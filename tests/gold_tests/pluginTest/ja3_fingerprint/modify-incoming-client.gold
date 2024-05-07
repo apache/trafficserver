@@ -1,6 +1,6 @@
 +++++++++ Incoming Request +++++++++
 -- State Machine Id``
-GET ``
+GET https:///some/path/https``
 host: ``
 content-length: ``
 x-request: ``

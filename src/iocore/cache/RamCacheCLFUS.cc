@@ -39,7 +39,7 @@
 #define LZMA_BASE_MEMLIMIT   (64 * 1024 * 1024)
 // #define CHECK_ACOUNTING 1 // very expensive double checking of all sizes
 
-#define REQUEUE_HITS(_h)              ((_h) ? ((_h)-1) : 0)
+#define REQUEUE_HITS(_h)              ((_h) ? ((_h) - 1) : 0)
 #define CACHE_VALUE_HITS_SIZE(_h, _s) ((float)((_h) + 1) / ((_s) + ENTRY_OVERHEAD))
 #define CACHE_VALUE(_x)               CACHE_VALUE_HITS_SIZE((_x)->hits, (_x)->size)
 
@@ -60,11 +60,11 @@ DbgCtl dbg_ctl_ram_cache_compare{"ram_cache_compare"};
 
 struct RamCacheCLFUSEntry {
   CryptoHash key;
-  uint64_t auxkey;
-  uint64_t hits;
-  uint32_t size; // memory used including padding in buffer
-  uint32_t len;  // actual data length
-  uint32_t compressed_len;
+  uint64_t   auxkey;
+  uint64_t   hits;
+  uint32_t   size; // memory used including padding in buffer
+  uint32_t   len;  // actual data length
+  uint32_t   compressed_len;
   union {
     struct {
       uint32_t compressed     : 3; // compression type
@@ -85,9 +85,9 @@ public:
   RamCacheCLFUS() {}
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  int get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
-  int put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
-  int fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
+  int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
+  int     put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
+  int     fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
   int64_t size() const override;
 
   void init(int64_t max_bytes, Stripe *stripe) override;
@@ -101,22 +101,22 @@ private:
   int64_t _bytes     = 0;
   int64_t _objects   = 0;
 
-  double _average_value                         = 0;
+  double  _average_value                        = 0;
   int64_t _history                              = 0;
-  int _ibuckets                                 = 0;
-  int _nbuckets                                 = 0;
+  int     _ibuckets                             = 0;
+  int     _nbuckets                             = 0;
   DList(RamCacheCLFUSEntry, hash_link) *_bucket = nullptr;
   Que(RamCacheCLFUSEntry, lru_link) _lru[2];
-  uint16_t *_seen                 = nullptr;
-  int _ncompressed                = 0;
-  RamCacheCLFUSEntry *_compressed = nullptr; // first uncompressed lru[0] entry
+  uint16_t           *_seen        = nullptr;
+  int                 _ncompressed = 0;
+  RamCacheCLFUSEntry *_compressed  = nullptr; // first uncompressed lru[0] entry
 
-  void _resize_hashtable();
-  void _victimize(RamCacheCLFUSEntry *e);
-  void _move_compressed(RamCacheCLFUSEntry *e);
+  void                _resize_hashtable();
+  void                _victimize(RamCacheCLFUSEntry *e);
+  void                _move_compressed(RamCacheCLFUSEntry *e);
   RamCacheCLFUSEntry *_destroy(RamCacheCLFUSEntry *e);
-  void _requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims);
-  void _tick(); // move CLOCK on history
+  void                _requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims);
+  void                _tick(); // move CLOCK on history
 };
 
 int64_t
@@ -140,7 +140,7 @@ class RamCacheCLFUSCompressor : public Continuation
 {
 public:
   RamCacheCLFUS *rc;
-  int mainEvent(int event, Event *e);
+  int            mainEvent(int event, Event *e);
 
   RamCacheCLFUSCompressor(RamCacheCLFUS *arc) : rc(arc) { SET_HANDLER(&RamCacheCLFUSCompressor::mainEvent); }
 };
@@ -222,7 +222,7 @@ RamCacheCLFUS::init(int64_t abytes, Stripe *astripe)
 static void
 check_accounting(RamCacheCLFUS *c)
 {
-  int64_t x = 0, xsize = 0, h = 0;
+  int64_t             x = 0, xsize = 0, h = 0;
   RamCacheCLFUSEntry *y = c->lru[0].head;
   while (y) {
     x++;
@@ -248,9 +248,9 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
   if (!this->_max_bytes) {
     return 0;
   }
-  int64_t i             = key->slice32(3) % this->_nbuckets;
+  int64_t             i = key->slice32(3) % this->_nbuckets;
   RamCacheCLFUSEntry *e = this->_bucket[i].head;
-  char *b               = nullptr;
+  char               *b = nullptr;
   while (e) {
     if (e->key == *key && e->auxkey == auxkey) {
       this->_move_compressed(e);
@@ -285,7 +285,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           }
 #ifdef HAVE_LZMA_H
           case CACHE_COMPRESSION_LIBLZMA: {
-            size_t l = static_cast<size_t>(e->len), ipos = 0, opos = 0;
+            size_t   l = static_cast<size_t>(e->len), ipos = 0, opos = 0;
             uint64_t memlimit = e->len * 2 + LZMA_BASE_MEMLIMIT;
             if (LZMA_OK != lzma_stream_buffer_decode(&memlimit, 0, nullptr, reinterpret_cast<uint8_t *>(e->data->data()), &ipos,
                                                      e->compressed_len, reinterpret_cast<uint8_t *>(b), &opos, l)) {
@@ -433,7 +433,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
     this->_ncompressed = 0;
   }
   float target = (cache_config_ram_cache_compress_percent / 100.0) * this->_objects;
-  int n        = 0;
+  int   n      = 0;
   char *b = nullptr, *bb = nullptr;
   while (this->_compressed && target > this->_ncompressed) {
     RamCacheCLFUSEntry *e = this->_compressed;
@@ -447,7 +447,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
     {
       e->compressed_len = e->size;
       uint32_t l        = 0;
-      int ctype         = cache_config_ram_cache_compress;
+      int      ctype    = cache_config_ram_cache_compress;
       switch (ctype) {
       default:
         goto Lcontinue;
@@ -465,8 +465,8 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       }
       // store transient data for lock release
       Ptr<IOBufferData> edata = e->data;
-      uint32_t elen           = e->len;
-      CryptoHash key          = e->key;
+      uint32_t          elen  = e->len;
+      CryptoHash        key   = e->key;
       MUTEX_UNTAKE_LOCK(stripe->mutex, thread);
       b           = static_cast<char *>(ats_malloc(l));
       bool failed = false;
@@ -508,7 +508,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         if (failed) {
           goto Lfailed;
         }
-        uint32_t i             = key.slice32(3) % this->_nbuckets;
+        uint32_t            i  = key.slice32(3) % this->_nbuckets;
         RamCacheCLFUSEntry *ee = this->_bucket[i].head;
         while (ee) {
           if (ee->key == key && ee->data == edata) {
@@ -591,10 +591,10 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
   if (!this->_max_bytes) {
     return 0;
   }
-  uint32_t i            = key->slice32(3) % this->_nbuckets;
-  RamCacheCLFUSEntry *e = this->_bucket[i].head;
-  uint32_t size         = copy ? len : data->block_size();
-  double victim_value   = 0;
+  uint32_t            i            = key->slice32(3) % this->_nbuckets;
+  RamCacheCLFUSEntry *e            = this->_bucket[i].head;
+  uint32_t            size         = copy ? len : data->block_size();
+  double              victim_value = 0;
   while (e) {
     if (e->key == *key) {
       if (e->auxkey == auxkey) {
@@ -640,8 +640,8 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
     }
   }
   Que(RamCacheCLFUSEntry, lru_link) victims;
-  RamCacheCLFUSEntry *victim = nullptr;
-  int requeue_limit          = REQUEUE_LIMIT;
+  RamCacheCLFUSEntry *victim        = nullptr;
+  int                 requeue_limit = REQUEUE_LIMIT;
   if (!this->_lru[1].head) { // initial fill
     if (this->_bytes + size <= this->_max_bytes) {
       goto Linsert;
@@ -770,7 +770,7 @@ RamCacheCLFUS::fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_au
   if (!this->_max_bytes) {
     return 0;
   }
-  uint32_t i            = key->slice32(3) % this->_nbuckets;
+  uint32_t            i = key->slice32(3) % this->_nbuckets;
   RamCacheCLFUSEntry *e = this->_bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey == old_auxkey) {

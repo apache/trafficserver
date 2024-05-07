@@ -56,8 +56,8 @@ TSError(const char *fmt, ...)
 static char *
 make_pem_header(const char *pem)
 {
-  char *hdr;
-  char *ptr;
+  char    *hdr;
+  char    *ptr;
   unsigned remain;
 
   hdr = ptr = strdup(pem);
@@ -197,15 +197,15 @@ TEST_CASE("SSLHeaders", "[ssl_hdrs]")
   ;
 #endif
 
-    BIO *exp   = BIO_new(BIO_s_mem());
-    BIO *bio   = BIO_new_mem_buf((void *)test_certificate, -1);
+    BIO  *exp  = BIO_new(BIO_s_mem());
+    BIO  *bio  = BIO_new_mem_buf((void *)test_certificate, -1);
     X509 *x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
 
     LOG_CHECK(x509 != nullptr, "failed to load the test certificate");
 
 #define EXPECT_FIELD(_field, _value)                                                                                    \
   do {                                                                                                                  \
-    long len;                                                                                                           \
+    long  len;                                                                                                          \
     char *ptr;                                                                                                          \
     SslHdrExpandX509Field(exp, x509, _field);                                                                           \
     len = BIO_get_mem_data(exp, &ptr);                                                                                  \

@@ -45,7 +45,7 @@ Value::set_value(const std::string &val)
 
   if (_value.find("%{") != std::string::npos) {
     HRWSimpleTokenizer tokenizer(_value);
-    auto tokens = tokenizer.get_tokens();
+    auto               tokens = tokenizer.get_tokens();
 
     for (const auto &token : tokens) {
       Condition *tcond_val = nullptr;
@@ -60,6 +60,7 @@ Value::set_value(const std::string &val)
             tcond_val->initialize(parser);
           } else {
             // TODO: should we produce error here?
+            Dbg(dbg_ctl, "Error parsing value '%s'", _value.c_str());
           }
         }
       } else {

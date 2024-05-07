@@ -50,8 +50,8 @@ private:
   {
   public:
     unordered_map<string, string> m_subelements;
-    string m_val;
-    bool parts_inited = false;
+    string                        m_val;
+    bool                          parts_inited = false;
   };
   CookieVal *m_currentVal = nullptr;
 

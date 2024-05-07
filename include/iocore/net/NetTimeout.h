@@ -34,16 +34,16 @@
 class NetTimeout
 {
 public:
-  void set_active_timeout(ink_hrtime timeout_in);
-  void set_inactive_timeout(ink_hrtime timeout_in);
-  void cancel_active_timeout();
-  void cancel_inactive_timeout();
-  void reset_active_timeout();
-  void reset_inactive_timeout();
-  bool is_active_timeout_expired(ink_hrtime now);
-  bool is_inactive_timeout_expired(ink_hrtime now);
+  void       set_active_timeout(ink_hrtime timeout_in);
+  void       set_inactive_timeout(ink_hrtime timeout_in);
+  void       cancel_active_timeout();
+  void       cancel_inactive_timeout();
+  void       reset_active_timeout();
+  void       reset_inactive_timeout();
+  bool       is_active_timeout_expired(ink_hrtime now);
+  bool       is_inactive_timeout_expired(ink_hrtime now);
   ink_hrtime idle_time(ink_hrtime now);
-  void update_inactivity();
+  void       update_inactivity();
 
 private:
   ink_hrtime _active_timeout_in        = 0;
@@ -77,12 +77,12 @@ public:
 
   void start();
   void stop();
-  int check_activity(int event, Event *e);
+  int  check_activity(int event, Event *e);
 
 private:
   Event *_event = nullptr;
-  List *_list   = nullptr;
-  int _freq     = 1;
+  List  *_list  = nullptr;
+  int    _freq  = 1;
 };
 
 ////
@@ -219,14 +219,19 @@ template <class T, class List>
 inline void
 ActivityCop<T, List>::start()
 {
-  _event = this_ethread()->schedule_every(this, HRTIME_SECONDS(_freq));
+  if (_event == nullptr) {
+    _event = this_ethread()->schedule_every(this, HRTIME_SECONDS(_freq));
+  }
 }
 
 template <class T, class List>
 inline void
 ActivityCop<T, List>::stop()
 {
-  _event->cancel();
+  if (_event != nullptr) {
+    _event->cancel();
+    _event = nullptr;
+  }
 }
 
 template <class T, class List>

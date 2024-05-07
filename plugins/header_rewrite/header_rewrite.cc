@@ -26,6 +26,8 @@
 #include "ts/remap.h"
 #include "ts/remap_version.h"
 
+#include "proxy/http/remap/PluginFactory.h"
+
 #include "parser.h"
 #include "ruleset.h"
 #include "resources.h"
@@ -35,19 +37,26 @@
 // Debugs
 const char PLUGIN_NAME[]     = "header_rewrite";
 const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
-
 namespace header_rewrite_ns
 {
 DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
 DbgCtl pi_dbg_ctl{PLUGIN_NAME};
+
+std::once_flag initHRWLibs;
+PluginFactory  plugin_factory;
 } // namespace header_rewrite_ns
 
-static std::once_flag initGeoLibs;
-
 static void
-initGeoLib(const std::string &dbPath)
+initHRWLibraries(const std::string &dbPath)
 {
+  header_rewrite_ns::plugin_factory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
+
+  if (dbPath.empty()) {
+    return;
+  }
+
   Dbg(pi_dbg_ctl, "Loading geo db %s", dbPath.c_str());
+
 #if TS_USE_HRW_GEOIP
   GeoIPConditionGeo::initLibrary(dbPath);
 #elif TS_USE_HRW_MAXMINDDB
@@ -99,13 +108,13 @@ public:
     return _rules[hook];
   }
 
-  bool parse_config(const std::string &fname, TSHttpHookID default_hook);
+  bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr);
 
 private:
   bool add_rule(RuleSet *rule);
 
-  TSCont _cont;
-  RuleSet *_rules[TS_HTTP_LAST_HOOK + 1];
+  TSCont      _cont;
+  RuleSet    *_rules[TS_HTTP_LAST_HOOK + 1];
   ResourceIDs _resids[TS_HTTP_LAST_HOOK + 1];
 };
 
@@ -133,12 +142,12 @@ RulesConfig::add_rule(RuleSet *rule)
 // anyways (or reload for remap.config), so not really in the critical path.
 //
 bool
-RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
+RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url, char *to_url)
 {
-  RuleSet *rule = nullptr;
-  std::string filename;
+  RuleSet      *rule = nullptr;
+  std::string   filename;
   std::ifstream f;
-  int lineno = 0;
+  int           lineno = 0;
 
   if (0 == fname.size()) {
     TSError("[%s] no config filename provided", PLUGIN_NAME);
@@ -177,10 +186,15 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
       continue;
     }
 
-    Parser p;
+    Parser p(from_url, to_url);
 
     // Tokenize and parse this line
-    if (!p.parse_line(line) || p.empty()) {
+    if (!p.parse_line(line)) {
+      Dbg(dbg_ctl, "Error parsing line '%s'", line.c_str());
+      continue;
+    }
+
+    if (p.empty()) {
       continue;
     }
 
@@ -189,8 +203,8 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
       rule = nullptr;
     }
 
-    TSHttpHookID hook = default_hook;
-    bool is_hook      = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
+    TSHttpHookID hook    = default_hook;
+    bool         is_hook = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
 
     if (nullptr == rule) {
       rule = new RuleSet();
@@ -253,7 +267,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
 static int
 cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp    = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn    txnp = static_cast<TSHttpTxn>(edata);
   TSHttpHookID hook = TS_HTTP_LAST_HOOK;
   RulesConfig *conf = static_cast<RulesConfig *>(TSContDataGet(contp));
 
@@ -287,7 +301,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 
   if (hook != TS_HTTP_LAST_HOOK) {
     const RuleSet *rule = conf->rule(hook);
-    Resources res(txnp, contp);
+    Resources      res(txnp, contp);
 
     // Get the resources necessary to process this event
     res.gather(conf->resid(hook), hook);
@@ -351,12 +365,12 @@ TSPluginInit(int argc, const char *argv[])
 
   Dbg(pi_dbg_ctl, "Global geo db %s", geoDBpath.c_str());
 
-  std::call_once(initGeoLibs, [&geoDBpath]() { initGeoLib(geoDBpath); });
+  std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
 
   // Parse the global config file(s). All rules are just appended
   // to the "global" Rules configuration.
-  RulesConfig *conf = new RulesConfig;
-  bool got_config   = false;
+  RulesConfig *conf       = new RulesConfig;
+  bool         got_config = false;
 
   for (int i = optind; i < argc; ++i) {
     // Parse the config file(s). Note that multiple config files are
@@ -409,6 +423,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     return TS_ERROR;
   }
 
+  char *from_url = argv[0];
+  char *to_url   = argv[1];
+
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.
   --argc;
@@ -434,15 +451,15 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
 
     Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
-
-    std::call_once(initGeoLibs, [&geoDBpath]() { initGeoLib(geoDBpath); });
   }
+
+  std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
 
   RulesConfig *conf = new RulesConfig;
 
   for (int i = optind; i < argc; ++i) {
     Dbg(pi_dbg_ctl, "Loading remap configuration file %s", argv[i]);
-    if (!conf->parse_config(argv[i], TS_REMAP_PSEUDO_HOOK)) {
+    if (!conf->parse_config(argv[i], TS_REMAP_PSEUDO_HOOK, from_url, to_url)) {
       TSError("[%s] Unable to create remap instance", PLUGIN_NAME);
       delete conf;
       return TS_ERROR;
@@ -468,6 +485,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 void
 TSRemapDeleteInstance(void *ih)
 {
+  Dbg(pi_dbg_ctl, "Deleting RulesConfig");
   delete static_cast<RulesConfig *>(ih);
 }
 
@@ -484,7 +502,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   }
 
   TSRemapStatus rval = TSREMAP_NO_REMAP;
-  RulesConfig *conf  = static_cast<RulesConfig *>(ih);
+  RulesConfig  *conf = static_cast<RulesConfig *>(ih);
 
   // Go through all hooks we support, and setup the txn hook(s) as necessary
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
@@ -497,7 +515,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // Now handle the remap specific rules for the "remap hook" (which is not a real hook).
   // This is sufficiently different than the normal cont_rewrite_headers() callback, and
   // we can't (shouldn't) schedule this as a TXN hook.
-  RuleSet *rule = conf->rule(TS_REMAP_PSEUDO_HOOK);
+  RuleSet  *rule = conf->rule(TS_REMAP_PSEUDO_HOOK);
   Resources res(rh, rri);
 
   res.gather(RSRC_CLIENT_REQUEST_HEADERS, TS_REMAP_PSEUDO_HOOK);

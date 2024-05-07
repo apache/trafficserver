@@ -136,11 +136,11 @@ void
 DiffConfigPrinter::write_output(YAML::Node const &result)
 {
   std::string text;
-  auto response = result.as<shared::rpc::RecordLookUpResponse>();
+  auto        response = result.as<shared::rpc::RecordLookUpResponse>();
   for (auto &&recordInfo : response.recordList) {
     auto const &currentValue = recordInfo.currentValue;
     auto const &defaultValue = recordInfo.defaultValue;
-    const bool hasChanged    = (currentValue != defaultValue);
+    const bool  hasChanged   = (currentValue != defaultValue);
     if (hasChanged) {
       if (!_printAsRecords) {
         std::cout << swoc::bwprint(text, "{} has changed\n", recordInfo.name);
@@ -226,8 +226,7 @@ ConfigStatusPrinter::write_output(YAML::Node const &result)
       }
     }
   } catch (...) {
-    std::cout << recordName << ": <unable to read the value>"
-              << "\n";
+    std::cout << recordName << ": <unable to read the value>" << "\n";
   }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -310,7 +309,7 @@ CacheDiskStoragePrinter::write_output(YAML::Node const &result)
   };
 
   auto const &resp = result.as<DeviceStatusInfoResponse>();
-  auto iter        = std::begin(resp.data);
+  auto        iter = std::begin(resp.data);
   my_print(*iter);
   ++iter;
   for (; iter != std::end(resp.data); ++iter) {

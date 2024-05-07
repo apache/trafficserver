@@ -49,7 +49,7 @@ public:
   private:
     friend class Header;
 
-    Header *_owner       = nullptr;
+    Header      *_owner  = nullptr;
     TSHttpStatus _status = TS_HTTP_STATUS_NONE;
 
   }; // End class Header::Status
@@ -160,7 +160,7 @@ public:
   private:
     friend class Header;
 
-    Header *_owner = nullptr;
+    Header            *_owner = nullptr;
     Cript::string_view _method;
 
   }; // End class Header::Method
@@ -201,7 +201,7 @@ public:
     }
 
   private:
-    Header *_owner = nullptr;
+    Header            *_owner = nullptr;
     Cript::string_view _cache;
 
   }; // Class Header::CacheStatus
@@ -261,8 +261,8 @@ public:
     }
 
   private:
-    Header *_owner    = nullptr;
-    TSMLoc _field_loc = nullptr;
+    Header            *_owner     = nullptr;
+    TSMLoc             _field_loc = nullptr;
     Cript::string_view _name;
 
   }; // Class Header::String
@@ -349,9 +349,9 @@ public:
     }
 
   private:
-    Name _view     = nullptr;
-    uint32_t _tag  = 0;
-    Header *_owner = nullptr;
+    Name     _view  = nullptr;
+    uint32_t _tag   = 0;
+    Header  *_owner = nullptr;
 
     static const Iterator _end;
   }; // Class Header::iterator
@@ -410,7 +410,7 @@ public:
     p.clear();
   }
 
-  Iterator begin();
+  Iterator           begin();
   Cript::string_view iterate(); // This is a little helper for the iterators
 
   [[nodiscard]] Iterator
@@ -419,17 +419,17 @@ public:
     return Iterator::end(); // Static end iterator. ToDo: Does this have any value over making a new one always?
   }
 
-  Status status;
-  Reason reason;
-  Body body;
+  Status      status;
+  Reason      reason;
+  Body        body;
   CacheStatus cache;
 
 protected:
-  TSMBuffer _bufp            = nullptr;
-  TSMLoc _hdr_loc            = nullptr;
-  Cript::Transaction *_state = nullptr; // Pointer into the owning Context's State
-  TSMLoc _iterator_loc       = nullptr;
-  uint32_t _iterator_tag     = 0; // This is used to assure that we don't have more than one active iterator on a header
+  TSMBuffer           _bufp         = nullptr;
+  TSMLoc              _hdr_loc      = nullptr;
+  Cript::Transaction *_state        = nullptr; // Pointer into the owning Context's State
+  TSMLoc              _iterator_loc = nullptr;
+  uint32_t            _iterator_tag = 0; // This is used to assure that we don't have more than one active iterator on a header
 
 }; // End class Header
 

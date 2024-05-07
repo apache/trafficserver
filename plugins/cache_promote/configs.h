@@ -40,5 +40,5 @@ public:
 
 private:
   PromotionPolicy *_policy = nullptr;
-  PolicyManager *_manager;
+  PolicyManager   *_manager;
 };

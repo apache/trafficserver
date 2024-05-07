@@ -82,22 +82,23 @@ TLSEarlyDataSupport::update_early_data_config(SSL *ssl, uint32_t max_early_data,
   // are calling "ssl_accept" non-blocking, it seems to be confusing the anti-replay
   // mechanism and causing session resumption to fail.
 #ifdef HAVE_SSL_SET_MAX_EARLY_DATA
-  bool ret1 = false;
-  bool ret2 = false;
+  static DbgCtl dbg_ctl_ssl_early_data{"ssl_early_data"};
+  bool          ret1 = false;
+  bool          ret2 = false;
   if ((ret1 = SSL_set_max_early_data(ssl, max_early_data)) == 1) {
-    Debug("ssl_early_data", "SSL_set_max_early_data %u: success", max_early_data);
+    Dbg(dbg_ctl_ssl_early_data, "SSL_set_max_early_data %u: success", max_early_data);
   } else {
-    Debug("ssl_early_data", "SSL_set_max_early_data %u: failed", max_early_data);
+    Dbg(dbg_ctl_ssl_early_data, "SSL_set_max_early_data %u: failed", max_early_data);
   }
 
   if ((ret2 = SSL_set_recv_max_early_data(ssl, recv_max_early_data)) == 1) {
-    Debug("ssl_early_data", "SSL_set_recv_max_early_data %u: success", recv_max_early_data);
+    Dbg(dbg_ctl_ssl_early_data, "SSL_set_recv_max_early_data %u: success", recv_max_early_data);
   } else {
-    Debug("ssl_early_data", "SSL_set_recv_max_early_data %u: failed", recv_max_early_data);
+    Dbg(dbg_ctl_ssl_early_data, "SSL_set_recv_max_early_data %u: failed", recv_max_early_data);
   }
 
   if (ret1 && ret2) {
-    Debug("ssl_early_data", "Must disable anti-replay if 0-rtt is enabled.");
+    Dbg(dbg_ctl_ssl_early_data, "Must disable anti-replay if 0-rtt is enabled.");
     SSL_set_options(ssl, SSL_OP_NO_ANTI_REPLAY);
   }
 #else

@@ -39,7 +39,7 @@ namespace cache
   void
   write(const std::string &k, std::string &&s)
   {
-    Key key(k);
+    Key    key(k);
     TSCont continuation = TSContCreate(Write::handle, nullptr);
     assert(continuation != nullptr);
     TSContDataSet(continuation, new Write(std::move(s)));

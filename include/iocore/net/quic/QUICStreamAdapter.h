@@ -37,12 +37,12 @@ public:
     return _stream;
   }
 
-  virtual int64_t write(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin) = 0;
+  virtual int64_t    write(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin) = 0;
   Ptr<IOBufferBlock> read(size_t len);
-  virtual bool is_eos()         = 0;
-  virtual uint64_t unread_len() = 0;
-  virtual uint64_t read_len()   = 0;
-  virtual uint64_t total_len()  = 0;
+  virtual bool       is_eos()     = 0;
+  virtual uint64_t   unread_len() = 0;
+  virtual uint64_t   read_len()   = 0;
+  virtual uint64_t   total_len()  = 0;
 
   /**
    * Tell the application that there is data to read
@@ -61,5 +61,5 @@ public:
 
 protected:
   virtual Ptr<IOBufferBlock> _read(size_t len) = 0;
-  QUICStream &_stream;
+  QUICStream                &_stream;
 };

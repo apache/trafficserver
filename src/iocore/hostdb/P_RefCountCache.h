@@ -45,14 +45,14 @@ using ts::Metrics;
 
 #define REFCOUNTCACHE_MAGIC_NUMBER 0x0BAD2D9
 
-static constexpr unsigned char REFCOUNTCACHE_MAJOR_VERSION = 1;
-static constexpr unsigned char REFCOUNTCACHE_MINOR_VERSION = 0;
+static constexpr unsigned char     REFCOUNTCACHE_MAJOR_VERSION = 1;
+static constexpr unsigned char     REFCOUNTCACHE_MINOR_VERSION = 0;
 static constexpr ts::VersionNumber REFCOUNTCACHE_VERSION(1, 0);
 
 // Stats
 struct RefCountCacheBlock {
-  Metrics::Gauge::AtomicType *refcountcache_current_items;
-  Metrics::Gauge::AtomicType *refcountcache_current_size;
+  Metrics::Gauge::AtomicType   *refcountcache_current_items;
+  Metrics::Gauge::AtomicType   *refcountcache_current_size;
   Metrics::Counter::AtomicType *refcountcache_total_inserts;
   Metrics::Counter::AtomicType *refcountcache_total_failed_inserts;
   Metrics::Counter::AtomicType *refcountcache_total_lookups;
@@ -63,9 +63,9 @@ struct RefCountCacheBlock {
 };
 
 struct RefCountCacheItemMeta {
-  uint64_t key;
+  uint64_t     key;
   unsigned int size;
-  ink_time_t expiry_time; // expire time as seconds since epoch
+  ink_time_t   expiry_time; // expire time as seconds since epoch
   RefCountCacheItemMeta(uint64_t key, unsigned int size, ink_time_t expiry_time = -1)
     : key(key), size(size), expiry_time(expiry_time)
   {
@@ -77,11 +77,11 @@ struct RefCountCacheItemMeta {
 class RefCountCacheHashEntry
 {
 public:
-  Ptr<RefCountObj> item;
-  RefCountCacheHashEntry *_next{nullptr};
-  RefCountCacheHashEntry *_prev{nullptr};
+  Ptr<RefCountObj>                              item;
+  RefCountCacheHashEntry                       *_next{nullptr};
+  RefCountCacheHashEntry                       *_prev{nullptr};
   PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry = nullptr;
-  RefCountCacheItemMeta meta;
+  RefCountCacheItemMeta                         meta;
 
   // Need a no-argument constructor to use the classAllocator
   RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), meta(0, 0) {}
@@ -100,7 +100,7 @@ public:
   }
 
   static RefCountCacheHashEntry *alloc();
-  static void dealloc(RefCountCacheHashEntry *e);
+  static void                    dealloc(RefCountCacheHashEntry *e);
 
   template <typename C>
   static void
@@ -165,8 +165,8 @@ public:
 
   RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items, RefCountCacheBlock *rsb = nullptr);
   Ptr<C> get(uint64_t key);
-  void put(uint64_t key, C *item, int size = 0, time_t expire_time = 0);
-  void erase(uint64_t key, ink_time_t expiry_time = -1);
+  void   put(uint64_t key, C *item, int size = 0, time_t expire_time = 0);
+  void   erase(uint64_t key, ink_time_t expiry_time = -1);
 
   void clear();
   bool is_full() const;
@@ -174,7 +174,7 @@ public:
   void dealloc_entry(hash_type::iterator ptr);
 
   size_t count() const;
-  void copy(std::vector<RefCountCacheHashEntry *> &items);
+  void   copy(std::vector<RefCountCacheHashEntry *> &items);
 
   hash_type &get_map();
 
@@ -182,15 +182,15 @@ public:
 
 private:
   unsigned int part_num;
-  uint64_t max_size;
+  uint64_t     max_size;
   unsigned int max_items;
-  uint64_t size;
+  uint64_t     size;
   unsigned int items;
 
   hash_type item_map;
 
   PriorityQueue<RefCountCacheHashEntry *> expiry_queue;
-  RefCountCacheBlock *rsb;
+  RefCountCacheBlock                     *rsb;
 };
 
 template <class C>
@@ -366,7 +366,7 @@ RefCountCachePartition<C>::get_map()
 class RefCountCacheHeader
 {
 public:
-  unsigned int magic = REFCOUNTCACHE_MAGIC_NUMBER;
+  unsigned int      magic = REFCOUNTCACHE_MAGIC_NUMBER;
   ts::VersionNumber version{REFCOUNTCACHE_VERSION};
   ts::VersionNumber object_version; // version passed in of whatever it is we are caching
 
@@ -400,27 +400,27 @@ public:
 
   // User interface to the cache
   Ptr<C> get(uint64_t key);
-  void put(uint64_t key, C *item, int size = 0, ink_time_t expiry_time = -1);
-  void erase(uint64_t key);
-  void clear();
+  void   put(uint64_t key, C *item, int size = 0, ink_time_t expiry_time = -1);
+  void   erase(uint64_t key);
+  void   clear();
 
   // Some methods to get some internal state
-  int partition_for_key(uint64_t key);
-  ts::shared_mutex &lock_for_key(uint64_t key);
-  size_t partition_count() const;
+  int                        partition_for_key(uint64_t key);
+  ts::shared_mutex          &lock_for_key(uint64_t key);
+  size_t                     partition_count() const;
   RefCountCachePartition<C> &get_partition(int pnum);
-  size_t count() const;
-  RefCountCacheHeader &get_header();
-  RefCountCacheBlock *get_rsb();
+  size_t                     count() const;
+  RefCountCacheHeader       &get_header();
+  RefCountCacheBlock        *get_rsb();
 
 private:
-  int max_size;  // Total size
-  int max_items; // Total number of items allowed
-  unsigned int num_partitions;
+  int                                      max_size;  // Total size
+  int                                      max_items; // Total number of items allowed
+  unsigned int                             num_partitions;
   std::vector<RefCountCachePartition<C> *> partitions;
   // Header
   RefCountCacheHeader header; // Our header
-  RefCountCacheBlock rsb;
+  RefCountCacheBlock  rsb;
 };
 
 template <class C>
@@ -562,7 +562,7 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::strin
 
   // read in the header
   RefCountCacheHeader tmpHeader = RefCountCacheHeader();
-  int read_ret                  = read(fd, (char *)&tmpHeader, sizeof(RefCountCacheHeader));
+  int                 read_ret  = read(fd, (char *)&tmpHeader, sizeof(RefCountCacheHeader));
   if (read_ret != sizeof(RefCountCacheHeader)) {
     SocketManager::close(fd);
     Warning("Error reading cache header from disk (expected %ld): %d", sizeof(RefCountCacheHeader), read_ret);

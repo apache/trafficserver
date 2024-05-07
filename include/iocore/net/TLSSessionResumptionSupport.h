@@ -27,18 +27,19 @@
 #include <openssl/ssl.h>
 
 #include "tscore/ink_inet.h"
-#include "../../../src/iocore/net/P_SSLCertLookup.h"
-#include "../../../src/iocore/net/P_SSLUtils.h"
+#include "iocore/net/SSLTypes.h"
+
+struct ssl_ticket_key_block;
 
 class TLSSessionResumptionSupport
 {
 public:
   virtual ~TLSSessionResumptionSupport() = default;
 
-  static void initialize();
+  static void                         initialize();
   static TLSSessionResumptionSupport *getInstance(SSL *ssl);
-  static void bind(SSL *ssl, TLSSessionResumptionSupport *srs);
-  static void unbind(SSL *ssl);
+  static void                         bind(SSL *ssl, TLSSessionResumptionSupport *srs);
+  static void                         unbind(SSL *ssl);
 
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
   int processSessionTicket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx,
@@ -47,14 +48,14 @@ public:
   int processSessionTicket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                            int enc);
 #endif
-  bool getSSLSessionCacheHit() const;
-  bool getSSLOriginSessionCacheHit() const;
+  bool         getSSLSessionCacheHit() const;
+  bool         getSSLOriginSessionCacheHit() const;
   ssl_curve_id getSSLCurveNID() const;
 
   std::shared_ptr<SSL_SESSION> getOriginSession(SSL *ssl, const std::string &lookup_key);
 
 protected:
-  void clear();
+  void                      clear();
   virtual const IpEndpoint &_getLocalEndpoint() = 0;
 
 private:
@@ -62,7 +63,7 @@ private:
 
   bool _sslSessionCacheHit       = false;
   bool _sslOriginSessionCacheHit = false;
-  int _sslCurveNID               = NID_undef;
+  int  _sslCurveNID              = NID_undef;
 
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
   int _setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,

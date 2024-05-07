@@ -41,7 +41,7 @@ public:
   using IPReputations = std::vector<IpReputation::SieveLru *>;
   using Lists         = std::vector<List::IP *>;
 
-  SniSelector() = default;
+  SniSelector() { Dbg(dbg_ctl, "Creating SNI selector"); }
 
   SniSelector(self_type &&)               = delete;
   self_type &operator=(const self_type &) = delete;
@@ -49,6 +49,7 @@ public:
 
   virtual ~SniSelector()
   {
+    Dbg(dbg_ctl, "Destroying SNI selector");
     if (_queue_action) {
       TSActionCancel(_queue_action);
     }
@@ -180,15 +181,15 @@ public:
   static void startup(const std::string &yaml_file);
 
 private:
-  std::string _yaml_file;
-  bool _needs_queue_cont = false;
-  TSCont _queue_cont     = nullptr;   // Continuation processing the queue periodically
-  TSAction _queue_action = nullptr;   // The action associated with the queue continuation, needed to shut it down
-  Limiters _limiters;                 // The SNI limiters
-  SniRateLimiter *_default = nullptr; // Default limiter, if any
-  IPReputations _reputations;         // IP-Reputation rules
-  Lists _lists;                       // IP lists (for now, could be generalized later)
-  std::atomic<uint32_t> _leases = 0;  // Number of leases we have on the current selector, start with one
+  std::string           _yaml_file;
+  bool                  _needs_queue_cont = false;
+  TSCont                _queue_cont       = nullptr; // Continuation processing the queue periodically
+  TSAction              _queue_action     = nullptr; // The action associated with the queue continuation, needed to shut it down
+  Limiters              _limiters;                   // The SNI limiters
+  SniRateLimiter       *_default = nullptr;          // Default limiter, if any
+  IPReputations         _reputations;                // IP-Reputation rules
+  Lists                 _lists;                      // IP lists (for now, could be generalized later)
+  std::atomic<uint32_t> _leases = 0;                 // Number of leases we have on the current selector, start with one
 
   static std::atomic<self_type *> _instance; // Holds the singleton instance, initialized in the .cc file
 };

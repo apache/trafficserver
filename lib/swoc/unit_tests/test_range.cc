@@ -13,7 +13,6 @@ using namespace swoc::literals;
 
 using range_t = swoc::DiscreteRange<unsigned>;
 TEST_CASE("Discrete Range", "[libswoc][range]") {
-  range_t none; // empty range.
   range_t single{56};
   range_t r1{56, 100};
   range_t r2{101, 200};

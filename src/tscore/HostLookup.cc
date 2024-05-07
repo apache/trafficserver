@@ -189,7 +189,7 @@ static const int numLegalChars = 38;
 //
 struct CharIndexBlock {
   struct Item {
-    HostBranch *branch{nullptr};
+    HostBranch                     *branch{nullptr};
     std::unique_ptr<CharIndexBlock> block;
   };
   std::array<Item, numLegalChars> array;
@@ -242,7 +242,7 @@ public:
     using self_type = iterator;
 
     struct State {
-      int index{-1};
+      int             index{-1};
       CharIndexBlock *block{nullptr};
     };
 
@@ -250,9 +250,9 @@ public:
 
     value_type *operator->();
     value_type &operator*();
-    bool operator==(self_type const &that) const;
-    bool operator!=(self_type const &that) const;
-    self_type &operator++();
+    bool        operator==(self_type const &that) const;
+    bool        operator!=(self_type const &that) const;
+    self_type  &operator++();
 
     // Current level.
     int cur_level{-1};
@@ -268,7 +268,7 @@ public:
   };
 
   ~CharIndex();
-  void Insert(string_view match_data, HostBranch *toInsert);
+  void        Insert(string_view match_data, HostBranch *toInsert);
   HostBranch *Lookup(string_view match_data);
 
   iterator begin();
@@ -297,7 +297,7 @@ CharIndex::~CharIndex()
 void
 CharIndex::Insert(string_view match_data, HostBranch *toInsert)
 {
-  unsigned char index;
+  unsigned char   index;
   CharIndexBlock *cur = &root;
 
   ink_assert(!match_data.empty());
@@ -487,7 +487,7 @@ class HostArray
   using Array = std::array<Item, HOST_ARRAY_MAX>;
 
 public:
-  bool Insert(string_view match_data_in, HostBranch *toInsert);
+  bool        Insert(string_view match_data_in, HostBranch *toInsert);
   HostBranch *Lookup(string_view match_data_in, bool bNotProcess);
 
   Array::iterator
@@ -502,7 +502,7 @@ public:
   }
 
 private:
-  int _size{0}; // number of elements currently in the array
+  int   _size{0}; // number of elements currently in the array
   Array array;
 };
 
@@ -761,7 +761,7 @@ HostLookup::TableInsert(string_view match_data, int index, bool domain_record)
 {
   HostBranch *cur = &root;
   HostBranch *next;
-  TextView match{match_data};
+  TextView    match{match_data};
 
   // Traverse down the search structure until we either
   //       Get beyond the fixed number depth of the host table
@@ -918,7 +918,7 @@ HostLookup::MatchNext(HostLookupState *s, void **opaque_ptr)
     }
 
     TextView name{s->hostname_stub};
-    auto token       = name.take_suffix_at('.');
+    auto     token   = name.take_suffix_at('.');
     s->hostname_stub = name;
     cur              = FindNextLevel(cur, token, true);
 

@@ -29,7 +29,7 @@ TEST_CASE("ValidateURL", "[proxy][validurl]")
 {
   static const struct {
     const char *const text;
-    bool valid;
+    bool              valid;
   } http_validate_hdr_field_test_case[] = {
     {"yahoo",                                               true },
     {"yahoo.com",                                           true },
@@ -60,7 +60,7 @@ TEST_CASE("Validate Scheme", "[proxy][validscheme]")
 {
   static const struct {
     std::string_view text;
-    bool valid;
+    bool             valid;
   } scheme_test_cases[] = {
     {"http",       true },
     {"https",      true },
@@ -97,7 +97,7 @@ TEST_CASE("ParseRulesStrictURI", "[proxy][parseuri]")
 {
   const struct {
     const char *const uri;
-    bool valid;
+    bool              valid;
   } http_strict_uri_parsing_test_case[] = {
     {"//index.html",                  true },
     {"/home",                         true },
@@ -138,7 +138,7 @@ TEST_CASE("ParseRulesMostlyStrictURI", "[proxy][parseuri]")
 {
   const struct {
     const char *const uri;
-    bool valid;
+    bool              valid;
   } http_mostly_strict_uri_parsing_test_case[] = {
     {"//index.html",                  true },
     {"/home",                         true },
@@ -178,10 +178,10 @@ TEST_CASE("ParseRulesMostlyStrictURI", "[proxy][parseuri]")
 struct url_parse_test_case {
   const std::string input_uri;
   const std::string expected_printed_url;
-  const bool verify_host_characters;
+  const bool        verify_host_characters;
   const std::string expected_printed_url_regex;
-  const bool is_valid;
-  const bool is_valid_regex;
+  const bool        is_valid;
+  const bool        is_valid_regex;
 };
 
 constexpr bool IS_VALID               = true;
@@ -523,7 +523,7 @@ constexpr bool URL_PARSE_REGEX = false;
 void
 test_parse(url_parse_test_case const &test_case, bool parse_function)
 {
-  URL url;
+  URL      url;
   HdrHeap *heap = new_HdrHeap();
   url.create(heap);
   ParseResult result = PARSE_RESULT_OK;
@@ -549,8 +549,8 @@ test_parse(url_parse_test_case const &test_case, bool parse_function)
   }
   if (result == PARSE_RESULT_DONE) {
     char buf[1024];
-    int index  = 0;
-    int offset = 0;
+    int  index  = 0;
+    int  offset = 0;
     url.print(buf, sizeof(buf), &index, &offset);
     std::string printed_url{buf, static_cast<size_t>(index)};
     if (parse_function == URL_PARSE) {
@@ -576,8 +576,8 @@ struct get_hash_test_case {
   const std::string description;
   const std::string uri_1;
   const std::string uri_2;
-  const bool ignore_query;
-  const bool has_equal_hash;
+  const bool        ignore_query;
+  const bool        has_equal_hash;
 };
 
 constexpr bool HAS_EQUAL_HASH = true;

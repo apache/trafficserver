@@ -24,8 +24,10 @@
 #include "P_Cache.h"
 #include "P_CacheDoc.h"
 #include "iocore/cache/AggregateWriteBuffer.h"
-#include "iocore/cache/CacheEvacuateDocVC.h"
+#include "CacheEvacuateDocVC.h"
 
+// These macros allow two incrementing unsigned values x and y to maintain
+// their ordering when one of them overflows, given that the values stay close to each other.
 #define UINT_WRAP_LTE(_x, _y) (((_y) - (_x)) < INT_MAX)  // exploit overflow
 #define UINT_WRAP_GTE(_x, _y) (((_x) - (_y)) < INT_MAX)  // exploit overflow
 #define UINT_WRAP_LT(_x, _y)  (((_x) - (_y)) >= INT_MAX) // exploit overflow
@@ -55,7 +57,7 @@ DbgCtl dbg_ctl_agg_read{"agg_read"};
 int
 get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key)
 {
-  int alt_count = cache_vector->count();
+  int            alt_count = cache_vector->count();
   CacheHTTPInfo *obj;
   if (!alt_count) {
     return -1;
@@ -128,8 +130,8 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         // HttpSM is destructed. Instead, therefore, alternate eviction logging
         // was implemented for diags.log with the
         // proxy.config.cache.log.alternate.eviction toggle.
-        CacheHTTPInfo *info = write_vector->get(0);
-        HTTPHdr *request    = info->request_get();
+        CacheHTTPInfo *info    = write_vector->get(0);
+        HTTPHdr       *request = info->request_get();
         if (request->valid()) {
           // Marking the request's target as dirty will guarantee that the
           // internal members of the request used for printing the URL will be
@@ -138,7 +140,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           // In contrast to url_string_get, this url_print interface doesn't
           // use HTTPHdr's m_heap which is not valid at this point because the
           // HttpSM is most likely gone.
-          int url_length = request->url_printed_length();
+          int                  url_length = request->url_printed_length();
           ats_scoped_mem<char> url_text;
           url_text   = static_cast<char *>(ats_malloc(url_length + 1));
           int index  = 0;
@@ -171,9 +173,9 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
 
     if (od->move_resident_alt && first_buf.get() && !od->has_multiple_writers()) {
-      Doc *doc         = reinterpret_cast<Doc *>(first_buf->data());
-      int small_doc    = static_cast<int64_t>(doc->data_len()) < static_cast<int64_t>(cache_config_alt_rewrite_max_size);
-      int have_res_alt = doc->key == od->single_doc_key;
+      Doc *doc          = reinterpret_cast<Doc *>(first_buf->data());
+      int  small_doc    = static_cast<int64_t>(doc->data_len()) < static_cast<int64_t>(cache_config_alt_rewrite_max_size);
+      int  have_res_alt = doc->key == od->single_doc_key;
       // if the new alternate is not written with the vector
       // then move the old one with the vector
       // if its a header only update move the resident alternate
@@ -275,10 +277,10 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
 {
   IOBufferBlock *b = ab;
   while (b && len >= 0) {
-    char *start    = b->_start;
-    char *end      = b->_end;
-    int max_bytes  = end - start;
-    max_bytes     -= offset;
+    char *start      = b->_start;
+    char *end        = b->_end;
+    int   max_bytes  = end - start;
+    max_bytes       -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
       b      = b->next.get();
@@ -506,10 +508,10 @@ Stripe::evacuateDocReadDone(int event, Event *e)
   ink_assert(is_io_in_progress());
   set_io_not_in_progress();
   ink_assert(mutex->thread_holding == this_ethread());
-  Doc *doc = reinterpret_cast<Doc *>(doc_evacuator->buf->data());
-  CacheKey next_key;
-  EvacuationBlock *b = nullptr;
-  auto bucket        = dir_evac_bucket(&doc_evacuator->overwrite_dir);
+  Doc             *doc = reinterpret_cast<Doc *>(doc_evacuator->buf->data());
+  CacheKey         next_key;
+  EvacuationBlock *b      = nullptr;
+  auto             bucket = dir_evac_bucket(&doc_evacuator->overwrite_dir);
   if (doc->magic != DOC_MAGIC) {
     Dbg(dbg_ctl_cache_evac, "DOC magic: %X %d", (int)dir_tag(&doc_evacuator->overwrite_dir),
         (int)dir_offset(&doc_evacuator->overwrite_dir));
@@ -593,18 +595,18 @@ Ldone:
 int
 Stripe::evac_range(off_t low, off_t high, int evac_phase)
 {
-  off_t s = this->offset_to_vol_offset(low);
-  off_t e = this->offset_to_vol_offset(high);
-  int si  = dir_offset_evac_bucket(s);
-  int ei  = dir_offset_evac_bucket(e);
+  off_t s  = this->offset_to_vol_offset(low);
+  off_t e  = this->offset_to_vol_offset(high);
+  int   si = dir_offset_evac_bucket(s);
+  int   ei = dir_offset_evac_bucket(e);
 
   for (int i = si; i <= ei; i++) {
-    EvacuationBlock *b     = evacuate[i].head;
-    EvacuationBlock *first = nullptr;
-    int64_t first_offset   = INT64_MAX;
+    EvacuationBlock *b            = evacuate[i].head;
+    EvacuationBlock *first        = nullptr;
+    int64_t          first_offset = INT64_MAX;
     for (; b; b = b->link.next) {
       int64_t offset = dir_offset(&b->dir);
-      int phase      = dir_phase(&b->dir);
+      int     phase  = dir_phase(&b->dir);
       if (offset >= s && offset < e && !b->f.done && phase == evac_phase) {
         if (offset < first_offset) {
           first        = b;
@@ -639,10 +641,10 @@ static int
 agg_copy(char *p, CacheVC *vc)
 {
   Stripe *stripe = vc->stripe;
-  off_t o        = stripe->header->write_pos + stripe->get_agg_buf_pos();
+  off_t   o      = stripe->header->write_pos + stripe->get_agg_buf_pos();
 
   if (!vc->f.evacuator) {
-    Doc *doc                   = reinterpret_cast<Doc *>(p);
+    Doc           *doc         = reinterpret_cast<Doc *>(p);
     IOBufferBlock *res_alt_blk = nullptr;
 
     uint32_t len = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
@@ -745,7 +747,7 @@ agg_copy(char *p, CacheVC *vc)
       }
 #ifdef VERIFY_JTEST_DATA
       if (f.use_first_key && header_len) {
-        int ib = 0, xd = 0;
+        int  ib = 0, xd = 0;
         char xx[500];
         new_info.request_get().url_get().print(xx, 500, &ib, &xd);
         char *x = xx;
@@ -773,7 +775,7 @@ agg_copy(char *p, CacheVC *vc)
   } else {
     // for evacuated documents, copy the data, and update directory
     Doc *doc = reinterpret_cast<Doc *>(vc->buf->data());
-    int l    = vc->stripe->round_to_approx_size(doc->len);
+    int  l   = vc->stripe->round_to_approx_size(doc->len);
 
 #ifdef DEBUG
     Metrics::Counter::increment(cache_rsb.gc_frags_evacuated);
@@ -817,7 +819,7 @@ Stripe::evacuate_cleanup()
   int64_t e  = dir_offset_evac_bucket(eo);
   int64_t sx = e - (evacuate_size / PIN_SCAN_EVERY) - 1;
   int64_t s  = sx;
-  int i;
+  int     i;
 
   if (e > evacuate_size) {
     e = evacuate_size;
@@ -1621,11 +1623,11 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   }
 
   ink_assert(caches[type] == this);
-  intptr_t err   = 0;
-  int if_writers = (uintptr_t)info == CACHE_ALLOW_MULTIPLE_WRITES;
-  CacheVC *c     = new_CacheVC(cont);
-  c->vio.op      = VIO::WRITE;
-  c->first_key   = *key;
+  intptr_t err        = 0;
+  int      if_writers = (uintptr_t)info == CACHE_ALLOW_MULTIPLE_WRITES;
+  CacheVC *c          = new_CacheVC(cont);
+  c->vio.op           = VIO::WRITE;
+  c->first_key        = *key;
   /*
      The transition from single fragment document to a multi-fragment document
      would cause a problem if the key and the first_key collide. In case of

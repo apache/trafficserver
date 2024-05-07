@@ -26,6 +26,8 @@
 #include <ts/remap_version.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 static const char *PLUGIN_NAME = "fq_pacing";
 
@@ -56,21 +58,21 @@ safe_setsockopt(int s, int level, int optname, char *optval, int optlevel)
 static int
 fq_is_default_qdisc()
 {
-  TSFile f       = nullptr;
-  ssize_t s      = 0;
-  char buffer[5] = {};
-  int rc         = 0;
+  int     fd        = -1;
+  ssize_t bytes     = 0;
+  char    buffer[5] = {};
+  int     rc        = 0;
 
-  f = TSfopen("/proc/sys/net/core/default_qdisc", "r");
-  if (!f) {
+  fd = open("/proc/sys/net/core/default_qdisc", O_RDONLY);
+  if (fd < 0) {
     return 0;
   }
 
-  s = TSfread(f, buffer, sizeof(buffer) - 1);
-  if (s > 0) {
-    buffer[s] = 0;
+  bytes = read(fd, buffer, sizeof(buffer) - 1);
+  if (bytes > 0) {
+    buffer[bytes] = 0;
   } else {
-    TSfclose(f);
+    close(fd);
     return 0;
   }
 
@@ -79,7 +81,7 @@ fq_is_default_qdisc()
   }
 
   rc = (strncmp(buffer, "fq", sizeof(buffer)) == 0);
-  TSfclose(f);
+  close(fd);
   return (rc);
 }
 
@@ -114,13 +116,13 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  fq_pacing_cfg_t *cfg      = nullptr;
-  unsigned long pacing_rate = 0;
+  fq_pacing_cfg_t *cfg         = nullptr;
+  unsigned long    pacing_rate = 0;
 
   Dbg(dbg_ctl, "Instantiating a new remap.config plugin rule");
 
   if (argc > 1) {
-    int c;
+    int                        c;
     static const struct option longopts[] = {
       {"rate",  required_argument, nullptr, 'r'},
       {nullptr, 0,                 nullptr, 0  }
@@ -171,8 +173,8 @@ TSRemapDeleteInstance(void *instance)
 static int
 reset_pacing_cont(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  auto txn_data  = static_cast<fq_pacing_cont_t *>(TSContDataGet(contp));
+  TSHttpTxn txnp     = static_cast<TSHttpTxn>(edata);
+  auto      txn_data = static_cast<fq_pacing_cont_t *>(TSContDataGet(contp));
 
 #ifdef SO_MAX_PACING_RATE
   unsigned int pacing_off = ~0U;
@@ -209,7 +211,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
 #ifdef SO_MAX_PACING_RATE
   fq_pacing_cfg_t *cfg = static_cast<fq_pacing_cfg_t *>(instance);
-  int res              = 0;
+  int              res = 0;
 
   res = safe_setsockopt(client_fd, SOL_SOCKET, SO_MAX_PACING_RATE, reinterpret_cast<char *>(&cfg->pacing_rate),
                         sizeof(cfg->pacing_rate));

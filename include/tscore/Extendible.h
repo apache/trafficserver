@@ -74,7 +74,7 @@
 // Has 'const_iterator' trait class
 template <typename T> class has_const_iterator
 {
-  template <typename U> static std::true_type check(typename U::const_iterator *);
+  template <typename U> static std::true_type  check(typename U::const_iterator *);
   template <typename U> static std::false_type check(...);
 
 public:
@@ -84,7 +84,7 @@ public:
 // Has 'super_type' trait class
 template <typename T> class has_super_type
 {
-  template <typename U> static std::true_type check(typename U::super_type *);
+  template <typename U> static std::true_type  check(typename U::super_type *);
   template <typename U> static std::false_type check(...);
 
 public:
@@ -123,7 +123,7 @@ namespace details // internal stuff
 
   // forward declare friend functions used outside of details
   template <typename T> uintptr_t initRecurseSuper(T &, uintptr_t);
-  template <typename T> FieldPtr FieldPtrGet(Extendible<T> const &, details::FieldDesc const &);
+  template <typename T> FieldPtr  FieldPtrGet(Extendible<T> const &, details::FieldDesc const &);
 
   //////////////////////////////////////////
 
@@ -132,16 +132,16 @@ namespace details // internal stuff
   /////////////////////////////////////////////////////////////////////
   /// ext::details::FieldDesc - type erased field descriptor, with type specific std::functions
   struct FieldDesc {
-    Offest_t ext_loc_offset;        ///< byte offset to Extendible._ext_loc
-    Offest_t field_offset;          ///< byte offset from ext_loc to field
+    Offest_t        ext_loc_offset; ///< byte offset to Extendible._ext_loc
+    Offest_t        field_offset;   ///< byte offset from ext_loc to field
     std::type_index field_type_idx; ///< data type index
-    uint16_t size;                  ///< byte size of field
-    uint8_t align;                  ///< alignment of field
-    uint8_t mask;                   ///< mask for packed bit operations
+    uint16_t        size;           ///< byte size of field
+    uint8_t         align;          ///< alignment of field
+    uint8_t         mask;           ///< mask for packed bit operations
 
     // specialize the following
-    std::function<void(FieldPtr)> constructor;
-    std::function<void(FieldPtr)> destructor;
+    std::function<void(FieldPtr)>                     constructor;
+    std::function<void(FieldPtr)>                     destructor;
     std::function<void(std::ostream &, void const *)> serializer;
 
     FieldDesc() : field_type_idx(typeid(std::nullptr_t)) {}
@@ -152,12 +152,12 @@ namespace details // internal stuff
   class Schema
   {
   public:
-    std::unordered_map<std::string, FieldDesc> fields; ///< defined elements of the blob by name
-    size_t alloc_size                     = 0;         ///< bytes to allocate for fields
-    uint8_t alloc_align                   = 1;         ///< alignment of block
-    std::atomic<uint> cnt_constructed     = {0};       ///< the number of Extendible<Derived> created.
-    std::atomic<uint> cnt_fld_constructed = {0};       ///< the number of Extendible<Derived> that constructed fields.
-    std::atomic<uint> cnt_destructed      = {0};       ///< the number of Extendible<Derived> destroyed.
+    std::unordered_map<std::string, FieldDesc> fields;                ///< defined elements of the blob by name
+    size_t                                     alloc_size      = 0;   ///< bytes to allocate for fields
+    uint8_t                                    alloc_align     = 1;   ///< alignment of block
+    std::atomic<uint>                          cnt_constructed = {0}; ///< the number of Extendible<Derived> created.
+    std::atomic<uint> cnt_fld_constructed = {0}; ///< the number of Extendible<Derived> that constructed fields.
+    std::atomic<uint> cnt_destructed      = {0}; ///< the number of Extendible<Derived> destroyed.
 
   public:
     Schema() {}
@@ -167,10 +167,10 @@ namespace details // internal stuff
     bool no_instances() const; ///< returns true if there are no instances of Extendible<Derived_t>
     bool reset();              ///< clears all field definitions.
 
-    size_t fullSize(size_t base_size) const;       ///< returns sizeof memory allocated
-    void updateMemOffsets();                       ///< updates memory offsets, alignment, and total allocation size
-    void callConstructor(uintptr_t ext_start_ptr); ///< calls constructor for each field
-    void callDestructor(uintptr_t ext_start_ptr);  ///< call destructor for each field
+    size_t fullSize(size_t base_size) const;         ///< returns sizeof memory allocated
+    void   updateMemOffsets();                       ///< updates memory offsets, alignment, and total allocation size
+    void   callConstructor(uintptr_t ext_start_ptr); ///< calls constructor for each field
+    void   callDestructor(uintptr_t ext_start_ptr);  ///< call destructor for each field
 
   }; // end Schema struct
 } // namespace details
@@ -228,9 +228,9 @@ private:
     return uintptr_t(this) + ext_loc;
   }
 
-  template <typename T> friend T *create();
-  template <typename T> friend uintptr_t details::initRecurseSuper(T &, uintptr_t);
-  template <typename T> friend FieldPtr details::FieldPtrGet(Extendible<T> const &, details::FieldDesc const &);
+  template <typename T> friend T          *create();
+  template <typename T> friend uintptr_t   details::initRecurseSuper(T &, uintptr_t);
+  template <typename T> friend FieldPtr    details::FieldPtrGet(Extendible<T> const &, details::FieldDesc const &);
   template <typename T> friend std::string viewFormat(T const &, uintptr_t, int);
 };
 
@@ -284,7 +284,7 @@ template <typename Derived_t, typename Field_t> class FieldId
 {
 public:
   ext::details::FieldDesc const *desc = nullptr;
-  bool isValid() const;
+  bool                           isValid() const;
   FieldId(ext::details::FieldDesc const &);
   FieldId() {}
   FieldId(FieldId const &)            = default;
@@ -516,8 +516,8 @@ fieldFind(FieldId<Derived_t, Field_t> &field_id, char const *field_name)
 {
   using namespace ext::details;
   ink_release_assert(areFieldsFinalized());
-  Schema const &schema = Extendible<Derived_t>::schema;
-  auto field_iter      = schema.fields.find(field_name);
+  Schema const &schema     = Extendible<Derived_t>::schema;
+  auto          field_iter = schema.fields.find(field_name);
   if (field_iter == schema.fields.end()) {
     return false; // didn't find name
   }
@@ -532,8 +532,8 @@ fieldFind(char const *field_name)
 {
   using namespace ext::details;
   ink_release_assert(areFieldsFinalized());
-  Schema const &schema = Extendible<Derived_t>::schema;
-  auto field_iter      = schema.fields.find(field_name);
+  Schema const &schema     = Extendible<Derived_t>::schema;
+  auto          field_iter = schema.fields.find(field_name);
   if (field_iter == schema.fields.end()) {
     return nullptr; // didn't find name
   }
@@ -546,8 +546,8 @@ template <typename T, typename Derived_t, typename Field_t>
 inline decltype(auto)
 get(T const &d, FieldId<Derived_t, Field_t> &field)
 {
-  Extendible<Derived_t> const &ext = d;
-  FieldPtr fld_ptr                 = ext::details::FieldPtrGet(ext, *field.desc);
+  Extendible<Derived_t> const &ext     = d;
+  FieldPtr                     fld_ptr = ext::details::FieldPtrGet(ext, *field.desc);
   return ext::details::fieldGet(fld_ptr, field);
 }
 
@@ -555,8 +555,8 @@ template <typename T, typename Derived_t, typename Field_t>
 inline decltype(auto)
 set(T &d, FieldId<Derived_t, Field_t> &field)
 {
-  Extendible<Derived_t> const &ext = d;
-  FieldPtr fld_ptr                 = ext::details::FieldPtrGet(ext, *field.desc);
+  Extendible<Derived_t> const &ext     = d;
+  FieldPtr                     fld_ptr = ext::details::FieldPtrGet(ext, *field.desc);
   return ext::details::fieldSet(fld_ptr, field);
 }
 
@@ -687,11 +687,11 @@ viewFormat(T const &t, uintptr_t _base_addr = 0, int _full_size = ext::sizeOf<T>
   }
 
   if constexpr (is_base_of<Extendible<T>, T>::value) {
-    Extendible<T> const *e = &t;
-    int ptr_start          = uintptr_t(e) + Extendible<T>::getLocOffset() - _base_addr;
-    int ptr_end            = ptr_start + sizeof(typename Extendible<T>::short_ptr_t);
-    int ext_start          = e->getBegin() - _base_addr;
-    int ext_end            = Extendible<T>::schema.fullSize(ext_start);
+    Extendible<T> const *e         = &t;
+    int                  ptr_start = uintptr_t(e) + Extendible<T>::getLocOffset() - _base_addr;
+    int                  ptr_end   = ptr_start + sizeof(typename Extendible<T>::short_ptr_t);
+    int                  ext_start = e->getBegin() - _base_addr;
+    int                  ext_end   = Extendible<T>::schema.fullSize(ext_start);
 
     ink_assert(ptr_end <= ext_start);
     ink_assert(ext_end <= _full_size);
@@ -745,8 +745,8 @@ serialize(std::ostream &os, T const &t)
     if constexpr (has_super_type<T>::value) {
       serialize<typename T::super_type>(os, t);
     }
-    auto const &schema = T::schema;
-    size_t name_width  = 0;
+    auto const &schema     = T::schema;
+    size_t      name_width = 0;
     for (const auto &kv : schema.fields) {
       name_width = max(name_width, kv.first.length());
     }

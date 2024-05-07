@@ -16,3 +16,5 @@
 #######################
 
 add_atsplugin(remap_purge remap_purge.cc)
+
+verify_remap_plugin(remap_purge)

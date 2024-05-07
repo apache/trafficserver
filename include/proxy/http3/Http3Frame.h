@@ -39,18 +39,18 @@ public:
   Http3Frame(Http3FrameType type);
   virtual ~Http3Frame() {}
 
-  uint64_t total_length() const;
-  uint64_t length() const;
-  Http3FrameType type() const;
+  uint64_t                   total_length() const;
+  uint64_t                   length() const;
+  Http3FrameType             type() const;
   virtual Ptr<IOBufferBlock> to_io_buffer_block() const;
-  virtual void reset(const uint8_t *buf, size_t len);
-  static int length(const uint8_t *buf, size_t buf_len, uint64_t &length);
-  static Http3FrameType type(const uint8_t *buf, size_t buf_len);
+  virtual void               reset(const uint8_t *buf, size_t len);
+  static int                 length(const uint8_t *buf, size_t buf_len, uint64_t &length);
+  static Http3FrameType      type(const uint8_t *buf, size_t buf_len);
 
 protected:
-  uint64_t _length       = 0;
-  Http3FrameType _type   = Http3FrameType::UNKNOWN;
-  size_t _payload_offset = 0;
+  uint64_t       _length         = 0;
+  Http3FrameType _type           = Http3FrameType::UNKNOWN;
+  size_t         _payload_offset = 0;
 };
 
 class Http3UnknownFrame : public Http3Frame
@@ -62,8 +62,8 @@ public:
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
 
 protected:
-  const uint8_t *_buf = nullptr;
-  size_t _buf_len     = 0;
+  const uint8_t *_buf     = nullptr;
+  size_t         _buf_len = 0;
 };
 
 //
@@ -78,15 +78,15 @@ public:
   Http3DataFrame(ats_unique_buf payload, size_t payload_len);
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
-  void reset(const uint8_t *buf, size_t len) override;
+  void               reset(const uint8_t *buf, size_t len) override;
 
   const uint8_t *payload() const;
-  uint64_t payload_length() const;
+  uint64_t       payload_length() const;
 
 private:
   const uint8_t *_payload      = nullptr;
   ats_unique_buf _payload_uptr = {nullptr};
-  size_t _payload_len          = 0;
+  size_t         _payload_len  = 0;
 };
 
 //
@@ -101,15 +101,15 @@ public:
   Http3HeadersFrame(ats_unique_buf header_block, size_t header_block_len);
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
-  void reset(const uint8_t *buf, size_t len) override;
+  void               reset(const uint8_t *buf, size_t len) override;
 
   const uint8_t *header_block() const;
-  uint64_t header_block_length() const;
+  uint64_t       header_block_length() const;
 
 private:
   const uint8_t *_header_block      = nullptr;
   ats_unique_buf _header_block_uptr = {nullptr};
-  size_t _header_block_len          = 0;
+  size_t         _header_block_len  = 0;
 };
 
 //
@@ -122,7 +122,7 @@ public:
   Http3SettingsFrame() : Http3Frame(Http3FrameType::SETTINGS) {}
   Http3SettingsFrame(const uint8_t *buf, size_t len, uint32_t max_settings = 0);
 
-  static constexpr size_t MAX_PAYLOAD_SIZE = 60;
+  static constexpr size_t                         MAX_PAYLOAD_SIZE = 60;
   static constexpr std::array<Http3SettingsId, 4> VALID_SETTINGS_IDS{
     Http3SettingsId::HEADER_TABLE_SIZE,
     Http3SettingsId::MAX_FIELD_SECTION_SIZE,
@@ -131,21 +131,21 @@ public:
   };
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
-  void reset(const uint8_t *buf, size_t len) override;
+  void               reset(const uint8_t *buf, size_t len) override;
 
-  bool is_valid() const;
+  bool           is_valid() const;
   Http3ErrorUPtr get_error() const;
 
-  bool contains(Http3SettingsId id) const;
+  bool     contains(Http3SettingsId id) const;
   uint64_t get(Http3SettingsId id) const;
-  void set(Http3SettingsId id, uint64_t value);
+  void     set(Http3SettingsId id, uint64_t value);
 
 private:
   std::map<Http3SettingsId, uint64_t> _settings;
   // TODO: make connection error with HTTP_MALFORMED_FRAME
-  bool _valid = false;
+  bool           _valid = false;
   Http3ErrorCode _error_code;
-  const char *_error_reason = nullptr;
+  const char    *_error_reason = nullptr;
 };
 
 using Http3FrameDeleterFunc  = void (*)(Http3Frame *p);
@@ -159,9 +159,9 @@ using Http3FrameUPtr        = std::unique_ptr<Http3Frame, Http3FrameDeleterFunc>
 using Http3DataFrameUPtr    = std::unique_ptr<Http3DataFrame, Http3FrameDeleterFunc>;
 using Http3HeadersFrameUPtr = std::unique_ptr<Http3HeadersFrame, Http3FrameDeleterFunc>;
 
-extern ClassAllocator<Http3Frame> http3FrameAllocator;
-extern ClassAllocator<Http3DataFrame> http3DataFrameAllocator;
-extern ClassAllocator<Http3HeadersFrame> http3HeadersFrameAllocator;
+extern ClassAllocator<Http3Frame>         http3FrameAllocator;
+extern ClassAllocator<Http3DataFrame>     http3DataFrameAllocator;
+extern ClassAllocator<Http3HeadersFrame>  http3HeadersFrameAllocator;
 extern ClassAllocator<Http3SettingsFrame> http3SettingsFrameAllocator;
 
 class Http3FrameDeleter

@@ -116,7 +116,7 @@ public:
   }
 
   // Virtual methods, has to be implemented by each conditional;
-  void initialize(Parser &p) override;
+  void         initialize(Parser &p) override;
   virtual void append_value(std::string &s, const Resources &res) = 0;
 
 protected:
@@ -125,8 +125,8 @@ protected:
 
   std::string _qualifier;
   const char *_qualifier_wks = nullptr;
-  MatcherOps _cond_op        = MATCH_EQUAL;
-  Matcher *_matcher          = nullptr;
+  MatcherOps  _cond_op       = MATCH_EQUAL;
+  Matcher    *_matcher       = nullptr;
 
 private:
   CondModifiers _mods = COND_NONE;

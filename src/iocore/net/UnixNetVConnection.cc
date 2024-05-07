@@ -38,6 +38,14 @@
 // Global
 ClassAllocator<UnixNetVConnection> netVCAllocator("netVCAllocator");
 
+namespace
+{
+DbgCtl dbg_ctl_socket{"socket"};
+DbgCtl dbg_ctl_inactivity_cop{"inactivity_cop"};
+DbgCtl dbg_ctl_iocore_net{"iocore_net"};
+
+} // end anonymous namespace
+
 //
 // Reschedule a UnixNetVConnection by moving it
 // onto or off of the ready_list
@@ -67,7 +75,7 @@ write_reschedule(NetHandler *nh, UnixNetVConnection *vc)
 void
 net_activity(UnixNetVConnection *vc, EThread *thread)
 {
-  Debug("socket", "net_activity updating inactivity %" PRId64 ", NetVC=%p", vc->inactivity_timeout_in, vc);
+  Dbg(dbg_ctl_socket, "net_activity updating inactivity %" PRId64 ", NetVC=%p", vc->inactivity_timeout_in, vc);
   (void)thread;
   if (vc->inactivity_timeout_in) {
     vc->next_inactivity_timeout_at = ink_get_hrtime() + vc->inactivity_timeout_in;
@@ -94,7 +102,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_ERROR:
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      Debug("inactivity_cop", "event %d: null read.vio cont, closing vc %p", event, vc);
+      Dbg(dbg_ctl_inactivity_cop, "event %d: null read.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
       break;
     default:
@@ -128,7 +136,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_ERROR:
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      Debug("inactivity_cop", "event %d: null write.vio cont, closing vc %p", event, vc);
+      Dbg(dbg_ctl_inactivity_cop, "event %d: null write.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
       break;
     default:
@@ -193,7 +201,7 @@ static void
 read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
   NetState *s = &vc->read;
-  int64_t r   = 0;
+  int64_t   r = 0;
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
@@ -230,9 +238,9 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   }
 
   // read data
-  int64_t rattempted = 0, total_read = 0;
+  int64_t  rattempted = 0, total_read = 0;
   unsigned niov = 0;
-  IOVec tiovec[NET_MAX_IOV];
+  IOVec    tiovec[NET_MAX_IOV];
   if (toread) {
     IOBufferBlock *b = buf.writer()->first_write_block();
     do {
@@ -306,7 +314,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     buf.writer()->fill(r);
 #ifdef DEBUG
     if (buf.writer()->write_avail() <= 0) {
-      Debug("iocore_net", "read_from_net, read buffer full");
+      Dbg(dbg_ctl_iocore_net, "read_from_net, read buffer full");
     }
 #endif
     s->vio.ndone += r;
@@ -321,7 +329,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     ink_assert(ntodo >= 0);
     if (s->vio.ntodo() <= 0) {
       read_signal_done(VC_EVENT_READ_COMPLETE, nh, vc);
-      Debug("iocore_net", "read_from_net, read finished - signal done");
+      Dbg(dbg_ctl_iocore_net, "read_from_net, read finished - signal done");
       return;
     } else {
       if (read_signal_and_update(VC_EVENT_READ_READY, vc) != EVENT_CONT) {
@@ -359,7 +367,7 @@ write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 void
 write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
-  NetState *s     = &vc->write;
+  NetState     *s = &vc->write;
   Continuation *c = vc->write.vio.cont;
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
@@ -472,7 +480,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
 
-  int needs             = 0;
+  int     needs         = 0;
   int64_t total_written = 0;
   int64_t r             = vc->load_buffer_and_write(towrite, buf, total_written, needs);
 
@@ -566,8 +574,8 @@ UnixNetVConnection::get_data(int id, void *data)
 {
   union {
     TSVIO *vio;
-    void *data;
-    int *n;
+    void  *data;
+    int   *n;
   } ptr;
 
   ptr.data = data;
@@ -652,7 +660,7 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   if (netvc_context == NET_VCONNECTION_OUT) {
     // do not clear the iobufs yet to guard
     // against race condition with session pool closing
-    Debug("iocore_net", "delay vio buffer clear to protect against  race for vc %p", this);
+    Dbg(dbg_ctl_iocore_net, "delay vio buffer clear to protect against  race for vc %p", this);
   } else {
     // may be okay to delay for all VCs?
     read.vio.buffer.clear();
@@ -662,8 +670,8 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
 
-  EThread *t        = this_ethread();
-  bool close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
+  EThread *t            = this_ethread();
+  bool     close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
 
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1) {
@@ -869,12 +877,12 @@ UnixNetVConnection::net_write_io(NetHandler *nh, EThread *lthread)
 int64_t
 UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs)
 {
-  int64_t r                  = 0;
-  int64_t try_to_write       = 0;
-  IOBufferReader *tmp_reader = buf.reader()->clone();
+  int64_t         r            = 0;
+  int64_t         try_to_write = 0;
+  IOBufferReader *tmp_reader   = buf.reader()->clone();
 
   do {
-    IOVec tiovec[NET_MAX_IOV];
+    IOVec    tiovec[NET_MAX_IOV];
     unsigned niov = 0;
     try_to_write  = 0;
 
@@ -1015,7 +1023,7 @@ UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
 int
 UnixNetVConnection::acceptEvent(int event, Event *e)
 {
-  EThread *t    = (e == nullptr) ? this_ethread() : e->ethread;
+  EThread    *t = (e == nullptr) ? this_ethread() : e->ethread;
   NetHandler *h = get_NetHandler(t);
 
   thread = t;
@@ -1078,10 +1086,10 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     return EVENT_DONE;
   }
 
-  int signal_event;
-  Continuation *reader_cont     = nullptr;
-  Continuation *writer_cont     = nullptr;
-  ink_hrtime *signal_timeout_at = nullptr;
+  int           signal_event;
+  Continuation *reader_cont       = nullptr;
+  Continuation *writer_cont       = nullptr;
+  ink_hrtime   *signal_timeout_at = nullptr;
 
   switch (event) {
   // Treating immediate as inactivity timeout for any
@@ -1133,7 +1141,7 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
   this->mutex  = c->mutex;
   this->thread = this_ethread();
 
-  EThread *t    = this_ethread();
+  EThread    *t = this_ethread();
   NetHandler *h = get_NetHandler(t);
 
   MUTEX_TRY_LOCK(lock, h->mutex, t);
@@ -1143,7 +1151,7 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
   }
 
   if (h->startIO(this) < 0) {
-    Debug("iocore_net", "populate : Failed to add to epoll list");
+    Dbg(dbg_ctl_iocore_net, "populate : Failed to add to epoll list");
     return EVENT_ERROR;
   }
 
@@ -1174,11 +1182,11 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   //
   // Initialize this UnixNetVConnection
   //
-  if (is_debug_tag_set("iocore_net")) {
+  if (dbg_ctl_iocore_net.on()) {
     char addrbuf[INET6_ADDRSTRLEN];
-    Debug("iocore_net", "connectUp:: local_addr=%s:%d [%s]",
-          options.local_ip.isValid() ? options.local_ip.toString(addrbuf, sizeof(addrbuf)) : "*", options.local_port,
-          NetVCOptions::toString(options.addr_binding));
+    DbgPrint(dbg_ctl_iocore_net, "connectUp:: local_addr=%s:%d [%s]",
+             options.local_ip.isValid() ? options.local_ip.toString(addrbuf, sizeof(addrbuf)) : "*", options.local_port,
+             NetVCOptions::toString(options.addr_binding));
   }
 
   // If this is getting called from the TS API, then we are wiring up a file descriptor
@@ -1289,7 +1297,7 @@ UnixNetVConnection::clear()
 void
 UnixNetVConnection::free_thread(EThread *t)
 {
-  Debug("iocore_net", "Entering UnixNetVConnection::free()");
+  Dbg(dbg_ctl_iocore_net, "Entering UnixNetVConnection::free()");
 
   ink_release_assert(t == this_ethread());
 
@@ -1301,7 +1309,7 @@ UnixNetVConnection::free_thread(EThread *t)
   con.close();
 
   if (is_tunnel_endpoint()) {
-    Debug("iocore_net", "Freeing UnixNetVConnection that is tunnel endpoint");
+    Dbg(dbg_ctl_iocore_net, "Freeing UnixNetVConnection that is tunnel endpoint");
 
     Metrics::Gauge::decrement(([&]() -> Metrics::Gauge::AtomicType * {
       switch (get_context()) {
@@ -1336,7 +1344,7 @@ UnixNetVConnection::apply_options()
 TS_INLINE void
 UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 {
-  Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
+  Dbg(dbg_ctl_socket, "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   inactivity_timeout_in      = timeout_in;
   next_inactivity_timeout_at = (timeout_in > 0) ? ink_get_hrtime() + inactivity_timeout_in : 0;
 }
@@ -1344,7 +1352,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 TS_INLINE void
 UnixNetVConnection::set_default_inactivity_timeout(ink_hrtime timeout_in)
 {
-  Debug("socket", "Set default inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
+  Dbg(dbg_ctl_socket, "Set default inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   default_inactivity_timeout_in = timeout_in;
 }
 
@@ -1521,13 +1529,13 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
       Error("Unable to set TCP congestion control on socket %d to \"%s\", errno=%d (%s)", con.fd, ccp.data(), errno,
             strerror(errno));
     } else {
-      Debug("socket", "Setting TCP congestion control on socket [%d] to \"%s\" -> %d", con.fd, ccp.data(), rv);
+      Dbg(dbg_ctl_socket, "Setting TCP congestion control on socket [%d] to \"%s\" -> %d", con.fd, ccp.data(), rv);
     }
     return 0;
   }
   return -1;
 #else
-  Debug("socket", "Setting TCP congestion control is not supported on this platform.");
+  Dbg(dbg_ctl_socket, "Setting TCP congestion control is not supported on this platform.");
   return -1;
 #endif
 }
@@ -1535,7 +1543,7 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
 void
 UnixNetVConnection::mark_as_tunnel_endpoint()
 {
-  Debug("iocore_net", "Entering UnixNetVConnection::mark_as_tunnel_endpoint()");
+  Dbg(dbg_ctl_iocore_net, "Entering UnixNetVConnection::mark_as_tunnel_endpoint()");
 
   ink_assert(!_is_tunnel_endpoint);
 

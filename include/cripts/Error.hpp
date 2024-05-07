@@ -41,7 +41,7 @@ public:
 
     static void _set(Cript::Context *context, const Cript::string_view msg);
 
-    [[nodiscard]] Cript::StringViewWrapper
+    [[nodiscard]] Cript::string_view
     message() const
     {
       return {_message.c_str(), _message.size()};
@@ -113,6 +113,6 @@ public:
 
 private:
   Message _message;
-  Status _status;
-  bool _failed = false;
+  Status  _status;
+  bool    _failed = false;
 };

@@ -35,22 +35,22 @@ using namespace std;
 TEST_CASE("AcidPtr Atomicity")
 {
   // fail if skew is detected.
-  constexpr int N = 1000; // Number of threads
-  constexpr int K = 50;   // Size of data sample.
+  constexpr int        N = 1000; // Number of threads
+  constexpr int        K = 50;   // Size of data sample.
   AcidPtr<vector<int>> ptr(new vector<int>(K));
-  atomic<int> errors{0};
-  atomic<unsigned> count{0};
-  condition_variable gate;
-  mutex gate_mutex;
+  atomic<int>          errors{0};
+  atomic<unsigned>     count{0};
+  condition_variable   gate;
+  mutex                gate_mutex;
 
   auto job_read_write = [&]() {
     {
       unique_lock<mutex> gate_lock(gate_mutex);
       gate.wait(gate_lock);
     }
-    int r = random();
+    int                        r = random();
     AcidCommitPtr<vector<int>> cptr(ptr);
-    int old = (*cptr)[0];
+    int                        old = (*cptr)[0];
     for (int &i : *cptr) {
       if (i != old) {
         errors++;
@@ -66,7 +66,7 @@ TEST_CASE("AcidPtr Atomicity")
       gate.wait(gate_lock);
     }
     auto sptr = ptr.getPtr();
-    int old   = (*sptr)[0];
+    int  old  = (*sptr)[0];
     for (int const &i : *sptr) {
       if (i != old) {
         errors++;
@@ -126,7 +126,7 @@ TEST_CASE("AcidPtr Isolation")
 
 TEST_CASE("AcidPtr persistence")
 {
-  AcidPtr<int> p(new int(40));
+  AcidPtr<int>               p(new int(40));
   std::shared_ptr<const int> r1, r2, r3, r4;
   REQUIRE(p.getPtr() != nullptr);
   r1 = p.getPtr();

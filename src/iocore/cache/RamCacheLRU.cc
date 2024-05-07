@@ -22,10 +22,12 @@
  */
 
 #include "P_Cache.h"
+#include <vector>
+#include <iterator>
 
 struct RamCacheLRUEntry {
   CryptoHash key;
-  uint64_t auxkey;
+  uint64_t   auxkey;
   LINK(RamCacheLRUEntry, lru_link);
   LINK(RamCacheLRUEntry, hash_link);
   Ptr<IOBufferData> data;
@@ -39,22 +41,22 @@ struct RamCacheLRU : public RamCache {
   int64_t objects   = 0;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey must match
-  int get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
-  int put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
-  int fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
+  int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
+  int     put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
+  int     fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
   int64_t size() const override;
 
   void init(int64_t max_bytes, Stripe *stripe) override;
 
   // private
-  uint16_t *seen = nullptr;
+  std::vector<bool> *seen = nullptr;
   Que(RamCacheLRUEntry, lru_link) lru;
   DList(RamCacheLRUEntry, hash_link) *bucket = nullptr;
-  int nbuckets                               = 0;
-  int ibuckets                               = 0;
+  int     nbuckets                           = 0;
+  int     ibuckets                           = 0;
   Stripe *stripe                             = nullptr;
 
-  void resize_hashtable();
+  void              resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
 };
 
@@ -84,13 +86,14 @@ RamCacheLRU::size() const
 
 ClassAllocator<RamCacheLRUEntry> ramCacheLRUEntryAllocator("RamCacheLRUEntry");
 
-static const int bucket_sizes[] = {127,     251,      509,      1021,     2039,      4093,      8191,     16381,
-                                   32749,   65521,    131071,   262139,   524287,    1048573,   2097143,  4194301,
-                                   8388593, 16777213, 33554393, 67108859, 134217689, 268435399, 536870909};
+static const int bucket_sizes[] = {8191,    16381,   32749,    65521,    131071,   262139,    524287,    1048573,   2097143,
+                                   4194301, 8388593, 16777213, 33554393, 67108859, 134217689, 268435399, 536870909, 1073741827};
 
 void
 RamCacheLRU::resize_hashtable()
 {
+  ink_release_assert(ibuckets < static_cast<int>(std::size(bucket_sizes)));
+
   int anbuckets = bucket_sizes[ibuckets];
   DDbg(dbg_ctl_ram_cache, "resize hashtable %d", anbuckets);
   int64_t s                                      = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
@@ -107,11 +110,12 @@ RamCacheLRU::resize_hashtable()
   }
   bucket   = new_bucket;
   nbuckets = anbuckets;
-  ats_free(seen);
-  int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
+  delete seen;
   if (cache_config_ram_cache_use_seen_filter) {
-    seen = static_cast<uint16_t *>(ats_malloc(size));
-    memset(seen, 0, size);
+    int size = bucket_sizes[ibuckets];
+
+    seen = new std::vector<bool>(size * 2); // Twice the size, to reduce collision risks.
+    seen->assign(size * 2, false);
   }
 }
 
@@ -133,7 +137,7 @@ RamCacheLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey)
   if (!max_bytes) {
     return 0;
   }
-  uint32_t i          = key->slice32(3) % nbuckets;
+  uint32_t          i = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey == auxkey) {
@@ -159,7 +163,7 @@ RamCacheLRUEntry *
 RamCacheLRU::remove(RamCacheLRUEntry *e)
 {
   RamCacheLRUEntry *ret = e->hash_link.next;
-  uint32_t b            = e->key.slice32(3) % nbuckets;
+  uint32_t          b   = e->key.slice32(3) % nbuckets;
   bucket[b].remove(e);
   lru.remove(e);
   bytes -= ENTRY_OVERHEAD + e->data->block_size();
@@ -181,15 +185,21 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool, uint64
     return 0;
   }
   uint32_t i = key->slice32(3) % nbuckets;
-  if (cache_config_ram_cache_use_seen_filter) {
-    uint16_t k  = key->slice32(3) >> 16;
-    uint16_t kk = seen[i];
-    seen[i]     = k;
-    if ((kk != k)) {
+  if ((cache_config_ram_cache_use_seen_filter == 1) ||
+      // If proxy.config.cache.ram_cache.use_seen_filter is > 1,  and the cache is more than <n>% full, then use the seen filter.
+      // <n>% is calculated based on this setting, with 2 == 50%, 3 == 67%, 4 == 75%, up to 9 == 90%.
+      ((cache_config_ram_cache_use_seen_filter > 1) && (bytes >= max_bytes * (1 - (1 / cache_config_ram_cache_use_seen_filter))))) {
+    uint32_t j = key->slice32(3) % (nbuckets * 2); // The seen filter bucket size is 2x
+
+    if (!(*seen)[j]) {
       DDbg(dbg_ctl_ram_cache, "put %X %" PRIu64 " len %d UNSEEN", key->slice32(3), auxkey, len);
+      (*seen)[j] = true;
       return 0;
+    } else {
+      (*seen)[j] = false; // Clear the seen filter slot for future entries.
     }
   }
+
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key) {
@@ -223,7 +233,7 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool, uint64
     }
   }
   DDbg(dbg_ctl_ram_cache, "put %X %" PRIu64 " INSERTED", key->slice32(3), auxkey);
-  if (objects > nbuckets) {
+  if (objects > nbuckets * 0.75) { // Resize when 75% "full"
     ++ibuckets;
     resize_hashtable();
   }
@@ -236,7 +246,7 @@ RamCacheLRU::fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxk
   if (!max_bytes) {
     return 0;
   }
-  uint32_t i          = key->slice32(3) % nbuckets;
+  uint32_t          i = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey == old_auxkey) {

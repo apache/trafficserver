@@ -35,11 +35,11 @@
 #include "txn_box/Config.h"
 #include "txn_box/Context.h"
 
-using swoc::TextView;
 using swoc::BufferWriter;
 using swoc::Errata;
-using swoc::Rv;
 using swoc::MemSpan;
+using swoc::Rv;
+using swoc::TextView;
 // namespace bwf = swoc::bwf;
 // using namespace swoc::literals;
 
@@ -103,7 +103,7 @@ public:
   static constexpr TextView NAME{"inbound-addr-remote"};
   using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -129,7 +129,7 @@ public:
   static constexpr TextView NAME{"inbound-addr-local"};
   using Extractor::extract; // declare hidden member function
   Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature        extract(Context &ctx, Spec const &spec) override;
 };
 
 Rv<ActiveType>
@@ -230,7 +230,7 @@ auto
 Ex_inbound_protocol_stack::extract(Context &ctx, Spec const &) -> Feature
 {
   std::array<char const *, 10> tags;
-  auto n = ctx._txn.inbound_ssn().protocol_stack(MemSpan{tags.data(), tags.size()});
+  auto                         n = ctx._txn.inbound_ssn().protocol_stack(MemSpan{tags.data(), tags.size()});
   if (n > 0) {
     auto span = ctx.alloc_span<Feature>(n);
     for (decltype(n) idx = 0; idx < n; ++idx) {
@@ -270,7 +270,7 @@ auto
 Ex_outbound_protocol_stack::extract(Context &ctx, Spec const &) -> Feature
 {
   std::array<char const *, 10> tags;
-  auto n = ctx._txn.outbound_protocol_stack(MemSpan{tags.data(), tags.size()});
+  auto                         n = ctx._txn.outbound_protocol_stack(MemSpan{tags.data(), tags.size()});
   if (n > 0) {
     auto span = ctx.alloc_span<Feature>(n);
     for (decltype(n) idx = 0; idx < n; ++idx) {
@@ -375,8 +375,8 @@ class Ex_inbound_cert_local_issuer_value : public StringExtractor
 
 public:
   static constexpr TextView NAME{"inbound-cert-local-issuer-field"};
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
 };
@@ -410,8 +410,8 @@ class Ex_outbound_cert_local_issuer_value : public StringExtractor
 
 public:
   static constexpr TextView NAME{"outbound-cert-local-issuer-field"};
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
 };
@@ -447,8 +447,8 @@ class Ex_inbound_cert_local_subject_field : public StringExtractor
 
 public:
   static constexpr TextView NAME{"inbound-cert-local-subject-field"};
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
 };
@@ -482,8 +482,8 @@ class Ex_outbound_cert_local_subject_field : public StringExtractor
 
 public:
   static constexpr TextView NAME{"outbound-cert-local-subject-field"};
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
 };
@@ -518,8 +518,8 @@ class Ex_inbound_cert_remote_issuer_value : public StringExtractor
 
 public:
   static constexpr TextView NAME{"inbound-cert-remote-issuer-field"};
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
 };
@@ -554,8 +554,8 @@ class Ex_outbound_cert_remote_issuer_value : public StringExtractor
 
 public:
   static constexpr TextView NAME{"outbound-cert-remote-issuer-field"};
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
 };
@@ -592,8 +592,8 @@ class Ex_inbound_cert_remote_subject_field : public StringExtractor
 
 public:
   static constexpr TextView NAME{"inbound-cert-remote-subject-field"};
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
 };
@@ -628,8 +628,8 @@ class Ex_outbound_cert_remote_subject_field : public StringExtractor
 
 public:
   static constexpr TextView NAME{"outbound-cert-remote-subject-field"};
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 
 protected:
 };
@@ -664,8 +664,8 @@ class Ex_ts_uuid : public StringExtractor
 
 public:
   static constexpr TextView NAME{"ts-uuid"};
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
 Rv<ActiveType>
@@ -685,24 +685,24 @@ namespace
 // Extractors aren't constructed, they are always named references to singletons.
 // These are the singletons.
 
-Ex_inbound_txn_count inbound_txn_count;
-Ex_inbound_sni inbound_sni;
-Ex_inbound_protocol inbound_protocol;
-Ex_inbound_addr_remote inbound_addr_remote;
-Ex_inbound_addr_local inbound_addr_local;
-Ex_has_inbound_protocol_prefix has_inbound_protocol_prefix;
-Ex_inbound_protocol_stack inbound_protocol_stack;
-Ex_inbound_cert_verify_result inbound_cert_verify_result;
-Ex_inbound_cert_local_issuer_value inbound_cert_local_issuer_value;
-Ex_inbound_cert_local_subject_field inbound_cert_local_subject_field;
-Ex_inbound_cert_remote_issuer_value inbound_cert_remote_issuer_value;
+Ex_inbound_txn_count                 inbound_txn_count;
+Ex_inbound_sni                       inbound_sni;
+Ex_inbound_protocol                  inbound_protocol;
+Ex_inbound_addr_remote               inbound_addr_remote;
+Ex_inbound_addr_local                inbound_addr_local;
+Ex_has_inbound_protocol_prefix       has_inbound_protocol_prefix;
+Ex_inbound_protocol_stack            inbound_protocol_stack;
+Ex_inbound_cert_verify_result        inbound_cert_verify_result;
+Ex_inbound_cert_local_issuer_value   inbound_cert_local_issuer_value;
+Ex_inbound_cert_local_subject_field  inbound_cert_local_subject_field;
+Ex_inbound_cert_remote_issuer_value  inbound_cert_remote_issuer_value;
 Ex_inbound_cert_remote_subject_field inbound_cert_remote_subject_field;
 
-Ex_has_outbound_protocol_prefix has_outbound_protocol_prefix;
-Ex_outbound_protocol_stack outbound_protocol_stack;
-Ex_outbound_cert_local_issuer_value outbound_cert_local_issuer_value;
-Ex_outbound_cert_local_subject_field outbound_cert_local_subject_field;
-Ex_outbound_cert_remote_issuer_value outbound_cert_remote_issuer_value;
+Ex_has_outbound_protocol_prefix       has_outbound_protocol_prefix;
+Ex_outbound_protocol_stack            outbound_protocol_stack;
+Ex_outbound_cert_local_issuer_value   outbound_cert_local_issuer_value;
+Ex_outbound_cert_local_subject_field  outbound_cert_local_subject_field;
+Ex_outbound_cert_remote_issuer_value  outbound_cert_remote_issuer_value;
 Ex_outbound_cert_remote_subject_field outbound_cert_remote_subject_field;
 
 Ex_ts_uuid ts_uuid;

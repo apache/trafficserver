@@ -94,9 +94,9 @@ block_alloc(ArenaBlock *block, size_t size, size_t alignment)
 void *
 Arena::alloc(size_t size, size_t alignment)
 {
-  ArenaBlock *b;
+  ArenaBlock  *b;
   unsigned int block_size;
-  void *mem;
+  void        *mem;
 
   ink_assert((alignment & (alignment - 1)) == 0);
 

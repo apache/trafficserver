@@ -45,8 +45,8 @@
 #include <limits>
 #include "tscore/ink_sys_control.h"
 
-NetHandler *get_NetHandler(EThread *t);
-PollCont *get_PollCont(EThread *t);
+NetHandler     *get_NetHandler(EThread *t);
+PollCont       *get_PollCont(EThread *t);
 PollDescriptor *get_PollDescriptor(EThread *t);
 
 using NetContHandler = int (NetHandler::*)(int, void *);
@@ -55,9 +55,9 @@ using uint32         = unsigned int;
 extern ink_hrtime last_throttle_warning;
 extern ink_hrtime last_shedding_warning;
 extern ink_hrtime emergency_throttle_time;
-extern int net_connections_throttle;
-extern bool net_memory_throttle;
-extern int fds_throttle;
+extern int        net_connections_throttle;
+extern bool       net_memory_throttle;
+extern int        fds_throttle;
 extern ink_hrtime last_transient_accept_error;
 
 //
@@ -92,8 +92,8 @@ enum ThrottleType {
 TS_INLINE int
 net_connections_to_throttle(ThrottleType t)
 {
-  double headroom    = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
-  int currently_open = static_cast<int>(Metrics::Gauge::load(net_rsb.connections_currently_open));
+  double headroom       = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
+  int    currently_open = static_cast<int>(Metrics::Gauge::load(net_rsb.connections_currently_open));
 
   // deal with race if we got to multiple net threads
   if (currently_open < 0) {

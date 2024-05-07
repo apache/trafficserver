@@ -31,7 +31,7 @@ TEST_CASE("Basic test with ; separated cookies", "[CookieJar]")
 {
   std::cerr << "Verify individual cookie crumbs (semicolon separated)" << std::endl;
   CookieJar oreo;
-  bool rc = oreo.create("fp=1;fn=2;sp=3;tl=4");
+  bool      rc = oreo.create("fp=1;fn=2;sp=3;tl=4");
   REQUIRE(rc == true);
 
   string val;
@@ -59,7 +59,7 @@ TEST_CASE("Basic test with space separated cookies", "[CookieJar]")
 {
   std::cerr << "Verify individual cookie crumbs (space separated)" << std::endl;
   CookieJar oreo;
-  bool rc = oreo.create("fp=1 fn=2    sp=3          tl=4");
+  bool      rc = oreo.create("fp=1 fn=2    sp=3          tl=4");
   REQUIRE(rc == true);
 
   string val;
@@ -87,7 +87,7 @@ TEST_CASE("Basic test with mixed delimiters", "[CookieJar]")
 {
   std::cerr << "Verify individual cookie crumbs (mixed delimiters)" << std::endl;
   CookieJar oreo;
-  bool rc = oreo.create("fp=1;fn=2 ;  sp=3 ;;     ; tl=4");
+  bool      rc = oreo.create("fp=1;fn=2 ;  sp=3 ;;     ; tl=4");
   REQUIRE(rc == true);
 
   string val;
@@ -115,7 +115,7 @@ TEST_CASE("Test with some empty values", "[CookieJar]")
 {
   std::cerr << "Verify empty values" << std::endl;
   CookieJar oreo;
-  bool rc = oreo.create("lastname=whatever;firstname=;age=100;salary=;dept=engineering");
+  bool      rc = oreo.create("lastname=whatever;firstname=;age=100;salary=;dept=engineering");
   REQUIRE(rc == true);
 
   string val;
@@ -144,7 +144,7 @@ TEST_CASE("Verify double quotes around values are stripped", "[CookieJar]")
 {
   std::cerr << "Verify double quotes around values are stripped" << std::endl;
   CookieJar oreo;
-  bool rc = oreo.create("lang=c;vcs=\"git\"");
+  bool      rc = oreo.create("lang=c;vcs=\"git\"");
   REQUIRE(rc == true);
 
   string val;
@@ -159,7 +159,7 @@ TEST_CASE("Discard invalid cookie names", "[CookieJar]")
 
   // [] cannot be used in cookie names
   CookieJar oreo;
-  bool rc = oreo.create("t=2;x=3;[invalid]=4;valid=5");
+  bool      rc = oreo.create("t=2;x=3;[invalid]=4;valid=5");
   REQUIRE(rc == true);
 
   string val;

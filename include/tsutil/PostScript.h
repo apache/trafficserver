@@ -58,7 +58,7 @@ public:
   PostScript &operator=(const PostScript &) = delete;
 
 private:
-  bool _armed = true;
+  bool     _armed = true;
   Callable _f;
 };
 

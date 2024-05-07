@@ -47,41 +47,50 @@
 #include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
 #include "P_TLSKeyLogger.h"
+#include "iocore/net/SSLMultiCertConfigLoader.h"
 #include "iocore/net/SSLDiags.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
 #include "iocore/net/YamlSNIConfig.h"
 
-int SSLConfig::config_index                                = 0;
-int SSLConfig::configids[]                                 = {0, 0};
-int SSLCertificateConfig::configid                         = 0;
-int SSLTicketKeyConfig::configid                           = 0;
-int SSLConfigParams::ssl_maxrecord                         = 0;
-int SSLConfigParams::ssl_misc_max_iobuffer_size_index      = 8;
-bool SSLConfigParams::ssl_allow_client_renegotiation       = false;
-bool SSLConfigParams::ssl_ocsp_enabled                     = false;
-int SSLConfigParams::ssl_ocsp_cache_timeout                = 3600;
-bool SSLConfigParams::ssl_ocsp_request_mode                = false;
-int SSLConfigParams::ssl_ocsp_request_timeout              = 10;
-int SSLConfigParams::ssl_ocsp_update_period                = 60;
-char *SSLConfigParams::ssl_ocsp_user_agent                 = nullptr;
-int SSLConfigParams::ssl_handshake_timeout_in              = 0;
-int SSLConfigParams::origin_session_cache                  = 1;
-size_t SSLConfigParams::origin_session_cache_size          = 10240;
-init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb         = nullptr;
-load_ssl_file_func SSLConfigParams::load_ssl_file_cb       = nullptr;
-swoc::IPRangeSet *SSLConfigParams::proxy_protocol_ip_addrs = nullptr;
-bool SSLConfigParams::ssl_ktls_enabled                     = false;
+int                SSLConfig::config_index                           = 0;
+int                SSLConfig::configids[]                            = {0, 0};
+int                SSLCertificateConfig::configid                    = 0;
+int                SSLTicketKeyConfig::configid                      = 0;
+int                SSLConfigParams::ssl_maxrecord                    = 0;
+int                SSLConfigParams::ssl_misc_max_iobuffer_size_index = 8;
+bool               SSLConfigParams::ssl_allow_client_renegotiation   = false;
+bool               SSLConfigParams::ssl_ocsp_enabled                 = false;
+int                SSLConfigParams::ssl_ocsp_cache_timeout           = 3600;
+bool               SSLConfigParams::ssl_ocsp_request_mode            = false;
+int                SSLConfigParams::ssl_ocsp_request_timeout         = 10;
+int                SSLConfigParams::ssl_ocsp_update_period           = 60;
+char              *SSLConfigParams::ssl_ocsp_user_agent              = nullptr;
+int                SSLConfigParams::ssl_handshake_timeout_in         = 0;
+int                SSLConfigParams::origin_session_cache             = 1;
+size_t             SSLConfigParams::origin_session_cache_size        = 10240;
+init_ssl_ctx_func  SSLConfigParams::init_ssl_ctx_cb                  = nullptr;
+load_ssl_file_func SSLConfigParams::load_ssl_file_cb                 = nullptr;
+swoc::IPRangeSet  *SSLConfigParams::proxy_protocol_ip_addrs          = nullptr;
+bool               SSLConfigParams::ssl_ktls_enabled                 = false;
 
-const uint32_t EARLY_DATA_DEFAULT_SIZE               = 16384;
-uint32_t SSLConfigParams::server_max_early_data      = 0;
-uint32_t SSLConfigParams::server_recv_max_early_data = EARLY_DATA_DEFAULT_SIZE;
-bool SSLConfigParams::server_allow_early_data_params = false;
+const uint32_t EARLY_DATA_DEFAULT_SIZE                         = 16384;
+uint32_t       SSLConfigParams::server_max_early_data          = 0;
+uint32_t       SSLConfigParams::server_recv_max_early_data     = EARLY_DATA_DEFAULT_SIZE;
+bool           SSLConfigParams::server_allow_early_data_params = false;
 
-int SSLConfigParams::async_handshake_enabled = 0;
-char *SSLConfigParams::engine_conf_file      = nullptr;
+int   SSLConfigParams::async_handshake_enabled = 0;
+char *SSLConfigParams::engine_conf_file        = nullptr;
 
-static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
+namespace
+{
+std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
+
+DbgCtl dbg_ctl_ssl_load{"ssl_load"};
+DbgCtl dbg_ctl_ssl_config_updateCTX{"ssl_config_updateCTX"};
+DbgCtl dbg_ctl_ssl_client_ctx{"ssl_client_ctx"};
+
+} // end anonymous namespace
 
 SSLConfigParams::SSLConfigParams()
 {
@@ -182,13 +191,13 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 int
 UpdateServerPolicy(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
-  SSLConfigParams *params = SSLConfig::acquire();
-  char *verify_server     = data.rec_string;
+  SSLConfigParams *params        = SSLConfig::acquire();
+  char            *verify_server = data.rec_string;
   if (params != nullptr && verify_server != nullptr) {
-    Debug("ssl_load", "New Server Policy %s", verify_server);
+    Dbg(dbg_ctl_ssl_load, "New Server Policy %s", verify_server);
     params->SetServerPolicy(verify_server);
   } else {
-    Debug("ssl_load", "Failed to load new Server Policy %p %p", verify_server, params);
+    Dbg(dbg_ctl_ssl_load, "Failed to load new Server Policy %p %p", verify_server, params);
   }
   return 0;
 }
@@ -196,8 +205,8 @@ UpdateServerPolicy(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS
 int
 UpdateServerPolicyProperties(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
-  SSLConfigParams *params = SSLConfig::acquire();
-  char *verify_server     = data.rec_string;
+  SSLConfigParams *params        = SSLConfig::acquire();
+  char            *verify_server = data.rec_string;
   if (params != nullptr && verify_server != nullptr) {
     params->SetServerPolicyProperties(verify_server);
   }
@@ -571,7 +580,7 @@ SSLConfig::startup()
 void
 SSLConfig::reconfigure()
 {
-  Debug("ssl_load", "Reload SSLConfig");
+  Dbg(dbg_ctl_ssl_load, "Reload SSLConfig");
   SSLConfigParams *params;
   params = new SSLConfigParams;
   // start loading the next config
@@ -622,15 +631,15 @@ SSLCertificateConfig::startup()
 bool
 SSLCertificateConfig::reconfigure()
 {
-  bool retStatus = true;
+  bool                     retStatus = true;
   SSLConfig::scoped_config params;
-  SSLCertLookup *lookup = new SSLCertLookup();
+  SSLCertLookup           *lookup = new SSLCertLookup();
 
   // Test SSL certificate loading startup. With large numbers of certificates, reloading can take time, so delay
   // twice the healthcheck period to simulate a loading a large certificate set.
   if (is_action_tag_set("test.multicert.delay")) {
     const int secs = 60;
-    Debug("ssl_load", "delaying certificate reload by %d secs", secs);
+    Dbg(dbg_ctl_ssl_load, "delaying certificate reload by %d secs", secs);
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
@@ -689,8 +698,8 @@ SSLTicketParams::LoadTicket(bool &nochange)
   ssl_ticket_key_block *keyblock = nullptr;
 
   SSLConfig::scoped_config params;
-  time_t last_load_time    = 0;
-  bool no_default_keyblock = true;
+  time_t                   last_load_time      = 0;
+  bool                     no_default_keyblock = true;
 
   SSLTicketKeyConfig::scoped_config ticket_params;
   if (ticket_params) {
@@ -710,7 +719,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
     struct stat sdata;
     if (last_load_time && (stat(ticket_key_filename, &sdata) >= 0)) {
       if (sdata.st_mtime && sdata.st_mtime <= last_load_time) {
-        Debug("ssl_load", "ticket key %s has not changed", ticket_key_filename);
+        Dbg(dbg_ctl_ssl_load, "ticket key %s has not changed", ticket_key_filename);
         // No updates since last load
         return true;
       }
@@ -732,7 +741,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
   default_global_keyblock = keyblock;
   load_time               = time(nullptr);
 
-  Debug("ssl_load", "ticket key reloaded from %s", ticket_key_filename);
+  Dbg(dbg_ctl_ssl_load, "ticket key reloaded from %s", ticket_key_filename);
 #endif
   return true;
 }
@@ -824,26 +833,26 @@ cleanup_bio(BIO *&biop)
 void
 SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
 {
-  Debug("ssl_config_updateCTX", "Update cert %s, %p", cert_secret_name.c_str(), this);
+  Dbg(dbg_ctl_ssl_config_updateCTX, "Update cert %s, %p", cert_secret_name.c_str(), this);
 
   // Instances of SSLConfigParams should access by one thread at a time only.  secret_for_updateCTX is accessed
   // atomically as a fail-safe.
   //
   char const *expected = nullptr;
   if (!secret_for_updateCTX.compare_exchange_strong(expected, cert_secret_name.c_str())) {
-    if (is_debug_tag_set("ssl_config_updateCTX")) {
+    if (dbg_ctl_ssl_config_updateCTX.on()) {
       // As a fail-safe, handle it if secret_for_updateCTX doesn't or no longer points to a null-terminated string.
       //
       char const *s{expected};
-      for (; *s && (std::size_t(s - expected) < cert_secret_name.size()); ++s) {
-      }
-      Debug("ssl_config_updateCTX", "Update cert, indirect recusive call caused by call for %.*s", int(s - expected), expected);
+      for (; *s && (std::size_t(s - expected) < cert_secret_name.size()); ++s) {}
+      DbgPrint(dbg_ctl_ssl_config_updateCTX, "Update cert, indirect recusive call caused by call for %.*s", int(s - expected),
+               expected);
     }
     return;
   }
 
   // Clear the corresponding client CTXs.  They will be lazy loaded later
-  Debug("ssl_load", "Update cert %s", cert_secret_name.c_str());
+  Dbg(dbg_ctl_ssl_load, "Update cert %s", cert_secret_name.c_str());
   this->clearCTX(cert_secret_name);
 
   // Update the server cert
@@ -861,7 +870,7 @@ SSLConfigParams::clearCTX(const std::string &client_cert) const
     auto ctx_iter = ctx_map_iter->second.find(client_cert);
     if (ctx_iter != ctx_map_iter->second.end()) {
       ctx_iter->second = nullptr;
-      Debug("ssl_load", "Clear client cert %s %s", ctx_map_iter->first.c_str(), ctx_iter->first.c_str());
+      Dbg(dbg_ctl_ssl_load, "Clear client cert %s %s", ctx_map_iter->first.c_str(), ctx_iter->first.c_str());
     }
   }
   ink_mutex_release(&ctxMapLock);
@@ -879,11 +888,11 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
                         const char *ca_bundle_path) const
 {
   shared_SSL_CTX client_ctx = nullptr;
-  std::string top_level_key, ctx_key;
+  std::string    top_level_key, ctx_key;
   ctx_key = client_cert;
   swoc::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
 
-  Debug("ssl_client_ctx", "Look for client cert \"%s\" \"%s\"", top_level_key.c_str(), ctx_key.c_str());
+  Dbg(dbg_ctl_ssl_client_ctx, "Look for client cert \"%s\" \"%s\"", top_level_key.c_str(), ctx_key.c_str());
 
   ink_mutex_acquire(&ctxMapLock);
   auto ctx_map_iter = top_level_ctx_map.find(top_level_key);
@@ -895,12 +904,12 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
   }
   ink_mutex_release(&ctxMapLock);
 
-  BIO *biop     = nullptr;
-  X509 *cert    = nullptr;
-  EVP_PKEY *key = nullptr;
+  BIO      *biop = nullptr;
+  X509     *cert = nullptr;
+  EVP_PKEY *key  = nullptr;
   // Create context if doesn't exists
   if (!client_ctx) {
-    Debug("ssl_client_ctx", "Load new cert for %s %s", top_level_key.c_str(), ctx_key.c_str());
+    Dbg(dbg_ctl_ssl_client_ctx, "Load new cert for %s %s", top_level_key.c_str(), ctx_key.c_str());
     client_ctx = shared_SSL_CTX(SSLInitClientContext(this), SSLReleaseContext);
 
     // Upon configuration, elevate file access to be able to read root-only
@@ -959,7 +968,9 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
         biop = BIO_new_mem_buf(secret_data.data(), secret_data.size());
       }
 
-      key = PEM_read_bio_PrivateKey(biop, nullptr, nullptr, nullptr);
+      pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(client_ctx.get());
+      void            *u           = SSL_CTX_get_default_passwd_cb_userdata(client_ctx.get());
+      key                          = PEM_read_bio_PrivateKey(biop, nullptr, password_cb, u);
       if (!key) {
         SSLError("failed to load client private key file from %s", key_file_name.c_str());
         goto fail;

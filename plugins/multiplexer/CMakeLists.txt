@@ -27,3 +27,5 @@ add_atsplugin(
 )
 
 target_compile_definitions(multiplexer PRIVATE PLUGIN_TAG="multiplexer")
+
+verify_remap_plugin(multiplexer)

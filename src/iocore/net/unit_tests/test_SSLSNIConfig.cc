@@ -109,7 +109,7 @@ TEST_CASE("Test SSLSNIConfig")
   SECTION("Matching order")
   {
     std::string_view target = "foo.bar.com";
-    auto const &actions{params.get(target, 443)};
+    auto const      &actions{params.get(target, 443)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 5); ///< three H2 config + early data + fqdn
   }
@@ -117,7 +117,7 @@ TEST_CASE("Test SSLSNIConfig")
 
 TEST_CASE("SNIConfig reconfigure callback is invoked")
 {
-  int result{0};
+  int  result{0};
   auto set_result{[&result]() { result = 42; }};
   SNIConfig::set_on_reconfigure_callback(set_result);
   SNIConfig::reconfigure();

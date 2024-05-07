@@ -45,12 +45,14 @@ class Operator : public Statement
 public:
   Operator() { Dbg(dbg_ctl, "Calling CTOR for Operator"); }
 
+  virtual ~Operator() = default; // Very uncommon for an Operator to have a custom DTOR, but happens.
+
   // noncopyable
   Operator(const Operator &)       = delete;
   void operator=(const Operator &) = delete;
 
   OperModifiers get_oper_modifiers() const;
-  void initialize(Parser &p) override;
+  void          initialize(Parser &p) override;
 
   void
   do_exec(const Resources &res) const

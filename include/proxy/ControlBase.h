@@ -76,12 +76,12 @@ public:
   ~ControlBase();
 
   const char *ProcessModifiers(matcher_line *line_info);
-  bool CheckModifiers(HttpRequestData *request_data);
-  bool CheckForMatch(HttpRequestData *request_data, int last_number);
+  bool        CheckModifiers(HttpRequestData *request_data);
+  bool        CheckForMatch(HttpRequestData *request_data, int last_number);
 
   void Print() const;
 
-  int line_num = 0;
+  int       line_num = 0;
   Modifier *findModOfType(Modifier::Type t) const;
 
 protected:
@@ -92,7 +92,7 @@ protected:
 
 private:
   using Array = std::vector<Modifier *>;
-  Array _mods;
+  Array       _mods;
   const char *ProcessSrcIp(char *val, void **opaque_ptr);
   const char *ProcessTimeOfDay(char *val, void **opaque_ptr);
   const char *ProcessPort(char *val, void **opaque_ptr);

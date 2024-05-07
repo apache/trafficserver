@@ -21,8 +21,8 @@
 int64_t
 IOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length)
 {
-  int64_t avail, need, n;
-  const char *start;
+  int64_t         avail, need, n;
+  const char     *start;
   TSIOBufferBlock blk;
 
   n   = 0;

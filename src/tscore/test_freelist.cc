@@ -32,13 +32,13 @@ InkFreeList *flist = nullptr;
 void *
 test(void *d)
 {
-  int id;
+  int   id;
   void *m1, *m2, *m3;
 
   id = (intptr_t)d;
 
   time_t start = time(nullptr);
-  int count    = 0;
+  int    count = 0;
   for (;;) {
     m1 = ink_freelist_new(flist);
     m2 = ink_freelist_new(flist);

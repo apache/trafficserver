@@ -68,9 +68,9 @@ struct CacheProcessor : public Processor {
   {
   }
 
-  int start(int n_cache_threads = 0, size_t stacksize = DEFAULT_STACKSIZE) override;
+  int         start(int n_cache_threads = 0, size_t stacksize = DEFAULT_STACKSIZE) override;
   virtual int start_internal(int flags = 0);
-  void stop();
+  void        stop();
 
   int dir_check(bool fix);
 
@@ -146,19 +146,19 @@ struct CacheProcessor : public Processor {
   }
 
   static uint32_t cache_ready;
-  static int initialized;
-  static int start_done;
-  static bool clear;
-  static bool fix;
-  static bool check;
-  static int start_internal_flags;
-  static int auto_clear_flag;
+  static int      initialized;
+  static int      start_done;
+  static bool     clear;
+  static bool     fix;
+  static bool     check;
+  static int      start_internal_flags;
+  static int      auto_clear_flag;
 
   ts::VersionNumber min_stripe_version;
   ts::VersionNumber max_stripe_version;
 
-  CALLBACK_FUNC cb_after_init = nullptr;
-  int wait_for_cache          = 0;
+  CALLBACK_FUNC cb_after_init  = nullptr;
+  int           wait_for_cache = 0;
 };
 
 inline void
@@ -168,12 +168,12 @@ CacheProcessor::afterInitCallbackSet(CALLBACK_FUNC cb)
 }
 
 struct CacheVConnection : public VConnection {
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override                           = 0;
-  virtual VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset)           = 0;
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override = 0;
-  void do_io_close(int lerrno = -1) override                                                          = 0;
-  void reenable(VIO *avio) override                                                                   = 0;
-  void reenable_re(VIO *avio) override                                                                = 0;
+  VIO         *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override                           = 0;
+  virtual VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset)                   = 0;
+  VIO         *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override = 0;
+  void         do_io_close(int lerrno = -1) override                                                          = 0;
+  void         reenable(VIO *avio) override                                                                   = 0;
+  void         reenable_re(VIO *avio) override                                                                = 0;
   void
   do_io_shutdown(ShutdownHowTo_t howto) override
   {
@@ -188,10 +188,10 @@ struct CacheVConnection : public VConnection {
   virtual void set_http_info(CacheHTTPInfo *info)  = 0;
   virtual void get_http_info(CacheHTTPInfo **info) = 0;
 
-  virtual bool is_ram_cache_hit() const   = 0;
-  virtual bool set_pin_in_cache(time_t t) = 0;
-  virtual time_t get_pin_in_cache()       = 0;
-  virtual int64_t get_object_size()       = 0;
+  virtual bool    is_ram_cache_hit() const   = 0;
+  virtual bool    set_pin_in_cache(time_t t) = 0;
+  virtual time_t  get_pin_in_cache()         = 0;
+  virtual int64_t get_object_size()          = 0;
   virtual bool
   is_compressed_in_ram() const
   {
@@ -218,6 +218,6 @@ struct CacheVConnection : public VConnection {
   CacheVConnection();
 };
 
-void ink_cache_init(ts::ModuleVersion version);
+void                  ink_cache_init(ts::ModuleVersion version);
 extern CacheProcessor cacheProcessor;
-extern Continuation *cacheRegexDeleteCont;
+extern Continuation  *cacheRegexDeleteCont;

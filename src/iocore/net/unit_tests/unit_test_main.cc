@@ -60,7 +60,6 @@ public:
     main_thread->set_specific();
 
     SSLConfig::startup();
-    init_global_ssl_hooks();
   }
 
   void

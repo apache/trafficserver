@@ -53,7 +53,7 @@ class Http2ConnectionSettings
 public:
   Http2ConnectionSettings();
 
-  void settings_from_configs(bool is_outbound);
+  void     settings_from_configs(bool is_outbound);
   unsigned get(Http2SettingsIdentifier id) const;
   unsigned set(Http2SettingsIdentifier id, unsigned value);
 
@@ -79,12 +79,12 @@ public:
   Http2ConnectionState(const Http2ConnectionState &)            = delete;
   Http2ConnectionState &operator=(const Http2ConnectionState &) = delete;
 
-  ProxyError rx_error_code;
-  ProxyError tx_error_code;
-  Http2CommonSession *session     = nullptr;
-  HpackHandle *local_hpack_handle = nullptr;
-  HpackHandle *peer_hpack_handle  = nullptr;
-  DependencyTree *dependency_tree = nullptr;
+  ProxyError               rx_error_code;
+  ProxyError               tx_error_code;
+  Http2CommonSession      *session            = nullptr;
+  HpackHandle             *local_hpack_handle = nullptr;
+  HpackHandle             *peer_hpack_handle  = nullptr;
+  DependencyTree          *dependency_tree    = nullptr;
   ActivityCop<Http2Stream> _cop;
 
   /** The HTTP/2 settings configured by ATS and dictated to the peer via
@@ -123,13 +123,13 @@ public:
   // Stream control interfaces
   Http2Stream *create_stream(Http2StreamId new_id, Http2Error &error);
   Http2Stream *create_initiating_stream(Http2Error &error);
-  void set_stream_id(Http2Stream *stream);
+  void         set_stream_id(Http2Stream *stream);
   Http2Stream *find_stream(Http2StreamId id) const;
-  void restart_streams();
-  bool delete_stream(Http2Stream *stream);
-  void release_stream();
-  void cleanup_streams();
-  void restart_receiving(Http2Stream *stream);
+  void         restart_streams();
+  bool         delete_stream(Http2Stream *stream);
+  void         release_stream();
+  void         cleanup_streams();
+  void         restart_receiving(Http2Stream *stream);
 
   /** Update all streams for the peer's newly dictated stream window size. */
   void update_initial_peer_rwnd(Http2WindowSize new_size);
@@ -139,30 +139,32 @@ public:
 
   Http2StreamId get_latest_stream_id_in() const;
   Http2StreamId get_latest_stream_id_out() const;
-  int get_stream_requests() const;
-  void increment_stream_requests();
-  bool is_peer_concurrent_stream_ub() const;
-  bool is_peer_concurrent_stream_lb() const;
+  int           get_stream_requests() const;
+  void          increment_stream_requests();
+  bool          is_peer_concurrent_stream_ub() const;
+  bool          is_peer_concurrent_stream_lb() const;
 
   // Continuated header decoding
   Http2StreamId get_continued_stream_id() const;
-  void set_continued_stream_id(Http2StreamId stream_id);
-  void clear_continued_stream_id();
+  void          set_continued_stream_id(Http2StreamId stream_id);
+  void          clear_continued_stream_id();
 
-  uint32_t get_peer_stream_count() const;
-  void decrement_peer_stream_count();
-  double get_stream_error_rate() const;
+  uint32_t       get_peer_stream_count() const;
+  void           decrement_peer_stream_count();
+  double         get_stream_error_rate() const;
   Http2ErrorCode get_shutdown_reason() const;
 
   // HTTP/2 frame sender
-  void schedule_stream_to_send_priority_frames(Http2Stream *stream);
-  void send_data_frames_depends_on_priority();
-  void schedule_stream_to_send_data_frames(Http2Stream *stream);
-  void send_data_frames(Http2Stream *stream);
+  void                     schedule_stream_to_send_priority_frames(Http2Stream *stream);
+  void                     send_data_frames_depends_on_priority();
+  void                     schedule_stream_to_send_data_frames(Http2Stream *stream);
+  void                     schedule_retransmit(ink_hrtime t);
+  void                     cancel_retransmit();
+  void                     send_data_frames(Http2Stream *stream);
   Http2SendDataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
-  void send_headers_frame(Http2Stream *stream);
-  bool send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
-  void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
+  void                     send_headers_frame(Http2Stream *stream);
+  bool                     send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
+  void                     send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
 
   /** Send a SETTINGS frame to the peer.
    *
@@ -182,26 +184,28 @@ public:
   bool is_valid_streamid(Http2StreamId id) const;
 
   Http2ShutdownState get_shutdown_state() const;
-  void set_shutdown_state(Http2ShutdownState state, Http2ErrorCode reason = Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+  void               set_shutdown_state(Http2ShutdownState state, Http2ErrorCode reason = Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
 
   Event *get_zombie_event();
-  void schedule_zombie_event();
+  void   schedule_zombie_event();
 
-  void increment_received_settings_count(uint32_t count);
+  void     increment_received_settings_count(uint32_t count);
   uint32_t get_received_settings_count();
-  void increment_received_settings_frame_count();
+  void     increment_received_settings_frame_count();
   uint32_t get_received_settings_frame_count();
-  void increment_received_ping_frame_count();
+  void     increment_received_ping_frame_count();
   uint32_t get_received_ping_frame_count();
-  void increment_received_priority_frame_count();
+  void     increment_received_priority_frame_count();
   uint32_t get_received_priority_frame_count();
-  void increment_received_rst_stream_frame_count();
+  void     increment_received_rst_stream_frame_count();
   uint32_t get_received_rst_stream_frame_count();
+  void     increment_received_continuation_frame_count();
+  uint32_t get_received_continuation_frame_count();
 
-  ssize_t get_peer_rwnd() const;
+  ssize_t        get_peer_rwnd() const;
   Http2ErrorCode increment_peer_rwnd(size_t amount);
   Http2ErrorCode decrement_peer_rwnd(size_t amount);
-  ssize_t get_local_rwnd() const;
+  ssize_t        get_local_rwnd() const;
   Http2ErrorCode increment_local_rwnd(size_t amount);
   Http2ErrorCode decrement_local_rwnd(size_t amount);
 
@@ -245,10 +249,10 @@ private:
 
   // Getters for stream control configurations that retrieve the inbound or
   // outbound values per the configured session.
-  uint32_t _get_configured_max_concurrent_streams() const;
-  uint32_t _get_configured_min_concurrent_streams() const;
-  uint32_t _get_configured_max_active_streams() const;
-  uint32_t _get_configured_initial_window_size() const;
+  uint32_t               _get_configured_max_concurrent_streams() const;
+  uint32_t               _get_configured_min_concurrent_streams() const;
+  uint32_t               _get_configured_max_active_streams() const;
+  uint32_t               _get_configured_initial_window_size() const;
   Http2FlowControlPolicy _get_configured_flow_control_policy() const;
 
   /** Calculate the initial session window size that we communicate to inbound
@@ -271,9 +275,9 @@ private:
   //   If given Stream Identifier is not found in stream_list and it is greater
   //   than latest_streamid_in, the state of Stream is IDLE.
   Queue<Http2Stream> stream_list;
-  Http2StreamId latest_streamid_in  = 0;
-  Http2StreamId latest_streamid_out = 0;
-  std::atomic<int> stream_requests  = 0;
+  Http2StreamId      latest_streamid_in  = 0;
+  Http2StreamId      latest_streamid_out = 0;
+  std::atomic<int>   stream_requests     = 0;
 
   // Counter for current active streams which are started by the client.
   std::atomic<uint32_t> peer_streams_count_in = 0;
@@ -323,14 +327,15 @@ private:
    */
   bool _local_rwnd_is_shrinking = false;
 
-  std::array<size_t, 5> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
-  int _recent_rwnd_increment_index             = 0;
+  std::array<size_t, 5> _recent_rwnd_increment       = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
+  int                   _recent_rwnd_increment_index = 0;
 
   FrequencyCounter _received_settings_counter;
   FrequencyCounter _received_settings_frame_counter;
   FrequencyCounter _received_ping_frame_counter;
   FrequencyCounter _received_priority_frame_counter;
   FrequencyCounter _received_rst_stream_frame_counter;
+  FrequencyCounter _received_continuation_frame_counter;
 
   /** Records the various settings for each SETTINGS frame that we've sent.
    *
@@ -387,22 +392,24 @@ private:
   //   - [RFC 7540] 6.10 CONTINUATION
   //     "If the END_HEADERS bit is not set, this frame MUST be followed by
   //     another CONTINUATION frame."
-  Http2StreamId continued_stream_id = 0;
-  bool _priority_scheduled          = false;
-  bool _data_scheduled              = false;
-  bool fini_received                = false;
-  bool in_destroy                   = false;
-  int recursion                     = 0;
-  Http2ShutdownState shutdown_state = HTTP2_SHUTDOWN_NONE;
-  Http2ErrorCode shutdown_reason    = Http2ErrorCode::HTTP2_ERROR_MAX;
-  Event *shutdown_cont_event        = nullptr;
-  Event *fini_event                 = nullptr;
-  Event *zombie_event               = nullptr;
+  Http2StreamId      continued_stream_id = 0;
+  bool               fini_received       = false;
+  bool               in_destroy          = false;
+  int                recursion           = 0;
+  Http2ShutdownState shutdown_state      = HTTP2_SHUTDOWN_NONE;
+  Http2ErrorCode     shutdown_reason     = Http2ErrorCode::HTTP2_ERROR_MAX;
+  Event             *shutdown_cont_event = nullptr;
+  Event             *fini_event          = nullptr;
+  Event             *zombie_event        = nullptr;
+  Event             *_priority_event     = nullptr;
+  Event             *_data_event         = nullptr;
+  Event             *retransmit_event    = nullptr;
 
-  uint32_t configured_max_settings_frames_per_minute   = 0;
-  uint32_t configured_max_ping_frames_per_minute       = 0;
-  uint32_t configured_max_priority_frames_per_minute   = 0;
-  uint32_t configured_max_rst_stream_frames_per_minute = 0;
+  uint32_t configured_max_settings_frames_per_minute     = 0;
+  uint32_t configured_max_ping_frames_per_minute         = 0;
+  uint32_t configured_max_priority_frames_per_minute     = 0;
+  uint32_t configured_max_rst_stream_frames_per_minute   = 0;
+  uint32_t configured_max_continuation_frames_per_minute = 0;
 };
 
 ///////////////////////////////////////////////

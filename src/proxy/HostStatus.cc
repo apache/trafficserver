@@ -36,10 +36,10 @@ const std::string HOST_NAME_KEY{"hostname"};
 const std::string STATUS_KEY{"status"};
 
 struct HostCmdInfo {
-  TSHostStatus type{TSHostStatus::TS_HOST_STATUS_INIT};
-  unsigned int reasonType{0};
+  TSHostStatus             type{TSHostStatus::TS_HOST_STATUS_INIT};
+  unsigned int             reasonType{0};
   std::vector<std::string> hosts;
-  int time{0};
+  int                      time{0};
 };
 
 } // namespace
@@ -61,7 +61,7 @@ HostStatRec::HostStatRec()
 HostStatRec::HostStatRec(std::string str)
 {
   std::vector<std::string> v1;
-  std::stringstream ss1(str);
+  std::stringstream        ss1(str);
 
   reasons = 0;
 
@@ -158,17 +158,17 @@ HostStatus::~HostStatus()
 void
 HostStatus::loadFromPersistentStore()
 {
-  YAML::Node records;
+  YAML::Node  records;
   std::string fileStore = getHostStatusPersistentFilePath();
   if (access(fileStore.c_str(), R_OK) == 0) {
     try {
       records               = YAML::LoadFile(fileStore.c_str());
       YAML::Node statusList = records["statuses"];
       for (YAML::const_iterator it = statusList.begin(); it != statusList.end(); ++it) {
-        const YAML::Node &host = *it;
-        std::string hostName   = host[HOST_NAME_KEY].as<std::string>();
-        std::string status     = host[STATUS_KEY].as<std::string>();
-        HostStatRec h(status);
+        const YAML::Node &host     = *it;
+        std::string       hostName = host[HOST_NAME_KEY].as<std::string>();
+        std::string       status   = host[STATUS_KEY].as<std::string>();
+        HostStatRec       h(status);
         loadRecord(hostName, h);
       }
     } catch (std::exception const &ex) {
@@ -300,7 +300,7 @@ HostStatus::getAllHostStatuses(std::vector<HostStatuses> &hosts)
   {
     for (std::pair<std::string, HostStatRec *> hsts : hosts_statuses) {
       std::stringstream ss;
-      HostStatuses h;
+      HostStatuses      h;
       h.hostname = hsts.first;
       ss << *hsts.second;
       h.status = ss.str();
@@ -315,8 +315,8 @@ HostStatRec *
 HostStatus::getHostStatus(const std::string_view name)
 {
   HostStatRec *_status = nullptr;
-  time_t now           = time(0);
-  bool lookup          = false;
+  time_t       now     = time(0);
+  bool         lookup  = false;
 
   // if host_statuses is empty, just return
   // a nullptr as there is no need to lock
@@ -424,15 +424,15 @@ server_get_status(std::string_view id, YAML::Node const &params)
 {
   namespace err = rpc::handlers::errors;
   swoc::Rv<YAML::Node> resp;
-  YAML::Node statusList{YAML::NodeType::Sequence}, errorList{YAML::NodeType::Sequence};
+  YAML::Node           statusList{YAML::NodeType::Sequence}, errorList{YAML::NodeType::Sequence};
 
   try {
     if (!params.IsNull() && params.size() > 0) { // returns host statuses for just the ones asked for.
       for (YAML::const_iterator it = params.begin(); it != params.end(); ++it) {
-        YAML::Node host{YAML::NodeType::Map};
-        auto name             = it->as<std::string>();
+        YAML::Node   host{YAML::NodeType::Map};
+        auto         name     = it->as<std::string>();
         HostStatRec *host_rec = nullptr;
-        HostStatus &hs        = HostStatus::instance();
+        HostStatus  &hs       = HostStatus::instance();
         host_rec              = hs.getHostStatus(name);
         if (host_rec == nullptr) {
           Debug("host_statuses", "no record for %s was found", name.c_str());
@@ -449,7 +449,7 @@ server_get_status(std::string_view id, YAML::Node const &params)
       }
     } else { // return all host statuses.
       std::vector<HostStatuses> hostInfo;
-      HostStatus &hs = HostStatus::instance();
+      HostStatus               &hs = HostStatus::instance();
       hs.getAllHostStatuses(hostInfo);
       for (auto &h : hostInfo) {
         YAML::Node host{YAML::NodeType::Map};
@@ -494,7 +494,7 @@ server_set_status(std::string_view id, YAML::Node const &params)
 
     // schedule a write to the persistent store.
     Debug("host_statuses", "updating persistent store");
-    eventProcessor.schedule_imm(new HostStatusSync, ET_TASK);
+    eventProcessor.schedule_imm(HostStatusSync::new_instance(), ET_TASK);
   } catch (std::exception const &ex) {
     Debug("host_statuses", "Got an error HostCmdInfo decoding: %s", ex.what());
     resp.errata()
@@ -510,9 +510,9 @@ HostStatusSync::sync_task()
 {
   YAML::Node records{YAML::NodeType::Map};
 
-  YAML::Node statusList{YAML::NodeType::Sequence};
+  YAML::Node                statusList{YAML::NodeType::Sequence};
   std::vector<HostStatuses> statuses;
-  HostStatus &hs = HostStatus::instance();
+  HostStatus               &hs = HostStatus::instance();
   hs.getAllHostStatuses(statuses);
 
   for (auto &&h : statuses) {

@@ -77,7 +77,7 @@ static DbgCtl dbg_ctl{PLUGIN};
   VDEBUG("vio=%p vio.cont=%p, vio.cont.data=%p, vio.vc=%p " fmt, (vio), TSVIOContGet(vio), TSContDataGet(TSVIOContGet(vio)), \
          TSVIOVConnGet(vio), ##__VA_ARGS__)
 
-static TSCont TxnHook;
+static TSCont  TxnHook;
 static uint8_t GeneratorData[32 * 1024];
 
 static int StatCountBytes     = -1;
@@ -89,11 +89,11 @@ static int GeneratorTxnHook(TSCont contp, TSEvent event, void *edata);
 struct GeneratorRequest;
 
 union argument_type {
-  void *ptr;
-  intptr_t ecode;
-  TSVConn vc;
-  TSVIO vio;
-  TSHttpTxn txn;
+  void             *ptr;
+  intptr_t          ecode;
+  TSVConn           vc;
+  TSVIO             vio;
+  TSHttpTxn         txn;
   GeneratorRequest *grq;
 
   argument_type(void *_p) : ptr(_p) {}
@@ -112,8 +112,8 @@ lengthof(const char (&)[N])
 // for each TSVConn; one to push data into the TSVConn and one to pull
 // data out.
 struct IOChannel {
-  TSVIO vio = nullptr;
-  TSIOBuffer iobuf;
+  TSVIO            vio = nullptr;
+  TSIOBuffer       iobuf;
   TSIOBufferReader reader;
 
   IOChannel() : iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)), reader(TSIOBufferReaderAlloc(iobuf)) {}
@@ -142,8 +142,8 @@ struct IOChannel {
 };
 
 struct GeneratorHttpHeader {
-  TSMBuffer buffer;
-  TSMLoc header;
+  TSMBuffer    buffer;
+  TSMLoc       header;
   TSHttpParser parser;
 
   GeneratorHttpHeader()
@@ -166,17 +166,17 @@ struct GeneratorHttpHeader {
 };
 
 struct GeneratorRequest {
-  off_t nbytes   = 0; // Number of bytes to generate.
-  unsigned flags = 0;
-  unsigned delay = 0; // Milliseconds to delay before sending a response.
-  unsigned maxage;    // Max age for cache responses.
+  off_t    nbytes = 0; // Number of bytes to generate.
+  unsigned flags  = 0;
+  unsigned delay  = 0; // Milliseconds to delay before sending a response.
+  unsigned maxage;     // Max age for cache responses.
   unsigned bytesSeen;
 
-  int64_t contentLength;
-  IOChannel readio;
-  IOChannel writeio;
+  int64_t             contentLength;
+  IOChannel           readio;
+  IOChannel           writeio;
   GeneratorHttpHeader rqheader;
-  TSHttpStatus status = TS_HTTP_STATUS_NONE;
+  TSHttpStatus        status = TS_HTTP_STATUS_NONE;
 
   enum {
     CACHEABLE = 0x0001,
@@ -396,11 +396,11 @@ GeneratorPOSTResponse(GeneratorRequest *grq, TSCont contp)
 static bool
 GeneratorParseRequest(GeneratorRequest *grq)
 {
-  TSMLoc url;
+  TSMLoc      url;
   const char *path;
   const char *end;
-  int pathsz;
-  unsigned count = 0;
+  int         pathsz;
+  unsigned    count = 0;
 
   path = TSHttpHdrMethodGet(grq->rqheader.buffer, grq->rqheader.header, &pathsz);
 
@@ -438,7 +438,7 @@ GeneratorParseRequest(GeneratorRequest *grq)
   end = path + pathsz;
   while (path < end) {
     const char *sep = path;
-    size_t nbytes;
+    size_t      nbytes;
 
     while (*sep != '/' && sep < end) {
       ++sep;
@@ -534,7 +534,7 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
   }
 
   case TS_EVENT_VCONN_READ_READY: {
-    argument_type cdata           = TSContDataGet(contp);
+    argument_type        cdata    = TSContDataGet(contp);
     GeneratorHttpHeader &rqheader = cdata.grq->rqheader;
 
     VDEBUG("reading vio=%p vc=%p, grq=%p", arg.vio, TSVIOVConnGet(arg.vio), cdata.grq);
@@ -547,7 +547,7 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
       // Look for data and if we find any, consume.
       if (TSVIOBufferGet(input_vio)) {
         TSIOBufferReader reader = cdata.grq->readio.reader;
-        int64_t n               = TSIOBufferReaderAvail(reader);
+        int64_t          n      = TSIOBufferReaderAvail(reader);
         if (n > 0) {
           TSIOBufferReaderConsume(reader, n);
           TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + n);
@@ -580,7 +580,7 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
     }
 
     for (TSIOBufferBlock blk = TSIOBufferReaderStart(cdata.grq->readio.reader); blk; blk = TSIOBufferBlockNext(blk)) {
-      int64_t nbytes;
+      int64_t     nbytes;
       const char *ptr = TSIOBufferBlockReadStart(blk, cdata.grq->readio.reader, &nbytes);
       if (ptr == nullptr || nbytes == 0) {
         continue;
@@ -735,8 +735,8 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
 static void
 CheckCacheable(TSHttpTxn txnp, TSMLoc url, TSMBuffer bufp)
 {
-  int pathsz       = 0;
-  const char *path = TSUrlPathGet(bufp, url, &pathsz);
+  int         pathsz = 0;
+  const char *path   = TSUrlPathGet(bufp, url, &pathsz);
 
   if (path && (pathsz >= 8) && (0 == memcmp(path, "nocache/", 8))) {
     // It's not cacheable, so, turn off the cache. This avoids major serialization and performance issues.
@@ -756,8 +756,8 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR: {
     TSMBuffer recp;
-    TSMLoc url_loc;
-    TSMLoc hdr_loc;
+    TSMLoc    url_loc;
+    TSMLoc    hdr_loc;
 
     if (TSHttpTxnClientReqGet(arg.txn, &recp, &hdr_loc) != TS_SUCCESS) {
       VERROR("failed to get client request handle");

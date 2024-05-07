@@ -36,8 +36,8 @@
 #define MAX_ALIST_TEST  10
 #define MAX_ALIST_ARRAY 100000
 InkAtomicList al[MAX_ALIST_TEST];
-void *al_test[MAX_ALIST_TEST][MAX_ALIST_ARRAY];
-int al_done = 0;
+void         *al_test[MAX_ALIST_TEST][MAX_ALIST_ARRAY];
+int           al_done = 0;
 
 void *
 testalist(void *ame)
@@ -64,23 +64,23 @@ testalist(void *ame)
 #define MAX_ITEMS_PER_LIST (1 * 1024)
 #define MAX_TEST_THREADS   64
 static InkAtomicList alists[MAX_ATOMIC_LISTS];
-struct listItem *items[MAX_ATOMIC_LISTS * MAX_ITEMS_PER_LIST];
+struct listItem     *items[MAX_ATOMIC_LISTS * MAX_ITEMS_PER_LIST];
 
 struct listItem {
-  int data1;
-  int data2;
+  int   data1;
+  int   data2;
   void *link;
-  int data3;
-  int data4;
-  int check;
+  int   data3;
+  int   data4;
+  int   check;
 };
 
 void
 init_data()
 {
-  int j;
-  int ali;
-  struct listItem l;
+  int              j;
+  int              ali;
+  struct listItem  l;
   struct listItem *plistItem;
 
   for (ali = 0; ali < MAX_ATOMIC_LISTS; ali++)
@@ -104,11 +104,11 @@ init_data()
 void
 cycle_data(void *d)
 {
-  InkAtomicList *l;
+  InkAtomicList   *l;
   struct listItem *pli;
   struct listItem *pli_next;
-  int iterations;
-  int me;
+  int              iterations;
+  int              me;
 
   me         = (int)d;
   iterations = 0;
@@ -145,7 +145,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */[])
   int32_t m = 1, n = 100;
   // int64 lm = 1LL, ln = 100LL;
   const char *m2 = "hello";
-  char *n2;
+  char       *n2;
 
   printf("sizeof(int32_t)==%d   sizeof(void *)==%d\n", static_cast<int>(sizeof(int32_t)), static_cast<int>(sizeof(void *)));
 
@@ -184,7 +184,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */[])
       ink_atomiclist_init(&al[ali], "foo", 0);
     }
     for (ali = 0; ali < MAX_ALIST_TEST; ali++) {
-      ink_thread tid;
+      ink_thread     tid;
       pthread_attr_t attr;
 
       pthread_attr_init(&attr);

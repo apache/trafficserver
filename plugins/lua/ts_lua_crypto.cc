@@ -105,11 +105,11 @@ static int
 ts_lua_md5(lua_State *L)
 {
   u_char *src;
-  size_t slen;
+  size_t  slen;
 
   MD5_CTX md5_ctx;
-  u_char md5_buf[TS_LUA_MD5_DIGEST_LENGTH];
-  u_char hex_buf[2 * sizeof(md5_buf)];
+  u_char  md5_buf[TS_LUA_MD5_DIGEST_LENGTH];
+  u_char  hex_buf[2 * sizeof(md5_buf)];
 
   if (lua_gettop(L) != 1) {
     return luaL_error(L, "expecting one argument");
@@ -138,10 +138,10 @@ static int
 ts_lua_md5_bin(lua_State *L)
 {
   u_char *src;
-  size_t slen;
+  size_t  slen;
 
   MD5_CTX md5_ctx;
-  u_char md5_buf[TS_LUA_MD5_DIGEST_LENGTH];
+  u_char  md5_buf[TS_LUA_MD5_DIGEST_LENGTH];
 
   if (lua_gettop(L) != 1) {
     return luaL_error(L, "expecting one argument");
@@ -168,11 +168,11 @@ static int
 ts_lua_sha1(lua_State *L)
 {
   u_char *src;
-  size_t slen;
+  size_t  slen;
 
   SHA_CTX sha;
-  u_char sha_buf[TS_LUA_SHA1_DIGEST_LENGTH];
-  u_char hex_buf[2 * sizeof(sha_buf)];
+  u_char  sha_buf[TS_LUA_SHA1_DIGEST_LENGTH];
+  u_char  hex_buf[2 * sizeof(sha_buf)];
 
   if (lua_gettop(L) != 1) {
     return luaL_error(L, "expecting one argument");
@@ -200,10 +200,10 @@ static int
 ts_lua_sha1_bin(lua_State *L)
 {
   u_char *src;
-  size_t slen;
+  size_t  slen;
 
   SHA_CTX sha;
-  u_char sha_buf[TS_LUA_SHA1_DIGEST_LENGTH];
+  u_char  sha_buf[TS_LUA_SHA1_DIGEST_LENGTH];
 
   if (lua_gettop(L) != 1) {
     return luaL_error(L, "expecting one argument");
@@ -230,11 +230,11 @@ static int
 ts_lua_sha256(lua_State *L)
 {
   u_char *src;
-  size_t slen;
+  size_t  slen;
 
   SHA256_CTX sha;
-  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
-  u_char hex_buf[2 * sizeof(sha_buf)];
+  u_char     sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
+  u_char     hex_buf[2 * sizeof(sha_buf)];
 
   if (lua_gettop(L) != 1) {
     return luaL_error(L, "expecting one argument");
@@ -262,10 +262,10 @@ static int
 ts_lua_sha256_bin(lua_State *L)
 {
   u_char *src;
-  size_t slen;
+  size_t  slen;
 
   SHA256_CTX sha;
-  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
+  u_char     sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
 
   if (lua_gettop(L) != 1) {
     return luaL_error(L, "expecting one argument");
@@ -293,14 +293,14 @@ ts_lua_hmac_md5(lua_State *L)
 {
   u_char *key;
   u_char *src;
-  size_t klen;
-  size_t slen;
+  size_t  klen;
+  size_t  slen;
 
   unsigned char *key_bin;
-  unsigned int key_bin_len;
+  unsigned int   key_bin_len;
 
-  u_char sha_buf[TS_LUA_MD5_DIGEST_LENGTH] = {0};
-  u_char hex_buf[2 * sizeof(sha_buf)]      = {0};
+  u_char       sha_buf[TS_LUA_MD5_DIGEST_LENGTH] = {0};
+  u_char       hex_buf[2 * sizeof(sha_buf)]      = {0};
   unsigned int output_length;
 
   if (lua_gettop(L) != 2) {
@@ -348,14 +348,14 @@ ts_lua_hmac_sha1(lua_State *L)
 {
   u_char *key;
   u_char *src;
-  size_t klen;
-  size_t slen;
+  size_t  klen;
+  size_t  slen;
 
   unsigned char *key_bin;
-  unsigned int key_bin_len;
+  unsigned int   key_bin_len;
 
-  u_char sha_buf[TS_LUA_SHA1_DIGEST_LENGTH] = {0};
-  u_char hex_buf[2 * sizeof(sha_buf)]       = {0};
+  u_char       sha_buf[TS_LUA_SHA1_DIGEST_LENGTH] = {0};
+  u_char       hex_buf[2 * sizeof(sha_buf)]       = {0};
   unsigned int output_length;
 
   if (lua_gettop(L) != 2) {
@@ -403,14 +403,14 @@ ts_lua_hmac_sha256(lua_State *L)
 {
   u_char *key;
   u_char *src;
-  size_t klen;
-  size_t slen;
+  size_t  klen;
+  size_t  slen;
 
   unsigned char *key_bin;
-  unsigned int key_bin_len;
+  unsigned int   key_bin_len;
 
-  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH] = {0};
-  u_char hex_buf[2 * sizeof(sha_buf)]         = {0};
+  u_char       sha_buf[TS_LUA_SHA256_DIGEST_LENGTH] = {0};
+  u_char       hex_buf[2 * sizeof(sha_buf)]         = {0};
   unsigned int output_length;
 
   if (lua_gettop(L) != 2) {
@@ -458,8 +458,8 @@ ts_lua_base64_encode(lua_State *L)
 {
   u_char *src;
   u_char *dst;
-  size_t slen;
-  size_t dlen;
+  size_t  slen;
+  size_t  dlen;
 
   size_t length;
 
@@ -490,8 +490,8 @@ ts_lua_base64_decode(lua_State *L)
 {
   u_char *src;
   u_char *dst;
-  size_t slen;
-  size_t dlen;
+  size_t  slen;
+  size_t  dlen;
 
   size_t length;
 
@@ -520,7 +520,7 @@ ts_lua_base64_decode(lua_State *L)
 static int
 ts_lua_escape_uri(lua_State *L)
 {
-  size_t len, dlen;
+  size_t  len, dlen;
   u_char *src, *dst;
 
   size_t length;
@@ -553,7 +553,7 @@ ts_lua_escape_uri(lua_State *L)
 static int
 ts_lua_unescape_uri(lua_State *L)
 {
-  size_t len, dlen;
+  size_t  len, dlen;
   u_char *src, *dst;
 
   size_t length;

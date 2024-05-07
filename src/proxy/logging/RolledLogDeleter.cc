@@ -69,7 +69,7 @@ RolledLogDeleter::register_log_type_for_deletion(std::string_view log_type, int 
     // Already registered.
     return;
   }
-  auto deletingInfo     = std::make_unique<LogDeletingInfo>(log_type, rolling_min_count);
+  auto  deletingInfo    = std::make_unique<LogDeletingInfo>(log_type, rolling_min_count);
   auto *deletingInfoPtr = deletingInfo.get();
 
   deletingInfoList.push_back(std::move(deletingInfo));
@@ -81,7 +81,7 @@ bool
 RolledLogDeleter::consider_for_candidacy(std::string_view log_path, int64_t file_size, time_t modification_time)
 {
   const fs::path rolled_log_file = fs::path(log_path).filename();
-  auto iter                      = deleting_info.find(LogUtils::get_unrolled_filename(rolled_log_file.view()));
+  auto           iter            = deleting_info.find(LogUtils::get_unrolled_filename(rolled_log_file.view()));
   if (iter == deleting_info.end()) {
     return false;
   }

@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "iocore/eventsystem/Freer.h"
 #include "tscore/ink_config.h"
 #include "proxy/http/remap/UrlMapping.h"
 #include "proxy/http/remap/UrlMappingPathIndex.h"
@@ -56,7 +57,7 @@ enum mapping_type {
 /**
  *
  **/
-class UrlRewrite : public RefCountObj
+class UrlRewrite : public RefCountObjInHeap
 {
 public:
   using URLTable = std::unordered_map<std::string, UrlMappingPathIndex *>;
@@ -79,9 +80,9 @@ public:
   int BuildTable(const char *path);
 
   mapping_type Remap_redirect(HTTPHdr *request_header, URL *redirect_url);
-  bool ReverseMap(HTTPHdr *response_header);
-  void SetReverseFlag(int flag);
-  void Print() const;
+  bool         ReverseMap(HTTPHdr *response_header);
+  void         SetReverseFlag(int flag);
+  void         Print() const;
 
   // The UrlRewrite object is-a RefCountObj, but this is a convenience to make it clear that we
   // don't delete() these objects directly, but via the release() method only.
@@ -120,13 +121,13 @@ public:
 
   struct RegexMapping {
     url_mapping *url_map;
-    Regex regular_expression;
+    Regex        regular_expression;
 
     // we store the host-string-to-substitute here; if a match is found,
     // the substitutions are made and the resulting url is stored
     // directly in toURL's host field
     char *to_url_host_template;
-    int to_url_host_template_len;
+    int   to_url_host_template_len;
 
     // stores the number of substitutions
     int n_substitutions;
@@ -144,7 +145,7 @@ public:
 
   struct MappingsStore {
     std::unique_ptr<URLTable> hash_lookup;
-    RegexMappingList regex_list;
+    RegexMappingList          regex_list;
     bool
     empty()
     {
@@ -152,8 +153,8 @@ public:
     }
   };
 
-  void PerformACLFiltering(HttpTransact::State *s, url_mapping *mapping);
-  void PrintStore(const MappingsStore &store) const;
+  void        PerformACLFiltering(HttpTransact::State *s, url_mapping *mapping);
+  void        PrintStore(const MappingsStore &store) const;
   std::string PrintRemapHits();
   std::string PrintRemapHitsStore(MappingsStore &store);
 
@@ -213,14 +214,14 @@ public:
 
   char *ts_name = nullptr; // Used to send redirects when no host info
 
-  char *http_default_redirect_url      = nullptr; // Used if redirect in "referer" filtering was not defined properly
-  int num_rules_forward                = 0;
-  int num_rules_reverse                = 0;
-  int num_rules_redirect_permanent     = 0;
-  int num_rules_redirect_temporary     = 0;
-  int num_rules_forward_with_recv_port = 0;
+  char *http_default_redirect_url        = nullptr; // Used if redirect in "referer" filtering was not defined properly
+  int   num_rules_forward                = 0;
+  int   num_rules_reverse                = 0;
+  int   num_rules_redirect_permanent     = 0;
+  int   num_rules_redirect_temporary     = 0;
+  int   num_rules_forward_with_recv_port = 0;
 
-  PluginFactory pluginFactory;
+  PluginFactory           pluginFactory;
   NextHopStrategyFactory *strategyFactory = nullptr;
 
 private:
@@ -230,14 +231,14 @@ private:
                       UrlMappingContainer &mapping_container);
   url_mapping *_tableLookup(std::unique_ptr<URLTable> &h_table, URL *request_url, int request_port, char *request_host,
                             int request_host_len);
-  bool _regexMappingLookup(RegexMappingList &regex_mappings, URL *request_url, int request_port, const char *request_host,
-                           int request_host_len, int rank_ceiling, UrlMappingContainer &mapping_container);
-  int _expandSubstitutions(size_t *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
-                           int dest_buf_size);
-  void _destroyTable(std::unique_ptr<URLTable> &h_table);
-  void _destroyList(RegexMappingList &regexes);
-  inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping *reg_map, const char *src_host,
-                          bool is_cur_mapping_regex, int &count);
+  bool         _regexMappingLookup(RegexMappingList &regex_mappings, URL *request_url, int request_port, const char *request_host,
+                                   int request_host_len, int rank_ceiling, UrlMappingContainer &mapping_container);
+  int          _expandSubstitutions(size_t *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
+                                    int dest_buf_size);
+  void         _destroyTable(std::unique_ptr<URLTable> &h_table);
+  void         _destroyList(RegexMappingList &regexes);
+  inline bool  _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping *reg_map, const char *src_host,
+                           bool is_cur_mapping_regex, int &count);
 };
 
 void url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *request_url, int scheme = -1);

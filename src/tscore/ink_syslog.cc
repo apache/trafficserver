@@ -33,7 +33,7 @@
 struct syslog_fac {
   char *long_str;
   char *short_str;
-  int fac_int;
+  int   fac_int;
 };
 
 static const syslog_fac convert_table[] = {

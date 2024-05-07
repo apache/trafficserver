@@ -69,21 +69,21 @@ public:
   /// I have no idea what this is for.
   using OS_Response_F = void(void *ih, TSHttpTxn rh, int os_response_type);
 
-  void *dl_handle                       = nullptr; /* "handle" for the dynamic library */
-  Init_F *init_cb                       = nullptr;
-  PreReload_F *pre_config_reload_cb     = nullptr;
-  PostReload_F *post_config_reload_cb   = nullptr;
-  Done_F *done_cb                       = nullptr;
-  New_Instance_F *new_instance_cb       = nullptr;
-  Delete_Instance_F *delete_instance_cb = nullptr;
-  Do_Remap_F *do_remap_cb               = nullptr;
-  OS_Response_F *os_response_cb         = nullptr;
+  void              *dl_handle             = nullptr; /* "handle" for the dynamic library */
+  Init_F            *init_cb               = nullptr;
+  PreReload_F       *pre_config_reload_cb  = nullptr;
+  PostReload_F      *post_config_reload_cb = nullptr;
+  Done_F            *done_cb               = nullptr;
+  New_Instance_F    *new_instance_cb       = nullptr;
+  Delete_Instance_F *delete_instance_cb    = nullptr;
+  Do_Remap_F        *do_remap_cb           = nullptr;
+  OS_Response_F     *os_response_cb        = nullptr;
 
   RemapPluginInfo(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath);
   ~RemapPluginInfo();
 
   /* Overload to add / execute remap plugin specific tasks during the plugin loading */
-  bool load(std::string &error) override;
+  bool load(std::string &error, const fs::path &compilerPath) override;
 
   /* Used by the factory to invoke callbacks during plugin load, init and unload  */
   bool init(std::string &error) override;
@@ -95,7 +95,7 @@ public:
 
   /* Used by the other parts of the traffic server core while handling requests */
   TSRemapStatus doRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
-  void osResponse(void *ih, TSHttpTxn rh, int os_response_type);
+  void          osResponse(void *ih, TSHttpTxn rh, int os_response_type);
 
   /* Used by traffic server core to indicate configuration reload */
   void indicatePreReload() override;
@@ -105,8 +105,8 @@ protected:
   /* Utility to be used only with unit testing */
   std::string missingRequiredSymbolError(const std::string &pluginName, const char *required, const char *requiring = nullptr);
   template <class T> T *getFunctionSymbol(const char *symbol);
-  void setPluginContext();
-  void resetPluginContext();
+  void                  setPluginContext();
+  void                  resetPluginContext();
 
   static constexpr const char *const _tag = "plugin_remap"; /** @brief log tag used by this class */
 
@@ -119,6 +119,6 @@ protected:
  **/
 struct host_hdr_info {
   const char *request_host;
-  int host_len;
-  int request_port;
+  int         host_len;
+  int         request_port;
 };

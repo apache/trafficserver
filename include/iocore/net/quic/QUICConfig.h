@@ -27,7 +27,7 @@
 #include <quiche.h>
 
 #include "iocore/eventsystem/ConfigProcessor.h"
-#include "../../../../src/iocore/net/P_SSLCertLookup.h"
+#include "iocore/net/SSLTypes.h"
 
 class QUICConfigParams : public ConfigInfo
 {
@@ -54,36 +54,36 @@ public:
   shared_SSL_CTX client_ssl_ctx() const;
 
   // Transport Parameters
-  uint32_t no_activity_timeout_in() const;
-  uint32_t no_activity_timeout_out() const;
+  uint32_t          no_activity_timeout_in() const;
+  uint32_t          no_activity_timeout_out() const;
   const IpEndpoint *preferred_address_ipv4() const;
   const IpEndpoint *preferred_address_ipv6() const;
-  uint32_t initial_max_data_in() const;
-  uint32_t initial_max_data_out() const;
-  uint32_t initial_max_stream_data_bidi_local_in() const;
-  uint32_t initial_max_stream_data_bidi_local_out() const;
-  uint32_t initial_max_stream_data_bidi_remote_in() const;
-  uint32_t initial_max_stream_data_bidi_remote_out() const;
-  uint32_t initial_max_stream_data_uni_in() const;
-  uint32_t initial_max_stream_data_uni_out() const;
-  uint64_t initial_max_streams_bidi_in() const;
-  uint64_t initial_max_streams_bidi_out() const;
-  uint64_t initial_max_streams_uni_in() const;
-  uint64_t initial_max_streams_uni_out() const;
-  uint8_t ack_delay_exponent_in() const;
-  uint8_t ack_delay_exponent_out() const;
-  uint8_t max_ack_delay_in() const;
-  uint8_t max_ack_delay_out() const;
-  uint8_t active_cid_limit_in() const;
-  uint8_t active_cid_limit_out() const;
-  bool disable_active_migration() const;
-  uint32_t get_max_recv_udp_payload_size_in() const;
-  uint32_t get_max_recv_udp_payload_size_out() const;
+  uint32_t          initial_max_data_in() const;
+  uint32_t          initial_max_data_out() const;
+  uint32_t          initial_max_stream_data_bidi_local_in() const;
+  uint32_t          initial_max_stream_data_bidi_local_out() const;
+  uint32_t          initial_max_stream_data_bidi_remote_in() const;
+  uint32_t          initial_max_stream_data_bidi_remote_out() const;
+  uint32_t          initial_max_stream_data_uni_in() const;
+  uint32_t          initial_max_stream_data_uni_out() const;
+  uint64_t          initial_max_streams_bidi_in() const;
+  uint64_t          initial_max_streams_bidi_out() const;
+  uint64_t          initial_max_streams_uni_in() const;
+  uint64_t          initial_max_streams_uni_out() const;
+  uint8_t           ack_delay_exponent_in() const;
+  uint8_t           ack_delay_exponent_out() const;
+  uint8_t           max_ack_delay_in() const;
+  uint8_t           max_ack_delay_out() const;
+  uint8_t           active_cid_limit_in() const;
+  uint8_t           active_cid_limit_out() const;
+  bool              disable_active_migration() const;
+  uint32_t          get_max_recv_udp_payload_size_in() const;
+  uint32_t          get_max_recv_udp_payload_size_out() const;
 
   uint32_t get_max_send_udp_payload_size_in() const;
   uint32_t get_max_send_udp_payload_size_out() const;
 
-  static int connection_table_size();
+  static int     connection_table_size();
   static uint8_t scid_len();
 
   bool disable_http_0_9() const;
@@ -111,33 +111,33 @@ private:
   shared_SSL_CTX _client_ssl_ctx = nullptr;
 
   // Transport Parameters
-  uint32_t _no_activity_timeout_in    = 0;
-  uint32_t _no_activity_timeout_out   = 0;
-  const char *_preferred_address_ipv4 = nullptr;
-  const char *_preferred_address_ipv6 = nullptr;
-  IpEndpoint _preferred_endpoint_ipv4;
-  IpEndpoint _preferred_endpoint_ipv6;
-  uint32_t _initial_max_data_in                     = 0;
-  uint32_t _initial_max_data_out                    = 0;
-  uint32_t _initial_max_stream_data_bidi_local_in   = 0;
-  uint32_t _initial_max_stream_data_bidi_local_out  = 0;
-  uint32_t _initial_max_stream_data_bidi_remote_in  = 0;
-  uint32_t _initial_max_stream_data_bidi_remote_out = 0;
-  uint32_t _initial_max_stream_data_uni_in          = 0;
-  uint32_t _initial_max_stream_data_uni_out         = 0;
-  uint32_t _initial_max_streams_bidi_in             = 0;
-  uint32_t _initial_max_streams_bidi_out            = 0;
-  uint32_t _initial_max_streams_uni_in              = 0;
-  uint32_t _initial_max_streams_uni_out             = 0;
-  uint32_t _ack_delay_exponent_in                   = 0;
-  uint32_t _ack_delay_exponent_out                  = 0;
-  uint32_t _max_ack_delay_in                        = 0;
-  uint32_t _max_ack_delay_out                       = 0;
-  uint32_t _active_cid_limit_in                     = 0;
-  uint32_t _active_cid_limit_out                    = 0;
-  uint32_t _disable_active_migration                = 0;
-  uint32_t _max_recv_udp_payload_size_in            = 0;
-  uint32_t _max_recv_udp_payload_size_out           = 0;
+  uint32_t    _no_activity_timeout_in  = 0;
+  uint32_t    _no_activity_timeout_out = 0;
+  const char *_preferred_address_ipv4  = nullptr;
+  const char *_preferred_address_ipv6  = nullptr;
+  IpEndpoint  _preferred_endpoint_ipv4;
+  IpEndpoint  _preferred_endpoint_ipv6;
+  uint32_t    _initial_max_data_in                     = 0;
+  uint32_t    _initial_max_data_out                    = 0;
+  uint32_t    _initial_max_stream_data_bidi_local_in   = 0;
+  uint32_t    _initial_max_stream_data_bidi_local_out  = 0;
+  uint32_t    _initial_max_stream_data_bidi_remote_in  = 0;
+  uint32_t    _initial_max_stream_data_bidi_remote_out = 0;
+  uint32_t    _initial_max_stream_data_uni_in          = 0;
+  uint32_t    _initial_max_stream_data_uni_out         = 0;
+  uint32_t    _initial_max_streams_bidi_in             = 0;
+  uint32_t    _initial_max_streams_bidi_out            = 0;
+  uint32_t    _initial_max_streams_uni_in              = 0;
+  uint32_t    _initial_max_streams_uni_out             = 0;
+  uint32_t    _ack_delay_exponent_in                   = 0;
+  uint32_t    _ack_delay_exponent_out                  = 0;
+  uint32_t    _max_ack_delay_in                        = 0;
+  uint32_t    _max_ack_delay_out                       = 0;
+  uint32_t    _active_cid_limit_in                     = 0;
+  uint32_t    _active_cid_limit_out                    = 0;
+  uint32_t    _disable_active_migration                = 0;
+  uint32_t    _max_recv_udp_payload_size_in            = 0;
+  uint32_t    _max_recv_udp_payload_size_out           = 0;
 
   uint32_t _max_send_udp_payload_size_in  = 0;
   uint32_t _max_send_udp_payload_size_out = 0;
@@ -150,10 +150,10 @@ private:
 class QUICConfig
 {
 public:
-  static void startup();
-  static void reconfigure();
+  static void              startup();
+  static void              reconfigure();
   static QUICConfigParams *acquire();
-  static void release(QUICConfigParams *params);
+  static void              release(QUICConfigParams *params);
 
   using scoped_config = ConfigProcessor::scoped_config<QUICConfig, QUICConfigParams>;
 

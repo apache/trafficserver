@@ -53,6 +53,12 @@
   REC_EstablishStaticConfigByte(_ix, _n);      \
   REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
 
+namespace
+{
+DbgCtl dbg_ctl_http_config{"http_config"};
+
+} // end anonymous namespace
+
 class HttpConfigCont : public Continuation
 {
 public:
@@ -62,7 +68,7 @@ public:
 
 /// Data item for enumerated type config value.
 template <typename T> struct ConfigEnumPair {
-  T _value;
+  T           _value;
   const char *_key;
 };
 
@@ -74,7 +80,7 @@ template <typename T, unsigned N>
 static bool
 http_config_enum_search(std::string_view key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
-  Debug("http_config", "enum element %.*s", static_cast<int>(key.size()), key.data());
+  Dbg(dbg_ctl_http_config, "enum element %.*s", static_cast<int>(key.size()), key.data());
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
     if (key.compare(list[i]._key) == 0) {
@@ -124,9 +130,9 @@ HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
   mask = 0;
   // Parse through and build up mask
   std::string_view key_list(key);
-  size_t start  = 0;
-  size_t offset = 0;
-  Debug("http_config", "enum mask value %s", key);
+  size_t           start  = 0;
+  size_t           offset = 0;
+  Dbg(dbg_ctl_http_config, "enum mask value %s", key);
   do {
     offset = key_list.find(',', start);
     if (offset == std::string_view::npos) {
@@ -170,11 +176,11 @@ static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolSt
   {TS_SERVER_SESSION_SHARING_POOL_GLOBAL_LOCKED, "global_locked"},
 };
 
-int HttpConfig::m_id = 0;
+int              HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
 
-static int http_config_changes          = 1;
-static HttpConfigCont *http_config_cont = nullptr;
+static int             http_config_changes = 1;
+static HttpConfigCont *http_config_cont    = nullptr;
 
 HttpConfigCont::HttpConfigCont() : Continuation(new_ProxyMutex())
 {
@@ -208,8 +214,8 @@ http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 static int
 http_server_session_sharing_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
-  bool valid_p        = true;
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+  bool              valid_p = true;
+  HttpConfigParams *c       = static_cast<HttpConfigParams *>(cookie);
 
   if (0 == strcasecmp("proxy.config.http.server_session_sharing.match", name)) {
     MgmtByte &match = c->oride.server_session_sharing_match;
@@ -235,13 +241,13 @@ http_server_session_sharing_cb(const char *name, RecDataT dtype, RecData data, v
 static int
 http_insert_forwarded_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
-  bool valid_p        = false;
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+  bool              valid_p = false;
+  HttpConfigParams *c       = static_cast<HttpConfigParams *>(cookie);
 
   if (0 == strcasecmp("proxy.config.http.insert_forwarded", name)) {
     if (RECD_STRING == dtype) {
       swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(data.rec_string), error);
+      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(std::string_view(data.rec_string), error);
       if (!error.size()) {
         c->oride.insert_forwarded = bs;
         valid_p                   = true;
@@ -538,21 +544,63 @@ register_stat_callbacks()
     Metrics::Counter::createPtr("proxy.process.http.user_agent_response_header_total_size");
   http_rsb.websocket_current_active_client_connections =
     Metrics::Gauge::createPtr("proxy.process.http.websocket.current_active_client_connections");
+
+  Metrics::Derived::derive({
+    // Total bytes of client request body + headers
+    {"proxy.process.http.user_agent_total_request_bytes",
+     {http_rsb.user_agent_request_document_total_size, http_rsb.user_agent_request_header_total_size}                                           },
+    // Total bytes of client response body + headers
+    {"proxy.process.http.user_agent_total_response_bytes",
+     {http_rsb.user_agent_response_document_total_size, http_rsb.user_agent_response_header_total_size}                                         },
+    // Total bytes of origin server request body + headers
+    {"proxy.process.http.origin_server_total_request_bytes",
+     {http_rsb.origin_server_request_document_total_size, http_rsb.origin_server_request_header_total_size}                                     },
+    // Total bytes of origin server response body + headers
+    {"proxy.process.http.origin_server_total_response_bytes",
+     {http_rsb.origin_server_response_document_total_size, http_rsb.origin_server_response_header_total_size}                                   },
+    // Total bytes of client request and response (total traffic to and from clients)
+    {"proxy.process.user_agent_total_bytes",
+     {"proxy.process.http.user_agent_total_request_bytes", "proxy.process.http.user_agent_total_response_bytes"}                                },
+    // Total bytes of origin/parent request and response
+    {"proxy.process.origin_server_total_bytes",
+     {"proxy.process.http.origin_server_total_request_bytes", "proxy.process.http.origin_server_total_response_bytes",
+      http_rsb.parent_proxy_request_total_bytes, http_rsb.parent_proxy_response_total_bytes}                                                    },
+    // Total requests which are cache hits
+    {"proxy.process.cache_total_hits",
+     {http_rsb.cache_hit_fresh, http_rsb.cache_hit_reval, http_rsb.cache_hit_ims, http_rsb.cache_hit_stale_served}                              },
+    // Total requests which are cache misses
+    {"proxy.process.cache_total_misses",
+     {http_rsb.cache_miss_cold, http_rsb.cache_miss_changed, http_rsb.cache_miss_client_no_cache, http_rsb.cache_miss_ims,
+      http_rsb.cache_miss_uncacheable}                                                                                                          },
+    // Total of all server connections (sum of origins and parent connections)
+    {"proxy.process.current_server_connections",              {http_rsb.current_server_connections, http_rsb.current_parent_proxy_connections}  },
+    // Total requests, both hits and misses (this is slightly superfluous, but assures correct percentage calculations)
+    {"proxy.process.cache_total_requests",                    {"proxy.process.cache_total_hits", "proxy.process.cache_total_misses"}            },
+    // Total cache requests bytes which are cache hits
+    {"proxy.process.cache_total_hits_bytes",
+     {http_rsb.tcp_hit_user_agent_bytes, http_rsb.tcp_refresh_hit_user_agent_bytes, http_rsb.tcp_ims_hit_user_agent_bytes}                      },
+    // Total cache requests bytes which are cache misses
+    {"proxy.process.cache_total_misses_bytes",
+     {http_rsb.tcp_miss_user_agent_bytes, http_rsb.tcp_expired_miss_user_agent_bytes, http_rsb.tcp_refresh_miss_user_agent_bytes,
+      http_rsb.tcp_ims_miss_user_agent_bytes}                                                                                                   },
+    // Total request bytes, both hits and misses
+    {"proxy.process.cache_total_bytes",                       {"proxy.process.cache_total_hits_bytes", "proxy.process.cache_total_misses_bytes"}}
+  });
 }
 
 static bool
 set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
 {
-  bool ret = false;
+  bool             ret = false;
   HttpStatusBitset set;
   // values from proxy.config.http.negative_caching_list
   if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
     // parse the list of status codes
     swoc::TextView status_list(data.rec_string, strlen(data.rec_string));
-    auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
+    auto           is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
     while (!status_list.ltrim_if(is_sep).empty()) {
       swoc::TextView span, token{status_list.take_prefix_if(is_sep)};
-      auto n = swoc::svtoi(token, &span);
+      auto           n = swoc::svtoi(token, &span);
       if (span.size() != token.size()) {
         Error("Invalid status code '%.*s' for negative caching: not a number", static_cast<int>(token.size()), token.data());
       } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {
@@ -663,7 +711,7 @@ ConfigDuration HttpDownServerCacheTimeVar{HttpConfig::m_master.oride.down_server
 // without having to export the class definition. Again, the compiler doesn't allow doing this
 // in one line.
 extern MgmtConverter const &HttpDownServerCacheTimeConv;
-MgmtConverter const &HttpDownServerCacheTimeConv = HttpDownServerCacheTimeVar.Conversions;
+MgmtConverter const        &HttpDownServerCacheTimeConv = HttpDownServerCacheTimeVar.Conversions;
 
 ////////////////////////////////////////////////////////////////
 //
@@ -753,7 +801,7 @@ HttpConfig::startup()
 
     if (REC_ERR_OKAY == RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))) {
       swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(str), error);
+      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(std::string_view(str), error);
       if (!error.size()) {
         c.oride.insert_forwarded = bs;
       } else {
@@ -1298,8 +1346,8 @@ HttpConfig::parse_ports_list(char *ports_string)
     ports_list->next = nullptr;
   } else {
     HttpConfigPortRange *pr, *prev;
-    char *start;
-    char *end;
+    char                *start;
+    char                *end;
 
     pr   = nullptr;
     prev = nullptr;
@@ -1371,26 +1419,26 @@ RedirectEnabled::ActionMap *
 HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &self_action)
 {
   using RedirectEnabled::Action;
-  using RedirectEnabled::AddressClass;
   using RedirectEnabled::action_map;
   using RedirectEnabled::address_class_map;
+  using RedirectEnabled::AddressClass;
 
   if (nullptr == input_string) {
     Error("parse_redirect_actions: The configuration value is empty.");
     return nullptr;
   }
-  Tokenizer configTokens(", ");
-  int n_rules = configTokens.Initialize(input_string);
+  Tokenizer                      configTokens(", ");
+  int                            n_rules = configTokens.Initialize(input_string);
   std::map<AddressClass, Action> configMapping;
   for (int i = 0; i < n_rules; i++) {
     const char *rule = configTokens[i];
-    Tokenizer ruleTokens(":");
-    int n_mapping = ruleTokens.Initialize(rule);
+    Tokenizer   ruleTokens(":");
+    int         n_mapping = ruleTokens.Initialize(rule);
     if (2 != n_mapping) {
       Error("parse_redirect_actions: Individual rules must be an address class and an action separated by a colon (:)");
       return nullptr;
     }
-    std::string c_input(ruleTokens[0]), a_input(ruleTokens[1]);
+    std::string  c_input(ruleTokens[0]), a_input(ruleTokens[1]);
     AddressClass c =
       address_class_map.find(ruleTokens[0]) != address_class_map.end() ? address_class_map[ruleTokens[0]] : AddressClass::INVALID;
     Action a = action_map.find(ruleTokens[1]) != action_map.end() ? action_map[ruleTokens[1]] : Action::INVALID;
@@ -1410,7 +1458,7 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
     configMapping[AddressClass::DEFAULT] = Action::RETURN;
   }
 
-  auto *ret     = new RedirectEnabled::ActionMap;
+  auto  *ret    = new RedirectEnabled::ActionMap;
   Action action = Action::INVALID;
 
   // PRIVATE

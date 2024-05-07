@@ -34,7 +34,7 @@ using swoc::TextView;
 TEST_CASE("RecHttp", "[librecords][RecHttp]")
 {
   std::vector<HttpProxyPort> ports;
-  CatchDiags *cdiag = static_cast<CatchDiags *>(diags());
+  CatchDiags                *cdiag = static_cast<CatchDiags *>(diags());
   cdiag->messages.clear();
 
   SECTION("base")
@@ -100,11 +100,11 @@ TEST_CASE("RecHttp", "[librecords][RecHttp]")
 }
 
 struct ConvertAlpnToWireFormatTestCase {
-  std::string description;
-  std::string alpn_input;
+  std::string   description;
+  std::string   alpn_input;
   unsigned char expected_alpn_wire_format[MAX_ALPN_STRING] = {0};
-  int expected_alpn_wire_format_len                        = MAX_ALPN_STRING;
-  bool expected_return                                     = true;
+  int           expected_alpn_wire_format_len              = MAX_ALPN_STRING;
+  bool          expected_return                            = true;
 };
 
 // clang-format off
@@ -218,8 +218,8 @@ TEST_CASE("convert_alpn_to_wire_format", "[librecords][RecHttp]")
     SECTION(test_case.description)
     {
       unsigned char alpn_wire_format[MAX_ALPN_STRING] = {0xab};
-      int alpn_wire_format_len                        = MAX_ALPN_STRING;
-      auto const result = convert_alpn_to_wire_format(test_case.alpn_input, alpn_wire_format, alpn_wire_format_len);
+      int           alpn_wire_format_len              = MAX_ALPN_STRING;
+      auto const    result = convert_alpn_to_wire_format(test_case.alpn_input, alpn_wire_format, alpn_wire_format_len);
       REQUIRE(result == test_case.expected_return);
       REQUIRE(alpn_wire_format_len == test_case.expected_alpn_wire_format_len);
       REQUIRE(memcmp(alpn_wire_format, test_case.expected_alpn_wire_format, test_case.expected_alpn_wire_format_len) == 0);

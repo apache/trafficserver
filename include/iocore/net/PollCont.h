@@ -30,14 +30,14 @@ class NetHandler;
 struct PollDescriptor;
 
 struct PollCont : public Continuation {
-  NetHandler *net_handler;
+  NetHandler     *net_handler;
   PollDescriptor *pollDescriptor;
   PollDescriptor *nextPollDescriptor;
-  int poll_timeout;
+  int             poll_timeout;
 
   PollCont(Ptr<ProxyMutex> &m, int pt = EThread::default_wait_interval_ms);
   PollCont(Ptr<ProxyMutex> &m, NetHandler *nh, int pt = EThread::default_wait_interval_ms);
   ~PollCont() override;
-  int pollEvent(int, Event *);
+  int  pollEvent(int, Event *);
   void do_poll(ink_hrtime timeout);
 };

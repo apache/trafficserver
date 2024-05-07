@@ -35,13 +35,13 @@ class EThread;
 struct PriorityEventQueue {
   Que(Event, link) after[N_PQ_LIST];
   ink_hrtime last_check_time;
-  uint32_t last_check_buckets;
+  uint32_t   last_check_buckets;
 
   void
   enqueue(Event *e, ink_hrtime now)
   {
     ink_hrtime t = e->timeout_at - now;
-    int i        = 0;
+    int        i = 0;
     // equivalent but faster
     if (t <= PQ_BUCKET_TIME(3)) {
       if (t <= PQ_BUCKET_TIME(1)) {

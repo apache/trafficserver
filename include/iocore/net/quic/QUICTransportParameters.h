@@ -87,8 +87,8 @@ public:
   bool is_valid() const;
 
   const uint8_t *getAsBytes(QUICTransportParameterId id, uint16_t &len) const;
-  uint64_t getAsUInt(QUICTransportParameterId id) const;
-  bool contains(QUICTransportParameterId id) const;
+  uint64_t       getAsUInt(QUICTransportParameterId id) const;
+  bool           contains(QUICTransportParameterId id) const;
 
   void set(QUICTransportParameterId id, const uint8_t *value, uint16_t value_len);
   void set(QUICTransportParameterId id, uint64_t value);
@@ -102,7 +102,7 @@ protected:
     Value(const uint8_t *data, uint16_t len);
     ~Value();
     const uint8_t *data() const;
-    uint16_t len() const;
+    uint16_t       len() const;
 
   private:
     uint8_t *_data = nullptr;
@@ -114,8 +114,8 @@ protected:
   bool _valid = false;
 
   virtual std::ptrdiff_t _parameters_offset(const uint8_t *buf) const = 0;
-  virtual int _validate_parameters(QUICVersion version) const;
-  void _print() const;
+  virtual int            _validate_parameters(QUICVersion version) const;
+  void                   _print() const;
 
   std::map<QUICTransportParameterId, Value *> _parameters;
 };
@@ -128,7 +128,7 @@ public:
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
-  int _validate_parameters(QUICVersion version) const override;
+  int            _validate_parameters(QUICVersion version) const override;
 
 private:
 };
@@ -141,5 +141,5 @@ public:
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
-  int _validate_parameters(QUICVersion version) const override;
+  int            _validate_parameters(QUICVersion version) const override;
 };

@@ -91,7 +91,7 @@ private:
   uint32_t raw_flags = 0;
 };
 
-void set_cont_flags(const ContFlags &flags);
-void set_cont_flag(ContFlags::flags flag_bit, bool value);
+void      set_cont_flags(const ContFlags &flags);
+void      set_cont_flag(ContFlags::flags flag_bit, bool value);
 ContFlags get_cont_flags();
-bool get_cont_flag(ContFlags::flags flag_bit);
+bool      get_cont_flag(ContFlags::flags flag_bit);

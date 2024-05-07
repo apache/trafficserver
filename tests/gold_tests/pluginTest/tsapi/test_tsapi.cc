@@ -51,7 +51,7 @@ std::fstream logFile;
 
 TSCont tCont, gCont;
 
-std::uintptr_t remap_count;
+std::uintptr_t  remap_count;
 std::bitset<64> remap_mask;
 
 void
@@ -95,7 +95,7 @@ testsForReqHdr(char const *desc, TSMBuffer hbuf, TSMLoc hloc)
   } else {
     ts::PostScript ps([=]() -> void { TSHandleMLocRelease(hbuf, TS_NULL_MLOC, url_loc); });
 
-    int scheme_len;
+    int         scheme_len;
     char const *scheme_data = TSUrlSchemeGet(hbuf, url_loc, &scheme_len);
     if (!scheme_data || !scheme_len) {
       logFile << "failed to get URL scheme" << std::endl;
@@ -118,7 +118,7 @@ void
 testsForEffectiveUrlStringGet(TSHttpTxn txn)
 {
   logFile << "TSHttpTxnEffectiveUrlStringGet():  ";
-  int urlLength;
+  int   urlLength;
   char *urlStr = TSHttpTxnEffectiveUrlStringGet(txn, &urlLength);
   if (!urlStr) {
     logFile << "URL null" << std::endl;
@@ -140,7 +140,7 @@ testsForReadReqHdrHook(TSHttpTxn txn)
 
   {
     TSMBuffer hbuf;
-    TSMLoc hloc;
+    TSMLoc    hloc;
 
     if (TSHttpTxnClientReqGet(txn, &hbuf, &hloc) != TS_SUCCESS) {
       logFile << "failed to get client request" << std::endl;
@@ -159,7 +159,7 @@ testsForSendReqHdrHook(TSHttpTxn txn)
 
   {
     TSMBuffer hbuf;
-    TSMLoc hloc;
+    TSMLoc    hloc;
 
     if (TSHttpTxnServerReqGet(txn, &hbuf, &hloc) != TS_SUCCESS) {
       logFile << "failed to get server request" << std::endl;

@@ -42,23 +42,23 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 }
 
 struct secure_link_info {
-  char *secret;
+  char   *secret;
   uint8_t strict;
 };
 
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  TSRemapStatus status{TSREMAP_ERROR};
-  int i, len;
-  time_t t, e;
-  EVP_MD_CTX *ctx;
+  TSRemapStatus       status{TSREMAP_ERROR};
+  int                 i, len;
+  time_t              t, e;
+  EVP_MD_CTX         *ctx;
   struct sockaddr_in *in;
-  const char *qh, *ph, *ip;
-  unsigned char md[MD5_DIGEST_LENGTH];
-  secure_link_info *sli = static_cast<secure_link_info *>(ih);
-  char *token = nullptr, *tokenptr = nullptr, *expire = nullptr, *expireptr = nullptr, *path = nullptr;
-  char *s, *ptr, *saveptr = nullptr, *val, hash[32] = "";
+  const char         *qh, *ph, *ip;
+  unsigned char       md[MD5_DIGEST_LENGTH];
+  secure_link_info   *sli   = static_cast<secure_link_info *>(ih);
+  char               *token = nullptr, *tokenptr = nullptr, *expire = nullptr, *expireptr = nullptr, *path = nullptr;
+  char               *s, *ptr, *saveptr = nullptr, *val, hash[32] = "";
 
   in = (struct sockaddr_in *)TSHttpTxnClientAddrGet(rh);
   ip = inet_ntoa(in->sin_addr);
@@ -168,7 +168,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 TSReturnCode
 TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_size)
 {
-  int i;
+  int               i;
   secure_link_info *sli;
 
   // squash unused variable warnings ...

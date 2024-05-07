@@ -67,10 +67,10 @@ check_names(X509 *cert)
         break;
       }
 
-      X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
-      ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
-      char *subj_name    = strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), ASN1_STRING_length(cn));
-      retval             = check_name(subj_name);
+      X509_NAME_ENTRY *e         = X509_NAME_get_entry(subject, pos);
+      ASN1_STRING     *cn        = X509_NAME_ENTRY_get_data(e);
+      char            *subj_name = strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), ASN1_STRING_length(cn));
+      retval                     = check_name(subj_name);
       free(subj_name);
     }
   }
@@ -104,8 +104,8 @@ CB_client_verify(TSCont cont, TSEvent event, void *edata)
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
   // Is this a good name or not?
-  TSEvent reenable_event = TS_EVENT_CONTINUE;
-  X509_STORE_CTX *ctx    = reinterpret_cast<X509_STORE_CTX *>(TSVConnSslVerifyCTXGet(ssl_vc));
+  TSEvent         reenable_event = TS_EVENT_CONTINUE;
+  X509_STORE_CTX *ctx            = reinterpret_cast<X509_STORE_CTX *>(TSVConnSslVerifyCTXGet(ssl_vc));
   if (ctx) {
     STACK_OF(X509) *chain = X509_STORE_CTX_get1_chain(ctx);
     // X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
@@ -134,7 +134,7 @@ CB_client_verify(TSCont cont, TSEvent event, void *edata)
 void
 parse_callbacks(int argc, const char *argv[], int &count)
 {
-  int i = 0;
+  int         i = 0;
   const char *ptr;
   for (i = 0; i < argc; i++) {
     if (argv[i][0] == '-') {
@@ -160,7 +160,7 @@ void
 setup_callbacks(int count)
 {
   TSCont cb = nullptr;
-  int i;
+  int    i;
 
   Dbg(dbg_ctl, "Setup callbacks count=%d", count);
   for (i = 0; i < count; i++) {

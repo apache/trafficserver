@@ -217,10 +217,10 @@ Lnext:
 void
 CacheTestSM::fill_buffer()
 {
-  int64_t avail  = buffer->write_avail();
-  CacheKey k     = key;
-  k.b[1]        += content_salt;
-  int64_t sk     = static_cast<int64_t>(sizeof(key));
+  int64_t  avail  = buffer->write_avail();
+  CacheKey k      = key;
+  k.b[1]         += content_salt;
+  int64_t sk      = static_cast<int64_t>(sizeof(key));
   while (avail > 0) {
     int64_t l = avail;
     if (l > sk) {
@@ -244,10 +244,10 @@ CacheTestSM::fill_buffer()
 int
 CacheTestSM::check_buffer()
 {
-  int64_t avail  = buffer_reader->read_avail();
-  CacheKey k     = key;
-  k.b[1]        += content_salt;
-  char b[sizeof(key)];
+  int64_t  avail  = buffer_reader->read_avail();
+  CacheKey k      = key;
+  k.b[1]         += content_salt;
+  char    b[sizeof(key)];
   int64_t sk  = static_cast<int64_t>(sizeof(key));
   int64_t pos = cvio->ndone - buffer_reader->read_avail();
   while (avail > 0) {
@@ -347,8 +347,8 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
     t, replace_test,
     { cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_OVERWRITE_SYNC); } int open_write_callout()
       override {
-        CacheTestHeader *h = nullptr;
-        int hlen           = 0;
+        CacheTestHeader *h    = nullptr;
+        int              hlen = 0;
         if (cache_vc->get_header((void **)&h, &hlen) < 0)
           return -1;
         if (h->serial != 10)
@@ -366,8 +366,8 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   CACHE_SM(
     t, replace_read_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() override {
-      CacheTestHeader *h = nullptr;
-      int hlen           = 0;
+      CacheTestHeader *h    = nullptr;
+      int              hlen = 0;
       if (cache_vc->get_header((void **)&h, &hlen) < 0)
         return -1;
       if (h->serial != 11)
@@ -427,16 +427,16 @@ force_link_CacheTest()
 
 REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, int *pstatus)
 {
-  static int const MAX_VOLS           = 26; // maximum values used in any test.
-  static uint64_t DEFAULT_SKIP        = 8192;
-  static uint64_t DEFAULT_STRIPE_SIZE = 1024ULL * 1024 * 1024 * 911; // 911G
-  CacheDisk disk;                                                    // Only need one because it's just checked for failure.
-  CacheHostRecord hr1, hr2;
-  Stripe *sample;
+  static int const MAX_VOLS            = 26; // maximum values used in any test.
+  static uint64_t  DEFAULT_SKIP        = 8192;
+  static uint64_t  DEFAULT_STRIPE_SIZE = 1024ULL * 1024 * 1024 * 911; // 911G
+  CacheDisk        disk;                                              // Only need one because it's just checked for failure.
+  CacheHostRecord  hr1, hr2;
+  Stripe          *sample;
   static int const sample_idx = 16;
-  Stripe stripes[MAX_VOLS];
-  Stripe *stripe_ptrs[MAX_VOLS]; // array of pointers.
-  char buff[2048];
+  Stripe           stripes[MAX_VOLS];
+  Stripe          *stripe_ptrs[MAX_VOLS]; // array of pointers.
+  char             buff[2048];
 
   // Only run at the highest levels.
   if (REGRESSION_TEST_EXTENDED > level) {
@@ -499,7 +499,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   hr2.stripes = nullptr;
 }
 
-static double zipf_alpha        = 1.2;
+static double  zipf_alpha       = 1.2;
 static int64_t zipf_bucket_size = 1;
 
 #define ZIPF_SIZE (1 << 20)
@@ -548,9 +548,9 @@ get_zipf(double v)
 static bool
 test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cache_size)
 {
-  bool pass = true;
-  CacheKey key;
-  Stripe *stripe = theCache->key_to_stripe(&key, "example.com", sizeof("example.com") - 1);
+  bool                           pass = true;
+  CacheKey                       key;
+  Stripe                        *stripe = theCache->key_to_stripe(&key, "example.com", sizeof("example.com") - 1);
   std::vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, stripe);
@@ -558,7 +558,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   for (int l = 0; l < 10; l++) {
     for (int i = 0; i < 200; i++) {
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
-      CryptoHash hash;
+      CryptoHash    hash;
 
       d->alloc(BUFFER_SIZE_INDEX_16K);
       data.push_back(make_ptr(d));
@@ -568,7 +568,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       // More hits for the first 10.
       for (int j = 0; j <= i && j < 10; j++) {
         Ptr<IOBufferData> data;
-        CryptoHash hash;
+        CryptoHash        hash;
 
         hash.u64[0] = (static_cast<uint64_t>(j) << 32) + j;
         hash.u64[1] = (static_cast<uint64_t>(j) << 32) + j;
@@ -578,7 +578,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   }
 
   for (int i = 0; i < 10; i++) {
-    CryptoHash hash;
+    CryptoHash        hash;
     Ptr<IOBufferData> data;
 
     hash.u64[0] = (static_cast<uint64_t>(i) << 32) + i;

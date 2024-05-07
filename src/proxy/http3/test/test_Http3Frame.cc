@@ -77,21 +77,21 @@ TEST_CASE("Store DATA Frame", "[http3]")
   SECTION("Normal")
   {
     uint8_t buf[32] = {0};
-    size_t len;
+    size_t  len;
     uint8_t expected1[] = {
       0x00,                   // Type
       0x04,                   // Length
       0x11, 0x22, 0x33, 0x44, // Payload
     };
 
-    uint8_t raw1[]          = "\x11\x22\x33\x44";
+    uint8_t        raw1[]   = "\x11\x22\x33\x44";
     ats_unique_buf payload1 = ats_unique_malloc(4);
     memcpy(payload1.get(), raw1, 4);
 
     Http3DataFrame data_frame(std::move(payload1), 4);
     CHECK(data_frame.length() == 4);
 
-    auto ibb = data_frame.to_io_buffer_block();
+    auto           ibb = data_frame.to_io_buffer_block();
     IOBufferReader reader;
     reader.block = ibb.get();
     len          = reader.read_avail();
@@ -106,21 +106,21 @@ TEST_CASE("Store HEADERS Frame", "[http3]")
   SECTION("Normal")
   {
     uint8_t buf[32] = {0};
-    size_t len;
+    size_t  len;
     uint8_t expected1[] = {
       0x01,                   // Type
       0x04,                   // Length
       0x11, 0x22, 0x33, 0x44, // Payload
     };
 
-    uint8_t raw1[]              = "\x11\x22\x33\x44";
+    uint8_t        raw1[]       = "\x11\x22\x33\x44";
     ats_unique_buf header_block = ats_unique_malloc(4);
     memcpy(header_block.get(), raw1, 4);
 
     Http3HeadersFrame hdrs_frame(std::move(header_block), 4);
     CHECK(hdrs_frame.length() == 4);
 
-    auto ibb = hdrs_frame.to_io_buffer_block();
+    auto           ibb = hdrs_frame.to_io_buffer_block();
     IOBufferReader reader;
     reader.block = ibb.get();
     len          = reader.read_avail();
@@ -176,9 +176,9 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
     settings_frame.set(Http3SettingsId::MAX_FIELD_SECTION_SIZE, 0x0400);
     settings_frame.set(Http3SettingsId::NUM_PLACEHOLDERS, 0x0f);
 
-    uint8_t buf[32] = {0};
-    size_t len;
-    auto ibb = settings_frame.to_io_buffer_block();
+    uint8_t        buf[32] = {0};
+    size_t         len;
+    auto           ibb = settings_frame.to_io_buffer_block();
     IOBufferReader reader;
     reader.block = ibb.get();
     len          = reader.read_avail();
@@ -201,9 +201,9 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
     Http3SettingsFrame settings_frame;
     settings_frame.set(Http3SettingsId::MAX_FIELD_SECTION_SIZE, 0x0400);
 
-    uint8_t buf[32] = {0};
-    size_t len;
-    auto ibb = settings_frame.to_io_buffer_block();
+    uint8_t        buf[32] = {0};
+    size_t         len;
+    auto           ibb = settings_frame.to_io_buffer_block();
     IOBufferReader reader;
     reader.block = ibb.get();
     len          = reader.read_avail();
@@ -281,9 +281,9 @@ TEST_CASE("SETTINGS frame handler", "[http3]")
     0x00,       // Value
   };
 
-  Http3SettingsHandler handler     = Http3SettingsHandler(nullptr);
-  Http3SettingsFrame invalid_frame = Http3SettingsFrame(input, sizeof(input), 1);
-  Http3ErrorUPtr error             = Http3ErrorUPtr(nullptr);
+  Http3SettingsHandler handler       = Http3SettingsHandler(nullptr);
+  Http3SettingsFrame   invalid_frame = Http3SettingsFrame(input, sizeof(input), 1);
+  Http3ErrorUPtr       error         = Http3ErrorUPtr(nullptr);
 
   CHECK(invalid_frame.is_valid() == false);
 

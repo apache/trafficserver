@@ -27,23 +27,23 @@
 #include <openssl/ssl.h>
 
 #include "tscore/ink_hrtime.h"
-#include "../../../src/iocore/net/P_SSLUtils.h"
+#include "iocore/net/SSLTypes.h"
 
 class TLSBasicSupport
 {
 public:
   virtual ~TLSBasicSupport() = default;
 
-  static void initialize();
+  static void             initialize();
   static TLSBasicSupport *getInstance(SSL *ssl);
-  static void bind(SSL *ssl, TLSBasicSupport *srs);
-  static void unbind(SSL *ssl);
+  static void             bind(SSL *ssl, TLSBasicSupport *srs);
+  static void             unbind(SSL *ssl);
 
   const char *get_tls_protocol_name() const;
   const char *get_tls_cipher_suite() const;
   const char *get_tls_curve() const;
-  ink_hrtime get_tls_handshake_begin_time() const;
-  ink_hrtime get_tls_handshake_end_time() const;
+  ink_hrtime  get_tls_handshake_begin_time() const;
+  ink_hrtime  get_tls_handshake_end_time() const;
 
   void set_valid_tls_version_min(int min);
   void set_valid_tls_version_max(int max);
@@ -52,8 +52,8 @@ public:
 protected:
   void clear();
 
-  virtual SSL *_get_ssl_object() const        = 0;
-  virtual ssl_curve_id _get_tls_curve() const = 0;
+  virtual SSL         *_get_ssl_object() const = 0;
+  virtual ssl_curve_id _get_tls_curve() const  = 0;
 
   void _record_tls_handshake_begin_time();
   void _record_tls_handshake_end_time();

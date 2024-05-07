@@ -185,14 +185,14 @@ ConfigCommand::config_describe()
 void
 ConfigCommand::config_defaults()
 {
-  const bool configs{true};
+  const bool                   configs{true};
   shared::rpc::JSONRPCResponse response = invoke_rpc(GetAllRecordsRequest{configs});
   _printer->write_output(response);
 }
 void
 ConfigCommand::config_diff()
 {
-  GetAllRecordsRequest request{true};
+  GetAllRecordsRequest         request{true};
   shared::rpc::JSONRPCResponse response = invoke_rpc(request);
   _printer->write_output(response);
 }
@@ -200,7 +200,7 @@ ConfigCommand::config_diff()
 void
 ConfigCommand::config_status()
 {
-  ConfigStatusRequest request;
+  ConfigStatusRequest          request;
   shared::rpc::JSONRPCResponse response = invoke_rpc(request);
   _printer->write_output(response);
 }
@@ -208,7 +208,7 @@ ConfigCommand::config_status()
 void
 ConfigCommand::config_set()
 {
-  auto const &data = get_parsed_arguments()->get(SET_STR);
+  auto const            &data = get_parsed_arguments()->get(SET_STR);
   ConfigSetRecordRequest request{
     {data[0], data[1]}
   };
@@ -279,7 +279,7 @@ MetricCommand::metric_clear()
 void
 MetricCommand::metric_zero()
 {
-  auto records = get_parsed_arguments()->get(ZERO_STR);
+  auto               records = get_parsed_arguments()->get(ZERO_STR);
   ClearMetricRequest request{// names
                              {{std::begin(records), std::end(records)}}};
 
@@ -290,13 +290,13 @@ void
 MetricCommand::metric_monitor()
 {
   ts::ArgumentData const &arg = get_parsed_arguments()->get(MONITOR_STR);
-  std::string err_text;
+  std::string             err_text;
 
   //
   // Note: if any of the string->number fails, the exception will be caught by the invoke function from the ArgParser.
   //
   const int32_t count = std::stoi(get_parsed_arguments()->get("count").value());
-  int32_t query_count{0};
+  int32_t       query_count{0};
   const int32_t interval = std::stoi(get_parsed_arguments()->get("interval").value());
   // default count is 0.
   if (count < 0 || interval <= 0) {
@@ -324,8 +324,8 @@ MetricCommand::metric_monitor()
     _printer->write_output(swoc::bwprint(err_text, "--- metric monitor statistics({}) ---", query_count));
 
     for (auto const &item : _summary) {
-      ctx const &s  = item.second;
-      const int avg = s.sum / query_count;
+      ctx const &s   = item.second;
+      const int  avg = s.sum / query_count;
       _printer->write_output(swoc::bwprint(err_text, "┌ {}\n└─ min/avg/max = {:.5}/{}/{:.5}", item.first, s.min, avg, s.max));
     }
   };
@@ -348,7 +348,7 @@ MetricCommand::metric_monitor()
     }
 
     for (auto &&rec : response.recordList) { // requested metric(s)
-      auto &s         = summary[rec.name];   // We will update it.
+      auto       &s   = summary[rec.name];   // We will update it.
       const float val = std::stof(rec.currentValue);
 
       s.sum += val;
@@ -396,7 +396,7 @@ HostCommand::HostCommand(ts::Arguments *args) : CtrlCommand(args)
 void
 HostCommand::status_get()
 {
-  auto const &data = get_parsed_arguments()->get(STATUS_STR);
+  auto const          &data = get_parsed_arguments()->get(STATUS_STR);
   HostGetStatusRequest request{
     {std::begin(data), std::end(data)}
   };
@@ -409,7 +409,7 @@ HostCommand::status_get()
 void
 HostCommand::status_down()
 {
-  auto hosts = get_parsed_arguments()->get(DOWN_STR);
+  auto                 hosts = get_parsed_arguments()->get(DOWN_STR);
   HostSetStatusRequest request{
     {HostSetStatusRequest::Params::Op::DOWN,
      {std::begin(hosts), std::end(hosts)},
@@ -423,7 +423,7 @@ HostCommand::status_down()
 void
 HostCommand::status_up()
 {
-  auto hosts = get_parsed_arguments()->get(UP_STR);
+  auto                 hosts = get_parsed_arguments()->get(UP_STR);
   HostSetStatusRequest request{
     {HostSetStatusRequest::Params::Op::UP,
      {std::begin(hosts), std::end(hosts)},
@@ -446,7 +446,7 @@ PluginCommand::PluginCommand(ts::Arguments *args) : CtrlCommand(args)
 void
 PluginCommand::plugin_msg()
 {
-  auto msgs = get_parsed_arguments()->get(MSG_STR);
+  auto                              msgs = get_parsed_arguments()->get(MSG_STR);
   BasicPluginMessageRequest::Params params;
   params.tag = msgs[0];
   if (msgs.size() > 1) {
@@ -454,7 +454,7 @@ PluginCommand::plugin_msg()
     params.str = msgs[1];
   }
   BasicPluginMessageRequest request{params};
-  auto response = invoke_rpc(request);
+  auto                      response = invoke_rpc(request);
   _printer->write_output(response);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -503,7 +503,7 @@ DirectRPCCommand::from_file_request()
     // run some basic validation on the passed files, they should
     try {
       std::ifstream file(filename);
-      std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+      std::string   content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
       if (!validate_input(content)) {
         _printer->write_output(
@@ -593,7 +593,7 @@ ServerCommand::server_drain()
   if (get_parsed_arguments()->get(UNDO_STR)) {
     response = invoke_rpc(ServerStopDrainRequest{});
   } else {
-    const bool newConn = get_parsed_arguments()->get(NO_NEW_CONN_STR);
+    const bool              newConn = get_parsed_arguments()->get(NO_NEW_CONN_STR);
     ServerStartDrainRequest request{{newConn}};
     response = invoke_rpc(request);
   }
@@ -616,17 +616,17 @@ StorageCommand::StorageCommand(ts::Arguments *args) : CtrlCommand(args)
 void
 StorageCommand::get_storage_status()
 {
-  auto disks = get_parsed_arguments()->get(STATUS_STR);
+  auto                          disks = get_parsed_arguments()->get(STATUS_STR);
   GetStorageDeviceStatusRequest request{{{std::begin(disks), std::end(disks)}}};
-  auto response = invoke_rpc(request);
+  auto                          response = invoke_rpc(request);
   _printer->write_output(response);
 }
 void
 StorageCommand::set_storage_offline()
 {
-  auto disks = get_parsed_arguments()->get(OFFLINE_STR);
+  auto                           disks = get_parsed_arguments()->get(OFFLINE_STR);
   SetStorageDeviceOfflineRequest request{{{std::begin(disks), std::end(disks)}}};
-  auto response = invoke_rpc(request);
+  auto                           response = invoke_rpc(request);
   _printer->write_output(response);
 }
 //------------------------------------------------------------------------------------------------------------------------------------

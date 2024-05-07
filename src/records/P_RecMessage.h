@@ -37,13 +37,13 @@ void RecMessageRegister();
 //-------------------------------------------------------------------------
 
 RecMessage *RecMessageAlloc(RecMessageT msg_type, int initial_size = 256);
-int RecMessageFree(RecMessage *msg);
+int         RecMessageFree(RecMessage *msg);
 
 RecMessage *RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record);
-int RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record);
-int RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record);
+int         RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record);
+int         RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record);
 
 int RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie);
 
 RecMessage *RecMessageReadFromDisk(const char *fpath);
-int RecMessageWriteToDisk(RecMessage *msg, const char *fpath);
+int         RecMessageWriteToDisk(RecMessage *msg, const char *fpath);

@@ -57,10 +57,10 @@ std::shared_ptr<HostRecord>
 NextHopConsistentHash::chashLookup(const std::shared_ptr<ATSConsistentHash> &ring, uint32_t cur_ring, ParentResult &result,
                                    HttpRequestData &request_info, bool *wrapped, uint64_t sm_id)
 {
-  uint64_t hash_key = 0;
-  ATSHash64Sip24 hash;
-  HostRecord *host_rec        = nullptr;
-  ATSConsistentHashIter *iter = &result.chashIter[cur_ring];
+  uint64_t               hash_key = 0;
+  ATSHash64Sip24         hash;
+  HostRecord            *host_rec = nullptr;
+  ATSConsistentHashIter *iter     = &result.chashIter[cur_ring];
 
   if (result.chash_init[cur_ring] == false) {
     hash_key                    = getHashKey(sm_id, request_info, &hash);
@@ -168,8 +168,8 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
 uint64_t
 NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata, ATSHash64 *h)
 {
-  URL *url                   = nullptr;
-  int len                    = 0;
+  URL        *url            = nullptr;
+  int         len            = 0;
   const char *url_string_ref = nullptr;
 
   switch (hash_url) {
@@ -275,25 +275,25 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
 {
   uint32_t const NO_RING_USE_POST_REMAP = uint32_t(0) - 1;
 
-  HttpSM *sm                    = reinterpret_cast<HttpSM *>(txnp);
-  ParentResult &result          = sm->t_state.parent_result;
-  HttpRequestData &request_info = sm->t_state.request_data;
-  int64_t sm_id                 = sm->sm_id;
-  int64_t retry_time            = sm->t_state.txn_conf->parent_retry_time;
-  time_t _now                   = now;
-  bool firstcall                = false;
-  bool nextHopRetry             = false;
-  bool wrapped                  = false;
-  std::vector<bool> wrap_around(groups, false);
-  uint32_t cur_ring                = 0; // there is a hash ring for each host group
-  uint32_t lookups                 = 0;
-  std::shared_ptr<HostRecord> pRec = nullptr;
-  HostStatus &pStatus              = HostStatus::instance();
-  TSHostStatus host_stat           = TSHostStatus::TS_HOST_STATUS_INIT;
-  HostStatRec *hst                 = nullptr;
-  Machine *machine                 = Machine::instance();
-  std::string_view first_call_host;
-  int first_call_port = 0;
+  HttpSM                     *sm           = reinterpret_cast<HttpSM *>(txnp);
+  ParentResult               &result       = sm->t_state.parent_result;
+  HttpRequestData            &request_info = sm->t_state.request_data;
+  int64_t                     sm_id        = sm->sm_id;
+  int64_t                     retry_time   = sm->t_state.txn_conf->parent_retry_time;
+  time_t                      _now         = now;
+  bool                        firstcall    = false;
+  bool                        nextHopRetry = false;
+  bool                        wrapped      = false;
+  std::vector<bool>           wrap_around(groups, false);
+  uint32_t                    cur_ring  = 0; // there is a hash ring for each host group
+  uint32_t                    lookups   = 0;
+  std::shared_ptr<HostRecord> pRec      = nullptr;
+  HostStatus                 &pStatus   = HostStatus::instance();
+  TSHostStatus                host_stat = TSHostStatus::TS_HOST_STATUS_INIT;
+  HostStatRec                *hst       = nullptr;
+  Machine                    *machine   = Machine::instance();
+  std::string_view            first_call_host;
+  int                         first_call_port = 0;
 
   if (result.line_number == -1 && result.result == PARENT_UNDEFINED) {
     firstcall = true;

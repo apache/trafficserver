@@ -39,7 +39,7 @@
   function which, given a LogAccess object, returns true if
   the log entry is to be tossed out.
   -------------------------------------------------------------------------*/
-class LogFilter : public RefCountObj
+class LogFilter : public RefCountObjInHeap
 {
 public:
   enum Type {
@@ -100,12 +100,12 @@ public:
   static LogFilter *parse(const char *name, Action action, const char *condition);
 
 protected:
-  char *m_name;
+  char     *m_name;
   LogField *m_field;
-  Action m_action; // the action this filter takes
-  Operator m_operator;
-  Type m_type;
-  size_t m_num_values; // the number of comparison values
+  Action    m_action; // the action this filter takes
+  Operator  m_operator;
+  Type      m_type;
+  size_t    m_num_values; // the number of comparison values
 
 public:
   LINK(LogFilter, link); // so we can create a LogFilterList
@@ -145,8 +145,8 @@ private:
 
   // these are used to speed up case insensitive operations
   //
-  char **m_value_uppercase = nullptr; // m_value in all uppercase
-  size_t *m_length         = nullptr; // length of m_value string
+  char  **m_value_uppercase = nullptr; // m_value in all uppercase
+  size_t *m_length          = nullptr; // length of m_value string
 
   void _setValues(size_t n, char **value);
 
@@ -204,7 +204,7 @@ private:
   int64_t *m_value = nullptr; // the array of values
 
   void _setValues(size_t n, int64_t *value);
-  int _convertStringToInt(char *val, int64_t *ival, LogFieldAliasMap *map);
+  int  _convertStringToInt(char *val, int64_t *ival, LogFieldAliasMap *map);
 
   // -- member functions that are not allowed --
   LogFilterInt();
@@ -258,11 +258,11 @@ public:
   ~LogFilterList();
   bool operator==(LogFilterList &);
 
-  void add(LogFilter *filter, bool copy = true);
-  bool toss_this_entry(LogAccess *lad);
-  bool wipe_this_entry(LogAccess *lad);
+  void       add(LogFilter *filter, bool copy = true);
+  bool       toss_this_entry(LogAccess *lad);
+  bool       wipe_this_entry(LogAccess *lad);
   LogFilter *find_by_name(const char *name);
-  void clear();
+  void       clear();
 
   LogFilter *
   first() const
@@ -277,7 +277,7 @@ public:
   }
 
   unsigned count() const;
-  void display(FILE *fd = stdout);
+  void     display(FILE *fd = stdout);
 
   bool
   does_conjunction() const
@@ -416,8 +416,8 @@ findPatternFromParamName(const char *lookup_query_param, const char *pattern)
 static void
 updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos, char *buf_dest)
 {
-  int buf_dest_len = strlen(buf_dest);
-  char buf_dest_to_field[buf_dest_len + 1];
+  int   buf_dest_len = strlen(buf_dest);
+  char  buf_dest_to_field[buf_dest_len + 1];
   char *temp_text = buf_dest_to_field;
   memcpy(temp_text, buf_dest, (pattern_str - buf_dest));
   temp_text             += (pattern_str - buf_dest);
@@ -454,11 +454,11 @@ updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos,
 static void
 wipeField(char **field, char *pattern, const char *uppercase_field)
 {
-  char *buf_dest          = *field;
+  char       *buf_dest    = *field;
   const char *lookup_dest = uppercase_field ? uppercase_field : *field;
 
   if (buf_dest) {
-    char *query_param              = strchr(buf_dest, '?');
+    char       *query_param        = strchr(buf_dest, '?');
     const char *lookup_query_param = strchr(lookup_dest, '?');
     if (!query_param || !lookup_query_param) {
       return;

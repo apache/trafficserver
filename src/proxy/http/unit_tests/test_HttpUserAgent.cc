@@ -37,7 +37,7 @@
 class Http1ClientTestSession final : public Http1ClientSession
 {
 public:
-  int get_transact_count() const override;
+  int  get_transact_count() const override;
   void set_transact_count(int count);
   void set_vc(NetVConnection *new_vc);
 
@@ -65,11 +65,11 @@ Http1ClientTestSession::set_vc(NetVConnection *new_vc)
 
 TEST_CASE("tcp_reused should be set correctly when a session is attached.")
 {
-  HttpUserAgent user_agent;
+  HttpUserAgent         user_agent;
   TransactionMilestones milestones;
 
   Http1ClientTestSession ssn;
-  SSLNetVConnection netvc;
+  SSLNetVConnection      netvc;
   ssn.set_vc(&netvc);
   HttpSessionAccept::Options options;
   ssn.accept_options = &options;

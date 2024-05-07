@@ -125,8 +125,8 @@ void
 CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
 {
   char buf[CRYPTO_HEX_SIZE], *p;
-  int purl;
-  int i, tmp;
+  int  purl;
+  int  i, tmp;
 
   p    = buffer;
   purl = 1;
@@ -180,7 +180,7 @@ int
 CacheHTTPInfoVector::marshal(char *buf, int length)
 {
   char *start = buf;
-  int count   = 0;
+  int   count = 0;
 
   ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
 
@@ -203,7 +203,7 @@ CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj *block_p
 {
   ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
 
-  const char *start = buf;
+  const char   *start = buf;
   CacheHTTPInfo info;
   xcount = 0;
 
@@ -229,7 +229,7 @@ CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj *block
 {
   ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
 
-  const char *start = buf;
+  const char   *start = buf;
   CacheHTTPInfo info;
   xcount = 0;
 

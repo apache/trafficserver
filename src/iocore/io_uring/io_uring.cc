@@ -37,6 +37,12 @@ using ts::Metrics;
 
 std::atomic<int> main_wq_fd;
 
+namespace
+{
+DbgCtl dbg_ctl_io_uring{"io_uring"};
+
+} // end anonymous namespace
+
 IOUringConfig IOUringContext::config;
 
 struct IOUringStatsBlock {
@@ -55,8 +61,8 @@ IOUringContext::set_config(const IOUringConfig &cfg)
   config = cfg;
 }
 
-static io_uring_probe probe_unsupported     = {};
-constexpr int MAX_SUPPORTED_OP_BEFORE_PROBE = 20;
+static io_uring_probe probe_unsupported             = {};
+constexpr int         MAX_SUPPORTED_OP_BEFORE_PROBE = 20;
 
 IOUringContext::IOUringContext()
 {
@@ -78,12 +84,12 @@ IOUringContext::IOUringContext()
   int ret = io_uring_queue_init_params(config.queue_entries, &ring, &p);
   if (ret < 0) {
     char *err = strerror(-ret);
-    Debug("io_uring", "io_uring_queue_init_params failed: (%d) %s", -ret, err);
+    Dbg(dbg_ctl_io_uring, "io_uring_queue_init_params failed: (%d) %s", -ret, err);
     ring.ring_fd = -1;
   } else {
     /* no sharing for non-fixed either */
     if (config.sq_poll_ms && !(p.features & IORING_FEAT_SQPOLL_NONFIXED)) {
-      Debug("io_uring", "No SQPOLL sharing with nonfixed");
+      Dbg(dbg_ctl_io_uring, "No SQPOLL sharing with nonfixed");
     }
   }
 
@@ -126,7 +132,7 @@ IOUringContext::set_wq_max_workers(unsigned int bounded, unsigned int unbounded)
     return 0;
   }
   unsigned int args[2] = {bounded, unbounded};
-  int result           = io_uring_register_iowq_max_workers(&ring, args);
+  int          result  = io_uring_register_iowq_max_workers(&ring, args);
   return result;
 }
 
@@ -175,9 +181,9 @@ IOUringContext::service()
 void
 IOUringContext::submit_and_wait(ink_hrtime t)
 {
-  timespec ts               = ink_hrtime_to_timespec(t);
+  timespec          ts      = ink_hrtime_to_timespec(t);
   __kernel_timespec timeout = {ts.tv_sec, ts.tv_nsec};
-  io_uring_cqe *cqe         = nullptr;
+  io_uring_cqe     *cqe     = nullptr;
 
   int count = io_uring_submit_and_wait_timeout(&ring, &cqe, 1, &timeout, nullptr);
 

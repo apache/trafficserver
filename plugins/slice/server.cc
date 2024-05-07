@@ -38,7 +38,7 @@ contentRangeFrom(HttpHeader const &header)
     and manipulate it into a client response header
    */
   char rangestr[1024];
-  int rangelen = sizeof(rangestr);
+  int  rangelen = sizeof(rangestr);
 
   // look for expected Content-Range field
   bool const hasContentRange(header.valueForKey(TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE, rangestr, &rangelen));
@@ -62,7 +62,7 @@ contentLengthFrom(HttpHeader const &header)
   int64_t bytes = 0;
 
   char constr[1024];
-  int conlen = sizeof(constr);
+  int  conlen = sizeof(constr);
 
   // look for expected Content-Length field
   bool const hasContentLength(header.valueForKey(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, constr, &conlen));
@@ -98,7 +98,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 
   data->m_dnstream.setupVioWrite(contp, INT64_MAX);
 
-  TSVIO const output_vio      = data->m_dnstream.m_write.m_vio;
+  TSVIO const      output_vio = data->m_dnstream.m_write.m_vio;
   TSIOBuffer const output_buf = data->m_dnstream.m_write.m_iobuf;
 
   // only process a 206, everything else gets a (possibly incomplete)
@@ -161,7 +161,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     std::string const &bodystr = bodyString416();
     form416HeaderAndBody(header, data->m_contentlen, bodystr);
 
-    int const hlen     = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
+    int const     hlen = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
     int64_t const blen = bodystr.size();
 
     TSVIONBytesSet(output_vio, int64_t(hlen) + blen);
@@ -189,9 +189,9 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     respcr.m_end    = data->m_req_range.m_end;
     respcr.m_length = data->m_contentlen;
 
-    char rangestr[1024];
-    int rangelen      = sizeof(rangestr);
-    bool const crstat = respcr.toStringClosed(rangestr, &rangelen);
+    char       rangestr[1024];
+    int        rangelen = sizeof(rangestr);
+    bool const crstat   = respcr.toStringClosed(rangestr, &rangelen);
 
     // corner case, return 500 ??
     if (!crstat) {
@@ -210,7 +210,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     header.removeKey(TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE);
   }
 
-  char bufstr[1024];
+  char      bufstr[1024];
   int const buflen = snprintf(bufstr, sizeof(bufstr), "%" PRId64, bodybytes);
   header.setKeyVal(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, bufstr, buflen);
 
@@ -254,15 +254,15 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
   HttpHeader const header_req(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
 
   TSHRTime const timenowus = TShrtime();
-  int64_t const msecs      = timenowus / 1000000;
-  int64_t const secs       = msecs / 1000;
-  int64_t const ms         = msecs % 1000;
+  int64_t const  msecs     = timenowus / 1000000;
+  int64_t const  secs      = msecs / 1000;
+  int64_t const  ms        = msecs % 1000;
 
   // Gather information on the request, must delete urlstr
-  int urllen         = 0;
+  int         urllen = 0;
   char *const urlstr = header_req.urlString(&urllen);
 
-  char urlpstr[16384];
+  char   urlpstr[16384];
   size_t urlplen = sizeof(urlpstr);
   TSStringPercentEncode(urlstr, urllen, urlpstr, urlplen, &urlplen, nullptr);
 
@@ -272,18 +272,18 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
 
   // uas
   char uasstr[8192];
-  int uaslen = sizeof(uasstr);
+  int  uaslen = sizeof(uasstr);
   header_req.valueForKey(TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT, uasstr, &uaslen);
 
   // raw range request
   char rangestr[1024];
-  int rangelen = sizeof(rangestr);
+  int  rangelen = sizeof(rangestr);
   header_req.valueForKey(conf->m_skip_header.data(), conf->m_skip_header.size(), rangestr, &rangelen);
 
   // Normalized range request
   ContentRange const crange(data->m_req_range.m_beg, data->m_req_range.m_end, data->m_contentlen);
-  char normstr[1024];
-  int normlen = sizeof(normstr);
+  char               normstr[1024];
+  int                normlen = sizeof(normstr);
   crange.toStringClosed(normstr, &normlen);
 
   // block range request
@@ -295,12 +295,12 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
 
   // content range
   char crstr[1024];
-  int crlen = sizeof(crstr);
+  int  crlen = sizeof(crstr);
   header_resp.valueForKey(TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE, crstr, &crlen);
 
   // etag
   char etagstr[1024];
-  int etaglen = sizeof(etagstr);
+  int  etaglen = sizeof(etagstr);
   header_resp.valueForKey(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG, etagstr, &etaglen);
 
   // last modified
@@ -309,19 +309,19 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
 
   // cc
   char ccstr[2048];
-  int cclen = sizeof(ccstr);
+  int  cclen = sizeof(ccstr);
   header_resp.valueForKey(TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, ccstr, &cclen);
 
   // via tag
   char viastr[8192];
-  int vialen = sizeof(viastr);
+  int  vialen = sizeof(viastr);
   header_resp.valueForKey(TS_MIME_FIELD_VIA, TS_MIME_LEN_VIA, viastr, &vialen);
 
-  char etagexpstr[1024];
+  char   etagexpstr[1024];
   size_t etagexplen = sizeof(etagexpstr);
   TSStringPercentEncode(data->m_etag, data->m_etaglen, etagexpstr, etagexplen, &etagexplen, nullptr);
 
-  char etaggotstr[1024];
+  char   etaggotstr[1024];
   size_t etaggotlen = sizeof(etaggotstr);
   TSStringPercentEncode(etagstr, etaglen, etaggotstr, etaggotlen, &etaggotlen, nullptr);
 
@@ -394,7 +394,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
   if (same) {
     // prefer the etag but use Last-Modified if we must.
     char etag[8192];
-    int etaglen = sizeof(etag);
+    int  etaglen = sizeof(etag);
     header.valueForKey(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG, etag, &etaglen);
 
     if (0 < data->m_etaglen || 0 < etaglen) {
@@ -404,7 +404,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
       }
     } else {
       char lastmodified[33];
-      int lastmodifiedlen = sizeof(lastmodified);
+      int  lastmodifiedlen = sizeof(lastmodified);
       header.valueForKey(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, lastmodified, &lastmodifiedlen);
       if (0 < data->m_lastmodifiedlen || 0 < lastmodifiedlen) {
         same = data->m_lastmodifiedlen == lastmodifiedlen && 0 == strncmp(lastmodified, data->m_lastmodified, lastmodifiedlen);
@@ -440,7 +440,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
       DEBUG_LOG("Attempting to reissue interior slice block request with IMS header time: %jd", static_cast<intmax_t>(dateims));
 
       // add special CRR IMS header to the request
-      HttpHeader headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
+      HttpHeader          headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
       Config const *const conf = data->m_config;
       if (!headerreq.setKeyTime(conf->m_crr_ims_header.data(), conf->m_crr_ims_header.size(), dateims)) {
         ERROR_LOG("Failed setting '%s'", conf->m_crr_ims_header.c_str());
@@ -463,7 +463,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
       DEBUG_LOG("Attempting to reissue reference slice block request with IMS header time: %jd", static_cast<intmax_t>(dateims));
 
       // add special CRR IMS header to the request
-      HttpHeader headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
+      HttpHeader          headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
       Config const *const conf = data->m_config;
       if (!headerreq.setKeyTime(conf->m_crr_ims_header.data(), conf->m_crr_ims_header.size(), dateims)) {
         ERROR_LOG("Failed setting '%s'", conf->m_crr_ims_header.c_str());
@@ -517,10 +517,10 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 
     // has block response header been parsed??
     if (!data->m_server_block_header_parsed) {
-      int64_t consumed              = 0;
-      TSIOBufferReader const reader = data->m_upstream.m_read.m_reader;
-      TSVIO const input_vio         = data->m_upstream.m_read.m_vio;
-      TSParseResult const res       = data->m_resp_hdrmgr.populateFrom(data->m_http_parser, reader, TSHttpHdrParseResp, &consumed);
+      int64_t                consumed  = 0;
+      TSIOBufferReader const reader    = data->m_upstream.m_read.m_reader;
+      TSVIO const            input_vio = data->m_upstream.m_read.m_vio;
+      TSParseResult const    res = data->m_resp_hdrmgr.populateFrom(data->m_http_parser, reader, TSHttpHdrParseResp, &consumed);
 
       TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + consumed);
 
@@ -597,7 +597,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 
         // Check if we should abort the client
         if (data->m_dnstream.isOpen()) {
-          TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
+          TSVIO const   output_vio  = data->m_dnstream.m_write.m_vio;
           int64_t const output_done = TSVIONDoneGet(output_vio);
           int64_t const output_sent = data->m_bytessent;
           if (output_done == output_sent) {
@@ -681,7 +681,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
         start_next_block = true;
       } else if (data->m_dnstream.m_write.isOpen()) {
         // check throttle condition
-        TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
+        TSVIO const   output_vio  = data->m_dnstream.m_write.m_vio;
         int64_t const output_done = TSVIONDoneGet(output_vio);
         int64_t const output_sent = data->m_bytessent;
         int64_t const threshout   = data->m_config->m_blockbytes;

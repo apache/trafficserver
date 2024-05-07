@@ -29,7 +29,7 @@
 
 #include "shared/overridable_txn_vars.h"
 
-#include "mgmt/rpc/handlers/common/RecordsUtils.h"
+#include "RecordsUtils.h"
 
 ///
 /// @brief Namespace to group all the names used for key access to the yaml lookup nodes.

@@ -69,12 +69,12 @@ struct HTTPStatsFormatter {
   {
   }
 
-  uint64_t wrap_unsigned_counter(uint64_t value);
+  uint64_t    wrap_unsigned_counter(uint64_t value);
   std::string output();
 
-  bool csv              = false;
-  bool integer_counters = false;
-  bool wrap_counters    = false;
+  bool        csv              = false;
+  bool        integer_counters = false;
+  bool        wrap_counters    = false;
   std::string buf;
 };
 
@@ -84,7 +84,7 @@ struct HTTPStatsConfig {
   ~HTTPStatsConfig() { TSContDestroy(cont); }
   std::string mimeType;
 
-  int maxAge            = 0;
+  int  maxAge           = 0;
   bool csv              = false;
   bool integer_counters = false;
   bool wrap_counters    = false;
@@ -95,11 +95,11 @@ struct HTTPStatsConfig {
 struct HTTPStatsRequest;
 
 union argument_type {
-  void *ptr;
-  intptr_t ecode;
-  TSVConn vc;
-  TSVIO vio;
-  TSHttpTxn txn;
+  void             *ptr;
+  intptr_t          ecode;
+  TSVConn           vc;
+  TSVIO             vio;
+  TSHttpTxn         txn;
   HTTPStatsRequest *trq;
 
   argument_type(void *_p) : ptr(_p) {}
@@ -110,8 +110,8 @@ union argument_type {
 // for each TSVConn; one to push data into the TSVConn and one to pull
 // data out.
 struct IOChannel {
-  TSVIO vio = nullptr;
-  TSIOBuffer iobuf;
+  TSVIO            vio = nullptr;
+  TSIOBuffer       iobuf;
   TSIOBufferReader reader;
 
   IOChannel() : iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)), reader(TSIOBufferReaderAlloc(iobuf)) {}
@@ -140,8 +140,8 @@ struct IOChannel {
 };
 
 struct HTTPStatsHttpHeader {
-  TSMBuffer buffer;
-  TSMLoc header;
+  TSMBuffer    buffer;
+  TSMLoc       header;
   TSHttpParser parser;
 
   HTTPStatsHttpHeader()
@@ -166,11 +166,11 @@ struct HTTPStatsHttpHeader {
 struct HTTPStatsRequest {
   HTTPStatsRequest() {}
 
-  off_t nbytes        = 0; // Number of bytes to generate.
-  unsigned maxAge     = 0; // Max age for cache responses.
-  unsigned statusCode = 200;
-  IOChannel readio;
-  IOChannel writeio;
+  off_t               nbytes     = 0; // Number of bytes to generate.
+  unsigned            maxAge     = 0; // Max age for cache responses.
+  unsigned            statusCode = 200;
+  IOChannel           readio;
+  IOChannel           writeio;
   HTTPStatsHttpHeader rqheader;
 
   std::string mimeType;
@@ -301,7 +301,7 @@ static bool
 HTTPStatsParseRequest(HTTPStatsRequest *trq)
 {
   const char *path;
-  int pathsz;
+  int         pathsz;
 
   // Make sure this is a GET request
   path = TSHttpHdrMethodGet(trq->rqheader.buffer, trq->rqheader.header, &pathsz);
@@ -364,18 +364,18 @@ HTTPStatsInterceptHook(TSCont contp, TSEvent event, void *edata)
   }
 
   case TS_EVENT_VCONN_READ_READY: {
-    argument_type cdata           = TSContDataGet(contp);
+    argument_type        cdata    = TSContDataGet(contp);
     HTTPStatsHttpHeader &rqheader = cdata.trq->rqheader;
 
     VDEBUG("reading vio=%p vc=%p, trq=%p", arg.vio, TSVIOVConnGet(arg.vio), cdata.trq);
 
     TSIOBufferBlock blk;
-    TSParseResult result = TS_PARSE_CONT;
+    TSParseResult   result = TS_PARSE_CONT;
 
     for (blk = TSIOBufferReaderStart(cdata.trq->readio.reader); blk; blk = TSIOBufferBlockNext(blk)) {
-      const char *ptr;
-      const char *end;
-      int64_t nbytes;
+      const char  *ptr;
+      const char  *end;
+      int64_t      nbytes;
       TSHttpStatus status = static_cast<TSHttpStatus>(cdata.trq->statusCode);
 
       ptr = TSIOBufferBlockReadStart(blk, cdata.trq->readio.reader, &nbytes);
@@ -514,9 +514,9 @@ HTTPStatsTxnHook(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
-    int method_length, status;
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    int         method_length, status;
+    TSMBuffer   bufp;
+    TSMLoc      hdr_loc;
     const char *method;
 
     if (TSHttpTxnCacheLookupStatusGet(arg.txn, &status) != TS_SUCCESS) {

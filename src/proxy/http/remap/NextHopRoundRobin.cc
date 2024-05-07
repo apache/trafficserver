@@ -35,26 +35,26 @@ NextHopRoundRobin::~NextHopRoundRobin()
 void
 NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
 {
-  HttpSM *sm                   = reinterpret_cast<HttpSM *>(txnp);
-  ParentResult *result         = &sm->t_state.parent_result;
-  HttpRequestData request_info = sm->t_state.request_data;
-  int64_t sm_id                = sm->sm_id;
-  int64_t fail_threshold       = sm->t_state.txn_conf->parent_fail_threshold;
-  int64_t retry_time           = sm->t_state.txn_conf->parent_retry_time;
-  time_t _now                  = now;
-  bool firstcall               = true;
-  bool parentUp                = false;
-  bool parentRetry             = false;
-  bool wrapped                 = result->wrap_around;
-  std::vector<bool> wrap_around(groups, false);
-  uint32_t cur_hst_index = 0;
-  uint32_t cur_grp_index = 0;
-  uint32_t hst_size      = host_groups[cur_grp_index].size();
-  uint32_t start_group   = 0;
-  uint32_t start_host    = 0;
+  HttpSM                     *sm             = reinterpret_cast<HttpSM *>(txnp);
+  ParentResult               *result         = &sm->t_state.parent_result;
+  HttpRequestData             request_info   = sm->t_state.request_data;
+  int64_t                     sm_id          = sm->sm_id;
+  int64_t                     fail_threshold = sm->t_state.txn_conf->parent_fail_threshold;
+  int64_t                     retry_time     = sm->t_state.txn_conf->parent_retry_time;
+  time_t                      _now           = now;
+  bool                        firstcall      = true;
+  bool                        parentUp       = false;
+  bool                        parentRetry    = false;
+  bool                        wrapped        = result->wrap_around;
+  std::vector<bool>           wrap_around(groups, false);
+  uint32_t                    cur_hst_index = 0;
+  uint32_t                    cur_grp_index = 0;
+  uint32_t                    hst_size      = host_groups[cur_grp_index].size();
+  uint32_t                    start_group   = 0;
+  uint32_t                    start_host    = 0;
   std::shared_ptr<HostRecord> cur_host;
-  HostStatus &pStatus    = HostStatus::instance();
-  TSHostStatus host_stat = TSHostStatus::TS_HOST_STATUS_UP;
+  HostStatus                 &pStatus   = HostStatus::instance();
+  TSHostStatus                host_stat = TSHostStatus::TS_HOST_STATUS_UP;
 
   if (result->line_number != -1 && result->result != PARENT_UNDEFINED) {
     firstcall = false;

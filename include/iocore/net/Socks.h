@@ -53,7 +53,7 @@ struct SocksAddrType {
   unsigned char type = SOCKS_ATYPE_NONE;
   union {
     // mostly it is ipv4. in other cases we will xalloc().
-    unsigned char ipv4[4];
+    unsigned char  ipv4[4];
     unsigned char *buf;
   } addr;
 

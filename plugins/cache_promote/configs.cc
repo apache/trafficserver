@@ -27,15 +27,15 @@
 static const struct option longopt[] = {
   {const_cast<char *>("policy"),               required_argument, nullptr, 'p' },
   {const_cast<char *>("stats-enable-with-id"), required_argument, nullptr, 'e' },
- // This is for both Chance and LRU (optional) policy
+  // This is for both Chance and LRU (optional) policy
   {const_cast<char *>("sample"),               required_argument, nullptr, 's' },
- // For the LRU policy
+  // For the LRU policy
   {const_cast<char *>("buckets"),              required_argument, nullptr, 'b' },
   {const_cast<char *>("hits"),                 required_argument, nullptr, 'h' },
   {const_cast<char *>("bytes"),                required_argument, nullptr, 'B' },
   {const_cast<char *>("label"),                required_argument, nullptr, 'l' },
   {const_cast<char *>("internal-enabled"),     no_argument,       nullptr, 'i' },
- // EOF
+  // EOF
   {nullptr,                                    no_argument,       nullptr, '\0'},
 };
 

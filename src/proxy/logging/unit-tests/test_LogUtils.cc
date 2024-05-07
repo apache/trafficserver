@@ -58,8 +58,7 @@ test(const MIMEField *pairs, int numPairs, const char *asciiResult, int extraUnm
   int binSize{1};
 
   if (binBuf[0]) {
-    for (; binBuf[binSize] or binBuf[binSize + 1]; ++binSize) {
-    }
+    for (; binBuf[binSize] or binBuf[binSize + 1]; ++binSize) {}
 
     binSize += 2;
 

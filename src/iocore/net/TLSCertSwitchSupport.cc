@@ -22,6 +22,13 @@
 #include "iocore/net/TLSCertSwitchSupport.h"
 #include "P_SSLCertLookup.h"
 
+namespace
+{
+DbgCtl dbg_ctl_ssl{"ssl"};
+DbgCtl dbg_ctl_ssl_load{"ssl_load"};
+
+} // end anonymous namespace
+
 int TLSCertSwitchSupport::_ex_data_index = -1;
 
 void
@@ -62,13 +69,13 @@ TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType)
   shared_SSL_CTX ctx = nullptr;
 
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  bool found             = true;
+  bool        found      = true;
 
-  Debug("ssl", "set_context_cert ssl=%p server=%s", ssl, servername);
+  Dbg(dbg_ctl_ssl, "set_context_cert ssl=%p server=%s", ssl, servername);
 
   // catch the client renegotiation early on
   if (this->_isTryingRenegotiation()) {
-    Debug("ssl_load", "set_context_cert trying to renegotiate from the client");
+    Dbg(dbg_ctl_ssl_load, "set_context_cert trying to renegotiate from the client");
     return 0;
   }
 
@@ -92,8 +99,8 @@ TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType)
 
   SSL_CTX *verify_ctx = SSL_get_SSL_CTX(ssl);
   // set_context_cert found SSL context for ...
-  Debug("ssl_load", "ssl_cert_callback %s SSL context %p for requested name '%s'", found ? "found" : "using", verify_ctx,
-        servername);
+  Dbg(dbg_ctl_ssl_load, "ssl_cert_callback %s SSL context %p for requested name '%s'", found ? "found" : "using", verify_ctx,
+      servername);
 
   if (verify_ctx == nullptr) {
     return 0;

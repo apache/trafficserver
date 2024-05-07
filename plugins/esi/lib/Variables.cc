@@ -232,9 +232,9 @@ Variables::getValue(const string &name) const
     return iter->second;
   }
   const char *header;
-  int header_len;
+  int         header_len;
   const char *attr;
-  int attr_len;
+  int         attr_len;
   if (!_parseDictVariable(name, header, header_len, attr, attr_len)) {
     DBG("[%s] Unmatched simple variable [%.*s] not in dict variable form", __FUNCTION__, int(name.size()), name.data());
     return EMPTY_STRING;
@@ -288,7 +288,7 @@ Variables::_parseSubCookies()
       continue;
     }
 
-    StringHash &subcookies = _sub_cookies[name];
+    StringHash   &subcookies = _sub_cookies[name];
     AttributeList attr_list;
     Utils::parseAttributes(value.c_str(), value.length(), attr_list, "&");
     for (auto &iter : attr_list) {
@@ -316,7 +316,7 @@ Variables::_getSubCookieValue(const string &cookie_str, size_t cookie_part_divid
   // we need to do this as we are going to manipulate the 'divider'
   // character, and we don't need to create a copy of the string for
   // that; hence this shortcut
-  string &non_const_cookie_str = const_cast<string &>(cookie_str);
+  string                    &non_const_cookie_str = const_cast<string &>(cookie_str);
   StringHash::const_iterator it_part;
 
   non_const_cookie_str[cookie_part_divider] = '\0';                        // make sure cookie name is NULL terminated
@@ -372,7 +372,7 @@ Variables::_parseCookieString(const char *str, int str_len)
   Utils::parseAttributes(str, str_len, cookies, ";,");
   for (auto &iter : cookies) {
     std::string cookie = iter.name;
-    size_t pos         = cookie.find('=');
+    size_t      pos    = cookie.find('=');
 
     if (pos != std::string::npos) {
       cookie = cookie.substr(0, pos);
@@ -406,7 +406,7 @@ Variables::_parseAcceptLangString(const char *str, int str_len)
     ;
   }
   const char *lang = str + i;
-  int lang_len;
+  int         lang_len;
   for (; i <= str_len; ++i) {
     if ((i == str_len) || (str[i] == ',')) {
       lang_len = str + i - lang;
@@ -429,8 +429,8 @@ bool
 Variables::_parseDictVariable(const std::string &variable, const char *&header, int &header_len, const char *&attr,
                               int &attr_len) const
 {
-  const char *var_ptr = variable.data();
-  int var_size        = variable.size();
+  const char *var_ptr  = variable.data();
+  int         var_size = variable.size();
   if ((var_size <= 4) || (variable[var_size - 1] != '}')) {
     return false;
   }

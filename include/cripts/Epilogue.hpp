@@ -236,7 +236,7 @@ wrap_delete_instance(T *context, bool execute, CaseTag<0>) -> bool
 int
 default_cont(TSCont contp, TSEvent event, void *edata)
 {
-  auto txnp     = static_cast<TSHttpTxn>(edata);
+  auto  txnp    = static_cast<TSHttpTxn>(edata);
   auto *context = static_cast<Cript::Context *>(TSContDataGet(contp));
 
   context->reset(); // Clears the cached handles to internal ATS data (mloc's etc.)
@@ -376,7 +376,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
   // This is to check, and call, the Cript's do_init() if provided.
   // Note that the context here is not a Cript context, but rather tha API info
-  extern void global_initialization();
+  extern void           global_initialization();
   extern pthread_once_t init_once_control;
 
   pthread_once(&init_once_control, global_initialization);
@@ -395,9 +395,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  auto *inst = new Cript::Instance(argc, argv);
+  auto                  *inst = new Cript::Instance(argc, argv);
   Cript::InstanceContext context(*inst);
-  bool needs_create_instance = wrap_create_instance(&context, false, CaseArg);
+  bool                   needs_create_instance = wrap_create_instance(&context, false, CaseArg);
 
   if (needs_create_instance) {
     wrap_create_instance(&context, true, CaseArg);
@@ -442,13 +442,15 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 void
 TSRemapDeleteInstance(void *ih)
 {
-  auto inst = static_cast<Cript::Instance *>(ih);
+  auto                   inst = static_cast<Cript::Instance *>(ih);
   Cript::InstanceContext context(*inst);
-  bool needs_delete_instance = wrap_delete_instance(&context, false, CaseArg);
+  bool                   needs_delete_instance = wrap_delete_instance(&context, false, CaseArg);
 
   if (needs_delete_instance) {
     wrap_delete_instance(&context, true, CaseArg);
   }
+
+  inst->debug("Deleted an instance for Cript = {}", inst->plugin_debug_tag);
 
   delete inst;
 }
@@ -458,7 +460,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   // Check to see if we need to setup future hooks with a continuation. This
   // should only happen once.
-  static bool cript_needs_do_remap = wrap_do_remap(static_cast<Cript::Context *>(nullptr), false, CaseArg);
+  static bool     cript_needs_do_remap = wrap_do_remap(static_cast<Cript::Context *>(nullptr), false, CaseArg);
   static unsigned cript_enabled_hooks =
     (wrap_post_remap(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_POST_REMAP : 0) |
     (wrap_send_response(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_SEND_RESPONSE : 0) |
@@ -467,11 +469,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     (wrap_cache_lookup(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_CACHE_LOOKUP : 0) |
     (wrap_txn_close(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_TXN_CLOSE : 0);
 
-  TSHttpSsn ssnp    = TSHttpTxnSsnGet(txnp);
-  auto *inst        = static_cast<Cript::Instance *>(ih);
-  auto bundle_cbs   = inst->callbacks();
-  auto *context     = Cript::Context::factory(txnp, ssnp, rri, *inst);
-  bool keep_context = false;
+  TSHttpSsn ssnp         = TSHttpTxnSsnGet(txnp);
+  auto     *inst         = static_cast<Cript::Instance *>(ih);
+  auto      bundle_cbs   = inst->callbacks();
+  auto     *context      = Cript::Context::factory(txnp, ssnp, rri, *inst);
+  bool      keep_context = false;
 
   context->state.hook          = TS_HTTP_READ_REQUEST_HDR_HOOK; // Not quite true
   context->state.enabled_hooks = (cript_enabled_hooks | bundle_cbs);

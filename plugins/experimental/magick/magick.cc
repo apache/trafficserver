@@ -76,8 +76,8 @@ struct ThreadPool {
   using Queue    = std::list<Callback>;
   using Lock     = std::unique_lock<std::mutex>;
 
-  const size_t size_;
-  bool running_;
+  const size_t    size_;
+  bool            running_;
   TSThread *const pool_;
 
   // a double linked list is used due to the high amount of insertions and deletions
@@ -270,7 +270,7 @@ struct Image {
 
 struct Wand {
   MagickWand *wand;
-  void *blob = nullptr;
+  void       *blob = nullptr;
 
   ~Wand()
   {
@@ -351,7 +351,7 @@ struct QueryMap {
   const static Vector emptyValues;
 
   std::string content_;
-  Map map_;
+  Map         map_;
 
   QueryMap(std::string &&s) : content_(s) { parse(); }
 
@@ -370,7 +370,7 @@ struct QueryMap {
   parse()
   {
     std::string_view key;
-    std::size_t i = 0, j = 0;
+    std::size_t      i = 0, j = 0;
     for (; i < content_.size(); ++i) {
       const char c = content_[i];
       switch (c) {
@@ -409,7 +409,7 @@ bool
 QueryParameterToCharVector(CharVector &v)
 {
   {
-    std::size_t s         = 0;
+    std::size_t        s  = 0;
     const TSReturnCode rc = TSStringPercentDecode(v.data(), v.size(), v.data(), v.size(), &s);
     assert(TS_SUCCESS == rc);
     if (rc != TS_SUCCESS) {
@@ -419,7 +419,7 @@ QueryParameterToCharVector(CharVector &v)
   }
 
   {
-    std::size_t s         = 0;
+    std::size_t        s  = 0;
     const TSReturnCode rc = TSBase64Decode(v.data(), v.size(), reinterpret_cast<unsigned char *>(v.data()), v.size(), &s);
     assert(TS_SUCCESS == rc);
     if (rc != TS_SUCCESS) {
@@ -438,7 +438,7 @@ QueryParameterToArguments(CharVector &v)
   result.reserve(32);
 
   std::size_t i = 0, j = 0;
-  bool quote = false;
+  bool        quote = false;
 
   for (; i < v.size(); ++i) {
     char &c = v[i];
@@ -489,9 +489,9 @@ struct ImageTransform : TransformationPlugin {
     Dbg(dbg_ctl, "handleInputComplete");
 
     threadPool_.emplace_back([this]() {
-      magick::Image image;
+      magick::Image     image;
       magick::Exception exception;
-      magick::Wand wand;
+      magick::Wand      wand;
 
       assert(!this->blob_.empty());
 
@@ -515,16 +515,16 @@ struct ImageTransform : TransformationPlugin {
     Dbg(dbg_ctl, "Scheduling background transformation (%p)", this);
   }
 
-  CharVector arguments_;
+  CharVector        arguments_;
   CharPointerVector argumentMap_;
-  CharVector blob_;
-  ThreadPool &threadPool_;
+  CharVector        blob_;
+  ThreadPool       &threadPool_;
 };
 
 struct GlobalHookPlugin : GlobalPlugin {
-  magick::Core core_;
+  magick::Core    core_;
   magick::EVPKey *key_ = nullptr;
-  ThreadPool threadPool_;
+  ThreadPool      threadPool_;
 
   ~GlobalHookPlugin() override
   {
@@ -584,10 +584,10 @@ struct GlobalHookPlugin : GlobalPlugin {
     if (compatibleContentType) {
       Dbg(dbg_ctl, "Content-Type is compatible: %s", contentType.c_str());
       const QueryMap queryMap(t.getServerRequest().getUrl().getQuery());
-      const auto &magickQueryParameter = queryMap["magick"];
+      const auto    &magickQueryParameter = queryMap["magick"];
       if (!magickQueryParameter.empty()) {
         const auto &view = magickQueryParameter.front();
-        CharVector magick(view.data(), view.data() + view.size());
+        CharVector  magick(view.data(), view.data() + view.size());
 
         bool verified = nullptr == key_;
 
@@ -595,7 +595,7 @@ struct GlobalHookPlugin : GlobalPlugin {
           const auto &magickSigQueryParameter = queryMap["magickSig"];
           if (!magickSigQueryParameter.empty()) {
             const auto &view2 = magickSigQueryParameter.front();
-            CharVector magickSig(view2.data(), view2.data() + view2.size());
+            CharVector  magickSig(view2.data(), view2.data() + view2.size());
             magickSig.insert(magickSig.end(), '\0');
             Dbg(dbg_ctl, "Magick Signature: %s", magickSig.data());
             QueryParameterToCharVector(magickSig);

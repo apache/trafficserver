@@ -33,6 +33,14 @@
 #include "P_QUICNetVConnection.h"
 #endif
 
+namespace
+{
+#if TS_USE_QUIC == 1
+DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
+#endif
+
+} // end anonymous namespace
+
 int
 ControlQUIC::SNIAction(SSL &ssl, const Context &ctx) const
 {
@@ -49,7 +57,7 @@ ControlQUIC::SNIAction(SSL &ssl, const Context &ctx) const
   if (dbg_ctl_ssl_sni.on()) {
     if (auto snis = TLSSNISupport::getInstance(&ssl)) {
       const char *servername = snis->get_sni_server_name();
-      Dbg(dbg_ctl_ssl_sni, "Rejecting handshake due to QUIC being disabled for fqdn [%s]", servername);
+      DbgPrint(dbg_ctl_ssl_sni, "Rejecting handshake due to QUIC being disabled for fqdn [%s]", servername);
     }
   }
 
@@ -134,6 +142,15 @@ HTTP2MaxRstStreamFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
   return SSL_TLSEXT_ERR_OK;
 }
 
+int
+HTTP2MaxContinuationFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
+{
+  if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+    snis->hints_from_sni.http2_max_continuation_frames_per_minute = value;
+  }
+  return SSL_TLSEXT_ERR_OK;
+}
+
 TunnelDestination::TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
                                      const std::vector<int> &alpn)
   : destination(dest), type(type), tunnel_prewarm(prewarm), alpn_ids(alpn)
@@ -176,7 +193,7 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
   const char *servername = snis->get_sni_server_name();
   if (fnArrIndexes.empty()) {
     tuns->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
-    Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
+    Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
   } else {
     bool port_is_dynamic = false;
     auto fixed_dst{destination};
@@ -186,7 +203,7 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
       fixed_dst = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, port_is_dynamic);
     }
     tuns->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
-    Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
+    Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
   }
 
   if (type == SNIRoutingType::BLIND) {
@@ -221,7 +238,7 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
   if (dst.empty() || groups.empty()) {
     return std::string{dst};
   }
-  std::string real_dst;
+  std::string            real_dst;
   std::string::size_type pos{0};
 
   const auto end = std::end(dst);
@@ -235,8 +252,8 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
     }
     if (*c == '$') {
       // find the next '.' so we can get the group number.
-      const auto dot            = dst.find('.', pos);
-      std::string::size_type to = std::string::npos;
+      const auto             dot = dst.find('.', pos);
+      std::string::size_type to  = std::string::npos;
       if (dot != std::string::npos) {
         to = dot - (pos + 1);
       } else {
@@ -352,7 +369,7 @@ SNI_IpAllow::SNI_IpAllow(std::string &ip_allow_list, std::string const &serverna
 {
   swoc::TextView content{ip_allow_list};
   if (content && content[0] == '@') {
-    std::error_code ec;
+    std::error_code  ec;
     swoc::file::path path{content.remove_prefix(1)};
     if (path.is_relative()) {
       path = swoc::file::path(Layout::get()->sysconfdir) / path;

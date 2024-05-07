@@ -47,7 +47,7 @@ public:
 
   void stop_accept() override;
 
-  Action *connect_re(Continuation *cont, sockaddr const *target, NetVCOptions const &options) override;
+  Action         *connect_re(Continuation *cont, sockaddr const *target, NetVCOptions const &options) override;
   NetVConnection *allocate_vc(EThread *t) override;
 
   void init() override;

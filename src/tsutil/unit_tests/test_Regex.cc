@@ -30,11 +30,11 @@
 
 struct subject_match_t {
   std::string_view subject;
-  bool match;
+  bool             match;
 };
 
 struct test_t {
-  std::string_view regex;
+  std::string_view             regex;
   std::vector<subject_match_t> tests;
 };
 
@@ -71,14 +71,14 @@ std::vector<test_t> test_data_anchored{
 };
 
 struct submatch_t {
-  std::string_view subject;
-  int32_t count;
+  std::string_view              subject;
+  int32_t                       count;
   std::vector<std::string_view> submatches;
 };
 
 struct submatch_test_t {
-  std::string_view regex;
-  int capture_count;
+  std::string_view        regex;
+  int                     capture_count;
   std::vector<submatch_t> tests;
 };
 
@@ -165,7 +165,7 @@ TEST_CASE("Regex", "[libts][Regex]")
 
   // test for not compiling regular expression
   {
-    Regex r;
+    Regex        r;
     RegexMatches matches;
     REQUIRE(r.exec("foo") == false);
     REQUIRE(r.exec("foo", matches) == 0);
@@ -179,4 +179,14 @@ TEST_CASE("Regex", "[libts][Regex]")
     REQUIRE(r.compile(R"(bar)") == true);
     REQUIRE(r.exec("bar") == true);
   }
+
+// test with matches set to 100, don't run the test in debug mode or the test will abort with a message to increase the buffer size
+#ifndef DEBUG
+  {
+    Regex        r;
+    RegexMatches matches(100);
+    REQUIRE(r.compile(R"(foo)") == true);
+    REQUIRE(r.exec("foo", matches) == 1);
+  }
+#endif
 }

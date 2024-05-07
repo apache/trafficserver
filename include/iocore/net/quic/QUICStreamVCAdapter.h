@@ -34,14 +34,14 @@ public:
   virtual ~QUICStreamVCAdapter();
 
   // Implement QUICStreamAdapter Interface
-  int64_t write(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin) override;
-  void encourge_read() override;
-  bool is_eos() override;
+  int64_t  write(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin) override;
+  void     encourge_read() override;
+  bool     is_eos() override;
   uint64_t unread_len() override;
   uint64_t read_len() override;
   uint64_t total_len() override;
-  void encourge_write() override;
-  void notify_eos() override;
+  void     encourge_write() override;
+  void     notify_eos() override;
 
   // Implement VConnection Interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
@@ -49,6 +49,10 @@ public:
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
+
+  // Helpers to check VIO states
+  bool is_readable();
+  bool is_writable();
 
   void clear_read_ready_event(Event *e);
   void clear_read_complete_event(Event *e);
@@ -120,8 +124,8 @@ public:
   }
 
   QUICStreamVCAdapter adapter;
-  MIOBuffer *read_buffer;
-  MIOBuffer *write_buffer;
-  VIO *read_vio  = nullptr;
-  VIO *write_vio = nullptr;
+  MIOBuffer          *read_buffer;
+  MIOBuffer          *write_buffer;
+  VIO                *read_vio  = nullptr;
+  VIO                *write_vio = nullptr;
 };

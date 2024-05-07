@@ -93,7 +93,7 @@ struct SplitDNS : public ConfigInfo {
   ~SplitDNS() override;
 
   void *getDNSRecord(swoc::TextView hostname);
-  void findServer(RequestData *rdata, SplitDNSResult *result);
+  void  findServer(RequestData *rdata, SplitDNSResult *result);
 
   DNS_table *m_DNSSrvrTable = nullptr;
 
@@ -103,9 +103,9 @@ struct SplitDNS : public ConfigInfo {
      required by the alleged fast
      path
      ---------------------------- */
-  bool m_bEnableFastPath               = false;
-  HostLookup::LeafArray *m_pxLeafArray = nullptr;
-  int m_numEle                         = 0;
+  bool                   m_bEnableFastPath = false;
+  HostLookup::LeafArray *m_pxLeafArray     = nullptr;
+  int                    m_numEle          = 0;
 };
 
 /* --------------------------------------------------------------
@@ -192,8 +192,8 @@ public:
   void Print() const;
 
   DNSServer m_servers;
-  int m_dnsSrvr_cnt      = 0;
-  int m_domain_srch_list = 0;
+  int       m_dnsSrvr_cnt      = 0;
+  int       m_domain_srch_list = 0;
 };
 
 /* --------------------------------------------------------------

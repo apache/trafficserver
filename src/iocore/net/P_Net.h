@@ -35,14 +35,14 @@
 using ts::Metrics;
 
 struct NetStatsBlock {
-  Metrics::Gauge::AtomicType *accepts_currently_open;
+  Metrics::Gauge::AtomicType   *accepts_currently_open;
   Metrics::Counter::AtomicType *calls_to_read_nodata;
   Metrics::Counter::AtomicType *calls_to_read;
   Metrics::Counter::AtomicType *calls_to_readfromnet;
   Metrics::Counter::AtomicType *calls_to_write_nodata;
   Metrics::Counter::AtomicType *calls_to_write;
   Metrics::Counter::AtomicType *calls_to_writetonet;
-  Metrics::Gauge::AtomicType *connections_currently_open;
+  Metrics::Gauge::AtomicType   *connections_currently_open;
   Metrics::Counter::AtomicType *connections_throttled_in;
   Metrics::Counter::AtomicType *per_client_connections_throttled_in;
   Metrics::Counter::AtomicType *connections_throttled_out;
@@ -59,26 +59,26 @@ struct NetStatsBlock {
   Metrics::Counter::AtomicType *read_bytes_count;
   Metrics::Counter::AtomicType *requests_max_throttled_in;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_blind_tcp;
-  Metrics::Gauge::AtomicType *tunnel_current_client_connections_blind_tcp;
+  Metrics::Gauge::AtomicType   *tunnel_current_client_connections_blind_tcp;
   Metrics::Counter::AtomicType *tunnel_total_server_connections_blind_tcp;
-  Metrics::Gauge::AtomicType *tunnel_current_server_connections_blind_tcp;
+  Metrics::Gauge::AtomicType   *tunnel_current_server_connections_blind_tcp;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_tls_tunnel;
-  Metrics::Gauge::AtomicType *tunnel_current_client_connections_tls_tunnel;
+  Metrics::Gauge::AtomicType   *tunnel_current_client_connections_tls_tunnel;
   Metrics::Counter::AtomicType *tunnel_total_server_connections_tls;
-  Metrics::Gauge::AtomicType *tunnel_current_server_connections_tls;
+  Metrics::Gauge::AtomicType   *tunnel_current_server_connections_tls;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_tls_forward;
-  Metrics::Gauge::AtomicType *tunnel_current_client_connections_tls_forward;
+  Metrics::Gauge::AtomicType   *tunnel_current_client_connections_tls_forward;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_tls_partial_blind;
-  Metrics::Gauge::AtomicType *tunnel_current_client_connections_tls_partial_blind;
+  Metrics::Gauge::AtomicType   *tunnel_current_client_connections_tls_partial_blind;
   Metrics::Counter::AtomicType *tunnel_total_client_connections_tls_http;
-  Metrics::Gauge::AtomicType *tunnel_current_client_connections_tls_http;
-  Metrics::Gauge::AtomicType *socks_connections_currently_open;
+  Metrics::Gauge::AtomicType   *tunnel_current_client_connections_tls_http;
+  Metrics::Gauge::AtomicType   *socks_connections_currently_open;
   Metrics::Counter::AtomicType *socks_connections_successful;
   Metrics::Counter::AtomicType *socks_connections_unsuccessful;
   Metrics::Counter::AtomicType *tcp_accept;
   Metrics::Counter::AtomicType *write_bytes;
   Metrics::Counter::AtomicType *write_bytes_count;
-  Metrics::Gauge::AtomicType *connection_tracker_table_size;
+  Metrics::Gauge::AtomicType   *connection_tracker_table_size;
 };
 
 extern NetStatsBlock net_rsb;
@@ -109,7 +109,3 @@ static constexpr ts::ModuleVersion NET_SYSTEM_MODULE_INTERNAL_VERSION(NET_SYSTEM
 #else
 #define NetDbg(dbg_ctl, fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 #endif
-
-/// Default amount of buffer space to use for the initial read on an incoming connection.
-/// This is an IOBufferBlock index, not the size in bytes.
-static size_t const CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX = BUFFER_SIZE_INDEX_4K;

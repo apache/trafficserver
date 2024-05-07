@@ -41,6 +41,7 @@
 #include "P_SSLConfig.h"
 #include "P_TLSKeyLogger.h"
 #include "BoringSSLUtils.h"
+#include "iocore/net/SSLMultiCertConfigLoader.h"
 #include "iocore/net/ProxyProtocol.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "SSLSessionCache.h"
@@ -91,7 +92,7 @@ static constexpr std::string_view SSL_SESSION_TICKET_ENABLED("ssl_ticket_enabled
 static constexpr std::string_view SSL_SESSION_TICKET_NUMBER("ssl_ticket_number"sv);
 static constexpr std::string_view SSL_KEY_DIALOG("ssl_key_dialog"sv);
 static constexpr std::string_view SSL_SERVERNAME("dest_fqdn"sv);
-static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
+static constexpr char             SSL_CERT_SEPARATE_DELIM = ',';
 
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
@@ -103,8 +104,8 @@ static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 
 static int ssl_vc_index = -1;
 
-static ink_mutex *mutex_buf      = nullptr;
-static bool open_ssl_initialized = false;
+static ink_mutex *mutex_buf            = nullptr;
+static bool       open_ssl_initialized = false;
 
 static DbgCtl dbg_ctl_ssl_load{"ssl_load"};
 static DbgCtl dbg_ctl_ssl_session_cache{"ssl.session_cache"};
@@ -190,7 +191,7 @@ static int
 ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
   Dbg(dbg_ctl_ssl_verify, "Callback: verify client cert");
-  auto *ssl                = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  auto              *ssl   = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   if (!netvc || netvc->ssl != ssl) {
@@ -249,7 +250,7 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
 static ssl_select_cert_result_t
 ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 {
-  SSL *s              = client_hello->ssl;
+  SSL           *s    = client_hello->ssl;
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
 
   if (snis) {
@@ -290,10 +291,10 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 static int
 ssl_cert_callback(SSL *ssl, void *arg)
 {
-  TLSCertSwitchSupport *tcss  = TLSCertSwitchSupport::getInstance(ssl);
-  SSLNetVConnection *sslnetvc = dynamic_cast<SSLNetVConnection *>(tcss);
-  bool reenabled;
-  int retval = 1;
+  TLSCertSwitchSupport *tcss     = TLSCertSwitchSupport::getInstance(ssl);
+  SSLNetVConnection    *sslnetvc = dynamic_cast<SSLNetVConnection *>(tcss);
+  bool                  reenabled;
+  int                   retval = 1;
 
   // If we are in tunnel mode, don't select a cert.  Pause!
   if (sslnetvc) {
@@ -310,9 +311,9 @@ ssl_cert_callback(SSL *ssl, void *arg)
   SSLCertContextType ctxType = SSLCertContextType::GENERIC;
 #ifdef OPENSSL_IS_BORINGSSL
   if (arg != nullptr) {
-    const SSL_CLIENT_HELLO *client_hello = (const SSL_CLIENT_HELLO *)arg;
-    const bool client_ecdsa_capable      = BoringSSLUtils::isClientEcdsaCapable(client_hello);
-    ctxType                              = client_ecdsa_capable ? SSLCertContextType::EC : SSLCertContextType::RSA;
+    const SSL_CLIENT_HELLO *client_hello         = (const SSL_CLIENT_HELLO *)arg;
+    const bool              client_ecdsa_capable = BoringSSLUtils::isClientEcdsaCapable(client_hello);
+    ctxType                                      = client_ecdsa_capable ? SSLCertContextType::EC : SSLCertContextType::RSA;
   }
 #endif
 
@@ -349,7 +350,7 @@ ssl_cert_callback(SSL *ssl, void *arg)
     }
 
     // Reset the ticket callback if needed
-    SSL_CTX *ctx                                         = SSL_get_SSL_CTX(ssl);
+    SSL_CTX                        *ctx                  = SSL_get_SSL_CTX(ssl);
     shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
     if (sslMultiCertSettings->session_ticket_enabled != 0) {
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
@@ -455,7 +456,7 @@ DH_get_2048_256()
     0x7F, 0xD0, 0x28, 0x37, 0x0D, 0xF9, 0x2B, 0x52, 0xC7, 0x89, 0x14, 0x28, 0xCD, 0xC6, 0x7E, 0xB6, 0x18, 0x4B, 0x52, 0x3D,
     0x1D, 0xB2, 0x46, 0xC3, 0x2F, 0x63, 0x07, 0x84, 0x90, 0xF0, 0x0E, 0xF8, 0xD6, 0x47, 0xD1, 0x48, 0xD4, 0x79, 0x54, 0x51,
     0x5E, 0x23, 0x27, 0xCF, 0xEF, 0x98, 0xC5, 0x82, 0x66, 0x4B, 0x4C, 0x0F, 0x6C, 0xC4, 0x16, 0x59};
-  DH *dh;
+  DH     *dh;
   BIGNUM *p;
   BIGNUM *g;
 
@@ -569,18 +570,6 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 #endif /* TS_HAS_TLS_SESSION_TICKET */
 }
 
-struct passphrase_cb_userdata {
-  const SSLConfigParams *_configParams;
-  const char *_serverDialog;
-  const char *_serverCert;
-  const char *_serverKey;
-
-  passphrase_cb_userdata(const SSLConfigParams *params, const char *dialog, const char *cert, const char *key)
-    : _configParams(params), _serverDialog(dialog), _serverCert(cert), _serverKey(key)
-  {
-  }
-};
-
 // RAII implementation for struct termios
 struct ssl_termios : public termios {
   ssl_termios(int fd)
@@ -608,7 +597,7 @@ struct ssl_termios : public termios {
   }
 
 private:
-  int _fd;
+  int            _fd;
   struct termios _initialAttr;
 };
 
@@ -656,15 +645,17 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
     return 0;
   }
 
-  *buf                       = 0;
-  passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
+  *buf                                                = 0;
+  const SSLMultiCertConfigParams *sslMultCertSettings = static_cast<SSLMultiCertConfigParams *>(userdata);
 
-  Dbg(dbg_ctl_ssl_load, "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+  Dbg(dbg_ctl_ssl_load, "ssl_private_key_passphrase_callback_exec rwflag=%d dialog=%s", rwflag, sslMultCertSettings->dialog.get());
 
   // only respond to reading private keys, not writing them (does ats even do that?)
   if (0 == rwflag) {
     // execute the dialog program and use the first line output as the passphrase
-    FILE *f = popen(ud->_serverDialog, "r");
+    ink_assert(strncmp(sslMultCertSettings->dialog, "exec:", 5) == 0);
+    const char *serverDialog = &sslMultCertSettings->dialog[5];
+    FILE       *f            = popen(serverDialog, "r");
     if (f) {
       if (fgets(buf, size, f)) {
         // remove any ending CR or LF
@@ -677,7 +668,7 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
       }
       pclose(f);
     } else { // popen failed
-      Error("could not open dialog '%s' - %s", ud->_serverDialog, strerror(errno));
+      Error("could not open dialog '%s' - %s", serverDialog, strerror(errno));
     }
   }
   return strlen(buf);
@@ -690,19 +681,19 @@ ssl_private_key_passphrase_callback_builtin(char *buf, int size, int rwflag, voi
     return 0;
   }
 
-  *buf                       = 0;
-  passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
+  *buf                                                = 0;
+  const SSLMultiCertConfigParams *sslMultCertSettings = static_cast<SSLMultiCertConfigParams *>(userdata);
 
-  Dbg(dbg_ctl_ssl_load, "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+  Dbg(dbg_ctl_ssl_load, "ssl_private_key_passphrase_callback rwflag=%d dialog=%s", rwflag, sslMultCertSettings->dialog.get());
 
   // only respond to reading private keys, not writing them (does ats even do that?)
   if (0 == rwflag) {
     // output request
     fprintf(stdout, "Some of your private key files are encrypted for security reasons.\n");
     fprintf(stdout, "In order to read them you have to provide the pass phrases.\n");
-    fprintf(stdout, "ssl_cert_name=%s", ud->_serverCert);
-    if (ud->_serverKey) { // output ssl_key_name if provided
-      fprintf(stdout, " ssl_key_name=%s", ud->_serverKey);
+    fprintf(stdout, "ssl_cert_name=%s", sslMultCertSettings->cert.get());
+    if (sslMultCertSettings->key.get()) { // output ssl_key_name if provided
+      fprintf(stdout, " ssl_key_name=%s", sslMultCertSettings->key.get());
     }
     fprintf(stdout, "\n");
     // get passphrase
@@ -723,7 +714,7 @@ ssl_private_key_validate_exec(const char *cmdLine)
     return false;
   }
 
-  bool bReturn      = false;
+  bool  bReturn     = false;
   char *cmdLineCopy = ats_strdup(cmdLine);
   char *ptr         = cmdLineCopy;
 
@@ -890,7 +881,10 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
 #endif
   if (pkey == nullptr) {
     scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
-    pkey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
+
+    pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(ctx);
+    void            *u           = SSL_CTX_get_default_passwd_cb_userdata(ctx);
+    pkey                         = PEM_read_bio_PrivateKey(bio.get(), nullptr, password_cb, u);
     if (nullptr == pkey) {
       Dbg(dbg_ctl_ssl_load, "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
           secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
@@ -1086,7 +1080,7 @@ void
 setClientCertLevel(SSL *ssl, uint8_t certLevel)
 {
   SSLConfig::scoped_config params;
-  int server_verify_client = SSL_VERIFY_NONE;
+  int                      server_verify_client = SSL_VERIFY_NONE;
 
   if (certLevel == 2) {
     server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE;
@@ -1134,7 +1128,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
 {
   std::vector<std::vector<std::string>> cert_names;
   std::vector<std::vector<std::string>> key_names;
-  std::vector<std::string> key_names_list;
+  std::vector<std::string>              key_names_list;
 
   bool generate_default_ctx = data.cert_names_list.empty();
   if (!generate_default_ctx) {
@@ -1158,10 +1152,10 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     key_names.emplace_back(std::vector({std::string("default")}));
   }
 
-  SSLCertContextType ctx_type = SSLCertContextType::GENERIC;
+  SSLCertContextType             ctx_type = SSLCertContextType::GENERIC;
   std::vector<SSLLoadingContext> ret;
-  unsigned int i = 0;
-  SSL_CTX *ctx   = nullptr;
+  unsigned int                   i   = 0;
+  SSL_CTX                       *ctx = nullptr;
   for (auto const &cert_names_list : cert_names) {
     if (i < key_names.size()) {
       key_names_list = key_names[i];
@@ -1306,16 +1300,14 @@ bool
 SSLMultiCertConfigLoader::_setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings)
 {
   if (sslMultCertSettings->dialog) {
-    passphrase_cb_userdata ud(this->_params, sslMultCertSettings->dialog, sslMultCertSettings->first_cert,
-                              sslMultCertSettings->key);
     // pass phrase dialog configuration
     pem_password_cb *passwd_cb = nullptr;
     if (strncmp(sslMultCertSettings->dialog, "exec:", 5) == 0) {
-      ud._serverDialog = &sslMultCertSettings->dialog[5];
+      const char *serverDialog = &sslMultCertSettings->dialog[5];
+      Dbg(dbg_ctl_ssl_load, "exec:%s", serverDialog);
       // validate the exec program
-      if (!ssl_private_key_validate_exec(ud._serverDialog)) {
-        SSLError("failed to access '%s' pass phrase program: %s", (const char *)ud._serverDialog, strerror(errno));
-        memset(static_cast<void *>(&ud), 0, sizeof(ud));
+      if (!ssl_private_key_validate_exec(serverDialog)) {
+        SSLError("failed to access '%s' pass phrase program: %s", serverDialog, strerror(errno));
         return false;
       }
       passwd_cb = ssl_private_key_passphrase_callback_exec;
@@ -1323,13 +1315,10 @@ SSLMultiCertConfigLoader::_setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigPa
       passwd_cb = ssl_private_key_passphrase_callback_builtin;
     } else { // unknown config
       SSLError("unknown %s configuration value '%s'", SSL_KEY_DIALOG.data(), (const char *)sslMultCertSettings->dialog);
-      memset(static_cast<void *>(&ud), 0, sizeof(ud));
       return false;
     }
     SSL_CTX_set_default_passwd_cb(ctx, passwd_cb);
-    SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
-    // Clear any password info lingering in the UD data structure
-    memset(static_cast<void *>(&ud), 0, sizeof(ud));
+    SSL_CTX_set_default_passwd_cb_userdata(ctx, const_cast<SSLMultiCertConfigParams *>(sslMultCertSettings));
   }
   return true;
 }
@@ -1385,7 +1374,7 @@ SSLMultiCertConfigLoader::_setup_session_ticket(SSL_CTX *ctx, const SSLMultiCert
 bool
 SSLMultiCertConfigLoader::_setup_client_cert_verification(SSL_CTX *ctx)
 {
-  int server_verify_client;
+  int                    server_verify_client;
   const SSLConfigParams *params = this->_params;
 
   if (params->clientCertLevel != 0) {
@@ -1493,12 +1482,12 @@ SSL_CTX *
 SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultiCertSettings, const char *cert_path,
                        const char *key_path)
 {
-  SSLMultiCertConfigLoader loader(params);
-  std::vector<X509 *> cert_list;
-  std::set<std::string> common_names;
+  SSLMultiCertConfigLoader                       loader(params);
+  std::vector<X509 *>                            cert_list;
+  std::set<std::string>                          common_names;
   std::unordered_map<int, std::set<std::string>> unique_names;
-  SSLMultiCertConfigLoader::CertLoadData data;
-  SSLCertContextType cert_type;
+  SSLMultiCertConfigLoader::CertLoadData         data;
+  SSLCertContextType                             cert_type;
   if (!loader.load_certs_and_cross_reference_names(cert_list, data, params, sslMultiCertSettings, common_names, unique_names,
                                                    &cert_type)) {
     return nullptr;
@@ -1542,11 +1531,11 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
  * Common name resolution and cert validation
  */
 bool
-SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams &sslMultCertSettings,
+SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams  &sslMultCertSettings,
                                         SSLMultiCertConfigLoader::CertLoadData &data, std::set<std::string> &common_names,
                                         std::unordered_map<int, std::set<std::string>> &unique_names)
 {
-  std::vector<X509 *> cert_list;
+  std::vector<X509 *>    cert_list;
   const SSLConfigParams *params = this->_params;
 
   SSLCertContextType cert_type;
@@ -1555,7 +1544,7 @@ SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams &s
     return false;
   }
 
-  int i           = 0;
+  int  i          = 0;
   bool good_certs = true;
   for (auto const &cert : cert_list) {
     const char *current_cert_name = data.cert_names_list[i].c_str();
@@ -1581,10 +1570,10 @@ SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams &s
 bool
 SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams sslMultCertSettings)
 {
-  bool retval = true;
-  std::set<std::string> common_names;
+  bool                                           retval = true;
+  std::set<std::string>                          common_names;
   std::unordered_map<int, std::set<std::string>> unique_names;
-  SSLMultiCertConfigLoader::CertLoadData data;
+  SSLMultiCertConfigLoader::CertLoadData         data;
 
   if (!this->_prep_ssl_ctx(sslMultCertSettings, data, common_names, unique_names)) {
     lookup->is_valid = false;
@@ -1659,9 +1648,9 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
   lookup->getPolicies(secret_name, policies);
 
   for (auto policy_iter = policies.begin(); policy_iter != policies.end() && retval; ++policy_iter) {
-    std::set<std::string> common_names;
+    std::set<std::string>                          common_names;
     std::unordered_map<int, std::set<std::string>> unique_names;
-    SSLMultiCertConfigLoader::CertLoadData data;
+    SSLMultiCertConfigLoader::CertLoadData         data;
     if (!this->_prep_ssl_ctx(*policy_iter, data, common_names, unique_names)) {
       retval = false;
       break;
@@ -1716,7 +1705,7 @@ bool
 SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings,
                                                 shared_SSL_CTX ctx, SSLCertContextType ctx_type, std::set<std::string> &names)
 {
-  bool inserted                        = false;
+  bool                        inserted = false;
   shared_ssl_ticket_key_block keyblock = nullptr;
   // Load the session ticket key if session tickets are not disabled
   if (sslMultCertSettings->session_ticket_enabled != 0) {
@@ -1831,7 +1820,7 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
   // TS-4679:  It is ok to be missing the cert.  At least if the action is set to tunnel
   if (sslMultCertSettings->cert) {
     SimpleTokenizer cert_tok(sslMultCertSettings->cert, SSL_CERT_SEPARATE_DELIM);
-    const char *first_cert = cert_tok.getNext();
+    const char     *first_cert = cert_tok.getNext();
     if (first_cert) {
       sslMultCertSettings->first_cert = ats_strdup(first_cert);
     }
@@ -1845,9 +1834,9 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 {
   const SSLConfigParams *params = this->_params;
 
-  char *tok_state   = nullptr;
-  char *line        = nullptr;
-  unsigned line_num = 0;
+  char        *tok_state = nullptr;
+  char        *line      = nullptr;
+  unsigned     line_num  = 0;
   matcher_line line_info;
 
   const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
@@ -1855,7 +1844,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   Note("%s loading ...", ts::filename::SSL_MULTICERT);
 
   std::error_code ec;
-  std::string content{swoc::file::load(swoc::file::path{params->configFilePath}, ec)};
+  std::string     content{swoc::file::load(swoc::file::path{params->configFilePath}, ec)};
   if (ec) {
     switch (ec.value()) {
     case ENOENT:
@@ -1885,7 +1874,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 
     if (*line != '\0' && *line != '#') {
       shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
-      const char *errPtr;
+      const char                     *errPtr;
 
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
       Dbg(dbg_ctl_ssl_load, "currently parsing %s at line %d from config file: %s", line, line_num, params->configFilePath);
@@ -1963,9 +1952,9 @@ get_sni_addr(SSL *ssl)
     if (sni_name) {
       sni_addr.assign(sni_name);
     } else {
-      int sock_fd = SSL_get_fd(ssl);
+      int              sock_fd = SSL_get_fd(ssl);
       sockaddr_storage addr;
-      socklen_t addr_len = sizeof(addr);
+      socklen_t        addr_len = sizeof(addr);
       if (sock_fd >= 0) {
         getpeername(sock_fd, reinterpret_cast<sockaddr *>(&addr), &addr_len);
         if (addr.ss_family == AF_INET || addr.ss_family == AF_INET6) {
@@ -2091,7 +2080,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   }
 
   bool first_pass = true;
-  int cert_index  = 0;
+  int  cert_index = 0;
   for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
     std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
     data.cert_names_list.push_back(completeServerCertPath);
@@ -2108,7 +2097,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
       return false;
     }
     scoped_BIO bio(BIO_new_mem_buf(secret_data.data(), secret_data.size()));
-    X509 *cert = nullptr;
+    X509      *cert = nullptr;
     if (bio) {
       cert = PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr);
     } else {
@@ -2124,7 +2113,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
     if (certType != nullptr) {
 #ifdef OPENSSL_IS_BORINGSSL
       std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> public_key(X509_get_pubkey(cert), &EVP_PKEY_free);
-      int pkey_id = EVP_PKEY_id(public_key.get());
+      int                                                 pkey_id = EVP_PKEY_id(public_key.get());
 
       switch (pkey_id) {
       case EVP_PKEY_EC:
@@ -2159,9 +2148,9 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
           break;
         }
 
-        X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
-        ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
-        subj_name          = asn1_strdup(cn);
+        X509_NAME_ENTRY *e  = X509_NAME_get_entry(subject, pos);
+        ASN1_STRING     *cn = X509_NAME_ENTRY_get_data(e);
+        subj_name           = asn1_strdup(cn);
 
         Dbg(dbg_ctl_ssl_load, "subj '%s' in certificate %s %p", subj_name.get(), data.cert_names_list[i].c_str(), cert);
         name_set.insert(subj_name.get());
@@ -2261,7 +2250,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       return false;
     }
     scoped_BIO bio(BIO_new_mem_buf(secret_data.data(), secret_data.size()));
-    X509 *cert = nullptr;
+    X509      *cert = nullptr;
     if (bio) {
       cert = PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr);
     } else {
@@ -2356,9 +2345,9 @@ SSLMultiCertConfigLoader::set_session_id_context(SSL_CTX *ctx, const SSLConfigPa
   EVP_MD_CTX *digest           = EVP_MD_CTX_new();
   STACK_OF(X509_NAME) *ca_list = nullptr;
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
-  unsigned int hash_len    = 0;
-  const char *setting_cert = sslMultCertSettings ? sslMultCertSettings->cert.get() : nullptr;
-  bool result              = false;
+  unsigned int  hash_len     = 0;
+  const char   *setting_cert = sslMultCertSettings ? sslMultCertSettings->cert.get() : nullptr;
+  bool          result       = false;
 
   if (params->serverCACertFilename) {
     ca_list = SSL_load_client_CA_file(params->serverCACertFilename);
@@ -2431,6 +2420,7 @@ SSLMultiCertConfigLoader::_dbg_ctl() const
 void
 SSLMultiCertConfigLoader::clear_pw_references(SSL_CTX *ssl_ctx)
 {
+  Dbg(dbg_ctl_ssl_load, "clearing pw preferences");
   SSL_CTX_set_default_passwd_cb(ssl_ctx, nullptr);
   SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, nullptr);
 }
@@ -2452,7 +2442,7 @@ SSLSessionDup(SSL_SESSION *sess)
   return SSL_SESSION_dup(sess);
 #else
   SSL_SESSION *duplicated = nullptr;
-  int len                 = i2d_SSL_SESSION(sess, nullptr);
+  int          len        = i2d_SSL_SESSION(sess, nullptr);
   if (len < 0) {
     return nullptr;
   }

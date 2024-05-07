@@ -67,10 +67,10 @@ int
 CB_Pre_Accept(TSCont, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
-  IpAddr ip(TSNetVConnLocalAddrGet(ssl_vc));
-  char buff[INET6_ADDRSTRLEN];
-  IpAddr ip_client(TSNetVConnRemoteAddrGet(ssl_vc));
-  char buff2[INET6_ADDRSTRLEN];
+  IpAddr  ip(TSNetVConnLocalAddrGet(ssl_vc));
+  char    buff[INET6_ADDRSTRLEN];
+  IpAddr  ip_client(TSNetVConnRemoteAddrGet(ssl_vc));
+  char    buff2[INET6_ADDRSTRLEN];
 
   // Not the worlds most efficient address comparison.  For short lists
   // shouldn't be too bad.  If the client IP is in any of the ranges,
@@ -104,8 +104,8 @@ CB_Pre_Accept(TSCont, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  bool success = false;
-  TSCont cb_pa = nullptr; // pre-accept callback continuation
+  bool   success = false;
+  TSCont cb_pa   = nullptr; // pre-accept callback continuation
 
   TSPluginRegistrationInfo info;
   info.plugin_name   = PLUGIN_NAME;

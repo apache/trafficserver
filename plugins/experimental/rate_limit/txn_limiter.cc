@@ -38,6 +38,13 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
     return TS_EVENT_CONTINUE;
     break;
 
+  case TS_EVENT_HTTP_SSN_CLOSE:
+    limiter->free();
+    TSContDestroy(cont); // We are done with this continuation now
+    TSHttpSsnReenable(static_cast<TSHttpSsn>(edata), TS_EVENT_HTTP_CONTINUE);
+    return TS_EVENT_NONE;
+    break;
+
   case TS_EVENT_HTTP_POST_REMAP:
     limiter->push(static_cast<TSHttpTxn>(edata), cont);
     limiter->incrementMetric(RATE_LIMITER_METRIC_QUEUED);
@@ -63,8 +70,8 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
 static int
 txn_queue_cont(TSCont cont, TSEvent event, void *edata)
 {
-  auto *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(cont));
-  QueueTime now = std::chrono::system_clock::now(); // Only do this once per "loop"
+  auto     *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(cont));
+  QueueTime now     = std::chrono::system_clock::now(); // Only do this once per "loop"
 
   // Try to enable some queued txns (if any) if there are slots available
   while (limiter->size() > 0 && limiter->reserve()) {
@@ -75,8 +82,8 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
     Dbg(dbg_ctl, "Enabling queued txn after %ldms", static_cast<long>(delay.count()));
     // Since this was a delayed transaction, we need to add the TXN_CLOSE hook to free the slot when done
     TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     limiter->incrementMetric(RATE_LIMITER_METRIC_RESUMED);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   }
 
   // Kill any queued txns if they are too old
@@ -92,8 +99,8 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
       Dbg(dbg_ctl, "Queued TXN is too old (%ldms), erroring out", static_cast<long>(age.count()));
       TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()));
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
-      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
       limiter->incrementMetric(RATE_LIMITER_METRIC_EXPIRED);
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
     }
   }
 
@@ -107,16 +114,17 @@ bool
 TxnRateLimiter::initialize(int argc, const char *argv[])
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("limit"),  required_argument, nullptr, 'l' },
-    {const_cast<char *>("queue"),  required_argument, nullptr, 'q' },
-    {const_cast<char *>("error"),  required_argument, nullptr, 'e' },
-    {const_cast<char *>("retry"),  required_argument, nullptr, 'r' },
-    {const_cast<char *>("header"), required_argument, nullptr, 'h' },
-    {const_cast<char *>("maxage"), required_argument, nullptr, 'm' },
-    {const_cast<char *>("prefix"), required_argument, nullptr, 'p' },
-    {const_cast<char *>("tag"),    required_argument, nullptr, 't' },
- // EOF
-    {nullptr,                      no_argument,       nullptr, '\0'},
+    {const_cast<char *>("limit"),     required_argument, nullptr, 'l' },
+    {const_cast<char *>("queue"),     required_argument, nullptr, 'q' },
+    {const_cast<char *>("error"),     required_argument, nullptr, 'e' },
+    {const_cast<char *>("retry"),     required_argument, nullptr, 'r' },
+    {const_cast<char *>("header"),    required_argument, nullptr, 'h' },
+    {const_cast<char *>("maxage"),    required_argument, nullptr, 'm' },
+    {const_cast<char *>("prefix"),    required_argument, nullptr, 'p' },
+    {const_cast<char *>("tag"),       required_argument, nullptr, 't' },
+    {const_cast<char *>("conntrack"), no_argument,       nullptr, 'c' },
+    // EOF
+    {nullptr,                         no_argument,       nullptr, '\0'},
   };
   optind             = 1;
   std::string prefix = RATE_LIMITER_METRIC_PREFIX;
@@ -150,6 +158,9 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     case 't':
       tag = optarg;
       break;
+    case 'c':
+      this->_conntrack = true;
+      break;
     }
     if (opt == -1) {
       break;
@@ -179,4 +190,15 @@ TxnRateLimiter::setupTxnCont(TSHttpTxn txnp, TSHttpHookID hook)
 
   TSContDataSet(cont, this);
   TSHttpTxnHookAdd(txnp, hook, cont);
+}
+
+// This only needs the TS_HTTP_SSN_CLOSE_HOOK, for now at least, so not passed as argument.
+void
+TxnRateLimiter::setupSsnCont(TSHttpSsn ssnp)
+{
+  TSCont cont = TSContCreate(txn_limit_cont, nullptr);
+  TSReleaseAssert(cont);
+
+  TSContDataSet(cont, this);
+  TSHttpSsnHookAdd(ssnp, TS_HTTP_SSN_CLOSE_HOOK, cont);
 }

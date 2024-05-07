@@ -463,8 +463,6 @@ C_Format::capture(BufferWriter &, Spec const &spec, std::any const &value) {
 // C_Format parsing
 bool
 C_Format::operator()(std::string_view &literal, Spec &spec) {
-  TextView parsed;
-
   // clean up any old business from a previous specifier.
   if (_prec_p) {
     spec._type = Spec::CAPTURE_TYPE;

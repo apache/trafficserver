@@ -35,22 +35,22 @@ public:
   QUICStreamManager(QUICContext *context, QUICApplicationMap *app_map);
   virtual ~QUICStreamManager();
 
-  void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
-                                const std::shared_ptr<const QUICTransportParameters> &remote_tp);
-  void set_max_streams_bidi(uint64_t max_streams);
-  void set_max_streams_uni(uint64_t max_streams);
+  void     init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
+                                    const std::shared_ptr<const QUICTransportParameters> &remote_tp);
+  void     set_max_streams_bidi(uint64_t max_streams);
+  void     set_max_streams_uni(uint64_t max_streams);
   uint64_t total_reordered_bytes() const;
   uint64_t total_offset_received() const;
   uint64_t total_offset_sent() const;
 
-  uint32_t stream_count() const;
+  uint32_t    stream_count() const;
   QUICStream *find_stream(QUICStreamId stream_id);
 
   QUICConnectionErrorUPtr create_stream(QUICStreamId stream_id);
-  QUICConnectionErrorUPtr create_uni_stream(QUICStreamId &new_stream_id);
-  QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId &new_stream_id);
-  QUICConnectionErrorUPtr delete_stream(QUICStreamId &new_stream_id);
-  void reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error);
+  QUICConnectionErrorUPtr create_uni_stream(QUICStreamId new_stream_id);
+  QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId new_stream_id);
+  QUICConnectionErrorUPtr delete_stream(QUICStreamId new_stream_id);
+  void                    reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error);
 
   void set_default_application(QUICApplication *app);
 
@@ -60,6 +60,6 @@ public:
   DLL<QUICStream> stream_list;
 
 protected:
-  QUICContext *_context        = nullptr;
+  QUICContext        *_context = nullptr;
   QUICApplicationMap *_app_map = nullptr;
 };

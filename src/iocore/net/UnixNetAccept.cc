@@ -35,6 +35,8 @@ namespace
 
 DbgCtl dbg_ctl_iocore_net{"iocore_net"};
 DbgCtl dbg_ctl_iocore_net_accept_start{"iocore_net_accept_start"};
+DbgCtl dbg_ctl_iocore_net_accepts{"iocore_net_accepts"};
+DbgCtl dbg_ctl_iocore_net_accept{"iocore_net_accept"};
 
 /** Check and handle if the number of client connections exceeds the configured max.
  *
@@ -49,14 +51,14 @@ handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<Connection
 {
   int const client_max = NetHandler::get_per_client_max_connections_in();
   if (client_max > 0) {
-    auto inbound_tracker     = ConnectionTracker::obtain_inbound(addr);
-    auto const tracked_count = inbound_tracker.reserve();
+    auto       inbound_tracker = ConnectionTracker::obtain_inbound(addr);
+    auto const tracked_count   = inbound_tracker.reserve();
     if (tracked_count > client_max) {
       // close the connection as we are in per client connection throttle state
       inbound_tracker.release();
       inbound_tracker.blocked();
       inbound_tracker.Warn_Blocked(client_max, 0, tracked_count - 1, addr,
-                                   is_debug_tag_set("iocore_net_accept") ? "iocore_net_accept" : nullptr);
+                                   dbg_ctl_iocore_net_accept.on() ? &dbg_ctl_iocore_net_accept : nullptr);
       Metrics::Counter::increment(net_rsb.per_client_connections_throttled_in);
       return false;
     }
@@ -79,11 +81,11 @@ safe_delay(int msec)
 int
 net_accept(NetAccept *na, void *ep, bool blockable)
 {
-  Event *e               = static_cast<Event *>(ep);
-  int res                = 0;
-  int count              = 0;
-  UnixNetVConnection *vc = nullptr;
-  Connection con;
+  Event              *e     = static_cast<Event *>(ep);
+  int                 res   = 0;
+  int                 count = 0;
+  UnixNetVConnection *vc    = nullptr;
+  Connection          con;
 
   int additional_accepts = NetHandler::get_additional_accepts();
 
@@ -146,7 +148,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
 #endif
     SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::acceptEvent);
 
-    EThread *t;
+    EThread    *t;
     NetHandler *h;
     if (e->ethread->is_event_type(ET_NET)) {
       t = e->ethread;
@@ -176,7 +178,7 @@ Ldone:
   // if we stop looping as a result of hitting the accept limit,
   // resechedule accepting to the end of the thread event queue
   // for the goal of fairness between accepting and other work
-  Debug("iocore_net_accepts", "exited accept loop - count: %d, limit: %d", count, additional_accepts);
+  Dbg(dbg_ctl_iocore_net_accepts, "exited accept loop - count: %d, limit: %d", count, additional_accepts);
   if (count >= additional_accepts) {
     this_ethread()->schedule_imm_local(na);
   }
@@ -197,8 +199,8 @@ getNetAccept(int ID)
 void
 NetAccept::init_accept_loop()
 {
-  int i, n;
-  char thr_name[MAX_THREAD_NAME_LENGTH];
+  int    i, n;
+  char   thr_name[MAX_THREAD_NAME_LENGTH];
   size_t stacksize;
   if (do_listen(BLOCKING)) {
     return;
@@ -295,7 +297,7 @@ NetAccept::init_accept_per_thread()
 
   for (i = 0; i < n; i++) {
     NetAccept *a = (i < n - 1) ? clone() : this;
-    EThread *t   = eventProcessor.thread_group[ET_NET]._thread[i];
+    EThread   *t = eventProcessor.thread_group[ET_NET]._thread[i];
     a->mutex     = get_NetHandler(t)->mutex;
     t->schedule_imm(a);
   }
@@ -334,9 +336,9 @@ NetAccept::do_listen(bool non_blocking)
 int
 NetAccept::do_blocking_accept(EThread *t)
 {
-  int res                = 0;
-  UnixNetVConnection *vc = nullptr;
-  Connection con;
+  int                 res = 0;
+  UnixNetVConnection *vc  = nullptr;
+  Connection          con;
   con.sock_type = SOCK_STREAM;
 
   int count              = 0;
@@ -426,8 +428,8 @@ NetAccept::do_blocking_accept(EThread *t)
 #endif
     SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::acceptEvent);
 
-    EThread *localt = eventProcessor.assign_thread(ET_NET);
-    NetHandler *h   = get_NetHandler(localt);
+    EThread    *localt = eventProcessor.assign_thread(ET_NET);
+    NetHandler *h      = get_NetHandler(localt);
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
     localt->schedule_imm(vc);
@@ -482,19 +484,19 @@ NetAccept::acceptFastEvent(int event, void *ep)
   Event *e = static_cast<Event *>(ep);
   (void)event;
   (void)e;
-  int bufsz, res = 0;
+  int        bufsz, res = 0;
   Connection con;
   con.sock_type = SOCK_STREAM;
 
-  UnixNetVConnection *vc = nullptr;
-  int count              = 0;
-  EThread *t             = e->ethread;
-  NetHandler *h          = get_NetHandler(t);
-  int additional_accepts = NetHandler::get_additional_accepts();
+  UnixNetVConnection *vc                 = nullptr;
+  int                 count              = 0;
+  EThread            *t                  = e->ethread;
+  NetHandler         *h                  = get_NetHandler(t);
+  int                 additional_accepts = NetHandler::get_additional_accepts();
 
   do {
     socklen_t sz = sizeof(con.addr);
-    int fd       = SocketManager::accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
+    int       fd = SocketManager::accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
     con.fd       = fd;
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
 
@@ -601,7 +603,7 @@ Ldone:
   // if we stop looping as a result of hitting the accept limit,
   // resechedule accepting to the end of the thread event queue
   // for the goal of fairness between accepting and other work
-  Debug("iocore_net_accepts", "exited accept loop - count: %d, limit: %d", count, additional_accepts);
+  Dbg(dbg_ctl_iocore_net_accepts, "exited accept loop - count: %d, limit: %d", count, additional_accepts);
   if (count >= additional_accepts) {
     this_ethread()->schedule_imm_local(this);
   }

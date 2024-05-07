@@ -28,8 +28,8 @@
 std::string const &
 bodyString416()
 {
-  static std::string bodystr;
-  static std::mutex mutex;
+  static std::string                bodystr;
+  static std::mutex                 mutex;
   std::lock_guard<std::mutex> const guard(mutex);
 
   if (bodystr.empty()) {
@@ -51,8 +51,8 @@ bodyString416()
 std::string
 string502(int const httpver)
 {
-  static std::string msg;
-  static std::mutex mutex;
+  static std::string                msg;
+  static std::mutex                 mutex;
   std::lock_guard<std::mutex> const guard(mutex);
 
   if (msg.empty()) {
@@ -68,12 +68,12 @@ string502(int const httpver)
     bodystr.append("</body>\n");
     bodystr.append("</html>\n");
 
-    char hverstr[64];
+    char      hverstr[64];
     int const hlen =
       snprintf(hverstr, sizeof(hverstr), "HTTP/%d.%d 502 Bad Gateway\r\n", TS_HTTP_MAJOR(httpver), TS_HTTP_MINOR(httpver));
     msg.append(hverstr, hlen);
 
-    char clenstr[1024];
+    char      clenstr[1024];
     int const clen = snprintf(clenstr, sizeof(clenstr), "%lu", bodystr.size());
     msg.append("Content-Length: ");
     msg.append(clenstr, clen);
@@ -99,11 +99,11 @@ form416HeaderAndBody(HttpHeader &header, int64_t const contentlen, std::string c
   header.setReason(reason, strlen(reason));
 
   char bufstr[256];
-  int buflen = snprintf(bufstr, sizeof(bufstr), "%lu", bodystr.size());
+  int  buflen = snprintf(bufstr, sizeof(bufstr), "%lu", bodystr.size());
   header.setKeyVal(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, bufstr, buflen);
 
   static char const *const ctypestr = "text/html";
-  static int const ctypelen         = strlen(ctypestr);
+  static int const         ctypelen = strlen(ctypestr);
   header.setKeyVal(TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE, ctypestr, ctypelen);
 
   buflen = snprintf(bufstr, 255, "*/%" PRId64, contentlen);

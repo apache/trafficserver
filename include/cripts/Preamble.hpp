@@ -60,13 +60,13 @@
 #include "cripts/Plugins.hpp"
 
 // This is to make using these more convenient
-using fmt::format;
 using Cript::string;
+using fmt::format;
 
 // This needs to be last
 #include "cripts/Context.hpp"
 
 // These are globals, making certain operations nice and convenient, without wasting plugin space
-extern Proxy proxy;      // Access to all overridable configurations
-extern Control control;  // Access to the HTTP control mechanism
+extern Proxy    proxy;   // Access to all overridable configurations
+extern Control  control; // Access to the HTTP control mechanism
 extern Versions version; // Access to the ATS version information

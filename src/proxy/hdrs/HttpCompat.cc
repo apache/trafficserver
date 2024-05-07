@@ -52,10 +52,10 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, c
 void
 HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, int len, char sep)
 {
-  int in_quote;
-  const char quot = '\"';
+  int         in_quote;
+  const char  quot = '\"';
   const char *s, *e, *l, *s_before_skipping_ws;
-  int index, byte_length, hit_sep, trim_end_quote;
+  int         index, byte_length, hit_sep, trim_end_quote;
 
   if ((string == nullptr) || (list == nullptr) || (sep == NUL)) {
     return;
@@ -203,10 +203,10 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
 bool
 HttpCompat::lookup_param_in_strlist(StrList *param_list, const char *param_name, char *param_val, int param_val_length)
 {
-  int cnt;
+  int         cnt;
   const char *s, *t;
-  Str *param;
-  bool is_match;
+  Str        *param;
+  bool        is_match;
 
   for (param = param_list->head; param != nullptr; param = param->next) {
     /////////////////////////////////////////////////////
@@ -278,7 +278,7 @@ HttpCompat::lookup_param_in_semicolon_string(const char *semicolon_string, int s
                                              char *param_val, int param_val_length)
 {
   StrList l;
-  bool result;
+  bool    result;
 
   parse_semicolon_list(&l, semicolon_string, semicolon_string_len);
   result = lookup_param_in_strlist(&l, param_name, param_val, param_val_length);
@@ -303,7 +303,7 @@ void
 HttpCompat::parse_mime_type(const char *mime_string, char *type, char *subtype, int type_len, int subtype_len)
 {
   const char *s, *e;
-  char *d;
+  char       *d;
 
   *type = *subtype = '\0';
 
@@ -357,7 +357,7 @@ HttpCompat::parse_mime_type_with_len(const char *mime_string, int mime_string_le
                                      int subtype_len)
 {
   const char *s, *s_toofar, *e;
-  char *d;
+  char       *d;
 
   *type = *subtype = '\0';
   s_toofar         = mime_string + mime_string_len;
@@ -451,7 +451,7 @@ HttpCompat::do_vary_header_values_match(MIMEField *hdr1, MIMEField *hdr2)
     return false;
   }
 
-  int hdr1_val_len, hdr2_val_len;
+  int         hdr1_val_len, hdr2_val_len;
   const char *hdr1_val = iter1.get_first(hdr1, &hdr1_val_len);
   const char *hdr2_val = iter2.get_first(hdr2, &hdr2_val_len);
 
@@ -481,7 +481,7 @@ float
 HttpCompat::find_Q_param_in_strlist(StrList *strlist)
 {
   float f, this_q;
-  char q_string[8];
+  char  q_string[8];
 
   this_q = 1.0;
   if (HttpCompat::lookup_param_in_strlist(strlist, (char *)"q", q_string, sizeof(q_string))) {
@@ -539,7 +539,7 @@ HttpCompat::match_accept_language(const char *lang_str, int lang_len, StrList *a
                                   int *matching_index, bool ignore_wildcards)
 {
   float Q, Q_wild;
-  Str *a_value;
+  Str  *a_value;
 
   Q                     = -1; // will never be returned as -1
   Q_wild                = -1; // will never be returned as -1
@@ -588,7 +588,7 @@ HttpCompat::match_accept_language(const char *lang_str, int lang_len, StrList *a
     // was specified, this document matches all accept headers.        //
     /////////////////////////////////////////////////////////////////////
     const char *atag_str = a_param_list.head->str;
-    int atag_len         = static_cast<int>(a_param_list.head->len);
+    int         atag_len = static_cast<int>(a_param_list.head->len);
 
     float tq = HttpCompat::find_Q_param_in_strlist(&a_param_list);
 
@@ -657,7 +657,7 @@ HttpCompat::match_accept_charset(const char *charset_str, int charset_len, StrLi
                                  bool ignore_wildcards)
 {
   float Q, Q_wild;
-  Str *a_value;
+  Str  *a_value;
 
   Q                    = -1; // will never be returned as -1
   Q_wild               = -1; // will never be returned as -1
@@ -699,8 +699,8 @@ HttpCompat::match_accept_charset(const char *charset_str, int charset_len, StrLi
     // see if the Accept-Charset tag matches the current charset //
     ///////////////////////////////////////////////////////////////
     const char *atag_str = a_param_list.head->str;
-    int atag_len         = static_cast<int>(a_param_list.head->len);
-    float tq             = HttpCompat::find_Q_param_in_strlist(&a_param_list);
+    int         atag_len = static_cast<int>(a_param_list.head->len);
+    float       tq       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
 
     if ((atag_len == 1) && (atag_str[0] == '*')) // wildcard
     {

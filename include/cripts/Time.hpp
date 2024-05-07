@@ -94,8 +94,8 @@ public:
   }
 
 protected:
-  std::time_t _now = std::time(nullptr);
-  std::tm _result  = {};
+  std::time_t _now    = std::time(nullptr);
+  std::tm     _result = {};
 };
 } // namespace detail
 

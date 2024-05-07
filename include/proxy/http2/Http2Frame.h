@@ -36,14 +36,14 @@ public:
   Http2Frame(const Http2FrameHeader &h, IOBufferReader *r, bool e = false) : _hdr(h), _ioreader(r), _from_early_data(e) {}
 
   // Accessor
-  IOBufferReader *reader() const;
+  IOBufferReader         *reader() const;
   const Http2FrameHeader &header() const;
-  bool is_from_early_data() const;
+  bool                    is_from_early_data() const;
 
 private:
   Http2FrameHeader _hdr;
-  IOBufferReader *_ioreader = nullptr;
-  bool _from_early_data     = false;
+  IOBufferReader  *_ioreader        = nullptr;
+  bool             _from_early_data = false;
 };
 
 /**
@@ -79,8 +79,8 @@ public:
   int64_t write_to(MIOBuffer *iobuffer) const override;
 
 private:
-  IOBufferReader *_reader = nullptr;
-  uint32_t _payload_len   = 0;
+  IOBufferReader *_reader      = nullptr;
+  uint32_t        _payload_len = 0;
 };
 
 /**
@@ -157,7 +157,7 @@ public:
 
 private:
   Http2SettingsParameter *_params = nullptr;
-  uint32_t _psize                 = 0;
+  uint32_t                _psize  = 0;
 };
 
 /**
@@ -180,8 +180,8 @@ public:
 
 private:
   Http2PushPromise _params;
-  uint8_t *_hdr_block     = nullptr;
-  uint32_t _hdr_block_len = 0;
+  uint8_t         *_hdr_block     = nullptr;
+  uint32_t         _hdr_block_len = 0;
 };
 
 /**

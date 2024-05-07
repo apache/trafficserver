@@ -82,10 +82,10 @@ public:
 private:
   struct EsiNodeInfo {
     EsiLib::DocNode::TYPE type;
-    const char *tag_suffix;
-    int tag_suffix_len;
-    const char *closing_tag;
-    int closing_tag_len;
+    const char           *tag_suffix;
+    int                   tag_suffix_len;
+    const char           *closing_tag;
+    int                   closing_tag_len;
     EsiNodeInfo(EsiLib::DocNode::TYPE t, const char *s, int s_len, const char *ct, int ct_len)
       : type(t), tag_suffix(s), tag_suffix_len(s_len), closing_tag(ct), closing_tag_len(ct_len){};
   };
@@ -93,14 +93,14 @@ private:
   const unsigned _max_doc_size;
 
   std::string _data;
-  int _parse_start_pos;
-  size_t _orig_output_list_size = 0;
+  int         _parse_start_pos;
+  size_t      _orig_output_list_size = 0;
 
   static const EsiNodeInfo ESI_NODES[];
   static const EsiNodeInfo HTML_COMMENT_NODE_INFO;
 
   static const char *ESI_TAG_PREFIX;
-  static const int ESI_TAG_PREFIX_LEN;
+  static const int   ESI_TAG_PREFIX_LEN;
 
   static const std::string SRC_ATTR_STR;
   static const std::string TEST_ATTR_STR;

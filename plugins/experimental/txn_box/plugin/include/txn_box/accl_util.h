@@ -33,6 +33,7 @@
 
 #include <swoc/TextView.h>
 #include <swoc/swoc_meta.h>
+#include <swoc/MemArena.h>
 
 // fwd declarations.
 class Comparison;
@@ -70,21 +71,41 @@ template <typename Key, typename Value> class StringTree
       left  = this;
       right = this;
     }
-    Key key;
+
+    ~Node()
+    {
+      reset();
+      if (left && left->bit_count) {
+        std::destroy_at(left);
+      }
+
+      if (right && right->bit_count) {
+        std::destroy_at(right);
+      }
+    }
+
+    Key   key;
     Value value;
     /// bit pos where it differs from previous node.
     std::size_t bit_count{0};
     /// key/value rank.
     int32_t rank;
     /// only two ways, btree
-    self_type *left;
-    self_type *right;
+    self_type *left{nullptr};
+    self_type *right{nullptr};
 
     Node()                        = delete;
     Node(Node const &)            = delete;
     Node(Node &&)                 = delete;
     Node &operator=(Node const &) = delete;
     Node &operator=(Node &&)      = delete;
+
+  private:
+    void
+    reset()
+    {
+      this->bit_count = 0;
+    }
   };
   // types
   using node_type     = Node;
@@ -128,11 +149,8 @@ private:
   /// hold the first element on the entire tree.
   node_type_ptr _head;
   /// this gets incremented on every insert.
-  int32_t _rank_counter{0};
-  /// recursive memory cleanup function.
-  void freeup(Node *n);
-  /// clean up function, should deal with all the crap.
-  void cleanup();
+  int32_t        _rank_counter{0};
+  swoc::MemArena _arena; ///< Storage for nodes
 };
 
 /// --------------------------------------------------------------------------------------------------------------------
@@ -179,7 +197,7 @@ get_bit(Key const &key, std::size_t position)
   assert(ptr != nullptr);
   int const byte_number      = position / 8;
   int const position_in_byte = position - (byte_number * 8);
-  auto byte                  = get_byte<Key>(ptr, byte_number);
+  auto      byte             = get_byte<Key>(ptr, byte_number);
   return ((byte) >> (7 - position_in_byte)) & 1;
 }
 
@@ -188,8 +206,8 @@ static auto
 get_first_diff_bit_position(Key const &lhs, Key const &rhs)
 {
   std::size_t byte_count{0};
-  auto lhs_iter = std::begin(lhs);
-  auto rhs_iter = std::begin(rhs);
+  auto        lhs_iter = std::begin(lhs);
+  auto        rhs_iter = std::begin(rhs);
   while ((lhs_iter != std::end(lhs) && rhs_iter != std::end(rhs)) && *lhs_iter == *rhs_iter) {
     ++lhs_iter;
     ++rhs_iter;
@@ -215,13 +233,13 @@ template <typename Key, typename Value> StringTree<Key, Value>::StringTree()
   // We do not set the rank now, as for the head, -1 should be ok.
   // we may be able to no need to initialize empty string if Key=string_view, thinking about this
   // as isPrefix may badly fail if null. Maybe check for head(before call to isPrefix).
-  _head            = new Node(Key{""}, Value{});
+  _head            = _arena.make<Node>(Key{""}, Value{});
   _head->bit_count = 0;
 }
 
 template <typename Key, typename Value> StringTree<Key, Value>::~StringTree()
 {
-  cleanup();
+  std::destroy_at(_head);
 }
 
 template <typename Key, typename Value>
@@ -229,7 +247,7 @@ bool
 StringTree<Key, Value>::insert(Key const &key, Value const &value, Comparison *cmp)
 {
   node_type_ptr search_node = _head;
-  std::size_t idx{0};
+  std::size_t   idx{0};
 
   // We wil try to go down the path and get close to the place where we want to insert the new value, then we will
   // follow the logic as like a search miss.
@@ -247,7 +265,7 @@ StringTree<Key, Value>::insert(Key const &key, Value const &value, Comparison *c
   std::size_t const first_diff_bit = (search_node == _head ? 1 : detail::get_first_diff_bit_position(key, search_node->key));
 
   // Getting ready the new node.
-  node_type_ptr new_node = new Node(key, value, _rank_counter++);
+  node_type_ptr new_node = _arena.make<Node>(key, value, _rank_counter++);
 
   // we will work on this two from now. Always left to start.
   node_type_ptr p = _head;
@@ -280,7 +298,7 @@ std::pair<bool, Value>
 StringTree<Key, Value>::full_match(Key const &key, Comparison *cmp) const noexcept
 {
   node_type_ptr search_node = _head->left;
-  std::size_t idx{0};
+  std::size_t   idx{0};
 
   // Walk down the tree using the bit_count to check which direction take. We will check this on every node.
   // If 1 we follow right, on 0 we go left. We will stop when find the uplink. At this point only we will compare the key.
@@ -363,33 +381,6 @@ StringTree<Key, Value>::prefix_match(Key const &prefix, Comparison *cmp) const
   return search;
 }
 
-template <typename Key, typename Value>
-void
-StringTree<Key, Value>::freeup(Node *n)
-{
-  if (n == nullptr) {
-    return;
-  }
-
-  node_type_ptr left  = n->left;
-  node_type_ptr right = n->right;
-
-  if (left->bit_count >= n->bit_count && (left != n && left != _head)) {
-    freeup(left);
-  }
-  if (right->bit_count >= n->bit_count && (right != n && right != _head)) {
-    freeup(right);
-  }
-  // ^^ should catch the nullptr
-  delete n;
-}
-
-template <typename Key, typename Value>
-void
-StringTree<Key, Value>::cleanup()
-{
-  freeup(_head);
-}
 /// --------------------------------------------------------------------------------------------------------------------
 
 ///
@@ -492,7 +483,7 @@ public:
   }
   // for debugging purpose we may need to log it.
   template <typename T> friend std::ostream &operator<<(std::ostream &os, reversed_view<T> const &v);
-  template <typename T> friend bool operator==(reversed_view<T> const &lhs, reversed_view<T> const &rhs);
+  template <typename T> friend bool          operator==(reversed_view<T> const &lhs, reversed_view<T> const &rhs);
 
   // To be removed. POC for testing purposes.
   View

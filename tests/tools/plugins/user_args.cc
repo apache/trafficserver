@@ -27,12 +27,12 @@
 #include <cstdio>
 
 using ArgIndexes = struct {
-  int TXN, SSN, VCONN, GLB;
+  int    TXN, SSN, VCONN, GLB;
   TSCont contp;
 };
 
 const char *PLUGIN_NAME = "user_args_test";
-ArgIndexes gIX;
+ArgIndexes  gIX;
 
 bool
 set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, const char *val)
@@ -41,7 +41,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, const char *val)
     return false;
   }
 
-  bool ret         = false;
+  bool   ret       = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header, strlen(header));
 
   TSReleaseAssert(!field_loc); // The headers are for testing, should never exist
@@ -59,9 +59,9 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, const char *val)
 static int
 cont_global(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
-  TSVConn vconnp = TSHttpSsnClientVConnGet(ssnp);
+  TSHttpTxn txnp   = static_cast<TSHttpTxn>(edata);
+  TSHttpSsn ssnp   = TSHttpTxnSsnGet(txnp);
+  TSVConn   vconnp = TSHttpSsnClientVConnGet(ssnp);
 
   TSUserArgSet(txnp, gIX.TXN, (void *)"Transaction Data");
   TSUserArgSet(ssnp, gIX.SSN, (void *)"Session Data");
@@ -75,12 +75,12 @@ cont_global(TSCont contp, TSEvent event, void *edata)
 static int
 cont_remap(TSCont contp, TSEvent event, void *edata)
 {
-  TSMBuffer bufp;
-  TSMLoc hdrs;
-  ArgIndexes *ix = static_cast<ArgIndexes *>(TSContDataGet(contp));
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
-  TSVConn vconnp = TSHttpSsnClientVConnGet(ssnp);
+  TSMBuffer   bufp;
+  TSMLoc      hdrs;
+  ArgIndexes *ix     = static_cast<ArgIndexes *>(TSContDataGet(contp));
+  TSHttpTxn   txnp   = static_cast<TSHttpTxn>(edata);
+  TSHttpSsn   ssnp   = TSHttpTxnSsnGet(txnp);
+  TSVConn     vconnp = TSHttpSsnClientVConnGet(ssnp);
 
   if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdrs)) {
     set_header(bufp, hdrs, "X-Arg-GLB", static_cast<const char *>(TSUserArgGet(nullptr, ix->GLB)));

@@ -42,14 +42,14 @@
 #include "txn_box/yaml_util.h"
 #include "txn_box/ts_util.h"
 
-using swoc::TextView;
-using swoc::Errata;
-using swoc::Rv;
 using swoc::BufferWriter;
+using swoc::Errata;
 using swoc::IPAddr;
 using swoc::IPRange;
 using swoc::IPSpace;
 using swoc::MemSpan;
+using swoc::Rv;
+using swoc::TextView;
 
 using namespace swoc::literals;
 namespace bwf = swoc::bwf;
@@ -75,7 +75,7 @@ using Row = MemSpan<std::byte>;
 using Space = IPSpace<Row>;
 /// Space information that must be reloaded on file change.
 struct SpaceInfo {
-  Space space;          ///< IPSpace.
+  Space          space; ///< IPSpace.
   swoc::MemArena arena; ///< Row storage.
 };
 
@@ -83,10 +83,10 @@ using SpaceHandle = std::shared_ptr<SpaceInfo>;
 /// Context information for the active IP Space.
 /// This is set up by the @c ip-space modifier and is only valid in the expression scope.
 struct CtxActiveInfo {
-  SpaceHandle _space;                  ///< Active space.
+  SpaceHandle         _space;          ///< Active space.
   Do_ip_space_define *_drtv = nullptr; ///< Active directive.
-  IPAddr _addr;                        ///< Search address.
-  Row *_row = nullptr;                 ///< Active row.
+  IPAddr              _addr;           ///< Search address.
+  Row                *_row = nullptr;  ///< Active row.
 };
 
 } // namespace
@@ -236,7 +236,7 @@ struct Txb_IP_Space {
   /// An instance of this is stored in the configuration arena.
   struct CfgInfo {
     ReservedSpan _ctx_reserved_span; ///< Per context reserved storage.
-    Map _map;                        ///< Map of defined spaces.
+    Map          _map;               ///< Map of defined spaces.
   };
 
   /** Retrieve configuration level information.
@@ -272,12 +272,12 @@ protected:
 
 public:
   static inline constexpr swoc::TextView KEY = Txb_IP_Space::DRTV_KEY; ///< Directive name.
-  static const HookMask HOOKS;                                         ///< Valid hooks for directive.
+  static const HookMask                  HOOKS;                        ///< Valid hooks for directive.
 
   /// Functor to do file content updating as needed.
   struct Updater {
-    std::weak_ptr<Config> _cfg; ///< Configuration.
-    Do_ip_space_define *_block; ///< Space instance.
+    std::weak_ptr<Config> _cfg;   ///< Configuration.
+    Do_ip_space_define   *_block; ///< Space instance.
 
     void operator()(); ///< Do the update check.
   };
@@ -314,12 +314,12 @@ public:
 protected:
   /// Information about a column in the IPSpace table.
   struct Column {
-    TextView _name;           ///< Name.
-    unsigned _idx;            ///< Index.
-    ColumnData _type;         ///< Column data type.
-    swoc::Lexicon<int> _tags; ///< Tags for enumerations or flags.
-    size_t _row_offset;       ///< Offset in to @c Row for column data.
-    size_t _row_size;         ///< # of bytes of row storage.
+    TextView           _name;       ///< Name.
+    unsigned           _idx;        ///< Index.
+    ColumnData         _type;       ///< Column data type.
+    swoc::Lexicon<int> _tags;       ///< Tags for enumerations or flags.
+    size_t             _row_offset; ///< Offset in to @c Row for column data.
+    size_t             _row_size;   ///< # of bytes of row storage.
 
     Column()              = default; ///< Default constructor.
     Column(Column &&that) = default; ///< Move constructor.
@@ -339,22 +339,22 @@ protected:
     static const swoc::Lexicon<ColumnData> TypeNames;
   };
 
-  TextView _name;                 ///< Block name.
-  swoc::file::path _path;         ///< Path to file (optional)
-  SpaceHandle _space;             ///< The IP Space
+  TextView          _name;        ///< Block name.
+  swoc::file::path  _path;        ///< Path to file (optional)
+  SpaceHandle       _space;       ///< The IP Space
   std::shared_mutex _space_mutex; ///< Reader / writer for @a _space.
 
-  std::vector<Column> _cols;             ///< Defined columns.
-  swoc::Lexicon<unsigned> _col_names;    ///< Mapping of names <-> indices.
-  static constexpr int INVALID_TAG = -1; ///< Lexicon default value for invalid tag.
-  static constexpr int AUTO_TAG    = -2; ///< Lexicon default value for auto adding tags (enum).
-  size_t _row_size                 = 0;  ///< Current row size.
+  std::vector<Column>     _cols;            ///< Defined columns.
+  swoc::Lexicon<unsigned> _col_names;       ///< Mapping of names <-> indices.
+  static constexpr int    INVALID_TAG = -1; ///< Lexicon default value for invalid tag.
+  static constexpr int    AUTO_TAG    = -2; ///< Lexicon default value for auto adding tags (enum).
+  size_t                  _row_size   = 0;  ///< Current row size.
 
-  feature_type_for<DURATION> _duration = {}; ///< Time between update checks.
+  feature_type_for<DURATION>                       _duration = {}; ///< Time between update checks.
   std::atomic<std::chrono::system_clock::duration> _last_check =
     std::chrono::system_clock::now().time_since_epoch(); ///< Absolute time of the last alert.
   std::chrono::system_clock::time_point _last_modified;  ///< Last modified time of the file.
-  ts::TaskHandle _task;                                  ///< Handle for periodic checking task.
+  ts::TaskHandle                        _task;           ///< Handle for periodic checking task.
 
   int _line_no = 0; ///< For debugging name conflicts.
 
@@ -426,7 +426,7 @@ Do_ip_space_define::should_check()
 
   if (_duration.count() > 0) {
     Clock::duration last = _last_check;  // required because CAS needs lvalue reference.
-    auto now             = Clock::now(); // Current time_point.
+    auto            now  = Clock::now(); // Current time_point.
     if (Clock::time_point(last) + _duration <= now) {
       // it's been long enough, swap out our time for the last time. The winner of this swap
       // does the actual alert, leaving its current time as the last alert time.
@@ -452,26 +452,26 @@ Do_ip_space_define::parse_space(Config &cfg, TextView content) -> Rv<SpaceHandle
 {
   TextView line;
   unsigned line_no = 0;
-  auto space       = std::make_shared<SpaceInfo>();
+  auto     space   = std::make_shared<SpaceInfo>();
   while (!(line = content.take_prefix_at('\n')).empty()) {
     ++line_no;
     line.trim_if(&isspace);
     if (line.empty() || '#' == line.front()) {
       continue;
     }
-    auto token = line.take_prefix_at(',');
+    auto    token = line.take_prefix_at(',');
     IPRange range{token};
     if (range.empty()) {
       return Errata(S_ERROR, R"(Invalid range "{}" at line {}.)", token, line_no);
     }
 
-    Row row = space->arena.alloc(_row_size).rebind<std::byte>();
+    Row      row = space->arena.alloc(_row_size).rebind<std::byte>();
     TextView parsed;
     // Iterate over the columns. If the input data runs out, then @a token becomes the empty
     // full, which the various cases deal with (in most an empty token isn't a problem).
     // This guarantees that every column in every row is initialized.
     for (unsigned col_idx = 1; col_idx < _cols.size(); ++col_idx) {
-      Column &c = _cols[col_idx];
+      Column       &c = _cols[col_idx];
       MemSpan<void> data{row.data() + c._row_offset, c._row_size};
       token = line.take_prefix_at(',').ltrim_if(&isspace);
       switch (c._type) {
@@ -504,7 +504,7 @@ Do_ip_space_define::parse_space(Config &cfg, TextView content) -> Rv<SpaceHandle
         break;
       case ColumnData::FLAGS: {
         TextView key;
-        BitSpan bits{data};
+        BitSpan  bits{data};
         bits.reset(); // start with no bits set.
         while (!(key = token.take_prefix_if([](char c) -> bool { return !('-' == c || '_' == c || isalnum(c)); })).empty()) {
           if (auto idx = c._tags[key]; idx >= 0) {
@@ -526,7 +526,7 @@ Errata
 Do_ip_space_define::define_column(Config &cfg, YAML::Node node)
 {
   Column col;
-  auto name_node = node[NAME_TAG];
+  auto   name_node = node[NAME_TAG];
   if (name_node) {
     auto &&[name_expr, name_errata]{cfg.parse_expr(name_node)};
     if (!name_errata.is_ok()) {
@@ -621,7 +621,7 @@ Rv<Directive::Handle>
 Do_ip_space_define::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_node, swoc::TextView const &, swoc::TextView const &,
                          YAML::Node key_value)
 {
-  auto self = new self_type();
+  auto   self = new self_type();
   Handle handle(self);
   self->_line_no = drtv_node.Mark().line;
 
@@ -709,7 +709,7 @@ Do_ip_space_define::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_nod
   }
 
   std::error_code ec;
-  auto content = swoc::file::load(self->_path, ec);
+  auto            content = swoc::file::load(self->_path, ec);
   if (ec) {
     return Errata(S_ERROR, "Unable to read input file {} for space {} - {}", self->_path, self->_name, ec);
   }
@@ -757,7 +757,7 @@ Do_ip_space_define::Updater::operator()()
   }
 
   std::error_code ec;
-  auto fs = swoc::file::status(_block->_path, ec);
+  auto            fs = swoc::file::status(_block->_path, ec);
   if (!ec) {
     auto mtime = swoc::file::last_write_time(fs);
     if (mtime <= _block->_last_modified) {
@@ -840,8 +840,8 @@ public:
   static Rv<Handle> load(Config &cfg, YAML::Node node, TextView key, TextView arg, YAML::Node key_value);
 
 protected:
-  Expr _expr;                          ///< Value expression.
-  TextView _name;                      ///< Argument - IPSpace name.
+  Expr                _expr;           ///< Value expression.
+  TextView            _name;           ///< Argument - IPSpace name.
   Do_ip_space_define *_drtv = nullptr; ///< The IPSpace define for @a _name
 };
 
@@ -865,12 +865,12 @@ Mod_ip_space::result_type(const ActiveType &) const
 Rv<Modifier::Handle>
 Mod_ip_space::load(Config &cfg, YAML::Node node, TextView, TextView arg, YAML::Node key_value)
 {
-  auto *csi = Txb_IP_Space::cfg_info(cfg);
+  auto         *csi = Txb_IP_Space::cfg_info(cfg);
   CfgActiveInfo info;
   // Unfortunately supporting remap requires dynamic access.
   if (csi) { // global, resolve to the specific ipspace directive.
-    auto &map = csi->_map;
-    auto spot = map.find(arg);
+    auto &map  = csi->_map;
+    auto  spot = map.find(arg);
     if (spot == map.end()) {
       return Errata(S_ERROR, R"("{}" at {} is not the name of a defined IP space.)", arg, node.Mark());
     }
@@ -893,7 +893,7 @@ Mod_ip_space::operator()(Context &ctx, feature_type_for<IP_ADDR> addr)
 {
   // Set up local active state.
   CtxActiveInfo active;
-  auto drtv = _drtv; // may be locally updated, need a copy.
+  auto          drtv = _drtv; // may be locally updated, need a copy.
   if (drtv) {
     active._space = drtv->acquire_space();
   } else {
@@ -961,7 +961,7 @@ Ex_ip_col::validate(Config &cfg, Spec &spec, const TextView &arg)
   auto span       = cfg.allocate_cfg_storage(sizeof(Info)).rebind<Info>();
   spec._data.span = span;
   Info &info      = span[0];
-  auto drtv       = mod_info->_drtv;
+  auto  drtv      = mod_info->_drtv;
   // Always do the column conversion if it's an integer - that won't change at runtime.
   if (auto n = svtou(arg, &parsed); arg.size() == parsed.size()) {
     if (drtv && n >= drtv->_cols.size()) {
@@ -1052,7 +1052,7 @@ Ex_ip_col::extract(Context &ctx, const Spec &spec)
 
 namespace
 {
-Ex_ip_col ex_ip_col;
+Ex_ip_col             ex_ip_col;
 [[maybe_unused]] bool INITIALIZED = []() -> bool {
   Config::define<Do_ip_space_define>();
   Modifier::define(Mod_ip_space::KEY, Mod_ip_space::load);

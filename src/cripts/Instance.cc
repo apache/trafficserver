@@ -64,7 +64,7 @@ Cript::Instance::addPlugin(const Cript::string &tag, const Cript::string &plugin
   auto p = Plugin::Remap::create(tag, plugin, from_url, to_url, options);
 
   if (p.valid()) {
-    plugins[tag] = std::move(p);
+    plugins.emplace(tag, std::move(p));
 
     return true;
   } else {

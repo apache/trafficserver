@@ -178,7 +178,7 @@ using milestone_map = std::map<swoc::TextView, TSMilestonesType, cmp_str>;
 static milestone_map m_milestone_map;
 
 struct milestone {
-  const char *msname;
+  const char      *msname;
   TSMilestonesType mstype;
 };
 
@@ -283,7 +283,7 @@ TSMilestonesType
 LogField::milestone_from_m_name()
 {
   milestone_map::iterator it;
-  TSMilestonesType result = TS_MILESTONE_LAST_ENTRY;
+  TSMilestonesType        result = TS_MILESTONE_LAST_ENTRY;
 
   it = m_milestone_map.find(m_name);
   if (it != m_milestone_map.end()) {
@@ -297,7 +297,7 @@ int
 LogField::milestones_from_m_name(TSMilestonesType *ms1, TSMilestonesType *ms2)
 {
   milestone_map::iterator it;
-  swoc::TextView ms1_name, ms2_name(m_name);
+  swoc::TextView          ms1_name, ms2_name(m_name);
 
   ms1_name = ms2_name.take_prefix_at('-');
 
@@ -822,7 +822,7 @@ unsigned
 LogFieldList::marshal(LogAccess *lad, char *buf)
 {
   char *ptr;
-  int bytes = 0;
+  int   bytes = 0;
   for (LogField *f = first(); f; f = next(f)) {
     ptr    = &buf[bytes];
     bytes += f->marshal(lad, ptr);
@@ -835,7 +835,7 @@ unsigned
 LogFieldList::marshal_agg(char *buf)
 {
   char *ptr;
-  int bytes = 0;
+  int   bytes = 0;
   for (LogField *f = first(); f; f = next(f)) {
     ptr    = &buf[bytes];
     bytes += f->marshal_agg(ptr);

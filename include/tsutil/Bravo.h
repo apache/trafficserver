@@ -189,8 +189,8 @@ public:
 
 private:
   mutex_type *_mutex = nullptr;
-  Token _token       = 0;
-  bool _owns         = false;
+  Token       _token = 0;
+  bool        _owns  = false;
 };
 
 /**
@@ -255,9 +255,9 @@ public:
 
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
-      size_t index = DenseThreadId::self() % SLOT_SIZE;
-      Slot &slot   = _mutex.readers[index];
-      bool expect  = false;
+      size_t index  = DenseThreadId::self() % SLOT_SIZE;
+      Slot  &slot   = _mutex.readers[index];
+      bool   expect = false;
       if (slot.mu.compare_exchange_strong(expect, true, std::memory_order_relaxed)) {
         // recheck
         if (_mutex.read_bias.load(std::memory_order_acquire)) {
@@ -283,9 +283,9 @@ public:
 
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
-      size_t index = DenseThreadId::self() % SLOT_SIZE;
-      Slot &slot   = _mutex.readers[index];
-      bool expect  = false;
+      size_t index  = DenseThreadId::self() % SLOT_SIZE;
+      Slot  &slot   = _mutex.readers[index];
+      bool   expect = false;
 
       if (slot.mu.compare_exchange_weak(expect, true, std::memory_order_release, std::memory_order_relaxed)) {
         // recheck
@@ -330,10 +330,10 @@ private:
   };
 
   struct Mutex {
-    std::atomic<bool> read_bias         = false;
-    std::array<Slot, SLOT_SIZE> readers = {};
-    time_point inhibit_until{};
-    T underlying;
+    std::atomic<bool>           read_bias = false;
+    std::array<Slot, SLOT_SIZE> readers   = {};
+    time_point                  inhibit_until{};
+    T                           underlying;
   };
 
   time_point

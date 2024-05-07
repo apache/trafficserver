@@ -79,7 +79,7 @@ void
 RPCConfig::load_from_file(std::string const &filePath)
 {
   std::error_code ec;
-  std::string content{swoc::file::load(swoc::file::path{filePath}, ec)};
+  std::string     content{swoc::file::load(swoc::file::path{filePath}, ec)};
 
   if (ec) {
     Warning("Cannot open the config file: %s - %s", filePath.c_str(), strerror(ec.value()));

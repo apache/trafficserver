@@ -39,11 +39,17 @@
     sm->history.push_back(MakeSourceLocation(), e, r); \
   }
 
-#define STATE_ENTER(state_name, event)                                                                                   \
-  {                                                                                                                      \
-    SM_REMEMBER(master_sm, event, NO_REENTRANT);                                                                         \
-    Debug("http_cache", "[%" PRId64 "] [%s, %s]", master_sm->sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
+#define STATE_ENTER(state_name, event)                                                                                       \
+  {                                                                                                                          \
+    SM_REMEMBER(master_sm, event, NO_REENTRANT);                                                                             \
+    Dbg(dbg_ctl_http_cache, "[%" PRId64 "] [%s, %s]", master_sm->sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
+
+namespace
+{
+DbgCtl dbg_ctl_http_cache{"http_cache"};
+
+} // end anonymous namespace
 
 HttpCacheAction::HttpCacheAction() {}
 
@@ -148,10 +154,10 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     // than or equal to the max number of open read retries,
     // else treat as a cache miss.
     ink_assert(open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries || write_locked);
-    Debug("http_cache",
-          "[%" PRId64 "] [state_cache_open_read] cache open read failure %d. "
-          "retrying cache open read...",
-          master_sm->sm_id, open_read_tries);
+    Dbg(dbg_ctl_http_cache,
+        "[%" PRId64 "] [state_cache_open_read] cache open read failure %d. "
+        "retrying cache open read...",
+        master_sm->sm_id, open_read_tries);
 
     do_cache_open_read(cache_key);
     break;
@@ -169,7 +175,7 @@ HttpCacheSM::write_retry_done() const
   MgmtInt const timeout_ms = master_sm->t_state.txn_conf->max_cache_open_write_retry_timeout;
   if (0 < timeout_ms && 0 < open_write_start) {
     ink_hrtime const elapsed = ink_get_hrtime() - open_write_start;
-    MgmtInt const msecs      = ink_hrtime_to_msec(elapsed);
+    MgmtInt const    msecs   = ink_hrtime_to_msec(elapsed);
     return timeout_ms < msecs;
   } else {
     return master_sm->t_state.txn_conf->max_cache_open_write_retries < open_write_tries;
@@ -206,13 +212,13 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
       // without write retries in both a cache miss or a cache refresh scenario.
 
       if (write_retry_done()) {
-        Debug("http_cache", "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. read retry triggered",
-              master_sm->sm_id, open_write_tries);
+        Dbg(dbg_ctl_http_cache, "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. read retry triggered",
+            master_sm->sm_id, open_write_tries);
         if (master_sm->t_state.txn_conf->max_cache_open_read_retries <= 0) {
-          Debug("http_cache",
-                "[%" PRId64 "] [state_cache_open_write] invalid config, cache write fail set to"
-                " read retry, but, max_cache_open_read_retries is not enabled",
-                master_sm->sm_id);
+          Dbg(dbg_ctl_http_cache,
+              "[%" PRId64 "] [state_cache_open_write] invalid config, cache write fail set to"
+              " read retry, but, max_cache_open_read_retries is not enabled",
+              master_sm->sm_id);
         }
         open_read_tries = 0;
 
@@ -233,10 +239,10 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     } else {
       // The cache is hosed or full or something.
       // Forward the failure to the main sm
-      Debug("http_cache",
-            "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
-            "done retrying...",
-            master_sm->sm_id, open_write_tries);
+      Dbg(dbg_ctl_http_cache,
+          "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
+          "done retrying...",
+          master_sm->sm_id, open_write_tries);
       open_write_cb = true;
       err_code      = reinterpret_cast<intptr_t>(data);
       master_sm->handleEvent(event, &captive_action);
@@ -245,17 +251,17 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
 
   case EVENT_INTERVAL:
     if (master_sm->t_state.txn_conf->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
-      Debug("http_cache",
-            "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
-            "falling back to read retry...",
-            master_sm->sm_id, open_write_tries);
+      Dbg(dbg_ctl_http_cache,
+          "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
+          "falling back to read retry...",
+          master_sm->sm_id, open_write_tries);
       open_read_cb = false;
       master_sm->handleEvent(CACHE_EVENT_OPEN_READ, &captive_action);
     } else {
-      Debug("http_cache",
-            "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
-            "retrying cache open write...",
-            master_sm->sm_id, open_write_tries);
+      Dbg(dbg_ctl_http_cache,
+          "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
+          "retrying cache open write...",
+          master_sm->sm_id, open_write_tries);
 
       // Retry the cache open write if the number retries is less
       // than or equal to the max number of open write retries

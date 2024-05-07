@@ -44,14 +44,21 @@ Thread::Thread()
   mutex = new_ProxyMutex();
 }
 
+Thread::~Thread()
+{
+  if (this_thread_ptr == this) {
+    this_thread_ptr = nullptr;
+  }
+}
+
 ///////////////////////////////////////////////
 // Unix & non-NT Interface impl              //
 ///////////////////////////////////////////////
 
 struct thread_data_internal {
-  ThreadFunction f;                  ///< Function to execute in the thread.
-  Thread *me;                        ///< The class instance.
-  char name[MAX_THREAD_NAME_LENGTH]; ///< Name for the thread.
+  ThreadFunction f;                            ///< Function to execute in the thread.
+  Thread        *me;                           ///< The class instance.
+  char           name[MAX_THREAD_NAME_LENGTH]; ///< Name for the thread.
 };
 
 static void *

@@ -95,21 +95,19 @@ class SslLRUList
 {
 private:
   struct SslData {
-    std::queue<void *> vconnQ;    ///< Current queue of connections waiting for cert
-    std::unique_ptr<SSL_CTX> ctx; ///< Context generated
-    std::unique_ptr<X509> cert;   ///< Cert generated
-    std::string commonName;       ///< SNI
-    bool scheduled = false;       ///< If a TASK thread has been scheduled to generate cert
-                                  ///< The first thread might fail to do so, this flag will help reschedule
-    bool wontdo = false;          ///< if certs not on disk and dynamic gen is disabled
+    std::queue<void *>       vconnQ;            ///< Current queue of connections waiting for cert
+    std::unique_ptr<SSL_CTX> ctx;               ///< Context generated
+    std::unique_ptr<X509>    cert;              ///< Cert generated
+    std::string              commonName;        ///< SNI
+    bool                     scheduled = false; ///< If a TASK thread has been scheduled to generate cert
+                                                ///< The first thread might fail to do so, this flag will help reschedule
+    bool wontdo = false;                        ///< if certs not on disk and dynamic gen is disabled
     /// Doubly Linked List pointers for LRU
     SslData *prev = nullptr;
     SslData *next = nullptr;
 
     SslData() = default;
-    ~SslData()
-    { /* Dbg(dbg_ctl, "Deleting ssl data for [%s]", commonName.c_str()); */
-    }
+    ~SslData() { /* Dbg(dbg_ctl, "Deleting ssl data for [%s]", commonName.c_str()); */ }
   };
 
   using scoped_SslData = std::unique_ptr<SslLRUList::SslData>;
@@ -117,10 +115,10 @@ private:
   // unordered_map is much faster in terms of insertion/lookup/removal
   // Although it uses more space than map, the time efficiency should be more important
   std::unordered_map<std::string, scoped_SslData> cnDataMap; ///< Map from CN to sslData
-  TSMutex list_mutex;
+  TSMutex                                         list_mutex;
 
-  int size = 0;
-  int limit;
+  int      size = 0;
+  int      limit;
   SslData *head = nullptr;
   SslData *tail = nullptr;
 
@@ -134,10 +132,10 @@ public:
   SSL_CTX *
   lookup_and_create(const char *servername, void *edata, bool &wontdo)
   {
-    SslData *ssl_data              = nullptr;
+    SslData       *ssl_data        = nullptr;
     scoped_SslData scoped_ssl_data = nullptr;
-    SSL_CTX *ref_ctx               = nullptr;
-    std::string commonName(servername);
+    SSL_CTX       *ref_ctx         = nullptr;
+    std::string    commonName(servername);
     TSMutexLock(list_mutex);
     auto dataItr = cnDataMap.find(commonName);
     /// If such a context exists in dict
@@ -311,17 +309,17 @@ public:
 static bool sign_enabled = false;
 
 // Trusted CA private key and cert
-static scoped_X509 ca_cert_scoped;
+static scoped_X509     ca_cert_scoped;
 static scoped_EVP_PKEY ca_pkey_scoped;
 // static scoped_EVP_PKEY  ts_pkey_scoped;
 
-static int ca_serial;            ///< serial number
-static std::fstream serial_file; ///< serial number file
-static TSMutex serial_mutex;     ///< serial number mutex
+static int          ca_serial;    ///< serial number
+static std::fstream serial_file;  ///< serial number file
+static TSMutex      serial_mutex; ///< serial number mutex
 
 // Management Object
 static std::unique_ptr<SslLRUList> ssl_list = nullptr;
-static std::string store_path;
+static std::string                 store_path;
 
 /**
  * Local helper function that adds a Subject Alternative Name field into a
@@ -334,9 +332,9 @@ static void
 addSANExtToCert(X509 *cert, std::string_view dnsName)
 {
   Dbg(dbg_ctl, "Adding SAN extension to the cert");
-  GENERAL_NAMES *generalNames = sk_GENERAL_NAME_new_null();
-  GENERAL_NAME *generalName   = GENERAL_NAME_new();
-  ASN1_IA5STRING *ia5         = ASN1_IA5STRING_new();
+  GENERAL_NAMES  *generalNames = sk_GENERAL_NAME_new_null();
+  GENERAL_NAME   *generalName  = GENERAL_NAME_new();
+  ASN1_IA5STRING *ia5          = ASN1_IA5STRING_new();
   ASN1_STRING_set(ia5, dnsName.data(), dnsName.length());
   // generalName owns ia5 after this call
   GENERAL_NAME_set0_value(generalName, GEN_DNS, ia5);
@@ -350,7 +348,7 @@ static scoped_X509
 mkcrt(const std::string &commonName, int serial)
 {
   scoped_EVP_PKEY pktmp;
-  scoped_X509 cert;
+  scoped_X509     cert;
 
   cert.reset(X509_new());
 
@@ -403,10 +401,10 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
   std::string commonName(servername);
 
   std::queue<void *> localQ;
-  SSL_CTX *ref_ctx;
-  scoped_SSL_CTX ctx;
-  scoped_X509_REQ req;
-  scoped_X509 cert;
+  SSL_CTX           *ref_ctx;
+  scoped_SSL_CTX     ctx;
+  scoped_X509_REQ    req;
+  scoped_X509        cert;
 
   /// Calculate hash and path, try certs on disk first
   unsigned char digest[MD5_DIGEST_LENGTH];
@@ -417,7 +415,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
   std::string cert_filename = path + '/' + commonName + ".crt";
 
   struct stat st;
-  FILE *fp = nullptr;
+  FILE       *fp = nullptr;
   /// If directory doesn't exist, create one
   if (stat(path.c_str(), &st) == -1) {
     mkdir(path.c_str(), 0755);
@@ -514,7 +512,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
     TSVConn ssl_vc = reinterpret_cast<TSVConn>(localQ.front());
     localQ.pop();
     TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
-    SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
+    SSL            *ssl    = reinterpret_cast<SSL *>(sslobj);
     SSL_set_SSL_CTX(ssl, ref_ctx);
     TSVConnReenable(ssl_vc);
   }
@@ -527,11 +525,11 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
 static int
 cert_retriever(TSCont contp, TSEvent event, void *edata)
 {
-  TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
-  TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
-  SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  SSL_CTX *ref_ctx       = nullptr;
+  TSVConn         ssl_vc     = reinterpret_cast<TSVConn>(edata);
+  TSSslConnection sslobj     = TSVConnSslConnectionGet(ssl_vc);
+  SSL            *ssl        = reinterpret_cast<SSL *>(sslobj);
+  const char     *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  SSL_CTX        *ref_ctx    = nullptr;
 
   if (servername == nullptr) {
     TSError("[%s] %s: no SNI available", __func__, PLUGIN_NAME);
@@ -570,10 +568,10 @@ TSPluginInit(int argc, const char *argv[])
   Dbg(dbg_ctl, "initializing plugin");
   // Initialization data and callback
   TSPluginRegistrationInfo info;
-  TSCont cb_shadow   = nullptr;
-  info.plugin_name   = "certifier";
-  info.vendor_name   = "Apache Software Foundation";
-  info.support_email = "dev@trafficserver.apache.org";
+  TSCont                   cb_shadow = nullptr;
+  info.plugin_name                   = "certifier";
+  info.vendor_name                   = "Apache Software Foundation";
+  info.support_email                 = "dev@trafficserver.apache.org";
 
   const char *key    = nullptr;
   const char *cert   = nullptr;

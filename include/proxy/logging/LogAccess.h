@@ -286,14 +286,14 @@ public:
   //
   // milestones access
   //
-  int marshal_milestone(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
-  int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
+  int  marshal_milestone(TSMilestonesType ms, char *buf);
+  int  marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
+  int  marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
+  int  marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
+  int  marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
+  int  marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
+  int  marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
+  int  marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
   //
   // unmarshalling routines
@@ -302,27 +302,27 @@ public:
   // destination buffer supplied.
   //
   static int64_t unmarshal_int(char **buf);
-  static int unmarshal_itoa(int64_t val, char *dest, int field_width = 0, char leading_char = ' ');
-  static int unmarshal_itox(int64_t val, char *dest, int field_width = 0, char leading_char = ' ');
-  static int unmarshal_int_to_str(char **buf, char *dest, int len);
-  static int unmarshal_int_to_str_hex(char **buf, char *dest, int len);
-  static int unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
-  static int unmarshal_ttmsf(char **buf, char *dest, int len);
-  static int unmarshal_int_to_date_str(char **buf, char *dest, int len);
-  static int unmarshal_int_to_time_str(char **buf, char *dest, int len);
-  static int unmarshal_int_to_netscape_str(char **buf, char *dest, int len);
-  static int unmarshal_http_version(char **buf, char *dest, int len);
-  static int unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
-  static int unmarshal_http_status(char **buf, char *dest, int len);
-  static int unmarshal_ip(char **buf, IpEndpoint *dest);
-  static int unmarshal_ip_to_str(char **buf, char *dest, int len);
-  static int unmarshal_ip_to_hex(char **buf, char *dest, int len);
-  static int unmarshal_hierarchy(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
-  static int unmarshal_finish_status(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
-  static int unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
-  static int unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
-  static int unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
-  static int unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
+  static int     unmarshal_itoa(int64_t val, char *dest, int field_width = 0, char leading_char = ' ');
+  static int     unmarshal_itox(int64_t val, char *dest, int field_width = 0, char leading_char = ' ');
+  static int     unmarshal_int_to_str(char **buf, char *dest, int len);
+  static int     unmarshal_int_to_str_hex(char **buf, char *dest, int len);
+  static int     unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
+  static int     unmarshal_ttmsf(char **buf, char *dest, int len);
+  static int     unmarshal_int_to_date_str(char **buf, char *dest, int len);
+  static int     unmarshal_int_to_time_str(char **buf, char *dest, int len);
+  static int     unmarshal_int_to_netscape_str(char **buf, char *dest, int len);
+  static int     unmarshal_http_version(char **buf, char *dest, int len);
+  static int     unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
+  static int     unmarshal_http_status(char **buf, char *dest, int len);
+  static int     unmarshal_ip(char **buf, IpEndpoint *dest);
+  static int     unmarshal_ip_to_str(char **buf, char *dest, int len);
+  static int     unmarshal_ip_to_hex(char **buf, char *dest, int len);
+  static int     unmarshal_hierarchy(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int     unmarshal_finish_status(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int     unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int     unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int     unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int     unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
 
   static int unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg = nullptr);
 
@@ -339,7 +339,7 @@ public:
   static void marshal_int(char *dest, int64_t source);
   static void marshal_str(char *dest, const char *source, int padded_len);
   static void marshal_mem(char *dest, const char *source, int actual_len, int padded_len);
-  static int marshal_ip(char *dest, sockaddr const *ip);
+  static int  marshal_ip(char *dest, sockaddr const *ip);
 
   // noncopyable
   // -- member functions that are not allowed --
@@ -357,24 +357,24 @@ private:
   HTTPHdr *m_server_response = nullptr;
   HTTPHdr *m_cache_response  = nullptr;
 
-  char *m_client_req_url_str                = nullptr;
-  int m_client_req_url_len                  = 0;
-  char *m_client_req_url_canon_str          = nullptr;
-  int m_client_req_url_canon_len            = 0;
-  char *m_client_req_unmapped_url_canon_str = nullptr;
-  int m_client_req_unmapped_url_canon_len   = 0;
-  char *m_client_req_unmapped_url_path_str  = nullptr;
-  int m_client_req_unmapped_url_path_len    = 0;
-  char *m_client_req_unmapped_url_host_str  = nullptr;
-  int m_client_req_unmapped_url_host_len    = 0;
-  char const *m_client_req_url_path_str     = nullptr;
-  int m_client_req_url_path_len             = 0;
-  char *m_proxy_resp_content_type_str       = nullptr;
-  int m_proxy_resp_content_type_len         = 0;
-  char *m_proxy_resp_reason_phrase_str      = nullptr;
-  int m_proxy_resp_reason_phrase_len        = 0;
-  char *m_cache_lookup_url_canon_str        = nullptr;
-  int m_cache_lookup_url_canon_len          = 0;
+  char       *m_client_req_url_str                = nullptr;
+  int         m_client_req_url_len                = 0;
+  char       *m_client_req_url_canon_str          = nullptr;
+  int         m_client_req_url_canon_len          = 0;
+  char       *m_client_req_unmapped_url_canon_str = nullptr;
+  int         m_client_req_unmapped_url_canon_len = 0;
+  char       *m_client_req_unmapped_url_path_str  = nullptr;
+  int         m_client_req_unmapped_url_path_len  = 0;
+  char       *m_client_req_unmapped_url_host_str  = nullptr;
+  int         m_client_req_unmapped_url_host_len  = 0;
+  char const *m_client_req_url_path_str           = nullptr;
+  int         m_client_req_url_path_len           = 0;
+  char       *m_proxy_resp_content_type_str       = nullptr;
+  int         m_proxy_resp_content_type_len       = 0;
+  char       *m_proxy_resp_reason_phrase_str      = nullptr;
+  int         m_proxy_resp_reason_phrase_len      = 0;
+  char       *m_cache_lookup_url_canon_str        = nullptr;
+  int         m_cache_lookup_url_canon_len        = 0;
 
   void validate_unmapped_url();
   void validate_unmapped_url_path();

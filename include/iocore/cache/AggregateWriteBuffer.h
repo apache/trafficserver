@@ -88,19 +88,19 @@ public:
   void copy_from(char *dest, int offset, size_t nbytes) const;
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
-  char *get_buffer();
-  int get_buffer_pos() const;
-  void add_buffer_pos(int size);
-  void seek(int offset);
-  void reset_buffer_pos();
-  int get_bytes_pending_aggregation() const;
-  void add_bytes_pending_aggregation(int size);
+  char                                    *get_buffer();
+  int                                      get_buffer_pos() const;
+  void                                     add_buffer_pos(int size);
+  void                                     seek(int offset);
+  void                                     reset_buffer_pos();
+  int                                      get_bytes_pending_aggregation() const;
+  void                                     add_bytes_pending_aggregation(int size);
 
 private:
   Queue<CacheVC, Continuation::Link_link> _pending_writers;
-  char *_buffer                  = nullptr;
-  int _bytes_pending_aggregation = 0;
-  int _buffer_pos                = 0;
+  char                                   *_buffer                    = nullptr;
+  int                                     _bytes_pending_aggregation = 0;
+  int                                     _buffer_pos                = 0;
 };
 
 inline Queue<CacheVC, Continuation::Link_link> &

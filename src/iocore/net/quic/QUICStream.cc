@@ -97,7 +97,7 @@ void
 QUICStream::receive_data(quiche_conn *quiche_con)
 {
   uint8_t buf[4096];
-  bool fin;
+  bool    fin;
   ssize_t read_len = 0;
 
   while ((read_len = quiche_conn_stream_recv(quiche_con, this->_id, buf, sizeof(buf), &fin)) > 0) {
@@ -112,7 +112,7 @@ QUICStream::receive_data(quiche_conn *quiche_con)
 void
 QUICStream::send_data(quiche_conn *quiche_con)
 {
-  bool fin    = false;
+  bool    fin = false;
   ssize_t len = 0;
 
   len = quiche_conn_stream_capacity(quiche_con, this->_id);

@@ -218,7 +218,7 @@ public:
 private:
   unsigned int element_size;
   unsigned int alignment;
-  int advice;
+  int          advice;
 };
 
 #if TS_USE_MALLOC_ALLOCATOR
@@ -304,8 +304,8 @@ public:
   alloc()
   {
     void *callstack[3];
-    int frames = backtrace(callstack, 3);
-    C *ptr     = ClassAllocator<C, Destruct_on_free>::alloc();
+    int   frames = backtrace(callstack, 3);
+    C    *ptr    = ClassAllocator<C, Destruct_on_free>::alloc();
 
     const void *symbol = nullptr;
     if (frames == 3 && callstack[2] != nullptr) {
@@ -335,8 +335,8 @@ public:
   }
 
 private:
-  ResourceTracker tracker;
+  ResourceTracker                tracker;
   std::map<void *, const void *> reverse_lookup;
-  uint64_t allocations;
-  ink_mutex trackerLock;
+  uint64_t                       allocations;
+  ink_mutex                      trackerLock;
 };

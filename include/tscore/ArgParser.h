@@ -124,7 +124,7 @@ public:
     std::string short_option;  // short option: -a
     std::string description;   // help description
     std::string envvar;        // stored ENV variable
-    unsigned arg_num;          // number of argument expected
+    unsigned    arg_num;       // number of argument expected
     std::string default_value; // default value of option
     std::string key;           // look-up key
   };

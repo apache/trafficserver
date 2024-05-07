@@ -180,16 +180,16 @@ public:
   int nthread_holding;
 
 #ifdef DEBUG
-  ink_hrtime hold_time;
+  ink_hrtime     hold_time;
   SourceLocation srcloc;
-  const char *handler;
+  const char    *handler;
 
 #ifdef MAX_LOCK_TAKEN
   int taken;
 #endif // MAX_LOCK_TAKEN
 
 #ifdef LOCK_CONTENTION_PROFILING
-  int total_acquires, blocking_acquires, nonblocking_acquires, successful_nonblocking_acquires, unsuccessful_nonblocking_acquires;
+  int  total_acquires, blocking_acquires, nonblocking_acquires, successful_nonblocking_acquires, unsuccessful_nonblocking_acquires;
   void print_lock_stats(int flag);
 #endif // LOCK_CONTENTION_PROFILING
 #endif // DEBUG
@@ -387,7 +387,7 @@ class WeakMutexLock
 {
 private:
   Ptr<ProxyMutex> m;
-  bool locked_p{false};
+  bool            locked_p{false};
 
 public:
   WeakMutexLock() = default;
@@ -440,7 +440,7 @@ class MutexLock
 {
 private:
   Ptr<ProxyMutex> m{};
-  bool locked_p{false};
+  bool            locked_p{false};
 
 public:
   MutexLock() = default;
@@ -491,7 +491,7 @@ class WeakMutexTryLock
 {
 private:
   Ptr<ProxyMutex> m;
-  bool lock_acquired{false};
+  bool            lock_acquired{false};
 
 public:
   WeakMutexTryLock() = default;
@@ -575,7 +575,7 @@ class MutexTryLock
 {
 private:
   Ptr<ProxyMutex> m;
-  bool lock_acquired{false};
+  bool            lock_acquired{false};
 
 public:
   MutexTryLock() = default;

@@ -25,24 +25,24 @@
 #pragma once
 
 #include <openssl/ssl.h>
-#include "../../../src/iocore/net/P_SSLCertLookup.h"
+#include "iocore/net/SSLTypes.h"
 
 class TLSCertSwitchSupport
 {
 public:
   virtual ~TLSCertSwitchSupport() = default;
 
-  static void initialize();
+  static void                  initialize();
   static TLSCertSwitchSupport *getInstance(SSL *ssl);
-  static void bind(SSL *ssl, TLSCertSwitchSupport *tcss);
-  static void unbind(SSL *ssl);
+  static void                  bind(SSL *ssl, TLSCertSwitchSupport *tcss);
+  static void                  unbind(SSL *ssl);
 
   int selectCertificate(SSL *ssl, SSLCertContextType ctxType);
 
 protected:
   void _clear();
 
-  virtual bool _isTryingRenegotiation() const                                                            = 0;
+  virtual bool           _isTryingRenegotiation() const                                                  = 0;
   virtual shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) = 0;
   virtual shared_SSL_CTX _lookupContextByIP()                                                            = 0;
 

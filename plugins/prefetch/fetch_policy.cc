@@ -34,7 +34,7 @@ FetchPolicy::getInstance(const char *parameters)
 {
   const char *name   = parameters;
   const char *delim  = strchr(parameters, ':');
-  size_t len         = (nullptr == delim ? strlen(name) : delim - name);
+  size_t      len    = (nullptr == delim ? strlen(name) : delim - name);
   const char *params = (nullptr == delim ? nullptr : delim + 1);
 
   PrefetchDebug("getting '%.*s' policy instance, params: %s", (int)len, name, params);

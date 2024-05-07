@@ -66,8 +66,8 @@ static char bind_stderr[512] = "";
 namespace notstd
 {
 struct barrier {
-  int count;
-  std::mutex m;
+  int                     count;
+  std::mutex              m;
   std::condition_variable cv;
 
   barrier(int count) : count(count) {}
@@ -130,15 +130,15 @@ TEST_CASE("LogObject", "[proxy/logging]")
 
   BENCHMARK("logobject fast")
   {
-    int thread_cnt = 40;
+    int             thread_cnt = 40;
     notstd::barrier barrier(thread_cnt);
-    auto test_object = [&](LogObject *o) {
+    auto            test_object = [&](LogObject *o) {
       Thread *me = new EThread;
       me->set_specific();
       barrier.arrive_and_wait();
 
       std::string_view logline = "012345678901234567890123456789012345678901234567890";
-      int total                = 0;
+      int              total   = 0;
       while (total < Log::config->log_buffer_size * 100) {
         o->log(nullptr, logline);
         total += logline.size();
@@ -161,7 +161,7 @@ TEST_CASE("LogObject", "[proxy/logging]")
 
   BENCHMARK("logobject slow")
   {
-    int thread_cnt = 40;
+    int             thread_cnt = 40;
     notstd::barrier barrier(thread_cnt);
 
     auto test_object = [&](LogObject *o) {
@@ -170,7 +170,7 @@ TEST_CASE("LogObject", "[proxy/logging]")
       barrier.arrive_and_wait();
 
       std::string_view logline = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvw";
-      int total                = 0;
+      int              total   = 0;
       while (total < Log::config->log_buffer_size * 100) {
         o->log(nullptr, logline);
         total += logline.size();

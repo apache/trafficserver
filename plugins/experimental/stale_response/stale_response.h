@@ -26,6 +26,7 @@
 #include "ts/apidefs.h"
 #include "ts_wrap.h"
 #include "ts/ts.h"
+#include "BodyData.h"
 
 #include <cstdint>
 #include <map>
@@ -35,29 +36,41 @@ struct BodyData;
 using UintBodyMap = std::map<uint32_t, BodyData *>;
 
 const unsigned int c_hashSeed = 99991;
-extern const char PLUGIN_TAG[];
-extern const char PLUGIN_TAG_BAD[];
+extern const char  PLUGIN_TAG[];
+extern const char  PLUGIN_TAG_BAD[];
 
 EXT_DBG_CTL(PLUGIN_TAG)
 EXT_DBG_CTL(PLUGIN_TAG_BAD)
 
 struct LogInfo {
-  TSTextLogObject object      = nullptr;
-  bool all                    = false;
-  bool stale_if_error         = false;
-  bool stale_while_revalidate = false;
-  char const *filename        = PLUGIN_TAG;
+  TSTextLogObject object                 = nullptr;
+  bool            all                    = false;
+  bool            stale_if_error         = false;
+  bool            stale_while_revalidate = false;
+  char const     *filename               = PLUGIN_TAG;
 };
 
 struct ConfigInfo {
   ConfigInfo() : body_data{new UintBodyMap()}, body_data_mutex(TSMutexCreate()) {}
+  ~ConfigInfo()
+  {
+    if (this->body_data) {
+      for (auto &it : *this->body_data) {
+        delete it.second;
+      }
+      delete this->body_data;
+    }
+    if (this->body_data_mutex) {
+      TSMutexDestroy(this->body_data_mutex);
+    }
+  }
   UintBodyMap *body_data = nullptr;
-  TSMutex body_data_mutex;
-  int64_t body_data_memory_usage = 0;
-  int txn_slot                   = 0;
+  TSMutex      body_data_mutex;
+  int64_t      body_data_memory_usage = 0;
+  int          txn_slot               = 0;
 
-  bool intercept_reroute             = false;
-  bool force_parallel_async          = false;
+  bool    intercept_reroute          = false;
+  bool    force_parallel_async       = false;
   int64_t max_body_data_memory_usage = c_default_max_body_data_memory_usage;
 
   time_t stale_if_error_override         = 0;
@@ -85,19 +98,19 @@ struct CachedHeaderInfo {
 };
 
 struct RequestInfo {
-  char *effective_url;
-  int effective_url_length;
-  TSMBuffer http_hdr_buf;
-  TSMLoc http_hdr_loc;
+  char            *effective_url;
+  int              effective_url_length;
+  TSMBuffer        http_hdr_buf;
+  TSMLoc           http_hdr_loc;
   struct sockaddr *client_addr;
-  uint32_t key_hash;
+  uint32_t         key_hash;
 };
 
 struct ResponseInfo {
-  TSMBuffer http_hdr_buf;
-  TSMLoc http_hdr_loc;
+  TSMBuffer    http_hdr_buf;
+  TSMLoc       http_hdr_loc;
   TSHttpParser parser;
-  bool parsed;
+  bool         parsed;
   TSHttpStatus status;
 };
 
@@ -107,31 +120,31 @@ struct StateInfo {
   {
     time(&this->txn_start);
   }
-  TSHttpTxn txnp                      = nullptr;
-  TSCont transaction_contp            = nullptr;
-  bool swr_active                     = false;
-  bool sie_active                     = false;
-  bool over_max_memory                = false;
-  TSIOBuffer req_io_buf               = nullptr;
-  TSIOBuffer resp_io_buf              = nullptr;
+  TSHttpTxn        txnp               = nullptr;
+  TSCont           transaction_contp  = nullptr;
+  bool             swr_active         = false;
+  bool             sie_active         = false;
+  bool             over_max_memory    = false;
+  TSIOBuffer       req_io_buf         = nullptr;
+  TSIOBuffer       resp_io_buf        = nullptr;
   TSIOBufferReader req_io_buf_reader  = nullptr;
   TSIOBufferReader resp_io_buf_reader = nullptr;
-  TSVIO r_vio                         = nullptr;
-  TSVIO w_vio                         = nullptr;
-  TSVConn vconn                       = nullptr;
-  RequestInfo *req_info               = nullptr;
-  ResponseInfo *resp_info             = nullptr;
-  time_t txn_start                    = 0;
-  ConfigInfo *plugin_config           = nullptr;
-  char *pristine_url                  = nullptr;
-  BodyData *sie_body                  = nullptr;
-  BodyData *cur_save_body             = nullptr;
-  bool intercept_request              = false;
+  TSVIO            r_vio              = nullptr;
+  TSVIO            w_vio              = nullptr;
+  TSVConn          vconn              = nullptr;
+  RequestInfo     *req_info           = nullptr;
+  ResponseInfo    *resp_info          = nullptr;
+  time_t           txn_start          = 0;
+  ConfigInfo      *plugin_config      = nullptr;
+  char            *pristine_url       = nullptr;
+  BodyData        *sie_body           = nullptr;
+  BodyData        *cur_save_body      = nullptr;
+  bool             intercept_request  = false;
 };
 
 BodyData *async_check_active(uint32_t key_hash, ConfigInfo *plugin_config);
-bool async_check_and_add_active(uint32_t key_hash, ConfigInfo *plugin_config);
-bool async_remove_active(uint32_t key_hash, ConfigInfo *plugin_config);
+bool      async_check_and_add_active(uint32_t key_hash, ConfigInfo *plugin_config);
+bool      async_remove_active(uint32_t key_hash, ConfigInfo *plugin_config);
 
 // 500, 502, 503, 504
 inline bool

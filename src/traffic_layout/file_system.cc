@@ -38,7 +38,7 @@ static std::string dst_root;
 static std::string src_root;
 static std::string copy_dir; // the current dir we are copying. e.x. sysconfdir, bindir...
 static std::string remove_path;
-CopyStyle copy_style;
+CopyStyle          copy_style;
 
 // list of all executables of traffic server
 std::set<std::string> const executables = {"traffic_crashlog", "traffic_ctl",    "traffic_layout", "traffic_logcat",

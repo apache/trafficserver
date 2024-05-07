@@ -43,17 +43,17 @@ public:
 
   // Implement ProxySession interface
   const char *get_protocol_string() const override;
-  int populate_protocol(std::string_view *result, int size) const override;
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
-  void start() override;
-  void destroy() override;
-  void free() override;
-  void release(ProxyTransaction *trans) override;
-  int get_transact_count() const override;
+  int         populate_protocol(std::string_view *result, int size) const override;
+  void        new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
+  void        start() override;
+  void        destroy() override;
+  void        free() override;
+  void        release(ProxyTransaction *trans) override;
+  int         get_transact_count() const override;
 
   // HQSession
-  void add_transaction(HQTransaction *trans);
-  void remove_transaction(HQTransaction *trans);
+  void           add_transaction(HQTransaction *trans);
+  void           remove_transaction(HQTransaction *trans);
   HQTransaction *get_transaction(QUICStreamId);
 
 private:
@@ -75,21 +75,21 @@ public:
 
   // ProxySession interface
   HTTPVersion get_version(HTTPHdr &hdr) const override;
-  void increment_current_active_connections_stat() override;
-  void decrement_current_active_connections_stat() override;
-  bool is_protocol_framed() const override;
-  uint64_t get_received_frame_count(uint64_t type) const override;
+  void        increment_current_active_connections_stat() override;
+  void        decrement_current_active_connections_stat() override;
+  bool        is_protocol_framed() const override;
+  uint64_t    get_received_frame_count(uint64_t type) const override;
 
   // Implement ProxySession interface
   const char *get_protocol_string() const override;
 
-  QPACK *local_qpack();
-  QPACK *remote_qpack();
+  QPACK             *local_qpack();
+  QPACK             *remote_qpack();
   Http3FrameCounter *get_received_frame_counter();
 
 private:
-  QPACK *_remote_qpack = nullptr; // QPACK for decoding
-  QPACK *_local_qpack  = nullptr; // QPACK for encoding
+  QPACK            *_remote_qpack = nullptr; // QPACK for decoding
+  QPACK            *_local_qpack  = nullptr; // QPACK for encoding
   Http3FrameCounter _received_frame_counter;
 };
 
@@ -106,8 +106,8 @@ public:
 
   // ProxySession interface
   HTTPVersion get_version(HTTPHdr &hdr) const override;
-  void increment_current_active_connections_stat() override;
-  void decrement_current_active_connections_stat() override;
+  void        increment_current_active_connections_stat() override;
+  void        decrement_current_active_connections_stat() override;
 
 private:
 };

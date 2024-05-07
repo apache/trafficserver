@@ -42,8 +42,8 @@ struct ssl_session_cache_exdata {
 class SSLOriginSession
 {
 public:
-  std::string key;
-  ssl_curve_id curve_id;
+  std::string                  key;
+  ssl_curve_id                 curve_id;
   std::shared_ptr<SSL_SESSION> shared_sess = nullptr;
 
   SSLOriginSession(const std::string &lookup_key, ssl_curve_id curve, std::shared_ptr<SSL_SESSION> session)
@@ -60,14 +60,14 @@ public:
   SSLOriginSessionCache();
   ~SSLOriginSessionCache();
 
-  void insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl);
+  void                         insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl);
   std::shared_ptr<SSL_SESSION> get_session(const std::string &lookup_key, ssl_curve_id *curve);
-  void remove_session(const std::string &lookup_key);
+  void                         remove_session(const std::string &lookup_key);
 
 private:
   void remove_oldest_session(const std::unique_lock<ts::shared_mutex> &lock);
 
-  mutable ts::shared_mutex mutex;
-  CountQueue<SSLOriginSession> orig_sess_que;
+  mutable ts::shared_mutex                  mutex;
+  CountQueue<SSLOriginSession>              orig_sess_que;
   std::map<std::string, SSLOriginSession *> orig_sess_map;
 };

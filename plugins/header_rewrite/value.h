@@ -92,8 +92,8 @@ public:
   }
 
 private:
-  int _int_value      = 0;
-  double _float_value = 0.0;
-  std::string _value;
+  int                      _int_value   = 0;
+  double                   _float_value = 0.0;
+  std::string              _value;
   std::vector<Condition *> _cond_vals;
 };

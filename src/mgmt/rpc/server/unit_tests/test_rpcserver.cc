@@ -66,9 +66,9 @@ add_method_handler(const std::string &name, Func &&call)
 } // namespace rpc
 static const std::string sockPath{"/tmp/jsonrpc20_test.sock"};
 static const std::string lockPath{"/tmp/jsonrpc20_test.lock"};
-static constexpr int default_backlog{5};
-static constexpr int default_maxRetriesOnTransientErrors{64};
-static constexpr auto logTag{"rpc.test.client"};
+static constexpr int     default_backlog{5};
+static constexpr int     default_maxRetriesOnTransientErrors{64};
+static constexpr auto    logTag{"rpc.test.client"};
 
 struct RPCServerTestListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
@@ -128,7 +128,7 @@ RPCServerTestListener::~RPCServerTestListener() {}
 DEFINE_JSONRPC_PROTO_FUNCTION(some_foo) // id, params
 {
   swoc::Rv<YAML::Node> resp;
-  int dur{1};
+  int                  dur{1};
   try {
     dur = params["duration"].as<int>();
   } catch (...) {
@@ -148,8 +148,8 @@ fs::path
 getTemporaryDir()
 {
   std::error_code ec;
-  fs::path tmpDir  = fs::canonical(fs::temp_directory_path(), ec);
-  tmpDir          /= "sandbox_XXXXXX";
+  fs::path        tmpDir  = fs::canonical(fs::temp_directory_path(), ec);
+  tmpDir                 /= "sandbox_XXXXXX";
 
   char dirNameTemplate[tmpDir.string().length() + 1];
   snprintf(dirNameTemplate, sizeof(dirNameTemplate), "%s", tmpDir.c_str());
@@ -169,7 +169,7 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
   void
   send_in_chunks(std::string_view data, int disconnect_after_chunk_n = -1)
   {
-    int chunk_number{1};
+    int  chunk_number{1};
     auto chunks = chunk<N>(data);
     for (auto &&part : chunks) {
       if (::write(_sock, part.c_str(), part.size()) < 0) {
@@ -191,7 +191,7 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
   read()
   {
     std::string buf;
-    auto ret = super::read_all(buf);
+    auto        ret = super::read_all(buf);
     if (ret == ReadStatus::NO_ERROR) {
       return buf;
     }
@@ -202,7 +202,7 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
   query(std::string_view msg)
   {
     std::string buf;
-    auto ret = connect().send(msg).read_all(buf);
+    auto        ret = connect().send(msg).read_all(buf);
     if (ret == ReadStatus::NO_ERROR) {
       return buf;
     }
@@ -221,10 +221,10 @@ private:
         std::string{from, to}
       };
     }
-    std::size_t index{0};
+    std::size_t                index{0};
     std::array<std::string, N> ret;
-    const std::size_t each_part = size / N;
-    const std::size_t remainder = size % N;
+    const std::size_t          each_part = size / N;
+    const std::size_t          remainder = size % N;
 
     for (auto it = from; it != to;) {
       if (std::size_t rem = std::distance(it, to); rem == (each_part + remainder)) {
@@ -252,7 +252,7 @@ void
 send_request(std::string json, std::promise<std::string> p)
 {
   ScopedLocalSocket rpc_client;
-  auto resp = rpc_client.query(json);
+  auto              resp = rpc_client.query(json);
   p.set_value(resp);
 }
 } // namespace
@@ -265,8 +265,8 @@ TEST_CASE("Sending 'concurrent' requests to the rpc server.", "[thread]")
 
     std::promise<std::string> p1;
     std::promise<std::string> p2;
-    auto fut1 = p1.get_future();
-    auto fut2 = p2.get_future();
+    auto                      fut1 = p1.get_future();
+    auto                      fut2 = p2.get_future();
 
     REQUIRE_NOTHROW([&]() {
       // Two different clients, on the same server, as the server is an Unix Domain Socket, it should handle all this
@@ -296,7 +296,7 @@ std::string
 random_string(std::string::size_type length)
 {
   auto randchar = []() -> char {
-    const char charset[]   = "0123456789"
+    const char   charset[] = "0123456789"
                              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                              "abcdefghijklmnopqrstuvwxyz";
     const size_t max_index = (sizeof(charset) - 1);
@@ -320,10 +320,10 @@ TEST_CASE("Basic message sending to a running server", "[socket]")
   SECTION("Basic single request to the rpc server")
   {
     const int S{500};
-    auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
+    auto      json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
     REQUIRE_NOTHROW([&]() {
       ScopedLocalSocket rpc_client;
-      auto resp = rpc_client.query(json);
+      auto              resp = rpc_client.query(json);
 
       REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "EfGh-1"})");
     }());
@@ -338,10 +338,10 @@ TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "
   SECTION("Message larger than the the accepted size.")
   {
     const int S{32000}; // + the rest of the json message.
-    auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
+    auto      json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
     REQUIRE_NOTHROW([&]() {
       ScopedLocalSocket rpc_client;
-      auto resp = rpc_client.query(json);
+      auto              resp = rpc_client.query(json);
       REQUIRE(resp.empty());
     }());
   }
@@ -356,10 +356,10 @@ TEST_CASE("Test with invalid json message", "[socket]")
   SECTION("A rpc server")
   {
     const int S{10};
-    auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) + R"("}, "id": "EfGh})"};
+    auto      json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) + R"("}, "id": "EfGh})"};
     REQUIRE_NOTHROW([&]() {
       ScopedLocalSocket rpc_client;
-      auto resp = rpc_client.query(json);
+      auto              resp = rpc_client.query(json);
 
       CHECK(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
     }());
@@ -374,7 +374,7 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
   SECTION("Sending request by chunks")
   {
     const int S{10};
-    auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) +
+    auto      json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) +
               R"("}, "id": "chunk-parts-3"})"};
 
     REQUIRE_NOTHROW([&]() {
@@ -396,7 +396,7 @@ TEST_CASE("Test with chunks - disconnect after second part", "[socket][chunks]")
   SECTION("Sending request by chunks")
   {
     const int S{4000};
-    auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) +
+    auto      json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) +
               R"("}, "id": "chunk-parts-3-2"})"};
 
     REQUIRE_NOTHROW([&]() {
@@ -419,7 +419,7 @@ TEST_CASE("Test with chunks - incomplete message", "[socket][chunks]")
   SECTION("Sending request by chunks, broken message")
   {
     const int S{50};
-    auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) +
+    auto      json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) +
               R"("}, "id": "chunk-parts-3)"};
     //                                  ^  missing-> "}
 
@@ -516,8 +516,8 @@ TEST_CASE("Test configuration parsing. UDS values", "[string]")
 
   REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UNIX);
 
-  auto socket    = std::make_unique<LocalSocketTest>();
-  auto const ret = socket->configure(serverConfig.get_comm_config_params());
+  auto       socket = std::make_unique<LocalSocketTest>();
+  auto const ret    = socket->configure(serverConfig.get_comm_config_params());
   REQUIRE(ret);
   REQUIRE(socket->get_conf().backlog == default_backlog);
   REQUIRE(socket->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
@@ -548,8 +548,8 @@ TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
 
   REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UNIX);
 
-  auto socket     = std::make_unique<LocalSocketTest>();
-  auto const &ret = socket->configure(serverConfig.get_comm_config_params());
+  auto        socket = std::make_unique<LocalSocketTest>();
+  auto const &ret    = socket->configure(serverConfig.get_comm_config_params());
   REQUIRE(ret);
   REQUIRE(socket->get_conf().backlog == 5);
   REQUIRE(socket->get_conf().maxRetriesOnTransientErrors == 64);

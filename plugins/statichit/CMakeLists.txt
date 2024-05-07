@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(statichit statichit.cc)
+verify_remap_plugin(statichit)

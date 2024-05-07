@@ -27,6 +27,12 @@
 #include "P_SSLNextProtocolSet.h"
 #include "swoc/TextView.h"
 
+namespace
+{
+DbgCtl dbg_ctl_ssl{"ssl"};
+
+} // end anonymous namespace
+
 // For currently defined protocol strings, see
 // http://technotes.googlecode.com/git/nextprotoneg.html. The OpenSSL
 // documentation tells us to return a string in "wire format". The
@@ -47,7 +53,7 @@ bool
 SSLNextProtocolSet::create_npn_advertisement(const SessionProtocolSet &enabled, unsigned char **npn, size_t *len) const
 {
   const SSLNextProtocolSet::NextProtocolEndpoint *ep;
-  unsigned char *advertised;
+  unsigned char                                  *advertised;
 
   ats_free(*npn);
   *npn = nullptr;
@@ -67,7 +73,7 @@ SSLNextProtocolSet::create_npn_advertisement(const SessionProtocolSet &enabled, 
 
   for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
     if (enabled.contains(globalSessionProtocolNameRegistry.toIndex(swoc::TextView{ep->protocol, strlen(ep->protocol)}))) {
-      Debug("ssl", "advertising protocol %s, %p", ep->protocol, ep->endpoint);
+      Dbg(dbg_ctl_ssl, "advertising protocol %s, %p", ep->protocol, ep->endpoint);
       advertised = append_protocol(ep->protocol, advertised);
     }
   }

@@ -30,11 +30,11 @@
 #include "txn_box/Context.h"
 #include "txn_box/Config.h"
 
-using swoc::TextView;
-using swoc::MemSpan;
-using swoc::Errata;
-using swoc::Rv;
 using swoc::BufferWriter;
+using swoc::Errata;
+using swoc::MemSpan;
+using swoc::Rv;
+using swoc::TextView;
 namespace bwf = swoc::bwf;
 using namespace swoc::literals;
 
@@ -122,9 +122,9 @@ FeatureGroup::load_expr(Config &cfg, Tracking &tracking, Tracking::Info *info, Y
   struct V {
     V(FeatureGroup &fg, Config &cfg, Tracking &tracking) : _fg(fg), _cfg(cfg), _tracking(tracking) {}
     FeatureGroup &_fg;
-    Config &_cfg;
-    Tracking &_tracking;
-    bool _dependent_p = false;
+    Config       &_cfg;
+    Tracking     &_tracking;
+    bool          _dependent_p = false;
 
     /// Update @a spec as needed to have the correct "this" extractor.
     Errata
@@ -240,7 +240,7 @@ FeatureGroup::load(Config &cfg, YAML::Node const &node, std::initializer_list<Fe
   unsigned n_keys = node.size(); // Number of keys in @a node.
 
   Tracking::Info tracking_info[n_keys];
-  Tracking tracking(node, tracking_info, n_keys);
+  Tracking       tracking(node, tracking_info, n_keys);
 
   // Find the roots of extraction - these are the named keys actually in the node.
   // Need to do this explicitly to transfer the flags, and to check for duplicates in @a ex_keys.
@@ -288,7 +288,7 @@ FeatureGroup::load(Config &cfg, YAML::Node const &node, std::initializer_list<Fe
   // Persist the keys by copying persistent data from the tracking data to config allocated space.
   for (unsigned short idx = 0; idx < tracking._count; ++idx) {
     Tracking::Info &src = tracking._info[idx];
-    ExprInfo &dst       = _expr_info[idx];
+    ExprInfo       &dst = _expr_info[idx];
     dst._name           = src._name;
     dst._expr           = std::move(src._expr);
     dst._exf_idx        = src._exf_idx;
@@ -407,7 +407,7 @@ Feature::is_list() const
 ActiveType
 Feature::active_type() const
 {
-  auto vt       = this->value_type();
+  auto       vt = this->value_type();
   ActiveType at = vt;
   if (TUPLE == vt) {
     auto &tp = std::get<IndexFor(TUPLE)>(*this);
@@ -448,7 +448,7 @@ cdr(Feature &feature)
     break;
   case IndexFor(TUPLE): {
     Feature cdr{feature};
-    auto &span = std::get<feature_type_for<TUPLE>>(cdr);
+    auto   &span = std::get<feature_type_for<TUPLE>>(cdr);
     span.remove_prefix(1);
     feature = span.empty() ? NIL_FEATURE : cdr;
   } break;

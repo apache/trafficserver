@@ -57,7 +57,7 @@ namespace Bundle
     }
 
   private:
-    std::string _message;
+    std::string        _message;
     Cript::string_view _bundle;
     Cript::string_view _option;
   };

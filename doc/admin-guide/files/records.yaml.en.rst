@@ -2559,9 +2559,18 @@ RAM Cache
 
    Enabling this option will filter inserts into the RAM cache to ensure that
    they have been seen at least once.  For the **LRU**, this provides scan
-   resistance. Note that **CLFUS** already requires that a document have history
+   resistance.
+
+   As of ATS v10.0.0 and later, this setting can take values in the range ``0`` to
+   ``9``. Values above ``1`` will only enable the seen filter after a certain
+   threshold of RAM cache usage has been reached.  The threshold is determined by
+   the value of this setting, with ``2`` being 50% filled, ``3`` being 67% filled,
+   and so on.
+
+   Note that **CLFUS** already requires that a document have history
    before it is inserted, so for **CLFUS**, setting this option means that a
    document must be seen three times before it is added to the RAM cache.
+
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.compress INT 0
 
@@ -4507,8 +4516,15 @@ HTTP/2 Configuration
 .. ts:cv:: CONFIG proxy.config.http2.max_rst_stream_frames_per_minute INT 200
    :reloadable:
 
-   Specifies how many RST_STREAM frames |TS| receives for a minute at maximum.
-   Clients exceeded this limit will be immediately disconnected with an error
+   Specifies how many RST_STREAM frames |TS| receives per minute at maximum.
+   Clients exceeding this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_continuation_frames_per_minute INT 120
+   :reloadable:
+
+   Specifies how many CONTINUATION frames |TS| receives per minute at maximum.
+   Clients exceeding this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
 
 .. ts:cv:: CONFIG proxy.config.http2.min_avg_window_update FLOAT 2560.0
@@ -4832,6 +4848,20 @@ Plug-in Configuration
 
    Enables (``1``) or disables (``0``) the dynamic reload feature for remap
    plugins (`remap.config`). Global plugins (`plugin.config`) do not have dynamic reload feature yet.
+
+.. ts:cv:: CONFIG proxy.config.plugin.compiler_path STRING ""
+
+   Specifies an optional compiler tool path for compiling plugins. This tool should
+   be an executable, which takes two arguments:
+
+   === ======================================================================
+   Arg Description
+   === ======================================================================
+   1   This is the path to the source file, which should be compiled
+   2   This is the path to the DSO file, which will be created and loaded
+   === ======================================================================
+
+   The script should exit with a status code of ``0`` if the compilation was successful.
 
 .. ts:cv:: CONFIG proxy.config.plugin.vc.default_buffer_index INT 8
    :reloadable:

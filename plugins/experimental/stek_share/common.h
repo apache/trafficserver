@@ -65,9 +65,9 @@ public:
   }
 
 private:
-  std::atomic<bool> shut_down = false;
+  std::atomic<bool>     shut_down = false;
   std::deque<pthread_t> threads_queue;
-  std::mutex threads_mutex;
+  std::mutex            threads_mutex;
 };
 
 std::string hex_str(std::string const &str);

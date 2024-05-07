@@ -31,8 +31,6 @@
 #include "proxy/http/remap/PluginDso.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
 
-#include "tscore/Ptr.h"
-
 #include "tscore/ink_uuid.h"
 #include "ts/apidefs.h"
 
@@ -49,11 +47,11 @@ public:
 
   /* Used by the PluginFactory */
   static RemapPluginInst *init(RemapPluginInfo *plugin, int argc, char **argv, std::string &error);
-  void done();
+  void                    done();
 
   /* Used by the traffic server core while processing requests */
   TSRemapStatus doRemap(TSHttpTxn rh, TSRemapRequestInfo *rri);
-  void osResponse(TSHttpTxn rh, int os_response_type);
+  void          osResponse(TSHttpTxn rh, int os_response_type);
 
   /* List used by the plugin factory */
   using self_type  = RemapPluginInst; ///< Self reference type.
@@ -63,7 +61,7 @@ public:
 
   /* Plugin instance = the plugin info + the data returned by the init callback */
   RemapPluginInfo &_plugin;
-  void *_instance = nullptr;
+  void            *_instance = nullptr;
 };
 
 /**
@@ -95,12 +93,13 @@ public:
   virtual ~PluginFactory();
 
   PluginFactory &setRuntimeDir(const fs::path &runtimeDir);
+  PluginFactory &setCompilerPath(const fs::path &compilerPath);
   PluginFactory &addSearchDir(const fs::path &searchDir);
 
   RemapPluginInst *getRemapPlugin(const fs::path &configPath, int argc, char **argv, std::string &error, bool dynamicReloadEnabled);
 
   virtual const char *getUuid();
-  void clean(std::string &error);
+  void                clean(std::string &error);
 
   void deactivate();
   void indicatePreReload();
@@ -108,16 +107,26 @@ public:
 
 protected:
   PluginDso *findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled);
-  fs::path getEffectivePath(const fs::path &configPath);
+  fs::path   getEffectivePath(const fs::path &configPath);
 
-  std::vector<fs::path> _searchDirs; /** @brief ordered list of search paths where we look for plugins */
-  fs::path _runtimeDir;              /** @brief the path where we would create a temporary copies of the plugins to load */
+  std::vector<fs::path> _searchDirs;   /** @brief ordered list of search paths where we look for plugins */
+  fs::path              _runtimeDir;   /** @brief the path where we would create a temporary copies of the plugins to load */
+  fs::path              _compilerPath; /** @brief the compilation script to use for cripts and other non-DSO plugins */
 
   PluginInstList _instList;
 
-  ATSUuid *_uuid = nullptr;
+  ATSUuid        *_uuid = nullptr;
   std::error_code _ec;
-  bool _preventiveCleaning = true;
+  bool            _preventiveCleaning = true;
 
   static constexpr const char *const _tag = "plugin_factory"; /** @brief log tag used by this class */
+  static const DbgCtl               &_dbg_ctl();
 };
+
+inline const DbgCtl &
+PluginFactory::_dbg_ctl()
+{
+  static DbgCtl dc{_tag};
+
+  return dc;
+}

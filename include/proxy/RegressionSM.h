@@ -49,20 +49,20 @@ struct RegressionSM : public Continuation {
   void run_in(int *pstatus, ink_hrtime t);
 
   // internal
-  int status           = REGRESSION_TEST_INPROGRESS;
-  int *pstatus         = nullptr;
-  RegressionSM *parent = nullptr;
-  int nwaiting         = 0;
-  int nchildren        = 0;
+  int                         status    = REGRESSION_TEST_INPROGRESS;
+  int                        *pstatus   = nullptr;
+  RegressionSM               *parent    = nullptr;
+  int                         nwaiting  = 0;
+  int                         nchildren = 0;
   std::vector<RegressionSM *> children;
-  intptr_t n             = 0;
-  intptr_t ichild        = 0;
-  bool parallel          = false;
-  bool repeat            = false;
-  Action *pending_action = nullptr;
+  intptr_t                    n              = 0;
+  intptr_t                    ichild         = 0;
+  bool                        parallel       = false;
+  bool                        repeat         = false;
+  Action                     *pending_action = nullptr;
 
-  int regression_sm_start(int event, void *data);
-  int regression_sm_waiting(int event, void *data);
+  int  regression_sm_start(int event, void *data);
+  int  regression_sm_waiting(int event, void *data);
   void set_status(int status);
   void child_done(int status);
   void xrun(RegressionSM *parent);

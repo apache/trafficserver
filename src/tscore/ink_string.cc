@@ -55,7 +55,7 @@ char *
 ink_string_concatenate_strings(char *dest, ...)
 {
   va_list ap;
-  char *s, *d;
+  char   *s, *d;
 
   va_start(ap, dest);
 
@@ -91,7 +91,7 @@ char *
 ink_string_concatenate_strings_n(char *dest, int n, ...)
 {
   va_list ap;
-  char *s, *d;
+  char   *s, *d;
 
   va_start(ap, n);
 
@@ -173,9 +173,9 @@ ink_string_append(char *dest, char *src, int n)
 size_t
 ink_strlcpy(char *dst, const char *src, size_t siz)
 {
-  char *d       = dst;
+  char       *d = dst;
   const char *s = src;
-  size_t n      = siz;
+  size_t      n = siz;
 
   /* Copy as many bytes as will fit */
   if (n != 0) {
@@ -204,10 +204,10 @@ ink_strlcpy(char *dst, const char *src, size_t siz)
 size_t
 ink_strlcat(char *dst, const char *src, size_t siz)
 {
-  char *d       = dst;
+  char       *d = dst;
   const char *s = src;
-  size_t n      = siz;
-  size_t dlen;
+  size_t      n = siz;
+  size_t      dlen;
 
   /* Find the end of dst and adjust bytes left but don't go past end */
   while (n-- != 0 && *d != '\0') {

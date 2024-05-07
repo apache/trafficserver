@@ -46,15 +46,15 @@
 #include "proxy/logging/Log.h"
 
 // logcat-specific command-line flags
-static int squid_flag              = 0;
-static int follow_flag             = 0;
-static int clf_flag                = 0;
-static int elf_flag                = 0;
-static int elf2_flag               = 0;
-static int auto_filenames          = 0;
-static int overwrite_existing_file = 0;
+static int  squid_flag              = 0;
+static int  follow_flag             = 0;
+static int  clf_flag                = 0;
+static int  elf_flag                = 0;
+static int  elf2_flag               = 0;
+static int  auto_filenames          = 0;
+static int  overwrite_existing_file = 0;
 static char output_file[1024];
-int auto_clear_cache_flag = 0;
+int         auto_clear_cache_flag = 0;
 
 static const ArgumentDescription argument_descriptions[] = {
 
@@ -120,7 +120,7 @@ static int
 process_file(int in_fd, int out_fd)
 {
   char buffer[MAX_LOGBUFFER_SIZE];
-  int nread, buffer_bytes;
+  int  nread, buffer_bytes;
 
   while (true) {
     // read the next buffer from file descriptor
@@ -131,9 +131,9 @@ process_file(int in_fd, int out_fd)
     // read the first 8 bytes of the header, which will give us the
     // cookie and the version number.
     //
-    unsigned first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
-    unsigned header_size     = sizeof(LogBufferHeader);
-    LogBufferHeader *header  = (LogBufferHeader *)&buffer[0];
+    unsigned         first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
+    unsigned         header_size     = sizeof(LogBufferHeader);
+    LogBufferHeader *header          = (LogBufferHeader *)&buffer[0];
 
     nread = read(in_fd, buffer, first_read_size);
     if (!nread || nread == EOF) {

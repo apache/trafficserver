@@ -36,10 +36,10 @@ namespace ct
 Errata
 CacheScan::Scan(bool search)
 {
-  int64_t guessed_size = 1048576; // 1M
-  Errata zret;
+  int64_t            guessed_size = 1048576; // 1M
+  Errata             zret;
   std::bitset<65536> dir_bitset;
-  char *stripe_buff2 = static_cast<char *>(ats_memalign(ats_pagesize(), guessed_size));
+  char              *stripe_buff2 = static_cast<char *>(ats_memalign(ats_pagesize(), guessed_size));
   for (int s = 0; s < this->stripe->_segments; s++) {
     dir_bitset.reset();
     for (int b = 0; b < this->stripe->_buckets; b++) {
@@ -56,7 +56,7 @@ CacheScan::Scan(bool search)
             ats_free(stripe_buff2);
             stripe_buff2 = static_cast<char *>(ats_memalign(ats_pagesize(), dir_approx_size(e)));
           }
-          int fd         = this->stripe->_span->_fd;
+          int     fd     = this->stripe->_span->_fd;
           int64_t offset = this->stripe->stripe_offset(e);
           ssize_t n      = pread(fd, stripe_buff2, size, offset);
           if (n < 0) {
@@ -202,8 +202,8 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 
   // Loop over objects and swizzle there pointer to
   //  live offsets
-  char *obj_data  = hh->m_data_start;
-  intptr_t offset = (intptr_t)hh;
+  char    *obj_data = hh->m_data_start;
+  intptr_t offset   = (intptr_t)hh;
 
   while (obj_data < hh->m_free_start) {
     HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(obj_data);
@@ -254,9 +254,9 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 Errata
 CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
-  Errata zret;
-  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
-  int orig_len      = len;
+  Errata        zret;
+  HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
+  int           orig_len = len;
 
   if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
     // Already unmarshalled, must be a ram cache
@@ -305,9 +305,9 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   // request hdrs
 
-  HdrHeap *heap   = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
-  HTTPHdrImpl *hh = nullptr;
-  int tmp         = 0;
+  HdrHeap *heap    = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
+  HTTPHdrImpl *hh  = nullptr;
+  int          tmp = 0;
   if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
     tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
@@ -363,8 +363,8 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
   Errata zret;
   ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
 
-  char *start            = const_cast<char *>(buf);
-  RefCountObj *block_ref = nullptr;
+  char               *start     = const_cast<char *>(buf);
+  RefCountObj        *block_ref = nullptr;
   swoc::MemSpan<char> doc_mem(const_cast<char *>(buf), length);
 
   while (length - (buf - start) > static_cast<int>(sizeof(HTTPCacheAlt))) {

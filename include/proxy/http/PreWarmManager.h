@@ -61,7 +61,7 @@ struct DstHash {
   size_t
   operator()(const PreWarm::SPtrConstDst &dst) const
   {
-    CryptoHash hash;
+    CryptoHash    hash;
     CryptoContext context{};
 
     context.update(dst->host.data(), dst->host.size());
@@ -98,15 +98,15 @@ struct Conf {
   {
   }
 
-  uint32_t min                                     = 0;
-  int32_t max                                      = 0;
-  double rate                                      = 1.0;
-  ink_hrtime connect_timeout                       = 0;
-  ink_hrtime inactive_timeout                      = 0;
-  bool srv_enabled                                 = false;
-  YamlSNIConfig::Policy verify_server_policy       = YamlSNIConfig::Policy::UNSET;
+  uint32_t                min                      = 0;
+  int32_t                 max                      = 0;
+  double                  rate                     = 1.0;
+  ink_hrtime              connect_timeout          = 0;
+  ink_hrtime              inactive_timeout         = 0;
+  bool                    srv_enabled              = false;
+  YamlSNIConfig::Policy   verify_server_policy     = YamlSNIConfig::Policy::UNSET;
   YamlSNIConfig::Property verify_server_properties = YamlSNIConfig::Property::UNSET;
-  std::string sni;
+  std::string             sni;
 };
 
 using SPtrConstConf = std::shared_ptr<const Conf>;
@@ -139,7 +139,7 @@ class PreWarmManager;
 class SNIConfigParams;
 
 extern ClassAllocator<PreWarmSM> preWarmSMAllocator;
-extern PreWarmManager prewarmManager;
+extern PreWarmManager            prewarmManager;
 
 /**
    @class PreWarmSM
@@ -206,28 +206,28 @@ private:
   };
 
   Action *_connect(const IpEndpoint &addr);
-  void _reset();
-  void _record_handshake_time();
+  void    _reset();
+  void    _record_handshake_time();
 
   ////
   // Variables
   //
-  NetTimeout _timeout{};
+  NetTimeout                                                        _timeout{};
   Milestones<Milestone, static_cast<size_t>(Milestone::LAST_ENTRY)> _milestones;
 
   uint32_t _retry_counter = 0;
 
-  PreWarm::SPtrConstDst _dst;
-  PreWarm::SPtrConstConf _conf;
+  PreWarm::SPtrConstDst      _dst;
+  PreWarm::SPtrConstConf     _conf;
   PreWarm::SPtrConstStatsIds _stats_ids;
 
   NetVConnection *_netvc            = nullptr;
-  Action *_pending_action           = nullptr;
-  MIOBuffer *_read_buf              = nullptr;
+  Action         *_pending_action   = nullptr;
+  MIOBuffer      *_read_buf         = nullptr;
   IOBufferReader *_read_buf_reader  = nullptr;
-  MIOBuffer *_write_buf             = nullptr;
+  MIOBuffer      *_write_buf        = nullptr;
   IOBufferReader *_write_buf_reader = nullptr;
-  Event *_retry_event               = nullptr;
+  Event          *_retry_event      = nullptr;
 };
 
 /**
@@ -253,7 +253,7 @@ public:
   int state_running(int event, void *data);
 
   // Modifiers for queue
-  void push(const PreWarm::SPtrConstDst &dst, PreWarmSM *sm);
+  void       push(const PreWarm::SPtrConstDst &dst, PreWarmSM *sm);
   PreWarmSM *dequeue(const PreWarm::SPtrConstDst &dst);
 
 private:
@@ -265,11 +265,11 @@ private:
   };
 
   struct Info {
-    Queue *init_list;
-    Queue *open_list;
-    PreWarm::SPtrConstConf conf;
+    Queue                     *init_list;
+    Queue                     *open_list;
+    PreWarm::SPtrConstConf     conf;
     PreWarm::SPtrConstStatsIds stats_ids;
-    Stat stat;
+    Stat                       stat;
   };
 
   using Map = std::unordered_map<PreWarm::SPtrConstDst, Info, PreWarm::DstHash, PreWarm::DstKeyEqual>;
@@ -292,12 +292,12 @@ private:
   //
   PreWarm::Algorithm _algorithm = PreWarm::Algorithm::V1;
 
-  Event *_tick_event       = nullptr;
+  Event     *_tick_event   = nullptr;
   ink_hrtime _event_period = HRTIME_SECONDS(1);
 
   // Force PreWarmSM to open new netvc to keep the connection warm periodically
   ActivityCop<PreWarmSM> _cop;
-  DLL<PreWarmSM> _cop_list;
+  DLL<PreWarmSM>         _cop_list;
 
   Map _map;
 };
@@ -330,7 +330,7 @@ public:
 
   // References
   const PreWarm::ParsedSNIConf &get_parsed_conf() const;
-  const PreWarm::StatsIdMap &get_stats_id_map() const;
+  const PreWarm::StatsIdMap    &get_stats_id_map() const;
 
 private:
   void _parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNIConfigParams *sni_conf) const;
@@ -343,5 +343,5 @@ private:
   Ptr<ProxyMutex> _mutex;
 
   PreWarm::ParsedSNIConf _parsed_conf;
-  PreWarm::StatsIdMap _stats_id_map;
+  PreWarm::StatsIdMap    _stats_id_map;
 };

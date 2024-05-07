@@ -38,12 +38,12 @@ struct UDPPacketInternal {
   uint64_t pktLength    = 0;
   uint16_t segment_size = 0;
 
-  int reqGenerationNum     = 0;
-  ink_hrtime delivery_time = 0; // when to deliver packet
+  int        reqGenerationNum = 0;
+  ink_hrtime delivery_time    = 0; // when to deliver packet
 
   Ptr<IOBufferBlock> chain;
-  Continuation *cont  = nullptr; // callback on error
-  UDPConnection *conn = nullptr; // connection where packet should be sent to.
+  Continuation      *cont = nullptr; // callback on error
+  UDPConnection     *conn = nullptr; // connection where packet should be sent to.
 
   int in_the_priority_queue = 0;
   int in_heap               = 0;
@@ -68,12 +68,12 @@ public:
   ~UDPPacket();
   void free(); // fast deallocate
 
-  void setContinuation(Continuation *c);
-  void setConnection(UDPConnection *c);
+  void           setContinuation(Continuation *c);
+  void           setConnection(UDPConnection *c);
   UDPConnection *getConnection();
   IOBufferBlock *getIOBlockChain();
-  int64_t getPktLength();
-  uint8_t *get_entire_chain_buffer(size_t *buf_len);
+  int64_t        getPktLength();
+  uint8_t       *get_entire_chain_buffer(size_t *buf_len);
 
   /**
      Add IOBufferBlock (chain) to end of packet.
@@ -113,7 +113,7 @@ public:
 private:
   SLINK(UDPPacket, alink); // atomic link
   UDPPacketInternal p;
-  ats_unique_buf _payload{nullptr};
+  ats_unique_buf    _payload{nullptr};
 };
 
 // Inline definitions

@@ -55,7 +55,7 @@ using namespace maxmind_acl_ns;
 
 struct plugin_regex {
   std::string _regex_s;
-  pcre *_rex;
+  pcre       *_rex;
   pcre_extra *_extra;
 };
 
@@ -88,10 +88,10 @@ public:
 
 protected:
   // Class members
-  std::string configloc;
-  YAML::Node _config;
-  MMDB_s _mmdb;
-  std::string _html;
+  std::string                           configloc;
+  YAML::Node                            _config;
+  MMDB_s                                _mmdb;
+  std::string                           _html;
   std::unordered_map<std::string, bool> allow_country;
 
   std::unordered_map<std::string, std::vector<plugin_regex>> allow_regex;
@@ -115,13 +115,13 @@ protected:
   bool default_allow = false;
   bool db_loaded     = false;
 
-  bool loaddb(const YAML::Node &dbNode);
-  bool loadallow(const YAML::Node &allowNode);
-  bool loaddeny(const YAML::Node &denyNode);
-  void loadhtml(const YAML::Node &htmlNode);
-  bool loadanonymous(const YAML::Node &anonNode);
-  bool eval_country(MMDB_entry_data_s *entry_data, const std::string &url);
-  bool eval_anonymous(MMDB_entry_s *entry_data);
-  void parseregex(const YAML::Node &regex, bool allow);
+  bool    loaddb(const YAML::Node &dbNode);
+  bool    loadallow(const YAML::Node &allowNode);
+  bool    loaddeny(const YAML::Node &denyNode);
+  void    loadhtml(const YAML::Node &htmlNode);
+  bool    loadanonymous(const YAML::Node &anonNode);
+  bool    eval_country(MMDB_entry_data_s *entry_data, const std::string &url);
+  bool    eval_anonymous(MMDB_entry_s *entry_data);
+  void    parseregex(const YAML::Node &regex, bool allow);
   ipstate eval_ip(const sockaddr *sock) const;
 };

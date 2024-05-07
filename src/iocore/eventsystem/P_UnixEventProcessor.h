@@ -53,7 +53,7 @@ EventProcessor::allocate(int size)
 TS_INLINE EThread *
 EventProcessor::assign_thread(EventType etype)
 {
-  int next;
+  int                    next;
   ThreadGroupDescriptor *tg = &thread_group[etype];
 
   ink_assert(etype < MAX_EVENT_TYPES);
@@ -204,8 +204,8 @@ EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, i
 TS_INLINE std::vector<TSAction>
 EventProcessor::schedule_entire(Continuation *cont, ink_hrtime t, ink_hrtime p, EventType et, int callback_event, void *cookie)
 {
-  ThreadGroupDescriptor *tg = &thread_group[et];
-  EThread *curr_thread      = this_ethread();
+  ThreadGroupDescriptor *tg          = &thread_group[et];
+  EThread               *curr_thread = this_ethread();
 
   std::vector<TSAction> actions;
 

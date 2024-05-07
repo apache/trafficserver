@@ -37,8 +37,8 @@ struct PluginRegInfo {
   PluginRegInfo();
   ~PluginRegInfo();
 
-  bool plugin_registered = false;
-  char *plugin_path      = nullptr;
+  bool  plugin_registered = false;
+  char *plugin_path       = nullptr;
 
   char *plugin_name   = nullptr;
   char *vendor_name   = nullptr;
@@ -51,7 +51,7 @@ struct PluginRegInfo {
 
 // Plugin registration vars
 extern DLL<PluginRegInfo> plugin_reg_list;
-extern PluginRegInfo *plugin_reg_current;
+extern PluginRegInfo     *plugin_reg_current;
 
 bool plugin_init(bool validateOnly = false);
 bool plugin_dso_load(const char *path, void *&handle, void *&init, std::string &error);

@@ -54,10 +54,10 @@ public:
   }
 
   uint64_t hasher(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
-  bool sample(double rate, uint32_t seed = 0, unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
+  bool     sample(double rate, uint32_t seed = 0, unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
 
 private:
-  char _str[INET6_ADDRSTRLEN + 1];
+  char     _str[INET6_ADDRSTRLEN + 1];
   uint64_t _hash    = 0;
   uint16_t _sampler = 0;
 };
@@ -91,7 +91,7 @@ class ConnBase
 
   private:
     ConnBase *_owner = nullptr;
-    integer _val     = -1;
+    integer   _val   = -1;
 
   }; // End class ConnBase::Dscp
 
@@ -133,7 +133,7 @@ class ConnBase
 
   private:
     ConnBase *_owner = nullptr;
-    uint32_t _val    = Off;
+    uint32_t  _val   = Off;
 
   }; // End class ConnBase::Pacing
 
@@ -192,7 +192,7 @@ class ConnBase
 
   private:
     ConnBase *_owner = nullptr;
-    integer _val     = -1;
+    integer   _val   = -1;
 
   }; // End class ConnBase::Mark
 
@@ -264,7 +264,7 @@ class ConnBase
     }
 
     struct tcp_info info;
-    socklen_t info_len = sizeof(info);
+    socklen_t       info_len = sizeof(info);
 
 #else
     integer
@@ -296,8 +296,8 @@ class ConnBase
   private:
     void initialize();
 
-    ConnBase *_owner = nullptr;
-    bool _ready      = false;
+    ConnBase     *_owner = nullptr;
+    bool          _ready = false;
     Cript::string _logging; // Storage for the logformat of the tcpinfo
 
   }; // End class ConnBase::TcpInfo
@@ -335,23 +335,23 @@ public:
     return TSHttpTxnIsInternal(_state->txnp);
   }
 
-  [[nodiscard]] virtual int count() const = 0;
-  virtual void setDscp(int val)           = 0;
-  virtual void setMark(int val)           = 0;
-  Dscp dscp;
-  Congestion congestion;
-  TcpInfo tcpinfo;
-  Geo geo;
-  Pacing pacing;
-  Mark mark;
+  [[nodiscard]] virtual int count() const    = 0;
+  virtual void              setDscp(int val) = 0;
+  virtual void              setMark(int val) = 0;
+  Dscp                      dscp;
+  Congestion                congestion;
+  TcpInfo                   tcpinfo;
+  Geo                       geo;
+  Pacing                    pacing;
+  Mark                      mark;
 
   Cript::string_view string(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
 
 protected:
-  Cript::Transaction *_state     = nullptr;
+  Cript::Transaction    *_state  = nullptr;
   struct sockaddr const *_socket = nullptr;
-  TSVConn _vc                    = nullptr;
-  char _str[INET6_ADDRSTRLEN + 1];
+  TSVConn                _vc     = nullptr;
+  char                   _str[INET6_ADDRSTRLEN + 1];
 
 }; // End class ConnBase
 
@@ -368,8 +368,8 @@ public:
   void operator=(const Connection &) = delete;
   Connection(const Connection &)     = delete;
 
-  [[nodiscard]] int fd() const override;
-  [[nodiscard]] int count() const override;
+  [[nodiscard]] int  fd() const override;
+  [[nodiscard]] int  count() const override;
   static Connection &_get(Cript::Context *context);
 
   void
@@ -400,8 +400,8 @@ public:
   void operator=(const Connection &) = delete;
   Connection(const Connection &)     = delete;
 
-  [[nodiscard]] int fd() const override;
-  [[nodiscard]] int count() const override;
+  [[nodiscard]] int  fd() const override;
+  [[nodiscard]] int  count() const override;
   static Connection &_get(Cript::Context *context);
 
   void

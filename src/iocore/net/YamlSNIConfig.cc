@@ -65,7 +65,7 @@ load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
 
   for (const auto &alpn : node) {
     auto value = alpn.as<std::string>();
-    int index  = globalSessionProtocolNameRegistry.indexFor(value);
+    int  index = globalSessionProtocolNameRegistry.indexFor(value);
     if (index == SessionProtocolNameRegistry::INVALID) {
       throw YAML::ParserException(alpn.Mark(), "unknown value \"" + value + "\"");
     } else {
@@ -175,6 +175,9 @@ YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
   if (http2_max_rst_stream_frames_per_minute.has_value()) {
     actions.push_back(std::make_unique<HTTP2MaxRstStreamFramesPerMinute>(http2_max_rst_stream_frames_per_minute.value()));
   }
+  if (http2_max_continuation_frames_per_minute.has_value()) {
+    actions.push_back(std::make_unique<HTTP2MaxContinuationFramesPerMinute>(http2_max_continuation_frames_per_minute.value()));
+  }
 
   actions.push_back(std::make_unique<ServerMaxEarlyData>(server_max_early_data));
   actions.push_back(std::make_unique<SNI_IpAllow>(ip_allow, fqdn));
@@ -222,6 +225,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_http2_max_ping_frames_per_minute,
                                                TS_http2_max_priority_frames_per_minute,
                                                TS_http2_max_rst_stream_frames_per_minute,
+                                               TS_http2_max_continuation_frames_per_minute,
                                                TS_quic,
                                                TS_ip_allow,
 #if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
@@ -277,6 +281,9 @@ template <> struct convert<YamlSNIConfig::Item> {
     if (node[TS_http2_max_rst_stream_frames_per_minute]) {
       item.http2_max_rst_stream_frames_per_minute = node[TS_http2_max_rst_stream_frames_per_minute].as<int>();
     }
+    if (node[TS_http2_max_continuation_frames_per_minute]) {
+      item.http2_max_continuation_frames_per_minute = node[TS_http2_max_continuation_frames_per_minute].as<int>();
+    }
     if (node[TS_quic]) {
       item.offer_quic = node[TS_quic].as<bool>();
     }
@@ -284,7 +291,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     // enum
     if (node[TS_verify_client]) {
       auto value = node[TS_verify_client].as<std::string>();
-      int level  = LEVEL_DESCRIPTOR.get(value);
+      int  level = LEVEL_DESCRIPTOR.get(value);
       if (level < 0) {
         throw YAML::ParserException(node[TS_verify_client].Mark(), "unknown value \"" + value + "\"");
       }
@@ -342,17 +349,17 @@ template <> struct convert<YamlSNIConfig::Item> {
 
     if (node[TS_host_sni_policy]) {
       auto value           = node[TS_host_sni_policy].as<std::string>();
-      int policy           = POLICY_DESCRIPTOR.get(value);
+      int  policy          = POLICY_DESCRIPTOR.get(value);
       item.host_sni_policy = static_cast<uint8_t>(policy);
     }
 
-    YamlSNIConfig::TunnelPreWarm t_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
-    uint32_t t_min                         = item.tunnel_prewarm_min;
-    int32_t t_max                          = item.tunnel_prewarm_max;
-    double t_rate                          = item.tunnel_prewarm_rate;
-    uint32_t t_connect_timeout             = item.tunnel_prewarm_connect_timeout;
-    uint32_t t_inactive_timeout            = item.tunnel_prewarm_inactive_timeout;
-    bool t_srv                             = item.tunnel_prewarm_srv;
+    YamlSNIConfig::TunnelPreWarm t_prewarm          = YamlSNIConfig::TunnelPreWarm::UNSET;
+    uint32_t                     t_min              = item.tunnel_prewarm_min;
+    int32_t                      t_max              = item.tunnel_prewarm_max;
+    double                       t_rate             = item.tunnel_prewarm_rate;
+    uint32_t                     t_connect_timeout  = item.tunnel_prewarm_connect_timeout;
+    uint32_t                     t_inactive_timeout = item.tunnel_prewarm_inactive_timeout;
+    bool                         t_srv              = item.tunnel_prewarm_srv;
 
     if (node[TS_tunnel_prewarm]) {
       auto is_prewarm_enabled = node[TS_tunnel_prewarm].as<bool>();
@@ -411,8 +418,8 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_verify_server_policy]) {
-      auto value = node[TS_verify_server_policy].as<std::string>();
-      int policy = POLICY_DESCRIPTOR.get(value);
+      auto value  = node[TS_verify_server_policy].as<std::string>();
+      int  policy = POLICY_DESCRIPTOR.get(value);
       if (policy < 0) {
         throw YAML::ParserException(node[TS_verify_server_policy].Mark(), "unknown value \"" + value + "\"");
       }
@@ -420,8 +427,8 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_verify_server_properties]) {
-      auto value     = node[TS_verify_server_properties].as<std::string>();
-      int properties = PROPERTIES_DESCRIPTOR.get(value);
+      auto value      = node[TS_verify_server_properties].as<std::string>();
+      int  properties = PROPERTIES_DESCRIPTOR.get(value);
       if (properties < 0) {
         throw YAML::ParserException(node[TS_verify_server_properties].Mark(), "unknown value \"" + value + "\"");
       }
@@ -443,8 +450,8 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
     if (node[TS_valid_tls_versions_in]) {
       for (unsigned int i = 0; i < node[TS_valid_tls_versions_in].size(); i++) {
-        auto value   = node[TS_valid_tls_versions_in][i].as<std::string>();
-        int protocol = TLS_PROTOCOLS_DESCRIPTOR.get(value);
+        auto value    = node[TS_valid_tls_versions_in][i].as<std::string>();
+        int  protocol = TLS_PROTOCOLS_DESCRIPTOR.get(value);
         item.EnableProtocol(static_cast<YamlSNIConfig::TLSProtocol>(protocol));
       }
     }
@@ -489,9 +496,9 @@ template <> struct convert<YamlSNIConfig::Item> {
     auto max{port_view};
 
     swoc::TextView parsed_min;
-    auto min_port{swoc::svtoi(min, &parsed_min)};
+    auto           min_port{swoc::svtoi(min, &parsed_min)};
     swoc::TextView parsed_max;
-    auto max_port{swoc::svtoi(max, &parsed_max)};
+    auto           max_port{swoc::svtoi(max, &parsed_max)};
     if (parsed_min != min || min_port < 1 || parsed_max != max || max_port > std::numeric_limits<in_port_t>::max() ||
         max_port < min_port) {
       throw YAML::ParserException(node.Mark(), swoc::bwprint(ts::bw_dbg, "bad port range: {}-{}", min, max));
@@ -530,7 +537,7 @@ std::array<std::function<std::string(std::string_view,            // destination
       port_is_dynamic = true;
       if (vc) {
         if (var_start_pos != std::string::npos) {
-          const auto local_port = vc->get_local_port();
+          const auto  local_port = vc->get_local_port();
           std::string dst{destination.substr(0, var_start_pos)};
           dst += std::to_string(local_port);
           return dst;
@@ -545,7 +552,7 @@ std::array<std::function<std::string(std::string_view,            // destination
       port_is_dynamic = true;
       if (vc) {
         if (var_start_pos != std::string::npos) {
-          const auto local_port = vc->get_proxy_protocol_dst_port();
+          const auto  local_port = vc->get_proxy_protocol_dst_port();
           std::string dst{destination.substr(0, var_start_pos)};
           dst += std::to_string(local_port);
           return dst;

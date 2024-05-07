@@ -115,7 +115,7 @@ struct HostStatusLookUpResponse {
   };
 
   std::vector<HostStatusInfo> statusList;
-  std::vector<std::string> errorList;
+  std::vector<std::string>    errorList;
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 struct HostSetStatusRequest : shared::rpc::ClientRequest {
@@ -125,10 +125,10 @@ struct HostSetStatusRequest : shared::rpc::ClientRequest {
       UP = 1,
       DOWN,
     };
-    Op op;
+    Op                       op;
     std::vector<std::string> hosts;
-    std::string reason;
-    std::string time{"0"};
+    std::string              reason;
+    std::string              time{"0"};
   };
 
   HostSetStatusRequest(Params p) { super::params = p; }
@@ -219,7 +219,7 @@ struct DeviceStatusInfoResponse {
     CacheDisk(std::string p, std::string s, int e) : path(std::move(p)), status(std::move(s)), errorCount(e) {}
     std::string path;
     std::string status;
-    int errorCount;
+    int         errorCount;
   };
   std::vector<CacheDisk> data;
 };

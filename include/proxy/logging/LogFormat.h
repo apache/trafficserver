@@ -49,7 +49,7 @@ enum LogFileFormat {
   which is defined as a set of fields.
   -------------------------------------------------------------------------*/
 
-class LogFormat : public RefCountObj
+class LogFormat : public RefCountObjInHeap
 {
 public:
   LogFormat(const char *name, const char *format_str, unsigned interval_sec = 0, LogEscapeType escape_type = LOG_ESCAPE_NONE);
@@ -122,11 +122,11 @@ public:
   }
 
 public:
-  static int32_t id_from_name(const char *name);
+  static int32_t    id_from_name(const char *name);
   static LogFormat *format_from_specification(char *spec, char **file_name, char **file_header, LogFileFormat *file_type);
-  static int parse_symbol_string(const char *symbol_string, LogFieldList *field_list, bool *contains_aggregates);
-  static int parse_format_string(const char *format_str, char **printf_str, char **fields_str);
-  static int parse_escape_string(const char *str, int len);
+  static int        parse_symbol_string(const char *symbol_string, LogFieldList *field_list, bool *contains_aggregates);
+  static int        parse_format_string(const char *format_str, char **printf_str, char **fields_str);
+  static int        parse_escape_string(const char *str, int len);
 
   // these are static because m_tagging_on is a class variable
   static void
@@ -146,22 +146,22 @@ private:
 
 public:
   LogFieldList m_field_list;
-  long m_interval_sec;
-  long m_interval_next;
-  char *m_agg_marshal_space;
+  long         m_interval_sec;
+  long         m_interval_next;
+  char        *m_agg_marshal_space;
 
 private:
   static bool m_tagging_on; // flag to control tagging, class
   // variable
-  bool m_valid;
-  char *m_name_str;
-  int32_t m_name_id;
-  char *m_fieldlist_str;
-  unsigned m_fieldlist_id;
-  unsigned m_field_count;
-  char *m_printf_str;
-  bool m_aggregate;
-  char *m_format_str;
+  bool          m_valid;
+  char         *m_name_str;
+  int32_t       m_name_id;
+  char         *m_fieldlist_str;
+  unsigned      m_fieldlist_id;
+  unsigned      m_field_count;
+  char         *m_printf_str;
+  bool          m_aggregate;
+  char         *m_format_str;
   LogFormatType m_format_type;
   LogEscapeType m_escape_type;
 
@@ -195,7 +195,7 @@ public:
   LogFormatList();
   ~LogFormatList();
 
-  void add(LogFormat *format, bool copy = true);
+  void       add(LogFormat *format, bool copy = true);
   LogFormat *find_by_name(const char *name) const;
 
   LogFormat *
@@ -209,9 +209,9 @@ public:
     return (here->link).next;
   }
 
-  void clear();
+  void     clear();
   unsigned count();
-  void display(FILE *fd = stdout);
+  void     display(FILE *fd = stdout);
 
   // noncopyable
   // -- member functions that are not allowed --

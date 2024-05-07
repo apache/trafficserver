@@ -42,9 +42,9 @@
 char qifdir[256]  = "./qifs/qifs";
 char encdir[256]  = "./qifs/encoded";
 char decdir[256]  = "./qifs/decoded";
-int tablesize     = 4096;
-int streams       = 100;
-int ackmode       = 0;
+int  tablesize    = 4096;
+int  streams      = 100;
+int  ackmode      = 0;
 char appname[256] = "ats";
 char pattern[256] = "";
 

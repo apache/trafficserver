@@ -67,7 +67,7 @@ public:
   Get(nostd::string_view key) const noexcept override
   {
     std::string key_to_compare = key.data();
-    auto it                    = headers_.find(key_to_compare);
+    auto        it             = headers_.find(key_to_compare);
     if (it != headers_.end()) {
       return it->second;
     }
@@ -134,7 +134,7 @@ InitTracer(const std::string &url, const std::string &service_name, double rate)
   auto resource = opentelemetry::sdk::resource::Resource::Create(attributes);
 
   auto context  = std::make_shared<sdktrace::TracerContext>(std::move(processors), resource,
-                                                           std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(
+                                                            std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(
                                                              std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
   auto provider = nostd::shared_ptr<trace::TracerProvider>(new sdktrace::TracerProvider(context));
 
@@ -195,7 +195,7 @@ get_span_options(std::map<std::string, std::string> parent_headers)
 std::map<std::string, std::string>
 get_trace_headers()
 {
-  auto current_ctx = opentelemetry::context::RuntimeContext::GetCurrent();
+  auto                                                   current_ctx = opentelemetry::context::RuntimeContext::GetCurrent();
   HttpTextMapCarrier<std::map<std::string, std::string>> carrier;
   auto prop = opentelemetry::context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
   prop->Inject(carrier, current_ctx);

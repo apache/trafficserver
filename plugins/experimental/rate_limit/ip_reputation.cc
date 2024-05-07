@@ -135,6 +135,8 @@ SieveLru::parseYaml(const YAML::Node &node)
   Dbg(dbg_ctl, "\twith perma-block rule: %s(%u, %u, %ld)", _name.c_str(), _permablock_limit, _permablock_threshold,
       static_cast<long>(_permablock_max_age.count()));
 
+  _initialized = true;
+
   return true;
 }
 
@@ -300,7 +302,7 @@ SieveLru::dump()
 
   for (uint32_t i = 0; i < _num_buckets + 1; ++i) {
     int64_t cnt = 0, sum = 0;
-    auto lru = _buckets[i];
+    auto    lru = _buckets[i];
 
     std::cout << '\n' << "Dumping bucket " << i << " (size=" << lru->size() << ", max_size=" << lru->max_size() << ")" << '\n';
     for (auto &it : *lru) {

@@ -37,10 +37,10 @@
 static RegressionTest *test           = nullptr;
 static RegressionTest *exclusive_test = nullptr;
 
-RegressionTest *RegressionTest::current = nullptr;
-int RegressionTest::ran_tests           = 0;
-DFA RegressionTest::dfa;
-int RegressionTest::final_status = REGRESSION_TEST_PASSED;
+RegressionTest *RegressionTest::current   = nullptr;
+int             RegressionTest::ran_tests = 0;
+DFA             RegressionTest::dfa;
+int             RegressionTest::final_status = REGRESSION_TEST_PASSED;
 
 static const char *
 progname(const char *path)
@@ -116,7 +116,7 @@ RegressionTest::run(const char *atest, int regression_level)
 void
 RegressionTest::list()
 {
-  char buf[128];
+  char        buf[128];
   const char *bold   = "\x1b[1m";
   const char *unbold = "\x1b[0m";
 
@@ -176,8 +176,8 @@ RegressionTest::check_status(int regression_level)
     }
   }
 
-  RegressionTest *t = test;
-  int exclusive     = 0;
+  RegressionTest *t         = test;
+  int             exclusive = 0;
 
 check_test_list:
   while (t) {
@@ -213,8 +213,8 @@ int
 RegressionTest::main(int /* argc */, const char **argv, int level)
 {
   char regression_test[1024] = "";
-  int regression_list        = 0;
-  int regression_level       = level;
+  int  regression_list       = 0;
+  int  regression_level      = level;
 
   const ArgumentDescription argument_descriptions[] = {
     {"regression",      'R', "Regression Level (quick:1..long:3)", "I",    &regression_level, "PROXY_REGRESSION",      nullptr},
@@ -238,7 +238,7 @@ RegressionTest::main(int /* argc */, const char **argv, int level)
 int
 rprintf(RegressionTest *t, const char *format, ...)
 {
-  int l;
+  int  l;
   char buffer[8192];
 
   snprintf(buffer, sizeof(buffer), "RPRINT %s: ", t->name);
@@ -256,7 +256,7 @@ rprintf(RegressionTest *t, const char *format, ...)
 int
 rperf(RegressionTest *t, const char *tag, double val)
 {
-  int l;
+  int  l;
   char format2[8192];
   l = snprintf(format2, sizeof(format2), "RPERF %s.%s %f\n", t->name, tag, val);
   fputs(format2, stderr);

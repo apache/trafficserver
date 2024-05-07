@@ -58,15 +58,15 @@ length(std::string const &str)
 }
 
 constexpr unsigned DEFAULT_MAX_FILE_COUNT = 100;
-constexpr int MAX_QUERY_LENGTH            = 4096;
+constexpr int      MAX_QUERY_LENGTH       = 4096;
 
 unsigned MaxFileCount = DEFAULT_MAX_FILE_COUNT;
 
 // We hardcode "immutable" here because it's not yet defined in the ATS API
 #define HTTP_IMMUTABLE "immutable"
 
-int arg_idx = -1;
-static string SIG_KEY_NAME;
+int                   arg_idx = -1;
+static string         SIG_KEY_NAME;
 static vector<string> HEADER_ALLOWLIST;
 
 #define DEFAULT_COMBO_HANDLER_PATH "admin/v1/combo"
@@ -86,21 +86,21 @@ static string COMBO_HANDLER_PATH{DEFAULT_COMBO_HANDLER_PATH};
 using StringList = list<string>;
 
 struct ClientRequest {
-  TSHttpStatus status         = TS_HTTP_STATUS_OK;
+  TSHttpStatus    status      = TS_HTTP_STATUS_OK;
   const sockaddr *client_addr = nullptr;
-  StringList file_urls;
-  bool gzip_accepted = false;
-  string defaultBucket; // default Bucket will be set to HOST header
+  StringList      file_urls;
+  bool            gzip_accepted = false;
+  string          defaultBucket; // default Bucket will be set to HOST header
   ClientRequest() : defaultBucket("l"){};
 };
 
 struct InterceptData {
   TSVConn net_vc;
-  TSCont contp;
+  TSCont  contp;
 
   struct IoHandle {
-    TSVIO vio               = nullptr;
-    TSIOBuffer buffer       = nullptr;
+    TSVIO            vio    = nullptr;
+    TSIOBuffer       buffer = nullptr;
     TSIOBufferReader reader = nullptr;
 
     IoHandle() = default;
@@ -116,20 +116,20 @@ struct InterceptData {
     };
   };
 
-  IoHandle input;
-  IoHandle output;
+  IoHandle     input;
+  IoHandle     output;
   TSHttpParser http_parser;
 
-  string body;
-  TSMBuffer req_hdr_bufp;
-  TSMLoc req_hdr_loc;
-  bool req_hdr_parsed;
-  bool initialized;
-  ClientRequest creq;
+  string               body;
+  TSMBuffer            req_hdr_bufp;
+  TSMLoc               req_hdr_loc;
+  bool                 req_hdr_parsed;
+  bool                 initialized;
+  ClientRequest        creq;
   HttpDataFetcherImpl *fetcher;
-  bool read_complete;
-  bool write_complete;
-  string gzipped_data;
+  bool                 read_complete;
+  bool                 write_complete;
+  string               gzipped_data;
 
   InterceptData(TSCont cont)
     : net_vc(nullptr),
@@ -167,9 +167,9 @@ struct CacheControlHeader {
   string generate() const;
 
   // Cache-Control values we're keeping track of
-  unsigned int _max_age = numeric_limits<unsigned int>::max();
-  Publicity _publicity  = Publicity::DEFAULT;
-  bool _immutable       = true;
+  unsigned int _max_age   = numeric_limits<unsigned int>::max();
+  Publicity    _publicity = Publicity::DEFAULT;
+  bool         _immutable = true;
 };
 
 class ContentTypeHandler
@@ -262,13 +262,13 @@ CacheControlHeader::update(TSMBuffer bufp, TSMLoc hdr_loc)
     if ((n_values != TS_ERROR) && (n_values > 0)) {
       for (int i = 0; i < n_values; i++) {
         // Grab this current header value
-        int _val_len    = 0;
-        const char *val = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &_val_len);
+        int         _val_len = 0;
+        const char *val      = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &_val_len);
 
         // Update max-age if necessary
         if (strncasecmp(val, TS_HTTP_VALUE_MAX_AGE, TS_HTTP_LEN_MAX_AGE) == 0) {
           unsigned int max_age  = 0;
-          char *ptr             = const_cast<char *>(val);
+          char        *ptr      = const_cast<char *>(val);
           ptr                  += TS_HTTP_LEN_MAX_AGE;
           while ((*ptr == ' ') || (*ptr == '\t')) {
             ptr++;
@@ -307,9 +307,9 @@ string
 CacheControlHeader::generate() const
 {
   unsigned int max_age;
-  char line_buf[256];
-  const char *publicity;
-  const char *immutable;
+  char         line_buf[256];
+  const char  *publicity;
+  const char  *immutable;
 
   // Previously, all combo_cache documents were public. However, that's a bug. If any requested document is private the combo_cache
   // document should private as well.
@@ -327,12 +327,12 @@ CacheControlHeader::generate() const
 }
 
 // forward declarations
-static int handleReadRequestHeader(TSCont contp, TSEvent event, void *edata);
+static int  handleReadRequestHeader(TSCont contp, TSEvent event, void *edata);
 static bool isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc);
 static void getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc, ClientRequest &creq);
 static void parseQueryParameters(const char *query, int query_len, ClientRequest &creq);
 static void checkGzipAcceptance(TSMBuffer bufp, TSMLoc hdr_loc, ClientRequest &creq);
-static int handleServerEvent(TSCont contp, TSEvent event, void *edata);
+static int  handleServerEvent(TSCont contp, TSEvent event, void *edata);
 static bool initRequestProcessing(InterceptData &int_data, void *edata, bool &write_response);
 static bool readInterceptRequest(InterceptData &int_data);
 static bool writeResponse(InterceptData &int_data);
@@ -355,7 +355,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (argc > 1) {
-    int c;
+    int                        c;
     static const struct option longopts[] = {
       {"max-files", required_argument, nullptr, 'f'},
       {nullptr,     0,                 nullptr, 0  },
@@ -367,7 +367,7 @@ TSPluginInit(int argc, const char *argv[])
       switch (c) {
       case 'f': {
         char *tmp = nullptr;
-        long n    = strtol(optarg, &tmp, 0);
+        long  n   = strtol(optarg, &tmp, 0);
         if (tmp == optarg) {
           TSError("[%s] %s requires a numeric argument", DEBUG_TAG, longopts[longindex].name);
         } else if (n < 1) {
@@ -407,7 +407,7 @@ TSPluginInit(int argc, const char *argv[])
 
   if (argc > optind && (argv[optind][0] != '-' || argv[optind][1])) {
     stringstream strstream(argv[optind++]);
-    string header;
+    string       header;
     while (getline(strstream, header, ':')) {
       HEADER_ALLOWLIST.push_back(header);
     }
@@ -479,9 +479,9 @@ handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
   LOG_DEBUG("combo is enabled for this channel");
   LOG_DEBUG("handling TS_EVENT_HTTP_OS_DNS event");
 
-  TSEvent reenable_to_event = TS_EVENT_HTTP_CONTINUE;
+  TSEvent   reenable_to_event = TS_EVENT_HTTP_CONTINUE;
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
     TSMLoc url_loc;
@@ -518,8 +518,8 @@ handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
 static bool
 isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc)
 {
-  int method_len;
-  bool retval        = false;
+  int         method_len;
+  bool        retval = false;
   const char *method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
 
   if (!method) {
@@ -532,7 +532,7 @@ isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc)
     }
 
     if (retval) {
-      int path_len;
+      int         path_len;
       const char *path = TSUrlPathGet(bufp, url_loc, &path_len);
       if (!path) {
         LOG_ERROR("Could not get path from request URL");
@@ -551,10 +551,10 @@ static bool
 getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &creq)
 {
   LOG_DEBUG("In getDefaultBucket");
-  TSMLoc field_loc;
+  TSMLoc      field_loc;
   const char *host;
-  int host_len            = 0;
-  bool defaultBucketFound = false;
+  int         host_len           = 0;
+  bool        defaultBucketFound = false;
 
   field_loc = TSMimeHdrFieldFind(bufp, hdr_obj, TS_MIME_FIELD_HOST, -1);
   if (field_loc == TS_NULL_MLOC) {
@@ -582,7 +582,7 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
 static void
 getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc, ClientRequest &creq)
 {
-  int query_len;
+  int         query_len;
   const char *query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
 
   if (!query) {
@@ -608,16 +608,16 @@ getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc,
 static void
 parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
 {
-  creq.status         = TS_HTTP_STATUS_OK;
-  int param_start_pos = 0;
-  bool sig_verified   = false;
-  int colon_pos       = -1;
-  string file_url("http://localhost/");
-  size_t file_base_url_size      = file_url.size();
-  const char *common_prefix      = nullptr;
-  int common_prefix_size         = 0;
-  const char *common_prefix_path = nullptr;
-  int common_prefix_path_size    = 0;
+  creq.status                 = TS_HTTP_STATUS_OK;
+  int         param_start_pos = 0;
+  bool        sig_verified    = false;
+  int         colon_pos       = -1;
+  string      file_url("http://localhost/");
+  size_t      file_base_url_size      = file_url.size();
+  const char *common_prefix           = nullptr;
+  int         common_prefix_size      = 0;
+  const char *common_prefix_path      = nullptr;
+  int         common_prefix_path_size = 0;
 
   for (int i = 0; i <= query_len; ++i) {
     if ((i == query_len) || (query[i] == '&')) {
@@ -723,8 +723,8 @@ checkGzipAcceptance(TSMBuffer bufp, TSMLoc hdr_loc, ClientRequest &creq)
   TSMLoc field_loc   = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   if (field_loc != TS_NULL_MLOC) {
     const char *value;
-    int value_len;
-    int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+    int         value_len;
+    int         n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
 
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
@@ -747,8 +747,8 @@ checkGzipAcceptance(TSMBuffer bufp, TSMLoc hdr_loc, ClientRequest &creq)
 static int
 handleServerEvent(TSCont contp, TSEvent event, void *edata)
 {
-  InterceptData *int_data = static_cast<InterceptData *>(TSContDataGet(contp));
-  bool write_response     = false;
+  InterceptData *int_data       = static_cast<InterceptData *>(TSContDataGet(contp));
+  bool           write_response = false;
 
   switch (event) {
   case TS_EVENT_NET_ACCEPT_FAILED:
@@ -857,8 +857,8 @@ readInterceptRequest(InterceptData &int_data)
 
   int consumed = 0;
   if (avail > 0) {
-    int64_t data_len;
-    const char *data;
+    int64_t         data_len;
+    const char     *data;
     TSIOBufferBlock block = TSIOBufferReaderStart(int_data.input.reader);
     while (block != nullptr) {
       data               = TSIOBufferBlockReadStart(block, int_data.input.reader, &data_len);
@@ -888,8 +888,8 @@ static const string OK_REPLY_LINE("HTTP/1.0 200 OK\r\n");
 static const string BAD_REQUEST_RESPONSE("HTTP/1.0 400 Bad Request\r\n\r\n");
 static const string ERROR_REPLY_RESPONSE("HTTP/1.0 500 Internal Server Error\r\n\r\n");
 static const string FORBIDDEN_RESPONSE("HTTP/1.0 403 Forbidden\r\n\r\n");
-static const char GZIP_ENCODING_FIELD[]   = {"Content-Encoding: gzip\r\n"};
-static const int GZIP_ENCODING_FIELD_SIZE = sizeof(GZIP_ENCODING_FIELD) - 1;
+static const char   GZIP_ENCODING_FIELD[]    = {"Content-Encoding: gzip\r\n"};
+static const int    GZIP_ENCODING_FIELD_SIZE = sizeof(GZIP_ENCODING_FIELD) - 1;
 
 static bool
 writeResponse(InterceptData &int_data)
@@ -897,7 +897,7 @@ writeResponse(InterceptData &int_data)
   int_data.setupWrite();
 
   ByteBlockList body_blocks;
-  string resp_header_fields;
+  string        resp_header_fields;
   prepareResponse(int_data, body_blocks, resp_header_fields);
 
   int n_bytes_written = 0;
@@ -953,12 +953,12 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
 {
   if (int_data.creq.status == TS_HTTP_STATUS_OK) {
     HttpDataFetcherImpl::ResponseData resp_data;
-    TSMLoc field_loc;
-    time_t expires_time;
-    bool got_expires_time = false;
-    int num_headers       = HEADER_ALLOWLIST.size();
-    int flags_list[num_headers];
-    CacheControlHeader cch;
+    TSMLoc                            field_loc;
+    time_t                            expires_time;
+    bool                              got_expires_time = false;
+    int                               num_headers      = HEADER_ALLOWLIST.size();
+    int                               flags_list[num_headers];
+    CacheControlHeader                cch;
 
     for (int i = 0; i < num_headers; i++) {
       flags_list[i] = 0;
@@ -983,7 +983,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
         field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES);
         if (field_loc != TS_NULL_MLOC) {
           time_t curr_field_expires_time;
-          int n_values = TSMimeHdrFieldValuesCount(resp_data.bufp, resp_data.hdr_loc, field_loc);
+          int    n_values = TSMimeHdrFieldValuesCount(resp_data.bufp, resp_data.hdr_loc, field_loc);
           if ((n_values != TS_ERROR) && (n_values > 0)) {
             curr_field_expires_time = TSMimeHdrFieldValueDateGet(resp_data.bufp, resp_data.hdr_loc, field_loc);
             if (!got_expires_time) {
@@ -1005,10 +1005,10 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
 
           field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, header.c_str(), header.size());
           if (field_loc != TS_NULL_MLOC) {
-            bool values_added = false;
+            bool        values_added = false;
             const char *value;
-            int value_len;
-            int n_values = TSMimeHdrFieldValuesCount(resp_data.bufp, resp_data.hdr_loc, field_loc);
+            int         value_len;
+            int         n_values = TSMimeHdrFieldValuesCount(resp_data.bufp, resp_data.hdr_loc, field_loc);
             if ((n_values != TS_ERROR) && (n_values > 0)) {
               for (int k = 0; k < n_values; k++) {
                 value = TSMimeHdrFieldValueStringGet(resp_data.bufp, resp_data.hdr_loc, field_loc, k, &value_len);
@@ -1045,7 +1045,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
           if (expires_time <= 0) {
             resp_header_fields.append("Expires: 0\r\n");
           } else {
-            char line_buf[128];
+            char      line_buf[128];
             struct tm gm_expires_time;
             int line_size = strftime(line_buf, 128, "Expires: %a, %d %b %Y %T GMT\r\n", gmtime_r(&expires_time, &gm_expires_time));
             resp_header_fields.append(line_buf, line_size);
@@ -1073,10 +1073,10 @@ ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
   if (field_loc != TS_NULL_MLOC) {
-    bool values_added = false;
+    bool        values_added = false;
     const char *value;
-    int value_len;
-    int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+    int         value_len;
+    int         n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
       swoc::TextView tv{value, size_t(value_len)};
@@ -1118,9 +1118,9 @@ void
 ContentTypeHandler::loadAllowList(std::string const &file_spec)
 {
   std::fstream fs;
-  char line_buffer[256];
-  bool extra_junk_on_line{false};
-  int line_num = 0;
+  char         line_buffer[256];
+  bool         extra_junk_on_line{false};
+  int          line_num = 0;
 
   fs.open(file_spec, std::ios_base::in);
   if (fs.good()) {
@@ -1131,7 +1131,7 @@ ContentTypeHandler::loadAllowList(std::string const &file_spec)
         break;
       }
       constexpr swoc::TextView bs{" \t"};
-      swoc::TextView line{line_buffer, std::size_t(fs.gcount() - 1)};
+      swoc::TextView           line{line_buffer, std::size_t(fs.gcount() - 1)};
       line.ltrim(bs);
       if (line.empty() || line[0] == '#') {
         // Empty/comment line.
@@ -1176,10 +1176,10 @@ writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written)
   }
 
   if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_LAST_MODIFIED) == HEADER_ALLOWLIST.end()) {
-    time_t time_now = static_cast<time_t>(TShrtime() / 1000000000); // it returns nanoseconds!
-    char last_modified_line[128];
+    time_t    time_now = static_cast<time_t>(TShrtime() / 1000000000); // it returns nanoseconds!
+    char      last_modified_line[128];
     struct tm gmnow;
-    int last_modified_line_size =
+    int       last_modified_line_size =
       strftime(last_modified_line, 128, "Last-Modified: %a, %d %b %Y %T GMT\r\n", gmtime_r(&time_now, &gmnow));
     if (TSIOBufferWrite(int_data.output.buffer, last_modified_line, last_modified_line_size) == TS_ERROR) {
       LOG_ERROR("Error while writing last-modified fields");

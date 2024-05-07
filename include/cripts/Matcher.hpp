@@ -164,10 +164,10 @@ public:
       return matched();
     }
 
-    Cript::StringViewWrapper
+    Cript::string_view
     operator[](size_t ix) const
     {
-      Cript::StringViewWrapper ret;
+      Cript::string_view ret;
 
       if ((count() > ix) && _ovector) {
         ret = {_subject.substr(_ovector[ix * 2], _ovector[ix * 2 + 1] - _ovector[ix * 2])};
@@ -198,12 +198,12 @@ public:
     static void *malloc(PCRE2_SIZE size, void *context);
 
   private:
-    RegexEntries::size_type _match = 0; // The index into the regex vector that match, starting at 1 for the first regex
-    pcre2_match_data *_data        = nullptr;
-    PCRE2_SIZE *_ovector           = nullptr;
-    PCRE2_SIZE _ctx_ix             = 0;
-    std::byte _ctx_data[24 * 2 + 96 + 16 * MAX_CAPTURES];
-    Cript::string_view _subject;
+    RegexEntries::size_type _match   = 0; // The index into the regex vector that match, starting at 1 for the first regex
+    pcre2_match_data       *_data    = nullptr;
+    PCRE2_SIZE             *_ovector = nullptr;
+    PCRE2_SIZE              _ctx_ix  = 0;
+    std::byte               _ctx_data[24 * 2 + 96 + 16 * MAX_CAPTURES];
+    Cript::string_view      _subject;
   };
 
   PCRE() = default;
@@ -220,7 +220,7 @@ public:
 
   ~PCRE();
 
-  void add(Cript::string_view regex, uint32_t options = 0, bool jit = true);
+  void   add(Cript::string_view regex, uint32_t options = 0, bool jit = true);
   Result contains(Cript::string_view subject, PCRE2_SIZE offset = 0, uint32_t options = 0);
 
   Result

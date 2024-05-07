@@ -75,6 +75,7 @@ execute_process(
 
 # Options
 include(AutoOptionHelpers)
+find_package(PkgConfig)
 auto_option(HWLOC FEATURE_VAR TS_USE_HWLOC PACKAGE_DEPENDS hwloc)
 auto_option(
   JEMALLOC
@@ -318,7 +319,10 @@ endif()
 find_package(maxminddb) # Header_rewrite experimental/maxmind_acl
 
 if(ENABLE_ASAN)
-  add_compile_options(-fsanitize=address)
+  if(ENABLE_JEMALLOC OR ENABLE_MIMALLOC)
+    message(FATAL_ERROR "ENABLE_JEMALLOC and ENABLE_MIMALLOC are not compatible with asan builds")
+  endif()
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
   add_link_options(-fsanitize=address)
 endif()
 
@@ -336,7 +340,7 @@ set(HAVE_NCURSES_NCURSES_H ${CURSES_HAVE_NCURSES_NCURSES_H})
 if(EXTERNAL_YAML_CPP)
   message(STATUS "Looking for external yaml-cpp")
   find_package(yaml-cpp "0.8.0" REQUIRED)
-  set(YAMLCPP_LIB_VERSION yaml-cpp_VERSION)
+  set(YAMLCPP_LIB_VERSION ${yaml-cpp_VERSION})
   find_package_message(
     yaml-cpp "Found yaml-cpp: ${yaml-cpp_CONFIG} (found version \"${yaml-cpp_VERSION}\")" "${yaml-cpp_CONFIG}"
   )
@@ -440,8 +444,10 @@ check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
 check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" TS_USE_HELLO_CB)
 check_symbol_exists(SSL_set1_verify_cert_store "openssl/ssl.h" TS_HAS_VERIFY_CERT_STORE)
-check_symbol_exists(SSL_read_early_data "openssl/ssl.h" TS_HAS_TLS_EARLY_DATA)
 check_symbol_exists(SSL_set_max_early_data "openssl/ssl.h" HAVE_SSL_SET_MAX_EARLY_DATA)
+check_symbol_exists(SSL_read_early_data "openssl/ssl.h" HAVE_SSL_READ_EARLY_DATA)
+check_symbol_exists(SSL_write_early_data "openssl/ssl.h" HAVE_SSL_WRITE_EARLY_DATA)
+check_symbol_exists(SSL_in_early_data "openssl/ssl.h" HAVE_SSL_IN_EARLY_DATA)
 check_symbol_exists(SSL_CTX_set_ciphersuites "openssl/ssl.h" TS_USE_TLS_SET_CIPHERSUITES)
 check_symbol_exists(SSL_CTX_set_keylog_callback "openssl/ssl.h" TS_HAS_TLS_KEYLOGGING)
 check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB)
@@ -458,7 +464,15 @@ endif()
 
 unset(CMAKE_REQUIRED_FLAGS)
 
-set(HAVE_SSL_READ_EARLY_DATA ${TS_HAS_TLS_EARLY_DATA})
+set(TS_HAS_TLS_EARLY_DATA
+    ${HAVE_SSL_SET_MAX_EARLY_DATA}
+    |
+    ${HAVE_SSL_READ_EARLY_DATA}
+    |
+    ${HAVE_SSL_WRITE_EARLY_DATA}
+    |
+    ${HAVE_SSL_IN_EARLY_DATA}
+)
 
 set(CMAKE_REQUIRED_INCLUDES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)
@@ -565,7 +579,9 @@ add_subdirectory(lib)
 # there are warnings, we can't do anything about it.
 # Note: -DCMAKE_COMPILE_WARNING_AS_ERROR=ON will turn warnings into errors.
 add_compile_options(-pipe -Wall -Wextra -Wno-unused-parameter)
-add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override;-Wno-vla-extension>")
+add_compile_options(
+  "$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override;-Wno-vla-extension;-fno-strict-aliasing>"
+)
 add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-format-truncation;-Wno-stringop-overflow>")
 
 if(NOT EXTERNAL_YAML_CPP)

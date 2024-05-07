@@ -39,8 +39,8 @@ static const uint32_t HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
 namespace
 {
 struct Http2HeaderName {
-  const char *name = nullptr;
-  int name_len     = 0;
+  const char *name     = nullptr;
+  int         name_len = 0;
 };
 
 static VersionConverter hvc;
@@ -54,15 +54,15 @@ Metrics::Counter::AtomicType *http2_frame_metrics_in[HTTP2_FRAME_TYPE_MAX + 1];
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
-  void *ptr;
-  uint8_t *u8;
+  void     *ptr;
+  uint8_t  *u8;
   uint16_t *u16;
   uint32_t *u32;
 };
 
 template <typename T> union byte_addressable_value {
   uint8_t bytes[sizeof(T)];
-  T value;
+  T       value;
 };
 
 static void
@@ -179,7 +179,7 @@ http2_settings_parameter_is_valid(const Http2SettingsParameter &param)
 bool
 http2_parse_frame_header(IOVec iov, Http2FrameHeader &hdr)
 {
-  byte_pointer ptr(iov.iov_base);
+  byte_pointer                     ptr(iov.iov_base);
   byte_addressable_value<uint32_t> length_and_type;
   byte_addressable_value<uint32_t> streamid;
 
@@ -307,7 +307,7 @@ http2_parse_headers_parameter(IOVec iov, Http2HeadersParameter &params)
 bool
 http2_parse_priority_parameter(IOVec iov, Http2Priority &priority)
 {
-  byte_pointer ptr(iov.iov_base);
+  byte_pointer                     ptr(iov.iov_base);
   byte_addressable_value<uint32_t> dependency;
 
   memcpy_and_advance(dependency.bytes, ptr);
@@ -325,7 +325,7 @@ http2_parse_priority_parameter(IOVec iov, Http2Priority &priority)
 bool
 http2_parse_rst_stream(IOVec iov, Http2RstStream &rst_stream)
 {
-  byte_pointer ptr(iov.iov_base);
+  byte_pointer                     ptr(iov.iov_base);
   byte_addressable_value<uint32_t> ec;
 
   memcpy_and_advance(ec.bytes, ptr);
@@ -338,7 +338,7 @@ http2_parse_rst_stream(IOVec iov, Http2RstStream &rst_stream)
 bool
 http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter &param)
 {
-  byte_pointer ptr(iov.iov_base);
+  byte_pointer                     ptr(iov.iov_base);
   byte_addressable_value<uint16_t> pid;
   byte_addressable_value<uint32_t> pval;
 
@@ -358,7 +358,7 @@ http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter &param)
 bool
 http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
 {
-  byte_pointer ptr(iov.iov_base);
+  byte_pointer                     ptr(iov.iov_base);
   byte_addressable_value<uint32_t> sid;
   byte_addressable_value<uint32_t> ec;
 
@@ -373,7 +373,7 @@ http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
 bool
 http2_parse_window_update(IOVec iov, uint32_t &size)
 {
-  byte_pointer ptr(iov.iov_base);
+  byte_pointer                     ptr(iov.iov_base);
   byte_addressable_value<uint32_t> s;
 
   memcpy_and_advance(s.bytes, ptr);
@@ -459,45 +459,46 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 }
 
 // Initialize this subsystem with librecords configs (for now)
-uint32_t Http2::max_concurrent_streams_in            = 100;
-uint32_t Http2::min_concurrent_streams_in            = 10;
-uint32_t Http2::max_active_streams_in                = 0;
-bool Http2::throttling                               = false;
-uint32_t Http2::stream_priority_enabled              = 0;
-uint32_t Http2::initial_window_size_in               = 65535;
-Http2FlowControlPolicy Http2::flow_control_policy_in = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
-uint32_t Http2::max_frame_size                       = 16384;
-uint32_t Http2::header_table_size                    = 4096;
-uint32_t Http2::max_header_list_size                 = 4294967295;
-uint32_t Http2::accept_no_activity_timeout           = 120;
-uint32_t Http2::no_activity_timeout_in               = 120;
-uint32_t Http2::active_timeout_in                    = 0;
-uint32_t Http2::push_diary_size                      = 256;
-uint32_t Http2::zombie_timeout_in                    = 0;
+uint32_t               Http2::max_concurrent_streams_in  = 100;
+uint32_t               Http2::min_concurrent_streams_in  = 10;
+uint32_t               Http2::max_active_streams_in      = 0;
+bool                   Http2::throttling                 = false;
+uint32_t               Http2::stream_priority_enabled    = 0;
+uint32_t               Http2::initial_window_size_in     = 65535;
+Http2FlowControlPolicy Http2::flow_control_policy_in     = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
+uint32_t               Http2::max_frame_size             = 16384;
+uint32_t               Http2::header_table_size          = 4096;
+uint32_t               Http2::max_header_list_size       = 4294967295;
+uint32_t               Http2::accept_no_activity_timeout = 120;
+uint32_t               Http2::no_activity_timeout_in     = 120;
+uint32_t               Http2::active_timeout_in          = 0;
+uint32_t               Http2::push_diary_size            = 256;
+uint32_t               Http2::zombie_timeout_in          = 0;
 
-uint32_t Http2::max_concurrent_streams_out            = 100;
-uint32_t Http2::min_concurrent_streams_out            = 10;
-uint32_t Http2::max_active_streams_out                = 0;
-uint32_t Http2::initial_window_size_out               = 65535;
-Http2FlowControlPolicy Http2::flow_control_policy_out = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
-uint32_t Http2::no_activity_timeout_out               = 120;
+uint32_t               Http2::max_concurrent_streams_out = 100;
+uint32_t               Http2::min_concurrent_streams_out = 10;
+uint32_t               Http2::max_active_streams_out     = 0;
+uint32_t               Http2::initial_window_size_out    = 65535;
+Http2FlowControlPolicy Http2::flow_control_policy_out    = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
+uint32_t               Http2::no_activity_timeout_out    = 120;
 
-float Http2::stream_error_rate_threshold         = 0.1;
-uint32_t Http2::stream_error_sampling_threshold  = 10;
-uint32_t Http2::max_settings_per_frame           = 7;
-uint32_t Http2::max_settings_per_minute          = 14;
-uint32_t Http2::max_settings_frames_per_minute   = 14;
-uint32_t Http2::max_ping_frames_per_minute       = 60;
-uint32_t Http2::max_priority_frames_per_minute   = 120;
-uint32_t Http2::max_rst_stream_frames_per_minute = 200;
-float Http2::min_avg_window_update               = 2560.0;
-uint32_t Http2::con_slow_log_threshold           = 0;
-uint32_t Http2::stream_slow_log_threshold        = 0;
-uint32_t Http2::header_table_size_limit          = 65536;
-uint32_t Http2::write_buffer_block_size          = 262144;
-float Http2::write_size_threshold                = 0.5;
-uint32_t Http2::write_time_threshold             = 100;
-uint32_t Http2::buffer_water_mark                = 0;
+float    Http2::stream_error_rate_threshold        = 0.1;
+uint32_t Http2::stream_error_sampling_threshold    = 10;
+uint32_t Http2::max_settings_per_frame             = 7;
+uint32_t Http2::max_settings_per_minute            = 14;
+uint32_t Http2::max_settings_frames_per_minute     = 14;
+uint32_t Http2::max_ping_frames_per_minute         = 60;
+uint32_t Http2::max_priority_frames_per_minute     = 120;
+uint32_t Http2::max_rst_stream_frames_per_minute   = 200;
+uint32_t Http2::max_continuation_frames_per_minute = 120;
+float    Http2::min_avg_window_update              = 2560.0;
+uint32_t Http2::con_slow_log_threshold             = 0;
+uint32_t Http2::stream_slow_log_threshold          = 0;
+uint32_t Http2::header_table_size_limit            = 65536;
+uint32_t Http2::write_buffer_block_size            = 262144;
+float    Http2::write_size_threshold               = 0.5;
+uint32_t Http2::write_time_threshold               = 100;
+uint32_t Http2::buffer_water_mark                  = 0;
 
 void
 Http2::init()
@@ -545,6 +546,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_ping_frames_per_minute, "proxy.config.http2.max_ping_frames_per_minute");
   REC_EstablishStaticConfigInt32U(max_priority_frames_per_minute, "proxy.config.http2.max_priority_frames_per_minute");
   REC_EstablishStaticConfigInt32U(max_rst_stream_frames_per_minute, "proxy.config.http2.max_rst_stream_frames_per_minute");
+  REC_EstablishStaticConfigInt32U(max_continuation_frames_per_minute, "proxy.config.http2.max_continuation_frames_per_minute");
   REC_EstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
   REC_EstablishStaticConfigInt32U(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
   REC_EstablishStaticConfigInt32U(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
@@ -597,6 +599,8 @@ Http2::init()
     Metrics::Counter::createPtr("proxy.process.http2.max_priority_frames_per_minute_exceeded");
   http2_rsb.max_rst_stream_frames_per_minute_exceeded =
     Metrics::Counter::createPtr("proxy.process.http2.max_rst_stream_frames_per_minute_exceeded");
+  http2_rsb.max_continuation_frames_per_minute_exceeded =
+    Metrics::Counter::createPtr("proxy.process.http2.max_continuation_frames_per_minute_exceeded");
   http2_rsb.insufficient_avg_window_update = Metrics::Counter::createPtr("proxy.process.http2.insufficient_avg_window_update");
   http2_rsb.max_concurrent_streams_exceeded_in =
     Metrics::Counter::createPtr("proxy.process.http2.max_concurrent_streams_exceeded_in");

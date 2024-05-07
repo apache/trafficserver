@@ -36,21 +36,21 @@
 
 static DbgCtl dbg_ctl{"[custom_redirect]"};
 
-static char *redirect_url_header   = nullptr;
-static int redirect_url_header_len = 0;
-static int return_code             = TS_HTTP_STATUS_NONE;
+static char *redirect_url_header     = nullptr;
+static int   redirect_url_header_len = 0;
+static int   return_code             = TS_HTTP_STATUS_NONE;
 
 static void
 handle_response(TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
 {
-  TSMBuffer resp_bufp;
-  TSMLoc resp_loc;
-  TSMBuffer req_bufp;
-  TSMLoc req_loc;
-  TSMLoc redirect_url_loc;
+  TSMBuffer    resp_bufp;
+  TSMLoc       resp_loc;
+  TSMBuffer    req_bufp;
+  TSMLoc       req_loc;
+  TSMLoc       redirect_url_loc;
   TSHttpStatus status;
-  const char *redirect_url_str;
-  int redirect_url_length;
+  const char  *redirect_url_str;
+  int          redirect_url_length;
 
   if (TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
     TSError("[custom_redirect] Couldn't retrieve server response header");
@@ -61,7 +61,7 @@ handle_response(TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
       if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc) != TS_SUCCESS) {
         TSError("[custom_redirect] Couldn't retrieve server response header");
       } else {
-        int method_len;
+        int         method_len;
         const char *method = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
         if ((return_code == TS_HTTP_STATUS_NONE || return_code == status) &&
             ((strncasecmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0))) {

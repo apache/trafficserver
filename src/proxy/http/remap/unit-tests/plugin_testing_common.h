@@ -67,30 +67,30 @@ public:
   }
 
   /* Input fields used to set the test behavior of the plugin call-backs */
-  bool fail = false; /* tell the plugin call-back to fail for testing purposuses */
-  void *input_ih;    /* the value to be returned by the plugin instance init function */
+  bool  fail = false; /* tell the plugin call-back to fail for testing purposuses */
+  void *input_ih;     /* the value to be returned by the plugin instance init function */
 
   /* Output fields showing what happend during the test */
-  const PluginThreadContext *contextInit         = nullptr;                   /* plugin initialization context */
-  const PluginThreadContext *contextInitInstance = nullptr;                   /* plugin instance initialization context */
-  int doRemapCalled                              = 0;                         /* mark if remap was called */
-  int initCalled                                 = 0;                         /* mark if plugin init was called */
-  int doneCalled                                 = 0;                         /* mark if done was called */
-  int initInstanceCalled                         = 0;                         /* mark if instance init was called */
-  int deleteInstanceCalled                       = 0;                         /* mark if delete instance was called */
-  int preReloadConfigCalled                      = 0;                         /* mark if pre-reload config was called */
-  int postReloadConfigCalled                     = 0;                         /* mark if post-reload config was called */
+  const PluginThreadContext *contextInit            = nullptr;                /* plugin initialization context */
+  const PluginThreadContext *contextInitInstance    = nullptr;                /* plugin instance initialization context */
+  int                        doRemapCalled          = 0;                      /* mark if remap was called */
+  int                        initCalled             = 0;                      /* mark if plugin init was called */
+  int                        doneCalled             = 0;                      /* mark if done was called */
+  int                        initInstanceCalled     = 0;                      /* mark if instance init was called */
+  int                        deleteInstanceCalled   = 0;                      /* mark if delete instance was called */
+  int                        preReloadConfigCalled  = 0;                      /* mark if pre-reload config was called */
+  int                        postReloadConfigCalled = 0;                      /* mark if post-reload config was called */
   TSRemapReloadStatus postReloadConfigStatus = TSREMAP_CONFIG_RELOAD_FAILURE; /* mark if plugin reload status is passed correctly */
-  void *ih                                   = nullptr;                       /* instance handler */
-  int argc                                   = 0;       /* number of plugin instance parameters received by the plugin */
-  char **argv                                = nullptr; /* plugin instance parameters received by the plugin */
+  void               *ih                     = nullptr;                       /* instance handler */
+  int                 argc                   = 0;       /* number of plugin instance parameters received by the plugin */
+  char              **argv                   = nullptr; /* plugin instance parameters received by the plugin */
 };
 
 using GetPluginDebugObjectFunction = void *();
 extern "C" GetPluginDebugObjectFunction getPluginDebugObjectTest;
 
-#define PluginDebug(category, fmt, ...) \
-  PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", category, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define PluginDbg(dbg_ctl, fmt, ...) \
+  PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", (dbg_ctl).tag(), __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define PluginError(fmt, ...) PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 void PrintToStdErr(const char *fmt, ...);
 

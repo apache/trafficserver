@@ -90,7 +90,7 @@ create_request_info(TSHttpTxn txnp)
   RequestInfo *req_info = static_cast<RequestInfo *>(TSmalloc(sizeof(RequestInfo)));
 
   TSMBuffer hdr_url_buf;
-  TSMLoc hdr_url_loc;
+  TSMLoc    hdr_url_loc;
 
   TSHttpTxnClientReqGet(txnp, &hdr_url_buf, &hdr_url_loc);
 
@@ -329,11 +329,11 @@ send_stale_response(StateInfo *state)
 static CachedHeaderInfo *
 get_cached_header_info(StateInfo *state)
 {
-  TSHttpTxn txnp = state->txnp;
+  TSHttpTxn         txnp = state->txnp;
   CachedHeaderInfo *chi;
-  TSMBuffer cr_buf;
-  TSMLoc cr_hdr_loc, cr_date_loc, cr_cache_control_loc, cr_cache_control_dup_loc;
-  int cr_cache_control_count = 0;
+  TSMBuffer         cr_buf;
+  TSMLoc            cr_hdr_loc, cr_date_loc, cr_cache_control_loc, cr_cache_control_dup_loc;
+  int               cr_cache_control_count = 0;
 
   chi = static_cast<CachedHeaderInfo *>(TSmalloc(sizeof(CachedHeaderInfo)));
 
@@ -359,8 +359,8 @@ get_cached_header_info(StateInfo *state)
 
       DirectiveParser directives;
       for (int i = 0; i < cr_cache_control_count; ++i) {
-        int val_len   = 0;
-        char const *v = TSMimeHdrFieldValueStringGet(cr_buf, cr_hdr_loc, cr_cache_control_loc, i, &val_len);
+        int         val_len = 0;
+        char const *v       = TSMimeHdrFieldValueStringGet(cr_buf, cr_hdr_loc, cr_cache_control_loc, i, &val_len);
         TSDebug(PLUGIN_TAG, "Processing directives: %.*s", val_len, v);
         swoc::TextView cache_control_value{v, static_cast<size_t>(val_len)};
         directives.merge(DirectiveParser{cache_control_value});
@@ -422,8 +422,8 @@ static void
 fetch_save_response(StateInfo *state, BodyData *pBody)
 {
   TSIOBufferBlock block;
-  int64_t avail;
-  char const *start;
+  int64_t         avail;
+  char const     *start;
   block = TSIOBufferReaderStart(state->resp_io_buf_reader);
   while (block != nullptr) {
     start = TSIOBufferBlockReadStart(block, state->resp_io_buf_reader, &avail);
@@ -443,9 +443,9 @@ static void
 fetch_parse_response(StateInfo *state)
 {
   TSIOBufferBlock block;
-  TSParseResult pr = TS_PARSE_CONT;
-  int64_t avail;
-  char const *start;
+  TSParseResult   pr = TS_PARSE_CONT;
+  int64_t         avail;
+  char const     *start;
 
   block = TSIOBufferReaderStart(state->resp_io_buf_reader);
 
@@ -524,7 +524,7 @@ fetch_finish(StateInfo *state)
       // ServerIntercept will delete the body and send the data to the client
       // Add sie_server_intercept header.
       TSMBuffer buf;
-      TSMLoc hdr_loc;
+      TSMLoc    hdr_loc;
       TSHttpTxnClientReqGet(state->txnp, &buf, &hdr_loc);
       if (!add_header(buf, hdr_loc, SIE_SERVER_INTERCEPT_HEADER, HTTP_VALUE_SERVER_INTERCEPT)) {
         TSError("stale_response [%s] error inserting header %s", __FUNCTION__, SIE_SERVER_INTERCEPT_HEADER);
@@ -601,7 +601,7 @@ static int
 fetch_resource(TSCont contp, TSEvent, void *)
 {
   StateInfo *state;
-  TSCont consume_contp;
+  TSCont     consume_contp;
   state = static_cast<StateInfo *>(TSContDataGet(contp));
 
   TSDebug(PLUGIN_TAG, "[%s] {%u} Start swr=%d sie=%d ", __FUNCTION__, state->req_info->key_hash, state->swr_active,
@@ -683,13 +683,13 @@ static int
 transaction_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpStatus http_status = TS_HTTP_STATUS_NONE;
-  int status               = 0;
-  StateInfo *state         = nullptr;
-  TSMBuffer buf;
-  TSMLoc loc;
+  int          status      = 0;
+  StateInfo   *state       = nullptr;
+  TSMBuffer    buf;
+  TSMLoc       loc;
 
-  TSHttpTxn const txnp      = static_cast<TSHttpTxn>(edata);
-  ConfigInfo *plugin_config = static_cast<ConfigInfo *>(TSContDataGet(contp));
+  TSHttpTxn const txnp          = static_cast<TSHttpTxn>(edata);
+  ConfigInfo     *plugin_config = static_cast<ConfigInfo *>(TSContDataGet(contp));
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     TSDebug(PLUGIN_TAG, "[%s] TS_EVENT_HTTP_READ_REQUEST_HDR", __FUNCTION__);
@@ -802,7 +802,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
         // strip the async if we missed the internal fake cache lookup -- ats just misses ?
         if (plugin_config->intercept_reroute) {
           TSMBuffer buf;
-          TSMLoc hdr_loc;
+          TSMLoc    hdr_loc;
           TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc);
           if (strip_trailing_parameter(buf, hdr_loc)) {
             TSDebug(PLUGIN_TAG_BAD, "[%s] {%u} missed fake internal cache lookup", __FUNCTION__, state->req_info->key_hash);
@@ -876,7 +876,7 @@ parse_args(int argc, char const *argv[])
     return nullptr;
   }
   ConfigInfo *plugin_config = new ConfigInfo();
-  int c;
+  int         c;
   optind                                = 1;
   static const struct option longopts[] = {
     {"log-all",                        no_argument,       nullptr, 'a'},
@@ -893,7 +893,7 @@ parse_args(int argc, char const *argv[])
     {"max-memory-usage",               required_argument, nullptr, 'j'},
     {"force-parallel-async",           no_argument,       nullptr, 'k'},
 
- //  released a version that used "_" by mistake
+    //  released a version that used "_" by mistake
     {"force_stale_if_error",           required_argument, nullptr, 'E'},
     {"force_stale_while_revalidate",   required_argument, nullptr, 'F'},
     {"stale_if_error_default",         required_argument, nullptr, 'G'},
@@ -1001,7 +1001,7 @@ read_request_header_handler(TSHttpTxn const txnp, ConfigInfo *plugin_config)
       if (async_intercept_active(state->req_info->key_hash, plugin_config)) {
         // add the async to the end so we use the fake cached response
         TSMBuffer buf;
-        TSMLoc hdr_loc;
+        TSMLoc    hdr_loc;
         TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc);
         add_trailing_parameter(buf, hdr_loc);
         TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
@@ -1018,8 +1018,8 @@ read_request_header_handler(TSHttpTxn const txnp, ConfigInfo *plugin_config)
 static int
 global_request_header_hook(TSCont contp, TSEvent event, void *edata)
 {
-  ConfigInfo *plugin_config = static_cast<ConfigInfo *>(TSContDataGet(contp));
-  TSHttpTxn const txnp      = static_cast<TSHttpTxn>(edata);
+  ConfigInfo     *plugin_config = static_cast<ConfigInfo *>(TSContDataGet(contp));
+  TSHttpTxn const txnp          = static_cast<TSHttpTxn>(edata);
   read_request_header_handler(txnp, plugin_config);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return TS_SUCCESS;
@@ -1068,6 +1068,7 @@ TSPluginInit(int argc, const char *argv[])
   // proxy.config.http.insert_age_in_response
   if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_TAG, "reserve state info slot", &(plugin_config->txn_slot))) {
     TSError("stale_response [%s] failed to user argument data. Plugin registration failed.", PLUGIN_TAG);
+    delete plugin_config;
     return;
   }
   TSCont main_contp = TSContCreate(global_request_header_hook, nullptr);

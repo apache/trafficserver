@@ -37,15 +37,15 @@
 #include <swoc/Errata.h>
 
 // records, record hash-table, and hash-table rwlock
-extern RecRecord *g_records;
+extern RecRecord                                   *g_records;
 extern std::unordered_map<std::string, RecRecord *> g_records_ht;
-extern ink_rwlock g_records_rwlock;
-extern int g_num_records;
+extern ink_rwlock                                   g_records_rwlock;
+extern int                                          g_num_records;
 
 // records.yaml items
-extern const char *g_rec_config_fpath;
+extern const char                     *g_rec_config_fpath;
 extern std::unordered_set<std::string> g_rec_config_contents_ht;
-extern ink_mutex g_rec_config_lock;
+extern ink_mutex                       g_rec_config_lock;
 
 //-------------------------------------------------------------------------
 // Initialization
@@ -76,16 +76,16 @@ RecErrT RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data
 //-------------------------------------------------------------------------
 // Read/Sync to Disk
 //-------------------------------------------------------------------------
-RecErrT RecReadStatsFile();
-RecErrT RecSyncStatsFile();
-RecErrT RecReadConfigFile();
+RecErrT      RecReadStatsFile();
+RecErrT      RecSyncStatsFile();
+RecErrT      RecReadConfigFile();
 swoc::Errata RecReadYamlConfigFile();
 
 //-------------------------------------------------------------------------
 // Misc
 //-------------------------------------------------------------------------
 
-bool i_am_the_record_owner(RecT rec_type);
+bool       i_am_the_record_owner(RecT rec_type);
 RecUpdateT RecExecConfigUpdateCbs(unsigned int update_required_type);
 
 void RecDumpRecordsHt(RecT rec_type = RECT_NULL);

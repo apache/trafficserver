@@ -51,7 +51,7 @@
 #define CRASHLOG_HAVE_THREADINFO 0x1u
 
 struct crashlog_target {
-  pid_t pid;
+  pid_t     pid;
   siginfo_t siginfo;
 #if defined(__linux__)
   ucontext_t ucontext;
@@ -59,7 +59,7 @@ struct crashlog_target {
   char ucontext; // just a placeholder ...
 #endif
   struct tm timestamp;
-  unsigned flags;
+  unsigned  flags;
 };
 
 bool crashlog_write_backtrace(FILE *, const crashlog_target &);

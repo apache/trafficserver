@@ -22,7 +22,11 @@
  */
 
 #pragma once
-#include "../../../src/iocore/net/P_UnixPollDescriptor.h"
+
+#include "tscore/ink_config.h"
+#include "tscore/ink_platform.h"
+
+struct PollDescriptor;
 
 using EventLoop = PollDescriptor *;
 
@@ -51,6 +55,12 @@ using EventLoop = PollDescriptor *;
 #else
 #define INK_EV_EDGE_TRIGGER 0
 #endif
+#include <sys/event.h>
+#define INK_EVP_IN    0x001
+#define INK_EVP_PRI   0x002
+#define INK_EVP_OUT   0x004
+#define INK_EVP_ERR   0x010
+#define INK_EVP_HUP   0x020
 #define EVENTIO_READ  INK_EVP_IN
 #define EVENTIO_WRITE INK_EVP_OUT
 #define EVENTIO_ERROR (0x010 | 0x002 | 0x020) // ERR PRI HUP
@@ -63,7 +73,7 @@ struct EventIO {
   int events = 0; ///< a bit mask of enabled events
 #endif
   EventLoop event_loop = nullptr; ///< the assigned event loop
-  bool syscall         = true;    ///< if false, disable all functionality (for QUIC)
+  bool      syscall    = true;    ///< if false, disable all functionality (for QUIC)
 
   /** Alter the events that will trigger the continuation, for level triggered I/O.
      @param events add with positive mask(+EVENTIO_READ), or remove with negative mask (-EVENTIO_READ)

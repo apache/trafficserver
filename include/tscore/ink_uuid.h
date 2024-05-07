@@ -115,15 +115,15 @@ private:
       uint32_t timeLow;
       uint16_t timeMid;
       uint16_t timeHighAndVersion;
-      uint8_t clockSeqAndReserved;
-      uint8_t clockSeqLow;
-      uint8_t node[6];
+      uint8_t  clockSeqAndReserved;
+      uint8_t  clockSeqLow;
+      uint8_t  node[6];
     } _rfc4122;
   } _uuid;
 
   // This is the typically used visible portion of the UUID
   TSUuidVersion _version = TS_UUID_UNDEFINED;
-  char _string[TS_UUID_STRING_LEN + 1];
+  char          _string[TS_UUID_STRING_LEN + 1];
 
   bool
   _toString(char *buf)

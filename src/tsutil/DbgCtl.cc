@@ -150,7 +150,7 @@ DbgCtl::_new_reference(char const *tag)
   DebugInterface *p = DebugInterface::get_instance();
   debug_assert(tag != nullptr);
 
-  // DbgCtl instances may be declared as static objects in the destructors of objects not destoyed till program exit.
+  // DbgCtl instances may be declared as static objects in the destructors of objects not destroyed till program exit.
   // So, we must handle the case where the construction of such instances of DbgCtl overlaps with the destruction of
   // other instances of DbgCtl.  That is why it is important to make sure the reference count is non-zero before
   // constructing _RegistryAccessor.  The _RegistryAccessor constructor is thereby able to assume that, if it creates
@@ -158,6 +158,20 @@ DbgCtl::_new_reference(char const *tag)
 
   ++_RegistryAccessor::registry_reference_count;
 
+  // There is a mutex in the C/C++ runtime that both dlopen() and _cxa_thread_atexit() lock while running.
+  // Creating a _RegistryAccessor instance locks the registry mutex.  If the subsequent code in this function triggers
+  // the construction of a thread_local variable (with a non-trivial destructor), the following deadlock scenario is
+  // possible:
+  // 1.  Thread 1 calls a DbgCtl constructor, which locks the registry mutex, but then is suspended.
+  // 2.  Thread 2 calls dlopen() for a plugin, locking the runtime mutex.  It then executes the constructor for a
+  //     statically allocated DbgCtl object, which blocks on locking the registry mutex.
+  // 3.  Thread 1 resumes, and calls member functions of the derived class of DebugInterface.  If this causes the
+  //     the construction of a thread_local variable with a non-trivial destructor, _cxa_thread_atexit() will be called
+  //     to set up a call of the variable's destructor at thread exit.  The call to _cxa_thread_atexit() will block on
+  //     the runtime mutex (held by Thread 2).  So Thread 1 holds the registry mutex and is blocked waiting for the
+  //     runtime mutex.  And Thread 2 holds the runtime mutex and is blocked waiting for the registry mutex.  Deadlock.
+  //
+  // This deadlock is avoided by having the thread_local variable register its destruction in a non-thread_local class.
   _RegistryAccessor ra;
 
   auto &d{ra.data()};
@@ -215,7 +229,7 @@ void
 DbgCtl::print(char const *tag, char const *file, char const *function, int line, char const *fmt_str, ...)
 {
   DebugInterface *p = DebugInterface::get_instance();
-  SourceLocation src_loc{file, function, line};
+  SourceLocation  src_loc{file, function, line};
   if (p) {
     va_list args;
     va_start(args, fmt_str);
@@ -326,7 +340,7 @@ struct DiagTimestamp {
 swoc::BufferWriter &
 bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagTimestamp const &ts)
 {
-  auto epoch = std::chrono::system_clock::to_time_t(ts.ts);
+  auto                        epoch = std::chrono::system_clock::to_time_t(ts.ts);
   swoc::LocalBufferWriter<48> lw;
 
   ctime_r(&epoch, lw.aux_data());

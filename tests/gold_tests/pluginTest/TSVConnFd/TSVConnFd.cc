@@ -97,9 +97,9 @@ private:
   // current block, _block_size is it's size, and _block_avail is the number of bytes at the end of the block
   // not yet consumed (less than or equal to _block_size, may be 0).
   //
-  std::int64_t _block_size{0}, _block_avail{0};
-  TSIOBufferBlock _io_block{nullptr}; // Initialize to shut up compiler warning.
-  char const *_block_data{nullptr};   // Initialize to shut up compiler warning.
+  std::int64_t    _block_size{0}, _block_avail{0};
+  TSIOBufferBlock _io_block{nullptr};   // Initialize to shut up compiler warning.
+  char const     *_block_data{nullptr}; // Initialize to shut up compiler warning.
 };
 
 std::int64_t
@@ -225,13 +225,13 @@ protected:
   Recv_from_vconn &operator=(Recv_from_vconn const &) = delete;
 
 private:
-  TSVConn _vconn;
-  TSMutex _mtx_{nonNullPtrDbg(TSMutexCreate())};
-  atscppapi::TSContUniqPtr _cont{nonNullPtrDbg(TSContCreate(_cont_func, _mtx_))};
+  TSVConn                      _vconn;
+  TSMutex                      _mtx_{nonNullPtrDbg(TSMutexCreate())};
+  atscppapi::TSContUniqPtr     _cont{nonNullPtrDbg(TSContCreate(_cont_func, _mtx_))};
   atscppapi::TSIOBufferUniqPtr _io_buffer{nonNullPtrDbg(TSIOBufferCreate())};
-  Io_buffer_consume _bc{nonNullPtrDbg(_io_buffer.get())}; // Order is important here, _bc must be destroyed before _io_buffer.
+  Io_buffer_consume    _bc{nonNullPtrDbg(_io_buffer.get())}; // Order is important here, _bc must be destroyed before _io_buffer.
   std::atomic<_Status> _status_{IN_PROGRESS};
-  TSEvent _error_event_{TS_EVENT_NONE};
+  TSEvent              _error_event_{TS_EVENT_NONE};
 
   static int _cont_func(TSCont cont, TSEvent event, void *edata);
 
@@ -335,14 +335,14 @@ protected:
   void _send(void const *data, int64_t n_bytes);
 
 private:
-  TSVConn _vconn;
-  int64_t _bytes_to_send;
-  TSMutex _mtx{nullptr};
-  TSContUniqPtr _cont; // Destroying this destroys _mtx.
-  atscppapi::TSIOBufferUniqPtr _io_buf;
+  TSVConn                            _vconn;
+  int64_t                            _bytes_to_send;
+  TSMutex                            _mtx{nullptr};
+  TSContUniqPtr                      _cont; // Destroying this destroys _mtx.
+  atscppapi::TSIOBufferUniqPtr       _io_buf;
   atscppapi::TSIOBufferReaderUniqPtr _io_buf_reader; // Order matters, this must be destroyed before _io_buf.
-  std::atomic<Status> _status{IN_PROGRESS};
-  TSEvent _error_event{TS_EVENT_NONE};
+  std::atomic<Status>                _status{IN_PROGRESS};
+  TSEvent                            _error_event{TS_EVENT_NONE};
 
   static int _cont_func(TSCont cont, TSEvent event, void *edata);
 
@@ -370,7 +370,7 @@ Send_to_vconn::_send(void const *data, int64_t n_bytes)
 
   TSAssert(IN_PROGRESS == status());
 
-  int64_t size      = n_bytes;
+  int64_t     size  = n_bytes;
   char const *data_ = static_cast<char const *>(data);
 
   do {
@@ -537,16 +537,16 @@ private:
     std::shared_ptr<File_deleter> _f_del;
 
     struct _Send_fields {
-      int n_groups_remaining, n_group_bytes;
-      bool allow_error;
+      int                        n_groups_remaining, n_group_bytes;
+      bool                       allow_error;
       std::vector<unsigned char> buf;
-      unsigned char ramp_val{0};
+      unsigned char              ramp_val{0};
     };
 
     _Send_fields _s;
 
     struct _Recv_fields {
-      int n_bytes_remaining;
+      int           n_bytes_remaining;
       unsigned char ramp_val{0};
     };
 

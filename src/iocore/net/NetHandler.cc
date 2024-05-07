@@ -35,6 +35,13 @@
 
 using namespace std::literals;
 
+namespace
+{
+DbgCtl dbg_ctl_net_queue{"net_queue"};
+DbgCtl dbg_ctl_v_net_queue{"v_net_queue"};
+
+} // end anonymous namespace
+
 std::atomic<uint32_t> NetHandler::additional_accepts{0};
 std::atomic<uint32_t> NetHandler::per_client_max_connections_in{0};
 
@@ -57,7 +64,7 @@ NetHandler::startIO(NetEvent *ne)
     res = errno;
     // EEXIST should be ok, though it should have been cleared before we got back here
     if (errno != EEXIST) {
-      Debug("iocore_net", "NetHandler::startIO : failed on EventIO::start, errno = [%d](%s)", errno, strerror(errno));
+      Dbg(dbg_ctl_iocore_net, "NetHandler::startIO : failed on EventIO::start, errno = [%d](%s)", errno, strerror(errno));
       return -res;
     }
   }
@@ -114,33 +121,33 @@ NetHandler::stopCop(NetEvent *ne)
 int
 NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, void *)
 {
-  uint32_t *updated_member = nullptr; // direct pointer to config member for update.
+  uint32_t        *updated_member = nullptr; // direct pointer to config member for update.
   std::string_view name{str};
 
   if (name == "proxy.config.net.max_connections_in"sv) {
     updated_member = &NetHandler::global_config.max_connections_in;
-    Debug("net_queue", "proxy.config.net.max_connections_in updated to %" PRId64, data.rec_int);
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.max_connections_in updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.max_requests_in"sv) {
     updated_member = &NetHandler::global_config.max_requests_in;
-    Debug("net_queue", "proxy.config.net.max_requests_in updated to %" PRId64, data.rec_int);
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.max_requests_in updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.inactive_threshold_in"sv) {
     updated_member = &NetHandler::global_config.inactive_threshold_in;
-    Debug("net_queue", "proxy.config.net.inactive_threshold_in updated to %" PRId64, data.rec_int);
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.inactive_threshold_in updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.transaction_no_activity_timeout_in"sv) {
     updated_member = &NetHandler::global_config.transaction_no_activity_timeout_in;
-    Debug("net_queue", "proxy.config.net.transaction_no_activity_timeout_in updated to %" PRId64, data.rec_int);
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.transaction_no_activity_timeout_in updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.keep_alive_no_activity_timeout_in"sv) {
     updated_member = &NetHandler::global_config.keep_alive_no_activity_timeout_in;
-    Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %" PRId64, data.rec_int);
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.keep_alive_no_activity_timeout_in updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.default_inactivity_timeout"sv) {
     updated_member = &NetHandler::global_config.default_inactivity_timeout;
-    Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.additional_accepts"sv) {
     NetHandler::additional_accepts.store(data.rec_int, std::memory_order_relaxed);
-    Debug("net_queue", "proxy.config.net.additional_accepts updated to %" PRId64, data.rec_int);
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.additional_accepts updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.per_client.max_connections_in"sv) {
     NetHandler::per_client_max_connections_in.store(data.rec_int, std::memory_order_relaxed);
-    Debug("net_queue", "proxy.config.net.per_client.max_connections_in updated to %" PRId64, data.rec_int);
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.per_client.max_connections_in updated to %" PRId64, data.rec_int);
   }
 
   if (updated_member) {
@@ -195,17 +202,17 @@ NetHandler::init_for_process()
   RecRegisterConfigUpdateCb("proxy.config.net.additional_accepts", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.per_client.max_connections_in", update_nethandler_config, nullptr);
 
-  Debug("net_queue", "proxy.config.net.max_connections_in updated to %d", global_config.max_connections_in);
-  Debug("net_queue", "proxy.config.net.max_requests_in updated to %d", global_config.max_requests_in);
-  Debug("net_queue", "proxy.config.net.inactive_threshold_in updated to %d", global_config.inactive_threshold_in);
-  Debug("net_queue", "proxy.config.net.transaction_no_activity_timeout_in updated to %d",
-        global_config.transaction_no_activity_timeout_in);
-  Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %d",
-        global_config.keep_alive_no_activity_timeout_in);
-  Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %d", global_config.default_inactivity_timeout);
-  Debug("net_queue", "proxy.config.net.additional_accepts updated to %d", additional_accepts.load(std::memory_order_relaxed));
-  Debug("net_queue", "proxy.config.net.per_client.max_connections_in updated to %d",
-        per_client_max_connections_in.load(std::memory_order_relaxed));
+  Dbg(dbg_ctl_net_queue, "proxy.config.net.max_connections_in updated to %d", global_config.max_connections_in);
+  Dbg(dbg_ctl_net_queue, "proxy.config.net.max_requests_in updated to %d", global_config.max_requests_in);
+  Dbg(dbg_ctl_net_queue, "proxy.config.net.inactive_threshold_in updated to %d", global_config.inactive_threshold_in);
+  Dbg(dbg_ctl_net_queue, "proxy.config.net.transaction_no_activity_timeout_in updated to %d",
+      global_config.transaction_no_activity_timeout_in);
+  Dbg(dbg_ctl_net_queue, "proxy.config.net.keep_alive_no_activity_timeout_in updated to %d",
+      global_config.keep_alive_no_activity_timeout_in);
+  Dbg(dbg_ctl_net_queue, "proxy.config.net.default_inactivity_timeout updated to %d", global_config.default_inactivity_timeout);
+  Dbg(dbg_ctl_net_queue, "proxy.config.net.additional_accepts updated to %d", additional_accepts.load(std::memory_order_relaxed));
+  Dbg(dbg_ctl_net_queue, "proxy.config.net.per_client.max_connections_in updated to %d",
+      per_client_max_connections_in.load(std::memory_order_relaxed));
 }
 
 //
@@ -353,8 +360,8 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   // Get & Process polling result
   PollDescriptor *pd = get_PollDescriptor(this->thread);
   for (int x = 0; x < pd->result; x++) {
-    epd       = static_cast<EventIO *> get_ev_data(pd, x);
-    int flags = get_ev_events(pd, x);
+    epd                                = static_cast<EventIO *> get_ev_data(pd, x);
+    int                          flags = get_ev_events(pd, x);
     epd->process_event(flags);
     ev_next_event(pd, x);
   }
@@ -385,10 +392,10 @@ bool
 NetHandler::manage_active_queue(NetEvent *enabling_ne, bool ignore_queue_size = false)
 {
   const int total_connections_in = active_queue_size + keep_alive_queue_size;
-  Debug("v_net_queue",
-        "max_connections_per_thread_in: %d max_requests_per_thread_in: %d total_connections_in: %d "
-        "active_queue_size: %d keep_alive_queue_size: %d",
-        max_connections_per_thread_in, max_requests_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
+  Dbg(dbg_ctl_v_net_queue,
+      "max_connections_per_thread_in: %d max_requests_per_thread_in: %d total_connections_in: %d "
+      "active_queue_size: %d keep_alive_queue_size: %d",
+      max_connections_per_thread_in, max_requests_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
 
   if (!max_requests_per_thread_in) {
     // active queue has no max
@@ -402,12 +409,12 @@ NetHandler::manage_active_queue(NetEvent *enabling_ne, bool ignore_queue_size = 
   ink_hrtime now = ink_get_hrtime();
 
   // loop over the non-active connections and try to close them
-  NetEvent *ne         = active_queue.head;
-  NetEvent *ne_next    = nullptr;
-  int closed           = 0;
-  int handle_event     = 0;
-  int total_idle_time  = 0;
-  int total_idle_count = 0;
+  NetEvent *ne               = active_queue.head;
+  NetEvent *ne_next          = nullptr;
+  int       closed           = 0;
+  int       handle_event     = 0;
+  int       total_idle_time  = 0;
+  int       total_idle_count = 0;
   for (; ne != nullptr; ne = ne_next) {
     ne_next = ne->active_queue_link.next;
     // It seems dangerous closing the current ne at this point
@@ -438,29 +445,30 @@ NetHandler::configure_per_thread_values()
   int threads                   = eventProcessor.thread_group[ET_NET]._count;
   max_connections_per_thread_in = config.max_connections_in / threads;
   max_requests_per_thread_in    = config.max_requests_in / threads;
-  Debug("net_queue", "max_connections_per_thread_in updated to %d threads: %d", max_connections_per_thread_in, threads);
-  Debug("net_queue", "max_requests_per_thread_in updated to %d threads: %d", max_requests_per_thread_in, threads);
+  Dbg(dbg_ctl_net_queue, "max_connections_per_thread_in updated to %d threads: %d", max_connections_per_thread_in, threads);
+  Dbg(dbg_ctl_net_queue, "max_requests_per_thread_in updated to %d threads: %d", max_requests_per_thread_in, threads);
 }
 
 void
 NetHandler::manage_keep_alive_queue()
 {
-  uint32_t total_connections_in = active_queue_size + keep_alive_queue_size;
-  ink_hrtime now                = ink_get_hrtime();
+  uint32_t   total_connections_in = active_queue_size + keep_alive_queue_size;
+  ink_hrtime now                  = ink_get_hrtime();
 
-  Debug("v_net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
-        max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
+  Dbg(dbg_ctl_v_net_queue,
+      "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
+      max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
 
   if (!max_connections_per_thread_in || total_connections_in <= max_connections_per_thread_in) {
     return;
   }
 
   // loop over the non-active connections and try to close them
-  NetEvent *ne_next    = nullptr;
-  int closed           = 0;
-  int handle_event     = 0;
-  int total_idle_time  = 0;
-  int total_idle_count = 0;
+  NetEvent *ne_next          = nullptr;
+  int       closed           = 0;
+  int       handle_event     = 0;
+  int       total_idle_time  = 0;
+  int       total_idle_count = 0;
   for (NetEvent *ne = keep_alive_queue.head; ne != nullptr; ne = ne_next) {
     ne_next = ne->keep_alive_queue_link.next;
     _close_ne(ne, now, handle_event, closed, total_idle_time, total_idle_count);
@@ -472,9 +480,9 @@ NetHandler::manage_keep_alive_queue()
   }
 
   if (total_idle_count > 0) {
-    Debug("net_queue", "max cons: %d active: %d idle: %d already closed: %d, close event: %d mean idle: %d",
-          max_connections_per_thread_in, total_connections_in, keep_alive_queue_size, closed, handle_event,
-          total_idle_time / total_idle_count);
+    Dbg(dbg_ctl_net_queue, "max cons: %d active: %d idle: %d already closed: %d, close event: %d mean idle: %d",
+        max_connections_per_thread_in, total_connections_in, keep_alive_queue_size, closed, handle_event,
+        total_idle_time / total_idle_count);
   }
 }
 
@@ -495,9 +503,9 @@ NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &clos
     Metrics::Counter::increment(net_rsb.keep_alive_queue_timeout_total, diff);
     Metrics::Counter::increment(net_rsb.keep_alive_queue_timeout_count);
   }
-  Debug("net_queue", "closing connection NetEvent=%p idle: %u now: %" PRId64 " at: %" PRId64 " in: %" PRId64 " diff: %" PRId64, ne,
-        keep_alive_queue_size, ink_hrtime_to_sec(now), ink_hrtime_to_sec(ne->next_inactivity_timeout_at),
-        ink_hrtime_to_sec(ne->inactivity_timeout_in), diff);
+  Dbg(dbg_ctl_net_queue, "closing connection NetEvent=%p idle: %u now: %" PRId64 " at: %" PRId64 " in: %" PRId64 " diff: %" PRId64,
+      ne, keep_alive_queue_size, ink_hrtime_to_sec(now), ink_hrtime_to_sec(ne->next_inactivity_timeout_at),
+      ink_hrtime_to_sec(ne->inactivity_timeout_in), diff);
   if (ne->closed) {
     free_netevent(ne);
     ++closed;
@@ -521,7 +529,7 @@ NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &clos
 void
 NetHandler::add_to_keep_alive_queue(NetEvent *ne)
 {
-  Debug("net_queue", "NetEvent: %p", ne);
+  Dbg(dbg_ctl_net_queue, "NetEvent: %p", ne);
   ink_assert(mutex->thread_holding == this_ethread());
 
   if (keep_alive_queue.in(ne)) {
@@ -541,7 +549,7 @@ NetHandler::add_to_keep_alive_queue(NetEvent *ne)
 void
 NetHandler::remove_from_keep_alive_queue(NetEvent *ne)
 {
-  Debug("net_queue", "NetEvent: %p", ne);
+  Dbg(dbg_ctl_net_queue, "NetEvent: %p", ne);
   ink_assert(mutex->thread_holding == this_ethread());
 
   if (keep_alive_queue.in(ne)) {
@@ -553,9 +561,9 @@ NetHandler::remove_from_keep_alive_queue(NetEvent *ne)
 bool
 NetHandler::add_to_active_queue(NetEvent *ne)
 {
-  Debug("net_queue", "NetEvent: %p", ne);
-  Debug("net_queue", "max_connections_per_thread_in: %d active_queue_size: %d keep_alive_queue_size: %d",
-        max_connections_per_thread_in, active_queue_size, keep_alive_queue_size);
+  Dbg(dbg_ctl_net_queue, "NetEvent: %p", ne);
+  Dbg(dbg_ctl_net_queue, "max_connections_per_thread_in: %d active_queue_size: %d keep_alive_queue_size: %d",
+      max_connections_per_thread_in, active_queue_size, keep_alive_queue_size);
   ink_assert(mutex->thread_holding == this_ethread());
 
   bool active_queue_full = false;
@@ -586,7 +594,7 @@ NetHandler::add_to_active_queue(NetEvent *ne)
 void
 NetHandler::remove_from_active_queue(NetEvent *ne)
 {
-  Debug("net_queue", "NetEvent: %p", ne);
+  Dbg(dbg_ctl_net_queue, "NetEvent: %p", ne);
   ink_assert(mutex->thread_holding == this_ethread());
 
   if (active_queue.in(ne)) {

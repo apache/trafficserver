@@ -41,12 +41,12 @@
 #include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/TLSEarlyDataSupport.h"
 
-#define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
+#define HttpSsnDbg(fmt, ...) SsnDbg(this, dbg_ctl_http_cs, fmt, __VA_ARGS__)
 
-#define STATE_ENTER(state_name, event, vio)                                                             \
-  do {                                                                                                  \
-    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */          \
-    HttpSsnDebug("[%" PRId64 "] [%s, %s]", con_id, #state_name, HttpDebugNames::get_event_name(event)); \
+#define STATE_ENTER(state_name, event, vio)                                                           \
+  do {                                                                                                \
+    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */        \
+    HttpSsnDbg("[%" PRId64 "] [%s, %s]", con_id, #state_name, HttpDebugNames::get_event_name(event)); \
   } while (0)
 
 #ifdef USE_HTTP_DEBUG_LISTS
@@ -59,6 +59,13 @@ ink_mutex debug_cs_list_mutex;
 #endif /* USE_HTTP_DEBUG_LISTS */
 
 ClassAllocator<Http1ClientSession, true> http1ClientSessionAllocator("http1ClientSessionAllocator");
+
+namespace
+{
+DbgCtl dbg_ctl_http_cs{"http_cs"};
+DbgCtl dbg_ctl_ssl_early_data{"ssl_early_data"};
+
+} // end anonymous namespace
 
 Http1ClientSession::Http1ClientSession() : super(), trans(this) {}
 
@@ -73,7 +80,7 @@ Http1ClientSession::destroy()
   if (!in_destroy) {
     in_destroy = true;
 
-    HttpSsnDebug("[%" PRId64 "] session destroy", con_id);
+    HttpSsnDbg("[%" PRId64 "] session destroy", con_id);
     ink_assert(read_buffer);
     ink_release_assert(transact_count == released_transactions);
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
@@ -143,7 +150,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   if (TLSEarlyDataSupport *eds = new_vc->get_service<TLSEarlyDataSupport>()) {
     read_from_early_data = eds->get_early_data_len();
-    Debug("ssl_early_data", "read_from_early_data = %" PRId64, read_from_early_data);
+    Dbg(dbg_ctl_ssl_early_data, "read_from_early_data = %" PRId64, read_from_early_data);
   }
 
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
@@ -188,7 +195,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_mutex_release(&debug_cs_list_mutex);
 #endif
 
-  HttpSsnDebug("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
+  HttpSsnDbg("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
   _vc->set_tcp_congestion_control(CLIENT_SIDE);
 
@@ -203,7 +210,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   // INKqa11186: Use a local pointer to the mutex as
   // when we return from do_api_callout, the ClientSession may
   // have already been deallocated.
-  EThread *ethis         = this_ethread();
+  EThread        *ethis  = this_ethread();
   Ptr<ProxyMutex> lmutex = this->mutex;
   MUTEX_TAKE_LOCK(lmutex, ethis);
   do_api_callout(TS_HTTP_SSN_START_HOOK);
@@ -243,7 +250,7 @@ Http1ClientSession::do_io_close(int alerrno)
   if (half_close && this->trans.get_sm()) {
     read_state = HCS_HALF_CLOSED;
     SET_HANDLER(&Http1ClientSession::state_wait_for_close);
-    HttpSsnDebug("[%" PRId64 "] session half close", con_id);
+    HttpSsnDbg("[%" PRId64 "] session half close", con_id);
 
     if (_vc) {
       _vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
@@ -262,7 +269,7 @@ Http1ClientSession::do_io_close(int alerrno)
     // READ_READY event.
     _reader->consume(_reader->read_avail());
   } else {
-    HttpSsnDebug("[%" PRId64 "] session closed", con_id);
+    HttpSsnDbg("[%" PRId64 "] session closed", con_id);
     read_state = HCS_CLOSED;
 
     if (_vc) {
@@ -405,7 +412,7 @@ Http1ClientSession::release(ProxyTransaction *trans)
 {
   // When release is called from start() to read the first transaction, get_sm()
   // will return null.
-  HttpSM *sm                = trans->get_sm();
+  HttpSM           *sm      = trans->get_sm();
   Http1Transaction *h1trans = static_cast<Http1Transaction *>(trans);
   if (sm) {
     MgmtInt ka_in = trans->get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_in;
@@ -426,10 +433,10 @@ Http1ClientSession::release(ProxyTransaction *trans)
   /*  Start the new transaction once we finish completely the current transaction and unroll the stack */
   bool more_to_read = this->_reader->is_read_avail_more_than(0);
   if (more_to_read) {
-    HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", con_id);
+    HttpSsnDbg("[%" PRId64 "] data already in buffer, starting new transaction", con_id);
     new_transaction();
   } else {
-    HttpSsnDebug("[%" PRId64 "] initiating io for next header", con_id);
+    HttpSsnDbg("[%" PRId64 "] initiating io for next header", con_id);
     read_state = HCS_KEEP_ALIVE;
     SET_HANDLER(&Http1ClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
@@ -478,7 +485,7 @@ Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transa
     ink_assert(bound_ss == nullptr);
     ssession->state = PoolableSession::KA_RESERVED;
     bound_ss        = ssession;
-    HttpSsnDebug("[%" PRId64 "] attaching server session [%" PRId64 "] as slave", con_id, ssession->connection_id());
+    HttpSsnDbg("[%" PRId64 "] attaching server session [%" PRId64 "] as slave", con_id, ssession->connection_id());
     ink_assert(ssession->get_netvc() != this->get_netvc());
 
     // handling potential keep-alive here

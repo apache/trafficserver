@@ -126,10 +126,10 @@ static char *
 make_vol_map(Stripe *stripe)
 {
   // Map will be one byte for each SCAN_BUF_SIZE bytes.
-  off_t start_offset = stripe->vol_offset_to_offset(0);
-  off_t vol_len      = stripe->vol_relative_length(start_offset);
-  size_t map_len     = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
-  char *vol_map      = static_cast<char *>(ats_malloc(map_len));
+  off_t  start_offset = stripe->vol_offset_to_offset(0);
+  off_t  vol_len      = stripe->vol_relative_length(start_offset);
+  size_t map_len      = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
+  char  *vol_map      = static_cast<char *>(ats_malloc(map_len));
 
   memset(vol_map, 0, map_len);
 
@@ -311,8 +311,8 @@ CacheVC::dead(int /* event ATS_UNUSED */, Event * /*e ATS_UNUSED */)
 static void
 unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
 {
-  using UnmarshalFunc           = int(char *buf, int len, RefCountObj *block_ref);
-  UnmarshalFunc *unmarshal_func = &HTTPInfo::unmarshal;
+  using UnmarshalFunc              = int(char *buf, int len, RefCountObj *block_ref);
+  UnmarshalFunc    *unmarshal_func = &HTTPInfo::unmarshal;
   ts::VersionNumber version(doc->v_major, doc->v_minor);
 
   // introduced by https://github.com/apache/trafficserver/pull/4874, this is used to distinguish the doc version
@@ -322,7 +322,7 @@ unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
   }
 
   char *tmp = doc->hdr();
-  int len   = doc->hlen;
+  int   len = doc->hlen;
   while (len > 0) {
     int r = unmarshal_func(tmp, len, buf.get());
     if (r < 0) {
@@ -523,9 +523,9 @@ LmemHit:
 bool
 CacheVC::load_from_ram_cache()
 {
-  int64_t o           = dir_offset(&this->dir);
-  int ram_hit_state   = this->stripe->ram_cache->get(read_key, &this->buf, static_cast<uint64_t>(o));
-  f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
+  int64_t o             = dir_offset(&this->dir);
+  int     ram_hit_state = this->stripe->ram_cache->get(read_key, &this->buf, static_cast<uint64_t>(o));
+  f.compressed_in_ram   = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
   return ram_hit_state >= RAM_HIT_COMPRESS_NONE;
 }
 
@@ -547,7 +547,7 @@ CacheVC::load_from_aggregation_buffer()
   }
 
   this->buf = new_IOBufferData(iobuffer_size_to_index(this->io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-  char *doc = this->buf->data();
+  char                 *doc     = this->buf->data();
   [[maybe_unused]] bool success = this->stripe->copy_from_aggregate_write_buffer(doc, dir, this->io.aiocb.aio_nbytes);
   // We already confirmed that the copy was valid, so it should not fail.
   ink_assert(success);
@@ -685,13 +685,13 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   Dbg(dbg_ctl_cache_scan_truss, "inside %p:scanObject", this);
 
-  Doc *doc     = nullptr;
+  Doc  *doc    = nullptr;
   void *result = nullptr;
-  int hlen     = 0;
-  char hname[500];
-  bool hostinfo_copied         = false;
-  off_t next_object_len        = 0;
-  bool might_need_overlap_read = false;
+  int   hlen   = 0;
+  char  hname[500];
+  bool  hostinfo_copied         = false;
+  off_t next_object_len         = 0;
+  bool  might_need_overlap_read = false;
 
   cancel_trigger();
   set_io_not_in_progress();
@@ -741,7 +741,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     might_need_overlap_read = false;
     doc                     = reinterpret_cast<Doc *>(reinterpret_cast<char *>(doc) + next_object_len);
     next_object_len         = stripe->round_to_approx_size(doc->len);
-    int i;
+    int  i;
     bool changed;
 
     if (doc->magic != DOC_MAGIC) {
@@ -771,7 +771,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
     {
       char *tmp = doc->hdr();
-      int len   = doc->hlen;
+      int   len = doc->hlen;
       while (len > 0) {
         int r = HTTPInfo::unmarshal(tmp, len, buf.get());
         if (r < 0) {
@@ -967,7 +967,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     // if so return failure
     Dbg(dbg_ctl_cache_scan, "got writer lock");
     Dir *l = nullptr;
-    Dir d;
+    Dir  d;
     Doc *doc = reinterpret_cast<Doc *>(buf->data() + offset);
     offset   = reinterpret_cast<char *>(doc) - buf->data() + stripe->round_to_approx_size(doc->len);
     // if the doc contains some data, then we need to create

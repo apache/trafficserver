@@ -23,6 +23,7 @@
 
 #include "api/APIHooks.h"
 
+#include "api/APIHook.h"
 #include "tscore/Allocator.h"
 
 // inkevent
@@ -42,7 +43,8 @@ APIHooks::append(INKContInternal *cont)
 {
   APIHook *api_hook;
 
-  api_hook         = THREAD_ALLOC(apiHookAllocator, this_thread());
+  Thread *t        = this_thread();
+  api_hook         = SAFE_THREAD_ALLOC(apiHookAllocator, t);
   api_hook->m_cont = cont;
 
   m_hooks.enqueue(api_hook);

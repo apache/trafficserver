@@ -93,14 +93,14 @@ ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of query 
                 const char *dname,                         /*!< domain name  */
                 int _class, int type,                      /*!< _class and type of query  */
                 const u_char *data,                        /*!< resource record data  */
-                int datalen,                               /*!< length of data  */
+                int           datalen,                     /*!< length of data  */
                 const u_char * /* newrr_in  ATS_UNUSED */, /*!< new rr for modify or append  */
                 u_char *buf,                               /*!< buffer to put query  */
-                int buflen)                                /*!< size of buffer  */
+                int     buflen)                                /*!< size of buffer  */
 {
   HEADER *hp;
   u_char *cp, *ep;
-  int n;
+  int     n;
   u_char *dnptrs[20], **dpp, **lastdnptr;
 
   /*
@@ -203,7 +203,7 @@ static const char digits[] = "0123456789";
 static int
 labellen(const u_char *lp)
 {
-  int bitlen;
+  int    bitlen;
   u_char l = *lp;
 
   if ((l & NS_CMPRSFLGS) == NS_CMPRSFLGS) {
@@ -228,9 +228,9 @@ labellen(const u_char *lp)
 static int
 decode_bitstring(const unsigned char **cpp, char *dn, const char *eom)
 {
-  const unsigned char *cp = *cpp;
-  char *beg               = dn, tc;
-  int b, blen, plen, i;
+  const unsigned char *cp  = *cpp;
+  char                *beg = dn, tc;
+  int                  b, blen, plen, i;
 
   if ((blen = (*cp & 0xff)) == 0) {
     blen = 256;
@@ -320,10 +320,10 @@ int
 ink_ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
 {
   const u_char *cp;
-  char *dn, *eom;
-  u_char c;
-  unsigned n;
-  int l;
+  char         *dn, *eom;
+  u_char        c;
+  unsigned      n;
+  int           l;
 
   cp  = src;
   dn  = dst;
@@ -426,10 +426,10 @@ ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
 #endif
 {
   const u_char *cp;
-  char *dn, *eom;
-  u_char c;
-  unsigned n;
-  int l;
+  char         *dn, *eom;
+  u_char        c;
+  unsigned      n;
+  int           l;
 
   cp  = src;
   dn  = dst;
@@ -516,7 +516,7 @@ ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
 HostResStyle
 ats_host_res_from(int family, HostResPreferenceOrder const &order)
 {
-  bool v4 = false, v6 = false;
+  bool              v4 = false, v6 = false;
   HostResPreference client = AF_INET6 == family ? HOST_RES_PREFER_IPV6 : HOST_RES_PREFER_IPV4;
 
   for (auto p : order) {

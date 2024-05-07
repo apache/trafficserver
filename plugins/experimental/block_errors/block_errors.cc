@@ -27,19 +27,19 @@
 #include <cinttypes>
 #include <string_view>
 
-DbgCtl dbg_ctl{"block_errors"};
-DbgCtl dbg_ctl_clean{"block_clean"};
-static uint32_t RESET_LIMIT     = 1000;
-static uint32_t TIMEOUT_CYCLES  = 4;
-static int StatCountBlocks      = -1;
-static bool shutdown_connection = false;
-static bool enabled             = true;
+DbgCtl          dbg_ctl{"block_errors"};
+DbgCtl          dbg_ctl_clean{"block_clean"};
+static uint32_t RESET_LIMIT         = 1000;
+static uint32_t TIMEOUT_CYCLES      = 4;
+static int      StatCountBlocks     = -1;
+static bool     shutdown_connection = false;
+static bool     enabled             = true;
 
 //-------------------------------------------------------------------------
 static int
 msg_hook(TSCont *contp, TSEvent event, void *edata)
 {
-  TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
+  TSPluginMsg     *msg = static_cast<TSPluginMsg *>(edata);
   std::string_view tag(static_cast<const char *>(msg->tag));
   std::string_view data(static_cast<const char *>(msg->data));
 
@@ -92,7 +92,7 @@ public:
   increment(swoc::IPAddr const &ip)
   {
     std::unique_lock lock(_mutex);
-    auto item = _table.find(ip);
+    auto             item = _table.find(ip);
     if (item == _table.end()) {
       _table.insert(std::make_pair(ip, IPTableItem()));
       return 1;
@@ -107,7 +107,7 @@ public:
   getCount(swoc::IPAddr const &ip)
   {
     std::shared_lock lock(_mutex);
-    auto item = _table.find(ip);
+    auto             item = _table.find(ip);
     if (item == _table.end()) {
       return 0;
     } else {
@@ -119,7 +119,7 @@ public:
   void
   clean()
   {
-    std::string address;
+    std::string      address;
     std::unique_lock lock(_mutex);
     for (auto item = _table.begin(); item != _table.end();) {
       if (item->second._count <= RESET_LIMIT || item->second._cycles >= TIMEOUT_CYCLES) {
@@ -144,7 +144,7 @@ public:
 
 private:
   std::unordered_map<swoc::IPAddr, IPTableItem> _table;
-  std::shared_mutex _mutex;
+  std::shared_mutex                             _mutex;
 };
 
 IPTable ip_table;
@@ -171,7 +171,7 @@ handle_start_hook(TSCont *contp, TSEvent event, void *edata)
 
   // get the ip address
   const sockaddr *addr = TSNetVConnRemoteAddrGet(vconn);
-  swoc::IPAddr ipaddr(addr);
+  swoc::IPAddr    ipaddr(addr);
 
   // get the count for the ip address
   uint32_t count = ip_table.getCount(ipaddr);
@@ -235,11 +235,11 @@ handle_close_hook(TSCont *contp, TSEvent event, void *edata)
   // count the error if there is a transaction error CANCEL or a session error ENHANCE_YOUR_CALM
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-error-codes
   if ((transaction.cls == 2 && transaction.code == 8) || (session.cls == 1 && session.code == 11)) {
-    TSHttpSsn ssn        = TSHttpTxnSsnGet(txnp);
-    TSVConn vconn        = TSHttpSsnClientVConnGet(ssn);
-    const sockaddr *addr = TSNetVConnRemoteAddrGet(vconn);
-    swoc::IPAddr ipaddr(addr);
-    uint32_t count = ip_table.increment(ipaddr);
+    TSHttpSsn       ssn   = TSHttpTxnSsnGet(txnp);
+    TSVConn         vconn = TSHttpSsnClientVConnGet(ssn);
+    const sockaddr *addr  = TSNetVConnRemoteAddrGet(vconn);
+    swoc::IPAddr    ipaddr(addr);
+    uint32_t        count = ip_table.increment(ipaddr);
     if (count > RESET_LIMIT) {
       std::string address;
       Dbg(dbg_ctl, "ip=%s count=%d is over the limit, shutdown connection on close", ipaddr_to_string(ipaddr, address).c_str(),

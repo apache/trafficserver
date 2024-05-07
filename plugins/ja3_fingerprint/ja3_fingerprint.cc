@@ -43,13 +43,13 @@
 // Get 16bit big endian order and update pointer
 #define n2s(c, s) ((s = (((unsigned int)(c[0])) << 8) | (((unsigned int)(c[1])))), c += 2)
 
-const char *PLUGIN_NAME = "ja3_fingerprint";
-static DbgCtl dbg_ctl{PLUGIN_NAME};
-static TSTextLogObject pluginlog          = nullptr;
-static int ja3_idx                        = -1;
-static int global_raw_enabled             = 0;
-static int global_log_enabled             = 0;
-static int global_modify_incoming_enabled = 0;
+const char            *PLUGIN_NAME = "ja3_fingerprint";
+static DbgCtl          dbg_ctl{PLUGIN_NAME};
+static TSTextLogObject pluginlog                      = nullptr;
+static int             ja3_idx                        = -1;
+static int             global_raw_enabled             = 0;
+static int             global_log_enabled             = 0;
+static int             global_modify_incoming_enabled = 0;
 
 // GREASE table as in ja3
 static const std::unordered_set<uint16_t> GREASE_table = {0x0a0a, 0x1a1a, 0x2a2a, 0x3a3a, 0x4a4a, 0x5a5a, 0x6a6a, 0x7a7a,
@@ -57,14 +57,14 @@ static const std::unordered_set<uint16_t> GREASE_table = {0x0a0a, 0x1a1a, 0x2a2a
 
 struct ja3_data {
   std::string ja3_string;
-  char md5_string[33];
-  char ip_addr[INET6_ADDRSTRLEN];
+  char        md5_string[33];
+  char        ip_addr[INET6_ADDRSTRLEN];
 };
 
 struct ja3_remap_info {
-  int raw_enabled = false;
-  int log_enabled = false;
-  TSCont handler  = nullptr;
+  int    raw_enabled = false;
+  int    log_enabled = false;
+  TSCont handler     = nullptr;
 
   ~ja3_remap_info()
   {
@@ -78,7 +78,7 @@ struct ja3_remap_info {
 static int
 custom_get_ja3_prefixed(int unit, const unsigned char *&data, int len, std::string &result)
 {
-  int cnt, tmp;
+  int  cnt, tmp;
   bool first = true;
   // Extract each entry and append to result string
   for (cnt = 0; cnt < len; cnt += unit) {
@@ -128,8 +128,8 @@ getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
 static std::string
 custom_get_ja3(SSL *s)
 {
-  std::string ja3;
-  size_t len;
+  std::string          ja3;
+  size_t               len;
   const unsigned char *p;
 
   // Get version
@@ -142,7 +142,7 @@ custom_get_ja3(SSL *s)
   ja3 += ',';
 
   // Get extensions
-  int *o;
+  int        *o;
   std::string eclist, ecpflist;
   if (SSL_client_hello_get0_ext(s, 0x0a, &p, &len) == 1) {
     // Skip first 2 bytes since we already have length
@@ -260,9 +260,9 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
     TSAssert(event == expected_event);
   }
 
-  TSHttpTxn txnp = nullptr;
-  TSHttpSsn ssnp = nullptr;
-  TSVConn vconn  = nullptr;
+  TSHttpTxn txnp  = nullptr;
+  TSHttpSsn ssnp  = nullptr;
+  TSVConn   vconn = nullptr;
   if ((txnp = static_cast<TSHttpTxn>(edata)) == nullptr || (ssnp = TSHttpTxnSsnGet(txnp)) == nullptr ||
       (vconn = TSHttpSsnClientVConnGet(ssnp)) == nullptr) {
     Dbg(dbg_ctl, "req_hdr_ja3_handler(): Failure to retrieve txn/ssn/vconn object.");
@@ -275,13 +275,13 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
   if (data) {
     // Decide global or remap
     ja3_remap_info *remap_info = static_cast<ja3_remap_info *>(TSContDataGet(contp));
-    bool raw_flag              = remap_info ? remap_info->raw_enabled : global_raw_enabled;
-    bool log_flag              = remap_info ? remap_info->log_enabled : global_log_enabled;
+    bool            raw_flag   = remap_info ? remap_info->raw_enabled : global_raw_enabled;
+    bool            log_flag   = remap_info ? remap_info->log_enabled : global_log_enabled;
     Dbg(dbg_ctl, "req_hdr_ja3_handler(): Found ja3 string.");
 
     // Get handle to headers
     TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMLoc    hdr_loc;
     if (global_modify_incoming_enabled) {
       TSAssert(TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc));
     } else {

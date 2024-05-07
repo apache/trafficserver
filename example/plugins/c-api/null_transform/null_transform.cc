@@ -35,8 +35,8 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 }
 
 struct MyData {
-  TSVIO output_vio;
-  TSIOBuffer output_buffer;
+  TSVIO            output_vio;
+  TSIOBuffer       output_buffer;
   TSIOBufferReader output_reader;
 };
 
@@ -67,11 +67,11 @@ my_data_destroy(MyData *data)
 static void
 handle_transform(TSCont contp)
 {
-  TSVConn output_conn;
+  TSVConn    output_conn;
   TSIOBuffer buf_test;
-  TSVIO input_vio;
-  MyData *data;
-  int64_t towrite;
+  TSVIO      input_vio;
+  MyData    *data;
+  int64_t    towrite;
 
   Dbg(dbg_ctl, "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */
@@ -249,10 +249,10 @@ transformable(TSHttpTxn txnp)
    *  We are only interested in transforming "200 OK" responses.
    */
 
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMBuffer    bufp;
+  TSMLoc       hdr_loc;
   TSHttpStatus resp_status;
-  int retv = 0;
+  int          retv = 0;
 
   Dbg(dbg_ctl, "Entering transformable()");
 

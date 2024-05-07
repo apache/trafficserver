@@ -26,9 +26,9 @@
 #include "txn_box/Comparison.h"
 #include "txn_box/yaml_util.h"
 
-using swoc::TextView;
 using swoc::Errata;
 using swoc::Rv;
+using swoc::TextView;
 using namespace swoc::literals;
 
 Errata
@@ -201,9 +201,9 @@ public:
   static constexpr TextView ARG_GLOBAL = "g";  ///< Global replace.
   static constexpr TextView ARG_NOCASE = "nc"; ///< Case insensitive match.
 protected:
-  RxpOp _op;         ///< Regular expression operator.
-  Expr _replacement; ///< Replacement text.
-  bool _global_p = false;
+  RxpOp _op;          ///< Regular expression operator.
+  Expr  _replacement; ///< Replacement text.
+  bool  _global_p = false;
 
   Mod_rxp_replace(RxpOp &&op, Expr &&replacement) : _op(std::move(op)), _replacement(std::move(replacement)) {}
 };
@@ -224,7 +224,7 @@ Rv<Modifier::Handle>
 Mod_rxp_replace::load(Config &cfg, YAML::Node node, TextView, TextView args, YAML::Node key_value)
 {
   Rxp::Options opt;
-  bool global_p = false;
+  bool         global_p = false;
 
   if (!key_value.IsSequence() || key_value.size() != 2) {
     return Errata(S_ERROR, R"(Value for modifier "{}" at {} is not list of size 2 - [ pattern, replacement ] - as required.)", KEY,
@@ -282,11 +282,11 @@ Mod_rxp_replace::operator()(Context &ctx, feature_type_for<STRING> src)
    */
   struct piece {
     TextView _text;
-    piece *_next = nullptr;
+    piece   *_next = nullptr;
   };
 
-  piece anchor;          // to avoid checking for nullptr / start of list.
-  piece *last = &anchor; // last piece added.
+  piece                anchor;         // to avoid checking for nullptr / start of list.
+  piece               *last = &anchor; // last piece added.
   [[maybe_unused]] int result;
 
   while (src && (result = _op(ctx, src)) > 0) {
@@ -318,7 +318,7 @@ Mod_rxp_replace::operator()(Context &ctx, feature_type_for<STRING> src)
   }
 
   // Pieces assemble!
-  auto span = ctx.transient_buffer(n).rebind<char>();
+  auto                    span = ctx.transient_buffer(n).rebind<char>();
   swoc::FixedBufferWriter w(span);
   for (piece *spot = anchor._next; spot != nullptr; spot = spot->_next) {
     w.write(spot->_text);
@@ -368,9 +368,9 @@ public:
 
   /// A filter comparison case.
   struct Case {
-    Action _action = PASS;   ///< Action on match.
-    Expr _expr;              ///< Replacement expression, if any.
-    Comparison::Handle _cmp; ///< Comparison.
+    Action             _action = PASS; ///< Action on match.
+    Expr               _expr;          ///< Replacement expression, if any.
+    Comparison::Handle _cmp;           ///< Comparison.
 
     /// Assign the comparison for this case.
     void assign(Comparison::Handle &&handle);
@@ -428,16 +428,16 @@ Mod_filter::compare(Context &ctx, Feature const &feature) const -> Case const *
 Rv<Feature>
 Mod_filter::operator()(Context &ctx, Feature &feature)
 {
-  Feature zret;
+  Feature zret{};
   if (feature.is_list()) {
-    auto src    = std::get<IndexFor(TUPLE)>(feature);
-    auto farray = static_cast<Feature *>(alloca(sizeof(Feature) * src.count()));
+    auto                    src    = std::get<IndexFor(TUPLE)>(feature);
+    auto                    farray = static_cast<Feature *>(alloca(sizeof(Feature) * src.count()));
     feature_type_for<TUPLE> dst{farray, src.count()};
-    unsigned dst_idx = 0;
+    unsigned                dst_idx = 0;
     for (Feature f = feature; !is_nil(f); f = cdr(f)) {
-      Feature item  = car(f);
-      auto c        = _cases(ctx, item);
-      Action action = ((c != _cases.end()) ? c->_action : DROP);
+      Feature item   = car(f);
+      auto    c      = _cases(ctx, item);
+      Action  action = ((c != _cases.end()) ? c->_action : DROP);
       switch (action) {
       case DROP:
         break;
@@ -455,7 +455,7 @@ Mod_filter::operator()(Context &ctx, Feature &feature)
     }
     zret = span;
   } else {
-    auto c        = this->compare(ctx, feature);
+    auto   c      = this->compare(ctx, feature);
     Action action = c ? c->_action : DROP;
     switch (action) {
     case DROP:
@@ -485,7 +485,7 @@ Mod_filter::Case::pre_load(Config &cfg, YAML::Node cmp_node)
     return Errata(S_ERROR, "List element at {} for {} modifier is not a comparison object.", cmp_node.Mark(), KEY);
   }
 
-  Expr replace_expr;
+  Expr     replace_expr;
   unsigned action_count = 0;
 
   if (auto do_node = cmp_node[Global::DO_KEY]; do_node) {
@@ -537,10 +537,10 @@ Mod_filter::Case::operator()(Context &ctx, Feature const &feature)
 Rv<Modifier::Handle>
 Mod_filter::load(Config &cfg, YAML::Node node, TextView, TextView, YAML::Node key_value)
 {
-  auto self = new self_type;
+  auto   self = new self_type;
   Handle handle(self);
-  auto active_type = cfg.active_type();
-  auto scope{cfg.feature_scope(active_type.can_satisfy(TUPLE) ? active_type.tuple_types() : active_type)};
+  auto   active_type = cfg.active_type();
+  auto   scope{cfg.feature_scope(active_type.can_satisfy(TUPLE) ? active_type.tuple_types() : active_type)};
 
   if (auto errata = self->_cases.load(cfg, key_value); !errata.is_ok()) {
     errata.note(R"(While parsing modifier "{}" at line {}.)", KEY, node.Mark());
@@ -682,7 +682,7 @@ Mod_join::operator()(Context &ctx, Feature &feature)
 {
   // Get the separator - if that doesn't work, leave it empty.
   TextView sep;
-  auto value = ctx.extract(_separator);
+  auto     value = ctx.extract(_separator);
   if (auto ptr = std::get_if<IndexFor(STRING)>(&value); ptr != nullptr) {
     sep = *ptr;
   }
@@ -891,7 +891,7 @@ public:
 
 protected:
   inline static const auto VALUE_TYPES = MaskFor({STRING, INTEGER, FLOAT, BOOLEAN, TUPLE, IP_ADDR, NIL});
-  Expr _value; ///< Default value.
+  Expr                     _value; ///< Default value.
 
   explicit Mod_as_bool(Expr &&expr) : _value(std::move(expr)) {}
 };
@@ -1268,8 +1268,8 @@ Rv<Feature>
 Mod_url_encode::operator()(Context &ctx, feature_type_for<STRING> feature)
 {
   const size_t size = feature.size() * 3; // *3 should suffice.
-  size_t length;
-  auto buff = ctx.transient_buffer(size);
+  size_t       length;
+  auto         buff = ctx.transient_buffer(size);
   if (TS_SUCCESS == TSStringPercentEncode(feature.data(), feature.size(), buff.data(), size, &length, escape_codes)) {
     ctx.transient_finalize(length).commit_transient();    // adjust the transient buffer length and commit it.
     return {FeatureView::Literal({buff.data(), length})}; // literal because it's committed.
@@ -1339,8 +1339,8 @@ Rv<Feature>
 Mod_url_decode::operator()(Context &ctx, feature_type_for<STRING> feature)
 {
   const size_t size = feature.size();
-  size_t length;
-  auto buff = ctx.transient_buffer(size);
+  size_t       length;
+  auto         buff = ctx.transient_buffer(size);
   if (TS_SUCCESS == TSStringPercentDecode(feature.data(), size, buff.data(), size, &length)) {
     ctx.transient_finalize(length).commit_transient();    // adjust the transient buffer length and commit it.
     return {FeatureView::Literal({buff.data(), length})}; // literal because it's committed.

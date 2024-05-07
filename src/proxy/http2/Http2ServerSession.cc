@@ -22,6 +22,7 @@
  */
 
 #include "proxy/http2/Http2ServerSession.h"
+#include "iocore/net/TLSSNISupport.h"
 #include "proxy/http/HttpDebugNames.h"
 #include "tscore/ink_base64.h"
 #include "proxy/http2/Http2CommonSessionInternal.h"
@@ -127,6 +128,14 @@ Http2ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->_write_buffer_reader   = this->write_buffer->alloc_reader();
   this->_write_size_threshold  = index_to_buffer_size(buffer_block_size_index) * Http2::write_size_threshold;
 
+  uint32_t buffer_water_mark;
+  if (auto snis = this->_vc->get_service<TLSSNISupport>(); snis && snis->hints_from_sni.http2_buffer_water_mark.has_value()) {
+    buffer_water_mark = snis->hints_from_sni.http2_buffer_water_mark.value();
+  } else {
+    buffer_water_mark = Http2::buffer_water_mark;
+  }
+  this->write_buffer->water_mark = buffer_water_mark;
+
   this->_handle_if_ssl(new_vc);
 
   do_api_callout(TS_HTTP_SSN_START_HOOK);
@@ -206,7 +215,7 @@ Http2ServerSession::main_event_handler(int event, void *edata)
     retval = 0;
     break;
 
-  case HTTP2_SESSION_EVENT_XMIT:
+  case HTTP2_SESSION_EVENT_PRIO:
   default:
     Http2SsnDebug("unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
@@ -313,7 +322,7 @@ Http2ServerSession::new_transaction()
   this->set_session_active();
 
   // Create a new stream/transaction
-  Http2Error error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+  Http2Error   error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   Http2Stream *stream = connection_state.create_initiating_stream(error);
 
   if (!stream || connection_state.is_peer_concurrent_stream_ub()) {
@@ -334,8 +343,8 @@ Http2ServerSession::add_session()
     return;
   }
   Http2SsnDebug("Add session to pool");
-  EThread *ethread        = this_ethread();
-  ServerSessionPool *pool = ethread->server_session_pool;
+  EThread           *ethread = this_ethread();
+  ServerSessionPool *pool    = ethread->server_session_pool;
   MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
   if (lock.is_locked()) {
     pool->addSession(this);
@@ -350,8 +359,8 @@ Http2ServerSession::remove_session()
     return;
   }
   Http2SsnDebug("Remove session from pool");
-  EThread *ethread        = this_ethread();
-  ServerSessionPool *pool = ethread->server_session_pool;
+  EThread           *ethread = this_ethread();
+  ServerSessionPool *pool    = ethread->server_session_pool;
   MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
   if (lock.is_locked()) {
     pool->removeSession(this);

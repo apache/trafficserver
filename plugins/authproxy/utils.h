@@ -45,7 +45,7 @@ AuthDelete(T *ptr)
 }
 
 struct HttpIoBuffer {
-  TSIOBuffer buffer;
+  TSIOBuffer       buffer;
   TSIOBufferReader reader;
 
   explicit HttpIoBuffer(TSIOBufferSizeIndex size = TS_IOBUFFER_SIZE_INDEX_32K)
@@ -90,7 +90,7 @@ struct HttpHeader {
   }
 
   TSMBuffer buffer;
-  TSMLoc header;
+  TSMLoc    header;
 
   // noncopyable
   HttpHeader(const HttpHeader &)            = delete; // delete

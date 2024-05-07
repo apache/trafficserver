@@ -75,6 +75,8 @@ operator_factory(const std::string &op)
     o = new OperatorSetBody();
   } else if (op == "set-http-cntl") {
     o = new OperatorSetHttpCntl();
+  } else if (op == "run-plugin") {
+    o = new OperatorRunPlugin();
 
   } else {
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
@@ -87,8 +89,8 @@ operator_factory(const std::string &op)
 Condition *
 condition_factory(const std::string &cond)
 {
-  Condition *c = nullptr;
-  std::string c_name, c_qual;
+  Condition             *c = nullptr;
+  std::string            c_name, c_qual;
   std::string::size_type pos = cond.find_first_of(':');
 
   if (pos != std::string::npos) {

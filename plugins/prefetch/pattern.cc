@@ -325,8 +325,8 @@ Pattern::replace(const String &subject, String &result)
 bool
 Pattern::compile()
 {
-  const char *errPtr; /* PCRE error */
-  int errOffset;      /* PCRE error offset */
+  const char *errPtr;    /* PCRE error */
+  int         errOffset; /* PCRE error offset */
 
   PrefetchDebug("compiling pattern:'%s', replacement:'%s'", _pattern.c_str(), _replacement.c_str());
 

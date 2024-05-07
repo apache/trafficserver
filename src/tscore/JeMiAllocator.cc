@@ -35,8 +35,8 @@ namespace je_mi_malloc
 {
 #if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
 thread_local extent_alloc_t *JeMiNodumpAllocator::original_alloc = nullptr;
-thread_local extent_hooks_t JeMiNodumpAllocator::extent_hooks;
-thread_local int JeMiNodumpAllocator::arena_flags = 0;
+thread_local extent_hooks_t  JeMiNodumpAllocator::extent_hooks;
+thread_local int             JeMiNodumpAllocator::arena_flags = 0;
 
 void *
 JeMiNodumpAllocator::alloc(extent_hooks_t *extent, void *new_addr, size_t size, size_t alignment, bool *zero, bool *commit,
@@ -57,7 +57,7 @@ int
 JeMiNodumpAllocator::extend_and_setup_arena()
 {
   unsigned int arena_id;
-  size_t arena_id_len = sizeof(arena_id);
+  size_t       arena_id_len = sizeof(arena_id);
   if (auto ret = mallctl("arenas.create", &arena_id, &arena_id_len, nullptr, 0)) {
     ink_abort("Unable to extend arena: %s", std::strerror(ret));
   }
@@ -65,9 +65,9 @@ JeMiNodumpAllocator::extend_and_setup_arena()
   int flags = MALLOCX_ARENA(arena_id) | MALLOCX_TCACHE_NONE;
 
   // Read the existing hooks
-  const auto key = "arena." + std::to_string(arena_id) + ".extent_hooks";
+  const auto      key = "arena." + std::to_string(arena_id) + ".extent_hooks";
   extent_hooks_t *hooks;
-  size_t hooks_len = sizeof(hooks);
+  size_t          hooks_len = sizeof(hooks);
   if (auto ret = mallctl(key.c_str(), &hooks, &hooks_len, nullptr, 0)) {
     ink_abort("Unable to get the hooks: %s", std::strerror(ret));
   }

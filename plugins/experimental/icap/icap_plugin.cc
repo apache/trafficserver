@@ -57,35 +57,35 @@ enum class State {
 #define ICAP_VERSION     "1.0"
 
 struct TransformData {
-  State state = State::BEGIN;
+  State           state = State::BEGIN;
   const TSHttpTxn txn;
 
   int64_t server_reply_content_length = 0;
 
-  TSIOBuffer input_buf          = nullptr;
+  TSIOBuffer       input_buf    = nullptr;
   TSIOBufferReader input_reader = nullptr;
 
-  TSIOBuffer os_resp_buf          = nullptr;
+  TSIOBuffer       os_resp_buf    = nullptr;
   TSIOBufferReader os_resp_reader = nullptr;
 
   int64_t done_write = false;
 
-  TSIOBuffer icap_resp_buf          = nullptr;
+  TSIOBuffer       icap_resp_buf    = nullptr;
   TSIOBufferReader icap_resp_reader = nullptr;
 
-  TSIOBuffer output_buf          = nullptr;
+  TSIOBuffer       output_buf    = nullptr;
   TSIOBufferReader output_reader = nullptr;
-  TSVConn output_vc              = nullptr;
-  TSVIO output_vio               = nullptr;
+  TSVConn          output_vc     = nullptr;
+  TSVIO            output_vio    = nullptr;
 
   TSAction pending_action = nullptr;
-  TSVConn icap_vc         = nullptr;
-  TSVIO icap_vio          = nullptr;
+  TSVConn  icap_vc        = nullptr;
+  TSVIO    icap_vio       = nullptr;
 
   std::string icap_header;
   std::string http_header;
   std::string chunk_length_str;
-  int64_t icap_reply_content_length = 0;
+  int64_t     icap_reply_content_length = 0;
 
   int64_t http_body_chunk_length         = -1;
   int64_t http_body_total_length_written = 0;
@@ -100,17 +100,17 @@ struct TransformData {
 
 /* Configurable parameters */
 static std::string server_ip;
-static int server_port;
-static int carp_port;
-static int debug_enabled;
+static int         server_port;
+static int         carp_port;
+static int         debug_enabled;
 
 /* Stats for debug */
-static int scan_passed;
-static int scan_failed;
-static int icap_conn_failed;
-static int total_icap_invalid;
-static int icap_response_err;
-static int icap_write_failed;
+static int    scan_passed;
+static int    scan_failed;
+static int    icap_conn_failed;
+static int    total_icap_invalid;
+static int    icap_response_err;
+static int    icap_write_failed;
 static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 static int transform_handler(TSCont contp, TSEvent event, void *edata);
@@ -186,7 +186,7 @@ static void
 setup_icap_status_header(TransformData *data, const char *header, const char *value)
 {
   TSMBuffer bufp;
-  TSMLoc resp_loc, field_loc;
+  TSMLoc    resp_loc, field_loc;
 
   if (TSHttpTxnTransformRespGet(data->txn, &bufp, &resp_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve transform response header", PLUGIN_NAME);
@@ -230,7 +230,7 @@ handle_invalid_icap_behavior(TSCont contp, TransformData *data, const char *msg)
   }
 
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   if (TSHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve transform response header", PLUGIN_NAME);
@@ -258,7 +258,7 @@ handle_invalid_icap_behavior(TSCont contp, TransformData *data, const char *msg)
 static int
 handle_icap_headers(TSCont contp, TransformData *data)
 {
-  int64_t pos = data->icap_header.find("\r\n");
+  int64_t     pos = data->icap_header.find("\r\n");
   std::string icap_status_line =
     pos != static_cast<int64_t>(std::string::npos) ? data->icap_header.substr(0, pos) : data->icap_header;
   /* Check icap header to determine whether the scan passed or not */
@@ -289,21 +289,21 @@ static void
 handle_icap_http_header(TransformData *data)
 {
   // Dbg(dbg_ctl, "Handling http header");
-  int64_t pos = data->http_header.find("\r\n");
+  int64_t     pos = data->http_header.find("\r\n");
   std::string http_status_line =
     pos != static_cast<int64_t>(std::string::npos) ? data->http_header.substr(0, pos) : data->http_header;
   /* find content length from header if any */
   std::smatch sm;
-  std::regex e("(Content-Length: )([[:digit:]]+)");
+  std::regex  e("(Content-Length: )([[:digit:]]+)");
   regex_search(data->http_header, sm, e);
   if (sm.size()) {
     data->icap_reply_content_length = std::stoll(sm[2].str().c_str(), nullptr, 10);
   }
   /* Replace header with the returned header from icap server */
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMBuffer    bufp;
+  TSMLoc       hdr_loc;
   TSHttpParser parser;
-  const char *raw_resp = data->http_header.c_str();
+  const char  *raw_resp = data->http_header.c_str();
 
   if (TSHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve transform response header", PLUGIN_NAME);
@@ -336,10 +336,10 @@ handle_read_http_body(TSCont contp, TransformData *data)
   if (avail > 0) {
     /* Read the chunk length if one is not available */
     if (data->http_body_chunk_length <= 0) {
-      int64_t data_len;
-      const char *buf;
-      int64_t consumed    = data->chunk_length_str.size();
-      TSIOBufferBlock blk = TSIOBufferReaderStart(data->icap_resp_reader);
+      int64_t         data_len;
+      const char     *buf;
+      int64_t         consumed = data->chunk_length_str.size();
+      TSIOBufferBlock blk      = TSIOBufferReaderStart(data->icap_resp_reader);
 
       while (blk != nullptr) {
         buf               = TSIOBufferBlockReadStart(blk, data->icap_resp_reader, &data_len);
@@ -354,7 +354,7 @@ handle_read_http_body(TSCont contp, TransformData *data)
         /* TODO replace this regex with more direct (and cheaper) parsing */
         /* Look for hex string indicating chunk length */
         std::smatch sm;
-        std::regex e("(\r\n)([[:xdigit:]]+)(\r\n)");
+        std::regex  e("(\r\n)([[:xdigit:]]+)(\r\n)");
         regex_search(data->chunk_length_str, sm, e);
         /* A match means we have finished reading the length */
         if (sm.size()) {
@@ -409,7 +409,7 @@ handle_read_http_body(TSCont contp, TransformData *data)
 static TSCont
 transform_create(TSHttpTxn txnp)
 {
-  TSCont contp;
+  TSCont         contp;
   TransformData *data;
 
   contp = TSTransformCreate(transform_handler, txnp);
@@ -443,7 +443,7 @@ transform_destroy(TSCont contp)
 static int
 transform_connect(TSCont contp, TransformData *data)
 {
-  TSAction action;
+  TSAction           action;
   struct sockaddr_in ip_addr;
   data->state = State::CONNECT;
 
@@ -537,7 +537,7 @@ handle_write_header(TSCont contp, TransformData *data)
 
   /* Acquire client request and server response header */
   TSMBuffer bufp_c, bufp_s;
-  TSMLoc req_loc, resp_loc;
+  TSMLoc    req_loc, resp_loc;
 
   if (TSHttpTxnClientReqGet(data->txn, &bufp_c, &req_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
@@ -576,9 +576,9 @@ handle_write_header(TSCont contp, TransformData *data)
 static int
 handle_write_body(TSCont contp, TransformData *data)
 {
-  TSVIO write_vio;
+  TSVIO   write_vio;
   int64_t towrite;
-  char *end_of_request = (char *)"\r\n0; ieof\r\n\r\n";
+  char   *end_of_request = (char *)"\r\n0; ieof\r\n\r\n";
 
   write_vio = TSVConnWriteVIOGet(contp);
   /* check if the write VIO's buffer is non-NULL. */
@@ -821,16 +821,16 @@ transform_read_icap_header_event(TSCont contp, TransformData *data, TSEvent even
     return handle_invalid_icap_behavior(contp, data, "Invalid ICAP server reply: reading icap header");
   case TS_EVENT_VCONN_READ_READY: {
     TSIOBufferReader reader = data->icap_resp_reader;
-    int64_t avail;
-    int64_t consumed    = data->icap_header.size();
-    int64_t read_nbytes = INT64_MAX;
+    int64_t          avail;
+    int64_t          consumed    = data->icap_header.size();
+    int64_t          read_nbytes = INT64_MAX;
 
     while (read_nbytes > 0) {
-      TSIOBufferBlock blk = TSIOBufferReaderStart(reader);
-      char *buf           = const_cast<char *>(TSIOBufferBlockReadStart(blk, reader, &avail));
-      int64_t read_ndone  = (avail >= read_nbytes) ? read_nbytes : avail;
-      int64_t consume     = read_ndone;
-      std::string chunk   = std::string(buf, read_ndone);
+      TSIOBufferBlock blk        = TSIOBufferReaderStart(reader);
+      char           *buf        = const_cast<char *>(TSIOBufferBlockReadStart(blk, reader, &avail));
+      int64_t         read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
+      int64_t         consume    = read_ndone;
+      std::string     chunk      = std::string(buf, read_ndone);
 
       /* Read in the icap header */
       data->icap_header += chunk;
@@ -878,16 +878,16 @@ transform_read_http_header_event(TSCont contp, TransformData *data, TSEvent even
     return handle_invalid_icap_behavior(contp, data, "Error when reading http header");
   case TS_EVENT_VCONN_READ_READY: {
     TSIOBufferReader reader = data->icap_resp_reader;
-    int64_t avail;
-    int64_t consumed    = data->http_header.size();
-    int64_t read_nbytes = INT64_MAX;
+    int64_t          avail;
+    int64_t          consumed    = data->http_header.size();
+    int64_t          read_nbytes = INT64_MAX;
 
     while (read_nbytes > 0) {
-      TSIOBufferBlock blk = TSIOBufferReaderStart(reader);
-      char *buf           = const_cast<char *>(TSIOBufferBlockReadStart(blk, reader, &avail));
-      int64_t read_ndone  = (avail >= read_nbytes) ? read_nbytes : avail;
-      int64_t consume     = read_ndone;
-      std::string chunk   = std::string(buf, read_ndone);
+      TSIOBufferBlock blk        = TSIOBufferReaderStart(reader);
+      char           *buf        = const_cast<char *>(TSIOBufferBlockReadStart(blk, reader, &avail));
+      int64_t         read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
+      int64_t         consume    = read_ndone;
+      std::string     chunk      = std::string(buf, read_ndone);
 
       data->http_header += chunk;
       // Dbg(dbg_ctl, "Headers: \n%s", icap_header.c_str());
@@ -994,7 +994,7 @@ transform_bypass_event(TSCont contp, TransformData *data, TSEvent event, void *e
 static int
 transform_buffer_os_resp_event(TSCont contp, TransformData *data, TSEvent event, void *edata)
 {
-  TSVIO write_vio;
+  TSVIO   write_vio;
   int64_t towrite;
 
   write_vio = TSVConnWriteVIOGet(contp);
@@ -1135,8 +1135,8 @@ server_response_ok(TSHttpTxn txnp)
    * responses.
    */
 
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
+  TSMBuffer    bufp;
+  TSMLoc       hdr_loc;
   TSHttpStatus resp_status;
 
   /* Check if incoming port is carp port, in which case don't initiate
@@ -1193,7 +1193,7 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  TSCont cont;
+  TSCont                   cont;
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";

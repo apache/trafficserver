@@ -46,7 +46,7 @@ public:
   getIncludeStatus(int include_id)
   {
     const char *data;
-    int data_len;
+    int         data_len;
     return getData(include_id, data, data_len) ? STATUS_DATA_AVAILABLE : STATUS_ERROR;
   }
 
@@ -62,8 +62,8 @@ public:
   virtual ~SpecialIncludeHandler(){};
 
 protected:
-  Variables &_esi_vars;
-  Expression &_esi_expr;
+  Variables       &_esi_vars;
+  Expression      &_esi_expr;
   HttpDataFetcher &_http_fetcher;
 };
 }; // namespace EsiLib

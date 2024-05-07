@@ -52,7 +52,7 @@ public:
   void cancel_inactivity_timeout() override;
   void transaction_done() override;
   void release() override;
-  int get_transaction_id() const override;
+  int  get_transaction_id() const override;
   void increment_transactions_stat() override;
   void decrement_transactions_stat() override;
 
@@ -65,8 +65,8 @@ public:
   virtual void reenable(VIO *) override;
 
   // HQTransaction
-  virtual int state_stream_open(int event, Event *data)   = 0;
-  virtual int state_stream_closed(int event, Event *data) = 0;
+  virtual int             state_stream_open(int event, Event *data)   = 0;
+  virtual int             state_stream_closed(int event, Event *data) = 0;
   NetVConnectionContext_t direction() const;
 
   // For Queue from tscore/Link.h
@@ -75,32 +75,32 @@ public:
 protected:
   virtual int64_t _process_read_vio()  = 0;
   virtual int64_t _process_write_vio() = 0;
-  void _schedule_read_ready_event();
-  void _unschedule_read_ready_event();
-  void _close_read_ready_event(Event *e);
-  void _schedule_read_complete_event();
-  void _unschedule_read_complete_event();
-  void _close_read_complete_event(Event *e);
-  void _schedule_write_ready_event();
-  void _unschedule_write_ready_event();
-  void _close_write_ready_event(Event *e);
-  void _schedule_write_complete_event();
-  void _unschedule_write_complete_event();
-  void _close_write_complete_event(Event *e);
-  void _signal_event(int event, Event *e);
-  void _signal_read_event();
-  void _signal_write_event();
-  void _delete_if_possible();
+  void            _schedule_read_ready_event();
+  void            _unschedule_read_ready_event();
+  void            _close_read_ready_event(Event *e);
+  void            _schedule_read_complete_event();
+  void            _unschedule_read_complete_event();
+  void            _close_read_complete_event(Event *e);
+  void            _schedule_write_ready_event();
+  void            _unschedule_write_ready_event();
+  void            _close_write_ready_event(Event *e);
+  void            _schedule_write_complete_event();
+  void            _unschedule_write_complete_event();
+  void            _close_write_complete_event(Event *e);
+  void            _signal_event(int event, Event *e);
+  void            _signal_read_event();
+  void            _signal_write_event();
+  void            _delete_if_possible();
 
   EThread *_thread = nullptr;
 
-  MIOBuffer _read_vio_buf = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  MIOBuffer                    _read_vio_buf = BUFFER_SIZE_INDEX_4K;
   QUICStreamVCAdapter::IOInfo &_info;
 
   size_t _sent_bytes = 0;
 
-  VIO _read_vio;
-  VIO _write_vio;
+  VIO    _read_vio;
+  VIO    _write_vio;
   Event *_read_ready_event     = nullptr;
   Event *_read_complete_event  = nullptr;
   Event *_write_ready_event    = nullptr;
@@ -133,12 +133,12 @@ private:
   int64_t _process_write_vio() override;
 
   // These are for HTTP/3
-  Http3FrameDispatcher _frame_dispatcher;
-  Http3FrameCollector _frame_collector;
-  Http3FrameGenerator *_header_framer      = nullptr;
-  Http3FrameGenerator *_data_framer        = nullptr;
-  Http3HeaderVIOAdaptor *_header_handler   = nullptr;
-  Http3StreamDataVIOAdaptor *_data_handler = nullptr;
+  Http3FrameDispatcher       _frame_dispatcher;
+  Http3FrameCollector        _frame_collector;
+  Http3FrameGenerator       *_header_framer  = nullptr;
+  Http3FrameGenerator       *_data_framer    = nullptr;
+  Http3HeaderVIOAdaptor     *_header_handler = nullptr;
+  Http3StreamDataVIOAdaptor *_data_handler   = nullptr;
 };
 
 /**

@@ -118,7 +118,7 @@ RegressionSM *
 r_sequential(RegressionTest *t, RegressionSM *sm, ...)
 {
   RegressionSM *new_sm = new RegressionSM(t);
-  va_list ap;
+  va_list       ap;
   va_start(ap, sm);
   new_sm->parallel = false;
   new_sm->repeat   = false;
@@ -150,7 +150,7 @@ RegressionSM *
 r_parallel(RegressionTest *t, RegressionSM *sm, ...)
 {
   RegressionSM *new_sm = new RegressionSM(t);
-  va_list ap;
+  va_list       ap;
   va_start(ap, sm);
   new_sm->parallel = true;
   new_sm->repeat   = false;

@@ -32,10 +32,10 @@ class QUICSupport
 public:
   virtual ~QUICSupport() = default;
 
-  static void initialize();
+  static void         initialize();
   static QUICSupport *getInstance(SSL *ssl);
-  static void bind(SSL *ssl, QUICSupport *srs);
-  static void unbind(SSL *ssl);
+  static void         bind(SSL *ssl, QUICSupport *srs);
+  static void         unbind(SSL *ssl);
 
   virtual QUICConnection *get_quic_connection() = 0;
 

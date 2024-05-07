@@ -40,10 +40,10 @@
 #include <ts/remap.h>
 #include "txn_box/yaml_util.h"
 
-using swoc::TextView;
+using swoc::BufferWriter;
 using swoc::Errata;
 using swoc::Rv;
-using swoc::BufferWriter;
+using swoc::TextView;
 namespace bwf = swoc::bwf;
 using namespace swoc::literals;
 
@@ -92,7 +92,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
     return TS_ERROR;
   }
 
-  auto cfg = std::make_shared<Config>();
+  auto                        cfg = std::make_shared<Config>();
   swoc::MemSpan<char const *> rule_args{swoc::MemSpan<char *>(argv, argc).rebind<char const *>()};
   cfg->mark_as_remap();
   Errata errata = cfg->load_cli_args(cfg, rule_args,
@@ -112,7 +112,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
   }
 
   G._remap_ctx_storage_required += cfg->reserved_ctx_storage_size();
-  *ih                            = new RemapContext{cfg};
+  *ih                            = new RemapContext{std::move(cfg)};
   return TS_SUCCESS;
 }
 

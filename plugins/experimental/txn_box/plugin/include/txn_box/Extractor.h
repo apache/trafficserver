@@ -63,10 +63,10 @@ public:
     /// Extractors are required to know what type was stored and retrieve it without additional
     /// type information.
     union union_type {
-      uintmax_t u;
+      uintmax_t           u;
       swoc::MemSpan<void> span;
-      swoc::TextView text;
-      ReservedSpan ctx_reserved_span;
+      swoc::TextView      text;
+      ReservedSpan        ctx_reserved_span;
 
       union_type() { span = decltype(span){}; }                // default constructor.
       union_type(union_type const &that) { span = that.span; } // provide copy constructor for Spec constructors.

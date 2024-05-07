@@ -69,7 +69,7 @@ any memory the map may have allocated.
 
  *****************************************************************************/
 
-class LogFieldAliasMap : public RefCountObj
+class LogFieldAliasMap : public RefCountObjInHeap
 {
 public:
   // the logging system assumes log entries of type sINT are
@@ -103,8 +103,8 @@ table->init(3, 1, "one", 2, "two", 7, "seven")
  *****************************************************************************/
 
 struct LogFieldAliasTableEntry {
-  bool valid    = false;   // entry in table is valid
-  char *name    = nullptr; // the string equivalent
+  bool   valid  = false;   // entry in table is valid
+  char  *name   = nullptr; // the string equivalent
   size_t length = 0;       // the length of the string
 
   LogFieldAliasTableEntry() {}
@@ -119,10 +119,10 @@ struct LogFieldAliasTableEntry {
 class LogFieldAliasTable : public LogFieldAliasMap
 {
 private:
-  IntType m_min                    = 0;       // minimum numeric value
-  IntType m_max                    = 0;       // maximum numeric value
-  IntType m_entries                = 0;       // number of entries in table
-  LogFieldAliasTableEntry *m_table = nullptr; // array of table entries
+  IntType                  m_min     = 0;       // minimum numeric value
+  IntType                  m_max     = 0;       // maximum numeric value
+  IntType                  m_entries = 0;       // number of entries in table
+  LogFieldAliasTableEntry *m_table   = nullptr; // array of table entries
 
 public:
   LogFieldAliasTable() {}
@@ -158,7 +158,7 @@ public:
   int
   asString(IntType key, char *buf, size_t bufLen, size_t *numCharsPtr = nullptr) const override
   {
-    int retVal;
+    int    retVal;
     size_t numChars;
 
     size_t i = key - m_min;

@@ -111,7 +111,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Peer signature type: ECDSA", "Should select EC cert")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify the first certificate", "Correct signer")
 
 # Should receive a RSA cert
@@ -122,7 +122,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Peer signature type: RSA-PSS", "Should select RSA cert")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify the first certificate", "Correct signer")
 
 # Should receive a RSA cert
@@ -133,7 +133,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Peer signature type: RSA-PSS", "Should select RSA cert")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify the first certificate", "Correct signer")
 
 # Should receive a EC cert
@@ -144,7 +144,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Peer signature type: ECDSA", "Should select EC cert")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify the first certificate", "Correct signer")
 
 # Copy in a new version of the foo.com cert.  Replace it with the version
@@ -170,7 +170,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Peer signature type: RSA-PSS", "Should select RSA cert")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = foo.com", "Should select foo.com")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?foo.com", "Should select foo.com")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("unable to verify the first certificate", "Different signer")
 
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert with correct CA")
@@ -180,7 +180,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Peer signature type: RSA-PSS", "Should select RSA cert")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = foo.com", "Should select foo.com")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?foo.com", "Should select foo.com")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify the first certificate", "Correct signer")
 
 # The EC case should be unchanged
@@ -191,5 +191,5 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Peer signature type: ECDSA", "Should select EC cert")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = foo.com", "Should select foo.com")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?foo.com", "Should select foo.com")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify the first certificate", "Correct signer")

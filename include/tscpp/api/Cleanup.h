@@ -105,7 +105,7 @@ class TxnAuxDataMgrBase
 protected:
   struct MgrData_ {
     TSCont txnCloseContp = nullptr;
-    int txnArgIndex      = -1;
+    int    txnArgIndex   = -1;
   };
 
 public:

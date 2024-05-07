@@ -28,15 +28,17 @@
  */
 
 #include "proxy/http/remap/PluginDso.h"
-#include "../../../iocore/eventsystem/P_Freer.h"
+#include "iocore/eventsystem/Freer.h"
 #include "../../../iocore/eventsystem/P_EventSystem.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
 #else
 #include "tscore/Diags.h"
-#define PluginDebug Debug
+#define PluginDbg   Dbg
 #define PluginError Error
 #endif
+
+#include <cstdlib>
 
 namespace
 {
@@ -58,8 +60,8 @@ concat_error(std::string &error, const std::string &msg)
 PluginDso::PluginDso(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath)
   : _configPath(configPath), _effectivePath(effectivePath), _runtimePath(runtimePath)
 {
-  PluginDebug(_tag, "PluginDso (%p) created _configPath: [%s] _effectivePath: [%s] _runtimePath: [%s]", this, _configPath.c_str(),
-              _effectivePath.c_str(), _runtimePath.c_str());
+  PluginDbg(_dbg_ctl(), "PluginDso (%p) created _configPath: [%s] _effectivePath: [%s] _runtimePath: [%s]", this,
+            _configPath.c_str(), _effectivePath.c_str(), _runtimePath.c_str());
 }
 
 PluginDso::~PluginDso()
@@ -69,7 +71,7 @@ PluginDso::~PluginDso()
 }
 
 bool
-PluginDso::load(std::string &error)
+PluginDso::load(std::string &error, const fs::path &compilerPath)
 {
   /* Clear all errors */
   error.clear();
@@ -80,28 +82,42 @@ PluginDso::load(std::string &error)
     return false;
   }
 
-  PluginDebug(_tag, "plugin '%s' started loading DSO", _configPath.c_str());
+  PluginDbg(_dbg_ctl(), "plugin '%s' started loading DSO", _configPath.c_str());
 
   /* Find plugin DSO looking through the search dirs */
   if (_effectivePath.empty()) {
     concat_error(error, "empty effective path");
     result = false;
   } else {
-    PluginDebug(_tag, "plugin '%s' effective path: %s", _configPath.c_str(), _effectivePath.c_str());
+    PluginDbg(_dbg_ctl(), "plugin '%s' effective path: %s", _configPath.c_str(), _effectivePath.c_str());
 
-    /* Copy the installed plugin DSO to a runtime directory if dynamic reload enabled */
     std::error_code ec;
-    if (isDynamicReloadEnabled() && !copy(_effectivePath, _runtimePath, ec)) {
+
+    if (!_effectivePath.string().ends_with(".so")) {
+      if (!isDynamicReloadEnabled()) {
+        concat_error(error, "Dynamic reload must be enabled for Cript files");
+        result = false;
+      } else {
+        std::string command = compilerPath.string() + " " + _effectivePath.string() + " " + _runtimePath.string();
+
+        if (std::system(command.c_str()) != 0) {
+          concat_error(error, "Compile script failed");
+          result = false;
+        }
+      }
+    } else if (isDynamicReloadEnabled() && !copy(_effectivePath, _runtimePath, ec)) {
       concat_error(error, "failed to create a copy");
       concat_error(error, ec.message());
       result = false;
-    } else {
-      PluginDebug(_tag, "plugin '%s' runtime path: %s", _configPath.c_str(), _runtimePath.c_str());
+    }
+
+    if (result) {
+      PluginDbg(_dbg_ctl(), "plugin '%s' runtime path: %s", _configPath.c_str(), _runtimePath.c_str());
 
       /* Save the time for later checking if DSO got modified in consecutive DSO reloads */
       std::error_code ec;
       _mtime = fs::last_write_time(_effectivePath, ec);
-      PluginDebug(_tag, "plugin '%s' modification time %ld", _configPath.c_str(), ts_clock::to_time_t(_mtime));
+      PluginDbg(_dbg_ctl(), "plugin '%s' modification time %ld", _configPath.c_str(), ts_clock::to_time_t(_mtime));
 
       /* Now attempt to load the plugin DSO */
 #if defined(darwin)
@@ -125,7 +141,7 @@ PluginDso::load(std::string &error)
       clean(error);
     }
   }
-  PluginDebug(_tag, "plugin '%s' finished loading DSO", _configPath.c_str());
+  PluginDbg(_dbg_ctl(), "plugin '%s' finished loading DSO", _configPath.c_str());
 
   return result;
 }
@@ -266,16 +282,16 @@ PluginDso::clean(std::string &error)
 void
 PluginDso::acquire()
 {
-  this->refcount_inc();
-  PluginDebug(_tag, "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->refcount(), this);
+  ++this->_instanceCount;
+  PluginDbg(_dbg_ctl(), "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->_instanceCount.load(), this);
 }
 
 void
 PluginDso::release()
 {
-  PluginDebug(_tag, "plugin DSO release (ref-count:%d, dso-addr:%p)", this->refcount() - 1, this);
-  if (0 == this->refcount_dec()) {
-    PluginDebug(_tag, "unloading plugin DSO '%s' (dso-addr:%p)", _configPath.c_str(), this);
+  PluginDbg(_dbg_ctl(), "plugin DSO release (ref-count:%d, dso-addr:%p)", this->_instanceCount.load() - 1, this);
+  if (0 == --this->_instanceCount) {
+    PluginDbg(_dbg_ctl(), "unloading plugin DSO '%s' (dso-addr:%p)", _configPath.c_str(), this);
     _plugins->remove(this);
   }
 }
@@ -283,21 +299,21 @@ PluginDso::release()
 void
 PluginDso::incInstanceCount()
 {
-  _instanceCount.refcount_inc();
-  PluginDebug(_tag, "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
+  ++_instanceCount;
+  PluginDbg(_dbg_ctl(), "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.load(), this);
 }
 
 void
 PluginDso::decInstanceCount()
 {
-  _instanceCount.refcount_dec();
-  PluginDebug(_tag, "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
+  --_instanceCount;
+  PluginDbg(_dbg_ctl(), "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.load(), this);
 }
 
 int
-PluginDso::instanceCount()
+PluginDso::instanceCount() const
 {
-  return _instanceCount.refcount();
+  return _instanceCount;
 }
 
 bool
@@ -331,8 +347,8 @@ PluginDso::LoadedPlugins::remove(PluginDso *plugin)
 PluginDso *
 PluginDso::LoadedPlugins::findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled)
 {
-  std::error_code ec;
-  auto fs = fs::status(path, ec);
+  std::error_code      ec;
+  auto                 fs = fs::status(path, ec);
   ts_clock::time_point mtime;
   if (!ec) {
     mtime = fs::last_write_time(fs);
@@ -352,8 +368,8 @@ PluginDso::LoadedPlugins::indicatePreReload(const char *factoryId)
 {
   SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
 
-  PluginDebug(_tag, "indicated config is going to be reloaded by factory '%s' to %zu plugin%s", factoryId, _list.count(),
-              _list.count() != 1 ? "s" : "");
+  PluginDbg(_dbg_ctl(), "indicated config is going to be reloaded by factory '%s' to %zu plugin%s", factoryId, _list.count(),
+            _list.count() != 1 ? "s" : "");
 
   _list.apply([](PluginDso &plugin) -> void { plugin.indicatePreReload(); });
 }
@@ -364,8 +380,8 @@ PluginDso::LoadedPlugins::indicatePostReload(bool reloadSuccessful, const std::u
 {
   SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
 
-  PluginDebug(_tag, "indicated config is done reloading by factory '%s' to %zu plugin%s", factoryId, _list.count(),
-              _list.count() != 1 ? "s" : "");
+  PluginDbg(_dbg_ctl(), "indicated config is done reloading by factory '%s' to %zu plugin%s", factoryId, _list.count(),
+            _list.count() != 1 ? "s" : "");
 
   for (auto &plugin : _list) {
     TSRemapReloadStatus status = TSREMAP_CONFIG_RELOAD_FAILURE;
@@ -382,7 +398,7 @@ bool
 PluginDso::LoadedPlugins::addPluginPathToDsoOptOutTable(std::string_view pluginPath)
 {
   std::error_code ec;
-  auto effectivePath = fs::canonical(fs::path{pluginPath}, ec);
+  auto            effectivePath = fs::canonical(fs::path{pluginPath}, ec);
 
   if (ec) {
     PluginError("Error getting the canonical path: %s", ec.message().c_str());
@@ -401,7 +417,7 @@ void
 PluginDso::LoadedPlugins::removePluginPathFromDsoOptOutTable(std::string_view pluginPath)
 {
   std::error_code ec;
-  auto effectivePath = fs::canonical(fs::path{pluginPath}, ec);
+  auto            effectivePath = fs::canonical(fs::path{pluginPath}, ec);
 
   if (ec) {
     PluginError("Error getting the canonical path: %s", ec.message().c_str());

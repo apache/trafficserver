@@ -27,16 +27,16 @@
 bool
 HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, bool is_trailing_header)
 {
-  const MIMEField *field = nullptr;
-  const char *name       = nullptr;
-  int name_len           = 0;
-  const char *value      = nullptr;
-  int value_len          = 0;
-  MIMEFieldIter iter;
-  auto method_field       = hdr.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
-  bool has_connect_method = false;
+  const MIMEField *field     = nullptr;
+  const char      *name      = nullptr;
+  int              name_len  = 0;
+  const char      *value     = nullptr;
+  int              value_len = 0;
+  MIMEFieldIter    iter;
+  auto             method_field       = hdr.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+  bool             has_connect_method = false;
   if (method_field) {
-    int method_len;
+    int         method_len;
     const char *method_value = method_field->value_get(&method_len);
     has_connect_method       = method_len == HTTP_LEN_CONNECT && strncmp(HTTP_METHOD_CONNECT, method_value, HTTP_LEN_CONNECT) == 0;
   }

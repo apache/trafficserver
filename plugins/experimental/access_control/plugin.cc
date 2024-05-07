@@ -86,10 +86,10 @@ class AccessControlTxnData
 {
 public:
   AccessControlTxnData(AccessControlConfig *config) : _config(config) {}
-  const AccessControlConfig *_config;      /** @brief pointer to the plugin config */
-  String _subject                = "";     /** @brief subject for debugging purposes */
-  AccessTokenStatus _vaState     = UNUSED; /** @brief VA access control token validation status */
-  AccessTokenStatus _originState = UNUSED; /** @brief Origin access control token validation status */
+  const AccessControlConfig *_config;               /** @brief pointer to the plugin config */
+  String                     _subject     = "";     /** @brief subject for debugging purposes */
+  AccessTokenStatus          _vaState     = UNUSED; /** @brief VA access control token validation status */
+  AccessTokenStatus          _originState = UNUSED; /** @brief Origin access control token validation status */
 };
 
 /**
@@ -152,7 +152,7 @@ static TSHttpStatus
 accessTokenStateToHttpStatus(AccessTokenStatus state, AccessControlConfig *config)
 {
   TSHttpStatus httpStatus = TS_HTTP_STATUS_NONE;
-  const char *message     = "VALID";
+  const char  *message    = "VALID";
   switch (state) {
   case VALID:
     break;
@@ -239,21 +239,21 @@ getCookieByName(TSHttpTxn txn, TSMBuffer buf, TSMLoc hdrs, const String &cookieN
 
     for (int i = 0; i < count; ++i) {
       const char *val;
-      int len;
+      int         len;
 
       val = TSMimeHdrFieldValueStringGet(buf, hdrs, field, i, &len);
       if (val == nullptr || len == 0) {
         continue;
       }
 
-      String cookie;
+      String             cookie;
       std::istringstream istr(String(val, len));
 
       while (std::getline(istr, cookie, ';')) {
         ::ltrim(cookie); // Trim leading spaces.
 
         String::size_type pos(cookie.find_first_of('='));
-        String name(cookie.substr(0, pos == String::npos ? cookie.size() : pos));
+        String            name(cookie.substr(0, pos == String::npos ? cookie.size() : pos));
 
         AccessControlDebug("cookie name: %s", name.c_str());
 
@@ -299,8 +299,8 @@ String
 getCookieExpiresTime(time_t expires)
 {
   struct tm tm;
-  char dateTime[1024];
-  size_t dateTimeLen = 1024;
+  char      dateTime[1024];
+  size_t    dateTimeLen = 1024;
 
   size_t len = strftime(dateTime, dateTimeLen, "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&expires, &tm));
   return String(dateTime, len);
@@ -321,10 +321,10 @@ getCookieExpiresTime(time_t expires)
 int
 contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp                    = static_cast<TSHttpTxn>(edata);
-  AccessControlTxnData *data        = static_cast<AccessControlTxnData *>(TSContDataGet(contp));
-  const AccessControlConfig *config = data->_config;
-  TSEvent resultEvent               = TS_EVENT_HTTP_CONTINUE;
+  TSHttpTxn                  txnp        = static_cast<TSHttpTxn>(edata);
+  AccessControlTxnData      *data        = static_cast<AccessControlTxnData *>(TSContDataGet(contp));
+  const AccessControlConfig *config      = data->_config;
+  TSEvent                    resultEvent = TS_EVENT_HTTP_CONTINUE;
 
   AccessControlDebug("event: '%s'", getEventName(event));
 
@@ -338,16 +338,16 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
        * - and we know the name of the cookie to do set-cookie */
 
       TSMBuffer clientRespBufp;
-      TSMLoc clientRespHdrLoc;
+      TSMLoc    clientRespHdrLoc;
       if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &clientRespBufp, &clientRespHdrLoc)) {
         TSMBuffer serverRespBufp;
-        TSMLoc serverRespHdrLoc;
+        TSMLoc    serverRespHdrLoc;
         if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &serverRespBufp, &serverRespHdrLoc)) {
           AccessControlDebug("got the response now create the cookie");
 
           static const size_t MAX_HEADER_LEN = 4096;
 
-          int tokenHdrValueLen = MAX_HEADER_LEN;
+          int  tokenHdrValueLen = MAX_HEADER_LEN;
           char tokenHdrValue[MAX_HEADER_LEN];
 
           getHeader(serverRespBufp, serverRespHdrLoc, config->_respTokenHeaderName.c_str(), config->_respTokenHeaderName.size(),
@@ -365,8 +365,8 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
                * store arbitrary data in a cookie-value SHOULD encode that data, for
                * example, using Base64 [RFC4648].
                */
-              int b64TokenHdrValueLen = cryptoBase64EncodedSize(tokenHdrValueLen);
-              char b64TokenHdrValue[b64TokenHdrValueLen];
+              int    b64TokenHdrValueLen = cryptoBase64EncodedSize(tokenHdrValueLen);
+              char   b64TokenHdrValue[b64TokenHdrValueLen];
               size_t b64CookieLen =
                 cryptoModifiedBase64Encode(tokenHdrValue, tokenHdrValueLen, b64TokenHdrValue, b64TokenHdrValueLen);
 
@@ -397,9 +397,9 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
               AccessControlDebug("failed to construct a valid origin access token, did not set-cookie with it");
               /* Don't set any cookie, fail the request here returning appropriate status code and body.*/
               TSHttpTxnStatusSet(txnp, config->_invalidOriginResponse);
-              static const char *body = "Unexpected Response From the Origin Server\n";
-              size_t bufsize          = strlen(body) + 1;
-              char *buf               = static_cast<char *>(TSmalloc(bufsize));
+              static const char *body    = "Unexpected Response From the Origin Server\n";
+              size_t             bufsize = strlen(body) + 1;
+              char              *buf     = static_cast<char *>(TSmalloc(bufsize));
               snprintf(buf, bufsize, "%s", body);
               TSHttpTxnErrorBodySet(txnp, buf, strlen(buf), nullptr);
 
@@ -417,7 +417,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
 
           TSHandleMLocRelease(serverRespBufp, TS_NULL_MLOC, serverRespHdrLoc);
         } else {
-          int len;
+          int   len;
           char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
           AccessControlError("failed to retrieve server response header for request url:%.*s",
                              (len ? len : static_cast<int>(UNKNOWN.size())), (url ? url : UNKNOWN.data()));
@@ -425,7 +425,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
 
         TSHandleMLocRelease(clientRespBufp, TS_NULL_MLOC, clientRespHdrLoc);
       } else {
-        int len;
+        int   len;
         char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
         AccessControlError("failed to retrieve client response header for request url:%.*s",
                            (len ? len : static_cast<int>(UNKNOWN.size())), (url ? url : UNKNOWN.data()));
@@ -436,11 +436,11 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_TXN_CLOSE: {
     if (!config->_extrValidationHdrName.empty()) {
       TSMBuffer clientRespBufp;
-      TSMLoc clientRespHdrLoc;
+      TSMLoc    clientRespHdrLoc;
 
       /* Add some debugging / logging to the client request so it can be extracted through headers */
       if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &clientRespBufp, &clientRespHdrLoc)) {
-        String statusHeader;
+        String     statusHeader;
         StringView vaState(accessTokenStatusToString(data->_vaState));
         StringView originState(accessTokenStatusToString(data->_originState));
 
@@ -496,15 +496,15 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
 
   /* Create txn data and register hooks */
   AccessControlTxnData *data = new AccessControlTxnData(config);
-  TSCont cont                = TSContCreate(contHandleAccessControl, TSMutexCreate());
+  TSCont                cont = TSContCreate(contHandleAccessControl, TSMutexCreate());
   TSContDataSet(cont, static_cast<void *>(data));
   TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
   TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, cont);
 
   /* Validate the token */
-  bool reject = config->_rejectRequestsWithInvalidTokens;
+  bool   reject = config->_rejectRequestsWithInvalidTokens;
   String cookie;
-  bool found = getCookieByName(txnp, rri->requestBufp, rri->requestHdrp, config->_cookieName, cookie);
+  bool   found = getCookieByName(txnp, rri->requestBufp, rri->requestHdrp, config->_cookieName, cookie);
   if (found) {
     AccessControlDebug("%s cookie: '%s'", config->_cookieName.c_str(), cookie.c_str());
 
@@ -515,7 +515,7 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
      * example, using Base64 [RFC4648].
      */
     size_t decodedCookieBufferSize = cryptoBase64DecodeSize(cookie.c_str(), cookie.size());
-    char decodedCookie[decodedCookieBufferSize];
+    char   decodedCookie[decodedCookieBufferSize];
     size_t decryptedCookieSize = cryptoModifiedBase64Decode(cookie.c_str(), cookie.size(), decodedCookie, decodedCookieBufferSize);
     if (0 < decryptedCookieSize) {
       AccessToken *token = config->_tokenFactory->getAccessToken();
@@ -569,20 +569,20 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  TSRemapStatus remapStatus   = TSREMAP_NO_REMAP;
-  AccessControlConfig *config = static_cast<AccessControlConfig *>(instance);
+  TSRemapStatus        remapStatus = TSREMAP_NO_REMAP;
+  AccessControlConfig *config      = static_cast<AccessControlConfig *>(instance);
 
   if (nullptr != config) {
     /* Plugin is designed to be used only with TLS, check the scheme */
-    int schemeLen      = 0;
-    const char *scheme = TSUrlSchemeGet(rri->requestBufp, rri->requestUrl, &schemeLen);
+    int         schemeLen = 0;
+    const char *scheme    = TSUrlSchemeGet(rri->requestBufp, rri->requestUrl, &schemeLen);
     if (nullptr != scheme) {
       if (/* strlen("https") */ 5 == schemeLen && 0 == strncmp(scheme, "https", schemeLen)) {
         AccessControlDebug("validate the access token");
 
-        String reqPath;
-        int pathLen      = 0;
-        const char *path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathLen);
+        String      reqPath;
+        int         pathLen = 0;
+        const char *path    = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathLen);
         if (nullptr != path && 0 < pathLen) {
           reqPath.assign(path, pathLen);
         }

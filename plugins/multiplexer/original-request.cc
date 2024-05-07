@@ -29,7 +29,7 @@ template <class T>
 std::string
 get(const TSMBuffer &b, const TSMLoc &l, const T &t)
 {
-  int length               = 0;
+  int               length = 0;
   const char *const buffer = t(b, l, &length);
 
   assert(buffer != nullptr);
@@ -41,7 +41,7 @@ get(const TSMBuffer &b, const TSMLoc &l, const T &t)
 std::string
 get(const TSMBuffer &b, const TSMLoc &l, const TSMLoc &f, const int i = 0)
 {
-  int length               = 0;
+  int               length = 0;
   const char *const buffer = TSMimeHdrFieldValueStringGet(b, l, f, i, &length);
 
   assert(buffer != nullptr);

@@ -25,12 +25,27 @@
 
 #include <atomic>
 
+#include "tscore/List.h"
+#include "iocore/eventsystem/VIO.h"
 #include "iocore/eventsystem/EventSystem.h"
-#include "../../../src/iocore/net/P_UnixNetState.h"
 #include "iocore/net/EventIO.h"
 #include "iocore/net/ReadWriteEventIO.h"
 
 class NetHandler;
+
+class Event;
+class NetEvent;
+
+struct NetState {
+  int             enabled = 0;
+  VIO             vio;
+  Link<NetEvent>  ready_link;
+  SLink<NetEvent> enable_link;
+  int             in_enabled_list = 0;
+  int             triggered       = 0;
+
+  NetState() : vio(VIO::NONE) {}
+};
 
 // this class is used to NetHandler to hide some detail of NetEvent.
 // To combine the `UDPConenction` and `NetEvent`. NetHandler should
@@ -64,17 +79,17 @@ public:
   void set_error_from_socket();
 
   // get fd
-  virtual int get_fd()                   = 0;
-  virtual Ptr<ProxyMutex> &get_mutex()   = 0;
-  virtual ContFlags &get_control_flags() = 0;
+  virtual int              get_fd()            = 0;
+  virtual Ptr<ProxyMutex> &get_mutex()         = 0;
+  virtual ContFlags       &get_control_flags() = 0;
 
   ReadWriteEventIO ep{};
-  NetState read{};
-  NetState write{};
+  NetState         read{};
+  NetState         write{};
 
-  int closed     = 0;
-  int error      = 0;
-  NetHandler *nh = nullptr;
+  int         closed = 0;
+  int         error  = 0;
+  NetHandler *nh     = nullptr;
 
   /** The explicitly set inactivity timeout duration in seconds.
    *

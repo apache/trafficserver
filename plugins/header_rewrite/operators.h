@@ -47,11 +47,11 @@ protected:
   void exec(const Resources &res) const override;
 
 private:
-  TSOverridableConfigKey _key = TS_CONFIG_NULL;
-  TSRecordDataType _type      = TS_RECORDDATATYPE_NULL;
+  TSOverridableConfigKey _key  = TS_CONFIG_NULL;
+  TSRecordDataType       _type = TS_RECORDDATATYPE_NULL;
 
   std::string _config;
-  Value _value;
+  Value       _value;
 };
 
 class OperatorSetStatus : public Operator
@@ -70,9 +70,9 @@ protected:
   void exec(const Resources &res) const override;
 
 private:
-  Value _status;
-  const char *_reason = nullptr;
-  int _reason_len     = 0;
+  Value       _status;
+  const char *_reason     = nullptr;
+  int         _reason_len = 0;
 };
 
 class OperatorSetStatusReason : public Operator
@@ -110,7 +110,7 @@ protected:
 
 private:
   UrlQualifiers _url_qual = URL_QUAL_NONE;
-  Value _value;
+  Value         _value;
 };
 
 // All the header operators share a base class
@@ -173,7 +173,7 @@ public:
   void operator=(const OperatorNoOp &) = delete;
 
 protected:
-  void exec(const Resources & /* res ATS_UNUSED */) const override{};
+  void exec(const Resources & /* res ATS_UNUSED */) const override {};
 };
 
 class OperatorSetTimeoutOut : public Operator
@@ -200,7 +200,7 @@ private:
   };
 
   TimeoutOutType _type = TO_OUT_UNDEFINED;
-  Value _timeout;
+  Value          _timeout;
 };
 
 class OperatorSkipRemap : public Operator
@@ -287,7 +287,7 @@ protected:
 
 private:
   std::string _counter_name;
-  int _counter = TS_ERROR;
+  int         _counter = TS_ERROR;
 };
 
 class OperatorRMCookie : public OperatorCookies
@@ -440,6 +440,38 @@ protected:
   void exec(const Resources &res) const override;
 
 private:
-  bool _flag = false;
+  bool           _flag = false;
   TSHttpCntlType _cntl_qual;
+};
+
+class RemapPluginInst; // Opaque to the HRW operator, but needed in the implementation.
+
+class OperatorRunPlugin : public Operator
+{
+public:
+  OperatorRunPlugin() { Dbg(dbg_ctl, "Calling CTOR for OperatorRunPlugin"); }
+
+  // This one is special, since we have to remove the old plugin from the factory.
+  ~OperatorRunPlugin() override
+  {
+    Dbg(dbg_ctl, "Calling DTOR for OperatorRunPlugin");
+
+    if (_plugin) {
+      _plugin->done();
+      _plugin = nullptr;
+    }
+  }
+
+  // noncopyable
+  OperatorRunPlugin(const OperatorRunPlugin &) = delete;
+  void operator=(const OperatorRunPlugin &)    = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  void exec(const Resources &res) const override;
+
+private:
+  RemapPluginInst *_plugin = nullptr;
 };

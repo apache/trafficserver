@@ -56,10 +56,10 @@ RPCRegistryInfo core_ats_rpc_service_provider_handle = {
 };
 
 // plugin rpc handling variables.
-std::mutex g_rpcHandlingMutex;
+std::mutex              g_rpcHandlingMutex;
 std::condition_variable g_rpcHandlingCompletion;
-swoc::Rv<YAML::Node> g_rpcHandlerResponseData;
-bool g_rpcHandlerProcessingCompleted{false};
+swoc::Rv<YAML::Node>    g_rpcHandlerResponseData;
+bool                    g_rpcHandlerProcessingCompleted{false};
 
 // --- Helpers
 swoc::Errata
@@ -103,7 +103,7 @@ JsonRPCManager::Dispatcher::response_type
 JsonRPCManager::Dispatcher::dispatch(Context const &ctx, specs::RPCRequestInfo const &request) const
 {
   std::error_code ec;
-  auto const &handler = find_handler(request, ec);
+  auto const     &handler = find_handler(request, ec);
 
   if (ec) {
     specs::RPCResponseInfo resp{request.id};
@@ -151,7 +151,7 @@ JsonRPCManager::Dispatcher::find_handler(specs::RPCRequestInfo const &request, s
 
 JsonRPCManager::Dispatcher::response_type
 JsonRPCManager::Dispatcher::invoke_method_handler(JsonRPCManager::Dispatcher::InternalHandler const &handler,
-                                                  specs::RPCRequestInfo const &request) const
+                                                  specs::RPCRequestInfo const                       &request) const
 {
   specs::RPCResponseInfo response{request.id};
 
@@ -174,7 +174,7 @@ JsonRPCManager::Dispatcher::invoke_method_handler(JsonRPCManager::Dispatcher::In
 
 JsonRPCManager::Dispatcher::response_type
 JsonRPCManager::Dispatcher::invoke_notification_handler(JsonRPCManager::Dispatcher::InternalHandler const &handler,
-                                                        specs::RPCRequestInfo const &notification) const
+                                                        specs::RPCRequestInfo const                       &notification) const
 {
   try {
     handler.invoke(notification);
@@ -291,11 +291,8 @@ JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const 
                                 std::unique_lock<std::mutex> lock(g_rpcHandlingMutex);
                                 g_rpcHandlingCompletion.wait(lock, []() { return g_rpcHandlerProcessingCompleted; });
                                 g_rpcHandlerProcessingCompleted = false;
-                                // seems to be done, set the response. As the response data is a swoc::Rv this will handle both,
-                                // error and non error cases.
+                                // swoc::Rv this will handle both, error and success cases.
                                 ret = std::move(g_rpcHandlerResponseData);
-                                // clean up the shared data.
-                                //                                g_rpcHandlerResponseData.clear(); // moved so no cleanup?
                                 lock.unlock();
                               }},
              this->_func);
@@ -320,7 +317,7 @@ JsonRPCManager::Dispatcher::InternalHandler::is_method() const
 swoc::Rv<YAML::Node>
 JsonRPCManager::Dispatcher::show_registered_handlers(std::string_view const &, const YAML::Node &)
 {
-  swoc::Rv<YAML::Node> resp;
+  swoc::Rv<YAML::Node>        resp;
   std::lock_guard<std::mutex> lock(_mutex);
   for (auto const &[name, handler] : _handlers) {
     std::string const &key = handler.is_method() ? RPC_SERVICE_METHODS_KEY : RPC_SERVICE_NOTIFICATIONS_KEY;
@@ -334,7 +331,7 @@ JsonRPCManager::Dispatcher::show_registered_handlers(std::string_view const &, c
 swoc::Rv<YAML::Node>
 JsonRPCManager::Dispatcher::get_service_descriptor(std::string_view const &, const YAML::Node &)
 {
-  YAML::Node rpcService;
+  YAML::Node                  rpcService;
   std::lock_guard<std::mutex> lock(_mutex);
 
   for (auto const &[name, handler] : _handlers) {
@@ -342,7 +339,7 @@ JsonRPCManager::Dispatcher::get_service_descriptor(std::string_view const &, con
     method[RPC_SERVICE_NAME_KEY] = name;
     method[RPC_SERVICE_TYPE_KEY] = handler.is_method() ? RPC_SERVICE_METHOD_STR : RPC_SERVICE_NOTIFICATION_STR;
     /* most of this information will be eventually populated from the RPCRegistryInfo object */
-    auto regInfo = handler.get_reg_info();
+    auto        regInfo = handler.get_reg_info();
     std::string provider;
     if (regInfo && regInfo->provider.size()) {
       provider = std::string{regInfo->provider};

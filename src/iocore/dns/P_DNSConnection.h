@@ -80,18 +80,18 @@ struct DNSConnection {
     self &setLocalIpv4(sockaddr const *addr);
   };
 
-  int fd;
+  int        fd;
   IpEndpoint ip;
-  int num = 0;
-  Options opt;
+  int        num = 0;
+  Options    opt;
   LINK(DNSConnection, link);
-  DNSEventIO eio{*this};
-  InkRand generator;
+  DNSEventIO  eio{*this};
+  InkRand     generator;
   DNSHandler *handler = nullptr;
 
   /// TCPData structure is to track the reading progress of a TCP connection
   struct TCPData {
-    Ptr<HostEnt> buf_ptr;
+    Ptr<HostEnt>   buf_ptr;
     unsigned short total_length = 0;
     unsigned short done_reading = 0;
     void
@@ -108,7 +108,7 @@ struct DNSConnection {
                 bool non_blocking_connect = NON_BLOCKING_CONNECT,
                 bool use_tcp = CONNECT_WITH_TCP, bool non_blocking = NON_BLOCKING, bool bind_random_port = BIND_ANY_PORT);
   */
-  int close();
+  int  close();
   void trigger();
 
   virtual ~DNSConnection();

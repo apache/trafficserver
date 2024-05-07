@@ -36,7 +36,7 @@ class SourceLocation
 public:
   const char *file;
   const char *func;
-  int line;
+  int         line;
 
   SourceLocation()                          = default;
   SourceLocation(const SourceLocation &rhs) = default;
@@ -58,7 +58,7 @@ public:
     return *this;
   }
 
-  char *str(char *buf, int buflen) const;
+  char               *str(char *buf, int buflen) const;
   swoc::BufferWriter &print(swoc::BufferWriter &w, swoc::bwf::Spec const &spec) const;
 };
 

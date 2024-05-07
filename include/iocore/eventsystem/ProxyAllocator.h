@@ -43,8 +43,8 @@ extern int thread_freelist_low_watermark;
 extern int cmd_disable_pfreelist;
 
 struct ProxyAllocator {
-  int allocated  = 0;
-  void *freelist = nullptr;
+  int   allocated = 0;
+  void *freelist  = nullptr;
 
   ProxyAllocator() {}
 };
@@ -73,6 +73,7 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 //
 #define THREAD_ALLOC(_a, _t, ...)      thread_alloc(::_a, _t->_a, ##__VA_ARGS__)
 #define THREAD_ALLOC_INIT(_a, _t, ...) thread_alloc(::_a, _t->_a, ##__VA_ARGS__)
+#define SAFE_THREAD_ALLOC(_a, _t, ...) (_t ? thread_alloc(::_a, _t->_a, ##__VA_ARGS__) : ::_a.alloc(##__VA_ARGS__))
 
 #else
 
@@ -86,8 +87,8 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 #define THREAD_FREE(_p, _a, _tin)                                                                  \
   do {                                                                                             \
     ::_a.destroy_if_enabled(_p);                                                                   \
-    if (!cmd_disable_pfreelist) {                                                                  \
-      Thread *_t      = (_tin);                                                                    \
+    Thread *_t = (_tin);                                                                           \
+    if (_t && !cmd_disable_pfreelist) {                                                            \
       *(char **)_p    = (char *)_t->_a.freelist;                                                   \
       _t->_a.freelist = _p;                                                                        \
       _t->_a.allocated++;                                                                          \

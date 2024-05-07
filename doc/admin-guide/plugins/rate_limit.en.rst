@@ -101,6 +101,16 @@ are available:
    noting that in the latter exampe, the non-standard scheme and port led to
    ":8080" being appended to the string.
 
+.. option:: --conntrack
+
+   This flag tells the limiter that rather than limiting the number of active transactions,
+   it should limit the number of active connections. This allows an established connection
+   to make any number of transactions, but limits the number of connections that can be
+   active at any one time.
+
+   Note that it's highly recommended that you keep a very low ``keep-alive`` timeout for the
+   connections that are using this rate limiter.
+
 Global Plugin
 -------------
 

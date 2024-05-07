@@ -46,7 +46,7 @@
 
 struct FieldListCacheElement {
   LogFieldList *fieldlist;
-  char *symbol_str;
+  char         *symbol_str;
 };
 
 enum {
@@ -54,8 +54,8 @@ enum {
 };
 
 FieldListCacheElement fieldlist_cache[FIELDLIST_CACHE_SIZE];
-int fieldlist_cache_entries = 0;
-int32_t LogBuffer::M_ID;
+int                   fieldlist_cache_entries = 0;
+int32_t               LogBuffer::M_ID;
 
 /*-------------------------------------------------------------------------
   The following LogBufferHeader routines are used to grab strings out from
@@ -197,13 +197,13 @@ LogBuffer::~LogBuffer()
 LogBuffer::LB_ResultCode
 LogBuffer::fast_write(size_t *write_offset, size_t write_size)
 {
-  LB_ResultCode ret_val    = LB_OK;
-  size_t actual_write_size = INK_ALIGN(write_size + sizeof(LogEntryHeader), m_write_align);
+  LB_ResultCode ret_val           = LB_OK;
+  size_t        actual_write_size = INK_ALIGN(write_size + sizeof(LogEntryHeader), m_write_align);
   if (m_state.s.offset + actual_write_size <= m_size) {
     size_t offset = m_state.s.offset;
 
     LogEntryHeader *entry_header = reinterpret_cast<LogEntryHeader *>(&m_buffer[offset]);
-    struct timeval tp            = ink_hrtime_to_timeval(ink_get_hrtime());
+    struct timeval  tp           = ink_hrtime_to_timeval(ink_get_hrtime());
 
     entry_header->timestamp      = tp.tv_sec;
     entry_header->timestamp_usec = tp.tv_usec;
@@ -236,9 +236,9 @@ LogBuffer::checkout_write(size_t *write_offset, size_t write_size)
   ink_assert(m_unaligned_buffer);
 
   LB_ResultCode ret_val = LB_BUSY;
-  LB_State old_s, new_s;
-  size_t offset            = 0;
-  size_t actual_write_size = INK_ALIGN(write_size + sizeof(LogEntryHeader), m_write_align);
+  LB_State      old_s, new_s;
+  size_t        offset            = 0;
+  size_t        actual_write_size = INK_ALIGN(write_size + sizeof(LogEntryHeader), m_write_align);
 
   uint64_t retries = static_cast<uint64_t>(-1);
   do {
@@ -343,7 +343,7 @@ LogBuffer::checkin_write(size_t write_offset)
   ink_assert(m_unaligned_buffer);
 
   LB_ResultCode ret_val = LB_OK;
-  LB_State old_s, new_s;
+  LB_State      old_s, new_s;
 
   do {
     new_s = old_s = m_state;
@@ -487,13 +487,13 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
 
   if (alt_fieldlist && alt_printf_str) {
     LogField *f, *g;
-    int n_alt_fields = alt_fieldlist->count();
-    int i            = 0;
+    int       n_alt_fields = alt_fieldlist->count();
+    int       i            = 0;
 
     readfrom_map = static_cast<int *>(ats_malloc(n_alt_fields * sizeof(int)));
     for (f = alt_fieldlist->first(); f; f = alt_fieldlist->next(f)) {
-      int readfrom_pos = 0;
-      bool found_match = false;
+      int  readfrom_pos = 0;
+      bool found_match  = false;
       for (g = fieldlist->first(); g; g = fieldlist->next(g)) {
         if (strcmp(f->symbol(), g->symbol()) == 0) {
           found_match       = true;
@@ -518,12 +518,12 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
   // LogField object, obtained from the fieldlist.
   //
 
-  LogField *field     = fieldlist->first();
-  LogField *lastField = nullptr;                                // For debug message.
-  int markCount       = 0;                                      // For debug message.
-  int printf_len      = static_cast<int>(::strlen(printf_str)); // OPTIMIZE
-  int bytes_written   = 0;
-  int res, i;
+  LogField *field         = fieldlist->first();
+  LogField *lastField     = nullptr;                                // For debug message.
+  int       markCount     = 0;                                      // For debug message.
+  int       printf_len    = static_cast<int>(::strlen(printf_str)); // OPTIMIZE
+  int       bytes_written = 0;
+  int       res, i;
 
   const char *buffer_size_exceeded_msg = "Traffic Server is skipping the current log entry because its size "
                                          "exceeds the maximum line (entry) size for an ascii log buffer";
@@ -611,9 +611,9 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
   // these stored plans.
   //
 
-  int i;
-  LogFieldList *fieldlist = nullptr;
-  bool delete_fieldlist_p = false; // need to free the fieldlist?
+  int           i;
+  LogFieldList *fieldlist          = nullptr;
+  bool          delete_fieldlist_p = false; // need to free the fieldlist?
 
   for (i = 0; i < fieldlist_cache_entries; i++) {
     if (strcmp(symbol_str, fieldlist_cache[i].symbol_str) == 0) {
@@ -640,10 +640,10 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
     }
   }
 
-  LogFieldList *alt_fieldlist = nullptr;
-  char *alt_printf_str        = nullptr;
-  char *alt_symbol_str        = nullptr;
-  bool bad_alt_format         = false;
+  LogFieldList *alt_fieldlist  = nullptr;
+  char         *alt_printf_str = nullptr;
+  char         *alt_symbol_str = nullptr;
+  bool          bad_alt_format = false;
 
   if (alt_format) {
     int n_alt_fields = LogFormat::parse_format_string(alt_format, &alt_printf_str, &alt_symbol_str);
@@ -655,7 +655,7 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
     if (!bad_alt_format) {
       alt_fieldlist      = new LogFieldList;
       bool contains_aggs = false;
-      int n_alt_fields2  = LogFormat::parse_symbol_string(alt_symbol_str, alt_fieldlist, &contains_aggs);
+      int  n_alt_fields2 = LogFormat::parse_symbol_string(alt_symbol_str, alt_fieldlist, &contains_aggs);
       if (n_alt_fields2 > 0 && contains_aggs) {
         Note("Alternative formats not allowed to contain aggregates");
         bad_alt_format = true;

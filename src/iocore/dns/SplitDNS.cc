@@ -74,9 +74,9 @@ const char *SDNSResultStr[] = {"DNSServer_Undefined", "DNSServer_Specified", "DN
 
 } // end anonymous namespace
 
-int SplitDNSConfig::m_id               = 0;
-int SplitDNSConfig::gsplit_dns_enabled = 0;
-int splitDNSFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
+int             SplitDNSConfig::m_id               = 0;
+int             SplitDNSConfig::gsplit_dns_enabled = 0;
+int             splitDNSFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
 Ptr<ProxyMutex> SplitDNSConfig::dnsHandler_mutex;
 
 /* --------------------------------------------------------------
@@ -212,7 +212,7 @@ SplitDNS::getDNSRecord(swoc::TextView hostname)
 void
 SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
 {
-  DNS_table *tablePtr = m_DNSSrvrTable;
+  DNS_table      *tablePtr = m_DNSSrvrTable;
   SplitDNSRecord *rec;
 
   ink_assert(result->r == DNS_SRVR_UNDEFINED);
@@ -230,7 +230,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
      --------------------------- */
   if (m_bEnableFastPath && m_pxLeafArray) {
     SplitDNSRecord *data_ptr = nullptr;
-    char *pHost              = const_cast<char *>(rdata->get_host());
+    char           *pHost    = const_cast<char *>(rdata->get_host());
     if (nullptr == pHost) {
       Warning("SplitDNS: No host to match !");
       return;
@@ -245,10 +245,10 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
         continue;
       }
 
-      int idx            = len - pxHL.match.size();
-      char *pH           = &pHost[idx];
+      int         idx    = len - pxHL.match.size();
+      char       *pH     = &pHost[idx];
       const char *pMatch = pxHL.match.data();
-      char cNot          = *pMatch;
+      char        cNot   = *pMatch;
 
       if ('!' == cNot) {
         pMatch++;
@@ -299,9 +299,9 @@ const char *
 SplitDNSRecord::ProcessDNSHosts(char *val)
 {
   Tokenizer pTok(",; \t\r");
-  int numTok;
-  int port  = 0;
-  int totsz = 0, sz = 0;
+  int       numTok;
+  int       port  = 0;
+  int       totsz = 0, sz = 0;
 
   numTok = pTok.Initialize(val, SHARE_TOKS);
   if (MAXNS < numTok) {
@@ -318,7 +318,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
      ------------------------------------------------ */
   for (int i = 0; i < numTok; i++) {
     const char *current = pTok[i];
-    char *tmp           = const_cast<char *>(strchr(current, ':'));
+    char       *tmp     = const_cast<char *>(strchr(current, ':'));
     // coverity[secure_coding]
     if (tmp != nullptr && sscanf(tmp + 1, "%d", &port) != 1) {
       return "Malformed DNS port";
@@ -373,7 +373,7 @@ const char *
 SplitDNSRecord::ProcessDefDomain(char *val)
 {
   Tokenizer pTok(",; \t\r");
-  int numTok;
+  int       numTok;
 
   numTok = pTok.Initialize(val, SHARE_TOKS);
 
@@ -401,9 +401,9 @@ const char *
 SplitDNSRecord::ProcessDomainSrchList(char *val)
 {
   Tokenizer pTok(",; \t\r");
-  int numTok;
-  int sz    = 0;
-  char *pSp = nullptr;
+  int       numTok;
+  int       sz  = 0;
+  char     *pSp = nullptr;
 
   numTok = pTok.Initialize(val, SHARE_TOKS);
 
@@ -415,7 +415,7 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
 
   for (int i = 0; i < numTok; i++) {
     const char *current = pTok[i];
-    int cnt = sz += strlen(current);
+    int         cnt = sz += strlen(current);
 
     if (MAXDNAME - 1 < sz) {
       break;
@@ -481,8 +481,8 @@ SplitDNSRecord::Init(matcher_line *line_info)
     return Result::failure("%s No server specified in %s at line %d", modulePrefix, ts::filename::SPLITDNS, line_num);
   }
 
-  DNSHandler *dnsH  = new DNSHandler;
-  ink_res_state res = new ts_imp_res_state;
+  DNSHandler   *dnsH = new DNSHandler;
+  ink_res_state res  = new ts_imp_res_state;
 
   memset(res, 0, sizeof(ts_imp_res_state));
   if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_dnsSrvr_cnt, dns_search, m_servers.x_def_domain,

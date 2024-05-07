@@ -37,17 +37,17 @@
 #define PLUGIN_NAME "denylist_0"
 
 static char **sites;
-static int nsites;
+static int    nsites;
 
 static void
 handle_dns(TSHttpTxn txnp, TSCont contp)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc url_loc;
+  TSMBuffer   bufp;
+  TSMLoc      hdr_loc;
+  TSMLoc      url_loc;
   const char *host;
-  int i;
-  int host_length;
+  int         i;
+  int         host_length;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
@@ -88,11 +88,11 @@ static void
 handle_response(TSHttpTxn txnp)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc url_loc;
-  char *url_str;
-  char *buf;
-  int url_length;
+  TSMLoc    hdr_loc;
+  TSMLoc    url_loc;
+  char     *url_str;
+  char     *buf;
+  int       url_length;
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Couldn't retrieve client response header", PLUGIN_NAME);

@@ -33,11 +33,25 @@
 class Parser
 {
 public:
-  Parser(){};
+  Parser() = default; // No from/to URLs for this parser
+  Parser(char *from_url, char *to_url) : _from_url(from_url), _to_url(to_url) {}
 
   // noncopyable
   Parser(const Parser &)         = delete;
   void operator=(const Parser &) = delete;
+
+  // These are not const char *, because, you know, everything else with argv is a char *
+  char *
+  from_url() const
+  {
+    return _from_url;
+  }
+
+  char *
+  to_url() const
+  {
+    return _to_url;
+  }
 
   bool
   empty() const
@@ -95,12 +109,14 @@ public:
 private:
   bool preprocess(std::vector<std::string> tokens);
 
-  bool _cond  = false;
-  bool _empty = false;
+  bool                     _cond     = false;
+  bool                     _empty    = false;
+  char                    *_from_url = nullptr;
+  char                    *_to_url   = nullptr;
   std::vector<std::string> _mods;
-  std::string _op;
-  std::string _arg;
-  std::string _val;
+  std::string              _op;
+  std::string              _arg;
+  std::string              _val;
 
 protected:
   std::vector<std::string> _tokens;

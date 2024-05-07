@@ -62,10 +62,10 @@ using namespace std;
 // Constants, please update the VERSION number when you make a new build!!!
 #define PROGRAM_NAME "traffic_logstats"
 
-const int MAX_LOGBUFFER_SIZE = 65536;
-const int DEFAULT_LINE_LEN   = 78;
-const double LOG10_1024      = 3.0102999566398116;
-const int MAX_ORIG_STRING    = 4096;
+const int    MAX_LOGBUFFER_SIZE = 65536;
+const int    DEFAULT_LINE_LEN   = 78;
+const double LOG10_1024         = 3.0102999566398116;
+const int    MAX_ORIG_STRING    = 4096;
 
 // Optimizations for "strcmp()", treat some fixed length (3 or 4 bytes) strings
 // as integers.
@@ -107,14 +107,14 @@ struct StatsCounter {
 };
 
 struct ElapsedStats {
-  int min;
-  int max;
+  int   min;
+  int   max;
   float avg;
   float stddev;
 };
 
 struct OriginStats {
-  const char *server;
+  const char  *server;
   StatsCounter total;
 
   struct {
@@ -295,17 +295,17 @@ struct UrlStats {
     return req.count > rhs.req.count;
   } // Reverse order
 
-  const char *url;
+  const char  *url;
   StatsCounter req;
   ElapsedStats time;
-  int64_t c_000;
-  int64_t c_2xx;
-  int64_t c_3xx;
-  int64_t c_4xx;
-  int64_t c_5xx;
-  int64_t hits;
-  int64_t misses;
-  int64_t errors;
+  int64_t      c_000;
+  int64_t      c_2xx;
+  int64_t      c_3xx;
+  int64_t      c_4xx;
+  int64_t      c_5xx;
+  int64_t      hits;
+  int64_t      misses;
+  int64_t      errors;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -452,7 +452,7 @@ public:
         _stack.splice(_stack.begin(), _stack, l);
       }
     } else {                                  // "new" URL
-      const char *u        = ats_strdup(url); // We own it.
+      const char        *u = ats_strdup(url); // We own it.
       LruStack::iterator l = _stack.end();
 
       if (_size > 0) {
@@ -579,41 +579,41 @@ private:
     }
   }
 
-  LruHash _hash;
-  LruStack _stack;
-  int _size, _show_urls;
+  LruHash            _hash;
+  LruStack           _stack;
+  int                _size, _show_urls;
   LruStack::iterator _cur;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // Globals, holding the accumulated stats (ok, I'm lazy ...)
-static OriginStats totals;
+static OriginStats   totals;
 static OriginStorage origins;
-static OriginSet *origin_set;
-static UrlLru *urls;
-static int parse_errors;
+static OriginSet    *origin_set;
+static UrlLru       *urls;
+static int           parse_errors;
 
 // Command line arguments (parsing)
 struct CommandLineArgs {
-  char log_file[1024];
-  char origin_file[1024];
-  char origin_list[MAX_ORIG_STRING];
-  int max_origins = 0;
-  char state_tag[1024];
+  char    log_file[1024];
+  char    origin_file[1024];
+  char    origin_list[MAX_ORIG_STRING];
+  int     max_origins = 0;
+  char    state_tag[1024];
   int64_t min_hits = 0;
-  int max_age      = 0;
-  int line_len;
-  int incremental     = 0; // Do an incremental run
-  int tail            = 0; // Tail the log file
-  int summary         = 0; // Summary only
-  int json            = 0; // JSON output
-  int cgi             = 0; // CGI output (typically with json)
-  int urls            = 0; // Produce JSON output of URL stats, arg is LRU size
-  int show_urls       = 0; // Max URLs to show
-  int as_object       = 0; // Show the URL stats as a single JSON object (not array)
-  int concise         = 0; // Eliminate metrics that can be inferred by other values
-  int report_per_user = 0; // A flag to aggregate and report stats per user instead of per host if 'true' (default 'false')
-  int no_format_check = 0; // A flag to skip the log format check if any of the fields is not a standard squid log format field.
+  int     max_age  = 0;
+  int     line_len;
+  int     incremental     = 0; // Do an incremental run
+  int     tail            = 0; // Tail the log file
+  int     summary         = 0; // Summary only
+  int     json            = 0; // JSON output
+  int     cgi             = 0; // CGI output (typically with json)
+  int     urls            = 0; // Produce JSON output of URL stats, arg is LRU size
+  int     show_urls       = 0; // Max URLs to show
+  int     as_object       = 0; // Show the URL stats as a single JSON object (not array)
+  int     concise         = 0; // Eliminate metrics that can be inferred by other values
+  int     report_per_user = 0; // A flag to aggregate and report stats per user instead of per host if 'true' (default 'false')
+  int     no_format_check = 0; // A flag to skip the log format check if any of the fields is not a standard squid log format field.
 
   CommandLineArgs() : line_len(DEFAULT_LINE_LEN)
 
@@ -671,7 +671,7 @@ CommandLineArgs::parse_arguments(const char **argv)
     cgi  = 1;
 
     if (nullptr != (query = getenv("QUERY_STRING"))) {
-      char buffer[MAX_ORIG_STRING];
+      char  buffer[MAX_ORIG_STRING];
       char *tok, *sep_ptr, *val;
 
       ink_strlcpy(buffer, query, sizeof(buffer));
@@ -718,7 +718,7 @@ enum ExitLevel {
 
 struct ExitStatus {
   ExitLevel level = EXIT_OK;
-  char notice[1024];
+  char      notice[1024];
 
   ExitStatus() { memset(notice, 0, sizeof(notice)); }
   void
@@ -814,7 +814,7 @@ update_counter(StatsCounter &counter, int size)
 inline void
 update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counter)
 {
-  int newcount, oldcount;
+  int   newcount, oldcount;
   float oldavg, newavg, sum_of_squares;
 
   // Skip all the "0" values.
@@ -1195,9 +1195,9 @@ update_protocols(OriginStats *stat, bool ipv6, int size)
 OriginStats *
 find_or_create_stats(const char *key)
 {
-  OriginStats *o_stats = nullptr;
+  OriginStats            *o_stats = nullptr;
   OriginStorage::iterator o_iter;
-  char *o_server = nullptr;
+  char                   *o_server = nullptr;
 
   // TODO: If we save state (struct) for a run, we probably need to always
   // update the origin data, no matter what the origin_set is.
@@ -1248,23 +1248,23 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
 {
   static LogFieldList *fieldlist = nullptr;
 
-  LogEntryHeader *entry;
+  LogEntryHeader   *entry;
   LogBufferIterator buf_iter(buf_header);
-  LogField *field = nullptr;
-  ParseStates state;
+  LogField         *field = nullptr;
+  ParseStates       state;
 
   char *read_from;
   char *tok;
   char *ptr;
-  int tok_len;
-  int flag = 0; // Flag used in state machine to carry "state" forward
+  int   tok_len;
+  int   flag = 0; // Flag used in state machine to carry "state" forward
 
   // Parsed results
-  int http_code = 0, size = 0, result = 0, hier = 0, elapsed = 0;
-  bool ipv6 = false;
+  int          http_code = 0, size = 0, result = 0, hier = 0, elapsed = 0;
+  bool         ipv6 = false;
   OriginStats *o_stats;
-  HTTPMethod method;
-  URLScheme scheme;
+  HTTPMethod   method;
+  URLScheme    scheme;
 
   if (!fieldlist) {
     fieldlist = new LogFieldList;
@@ -1313,8 +1313,8 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         state = P_STATE_RESULT;
         // Just skip the IP, we no longer assume it's always the same.
         {
-          LogFieldIp *ip = reinterpret_cast<LogFieldIp *>(read_from);
-          int len        = sizeof(LogFieldIp);
+          LogFieldIp *ip  = reinterpret_cast<LogFieldIp *>(read_from);
+          int         len = sizeof(LogFieldIp);
           if (AF_INET == ip->_family) {
             ipv6 = false;
             len  = sizeof(LogFieldIp4);
@@ -1762,15 +1762,15 @@ int
 process_file(int in_fd, off_t offset, unsigned max_age)
 {
   char buffer[MAX_LOGBUFFER_SIZE];
-  int nread, buffer_bytes;
+  int  nread, buffer_bytes;
 
   Debug("logstats", "Processing file [offset=%" PRId64 "].", (int64_t)offset);
   while (true) {
     Debug("logstats", "Reading initial header.");
     buffer[0] = '\0';
 
-    unsigned first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
-    LogBufferHeader *header  = (LogBufferHeader *)&buffer[0];
+    unsigned         first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
+    LogBufferHeader *header          = (LogBufferHeader *)&buffer[0];
 
     // Find the next log header, aligning us properly. This is not
     // particularly optimal, but we should only have to do this
@@ -1838,9 +1838,9 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       return 1;
     }
 
-    const int MAX_READ_TRIES = 5;
-    int total_read           = 0;
-    int read_tries_remaining = MAX_READ_TRIES; // since the data will be old anyway, let's only try a few times.
+    const int MAX_READ_TRIES       = 5;
+    int       total_read           = 0;
+    int       read_tries_remaining = MAX_READ_TRIES; // since the data will be old anyway, let's only try a few times.
     do {
       nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
       if (EOF == nread || !nread) { // just bail on error
@@ -1934,8 +1934,7 @@ inline void
 format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json, bool concise)
 {
   if (json) {
-    std::cout << "    " << '"' << desc << "\" : "
-              << "{ ";
+    std::cout << "    " << '"' << desc << "\" : " << "{ ";
     std::cout << R"("min": ")" << stat.min << "\", ";
     std::cout << R"("max": ")" << stat.max << "\"";
     if (!concise) {
@@ -1970,11 +1969,10 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
 {
   static char metrics[] = "KKMGTP";
   static char buf[64];
-  int ix = (stat.bytes > 1024 ? static_cast<int>(log10(static_cast<double>(stat.bytes)) / LOG10_1024) : 1);
+  int         ix = (stat.bytes > 1024 ? static_cast<int>(log10(static_cast<double>(stat.bytes)) / LOG10_1024) : 1);
 
   if (json) {
-    std::cout << "    " << '"' << desc << "\" : "
-              << "{ ";
+    std::cout << "    " << '"' << desc << "\" : " << "{ ";
     std::cout << R"("req": ")" << stat.count << "\", ";
     if (!concise) {
       std::cout << "\"req_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2)
@@ -2279,8 +2277,8 @@ void
 my_exit(const ExitStatus &status)
 {
   vector<OriginPair> vec;
-  bool first = true;
-  int max_origins;
+  bool               first = true;
+  int                max_origins;
 
   // Special case for URLs output.
   if (urls) {
@@ -2394,8 +2392,8 @@ int
 open_main_log(ExitStatus &status)
 {
   std::string logfile(Layout::get()->logdir);
-  int cnt = 3;
-  int main_fd;
+  int         cnt = 3;
+  int         main_fd;
 
   logfile.append("/squid.blog");
   while (((main_fd = open(logfile.c_str(), O_RDONLY)) < 0) && --cnt) {
@@ -2427,10 +2425,10 @@ open_main_log(ExitStatus &status)
 int
 main(int /* argc ATS_UNUSED */, const char *argv[])
 {
-  ExitStatus exit_status;
-  int res, cnt;
-  int main_fd;
-  unsigned max_age;
+  ExitStatus   exit_status;
+  int          res, cnt;
+  int          main_fd;
+  unsigned     max_age;
   struct flock lck;
 
   // build the application information structure
@@ -2485,7 +2483,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     }
 
     while (!fs.eof()) {
-      std::string line;
+      std::string            line;
       std::string::size_type start, end;
 
       getline(fs, line);
@@ -2535,7 +2533,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
 
     std::string sf_name(Layout::get()->logdir);
     struct stat stat_buf;
-    int state_fd;
+    int         state_fd;
     sf_name.append("/logstats.state");
 
     if (cl.state_tag[0] != '\0') {
@@ -2622,9 +2620,9 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     // Check if the main log file was rotated, and if so, locate
     // the old file first, and parse the remaining log data.
     if (stat_buf.st_ino != last_state.st_ino) {
-      DIR *dirp         = nullptr;
-      struct dirent *dp = nullptr;
-      ino_t old_inode   = last_state.st_ino;
+      DIR           *dirp      = nullptr;
+      struct dirent *dp        = nullptr;
+      ino_t          old_inode = last_state.st_ino;
 
       // Save the current log-file's I-Node number.
       last_state.st_ino = stat_buf.st_ino;

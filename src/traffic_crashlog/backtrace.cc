@@ -48,10 +48,10 @@ using threadlist = std::vector<pid_t>;
 static threadlist
 threads_for_process(pid_t proc)
 {
-  DIR *dir             = nullptr;
+  DIR           *dir   = nullptr;
   struct dirent *entry = nullptr;
 
-  char path[64];
+  char       path[64];
   threadlist threads;
 
   if (snprintf(path, sizeof(path), "/proc/%ld/task", static_cast<long>(proc)) >= static_cast<int>(sizeof(path))) {
@@ -88,12 +88,12 @@ done:
 static void
 backtrace_for_thread(pid_t threadid, TextBuffer &text)
 {
-  int status;
+  int              status;
   unw_addr_space_t addr_space = nullptr;
-  unw_cursor_t cursor;
-  void *ap       = nullptr;
-  pid_t target   = -1;
-  unsigned level = 0;
+  unw_cursor_t     cursor;
+  void            *ap     = nullptr;
+  pid_t            target = -1;
+  unsigned         level  = 0;
 
   // First, attach to the child, causing it to stop.
   status = ptrace(PTRACE_ATTACH, threadid, 0, 0);
@@ -131,12 +131,12 @@ backtrace_for_thread(pid_t threadid, TextBuffer &text)
   while (unw_step(&cursor) > 0) {
     unw_word_t ip;
     unw_word_t offset;
-    char buf[256];
+    char       buf[256];
 
     unw_get_reg(&cursor, UNW_REG_IP, &ip);
 
     if (unw_get_proc_name(&cursor, buf, sizeof(buf), &offset) == 0) {
-      int status;
+      int   status;
       char *name = abi::__cxa_demangle(buf, nullptr, nullptr, &status);
       text.format("%-4u 0x%016llx %s + %p\n", level, static_cast<unsigned long long>(ip), name ? name : buf, (void *)offset);
       free(name);
@@ -174,7 +174,7 @@ ServerBacktrace(unsigned /* options */, int pid, char **trace)
     Debug("backtrace", "tracing thread %ld\n", (long)threadid);
     // Get the thread name using /proc/PID/comm
     ats_scoped_fd fd;
-    char threadname[128];
+    char          threadname[128];
 
     snprintf(threadname, sizeof(threadname), "/proc/%ld/comm", static_cast<long>(threadid));
     fd = open(threadname, O_RDONLY);

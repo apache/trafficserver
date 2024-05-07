@@ -101,19 +101,19 @@ QUICStreamManager::create_stream(QUICStreamId stream_id)
 }
 
 QUICConnectionErrorUPtr
-QUICStreamManager::create_uni_stream(QUICStreamId &new_stream_id)
+QUICStreamManager::create_uni_stream(QUICStreamId new_stream_id)
 {
   return nullptr;
 }
 
 QUICConnectionErrorUPtr
-QUICStreamManager::create_bidi_stream(QUICStreamId &new_stream_id)
+QUICStreamManager::create_bidi_stream(QUICStreamId new_stream_id)
 {
   return nullptr;
 }
 
 QUICConnectionErrorUPtr
-QUICStreamManager::delete_stream(QUICStreamId &stream_id)
+QUICStreamManager::delete_stream(QUICStreamId stream_id)
 {
   QUICStream *stream = static_cast<QUICStream *>(this->find_stream(stream_id));
 

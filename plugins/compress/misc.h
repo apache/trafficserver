@@ -61,36 +61,36 @@ enum transform_state {
 #if HAVE_BROTLI_ENCODE_H
 using b_stream = struct {
   BrotliEncoderState *br;
-  uint8_t *next_in;
-  size_t avail_in;
-  uint8_t *next_out;
-  size_t avail_out;
-  size_t total_in;
-  size_t total_out;
+  uint8_t            *next_in;
+  size_t              avail_in;
+  uint8_t            *next_out;
+  size_t              avail_out;
+  size_t              total_in;
+  size_t              total_out;
 };
 #endif
 
 using Data = struct {
-  TSHttpTxn txn;
+  TSHttpTxn                txn;
   Gzip::HostConfiguration *hc;
-  TSVIO downstream_vio;
-  TSIOBuffer downstream_buffer;
-  TSIOBufferReader downstream_reader;
-  int downstream_length;
-  z_stream zstrm;
-  enum transform_state state;
-  int compression_type;
-  int compression_algorithms;
+  TSVIO                    downstream_vio;
+  TSIOBuffer               downstream_buffer;
+  TSIOBufferReader         downstream_reader;
+  int                      downstream_length;
+  z_stream                 zstrm;
+  enum transform_state     state;
+  int                      compression_type;
+  int                      compression_algorithms;
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
 #endif
 };
 
-voidpf gzip_alloc(voidpf opaque, uInt items, uInt size);
-void gzip_free(voidpf opaque, voidpf address);
-void normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);
-void hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
-void restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
+voidpf      gzip_alloc(voidpf opaque, uInt items, uInt size);
+void        gzip_free(voidpf opaque, voidpf address);
+void        normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);
+void        hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
+void        restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
 const char *init_hidden_header_name();
-int register_plugin();
-void log_compression_ratio(int64_t in, int64_t out);
+int         register_plugin();
+void        log_compression_ratio(int64_t in, int64_t out);

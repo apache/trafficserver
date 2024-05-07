@@ -40,10 +40,10 @@ static int const ACL_FILTER_MAX_IN_IP  = 8;
 static int const ACL_FILTER_MAX_ARGV   = 512;
 
 struct src_ip_info_t {
-  IpAddr start;             ///< Minimum value in range.
-  IpAddr end;               ///< Maximum value in range.
-  bool invert;              ///< Should we "invert" the meaning of this IP range ("not in range")
-  bool match_all_addresses; ///< This rule should match all IP addresses.
+  IpAddr start;               ///< Minimum value in range.
+  IpAddr end;                 ///< Maximum value in range.
+  bool   invert;              ///< Should we "invert" the meaning of this IP range ("not in range")
+  bool   match_all_addresses; ///< This rule should match all IP addresses.
 
   void
   reset()
@@ -67,8 +67,8 @@ struct src_ip_info_t {
 };
 
 struct src_ip_category_info_t {
-  std::string category; ///< The IP category for this remap rule.
-  bool invert = false;  ///< Should we "invert" the meaning of these IP categories ("not in categories")
+  std::string category;       ///< The IP category for this remap rule.
+  bool        invert = false; ///< Should we "invert" the meaning of these IP categories ("not in categories")
 
   void
   reset()
@@ -97,45 +97,45 @@ private:
   void reset();
 
 public:
-  acl_filter_rule *next = nullptr;
-  char *filter_name     = nullptr; // optional filter name
-  unsigned int allow_flag : 1,     // action allow deny
-    src_ip_valid          : 1,     // src_ip (client's src IP) range is specified and valid
-    src_ip_category_valid : 1,     // src_ip_category (client's src IP category) is specified and valid
-    in_ip_valid           : 1,     // in_ip (client's dest IP) range is specified and valid
-    active_queue_flag     : 1,     // filter is in active state (used by .useflt directive)
-    internal              : 1;     // filter internal HTTP requests
+  acl_filter_rule *next        = nullptr;
+  char            *filter_name = nullptr; // optional filter name
+  unsigned int     allow_flag : 1,        // action allow deny
+    src_ip_valid              : 1,        // src_ip (client's src IP) range is specified and valid
+    src_ip_category_valid     : 1,        // src_ip_category (client's src IP category) is specified and valid
+    in_ip_valid               : 1,        // in_ip (client's dest IP) range is specified and valid
+    active_queue_flag         : 1,        // filter is in active state (used by .useflt directive)
+    internal                  : 1;        // filter internal HTTP requests
 
   // we need arguments as string array for directive processing
-  int argc = 0;                    // argument counter (only for filter defs)
+  int   argc = 0;                  // argument counter (only for filter defs)
   char *argv[ACL_FILTER_MAX_ARGV]; // argument strings (only for filter defs)
 
   // methods
-  bool method_restriction_enabled;
+  bool              method_restriction_enabled;
   std::vector<bool> standard_method_lookup;
 
   using MethodMap = std::set<std::string>;
   MethodMap nonstandard_methods;
 
   // src_ip
-  int src_ip_cnt; // how many valid src_ip rules we have
+  int           src_ip_cnt; // how many valid src_ip rules we have
   src_ip_info_t src_ip_array[ACL_FILTER_MAX_SRC_IP];
 
-  int src_ip_category_cnt = 0; // how many valid src_ip rules we have
+  int                    src_ip_category_cnt = 0; // how many valid src_ip rules we have
   src_ip_category_info_t src_ip_category_array[ACL_FILTER_MAX_SRC_IP];
 
   // in_ip
-  int in_ip_cnt; // how many valid dest_ip rules we have
+  int           in_ip_cnt; // how many valid dest_ip rules we have
   src_ip_info_t in_ip_array[ACL_FILTER_MAX_IN_IP];
 
   acl_filter_rule();
   ~acl_filter_rule();
   void name(const char *_name = nullptr);
-  int add_argv(int _argc, char *_argv[]);
+  int  add_argv(int _argc, char *_argv[]);
   void print();
 
   static acl_filter_rule *find_byname(acl_filter_rule *list, const char *name);
-  static void delete_byname(acl_filter_rule **list, const char *name);
-  static void requeue_in_active_list(acl_filter_rule **list, acl_filter_rule *rp);
-  static void requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule *rp);
+  static void             delete_byname(acl_filter_rule **list, const char *name);
+  static void             requeue_in_active_list(acl_filter_rule **list, acl_filter_rule *rp);
+  static void             requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule *rp);
 };

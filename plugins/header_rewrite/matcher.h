@@ -85,7 +85,7 @@ public:
   get() const
   {
     return _data;
-  };
+  }
 
   void
   set(const T &d, CondModifiers mods)
@@ -200,10 +200,14 @@ private:
     return false;
   }
 
-  T _data;
+  T           _data;
   regexHelper _reHelper;
-  bool _nocase = false;
+  bool        _nocase = false;
 };
+
+// Specializations for the strings, since they can be both strings and regexes
+template <> void Matchers<std::string>::set(const std::string &d, CondModifiers mods);
+template <> bool Matchers<std::string>::test_eq(const std::string &t) const;
 
 // Specialized case matcher for the IP addresses matches.
 template <> class Matchers<const sockaddr *> : public Matcher

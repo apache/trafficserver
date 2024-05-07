@@ -33,7 +33,7 @@
 struct HistoryEntry {
   SourceLocation location;
   unsigned short event;
-  short reentrancy;
+  short          reentrancy;
 };
 
 template <unsigned Count> class History
@@ -74,7 +74,7 @@ public:
   }
 
 private:
-  HistoryEntry history[Count];
+  HistoryEntry history[Count] = {};
 
   unsigned int history_pos = 0;
 };

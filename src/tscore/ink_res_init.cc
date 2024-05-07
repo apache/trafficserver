@@ -152,7 +152,7 @@ static void
 ink_res_setoptions(ink_res_state statp, const char *options, const char *source ATS_UNUSED)
 {
   const char *cp = options;
-  int i;
+  int         i;
 
 #ifdef DEBUG
   if (statp->options & INK_RES_DEBUG) {
@@ -269,23 +269,23 @@ ink_res_randomid()
  * @internal This function has to be reachable by res_data.c but not publicly.
  */
 int
-ink_res_init(ink_res_state statp,         ///< State object to update.
-             IpEndpoint const *pHostList, ///< Additional servers.
-             size_t pHostListSize,        ///< # of entries in @a pHostList.
-             int dnsSearch,               /// Option of search_default_domains.
-             const char *pDefDomain,      ///< Default domain (may be nullptr).
-             const char *pSearchList,     ///< Unknown
-             const char *pResolvConf      ///< Path to configuration file.
+ink_res_init(ink_res_state     statp,         ///< State object to update.
+             IpEndpoint const *pHostList,     ///< Additional servers.
+             size_t            pHostListSize, ///< # of entries in @a pHostList.
+             int               dnsSearch,     /// Option of search_default_domains.
+             const char       *pDefDomain,    ///< Default domain (may be nullptr).
+             const char       *pSearchList,   ///< Unknown
+             const char       *pResolvConf    ///< Path to configuration file.
 )
 {
-  FILE *fp;
-  char *cp, **pp;
-  int n;
-  char buf[BUFSIZ];
-  size_t nserv   = 0;
-  int haveenv    = 0;
-  int havesearch = 0;
-  int dots;
+  FILE  *fp;
+  char  *cp, **pp;
+  int    n;
+  char   buf[BUFSIZ];
+  size_t nserv      = 0;
+  int    haveenv    = 0;
+  int    havesearch = 0;
+  int    dots;
   size_t maxns = INK_MAXNS;
 
   // INK_RES_SET_H_ERRNO(statp, 0);
@@ -547,10 +547,10 @@ parse_host_res_preference(const char *value, HostResPreferenceOrder &order)
 {
   Tokenizer tokens(";/|");
   // preference from the config string.
-  int np = 0;                        // index in to @a m_host_res_preference
+  int  np = 0;                       // index in to @a m_host_res_preference
   bool found[N_HOST_RES_PREFERENCE]; // redundancy check array
-  int n;                             // # of tokens
-  int i;                             // index
+  int  n;                            // # of tokens
+  int  i;                            // index
 
   n = tokens.Initialize(value);
 
@@ -599,7 +599,7 @@ parse_host_res_preference(const char *value, HostResPreferenceOrder &order)
 int
 ts_host_res_order_to_string(HostResPreferenceOrder const &order, char *out, int size)
 {
-  int zret   = 0;
+  int  zret  = 0;
   bool first = true;
   for (auto i : order) {
     /* Note we use a semi-colon here because this must be compatible

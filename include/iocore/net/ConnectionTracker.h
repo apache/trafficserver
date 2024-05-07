@@ -74,8 +74,8 @@ public:
 
   /// Per transaction configuration values.
   struct TxnConfig {
-    int server_max{0};                ///< Maximum concurrent server connections.
-    int server_min{0};                ///< Minimum keepalive server connections.
+    int       server_max{0};          ///< Maximum concurrent server connections.
+    int       server_min{0};          ///< Minimum keepalive server connections.
     MatchType server_match{MATCH_IP}; ///< Server match type.
   };
 
@@ -108,27 +108,27 @@ public:
 
     /// Equivalence key - two groups are equivalent if their keys are equal.
     struct Key {
-      IpEndpoint const &_addr;      ///< Remote IP address.
-      CryptoHash const &_hash;      ///< Hash of the FQDN.
-      MatchType const &_match_type; ///< Type of matching.
+      IpEndpoint const &_addr;       ///< Remote IP address.
+      CryptoHash const &_hash;       ///< Hash of the FQDN.
+      MatchType const  &_match_type; ///< Type of matching.
     };
 
     enum class DirectionType { INBOUND, OUTBOUND };
 
-    DirectionType _direction;                 ///< Whether the group is for inbound or outbound connections.
-    IpEndpoint _addr;                         ///< Remote IP address.
-    CryptoHash _hash;                         ///< Hash of the FQDN.
-    MatchType _match_type{MATCH_IP};          ///< Type of matching.
-    std::string _fqdn;                        ///< Expanded FQDN, set if matching on FQDN.
-    int _min_keep_alive_conns{0};             /// < Min keep alive conns on this server group
-    Key _key;                                 ///< Pre-assembled key which references the following members.
+    DirectionType               _direction;               ///< Whether the group is for inbound or outbound connections.
+    IpEndpoint                  _addr;                    ///< Remote IP address.
+    CryptoHash                  _hash;                    ///< Hash of the FQDN.
+    MatchType                   _match_type{MATCH_IP};    ///< Type of matching.
+    std::string                 _fqdn;                    ///< Expanded FQDN, set if matching on FQDN.
+    int                         _min_keep_alive_conns{0}; /// < Min keep alive conns on this server group
+    Key                         _key;                     ///< Pre-assembled key which references the following members.
     std::chrono::seconds const &_alert_delay; ///< A reference to client or server alert_delay depending upon connection direction.
 
     // Counting data.
-    std::atomic<int> _count{0};         ///< Number of inbound or outbound connections.
-    std::atomic<int> _count_max{0};     ///< largest observed @a count value.
-    std::atomic<int> _blocked{0};       ///< Number of connections blocked since last alert.
-    std::atomic<int> _in_queue{0};      ///< # of connections queued, waiting for a connection.
+    std::atomic<int>    _count{0};      ///< Number of inbound or outbound connections.
+    std::atomic<int>    _count_max{0};  ///< largest observed @a count value.
+    std::atomic<int>    _blocked{0};    ///< Number of connections blocked since last alert.
+    std::atomic<int>    _in_queue{0};   ///< # of connections queued, waiting for a connection.
     std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
 
     /** Constructor.
@@ -158,9 +158,9 @@ public:
 
   /// Container for per transaction state and operations.
   struct TxnState {
-    std::shared_ptr<Group> _g; ///< Active group for this transaction.
-    bool _reserved_p{false};   ///< Set if a connection slot has been reserved.
-    bool _queued_p{false};     ///< Set if the connection is delayed / queued.
+    std::shared_ptr<Group> _g;                 ///< Active group for this transaction.
+    bool                   _reserved_p{false}; ///< Set if a connection slot has been reserved.
+    bool                   _queued_p{false};   ///< Set if the connection is delayed / queued.
 
     /// Check if tracking is active.
     bool is_active();
@@ -195,7 +195,7 @@ public:
      * @param addr IP address of the upstream.
      * @param debug_tag Tag to use for the debug message. If no debug message should be generated set this to @c nullptr.
      */
-    void Warn_Blocked(int max_connections, int64_t id, int count, const sockaddr *addr, const char *debug_tag = nullptr);
+    void Warn_Blocked(int max_connections, int64_t id, int count, const sockaddr *addr, DbgCtl *debug_tag = nullptr);
   };
 
   /** Get or create the @c Group for the specified inbound session properties.
@@ -238,8 +238,8 @@ public:
    */
   static void config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUpdateCb const &config_cb);
 
-  /// Tag used for debugging output.
-  static constexpr char const *const DEBUG_TAG{"conn_track"};
+  /// Debug control used for debugging output.
+  static inline DbgCtl dbg_ctl{"conn_track"};
 
   /** Convert a string to a match type.
    *
@@ -281,7 +281,7 @@ protected:
   struct TableSingleton {
     friend ConnectionTracker::Group;
     std::unordered_map<Group::Key, std::shared_ptr<Group>, GroupMapHelper, GroupMapHelper>
-      _table;          ///< Hash table of connection groups.
+               _table; ///< Hash table of connection groups.
     std::mutex _mutex; ///< Lock for insert, delete, and find.
   };
   static TableSingleton _inbound_table;

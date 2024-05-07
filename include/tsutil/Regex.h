@@ -28,14 +28,14 @@
 #include <vector>
 #include <memory>
 
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
-
 /// @brief Match flags for regular expression evaluation.
+///
+/// @internal These values are copied from pcre2.h, to avoid having to include it.  The values are checked (with
+/// static_assert) in Regex.cc against PCRE2 named constants, in case they change in future PCRE2 releases.
 enum REFlags {
-  RE_CASE_INSENSITIVE = PCRE2_CASELESS,  ///< Ignore case (default: case sensitive).
-  RE_UNANCHORED       = PCRE2_MULTILINE, ///< Unanchored (DFA defaults to anchored).
-  RE_ANCHORED         = PCRE2_ANCHORED,  ///< Anchored (Regex defaults to unanchored).
+  RE_CASE_INSENSITIVE = 0x00000008u, ///< Ignore case (default: case sensitive).
+  RE_UNANCHORED       = 0x00000400u, ///< Unanchored (DFA defaults to anchored).
+  RE_ANCHORED         = 0x80000000u, ///< Anchored (Regex defaults to unanchored).
 };
 
 /// @brief Wrapper for PCRE2 match data.
@@ -63,19 +63,25 @@ public:
   size_t *get_ovector_pointer();
   int32_t size() const;
 
-protected:
-  pcre2_match_data *get_match_data();
-  void set_subject(std::string_view subject);
-  void set_size(int32_t size);
-
 private:
   constexpr static uint32_t DEFAULT_MATCHES = 10;
-  static void *malloc(size_t size, void *caller);
-  pcre2_match_data *_match_data = nullptr;
-  std::string_view _subject;
-  char _buffer[24 + 96 + 16 * DEFAULT_MATCHES]; // 24 bytes for the general context, 96 bytes overhead, 16 bytes per match.
-  size_t _buffer_bytes_used = 0;
-  int32_t _size             = 0;
+  static void              *malloc(size_t size, void *caller);
+  std::string_view          _subject;
+  char    _buffer[24 + 96 + 28 * DEFAULT_MATCHES]; // 24 bytes for the general context, 96 bytes overhead, 28 bytes per match.
+  size_t  _buffer_bytes_used = 0;
+  int32_t _size              = 0;
+
+  /// @internal This effectively wraps a void* so that we can avoid requiring the pcre2.h include for the user of the Regex
+  /// API (see Regex.cc).
+  struct _MatchData;
+  class _MatchDataPtr
+  {
+    friend struct _MatchData;
+
+  private:
+    void *_ptr = nullptr;
+  };
+  _MatchDataPtr _match_data;
 };
 
 /// @brief Wrapper for PCRE2 regular expression.
@@ -135,11 +141,17 @@ public:
   int get_capture_count();
 
 private:
-  // @internal - Because the PCRE header is badly done, we can't forward declare the PCRE
-  // enough to use as pointers. For some reason the header defines in name only a struct and
-  // then aliases it to the standard name, rather than simply declare the latter in name only.
-  // The goal is completely wrap PCRE and not include that header in client code.
-  pcre2_code *_code = nullptr;
+  /// @internal This effectively wraps a void* so that we can avoid requiring the pcre2.h include for the user of the Regex
+  /// API (see Regex.cc).
+  struct _Code;
+  class _CodePtr
+  {
+    friend struct _Code;
+
+  private:
+    void *_ptr = nullptr;
+  };
+  _CodePtr _code;
 };
 
 /** Deterministic Finite state Automata container.
@@ -170,8 +182,8 @@ public:
 private:
   struct Pattern {
     Pattern(Regex &&rxp, std::string &&s) : _re(std::move(rxp)), _p(std::move(s)) {}
-    Regex _re;      ///< The compile pattern.
-    std::string _p; ///< The original pattern.
+    Regex       _re; ///< The compile pattern.
+    std::string _p;  ///< The original pattern.
   };
 
   /** Compile @a pattern and add it to the pattern set.

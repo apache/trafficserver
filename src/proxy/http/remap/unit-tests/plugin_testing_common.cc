@@ -42,8 +42,8 @@ fs::path
 getTemporaryDir()
 {
   std::error_code ec;
-  fs::path tmpDir  = fs::canonical(fs::temp_directory_path(), ec);
-  tmpDir          /= "sandbox_XXXXXX";
+  fs::path        tmpDir  = fs::canonical(fs::temp_directory_path(), ec);
+  tmpDir                 /= "sandbox_XXXXXX";
 
   char dirNameTemplate[tmpDir.string().length() + 1];
   memcpy(dirNameTemplate, tmpDir.c_str(), sizeof(dirNameTemplate));

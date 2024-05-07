@@ -63,13 +63,13 @@ public:
   /// Information about an expression.
   /// This is per configuration data.
   struct ExprInfo {
-    Expr _expr;           ///< The feature expression.
+    Expr           _expr; ///< The feature expression.
     swoc::TextView _name; ///< Key name.
     /// Extracted feature index. For each referenced key, a slot is allocated for caching the
     /// extracted feature. @c INVALID_IDX indicates the feature isn't a dependency target
     /// and is therefore not cached.
-    index_type _exf_idx = INVALID_IDX;
-    bool _dependent_p   = false; ///< Is expression dependent on another key in the group?
+    index_type _exf_idx     = INVALID_IDX;
+    bool       _dependent_p = false; ///< Is expression dependent on another key in the group?
   };
 
   /** Store invocation state for extracting features.
@@ -228,8 +228,8 @@ protected:
 
   index_type _ref_count = 0; ///< Number of edge targets.
 
-  swoc::MemSpan<ExprInfo> _expr_info;  ///< Info for the key expression by key.
-  swoc::MemSpan<index_type> _ordering; ///< Extraction ordering for dependency targets.
+  swoc::MemSpan<ExprInfo>   _expr_info; ///< Info for the key expression by key.
+  swoc::MemSpan<index_type> _ordering;  ///< Extraction ordering for dependency targets.
 
   /// Context storage to store a @c State instance across feature extraction.
   ReservedSpan _ctx_state_span;

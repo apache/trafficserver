@@ -138,7 +138,7 @@
       "inherits": ["ci"],
       "generator": "Unix Makefiles",
       "cacheVariables": {
-        "ENABLE_CRIPTS": true
+        "ENABLE_CRIPTS": "ON"
       }
     },
     {
@@ -147,10 +147,11 @@
       "description": "CI Pipeline config for Rocky Linux",
       "inherits": ["ci"],
       "cacheVariables": {
-        "OPENSSL_ROOT_DIR": "/opt/boringssl",
-        "quiche_ROOT": "/opt/quiche",
+        "OPENSSL_ROOT_DIR": "/opt/h3-tools-boringssl/boringssl",
+        "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
-        "ENABLE_QUICHE": true
+        "opentelemetry_ROOT": "/opt",
+        "ENABLE_QUICHE": "ON"
       }
     },
     {
@@ -161,7 +162,9 @@
       "cacheVariables": {
         "OPENSSL_ROOT_DIR": "/opt/openssl-quic",
         "opentelemetry_ROOT": "/opt",
-        "ENABLE_CRIPTS": true
+        "CURL_ROOT": "/opt",
+        "wamr_ROOT": "/opt",
+        "ENABLE_CRIPTS": "ON"
       }
     },
     {
@@ -170,7 +173,11 @@
       "description": "CI Pipeline config for Fedora Linux compiled with c++20",
       "inherits": ["ci"],
       "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "20"
+        "opentelemetry_ROOT": "/opt",
+        "CURL_ROOT": "/opt",
+        "wamr_ROOT": "/opt",
+        "CMAKE_CXX_STANDARD": "20",
+        "ENABLE_CRIPTS": "ON"
       }
     },
     {
@@ -179,10 +186,13 @@
       "description": "CI Pipeline config for Fedora Linux (quiche build)",
       "inherits": ["ci"],
       "cacheVariables": {
-        "OPENSSL_ROOT_DIR": "/opt/boringssl",
-        "quiche_ROOT": "/opt/quiche",
+        "OPENSSL_ROOT_DIR": "/opt/h3-tools-boringssl/boringssl",
+        "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
+        "opentelemetry_ROOT": "/opt",
+        "CURL_ROOT": "/opt",
+        "wamr_ROOT": "/opt",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
-        "ENABLE_QUICHE": true
+        "ENABLE_QUICHE": "ON"
       }
     },
     {
@@ -289,15 +299,27 @@
       }
     },
     {
-      "name": "branch-quiche",
+      "name": "branch-quiche-on-boringssl",
       "displayName": "CI branch Quiche",
       "inherits": ["branch"],
       "cacheVariables": {
         "ENABLE_AUTEST": "ON",
         "nuraft_ROOT": "/opt/nuraft-boringssl",
-        "OPENSSL_ROOT_DIR": "/opt/boringssl",
+        "OPENSSL_ROOT_DIR": "/opt/h3-tools-boringssl/boringssl",
+        "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
+        "ENABLE_QUICHE": "ON"
+      }
+    },
+    {
+      "name": "branch-quiche-on-openssl",
+      "displayName": "CI branch Quiche",
+      "inherits": ["branch"],
+      "cacheVariables": {
+        "ENABLE_AUTEST": "ON",
+        "nuraft_ROOT": "/opt/nuraft-boringssl",
+        "OPENSSL_ROOT_DIR": "/opt/openssl-quic/",
         "quiche_ROOT": "/opt/quiche",
-        "ENABLE_QUICHE": true
+        "ENABLE_QUICHE": "ON"
       }
     },
     {

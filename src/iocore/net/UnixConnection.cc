@@ -44,6 +44,8 @@ unsigned int const IP_TRANSPARENT = 19;
 
 namespace
 {
+DbgCtl dbg_ctl_socket{"socket"};
+
 /** Struct to make cleaning up resources easier.
 
     By default, the @a method is invoked on the @a object when
@@ -114,7 +116,7 @@ Connection::open(NetVCOptions const &opt)
 {
   ink_assert(fd == NO_FD);
 
-  int res = 0; // temp result
+  int        res = 0; // temp result
   IpEndpoint local_addr;
   sock_type = NetVCOptions::USE_UDP == opt.ip_proto ? SOCK_DGRAM : SOCK_STREAM;
   int family;
@@ -158,13 +160,13 @@ Connection::open(NetVCOptions const &opt)
     static char const *const DEBUG_TEXT = "::open setsockopt() IP_TRANSPARENT";
 #if TS_USE_TPROXY
     if (-1 == setsockopt_on(fd, SOL_IP, TS_IP_TRANSPARENT)) {
-      Debug("socket", "%s - fail %d:%s", DEBUG_TEXT, errno, strerror(errno));
+      Dbg(dbg_ctl_socket, "%s - fail %d:%s", DEBUG_TEXT, errno, strerror(errno));
       return -errno;
     } else {
-      Debug("socket", "%s set", DEBUG_TEXT);
+      Dbg(dbg_ctl_socket, "%s set", DEBUG_TEXT);
     }
 #else
-    Debug("socket", "%s - requested but TPROXY not configured", DEBUG_TEXT);
+    Dbg(dbg_ctl_socket, "%s - requested but TPROXY not configured", DEBUG_TEXT);
 #endif
   }
 
@@ -179,7 +181,7 @@ Connection::open(NetVCOptions const &opt)
       while (rbufsz && !SocketManager::set_rcvbuf_size(fd, rbufsz)) {
         rbufsz -= 1024;
       }
-      Debug("socket", "::open: recv_bufsize = %d of %d", rbufsz, opt.socket_recv_bufsize);
+      Dbg(dbg_ctl_socket, "::open: recv_bufsize = %d of %d", rbufsz, opt.socket_recv_bufsize);
     }
   }
   if (opt.socket_send_bufsize > 0) {
@@ -189,7 +191,7 @@ Connection::open(NetVCOptions const &opt)
       while (sbufsz && !SocketManager::set_sndbuf_size(fd, sbufsz)) {
         sbufsz -= 1024;
       }
-      Debug("socket", "::open: send_bufsize = %d of %d", sbufsz, opt.socket_send_bufsize);
+      Dbg(dbg_ctl_socket, "::open: send_bufsize = %d of %d", sbufsz, opt.socket_send_bufsize);
     }
   }
 
@@ -273,24 +275,24 @@ Connection::apply_options(NetVCOptions const &opt)
   if (SOCK_STREAM == sock_type) {
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) {
       setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY);
-      Debug("socket", "::open: setsockopt() TCP_NODELAY on socket");
+      Dbg(dbg_ctl_socket, "::open: setsockopt() TCP_NODELAY on socket");
     }
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) {
       setsockopt_on(fd, SOL_SOCKET, SO_KEEPALIVE);
-      Debug("socket", "::open: setsockopt() SO_KEEPALIVE on socket");
+      Dbg(dbg_ctl_socket, "::open: setsockopt() SO_KEEPALIVE on socket");
     }
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) {
       struct linger l;
       l.l_onoff  = 1;
       l.l_linger = 0;
       safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l));
-      Debug("socket", "::open:: setsockopt() turn on SO_LINGER on socket");
+      Dbg(dbg_ctl_socket, "::open:: setsockopt() turn on SO_LINGER on socket");
     }
 #ifdef TCP_NOTSENT_LOWAT
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_NOTSENT_LOWAT) {
       uint32_t lowat = opt.packet_notsent_lowat;
       safe_setsockopt(fd, IPPROTO_TCP, TCP_NOTSENT_LOWAT, reinterpret_cast<char *>(&lowat), sizeof(lowat));
-      Debug("socket", "::open:: setsockopt() set TCP_NOTSENT_LOWAT to %d", lowat);
+      Dbg(dbg_ctl_socket, "::open:: setsockopt() set TCP_NOTSENT_LOWAT to %d", lowat);
     }
 #endif
   }

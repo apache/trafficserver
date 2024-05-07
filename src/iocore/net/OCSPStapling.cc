@@ -260,19 +260,25 @@ constexpr int TS_OCSP_CERTSTATUS_UNKNOWN = 2;
 
 // End of definitions from RFC 6960
 
+namespace
+{
+  DbgCtl dbg_ctl_ssl_ocsp{"ssl_ocsp"};
+
+} // end anonymous namespace
+
 // Cached info stored in SSL_CTX ex_info
 struct certinfo {
-  unsigned char idx[20]; // Index in session cache SHA1 hash of certificate
-  TS_OCSP_CERTID *cid;   // Certificate ID for OCSP requests or nullptr if ID cannot be determined
-  char *uri;             // Responder details
-  char *certname;
-  char *user_agent;
-  ink_mutex stapling_mutex;
-  unsigned char resp_der[MAX_STAPLING_DER];
-  unsigned int resp_derlen;
-  bool is_prefetched;
-  bool is_expire;
-  time_t expire_time;
+  unsigned char   idx[20]; // Index in session cache SHA1 hash of certificate
+  TS_OCSP_CERTID *cid;     // Certificate ID for OCSP requests or nullptr if ID cannot be determined
+  char           *uri;     // Responder details
+  char           *certname;
+  char           *user_agent;
+  ink_mutex       stapling_mutex;
+  unsigned char   resp_der[MAX_STAPLING_DER];
+  unsigned int    resp_derlen;
+  bool            is_prefetched;
+  bool            is_expire;
+  time_t          expire_time;
 };
 
 class HTTPRequest : public Continuation
@@ -336,7 +342,7 @@ public:
     }
     this->add_header("Content-Type", content_type);
     char req_body_len_str[10];
-    int req_body_len_str_len;
+    int  req_body_len_str_len;
     req_body_len_str_len = ink_fast_itoa(this->_req_body_len, req_body_len_str, sizeof(req_body_len_str));
     this->add_header("Content-Length", 14, req_body_len_str, req_body_len_str_len);
 
@@ -386,10 +392,10 @@ public:
   }
 
 private:
-  FetchSM *_fsm            = nullptr;
-  unsigned char *_req_body = nullptr;
-  int _req_body_len        = 0;
-  int _result              = INT_MAX;
+  FetchSM       *_fsm          = nullptr;
+  unsigned char *_req_body     = nullptr;
+  int            _req_body_len = 0;
+  int            _result       = INT_MAX;
 
   void
   fetch()
@@ -419,11 +425,11 @@ TS_OCSP_CERTID *
 TS_OCSP_cert_id_new(const EVP_MD *dgst, const X509_NAME *issuerName, const ASN1_BIT_STRING *issuerKey,
                     const ASN1_INTEGER *serialNumber)
 {
-  int nid;
-  unsigned int i;
-  X509_ALGOR *alg;
+  int             nid;
+  unsigned int    i;
+  X509_ALGOR     *alg;
   TS_OCSP_CERTID *cid = nullptr;
-  unsigned char md[EVP_MAX_MD_SIZE];
+  unsigned char   md[EVP_MAX_MD_SIZE];
 
   if ((cid = TS_OCSP_CERTID_new()) == nullptr)
     goto err;
@@ -431,7 +437,7 @@ TS_OCSP_cert_id_new(const EVP_MD *dgst, const X509_NAME *issuerName, const ASN1_
   alg = cid->hashAlgorithm;
   ASN1_OBJECT_free(alg->algorithm);
   if ((nid = EVP_MD_type(dgst)) == NID_undef) {
-    Debug("ssl_ocsp", "Unknown NID");
+    Dbg(dbg_ctl_ssl_ocsp, "Unknown NID");
     goto err;
   }
   if ((alg->algorithm = OBJ_nid2obj(nid)) == nullptr)
@@ -458,7 +464,7 @@ TS_OCSP_cert_id_new(const EVP_MD *dgst, const X509_NAME *issuerName, const ASN1_
   }
   return cid;
 digerr:
-  Debug("ssl_ocsp", "Digest error");
+  Dbg(dbg_ctl_ssl_ocsp, "Digest error");
 err:
   TS_OCSP_CERTID_free(cid);
   return nullptr;
@@ -467,9 +473,9 @@ err:
 TS_OCSP_CERTID *
 TS_OCSP_cert_to_id(const EVP_MD *dgst, const X509 *subject, const X509 *issuer)
 {
-  const X509_NAME *iname;
+  const X509_NAME    *iname;
   const ASN1_INTEGER *serial;
-  ASN1_BIT_STRING *ikey;
+  ASN1_BIT_STRING    *ikey;
 
   if (!dgst)
     dgst = EVP_sha1();
@@ -487,18 +493,18 @@ TS_OCSP_cert_to_id(const EVP_MD *dgst, const X509 *subject, const X509 *issuer)
 int
 TS_OCSP_check_validity(ASN1_GENERALIZEDTIME *thisupd, ASN1_GENERALIZEDTIME *nextupd, long nsec, long maxsec)
 {
-  int ret = 1;
+  int    ret = 1;
   time_t t_now, t_tmp;
 
   time(&t_now);
   /* Check thisUpdate is valid and not more than nsec in the future */
   if (!ASN1_GENERALIZEDTIME_check(thisupd)) {
-    Debug("ssl_ocsp", "Error in thisUpdate field");
+    Dbg(dbg_ctl_ssl_ocsp, "Error in thisUpdate field");
     ret = 0;
   } else {
     t_tmp = t_now + nsec;
     if (X509_cmp_time(thisupd, &t_tmp) > 0) {
-      Debug("ssl_ocsp", "Status not yet valid");
+      Dbg(dbg_ctl_ssl_ocsp, "Status not yet valid");
       ret = 0;
     }
 
@@ -509,7 +515,7 @@ TS_OCSP_check_validity(ASN1_GENERALIZEDTIME *thisupd, ASN1_GENERALIZEDTIME *next
     if (maxsec >= 0) {
       t_tmp = t_now - maxsec;
       if (X509_cmp_time(thisupd, &t_tmp) < 0) {
-        Debug("ssl_ocsp", "Status too old");
+        Dbg(dbg_ctl_ssl_ocsp, "Status too old");
         ret = 0;
       }
     }
@@ -520,19 +526,19 @@ TS_OCSP_check_validity(ASN1_GENERALIZEDTIME *thisupd, ASN1_GENERALIZEDTIME *next
 
   /* Check nextUpdate is valid and not more than nsec in the past */
   if (!ASN1_GENERALIZEDTIME_check(nextupd)) {
-    Debug("ssl_ocsp", "Error in nextUpdate field");
+    Dbg(dbg_ctl_ssl_ocsp, "Error in nextUpdate field");
     ret = 0;
   } else {
     t_tmp = t_now - nsec;
     if (X509_cmp_time(nextupd, &t_tmp) < 0) {
-      Debug("ssl_ocsp", "Status expired");
+      Dbg(dbg_ctl_ssl_ocsp, "Status expired");
       ret = 0;
     }
   }
 
   /* Also don't allow nextUpdate to precede thisUpdate */
   if (ASN1_STRING_cmp(nextupd, thisupd) < 0) {
-    Debug("ssl_ocsp", "nextUpdate precedes thisUpdate");
+    Dbg(dbg_ctl_ssl_ocsp, "nextUpdate precedes thisUpdate");
     ret = 0;
   }
 
@@ -562,11 +568,11 @@ TS_OCSP_response_get1_basic(TS_OCSP_RESPONSE *resp)
   TS_OCSP_RESPBYTES *rb = resp->responseBytes;
 
   if (rb == nullptr) {
-    Debug("ssl_ocsp", "No response data");
+    Dbg(dbg_ctl_ssl_ocsp, "No response data");
     return nullptr;
   }
   if (OBJ_obj2nid(rb->responseType) != NID_id_pkix_OCSP_basic) {
-    Debug("ssl_ocsp", "Not basic response");
+    Dbg(dbg_ctl_ssl_ocsp, "Not basic response");
     return nullptr;
   }
 
@@ -630,7 +636,7 @@ int
 TS_OCSP_single_get0_status(TS_OCSP_SINGLERESP *single, int *reason, ASN1_GENERALIZEDTIME **revtime, ASN1_GENERALIZEDTIME **thisupd,
                            ASN1_GENERALIZEDTIME **nextupd)
 {
-  int ret;
+  int                 ret;
   TS_OCSP_CERTSTATUS *cst;
 
   if (single == nullptr)
@@ -660,7 +666,7 @@ int
 TS_OCSP_resp_find_status(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int *status, int *reason, ASN1_GENERALIZEDTIME **revtime,
                          ASN1_GENERALIZEDTIME **thisupd, ASN1_GENERALIZEDTIME **nextupd)
 {
-  int i = TS_OCSP_resp_find(bs, id, -1);
+  int                 i = TS_OCSP_resp_find(bs, id, -1);
   TS_OCSP_SINGLERESP *single;
 
   /* Maybe check for multiple responses and give an error? */
@@ -722,7 +728,7 @@ ssl_stapling_ex_init()
 static X509 *
 stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
 {
-  X509 *issuer                = nullptr;
+  X509       *issuer          = nullptr;
   X509_STORE *st              = SSL_CTX_get_cert_store(ssl_ctx);
   STACK_OF(X509) *extra_certs = nullptr;
   X509_STORE_CTX *inctx       = X509_STORE_CTX_new();
@@ -772,9 +778,9 @@ end:
 static bool
 stapling_cache_response(TS_OCSP_RESPONSE *rsp, certinfo *cinf)
 {
-  unsigned char resp_der[MAX_STAPLING_DER];
+  unsigned char  resp_der[MAX_STAPLING_DER];
   unsigned char *p;
-  unsigned int resp_derlen;
+  unsigned int   resp_derlen;
 
   p           = resp_der;
   resp_derlen = i2d_TS_OCSP_RESPONSE(rsp, &p);
@@ -796,7 +802,7 @@ stapling_cache_response(TS_OCSP_RESPONSE *rsp, certinfo *cinf)
   cinf->expire_time = time(nullptr) + SSLConfigParams::ssl_ocsp_cache_timeout;
   ink_mutex_release(&cinf->stapling_mutex);
 
-  Debug("ssl_ocsp", "stapling_cache_response: success to cache response");
+  Dbg(dbg_ctl_ssl_ocsp, "stapling_cache_response: success to cache response");
   return true;
 }
 
@@ -842,15 +848,15 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
   cinf->expire_time   = 0;
 
   if (cinf->is_prefetched) {
-    Debug("ssl_ocsp", "using OCSP prefetched response file %s", rsp_file);
+    Dbg(dbg_ctl_ssl_ocsp, "using OCSP prefetched response file %s", rsp_file);
     FILE *fp = fopen(rsp_file, "r");
     if (fp) {
       fseek(fp, 0, SEEK_END);
       long rsp_buf_len = ftell(fp);
       if (rsp_buf_len >= 0) {
         rewind(fp);
-        unsigned char *rsp_buf = static_cast<unsigned char *>(malloc(rsp_buf_len));
-        auto read_len          = fread(rsp_buf, 1, rsp_buf_len, fp);
+        unsigned char *rsp_buf  = static_cast<unsigned char *>(malloc(rsp_buf_len));
+        auto           read_len = fread(rsp_buf, 1, rsp_buf_len, fp);
         if (read_len == static_cast<size_t>(rsp_buf_len)) {
           const unsigned char *p = rsp_buf;
           rsp                    = d2i_TS_OCSP_RESPONSE(nullptr, &p, rsp_buf_len);
@@ -873,7 +879,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
       Error("stapling_refresh_response: can not cache response");
       goto err;
     } else {
-      Debug("ssl_ocsp", "stapling_refresh_response: successful refresh OCSP response");
+      Dbg(dbg_ctl_ssl_ocsp, "stapling_refresh_response: successful refresh OCSP response");
       TS_OCSP_RESPONSE_free(rsp);
       rsp = nullptr;
     }
@@ -952,10 +958,10 @@ stapling_get_cert_info(SSL_CTX *ctx)
 static int
 stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
 {
-  int status            = TS_OCSP_CERTSTATUS_UNKNOWN, reason;
-  TS_OCSP_BASICRESP *bs = nullptr;
+  int                   status = TS_OCSP_CERTSTATUS_UNKNOWN, reason;
+  TS_OCSP_BASICRESP    *bs     = nullptr;
   ASN1_GENERALIZEDTIME *rev, *thisupd, *nextupd;
-  int response_status = ASN1_ENUMERATED_get(rsp->responseStatus);
+  int                   response_status = ASN1_ENUMERATED_get(rsp->responseStatus);
 
   // Check to see if response is an error.
   // If so we automatically accept it because it would have expired from the cache if it was time to retry.
@@ -1000,7 +1006,7 @@ stapling_check_response(certinfo *cinf, TS_OCSP_RESPONSE *rsp)
 static TS_OCSP_RESPONSE *
 query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, int req_timeout, bool use_get)
 {
-  ink_hrtime start, end;
+  ink_hrtime        start, end;
   TS_OCSP_RESPONSE *resp = nullptr;
 
   start = ink_get_hrtime();
@@ -1043,16 +1049,16 @@ query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, i
   if (!httpreq.is_done()) {
     Error("OCSP request was timed out; uri=%s", uri);
     if (!httpreq.is_initiated()) {
-      Debug("ssl_ocsp", "Request is not initiated yet. Cancelling the event.");
+      Dbg(dbg_ctl_ssl_ocsp, "Request is not initiated yet. Cancelling the event.");
       e->cancel(&httpreq);
     }
   }
 
   if (httpreq.is_success()) {
     // Parse the response
-    int len;
-    unsigned char *res     = httpreq.get_response_body(&len);
-    const unsigned char *p = res;
+    int                  len;
+    unsigned char       *res = httpreq.get_response_body(&len);
+    const unsigned char *p   = res;
     resp = reinterpret_cast<TS_OCSP_RESPONSE *>(ASN1_item_d2i(nullptr, &p, len, ASN1_ITEM_rptr(TS_OCSP_RESPONSE)));
 
     if (resp) {
@@ -1100,13 +1106,13 @@ static const unsigned char encoding_map[32] = {
 static IOBufferBlock *
 make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
 {
-  unsigned char *ocsp_der = nullptr;
-  int ocsp_der_len        = -1;
-  char ocsp_encoded_der[MAX_OCSP_GET_ENCODED_LENGTH]; // Stores base64 encoded data
-  size_t ocsp_encoded_der_len = 0;
-  char ocsp_escaped[MAX_OCSP_GET_ENCODED_LENGTH];
-  int ocsp_escaped_len = -1;
-  IOBufferBlock *url   = nullptr;
+  unsigned char *ocsp_der     = nullptr;
+  int            ocsp_der_len = -1;
+  char           ocsp_encoded_der[MAX_OCSP_GET_ENCODED_LENGTH]; // Stores base64 encoded data
+  size_t         ocsp_encoded_der_len = 0;
+  char           ocsp_escaped[MAX_OCSP_GET_ENCODED_LENGTH];
+  int            ocsp_escaped_len = -1;
+  IOBufferBlock *url              = nullptr;
 
   ocsp_der_len = i2d_TS_OCSP_REQUEST(req, &ocsp_der);
 
@@ -1117,7 +1123,7 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
     Error("stapling_refresh_response: unable to convert OCSP request to DER; falling back to POST; url=%s", base_url);
     return nullptr;
   }
-  Debug("ssl_ocsp", "converted OCSP request to DER; length=%d", ocsp_der_len);
+  Dbg(dbg_ctl_ssl_ocsp, "converted OCSP request to DER; length=%d", ocsp_der_len);
 
   if (ats_base64_encode(ocsp_der, ocsp_der_len, ocsp_encoded_der, MAX_OCSP_GET_ENCODED_LENGTH, &ocsp_encoded_der_len) == false ||
       ocsp_encoded_der_len == 0) {
@@ -1126,14 +1132,14 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
     return nullptr;
   }
   OPENSSL_free(ocsp_der);
-  Debug("ssl_ocsp", "encoded DER with base64: %s", ocsp_encoded_der);
+  Dbg(dbg_ctl_ssl_ocsp, "encoded DER with base64: %s", ocsp_encoded_der);
 
   if (nullptr == Encoding::pure_escapify_url(nullptr, ocsp_encoded_der, ocsp_encoded_der_len, &ocsp_escaped_len, ocsp_escaped,
                                              MAX_OCSP_GET_ENCODED_LENGTH, encoding_map)) {
     Error("stapling_refresh_response: unable to escapify encoded url; falling back to POST; url=%s", base_url);
     return nullptr;
   }
-  Debug("ssl_ocsp", "escaped encoded path; %d bytes, %s", ocsp_escaped_len, ocsp_escaped);
+  Dbg(dbg_ctl_ssl_ocsp, "escaped encoded path; %d bytes, %s", ocsp_escaped_len, ocsp_escaped);
 
   size_t total_url_len =
     sizeof(char) * (strlen(base_url) + 1 + ocsp_escaped_len + 1); // <base URL> + / + <encoded OCSP request> + \0
@@ -1143,7 +1149,7 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
   // increase buffer index as necessary to fit the largest observed encoded_path_len
   while (buffer_size < total_url_len && buffer_idx < MAX_BUFFER_SIZE_INDEX) {
     buffer_size = BUFFER_SIZE_FOR_INDEX(++buffer_idx);
-    Debug("ssl_ocsp", "increased buffer index to %d", buffer_idx);
+    Dbg(dbg_ctl_ssl_ocsp, "increased buffer index to %d", buffer_idx);
   }
 
   if (buffer_size < total_url_len) {
@@ -1153,8 +1159,8 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
     return nullptr;
   }
 
-  Debug("ssl_ocsp", "creating new buffer block with index %d, size %d, to store %zu encoded bytes", buffer_idx, buffer_size,
-        total_url_len);
+  Dbg(dbg_ctl_ssl_ocsp, "creating new buffer block with index %d, size %d, to store %zu encoded bytes", buffer_idx, buffer_size,
+      total_url_len);
   url = new_IOBufferBlock();
   url->alloc(buffer_idx);
 
@@ -1169,7 +1175,7 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
 
   written = ink_strlcat(url->end(), ocsp_escaped, url->write_avail());
   url->fill(written);
-  Debug("ssl_ocsp", "appended encoded data to path: %s", url->buf());
+  Dbg(dbg_ctl_ssl_ocsp, "appended encoded data to path: %s", url->buf());
 
   return url;
 }
@@ -1177,13 +1183,13 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
 static bool
 stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
 {
-  bool rv                    = true;
-  TS_OCSP_REQUEST *req       = nullptr;
-  TS_OCSP_CERTID *id         = nullptr;
-  int response_status        = 0;
-  IOBufferBlock *url_for_get = nullptr;
-  const char *url            = nullptr; // Final URL to use
-  bool use_get               = false;
+  bool             rv              = true;
+  TS_OCSP_REQUEST *req             = nullptr;
+  TS_OCSP_CERTID  *id              = nullptr;
+  int              response_status = 0;
+  IOBufferBlock   *url_for_get     = nullptr;
+  const char      *url             = nullptr; // Final URL to use
+  bool             use_get         = false;
 
   *prsp = nullptr;
 
@@ -1211,7 +1217,7 @@ stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
     url = cinf->uri;
   }
 
-  Debug("ssl_ocsp", "stapling_refresh_response: querying responder; method=%s uri=%s", use_get ? "GET" : "POST", cinf->uri);
+  Dbg(dbg_ctl_ssl_ocsp, "stapling_refresh_response: querying responder; method=%s uri=%s", use_get ? "GET" : "POST", cinf->uri);
 
   *prsp = query_responder(url, cinf->user_agent, req, SSLConfigParams::ssl_ocsp_request_timeout, use_get);
   if (*prsp == nullptr) {
@@ -1220,7 +1226,7 @@ stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
 
   response_status = ASN1_ENUMERATED_get((*prsp)->responseStatus);
   if (response_status == TS_OCSP_RESPONSE_STATUS_SUCCESSFUL) {
-    Debug("ssl_ocsp", "stapling_refresh_response: query response received");
+    Dbg(dbg_ctl_ssl_ocsp, "stapling_refresh_response: query response received");
     stapling_check_response(cinf, *prsp);
   } else {
     Error("stapling_refresh_response: responder response error; uri=%s method=%s response_status=%d", cinf->uri,
@@ -1230,7 +1236,7 @@ stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
   if (!stapling_cache_response(*prsp, cinf)) {
     Error("stapling_refresh_response: can not cache response");
   } else {
-    Debug("ssl_ocsp", "stapling_refresh_response: successfully refreshed OCSP response");
+    Dbg(dbg_ctl_ssl_ocsp, "stapling_refresh_response: successfully refreshed OCSP response");
   }
   goto done;
 
@@ -1254,13 +1260,13 @@ done:
 void
 ocsp_update()
 {
-  shared_SSL_CTX ctx;
+  shared_SSL_CTX    ctx;
   TS_OCSP_RESPONSE *resp = nullptr;
-  time_t current_time;
+  time_t            current_time;
 
   SSLCertificateConfig::scoped_config certLookup;
 
-  Debug("ssl_ocsp", "updating OCSP data");
+  Dbg(dbg_ctl_ssl_ocsp, "updating OCSP data");
 #ifndef OPENSSL_IS_BORINGSSL
   const SSLCertContextType ctxTypes[] = {SSLCertContextType::GENERIC};
 #else
@@ -1273,8 +1279,8 @@ ocsp_update()
       if (cc) {
         ctx = cc->getCtx();
         if (ctx) {
-          certinfo *cinf    = nullptr;
-          certinfo_map *map = stapling_get_cert_info(ctx.get());
+          certinfo     *cinf = nullptr;
+          certinfo_map *map  = stapling_get_cert_info(ctx.get());
           if (map) {
             // Walk over all certs associated with this CTX
             for (auto &iter : *map) {
@@ -1284,7 +1290,7 @@ ocsp_update()
               if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
                 ink_mutex_release(&cinf->stapling_mutex);
                 if (stapling_refresh_response(cinf, &resp)) {
-                  Debug("ssl_ocsp", "Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
+                  Dbg(dbg_ctl_ssl_ocsp, "Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
                   Metrics::Counter::increment(ssl_rsb.ocsp_refreshed_cert);
                 } else {
                   Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
@@ -1314,12 +1320,12 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
   // originally was, cinf = stapling_get_cert_info(ssl->ctx);
   certinfo_map *map = stapling_get_cert_info(SSL_get_SSL_CTX(ssl));
   if (map == nullptr) {
-    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: failed to get certificate map");
+    Dbg(dbg_ctl_ssl_ocsp, "ssl_callback_ocsp_stapling: failed to get certificate map");
     return SSL_TLSEXT_ERR_NOACK;
   }
 
   if (map->empty()) {
-    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: certificate map empty");
+    Dbg(dbg_ctl_ssl_ocsp, "ssl_callback_ocsp_stapling: certificate map empty");
     return SSL_TLSEXT_ERR_NOACK;
   }
 
@@ -1359,15 +1365,15 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
   time_t current_time = time(nullptr);
   if ((cinf->resp_derlen == 0 || cinf->is_expire) || (cinf->expire_time < current_time && !cinf->is_prefetched)) {
     ink_mutex_release(&cinf->stapling_mutex);
-    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
+    Dbg(dbg_ctl_ssl_ocsp, "ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
     return SSL_TLSEXT_ERR_NOACK;
   } else {
     unsigned char *p = static_cast<unsigned char *>(OPENSSL_malloc(cinf->resp_derlen));
     memcpy(p, cinf->resp_der, cinf->resp_derlen);
     ink_mutex_release(&cinf->stapling_mutex);
     SSL_set_tlsext_status_ocsp_resp(ssl, p, cinf->resp_derlen);
-    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: successfully got certificate status for %s", cinf->certname);
-    Debug("ssl_ocsp", "is_prefetched:%d uri:%s", cinf->is_prefetched, cinf->uri);
+    Dbg(dbg_ctl_ssl_ocsp, "ssl_callback_ocsp_stapling: successfully got certificate status for %s", cinf->certname);
+    Dbg(dbg_ctl_ssl_ocsp, "is_prefetched:%d uri:%s", cinf->is_prefetched, cinf->uri);
     return SSL_TLSEXT_ERR_OK;
   }
 }

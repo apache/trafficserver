@@ -36,6 +36,7 @@
 #include <vector>
 #include <forward_list>
 #include <ctime>
+#include <atomic>
 
 #include "swoc/IntrusiveDList.h"
 
@@ -49,12 +50,12 @@ namespace fs = swoc::file;
 
 #include "proxy/Plugin.h"
 
-class PluginThreadContext : public RefCountObj
+class PluginThreadContext : public RefCountObjInHeap
 {
 public:
-  virtual void acquire()                  = 0;
-  virtual void release()                  = 0;
-  static constexpr const char *const _tag = "plugin_context"; /** @brief log tag used by this class */
+  virtual void                       acquire() = 0;
+  virtual void                       release() = 0;
+  static constexpr const char *const _tag      = "plugin_context"; /** @brief log tag used by this class */
 };
 
 class PluginDso : public PluginThreadContext
@@ -66,16 +67,16 @@ public:
   virtual ~PluginDso();
 
   /* DSO Load, unload, get symbols from DSO */
-  virtual bool load(std::string &error);
+  virtual bool load(std::string &error, const fs::path &compilerPath);
   virtual bool unload(std::string &error);
-  bool isLoaded();
-  bool getSymbol(const char *symbol, void *&address, std::string &error) const;
+  bool         isLoaded();
+  bool         getSymbol(const char *symbol, void *&address, std::string &error) const;
 
   /* Accessors for effective and runtime paths */
-  const fs::path &effectivePath() const;
-  const fs::path &runtimePath() const;
+  const fs::path            &effectivePath() const;
+  const fs::path            &runtimePath() const;
   swoc::file::file_time_type modTime() const;
-  void *dlOpenHandle() const;
+  void                      *dlOpenHandle() const;
   void *
   dlh() const
   {
@@ -100,17 +101,17 @@ public:
 
   void incInstanceCount();
   void decInstanceCount();
-  int instanceCount();
+  int  instanceCount() const;
   bool isDynamicReloadEnabled() const;
 
-  class LoadedPlugins : public RefCountObj
+  class LoadedPlugins : public RefCountObjInHeap
   {
   public:
     LoadedPlugins() : _mutex(new_ProxyMutex()) {}
-    void add(PluginDso *plugin);
-    void remove(PluginDso *plugin);
+    void       add(PluginDso *plugin);
+    void       remove(PluginDso *plugin);
     PluginDso *findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled);
-    void indicatePreReload(const char *factoryId);
+    void       indicatePreReload(const char *factoryId);
     void indicatePostReload(bool reloadSuccessful, const std::unordered_map<PluginDso *, int> &pluginUsed, const char *factoryId);
 
     /**
@@ -138,7 +139,7 @@ public:
     void removePluginPathFromDsoOptOutTable(std::string_view pluginPath);
 
   private:
-    PluginList _list;       /** @brief plugin list */
+    PluginList      _list;  /** @brief plugin list */
     Ptr<ProxyMutex> _mutex; /** @brief mutex used when updating the plugin list from multiple threads */
 
     struct DisableDSOReloadPluginInfo {
@@ -166,11 +167,21 @@ protected:
 
   void *_dlh = nullptr; /** @brief dlopen handler used internally in this class, used as flag for loaded vs unloaded (nullptr) */
 
-  static constexpr const char *const _tag = "plugin_dso";       /** @brief log tag used by this class */
+  static constexpr const char *const _tag = "plugin_dso"; /** @brief log tag used by this class */
+  static const DbgCtl               &_dbg_ctl();
   swoc::file::file_time_type _mtime{fs::file_time_type::min()}; /* @brief modification time of the DSO's file, used for checking */
-  bool _preventiveCleaning = true;
+  bool                       _preventiveCleaning = true;
 
   static Ptr<LoadedPlugins>
     _plugins; /** @brief a global list of plugins, usually maintained by a plugin factory or plugin instance itself */
-  RefCountObj _instanceCount; /** @brief used for properly calling "done" and "indicate config reload" methods by the factory */
+  std::atomic<int> _instanceCount{
+    0}; /** @brief used for properly calling "done" and "indicate config reload" methods by the factory */
 };
+
+inline const DbgCtl &
+PluginDso::_dbg_ctl()
+{
+  static DbgCtl dc{_tag};
+
+  return dc;
+}

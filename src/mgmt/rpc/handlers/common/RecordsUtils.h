@@ -24,11 +24,9 @@
 
 #include "tsutil/ts_errata.h"
 
-#include "mgmt/rpc/handlers/common/convert.h"
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
 
 #include "records/RecCore.h"
-#include "../../../../../src/records/P_RecCore.h"
 #include "tscore/Diags.h"
 
 #include <yaml-cpp/yaml.h>
@@ -88,16 +86,5 @@ std::tuple<YAML::Node, std::error_code> get_yaml_record(std::string const &name,
 /// @return std::tuple<YAML::Node, std::error_code>
 ///
 std::tuple<YAML::Node, std::error_code> get_yaml_record_regex(std::string const &regex, unsigned recType);
-
-///
-/// @brief Runs a validity check base on the type and the pattern.
-///
-/// @param value Value where the validity check should be applied.
-/// @param checkType The type of the value.
-/// @param pattern  The pattern.
-/// @return true if the validity was ok, false otherwise.
-///
-bool recordValidityCheck(const char *value, RecCheckT checkType,
-                         const char *pattern); // code originally from WebMgmtUtils
 
 } // namespace rpc::handlers::records::utils

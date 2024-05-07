@@ -30,14 +30,21 @@ struct CRYPTO_dynlock_value {
   CRYPTO_dynlock_value(const char *f, int l) : file(f), line(l) { ink_mutex_init(&mutex); }
   ~CRYPTO_dynlock_value() { ink_mutex_destroy(&mutex); }
   const char *file;
-  int line;
-  ink_mutex mutex;
+  int         line;
+  ink_mutex   mutex;
 };
+
+namespace
+{
+DbgCtl dbg_ctl_v_ssl_lock{"v_ssl_lock"};
+DbgCtl dbg_ctl_ssl{"ssl"};
+
+} // end anonymous namespace
 
 struct CRYPTO_dynlock_value *
 ssl_dyn_create_callback(const char *file, int line)
 {
-  Debug("v_ssl_lock", "file: %s line: %d", file, line);
+  Dbg(dbg_ctl_v_ssl_lock, "file: %s line: %d", file, line);
 
   CRYPTO_dynlock_value *value = new CRYPTO_dynlock_value(file, line);
   return value;
@@ -48,14 +55,14 @@ ssl_dyn_create_callback(const char *file, int line)
 void
 ssl_dyn_lock_callback(int mode, struct CRYPTO_dynlock_value *value, const char *file, int line)
 {
-  Debug("v_ssl_lock", "file: %s line: %d", file, line);
+  Dbg(dbg_ctl_v_ssl_lock, "file: %s line: %d", file, line);
 
   if (mode & CRYPTO_LOCK) {
     ink_mutex_acquire(&value->mutex);
   } else if (mode & CRYPTO_UNLOCK) {
     ink_mutex_release(&value->mutex);
   } else {
-    Debug("ssl", "invalid SSL locking mode 0x%x", mode);
+    Dbg(dbg_ctl_ssl, "invalid SSL locking mode 0x%x", mode);
     ink_release_assert(0);
   }
 }
@@ -64,6 +71,6 @@ ssl_dyn_lock_callback(int mode, struct CRYPTO_dynlock_value *value, const char *
 void
 ssl_dyn_destroy_callback(struct CRYPTO_dynlock_value *value, const char *file, int line)
 {
-  Debug("v_ssl_lock", "file: %s line: %d", file, line);
+  Dbg(dbg_ctl_v_ssl_lock, "file: %s line: %d", file, line);
   delete value;
 }

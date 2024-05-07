@@ -23,22 +23,22 @@
 struct fetch_multi_info;
 
 typedef struct {
-  TSCont contp;
+  TSCont                   contp;
   struct fetch_multi_info *fmi;
 
-  TSIOBuffer buffer;
+  TSIOBuffer       buffer;
   TSIOBufferReader reader;
-  TSFetchSM fch;
+  TSFetchSM        fch;
 
   unsigned int over   : 1;
   unsigned int failed : 1;
 } ts_lua_fetch_info;
 
 typedef struct fetch_multi_info {
-  TSCont contp; // should be destroyed only in cleanup
-  int multi;    // invoke from ts.fetch_multi
-  int total;
-  int done;
+  TSCont            contp; // should be destroyed only in cleanup
+  int               multi; // invoke from ts.fetch_multi
+  int               total;
+  int               done;
   ts_lua_fetch_info fiv[0];
 } ts_lua_fetch_multi_info;
 

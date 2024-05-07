@@ -42,9 +42,9 @@ constexpr std::string_view b3_s_key   = {"X-B3-Sampled"};
 static int
 close_txn(TSCont contp, TSEvent event, void *edata)
 {
-  int retval = 0;
+  int       retval = 0;
   TSMBuffer buf;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   Dbg(dbg_ctl, "[%s] Retrieving status code to add to span attributes", __FUNCTION__);
   auto req_data = static_cast<ExtraRequestData *>(TSContDataGet(contp));
@@ -116,7 +116,7 @@ static void
 read_request(TSHttpTxn txnp, TSCont contp)
 {
   TSMBuffer buf;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   Dbg(dbg_ctl, "[%s] Reading information from request", __FUNCTION__);
   if (TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc) != TS_SUCCESS) {
@@ -136,15 +136,15 @@ read_request(TSHttpTxn txnp, TSCont contp)
 
   std::string path_str = "/";
   const char *path     = nullptr;
-  int path_len         = 0;
+  int         path_len = 0;
   path                 = TSUrlPathGet(buf, url_loc, &path_len);
   path_str.append(std::string_view(path, path_len));
 
-  TSMLoc host_field_loc   = TS_NULL_MLOC;
-  TSMLoc l_host_field_loc = TS_NULL_MLOC;
-  const char *host        = nullptr;
-  int host_len            = 0;
-  host                    = TSUrlHostGet(buf, url_loc, &host_len);
+  TSMLoc      host_field_loc   = TS_NULL_MLOC;
+  TSMLoc      l_host_field_loc = TS_NULL_MLOC;
+  const char *host             = nullptr;
+  int         host_len         = 0;
+  host                         = TSUrlHostGet(buf, url_loc, &host_len);
   if (host_len == 0) {
     host_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, host_key.data(), host_key.length());
     if (host_field_loc != TS_NULL_MLOC) {
@@ -160,18 +160,18 @@ read_request(TSHttpTxn txnp, TSCont contp)
   }
   std::string_view host_str(host, host_len);
 
-  const char *scheme = nullptr;
-  int scheme_len     = 0;
-  scheme             = TSUrlSchemeGet(buf, url_loc, &scheme_len);
+  const char *scheme     = nullptr;
+  int         scheme_len = 0;
+  scheme                 = TSUrlSchemeGet(buf, url_loc, &scheme_len);
   std::string_view scheme_str(scheme, scheme_len);
 
   int port;
   port = TSUrlPortGet(buf, url_loc);
 
   // method
-  const char *method = nullptr;
-  int method_len     = 0;
-  method             = TSHttpHdrMethodGet(buf, hdr_loc, &method_len);
+  const char *method     = nullptr;
+  int         method_len = 0;
+  method                 = TSHttpHdrMethodGet(buf, hdr_loc, &method_len);
   std::string_view method_str(method, method_len);
 
   // TO-DO: add http flavor as attribute
@@ -180,48 +180,48 @@ read_request(TSHttpTxn txnp, TSCont contp)
   // const char *h11_tag = TSHttpTxnClientProtocolStackContains(txnp, "http/1.1");
 
   // target
-  char *target   = nullptr;
-  int target_len = 0;
-  target         = TSHttpTxnEffectiveUrlStringGet(txnp, &target_len);
+  char *target     = nullptr;
+  int   target_len = 0;
+  target           = TSHttpTxnEffectiveUrlStringGet(txnp, &target_len);
   std::string_view target_str(target, target_len);
 
   // user-agent
-  TSMLoc ua_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, ua_key.data(), ua_key.length());
-  const char *ua      = nullptr;
-  int ua_len          = 0;
+  TSMLoc      ua_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, ua_key.data(), ua_key.length());
+  const char *ua           = nullptr;
+  int         ua_len       = 0;
   if (ua_field_loc) {
     ua = TSMimeHdrFieldValueStringGet(buf, hdr_loc, ua_field_loc, -1, &ua_len);
   }
   std::string_view ua_str(ua, ua_len);
 
   // B3 headers
-  TSMLoc b3_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_key.data(), b3_key.length());
-  const char *b3      = nullptr;
-  int b3_len          = 0;
+  TSMLoc      b3_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_key.data(), b3_key.length());
+  const char *b3           = nullptr;
+  int         b3_len       = 0;
   if (b3_field_loc) {
     b3 = TSMimeHdrFieldValueStringGet(buf, hdr_loc, b3_field_loc, -1, &b3_len);
   }
   std::string_view b3_str(b3, b3_len);
 
-  TSMLoc b3_tid_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_tid_key.data(), b3_tid_key.length());
-  const char *b3_tid      = nullptr;
-  int b3_tid_len          = 0;
+  TSMLoc      b3_tid_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_tid_key.data(), b3_tid_key.length());
+  const char *b3_tid           = nullptr;
+  int         b3_tid_len       = 0;
   if (b3_tid_field_loc) {
     b3_tid = TSMimeHdrFieldValueStringGet(buf, hdr_loc, b3_tid_field_loc, -1, &b3_tid_len);
   }
   std::string_view b3_tid_str(b3_tid, b3_tid_len);
 
-  TSMLoc b3_sid_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_sid_key.data(), b3_sid_key.length());
-  const char *b3_sid      = nullptr;
-  int b3_sid_len          = 0;
+  TSMLoc      b3_sid_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_sid_key.data(), b3_sid_key.length());
+  const char *b3_sid           = nullptr;
+  int         b3_sid_len       = 0;
   if (b3_sid_field_loc) {
     b3_sid = TSMimeHdrFieldValueStringGet(buf, hdr_loc, b3_sid_field_loc, -1, &b3_sid_len);
   }
   std::string_view b3_sid_str(b3_sid, b3_sid_len);
 
-  TSMLoc b3_s_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_s_key.data(), b3_s_key.length());
-  const char *b3_s      = nullptr;
-  int b3_s_len          = 0;
+  TSMLoc      b3_s_field_loc = TSMimeHdrFieldFind(buf, hdr_loc, b3_s_key.data(), b3_s_key.length());
+  const char *b3_s           = nullptr;
+  int         b3_s_len       = 0;
   if (b3_s_field_loc) {
     b3_s = TSMimeHdrFieldValueStringGet(buf, hdr_loc, b3_s_field_loc, -1, &b3_s_len);
   }
@@ -333,9 +333,9 @@ TSPluginInit(int argc, const char *argv[])
   // Get parameter: service name, sampling rate,
   std::string url          = "";
   std::string service_name = "otel_tracer";
-  double rate              = 1.0;
+  double      rate         = 1.0;
   if (argc > 1) {
-    int c;
+    int                        c;
     static const struct option longopts[] = {
       {const_cast<char *>("url"),           required_argument, nullptr, 'u'},
       {const_cast<char *>("service-name"),  required_argument, nullptr, 's'},

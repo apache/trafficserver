@@ -44,8 +44,8 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
 {
   struct Test {
     swoc::TextView msg;
-    int expected_result;
-    int expected_bytes_consumed;
+    int            expected_result;
+    int            expected_bytes_consumed;
   };
   static const std::array<Test, 26> tests = {
     {
@@ -83,7 +83,7 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
   http_parser_init(&parser);
 
   for (auto const &test : tests) {
-    HTTPHdr req_hdr;
+    HTTPHdr  req_hdr;
     HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64); // extra to prevent proxy allocation.
 
     req_hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
@@ -107,8 +107,8 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
 
   struct Fragment {
     swoc::TextView msg;
-    bool shares_input;
-    int expected_result;
+    bool           shares_input;
+    int            expected_result;
   };
   constexpr std::array<Fragment, 3> const fragments = {
     {
@@ -118,14 +118,14 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
      }
   };
 
-  MIMEScanner scanner;
+  MIMEScanner    scanner;
   swoc::TextView output; // only set on last call
 
   for (auto const &frag : fragments) {
-    swoc::TextView input        = frag.msg;
-    bool got_shares_input       = !frag.shares_input;
-    constexpr bool const is_eof = false;
-    ParseResult const got_res   = scanner.get(input, output, got_shares_input, is_eof, MIMEScanner::LINE);
+    swoc::TextView       input            = frag.msg;
+    bool                 got_shares_input = !frag.shares_input;
+    constexpr bool const is_eof           = false;
+    ParseResult const    got_res          = scanner.get(input, output, got_shares_input, is_eof, MIMEScanner::LINE);
 
     REQUIRE(frag.expected_result == got_res);
     REQUIRE(frag.shares_input == got_shares_input);
@@ -174,13 +174,13 @@ comp_http_hdr(HTTPHdr *h1, HTTPHdr *h2)
 int
 test_http_hdr_copy_over_aux(int testnum, const char *request, const char *response)
 {
-  int err;
+  int     err;
   HTTPHdr req_hdr;
   HTTPHdr resp_hdr;
   HTTPHdr copy1;
   HTTPHdr copy2;
 
-  HTTPParser parser;
+  HTTPParser  parser;
   const char *start;
   const char *end;
   const char *comp_str = nullptr;
@@ -279,13 +279,13 @@ done:
 int
 test_http_hdr_null_char(int testnum, const char *request, const char * /*request_tgt*/)
 {
-  int err;
-  HTTPHdr hdr;
+  int            err;
+  HTTPHdr        hdr;
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
-  HTTPParser parser;
-  const char *start;
-  char cpy_buf[2048];
-  const char *cpy_buf_ptr = cpy_buf;
+  HTTPParser     parser;
+  const char    *start;
+  char           cpy_buf[2048];
+  const char    *cpy_buf_ptr = cpy_buf;
 
   /*** (1) parse the request string into hdr ***/
 
@@ -321,13 +321,13 @@ test_http_hdr_null_char(int testnum, const char *request, const char * /*request
 int
 test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_tgt */)
 {
-  int err;
-  HTTPHdr hdr;
+  int            err;
+  HTTPHdr        hdr;
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
-  HTTPParser parser;
-  const char *start;
-  char cpy_buf[2048];
-  const char *cpy_buf_ptr = cpy_buf;
+  HTTPParser     parser;
+  const char    *start;
+  char           cpy_buf[2048];
+  const char    *cpy_buf_ptr = cpy_buf;
 
   /*** (1) parse the request string into hdr ***/
 
@@ -360,26 +360,35 @@ test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_
   return 1;
 }
 
+struct TestRefCountObj : public RefCountObj {
+  void
+  free() override
+  {
+    std::printf("FAILED: TestRefCountObj object should not be freed\n");
+    std::exit(1);
+  }
+};
+
 int
 test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *request_tgt, const char *response,
                                  const char *response_tgt)
 {
-  int err;
-  HTTPHdr hdr;
-  HTTPParser parser;
+  int         err;
+  HTTPHdr     hdr;
+  HTTPParser  parser;
   const char *start;
   const char *end;
 
   char prt_buf[2048];
-  int prt_bufsize = sizeof(prt_buf);
-  int prt_bufindex, prt_dumpoffset, prt_ret;
+  int  prt_bufsize = sizeof(prt_buf);
+  int  prt_bufindex, prt_dumpoffset, prt_ret;
 
   char cpy_buf[2048];
-  int cpy_bufsize = sizeof(cpy_buf);
-  int cpy_bufindex, cpy_dumpoffset, cpy_ret;
+  int  cpy_bufsize = sizeof(cpy_buf);
+  int  cpy_bufindex, cpy_dumpoffset, cpy_ret;
 
   std::unique_ptr<char[]> marshal_buf(new char[2048]);
-  int marshal_bufsize = sizeof(cpy_buf);
+  int                     marshal_bufsize = sizeof(cpy_buf);
 
   /*** (1) parse the request string into hdr ***/
 
@@ -403,8 +412,8 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
   }
 
   /*** (2) copy the request header ***/
-  HTTPHdr new_hdr, marshal_hdr;
-  RefCountObj ref;
+  HTTPHdr         new_hdr, marshal_hdr;
+  TestRefCountObj ref;
 
   // Pretend to pin this object with a refcount.
   ref.refcount_inc();
@@ -524,8 +533,8 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 int
 test_arena_aux(Arena *arena, int len)
 {
-  char *str      = arena->str_alloc(len);
-  int verify_len = static_cast<int>(arena->str_length(str));
+  char *str        = arena->str_alloc(len);
+  int   verify_len = static_cast<int>(arena->str_length(str));
 
   if (len != verify_len) {
     std::printf("FAILED: requested %d, got %d bytes\n", len, verify_len);
@@ -548,35 +557,35 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
   {
     static struct {
       std::string_view line;
-      ParseResult expected;
+      ParseResult      expected;
     } test_cases[] = {
-  ////
-  // Field Name
+      ////
+      // Field Name
       {"Content-Length: 10\r\n",     PARSE_RESULT_CONT },
       {"Content-Length\x0b: 10\r\n", PARSE_RESULT_ERROR},
- ////
-  // Field Value
-  // SP
+      ////
+      // Field Value
+      // SP
       {"Content-Length: 10\r\n",     PARSE_RESULT_CONT },
- // HTAB
+      // HTAB
       {"Foo: ab\td/cd\r\n",          PARSE_RESULT_CONT },
- // VCHAR
+      // VCHAR
       {"Foo: ab\x21/cd\r\n",         PARSE_RESULT_CONT },
       {"Foo: ab\x7e/cd\r\n",         PARSE_RESULT_CONT },
- // DEL
+      // DEL
       {"Foo: ab\x7f/cd\r\n",         PARSE_RESULT_ERROR},
- // obs-text
+      // obs-text
       {"Foo: ab\x80/cd\r\n",         PARSE_RESULT_CONT },
       {"Foo: ab\xff/cd\r\n",         PARSE_RESULT_CONT },
- // control char
+      // control char
       {"Content-Length: 10\x0b\r\n", PARSE_RESULT_ERROR},
       {"Content-Length:\x0b 10\r\n", PARSE_RESULT_ERROR},
       {"Foo: ab\x1d/cd\r\n",         PARSE_RESULT_ERROR},
     };
 
-    MIMEHdr hdr;
+    MIMEHdr        hdr;
     ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
-    MIMEParser parser;
+    MIMEParser     parser;
     mime_parser_init(&parser);
 
     for (const auto &t : test_cases) {
@@ -621,7 +630,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       {nullptr,                         nullptr                              },
     };
 
-    int i;
+    int    i;
     time_t fast_t, slow_t;
 
     for (i = 0; dates[i].fast; i++) {
@@ -648,9 +657,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     // (1) Test a few hand-created dates
 
-    int i;
-    time_t t, t2, t3;
-    char buffer[128], buffer2[128];
+    int                i;
+    time_t             t, t2, t3;
+    char               buffer[128], buffer2[128];
     static const char *envstr = "TZ=GMT0";
 
     // shift into GMT timezone for cftime conversions
@@ -809,11 +818,11 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       "a.b.com/xx.jpg?newpath=http://bob.dave.com",
     };
 
-    int err, failed = 0;
-    URL url;
+    int         err, failed = 0;
+    URL         url;
     const char *start;
     const char *end;
-    int old_length, new_length;
+    int         old_length, new_length;
 
     for (unsigned i = 0; i < countof(strs); i++) {
       old_length = static_cast<int>(strlen(strs[i]));
@@ -908,9 +917,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       "\r\n",
     };
 
-    int err;
-    MIMEHdr hdr;
-    MIMEParser parser;
+    int         err;
+    MIMEHdr     hdr;
+    MIMEParser  parser;
     const char *start;
     const char *end;
 
@@ -930,7 +939,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     // Test the (new) continuation line folding to be correct. This should replace the
     // \r\n with two spaces (so a total of three between "part1" and "part2").
-    int length               = 0;
+    int         length       = 0;
     const char *continuation = hdr.value_get("continuation", 12, &length);
 
     if ((13 != length)) {
@@ -987,7 +996,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     hdr.value_append("Cache-Control", 13, "no-cache", 8, true);
 
     MIMEField *cc_field;
-    StrList slist;
+    StrList    slist;
 
     cc_field = hdr.field_find("Cache-Control", 13);
 
@@ -1430,9 +1439,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       {request_blank3,        response_blank3      }
     };
 
-    int err;
-    HTTPHdr req_hdr, rsp_hdr;
-    HTTPParser parser;
+    int         err;
+    HTTPHdr     req_hdr, rsp_hdr;
+    HTTPParser  parser;
     const char *start;
     const char *end;
     const char *request;
@@ -1524,9 +1533,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       const int NNN = 1000;
       {
         char buf[NNN];
-        int bufindex, last_bufindex;
-        int tmp;
-        int i;
+        int  bufindex, last_bufindex;
+        int  tmp;
+        int  i;
 
         bufindex = 0;
 
@@ -1597,10 +1606,10 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
   {
     std::printf("   <<< MUST BE HAND-VERIFIED FOR FULL BENEFIT>>>\n\n");
 
-    HTTPHdr resp_hdr;
-    int err, i;
-    HTTPParser parser;
-    const char base_resp[] = "HTTP/1.0 200 OK\r\n\r\n";
+    HTTPHdr     resp_hdr;
+    int         err, i;
+    HTTPParser  parser;
+    const char  base_resp[] = "HTTP/1.0 200 OK\r\n\r\n";
     const char *start, *end;
 
     /*** (1) parse the response string into req_hdr ***/
@@ -1713,9 +1722,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     struct {
       const char *content_language;
       const char *accept_language;
-      float Q;
-      int L;
-      int I;
+      float       Q;
+      int         L;
+      int         I;
     } test_cases[] = {
       {"en",         "*",                                      1.0, 1,  1},
       {"en",         "fr",                                     0.0, 0,  0},
@@ -1742,7 +1751,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       {nullptr,      nullptr,                                  0.0, 0,  0},
     };
 
-    int i, I, L;
+    int   i, I, L;
     float Q;
 
     for (i = 0; test_cases[i].accept_language; i++) {
@@ -1769,8 +1778,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     struct {
       const char *content_charset;
       const char *accept_charset;
-      float Q;
-      int I;
+      float       Q;
+      int         I;
     } test_cases[] = {
       {"iso-8859-1", "*",                                                                1.0,   1},
       {"iso-8859-1", "iso-8859-2",                                                       0.0,   0},
@@ -1801,7 +1810,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       {nullptr,      nullptr,                                                            0.0,   0},
     };
 
-    int i, I;
+    int   i, I;
     float Q;
 
     for (i = 0; test_cases[i].accept_charset; i++) {
@@ -1824,7 +1833,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
   {
     static struct {
       const char *value;
-      int value_count;
+      int         value_count;
       struct {
         int offset;
         int len;
@@ -1852,8 +1861,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     };
 
     HTTPHdr hdr;
-    char field_name[32];
-    int i, j, len, ntests, ncommavals;
+    char    field_name[32];
+    int     i, j, len, ntests, ncommavals;
 
     ntests = sizeof(tests) / sizeof(tests[0]);
 
@@ -1881,8 +1890,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       }
 
       for (j = 0; j < tests[i].value_count; j++) {
-        const char *val = mime_field_value_get_comma_val(f, &len, j);
-        int offset      = ((val == nullptr) ? -1 : (val - f->m_ptr_value));
+        const char *val    = mime_field_value_get_comma_val(f, &len, j);
+        int         offset = ((val == nullptr) ? -1 : (val - f->m_ptr_value));
 
         if ((offset != tests[i].pieces[j].offset) || (len != tests[i].pieces[j].len)) {
           std::printf(
@@ -1900,7 +1909,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
   {
     static struct {
       const char *old_raw;
-      int idx;
+      int         idx;
       const char *slice;
       const char *new_raw;
     } tests[] = {
@@ -1944,8 +1953,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     };
 
     HTTPHdr hdr;
-    char field_name[32];
-    int i, ntests;
+    char    field_name[32];
+    int     i, ntests;
 
     ntests = sizeof(tests) / sizeof(tests[0]);
 
@@ -1989,7 +1998,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
   {
     static struct {
       const char *value;
-      int count;
+      int         count;
       struct {
         int offset;
         int len;

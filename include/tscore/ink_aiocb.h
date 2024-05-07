@@ -46,7 +46,7 @@ struct ink_aiocb {
   void *aio_buf; /* buffer location */
 #endif
   size_t aio_nbytes; /* length of transfer */
-  off_t aio_offset;  /* file offset */
+  off_t  aio_offset; /* file offset */
 
   int aio_lio_opcode; /* listio operation */
   int aio_state;      /* state flag for List I/O */

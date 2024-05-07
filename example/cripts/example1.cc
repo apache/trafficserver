@@ -119,10 +119,10 @@ do_send_response()
 
 do_remap()
 {
-  auto now    = Time::Local::now();
+  auto   now  = Time::Local::now();
   borrow req  = Client::Request::get();
   borrow conn = Client::Connection::get();
-  auto ip     = conn.ip();
+  auto   ip   = conn.ip();
 
   if (CRIPT_ALLOW.contains(ip)) {
     CDebug("Client IP allowed: {}", ip.string(24, 64));
@@ -147,8 +147,8 @@ do_remap()
   CDebug("X-Miles = {}", req["X-Miles"]);
   CDebug("random(1000) = {}", Cript::random(1000));
 
-  borrow url    = Pristine::URL::get();
-  auto old_port = url.port;
+  borrow url      = Pristine::URL::get();
+  auto   old_port = url.port;
 
   CDebug("Method is {}", req.method);
   CDebug("Scheme is {}", url.scheme);
@@ -157,6 +157,10 @@ do_remap()
   CDebug("Path is {}", url.path);
   CDebug("Path[1] is {}", url.path[1]);
   CDebug("Query is {}", url.query);
+
+  auto testing_trim = url.path.trim();
+
+  CDebug("Trimmed path is {}", testing_trim);
 
   if (url.query["foo"] > 100) {
     CDebug("Query[foo] is > 100");
@@ -194,8 +198,8 @@ do_remap()
 
   // Some Crypto::Base64 tests
   static auto base64_test = "VGltZSB3aWxsIG5vdCBzbG93IGRvd24gd2hlbiBzb21ldGhpbmcgdW5wbGVhc2FudCBsaWVzIGFoZWFkLg==";
-  auto hp                 = Crypto::Base64::decode(base64_test);
-  auto hp2                = Crypto::Base64::encode(hp);
+  auto        hp          = Crypto::Base64::decode(base64_test);
+  auto        hp2         = Crypto::Base64::encode(hp);
 
   CDebug("HP quote: {}", hp);
   if (base64_test != hp2) {
@@ -206,8 +210,8 @@ do_remap()
 
   // Some Crypto::Escape (URL escaping) tests
   static auto escape_test = "Hello_World_!@%23$%25%5E&*()_%2B%3C%3E?%2C.%2F";
-  auto uri                = Crypto::Escape::decode(escape_test);
-  auto uri2               = Crypto::Escape::encode(uri);
+  auto        uri         = Crypto::Escape::decode(escape_test);
+  auto        uri2        = Crypto::Escape::encode(uri);
 
   CDebug("Unescaped URI: {}", uri);
   if (escape_test != uri2) {

@@ -25,6 +25,7 @@
 #include "proxy/http/HttpDebugNames.h"
 #include "proxy/ProxySession.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include "private/SSLProxySession.h"
 
 std::map<int, std::function<PoolableSession *()>> ProtocolSessionCreateMap;
 

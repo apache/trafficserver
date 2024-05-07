@@ -254,7 +254,7 @@ HttpRequestData::get_client_ip()
   return nullptr;
 }
 
-SslAPIHooks *ssl_hooks             = nullptr;
+SslAPIHooks       *ssl_hooks       = nullptr;
 LifecycleAPIHooks *lifecycle_hooks = nullptr;
 
 #include "proxy/http/HttpDebugNames.h"
@@ -309,7 +309,7 @@ HttpSM::init(bool from_early_data)
 }
 
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
-HttpAPIHooks *http_global_hooks;
+HttpAPIHooks          *http_global_hooks;
 
 HttpVCTable::HttpVCTable(HttpSM *) {}
 

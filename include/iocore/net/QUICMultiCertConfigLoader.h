@@ -23,16 +23,16 @@
 
 #pragma once
 
-#include "../../../src/iocore/net/P_SSLCertLookup.h"
-#include "../../../src/iocore/net/P_SSLUtils.h"
+#include "iocore/net/SSLMultiCertConfigLoader.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 
 class QUICCertConfig
 {
 public:
-  static void startup();
-  static void reconfigure();
+  static void           startup();
+  static void           reconfigure();
   static SSLCertLookup *acquire();
-  static void release(SSLCertLookup *lookup);
+  static void           release(SSLCertLookup *lookup);
 
   using scoped_config = ConfigProcessor::scoped_config<QUICCertConfig, SSLCertLookup>;
 
@@ -48,7 +48,7 @@ public:
   virtual SSL_CTX *default_server_ssl_ctx() override;
 
 private:
-  const char *_debug_tag() const override;
+  const char  *_debug_tag() const override;
   virtual bool _setup_session_cache(SSL_CTX *ctx) override;
   virtual bool _set_cipher_suites_for_legacy_versions(SSL_CTX *ctx) override;
   virtual bool _set_info_callback(SSL_CTX *ctx) override;

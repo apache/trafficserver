@@ -27,6 +27,11 @@
 #include <memory>
 #include <shared_mutex>
 
+namespace
+{
+DbgCtl dbg_ctl_ssl_origin_session_cache{"ssl.origin_session_cache"};
+} // end anonymous namespace
+
 // Custom deleter for shared origin sessions
 void
 SSLSessDeleter(SSL_SESSION *_p)
@@ -45,42 +50,36 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
 
   /* do not cache a session that's too big. */
   if (len > static_cast<size_t>(SSL_MAX_ORIG_SESSION_SIZE)) {
-    Debug("ssl.origin_session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len,
-          SSL_MAX_ORIG_SESSION_SIZE);
+    Dbg(dbg_ctl_ssl_origin_session_cache, "Unable to save SSL session because size of %zd exceeds the max of %d", len,
+        SSL_MAX_ORIG_SESSION_SIZE);
     return;
   } else if (len == 0) {
-    Debug("ssl.origin_session_cache", "Unable to save SSL session because size is 0");
+    Dbg(dbg_ctl_ssl_origin_session_cache, "Unable to save SSL session because size is 0");
     return;
   }
 
   // Duplicate the session from the connection, we'll be keeping track the ref-count with a shared pointer ourself
   SSL_SESSION *sess_ptr = SSLSessionDup(sess);
 
-  if (is_debug_tag_set("ssl.origin_session_cache")) {
-    Debug("ssl.origin_session_cache", "insert session: %s = %p", lookup_key.c_str(), sess_ptr);
-  }
+  Dbg(dbg_ctl_ssl_origin_session_cache, "insert session: %s = %p", lookup_key.c_str(), sess_ptr);
 
   // Create the shared pointer to the session, with the custom deleter
-  std::shared_ptr<SSL_SESSION> shared_sess(sess_ptr, SSLSessDeleter);
-  ssl_curve_id curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
+  std::shared_ptr<SSL_SESSION>      shared_sess(sess_ptr, SSLSessDeleter);
+  ssl_curve_id                      curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
   std::unique_ptr<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, curve, shared_sess));
-  auto new_node = ssl_orig_session.release();
+  auto                              new_node = ssl_orig_session.release();
 
   std::unique_lock lock(mutex);
-  auto entry = orig_sess_map.find(lookup_key);
+  auto             entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
-    if (is_debug_tag_set("ssl.origin_session_cache")) {
-      Debug("ssl.origin_session_cache", "found duplicate key: %s, replacing %p with %p", lookup_key.c_str(),
-            node->shared_sess.get(), sess_ptr);
-    }
+    Dbg(dbg_ctl_ssl_origin_session_cache, "found duplicate key: %s, replacing %p with %p", lookup_key.c_str(),
+        node->shared_sess.get(), sess_ptr);
     orig_sess_que.remove(node);
     orig_sess_map.erase(entry);
     delete node;
   } else if (orig_sess_map.size() >= SSLConfigParams::origin_session_cache_size) {
-    if (is_debug_tag_set("ssl.origin_session_cache")) {
-      Debug("ssl.origin_session_cache", "origin session cache full, removing oldest session");
-    }
+    Dbg(dbg_ctl_ssl_origin_session_cache, "origin session cache full, removing oldest session");
     remove_oldest_session(lock);
   }
 
@@ -91,12 +90,10 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
 std::shared_ptr<SSL_SESSION>
 SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *curve)
 {
-  if (is_debug_tag_set("ssl.origin_session_cache")) {
-    Debug("ssl.origin_session_cache", "get session: %s", lookup_key.c_str());
-  }
+  Dbg(dbg_ctl_ssl_origin_session_cache, "get session: %s", lookup_key.c_str());
 
   std::shared_lock lock(mutex);
-  auto entry = orig_sess_map.find(lookup_key);
+  auto             entry = orig_sess_map.find(lookup_key);
   if (entry == orig_sess_map.end()) {
     return nullptr;
   }
@@ -116,9 +113,7 @@ SSLOriginSessionCache::remove_oldest_session(const std::unique_lock<ts::shared_m
 
   while (orig_sess_que.head && orig_sess_que.size >= static_cast<int>(SSLConfigParams::origin_session_cache_size)) {
     auto node = orig_sess_que.pop();
-    if (is_debug_tag_set("ssl.origin_session_cache")) {
-      Debug("ssl.origin_session_cache", "remove oldest session: %s, session ptr: %p", node->key.c_str(), node->shared_sess.get());
-    }
+    Dbg(dbg_ctl_ssl_origin_session_cache, "remove oldest session: %s, session ptr: %p", node->key.c_str(), node->shared_sess.get());
     orig_sess_map.erase(node->key);
     delete node;
   }
@@ -129,12 +124,10 @@ SSLOriginSessionCache::remove_session(const std::string &lookup_key)
 {
   // We can't bail on contention here because this session MUST be removed.
   std::unique_lock lock(mutex);
-  auto entry = orig_sess_map.find(lookup_key);
+  auto             entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
-    if (is_debug_tag_set("ssl.origin_session_cache")) {
-      Debug("ssl.origin_session_cache", "remove session: %s, session ptr: %p", lookup_key.c_str(), node->shared_sess.get());
-    }
+    Dbg(dbg_ctl_ssl_origin_session_cache, "remove session: %s, session ptr: %p", lookup_key.c_str(), node->shared_sess.get());
     orig_sess_que.remove(node);
     orig_sess_map.erase(entry);
     delete node;

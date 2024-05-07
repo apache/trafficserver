@@ -23,12 +23,14 @@ add_atsplugin(esi esi.cc serverIntercept.cc)
 target_link_libraries(esi PRIVATE esi-common esicore fetcher libswoc::libswoc)
 target_include_directories(esi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 verify_global_plugin(esi)
+verify_remap_plugin(esi)
 
 add_atsplugin(combo_handler combo_handler.cc)
 
 target_link_libraries(combo_handler PRIVATE esicore fetcher)
 target_include_directories(combo_handler PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 verify_global_plugin(combo_handler)
+verify_remap_plugin(combo_handler)
 
 if(BUILD_TESTING)
   add_subdirectory(test)

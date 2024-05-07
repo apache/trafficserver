@@ -68,16 +68,16 @@ uint32_t test_values[] = {
 void
 random_test()
 {
-  const int size  = 1024;
-  char *dst_start = (char *)malloc(size * 2);
-  char string[size];
+  const int size      = 1024;
+  char     *dst_start = (char *)malloc(size * 2);
+  char      string[size];
   for (char &i : string) {
     // coverity[dont_call]
     long num = lrand48();
     i        = (char)num;
   }
-  const uint8_t *src = (const uint8_t *)string;
-  uint32_t src_len   = sizeof(string);
+  const uint8_t *src     = (const uint8_t *)string;
+  uint32_t       src_len = sizeof(string);
 
   int bytes = huffman_decode(dst_start, src, src_len);
 
@@ -99,13 +99,13 @@ TEST_CASE("Huffmancode Random", "[proxy][huffman]")
 
 union Value {
   uint32_t x;
-  uint8_t y[4];
+  uint8_t  y[4];
 };
 
 TEST_CASE("values_test", "[proxy][huffman]")
 {
   char dst_start[4];
-  int size = sizeof(test_values) / 4;
+  int  size = sizeof(test_values) / 4;
   for (int i = 0; i < size; i += 2) {
     const uint32_t value = test_values[i];
     const uint32_t bits  = test_values[i + 1];
@@ -142,7 +142,7 @@ TEST_CASE("values_test", "[proxy][huffman]")
     encoded_mapped.y[2] = encoded.y[1];
     encoded_mapped.y[3] = encoded.y[0];
 
-    int bytes        = huffman_decode(dst_start, encoded_mapped.y, encoded_size);
+    int  bytes       = huffman_decode(dst_start, encoded_mapped.y, encoded_size);
     char ascii_value = i / 2;
 
     // EOS is treated as invalid so check for an error
@@ -158,9 +158,9 @@ TEST_CASE("values_test", "[proxy][huffman]")
 // NOTE: Test data from "C.6.1 First Response" in RFC 7541.
 const static struct {
   uint8_t *src;
-  int64_t src_len;
+  int64_t  src_len;
   uint8_t *expect;
-  int64_t expect_len;
+  int64_t  expect_len;
 } huffman_encode_test_data[] = {
   {(uint8_t *)"",                              0,  (uint8_t *)"",                                                                     0 },
   {(uint8_t *)"0",                             1,  (uint8_t *)"\x07",                                                                 1 },
@@ -175,8 +175,8 @@ const static struct {
 TEST_CASE("encode_test", "[proxy][huffman]")
 {
   for (const auto &i : huffman_encode_test_data) {
-    uint8_t *dst        = static_cast<uint8_t *>(malloc(i.expect_len));
-    int64_t encoded_len = huffman_encode(dst, i.src, i.src_len);
+    uint8_t *dst         = static_cast<uint8_t *>(malloc(i.expect_len));
+    int64_t  encoded_len = huffman_encode(dst, i.src, i.src_len);
 
     REQUIRE(encoded_len == i.expect_len);
     REQUIRE(memcmp(i.expect, dst, encoded_len) == 0);
@@ -189,7 +189,7 @@ TEST_CASE("decode_errors", "[proxy][huffman]")
 {
   const static struct {
     char *input;
-    int input_len;
+    int   input_len;
   } test_cases[] = {
     {(char *)"\x00",                 1},
     {(char *)"\xff",                 1},
@@ -199,9 +199,9 @@ TEST_CASE("decode_errors", "[proxy][huffman]")
   };
 
   for (unsigned int i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
-    int dst_len = 2 * test_cases[i].input_len;
-    char *dst   = (char *)malloc(dst_len);
-    int len     = huffman_decode(dst, (uint8_t *)test_cases[i].input, test_cases[i].input_len);
+    int   dst_len = 2 * test_cases[i].input_len;
+    char *dst     = (char *)malloc(dst_len);
+    int   len     = huffman_decode(dst, (uint8_t *)test_cases[i].input, test_cases[i].input_len);
     REQUIRE(len == -1);
     free(dst);
   }

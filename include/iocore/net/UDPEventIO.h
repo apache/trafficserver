@@ -32,10 +32,10 @@ class UDPEventIO : public EventIO
 {
 public:
   UDPEventIO() : EventIO() {}
-  int start(EventLoop l, UnixUDPConnection *uc, UDPNetHandler *uh, int events);
+  int  start(EventLoop l, UnixUDPConnection *uc, UDPNetHandler *uh, int events);
   void process_event(int flags) override;
 
 private:
   UnixUDPConnection *_uc = nullptr;
-  UDPNetHandler *_uh     = nullptr;
+  UDPNetHandler     *_uh = nullptr;
 };

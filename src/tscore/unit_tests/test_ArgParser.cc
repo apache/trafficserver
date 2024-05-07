@@ -24,7 +24,7 @@
 #include "catch.hpp"
 #include "tscore/ArgParser.h"
 
-int global;
+int           global;
 ts::ArgParser parser;
 ts::ArgParser parser2;
 

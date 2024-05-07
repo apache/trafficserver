@@ -77,8 +77,8 @@ int
 LogUtils::timestamp_to_str(long timestamp, char *buf, int size)
 {
   static const char *format_str = "%Y%m%d.%Hh%Mm%Ss";
-  struct tm res;
-  struct tm *tms;
+  struct tm          res;
+  struct tm         *tms;
   tms = ink_localtime_r((const time_t *)&timestamp, &res);
   return strftime(buf, size, format_str, tms);
 }
@@ -115,11 +115,11 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
     // most of this garbage is simply to find out the offset from GMT,
     // taking daylight savings into account.
     //
-    struct tm res;
-    struct tm *tms = ink_localtime_r((const time_t *)&timestamp, &res);
-    long zone      = -tms->tm_gmtoff; // double negative!
-    int offset;
-    char sign;
+    struct tm  res;
+    struct tm *tms  = ink_localtime_r((const time_t *)&timestamp, &res);
+    long       zone = -tms->tm_gmtoff; // double negative!
+    int        offset;
+    char       sign;
 
     if (zone >= 0) {
       offset = zone / 60;
@@ -130,7 +130,7 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
     }
 
     static char gmtstr[16];
-    int glen = snprintf(gmtstr, 16, "%c%.2d%.2d", sign, offset / 60, offset % 60);
+    int         glen = snprintf(gmtstr, 16, "%c%.2d%.2d", sign, offset / 60, offset % 60);
 
     strftime(timebuf, 64 - glen, "%d/%b/%Y:%H:%M:%S ", tms);
     ink_strlcat(timebuf, gmtstr, sizeof(timebuf));
@@ -163,7 +163,7 @@ LogUtils::timestamp_to_date_str(long timestamp)
   //
 
   if (timestamp != last_timestamp) {
-    struct tm res;
+    struct tm  res;
     struct tm *tms = ink_localtime_r((const time_t *)&timestamp, &res);
     strftime(timebuf, 64, "%Y-%m-%d", tms);
     last_timestamp = timestamp;
@@ -195,7 +195,7 @@ LogUtils::timestamp_to_time_str(long timestamp)
   //
 
   if (timestamp != last_timestamp) {
-    struct tm res;
+    struct tm  res;
     struct tm *tms = ink_localtime_r((const time_t *)&timestamp, &res);
     strftime(timebuf, 64, "%H:%M:%S", tms);
     last_timestamp = timestamp;
@@ -329,8 +329,8 @@ LogUtils::get_unrolled_filename(swoc::TextView rolled_filename)
 int
 LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *has_size_limit, uint64_t *current_size_limit_bytes)
 {
-  int ret_val = 0;
-  int e;
+  int         ret_val = 0;
+  int         e;
   struct stat stat_data;
 
   e = stat(full_filename, &stat_data);
@@ -425,7 +425,7 @@ namespace
 void
 marshalStr(swoc::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEField::*get_func)(int *length) const)
 {
-  int length;
+  int         length;
   const char *data = (mf.*get_func)(&length);
 
   if (!data or (*data == '\0')) {

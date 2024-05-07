@@ -45,9 +45,9 @@ namespace io
 {
   // TODO(dmorilha): dislike this
   struct IO {
-    TSIOBuffer buffer;
+    TSIOBuffer       buffer;
     TSIOBufferReader reader;
-    TSVIO vio = nullptr;
+    TSVIO            vio = nullptr;
 
     ~IO()
     {
@@ -85,27 +85,27 @@ namespace io
 
   struct ReaderSize {
     const TSIOBufferReader reader;
-    const size_t offset;
-    const size_t size;
+    const size_t           offset;
+    const size_t           size;
 
     ReaderSize(const TSIOBufferReader r, const size_t s, const size_t o = 0) : reader(r), offset(o), size(s)
     {
       assert(reader != nullptr);
     }
 
-    ReaderSize(const ReaderSize &)            = delete;
-    ReaderSize &operator=(const ReaderSize &) = delete;
-    void *operator new(const std::size_t)     = delete;
+    ReaderSize(const ReaderSize &)              = delete;
+    ReaderSize &operator=(const ReaderSize &)   = delete;
+    void       *operator new(const std::size_t) = delete;
   };
 
   struct ReaderOffset {
     const TSIOBufferReader reader;
-    const size_t offset;
+    const size_t           offset;
 
     ReaderOffset(const TSIOBufferReader r, const size_t o) : reader(r), offset(o) { assert(reader != nullptr); }
     ReaderOffset(const ReaderOffset &)            = delete;
     ReaderOffset &operator=(const ReaderOffset &) = delete;
-    void *operator new(const std::size_t)         = delete;
+    void         *operator new(const std::size_t) = delete;
   };
 
   struct WriteOperation;
@@ -139,18 +139,18 @@ namespace io
   };
 
   struct WriteOperation : std::enable_shared_from_this<WriteOperation> {
-    TSVConn vconnection_;
-    TSIOBuffer buffer_;
+    TSVConn          vconnection_;
+    TSIOBuffer       buffer_;
     TSIOBufferReader reader_;
-    TSMutex mutex_;
-    TSCont continuation_;
-    TSVIO vio_;
-    TSAction action_;
-    const size_t timeout_;
-    size_t bytes_;
-    bool reenable_;
+    TSMutex          mutex_;
+    TSCont           continuation_;
+    TSVIO            vio_;
+    TSAction         action_;
+    const size_t     timeout_;
+    size_t           bytes_;
+    bool             reenable_;
 
-    static int Handle(TSCont, TSEvent, void *);
+    static int                       Handle(TSCont, TSEvent, void *);
     static WriteOperationWeakPointer Create(const TSVConn, const TSMutex mutex = nullptr, const size_t timeout = 0);
 
     ~WriteOperation();
@@ -188,7 +188,7 @@ namespace io
 
   struct IOSink : std::enable_shared_from_this<IOSink> {
     WriteOperationWeakPointer operation_;
-    DataPointer data_;
+    DataPointer               data_;
 
     ~IOSink();
 
@@ -215,10 +215,10 @@ namespace io
       return IOSinkPointer(new IOSink(WriteOperation::Create(std::forward<A>(a)...)));
     }
 
-    void process();
+    void        process();
     SinkPointer branch();
-    Lock lock();
-    void abort();
+    Lock        lock();
+    void        abort();
 
   private:
     IOSink(WriteOperationWeakPointer &&p) : operation_(std::move(p)) {}
@@ -238,7 +238,7 @@ namespace io
   };
 
   struct BufferNode : Node {
-    const TSIOBuffer buffer_;
+    const TSIOBuffer       buffer_;
     const TSIOBufferReader reader_;
 
     ~BufferNode() override
@@ -256,20 +256,20 @@ namespace io
     }
 
     // noncopyable
-    BufferNode(const BufferNode &)            = delete;
-    BufferNode &operator=(const BufferNode &) = delete;
-    BufferNode &operator<<(const TSIOBufferReader);
-    BufferNode &operator<<(const ReaderSize &);
-    BufferNode &operator<<(const ReaderOffset &);
-    BufferNode &operator<<(const char *const);
-    BufferNode &operator<<(const std::string &);
+    BufferNode(const BufferNode &)             = delete;
+    BufferNode  &operator=(const BufferNode &) = delete;
+    BufferNode  &operator<<(const TSIOBufferReader);
+    BufferNode  &operator<<(const ReaderSize &);
+    BufferNode  &operator<<(const ReaderOffset &);
+    BufferNode  &operator<<(const char *const);
+    BufferNode  &operator<<(const std::string &);
     Node::Result process(const TSIOBuffer) override;
   };
 
   struct Data : Node {
-    Nodes nodes_;
+    Nodes         nodes_;
     IOSinkPointer root_;
-    bool first_;
+    bool          first_;
 
     template <class T> Data(T &&t) : root_(std::forward<T>(t)), first_(false) {}
     // noncopyable

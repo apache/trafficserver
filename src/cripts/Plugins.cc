@@ -34,9 +34,9 @@ Plugin::Remap
 Plugin::Remap::create(const std::string &tag, const std::string &plugin, const Cript::string &from_url, const Cript::string &to_url,
                       const Plugin::Options &options)
 {
-  Plugin::Remap inst;
-  int argc          = options.size() + 1;
-  const char **argv = new const char *[argc];
+  Plugin::Remap          inst;
+  int                    argc = options.size() + 1;
+  const char           **argv = new const char *[argc];
   const swoc::file::path path(plugin);
 
   // Remap plugins expect the first two arguments to be the from and to URLs.
@@ -69,6 +69,15 @@ Plugin::Remap::create(const std::string &tag, const std::string &plugin, const C
   }
 
   return inst; // RVO
+}
+
+void
+Plugin::Remap::cleanup()
+{
+  if (_plugin) {
+    _plugin->done();
+    _plugin = nullptr;
+  }
 }
 
 void

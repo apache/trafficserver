@@ -173,19 +173,19 @@ EsiProcessor::_getIncludeStatus(const DocNode &node)
       return STATUS_DATA_AVAILABLE;
     }
 
-    string raw_url(url.value, url.value_len);
+    string               raw_url(url.value, url.value_len);
     StringHash::iterator iter = _include_urls.find(raw_url);
     if (iter == _include_urls.end()) {
       TSError("[%s] Data not requested for URL [%.*s]; no data to include", __FUNCTION__, url.value_len, url.value);
       return STATUS_ERROR;
     }
     const string &processed_url = iter->second;
-    DataStatus status           = _fetcher.getRequestStatus(processed_url);
+    DataStatus    status        = _fetcher.getRequestStatus(processed_url);
     DBG("[%s] Got status %d successfully for URL [%.*s]", __FUNCTION__, status, int(processed_url.size()), processed_url.data());
     return status;
   } else if (node.type == DocNode::TYPE_SPECIAL_INCLUDE) {
-    int include_data_id            = 0;
-    SpecialIncludeHandler *handler = nullptr;
+    int                    include_data_id = 0;
+    SpecialIncludeHandler *handler         = nullptr;
     for (AttributeList::const_iterator attr_iter = node.attr_list.begin(); attr_iter != node.attr_list.end(); ++attr_iter) {
       if (attr_iter->name == INCLUDE_DATA_ID_ATTR) {
         include_data_id = attr_iter->value_len;
@@ -222,14 +222,14 @@ EsiProcessor::_getIncludeData(const DocNode &node, const char **content_ptr /* =
       }
     }
 
-    string raw_url(url.value, url.value_len);
+    string               raw_url(url.value, url.value_len);
     StringHash::iterator iter = _include_urls.find(raw_url);
     if (iter == _include_urls.end()) {
       TSError("[%s] Data not requested for URL [%.*s]; no data to include", __FUNCTION__, url.value_len, url.value);
       return false;
     }
     const string &processed_url = iter->second;
-    bool result;
+    bool          result;
     if (content_ptr && content_len_ptr) {
       result = _fetcher.getContent(processed_url, *content_ptr, *content_len_ptr);
     } else {
@@ -243,8 +243,8 @@ EsiProcessor::_getIncludeData(const DocNode &node, const char **content_ptr /* =
     DBG("[%s] Got content successfully for URL [%.*s]", __FUNCTION__, int(processed_url.size()), processed_url.data());
     return true;
   } else if (node.type == DocNode::TYPE_SPECIAL_INCLUDE) {
-    int include_data_id            = 0;
-    SpecialIncludeHandler *handler = nullptr;
+    int                    include_data_id = 0;
+    SpecialIncludeHandler *handler         = nullptr;
     for (AttributeList::const_iterator attr_iter = node.attr_list.begin(); attr_iter != node.attr_list.end(); ++attr_iter) {
       if (attr_iter->name == INCLUDE_DATA_ID_ATTR) {
         include_data_id = attr_iter->value_len;
@@ -285,8 +285,8 @@ EsiProcessor::process(const char *&data, int &data_len)
     TSError("[%s] Processor has to finish parsing via completeParse() before process() call", __FUNCTION__);
     return FAILURE;
   }
-  DocNodeList::iterator node_iter, iter;
-  bool attempt_succeeded;
+  DocNodeList::iterator  node_iter, iter;
+  bool                   attempt_succeeded;
   TryBlockList::iterator try_iter = _try_blocks.begin();
   for (int i = 0; i < _n_try_blocks_processed; ++i, ++try_iter) {
     ;
@@ -297,7 +297,7 @@ EsiProcessor::process(const char *&data, int &data_len)
     for (node_iter = try_iter->attempt_nodes.begin(); node_iter != try_iter->attempt_nodes.end(); ++node_iter) {
       if ((node_iter->type == DocNode::TYPE_INCLUDE) || (node_iter->type == DocNode::TYPE_SPECIAL_INCLUDE)) {
         const Attribute &url = (*node_iter).attr_list.front();
-        string raw_url(url.value, url.value_len);
+        string           raw_url(url.value, url.value_len);
         if (!_getIncludeData(*node_iter)) {
           attempt_succeeded = false;
           TSError("[%s] attempt section errored; due to url [%s]", __FUNCTION__, raw_url.c_str());
@@ -359,9 +359,9 @@ EsiProcessor::flush(string &data, int &overall_len)
     return SUCCESS;
   }
   DocNodeList::iterator node_iter, iter;
-  bool attempt_succeeded;
-  bool attempt_pending;
-  bool node_pending;
+  bool                  attempt_succeeded;
+  bool                  attempt_pending;
+  bool                  node_pending;
   _output_data.clear();
   TryBlockList::iterator try_iter = _try_blocks.begin();
   for (int i = 0; i < _n_try_blocks_processed; ++i, ++try_iter) {
@@ -386,7 +386,7 @@ EsiProcessor::flush(string &data, int &overall_len)
     for (node_iter = try_iter->attempt_nodes.begin(); node_iter != try_iter->attempt_nodes.end(); ++node_iter) {
       if ((node_iter->type == DocNode::TYPE_INCLUDE) || (node_iter->type == DocNode::TYPE_SPECIAL_INCLUDE)) {
         const Attribute &url = (*node_iter).attr_list.front();
-        string raw_url(url.value, url.value_len);
+        string           raw_url(url.value, url.value_len);
         if (_getIncludeStatus(*node_iter) != STATUS_DATA_AVAILABLE) {
           attempt_succeeded = false;
           TSError("[%s] attempt section errored; due to url [%s]", __FUNCTION__, raw_url.c_str());
@@ -496,11 +496,11 @@ EsiProcessor::~EsiProcessor()
 bool
 EsiProcessor::_processEsiNode(const DocNodeList::iterator &iter)
 {
-  bool retval;
+  bool           retval;
   const DocNode &node = *iter;
   if ((node.type == DocNode::TYPE_INCLUDE) || (node.type == DocNode::TYPE_SPECIAL_INCLUDE)) {
     const char *content;
-    int content_len;
+    int         content_len;
     if ((retval = _getIncludeData(node, &content, &content_len))) {
       if (content_len > 0) {
         _output_data.append(content, content_len);
@@ -590,7 +590,7 @@ EsiProcessor::_handleTry(DocNodeList::iterator &curr_node)
     }
   }
   TryBlock try_info(attempt_node->child_nodes, except_node->child_nodes, curr_node);
-  int n_prescanned_nodes = 0;
+  int      n_prescanned_nodes = 0;
   if (!_preprocess(try_info.attempt_nodes, n_prescanned_nodes)) {
     TSError("[%s] Couldn't preprocess attempt node of try block", __FUNCTION__);
     return false;
@@ -628,8 +628,8 @@ bool
 EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
 {
   DocNodeList::iterator list_iter = node_list.begin();
-  StringHash::iterator hash_iter;
-  string raw_url;
+  StringHash::iterator  hash_iter;
+  string                raw_url;
 
   // skip previously examined nodes
   for (int i = 0; i < n_prescanned_nodes; ++i, ++list_iter) {
@@ -695,9 +695,9 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
     }
     case DocNode::TYPE_SPECIAL_INCLUDE: {
       Stats::increment(Stats::N_SPCL_INCLUDES);
-      const Attribute &handler_attr = list_iter->attr_list.front();
-      string handler_id(handler_attr.value, handler_attr.value_len);
-      SpecialIncludeHandler *handler;
+      const Attribute                  &handler_attr = list_iter->attr_list.front();
+      string                            handler_id(handler_attr.value, handler_attr.value_len);
+      SpecialIncludeHandler            *handler;
       IncludeHandlerMap::const_iterator map_iter = _include_handlers.find(handler_id);
       if (map_iter == _include_handlers.end()) {
         handler = _handler_manager.getHandler(_esi_vars, _expression, _fetcher, handler_id);
@@ -736,7 +736,7 @@ void
 EsiProcessor::_addFooterData()
 {
   const char *footer;
-  int footer_len;
+  int         footer_len;
   for (IncludeHandlerMap::iterator iter = _include_handlers.begin(); iter != _include_handlers.end(); ++iter) {
     iter->second->getFooter(footer, footer_len);
     if (footer_len > 0) {

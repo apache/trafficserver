@@ -37,7 +37,7 @@ def main():
     sess_file_path = os.path.join(args.run_dir, 'sess.dat')
     early_data_file_path = os.path.join(args.run_dir, 'early_{0}_{1}.txt'.format(args.http_ver, args.test_name))
 
-    if args.sni != '':
+    if args.sni != '' and args.sni is not None:
         sni_str = '-servername {0}'.format(args.sni)
     else:
         sni_str = ''
@@ -69,7 +69,8 @@ def main():
         data = b''
         for line in lines:
             line += b'\n'
-            if line.startswith(bytes('SSL_connect:', 'utf-8')) or \
+            if line.startswith(bytes('Connecting to', 'utf-8')) or \
+                    line.startswith(bytes('SSL_connect:', 'utf-8')) or \
                     line.startswith(bytes('SSL3 alert', 'utf-8')) or \
                     bytes('Can\'t use SSL_get_servername', 'utf-8') in line:
                 continue

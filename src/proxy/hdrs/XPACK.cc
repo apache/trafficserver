@@ -95,10 +95,10 @@ xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_
     return XPACK_ERROR_COMPRESSION_ERROR;
   }
 
-  const uint8_t *p            = buf_start;
-  bool isHuffman              = *p & (0x01 << n);
-  uint64_t encoded_string_len = 0;
-  int64_t len                 = 0;
+  const uint8_t *p                  = buf_start;
+  bool           isHuffman          = *p & (0x01 << n);
+  uint64_t       encoded_string_len = 0;
+  int64_t        len                = 0;
 
   len = xpack_decode_integer(encoded_string_len, p, buf_end, n);
   if (len == XPACK_ERROR_COMPRESSION_ERROR) {
@@ -172,12 +172,12 @@ xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value,
 int64_t
 xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, uint64_t value_len, uint8_t n)
 {
-  uint8_t *p       = buf_start;
-  bool use_huffman = true;
+  uint8_t *p           = buf_start;
+  bool     use_huffman = true;
 
   ts::LocalBuffer<uint8_t, 4096> local_buffer(value_len * 4);
-  uint8_t *data    = local_buffer.data();
-  int64_t data_len = 0;
+  uint8_t                       *data     = local_buffer.data();
+  int64_t                        data_len = 0;
 
   // TODO Choose whether to use Huffman encoding wisely
   // cppcheck-suppress knownConditionTrueFalse; leaving "use_huffman" for wise huffman usage in the future
@@ -264,12 +264,12 @@ const XpackLookupResult
 XpackDynamicTable::lookup(const char *name, size_t name_len, const char *value, size_t value_len) const
 {
   XPACKDebug("Lookup entry: name=%.*s, value=%.*s", static_cast<int>(name_len), name, static_cast<int>(value_len), value);
-  XpackLookupResult::MatchType match_type = XpackLookupResult::MatchType::NONE;
-  uint32_t i                              = this->_calc_index(this->_entries_tail, 1);
-  uint32_t end                            = this->_calc_index(this->_entries_head, 1);
-  uint32_t candidate_index                = 0;
-  const char *tmp_name                    = nullptr;
-  const char *tmp_value                   = nullptr;
+  XpackLookupResult::MatchType match_type      = XpackLookupResult::MatchType::NONE;
+  uint32_t                     i               = this->_calc_index(this->_entries_tail, 1);
+  uint32_t                     end             = this->_calc_index(this->_entries_head, 1);
+  uint32_t                     candidate_index = 0;
+  const char                  *tmp_name        = nullptr;
+  const char                  *tmp_value       = nullptr;
 
   // DynamicTable is empty
   if (this->is_empty()) {
@@ -369,12 +369,12 @@ XpackDynamicTable::insert_entry(const std::string_view name, const std::string_v
 const XpackLookupResult
 XpackDynamicTable::duplicate_entry(uint32_t current_index)
 {
-  const char *name  = nullptr;
-  size_t name_len   = 0;
-  const char *value = nullptr;
-  size_t value_len  = 0;
-  char *duped_name;
-  char *duped_value;
+  const char *name      = nullptr;
+  size_t      name_len  = 0;
+  const char *value     = nullptr;
+  size_t      value_len = 0;
+  char       *duped_name;
+  char       *duped_value;
 
   XpackLookupResult result = this->lookup(current_index, &name, &name_len, &value, &value_len);
   if (result.match_type != XpackLookupResult::MatchType::EXACT) {
@@ -473,6 +473,10 @@ XpackDynamicTable::count() const
 bool
 XpackDynamicTable::_make_space(uint64_t required_size)
 {
+  if (is_empty()) {
+    // if the table is empty, skip and just check if there is enough space
+    return required_size <= this->_available;
+  }
   uint32_t freed = 0;
   uint32_t tail  = this->_calc_index(this->_entries_tail, 1);
 

@@ -24,8 +24,8 @@ static int ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *tra
 int
 ts_lua_client_entry(TSCont contp, TSEvent ev, void *edata)
 {
-  int n, event;
-  TSVIO input_vio;
+  int                        n, event;
+  TSVIO                      input_vio;
   ts_lua_http_transform_ctx *transform_ctx;
 
   event         = (int)ev;
@@ -58,17 +58,17 @@ ts_lua_client_entry(TSCont contp, TSEvent ev, void *edata)
 static int
 ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TSEvent event, int n)
 {
-  TSVIO input_vio;
-  TSIOBufferReader input_reader = nullptr;
-  TSIOBufferBlock blk;
-  int64_t toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes;
-  const char *start;
-  int ret, eos, rc, top, empty_input;
+  TSVIO             input_vio;
+  TSIOBufferReader  input_reader = nullptr;
+  TSIOBufferBlock   blk;
+  int64_t           toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes;
+  const char       *start;
+  int               ret, eos, rc, top, empty_input;
   ts_lua_coroutine *crt;
   ts_lua_cont_info *ci;
 
   lua_State *L;
-  TSMutex mtxp;
+  TSMutex    mtxp;
 
   ci  = &transform_ctx->cinfo;
   crt = &ci->routine;
@@ -244,8 +244,8 @@ ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TS
 int
 ts_lua_transform_entry(TSCont contp, TSEvent ev, void *edata)
 {
-  int n, event;
-  TSVIO input_vio;
+  int                        n, event;
+  TSVIO                      input_vio;
   ts_lua_http_transform_ctx *transform_ctx;
 
   event         = (int)ev;
@@ -283,20 +283,20 @@ ts_lua_transform_entry(TSCont contp, TSEvent ev, void *edata)
 static int
 ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TSEvent event, int n)
 {
-  TSVConn output_conn;
-  TSVIO input_vio;
-  TSIOBufferReader input_reader = nullptr;
-  TSIOBufferBlock blk;
-  int64_t toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes, l;
-  const char *start;
-  const char *res;
-  size_t res_len;
-  int ret, eos, write_down, rc, top, empty_input;
+  TSVConn           output_conn;
+  TSVIO             input_vio;
+  TSIOBufferReader  input_reader = nullptr;
+  TSIOBufferBlock   blk;
+  int64_t           toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes, l;
+  const char       *start;
+  const char       *res;
+  size_t            res_len;
+  int               ret, eos, write_down, rc, top, empty_input;
   ts_lua_coroutine *crt;
   ts_lua_cont_info *ci;
 
   lua_State *L;
-  TSMutex mtxp;
+  TSMutex    mtxp;
 
   ci  = &transform_ctx->cinfo;
   crt = &ci->routine;

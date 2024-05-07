@@ -135,11 +135,11 @@ enum protocol_binary_datatypes { PROTOCOL_BINARY_RAW_BYTES = 0x00 };
  */
 union protocol_binary_request_header {
   struct {
-    uint8_t magic;
-    uint8_t opcode;
+    uint8_t  magic;
+    uint8_t  opcode;
     uint16_t keylen;
-    uint8_t extlen;
-    uint8_t datatype;
+    uint8_t  extlen;
+    uint8_t  datatype;
     uint16_t reserved;
     uint32_t bodylen;
     uint32_t opaque;
@@ -154,11 +154,11 @@ union protocol_binary_request_header {
  */
 union protocol_binary_response_header {
   struct {
-    uint8_t magic;
-    uint8_t opcode;
+    uint8_t  magic;
+    uint8_t  opcode;
     uint16_t keylen;
-    uint8_t extlen;
-    uint8_t datatype;
+    uint8_t  extlen;
+    uint8_t  datatype;
     uint16_t status;
     uint32_t bodylen;
     uint32_t opaque;
@@ -383,8 +383,8 @@ union protocol_binary_request_rangeop {
     protocol_binary_response_header header;
     struct {
       uint16_t size;
-      uint8_t reserved;
-      uint8_t flags;
+      uint8_t  reserved;
+      uint8_t  flags;
       uint32_t max_results;
     } body;
   } message;

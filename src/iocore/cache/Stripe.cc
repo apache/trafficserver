@@ -56,9 +56,9 @@ compare_ushort(void const *a, void const *b)
 } // namespace
 
 struct StripeInitInfo {
-  off_t recover_pos;
+  off_t               recover_pos;
   AIOCallbackInternal vol_aio[4];
-  char *vol_h_f;
+  char               *vol_h_f;
 
   StripeInitInfo()
   {
@@ -90,7 +90,7 @@ Stripe::begin_read(CacheVC *cont) const
   if (cont->f.single_fragment) {
     return 0;
   }
-  int i = dir_evac_bucket(&cont->earliest_dir);
+  int              i = dir_evac_bucket(&cont->earliest_dir);
   EvacuationBlock *b;
   for (b = evacuate[i].head; b; b = b->link.next) {
     if (dir_offset(&b->dir) != dir_offset(&cont->earliest_dir)) {
@@ -121,7 +121,7 @@ Stripe::close_read(CacheVC *cont) const
   if (dir_is_empty(&cont->earliest_dir)) {
     return 1;
   }
-  int i = dir_evac_bucket(&cont->earliest_dir);
+  int              i = dir_evac_bucket(&cont->earliest_dir);
   EvacuationBlock *b;
   for (b = evacuate[i].head; b;) {
     EvacuationBlock *next = b->link.next;
@@ -183,7 +183,7 @@ Stripe::clear_dir()
 int
 Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
-  char *seed_str              = disk->hash_base_string ? disk->hash_base_string : s;
+  char        *seed_str       = disk->hash_base_string ? disk->hash_base_string : s;
   const size_t hash_seed_size = strlen(seed_str);
   const size_t hash_text_size = hash_seed_size + 32;
 
@@ -232,7 +232,7 @@ Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   }
 
   init_info           = new StripeInitInfo();
-  int footerlen       = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+  int   footerlen     = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
   off_t footer_offset = this->dirlen() - footerlen;
   // try A
   off_t as = skip;
@@ -261,7 +261,7 @@ Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 int
 Stripe::handle_dir_clear(int event, void *data)
 {
-  size_t dir_len = this->dirlen();
+  size_t       dir_len = this->dirlen();
   AIOCallback *op;
 
   if (event == AIO_EVENT_DONE) {
@@ -368,7 +368,7 @@ Stripe::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 {
   uint32_t got_len         = 0;
   uint32_t max_sync_serial = header->sync_serial;
-  char *s, *e = nullptr;
+  char    *s, *e = nullptr;
   if (event == EVENT_IMMEDIATE) {
     if (header->sync_serial == 0) {
       io.aiocb.aio_buf = nullptr;
@@ -596,10 +596,10 @@ Ldone: {
     aio->thread           = AIO_CALLBACK_THREAD_ANY;
     aio->then             = (i < 2) ? &(init_info->vol_aio[i + 1]) : nullptr;
   }
-  int footerlen = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
-  size_t dirlen = this->dirlen();
-  int B         = header->sync_serial & 1;
-  off_t ss      = skip + (B ? dirlen : 0);
+  int    footerlen = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+  size_t dirlen    = this->dirlen();
+  int    B         = header->sync_serial & 1;
+  off_t  ss        = skip + (B ? dirlen : 0);
 
   init_info->vol_aio[0].aiocb.aio_buf    = raw_dir;
   init_info->vol_aio[0].aiocb.aio_nbytes = footerlen;
@@ -642,7 +642,7 @@ Stripe::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data ATS_
 int
 Stripe::handle_header_read(int event, void *data)
 {
-  AIOCallback *op;
+  AIOCallback         *op;
   StripteHeaderFooter *hf[4];
   switch (event) {
   case AIO_EVENT_DONE:
@@ -716,20 +716,20 @@ Stripe::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 int
 Stripe::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
-  static int const SEGMENT_HISTOGRAM_WIDTH = 16;
-  int hist[SEGMENT_HISTOGRAM_WIDTH + 1]    = {0};
-  unsigned short chain_tag[MAX_ENTRIES_PER_SEGMENT];
-  int32_t chain_mark[MAX_ENTRIES_PER_SEGMENT];
-  uint64_t total_buckets = buckets * segments;
-  uint64_t total_entries = total_buckets * DIR_DEPTH;
-  int frag_demographics[1 << DIR_SIZE_WIDTH][DIR_BLOCK_SIZES];
+  static int const SEGMENT_HISTOGRAM_WIDTH           = 16;
+  int              hist[SEGMENT_HISTOGRAM_WIDTH + 1] = {0};
+  unsigned short   chain_tag[MAX_ENTRIES_PER_SEGMENT];
+  int32_t          chain_mark[MAX_ENTRIES_PER_SEGMENT];
+  uint64_t         total_buckets = buckets * segments;
+  uint64_t         total_entries = total_buckets * DIR_DEPTH;
+  int              frag_demographics[1 << DIR_SIZE_WIDTH][DIR_BLOCK_SIZES];
 
   int j;
   int stale = 0, in_use = 0, empty = 0;
   int free = 0, head = 0, buckets_in_use = 0;
 
-  int max_chain_length = 0;
-  int64_t bytes_in_use = 0;
+  int     max_chain_length = 0;
+  int64_t bytes_in_use     = 0;
 
   ink_zero(frag_demographics);
 
@@ -740,21 +740,21 @@ Stripe::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this p
   printf("  Entries:   %" PRIu64 "\n", total_entries);
 
   for (int s = 0; s < segments; s++) {
-    Dir *seg               = this->dir_segment(s);
-    int seg_chain_max      = 0;
-    int seg_empty          = 0;
-    int seg_in_use         = 0;
-    int seg_stale          = 0;
-    int seg_bytes_in_use   = 0;
-    int seg_dups           = 0;
-    int seg_buckets_in_use = 0;
+    Dir *seg                = this->dir_segment(s);
+    int  seg_chain_max      = 0;
+    int  seg_empty          = 0;
+    int  seg_in_use         = 0;
+    int  seg_stale          = 0;
+    int  seg_bytes_in_use   = 0;
+    int  seg_dups           = 0;
+    int  seg_buckets_in_use = 0;
 
     ink_zero(chain_tag);
     memset(chain_mark, -1, sizeof(chain_mark));
 
     for (int b = 0; b < buckets; b++) {
       Dir *root = dir_bucket(b, seg);
-      int h     = 0; // chain length starting in this bucket
+      int  h    = 0; // chain length starting in this bucket
 
       // Walk the chain starting in this bucket
       int chain_idx = 0;
@@ -994,9 +994,9 @@ Stripe::shutdown(EThread *shutdown_thread)
   this->footer->sync_serial = this->header->sync_serial;
 
   CHECK_DIR(d);
-  size_t B    = this->header->sync_serial & 1;
-  off_t start = this->skip + (B ? dirlen : 0);
-  B           = pwrite(this->fd, this->raw_dir, dirlen, start);
+  size_t B     = this->header->sync_serial & 1;
+  off_t  start = this->skip + (B ? dirlen : 0);
+  B            = pwrite(this->fd, this->raw_dir, dirlen, start);
   ink_assert(B == dirlen);
   Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
 }

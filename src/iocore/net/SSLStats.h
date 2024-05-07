@@ -88,16 +88,16 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *user_agent_expired_cert            = nullptr;
   Metrics::Counter::AtomicType *user_agent_other_errors            = nullptr;
   Metrics::Counter::AtomicType *user_agent_revoked_cert            = nullptr;
-  Metrics::Gauge::AtomicType *user_agent_session_hit               = nullptr;
-  Metrics::Gauge::AtomicType *user_agent_session_miss              = nullptr;
-  Metrics::Gauge::AtomicType *user_agent_session_timeout           = nullptr;
-  Metrics::Gauge::AtomicType *user_agent_sessions                  = nullptr;
+  Metrics::Gauge::AtomicType   *user_agent_session_hit             = nullptr;
+  Metrics::Gauge::AtomicType   *user_agent_session_miss            = nullptr;
+  Metrics::Gauge::AtomicType   *user_agent_session_timeout         = nullptr;
+  Metrics::Gauge::AtomicType   *user_agent_sessions                = nullptr;
   Metrics::Counter::AtomicType *user_agent_unknown_ca              = nullptr;
   Metrics::Counter::AtomicType *user_agent_unknown_cert            = nullptr;
   Metrics::Counter::AtomicType *user_agent_wrong_version           = nullptr;
 };
 
-extern SSLStatsBlock ssl_rsb;
+extern SSLStatsBlock                                                   ssl_rsb;
 extern std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
 
 // Initialize SSL statistics.

@@ -63,12 +63,12 @@ static const char *month_names[] = {
 };
 
 struct MDY {
-  uint8_t m;
-  uint8_t d;
+  uint8_t  m;
+  uint8_t  d;
   uint16_t y;
 };
 
-static MDY *_days_to_mdy_fast_lookup_table = nullptr;
+static MDY   *_days_to_mdy_fast_lookup_table = nullptr;
 static time_t _days_to_mdy_fast_lookup_table_first_day;
 static time_t _days_to_mdy_fast_lookup_table_last_day;
 
@@ -482,7 +482,7 @@ mime_hdr_set_accelerator_slotnum(MIMEHdrImpl *mh, int32_t slot_id, uint32_t slot
 inline void
 mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
 {
-  int slot_id;
+  int       slot_id;
   ptrdiff_t slot_num;
   if (field->m_wks_idx < 0) {
     return;
@@ -562,9 +562,9 @@ void
 mime_hdr_sanity_check(MIMEHdrImpl *mh)
 {
   MIMEFieldBlockImpl *fblock, *blk, *last_fblock;
-  MIMEField *field, *next_dup;
-  uint32_t slot_index, index;
-  uint64_t masksum;
+  MIMEField          *field, *next_dup;
+  uint32_t            slot_index, index;
+  uint64_t            masksum;
 
   ink_assert(mh != nullptr);
 
@@ -604,7 +604,7 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
         // if this is a well known string, check presence bits & slot accelerators
         if (field->m_wks_idx >= 0) {
           const char *wks = hdrtoken_index_to_wks(field->m_wks_idx);
-          int len         = hdrtoken_index_to_length(field->m_wks_idx);
+          int         len = hdrtoken_index_to_length(field->m_wks_idx);
 
           if (field->m_len_name != len || strncasecmp(field->m_ptr_name, wks, field->m_len_name) != 0) {
             Warning("Encountered WKS hash collision on '%.*s'", field->m_len_name, field->m_ptr_name);
@@ -949,7 +949,7 @@ mime_init_cache_control_cooking_masks()
 {
   static struct {
     const char *name;
-    uint32_t mask;
+    uint32_t    mask;
   } cc_mask_table[] = {
     {"max-age",              MIME_COOKED_MASK_CC_MAX_AGE             },
     {"no-cache",             MIME_COOKED_MASK_CC_NO_CACHE            },
@@ -968,7 +968,7 @@ mime_init_cache_control_cooking_masks()
   };
 
   for (int i = 0; cc_mask_table[i].name != nullptr; i++) {
-    const char *wks                              = hdrtoken_string_to_wks(cc_mask_table[i].name);
+    const char         *wks                      = hdrtoken_string_to_wks(cc_mask_table[i].name);
     HdrTokenHeapPrefix *p                        = hdrtoken_wks_to_prefix(wks);
     p->wks_type_specific.u.cache_control.cc_mask = cc_mask_table[i].mask;
   }
@@ -986,7 +986,7 @@ mime_init_date_format_table()
 
   time_t now_secs;
   time_t i, now_days, first_days, last_days, num_days;
-  int m = 0, d = 0, y = 0;
+  int    m = 0, d = 0, y = 0;
 
   time(&now_secs);
   now_days   = static_cast<time_t>(now_secs / (60 * 60 * 24));
@@ -1112,7 +1112,7 @@ mime_hdr_destroy(HdrHeap *heap, MIMEHdrImpl *mh)
 void
 mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHeap *d_heap, bool inherit_strs)
 {
-  int block_count;
+  int                 block_count;
   MIMEFieldBlockImpl *s_fblock, *d_fblock, *prev_d_fblock;
 
   // If there are chained field blocks beyond the first one, we're just going to
@@ -1125,9 +1125,9 @@ mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHea
 
   ink_assert(((char *)&(s_mh->m_first_fblock.m_field_slots[MIME_FIELD_BLOCK_SLOTS]) - (char *)s_mh) == sizeof(struct MIMEHdrImpl));
 
-  int top             = s_mh->m_first_fblock.m_freetop;
-  char *end           = reinterpret_cast<char *>(&(s_mh->m_first_fblock.m_field_slots[top]));
-  int bytes_below_top = end - reinterpret_cast<char *>(s_mh);
+  int   top             = s_mh->m_first_fblock.m_freetop;
+  char *end             = reinterpret_cast<char *>(&(s_mh->m_first_fblock.m_field_slots[top]));
+  int   bytes_below_top = end - reinterpret_cast<char *>(s_mh);
 
   // copies useful part of enclosed first block too
   memcpy(d_mh, s_mh, bytes_below_top);
@@ -1174,9 +1174,9 @@ mime_hdr_clone(MIMEHdrImpl *s_mh, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit
  * @a dest_ptr does to @a src_base.
  */
 static inline MIMEField *
-rebase(MIMEField *dest_ptr, ///< Original pointer into @src_base memory.
-       void *dest_base,     ///< New base pointer.
-       void *src_base       ///< Original base pointer.
+rebase(MIMEField *dest_ptr,  ///< Original pointer into @src_base memory.
+       void      *dest_base, ///< New base pointer.
+       void      *src_base   ///< Original base pointer.
 )
 {
   return reinterpret_cast<MIMEField *>(reinterpret_cast<char *>(dest_ptr) +
@@ -1211,9 +1211,9 @@ mime_hdr_field_block_list_adjust(int /* block_count ATS_UNUSED */, MIMEFieldBloc
 int
 mime_hdr_length_get(MIMEHdrImpl *mh)
 {
-  unsigned int length, index;
+  unsigned int        length, index;
   MIMEFieldBlockImpl *fblock;
-  MIMEField *field;
+  MIMEField          *field;
 
   length = 2;
 
@@ -1240,7 +1240,7 @@ MIMEField *
 _mime_hdr_field_list_search_by_wks(MIMEHdrImpl *mh, int wks_idx)
 {
   MIMEFieldBlockImpl *fblock;
-  MIMEField *field, *too_far_field;
+  MIMEField          *field, *too_far_field;
 
   ink_assert(hdrtoken_is_valid_wks_idx(wks_idx));
 
@@ -1263,7 +1263,7 @@ MIMEField *
 _mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len)
 {
   MIMEFieldBlockImpl *fblock;
-  MIMEField *field, *too_far_field;
+  MIMEField          *field, *too_far_field;
 
   ink_assert(mh);
   for (fblock = &(mh->m_first_fblock); fblock != nullptr; fblock = fblock->m_next) {
@@ -1285,7 +1285,7 @@ _mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, const char *field_name_st
 MIMEField *
 _mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum)
 {
-  unsigned int block_num, block_index;
+  unsigned int        block_num, block_index;
   MIMEFieldBlockImpl *fblock;
 
   if (slotnum < MIME_FIELD_BLOCK_SLOTS) {
@@ -1316,7 +1316,7 @@ MIMEField *
 mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len)
 {
   HdrTokenHeapPrefix *token_info;
-  const bool is_wks = hdrtoken_is_wks(field_name_str);
+  const bool          is_wks = hdrtoken_is_wks(field_name_str);
 
   ink_assert(field_name_len >= 0);
 
@@ -1383,10 +1383,10 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
 MIMEField *
 mime_hdr_field_get(MIMEHdrImpl *mh, int idx)
 {
-  unsigned int index;
+  unsigned int        index;
   MIMEFieldBlockImpl *fblock;
-  MIMEField *field;
-  int got_idx;
+  MIMEField          *field;
+  int                 got_idx;
 
   got_idx = -1;
 
@@ -1414,10 +1414,10 @@ mime_hdr_field_get_slotnum(MIMEHdrImpl *mh, int slotnum)
 int
 mime_hdr_fields_count(MIMEHdrImpl *mh)
 {
-  unsigned int index;
+  unsigned int        index;
   MIMEFieldBlockImpl *fblock;
-  MIMEField *field;
-  int count;
+  MIMEField          *field;
+  int                 count;
 
   count = 0;
 
@@ -1444,7 +1444,7 @@ mime_field_init(MIMEField *field)
 MIMEField *
 mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh)
 {
-  MIMEField *field;
+  MIMEField          *field;
   MIMEFieldBlockImpl *tail_fblock, *new_fblock;
 
   tail_fblock = mh->m_fblock_list_tail;
@@ -1467,8 +1467,8 @@ mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh)
 MIMEField *
 mime_field_create_named(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length)
 {
-  MIMEField *field       = mime_field_create(heap, mh);
-  int field_name_wks_idx = hdrtoken_tokenize(name, length);
+  MIMEField *field              = mime_field_create(heap, mh);
+  int        field_name_wks_idx = hdrtoken_tokenize(name, length);
   mime_field_name_set(heap, mh, field, field_name_wks_idx, name, length, true);
   return field;
 }
@@ -1505,7 +1505,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
 
   if (prev_dup) {
     MIMEField *next_dup;
-    int field_slotnum, prev_slotnum, next_slotnum;
+    int        field_slotnum, prev_slotnum, next_slotnum;
 
     /////////////////////////////////////////////////////////////////
     // walk down dup list looking for the last dup in slot-order   //
@@ -1610,7 +1610,7 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
   } else // need to walk list to find and patch out from predecessor
   {
     std::string_view name{field->name_get()};
-    MIMEField *prev = mime_hdr_field_find(mh, name.data(), static_cast<int>(name.size()));
+    MIMEField       *prev = mime_hdr_field_find(mh, name.data(), static_cast<int>(name.size()));
 
     while (prev && (prev->m_next_dup != field)) {
       prev = prev->m_next_dup;
@@ -1662,8 +1662,8 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
     MIME_HDR_SANITY_CHECK(mh);
     mime_field_destroy(mh, field);
 
-    MIMEFieldBlockImpl *prev_block = nullptr;
-    bool can_destroy_block         = true;
+    MIMEFieldBlockImpl *prev_block        = nullptr;
+    bool                can_destroy_block = true;
     for (auto fblock = &(mh->m_first_fblock); fblock != nullptr; fblock = fblock->m_next) {
       if (prev_block != nullptr) {
         if (fblock->m_freetop == MIME_FIELD_BLOCK_SLOTS && fblock->contains(field)) {
@@ -1708,14 +1708,14 @@ MIMEHdrImpl::find(MIMEField const *field) -> iterator
 int
 mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field)
 {
-  int slots_so_far;
+  int                 slots_so_far;
   MIMEFieldBlockImpl *fblock;
 
   slots_so_far = 0;
   for (fblock = &(mh->m_first_fblock); fblock != nullptr; fblock = fblock->m_next) {
     if (fblock->contains(field)) {
-      MIMEField *first     = &(fblock->m_field_slots[0]);
-      ptrdiff_t block_slot = field - first; // in units of MIMEField
+      MIMEField *first      = &(fblock->m_field_slots[0]);
+      ptrdiff_t  block_slot = field - first; // in units of MIMEField
       return slots_so_far + block_slot;
     }
     slots_so_far += MIME_FIELD_BLOCK_SLOTS;
@@ -1726,7 +1726,7 @@ mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field)
 MIMEField *
 mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int name_length)
 {
-  int wks_idx;
+  int        wks_idx;
   MIMEField *field;
 
   field = mime_hdr_field_find(mh, name, name_length);
@@ -1800,10 +1800,10 @@ MIMEField::value_get_index(const char *value, int length) const
       retval = 0;
     }
   } else {
-    HdrCsvIter iter;
-    int tok_len;
-    int index       = 0;
-    const char *tok = iter.get_first(this, &tok_len);
+    HdrCsvIter  iter;
+    int         tok_len;
+    int         index = 0;
+    const char *tok   = iter.get_first(this, &tok_len);
 
     while (tok) {
       if (tok_len == length && strncasecmp(tok, value, length) == 0) {
@@ -1867,7 +1867,7 @@ mime_field_value_get_comma_val(const MIMEField *field, int *length, int idx)
     }
     return nullptr;
   } else {
-    Str *str;
+    Str    *str;
     StrList list(false);
 
     mime_field_value_get_comma_list(field, &list);
@@ -1890,7 +1890,7 @@ mime_field_value_get_comma_val_count(const MIMEField *field)
     return ((field->m_len_value == 0) ? 0 : 1);
   } else {
     StrList list(false);
-    int count = mime_field_value_get_comma_list(field, &list);
+    int     count = mime_field_value_get_comma_list(field, &list);
     return count;
   }
 }
@@ -1913,9 +1913,9 @@ mime_field_value_get_comma_list(const MIMEField *field, StrList *list)
 const char *
 mime_field_value_str_from_strlist(HdrHeap *heap, int *new_str_len_return, StrList *list)
 {
-  Str *cell;
+  Str  *cell;
   char *new_value, *dest;
-  int i, new_value_len;
+  int   i, new_value_len;
   // This works, because all strings are from the same heap when it is "split" into the list.
   HdrHeap::HeapGuard guard(heap, list->head->str);
 
@@ -1957,8 +1957,8 @@ void
 mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
                                int new_piece_len)
 {
-  int len;
-  Str *cell;
+  int     len;
+  Str    *cell;
   StrList list(false);
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
@@ -1989,8 +1989,8 @@ mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field,
 void
 mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx)
 {
-  int len;
-  Str *cell;
+  int     len;
+  Str    *cell;
   StrList list(false);
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
@@ -2036,8 +2036,8 @@ void
 mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
                                   int new_piece_len)
 {
-  int len;
-  Str *cell, *prev;
+  int     len;
+  Str    *cell, *prev;
   StrList list(false);
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
@@ -2077,11 +2077,11 @@ void
 mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
                                   int new_piece_len)
 {
-  Str *cell;
+  Str    *cell;
   StrList list(false);
-  int trimmed, len;
-  size_t extended_len;
-  char *dest, *temp_ptr, temp_buf[128];
+  int     trimmed, len;
+  size_t  extended_len;
+  char   *dest, *temp_ptr, temp_buf[128];
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
@@ -2172,7 +2172,7 @@ void
 mime_field_value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int32_t value)
 {
   char buf[16];
-  int len = mime_format_int(buf, value, sizeof(buf));
+  int  len = mime_format_int(buf, value, sizeof(buf));
   mime_field_value_set(heap, mh, field, buf, len, true);
 }
 
@@ -2180,7 +2180,7 @@ void
 mime_field_value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, uint32_t value)
 {
   char buf[16];
-  int len = mime_format_uint(buf, value, sizeof(buf));
+  int  len = mime_format_uint(buf, value, sizeof(buf));
   mime_field_value_set(heap, mh, field, buf, len, true);
 }
 
@@ -2188,7 +2188,7 @@ void
 mime_field_value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int64_t value)
 {
   char buf[21];
-  int len = mime_format_int64(buf, value, sizeof(buf));
+  int  len = mime_format_int64(buf, value, sizeof(buf));
   mime_field_value_set(heap, mh, field, buf, len, true);
 }
 
@@ -2196,7 +2196,7 @@ void
 mime_field_value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, time_t value)
 {
   char buf[33];
-  int len = mime_format_date(buf, value);
+  int  len = mime_format_date(buf, value);
   mime_field_value_set(heap, mh, field, buf, len, true);
 }
 
@@ -2273,9 +2273,9 @@ mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const 
 
 MIMEField *
 MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
-                              int *host_len,         ///< Length of host.
+                              int         *host_len, ///< Length of host.
                               const char **port_ptr, ///< Pointer to port.
-                              int *port_len)
+                              int         *port_len)
 {
   MIMEField *field = this->field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
   if (host_ptr) {
@@ -2431,7 +2431,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   }
 
   TextView parsed_text{input.data(), text.data()};
-  bool save_parsed_text_p = !parsed_text.empty();
+  bool     save_parsed_text_p = !parsed_text.empty();
 
   if (PARSE_RESULT_CONT == zret) {
     // data ran out before we got a clear final result. There a number of things we need to check
@@ -2525,7 +2525,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
                   bool must_copy_strings, bool eof, bool remove_ws_from_field_name, size_t max_hdr_field_size)
 {
   ParseResult err;
-  bool line_is_real;
+  bool        line_is_real;
 
   MIMEScanner *scanner = &parser->m_scanner;
 
@@ -2611,7 +2611,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     //////////////////////////////////////////////////////////////////////
 
     if (must_copy_strings || (!line_is_real)) {
-      char *dup       = heap->duplicate_str(parsed.data(), parsed.size());
+      char     *dup   = heap->duplicate_str(parsed.data(), parsed.size());
       ptrdiff_t delta = dup - parsed.data();
       field_name.assign(field_name.data() + delta, field_name.size());
       field_value.assign(field_value.data() + delta, field_value.size());
@@ -2652,7 +2652,7 @@ void
 mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
 {
   MIMEFieldBlockImpl *fblock;
-  MIMEHdrImpl *obj = (MIMEHdrImpl *)raw;
+  MIMEHdrImpl        *obj = (MIMEHdrImpl *)raw;
 
   Debug("http", "\t[PBITS: 0x%08X%08X, SLACC: 0x%04X%04X%04X%04X, HEADBLK: %p, TAILBLK: %p]",
         (uint32_t)((obj->m_presence_bits >> 32) & (TOK_64_CONST(0xFFFFFFFF))),
@@ -2674,7 +2674,7 @@ mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
 void
 mime_field_block_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 {
-  unsigned int i;
+  unsigned int       i;
   static const char *readiness_names[] = {"EMPTY", "DETACHED", "LIVE", "DELETED"};
 
   MIMEFieldBlockImpl *obj = (MIMEFieldBlockImpl *)raw;
@@ -2707,8 +2707,8 @@ mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start
                int *buf_chars_to_skip_inout)
 {
   MIMEFieldBlockImpl *fblock;
-  MIMEField *field;
-  uint32_t index;
+  MIMEField          *field;
+  uint32_t            index;
 
 #define SIMPLE_MIME_HDR_PRINT
 #ifdef SIMPLE_MIME_HDR_PRINT
@@ -2727,7 +2727,7 @@ mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start
   //      not mime_mem_print
   for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
     const char *contig_start = NULL;
-    int this_length, contig_length = 0;
+    int         this_length, contig_length = 0;
     for (index = 0; index < fblock->m_freetop; index++) {
       field       = &(fblock->m_field_slots[index]);
       this_length = field->m_len_name + field->m_len_value + field->m_n_v_raw_printable_pad;
@@ -3028,7 +3028,7 @@ mime_format_date(char *buffer, time_t value)
   };
 
   char *buf;
-  int sec, min, hour, wday, mday = 0, year = 0, month = 0;
+  int   sec, min, hour, wday, mday = 0, year = 0, month = 0;
 
   buf = buffer;
 
@@ -3136,7 +3136,7 @@ int32_t
 mime_parse_int(const char *buf, const char *end)
 {
   int32_t num;
-  bool negative;
+  bool    negative;
 
   if (!buf || (buf == end)) {
     return 0;
@@ -3219,7 +3219,7 @@ int64_t
 mime_parse_int64(const char *buf, const char *end)
 {
   int64_t num;
-  bool negative;
+  bool    negative;
 
   if (!buf || (buf == end)) {
     return 0;
@@ -3295,7 +3295,7 @@ mime_parse_int64(const char *buf, const char *end)
 int
 mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
 {
-  unsigned int three_char_wday, three_char_mon;
+  unsigned int     three_char_wday, three_char_mon;
   std::string_view view{buf, size_t(length)};
 
   ink_assert(length >= 29);
@@ -3415,10 +3415,10 @@ mime_parse_date(const char *buf, const char *end)
   static const int days[12]    = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
 
   struct tm tp;
-  time_t t;
-  int year;
-  int month;
-  int mday;
+  time_t    t;
+  int       year;
+  int       month;
+  int       mday;
 
   if (!buf) {
     return static_cast<time_t>(0);
@@ -3624,7 +3624,7 @@ mime_parse_integer(const char *&buf, const char *end, int *integer)
   }
 
   int32_t num;
-  bool negative;
+  bool    negative;
 
   // This code is copied verbatim from mime_parse_int ... Sigh. Maybe amc is right, and
   // we really need to clean this up. But, as such, we should redo all these interfaces,
@@ -3845,13 +3845,13 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
 void
 MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 {
-  int len, tlen;
+  int         len, tlen;
   const char *s;
   const char *c;
   const char *e;
   const char *token_wks;
-  MIMEField *field;
-  uint32_t mask = 0;
+  MIMEField  *field;
+  uint32_t    mask = 0;
 
   mime_hdr_cooked_stuff_init(this, changing_field_or_null);
 

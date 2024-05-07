@@ -57,50 +57,50 @@ struct RecConfigUpdateCbList {
   {
   }
 
-  RecConfigUpdateCb update_cb;
-  void *update_cookie         = nullptr;
-  RecConfigUpdateCbList *next = nullptr;
+  RecConfigUpdateCb      update_cb;
+  void                  *update_cookie = nullptr;
+  RecConfigUpdateCbList *next          = nullptr;
 };
 
 using RecStatUpdateFuncList = struct RecStatUpdateFuncList_t {
-  RecRawStatBlock *rsb;
-  int id;
-  RecStatUpdateFunc update_func;
-  void *update_cookie;
+  RecRawStatBlock                *rsb;
+  int                             id;
+  RecStatUpdateFunc               update_func;
+  void                           *update_cookie;
   struct RecStatUpdateFuncList_t *next;
 };
 
 struct RecStatMeta {
-  RecRawStat data_raw;
+  RecRawStat       data_raw;
   RecRawStatSyncCb sync_cb;
   RecRawStatBlock *sync_rsb;
-  int sync_id;
-  RecPersistT persist_type;
+  int              sync_id;
+  RecPersistT      persist_type;
 };
 
 struct RecConfigMeta {
-  unsigned char update_required;
+  unsigned char          update_required;
   RecConfigUpdateCbList *update_cb_list;
-  void *update_cookie;
-  RecUpdateT update_type;
-  RecCheckT check_type;
-  char *check_expr;
-  RecAccessT access_type;
-  RecSourceT source; ///< Source of the configuration value.
+  void                  *update_cookie;
+  RecUpdateT             update_type;
+  RecCheckT              check_type;
+  char                  *check_expr;
+  RecAccessT             access_type;
+  RecSourceT             source; ///< Source of the configuration value.
 };
 
 struct RecRecord {
-  RecT rec_type;
-  RecDataT data_type;
-  const char *name;
-  RecData data;
-  RecData data_default;
-  RecMutex lock;
+  RecT          rec_type;
+  RecDataT      data_type;
+  const char   *name;
+  RecData       data;
+  RecData       data_default;
+  RecMutex      lock;
   unsigned char sync_required;
-  bool registered;
-  uint32_t version;
+  bool          registered;
+  uint32_t      version;
   union {
-    RecStatMeta stat_meta;
+    RecStatMeta   stat_meta;
     RecConfigMeta config_meta;
   };
   int order;
@@ -123,21 +123,21 @@ enum RecMessageT {
 
 struct RecMessageHdr {
   RecMessageT msg_type;
-  int o_start;
-  int o_write;
-  int o_end;
-  int entries;
-  int alignment; // needs to be 8 byte aligned
+  int         o_start;
+  int         o_write;
+  int         o_end;
+  int         entries;
+  int         alignment; // needs to be 8 byte aligned
 };
 
 struct RecMessageEleHdr {
   unsigned int magic;
-  int o_next;
+  int          o_next;
 };
 
 struct RecMessageItr {
   RecMessageEleHdr *ele_hdr;
-  int next;
+  int               next;
 };
 
 using RecMessage = RecMessageHdr;

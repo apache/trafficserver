@@ -30,6 +30,7 @@ apt-get install -y libev-dev libjemalloc-dev python2-dev libxml2-dev libpython2-
 curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=nightly
 export PATH="/root/.cargo/bin:${PATH}"
 
+# Build tools folder will be /opt/h3-tools-boringssl
 BASE=/opt $SRC/trafficserver/tools/build_h3_tools.sh
 
 export CFLAGS="${CFLAGS_SAVE}"
@@ -50,19 +51,20 @@ then
 fi
 
 mkdir -p build && cd build/
-cmake -DENABLE_POSIX_CAP=OFF -DENABLE_FUZZING=ON -DYAML_BUILD_SHARED_LIBS=OFF -DENABLE_HWLOC=OFF -DENABLE_JEMALLOC=OFF -DENABLE_LUAJIT=OFF -Dquiche_ROOT=/opt/quiche -DENABLE_QUICHE=TRUE -DOPENSSL_INCLUDE_DIR=/opt/boringssl/include -DOPENSSL_ROOT_DIR=/opt/boringssl ../.
+cmake -DENABLE_POSIX_CAP=OFF -DENABLE_FUZZING=ON -DYAML_BUILD_SHARED_LIBS=OFF -DENABLE_HWLOC=OFF -DENABLE_JEMALLOC=OFF -DENABLE_LUAJIT=OFF -Dquiche_ROOT=/opt/h3-tools-boringssl/quiche -DENABLE_QUICHE=TRUE -DOPENSSL_INCLUDE_DIR=/opt/h3-tools-boringssl/boringssl/include -DOPENSSL_ROOT_DIR=/opt/h3-tools-boringssl/boringssl ../.
 make -j$(nproc) --ignore-errors
 
 cp tests/fuzzing/fuzz_* $OUT/
 cp -r tests/fuzzing/lib/ $OUT/
 cp $SRC/trafficserver/tests/fuzzing/*.zip  $OUT/
 
-cp /opt/boringssl/lib/libssl.so $OUT/lib/
-cp /opt/boringssl/lib/libcrypto.so $OUT/lib/
-cp /opt/quiche/lib/libquiche.so $OUT/lib/
+cp /opt/h3-tools-boringssl/boringssl/lib/libssl.so $OUT/lib/
+cp /opt/h3-tools-boringssl/boringssl/lib/libcrypto.so $OUT/lib/
+cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/
 
 if [[ $SANITIZER = undefined ]]
 then
     rm -f $OUT/fuzz_http
     rm -f $OUT/fuzz_hpack
+    rm -f $OUT/fuzz_http3frame
 fi

@@ -50,11 +50,17 @@ char mac_param_digest[] = "sha256";
 
 int TLSSessionResumptionSupport::_ex_data_index = -1;
 
-static bool
+namespace
+{
+DbgCtl dbg_ctl_ssl_session_ticket{"ssl_session_ticket"};
+
+bool
 is_ssl_session_timed_out(SSL_SESSION *session)
 {
   return SSL_SESSION_get_timeout(session) < (time(nullptr) - SSL_SESSION_get_time(session));
 }
+
+} // end anonymous namespace
 
 void
 TLSSessionResumptionSupport::initialize()
@@ -93,13 +99,13 @@ TLSSessionResumptionSupport::processSessionTicket(SSL *ssl, unsigned char *keyna
                                                   HMAC_CTX *hctx, int enc)
 #endif
 {
-  SSLConfig::scoped_config config;
+  SSLConfig::scoped_config            config;
   SSLCertificateConfig::scoped_config lookup;
-  SSLTicketKeyConfig::scoped_config params;
+  SSLTicketKeyConfig::scoped_config   params;
 
   // Get the IP address to look up the keyblock
-  const IpEndpoint &ip           = this->_getLocalEndpoint();
-  SSLCertContext *cc             = lookup->find(ip);
+  const IpEndpoint     &ip       = this->_getLocalEndpoint();
+  SSLCertContext       *cc       = lookup->find(ip);
   ssl_ticket_key_block *keyblock = nullptr;
   if (cc == nullptr || cc->keyblock == nullptr) {
     // Try the default
@@ -139,7 +145,7 @@ TLSSessionResumptionSupport::getSSLCurveNID() const
 std::shared_ptr<SSL_SESSION>
 TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &lookup_key)
 {
-  ssl_curve_id curve                       = 0;
+  ssl_curve_id                 curve       = 0;
   std::shared_ptr<SSL_SESSION> shared_sess = origin_sess_cache->get_session(lookup_key, &curve);
 
   if (shared_sess != nullptr) {
@@ -199,7 +205,7 @@ TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblo
   }
 #endif
 
-  Debug("ssl_session_ticket", "create ticket for a new session.");
+  Dbg(dbg_ctl_ssl_session_ticket, "create ticket for a new session.");
   Metrics::Counter::increment(ssl_rsb.total_tickets_created);
   return 1;
 }
@@ -234,7 +240,7 @@ TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblo
       }
 #endif
 
-      Debug("ssl_session_ticket", "verify the ticket for an existing session.");
+      Dbg(dbg_ctl_ssl_session_ticket, "verify the ticket for an existing session.");
       // Increase the total number of decrypted tickets.
       Metrics::Counter::increment(ssl_rsb.total_tickets_verified);
 
@@ -246,7 +252,7 @@ TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblo
 
 #ifdef TLS1_3_VERSION
       if (SSL_version(ssl) >= TLS1_3_VERSION) {
-        Debug("ssl_session_ticket", "make sure tickets are only used once.");
+        Dbg(dbg_ctl_ssl_session_ticket, "make sure tickets are only used once.");
         return 2;
       }
 #endif
@@ -256,7 +262,7 @@ TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblo
     }
   }
 
-  Debug("ssl_session_ticket", "keyname is not consistent.");
+  Dbg(dbg_ctl_ssl_session_ticket, "keyname is not consistent.");
   Metrics::Counter::increment(ssl_rsb.total_tickets_not_found);
   return 0;
 }

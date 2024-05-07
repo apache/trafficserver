@@ -16,3 +16,4 @@
 #######################
 
 add_atsplugin(mp4 mp4.cc mp4_meta.cc)
+verify_remap_plugin(mp4)

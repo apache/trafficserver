@@ -79,23 +79,23 @@ struct ink_freelist_ops {
 };
 
 using ink_freelist_list = struct _ink_freelist_list {
-  InkFreeList *fl;
+  InkFreeList               *fl;
   struct _ink_freelist_list *next;
 };
 
 static void *freelist_new(InkFreeList *f);
-static void freelist_free(InkFreeList *f, void *item);
-static void freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
+static void  freelist_free(InkFreeList *f, void *item);
+static void  freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
 
 static void *malloc_new(InkFreeList *f);
-static void malloc_free(InkFreeList *f, void *item);
-static void malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
+static void  malloc_free(InkFreeList *f, void *item);
+static void  malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
 
-static const ink_freelist_ops malloc_ops   = {malloc_new, malloc_free, malloc_bulkfree};
-static const ink_freelist_ops freelist_ops = {freelist_new, freelist_free, freelist_bulkfree};
-static const ink_freelist_ops *default_ops = &freelist_ops;
+static const ink_freelist_ops  malloc_ops   = {malloc_new, malloc_free, malloc_bulkfree};
+static const ink_freelist_ops  freelist_ops = {freelist_new, freelist_free, freelist_bulkfree};
+static const ink_freelist_ops *default_ops  = &freelist_ops;
 
-static ink_freelist_list *freelists                = nullptr;
+static ink_freelist_list      *freelists           = nullptr;
 static const ink_freelist_ops *freelist_global_ops = default_ops;
 
 inline void
@@ -130,7 +130,7 @@ void
 ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
                   bool use_hugepages)
 {
-  InkFreeList *f;
+  InkFreeList       *f;
   ink_freelist_list *fll;
 
   /* its safe to add to this global list because ink_freelist_init()
@@ -211,15 +211,15 @@ freelist_new(InkFreeList *f)
 {
   head_p item;
   head_p next;
-  int result = 0;
+  int    result = 0;
 
   do {
     INK_QUEUE_LD(item, f->head);
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       uint32_t i;
-      void *newp        = nullptr;
-      size_t alloc_size = static_cast<size_t>(f->chunk_size) * f->type_size;
-      size_t alignment  = 0;
+      void    *newp       = nullptr;
+      size_t   alloc_size = static_cast<size_t>(f->chunk_size) * f->type_size;
+      size_t   alignment  = 0;
 
       if (f->use_hugepages) {
         alignment = ats_hugepage_size();
@@ -307,7 +307,7 @@ freelist_free(InkFreeList *f, void *item)
   void **adr_of_next = ADDRESS_OF_NEXT(item, 0);
   head_p h;
   head_p item_pair;
-  int result = 0;
+  int    result = 0;
 
   // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
 
@@ -367,7 +367,7 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
   void **adr_of_next = ADDRESS_OF_NEXT(tail, 0);
   head_p h;
   head_p item_pair;
-  int result = 0;
+  int    result = 0;
 
   // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
 
@@ -504,7 +504,7 @@ ink_atomiclist_pop(InkAtomicList *l)
 {
   head_p item;
   head_p next;
-  int result = 0;
+  int    result = 0;
   do {
     INK_QUEUE_LD(item, l->head);
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
@@ -525,7 +525,7 @@ ink_atomiclist_popall(InkAtomicList *l)
 {
   head_p item;
   head_p next;
-  int result = 0;
+  int    result = 0;
   do {
     INK_QUEUE_LD(item, l->head);
     if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
@@ -553,8 +553,8 @@ ink_atomiclist_push(InkAtomicList *l, void *item)
   void **adr_of_next = ADDRESS_OF_NEXT(item, l->offset);
   head_p head;
   head_p item_pair;
-  int result = 0;
-  void *h    = nullptr;
+  int    result = 0;
+  void  *h      = nullptr;
   do {
     INK_QUEUE_LD(head, l->head);
     h            = FREELIST_POINTER(head);
@@ -572,10 +572,10 @@ void *
 ink_atomiclist_remove(InkAtomicList *l, void *item)
 {
   head_p head;
-  void *prev       = nullptr;
+  void  *prev      = nullptr;
   void **addr_next = ADDRESS_OF_NEXT(item, l->offset);
-  void *item_next  = *addr_next;
-  int result       = 0;
+  void  *item_next = *addr_next;
+  int    result    = 0;
 
   /*
    * first, try to pop it if it is first
@@ -599,7 +599,7 @@ ink_atomiclist_remove(InkAtomicList *l, void *item)
   prev = TO_PTR(FREELIST_POINTER(head));
   while (prev) {
     void **prev_adr_of_next = ADDRESS_OF_NEXT(prev, l->offset);
-    void *prev_prev         = prev;
+    void  *prev_prev        = prev;
     prev                    = TO_PTR(*prev_adr_of_next);
     if (prev == item) {
       ink_assert(prev_prev != item_next);

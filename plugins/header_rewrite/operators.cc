@@ -22,8 +22,10 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <algorithm>
+#include <iomanip>
 
 #include "ts/ts.h"
+#include "swoc/swoc_file.h"
 
 #include "operators.h"
 #include "ts/apidefs.h"
@@ -190,7 +192,7 @@ OperatorSetDestination::exec(const Resources &res) const
 
     // Determine which TSMBuffer and TSMLoc to use
     TSMBuffer bufp;
-    TSMLoc url_m_loc;
+    TSMLoc    url_m_loc;
     if (res._rri) {
       bufp      = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
@@ -233,8 +235,8 @@ OperatorSetDestination::exec(const Resources &res) const
       } else {
         // 1.6.4--Support for preserving QSA in case of set-destination
         if (get_oper_modifiers() & OPER_QSA) {
-          int query_len     = 0;
-          const char *query = TSUrlHttpQueryGet(bufp, url_m_loc, &query_len);
+          int         query_len = 0;
+          const char *query     = TSUrlHttpQueryGet(bufp, url_m_loc, &query_len);
           Dbg(pi_dbg_ctl, "QSA mode, append original query string: %.*s", query_len, query);
           // std::string connector = (value.find("?") == std::string::npos)? "?" : "&";
           value.append("&");
@@ -263,7 +265,7 @@ OperatorSetDestination::exec(const Resources &res) const
       } else {
         const char *start = value.c_str();
         const char *end   = start + value.size();
-        TSMLoc new_url_loc;
+        TSMLoc      new_url_loc;
         if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS && TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
           Dbg(pi_dbg_ctl, "Set destination URL to %s", value.c_str());
@@ -300,7 +302,7 @@ OperatorRMDestination::exec(const Resources &res) const
 
     // Determine which TSMBuffer and TSMLoc to use
     TSMBuffer bufp;
-    TSMLoc url_m_loc;
+    TSMLoc    url_m_loc;
     if (res._rri) {
       bufp      = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
@@ -362,7 +364,7 @@ void
 EditRedirectResponse(TSHttpTxn txnp, const std::string &location, TSHttpStatus status, TSMBuffer bufp, TSMLoc hdr_loc)
 {
   // Set new location.
-  TSMLoc field_loc;
+  TSMLoc             field_loc;
   static std::string header("Location");
   if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
     if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, location.c_str(), location.size())) {
@@ -370,7 +372,7 @@ EditRedirectResponse(TSHttpTxn txnp, const std::string &location, TSHttpStatus s
       TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
     }
     const char *reason = TSHttpHdrReasonLookup(status);
-    size_t len         = strlen(reason);
+    size_t      len    = strlen(reason);
     TSHttpHdrReasonSet(bufp, hdr_loc, reason, len);
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
   }
@@ -396,7 +398,7 @@ cont_add_location(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR: {
     TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    TSMLoc    hdr_loc;
     if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
       EditRedirectResponse(txnp, osd->get_location(), status, bufp, hdr_loc);
     } else {
@@ -431,7 +433,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     }
 
     TSMBuffer bufp;
-    TSMLoc url_loc;
+    TSMLoc    url_loc;
     if (remap) {
       // Handle when called from remap plugin.
       bufp    = res._rri->requestBufp;
@@ -448,8 +450,8 @@ OperatorSetRedirect::exec(const Resources &res) const
     size_t pos_path = 0;
     if ((pos_path = value.find("%{PATH}")) != std::string::npos) {
       value.erase(pos_path, 7); // erase %{PATH} from the rewritten to url
-      int path_len     = 0;
-      const char *path = TSUrlPathGet(bufp, url_loc, &path_len);
+      int         path_len = 0;
+      const char *path     = TSUrlPathGet(bufp, url_loc, &path_len);
       if (path_len > 0) {
         Dbg(pi_dbg_ctl, "Find %%{PATH} in redirect url, replace it with: %.*s", path_len, path);
         value.insert(pos_path, path, path_len);
@@ -457,8 +459,8 @@ OperatorSetRedirect::exec(const Resources &res) const
     }
 
     // Append the original query string
-    int query_len     = 0;
-    const char *query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
+    int         query_len = 0;
+    const char *query     = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
 
     if ((get_oper_modifiers() & OPER_QSA) && (query_len > 0)) {
       Dbg(pi_dbg_ctl, "QSA mode, append original query string: %.*s", query_len, query);
@@ -665,8 +667,8 @@ OperatorSetHeader::exec(const Resources &res) const
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
       }
     } else {
-      TSMLoc tmp = nullptr;
-      bool first = true;
+      TSMLoc tmp   = nullptr;
+      bool   first = true;
 
       while (field_loc) {
         tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
@@ -765,8 +767,8 @@ OperatorRMCookie::exec(const Resources &res) const
       return;
     }
 
-    int cookies_len     = 0;
-    const char *cookies = TSMimeHdrFieldValueStringGet(res.bufp, res.hdr_loc, field_loc, -1, &cookies_len);
+    int         cookies_len = 0;
+    const char *cookies     = TSMimeHdrFieldValueStringGet(res.bufp, res.hdr_loc, field_loc, -1, &cookies_len);
     std::string updated_cookie;
     if (CookieHelper::cookieModifyHelper(cookies, cookies_len, updated_cookie, CookieHelper::COOKIE_OP_DEL, _cookie)) {
       if (updated_cookie.empty()) {
@@ -816,8 +818,8 @@ OperatorAddCookie::exec(const Resources &res) const
       return;
     }
 
-    int cookies_len     = 0;
-    const char *cookies = TSMimeHdrFieldValueStringGet(res.bufp, res.hdr_loc, field_loc, -1, &cookies_len);
+    int         cookies_len = 0;
+    const char *cookies     = TSMimeHdrFieldValueStringGet(res.bufp, res.hdr_loc, field_loc, -1, &cookies_len);
     std::string updated_cookie;
     if (CookieHelper::cookieModifyHelper(cookies, cookies_len, updated_cookie, CookieHelper::COOKIE_OP_ADD, _cookie, value) &&
         TS_SUCCESS ==
@@ -861,8 +863,8 @@ OperatorSetCookie::exec(const Resources &res) const
       return;
     }
 
-    int cookies_len     = 0;
-    const char *cookies = TSMimeHdrFieldValueStringGet(res.bufp, res.hdr_loc, field_loc, -1, &cookies_len);
+    int         cookies_len = 0;
+    const char *cookies     = TSMimeHdrFieldValueStringGet(res.bufp, res.hdr_loc, field_loc, -1, &cookies_len);
     std::string updated_cookie;
     if (CookieHelper::cookieModifyHelper(cookies, cookies_len, updated_cookie, CookieHelper::COOKIE_OP_SET, _cookie, value) &&
         TS_SUCCESS ==
@@ -1092,6 +1094,7 @@ OperatorSetHttpCntl::initialize_hooks()
 static const char *const HttpCntls[] = {
   "LOGGING", "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE", "SERVER_NO_STORE", "TXN_DEBUG", "SKIP_REMAP",
 };
+
 void
 OperatorSetHttpCntl::exec(const Resources &res) const
 {
@@ -1101,5 +1104,75 @@ OperatorSetHttpCntl::exec(const Resources &res) const
   } else {
     TSHttpTxnCntlSet(res.txnp, _cntl_qual, false);
     Dbg(pi_dbg_ctl, "   Turning OFF %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
+  }
+}
+
+void
+OperatorRunPlugin::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  auto plugin_name = p.get_arg();
+  auto plugin_args = p.get_value();
+
+  if (plugin_name.empty()) {
+    TSError("[%s] missing plugin name", PLUGIN_NAME);
+    return;
+  }
+
+  std::vector<std::string> tokens;
+  std::istringstream       iss(plugin_args);
+  std::string              token;
+
+  while (iss >> std::quoted(token)) {
+    tokens.push_back(token);
+  }
+
+  // Create argc and argv
+  int    argc = tokens.size() + 2;
+  char **argv = new char *[argc];
+
+  argv[0] = p.from_url();
+  argv[1] = p.to_url();
+
+  for (int i = 0; i < argc; ++i) {
+    argv[i + 2] = const_cast<char *>(tokens[i].c_str());
+  }
+
+  std::string error;
+
+  // We have to escalate access while loading these plugins, just as done when loading remap.config
+  {
+    uint32_t elevate_access = 0;
+
+    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
+
+    _plugin = plugin_factory.getRemapPlugin(swoc::file::path(plugin_name), argc, const_cast<char **>(argv), error,
+                                            isPluginDynamicReloadEnabled());
+  } // done elevating access
+
+  delete[] argv;
+
+  if (!_plugin) {
+    TSError("[%s] Unable to load plugin '%s': %s", PLUGIN_NAME, plugin_name.c_str(), error.c_str());
+  }
+}
+
+void
+OperatorRunPlugin::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS); // Need this for the txnp
+}
+
+void
+OperatorRunPlugin::exec(const Resources &res) const
+{
+  TSReleaseAssert(_plugin != nullptr);
+
+  if (res._rri && res.txnp) {
+    _plugin->doRemap(res.txnp, res._rri);
   }
 }

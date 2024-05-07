@@ -50,16 +50,16 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 static int PassthruSessionEvent(TSCont cont, TSEvent event, void *edata);
 
 union EventArgument {
-  void *edata;
+  void   *edata;
   TSVConn vconn;
-  TSVIO vio;
+  TSVIO   vio;
 
   EventArgument(void *_p) : edata(_p) {}
 };
 
 struct PassthruIO {
-  TSVIO vio               = nullptr;
-  TSIOBuffer iobuf        = nullptr;
+  TSVIO            vio    = nullptr;
+  TSIOBuffer       iobuf  = nullptr;
   TSIOBufferReader reader = nullptr;
 
   PassthruIO() {}
@@ -126,14 +126,14 @@ struct PassthruIO {
 struct PassthruSession {
   // VC session to the client.
   struct {
-    TSVConn vconn;
+    TSVConn    vconn;
     PassthruIO readio;
     PassthruIO writeio;
   } client;
 
   // VC session to Traffic Server via TSHttpConnect.
   struct {
-    TSVConn vconn;
+    TSVConn    vconn;
     PassthruIO readio;
     PassthruIO writeio;
   } server;
@@ -186,7 +186,7 @@ PassthruSessionIsFinished(PassthruSession *sp)
 static int
 PassthruSessionEvent(TSCont cont, TSEvent event, void *edata)
 {
-  EventArgument arg(edata);
+  EventArgument    arg(edata);
   PassthruSession *sp = static_cast<PassthruSession *>(TSContDataGet(cont));
 
   PassthruSessionDebug(sp, "session event on vconn=%p event=%d (%s)", TSVIOVConnGet(arg.vio), event, TSHttpEventNameLookup(event));
@@ -278,7 +278,7 @@ PassthruSessionEvent(TSCont cont, TSEvent event, void *edata)
 static int
 PassthruAccept(TSCont /* cont */, TSEvent event, void *edata)
 {
-  EventArgument arg(edata);
+  EventArgument    arg(edata);
   PassthruSession *sp = new PassthruSession();
 
   PassthruSessionDebug(sp, "accepting connection on vconn=%p event=%d", arg.vconn, event);
@@ -296,9 +296,9 @@ PassthruAccept(TSCont /* cont */, TSEvent event, void *edata)
 static TSReturnCode
 PassthruListen()
 {
-  TSMgmtString ports          = nullptr;
+  TSMgmtString     ports      = nullptr;
   TSPortDescriptor descriptor = nullptr;
-  TSCont cont                 = nullptr;
+  TSCont           cont       = nullptr;
 
   if (TSMgmtStringGet("config.plugin.passthru.server_ports", &ports) == TS_ERROR) {
     TSError("[%s] missing config.plugin.passthru.server_ports configuration", PLUGIN_NAME);

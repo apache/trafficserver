@@ -82,17 +82,17 @@ public:
   void set_expect_receive_trailer() override;
 
   Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size);
-  void send_headers(Http2ConnectionState &cstate);
-  void initiating_close();
-  bool is_outbound_connection() const;
-  bool is_tunneling() const;
-  void terminate_if_possible();
-  void update_read_request(bool send_update);
-  void update_write_request(bool send_update);
+  void           send_headers(Http2ConnectionState &cstate);
+  void           initiating_close();
+  bool           is_outbound_connection() const;
+  bool           is_tunneling() const;
+  void           terminate_if_possible();
+  void           update_read_request(bool send_update);
+  void           update_write_request(bool send_update);
 
-  void signal_read_event(int event);
+  void                  signal_read_event(int event);
   static constexpr auto CALL_UPDATE = true;
-  void signal_write_event(int event, bool call_update = CALL_UPDATE);
+  void                  signal_write_event(int event, bool call_update = CALL_UPDATE);
 
   void restart_sending();
   bool push_promise(URL &url, const MIMEField *accept_encoding);
@@ -100,7 +100,7 @@ public:
   // Stream level window size
   // The following peer versions are our accounting of how many bytes we can
   // send to the peer in order to respect their advertised receive window.
-  ssize_t get_peer_rwnd() const;
+  ssize_t        get_peer_rwnd() const;
   Http2ErrorCode increment_peer_rwnd(size_t amount);
   Http2ErrorCode decrement_peer_rwnd(size_t amount);
 
@@ -110,7 +110,7 @@ public:
   // peer has exceeded the window size by sending us too many bytes and we also
   // use this to calculate WINDOW_UPDATE frame increment values to send to the
   // peer.
-  ssize_t get_local_rwnd() const;
+  ssize_t        get_local_rwnd() const;
   Http2ErrorCode increment_local_rwnd(size_t amount);
   Http2ErrorCode decrement_local_rwnd(size_t amount);
 
@@ -127,9 +127,9 @@ public:
   void increment_transactions_stat() override;
   void decrement_transactions_stat() override;
   void set_transaction_id(int new_id);
-  int get_transaction_id() const override;
-  int get_transaction_priority_weight() const override;
-  int get_transaction_priority_dependence() const override;
+  int  get_transaction_id() const override;
+  int  get_transaction_priority_weight() const override;
+  int  get_transaction_priority_dependence() const override;
   bool is_read_closed() const override;
 
   HTTPHdr *
@@ -143,34 +143,34 @@ public:
 
   void clear_io_events();
 
-  bool is_state_writeable() const;
-  bool is_closed() const;
+  bool            is_state_writeable() const;
+  bool            is_closed() const;
   IOBufferReader *get_data_reader_for_send() const;
-  void set_rx_error_code(ProxyError e) override;
-  void set_tx_error_code(ProxyError e) override;
+  void            set_rx_error_code(ProxyError e) override;
+  void            set_tx_error_code(ProxyError e) override;
 
-  bool has_request_body(int64_t content_length, bool is_chunked_set) const override;
+  bool        has_request_body(int64_t content_length, bool is_chunked_set) const override;
   HTTPVersion get_version(HTTPHdr &hdr) const override;
 
   void mark_milestone(Http2StreamMilestone type);
 
-  void increment_data_length(uint64_t length);
-  bool payload_length_is_valid() const;
-  bool is_write_vio_done() const;
-  void update_sent_count(unsigned num_bytes);
-  Http2StreamId get_id() const;
+  void             increment_data_length(uint64_t length);
+  bool             payload_length_is_valid() const;
+  bool             is_write_vio_done() const;
+  void             update_sent_count(unsigned num_bytes);
+  Http2StreamId    get_id() const;
   Http2StreamState get_state() const;
-  bool change_state(uint8_t type, uint8_t flags);
-  void set_peer_rwnd(Http2WindowSize new_size);
-  void set_local_rwnd(Http2WindowSize new_size);
-  bool trailing_header_is_possible() const;
-  void set_trailing_header_is_possible();
-  void set_receive_headers(HTTPHdr &h2_headers);
-  void reset_receive_headers();
-  void reset_send_headers();
-  MIOBuffer *read_vio_writer() const;
-  int64_t read_vio_read_avail();
-  bool is_read_enabled() const;
+  bool             change_state(uint8_t type, uint8_t flags);
+  void             set_peer_rwnd(Http2WindowSize new_size);
+  void             set_local_rwnd(Http2WindowSize new_size);
+  bool             trailing_header_is_possible() const;
+  void             set_trailing_header_is_possible();
+  void             set_receive_headers(HTTPHdr &h2_headers);
+  void             reset_receive_headers();
+  void             reset_send_headers();
+  MIOBuffer       *read_vio_writer() const;
+  int64_t          read_vio_read_avail();
+  bool             is_read_enabled() const;
 
   //////////////////
   // Variables
@@ -184,16 +184,16 @@ public:
   bool parsing_header_done       = false;
   bool is_first_transaction_flag = false;
 
-  HTTPHdr _send_header;
-  IOBufferReader *_send_reader             = nullptr;
+  HTTPHdr                    _send_header;
+  IOBufferReader            *_send_reader  = nullptr;
   Http2DependencyTree::Node *priority_node = nullptr;
 
   Http2ConnectionState &get_connection_state();
 
 private:
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
-  void send_body(bool call_update);
-  void _clear_timers();
+  void   send_body(bool call_update);
+  void   _clear_timers();
 
   /**
    * Check if this thread is the right thread to process events for this
@@ -202,19 +202,19 @@ private:
    */
   bool _switch_thread_if_not_on_right_thread(int event, void *edata);
 
-  NetTimeout _timeout{};
-  HTTPParser http_parser;
-  EThread *_thread        = nullptr;
-  Http2StreamId _id       = -1;
-  Http2StreamState _state = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
-  int64_t _http_sm_id     = -1;
+  NetTimeout       _timeout{};
+  HTTPParser       http_parser;
+  EThread         *_thread     = nullptr;
+  Http2StreamId    _id         = -1;
+  Http2StreamState _state      = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
+  int64_t          _http_sm_id = -1;
 
-  HTTPHdr _receive_header;
-  MIOBuffer _receive_buffer = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
-  VIO read_vio;
-  VIO write_vio;
+  HTTPHdr   _receive_header;
+  MIOBuffer _receive_buffer = BUFFER_SIZE_INDEX_4K;
+  VIO       read_vio;
+  VIO       write_vio;
 
-  History<HISTORY_DEFAULT_SIZE> _history;
+  History<HISTORY_DEFAULT_SIZE>                                                           _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
 
   /** Any headers received while this is true are trailing headers.
@@ -268,7 +268,7 @@ private:
   // The same pattern is used with HttpSM for object clean up.
   //
   bool closed           = false;
-  int reentrancy_count  = 0;
+  int  reentrancy_count = 0;
   bool terminate_stream = false;
 
   uint64_t data_length = 0;
@@ -277,8 +277,8 @@ private:
   ssize_t _peer_rwnd  = 0;
   ssize_t _local_rwnd = 0;
 
-  std::array<size_t, 5> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
-  int _recent_rwnd_increment_index             = 0;
+  std::array<size_t, 5> _recent_rwnd_increment       = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
+  int                   _recent_rwnd_increment_index = 0;
 
   Event *cross_thread_event = nullptr;
   Event *read_event         = nullptr;

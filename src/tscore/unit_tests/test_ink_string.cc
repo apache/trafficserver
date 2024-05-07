@@ -30,7 +30,7 @@
 // ink_fast_ltoa test
 //-------------------------------------------------------------------------
 struct int64_item {
-  int64_t n;
+  int64_t          n;
   std::string_view s;
 };
 
@@ -94,7 +94,7 @@ TEST_CASE("ink_fast_ltoa", "[libts][ink_fast_ltoa]")
 // ink_fast_inta test
 //-------------------------------------------------------------------------
 struct int_item {
-  int n;
+  int              n;
   std::string_view s;
 };
 
@@ -139,7 +139,7 @@ TEST_CASE("ink_fast_inta", "[libts][ink_fast_inta]")
 // ink_fast_uinta test
 //-------------------------------------------------------------------------
 struct uint_item {
-  unsigned int n;
+  unsigned int     n;
   std::string_view s;
 };
 

@@ -40,7 +40,7 @@
 EventNotify::EventNotify()
 {
 #if defined(HAVE_EVENTFD) && TS_USE_EPOLL == 1
-  int ret;
+  int                ret;
   struct epoll_event ev;
 
   m_event_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -80,8 +80,8 @@ int
 EventNotify::wait()
 {
 #if defined(HAVE_EVENTFD) && TS_USE_EPOLL == 1
-  ssize_t nr, nr_fd;
-  uint64_t value = 0;
+  ssize_t            nr, nr_fd;
+  uint64_t           value = 0;
   struct epoll_event ev;
 
   do {
@@ -108,8 +108,8 @@ int
 EventNotify::timedwait(int timeout) // milliseconds
 {
 #if defined(HAVE_EVENTFD) && TS_USE_EPOLL == 1
-  ssize_t nr, nr_fd = 0;
-  uint64_t value = 0;
+  ssize_t            nr, nr_fd = 0;
+  uint64_t           value = 0;
   struct epoll_event ev;
 
   //

@@ -253,12 +253,12 @@ const char *_hdrtoken_strs_heap_l = nullptr; // storage last byte
 
 int hdrtoken_num_wks = SIZEOF(_hdrtoken_strs); // # of well-known strings
 
-const char *hdrtoken_strs[SIZEOF(_hdrtoken_strs)];             // wks_idx -> heap ptr
-int hdrtoken_str_lengths[SIZEOF(_hdrtoken_strs)];              // wks_idx -> length
+const char  *hdrtoken_strs[SIZEOF(_hdrtoken_strs)];            // wks_idx -> heap ptr
+int          hdrtoken_str_lengths[SIZEOF(_hdrtoken_strs)];     // wks_idx -> length
 HdrTokenType hdrtoken_str_token_types[SIZEOF(_hdrtoken_strs)]; // wks_idx -> token type
-int32_t hdrtoken_str_slotids[SIZEOF(_hdrtoken_strs)];          // wks_idx -> slot id
-uint64_t hdrtoken_str_masks[SIZEOF(_hdrtoken_strs)];           // wks_idx -> presence mask
-uint32_t hdrtoken_str_flags[SIZEOF(_hdrtoken_strs)];           // wks_idx -> flags
+int32_t      hdrtoken_str_slotids[SIZEOF(_hdrtoken_strs)];     // wks_idx -> slot id
+uint64_t     hdrtoken_str_masks[SIZEOF(_hdrtoken_strs)];       // wks_idx -> presence mask
+uint32_t     hdrtoken_str_flags[SIZEOF(_hdrtoken_strs)];       // wks_idx -> flags
 
 DFA *hdrtoken_strs_dfa = nullptr;
 
@@ -272,7 +272,7 @@ DFA *hdrtoken_strs_dfa = nullptr;
 
 struct HdrTokenHashBucket {
   const char *wks;
-  uint32_t hash;
+  uint32_t    hash;
 };
 
 HdrTokenHashBucket hdrtoken_hash_table[HDRTOKEN_HASH_TABLE_SIZE];
@@ -381,7 +381,7 @@ void
 hdrtoken_hash_init()
 {
   uint32_t i;
-  int num_collisions;
+  int      num_collisions;
 
   memset(hdrtoken_hash_table, 0, sizeof(hdrtoken_hash_table));
   num_collisions = 0;
@@ -389,7 +389,7 @@ hdrtoken_hash_init()
   for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_commonly_tokenized_strs); i++) {
     // convert the common string to the well-known token
     unsigned const char *wks;
-    int wks_idx =
+    int                  wks_idx =
       hdrtoken_tokenize_dfa(_hdrtoken_commonly_tokenized_strs[i], static_cast<int>(strlen(_hdrtoken_commonly_tokenized_strs[i])),
                             reinterpret_cast<const char **>(&wks));
     ink_release_assert(wks_idx >= 0);
@@ -489,7 +489,7 @@ hdrtoken_init()
 
     // Set the token types for certain tokens
     for (i = 0; _hdrtoken_strs_type_initializers[i].name != nullptr; i++) {
-      int wks_idx;
+      int                 wks_idx;
       HdrTokenHeapPrefix *prefix;
 
       wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_strs_type_initializers[i].name,
@@ -503,7 +503,7 @@ hdrtoken_init()
 
     // Set special data for field names
     for (i = 0; _hdrtoken_strs_field_initializers[i].name != nullptr; i++) {
-      int wks_idx;
+      int                 wks_idx;
       HdrTokenHeapPrefix *prefix;
 
       wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_strs_field_initializers[i].name,
@@ -563,7 +563,7 @@ int
 hdrtoken_method_tokenize(const char *string, int string_len)
 {
   const char *string_out;
-  int retval = -1;
+  int         retval = -1;
   if (hdrtoken_is_wks(string)) {
     retval = hdrtoken_wks_to_index(string);
     return retval;
@@ -584,7 +584,7 @@ hdrtoken_method_tokenize(const char *string, int string_len)
 int
 hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
 {
-  int wks_idx;
+  int                 wks_idx;
   HdrTokenHashBucket *bucket;
 
   ink_assert(string != nullptr);

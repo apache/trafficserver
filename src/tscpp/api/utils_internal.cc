@@ -60,8 +60,8 @@ cleanupTransaction(Transaction &transaction, TSHttpTxn ats_txn_handle)
 void
 cleanupTransactionPlugin(Plugin *plugin, TSHttpTxn ats_txn_handle)
 {
-  TransactionPlugin *transaction_plugin = static_cast<TransactionPlugin *>(plugin);
-  std::shared_ptr<Mutex> trans_mutex    = utils::internal::getTransactionPluginMutex(*transaction_plugin, ats_txn_handle);
+  TransactionPlugin     *transaction_plugin = static_cast<TransactionPlugin *>(plugin);
+  std::shared_ptr<Mutex> trans_mutex        = utils::internal::getTransactionPluginMutex(*transaction_plugin, ats_txn_handle);
   if (trans_mutex == nullptr) {
     LOG_ERROR("TransactionPlugin use-after-free! plugin %p, txn %p", plugin, ats_txn_handle);
     return;
@@ -76,8 +76,8 @@ int
 handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
 {
   // This function is only here to clean up Transaction objects
-  TSHttpTxn ats_txn_handle = static_cast<TSHttpTxn>(edata);
-  Transaction &transaction = utils::internal::getTransaction(ats_txn_handle);
+  TSHttpTxn    ats_txn_handle = static_cast<TSHttpTxn>(edata);
+  Transaction &transaction    = utils::internal::getTransaction(ats_txn_handle);
   LOG_DEBUG("Got event %d on continuation %p for transaction (ats pointer %p, object %p)", event, cont, ats_txn_handle,
             &transaction);
 
@@ -86,7 +86,7 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_HTTP_POST_REMAP:
     // This is here to force a refresh of the cached client request url
     TSMBuffer hdr_buf;
-    TSMLoc hdr_loc;
+    TSMLoc    hdr_loc;
     (void)TSHttpTxnClientReqGet(static_cast<TSHttpTxn>(transaction.getAtsHandle()), &hdr_buf, &hdr_loc);
     break;
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
@@ -119,7 +119,7 @@ setupTransactionManagement()
   TSAssert(TS_SUCCESS == TSUserArgIndexReserve(TS_USER_ARGS_TXN, "atscppapi", "ATS CPP API", &TRANSACTION_STORAGE_INDEX));
   // We must always have a cleanup handler available
   TSMutex mutex = nullptr;
-  TSCont cont   = TSContCreate(handleTransactionEvents, mutex);
+  TSCont  cont  = TSContCreate(handleTransactionEvents, mutex);
   TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
@@ -263,7 +263,7 @@ void
 utils::internal::invokePluginForEvent(GlobalPlugin *plugin, TSHttpAltInfo altinfo_handle, TSEvent event)
 {
   TSMBuffer hdr_buf;
-  TSMLoc hdr_loc;
+  TSMLoc    hdr_loc;
 
   assert(event == TS_EVENT_HTTP_SELECT_ALT);
 
@@ -284,15 +284,15 @@ std::string
 utils::internal::consumeFromTSIOBufferReader(TSIOBufferReader reader)
 {
   std::string str;
-  int avail = TSIOBufferReaderAvail(reader);
+  int         avail = TSIOBufferReaderAvail(reader);
 
   if (avail != TS_ERROR) {
     int consumed = 0;
     if (avail > 0) {
       str.reserve(avail + 1);
 
-      int64_t data_len;
-      const char *char_data;
+      int64_t         data_len;
+      const char     *char_data;
       TSIOBufferBlock block = TSIOBufferReaderStart(reader);
       while (block != nullptr) {
         char_data = TSIOBufferBlockReadStart(block, reader, &data_len);

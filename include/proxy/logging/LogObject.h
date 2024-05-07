@@ -81,7 +81,7 @@ public:
 
 // LogObject is atomically reference counted, and the reference count is always owned by
 // one or more LogObjectManagers.
-class LogObject : public RefCountObj
+class LogObject : public RefCountObjInHeap
 {
 public:
   enum LogObjectFlags {
@@ -139,7 +139,7 @@ public:
 
   void check_buffer_expiration(long time_now);
 
-  void display(FILE *fd = stdout);
+  void            display(FILE *fd = stdout);
   static uint64_t compute_signature(LogFormat *format, char *filename, unsigned int flags);
 
   inline const char *
@@ -244,8 +244,8 @@ public:
   bool operator==(LogObject &rhs);
 
 public:
-  LogFormat *m_format;
-  Ptr<LogFile> m_logFile;
+  LogFormat    *m_format;
+  Ptr<LogFile>  m_logFile;
   LogFilterList m_filter_list;
 
 private:
@@ -259,25 +259,25 @@ private:
   // could not be used because of
   // name conflicts
 
-  unsigned int m_flags; // diverse object flags (see above)
-  uint64_t m_signature; // INK_MD5 signature for object
+  unsigned int m_flags;     // diverse object flags (see above)
+  uint64_t     m_signature; // INK_MD5 signature for object
 
   Log::RollingEnabledValues m_rolling_enabled;
-  int m_flush_threads;        // number of flush threads
-  int m_rolling_interval_sec; // time interval between rolls
+  int                       m_flush_threads;        // number of flush threads
+  int                       m_rolling_interval_sec; // time interval between rolls
   // 0 means no rolling
-  int m_rolling_offset_hr;     //
-  int m_rolling_size_mb;       // size at which the log file rolls
+  int  m_rolling_offset_hr;    //
+  int  m_rolling_size_mb;      // size at which the log file rolls
   long m_last_roll_time;       // the last time this object rolled its files
-  int m_max_rolled;            // maximum number of rolled logs to be kept, 0 no limit
-  int m_min_rolled;            // minimum number of rolled logs to be kept, 0 no limit
+  int  m_max_rolled;           // maximum number of rolled logs to be kept, 0 no limit
+  int  m_min_rolled;           // minimum number of rolled logs to be kept, 0 no limit
   bool m_reopen_after_rolling; // reopen log file after rolling (normally it is just renamed and closed)
 
-  head_p m_log_buffer; // current work buffer
-  unsigned m_buffer_manager_idx;
+  head_p            m_log_buffer; // current work buffer
+  unsigned          m_buffer_manager_idx;
   LogBufferManager *m_buffer_manager;
 
-  int m_pipe_buffer_size;
+  int  m_pipe_buffer_size;
   bool m_fast; // use fast buffering (thread local logbuffers)
 
   void generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format);
@@ -342,11 +342,11 @@ private:
 public:
   ink_mutex *_APImutex; // synchronize access to array of API objects
 private:
-  int _manage_object(LogObject *log_object, bool is_api_object, int maxConflicts);
+  int         _manage_object(LogObject *log_object, bool is_api_object, int maxConflicts);
   static bool _has_internal_filename_conflict(std::string_view filename, LogObjectList &objects);
-  int _solve_filename_conflicts(LogObject *log_obj, int maxConflicts);
-  int _solve_internal_filename_conflicts(LogObject *log_obj, int maxConflicts, int fileNum = 0);
-  void _filename_resolution_abort(const char *fname);
+  int         _solve_filename_conflicts(LogObject *log_obj, int maxConflicts);
+  int         _solve_internal_filename_conflicts(LogObject *log_obj, int maxConflicts, int fileNum = 0);
+  void        _filename_resolution_abort(const char *fname);
 
 public:
   LogObjectManager();
@@ -375,18 +375,18 @@ public:
   void flush_all_objects();
 
   LogObject *get_object_with_signature(uint64_t signature);
-  void check_buffer_expiration(long time_now);
+  void       check_buffer_expiration(long time_now);
 
   unsigned roll_files(long time_now);
-  void reopen_moved_log_files();
+  void     reopen_moved_log_files();
 
-  int log(LogAccess *lad);
-  void display(FILE *str = stdout);
-  void add_filter_to_all(LogFilter *filter);
+  int        log(LogAccess *lad);
+  void       display(FILE *str = stdout);
+  void       add_filter_to_all(LogFilter *filter);
   LogObject *find_by_format_name(const char *name) const;
-  size_t preproc_buffers(int idx);
-  void open_local_pipes();
-  void transfer_objects(LogObjectManager &mgr);
+  size_t     preproc_buffers(int idx);
+  void       open_local_pipes();
+  void       transfer_objects(LogObjectManager &mgr);
 
   bool
   has_api_objects() const

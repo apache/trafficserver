@@ -31,6 +31,7 @@
 #include "proxy/logging/LogFormat.h"
 #include "proxy/logging/LogBuffer.h"
 #include "tscore/Encoding.h"
+#include "../private/SSLProxySession.h"
 
 char INVALID_STR[] = "!INVALID_STR!";
 
@@ -110,7 +111,7 @@ LogAccess::init()
 int
 LogAccess::marshal_proxy_host_name(char *buf)
 {
-  int len         = 0;
+  int         len = 0;
   char const *str = nullptr;
 
   if (Machine *machine = Machine::instance(); machine) {
@@ -198,11 +199,11 @@ LogAccess::marshal_record(char *record, char *buf)
     return max_chars;
   }
 
-  const char *record_not_found_msg          = "RECORD_NOT_FOUND";
+  const char        *record_not_found_msg   = "RECORD_NOT_FOUND";
   const unsigned int record_not_found_chars = ::strlen(record_not_found_msg) + 1;
 
-  char ascii_buf[max_chars];
-  const char *out_buf;
+  char         ascii_buf[max_chars];
+  const char  *out_buf;
   unsigned int num_chars;
 
 #define LOG_INTEGER RECD_INT
@@ -211,13 +212,13 @@ LogAccess::marshal_record(char *record, char *buf)
 #define LOG_STRING  RECD_STRING
 
   RecDataT stype = RECD_NULL;
-  bool found     = false;
+  bool     found = false;
 
   // Since, for now at least, String metrics are still in librecords, do that lookup
   // first, and only do the new metrics lookup on a miss.
   if (RecGetRecordDataType(record, &stype) != REC_ERR_OKAY) {
-    ts::Metrics &metrics    = ts::Metrics::instance();
-    ts::Metrics::IdType mid = metrics[record];
+    ts::Metrics        &metrics = ts::Metrics::instance();
+    ts::Metrics::IdType mid     = metrics[record];
 
     if (mid != ts::Metrics::NOT_FOUND) {
       int64_t val = metrics[mid].load();
@@ -400,7 +401,7 @@ int
 LogAccess::marshal_ip(char *dest, sockaddr const *ip)
 {
   LogFieldIpStorage data;
-  int len = sizeof(data._ip);
+  int               len = sizeof(data._ip);
   if (nullptr == ip) {
     data._ip._family = AF_UNSPEC;
   } else if (ats_is_ip4(ip)) {
@@ -434,7 +435,7 @@ LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFi
   case LogFieldAliasMap::INVALID_INT:
     if (msg) {
       const int bufSize = 64;
-      char invalidCodeMsg[bufSize];
+      char      invalidCodeMsg[bufSize];
       codeStrLen = snprintf(invalidCodeMsg, 64, "%s(%" PRId64 ")", msg, code);
       if (codeStrLen < bufSize && codeStrLen < len) {
         ink_strlcpy(dest, invalidCodeMsg, len);
@@ -499,8 +500,8 @@ LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading
 {
   ink_assert(dest != nullptr);
 
-  char *p       = dest;
-  bool negative = false;
+  char *p        = dest;
+  bool  negative = false;
 
   if (val < 0) {
     negative = true;
@@ -537,7 +538,7 @@ LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading
 {
   ink_assert(dest != nullptr);
 
-  char *p             = dest;
+  char       *p       = dest;
   static char table[] = "0123456789abcdef?";
 
   for (int i = 0; i < static_cast<int>(sizeof(int64_t) * 2); i++) {
@@ -564,9 +565,9 @@ LogAccess::unmarshal_int_to_str(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  char val_buf[128];
-  int64_t val = unmarshal_int(buf);
-  int val_len = unmarshal_itoa(val, val_buf + 127);
+  char    val_buf[128];
+  int64_t val     = unmarshal_int(buf);
+  int     val_len = unmarshal_itoa(val, val_buf + 127);
 
   if (val_len < len) {
     memcpy(dest, val_buf + 128 - val_len, val_len);
@@ -588,9 +589,9 @@ LogAccess::unmarshal_int_to_str_hex(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  char val_buf[128];
-  int64_t val = unmarshal_int(buf);
-  int val_len = unmarshal_itox(val, val_buf + 127);
+  char    val_buf[128];
+  int64_t val     = unmarshal_int(buf);
+  int     val_len = unmarshal_itox(val, val_buf + 127);
 
   if (val_len < len) {
     memcpy(dest, val_buf + 128 - val_len, val_len);
@@ -712,9 +713,9 @@ unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
 {
   Debug("log-escape", "unmarshal_str_json start, len=%d, slice=%p", len, slice);
 
-  char *val_buf   = *buf;
-  int val_len     = static_cast<int>(::strlen(val_buf));
-  int escaped_len = escape_json(nullptr, val_buf, val_len);
+  char *val_buf     = *buf;
+  int   val_len     = static_cast<int>(::strlen(val_buf));
+  int   escaped_len = escape_json(nullptr, val_buf, val_len);
 
   *buf += LogAccess::strlen(val_buf); // this is how it was stored
 
@@ -764,7 +765,7 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEs
   }
 
   char *val_buf = *buf;
-  int val_len   = static_cast<int>(::strlen(val_buf));
+  int   val_len = static_cast<int>(::strlen(val_buf));
 
   *buf += LogAccess::strlen(val_buf); // this is how it was stored
 
@@ -798,9 +799,9 @@ LogAccess::unmarshal_ttmsf(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  int64_t val = unmarshal_int(buf);
-  double secs = static_cast<double>(val) / 1000;
-  int val_len = snprintf(dest, len, "%.3f", secs);
+  int64_t val     = unmarshal_int(buf);
+  double  secs    = static_cast<double>(val) / 1000;
+  int     val_len = snprintf(dest, len, "%.3f", secs);
   return val_len;
 }
 
@@ -811,9 +812,9 @@ LogAccess::unmarshal_int_to_date_str(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  int64_t value = unmarshal_int(buf);
-  char *strval  = LogUtils::timestamp_to_date_str(value);
-  int strlen    = static_cast<int>(::strlen(strval));
+  int64_t value  = unmarshal_int(buf);
+  char   *strval = LogUtils::timestamp_to_date_str(value);
+  int     strlen = static_cast<int>(::strlen(strval));
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -826,9 +827,9 @@ LogAccess::unmarshal_int_to_time_str(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  int64_t value = unmarshal_int(buf);
-  char *strval  = LogUtils::timestamp_to_time_str(value);
-  int strlen    = static_cast<int>(::strlen(strval));
+  int64_t value  = unmarshal_int(buf);
+  char   *strval = LogUtils::timestamp_to_time_str(value);
+  int     strlen = static_cast<int>(::strlen(strval));
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -853,9 +854,9 @@ LogAccess::unmarshal_int_to_netscape_str(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  int64_t value = unmarshal_int(buf);
-  char *strval  = LogUtils::timestamp_to_netscape_str(value);
-  int strlen    = static_cast<int>(::strlen(strval));
+  int64_t value  = unmarshal_int(buf);
+  char   *strval = LogUtils::timestamp_to_netscape_str(value);
+  int     strlen = static_cast<int>(::strlen(strval));
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -897,10 +898,10 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  static const char *http = "HTTP/";
-  static int http_len     = static_cast<int>(::strlen(http));
+  static const char *http     = "HTTP/";
+  static int         http_len = static_cast<int>(::strlen(http));
 
-  char val_buf[128];
+  char  val_buf[128];
   char *p = val_buf;
 
   memcpy(p, http, http_len);
@@ -976,9 +977,9 @@ LogAccess::unmarshal_http_status(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  char val_buf[128];
-  int64_t val = unmarshal_int(buf);
-  int val_len = unmarshal_itoa(val, val_buf + 127, 3, '0');
+  char    val_buf[128];
+  int64_t val     = unmarshal_int(buf);
+  int     val_len = unmarshal_itoa(val, val_buf + 127, 3, '0');
   if (val_len < len) {
     memcpy(dest, val_buf + 128 - val_len, val_len);
     return val_len;
@@ -1029,7 +1030,7 @@ int
 LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
 {
   IpEndpoint ip;
-  int zret = -1;
+  int        zret = -1;
 
   if (len > 0) {
     unmarshal_ip(buf, &ip);
@@ -1054,7 +1055,7 @@ LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
 {
-  int zret = -1;
+  int        zret = -1;
   IpEndpoint ip;
 
   if (len > 0) {
@@ -1160,7 +1161,7 @@ LogAccess::unmarshal_record(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   char *val_buf  = *buf;
-  int val_len    = static_cast<int>(::strlen(val_buf));
+  int   val_len  = static_cast<int>(::strlen(val_buf));
   *buf          += MARSHAL_RECORD_LENGTH; // this is how it was stored
   if (val_len < len) {
     memcpy(dest, val_buf, val_len);
@@ -1198,7 +1199,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   //
   char *printf_str = nullptr;
   char *fields_str = nullptr;
-  int n_fields     = LogFormat::parse_format_string(format_str, &printf_str, &fields_str);
+  int   n_fields   = LogFormat::parse_format_string(format_str, &printf_str, &fields_str);
 
   //
   // Perhaps there were no fields to resolve?  Then just return the
@@ -1215,8 +1216,8 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   Debug("log-resolve", "printf string: %s", printf_str);
 
   LogFieldList fields;
-  bool contains_aggregates;
-  int field_count = LogFormat::parse_symbol_string(fields_str, &fields, &contains_aggregates);
+  bool         contains_aggregates;
+  int          field_count = LogFormat::parse_symbol_string(fields_str, &fields, &contains_aggregates);
 
   if (field_count != n_fields) {
     Error("format_str contains %d invalid field symbols", n_fields - field_count);
@@ -1232,7 +1233,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   Debug("log-resolve", "Marshaling data from LogAccess into buffer ...");
   context->init();
   unsigned bytes_needed = fields.marshal_len(context);
-  char *buf             = static_cast<char *>(ats_malloc(bytes_needed));
+  char    *buf          = static_cast<char *>(ats_malloc(bytes_needed));
   unsigned bytes_used   = fields.marshal(context, buf);
 
   ink_assert(bytes_needed == bytes_used);
@@ -1244,7 +1245,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   // we're not sure how much space it will take when it's unmarshalled.
   // So, we'll just guess.
   //
-  char *result = static_cast<char *>(ats_malloc(8192));
+  char    *result = static_cast<char *>(ats_malloc(8192));
   unsigned bytes_resolved =
     LogBuffer::resolve_custom_entry(&fields, printf_str, buf, result, 8191, LogUtils::timestamp(), 0, LOG_SEGMENT_VERSION);
   ink_assert(bytes_resolved < 8192);
@@ -1336,7 +1337,7 @@ LogAccess::marshal_plugin_identity_id(char *buf)
 int
 LogAccess::marshal_plugin_identity_tag(char *buf)
 {
-  int len         = INK_MIN_ALIGN;
+  int         len = INK_MIN_ALIGN;
   const char *tag = m_http_sm->plugin_tag;
 
   if (!tag) {
@@ -1462,7 +1463,7 @@ int
 LogAccess::marshal_version_build_number(char *buf)
 {
   auto &version = AppVersionInfo::get_version();
-  int len       = LogAccess::strlen(version.build_number());
+  int   len     = LogAccess::strlen(version.build_number());
   if (buf) {
     marshal_str(buf, version.build_number(), len);
   }
@@ -1476,7 +1477,7 @@ int
 LogAccess::marshal_version_string(char *buf)
 {
   auto &version = AppVersionInfo::get_version();
-  int len       = LogAccess::strlen(version.version());
+  int   len     = LogAccess::strlen(version.version());
   if (buf) {
     marshal_str(buf, version.version(), len);
   }
@@ -1490,7 +1491,7 @@ int
 LogAccess::marshal_proxy_protocol_version(char *buf)
 {
   const char *version_str = nullptr;
-  int len                 = INK_MIN_ALIGN;
+  int         len         = INK_MIN_ALIGN;
 
   if (m_http_sm) {
     ProxyProtocolVersion ver = m_http_sm->t_state.pp_info.version;
@@ -1559,7 +1560,7 @@ int
 LogAccess::marshal_client_auth_user_name(char *buf)
 {
   char *str = nullptr;
-  int len   = INK_MIN_ALIGN;
+  int   len = INK_MIN_ALIGN;
 
   // Jira TS-40:
   // NOTE: Authentication related code and modules were removed/disabled.
@@ -1587,7 +1588,7 @@ LogAccess::validate_unmapped_url()
     m_client_req_unmapped_url_canon_str = INVALID_STR;
 
     if (m_http_sm->t_state.unmapped_url.valid()) {
-      int unmapped_url_len;
+      int   unmapped_url_len;
       char *unmapped_url = m_http_sm->t_state.unmapped_url.string_get_ref(&unmapped_url_len);
 
       if (unmapped_url && unmapped_url[0] != 0) {
@@ -1614,7 +1615,7 @@ LogAccess::validate_unmapped_url_path()
     m_client_req_unmapped_url_host_str = INVALID_STR;
 
     if (m_client_req_unmapped_url_path_len >= 6) { // xxx:// - minimum schema size
-      int len;
+      int   len;
       char *c =
         static_cast<char *>(memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1));
 
@@ -1649,7 +1650,7 @@ LogAccess::validate_lookup_url()
     m_cache_lookup_url_canon_str = INVALID_STR;
 
     if (m_http_sm->t_state.cache_info.lookup_url_storage.valid()) {
-      int lookup_url_len;
+      int   lookup_url_len;
       char *lookup_url = m_http_sm->t_state.cache_info.lookup_url_storage.string_get_ref(&lookup_url_len);
 
       if (lookup_url && lookup_url[0] != 0) {
@@ -1703,9 +1704,9 @@ LogAccess::marshal_client_req_timestamp_ms(char *buf)
 int
 LogAccess::marshal_client_req_http_method(char *buf)
 {
-  char *str = nullptr;
-  int alen  = 0;
-  int plen  = INK_MIN_ALIGN;
+  char *str  = nullptr;
+  int   alen = 0;
+  int   plen = INK_MIN_ALIGN;
 
   if (m_client_request) {
     str = const_cast<char *>(m_client_request->method_get(&alen));
@@ -1830,10 +1831,10 @@ LogAccess::marshal_client_req_url_path(char *buf)
 int
 LogAccess::marshal_client_req_url_scheme(char *buf)
 {
-  int scheme      = m_http_sm->t_state.orig_scheme;
-  const char *str = nullptr;
-  int alen;
-  int plen = INK_MIN_ALIGN;
+  int         scheme = m_http_sm->t_state.orig_scheme;
+  const char *str    = nullptr;
+  int         alen;
+  int         plen = INK_MIN_ALIGN;
 
   // If the transaction aborts very early, the scheme may not be set, or so ASAN reports.
   if (scheme >= 0) {
@@ -1888,7 +1889,7 @@ int
 LogAccess::marshal_client_req_protocol_version(char *buf)
 {
   const char *protocol_str = m_http_sm->get_user_agent().get_client_protocol();
-  int len                  = LogAccess::strlen(protocol_str);
+  int         len          = LogAccess::strlen(protocol_str);
 
   // Set major & minor versions when protocol_str is not "http/2".
   if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
@@ -1920,7 +1921,7 @@ int
 LogAccess::marshal_server_req_protocol_version(char *buf)
 {
   const char *protocol_str = m_http_sm->server_protocol;
-  int len                  = LogAccess::strlen(protocol_str);
+  int         len          = LogAccess::strlen(protocol_str);
 
   // Set major & minor versions when protocol_str is not "http/2".
   if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
@@ -2051,7 +2052,7 @@ int
 LogAccess::marshal_client_finish_status_code(char *buf)
 {
   if (buf) {
-    int code                                  = LOG_FINISH_FIN;
+    int                        code           = LOG_FINISH_FIN;
     HttpTransact::AbortState_t cl_abort_state = m_http_sm->t_state.client_info.abort;
     if (cl_abort_state == HttpTransact::ABORTED) {
       // Check to see if the abort is due to a timeout
@@ -2085,9 +2086,9 @@ LogAccess::marshal_client_req_id(char *buf)
 int
 LogAccess::marshal_client_req_uuid(char *buf)
 {
-  char str[TS_CRUUID_STRING_LEN + 1];
+  char        str[TS_CRUUID_STRING_LEN + 1];
   const char *uuid = Machine::instance()->uuid.getString();
-  int len          = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
+  int         len  = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
 
   ink_assert(len <= TS_CRUUID_STRING_LEN);
   len = round_strlen(len + 1);
@@ -2138,8 +2139,8 @@ LogAccess::marshal_client_tx_error_code(char *buf)
 int
 LogAccess::marshal_client_security_protocol(char *buf)
 {
-  const char *proto = m_http_sm->get_user_agent().get_client_sec_protocol();
-  int round_len     = LogAccess::strlen(proto);
+  const char *proto     = m_http_sm->get_user_agent().get_client_sec_protocol();
+  int         round_len = LogAccess::strlen(proto);
 
   if (buf) {
     marshal_str(buf, proto, round_len);
@@ -2151,8 +2152,8 @@ LogAccess::marshal_client_security_protocol(char *buf)
 int
 LogAccess::marshal_client_security_cipher_suite(char *buf)
 {
-  const char *cipher = m_http_sm->get_user_agent().get_client_cipher_suite();
-  int round_len      = LogAccess::strlen(cipher);
+  const char *cipher    = m_http_sm->get_user_agent().get_client_cipher_suite();
+  int         round_len = LogAccess::strlen(cipher);
 
   if (buf) {
     marshal_str(buf, cipher, round_len);
@@ -2164,8 +2165,8 @@ LogAccess::marshal_client_security_cipher_suite(char *buf)
 int
 LogAccess::marshal_client_security_curve(char *buf)
 {
-  const char *curve = m_http_sm->get_user_agent().get_client_curve();
-  int round_len     = LogAccess::strlen(curve);
+  const char *curve     = m_http_sm->get_user_agent().get_client_curve();
+  int         round_len = LogAccess::strlen(curve);
 
   if (buf) {
     marshal_str(buf, curve, round_len);
@@ -2513,7 +2514,7 @@ int
 LogAccess::marshal_server_host_name(char *buf)
 {
   char *str = nullptr;
-  int len   = INK_MIN_ALIGN;
+  int   len = INK_MIN_ALIGN;
 
   if (m_http_sm->t_state.current.server) {
     str = m_http_sm->t_state.current.server->name;
@@ -2853,10 +2854,10 @@ LogAccess::marshal_file_size(char *buf)
 {
   if (buf) {
     MIMEField *fld;
-    HTTPHdr *hdr = m_server_response ? m_server_response : m_cache_response;
+    HTTPHdr   *hdr = m_server_response ? m_server_response : m_cache_response;
 
     if (hdr && (fld = hdr->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE))) {
-      int len;
+      int   len;
       char *str = const_cast<char *>(fld->value_get(&len));
       char *pos = static_cast<char *>(memchr(str, '/', len)); // Find the /
 
@@ -3004,10 +3005,10 @@ LogAccess::marshal_cache_collapsed_connection_success(char *buf)
 int
 LogAccess::marshal_http_header_field(LogField::Container container, char *field, char *buf)
 {
-  char *str        = nullptr;
-  int padded_len   = INK_MIN_ALIGN;
-  int actual_len   = 0;
-  bool valid_field = false;
+  char    *str         = nullptr;
+  int      padded_len  = INK_MIN_ALIGN;
+  int      actual_len  = 0;
+  bool     valid_field = false;
   HTTPHdr *header;
 
   switch (container) {
@@ -3105,10 +3106,10 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
 int
 LogAccess::marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf)
 {
-  char *str = nullptr, *new_str = nullptr;
-  int padded_len = INK_MIN_ALIGN;
-  int actual_len = 0, new_len = 0;
-  bool valid_field = false;
+  char    *str = nullptr, *new_str = nullptr;
+  int      padded_len = INK_MIN_ALIGN;
+  int      actual_len = 0, new_len = 0;
+  bool     valid_field = false;
   HTTPHdr *header;
 
   switch (container) {
@@ -3158,8 +3159,8 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
 
         // Dups need to be comma separated.  So if there's another
         // dup, then add a comma and an escapified space ...
-        constexpr const char SEP[] = ",%20";
-        constexpr size_t SEP_LEN   = sizeof(SEP) - 1;
+        constexpr const char SEP[]   = ",%20";
+        constexpr size_t     SEP_LEN = sizeof(SEP) - 1;
         if (fld != nullptr) {
           if (buf) {
             memcpy(buf, SEP, SEP_LEN);

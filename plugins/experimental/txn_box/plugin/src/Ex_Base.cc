@@ -34,11 +34,11 @@
 #include "txn_box/Config.h"
 #include "txn_box/Context.h"
 
-using swoc::TextView;
-using swoc::MemSpan;
 using swoc::BufferWriter;
 using swoc::Errata;
+using swoc::MemSpan;
 using swoc::Rv;
+using swoc::TextView;
 namespace bwf = swoc::bwf;
 using namespace swoc::literals;
 /* ------------------------------------------------------------------------------------ */
@@ -153,8 +153,8 @@ Ex_random::validate(Config &cfg, Extractor::Spec &spec, TextView const &arg)
   values[1] = max;
   // Parse the parameter.
   if (arg) {
-    auto max_arg{arg};
-    auto min_arg = max_arg.split_prefix_at(",-");
+    auto     max_arg{arg};
+    auto     min_arg = max_arg.split_prefix_at(",-");
     TextView parsed;
     if (min_arg) {
       min = swoc::svtoi(min_arg, &parsed);
@@ -232,7 +232,7 @@ Ex_duration<T, KEY>::validate(Config &cfg, Extractor::Spec &spec, TextView const
   }
 
   TextView parsed;
-  auto n = swoc::svtoi(arg, &parsed);
+  auto     n = swoc::svtoi(arg, &parsed);
   if (parsed.size() != arg.size()) {
     return Errata(S_ERROR, R"(Parameter "{}" for "{}" is not an integer as required)", arg, NAME);
   }
@@ -299,8 +299,8 @@ Ex_txn_conf::validate(Config &cfg, Spec &spec, const TextView &arg)
 Feature
 Ex_txn_conf::extract(Context &ctx, const Extractor::Spec &spec)
 {
-  Feature zret;
-  auto var               = spec._data.span.rebind<store_type>()[0];
+  Feature zret{};
+  auto    var            = spec._data.span.rebind<store_type>()[0];
   auto &&[value, errata] = ctx._txn.override_fetch(*var);
   if (errata.is_ok()) {
     switch (value.index()) {
@@ -342,7 +342,7 @@ public:
   }
 
   using Extractor::extract; // declare hidden member function
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -366,9 +366,9 @@ class Ex_unmatched_group : public Extractor
   using super_type = Extractor;          ///< Parent type.
 public:
   static constexpr TextView NAME = UNMATCHED_FEATURE_KEY;
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
   using Extractor::extract; // declare hidden member function
-  Feature extract(Context &ctx, Spec const &spec) override;
+  Feature       extract(Context &ctx, Spec const &spec) override;
   BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
@@ -397,10 +397,10 @@ class Ex_env : public StringExtractor
   using super_type = StringExtractor; ///< Parent type.
 public:
   static constexpr TextView NAME = "env";
-  Rv<ActiveType> validate(Config &cfg, Spec &spec, TextView const &arg) override;
-  Feature extract(Config &ctx, Spec const &spec) override;
-  Feature extract(Context &ctx, Spec const &spec) override;
-  BufferWriter &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
+  Rv<ActiveType>            validate(Config &cfg, Spec &spec, TextView const &arg) override;
+  Feature                   extract(Config &ctx, Spec const &spec) override;
+  Feature                   extract(Context &ctx, Spec const &spec) override;
+  BufferWriter             &format(BufferWriter &w, Spec const &spec, Context &ctx) override;
 };
 
 Rv<ActiveType>
@@ -409,7 +409,7 @@ Ex_env::validate(Config &cfg, Extractor::Spec &spec, TextView const &arg)
   auto span       = cfg.alloc_span<TextView>(1);
   spec._data.span = span;
   TextView &value = span[0];
-  char c_arg[arg.size() + 1];
+  char      c_arg[arg.size() + 1];
   memcpy(c_arg, arg.data(), arg.size());
   c_arg[arg.size()] = 0;
   if (auto txt = ::getenv(c_arg); txt != nullptr) {
@@ -472,24 +472,24 @@ Ex_is_internal is_internal;
 Ex_txn_conf txn_conf;
 
 Ex_random random;
-Ex_env env;
+Ex_env    env;
 
-static constexpr TextView NANOSECONDS = "nanoseconds";
-Ex_duration<std::chrono::nanoseconds, &NANOSECONDS> nanoseconds;
-static constexpr TextView MILLISECONDS = "milliseconds";
+static constexpr TextView                             NANOSECONDS = "nanoseconds";
+Ex_duration<std::chrono::nanoseconds, &NANOSECONDS>   nanoseconds;
+static constexpr TextView                             MILLISECONDS = "milliseconds";
 Ex_duration<std::chrono::milliseconds, &MILLISECONDS> milliseconds;
-static constexpr TextView SECONDS = "seconds";
-Ex_duration<std::chrono::seconds, &SECONDS> seconds;
-static constexpr TextView MINUTES = "minutes";
-Ex_duration<std::chrono::minutes, &MINUTES> minutes;
-static constexpr TextView HOURS = "hours";
-Ex_duration<std::chrono::hours, &HOURS> hours;
-static constexpr TextView DAYS = "days";
-Ex_duration<std::chrono::days, &DAYS> days;
-static constexpr TextView WEEKS = "weeks";
-Ex_duration<std::chrono::weeks, &WEEKS> weeks;
+static constexpr TextView                             SECONDS = "seconds";
+Ex_duration<std::chrono::seconds, &SECONDS>           seconds;
+static constexpr TextView                             MINUTES = "minutes";
+Ex_duration<std::chrono::minutes, &MINUTES>           minutes;
+static constexpr TextView                             HOURS = "hours";
+Ex_duration<std::chrono::hours, &HOURS>               hours;
+static constexpr TextView                             DAYS = "days";
+Ex_duration<std::chrono::days, &DAYS>                 days;
+static constexpr TextView                             WEEKS = "weeks";
+Ex_duration<std::chrono::weeks, &WEEKS>               weeks;
 
-Ex_active_feature ex_with_feature;
+Ex_active_feature  ex_with_feature;
 Ex_unmatched_group unmatched_group;
 
 [[maybe_unused]] bool INITIALIZED = []() -> bool {

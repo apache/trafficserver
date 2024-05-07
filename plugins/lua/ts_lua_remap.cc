@@ -101,7 +101,7 @@ static int
 ts_lua_remap_get_from_url_host(lua_State *L)
 {
   const char *host;
-  int len = 0;
+  int         len = 0;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -146,7 +146,7 @@ static int
 ts_lua_remap_get_from_url_scheme(lua_State *L)
 {
   const char *scheme;
-  int len;
+  int         len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -171,7 +171,7 @@ static int
 ts_lua_remap_get_from_uri(lua_State *L)
 {
   const char *path;
-  int path_len;
+  int         path_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -194,7 +194,7 @@ static int
 ts_lua_remap_get_from_url(lua_State *L)
 {
   char *url;
-  int url_len;
+  int   url_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -217,7 +217,7 @@ static int
 ts_lua_remap_get_to_url_host(lua_State *L)
 {
   const char *host;
-  int len = 0;
+  int         len = 0;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -262,7 +262,7 @@ static int
 ts_lua_remap_get_to_url_scheme(lua_State *L)
 {
   const char *scheme;
-  int len;
+  int         len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -287,7 +287,7 @@ static int
 ts_lua_remap_get_to_uri(lua_State *L)
 {
   const char *path;
-  int path_len;
+  int         path_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -310,7 +310,7 @@ static int
 ts_lua_remap_get_to_url(lua_State *L)
 {
   char *url;
-  int url_len;
+  int   url_len;
 
   ts_lua_http_ctx *http_ctx;
 

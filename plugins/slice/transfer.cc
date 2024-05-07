@@ -26,9 +26,9 @@ transfer_content_bytes(Data *const data)
     return 0;
   }
 
-  TSIOBufferReader const reader = data->m_upstream.m_read.m_reader;
-  TSIOBuffer const output_buf   = data->m_dnstream.m_write.m_iobuf;
-  TSVIO const output_vio        = data->m_dnstream.m_write.m_vio;
+  TSIOBufferReader const reader     = data->m_upstream.m_read.m_reader;
+  TSIOBuffer const       output_buf = data->m_dnstream.m_write.m_iobuf;
+  TSVIO const            output_vio = data->m_dnstream.m_write.m_vio;
 
   int64_t consumed = 0; // input vio bytes visited
   int64_t copied   = 0; // output bytes transferred
@@ -93,8 +93,8 @@ transfer_all_bytes(Data *const data)
 
   int64_t consumed = 0; // input vio bytes visited
 
-  TSIOBufferReader const reader = data->m_upstream.m_read.m_reader;
-  TSIOBuffer const output_buf   = data->m_dnstream.m_write.m_iobuf;
+  TSIOBufferReader const reader     = data->m_upstream.m_read.m_reader;
+  TSIOBuffer const       output_buf = data->m_dnstream.m_write.m_iobuf;
 
   int64_t const read_avail = TSIOBufferReaderAvail(reader);
 

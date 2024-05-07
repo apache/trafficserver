@@ -40,6 +40,12 @@
 #include <vector>
 #include <openssl/rand.h>
 
+namespace
+{
+DbgCtl dbg_ctl_ssl{"ssl"};
+
+} // end anonymous namespace
+
 struct SSLAddressLookupKey {
   explicit SSLAddressLookupKey(const IpEndpoint &ip)
   {
@@ -74,7 +80,7 @@ struct SSLAddressLookupKey {
   }
 
 private:
-  char key[(TS_IP6_SIZE * 2) /* hex addr */ + 1 /* dot */ + 4 /* port */ + 1 /* nullptr */];
+  char          key[(TS_IP6_SIZE * 2) /* hex addr */ + 1 /* dot */ + 4 /* port */ + 1 /* nullptr */];
   unsigned char sep = 0; // offset of address/port separator
 };
 
@@ -92,9 +98,9 @@ public:
   /// This creates an alias, a different @a name referring to the same
   /// cert context.
   /// @return @a idx
-  int insert(const char *name, int idx);
+  int             insert(const char *name, int idx);
   SSLCertContext *lookup(const std::string &name);
-  void printWildDomains() const;
+  void            printWildDomains() const;
   unsigned
   count() const
   {
@@ -117,7 +123,7 @@ private:
     void
     Print() const
     {
-      Debug("ssl", "Item=%p SSL_CTX=#%d", this, idx);
+      Dbg(dbg_ctl_ssl, "Item=%p SSL_CTX=#%d", this, idx);
     }
     int idx = -1;           ///< Index in the context store.
     LINK(ContextRef, link); ///< Require by @c Trie
@@ -143,8 +149,8 @@ void
 ticket_block_free(void *ptr)
 {
   if (ptr) {
-    ssl_ticket_key_block *key_block_ptr = static_cast<ssl_ticket_key_block *>(ptr);
-    unsigned num_ticket_keys            = key_block_ptr->num_keys;
+    ssl_ticket_key_block *key_block_ptr   = static_cast<ssl_ticket_key_block *>(ptr);
+    unsigned              num_ticket_keys = key_block_ptr->num_keys;
     memset(ptr, 0, sizeof(ssl_ticket_key_block) + num_ticket_keys * sizeof(ssl_ticket_key_t));
   }
   ats_free(ptr);
@@ -154,7 +160,7 @@ ssl_ticket_key_block *
 ticket_block_alloc(unsigned count)
 {
   ssl_ticket_key_block *ptr;
-  size_t nbytes = sizeof(ssl_ticket_key_block) + count * sizeof(ssl_ticket_key_t);
+  size_t                nbytes = sizeof(ssl_ticket_key_block) + count * sizeof(ssl_ticket_key_t);
 
   ptr = static_cast<ssl_ticket_key_block *>(ats_malloc(nbytes));
   memset(ptr, 0, nbytes);
@@ -165,13 +171,13 @@ ticket_block_alloc(unsigned count)
 ssl_ticket_key_block *
 ticket_block_create(char *ticket_key_data, int ticket_key_len)
 {
-  ssl_ticket_key_block *keyblock = nullptr;
-  unsigned num_ticket_keys       = ticket_key_len / sizeof(ssl_ticket_key_t);
+  ssl_ticket_key_block *keyblock        = nullptr;
+  unsigned              num_ticket_keys = ticket_key_len / sizeof(ssl_ticket_key_t);
   if (num_ticket_keys == 0) {
     Error("SSL session ticket key is too short (>= 48 bytes are required)");
     goto fail;
   }
-  Debug("ssl", "Create %d ticket key blocks", num_ticket_keys);
+  Dbg(dbg_ctl_ssl, "Create %d ticket key blocks", num_ticket_keys);
 
   keyblock = ticket_block_alloc(num_ticket_keys);
 
@@ -197,8 +203,8 @@ ssl_ticket_key_block *
 ssl_create_ticket_keyblock(const char *ticket_key_path)
 {
 #if TS_HAS_TLS_SESSION_TICKET
-  ats_scoped_str ticket_key_data;
-  int ticket_key_len;
+  ats_scoped_str        ticket_key_data;
+  int                   ticket_key_len;
   ssl_ticket_key_block *keyblock = nullptr;
 
   if (ticket_key_path != nullptr) {
@@ -295,7 +301,7 @@ SSLCertLookup::find(const std::string &address, SSLCertContextType ctxType) cons
 SSLCertContext *
 SSLCertLookup::find(const IpEndpoint &address) const
 {
-  SSLCertContext *cc;
+  SSLCertContext     *cc;
   SSLAddressLookupKey key(address);
 
 #ifdef OPENSSL_IS_BORINGSSL
@@ -452,7 +458,7 @@ int
 SSLContextStorage::insert(const char *name, int idx)
 {
   ats_wildcard_matcher wildcard;
-  char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
+  char                 lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
   ts::transform_lower(name, lower_case_name);
 
   shared_SSL_CTX ctx = this->ctx_store[idx].getCtx();
@@ -466,22 +472,22 @@ SSLContextStorage::insert(const char *name, int idx)
     }
     if (subdomain) {
       if (auto it = this->wilddomains.find(subdomain); it != this->wilddomains.end()) {
-        Debug("ssl", "previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name, it->second,
-              idx);
+        Dbg(dbg_ctl_ssl, "previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name,
+            it->second, idx);
         idx = -1;
       } else {
         this->wilddomains.emplace(subdomain, idx);
-        Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, ctx.get(), idx);
+        Dbg(dbg_ctl_ssl, "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, ctx.get(), idx);
       }
     }
   } else {
     if (auto it = this->hostnames.find(lower_case_name); it != this->hostnames.end() && idx != it->second) {
-      Debug("ssl", "previously indexed '%s' with SSL_CTX %d, cannot index it with SSL_CTX #%d now", lower_case_name, it->second,
-            idx);
+      Dbg(dbg_ctl_ssl, "previously indexed '%s' with SSL_CTX %d, cannot index it with SSL_CTX #%d now", lower_case_name, it->second,
+          idx);
       idx = -1;
     } else {
       this->hostnames.emplace(lower_case_name, idx);
-      Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, ctx.get(), idx);
+      Dbg(dbg_ctl_ssl, "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, ctx.get(), idx);
     }
   }
   return idx;
@@ -491,7 +497,7 @@ void
 SSLContextStorage::printWildDomains() const
 {
   for (auto &&it : this->wilddomains) {
-    Debug("ssl", "Stored wilddomain %s", it.first.c_str());
+    Dbg(dbg_ctl_ssl, "Stored wilddomain %s", it.first.c_str());
   }
 }
 
@@ -525,7 +531,7 @@ SSLContextStorage::lookup(const std::string &name)
 static char *
 reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
 {
-  char *ptr        = reversed + sizeof(reversed);
+  char       *ptr  = reversed + sizeof(reversed);
   const char *part = hostname;
 
   *(--ptr) = '\0'; // NUL-terminate
@@ -556,7 +562,7 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
 
 REGRESSION_TEST(SSLWildcardMatch)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  TestBox box(t, pstatus);
+  TestBox              box(t, pstatus);
   ats_wildcard_matcher wildcard;
 
   box = REGRESSION_TEST_PASSED;

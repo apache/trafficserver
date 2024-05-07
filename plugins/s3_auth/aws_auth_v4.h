@@ -44,13 +44,13 @@ class TsInterface
 {
 public:
   virtual ~TsInterface(){};
-  virtual const char *getMethod(int *length) = 0;
-  virtual const char *getHost(int *length)   = 0;
-  virtual const char *getPath(int *length)   = 0;
-  virtual const char *getParams(int *length) = 0;
-  virtual const char *getQuery(int *length)  = 0;
-  virtual HeaderIterator headerBegin()       = 0;
-  virtual HeaderIterator headerEnd()         = 0;
+  virtual const char    *getMethod(int *length) = 0;
+  virtual const char    *getHost(int *length)   = 0;
+  virtual const char    *getPath(int *length)   = 0;
+  virtual const char    *getParams(int *length) = 0;
+  virtual const char    *getQuery(int *length)  = 0;
+  virtual HeaderIterator headerBegin()          = 0;
+  virtual HeaderIterator headerEnd()            = 0;
 };
 
 #ifdef AWS_AUTH_V4_UNIT_TEST
@@ -75,7 +75,7 @@ void
 commaSeparateString(ContainerType &ss, const String &input, bool trim = true, bool lowerCase = true)
 {
   std::istringstream istr(input);
-  String token;
+  String             token;
 
   while (std::getline(istr, token, ',')) {
     token = trim ? trimWhiteSpaces(token) : token;
@@ -93,19 +93,19 @@ public:
             const char *awsSecretAccessKey, size_t awsSecretAccessKeyLen, const char *awsService, size_t awsServiceLen,
             const StringSet &includedHeaders, const StringSet &excludedHeaders, const StringMap &regionMap);
   const char *getDateTime(size_t *dateTimeLen);
-  String getPayloadHash();
-  String getAuthorizationHeader();
+  String      getPayloadHash();
+  String      getAuthorizationHeader();
 
 private:
   TsInterface &_api;
-  char _dateTime[sizeof "20170428T010203Z"];
-  bool _signPayload               = false;
-  const char *_awsAccessKeyId     = nullptr;
-  size_t _awsAccessKeyIdLen       = 0;
-  const char *_awsSecretAccessKey = nullptr;
-  size_t _awsSecretAccessKeyLen   = 0;
-  const char *_awsService         = nullptr;
-  size_t _awsServiceLen           = 0;
+  char         _dateTime[sizeof "20170428T010203Z"];
+  bool         _signPayload           = false;
+  const char  *_awsAccessKeyId        = nullptr;
+  size_t       _awsAccessKeyIdLen     = 0;
+  const char  *_awsSecretAccessKey    = nullptr;
+  size_t       _awsSecretAccessKeyLen = 0;
+  const char  *_awsService            = nullptr;
+  size_t       _awsServiceLen         = 0;
 
   const StringSet &_includedHeaders;
   const StringSet &_excludedHeaders;

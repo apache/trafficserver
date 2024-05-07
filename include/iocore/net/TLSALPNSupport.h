@@ -35,10 +35,10 @@ class ALPNSupport
 public:
   virtual ~ALPNSupport() = default;
 
-  static void initialize();
+  static void         initialize();
   static ALPNSupport *getInstance(SSL *ssl);
-  static void bind(SSL *ssl, ALPNSupport *alpns);
-  static void unbind(SSL *ssl);
+  static void         bind(SSL *ssl, ALPNSupport *alpns);
+  static void         unbind(SSL *ssl);
 
   void registerNextProtocolSet(SSLNextProtocolSet *, const SessionProtocolSet &protos);
   void disableProtocol(int idx);
@@ -73,18 +73,18 @@ public:
   }
 
   void set_negotiated_protocol_id(const swoc::TextView &proto);
-  int get_negotiated_protocol_id() const;
+  int  get_negotiated_protocol_id() const;
 
 private:
   static int _ex_data_index;
 
   const SSLNextProtocolSet *npnSet = nullptr;
-  SessionProtocolSet protoenabled;
+  SessionProtocolSet        protoenabled;
   // Local copies of the npn strings
-  unsigned char *npn        = nullptr;
-  size_t npnsz              = 0;
-  Continuation *npnEndpoint = nullptr;
-  int _negotiated_proto_id  = SessionProtocolNameRegistry::INVALID;
+  unsigned char *npn                  = nullptr;
+  size_t         npnsz                = 0;
+  Continuation  *npnEndpoint          = nullptr;
+  int            _negotiated_proto_id = SessionProtocolNameRegistry::INVALID;
 };
 
 //

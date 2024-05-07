@@ -71,7 +71,7 @@ namespace ContinuationTest
 {
 struct {
   TSEvent event;
-  void *edata;
+  void   *edata;
 } passedToEventFunc;
 
 bool

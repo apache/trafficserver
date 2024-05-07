@@ -29,7 +29,7 @@ public:
 
   static void initLibrary(const std::string &path);
 
-  virtual int64_t get_geo_int(const sockaddr *addr) const override;
+  virtual int64_t     get_geo_int(const sockaddr *addr) const override;
   virtual std::string get_geo_string(const sockaddr *addr) const override;
 };
 
@@ -41,6 +41,6 @@ public:
 
   static void initLibrary(const std::string &path);
 
-  virtual int64_t get_geo_int(const sockaddr *addr) const override;
+  virtual int64_t     get_geo_int(const sockaddr *addr) const override;
   virtual std::string get_geo_string(const sockaddr *addr) const override;
 };

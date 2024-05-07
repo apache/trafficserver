@@ -52,9 +52,6 @@ private:
 
 class SSLAPIHooks : public FeatureAPIHooks<TSSslHookInternalID, TSSslHookInternalID::NUM>
 {
+public:
+  static SSLAPIHooks *instance();
 };
-
-// there is no corresponding deinit; we leak the resource on shutdown
-void init_global_ssl_hooks();
-
-extern SSLAPIHooks *g_ssl_hooks;
