@@ -26,6 +26,8 @@
 #include <ts/remap_version.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 static const char *PLUGIN_NAME = "fq_pacing";
 
@@ -56,21 +58,21 @@ safe_setsockopt(int s, int level, int optname, char *optval, int optlevel)
 static int
 fq_is_default_qdisc()
 {
-  TSFile  f         = nullptr;
-  ssize_t s         = 0;
+  int     fd        = -1;
+  ssize_t bytes     = 0;
   char    buffer[5] = {};
   int     rc        = 0;
 
-  f = TSfopen("/proc/sys/net/core/default_qdisc", "r");
-  if (!f) {
+  fd = open("/proc/sys/net/core/default_qdisc", O_RDONLY);
+  if (fd < 0) {
     return 0;
   }
 
-  s = TSfread(f, buffer, sizeof(buffer) - 1);
-  if (s > 0) {
-    buffer[s] = 0;
+  bytes = read(fd, buffer, sizeof(buffer) - 1);
+  if (bytes > 0) {
+    buffer[bytes] = 0;
   } else {
-    TSfclose(f);
+    close(fd);
     return 0;
   }
 
@@ -79,7 +81,7 @@ fq_is_default_qdisc()
   }
 
   rc = (strncmp(buffer, "fq", sizeof(buffer)) == 0);
-  TSfclose(f);
+  close(fd);
   return (rc);
 }
 
