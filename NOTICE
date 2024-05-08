@@ -101,3 +101,8 @@ https://github.com/ariya/FastLZ
 
 include/tsutil/Bravo.h is C++ version of puzpuzpuz/xsync's RBMutex
 Copyright (c) 2021 Andrey Pechkurov (MIT License)
+
+~~
+
+lib/systemtap/sys/sdt.h is from SystemTap.  This file is dedicated to the public domain, pursuant to CC0.
+https://fossies.org/linux/systemtap/includes/sys/sdt.h
