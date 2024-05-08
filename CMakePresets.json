@@ -161,6 +161,7 @@
       "description": "CI Pipeline config for Fedora Linux",
       "inherits": ["ci"],
       "cacheVariables": {
+        "ENABLE_PROBES": "ON",
         "OPENSSL_ROOT_DIR": "/opt/openssl-quic",
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
