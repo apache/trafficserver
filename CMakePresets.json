@@ -151,7 +151,9 @@
         "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
         "opentelemetry_ROOT": "/opt",
-        "ENABLE_QUICHE": "ON"
+        "ENABLE_QUICHE": "ON",
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -fsanitize=address",
+        "CMAKE_C_FLAGS_DEBUG": "-g -fsanitize=address"
       }
     },
     {
