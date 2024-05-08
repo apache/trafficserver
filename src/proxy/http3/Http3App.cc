@@ -79,7 +79,7 @@ Http3App::~Http3App()
 void
 Http3App::start()
 {
-  QUICStreamId            stream_id;
+  QUICStreamId            stream_id{};
   QUICConnectionErrorUPtr error;
 
   error = this->create_uni_stream(stream_id, Http3StreamType::CONTROL);
