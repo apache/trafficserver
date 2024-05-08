@@ -141,6 +141,7 @@ option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
 option(LINK_PLUGINS "Link core libraries to plugins (default OFF)")
+option(ENABLE_PROBES "Enable ATS SystemTap probes (default OFF)")
 
 # Setup user
 # NOTE: this is the user trafficserver runs as
@@ -323,6 +324,10 @@ if(ENABLE_ASAN)
   endif()
   add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
   add_link_options(-fsanitize=address)
+endif()
+
+if(ENABLE_PROBES)
+  add_compile_options("-DENABLE_SYSTEMTAP_PROBES")
 endif()
 
 set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})

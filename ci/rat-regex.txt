@@ -67,6 +67,7 @@ port\.h
 ^catch[.]hpp$
 ^configuru.hpp$
 ^yamlcpp$
+^systemtap$
 ^swoc$
 ^tests/gold_tests/autest-site/min_cfg$
 ^clang-tidy.conf$
