@@ -56,7 +56,7 @@
 #include "iocore/net/ProxyProtocol.h"
 
 #include "tscore/Layout.h"
-#include "ts/sdt.h"
+#include "ts/ats_probe.h"
 
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>

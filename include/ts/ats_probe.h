@@ -1,6 +1,6 @@
 /** @file
 
-    A brief file description
+    Expose ATS SystemTap probes.
 
     @section license License
 
@@ -23,7 +23,8 @@
 
 #pragma once
 
-#ifdef HAVE_SYSTEMTAP
+// To enable ATS SystemTap probes, pass -DENABLE_PROBES=ON to cmake.
+#ifdef ENABLE_SYSTEMTAP_PROBES
 
 #include <sys/sdt.h>
 
