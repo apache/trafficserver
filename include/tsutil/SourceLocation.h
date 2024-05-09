@@ -24,29 +24,32 @@
 #pragma once
 
 #include "swoc/bwf_fwd.h"
+#include <string_view>
 
 // The SourceLocation class wraps up a source code location, including
 // file name, function name, and line number, and contains a method to
 // format the result into a string buffer.
 
-#define MakeSourceLocation() SourceLocation(__FILE__, __FUNCTION__, __LINE__)
+#define MakeSourceLocation()                                                                                                 \
+  SourceLocation(std::string_view{__FILE__, sizeof(__FILE__) - 1}, std::string_view{__FUNCTION__, sizeof(__FUNCTION__) - 1}, \
+                 __LINE__)
 
 class SourceLocation
 {
 public:
-  const char *file;
-  const char *func;
-  int         line;
+  std::string_view file;
+  std::string_view func;
+  int              line = 0;
 
   SourceLocation()                          = default;
   SourceLocation(const SourceLocation &rhs) = default;
 
-  SourceLocation(const char *_file, const char *_func, int _line) : file(_file), func(_func), line(_line) {}
+  SourceLocation(std::string_view _file, std::string_view _func, int _line) : file(_file), func(_func), line(_line) {}
 
   bool
   valid() const
   {
-    return file && line;
+    return !file.empty() && line;
   }
 
   SourceLocation &
@@ -57,6 +60,8 @@ public:
     this->line = rhs.line;
     return *this;
   }
+
+  std::string_view basefile() const;
 
   char               *str(char *buf, int buflen) const;
   swoc::BufferWriter &print(swoc::BufferWriter &w, swoc::bwf::Spec const &spec) const;

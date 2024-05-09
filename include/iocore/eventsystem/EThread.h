@@ -306,6 +306,40 @@ public:
 
   InkRand generator = static_cast<uint64_t>(ink_get_hrtime() ^ reinterpret_cast<uintptr_t>(this));
 
+#ifdef ENABLE_EVENT_CORRELATION
+  Event::CorrelationType push_correlation(Event::CorrelationType corr);
+  void                   pop_correlation(Event::CorrelationType corr);
+  Event::CorrelationType ethread_correlation = Event::CorrelationType();
+
+  static Event::CorrelationType
+  correlation()
+  {
+    EThread *t = this_ethread();
+    if (t != nullptr) {
+      return t->ethread_correlation;
+    }
+    return {};
+  }
+
+  static void
+  set_correlation(Event::CorrelationType c)
+  {
+    EThread *t = this_ethread();
+    if (t != nullptr) {
+      t->ethread_correlation = c;
+    }
+  }
+
+  static void
+  clear_correlation()
+  {
+    EThread *t = this_ethread();
+    if (t != nullptr) {
+      t->ethread_correlation = {};
+    }
+  }
+#endif
+
   /*-------------------------------------------------------*\
   |  UNIX Interface                                         |
   \*-------------------------------------------------------*/

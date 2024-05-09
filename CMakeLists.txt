@@ -143,6 +143,7 @@ option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
 option(LINK_PLUGINS "Link core libraries to plugins (default OFF)")
 option(ENABLE_PROBES "Enable ATS SystemTap probes (default OFF)")
+option(ENABLE_LOCK_LEDGER "Enable lock ledger recording (default OFF)")
 
 # Setup user
 # NOTE: this is the user trafficserver runs as
@@ -354,6 +355,10 @@ endif()
 if(EXTERNAL_LIBSWOC)
   message(STATUS "Looking for external libswoc")
   find_package(libswoc REQUIRED)
+endif()
+
+if(ENABLE_LOCK_LEDGER)
+  add_compile_definitions(ENABLE_EVENT_CORRELATION ENABLE_LOCK_LEDGER)
 endif()
 
 include(Check128BitCas)

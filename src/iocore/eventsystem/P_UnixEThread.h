@@ -101,6 +101,9 @@ TS_INLINE Event *
 EThread::schedule(Event *e)
 {
   e->ethread = this;
+#ifdef ENABLE_EVENT_CORRELATION
+  e->set_correlation(ethread_correlation);
+#endif
   if (tt != REGULAR) {
     ink_assert(tt == DEDICATED);
     return eventProcessor.schedule(e, ET_CALL);

@@ -163,8 +163,21 @@ public:
   Thread &operator=(const Thread &) = delete;
   virtual ~Thread();
 
+  void
+  set_name(std::string_view n)
+  {
+    thread_name = n;
+  }
+  std::string_view
+  name()
+  {
+    return thread_name;
+  }
+
 protected:
   Thread();
+
+  std::string_view thread_name;
 };
 
 extern Thread *this_thread();

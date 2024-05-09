@@ -119,6 +119,9 @@ public:
 
   /** Whether the current timeout is a default inactivity timeout. */
   bool use_default_inactivity_timeout = false;
+#if ENABLE_EVENT_CORRELATION
+  Event::CorrelationType event_correlation{};
+#endif
 
   LINK(NetEvent, open_link);
   LINK(NetEvent, cop_link);

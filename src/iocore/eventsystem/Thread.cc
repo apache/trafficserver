@@ -68,6 +68,7 @@ spawn_thread_internal(void *a)
 
   p->me->set_specific();
   ink_set_thread_name(p->name);
+  p->me->set_name(p->name);
 
   if (p->f) {
     p->f();
