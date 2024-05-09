@@ -61,6 +61,8 @@ set(BUILD_NUMBER
     "0"
     CACHE STRING "The build number"
 )
+set(SRC_BUILD_DIR ${CMAKE_BINARY_DIR})
+
 execute_process(
   COMMAND id -nu
   OUTPUT_VARIABLE BUILD_PERSON
