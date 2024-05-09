@@ -629,6 +629,7 @@ QUICNetVConnection::_handle_write_ready()
 
   Ptr<IOBufferBlock> udp_payload;
   quiche_send_info   send_info;
+  struct timespec    send_at_hint;
   ssize_t            res;
   ssize_t            written = 0;
 
@@ -642,6 +643,13 @@ QUICNetVConnection::_handle_write_ready()
   while (written + max_udp_payload_size <= quantum) {
     res = quiche_conn_send(this->_quiche_con, reinterpret_cast<uint8_t *>(udp_payload->end()) + written, max_udp_payload_size,
                            &send_info);
+
+#ifdef HAVE_SO_TXTIME
+    if (written == 0) {
+      memcpy(&send_at_hint, &send_info.at, sizeof(struct timespec));
+    }
+#endif
+
     if (res > 0) {
       written += res;
     }
@@ -655,7 +663,7 @@ QUICNetVConnection::_handle_write_ready()
     if (static_cast<size_t>(written) > max_udp_payload_size) {
       segment_size = max_udp_payload_size;
     }
-    this->_packet_handler->send_packet(this->_udp_con, this->con.addr, udp_payload, segment_size);
+    this->_packet_handler->send_packet(this->_udp_con, this->con.addr, udp_payload, segment_size, &send_at_hint);
     net_activity(this, this_ethread());
   }
 }

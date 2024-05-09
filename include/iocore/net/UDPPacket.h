@@ -40,6 +40,9 @@ struct UDPPacketInternal {
 
   int        reqGenerationNum = 0;
   ink_hrtime delivery_time    = 0; // when to deliver packet
+#ifdef HAVE_SO_TXTIME
+  struct timespec send_at;
+#endif
 
   Ptr<IOBufferBlock> chain;
   Continuation      *cont = nullptr; // callback on error
@@ -102,7 +105,8 @@ public:
      @param buf IOBufferBlock chain of data to use
      @param segment_size Segment size
   */
-  static UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size = 0);
+  static UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size = 0,
+                                  struct timespec *send_at_hint = nullptr);
 
   /**
      Create a new packet to be delivered to application.
