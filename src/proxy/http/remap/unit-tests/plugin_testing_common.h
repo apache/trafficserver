@@ -38,8 +38,6 @@
 
 #include "proxy/http/remap/PluginFactory.h"
 
-extern thread_local PluginThreadContext *pluginThreadContext;
-
 /* A temp sandbox to play with our toys used for all fun with this test-bench */
 fs::path getTemporaryDir();
 

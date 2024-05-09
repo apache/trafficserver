@@ -35,16 +35,15 @@
 #include "plugin_testing_common.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
 
-thread_local PluginThreadContext *pluginThreadContext;
-
-static void    *INSTANCE_HANDLER = (void *)789;
-std::error_code ec;
+static void            *INSTANCE_HANDLER = (void *)789;
+std::error_code         ec;
+static RemapPluginInfo *Keep_Plugin{nullptr};
 
 /* The following are paths that are used commonly in the unit-tests */
 static fs::path sandboxDir     = getTemporaryDir();
 static fs::path runtimeDir     = sandboxDir / "runtime";
 static fs::path searchDir      = sandboxDir / "search";
-static fs::path pluginBuildDir = fs::current_path();
+static fs::path pluginBuildDir = fs::path{SRC_BUILD_DIR} / "src/proxy/http/remap/unit-tests/.libs";
 
 void
 clean()
@@ -96,7 +95,6 @@ setupSandBox(const fs::path configPath)
   fs::path effectivePath   = searchDir / configPath;
   fs::path runtimePath     = runtimeDir / configPath;
   fs::path pluginBuildPath = pluginBuildDir / configPath;
-
   /* Instantiate and initialize a plugin DSO instance. */
   RemapPluginUnitTest *plugin = new RemapPluginUnitTest(configPath, effectivePath, runtimePath);
 
@@ -265,7 +263,7 @@ SCENARIO("invoking plugin init", "[plugin][core]")
 
         checkCallTest(/* shouldHaveFailed */ false, result, error, expectedError, debugObject->initCalled);
       }
-      cleanupSandBox(nullptr);
+      cleanupSandBox(Keep_Plugin);
     }
 
     WHEN("init fails")
@@ -329,7 +327,7 @@ SCENARIO("invoking plugin instance init", "[plugin][core]")
           CHECK(0 == strcmp(ARGV[i], debugObject->argv[i]));
         }
       }
-      cleanupSandBox(nullptr);
+      cleanupSandBox(Keep_Plugin);
     }
 
     WHEN("instance init fails")
@@ -440,7 +438,7 @@ SCENARIO("config reload", "[plugin][core]")
         CHECK(1 == debugObject->postReloadConfigCalled);
         CHECK(TSREMAP_CONFIG_RELOAD_FAILURE == debugObject->postReloadConfigStatus);
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox(Keep_Plugin);
     }
 
     WHEN("'config reload' is successful and the plugin is part of the new configuration")
@@ -456,7 +454,7 @@ SCENARIO("config reload", "[plugin][core]")
         CHECK(1 == debugObject->postReloadConfigCalled);
         CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED == debugObject->postReloadConfigStatus);
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox(Keep_Plugin);
     }
 
     WHEN("'config reload' is successful and the plugin is part of the new configuration")

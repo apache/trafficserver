@@ -94,3 +94,6 @@ public:
     return 0;
   }
 };
+
+void enablePluginDynamicReload();
+void disablePluginDynamicReload();
