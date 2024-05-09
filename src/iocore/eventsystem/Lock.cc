@@ -36,6 +36,7 @@
 
 ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
 
+#if ENABLE_LOCK_LEDGER
 struct FrameHeader {
   char     magic[4];
   uint32_t label_count;
@@ -380,6 +381,7 @@ lock_unlock(ProxyMutex *m)
 {
   the_ledger.add_entry(UnlockOp, m);
 }
+#endif // ENABLE_LOCK_LEDGER
 
 #ifdef LOCK_CONTENTION_PROFILING
 void
