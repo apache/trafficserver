@@ -1250,7 +1250,6 @@ TEST_CASE("IPSpace Edge", "[libswoc][ipspace][edge]") {
 
   auto spot = cspace.find(a1);
   static_assert(std::is_same_v<Space::const_iterator, decltype(spot)>);
-  auto &v1 = *spot;
 
   auto const iter = cspace.find(a1);
   if (auto &&[r, p] = *iter; !r.empty()) {
