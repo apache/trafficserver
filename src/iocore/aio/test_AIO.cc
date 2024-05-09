@@ -108,6 +108,13 @@ struct AIO_Device : public Continuation {
     time_start = 0;
     SET_HANDLER(&AIO_Device::do_hotset);
   }
+  ~AIO_Device()
+  {
+    if (io) {
+      delete io;
+      io = nullptr;
+    }
+  }
   int
   select_mode(double p)
   {
