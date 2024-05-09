@@ -87,7 +87,6 @@ endmacro()
 #   [DESCRIPTION <description>]
 #   [DEFAULT <default>]
 #   [FEATURE_VAR <feature_var>]
-#   [WITH_SUBDIRECTORY <name>]
 #   [COMPONENT <component>]
 #   [PACKAGE_DEPENDS <package_one> <package_two> ...]
 #   [HEADER_DEPENDS <header_one> <header_two> ...]
@@ -120,9 +119,6 @@ endmacro()
 # used, given the value of the option and whether the requirements for the
 # feature are satisfied. By default, it is USE_<feature_name>.
 #
-# WITH_SUBDIRECTORY is an optional subdirectory that should be added if the
-# feature is enabled.
-#
 # COMPONENT check for a component of the package. Currently this only works if
 # specifying a single package in PACKAGE_DEPENDS
 #
@@ -131,9 +127,7 @@ endmacro()
 # HEADER_DEPENDS is a list of headers that are required for the feature.
 #
 macro(auto_option _FEATURE_NAME)
-  cmake_parse_arguments(
-    ARG "" "DESCRIPTION;DEFAULT;FEATURE_VAR;WITH_SUBDIRECTORY" "PACKAGE_DEPENDS;HEADER_DEPENDS;COMPONENTS" ${ARGN}
-  )
+  cmake_parse_arguments(ARG "" "DESCRIPTION;DEFAULT;FEATURE_VAR" "PACKAGE_DEPENDS;HEADER_DEPENDS;COMPONENTS" ${ARGN})
 
   set(OPTION_VAR "ENABLE_${_FEATURE_NAME}")
   if(ARG_FEATURE_VAR)
@@ -164,10 +158,6 @@ macro(auto_option _FEATURE_NAME)
     _check_header_depends(${OPTION_VAR} "${ARG_HEADER_DEPENDS}" ${FEATURE_VAR})
   else()
     set(${FEATURE_VAR} FALSE)
-  endif()
-
-  if(ARG_WITH_SUBDIRECTORY AND ${${FEATURE_VAR}})
-    add_subdirectory(${ARG_WITH_SUBDIRECTORY})
   endif()
 endmacro()
 
