@@ -545,7 +545,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       // Field Name
       {"Content-Length: 10\r\n", PARSE_RESULT_CONT},
       {"Content-Length\x0b: 10\r\n", PARSE_RESULT_ERROR},
-      // "(),/:;<=>?@[\]{}
+      {"Content-Length\xff: 10\r\n", PARSE_RESULT_ERROR},
+      // Delimiters in field name
       {"delimiter_\": 10\r\n",       PARSE_RESULT_ERROR},
       {"delimiter_(: 0\r\n",         PARSE_RESULT_ERROR},
       {"delimiter_): 0\r\n",         PARSE_RESULT_ERROR},
