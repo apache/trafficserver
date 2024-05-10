@@ -114,7 +114,9 @@ loadPlugin(RemapPluginUnitTest *plugin, std::string &error, PluginDebugObject *&
 void
 cleanupSandBox(RemapPluginInfo *plugin)
 {
-  delete plugin;
+  if (plugin != nullptr) {
+    delete plugin;
+  }
   clean();
 }
 
@@ -263,7 +265,7 @@ SCENARIO("invoking plugin init", "[plugin][core]")
 
         checkCallTest(/* shouldHaveFailed */ false, result, error, expectedError, debugObject->initCalled);
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox(nullptr);
     }
 
     WHEN("init fails")
@@ -327,7 +329,7 @@ SCENARIO("invoking plugin instance init", "[plugin][core]")
           CHECK(0 == strcmp(ARGV[i], debugObject->argv[i]));
         }
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox(nullptr);
     }
 
     WHEN("instance init fails")
