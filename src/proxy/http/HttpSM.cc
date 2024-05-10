@@ -4847,10 +4847,13 @@ HttpSM::do_range_setup_if_necessary()
         }
       } else {
         // if revalidating and cache is stale we want to transform
-        if (t_state.cache_info.action == HttpTransact::CACHE_DO_REPLACE &&
-            t_state.hdr_info.server_response.status_get() == HTTP_STATUS_OK) {
-          Dbg(dbg_ctl_http_range, "Serving transform after stale cache re-serve");
-          do_transform = true;
+        if (t_state.cache_info.action == HttpTransact::CACHE_DO_REPLACE) {
+          if (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_OK) {
+            Dbg(dbg_ctl_http_range, "Serving transform after stale cache re-serve");
+            do_transform = true;
+          } else {
+            Dbg(dbg_ctl_http_range, "Not transforming after revalidate");
+          }
         } else if (cache_sm.cache_read_vc && cache_sm.cache_read_vc->is_pread_capable()) {
           // If only one range entry and pread is capable, no need transform range
           t_state.range_setup = HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED;
