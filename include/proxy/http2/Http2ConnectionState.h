@@ -201,7 +201,7 @@ public:
   uint32_t get_received_rst_stream_frame_count();
   void     increment_received_continuation_frame_count();
   uint32_t get_received_continuation_frame_count();
-  void increment_received_empty_frame_count();
+  void     increment_received_empty_frame_count();
   uint32_t get_received_empty_frame_count();
 
   ssize_t        get_peer_rwnd() const;

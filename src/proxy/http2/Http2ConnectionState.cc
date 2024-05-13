@@ -214,8 +214,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
                      this->get_local_rwnd(), session_window, stream->get_local_rwnd(), stream_window);
   }
 
-  const uint32_t unpadded_length = payload_length - pad_length;
-  MIOBuffer     *writer          = stream->read_vio_writer();
+  MIOBuffer *writer = stream->read_vio_writer();
   if (writer == nullptr) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "no writer");
   }
@@ -1049,7 +1048,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
   this->increment_received_continuation_frame_count();
   // Close this connection if its CONTINUATION frame count exceeds a limit.
   if (configured_max_continuation_frames_per_minute != 0 &&
-      this->get_received_continuation_frame_count() > configured_max_continuation_frames_per_minute) {
+      this->get_received_continuation_frame_count() > static_cast<uint32_t>(configured_max_continuation_frames_per_minute)) {
     Metrics::Counter::increment(http2_rsb.max_continuation_frames_per_minute_exceeded);
     Http2StreamDebug(this->session, stream_id, "Observed too frequent CONTINUATION frames: %u frames within a last minute",
                      this->get_received_continuation_frame_count());
@@ -1303,7 +1302,7 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
   configured_max_priority_frames_per_minute     = Http2::max_priority_frames_per_minute;
   configured_max_rst_stream_frames_per_minute   = Http2::max_rst_stream_frames_per_minute;
   configured_max_continuation_frames_per_minute = Http2::max_continuation_frames_per_minute;
-  configured_max_empty_frames_per_minute      = Http2::max_empty_frames_per_minute;
+  configured_max_empty_frames_per_minute        = Http2::max_empty_frames_per_minute;
 
   if (auto snis = session->get_netvc()->get_service<TLSSNISupport>(); snis) {
     if (snis->hints_from_sni.http2_max_settings_frames_per_minute.has_value()) {
@@ -2790,6 +2789,7 @@ Http2ConnectionState::get_received_continuation_frame_count()
   return this->_received_continuation_frame_counter.get_count();
 }
 
+void
 Http2ConnectionState::increment_received_empty_frame_count()
 {
   this->_received_empty_frame_counter.increment();

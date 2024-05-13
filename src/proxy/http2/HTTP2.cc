@@ -482,24 +482,24 @@ uint32_t               Http2::initial_window_size_out    = 65535;
 Http2FlowControlPolicy Http2::flow_control_policy_out    = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
 uint32_t               Http2::no_activity_timeout_out    = 120;
 
-float    Http2::stream_error_rate_threshold       = 0.1;
-uint32_t Http2::stream_error_sampling_threshold   = 10;
-int32_t Http2::max_settings_per_frame             = 7;
-int32_t Http2::max_settings_per_minute            = 14;
-int32_t Http2::max_settings_frames_per_minute     = 14;
-int32_t Http2::max_ping_frames_per_minute         = 60;
-int32_t Http2::max_priority_frames_per_minute     = 120;
-int32_t Http2::max_rst_stream_frames_per_minute   = 200;
-int32_t Http2::max_continuation_frames_per_minute = 120;
-int32_t Http2::max_empty_frames_per_minute        = 0;
-float    Http2::min_avg_window_update             = 2560.0;
-uint32_t Http2::con_slow_log_threshold            = 0;
-uint32_t Http2::stream_slow_log_threshold         = 0;
-uint32_t Http2::header_table_size_limit           = 65536;
-uint32_t Http2::write_buffer_block_size           = 262144;
-float    Http2::write_size_threshold              = 0.5;
-uint32_t Http2::write_time_threshold              = 100;
-uint32_t Http2::buffer_water_mark                 = 0;
+float    Http2::stream_error_rate_threshold        = 0.1;
+uint32_t Http2::stream_error_sampling_threshold    = 10;
+int32_t  Http2::max_settings_per_frame             = 7;
+int32_t  Http2::max_settings_per_minute            = 14;
+int32_t  Http2::max_settings_frames_per_minute     = 14;
+int32_t  Http2::max_ping_frames_per_minute         = 60;
+int32_t  Http2::max_priority_frames_per_minute     = 120;
+int32_t  Http2::max_rst_stream_frames_per_minute   = 200;
+int32_t  Http2::max_continuation_frames_per_minute = 120;
+int32_t  Http2::max_empty_frames_per_minute        = 0;
+float    Http2::min_avg_window_update              = 2560.0;
+uint32_t Http2::con_slow_log_threshold             = 0;
+uint32_t Http2::stream_slow_log_threshold          = 0;
+uint32_t Http2::header_table_size_limit            = 65536;
+uint32_t Http2::write_buffer_block_size            = 262144;
+float    Http2::write_size_threshold               = 0.5;
+uint32_t Http2::write_time_threshold               = 100;
+uint32_t Http2::buffer_water_mark                  = 0;
 
 void
 Http2::init()
