@@ -47,3 +47,5 @@ target_link_libraries(
           OpenSSL::Crypto
 )
 add_test(NAME uri_signing_test COMMAND uri_signing_test)
+set_tests_properties(uri_signing_test PROPERTIES ENVIRONMENT "ASAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/uri_signing_test_leak_suppression.txt")
+
