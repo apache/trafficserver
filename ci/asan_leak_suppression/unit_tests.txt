@@ -8,6 +8,3 @@ leak:ConsCell
 leak:pcre_jit_stack_alloc
 # PR#10541
 leak:test_http_hdr_print_and_copy_aux
-
-leak:libquiche.so
-leak:libcjose.so
