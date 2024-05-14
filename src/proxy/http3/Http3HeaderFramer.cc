@@ -30,6 +30,12 @@
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3Transaction.h"
 
+namespace
+{
+DbgCtl dbg_ctl_http3_trans{"http3_trans"};
+
+} // end anonymous namespace
+
 Http3HeaderFramer::Http3HeaderFramer(Http3Transaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id)
   : _transaction(transaction), _source_vio(source), _qpack(qpack), _stream_id(stream_id)
 {
@@ -109,7 +115,7 @@ Http3HeaderFramer::_generate_header_block()
   case PARSE_RESULT_CONT:
     break;
   default:
-    Debug("http3_trans", "Ignore invalid headers");
+    Dbg(dbg_ctl_http3_trans, "Ignore invalid headers");
     break;
   }
 }

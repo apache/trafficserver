@@ -34,8 +34,15 @@
 #include "proxy/http3/Http3Session.h"
 #include "proxy/http3/Http3Transaction.h"
 
-static constexpr char debug_tag[]   = "quic_simple_app";
-static constexpr char debug_tag_v[] = "v_quic_simple_app";
+namespace
+{
+constexpr char debug_tag[]   = "quic_simple_app";
+constexpr char debug_tag_v[] = "v_quic_simple_app";
+
+DbgCtl dbg_ctl{debug_tag};
+DbgCtl dbg_ctl_v{debug_tag_v};
+
+} // end anonymous namespace
 
 Http09App::Http09App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl,
                      const HttpSessionAccept::Options &options)
@@ -89,13 +96,13 @@ Http09App::on_stream_close(QUICStream &stream)
 int
 Http09App::main_event_handler(int event, Event *data)
 {
-  Debug(debug_tag_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
+  Dbg(dbg_ctl_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
 
   VIO                 *vio     = reinterpret_cast<VIO *>(data->cookie);
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
 
   if (adapter == nullptr) {
-    Debug(debug_tag, "[%s] Unknown Stream", this->_qc->cids().data());
+    Dbg(dbg_ctl, "[%s] Unknown Stream", this->_qc->cids().data());
     return -1;
   }
 

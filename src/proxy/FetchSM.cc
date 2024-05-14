@@ -33,13 +33,19 @@
 
 ClassAllocator<FetchSM> FetchSMAllocator("FetchSMAllocator");
 
+namespace
+{
+DbgCtl dbg_ctl{DEBUG_TAG};
+
+} // end anonymous namespace
+
 void
 FetchSM::cleanUp()
 {
-  Debug(DEBUG_TAG, "[%s] calling cleanup", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] calling cleanup", __FUNCTION__);
 
   if (!ink_atomic_cas(&destroyed, false, true)) {
-    Debug(DEBUG_TAG, "Error: Double delete on FetchSM, this:%p", this);
+    Dbg(dbg_ctl, "Error: Double delete on FetchSM, this:%p", this);
     return;
   }
 
@@ -67,7 +73,7 @@ FetchSM::httpConnect()
   const char     *tag = pi ? pi->getPluginTag() : "fetchSM";
   int64_t         id  = pi ? pi->getPluginId() : 0;
 
-  Debug(DEBUG_TAG, "[%s] calling httpconnect write pi=%p tag=%s id=%" PRId64, __FUNCTION__, pi, tag, id);
+  Dbg(dbg_ctl, "[%s] calling httpconnect write pi=%p tag=%s id=%" PRId64, __FUNCTION__, pi, tag, id);
   TSHttpConnectOptions options{.connect_type      = TS_CONNECT_PLUGIN,
                                .addr              = &_addr.sa,
                                .tag               = tag,
@@ -76,7 +82,7 @@ FetchSM::httpConnect()
                                .buffer_water_mark = TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT};
   http_vc = PluginHttpConnectInternal(&options);
   if (http_vc == nullptr) {
-    Debug(DEBUG_TAG, "Not ready to use");
+    Dbg(dbg_ctl, "Not ready to use");
     if (contp) {
       if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
         return InvokePluginExt(TS_EVENT_ERROR);
@@ -199,8 +205,8 @@ FetchSM::check_for_field_value(const char *name, size_t name_len, char const *va
   if (ret) {
     for (Str *f = slist.head; f != nullptr; f = f->next) {
       if (f->len == value_len && 0 == strncasecmp(f->str, value, value_len)) {
-        Debug(DEBUG_TAG, "[%s] field '%.*s', value '%.*s'", __FUNCTION__, static_cast<int>(name_len), name,
-              static_cast<int>(value_len), value);
+        Dbg(dbg_ctl, "[%s] field '%.*s', value '%.*s'", __FUNCTION__, static_cast<int>(name_len), name, static_cast<int>(value_len),
+            value);
         zret = true;
         break;
       }
@@ -316,9 +322,9 @@ FetchSM::InvokePluginExt(int fetch_event)
     goto out;
   }
 
-  Debug(DEBUG_TAG, "[%s] chunked:%d, content_len: %" PRId64 ", received_len: %" PRId64 ", avail: %" PRId64 "", __FUNCTION__,
-        resp_is_chunked, resp_content_length, resp_received_body_len,
-        resp_is_chunked > 0 ? chunked_handler.chunked_reader->read_avail() : resp_reader->read_avail());
+  Dbg(dbg_ctl, "[%s] chunked:%d, content_len: %" PRId64 ", received_len: %" PRId64 ", avail: %" PRId64 "", __FUNCTION__,
+      resp_is_chunked, resp_content_length, resp_received_body_len,
+      resp_is_chunked > 0 ? chunked_handler.chunked_reader->read_avail() : resp_reader->read_avail());
 
   if (resp_is_chunked > 0) {
     if (!chunked_handler.chunked_reader->read_avail()) {
@@ -396,7 +402,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
     reader->skip_empty_blocks();
 
   read_avail = reader->read_avail();
-  Debug(DEBUG_TAG, "[%s] total avail %" PRId64, __FUNCTION__, read_avail);
+  Dbg(dbg_ctl, "[%s] total avail %" PRId64, __FUNCTION__, read_avail);
   if (!read_avail) {
     client_bytes = 0;
     return;
@@ -494,7 +500,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
 void
 FetchSM::process_fetch_read(int event)
 {
-  Debug(DEBUG_TAG, "[%s] I am here read", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] I am here read", __FUNCTION__);
   int64_t bytes;
   int     bytes_used;
   int64_t total_bytes_copied = 0;
@@ -504,18 +510,18 @@ FetchSM::process_fetch_read(int event)
     // duplicate the bytes for backward compatibility with TSFetchUrl()
     if (!(fetch_flags & TS_FETCH_FLAGS_STREAM)) {
       bytes = resp_reader->read_avail();
-      Debug(DEBUG_TAG, "[%s] number of bytes in read ready %" PRId64, __FUNCTION__, bytes);
+      Dbg(dbg_ctl, "[%s] number of bytes in read ready %" PRId64, __FUNCTION__, bytes);
 
       while (total_bytes_copied < bytes) {
         int64_t actual_bytes_copied;
         actual_bytes_copied = resp_buffer->write(resp_reader, bytes, 0);
-        Debug(DEBUG_TAG, "[%s] copied %" PRId64 " bytes", __FUNCTION__, actual_bytes_copied);
+        Dbg(dbg_ctl, "[%s] copied %" PRId64 " bytes", __FUNCTION__, actual_bytes_copied);
         if (actual_bytes_copied <= 0) {
           break;
         }
         total_bytes_copied += actual_bytes_copied;
       }
-      Debug(DEBUG_TAG, "[%s] total copied %" PRId64 " bytes", __FUNCTION__, total_bytes_copied);
+      Dbg(dbg_ctl, "[%s] total copied %" PRId64 " bytes", __FUNCTION__, total_bytes_copied);
       resp_reader->consume(total_bytes_copied);
     }
 
@@ -544,7 +550,7 @@ FetchSM::process_fetch_read(int event)
       get_info_from_buffer(resp_reader);
       InvokePlugin(callback_events.success_event_id, (void *)this);
     }
-    Debug(DEBUG_TAG, "[%s] received EOS", __FUNCTION__);
+    Dbg(dbg_ctl, "[%s] received EOS", __FUNCTION__);
     cleanUp();
     break;
   case TS_EVENT_ERROR:
@@ -561,7 +567,7 @@ FetchSM::process_fetch_read(int event)
 void
 FetchSM::process_fetch_write(int event)
 {
-  Debug(DEBUG_TAG, "[%s] calling process write", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] calling process write", __FUNCTION__);
   switch (event) {
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     req_finished = true;
@@ -589,7 +595,7 @@ FetchSM::process_fetch_write(int event)
 int
 FetchSM::fetch_handler(int event, void *edata)
 {
-  Debug(DEBUG_TAG, "[%s] calling fetch_plugin", __FUNCTION__);
+  Dbg(dbg_ctl, "[%s] calling fetch_plugin", __FUNCTION__);
 
   if (edata == read_vio) {
     process_fetch_read(event);
@@ -681,7 +687,7 @@ FetchSM::ext_write_data(const void *data, size_t len)
   }
   req_buffer->write(data, len);
 
-  Debug(DEBUG_TAG, "[%s] re-enabling write_vio, header_done %u", __FUNCTION__, header_done);
+  Dbg(dbg_ctl, "[%s] re-enabling write_vio, header_done %u", __FUNCTION__, header_done);
   write_vio->reenable();
 
   if (fetch_flags & TS_FETCH_FLAGS_NEWLOCK) {

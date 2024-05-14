@@ -29,7 +29,9 @@
 #include "iocore/net/NetVConnection.h"
 #include "proxy/http/HttpConfig.h"
 
-static bool
+namespace
+{
+bool
 proto_is_http2(IOBufferReader *reader)
 {
   char      buf[HTTP2_CONNECTION_PREFACE_LEN];
@@ -47,6 +49,11 @@ proto_is_http2(IOBufferReader *reader)
   ink_assert(nbytes <= (int64_t)HTTP2_CONNECTION_PREFACE_LEN);
   return memcmp(HTTP2_CONNECTION_PREFACE, buf, nbytes) == 0;
 }
+
+DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
+DbgCtl dbg_ctl_http{"http"};
+
+} // end anonymous namespace
 
 struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessionAcceptEnums {
   static const size_t   minimum_read_size = 1;
@@ -103,28 +110,28 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     pp_ipmap = probeParent->proxy_protocol_ipmap;
 
     if (netvc->get_is_proxy_protocol() && netvc->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
-      Debug("proxyprotocol", "ioCompletionEvent: proxy protocol is enabled on this port");
+      Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: proxy protocol is enabled on this port");
       if (pp_ipmap->count() > 0) {
-        Debug("proxyprotocol", "ioCompletionEvent: proxy protocol has a configured allowlist of trusted IPs - checking");
+        Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: proxy protocol has a configured allowlist of trusted IPs - checking");
         if (!pp_ipmap->contains(swoc::IPAddr(netvc->get_remote_addr()))) {
-          Debug("proxyprotocol",
-                "ioCompletionEvent: Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
+          Dbg(dbg_ctl_proxyprotocol,
+              "ioCompletionEvent: Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
           goto done;
         } else {
           char new_host[INET6_ADDRSTRLEN];
-          Debug("proxyprotocol", "ioCompletionEvent: Source IP [%s] is trusted in the allowlist for proxy protocol",
-                ats_ip_ntop(netvc->get_remote_addr(), new_host, sizeof(new_host)));
+          Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: Source IP [%s] is trusted in the allowlist for proxy protocol",
+              ats_ip_ntop(netvc->get_remote_addr(), new_host, sizeof(new_host)));
         }
       } else {
-        Debug("proxyprotocol",
-              "ioCompletionEvent: proxy protocol DOES NOT have a configured allowlist of trusted IPs but proxy protocol is "
-              "ernabled on this port - processing all connections");
+        Dbg(dbg_ctl_proxyprotocol,
+            "ioCompletionEvent: proxy protocol DOES NOT have a configured allowlist of trusted IPs but proxy protocol is "
+            "ernabled on this port - processing all connections");
       }
 
       if (netvc->has_proxy_protocol(reader)) {
-        Debug("proxyprotocol", "ioCompletionEvent: http has proxy protocol header");
+        Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: http has proxy protocol header");
       } else {
-        Debug("proxyprotocol", "ioCompletionEvent: proxy protocol was enabled, but Proxy Protocol header was not present");
+        Dbg(dbg_ctl_proxyprotocol, "ioCompletionEvent: proxy protocol was enabled, but Proxy Protocol header was not present");
       }
     } // end of Proxy Protocol processing
 
@@ -186,11 +193,11 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     HttpConfig::release(param);
 
     if (!probe->reader->is_read_avail_more_than(0)) {
-      Debug("http", "probe needs data, read..");
+      Dbg(dbg_ctl_http, "probe needs data, read..");
       vio = netvc->do_io_read(probe, BUFFER_SIZE_FOR_INDEX(ProtocolProbeTrampoline::buffer_size_index), probe->iobuf);
       vio->reenable();
     } else {
-      Debug("http", "probe already has data, call ioComplete directly..");
+      Dbg(dbg_ctl_http, "probe already has data, call ioComplete directly..");
       vio = netvc->do_io_read(this, 0, nullptr);
       probe->ioCompletionEvent(VC_EVENT_READ_COMPLETE, (void *)vio);
     }

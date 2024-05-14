@@ -23,6 +23,12 @@
 
 #include "proxy/http3/Http3SettingsHandler.h"
 
+namespace
+{
+DbgCtl dbg_ctl_http3{"http3"};
+
+} // end anonymous namespace
+
 //
 // SETTINGS frame handler
 //
@@ -53,28 +59,28 @@ Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame, int3
     uint64_t header_table_size = settings_frame->get(Http3SettingsId::HEADER_TABLE_SIZE);
     this->_session->remote_qpack()->update_max_table_size(header_table_size);
 
-    Debug("http3", "SETTINGS_HEADER_TABLE_SIZE: %" PRId64, header_table_size);
+    Dbg(dbg_ctl_http3, "SETTINGS_HEADER_TABLE_SIZE: %" PRId64, header_table_size);
   }
 
   if (settings_frame->contains(Http3SettingsId::MAX_FIELD_SECTION_SIZE)) {
     uint64_t max_field_section_size = settings_frame->get(Http3SettingsId::MAX_FIELD_SECTION_SIZE);
     this->_session->remote_qpack()->update_max_field_section_size(max_field_section_size);
 
-    Debug("http3", "SETTINGS_MAX_FIELD_SECTION_SIZE: %" PRId64, max_field_section_size);
+    Dbg(dbg_ctl_http3, "SETTINGS_MAX_FIELD_SECTION_SIZE: %" PRId64, max_field_section_size);
   }
 
   if (settings_frame->contains(Http3SettingsId::QPACK_BLOCKED_STREAMS)) {
     uint64_t qpack_blocked_streams = settings_frame->get(Http3SettingsId::QPACK_BLOCKED_STREAMS);
     this->_session->remote_qpack()->update_max_blocking_streams(qpack_blocked_streams);
 
-    Debug("http3", "SETTINGS_QPACK_BLOCKED_STREAMS: %" PRId64, qpack_blocked_streams);
+    Dbg(dbg_ctl_http3, "SETTINGS_QPACK_BLOCKED_STREAMS: %" PRId64, qpack_blocked_streams);
   }
 
   if (settings_frame->contains(Http3SettingsId::NUM_PLACEHOLDERS)) {
     uint64_t num_placeholders = settings_frame->get(Http3SettingsId::NUM_PLACEHOLDERS);
     // TODO: update settings for priority tree
 
-    Debug("http3", "SETTINGS_NUM_PLACEHOLDERS: %" PRId64, num_placeholders);
+    Dbg(dbg_ctl_http3, "SETTINGS_NUM_PLACEHOLDERS: %" PRId64, num_placeholders);
   }
 
   return Http3ErrorUPtr(nullptr);
