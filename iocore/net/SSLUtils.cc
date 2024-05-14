@@ -779,7 +779,8 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
   *buf                                                = 0;
   const SSLMultiCertConfigParams *sslMultCertSettings = static_cast<SSLMultiCertConfigParams *>(userdata);
 
-  Debug("ssl_load", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, sslMultCertSettings->dialog.get());
+  Debug("ssl_load", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag,
+        sslMultCertSettings->dialog.get());
 
   // only respond to reading private keys, not writing them (does ats even do that?)
   if (0 == rwflag) {
