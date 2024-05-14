@@ -332,6 +332,37 @@ Url::Query::erase(Cript::string_view param)
 }
 
 void
+Url::Query::erase(std::initializer_list<Cript::string_view> list, bool keep)
+{
+  if (keep) {
+    // Make sure the hash and vector are populated
+    _parser();
+
+    for (auto viter = _ordered.begin(); viter != _ordered.end();) {
+      if (list.end() == std::find(list.begin(), list.end(), *viter)) {
+        auto iter = _hashed.find(*viter);
+
+        TSReleaseAssert(iter != _hashed.end());
+        _size -= iter->second.size(); // Size of the erased value
+        _size -= viter->size();       // Length of the erased key
+        _hashed.erase(iter);
+        viter     = _ordered.erase(viter);
+        _modified = true;
+      } else {
+        ++viter;
+      }
+    }
+    if (_ordered.size() == 0) {
+      reset();
+    }
+  } else {
+    for (auto &it : list) {
+      erase(it);
+    }
+  }
+}
+
+void
 Url::Query::reset()
 {
   Component::reset();
