@@ -910,7 +910,9 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
         biop = BIO_new_mem_buf(secret_data.data(), secret_data.size());
       }
 
-      key = PEM_read_bio_PrivateKey(biop, nullptr, nullptr, nullptr);
+      pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(client_ctx.get());
+      void *u                      = SSL_CTX_get_default_passwd_cb_userdata(client_ctx.get());
+      key                          = PEM_read_bio_PrivateKey(biop, nullptr, password_cb, u);
       if (!key) {
         SSLError("failed to load client private key file from %s", key_file_name.c_str());
         goto fail;

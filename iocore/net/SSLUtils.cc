@@ -701,18 +701,6 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 #endif /* TS_HAS_TLS_SESSION_TICKET */
 }
 
-struct passphrase_cb_userdata {
-  const SSLConfigParams *_configParams;
-  const char *_serverDialog;
-  const char *_serverCert;
-  const char *_serverKey;
-
-  passphrase_cb_userdata(const SSLConfigParams *params, const char *dialog, const char *cert, const char *key)
-    : _configParams(params), _serverDialog(dialog), _serverCert(cert), _serverKey(key)
-  {
-  }
-};
-
 // RAII implementation for struct termios
 struct ssl_termios : public termios {
   ssl_termios(int fd)
@@ -788,15 +776,18 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
     return 0;
   }
 
-  *buf                       = 0;
-  passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
+  *buf                                                = 0;
+  const SSLMultiCertConfigParams *sslMultCertSettings = static_cast<SSLMultiCertConfigParams *>(userdata);
 
-  Debug("ssl_load", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+  Debug("ssl_load", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag,
+        sslMultCertSettings->dialog.get());
 
   // only respond to reading private keys, not writing them (does ats even do that?)
   if (0 == rwflag) {
     // execute the dialog program and use the first line output as the passphrase
-    FILE *f = popen(ud->_serverDialog, "r");
+    ink_assert(strncmp(sslMultCertSettings->dialog, "exec:", 5) == 0);
+    const char *serverDialog = &sslMultCertSettings->dialog[5];
+    FILE *f                  = popen(serverDialog, "r");
     if (f) {
       if (fgets(buf, size, f)) {
         // remove any ending CR or LF
@@ -809,7 +800,7 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
       }
       pclose(f);
     } else { // popen failed
-      Error("could not open dialog '%s' - %s", ud->_serverDialog, strerror(errno));
+      Error("could not open dialog '%s' - %s", serverDialog, strerror(errno));
     }
   }
   return strlen(buf);
@@ -822,19 +813,19 @@ ssl_private_key_passphrase_callback_builtin(char *buf, int size, int rwflag, voi
     return 0;
   }
 
-  *buf                       = 0;
-  passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
+  *buf                                                = 0;
+  const SSLMultiCertConfigParams *sslMultCertSettings = static_cast<SSLMultiCertConfigParams *>(userdata);
 
-  Debug("ssl_load", "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+  Debug("ssl_load", "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, sslMultCertSettings->dialog.get());
 
   // only respond to reading private keys, not writing them (does ats even do that?)
   if (0 == rwflag) {
     // output request
     fprintf(stdout, "Some of your private key files are encrypted for security reasons.\n");
     fprintf(stdout, "In order to read them you have to provide the pass phrases.\n");
-    fprintf(stdout, "ssl_cert_name=%s", ud->_serverCert);
-    if (ud->_serverKey) { // output ssl_key_name if provided
-      fprintf(stdout, " ssl_key_name=%s", ud->_serverKey);
+    fprintf(stdout, "ssl_cert_name=%s", sslMultCertSettings->cert.get());
+    if (sslMultCertSettings->key.get()) { // output ssl_key_name if provided
+      fprintf(stdout, " ssl_key_name=%s", sslMultCertSettings->key.get());
     }
     fprintf(stdout, "\n");
     // get passphrase
@@ -1018,7 +1009,10 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
 #endif
   if (pkey == nullptr) {
     scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
-    pkey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
+
+    pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(ctx);
+    void *u                      = SSL_CTX_get_default_passwd_cb_userdata(ctx);
+    pkey                         = PEM_read_bio_PrivateKey(bio.get(), nullptr, password_cb, u);
     if (nullptr == pkey) {
       Debug("ssl_load", "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
             secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
@@ -1451,16 +1445,14 @@ bool
 SSLMultiCertConfigLoader::_setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings)
 {
   if (sslMultCertSettings->dialog) {
-    passphrase_cb_userdata ud(this->_params, sslMultCertSettings->dialog, sslMultCertSettings->first_cert,
-                              sslMultCertSettings->key);
     // pass phrase dialog configuration
     pem_password_cb *passwd_cb = nullptr;
     if (strncmp(sslMultCertSettings->dialog, "exec:", 5) == 0) {
-      ud._serverDialog = &sslMultCertSettings->dialog[5];
+      const char *serverDialog = &sslMultCertSettings->dialog[5];
+      Debug("ssl_load", "exec:%s", serverDialog);
       // validate the exec program
-      if (!ssl_private_key_validate_exec(ud._serverDialog)) {
-        SSLError("failed to access '%s' pass phrase program: %s", (const char *)ud._serverDialog, strerror(errno));
-        memset(static_cast<void *>(&ud), 0, sizeof(ud));
+      if (!ssl_private_key_validate_exec(serverDialog)) {
+        SSLError("failed to access '%s' pass phrase program: %s", serverDialog, strerror(errno));
         return false;
       }
       passwd_cb = ssl_private_key_passphrase_callback_exec;
@@ -1468,13 +1460,10 @@ SSLMultiCertConfigLoader::_setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigPa
       passwd_cb = ssl_private_key_passphrase_callback_builtin;
     } else { // unknown config
       SSLError("unknown %s configuration value '%s'", SSL_KEY_DIALOG.data(), (const char *)sslMultCertSettings->dialog);
-      memset(static_cast<void *>(&ud), 0, sizeof(ud));
       return false;
     }
     SSL_CTX_set_default_passwd_cb(ctx, passwd_cb);
-    SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
-    // Clear any password info lingering in the UD data structure
-    memset(static_cast<void *>(&ud), 0, sizeof(ud));
+    SSL_CTX_set_default_passwd_cb_userdata(ctx, const_cast<SSLMultiCertConfigParams *>(sslMultCertSettings));
   }
   return true;
 }
@@ -2576,6 +2565,7 @@ SSLMultiCertConfigLoader::_debug_tag() const
 void
 SSLMultiCertConfigLoader::clear_pw_references(SSL_CTX *ssl_ctx)
 {
+  Debug("ssl_load", "clearing pw preferences");
   SSL_CTX_set_default_passwd_cb(ssl_ctx, nullptr);
   SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, nullptr);
 }
