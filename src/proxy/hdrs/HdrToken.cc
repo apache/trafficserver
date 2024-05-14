@@ -33,6 +33,10 @@
 #include "tsutil/Regex.h"
 #include "proxy/hdrs/URL.h"
 
+namespace
+{
+DbgCtl dbg_ctl_hdr_token{"hdr_token"};
+
 /*
  You SHOULD add to _hdrtoken_commonly_tokenized_strs, with the same ordering
  ** important, ordering matters **
@@ -47,7 +51,7 @@
   /ericb
 */
 
-static const char *_hdrtoken_strs[] = {
+const char *_hdrtoken_strs[] = {
   // MIME Field names
   "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
   "Approved", // NNTP
@@ -118,7 +122,7 @@ static const char *_hdrtoken_strs[] = {
   // RFC-7932
   "br"};
 
-static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
+HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file",                 HDRTOKEN_TYPE_SCHEME        },
   {"ftp",                  HDRTOKEN_TYPE_SCHEME        },
   {"gopher",               HDRTOKEN_TYPE_SCHEME        },
@@ -168,7 +172,7 @@ static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {(char *)nullptr,        static_cast<HdrTokenType>(0)},
 };
 
-static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
+HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Accept",                    MIME_SLOTID_ACCEPT,              MIME_PRESENCE_ACCEPT,              (HTIF_COMMAS | HTIF_MULTVALS)                },
   {"Accept-Charset",            MIME_SLOTID_ACCEPT_CHARSET,      MIME_PRESENCE_ACCEPT_CHARSET,      (HTIF_COMMAS | HTIF_MULTVALS)                },
   {"Accept-Encoding",           MIME_SLOTID_ACCEPT_ENCODING,     MIME_PRESENCE_ACCEPT_ENCODING,     (HTIF_COMMAS | HTIF_MULTVALS)                },
@@ -247,6 +251,8 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Sec-WebSocket-Version",     MIME_SLOTID_NONE,                MIME_PRESENCE_NONE,                HTIF_NONE                                    },
   {nullptr,                     0,                               0,                                 0                                            },
 };
+
+} // end anonymous namespace
 
 const char *_hdrtoken_strs_heap_f = nullptr; // storage first byte
 const char *_hdrtoken_strs_heap_l = nullptr; // storage last byte
@@ -609,7 +615,7 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
     return wks_idx;
   }
 
-  Debug("hdr_token", "Did not find a WKS for '%.*s'", string_len, string);
+  Dbg(dbg_ctl_hdr_token, "Did not find a WKS for '%.*s'", string_len, string);
   return -1;
 }
 

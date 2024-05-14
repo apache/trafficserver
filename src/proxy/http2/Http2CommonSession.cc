@@ -24,18 +24,23 @@
 #include "proxy/http2/Http2CommonSession.h"
 #include "proxy/http/HttpDebugNames.h"
 
+namespace
+{
+DbgCtl dbg_ctl_http2_cs{"http2_cs"};
+
 #define REMEMBER(e, r)                          \
   {                                             \
     this->remember(MakeSourceLocation(), e, r); \
   }
 
-#define STATE_ENTER(state_name, event)                                                                                          \
-  do {                                                                                                                          \
-    REMEMBER(event, this->recursion)                                                                                            \
-    Debug("http2_cs", "[%" PRId64 "] [%s, %s]", this->get_connection_id(), #state_name, HttpDebugNames::get_event_name(event)); \
+#define STATE_ENTER(state_name, event)                                                      \
+  do {                                                                                      \
+    REMEMBER(event, this->recursion)                                                        \
+    Dbg(dbg_ctl_http2_cs, "[%" PRId64 "] [%s, %s]", this->get_connection_id(), #state_name, \
+        HttpDebugNames::get_event_name(event));                                             \
   } while (0)
 
-#define Http2SsnDebug(fmt, ...) Debug("http2_cs", "[%" PRId64 "] " fmt, this->get_connection_id(), ##__VA_ARGS__)
+#define Http2SsnDebug(fmt, ...) Dbg(dbg_ctl_http2_cs, "[%" PRId64 "] " fmt, this->get_connection_id(), ##__VA_ARGS__)
 
 #define HTTP2_SET_SESSION_HANDLER(handler) \
   do {                                     \
@@ -45,7 +50,7 @@
 
 // memcpy the requested bytes from the IOBufferReader, returning how many were
 // actually copied.
-static inline unsigned
+inline unsigned
 copy_from_buffer_reader(void *dst, IOBufferReader *reader, unsigned nbytes)
 {
   char *end;
@@ -53,6 +58,8 @@ copy_from_buffer_reader(void *dst, IOBufferReader *reader, unsigned nbytes)
   end = reader->memcpy(dst, nbytes, 0 /* offset */);
   return end - static_cast<char *>(dst);
 }
+
+} // end anonymous namespace
 
 void
 Http2CommonSession::remember(const SourceLocation &location, int event, int reentrant)

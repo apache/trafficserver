@@ -355,6 +355,12 @@ int MIME_WKSIDX_SEC_WEBSOCKET_VERSION;
 int MIME_WKSIDX_HTTP2_SETTINGS;
 int MIME_WKSIDX_EARLY_DATA;
 
+namespace
+{
+DbgCtl dbg_ctl_http{"http"};
+
+} // end anonymous namespace
+
 /***********************************************************************
  *                                                                     *
  *                 U T I L I T Y    R O U T I N E S                    *
@@ -1325,14 +1331,15 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
   ////////////////////////////////////////////
 
 #if TRACK_FIELD_FIND_CALLS
-  Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): is_wks = %d", mh, field_name_len, field_name_str, is_wks);
+  Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): is_wks = %d", mh, field_name_len, field_name_str, is_wks);
 #endif
 
   if (is_wks) {
     token_info = hdrtoken_wks_to_prefix(field_name_str);
     if ((token_info->wks_info.mask) && ((mh->m_presence_bits & token_info->wks_info.mask) == 0)) {
 #if TRACK_FIELD_FIND_CALLS
-      Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): MISS (due to presence bits)", mh, field_name_len, field_name_str);
+      Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): MISS (due to presence bits)", mh, field_name_len,
+          field_name_str);
 #endif
       return nullptr;
     }
@@ -1346,13 +1353,13 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
         MIMEField *f = _mime_hdr_field_list_search_by_slotnum(mh, slotnum);
         ink_assert((f == nullptr) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
-        Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to slot accelerators)", mh, field_name_len,
-              field_name_str, (f ? "HIT" : "MISS"));
+        Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to slot accelerators)", mh, field_name_len,
+            field_name_str, (f ? "HIT" : "MISS"));
 #endif
         return f;
       } else {
 #if TRACK_FIELD_FIND_CALLS
-        Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): UNKNOWN (slot too big)", mh, field_name_len, field_name_str);
+        Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): UNKNOWN (slot too big)", mh, field_name_len, field_name_str);
 #endif
       }
     }
@@ -1364,8 +1371,8 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
     MIMEField *f = _mime_hdr_field_list_search_by_wks(mh, token_info->wks_idx);
     ink_assert((f == nullptr) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
-    Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to WKS list walk)", mh, field_name_len, field_name_str,
-          (f ? "HIT" : "MISS"));
+    Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to WKS list walk)", mh, field_name_len, field_name_str,
+        (f ? "HIT" : "MISS"));
 #endif
     return f;
   } else {
@@ -1373,8 +1380,8 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
 
     ink_assert((f == nullptr) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
-    Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to strcmp list walk)", mh, field_name_len, field_name_str,
-          (f ? "HIT" : "MISS"));
+    Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to strcmp list walk)", mh, field_name_len, field_name_str,
+        (f ? "HIT" : "MISS"));
 #endif
     return f;
   }
@@ -2654,16 +2661,16 @@ mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
   MIMEFieldBlockImpl *fblock;
   MIMEHdrImpl        *obj = (MIMEHdrImpl *)raw;
 
-  Debug("http", "\t[PBITS: 0x%08X%08X, SLACC: 0x%04X%04X%04X%04X, HEADBLK: %p, TAILBLK: %p]",
-        (uint32_t)((obj->m_presence_bits >> 32) & (TOK_64_CONST(0xFFFFFFFF))),
-        (uint32_t)((obj->m_presence_bits >> 0) & (TOK_64_CONST(0xFFFFFFFF))), obj->m_slot_accelerators[0],
-        obj->m_slot_accelerators[1], obj->m_slot_accelerators[2], obj->m_slot_accelerators[3], &(obj->m_first_fblock),
-        obj->m_fblock_list_tail);
+  Dbg(dbg_ctl_http, "\t[PBITS: 0x%08X%08X, SLACC: 0x%04X%04X%04X%04X, HEADBLK: %p, TAILBLK: %p]",
+      (uint32_t)((obj->m_presence_bits >> 32) & (TOK_64_CONST(0xFFFFFFFF))),
+      (uint32_t)((obj->m_presence_bits >> 0) & (TOK_64_CONST(0xFFFFFFFF))), obj->m_slot_accelerators[0],
+      obj->m_slot_accelerators[1], obj->m_slot_accelerators[2], obj->m_slot_accelerators[3], &(obj->m_first_fblock),
+      obj->m_fblock_list_tail);
 
-  Debug("http", "\t[CBITS: 0x%08X, T_MAXAGE: %d, T_SMAXAGE: %d, T_MAXSTALE: %d, T_MINFRESH: %d, PNO$: %d]",
-        obj->m_cooked_stuff.m_cache_control.m_mask, obj->m_cooked_stuff.m_cache_control.m_secs_max_age,
-        obj->m_cooked_stuff.m_cache_control.m_secs_s_maxage, obj->m_cooked_stuff.m_cache_control.m_secs_max_stale,
-        obj->m_cooked_stuff.m_cache_control.m_secs_min_fresh, obj->m_cooked_stuff.m_pragma.m_no_cache);
+  Dbg(dbg_ctl_http, "\t[CBITS: 0x%08X, T_MAXAGE: %d, T_SMAXAGE: %d, T_MAXSTALE: %d, T_MINFRESH: %d, PNO$: %d]",
+      obj->m_cooked_stuff.m_cache_control.m_mask, obj->m_cooked_stuff.m_cache_control.m_secs_max_age,
+      obj->m_cooked_stuff.m_cache_control.m_secs_s_maxage, obj->m_cooked_stuff.m_cache_control.m_secs_max_stale,
+      obj->m_cooked_stuff.m_cache_control.m_secs_min_fresh, obj->m_cooked_stuff.m_pragma.m_no_cache);
   for (fblock = &(obj->m_first_fblock); fblock != nullptr; fblock = fblock->m_next) {
     if (recurse || (fblock == &(obj->m_first_fblock))) {
       obj_describe((HdrHeapObjImpl *)fblock, recurse);
@@ -2679,11 +2686,11 @@ mime_field_block_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 
   MIMEFieldBlockImpl *obj = (MIMEFieldBlockImpl *)raw;
 
-  Debug("http", "[FREETOP: %d, NEXTBLK: %p]", obj->m_freetop, obj->m_next);
+  Dbg(dbg_ctl_http, "[FREETOP: %d, NEXTBLK: %p]", obj->m_freetop, obj->m_next);
 
   for (i = 0; i < obj->m_freetop; i++) {
     MIMEField *f = &(obj->m_field_slots[i]);
-    Debug("http", "\tSLOT #%2d (%p), %-8s", i, f, readiness_names[f->m_readiness]);
+    Dbg(dbg_ctl_http, "\tSLOT #%2d (%p), %-8s", i, f, readiness_names[f->m_readiness]);
 
     switch (f->m_readiness) {
     case MIME_FIELD_SLOT_READINESS_EMPTY:
@@ -2691,14 +2698,14 @@ mime_field_block_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
     case MIME_FIELD_SLOT_READINESS_DETACHED:
     case MIME_FIELD_SLOT_READINESS_LIVE:
     case MIME_FIELD_SLOT_READINESS_DELETED:
-      Debug("http", "[N: \"%.*s\", N_LEN: %d, N_IDX: %d, ", f->m_len_name, (f->m_ptr_name ? f->m_ptr_name : "NULL"), f->m_len_name,
-            f->m_wks_idx);
-      Debug("http", "V: \"%.*s\", V_LEN: %d, ", f->m_len_value, (f->m_ptr_value ? f->m_ptr_value : "NULL"), f->m_len_value);
-      Debug("http", "NEXTDUP: %p, RAW: %d, RAWLEN: %d, F: %d]", f->m_next_dup, f->m_n_v_raw_printable,
-            f->m_len_name + f->m_len_value + f->m_n_v_raw_printable_pad, f->m_flags);
+      Dbg(dbg_ctl_http, "[N: \"%.*s\", N_LEN: %d, N_IDX: %d, ", f->m_len_name, (f->m_ptr_name ? f->m_ptr_name : "NULL"),
+          f->m_len_name, f->m_wks_idx);
+      Dbg(dbg_ctl_http, "V: \"%.*s\", V_LEN: %d, ", f->m_len_value, (f->m_ptr_value ? f->m_ptr_value : "NULL"), f->m_len_value);
+      Dbg(dbg_ctl_http, "NEXTDUP: %p, RAW: %d, RAWLEN: %d, F: %d]", f->m_next_dup, f->m_n_v_raw_printable,
+          f->m_len_name + f->m_len_value + f->m_n_v_raw_printable_pad, f->m_flags);
       break;
     }
-    Debug("http", "\n");
+    Dbg(dbg_ctl_http, "\n");
   }
 }
 
@@ -3890,7 +3897,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
           // If >= 0 then this is a well known token
           if (hdrtoken_tokenize(s, tlen, &token_wks) >= 0) {
 #if TRACK_COOKING
-            Debug("http", "recompute_cooked_stuff: got field '%s'", token_wks);
+            Dbg(dbg_ctl_http, "recompute_cooked_stuff: got field '%s'", token_wks);
 #endif
 
             HdrTokenHeapPrefix *p                  = hdrtoken_wks_to_prefix(token_wks);
@@ -3898,7 +3905,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
             m_cooked_stuff.m_cache_control.m_mask |= mask;
 
 #if TRACK_COOKING
-            Debug("http", "                        set mask 0x%0X", mask);
+            Dbg(dbg_ctl_http, "                        set mask 0x%0X", mask);
 #endif
 
             if (mask & (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE | MIME_COOKED_MASK_CC_MAX_STALE |
@@ -3907,7 +3914,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 
               if (mime_parse_integer(c, e, &value)) {
 #if TRACK_COOKING
-                Debug("http", "                        set integer value %d", value);
+                Dbg(dbg_ctl_http, "                        set integer value %d", value);
 #endif
                 if (token_wks == MIME_VALUE_MAX_AGE) {
                   m_cooked_stuff.m_cache_control.m_secs_max_age = value;
@@ -3920,7 +3927,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
                 }
               } else {
 #if TRACK_COOKING
-                Debug("http", "                        set integer value %d", INT_MAX);
+                Dbg(dbg_ctl_http, "                        set integer value %d", INT_MAX);
 #endif
                 if (token_wks == MIME_VALUE_MAX_STALE) {
                   m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;

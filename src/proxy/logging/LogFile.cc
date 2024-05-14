@@ -55,6 +55,13 @@
 #include "proxy/logging/LogConfig.h"
 #include "proxy/logging/Log.h"
 
+namespace
+{
+DbgCtl dbg_ctl_log_file{"log-file"};
+DbgCtl dbg_ctl_log{"log"};
+
+} // end anonymous namespace
+
 /*-------------------------------------------------------------------------
   LogFile::LogFile
 
@@ -84,7 +91,7 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
   m_fd                = -1;
   m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
 
-  Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p, escape_type=%d", m_name, this, escape_type);
+  Dbg(dbg_ctl_log_file, "exiting LogFile constructor, m_name=%s, this=%p, escape_type=%d", m_name, this, escape_type);
 }
 
 /*-------------------------------------------------------------------------
@@ -99,7 +106,7 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
 
 LogFile::~LogFile()
 {
-  Debug("log-file", "entering LogFile destructor, this=%p", this);
+  Dbg(dbg_ctl_log_file, "entering LogFile destructor, this=%p", this);
 
   // close_file() checks whether a file is open before attempting to close, so
   // this is safe to call even if a file had not been opened. Further, calling
@@ -109,7 +116,7 @@ LogFile::~LogFile()
   delete m_log;
   ats_free(m_header);
   ats_free(m_name);
-  Debug("log-file", "exiting LogFile destructor, this=%p", this);
+  Dbg(dbg_ctl_log_file, "exiting LogFile destructor, this=%p", this);
 }
 
 /*-------------------------------------------------------------------------
@@ -165,14 +172,14 @@ LogFile::open_file()
         return LOG_FILE_COULD_NOT_CREATE_PIPE;
       }
     } else {
-      Debug("log-file", "Created named pipe %s for logging", m_name);
+      Dbg(dbg_ctl_log_file, "Created named pipe %s for logging", m_name);
     }
 
     // now open the pipe
-    Debug("log-file", "attempting to open pipe %s", m_name);
+    Dbg(dbg_ctl_log_file, "attempting to open pipe %s", m_name);
     m_fd = ::open(m_name, O_WRONLY | O_NDELAY, 0);
     if (m_fd < 0) {
-      Debug("log-file", "no readers for pipe %s", m_name);
+      Dbg(dbg_ctl_log_file, "no readers for pipe %s", m_name);
       return LOG_FILE_NO_PIPE_READERS;
     }
 
@@ -183,7 +190,7 @@ LogFile::open_file()
       if (pipe_size == -1) {
         Error("Get pipe size failed for pipe %s: %s", m_name, strerror(errno));
       } else {
-        Debug("log-file", "Previous buffer size for pipe %s: %ld", m_name, pipe_size);
+        Dbg(dbg_ctl_log_file, "Previous buffer size for pipe %s: %ld", m_name, pipe_size);
       }
 
       int ret = fcntl(m_fd, F_SETPIPE_SZ, m_pipe_buffer_size);
@@ -195,7 +202,7 @@ LogFile::open_file()
       if (pipe_size == -1) {
         Error("Get pipe size after setting it failed for pipe %s: %s", m_name, strerror(errno));
       } else {
-        Debug("log-file", "New buffer size for pipe %s: %ld", m_name, pipe_size);
+        Dbg(dbg_ctl_log_file, "New buffer size for pipe %s: %ld", m_name, pipe_size);
       }
     }
 #endif // F_GETPIPE_SZ
@@ -218,14 +225,14 @@ LogFile::open_file()
   //
   if (!file_exists) {
     if (m_file_format != LOG_FILE_BINARY && m_header && m_log) {
-      Debug("log-file", "writing header to LogFile %s", m_name);
+      Dbg(dbg_ctl_log_file, "writing header to LogFile %s", m_name);
       writeln(m_header, strlen(m_header), fileno(m_log->m_fp), m_name);
     }
   }
 
   Metrics::Gauge::increment(log_rsb.log_files_open);
 
-  Debug("log", "exiting LogFile::open_file(), file=%s presumably open", m_name);
+  Dbg(dbg_ctl_log, "exiting LogFile::open_file(), file=%s presumably open", m_name);
   return LOG_FILE_NO_ERROR;
 }
 
@@ -243,7 +250,7 @@ LogFile::close_file()
       if (::close(m_fd)) {
         Error("Error closing LogFile %s: %s.", m_name, strerror(errno));
       } else {
-        Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
+        Dbg(dbg_ctl_log_file, "LogFile %s (fd=%d) is closed", m_name, m_fd);
         Metrics::Gauge::decrement(log_rsb.log_files_open);
       }
       m_fd = -1;
@@ -251,7 +258,7 @@ LogFile::close_file()
       if (m_log->close_file()) {
         Error("Error closing LogFile %s: %s.", m_log->get_name(), strerror(errno));
       } else {
-        Debug("log-file", "LogFile %s is closed", m_log->get_name());
+        Dbg(dbg_ctl_log_file, "LogFile %s is closed", m_log->get_name());
         Metrics::Gauge::decrement(log_rsb.log_files_open);
       }
     } else {
@@ -335,7 +342,7 @@ LogFile::trim_rolled(size_t rolling_max_count)
         Error("unable to auto-delete rolled logfile %s: %s", file._name.c_str(), strerror(errno));
         result = false;
       } else {
-        Debug("log-file", "rolled logfile, %s, was auto-deleted", file._name.c_str());
+        Dbg(dbg_ctl_log_file, "rolled logfile, %s, was auto-deleted", file._name.c_str());
       }
     }
   }
@@ -562,10 +569,10 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
 int
 LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_format)
 {
-  Debug("log-file",
-        "entering LogFile::write_ascii_logbuffer3 for %s "
-        "(this=%p)",
-        m_name, this);
+  Dbg(dbg_ctl_log_file,
+      "entering LogFile::write_ascii_logbuffer3 for %s "
+      "(this=%p)",
+      m_name, this);
   ink_assert(buffer_header != nullptr);
 
   LogBufferIterator iter(buffer_header);
