@@ -599,6 +599,7 @@ Do_ip_space_define::define_column(Config &cfg, YAML::Node node)
   }
   col._idx        = _cols.size();
   col._row_offset = _row_size;
+  col._row_size   = 0;
   switch (col._type) {
   default:
     break; // shouldn't happen.
