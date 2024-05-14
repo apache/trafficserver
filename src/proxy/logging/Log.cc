@@ -87,8 +87,17 @@ LogsStatsBlock log_rsb;
   to be changed (as the result of a manager callback).
   -------------------------------------------------------------------------*/
 
-LogConfig      *Log::config  = nullptr;
-static unsigned log_configid = 0;
+LogConfig *Log::config = nullptr;
+
+namespace
+{
+DbgCtl dbg_ctl_log_config{"log-config"};
+DbgCtl dbg_ctl_log_api_mutex{"log-api-mutex"};
+DbgCtl dbg_ctl_log_periodic{"log-periodic"};
+DbgCtl dbg_ctl_log{"log"};
+DbgCtl dbg_ctl_log_preproc{"log-preproc"};
+
+unsigned log_configid = 0;
 
 // Downcast from a Ptr<LogFieldAliasTable> to a Ptr<LogFieldAliasMap>.
 static Ptr<LogFieldAliasMap>
@@ -97,13 +106,15 @@ make_alias_map(Ptr<LogFieldAliasTable> &table)
   return make_ptr(static_cast<LogFieldAliasMap *>(table.get()));
 }
 
+} // end anonymous namespace
+
 void
 Log::change_configuration()
 {
   LogConfig *prev_config = Log::config;
   LogConfig *new_config  = nullptr;
 
-  Debug("log-config", "Changing configuration ...");
+  Dbg(dbg_ctl_log_config, "Changing configuration ...");
 
   new_config = new LogConfig;
   ink_assert(new_config != nullptr);
@@ -113,7 +124,7 @@ Log::change_configuration()
   // the new config
   //
   ink_mutex_acquire(prev_config->log_object_manager._APImutex);
-  Debug("log-api-mutex", "Log::change_configuration acquired api mutex");
+  Dbg(dbg_ctl_log_api_mutex, "Log::change_configuration acquired api mutex");
 
   new_config->init(prev_config);
 
@@ -127,7 +138,7 @@ Log::change_configuration()
   // Server would crash the next time the plugin referenced the freed object.
 
   ink_mutex_release(prev_config->log_object_manager._APImutex);
-  Debug("log-api-mutex", "Log::change_configuration released api mutex");
+  Dbg(dbg_ctl_log_api_mutex, "Log::change_configuration released api mutex");
 
   // Register the new config in the config processor; the old one will now be scheduled for a
   // future deletion. We don't need to do anything magical with refcounts, since the
@@ -138,7 +149,7 @@ Log::change_configuration()
   // objects that weren't transferred to the new config ...
   prev_config->log_object_manager.flush_all_objects();
 
-  Debug("log-config", "... new configuration in place");
+  Dbg(dbg_ctl_log_config, "... new configuration in place");
 }
 
 /*-------------------------------------------------------------------------
@@ -198,10 +209,10 @@ struct PeriodicWakeup : Continuation {
 void
 Log::periodic_tasks(long time_now)
 {
-  Debug("log-api-mutex", "entering Log::periodic_tasks");
+  Dbg(dbg_ctl_log_api_mutex, "entering Log::periodic_tasks");
 
   if (logging_mode_changed || Log::config->reconfiguration_needed) {
-    Debug("log-config", "Performing reconfiguration, init status = %d", init_status);
+    Dbg(dbg_ctl_log_config, "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
       int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
@@ -221,8 +232,8 @@ Log::periodic_tasks(long time_now)
     //
     change_configuration();
   } else if (logging_mode > LOG_MODE_NONE || config->has_api_objects()) {
-    Debug("log-periodic", "Performing periodic tasks");
-    Debug("log-periodic", "Periodic task interval = %d", periodic_tasks_interval);
+    Dbg(dbg_ctl_log_periodic, "Performing periodic tasks");
+    Dbg(dbg_ctl_log_periodic, "Periodic task interval = %d", periodic_tasks_interval);
 
     // Check if space is ok and update the space used
     //
@@ -993,7 +1004,7 @@ int
 Log::handle_logging_mode_change(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
                                 RecData /* data ATS_UNUSED */, void * /* cookie ATS_UNUSED */)
 {
-  Debug("log-config", "Enabled status changed");
+  Dbg(dbg_ctl_log_config, "Enabled status changed");
   logging_mode_changed = true;
   return 0;
 }
@@ -1002,14 +1013,14 @@ int
 Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
                                       void * /* cookie ATS_UNSED */)
 {
-  Debug("log-periodic", "periodic task interval changed");
+  Dbg(dbg_ctl_log_periodic, "periodic task interval changed");
   if (data.rec_int <= 0) {
     periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
     Error("new periodic tasks interval = %d is invalid, falling back to default = %d", (int)data.rec_int,
           PERIODIC_TASKS_INTERVAL_FALLBACK);
   } else {
     periodic_tasks_interval = static_cast<uint32_t>(data.rec_int);
-    Debug("log-periodic", "periodic task interval changed to %u", periodic_tasks_interval);
+    Dbg(dbg_ctl_log_periodic, "periodic task interval changed to %u", periodic_tasks_interval);
   }
   return REC_ERR_OKAY;
 }
@@ -1017,7 +1028,7 @@ Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDat
 int
 Log::handle_log_rotation_request()
 {
-  Debug("log", "Request to reopen rotated log files.");
+  Dbg(dbg_ctl_log, "Request to reopen rotated log files.");
   log_rotate_signal_received = true;
   return 0;
 }
@@ -1078,7 +1089,7 @@ Log::init(int flags)
 
   init_fields();
   if (!(config_flags & LOGCAT)) {
-    Debug("log-config", "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
+    Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
     config->init();
     init_when_enabled();
   }
@@ -1105,7 +1116,7 @@ Log::init_when_enabled()
   }
 
   Note("logging initialized[%d], logging_mode = %d", init_status, logging_mode);
-  if (is_debug_tag_set("log-config")) {
+  if (dbg_ctl_log_config.on()) {
     config->display();
   }
 }
@@ -1169,18 +1180,18 @@ Log::access(LogAccess *lad)
   if (Log::config->sampling_frequency > 1) {
     this_sample = sample++;
     if (this_sample && this_sample % Log::config->sampling_frequency) {
-      Debug("log", "sampling, skipping this entry ...");
+      Dbg(dbg_ctl_log, "sampling, skipping this entry ...");
       Metrics::Counter::increment(log_rsb.event_log_access_skip);
       ret = Log::SKIP;
       goto done;
     } else {
-      Debug("log", "sampling, LOGGING this entry ...");
+      Dbg(dbg_ctl_log, "sampling, LOGGING this entry ...");
       sample = 1;
     }
   }
 
   if (Log::config->log_object_manager.get_num_objects() == 0) {
-    Debug("log", "no log objects, skipping this entry ...");
+    Dbg(dbg_ctl_log, "no log objects, skipping this entry ...");
     Metrics::Counter::increment(log_rsb.event_log_access_skip);
     ret = Log::SKIP;
     goto done;
@@ -1264,7 +1275,7 @@ Log::preproc_thread_main(void *args)
 {
   int idx = *static_cast<int *>(args);
 
-  Debug("log-preproc", "log preproc thread is alive ...");
+  Dbg(dbg_ctl_log_preproc, "log preproc thread is alive ...");
 
   Log::preproc_notify[idx].lock();
 
@@ -1280,8 +1291,8 @@ Log::preproc_thread_main(void *args)
       // config->increment_space_used(bytes_to_disk);
       // TODO: the bytes_to_disk should be set to Log
 
-      Debug("log-preproc", "%zu buffers preprocessed from LogConfig %p (refcount=%d) this round", buffers_preproced, current,
-            current->refcount());
+      Dbg(dbg_ctl_log_preproc, "%zu buffers preprocessed from LogConfig %p (refcount=%d) this round", buffers_preproced, current,
+          current->refcount());
 
       configProcessor.release(log_configid, current);
     }
@@ -1362,8 +1373,8 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       //
       while (total_bytes - bytes_written) {
         if (Log::config->logging_space_exhausted) {
-          Debug("log", "logging space exhausted, failed to write file:%s, have dropped (%d) bytes.", logfile->get_name(),
-                (total_bytes - bytes_written));
+          Dbg(dbg_ctl_log, "logging space exhausted, failed to write file:%s, have dropped (%d) bytes.", logfile->get_name(),
+              (total_bytes - bytes_written));
 
           Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
           break;
@@ -1378,7 +1389,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
           Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
           break;
         }
-        Debug("log", "Successfully wrote some stuff to %s", logfile->get_name());
+        Dbg(dbg_ctl_log, "Successfully wrote some stuff to %s", logfile->get_name());
         bytes_written += len;
       }
 
@@ -1395,7 +1406,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     //
     now = ink_get_hrtime() / HRTIME_SECOND;
     if (now >= last_time + periodic_tasks_interval) {
-      Debug("log-preproc", "periodic tasks for %" PRId64, (int64_t)now);
+      Dbg(dbg_ctl_log_preproc, "periodic tasks for %" PRId64, (int64_t)now);
       periodic_tasks(now);
       last_time = ink_get_hrtime() / HRTIME_SECOND;
     }

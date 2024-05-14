@@ -143,6 +143,12 @@ int HTTP_LEN_100_CONTINUE;
 
 Arena *const HTTPHdr::USE_HDR_HEAP_MAGIC = reinterpret_cast<Arena *>(1);
 
+namespace
+{
+DbgCtl dbg_ctl_http{"http"};
+
+} // end anonymous namespace
+
 /***********************************************************************
  *                                                                     *
  *                         M A I N    C O D E                          *
@@ -571,9 +577,9 @@ http_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
   HTTPHdrImpl *obj = (HTTPHdrImpl *)raw;
 
   if (obj->m_polarity == HTTP_TYPE_REQUEST) {
-    Debug("http", "[TYPE: REQ, V: %04X, URL: %p, METHOD: \"%.*s\", METHOD_LEN: %d, FIELDS: %p]", obj->m_version.get_flat_version(),
-          obj->u.req.m_url_impl, obj->u.req.m_len_method, (obj->u.req.m_ptr_method ? obj->u.req.m_ptr_method : "NULL"),
-          obj->u.req.m_len_method, obj->m_fields_impl);
+    Dbg(dbg_ctl_http, "[TYPE: REQ, V: %04X, URL: %p, METHOD: \"%.*s\", METHOD_LEN: %d, FIELDS: %p]",
+        obj->m_version.get_flat_version(), obj->u.req.m_url_impl, obj->u.req.m_len_method,
+        (obj->u.req.m_ptr_method ? obj->u.req.m_ptr_method : "NULL"), obj->u.req.m_len_method, obj->m_fields_impl);
     if (recurse) {
       if (obj->u.req.m_url_impl) {
         obj_describe(obj->u.req.m_url_impl, recurse);
@@ -583,9 +589,9 @@ http_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
       }
     }
   } else {
-    Debug("http", "[TYPE: RSP, V: %04X, STATUS: %d, REASON: \"%.*s\", REASON_LEN: %d, FIELDS: %p]",
-          obj->m_version.get_flat_version(), obj->u.resp.m_status, obj->u.resp.m_len_reason,
-          (obj->u.resp.m_ptr_reason ? obj->u.resp.m_ptr_reason : "NULL"), obj->u.resp.m_len_reason, obj->m_fields_impl);
+    Dbg(dbg_ctl_http, "[TYPE: RSP, V: %04X, STATUS: %d, REASON: \"%.*s\", REASON_LEN: %d, FIELDS: %p]",
+        obj->m_version.get_flat_version(), obj->u.resp.m_status, obj->u.resp.m_len_reason,
+        (obj->u.resp.m_ptr_reason ? obj->u.resp.m_ptr_reason : "NULL"), obj->u.resp.m_len_reason, obj->m_fields_impl);
     if (recurse) {
       if (obj->m_fields_impl) {
         obj_describe(obj->m_fields_impl, recurse);
@@ -1249,7 +1255,7 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     // the Content-Length
     if (mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING) != nullptr) {
       // Delete all Content-Length headers
-      Debug("http", "Transfer-Encoding header and Content-Length headers the request, removing all Content-Length headers");
+      Dbg(dbg_ctl_http, "Transfer-Encoding header and Content-Length headers the request, removing all Content-Length headers");
       mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field, true);
       return PARSE_RESULT_DONE;
     }
@@ -1268,14 +1274,14 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     // Content-Length = 1*DIGIT
     //
     if (value.empty()) {
-      Debug("http", "Content-Length headers don't match the ABNF, returning parse error");
+      Dbg(dbg_ctl_http, "Content-Length headers don't match the ABNF, returning parse error");
       return PARSE_RESULT_ERROR;
     }
 
     // If the content-length value contains a non-numeric value, the header is invalid
     if (std::find_if(value.cbegin(), value.cend(), [](std::string_view::value_type c) { return !std::isdigit(c); }) !=
         value.cend()) {
-      Debug("http", "Content-Length value contains non-digit, returning parse error");
+      Dbg(dbg_ctl_http, "Content-Length value contains non-digit, returning parse error");
       return PARSE_RESULT_ERROR;
     }
 
@@ -1284,11 +1290,11 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
 
       if ((value.length() != value_dup.length()) || value.compare(value_dup) != 0) {
         // Values are different, parse error
-        Debug("http", "Content-Length headers don't match, returning parse error");
+        Dbg(dbg_ctl_http, "Content-Length headers don't match, returning parse error");
         return PARSE_RESULT_ERROR;
       } else {
         // Delete the duplicate since it has the same value
-        Debug("http", "Deleting duplicate Content-Length header");
+        Dbg(dbg_ctl_http, "Deleting duplicate Content-Length header");
         mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field->m_next_dup, false);
       }
     }

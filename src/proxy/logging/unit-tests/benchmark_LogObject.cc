@@ -99,7 +99,7 @@ TEST_CASE("LogObject", "[proxy/logging]")
   diags()->set_std_output(StdStream::STDOUT, bind_stdout);
   diags()->set_std_output(StdStream::STDERR, bind_stderr);
 
-  if (is_debug_tag_set("diags")) {
+  if (DbgCtl dc{"diags"}; dc.on()) {
     diags()->dump();
   }
   Layout::create("/opt/ats");
