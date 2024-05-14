@@ -31,7 +31,13 @@ ClassAllocator<Http3DataFrame>     http3DataFrameAllocator("http3DataFrameAlloca
 ClassAllocator<Http3HeadersFrame>  http3HeadersFrameAllocator("http3HeadersFrameAllocator");
 ClassAllocator<Http3SettingsFrame> http3SettingsFrameAllocator("http3SettingsFrameAllocator");
 
+namespace
+{
 constexpr int HEADER_OVERHEAD = 10; // This should work as long as a payload length is less than 64 bits
+
+DbgCtl dbg_ctl_http3_frame_factory{"http3_frame_factory"};
+
+} // end anonymous namespace
 
 //
 // Static functions
@@ -419,7 +425,7 @@ Http3FrameFactory::create(const uint8_t *buf, size_t len)
     return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_settings_frame);
   default:
     // Unknown frame
-    Debug("http3_frame_factory", "Unknown frame type %hhx", static_cast<uint8_t>(type));
+    Dbg(dbg_ctl_http3_frame_factory, "Unknown frame type %hhx", static_cast<uint8_t>(type));
     frame = http3FrameAllocator.alloc();
     new (frame) Http3Frame(buf, len);
     return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_frame);

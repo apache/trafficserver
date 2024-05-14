@@ -35,13 +35,20 @@
 
 #define NetVC2QUICCon(netvc) netvc->get_service<QUICSupport>()->get_quic_connection()
 
-#define Http3TransDebug(fmt, ...)                                                                              \
-  Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt, NetVC2QUICCon(this->_proxy_ssn->get_netvc())->cids().data(), \
-        this->get_transaction_id(), ##__VA_ARGS__)
+#define Http3TransDebug(fmt, ...)                                                                                  \
+  Dbg(dbg_ctl_http3_trans, "[%s] [%" PRIx32 "] " fmt, NetVC2QUICCon(this->_proxy_ssn->get_netvc())->cids().data(), \
+      this->get_transaction_id(), ##__VA_ARGS__)
 
-#define Http3TransVDebug(fmt, ...)                                                                               \
-  Debug("v_http3_trans", "[%s] [%" PRIx32 "] " fmt, NetVC2QUICCon(this->_proxy_ssn->get_netvc())->cids().data(), \
-        this->get_transaction_id(), ##__VA_ARGS__)
+#define Http3TransVDebug(fmt, ...)                                                                                   \
+  Dbg(dbg_ctl_v_http3_trans, "[%s] [%" PRIx32 "] " fmt, NetVC2QUICCon(this->_proxy_ssn->get_netvc())->cids().data(), \
+      this->get_transaction_id(), ##__VA_ARGS__)
+
+namespace
+{
+DbgCtl dbg_ctl_http3_trans{"http3_trans"};
+DbgCtl dbg_ctl_v_http3_trans{"v_http3_trans"};
+
+} // end anonymous namespace
 
 // static void
 // dump_io_buffer(IOBufferReader *reader)
@@ -50,7 +57,7 @@
 //   uint8_t msg[1024]            = {0};
 //   int64_t msg_len              = 1024;
 //   int64_t read_len             = debug_reader->read(msg, msg_len);
-//   Debug("v_http3_trans", "len=%" PRId64 "\n%s\n", read_len, msg);
+//   Dbg(dbg_ctl_v_http3_trans, "len=%" PRId64 "\n%s\n", read_len, msg);
 // }
 
 //

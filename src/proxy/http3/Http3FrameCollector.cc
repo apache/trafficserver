@@ -25,6 +25,12 @@
 
 #include "proxy/http3/Http3DebugNames.h"
 
+namespace
+{
+DbgCtl dbg_ctl_http3{"http3"};
+
+} // end anonymous namespace
+
 Http3ErrorUPtr
 Http3FrameCollector::on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, size_t &nwritten, bool &all_done)
 {
@@ -41,7 +47,7 @@ Http3FrameCollector::on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, s
       auto b    = frame->to_io_buffer_block();
       len       = writer.write(b.get(), INT64_MAX, 0);
       nwritten += len;
-      Debug("http3", "[TX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(frame->type()), len);
+      Dbg(dbg_ctl_http3, "[TX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(frame->type()), len);
     }
 
     all_done &= g->is_done();

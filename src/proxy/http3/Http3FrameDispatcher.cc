@@ -28,6 +28,13 @@
 
 #include "proxy/http3/Http3DebugNames.h"
 
+namespace
+{
+DbgCtl dbg_ctl_v_http3{"v_http3"};
+DbgCtl dbg_ctl_http3{"http3"};
+
+} // end anonymous namespace
+
 //
 // Frame Dispatcher
 //
@@ -53,13 +60,13 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
     uint8_t head[16];
     auto    p        = reader.memcpy(head, 16);
     int64_t read_len = p - reinterpret_cast<char *>(head);
-    Debug("v_http3", "reading H3 frame: state=%d read_len=%" PRId64, this->_reading_state, read_len);
+    Dbg(dbg_ctl_v_http3, "reading H3 frame: state=%d read_len=%" PRId64, this->_reading_state, read_len);
 
     if (this->_reading_state == READING_TYPE_LEN) {
       if (read_len >= 1) {
         this->_reading_frame_type_len = QUICVariableInt::size(head);
         this->_reading_state          = READING_LENGTH_LEN;
-        Debug("v_http3", "type_len=%" PRId64, this->_reading_frame_type_len);
+        Dbg(dbg_ctl_v_http3, "type_len=%" PRId64, this->_reading_frame_type_len);
       } else {
         break;
       }
@@ -69,7 +76,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
       if (read_len >= this->_reading_frame_type_len + 1) {
         this->_reading_frame_length_len = QUICVariableInt::size(head + this->_reading_frame_type_len);
         this->_reading_state            = READING_PAYLOAD_LEN;
-        Debug("v_http3", "length_len=%" PRId64, this->_reading_frame_length_len);
+        Dbg(dbg_ctl_v_http3, "length_len=%" PRId64, this->_reading_frame_length_len);
       } else {
         break;
       }
@@ -79,7 +86,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
       if (read_len >= this->_reading_frame_type_len + this->_reading_frame_length_len) {
         size_t dummy;
         QUICVariableInt::decode(this->_reading_frame_payload_len, dummy, head + this->_reading_frame_type_len);
-        Debug("v_http3", "payload_len=%" PRId64, this->_reading_frame_payload_len);
+        Dbg(dbg_ctl_v_http3, "payload_len=%" PRId64, this->_reading_frame_payload_len);
         this->_reading_state = READING_PAYLOAD;
       } else {
         break;
@@ -104,7 +111,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
 
       // Dispatch
       Http3FrameType type = frame->type();
-      Debug("http3", "[RX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(type), frame_len);
+      Dbg(dbg_ctl_http3, "[RX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(type), frame_len);
       std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
       for (auto h : handlers) {
         error = h->handle_frame(frame, frame_count - 1, stream_type);

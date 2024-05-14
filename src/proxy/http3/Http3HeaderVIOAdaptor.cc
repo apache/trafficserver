@@ -27,6 +27,13 @@
 #include "iocore/eventsystem/VIO.h"
 #include "proxy/hdrs/HTTP.h"
 
+namespace
+{
+DbgCtl dbg_ctl_http3{"http3"};
+DbgCtl dbg_ctl_v_http3{"v_http3"};
+
+} // end anonymous namespace
+
 Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id)
   : _sink_vio(sink), _qpack(qpack), _stream_id(stream_id)
 {
@@ -58,9 +65,9 @@ Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame, int
     // When decoding is not blocked, continuation should be called directly?
   } else if (res == 1) {
     // Decoding is blocked.
-    Debug("http3", "Decoding is blocked. DecodeRequest is scheduled");
+    Dbg(dbg_ctl_http3, "Decoding is blocked. DecodeRequest is scheduled");
   } else if (res < 0) {
-    Debug("http3", "Error on decoding header (%d)", res);
+    Dbg(dbg_ctl_http3, "Error on decoding header (%d)", res);
   } else {
     ink_abort("should not be here");
   }
@@ -79,13 +86,13 @@ Http3HeaderVIOAdaptor::event_handler(int event, Event *data)
 {
   switch (event) {
   case QPACK_EVENT_DECODE_COMPLETE:
-    Debug("v_http3", "%s (%d)", "QPACK_EVENT_DECODE_COMPLETE", event);
+    Dbg(dbg_ctl_v_http3, "%s (%d)", "QPACK_EVENT_DECODE_COMPLETE", event);
     if (this->_on_qpack_decode_complete()) {
       // If READ_READY event is scheduled, should it be canceled?
     }
     break;
   case QPACK_EVENT_DECODE_FAILED:
-    Debug("v_http3", "%s (%d)", "QPACK_EVENT_DECODE_FAILED", event);
+    Dbg(dbg_ctl_v_http3, "%s (%d)", "QPACK_EVENT_DECODE_FAILED", event);
     // FIXME: handle error
     break;
   }
@@ -100,12 +107,12 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
   constexpr static bool NON_TRAILER = false;
   if (!HeaderValidator::is_h2_h3_header_valid(this->_header, http_hdr_type_get(this->_header.m_http) == HTTP_TYPE_RESPONSE,
                                               NON_TRAILER)) {
-    Debug("http3", "Header is invalid");
+    Dbg(dbg_ctl_http3, "Header is invalid");
     return -1;
   }
   int res = this->_hvc.convert(this->_header, 3, 1);
   if (res != 0) {
-    Debug("http3", "PARSE_RESULT_ERROR");
+    Dbg(dbg_ctl_http3, "PARSE_RESULT_ERROR");
     return -1;
   }
 

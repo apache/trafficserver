@@ -42,6 +42,8 @@ struct HostCmdInfo {
   int                      time{0};
 };
 
+DbgCtl dbg_ctl_host_statuses{"host_statuses"};
+
 } // namespace
 
 swoc::Rv<YAML::Node> server_get_status(std::string_view const id, YAML::Node const &params);
@@ -182,7 +184,7 @@ void
 HostStatus::loadRecord(std::string_view name, HostStatRec &h)
 {
   HostStatRec *host_stat = nullptr;
-  Debug("host_statuses", "loading host status record for %.*s", int(name.size()), name.data());
+  Dbg(dbg_ctl_host_statuses, "loading host status record for %.*s", int(name.size()), name.data());
   ink_rwlock_wrlock(&host_status_rwlock);
   {
     auto it = hosts_statuses.find(std::string(name));
@@ -213,7 +215,8 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       hosts_statuses.emplace(name, host_stat);
     }
     if (reason & Reason::ACTIVE) {
-      Debug("host_statuses", "for host %.*s set status: %s, Reason:ACTIVE", int(name.size()), name.data(), HostStatusNames[status]);
+      Dbg(dbg_ctl_host_statuses, "for host %.*s set status: %s, Reason:ACTIVE", int(name.size()), name.data(),
+          HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->active_marked_down  = time(0);
         host_stat->active_down_time    = down_time;
@@ -227,7 +230,8 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       }
     }
     if (reason & Reason::LOCAL) {
-      Debug("host_statuses", "for host %.*s set status: %s, Reason:LOCAL", int(name.size()), name.data(), HostStatusNames[status]);
+      Dbg(dbg_ctl_host_statuses, "for host %.*s set status: %s, Reason:LOCAL", int(name.size()), name.data(),
+          HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->local_marked_down  = time(0);
         host_stat->local_down_time    = down_time;
@@ -241,7 +245,8 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       }
     }
     if (reason & Reason::MANUAL) {
-      Debug("host_statuses", "for host %.*s set status: %s, Reason:MANUAL", int(name.size()), name.data(), HostStatusNames[status]);
+      Dbg(dbg_ctl_host_statuses, "for host %.*s set status: %s, Reason:MANUAL", int(name.size()), name.data(),
+          HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->manual_marked_down  = time(0);
         host_stat->manual_down_time    = down_time;
@@ -255,8 +260,8 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       }
     }
     if (reason & Reason::SELF_DETECT) {
-      Debug("host_statuses", "for host %.*s set status: %s, Reason:SELF_DETECT", int(name.size()), name.data(),
-            HostStatusNames[status]);
+      Dbg(dbg_ctl_host_statuses, "for host %.*s set status: %s, Reason:SELF_DETECT", int(name.size()), name.data(),
+          HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->self_detect_marked_down  = time(0);
         host_stat->reasons                 |= Reason::SELF_DETECT;
@@ -271,10 +276,10 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       if (host_stat->reasons == 0) {
         host_stat->status = TSHostStatus::TS_HOST_STATUS_UP;
       }
-      Debug("host_statuses", "reasons: %d, status: %s", host_stat->reasons, HostStatusNames[host_stat->status]);
+      Dbg(dbg_ctl_host_statuses, "reasons: %d, status: %s", host_stat->reasons, HostStatusNames[host_stat->status]);
     } else {
       host_stat->status = status;
-      Debug("host_statuses", "reasons: %d, status: %s", host_stat->reasons, HostStatusNames[host_stat->status]);
+      Dbg(dbg_ctl_host_statuses, "reasons: %d, status: %s", host_stat->reasons, HostStatusNames[host_stat->status]);
     }
   }
   ink_rwlock_unlock(&host_status_rwlock);
@@ -343,24 +348,24 @@ HostStatus::getHostStatus(const std::string_view name)
     unsigned int reasons = _status->reasons;
     if ((_status->reasons & Reason::ACTIVE) && _status->active_down_time > 0) {
       if ((_status->active_down_time + _status->active_marked_down) < now) {
-        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(),
-              now, _status->active_down_time, _status->active_marked_down, Reason::ACTIVE_REASON);
+        Dbg(dbg_ctl_host_statuses, "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()),
+            name.data(), now, _status->active_down_time, _status->active_marked_down, Reason::ACTIVE_REASON);
         setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, 0, Reason::ACTIVE);
         reasons ^= Reason::ACTIVE;
       }
     }
     if ((_status->reasons & Reason::LOCAL) && _status->local_down_time > 0) {
       if ((_status->local_down_time + _status->local_marked_down) < now) {
-        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(),
-              now, _status->local_down_time, _status->local_marked_down, Reason::LOCAL_REASON);
+        Dbg(dbg_ctl_host_statuses, "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()),
+            name.data(), now, _status->local_down_time, _status->local_marked_down, Reason::LOCAL_REASON);
         setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, 0, Reason::LOCAL);
         reasons ^= Reason::LOCAL;
       }
     }
     if ((_status->reasons & Reason::MANUAL) && _status->manual_down_time > 0) {
       if ((_status->manual_down_time + _status->manual_marked_down) < now) {
-        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(),
-              now, _status->manual_down_time, _status->manual_marked_down, Reason::MANUAL_REASON);
+        Dbg(dbg_ctl_host_statuses, "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()),
+            name.data(), now, _status->manual_down_time, _status->manual_marked_down, Reason::MANUAL_REASON);
         setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, 0, Reason::MANUAL);
         reasons ^= Reason::MANUAL;
       }
@@ -435,7 +440,7 @@ server_get_status(std::string_view id, YAML::Node const &params)
         HostStatus  &hs       = HostStatus::instance();
         host_rec              = hs.getHostStatus(name);
         if (host_rec == nullptr) {
-          Debug("host_statuses", "no record for %s was found", name.c_str());
+          Dbg(dbg_ctl_host_statuses, "no record for %s was found", name.c_str());
           errorList.push_back("no record for " + name + " was found");
           continue;
         } else {
@@ -444,7 +449,7 @@ server_get_status(std::string_view id, YAML::Node const &params)
           host[HOST_NAME_KEY] = name;
           host[STATUS_KEY]    = s.str();
           statusList.push_back(host);
-          Debug("host_statuses", "hostname: %s, status: %s", name.c_str(), s.str().c_str());
+          Dbg(dbg_ctl_host_statuses, "hostname: %s, status: %s", name.c_str(), s.str().c_str());
         }
       }
     } else { // return all host statuses.
@@ -459,7 +464,7 @@ server_get_status(std::string_view id, YAML::Node const &params)
       }
     }
   } catch (std::exception const &ex) {
-    Debug("host_statuses", "Got an error decoding the parameters: %s", ex.what());
+    Dbg(dbg_ctl_host_statuses, "Got an error decoding the parameters: %s", ex.what());
     errorList.push_back("Error decoding parameters : " + std::string(ex.what()));
   }
 
@@ -473,7 +478,7 @@ server_get_status(std::string_view id, YAML::Node const &params)
 swoc::Rv<YAML::Node>
 server_set_status(std::string_view id, YAML::Node const &params)
 {
-  Debug("host_statuses", "id=%s", id.data());
+  Dbg(dbg_ctl_host_statuses, "id=%s", id.data());
   namespace err = rpc::handlers::errors;
   swoc::Rv<YAML::Node> resp;
 
@@ -484,8 +489,8 @@ server_set_status(std::string_view id, YAML::Node const &params)
       for (auto const &name : cmdInfo.hosts) {
         HostStatus &hs       = HostStatus::instance();
         std::string statName = stat_prefix + name;
-        Debug("host_statuses", "marking server %s : %s", name.c_str(),
-              (cmdInfo.type == TSHostStatus::TS_HOST_STATUS_UP ? "up" : "down"));
+        Dbg(dbg_ctl_host_statuses, "marking server %s : %s", name.c_str(),
+            (cmdInfo.type == TSHostStatus::TS_HOST_STATUS_UP ? "up" : "down"));
         hs.setHostStatus(name.c_str(), cmdInfo.type, cmdInfo.time, cmdInfo.reasonType);
       }
     } else {
@@ -493,10 +498,10 @@ server_set_status(std::string_view id, YAML::Node const &params)
     }
 
     // schedule a write to the persistent store.
-    Debug("host_statuses", "updating persistent store");
+    Dbg(dbg_ctl_host_statuses, "updating persistent store");
     eventProcessor.schedule_imm(HostStatusSync::new_instance(), ET_TASK);
   } catch (std::exception const &ex) {
-    Debug("host_statuses", "Got an error HostCmdInfo decoding: %s", ex.what());
+    Dbg(dbg_ctl_host_statuses, "Got an error HostCmdInfo decoding: %s", ex.what());
     resp.errata()
       .assign(std::error_code{rpc::handlers::errors::Codes::SERVER})
       .note("Error found during host status set: {}", ex.what());
