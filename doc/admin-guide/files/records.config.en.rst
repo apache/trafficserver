@@ -974,6 +974,18 @@ mptcp
    request, this option determines the size of the chunks, in bytes, to use
    when sending content to an HTTP/1.1 client.
 
+.. ts:cv:: CONFIG proxy.config.http.drop_chunked_trailers INT 0
+   :reloadable:
+   :overridable:
+
+   Specifies whether |TS| should drop chunked trailers. If enabled (``1``), |TS|
+   will drop any chunked trailers in a ``Transfer-Encoded: chunked`` request or
+   response body. If disabled (``0``), |TS| will pass the chunked trailers
+   unmodified to the receiving peer.  See `RFC 9112, section 7.1.2
+   <https://www.rfc-editor.org/rfc/rfc9112.html#name-chunked-trailer-section>`_
+   for details about chunked trailers. By default, this option is disabled
+   and therefore |TS| will not drop chunked trailers.
+
 .. ts:cv:: CONFIG proxy.config.http.send_http11_requests INT 1
    :reloadable:
    :overridable:

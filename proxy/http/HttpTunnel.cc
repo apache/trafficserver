@@ -48,27 +48,27 @@ static int const CHUNK_IOBUFFER_SIZE_INDEX = MIN_IOBUFFER_SIZE;
 ChunkedHandler::ChunkedHandler() : max_chunk_size(DEFAULT_MAX_CHUNK_SIZE) {}
 
 void
-ChunkedHandler::init(IOBufferReader *buffer_in, HttpTunnelProducer *p)
+ChunkedHandler::init(IOBufferReader *buffer_in, HttpTunnelProducer *p, bool drop_chunked_trailers)
 {
   if (p->do_chunking) {
-    init_by_action(buffer_in, ACTION_DOCHUNK);
+    init_by_action(buffer_in, ACTION_DOCHUNK, drop_chunked_trailers);
   } else if (p->do_dechunking) {
-    init_by_action(buffer_in, ACTION_DECHUNK);
+    init_by_action(buffer_in, ACTION_DECHUNK, drop_chunked_trailers);
   } else {
-    init_by_action(buffer_in, ACTION_PASSTHRU);
+    init_by_action(buffer_in, ACTION_PASSTHRU, drop_chunked_trailers);
   }
   return;
 }
 
 void
-ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action)
+ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action, bool drop_chunked_trailers)
 {
-  running_sum    = 0;
-  num_digits     = 0;
-  cur_chunk_size = 0;
-  bytes_left     = 0;
-  truncation     = false;
-  this->action   = action;
+  running_sum          = 0;
+  num_digits           = 0;
+  cur_chunk_size       = 0;
+  cur_chunk_bytes_left = 0;
+  truncation           = false;
+  this->action         = action;
 
   switch (action) {
   case ACTION_DOCHUNK:
@@ -84,6 +84,18 @@ ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action)
     break;
   case ACTION_PASSTHRU:
     chunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
+    if (drop_chunked_trailers) {
+      // Note that dropping chunked trailers only applies in the passthrough
+      // case in which we are filtering out chunked trailers as we proxy.
+      this->drop_chunked_trailers = drop_chunked_trailers;
+
+      // We only need an intermediate buffer when modifying the chunks by
+      // filtering out the trailers. Otherwise, a simple passthrough needs no
+      // intermediary buffer as consumers will simply read directly from
+      // chunked_reader.
+      chunked_buffer = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
+      chunked_size   = 0;
+    }
     break;
   default:
     ink_release_assert(!"Unknown action");
@@ -97,12 +109,14 @@ ChunkedHandler::clear()
 {
   switch (action) {
   case ACTION_DOCHUNK:
-    free_MIOBuffer(chunked_buffer);
+  case ACTION_PASSTHRU:
+    if (chunked_buffer) {
+      free_MIOBuffer(chunked_buffer);
+    }
     break;
   case ACTION_DECHUNK:
     free_MIOBuffer(dechunked_buffer);
     break;
-  case ACTION_PASSTHRU:
   default:
     break;
   }
@@ -166,9 +180,9 @@ ChunkedHandler::read_size()
       } else if (state == CHUNK_READ_SIZE_CRLF) { // Scan for a linefeed
         if (ParseRules::is_lf(*tmp)) {
           Debug("http_chunk", "read chunk size of %d bytes", running_sum);
-          bytes_left = (cur_chunk_size = running_sum);
-          state      = (running_sum == 0) ? CHUNK_READ_TRAILER_BLANK : CHUNK_READ_CHUNK;
-          done       = true;
+          cur_chunk_bytes_left = (cur_chunk_size = running_sum);
+          state                = (running_sum == 0) ? CHUNK_READ_TRAILER_BLANK : CHUNK_READ_CHUNK;
+          done                 = true;
           break;
         }
       } else if (state == CHUNK_READ_SIZE_START) {
@@ -187,15 +201,19 @@ ChunkedHandler::read_size()
       tmp++;
       data_size--;
     }
+    if (drop_chunked_trailers) {
+      chunked_buffer->write(chunked_reader, bytes_used);
+      chunked_size += bytes_used;
+    }
     chunked_reader->consume(bytes_used);
   }
 }
 
 // int ChunkedHandler::transfer_bytes()
 //
-//   Transfer bytes from chunked_reader to dechunked buffer
+//   Transfer bytes from chunked_reader to dechunked buffer.
 //   Use block reference method when there is a sufficient
-//   size to move.  Otherwise, uses memcpy method
+//   size to move.  Otherwise, uses memcpy method.
 //
 int64_t
 ChunkedHandler::transfer_bytes()
@@ -204,22 +222,26 @@ ChunkedHandler::transfer_bytes()
 
   // Handle the case where we are doing chunked passthrough.
   if (!dechunked_buffer) {
-    moved = std::min(bytes_left, chunked_reader->read_avail());
+    moved = std::min(cur_chunk_bytes_left, chunked_reader->read_avail());
+    if (drop_chunked_trailers) {
+      chunked_buffer->write(chunked_reader, moved);
+      chunked_size += moved;
+    }
     chunked_reader->consume(moved);
-    bytes_left = bytes_left - moved;
+    cur_chunk_bytes_left = cur_chunk_bytes_left - moved;
     return moved;
   }
 
-  while (bytes_left > 0) {
+  while (cur_chunk_bytes_left > 0) {
     block_read_avail = chunked_reader->block_read_avail();
 
-    to_move = std::min(bytes_left, block_read_avail);
+    to_move = std::min(cur_chunk_bytes_left, block_read_avail);
     if (to_move <= 0) {
       break;
     }
 
     if (to_move >= min_block_transfer_bytes) {
-      moved = dechunked_buffer->write(chunked_reader, bytes_left);
+      moved = dechunked_buffer->write(chunked_reader, cur_chunk_bytes_left);
     } else {
       // Small amount of data available.  We want to copy the
       // data rather than block reference to prevent the buildup
@@ -230,7 +252,7 @@ ChunkedHandler::transfer_bytes()
 
     if (moved > 0) {
       chunked_reader->consume(moved);
-      bytes_left = bytes_left - moved;
+      cur_chunk_bytes_left = cur_chunk_bytes_left - moved;
       dechunked_size += moved;
       total_moved += moved;
     } else {
@@ -245,12 +267,12 @@ ChunkedHandler::read_chunk()
 {
   int64_t b = transfer_bytes();
 
-  ink_assert(bytes_left >= 0);
-  if (bytes_left == 0) {
+  ink_assert(cur_chunk_bytes_left >= 0);
+  if (cur_chunk_bytes_left == 0) {
     Debug("http_chunk", "completed read of chunk of %" PRId64 " bytes", cur_chunk_size);
 
     state = CHUNK_READ_SIZE_START;
-  } else if (bytes_left > 0) {
+  } else if (cur_chunk_bytes_left > 0) {
     Debug("http_chunk", "read %" PRId64 " bytes of an %" PRId64 " chunk", b, cur_chunk_size);
   }
 }
@@ -281,6 +303,13 @@ ChunkedHandler::read_trailer()
         if (state == CHUNK_READ_TRAILER_CR || state == CHUNK_READ_TRAILER_BLANK) {
           state = CHUNK_READ_DONE;
           Debug("http_chunk", "completed read of trailers");
+
+          if (this->drop_chunked_trailers) {
+            // We skip passing through chunked trailers to the peer and only write
+            // the final CRLF that ends all chunked content.
+            chunked_buffer->write(FINAL_CRLF.data(), FINAL_CRLF.size());
+            chunked_size += FINAL_CRLF.size();
+          }
           done = true;
           break;
         } else {
@@ -596,10 +625,12 @@ HttpTunnel::deallocate_buffers()
 }
 
 void
-HttpTunnel::set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_bytes, TunnelChunkingAction_t action)
+HttpTunnel::set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_bytes, TunnelChunkingAction_t action,
+                                         bool drop_chunked_trailers)
 {
-  p->chunked_handler.skip_bytes = skip_bytes;
-  p->chunking_action            = action;
+  this->http_drop_chunked_trailers = drop_chunked_trailers;
+  p->chunked_handler.skip_bytes    = skip_bytes;
+  p->chunking_action               = action;
 
   switch (action) {
   case TCA_CHUNK_CONTENT:
@@ -808,9 +839,11 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   ink_assert(p->vc != nullptr);
   active = true;
 
-  IOBufferReader *chunked_buffer_start = nullptr, *dechunked_buffer_start = nullptr;
+  IOBufferReader *chunked_buffer_start     = nullptr;
+  IOBufferReader *dechunked_buffer_start   = nullptr;
+  IOBufferReader *passthrough_buffer_start = nullptr;
   if (p->do_chunking || p->do_dechunking || p->do_chunked_passthru) {
-    p->chunked_handler.init(p->buffer_start, p);
+    p->chunked_handler.init(p->buffer_start, p, this->http_drop_chunked_trailers);
 
     // Copy the header into the chunked/dechunked buffers.
     if (p->do_chunking) {
@@ -833,6 +866,11 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
         Debug("http_tunnel", "[producer_run] do_dechunking::Copied header of size %" PRId64 "", p->chunked_handler.skip_bytes);
       }
+    }
+    if (p->chunked_handler.drop_chunked_trailers) {
+      // initialize a reader to passthrough buffer start before writing to keep ref count
+      passthrough_buffer_start = p->chunked_handler.chunked_buffer->alloc_reader();
+      p->chunked_handler.chunked_buffer->write(p->buffer_start, p->chunked_handler.skip_bytes);
     }
   }
 
@@ -873,7 +911,13 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       c->buffer_reader = p->chunked_handler.chunked_buffer->clone_reader(chunked_buffer_start);
     } else if (action == TCA_DECHUNK_CONTENT) {
       c->buffer_reader = p->chunked_handler.dechunked_buffer->clone_reader(dechunked_buffer_start);
-    } else {
+    } else if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
+      if (p->chunked_handler.drop_chunked_trailers) {
+        c->buffer_reader = p->chunked_handler.chunked_buffer->clone_reader(passthrough_buffer_start);
+      } else {
+        c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
+      }
+    } else { // TCA_PASSTHRU_DECHUNKED_CONTENT
       c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
     }
 
@@ -917,6 +961,9 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     // remove the dechunked reader marker so that it doesn't act like a buffer guard
     if (p->do_dechunking && dechunked_buffer_start) {
       p->chunked_handler.dechunked_buffer->dealloc_reader(dechunked_buffer_start);
+    }
+    if (p->do_chunked_passthru && passthrough_buffer_start) {
+      p->chunked_handler.chunked_buffer->dealloc_reader(passthrough_buffer_start);
     }
 
     // bz57413

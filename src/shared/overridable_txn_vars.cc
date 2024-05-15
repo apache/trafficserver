@@ -30,6 +30,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {"proxy.config.ssl.hsts_max_age", {TS_CONFIG_SSL_HSTS_MAX_AGE, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.normalize_ae", {TS_CONFIG_HTTP_NORMALIZE_AE, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.chunking.size", {TS_CONFIG_HTTP_CHUNKING_SIZE, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.http.drop_chunked_trailers", {TS_CONFIG_HTTP_DROP_CHUNKED_TRAILERS, TS_RECORDDATATYPE_INT}},
      {"proxy.config.ssl.client.cert.path", {TS_CONFIG_SSL_CERT_FILEPATH, TS_RECORDDATATYPE_STRING}},
      {"proxy.config.http.allow_half_open", {TS_CONFIG_HTTP_ALLOW_HALF_OPEN, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.chunking_enabled", {TS_CONFIG_HTTP_CHUNKING_ENABLED, TS_RECORDDATATYPE_INT}},
