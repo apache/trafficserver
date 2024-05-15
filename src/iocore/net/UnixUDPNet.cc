@@ -97,7 +97,7 @@ UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBuffe
   p->p.segment_size = segment_size;
 #ifdef HAVE_SO_TXTIME
   if (send_at_hint) {
-    memcpy(&p->p.send_at, &send_at_hint, sizeof(struct timespec));
+    memcpy(&p->p.send_at, send_at_hint, sizeof(struct timespec));
   }
 #endif
   return p;
