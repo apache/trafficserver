@@ -213,7 +213,7 @@ class ConnBase
 
   private:
     ConnBase *_owner = nullptr;
-  }; // End class Geo::TcpInfo
+  }; // End class ConnBase::Geo
 
   class TcpInfo
   {
