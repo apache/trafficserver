@@ -48,6 +48,7 @@ duplicate bugs is encouraged, but not required.
    logging-architecture/index.en
    internal-libraries/index.en
    plugins/index.en
+   cripts/index.en
    config-vars.en
    api/index.en
    continuous-integration/index.en
