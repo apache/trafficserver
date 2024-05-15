@@ -647,7 +647,6 @@ Stripe::agg_copy(CacheVC *vc)
     Doc           *doc         = this->_write_buffer.emplace(this->round_to_approx_size(len));
     IOBufferBlock *res_alt_blk = nullptr;
 
-    uint32_t len = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
     ink_assert(vc->frag_type != CACHE_FRAG_TYPE_HTTP || len != sizeof(Doc));
     ink_assert(this->round_to_approx_size(len) == vc->agg_len);
     // update copy of directory entry for this document
@@ -991,8 +990,6 @@ Stripe::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &tocall
          this->header->write_pos + this->_write_buffer.get_buffer_pos(), c->first_key.slice32(0));
     [[maybe_unused]] int wrotelen = this->agg_copy(c);
     ink_assert(writelen == wrotelen);
-    this->_write_buffer.add_bytes_pending_aggregation(-writelen);
-    this->_write_buffer.add_buffer_pos(writelen);
     CacheVC *n = (CacheVC *)c->link.next;
     this->_write_buffer.get_pending_writers().dequeue();
     if (c->f.sync && c->f.use_first_key) {

@@ -91,8 +91,8 @@ public:
    * Create a new document in the buffer.
    *
    * This method may only be called if there is space at the current
-   * buffer position for the document. Use reset_buffer_pos or add_buffer_pos
-   * to set the position in the buffer before calling this method. If this
+   * buffer position for the document. Use reset_buffer_pos to reset
+   * to the beginning of the buffer when it gets full. If this
    * condition is not met, the new document may overrun the buffer.
    *
    * The buffer position will be updated to the end of the document's data
@@ -138,7 +138,6 @@ public:
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
   char                                    *get_buffer();
   int                                      get_buffer_pos() const;
-  void                                     add_buffer_pos(int size);
   void                                     seek(int offset);
   void                                     reset_buffer_pos();
   int                                      get_bytes_pending_aggregation() const;
@@ -167,12 +166,6 @@ inline int
 AggregateWriteBuffer::get_buffer_pos() const
 {
   return this->_buffer_pos;
-}
-
-inline void
-AggregateWriteBuffer::add_buffer_pos(int size)
-{
-  this->_buffer_pos += size;
 }
 
 inline void
