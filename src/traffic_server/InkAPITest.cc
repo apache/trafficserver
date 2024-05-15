@@ -8704,7 +8704,8 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {"proxy.config.url_r
                                                              "proxy.config.http.insert_forwarded",
                                                              "proxy.config.http.allow_multi_range",
                                                              "proxy.config.http.request_buffer_enabled",
-                                                             "proxy.config.http.allow_half_open"};
+                                                             "proxy.config.http.allow_half_open",
+                                                             "proxy.config.http.drop_chunked_trailers"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
