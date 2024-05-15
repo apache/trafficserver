@@ -786,7 +786,7 @@ agg_copy(char *p, CacheVC *vc)
     doc->sync_serial  = vc->stripe->header->sync_serial;
     doc->write_serial = vc->stripe->header->write_serial;
 
-    memcpy(p, doc, doc->len);
+    this->_write_buffer.add(doc, l);
 
     vc->dir = vc->overwrite_dir;
     dir_set_offset(&vc->dir, vc->stripe->offset_to_vol_offset(o));

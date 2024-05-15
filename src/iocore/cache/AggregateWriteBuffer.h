@@ -63,6 +63,31 @@ public:
   bool is_empty() const;
 
   /**
+   * Add a new document to the buffer.
+   *
+   * This method copies the provided document into the buffer.
+   *
+   * This method may only be called if there is space at the current
+   * buffer position for the document, and the document has a correct len
+   * field. Use reset_buffer_pos to reset to the beginning of the buffer
+   * when it gets full. If this condition is not met, the new document may
+   * overrun the buffer.
+   *
+   * The buffer position will be updated to the end of the document's data
+   * and the document length will be subtracted from the bytes pending
+   * aggregation.
+   *
+   * @param document: A pointer to the document to add to the buffer. It must
+   *   have a correct len field, and its headers and data must follow it. This
+   *   requires a pointer to a full document buffer - not just the Doc struct.
+   * @param approx_size The approximate size of all headers and data as
+   *   determined by Stripe::round_to_approx_size. The document may not need
+   *   this much space.
+   *
+   */
+  void add(Doc const *document, int approx_size);
+
+  /**
    * Create a new document in the buffer.
    *
    * This method may only be called if there is space at the current

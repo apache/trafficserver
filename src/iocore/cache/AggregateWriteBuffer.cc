@@ -34,6 +34,14 @@
 
 #include <cstring>
 
+void
+AggregateWriteBuffer::add(Doc const *doc, int approx_size)
+{
+  std::memcpy(this->_buffer + this->_buffer_pos, doc, doc->len);
+  this->_buffer_pos += approx_size;
+  this->add_bytes_pending_aggregation(approx_size);
+}
+
 Doc *
 AggregateWriteBuffer::emplace(int approx_size)
 {
