@@ -18,3 +18,6 @@ leak:RegressionTest_SDK_API_TSPortDescriptor
 leak:RegressionTest_HostDBProcessor
 leak:RegressionTest_DNS
 leak:RegressionTest_UDPNet_echo
+leak:HttpConfig::startup
+# libswoc
+leak:MemArena::make_block

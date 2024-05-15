@@ -57,6 +57,13 @@ FieldListCacheElement fieldlist_cache[FIELDLIST_CACHE_SIZE];
 int                   fieldlist_cache_entries = 0;
 int32_t               LogBuffer::M_ID;
 
+namespace
+{
+DbgCtl dbg_ctl_log_logbuffer{"log-logbuffer"};
+DbgCtl dbg_ctl_log_fieldlist{"log-fieldlist"};
+
+} // end anonymous namespace
+
 /*-------------------------------------------------------------------------
   The following LogBufferHeader routines are used to grab strings out from
   the data section using the offsets held in the buffer header.
@@ -131,8 +138,8 @@ LogBuffer::LogBuffer(const LogConfig *cfg, LogObject *owner, size_t size, size_t
 
   m_expiration_time = LogUtils::timestamp() + cfg->max_secs_per_buffer;
 
-  Debug("log-logbuffer", "[%p] Created buffer %u for %s at address %p, size %d", this_ethread(), m_id, m_owner->get_base_filename(),
-        m_buffer, (int)size);
+  Dbg(dbg_ctl_log_logbuffer, "[%p] Created buffer %u for %s at address %p, size %d", this_ethread(), m_id,
+      m_owner->get_base_filename(), m_buffer, (int)size);
 }
 
 LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
@@ -156,8 +163,8 @@ LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
   //
   m_id = static_cast<uint32_t>(ink_atomic_increment(&M_ID, 1));
 
-  Debug("log-logbuffer", "[%p] Created repurposed buffer %u for %s at address %p", this_ethread(), m_id,
-        m_owner->get_base_filename(), m_buffer);
+  Dbg(dbg_ctl_log_logbuffer, "[%p] Created repurposed buffer %u for %s at address %p", this_ethread(), m_id,
+      m_owner->get_base_filename(), m_buffer);
 }
 
 void
@@ -171,7 +178,7 @@ LogBuffer::freeLogBuffer()
     log_buffer = m_buffer;
   }
   if (log_buffer) {
-    Debug("log-logbuffer", "[%p] Deleting buffer %u at address %p", this_ethread(), m_id, log_buffer);
+    Dbg(dbg_ctl_log_logbuffer, "[%p] Deleting buffer %u at address %p", this_ethread(), m_id, log_buffer);
     if (m_buffer_fast_allocator_size >= 0) {
       ioBufAllocator[m_buffer_fast_allocator_size].free_void(log_buffer);
     } else {
@@ -319,7 +326,7 @@ LogBuffer::checkout_write(size_t *write_offset, size_t write_size)
 
     *write_offset = offset + sizeof(LogEntryHeader);
   }
-  //    Debug("log-logbuffer","[%p] %s for buffer %u (%s) returning %d",
+  //    Dbg(dbg_ctl_log_logbuffer,"[%p] %s for buffer %u (%s) returning %d",
   //        this_ethread(),
   //        (write_offset ? "checkout_write" : "force_new_buffer"),
   //        m_id, m_owner->get_base_filename(), ret_val);
@@ -356,7 +363,7 @@ LogBuffer::checkin_write(size_t write_offset)
     }
   } while (!switch_state(old_s, new_s));
 
-  //    Debug("log-logbuffer","[%p] checkin_write for buffer %u (%s) "
+  //    Dbg(dbg_ctl_log_logbuffer,"[%p] checkin_write for buffer %u (%s) "
   //        "returning %d (%u writers left)", this_ethread(),
   //        m_id, m_owner->get_base_filename(), ret_val, writers_left);
 
@@ -617,21 +624,21 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
 
   for (i = 0; i < fieldlist_cache_entries; i++) {
     if (strcmp(symbol_str, fieldlist_cache[i].symbol_str) == 0) {
-      Debug("log-fieldlist", "Fieldlist for %s found in cache, #%d", symbol_str, i);
+      Dbg(dbg_ctl_log_fieldlist, "Fieldlist for %s found in cache, #%d", symbol_str, i);
       fieldlist = fieldlist_cache[i].fieldlist;
       break;
     }
   }
 
   if (!fieldlist) {
-    Debug("log-fieldlist", "Fieldlist for %s not found; creating ...", symbol_str);
+    Dbg(dbg_ctl_log_fieldlist, "Fieldlist for %s not found; creating ...", symbol_str);
     fieldlist = new LogFieldList;
     ink_assert(fieldlist != nullptr);
     bool contains_aggregates = false;
     LogFormat::parse_symbol_string(symbol_str, fieldlist, &contains_aggregates);
 
     if (fieldlist_cache_entries < FIELDLIST_CACHE_SIZE) {
-      Debug("log-fieldlist", "Fieldlist cached as entry %d", fieldlist_cache_entries);
+      Dbg(dbg_ctl_log_fieldlist, "Fieldlist cached as entry %d", fieldlist_cache_entries);
       fieldlist_cache[fieldlist_cache_entries].fieldlist  = fieldlist;
       fieldlist_cache[fieldlist_cache_entries].symbol_str = ats_strdup(symbol_str);
       fieldlist_cache_entries++;

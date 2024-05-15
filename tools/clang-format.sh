@@ -100,7 +100,7 @@ EOF
   start_time_file=$(mktemp -t clang-format-start-time.XXXXXXXXXX)
   touch ${start_time_file}
 
-  target_files=$(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in -o -iname \*.hpp | grep -vE 'lib/(catch2|fastlz|swoc|yamlcpp)')
+  target_files=$(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in -o -iname \*.hpp | grep -vE 'lib/(catch2|fastlz|swoc|systemtap|yamlcpp)')
   for file in ${target_files}; do
     # The ink_autoconf.h and ink_autoconf.h.in files are generated files,
     # so they do not need to be re-formatted by clang-format. Doing so

@@ -19,3 +19,4 @@
 # plugin itself is not leaking because all other code for the plugin had been
 # commented out so there was nothing to leak in the plugin.
 leak:plugin_dso_load
+leak:libquiche.so

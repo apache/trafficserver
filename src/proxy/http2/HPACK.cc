@@ -196,6 +196,9 @@ constexpr HpackHeaderField STATIC_TABLE[] = {
 constexpr std::string_view HPACK_HDR_FIELD_COOKIE        = STATIC_TABLE[TS_HPACK_STATIC_TABLE_COOKIE].name;
 constexpr std::string_view HPACK_HDR_FIELD_AUTHORIZATION = STATIC_TABLE[TS_HPACK_STATIC_TABLE_AUTHORIZATION].name;
 
+DbgCtl dbg_ctl_hpack_encode{"hpack_encode"};
+DbgCtl dbg_ctl_hpack_decode{"hpack_decode"};
+
 //
 // Local functions
 //
@@ -208,7 +211,7 @@ hpack_field_is_literal(HpackField ftype)
 // Try not to use memcmp(sv, sv) and strncasecmp(sv, sv) because we don't care which value comes first on a dictionary.
 // Return immediately if the lengths of given strings don't match.
 // Also, we noticed with profiling that taking char* and int was more performant than taking std::string_view.
-static inline bool
+inline bool
 match(const char *s1, int s1_len, const char *s2, int s2_len)
 {
   if (s1_len != s2_len) {
@@ -411,7 +414,7 @@ encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t
   *p |= 0x80;
   p  += len;
 
-  Debug("hpack_encode", "Encoded field: %d", index);
+  Dbg(dbg_ctl_hpack_encode, "Encoded field: %d", index);
   return p - buf_start;
 }
 
@@ -464,7 +467,7 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   }
   p += len;
 
-  Debug("hpack_encode", "Encoded field: %d: %.*s", index, static_cast<int>(header.value.size()), header.value.data());
+  Dbg(dbg_ctl_hpack_encode, "Encoded field: %d: %.*s", index, static_cast<int>(header.value.size()), header.value.data());
   return p - buf_start;
 }
 
@@ -512,8 +515,8 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 
   p += len;
 
-  Debug("hpack_encode", "Encoded field: %.*s: %.*s", static_cast<int>(header.name.size()), header.name.data(),
-        static_cast<int>(header.value.size()), header.value.data());
+  Dbg(dbg_ctl_hpack_encode, "Encoded field: %.*s: %.*s", static_cast<int>(header.name.size()), header.name.data(),
+      static_cast<int>(header.value.size()), header.value.data());
 
   return p - buf_start;
 }
@@ -549,13 +552,13 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
-  if (is_debug_tag_set("hpack_decode")) {
+  if (dbg_ctl_hpack_decode.on()) {
     int         decoded_name_len;
     const char *decoded_name = header.name_get(&decoded_name_len);
     int         decoded_value_len;
     const char *decoded_value = header.value_get(&decoded_value_len);
 
-    Debug("hpack_decode", "Decoded field: %.*s: %.*s", decoded_name_len, decoded_name, decoded_value_len, decoded_value);
+    Dbg(dbg_ctl_hpack_decode, "Decoded field: %.*s: %.*s", decoded_name_len, decoded_name, decoded_value_len, decoded_value);
   }
 
   return len;
@@ -640,13 +643,13 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   }
 
   // Print decoded header field
-  if (is_debug_tag_set("hpack_decode")) {
+  if (dbg_ctl_hpack_decode.on()) {
     int         decoded_name_len;
     const char *decoded_name = header.name_get(&decoded_name_len);
     int         decoded_value_len;
     const char *decoded_value = header.value_get(&decoded_value_len);
 
-    Debug("hpack_decode", "Decoded field: %.*s: %.*s", decoded_name_len, decoded_name, decoded_value_len, decoded_value);
+    Dbg(dbg_ctl_hpack_decode, "Decoded field: %.*s: %.*s", decoded_name_len, decoded_name, decoded_value_len, decoded_value);
   }
 
   if (has_http2_violation) {

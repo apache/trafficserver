@@ -44,6 +44,11 @@
 #include <sstream>
 #include <numeric>
 
+namespace
+{
+DbgCtl dbg_ctl_http2_con{"http2_con"};
+DbgCtl dbg_ctl_http2_priority{"http2_priority"};
+
 #define REMEMBER(e, r)                                     \
   {                                                        \
     if (this->session) {                                   \
@@ -51,12 +56,12 @@
     }                                                      \
   }
 
-#define Http2ConDebug(session, fmt, ...) Debug("http2_con", "[%" PRId64 "] " fmt, session->get_connection_id(), ##__VA_ARGS__);
+#define Http2ConDebug(session, fmt, ...) Dbg(dbg_ctl_http2_con, "[%" PRId64 "] " fmt, session->get_connection_id(), ##__VA_ARGS__);
 
 #define Http2StreamDebug(session, stream_id, fmt, ...) \
-  Debug("http2_con", "[%" PRId64 "] [%u] " fmt, session->get_connection_id(), stream_id, ##__VA_ARGS__);
+  Dbg(dbg_ctl_http2_con, "[%" PRId64 "] [%u] " fmt, session->get_connection_id(), stream_id, ##__VA_ARGS__);
 
-static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
+const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_DATA
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_HEADERS
   -1,                    // HTTP2_FRAME_TYPE_PRIORITY
@@ -69,7 +74,7 @@ static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_CONTINUATION
 };
 
-inline static unsigned
+inline unsigned
 read_rcv_buffer(char *buf, size_t bufsize, unsigned &nbytes, const Http2Frame &frame)
 {
   char *end;
@@ -83,6 +88,8 @@ read_rcv_buffer(char *buf, size_t bufsize, unsigned &nbytes, const Http2Frame &f
 
   return end - buf;
 }
+
+} // end anonymous namespace
 
 Http2Error
 Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
@@ -195,7 +202,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   // Update stream window size
   stream->decrement_local_rwnd(payload_length);
 
-  if (is_debug_tag_set("http2_con")) {
+  if (dbg_ctl_http2_con.on()) {
     uint32_t const stream_window  = this->acknowledged_local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
     uint32_t const session_window = this->_get_configured_receive_session_window_size();
     Http2StreamDebug(this->session, id,
@@ -582,10 +589,10 @@ Http2ConnectionState::rcv_priority_frame(const Http2Frame &frame)
     // [RFC 7540] 5.3.3 Reprioritization
     Http2StreamDebug(this->session, stream_id, "Reprioritize");
     this->dependency_tree->reprioritize(node, priority.stream_dependency, priority.exclusive_flag);
-    if (is_debug_tag_set("http2_priority")) {
+    if (dbg_ctl_http2_priority.on()) {
       std::stringstream output;
       this->dependency_tree->dump_tree(output);
-      Debug("http2_priority", "[%" PRId64 "] reprioritize %s", this->session->get_connection_id(), output.str().c_str());
+      Dbg(dbg_ctl_http2_priority, "[%" PRId64 "] reprioritize %s", this->session->get_connection_id(), output.str().c_str());
     }
   } else {
     // PRIORITY frame is received before HEADERS frame.
@@ -1966,10 +1973,10 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
       if (node->active) {
         dependency_tree->deactivate(node, 0);
       }
-      if (is_debug_tag_set("http2_priority")) {
+      if (dbg_ctl_http2_priority.on()) {
         std::stringstream output;
         dependency_tree->dump_tree(output);
-        Debug("http2_priority", "[%" PRId64 "] %s", session->get_connection_id(), output.str().c_str());
+        Dbg(dbg_ctl_http2_priority, "[%" PRId64 "] %s", session->get_connection_id(), output.str().c_str());
       }
       dependency_tree->remove(node);
       // ink_release_assert(dependency_tree->find(stream->get_id()) == nullptr);

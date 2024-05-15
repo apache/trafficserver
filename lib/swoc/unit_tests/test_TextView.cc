@@ -400,7 +400,6 @@ TEST_CASE("TextView Affixes", "[libswoc][TextView]") {
 
   // Checking that constexpr works for this constructor as long as npos isn't used.
   static constexpr TextView ctv2{"http://delain.nl/albums/Interlude.html", 38};
-  TextView ctv4{"http://delain.nl/albums/Interlude.html", 38};
   // This doesn't compile because it causes strlen to be called which isn't constexpr compatible.
   // static constexpr TextView ctv3 {"http://delain.nl/albums/Interlude.html", TextView::npos};
   // This works because it's not constexpr.

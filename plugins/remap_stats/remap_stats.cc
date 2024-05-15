@@ -19,7 +19,6 @@
   limitations under the License.
  */
 
-#include "tscore/ink_config.h"
 #include "tscore/ink_defs.h"
 #include "tsutil/ts_bw_format.h"
 

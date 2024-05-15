@@ -62,6 +62,14 @@
 #define DIAGS_LOG_FILENAME    "diags.log"
 #define MANAGER_LOG_FILENAME  "manager.log"
 
+namespace
+{
+DbgCtl dbg_ctl_logspace{"logspace"};
+DbgCtl dbg_ctl_log{"log"};
+DbgCtl dbg_ctl_log_config{"log-config"};
+
+} // end anonymous namespace
+
 void
 LogConfig::reconfigure_mgmt_variables(swoc::MemSpan<void>)
 {
@@ -77,8 +85,8 @@ LogConfig::register_rolled_log_auto_delete(std::string_view logname, int rolling
     return;
   }
 
-  Debug("logspace", "Registering rotated log deletion for %s with min roll count %d", std::string(logname).c_str(),
-        rolling_min_count);
+  Dbg(dbg_ctl_logspace, "Registering rotated log deletion for %s with min roll count %d", std::string(logname).c_str(),
+      rolling_min_count);
   rolledLogDeleter.register_log_type_for_deletion(logname, rolling_min_count);
 }
 
@@ -298,7 +306,7 @@ LogConfig::init(LogConfig *prev_config)
   if (Log::error_logging_enabled()) {
     std::unique_ptr<LogFormat> fmt(MakeTextLogFormat("error"));
 
-    Debug("log", "creating predefined error log object");
+    Dbg(dbg_ctl_log, "creating predefined error log object");
 
     errlog = new LogObject(this, fmt.get(), logfile_dir, error_log_filename, LOG_FILE_ASCII, nullptr, rolling_enabled,
                            preproc_threads, rolling_interval_sec, rolling_offset_hr, rolling_size_mb, /* auto_created */ false,
@@ -385,7 +393,7 @@ LogConfig::display(FILE *fd)
 void
 LogConfig::setup_log_objects()
 {
-  Debug("log", "creating objects...");
+  Dbg(dbg_ctl_log, "creating objects...");
 
   filter_list.clear();
 
@@ -395,7 +403,7 @@ LogConfig::setup_log_objects()
   // Open local pipes so readers can see them.
   log_object_manager.open_local_pipes();
 
-  if (is_debug_tag_set("log")) {
+  if (dbg_ctl_log.on()) {
     log_object_manager.display();
   }
 }
@@ -414,7 +422,7 @@ int
 LogConfig::reconfigure(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
                        void * /* cookie ATS_UNUSED */)
 {
-  Debug("log-config", "Reconfiguration request accepted");
+  Dbg(dbg_ctl_log_config, "Reconfiguration request accepted");
   Log::config->reconfiguration_needed = true;
   return 0;
 }
@@ -521,10 +529,10 @@ LogConfig::space_to_write(int64_t bytes_to_write) const
 
   space = ((logical_space_used < config_space) && (physical_space_left > partition_headroom));
 
-  Debug("logspace",
-        "logical space used %" PRId64 ", configured space %" PRId64 ", physical space left %" PRId64 ", partition headroom %" PRId64
-        ", space %s available",
-        logical_space_used, config_space, physical_space_left, partition_headroom, space ? "is" : "is not");
+  Dbg(dbg_ctl_logspace,
+      "logical space used %" PRId64 ", configured space %" PRId64 ", physical space left %" PRId64 ", partition headroom %" PRId64
+      ", space %s available",
+      logical_space_used, config_space, physical_space_left, partition_headroom, space ? "is" : "is not");
 
   return space;
 }
@@ -624,8 +632,8 @@ LogConfig::update_space_used()
   m_partition_space_left = partition_space_left;
   Metrics::Gauge::store(log_rsb.log_files_space_used, m_space_used);
 
-  Debug("logspace", "%" PRId64 " bytes being used for logs", m_space_used);
-  Debug("logspace", "%" PRId64 " bytes left on partition", m_partition_space_left);
+  Dbg(dbg_ctl_logspace, "%" PRId64 " bytes being used for logs", m_space_used);
+  Dbg(dbg_ctl_logspace, "%" PRId64 " bytes left on partition", m_partition_space_left);
 
   //
   // Now that we have an accurate picture of the amount of space being
@@ -642,16 +650,16 @@ LogConfig::update_space_used()
   int64_t headroom  = static_cast<int64_t>(max_space_mb_headroom) * LOG_MEGABYTE;
 
   if (!space_to_write(headroom)) {
-    Debug("logspace", "headroom reached, trying to clear space ...");
+    Dbg(dbg_ctl_logspace, "headroom reached, trying to clear space ...");
     if (!rolledLogDeleter.has_candidates()) {
       Note("Cannot clear space because there are no recognized Traffic Server rolled logs for auto deletion.");
     } else {
-      Debug("logspace", "Considering %zu delete candidates ...", rolledLogDeleter.get_candidate_count());
+      Dbg(dbg_ctl_logspace, "Considering %zu delete candidates ...", rolledLogDeleter.get_candidate_count());
     }
 
     while (rolledLogDeleter.has_candidates()) {
       if (space_to_write(headroom + log_buffer_size)) {
-        Debug("logspace", "low water mark reached; stop deleting");
+        Dbg(dbg_ctl_logspace, "low water mark reached; stop deleting");
         break;
       }
 
@@ -659,19 +667,19 @@ LogConfig::update_space_used()
       // Check if any candidate exists
       if (!victim) {
         // This shouldn't be triggered unless min_count are configured wrong or extra non-log files occupy the directory
-        Debug("logspace", "No more victims. Check your rolling_min_count settings and logging directory.");
+        Dbg(dbg_ctl_logspace, "No more victims. Check your rolling_min_count settings and logging directory.");
       } else {
-        Debug("logspace", "auto-deleting %s", victim->rolled_log_path.c_str());
+        Dbg(dbg_ctl_logspace, "auto-deleting %s", victim->rolled_log_path.c_str());
 
         if (unlink(victim->rolled_log_path.c_str()) < 0) {
           Note("Traffic Server was unable to auto-delete rolled "
                "logfile %s: %s.",
                victim->rolled_log_path.c_str(), strerror(errno));
         } else {
-          Debug("logspace",
-                "The rolled logfile, %s, was auto-deleted; "
-                "%" PRId64 " bytes were reclaimed.",
-                victim->rolled_log_path.c_str(), victim->size);
+          Dbg(dbg_ctl_logspace,
+              "The rolled logfile, %s, was auto-deleted; "
+              "%" PRId64 " bytes were reclaimed.",
+              victim->rolled_log_path.c_str(), victim->size);
 
           // Update after successful unlink;
           m_space_used           -= victim->size;

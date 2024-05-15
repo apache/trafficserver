@@ -15,6 +15,10 @@
 #
 #######################
 
+# Adjust default RelWithDebInfo flags to be in line with "Release with Debug".
+# The default RelWithDebInfo uses -O2, but Release uses -O3. This difference can be astonishing to users
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
   message(FATAL_ERROR "In source builds are disabled.  Use a preset, -B or run from a different directory")
 endif()
@@ -142,6 +146,7 @@ option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
 option(LINK_PLUGINS "Link core libraries to plugins (default OFF)")
+option(ENABLE_PROBES "Enable ATS SystemTap probes (default OFF)")
 
 # Setup user
 # NOTE: this is the user trafficserver runs as
@@ -322,8 +327,12 @@ if(ENABLE_ASAN)
   if(ENABLE_JEMALLOC OR ENABLE_MIMALLOC)
     message(FATAL_ERROR "ENABLE_JEMALLOC and ENABLE_MIMALLOC are not compatible with asan builds")
   endif()
-  add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
-  add_link_options(-fsanitize=address)
+  add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+  add_link_options(-g -fsanitize=address)
+endif()
+
+if(ENABLE_PROBES)
+  add_compile_options("-DENABLE_SYSTEMTAP_PROBES")
 endif()
 
 set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
@@ -400,6 +409,15 @@ if(TS_USE_HWLOC)
     C "#include <hwloc.h>
     int main() { return HWLOC_OBJ_PU; }" HAVE_HWLOC_OBJ_PU
   )
+endif()
+
+check_symbol_exists(SO_TXTIME "sys/socket.h" SO_TXTIME_FOUND)
+set(CMAKE_EXTRA_INCLUDE_FILES "linux/net_tstamp.h")
+check_type_size("struct sock_txtime" STRUCT_SOCK_TXTIME_FOUND)
+unset(CMAKE_EXTRA_INCLUDE_FILES)
+
+if(SO_TXTIME_FOUND AND STRUCT_SOCK_TXTIME_FOUND)
+  set(HAVE_SO_TXTIME TRUE)
 endif()
 
 option(USE_IOURING "Use experimental io_uring (linux only)" 0)

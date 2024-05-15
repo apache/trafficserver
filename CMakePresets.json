@@ -77,8 +77,7 @@
       "name": "asan",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS_DEBUG": "-g -fsanitize=address,undefined",
-        "CMAKE_C_FLAGS_DEBUG": "-g -fsanitize=address,undefined"
+        "ENABLE_ASAN": "ON"
       }
     },
     {
@@ -145,7 +144,7 @@
       "name": "ci-rocky",
       "displayName": "CI Rocky",
       "description": "CI Pipeline config for Rocky Linux",
-      "inherits": ["ci"],
+      "inherits": ["ci", "asan"],
       "cacheVariables": {
         "OPENSSL_ROOT_DIR": "/opt/h3-tools-boringssl/boringssl",
         "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
@@ -160,6 +159,7 @@
       "description": "CI Pipeline config for Fedora Linux",
       "inherits": ["ci"],
       "cacheVariables": {
+        "ENABLE_PROBES": "ON",
         "OPENSSL_ROOT_DIR": "/opt/openssl-quic",
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
@@ -316,7 +316,7 @@
       "inherits": ["branch"],
       "cacheVariables": {
         "ENABLE_AUTEST": "ON",
-        "nuraft_ROOT": "/opt/nuraft-boringssl",
+        "nuraft_ROOT": "/opt",
         "OPENSSL_ROOT_DIR": "/opt/openssl-quic/",
         "quiche_ROOT": "/opt/quiche",
         "ENABLE_QUICHE": "ON"

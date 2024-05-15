@@ -30,12 +30,18 @@
 
 ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator("http2ClientSessionAllocator");
 
-static int
+namespace
+{
+DbgCtl dbg_ctl_ssl_early_data{"ssl_early_data"};
+
+int
 send_connection_event(Continuation *cont, int event, void *edata)
 {
   SCOPED_MUTEX_LOCK(lock, cont->mutex, this_ethread());
   return cont->handleEvent(event, edata);
 }
+
+} // end anonymous namespace
 
 Http2ClientSession::Http2ClientSession() : super() {}
 
@@ -103,7 +109,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   if (auto eds = new_vc->get_service<TLSEarlyDataSupport>(); eds) {
     this->read_from_early_data = eds->get_early_data_len();
-    Debug("ssl_early_data", "read_from_early_data = %" PRId64, this->read_from_early_data);
+    Dbg(dbg_ctl_ssl_early_data, "read_from_early_data = %" PRId64, this->read_from_early_data);
   }
 
   Http2SsnDebug("session born, netvc %p", this->_vc);
@@ -114,9 +120,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->read_buffer->water_mark = connection_state.local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE);
   this->_read_buffer_reader     = reader ? reader : this->read_buffer->alloc_reader();
 
-  // This block size is the buffer size that we pass to SSLWriteBuffer
-  auto buffer_block_size_index = iobuffer_size_to_index(Http2::write_buffer_block_size, MAX_BUFFER_SIZE_INDEX);
-  this->write_buffer           = new_MIOBuffer(buffer_block_size_index);
+  this->write_buffer = new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
 
   uint32_t buffer_water_mark;
   if (auto snis = this->_vc->get_service<TLSSNISupport>(); snis && snis->hints_from_sni.http2_buffer_water_mark.has_value()) {
@@ -127,7 +131,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->write_buffer->water_mark = buffer_water_mark;
 
   this->_write_buffer_reader  = this->write_buffer->alloc_reader();
-  this->_write_size_threshold = index_to_buffer_size(buffer_block_size_index) * Http2::write_size_threshold;
+  this->_write_size_threshold = index_to_buffer_size(Http2::write_buffer_block_size_index) * Http2::write_size_threshold;
 
   this->_handle_if_ssl(new_vc);
 

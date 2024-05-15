@@ -49,6 +49,13 @@
 const char *LogFilter::OPERATOR_NAME[] = {"MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN"};
 const char *LogFilter::ACTION_NAME[]   = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
 
+namespace
+{
+DbgCtl dbg_ctl_log{"log"};
+DbgCtl dbg_ctl_log_filter_compare{"log-filter-compare"};
+
+} // end anonymous namespace
+
 /*-------------------------------------------------------------------------
   LogFilter::LogFilter
 
@@ -91,14 +98,14 @@ LogFilter::parse(const char *name, Action action, const char *condition)
 
   // validate field symbol
   if (strlen(field_str) > 2 && field_str[0] == '%' && field_str[1] == '<') {
-    Debug("log", "Field symbol has <> form: %s", field_str);
+    Dbg(dbg_ctl_log, "Field symbol has <> form: %s", field_str);
     char *end = field_str;
     while (*end && *end != '>') {
       end++;
     }
     *end       = '\0';
     field_str += 2;
-    Debug("log", "... now field symbol is %s", field_str);
+    Dbg(dbg_ctl_log, "... now field symbol is %s", field_str);
   }
 
   if (LogField *f = Log::global_field_list.find_by_symbol(field_str)) {
@@ -108,7 +115,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
   if (!logfield) {
     // check for container fields
     if (*field_str == '{') {
-      Debug("log", "%s appears to be a container field", field_str);
+      Dbg(dbg_ctl_log, "%s appears to be a container field", field_str);
 
       char *fname;
       char *cname;
@@ -126,7 +133,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
       // start of container symbol
       cname = fname_end + 1;
 
-      Debug("log", "found container field: Name = %s, symbol = %s", fname, cname);
+      Dbg(dbg_ctl_log, "found container field: Name = %s, symbol = %s", fname, cname);
 
       LogField::Container container = LogField::valid_container_name(cname);
       if (container == LogField::NO_CONTAINER) {
@@ -883,7 +890,7 @@ filters_are_equal(LogFilter *filt1, LogFilter *filt2)
   // TODO: we should check name here
   if (filt1->type() == filt2->type()) {
     if (filt1->type() == LogFilter::INT_FILTER) {
-      Debug("log-filter-compare", "int compare");
+      Dbg(dbg_ctl_log_filter_compare, "int compare");
       ret = (*((LogFilterInt *)filt1) == *((LogFilterInt *)filt2));
     } else if (filt1->type() == LogFilter::IP_FILTER) {
       ret = (*((LogFilterIP *)filt1) == *((LogFilterIP *)filt2));
@@ -893,7 +900,7 @@ filters_are_equal(LogFilter *filt1, LogFilter *filt2)
       ink_assert(!"invalid filter type");
     }
   } else {
-    Debug("log-filter-compare", "type diff");
+    Dbg(dbg_ctl_log_filter_compare, "type diff");
   }
   return ret;
 }

@@ -39,9 +39,12 @@
 #include "proxy/logging/LogAccess.h"
 #include "proxy/logging/Log.h"
 
+namespace
+{
+
 // clang-format off
 //
-static const char *container_names[] = {
+const char *container_names[] = {
   "not-a-container",
   "cqh",
   "psh",
@@ -60,7 +63,7 @@ static const char *container_names[] = {
   "msdms",
 };
 
-static const char *aggregate_names[] = {
+const char *aggregate_names[] = {
   "not-an-agg-op",
   "COUNT",
   "SUM",
@@ -68,6 +71,11 @@ static const char *aggregate_names[] = {
   "FIRST",
   "LAST",
 };
+
+DbgCtl dbg_ctl_log_agg{"log-agg"};
+DbgCtl dbg_ctl_log_field_hash{"log-field-hash"};
+
+} // end anonymous namespace
 
 // clang-format on
 
@@ -678,10 +686,10 @@ LogField::update_aggregate(int64_t val)
     return;
   }
 
-  Debug("log-agg",
-        "Aggregate field %s updated with val %" PRId64 ", "
-        "new val = %" PRId64 ", cnt = %" PRId64 "",
-        m_symbol, val, m_agg_val, m_agg_cnt);
+  Dbg(dbg_ctl_log_agg,
+      "Aggregate field %s updated with val %" PRId64 ", "
+      "new val = %" PRId64 ", cnt = %" PRId64 "",
+      m_symbol, val, m_agg_val, m_agg_cnt);
 }
 
 LogField::Container
@@ -790,7 +798,7 @@ LogFieldList::find_by_symbol(const char *symbol) const
 
   if (auto it = Log::field_symbol_hash.find(symbol); it != Log::field_symbol_hash.end() && it->second) {
     field = it->second;
-    Debug("log-field-hash", "Field %s found", field->symbol());
+    Dbg(dbg_ctl_log_field_hash, "Field %s found", field->symbol());
     return field;
   }
   // trusty old method

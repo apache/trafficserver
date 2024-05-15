@@ -27,8 +27,14 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
 
-#define QPACKDebug(fmt, ...)   Debug("qpack", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
-#define QPACKDTDebug(fmt, ...) Debug("qpack", "" fmt, ##__VA_ARGS__)
+#define QPACKDebug(fmt, ...)   Dbg(dbg_ctl_qpack, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
+#define QPACKDTDebug(fmt, ...) Dbg(dbg_ctl_qpack, "" fmt, ##__VA_ARGS__)
+
+namespace
+{
+DbgCtl dbg_ctl_qpack{"qpack"};
+
+} // end anonymous namespace
 
 // qpack-05 Appendix A.
 const QPACK::Header QPACK::StaticTable::STATIC_HEADER_FIELDS[] = {

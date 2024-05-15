@@ -69,6 +69,7 @@
 #cmakedefine01 HAVE_STRSIGNAL
 #cmakedefine01 HAVE_SYSINFO
 #cmakedefine01 HAVE_PRCTL
+#cmakedefine HAVE_SO_TXTIME 1
 
 #cmakedefine01 HAVE_HWLOC_OBJ_PU
 

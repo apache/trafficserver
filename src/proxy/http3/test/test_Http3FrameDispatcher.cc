@@ -59,6 +59,8 @@ TEST_CASE("Http3FrameHandler dispatch", "[http3]")
     CHECK(!error);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == 12);
+
+    free_MIOBuffer(buf);
   }
 }
 
@@ -108,6 +110,7 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
+    free_MIOBuffer(buf);
   }
 
   SECTION("first frame of the control stream must be SETTINGS frame")
@@ -149,6 +152,7 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_MISSING_SETTINGS);
     CHECK(handler.total_frame_received == 0);
     CHECK(nread == 3);
+    free_MIOBuffer(buf);
   }
 
   SECTION("DATA frame is not allowed on control stream")
@@ -188,6 +192,7 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
+    free_MIOBuffer(buf);
   }
 
   SECTION("HEADERS frame is not allowed on control stream")
@@ -227,6 +232,7 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
+    free_MIOBuffer(buf);
   }
 
   SECTION("RESERVED frame is not allowed on control stream")
@@ -266,6 +272,7 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
+    free_MIOBuffer(buf);
   }
 }
 
@@ -290,6 +297,7 @@ TEST_CASE("ignore unknown frames", "[http3]")
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::UNKNOWN, *reader, nread);
     CHECK(!error);
     CHECK(nread == 0);
+    free_MIOBuffer(buf);
   }
 }
 
@@ -326,5 +334,6 @@ TEST_CASE("Reserved frame type not allowed", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 0);
     CHECK(nread == 12);
+    free_MIOBuffer(buf);
   }
 }

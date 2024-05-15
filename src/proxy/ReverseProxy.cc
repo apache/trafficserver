@@ -42,8 +42,15 @@
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/http/remap/UrlMapping.h"
 
+namespace
+{
+Ptr<ProxyMutex> reconfig_mutex;
+
+DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
+
+} // end anonymous namespace
+
 // Global Ptrs
-static Ptr<ProxyMutex>            reconfig_mutex;
 UrlRewrite                       *rewrite_table       = nullptr;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
 
@@ -134,7 +141,7 @@ reloadUrlRewrite()
   UrlRewrite *newTable, *oldTable;
 
   Note("%s loading ...", ts::filename::REMAP);
-  Debug("url_rewrite", "%s updated, reloading...", ts::filename::REMAP);
+  Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP);
   newTable = new UrlRewrite();
   if (newTable->load()) {
     static const char *msg_format = "%s finished loading";
@@ -150,14 +157,14 @@ reloadUrlRewrite()
     // Release the old one
     oldTable->release();
 
-    Debug("url_rewrite", msg_format, ts::filename::REMAP);
+    Dbg(dbg_ctl_url_rewrite, msg_format, ts::filename::REMAP);
     Note(msg_format, ts::filename::REMAP);
     return true;
   } else {
     static const char *msg_format = "%s failed to load";
 
     delete newTable;
-    Debug("url_rewrite", msg_format, ts::filename::REMAP);
+    Dbg(dbg_ctl_url_rewrite, msg_format, ts::filename::REMAP);
     Error(msg_format, ts::filename::REMAP);
     return false;
   }
