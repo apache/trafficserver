@@ -33,17 +33,17 @@ server = Test.MakeVerifierServerProcess("server", replay_file)
 
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_cache=True)
 ts.Disk.remap_config.AddLine(
-    'map http://www.ae-0.com http://127.0.0.1:{0}'.f"{server.Variables.http_port}" +
+    f"map http://www.ae-0.com http://127.0.0.1:{server.Variables.http_port}" +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=0')
 ts.Disk.remap_config.AddLine(
-    'map http://www.ae-1.com http://127.0.0.1:{0}'.f"{server.Variables.http_port}" +
+    f"map http://www.ae-1.com http://127.0.0.1:{server.Variables.http_port}" +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1')
 ts.Disk.remap_config.AddLine(
-    'map http://www.ae-2.com http://127.0.0.1:{0}'.f"{server.Variables.http_port}" +
+    f"map http://www.ae-2.com http://127.0.0.1:{server.Variables.http_port}" +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2')
 # disable normalize_ae=3 on 9.1
 ts.Disk.remap_config.AddLine(
-    'map http://www.ae-3.com http://127.0.0.1:{0}'.f"{server.Variables.http_port}" +
+    f"map http://www.ae-3.com http://127.0.0.1:{server.Variables.http_port}" +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3')
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.records_config.update(
