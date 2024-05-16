@@ -107,7 +107,7 @@ tr.Processes.Default.Command = 'curl --verbose --header "Host: test-3" --header 
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --verbose --header "Host: test-2" --header "Foo: ab\x80d/ef" http://localhost:{0}/test-4' .format(
+tr.Processes.Default.Command = 'curl --verbose --header "Host: test-2" --header "Foo: ab\x80d/ef" http://localhost:{0}/test-4'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
