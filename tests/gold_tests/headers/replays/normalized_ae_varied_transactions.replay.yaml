@@ -30,7 +30,7 @@ sessions:
 - transactions:
 
   # Case 1 proxy.config.http.normalize_ae:0
-  # load a alternate of no Accept-Encoding header
+  # load an alternate of no Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -62,7 +62,7 @@ sessions:
         - [ X-Response-Identifier, { value: No-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: miss, as: equal } ]
 
-  # load a alternate of empty Accept-Encoding header
+  # load an alternate of empty Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -142,7 +142,7 @@ sessions:
         - [ X-Response-Identifier, { value: Empty-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
-  # load a alternate of gzip Accept-Encoding header
+  # load an alternate of gzip Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -201,7 +201,7 @@ sessions:
 
 
   # Case 2 proxy.config.http.normalize_ae:1
-  # load a alternate of no Accept-Encoding header
+  # load an alternate of no Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -302,7 +302,7 @@ sessions:
         - [ X-Response-Identifier, { value: No-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
-  # load a alternate of gzip Accept-Encoding header
+  # load an alternate of gzip Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -360,7 +360,7 @@ sessions:
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
   # Case 3 proxy.config.http.normalize_ae:2
-  # load a alternate of no Accept-Encoding header
+  # load an alternate of no Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -438,7 +438,7 @@ sessions:
         - [ X-Response-Identifier, { value: No-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
-  # load a alternate of br Accept-Encoding header
+  # load an alternate of br Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -472,7 +472,7 @@ sessions:
         - [ X-Response-Identifier, { value: Br-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: miss, as: equal } ]
 
-  # load a alternate of gzip Accept-Encoding header
+  # load an alternate of gzip Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -553,7 +553,7 @@ sessions:
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
   # Case 4 proxy.config.http.normalize_ae:3
-  # load a alternate of no Accept-Encoding header
+  # load an alternate of no Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -631,7 +631,7 @@ sessions:
         - [ X-Response-Identifier, { value: No-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
-  # load a alternate of br Accept-Encoding header
+  # load an alternate of br Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -665,7 +665,7 @@ sessions:
         - [ X-Response-Identifier, { value: Br-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: miss, as: equal } ]
 
-  # load a alternate of gzip Accept-Encoding header
+  # load an alternate of gzip Accept-Encoding header
   - client-request:
       method: "GET"
       version: "1.1"
@@ -699,7 +699,7 @@ sessions:
         - [ X-Response-Identifier, { value: Gzip-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: miss, as: equal } ]
 
-  # NOTICE: This case should load a alternate of br, gzip Accept-Encoding header.
+  # NOTICE: This case should load an alternate of br, gzip Accept-Encoding header.
   #         However, due to the implementation of calculate_quality_of_match(),
   #         ATS matches the alternate of gzip Accept-Encoding header.
   #         The result is DIFFERENT from the description of proxy.config.http.normalize_ae: 3
