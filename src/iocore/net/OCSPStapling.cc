@@ -1163,8 +1163,8 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
 
   // Append '/' if base_url does not end with it
   if (url->buf()[url->size() - 1] != '/') {
-    strncat(url->end(), "/", 1);
-    url->fill(1);
+    written = ink_strlcat(url->end(), "/", url->write_avail());
+    url->fill(written);
   }
 
   written = ink_strlcat(url->end(), ocsp_escaped, url->write_avail());
