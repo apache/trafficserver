@@ -600,7 +600,7 @@ add_compile_options(-pipe -Wall -Wextra -Wno-unused-parameter)
 add_compile_options(
   "$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override;-Wno-vla-extension;-fno-strict-aliasing>"
 )
-add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-format-truncation;-Wno-stringop-overflow>")
+add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-format-truncation>")
 
 if(NOT EXTERNAL_YAML_CPP)
   include(subproject_version)
