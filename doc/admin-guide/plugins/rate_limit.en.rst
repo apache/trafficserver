@@ -49,7 +49,13 @@ are available:
 
 .. option:: --limit
 
-   The maximum number of active client transactions.
+   The maximum number of active client transactions. This option can also be
+   used in conjunction with ``--rate``.
+
+.. option:: --rate
+
+   The acceptable rate, in transaction or connections per second, that we will
+   allow. This option can also be used in conjunction with ``--limit``.
 
 .. option:: --queue
 
@@ -140,6 +146,7 @@ and nodes are documented below.
       selector:
          - sni: test1.example.com
             limit: 1000
+            rate: 200
             queue:
                size: 1000
                max-age: 30
@@ -176,7 +183,13 @@ For the top level `selector` node, the following options are available:
 
 .. option:: limit
 
-   The maximum number of active client transactions.
+   The maximum number of active client transactions. This can also be used
+   in conjunction with the ``rate`` option.
+
+.. option:: rate
+
+   This limits the number of new sessions per second. It can be used in
+   conjunction with the ``limit`` option.
 
 .. option:: aliases
 

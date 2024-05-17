@@ -126,8 +126,22 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
         Dbg(dbg_ctl, "CLIENT_HELLO on %.*s, no IP reputation", static_cast<int>(sni_name.length()), sni_name.data());
       }
 
-      // If we passed the IP reputation filter, continue rate limiting these connections
-      if (!limiter->reserve()) {
+      auto status = limiter->reserve();
+
+      switch (status) {
+      case ReserveStatus::UNLIMITED:
+        // Unlimited, kinda odd, but ok
+        TSUserArgSet(vc, gVCIdx, nullptr);
+        TSVConnReenable(vc);
+        break;
+      case ReserveStatus::RESERVED:
+        // Not at limit on the handshake, we can re-enable
+        TSUserArgSet(vc, gVCIdx, reinterpret_cast<void *>(limiter));
+        TSVConnReenable(vc);
+        break;
+
+      case ReserveStatus::FULL:
+      case ReserveStatus::HIGH_RATE:
         if (!limiter->max_queue() || limiter->full()) {
           // We are running at limit, and the queue has reached max capacity, give back an error and be done.
           Dbg(dbg_ctl, "Rejecting connection, we're at capacity and queue is full");
@@ -143,11 +157,8 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
           Dbg(dbg_ctl, "Queueing the VC, we are at capacity");
           limiter->incrementMetric(RATE_LIMITER_METRIC_QUEUED);
         }
-      } else {
-        // Not at limit on the handshake, we can re-enable
-        TSUserArgSet(vc, gVCIdx, reinterpret_cast<void *>(limiter));
-        TSVConnReenable(vc);
       }
+      break;
     } else {
       // No limiter for this SNI at all, clear the args etc. just in case
       TSUserArgSet(vc, gVCIdx, nullptr);

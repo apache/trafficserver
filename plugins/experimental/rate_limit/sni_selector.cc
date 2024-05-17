@@ -130,6 +130,11 @@ SniSelector::yamlParser(const std::string &yaml_file)
             addLimiter(limiter);
           }
 
+          // Setup rate based limit, if configured (this is rate as in "requests per second")
+          if (limiter->rate() > 0) {
+            limiter->addBucket();
+          }
+
           // Add aliases, if any
           const YAML::Node &aliases = sni["aliases"];
 
@@ -214,7 +219,7 @@ sni_queue_cont(TSCont cont, TSEvent event, void *edata)
 
     if (owner) { // Don't operate on the aliases
       // Try to enable some queued VCs (if any) if there are slots available
-      while (limiter->size() > 0 && limiter->reserve()) {
+      while (limiter->size() > 0 && limiter->reserve() != ReserveStatus::RESERVED) { // Can't be UNLIMITED here
         auto [vc, contp, start_time]    = limiter->pop();
         std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 

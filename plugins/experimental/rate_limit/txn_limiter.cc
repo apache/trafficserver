@@ -74,7 +74,7 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
   QueueTime now     = std::chrono::system_clock::now(); // Only do this once per "loop"
 
   // Try to enable some queued txns (if any) if there are slots available
-  while (limiter->size() > 0 && limiter->reserve()) {
+  while (limiter->size() > 0 && limiter->reserve() != ReserveStatus::FULL) { // Can't be UNLIMITED here
     auto [txnp, contp, start_time]  = limiter->pop();
     std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
@@ -123,6 +123,7 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     {const_cast<char *>("prefix"),    required_argument, nullptr, 'p' },
     {const_cast<char *>("tag"),       required_argument, nullptr, 't' },
     {const_cast<char *>("conntrack"), no_argument,       nullptr, 'c' },
+    {const_cast<char *>("rate"),      required_argument, nullptr, 'R' },
     // EOF
     {nullptr,                         no_argument,       nullptr, '\0'},
   };
@@ -161,13 +162,16 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     case 'c':
       this->_conntrack = true;
       break;
+    case 'R':
+      this->_rate = strtol(optarg, nullptr, 10);
+      break;
     }
     if (opt == -1) {
       break;
     }
   }
 
-  if (this->max_queue() > 0) {
+  if (this->max_queue() > 0 && this->has_limit()) { // Only setup the queue if we have a limit
     _queue_cont = TSContCreate(txn_queue_cont, TSMutexCreate());
     TSReleaseAssert(_queue_cont);
     TSContDataSet(_queue_cont, this);
