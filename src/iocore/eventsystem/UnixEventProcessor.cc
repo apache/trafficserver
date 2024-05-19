@@ -266,6 +266,8 @@ ThreadAffinityInitializer::set_affinity(int, Event *)
   if (obj_count > 0) {
     // Get our `obj` instance with index based on the thread number we are on.
     hwloc_obj_t obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, t->id % obj_count);
+    t->hwloc_obj    = obj;
+
 #if HWLOC_API_VERSION >= 0x00010100
     int   cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
     char *cpu_mask     = static_cast<char *>(alloca(cpu_mask_len));

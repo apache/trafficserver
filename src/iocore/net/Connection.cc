@@ -27,10 +27,12 @@
   Commonality across all platforms -- move out as required.
 
 **************************************************************************/
-#include "tscore/ink_platform.h"
-#include "tscore/ink_defs.h"
 
 #include "P_Net.h"
+
+#include "tscore/ink_defs.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_sock.h"
 
 #ifdef SO_ACCEPTFILTER
 #include <sys/param.h>
@@ -49,6 +51,7 @@ DbgCtl dbg_ctl_http_tproxy{"http_tproxy"};
 DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
 DbgCtl dbg_ctl_iocore_net_server{"iocore_net_server"};
 DbgCtl dbg_ctl_connection{"connection"};
+DbgCtl dbg_ctl_iocore_thread{"iocore_thread"};
 
 } // end anonymous namespace
 
@@ -237,6 +240,23 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     }
 #endif
   }
+
+#ifdef SO_INCOMING_CPU
+  if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_INCOMING_CPU) {
+    int      cpu     = 0;
+    EThread *ethread = this_ethread();
+
+#ifdef TS_USE_HWLOC
+    cpu = ethread->hwloc_obj->os_index;
+#else
+    cpu = ethread->id;
+#endif
+    if (safe_setsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu)) < 0) {
+      goto Lerror;
+    }
+    Dbg(dbg_ctl_iocore_thread, "SO_INCOMING_CPU - fd=%d cpu=%d", fd, cpu);
+  }
+#endif
 
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY) < 0) {
     goto Lerror;

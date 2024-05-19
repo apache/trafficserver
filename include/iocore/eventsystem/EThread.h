@@ -34,6 +34,10 @@
 #include "iocore/eventsystem/ProtectedQueue.h"
 #include "tsutil/Histogram.h"
 
+#if TS_USE_HWLOC
+#include <hwloc.h>
+#endif
+
 // TODO: This would be much nicer to have "run-time" configurable (or something)
 #define PER_THREAD_DATA (1024 * 1024)
 
@@ -333,9 +337,15 @@ public:
 
   static constexpr int NO_ETHREAD_ID = -1;
   int                  id            = NO_ETHREAD_ID;
-  unsigned int         event_types   = 0;
-  bool                 is_event_type(EventType et);
-  void                 set_event_type(EventType et);
+
+#if TS_USE_HWLOC
+  hwloc_obj_t hwloc_obj = nullptr;
+#endif
+
+  unsigned int event_types = 0;
+
+  bool is_event_type(EventType et);
+  void set_event_type(EventType et);
 
   // Private Interface
 
