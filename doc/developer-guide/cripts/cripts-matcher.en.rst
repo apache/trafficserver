@@ -60,7 +60,7 @@ Here's an example using the regular expression matcher:
 
    For the IP-range and regular expression matcher, you can specify a single range or regular expression,
    it does not have to be declared as a list with the ``{}`` syntax. For both, the single or list arguments
-   are strings withing ``""``.
+   are strings within ``""``.
 
 .. _cripts-matchers-functions:
 
@@ -92,7 +92,7 @@ Function                       Description
 ``matched()``                  A boolean indicating if a regex was matched.
 ``count()``                    Returns the number of regex capture groups that are matched.
 ``matchIX()``                  Returns the index of the matched regex capture group.
-[] Index                       Retrives the matched string for the given capture group index.
+[] Index                       Retrieves the matched string for the given capture group index.
 ============================   ====================================================================
 
 Lets show an example:
