@@ -67,6 +67,9 @@ Component         Description
 ``query``         The query.
 ===============   =================================================================================
 
+.. note::
+   The path component of all URLs in ATS do **not** include the leading slash!
+
 These components can be accessed and modified as needed. Both the ``path`` and ``query`` are
 strings, and can be manipulated as such. However, they are both also considered list of their
 constituent parts, and can be accessed as such. For example, to get the first part of the path,

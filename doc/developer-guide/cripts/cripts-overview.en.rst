@@ -47,6 +47,17 @@ Plugins built using this method loads exactly like any other ATS plugin, and can
 used in the same way. The only difference is that the plugin will be a lot simpler
 to write and maintain.
 
+.. _cripts-overview-building-additions:
+
+Building Additions
+------------------
+
+The ATS build system is already setup such that when building ATS, and therefore Cripts,
+you can add additional modules and bundles to the build. This is done by adding the
+module or bundle to the ``src/cripts``, ``src/cripts/Bundles``, ``include/cripts`` and
+``include/cripts/Bundles`` directories. This has to be done before running the
+``cmake`` command in your build process.
+
 .. _cripts-overview-usage:
 
 Usage
@@ -90,8 +101,11 @@ depending on your preference. The file must be readable by the ATS process. Exam
 
    #include <cripts/Epilogue.hpp>
 
-In this example, note that both the Preamble and Epilogue are explicitly included.
-This is strictly necessary for the Cript to compile and load correctly.
+.. note::
+
+   Both the Preamble and Epilogue must explicitly be included in every cript,
+   in the correct order. The Preamble must come first, setting up the environment,
+   and the Epilogue must come last, initiating the hooks and the plugin.
 
 .. _cripts-overview-usage-compiler:
 
@@ -117,13 +131,13 @@ also shown below:
    # This was done for a Mac, may need to be adjusted for other platforms.
    ATS_ROOT=/opt/ats
    CXX=clang++
-   CXXFLAGS="-std=c++20 -I/opt/homebrew/include -undefined dynamic_lookup"
-   STDFLAGS="-shared -fPIC -Wall -Werror -I${ATS_ROOT}/include -L${ATS_ROOT}/lib -lcripts"
+   OSFLAGS="-I/opt/homebrew/include -undefined dynamic_lookup"
+   CXXFLAGS="-std=c++20 -O3 -shared -fPIC -Wall -Werror -I${ATS_ROOT}/include -L${ATS_ROOT}/lib -lcripts"
 
    SOURCE=$1
    DEST=$2
 
-   ${CXX} ${CXXFLAGS} ${STDFLAGS} -o $DEST $SOURCE
+   ${CXX} ${CXXFLAGS} ${OSFLAGS} -o $DEST $SOURCE
 
 The example in the ATS source directory is more complex, as it also provides a basic
 cache for the shared object files. This is useful for large setups with many Cript files.
@@ -215,7 +229,10 @@ In addition to these normal hooks, there are also three hooks that are used for 
 up a cript and remap plugin instance. This is primarily useful when writing traditional
 remap plugins in Cripts.
 
-**Note:** These hooks are not needed for most Cripts that are used in remap rules.
+.. note::
+
+   These hooks are not needed for most Cripts that are used in remap rules. And you
+   will only use the instance variables (see below) if you are using these instance hooks.
 
 .. _cripts-overview-hooks-do-init:
 

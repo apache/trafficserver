@@ -45,9 +45,11 @@ Header Object           Description
 ``Server::Response``    The server response headers.
 =====================   ===========================================================================
 
-Note that for all of these headers, except the ``Client::Request``, the headers are not
-available until the respective hook is called. For example, the ``Client::Response`` headers
-are not available until the response headers are received from the origin server or cache lookup.
+.. note::
+
+   For all of these headers, except the ``Client::Request``, the headers are not
+   available until the respective hook is called. For example, the ``Client::Response`` headers
+   are not available until the response headers are received from the origin server or cache lookup.
 
 Assigning the empty value (``""``) to a header will remove it from the header list. For example:
 
