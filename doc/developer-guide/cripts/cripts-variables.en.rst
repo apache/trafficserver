@@ -95,8 +95,10 @@ In addition to this, there's a number of *matching* features in Cripts, which ca
 with strings. These are covered in more detail in the :ref:`cripts-matcher` section. Of course,
 regular comparisons such as ``==`` and ``!=`` are also available.
 
-**Note:** We'll continue to update features of Cripts as we start using it more in production. If you
-have any suggestions or requests for strings (or any other data type), please let us know!
+.. note::
+
+   We'll continue to update features of Cripts as we start using it more in production. If you
+   have any suggestions or requests for strings (or any other data type), please let us know!
 
 .. _cripts-variables-configuration:
 
@@ -143,7 +145,7 @@ Variable                       Description
 ============================   ====================================================================
 
 All of these are controlled via a boolean value, and can be set to either ``true`` or ``false``,
-the same ``.get()`` and ``.set()`` as for configuration variables. As an example, lets randomly
+using the same ``.get()`` and ``.set()`` as for configuration variables. As an example, lets randomly
 turn off logging for some percentage of requests:
 
 .. code-block:: cpp
@@ -153,3 +155,32 @@ turn off logging for some percentage of requests:
        control.logging.set(false); // 10% log sampling
      }
    }
+
+
+.. _cripts-misc-versions:
+
+Versions
+========
+
+Cripts provides a way to get the version of ATS and Cripts at runtime. The
+following global variables are available:
+
+============================   ====================================================================
+Variable                       Description
+============================   ====================================================================
+versions.major                 The major version of ATS.
+versions.minor                 The minor version of ATS.
+versions.patch                 The patch version of ATS.
+============================   ====================================================================
+
+.. _cripts-variables-other:
+
+Other Variables
+===============
+
+There are a number of other variables that are available in Cripts. They are generally closely
+tied to another object, and are therefore documented in various chapters within here. However,
+here's a quick list of some of the more common ones:
+
+- :ref:`cripts-connections-variables`
+- :ref:`cripts-connections-tcpinfo-variables`
