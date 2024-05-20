@@ -641,7 +641,6 @@ NullTransform::handle_event(int event, void *edata)
     case VC_EVENT_ERROR:
       m_write_vio.cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
       break;
-    case VC_EVENT_EOS:
     case VC_EVENT_WRITE_COMPLETE:
       ink_assert(m_output_vio == (VIO *)edata);
 
@@ -803,7 +802,6 @@ RangeTransform::handle_event(int event, void *edata)
         m_write_vio.cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
       }
       break;
-    case VC_EVENT_EOS:
     case VC_EVENT_WRITE_COMPLETE:
       ink_assert(m_output_vio == (VIO *)edata);
       m_output_vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
