@@ -173,5 +173,5 @@ cancel the action. The following sample code implements this:
 
 The action functions are:
 
--  :c:func:`TSActionCancel`
--  :c:func:`TSActionDone`
+-  :cpp:func:`TSActionCancel`
+-  :cpp:func:`TSActionDone`

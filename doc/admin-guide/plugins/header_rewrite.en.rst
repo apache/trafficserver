@@ -1360,7 +1360,7 @@ the client where the requested data was served from.::
    set-header ATS-SRVR-UUID %{ID:UNIQUE}
 
 Apply rate limiting for some select requests
-------------------------------------
+--------------------------------------------
 
 This rule will conditiionally, based on the client request headers, apply rate
 limiting to the request.::
