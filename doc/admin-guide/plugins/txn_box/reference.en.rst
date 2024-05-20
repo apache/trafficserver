@@ -33,7 +33,7 @@ Glossary
 .. glossary::
    :sorted:
 
-   transaction
+   transaction (txn_box)
       A :term:`request` and the corresponding :term:`response`.
 
    request
