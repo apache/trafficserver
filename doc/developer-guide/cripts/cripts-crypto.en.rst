@@ -46,7 +46,7 @@ Object                              Description
 ``Crypto::HMAC::SHA256``            HMAC-SHA256 hashing.
 =================================   ===============================================================
 
-These objects all provide a ``encod()`` and ``decode()`` method, to hash and unhash strings.
+These objects all provide a ``encode()`` and ``decode()`` method, to hash and unhash strings.
 Examples:
 
 .. code-block:: cpp
@@ -62,7 +62,7 @@ Encryption
 ==========
 
 Currently only one encryption object is provides, for AES256. This object provides
-``encrypt()`` and ``decrypt()`` methods. A ``hex()`` method is also provided to retreive
+``encrypt()`` and ``decrypt()`` methods. A ``hex()`` method is also provided to retrieve
 the encrypted data as a hex string. For encrypting data in chunks, a ``finalize()`` method
 is provided to retrieve the final encrypted data.
 
