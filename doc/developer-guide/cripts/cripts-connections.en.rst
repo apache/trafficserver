@@ -97,14 +97,14 @@ Both connection objects provide a number of variables that can be accessed. Thes
 Variable                   Description
 =======================   =========================================================================
 ``tcpinfo``               A number of TCPinfo related fields (see below).
-``geo``                   If available (compile time) acess to Geo-IP data (see below).
+``geo``                   If available (compile time) access to Geo-IP data (see below).
 ``congestion``            Configure the congestion algorithm used on the socket.
 ``pacing``                Configure socket pacing for the connection.
 ``dscp``                  Manage the DSCP value for the connection socket.
 ``mark``                  Manage the Mark value for the connection socket.
 =======================   =========================================================================
 
-For other advanced features, a cript has access to the socket file descriptor, via the ``fd()``
+For other advanced features, a Cript has access to the socket file descriptor, via the ``fd()``
 method of the connection object.
 
 .. note::

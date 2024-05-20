@@ -115,7 +115,7 @@ Example usage to turn off a particular hook conditionally:
    }
 
 .. note::
-    Disabling callbacks like this is an optimization, avoding for the hook to be called at all.
+    Disabling callbacks like this is an optimization, avoiding for the hook to be called at all.
     It can be particularly useful when the decision to run the hook is made early in the Cript.
 
 Time
@@ -155,7 +155,7 @@ This opens up new possibilities for your existing plugins, as you gain the
 full power of Cript to decide when to run such plugins.
 
 Setting up existing remap plugins must be done in the ``do_create_instance()``
-hook. The instanatiated remap plugins must be added to the instance object for the
+hook. The instantiated remap plugins must be added to the instance object for the
 Cript, using the ``addPlugin()`` method. Here's an example to run the rate limiting
 plugin based on the client request headers:
 

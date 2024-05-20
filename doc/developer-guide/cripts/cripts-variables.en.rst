@@ -75,9 +75,9 @@ Method                Description
 ``size()``            Return the length of the string. Also available as ``length()``.
 ``starts_with()``     Check if the string starts with a given string.
 ``ends_with()``       Check if the string ends with a given string.
-``find()``            Find a string within the string. **TBD**
-``rfind()``           Find a string within the string, starting from the end. **TBD**
-``contains()``        Check if the string contains a given string. **TBD**
+``find()``            Find a string within the string.
+``rfind()``           Find a string within the string, starting from the end.
+``contains()``        Check if the string contains a given string.
 ``substr()``          Get a substring of the string, arguments are ``start`` and ``end`` position.
 ``split()``           Split the string into a list of strings, using a delimiter. Returns a list.
 ``trim()``            Trim whitespace from the string.
@@ -96,9 +96,8 @@ with strings. These are covered in more detail in the :ref:`cripts-matchers` sec
 regular comparisons such as ``==`` and ``!=`` are also available.
 
 .. note::
-
-   We'll continue to update features of Cripts as we start using it more in production. If you
-   have any suggestions or requests for strings (or any other data type), please let us know!
+   The ``find()`` and ``rfind()`` methods return the position of the string within the string, or
+   ``Cript::string_view::npos`` if the string is not found.
 
 .. _cripts-variables-configuration:
 

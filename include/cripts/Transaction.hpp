@@ -65,7 +65,11 @@ public:
   {
     bool client_abort = false;
 
-    return (TSHttpTxnAborted(txnp, &client_abort) == TS_SUCCESS);
+    if (TSHttpTxnAborted(txnp, &client_abort) == TS_SUCCESS) {
+      return client_abort;
+    }
+
+    return false;
   }
 
   [[nodiscard]] int

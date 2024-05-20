@@ -26,7 +26,7 @@ Urls
 ****
 
 The URL objects are managed and own by the Cripts subsystem, and as such
-must always be borrewed. The pattern for this is as follows:
+must always be borrowed. The pattern for this is as follows:
 
 .. code-block:: cpp
 
@@ -49,7 +49,7 @@ URL Object              Description
 
 These URLs all have the same methods and properties, but they are used in different
 hooks and have different meanings. The ``Client::URL`` is the most commonly used URL,
-which you will also modify in the tradtional remapping use case; for example changing
+which you will also modify in the traditional remapping use case; for example changing
 the ``path`` or ``host`` before further processing.
 
 .. _cripts-urls-components:
@@ -93,7 +93,7 @@ indexed in a list. To get the value of a specific query parameter, you can use t
 
   auto value = url.query["key"]; // This is the value of the key
 
-You can retreive the size of the path or query using the ``size()`` method, and you can clear
+You can retrieve the size of the path or query using the ``size()`` method, and you can clear
 the path or query using the ``erase()`` method. To summarize the ``path`` and ``query`` components
 have the following methods available to them:
 

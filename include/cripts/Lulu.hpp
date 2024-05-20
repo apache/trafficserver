@@ -187,8 +187,6 @@ public:
     _value.remove_suffix(n);
   }
 
-  // ToDo: There are other members of std::string_view /swoc::TextView that we may want to incorporate here,
-  // to make the mixin class more complete.
   ChildT &
   ltrim(char c)
   {
@@ -237,16 +235,34 @@ public:
     return _value.data_end();
   }
 
-  [[nodiscard]] bool
+  [[nodiscard]] constexpr bool
   ends_with(Cript::string_view const suffix) const
   {
     return _value.ends_with(suffix);
   }
 
-  [[nodiscard]] bool
+  [[nodiscard]] constexpr bool
   starts_with(Cript::string_view const prefix) const
   {
     return _value.starts_with(prefix);
+  }
+
+  [[nodiscard]] constexpr mixin_type::size_type
+  find(Cript::string_view const substr, mixin_type::size_type pos = 0) const
+  {
+    return _value.find(substr, pos);
+  }
+
+  [[nodiscard]] constexpr mixin_type::size_type
+  rfind(Cript::string_view const substr, mixin_type::size_type pos = 0) const
+  {
+    return _value.rfind(substr, pos);
+  }
+
+  [[nodiscard]] constexpr bool
+  contains(Cript::string_view const substr) const
+  {
+    return (_value.find(substr) != _value.npos);
   }
 
 protected:
