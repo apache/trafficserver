@@ -73,7 +73,7 @@ All matchers have the following functions:
 Function                       Description
 ============================   ====================================================================
 ``match()``                    Match the given string against the matcher.
-``contains()`                  Another name for ``match()``
+``contains()``                 Another name for ``match()``
 ``add()``                      Add another element to the matcher (can not be used with ``static``)
 ============================   ====================================================================
 
