@@ -49,6 +49,7 @@ ssl_netvc_cast(int event, void *edata)
     return dynamic_cast<SSLNetVConnection *>(ptr.vc);
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
     ptr.vio = static_cast<VIO *>(edata);
     return dynamic_cast<SSLNetVConnection *>(ptr.vio->vc_server);
