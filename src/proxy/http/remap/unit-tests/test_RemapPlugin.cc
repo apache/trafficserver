@@ -35,9 +35,8 @@
 #include "plugin_testing_common.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
 
-static void            *INSTANCE_HANDLER = (void *)789;
-std::error_code         ec;
-static RemapPluginInfo *Keep_Plugin{nullptr};
+static void    *INSTANCE_HANDLER = (void *)789;
+std::error_code ec;
 
 /* The following are paths that are used commonly in the unit-tests */
 static fs::path sandboxDir     = getTemporaryDir();
@@ -55,6 +54,8 @@ clean()
 class RemapPluginUnitTest : public RemapPluginInfo
 {
 public:
+  using Ptr = std::unique_ptr<RemapPluginUnitTest>;
+
   RemapPluginUnitTest(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath)
     : RemapPluginInfo(configPath, effectivePath, runtimePath)
   {
@@ -110,11 +111,8 @@ loadPlugin(RemapPluginUnitTest *plugin, std::string &error, PluginDebugObject *&
 }
 
 void
-cleanupSandBox(RemapPluginInfo *plugin)
+cleanupSandBox()
 {
-  if (plugin != nullptr) {
-    delete plugin;
-  }
   clean();
 }
 
@@ -127,91 +125,91 @@ SCENARIO("loading remap plugins", "[plugin][core]")
 
   GIVEN("a plugin which has only minimum required call back functions")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_required_cb.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_required_cb.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
     WHEN("loading")
     {
-      bool result = loadPlugin(plugin, error, debugObject);
+      bool result = loadPlugin(plugin.get(), error, debugObject);
 
       THEN("expect it to successfully load")
       {
         CHECK(true == result);
         CHECK(error.empty());
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 
   GIVEN("a plugin which is missing the plugin TSREMAP_FUNCNAME_INIT function")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_missing_init.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_missing_init.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
     WHEN("loading")
     {
-      bool result = loadPlugin(plugin, error, debugObject);
+      bool result = loadPlugin(plugin.get(), error, debugObject);
 
       THEN("expect it to successfully load")
       {
         CHECK_FALSE(result);
         CHECK(error == plugin->getError(TSREMAP_FUNCNAME_INIT));
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 
   GIVEN("a plugin which is missing the TSREMAP_FUNCNAME_DO_REMAP function")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_missing_doremap.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_missing_doremap.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
     WHEN("loading")
     {
-      bool result = loadPlugin(plugin, error, debugObject);
+      bool result = loadPlugin(plugin.get(), error, debugObject);
 
       THEN("expect it to fail")
       {
         CHECK_FALSE(result);
         CHECK(error == plugin->getError(TSREMAP_FUNCNAME_DO_REMAP));
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 
   GIVEN("a plugin which has TSREMAP_FUNCNAME_NEW_INSTANCE but is missing the TSREMAP_FUNCNAME_DELETE_INSTANCE function")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_missing_deleteinstance.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_missing_deleteinstance.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
     WHEN("loading")
     {
-      bool result = loadPlugin(plugin, error, debugObject);
+      bool result = loadPlugin(plugin.get(), error, debugObject);
 
       THEN("expect it to fail")
       {
         CHECK_FALSE(result);
         CHECK(error == plugin->getError(TSREMAP_FUNCNAME_DELETE_INSTANCE, TSREMAP_FUNCNAME_NEW_INSTANCE));
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 
   GIVEN("a plugin which has TSREMAP_FUNCNAME_DELETE_INSTANCE but is missing the TSREMAP_FUNCNAME_NEW_INSTANCE function")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_missing_newinstance.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_missing_newinstance.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
     WHEN("loading")
     {
-      bool result = loadPlugin(plugin, error, debugObject);
+      bool result = loadPlugin(plugin.get(), error, debugObject);
 
       THEN("expect it to fail")
       {
         CHECK_FALSE(result);
         CHECK(error == plugin->getError(TSREMAP_FUNCNAME_NEW_INSTANCE, TSREMAP_FUNCNAME_DELETE_INSTANCE));
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 }
@@ -245,10 +243,10 @@ SCENARIO("invoking plugin init", "[plugin][core]")
 
   GIVEN("plugin init function")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
-    bool result = loadPlugin(plugin, error, debugObject);
+    bool result = loadPlugin(plugin.get(), error, debugObject);
     CHECK(true == result);
 
     WHEN("init succeeds")
@@ -263,7 +261,7 @@ SCENARIO("invoking plugin init", "[plugin][core]")
 
         checkCallTest(/* shouldHaveFailed */ false, result, error, expectedError, debugObject->initCalled);
       }
-      cleanupSandBox(Keep_Plugin);
+      cleanupSandBox();
     }
 
     WHEN("init fails")
@@ -279,7 +277,7 @@ SCENARIO("invoking plugin init", "[plugin][core]")
 
         checkCallTest(/* shouldHaveFailed */ true, result, error, expectedError, debugObject->initCalled);
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 }
@@ -299,10 +297,10 @@ SCENARIO("invoking plugin instance init", "[plugin][core]")
 
   GIVEN("an instance init function")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
-    bool result = loadPlugin(plugin, error, debugObject);
+    bool result = loadPlugin(plugin.get(), error, debugObject);
     CHECK(true == result);
 
     WHEN("instance init succeeds")
@@ -327,7 +325,7 @@ SCENARIO("invoking plugin instance init", "[plugin][core]")
           CHECK(0 == strcmp(ARGV[i], debugObject->argv[i]));
         }
       }
-      cleanupSandBox(Keep_Plugin);
+      cleanupSandBox();
     }
 
     WHEN("instance init fails")
@@ -352,7 +350,7 @@ SCENARIO("invoking plugin instance init", "[plugin][core]")
           CHECK(0 == strcmp(ARGV[i], debugObject->argv[i]));
         }
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 }
@@ -366,10 +364,10 @@ SCENARIO("unloading the plugin", "[plugin][core]")
 
   GIVEN("a 'done' function")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
-    bool result = loadPlugin(plugin, error, debugObject);
+    bool result = loadPlugin(plugin.get(), error, debugObject);
     CHECK(true == result);
 
     WHEN("'done' is called")
@@ -382,16 +380,16 @@ SCENARIO("unloading the plugin", "[plugin][core]")
       {
         CHECK(1 == debugObject->doneCalled);
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 
   GIVEN("a 'delete_instance' function")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
-    bool result = loadPlugin(plugin, error, debugObject);
+    bool result = loadPlugin(plugin.get(), error, debugObject);
     CHECK(true == result);
 
     WHEN("'delete_instance' is called")
@@ -405,7 +403,7 @@ SCENARIO("unloading the plugin", "[plugin][core]")
         CHECK(1 == debugObject->deleteInstanceCalled);
         CHECK(INSTANCE_HANDLER == debugObject->ih);
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 }
@@ -419,10 +417,10 @@ SCENARIO("config reload", "[plugin][core]")
 
   GIVEN("a 'config reload' callback function")
   {
-    fs::path             pluginConfigPath = fs::path("plugin_testing_calls.so");
-    RemapPluginUnitTest *plugin           = setupSandBox(pluginConfigPath);
+    fs::path                 pluginConfigPath = fs::path("plugin_testing_calls.so");
+    RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
 
-    bool result = loadPlugin(plugin, error, debugObject);
+    bool result = loadPlugin(plugin.get(), error, debugObject);
     CHECK(true == result);
 
     WHEN("'config reload' failed")
@@ -438,7 +436,7 @@ SCENARIO("config reload", "[plugin][core]")
         CHECK(1 == debugObject->postReloadConfigCalled);
         CHECK(TSREMAP_CONFIG_RELOAD_FAILURE == debugObject->postReloadConfigStatus);
       }
-      cleanupSandBox(Keep_Plugin);
+      cleanupSandBox();
     }
 
     WHEN("'config reload' is successful and the plugin is part of the new configuration")
@@ -454,7 +452,7 @@ SCENARIO("config reload", "[plugin][core]")
         CHECK(1 == debugObject->postReloadConfigCalled);
         CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED == debugObject->postReloadConfigStatus);
       }
-      cleanupSandBox(Keep_Plugin);
+      cleanupSandBox();
     }
 
     WHEN("'config reload' is successful and the plugin is part of the new configuration")
@@ -470,7 +468,7 @@ SCENARIO("config reload", "[plugin][core]")
         CHECK(1 == debugObject->postReloadConfigCalled);
         CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED == debugObject->postReloadConfigStatus);
       }
-      cleanupSandBox(plugin);
+      cleanupSandBox();
     }
   }
 }
