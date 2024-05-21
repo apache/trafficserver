@@ -78,7 +78,7 @@ add_test(NAME test_PluginDso COMMAND $<TARGET_FILE:test_PluginDso>)
 
 add_executable(
   test_PluginFactory test_PluginFactory.cc plugin_testing_common.cc ../PluginFactory.cc ../PluginDso.cc
-                     ../RemapPluginInfo.cc
+                     ../RemapPluginInfo.cc ${PROJECT_SOURCE_DIR}/src/api/APIHooks.cc
 )
 
 target_compile_definitions(test_PluginFactory PRIVATE PLUGIN_DSO_TESTS)
@@ -86,7 +86,18 @@ target_compile_definitions(test_PluginFactory PRIVATE PLUGIN_DSO_TESTS)
 target_include_directories(test_PluginFactory PRIVATE ${PROJECT_SOURCE_DIR}/tests/include)
 
 target_link_libraries(
-  test_PluginFactory PRIVATE catch2::catch2 ts::tsapi ts::configmanager ts::inkevent libswoc::libswoc
+  test_PluginFactory
+  PRIVATE catch2::catch2
+          tscore
+          ts::tsapi
+          ts::configmanager
+          ts::hdrs
+          ts::proxy
+          ts::inkdns
+          ts::inkutils
+          ts::inknet
+          ts::inkevent
+          libswoc::libswoc
 )
 
 # This test currently does not pass.
@@ -94,13 +105,29 @@ add_test(NAME test_PluginFactory COMMAND $<TARGET_FILE:test_PluginFactory>)
 
 ### test_RemapPluginInfo ########################################################################
 
-add_executable(test_RemapPluginInfo test_RemapPlugin.cc plugin_testing_common.cc ../PluginDso.cc ../RemapPluginInfo.cc)
+add_executable(
+  test_RemapPluginInfo test_RemapPlugin.cc plugin_testing_common.cc ../PluginDso.cc ../RemapPluginInfo.cc
+                       ${PROJECT_SOURCE_DIR}/src/api/APIHooks.cc
+)
 
 target_compile_definitions(test_RemapPluginInfo PRIVATE PLUGIN_DSO_TESTS)
 
 target_include_directories(test_RemapPluginInfo PRIVATE ${PROJECT_SOURCE_DIR}/tests/include)
 
-target_link_libraries(test_RemapPluginInfo PRIVATE catch2::catch2 ts::tsapi ts::configmanager libswoc::libswoc)
+target_link_libraries(
+  test_RemapPluginInfo
+  PRIVATE catch2::catch2
+          tscore
+          ts::tsapi
+          ts::configmanager
+          ts::hdrs
+          ts::proxy
+          ts::inkdns
+          ts::inkutils
+          ts::inknet
+          ts::inkevent
+          libswoc::libswoc
+)
 
 # This test currently does not pass.
 add_test(NAME test_RemapPluginInfo COMMAND $<TARGET_FILE:test_RemapPluginInfo>)
