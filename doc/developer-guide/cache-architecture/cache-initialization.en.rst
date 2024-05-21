@@ -72,7 +72,7 @@ is, all stripe header read operations have completed). There is an instance of
 (:member:`Cache::hosttable`) for all cache volumes that are not explicitly assigned. If
 :file:`hosting.config` is empty then all cache volumes will be in the generic record.
 
-:func:`build_vol_hash_table` in :ts:git:`iocore/cache/Cache.cc` does the work of setting up the
+:func:`build_vol_hash_table` in :ts:git:`src/iocore/cache/Cache.cc` does the work of setting up the
 stripe assignment and is called for each :class:`CacheHostRecord` and the generic host record. The
 stripes to be assigned are in :member:`CacheHostRecord::vols`.
 
