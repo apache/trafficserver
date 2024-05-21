@@ -1,10 +1,10 @@
 # Apache Traffic Server
 
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-centos_7%2F&label=CentOS%207)](https://ci.trafficserver.apache.org/job/master/job/os-centos_7/)
-[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-debian_10%2F&label=Debian%2010)](https://ci.trafficserver.apache.org/job/master/job/os-debian_10/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-debian_11%2F&label=Debian%2011)](https://ci.trafficserver.apache.org/job/master/job/os-debian_11/)
-[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-fedora_37%2F&label=Fedora%2037)](https://ci.trafficserver.apache.org/job/master/job/os-fedora_37/)
-[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-fedora_38%2F&label=Fedora%2038)](https://ci.trafficserver.apache.org/job/master/job/os-fedora_38/)
+[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-debian_12%2F&label=Debian%2012)](https://ci.trafficserver.apache.org/job/master/job/os-debian_12/)
+[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-fedora_39%2F&label=Fedora%2039)](https://ci.trafficserver.apache.org/job/master/job/os-fedora_39/)
+[![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fos-fedora_40%2F&label=Fedora%2040)](https://ci.trafficserver.apache.org/job/master/job/os-fedora_40/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Ffreebsd%2F&label=FreeBSD)](https://ci.trafficserver.apache.org/job/master/job/freebsd/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fosx%2F&label=macOS)](https://ci.trafficserver.apache.org/job/master/job/osx/)
 [![Jenkins](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.trafficserver.apache.org%2Fjob%2Fmaster%2Fjob%2Fosx-m1%2F&label=macOS%20arm64)](https://ci.trafficserver.apache.org/job/master/job/osx-m1/)
