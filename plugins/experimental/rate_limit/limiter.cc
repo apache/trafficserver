@@ -36,6 +36,7 @@ static const char *suffixes[] = {
 void
 BucketManager::refill_thread()
 {
+  // coverity[missing_lock]
   while (_running) {
     auto startTime = std::chrono::steady_clock::now();
 
