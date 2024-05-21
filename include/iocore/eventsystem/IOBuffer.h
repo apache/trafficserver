@@ -110,7 +110,7 @@ enum AllocType {
 #define BUFFER_SIZE_FOR_CONSTANT(_size)            (_size - DEFAULT_BUFFER_SIZES)
 #define BUFFER_SIZE_INDEX_FOR_CONSTANT_SIZE(_size) (_size + DEFAULT_BUFFER_SIZES)
 
-extern FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
+extern MeteredAllocator<FreelistAllocator> ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
 void init_buffer_allocators(int iobuffer_advice, int chunk_sizes[DEFAULT_BUFFER_SIZES], bool use_hugepages);
 void init_buffer_allocators(int iobuffer_advice);
