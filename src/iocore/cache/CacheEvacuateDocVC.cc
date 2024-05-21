@@ -87,7 +87,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
             earliest_evac->total_len          += doc->data_len();
             if (earliest_evac->total_len == earliest_evac->doc_len) {
               dir_lookaside_fixup(&evac->earliest_key, this->stripe);
-              free_CacheVC(earliest_evac);
+              free_CacheEvacuateDocVC(earliest_evac);
             }
           }
         }

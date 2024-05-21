@@ -587,7 +587,7 @@ Stripe::evacuateDocReadDone(int event, Event *e)
   }
   return evacuateWrite(doc_evacuator, event, e);
 Ldone:
-  free_CacheVC(doc_evacuator);
+  free_CacheEvacuateDocVC(doc_evacuator);
   doc_evacuator = nullptr;
   return aggWrite(event, e);
 }
