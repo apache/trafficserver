@@ -68,7 +68,7 @@ persistent store.
 
    Two cache spans
 
-This storage organized into a set of administrative units which are called :term:`cache volumes
+This storage is organized into a set of administrative units which are called :term:`cache volumes
 <cache volume>`. These are defined in :file:`volume.config`. Cache volumes can be assigned
 different properties in :file:`hosting.config`.
 
