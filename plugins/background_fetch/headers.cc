@@ -97,19 +97,15 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
 void
 dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  TSIOBuffer       output_buffer;
-  TSIOBufferReader reader;
-  TSIOBufferBlock  block;
-  int64_t          block_avail;
-
-  output_buffer = TSIOBufferCreate();
-  reader        = TSIOBufferReaderAlloc(output_buffer);
+  TSIOBuffer       output_buffer = TSIOBufferCreate();
+  TSIOBufferReader reader        = TSIOBufferReaderAlloc(output_buffer);
+  int64_t          block_avail   = 0;
 
   /* This will print  just MIMEFields and not the http request line */
   TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
 
   /* We need to loop over all the buffer blocks, there can be more than 1 */
-  block = TSIOBufferReaderStart(reader);
+  TSIOBufferBlock block = TSIOBufferReaderStart(reader);
   do {
     const char *block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
     if (block_avail > 0) {
