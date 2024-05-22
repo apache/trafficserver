@@ -407,7 +407,7 @@ transform_read_status_event(TSCont contp, TransformData *data, TSEvent event, vo
   case TS_EVENT_VCONN_READ_COMPLETE:
     if (TSIOBufferReaderAvail(data->output_reader) == sizeof(int)) {
       void   *buf_ptr;
-      int64_t avail;
+      int64_t avail       = 0;
       int64_t read_nbytes = sizeof(int);
 
       buf_ptr = &data->content_length;
