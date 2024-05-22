@@ -820,8 +820,8 @@ transform_read_icap_header_event(TSCont contp, TransformData *data, TSEvent even
     TSStatIntIncrement(icap_response_err, 1);
     return handle_invalid_icap_behavior(contp, data, "Invalid ICAP server reply: reading icap header");
   case TS_EVENT_VCONN_READ_READY: {
-    TSIOBufferReader reader = data->icap_resp_reader;
-    int64_t          avail;
+    TSIOBufferReader reader      = data->icap_resp_reader;
+    int64_t          avail       = 0;
     int64_t          consumed    = data->icap_header.size();
     int64_t          read_nbytes = INT64_MAX;
 
@@ -835,8 +835,8 @@ transform_read_icap_header_event(TSCont contp, TransformData *data, TSEvent even
       /* Read in the icap header */
       data->icap_header += chunk;
       // Dbg(dbg_ctl, "Headers: \n%s", icap_header.c_str());
-      int64_t pos          = data->icap_header.find("\r\n\r\n");
-      int64_t token_length = std::string("\r\n\r\n").size();
+      int64_t           pos          = data->icap_header.find("\r\n\r\n");
+      constexpr int64_t token_length = std::string("\r\n\r\n").size();
 
       if (pos != static_cast<int64_t>(std::string::npos)) {
         data->icap_header.resize(pos);
