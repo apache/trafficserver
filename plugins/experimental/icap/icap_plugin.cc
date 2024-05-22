@@ -836,7 +836,7 @@ transform_read_icap_header_event(TSCont contp, TransformData *data, TSEvent even
       data->icap_header += chunk;
       // Dbg(dbg_ctl, "Headers: \n%s", icap_header.c_str());
       int64_t           pos          = data->icap_header.find("\r\n\r\n");
-      constexpr int64_t token_length = std::string("\r\n\r\n").size();
+      constexpr int64_t token_length = std::string_view("\r\n\r\n").size();
 
       if (pos != static_cast<int64_t>(std::string::npos)) {
         data->icap_header.resize(pos);
