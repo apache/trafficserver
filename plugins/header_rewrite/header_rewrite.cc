@@ -144,10 +144,10 @@ RulesConfig::add_rule(RuleSet *rule)
 bool
 RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url, char *to_url)
 {
-  RuleSet      *rule = nullptr;
-  std::string   filename;
-  std::ifstream f;
-  int           lineno = 0;
+  std::unique_ptr<RuleSet> rule(nullptr);
+  std::string              filename;
+  std::ifstream            f;
+  int                      lineno = 0;
 
   if (0 == fname.size()) {
     TSError("[%s] no config filename provided", PLUGIN_NAME);
@@ -199,15 +199,15 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     }
 
     // If we are at the beginning of a new condition, save away the previous rule (but only if it has operators).
-    if (p.is_cond() && add_rule(rule)) {
-      rule = nullptr;
+    if (p.is_cond() && add_rule(rule.get())) {
+      rule.release();
     }
 
     TSHttpHookID hook    = default_hook;
     bool         is_hook = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
 
     if (nullptr == rule) {
-      rule = new RuleSet();
+      rule = std::make_unique<RuleSet>();
       rule->set_hook(hook);
 
       if (is_hook) {
@@ -215,7 +215,6 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
         if ((default_hook == TS_REMAP_PSEUDO_HOOK) &&
             ((TS_HTTP_READ_REQUEST_HDR_HOOK == hook) || (TS_HTTP_PRE_REMAP_HOOK == hook))) {
           TSError("[%s] you can not use cond %%{%s} in a remap rule", PLUGIN_NAME, p.get_op().c_str());
-          delete rule;
           return false;
         }
         continue;
@@ -243,13 +242,14 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
       }
     } catch (std::runtime_error &e) {
       TSError("[%s] header_rewrite configuration exception: %s in file: %s", PLUGIN_NAME, e.what(), fname.c_str());
-      delete rule;
       return false;
     }
   }
 
   // Add the last rule (possibly the only rule)
-  add_rule(rule);
+  if (add_rule(rule.get())) {
+    rule.release();
+  }
 
   // Collect all resource IDs that we need
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
