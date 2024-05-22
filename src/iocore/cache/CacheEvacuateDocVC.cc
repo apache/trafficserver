@@ -138,7 +138,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
       break;
     }
   }
-  return free_CacheVC(this);
+  return free_CacheEvacuateDocVC(this);
 }
 
 int
@@ -190,7 +190,7 @@ CacheEvacuateDocVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e AT
     // the whole document has been evacuated. Insert the directory
     // entry in the directory.
     dir_lookaside_fixup(&earliest_key, this->stripe);
-    return free_CacheVC(this);
+    return free_CacheEvacuateDocVC(this);
   }
   return EVENT_CONT;
 Lcollision:
@@ -203,5 +203,5 @@ Lcollision:
   }
 Ldone:
   dir_lookaside_remove(&earliest_key, this->stripe);
-  return free_CacheVC(this);
+  return free_CacheEvacuateDocVC(this);
 }
