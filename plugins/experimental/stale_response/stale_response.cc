@@ -195,7 +195,7 @@ free_state_info(StateInfo *state)
   // this is a temp pointer do not delete
   // state->cur_save_body
 
-  TSfree(state);
+  delete state;
 }
 
 /*-----------------------------------------------------------------------------------------------*/
