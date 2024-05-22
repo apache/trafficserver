@@ -426,20 +426,19 @@ public:
     Cript::string      operator+=(Cript::string_view add);
     Parameter          operator[](Cript::string_view param);
     void               erase(Cript::string_view param);
-
-    void
-    erase(std::initializer_list<Cript::string_view> list)
-    {
-      for (auto &it : list) {
-        erase(it);
-      }
-    }
+    void               erase(std::initializer_list<Cript::string_view> list, bool keep = false);
 
     void
     erase()
     {
       operator=("");
       _size = 0;
+    }
+
+    void
+    keep(std::initializer_list<Cript::string_view> list)
+    {
+      erase(list, true);
     }
 
     void
