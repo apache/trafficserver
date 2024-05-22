@@ -38,12 +38,16 @@ Operator::initialize(Parser &p)
 {
   Statement::initialize(p);
 
-  if (p.mod_exist("L")) {
+  if (p.mod_exist("L") || p.mod_exist("LAST")) {
     _mods = static_cast<OperModifiers>(_mods | OPER_LAST);
   }
 
   if (p.mod_exist("QSA")) {
     _mods = static_cast<OperModifiers>(_mods | OPER_QSA);
+  }
+
+  if (p.mod_exist("I") || p.mod_exist("INV")) {
+    _mods = static_cast<OperModifiers>(_mods | OPER_INV);
   }
 }
 
