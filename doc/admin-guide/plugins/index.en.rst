@@ -67,6 +67,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Regex Revalidate <regex_revalidate.en>
    Remap Purge <remap_purge.en>
    Remap Stats <remap_stats.en>
+   Static Hit <statichit.en>
    Stats over HTTP <stats_over_http.en>
    TCPInfo <tcpinfo.en>
    Traffic Dump <traffic_dump.en>
@@ -135,6 +136,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Remap Stats <remap_stats.en>`
    This global plugin adds remap stats to the stats.
+
+:doc:`Static Hit <statichit.en>`
+    Serve static content from proxy's local filesystem.
 
 :doc:`Stats over HTTP <stats_over_http.en>`
     Provide an HTTP interface to all |TS| statistics.
