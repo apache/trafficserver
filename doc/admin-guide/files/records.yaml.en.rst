@@ -4494,6 +4494,13 @@ HTTP/2 Configuration
    Specifies how long |TS| keeps connections to origins open if a
    transaction stalls.
 
+.. ts:cv:: CONFIG proxy.config.http2.incomplete_header_timeout_in INT 10
+   :reloadable:
+   :units: seconds
+
+   Specifies how long |TS| keeps streams to clients open after they start sending HTTP headers. If a client doesn't send all
+   headers within this time, the stream and connection will be closed.
+
 .. ts:cv:: CONFIG proxy.config.http2.zombie_debug_timeout_in INT 0
    :reloadable:
 
