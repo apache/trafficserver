@@ -104,33 +104,41 @@ splitter(T input, char delim)
 Cript::string
 Cript::hex(const Cript::string &str)
 {
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::hex(str);
+#ifdef BOOST_ALGORITHM_HEXHPP
+  return boost::algorithm::hex(str);
+#else
   return str;
+#endif
 }
 
 Cript::string
 Cript::hex(Cript::string_view sv)
 {
-  // ToDo: Need to make this without Boost
-  // return hex(Cript::string(sv));
+#ifdef BOOST_ALGORITHM_HEXHPP
+  return hex(Cript::string(sv));
+#else
   return Cript::string(sv);
+#endif
 }
 
 Cript::string
 Cript::unhex(const Cript::string &str)
 {
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::unhex(str);
+#ifdef BOOST_ALGORITHM_HEXHPP
+  return boost::algorithm::unhex(str);
+#else
+#endif
   return str;
 }
 
 Cript::string
 Cript::unhex(Cript::string_view sv)
 {
-  // ToDo: Need to make this without Boost
-  // return unhex(Cript::string(sv));
+#ifdef BOOST_ALGORITHM_HEXHPP
+  return unhex(Cript::string(sv));
+#else
   return Cript::string(sv);
+#endif
 }
 
 Cript::string::operator integer() const

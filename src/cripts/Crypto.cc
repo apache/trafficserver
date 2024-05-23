@@ -110,17 +110,21 @@ Crypto::Escape::decode(Cript::string_view str)
 Cript::string
 Crypto::detail::Digest::hex() const
 {
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::hex(Cript::string(reinterpret_cast<const char *>(_hash), _length));
+#ifdef BOOST_ALGORITHM_HEXHPP
+  return boost::algorithm::hex(Cript::string(reinterpret_cast<const char *>(_hash), _length));
+#else
   return {reinterpret_cast<const char *>(_hash), _length};
+#endif
 }
 
 Cript::string
 Crypto::detail::Cipher::hex() const
 {
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::hex(_message);
+#ifdef BOOST_ALGORITHM_HEXHPP
+  return boost::algorithm::hex(_message);
+#else
   return _message;
+#endif
 }
 
 Crypto::SHA256

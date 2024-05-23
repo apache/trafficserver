@@ -32,6 +32,13 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
+// ToDo: This is a bit of a hack, until we have better conversion functions maybe in SWOC.
+#if __has_include(<boost/algorithm/hex.hpp>)
+#include <iostream>
+#include <boost/algorithm/hex.hpp>
+// Now use #ifdef BOOST_ALGORITHM_HEXHPP
+#endif
+
 // Silly typedef's for some PODs
 using integer = int64_t;
 using boolean = bool;

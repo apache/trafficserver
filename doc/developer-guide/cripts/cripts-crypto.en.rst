@@ -72,6 +72,10 @@ Object                              Description
 ``Crypto::AES256``                  AES256 encryption and decryption.
 =================================   ===============================================================
 
+.. note::
+   Proper ``hex()`` and ``unhex()`` functionality is only available if the Boost include files are
+   available when compiling ATS.
+
 .. _cripts-misc-crypto-encoding:
 
 Encoding
