@@ -27,6 +27,7 @@
 #include "Http2ClientSession.h"
 #include "HttpDebugNames.h"
 #include "HttpSM.h"
+#include "tscore/Diags.h"
 
 #include <numeric>
 
@@ -173,10 +174,36 @@ Http2Stream::main_event_handler(int event, void *edata)
   switch (event) {
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    if (_sm && read_vio.ntodo() > 0) {
+    if (_sm == nullptr && closed != true) {
+      // TIMEOUT without HttpSM - assuming incomplete header timeout
+      Http2StreamDebug("timeout event=%d", event);
+
+      ip_port_text_buffer ipb;
+      const char *remote_ip = ats_ip_ntop(this->_proxy_ssn->get_remote_addr(), ipb, sizeof(ipb));
+
+      Error("HTTP/2 stream error timeout remote_ip=%s session_id=%" PRId64 " stream_id=%u event=%d", remote_ip,
+            this->_proxy_ssn->connection_id(), this->_id, event);
+
+      // Close stream
+      do_io_close();
+      terminate_stream = true;
+
+      // Close connection because this stream doesn't read HEADERS/CONTINUATION frames anymore that makes HPACK dynamic table
+      // out of sync.
+      Http2ConnectionState &connection_state = static_cast<Http2ClientSession *>(_proxy_ssn)->connection_state;
+      {
+        SCOPED_MUTEX_LOCK(lock, connection_state.mutex, this_ethread());
+        Http2Error error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR,
+                         "stream timeout");
+        connection_state.handleEvent(HTTP2_SESSION_EVENT_ERROR, &error);
+      }
+    } else if (_sm && read_vio.ntodo() > 0) {
       this->signal_read_event(event);
     } else if (_sm && write_vio.ntodo() > 0) {
       this->signal_write_event(event);
+    } else {
+      Warning("HTTP/2 unknown case of %d event - session_id=%" PRId64 " stream_id=%u", event, this->_proxy_ssn->connection_id(),
+              this->_id);
     }
     break;
   case VC_EVENT_WRITE_READY:

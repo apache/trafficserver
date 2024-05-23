@@ -30,6 +30,9 @@
 #include "HttpDebugNames.h"
 #include "TLSSNISupport.h"
 
+#include "tscore/ink_assert.h"
+#include "tscore/ink_hrtime.h"
+#include "tscore/ink_memory.h"
 #include "tscpp/util/PostScript.h"
 #include "tscpp/util/LocalBuffer.h"
 
@@ -403,6 +406,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     if (!empty_request) {
       SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
       stream->mark_milestone(Http2StreamMilestone::START_TXN);
+      stream->cancel_active_timeout();
       stream->new_transaction(frame.is_from_early_data());
       // Send request header to SM
       stream->send_request(cstate);
@@ -1294,6 +1298,23 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     _scheduled = false;
   } break;
 
+  case HTTP2_SESSION_EVENT_ERROR: {
+    REMEMBER(event, this->recursion);
+
+    Http2ErrorCode error_code = Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR;
+    if (edata != nullptr) {
+      Http2Error *error = static_cast<Http2Error *>(edata);
+      error_code        = error->code;
+    }
+
+    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    this->send_goaway_frame(this->latest_streamid_in, error_code);
+    this->session->set_half_close_local_flag(true);
+    if (fini_event == nullptr) {
+      this->fini_event = this_ethread()->schedule_imm_local(static_cast<Continuation *>(this), HTTP2_SESSION_EVENT_FINI);
+    }
+  } break;
+
   // Initiate a graceful shutdown
   case HTTP2_SESSION_EVENT_SHUTDOWN_INIT: {
     REMEMBER(event, this->recursion);
@@ -1446,6 +1467,11 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   new_stream->mutex                     = new_ProxyMutex();
   new_stream->is_first_transaction_flag = get_stream_requests() == 0;
   increment_stream_requests();
+
+  // Set incomplete header timeout
+  //   Client should send END_HEADERS flag within the http2.incomplete_header_timeout_in.
+  //   The active timeout of this stream will be reset by HttpSM with http.transction_active_timeout_in when a HTTP TXN is started
+  new_stream->set_active_timeout(HRTIME_SECONDS(Http2::incomplete_header_timeout_in));
 
   return new_stream;
 }
