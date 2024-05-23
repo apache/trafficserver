@@ -466,7 +466,7 @@ Http2CommonSession::add_url_to_pushed_table(const char *url, int url_len)
   }
 
   if (_h2_pushed_urls->size() < Http2::push_diary_size) {
-    _h2_pushed_urls->emplace(url);
+    _h2_pushed_urls->emplace(url, url_len);
   }
 }
 
