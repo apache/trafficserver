@@ -20,6 +20,7 @@
 
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
+#include "tsutil/StringConvert.h"
 
 // From ATS, seems high ...
 #define ENCODED_LEN(len) (((int)ceil(1.34 * (len) + 5)) + 1)
@@ -110,17 +111,13 @@ Crypto::Escape::decode(Cript::string_view str)
 Cript::string
 Crypto::detail::Digest::hex() const
 {
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::hex(Cript::string(reinterpret_cast<const char *>(_hash), _length));
-  return {reinterpret_cast<const char *>(_hash), _length};
+  return ts::hex({reinterpret_cast<const char *>(_hash), _length});
 }
 
 Cript::string
 Crypto::detail::Cipher::hex() const
 {
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::hex(_message);
-  return _message;
+  return ts::hex(_message);
 }
 
 Crypto::SHA256
