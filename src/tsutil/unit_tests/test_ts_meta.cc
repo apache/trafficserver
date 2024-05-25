@@ -80,7 +80,7 @@ namespace
 {
 template <typename T>
 auto
-detect(T &&t, ts::meta::CaseTag<0>) -> std::string_view
+detect([[maybe_unused]] T &&t, ts::meta::CaseTag<0>) -> std::string_view
 {
   return "none";
 }
