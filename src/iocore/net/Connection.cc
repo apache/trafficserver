@@ -34,6 +34,10 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sock.h"
 
+#if TS_USE_HWLOC
+#include <hwloc.h>
+#endif
+
 #ifdef SO_ACCEPTFILTER
 #include <sys/param.h>
 #include <sys/linker.h>

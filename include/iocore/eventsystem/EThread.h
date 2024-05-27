@@ -35,7 +35,8 @@
 #include "tsutil/Histogram.h"
 
 #if TS_USE_HWLOC
-#include <hwloc.h>
+struct hwloc_obj;
+using hwloc_obj_t = hwloc_obj *;
 #endif
 
 // TODO: This would be much nicer to have "run-time" configurable (or something)
