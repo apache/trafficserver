@@ -29,4 +29,5 @@ TEST_CASE("StringConvert", "[STE]")
 {
   REQUIRE(ts::hex("01") == "3031");
   REQUIRE(ts::unhex("3031") == "01");
+  REQUIRE(ts::hex("5pn2QM") == "35706e32514d");
 }

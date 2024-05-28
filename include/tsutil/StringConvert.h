@@ -55,6 +55,7 @@ unhex(const std::string_view input)
   }
 
   result.resize(input.size() / 2);
+
   const char *p = input.data();
   for (auto &x : result) {
     if (auto [ptr, err] = std::from_chars(p, p + 2, x, 16); err == std::errc()) {
