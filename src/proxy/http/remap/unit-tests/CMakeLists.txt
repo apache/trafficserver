@@ -158,6 +158,14 @@ target_link_libraries(
 
 # This test currently does not pass.
 add_test(NAME test_RemapPluginInfo COMMAND $<TARGET_FILE:test_RemapPluginInfo>)
+# Disable ORD violation caused by double definition inside a stub file libinknet_stub.cc
+# see remap_test_dlopen_leak_suppression.txt for more info.
+set_tests_properties(
+  test_RemapPluginInfo test_PluginDso test_PluginFactory
+  PROPERTIES
+    ENVIRONMENT
+    "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
+)
 
 ### test_NextHopStrategyFactory ########################################################################
 
