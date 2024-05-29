@@ -30,6 +30,8 @@
 #include <array>
 #include <vector>
 #include <mutex>
+#include <atomic>
+#include <thread>
 
 static_assert(RE_CASE_INSENSITIVE == PCRE2_CASELESS, "Update RE_CASE_INSERSITIVE for current PCRE2 version.");
 static_assert(RE_UNANCHORED == PCRE2_MULTILINE, "Update RE_MULTILINE for current PCRE2 version.");
@@ -51,40 +53,57 @@ my_free(void *ptr, void * /*caller*/)
   free(ptr);
 }
 
-class RegexContext; // defined below
-class RegexContextCleanup
-{
-public:
-  void push_back(RegexContext *ctx);
-  ~RegexContextCleanup();
-
-private:
-  std::vector<RegexContext *> _contexts;
-  std::mutex                  _mutex;
-};
-RegexContextCleanup regex_context_cleanup;
-
 //----------------------------------------------------------------------------
 class RegexContext
 {
 public:
-  static RegexContext *
-  get_instance()
+  // The pointed-to RegexContext (if any) will not be destroyed while the Ptr instance exists.
+  class Ptr
   {
-    if (_shutdown == true) {
-      return nullptr;
+  public:
+    RegexContext *
+    operator()()
+    {
+      return _ptr;
+    }
+    Ptr(Ptr const &) = delete;
+    Ptr(Ptr &&src)
+    {
+      _ptr     = src._ptr;
+      src._ptr = nullptr;
+    }
+    Ptr &operator=(Ptr const &) = delete;
+    ~Ptr()
+    {
+      if (_ptr) {
+        RegexContext::_decrement_ref_count();
+      }
     }
 
-    if (_regex_context == nullptr) {
-      _regex_context = new RegexContext();
-      regex_context_cleanup.push_back(_regex_context);
+  private:
+    Ptr(RegexContext *ptr) : _ptr{ptr} {}
+    RegexContext *_ptr;
+
+    friend class RegexContext;
+  };
+
+  static Ptr
+  get_instance()
+  {
+    _increment_ref_count();
+    if (0 == _ref_count) {
+      // In shutdown.
+      return Ptr{nullptr};
     }
-    return _regex_context;
+    if (_regex_context == nullptr) {
+      std::lock_guard<std::mutex> guard(_data->mutex);
+      _regex_context = new RegexContext();
+      _data->all_contexts.push_back(_regex_context);
+    }
+    return Ptr{_regex_context};
   }
   ~RegexContext()
   {
-    _shutdown = true;
-
     if (_general_context != nullptr) {
       pcre2_general_context_free(_general_context);
     }
@@ -123,32 +142,68 @@ private:
     _jit_stack       = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
     pcre2_jit_stack_assign(_match_context, nullptr, _jit_stack);
   }
+  struct _Data {
+    std::vector<RegexContext *> all_contexts;
+    std::mutex                  mutex;
+  };
+  static void
+  _increment_ref_count()
+  {
+    bool     construct = false;
+    unsigned refs      = _ref_count;
+    while (refs != 0) {
+      construct = (refs == 1) && (_data_constructed == false);
+      if (_ref_count.compare_exchange_weak(refs, refs + 1)) {
+        break;
+      }
+    }
+    if (construct) {
+      _data             = new _Data();
+      _data_constructed = true;
+    } else {
+      while (!_data_constructed) {
+        std::this_thread::yield();
+      }
+    }
+  }
+  static void
+  _decrement_ref_count()
+  {
+    bool     destroy = false;
+    unsigned refs    = _ref_count;
+    while (refs != 0) {
+      destroy = refs == 1;
+      if (_ref_count.compare_exchange_weak(refs, refs - 1)) {
+        break;
+      }
+    }
+    if (destroy && (_data != nullptr)) {
+      for (auto ctx : _data->all_contexts) {
+        delete ctx;
+      }
+      delete _data;
+      _data = nullptr;
+    }
+  }
+  struct _Dummy {
+    ~_Dummy() { RegexContext::_decrement_ref_count(); }
+  };
   pcre2_general_context            *_general_context = nullptr;
   pcre2_compile_context            *_compile_context = nullptr;
   pcre2_match_context              *_match_context   = nullptr;
   pcre2_jit_stack                  *_jit_stack       = nullptr;
   thread_local static RegexContext *_regex_context;
-  static bool                       _shutdown; // flag to indicate destructor was called, so no new instances can be created
+  static std::atomic<unsigned>      _ref_count;
+  static _Data                     *_data;
+  static std::atomic<bool>          _data_constructed;
+  static _Dummy                     _dummy; // Destruction of _dummy triggers shutdown once there are zero _Ptr instances.
 };
 
 thread_local RegexContext *RegexContext::_regex_context = nullptr;
-bool                       RegexContext::_shutdown      = false;
-
-//----------------------------------------------------------------------------
-
-RegexContextCleanup::~RegexContextCleanup()
-{
-  std::lock_guard<std::mutex> guard(_mutex);
-  for (auto ctx : _contexts) {
-    delete ctx;
-  }
-}
-void
-RegexContextCleanup::push_back(RegexContext *ctx)
-{
-  std::lock_guard<std::mutex> guard(_mutex);
-  _contexts.push_back(ctx);
-}
+std::atomic<unsigned>      RegexContext::_ref_count{1}; // _dummy is considered to have one reference to Data contents.
+RegexContext::_Data       *RegexContext::_data = nullptr;
+std::atomic<bool>          RegexContext::_data_constructed{false};
+RegexContext::_Dummy       RegexContext::_dummy;
 
 } // namespace
 
@@ -176,7 +231,9 @@ RegexMatches::RegexMatches(uint32_t size)
   if (match_data == nullptr) {
     // buffer was too small, allocate from heap
     debug_assert_message(false, "RegexMatches data buffer too small, increase the buffer size in Regex.h");
-    match_data = pcre2_match_data_create(size, RegexContext::get_instance()->get_general_context());
+    auto rctx{RegexContext::get_instance()};
+    release_assert(rctx() != nullptr);
+    match_data = pcre2_match_data_create(size, rctx()->get_general_context());
   }
 
   _MatchData::set(_match_data, match_data);
@@ -285,15 +342,15 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
   }
 
   // get the RegexContext instance - should only be null when shutting down
-  RegexContext *regex_context = RegexContext::get_instance();
-  if (regex_context == nullptr) {
+  auto regex_context{RegexContext::get_instance()};
+  if (regex_context() == nullptr) {
     return false;
   }
 
   PCRE2_SIZE error_offset;
   int        error_code;
   auto       code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), flags, &error_code, &error_offset,
-                                  regex_context->get_compile_context());
+                                  regex_context()->get_compile_context());
   if (!code) {
     erroroffset = error_offset;
 
@@ -329,6 +386,10 @@ Regex::exec(std::string_view subject) const
 int32_t
 Regex::exec(std::string_view subject, RegexMatches &matches) const
 {
+  auto ctx{RegexContext::get_instance()};
+  if (ctx() == nullptr) {
+    return 0;
+  }
   auto code = _Code::get(_code);
 
   // check if there is a compiled regex
@@ -336,7 +397,7 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
     return 0;
   }
   int count = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, 0,
-                          RegexMatches::_MatchData::get(matches._match_data), RegexContext::get_instance()->get_match_context());
+                          RegexMatches::_MatchData::get(matches._match_data), ctx()->get_match_context());
 
   matches._size = count;
 
