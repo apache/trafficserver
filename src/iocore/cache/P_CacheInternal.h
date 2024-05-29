@@ -142,8 +142,9 @@ struct CacheRemoveCont : public Continuation {
 };
 
 // Global Data
-extern ClassAllocator<CacheVC> cacheVConnectionAllocator;
-extern CacheSync              *cacheDirSync;
+extern ClassAllocator<CacheVC>            cacheVConnectionAllocator;
+extern ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator;
+extern CacheSync                         *cacheDirSync;
 // Function Prototypes
 int                 cache_write(CacheVC *, CacheHTTPInfoVector *);
 int                 get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
@@ -169,7 +170,7 @@ new_CacheVC(Continuation *cont)
 }
 
 inline int
-free_CacheVC(CacheVC *cont)
+free_CacheVCCommon(CacheVC *cont)
 {
   static DbgCtl dbg_ctl{"cache_free"};
   Dbg(dbg_ctl, "free %p", cont);
@@ -218,7 +219,22 @@ free_CacheVC(CacheVC *cont)
 #ifdef DEBUG
   SET_CONTINUATION_HANDLER(cont, &CacheVC::dead);
 #endif
+  return EVENT_DONE;
+}
+
+inline int
+free_CacheVC(CacheVC *cont)
+{
+  free_CacheVCCommon(cont);
   THREAD_FREE(cont, cacheVConnectionAllocator, this_thread());
+  return EVENT_DONE;
+}
+
+inline int
+free_CacheEvacuateDocVC(CacheEvacuateDocVC *cont)
+{
+  free_CacheVCCommon(cont);
+  THREAD_FREE(cont, cacheEvacuateDocVConnectionAllocator, this_thread());
   return EVENT_DONE;
 }
 
