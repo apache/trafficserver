@@ -22,8 +22,8 @@
 
 namespace Bundle
 {
+const Cript::string Common::_name = "Bundle::Common";
 
-// Bundle::Common
 bool
 Common::validate(std::vector<Cript::Bundle::Error> &errors) const
 {
@@ -31,7 +31,7 @@ Common::validate(std::vector<Cript::Bundle::Error> &errors) const
 
   // The .dscp() can only be 0 - 63
   if (_dscp < 0 || _dscp > 63) {
-    errors.emplace_back("dscp must be between 0 and 63", "Common", "dscp");
+    errors.emplace_back("dscp must be between 0 and 63", name(), "dscp");
     failed = true;
   }
 
