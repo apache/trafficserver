@@ -878,7 +878,7 @@ dir_lookaside_cleanup(Stripe *stripe)
         DDbg(dbg_ctl_dir_lookaside, "cleanup %X %X cleaned up", b->evac_frags.earliest_key.slice32(0),
              b->evac_frags.earliest_key.slice32(1));
         i.remove(b);
-        free_CacheVC(b->earliest_evacuator);
+        free_CacheEvacuateDocVC(b->earliest_evacuator);
         free_EvacuationBlock(b, stripe->mutex->thread_holding);
         b = nb;
         goto Lagain;
