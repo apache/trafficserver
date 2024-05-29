@@ -22,6 +22,7 @@
  */
 
 #include "main.h"
+#include "test_doubles.h"
 
 #include "tscore/EventNotify.h"
 
@@ -29,8 +30,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <ostream>
-#include <stdexcept>
 
 // Required by main.h
 int  cache_vols           = 1;
@@ -82,93 +81,6 @@ std::array<AddWriterBranchTest, 32> add_writer_branch_test_cases = {
    }
 };
 
-class FakeVC : public CacheVC
-{
-public:
-  FakeVC()
-  {
-    this->buf    = new_IOBufferData(iobuffer_size_to_index(1024, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-    this->blocks = new_IOBufferBlock();
-    this->blocks->set(this->buf.get());
-    SET_HANDLER(&FakeVC::handle_call);
-  }
-
-  void
-  set_test_data(char const *source, int len)
-  {
-    this->blocks->reset();
-    if (len > 1024) {
-      throw std::runtime_error{"data length exceeds internal buffer"};
-    }
-    std::memcpy(this->buf->data(), source, len);
-    this->blocks->fill(len);
-  }
-
-  void
-  set_agg_len(int agg_len)
-  {
-    this->agg_len = agg_len;
-  }
-
-  void
-  set_header_len(int header_len)
-  {
-    this->header_len = header_len;
-  }
-
-  void
-  set_write_len(int write_len)
-  {
-    this->write_len = write_len;
-    this->total_len = static_cast<std::uint64_t>(write_len);
-  }
-
-  void
-  set_readers(int readers)
-  {
-    this->f.readers = readers;
-  }
-
-  int
-  handle_call(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
-  {
-    return EVENT_CONT;
-  }
-};
-
-class WaitingVC final : public FakeVC
-{
-public:
-  WaitingVC(Stripe *stripe)
-  {
-    SET_HANDLER(&WaitingVC::handle_call);
-    this->stripe = stripe;
-    this->dir    = *stripe->dir;
-  }
-
-  void
-  wait_for_callback()
-  {
-    this->_notifier.lock();
-    while (!this->_got_callback) {
-      this->_notifier.wait();
-    }
-    this->_notifier.unlock();
-  }
-
-  int
-  handle_call(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
-  {
-    this->_got_callback = true;
-    this->_notifier.signal();
-    return EVENT_CONT;
-  }
-
-private:
-  EventNotify _notifier;
-  bool        _got_callback{false};
-};
-
 /* Catch test helper to provide a Stripe with a valid file descriptor.
  *
  * The file will be deleted automatically when the application ends normally.
@@ -198,6 +110,8 @@ init_stripe_for_writing(Stripe &stripe, StripteHeaderFooter &header, CacheVol &c
   stripe.cache_vol                                = &cache_vol;
   cache_rsb.write_backlog_failure                 = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
   stripe.cache_vol->vol_rsb.write_backlog_failure = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
+  cache_rsb.gc_frags_evacuated                    = Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
+  stripe.cache_vol->vol_rsb.gc_frags_evacuated    = Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
 
   // A number of things must be initialized in a certain way for Stripe
   // not to segfault, hit an assertion, or exhibit zero-division.
@@ -278,7 +192,7 @@ TEST_CASE("The behavior of Stripe::add_writer.")
 // This test case demonstrates how to set up a Stripe and make
 // a call to aggWrite without causing memory errors. It uses a
 // tmpfile for the Stripe to write to.
-TEST_CASE("aggWrite behavior")
+TEST_CASE("aggWrite behavior with f.evacuator unset")
 {
   Stripe              stripe;
   StripteHeaderFooter header;
@@ -376,6 +290,99 @@ TEST_CASE("aggWrite behavior")
     cache_config_enable_checksum = false;
   }
 
+  ats_free(stripe.raw_dir);
+  ats_free(stripe.evacuate);
+}
+
+// When f.evacuator is set, vc.buf must contain a Doc object including headers
+// and data.
+// We don't use a CacheEvacuateDocVC because the behavior under test depends
+// only on the presence of the f.evacuator flag.
+TEST_CASE("aggWrite behavior with f.evacuator set")
+{
+  Stripe              stripe;
+  StripteHeaderFooter header;
+  CacheVol            cache_vol;
+  auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};
+  WaitingVC           vc{&stripe};
+  char               *source = new char[sizeof(Doc) + 4]{};
+  const char         *yay    = "yay";
+  Doc                 doc{};
+  doc.magic     = DOC_MAGIC;
+  doc.len       = sizeof(Doc) + 4;
+  doc.total_len = 4;
+  doc.hlen      = 0;
+  std::memcpy(source, &doc, sizeof(doc));
+  std::memcpy(source + sizeof(Doc), yay, 4);
+  vc.set_test_data(source, sizeof(Doc) + 4);
+  vc.set_write_len(stripe.round_to_approx_size(doc.len));
+  vc.set_agg_len(stripe.round_to_approx_size(vc.write_len + vc.header_len + vc.frag_len));
+  vc.mark_as_evacuator();
+  stripe.add_writer(&vc);
+
+  SECTION("Given the aggregation buffer is partially full, sync is set, "
+          "when we schedule aggWrite with a VC buffer containing 'yay', ")
+  {
+    vc.f.sync           = 1;
+    vc.f.use_first_key  = 1;
+    vc.write_serial     = 1;
+    header.write_serial = 10;
+    int document_offset = header.write_pos;
+    {
+      SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
+      stripe.aggWrite(EVENT_NONE, 0);
+    }
+    vc.wait_for_callback();
+
+    SECTION("then some bytes should be written to disk")
+    {
+      CHECK(0 < header.agg_pos);
+    }
+
+    Doc doc;
+
+    {
+      // Other threads are still alive and may interact with the
+      // cache periodically, so we should always grab the lock
+      // whenever we interact with the underlying file.
+      SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
+      fseek(file, document_offset, SEEK_SET);
+      fread(&doc, sizeof(Doc), 1, file);
+    }
+
+    // An incorrect magic value would indicate that the document is corrupt.
+    REQUIRE(DOC_MAGIC == doc.magic);
+
+    SECTION("then the document should be single fragment.")
+    {
+      CHECK(doc.single_fragment());
+    }
+
+    SECTION("then the document header length should be 0.")
+    {
+      CHECK(0 == doc.hlen);
+    }
+
+    SECTION("then the document length should be sizeof(Doc) + 4.")
+    {
+      CHECK(sizeof(Doc) + 4 == doc.len);
+    }
+
+    SECTION("then the document data should contain 'yay'.")
+    {
+      char *data = new char[doc.data_len()];
+      {
+        SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
+        fseek(file, document_offset + doc.prefix_len(), SEEK_SET);
+        fread(data, doc.data_len(), 1, file);
+      }
+      INFO("buffer content is \"" << data << "\"");
+      CHECK(0 == strncmp("yay", data, 3));
+      delete[] data;
+    }
+  }
+
+  delete[] source;
   ats_free(stripe.raw_dir);
   ats_free(stripe.evacuate);
 }
