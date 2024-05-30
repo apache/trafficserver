@@ -84,7 +84,7 @@ namespace Yaml
 namespace swoc
 {
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, YAML::Mark const &mark)
+bwformat(BufferWriter &w, [[maybe_unused]] bwf::Spec const &spec, YAML::Mark const &mark)
 {
   return w.print("Line {}", mark.line);
 }

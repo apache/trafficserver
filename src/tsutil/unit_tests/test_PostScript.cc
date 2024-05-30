@@ -47,6 +47,8 @@ void
 f2(double a)
 {
   ++f2Called;
+
+  REQUIRE(a == 4.0);
 }
 
 void
@@ -65,7 +67,7 @@ TEST_CASE("PostScript", "[PSC]")
   {
     int           *p = &dummy;
     ts::PostScript g1([&]() -> void { f1(1, 2.0, p, dummy); });
-    ts::PostScript g2([=]() -> void { f2(4); });
+    ts::PostScript g2([=]() -> void { f2(4.0); });
     ts::PostScript g3([=]() -> void { f3(5, 6.0); });
 
     g2.release();
