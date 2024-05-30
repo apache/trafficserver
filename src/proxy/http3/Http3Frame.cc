@@ -285,7 +285,7 @@ Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len, uint3
       this->_error_reason = reinterpret_cast<const char *>("invalid SETTINGS frame");
       break;
     }
-    
+
     size_t   value_len  = QUICVariableInt::size(buf + len);
     uint64_t value      = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
     len                += value_len;
