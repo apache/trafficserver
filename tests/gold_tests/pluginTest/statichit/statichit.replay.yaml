@@ -166,3 +166,72 @@ sessions:
         - [ Cache-Control, { value: no-cache, as: equal } ]
         - [ Content-Type, { value: text/plain, as: equal } ]
         - [ Server, { value: ATS, as: contains } ]
+
+  - client-request:
+      method: GET
+      url: /path
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn7 ]
+        - [ uuid, 8 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
+
+  - client-request:
+      method: GET
+      url: /path
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn8 ]
+        - [ uuid, 8 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
+
+  - client-request:
+      method: GET
+      url: /small_body.txt
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn9 ]
+        - [ uuid, 9 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
