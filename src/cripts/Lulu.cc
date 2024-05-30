@@ -23,6 +23,8 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
+#include "tsutil/StringConvert.h"
+
 #if CRIPTS_HAS_MAXMIND
 #include <maxminddb.h>
 
@@ -104,33 +106,25 @@ splitter(T input, char delim)
 Cript::string
 Cript::hex(const Cript::string &str)
 {
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::hex(str);
-  return str;
+  return ts::hex(str);
 }
 
 Cript::string
 Cript::hex(Cript::string_view sv)
 {
-  // ToDo: Need to make this without Boost
-  // return hex(Cript::string(sv));
-  return Cript::string(sv);
+  return ts::hex(sv);
 }
 
 Cript::string
 Cript::unhex(const Cript::string &str)
 {
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::unhex(str);
-  return str;
+  return ts::unhex(str);
 }
 
 Cript::string
 Cript::unhex(Cript::string_view sv)
 {
-  // ToDo: Need to make this without Boost
-  // return unhex(Cript::string(sv));
-  return Cript::string(sv);
+  return ts::unhex(sv);
 }
 
 Cript::string::operator integer() const
