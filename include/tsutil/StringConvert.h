@@ -26,6 +26,17 @@
 namespace ts
 {
 
+/**
+ * Convert input string into a hex string
+ *
+ * Each character in input is interpreted as an unsigned char and represented as a two-digit hex value [0-255] in the returned
+ * string.
+ *
+ * @param input Input string view
+ * @return The hex representation of the input string
+ *
+ * @note this is a specialization of boost::algorithms::hex
+ */
 inline std::string
 hex(const std::string_view input)
 {
@@ -45,6 +56,17 @@ hex(const std::string_view input)
   return result;
 }
 
+/**
+ * Convert input hex string into a string
+ *
+ * The input string must have even size and be comprised of hex digits [0-f]. Each two-digit pair is converted from hex to a
+ * character in the resulting output string.
+ *
+ * @param input Input string view
+ * @return The unhexified result string
+ *
+ * @note this is a specialization of boost::algorithms::unhex
+ */
 inline std::string
 unhex(const std::string_view input)
 {
