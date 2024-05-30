@@ -338,7 +338,7 @@ struct DiagTimestamp {
 };
 
 swoc::BufferWriter &
-bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagTimestamp const &ts)
+bwformat(swoc::BufferWriter &w, [[maybe_unused]] swoc::bwf::Spec const &spec, DiagTimestamp const &ts)
 {
   auto                        epoch = std::chrono::system_clock::to_time_t(ts.ts);
   swoc::LocalBufferWriter<48> lw;
