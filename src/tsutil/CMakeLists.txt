@@ -75,6 +75,7 @@ if(BUILD_TESTING)
     unit_tests/test_LocalBuffer.cc
     unit_tests/test_PostScript.cc
     unit_tests/test_Strerror.cc
+    unit_tests/test_StringConvert.cc
     unit_tests/test_Regex.cc
     unit_tests/test_ts_meta.cc
     unit_tests/test_time_parser.cc
