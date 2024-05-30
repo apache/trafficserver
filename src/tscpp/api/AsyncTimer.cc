@@ -48,7 +48,7 @@ struct atscppapi::AsyncTimerState {
 namespace
 {
 int
-handleTimerEvent(TSCont cont, TSEvent event, void *edata)
+handleTimerEvent(TSCont cont, [[maybe_unused]] TSEvent event, [[maybe_unused]] void *edata)
 {
   AsyncTimerState *state = static_cast<AsyncTimerState *>(TSContDataGet(cont));
   if (state->initial_timer_action_) {

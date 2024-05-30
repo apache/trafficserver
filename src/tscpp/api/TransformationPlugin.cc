@@ -325,7 +325,7 @@ TransformationPlugin::resumeCont()
 }
 
 int
-ResumeAfterPauseCont::_run(TSEvent event, void *edata)
+ResumeAfterPauseCont::_run([[maybe_unused]] TSEvent event, [[maybe_unused]] void *edata)
 {
   auto state     = static_cast<TransformationPluginState *>(this);
   state->paused_ = false;

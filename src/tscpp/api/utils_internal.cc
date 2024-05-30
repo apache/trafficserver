@@ -43,7 +43,7 @@ namespace
 int TRANSACTION_STORAGE_INDEX = -1;
 
 void
-resetTransactionHandles(Transaction &transaction, TSEvent event)
+resetTransactionHandles(Transaction &transaction, [[maybe_unused]] TSEvent event)
 {
   utils::internal::resetTransactionHandles(transaction);
   return;
@@ -260,7 +260,7 @@ utils::internal::invokePluginForEvent(GlobalPlugin *plugin, TSHttpTxn ats_txn_ha
 }
 
 void
-utils::internal::invokePluginForEvent(GlobalPlugin *plugin, TSHttpAltInfo altinfo_handle, TSEvent event)
+utils::internal::invokePluginForEvent(GlobalPlugin *plugin, TSHttpAltInfo altinfo_handle, [[maybe_unused]] TSEvent event)
 {
   TSMBuffer hdr_buf;
   TSMLoc    hdr_loc;
