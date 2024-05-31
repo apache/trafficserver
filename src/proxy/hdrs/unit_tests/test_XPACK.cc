@@ -275,8 +275,8 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(memcmp(value, "value2", value_len) == 0);
 
     // Insert one more entry (this should evict all existing entries)
-    std::string field_4 = get_long_string(50);
-    dt.insert_entry(field_4, field_4); // 100 bytes. _head should now be 0.
+    std::string field_4 = get_long_string(40);
+    dt.insert_entry(field_4, field_4); // 80 bytes. _head should now be 0.
     REQUIRE(dt.size() == 2 * field_4.length() + 32);
     REQUIRE(dt.maximum_size() == MAX_SIZE);
     REQUIRE(dt.count() == 1);

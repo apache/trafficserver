@@ -235,11 +235,15 @@ private:
    */
   void _expand_storage_size(uint32_t new_storage_size);
 
-  /**
-   * The type of reuired_size is uint64 so that we can handle a size that is begger than the table capacity.
-   * Passing a value more than UINT32_MAX evicts every entry and return false.
+  /** Evict entries to obtain the extra space needed.
+   *
+   * The type of reuired_size is uint64 so that we can handle a size that is bigger than the table capacity.
+   * Passing a value more than UINT32_MAX evicts every entry and returns false.
+   *
+   * @param[in] extra_space_needed The amount of space needed to be freed.
+   * @return true if the required space was freed, false otherwise.
    */
-  bool _make_space(uint64_t required_size);
+  bool _make_space(uint64_t extra_space_needed);
 
   /** Calcurates the index number for _entries, which is a kind of circular buffer.
    *
