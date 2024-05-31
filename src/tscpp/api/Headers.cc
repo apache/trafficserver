@@ -80,6 +80,12 @@ HeaderFieldName::operator==(const char *field_name)
 }
 
 bool
+HeaderFieldName::operator==(std::string_view field_name)
+{
+  return (name_.size() == field_name.size()) && (::strncasecmp(name_.data(), field_name.data(), name_.size()) == 0);
+}
+
+bool
 HeaderFieldName::operator==(const std::string &field_name)
 {
   return operator==(field_name.c_str());
@@ -87,6 +93,12 @@ HeaderFieldName::operator==(const std::string &field_name)
 
 bool
 HeaderFieldName::operator!=(const char *field_name)
+{
+  return !operator==(field_name);
+}
+
+bool
+HeaderFieldName::operator!=(std::string_view field_name)
 {
   return !operator==(field_name);
 }
@@ -327,6 +339,13 @@ HeaderField::operator==(const char *field_name) const
 }
 
 bool
+HeaderField::operator==(std::string_view field_name) const
+{
+  HeaderFieldName nm = name();
+  return (nm.length() == field_name.size()) && (::strncasecmp(nm.c_str(), field_name.data(), field_name.size()) == 0);
+}
+
+bool
 HeaderField::operator==(const std::string &field_name) const
 {
   return operator==(field_name.c_str());
@@ -334,6 +353,12 @@ HeaderField::operator==(const std::string &field_name) const
 
 bool
 HeaderField::operator!=(const char *field_name) const
+{
+  return !operator==(field_name);
+}
+
+bool
+HeaderField::operator!=(std::string_view field_name) const
 {
   return !operator==(field_name);
 }
@@ -593,9 +618,11 @@ Headers::erase(const char *key, int length)
 Headers::size_type
 Headers::count(const char *key, int length)
 {
-  size_type ret_count = 0;
+  size_type        ret_count = 0;
+  size_t           len       = (length < 0) ? strlen(key) : length;
+  std::string_view key_name(key, len);
   for (header_field_iterator it = begin(); it != end(); ++it) {
-    if ((*it).name() == key) {
+    if ((*it).name() == key_name) {
       ret_count++;
     }
   }
