@@ -206,7 +206,7 @@ setupConfigPathTest(const fs::path &configPath, const fs::path &pluginBuildPath,
   if (0 != mtime) {
     struct stat    sb;
     struct utimbuf new_times;
-    stat(effectivePath.c_str(), &sb);
+    CHECK(stat(effectivePath.c_str(), &sb) == 0);
     new_times.actime  = sb.st_atime; /* keep atime unchanged */
     new_times.modtime = mtime;       /* set mtime to current time */
     utime(effectivePath.c_str(), &new_times);
