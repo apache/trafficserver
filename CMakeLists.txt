@@ -109,20 +109,7 @@ auto_option(
   "sys/prctl.h"
 )
 auto_option(LUAJIT PACKAGE_DEPENDS luajit)
-auto_option(
-  MAGICK
-  PACKAGE_DEPENDS
-  ImageMagick
-  COMPONENTS
-  Magick++
-  MagickWand
-  MagickCore
-)
-
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
-
-# This creates the magic import target if necessary (older cmake)
-include(magick_target)
 
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(ENABLE_FUZZING "Enable fuzzing (default OFF)")
@@ -656,10 +643,16 @@ endif()
 if(ENABLE_FUZZING)
   add_subdirectory(tests/fuzzing)
 endif()
-add_subdirectory(plugins)
 
 # set up auto options for experimental plugins
+# This must be done before setting up the stable plugins
+# because they check whether the experimental plugins
+# already found ImageMagick, but not the other way around.
+# Doing these in the other order may add ImageMagick::Magick++
+# twice which is an error.
 include(ExperimentalPlugins)
+# This also adds any experimental plugins that have been enabled.
+add_subdirectory(plugins)
 
 add_subdirectory(configs)
 if(ENABLE_EXAMPLE)
