@@ -383,7 +383,7 @@ Stripe::vol_init_data()
 }
 
 void
-Stripe::updateLiveData(enum Copy c)
+Stripe::updateLiveData([[maybe_unused]] enum Copy c)
 {
   //  CacheStoreBlocks delta{_meta_pos[c][FOOT] - _meta_pos[c][HEAD]};
   CacheStoreBlocks header_len(0);
@@ -442,7 +442,7 @@ Stripe::stripe_offset(CacheDirEntry *e)
 }
 
 int
-Stripe::dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_collision)
+Stripe::dir_probe(CryptoHash *key, [[maybe_unused]] CacheDirEntry *result, [[maybe_unused]] CacheDirEntry **last_collision)
 {
   int segment = key->slice32(0) % this->_segments;
   int bucket  = key->slice32(1) % this->_buckets;
