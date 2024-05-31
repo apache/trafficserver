@@ -140,6 +140,19 @@ ip_allow:
       - GET
 '''
 
+IP_ALLOW_MINIMUM = f'''
+ip_categories:
+  - name: ACME_LOCAL
+    ip_addrs: 127.0.0.1
+  - name: ACME_EXTERNAL
+    ip_addrs: 5.6.7.8
+
+ip_allow:
+  - apply: in
+    ip_addrs: 0/0
+    action: allow
+'''
+
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify non-allowed methods are blocked.",
     replay_file='remap_acl_get_post_allowed.replay.yaml',
@@ -296,3 +309,12 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration='@action=allow @in_ip=3.4.5.6 @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 403, 403, 403, 403])
+
+test_named_acl_deny = Test_remap_acl(
+    "Verify we can deny all but allow in a named acl.",
+    replay_file='get_head_post.replay.yaml',
+    ip_allow_content=IP_ALLOW_MINIMUM,
+    deactivate_ip_allow=False,
+    acl_configuration='',
+    named_acls=[('deny', '@action=deny @method=HEAD @method=POST')],
+    expected_responses=[200, 403, 403])
