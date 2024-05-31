@@ -18,7 +18,13 @@ Verify remap.config acl behavior.
 #  limitations under the License.
 
 import os
+import io
 import re
+import pathlib
+import inspect
+import tempfile
+from yaml import load, dump
+from yaml import CLoader as Loader
 from typing import List, Tuple
 
 Test.Summary = '''
@@ -138,6 +144,33 @@ ip_allow:
     action: allow
     methods:
       - GET
+'''
+
+IP_ALLOW_DENY = f'''
+ip_categories:
+  - name: ACME_LOCAL
+    ip_addrs: 127.0.0.1
+  - name: ACME_EXTERNAL
+    ip_addrs: 5.6.7.8
+
+ip_allow:
+  - apply: in
+    ip_addrs: 0/0
+    action: deny
+    methods:
+      - GET
+'''
+
+IP_ALLOW_MINIMUM = f'''
+ip_categories:
+  - name: ACME_LOCAL
+    ip_addrs: 127.0.0.1
+  - name: ACME_EXTERNAL
+    ip_addrs: 5.6.7.8
+ip_allow:
+  - apply: in
+    ip_addrs: 0/0
+    action: allow
 '''
 
 test_ip_allow_optional_methods = Test_remap_acl(
@@ -305,3 +338,261 @@ test_named_acl_deny = Test_remap_acl(
     acl_configuration='',
     named_acls=[('deny', '@action=deny @method=HEAD @method=POST')],
     expected_responses=[200, 403, 403, 403])
+'''
+From src/proxy/http/remap/RemapConfig.cc:123
+// ACLs are processed in this order:
+// 1. A remap.config ACL line for an individual remap rule.
+// 2. All named ACLs in remap.config.
+// 3. Rules as specified in ip_allow.yaml.
+
+
+A simple example is:
++--------+--------------+------------------+------------------+---------------+
+| Method | remap.config |    named ACL     |  ip_allow.yaml   |    result     |
++--------+--------------+------------------+------------------+---------------+
+| GET    |            - | allow (implicit) | allow (explicit) | allowed (200) |
+| HEAD   |            - | deny (explicit)  | -                | denied (403)  |
+| POST   |            - | deny (explicit)  | -                | denied (403)  |
+| PUT    |            - | allow (implicit) | deny (implicit)  | allowed (200) |
+| DELETE |            - | allow (implicit) | deny (implicit)  | allowed (200) |
+| PUSH   |            - | allow (implicit) | deny (implicit)  | allowed (200) |
+|--------+--------------+------------------+------------------+---------------+
+
+'''
+'''
+replay_proxy_response writes the given replay file (which expects a single GET & POST client-request)
+with the given proxy_response value. This is only used to support the below table test.
+'''
+
+
+def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_response):
+    current_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    path = os.path.join(current_dir, filename)
+    data = None
+    with open(path) as f:
+        data = load(f, Loader=Loader)
+        for session in data["sessions"]:
+            for transaction in session["transactions"]:
+                method = transaction["client-request"]["method"]
+                if method == "GET":
+                    transaction["proxy-response"]["status"] = get_proxy_response
+                elif method == "POST":
+                    transaction["proxy-response"]["status"] = post_proxy_response
+                else:
+                    raise Exception("Expected to find GET or POST request, found %s", method)
+    with open(replay_file, "w") as f:
+        f.write(dump(data))
+
+
+all_acl_combinations = [
+    {
+        "inline": "",
+        "named_acl": "",
+        "ip_allow": IP_ALLOW_MINIMUM,
+        "GET response": 200,
+        "POST response": 200,
+    },
+    {
+        "inline": "",
+        "named_acl": "",
+        "ip_allow": IP_ALLOW_CONTENT,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "",
+        "named_acl": "",
+        "ip_allow": IP_ALLOW_DENY,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "",
+        "named_acl": "@action=allow @method=GET",
+        "ip_allow": IP_ALLOW_MINIMUM,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "",
+        "named_acl": "@action=allow @method=GET",
+        "ip_allow": IP_ALLOW_CONTENT,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "",
+        "named_acl": "@action=allow @method=GET",
+        "ip_allow": IP_ALLOW_DENY,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "",
+        "named_acl": "@action=deny @method=GET",
+        "ip_allow": IP_ALLOW_MINIMUM,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "",
+        "named_acl": "@action=deny @method=GET",
+        "ip_allow": IP_ALLOW_CONTENT,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "",
+        "named_acl": "@action=deny @method=GET",
+        "ip_allow": IP_ALLOW_DENY,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "@action=allow @method=GET",
+        "named_acl": "",
+        "ip_allow": IP_ALLOW_MINIMUM,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "@action=allow @method=GET",
+        "named_acl": "",
+        "ip_allow": IP_ALLOW_CONTENT,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "@action=allow @method=GET",
+        "named_acl": "",
+        "ip_allow": IP_ALLOW_DENY,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "@action=allow @method=GET",
+        "named_acl": "@action=allow @method=GET",
+        "ip_allow": IP_ALLOW_MINIMUM,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "@action=allow @method=GET",
+        "named_acl": "@action=allow @method=GET",
+        "ip_allow": IP_ALLOW_CONTENT,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "@action=allow @method=GET",
+        "named_acl": "@action=allow @method=GET",
+        "ip_allow": IP_ALLOW_DENY,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "@action=allow @method=GET",
+        "named_acl": "@action=deny @method=GET",
+        "ip_allow": IP_ALLOW_MINIMUM,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "@action=allow @method=GET",
+        "named_acl": "@action=deny @method=GET",
+        "ip_allow": IP_ALLOW_CONTENT,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "@action=allow @method=GET",
+        "named_acl": "@action=deny @method=GET",
+        "ip_allow": IP_ALLOW_DENY,
+        "GET response": 200,
+        "POST response": 403,
+    },
+    {
+        "inline": "@action=deny @method=GET",
+        "named_acl": "",
+        "ip_allow": IP_ALLOW_MINIMUM,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "@action=deny @method=GET",
+        "named_acl": "",
+        "ip_allow": IP_ALLOW_CONTENT,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "@action=deny @method=GET",
+        "named_acl": "",
+        "ip_allow": IP_ALLOW_DENY,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "@action=deny @method=GET",
+        "named_acl": "@action=allow @method=GET",
+        "ip_allow": IP_ALLOW_MINIMUM,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "@action=deny @method=GET",
+        "named_acl": "@action=allow @method=GET",
+        "ip_allow": IP_ALLOW_CONTENT,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "@action=deny @method=GET",
+        "named_acl": "@action=allow @method=GET",
+        "ip_allow": IP_ALLOW_DENY,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "@action=deny @method=GET",
+        "named_acl": "@action=deny @method=GET",
+        "ip_allow": IP_ALLOW_MINIMUM,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "@action=deny @method=GET",
+        "named_acl": "@action=deny @method=GET",
+        "ip_allow": IP_ALLOW_CONTENT,
+        "GET response": 403,
+        "POST response": 200,
+    },
+    {
+        "inline": "@action=deny @method=GET",
+        "named_acl": "@action=deny @method=GET",
+        "ip_allow": IP_ALLOW_DENY,
+        "GET response": 403,
+        "POST response": 200,
+    },
+]
+"""
+Test all acl combinations
+"""
+for idx, test in enumerate(all_acl_combinations):
+    (_, replay_file_name) = tempfile.mkstemp(suffix="table_test_{}.replay".format(idx))
+    replay_proxy_response(
+        "base.replay.yaml",
+        replay_file_name,
+        test["GET response"],
+        test["POST response"],
+    )
+    Test.Summary = "table test {0}".format(idx)
+    Test_remap_acl(
+        "{0} {1} {2}".format(test["inline"], test["named_acl"], test["ip_allow"]),
+        replay_file=replay_file_name,
+        ip_allow_content=test["ip_allow"],
+        deactivate_ip_allow=False,
+        acl_configuration=test["inline"],
+        named_acls=[("acl", test["named_acl"])] if test["named_acl"] != "" else [],
+        expected_responses=[test["GET response"], test["POST response"]],
+    )
