@@ -494,16 +494,16 @@ XpackDynamicTable::_expand_storage_size(uint32_t new_storage_size)
 }
 
 bool
-XpackDynamicTable::_make_space(uint64_t required_size)
+XpackDynamicTable::_make_space(uint64_t extra_space_needed)
 {
   if (is_empty()) {
-    // if the table is empty, skip and just check if there is enough space
-    return required_size <= this->_available;
+    // If the table is empty, there's nothing to free.
+    return extra_space_needed == 0;
   }
   uint32_t freed = 0;
   uint32_t tail  = this->_calc_index(this->_entries_tail, 1);
 
-  while (required_size > freed) {
+  while (extra_space_needed > freed) {
     if (this->_entries_head < tail) {
       break;
     }
@@ -523,7 +523,7 @@ XpackDynamicTable::_make_space(uint64_t required_size)
     XPACKDbg("Available size: %u", this->_available);
   }
 
-  return required_size <= this->_available;
+  return freed >= extra_space_needed;
 }
 
 uint32_t
