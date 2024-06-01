@@ -199,7 +199,7 @@ ServerBacktrace(unsigned /* options */, int pid, char **trace)
 #else /* TS_USE_REMOTE_UNWINDING */
 
 int
-ServerBacktrace([[maybe_unused]] unsigned options, [[maybe_unused]] int pid:, char **trace)
+ServerBacktrace([[maybe_unused]] unsigned options, [[maybe_unused]] int pid, char **trace)
 {
   *trace = nullptr;
   return -1;
