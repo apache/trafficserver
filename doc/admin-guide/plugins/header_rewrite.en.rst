@@ -775,6 +775,14 @@ changing the remapped destination, ``<part>`` should be used to indicate the
 component that is being modified (see `URL Parts`_). Currently the only valid
 parts for rm-destination are QUERY, PATH, and PORT.
 
+For the query parameter, this operator takes an optional second argument,
+which is a list of query parameters to remove (or keep with ``[INV]`` modifier).
+
+::
+
+  rm-destination QUERY <comma separate list of query parameter>
+
+
 run-plugin
 ~~~~~~~~~~~~~~
 ::
@@ -899,6 +907,7 @@ The flags currently supported are:
 Flag   Description
 ====== ========================================================================
 L      Last rule, do not continue.
+I      Invert the semantics of the rules parameters
 QSA    Append the results of the rule to the query string.
 ====== ========================================================================
 
@@ -1332,6 +1341,16 @@ The following ruleset removes any query parameters set by the client.::
 
    cond %{REMAP_PSEUDO_HOOK}
    rm-destination QUERY
+
+Remove only a few select query parameters:
+
+   cond %{REMAP_PSEUDO_HOOK}
+   rm-destination QUERY foo,bar
+
+Keep only a few select query parameters -- removing the rest:
+
+   cond %{REMAP_PSEUDO_HOOK}
+   rm-destination QUERY foo,bar [I]
 
 Mimic X-Debug Plugin's X-Cache Header
 -------------------------------------
