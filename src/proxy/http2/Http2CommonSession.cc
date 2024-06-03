@@ -419,6 +419,9 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
 bool
 Http2CommonSession::_should_do_something_else()
 {
+  if (this->get_proxy_session()->is_peer_closed()) {
+    return false;
+  }
   if (this->_interrupt_reading_frames) {
     this->_interrupt_reading_frames = false;
     return true;
