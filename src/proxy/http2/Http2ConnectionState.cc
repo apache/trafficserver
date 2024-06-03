@@ -1905,6 +1905,10 @@ Http2ConnectionState::restart_streams()
 void
 Http2ConnectionState::restart_receiving(Http2Stream *stream)
 {
+  if (this->session->get_proxy_session()->is_peer_closed()) {
+    // Cannot restart a closed connection.
+    return;
+  }
   // Connection level WINDOW UPDATE
   uint32_t const configured_session_window = this->_get_configured_receive_session_window_size();
   uint32_t const min_session_window =
