@@ -169,7 +169,7 @@ becomes the writable string heap for the header heap.
 Each heap object is responsible for providing a :code:`move_strings` method which copies its strings
 to a new string heap, passed as an argument. This is a source of pointer invalidation for other
 parts of the core and the plugin API. For the latter, insulating from such string movement is the
-point of the :c:type:`TSMLoc` type.
+point of the :cpp:type:`TSMLoc` type.
 
 String Allocation
 -----------------

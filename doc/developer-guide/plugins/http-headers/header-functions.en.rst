@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-http-headers-functions:
 
@@ -149,28 +150,28 @@ known schemes, since this removes the possibility of a spelling error.
 
 The **HTTP Header Functions** are listed below:
 
--  :c:func:`TSHttpHdrClone`
--  :c:func:`TSHttpHdrCopy`
--  :c:func:`TSHttpHdrCreate`
--  :c:func:`TSHttpHdrDestroy`
--  :c:func:`TSHttpHdrLengthGet`
--  :c:func:`TSHttpHdrMethodGet`
--  :c:func:`TSHttpHdrMethodSet`
--  :c:func:`TSHttpHdrPrint`
--  :c:func:`TSHttpHdrReasonGet`
--  :c:func:`TSHttpHdrReasonLookup`
--  :c:func:`TSHttpHdrReasonSet`
--  :c:func:`TSHttpHdrStatusGet`
--  :c:func:`TSHttpHdrStatusSet`
--  :c:func:`TSHttpHdrTypeGet`
--  :c:func:`TSHttpHdrTypeSet`
--  :c:func:`TSHttpHdrUrlGet`
--  :c:func:`TSHttpHdrUrlSet`
--  :c:func:`TSHttpHdrVersionGet`
--  :c:func:`TSHttpHdrVersionSet`
--  :c:func:`TSHttpParserClear`
--  :c:func:`TSHttpParserCreate`
--  :c:func:`TSHttpParserDestroy`
--  :c:func:`TSHttpHdrParseReq`
--  :c:func:`TSHttpHdrParseResp`
+-  :func:`TSHttpHdrClone`
+-  :func:`TSHttpHdrCopy`
+-  :func:`TSHttpHdrCreate`
+-  :func:`TSHttpHdrDestroy`
+-  :func:`TSHttpHdrLengthGet`
+-  :func:`TSHttpHdrMethodGet`
+-  :func:`TSHttpHdrMethodSet`
+-  :func:`TSHttpHdrPrint`
+-  :func:`TSHttpHdrReasonGet`
+-  :func:`TSHttpHdrReasonLookup`
+-  :func:`TSHttpHdrReasonSet`
+-  :func:`TSHttpHdrStatusGet`
+-  :func:`TSHttpHdrStatusSet`
+-  :func:`TSHttpHdrTypeGet`
+-  :func:`TSHttpHdrTypeSet`
+-  :func:`TSHttpHdrUrlGet`
+-  :func:`TSHttpHdrUrlSet`
+-  :func:`TSHttpHdrVersionGet`
+-  :func:`TSHttpHdrVersionSet`
+-  :func:`TSHttpParserClear`
+-  :func:`TSHttpParserCreate`
+-  :func:`TSHttpParserDestroy`
+-  :func:`TSHttpHdrParseReq`
+-  :func:`TSHttpHdrParseResp`
 

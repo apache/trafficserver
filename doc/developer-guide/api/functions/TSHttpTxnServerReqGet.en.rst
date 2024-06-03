@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpTxnServerReqGet
 *********************
@@ -45,11 +45,11 @@ look something like ::
       /* mbuffer, mloc in an undefined state */
    }
 
-This call returns :c:macro:`TS_SUCCESS` on success, and :c:macro:`TS_ERROR` on failure. It is the
+This call returns :enumerator:`TS_SUCCESS` on success, and :enumerator:`TS_ERROR` on failure. It is the
 caller's responsibility to see that :arg:`txnp` is a valid transaction.
 
 Once the request object is obtained, it can be used to access all of the elements of the request,
 such as the URL, the header fields, etc. This is also the mechanism by which a plugin can change the
 upstream request, if done before the request is sent (in or before
-:c:macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK`). Note that for earlier hooks, the request may not yet
+:enumerator:`TS_HTTP_SEND_REQUEST_HDR_HOOK`). Note that for earlier hooks, the request may not yet
 exist, in which case an error is returned.

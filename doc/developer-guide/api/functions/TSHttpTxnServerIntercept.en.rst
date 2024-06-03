@@ -17,7 +17,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpTxnServerIntercept
 ************************
@@ -39,17 +39,17 @@ Description
 :func:`TSHttpTxnServerIntercept` allows a plugin take over the servicing of the
 request as though it was the origin server. In the event a request needs to be
 made to the server for transaction :arg:`txnp`, :arg:`contp` will be sent a
-:macro:`TS_EVENT_NET_ACCEPT` event. The :arg:`edata` passed with
-:macro:`TS_EVENT_NET_ACCEPT` is an :type:`TSVConn` just as it would be for a
+:enumerator:`TS_EVENT_NET_ACCEPT` event. The :arg:`edata` passed with
+:enumerator:`TS_EVENT_NET_ACCEPT` is an :type:`TSVConn` just as it would be for a
 normal accept. The plugin must act as if it is an HTTP server and read the HTTP
 request and body from the :type:`TSVConn` and send an HTTP response header and
 body.
 
 :func:`TSHttpTxnServerIntercept` must be not be called after the connection to
 the server has taken place. This means that the last hook that it can be called
-from is :data:`TS_HTTP_READ_CACHE_HDR_HOOK`. If a connection to the server is
+from is :cpp:enumerator:`TS_HTTP_READ_CACHE_HDR_HOOK`. If a connection to the server is
 not necessary, the continuation :arg:`contp` will be sent a
-:macro:`TS_EVENT_NET_ACCEPT_FAILED` event when the transaction completes.
+:enumerator:`TS_EVENT_NET_ACCEPT_FAILED` event when the transaction completes.
 
 The response from the plugin is cached subject to standard and configured HTTP
 caching rules. Should the plugin wish the response not be cached, the plugin

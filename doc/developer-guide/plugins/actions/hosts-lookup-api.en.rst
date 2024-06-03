@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-actions-hosts-lookup:
 
@@ -27,6 +28,6 @@ lookup of a host name, much like a DNS lookup.
 
 The hosts lookup functions are as follows:
 
--  :c:func:`TSHostLookup`
--  :c:func:`TSHostLookupResultAddrGet`
+-  :func:`TSHostLookup`
+-  :func:`TSHostLookupResultAddrGet`
 

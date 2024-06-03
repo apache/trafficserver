@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-examples-denylist:
 
@@ -99,8 +100,8 @@ that might be sent to it:
 
 When you write handler functions, you have to anticipate any events that
 might be sent to the handler by hooks or by other functions. In the
-Denylist plugin, ``TS_EVENT_OS_DNS`` is sent because of the global hook
-established in ``TSPluginInit``, ``TS_EVENT_HTTP_SEND_RESPONSE_HDR`` is
+Denylist plugin, :enumerator:`TS_EVENT_HTTP_OS_DNS` is sent because of the global hook
+established in ``TSPluginInit``, :enumerator:`TS_EVENT_HTTP_SEND_RESPONSE_HDR` is
 sent because the plugin contains a transaction hook
 (see :ref:`developer-plugins-examples-denylist-txn-hook`).
 It is good practice to have a default case in your switch statements.

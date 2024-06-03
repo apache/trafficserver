@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpHdrHostGet
 ****************
@@ -41,5 +41,5 @@ header field.
 
 .. note::
 
-   This is much faster than calling :c:func:`TSHttpTxnEffectiveUrlStringGet` and
+   This is much faster than calling :func:`TSHttpTxnEffectiveUrlStringGet` and
    extracting the host from the result.

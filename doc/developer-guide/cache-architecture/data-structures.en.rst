@@ -453,6 +453,10 @@ Data Structures
 
     .. member:: Queue<ConfigVol> cp_queue
 
+.. union:: CryptoHash
+
+   Used for cache keys, along with other cache related operations.
+
 .. class:: Cache
 
    Base object for a cache.

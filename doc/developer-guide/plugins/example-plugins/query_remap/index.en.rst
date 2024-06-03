@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-examples-query-remap:
 
@@ -53,16 +54,16 @@ Required Functions
 
 A remap plugin is required to implement the following functions:
 
--  :c:func:`TSRemapInit`:
+-  :func:`TSRemapInit`:
    the remap initialization function, called once when the plugin is
    loaded
 
--  :c:func:`TSRemapNewInstance`:
+-  :func:`TSRemapNewInstance`:
    a new instance is created for each rule associated with the plugin.
    Called each time the plugin used in a remap rule (this function is
    what processes the pparam values)
 
--  :c:func:`TSRemapDoRemap`:
+-  :func:`TSRemapDoRemap`:
    the entry point used by Traffic Server to find the new URL to which
    it remaps; called every time a request comes in
 

@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../../common.defs
+.. default-domain:: cpp
 
 Setting a Transaction Hook
 **************************
@@ -40,7 +41,7 @@ Basic authorization or a valid username/password, then it adds a
 ``SEND_RESPONSE_HDR_HOOK`` to the transaction being processed. This
 means that Traffic Server will call the plugin back when sending the
 client response. ``handle_dns`` reenables the transaction with
-``TS_EVENT_HTTP_ERROR``, which means that the plugin wants Traffic
+:enumerator:`TS_EVENT_HTTP_ERROR`, which means that the plugin wants Traffic
 Server to terminate the transaction.
 
 When Traffic Server terminates the transaction, it sends the client an

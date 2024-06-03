@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSUuidCreate
 ************
@@ -99,7 +99,7 @@ Return Values
 
 The :type:`TSUuid` type is an opaque pointer to an internal representation of
 the UUID object. Several of the functions returns a normal Traffic Server
-return status code, :type:`TSReturnCode`. You should verify the success of
+return status code, :enum:`TSReturnCode`. You should verify the success of
 those APIs, of course.
 
 The :func:`TSUuidStringGet` function will return ``nullptr`` if the :type:`TSUuid`

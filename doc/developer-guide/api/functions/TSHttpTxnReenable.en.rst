@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpTxnReenable
 *****************
@@ -37,7 +37,7 @@ Description
 ===========
 
 The plugin tells the transaction :arg:`txnp` to either continue
-(:data:`TS_EVENT_HTTP_CONTINUE`) or stop (:data:`TS_EVENT_HTTP_ERROR`).
+(:enumerator:`TS_EVENT_HTTP_CONTINUE`) or stop (:enumerator:`TS_EVENT_HTTP_ERROR`).
 
 .. important::
 
