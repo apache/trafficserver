@@ -56,6 +56,8 @@ target_link_libraries(
 )
 
 if(BUILD_TESTING)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/var)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/config)
   add_executable(test_jsonrpc jsonrpc/unit_tests/unit_test_main.cc jsonrpc/unit_tests/test_basic_protocol.cc)
   target_link_libraries(
     test_jsonrpc ts::tsutil catch2::catch2 ts::rpcpublichandlers ts::jsonrpc_protocol libswoc::libswoc
