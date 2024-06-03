@@ -173,17 +173,6 @@ OperatorSetDestination::initialize(Parser &p)
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
 }
 
-// OperatorRMDestination
-void
-OperatorRMDestination::initialize(Parser &p)
-{
-  Operator::initialize(p);
-
-  _url_qual = parse_url_qualifier(p.get_arg());
-  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
-  require_resources(RSRC_SERVER_REQUEST_HEADERS);
-}
-
 void
 OperatorSetDestination::exec(const Resources &res) const
 {
@@ -293,12 +282,45 @@ OperatorSetDestination::exec(const Resources &res) const
   }
 }
 
+#include <iostream>
+
+// OperatorRMDestination
+static std::vector<std::string_view>
+_tokenize(swoc::TextView text, char delimiter)
+{
+  std::vector<std::string_view> tokens;
+
+  while (text) {
+    tokens.push_back(text.take_prefix_at(delimiter));
+  }
+
+  return tokens;
+}
+
+void
+OperatorRMDestination::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _url_qual = parse_url_qualifier(p.get_arg());
+  _stop     = p.get_value();
+
+  if (!_stop.empty()) {
+    if (get_oper_modifiers() & OPER_INV) {
+      _keep = true;
+    }
+    _stop_list = _tokenize(_stop, ',');
+  }
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+}
+
 void
 OperatorRMDestination::exec(const Resources &res) const
 {
   if (res._rri || (res.bufp && res.hdr_loc)) {
-    // Default empty string to delete components
-    static std::string value = "";
+    std::string value = "";
 
     // Determine which TSMBuffer and TSMLoc to use
     TSMBuffer bufp;
@@ -322,9 +344,30 @@ OperatorRMDestination::exec(const Resources &res) const
       Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() deleting PATH");
       break;
     case URL_QUAL_QUERY:
+      if (_stop_list.size() > 0) {
+        int         q_len = 0;
+        const char *query = TSUrlHttpQueryGet(bufp, url_m_loc, &q_len);
+
+        if (q_len > 0) {
+          for (auto &q : _tokenize({query, static_cast<size_t>(q_len)}, '&')) {
+            auto eq_pos = q.find('=');
+            auto it = std::find(_stop_list.begin(), _stop_list.end(), (eq_pos != std::string_view::npos) ? q.substr(0, eq_pos) : q);
+
+            if (_keep == (it != _stop_list.end())) {
+              if (!value.empty()) {
+                value.append("&").append(q);
+              } else {
+                value = q;
+              }
+            }
+          }
+        }
+        Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() rewrote QUERY to \"%s\"", value.c_str());
+      } else {
+        Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() deleting QUERY");
+      }
       const_cast<Resources &>(res).changed_url = true;
       TSUrlHttpQuerySet(bufp, url_m_loc, value.c_str(), value.size());
-      Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() deleting QUERY");
       break;
     case URL_QUAL_PORT:
       const_cast<Resources &>(res).changed_url = true;
