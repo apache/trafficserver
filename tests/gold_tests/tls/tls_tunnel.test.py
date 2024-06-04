@@ -234,7 +234,7 @@ tr.Processes.Default.Command = (
 tr.ReturnCode = 1
 tr.TimeOut = 5
 tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl.SSLEOFError", "Verify a the handshake failed")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl.SSL.*Error:.*EOF", "Verify a the handshake failed")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"Rejected a tunnel to port {rejected_port} not in connect_ports", "Verify the tunnel was rejected")
 
