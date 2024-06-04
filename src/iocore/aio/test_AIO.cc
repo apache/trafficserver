@@ -90,21 +90,20 @@ int    seq_write_size         = 0;
 int    rand_read_size         = 0;
 
 struct AIO_Device : public Continuation {
-  char        *path;
-  int          fd;
-  int          id;
-  char        *buf;
-  ink_hrtime   time_start, time_end;
-  int          seq_reads;
-  int          seq_writes;
-  int          rand_reads;
-  int          hotset_idx;
-  int          mode;
-  AIOCallback *io;
-  AIO_Device(ProxyMutex *m) : Continuation(m)
+  char                        *path;
+  int                          fd;
+  int                          id;
+  char                        *buf;
+  ink_hrtime                   time_start, time_end;
+  int                          seq_reads;
+  int                          seq_writes;
+  int                          rand_reads;
+  int                          hotset_idx;
+  int                          mode;
+  std::unique_ptr<AIOCallback> io;
+  AIO_Device(ProxyMutex *m) : Continuation(m), io{new_AIOCallback()}
   {
     hotset_idx = 0;
-    io         = new_AIOCallback();
     time_start = 0;
     SET_HANDLER(&AIO_Device::do_hotset);
   }
@@ -259,7 +258,7 @@ AIO_Device::do_hotset(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   io->aiocb.aio_buf    = buf;
   io->action           = this;
   io->thread           = mutex->thread_holding;
-  ink_assert(ink_aio_write(io) >= 0);
+  ink_assert(ink_aio_write(io.get()) >= 0);
   hotset_idx++;
   return 0;
 }
@@ -303,7 +302,7 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     io->aiocb.aio_offset     = seq_read_point;
     io->aiocb.aio_nbytes     = seq_read_size;
     io->aiocb.aio_lio_opcode = LIO_READ;
-    ink_assert(ink_aio_read(io) >= 0);
+    ink_assert(ink_aio_read(io.get()) >= 0);
     seq_read_point += seq_read_size;
     if (seq_read_point > max_offset) {
       seq_read_point = MIN_OFFSET;
@@ -315,7 +314,7 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     io->aiocb.aio_nbytes     = seq_write_size;
     io->aiocb.aio_lio_opcode = LIO_WRITE;
     do_touch_data(seq_write_size, (static_cast<int>(seq_write_point)) % 1024);
-    ink_assert(ink_aio_write(io) >= 0);
+    ink_assert(ink_aio_write(io.get()) >= 0);
     seq_write_point += seq_write_size;
     seq_write_point += write_skip;
     if (seq_write_point > max_offset) {
@@ -342,7 +341,7 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     io->aiocb.aio_offset     = o;
     io->aiocb.aio_nbytes     = rand_read_size;
     io->aiocb.aio_lio_opcode = LIO_READ;
-    ink_assert(ink_aio_read(io) >= 0);
+    ink_assert(ink_aio_read(io.get()) >= 0);
     rand_reads++;
     break;
   }
