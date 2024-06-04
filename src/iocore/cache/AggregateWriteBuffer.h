@@ -74,8 +74,7 @@ public:
    * overrun the buffer.
    *
    * The buffer position will be updated to the end of the document's data
-   * and the document length will be subtracted from the bytes pending
-   * aggregation.
+   * and approx_size will be subtracted from the bytes pending aggregation.
    *
    * @param document: A pointer to the document to add to the buffer. It must
    *   have a correct len field, and its headers and data must follow it. This
@@ -96,8 +95,7 @@ public:
    * condition is not met, the new document may overrun the buffer.
    *
    * The buffer position will be updated to the end of the document's data
-   * and the document length will be subtracted from the bytes pending
-   * aggregation.
+   * and approx_size will be subtracted from the bytes pending aggregation.
    *
    * The new document will be uninitialized.
    *
