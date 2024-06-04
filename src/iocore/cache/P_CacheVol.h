@@ -329,7 +329,7 @@ private:
   void _init_dir();
   void _init_data_internal();
   void _init_data();
-  int  agg_copy(CacheVC *vc);
+  int  _agg_copy(CacheVC *vc);
   bool flush_aggregate_write_buffer();
 
   AggregateWriteBuffer _write_buffer;

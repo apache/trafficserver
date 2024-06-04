@@ -638,7 +638,7 @@ Stripe::evac_range(off_t low, off_t high, int evac_phase)
 }
 
 int
-Stripe::agg_copy(CacheVC *vc)
+Stripe::_agg_copy(CacheVC *vc)
 {
   off_t o = this->header->write_pos + this->get_agg_buf_pos();
 
@@ -988,7 +988,7 @@ Stripe::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &tocall
     }
     DDbg(dbg_ctl_agg_read, "copying: %d, %" PRIu64 ", key: %d", this->_write_buffer.get_buffer_pos(),
          this->header->write_pos + this->_write_buffer.get_buffer_pos(), c->first_key.slice32(0));
-    [[maybe_unused]] int wrotelen = this->agg_copy(c);
+    [[maybe_unused]] int wrotelen = this->_agg_copy(c);
     ink_assert(writelen == wrotelen);
     CacheVC *n = (CacheVC *)c->link.next;
     this->_write_buffer.get_pending_writers().dequeue();
