@@ -22,8 +22,8 @@
 
 namespace Bundle
 {
+const Cript::string LogsMetrics::_name = "Bundle::LogsMetrics";
 
-// Bundle::LogsMetrics
 namespace
 {
   enum {

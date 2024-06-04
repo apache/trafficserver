@@ -408,7 +408,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
     for (auto &bundle : inst->bundles) {
       // Collect all the callbacks needed from all bundles, and validate them
-      if (bundle->validate(errors)) {
+      if (!bundle->validate(errors)) {
         inst->needCallback(bundle->callbacks());
       }
     }
