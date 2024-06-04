@@ -50,10 +50,6 @@ protected:
 
 }; // class HRWBridge
 
-} // namespace detail
-
-namespace
-{
 // We support 4 different type of header operations, so isolate the common code
 class HeadersType
 {
@@ -74,7 +70,7 @@ public:
   std::vector<Cript::string>                                 rm_headers;
   std::vector<std::pair<Cript::string, detail::HRWBridge *>> set_headers;
 };
-} // namespace
+} // namespace detail
 
 namespace Bundle
 {
@@ -118,10 +114,10 @@ public:
 private:
   static const Cript::string _name;
 
-  HeadersType _client_request;
-  HeadersType _client_response;
-  HeadersType _server_request;
-  HeadersType _server_response;
+  detail::HeadersType _client_request;
+  detail::HeadersType _client_response;
+  detail::HeadersType _server_request;
+  detail::HeadersType _server_response;
 };
 
 } // namespace Bundle

@@ -335,15 +335,17 @@ public:
     return TSHttpTxnIsInternal(_state->txnp);
   }
 
-  [[nodiscard]] virtual int count() const    = 0;
-  virtual void              setDscp(int val) = 0;
-  virtual void              setMark(int val) = 0;
-  Dscp                      dscp;
-  Congestion                congestion;
-  TcpInfo                   tcpinfo;
-  Geo                       geo;
-  Pacing                    pacing;
-  Mark                      mark;
+  [[nodiscard]] virtual Cript::IP localIP() const;
+  [[nodiscard]] virtual int       count() const    = 0;
+  virtual void                    setDscp(int val) = 0;
+  virtual void                    setMark(int val) = 0;
+
+  Dscp       dscp;
+  Congestion congestion;
+  TcpInfo    tcpinfo;
+  Geo        geo;
+  Pacing     pacing;
+  Mark       mark;
 
   Cript::string_view string(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
 
@@ -384,6 +386,12 @@ public:
     TSHttpTxnClientPacketMarkSet(_state->txnp, val);
   }
 
+  [[nodiscard]] Cript::IP
+  localIP() const override
+  {
+    return Cript::IP(TSHttpTxnIncomingAddrGet(_state->txnp));
+  }
+
 }; // End class Client::Connection
 
 } // namespace Client
@@ -414,6 +422,12 @@ public:
   setMark(int val) override
   {
     TSHttpTxnServerPacketMarkSet(_state->txnp, val);
+  }
+
+  [[nodiscard]] Cript::IP
+  localIP() const override
+  {
+    return Cript::IP(TSHttpTxnOutgoingAddrGet(_state->txnp));
   }
 
 }; // End class Server::Connection

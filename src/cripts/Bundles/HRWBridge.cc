@@ -30,16 +30,16 @@ class ID : public detail::HRWBridge
   using self_type  = ID;
   using super_type = detail::HRWBridge;
 
-  enum class Type { none, REQUEST, PROCESS, UNIQUE };
+  enum class Type : uint8_t { none, REQUEST, PROCESS, UNIQUE };
 
 public:
   ID(const self_type &)             = delete;
   void operator=(const self_type &) = delete;
 
   ID(const Cript::string_view &id);
-  virtual ~ID() = default;
+  ~ID() override = default;
 
-  virtual Cript::string_view value(Cript::Context *context) override;
+  Cript::string_view value(Cript::Context *context) override;
 
 private:
   Type _type = Type::none;
@@ -80,25 +80,90 @@ ID::value(Cript::Context *context)
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// Bridge for the ID class
+class IP : public detail::HRWBridge
+{
+  using self_type  = IP;
+  using super_type = detail::HRWBridge;
+
+  enum class Type : uint8_t { none, CLIENT, INBOUND, SERVER, OUTBOUND };
+
+public:
+  IP(const self_type &)             = delete;
+  void operator=(const self_type &) = delete;
+
+  IP(const Cript::string_view &iP);
+  ~IP() override = default;
+
+  Cript::string_view value(Cript::Context *context) override;
+
+private:
+  Type _type = Type::none;
+};
+
+IP::IP(const Cript::string_view &ip) : super_type(ip)
+{
+  if (ip == "CLIENT") {
+    _type = Type::CLIENT;
+  } else if (ip == "INBOUND") {
+    _type = Type::INBOUND;
+  } else if (ip == "SERVER") {
+    _type = Type::SERVER;
+  } else if (ip == "OUTBOUND") {
+    _type = Type::INBOUND;
+  } else {
+    TSReleaseAssert(!"Invalid IP type in HRWBridge");
+  }
+}
+
+Cript::string_view
+IP::value(Cript::Context *context)
+{
+  switch (_type) {
+  case Type::CLIENT: {
+    auto ip = Client::Connection::get().ip();
+    _value  = ip.string();
+  } break;
+  case Type::INBOUND: {
+    auto ip = Client::Connection::get().localIP();
+    _value  = ip.string();
+  } break;
+  case Type::SERVER: {
+    auto ip = Server::Connection::get().ip();
+    _value  = ip.string();
+  } break;
+  case Type::OUTBOUND: {
+    auto ip = Server::Connection::get().localIP();
+    _value  = ip.string();
+  } break;
+  default:
+    _value = "";
+    break;
+  }
+
+  return _value;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // Bridge for all URLs
 class URL : public detail::HRWBridge
 {
   using self_type  = URL;
   using super_type = detail::HRWBridge;
 
-  enum class Component { none, HOST, PATH, PORT, QUERY, SCHEME, URL };
+  enum class Component : uint8_t { none, HOST, PATH, PORT, QUERY, SCHEME, URL };
 
 public:
-  enum class Type { none, CLIENT, REMAP_FROM, REMAP_TO, PRISTINE, CACHE, PARENT };
+  enum class Type : uint8_t { none, CLIENT, REMAP_FROM, REMAP_TO, PRISTINE, CACHE, PARENT };
 
   URL(const self_type &)           = delete;
   URL operator=(const self_type &) = delete;
 
   URL(const Cript::string_view &) = delete;
   URL(Type utype, const Cript::string_view &comp);
-  virtual ~URL() = default;
+  ~URL() override = default;
 
-  virtual Cript::string_view value(Cript::Context *context) override;
+  Cript::string_view value(Cript::Context *context) override;
 
 private:
   Cript::string_view _getComponent(Cript::Url &url);
@@ -230,6 +295,9 @@ Bundle::Headers::bridgeFactory(const Cript::string &source)
 
     if (key == "ID") {
       return new detail::ID(str);
+    } else if (key == "IP") {
+      return new detail::IP(str);
+      // ToDo: We need CIDR:x,y support here, on the IP:CLIENT
     } else if (key == "FROM-URL") {
       return new detail::URL(detail::URL::Type::REMAP_FROM, str);
     } else if (key == "TO-URL") {

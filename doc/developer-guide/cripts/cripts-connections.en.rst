@@ -52,7 +52,26 @@ Connection Object           Description
 =======================   =========================================================================
 
 As usual, the ``Server::Connection`` object is only available assuming that the request
-is a forward proxy request. On cache misses, there is no such connection.
+is a forward proxy request, and you borrow it with the ``get()`` method. On cache misses,
+there is no such connection.
+
+.. _cripts-connections-methods:
+
+Connection Methods
+==================
+
+The connection objects provides a set of methods, used to access some internals details of the
+connections. These are:
+
+=======================   =========================================================================
+Method                    Description
+=======================   =========================================================================
+``count()``               The number of transactions processed on the connection so far.
+``ip()``                  The IP address of the connection.
+``localIP()``             The server (ATS) IP address of the connection.
+``isInternal()``          Returns ``true`` or ``false`` if the connection is internal to ATS.
+``socket()``              Returns the raw socket structure for the connection (use with care).
+=======================   =========================================================================
 
 .. _cripts-connections-variables:
 
@@ -64,7 +83,6 @@ Both connection objects provide a number of variables that can be accessed. Thes
 =======================   =========================================================================
 Variable                   Description
 =======================   =========================================================================
-``count``                 The number of transactions processed on the connection so far.
 ``tcpinfo``               A number of TCPinfo related fields (see below).
 ``geo``                   If available (compile time) access to Geo-IP data (see below).
 ``congestion``            Configure the congestion algorithm used on the socket.

@@ -22,7 +22,7 @@
 
 namespace
 {
-enum HeaderTargets {
+enum HeaderTargets : uint8_t {
   NONE,
   CLIENT_REQUEST,
   CLIENT_RESPONSE,
@@ -94,6 +94,7 @@ Headers::set_headers(const Cript::string_view target, const std::vector<std::pai
 {
   std::vector<std::pair<Cript::string, detail::HRWBridge *>> hdrs;
 
+  hdrs.reserve(headers.size());
   for (const auto &hdr : headers) {
     // ToDo: HRW brige this string
     hdrs.emplace_back(hdr.first, Headers::bridgeFactory(hdr.second));
