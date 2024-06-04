@@ -42,9 +42,15 @@ public:
   {
     auto *entry = new self_type();
 
-    inst.bundles.push_back(entry);
+    inst.addBundle(entry);
 
     return *entry;
+  }
+
+  const Cript::string &
+  name() const override
+  {
+    return _name;
   }
 
   self_type &
@@ -70,9 +76,10 @@ public:
   void doRemap(Cript::Context *context) override;
 
 private:
-  Cript::string _cc       = "";
-  int           _dscp     = 0;
-  bool          _force_cc = false;
+  static const Cript::string _name;
+  Cript::string              _cc       = "";
+  int                        _dscp     = 0;
+  bool                       _force_cc = false;
 };
 
 } // namespace Bundle
