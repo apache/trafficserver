@@ -62,7 +62,7 @@ signal_register_handler(int signal_num, signal_handler_t handle_signal)
 } // namespace
 
 int
-main(int argc, const char **argv)
+main([[maybe_unused]] int argc, const char **argv)
 {
   ts::ArgParser parser;
 

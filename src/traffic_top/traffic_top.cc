@@ -377,7 +377,7 @@ char reconnecting_animation[4] = {'|', '/', '-', '\\'};
 
 //----------------------------------------------------------------------------
 int
-main(int argc, const char **argv)
+main([[maybe_unused]] int argc, const char **argv)
 {
   static const char USAGE[] = "Usage: traffic_top [-s seconds]";
 

@@ -324,7 +324,7 @@ SocksProxy::state_read_client_request(int event, void *data)
 }
 
 int
-SocksProxy::state_read_socks4_client_request(int event, void *data)
+SocksProxy::state_read_socks4_client_request([[maybe_unused]] int event, [[maybe_unused]] void *data)
 {
   ink_assert(state == SOCKS_ACCEPT);
 
@@ -360,7 +360,7 @@ SocksProxy::state_read_socks4_client_request(int event, void *data)
 }
 
 int
-SocksProxy::state_read_socks5_client_auth_methods(int event, void *data)
+SocksProxy::state_read_socks5_client_auth_methods([[maybe_unused]] int event, [[maybe_unused]] void *data)
 {
   int64_t        n;
   unsigned char *p;
@@ -410,7 +410,7 @@ SocksProxy::state_read_socks5_client_auth_methods(int event, void *data)
 }
 
 int
-SocksProxy::state_send_socks5_auth_method(int event, void *data)
+SocksProxy::state_send_socks5_auth_method(int event, [[maybe_unused]] void *data)
 {
   ink_assert(state == SOCKS_ACCEPT);
   switch (event) {
@@ -435,7 +435,7 @@ SocksProxy::state_send_socks5_auth_method(int event, void *data)
 }
 
 int
-SocksProxy::state_read_socks5_client_request(int event, void *data)
+SocksProxy::state_read_socks5_client_request(int event, [[maybe_unused]] void *data)
 {
   int64_t        n;
   unsigned char *p;
@@ -545,7 +545,7 @@ SocksProxy::parse_socks_client_request(unsigned char *p)
 }
 
 int
-SocksProxy::state_handing_over_http_request(int event, void *data)
+SocksProxy::state_handing_over_http_request(int event, [[maybe_unused]] void *data)
 {
   int ret = EVENT_DONE;
 
@@ -580,7 +580,7 @@ SocksProxy::state_handing_over_http_request(int event, void *data)
 }
 
 int
-SocksProxy::state_send_socks_reply(int event, void *data)
+SocksProxy::state_send_socks_reply(int event, [[maybe_unused]] void *data)
 {
   int ret = EVENT_DONE;
 

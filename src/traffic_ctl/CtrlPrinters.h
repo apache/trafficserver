@@ -143,7 +143,7 @@ BasePrinter::is_records_format() const
 class GenericPrinter : public BasePrinter
 {
   void
-  write_output(YAML::Node const &result) override
+  write_output([[maybe_unused]] YAML::Node const &result) override
   {
     /* muted */
   }
