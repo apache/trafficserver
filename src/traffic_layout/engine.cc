@@ -152,7 +152,7 @@ path_handler(const std::string &path, bool run_flag, const std::string &command)
 
 // check if there is any directory inside empty_check_directory to see if it is empty or not
 static int
-check_directory_empty(const char *path, const struct stat *s, int flag)
+check_directory_empty(const char *path, [[maybe_unused]] const struct stat *s, int flag)
 {
   return std::string(path) != empty_check_directory ? -1 : 0;
 }

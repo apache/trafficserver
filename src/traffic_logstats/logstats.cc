@@ -1222,8 +1222,8 @@ find_or_create_stats(const char *key)
 ///////////////////////////////////////////////////////////////////////////////
 // Update the stats
 void
-update_stats(OriginStats *o_stats, const HTTPMethod method, URLScheme scheme, int http_code, int size, int result, int hier,
-             int elapsed, bool ipv6)
+update_stats(OriginStats *o_stats, const HTTPMethod method, URLScheme scheme, int http_code, int size, int result,
+             [[maybe_unused]] int hier, int elapsed, bool ipv6)
 {
   update_results_elapsed(&totals, result, elapsed, size);
   update_codes(&totals, http_code, size);
@@ -1956,7 +1956,7 @@ format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json, bool 
 }
 
 void
-format_detail_header(const char *desc, bool concise = false)
+format_detail_header(const char *desc, [[maybe_unused]] bool concise = false)
 {
   std::cout << std::left << std::setw(29) << desc;
   std::cout << std::right << std::setw(15) << "Count" << std::setw(11) << "Percent";
