@@ -220,6 +220,7 @@ private:
   int          advice;
 };
 
+#if TS_USE_ALLOCATOR_METRICS
 template <typename WrappedAllocator> class MeteredAllocator : public WrappedAllocator
 {
 public:
@@ -300,6 +301,13 @@ using Allocator = MeteredAllocator<MallocAllocator>;
 #else
 using Allocator = MeteredAllocator<FreelistAllocator>;
 #endif
+#else
+#if TS_USE_MALLOC_ALLOCATOR
+using Allocator = MallocAllocator;
+#else
+using Allocator = FreelistAllocator;
+#endif
+#endif // TS_USE_ALLOCATOR_METRICS
 
 /**
   Allocator for Class objects.
