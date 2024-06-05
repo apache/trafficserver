@@ -241,14 +241,16 @@ TEST_CASE("aggWrite behavior with f.evacuator unset")
 
     Doc doc;
 
+    std::size_t documents_read{};
     {
       // Other threads are still alive and may interact with the
       // cache periodically, so we should always grab the lock
       // whenever we interact with the underlying file.
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       fseek(file, document_offset, SEEK_SET);
-      fread(&doc, sizeof(Doc), 1, file);
+      documents_read = fread(&doc, sizeof(Doc), 1, file);
     }
+    REQUIRE(1 == documents_read);
 
     // An incorrect magic value would indicate that the document is corrupt.
     REQUIRE(DOC_MAGIC == doc.magic);
@@ -276,12 +278,14 @@ TEST_CASE("aggWrite behavior with f.evacuator unset")
 
     SECTION("then the document data should contain 'yay'.")
     {
-      char *data = new char[doc.data_len()];
+      std::size_t data_buffers_read{};
+      char       *data = new char[doc.data_len()];
       {
         SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
         fseek(file, document_offset + doc.prefix_len(), SEEK_SET);
-        fread(data, doc.data_len(), 1, file);
+        data_buffers_read = fread(data, doc.data_len(), 1, file);
       }
+      REQUIRE(1 == data_buffers_read);
       INFO("buffer content is \"" << data << "\"");
       CHECK(0 == strncmp("yay", data, 3));
       delete[] data;
@@ -341,14 +345,16 @@ TEST_CASE("aggWrite behavior with f.evacuator set")
 
     Doc doc;
 
+    std::size_t documents_read{};
     {
       // Other threads are still alive and may interact with the
       // cache periodically, so we should always grab the lock
       // whenever we interact with the underlying file.
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       fseek(file, document_offset, SEEK_SET);
-      fread(&doc, sizeof(Doc), 1, file);
+      documents_read = fread(&doc, sizeof(Doc), 1, file);
     }
+    REQUIRE(1 == documents_read);
 
     // An incorrect magic value would indicate that the document is corrupt.
     REQUIRE(DOC_MAGIC == doc.magic);
@@ -370,12 +376,14 @@ TEST_CASE("aggWrite behavior with f.evacuator set")
 
     SECTION("then the document data should contain 'yay'.")
     {
-      char *data = new char[doc.data_len()];
+      std::size_t data_buffers_read{};
+      char       *data = new char[doc.data_len()];
       {
         SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
         fseek(file, document_offset + doc.prefix_len(), SEEK_SET);
-        fread(data, doc.data_len(), 1, file);
+        data_buffers_read = fread(data, doc.data_len(), 1, file);
       }
+      REQUIRE(1 == data_buffers_read);
       INFO("buffer content is \"" << data << "\"");
       CHECK(0 == strncmp("yay", data, 3));
       delete[] data;
