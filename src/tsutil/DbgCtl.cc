@@ -150,6 +150,8 @@ DbgCtl::_new_reference(char const *tag)
   DebugInterface *p = DebugInterface::get_instance();
   debug_assert(tag != nullptr);
 
+  _TagData *new_tag_data{nullptr};
+
   // DbgCtl instances may be declared as static objects in the destructors of objects not destroyed till program exit.
   // So, we must handle the case where the construction of such instances of DbgCtl overlaps with the destruction of
   // other instances of DbgCtl.  That is why it is important to make sure the reference count is non-zero before
@@ -157,42 +159,46 @@ DbgCtl::_new_reference(char const *tag)
   // the Registry, the new Registry will not be destroyed before the mutex in the new Registry is locked.
 
   ++_RegistryAccessor::registry_reference_count;
+  {
+    _RegistryAccessor ra;
 
-  // There is a mutex in the C/C++ runtime that both dlopen() and _cxa_thread_atexit() lock while running.
+    auto &d{ra.data()};
+
+    if (auto it = d.map.find(tag); it != d.map.end()) {
+      return &*it;
+    }
+
+    auto sz = std::strlen(tag);
+
+    debug_assert(sz > 0);
+
+    char *t = new char[sz + 1]; // Deleted by ~Registry().
+    std::memcpy(t, tag, sz + 1);
+    _TagData new_elem{t, false};
+
+    auto res = d.map.insert(new_elem);
+
+    debug_assert(res.second);
+
+    new_tag_data = &*res.first;
+  }
+  new_tag_data->second = p && p->debug_tag_activated(tag);
+
+  // It is important that debug_tag_activated() is NOT called while the ra object exists, and the registry mutex is
+  // locked.  There is a mutex in the C/C++ runtime that both dlopen() and _cxa_thread_atexit() lock while running.
   // Creating a _RegistryAccessor instance locks the registry mutex.  If the subsequent code in this function triggers
-  // the construction of a thread_local variable (with a non-trivial destructor), the following deadlock scenario is
-  // possible:
+  // the construction of a thread_local variable (with a non-trivial destructor), with the registry mutex locked, the
+  // following deadlock scenario is possible:
   // 1.  Thread 1 calls a DbgCtl constructor, which locks the registry mutex, but then is suspended.
   // 2.  Thread 2 calls dlopen() for a plugin, locking the runtime mutex.  It then executes the constructor for a
   //     statically allocated DbgCtl object, which blocks on locking the registry mutex.
-  // 3.  Thread 1 resumes, and calls member functions of the derived class of DebugInterface.  If this causes the
-  //     the construction of a thread_local variable with a non-trivial destructor, _cxa_thread_atexit() will be called
-  //     to set up a call of the variable's destructor at thread exit.  The call to _cxa_thread_atexit() will block on
-  //     the runtime mutex (held by Thread 2).  So Thread 1 holds the registry mutex and is blocked waiting for the
-  //     runtime mutex.  And Thread 2 holds the runtime mutex and is blocked waiting for the registry mutex.  Deadlock.
-  //
-  // This deadlock is avoided by having the thread_local variable register its destruction in a non-thread_local class.
-  _RegistryAccessor ra;
+  // 3.  Thread 1 resumes, and calls a function that causes the the construction of a thread_local variable with a
+  //     non-trivial destructor.  This causes a call to _cxa_thread_atexit(), to set up a call of the variable's
+  //     destructor at thread exit.  The call to _cxa_thread_atexit() will block on the runtime mutex (held by Thread 2).
+  //     So Thread 1 holds the registry mutex and is blocked waiting for the runtime mutex.  And Thread 2 holds the
+  //     runtime mutex and is blocked waiting for the registry mutex.  Deadlock.
 
-  auto &d{ra.data()};
-
-  if (auto it = d.map.find(tag); it != d.map.end()) {
-    return &*it;
-  }
-
-  auto sz = std::strlen(tag);
-
-  debug_assert(sz > 0);
-
-  char *t = new char[sz + 1]; // Deleted by ~Registry().
-  std::memcpy(t, tag, sz + 1);
-  _TagData new_elem{t, p && p->debug_tag_activated(tag)};
-
-  auto res = d.map.insert(new_elem);
-
-  debug_assert(res.second);
-
-  return &*res.first;
+  return new_tag_data;
 }
 
 void
