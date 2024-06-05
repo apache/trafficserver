@@ -27,15 +27,15 @@ const Cript::string Common::_name = "Bundle::Common";
 bool
 Common::validate(std::vector<Cript::Bundle::Error> &errors) const
 {
-  bool failed = false;
+  bool good = true;
 
   // The .dscp() can only be 0 - 63
   if (_dscp < 0 || _dscp > 63) {
     errors.emplace_back("dscp must be between 0 and 63", name(), "dscp");
-    failed = true;
+    good = false;
   }
 
-  return failed;
+  return good;
 }
 
 void

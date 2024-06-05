@@ -121,6 +121,8 @@ private:
   friend class Client::Response;
   friend class Client::Connection;
   friend class Client::URL;
+  friend class Remap::From::URL;
+  friend class Remap::To::URL;
   friend class Server::Request;
   friend class Server::Response;
   friend class Server::Connection;
@@ -135,6 +137,8 @@ private:
   Client::Request    _client_req_header;
   Client::Connection _client_conn;
   Client::URL        _client_url;
+  Remap::From::URL   _remap_from_url;
+  Remap::To::URL     _remap_to_url;
   Pristine::URL      _pristine_url;
   Server::Response   _server_resp_header;
   Server::Request    _server_req_header;
