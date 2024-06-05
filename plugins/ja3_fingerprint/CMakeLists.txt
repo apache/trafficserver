@@ -15,8 +15,12 @@
 #
 #######################
 
-add_atsplugin(ja3_fingerprint ja3_fingerprint.cc)
+add_atsplugin(ja3_fingerprint ja3_fingerprint.cc ja3_utils.cc)
 
 target_link_libraries(ja3_fingerprint PRIVATE OpenSSL::SSL)
 verify_global_plugin(ja3_fingerprint)
 verify_remap_plugin(ja3_fingerprint)
+
+add_executable(test_ja3_fingerprint ja3_utils.cc test_utils.cc)
+target_link_libraries(test_ja3_fingerprint PRIVATE catch2::catch2)
+add_test(test_ja3_fingerprint test_ja3_fingerprint)
