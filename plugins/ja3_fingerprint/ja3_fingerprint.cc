@@ -16,17 +16,9 @@
   limitations under the License.
  */
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
 #include <getopt.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-#include <string>
-#include <unordered_set>
-#include <memory>
 
 #include "ts/apidefs.h"
 #include "ts/ts.h"
@@ -39,6 +31,13 @@
 #include <openssl/ssl.h>
 #include <openssl/md5.h>
 #include <openssl/opensslv.h>
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <memory>
+#include <string>
+#include <unordered_set>
 
 // Get 16bit big endian order and update pointer
 #define n2s(c, s) ((s = (((unsigned int)(c[0])) << 8) | (((unsigned int)(c[1])))), c += 2)
