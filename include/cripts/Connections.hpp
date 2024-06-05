@@ -64,6 +64,9 @@ private:
 
 } // namespace Cript
 
+namespace detail
+{
+
 class ConnBase
 {
   using self_type = ConnBase;
@@ -335,7 +338,7 @@ public:
     return TSHttpTxnIsInternal(_state->txnp);
   }
 
-  [[nodiscard]] virtual Cript::IP localIP() const;
+  [[nodiscard]] virtual Cript::IP localIP() const  = 0;
   [[nodiscard]] virtual int       count() const    = 0;
   virtual void                    setDscp(int val) = 0;
   virtual void                    setMark(int val) = 0;
@@ -357,12 +360,14 @@ protected:
 
 }; // End class ConnBase
 
+} // namespace detail
+
 namespace Client
 {
-class Connection : public ConnBase
+class Connection : public detail::ConnBase
 {
-  using super_type = ConnBase;
-  using self_type  = Connection;
+  using pe        = detail::ConnBase;
+  using self_type = Connection;
 
 public:
   Connection() = default;
@@ -398,10 +403,10 @@ public:
 
 namespace Server
 {
-class Connection : public ConnBase
+class Connection : public detail::ConnBase
 {
-  using super_type = ConnBase;
-  using self_type  = Connection;
+  using pe        = detail::ConnBase;
+  using self_type = Connection;
 
 public:
   Connection()                       = default;
