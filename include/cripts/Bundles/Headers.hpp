@@ -82,8 +82,6 @@ class Headers : public Cript::Bundle::Base
 public:
   using super_type::Base;
 
-  bool validate(std::vector<Cript::Bundle::Error> &errors) const override;
-
   // This is the factory to create an instance of this bundle
   static self_type &
   _activate(Cript::Instance &inst)

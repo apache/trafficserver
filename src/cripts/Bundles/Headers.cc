@@ -52,16 +52,6 @@ namespace Bundle
 {
 const Cript::string Headers::_name = "Bundle::Headers";
 
-bool
-Headers::validate(std::vector<Cript::Bundle::Error> &errors) const
-{
-  bool failed = false;
-  // errors.emplace_back("dscp must be between 0 and 63", name(), "dscp");
-  // failed = true;
-
-  return failed;
-}
-
 Headers::self_type &
 Headers::rm_headers(const Cript::string_view target, const std::vector<Cript::string> &headers)
 {
@@ -96,7 +86,6 @@ Headers::set_headers(const Cript::string_view target, const std::vector<std::pai
 
   hdrs.reserve(headers.size());
   for (const auto &hdr : headers) {
-    // ToDo: HRW brige this string
     hdrs.emplace_back(hdr.first, Headers::bridgeFactory(hdr.second));
   }
 
