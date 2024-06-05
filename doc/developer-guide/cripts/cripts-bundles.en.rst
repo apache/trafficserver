@@ -41,6 +41,7 @@ Bundle                         Description
 ============================   ====================================================================
 ``Bundle::Common``             For DSCP and an overridable Cache-Control header.
 ``Bundle::LogsMetrics``        Log sampling, TCPInfo  and per-remap metrics.
+``Bundle::Headers``            For removing or adding headers
 ============================   ====================================================================
 
 This example shows how a Cript would enable both of these bundles with all features:
@@ -69,3 +70,33 @@ This example shows how a Cript would enable both of these bundles with all featu
    The bundles are not enabled by default. You have to explicitly activate them in your Cript,
    with the appropriate include directives. This is because the list of Bundles may grow over time,
    as well as the build system allowing for custom bundles locally.
+
+
+.. _cripts-bundles-headers:
+
+Headers
+=======
+
+Even though adding or removing headers in Cripts is very straight forward, we've added the ``Bundle::Headers``
+for not only convenience, but also for easier integration and migratino with existing configurations. There
+are two main functions in this bundle:
+
+- ``rm_headers()``: Add a header to the request or response.
+- ``add_headers()``: Remove a header from the request or response.
+
+The ``rm_headers()`` function takes a list of headers to remove, while the ``add_headers()`` function takes a list
+of key-value pairs to add. The header values here are strings, but they can also be strings with the special
+operators from the ``header_rewrite`` plugin. For example:
+
+.. code-block:: cpp
+
+   #include <cripts/Preamble.hpp>
+   #include <cripts/Bundles/Headers.hpp>
+
+   do_create_instance()
+   {
+     Bundle::Headers::activate().rm_headers({"X-Header1", "X-Header2"})
+                                .add_headers({{"X-Header3", "value3"},
+                                              {"X-Header4", "%{FROM-URL:PATH}"},
+                                              {"X-Header5", "%{ID:UNIQUE}"} });
+   }

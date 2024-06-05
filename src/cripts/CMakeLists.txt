@@ -47,8 +47,9 @@ set(CRIPTS_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
 )
 
-set(CRIPTS_BUNDLE_HEADERS ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Common.hpp
-                          ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/LogsMetrics.hpp
+set(CRIPTS_BUNDLE_HEADERS
+    ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Common.hpp ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Headers.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/LogsMetrics.hpp
 )
 
 add_library(cripts SHARED ${CPP_FILES})
