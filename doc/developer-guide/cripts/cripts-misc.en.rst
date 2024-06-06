@@ -214,17 +214,17 @@ UUID
 ====
 
 Cripts supports generating a few different UUID (Universally Unique Identifier), for
-different purposes. The ``UUID`` object provides the following functions:
+different purposes. The ``UUID`` class provides the following objects:
 
 =========================   =======================================================================
-Function                    Description
+Object                      Description
 =========================   =======================================================================
 ``UUID::Process``           Returns a UUID for the running process (changes on ATS startup).
 ``UUID::Unique``            Returns a completely unique UUID for the server and transacion.
 ``UUID::Request``           Returns a unique id for this request.
 =========================   =======================================================================
 
-Using the ``UUID`` object is simple, via the ``get()`` method. Here's an example:
+Using the ``UUID`` object is simple, via the ``::get()`` method. Here's an example:
 
 .. code-block:: cpp
 

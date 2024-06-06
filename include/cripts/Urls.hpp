@@ -28,6 +28,8 @@
 #include "ts/remap.h"
 #include "ts/ts.h"
 
+#include "cripts/Headers.hpp"
+
 namespace Cript
 {
 class Context;
@@ -550,6 +552,12 @@ public:
     return _urlp;
   }
 
+  virtual bool
+  readOnly() const
+  {
+    return false;
+  }
+
   // Getters / setters for the full URL
   Cript::string url() const;
 
@@ -567,13 +575,11 @@ protected:
     host._owner = path._owner = scheme._owner = query._owner = port._owner = this;
   }
 
-  TSMBuffer _bufp = nullptr;               // These two gets setup via initializing, pointing
-                                           // to appropriate headers
+  TSMBuffer           _bufp     = nullptr; // These two gets setup via initializing, to appropriate headers
   TSMLoc              _hdr_loc  = nullptr; // Do not release any of this within the URL classes!
   TSMLoc              _urlp     = nullptr; // This is owned by us.
   Cript::Transaction *_state    = nullptr; // Pointer into the owning Context's State
-  bool                _modified = false;   // We have pending changes on the path components or
-                                           // query parameters?
+  bool                _modified = false;   // We have pending changes on the path/query components
 
 }; // End class Url
 
@@ -588,12 +594,17 @@ class URL : public Cript::Url
   using self_type  = URL;
 
 public:
-  URL() = default;
-
+  URL()                       = default;
   URL(const URL &)            = delete;
   void operator=(const URL &) = delete;
 
   static URL &_get(Cript::Context *context);
+
+  bool
+  readOnly() const override
+  {
+    return true;
+  }
 
 }; // End class Pristine::URL
 
@@ -647,6 +658,12 @@ namespace From
     {
     }
 
+    bool
+    readOnly() const override
+    {
+      return true;
+    }
+
     static URL &_get(Cript::Context *context);
     bool        _update(Cript::Context *context);
 
@@ -673,6 +690,12 @@ namespace To
     void
     reset() override
     {
+    }
+
+    bool
+    readOnly() const override
+    {
+      return true;
     }
 
     static URL &_get(Cript::Context *context);

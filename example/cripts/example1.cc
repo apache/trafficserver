@@ -53,6 +53,14 @@ do_txn_close()
   CDebug("Cool, TXN close also works");
 }
 
+do_cache_lookup()
+{
+  borrow url2 = Cache::URL::get();
+
+  CDebug("Cache URL: {}", url2.url());
+  CDebug("Cache Host: {}", url2.host);
+}
+
 do_send_request()
 {
   borrow req = Server::Request::get();
@@ -110,10 +118,6 @@ do_send_response()
     resp.status = 222;
   }
 
-  borrow url2 = Cache::URL::get();
-
-  CDebug("Cache URL: {}", url2.url());
-  CDebug("Cache Host: {}", url2.host);
   CDebug("Txn count: {}", conn.count());
 }
 
@@ -147,7 +151,7 @@ do_remap()
   CDebug("X-Miles = {}", req["X-Miles"]);
   CDebug("random(1000) = {}", Cript::random(1000));
 
-  borrow url      = Pristine::URL::get();
+  borrow url      = Client::URL::get();
   auto   old_port = url.port;
 
   CDebug("Method is {}", req.method);

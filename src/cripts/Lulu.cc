@@ -188,5 +188,3 @@ std::string plugin_debug_tag;
 // This is to allow us to have a global initialization routine
 pthread_once_t init_once_control = PTHREAD_ONCE_INIT;
 pthread_once_t debug_tag_control = PTHREAD_ONCE_INIT;
-
-thread_local Cript::Context *Cript::Context::_contexts = nullptr;
