@@ -56,6 +56,7 @@
 #include "iocore/net/ProxyProtocol.h"
 
 #include "tscore/Layout.h"
+#include "tscore/ink_inet.h"
 #include "ts/ats_probe.h"
 
 #include <openssl/ossl_typ.h>
@@ -115,6 +116,7 @@ static DbgCtl dbg_ctl_ssl_alpn{"ssl_alpn"};
 static DbgCtl dbg_ctl_ssl_early_data{"ssl_early_data"};
 static DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 static DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
+static DbgCtl dbg_ctl_ip_address{"ip_address"};
 
 static const int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
 static const int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
@@ -289,6 +291,9 @@ HttpSM::init(bool from_early_data)
   sm_id                 = next_sm_id++;
   t_state.state_machine = this;
 
+  ATS_PROBE2(new_session, sm_id, &sm_id);
+  Dbg(dbg_ctl_ip_address, "new_session: sm_id=%ld, &sm_id=%p ", sm_id, &sm_id);
+
   t_state.http_config_param = HttpConfig::acquire();
   // Acquire a lease on the global remap / rewrite table (stupid global name ...)
   m_remap = rewrite_table->acquire();
@@ -368,6 +373,7 @@ HttpSM::start_sub_sm()
   tunnel.init(this, mutex);
   cache_sm.init(this, mutex);
   transform_cache_sm.init(this, mutex);
+  // ATS_PROBE1(start_connection, this);
 }
 
 void
@@ -415,7 +421,10 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   ats_ip_copy(&t_state.client_info.dst_addr, netvc->get_local_addr());
   t_state.client_info.is_transparent = netvc->get_is_transparent();
   t_state.client_info.port_attribute = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
-
+  ip_text_buffer ipb;
+  const char* ip = ats_ip_ntop(t_state.client_info.dst_addr, ipb, sizeof(ipb));
+  ATS_PROBE1(start_connection_with_ip_addresses, ip);
+  Dbg(dbg_ctl_ip_address,"Found Connnection: %s",ip);
   // Record api hook set state
   hooks_set = txn->has_hooks();
 
@@ -1693,6 +1702,7 @@ HttpSM::create_server_session(NetVConnection &netvc, MIOBuffer *netvc_read_buffe
   retval->new_connection(&netvc, netvc_read_buffer, netvc_reader);
 
   ATS_PROBE1(new_origin_server_connection, t_state.current.server->name);
+  Dbg(dbg_ctl_ip_address,"Ip origin Found: %s",t_state.current.server->name);
   retval->set_active();
 
   ats_ip_copy(&t_state.server_info.src_addr, netvc.get_local_addr());
@@ -2545,7 +2555,6 @@ HttpSM::state_cache_open_read(int event, void *data)
     pending_action = nullptr;
 
     SMDbg(dbg_ctl_http, "cache_open_read - CACHE_EVENT_OPEN_READ");
-
     /////////////////////////////////
     // lookup/open is successful. //
     /////////////////////////////////
@@ -2571,6 +2580,7 @@ HttpSM::state_cache_open_read(int event, void *data)
           -cache_sm.get_last_error());
 
     SMDbg(dbg_ctl_http, "open read failed.");
+
     // Inform HttpTransact somebody else is updating the document
     // HttpCacheSM already waited so transact should go ahead.
     if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {

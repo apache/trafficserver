@@ -31,6 +31,7 @@
 #define ATS_PROBE(probe)                  DTRACE_PROBE(trafficserver, probe)
 #define ATS_PROBE1(probe, param1)         DTRACE_PROBE1(trafficserver, probe, param1)
 #define ATS_PROBE2(probe, param1, param2) DTRACE_PROBE2(trafficserver, probe, param1, param2)
+#define ATS_PROBE3(probe, param1, param2,param3) DTRACE_PROBE2(trafficserver, probe, param1, param2, param3)
 
 #else
 

@@ -42,5 +42,5 @@ endif()
 add_library(catch2::catch2 INTERFACE IMPORTED GLOBAL)
 target_include_directories(catch2::catch2 INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/catch2")
 
-add_library(systemtap::systemtap INTERFACE IMPORTED GLOBAL)
-target_include_directories(systemtap::systemtap INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/systemtap")
+#add_library(systemtap::systemtap INTERFACE IMPORTED GLOBAL)
+#target_include_directories(systemtap::systemtap INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/systemtap")

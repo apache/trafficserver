@@ -23,13 +23,48 @@
 
  */
 
+
 BEGIN
 {
   @readlines = 0;
 }
 
-usdt:*:new_origin_server_connection
+usdt:*:new_session
 {
-  printf("new_origin_server_connection: %s\n", str(arg0));
+  printf("new_session1: %ld, %p\n", arg0, arg1);
+  @sm_id = arg0;
+  @psmid = arg1;
   @readlines++;
+}
+
+usdt:*:start_connection_with_ip_addresses
+{
+  printf("new_connection: %s\n", str(arg0));
+  @connections[str(arg0)] = count();
+}
+
+// Attach to the new_origin_server_connection probe
+ //usdt:/tmp/ats-dev/bin/traffic_server:traffic_server:new_origin_server_connection
+ //{
+     //printf("new_origin_server_connection: %s\n", str(arg0));
+     //@readlines++;
+ //}
+
+// Attach to the start_connection_with_ip_addresses probe and count connections by client IP
+
+//usdt:/tmp/ats-dev/bin/traffic_server:traffic_server:start_connection_with_ip_addresses
+// {
+    // printf("new_session from IP: %s\n", str(arg0));
+    // printf("Probe hit: %s\n", str(arg0));
+    // @connections[str(arg0)] = count();
+    // @readlines++;
+//}
+
+// Print the result on exit
+
+END
+{
+    printf("\nConnections by client IP:\n");
+    print(@connections);
+    printf("\nTotal lines read: %d\n", @readlines);
 }

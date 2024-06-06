@@ -115,7 +115,7 @@ target_link_libraries(
          PCRE::PCRE
          libswoc::libswoc
          yaml-cpp::yaml-cpp
-         systemtap::systemtap
+         #systemtap::systemtap
          resolv::resolv
          ts::tsutil
 )
