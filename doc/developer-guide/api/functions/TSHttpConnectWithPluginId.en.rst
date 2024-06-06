@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpConnectWithPluginId
 *************************
@@ -28,7 +28,7 @@ as if it came from a client.
 
 .. note::
 
-   This is a convenience function for :c:func:`TSHttpConnectPlugin` to provide
+   This is a convenience function for :func:`TSHttpConnectPlugin` to provide
    a simpler interface and backward compatibility for existing implementations.
    When this function is used instead of `TSHttpConnectPlugin`, default buffer
    index and watermark values will be used when creating IOBuffers.
@@ -47,7 +47,7 @@ Description
 
 This call attempts to create an HTTP state machine and a virtual
 connection to that state machine. This is more efficient than using
-:c:func:`TSNetConnect` because it avoids using the operating system
+:func:`TSNetConnect` because it avoids using the operating system
 stack via the loopback interface.
 
 :arg:`addr`
@@ -67,13 +67,13 @@ stack via the loopback interface.
    This is a numeric identifier that is passed through to the HTTP
    state machine. It is accessible via the log field :ref:`piid
    <piid>`. This is intended as a connection identifier and should
-   be distinct for every call to :c:func:`TSHttpConnectWithPluginId`.
+   be distinct for every call to :func:`TSHttpConnectWithPluginId`.
    The easiest mechanism is to define a plugin global value and
    increment it for each connection. The value :literal:`0` is
    reserved to mean "not set" and can be used as a default if this
    functionality is not needed.
 
-The virtual connection returned as the :c:type:`TSVConn` is API
+The virtual connection returned as the :cpp:type:`TSVConn` is API
 equivalent to a network virtual connection both to the plugin and
 to internal mechanisms. Data is read and written to the connection
 (and thence to the target system) by reading and writing on this
@@ -97,7 +97,7 @@ Notes
 The H2 implementation uses this to correlate client sessions
 with H2 streams. Each client connection is assigned a distinct
 numeric identifier. This is passed as the :arg:`id` to
-:c:func:`TSHttpConnectWithPluginId`. The :arg:`tag` is selected
+:func:`TSHttpConnectWithPluginId`. The :arg:`tag` is selected
 to be the ALPN (or NPN) string for the client session protocol, e.g.
 "h2". Log post processing can then count the number of connections for the
 various supported protocols and the number of H2 virtual streams for each

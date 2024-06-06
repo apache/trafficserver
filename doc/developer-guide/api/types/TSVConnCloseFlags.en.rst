@@ -16,6 +16,8 @@
 
 .. include:: ../../../common.defs
 
+.. default-domain:: cpp
+
 TSVConnCloseFlags
 *****************
 
@@ -26,16 +28,16 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:type:: TSVConnCloseFlags
+.. enum:: TSVConnCloseFlags
 
 Enum typedef.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSVConnCloseFlags TS_VC_CLOSE_ABORT
+.. enumerator:: TSVConnCloseFlags::TS_VC_CLOSE_ABORT
 
-.. c:member:: TSVConnCloseFlags TS_VC_CLOSE_NORMAL
+.. enumerator:: TSVConnCloseFlags::TS_VC_CLOSE_NORMAL
 
 Description
 ===========

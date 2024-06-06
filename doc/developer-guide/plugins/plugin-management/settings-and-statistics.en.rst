@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-management-settings-and-statistics:
 
@@ -44,16 +45,16 @@ the :ref:`admin-guide`.
 Depending on the result type, you'll use ``TSMgmtIntGet``,
 ``TSMgmtCounterGet``, ``TSMgmtFloatGet``, or ``TSMgmtStringGet`` to
 obtain the variable value (see the example for
-:c:func:`TSMgmtIntGet`.
+:func:`TSMgmtIntGet`.
 
 The ``TSMgmt*Get`` functions are:
 
--  :c:func:`TSMgmtCounterGet`
+-  :func:`TSMgmtCounterGet`
 
--  :c:func:`TSMgmtFloatGet`
+-  :func:`TSMgmtFloatGet`
 
--  :c:func:`TSMgmtIntGet`
+-  :func:`TSMgmtIntGet`
 
--  :c:func:`TSMgmtStringGet`
+-  :func:`TSMgmtStringGet`
 
 

@@ -16,7 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSSslSession
 ************
@@ -40,7 +40,7 @@ Description
 These functions work with the internal ATS session cache.  These functions are only useful if the ATS internal
 session cache is enabled by setting :ts:cv:`proxy.config.ssl.session_cache` has been set to 2.
 
-These functions tend to be used with the :macro:`TS_SSL_SESSION_HOOK`.
+These functions tend to be used with the :enumerator:`TS_SSL_SESSION_HOOK`.
 
 The functions work with the :type:`TSSslSessionID` object to identify sessions to retrieve, insert, or delete.
 

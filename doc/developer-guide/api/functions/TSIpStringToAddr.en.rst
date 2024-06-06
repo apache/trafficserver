@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSIpStringToAddr
 ****************
@@ -43,7 +43,7 @@ used to differentiate between an address and an attached port. E.g.
 Return values
 =============
 
-It returns :data:`TS_SUCCESS` on success, or :data:`TS_ERROR` on failure.
+It returns :enumerator:`TS_SUCCESS` on success, or :enumerator:`TS_ERROR` on failure.
 
 Notes
 =====

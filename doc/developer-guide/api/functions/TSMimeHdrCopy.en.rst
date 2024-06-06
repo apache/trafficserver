@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrCopy
 *************
@@ -37,10 +37,10 @@ Copies the contents of the MIME header located at :arg:`src_loc` within
 :arg:`src_bufp` to the MIME header located at :arg:`dest_loc` within
 :arg:`dest_bufp`.
 
-:c:func:`TSMimeHdrCopy` works correctly even if :arg:`src_bufp` and
+:func:`TSMimeHdrCopy` works correctly even if :arg:`src_bufp` and
 :arg:`dest_bufp` point to different marshal buffers.
 
 .. important::
 
    You must create the destination MIME header before copying into
-   it, using :c:func:`TSMimeHdrCreate`.
+   it, using :func:`TSMimeHdrCreate`.

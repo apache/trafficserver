@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-hooks-intercepting:
 
@@ -30,5 +31,5 @@ for reading ``POST`` bodies in plugins as well as using alternative
 transports to the origin server.The intercepting HTTP transaction
 functions are:
 
--  :c:func:`TSHttpTxnIntercept`
+-  :func:`TSHttpTxnIntercept`
 

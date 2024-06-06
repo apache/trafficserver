@@ -15,6 +15,7 @@
    permissions and limitations under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 TSFetchWakeUpOptions
 ********************
@@ -26,18 +27,18 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:type:: TSFetchWakeUpOptions
+.. enum:: TSFetchWakeUpOptions
 
 Enum typedef.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSFetchWakeUpOptions NO_CALLBACK
+.. enumerator:: TSFetchWakeUpOptions::NO_CALLBACK
 
-.. c:member:: TSFetchWakeUpOptions AFTER_HEADER
+.. enumerator:: TSFetchWakeUpOptions::AFTER_HEADER
 
-.. c:member:: TSFetchWakeUpOptions AFTER_BODY
+.. enumerator:: TSFetchWakeUpOptions::AFTER_BODY
 
 Description
 ===========

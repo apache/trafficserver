@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSContThreadAffinitySet
 ***********************
@@ -43,5 +43,5 @@ when invoked without explicitly setting the thread affinity.
 Return Values
 =============
 
-:data:`TS_SUCCESS` if thread affinity of continuation :arg:`contp` was set to :arg:`ethread`,
-:data:`TS_ERROR` if not.
+:cpp:enumerator:`TS_SUCCESS` if thread affinity of continuation :arg:`contp` was set to :arg:`ethread`,
+:cpp:enumerator:`TS_ERROR` if not.

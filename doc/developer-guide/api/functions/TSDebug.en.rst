@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 Dbg
 ***
@@ -37,11 +37,11 @@ Synopsis
 .. function:: void TSFatal(const char * format, ...)
 .. function:: void TSAlert(const char * format, ...)
 .. function:: void TSEmergency(const char * format, ...)
-.. cpp:type:: DbgCtl
-.. cpp:function:: void Dbg(DbgCtl &ctl, const char * format, ...)
-.. cpp:function:: bool DbgCtl::on()
-.. cpp:function:: void SpecificDbg(bool debug_flag, DbgCtl &ctl, const char * format, ...)
-.. cpp:function:: void DbgPrint(DbgCtl &ctl, const char * format, ...)
+.. type:: DbgCtl
+.. function:: void Dbg(DbgCtl &ctl, const char * format, ...)
+.. function:: bool DbgCtl::on()
+.. function:: void SpecificDbg(bool debug_flag, DbgCtl &ctl, const char * format, ...)
+.. function:: void DbgPrint(DbgCtl &ctl, const char * format, ...)
 .. function:: void TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
 .. function:: void TSHttpSsnDebugSet(TSHttpSsn ssn, int on)
 .. function:: int TSHttpTxnDebugGet(TSHttpTxn txnp)
@@ -49,8 +49,8 @@ Synopsis
 .. function:: const char* TSHttpServerStateNameLookup(TSServerState state)
 .. function:: const char* TSHttpHookNameLookup(TSHttpHookID hook)
 .. function:: const char* TSHttpEventNameLookup(TSEvent event)
-.. macro:: TSAssert( ... )
-.. macro:: TSReleaseAssert( ... )
+.. c:macro:: TSAssert( ... )
+.. c:macro:: TSReleaseAssert( ... )
 
 diags.log
 =========
@@ -87,10 +87,10 @@ cpp:func:`Dbg` logs the debug message only if the given debug control referred t
 
 ``ctl.on()`` (where ``ctl`` is an instance of ``DbgCtl``) returns true if ``ctl`` is on.
 
-In debug mode, :macro:`TSAssert` Traffic Server to prints the file
+In debug mode, :c:macro:`TSAssert` Traffic Server to prints the file
 name, line number and expression, and then aborts. In release mode,
 the expression is not removed but the effects of printing an error
-message and aborting are. :macro:`TSReleaseAssert` prints an error
+message and aborting are. :c:macro:`TSReleaseAssert` prints an error
 message and aborts in both release and debug mode.
 
 cpp:func:`SpecificDbg` emits a debug line even if the debug :arg:`tag`

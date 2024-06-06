@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-examples-denylist-txn-hook:
 
@@ -63,11 +64,11 @@ following things happen:
    being processed.
 
 #. The transaction is re-enabled using ``TSHttpTxnReenable`` with
-   ``TS_EVENT_HTTP_ERROR`` as its event argument. Reenabling with an
+   :enumerator:`TS_EVENT_HTTP_ERROR` as its event argument. Reenabling with an
    error event tells the HTTP state machine to stop the transaction and
    jump to the "send response header" state. Notice that if the
    requested site is not listed, then the transaction is re-enabled
-   with the ``TS_EVENT_HTTP_CONTINUE`` event.
+   with the :enumerator:`TS_EVENT_HTTP_CONTINUE` event.
 
 #. The string and ``TSMLoc`` data stored in the marshal buffer ``bufp`` is
    released by ``TSHandleMLocRelease`` (see
@@ -78,7 +79,7 @@ In general, whenever the plugin is doing something to a transaction, it
 must re-enable the transaction when it is finished. In other words: every
 time your handler function handles a transaction event, it must call
 ``TSHttpTxnReenable`` when it is finished. Similarly, after your plugin
-handles session events (``TS_EVENT_HTTP_SSN_START`` and
-``TS_EVENT_HTTP_SSN_CLOSE``), it must re-enable the session with
+handles session events (:enumerator:`TS_EVENT_HTTP_SSN_START` and
+:enumerator:`TS_EVENT_HTTP_SSN_CLOSE`), it must re-enable the session with
 ``TSHttpSsnReenable``. Reenabling the transaction twice in the same
 plugin routine is a bad error.

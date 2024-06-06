@@ -17,7 +17,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSUrlPercentEncode
 ******************
@@ -71,8 +71,8 @@ length of the source *not* including the null. E.g. ::
 Return Values
 =============
 
-All these APIs returns a :type:`TSReturnCode`, indicating success (:data:`TS_SUCCESS`) or failure
-(:data:`TS_ERROR`) of the operation.
+All these APIs returns a :enum:`TSReturnCode`, indicating success (:enumerator:`TS_SUCCESS`) or failure
+(:enumerator:`TS_ERROR`) of the operation.
 
 See Also
 ========

@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSPluginDSOReloadEnable
 *************************
@@ -41,7 +41,7 @@ This overrides :ts:cv:`proxy.config.plugin.dynamic_reload_mode`.
 
 .. warning::  This function should be called from within :func:`TSPluginInit`
 
-The function will return :type:`TS_ERROR`  in any of the following cases:
+The function will return :enumerator:`TS_ERROR`  in any of the following cases:
     - The function was not called from within :func:`TSPluginInit`
     - TS is unable to get the canonical path from the plugin's path.
 

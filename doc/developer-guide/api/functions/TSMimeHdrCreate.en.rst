@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrCreate
 ***************
@@ -35,4 +35,4 @@ Description
 
 Creates a new MIME header within :arg:`bufp`.
 
-Release with a call to :c:func:`TSHandleMLocRelease`.
+Release with a call to :func:`TSHandleMLocRelease`.
