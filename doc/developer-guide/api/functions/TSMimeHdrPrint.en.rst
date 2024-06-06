@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrPrint
 **************
@@ -34,4 +34,4 @@ Description
 ===========
 
 Formats the MIME header located at :arg:`hdr_loc` within :arg:`bufp` into the
-:c:type:`TSIOBuffer` :arg:`iobufp`.
+:cpp:type:`TSIOBuffer` :arg:`iobufp`.

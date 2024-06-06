@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSCacheWrite
 ************
@@ -37,7 +37,7 @@ Asks the Traffic Server cache if :arg:`contp` can start writing the object
 corresponding to :arg:`key` to the cache.
 
 If the object can be written, the cache calls :arg:`contp` back with the
-event :data:`TS_EVENT_CACHE_OPEN_WRITE`.  In this case, the cache
+event :enumerator:`TS_EVENT_CACHE_OPEN_WRITE`.  In this case, the cache
 also passes :arg:`contp` a cache vconnection and :arg:`contp` can then initiate a
 write operation on that vconnection using :type:`TSVConnWrite`.  The
 object is not committed to the cache until the vconnection is closed.
@@ -46,7 +46,7 @@ When all data has been transferred, the user (:arg:`contp`) must do an
 ``TSVConnAbort(contp, 0)``.
 
 If the object cannot be written, the cache calls :arg:`contp` back with the
-event :data:`TS_EVENT_CACHE_OPEN_WRITE_FAILED`.  This can happen,
+event :enumerator:`TS_EVENT_CACHE_OPEN_WRITE_FAILED`.  This can happen,
 for example, if there is another object with the same :arg:`key` being
 written to the cache.  The user (:arg:`contp`) has the option to cancel the
 action returned by :type:`TSCacheWrite`.

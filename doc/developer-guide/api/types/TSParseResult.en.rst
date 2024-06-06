@@ -15,6 +15,7 @@
    permissions and limitations under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 TSParseResult
 *************
@@ -26,19 +27,19 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:type:: TSParseResult
+.. enum:: TSParseResult
 
 Enum typedef defining the possible return values from
-:c:func:`TSHttpHdrParseResp`.
+:func:`TSHttpHdrParseResp`.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSParseResult TS_PARSE_ERROR
+.. enumerator:: TSParseResult::TS_PARSE_ERROR
 
-.. c:member:: TSParseResult TS_PARSE_DONE
+.. enumerator:: TSParseResult::TS_PARSE_DONE
 
-.. c:member:: TSParseResult TS_PARSE_CONT
+.. enumerator:: TSParseResult::TS_PARSE_CONT
 
 Description
 ===========

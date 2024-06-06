@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-hooks-http-sessions:
 
@@ -54,6 +55,6 @@ processing a session hook.
 
 The session hook functions are listed below:
 
--  :c:func:`TSHttpSsnHookAdd`
--  :c:func:`TSHttpSsnReenable`
+-  :func:`TSHttpSsnHookAdd`
+-  :func:`TSHttpSsnReenable`
 

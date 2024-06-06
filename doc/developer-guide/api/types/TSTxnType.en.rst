@@ -15,6 +15,7 @@
    permissions and limitations under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 TSTxnType
 ************
@@ -24,23 +25,23 @@ Synopsis
 
 .. code-block:: cpp
 
-.. c:enum:: TSTxnType
+.. enum:: TSTxnType
 
    Specify the type of a transaction argument
 
-   .. c:enumerator:: TS_TXN_TYPE_UNKNOWN
+   .. enumerator:: TS_TXN_TYPE_UNKNOWN
 
       Invalid value. This is used to indicate a failure or for initialization.
 
-   .. c:enumerator:: TS_TXN_TYPE_HTTP
+   .. enumerator:: TS_TXN_TYPE_HTTP
 
       A HTTP transaction. This includes CONNECT method requests which will create a tunnel.
 
-   .. c:enumerator:: TS_TXN_TYPE_EXPLICIT_TUNNEL
+   .. enumerator:: TS_TXN_TYPE_EXPLICIT_TUNNEL
 
       A blind tunnel transaction created based on a configuration file or an API call.
 
-   .. c:enumerator:: TS_TXN_TYPE_TR_PASS_TUNNEL
+   .. enumerator:: TS_TXN_TYPE_TR_PASS_TUNNEL
 
       A blind tunnel created based on a parse error for a server port with tr-pass set.
 

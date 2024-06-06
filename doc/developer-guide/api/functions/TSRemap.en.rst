@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSRemapInit
 ***********
@@ -79,9 +79,9 @@ invoked by current and all previous still used configurations. This is an option
 :func:`TSRemapPostConfigReload` is called to indicate the end of the new remap configuration
 load. It is called on the newly and previously loaded plugins, invoked by the new, current and
 previous still used configurations. It also indicates whether the configuration reload was successful
-by passing :macro:`TSREMAP_CONFIG_RELOAD_FAILURE` in case of failure and to notify the plugins if they
-are going to be part of the new configuration by passing :macro:`TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED`
-or :macro:`TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED`. This is an optional entry point.
+by passing :enumerator:`TSREMAP_CONFIG_RELOAD_FAILURE` in case of failure and to notify the plugins if they
+are going to be part of the new configuration by passing :enumerator:`TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED`
+or :enumerator:`TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED`. This is an optional entry point.
 
 Generally speaking, calls to these functions are mutually exclusive. The exception
 is for functions which take an HTTP transaction as a parameter. Calls to these
@@ -137,16 +137,16 @@ Return Values
 =============
 
 :func:`TSRemapInit` and :func:`TSRemapNewInstance` should return
-:data:`TS_SUCCESS` on success, and :data:`TS_ERROR` otherwise. A
-return value of :data:`TS_ERROR` is unrecoverable.
+:cpp:enumerator:`TS_SUCCESS` on success, and :cpp:enumerator:`TS_ERROR` otherwise. A
+return value of :cpp:enumerator:`TS_ERROR` is unrecoverable.
 
 :func:`TSRemapDoRemap` returns a status code that indicates whether the HTTP transaction has been
 modified and whether Traffic Server should continue to evaluate the chain of remap plugins. If the
-transaction was modified, the plugin should return :macro:`TSREMAP_DID_REMAP` or
-:macro:`TSREMAP_DID_REMAP_STOP`; otherwise it should return :macro:`TSREMAP_NO_REMAP` or
-:macro:`TSREMAP_NO_REMAP_STOP`. If Traffic Server should not send the transaction to subsequent
-plugins in the remap chain, return :macro:`TSREMAP_NO_REMAP_STOP` or :macro:`TSREMAP_DID_REMAP_STOP`.
-Returning :macro:`TSREMAP_ERROR` causes Traffic Server to stop evaluating the remap chain and respond
+transaction was modified, the plugin should return :enumerator:`TSREMAP_DID_REMAP` or
+:enumerator:`TSREMAP_DID_REMAP_STOP`; otherwise it should return :enumerator:`TSREMAP_NO_REMAP` or
+:enumerator:`TSREMAP_NO_REMAP_STOP`. If Traffic Server should not send the transaction to subsequent
+plugins in the remap chain, return :enumerator:`TSREMAP_NO_REMAP_STOP` or :enumerator:`TSREMAP_DID_REMAP_STOP`.
+Returning :enumerator:`TSREMAP_ERROR` causes Traffic Server to stop evaluating the remap chain and respond
 with an error.
 
 See Also

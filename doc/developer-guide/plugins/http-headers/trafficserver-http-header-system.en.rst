@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-http-headers-system:
 
@@ -68,7 +69,7 @@ duplicate fields.
 
 Properly-behaving plugins should check for the presence of duplicate
 fields and then iterate over the duplicate fields via
-:c:func:`TSMimeHdrFieldNextDup`.
+:func:`TSMimeHdrFieldNextDup`.
 
 MIME Fields Always Belong to an Associated MIME Header
 ======================================================

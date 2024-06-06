@@ -14,6 +14,7 @@
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
 
+.. default-domain:: cpp
 
 TSHttpTxnIncomingAddrGet
 ========================
@@ -28,7 +29,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. c:function:: sockaddr const* TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
+.. function:: sockaddr const* TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
 
 
 Description

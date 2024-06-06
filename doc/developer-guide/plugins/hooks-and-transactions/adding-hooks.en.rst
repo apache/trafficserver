@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-hooks-adding:
 
@@ -37,7 +38,7 @@ There are several ways to add hooks to your plugin.
 
 -  **Transformation hooks** Transformation hooks are a special case of
    transaction hooks. See
-   :c:func:`TSVConnCacheObjectSizeGet`
+   :func:`TSVConnCacheObjectSizeGet`
    for more information about transformation hooks. You add a
    transformation hook using ``TSHttpTxnHookAdd``, as described in
    :ref:`developer-plugins-hooks-http-transactions`.
@@ -58,9 +59,9 @@ There are several ways to add hooks to your plugin.
    information on the alternate selection mechanism.
 
 All of the hook addition functions
-(:c:func:`TSHttpHookAdd`,
-:c:func:`TSHttpSsnHookAdd`,
-:c:func:`TSHttpSsnReenable`)
+(:func:`TSHttpHookAdd`,
+:func:`TSHttpSsnHookAdd`,
+:func:`TSHttpSsnReenable`)
 take ``TSHttpHookID`` (identifies the hook to add on to) and ``TSCont``
 (the basic callback mechanism in Traffic Server). A single ``TSCont``
 can be added to any number of hooks at a time.
@@ -74,34 +75,34 @@ values for ``TSHttpHookID`` are:
     Called after the HTTP state machine has completed the cache lookup
     for the document requested in the ongoing transaction. Register this
     hook via ``TSHttpTxnHookAdd`` or ``TSHttpHookAdd``. Corresponds to
-    the event ``TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE``.
+    the event :enumerator:`TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE`.
 
 ``TS_HTTP_OS_DNS_HOOK``
     Called immediately after the HTTP state machine has completed a DNS
     lookup of the origin server. The HTTP state machine will know the
     origin server's IP address at this point, which is useful for
     performing both authentication and denylisting. Corresponds to the
-    event ``TS_EVENT_HTTP_OS_DNS``.
+    event :enumerator:`TS_EVENT_HTTP_OS_DNS`.
 
 ``TS_HTTP_POST_REMAP_HOOK``
     Called immediately after remapping occurs, before cache lookup.
-    Corresponds to the event ``TS_EVENT_HTTP_POST_REMAP``.
+    Corresponds to the event :enumerator:`TS_EVENT_HTTP_POST_REMAP`.
 
 ``TS_HTTP_PRE_REMAP_HOOK``
     Called after the request header is read from the client, before any
     remapping of the headers occurs. Corresponds to the event
-    ``TS_EVENT_HTTP_PRE_REMAP``.
+    :enumerator:`TS_EVENT_HTTP_PRE_REMAP`.
 
 ``TS_HTTP_READ_CACHE_HDR_HOOK``
     Called immediately after the request and response header of a
     previously-cached object is read from cache. This hook is only
     called if the document is being served from cache. Corresponds to
-    the event ``TS_EVENT_HTTP_READ_CACHE_HDR``.
+    the event :enumerator:`TS_EVENT_HTTP_READ_CACHE_HDR`.
 
 ``TS_HTTP_READ_RESPONSE_HDR_HOOK``
     Called immediately after the response header is read from the origin
     server or parent proxy. Corresponds to the event
-    ``TS_EVENT_HTTP_READ_RESPONSE_HDR``.
+    :enumerator:`TS_EVENT_HTTP_READ_RESPONSE_HDR`.
 
 ``TS_HTTP_RESPONSE_TRANSFORM_HOOK``
     See :ref:`"Transformations" <transformations>`
@@ -109,7 +110,7 @@ values for ``TSHttpHookID`` are:
 
 ``TS_HTTP_READ_REQUEST_HDR_HOOK``
     Called immediately after the request header is read from the client.
-    Corresponds to the event ``TS_EVENT_HTTP_READ_REQUEST_HDR``.
+    Corresponds to the event :enumerator:`TS_EVENT_HTTP_READ_REQUEST_HDR`.
 
 ``TS_HTTP_REQUEST_TRANSFORM_HOOK``
     See :ref:`"Transformations" <transformations>`
@@ -123,7 +124,7 @@ values for ``TSHttpHookID`` are:
     Called immediately before the proxy's response header is written to
     the client; this hook is usually used for modifying the response
     header. Corresponds to the event
-    ``TS_EVENT_HTTP_SEND_RESPONSE_HDR``.
+    :enumerator:`TS_EVENT_HTTP_SEND_RESPONSE_HDR`.
 
 ``TS_HTTP_SEND_REQUEST_HDR_HOOK``
     Called immediately before the proxy's request header is sent to the
@@ -163,5 +164,5 @@ values for ``TSHttpHookID`` are:
     determine whether the tunnel should be allowed or not.
 
 The function you use to add a global HTTP hook is
-:c:func:`TSHttpHookAdd`.
+:func:`TSHttpHookAdd`.
 

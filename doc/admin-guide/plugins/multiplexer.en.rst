@@ -38,7 +38,7 @@ Description
    #. Copies the resulting request (POST bodies are copied via the :ref:`HTTP Transform <developer-plugins-http-transformations>` mechanism).
    #. Changes the ``Host`` header of the copy according to ``pparam`` from the remap rule.
    #. Changes ``X-Multiplexer`` header value to ``copy`` instead of ``original``.
-   #. Asynchronously sends the copied request with :c:func:`TSHttpConnect`.
+   #. Asynchronously sends the copied request with :func:`TSHttpConnect`.
    #. The copied request with the specified host is then itself processed via :file:`remap.config`.
 
 |Name| dispatches the requests in the background without blocking the original request. Multiplexed

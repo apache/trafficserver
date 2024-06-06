@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSVConnTunnel
 *************
@@ -34,5 +34,5 @@ Description
 ===========
 
 Set the SSL connection :arg:`svc` to convert to a blind tunnel. Can be called
-from :member:`TS_VCONN_START_HOOK`, :member:`TS_SSL_SERVERNAME_HOOK`, or :member:`TS_SSL_SNI_HOOK` / :member:`TS_SSL_CERT_HOOK`.
+from :enumerator:`TS_VCONN_START_HOOK`, :enumerator:`TS_SSL_SERVERNAME_HOOK`, or :enumerator:`TS_SSL_SNI_HOOK` / :enumerator:`TS_SSL_CERT_HOOK`.
 

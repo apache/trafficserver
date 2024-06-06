@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-building:
 
@@ -45,18 +46,18 @@ Example Plugin Project
    add_atsplugin(myplugin myplugin.cc)
    verify_remap_plugin(myplugin)
 
-This example :file:`CMakeLists.txt` finds the tsapi package which provides the
-:func:`add_atsplugin` and :func:`verify_remap_plugin` functions.
-:func:`add_atsplugin` does all of the necessary cmake commands to build a
+This example ``CMakeLists.txt`` finds the tsapi package which provides the
+``add_atsplugin`` and ``verify_remap_plugin`` functions.
+``add_atsplugin`` does all of the necessary cmake commands to build a
 plugins module .so.  The function takes the plugin target name and a list of
 source files that make up the project.  If the plugin requires additional
-libraries, those can be linked with the :func:`target_link_libraries` cmake
+libraries, those can be linked with the ``target_link_libraries`` cmake
 function.
 
 After the plugin target is created, a verify test target can be created.  This
 will add a cmake test declaration and at test time, will run traffic_server in
 its verify plugin mode.  There are two verify functions provided,
-:func:`verify_remap_plugin` and :func:`verify_global_plugin`.  Use the relevant
+``verify_remap_plugin`` and ``verify_global_plugin``.  Use the relevant
 function for your plugin type (or call both if your plugin is both types).  The
 test will fail if either your plugin does not define the required init function
 (:func:`TSRemapInit` or :func:`TSPluginInit`), or if your plugin calls any

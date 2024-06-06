@@ -15,6 +15,7 @@
    permissions and limitations under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 TSHttpType
 **********
@@ -26,25 +27,25 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:type:: TSHttpType
+.. enum:: TSHttpType
 
 Enum typedef which defines the possible HTTP types assigned to an HTTP header,
-as returned by :c:func:`TSHttpHdrTypeGet`. Headers created by
-:c:func:`TSHttpHdrCreate` receive :c:member:`TS_HTTP_TYPE_UNKNOWN` by default
-and may be modified once by using :c:func:`TSHttpHdrTypeSet`.
+as returned by :func:`TSHttpHdrTypeGet`. Headers created by
+:func:`TSHttpHdrCreate` receive :enumerator:`TS_HTTP_TYPE_UNKNOWN` by default
+and may be modified once by using :func:`TSHttpHdrTypeSet`.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSHttpType TS_HTTP_TYPE_UNKNOWN
+.. enumerator:: TSHttpType::TS_HTTP_TYPE_UNKNOWN
 
-Default for new headers created by :c:func:`TSHttpHdrCreate`.
+Default for new headers created by :func:`TSHttpHdrCreate`.
 
-.. c:member:: TSHttpType TS_HTTP_TYPE_REQUEST
+.. enumerator:: TSHttpType::TS_HTTP_TYPE_REQUEST
 
 HTTP request headers.
 
-.. c:member:: TSHttpType TS_HTTP_TYPE_RESPONSE
+.. enumerator:: TSHttpType::TS_HTTP_TYPE_RESPONSE
 
 HTTP response headers.
 

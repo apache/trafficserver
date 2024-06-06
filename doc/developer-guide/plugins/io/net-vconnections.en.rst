@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-io-net-vconnections:
 
@@ -30,6 +31,6 @@ the Traffic Server abstraction for doing asynchronous IO.
 
 The netvconnection functions are listed below:
 
--  :c:func:`TSNetAccept`
--  :c:func:`TSNetConnect`
+-  :func:`TSNetAccept`
+-  :func:`TSNetConnect`
 

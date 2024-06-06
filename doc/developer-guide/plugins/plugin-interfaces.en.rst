@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-interfaces:
 
@@ -61,17 +62,17 @@ corresponding usage of the ``fopen`` family of functions is
 inappropriate due to file descriptor and portability limitations. The
 ``TSfopen`` family of functions consists of the following:
 
--  :c:func:`TSfclose`
+-  :func:`TSfclose`
 
--  :c:func:`TSfflush`
+-  :func:`TSfflush`
 
--  :c:func:`TSfgets`
+-  :func:`TSfgets`
 
--  :c:func:`TSfopen`
+-  :func:`TSfopen`
 
--  :c:func:`TSfread`
+-  :func:`TSfread`
 
--  :c:func:`TSfwrite`
+-  :func:`TSfwrite`
 
 Memory Allocation
 =================
@@ -92,17 +93,17 @@ leaks.
 
 The memory allocation functions are:
 
--  :c:func:`TSfree`
+-  :func:`TSfree`
 
--  :c:func:`TSmalloc`
+-  :func:`TSmalloc`
 
--  :c:func:`TSrealloc`
+-  :func:`TSrealloc`
 
--  :c:func:`TSstrdup`
+-  :func:`TSstrdup`
 
--  :c:func:`TSstrndup`
+-  :func:`TSstrndup`
 
-Thread Functions
+Thrd Functions
 ================
 
 The Traffic Server API thread functions enable you to create, destroy,
@@ -114,29 +115,29 @@ shared resources and data using the ``TSMutex`` type, as described in
 
 The thread functions are listed below:
 
--  :c:func:`TSThreadCreate`
--  :c:func:`TSThreadDestroy`
--  :c:func:`TSThreadInit`
--  :c:func:`TSThreadSelf`
+-  :func:`TSThreadCreate`
+-  :func:`TSThreadDestroy`
+-  :func:`TSThreadInit`
+-  :func:`TSThreadSelf`
 
 Debugging Functions
 ===================
 
--  :cpp:func:`Dbg`
+-  :func:`Dbg`
    prints out a formatted statement if you are
    running Traffic Server in debug mode.
 
--  :cpp:func:`DbgCtl::on`
+-  :func:`DbgCtl::on`
    checks to see if a debug control (associated with a debug tag) is
    set. If the debug tag is set, then Traffic Server prints out all
    debug statements associated with the control.
 
--  :c:func:`TSError`
+-  :func:`TSError`
    prints error messages to Traffic Server's error log
 
--  :c:func:`TSAssert`
+-  :c:macro:`TSAssert`
    enables the use of assertion in a plugin.
 
--  :c:func:`TSReleaseAssert`
+-  :c:macro:`TSReleaseAssert`
    enables the use of assertion in a plugin.
 

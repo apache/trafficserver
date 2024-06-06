@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-getting-started:
 
@@ -243,5 +244,5 @@ The ``TSPluginInit`` function has two arguments:
 -  The ``argv`` argument is an array of pointers to the actual arguments
    defined in the ``plugin.config`` file for that plugin
 
-See :c:func:`TSPluginInit` for details about ``TSPluginInit``.
+See :func:`TSPluginInit` for details about ``TSPluginInit``.
 

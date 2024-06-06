@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSRemapFrom/ToUrlGet
 ********************
@@ -37,6 +37,6 @@ Description
 These functions are useful for transactions where the URL is remapped, due to matching a line in :file:`remap.config`.
 :func:`TSRemapFromUrlGet` returns the *from* URL in the matching line in :file:`remap.config`.
 :func:`TSRemapToUrlGet` returns the *to* URL in the matching line in :file:`remap.config`.
-This info is available at or after the :c:data:`TS_HTTP_POST_REMAP_HOOK` hook.  If the function returns
-:data:`TS_SUCCESS`, the location of the URL is put into the variable pointed to by :arg:`urlLocp`.  On error, the function
-returns :data:`TS_ERROR`.
+This info is available at or after the :enumerator:`TS_HTTP_POST_REMAP_HOOK` hook.  If the function returns
+:enumerator:`TS_SUCCESS`, the location of the URL is put into the variable pointed to by :arg:`urlLocp`.  On error, the function
+returns :enumerator:`TS_ERROR`.

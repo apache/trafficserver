@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 Plugin Statistics
 **********************
@@ -33,7 +33,7 @@ in contrast to processing log files.
 Synopsis
 ========
 
-.. code-block:: c
+.. code-block:: cpp
 
     #include <ts/ts.h>
 
@@ -54,7 +54,7 @@ Description
 A plugin statistic is created by :func:`TSStatCreate`. The :arg:`name` must be globally unique and
 should follow the standard dotted tag form. To avoid collisions and for easy of use the first tag
 should be the plugin name or something easily derived from it. Currently only integers are supported
-therefore :arg:`type` must be :enumerator:`~TSRecordDataType.TS_RECORDDATATYPE_INT`. The return value is
+therefore :arg:`type` must be :enumerator:`TS_RECORDDATATYPE_INT`. The return value is
 the index of the statistic. In general this should work but if it doesn't it will :code:`assert`. In
 particular, creating the same statistic twice will fail in this way, which can happen if statistics
 are created as part of or based on configuration files and |TS| is reloaded.
@@ -71,13 +71,13 @@ A group of records can be examined via :func:`TSRecordDump`. A set of records is
 iterated over. For each record in the set the callbac :arg:`callback` is invoked.
 
 The records are specified by the :enum:`TSRecordType`. If this is
-:enumerator:`~TSRecordType.TS_RECORDTYPE_NULL` then all records are examined. The callback is passed
+:enumerator:`TS_RECORDTYPE_NULL` then all records are examined. The callback is passed
 
    :arg:`type`
       The record type.
 
    :arg:`edata`
-      Callback context. This is the :arg:`edata` value passed to :c:func:`TSRecordDump`.
+      Callback context. This is the :arg:`edata` value passed to :func:`TSRecordDump`.
 
    :arg:`registered`
       A flag indicating if the value has been registered.

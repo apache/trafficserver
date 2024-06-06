@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrClone
 **************
@@ -39,6 +39,6 @@ marshal buffer.
 
 .. XXX The original paragraph above does not match the function prototype.
 
-Unlike :c:func:`TSMimeHdrCopy`, you do not have to create the
+Unlike :func:`TSMimeHdrCopy`, you do not have to create the
 destination MIME header before cloning.  Release the returned
-:c:type:`TSMLoc` handle with a call to :c:func:`TSHandleMLocRelease`.
+:cpp:type:`TSMLoc` handle with a call to :func:`TSHandleMLocRelease`.

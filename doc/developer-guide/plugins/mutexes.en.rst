@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-mutexes:
 
@@ -31,14 +32,14 @@ mutex acts as a lock that protects data in one program thread from being
 accessed by another thread.
 
 The Traffic Server API provides two functions that attempt to access and
-lock the data: :c:func:`TSMutexLockTry` and :c:func:`TSMutexLock`.
+lock the data: :func:`TSMutexLockTry` and :func:`TSMutexLock`.
 ``TSMutexLock`` is a blocking call - if you use it, you can slow
 Traffic Server performance because transaction processing pauses until
 the mutex is unlocked. It should be used only on threads created by the
 plugin ``TSContThreadCreate``. Never use it on a continuation handler
 called back by the Cache, Net, or Event Processor. Even if the critical
 section is very small, do not use it. If you need to update a flag, then
-set a variable and/or use atomic operations. If :c:func:`TSMutexLock` is used
+set a variable and/or use atomic operations. If :func:`TSMutexLock` is used
 in any case other than the one recommended above, then the result will
 be a serious performance impact.
 
@@ -74,26 +75,26 @@ Locking Global Data
 The :ref:`denylist-1.cc` sample plugin implements a mutex that locks global
 data. The denylist plugin reads sites to be denied from a
 configuration file; file read operations are protected by a mutex
-created in :c:func:`TSPluginInit`. The :ref:`denylist-1.cc` code uses
-:c:func:`TSMutexLockTry` instead of :c:func:`TSMutexLock`. For more detailed
+created in :func:`TSPluginInit`. The :ref:`denylist-1.cc` code uses
+:func:`TSMutexLockTry` instead of :func:`TSMutexLock`. For more detailed
 information, see the :ref:`denylist-1.cc` code;
-start by looking at the :c:func:`TSPluginInit` function.
+start by looking at the :func:`TSPluginInit` function.
 
 General guidelines for locking shared data are as follows:
 
 1. Create a mutex for the shared data with
-   :c:func:`TSMutexCreate`.
+   :func:`TSMutexCreate`.
 
 2. Whenever you need to read or modify this data, first lock it by
    calling
-   :c:func:`TSMutexLockTry`;
+   :func:`TSMutexLockTry`;
    then read or modify the data.
 
 3. When you are done with the data, unlock it with
-   :c:func:`TSMutexUnlock`.
+   :func:`TSMutexUnlock`.
    If you are unlocking data accessed during the processing of an HTTP
    transaction, then you must unlock it before calling
-   :c:func:`TSHttpTxnReenable`.
+   :func:`TSHttpTxnReenable`.
 
 Protecting a Continuation's Data
 ================================
@@ -240,7 +241,7 @@ suppose you want to store the state of the HTTP transaction:
 
 You need to allocate the memory and initialize this structure for each
 HTTP ``txnp``. You can do that in the plugin continuation handler when
-it is called back with ``TS_EVENT_HTTP_TXN_START``
+it is called back with :enumerator:`TS_EVENT_HTTP_TXN_START`
 
 .. code-block:: c
 
@@ -391,7 +392,7 @@ continuation created in ``txn_handler``:
 
 The mutex functions are listed below:
 
--  :c:func:`TSMutexCreate`
--  :c:func:`TSMutexLock`
--  :c:func:`TSMutexLockTry`
+-  :func:`TSMutexCreate`
+-  :func:`TSMutexLock`
+-  :func:`TSMutexLockTry`
 
