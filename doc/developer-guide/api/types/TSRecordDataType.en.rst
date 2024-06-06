@@ -15,6 +15,7 @@
    permissions and limitations under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 TSRecordDataType
 ****************
@@ -22,61 +23,61 @@ TSRecordDataType
 Synopsis
 ========
 
-.. code-block:: c
+.. code-block:: cpp
 
     #include <ts/apidefs.h>
 
-.. c:enum:: TSRecordDataType
+.. enum:: TSRecordDataType
 
    The underlying data type of a data record (configuration variable or statistic).
 
-   .. c:enumerator:: TS_RECORDDATATYPE_NULL
+   .. enumerator:: TS_RECORDDATATYPE_NULL
 
       No data type. Used as an invalid initialization value.
 
-   .. c:enumerator:: TS_RECORDDATATYPE_INT
+   .. enumerator:: TS_RECORDDATATYPE_INT
 
       An integer.
 
-   .. c:enumerator:: TS_RECORDDATATYPE_FLOAT
+   .. enumerator:: TS_RECORDDATATYPE_FLOAT
 
        Floating point.
 
-   .. c:enumerator:: TS_RECORDDATATYPE_STRING
+   .. enumerator:: TS_RECORDDATATYPE_STRING
 
       A string.
 
-   .. c:enumerator:: TS_RECORDDATATYPE_COUNTER
+   .. enumerator:: TS_RECORDDATATYPE_COUNTER
 
       A counter which has a count and a sum.
 
-   .. c:enumerator:: TS_RECORDDATATYPE_STAT_CONST
+   .. enumerator:: TS_RECORDDATATYPE_STAT_CONST
 
       A value that is unchangeable.
 
-   .. c:enumerator:: TS_RECORDDATATYPE_STAT_FX
+   .. enumerator:: TS_RECORDDATATYPE_STAT_FX
 
       Unknown.
 
-.. c:union:: TSRecordData
+.. union:: TSRecordData
 
-   A union that holds the data for a record. The correct member is indicated by a :c:enum:`TSRecordType` value.
+   A union that holds the data for a record. The correct member is indicated by a :enum:`TSRecordType` value.
 
-   .. c:member:: int rec_int
+   .. var:: int rec_int
 
-      Data for :c:enumerator:`TS_RECORDDATATYPE_INT <TSRecordDataType.TS_RECORDDATATYPE_INT>`.
+      Data for :enumerator:`TS_RECORDDATATYPE_INT`.
 
-   .. c:member:: float rec_float
+   .. var:: float rec_float
 
-      Data for :c:enumerator:`TS_RECORDDATATYPE_FLOAT <TSRecordDataType.TS_RECORDDATATYPE_FLOAT>`.
+      Data for :enumerator:`TS_RECORDDATATYPE_FLOAT`.
 
-   .. c:member:: char * rec_string
+   .. var:: char * rec_string
 
-      Data for :c:enumerator:`TS_RECORDDATATYPE_STRING <TSRecordDataType.TS_RECORDDATATYPE_STRING>`.
+      Data for :enumerator:`TS_RECORDDATATYPE_STRING`.
 
-   .. c:member:: int64_t rec_counter
+   .. var:: int64_t rec_counter
 
-      Data for :c:enumerator:`TS_RECORDDATATYPE_COUNTER <TSRecordDataType.TS_RECORDDATATYPE_COUNTER>`.
+      Data for :enumerator:`TS_RECORDDATATYPE_COUNTER`.
 
 Description
 ===========

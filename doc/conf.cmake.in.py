@@ -178,14 +178,30 @@ pygments_style = 'default'
 
 nitpicky = True
 nitpick_ignore = [
-    ('c:identifier', 'int64_t'),
-    ('c:identifier', 'uint64_t'),
-    ('c:identifier', 'uint8_t'),
-    ('c:identifier', 'int32_t'),
-    ('c:identifier', 'size_t'),
-    ('c:identifier', 'ssize_t'),
-    ('c:identifier', 'sockaddr'),
-    ('c:identifier', 'time_t'),
+    ('cpp:identifier', 'int64_t'),
+    ('cpp:identifier', 'uint64_t'),
+    ('cpp:identifier', 'uint8_t'),
+    ('cpp:identifier', 'int32_t'),
+    ('cpp:identifier', 'size_t'),
+    ('cpp:identifier', 'ssize_t'),
+    ('cpp:identifier', 'sockaddr'),
+    ('cpp:identifier', 'time_t'),
+    ('cpp:identifier', 'time_t'),
+    ('cpp:identifier', 'swoc'),
+    ('cpp:identifier', 'swoc::Rv<Directive::Handle>'),
+    ('cpp:identifier', 'Directive::Handle'),
+    ('cpp:identifier', 'CfgStaticData'),
+    ('cpp:identifier', 'YAML'),
+    ('cpp:identifier', 'YAML::Node'),
+    ('cpp:identifier', 'swoc'),
+    ('cpp:identifier', 'swoc::TextView'),
+    ('cpp:identifier', 'swoc'),
+    ('cpp:identifier', 'swoc::TextView'),
+    ('cpp:identifier', 'YAML'),
+    ('cpp:identifier', 'YAML::Node'),
+    ('cpp:identifier', 'swoc'),
+    ('cpp:identifier', 'swoc::Errata'),
+    ('cpp:identifier', 'CfgStaticData'),
     ('cpp:identifier', 'T'),  # template arg
     ('cpp:identifier', 'F'),  # template arg
     ('cpp:identifier', 'Args'),  # variadic template arg

@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeParserCreate
 ******************
@@ -38,4 +38,4 @@ Creates a MIME parser.
 The parser's data structure contains information about the header
 being parsed.  A single MIME parser can be used multiple times, though
 not simultaneously.  Before being used again, the parser must be
-cleared by calling :c:func:`TSMimeParserClear`.
+cleared by calling :func:`TSMimeParserClear`.

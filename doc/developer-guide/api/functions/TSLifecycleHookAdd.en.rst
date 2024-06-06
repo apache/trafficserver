@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 .. _ts-lifecycle-hook-add:
 
@@ -26,7 +26,7 @@ TSLifecycleHookAdd
 Synopsis
 ========
 
-.. code-block:: c
+.. code-block:: cpp
 
     #include <ts/ts.h>
 
@@ -60,7 +60,7 @@ Types
       API functions that depend on server ports should be called from this hook
       and not :func:`TSPluginInit`.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` and
+      Invoked with the event :enumerator:`TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` and
       ``nullptr`` data.
 
    .. cpp:enumerator:: TS_LIFECYCLE_PORTS_READY_HOOK
@@ -71,22 +71,22 @@ Types
       is called will be accepted by |TS|, making this a convenient place to signal
       external processes of that.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_PORTS_READY` and ``nullptr``
+      Invoked with the event :enumerator:`TS_EVENT_LIFECYCLE_PORTS_READY` and ``nullptr``
       data.
 
    .. cpp:enumerator:: TS_LIFECYCLE_CACHE_READY_HOOK
 
       Called after |TS| cache initialization has finished.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_CACHE_READY` and ``nullptr``
+      Invoked with the event :enumerator:`TS_EVENT_LIFECYCLE_CACHE_READY` and ``nullptr``
       data.
 
    .. cpp:enumerator:: TS_LIFECYCLE_MSG_HOOK
 
       Called when triggered by an external process, such as :program:`traffic_ctl`.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_MSG`. The data is an instance of the
-      :c:type:`TSPluginMsg`. This contains a *tag* which is a null terminated string and a data payload.
+      Invoked with the event :enumerator:`TS_EVENT_LIFECYCLE_MSG`. The data is an instance of the
+      :type:`TSPluginMsg`. This contains a *tag* which is a null terminated string and a data payload.
       The payload cannot be assumed to be null terminated and is created by the external agent. Its internal
       structure and format are entirely under the control of the external agent although presumably there is
       an agreement between the plugin and the external where this is determined by the :arg:`tag`.
@@ -103,7 +103,7 @@ Types
 
       Called after |TS| task threads have been started.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_TASK_THREADS_READY` and ``nullptr``
+      Invoked with the event :enumerator:`TS_EVENT_LIFECYCLE_TASK_THREADS_READY` and ``nullptr``
       data.
 
    .. cpp:enumerator:: TS_LIFECYCLE_SSL_SECRET_HOOK
@@ -111,30 +111,30 @@ Types
       Called before the data for the certificate or key is loaded.  The data argument to the callback is a pointer to a :type:`TSSecretID` which
       contains a pointer to the name of the certificate or key and the relevant version if applicable.
 
-      This hook gives the plugin a chance to load the certificate or key from an alternative source and set via the :c:func:`TSSslSecretSet` API.
+      This hook gives the plugin a chance to load the certificate or key from an alternative source and set via the :func:`TSSslSecretSet` API.
       If there is no plugin override, the certificate or key will be loaded from disk and the secret name will be interpreted as a file path.
 
    .. cpp:enumerator:: TS_LIFECYCLE_SHUTDOWN_HOOK
 
       Called after |TS| receiving a shutdown signal, such as SIGTERM.
 
-      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_SHUTDOWN` and ``nullptr`` data.
+      Invoked with the event :enumerator:`TS_EVENT_LIFECYCLE_SHUTDOWN` and ``nullptr`` data.
 
-.. c:struct:: TSPluginMsg
+.. struct:: TSPluginMsg
 
-   The data for the plugin message event :c:data:`TS_EVENT_LIFECYCLE_MSG`.
+   The data for the plugin message event :enumerator:`TS_EVENT_LIFECYCLE_MSG`.
 
-   .. c:var:: const char * tag
+   .. var:: const char * tag
 
       The tag of the message. This is a null terminated string.
 
-   .. c:var:: const void * data
+   .. var:: const void * data
 
       Message data (payload). This is a raw slab of bytes - no structure is guaranteed.
 
-   .. c:var:: size_t data_size
+   .. var:: size_t data_size
 
-      The number of valid bytes pointed at by :var:`TSPluginMsg.data`.
+      The number of valid bytes pointed at by :var:`TSPluginMsg::data`.
 
 Ordering
 ========
@@ -150,7 +150,7 @@ The following example demonstrates how to correctly use
 initialized and therefore does not work if called from :func:`TSPluginInit`
 directly.
 
-.. code-block:: c
+.. code-block:: cpp
 
    #include <ts/ts.h>
 

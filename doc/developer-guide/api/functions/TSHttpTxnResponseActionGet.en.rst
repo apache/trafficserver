@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpTxnResponseActionGet
 **************************
@@ -42,3 +42,23 @@ n if not null.
 
 The action members will always be zero, if no plugin has called TSHttpTxnResp
 onseActionSet.
+
+.. cpp:type:: uint16_t in_port_t
+
+   A type representing a port number.
+
+.. struct:: TSResponseAction
+
+   Exposed for custom parent selection behavior.
+
+   .. member:: char const *hostname
+
+      The host for next request.
+
+   .. member:: size_t hostname_len
+
+      The host length for next request (not including null).
+
+   .. member:: in_port_t port
+
+      The port for next request.

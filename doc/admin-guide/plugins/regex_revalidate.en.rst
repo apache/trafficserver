@@ -141,7 +141,7 @@ Matches Only Post-Remapping
 The regular expressions in revalidation rules see only the final, remapped URL
 in a transaction. As such, they cannot be used to distinguish between two
 client-facing URLs which are mapped to the same origin object. This is due to
-the fact that the plugin uses :c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`.
+the fact that the plugin uses :cpp:enumerator:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`.
 
 Removing Rules
 --------------

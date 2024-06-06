@@ -340,7 +340,7 @@ as a string as well as an integer.
 The module is responsible for creating an instance of :code:`MgmtConverter` with the appropriate
 load / store function pairs set. The declaration must be visible in the :ts:git:`proxy/InkAPI.cc`
 file. The function :code:`_conf_to_memberp` sets up the conversion. For the value of the enumeration
-:c:type:`TSOverridableConfigKey` that specifies the overridable variable, code is added to specify
+:cpp:type:`TSOverridableConfigKey` that specifies the overridable variable, code is added to specify
 the member and the conversion. There are default converters for the API types and if the overridable
 is one of those, it is only necessary to call :code:`_memberp_to_generic` passing in a pointer to
 the variable. For a variable with conversion, :arg:`ret` should be set to point to the variable and

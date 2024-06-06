@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../common.defs
+.. default-domain:: cpp
 
 .. _http-proxy-caching:
 
@@ -663,21 +664,21 @@ The buffer size calculations include all elements in the transaction, including
 any buffers associated with :ref:`transform plugins <developer-plugins-http-transformations>`.
 
 Transaction buffering control can be enabled globally by using configuration
-variables or by :c:func:`TSHttpTxnConfigIntSet` in a plugin.
+variables or by :func:`TSHttpTxnConfigIntSet` in a plugin.
 
 ================= ================================================== =======================================================
-Value             Variable                                           :c:func:`TSHttpTxnConfigIntSet` key
+Value             Variable                                           :func:`TSHttpTxnConfigIntSet` key
 ================= ================================================== =======================================================
-Enable buffering  :ts:cv:`proxy.config.http.flow_control.enabled`    :c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`
-Set high water    :ts:cv:`proxy.config.http.flow_control.high_water` :c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK`
-Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  :c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK`
+Enable buffering  :ts:cv:`proxy.config.http.flow_control.enabled`    :cpp:enumerator:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`
+Set high water    :ts:cv:`proxy.config.http.flow_control.high_water` :cpp:enumerator:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK`
+Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  :cpp:enumerator:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK`
 ================= ================================================== =======================================================
 
 Be careful to always have the low water mark equal or less than the high water
 mark. If you set only one, the other will be set to the same value.
 
-If using :c:func:`TSHttpTxnConfigIntSet`, it must be called no later than
-:c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`.
+If using :func:`TSHttpTxnConfigIntSet`, it must be called no later than
+:cpp:enumerator:`TS_HTTP_READ_RESPONSE_HDR_HOOK`.
 
 .. _admin-configuration-reducing-origin-requests:
 

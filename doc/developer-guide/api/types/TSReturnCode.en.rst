@@ -16,6 +16,8 @@
 
 .. include:: ../../../common.defs
 
+.. default-domain:: cpp
+
 TSReturnCode
 ************
 
@@ -26,16 +28,16 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:type:: TSReturnCode
+.. enum:: TSReturnCode
 
 Enum typedef.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSReturnCode TS_ERROR
+.. enumerator:: TSReturnCode::TS_ERROR
 
-.. c:member:: TSReturnCode TS_SUCCESS
+.. enumerator:: TSReturnCode::TS_SUCCESS
 
 Description
 ===========

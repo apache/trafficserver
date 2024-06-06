@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-hooks-alternate-selection:
 
@@ -47,7 +48,7 @@ register locally to the hook ``TS_HTTP_SELECT_ALT_HOOK`` by using
 transaction or an HTTP session on hand when alternate selection is
 performed, it is only valid to hook onto the global list of
 ``TS_HTTP_SELECT_ALT_HOOK``. Traffic Server calls each of the select
-alternate hooks with the ``TS_EVENT_HTTP_SELECT_ALT`` event. The
+alternate hooks with the :enumerator:`TS_EVENT_HTTP_SELECT_ALT` event. The
 ``void *edata`` argument that is passed to the continuation is a pointer
 to an ``TSHttpAltInfo`` structure. It can be used later to call the HTTP
 alternate selection functions listed at the end of this section. Unlike

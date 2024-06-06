@@ -20,7 +20,7 @@
    when providing additional documentation on the type, to move it from here to a more appropriate
    file.
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSAPI Types
 ***********
@@ -45,10 +45,6 @@ more widely. Those are described on this page.
 .. type:: INK_MD5
 
    Buffer type sufficient to contain an MD5 hash value.
-
-.. cpp:class:: INK_MD5
-
-   See :type:`INK_MD5`.
 
 .. cpp:class:: RecRawStatBlock
 
@@ -107,12 +103,12 @@ more widely. Those are described on this page.
 
       A numeric value specifying the minimum number of bytes that must be written to
       an IOBuffer before any continuation is called back to read from the buffer.
-      See the :c:func:`TSIOBufferWaterMarkGet` and :c:func:`TSIOBufferWaterMarkSet`
+      See the :func:`TSIOBufferWaterMarkGet` and :func:`TSIOBufferWaterMarkSet`
       functions for further detail.
 
 .. type:: TSConnectType
 
-   Enumeration that specifies the type of data within a :c:type:`TSHttpConnectOptions` structure.
+   Enumeration that specifies the type of data within a :cpp:type:`TSHttpConnectOptions` structure.
 
 .. type:: TSHttpParser
 
@@ -135,10 +131,6 @@ more widely. Those are described on this page.
 .. type:: TSIOBufferWaterMark
 
    An enumeration that contains valid watermark values, currently only defaults.
-
-.. type:: TSLifecycleHookID
-
-   An enumeration that identifies a :ref:`life cycle hook <ts-lifecycle-hook-add>`.
 
 .. type:: TSMBuffer
 
@@ -165,10 +157,10 @@ more widely. Those are described on this page.
 
 .. type:: TSMLoc
 
-   This is a memory location relative to a :term:`header heap` represented by a :c:type:`TSMBuffer` and
-   must always be used in conjunction with that :c:type:`TSMBuffer` instance. It identifies a specific
-   object in the :c:type:`TSMBuffer`. This indirection is needed so that the :c:type:`TSMBuffer`
-   can reallocate space as needed. Therefore a raw address obtained from a :c:type:`TSMLoc` should
+   This is a memory location relative to a :term:`header heap` represented by a :cpp:type:`TSMBuffer` and
+   must always be used in conjunction with that :cpp:type:`TSMBuffer` instance. It identifies a specific
+   object in the :cpp:type:`TSMBuffer`. This indirection is needed so that the :cpp:type:`TSMBuffer`
+   can reallocate space as needed. Therefore a raw address obtained from a :cpp:type:`TSMLoc` should
    be considered volatile that may become invalid across any API call.
 
 .. var:: TSMLoc TS_NULL_MLOC
@@ -314,10 +306,6 @@ more widely. Those are described on this page.
 .. type:: TSVIO
 
 .. type:: ModuleVersion
-
-    A module version.
-
-.. cpp:type:: ModuleVersion
 
     A module version.
 

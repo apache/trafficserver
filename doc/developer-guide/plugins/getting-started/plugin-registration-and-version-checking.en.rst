@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-getting-started-registration:
 
@@ -28,8 +29,8 @@ compilation time and run time.
 
 Use the following interfaces:
 
--  :c:func:`TSPluginRegister`
--  :c:func:`TSTrafficServerVersionGet`
+-  :func:`TSPluginRegister`
+-  :func:`TSTrafficServerVersionGet`
 
 The plugin registers the plugin and ensures it's running with a
 compatible version of Traffic Server.

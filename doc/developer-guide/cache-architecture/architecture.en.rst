@@ -755,7 +755,7 @@ The checks that are done are:
       for the response to be cached. It is disabled by default, for
       best performance.
 
-A plugin can call :c:func:`TSHttpTxnReqCacheableSet()` to force the request to
+A plugin can call :func:`TSHttpTxnReqCacheableSet()` to force the request to
 be viewed as cache valid.
 
 .. _cache-lookup:

@@ -17,7 +17,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpHookAdd
 *************
@@ -82,7 +82,7 @@ the continuation function depends on the name of the hook.  The naming
 convention is that, for hook TS_xxx_HOOK, the event passed to the continuation
 function will be TS_EVENT_xxx.  For example, when a continuation attached to
 TS_HTTP_READ_REQUEST_HDR_HOOK is triggered, the event passed to the continuation
-function will be TS_EVENT_HTTP_READ_REQUEST_HDR.
+function will be :enumerator:`TS_EVENT_HTTP_READ_REQUEST_HDR`.
 
 When a continuation is triggered by a hook, the actual type of the event data
 (the void pointer passed as the third parameter to the continuation function) is

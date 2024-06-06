@@ -15,6 +15,7 @@
    permissions and limitations under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 TSStatPersistence
 *****************
@@ -26,18 +27,18 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. c:type:: TSStatPersistence
+.. enum:: TSStatPersistence
 
 Enum typedef.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSStatPersistence TS_STAT_PERSISTENT
+.. enumerator:: TSStatPersistence::TS_STAT_PERSISTENT
 
    The statistic value should be preserved across :program:`traffic_server` restarts.
 
-.. c:member:: TSStatPersistence TS_STAT_NON_PERSISTENT
+.. enumerator:: TSStatPersistence::TS_STAT_NON_PERSISTENT
 
    The statistic value should not be preserved across process restarts.
 

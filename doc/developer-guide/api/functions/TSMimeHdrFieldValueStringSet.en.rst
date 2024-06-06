@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrFieldValueStringSet
 ****************************
@@ -47,4 +47,4 @@ non-negative it must be the index of an existing element or exactly one past the
 call will fail. In the example case :arg:`idx` must be between ``0`` and ``3`` inclusive.
 :func:`TSMimeHdrFieldValuesCount` can be used to get the current number of elements.
 
-This function returns :macro:`TS_SUCCESS` if the value was set, :macro:`TS_ERROR` if not.
+This function returns :enumerator:`TS_SUCCESS` if the value was set, :enumerator:`TS_ERROR` if not.
