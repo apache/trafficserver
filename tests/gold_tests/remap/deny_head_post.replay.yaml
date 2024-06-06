@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# This expects a remap.config that allows GET and POST, but denies all other
+# This expects a remap.config that denies HEAD and POST, but allows all other
 # methods.
 
 meta:
@@ -82,3 +82,19 @@ sessions:
 
     proxy-response:
       status: 403
+
+  - client-request:
+      method: "DELETE"
+      version: "1.1"
+      url: /test/ip_allow/test_delete
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, delete ]
+        - [ X-Request, delete ]
+        - [ Content-Length, 0 ]
+
+    <<: *standard_response
+
+    proxy-response:
+      status: 200
