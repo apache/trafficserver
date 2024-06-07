@@ -1309,7 +1309,7 @@ allow-plain
    in a request with the sum of their name and value that exceed this size will cause the
    entire request to be treated as invalid and rejected by the proxy.
 
-.. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 131072
+.. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 32768
    :overridable:
    :reloadable:
 
@@ -1317,7 +1317,7 @@ allow-plain
    in a request which exceed this size will cause the entire request to be
    treated as invalid and rejected by the proxy.
 
-.. ts:cv:: CONFIG proxy.config.http.response_header_max_size INT 131072
+.. ts:cv:: CONFIG proxy.config.http.response_header_max_size INT 32768
    :overridable:
    :reloadable:
 
@@ -4448,12 +4448,11 @@ HTTP/2 Configuration
    Dynamic Table, however, headers still can be encoded as indexable
    representations. The upper limit is 65536.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 131072
+.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 32768
    :reloadable:
 
    This advisory setting informs a peer of the maximum size of header list
-   that the sender is prepared to accept blocks. The default value, which is
-   the unsigned int maximum value in |TS|, implies unlimited size.
+   that the sender is prepared to accept.
 
 .. ts:cv:: CONFIG proxy.config.http2.stream_priority_enabled INT 0
    :reloadable:
