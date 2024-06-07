@@ -91,12 +91,6 @@ public:
    * Case insensitive comparison of this HeaderFieldName
    * @return true if the two strings are equal.
    */
-  bool operator==(std::string_view field_name);
-
-  /**
-   * Case insensitive comparison of this HeaderFieldName
-   * @return true if the two strings are equal.
-   */
   bool operator==(const std::string &field_name);
 
   /**
@@ -104,12 +98,6 @@ public:
    * @return true if the two strings are not equal.
    */
   bool operator!=(const char *field_name);
-
-  /**
-   * Case insensitive comparison of this HeaderFieldName
-   * @return true if the two strings are not equal.
-   */
-  bool operator!=(std::string_view field_name);
 
   /**
    * Case insensitive comparison of this HeaderFieldName
@@ -357,13 +345,6 @@ public:
    */
   bool operator==(const char *field_name) const;
 
-  /**
-   * Compares the name of the header field only (not the values).
-   * @note This is a case insensitive comparison.
-   * @return true if the name is equal (case insensitive comparison).
-   */
-  bool operator==(std::string_view field_name) const;
-
   /** Compares the name of the header field only (not the values).
    * @note This is a case insensitive comparison.
    * @return true if the name is equal (case insensitive comparison).
@@ -375,12 +356,6 @@ public:
    * @return true if the name is NOT equal (case insensitive comparison).
    */
   bool operator!=(const char *field_name) const;
-
-  /** Compares the name of the header field only (not the values).
-   * @note This is a case insensitive comparison.
-   * @return true if the name is NOT equal (case insensitive comparison).
-   */
-  bool operator!=(std::string_view field_name) const;
 
   /** Compares the name of the header field only (not the values).
    * @note This is a case insensitive comparison.
