@@ -1,6 +1,9 @@
-/** @ja3_fingerprint.cc
+/** @file ja3_fingerprint.cc
+ *
   Plugin JA3 Fingerprint calculates JA3 signatures for incoming SSL traffic.
+
   @section license License
+
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -8,12 +11,15 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
+
       http://www.apache.org/licenses/LICENSE-2.0
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
 #include "ja3_utils.h"
@@ -107,7 +113,7 @@ custom_get_ja3(SSL *ssl)
 
   // Get cipher suites
   len = SSL_client_hello_get0_ciphers(ssl, &buf);
-  result.append(ja3::encode_dword_buffer(buf, len));
+  result.append(ja3::encode_word_buffer(buf, len));
   result.push_back(',');
 
   // Get extensions
@@ -121,14 +127,14 @@ custom_get_ja3(SSL *ssl)
   // Get elliptic curves
   if (SSL_client_hello_get0_ext(ssl, 0x0a, &buf, &len) == 1) {
     // Skip first 2 bytes since we already have length
-    result.append(ja3::encode_dword_buffer(buf + 2, len - 2));
+    result.append(ja3::encode_word_buffer(buf + 2, len - 2));
   }
   result.push_back(',');
 
   // Get elliptic curve point formats
   if (SSL_client_hello_get0_ext(ssl, 0x0b, &buf, &len) == 1) {
     // Skip first byte since we already have length
-    result.append(ja3::encode_word_buffer(buf + 1, len - 1));
+    result.append(ja3::encode_byte_buffer(buf + 1, len - 1));
   }
   return result;
 }

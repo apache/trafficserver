@@ -1,6 +1,9 @@
-/** @ja3_utils.cc
+/** @file ja3_utils.cc
+
   Plugin JA3 Fingerprint calculates JA3 signatures for incoming SSL traffic.
+
   @section license License
+
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -8,12 +11,15 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
+
       http://www.apache.org/licenses/LICENSE-2.0
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
 #include <algorithm>
@@ -31,7 +37,7 @@ static std::unordered_set<std::uint16_t> const GREASE_table = {0x0a0a, 0x1a1a, 0
 static constexpr std::uint16_t
 from_big_endian(unsigned char lowbyte, unsigned char highbyte)
 {
-  return (static_cast<std::uint16_t>(lowbyte) << 8) + highbyte;
+  return (static_cast<std::uint16_t>(lowbyte) << 8) | highbyte;
 }
 
 static bool
@@ -41,7 +47,7 @@ ja3_should_ignore(std::uint16_t n)
 }
 
 std::string
-encode_word_buffer(unsigned char const *buf, int const len)
+encode_byte_buffer(unsigned char const *buf, int const len)
 {
   std::string result;
   if (len > 0) {
@@ -58,21 +64,21 @@ encode_word_buffer(unsigned char const *buf, int const len)
 }
 
 std::string
-encode_dword_buffer(unsigned char const *buf, int const len)
+encode_word_buffer(unsigned char const *buf, int const len)
 {
   std::string result;
   auto        it{buf};
-  while (it < buf + len && ja3_should_ignore(from_big_endian(it[0], it[1]))) {
+  while ((it < (buf + len)) && ja3_should_ignore(from_big_endian(it[0], it[1]))) {
     it += 2;
   }
-  if (it < buf + len) {
+  if (it < (buf + len)) {
     // Benchmarks show that reserving buf.size() - 1 space in the string here
     // would have no impact on performance. Since the string may not even need
     // that much due to GREASE values present in the buffer, we don't do it.
     result.append(std::to_string(from_big_endian(it[0], it[1])));
     it += 2;
     for (; it < buf + len; it += 2) {
-      auto value{from_big_endian(it[0], it[1])};
+      auto const value{from_big_endian(it[0], it[1])};
       if (!ja3_should_ignore(value)) {
         result.push_back('-');
         result.append(std::to_string(value));
@@ -87,7 +93,7 @@ encode_integer_buffer(int const *buf, int const len)
 {
   std::string result;
   auto        it{std::find_if(buf, buf + len, [](int i) { return !ja3_should_ignore(i); })};
-  if (it < buf + len) {
+  if (it < (buf + len)) {
     result.append(std::to_string(*it));
     std::for_each(it + 1, buf + len, [&result](int const i) {
       if (!ja3_should_ignore(i)) {
