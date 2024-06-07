@@ -277,7 +277,6 @@ public:
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
   int                                      get_agg_buf_pos() const;
-  int                                      get_agg_todo_size() const;
 
   /**
    * Add a virtual connection waiting to write to this stripe.
@@ -549,10 +548,4 @@ inline int
 Stripe::get_agg_buf_pos() const
 {
   return this->_write_buffer.get_buffer_pos();
-}
-
-inline int
-Stripe::get_agg_todo_size() const
-{
-  return this->_write_buffer.get_bytes_pending_aggregation();
 }
