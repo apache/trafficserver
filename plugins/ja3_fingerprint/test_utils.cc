@@ -27,7 +27,7 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
-TEST_CASE("ja3 word buffer encoding")
+TEST_CASE("ja3 byte buffer encoding")
 {
   unsigned char const buf[]{0x8, 0x3, 0x4};
 
