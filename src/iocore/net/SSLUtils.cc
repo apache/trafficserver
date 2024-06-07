@@ -866,7 +866,7 @@ void
 SSLPostConfigInitialize()
 {
   if (SSLConfigParams::engine_conf_file) {
-#ifndef OPENSSL_IS_BORINGSSL
+#if HAVE_ENGINE_LOAD_DYNAMIC
     ENGINE_load_dynamic();
 #endif
 
@@ -948,7 +948,7 @@ static bool
 SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *keyPath, const char *secret_data, int secret_data_len)
 {
   EVP_PKEY *pkey = nullptr;
-#ifndef OPENSSL_IS_BORINGSSL
+#if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
   ENGINE *e = ENGINE_get_default_RSA();
   if (e != nullptr) {
     pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
@@ -2552,7 +2552,7 @@ SSLMultiCertConfigLoader::clear_pw_references(SSL_CTX *ssl_ctx)
 ssl_curve_id
 SSLGetCurveNID(SSL *ssl)
 {
-#ifndef OPENSSL_IS_BORINGSSL
+#if HAVE_SSL_GET_SHARED_CURVE
   return SSL_get_shared_curve(ssl, 0);
 #else
   return SSL_get_curve_id(ssl);
