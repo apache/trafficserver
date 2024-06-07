@@ -44,9 +44,13 @@ hex(const std::string_view input)
 
   result.resize(input.size() * 2);
 
-  char *p = result.data();
-  for (auto x : input) {
-    if (auto [ptr, err] = std::to_chars(p, result.data() + result.size(), x, 16); err == std::errc()) {
+  char *p   = result.data();
+  char *end = result.data() + result.size();
+  for (unsigned char x : input) {
+    if (x < 0x10) {
+      *p++ = '0';
+    }
+    if (auto [ptr, err] = std::to_chars(p, end, x, 16); err == std::errc()) {
       p = ptr;
     } else {
       throw std::runtime_error(std::make_error_code(err).message().c_str());
