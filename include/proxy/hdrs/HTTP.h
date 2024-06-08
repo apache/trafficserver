@@ -506,7 +506,7 @@ public:
 
   int unmarshal(char *buf, int len, RefCountObj *block_ref);
 
-  int print(char *buf, int bufsize, int *bufindex, int *dumpoffset);
+  int print(char *buf, int bufsize, int *bufindex, int *dumpoffset) const;
 
   int length_get() const;
 
@@ -761,7 +761,7 @@ HTTPHdr::copy_shallow(const HTTPHdr *hdr)
   -------------------------------------------------------------------------*/
 
 inline int
-HTTPHdr::print(char *buf, int bufsize, int *bufindex, int *dumpoffset)
+HTTPHdr::print(char *buf, int bufsize, int *bufindex, int *dumpoffset) const
 {
   ink_assert(valid());
   return http_hdr_print(m_http, buf, bufsize, bufindex, dumpoffset);
