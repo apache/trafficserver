@@ -2710,8 +2710,7 @@ mime_field_block_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 }
 
 int
-mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start, int buf_length, int *buf_index_inout,
-               int *buf_chars_to_skip_inout)
+mime_hdr_print(MIMEHdrImpl *mh, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
   MIMEFieldBlockImpl *fblock;
   MIMEField          *field;

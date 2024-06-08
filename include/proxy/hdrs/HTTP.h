@@ -428,7 +428,7 @@ void         http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HT
 HTTPHdrImpl *http_hdr_clone(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HdrHeap *d_heap);
 void         http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHeap *d_heap, bool inherit_strs);
 
-int http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hh, char *buf, int bufsize, int *bufindex, int *dumpoffset);
+int http_hdr_print(HdrHeap * /* heap ATS_UNUSED */, HTTPHdrImpl *hh, char *buf, int bufsize, int *bufindex, int *dumpoffset);
 
 void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 
