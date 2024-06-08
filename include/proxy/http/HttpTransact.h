@@ -69,17 +69,16 @@ s_dump_header(HTTPHdr const *hdr, std::string &out)
     // the use of tmp is precautionary to make sure our logic
     // doesn't break in case it does change in some circumstance.
     int tmp{offset};
-    done     = hdr->print(b, 4095, &used, &tmp);
+    done     = hdr->print(b, 4096, &used, &tmp);
     offset  += used;
-    b[used]  = '\0';
-    out.append(b);
+    out.append(b, used);
   } while (0 == done);
 }
 
 inline void
 dump_header(DbgCtl const &ctl, HTTPHdr const *hdr, std::int64_t sm_id, std::string_view description)
 {
-  if (true) {
+  if (ctl.on()) {
     std::string output;
     output.append("+++++++++ ");
     output.append(description);
