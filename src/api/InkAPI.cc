@@ -1524,12 +1524,12 @@ TSMimeHdrPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
   sdk_assert((sdk_sanity_check_mime_hdr_handle(obj) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS));
   sdk_assert(sdk_sanity_check_iocore_structure(iobufp) == TS_SUCCESS);
 
-  MIMEHdrImpl   *mh = _hdr_mloc_to_mime_hdr_impl(obj);
-  MIOBuffer     *b  = (MIOBuffer *)iobufp;
-  IOBufferBlock *blk;
-  int            bufindex;
-  int            tmp, dumpoffset = 0;
-  int            done;
+  MIMEHdrImpl const *mh = _hdr_mloc_to_mime_hdr_impl(obj);
+  MIOBuffer         *b  = (MIOBuffer *)iobufp;
+  IOBufferBlock     *blk;
+  int                bufindex;
+  int                tmp, dumpoffset = 0;
+  int                done;
 
   do {
     blk = b->get_current_block();
