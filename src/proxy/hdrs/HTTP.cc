@@ -429,7 +429,7 @@ http_version_print(const HTTPVersion &version, char *buf, int bufsize, int *bufi
   -------------------------------------------------------------------------*/
 
 int
-http_hdr_print(HTTPHdrImpl *hdr, char *buf, int bufsize, int *bufindex, int *dumpoffset)
+http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, int *dumpoffset)
 {
 #define TRY(x) \
   if (!x)      \
