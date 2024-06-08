@@ -1068,7 +1068,7 @@ HTTPHdr::url_set(const char *str, int length)
   -------------------------------------------------------------------------*/
 
 inline HTTPStatus
-http_hdr_status_get(HTTPHdrImpl *hh)
+http_hdr_status_get(HTTPHdrImpl const *hh)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
   return (HTTPStatus)hh->u.resp.m_status;
