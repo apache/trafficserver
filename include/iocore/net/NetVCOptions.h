@@ -145,6 +145,8 @@ struct NetVCOptions {
   static uint32_t const SOCK_OPT_PACKET_TOS = 32;
   /// Value for TCP_NOTSENT_LOWAT @c sockopt_flags
   static uint32_t const SOCK_OPT_TCP_NOTSENT_LOWAT = 64;
+  /// Value for SO_INCOMING_CPU @c sockopt_flags
+  static uint32_t const SOCK_OPT_INCOMING_CPU = 128;
 
   uint32_t packet_mark;
   uint32_t packet_tos;

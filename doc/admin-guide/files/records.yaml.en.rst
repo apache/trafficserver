@@ -5061,9 +5061,11 @@ Sockets
         PACKET_MARK (16)
         PACKET_TOS (32)
         TCP_NOTSENT_LOWAT (64)
+        INCOMING_CPU (128)
 
    Note: If MPTCP is enabled, TCP_NODELAY is only supported on Linux kernels 5.17+. TCP_FASTOPEN
    and TCP_NOTSENT_LOWAT socket options are currently not supported.
+
 .. note::
 
    This is a bitmask and you need to decide what bits to set.  Therefore,
@@ -5074,6 +5076,20 @@ Sockets
 
    To allow TCP Fast Open for client sockets on Linux, bit 2 of
    the ``net.ipv4.tcp_fastopen`` sysctl must be set.
+
+.. note::
+
+   As for SO_INCOMING_CPU, using it with SO_REUSEPORT and exec_thread affinity 4 is recommended.
+
+   .. code-block:: yaml
+
+      ts:
+        accept_threads: 0
+        exec_thread:
+          listen: 1
+          affinity: 4
+        net:
+         sock_option_flag_in: 0x80
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_out INT 0
    :overridable:
