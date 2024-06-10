@@ -49,8 +49,12 @@ namespace
 {
 DbgCtl dbg_ctl_log_escape{"log-escape"};
 DbgCtl dbg_ctl_log_resolve{"log-resolve"};
+DbgCtl dbg_ctl_log_unmarshal_orun{"log-unmarshal-orun"}; // Overrrun of unmarshaling destination buffer.
+DbgCtl dbg_ctl_log_unmarshal_data{"log-unmarshal-data"}; // Error in txn data when unmarshalling.
 
 } // end anonymous namespace
+
+#define DBG_UNMARSHAL_DEST_OVERRUN Dbg(dbg_ctl_log_unmarshal_orun, "Unmarshal destination buffer overrun.");
 
 /*-------------------------------------------------------------------------
   LogAccess
@@ -447,6 +451,7 @@ LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFi
       if (codeStrLen < bufSize && codeStrLen < len) {
         ink_strlcpy(dest, invalidCodeMsg, len);
       } else {
+        DBG_UNMARSHAL_DEST_OVERRUN
         codeStrLen = -1;
       }
     } else {
@@ -454,6 +459,7 @@ LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFi
     }
     break;
   case LogFieldAliasMap::BUFFER_TOO_SMALL:
+    DBG_UNMARSHAL_DEST_OVERRUN
     codeStrLen = -1;
     break;
   }
@@ -580,6 +586,7 @@ LogAccess::unmarshal_int_to_str(char **buf, char *dest, int len)
     memcpy(dest, val_buf + 128 - val_len, val_len);
     return val_len;
   }
+  DBG_UNMARSHAL_DEST_OVERRUN
   return -1;
 }
 
@@ -604,6 +611,7 @@ LogAccess::unmarshal_int_to_str_hex(char **buf, char *dest, int len)
     memcpy(dest, val_buf + 128 - val_len, val_len);
     return val_len;
   }
+  DBG_UNMARSHAL_DEST_OVERRUN
   return -1;
 }
 
@@ -736,6 +744,7 @@ unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
     }
 
     if (n >= len) {
+      DBG_UNMARSHAL_DEST_OVERRUN
       return -1;
     }
 
@@ -746,6 +755,7 @@ unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
     escape_json(dest, val_buf, escaped_len);
     return escaped_len;
   }
+  DBG_UNMARSHAL_DEST_OVERRUN
   return -1;
 }
 
@@ -785,6 +795,7 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEs
     }
 
     if (n >= len) {
+      DBG_UNMARSHAL_DEST_OVERRUN
       return -1;
     }
 
@@ -796,6 +807,7 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice, LogEs
     memcpy(dest, val_buf, val_len);
     return val_len;
   }
+  DBG_UNMARSHAL_DEST_OVERRUN
   return -1;
 }
 
@@ -807,8 +819,11 @@ LogAccess::unmarshal_ttmsf(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   int64_t val     = unmarshal_int(buf);
-  double  secs    = static_cast<double>(val) / 1000;
-  int     val_len = snprintf(dest, len, "%.3f", secs);
+  int     val_len = snprintf(dest, len, "%" PRId64 ".%03d", val / 1000, int((val < 0 ? -val : val) % 1000));
+  if (val_len >= len) {
+    DBG_UNMARSHAL_DEST_OVERRUN
+    return -1;
+  }
   return val_len;
 }
 
@@ -822,6 +837,11 @@ LogAccess::unmarshal_int_to_date_str(char **buf, char *dest, int len)
   int64_t value  = unmarshal_int(buf);
   char   *strval = LogUtils::timestamp_to_date_str(value);
   int     strlen = static_cast<int>(::strlen(strval));
+
+  if (strlen > len) {
+    DBG_UNMARSHAL_DEST_OVERRUN
+    return -1;
+  }
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -837,6 +857,11 @@ LogAccess::unmarshal_int_to_time_str(char **buf, char *dest, int len)
   int64_t value  = unmarshal_int(buf);
   char   *strval = LogUtils::timestamp_to_time_str(value);
   int     strlen = static_cast<int>(::strlen(strval));
+
+  if (strlen > len) {
+    DBG_UNMARSHAL_DEST_OVERRUN
+    return -1;
+  }
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -864,6 +889,11 @@ LogAccess::unmarshal_int_to_netscape_str(char **buf, char *dest, int len)
   int64_t value  = unmarshal_int(buf);
   char   *strval = LogUtils::timestamp_to_netscape_str(value);
   int     strlen = static_cast<int>(::strlen(strval));
+
+  if (strlen > len) {
+    DBG_UNMARSHAL_DEST_OVERRUN
+    return -1;
+  }
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -905,31 +935,35 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  static const char *http     = "HTTP/";
-  static int         http_len = static_cast<int>(::strlen(http));
+  static const char http[]   = "HTTP/";
+  static int        http_len = static_cast<int>(sizeof(http) - 1);
 
   char  val_buf[128];
   char *p = val_buf;
 
+  auto vb_left = [&]() -> int { return sizeof(val_buf) - (p - val_buf); };
+
   memcpy(p, http, http_len);
   p += http_len;
 
-  int res1 = unmarshal_int_to_str(buf, p, 128 - http_len);
+  int res1 = unmarshal_int_to_str(buf, p, vb_left());
   if (res1 < 0) {
     return -1;
   }
   p        += res1;
   *p++      = '.';
-  int res2  = unmarshal_int_to_str(buf, p, 128 - http_len - res1 - 1);
+  int res2  = unmarshal_int_to_str(buf, p, vb_left());
   if (res2 < 0) {
+    DBG_UNMARSHAL_DEST_OVERRUN
     return -1;
   }
 
-  int val_len = http_len + res1 + res2 + 1;
+  int val_len = p - val_buf;
   if (val_len < len) {
     memcpy(dest, val_buf, val_len);
     return val_len;
   }
+  DBG_UNMARSHAL_DEST_OVERRUN
   return -1;
 }
 
@@ -991,6 +1025,7 @@ LogAccess::unmarshal_http_status(char **buf, char *dest, int len)
     memcpy(dest, val_buf + 128 - val_len, val_len);
     return val_len;
   }
+  DBG_UNMARSHAL_DEST_OVERRUN
   return -1;
 }
 
@@ -1037,18 +1072,19 @@ int
 LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
 {
   IpEndpoint ip;
-  int        zret = -1;
 
   if (len > 0) {
     unmarshal_ip(buf, &ip);
     if (!ats_is_ip(&ip)) {
       *dest = '0';
-      zret  = 1;
+      Dbg(dbg_ctl_log_unmarshal_data, "Invalid IP address");
+      return 1;
     } else if (ats_ip_ntop(&ip, dest, len)) {
-      zret = static_cast<int>(::strlen(dest));
+      return static_cast<int>(::strlen(dest));
     }
   }
-  return zret;
+  DBG_UNMARSHAL_DEST_OVERRUN
+  return -1;
 }
 
 /*-------------------------------------------------------------------------
@@ -1062,19 +1098,20 @@ LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
 {
-  int        zret = -1;
   IpEndpoint ip;
 
   if (len > 0) {
     unmarshal_ip(buf, &ip);
     if (!ats_is_ip(&ip)) {
       *dest = '0';
-      zret  = 1;
+      Dbg(dbg_ctl_log_unmarshal_data, "Invalid IP address");
+      return 1;
     } else {
-      zret = ats_ip_to_hex(&ip.sa, dest, len);
+      return ats_ip_to_hex(&ip.sa, dest, len);
     }
   }
-  return zret;
+  DBG_UNMARSHAL_DEST_OVERRUN
+  return -1;
 }
 
 /*-------------------------------------------------------------------------
@@ -1174,6 +1211,7 @@ LogAccess::unmarshal_record(char **buf, char *dest, int len)
     memcpy(dest, val_buf, val_len);
     return val_len;
   }
+  DBG_UNMARSHAL_DEST_OVERRUN
   return -1;
 }
 
