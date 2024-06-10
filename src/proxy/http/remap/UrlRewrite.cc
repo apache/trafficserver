@@ -126,6 +126,22 @@ UrlRewrite::load()
   } else {
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
+
+  // ACL Matching Policy
+  int matching_policy = 0;
+  REC_ReadConfigInteger(matching_policy, "proxy.config.url_remap.acl_matching_policy");
+  switch (matching_policy) {
+  case 0:
+    _acl_matching_policy = ACLMatchingPolicy::FIRST_EXPLICIT_MATCH_WINS;
+    break;
+  case 1:
+    _acl_matching_policy = ACLMatchingPolicy::FIRST_ANY_MATCH_WINS;
+    break;
+  default:
+    Warning("unkown ACL Matching Policy :%d", matching_policy);
+    _valid = false;
+  }
+
   return _valid;
 }
 
@@ -535,17 +551,27 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
       if (ip_matches) {
         // The rule matches. Handle the method according to the rule.
         if (method_matches) {
+          // Explicit match
           // Did they specify allowing the listed methods, or denying them?
           Dbg(dbg_ctl_url_rewrite, "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
           s->client_connection_allowed = rp->allow_flag;
-        } else {
+
+          // Since we have a explicit matching ACL, no need to process other filters nor ip_allow.yaml rules
+          // regardless of ACLMatchingPolicy.
+          map->ip_allow_check_enabled_p = false;
+          break;
+        }
+
+        if (_acl_matching_policy == ACLMatchingPolicy::FIRST_ANY_MATCH_WINS) {
+          // Flipping action with implicit match
           Dbg(dbg_ctl_url_rewrite, "ACL rule matched on IP but not on method, action: %s, %s the request",
               (rp->allow_flag ? "allow" : "deny"), (rp->allow_flag ? "denying" : "allowing"));
           s->client_connection_allowed = !rp->allow_flag;
+
+          // Since we have a implicit matching ACL, no need to process other filters nor ip_allow.yaml rules.
+          map->ip_allow_check_enabled_p = false;
+          break;
         }
-        // Since we have a matching ACL, no need to process ip_allow.yaml rules.
-        map->ip_allow_check_enabled_p = false;
-        break;
       }
     }
   } /* end of for(rp = map->filter;rp;rp = rp->next) */

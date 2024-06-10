@@ -64,6 +64,11 @@ public:
   UrlRewrite()   = default;
   ~UrlRewrite() override;
 
+  enum class ACLMatchingPolicy {
+    FIRST_EXPLICIT_MATCH_WINS = 0,
+    FIRST_ANY_MATCH_WINS,
+  };
+
   /** Load the configuration.
    *
    * This access data in librecords to obtain the information needed for loading the configuration.
@@ -226,6 +231,7 @@ public:
 
 private:
   bool _valid = false;
+  ACLMatchingPolicy _acl_matching_policy = ACLMatchingPolicy::FIRST_EXPLICIT_MATCH_WINS;
 
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host, int request_host_len,
                       UrlMappingContainer &mapping_container);
