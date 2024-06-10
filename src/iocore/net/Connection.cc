@@ -250,7 +250,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     int      cpu     = 0;
     EThread *ethread = this_ethread();
 
-#ifdef TS_USE_HWLOC
+#if TS_USE_HWLOC
     cpu = ethread->hwloc_obj->os_index;
 #else
     cpu = ethread->id;
