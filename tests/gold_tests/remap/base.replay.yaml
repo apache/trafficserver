@@ -1,0 +1,51 @@
+meta:
+  version: '1.0'
+sessions:
+- protocol:
+  - name: http
+    version: 1
+  - name: tls
+    sni: test_sni
+  transactions:
+  - client-request:
+      headers:
+        fields:
+        - - Content-Length
+          - 0
+        - - uuid
+          - get
+        - - X-Request
+          - get
+      method: GET
+      url: /test/ip_allow/test_get
+      version: '1.1'
+    proxy-response:
+      status: 200
+    server-response:
+      headers:
+        fields:
+        - - Content-Length
+          - 20
+      reason: OK
+      status: 200
+  - client-request:
+      headers:
+        fields:
+        - - Content-Length
+          - 10
+        - - uuid
+          - post
+        - - X-Request
+          - post
+      method: POST
+      url: /test/ip_allow/test_post
+      version: '1.1'
+    proxy-response:
+      status: 200
+    server-response:
+      headers:
+        fields:
+        - - Content-Length
+          - 20
+      reason: OK
+      status: 200
