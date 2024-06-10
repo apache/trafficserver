@@ -122,6 +122,7 @@ set(DEFAULT_STACK_SIZE
 )
 option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
 option(ENABLE_MALLOC_ALLOCATOR "Use direct malloc allocator over freelist allocator (default OFF)")
+option(ENABLE_ALLOCATOR_METRICS "Enable metrics for Allocators (default OFF)")
 option(ENABLE_DOCS "Build docs (default OFF)")
 option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault injection, default OFF)" OFF)
 if(ENABLE_DISK_FAILURE_TESTS)
@@ -329,6 +330,7 @@ if(ENABLE_PROBES)
 endif()
 
 set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
+set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
 # ncurses is used in traffic_top
