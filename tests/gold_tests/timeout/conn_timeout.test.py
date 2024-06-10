@@ -22,6 +22,8 @@ Test.Summary = 'Testing ATS TCP handshake timeout'
 # Comment out to run in your privileged environment
 Test.SkipIf(Condition.true("Test requires privilege"))
 
+Test.SkipUnless(Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"))
+
 ts = Test.MakeATSProcess("ts")
 
 Test.ContinueOnFail = True

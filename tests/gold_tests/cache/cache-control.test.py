@@ -22,6 +22,7 @@ Test cached responses and requests with bodies
 '''
 
 Test.ContinueOnFail = True
+Test.SkipUnless(Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts")

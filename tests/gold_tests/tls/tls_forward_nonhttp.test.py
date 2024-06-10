@@ -23,6 +23,8 @@ Test.Summary = '''
 Forwarding a non-HTTP protocol out of TLS
 '''
 
+Test.SkipUnless(Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"))
+
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 

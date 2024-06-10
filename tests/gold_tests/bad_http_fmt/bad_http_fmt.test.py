@@ -20,6 +20,8 @@ Test.Summary = '''
 Test requests with bad HTTP formats
 '''
 
+Test.SkipUnless(Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"))
+
 ArbitraryTimestamp = '12345678'
 
 random_path = "/sdfsdf"

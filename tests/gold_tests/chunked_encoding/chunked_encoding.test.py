@@ -22,7 +22,8 @@ Test.Summary = '''
 Test chunked encoding processing
 '''
 
-Test.SkipUnless(Condition.HasCurlFeature('http2'))
+Test.SkipUnless(
+    Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"), Condition.HasCurlFeature('http2'))
 Test.ContinueOnFail = True
 
 Test.GetTcpPort("upstream_port")
