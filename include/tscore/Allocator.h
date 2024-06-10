@@ -39,12 +39,11 @@
 
 #pragma once
 
-#include <new>
 #include <cstdlib>
 #include <utility>
 #include "tscore/ink_queue.h"
-#include "tscore/ink_defs.h"
 #include "tscore/ink_resource.h"
+#include "tsutil/Metrics.h"
 #include <execinfo.h>
 
 #define RND16(_x) (((_x) + 15) & ~15)
@@ -156,7 +155,7 @@ public:
   void
   free_void(void *ptr)
   {
-    free(ptr);
+    ::free(ptr);
   }
 
   /**
@@ -221,11 +220,94 @@ private:
   int          advice;
 };
 
+#if TS_USE_ALLOCATOR_METRICS
+template <typename WrappedAllocator> class MeteredAllocator : public WrappedAllocator
+{
+public:
+  void *
+  alloc_void()
+  {
+    inuse_metric->increment(1);
+    alloc_metric->increment(1);
+    return WrappedAllocator::alloc_void();
+  }
+
+  void
+  free_void(void *ptr)
+  {
+    inuse_metric->decrement(1);
+    free_metric->increment(1);
+    WrappedAllocator::free_void(ptr);
+  }
+
+  void
+  free_void_bulk(void *head, void *tail, size_t num_item)
+  {
+    inuse_metric->decrement(num_item);
+    free_metric->increment(num_item);
+    WrappedAllocator::free_void_bulk(head, tail, num_item);
+  }
+
+  MeteredAllocator() {}
+
+  MeteredAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8,
+                   bool use_hugepages = false)
+    : WrappedAllocator(name, element_size, chunk_size, alignment, use_hugepages),
+      inuse_metric{ts::Metrics::Gauge::createPtr("proxy.process.allocator.inuse.", name)},
+      alloc_metric{ts::Metrics::Counter::createPtr("proxy.process.allocator.alloc.", name)},
+      free_metric{ts::Metrics::Counter::createPtr("proxy.process.allocator.free.", name)},
+      size_metric{ts::Metrics::Gauge::createPtr("proxy.process.allocator.size.", name)}
+  {
+    size_metric->store(element_size);
+  }
+
+  void
+  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, bool use_hugepages,
+          int advice)
+  {
+    if (inuse_metric == nullptr) {
+      inuse_metric = ts::Metrics::Gauge::createPtr("proxy.process.allocator.inuse.", name);
+      alloc_metric = ts::Metrics::Counter::createPtr("proxy.process.allocator.alloc.", name);
+      free_metric  = ts::Metrics::Counter::createPtr("proxy.process.allocator.free.", name);
+      size_metric  = ts::Metrics::Gauge::createPtr("proxy.process.allocator.size.", name);
+    }
+    size_metric->store(element_size);
+
+    WrappedAllocator::re_init(name, element_size, chunk_size, alignment, use_hugepages, advice);
+  }
+
+  void
+  destroy_if_enabled(void *p)
+  {
+    WrappedAllocator::destroy_if_enabled(p);
+  }
+
+  // for metered allocator we don't want to return superclass or we'll skip metrics (see THREAD_FREE macro)
+  MeteredAllocator<WrappedAllocator> &
+  raw()
+  {
+    return *this;
+  }
+
+private:
+  ts::Metrics::AtomicType *inuse_metric = nullptr;
+  ts::Metrics::AtomicType *alloc_metric = nullptr;
+  ts::Metrics::AtomicType *free_metric  = nullptr;
+  ts::Metrics::AtomicType *size_metric  = nullptr;
+};
+
+#if TS_USE_MALLOC_ALLOCATOR
+using Allocator = MeteredAllocator<MallocAllocator>;
+#else
+using Allocator = MeteredAllocator<FreelistAllocator>;
+#endif
+#else
 #if TS_USE_MALLOC_ALLOCATOR
 using Allocator = MallocAllocator;
 #else
 using Allocator = FreelistAllocator;
 #endif
+#endif // TS_USE_ALLOCATOR_METRICS
 
 /**
   Allocator for Class objects.
@@ -273,7 +355,7 @@ public:
   {
   }
 
-  Allocator &
+  BaseAllocator &
   raw()
   {
     return *this;

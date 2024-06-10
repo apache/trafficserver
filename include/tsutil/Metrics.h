@@ -395,6 +395,15 @@ public:
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name)));
     }
 
+    static AtomicType *
+    createPtr(const std::string_view prefix, const std::string_view name)
+    {
+      auto       &instance = Metrics::instance();
+      std::string tmpname  = std::string(prefix) + std::string(name);
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname)));
+    }
+
     static Metrics::Gauge::SpanType
     createSpan(size_t size, IdType *id = nullptr)
     {
@@ -481,6 +490,15 @@ public:
       auto &instance = Metrics::instance();
 
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name)));
+    }
+
+    static AtomicType *
+    createPtr(const std::string_view prefix, const std::string_view name)
+    {
+      auto       &instance = Metrics::instance();
+      std::string tmpname  = std::string(prefix) + std::string(name);
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname)));
     }
 
     static Metrics::Counter::SpanType
