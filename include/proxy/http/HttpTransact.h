@@ -88,6 +88,8 @@ dump_header(DbgCtl const &ctl, HTTPHdr const *hdr, std::int64_t sm_id, std::stri
     output.push_back('\n');
     if (hdr->valid()) {
       s_dump_header(hdr, output);
+    } else {
+      output.append("Invalid header!\n");
     }
     // We make a single call to fprintf so that the output does not get
     // interleaved with output from other threads performing I/O.
