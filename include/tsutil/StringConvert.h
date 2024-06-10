@@ -84,7 +84,7 @@ unhex(const std::string_view input)
 
   const char *p = input.data();
   for (auto &x : result) {
-    if (auto [ptr, err] = std::from_chars(p, p + 2, x, 16); err == std::errc()) {
+    if (auto [ptr, err] = std::from_chars(p, p + 2, reinterpret_cast<unsigned char &>(x), 16); err == std::errc()) {
       p = ptr;
     } else {
       throw std::runtime_error(std::make_error_code(err).message().c_str());
