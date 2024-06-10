@@ -310,7 +310,7 @@ bool
 HeaderField::append(const char *value, int length)
 {
   return (TSMimeHdrFieldValueStringInsert(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_,
-                                          iter_.state_->mloc_container_->field_loc_, -1, value, -1) == TS_SUCCESS);
+                                          iter_.state_->mloc_container_->field_loc_, -1, value, length) == TS_SUCCESS);
 }
 
 bool
