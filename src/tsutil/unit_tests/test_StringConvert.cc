@@ -39,5 +39,7 @@ TEST_CASE("StringConvert", "[STE]")
   REQUIRE(ts::unhex("3031") == "01");
   REQUIRE(ts::hex("5pn2QM") == "35706e32514d");
 
-  REQUIRE(ts::hex(mkunsigned_string()) == "ab9eff1204");
+  auto usgn = mkunsigned_string();
+  REQUIRE(ts::hex(usgn) == "ab9eff1204");
+  REQUIRE(ts::unhex(ts::hex(usgn)) == usgn);
 }
