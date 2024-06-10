@@ -30,31 +30,31 @@ class Context;
 class Error
 {
 public:
-  class Message
+  class Reason
   {
-    using self_type = Message;
+    using self_type = Reason;
 
   public:
-    Message()                       = default;
-    Message(const Message &)        = delete;
-    void operator=(const Message &) = delete;
+    Reason()                       = default;
+    Reason(const Reason &)         = delete;
+    void operator=(const Reason &) = delete;
 
     static void _set(Cript::Context *context, const Cript::string_view msg);
 
     [[nodiscard]] Cript::string_view
-    message() const
+    reason() const
     {
-      return {_message.c_str(), _message.size()};
+      return {_reason.c_str(), _reason.size()};
     }
 
   private:
     void
     setter(const Cript::string_view msg)
     {
-      _message = msg;
+      _reason = msg;
     }
 
-    Cript::string _message;
+    Cript::string _reason;
   };
 
 #undef Status
@@ -112,7 +112,7 @@ public:
   void execute(Cript::Context *context);
 
 private:
-  Message _message;
-  Status  _status;
-  bool    _failed = false;
+  Reason _reason;
+  Status _status;
+  bool   _failed = false;
 };

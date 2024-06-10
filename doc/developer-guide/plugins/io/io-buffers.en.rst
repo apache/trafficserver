@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-io-buffers:
 
@@ -28,7 +29,7 @@ buffer blocks that point to buffer data. Both the buffer block
 (``TSIOBufferBlock``) and buffer data (``TSIOBufferData``) data
 structures are reference-counted, so they can reside in multiple buffers
 at the same time. This makes it extremely efficient to copy data from
-one IO buffer to another via :c:func:`TSIOBufferCopy`, since Traffic Server
+one IO buffer to another via :func:`TSIOBufferCopy`, since Traffic Server
 must only copy pointers and adjust reference counts appropriately (and
 doesn't actually copy any data).
 
@@ -39,7 +40,7 @@ structure. Since only a single writer is allowed, there is no
 corresponding ``TSIOBufferWriter`` data structure. The writer simply
 modifies the IO buffer directly. To see an example that illustrates how
 to use IOBuffers, refer to the sample code in the description of
-:c:func:`TSIOBufferBlockReadStart`.
+:func:`TSIOBufferBlockReadStart`.
 
 Additional information about IO buffer functions:
 
@@ -51,6 +52,6 @@ Additional information about IO buffer functions:
 
 -  Bytes that have already been read may not necessarily be freed within
    the ``TSIOBuffer``. To consume bytes that have been read, you must
-   call :c:func:`TSIOBufferReaderConsume`.
+   call :func:`TSIOBufferReaderConsume`.
 
 

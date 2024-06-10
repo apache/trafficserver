@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrFieldGet
 *****************
@@ -38,6 +38,6 @@ header located at :arg:`hdr` within :arg:`bufp`.
 
 The :arg:`idx` parameter specifies which field to retrieve.  The fields are
 numbered from :literal:`0` to ``TSMimeHdrFieldsCount(bufp, hdr_loc)`` - 1.  If
-:arg:`idx` does not lie within that range then :c:type:`TSMimeHdrFieldGet`
+:arg:`idx` does not lie within that range then :cpp:type:`TSMimeHdrFieldGet`
 returns :literal:`0`.  Release the returned handle with a call to
-:c:type:`TSHandleMLocRelease`.
+:cpp:type:`TSHandleMLocRelease`.

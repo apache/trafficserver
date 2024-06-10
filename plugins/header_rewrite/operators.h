@@ -129,7 +129,10 @@ protected:
   void exec(const Resources &res) const override;
 
 private:
-  UrlQualifiers _url_qual = URL_QUAL_NONE;
+  UrlQualifiers                 _url_qual = URL_QUAL_NONE;
+  bool                          _keep     = false;
+  std::string                   _stop     = "";
+  std::vector<std::string_view> _stop_list;
 };
 
 class OperatorSetRedirect : public Operator

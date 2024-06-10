@@ -1,0 +1,100 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# This expects a remap.config that denies HEAD and POST, but allows all other
+# methods.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - standard_response: &standard_response
+      server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 20 ]
+
+sessions:
+- protocol:
+  - name: http
+    version: 1
+  - name: tls
+    sni: test_sni
+  transactions:
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /test/ip_allow/test_get
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ uuid, get ]
+        - [ X-Request, get ]
+
+    <<: *standard_response
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /test/ip_allow/test_head
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ uuid, head ]
+        - [ X-Request, head ]
+
+    <<: *standard_response
+
+    proxy-response:
+      status: 403
+
+  # POST rejected
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /test/ip_allow/test_post
+      headers:
+        fields:
+        - [Content-Length, 10]
+        - [ uuid, post ]
+        - [ X-Request, post ]
+
+    <<: *standard_response
+
+    proxy-response:
+      status: 403
+
+  - client-request:
+      method: "DELETE"
+      version: "1.1"
+      url: /test/ip_allow/test_delete
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, delete ]
+        - [ X-Request, delete ]
+        - [ Content-Length, 0 ]
+
+    <<: *standard_response
+
+    proxy-response:
+      status: 200

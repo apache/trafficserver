@@ -16,19 +16,20 @@
    under the License.
 
 .. include:: ../../common.defs
+.. default-domain:: cpp
 
 .. _developer-cache-api-functions:
 
 API functions
 *************
 
-.. c:function:: void TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag)
+.. function:: void TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag)
 
    Set a flag that marks a request as cacheable. This is a positive override
    only, setting :arg:`flag` to ``0`` restores the default behavior, it does not
    force the request to be uncacheable.
 
-.. c:function:: TSReturnCode TSCacheUrlSet(TSHttpTxn txnp, char const* url, int length)
+.. function:: TSReturnCode TSCacheUrlSet(TSHttpTxn txnp, char const* url, int length)
 
    Set the cache key for the transaction :arg:`txnp` as the string pointed at by
    :arg:`url` of :arg:`length` characters. It need not be NUL-terminated. This should

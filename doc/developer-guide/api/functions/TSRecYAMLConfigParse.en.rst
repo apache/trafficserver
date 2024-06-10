@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSYAMLRecCfgFieldData
 *********************
@@ -70,12 +70,12 @@ Description
    A `YAML::Node` type holding the value of the field. Field value must be extracted from here. You can use the `YAML::Node` API to deduce
    the type, etc.
 
-   :c:tye: TSYAMLRecNodeHandler
+   :tye: TSYAMLRecNodeHandler
 
    Callback function for the caller to deal with each parsed node. ``cfg`` holds the details of the parsed field. `data` can be used to
    pass information along.
 
-   :c:func: TSRecYAMLConfigParse
+   :func: TSRecYAMLConfigParse
 
    Parse a YAML node following the record structure internals. On every scalar node the `handler` callback will be
    invoked with the appropriate parsed fields. `data` can be used to pass information along to every callback, this could be
@@ -143,8 +143,8 @@ Example:
 Return Values
 =============
 
-:c:func:`TSRecYAMLConfigParse`
+:func:`TSRecYAMLConfigParse`
 
-:c:func:`TSRecYAMLConfigParse`  This will return :const:`TS_ERROR` if there was an issue while parsing the file. Particular node errors
+:func:`TSRecYAMLConfigParse`  This will return :const:`TS_ERROR` if there was an issue while parsing the file. Particular node errors
 should be handled by the `TSYAMLRecNodeHandler` implementation.
 

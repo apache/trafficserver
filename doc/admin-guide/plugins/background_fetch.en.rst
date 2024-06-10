@@ -13,6 +13,7 @@
 
 .. _admin-plugins-background-fetch:
 .. include:: /common.defs
+.. default-domain:: cpp
 
 Background Fetch Plugin
 ***********************
@@ -50,7 +51,7 @@ Examining the responses from origin, we decide to trigger a background fetch of 
 *  The response is a ``206`` response
 
 *  The original client request, and the Origin server response, is clearly indicating that the
-   response is cacheable. This uses the new API :c:func:`TSHttpTxnIsCacheable()`, which also implies
+   response is cacheable. This uses the new API :func:`TSHttpTxnIsCacheable()`, which also implies
    honoring current Traffic Server configurations.
 
 

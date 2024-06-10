@@ -529,7 +529,7 @@ would be ::
    .deactivatefilter ip_allow
    map ...
    map ...
-   .activateefilter ip_allow
+   .activatefilter ip_allow
 
 Note this entirely disables IP Allow checks for those remap rules.
 

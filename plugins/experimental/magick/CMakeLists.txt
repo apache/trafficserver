@@ -17,6 +17,9 @@
 
 add_atsplugin(magick magick.cc)
 
+# This creates the magic import target if necessary (older cmake)
+include(magick_target)
+
 target_link_libraries(magick PRIVATE ImageMagick::MagickWand ImageMagick::MagickCore ts::tscppapi OpenSSL::Crypto)
 
 verify_global_plugin(magick ${CMAKE_CURRENT_SOURCE_DIR}/image_magic_dlopen_leak_suppression.txt)

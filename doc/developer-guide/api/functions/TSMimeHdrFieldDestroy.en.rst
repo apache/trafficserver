@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrFieldDestroy
 *********************
@@ -35,5 +35,5 @@ Description
 
 Destroys the MIME :arg:`field` located at :arg:`field` within :arg:`bufp`.
 
-You must release the :c:type:`TSMLoc` field with a call to
-:c:func:`TSHandleMLocRelease`.
+You must release the :cpp:type:`TSMLoc` field with a call to
+:func:`TSHandleMLocRelease`.

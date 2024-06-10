@@ -24,15 +24,17 @@ Error::execute(Cript::Context *context)
 {
   if (failed()) {
     TSHttpTxnStatusSet(context->state.txnp, _status.status());
+    // ToDo: So we can't set the reason phrase here, because ATS doesn't have that
+    // as a transaction API, only on the response header...
   }
 }
 
 // These are static, to be used with the set() wrapper define
 void
-Error::Message::_set(Cript::Context *context, const Cript::string_view msg)
+Error::Reason::_set(Cript::Context *context, const Cript::string_view msg)
 {
   context->state.error.fail();
-  context->state.error._message.setter(msg);
+  context->state.error._reason.setter(msg);
 }
 
 void

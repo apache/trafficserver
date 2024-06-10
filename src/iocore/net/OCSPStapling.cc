@@ -1169,8 +1169,8 @@ make_url_for_get(TS_OCSP_REQUEST *req, const char *base_url)
 
   // Append '/' if base_url does not end with it
   if (url->buf()[url->size() - 1] != '/') {
-    strncat(url->end(), "/", 1);
-    url->fill(1);
+    written = ink_strlcat(url->end(), "/", url->write_avail());
+    url->fill(written);
   }
 
   written = ink_strlcat(url->end(), ocsp_escaped, url->write_avail());
@@ -1309,7 +1309,7 @@ ocsp_update()
 
 // RFC 6066 Section-8: Certificate Status Request
 int
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_IS_AWSLC)
 ssl_callback_ocsp_stapling(SSL *ssl)
 #else
 ssl_callback_ocsp_stapling(SSL *ssl, void *)
@@ -1337,7 +1337,7 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
   }
 
   certinfo *cinf = nullptr;
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_IS_AWSLC)
   certinfo_map::iterator iter = map->find(cert);
   if (iter != map->end()) {
     cinf = iter->second;

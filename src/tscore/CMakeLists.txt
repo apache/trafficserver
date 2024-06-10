@@ -101,9 +101,9 @@ add_library(ts::tscore ALIAS tscore)
 # position independent.
 set_target_properties(tscore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-if(OPENSSL_IS_BORINGSSL)
+if(SSLLIB_IS_BORINGSSL OR SSLLIB_IS_AWSLC)
   target_sources(tscore PRIVATE HKDF_boringssl.cc)
-elseif(OPENSSL_IS_OPENSSL3)
+elseif(SSLLIB_IS_OPENSSL3)
   target_sources(tscore PRIVATE HKDF_openssl3.cc)
 else()
   target_sources(tscore PRIVATE HKDF_openssl.cc)

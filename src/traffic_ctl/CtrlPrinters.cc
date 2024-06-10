@@ -155,7 +155,7 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
-ConfigReloadPrinter::write_output(YAML::Node const &result)
+ConfigReloadPrinter::write_output([[maybe_unused]] YAML::Node const &result)
 {
 }
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -293,7 +293,7 @@ GetHostStatusPrinter::write_output(YAML::Node const &result)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 void
-SetHostStatusPrinter::write_output(YAML::Node const &result)
+SetHostStatusPrinter::write_output([[maybe_unused]] YAML::Node const &result)
 {
   // do nothing.
 }

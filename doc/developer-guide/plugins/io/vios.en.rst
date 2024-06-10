@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-io-vios:
 
@@ -48,15 +49,15 @@ as follows:
 The VIO functions below access and modify various parts of the data
 structure.
 
--  :c:func:`TSVIOBufferGet`
--  :c:func:`TSVIOVConnGet`
--  :c:func:`TSVIOContGet`
--  :c:func:`TSVIOMutexGet`
--  :c:func:`TSVIONBytesGet`
--  :c:func:`TSVIONBytesSet`
--  :c:func:`TSVIONDoneGet`
--  :c:func:`TSVIONDoneSet`
--  :c:func:`TSVIONTodoGet`
--  :c:func:`TSVIOReaderGet`
--  :c:func:`TSVIOReenable`
+-  :func:`TSVIOBufferGet`
+-  :func:`TSVIOVConnGet`
+-  :func:`TSVIOContGet`
+-  :func:`TSVIOMutexGet`
+-  :func:`TSVIONBytesGet`
+-  :func:`TSVIONBytesSet`
+-  :func:`TSVIONDoneGet`
+-  :func:`TSVIONDoneSet`
+-  :func:`TSVIONTodoGet`
+-  :func:`TSVIOReaderGet`
+-  :func:`TSVIOReenable`
 

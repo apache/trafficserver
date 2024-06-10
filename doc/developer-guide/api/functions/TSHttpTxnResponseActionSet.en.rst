@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpTxnResponseActionSet
 **************************
@@ -41,7 +41,7 @@ Therefore, plugins which set the ResponseAction to retry
 must also un-set it after the subsequent success or failure,
 or ATS will retry forever!
 
-The passed *action must not be null, and is copied and may be
+The passed *action* must not be null, and is copied and may be
 destroyed after this call returns.
 
 Callers must maintain owernship of action.hostname,

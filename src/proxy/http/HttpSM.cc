@@ -1088,6 +1088,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     break;
   }
   case VC_EVENT_ERROR:
+  case VC_EVENT_EOS:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::OPEN_RAW_ERROR;
     // use this value just to get around other values
@@ -1230,6 +1231,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
     }
   // FALLTHROUGH
   case VC_EVENT_ERROR:
+  case VC_EVENT_EOS:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     // Transform VC sends NULL on error conditions
     if (!c) {
@@ -1806,6 +1808,7 @@ HttpSM::state_http_server_open(int event, void *data)
     t_state.set_connect_fail(ETIMEDOUT);
   /* fallthrough */
   case VC_EVENT_ERROR:
+  case VC_EVENT_EOS:
   case NET_EVENT_OPEN_FAILED: {
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     t_state.outbound_conn_track_state.clear();

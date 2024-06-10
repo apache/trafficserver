@@ -22,11 +22,11 @@
 
 namespace Bundle
 {
+const Cript::string LogsMetrics::_name = "Bundle::LogsMetrics";
 
-// Bundle::LogsMetrics
 namespace
 {
-  enum {
+  enum : uint8_t {
     PROPSTAT_CACHE_MISS = 0,  // TS_CACHE_LOOKUP_MISS == 0
     PROPSTAT_CACHE_HIT_STALE, // TS_CACHE_LOOKUP_HIT_STALE == 1
     PROPSTAT_CACHE_HIT_FRESH, // TS_CACHE_LOOKUP_HIT_FRESH == 2

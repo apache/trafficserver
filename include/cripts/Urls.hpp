@@ -17,11 +17,6 @@
 */
 #pragma once
 
-namespace Cript
-{
-class Context;
-}
-
 #include <cstring>
 #include <iostream>
 #include <sstream>
@@ -32,6 +27,10 @@ class Context;
 
 #include "ts/remap.h"
 #include "ts/ts.h"
+
+namespace Cript
+{
+class Context;
 
 class Url
 {
@@ -86,6 +85,24 @@ class Url
 
     // This is not ideal, but best way I can think of for now to mixin the Cript::string_view mixin class
     // Remember to add things here when added to the Lulu.hpp file for the mixin class... :/
+    [[nodiscard]] constexpr Cript::string_view
+    substr(Cript::string_view::size_type pos = 0, Cript::string_view::size_type count = Cript::string_view::npos) const
+    {
+      return _data.substr(pos, count);
+    }
+
+    void
+    remove_prefix(Cript::string_view::size_type n)
+    {
+      _data.remove_prefix(n);
+    }
+
+    void
+    remove_suffix(Cript::string_view::size_type n)
+    {
+      _data.remove_suffix(n);
+    }
+
     Cript::string_view &
     ltrim(char c)
     {
@@ -138,6 +155,24 @@ class Url
     starts_with(Cript::string_view const prefix) const
     {
       return _data.starts_with(prefix);
+    }
+
+    [[nodiscard]] constexpr Cript::string_view::size_type
+    find(Cript::string_view const substr, Cript::string_view::size_type pos = 0) const
+    {
+      return _data.find(substr, pos);
+    }
+
+    [[nodiscard]] constexpr Cript::string_view::size_type
+    rfind(Cript::string_view const substr, Cript::string_view::size_type pos = 0) const
+    {
+      return _data.rfind(substr, pos);
+    }
+
+    [[nodiscard]] constexpr bool
+    contains(Cript::string_view const substr) const
+    {
+      return (_data.find(substr) != _data.npos);
     }
 
   protected:
@@ -426,20 +461,19 @@ public:
     Cript::string      operator+=(Cript::string_view add);
     Parameter          operator[](Cript::string_view param);
     void               erase(Cript::string_view param);
-
-    void
-    erase(std::initializer_list<Cript::string_view> list)
-    {
-      for (auto &it : list) {
-        erase(it);
-      }
-    }
+    void               erase(std::initializer_list<Cript::string_view> list, bool keep = false);
 
     void
     erase()
     {
       operator=("");
       _size = 0;
+    }
+
+    void
+    keep(std::initializer_list<Cript::string_view> list)
+    {
+      erase(list, true);
     }
 
     void
@@ -543,12 +577,14 @@ protected:
 
 }; // End class Url
 
+} // namespace Cript
+
 // The Pristine URL is immutable, we should "delete" the operator= methods
 namespace Pristine
 {
-class URL : public Url
+class URL : public Cript::Url
 {
-  using super_type = Url;
+  using super_type = Cript::Url;
   using self_type  = URL;
 
 public:
@@ -565,9 +601,9 @@ public:
 
 namespace Client
 {
-class URL : public Url
+class URL : public Cript::Url
 {
-  using super_type = Url;
+  using super_type = Cript::Url;
   using self_type  = URL;
 
 public:
@@ -591,11 +627,71 @@ private:
 
 } // namespace Client
 
+namespace Remap
+{
+namespace From
+{
+  class URL : public Cript::Url
+  {
+    using super_type = Cript::Url;
+    using self_type  = URL;
+
+  public:
+    URL()                       = default;
+    URL(const URL &)            = delete;
+    void operator=(const URL &) = delete;
+
+    // We must not release the bufp etc. since it comes from the RRI structure
+    void
+    reset() override
+    {
+    }
+
+    static URL &_get(Cript::Context *context);
+    bool        _update(Cript::Context *context);
+
+  private:
+    void _initialize(Cript::Context *context);
+
+  }; // End class Client::URL
+
+} // namespace From
+
+namespace To
+{
+  class URL : public Cript::Url
+  {
+    using super_type = Cript::Url;
+    using self_type  = URL;
+
+  public:
+    URL()                       = default;
+    URL(const URL &)            = delete;
+    void operator=(const URL &) = delete;
+
+    // We must not release the bufp etc. since it comes from the RRI structure
+    void
+    reset() override
+    {
+    }
+
+    static URL &_get(Cript::Context *context);
+    bool        _update(Cript::Context *context);
+
+  private:
+    void _initialize(Cript::Context *context);
+
+  }; // End class Client::URL
+
+} // namespace To
+
+} // namespace Remap
+
 namespace Cache
 {
-class URL : public Url // ToDo: This can maybe be a subclass of Client::URL ?
+class URL : public Cript::Url // ToDo: This can maybe be a subclass of Client::URL ?
 {
-  using super_type = Url;
+  using super_type = Cript::Url;
   using self_type  = URL;
 
 public:
@@ -622,9 +718,9 @@ private:
 
 namespace Parent
 {
-class URL : public Url
+class URL : public Cript::Url
 {
-  using super_type = Url;
+  using super_type = Cript::Url;
   using self_type  = URL;
 
 public:
@@ -652,7 +748,7 @@ private:
 // Formatters for {fmt}
 namespace fmt
 {
-template <> struct formatter<Url::Scheme> {
+template <> struct formatter<Cript::Url::Scheme> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -661,13 +757,13 @@ template <> struct formatter<Url::Scheme> {
 
   template <typename FormatContext>
   auto
-  format(Url::Scheme &scheme, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Url::Scheme &scheme, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", scheme.getSV());
   }
 };
 
-template <> struct formatter<Url::Host> {
+template <> struct formatter<Cript::Url::Host> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -676,13 +772,13 @@ template <> struct formatter<Url::Host> {
 
   template <typename FormatContext>
   auto
-  format(Url::Host &host, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Url::Host &host, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", host.getSV());
   }
 };
 
-template <> struct formatter<Url::Port> {
+template <> struct formatter<Cript::Url::Port> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -691,13 +787,13 @@ template <> struct formatter<Url::Port> {
 
   template <typename FormatContext>
   auto
-  format(Url::Port &port, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Url::Port &port, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(port));
   }
 };
 
-template <> struct formatter<Url::Path::String> {
+template <> struct formatter<Cript::Url::Path::String> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -706,13 +802,13 @@ template <> struct formatter<Url::Path::String> {
 
   template <typename FormatContext>
   auto
-  format(Url::Path::String &path, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Url::Path::String &path, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", path.getSV());
   }
 };
 
-template <> struct formatter<Url::Path> {
+template <> struct formatter<Cript::Url::Path> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -721,13 +817,13 @@ template <> struct formatter<Url::Path> {
 
   template <typename FormatContext>
   auto
-  format(Url::Path &path, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Url::Path &path, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", path.getSV());
   }
 };
 
-template <> struct formatter<Url::Query::Parameter> {
+template <> struct formatter<Cript::Url::Query::Parameter> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -736,13 +832,13 @@ template <> struct formatter<Url::Query::Parameter> {
 
   template <typename FormatContext>
   auto
-  format(Url::Query::Parameter &param, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Url::Query::Parameter &param, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", param.getSV());
   }
 };
 
-template <> struct formatter<Url::Query> {
+template <> struct formatter<Cript::Url::Query> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -751,7 +847,7 @@ template <> struct formatter<Url::Query> {
 
   template <typename FormatContext>
   auto
-  format(Url::Query &query, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Url::Query &query, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", query.getSV());
   }

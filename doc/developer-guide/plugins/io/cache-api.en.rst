@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-io-cache-api:
 
@@ -53,11 +54,11 @@ Cache Reads
 ``TSCacheRead`` does not really read - it is used for lookups (see the
 sample Protocol plugin). Possible callback events include:
 
--  ``TS_EVENT_CACHE_OPEN_READ`` - indicates the lookup was successful.
+-  :enumerator:`TS_EVENT_CACHE_OPEN_READ` - indicates the lookup was successful.
    The data passed back along with this event is a cache vconnection
    that can be used to initiate a read on this keyed data.
 
--  ``TS_EVENT_CACHE_OPEN_READ_FAILED`` - indicates the lookup was
+-  :enumerator:`TS_EVENT_CACHE_OPEN_READ_FAILED` - indicates the lookup was
    unsuccessful. Reasons for this event could be that another
    continuation is writing to that cache location, or the cache key
    doesn't refer to a cached resource. Data payload for this event
@@ -71,11 +72,11 @@ Use ``TSCacheWrite`` to write to a cache (see the :ref:`sample Protocol
 plugin <about-the-sample-protocol>`). Possible
 callback events include:
 
--  ``TS_EVENT_CACHE_WRITE_READ`` - indicates the lookup was successful.
+-  :enumerator:`TS_EVENT_CACHE_WRITE` - indicates the lookup was successful.
    The data passed back along with this event is a cache vconnection
    that can be used to initiate a cache write.
 
--  ``TS_EVENT_CACHE_OPEN_WRITE_FAILED`` - event returned when another
+-  :enumerator:`TS_EVENT_CACHE_OPEN_WRITE_FAILED` - event returned when another
    continuation is currently writing to this location in the cache. Data
    payload for this event indicates the possible reason for the write
    failing (``TSCacheError``).
@@ -87,10 +88,10 @@ Cache Removes
 Use ``TSCacheRemove`` to remove items from the cache. Possible callback
 events include:
 
--  ``TS_EVENT_CACHE_REMOVE`` - the item was removed. There is no data
+-  :enumerator:`TS_EVENT_CACHE_REMOVE` - the item was removed. There is no data
    payload for this event.
 
--  ``TS_EVENT_CACHE_REMOVE_FAILED`` - indicates the cache was unable to
+-  :enumerator:`TS_EVENT_CACHE_REMOVE_FAILED` - indicates the cache was unable to
    remove the item identified by the cache key. ``TSCacheError`` data
    indicates why the remove failed.
 
@@ -136,7 +137,7 @@ In the ``TS_CACHE_OPEN_READ`` handler:
         content_length = TSVConnCacheObjectSizeGet (cache_vconnp);
         cache_vio = TSVConnRead (cache_vconn, contp, cache_bufp, content_length);
 
-In the ``TS_EVENT_VCONN_READ_READY`` handler:
+In the :enumerator:`TS_EVENT_VCONN_READ_READY` handler:
 
 .. code-block:: c
 

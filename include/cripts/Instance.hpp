@@ -58,6 +58,18 @@ public:
   bool deletePlugin(const Cript::string &tag);
   void initialize(int argc, char *argv[], const char *filename);
 
+  void
+  addBundle(Cript::Bundle::Base *bundle)
+  {
+    for (auto &it : bundles) {
+      if (it->name() == bundle->name()) {
+        TSReleaseAssert(!"Duplicate bundle");
+      }
+    }
+
+    bundles.push_back(bundle);
+  }
+
   // This allows Bundles to require hooks as well.
   void
   needCallback(Cript::Callbacks cb)

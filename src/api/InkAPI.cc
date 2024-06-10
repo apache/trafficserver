@@ -6786,6 +6786,11 @@ TSReturnCode
 TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(url != nullptr);
+
+  if (url_len < 0) {
+    url_len = strlen(url);
+  }
 
   URL url_obj;
   url_obj.create(nullptr);

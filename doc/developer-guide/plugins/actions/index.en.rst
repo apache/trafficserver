@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-actions:
 
@@ -102,7 +103,7 @@ Below is an example of typical usage for an action:
 
 The example above shows a simple plugin that creates a continuation and
 then schedules it to be called immediately. When the plugin's handler
-function is called the first time, the event is ``TS_EVENT_IMMEDIATE``.
+function is called the first time, the event is :enumerator:`TS_EVENT_IMMEDIATE`.
 The plugin then tries to open a net connection to port 9999 on
 ``localhost`` (127.0.0.1). The IP description was left in cider notation
 to further clarify what is going on; also note that the above won't
@@ -173,5 +174,5 @@ cancel the action. The following sample code implements this:
 
 The action functions are:
 
--  :c:func:`TSActionCancel`
--  :c:func:`TSActionDone`
+-  :cpp:func:`TSActionCancel`
+-  :cpp:func:`TSActionDone`

@@ -473,7 +473,7 @@ Cache::loadSpan(swoc::file::path const &path)
 }
 
 Errata
-Cache::loadSpanDirect(swoc::file::path const &path, int vol_idx, const Bytes &size)
+Cache::loadSpanDirect(swoc::file::path const &path, int vol_idx, [[maybe_unused]] const Bytes &size)
 {
   Errata                zret;
   std::unique_ptr<Span> span(new Span(path));
@@ -1022,7 +1022,7 @@ Cache::build_stripe_hash_table()
 }
 
 Stripe *
-Cache::key_to_stripe(CryptoHash *key, const char *hostname, int host_len)
+Cache::key_to_stripe(CryptoHash *key, [[maybe_unused]] const char *hostname, [[maybe_unused]] int host_len)
 {
   uint32_t h = (key->slice32(2) >> DIR_TAG_WIDTH) % STRIPE_HASH_TABLE_SIZE;
   return globalVec_stripe[stripes_hash_table[h]];
@@ -1365,7 +1365,7 @@ Scan_Cache(swoc::file::path const &regex_path)
 }
 
 int
-main(int argc, const char *argv[])
+main([[maybe_unused]] int argc, const char *argv[])
 {
   swoc::file::path input_url_file;
   std::string      inputFile;

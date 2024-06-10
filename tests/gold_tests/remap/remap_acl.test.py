@@ -296,3 +296,12 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration='@action=allow @in_ip=3.4.5.6 @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 403, 403, 403, 403])
+
+test_named_acl_deny = Test_remap_acl(
+    "Verify a named ACL is applied if an in-line ACL is absent.",
+    replay_file='deny_head_post.replay.yaml',
+    ip_allow_content=IP_ALLOW_CONTENT,
+    deactivate_ip_allow=False,
+    acl_configuration='',
+    named_acls=[('deny', '@action=deny @method=HEAD @method=POST')],
+    expected_responses=[200, 403, 403, 403])

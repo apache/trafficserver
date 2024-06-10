@@ -48,11 +48,7 @@ static DbgCtl dbg_ctl{PLUGIN};
 
 #define VDEBUG(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 
-#if DEBUG
-#define VERROR(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
-#else
 #define VERROR(fmt, ...) TSError("[%s] %s: " fmt, PLUGIN, __FUNCTION__, ##__VA_ARGS__)
-#endif
 
 #define VIODEBUG(vio, fmt, ...)                                                                                              \
   VDEBUG("vio=%p vio.cont=%p, vio.cont.data=%p, vio.vc=%p " fmt, (vio), TSVIOContGet(vio), TSContDataGet(TSVIOContGet(vio)), \
@@ -532,10 +528,6 @@ StaticHitInterceptHook(TSCont contp, TSEvent event, void *edata)
     return TS_EVENT_NONE;
   }
 
-  case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
-    VERROR("unexpected event %s (%d) edata=%p", TSHttpEventNameLookup(event), event, arg.ptr);
-    return TS_EVENT_ERROR;
-
   default:
     VERROR("unexpected event %s (%d) edata=%p", TSHttpEventNameLookup(event), event, arg.ptr);
     return TS_EVENT_ERROR;
@@ -643,7 +635,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     int pathsz;
     TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathsz);
     if (pathsz > 0) {
-      VERROR("Path is not an exact match. Rejecting!");
+      VDEBUG("Path is not an exact match. Rejecting!");
       TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_NOT_FOUND);
       return TSREMAP_NO_REMAP;
     }

@@ -64,8 +64,8 @@ add_method_handler(const std::string &name, Func &&call)
   return rpc::JsonRPCManager::instance().add_method_handler(name, std::forward<Func>(call), nullptr, {});
 }
 } // namespace rpc
-static const std::string sockPath{"/tmp/jsonrpc20_test.sock"};
-static const std::string lockPath{"/tmp/jsonrpc20_test.lock"};
+static const std::string sockPath{"tests/var/jsonrpc20_test.sock"};
+static const std::string lockPath{"tests/var/jsonrpc20_test.lock"};
 static constexpr int     default_backlog{5};
 static constexpr int     default_maxRetriesOnTransientErrors{64};
 static constexpr auto    logTag{"rpc.test.client"};
@@ -143,20 +143,6 @@ DEFINE_JSONRPC_PROTO_FUNCTION(some_foo) // id, params
 }
 namespace
 {
-/* Create and return a path to a temporary sandbox directory. */
-fs::path
-getTemporaryDir()
-{
-  std::error_code ec;
-  fs::path        tmpDir  = fs::canonical(fs::temp_directory_path(), ec);
-  tmpDir                 /= "sandbox_XXXXXX";
-
-  char dirNameTemplate[tmpDir.string().length() + 1];
-  snprintf(dirNameTemplate, sizeof(dirNameTemplate), "%s", tmpDir.c_str());
-
-  return fs::path(mkdtemp(dirNameTemplate));
-}
-
 // Handy class to avoid manually disconnecting the socket.
 // TODO: should it also connect?
 struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
@@ -505,7 +491,7 @@ struct LocalSocketTest : public trp::IPCSocketServer {
 };
 } // namespace
 
-TEST_CASE("Test configuration parsing. UDS values", "[string]")
+TEST_CASE("Test configuration parsing from a YAML node. UDS values", "[string]")
 {
   rpc::config::RPCConfig serverConfig;
 
@@ -527,8 +513,7 @@ TEST_CASE("Test configuration parsing. UDS values", "[string]")
 
 TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
 {
-  fs::path sandboxDir = getTemporaryDir();
-  fs::path configPath = sandboxDir / "jsonrpc.yaml";
+  fs::path configPath = fs::path("tests/config") / "jsonrpc.yaml";
 
   // define here to later compare.
   std::string sockPathName{configPath.string() + "jsonrpc20_test2.sock"};
@@ -555,7 +540,4 @@ TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
   REQUIRE(socket->get_conf().maxRetriesOnTransientErrors == 64);
   REQUIRE(socket->get_conf().sockPathName == sockPathName);
   REQUIRE(socket->get_conf().lockPathName == lockPathName);
-
-  std::error_code ec;
-  REQUIRE(fs::remove_all(sandboxDir, ec) > 0);
 }

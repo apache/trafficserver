@@ -28,7 +28,7 @@
 using namespace std::literals;
 
 int
-main(int argc, const char **argv)
+main([[maybe_unused]] int argc, const char **argv)
 {
   LayoutEngine engine;
 

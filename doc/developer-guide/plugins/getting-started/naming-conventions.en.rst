@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-getting-started-naming:
 
@@ -26,10 +27,10 @@ The Traffic Server API adheres to the following naming conventions:
 
 -  The ``TS`` prefix is used for all function and variable names defined
    in the Traffic Server API. **Examples**:
-   ``TS_EVENT_NONE``,\ ``TSMutex``, and ``TSContCreate``
+   :enumerator:`TS_EVENT_NONE`,\ ``TSMutex``, and ``TSContCreate``
 
 -  Enumerated values are always written in all uppercase letters.
-   **Examples**: ``TS_EVENT_NONE`` and ``TS_VC_CLOSE_ABORT``
+   **Examples**: :enumerator:`TS_EVENT_NONE` and ``TS_VC_CLOSE_ABORT``
 
 -  Constant values are all uppercase; enumerated values can be seen as a
    subset of constants. **Examples**: ``TS_URL_SCHEME_FILE`` and

@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpConnectPlugin
 *************************
@@ -41,16 +41,16 @@ Description
 
 This call attempts to create an HTTP state machine and a virtual
 connection to that state machine. This is more efficient than using
-:c:func:`TSNetConnect` because it avoids using the operating system
+:func:`TSNetConnect` because it avoids using the operating system
 stack via the loopback interface.
 
 :arg:`options`
-   A :c:type:`TSHttpConnectOptions` structure that contains fields
+   A :cpp:type:`TSHttpConnectOptions` structure that contains fields
    that provide the network address of the target, a tag that can be
    passed through to the HTTP state machine, a plugin ID, a buffer
    index and buffer water mark.
 
-The virtual connection returned as the :c:type:`TSVConn` is API
+The virtual connection returned as the :cpp:type:`TSVConn` is API
 equivalent to a network virtual connection both to the plugin and
 to internal mechanisms. Data is read and written to the connection
 (and thence to the target system) by reading and writing on this
@@ -74,7 +74,7 @@ Notes
 The H2 implementation uses this to correlate client sessions
 with H2 streams. Each client connection is assigned a distinct
 numeric identifier. This is passed in the options structure via
-the member variable `id` to the :c:func:`TSHttpConnectPlugin` function.
+the member variable `id` to the :func:`TSHttpConnectPlugin` function.
 The :arg:`tag` is selected to be the ALPN (or NPN) string for the client session
 protocol, e.g. "h2". Log post processing can then count the number of
 connections for the various supported protocols and the number of H2

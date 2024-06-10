@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMgmtSourceGet
 ***************
@@ -40,34 +40,34 @@ failure if :arg:`var_name` is not found.
 Types
 =====
 
-.. type:: TSMgmtSource
+.. enum:: TSMgmtSource
 
    Source of the current value for a management (configuration) value.
 
-   .. macro:: TS_MGMT_SOURCE_NULL
+   .. enumerator:: TS_MGMT_SOURCE_NULL
 
       Invalid value, no source available. This is primarily used as an initialization or error value
       and should be returned only when the API call fails.
 
-   .. macro:: TS_MGMT_SOURCE_DEFAULT
+   .. enumerator:: TS_MGMT_SOURCE_DEFAULT
 
       The default value provided by the |TS| core.
 
-   .. macro:: TS_MGMT_SOURCE_PLUGIN
+   .. enumerator:: TS_MGMT_SOURCE_PLUGIN
 
       The configuration variable was created by a plugin and the value is the default value provided
       by a plugin.
 
-   .. macro:: TS_MGMT_SOURCE_EXPLICIT
+   .. enumerator:: TS_MGMT_SOURCE_EXPLICIT
 
       The value has been set in :file:`records.yaml`. Note this value is returned even if the
       variable was explicitly set to the default value.
 
-   .. macro:: TS_MGMT_SOURCE_ENV
+   .. enumerator:: TS_MGMT_SOURCE_ENV
 
       The value was retrieved from the process environment, overriding the default value.
 
 Return Values
 =============
 
-:data:`TS_SUCCESS` if the :arg:`var_name` was found, :data:`TS_ERROR` if not.
+:enumerator:`TS_SUCCESS` if the :arg:`var_name` was found, :enumerator:`TS_ERROR` if not.

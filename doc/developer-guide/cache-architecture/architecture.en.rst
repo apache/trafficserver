@@ -68,7 +68,7 @@ persistent store.
 
    Two cache spans
 
-This storage organized into a set of administrative units which are called :term:`cache volumes
+This storage is organized into a set of administrative units which are called :term:`cache volumes
 <cache volume>`. These are defined in :file:`volume.config`. Cache volumes can be assigned
 different properties in :file:`hosting.config`.
 
@@ -755,7 +755,7 @@ The checks that are done are:
       for the response to be cached. It is disabled by default, for
       best performance.
 
-A plugin can call :c:func:`TSHttpTxnReqCacheableSet()` to force the request to
+A plugin can call :func:`TSHttpTxnReqCacheableSet()` to force the request to
 be viewed as cache valid.
 
 .. _cache-lookup:

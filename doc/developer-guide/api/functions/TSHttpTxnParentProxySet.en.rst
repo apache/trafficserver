@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpTxnParentProxySet
 ***********************
@@ -35,5 +35,5 @@ Synopsis
 Description
 ===========
 
-The string :arg:`hostname` is copied into the :c:type:`TSHttpTxn`. You can
-modify or delete the string after calling :c:func:`TSHttpTxnParentProxySet`.
+The string :arg:`hostname` is copied into the :type:`TSHttpTxn`. You can
+modify or delete the string after calling :func:`TSHttpTxnParentProxySet`.

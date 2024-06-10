@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-configuration:
 
@@ -36,11 +37,11 @@ that a single mutex becomes a performance bottleneck very quickly.
 
 These functions define an interface to storing and retrieving an opaque data
 pointer. Internally, |TS| maintains reference count information about the data
-pointer so that a call to :c:func:`TSConfigSet` will not disturb another thread
+pointer so that a call to :func:`TSConfigSet` will not disturb another thread
 using the current data pointer. The philosophy is that once a user has a hold
 of the configuration pointer, it is okay for it to be used even if the
 configuration changes. All that a user typically wants is a non-changing
-snapshot of the configuration. You should use :c:func:`TSConfigSet` for all
+snapshot of the configuration. You should use :func:`TSConfigSet` for all
 global data updates.
 
 Here's how the interface works:
@@ -94,12 +95,12 @@ Here's how the interface works:
 
 The configuration functions are:
 
--  :c:func:`TSConfigDataGet`
+-  :func:`TSConfigDataGet`
 
--  :c:func:`TSConfigGet`
+-  :func:`TSConfigGet`
 
--  :c:func:`TSConfigRelease`
+-  :func:`TSConfigRelease`
 
--  :c:func:`TSConfigSet`
+-  :func:`TSConfigSet`
 
 

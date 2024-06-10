@@ -89,13 +89,13 @@ get_geo_string(const sockaddr *addr, Qualifiers q)
 }
 
 Cript::string
-ConnBase::Geo::ASN() const
+detail::ConnBase::Geo::ASN() const
 {
   return get_geo_string(this->_owner->socket(), GEO_QUAL_ASN);
 }
 
 Cript::string
-ConnBase::Geo::ASNName() const
+detail::ConnBase::Geo::ASNName() const
 {
   Cript::string ret;
   ret = get_geo_string(this->_owner->socket(), GEO_QUAL_ASN_NAME);
@@ -104,7 +104,7 @@ ConnBase::Geo::ASNName() const
 }
 
 Cript::string
-ConnBase::Geo::Country() const
+detail::ConnBase::Geo::Country() const
 {
   Cript::string ret;
   ret = get_geo_string(this->_owner->socket(), GEO_QUAL_COUNTRY);
@@ -113,7 +113,7 @@ ConnBase::Geo::Country() const
 }
 
 Cript::string
-ConnBase::Geo::CountryCode() const
+detail::ConnBase::Geo::CountryCode() const
 {
   Cript::string ret;
   ret = get_geo_string(this->_owner->socket(), GEO_QUAL_COUNTRY_ISO);
@@ -124,25 +124,25 @@ ConnBase::Geo::CountryCode() const
 #else
 
 Cript::string
-ConnBase::Geo::ASN() const
+detail::ConnBase::Geo::ASN() const
 {
   return "(unavailable)";
 }
 
 Cript::string
-ConnBase::Geo::ASNName() const
+detail::ConnBase::Geo::ASNName() const
 {
   return "(unavailable)";
 }
 
 Cript::string
-ConnBase::Geo::Country() const
+detail::ConnBase::Geo::Country() const
 {
   return "(unavailable)";
 }
 
 Cript::string
-ConnBase::Geo::CountryCode() const
+detail::ConnBase::Geo::CountryCode() const
 {
   return "(unavailable)";
 }

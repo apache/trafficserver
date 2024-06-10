@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSfwrite
 ********
@@ -37,7 +37,7 @@ Attempts to write :arg:`length` bytes of data from the buffer :arg:`buf` to the
 file :arg:`filep`.
 
 Make sure that :arg:`filep` is open for writing.  You might want to check the
-number of bytes written (:c:func:`TSfwrite` returns this value) against the
+number of bytes written (:func:`TSfwrite` returns this value) against the
 value of :arg:`length`.  If it is less, there might be insufficient space on
 disk, for example.
 

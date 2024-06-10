@@ -95,8 +95,14 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   limiter->initialize(argc, const_cast<const char **>(argv));
   *ih = static_cast<void *>(limiter);
 
-  Dbg(dbg_ctl, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u, conntrack=%s)", limiter->limit(),
-      limiter->max_queue(), static_cast<long>(limiter->max_age().count()), limiter->error(), limiter->conntrack() ? "yes" : "no");
+  if (limiter->rate() > 0) {
+    // Setup rate based limit, if configured (this is rate as in "requests per second")
+    limiter->addBucket();
+  }
+
+  Dbg(dbg_ctl, "Added active_in limiter rule (limit=%u, rate=%u, queue=%u, max-age=%ldms, error=%u, conntrack=%s)",
+      limiter->limit(), limiter->rate(), limiter->max_queue(), static_cast<long>(limiter->max_age().count()), limiter->error(),
+      limiter->conntrack() ? "yes" : "no");
 
   return TS_SUCCESS;
 }
@@ -121,17 +127,13 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       }
     }
 
-    if (!limiter->reserve()) {
-      if (!limiter->max_queue() || limiter->full()) {
-        // We are running at limit, and the queue has reached max capacity, give back an error and be done.
-        TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()));
-        limiter->setupTxnCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-        Dbg(dbg_ctl, "Rejecting request, we're at capacity and queue is full");
-      } else {
-        limiter->setupTxnCont(txnp, TS_HTTP_POST_REMAP_HOOK);
-        Dbg(dbg_ctl, "Adding rate limiting hook, we are at capacity");
-      }
-    } else {
+    auto status = limiter->reserve();
+
+    switch (status) {
+    case ReserveStatus::UNLIMITED:
+      // No limits, just let it pass through
+      break;
+    case ReserveStatus::RESERVED:
       if (limiter->conntrack()) {
         limiter->setupSsnCont(ssnp);
         Dbg(dbg_ctl, "Adding ssn-close hook, we're not at capacity");
@@ -139,6 +141,20 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         limiter->setupTxnCont(txnp, TS_HTTP_TXN_CLOSE_HOOK);
         Dbg(dbg_ctl, "Adding txn-close hook, we're not at capacity");
       }
+      break;
+
+    case ReserveStatus::FULL:
+    case ReserveStatus::HIGH_RATE:
+      if (!limiter->max_queue() || limiter->full()) {
+        // We are running at limit, and the queue has reached max capacity, give back an error and be done.
+        TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error()));
+        limiter->setupTxnCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+        Dbg(dbg_ctl, "Rejecting request, we're at %s and queue is full", status == ReserveStatus::FULL ? "capacity" : "high rate");
+      } else {
+        limiter->setupTxnCont(txnp, TS_HTTP_POST_REMAP_HOOK);
+        Dbg(dbg_ctl, "Adding queue delay hook, we are at %s", status == ReserveStatus::FULL ? "capacity" : "high rate");
+      }
+      break;
     }
   }
 

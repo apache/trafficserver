@@ -419,6 +419,9 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
 bool
 Http2CommonSession::_should_do_something_else()
 {
+  if (this->get_proxy_session()->is_peer_closed()) {
+    return false;
+  }
   if (this->_interrupt_reading_frames) {
     this->_interrupt_reading_frames = false;
     return true;
@@ -466,7 +469,7 @@ Http2CommonSession::add_url_to_pushed_table(const char *url, int url_len)
   }
 
   if (_h2_pushed_urls->size() < Http2::push_diary_size) {
-    _h2_pushed_urls->emplace(url);
+    _h2_pushed_urls->emplace(url, url_len);
   }
 }
 

@@ -57,6 +57,11 @@ public:
 
     SET_HANDLER(&CacheRWWTest::start_test);
   }
+  ~CacheRWWTest() override
+  {
+    delete this->_rt;
+    delete this->_wt;
+  }
 
   void handle_cache_event(int event, CacheTestBase *e) override;
   int  start_test(int event, void *e);

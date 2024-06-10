@@ -45,7 +45,10 @@ set(CRIPTS_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/cripts/Urls.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/UUID.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
-    ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Common.hpp
+)
+
+set(CRIPTS_BUNDLE_HEADERS
+    ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Common.hpp ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Headers.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/LogsMetrics.hpp
 )
 
@@ -63,6 +66,9 @@ set_target_properties(
 )
 
 install(TARGETS cripts PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cripts)
+
+# The PUBLIC_HEADER target can't handle include files in a subdirectory, so do those manually.
+install(FILES ${CRIPTS_BUNDLE_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cripts/Bundles)
 
 if(APPLE)
   target_link_options(cripts PRIVATE -undefined dynamic_lookup)

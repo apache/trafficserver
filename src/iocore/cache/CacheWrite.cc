@@ -217,7 +217,8 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
      agg queue. And if !f.evac_vector && !f.update the alternate->object_size
      is set to vc->total_len
    - f.readers.  If set, assumes that this is an evacuation, so the write
-     is not aborted even if vol->get_agg_todo_size() > agg_write_backlog
+     is not aborted even if
+     stripe->_write_buffer.get_bytes_pending_aggregation() > agg_write_backlog
    - f.evacuator. If this is an evacuation.
    - f.rewrite_resident_alt. The resident alternate is rewritten.
    - f.update. Used only if the write_vector needs to be written to disk.
@@ -587,7 +588,7 @@ Stripe::evacuateDocReadDone(int event, Event *e)
   }
   return evacuateWrite(doc_evacuator, event, e);
 Ldone:
-  free_CacheVC(doc_evacuator);
+  free_CacheEvacuateDocVC(doc_evacuator);
   doc_evacuator = nullptr;
   return aggWrite(event, e);
 }

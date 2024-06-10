@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-getting-started-simple-plugin:
 
@@ -25,7 +26,7 @@ A Simple Plugin
 This section describes how to write, compile, configure, and run a
 simple Traffic Server plugin. You'll follow the steps below:
 
-1. Make sure that your plugin source code contains an :c:func:`TSPluginInit`
+1. Make sure that your plugin source code contains an :func:`TSPluginInit`
    initialization function.
 
 2. Compile your plugin source code, creating a shared library.

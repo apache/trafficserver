@@ -14,6 +14,7 @@
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
 
+.. default-domain:: cpp
 
 TSHttpHdrReasonLookup
 =====================
@@ -25,7 +26,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. c:function:: const char* TSHttpHdrReasonLookup(TSHttpStatus status)
+.. function:: const char* TSHttpHdrReasonLookup(TSHttpStatus status)
 
 
 Description

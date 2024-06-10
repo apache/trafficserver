@@ -39,7 +39,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
             -Werror
             -Wno-unused-parameter
             -Wno-format-truncation
-            -Wno-stringop-overflow
             -Wno-invalid-offsetof
   )
   # stop the compiler from complaining about unused variable in structured binding

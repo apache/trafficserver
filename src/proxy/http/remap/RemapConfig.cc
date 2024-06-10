@@ -130,22 +130,24 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
       ;
     }
     errStr = remap_validate_filter_args(rpp, (const char **)bti->argv, bti->argc, errStrBuf, errStrBufSize);
-    for (rp = bti->rules_list; rp; rp = rp->next) {
+  }
+
+  for (rp = bti->rules_list; rp; rp = rp->next) {
+    for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
+      ;
+    }
+    if (rp->active_queue_flag) {
+      Dbg(dbg_ctl_url_rewrite, "[process_filter_opt] Add active main filter \"%s\" (argc=%d)",
+          rp->filter_name ? rp->filter_name : "<nullptr>", rp->argc);
       for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
         ;
       }
-      if (rp->active_queue_flag) {
-        Dbg(dbg_ctl_url_rewrite, "[process_filter_opt] Add active main filter \"%s\" (argc=%d)",
-            rp->filter_name ? rp->filter_name : "<nullptr>", rp->argc);
-        for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
-          ;
-        }
-        if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize)) != nullptr) {
-          break;
-        }
+      if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize)) != nullptr) {
+        break;
       }
     }
   }
+
   // Set the ip allow flag for this rule to the current ip allow flag state
   mp->ip_allow_check_enabled_p = bti->ip_allow_check_enabled_p;
 

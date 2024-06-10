@@ -130,7 +130,7 @@ read(const TSIOBufferReader &r, std::string &o, int64_t l = 0)
 }
 
 uint64_t
-read(const TSIOBuffer &b, std::string &o, const int64_t l = 0)
+read(const TSIOBuffer &b, std::string &o)
 {
   TSIOBufferReader reader = TSIOBufferReaderAlloc(b);
   const uint64_t   length = read(reader, o);

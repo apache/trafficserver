@@ -94,7 +94,7 @@ inline UnitParser::UnitParser(UnitParser::Units &&units, bool unit_required_p) n
 }
 
 inline UnitParser::self_type &
-UnitParser::unit_required(bool flag)
+UnitParser::unit_required([[maybe_unused]] bool flag)
 {
   _unit_required_p = false;
   return *this;

@@ -15,6 +15,7 @@
    permissions and limitations under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 TSRecordAccessType
 ******************
@@ -26,18 +27,18 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:type:: TSRecordAccessType
+.. enum:: TSRecordAccessType
 
 Enum typedef.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSRecordAccessType TS_RECORDACCESS_NULL
+.. enumerator:: TSRecordAccessType::TS_RECORDACCESS_NULL
 
-.. c:member:: TSRecordAccessType TS_RECORDACCESS_NO_ACCESS
+.. enumerator:: TSRecordAccessType::TS_RECORDACCESS_NO_ACCESS
 
-.. c:member:: TSRecordAccessType TS_RECORDACCESS_READ_ONLY
+.. enumerator:: TSRecordAccessType::TS_RECORDACCESS_READ_ONLY
 
 Description
 ===========
