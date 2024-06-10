@@ -1516,11 +1516,8 @@ TSMimeHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc s
 }
 
 void
-TSMimeHdrPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
+TSMimeHdrPrint(TSMLoc obj, TSIOBuffer iobufp)
 {
-  // The bufp argument is no longer used, but the assert is left in to verify
-  // the preconditon so that the API contract is not inadvertantly changed.
-  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(obj) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS));
   sdk_assert(sdk_sanity_check_iocore_structure(iobufp) == TS_SUCCESS);
 

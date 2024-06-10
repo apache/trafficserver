@@ -93,7 +93,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
 ///////////////////////////////////////////////////////////////////////////
 // Dump a header on stderr, useful together with Dbg().
 static void
-dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
+dump_headers(TSMLoc hdr_loc)
 {
   TSIOBuffer       output_buffer;
   TSIOBufferReader reader;
@@ -104,7 +104,7 @@ dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
   reader        = TSIOBufferReaderAlloc(output_buffer);
 
   /* This will print  just MIMEFields and not the http request line */
-  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  TSMimeHdrPrint(hdr_loc, output_buffer);
 
   /* We need to loop over all the buffer blocks, there can be more than 1 */
   block = TSIOBufferReaderStart(reader);
@@ -241,7 +241,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
         break;
       }
       Dbg(dbg_ctl, "Starting background fetch, replaying:");
-      dump_headers(data->mbuf, data->hdr_loc);
+      dump_headers(data->hdr_loc);
     }
 
     // Setup the NetVC for background fetch

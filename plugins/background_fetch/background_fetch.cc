@@ -388,7 +388,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
         break;
       }
       Dbg(Bg_dbg_ctl, "Starting background fetch, replaying:");
-      dump_headers(data->mbuf, data->hdr_loc);
+      dump_headers(data->hdr_loc);
     }
 
     // Setup the NetVC for background fetch
