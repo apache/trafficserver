@@ -25,6 +25,7 @@
 
 #include <cstddef>
 
+#include "tsutil/DbgCtl.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
 #include "iocore/hostdb/HostDB.h"
@@ -45,31 +46,56 @@
 #include "proxy/ProxySession.h"
 #include "tscore/MgmtDefs.h"
 
+#include <cstdint>
+#include <cstdio>
+#include <string>
+#include <string_view>
+
 #define HTTP_OUR_VIA_MAX_LENGTH 1024 // 512-bytes for hostname+via string, 512-bytes for the debug info
 
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 
-#define DUMP_HEADER(C, H, I, S)                                 \
-  {                                                             \
-    if ((C).on()) {                                             \
-      fprintf(stderr, "+++++++++ %s +++++++++\n", S);           \
-      fprintf(stderr, "-- State Machine Id: %" PRId64 "\n", I); \
-      char b[4096];                                             \
-      int  used, tmp, offset;                                   \
-      int  done;                                                \
-      offset = 0;                                               \
-      if ((H)->valid()) {                                       \
-        do {                                                    \
-          used     = 0;                                         \
-          tmp      = offset;                                    \
-          done     = (H)->print(b, 4095, &used, &tmp);          \
-          offset  += used;                                      \
-          b[used]  = '\0';                                      \
-          fprintf(stderr, "%s", b);                             \
-        } while (!done);                                        \
-      }                                                         \
-    }                                                           \
+inline void
+s_dump_header(HTTPHdr const *hdr, std::string &out)
+{
+  int offset{0};
+  int done{0};
+  do {
+    int  used{0};
+    char b[4096];
+    // The buffer offset is taken non-const and it is apparently
+    // modified in some code path, but in my testing it does
+    // not change, it seems. Since we manually bump the offset,
+    // the use of tmp is precautionary to make sure our logic
+    // doesn't break in case it does change in some circumstance.
+    int tmp{offset};
+    done    = hdr->print(b, 4096, &used, &tmp);
+    offset += used;
+    out.append(b, used);
+  } while (0 == done);
+}
+
+inline void
+dump_header(DbgCtl const &ctl, HTTPHdr const *hdr, std::int64_t sm_id, std::string_view description)
+{
+  if (ctl.on()) {
+    std::string output;
+    output.append("+++++++++ ");
+    output.append(description);
+    output.append(" +++++++++\n");
+    output.append("-- State Machine Id: ");
+    output.append(std::to_string(sm_id));
+    output.push_back('\n');
+    if (hdr->valid()) {
+      s_dump_header(hdr, output);
+    } else {
+      output.append("Invalid header!\n");
+    }
+    // We make a single call to fprintf so that the output does not get
+    // interleaved with output from other threads performing I/O.
+    fprintf(stderr, "%s", output.c_str());
   }
+}
 
 using ink_time_t = time_t;
 

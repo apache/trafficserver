@@ -690,7 +690,7 @@ BgFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
         break;
       }
       PrefetchDebug("Starting background fetch.");
-      dumpHeaders(fetch->_mbuf, fetch->_headerLoc);
+      dumpHeaders(fetch->_headerLoc);
     }
 
     // Setup the NetVC for background fetch
