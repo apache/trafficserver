@@ -25,9 +25,21 @@
 
 #include <tsutil/StringConvert.h>
 
+std::string
+mkunsigned_string()
+{
+  const char data[] = {static_cast<char>(0xab), static_cast<char>(0x9e), static_cast<char>(0xff), 0x12, 0x04};
+
+  return std::string(data, 5);
+}
+
 TEST_CASE("StringConvert", "[STE]")
 {
   REQUIRE(ts::hex("01") == "3031");
   REQUIRE(ts::unhex("3031") == "01");
   REQUIRE(ts::hex("5pn2QM") == "35706e32514d");
+
+  auto usgn = mkunsigned_string();
+  REQUIRE(ts::hex(usgn) == "ab9eff1204");
+  REQUIRE(ts::unhex(ts::hex(usgn)) == usgn);
 }
