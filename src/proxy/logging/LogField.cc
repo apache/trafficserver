@@ -327,7 +327,7 @@ LogField::milestones_from_m_name(TSMilestonesType *ms1, TSMilestonesType *ms2)
 }
 
 // Container field ctor
-LogField::LogField(const char *field, Container container, SetFunc _setfunc)
+LogField::LogField(const char *field, Container container)
   : m_name(ats_strdup(field)),
     m_symbol(ats_strdup(container_names[container])),
     m_type(LogField::STRING),
