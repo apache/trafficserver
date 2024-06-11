@@ -203,6 +203,20 @@ struct EVPKey {
   }
 };
 
+/** Remove the last error from this thread's error queue and print it.
+ */
+static void
+ssl_error()
+{
+  if (unsigned long error_code{ERR_get_error()}; 0 != error_code) {
+    if (char const *reason{ERR_lib_error_string(error_code)}; NULL == reason) {
+      Dbg(dbg_ctl, "SSL error: error code %lu", error_code);
+    } else {
+      Dbg(dbg_ctl, "SSL error: %s", reason);
+    }
+  }
+}
+
 bool
 verify(const byte *const msg, const size_t mlen, const byte *const sig, const size_t slen, EVP_PKEY *const pkey)
 {
@@ -218,28 +232,20 @@ verify(const byte *const msg, const size_t mlen, const byte *const sig, const si
 
   EVPContext evp;
 
-  {
-    const int rc = EVP_DigestVerifyInit(evp.context, nullptr, EVP_sha256(), nullptr, pkey);
-    assert(1 == rc);
-    if (1 != rc) {
-      return false;
-    }
+  if (const int rc = EVP_DigestVerifyInit(evp.context, nullptr, EVP_sha256(), nullptr, pkey); 1 != rc) {
+    ssl_error();
+    return false;
   }
 
-  ERR_clear_error();
-
-  {
-    const int rc = EVP_DigestVerify(evp.context, sig, slen, msg, mlen);
-    if (1 == rc) {
-      return true;
-    } else if (0 == rc) {
-      return false;
-    } else {
-      return false;
-    }
+  const int rc = EVP_DigestVerify(evp.context, sig, slen, msg, mlen);
+  if (1 == rc) {
+    return true;
+  } else if (0 == rc) {
+    return false;
+  } else {
+    ssl_error();
+    return false;
   }
-
-  return false;
 }
 
 struct Exception {
