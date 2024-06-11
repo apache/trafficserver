@@ -237,7 +237,7 @@ verify(const byte *const msg, const size_t mlen, const byte *const sig, const si
     return false;
   }
 
-  if (const int rc = EVP_DigestVerify(evp.context, sig, slen, msg, mlen); 1 == rc) {
+  const int rc = EVP_DigestVerify(evp.context, sig, slen, msg, mlen);
   if (1 == rc) {
     return true;
   } else if (0 == rc) {
