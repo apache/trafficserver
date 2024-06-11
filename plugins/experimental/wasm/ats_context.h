@@ -276,9 +276,8 @@ public:
   const char *
   getTransformResult(size_t *body_size)
   {
-    std::string s = transform_result_.get();
-    *body_size    = s.size();
-    return s.c_str();
+    *body_size = transform_result_.get().size();
+    return transform_result_.get().c_str();
   }
 
   // Metrics
