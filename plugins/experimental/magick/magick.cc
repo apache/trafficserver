@@ -176,10 +176,10 @@ struct EVPContext {
   ~EVPContext()
   {
     assert(nullptr != context);
-    EVP_MD_CTX_destroy(context);
+    EVP_MD_CTX_free(context);
   }
 
-  EVPContext() : context(EVP_MD_CTX_create()) { assert(nullptr != context); }
+  EVPContext() : context(EVP_MD_CTX_new()) { assert(nullptr != context); }
 };
 
 struct EVPKey {
@@ -226,19 +226,17 @@ verify(const byte *const msg, const size_t mlen, const byte *const sig, const si
     }
   }
 
-  {
-    const int rc = EVP_DigestVerifyUpdate(evp.context, msg, mlen);
-    assert(1 == rc);
-    if (1 != rc) {
-      return false;
-    }
-  }
-
   ERR_clear_error();
 
   {
-    const int rc = EVP_DigestVerifyFinal(evp.context, sig, slen);
-    return 1 == rc;
+    const int rc = EVP_DigestVerify(evp.context, sig, slen, msg, mlen);
+    if (1 == rc) {
+      return true;
+    } else if (0 == rc) {
+      return false;
+    } else {
+      return false;
+    }
   }
 
   return false;
