@@ -230,7 +230,7 @@ public:
   NextHopStrategyFactory *strategyFactory = nullptr;
 
 private:
-  bool _valid = false;
+  bool              _valid               = false;
   ACLMatchingPolicy _acl_matching_policy = ACLMatchingPolicy::FIRST_EXPLICIT_MATCH_WINS;
 
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host, int request_host_len,

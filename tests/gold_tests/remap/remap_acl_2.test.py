@@ -41,8 +41,7 @@ class Test_remap_acl:
 
     def __init__(
             self, name: str, replay_file: str, ip_allow_content: str, deactivate_ip_allow: bool, acl_matching_policy: int,
-            acl_configuration: str,
-            named_acls: List[Tuple[str, str]], expected_responses: List[int]):
+            acl_configuration: str, named_acls: List[Tuple[str, str]], expected_responses: List[int]):
         """Initialize the test.
 
         :param name: The name of the test.
@@ -100,7 +99,6 @@ class Test_remap_acl:
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.http.connect_ports': self._server.Variables.http_port,
                 'proxy.config.url_remap.acl_matching_policy': self._acl_matching_policy,
-
             })
 
         remap_config_lines = []
@@ -133,6 +131,7 @@ class Test_remap_acl:
         codes = [str(code) for code in self._expected_responses]
         p.Streams.stdout += Testers.ContainsExpression(
             '.*'.join(codes), "Verifying the expected order of responses", reflags=re.DOTALL | re.MULTILINE)
+
 
 IP_ALLOW_MINIMUM = f'''
 ip_categories:
@@ -176,7 +175,6 @@ ip_allow:
       - GET
 '''
 
-
 # From src/proxy/http/remap/RemapConfig.cc:123
 # // ACLs are processed in this order:
 # // 1. A remap.config ACL line for an individual remap rule.
@@ -197,12 +195,12 @@ ip_allow:
 # | PUT    | allow (implicit) | allow (implicit) | deny  (implicit) | deny  (explicit) | deny    (403) |
 # | DELETE | allow (implicit) | allow (implicit) | deny  (implicit) | allow (implicit) | allowed (200) |
 # |--------+------------------+------------------+------------------+------------------+---------------+
-
-
 '''
 replay_proxy_response writes the given replay file (which expects a single GET & POST client-request)
 with the given proxy_response value. This is only used to support the below table test.
 '''
+
+
 def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_response):
     current_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
     path = os.path.join(current_dir, filename)
@@ -220,6 +218,7 @@ def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_
                     raise Exception("Expected to find GET or POST request, found %s", method)
     with open(replay_file, "w") as f:
         f.write(dump(data))
+
 
 # yapf: disable
 all_acl_combinations = [
@@ -280,7 +279,6 @@ all_acl_combinations = [
 
 ]
 # yapf: enable
-
 """
 Test all acl combinations
 """
