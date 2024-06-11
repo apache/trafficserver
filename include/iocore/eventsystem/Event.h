@@ -150,6 +150,10 @@ class EThread;
 class Event : public Action
 {
 public:
+#ifdef ENABLE_EVENT_CORRELATION
+  using CorrelationType = uintptr_t;
+#endif
+
   ///////////////////////////////////////////////////////////
   // Common Interface                                      //
   ///////////////////////////////////////////////////////////
@@ -205,6 +209,19 @@ public:
   const void *get_location() const;
 #endif
 
+#ifdef ENABLE_EVENT_CORRELATION
+  void
+  set_correlation(CorrelationType corr)
+  {
+    correlation = corr;
+  }
+  CorrelationType
+  get_correlation()
+  {
+    return correlation;
+  }
+#endif
+
   void free();
 
   EThread *ethread = nullptr;
@@ -250,6 +267,10 @@ private:
     To get symbols, use backtrace_symbols(3) or external tools like `addr2line(1)` (Linux) or `atos(1)`(BSD).
    */
   const void *_location = nullptr;
+#endif
+
+#ifdef ENABLE_EVENT_CORRELATION
+  CorrelationType correlation;
 #endif
 
 public:

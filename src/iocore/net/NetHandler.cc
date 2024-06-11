@@ -22,6 +22,7 @@
  */
 
 #include "iocore/net/NetHandler.h"
+#include "iocore/eventsystem/Continuation.h"
 #include <atomic>
 
 #if TS_USE_LINUX_IO_URING
@@ -275,6 +276,9 @@ NetHandler::process_ready_list()
 #if defined(USE_EDGE_TRIGGER)
   // NetEvent *
   while ((ne = read_ready_list.dequeue())) {
+#if ENABLE_EVENT_CORRELATION
+    Event::CorrelationType old = this_ethread()->push_correlation(ne->event_correlation);
+#endif
     // Initialize the thread-local continuation flags
     set_cont_flags(ne->get_control_flags());
     if (ne->closed) {
@@ -284,8 +288,14 @@ NetHandler::process_ready_list()
     } else if (!ne->read.enabled) {
       read_ready_list.remove(ne);
     }
+#if ENABLE_EVENT_CORRELATION
+    this_ethread()->pop_correlation(old);
+#endif
   }
   while ((ne = write_ready_list.dequeue())) {
+#if ENABLE_EVENT_CORRELATION
+    Event::CorrelationType old = this_ethread()->push_correlation(ne->event_correlation);
+#endif
     set_cont_flags(ne->get_control_flags());
     if (ne->closed) {
       free_netevent(ne);
@@ -294,6 +304,9 @@ NetHandler::process_ready_list()
     } else if (!ne->write.enabled) {
       write_ready_list.remove(ne);
     }
+#if ENABLE_EVENT_CORRELATION
+    this_ethread()->pop_correlation(old);
+#endif
   }
 #else  /* !USE_EDGE_TRIGGER */
   while ((ne = read_ready_list.dequeue())) {

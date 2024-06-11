@@ -129,6 +129,24 @@ EThread::~EThread()
   MUTEX_UNTAKE_LOCK(mutex, this);
 }
 
+#ifdef ENABLE_EVENT_CORRELATION
+Event::CorrelationType
+EThread::push_correlation(Event::CorrelationType corr)
+{
+  Event::CorrelationType current = ethread_correlation;
+
+  ethread_correlation = corr;
+
+  return current;
+}
+
+void
+EThread::pop_correlation(Event::CorrelationType corr)
+{
+  ethread_correlation = corr;
+}
+#endif
+
 bool
 EThread::is_event_type(EventType et)
 {
@@ -160,6 +178,10 @@ EThread::process_event(Event *e, int calling_code)
     // Restore the client IP debugging flags
     set_cont_flags(e->continuation->control_flags);
 
+#ifdef ENABLE_EVENT_CORRELATION
+    Event::CorrelationType old = push_correlation(e->get_correlation());
+#endif
+
     e->continuation->handleEvent(calling_code, e);
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);
@@ -176,6 +198,10 @@ EThread::process_event(Event *e, int calling_code)
     } else if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
       free_event(e);
     }
+
+#ifdef ENABLE_EVENT_CORRELATION
+    pop_correlation(old);
+#endif
   }
 }
 

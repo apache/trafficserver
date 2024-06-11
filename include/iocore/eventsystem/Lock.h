@@ -26,6 +26,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Diags.h"
 #include "iocore/eventsystem/Thread.h"
+#include <mutex>
 
 #define MAX_LOCK_TIME               HRTIME_MSECONDS(200)
 #define THREAD_MUTEX_THREAD_HOLDING (-1024 * 1024)
@@ -50,17 +51,17 @@
 */
 
 // A weak version of the SCOPED_MUTEX_LOCK macro, allows the mutex to be a nullptr.
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
 #define WEAK_SCOPED_MUTEX_LOCK(_l, _m, _t) WeakMutexLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t);
-#else // DEBUG
+#else // ENABLE_LOCK_LEDGER
 #define WEAK_SCOPED_MUTEX_LOCK(_l, _m, _t) WeakMutexLock _l(_m, _t);
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
 
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
 #define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t)
-#else // DEBUG
+#else // ENABLE_LOCK_LEDGER
 #define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(_m, _t)
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
 
 /**
   Attempts to acquire the lock to the ProxyMutex.
@@ -76,17 +77,17 @@
 
 */
 
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
 #define WEAK_MUTEX_TRY_LOCK(_l, _m, _t) WeakMutexTryLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t);
-#else // DEBUG
+#else // ENABLE_LOCK_LEDGER
 #define WEAK_MUTEX_TRY_LOCK(_l, _m, _t) WeakMutexTryLock _l(_m, _t);
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
 
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
 #define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t)
-#else // DEBUG
+#else // ENABLE_LOCK_LEDGER
 #define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(_m, _t)
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
 
 /**
   Releases the lock on a ProxyMutex.
@@ -104,17 +105,17 @@
 
 /////////////////////////////////////
 // DEPRECATED DEPRECATED DEPRECATED
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
 #define MUTEX_TAKE_TRY_LOCK(_m, _t) Mutex_trylock(MakeSourceLocation(), (char *)nullptr, _m, _t)
 #else
 #define MUTEX_TAKE_TRY_LOCK(_m, _t) Mutex_trylock(_m, _t)
 #endif
 
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
 #define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(MakeSourceLocation(), (char *)nullptr, _m, _t)
 #else
 #define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(_m, _t)
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
 
 #define MUTEX_UNTAKE_LOCK(_m, _t) Mutex_unlock(_m, _t)
 // DEPRECATED DEPRECATED DEPRECATED
@@ -122,12 +123,6 @@
 
 class EThread;
 using EThreadPtr = EThread *;
-
-#if DEBUG
-extern void lock_waiting(const SourceLocation &, const char *handler);
-extern void lock_holding(const SourceLocation &, const char *handler);
-extern void lock_taken(const SourceLocation &, const char *handler);
-#endif
 
 /**
   Lock object used in continuations and threads.
@@ -166,7 +161,7 @@ public:
 
   */
   // coverity[uninit_member]
-  ink_mutex the_mutex;
+  std::mutex the_mutex;
 
   /**
     Backpointer to owning thread.
@@ -179,7 +174,7 @@ public:
 
   int nthread_holding;
 
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
   ink_hrtime     hold_time;
   SourceLocation srcloc;
   const char    *handler;
@@ -192,7 +187,7 @@ public:
   int  total_acquires, blocking_acquires, nonblocking_acquires, successful_nonblocking_acquires, unsuccessful_nonblocking_acquires;
   void print_lock_stats(int flag);
 #endif // LOCK_CONTENTION_PROFILING
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
   void free() override;
 
   /**
@@ -206,13 +201,13 @@ public:
 
   */
   ProxyMutex()
-#ifdef DEBUG
-    : srcloc(nullptr, nullptr, 0)
+#ifdef ENABLE_LOCK_LEDGER
+    : srcloc({}, {}, 0)
 #endif
   {
     thread_holding  = nullptr;
     nthread_holding = 0;
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
     hold_time = 0;
     handler   = nullptr;
 #ifdef MAX_LOCK_TAKEN
@@ -228,30 +223,22 @@ public:
 #endif // DEBUG
     // coverity[uninit_member]
   }
-
-  /**
-    Initializes the underlying mutex object.
-
-    After constructing your ProxyMutex object, use this function
-    to initialize the underlying mutex object with an optional name.
-
-    @param name Name to identify this ProxyMutex. Its use depends
-      on the given platform.
-
-  */
-  void
-  init(const char *name = "UnnamedMutex")
-  {
-    ink_mutex_init(&the_mutex);
-  }
 };
+
+#if ENABLE_LOCK_LEDGER
+extern void lock_waiting(ProxyMutex *, const SourceLocation &, const char *, EThread *);
+extern void lock_holding(ProxyMutex *);
+extern void lock_unlock(ProxyMutex *);
+extern void lock_taken(ProxyMutex *);
+extern void lock_locked(ProxyMutex *);
+#endif
 
 // The ClassAllocator for ProxyMutexes
 extern ClassAllocator<ProxyMutex> mutexAllocator;
 
 inline bool
 Mutex_trylock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
   const SourceLocation &location, const char *ahandler,
 #endif
   ProxyMutex *m, EThread *t)
@@ -259,27 +246,28 @@ Mutex_trylock(
   ink_assert(t != nullptr);
   ink_assert(t == reinterpret_cast<EThread *>(this_thread()));
   if (m->thread_holding != t) {
-    if (!ink_mutex_try_acquire(&m->the_mutex)) {
-#ifdef DEBUG
-      lock_waiting(m->srcloc, m->handler);
+    if (!m->the_mutex.try_lock()) {
+#ifdef ENABLE_LOCK_LEDGER
+      lock_waiting(m, location, ahandler, t);
 #ifdef LOCK_CONTENTION_PROFILING
       m->unsuccessful_nonblocking_acquires++;
       m->nonblocking_acquires++;
       m->total_acquires++;
       m->print_lock_stats(0);
 #endif // LOCK_CONTENTION_PROFILING
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
       return false;
     }
     m->thread_holding = t;
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
     m->srcloc    = location;
     m->handler   = ahandler;
     m->hold_time = ink_get_hrtime();
+    lock_locked(m);
 #ifdef MAX_LOCK_TAKEN
     m->taken++;
 #endif // MAX_LOCK_TAKEN
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
   }
 #ifdef DEBUG
 #ifdef LOCK_CONTENTION_PROFILING
@@ -295,13 +283,13 @@ Mutex_trylock(
 
 inline bool
 Mutex_trylock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
   const SourceLocation &location, const char *ahandler,
 #endif
   Ptr<ProxyMutex> &m, EThread *t)
 {
   return Mutex_trylock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
     location, ahandler,
 #endif
     m.get(), t);
@@ -309,24 +297,25 @@ Mutex_trylock(
 
 inline int
 Mutex_lock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
   const SourceLocation &location, const char *ahandler,
 #endif
   ProxyMutex *m, EThread *t)
 {
   ink_assert(t != nullptr);
   if (m->thread_holding != t) {
-    ink_mutex_acquire(&m->the_mutex);
+    m->the_mutex.lock();
     m->thread_holding = t;
     ink_assert(m->thread_holding);
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
     m->srcloc    = location;
     m->handler   = ahandler;
     m->hold_time = ink_get_hrtime();
+    lock_locked(m);
 #ifdef MAX_LOCK_TAKEN
     m->taken++;
 #endif // MAX_LOCK_TAKEN
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
   }
 #ifdef DEBUG
 #ifdef LOCK_CONTENTION_PROFILING
@@ -341,13 +330,13 @@ Mutex_lock(
 
 inline int
 Mutex_lock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
   const SourceLocation &location, const char *ahandler,
 #endif
   Ptr<ProxyMutex> &m, EThread *t)
 {
   return Mutex_lock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
     location, ahandler,
 #endif
     m.get(), t);
@@ -360,19 +349,20 @@ Mutex_unlock(ProxyMutex *m, EThread *t)
     ink_assert(t == m->thread_holding);
     m->nthread_holding--;
     if (!m->nthread_holding) {
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
+      lock_unlock(m);
       if (ink_get_hrtime() - m->hold_time > MAX_LOCK_TIME)
-        lock_holding(m->srcloc, m->handler);
+        lock_holding(m);
 #ifdef MAX_LOCK_TAKEN
       if (m->taken > MAX_LOCK_TAKEN)
         lock_taken(m->srcloc, m->handler);
 #endif // MAX_LOCK_TAKEN
-      m->srcloc  = SourceLocation(nullptr, nullptr, 0);
+      m->srcloc  = SourceLocation({}, {}, 0);
       m->handler = nullptr;
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
       ink_assert(m->thread_holding);
       m->thread_holding = nullptr;
-      ink_mutex_release(&m->the_mutex);
+      m->the_mutex.unlock();
     }
   }
 }
@@ -393,17 +383,17 @@ public:
   WeakMutexLock() = default;
 
   WeakMutexLock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
     const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
     Ptr<ProxyMutex> &am, EThread *t)
     : m(am), locked_p(true)
   {
     if (m.get()) {
       Mutex_lock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
         location, ahandler,
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
         m, t);
     }
   }
@@ -446,16 +436,16 @@ public:
   MutexLock() = default;
 
   MutexLock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
     const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
     Ptr<ProxyMutex> &am, EThread *t)
     : m(am), locked_p(true)
   {
     Mutex_lock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
       location, ahandler,
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
       m, t);
   }
 
@@ -497,17 +487,17 @@ public:
   WeakMutexTryLock() = default;
 
   WeakMutexTryLock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
     const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
     Ptr<ProxyMutex> &am, EThread *t)
     : m(am)
   {
     if (m.get()) {
       lock_acquired = Mutex_trylock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
         location, ahandler,
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
         m, t);
     } else {
       lock_acquired = true;
@@ -581,16 +571,16 @@ public:
   MutexTryLock() = default;
 
   MutexTryLock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
     const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
     Ptr<ProxyMutex> &am, EThread *t)
     : m(am)
   {
     lock_acquired = Mutex_trylock(
-#ifdef DEBUG
+#ifdef ENABLE_LOCK_LEDGER
       location, ahandler,
-#endif // DEBUG
+#endif // ENABLE_LOCK_LEDGER
       m, t);
   }
 
@@ -654,7 +644,6 @@ ProxyMutex::free()
   print_lock_stats(1);
 #endif
 #endif
-  ink_mutex_destroy(&the_mutex);
   mutexAllocator.free(this);
 }
 
@@ -674,6 +663,5 @@ inline ProxyMutex *
 new_ProxyMutex()
 {
   ProxyMutex *m = mutexAllocator.alloc();
-  m->init();
   return m;
 }

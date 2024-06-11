@@ -265,6 +265,10 @@ HttpSM::cleanup()
     THREAD_FREE(_prewarm_sm, preWarmSMAllocator, this_ethread());
     _prewarm_sm = nullptr;
   }
+
+#ifdef ENABLE_EVENT_CORRELATION
+  EThread::clear_correlation();
+#endif
 }
 
 void
@@ -288,6 +292,10 @@ HttpSM::init(bool from_early_data)
   // Unique state machine identifier
   sm_id                 = next_sm_id++;
   t_state.state_machine = this;
+
+#ifdef ENABLE_EVENT_CORRELATION
+  EThread::set_correlation(sm_id);
+#endif
 
   t_state.http_config_param = HttpConfig::acquire();
   // Acquire a lease on the global remap / rewrite table (stupid global name ...)
@@ -315,6 +323,10 @@ HttpSM::init(bool from_early_data)
   ink_mutex_acquire(&debug_sm_list_mutex);
   debug_sm_list.push(this);
   ink_mutex_release(&debug_sm_list_mutex);
+#endif
+
+#ifdef ENABLE_EVENT_CORRELATION
+  this_ethread()->push_correlation(sm_id);
 #endif
 }
 

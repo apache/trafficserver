@@ -1140,6 +1140,9 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
   this->con.move(con_in);
   this->mutex  = c->mutex;
   this->thread = this_ethread();
+#if ENABLE_EVENT_CORRELATION
+  this->event_correlation = this->thread->ethread_correlation;
+#endif
 
   EThread    *t = this_ethread();
   NetHandler *h = get_NetHandler(t);

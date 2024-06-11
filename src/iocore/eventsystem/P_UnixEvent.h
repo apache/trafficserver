@@ -31,6 +31,7 @@ Event::init(Continuation *c, ink_hrtime atimeout_at, ink_hrtime aperiod)
   period       = aperiod;
   immediate    = !period && !atimeout_at;
   cancelled    = false;
+
   return this;
 }
 

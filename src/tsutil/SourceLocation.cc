@@ -22,12 +22,26 @@
  */
 
 #include <cstdio>
-#include <cstring>
 #include "tsutil/SourceLocation.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_ex.h"
 
 using namespace swoc::literals;
+
+std::string_view
+SourceLocation::basefile() const
+{
+  std::string_view shortname;
+  if (!file.empty()) {
+    auto idx = file.find_last_of('/');
+    if (idx != std::string_view::npos) {
+      shortname = file.substr(idx + 1);
+    } else {
+      shortname = file;
+    }
+  }
+  return shortname;
+}
 
 // This method takes a SourceLocation source location data structure and
 // converts it to a human-readable representation, in the buffer <buf>
@@ -39,19 +53,16 @@ using namespace swoc::literals;
 char *
 SourceLocation::str(char *buf, int buflen) const
 {
-  const char *shortname;
-
   if (!this->valid() || buflen < 1) {
     return (nullptr);
   }
 
-  shortname = strrchr(file, '/');
-  shortname = shortname ? (shortname + 1) : file;
-
-  if (func != nullptr) {
-    snprintf(buf, buflen, "%s:%d (%s)", shortname, line, func);
+  std::string_view shortname = basefile();
+  if (!func.empty()) {
+    snprintf(buf, buflen, "%.*s:%d (%.*s)", static_cast<int>(shortname.size()), shortname.data(), line,
+             static_cast<int>(func.size()), func.data());
   } else {
-    snprintf(buf, buflen, "%s:%d", shortname, line);
+    snprintf(buf, buflen, "%.*s:%d", static_cast<int>(shortname.size()), shortname.data(), line);
   }
   buf[buflen - 1] = 0;
   return (buf);
@@ -61,8 +72,8 @@ swoc::BufferWriter &
 SourceLocation::print(swoc::BufferWriter &w, swoc::bwf::Spec const &) const
 {
   if (this->valid()) {
-    auto base = swoc::TextView{file, strlen(file)}.take_suffix_at('/');
-    w.print("{}:{}{}", base, line, swoc::bwf::If(func, " ({})"_tv, func));
+    auto base = swoc::TextView{file}.take_suffix_at('/');
+    w.print("{}:{}{}", base, line, swoc::bwf::If(!func.empty(), " ({})"_tv, func));
   };
   return w;
 }
