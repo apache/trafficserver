@@ -28,4 +28,4 @@ bool  headerExist(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len);
 char *getHeader(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int headerlen, char *value, int *valuelen);
 
 bool setHeader(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const char *val, int val_len);
-void dumpHeaders(TSMBuffer bufp, TSMLoc hdr_loc);
+void dumpHeaders(TSMLoc hdr_loc);

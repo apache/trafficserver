@@ -903,13 +903,12 @@ ParseResult mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh
 void mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse);
 void mime_field_block_describe(HdrHeapObjImpl *raw, bool recurse);
 
-int mime_hdr_print(HdrHeap *heap, MIMEHdrImpl *mh, char *buf_start, int buf_length, int *buf_index_inout,
-                   int *buf_chars_to_skip_inout);
+int mime_hdr_print(MIMEHdrImpl const *mh, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout);
 int mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout,
                    int *buf_chars_to_skip_inout);
 int mime_mem_print_lc(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout,
                       int *buf_chars_to_skip_inout);
-int mime_field_print(MIMEField *field, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout);
+int mime_field_print(MIMEField const *field, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout);
 
 const char *mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str, uint16_t *d_len, bool must_copy);
 
@@ -1409,7 +1408,7 @@ MIMEHdr::presence(uint64_t mask) const
 inline int
 MIMEHdr::print(char *buf, int bufsize, int *bufindex, int *chars_to_skip)
 {
-  return mime_hdr_print(m_heap, m_mime, buf, bufsize, bufindex, chars_to_skip);
+  return mime_hdr_print(m_mime, buf, bufsize, bufindex, chars_to_skip);
 }
 
 /*-------------------------------------------------------------------------

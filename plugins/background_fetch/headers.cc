@@ -95,14 +95,14 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
 ///////////////////////////////////////////////////////////////////////////
 // Dump a header on stderr, useful together with Dbg().
 void
-dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
+dump_headers(TSMLoc hdr_loc)
 {
   TSIOBuffer       output_buffer = TSIOBufferCreate();
   TSIOBufferReader reader        = TSIOBufferReaderAlloc(output_buffer);
   int64_t          block_avail   = 0;
 
   /* This will print  just MIMEFields and not the http request line */
-  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  TSMimeHdrPrint(hdr_loc, output_buffer);
 
   /* We need to loop over all the buffer blocks, there can be more than 1 */
   TSIOBufferBlock block = TSIOBufferReaderStart(reader);

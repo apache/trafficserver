@@ -6599,7 +6599,7 @@ HttpSM::setup_server_send_request()
     t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
   }
 
-  DUMP_HEADER(dbg_ctl_http_hdrs, &(t_state.hdr_info.server_request), sm_id, "Proxy's Request after hooks");
+  dump_header(dbg_ctl_http_hdrs, &(t_state.hdr_info.server_request), sm_id, "Proxy's Request after hooks");
 
   // We need a reader so bytes don't fall off the end of
   //  the buffer
@@ -8483,7 +8483,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
     }
   }
 
-  DUMP_HEADER(dbg_ctl_http_hdrs, &t_state.hdr_info.client_request, sm_id, "Framed Client Request..checking");
+  dump_header(dbg_ctl_http_hdrs, &t_state.hdr_info.client_request, sm_id, "Framed Client Request..checking");
 }
 
 void

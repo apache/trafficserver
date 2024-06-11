@@ -26,4 +26,4 @@
 
 int  remove_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len);
 bool set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const char *val, int val_len);
-void dump_headers(TSMBuffer bufp, TSMLoc hdr_loc);
+void dump_headers(TSMLoc hdr_loc);
