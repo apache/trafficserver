@@ -237,12 +237,13 @@ verify(const byte *const msg, const size_t mlen, const byte *const sig, const si
     return false;
   }
 
-  const int rc = EVP_DigestVerify(evp.context, sig, slen, msg, mlen);
-  if (1 == rc) {
+  if (const int rc = EVP_DigestVerify(evp.context, sig, slen, msg, mlen); 1 == rc) {
     return true;
-  } else if (0 == rc) {
-    return false;
   } else {
+    // The OpenSSL 1.1.1 API distinguishes between a verification failure and a
+    // more serious error with a specific return value for the former, but we
+    // have collapsed them into one case because we don't do any special
+    // handling for serious errors.
     ssl_error();
     return false;
   }
