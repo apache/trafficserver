@@ -438,7 +438,7 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
 
 /** Perform fast ACL filtering. */
 void
-UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
+UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const map)
 {
   if (unlikely(!s || s->acl_filtering_performed || !s->client_connection_allowed)) {
     return;
@@ -558,7 +558,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
 
           // Since we have a explicit matching ACL, no need to process other filters nor ip_allow.yaml rules
           // regardless of ACLMatchingPolicy.
-          map->ip_allow_check_enabled_p = false;
+          s->skip_ip_allow_yaml = true;
           break;
         }
 
@@ -568,8 +568,9 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
               (rp->allow_flag ? "allow" : "deny"), (rp->allow_flag ? "denying" : "allowing"));
           s->client_connection_allowed = !rp->allow_flag;
 
-          // Since we have a implicit matching ACL, no need to process other filters nor ip_allow.yaml rules.
-          map->ip_allow_check_enabled_p = false;
+          // Since we have a implicit matching ACL with FIRST_ANY_MATCH_WINS policy, no need to process other filters nor
+          // ip_allow.yaml rules.
+          s->skip_ip_allow_yaml = true;
           break;
         }
       }
