@@ -175,6 +175,22 @@ ip_allow:
       - GET
 '''
 
+IP_ALLOW_DENY_POST = f'''
+ip_categories:
+  - name: ACME_LOCAL
+    ip_addrs: 127.0.0.1
+  - name: ACME_EXTERNAL
+    ip_addrs: 5.6.7.8
+
+ip_allow:
+  - apply: in
+    ip_addrs: 0/0
+    action: deny
+    methods:
+      - GET
+      - POST
+'''
+
 # From src/proxy/http/remap/RemapConfig.cc:123
 # // ACLs are processed in this order:
 # // 1. A remap.config ACL line for an individual remap rule.
@@ -221,68 +237,75 @@ def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_
 
 
 # yapf: disable
+keys = ["index", "policy", "inline", "named_acl", "ip_allow", "GET response", "POST response"]
 all_acl_combinations = [
-    { "index":  0, "policy": "explicit", "inline": "",                          "named_acl": "",                          "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 200, },
-    { "index":  1, "policy": "explicit", "inline": "",                          "named_acl": "",                          "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 403, },
-    { "index":  2, "policy": "explicit", "inline": "",                          "named_acl": "",                          "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-    { "index":  3, "policy": "explicit", "inline": "",                          "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 200, },
-    { "index":  4, "policy": "explicit", "inline": "",                          "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 200, },
-    { "index":  5, "policy": "explicit", "inline": "",                          "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 200, "POST response": 200, },
-    { "index":  6, "policy": "explicit", "inline": "",                          "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 403, "POST response": 200, },
-    { "index":  7, "policy": "explicit", "inline": "",                          "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 403, "POST response": 200, },
-    { "index":  8, "policy": "explicit", "inline": "",                          "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-    { "index":  9, "policy": "explicit", "inline": "@action=allow @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 200, },
-    { "index": 10, "policy": "explicit", "inline": "@action=allow @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 200, },
-    { "index": 11, "policy": "explicit", "inline": "@action=allow @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_DENY,    "GET response": 200, "POST response": 200, },
-    { "index": 12, "policy": "explicit", "inline": "@action=allow @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 200, },
-    { "index": 13, "policy": "explicit", "inline": "@action=allow @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 200, },
-    { "index": 14, "policy": "explicit", "inline": "@action=allow @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 200, "POST response": 200, },
-    { "index": 15, "policy": "explicit", "inline": "@action=allow @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 200, },
-    { "index": 16, "policy": "explicit", "inline": "@action=allow @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 200, },
-    { "index": 17, "policy": "explicit", "inline": "@action=allow @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 200, "POST response": 200, },
-    { "index": 18, "policy": "explicit", "inline": "@action=deny  @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_MINIMUM, "GET response": 403, "POST response": 200, },
-    { "index": 19, "policy": "explicit", "inline": "@action=deny  @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_CONTENT, "GET response": 403, "POST response": 200, },
-    { "index": 20, "policy": "explicit", "inline": "@action=deny  @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-    { "index": 21, "policy": "explicit", "inline": "@action=deny  @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 403, "POST response": 200, },
-    { "index": 22, "policy": "explicit", "inline": "@action=deny  @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 403, "POST response": 200, },
-    { "index": 23, "policy": "explicit", "inline": "@action=deny  @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-    { "index": 24, "policy": "explicit", "inline": "@action=deny  @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 403, "POST response": 200, },
-    { "index": 25, "policy": "explicit", "inline": "@action=deny  @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 403, "POST response": 200, },
-    { "index": 26, "policy": "explicit", "inline": "@action=deny  @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-    { "index": 27, "policy": "any",      "inline": "",                          "named_acl": "",                          "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 200, },
-    { "index": 28, "policy": "any",      "inline": "",                          "named_acl": "",                          "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 403, },
-    { "index": 29, "policy": "any",      "inline": "",                          "named_acl": "",                          "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-    { "index": 30, "policy": "any",      "inline": "",                          "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 403, },
-    { "index": 40, "policy": "any",      "inline": "",                          "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 403, },
-    { "index": 41, "policy": "any",      "inline": "",                          "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 200, "POST response": 403, },
-    { "index": 42, "policy": "any",      "inline": "",                          "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 403, "POST response": 200, },
-    { "index": 43, "policy": "any",      "inline": "",                          "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 403, "POST response": 200, },
-    { "index": 44, "policy": "any",      "inline": "",                          "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-    { "index": 45, "policy": "any",      "inline": "@action=allow @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 403, },
-    { "index": 46, "policy": "any",      "inline": "@action=allow @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 403, },
-    { "index": 47, "policy": "any",      "inline": "@action=allow @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_DENY,    "GET response": 200, "POST response": 403, },
-    { "index": 48, "policy": "any",      "inline": "@action=allow @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 403, },
-    { "index": 49, "policy": "any",      "inline": "@action=allow @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 403, },
-    { "index": 50, "policy": "any",      "inline": "@action=allow @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 200, "POST response": 403, },
-    { "index": 51, "policy": "any",      "inline": "@action=allow @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 200, "POST response": 403, },
-    { "index": 52, "policy": "any",      "inline": "@action=allow @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 200, "POST response": 403, },
-    { "index": 53, "policy": "any",      "inline": "@action=allow @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 200, "POST response": 403, },
-    { "index": 54, "policy": "any",      "inline": "@action=deny  @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_MINIMUM, "GET response": 403, "POST response": 200, },
-    { "index": 55, "policy": "any",      "inline": "@action=deny  @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_CONTENT, "GET response": 403, "POST response": 200, },
-    { "index": 56, "policy": "any",      "inline": "@action=deny  @method=GET", "named_acl": "",                          "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-    { "index": 57, "policy": "any",      "inline": "@action=deny  @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 403, "POST response": 200, },
-    { "index": 58, "policy": "any",      "inline": "@action=deny  @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 403, "POST response": 200, },
-    { "index": 59, "policy": "any",      "inline": "@action=deny  @method=GET", "named_acl": "@action=allow @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-    { "index": 60, "policy": "any",      "inline": "@action=deny  @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_MINIMUM, "GET response": 403, "POST response": 200, },
-    { "index": 61, "policy": "any",      "inline": "@action=deny  @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_CONTENT, "GET response": 403, "POST response": 200, },
-    { "index": 62, "policy": "any",      "inline": "@action=deny  @method=GET", "named_acl": "@action=deny  @method=GET", "ip_allow": IP_ALLOW_DENY,    "GET response": 403, "POST response": 200, },
-
+    [   0,  "explicit",  "",                          "",                          IP_ALLOW_MINIMUM,   200, 200, ],
+    [   1,  "explicit",  "",                          "",                          IP_ALLOW_CONTENT,   200, 403, ],
+    [   2,  "explicit",  "",                          "",                          IP_ALLOW_DENY,      403, 200, ],
+    [   3,  "explicit",  "",                          "@action=allow @method=GET", IP_ALLOW_MINIMUM,   200, 200, ],
+    [   4,  "explicit",  "",                          "@action=allow @method=GET", IP_ALLOW_CONTENT,   200, 200, ],
+    [   5,  "explicit",  "",                          "@action=allow @method=GET", IP_ALLOW_DENY,      200, 200, ],
+    [   6,  "explicit",  "",                          "@action=deny  @method=GET", IP_ALLOW_MINIMUM,   403, 200, ],
+    [   7,  "explicit",  "",                          "@action=deny  @method=GET", IP_ALLOW_CONTENT,   403, 200, ],
+    [   8,  "explicit",  "",                          "@action=deny  @method=GET", IP_ALLOW_DENY,      403, 200, ],
+    [   9,  "explicit",  "@action=allow @method=GET", "",                          IP_ALLOW_MINIMUM,   200, 200, ],
+    [  10,  "explicit",  "@action=allow @method=GET", "",                          IP_ALLOW_CONTENT,   200, 200, ],
+    [  11,  "explicit",  "@action=allow @method=GET", "",                          IP_ALLOW_DENY,      200, 200, ],
+    [  12,  "explicit",  "@action=allow @method=GET", "@action=allow @method=GET", IP_ALLOW_MINIMUM,   200, 200, ],
+    [  13,  "explicit",  "@action=allow @method=GET", "@action=allow @method=GET", IP_ALLOW_CONTENT,   200, 200, ],
+    [  14,  "explicit",  "@action=allow @method=GET", "@action=allow @method=GET", IP_ALLOW_DENY,      200, 200, ],
+    [  15,  "explicit",  "@action=allow @method=GET", "@action=deny  @method=GET", IP_ALLOW_MINIMUM,   200, 200, ],
+    [  16,  "explicit",  "@action=allow @method=GET", "@action=deny  @method=GET", IP_ALLOW_CONTENT,   200, 200, ],
+    [  17,  "explicit",  "@action=allow @method=GET", "@action=deny  @method=GET", IP_ALLOW_DENY,      200, 200, ],
+    [  18,  "explicit",  "@action=deny  @method=GET", "",                          IP_ALLOW_MINIMUM,   403, 200, ],
+    [  19,  "explicit",  "@action=deny  @method=GET", "",                          IP_ALLOW_CONTENT,   403, 200, ],
+    [  20,  "explicit",  "@action=deny  @method=GET", "",                          IP_ALLOW_DENY,      403, 200, ],
+    [  21,  "explicit",  "@action=deny  @method=GET", "@action=allow @method=GET", IP_ALLOW_MINIMUM,   403, 200, ],
+    [  22,  "explicit",  "@action=deny  @method=GET", "@action=allow @method=GET", IP_ALLOW_CONTENT,   403, 200, ],
+    [  23,  "explicit",  "@action=deny  @method=GET", "@action=allow @method=GET", IP_ALLOW_DENY,      403, 200, ],
+    [  24,  "explicit",  "@action=deny  @method=GET", "@action=deny  @method=GET", IP_ALLOW_MINIMUM,   403, 200, ],
+    [  25,  "explicit",  "@action=deny  @method=GET", "@action=deny  @method=GET", IP_ALLOW_CONTENT,   403, 200, ],
+    [  26,  "explicit",  "@action=deny  @method=GET", "@action=deny  @method=GET", IP_ALLOW_DENY,      403, 200, ],
+    [  27,  "any",       "",                          "",                          IP_ALLOW_MINIMUM,   200, 200, ],
+    [  28,  "any",       "",                          "",                          IP_ALLOW_CONTENT,   200, 403, ],
+    [  29,  "any",       "",                          "",                          IP_ALLOW_DENY,      403, 200, ],
+    [  30,  "any",       "",                          "@action=allow @method=GET", IP_ALLOW_MINIMUM,   200, 403, ],
+    [  31,  "any",       "",                          "@action=allow @method=GET", IP_ALLOW_CONTENT,   200, 403, ],
+    [  32,  "any",       "",                          "@action=allow @method=GET", IP_ALLOW_DENY,      200, 403, ],
+    [  33,  "any",       "",                          "@action=deny  @method=GET", IP_ALLOW_MINIMUM,   403, 200, ],
+    [  34,  "any",       "",                          "@action=deny  @method=GET", IP_ALLOW_CONTENT,   403, 200, ],
+    [  35,  "any",       "",                          "@action=deny  @method=GET", IP_ALLOW_DENY,      403, 200, ],
+    [  36,  "any",       "@action=allow @method=GET", "",                          IP_ALLOW_MINIMUM,   200, 403, ],
+    [  37,  "any",       "@action=allow @method=GET", "",                          IP_ALLOW_CONTENT,   200, 403, ],
+    [  38,  "any",       "@action=allow @method=GET", "",                          IP_ALLOW_DENY,      200, 403, ],
+    [  39,  "any",       "@action=allow @method=GET", "@action=allow @method=GET", IP_ALLOW_MINIMUM,   200, 403, ],
+    [  40,  "any",       "@action=allow @method=GET", "@action=allow @method=GET", IP_ALLOW_CONTENT,   200, 403, ],
+    [  41,  "any",       "@action=allow @method=GET", "@action=allow @method=GET", IP_ALLOW_DENY,      200, 403, ],
+    [  42,  "any",       "@action=allow @method=GET", "@action=deny  @method=GET", IP_ALLOW_MINIMUM,   200, 403, ],
+    [  43,  "any",       "@action=allow @method=GET", "@action=deny  @method=GET", IP_ALLOW_CONTENT,   200, 403, ],
+    [  44,  "any",       "@action=allow @method=GET", "@action=deny  @method=GET", IP_ALLOW_DENY,      200, 403, ],
+    [  45,  "any",       "@action=deny  @method=GET", "",                          IP_ALLOW_MINIMUM,   403, 200, ],
+    [  46,  "any",       "@action=deny  @method=GET", "",                          IP_ALLOW_CONTENT,   403, 200, ],
+    [  47,  "any",       "@action=deny  @method=GET", "",                          IP_ALLOW_DENY,      403, 200, ],
+    [  48,  "any",       "@action=deny  @method=GET", "@action=allow @method=GET", IP_ALLOW_MINIMUM,   403, 200, ],
+    [  49,  "any",       "@action=deny  @method=GET", "@action=allow @method=GET", IP_ALLOW_CONTENT,   403, 200, ],
+    [  50,  "any",       "@action=deny  @method=GET", "@action=allow @method=GET", IP_ALLOW_DENY,      403, 200, ],
+    [  51,  "any",       "@action=deny  @method=GET", "@action=deny  @method=GET", IP_ALLOW_MINIMUM,   403, 200, ],
+    [  52,  "any",       "@action=deny  @method=GET", "@action=deny  @method=GET", IP_ALLOW_CONTENT,   403, 200, ],
+    [  53,  "any",       "@action=deny  @method=GET", "@action=deny  @method=GET", IP_ALLOW_DENY,      403, 200, ],
+    [  54,  "explicit",  "",                          "",                          IP_ALLOW_DENY_POST, 403, 403, ],
+    [  55,  "explicit",  "@action=allow @method=GET", "",                          IP_ALLOW_DENY_POST, 200, 403, ],
+    [  56,  "explicit",  "@action=deny  @method=GET", "",                          IP_ALLOW_DENY_POST, 403, 200, ],
+    [  57,  "any",       "",                          "",                          IP_ALLOW_DENY_POST, 403, 403, ],
+    [  58,  "any",       "@action=allow @method=GET", "",                          IP_ALLOW_DENY_POST, 200, 403, ],
+    [  59,  "any",       "@action=deny  @method=GET", "",                          IP_ALLOW_DENY_POST, 403, 403, ],
 ]
+all_tests = [dict(zip(keys, test)) for test in all_acl_combinations]
 # yapf: enable
 """
 Test all acl combinations
 """
-for idx, test in enumerate(all_acl_combinations):
+for idx, test in enumerate(all_tests):
     (_, replay_file_name) = tempfile.mkstemp(suffix="table_test_{}.replay".format(idx))
     replay_proxy_response(
         "base.replay.yaml",
