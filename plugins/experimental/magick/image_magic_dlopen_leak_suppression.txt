@@ -20,3 +20,4 @@
 # commented out so there was nothing to leak in the plugin.
 leak:plugin_dso_load
 leak:libquiche.so
+leak:libssl.so
