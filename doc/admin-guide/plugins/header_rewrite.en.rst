@@ -255,13 +255,13 @@ as part of the ``SEND_REQUEST_HDR_HOOK``.
 
 For example::
 
-    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    cond %{SEND_REQUEST_HDR_HOOK} [AND]
     cond %{NEXT-HOP:HOST} =www.firstparent.com
-        set-header HOST vhost.firstparent.com
+        set-header Host vhost.firstparent.com
 
-    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    cond %{SEND_REQUEST_HDR_HOOK} [AND]
     cond %{NEXT-HOP:HOST} =www.secondparent.com
-        set-header HOST vhost.secondparent.com
+        set-header Host vhost.secondparent.com
 
 GEO
 ~~~
