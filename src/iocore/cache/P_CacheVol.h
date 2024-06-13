@@ -27,7 +27,7 @@
 #include "P_CacheDoc.h"
 #include "P_CacheStats.h"
 #include "P_RamCache.h"
-#include "iocore/cache/AggregateWriteBuffer.h"
+#include "AggregateWriteBuffer.h"
 
 #include "iocore/eventsystem/EThread.h"
 
@@ -328,6 +328,7 @@ private:
   void _init_dir();
   void _init_data_internal();
   void _init_data();
+  int  _agg_copy(CacheVC *vc);
   bool flush_aggregate_write_buffer();
 
   AggregateWriteBuffer _write_buffer;

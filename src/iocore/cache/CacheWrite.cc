@@ -23,7 +23,7 @@
 
 #include "P_Cache.h"
 #include "P_CacheDoc.h"
-#include "iocore/cache/AggregateWriteBuffer.h"
+#include "AggregateWriteBuffer.h"
 #include "CacheEvacuateDocVC.h"
 
 // These macros allow two incrementing unsigned values x and y to maintain
@@ -638,24 +638,23 @@ Stripe::evac_range(off_t low, off_t high, int evac_phase)
   return 0;
 }
 
-static int
-agg_copy(char *p, CacheVC *vc)
+int
+Stripe::_agg_copy(CacheVC *vc)
 {
-  Stripe *stripe = vc->stripe;
-  off_t   o      = stripe->header->write_pos + stripe->get_agg_buf_pos();
+  off_t o = this->header->write_pos + this->get_agg_buf_pos();
 
   if (!vc->f.evacuator) {
-    Doc           *doc         = reinterpret_cast<Doc *>(p);
+    uint32_t       len         = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
+    Doc           *doc         = this->_write_buffer.emplace(this->round_to_approx_size(len));
     IOBufferBlock *res_alt_blk = nullptr;
 
-    uint32_t len = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
     ink_assert(vc->frag_type != CACHE_FRAG_TYPE_HTTP || len != sizeof(Doc));
-    ink_assert(stripe->round_to_approx_size(len) == vc->agg_len);
+    ink_assert(this->round_to_approx_size(len) == vc->agg_len);
     // update copy of directory entry for this document
     dir_set_approx_size(&vc->dir, vc->agg_len);
-    dir_set_offset(&vc->dir, stripe->offset_to_vol_offset(o));
-    ink_assert(stripe->vol_offset(&vc->dir) < (stripe->skip + stripe->len));
-    dir_set_phase(&vc->dir, stripe->header->phase);
+    dir_set_offset(&vc->dir, this->offset_to_vol_offset(o));
+    ink_assert(this->vol_offset(&vc->dir) < (this->skip + this->len));
+    dir_set_phase(&vc->dir, this->header->phase);
 
     // fill in document header
     doc->magic       = DOC_MAGIC;
@@ -667,8 +666,8 @@ agg_copy(char *p, CacheVC *vc)
     doc->unused      = 0; // force this for forward compatibility.
     doc->total_len   = vc->total_len;
     doc->first_key   = vc->first_key;
-    doc->sync_serial = stripe->header->sync_serial;
-    vc->write_serial = doc->write_serial = stripe->header->write_serial;
+    doc->sync_serial = this->header->sync_serial;
+    vc->write_serial = doc->write_serial = this->header->write_serial;
     doc->checksum                        = DOC_NO_CHECKSUM;
     if (vc->pin_in_cache) {
       dir_set_pinned(&vc->dir, 1);
@@ -732,13 +731,13 @@ agg_copy(char *p, CacheVC *vc)
     // move data
     if (vc->write_len) {
       {
-        ProxyMutex *mutex ATS_UNUSED = vc->stripe->mutex.get();
+        ProxyMutex *mutex ATS_UNUSED = this->mutex.get();
         ink_assert(mutex->thread_holding == this_ethread());
 
 // ToDo: Why are these for debug only ?
 #ifdef DEBUG
         Metrics::Counter::increment(cache_rsb.write_backlog_failure);
-        Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
+        Metrics::Counter::increment(this->cache_vol->vol_rsb.write_backlog_failure);
 #endif
       }
       if (vc->f.rewrite_resident_alt) {
@@ -776,21 +775,21 @@ agg_copy(char *p, CacheVC *vc)
   } else {
     // for evacuated documents, copy the data, and update directory
     Doc *doc = reinterpret_cast<Doc *>(vc->buf->data());
-    int  l   = vc->stripe->round_to_approx_size(doc->len);
+    int  l   = this->round_to_approx_size(doc->len);
 
 #ifdef DEBUG
     Metrics::Counter::increment(cache_rsb.gc_frags_evacuated);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.gc_frags_evacuated);
+    Metrics::Counter::increment(this->cache_vol->vol_rsb.gc_frags_evacuated);
 #endif
 
-    doc->sync_serial  = vc->stripe->header->sync_serial;
-    doc->write_serial = vc->stripe->header->write_serial;
+    doc->sync_serial  = this->header->sync_serial;
+    doc->write_serial = this->header->write_serial;
 
-    memcpy(p, doc, doc->len);
+    this->_write_buffer.add(doc, l);
 
     vc->dir = vc->overwrite_dir;
-    dir_set_offset(&vc->dir, vc->stripe->offset_to_vol_offset(o));
-    dir_set_phase(&vc->dir, vc->stripe->header->phase);
+    dir_set_offset(&vc->dir, this->offset_to_vol_offset(o));
+    dir_set_phase(&vc->dir, this->header->phase);
     return l;
   }
 }
@@ -990,10 +989,8 @@ Stripe::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &tocall
     }
     DDbg(dbg_ctl_agg_read, "copying: %d, %" PRIu64 ", key: %d", this->_write_buffer.get_buffer_pos(),
          this->header->write_pos + this->_write_buffer.get_buffer_pos(), c->first_key.slice32(0));
-    int wrotelen = agg_copy(this->_write_buffer.get_buffer() + this->_write_buffer.get_buffer_pos(), c);
+    [[maybe_unused]] int wrotelen = this->_agg_copy(c);
     ink_assert(writelen == wrotelen);
-    this->_write_buffer.add_bytes_pending_aggregation(-writelen);
-    this->_write_buffer.add_buffer_pos(writelen);
     CacheVC *n = (CacheVC *)c->link.next;
     this->_write_buffer.get_pending_writers().dequeue();
     if (c->f.sync && c->f.use_first_key) {
