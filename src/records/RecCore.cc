@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include <cstddef>
 #include <deque>
 #include <utility>
 
@@ -428,34 +429,50 @@ RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock)
 }
 
 RecErrT
-RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
+RecGetRecordString(const char *name, char *buf, int buf_len, std::size_t &out_len)
+{
+  ink_rwlock_rdlock(&g_records_rwlock);
+  RecErrT err = RecGetRecordStringNolock(name, buf, buf_len, out_len);
+  ink_rwlock_unlock(&g_records_rwlock);
+  return err;
+}
+
+RecErrT
+RecGetRecordStringNolock(const char *name, char *buf, int buf_len, std::size_t &out_len)
 {
   RecErrT err = REC_ERR_OKAY;
 
-  if (lock) {
-    ink_rwlock_rdlock(&g_records_rwlock);
-  }
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
 
     rec_mutex_acquire(&(r->lock));
     if (!r->registered || (r->data_type != RECD_STRING)) {
-      err = REC_ERR_FAIL;
+      err     = REC_ERR_FAIL;
+      out_len = 0;
     } else {
       if (r->data.rec_string == nullptr) {
         buf[0] = '\0';
       } else {
-        ink_strlcpy(buf, r->data.rec_string, buf_len);
+        out_len = ink_strlcpy(buf, r->data.rec_string, buf_len);
       }
     }
     rec_mutex_release(&(r->lock));
   } else {
-    err = REC_ERR_FAIL;
-  }
-  if (lock) {
-    ink_rwlock_unlock(&g_records_rwlock);
+    err     = REC_ERR_FAIL;
+    out_len = 0;
   }
   return err;
+}
+
+RecErrT
+RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
+{
+  size_t out_len ATS_UNUSED;
+  if (lock) {
+    return RecGetRecordString(name, buf, buf_len, out_len);
+  } else {
+    return RecGetRecordStringNolock(name, buf, buf_len, out_len);
+  }
 }
 
 RecErrT
