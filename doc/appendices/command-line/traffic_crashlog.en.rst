@@ -74,6 +74,15 @@ Options
     immediately after it is launched. :program:`traffic_server`
     will allow it to continue only when a crash occurs.
 
+.. option:: --exec
+
+    This option will execute the given program argument after the crashlogging
+    occurs, but before control is returned to traffic_server.  That is,
+    it will run the program after traffic_server crashes, but before the process
+    is cleaned up.  The program will be passed as single argument which is the
+    pid of the target traffic_server process. Output from the program will be
+    saved to the crashlog file.
+
 Caveats
 =======
 
