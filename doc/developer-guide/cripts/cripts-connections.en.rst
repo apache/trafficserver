@@ -73,6 +73,19 @@ Method                    Description
 ``socket()``              Returns the raw socket structure for the connection (use with care).
 =======================   =========================================================================
 
+The ``ip()`` and ``localIP()`` methods return the IP address as an object. In addition to the
+automatic string conversion, it also has a special semantic string conversion which takes
+IPv4 and IPv6 CIDR sizes. For example:
+
+.. code-block:: cpp
+
+   do_remap()
+   {
+     borrow conn = Client::Connection::get();
+     auto ip = conn.ip();
+
+     CDebug("Client IP CIDR: {}", ip.string(24, 64));
+
 .. _cripts-connections-variables:
 
 Connection Variables
