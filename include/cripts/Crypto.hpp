@@ -25,6 +25,7 @@
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
 
+#include "tsutil/StringConvert.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -71,7 +72,11 @@ namespace detail
     // ToDo: Not sure why, but some compilers says this is deprecated
     // void operator=(const Digest &) = delete;
 
-    [[nodiscard]] Cript::string hex() const;
+    [[nodiscard]] Cript::string
+    hex() const
+    {
+      return ts::hex({reinterpret_cast<const char *>(_hash), _length});
+    }
 
     operator Cript::string() const { return hex(); }
 
@@ -127,7 +132,12 @@ namespace detail
       return Crypto::Base64::encode(_message);
     }
 
-    [[nodiscard]] Cript::string hex() const;
+    [[nodiscard]] Cript::string
+    hex() const
+    {
+      return ts::hex(_message);
+    }
+
     operator Cript::string() const { return hex(); }
 
   protected:

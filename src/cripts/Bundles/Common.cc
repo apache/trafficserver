@@ -56,6 +56,7 @@ Common::doRemap(Cript::Context *context)
 
   // .dscp(int)
   if (_dscp > 0) {
+    CDebug("Setting DSCP = {}", _dscp);
     conn.dscp = _dscp;
   }
 }
