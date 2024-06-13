@@ -63,6 +63,7 @@
 #include <openssl/ssl.h>
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K
@@ -290,8 +291,6 @@ HttpSM::init(bool from_early_data)
   // Unique state machine identifier
   sm_id                 = next_sm_id++;
   t_state.state_machine = this;
-
-  ATS_PROBE2(new_session, sm_id, &sm_id);
   Dbg(dbg_ctl_ip_address, "new_session: sm_id=%ld, &sm_id=%p ", sm_id, &sm_id);
 
   t_state.http_config_param = HttpConfig::acquire();
@@ -422,15 +421,17 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   t_state.client_info.is_transparent = netvc->get_is_transparent();
   t_state.client_info.port_attribute = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
   ip_text_buffer ipb;
-  const char* ip = ats_ip_ntop(t_state.client_info.dst_addr, ipb, sizeof(ipb));
-  ATS_PROBE1(start_connection_with_ip_addresses, ip);
-  Dbg(dbg_ctl_ip_address,"Found Connnection: %s",ip);
+  const char    *ip = ats_ip_ntop(t_state.client_info.dst_addr, ipb, sizeof(ipb));
+  auto conn_id = txn->get_proxy_ssn()->connection_id();
+  ATS_PROBE3(start_connection_with_ip_addresses, ip, sm_id, conn_id);
+  Dbg(dbg_ctl_ip_address, "Found Connnection: %s", ip);
   // Record api hook set state
   hooks_set = txn->has_hooks();
 
   // Setup for parsing the header
   _ua.get_entry()->vc_read_handler = &HttpSM::state_read_client_request_header;
   t_state.hdr_info.client_request.destroy();
+  
   t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
 
   // Prepare raw reader which will live until we are sure this is HTTP indeed
@@ -1702,7 +1703,7 @@ HttpSM::create_server_session(NetVConnection &netvc, MIOBuffer *netvc_read_buffe
   retval->new_connection(&netvc, netvc_read_buffer, netvc_reader);
 
   ATS_PROBE1(new_origin_server_connection, t_state.current.server->name);
-  Dbg(dbg_ctl_ip_address,"Ip origin Found: %s",t_state.current.server->name);
+  Dbg(dbg_ctl_ip_address, "Ip origin Found: %s", t_state.current.server->name);
   retval->set_active();
 
   ats_ip_copy(&t_state.server_info.src_addr, netvc.get_local_addr());

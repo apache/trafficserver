@@ -26,22 +26,38 @@
 
 BEGIN
 {
-  @readlines = 0;
+  @readlines = 1;
 }
 
-usdt:*:new_session
+/* usdt:*:new_session
 {
-  printf("new_session1: %ld, %p\n", arg0, arg1);
-  @sm_id = arg0;
-  @psmid = arg1;
+  $client_ip = str(arg0);
+  $sm_id = arg1;
   @readlines++;
+  printf("new_session1: %s, %ld\n", $client_ip, $sm_id);
+  @lasttransaction[$client_ip] = nsecs;
+
+}*/
+
+
+
+
+interval:s:1{
+
+$idle_threshold_ns = 60 * 1000000000;  
+ $i = 0;
+    while ($i < 1000) {
+        if (@lasttransaction[$i] != 0) {
+            $time_since_last_txn = nsecs - @lasttransaction[$i];
+            printf("Time difference for IP index %d: %d ns\n", $i, (int64)$time_since_last_txn);
+            if ((int64)$time_since_last_txn > $idle_threshold_ns) {
+                printf("Idle connection from IP index: %d\n", $i);
+            }
+        }
+        $i++;
+    }
 }
 
-usdt:*:start_connection_with_ip_addresses
-{
-  printf("new_connection: %s\n", str(arg0));
-  @connections[str(arg0)] = count();
-}
 
 // Attach to the new_origin_server_connection probe
  //usdt:/tmp/ats-dev/bin/traffic_server:traffic_server:new_origin_server_connection
@@ -52,19 +68,50 @@ usdt:*:start_connection_with_ip_addresses
 
 // Attach to the start_connection_with_ip_addresses probe and count connections by client IP
 
-//usdt:/tmp/ats-dev/bin/traffic_server:traffic_server:start_connection_with_ip_addresses
-// {
-    // printf("new_session from IP: %s\n", str(arg0));
-    // printf("Probe hit: %s\n", str(arg0));
-    // @connections[str(arg0)] = count();
-    // @readlines++;
-//}
+usdt:*:start_connection_with_ip_addresses
+ {     
+     $client_ip = str(arg0);
+
+     //printf("new_session from IP: %s\n", $client_ip);
+     printf("Probe hit: %s\n", $client_ip);
+     @connections[$client_ip] = count();
+     @readlines++;
+     @lasttransaction[arg2] = nsecs;
+     @countTransaction[arg2]++;
+
+}
 
 // Print the result on exit
 
 END
 {
+    $current_time = nsecs;
+    $idle_threshold_ns = 60 * 1000000000;  
     printf("\nConnections by client IP:\n");
     print(@connections);
     printf("\nTotal lines read: %d\n", @readlines);
+    printf("\nLast transaction stamps by client IP:\n");
+    print(@lasttransaction);
+    
+    // Use a temporary map to check idle connections
+/*
+    // Check each entry in the temporary map
+    $i = 0;
+    while ($i < 10000) {
+        if (@lasttransaction[$i] != 0) {
+            $time_since_last_txn = nsecs - @lasttransaction[$i];
+            printf("Time difference for IP index %d: %d ns\n", $i, (int64)$time_since_last_txn);
+            if ((int64)$time_since_last_txn > $idle_threshold_ns) {
+                printf("Idle connection from IP index: %d\n", $i);
+            }
+        }
+        $i++;
+    }
+*/
+
+
+    
+
+
+
 }

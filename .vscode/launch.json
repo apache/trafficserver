@@ -1,11 +1,13 @@
 {
     "version": "0.2.0",
     "configurations": [
+        
+
         {
             "name": "(gdb) traffic_server",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}/src/traffic_server/traffic_server",
+            "program": "/tmp/ats-dev/bin/traffic_server",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

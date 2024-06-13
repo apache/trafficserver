@@ -111,13 +111,9 @@ endif()
 
 target_link_libraries(
   tscore
-  PUBLIC OpenSSL::Crypto
-         PCRE::PCRE
-         libswoc::libswoc
-         yaml-cpp::yaml-cpp
+  PUBLIC OpenSSL::Crypto PCRE::PCRE libswoc::libswoc yaml-cpp::yaml-cpp
          #systemtap::systemtap
-         resolv::resolv
-         ts::tsutil
+         resolv::resolv ts::tsutil
 )
 
 if(TS_USE_POSIX_CAP)
