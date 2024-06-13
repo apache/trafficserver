@@ -276,8 +276,12 @@ public:
   const char *
   getTransformResult(size_t *body_size)
   {
-    *body_size = transform_result_.get().size();
-    return transform_result_.get().c_str();
+    if (body_size) {
+      *body_size = transform_result_.get().size();
+      return transform_result_.get().c_str();
+    } else {
+      return nullptr;
+    }
   }
 
   // Metrics
