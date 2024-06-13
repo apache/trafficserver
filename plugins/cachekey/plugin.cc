@@ -64,6 +64,10 @@ setCacheKey(TSHttpTxn txn, Configs *config, TSRemapRequestInfo *rri = nullptr)
     if (!config->pathToBeRemoved()) {
       cachekey.appendPath(config->_pathCapture, config->_pathCaptureUri);
     }
+
+    /* Append the matrix parameters to the cache key. */
+    cachekey.appendMatrix(config->_matrix);
+
     /* Append query parameters to the cache key. */
     cachekey.appendQuery(config->_query);
 

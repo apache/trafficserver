@@ -63,6 +63,7 @@ public:
   void appendPath(Pattern &pathCapture, Pattern &pathCaptureUri);
   void appendHeaders(const ConfigHeaders &config);
   void appendQuery(const ConfigQuery &config);
+  void appendMatrix(const ConfigMatrix &config);
   void appendCookies(const ConfigCookies &config);
   void appendUaCaptures(Pattern &config);
   bool appendUaClass(Classifier &classifier);

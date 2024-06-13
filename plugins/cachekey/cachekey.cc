@@ -673,6 +673,27 @@ CacheKey::appendQuery(const ConfigQuery &config)
   }
 }
 
+void
+CacheKey::appendMatrix(const ConfigMatrix &config)
+{
+  if (config.toBeRemoved()) {
+    return;
+  }
+
+  const char *matrix;
+  int length;
+
+  matrix = TSUrlHttpParamsGet(_buf, _url, &length);
+  if (matrix == nullptr || length == 0) {
+    return;
+  }
+
+  if (matrix && length) {
+    _key.append(";");
+    _key.append(matrix, length);
+  }
+}
+
 /**
  * @brief Append User-Agent header captures specified in the Pattern configuration object.
  *
