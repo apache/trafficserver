@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-#include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 #include "cripts/Bundles/Common.hpp"
 
@@ -35,29 +34,66 @@ Common::validate(std::vector<Cript::Bundle::Error> &errors) const
     good = false;
   }
 
+  // Make sure we didn't encounter an error setting up the via headers
+  if (_client_via.first == 999 || _origin_via.first == 999) {
+    errors.emplace_back("via_header must be one of: disable, protocol, basic, detailed, full", name(), "via_header");
+    good = false;
+  }
+
   return good;
 }
 
-void
-Common::doReadResponse(Cript::Context *context)
+Common::self_type &
+Common::via_header(const Cript::string_view &destination, const Cript::string_view &value)
 {
-  borrow resp = Server::Response::get();
+  static const std::unordered_map<Cript::string_view, int> SettingValues = {
+    {"disable",  0  },
+    {"protocol", 1  },
+    {"basic",    2  },
+    {"detailed", 3  },
+    {"full",     4  },
+    {"none",     999}  // This is an error
+  };
 
-  // .cache_control(str)
-  if (!_cc.empty() && (resp.status > 199) && (resp.status < 400) && (resp["Cache-Control"].empty() || _force_cc)) {
-    resp["Cache-Control"] = _cc;
+  needCallback(Cript::Callbacks::DO_REMAP);
+
+  int  val = 999;
+  auto it  = SettingValues.find(value);
+
+  if (it != SettingValues.end()) {
+    val = it->second;
   }
+
+  if (destination.starts_with("client")) {
+    _client_via = {val, true};
+  } else if (destination.starts_with("origin") || destination.starts_with("server")) {
+    _origin_via = {val, true};
+  } else {
+    _client_via = _origin_via = {999, false};
+  }
+
+  return *this;
 }
 
 void
 Common::doRemap(Cript::Context *context)
 {
-  borrow conn = Client::Connection::get();
-
   // .dscp(int)
   if (_dscp > 0) {
+    borrow conn = Client::Connection::get();
+
     CDebug("Setting DSCP = {}", _dscp);
     conn.dscp = _dscp;
+  }
+
+  // .via_header()
+  if (_client_via.second) {
+    CDebug("Setting Client Via = {}", _client_via.first);
+    proxy.config.http.insert_response_via_str.set(_client_via.first);
+  }
+  if (_origin_via.second) {
+    CDebug("Setting Origin Via = {}", _origin_via.first);
+    proxy.config.http.insert_request_via_str.set(_origin_via.first);
   }
 }
 

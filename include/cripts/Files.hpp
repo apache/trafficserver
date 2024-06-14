@@ -18,7 +18,6 @@
 #pragma once
 
 #include <filesystem>
-#include <iostream>
 #include <fstream>
 
 #include "cripts/Lulu.hpp"

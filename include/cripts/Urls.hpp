@@ -17,9 +17,6 @@
 */
 #pragma once
 
-#include <cstring>
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -514,6 +511,20 @@ public:
 
   }; // End class Url::Query
 
+  class Matrix : public Component
+  {
+    using super_type = Component;
+    using self_type  = Matrix;
+
+    friend class Url;
+
+  public:
+    Matrix() = default;
+    Cript::string_view getSV() override;
+    self_type          operator=(Cript::string_view matrix);
+
+  }; // End class Url::Matrix
+
 public:
   Url() = default;
 
@@ -561,18 +572,19 @@ public:
   // Getters / setters for the full URL
   Cript::string url() const;
 
-  Host   host;
   Scheme scheme;
+  Host   host;
+  Port   port;
   Path   path;
   Query  query;
-  Port   port;
+  Matrix matrix;
 
 protected:
   void
   _initialize(Cript::Transaction *state)
   {
-    _state      = state;
-    host._owner = path._owner = scheme._owner = query._owner = port._owner = this;
+    _state        = state;
+    scheme._owner = host._owner = port._owner = path._owner = query._owner = matrix._owner = this;
   }
 
   TSMBuffer           _bufp     = nullptr; // These two gets setup via initializing, to appropriate headers
@@ -873,6 +885,21 @@ template <> struct formatter<Cript::Url::Query> {
   format(Cript::Url::Query &query, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", query.getSV());
+  }
+};
+
+template <> struct formatter<Cript::Url::Matrix> {
+  constexpr auto
+  parse(format_parse_context &ctx) -> decltype(ctx.begin())
+  {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto
+  format(Cript::Url::Matrix &matrix, FormatContext &ctx) -> decltype(ctx.out())
+  {
+    return fmt::format_to(ctx.out(), "{}", matrix.getSV());
   }
 };
 

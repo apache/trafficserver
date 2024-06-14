@@ -15,13 +15,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
-// This is an example bundle for some common tasks.
-//
-//  Bundle::Common::activate().dscp(10)
-//                            .cache_control("max-age=259200");
 #pragma once
 
+// This is an example bundle for some common tasks.
+//  Bundle::Common::activate().dscp(10)
+//                            .via_header("Client|Origin", "disable|protocol|basic|detailed|full")
+
+#include "cripts/Lulu.hpp"
+#include "cripts/Instance.hpp"
 #include "cripts/Bundle.hpp"
 
 namespace Bundle
@@ -62,24 +63,15 @@ public:
     return *this;
   }
 
-  self_type &
-  cache_control(Cript::string_view cc, bool force = false)
-  {
-    needCallback(Cript::Callbacks::DO_READ_RESPONSE);
-    _cc       = cc;
-    _force_cc = force;
+  self_type &via_header(const Cript::string_view &destination, const Cript::string_view &value);
 
-    return *this;
-  }
-
-  void doReadResponse(Cript::Context *context) override;
   void doRemap(Cript::Context *context) override;
 
 private:
   static const Cript::string _name;
-  Cript::string              _cc       = "";
-  int                        _dscp     = 0;
-  bool                       _force_cc = false;
+  int                        _dscp       = 0;
+  std::pair<int, bool>       _client_via = {0, false}; // Flag indicates if it's been set at all
+  std::pair<int, bool>       _origin_via = {0, false};
 };
 
 } // namespace Bundle

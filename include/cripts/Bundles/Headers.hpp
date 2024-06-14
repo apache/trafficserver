@@ -15,13 +15,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
-//  Bundle::Headers::activate().rm_headers("Client::Request", ["X-ATS-Request-ID", "X-ATS-Request-Start", "X-ATS-Request-End"])
-//                             .set_headers("Client::Response", {{"X-Foo", "bar", {"X-Fie", "fum"}});
 #pragma once
 
-#include <vector>
+// Bundle for common header operations
+//  Bundle::Headers::activate().rm_headers("Client::Request", ["X-ATS-Request-ID", "X-ATS-Request-Start", "X-ATS-Request-End"])
+//                             .set_headers("Client::Response", {{"X-Foo", "bar", {"X-Fie", "fum"}});
 
+#include "cripts/Lulu.hpp"
+#include "cripts/Instance.hpp"
 #include "cripts/Bundle.hpp"
 
 namespace detail
@@ -56,6 +57,9 @@ class HeadersType
   using self_type = HeadersType;
 
 public:
+  using HeaderList      = std::vector<Cript::string>;
+  using HeaderValueList = std::vector<std::pair<const Cript::string, detail::HRWBridge *>>;
+
   HeadersType()                     = default;
   HeadersType(const self_type &)    = delete;
   void operator=(const self_type &) = delete;
@@ -67,8 +71,8 @@ public:
     }
   }
 
-  std::vector<Cript::string>                                 rm_headers;
-  std::vector<std::pair<Cript::string, detail::HRWBridge *>> set_headers;
+  HeaderList      rm_headers;
+  HeaderValueList set_headers;
 };
 } // namespace detail
 
@@ -80,6 +84,9 @@ class Headers : public Cript::Bundle::Base
   using self_type  = Headers;
 
 public:
+  using HeaderList      = std::vector<const Cript::string>;
+  using HeaderValueList = std::vector<std::pair<const Cript::string, const Cript::string>>;
+
   using super_type::Base;
 
   // This is the factory to create an instance of this bundle
@@ -101,8 +108,8 @@ public:
 
   static detail::HRWBridge *bridgeFactory(const Cript::string &source);
 
-  self_type &rm_headers(const Cript::string_view target, const std::vector<Cript::string> &headers);
-  self_type &set_headers(const Cript::string_view target, const std::vector<std::pair<Cript::string, Cript::string>> &headers);
+  self_type &rm_headers(const Cript::string_view target, const HeaderList &headers);
+  self_type &set_headers(const Cript::string_view target, const HeaderValueList &headers);
 
   void doRemap(Cript::Context *context) override;
   void doSendResponse(Cript::Context *context) override;

@@ -17,6 +17,8 @@
 */
 #pragma once
 
+#include <vector>
+
 namespace Cript
 {
 // We have to forward declare this, to avoid some circular dependencies

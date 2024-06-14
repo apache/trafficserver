@@ -50,6 +50,7 @@ set(CRIPTS_PUBLIC_HEADERS
 set(CRIPTS_BUNDLE_HEADERS
     ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Common.hpp ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Headers.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/LogsMetrics.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Caching.hpp
 )
 
 add_library(cripts SHARED ${CPP_FILES})

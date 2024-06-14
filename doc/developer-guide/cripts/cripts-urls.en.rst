@@ -62,11 +62,12 @@ Every URL object has the following components:
 ===============   =================================================================================
 Component         Description
 ===============   =================================================================================
+``scheme``        The scheme (http, https, etc).
 ``host``          The host name.
 ``port``          The port number, this is an integer value.
-``scheme``        The scheme (http, https, etc).
 ``path``          The path.
-``query``         The query.
+``query``         The query parameters.
+``matrix``        The matrix parameters: Note: This is currently treated as a single string.
 ===============   =================================================================================
 
 .. note::
