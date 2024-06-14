@@ -17,16 +17,6 @@ Verify remap.config acl behavior.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-import io
-import re
-import pathlib
-import inspect
-import tempfile
-from yaml import load, dump
-from yaml import CLoader as Loader
-from typing import List, Tuple
-
 ALLOW_GET_AND_POST = f'''
 ip_allow:
   - apply: in
