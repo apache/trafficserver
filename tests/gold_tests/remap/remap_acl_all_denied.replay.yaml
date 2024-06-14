@@ -32,8 +32,6 @@ sessions:
 - protocol:
   - name: http
     version: 1
-  - name: tls
-    sni: test_sni
   transactions:
 
   - client-request:
