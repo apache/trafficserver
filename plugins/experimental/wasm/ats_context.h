@@ -276,7 +276,7 @@ public:
   const char *
   getTransformResult(size_t *body_size)
   {
-    if (body_size) {
+    if (body_size != nullptr) {
       *body_size = transform_result_.size();
       return transform_result_.getDataStrPtr();
     } else {
