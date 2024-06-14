@@ -26,6 +26,7 @@ import tempfile
 from yaml import load, dump
 from yaml import CLoader as Loader
 from typing import List, Tuple
+from deactivate_ip_allow import all_deactivate_ip_allow_tests
 
 Test.Summary = '''
 Verify remap.config acl behavior.
@@ -122,9 +123,18 @@ class Test_remap_acl:
         p.StartBefore(self._server)
         p.StartBefore(self._ts)
 
-        codes = [str(code) for code in self._expected_responses]
-        p.Streams.stdout += Testers.ContainsExpression(
-            '.*'.join(codes), "Verifying the expected order of responses", reflags=re.DOTALL | re.MULTILINE)
+        if self._expected_responses == [None, None]:
+            # If there are no expected responses, expect the Warning about the rejected ip.
+            self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+                "client '127.0.0.1' prohibited by ip-allow policy", "Verify the client rejection warning message.")
+
+            # Also, the client will complain about the broken connections.
+            p.ReturnCode = 1
+
+        else:
+            codes = [str(code) for code in self._expected_responses]
+            p.Streams.stdout += Testers.ContainsExpression(
+                '.*'.join(codes), "Verifying the expected order of responses", reflags=re.DOTALL | re.MULTILINE)
 
 
 ALLOW_GET_AND_POST = f'''
@@ -195,9 +205,9 @@ def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_
             for transaction in session["transactions"]:
                 method = transaction["client-request"]["method"]
                 if method == "GET":
-                    transaction["proxy-response"]["status"] = get_proxy_response
+                    transaction["proxy-response"]["status"] = 403 if get_proxy_response == None else get_proxy_response
                 elif method == "POST":
-                    transaction["proxy-response"]["status"] = post_proxy_response
+                    transaction["proxy-response"]["status"] = 403 if post_proxy_response == None else post_proxy_response
                 else:
                     raise Exception("Expected to find GET or POST request, found %s", method)
     with open(replay_file, "w") as f:
@@ -298,12 +308,12 @@ all_acl_combinations = [
 ]
 # yapf: enable
 
-all_tests = [dict(zip(keys, test)) for test in all_acl_combinations]
+all_acl_combination_tests = [dict(zip(keys, test)) for test in all_acl_combinations]
 """
 Test all acl combinations
 """
-for idx, test in enumerate(all_tests):
-    (_, replay_file_name) = tempfile.mkstemp(suffix="table_test_{}.replay".format(idx))
+for idx, test in enumerate(all_acl_combination_tests):
+    (_, replay_file_name) = tempfile.mkstemp(suffix="acl_table_test_{}.replay".format(idx))
     replay_proxy_response(
         "base.replay.yaml",
         replay_file_name,
@@ -320,4 +330,31 @@ for idx, test in enumerate(all_tests):
         acl_configuration=test["inline"],
         named_acls=[("acl", test["named_acl"])] if test["named_acl"] != "" else [],
         expected_responses=[test["GET response"], test["POST response"]],
+    )
+
+"""
+Test all ACL combinations
+"""
+for idx, test in enumerate(all_deactivate_ip_allow_tests):
+    try:
+        test["deactivate_ip_allow"]
+    except:
+        print(test)
+    (_, replay_file_name) = tempfile.mkstemp(suffix="deactivate_ip_allow_table_test_{}.replay".format(idx))
+    replay_proxy_response(
+        "base.replay.yaml",
+        replay_file_name,
+        test["GET response"],
+        test["POST response"],
+    )
+    Test.Summary = "table test {0}".format(idx)
+    Test_remap_acl(
+        "{0} {1} {2}".format(test["inline"], test["named_acl"], test["ip_allow"]),
+        replay_file=replay_file_name,
+        ip_allow_content=test["ip_allow"],
+        deactivate_ip_allow=test["deactivate_ip_allow"],
+        acl_matching_policy=0 if test["policy"] == "explicit" else 1,
+        acl_configuration=test["inline"],
+        named_acls=[("acl", test["named_acl"])] if test["named_acl"] != "" else [],
+        expected_responses=[test["GET response"], test["POST response"]]
     )
