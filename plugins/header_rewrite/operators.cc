@@ -30,6 +30,78 @@
 #include "operators.h"
 #include "ts/apidefs.h"
 
+namespace
+{
+const unsigned int LOCAL_IP_ADDRESS = 0x0100007f;
+const unsigned int MAX_SIZE         = 256;
+const int          LOCAL_PORT       = 8080;
+
+static int
+handleFetchEvents(TSCont cont, TSEvent event, void *edata)
+{
+  TSHttpTxn http_txn = static_cast<TSHttpTxn>(TSContDataGet(cont));
+
+  switch (static_cast<int>(event)) {
+  case OperatorSetCustomBody::TS_EVENT_FETCHSM_SUCCESS: {
+    TSHttpTxn   fetchsm_txn = static_cast<TSHttpTxn>(edata);
+    int         data_len;
+    const char *data_start = TSFetchRespGet(fetchsm_txn, &data_len);
+    const char *data_end   = data_start + data_len;
+    if (data_start != nullptr) {
+      TSHttpTxnErrorBodySet(http_txn, TSstrdup(data_start), (data_end - data_start), nullptr);
+    }
+    TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_ERROR);
+  } break;
+  case OperatorSetCustomBody::TS_EVENT_FETCHSM_FAILURE: {
+    Dbg(pi_dbg_ctl, "OperatorSetBodyCustom: Error getting custom body");
+    TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
+  } break;
+  case OperatorSetCustomBody::TS_EVENT_FETCHSM_TIMEOUT: {
+    Dbg(pi_dbg_ctl, "OperatorSetBodyCustom: Timeout getting custom body");
+    TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
+  } break;
+  case TS_EVENT_HTTP_TXN_CLOSE: {
+    TSContDestroy(cont);
+    TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
+  } break;
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+    // Do nothing
+    // The transaction is reenabled with the FetchSM transaction
+    break;
+  default:
+    TSWarning("Warning: handleFetchEvents got unknown event: %d", event);
+    break;
+  }
+  return 0;
+}
+
+TSReturnCode
+createRequestString(const std::string_view &value, char (&req_buf)[MAX_SIZE], int *req_buf_size)
+{
+  const char *start = value.data();
+  const char *end   = start + value.size();
+  TSMLoc      url_loc;
+  TSMBuffer   url_buf = TSMBufferCreate();
+  int         host_len, url_len = 0;
+
+  if (TSUrlCreate(url_buf, &url_loc) == TS_SUCCESS && TSUrlParse(url_buf, url_loc, &start, end) == TS_PARSE_DONE) {
+    const char *host = TSUrlHostGet(url_buf, url_loc, &host_len);
+    const char *url  = TSUrlStringGet(url_buf, url_loc, &url_len);
+
+    *req_buf_size = snprintf(req_buf, MAX_SIZE, "GET %.*s HTTP/1.1\r\nHost: %.*s\r\n\r\n", url_len, url, host_len, host);
+
+    TSMBufferDestroy(url_buf);
+
+    return TS_SUCCESS;
+  } else {
+    Dbg(pi_dbg_ctl, "Failed to parse url %s", start);
+    TSMBufferDestroy(url_buf);
+    return TS_ERROR;
+  }
+}
+
+} // namespace
+
 // OperatorConfig
 void
 OperatorSetConfig::initialize(Parser &p)
@@ -1217,5 +1289,62 @@ OperatorRunPlugin::exec(const Resources &res) const
 
   if (res._rri && res.txnp) {
     _plugin->doRemap(res.txnp, res._rri);
+  }
+}
+
+// OperatorSetBody
+void
+OperatorSetCustomBody::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  // we want the arg since body only takes one value
+  _value.set_value(p.get_arg());
+  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
+  require_resources(RSRC_RESPONSE_STATUS);
+}
+
+void
+OperatorSetCustomBody::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+}
+
+void
+OperatorSetCustomBody::exec(const Resources &res) const
+{
+  if (TSHttpTxnIsInternal(res.txnp)) {
+    // If this is triggered by an internal transaction, a infinte loop may occur
+    // It should only be triggered by the original transaction sent by the client
+    Dbg(pi_dbg_ctl, "OperatorSetCustomBody triggered by an internal transaction");
+    return;
+  }
+
+  char req_buf[MAX_SIZE];
+  int  req_buf_size = 0;
+  if (createRequestString(_value.get_value(), req_buf, &req_buf_size) == TS_SUCCESS) {
+    TSCont fetchCont = TSContCreate(handleFetchEvents, TSMutexCreate());
+    TSContDataSet(fetchCont, static_cast<void *>(res.txnp));
+
+    TSHttpTxnHookAdd(res.txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, fetchCont);
+    TSHttpTxnHookAdd(res.txnp, TS_HTTP_TXN_CLOSE_HOOK, fetchCont);
+
+    TSFetchEvent event_ids;
+    event_ids.success_event_id = TS_EVENT_FETCHSM_SUCCESS;
+    event_ids.failure_event_id = TS_EVENT_FETCHSM_FAILURE;
+    event_ids.timeout_event_id = TS_EVENT_FETCHSM_TIMEOUT;
+
+    struct sockaddr_in addr;
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = LOCAL_IP_ADDRESS;
+    addr.sin_port        = LOCAL_PORT;
+    TSFetchUrl(static_cast<const char *>(req_buf), req_buf_size, reinterpret_cast<struct sockaddr const *>(&addr), fetchCont,
+               AFTER_BODY, event_ids);
+
+    // Forces original status code in event TSHttpTxnErrorBodySet changed
+    // the code or another condition was set conflicting with this one.
+    // Set here because res is the only structure that contains the original status code.
+    TSHttpTxnStatusSet(res.txnp, res.resp_status);
+  } else {
+    TSError(PLUGIN_NAME, "OperatorSetCustomBody:exec:: Could not create request");
   }
 }
