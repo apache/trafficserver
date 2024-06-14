@@ -312,8 +312,8 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;
-  info.vendor_name   = "Oath";
-  info.support_email = "zeyuany@oath.com";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   // Options
   if (!read_config_option(argc, argv, global_raw_enabled, global_log_enabled, global_modify_incoming_enabled)) {
