@@ -32,6 +32,7 @@
 #include "tscore/BaseLogFile.h"
 #include "tscore/runroot.h"
 #include "iocore/eventsystem/RecProcess.h"
+#include <unistd.h>
 
 static int   syslog_mode  = false;
 static int   debug_mode   = false;
@@ -39,17 +40,19 @@ static int   wait_mode    = false;
 static char *host_triplet = nullptr;
 static int   target_pid   = getppid();
 static char *user         = nullptr;
+static char *exec_pgm     = nullptr;
 
 // If pid_t is not sizeof(int), we will have to jiggle argument parsing.
 extern char __pid_size_static_assert[sizeof(pid_t) == sizeof(int) ? 0 : -1];
 
 static const ArgumentDescription argument_descriptions[] = {
-  {"target", '-', "Target process ID",                         "I",  &target_pid,   nullptr, nullptr},
-  {"host",   '-', "Host triplet for the process being logged", "S*", &host_triplet, nullptr, nullptr},
-  {"wait",   '-', "Stop until signalled at startup",           "F",  &wait_mode,    nullptr, nullptr},
-  {"syslog", '-', "Syslog after writing a crash log",          "F",  &syslog_mode,  nullptr, nullptr},
-  {"debug",  '-', "Enable debugging mode",                     "F",  &debug_mode,   nullptr, nullptr},
-  {"user",   '-', "Username used to set privileges",           "S*", &user,         nullptr, nullptr},
+  {"target", '-', "Target process ID",                                        "I",  &target_pid,   nullptr, nullptr},
+  {"host",   '-', "Host triplet for the process being logged",                "S*", &host_triplet, nullptr, nullptr},
+  {"wait",   '-', "Stop until signalled at startup",                          "F",  &wait_mode,    nullptr, nullptr},
+  {"syslog", '-', "Syslog after writing a crash log",                         "F",  &syslog_mode,  nullptr, nullptr},
+  {"debug",  '-', "Enable debugging mode",                                    "F",  &debug_mode,   nullptr, nullptr},
+  {"user",   '-', "Username used to set privileges",                          "S*", &user,         nullptr, nullptr},
+  {"exec",   '-', "Program to execute at crash time (takes 1 pid parameter)", "S*", &exec_pgm,     nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
   RUNROOT_ARGUMENT_DESCRIPTION()
@@ -109,6 +112,32 @@ crashlog_write_backtrace(FILE *fp, pid_t pid, const crashlog_target &)
   fprintf(fp, "%s", trace);
   free(trace);
   return true;
+}
+
+void
+crashlog_exec_pgm(FILE *fp, pid_t pid)
+{
+  if (exec_pgm) {
+    fprintf(fp, "Executing Program `%s %d`:\n", exec_pgm, pid);
+    fflush(fp);
+    if (int chpid = fork(); chpid == 0) {
+      char tmp[32];
+      snprintf(tmp, sizeof(tmp), "%d", pid);
+      char *args[3] = {exec_pgm, tmp, nullptr};
+
+      dup2(fileno(fp), STDOUT_FILENO);
+      dup2(fileno(fp), STDERR_FILENO);
+
+      if (execv(exec_pgm, args) == -1) {
+        Error("Failed to exec pgm: %s\n", strerror(errno));
+      }
+    } else {
+      int stat = 0;
+      waitpid(chpid, &stat, 0);
+      fflush(fp);
+      Note("Exec program returned status %d (pid %d)\n", stat, chpid);
+    }
+  }
 }
 
 int
@@ -223,6 +252,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   fprintf(fp, "\n");
   crashlog_write_regions(fp, target);
+
+  fprintf(fp, "\n");
+  crashlog_exec_pgm(fp, target.pid);
 
   Error("wrote crash log to %s", logname);
 
