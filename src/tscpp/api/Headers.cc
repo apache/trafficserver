@@ -591,7 +591,7 @@ Headers::erase(const char *key, int length)
 }
 
 Headers::size_type
-Headers::count(const char *key, int length)
+Headers::count(const char *key, int /* length ATS_UNUSED */)
 {
   size_type ret_count = 0;
   for (header_field_iterator it = begin(); it != end(); ++it) {

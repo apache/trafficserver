@@ -43,7 +43,7 @@ namespace
 int TRANSACTION_STORAGE_INDEX = -1;
 
 void
-resetTransactionHandles(Transaction &transaction, [[maybe_unused]] TSEvent event)
+resetTransactionHandles(Transaction &transaction, TSEvent /* event ATS_UNUSED */)
 {
   utils::internal::resetTransactionHandles(transaction);
   return;

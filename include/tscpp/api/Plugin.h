@@ -157,8 +157,8 @@ public:
   /**
    * This method must be implemented when you hook HOOK_SELECT_ALT
    */
-  virtual void handleSelectAlt([[maybe_unused]] const Request &clientReq, [[maybe_unused]] const Request &cachedReq,
-                               [[maybe_unused]] const Response &cachedResp) {};
+  virtual void handleSelectAlt(const Request & /* clientReq ATS_UNUSED */, const Request & /* cachedReq ATS_UNUSED */,
+                               const Response & /* cachedResp ATS_UNUSED */) {};
 
   virtual ~Plugin(){};
 
