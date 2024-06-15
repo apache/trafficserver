@@ -1844,7 +1844,8 @@ Cache::key_to_stripe(const CacheKey *key, const char *hostname, int host_len)
 }
 
 int
-FragmentSizeUpdateCb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
+FragmentSizeUpdateCb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
+                     void * /* cookie ATS_UNUSED */)
 {
   if (sizeof(Doc) >= static_cast<size_t>(data.rec_int) || static_cast<size_t>(data.rec_int) - sizeof(Doc) > MAX_FRAG_SIZE) {
     Warning("The fragments size exceed the limitation, ignore: %" PRId64 ", %d", data.rec_int, cache_config_target_fragment_size);
@@ -1971,15 +1972,16 @@ ink_cache_init(ts::ModuleVersion v)
 //----------------------------------------------------------------------------
 Action *
 CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                          time_t pin_in_cache, CacheFragType type)
+                          time_t /* pin_in_cache ATS_UNUSED */, CacheFragType type)
 {
   return caches[type]->open_read(cont, &key->hash, request, params, type, key->hostname, key->hostlen);
 }
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, CacheHTTPHdr *request,
-                           CacheHTTPInfo *old_info, time_t pin_in_cache, CacheFragType type)
+CacheProcessor::open_write(Continuation *cont, int /* expected_size ATS_UNUSED */, const HttpCacheKey *key,
+                           CacheHTTPHdr * /* request ATS_UNUSED */, CacheHTTPInfo *old_info, time_t pin_in_cache,
+                           CacheFragType type)
 {
   return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, nullptr /* key1 */, type, key->hostname, key->hostlen);
 }

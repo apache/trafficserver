@@ -73,7 +73,7 @@ class CacheDirTest : public CacheInit
 {
 public:
   int
-  cache_init_success_callback(int event, void *e) override
+  cache_init_success_callback(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */) override
   {
     ink_hrtime ttime;
 

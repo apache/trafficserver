@@ -54,7 +54,7 @@ public:
    * @param[in] line The line to place in the keylog file.
    */
   static void
-  ssl_keylog_cb(const SSL *ssl, const char *line)
+  ssl_keylog_cb(const SSL * /* ssl ATS_UNUSED */, const char *line)
   {
     instance().log(line);
   }

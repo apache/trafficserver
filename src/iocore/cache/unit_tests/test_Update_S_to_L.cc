@@ -41,7 +41,7 @@ public:
   }
 
   int
-  start_test(int event, void *e)
+  start_test(int event, void * /* e ATS_UNUSED */)
   {
     REQUIRE(event == EVENT_IMMEDIATE);
     this_ethread()->schedule_imm(this->_rt);
@@ -87,7 +87,7 @@ public:
   }
 
   int
-  start_test(int event, void *e)
+  start_test(int event, void * /* e ATS_UNUSED */)
   {
     REQUIRE(event == EVENT_IMMEDIATE);
     this_ethread()->schedule_imm(this->_rt);
@@ -134,7 +134,7 @@ class CacheUpdateInit : public CacheInit
 public:
   CacheUpdateInit() {}
   int
-  cache_init_success_callback(int event, void *e) override
+  cache_init_success_callback(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */) override
   {
     CacheTestHandler     *h      = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");
     CacheUpdate_S_to_L   *update = new CacheUpdate_S_to_L(SMALL_FILE, LARGE_FILE, "http://www.scw11.com");

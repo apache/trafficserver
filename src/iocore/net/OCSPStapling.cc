@@ -299,7 +299,7 @@ public:
   }
 
   int
-  event_handler(int event, Event *e)
+  event_handler(int event, Event * /* e ATS_UNUSED */)
   {
     if (event == TS_EVENT_IMMEDIATE) {
       this->fetch();

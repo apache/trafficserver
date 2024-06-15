@@ -252,7 +252,7 @@ NetAccept::init_accept(EThread *t)
 }
 
 int
-NetAccept::accept_per_thread(int event, void *ep)
+NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED */)
 {
   int listen_per_thread = 0;
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
