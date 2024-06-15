@@ -179,7 +179,7 @@ RamCacheLRU::remove(RamCacheLRUEntry *e)
 
 // ignore 'copy' since we don't touch the data
 int
-RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t /* len ATS_UNUSED */, bool, uint64_t auxkey)
+RamCacheLRU::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t len, bool, uint64_t auxkey)
 {
   if (!max_bytes) {
     return 0;
