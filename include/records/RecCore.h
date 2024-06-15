@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include <cstddef>
 #include <functional>
 
 #include "tscore/Diags.h"
@@ -166,35 +165,6 @@ RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT
 
 RecErrT RecGetRecordInt(const char *name, RecInt *rec_int, bool lock = true);
 RecErrT RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock = true);
-
-/** Get the string associated with record name.
- *
- * Writes the null-terminated string value associated with name into buf. If
- * the value is longer than buf_len - 1, buf_len bytes will be copied and no
- * null-terminator will be written to buf. If no value is associated with the
- * record yet, writes a null-terminated empty string to buf ("\0").
- *
- * The number bytes copied will be written to out_len.
- *
- * The lock on the hash-table must not already be held. If it is already held,
- * use RecGetRecordsStringNolock instead.
- *
- * @param name The record name.
- * @param buf The buffer to hold the string value.
- * @param buf_len The size of the provided buffer.
- * @param out_len Out parameter for the number of bytes written to buf.
- * @return Returns REC_ERR_OKAY on success, REC_ERR_FAIL otherwise.
- */
-RecErrT RecGetRecordString(const char *name, char *buf, int buf_len, std::size_t &out_len);
-
-/** Get the string associated with record name.
- *
- * Works the same way as RecGetRecordString, except the hash-table lock will
- * not be acquired.
- *
- * @see RecGetRecordString
- */
-RecErrT RecGetRecordStringNolock(const char *name, char *buf, int buf_len, std::size_t &out_len);
 RecErrT RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
 RecErrT RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
 RecErrT RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock = true);

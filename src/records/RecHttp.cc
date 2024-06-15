@@ -146,12 +146,11 @@ RecHttpLoadIp(char const *name)
 void
 RecHttpLoadIpAddrsFromConfVar(const char *value_name, swoc::IPRangeSet &addrs)
 {
-  char        value[1024];
-  std::size_t value_size{};
+  char value[1024];
 
-  if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value), value_size)) {
+  if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value))) {
     Debug("config", "RecHttpLoadIpAddrsFromConfVar: parsing the name [%s] and value [%s]", value_name, value);
-    swoc::TextView text(value, value_size);
+    swoc::TextView text(value);
     while (text) {
       auto token = text.take_prefix_at(',');
       if (swoc::IPRange r; r.load(token)) {
