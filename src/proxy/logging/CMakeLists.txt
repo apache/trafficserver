@@ -41,12 +41,12 @@ target_link_libraries(logging PUBLIC ts::inkevent ts::inkutils ts::http ts::hdrs
 if(BUILD_TESTING)
   add_executable(test_LogUtils LogUtils.cc unit-tests/test_LogUtils.cc)
   target_compile_definitions(test_LogUtils PRIVATE TEST_LOG_UTILS)
-  target_link_libraries(test_LogUtils tscore records catch2::catch2)
+  target_link_libraries(test_LogUtils tscore ts::inkevent records catch2::catch2)
   add_test(NAME test_LogUtils COMMAND test_LogUtils)
 
   add_executable(test_RolledLogDeleter LogUtils.cc RolledLogDeleter.cc unit-tests/test_LogUtils.cc)
   target_compile_definitions(test_RolledLogDeleter PRIVATE TEST_LOG_UTILS)
-  target_link_libraries(test_RolledLogDeleter tscore records catch2::catch2)
+  target_link_libraries(test_RolledLogDeleter tscore ts::inkevent records catch2::catch2)
   add_test(NAME test_RolledLogDeleter COMMAND test_RolledLogDeleter)
 endif()
 
