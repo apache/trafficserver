@@ -180,10 +180,10 @@ public:
     return this;
   }
 
-  std::string
-  get()
+  const char *
+  getDataStrPtr()
   {
-    return owned_data_str_;
+    return owned_data_str_.c_str();
   }
 
 private:
@@ -276,9 +276,12 @@ public:
   const char *
   getTransformResult(size_t *body_size)
   {
-    std::string s = transform_result_.get();
-    *body_size    = s.size();
-    return s.c_str();
+    if (body_size != nullptr) {
+      *body_size = transform_result_.size();
+      return transform_result_.getDataStrPtr();
+    } else {
+      return nullptr;
+    }
   }
 
   // Metrics
