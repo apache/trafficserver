@@ -515,7 +515,7 @@ deactivated.) The filter `local_only` will only be applied to the
 second mapping.
 
 Special Filter and ip_allow Named Filter
---------------------------------------
+----------------------------------------
 
 If :file:`ip_allow.yaml` has a "deny all" filter, it is treated as a special filter that is applied before remapping for
 optimizaion. To control this for specific remap rules, a named filter called `ip_allow` is pre-defined. This named filter is
