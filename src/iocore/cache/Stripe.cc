@@ -1096,13 +1096,12 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
   init_document(vc, doc, len);
   doc->sync_serial = this->header->sync_serial;
   vc->write_serial = doc->write_serial = this->header->write_serial;
-  if (vc->pin_in_cache) {
+  if (vc->get_pin_in_cache()) {
     dir_set_pinned(&vc->dir, 1);
-    // coverity[Y2K38_SAFETY:FALSE]
-    doc->pinned = static_cast<uint32_t>(ink_get_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
+    doc->pin(vc->get_pin_in_cache());
   } else {
     dir_set_pinned(&vc->dir, 0);
-    doc->pinned = 0;
+    doc->unpin();
   }
 
   update_document_key(vc, doc);

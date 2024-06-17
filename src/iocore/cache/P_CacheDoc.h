@@ -26,6 +26,7 @@
 #include "iocore/eventsystem/IOBuffer.h"
 
 #include "tscore/CryptoHash.h"
+#include "tscore/ink_hrtime.h"
 
 #include <cstdint>
 #include <cstring>
@@ -68,6 +69,8 @@ struct Doc {
   char    *data();
   void     set_data(int len, IOBufferBlock *block, int offset);
   void     calculate_checksum();
+  void     pin(std::uint32_t const pin_in_cache);
+  void     unpin();
 
   using self_type = Doc;
 };
@@ -153,4 +156,17 @@ Doc::calculate_checksum()
   for (char *b = this->hdr(); b < reinterpret_cast<char *>(this) + this->len; b++) {
     this->checksum += *b;
   }
+}
+
+inline void
+Doc::pin(std::uint32_t const pin_in_cache)
+{
+  // coverity[Y2K38_SAFETY:FALSE]
+  this->pinned = static_cast<uint32_t>(ink_get_hrtime() / HRTIME_SECOND) + pin_in_cache;
+}
+
+inline void
+Doc::unpin()
+{
+  this->pinned = 0;
 }
