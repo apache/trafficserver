@@ -614,10 +614,10 @@ Stripe::evac_range(off_t low, off_t high, int evac_phase)
 int
 Stripe::_agg_copy(CacheVC *vc)
 {
-  if (!vc->f.evacuator) {
-    return this->_copy_writer_to_aggregation(vc);
-  } else {
+  if (vc->f.evacuator) {
     return this->_copy_evacuator_to_aggregation(vc);
+  } else {
+    return this->_copy_writer_to_aggregation(vc);
   }
 }
 
