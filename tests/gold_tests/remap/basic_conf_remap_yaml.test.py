@@ -125,7 +125,7 @@ test0 = conf_remap_yaml_load_test(
     gold_file="gold/200OK_test.gold",
     remap_filename="testexample_remap.yaml",
     remap_content='''
-    ts:
+    records:
       url_remap:
         pristine_host_hdr: 1
     ''')
@@ -135,7 +135,7 @@ test1 = conf_remap_yaml_load_test(
     "Test mismatch type",
     remap_filename="mismatch_field_type_remap.yaml",
     remap_content='''
-    ts:
+    records:
       url_remap:
         pristine_host_hdr: !!float '1'
     ''')
@@ -145,7 +145,7 @@ test2 = conf_remap_yaml_load_test(
     "Test invalid variable",
     remap_filename="invalid1_field_type_remap.yaml",
     remap_content='''
-    ts:
+    records:
       plugin:
         dynamic_reload_mode: 1
     ''')
@@ -160,7 +160,7 @@ test3 = conf_remap_yaml_load_test(
     gold_file="gold/200OK_test.gold",
     remap_filename="testexample2_remap.yaml",
     remap_content='''
-    ts:
+    records:
       plugin:
         dynamic_reload_mode: 1
 
@@ -175,7 +175,7 @@ test4 = conf_remap_yaml_load_test(
     gold_file="gold/200OK_test.gold",
     remap_filename="testexample_remap.yaml",
     remap_content='''
-    ts:
+    records:
       url_remap:
         pristine_host_hdr: 1
       hostdb:

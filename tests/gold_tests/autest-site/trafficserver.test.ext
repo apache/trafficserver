@@ -563,7 +563,7 @@ class YAMLFile(File):
 class RecordsYAML(YAMLFile):
 
     def __init__(self, runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True):
-        super(RecordsYAML, self).__init__(runable, name, exists, size, content_tester, execute, runtime, root_tag="ts")
+        super(RecordsYAML, self).__init__(runable, name, exists, size, content_tester, execute, runtime, root_tag="records")
 
     def _make_obj_from_legacy_record(self, config, var, value):
         '''

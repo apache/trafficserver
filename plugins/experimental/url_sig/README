@@ -27,7 +27,7 @@ Edge cache debugging
 	To enable the TSDebug verbose logging, change records.yaml to have:
 
   ```yaml
-  ts:
+  records:
     diags:
       debug:
         enabled: 1

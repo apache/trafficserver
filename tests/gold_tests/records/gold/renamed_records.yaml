@@ -1,4 +1,4 @@
-ts:
+records:
   exec_thread:
     autoconfig:
       enabled: 1

@@ -74,7 +74,7 @@ The first step is to set the plugin.compiler_path in the records.yaml file. For 
 
 .. code-block:: yaml
 
-   ts:
+   records:
      plugin:
        compiler_path: /opt/ats/bin/compiler.sh
 

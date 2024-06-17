@@ -22,7 +22,7 @@ Test.testName = 'Float in conf_remap Config Test'
 ts = Test.MakeATSProcess("ts")
 
 ts.Disk.MakeConfigFile('conf_remap.yaml').update('''
-ts:
+records:
   http:
     background_fill_completed_threshold: !!float '0.5'
 ''')
