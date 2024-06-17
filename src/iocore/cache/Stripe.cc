@@ -1039,6 +1039,28 @@ update_header_info(CacheVC *vc, Doc *doc)
   }
 }
 
+static void
+update_document_key(CacheVC *vc, Doc *doc)
+{
+  if (vc->f.use_first_key) {
+    if (doc->data_len() || vc->f.allow_empty_doc) {
+      doc->key = vc->earliest_key;
+    } else { // the vector is being written by itself
+      if (vc->earliest_key.is_zero()) {
+        do {
+          rand_CacheKey(&doc->key);
+        } while (DIR_MASK_TAG(doc->key.slice32(2)) == DIR_MASK_TAG(vc->first_key.slice32(2)));
+      } else {
+        prev_CacheKey(&doc->key, &vc->earliest_key);
+      }
+    }
+    dir_set_head(&vc->dir, true);
+  } else {
+    doc->key = vc->key;
+    dir_set_head(&vc->dir, !vc->fragment);
+  }
+}
+
 int
 Stripe::_copy_writer_to_aggregation(CacheVC *vc)
 {
@@ -1077,23 +1099,7 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
     doc->pinned = 0;
   }
 
-  if (vc->f.use_first_key) {
-    if (doc->data_len() || vc->f.allow_empty_doc) {
-      doc->key = vc->earliest_key;
-    } else { // the vector is being written by itself
-      if (vc->earliest_key.is_zero()) {
-        do {
-          rand_CacheKey(&doc->key);
-        } while (DIR_MASK_TAG(doc->key.slice32(2)) == DIR_MASK_TAG(vc->first_key.slice32(2)));
-      } else {
-        prev_CacheKey(&doc->key, &vc->earliest_key);
-      }
-    }
-    dir_set_head(&vc->dir, true);
-  } else {
-    doc->key = vc->key;
-    dir_set_head(&vc->dir, !vc->fragment);
-  }
+  update_document_key(vc, doc);
 
   if (vc->f.rewrite_resident_alt) {
     ink_assert(vc->f.use_first_key);
