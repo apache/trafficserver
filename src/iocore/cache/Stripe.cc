@@ -1017,6 +1017,21 @@ Stripe::shutdown(EThread *shutdown_thread)
 }
 
 static void
+init_document(CacheVC const *vc, Doc *doc, int const len)
+{
+  doc->magic     = DOC_MAGIC;
+  doc->len       = len;
+  doc->hlen      = vc->header_len;
+  doc->doc_type  = vc->frag_type;
+  doc->v_major   = CACHE_DB_MAJOR_VERSION;
+  doc->v_minor   = CACHE_DB_MINOR_VERSION;
+  doc->unused    = 0; // force this for forward compatibility.
+  doc->total_len = vc->total_len;
+  doc->first_key = vc->first_key;
+  doc->checksum  = DOC_NO_CHECKSUM;
+}
+
+static void
 update_header_info(CacheVC *vc, Doc *doc)
 {
   if (vc->frag_type == CACHE_FRAG_TYPE_HTTP) {
@@ -1078,18 +1093,9 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
   dir_set_phase(&vc->dir, this->header->phase);
 
   // fill in document header
-  doc->magic       = DOC_MAGIC;
-  doc->len         = len;
-  doc->hlen        = vc->header_len;
-  doc->doc_type    = vc->frag_type;
-  doc->v_major     = CACHE_DB_MAJOR_VERSION;
-  doc->v_minor     = CACHE_DB_MINOR_VERSION;
-  doc->unused      = 0; // force this for forward compatibility.
-  doc->total_len   = vc->total_len;
-  doc->first_key   = vc->first_key;
+  init_document(vc, doc, len);
   doc->sync_serial = this->header->sync_serial;
   vc->write_serial = doc->write_serial = this->header->write_serial;
-  doc->checksum                        = DOC_NO_CHECKSUM;
   if (vc->pin_in_cache) {
     dir_set_pinned(&vc->dir, 1);
     // coverity[Y2K38_SAFETY:FALSE]
