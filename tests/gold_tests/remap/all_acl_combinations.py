@@ -74,7 +74,6 @@ replay_proxy_response writes the given replay file (which expects a single GET &
 with the given proxy_response value. This is only used to support the below table test.
 '''
 
-
 # yapf: disable
 keys = ["index", "policy", "inline", "named_acl", "ip_allow", "GET response", "POST response"]
 all_acl_combinations = [
