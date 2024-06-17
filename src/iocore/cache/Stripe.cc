@@ -1016,6 +1016,29 @@ Stripe::shutdown(EThread *shutdown_thread)
   Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
 }
 
+static void
+update_header_info(CacheVC *vc, Doc *doc)
+{
+  if (vc->frag_type == CACHE_FRAG_TYPE_HTTP) {
+    ink_assert(vc->write_vector->count() > 0);
+    if (!vc->f.update && !vc->f.evac_vector) {
+      ink_assert(!(vc->first_key.is_zero()));
+      CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
+      http_info->object_size_set(vc->total_len);
+    }
+    // update + data_written =>  Update case (b)
+    // need to change the old alternate's object length
+    if (vc->f.update && vc->total_len) {
+      CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
+      http_info->object_size_set(vc->total_len);
+    }
+    ink_assert(!(((uintptr_t)&doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK));
+    ink_assert(vc->header_len == vc->write_vector->marshal(doc->hdr(), vc->header_len));
+  } else {
+    memcpy(doc->hdr(), vc->header_to_write, vc->header_len);
+  }
+}
+
 static char *
 iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
 {
@@ -1109,24 +1132,7 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
   // update the new_info object_key, and total_len and dirinfo
   if (vc->header_len) {
     ink_assert(vc->f.use_first_key);
-    if (vc->frag_type == CACHE_FRAG_TYPE_HTTP) {
-      ink_assert(vc->write_vector->count() > 0);
-      if (!vc->f.update && !vc->f.evac_vector) {
-        ink_assert(!(vc->first_key.is_zero()));
-        CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
-        http_info->object_size_set(vc->total_len);
-      }
-      // update + data_written =>  Update case (b)
-      // need to change the old alternate's object length
-      if (vc->f.update && vc->total_len) {
-        CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
-        http_info->object_size_set(vc->total_len);
-      }
-      ink_assert(!(((uintptr_t)&doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK));
-      ink_assert(vc->header_len == vc->write_vector->marshal(doc->hdr(), vc->header_len));
-    } else {
-      memcpy(doc->hdr(), vc->header_to_write, vc->header_len);
-    }
+    update_header_info(vc, doc);
     // the single fragment flag is not used in the write call.
     // putting it in for completeness.
     vc->f.single_fragment = doc->single_fragment();
