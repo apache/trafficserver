@@ -362,7 +362,7 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 }
 
 static void
-freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
+freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_t num_item)
 {
   void **adr_of_next = ADDRESS_OF_NEXT(tail, 0);
   head_p h;

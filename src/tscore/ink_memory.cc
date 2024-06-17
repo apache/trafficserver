@@ -193,7 +193,7 @@ ats_mlock(caddr_t addr, size_t len)
 }
 
 void *
-ats_track_malloc(size_t size, uint64_t *stat)
+ats_track_malloc(size_t size, [[maybe_unused]] uint64_t *stat)
 {
   void *ptr = ats_malloc(size);
 #ifdef HAVE_MALLOC_USABLE_SIZE
@@ -203,7 +203,7 @@ ats_track_malloc(size_t size, uint64_t *stat)
 }
 
 void *
-ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat)
+ats_track_realloc(void *ptr, size_t size, [[maybe_unused]] uint64_t *alloc_stat, [[maybe_unused]] uint64_t *free_stat)
 {
 #ifdef HAVE_MALLOC_USABLE_SIZE
   const size_t old_size = malloc_usable_size(ptr);
@@ -222,7 +222,7 @@ ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_s
 }
 
 void
-ats_track_free(void *ptr, uint64_t *stat)
+ats_track_free(void *ptr, [[maybe_unused]] uint64_t *stat)
 {
   if (ptr == nullptr) {
     return;

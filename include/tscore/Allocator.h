@@ -187,16 +187,16 @@ public:
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
   */
-  MallocAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8,
-                  bool use_hugepages = false)
+  MallocAllocator(const char * /* name ATS_UNUSED */, unsigned int element_size, unsigned int /* chunk_size  ATS_UNUSED */ = 128,
+                  unsigned int alignment = 8, bool /* use_hugepages  ATS_UNUSED */ = false)
     : element_size(element_size), alignment(alignment), advice(0)
   {
   }
 
   /** Re-initialize the parameters of the allocator. */
   void
-  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, bool use_hugepages,
-          int advice)
+  re_init(const char * /* name ATS_UNUSED */, unsigned int element_size, unsigned int /* chunk_size ATS_UNUSED */,
+          unsigned int alignment, bool /* use_hugepages ATS_UNUSED */, int advice)
   {
     this->element_size = element_size;
     this->alignment    = alignment;

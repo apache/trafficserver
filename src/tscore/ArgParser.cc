@@ -232,7 +232,8 @@ ArgParser::Command::Command(std::string const &name, std::string const &descript
 
 // check if this is a valid option before adding
 void
-ArgParser::Command::check_option(std::string const &long_option, std::string const &short_option, std::string const &key) const
+ArgParser::Command::check_option(std::string const &long_option, std::string const &short_option,
+                                 std::string const & /* key ATS_UNUSED */) const
 {
   if (long_option.size() < 3 || long_option[0] != '-' || long_option[1] != '-') {
     // invalid name
@@ -256,7 +257,7 @@ ArgParser::Command::check_option(std::string const &long_option, std::string con
 
 // check if this is a valid command before adding
 void
-ArgParser::Command::check_command(std::string const &name, std::string const &key) const
+ArgParser::Command::check_command(std::string const &name, std::string const & /* key ATS_UNUSED */) const
 {
   if (name.empty()) {
     // invalid name
