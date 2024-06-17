@@ -67,7 +67,7 @@ struct Doc {
   int      single_fragment() const;
   char    *hdr();
   char    *data();
-  void     set_data(int len, IOBufferBlock *block, int offset);
+  void     set_data(int len, IOBufferBlock const *block, int offset);
   void     calculate_checksum();
   void     pin(std::uint32_t const pin_in_cache);
   void     unpin();
@@ -106,9 +106,9 @@ Doc::data()
 }
 
 static char *
-iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
+iobufferblock_memcpy(char *p, int len, IOBufferBlock const *ab, int offset)
 {
-  IOBufferBlock *b = ab;
+  IOBufferBlock const *b = ab;
   while (b && len >= 0) {
     char *start      = b->_start;
     char *end        = b->_end;
@@ -133,7 +133,7 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
 }
 
 inline void
-Doc::set_data(int const len, IOBufferBlock *block, int const offset)
+Doc::set_data(int const len, IOBufferBlock const *block, int const offset)
 {
   iobufferblock_memcpy(this->data(), len, block, offset);
 #ifdef VERIFY_JTEST_DATA
