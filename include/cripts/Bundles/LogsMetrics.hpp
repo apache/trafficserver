@@ -46,7 +46,7 @@ public:
     return *entry;
   }
 
-  const Cript::string &
+  [[nodiscard]] const Cript::string &
   name() const override
   {
     return _name;

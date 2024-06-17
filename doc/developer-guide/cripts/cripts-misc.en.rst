@@ -45,8 +45,9 @@ making this easy.
 =========================   =======================================================================
 Function                    Description
 =========================   =======================================================================
-``Error::Status::set``      Sets the response to the status code, and force the request to error.
-``Error::Reason::set``      Sets an explicit reason message with the status code. **TBD**
+``Error::Status::set()``    Sets the response to the status code, and force the request to error.
+``Error::Status::get()``    Get the current response status for the request.
+``Error::Reason::set()``    Sets an explicit reason message with the status code. **TBD**
 =========================   =======================================================================
 
 Example:
@@ -59,6 +60,11 @@ Example:
 
      if (req["X-Header"] == "yes") {
        Error::Status::set(403);
+     }
+     // Do more stuff here
+
+     if (Error::status::get() != 403) {
+       // Do even more stuff here if we're not in error state
      }
    }
 

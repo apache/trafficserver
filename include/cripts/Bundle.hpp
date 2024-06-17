@@ -19,6 +19,9 @@
 
 #include <vector>
 
+#include "cripts/Lulu.hpp"
+#include "cripts/Transaction.hpp"
+
 namespace Cript
 {
 // We have to forward declare this, to avoid some circular dependencies
@@ -74,7 +77,7 @@ namespace Bundle
     void operator=(const self_type &) = delete;
     virtual ~Base()                   = default;
 
-    virtual const Cript::string &name() const = 0;
+    [[nodiscard]] virtual const Cript::string &name() const = 0;
 
     void
     needCallback(Cript::Callbacks cb)

@@ -32,10 +32,10 @@ class HRWBridge
   using self_type = HRWBridge;
 
 public:
+  HRWBridge()                       = delete;
   HRWBridge(const self_type &)      = delete;
   void operator=(const self_type &) = delete;
 
-  HRWBridge() = delete;
   HRWBridge(const Cript::string_view &str) : _value(str) {}
 
   virtual ~HRWBridge() = default;
@@ -84,7 +84,7 @@ class Headers : public Cript::Bundle::Base
   using self_type  = Headers;
 
 public:
-  using HeaderList      = std::vector<const Cript::string>;
+  using HeaderList      = std::vector<Cript::string>;
   using HeaderValueList = std::vector<std::pair<const Cript::string, const Cript::string>>;
 
   using super_type::Base;
@@ -100,7 +100,7 @@ public:
     return *entry;
   }
 
-  const Cript::string &
+  [[nodiscard]] const Cript::string &
   name() const override
   {
     return _name;

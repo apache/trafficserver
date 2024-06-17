@@ -25,6 +25,7 @@ class Context;
 #include "ts/apidefs.h"
 #include "ts/ts.h"
 
+#include "cripts/Lulu.hpp"
 #include "cripts/Matcher.hpp"
 
 namespace Cript
@@ -42,9 +43,8 @@ class IP : public swoc::IPAddr
 
 public:
   using super_type::IPAddr;
-
-  IP(const IP &)             = delete;
-  void operator=(const IP &) = delete;
+  IP(const self_type &)             = delete;
+  void operator=(const self_type &) = delete;
 
   Cript::string_view getSV(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
   Cript::string_view
@@ -77,8 +77,8 @@ class ConnBase
   public:
     friend class ConnBase;
 
-    Dscp()                       = default;
-    void operator=(const Dscp &) = delete;
+    Dscp()                            = default;
+    void operator=(const self_type &) = delete;
 
     // This is not perfect, but there's currently no ATS Get() mechanism to see a connections
     // current DSCP options.
@@ -105,8 +105,8 @@ class ConnBase
   public:
     friend class ConnBase;
 
-    Pacing()                       = default;
-    void operator=(const Pacing &) = delete;
+    Pacing()                          = default;
+    void operator=(const self_type &) = delete;
 
     // This is not perfect, but there's currently no ATS Get() mechanism to see a connections
     // current PACING options.
@@ -147,8 +147,8 @@ class ConnBase
   public:
     friend class ConnBase;
 
-    Congestion()                       = default;
-    void operator=(const Congestion &) = delete;
+    Congestion()                      = default;
+    void operator=(const self_type &) = delete;
 
     self_type &
     operator=(Cript::string_view const &str)
@@ -179,8 +179,8 @@ class ConnBase
   public:
     friend class ConnBase;
 
-    Mark()                       = default;
-    void operator=(const Mark &) = delete;
+    Mark()                            = default;
+    void operator=(const self_type &) = delete;
 
     // Same here, no API in ATS to Get() the mark on a VC.
     operator integer() const { return _val; }
@@ -206,8 +206,8 @@ class ConnBase
   public:
     friend class ConnBase;
 
-    Geo()                       = default;
-    void operator=(const Geo &) = delete;
+    Geo()                             = default;
+    void operator=(const self_type &) = delete;
 
     [[nodiscard]] Cript::string ASN() const;
     [[nodiscard]] Cript::string ASNName() const;
@@ -225,8 +225,9 @@ class ConnBase
   public:
     friend class ConnBase;
 
-    TcpInfo()                       = default;
-    void operator=(const TcpInfo &) = delete;
+    TcpInfo()                         = default;
+    TcpInfo(const self_type &)        = delete;
+    void operator=(const self_type &) = delete;
 
     Cript::string_view log();
 
@@ -306,9 +307,10 @@ class ConnBase
   }; // End class ConnBase::TcpInfo
 
 public:
-  void operator=(const ConnBase &) = delete;
-
   ConnBase() { dscp._owner = congestion._owner = tcpinfo._owner = geo._owner = pacing._owner = mark._owner = this; }
+
+  ConnBase(const self_type &)       = delete;
+  void operator=(const self_type &) = delete;
 
   [[nodiscard]] virtual int fd() const = 0; // This needs the txnp from the Context
 
@@ -370,10 +372,9 @@ class Connection : public detail::ConnBase
   using self_type = Connection;
 
 public:
-  Connection() = default;
-
-  void operator=(const Connection &) = delete;
-  Connection(const Connection &)     = delete;
+  Connection()                      = default;
+  Connection(const self_type &)     = delete;
+  void operator=(const self_type &) = delete;
 
   [[nodiscard]] int  fd() const override;
   [[nodiscard]] int  count() const override;
@@ -394,7 +395,7 @@ public:
   [[nodiscard]] Cript::IP
   localIP() const override
   {
-    return Cript::IP(TSHttpTxnIncomingAddrGet(_state->txnp));
+    return Cript::IP{TSHttpTxnIncomingAddrGet(_state->txnp)};
   }
 
 }; // End class Client::Connection
@@ -409,9 +410,9 @@ class Connection : public detail::ConnBase
   using self_type = Connection;
 
 public:
-  Connection()                       = default;
-  void operator=(const Connection &) = delete;
-  Connection(const Connection &)     = delete;
+  Connection()                      = default;
+  Connection(const self_type &)     = delete;
+  void operator=(const self_type &) = delete;
 
   [[nodiscard]] int  fd() const override;
   [[nodiscard]] int  count() const override;
@@ -432,7 +433,7 @@ public:
   [[nodiscard]] Cript::IP
   localIP() const override
   {
-    return Cript::IP(TSHttpTxnOutgoingAddrGet(_state->txnp));
+    return Cript::IP{TSHttpTxnOutgoingAddrGet(_state->txnp)};
   }
 
 }; // End class Server::Connection

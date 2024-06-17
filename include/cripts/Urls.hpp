@@ -22,8 +22,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ts/remap.h"
 #include "ts/ts.h"
+#include "ts/remap.h"
 
 #include "cripts/Headers.hpp"
 
@@ -528,8 +528,6 @@ public:
 public:
   Url() = default;
 
-  ~Url() { reset(); }
-
   // Clear anything "cached" in the Url, this is rather draconian, but it's safe...
   virtual void
   reset()
@@ -545,32 +543,32 @@ public:
     _state = nullptr;
   }
 
-  bool
+  [[nodiscard]] bool
   initialized() const
   {
     return (_state != nullptr);
   }
 
-  bool
+  [[nodiscard]] bool
   modified() const
   {
     return _modified;
   }
 
-  TSMLoc
+  [[nodiscard]] TSMLoc
   urlp() const
   {
     return _urlp;
   }
 
-  virtual bool
+  [[nodiscard]] virtual bool
   readOnly() const
   {
     return false;
   }
 
   // Getters / setters for the full URL
-  Cript::string url() const;
+  [[nodiscard]] Cript::string url() const;
 
   Scheme scheme;
   Host   host;
@@ -606,13 +604,13 @@ class URL : public Cript::Url
   using self_type  = URL;
 
 public:
-  URL()                       = default;
-  URL(const URL &)            = delete;
-  void operator=(const URL &) = delete;
+  URL()                             = default;
+  URL(const self_type &)            = delete;
+  void operator=(const self_type &) = delete;
 
-  static URL &_get(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
 
-  bool
+  [[nodiscard]] bool
   readOnly() const override
   {
     return true;
@@ -630,9 +628,9 @@ class URL : public Cript::Url
   using self_type  = URL;
 
 public:
-  URL()                       = default;
-  URL(const URL &)            = delete;
-  void operator=(const URL &) = delete;
+  URL()                             = default;
+  URL(const self_type &)            = delete;
+  void operator=(const self_type &) = delete;
 
   // We must not release the bufp etc. since it comes from the RRI structure
   void
@@ -640,8 +638,8 @@ public:
   {
   }
 
-  static URL &_get(Cript::Context *context);
-  bool        _update(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
+  bool              _update(Cript::Context *context);
 
 private:
   void _initialize(Cript::Context *context);
@@ -660,9 +658,9 @@ namespace From
     using self_type  = URL;
 
   public:
-    URL()                       = default;
-    URL(const URL &)            = delete;
-    void operator=(const URL &) = delete;
+    URL()                             = default;
+    URL(const self_type &)            = delete;
+    void operator=(const self_type &) = delete;
 
     // We must not release the bufp etc. since it comes from the RRI structure
     void
@@ -670,14 +668,14 @@ namespace From
     {
     }
 
-    bool
+    [[nodiscard]] bool
     readOnly() const override
     {
       return true;
     }
 
-    static URL &_get(Cript::Context *context);
-    bool        _update(Cript::Context *context);
+    static self_type &_get(Cript::Context *context);
+    bool              _update(Cript::Context *context);
 
   private:
     void _initialize(Cript::Context *context);
@@ -694,9 +692,9 @@ namespace To
     using self_type  = URL;
 
   public:
-    URL()                       = default;
-    URL(const URL &)            = delete;
-    void operator=(const URL &) = delete;
+    URL()                             = default;
+    URL(const self_type &)            = delete;
+    void operator=(const self_type &) = delete;
 
     // We must not release the bufp etc. since it comes from the RRI structure
     void
@@ -704,14 +702,14 @@ namespace To
     {
     }
 
-    bool
+    [[nodiscard]] bool
     readOnly() const override
     {
       return true;
     }
 
-    static URL &_get(Cript::Context *context);
-    bool        _update(Cript::Context *context);
+    static self_type &_get(Cript::Context *context);
+    bool              _update(Cript::Context *context);
 
   private:
     void _initialize(Cript::Context *context);
@@ -730,12 +728,12 @@ class URL : public Cript::Url // ToDo: This can maybe be a subclass of Client::U
   using self_type  = URL;
 
 public:
-  URL()                       = default;
-  URL(const URL &)            = delete;
-  void operator=(const URL &) = delete;
+  URL()                             = default;
+  URL(const self_type &)            = delete;
+  void operator=(const self_type &) = delete;
 
-  static URL &_get(Cript::Context *context);
-  bool        _update(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
+  bool              _update(Cript::Context *context);
 
 private:
   void
@@ -759,12 +757,12 @@ class URL : public Cript::Url
   using self_type  = URL;
 
 public:
-  URL()                       = default;
-  URL(const URL &)            = delete;
-  void operator=(const URL &) = delete;
+  URL()                             = default;
+  URL(const self_type &)            = delete;
+  void operator=(const self_type &) = delete;
 
-  static URL &_get(Cript::Context *context);
-  bool        _update(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
+  bool              _update(Cript::Context *context);
 
 private:
   void

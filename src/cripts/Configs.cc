@@ -19,6 +19,8 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
+namespace Cript
+{
 integer
 IntConfig::_get(Cript::Context *context) const
 {
@@ -62,3 +64,93 @@ FloatConfig::_set(Cript::Context *context, float value)
     context->state.error.fail();
   }
 }
+
+Records::Records(const Cript::string_view name)
+{
+  TSOverridableConfigKey key;
+  TSRecordDataType       type;
+
+  if (TSHttpTxnConfigFind(name.data(), name.size(), &key, &type) != TS_SUCCESS) {
+    TSError("Invalid configuration variable '%.*s'", static_cast<int>(name.size()), name.data());
+    TSReleaseAssert(!"Invalid configuration variable");
+  } else {
+    _name = name;
+    _key  = key;
+    _type = type;
+  }
+}
+
+Records::ValueType
+Records::_get(const Cript::Context *context) const
+{
+  switch (_type) {
+  case TS_RECORDDATATYPE_INT: {
+    TSMgmtInt i;
+
+    if (TSHttpTxnConfigIntGet(context->state.txnp, _key, &i) == TS_SUCCESS) {
+      return i;
+    }
+  } break;
+  case TS_RECORDDATATYPE_FLOAT: {
+    TSMgmtFloat f;
+
+    if (TSHttpTxnConfigFloatGet(context->state.txnp, _key, &f) == TS_SUCCESS) {
+      return f;
+    }
+  } break;
+  case TS_RECORDDATATYPE_STRING: {
+    const char *s   = nullptr;
+    int         len = 0;
+
+    if (TSHttpTxnConfigStringGet(context->state.txnp, _key, &s, &len) == TS_SUCCESS) {
+      return std::string(s, len);
+    }
+  } break;
+  default:
+    TSReleaseAssert(!"Invalid configuration type");
+    return 0;
+  }
+
+  return 0;
+}
+
+bool
+Records::_set(const Cript::Context *context, const ValueType value)
+{
+  switch (_type) {
+  case TS_RECORDDATATYPE_INT: {
+    TSMgmtInt i = std::get<TSMgmtInt>(value);
+
+    if (TSHttpTxnConfigIntSet(context->state.txnp, _key, i) != TS_SUCCESS) {
+      TSError("Failed to set integer configuration '%s'", _name.c_str());
+      return false;
+    }
+    CDebug("Set integer configuration '{}' to {}", _name.c_str(), i);
+  } break;
+  case TS_RECORDDATATYPE_FLOAT: {
+    TSMgmtFloat f = std::get<TSMgmtFloat>(value);
+
+    if (TSHttpTxnConfigFloatSet(context->state.txnp, _key, f) != TS_SUCCESS) {
+      TSError("Failed to set float configuration '%s'", _name.c_str());
+      return false;
+    }
+    CDebug("Set float configuration '{}' to {}", _name.c_str(), f);
+  } break;
+  case TS_RECORDDATATYPE_STRING: {
+    auto &str = std::get<std::string>(value);
+
+    if (TSHttpTxnConfigStringSet(context->state.txnp, _key, str.c_str(), str.size()) != TS_SUCCESS) {
+      TSError("Failed to set string configuration '%s'", _name.c_str());
+      return false;
+    }
+    CDebug("Set string configuration '{}' to '{}'", _name.c_str(), str.c_str());
+  } break;
+  default:
+    TSReleaseAssert(!"Invalid configuration type");
+    return false;
+  }
+
+  return true; // Success
+}
+
+} // namespace Cript

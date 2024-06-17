@@ -17,6 +17,8 @@
 */
 #pragma once
 
+#include "cripts/Lulu.hpp"
+
 // This is not awesome, but these APIs are internal to ATS. Once Cripts becomes
 // part of the ATS core, we can remove this.
 
@@ -31,21 +33,19 @@ class Remap
   using self_type = Remap;
 
 public:
-  Remap() = default;
+  Remap()                                 = default;
+  Remap(const self_type &)                = delete;
+  self_type &operator=(const self_type &) = delete;
+  self_type &operator=(self_type &&)      = default;
 
-  Remap(Remap &&other)
+  Remap(Remap &&other) noexcept
   {
     _plugin       = other._plugin;
     _valid        = other._valid;
     other._plugin = nullptr;
   }
 
-  Remap(const Remap &) = delete;
-
   ~Remap() { cleanup(); }
-
-  Remap &operator=(Remap &&)      = default;
-  Remap &operator=(const Remap &) = delete;
 
   void _runRemap(Cript::Context *context);
 

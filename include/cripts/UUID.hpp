@@ -17,6 +17,7 @@
 */
 #pragma once
 
+#include "cripts/Lulu.hpp"
 namespace Cript
 {
 class Context;
@@ -32,9 +33,9 @@ class Process
   using self_type = Process;
 
 public:
-  Process()                       = delete;
-  Process(const Process &)        = delete;
-  void operator=(const Process &) = delete;
+  Process()                         = delete;
+  Process(const self_type &)        = delete;
+  void operator=(const self_type &) = delete;
 
   // This doesn't use the context so we can implement it here
   static Cript::string
@@ -52,9 +53,9 @@ class Unique
   using self_type = Unique;
 
 public:
-  Unique()                       = delete;
-  Unique(const Unique &)         = delete;
-  void operator=(const Unique &) = delete;
+  Unique()                          = delete;
+  Unique(const self_type &)         = delete;
+  void operator=(const self_type &) = delete;
 
   static Cript::string _get(Cript::Context *context);
 
@@ -65,9 +66,9 @@ class Request
   using self_type = Request;
 
 public:
-  Request()                       = delete;
-  Request(const Request &)        = delete;
-  void operator=(const Request &) = delete;
+  Request()                         = delete;
+  Request(const self_type &)        = delete;
+  void operator=(const self_type &) = delete;
 
   static Cript::string _get(Cript::Context *context);
 

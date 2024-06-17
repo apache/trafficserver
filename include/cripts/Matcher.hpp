@@ -38,18 +38,19 @@ namespace Range
     using self_type  = Range::IP;
 
   public:
-    IP() = delete;
-    explicit IP(Cript::string_view ip) { add(ip); }
-    void operator=(const IP &) = delete;
+    IP()                              = delete;
+    void operator=(const self_type &) = delete;
 
-    IP(IP const &ip)
+    explicit IP(Cript::string_view ip) { add(ip); }
+
+    IP(self_type const &ip)
     {
       for (auto &it : ip) {
         mark(it);
       }
     }
 
-    IP(const std::initializer_list<IP> &list)
+    IP(const std::initializer_list<self_type> &list)
     {
       for (auto &it : list) {
         for (auto &it2 : it) {
@@ -102,11 +103,11 @@ namespace List
   public:
     Method() = delete;
     explicit Method(Header::Method method) : std::vector<Header::Method>() { push_back(method); }
-    void operator=(const Method &) = delete;
+    void operator=(const self_type &) = delete;
 
-    Method(Method const &method) : std::vector<Header::Method>() { insert(end(), std::begin(method), std::end(method)); }
+    Method(self_type const &method) : std::vector<Header::Method>() { insert(end(), std::begin(method), std::end(method)); }
 
-    Method(const std::initializer_list<Method> &list)
+    Method(const std::initializer_list<self_type> &list)
     {
       for (auto &it : list) {
         insert(end(), std::begin(it), std::end(it));
@@ -147,6 +148,8 @@ public:
 
   using Regex        = std::tuple<Cript::string, pcre2_code *>;
   using RegexEntries = std::vector<Regex>;
+
+  using self_type = PCRE;
 
   class Result
   {
@@ -206,10 +209,11 @@ public:
     Cript::string_view      _subject;
   };
 
-  PCRE() = default;
+  PCRE()                            = default;
+  PCRE(const self_type &)           = delete;
+  void operator=(const self_type &) = delete;
+
   PCRE(Cript::string_view regex, uint32_t options = 0) { add(regex, options); }
-  PCRE(const PCRE &)           = delete;
-  void operator=(const PCRE &) = delete;
 
   PCRE(std::initializer_list<Cript::string_view> list, uint32_t options = 0)
   {

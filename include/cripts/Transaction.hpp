@@ -29,7 +29,7 @@
 namespace Cript
 {
 // This is a bitfield, used to disable a particular callback from a previous hook
-enum Callbacks {
+enum Callbacks : std::uint8_t {
   NONE             = 0,
   DO_REMAP         = 1,
   DO_POST_REMAP    = 2,
