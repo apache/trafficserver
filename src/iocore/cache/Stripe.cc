@@ -21,15 +21,17 @@
   limitations under the License.
  */
 
-#include "iocore/cache/Cache.h"
 #include "P_CacheDisk.h"
 #include "P_CacheDoc.h"
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"
 
+#include "proxy/hdrs/HTTP.h"
+
 #include "tsutil/Metrics.h"
 
 #include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/IOBuffer.h"
 #include "iocore/eventsystem/Lock.h"
 
 #include "tsutil/DbgCtl.h"
@@ -39,6 +41,8 @@
 #include "tscore/ink_memory.h"
 
 #include <cstring>
+
+using CacheHTTPInfo = HTTPInfo;
 
 namespace
 {
@@ -1010,6 +1014,154 @@ Stripe::shutdown(EThread *shutdown_thread)
   B            = pwrite(this->fd, this->raw_dir, dirlen, start);
   ink_assert(B == dirlen);
   Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
+}
+
+static char *
+iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
+{
+  IOBufferBlock *b = ab;
+  while (b && len >= 0) {
+    char *start      = b->_start;
+    char *end        = b->_end;
+    int   max_bytes  = end - start;
+    max_bytes       -= offset;
+    if (max_bytes <= 0) {
+      offset = -max_bytes;
+      b      = b->next.get();
+      continue;
+    }
+    int bytes = len;
+    if (bytes >= max_bytes) {
+      bytes = max_bytes;
+    }
+    ::memcpy(p, start + offset, bytes);
+    p      += bytes;
+    len    -= bytes;
+    b       = b->next.get();
+    offset  = 0;
+  }
+  return p;
+}
+
+int
+Stripe::_copy_writer_to_aggregation(CacheVC *vc)
+{
+  off_t          doc_offset{this->header->write_pos + this->get_agg_buf_pos()};
+  uint32_t       len         = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
+  Doc           *doc         = this->_write_buffer.emplace(this->round_to_approx_size(len));
+  IOBufferBlock *res_alt_blk = nullptr;
+
+  ink_assert(vc->frag_type != CACHE_FRAG_TYPE_HTTP || len != sizeof(Doc));
+  ink_assert(this->round_to_approx_size(len) == vc->agg_len);
+  // update copy of directory entry for this document
+  dir_set_approx_size(&vc->dir, vc->agg_len);
+  dir_set_offset(&vc->dir, this->offset_to_vol_offset(doc_offset));
+  ink_assert(this->vol_offset(&vc->dir) < (this->skip + this->len));
+  dir_set_phase(&vc->dir, this->header->phase);
+
+  // fill in document header
+  doc->magic       = DOC_MAGIC;
+  doc->len         = len;
+  doc->hlen        = vc->header_len;
+  doc->doc_type    = vc->frag_type;
+  doc->v_major     = CACHE_DB_MAJOR_VERSION;
+  doc->v_minor     = CACHE_DB_MINOR_VERSION;
+  doc->unused      = 0; // force this for forward compatibility.
+  doc->total_len   = vc->total_len;
+  doc->first_key   = vc->first_key;
+  doc->sync_serial = this->header->sync_serial;
+  vc->write_serial = doc->write_serial = this->header->write_serial;
+  doc->checksum                        = DOC_NO_CHECKSUM;
+  if (vc->pin_in_cache) {
+    dir_set_pinned(&vc->dir, 1);
+    // coverity[Y2K38_SAFETY:FALSE]
+    doc->pinned = static_cast<uint32_t>(ink_get_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
+  } else {
+    dir_set_pinned(&vc->dir, 0);
+    doc->pinned = 0;
+  }
+
+  if (vc->f.use_first_key) {
+    if (doc->data_len() || vc->f.allow_empty_doc) {
+      doc->key = vc->earliest_key;
+    } else { // the vector is being written by itself
+      if (vc->earliest_key.is_zero()) {
+        do {
+          rand_CacheKey(&doc->key);
+        } while (DIR_MASK_TAG(doc->key.slice32(2)) == DIR_MASK_TAG(vc->first_key.slice32(2)));
+      } else {
+        prev_CacheKey(&doc->key, &vc->earliest_key);
+      }
+    }
+    dir_set_head(&vc->dir, true);
+  } else {
+    doc->key = vc->key;
+    dir_set_head(&vc->dir, !vc->fragment);
+  }
+
+  if (vc->f.rewrite_resident_alt) {
+    ink_assert(vc->f.use_first_key);
+    Doc *res_doc   = reinterpret_cast<Doc *>(vc->first_buf->data());
+    res_alt_blk    = new_IOBufferBlock(vc->first_buf, res_doc->data_len(), sizeof(Doc) + res_doc->hlen);
+    doc->key       = res_doc->key;
+    doc->total_len = res_doc->data_len();
+  }
+  // update the new_info object_key, and total_len and dirinfo
+  if (vc->header_len) {
+    ink_assert(vc->f.use_first_key);
+    if (vc->frag_type == CACHE_FRAG_TYPE_HTTP) {
+      ink_assert(vc->write_vector->count() > 0);
+      if (!vc->f.update && !vc->f.evac_vector) {
+        ink_assert(!(vc->first_key.is_zero()));
+        CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
+        http_info->object_size_set(vc->total_len);
+      }
+      // update + data_written =>  Update case (b)
+      // need to change the old alternate's object length
+      if (vc->f.update && vc->total_len) {
+        CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
+        http_info->object_size_set(vc->total_len);
+      }
+      ink_assert(!(((uintptr_t)&doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK));
+      ink_assert(vc->header_len == vc->write_vector->marshal(doc->hdr(), vc->header_len));
+    } else {
+      memcpy(doc->hdr(), vc->header_to_write, vc->header_len);
+    }
+    // the single fragment flag is not used in the write call.
+    // putting it in for completeness.
+    vc->f.single_fragment = doc->single_fragment();
+  }
+  // move data
+  if (vc->write_len) {
+    {
+      ProxyMutex *mutex ATS_UNUSED = this->mutex.get();
+      ink_assert(mutex->thread_holding == this_ethread());
+
+// ToDo: Why are these for debug only ?
+      Metrics::Counter::increment(cache_rsb.write_backlog_failure);
+      Metrics::Counter::increment(this->cache_vol->vol_rsb.write_backlog_failure);
+    }
+    if (vc->f.rewrite_resident_alt) {
+      iobufferblock_memcpy(doc->data(), vc->write_len, res_alt_blk, 0);
+    } else {
+      iobufferblock_memcpy(doc->data(), vc->write_len, vc->blocks.get(), vc->offset);
+    }
+  }
+  if (cache_config_enable_checksum) {
+    doc->checksum = 0;
+    for (char *b = doc->hdr(); b < reinterpret_cast<char *>(doc) + doc->len; b++) {
+      doc->checksum += *b;
+    }
+  }
+  if (vc->frag_type == CACHE_FRAG_TYPE_HTTP && vc->f.single_fragment) {
+    ink_assert(doc->hlen);
+  }
+
+  if (res_alt_blk) {
+    res_alt_blk->free();
+  }
+
+  return vc->agg_len;
 }
 
 int
