@@ -1585,7 +1585,7 @@ UpdateHostsFile(swoc::file::path const &path, ts_seconds interval)
   // Swap the pointer
   if (hf) {
     std::unique_lock lock(hostDB.host_file_mutex);
-    hostDB.host_file = hf;
+    hostDB.host_file = std::move(hf);
   }
   hostdb_hostfile_update_timestamp = hostdb_current_timestamp;
   // Mark this one as completed, so we can allow another update to happen
@@ -1622,7 +1622,7 @@ struct HostDBRegressionContinuation : public Continuation {
     if (event == EVENT_HOST_DB_LOOKUP) {
       --outstanding;
       if (r) {
-        rprintf(test, "HostDBRecord r=%x\n", r);
+        rprintf(test, "HostDBRecord r=%p\n", r);
         rprintf(test, "HostDBRecord hostname=%s\n", r->name());
         // If RR, print all of the enclosed records
         auto rr_info{r->rr_info()};
