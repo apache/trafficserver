@@ -23,9 +23,12 @@
 
 #pragma once
 
+#include "iocore/eventsystem/IOBuffer.h"
+
 #include "tscore/CryptoHash.h"
 
 #include <cstdint>
+#include <cstring>
 
 #define DOC_MAGIC       ((uint32_t)0x5F129B13)
 #define DOC_CORRUPT     ((uint32_t)0xDEADBABE)
@@ -63,6 +66,8 @@ struct Doc {
   int      single_fragment() const;
   char    *hdr();
   char    *data();
+  void     set_data(int len, IOBufferBlock *block, int offset);
+  void     calculate_checksum();
 
   using self_type = Doc;
 };
@@ -95,4 +100,48 @@ inline char *
 Doc::data()
 {
   return this->hdr() + this->hlen;
+}
+
+static char *
+iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
+{
+  IOBufferBlock *b = ab;
+  while (b && len >= 0) {
+    char *start      = b->_start;
+    char *end        = b->_end;
+    int   max_bytes  = end - start;
+    max_bytes       -= offset;
+    if (max_bytes <= 0) {
+      offset = -max_bytes;
+      b      = b->next.get();
+      continue;
+    }
+    int bytes = len;
+    if (bytes >= max_bytes) {
+      bytes = max_bytes;
+    }
+    ::memcpy(p, start + offset, bytes);
+    p      += bytes;
+    len    -= bytes;
+    b       = b->next.get();
+    offset  = 0;
+  }
+  return p;
+}
+
+inline void
+Doc::set_data(int const len, IOBufferBlock *block, int const offset)
+{
+  iobufferblock_memcpy(this->data(), len, block, offset);
+#ifdef VERIFY_JTEST_DATA
+  if (f.use_first_key && header_len) {
+    int  ib = 0, xd = 0;
+    char xx[500];
+    new_info.request_get().url_get().print(xx, 500, &ib, &xd);
+    char *x = xx;
+    for (int q = 0; q < 3; q++)
+      x = strchr(x + 1, '/');
+    ink_assert(!memcmp(doc->hdr(), x, ib - (x - xx)));
+  }
+#endif
 }

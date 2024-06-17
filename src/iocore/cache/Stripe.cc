@@ -1039,33 +1039,6 @@ update_header_info(CacheVC *vc, Doc *doc)
   }
 }
 
-static char *
-iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
-{
-  IOBufferBlock *b = ab;
-  while (b && len >= 0) {
-    char *start      = b->_start;
-    char *end        = b->_end;
-    int   max_bytes  = end - start;
-    max_bytes       -= offset;
-    if (max_bytes <= 0) {
-      offset = -max_bytes;
-      b      = b->next.get();
-      continue;
-    }
-    int bytes = len;
-    if (bytes >= max_bytes) {
-      bytes = max_bytes;
-    }
-    ::memcpy(p, start + offset, bytes);
-    p      += bytes;
-    len    -= bytes;
-    b       = b->next.get();
-    offset  = 0;
-  }
-  return p;
-}
-
 int
 Stripe::_copy_writer_to_aggregation(CacheVC *vc)
 {
@@ -1140,7 +1113,7 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
   // move data
   if (vc->write_len) {
     {
-      ProxyMutex *mutex ATS_UNUSED = this->mutex.get();
+      [[maybe_unused]] ProxyMutex *mutex = this->mutex.get();
       ink_assert(mutex->thread_holding == this_ethread());
 
 // ToDo: Why are these for debug only ?
@@ -1148,9 +1121,9 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
       Metrics::Counter::increment(this->cache_vol->vol_rsb.write_backlog_failure);
     }
     if (vc->f.rewrite_resident_alt) {
-      iobufferblock_memcpy(doc->data(), vc->write_len, res_alt_blk, 0);
+      doc->set_data(vc->write_len, res_alt_blk, 0);
     } else {
-      iobufferblock_memcpy(doc->data(), vc->write_len, vc->blocks.get(), vc->offset);
+      doc->set_data(vc->write_len, vc->blocks.get(), vc->offset);
     }
   }
   if (cache_config_enable_checksum) {
