@@ -145,3 +145,12 @@ Doc::set_data(int const len, IOBufferBlock *block, int const offset)
   }
 #endif
 }
+
+inline void
+Doc::calculate_checksum()
+{
+  this->checksum = 0;
+  for (char *b = this->hdr(); b < reinterpret_cast<char *>(this) + this->len; b++) {
+    this->checksum += *b;
+  }
+}

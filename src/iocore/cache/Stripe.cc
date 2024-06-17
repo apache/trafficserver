@@ -1127,10 +1127,7 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
     }
   }
   if (cache_config_enable_checksum) {
-    doc->checksum = 0;
-    for (char *b = doc->hdr(); b < reinterpret_cast<char *>(doc) + doc->len; b++) {
-      doc->checksum += *b;
-    }
+    doc->calculate_checksum();
   }
   if (vc->frag_type == CACHE_FRAG_TYPE_HTTP && vc->f.single_fragment) {
     ink_assert(doc->hlen);
