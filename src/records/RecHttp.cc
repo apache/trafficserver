@@ -33,6 +33,7 @@
 #include "tscore/ink_inet.h"
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_ip.h"
+#include <cstring>
 #include <string_view>
 #include <unordered_set>
 
@@ -150,7 +151,7 @@ RecHttpLoadIpAddrsFromConfVar(const char *value_name, swoc::IPRangeSet &addrs)
 
   if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value))) {
     Debug("config", "RecHttpLoadIpAddrsFromConfVar: parsing the name [%s] and value [%s]", value_name, value);
-    swoc::TextView text(value);
+    swoc::TextView text(value, std::strlen(value));
     while (text) {
       auto token = text.take_prefix_at(',');
       if (swoc::IPRange r; r.load(token)) {
