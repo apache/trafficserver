@@ -759,22 +759,7 @@ Stripe::_agg_copy(CacheVC *vc)
 
     return vc->agg_len;
   } else {
-    // for evacuated documents, copy the data, and update directory
-    Doc *doc = reinterpret_cast<Doc *>(vc->buf->data());
-    int  l   = this->round_to_approx_size(doc->len);
-
-    Metrics::Counter::increment(cache_rsb.gc_frags_evacuated);
-    Metrics::Counter::increment(this->cache_vol->vol_rsb.gc_frags_evacuated);
-
-    doc->sync_serial  = this->header->sync_serial;
-    doc->write_serial = this->header->write_serial;
-
-    this->_write_buffer.add(doc, l);
-
-    vc->dir = vc->overwrite_dir;
-    dir_set_offset(&vc->dir, this->offset_to_vol_offset(o));
-    dir_set_phase(&vc->dir, this->header->phase);
-    return l;
+    return this->_copy_evacuator_to_aggregation(vc);
   }
 }
 

@@ -27,6 +27,8 @@
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"
 
+#include "tsutil/Metrics.h"
+
 #include "iocore/eventsystem/EThread.h"
 #include "iocore/eventsystem/Lock.h"
 
@@ -1008,6 +1010,27 @@ Stripe::shutdown(EThread *shutdown_thread)
   B            = pwrite(this->fd, this->raw_dir, dirlen, start);
   ink_assert(B == dirlen);
   Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
+}
+
+int
+Stripe::_copy_evacuator_to_aggregation(CacheVC *vc)
+{
+  Doc *doc         = reinterpret_cast<Doc *>(vc->buf->data());
+  int  approx_size = this->round_to_approx_size(doc->len);
+
+  Metrics::Counter::increment(cache_rsb.gc_frags_evacuated);
+  Metrics::Counter::increment(this->cache_vol->vol_rsb.gc_frags_evacuated);
+
+  doc->sync_serial  = this->header->sync_serial;
+  doc->write_serial = this->header->write_serial;
+
+  off_t doc_offset{this->header->write_pos + this->_write_buffer.get_buffer_pos()};
+  this->_write_buffer.add(doc, approx_size);
+
+  vc->dir = vc->overwrite_dir;
+  dir_set_offset(&vc->dir, this->offset_to_vol_offset(doc_offset));
+  dir_set_phase(&vc->dir, this->header->phase);
+  return approx_size;
 }
 
 bool
