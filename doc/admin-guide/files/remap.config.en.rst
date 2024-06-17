@@ -541,14 +541,14 @@ Note this entirely disables :file:`ip_allow.yaml` checks for those remap rules.
 Evaluation Order and Matching Policy
 ------------------------------------
 
-ATS evaluates multiple ACL filters in below order.
+ATS evaluates multiple ACL filters in the following order:
 
 1. Special "deny all" filter in :file:`ip_allow.yaml`
 2. In-line Filter in :file:`remap.config`
 3. Named Filter in :file:`remap.config`
 4. Filters in :file:`ip_allow.yaml`
 
-When a ACL filter is found, ATS stop processing ACL filters depending on mathcing policy configured by
+When an ACL filter is found, ATS stops processing ACL filters depending on the mathcing policy configured by
 :ts:cv:`proxy.config.url_remap.acl_matching_policy`.
 
 First Explicit Match Wins Policy
