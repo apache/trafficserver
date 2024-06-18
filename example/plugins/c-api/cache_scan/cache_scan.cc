@@ -144,7 +144,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     // print the response headers
     TSCacheHttpInfoRespGet(cache_infop, &resp_bufp, &resp_hdr_loc);
     cstate->total_bytes += TSMimeHdrLengthGet(resp_bufp, resp_hdr_loc);
-    TSMimeHdrPrint(resp_bufp, resp_hdr_loc, cstate->resp_buffer);
+    TSMimeHdrPrint(resp_hdr_loc, cstate->resp_buffer);
     TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_hdr_loc);
 
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s2, sizeof(s2) - 1);

@@ -17,7 +17,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpTxnMilestoneGet
 *********************
@@ -149,7 +149,7 @@ is successful.
 *  A connection attempt is resolved when no more connection related activity
    remains to be done, and the connection is either established or has failed.
 
-*  :macro:`TS_MILESTONE_UA_CLOSE` and :macro:`TS_MILESTONE_SERVER_CLOSE` are
+*  :enumerator:`TS_MILESTONE_UA_CLOSE` and :enumerator:`TS_MILESTONE_SERVER_CLOSE` are
    updated continuously during the life of the transaction, every time there is
    I/O activity. The updating stops when the corresponding connection is
    closed, leaving the last I/O time as the final value.
@@ -157,21 +157,21 @@ is successful.
 *  The cache :literal:`OPEN` milestones time only the initial setup, the
    *open*, not the full read or write.
 
-*  :macro:`TS_MILESTONE_PLUGIN_ACTIVE` and :macro:`TS_MILESTONE_PLUGIN_TOTAL` are different from the other milestones as
-   they measure elapsed time, not event time. The value is the elapsed time *plus* :macro:`TS_MILESTONE_SM_START`. This
+*  :enumerator:`TS_MILESTONE_PLUGIN_ACTIVE` and :enumerator:`TS_MILESTONE_PLUGIN_TOTAL` are different from the other milestones as
+   they measure elapsed time, not event time. The value is the elapsed time *plus* :enumerator:`TS_MILESTONE_SM_START`. This
    was decided to be more convenient because then these milestones can be handled / displayed in the same way as the
-   other milestones, as offsets from :macro:`TS_MILESTONE_SM_START`.
+   other milestones, as offsets from :enumerator:`TS_MILESTONE_SM_START`.
 
-   :macro:`TS_MILESTONE_PLUGIN_ACTIVE` value is the amount of time the plugin was active, that is performing
-   computation. :macro:`TS_MILESTONE_PLUGIN_TOTAL` is the wall time which includes any time the transaction was blocked
+   :enumerator:`TS_MILESTONE_PLUGIN_ACTIVE` value is the amount of time the plugin was active, that is performing
+   computation. :enumerator:`TS_MILESTONE_PLUGIN_TOTAL` is the wall time which includes any time the transaction was blocked
    while a plugin was active. For instance if a plugin waits on an external event, that waiting time will be in
-   :macro:`TS_MILESTONE_PLUGIN_TOTAL` but not in :macro:`TS_MILESTONE_PLUGIN_ACTIVE`.
+   :enumerator:`TS_MILESTONE_PLUGIN_TOTAL` but not in :enumerator:`TS_MILESTONE_PLUGIN_ACTIVE`.
 
 Return Values
 =============
 
-:macro:`TS_SUCCESS` if successful and :arg:`time` was updated, otherwise
-:macro:`TS_ERROR`.
+:enumerator:`TS_SUCCESS` if successful and :arg:`time` was updated, otherwise
+:enumerator:`TS_ERROR`.
 
 See Also
 ========

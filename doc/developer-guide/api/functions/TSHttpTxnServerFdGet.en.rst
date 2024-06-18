@@ -25,7 +25,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. c:function:: TSReturnCode TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
+.. function:: TSReturnCode TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
 
 
 Description

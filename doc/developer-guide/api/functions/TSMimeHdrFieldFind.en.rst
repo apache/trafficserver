@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrFieldFind
 ******************
@@ -35,17 +35,17 @@ Synopsis
 Description
 ===========
 
-Retrieves the :c:type:`TSMLoc` location of a specified MIME field from
+Retrieves the :cpp:type:`TSMLoc` location of a specified MIME field from
 within the MIME header located at :arg:`hdr`.
 
 The :arg:`name` and :arg:`length` parameters specify which field to retrieve.
 For each MIME field in the MIME header, a case insensitive string
 comparison is done between the field name and :arg:`name`. If
-:c:func:`TSMimeHdrFieldFind` cannot find the requested field, it
-returns :c:data:`TS_NULL_MLOC`.  Release the returned :c:type:`TSMLoc`
-handle with a call to :c:func:`TSHandleMLocRelease`.
+:func:`TSMimeHdrFieldFind` cannot find the requested field, it
+returns :var:`TS_NULL_MLOC`.  Release the returned :cpp:type:`TSMLoc`
+handle with a call to :func:`TSHandleMLocRelease`.
 
 The :arg:`name` argument is best specified using the pre-defined Well-Known strings, such as e.g.
 ``TS_MIME_FIELD_CACHE_CONTROL`` and ``TS_MIME_LEN_CACHE_CONTROL``. These WK constants
-can also be looked up using :c:func:`TSMimeHdrStringToWKS`. If a header does
+can also be looked up using :func:`TSMimeHdrStringToWKS`. If a header does
 not have a WKS, this function will return a :code:`nullptr`.

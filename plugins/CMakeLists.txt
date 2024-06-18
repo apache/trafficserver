@@ -17,6 +17,8 @@
 
 include(add_atsplugin)
 
+# The experimental plugins are handled in cmake/ExperimentalPlugins.cmake.
+
 add_subdirectory(authproxy)
 add_subdirectory(background_fetch)
 add_subdirectory(cache_promote)
@@ -45,7 +47,7 @@ add_subdirectory(tcpinfo)
 add_subdirectory(traffic_dump)
 add_subdirectory(xdebug)
 
-if(NOT OPENSSL_IS_BORINGSSL)
+if(NOT SSLLIB_IS_BORINGSSL AND NOT SSLLIB_IS_AWSLC)
   add_subdirectory(ja3_fingerprint)
 endif()
 
@@ -53,14 +55,31 @@ if(USE_LUAJIT)
   add_subdirectory(lua)
 endif()
 
-if(BUILD_EXPERIMENTAL_PLUGINS)
-  add_subdirectory(experimental)
-endif()
-
 if(HOST_OS STREQUAL "linux")
   add_subdirectory(healthchecks)
 endif()
 
-if(USE_MAGICK)
+# FindImageMagick.cmake fails to check whether the target
+# exists before creating it, and we also find this for
+# the experimental/magick plugin. We have to guard the
+# find_package() call to ensure the module doesn't try
+# to create the same target twice.
+if(NOT TARGET ImageMagick::Magick++)
+  auto_option(
+    WEBP_TRANSFORM
+    FEATURE_VAR
+    BUILD_WEBP_TRANSFORM
+    PACKAGE_DEPENDS
+    ImageMagick
+    COMPONENTS
+    Magick++
+  )
+
+  include(magick_target)
+endif()
+
+if(BUILD_WEBP_TRANSFORM)
   add_subdirectory(webp_transform)
 endif()
+
+add_subdirectory(experimental)

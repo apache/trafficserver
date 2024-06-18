@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpTxnCacheLookupUrlGet
 **************************
@@ -35,7 +35,7 @@ Description
 
 Get the current cache key URL, also referred to as the lookup URL. This must
 be stored in a properly allocated URL object, typically created with a
-:c:func:`TSUrlCreate()`.
+:func:`TSUrlCreate()`.
 
 TSHttpTxnCacheLookupUrlSet
 ==========================
@@ -47,17 +47,17 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. c:function:: TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
+.. function:: TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
 
 Description
 -----------
 
 Set the current cache key URL, also referred to as the lookup URL. This must
 be stored in a properly allocated URL object, typically created with a
-:c:func:`TSUrlCreate()` or :c:func:`TSUrlClone()`.
+:func:`TSUrlCreate()` or :func:`TSUrlClone()`.
 
 This API can be called as early as ``TS_HTTP_READ_REQUEST_HDR_HOOK`` but no later than
 ``TS_HTTP_POST_REMAP_HOOK``. This is the preferred and most efficient way to
 modify the cache key, but an alternative is to use the old
-:c:func:`TSCacheUrlSet()`, which takes a simple string as argument.
+:func:`TSCacheUrlSet()`, which takes a simple string as argument.
 

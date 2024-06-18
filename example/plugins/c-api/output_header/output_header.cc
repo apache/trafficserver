@@ -74,7 +74,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   /* This will print  just MIMEFields and not
      the http request line */
   Dbg(dbg_ctl, "Printing the hdrs ... ");
-  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  TSMimeHdrPrint(hdr_loc, output_buffer);
 
   if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
     Dbg(dbg_ctl, "non-fatal: error releasing MLoc");

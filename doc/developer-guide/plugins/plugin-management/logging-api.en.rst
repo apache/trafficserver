@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-management-logging-api:
 
@@ -23,7 +24,7 @@ Logging API
 ***********
 
 The logging API enables your plugin to log entries in a custom text log
-file that you create with the call :c:func:`TSTextLogObjectCreate`. This log
+file that you create with the call :func:`TSTextLogObjectCreate`. This log
 file is part of Traffic Server's logging system; by default, it is
 stored in the logging directory. Once you have created the log object,
 you can set log properties.
@@ -31,31 +32,31 @@ you can set log properties.
 The logging API enables you to:
 
 -  Establish a custom text log for your plugin: see
-   :c:func:`TSTextLogObjectCreate`
+   :func:`TSTextLogObjectCreate`
 
 -  Set the log header for your custom text log: see
-   :c:func:`TSTextLogObjectHeaderSet`
+   :func:`TSTextLogObjectHeaderSet`
 
 -  Enable or disable rolling your custom text log: see
-   :c:func:`TSTextLogObjectRollingEnabledSet`
+   :func:`TSTextLogObjectRollingEnabledSet`
 
 -  Set the rolling interval (in seconds) for your custom text log: see
-   :c:func:`TSTextLogObjectRollingIntervalSecSet`
+   :func:`TSTextLogObjectRollingIntervalSecSet`
 
 -  Set the rolling offset for your custom text log: see
-   :c:func:`TSTextLogObjectRollingOffsetHrSet`
+   :func:`TSTextLogObjectRollingOffsetHrSet`
 
 -  Set the rolling size for your custom text log: see
-   :c:func:`TSTextLogObjectRollingSizeMbSet`
+   :func:`TSTextLogObjectRollingSizeMbSet`
 
 -  Write text entries to the custom text log: see
-   :c:func:`TSTextLogObjectWrite`
+   :func:`TSTextLogObjectWrite`
 
 -  Flush the contents of the custom text log's write buffer to disk: see
-   :c:func:`TSTextLogObjectFlush`
+   :func:`TSTextLogObjectFlush`
 
 -  Destroy custom text logs when you are done with them: see
-   :c:func:`TSTextLogObjectDestroy`
+   :func:`TSTextLogObjectDestroy`
 
 The steps below show how the logging API is used in the
 ``denylist_1.cc`` sample plugin. For the complete source code, see the

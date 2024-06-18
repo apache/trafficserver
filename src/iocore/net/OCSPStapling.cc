@@ -1309,7 +1309,7 @@ ocsp_update()
 
 // RFC 6066 Section-8: Certificate Status Request
 int
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_IS_AWSLC)
 ssl_callback_ocsp_stapling(SSL *ssl)
 #else
 ssl_callback_ocsp_stapling(SSL *ssl, void *)
@@ -1337,7 +1337,7 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
   }
 
   certinfo *cinf = nullptr;
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_IS_AWSLC)
   certinfo_map::iterator iter = map->find(cert);
   if (iter != map->end()) {
     cinf = iter->second;

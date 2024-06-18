@@ -1,6 +1,9 @@
-/** @ja3_fingerprint.cc
+/** @file ja3_fingerprint.cc
+ *
   Plugin JA3 Fingerprint calculates JA3 signatures for incoming SSL traffic.
+
   @section license License
+
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -8,25 +11,22 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
+
       http://www.apache.org/licenses/LICENSE-2.0
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
+#include "ja3_utils.h"
+
 #include <getopt.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-#include <string>
-#include <unordered_set>
-#include <memory>
 
 #include "ts/apidefs.h"
 #include "ts/ts.h"
@@ -40,8 +40,11 @@
 #include <openssl/md5.h>
 #include <openssl/opensslv.h>
 
-// Get 16bit big endian order and update pointer
-#define n2s(c, s) ((s = (((unsigned int)(c[0])) << 8) | (((unsigned int)(c[1])))), c += 2)
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <memory>
+#include <string>
 
 const char            *PLUGIN_NAME = "ja3_fingerprint";
 static DbgCtl          dbg_ctl{PLUGIN_NAME};
@@ -50,10 +53,6 @@ static int             ja3_idx                        = -1;
 static int             global_raw_enabled             = 0;
 static int             global_log_enabled             = 0;
 static int             global_modify_incoming_enabled = 0;
-
-// GREASE table as in ja3
-static const std::unordered_set<uint16_t> GREASE_table = {0x0a0a, 0x1a1a, 0x2a2a, 0x3a3a, 0x4a4a, 0x5a5a, 0x6a6a, 0x7a7a,
-                                                          0x8a8a, 0x9a9a, 0xaaaa, 0xbaba, 0xcaca, 0xdada, 0xeaea, 0xfafa};
 
 struct ja3_data {
   std::string ja3_string;
@@ -74,31 +73,6 @@ struct ja3_remap_info {
     }
   }
 };
-
-static int
-custom_get_ja3_prefixed(int unit, const unsigned char *&data, int len, std::string &result)
-{
-  int  cnt, tmp;
-  bool first = true;
-  // Extract each entry and append to result string
-  for (cnt = 0; cnt < len; cnt += unit) {
-    if (unit == 1) {
-      tmp = *(data++);
-    } else {
-      n2s(data, tmp);
-    }
-
-    // Check for GREASE for 16-bit values, append only if non-GREASE
-    if (unit != 2 || GREASE_table.find(tmp) == GREASE_table.end()) {
-      if (!first) {
-        result += '-';
-      }
-      first   = false;
-      result += std::to_string(tmp);
-    }
-  }
-  return 0;
-}
 
 char *
 getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
@@ -126,52 +100,43 @@ getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
 }
 
 static std::string
-custom_get_ja3(SSL *s)
+custom_get_ja3(SSL *ssl)
 {
-  std::string          ja3;
-  size_t               len;
-  const unsigned char *p;
+  std::string          result;
+  std::size_t          len{};
+  const unsigned char *buf{};
 
   // Get version
-  unsigned int version  = SSL_client_hello_get0_legacy_version(s);
-  ja3                  += std::to_string(version) + ',';
+  unsigned int version = SSL_client_hello_get0_legacy_version(ssl);
+  result.append(std::to_string(version));
+  result.push_back(',');
 
   // Get cipher suites
-  len = SSL_client_hello_get0_ciphers(s, &p);
-  custom_get_ja3_prefixed(2, p, len, ja3);
-  ja3 += ',';
+  len = SSL_client_hello_get0_ciphers(ssl, &buf);
+  result.append(ja3::encode_word_buffer(buf, len));
+  result.push_back(',');
 
   // Get extensions
-  int        *o;
-  std::string eclist, ecpflist;
-  if (SSL_client_hello_get0_ext(s, 0x0a, &p, &len) == 1) {
+  int *extension_ids{};
+  if (SSL_client_hello_get1_extensions_present(ssl, &extension_ids, &len) == 1) {
+    result.append(ja3::encode_integer_buffer(extension_ids, len));
+    OPENSSL_free(extension_ids);
+  }
+  result.push_back(',');
+
+  // Get elliptic curves
+  if (SSL_client_hello_get0_ext(ssl, 0x0a, &buf, &len) == 1) {
     // Skip first 2 bytes since we already have length
-    p   += 2;
-    len -= 2;
-    custom_get_ja3_prefixed(2, p, len, eclist);
+    result.append(ja3::encode_word_buffer(buf + 2, len - 2));
   }
-  if (SSL_client_hello_get0_ext(s, 0x0b, &p, &len) == 1) {
+  result.push_back(',');
+
+  // Get elliptic curve point formats
+  if (SSL_client_hello_get0_ext(ssl, 0x0b, &buf, &len) == 1) {
     // Skip first byte since we already have length
-    ++p;
-    --len;
-    custom_get_ja3_prefixed(1, p, len, ecpflist);
+    result.append(ja3::encode_byte_buffer(buf + 1, len - 1));
   }
-  if (SSL_client_hello_get1_extensions_present(s, &o, &len) == 1) {
-    bool first = true;
-    for (size_t i = 0; i < len; i++) {
-      int type = o[i];
-      if (GREASE_table.find(type) == GREASE_table.end()) {
-        if (!first) {
-          ja3 += '-';
-        }
-        first  = false;
-        ja3   += std::to_string(type);
-      }
-    }
-    OPENSSL_free(o);
-  }
-  ja3 += "," + eclist + "," + ecpflist;
-  return ja3;
+  return result;
 }
 
 // This function will append value to the last occurrence of field. If none exists, it will

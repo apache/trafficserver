@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-hooks-initiate-http:
 
@@ -25,5 +26,5 @@ Initiate HTTP Connection
 This function enables plugins to initiate HTTP transactions. The
 initiate HTTP connection function is:
 
--  :c:func:`TSHttpConnect`
+-  :func:`TSHttpConnect`
 

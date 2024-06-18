@@ -1309,7 +1309,7 @@ allow-plain
    in a request with the sum of their name and value that exceed this size will cause the
    entire request to be treated as invalid and rejected by the proxy.
 
-.. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 131072
+.. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 32768
    :overridable:
    :reloadable:
 
@@ -1317,7 +1317,7 @@ allow-plain
    in a request which exceed this size will cause the entire request to be
    treated as invalid and rejected by the proxy.
 
-.. ts:cv:: CONFIG proxy.config.http.response_header_max_size INT 131072
+.. ts:cv:: CONFIG proxy.config.http.response_header_max_size INT 32768
    :overridable:
    :reloadable:
 
@@ -1345,7 +1345,7 @@ allow-plain
    to the error logging destination. Disabling this option prevents error
    responses (such as ``403``\ s) from appearing in the error logs. Any HTTP
    response status codes equal to, or higher, than the minimum code defined by
-   :c:data:`TS_HTTP_STATUS_BAD_REQUEST` are affected by this setting.
+   :cpp:enumerator:`TS_HTTP_STATUS_BAD_REQUEST` are affected by this setting.
 
 Parent Proxy Configuration
 ==========================
@@ -2216,7 +2216,7 @@ Cache Control
    configured.
 
    Note that plugins, particularly authorization plugins, which use the
-   :c:data:`TS_HTTP_OS_DNS_HOOK` hook may require this configuration variable
+   :cpp:enumerator:`TS_HTTP_OS_DNS_HOOK` hook may require this configuration variable
    to be disabled (``0``) in order to function properly. This will ensure that
    the hook will be evaluated and plugin execution will occur even when there
    is a fresh copy of the requested object in the cache (which would normally
@@ -2225,7 +2225,7 @@ Cache Control
    The downside is that the performance gain by skipping otherwise unnecessary
    DNS lookups is lost. Because the variable is overridable, you may retain
    this performance benefit for portions of your cache which do not require the
-   use of :c:data:`TS_HTTP_OS_DNS_HOOK` plugins, by ensuring that the setting
+   use of :cpp:enumerator:`TS_HTTP_OS_DNS_HOOK` plugins, by ensuring that the setting
    is first disabled within only the relevant transactions. Refer to the
    documentation on :ref:`admin-plugins-conf-remap` for more information.
 
@@ -3274,7 +3274,7 @@ Logging Configuration
 
    If set to a non-zero value :arg:`N` then any connection that takes longer than :arg:`N` milliseconds from accept to
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+   <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
 
 .. ts:cv:: CONFIG proxy.config.http2.connection.slow.log.threshold INT 0
    :reloadable:
@@ -3284,7 +3284,7 @@ Logging Configuration
    that takes longer than :arg:`N` milliseconds from open to close will cause
    its timing stats to be written to the :ts:cv:`debugging log file
    <proxy.config.output.logfile>`. This is identifying data about the
-   transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+   transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
 
 .. ts:cv:: CONFIG proxy.config.http2.stream.slow.log.threshold INT 0
    :reloadable:
@@ -3294,7 +3294,7 @@ Logging Configuration
    that takes longer than :arg:`N` milliseconds from open to close will cause
    its timing stats to be written to the :ts:cv:`debugging log file
    <proxy.config.output.logfile>`. This is identifying data about the
-   transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+   transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
 
 .. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
@@ -4454,12 +4454,11 @@ HTTP/2 Configuration
    Dynamic Table, however, headers still can be encoded as indexable
    representations. The upper limit is 65536.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 131072
+.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 32768
    :reloadable:
 
    This advisory setting informs a peer of the maximum size of header list
-   that the sender is prepared to accept blocks. The default value, which is
-   the unsigned int maximum value in |TS|, implies unlimited size.
+   that the sender is prepared to accept.
 
 .. ts:cv:: CONFIG proxy.config.http2.stream_priority_enabled INT 0
    :reloadable:
@@ -5062,9 +5061,11 @@ Sockets
         PACKET_MARK (16)
         PACKET_TOS (32)
         TCP_NOTSENT_LOWAT (64)
+        INCOMING_CPU (128)
 
    Note: If MPTCP is enabled, TCP_NODELAY is only supported on Linux kernels 5.17+. TCP_FASTOPEN
    and TCP_NOTSENT_LOWAT socket options are currently not supported.
+
 .. note::
 
    This is a bitmask and you need to decide what bits to set.  Therefore,
@@ -5075,6 +5076,20 @@ Sockets
 
    To allow TCP Fast Open for client sockets on Linux, bit 2 of
    the ``net.ipv4.tcp_fastopen`` sysctl must be set.
+
+.. note::
+
+   As for SO_INCOMING_CPU, using it with SO_REUSEPORT and exec_thread affinity 4 is recommended.
+
+   .. code-block:: yaml
+
+      ts:
+        accept_threads: 0
+        exec_thread:
+          listen: 1
+          affinity: 4
+        net:
+         sock_option_flag_in: 0x80
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_out INT 0
    :overridable:

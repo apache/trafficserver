@@ -36,7 +36,7 @@ Errors
 ======
 
 Often it's useful to be able to abort a client transaction prematurely, and
-return an error to the client. Cripts provides a few convenience functions for
+return an error to the client. Cripts provid
 making this easy.
 
 .. note::
@@ -206,4 +206,31 @@ by the ``File::Line::Reader`` object. Some examples:
      }
      string secret = File::Line::Reader(p2);
      CDebug("Read secret = {}", secret);
+   }
+
+.. _cripts-misc-uuid:
+
+UUID
+====
+
+Cripts supports generating a few different UUID (Universally Unique Identifier), for
+different purposes. The ``UUID`` class provides the following objects:
+
+=========================   =======================================================================
+Object                      Description
+=========================   =======================================================================
+``UUID::Process``           Returns a UUID for the running process (changes on ATS startup).
+``UUID::Unique``            Returns a completely unique UUID for the server and transacion.
+``UUID::Request``           Returns a unique id for this request.
+=========================   =======================================================================
+
+Using the ``UUID`` object is simple, via the ``::get()`` method. Here's an example:
+
+.. code-block:: cpp
+
+   do_remap()
+   {
+     static borrow req = Client::Request::get();
+
+     resp["X-UUID"] = UUID::Unique::get();
    }

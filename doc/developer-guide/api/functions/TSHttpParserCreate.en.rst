@@ -17,7 +17,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpParserCreate
 ******************
@@ -58,11 +58,11 @@ It is possible to parse an HTTP request header a single byte at a
 time using repeated calls to :func:`TSHttpHdrParseReq`. As long as
 an error does not occur, the :func:`TSHttpHdrParseReq` function
 will consume that single byte and ask for more. :func:`TSHttpHdrParseReq`
-should be called after :data:`TS_HTTP_READ_REQUEST_HDR_HOOK`.
+should be called after :enumerator:`TS_HTTP_READ_REQUEST_HDR_HOOK`.
 
 :func:`TSHttpHdrParseResp` operates in the same manner as
 :func:`TSHttpHdrParseReq` except it parses an HTTP response header.
-It should be called after :data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`.
+It should be called after :enumerator:`TS_HTTP_READ_RESPONSE_HDR_HOOK`.
 
 :func:`TSHttpParserClear` clears the specified HTTP parser so it
 may be used again.
@@ -74,10 +74,10 @@ Return Values
 =============
 
 :func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp` both return
-a :type:`TSParseResult` value. :data:`TS_PARSE_ERROR` is returned
-on error, :data:`TS_PARSE_CONT` is returned if parsing of the header
+a :type:`TSParseResult` value. :enumerator:`TS_PARSE_ERROR` is returned
+on error, :enumerator:`TS_PARSE_CONT` is returned if parsing of the header
 stopped because the end of the buffer was reached, and
-:data:`TS_PARSE_DONE` when a \\r\\n\\r\\n pattern is encountered,
+:enumerator:`TS_PARSE_DONE` when a \\r\\n\\r\\n pattern is encountered,
 indicating the end of the header.
 
 See Also

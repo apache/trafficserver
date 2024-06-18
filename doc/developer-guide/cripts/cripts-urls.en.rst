@@ -36,14 +36,16 @@ must always be borrowed. The pattern for this is as follows:
 
 There are four types of URLs that can be borrowed:
 
-===================   =============================================================================
-URL Object            Description
-===================   =============================================================================
-``Client::URL``       The client request URL, as it currently stands (may be modified).
-``Pristine:URL``      The pristine client request URL, as it was coming into the ATS server.
-``Parent::URL``       The outgoing server URL, as sent to the next server (parent or origin).
-``Cache::URL``        The cache URL, which will be used for the cache lookups.
-===================   =============================================================================
+=====================   =============================================================================
+URL Object              Description
+=====================   =============================================================================
+``Client::URL``         The client request URL, as it currently stands (may be modified).
+``Pristine:URL``        The pristine client request URL, as it was coming into the ATS server.
+``Parent::URL``         The outgoing server URL, as sent to the next server (parent or origin).
+``Cache::URL``          The cache URL, which will be used for the cache lookups.
+``Remap::From::URL``    The remap ``from`` URL, from :file:`remap.config`.
+``Remap::To::URL``      The remap ``to`` URL, from :file:`remap.config`.
+=====================   =============================================================================
 
 These URLs all have the same methods and properties, but they are used in different
 hooks and have different meanings. The ``Client::URL`` is the most commonly used URL,

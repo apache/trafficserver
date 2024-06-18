@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../common.defs
+.. default-domain:: cpp
 
 plugin.config
 *************
@@ -46,7 +47,7 @@ arbitrary effects on caching and authorization policies.
 
 An option list of whitespace-separated arguments may follow the plugin name.
 These are passed as an argument vector to the plugin's initialization function,
-:c:func:`TSPluginInit`. Arguments that begin with the ``$`` character designate
+:func:`TSPluginInit`. Arguments that begin with the ``$`` character designate
 |TS| configuration variables. These arguments will be replaced with the value
 of the corresponding configuration variable before the plugin is loaded.  When
 using configuration variable expansion, note that most |TS| configuration can

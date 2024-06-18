@@ -310,7 +310,7 @@ bool
 HeaderField::append(const char *value, int length)
 {
   return (TSMimeHdrFieldValueStringInsert(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_,
-                                          iter_.state_->mloc_container_->field_loc_, -1, value, -1) == TS_SUCCESS);
+                                          iter_.state_->mloc_container_->field_loc_, -1, value, length) == TS_SUCCESS);
 }
 
 bool
@@ -594,8 +594,10 @@ Headers::size_type
 Headers::count(const char *key, int /* length ATS_UNUSED */)
 {
   size_type ret_count = 0;
+  size_t    len       = (length < 0) ? strlen(key) : length;
   for (header_field_iterator it = begin(); it != end(); ++it) {
-    if ((*it).name() == key) {
+    HeaderFieldName nm = (*it).name();
+    if ((nm.length() == len) && (::strncasecmp(nm.c_str(), key, len) == 0)) {
       ret_count++;
     }
   }

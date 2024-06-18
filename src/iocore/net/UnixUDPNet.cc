@@ -113,7 +113,8 @@ UDPPacket::new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, Pt
   p->p.delivery_time         = 0;
   ats_ip_copy(&p->from, from);
   ats_ip_copy(&p->to, to);
-  p->p.chain = block;
+  // contents of block are moved to p.chain
+  p->p.chain = std::move(block);
 
   return p;
 }

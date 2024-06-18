@@ -438,7 +438,7 @@ Utility
    file is avaiable during a subsequent check and is updated (newer than the last load time) it will
    be loaded and used instead of the text.
 
-   .. seealso:: :ref:`ex-text-block`, :ref:`mod-as-text-block`
+   .. seealso:: :ex:`text-block`.
 
 .. directive:: error
 

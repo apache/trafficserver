@@ -196,9 +196,9 @@ Each **strategy** in the list may using the following parameters:
   not have a value (e.g. not set by an API), we default back to the reqeust URL. Use one of:
 
    #. **request**: (**default**) Use the client request URL.
-   #. **cache**: Use the cache key URL as set via the APIs :c:func:`TSHttpTxnCacheLookupUrlSet()`
-      or :c:func:`TSCacheUrlSet()`. This would likely be set using a plugin such as **cachekey**.
-   #. **parent**: Use the parent URL as set via the API :c:func:`TSHttpTxnParentSelectionUrlSet`.
+   #. **cache**: Use the cache key URL as set via the APIs :cpp:func:`TSHttpTxnCacheLookupUrlSet()`
+      or :cpp:func:`TSCacheUrlSet()`. This would likely be set using a plugin such as **cachekey**.
+   #. **parent**: Use the parent URL as set via the API :cpp:func:`TSHttpTxnParentSelectionUrlSet`.
       This again is likely set via an existing plugin such as the **cachekey** plugin.
 
 - **go_direct**: A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**

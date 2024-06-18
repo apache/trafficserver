@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpStatus
 ************
@@ -28,13 +28,13 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:type:: TSHttpStatus
+.. enum:: TSHttpStatus
 
 This set of enums represents the possible HTTP types that can be
 assigned to an HTTP header.
 
 When a header is created with :func:`TSHttpHdrCreate`, it is
-automatically assigned a type of :data:`TS_HTTP_TYPE_UNKNOWN`.  You
+automatically assigned a type of :cpp:enumerator:`TS_HTTP_TYPE_UNKNOWN`.  You
 can modify the HTTP type ONCE after it the header is created, using
 :func:`TSHttpHdrTypeSet`.  After setting the HTTP type once, you
 cannot set it again.  Use :func:`TSHttpHdrTypeGet` to obtain the
@@ -43,121 +43,121 @@ cannot set it again.  Use :func:`TSHttpHdrTypeGet` to obtain the
 Enumeration Members
 ===================
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_NONE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_NONE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_CONTINUE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_CONTINUE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_SWITCHING_PROTOCOL
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_SWITCHING_PROTOCOL
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_EARLY_HINTS
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_EARLY_HINTS
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_OK
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_OK
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_CREATED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_CREATED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_ACCEPTED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_ACCEPTED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_NO_CONTENT
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_NO_CONTENT
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_RESET_CONTENT
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_RESET_CONTENT
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_PARTIAL_CONTENT
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_PARTIAL_CONTENT
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_MULTI_STATUS
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_MULTI_STATUS
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_ALREADY_REPORTED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_ALREADY_REPORTED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_IM_USED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_IM_USED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_MULTIPLE_CHOICES
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_MULTIPLE_CHOICES
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_MOVED_PERMANENTLY
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_MOVED_PERMANENTLY
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_MOVED_TEMPORARILY
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_MOVED_TEMPORARILY
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_SEE_OTHER
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_SEE_OTHER
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_NOT_MODIFIED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_NOT_MODIFIED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_USE_PROXY
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_USE_PROXY
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_TEMPORARY_REDIRECT
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_TEMPORARY_REDIRECT
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_PERMANENT_REDIRECT
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_PERMANENT_REDIRECT
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_BAD_REQUEST
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_BAD_REQUEST
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_UNAUTHORIZED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_UNAUTHORIZED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_PAYMENT_REQUIRED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_PAYMENT_REQUIRED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_FORBIDDEN
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_FORBIDDEN
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_NOT_FOUND
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_NOT_FOUND
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_METHOD_NOT_ALLOWED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_METHOD_NOT_ALLOWED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_NOT_ACCEPTABLE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_NOT_ACCEPTABLE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_REQUEST_TIMEOUT
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_REQUEST_TIMEOUT
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_CONFLICT
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_CONFLICT
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_GONE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_GONE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_LENGTH_REQUIRED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_LENGTH_REQUIRED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_PRECONDITION_FAILED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_PRECONDITION_FAILED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_REQUEST_URI_TOO_LONG
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_REQUEST_URI_TOO_LONG
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_EXPECTATION_FAILED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_EXPECTATION_FAILED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_UNPROCESSABLE_ENTITY
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_UNPROCESSABLE_ENTITY
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_LOCKED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_LOCKED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_FAILED_DEPENDENCY
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_FAILED_DEPENDENCY
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_UPGRADE_REQUIRED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_UPGRADE_REQUIRED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_PRECONDITION_REQUIRED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_PRECONDITION_REQUIRED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_TOO_MANY_REQUESTS
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_TOO_MANY_REQUESTS
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_INTERNAL_SERVER_ERROR
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_INTERNAL_SERVER_ERROR
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_NOT_IMPLEMENTED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_NOT_IMPLEMENTED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_BAD_GATEWAY
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_BAD_GATEWAY
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_SERVICE_UNAVAILABLE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_SERVICE_UNAVAILABLE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_GATEWAY_TIMEOUT
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_GATEWAY_TIMEOUT
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_INSUFFICIENT_STORAGE
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_INSUFFICIENT_STORAGE
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_LOOP_DETECTED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_LOOP_DETECTED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_NOT_EXTENDED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_NOT_EXTENDED
 
-.. c:member:: TSHttpStatus TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED
+.. enumerator:: TSHttpStatus::TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED
 
 Description
 ===========

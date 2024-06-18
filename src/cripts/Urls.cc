@@ -20,13 +20,13 @@
 #include "cripts/Preamble.hpp"
 
 std::vector<Cript::string_view>
-Url::Component::split(const char delim)
+Cript::Url::Component::split(const char delim)
 {
   return Cript::splitter(getSV(), delim);
 }
 
 Cript::string_view
-Url::Scheme::getSV()
+Cript::Url::Scheme::getSV()
 {
   if (_owner && _data.empty()) {
     const char *value = nullptr;
@@ -39,9 +39,10 @@ Url::Scheme::getSV()
   return _data;
 }
 
-Url::Scheme
-Url::Scheme::operator=(Cript::string_view scheme)
+Cript::Url::Scheme
+Cript::Url::Scheme::operator=(Cript::string_view scheme)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlSchemeSet(_owner->_bufp, _owner->_urlp, scheme.data(), scheme.size());
   _owner->_modified = true;
   reset();
@@ -51,7 +52,7 @@ Url::Scheme::operator=(Cript::string_view scheme)
 }
 
 Cript::string_view
-Url::Host::getSV()
+Cript::Url::Host::getSV()
 {
   if (_owner && _data.empty()) {
     const char *value = nullptr;
@@ -65,9 +66,10 @@ Url::Host::getSV()
   return _data;
 }
 
-Url::Host
-Url::Host::operator=(Cript::string_view host)
+Cript::Url::Host
+Cript::Url::Host::operator=(Cript::string_view host)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlHostSet(_owner->_bufp, _owner->_urlp, host.data(), host.size());
   _owner->_modified = true;
   reset();
@@ -76,7 +78,7 @@ Url::Host::operator=(Cript::string_view host)
   return *this;
 }
 
-Url::Port::operator integer() // This should not be explicit
+Cript::Url::Port::operator integer() // This should not be explicit
 {
   if (_owner && _port < 0) {
     _port = TSUrlPortGet(_owner->_bufp, _owner->_urlp);
@@ -85,9 +87,10 @@ Url::Port::operator integer() // This should not be explicit
   return _port;
 }
 
-Url::Port
-Url::Port::operator=(int port)
+Cript::Url::Port
+Cript::Url::Port::operator=(int port)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlPortSet(_owner->_bufp, _owner->_urlp, port);
   _owner->_modified = true;
   reset();
@@ -96,7 +99,7 @@ Url::Port::operator=(int port)
 }
 
 Cript::string_view
-Url::Path::getSV()
+Cript::Url::Path::getSV()
 {
   if (_segments.size() > 0) {
     std::ostringstream path;
@@ -122,8 +125,8 @@ Url::Path::getSV()
   return _data;
 }
 
-Url::Path::String
-Url::Path::operator[](Segments::size_type ix)
+Cript::Url::Path::String
+Cript::Url::Path::operator[](Segments::size_type ix)
 {
   Url::Path::String ret;
 
@@ -135,9 +138,10 @@ Url::Path::operator[](Segments::size_type ix)
   return ret; // RVO
 }
 
-Url::Path
-Url::Path::operator=(Cript::string_view path)
+Cript::Url::Path
+Cript::Url::Path::operator=(Cript::string_view path)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlPathSet(_owner->_bufp, _owner->_urlp, path.data(), path.size());
   _owner->_modified = true;
   reset();
@@ -147,7 +151,7 @@ Url::Path::operator=(Cript::string_view path)
 }
 
 Cript::string
-Url::Path::operator+=(Cript::string_view add)
+Cript::Url::Path::operator+=(Cript::string_view add)
 {
   Cript::string str;
 
@@ -159,9 +163,11 @@ Url::Path::operator+=(Cript::string_view add)
 
   return str; // RVO
 }
-Url::Path::String &
-Url::Path::String::operator=(const Cript::string_view str)
+
+Cript::Url::Path::String &
+Cript::Url::Path::String::operator=(const Cript::string_view str)
 {
+  TSReleaseAssert(!_owner->_owner->readOnly()); // This can not be a read-only URL
   _owner->_size          -= _owner->_segments[_ix].size();
   _owner->_segments[_ix]  = str;
   _owner->_size          += str.size();
@@ -171,7 +177,7 @@ Url::Path::String::operator=(const Cript::string_view str)
 }
 
 void
-Url::Path::reset()
+Cript::Url::Path::reset()
 {
   Component::reset();
 
@@ -182,7 +188,7 @@ Url::Path::reset()
 }
 
 void
-Url::Path::push(Cript::string_view val)
+Cript::Url::Path::push(Cript::string_view val)
 {
   _parser();
   _modified = true;
@@ -190,7 +196,7 @@ Url::Path::push(Cript::string_view val)
 }
 
 void
-Url::Path::insert(Segments::size_type ix, Cript::string_view val)
+Cript::Url::Path::insert(Segments::size_type ix, Cript::string_view val)
 {
   _parser();
   _modified = true;
@@ -198,16 +204,17 @@ Url::Path::insert(Segments::size_type ix, Cript::string_view val)
 }
 
 void
-Url::Path::_parser()
+Cript::Url::Path::_parser()
 {
   if (_segments.size() == 0) {
     _segments = split('/');
   }
 }
 
-Url::Query::Parameter &
-Url::Query::Parameter::operator=(const Cript::string_view str)
+Cript::Url::Query::Parameter &
+Cript::Url::Query::Parameter::operator=(const Cript::string_view str)
 {
+  TSReleaseAssert(!_owner->_owner->readOnly()); // This can not be a read-only URL
   auto iter = _owner->_hashed.find(_name);
 
   if (iter != _owner->_hashed.end()) {
@@ -222,7 +229,7 @@ Url::Query::Parameter::operator=(const Cript::string_view str)
 }
 
 Cript::string_view
-Url::Query::getSV()
+Cript::Url::Query::getSV()
 {
   if (_ordered.size() > 0) {
     _storage.clear();
@@ -264,9 +271,10 @@ Url::Query::getSV()
   return _data;
 }
 
-Url::Query
-Url::Query::operator=(Cript::string_view query)
+Cript::Url::Query
+Cript::Url::Query::operator=(Cript::string_view query)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
   _owner->_modified = true;
   reset();
@@ -276,7 +284,7 @@ Url::Query::operator=(Cript::string_view query)
 }
 
 Cript::string
-Url::Query::operator+=(Cript::string_view add)
+Cript::Url::Query::operator+=(Cript::string_view add)
 {
   Cript::string str;
 
@@ -289,8 +297,8 @@ Url::Query::operator+=(Cript::string_view add)
   return str; // RVO
 }
 
-Url::Query::Parameter
-Url::Query::operator[](Cript::string_view param)
+Cript::Url::Query::Parameter
+Cript::Url::Query::operator[](Cript::string_view param)
 {
   // Make sure the hash and vector are populated
   _parser();
@@ -308,7 +316,7 @@ Url::Query::operator[](Cript::string_view param)
 }
 
 void
-Url::Query::erase(Cript::string_view param)
+Cript::Url::Query::erase(Cript::string_view param)
 {
   // Make sure the hash and vector are populated
   _parser();
@@ -332,7 +340,7 @@ Url::Query::erase(Cript::string_view param)
 }
 
 void
-Url::Query::erase(std::initializer_list<Cript::string_view> list, bool keep)
+Cript::Url::Query::erase(std::initializer_list<Cript::string_view> list, bool keep)
 {
   if (keep) {
     // Make sure the hash and vector are populated
@@ -363,7 +371,7 @@ Url::Query::erase(std::initializer_list<Cript::string_view> list, bool keep)
 }
 
 void
-Url::Query::reset()
+Cript::Url::Query::reset()
 {
   Component::reset();
 
@@ -375,7 +383,7 @@ Url::Query::reset()
 }
 
 void
-Url::Query::_parser()
+Cript::Url::Query::_parser()
 {
   if (_ordered.size() == 0) {
     for (const auto sv : split('&')) {
@@ -394,7 +402,7 @@ Url::Query::_parser()
 }
 
 Cript::string
-Url::url() const
+Cript::Url::url() const
 {
   Cript::string ret;
 
@@ -455,6 +463,46 @@ Client::URL::_update(Cript::Context *context)
   query.flush();
 
   return _modified;
+}
+
+void
+Remap::From::URL::_initialize(Cript::Context *context)
+{
+  Url::_initialize(&context->state);
+
+  _bufp    = context->rri->requestBufp;
+  _hdr_loc = context->rri->requestHdrp;
+  _urlp    = context->rri->mapFromUrl;
+}
+
+Remap::From::URL &
+Remap::From::URL::_get(Cript::Context *context)
+{
+  if (!context->_remap_from_url.initialized()) {
+    context->_remap_from_url._initialize(context);
+  }
+
+  return context->_remap_from_url;
+}
+
+void
+Remap::To::URL::_initialize(Cript::Context *context)
+{
+  Url::_initialize(&context->state);
+
+  _bufp    = context->rri->requestBufp;
+  _hdr_loc = context->rri->requestHdrp;
+  _urlp    = context->rri->mapToUrl;
+}
+
+Remap::To::URL &
+Remap::To::URL::_get(Cript::Context *context)
+{
+  if (!context->_remap_to_url.initialized()) {
+    context->_remap_to_url._initialize(context);
+  }
+
+  return context->_remap_to_url;
 }
 
 Cache::URL &
@@ -520,4 +568,25 @@ Cache::URL::_update(Cript::Context *context)
   }
 
   return false;
+}
+
+// ToDo: This may need more work, to understand which hooks the parent URL is actually available
+Parent::URL &
+Parent::URL::_get(Cript::Context *context)
+{
+  if (!context->_cache_url.initialized()) {
+    Parent::URL     *url = &context->_parent_url;
+    Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
+
+    if (TSUrlCreate(req.bufp(), &url->_urlp) == TS_SUCCESS) {
+      TSAssert(context->state.txnp);
+      if (TSHttpTxnParentSelectionUrlGet(context->state.txnp, req.bufp(), url->_urlp) == TS_SUCCESS) {
+        url->_initialize(&context->state, &req);
+      }
+    } else {
+      context->state.error.fail();
+    }
+  }
+
+  return context->_parent_url;
 }

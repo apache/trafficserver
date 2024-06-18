@@ -27,7 +27,7 @@
 #include "P_CacheDoc.h"
 #include "P_CacheStats.h"
 #include "P_RamCache.h"
-#include "iocore/cache/AggregateWriteBuffer.h"
+#include "AggregateWriteBuffer.h"
 
 #include "iocore/eventsystem/EThread.h"
 
@@ -277,7 +277,6 @@ public:
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
   int                                      get_agg_buf_pos() const;
-  int                                      get_agg_todo_size() const;
 
   /**
    * Add a virtual connection waiting to write to this stripe.
@@ -329,6 +328,7 @@ private:
   void _init_dir();
   void _init_data_internal();
   void _init_data();
+  int  _agg_copy(CacheVC *vc);
   bool flush_aggregate_write_buffer();
 
   AggregateWriteBuffer _write_buffer;
@@ -549,10 +549,4 @@ inline int
 Stripe::get_agg_buf_pos() const
 {
   return this->_write_buffer.get_buffer_pos();
-}
-
-inline int
-Stripe::get_agg_todo_size() const
-{
-  return this->_write_buffer.get_bytes_pending_aggregation();
 }

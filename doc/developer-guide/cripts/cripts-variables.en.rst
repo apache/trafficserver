@@ -92,7 +92,7 @@ Method                Description
 ===================   =============================================================================
 
 In addition to this, there's a number of *matching* features in Cripts, which can be used together
-with strings. These are covered in more detail in the :ref:`cripts-matcher` section. Of course,
+with strings. These are covered in more detail in the :ref:`cripts-matchers` section. Of course,
 regular comparisons such as ``==`` and ``!=`` are also available.
 
 .. note::

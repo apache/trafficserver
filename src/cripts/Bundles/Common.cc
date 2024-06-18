@@ -22,20 +22,20 @@
 
 namespace Bundle
 {
+const Cript::string Common::_name = "Bundle::Common";
 
-// Bundle::Common
 bool
 Common::validate(std::vector<Cript::Bundle::Error> &errors) const
 {
-  bool failed = false;
+  bool good = true;
 
   // The .dscp() can only be 0 - 63
   if (_dscp < 0 || _dscp > 63) {
-    errors.emplace_back("dscp must be between 0 and 63", "Common", "dscp");
-    failed = true;
+    errors.emplace_back("dscp must be between 0 and 63", name(), "dscp");
+    good = false;
   }
 
-  return failed;
+  return good;
 }
 
 void
@@ -56,6 +56,7 @@ Common::doRemap(Cript::Context *context)
 
   // .dscp(int)
   if (_dscp > 0) {
+    CDebug("Setting DSCP = {}", _dscp);
     conn.dscp = _dscp;
   }
 }

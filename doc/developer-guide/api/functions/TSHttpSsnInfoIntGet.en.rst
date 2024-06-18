@@ -14,6 +14,7 @@
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
 
+.. default-domain:: cpp
 
 TSHttpSsnInfoIntGet
 ===================
@@ -25,24 +26,24 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. c:function:: TSReturnCode TSHttpSsnInfoIntGet(TSHttpSsn ssnp, TSHttpSsnInfoKey key, TSMgmtInt * value, uint64_t subkey = 0)
+.. function:: TSReturnCode TSHttpSsnInfoIntGet(TSHttpSsn ssnp, TSHttpSsnInfoKey key, TSMgmtInt * value, uint64_t subkey = 0)
 
 Description
 -----------
 
-:c:func:`TSHttpSsnInfoIntGet` returns arbitrary integer-typed info about a session as defined in
-:c:type:`TSHttpSsnInfoKey`. The API will be part of a generic API umbrella that can support returning
+:func:`TSHttpSsnInfoIntGet` returns arbitrary integer-typed info about a session as defined in
+:cpp:type:`TSHttpSsnInfoKey`. The API will be part of a generic API umbrella that can support returning
 arbitrary info about a session using custom log tags.
 
-The :c:type:`TSHttpSsnInfoKey` currently supports the below integer-based info about a transaction
+The :cpp:type:`TSHttpSsnInfoKey` currently supports the below integer-based info about a transaction
 
-.. c:enum:: TSHttpSsnInfoKey
+.. enum:: TSHttpSsnInfoKey
 
-   .. c:enumerator:: TS_SSN_INFO_TRANSACTION_COUNT
+   .. enumerator:: TS_SSN_INFO_TRANSACTION_COUNT
 
       The value indicate the number of transactions made on the session.
 
-   .. c:enumerator:: TS_SSN_INFO_RECEIVED_FRAME_COUNT
+   .. enumerator:: TS_SSN_INFO_RECEIVED_FRAME_COUNT
 
       The value indicate the number of HTTP/2 or HTTP/3 frames received on the session.
       A frame type must be specified by passing it to subkey.
@@ -52,4 +53,4 @@ The :c:type:`TSHttpSsnInfoKey` currently supports the below integer-based info a
 Return values
 -------------
 
-The API returns :c:data:`TS_SUCCESS`, if the requested info is supported, :c:data:`TS_ERROR` otherwise.
+The API returns :enumerator:`TS_SUCCESS`, if the requested info is supported, :enumerator:`TS_ERROR` otherwise.

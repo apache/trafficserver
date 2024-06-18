@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-hooks-http-transactions:
 
@@ -29,7 +30,7 @@ transactions.
 As described in :ref:`HTTP sessions
 <developer-plugins-hooks-http-sessions>`, an **HTTP transaction** is an
 object defined for the lifetime of a single request from a client and
-the corresponding response from Traffic Server. The :c:type:`TSHttpTxn`
+the corresponding response from Traffic Server. The :cpp:type:`TSHttpTxn`
 structure is the main handle given to a plugin for manipulating a
 transaction's internal state. Additionally, an HTTP transaction has a
 reference back to the HTTP session that created it.
@@ -153,48 +154,48 @@ illustration of the steps involved in a typical HTTP transaction.
 
 The HTTP transaction functions are:
 
--  :c:func:`TSHttpTxnCacheLookupStatusGet`
+-  :func:`TSHttpTxnCacheLookupStatusGet`
 
--  :c:func:`TSHttpTxnCachedReqGet`
+-  :func:`TSHttpTxnCachedReqGet`
    - Note that it is an error to modify cached headers.
 
--  :c:func:`TSHttpTxnCachedRespGet`
+-  :func:`TSHttpTxnCachedRespGet`
    - Note that it is an error to modify cached headers.
 
--  :c:func:`TSHttpTxnClientReqGet`
+-  :func:`TSHttpTxnClientReqGet`
    - Plugins that read client request headers use this call to retrieve the
-   HTTP header for any given :c:type:`TSHttpTxn`.
+   HTTP header for any given :cpp:type:`TSHttpTxn`.
 
--  :c:func:`TSHttpTxnPostBufferReaderGet`
+-  :func:`TSHttpTxnPostBufferReaderGet`
    - Plugins that read client request bodies use this call to retrieve the
-   HTTP body for any given :c:type:`TSHttpTxn`.
+   HTTP body for any given :cpp:type:`TSHttpTxn`.
 
--  :c:func:`TSHttpTxnClientRespGet`
+-  :func:`TSHttpTxnClientRespGet`
 
--  :c:func:`TSHttpTxnErrorBodySet`
+-  :func:`TSHttpTxnErrorBodySet`
 
--  :c:func:`TSHttpTxnHookAdd`
+-  :func:`TSHttpTxnHookAdd`
 
--  :c:func:`TSHttpTxnNextHopAddrGet`
+-  :func:`TSHttpTxnNextHopAddrGet`
 
--  :c:func:`TSHttpTxnParentProxySet`
+-  :func:`TSHttpTxnParentProxySet`
 
--  :c:func:`TSHttpTxnReenable`
+-  :func:`TSHttpTxnReenable`
 
--  :c:func:`TSHttpTxnServerAddrGet`
+-  :func:`TSHttpTxnServerAddrGet`
 
--  :c:func:`TSHttpTxnServerAddrSet`
+-  :func:`TSHttpTxnServerAddrSet`
 
--  :c:func:`TSHttpTxnServerReqGet`
+-  :func:`TSHttpTxnServerReqGet`
 
--  :c:func:`TSHttpTxnServerRespGet`
+-  :func:`TSHttpTxnServerRespGet`
 
--  :c:func:`TSHttpTxnSsnGet`
+-  :func:`TSHttpTxnSsnGet`
 
--  :c:func:`TSHttpTxnTransformedRespCache`
+-  :func:`TSHttpTxnTransformedRespCache`
 
--  :c:func:`TSHttpTxnTransformRespGet`
+-  :func:`TSHttpTxnTransformRespGet`
 
--  :c:func:`TSHttpTxnUntransformedRespCache`
+-  :func:`TSHttpTxnUntransformedRespCache`
 
 

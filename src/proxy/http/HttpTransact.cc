@@ -1022,7 +1022,7 @@ HttpTransact::StartRemapRequest(State *s)
     TxnDbg(dbg_ctl_http_trans, "Before Remapping:");
     obj_describe(s->hdr_info.client_request.m_http, true);
   }
-  DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.client_request, s->state_machine_id(), "Incoming Request");
+  dump_header(dbg_ctl_http_hdrs, &s->hdr_info.client_request, s->state_machine_id(), "Incoming Request");
 
   if (s->http_config_param->referer_filter_enabled) {
     s->filter_mask = URL_REMAP_FILTER_REFERER;
@@ -2264,9 +2264,9 @@ HttpTransact::HandlePushResponseHdr(State *s)
   s->hdr_info.server_request.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
   s->hdr_info.server_request.value_set("X-Inktomi-Source", 16, "http PUSH", 9);
 
-  DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.server_response, s->state_machine_id(), "Pushed Response Header");
+  dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_response, s->state_machine_id(), "Pushed Response Header");
 
-  DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Generated Request Header");
+  dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Generated Request Header");
 
   s->response_received_time = s->request_sent_time = ink_local_time();
 
@@ -2447,7 +2447,7 @@ HttpTransact::issue_revalidate(State *s)
     // the client has the right credentials
     // this cache action is just to get us into the hcoofsr function
     s->cache_info.action = CACHE_DO_UPDATE;
-    DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Proxy's Request (Conditionalized)");
+    dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Proxy's Request (Conditionalized)");
     return;
   }
 
@@ -2520,7 +2520,7 @@ HttpTransact::issue_revalidate(State *s)
       if (str) {
         s->hdr_info.server_request.value_set(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, str, length);
       }
-      DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Proxy's Request (Conditionalized)");
+      dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Proxy's Request (Conditionalized)");
     }
     // if Etag exists, also add if-non-match header
     if (c_resp->presence(MIME_PRESENCE_ETAG) && (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
@@ -2534,7 +2534,7 @@ HttpTransact::issue_revalidate(State *s)
         }
         s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, etag, length);
       }
-      DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Proxy's Request (Conditionalized)");
+      dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Proxy's Request (Conditionalized)");
     }
     break;
   case HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION: // 203
@@ -3430,7 +3430,7 @@ HttpTransact::HandleResponse(State *s)
   s->current.now = s->response_received_time;
 
   TxnDbg(dbg_ctl_http_trans, "response_received_time: %" PRId64, (int64_t)s->response_received_time);
-  DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.server_response, s->state_machine_id(), "Incoming O.S. Response");
+  dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_response, s->state_machine_id(), "Incoming O.S. Response");
 
   Metrics::Counter::increment(http_rsb.incoming_responses);
 
@@ -4074,7 +4074,7 @@ HttpTransact::build_response_copy(State *s, HTTPHdr *base_response, HTTPHdr *out
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response); // http version conversion
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
-  DUMP_HEADER(dbg_ctl_http_hdrs, outgoing_response, s->state_machine_id(), "Proxy's Response");
+  dump_header(dbg_ctl_http_hdrs, outgoing_response, s->state_machine_id(), "Proxy's Response");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -4616,7 +4616,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
                                                  warn_text, strlen(warn_text));
     }
 
-    DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.client_response, s->state_machine_id(), "Proxy's Response (Client Conditionals)");
+    dump_header(dbg_ctl_http_hdrs, &s->hdr_info.client_response, s->state_machine_id(), "Proxy's Response (Client Conditionals)");
     return;
   }
   // all other responses (not 304, 412, 416) are handled here
@@ -4839,7 +4839,7 @@ HttpTransact::handle_transform_ready(State *s)
   s->pre_transform_source = s->source;
   s->source               = SOURCE_TRANSFORM;
 
-  DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.transform_response, s->state_machine_id(), "Header From Transform");
+  dump_header(dbg_ctl_http_hdrs, &s->hdr_info.transform_response, s->state_machine_id(), "Header From Transform");
 
   build_response(s, &s->hdr_info.transform_response, &s->hdr_info.client_response, s->client_info.http_version);
 
@@ -4887,7 +4887,7 @@ HttpTransact::set_header_for_transform(State *s, HTTPHdr *base_header)
   //   in the chain
   s->hdr_info.transform_response.field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
 
-  DUMP_HEADER(dbg_ctl_http_hdrs, &s->hdr_info.transform_response, s->state_machine_id(), "Header To Transform");
+  dump_header(dbg_ctl_http_hdrs, &s->hdr_info.transform_response, s->state_machine_id(), "Header To Transform");
 }
 
 void
@@ -4947,7 +4947,7 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
     cache_info->response_get()->field_delete(MIME_FIELD_WWW_AUTHENTICATE, MIME_LEN_WWW_AUTHENTICATE);
   }
 
-  DUMP_HEADER(dbg_ctl_http_hdrs, cache_info->request_get(), s->state_machine_id(), "Cached Request Hdr");
+  dump_header(dbg_ctl_http_hdrs, cache_info->request_get(), s->state_machine_id(), "Cached Request Hdr");
 }
 
 void
@@ -7770,7 +7770,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   ink_assert(s->request_sent_time >= s->response_received_time);
 
   TxnDbg(dbg_ctl_http_trans, "request_sent_time: %" PRId64, (int64_t)s->request_sent_time);
-  DUMP_HEADER(dbg_ctl_http_hdrs, outgoing_request, s->state_machine_id(), "Proxy's Request");
+  dump_header(dbg_ctl_http_hdrs, outgoing_request, s->state_machine_id(), "Proxy's Request");
 
   Metrics::Counter::increment(http_rsb.outgoing_requests);
 }
@@ -7943,10 +7943,10 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   if (dbg_ctl_http_hdrs.on()) {
     if (base_response) {
-      DUMP_HEADER(dbg_ctl_http_hdrs, base_response, s->state_machine_id(), "Base Header for Building Response");
+      dump_header(dbg_ctl_http_hdrs, base_response, s->state_machine_id(), "Base Header for Building Response");
     }
 
-    DUMP_HEADER(dbg_ctl_http_hdrs, outgoing_response, s->state_machine_id(), "Proxy's Response 2");
+    dump_header(dbg_ctl_http_hdrs, outgoing_response, s->state_machine_id(), "Proxy's Response 2");
   }
 
   return;

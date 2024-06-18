@@ -405,9 +405,7 @@ public:
   void
   erase(const Cript::string_view header)
   {
-    auto p = operator[](header);
-
-    p.clear();
+    operator[](header) = "";
   }
 
   Iterator           begin();

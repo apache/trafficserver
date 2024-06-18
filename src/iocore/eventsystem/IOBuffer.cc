@@ -25,6 +25,7 @@
   UIOBuffer.cc
 
 **************************************************************************/
+#include "tscore/Allocator.h"
 #include "tscore/ink_defs.h"
 #include "P_EventSystem.h"
 #include "swoc/Lexicon.h"
@@ -34,7 +35,11 @@
 //
 // General Buffer Allocator
 //
-FreelistAllocator             ioBufAllocator[DEFAULT_BUFFER_SIZES];
+#if TS_USE_ALLOCATOR_METRICS
+MeteredAllocator<FreelistAllocator> ioBufAllocator[DEFAULT_BUFFER_SIZES];
+#else
+FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
+#endif
 ClassAllocator<MIOBuffer>     ioAllocator("ioAllocator", DEFAULT_BUFFER_NUMBER);
 ClassAllocator<IOBufferData>  ioDataAllocator("ioDataAllocator", DEFAULT_BUFFER_NUMBER);
 ClassAllocator<IOBufferBlock> ioBlockAllocator("ioBlockAllocator", DEFAULT_BUFFER_NUMBER);

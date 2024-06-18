@@ -75,7 +75,7 @@ continuation for the :class:`EThread` executes the continuations on this list fo
 thread group and then returns, after which :func:`EThread::execute` loops on processing its event
 queue.
 
-:class:`EventProcessor` is intended to be a singleton and the global instance is :var:`eventProcessor`.
+:class:`EventProcessor` is intended to be a singleton and the global instance is ``eventProcessor``.
 
 In general if a subsystem in the |TS| core is setting up a thread group, it should use code of the
 form
@@ -107,21 +107,13 @@ This registers the group name and type, starts the threads, and returns the even
 Types
 =====
 
-.. type:: EventType
+.. enumerator:: EventType::ET_CALL
 
-   A thread classification value that represents the type of events the thread is expected to process.
+   A predefined :enum:`EventType` which always exists. This is deprecated, use :enumerator:`ET_NET` instead.
 
-.. var:: EventType ET_CALL
+.. enumerator:: EventType::ET_NET
 
-   A predefined :type:`EventType` which always exists. This is deprecated, use :var:`ET_NET` instead.
-
-.. var:: EventType ET_NET
-
-   A synonym for :var:`ET_CALL`.
-
-.. var:: EventProcessor eventProcessor
-
-   The global single instance of :class:`EventProcessor`.
+   A synonym for :enumerator:`ET_CALL`.
 
 .. type:: ThreadFunction
 
@@ -150,7 +142,7 @@ Types
 
    .. function:: EventType registerEventType(const char* name)
 
-      Register an event type by name. This reserves an event type index which is returned as :type:`EventType`.
+      Register an event type by name. This reserves an event type index which is returned as :enum:`EventType`.
 
    .. function:: void execute()
 
@@ -187,6 +179,11 @@ Types
 
 .. class:: EventProcessor
 
+   Main processor for the Event System. The EventProcessor is the core
+   component of the Event System. Once started, it is responsible for
+   creating and managing groups of threads that execute user-defined
+   tasks asynchronously at a given time or periodically.
+
    .. function:: EventType register_event_type(char const * name)
 
       Register an event type with the name :arg:`name`. The unique type index is returned.
@@ -201,3 +198,7 @@ Types
 
       When the :class:`EventProcessor` starts a thread of type :arg:`ev_type` the function :arg:`f`
       will be called with a pointer to the :class:`EThread` instance which is starting.
+
+ .. var:: EventProcessor eventProcessor
+
+    The global singleton instance of :class:`EventProcessor`.

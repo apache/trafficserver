@@ -106,23 +106,6 @@ Crypto::Escape::decode(Cript::string_view str)
   return ret; // RVO
 }
 
-// These may be small, but pulls in a fair amount of Boost code, so better keep them in the .cc
-Cript::string
-Crypto::detail::Digest::hex() const
-{
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::hex(Cript::string(reinterpret_cast<const char *>(_hash), _length));
-  return {reinterpret_cast<const char *>(_hash), _length};
-}
-
-Cript::string
-Crypto::detail::Cipher::hex() const
-{
-  // ToDo: Need to make this without Boost
-  // return boost::algorithm::hex(_message);
-  return _message;
-}
-
 Crypto::SHA256
 Crypto::SHA256::encode(Cript::string_view str)
 {

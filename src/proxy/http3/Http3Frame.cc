@@ -277,13 +277,24 @@ Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len, uint3
       break;
     }
 
-    size_t   id_len  = QUICVariableInt::size(buf + len);
-    uint16_t id      = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
-    len             += id_len;
+    size_t id_len = QUICVariableInt::size(buf + len);
+    if ((len + id_len) >=
+        buf_len) { // if the id is larger than the buffer or at the boundary of the buffer (i.e. no value), it is invalid
+      this->_error_code   = Http3ErrorCode::H3_SETTINGS_ERROR;
+      this->_error_reason = reinterpret_cast<const char *>("invalid SETTINGS frame");
+      break;
+    }
+    uint16_t id  = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
+    len         += id_len;
 
-    size_t   value_len  = QUICVariableInt::size(buf + len);
-    uint64_t value      = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
-    len                += value_len;
+    size_t value_len = QUICVariableInt::size(buf + len);
+    if ((len + value_len) > buf_len) {
+      this->_error_code   = Http3ErrorCode::H3_SETTINGS_ERROR;
+      this->_error_reason = reinterpret_cast<const char *>("invalid SETTINGS frame");
+      break;
+    }
+    uint64_t value  = QUICIntUtil::read_QUICVariableInt(buf + len, buf_len - len);
+    len            += value_len;
 
     // Ignore any SETTINGS identifier it does not understand.
     bool ignore = true;

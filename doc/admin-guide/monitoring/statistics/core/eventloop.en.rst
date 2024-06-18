@@ -12,7 +12,7 @@
    under the License.
 
 .. include:: ../../../../common.defs
-
+.. default-domain:: cpp
 .. _admin-stats-core-eventloop:
 
 Event Loop
@@ -199,6 +199,6 @@ high then it is likely transactions are experiencing significant latency.
 .. ts:stat:: global proxy.process.api.time.*ms integer
 
    A set of statistics that provide a histogram of total time spent in plugins. This is sampled
-   per plugin, rather than the aggregate value for milestone :c:macro:`TS_MILESTONE_PLUGIN_TOTAL`.
+   per plugin, rather than the aggregate value for milestone :enumerator:`TS_MILESTONE_PLUGIN_TOTAL`.
 
    See :ts:stat:`proxy.process.eventloop.time.*ms` for technical details.

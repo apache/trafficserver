@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrFieldRemove
 ********************
@@ -43,7 +43,7 @@ the header then nothing is done.
 
    Removing the field does not destroy the field. It only detaches the
    field, hiding it from the printed output. The field can be
-   reattached with a call to :c:func:`TSMimeHdrFieldAppend`.  If you
+   reattached with a call to :func:`TSMimeHdrFieldAppend`.  If you
    do not use the detached field you should destroy it with a call to
-   :c:func:`TSMimeHdrFieldDestroy` and release the handle field with a
-   call to :c:func:`TSHandleMLocRelease`.
+   :func:`TSMimeHdrFieldDestroy` and release the handle field with a
+   call to :func:`TSHandleMLocRelease`.

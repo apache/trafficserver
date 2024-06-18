@@ -96,7 +96,7 @@ create_directory(const std::string &dir)
 }
 
 static int
-remove_function(const char *path, const struct stat *s, int flag, struct FTW *f)
+remove_function(const char *path, [[maybe_unused]] const struct stat *s, int flag, [[maybe_unused]] struct FTW *f)
 {
   int (*rm_func)(const char *);
 
@@ -115,7 +115,7 @@ remove_function(const char *path, const struct stat *s, int flag, struct FTW *f)
 }
 
 static int
-remove_inside_function(const char *path, const struct stat *s, int flag, struct FTW *f)
+remove_inside_function(const char *path, [[maybe_unused]] const struct stat *s, int flag, [[maybe_unused]] struct FTW *f)
 {
   std::string path_to_remove = path;
   if (path_to_remove != remove_path) {

@@ -139,7 +139,7 @@ Cript::IP::sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_
 }
 
 void
-ConnBase::TcpInfo::initialize()
+detail::ConnBase::TcpInfo::initialize()
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
   if (!_ready) {
@@ -159,7 +159,7 @@ ConnBase::TcpInfo::initialize()
 }
 
 Cript::string_view
-ConnBase::TcpInfo::log()
+detail::ConnBase::TcpInfo::log()
 {
   initialize();
   // We intentionally do not use the old tcpinfo that may be stored, since we may

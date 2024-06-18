@@ -68,6 +68,8 @@ A header can also be removed by using the ``erase`` method, which is a little mo
 
   req.erase("X-Foo");
 
+.. note:: There is also a Cripts Bundle for headers, see :ref:`Bundles <cripts-bundles-headers>`.
+
 .. _cripts-headers-iterators:
 
 Iterators
@@ -161,5 +163,3 @@ fresh or stale. Example usage of the cache status:
       // Do something
     }
   }
-
-..

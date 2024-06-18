@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-http-transformations-null-transform:
 
@@ -169,7 +170,7 @@ Below is an overview of the null transform plugin:
     send ``WRITE_READY`` events when they need more data; when data is
     available, the upstream vconnections re-enable the downstream
     vconnections. In this instance, the ``TSVIOReenable`` function sends
-    ``TS_EVENT_IMMEDIATE``.
+    :enumerator:`TS_EVENT_IMMEDIATE`.
 
     **Passing Data Through a Transformation**
     {#PassingDataThroughaTransformation}

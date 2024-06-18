@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSRPCRegister
 *************
@@ -116,7 +116,7 @@ the plugin is using. A null terminated string is expected.
 
 :arg:`yamlcpp_lib_len` should be the length of the yamlcpp_lib_len string.
 
-:c:func:`TSRPCRegisterMethodHandler` Add new registered method handler to the JSON RPC engine.
+:func:`TSRPCRegisterMethodHandler` Add new registered method handler to the JSON RPC engine.
 
 :arg:`name` call name to be exposed by the RPC Engine, this should match the incoming request.
 If you register **get_stats** then the incoming jsonrpc call should have this very
@@ -124,7 +124,7 @@ same name in the **method** field. .. {...'method': 'get_stats'...}.
 
 :arg:`name_len` The length of the name string.
 
-:arg:`callback` The function to be registered. Check :c:func:`TSRPCMethodCb`.
+:arg:`callback` The function to be registered. Check :type:`TSRPCMethodCb`.
 
 :arg:`info` TSRPCProviderHandle pointer,
 this will be used to provide more context information about this call. It is expected to use the one created by ``TSRPCRegister``.
@@ -134,7 +134,7 @@ manager will use this object to perform certain actions. A copy of this object w
 
 Please check :ref:`jsonrpc_development` for examples.
 
-:c:func:`TSRPCRegisterNotificationHandler` Add new registered method handler to the JSON RPC engine.
+:func:`TSRPCRegisterNotificationHandler` Add new registered method handler to the JSON RPC engine.
 
 :arg:`name` call name to be exposed by the RPC Engine, this should match the incoming request.
 If you register **get_stats** then the incoming jsonrpc call should have this very
@@ -142,7 +142,7 @@ same name in the **method** field. .. {...'method': 'get_stats'...}.
 
 :arg:`name_len` The length of the name string.
 
-:arg:`callback` The function to be registered. Check :c:func:`TSRPCNotificationCb`.
+:arg:`callback` The function to be registered. Check :type:`TSRPCNotificationCb`.
 
 :arg:`info` TSRPCProviderHandle pointer,
 this will be used to provide more context information about this call. It is expected to use the one created by ``TSRPCRegister``.
@@ -152,7 +152,7 @@ manager will use this object to perform certain actions. A copy of this object w
 
 Please check :ref:`jsonrpc_development` for examples.
 
-:c:func:`TSRPCHandlerDone` Function to notify the JSONRPC engine that the plugin handler is finished processing the current request.
+:func:`TSRPCHandlerDone` Function to notify the JSONRPC engine that the plugin handler is finished processing the current request.
 This function must be used when implementing a 'method' rpc handler. Once the work is done and the
 response is ready to be sent back to the client, this function should be called.
 Is expected to set the YAML node as response. If the response is empty a **success** message will be
@@ -186,7 +186,7 @@ Example:
         }
 
 
-:c:func:`TSRPCHandlerError` Function to notify the JSONRPC engine that the plugin handler is finished processing the current request with an error.
+:func:`TSRPCHandlerError` Function to notify the JSONRPC engine that the plugin handler is finished processing the current request with an error.
 
 :arg:`code` Should be the error number for this particular error.
 
@@ -231,22 +231,22 @@ Example:
 
 .. important::
 
-    You must always inform the RPC after processing the jsonrpc request. Either by calling :c:func:`TSRPCHandlerDone` or :c:func:`TSRPCHandlerError`
+    You must always inform the RPC after processing the jsonrpc request. Either by calling :func:`TSRPCHandlerDone` or :func:`TSRPCHandlerError`
     . Calling either of these functions twice is a serious error. You should call exactly one of these functions.
 
 Return Values
 =============
 
-:c:func:`TSRPCRegister` returns :const:`TS_SUCCESS` if all is good, :const:`TS_ERROR` if the :arg:`yamlcpp_lib_version`
+:func:`TSRPCRegister` returns :enumerator:`TS_SUCCESS` if all is good, :enumerator:`TS_ERROR` if the :arg:`yamlcpp_lib_version`
 was not set, or the ``yamlcpp`` version does not match with the one used internally in TS.
 
-:c:func:`TSRPCRegisterMethodHandler` :const:`TS_SUCCESS` if the handler was successfully registered, :const:`TS_ERROR` if the handler is already registered.
+:func:`TSRPCRegisterMethodHandler` :enumerator:`TS_SUCCESS` if the handler was successfully registered, :enumerator:`TS_ERROR` if the handler is already registered.
 
-:c:func:`TSRPCRegisterNotificationHandler`:const:`TS_SUCCESS` if the handler was successfully registered, :const:`TS_ERROR` if the handler is already registered.
+:func:`TSRPCRegisterNotificationHandler`:enumerator:`TS_SUCCESS` if the handler was successfully registered, :enumerator:`TS_ERROR` if the handler is already registered.
 
-:c:func:`TSRPCHandlerDone` Returns :const:`TS_SUCCESS` if no issues, or  :const:`TS_ERROR` if an issue was found.
+:func:`TSRPCHandlerDone` Returns :enumerator:`TS_SUCCESS` if no issues, or  :enumerator:`TS_ERROR` if an issue was found.
 
-:c:func:`TSRPCHandlerError` Returns :const:`TS_SUCCESS` if no issues, or  :const:`TS_ERROR` if an issue was found.
+:func:`TSRPCHandlerError` Returns :enumerator:`TS_SUCCESS` if no issues, or  :enumerator:`TS_ERROR` if an issue was found.
 
 
 See also

@@ -72,6 +72,8 @@ namespace Bundle
     void operator=(const self_type &) = delete;
     virtual ~Base()                   = default;
 
+    virtual const Cript::string &name() const = 0;
+
     void
     needCallback(Cript::Callbacks cb)
     {
@@ -141,16 +143,7 @@ namespace Bundle
 
   protected:
     unsigned _callbacks = 0;
-
   }; // Class Base
-
-  // These are used in the preamble, to see if a function is implemented in a bundle.
-  template <typename T>
-  bool
-  checkDoRemap()
-  {
-    return (std::is_same_v<decltype(&T::doRemap), void (T::*)()>);
-  }
 
 } // namespace Bundle
 

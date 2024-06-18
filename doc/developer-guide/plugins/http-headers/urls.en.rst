@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 .. _developer-plugins-http-headers-urls:
 
@@ -46,56 +47,56 @@ To facilitate fast comparisons and reduce storage size, Traffic Server
 defines several preallocated scheme names.
 
 "file"
-   .. c:var:: char const * TS_URL_SCHEME_FILE
-   .. c:var:: int TS_URL_LEN_FILE
+   .. var:: char const * TS_URL_SCHEME_FILE
+   .. var:: int TS_URL_LEN_FILE
 
 "ftp"
-   .. c:var:: char const * TS_URL_SCHEME_FTP
-   .. c:var:: int TS_URL_LEN_FTP
+   .. var:: char const * TS_URL_SCHEME_FTP
+   .. var:: int TS_URL_LEN_FTP
 
 "gopher"
-   .. c:var:: char const * TS_URL_SCHEME_GOPHER
-   .. c:var:: int TS_URL_LEN_GOPHER
+   .. var:: char const * TS_URL_SCHEME_GOPHER
+   .. var:: int TS_URL_LEN_GOPHER
 
 "http"
-   .. c:var:: char const * TS_URL_SCHEME_HTTP
-   .. c:var:: int TS_URL_LEN_HTTP
+   .. var:: char const * TS_URL_SCHEME_HTTP
+   .. var:: int TS_URL_LEN_HTTP
 
 "https"
-   .. c:var:: char const * TS_URL_SCHEME_HTTPS
-   .. c:var:: int TS_URL_LEN_HTTPS
+   .. var:: char const * TS_URL_SCHEME_HTTPS
+   .. var:: int TS_URL_LEN_HTTPS
 
 "mailto"
-   .. c:var:: char const * TS_URL_SCHEME_MAILTO
-   .. c:var:: int TS_URL_LEN_MAILTO
+   .. var:: char const * TS_URL_SCHEME_MAILTO
+   .. var:: int TS_URL_LEN_MAILTO
 
 "news"
-   .. c:var:: char const * TS_URL_SCHEME_NEWS
-   .. c:var:: int TS_URL_LEN_NEWS
+   .. var:: char const * TS_URL_SCHEME_NEWS
+   .. var:: int TS_URL_LEN_NEWS
 
 "nntp"
-   .. c:var:: char const * TS_URL_SCHEME_NNTP
-   .. c:var:: int TS_URL_LEN_NNTP
+   .. var:: char const * TS_URL_SCHEME_NNTP
+   .. var:: int TS_URL_LEN_NNTP
 
 "prospero"
-   .. c:var:: char const * TS_URL_SCHEME_PROSPERO
-   .. c:var:: int TS_URL_LEN_PROSPERO
+   .. var:: char const * TS_URL_SCHEME_PROSPERO
+   .. var:: int TS_URL_LEN_PROSPERO
 
 "telnet"
-   .. c:var:: char const * TS_URL_SCHEME_TELNET
-   .. c:var:: int TS_URL_LEN_TELNET
+   .. var:: char const * TS_URL_SCHEME_TELNET
+   .. var:: int TS_URL_LEN_TELNET
 
 "wais"
-   .. c:var:: char const * TS_URL_SCHEME_WAIS
-   .. c:var:: int TS_URL_LEN_WAIS
+   .. var:: char const * TS_URL_SCHEME_WAIS
+   .. var:: int TS_URL_LEN_WAIS
 
 "ws"
-   .. c:var:: char const * TS_URL_SCHEME_WS
-   .. c:var:: int TS_URL_LEN_WS
+   .. var:: char const * TS_URL_SCHEME_WS
+   .. var:: int TS_URL_LEN_WS
 
 "wss"
-   .. c:var:: char const * TS_URL_SCHEME_WSS
-   .. c:var:: int TS_URL_LEN_WSS
+   .. var:: char const * TS_URL_SCHEME_WSS
+   .. var:: int TS_URL_LEN_WSS
 
 The scheme names above are defined in ``apidefs.h``. When Traffic Server sets the scheme portion of
 the URL (or any portion for that matter), it quickly checks to see if the new value is one of the
@@ -108,31 +109,31 @@ spelling errors.
 
 Traffic Server **URL functions** are listed below:
 
-:c:func:`TSUrlClone`
-:c:func:`TSUrlCopy`
-:c:func:`TSUrlCreate`
-:c:func:`TSUrlPrint`
-:c:func:`TSUrlFtpTypeGet`
-:c:func:`TSUrlFtpTypeSet`
-:c:func:`TSUrlHostGet`
-:c:func:`TSUrlHostSet`
-:c:func:`TSUrlHttpFragmentGet`
-:c:func:`TSUrlHttpFragmentSet`
-:c:func:`TSUrlHttpParamsGet`
-:c:func:`TSUrlHttpParamsSet`
-:c:func:`TSUrlHttpQueryGet`
-:c:func:`TSUrlHttpQuerySet`
-:c:func:`TSUrlLengthGet`
-:c:func:`TSUrlParse`
-:c:func:`TSUrlPasswordGet`
-:c:func:`TSUrlPasswordSet`
-:c:func:`TSUrlPathGet`
-:c:func:`TSUrlPathSet`
-:c:func:`TSUrlPortGet`
-:c:func:`TSUrlRawPortGet`
-:c:func:`TSUrlPortSet`
-:c:func:`TSUrlSchemeGet`
-:c:func:`TSUrlSchemeSet`
-:c:func:`TSUrlStringGet`
-:c:func:`TSUrlUserGet`
-:c:func:`TSUrlUserSet`
+:func:`TSUrlClone`
+:func:`TSUrlCopy`
+:func:`TSUrlCreate`
+:func:`TSUrlPrint`
+:func:`TSUrlFtpTypeGet`
+:func:`TSUrlFtpTypeSet`
+:func:`TSUrlHostGet`
+:func:`TSUrlHostSet`
+:func:`TSUrlHttpFragmentGet`
+:func:`TSUrlHttpFragmentSet`
+:func:`TSUrlHttpParamsGet`
+:func:`TSUrlHttpParamsSet`
+:func:`TSUrlHttpQueryGet`
+:func:`TSUrlHttpQuerySet`
+:func:`TSUrlLengthGet`
+:func:`TSUrlParse`
+:func:`TSUrlPasswordGet`
+:func:`TSUrlPasswordSet`
+:func:`TSUrlPathGet`
+:func:`TSUrlPathSet`
+:func:`TSUrlPortGet`
+:func:`TSUrlRawPortGet`
+:func:`TSUrlPortSet`
+:func:`TSUrlSchemeGet`
+:func:`TSUrlSchemeSet`
+:func:`TSUrlStringGet`
+:func:`TSUrlUserGet`
+:func:`TSUrlUserSet`

@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSMimeHdrPrint
 **************
@@ -28,10 +28,10 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSMimeHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp)
+.. function:: void TSMimeHdrPrint(TSMLoc offset, TSIOBuffer iobufp)
 
 Description
 ===========
 
-Formats the MIME header located at :arg:`hdr_loc` within :arg:`bufp` into the
-:c:type:`TSIOBuffer` :arg:`iobufp`.
+Formats the MIME header located at :arg:`hdr_loc` into the
+:cpp:type:`TSIOBuffer` :arg:`iobufp`.

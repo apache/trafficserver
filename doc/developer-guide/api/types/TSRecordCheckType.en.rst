@@ -15,6 +15,7 @@
    permissions and limitations under the License.
 
 .. include:: ../../../common.defs
+.. default-domain:: cpp
 
 TSRecordCheckType
 *****************
@@ -26,20 +27,20 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:type:: TSRecordCheckType
+.. enum:: TSRecordCheckType
 
 Enum typedef.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSRecordCheckType TS_RECORDCHECK_NULL
+.. enumerator:: TSRecordCheckType::TS_RECORDCHECK_NULL
 
-.. c:member:: TSRecordCheckType TS_RECORDCHECK_STR
+.. enumerator:: TSRecordCheckType::TS_RECORDCHECK_STR
 
-.. c:member:: TSRecordCheckType TS_RECORDCHECK_INT
+.. enumerator:: TSRecordCheckType::TS_RECORDCHECK_INT
 
-.. c:member:: TSRecordCheckType TS_RECORDCHECK_IP
+.. enumerator:: TSRecordCheckType::TS_RECORDCHECK_IP
 
 Description
 ===========

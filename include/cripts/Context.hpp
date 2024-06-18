@@ -23,9 +23,9 @@
 #include "ts/ts.h"
 
 #include "cripts/Instance.hpp"
-
-// Some compile time options
-#define USE_CONTEXT_POOL 1
+#include "cripts/Headers.hpp"
+#include "cripts/Urls.hpp"
+#include "cripts/Connections.hpp"
 
 // These are pretty arbitrary for now
 constexpr int CONTEXT_DATA_SLOTS = 4;
@@ -38,66 +38,24 @@ class Context
   using DataType  = std::variant<integer, double, boolean, void *, Cript::string>;
 
 public:
-  Context()                       = delete;
-  Context(const Context &)        = delete;
-  void operator=(const Context &) = delete;
+  Context()                         = delete;
+  Context(const self_type &)        = delete;
+  void operator=(const self_type &) = delete;
 
-  // Freelist management, a thread_local freelist of Context objects.
-  static self_type *
-  factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst)
+  // This will, and should, only be called via the ProxyAllocator as used in the factory.
+  Context(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst) : rri(rri_ptr), p_instance(inst)
   {
-#if USE_CONTEXT_POOL
-    if (_contexts) {
-      auto tmp = _contexts;
-
-      _contexts = _contexts->_next;
-      return new (tmp) self_type(txn_ptr, ssn_ptr, rri_ptr, inst);
-    } else {
-      return new self_type(txn_ptr, ssn_ptr, rri_ptr, inst);
-    }
-#else
-    return new self_type(txn_ptr, ssn_ptr, rri_ptr, inst);
-#endif
-  }
-
-  void
-  release()
-  {
-#if USE_CONTEXT_POOL
-    this->_next = _contexts;
-    _contexts   = this;
-#else
-    delete this;
-#endif
+    state.txnp    = txn_ptr;
+    state.ssnp    = ssn_ptr;
+    state.context = this;
   }
 
   // Clear the cached header mloc's etc.
-  void
-  reset()
-  {
-    // Clear the initialized headers before calling next hook
-    if (_client_resp_header.initialized()) {
-      _client_resp_header.reset();
-    }
-    if (_server_resp_header.initialized()) {
-      _server_resp_header.reset();
-    }
-    if (_client_req_header.initialized()) {
-      _client_req_header.reset();
-    }
-    if (_server_req_header.initialized()) {
-      _server_req_header.reset();
-    }
+  void reset();
 
-    // Clear the initialized URLs before calling next hook
-    // Note: The client_url doesn't need to be cleared, since it's from the RRI struct
-    if (_cache_url.initialized()) {
-      _cache_url.reset();
-    }
-    if (_pristine_url.initialized()) {
-      _pristine_url.reset();
-    }
-  }
+  // Freelist management, a thread_local freelist of Context objects. These are implemented in Lulu.cc.
+  static self_type *factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst);
+  void              release();
 
   // These fields are preserving the parameters as setup in DoRemap()
   Cript::Transaction                       state;
@@ -109,18 +67,12 @@ public:
   // These are private, but needs to be visible to our friend classes that
   // depends on the Context.
 private:
-  // This can be private, since all constructors should go via the factory
-  Context(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst) : rri(rri_ptr), p_instance(inst)
-  {
-    state.txnp    = txn_ptr;
-    state.ssnp    = ssn_ptr;
-    state.context = this;
-  }
-
   friend class Client::Request;
   friend class Client::Response;
   friend class Client::Connection;
   friend class Client::URL;
+  friend class Remap::From::URL;
+  friend class Remap::To::URL;
   friend class Server::Request;
   friend class Server::Response;
   friend class Server::Connection;
@@ -135,16 +87,14 @@ private:
   Client::Request    _client_req_header;
   Client::Connection _client_conn;
   Client::URL        _client_url;
+  Remap::From::URL   _remap_from_url;
+  Remap::To::URL     _remap_to_url;
   Pristine::URL      _pristine_url;
   Server::Response   _server_resp_header;
   Server::Request    _server_req_header;
   Server::Connection _server_conn;
   Cache::URL         _cache_url;
   Parent::URL        _parent_url;
-
-  // For the thread_local freelist
-  static thread_local self_type *_contexts;
-  self_type                     *_next = nullptr;
 }; // End class Context
 
 } // namespace Cript

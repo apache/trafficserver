@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. default-domain:: c
+.. default-domain:: cpp
 
 TSHttpTxnServerAddrSet
 **********************
@@ -44,7 +44,7 @@ done as the address of the server is already known.
 Return Value
 ============
 
-:data:`TS_ERROR` is returned if :arg:`addr` does not contain a valid
+:enumerator:`TS_ERROR` is returned if :arg:`addr` does not contain a valid
 IPv4 or IPv6 address with a valid (non-zero) port.
 
 Notes

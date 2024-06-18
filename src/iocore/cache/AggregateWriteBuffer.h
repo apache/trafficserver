@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "P_CacheDoc.h"
+
 #include "iocore/eventsystem/Continuation.h"
 
 #include "tscore/ink_memory.h"
@@ -61,6 +63,50 @@ public:
   bool is_empty() const;
 
   /**
+   * Add a new document to the buffer.
+   *
+   * This method copies the provided document into the buffer.
+   *
+   * This method may only be called if there is space at the current
+   * buffer position for the document, and the document has a correct len
+   * field. Use reset_buffer_pos to reset to the beginning of the buffer
+   * when it gets full. If this condition is not met, the new document may
+   * overrun the buffer.
+   *
+   * The buffer position will be updated to the end of the document's data
+   * and approx_size will be subtracted from the bytes pending aggregation.
+   *
+   * @param document: A pointer to the document to add to the buffer. It must
+   *   have a correct len field, and its headers and data must follow it. This
+   *   requires a pointer to a full document buffer - not just the Doc struct.
+   * @param approx_size The approximate size of all headers and data as
+   *   determined by Stripe::round_to_approx_size. The document may not need
+   *   this much space.
+   *
+   */
+  void add(Doc const *document, int approx_size);
+
+  /**
+   * Create a new document in the buffer.
+   *
+   * This method may only be called if there is space at the current
+   * buffer position for the document. Use reset_buffer_pos to reset
+   * to the beginning of the buffer when it gets full. If this
+   * condition is not met, the new document may overrun the buffer.
+   *
+   * The buffer position will be updated to the end of the document's data
+   * and approx_size will be subtracted from the bytes pending aggregation.
+   *
+   * The new document will be uninitialized.
+   *
+   * @param approx_size The approximate size of all headers and data as
+   *   determined by Stripe::round_to_approx_size. The document may not need
+   *   this much space.
+   * @return Returns a non-owning pointer to the new document.
+   */
+  Doc *emplace(int approx_size);
+
+  /**
    * Flush the internal buffer to disk.
    *
    * This method should be called during shutdown. It must not be called
@@ -90,7 +136,6 @@ public:
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
   char                                    *get_buffer();
   int                                      get_buffer_pos() const;
-  void                                     add_buffer_pos(int size);
   void                                     seek(int offset);
   void                                     reset_buffer_pos();
   int                                      get_bytes_pending_aggregation() const;
@@ -119,12 +164,6 @@ inline int
 AggregateWriteBuffer::get_buffer_pos() const
 {
   return this->_buffer_pos;
-}
-
-inline void
-AggregateWriteBuffer::add_buffer_pos(int size)
-{
-  this->_buffer_pos += size;
 }
 
 inline void
