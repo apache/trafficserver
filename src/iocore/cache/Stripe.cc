@@ -1123,14 +1123,12 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
   }
   // move data
   if (vc->write_len) {
-    {
-      [[maybe_unused]] ProxyMutex *mutex = this->mutex.get();
-      ink_assert(mutex->thread_holding == this_ethread());
+    [[maybe_unused]] ProxyMutex const *mutex = this->mutex.get();
+    ink_assert(mutex->thread_holding == this_ethread());
 
-// ToDo: Why are these for debug only ?
-      Metrics::Counter::increment(cache_rsb.write_backlog_failure);
-      Metrics::Counter::increment(this->cache_vol->vol_rsb.write_backlog_failure);
-    }
+    Metrics::Counter::increment(cache_rsb.write_backlog_failure);
+    Metrics::Counter::increment(this->cache_vol->vol_rsb.write_backlog_failure);
+
     if (vc->f.rewrite_resident_alt) {
       doc->set_data(vc->write_len, res_alt_blk, 0);
     } else {
