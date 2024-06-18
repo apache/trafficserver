@@ -27,12 +27,8 @@
 
 namespace
 {
-#ifdef DEBUG
-
 DbgCtl dbg_ctl_iocore_net_poll{"iocore_net_poll"};
 DbgCtl dbg_ctl_v_iocore_net_poll{"v_iocore_net_poll"};
-
-#endif
 } // end anonymous namespace
 
 PollCont::PollCont(Ptr<ProxyMutex> &m, int pt)

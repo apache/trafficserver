@@ -288,8 +288,9 @@ public:
    *   - Adding a Doc to the virtual connection header would exceed the
    *       maximum fragment size.
    *   - vc->f.readers is not set (this virtual connection is not an evacuator),
-   *       the writes waiting to be aggregated exceed the maximum backlog,
-   *       and the virtual connection has a non-zero write length.
+   *       is full, the writes waiting to be aggregated exceed the maximum
+   *       backlog plus the space in the aggregatation buffer, and the virtual
+   *       connection has a non-zero write length.
    *
    * @param vc: The virtual connection.
    * @return: Returns true if the operation was successfull, otherwise false.
