@@ -58,7 +58,7 @@ TSRemapDeleteInstance(void *ih)
 }
 
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   return TS_SUCCESS;
 }
