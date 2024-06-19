@@ -488,7 +488,7 @@ ssl_next_protos_advertised_callback(SSL *ssl, const unsigned char **out, unsigne
 
   ink_assert(alpns);
   if (alpns) {
-    return alpns->advertise_next_protocol(ssl, out, outlen);
+    return alpns->advertise_next_protocol(out, outlen);
   }
 
   return SSL_TLSEXT_ERR_NOACK;
@@ -502,7 +502,7 @@ ssl_alpn_select_callback(SSL *ssl, const unsigned char **out, unsigned char *out
 
   ink_assert(alpns);
   if (alpns) {
-    return alpns->select_next_protocol(ssl, out, outlen, in, inlen);
+    return alpns->select_next_protocol(out, outlen, in, inlen);
   }
 
   return SSL_TLSEXT_ERR_NOACK;
@@ -946,8 +946,7 @@ SSLMultiCertConfigLoader::default_server_ssl_ctx()
 }
 
 static bool
-SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams * /* params ATS_UNUSED */, const char *keyPath, const char *secret_data,
-                     int secret_data_len)
+SSLPrivateKeyHandler(SSL_CTX *ctx, const char *keyPath, const char *secret_data, int secret_data_len)
 {
   EVP_PKEY *pkey = nullptr;
 #if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
@@ -2407,7 +2406,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       Dbg(dbg_ctl_ssl_load, "empty private key for public key %s", cert_names_list[i].c_str());
       secret_key_data = secret_data;
     }
-    if (!SSLPrivateKeyHandler(ctx, params, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
+    if (!SSLPrivateKeyHandler(ctx, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
       SSLError("failed to load certificate: %s of length %ld with key path: %s", cert_names_list[i].c_str(), secret_key_data.size(),
                keyPath.empty() ? "[empty key path]" : keyPath.c_str());
       return false;

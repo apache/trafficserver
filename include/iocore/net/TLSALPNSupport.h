@@ -46,8 +46,8 @@ public:
   void clear();
   bool setSelectedProtocol(const unsigned char *proto, unsigned int len);
 
-  int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned *outlen);
-  int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen);
+  int advertise_next_protocol(const unsigned char **out, unsigned *outlen);
+  int select_next_protocol(const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen);
 
   Continuation *
   endpoint() const

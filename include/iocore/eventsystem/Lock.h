@@ -240,7 +240,7 @@ public:
 
   */
   void
-  init(const char * /* name  ATS_UNUSED */ = "UnnamedMutex")
+  init()
   {
     ink_mutex_init(&the_mutex);
   }

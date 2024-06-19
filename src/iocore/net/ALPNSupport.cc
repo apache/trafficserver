@@ -88,7 +88,7 @@ ALPNSupport::setSelectedProtocol(const unsigned char *proto, unsigned int len)
 }
 
 int
-ALPNSupport::advertise_next_protocol(SSL * /* ssl ATS_UNUSED */, const unsigned char **out, unsigned *outlen)
+ALPNSupport::advertise_next_protocol(const unsigned char **out, unsigned *outlen)
 {
   if (this->getNPN(out, outlen)) {
     // Successful return tells OpenSSL to advertise.
@@ -98,8 +98,7 @@ ALPNSupport::advertise_next_protocol(SSL * /* ssl ATS_UNUSED */, const unsigned 
 }
 
 int
-ALPNSupport::select_next_protocol(SSL * /* ssl ATS_UNUSED */, const unsigned char **out, unsigned char *outlen,
-                                  const unsigned char *in, unsigned inlen)
+ALPNSupport::select_next_protocol(const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen)
 {
   const unsigned char *npnptr  = nullptr;
   unsigned int         npnsize = 0;
