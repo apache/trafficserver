@@ -85,7 +85,7 @@ static_assert(ConnectionTracker::Group::Clock::period::den >= 1000);
 namespace
 {
 bool
-Config_Update_Conntrack_Min(const char *name, RecDataT dtype, RecData data, void *cookie)
+Config_Update_Conntrack_Min(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<ConnectionTracker::TxnConfig *>(cookie);
 
@@ -97,7 +97,7 @@ Config_Update_Conntrack_Min(const char *name, RecDataT dtype, RecData data, void
 }
 
 bool
-Config_Update_Conntrack_Max(const char *name, RecDataT dtype, RecData data, void *cookie)
+Config_Update_Conntrack_Max(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<ConnectionTracker::TxnConfig *>(cookie);
 
@@ -109,7 +109,7 @@ Config_Update_Conntrack_Max(const char *name, RecDataT dtype, RecData data, void
 }
 
 bool
-Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, void *cookie)
+Config_Update_Conntrack_Match(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<ConnectionTracker::TxnConfig *>(cookie);
 
@@ -129,8 +129,8 @@ Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, vo
 }
 
 bool
-Config_Update_Conntrack_Server_Alert_Delay_Helper(const char *name, RecDataT dtype, RecData data, void *cookie,
-                                                  std::chrono::seconds &alert_delay)
+Config_Update_Conntrack_Server_Alert_Delay_Helper(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data,
+                                                  void * /* cookie ATS_UNUSED */, std::chrono::seconds &alert_delay)
 {
   if (RECD_INT == dtype && data.rec_int >= 0) {
     alert_delay = std::chrono::seconds(data.rec_int);
@@ -464,7 +464,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::MatchType ty
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::Group::Key const &key)
+bwformat(BufferWriter &w, bwf::Spec const & /* spec ATS_UNUSED */, ConnectionTracker::Group::Key const &key)
 {
   switch (key._match_type) {
   case ConnectionTracker::MATCH_BOTH:
@@ -484,7 +484,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::Group::Key c
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, ConnectionTracker::Group const &g)
+bwformat(BufferWriter &w, bwf::Spec const & /* spec ATS_UNUSED */, ConnectionTracker::Group const &g)
 {
   switch (g._match_type) {
   case ConnectionTracker::MATCH_BOTH:

@@ -86,14 +86,14 @@ public:
   ~TerminalTest() { TEST_DONE(); }
 
   int
-  terminal_event(int event, void *e)
+  terminal_event(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
   {
     delete this;
     return 0;
   }
 
   void
-  handle_cache_event(int event, CacheTestBase *e) override
+  handle_cache_event(int /* event ATS_UNUSED */, CacheTestBase * /* e ATS_UNUSED */) override
   {
     delete this;
   }

@@ -42,7 +42,7 @@ DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 } // end anonymous namespace
 
 int
-ControlQUIC::SNIAction(SSL &ssl, const Context &ctx) const
+ControlQUIC::SNIAction([[maybe_unused]] SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
 #if TS_USE_QUIC == 1
   if (enable_quic) {
@@ -68,7 +68,7 @@ ControlQUIC::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 int
-ControlH2::SNIAction(SSL &ssl, const Context &ctx) const
+ControlH2::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   auto snis  = TLSSNISupport::getInstance(&ssl);
   auto alpns = ALPNSupport::getInstance(&ssl);
@@ -89,7 +89,7 @@ ControlH2::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 int
-HTTP2BufferWaterMark::SNIAction(SSL &ssl, const Context &ctx) const
+HTTP2BufferWaterMark::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   if (auto snis = TLSSNISupport::getInstance(&ssl)) {
     snis->hints_from_sni.http2_buffer_water_mark = value;
@@ -98,7 +98,7 @@ HTTP2BufferWaterMark::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 int
-HTTP2InitialWindowSizeIn::SNIAction(SSL &ssl, const Context &ctx) const
+HTTP2InitialWindowSizeIn::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   if (auto snis = TLSSNISupport::getInstance(&ssl)) {
     snis->hints_from_sni.http2_initial_window_size_in = value;
@@ -107,7 +107,7 @@ HTTP2InitialWindowSizeIn::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 int
-HTTP2MaxSettingsFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
+HTTP2MaxSettingsFramesPerMinute::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   if (auto snis = TLSSNISupport::getInstance(&ssl)) {
     snis->hints_from_sni.http2_max_settings_frames_per_minute = value;
@@ -116,7 +116,7 @@ HTTP2MaxSettingsFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 int
-HTTP2MaxPingFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
+HTTP2MaxPingFramesPerMinute::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   if (auto snis = TLSSNISupport::getInstance(&ssl)) {
     snis->hints_from_sni.http2_max_ping_frames_per_minute = value;
@@ -125,7 +125,7 @@ HTTP2MaxPingFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 int
-HTTP2MaxPriorityFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
+HTTP2MaxPriorityFramesPerMinute::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   if (auto snis = TLSSNISupport::getInstance(&ssl)) {
     snis->hints_from_sni.http2_max_priority_frames_per_minute = value;
@@ -134,7 +134,7 @@ HTTP2MaxPriorityFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 int
-HTTP2MaxRstStreamFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
+HTTP2MaxRstStreamFramesPerMinute::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   if (auto snis = TLSSNISupport::getInstance(&ssl)) {
     snis->hints_from_sni.http2_max_rst_stream_frames_per_minute = value;
@@ -143,7 +143,7 @@ HTTP2MaxRstStreamFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 int
-HTTP2MaxContinuationFramesPerMinute::SNIAction(SSL &ssl, const Context &ctx) const
+HTTP2MaxContinuationFramesPerMinute::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   if (auto snis = TLSSNISupport::getInstance(&ssl)) {
     snis->hints_from_sni.http2_max_continuation_frames_per_minute = value;
@@ -293,7 +293,7 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
 }
 
 int
-VerifyClient::SNIAction(SSL &ssl, const Context &ctx) const
+VerifyClient::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   auto snis   = TLSSNISupport::getInstance(&ssl);
   auto ssl_vc = SSLNetVCAccess(&ssl);
@@ -312,21 +312,23 @@ VerifyClient::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 bool
-VerifyClient::TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const
+VerifyClient::TestClientSNIAction(const char * /* servername ATS_UNUSED */, const IpEndpoint & /* ep ATS_UNUSED */,
+                                  int & /* policy ATS_UNUSED */) const
 {
   // This action is triggered by a SNI if it was set
   return true;
 }
 
 int
-HostSniPolicy::SNIAction(SSL &ssl, const Context &ctx) const
+HostSniPolicy::SNIAction(SSL & /* ssl ATS_UNUSED */, const Context & /* ctx ATS_UNUSED */) const
 {
   // On action this doesn't do anything
   return SSL_TLSEXT_ERR_OK;
 }
 
 bool
-HostSniPolicy::TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &in_policy) const
+HostSniPolicy::TestClientSNIAction(const char * /* servername ATS_UNUSED */, const IpEndpoint & /* ep ATS_UNUSED */,
+                                   int &in_policy) const
 {
   // Update the policy when testing
   in_policy = this->policy;
@@ -340,7 +342,7 @@ TLSValidProtocols::TLSValidProtocols(unsigned long protocols) : unset(false), pr
 }
 
 int
-TLSValidProtocols::SNIAction(SSL &ssl, const Context & /* ctx */) const
+TLSValidProtocols::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   auto snis = TLSSNISupport::getInstance(&ssl);
   auto tbs  = TLSBasicSupport::getInstance(&ssl);
@@ -403,7 +405,7 @@ SNI_IpAllow::load(swoc::TextView content, swoc::TextView server_name)
 }
 
 int
-SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const &ctx) const
+SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED */) const
 {
   // i.e, ip filtering is not required
   if (ip_addrs.count() == 0) {
@@ -425,13 +427,14 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const &ctx) const
 }
 
 bool
-SNI_IpAllow::TestClientSNIAction(char const *servrername, IpEndpoint const &ep, int &policy) const
+SNI_IpAllow::TestClientSNIAction(char const * /* servrername ATS_UNUSED */, IpEndpoint const &ep,
+                                 int & /* policy ATS_UNUSED */) const
 {
   return ip_addrs.contains(swoc::IPAddr(ep));
 }
 
 int
-OutboundSNIPolicy::SNIAction(SSL &ssl, const Context &ctx) const
+OutboundSNIPolicy::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   if (!policy.empty()) {
     if (auto snis = TLSSNISupport::getInstance(&ssl)) {
@@ -442,7 +445,7 @@ OutboundSNIPolicy::SNIAction(SSL &ssl, const Context &ctx) const
 }
 
 int
-ServerMaxEarlyData::SNIAction(SSL &ssl, const Context &ctx) const
+ServerMaxEarlyData::SNIAction([[maybe_unused]] SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
 #if TS_HAS_TLS_EARLY_DATA
   auto snis = TLSSNISupport::getInstance(&ssl);

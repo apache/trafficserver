@@ -85,7 +85,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase;
 
   void
-  testRunStarting(Catch::TestRunInfo const &testRunInfo) override
+  testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
   {
     Layout::create();
     init_diags("", nullptr);

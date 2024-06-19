@@ -81,7 +81,7 @@ CacheTestHandler::handle_cache_event(int event, CacheTestBase *base)
 }
 
 int
-CacheTestHandler::start_test(int event, void *e)
+CacheTestHandler::start_test(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
 {
   this_ethread()->schedule_imm(this->_wt);
   return 0;

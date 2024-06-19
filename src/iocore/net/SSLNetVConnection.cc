@@ -2452,7 +2452,7 @@ SSLNetVConnection::_ssl_connect()
 
         Dbg(dbg_ctl_ssl_origin_session_cache, "origin session cache lookup key = %s", lookup_key.c_str());
 
-        std::shared_ptr<SSL_SESSION> shared_sess = this->getOriginSession(ssl, lookup_key);
+        std::shared_ptr<SSL_SESSION> shared_sess = this->getOriginSession(lookup_key);
 
         if (shared_sess && SSL_set_session(ssl, shared_sess.get())) {
           // Keep a reference of this shared pointer in the connection

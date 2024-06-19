@@ -1311,7 +1311,7 @@ Learliest:
    Handle a directory delete event in case of some detected corruption.
 */
 int
-CacheVC::openReadDirDelete(int event, Event *e)
+CacheVC::openReadDirDelete(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   MUTEX_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
   if (!lock.is_locked()) {

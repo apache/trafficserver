@@ -194,7 +194,7 @@ TEST_CASE("MIOBufferWriter", "[MIOBW]")
 }
 
 void
-_ink_assert(const char *a, const char *f, int l)
+_ink_assert(const char * /* a ATS_UNUSED */, const char * /* f ATS_UNUSED */, int /* l ATS_UNUSED */)
 {
   // Coverity is confused and thinks this _ink_assert is the one used in traffic_server
   // coverity[UNCAUGHT_EXCEPT:FALSE]

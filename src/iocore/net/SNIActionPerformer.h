@@ -43,7 +43,7 @@ public:
 #if TS_USE_QUIC == 1
   ControlQUIC(bool turn_on) : enable_quic(turn_on) {}
 #else
-  ControlQUIC(bool turn_on) {}
+  ControlQUIC(bool /* turn_on ATS_UNUSED */) {}
 #endif
   ~ControlQUIC() override {}
 

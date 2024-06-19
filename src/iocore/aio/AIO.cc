@@ -103,7 +103,7 @@ ink_aio_set_err_callback(Continuation *callback)
 }
 
 void
-ink_aio_init(ts::ModuleVersion v, AIOBackend backend)
+ink_aio_init(ts::ModuleVersion v, [[maybe_unused]] AIOBackend backend)
 {
   ink_release_assert(v.check(AIO_MODULE_INTERNAL_VERSION));
 

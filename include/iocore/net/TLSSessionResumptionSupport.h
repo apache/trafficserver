@@ -52,7 +52,7 @@ public:
   ssl_curve_id getSSLCurveNID() const;
 
   SSL_SESSION                 *getSession(SSL *ssl, const unsigned char *id, int len, int *copy);
-  std::shared_ptr<SSL_SESSION> getOriginSession(SSL *ssl, const std::string &lookup_key);
+  std::shared_ptr<SSL_SESSION> getOriginSession(const std::string &lookup_key);
 
 protected:
   void                      clear();
@@ -66,13 +66,13 @@ private:
   int  _sslCurveNID              = NID_undef;
 
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
-  int _setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,
-                             EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx);
+  int _setSessionInformation(ssl_ticket_key_block *keyblock, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx,
+                             EVP_MAC_CTX *hctx);
   int _getSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,
                              EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx);
 #else
-  int _setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,
-                             EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx);
+  int _setSessionInformation(ssl_ticket_key_block *keyblock, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx,
+                             HMAC_CTX *hctx);
   int _getSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,
                              EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx);
 #endif

@@ -162,7 +162,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 CATCH_REGISTER_LISTENER(EventProcessorListener);
 
 void
-init_cache(size_t size, const char *name)
+init_cache(size_t /* size ATS_UNUSED */, const char * /* name ATS_UNUSED */)
 {
   ink_cache_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
   cacheProcessor.start();
@@ -284,7 +284,7 @@ CacheWriteTest::do_io_write(size_t size)
 }
 
 int
-CacheWriteTest::start_test(int event, void *e)
+CacheWriteTest::start_test(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
 {
   Dbg(dbg_ctl_cache_test, "start write test");
 
@@ -354,7 +354,7 @@ CacheReadTest::do_io_read(size_t size)
 }
 
 int
-CacheReadTest::start_test(int event, void *e)
+CacheReadTest::start_test(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
 {
   Dbg(dbg_ctl_cache_test, "start read test");
   HttpCacheKey key;

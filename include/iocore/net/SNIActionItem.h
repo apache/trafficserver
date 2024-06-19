@@ -63,7 +63,8 @@ public:
     the host name to avoid SNI-based policy
   */
   virtual bool
-  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const
+  TestClientSNIAction(const char * /* servername ATS_UNUSED */, const IpEndpoint & /* ep ATS_UNUSED */,
+                      int & /* policy ATS_UNUSED */) const
   {
     return false;
   }
