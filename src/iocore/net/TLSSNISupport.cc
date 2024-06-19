@@ -92,7 +92,7 @@ void
 #ifdef OPENSSL_IS_BORINGSSL
 TLSSNISupport::on_client_hello(const SSL_CLIENT_HELLO *client_hello)
 #else
-TLSSNISupport::on_client_hello(SSL *ssl, int *al, void *arg)
+TLSSNISupport::on_client_hello(SSL *ssl, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
 #endif
 {
   const char          *servername = nullptr;
@@ -135,7 +135,7 @@ TLSSNISupport::on_client_hello(SSL *ssl, int *al, void *arg)
 #endif
 
 void
-TLSSNISupport::on_servername(SSL *ssl, int *al, void *arg)
+TLSSNISupport::on_servername(SSL *ssl, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
 {
   this->_fire_ssl_servername_event();
 

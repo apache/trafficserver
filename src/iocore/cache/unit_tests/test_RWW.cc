@@ -102,7 +102,7 @@ protected:
 };
 
 int
-CacheRWWTest::start_test(int event, void *e)
+CacheRWWTest::start_test(int event, void * /* e ATS_UNUSED */)
 {
   REQUIRE(event == EVENT_IMMEDIATE);
   this_ethread()->schedule_imm(this->_wt);
@@ -402,7 +402,7 @@ class CacheRWWCacheInit : public CacheInit
 public:
   CacheRWWCacheInit() {}
   int
-  cache_init_success_callback(int event, void *e) override
+  cache_init_success_callback(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */) override
   {
     CacheRWWTest      *crww     = new CacheRWWTest(LARGE_FILE);
     CacheRWWErrorTest *crww_l   = new CacheRWWErrorTest(LARGE_FILE, "http://www.scw22.com/");

@@ -31,7 +31,7 @@ NetAcceptEventIO::start(EventLoop l, NetAccept *na, int events)
   return start_common(l, _na->server.fd, events);
 }
 void
-NetAcceptEventIO::process_event(int flags)
+NetAcceptEventIO::process_event(int /* flags ATS_UNUSED */)
 {
   this_ethread()->schedule_imm(_na);
 }

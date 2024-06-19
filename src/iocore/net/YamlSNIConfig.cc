@@ -520,7 +520,7 @@ std::array<std::function<std::string(std::string_view,            // destination
   TunnelDestination::fix_destination = {
 
     // Replace wildcards with matched groups.
-    [](std::string_view destination, size_t var_start_pos, const Context &ctx, SSLNetVConnection *,
+    [](std::string_view destination, size_t /* var_start_pos ATS_UNUSED */, const Context &ctx, SSLNetVConnection *,
        bool &port_is_dynamic) -> std::string {
       port_is_dynamic = false;
       if ((destination.find_first_of('$') != std::string::npos) && ctx._fqdn_wildcard_captured_groups) {
@@ -532,7 +532,7 @@ std::array<std::function<std::string(std::string_view,            // destination
     },
 
     // Use local port for the tunnel.
-    [](std::string_view destination, size_t var_start_pos, const Context &ctx, SSLNetVConnection *vc,
+    [](std::string_view destination, size_t var_start_pos, const Context & /* ctx ATS_UNUSED */, SSLNetVConnection *vc,
        bool &port_is_dynamic) -> std::string {
       port_is_dynamic = true;
       if (vc) {
@@ -547,7 +547,7 @@ std::array<std::function<std::string(std::string_view,            // destination
     },
 
     // Use the Proxy Protocol port for the tunnel.
-    [](std::string_view destination, size_t var_start_pos, const Context &ctx, SSLNetVConnection *vc,
+    [](std::string_view destination, size_t var_start_pos, const Context & /* ctx ATS_UNUSED */, SSLNetVConnection *vc,
        bool &port_is_dynamic) -> std::string {
       port_is_dynamic = true;
       if (vc) {

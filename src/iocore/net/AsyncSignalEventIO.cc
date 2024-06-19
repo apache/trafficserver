@@ -33,7 +33,7 @@ AsyncSignalEventIO::start(EventLoop l, int fd, int events)
 }
 
 void
-AsyncSignalEventIO::process_event(int flags)
+AsyncSignalEventIO::process_event(int /* flags ATS_UNUSED */)
 {
   [[maybe_unused]] ssize_t ret;
 #if HAVE_EVENTFD

@@ -28,7 +28,8 @@
 #include "proxy/HttpAPIHooks.h"
 
 void
-HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
+HttpHookState::init(TSHttpHookID /* id ATS_UNUSED */, HttpAPIHooks const * /* global ATS_UNUSED */,
+                    HttpAPIHooks const * /* ssn ATS_UNUSED */, HttpAPIHooks const * /* txn ATS_UNUSED */)
 {
 }
 
@@ -44,7 +45,7 @@ HttpHookState::getNext()
 }
 
 TSVConn
-TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
+TSHttpConnectWithPluginId(sockaddr const * /* addr ATS_UNUSED */, const char * /* tag ATS_UNUSED */, int64_t /* id ATS_UNUSED */)
 {
   return TSVConn{};
 }
@@ -53,25 +54,26 @@ int         TS_MIME_LEN_CONTENT_LENGTH   = 0;
 const char *TS_MIME_FIELD_CONTENT_LENGTH = "";
 
 TSIOBufferBlock
-TSIOBufferReaderStart(TSIOBufferReader readerp)
+TSIOBufferReaderStart(TSIOBufferReader /* readerp ATS_UNUSED */)
 {
   return TSIOBufferBlock{};
 }
 
 TSIOBufferBlock
-TSIOBufferBlockNext(TSIOBufferBlock blockp)
+TSIOBufferBlockNext(TSIOBufferBlock /* blockp ATS_UNUSED */)
 {
   return TSIOBufferBlock{};
 }
 
 const char *
-TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t *avail)
+TSIOBufferBlockReadStart(TSIOBufferBlock /* blockp ATS_UNUSED */, TSIOBufferReader /* readerp ATS_UNUSED */,
+                         int64_t * /* avail ATS_UNUSED */)
 {
   return "";
 }
 
 void
-TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes)
+TSIOBufferReaderConsume(TSIOBufferReader /* readerp ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */)
 {
 }
 

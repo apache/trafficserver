@@ -243,7 +243,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 }
 
 static void
-ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
+ssl_rm_cached_session(SSL_CTX * /* ctx ATS_UNUSED */, SSL_SESSION *sess)
 {
 #ifdef TLS1_3_VERSION
   if (SSL_SESSION_get_protocol_version(sess) == TLS1_3_VERSION) {
@@ -377,7 +377,7 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
  * Return 1 on success, 0 on error, or -1 to pause, -2 to retry
  */
 static int
-ssl_cert_callback(SSL *ssl, void *arg)
+ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 {
   TLSCertSwitchSupport *tcss     = TLSCertSwitchSupport::getInstance(ssl);
   SSLNetVConnection    *sslnetvc = dynamic_cast<SSLNetVConnection *>(tcss);
@@ -488,7 +488,7 @@ ssl_next_protos_advertised_callback(SSL *ssl, const unsigned char **out, unsigne
 
   ink_assert(alpns);
   if (alpns) {
-    return alpns->advertise_next_protocol(ssl, out, outlen);
+    return alpns->advertise_next_protocol(out, outlen);
   }
 
   return SSL_TLSEXT_ERR_NOACK;
@@ -502,7 +502,7 @@ ssl_alpn_select_callback(SSL *ssl, const unsigned char **out, unsigned char *out
 
   ink_assert(alpns);
   if (alpns) {
-    return alpns->select_next_protocol(ssl, out, outlen, in, inlen);
+    return alpns->select_next_protocol(out, outlen, in, inlen);
   }
 
   return SSL_TLSEXT_ERR_NOACK;
@@ -578,7 +578,7 @@ SSLMultiCertConfigLoader::_enable_ktls(SSL_CTX *ctx)
 }
 
 bool
-SSLMultiCertConfigLoader::_enable_early_data(SSL_CTX *ctx)
+SSLMultiCertConfigLoader::_enable_early_data([[maybe_unused]] SSL_CTX *ctx)
 {
 #if TS_HAS_TLS_EARLY_DATA
   if (SSLConfigParams::server_max_early_data > 0) {
@@ -946,7 +946,7 @@ SSLMultiCertConfigLoader::default_server_ssl_ctx()
 }
 
 static bool
-SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *keyPath, const char *secret_data, int secret_data_len)
+SSLPrivateKeyHandler(SSL_CTX *ctx, const char *keyPath, const char *secret_data, int secret_data_len)
 {
   EVP_PKEY *pkey = nullptr;
 #if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
@@ -2406,7 +2406,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       Dbg(dbg_ctl_ssl_load, "empty private key for public key %s", cert_names_list[i].c_str());
       secret_key_data = secret_data;
     }
-    if (!SSLPrivateKeyHandler(ctx, params, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
+    if (!SSLPrivateKeyHandler(ctx, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
       SSLError("failed to load certificate: %s of length %ld with key path: %s", cert_names_list[i].c_str(), secret_key_data.size(),
                keyPath.empty() ? "[empty key path]" : keyPath.c_str());
       return false;

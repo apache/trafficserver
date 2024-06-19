@@ -34,7 +34,7 @@ class CacheCommInit : public CacheInit
 public:
   CacheCommInit() {}
   int
-  cache_init_success_callback(int event, void *e) override
+  cache_init_success_callback(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */) override
   {
     CacheTestHandler *h  = new CacheTestHandler(LARGE_FILE);
     CacheTestHandler *h2 = new CacheTestHandler(SMALL_FILE, "http://www.scw11.com");

@@ -116,7 +116,7 @@ TLSSessionResumptionSupport::processSessionTicket(SSL *ssl, unsigned char *keyna
   ink_release_assert(keyblock != nullptr && keyblock->num_keys > 0);
 
   if (enc == 1) {
-    return this->_setSessionInformation(keyblock, ssl, keyname, iv, cipher_ctx, hctx);
+    return this->_setSessionInformation(keyblock, keyname, iv, cipher_ctx, hctx);
   } else if (enc == 0) {
     return this->_getSessionInformation(keyblock, ssl, keyname, iv, cipher_ctx, hctx);
   }
@@ -191,7 +191,7 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
 }
 
 std::shared_ptr<SSL_SESSION>
-TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &lookup_key)
+TLSSessionResumptionSupport::getOriginSession(const std::string &lookup_key)
 {
   ssl_curve_id                 curve       = 0;
   std::shared_ptr<SSL_SESSION> shared_sess = origin_sess_cache->get_session(lookup_key, &curve);
@@ -221,12 +221,12 @@ TLSSessionResumptionSupport::clear()
 
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
 int
-TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname,
-                                                    unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx)
+TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblock, unsigned char *keyname, unsigned char *iv,
+                                                    EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx)
 #else
 int
-TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname,
-                                                    unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx)
+TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblock, unsigned char *keyname, unsigned char *iv,
+                                                    EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx)
 #endif
 {
   const ssl_ticket_key_t &most_recent_key = keyblock->keys[0];
@@ -260,12 +260,14 @@ TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblo
 
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
 int
-TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname,
-                                                    unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx)
+TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblock, [[maybe_unused]] SSL *ssl,
+                                                    unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx,
+                                                    EVP_MAC_CTX *hctx)
 #else
 int
-TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname,
-                                                    unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx)
+TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblock, [[maybe_unused]] SSL *ssl,
+                                                    unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx,
+                                                    HMAC_CTX *hctx)
 #endif
 {
   for (unsigned i = 0; i < keyblock->num_keys; ++i) {
