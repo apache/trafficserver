@@ -814,7 +814,6 @@ HttpSM::wait_for_full_body()
   client_request_body_bytes =
     post_buffer->write(_ua.get_txn()->get_remote_reader(), chunked ? _ua.get_txn()->get_remote_reader()->read_avail() : post_bytes);
 
-  _ua.get_txn()->get_remote_reader()->consume(client_request_body_bytes);
   p = tunnel.add_producer(_ua.get_entry()->vc, post_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_BUFFER_READ,
                           "ua post buffer");
   if (chunked) {
@@ -3850,6 +3849,10 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
   // zero on that second read.
   if (server_request_body_bytes == 0) {
     server_request_body_bytes = c->bytes_written;
+    if (post_transform_info.vc == nullptr) {
+      // Now we know how many body bytes the tunnel consumed.
+      _ua.get_txn()->get_remote_reader()->consume(server_request_body_bytes);
+    }
   }
 
   switch (event) {
@@ -6244,7 +6247,6 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     if (client_request_body_bytes == 0) {
       client_request_body_bytes = num_body_bytes;
     }
-    _ua.get_txn()->get_remote_reader()->consume(num_body_bytes);
     // The user agent has already sent all it has
     if (_ua.get_txn()->is_read_closed()) {
       post_bytes = num_body_bytes;
