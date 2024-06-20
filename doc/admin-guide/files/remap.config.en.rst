@@ -349,7 +349,7 @@ protection' feature in Traffic Server, configure records.yaml with:
    :linenos:
    :emphasize-lines: 3
 
-   ts:
+   records:
      http:
        referer_filter: 1
 
@@ -359,7 +359,7 @@ In order to enable run-time formatting for redirect URL, configure:
    :linenos:
    :emphasize-lines: 3
 
-   ts:
+   records:
      http:
        referer_format_redirect: 1
 

@@ -230,12 +230,12 @@ Display the current value of a configuration record.
 
       $ traffic_ctl config set proxy.config.diags.debug.enabled 1 -c records.yaml
       $ cat records.yaml
-      ts:
+      records:
       ...
       # Document modified by traffic_ctl Mon Feb 13 23:07:15 2023
       #
       ---
-      ts:
+      records:
          diags:
             debug:
                enabled: 1
@@ -261,7 +261,7 @@ Display the current value of a configuration record.
          # Document modified by traffic_ctl Mon Feb 13 23:07:15 2023
          #
          ---
-         ts:
+         records:
             some:
                plugin:
                   config:

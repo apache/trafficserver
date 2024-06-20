@@ -53,7 +53,7 @@ void SetRecordFromYAMLNode(const CfgNode &field, swoc::Errata &errata);
 swoc::Errata RecYAMLConfigFileParse(const char *path, RecYAMLNodeHandler handler);
 
 ///
-/// @brief This function parses the YAML root node ("ts") and convert each field
+/// @brief This function parses the YAML root node ("records") and convert each field
 ///        into a record style object.
 ///
 /// As we keep the internal records without a change we should rebuild each records name
@@ -62,7 +62,7 @@ swoc::Errata RecYAMLConfigFileParse(const char *path, RecYAMLNodeHandler handler
 ///
 /// Example:
 ///
-/// ts:
+/// records:
 ///   exec_thread:
 ///       autoconfig:
 ///         scale: 1.0
@@ -77,7 +77,7 @@ swoc::Errata RecYAMLConfigFileParse(const char *path, RecYAMLNodeHandler handler
 /// @note This function is separated from RecYAMLConfigFileParse as this can also be called
 ///       independently, i.e.: From a RPC handler.
 ///
-/// @param root Top YAML node, it should contain the "ts" element.
+/// @param root Top YAML node, it should contain the "records" element.
 /// @param handle Callback that will process each parsed node.
 /// @param lock true if we want this function to lock g_records_rwlock. If you are locking already,
 ///             then leave it as false.

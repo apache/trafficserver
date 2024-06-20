@@ -1,4 +1,4 @@
-ts:
+records:
   accept_threads: 1
   allocator:
     dontdump_iobuffers: 1

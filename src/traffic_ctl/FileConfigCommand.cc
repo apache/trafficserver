@@ -30,27 +30,27 @@
 namespace
 {
 constexpr std::string_view PREFIX{"proxy.config."};
-constexpr std::string_view TS_PREFIX{"ts."};
+constexpr std::string_view TS_PREFIX{"records."};
 
 constexpr bool                    CREATE_IF_NOT_EXIST{true};
 constexpr bool                    DO_NOT_CREATE_IF_NOT_EXIST{false};
 const std::pair<bool, YAML::Node> NOT_FOUND{false, {}};
 
-/// We support either passing variables with the prefix 'proxy.config.' or 'ts.'
-/// Internally we need to use 'ts.variable' as the root node starts with 'ts' for records
+/// We support either passing variables with the prefix 'proxy.config.' or 'records.'
+/// Internally we need to use 'records.variable' as the root node starts with 'records' for records
 /// configs.
 std::string
 amend_variable_name(swoc::TextView variable)
 {
   std::string var{TS_PREFIX};
   // If the variable is prefixed with "proxy.config" we will remove it and replace it
-  // with the records "ts." root name.
+  // with the records "records." root name.
   if (swoc::TextView{variable}.starts_with(PREFIX)) {
     var += variable.substr(PREFIX.size());
     return var;
   }
 
-  // you may be using "ts." already or some other name maybe for a different file.
+  // you may be using "records." already or some other name maybe for a different file.
   // we expect either `ts` or `proxy.config`
   return {variable.data(), variable.size()};
 }
