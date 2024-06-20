@@ -28,7 +28,7 @@ related to memory - you can use memory dump information. Enable
 
 .. code-block:: yaml
 
-   ts:
+   records:
      dump_mem_info_frequency: value
 
 This causes Traffic Server to dump memory information to ``traffic.out``
@@ -37,7 +37,7 @@ disabled.
 
 .. code-block:: yaml
 
-   ts:
+   records:
      res_track_memory: value
 
 

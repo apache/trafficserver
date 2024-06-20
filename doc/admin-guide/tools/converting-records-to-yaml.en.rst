@@ -33,10 +33,12 @@ New YAML structure
 ==================
 
 
-#. We are introducing a root node ``ts`` for the :file:`records.yaml`, so all existing records
-will belong to the new ``ts`` node.
-#. From the current ``records.config`` structure we have dropped the prefix ``proxy.config``
-and ``proxy.local`` and use the rest to build a YAML structure.
+A YAML node ``records``` is the main root node for the :file:`records.yaml`, so all existing records
+will belong to this ``records``` node.
+
+From the current ``records.config`` structure we have dropped the prefix ``proxy.config``
+and ``proxy.local`` and use what's left on the variable name to build a YAML structure, always
+below the ``records`` node.
 
 The logic around this is basically to walk down the record name separated by the dots and build
 a new YAML map from each name, so for instance, with the following records:
@@ -61,7 +63,7 @@ the following:
 .. code-block:: yaml
    :linenos:
 
-      ts:
+   records:
       accept_threads: 1
       cache:
          threads_per_disk: 8
@@ -194,7 +196,7 @@ Expect non core records to set the type (!!int, !!float, etc).
 
 .. code-block:: bash
 
-   ts:
+   records:
       plugin_x:
          my_field_1: !!int '1'
          my_field_2: !!float '1.2'
@@ -223,7 +225,7 @@ non core records, for instance:
    $ convert2yaml.py -f records.config -o records.yaml -t float,int
 
    $ cat records.yaml
-   ts:
+   records:
       http:
          my_own_record_1: !!float '1.0'
          my_own_record_2: !!int '1'

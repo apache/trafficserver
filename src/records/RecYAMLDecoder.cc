@@ -40,7 +40,7 @@ static std::array<std::string_view, 5> Node_Type_to_Str{
 namespace
 {
 constexpr std::string_view CONFIG_RECORD_PREFIX{"proxy.config"};
-const inline std::string   RECORD_YAML_ROOT_STR{"ts"};
+const inline std::string   RECORD_YAML_ROOT_STR{"records"};
 
 } // namespace
 
@@ -154,7 +154,7 @@ ParseRecordsFromYAML(YAML::Node root, RecYAMLNodeHandler handler, bool lock /*fa
       detail::flatten_node({n.first, n.second, CONFIG_RECORD_PREFIX}, handler, errata);
     }
   } else {
-    return swoc::Errata(ERRATA_NOTE, "'ts' root key not present or no fields to read.");
+    return swoc::Errata(ERRATA_NOTE, "'records' root key not present or no fields to read.");
   }
 
   return errata;

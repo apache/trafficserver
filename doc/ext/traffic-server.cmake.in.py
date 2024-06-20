@@ -223,7 +223,7 @@ class TSConfVar(std.Target):
         code_block_title = None
         if 'legacy' not in self.options:
             code_block = self.__generate_code(cv_name, cv_default, cv_type)
-            code_block_title = sphinx.addnodes.compact_paragraph(text="yaml-rep:")
+            code_block_title = sphinx.addnodes.compact_paragraph(text="yaml:")
             self.add_name(code_block_title)
             self.add_name(code_block)
 

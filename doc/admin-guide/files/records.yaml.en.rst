@@ -45,14 +45,14 @@ to apply the changes.
 YAML structure
 ==============
 
-All fields are located inside the ``ts`` root node. ATS supports reading multiple documents from
+All fields are located inside the ``records``` root node. ATS supports reading multiple documents from
 the same YAML stream, subsequent documents overrides earlier fields.
 
 
 .. code-block:: yaml
    :linenos:
 
-   ts:
+   records:
      diags:
       debug:
          enabled: 0
@@ -93,7 +93,7 @@ We expect non core records to set the type (!!int, !!float, etc).
 
 .. code-block:: yaml
 
-   ts:
+   records:
       plugin_x:
          my_field_1: !!int '1'
          my_field_2: !!float '1.2'
@@ -159,7 +159,7 @@ value ``my_server``. This means that the name of the |TS| proxy is ``my_server``
    .. code-block:: yaml
       :linenos:
 
-      ts:
+      records:
          proxy_name: my_server
 
 
@@ -168,7 +168,7 @@ If the server name should be ``that_server`` the line would be:
    .. code-block:: yaml
       :linenos:
 
-      ts:
+      records:
          proxy_name: that_server
 
 
@@ -178,7 +178,7 @@ disables the option; a value of ``1`` enables the option.
    .. code-block:: yaml
       :linenos:
 
-      ts:
+      records:
          arm:
             enabled: 0
 
@@ -188,7 +188,7 @@ DNS response to 10 seconds.
    .. code-block:: yaml
       :linenos:
 
-      ts:
+      records:
          hostdb:
             lookup_timeout: 10
 
@@ -197,7 +197,7 @@ In the following example the field sets the field with a ``float`` value.
    .. code-block:: yaml
       :linenos:
 
-      ts:
+      records:
          exec_thread:
             autoconfig:
                scale: 1.0
@@ -209,7 +209,7 @@ prefix.
    .. code-block:: yaml
       :linenos:
 
-      ts:
+      records:
          cache:
             ram_cache:
                size: 64G
@@ -590,7 +590,7 @@ Network
 
    .. code-block:: yaml
 
-      ts:
+      records:
         incoming_ip_to_bind: 192.168.101.18
 
 .. topic:: Example
@@ -600,7 +600,7 @@ Network
 
    .. code-block:: yaml
 
-      ts:
+      records:
         incoming_ip_to_bind: "192.168.101.18 [fc07:192:168:101::17]"
 
 .. ts:cv:: CONFIG proxy.config.outgoing_ip_to_bind STRING 0.0.0.0 [::]
@@ -624,7 +624,7 @@ Network
 
    .. code-block:: yaml
 
-      ts:
+      records:
         outgoing_ip_to_bind: 192.168.101.18
 
 .. topic:: Example
@@ -633,7 +633,7 @@ Network
 
    .. code-block:: yaml
 
-      ts:
+      records:
         outgoing_ip_to_bind: "192.168.101.17 [fc07:192:168:101::17]"
 
 .. ts:cv:: CONFIG proxy.config.net.event_period INT 10
@@ -4644,7 +4644,7 @@ removed in the future without prior notice.
 
    .. code-block:: yaml
 
-      ts:
+      records:
         quic:
           qlog:
             file_base: /my/logs/test1
@@ -5083,7 +5083,7 @@ Sockets
 
    .. code-block:: yaml
 
-      ts:
+      records:
         accept_threads: 0
         exec_thread:
           listen: 1
@@ -5197,7 +5197,7 @@ Sockets
    .. code-block:: yaml
       :linenos:
 
-      ts:
+      records:
         exec_thread:
           autoconfig:
             enabled: 0

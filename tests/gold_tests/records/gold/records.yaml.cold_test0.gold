@@ -1,9 +1,9 @@
-ts:
+records:
 ``
 # Document modified by traffic_ctl ``
 #``
 ---
-ts:
+records:
   diags:
     debug:
       tags: http

@@ -86,7 +86,7 @@ Example:
 
    .. code-block:: yaml
 
-      ts:
+      records:
         plugin_x:
           field_1: 1
           data:
