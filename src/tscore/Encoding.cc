@@ -25,6 +25,11 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_string.h"
 
+namespace
+{
+
+DbgCtl dbg_ctl_log_utils{"log-utils"};
+
 /*-------------------------------------------------------------------------
   Encoding::escapify_url_common
 
@@ -37,9 +42,6 @@
   functions differ on whether the function tries to detect and avoid
   double URL encoding (escapify_url) or not (pure_escapify_url)
   -------------------------------------------------------------------------*/
-
-namespace
-{
 char *
 escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map,
                     bool pure_escape)
@@ -150,7 +152,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
         bool          needsEncoding = ((map[c1 / 8] & (1 << (7 - c1 % 8))) || (map[c2 / 8] & (1 << (7 - c2 % 8))));
         if (!needsEncoding) {
           out_len -= 2;
-          Debug("log-utils", "character already encoded..skipping %c, %c, %c", *from, *(from + 1), *(from + 2));
+          Dbg(dbg_ctl_log_utils, "character already encoded..skipping %c, %c, %c", *from, *(from + 1), *(from + 2));
           *to++ = *from++;
           continue;
         }

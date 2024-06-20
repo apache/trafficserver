@@ -111,7 +111,8 @@ public:
   {
     if (0 == this->refcount_dec()) {
       // Delete this on an ET_TASK thread, which avoids doing potentially slow things on an ET_NET thread.
-      Debug("url_rewrite", "Deleting old configuration immediately");
+      static DbgCtl dc{"url_rewrite"};
+      Dbg(dc, "Deleting old configuration immediately");
       new_Deleter(this, 0);
     }
   }

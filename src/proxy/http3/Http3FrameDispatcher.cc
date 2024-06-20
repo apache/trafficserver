@@ -119,8 +119,8 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
       if (this->_current_frame->update()) {
         // Dispatch
         Http3FrameType type = this->_current_frame->type();
-        Debug("http3", "[RX] [%" PRIu64 "] | %s size=%" PRIu64 "/%" PRIu64, stream_id, Http3DebugNames::frame_type(type),
-              this->_current_frame->total_length() - _bytes_to_skip, this->_current_frame->total_length());
+        Dbg(dbg_ctl_http3, "[RX] [%" PRIu64 "] | %s size=%" PRIu64 "/%" PRIu64, stream_id, Http3DebugNames::frame_type(type),
+            this->_current_frame->total_length() - _bytes_to_skip, this->_current_frame->total_length());
         std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
         for (auto h : handlers) {
           error = h->handle_frame(this->_current_frame, stream_type);

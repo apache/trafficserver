@@ -25,6 +25,13 @@
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
 #include "mgmt/rpc/handlers/common/Utils.h"
 
+namespace
+{
+DbgCtl dbg_ctl_rpc_server{"rpc.server"};
+DbgCtl dbg_ctl_rpc_handler_server{"rpc.handler.server"};
+
+} // end anonymous namespace
+
 namespace rpc::handlers::server
 {
 namespace field_names
@@ -86,7 +93,7 @@ server_start_drain(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
   try {
     if (!params.IsNull()) {
       DrainInfo di = params.as<DrainInfo>();
-      Debug("rpc.server", "draining - No new connections %s", (di.noNewConnections ? "yes" : "no"));
+      Dbg(dbg_ctl_rpc_server, "draining - No new connections %s", (di.noNewConnections ? "yes" : "no"));
       // TODO: no new connections flag -  implement with the right metric / unimplemented in traffic_ctl
     }
 
@@ -96,7 +103,7 @@ server_start_drain(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
       resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Server already draining.");
     }
   } catch (std::exception const &ex) {
-    Debug("rpc.handler.server", "Got an error DrainInfo decoding: %s", ex.what());
+    Dbg(dbg_ctl_rpc_handler_server, "Got an error DrainInfo decoding: %s", ex.what());
     resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Error found during server drain: {}", ex.what());
   }
   return resp;

@@ -147,8 +147,7 @@ public:
     return (config.enabled(mode) & 1) || (config.enabled(mode) == 2 && this->get_override());
   }
 
-  // is_debug_tag_set() is the faster alternative to this for debug mode, when the tag is a literal C-string
-  // (or otherwise is a constexpr returning char const *).
+  // Returns true if tag is enabled for mode.
   //
   bool
   on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const

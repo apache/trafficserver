@@ -26,16 +26,24 @@ Record statistics support
 #include <string_view>
 #include <list>
 
-//-------------------------------------------------------------------------
-// RecAllocateRawStatBlock
-//-------------------------------------------------------------------------
-static RecRawStatBlockAllocator raw_stat_block_allocator = nullptr;
+namespace
+{
+
+DbgCtl dbg_ctl_stats{"stats"};
+
+RecRawStatBlockAllocator raw_stat_block_allocator = nullptr;
+
+} // end anonymous namespace
+
 void
 SetRecAllocateRawStatBlockAllocator(RecRawStatBlockAllocator f)
 {
   raw_stat_block_allocator = f;
 }
 
+//-------------------------------------------------------------------------
+// RecAllocateRawStatBlock
+//-------------------------------------------------------------------------
 RecRawStatBlock *
 RecAllocateRawStatBlock(int num_stats)
 {
@@ -49,7 +57,7 @@ int
 _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id,
                     RecRawStatSyncCb sync_cb)
 {
-  Debug("stats", "RecRawStatSyncCb(%s): rsb pointer:%p id:%d", name, rsb, id);
+  Dbg(dbg_ctl_stats, "RecRawStatSyncCb(%s): rsb pointer:%p id:%d", name, rsb, id);
 
   // check to see if we're good to proceed
   ink_assert(id < rsb->max_stats);
@@ -96,7 +104,7 @@ RecRawStatSyncSum(const char *name, RecDataT data_type, RecData *data, RecRawSta
 {
   RecRawStat total;
 
-  Debug("stats", "raw sync:sum for %s", name);
+  Dbg(dbg_ctl_stats, "raw sync:sum for %s", name);
   rsb->ops->raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
@@ -110,7 +118,7 @@ RecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecRawS
 {
   RecRawStat total;
 
-  Debug("stats", "raw sync:count for %s", name);
+  Dbg(dbg_ctl_stats, "raw sync:count for %s", name);
   rsb->ops->raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
@@ -125,7 +133,7 @@ RecRawStatSyncAvg(const char *name, RecDataT data_type, RecData *data, RecRawSta
   RecRawStat total;
   RecFloat   avg = 0.0f;
 
-  Debug("stats", "raw sync:avg for %s", name);
+  Dbg(dbg_ctl_stats, "raw sync:avg for %s", name);
   rsb->ops->raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
@@ -142,7 +150,7 @@ RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Rec
   RecRawStat total;
   RecFloat   r;
 
-  Debug("stats", "raw sync:hr-timeavg for %s", name);
+  Dbg(dbg_ctl_stats, "raw sync:hr-timeavg for %s", name);
   rsb->ops->raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
@@ -164,7 +172,7 @@ RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, RecDa
   RecRawStat total;
   RecFloat   r;
 
-  Debug("stats", "raw sync:seconds for %s", name);
+  Dbg(dbg_ctl_stats, "raw sync:seconds for %s", name);
   rsb->ops->raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
