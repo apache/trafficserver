@@ -40,6 +40,8 @@ struct SetRecordCmdInfo {
   std::string name;
   std::string value;
 };
+
+DbgCtl dbg_ctl_RPC{"RPC"};
 } // namespace
 
 namespace YAML
@@ -191,7 +193,7 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /
   static auto          reconf_time = metrics.lookup("proxy.process.proxy.reconfigure_time");
   static auto          reconf_req  = metrics.lookup("proxy.process.proxy.reconfigure_required");
   swoc::Rv<YAML::Node> resp;
-  Debug("RPC", "invoke plugin callbacks");
+  Dbg(dbg_ctl_RPC, "invoke plugin callbacks");
   // if there is any error, report it back.
   if (auto err = FileManager::instance().rereadConfig(); !err.empty()) {
     resp.note(err);

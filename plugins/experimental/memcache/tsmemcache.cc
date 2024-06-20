@@ -45,7 +45,14 @@ static time_t base_day_time;
 int32_t    MC::verbosity  = 0;
 ink_hrtime MC::last_flush = 0;
 
-static void
+namespace
+{
+
+DbgCtl dbg_ctl_tsmemcache{"tsmemcache"};
+DbgCtl dbg_ctl_tsmemcache_ascii_response{"tsmemcache_ascii_response"};
+DbgCtl dbg_ctl_tsmemcache_ascii_cmd{"tsmemcache_ascii_cmd"};
+
+void
 tsmemcache_constants()
 {
   struct tm tm;
@@ -59,11 +66,11 @@ tsmemcache_constants()
 }
 
 #ifdef DEBUG
-char debug_string_buffer[TSMEMCACHE_TMP_CMD_BUFFER_SIZE];
-static char *
+char *
 mc_string(const char *s, int len)
 {
-  int l = len;
+  static char debug_string_buffer[TSMEMCACHE_TMP_CMD_BUFFER_SIZE];
+  int         l = len;
   while (l && (s[l - 1] == '\r' || s[l - 1] == '\n')) {
     l--;
   }
@@ -79,20 +86,20 @@ mc_string(const char *s, int len)
 #endif
 
 #ifdef DEBUG
-#define MCDebugBuf(_t, _s, _l) \
-  if (is_debug_tag_set(_t))    \
-  printf(_t ": %s\n", mc_string(_s, _l))
-#define MCDebug Debug
+#define MCDebugBuf(_dc, _s, _l) \
+  if ((_dc).on())               \
+  printf("%s: %s\n", (_dc).tag(), mc_string(_s, _l))
+#define MCDebug Dbg
 #else
-#define MCDebugBuf(_t, _s, _l) \
-  do {                         \
+#define MCDebugBuf(_dc, _s, _l) \
+  do {                          \
   } while (0)
 #define MCDebug \
   if (0)        \
-  Debug
+  Dbg
 #endif
 
-static uint64_t
+uint64_t
 ink_hton64(uint64_t in)
 {
   int32_t  val = 1;
@@ -120,6 +127,8 @@ ink_hton64(uint64_t in)
   }
 }
 #define ink_ntoh64 ink_hton64
+
+} // end anonymous namespace
 
 int
 MCAccept::main_event(int event, void *data)
@@ -375,10 +384,10 @@ MC::write_binary_response(const void *d, int hlen, int keylen, int dlen)
       binary_header.request.opcode == PROTOCOL_BINARY_CMD_GETKQ) {
     add_binary_header(0, hlen, keylen, dlen);
     if (dlen) {
-      MCDebug("tsmemcache", "response dlen %d\n", dlen);
+      MCDebug(dbg_ctl_tsmemcache, "response dlen %d\n", dlen);
       wbuf->write(d, dlen);
     } else {
-      MCDebug("tsmemcache", "no response\n");
+      MCDebug(dbg_ctl_tsmemcache, "no response\n");
     }
   }
   return writer->read_avail();
@@ -539,7 +548,7 @@ MC::read_binary_from_client_event(int event, void *data)
   if (!(_e))               \
     return protocol_error();
 
-  MCDebug("tsmemcache", "bin cmd %d\n", binary_header.request.opcode);
+  MCDebug(dbg_ctl_tsmemcache, "bin cmd %d\n", binary_header.request.opcode);
   switch (binary_header.request.opcode) {
   case PROTOCOL_BINARY_CMD_VERSION:
     CHECK_PROTOCOL(extlen == 0 && keylen == 0 && bodylen == 0);
@@ -651,7 +660,7 @@ MC::ascii_response(const char *s, int len)
     wbuf->write(s, len);
     wvio->nbytes = INT64_MAX;
     wvio->reenable();
-    MCDebugBuf("tsmemcache_ascii_response", s, len);
+    MCDebugBuf(dbg_ctl_tsmemcache_ascii_response, s, len);
   }
   if (end_of_cmd > 0) {
     reader->consume(end_of_cmd);
@@ -963,7 +972,7 @@ MC::ascii_incr_decr_event(int event, void *data)
       } else {
         wvio->reenable();
       }
-      MCDebugBuf("tsmemcache_ascii_response", s, e - s + 2);
+      MCDebugBuf(dbg_ctl_tsmemcache_ascii_response, s, e - s + 2);
       header.nbytes = e - s;
       cwvc->set_header(&header, header.len());
       TS_PUSH_HANDLER(&MC::stream_event);
@@ -1258,7 +1267,7 @@ MC::read_ascii_from_client_event(int /* event ATS_UNUSED */, void * /* data ATS_
 {
   int   len = 0;
   char *c = get_ascii_input(TSMEMCACHE_TMP_CMD_BUFFER_SIZE, &len), *s = c;
-  MCDebugBuf("tsmemcache_ascii_cmd", c, len);
+  MCDebugBuf(dbg_ctl_tsmemcache_ascii_cmd, c, len);
   char *e = c + len - 5; // at least 6 chars
   while (*s == ' ' && s < e) {
     s++; // skip leading spaces
@@ -1532,7 +1541,7 @@ MC::stream_event(int event, void *data)
 int
 MC::tunnel_event(int event, void *data)
 {
-  MCDebug("tsmemcache", "tunnel %d %p crvio %p cwvio %p", event, data, crvio, cwvio);
+  MCDebug(dbg_ctl_tsmemcache, "tunnel %d %p crvio %p cwvio %p", event, data, crvio, cwvio);
   if (data == crvio) {
     switch (event) {
     case VC_EVENT_READ_READY:
@@ -1611,7 +1620,7 @@ TSPluginInit(int argc, const char *argv[])
       TSError("[tsmemcache] bad accept_port '%s'\n", argv[1]);
       goto error;
     }
-    MCDebug("tsmemcache", "using accept_port %d", port);
+    MCDebug(dbg_ctl_tsmemcache, "using accept_port %d", port);
   }
   init_tsmemcache(port);
   return;

@@ -172,64 +172,14 @@ diags()
     }                                                                             \
   } while (false)
 
-// A BufferWriter version of Debug().
-#define Debug_bw(tag__, fmt, ...)                                                          \
-  do {                                                                                     \
-    if (unlikely(diags()->on())) {                                                         \
-      static DbgCtl Debug_bw_ctl(tag__);                                                   \
-      if (Debug_bw_ctl.tag_on()) {                                                         \
-        DbgPrint(Debug_bw_ctl, "%s", swoc::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
-      }                                                                                    \
-    }                                                                                      \
-  } while (false)
-
-// printf-like debug output.  First parameter must be tag (C-string literal, or otherwise
-// a constexpr returning char const pointer to null-terminated C-string).
-//
-#define Debug(TAG, ...)                   \
-  do {                                    \
-    if (unlikely(diags()->on())) {        \
-      static DbgCtl Debug_ctl(TAG);       \
-      if (Debug_ctl.tag_on()) {           \
-        DbgPrint(Debug_ctl, __VA_ARGS__); \
-      }                                   \
-    }                                     \
-  } while (false)
-
-// For better performance, use this instead of diags()->on(tag) when the tag parameter is a C-string literal.
-//
-#define is_debug_tag_set(TAG)                 \
-  (unlikely(diags()->on()) && ([]() -> bool { \
-     static DbgCtl idts_ctl(TAG);             \
-     return idts_ctl.tag_on() != 0;           \
-   }()))
-
-#define SpecificDebug(FLAG, TAG, ...)               \
-  do {                                              \
-    {                                               \
-      static DbgCtl SpecificDebug_ctl(TAG);         \
-      if (unlikely(diags()->on())) {                \
-        if (FLAG || SpecificDebug_ctl.tag_on()) {   \
-          DbgPrint(SpecificDebug_ctl, __VA_ARGS__); \
-        }                                           \
-      }                                             \
-    }                                               \
-  } while (false)
-
-#define is_action_tag_set(_t)     unlikely(diags()->on(_t, DiagsTagType_Action))
-#define debug_tag_assert(_t, _a)  (is_debug_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)
-#define action_tag_assert(_t, _a) (is_action_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)
-#define is_diags_on(_t)           is_debug_tag_set(_t) // Deprecated.
+#define is_action_tag_set(_t) unlikely(diags()->on(_t, DiagsTagType_Action))
 
 #else // TS_USE_DIAGS
 
 #define Diag(...)
-#define Debug(...)
 
-#define is_debug_tag_set(_t)      0
-#define is_action_tag_set(_t)     0
-#define debug_tag_assert(_t, _a)  /**/
-#define action_tag_assert(_t, _a) /**/
-#define is_diags_on(_t)           0
+#define Dbg_bw(ctl__, fmt, ...)
+
+#define is_action_tag_set(_t) 0
 
 #endif // TS_USE_DIAGS

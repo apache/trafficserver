@@ -24,7 +24,13 @@
 #include "proxy/http/HttpSM.h"
 #include "proxy/Plugin.h"
 
-#define HttpTxnDebug(fmt, ...) SsnDebug(this, "http_txn", fmt, __VA_ARGS__)
+namespace
+{
+DbgCtl dbg_ctl_http_txn{"http_txn"};
+
+} // end anonymous namespace
+
+#define HttpTxnDebug(fmt, ...) SsnDbg(this, dbg_ctl_http_txn, fmt, __VA_ARGS__)
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 

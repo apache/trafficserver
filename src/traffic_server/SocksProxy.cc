@@ -688,7 +688,7 @@ struct SocksAccepter : public Continuation {
   mainEvent(int event, NetVConnection *netVC)
   {
     ink_assert(event == NET_EVENT_ACCEPT);
-    // Debug("Socks", "Accepter got ACCEPT event");
+    // Dbg(dbg_ctl_Socks, "Accepter got ACCEPT event");
 
     new_SocksProxy(netVC);
 

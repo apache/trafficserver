@@ -45,18 +45,20 @@
 #include "proxy/logging/LogUtils.h"
 #include "proxy/logging/Log.h"
 
-// logcat-specific command-line flags
-static int  squid_flag              = 0;
-static int  follow_flag             = 0;
-static int  clf_flag                = 0;
-static int  elf_flag                = 0;
-static int  elf2_flag               = 0;
-static int  auto_filenames          = 0;
-static int  overwrite_existing_file = 0;
-static char output_file[1024];
-int         auto_clear_cache_flag = 0;
+namespace
+{
 
-static const ArgumentDescription argument_descriptions[] = {
+// logcat-specific command-line flags
+int  squid_flag              = 0;
+int  follow_flag             = 0;
+int  clf_flag                = 0;
+int  elf_flag                = 0;
+int  elf2_flag               = 0;
+int  auto_filenames          = 0;
+int  overwrite_existing_file = 0;
+char output_file[1024];
+
+const ArgumentDescription argument_descriptions[] = {
 
   {"output_file",      'o', "Specify output file",                 "S1023", &output_file,             NULL, NULL},
   {"auto_filenames",   'a', "Automatically generate output names", "T",     &auto_filenames,          NULL, NULL},
@@ -72,13 +74,15 @@ static const ArgumentDescription argument_descriptions[] = {
   RUNROOT_ARGUMENT_DESCRIPTION()
 };
 
+DbgCtl dbg_ctl_logcat{"logcat"};
+
 /*
  * Gets the inode number of a given file
  *
  * @param filename name of the file
  * @returns -1 on failure, otherwise inode number
  */
-static ino_t
+ino_t
 get_inode_num(const char *filename)
 {
   struct stat sb;
@@ -99,7 +103,7 @@ get_inode_num(const char *filename)
  * @param old_inode_num the most recently known inode number of `input_name`
  * @returns -1 on failure, 0 on noop, otherwise the open fd of rotated file
  */
-static int
+int
 follow_rotate(const char *input_file, ino_t old_inode_num)
 {
   // check if file has been rotated
@@ -116,7 +120,7 @@ follow_rotate(const char *input_file, ino_t old_inode_num)
   }
 }
 
-static int
+int
 process_file(int in_fd, int out_fd)
 {
   char buffer[MAX_LOGBUFFER_SIZE];
@@ -125,7 +129,7 @@ process_file(int in_fd, int out_fd)
   while (true) {
     // read the next buffer from file descriptor
     //
-    Debug("logcat", "Reading buffer ...");
+    Dbg(dbg_ctl_logcat, "Reading buffer ...");
     memset(buffer, 0, sizeof(buffer));
 
     // read the first 8 bytes of the header, which will give us the
@@ -208,7 +212,7 @@ process_file(int in_fd, int out_fd)
   }
 }
 
-static int
+int
 open_output_file(char *output_file_p)
 {
   int file_desc = 0;
@@ -240,6 +244,8 @@ open_output_file(char *output_file_p)
 
   return file_desc;
 }
+
+} // end anonymous namespace
 
 /*-------------------------------------------------------------------------
   main
@@ -368,7 +374,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
                 break;
               } else if (fd > 0) {
                 // we got a new fd to use
-                Debug("logcat", "Detected logfile rotation. Following to new file");
+                Dbg(dbg_ctl_logcat, "Detected logfile rotation. Following to new file");
                 close(in_fd);
                 in_fd = fd;
 

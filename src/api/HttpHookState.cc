@@ -23,6 +23,13 @@
 
 #include "api/InkAPIInternal.h"
 
+namespace
+{
+
+DbgCtl dbg_ctl_plugin{"plugin"};
+
+} // end anonymous namespace
+
 void
 HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
 {
@@ -52,9 +59,7 @@ HttpHookState::getNext()
 {
   APIHook const *zret = nullptr;
 
-#ifdef DEBUG
-  Debug("plugin", "computing next callback for hook %d", _id);
-#endif
+  Dbg(dbg_ctl_plugin, "computing next callback for hook %d", _id);
 
   if (zret = _global.candidate(); zret) {
     ++_global;

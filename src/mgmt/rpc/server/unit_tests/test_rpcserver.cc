@@ -65,11 +65,16 @@ add_method_handler(const std::string &name, Func &&call)
   return rpc::JsonRPCManager::instance().add_method_handler(name, std::forward<Func>(call), nullptr, {});
 }
 } // namespace rpc
-static const std::string sockPath{"tests/var/jsonrpc20_test.sock"};
-static const std::string lockPath{"tests/var/jsonrpc20_test.lock"};
-static constexpr int     default_backlog{5};
-static constexpr int     default_maxRetriesOnTransientErrors{64};
-static constexpr auto    logTag{"rpc.test.client"};
+
+namespace
+{
+const std::string sockPath{"tests/var/jsonrpc20_test.sock"};
+const std::string lockPath{"tests/var/jsonrpc20_test.lock"};
+constexpr int     default_backlog{5};
+constexpr int     default_maxRetriesOnTransientErrors{64};
+DbgCtl            dbg_ctl{"rpc.test.client"};
+
+} // end anonymous namespace
 
 struct RPCServerTestListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
@@ -103,7 +108,7 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
 
       jsonrpcServer->start_thread();
     } catch (std::exception const &ex) {
-      Debug(logTag, "Oops: %s", ex.what());
+      Dbg(dbg_ctl, "Oops: %s", ex.what());
     }
   }
 
@@ -160,12 +165,12 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
     auto chunks = chunk<N>(data);
     for (auto &&part : chunks) {
       if (super::_safe_write(_sock, part.c_str(), part.size()) == -1) {
-        Debug(logTag, "error sending message :%s", std ::strerror(errno));
+        Dbg(dbg_ctl, "error sending message :%s", std ::strerror(errno));
         break;
       }
 
       if (disconnect_after_chunk_n == chunk_number) {
-        Debug(logTag, "Disconnecting it after chunk %d", chunk_number);
+        Dbg(dbg_ctl, "Disconnecting it after chunk %d", chunk_number);
         super::disconnect();
         return;
       }

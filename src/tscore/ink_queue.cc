@@ -57,7 +57,14 @@
 #include "tscore/Diags.h"
 #include "tscore/JeMiAllocator.h"
 
-#define DEBUG_TAG "freelist"
+struct ink_freelist_ops {
+  void *(*fl_new)(InkFreeList *);
+  void (*fl_free)(InkFreeList *, void *);
+  void (*fl_bulkfree)(InkFreeList *, void *, void *, size_t);
+};
+
+namespace
+{
 
 /*
  * SANITY and DEADBEEF are compute-intensive memory debugging to
@@ -70,39 +77,37 @@
 #define DEADBEEF
 #endif
 
-static auto jma = je_mi_malloc::globalJeMiNodumpAllocator();
-
-struct ink_freelist_ops {
-  void *(*fl_new)(InkFreeList *);
-  void (*fl_free)(InkFreeList *, void *);
-  void (*fl_bulkfree)(InkFreeList *, void *, void *, size_t);
-};
+auto jma = je_mi_malloc::globalJeMiNodumpAllocator();
 
 using ink_freelist_list = struct _ink_freelist_list {
   InkFreeList               *fl;
   struct _ink_freelist_list *next;
 };
 
-static void *freelist_new(InkFreeList *f);
-static void  freelist_free(InkFreeList *f, void *item);
-static void  freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
+void *freelist_new(InkFreeList *f);
+void  freelist_free(InkFreeList *f, void *item);
+void  freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
 
-static void *malloc_new(InkFreeList *f);
-static void  malloc_free(InkFreeList *f, void *item);
-static void  malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
+void *malloc_new(InkFreeList *f);
+void  malloc_free(InkFreeList *f, void *item);
+void  malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
 
-static const ink_freelist_ops  malloc_ops   = {malloc_new, malloc_free, malloc_bulkfree};
-static const ink_freelist_ops  freelist_ops = {freelist_new, freelist_free, freelist_bulkfree};
-static const ink_freelist_ops *default_ops  = &freelist_ops;
+const ink_freelist_ops  malloc_ops   = {malloc_new, malloc_free, malloc_bulkfree};
+const ink_freelist_ops  freelist_ops = {freelist_new, freelist_free, freelist_bulkfree};
+const ink_freelist_ops *default_ops  = &freelist_ops;
 
-static ink_freelist_list      *freelists           = nullptr;
-static const ink_freelist_ops *freelist_global_ops = default_ops;
+ink_freelist_list      *freelists           = nullptr;
+const ink_freelist_ops *freelist_global_ops = default_ops;
+
+DbgCtl dbg_ctl_freelist_init{"freelist_init"};
 
 inline void
 dummy_forced_read(void *mem)
 {
   static_cast<void>(*const_cast<int volatile *>(reinterpret_cast<int *>(mem)));
 }
+
+} // end anonymous namespace
 
 const InkFreeListOps *
 ink_freelist_malloc_ops()
@@ -162,14 +167,14 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
     // Make sure we align *all* the objects in the allocation, not just the first one
     f->type_size = INK_ALIGN(type_size, f->alignment);
   }
-  Debug(DEBUG_TAG "_init", "<%s> Alignment request/actual (%" PRIu32 "/%" PRIu32 ")", name, alignment, f->alignment);
-  Debug(DEBUG_TAG "_init", "<%s> Type Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, type_size, f->type_size);
+  Dbg(dbg_ctl_freelist_init, "<%s> Alignment request/actual (%" PRIu32 "/%" PRIu32 ")", name, alignment, f->alignment);
+  Dbg(dbg_ctl_freelist_init, "<%s> Type Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, type_size, f->type_size);
   if (f->use_hugepages) {
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_hugepage_size()) / f->type_size;
   } else {
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_pagesize()) / f->type_size;
   }
-  Debug(DEBUG_TAG "_init", "<%s> Chunk Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, chunk_size, f->chunk_size);
+  Dbg(dbg_ctl_freelist_init, "<%s> Chunk Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, chunk_size, f->chunk_size);
   SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
 
   *fl = f;
@@ -206,7 +211,10 @@ ink_freelist_new(InkFreeList *f)
   return ptr;
 }
 
-static void *
+namespace
+{
+
+void *
 freelist_new(InkFreeList *f)
 {
   head_p item;
@@ -277,7 +285,7 @@ freelist_new(InkFreeList *f)
   return TO_PTR(FREELIST_POINTER(item));
 }
 
-static void *
+void *
 malloc_new(InkFreeList *f)
 {
   void *newp = nullptr;
@@ -291,6 +299,8 @@ malloc_new(InkFreeList *f)
   return newp;
 }
 
+} // end anonymous namespace
+
 void
 ink_freelist_free(InkFreeList *f, void *item)
 {
@@ -301,7 +311,10 @@ ink_freelist_free(InkFreeList *f, void *item)
   }
 }
 
-static void
+namespace
+{
+
+void
 freelist_free(InkFreeList *f, void *item)
 {
   void **adr_of_next = ADDRESS_OF_NEXT(item, 0);
@@ -342,7 +355,7 @@ freelist_free(InkFreeList *f, void *item)
   }
 }
 
-static void
+void
 malloc_free(InkFreeList *f, void *item)
 {
   if (f->alignment) {
@@ -351,6 +364,8 @@ malloc_free(InkFreeList *f, void *item)
     ats_free(item);
   }
 }
+
+} // end anonymous namespace
 
 void
 ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
@@ -361,7 +376,10 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
   ink_atomic_decrement(reinterpret_cast<int *>(&f->used), num_item);
 }
 
-static void
+namespace
+{
+
+void
 freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_t num_item)
 {
   void **adr_of_next = ADDRESS_OF_NEXT(tail, 0);
@@ -407,7 +425,7 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_
   }
 }
 
-static void
+void
 malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
 {
   void *item = head;
@@ -422,6 +440,8 @@ malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
     ats_free(item);
   }
 }
+
+} // end anonymous namespace
 
 void
 ink_freelists_snap_baseline()
