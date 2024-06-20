@@ -17,10 +17,11 @@
 */
 #pragma once
 
-#include "ts/remap.h"
 #include "ts/ts.h"
+#include "ts/remap.h"
 
 #include "cripts/Bundle.hpp"
+#include "cripts/Context.hpp"
 
 // Case hierarchy, this is from ATS ts_meta.h.
 template <unsigned N> struct CaseTag : public CaseTag<N - 1> {

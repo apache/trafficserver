@@ -20,6 +20,7 @@
 #include <cripts/Preamble.hpp>
 
 #include <cripts/Bundles/Common.hpp>
+#include <cripts/Bundles/Caching.hpp>
 
 // Globals for this Cript
 static Matcher::Range::IP CRIPT_ALLOW({"192.168.201.0/24", "10.0.0.0/8"});
@@ -42,7 +43,8 @@ do_create_instance()
   instance.metrics[7] = Metrics::Counter::create("cript.example1.c7");
   instance.metrics[8] = Metrics::Counter::create("cript.example1.c8"); // This one should resize() the storage
 
-  Bundle::Common::activate().dscp(10).cache_control("max-age=259200");
+  Bundle::Common::activate().dscp(10);
+  Bundle::Caching::activate().cache_control("max-age=259200");
 }
 
 do_txn_close()

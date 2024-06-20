@@ -19,8 +19,10 @@
 
 #include <ctime>
 
-#include "ts/remap.h"
 #include "ts/ts.h"
+#include "ts/remap.h"
+
+#include "cripts/Lulu.hpp"
 
 // This is lame, but until C++20, we're missing important features from
 // std::chrono :-/ Todo: Rewrite this with std::chrono when it has things like
@@ -33,9 +35,9 @@ class BaseTime
   using self_type = detail::BaseTime;
 
 public:
-  BaseTime()                       = default;
-  BaseTime(const BaseTime &)       = delete;
-  void operator=(const BaseTime &) = delete;
+  BaseTime()                        = default;
+  BaseTime(const self_type &)       = delete;
+  void operator=(const self_type &) = delete;
 
   operator integer() const { return epoch(); }
 
@@ -109,9 +111,10 @@ class Local : public detail::BaseTime
   using self_type  = Local;
 
 public:
+  Local(const self_type &)          = delete;
+  void operator=(const self_type &) = delete;
+
   Local() { localtime_r(&_now, static_cast<struct tm *>(&_result)); }
-  Local(const Local &)          = delete;
-  void operator=(const Local &) = delete;
 
   // Factory, for consistency with ::get()
   static Local

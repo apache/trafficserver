@@ -52,8 +52,6 @@ Cript::Instance::initialize(int argc, char *argv[], const char *filename)
   dbg_ctl_cript.set(plugin_debug_tag.c_str());
 }
 
-#include <iostream>
-
 bool
 Cript::Instance::addPlugin(const Cript::string &tag, const Cript::string &plugin, const Plugin::Options &options)
 {

@@ -17,13 +17,15 @@
 */
 #pragma once
 
-#include <memory>
+// These are technically not needed, but useful to have around for advanced
+// Cripters.
 #include <algorithm>
 #include <vector>
 #include <string>
 #include <string_view>
 #include <chrono>
 #include <climits>
+#include <iostream> // Useful for debugging
 
 #include <fmt/core.h>
 
@@ -50,6 +52,7 @@
 #include "cripts/Headers.hpp"
 #include "cripts/Urls.hpp"
 #include "cripts/Configs.hpp"
+#include "cripts/ConfigsBase.hpp"
 #include "cripts/Connections.hpp"
 #include "cripts/UUID.hpp"
 #include "cripts/Matcher.hpp"
