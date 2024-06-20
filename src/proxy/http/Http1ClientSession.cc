@@ -406,7 +406,8 @@ Http1ClientSession::state_keep_alive(int event, void *data)
   return 0;
 }
 
-// Called from the Http1Transaction::release
+// Called from the Http1Transaction::release or at the start of a session for
+// the very first transaction from Http1ClientSession::new_connection.
 void
 Http1ClientSession::release(ProxyTransaction *trans)
 {

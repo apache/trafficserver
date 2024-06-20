@@ -1504,7 +1504,7 @@ HttpTransact::HandleRequest(State *s)
 {
   TxnDbg(dbg_ctl_http_trans, "START HttpTransact::HandleRequest");
 
-  if (!s->state_machine->is_waiting_for_full_body && !s->state_machine->is_using_post_buffer) {
+  if (!s->state_machine->is_waiting_for_full_body && !s->state_machine->is_buffering_request_body) {
     ink_assert(!s->hdr_info.server_request.valid());
 
     Metrics::Counter::increment(http_rsb.incoming_requests);
