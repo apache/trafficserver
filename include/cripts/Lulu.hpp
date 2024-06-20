@@ -314,7 +314,7 @@ public:
 
   // This allows for a std::string to be moved to a Cript::string
   string(super_type &&that) : super_type(std::move(that)) {}
-  string(self_type &&that) : super_type(std::move(that)) {}
+  string(self_type &&that) noexcept : super_type(that) {}
 
   operator Cript::string_view() const { return {this->c_str(), this->size()}; }
 
@@ -423,9 +423,9 @@ class Control
     using self_type = Base;
 
   public:
-    Base()                       = delete;
-    Base(const Base &)           = delete;
-    void operator=(const Base &) = delete;
+    Base()                            = delete;
+    Base(const self_type &)           = delete;
+    void operator=(const self_type &) = delete;
 
     explicit Base(TSHttpCntlType ctrl) : _ctrl(ctrl) {}
     bool _get(Cript::Context *context) const;
@@ -440,9 +440,9 @@ class Control
     using self_type = Cache;
 
   public:
-    Cache()                       = default;
-    Cache(const Cache &)          = delete;
-    void operator=(const Cache &) = delete;
+    Cache()                           = default;
+    Cache(const self_type &)          = delete;
+    void operator=(const self_type &) = delete;
 
     Base response{TS_HTTP_CNTL_RESPONSE_CACHEABLE};
     Base request{TS_HTTP_CNTL_REQUEST_CACHEABLE};
@@ -463,9 +463,9 @@ class Versions
   using self_type = Versions;
 
 public:
-  Versions()                       = default;
-  Versions(const Versions &)       = delete;
-  void operator=(const Versions &) = delete;
+  Versions()                        = default;
+  Versions(const self_type &)       = delete;
+  void operator=(const self_type &) = delete;
 
   Cript::string_view
   getSV()
@@ -505,9 +505,9 @@ private:
     using self_type = Major;
 
   public:
-    Major()                       = default;
-    Major(const Major &)          = delete;
-    void operator=(const Major &) = delete;
+    Major()                           = default;
+    Major(const self_type &)          = delete;
+    void operator=(const self_type &) = delete;
 
     operator integer() const // This should not be explicit
     {
@@ -521,9 +521,9 @@ private:
     using self_type = Minor;
 
   public:
-    Minor()                       = default;
-    Minor(const Minor &)          = delete;
-    void operator=(const Minor &) = delete;
+    Minor()                           = default;
+    Minor(const self_type &)          = delete;
+    void operator=(const self_type &) = delete;
 
     operator integer() const // This should not be explicit
     {
@@ -537,9 +537,9 @@ private:
     using self_type = Minor;
 
   public:
-    Patch()                       = default;
-    Patch(const Patch &)          = delete;
-    void operator=(const Patch &) = delete;
+    Patch()                           = default;
+    Patch(const self_type &)          = delete;
+    void operator=(const self_type &) = delete;
 
     operator integer() const // This should not be explicit
     {

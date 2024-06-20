@@ -177,16 +177,19 @@ LogsMetrics::doCacheLookup(Cript::Context *context)
 void
 LogsMetrics::doRemap(Cript::Context *context)
 {
-  bool sampled = false;
+  bool sampled = true;
 
   // .logsample(int)
-  if ((_log_sample > 0) && (Cript::random(_log_sample) != 1)) {
-    control.logging.set(false);
-    sampled = true;
+  if (_log_sample > 0) {
+    if (Cript::random(_log_sample) != 1) {
+      control.logging.set(false);
+      sampled = false;
+    }
+    CDebug("Log sampling: 1 in {} -> {}", _log_sample, sampled);
   }
 
   // .tcpinfo(bool)
-  if (_tcpinfo && !sampled) {
+  if (_tcpinfo && sampled) {
     borrow req      = Client::Request::get();
     borrow conn     = Client::Connection::get();
     req["@TCPInfo"] = fmt::format("TS; {}", conn.tcpinfo.log());

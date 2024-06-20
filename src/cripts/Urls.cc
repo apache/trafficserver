@@ -15,6 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+#include <sstream>
 
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
@@ -399,6 +400,33 @@ Cript::Url::Query::_parser()
       _hashed[key] = val;
     }
   }
+}
+
+Cript::string_view
+Cript::Url::Matrix::getSV()
+{
+  if (_owner && _data.empty()) {
+    const char *value = nullptr;
+    int         len   = 0;
+
+    value   = TSUrlHttpParamsGet(_owner->_bufp, _owner->_urlp, &len);
+    _data   = Cript::string_view(value, len);
+    _loaded = true;
+  }
+
+  return _data;
+}
+
+Cript::Url::Matrix
+Cript::Url::Matrix::operator=(Cript::string_view matrix)
+{
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
+  TSUrlHttpParamsSet(_owner->_bufp, _owner->_urlp, matrix.data(), matrix.size());
+  _owner->_modified = true;
+  reset();
+  _loaded = false;
+
+  return *this;
 }
 
 Cript::string

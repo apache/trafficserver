@@ -16,24 +16,32 @@
   limitations under the License.
 */
 
-#include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
+#include "cripts/Bundles/Caching.hpp"
 
-// Our include depedenencies are unfortunate ...
-extern std::string RecConfigReadConfigDir();
-
-std::filesystem::file_status
-File::Status(const File::Path &path)
+namespace Bundle
 {
-  return std::filesystem::status(path);
-}
+const Cript::string Caching::_name = "Bundle::Caching";
 
-File::Path &
-File::Path::rebase()
+void
+Caching::doRemap(Cript::Context *context)
 {
-  if (std::filesystem::status(*this).type() != std::filesystem::file_type::regular) {
-    *this = RecConfigReadConfigDir() + "/" + this->string();
+  // .disable(bool)
+  if (_disabled) {
+    proxy.config.http.cache.http.set(0);
+    CDebug("Caching disabled");
   }
-
-  return *this;
 }
+
+void
+Caching::doReadResponse(Cript::Context *context)
+{
+  borrow resp = Server::Response::get();
+
+  // .cache_control(str)
+  if (!_cc.empty() && (resp.status > 199) && (resp.status < 400) && (resp["Cache-Control"].empty() || _force_cc)) {
+    resp["Cache-Control"] = _cc;
+  }
+}
+
+} // namespace Bundle

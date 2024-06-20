@@ -53,23 +53,23 @@ namespace Bundle
 const Cript::string Headers::_name = "Bundle::Headers";
 
 Headers::self_type &
-Headers::rm_headers(const Cript::string_view target, const std::vector<Cript::string> &headers)
+Headers::rm_headers(const Cript::string_view target, const HeaderList &headers)
 {
   switch (header_target(target)) {
   case CLIENT_REQUEST:
-    _client_request.rm_headers = headers;
+    _client_request.rm_headers.insert(_client_request.rm_headers.end(), headers.begin(), headers.end());
     needCallback(Cript::Callbacks::DO_REMAP);
     break;
   case CLIENT_RESPONSE:
-    _client_response.rm_headers = headers;
+    _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
     needCallback(Cript::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
-    _server_request.rm_headers = headers;
+    _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
     needCallback(Cript::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
-    _server_response.rm_headers = headers;
+    _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
     needCallback(Cript::Callbacks::DO_READ_RESPONSE);
     break;
   default:
@@ -80,34 +80,34 @@ Headers::rm_headers(const Cript::string_view target, const std::vector<Cript::st
 }
 
 Headers::self_type &
-Headers::set_headers(const Cript::string_view target, const std::vector<std::pair<Cript::string, Cript::string>> &headers)
+Headers::set_headers(const Cript::string_view target, const HeaderValueList &headers)
 {
-  std::vector<std::pair<Cript::string, detail::HRWBridge *>> hdrs;
-
-  hdrs.reserve(headers.size());
-  for (const auto &hdr : headers) {
-    hdrs.emplace_back(hdr.first, Headers::bridgeFactory(hdr.second));
-  }
+  detail::HeadersType::HeaderValueList *hdrs = nullptr;
 
   switch (header_target(target)) {
   case CLIENT_REQUEST:
-    _client_request.set_headers = hdrs;
+    hdrs = &_client_request.set_headers;
     needCallback(Cript::Callbacks::DO_REMAP);
     break;
   case CLIENT_RESPONSE:
-    _client_response.set_headers = hdrs;
+    hdrs = &_client_response.set_headers;
     needCallback(Cript::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
-    _server_request.set_headers = hdrs;
+    hdrs = &_server_request.set_headers;
     needCallback(Cript::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
-    _server_response.set_headers = hdrs;
+    hdrs = &_server_response.set_headers;
     needCallback(Cript::Callbacks::DO_READ_RESPONSE);
     break;
   default:
     TSReleaseAssert(!"Invalid target for set_headers()");
+  }
+
+  hdrs->reserve(headers.size());
+  for (const auto &hdr : headers) {
+    hdrs->emplace_back(hdr.first, Headers::bridgeFactory(hdr.second));
   }
 
   return *this;

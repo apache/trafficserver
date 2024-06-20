@@ -17,10 +17,9 @@
 */
 #pragma once
 
-// This is a bundle for some per-remap metrics and logging.
-//  Bundle::LogsMetrics::activate().propstats("property-name")
-//                                 .logsample(2000)
-//                                 .tcpinfo();
+//  Cache specific features:
+//  Bundle::Caching::activate().cache_control("max-age=259200")
+//                             .disable(true)
 
 #include "cripts/Lulu.hpp"
 #include "cripts/Instance.hpp"
@@ -28,18 +27,19 @@
 
 namespace Bundle
 {
-class LogsMetrics : public Cript::Bundle::Base
+class Caching : public Cript::Bundle::Base
 {
   using super_type = Cript::Bundle::Base;
-  using self_type  = LogsMetrics;
+  using self_type  = Caching;
 
 public:
-  LogsMetrics(Cript::Instance *inst) : _inst(inst) {}
+  using super_type::Base;
 
+  // This is the factory to create an instance of this bundle
   static self_type &
   _activate(Cript::Instance &inst)
   {
-    auto *entry = new self_type(&inst);
+    auto *entry = new self_type();
 
     inst.addBundle(entry);
 
@@ -52,39 +52,33 @@ public:
     return _name;
   }
 
-  self_type &propstats(const Cript::string_view &label); // In LogsMetrics.cc
+  self_type &
+  cache_control(Cript::string_view cc, bool force = false)
+  {
+    needCallback(Cript::Callbacks::DO_READ_RESPONSE);
+    _cc       = cc;
+    _force_cc = force;
+
+    return *this;
+  }
 
   self_type &
-  logsample(int val)
+  disable(bool disable = true)
   {
     needCallback(Cript::Callbacks::DO_REMAP);
-    _log_sample = val;
+    _disabled = disable;
 
     return *this;
   }
 
-  self_type &
-  tcpinfo(bool enable = true)
-  {
-    if (enable) {
-      needCallback({Cript::Callbacks::DO_REMAP, Cript::Callbacks::DO_SEND_RESPONSE, Cript::Callbacks::DO_TXN_CLOSE});
-    }
-    _tcpinfo = enable;
-
-    return *this;
-  }
-
-  void doCacheLookup(Cript::Context *context) override;
-  void doSendResponse(Cript::Context *context) override;
-  void doTxnClose(Cript::Context *context) override;
+  void doReadResponse(Cript::Context *context) override;
   void doRemap(Cript::Context *context) override;
 
 private:
   static const Cript::string _name;
-  Cript::Instance           *_inst;               // This Bundle needs the instance for access to the instance metrics
-  Cript::string              _label      = "";    // Propstats label
-  int                        _log_sample = 0;     // Log sampling
-  bool                       _tcpinfo    = false; // Turn on TCP info logging
+  Cript::string              _cc       = "";
+  bool                       _force_cc = false;
+  bool                       _disabled = false;
 };
 
 } // namespace Bundle

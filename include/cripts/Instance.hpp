@@ -21,8 +21,8 @@
 #include <variant>
 #include <unordered_map>
 
-#include "ts/remap.h"
 #include "ts/ts.h"
+#include "ts/remap.h"
 
 #include "cripts/Plugins.hpp"
 #include "cripts/Metrics.hpp"
@@ -39,9 +39,9 @@ class Instance
 public:
   using DataType = std::variant<integer, double, boolean, void *, Cript::string>;
 
-  Instance()                       = delete;
-  Instance(const Instance &)       = delete;
-  void operator=(const Instance &) = delete;
+  Instance()                        = delete;
+  Instance(const self_type &)       = delete;
+  void operator=(const self_type &) = delete;
 
   // This has to be in the .hpp file, otherwise we will not get the correct debug tag!
   Instance(int argc, char *argv[]) { initialize(argc, argv, __BASE_FILE__); }
@@ -142,9 +142,11 @@ private:
 // A little wrapper / hack to make the do_create_instance take what looks like a context.
 // This is only used during instantiation, not at runtime when the instance is used.
 struct InstanceContext {
-  InstanceContext()                        = delete;
-  void operator=(const InstanceContext &)  = delete;
-  InstanceContext(const InstanceContext &) = delete;
+  using self_type = InstanceContext;
+
+  InstanceContext()                  = delete;
+  InstanceContext(const self_type &) = delete;
+  void operator=(const self_type &)  = delete;
 
   InstanceContext(Cript::Instance &inst) : p_instance(inst) {}
 

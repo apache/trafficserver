@@ -122,6 +122,19 @@ Best way to understand this is to look at an example:
 This is a pretty artificial example, but shows the name space of these configurations, and how they
 match the documented ATS configuration names.
 
+The configurations can also be access via a more advanced API, typically used for embedding existing
+control planes with Cripts. This is done using the ``Records`` object, for example:
+
+.. code-block:: cpp
+
+   do_remap() {
+     auto http_cache = Cript::Records("proxy.config.http.cache.http");
+
+     if (AsInteger(http_cache.get()) > 0) {
+       CDebug("HTTP Cache is on");
+     }
+   }
+
 .. _cripts-variables-control:
 
 Control Variable
