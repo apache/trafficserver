@@ -515,6 +515,7 @@ find_package(resolv)
 if(ENABLE_DOCS OR ENABLE_AUTEST)
   find_package(Python3 REQUIRED)
   find_program(PipEnv pipenv REQUIRED)
+  find_program(NETCAT_PROGRAM nc REQUIRED)
 endif()
 
 if(ENABLE_DOCS)
