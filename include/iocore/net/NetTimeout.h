@@ -46,6 +46,13 @@ public:
   void       update_inactivity();
 
 private:
+  static DbgCtl &
+  _dbg_ctl()
+  {
+    static DbgCtl dc{"activity_cop"};
+    return dc;
+  }
+
   ink_hrtime _active_timeout_in        = 0;
   ink_hrtime _inactive_timeout_in      = 0;
   ink_hrtime _next_active_timeout_at   = 0;
@@ -157,8 +164,8 @@ NetTimeout::is_active_timeout_expired(ink_hrtime now)
   }
 
   if (0 < _next_active_timeout_at && _next_active_timeout_at < now) {
-    Debug("activity_cop", "active timeout cont=%p now=%" PRId64 " timeout_at=%" PRId64 " timeout_in=%" PRId64, this,
-          ink_hrtime_to_sec(now), ink_hrtime_to_sec(_next_active_timeout_at), ink_hrtime_to_sec(_active_timeout_in));
+    Dbg(_dbg_ctl(), "active timeout cont=%p now=%" PRId64 " timeout_at=%" PRId64 " timeout_in=%" PRId64, this,
+        ink_hrtime_to_sec(now), ink_hrtime_to_sec(_next_active_timeout_at), ink_hrtime_to_sec(_active_timeout_in));
     return true;
   }
 
@@ -175,8 +182,8 @@ NetTimeout::is_inactive_timeout_expired(ink_hrtime now)
   }
 
   if (0 < _next_inactive_timeout_at && _next_inactive_timeout_at < now) {
-    Debug("activity_cop", "inactive timeout cont=%p now=%" PRId64 " timeout_at=%" PRId64 " timeout_in=%" PRId64, this,
-          ink_hrtime_to_sec(now), ink_hrtime_to_sec(_next_inactive_timeout_at), ink_hrtime_to_sec(_inactive_timeout_in));
+    Dbg(_dbg_ctl(), "inactive timeout cont=%p now=%" PRId64 " timeout_at=%" PRId64 " timeout_in=%" PRId64, this,
+        ink_hrtime_to_sec(now), ink_hrtime_to_sec(_next_inactive_timeout_at), ink_hrtime_to_sec(_inactive_timeout_in));
     return true;
   }
 

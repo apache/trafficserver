@@ -28,8 +28,10 @@
 
 #include "tscore/ink_mutex.h"
 
+class DbgCtl;
+
 /// Generate a debug message with the current capabilities for the process.
-extern void DebugCapabilities(const char *tag ///< Debug message tag.
+extern void DebugCapabilities(DbgCtl &dbg_ctl ///< Debug message control.
 );
 /// Set capabilities to persist across change of user id.
 /// @return true on success
