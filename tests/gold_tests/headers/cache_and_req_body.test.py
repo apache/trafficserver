@@ -21,7 +21,6 @@ Test.Summary = '''
 Test cached responses and requests with bodies using CurlHeader tester
 '''
 
-Test.SkipUnless(Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"))
 Test.ContinueOnFail = True
 
 # Define default ATS

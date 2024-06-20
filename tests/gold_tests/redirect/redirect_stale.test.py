@@ -21,8 +21,6 @@ Test.Summary = '''
 Test that redirects will be followed when refreshing stale cache objects.
 '''
 
-Test.SkipUnless(Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"))
-
 server = Test.MakeOriginServer("server")
 
 ArbitraryTimestamp = '12345678'

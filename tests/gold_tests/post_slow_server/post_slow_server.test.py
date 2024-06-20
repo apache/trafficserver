@@ -24,8 +24,7 @@ Server receives POST, sent by client over HTTP/2, waits 2 minutes, then sends re
 # Because of the 2 minute delay, we don't want to run this test in CI checks.  Comment out this line to run it.
 Test.SkipIf(Condition.true("Test takes too long to run it in CI."))
 
-Test.SkipUnless(
-    Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"), Condition.HasCurlFeature('http2'))
+Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 

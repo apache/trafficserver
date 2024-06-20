@@ -22,7 +22,6 @@ import os
 Test.Summary = '''
 Verify that request following a ill-formed request is not processed
 '''
-Test.SkipUnless(Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"))
 Test.ContinueOnFail = True
 ts = Test.MakeATSProcess("ts")
 Test.ContinueOnFail = True

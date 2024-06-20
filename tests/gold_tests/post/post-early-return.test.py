@@ -24,7 +24,6 @@ import os
 Test.Summary = '''
 Test a case when the origin returns before the post is completed
 '''
-Test.SkipUnless(Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"))
 Test.ContinueOnFail = True
 
 Test.GetTcpPort("upstream_port1")

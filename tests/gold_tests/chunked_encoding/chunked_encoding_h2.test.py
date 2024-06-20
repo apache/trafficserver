@@ -21,7 +21,6 @@ Test interaction of H2 and chunked encoding
 '''
 
 Test.SkipUnless(
-    Condition.HasProgram("nc", "Netcat needs to be installed on system for this test to work"),
     Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2'))
 Test.ContinueOnFail = True
