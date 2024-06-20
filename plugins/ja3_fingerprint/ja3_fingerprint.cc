@@ -263,7 +263,7 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSEvent expected_event = global_modify_incoming_enabled ? TS_EVENT_HTTP_READ_REQUEST_HDR : TS_EVENT_HTTP_SEND_REQUEST_HDR;
   if (event != expected_event) {
-    TSError("Unexpected event, got %d, expected %d", event, expected_event);
+    TSError("[%s] Unexpected event, got %d, expected %d", PLUGIN_NAME, event, expected_event);
     TSAssert(event == expected_event);
   }
 
@@ -361,7 +361,7 @@ TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_U
 
   // Check if there is config conflict as both global and remap plugin
   if (ja3_idx >= 0) {
-    TSError(PLUGIN_NAME, "JA3 configured as both global and remap. Check plugin.config.");
+    TSError("[%s] JA3 configured as both global and remap. Check plugin.config.", PLUGIN_NAME);
     return TS_ERROR;
   }
 
@@ -408,7 +408,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   // On remap, set up handler at send req hook to send JA3 data as header
   if (!remap_info || !rri || !(remap_info->handler)) {
-    TSError("Invalid private data or RRI or handler.");
+    TSError("[%s] Invalid private data or RRI or handler.", PLUGIN_NAME);
   } else {
     TSHttpTxnHookAdd(rh, TS_HTTP_SEND_REQUEST_HDR_HOOK, remap_info->handler);
   }
