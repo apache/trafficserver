@@ -447,7 +447,7 @@ InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 }
 
 static void
-InjectOriginalContentTypeHeader(TSHttpTxn /* txn ATS_UNUSED */, TSMBuffer buffer, TSMLoc hdr)
+InjectOriginalContentTypeHeader(TSMBuffer buffer, TSMLoc hdr)
 {
   TSMLoc ct_field = TSMimeHdrFieldFind(buffer, hdr, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
   if (TS_NULL_MLOC != ct_field) {
@@ -588,7 +588,7 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
   }
 
   if (xheaders & XHEADER_X_PROBE_HEADERS) {
-    InjectOriginalContentTypeHeader(txn, buffer, hdr);
+    InjectOriginalContentTypeHeader(buffer, hdr);
     BodyBuilder *data = AuxDataMgr::data(txn).body_builder.get();
     Dbg(dbg_ctl_xform, "XInjectResponseHeaders(): client resp header ready");
     if (data == nullptr) {

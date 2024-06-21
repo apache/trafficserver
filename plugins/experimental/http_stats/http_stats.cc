@@ -244,7 +244,7 @@ HeaderFieldStringSet(const HTTPStatsHttpHeader &http, const char *field_name, in
 }
 
 static TSReturnCode
-WriteResponseHeader(HTTPStatsRequest *trq, TSCont /* contp ATS_UNUSED */, TSHttpStatus status)
+WriteResponseHeader(HTTPStatsRequest *trq, TSHttpStatus status)
 {
   HTTPStatsHttpHeader response;
 
@@ -403,7 +403,7 @@ HTTPStatsInterceptHook(TSCont contp, TSEvent event, void *edata)
         cdata.trq->writeio.write(TSVIOVConnGet(arg.vio), contp);
         TSVIONBytesSet(cdata.trq->writeio.vio, 0);
 
-        if (WriteResponseHeader(cdata.trq, contp, status) != TS_SUCCESS) {
+        if (WriteResponseHeader(cdata.trq, status) != TS_SUCCESS) {
           VERROR("failure writing response");
           return TS_EVENT_ERROR;
         }

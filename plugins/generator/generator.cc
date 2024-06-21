@@ -337,7 +337,7 @@ GeneratorWriteFailureResponse(GeneratorRequest *grq, TSHttpStatus status)
 }
 
 static TSReturnCode
-GeneratorWriteResponse(GeneratorRequest *grq, TSCont /* contp ATS_UNUSED */)
+GeneratorWriteResponse(GeneratorRequest *grq)
 {
   GeneratorHttpHeader response;
   VDEBUG("writing GET response");
@@ -374,7 +374,7 @@ GeneratorWriteResponse(GeneratorRequest *grq, TSCont /* contp ATS_UNUSED */)
 }
 
 static TSReturnCode
-GeneratorPOSTResponse(GeneratorRequest *grq, TSCont /* contp ATS_UNUSED */)
+GeneratorPOSTResponse(GeneratorRequest *grq)
 {
   GeneratorHttpHeader response;
   VDEBUG("writing POST response");
@@ -559,7 +559,7 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
           TSVIOReenable(input_vio);
 
         } else {
-          if (GeneratorPOSTResponse(cdata.grq, contp) != TS_SUCCESS) {
+          if (GeneratorPOSTResponse(cdata.grq) != TS_SUCCESS) {
             VERROR("failure writing response");
             return TS_EVENT_ERROR;
           }
@@ -635,7 +635,7 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
           return TS_EVENT_NONE;
         }
 
-        if (GeneratorWriteResponse(cdata.grq, contp) != TS_SUCCESS) {
+        if (GeneratorWriteResponse(cdata.grq) != TS_SUCCESS) {
           VERROR("failure writing response");
           return TS_EVENT_ERROR;
         }
@@ -713,7 +713,7 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
     // Our response delay expired, so write the headers now, which
     // will also trigger the read+write event flow.
     argument_type cdata = TSContDataGet(contp);
-    if (GeneratorWriteResponse(cdata.grq, contp) != TS_SUCCESS) {
+    if (GeneratorWriteResponse(cdata.grq) != TS_SUCCESS) {
       VERROR("failure writing response");
       return TS_EVENT_ERROR;
     }

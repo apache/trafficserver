@@ -405,7 +405,7 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   String      awsRegion = getRegion(defaultDefaultRegionMap, host, hostLen);
 
   /* Test string to sign calculation */
-  String stringToSign = getStringToSign(host, hostLen, dateTime, dateTimeLen, awsRegion.c_str(), awsRegion.length(), awsService,
+  String stringToSign = getStringToSign(dateTime, dateTimeLen, awsRegion.c_str(), awsRegion.length(), awsService,
                                         strlen(awsService), canonicalReq.c_str(), canonicalReq.length());
   CAPTURE(stringToSign);
   CHECK_FALSE(stringToSign.compare(bench[3]));

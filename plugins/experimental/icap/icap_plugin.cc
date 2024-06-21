@@ -256,7 +256,7 @@ handle_invalid_icap_behavior(TSCont contp, TransformData *data, const char *msg)
  *              icap eaders from response of icap server.
  */
 static int
-handle_icap_headers(TSCont /* contp ATS_UNUSED */, TransformData *data)
+handle_icap_headers(TransformData *data)
 {
   int64_t     pos = data->icap_header.find("\r\n");
   std::string icap_status_line =
@@ -329,7 +329,7 @@ handle_icap_http_header(TransformData *data)
  *              downstream.
  */
 static int
-handle_read_http_body(TSCont /* contp ATS_UNUSED */, TransformData *data)
+handle_read_http_body(TransformData *data)
 {
   int64_t avail = TSIOBufferReaderAvail(data->icap_resp_reader);
 
@@ -465,7 +465,7 @@ transform_connect(TSCont contp, TransformData *data)
 }
 
 static int
-transform_write_body(TSCont /* contp ATS_UNUSED */, TransformData *data)
+transform_write_body(TransformData *data)
 {
   data->state = State::WRITE_BODY;
   /* If debug-mode enabled, allocate buffer to store origin response */
@@ -521,7 +521,7 @@ transform_read_http_body(TSCont contp, TransformData *data)
   }
 
   if (TSIOBufferReaderAvail(data->icap_resp_reader)) {
-    return handle_read_http_body(contp, data);
+    return handle_read_http_body(data);
   }
 
   return 0;
@@ -570,7 +570,7 @@ handle_write_header(TSCont contp, TransformData *data)
   TSHandleMLocRelease(bufp_c, TS_NULL_MLOC, req_loc);
   TSHandleMLocRelease(bufp_s, TS_NULL_MLOC, resp_loc);
 
-  return transform_write_body(contp, data);
+  return transform_write_body(data);
 }
 
 static int
@@ -707,7 +707,7 @@ transform_bypass(TSCont contp, TransformData *data)
  * Description: Buffer response body from origin server.
  */
 static int
-transform_buffer_os_resp(TSCont /* contp ATS_UNUSED */, TransformData *data)
+transform_buffer_os_resp(TransformData *data)
 {
   data->state = State::BUFFER_OS_RESP;
   Dbg(dbg_ctl, "Buffer os response.");
@@ -771,7 +771,7 @@ transform_write_header_event(TSCont contp, TransformData *data, TSEvent event, v
 {
   switch (event) {
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    return transform_write_body(contp, data);
+    return transform_write_body(data);
   case TS_EVENT_ERROR:
     return handle_invalid_icap_behavior(contp, data, "Error writing header to ICAP scanner");
   case TS_EVENT_IMMEDIATE:
@@ -798,7 +798,7 @@ transform_write_event(TSCont contp, TransformData *data, TSEvent event, void * /
      */
     if (debug_enabled) {
       setup_icap_status_header(data, "@ICAP-Status", "Cannot connect to ICAP server");
-      return transform_buffer_os_resp(contp, data);
+      return transform_buffer_os_resp(data);
     } else {
       return handle_invalid_icap_behavior(contp, data, "Error writing body to ICAP scanner");
     }
@@ -842,7 +842,7 @@ transform_read_icap_header_event(TSCont contp, TransformData *data, TSEvent even
         data->icap_header.resize(pos);
         consume = pos + token_length - consumed;
         TSIOBufferReaderConsume(reader, consume);
-        if (handle_icap_headers(contp, data)) {
+        if (handle_icap_headers(data)) {
           return transform_send_os_resp(contp, data);
         } else {
           return transform_read_http_header(contp, data);
@@ -942,7 +942,7 @@ transform_read_http_body_event(TSCont contp, TransformData *data, TSEvent event,
     data->eos_detected = true;
     break;
   case TS_EVENT_VCONN_READ_READY:
-    handle_read_http_body(contp, data);
+    handle_read_http_body(data);
     TSVIOReenable(data->output_vio);
     break;
   case TS_EVENT_VCONN_WRITE_COMPLETE:
@@ -950,7 +950,7 @@ transform_read_http_body_event(TSCont contp, TransformData *data, TSEvent event,
     break;
   case TS_EVENT_VCONN_WRITE_READY:
     TSVIOReenable(data->icap_vio);
-    handle_read_http_body(contp, data);
+    handle_read_http_body(data);
     break;
   default:
     break;

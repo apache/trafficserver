@@ -119,7 +119,7 @@ private:
 ///////////////////////////////////////////////////////////////////////////
 // Dump a header on stderr, useful together with Dbg().
 void
-print_headers(TSHttpTxn /* txn ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &ss)
+print_headers(TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &ss)
 {
   TSIOBuffer        output_buffer;
   TSIOBufferReader  reader;
@@ -160,7 +160,7 @@ log_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, char const *type_msg)
 {
   if (dbg_ctl_hdrs.on()) {
     std::stringstream output;
-    print_headers(txn, bufp, hdr_loc, output);
+    print_headers(bufp, hdr_loc, output);
     Dbg(dbg_ctl_hdrs, "\n=============\n %s headers are... \n %s", type_msg, output.str().c_str());
   }
 }
@@ -172,13 +172,13 @@ print_request_headers(TSHttpTxn txn, std::stringstream &output)
   TSMLoc    hdr_loc;
   if (TSHttpTxnClientReqGet(txn, &buf_c, &hdr_loc) == TS_SUCCESS) {
     output << "{'type':'request', 'side':'client', 'headers': {\n";
-    print_headers(txn, buf_c, hdr_loc, output);
+    print_headers(buf_c, hdr_loc, output);
     output << "\n\t}}";
     TSHandleMLocRelease(buf_c, TS_NULL_MLOC, hdr_loc);
   }
   if (TSHttpTxnServerReqGet(txn, &buf_s, &hdr_loc) == TS_SUCCESS) {
     output << ",{'type':'request', 'side':'server', 'headers': {\n";
-    print_headers(txn, buf_s, hdr_loc, output);
+    print_headers(buf_s, hdr_loc, output);
     output << "\n\t}}";
     TSHandleMLocRelease(buf_s, TS_NULL_MLOC, hdr_loc);
   }
@@ -191,13 +191,13 @@ print_response_headers(TSHttpTxn txn, std::stringstream &output)
   TSMLoc    hdr_loc;
   if (TSHttpTxnServerRespGet(txn, &buf_s, &hdr_loc) == TS_SUCCESS) {
     output << "{'type':'response', 'side':'server', 'headers': {\n";
-    print_headers(txn, buf_s, hdr_loc, output);
+    print_headers(buf_s, hdr_loc, output);
     output << "\n\t}},";
     TSHandleMLocRelease(buf_s, TS_NULL_MLOC, hdr_loc);
   }
   if (TSHttpTxnClientRespGet(txn, &buf_c, &hdr_loc) == TS_SUCCESS) {
     output << "{'type':'response', 'side':'client', 'headers': {\n";
-    print_headers(txn, buf_c, hdr_loc, output);
+    print_headers(buf_c, hdr_loc, output);
     output << "\n\t}}";
     TSHandleMLocRelease(buf_c, TS_NULL_MLOC, hdr_loc);
   }
