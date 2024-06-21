@@ -261,8 +261,7 @@ TEST_CASE("HMAC Digest: test various supported/unsupported types", "[MAC][access
 
   StringList::iterator digestIter = digests.begin();
   for (String digestType : types) {
-    size_t outLen = cryptoMessageDigestGet(digestType.c_str(), data.c_str(), data.length(), key.c_str(), key.length(), out,
-                                           MAX_MSGDIGEST_BUFFER_SIZE);
+    size_t outLen = cryptoMessageDigestGet(digestType.c_str(), data.c_str(), data.length(), key.c_str(), key.length(), out);
     CHECK(0 < outLen);
     if (0 < outLen) {
       size_t hexOutLen = hexDecode(digestIter->c_str(), digestIter->length(), hexOut, MAX_MSGDIGEST_BUFFER_SIZE);
