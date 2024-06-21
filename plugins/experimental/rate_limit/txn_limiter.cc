@@ -68,7 +68,7 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
 }
 
 static int
-txn_queue_cont(TSCont cont, TSEvent event, void *edata)
+txn_queue_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   auto     *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(cont));
   QueueTime now     = std::chrono::system_clock::now(); // Only do this once per "loop"

@@ -78,7 +78,7 @@ setCacheKey(TSHttpTxn txn, Configs *config, TSRemapRequestInfo *rri = nullptr)
 }
 
 static int
-contSetCachekey(TSCont contp, TSEvent event, void *edata)
+contSetCachekey(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
 
@@ -130,7 +130,7 @@ TSPluginInit(int argc, const char *argv[])
  * @return always TS_SUCCESS.
  */
 TSReturnCode
-TSRemapInit(TSRemapInterface *apiInfo, char *errBuf, int erroBufSize)
+TSRemapInit(TSRemapInterface * /* apiInfo ATS_UNUSED */, char * /* errBuf ATS_UNUSED */, int /* erroBufSize ATS_UNUSED */)
 {
   return TS_SUCCESS;
 }
@@ -147,7 +147,7 @@ TSRemapInit(TSRemapInterface *apiInfo, char *errBuf, int erroBufSize)
  * @return TS_SUCCES if success or TS_ERROR if failure
  */
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **instance, char *errBuf, int errBufSize)
+TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* errBuf ATS_UNUSED */, int /* errBufSize ATS_UNUSED */)
 {
   Configs *config = new Configs();
   if (nullptr != config && config->init(argc, const_cast<const char **>(argv), /* perRemapConfig */ true)) {

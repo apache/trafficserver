@@ -198,7 +198,7 @@ template <class T> struct HttpTransaction {
   }
 
   static int
-  handle(TSCont c, TSEvent e, void *d)
+  handle(TSCont c, TSEvent e, void * /* d ATS_UNUSED */)
   {
     Self *const self = static_cast<Self *const>(TSContDataGet(c));
     assert(self != nullptr);

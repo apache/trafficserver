@@ -528,7 +528,7 @@ check_request_header(TSHttpTxn const txnp, Config const *const conf, PluginType 
 }
 
 int
-global_request_header_hook(TSCont const contp, TSEvent const event, void *const edata)
+global_request_header_hook(TSCont const contp, TSEvent const /* event ATS_UNUSED */, void *const edata)
 {
   TSHttpTxn const     txnp = static_cast<TSHttpTxn>(edata);
   Config const *const conf = static_cast<Config *>(TSContDataGet(contp));

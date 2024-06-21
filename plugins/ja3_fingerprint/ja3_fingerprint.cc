@@ -199,7 +199,7 @@ append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, const char *field, int field_len
 }
 
 static int
-client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
+client_hello_ja3_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
   switch (event) {
@@ -377,7 +377,7 @@ TSPluginInit(int argc, const char *argv[])
 
 // Remap Part
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   Dbg(dbg_ctl, "JA3 Remap Plugin initializing..");
 

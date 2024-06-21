@@ -37,7 +37,7 @@ static bool     enabled             = true;
 
 //-------------------------------------------------------------------------
 static int
-msg_hook(TSCont *contp, TSEvent event, void *edata)
+msg_hook(TSCont * /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSPluginMsg     *msg = static_cast<TSPluginMsg *>(edata);
   std::string_view tag(static_cast<const char *>(msg->tag));
@@ -151,7 +151,7 @@ IPTable ip_table;
 
 //-------------------------------------------------------------------------
 static int
-handle_start_hook(TSCont *contp, TSEvent event, void *edata)
+handle_start_hook(TSCont * /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   Dbg(dbg_ctl, "handle_start_hook");
   auto vconn = static_cast<TSVConn>(edata);
@@ -209,7 +209,7 @@ struct Errors {
 
 //-------------------------------------------------------------------------
 static int
-handle_close_hook(TSCont *contp, TSEvent event, void *edata)
+handle_close_hook(TSCont * /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   Dbg(dbg_ctl, "handle_close_hook");
   auto txnp = static_cast<TSHttpTxn>(edata);
@@ -255,7 +255,7 @@ handle_close_hook(TSCont *contp, TSEvent event, void *edata)
 
 //-------------------------------------------------------------------------
 static int
-clean_table(TSCont *contp, TSEvent event, void *edata)
+clean_table(TSCont * /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   ip_table.clean();
   return 0;

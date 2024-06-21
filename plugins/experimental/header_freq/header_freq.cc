@@ -103,7 +103,7 @@ Log_Data(std::ostream &ss)
  * the origin headers.
  */
 int
-CB_Command_Log(TSCont contp, TSEvent event, void *edata)
+CB_Command_Log(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   std::string *command = static_cast<std::string *>(TSContDataGet(contp));
   if (nullptr == command) {
@@ -224,7 +224,7 @@ handle_header_event(TSHttpTxn txnp, TSEvent event, CountMap_t &freq_map)
  * SEND_RESPONSE_HDR hooks.
  */
 int
-header_handle_hook(TSCont contp, TSEvent event, void *edata)
+header_handle_hook(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp    = reinterpret_cast<TSHttpTxn>(edata);
   int       ret_val = TS_SUCCESS;
@@ -251,7 +251,7 @@ header_handle_hook(TSCont contp, TSEvent event, void *edata)
  * header stats.
  */
 int
-msg_handle_hook(TSCont contp, TSEvent event, void *edata)
+msg_handle_hook(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_LIFECYCLE_MSG: // Handle external command
@@ -286,7 +286,7 @@ msg_handle_hook(TSCont contp, TSEvent event, void *edata)
 
 /// Registration entry point for plugin.
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   Dbg(dbg_ctl_init, "initializing plugin");
 

@@ -373,7 +373,8 @@ wrap_unsigned_counter(uint64_t value)
 }
 
 static void
-json_out_stat(TSRecordType rec_type, void *edata, int registered, const char *name, TSRecordDataType data_type, TSRecordData *datum)
+json_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
+              TSRecordDataType data_type, TSRecordData *datum)
 {
   stats_state *my_state = static_cast<stats_state *>(edata);
 
@@ -397,7 +398,8 @@ json_out_stat(TSRecordType rec_type, void *edata, int registered, const char *na
 }
 
 static void
-csv_out_stat(TSRecordType rec_type, void *edata, int registered, const char *name, TSRecordDataType data_type, TSRecordData *datum)
+csv_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
+             TSRecordDataType data_type, TSRecordData *datum)
 {
   stats_state *my_state = static_cast<stats_state *>(edata);
   switch (data_type) {
@@ -565,7 +567,7 @@ stats_dostuff(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-stats_origin(TSCont contp, TSEvent event, void *edata)
+stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSCont       icontp;
   stats_state *my_state;
@@ -932,7 +934,7 @@ new_config_holder(const char *path)
 }
 
 static int
-free_handler(TSCont cont, TSEvent event, void *edata)
+free_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   config_t *config;
   config = (config_t *)TSContDataGet(cont);
@@ -942,7 +944,7 @@ free_handler(TSCont cont, TSEvent event, void *edata)
 }
 
 static int
-config_handler(TSCont cont, TSEvent event, void *edata)
+config_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   config_holder_t *config_holder;
   config_holder = (config_holder_t *)TSContDataGet(cont);

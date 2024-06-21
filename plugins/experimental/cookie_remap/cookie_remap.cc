@@ -896,7 +896,7 @@ using OpsQueue = std::vector<const op *>;
 //----------------------------------------------------------------------------
 // init
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   return TS_SUCCESS;
 }
@@ -904,7 +904,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 //----------------------------------------------------------------------------
 // initialization of structures from config parameters
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   if (argc != 3) {
     TSError("arguments not equal to 3: %d", argc);

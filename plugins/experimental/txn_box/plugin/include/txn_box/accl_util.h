@@ -171,7 +171,7 @@ get_bit_from_byte(char key, std::size_t position) noexcept
 template <typename T>
 auto
 get_byte(typename T::const_pointer ptr, int byte_number,
-         typename std::enable_if_t<std::is_same_v<T, reversed_view<swoc::TextView>>> *val = 0)
+         typename std::enable_if_t<std::is_same_v<T, reversed_view<swoc::TextView>>> * /* val ATS_UNUSED */ = 0)
 {
   typename T::const_pointer byte = ptr - byte_number;
   return *byte;
@@ -179,7 +179,7 @@ get_byte(typename T::const_pointer ptr, int byte_number,
 template <typename T>
 auto
 get_byte(typename T::const_pointer ptr, int byte_number,
-         typename std::enable_if_t<!std::is_same_v<T, reversed_view<swoc::TextView>>> *val = 0)
+         typename std::enable_if_t<!std::is_same_v<T, reversed_view<swoc::TextView>>> * /* val ATS_UNUSED */ = 0)
 {
   typename T::const_pointer byte = ptr + byte_number;
   return *byte;
@@ -244,7 +244,7 @@ template <typename Key, typename Value> StringTree<Key, Value>::~StringTree()
 
 template <typename Key, typename Value>
 bool
-StringTree<Key, Value>::insert(Key const &key, Value const &value, Comparison *cmp)
+StringTree<Key, Value>::insert(Key const &key, Value const &value, Comparison * /* cmp ATS_UNUSED */)
 {
   node_type_ptr search_node = _head;
   std::size_t   idx{0};
@@ -295,7 +295,7 @@ StringTree<Key, Value>::insert(Key const &key, Value const &value, Comparison *c
 
 template <typename Key, typename Value>
 std::pair<bool, Value>
-StringTree<Key, Value>::full_match(Key const &key, Comparison *cmp) const noexcept
+StringTree<Key, Value>::full_match(Key const &key, Comparison * /* cmp ATS_UNUSED */) const noexcept
 {
   node_type_ptr search_node = _head->left;
   std::size_t   idx{0};
@@ -315,7 +315,7 @@ StringTree<Key, Value>::full_match(Key const &key, Comparison *cmp) const noexce
 
 template <typename Key, typename Value>
 std::vector<std::pair<Key, Value>>
-StringTree<Key, Value>::prefix_match(Key const &prefix, Comparison *cmp) const
+StringTree<Key, Value>::prefix_match(Key const &prefix, Comparison * /* cmp ATS_UNUSED */) const
 {
   // Nodes will help to follow, but basically we:
   // 1 - find the closest node.

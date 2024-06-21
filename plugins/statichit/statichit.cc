@@ -296,7 +296,7 @@ HeaderFieldStringSet(const StaticHitHttpHeader &http, const char *field_name, in
 }
 
 static TSReturnCode
-WriteResponseHeader(StaticHitRequest *trq, TSCont contp, TSHttpStatus status)
+WriteResponseHeader(StaticHitRequest *trq, TSHttpStatus status)
 {
   StaticHitHttpHeader response;
 
@@ -455,7 +455,7 @@ StaticHitInterceptHook(TSCont contp, TSEvent event, void *edata)
         cdata.trq->writeio.write(TSVIOVConnGet(arg.vio), contp);
         TSVIONBytesSet(cdata.trq->writeio.vio, 0);
 
-        if (WriteResponseHeader(cdata.trq, contp, status) != TS_SUCCESS) {
+        if (WriteResponseHeader(cdata.trq, status) != TS_SUCCESS) {
           VERROR("failure writing response");
           return TS_EVENT_ERROR;
         }

@@ -100,7 +100,7 @@ public:
  * @return always TS_SUCCESS.
  */
 TSReturnCode
-TSRemapInit(TSRemapInterface *apiInfo, char *errBuf, int erroBufSize)
+TSRemapInit(TSRemapInterface * /* apiInfo ATS_UNUSED */, char * /* errBuf ATS_UNUSED */, int /* erroBufSize ATS_UNUSED */)
 {
   return TS_SUCCESS;
 }
@@ -117,7 +117,7 @@ TSRemapInit(TSRemapInterface *apiInfo, char *errBuf, int erroBufSize)
  * @return TS_SUCCES if success or TS_ERROR if failure
  */
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **instance, char *errBuf, int errBufSize)
+TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* errBuf ATS_UNUSED */, int /* errBufSize ATS_UNUSED */)
 {
   AccessControlConfig *config = new AccessControlConfig();
   if (nullptr != config && config->init(argc, argv)) {
@@ -229,7 +229,7 @@ nextDuplicate(TSMBuffer buffer, TSMLoc hdr, TSMLoc field)
  * @note Add the cookies to "hier-part" (RFC 3986), always sort them in the cache key.
  */
 bool
-getCookieByName(TSHttpTxn txn, TSMBuffer buf, TSMLoc hdrs, const String &cookieName, String &cookieValue)
+getCookieByName(TSHttpTxn /* txn ATS_UNUSED */, TSMBuffer buf, TSMLoc hdrs, const String &cookieName, String &cookieValue)
 {
   TSMLoc field;
 

@@ -200,7 +200,7 @@ cryptoErrStr(char *buffer, size_t bufferLen)
  */
 size_t
 cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen, const char *key, size_t keyLen, char *out,
-                       size_t outLen)
+                       size_t /* outLen ATS_UNUSED */)
 {
 #ifndef HAVE_HMAC_CTX_NEW
   HMAC_CTX ctx[1];
@@ -288,7 +288,7 @@ cryptoBase64EncodedSize(size_t decodedSize)
  * @return output buffer size
  */
 size_t
-cryptoBase64DecodeSize(const char *encoded, size_t encodedLen)
+cryptoBase64DecodeSize(const char * /* encoded ATS_UNUSED */, size_t encodedLen)
 {
   return ats_base64_decode_dstlen(encodedLen);
 }

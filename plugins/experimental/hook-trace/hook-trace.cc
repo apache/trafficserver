@@ -35,7 +35,7 @@ countof(const T (&)[N])
 }
 
 static int
-HttpHookTracer(TSCont contp, TSEvent event, void *edata)
+HttpHookTracer(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   union {
     TSHttpTxn     txn;
@@ -124,7 +124,7 @@ HttpHookTracer(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-LifecycleHookTracer(TSCont contp, TSEvent event, void *edata)
+LifecycleHookTracer(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
