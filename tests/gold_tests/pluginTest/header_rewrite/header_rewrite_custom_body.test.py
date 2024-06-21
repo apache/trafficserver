@@ -81,8 +81,6 @@ class HeaderRewriteCustomBodyTest:
         tr.Processes.Default.Streams.stdout = "gold/header_rewrite-custom_body_body.gold"
         tr.StillRunningAfter = self.server
 
-        self.ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
-
     def run(self):
         self.runTraffic()
 
