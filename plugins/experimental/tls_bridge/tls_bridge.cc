@@ -648,7 +648,7 @@ CB_Exec(TSCont contp, TSEvent ev_idx, void *data)
 
 // Handle a new transaction - check if it should be intercepted and if so do the intercept.
 int
-CB_Read_Request_Hdr(TSCont contp, TSEvent ev_idx, void *data)
+CB_Read_Request_Hdr(TSCont /* contp ATS_UNUSED */, TSEvent /* ev_idx ATS_UNUSED */, void *data)
 {
   auto      txn = static_cast<TSHttpTxn>(data);
   TSMBuffer mbuf;

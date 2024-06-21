@@ -304,7 +304,7 @@ SessionData::get_server_protocol_description(TSHttpTxn server_txnp)
     [&server_txnp](int n, const char **result, int *actual) {
       return TSHttpTxnServerProtocolStackGet(server_txnp, n, result, actual);
     },
-    [&server_txnp]() { return get_server_tls_description(server_txnp); }, [](std::string_view http_version) {});
+    [&server_txnp]() { return get_server_tls_description(server_txnp); }, [](std::string_view /* http_version ATS_UNUSED */) {});
 }
 
 SessionData::SessionData()
@@ -451,7 +451,7 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
 
 // static
 int
-SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
+SessionData::global_session_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpSsn ssnp = static_cast<TSHttpSsn>(edata);
 

@@ -95,13 +95,13 @@ Acl::init()
 }
 
 int
-Acl::country_id_by_code(const std::string &str) const
+Acl::country_id_by_code(const std::string & /* str ATS_UNUSED */) const
 {
   return -1;
 }
 
 int
-Acl::country_id_by_addr(const sockaddr *addr) const
+Acl::country_id_by_addr(const sockaddr * /* addr ATS_UNUSED */) const
 {
   return -1;
 }

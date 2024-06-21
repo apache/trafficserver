@@ -296,7 +296,7 @@ getStats(TSMutex stat_creation_mutex)
 }
 
 static int
-systemStatsContCB(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
+systemStatsContCB(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   TSMutex stat_creation_mutex;
 
@@ -312,7 +312,7 @@ systemStatsContCB(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* arg ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
   TSCont                   stats_cont;

@@ -599,8 +599,6 @@ getRegion(const StringMap &regionMap, const char *entryPoint, size_t entryPointL
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
 
- * @param entryPoint  entry-point name
- * @param entryPointLen entry-point name length
  * @param dateTime - ISO 8601 time
  * @param dateTimeLen - ISO 8601 time length
  * @param region AWS region name
@@ -612,8 +610,8 @@ getRegion(const StringMap &regionMap, const char *entryPoint, size_t entryPointL
  * @returns the string to sign
  */
 String
-getStringToSign(const char *entryPoint, size_t EntryPointLen, const char *dateTime, size_t dateTimeLen, const char *region,
-                size_t regionLen, const char *service, size_t serviceLen, const char *sha256Hash, size_t sha256HashLen)
+getStringToSign(const char *dateTime, size_t dateTimeLen, const char *region, size_t regionLen, const char *service,
+                size_t serviceLen, const char *sha256Hash, size_t sha256HashLen)
 {
   String stringToSign;
 
@@ -738,8 +736,8 @@ AwsAuthV4::getAuthorizationHeader()
 
   String awsRegion = getRegion(_regionMap, host, hostLen);
 
-  String stringToSign = getStringToSign(host, hostLen, _dateTime, sizeof(_dateTime) - 1, awsRegion.c_str(), awsRegion.length(),
-                                        _awsService, _awsServiceLen, canonicalReq.c_str(), canonicalReq.length());
+  String stringToSign = getStringToSign(_dateTime, sizeof(_dateTime) - 1, awsRegion.c_str(), awsRegion.length(), _awsService,
+                                        _awsServiceLen, canonicalReq.c_str(), canonicalReq.length());
 #ifdef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
   std::cout << "<StringToSign>" << stringToSign << "</StringToSign>" << std::endl;
 #endif

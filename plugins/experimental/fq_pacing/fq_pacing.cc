@@ -86,7 +86,7 @@ fq_is_default_qdisc()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
 
@@ -171,7 +171,7 @@ TSRemapDeleteInstance(void *instance)
 }
 
 static int
-reset_pacing_cont(TSCont contp, TSEvent event, void *edata)
+reset_pacing_cont(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSHttpTxn txnp     = static_cast<TSHttpTxn>(edata);
   auto      txn_data = static_cast<fq_pacing_cont_t *>(TSContDataGet(contp));
@@ -197,7 +197,7 @@ reset_pacing_cont(TSCont contp, TSEvent event, void *edata)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   if (TSHttpTxnClientProtocolStackContains(txnp, TS_PROTO_TAG_HTTP_2_0) != nullptr) {
     Dbg(dbg_ctl, "Skipping plugin execution for HTTP/2 requests");

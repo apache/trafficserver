@@ -136,9 +136,8 @@ String getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const S
                                      const StringSet &excludeHeaders, String &signedHeaders);
 String getStringToSign(TsInterface &api, const char *dateTime, size_t dateTimeLen, const char *canonicalRequestSha256Hash,
                        size_t canonicalRequestSha256HashLen);
-String getStringToSign(const char *host, size_t hostLen, const char *dateTime, size_t dateTimeLen, const char *region,
-                       size_t regionLen, const char *service, size_t serviceLen, const char *canonicalRequestSha256Hash,
-                       size_t canonicalRequestSha256HashLen);
+String getStringToSign(const char *dateTime, size_t dateTimeLen, const char *region, size_t regionLen, const char *service,
+                       size_t serviceLen, const char *canonicalRequestSha256Hash, size_t canonicalRequestSha256HashLen);
 String getRegion(const StringMap &regionMap, const char *host, size_t hostLen);
 size_t hmacSha256(const char *secret, size_t secretLen, const char *msg, size_t msgLen, char *hmac, size_t hmacLen);
 

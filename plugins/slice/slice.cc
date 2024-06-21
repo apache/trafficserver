@@ -214,7 +214,7 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 ///// remap plugin engine
 
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   Config *const config = static_cast<Config *>(ih);
 
@@ -227,7 +227,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
 ///// remap plugin setup and teardown
 void
-TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
+TSRemapOSResponse(void * /* ih ATS_UNUSED */, TSHttpTxn /* rh ATS_UNUSED */, int /* os_response_type ATS_UNUSED */)
 {
 }
 
@@ -250,7 +250,7 @@ TSRemapDeleteInstance(void *ih)
 }
 
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbug, int errbuf_size)
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbug ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   DEBUG_LOG("slice remap initializing.");
   return TS_SUCCESS;

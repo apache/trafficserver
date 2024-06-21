@@ -175,7 +175,7 @@ DoRemap(const Instance &i, TSHttpTxn t)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *i, TSHttpTxn t, TSRemapRequestInfo *r)
+TSRemapDoRemap(void *i, TSHttpTxn t, TSRemapRequestInfo * /* r ATS_UNUSED */)
 {
   assert(i != nullptr);
   assert(t != nullptr);
