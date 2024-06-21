@@ -35,7 +35,7 @@ DbgCtl dbg_ctl{debug_tag};
 
 /// Handle LIFECYCLE_MSG from traffic_ctl.
 static int
-global_message_handler(TSCont contp, TSEvent event, void *edata)
+global_message_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_LIFECYCLE_MSG: {

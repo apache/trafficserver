@@ -447,7 +447,7 @@ InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 }
 
 static void
-InjectOriginalContentTypeHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+InjectOriginalContentTypeHeader(TSHttpTxn /* txn ATS_UNUSED */, TSMBuffer buffer, TSMLoc hdr)
 {
   TSMLoc ct_field = TSMimeHdrFieldFind(buffer, hdr, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
   if (TS_NULL_MLOC != ct_field) {

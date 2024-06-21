@@ -337,7 +337,7 @@ GeneratorWriteFailureResponse(GeneratorRequest *grq, TSHttpStatus status)
 }
 
 static TSReturnCode
-GeneratorWriteResponse(GeneratorRequest *grq, TSCont contp)
+GeneratorWriteResponse(GeneratorRequest *grq, TSCont /* contp ATS_UNUSED */)
 {
   GeneratorHttpHeader response;
   VDEBUG("writing GET response");
@@ -374,7 +374,7 @@ GeneratorWriteResponse(GeneratorRequest *grq, TSCont contp)
 }
 
 static TSReturnCode
-GeneratorPOSTResponse(GeneratorRequest *grq, TSCont contp)
+GeneratorPOSTResponse(GeneratorRequest *grq, TSCont /* contp ATS_UNUSED */)
 {
   GeneratorHttpHeader response;
   VDEBUG("writing POST response");

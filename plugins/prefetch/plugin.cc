@@ -108,7 +108,7 @@ getCacheLookupResultName(TSCacheLookupResult result)
  * @return always TS_SUCCESS.
  */
 TSReturnCode
-TSRemapInit(TSRemapInterface *apiInfo, char *errBuf, int erroBufSize)
+TSRemapInit(TSRemapInterface * /* apiInfo ATS_UNUSED */, char * /* errBuf ATS_UNUSED */, int /* erroBufSize ATS_UNUSED */)
 {
   return TS_SUCCESS;
 }
@@ -756,7 +756,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
  * @return TS_SUCCES if success or TS_ERROR if failure
  */
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **instance, char *errBuf, int errBufSize)
+TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* errBuf ATS_UNUSED */, int /* errBufSize ATS_UNUSED */)
 {
   bool failed = true;
 

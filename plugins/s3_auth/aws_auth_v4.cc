@@ -612,8 +612,9 @@ getRegion(const StringMap &regionMap, const char *entryPoint, size_t entryPointL
  * @returns the string to sign
  */
 String
-getStringToSign(const char *entryPoint, size_t EntryPointLen, const char *dateTime, size_t dateTimeLen, const char *region,
-                size_t regionLen, const char *service, size_t serviceLen, const char *sha256Hash, size_t sha256HashLen)
+getStringToSign(const char * /* entryPoint ATS_UNUSED */, size_t /* EntryPointLen ATS_UNUSED */, const char *dateTime,
+                size_t dateTimeLen, const char *region, size_t regionLen, const char *service, size_t serviceLen,
+                const char *sha256Hash, size_t sha256HashLen)
 {
   String stringToSign;
 

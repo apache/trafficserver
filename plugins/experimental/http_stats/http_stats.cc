@@ -244,7 +244,7 @@ HeaderFieldStringSet(const HTTPStatsHttpHeader &http, const char *field_name, in
 }
 
 static TSReturnCode
-WriteResponseHeader(HTTPStatsRequest *trq, TSCont contp, TSHttpStatus status)
+WriteResponseHeader(HTTPStatsRequest *trq, TSCont /* contp ATS_UNUSED */, TSHttpStatus status)
 {
   HTTPStatsHttpHeader response;
 
@@ -568,7 +568,7 @@ TSRemapInit(TSRemapInterface * /* api_info */, char * /* errbuf */, int /* errbu
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   const TSHttpStatus txnstat = TSHttpTxnStatusGet(rh);
   if (txnstat != TS_HTTP_STATUS_NONE && txnstat != TS_HTTP_STATUS_OK) {
@@ -704,7 +704,8 @@ HTTPStatsFormatter::wrap_unsigned_counter(uint64_t value)
   } while (0)
 
 static void
-json_out_stat(TSRecordType rec_type, void *edata, int registered, const char *name, TSRecordDataType data_type, TSRecordData *datum)
+json_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
+              TSRecordDataType data_type, TSRecordData *datum)
 {
   HTTPStatsFormatter *fmtr = static_cast<HTTPStatsFormatter *>(edata);
 
@@ -728,7 +729,8 @@ json_out_stat(TSRecordType rec_type, void *edata, int registered, const char *na
 }
 
 static void
-csv_out_stat(TSRecordType rec_type, void *edata, int registered, const char *name, TSRecordDataType data_type, TSRecordData *datum)
+csv_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
+             TSRecordDataType data_type, TSRecordData *datum)
 {
   HTTPStatsFormatter *fmtr = static_cast<HTTPStatsFormatter *>(edata);
 

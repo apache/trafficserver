@@ -291,7 +291,7 @@ MC::write_binary_error(protocol_binary_response_status err, int swallow)
 }
 
 int
-MC::swallow_then_read_event(int event, void *data)
+MC::swallow_then_read_event(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   rvio->nbytes  = INT64_MAX;
   int64_t avail = reader->read_avail();
@@ -307,7 +307,7 @@ MC::swallow_then_read_event(int event, void *data)
 }
 
 int
-MC::swallow_cmd_then_read_from_client_event(int event, void *data)
+MC::swallow_cmd_then_read_from_client_event(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   int64_t avail = reader->read_avail();
   if (avail) {
@@ -687,7 +687,7 @@ MC::get_ascii_input(int n, int *end)
 }
 
 int
-MC::ascii_get_event(int event, void *data)
+MC::ascii_get_event(int event, void * /* data ATS_UNUSED */)
 {
   switch (event) {
   case CACHE_EVENT_OPEN_READ_FAILED:
@@ -877,7 +877,7 @@ Lfail:
 }
 
 int
-MC::ascii_delete_event(int event, void *data)
+MC::ascii_delete_event(int event, void * /* data ATS_UNUSED */)
 {
   switch (event) {
   case CACHE_EVENT_REMOVE_FAILED:
@@ -1254,7 +1254,7 @@ is_noreply(char **pt, char *e)
 }
 
 int
-MC::read_ascii_from_client_event(int event, void *data)
+MC::read_ascii_from_client_event(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   int   len = 0;
   char *c = get_ascii_input(TSMEMCACHE_TMP_CMD_BUFFER_SIZE, &len), *s = c;

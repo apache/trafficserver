@@ -77,7 +77,7 @@ public:
   }
 
   virtual bool
-  parseOption(int opt, char *optarg)
+  parseOption(int /* opt ATS_UNUSED */, char * /* optarg ATS_UNUSED */)
   {
     return false;
   }
@@ -90,7 +90,7 @@ public:
 
   // Cleanup any internal state / memory that may be in use
   virtual void
-  cleanup(TSHttpTxn txnp)
+  cleanup(TSHttpTxn /* txnp ATS_UNUSED */)
   {
   }
 
@@ -102,7 +102,7 @@ public:
   }
 
   virtual void
-  addBytes(TSHttpTxn txnp)
+  addBytes(TSHttpTxn /* txnp ATS_UNUSED */)
   {
   }
 

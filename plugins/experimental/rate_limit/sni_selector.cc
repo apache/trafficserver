@@ -176,7 +176,7 @@ SniSelector::yamlParser(const std::string &yaml_file)
 // This is the queue management continuation, which gets called periodically
 //
 static int
-sni_config_cont(TSCont cont, TSEvent event, void *edata)
+sni_config_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   auto selector = SniSelector::instance(); // Also leases the instance
   auto old_sel  = static_cast<SniSelector *>(TSContDataGet(cont));
@@ -209,7 +209,7 @@ sni_config_cont(TSCont cont, TSEvent event, void *edata)
 // This is the queue management continuation, which gets called periodically
 //
 static int
-sni_queue_cont(TSCont cont, TSEvent event, void *edata)
+sni_queue_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   auto *selector = static_cast<SniSelector *>(TSContDataGet(cont));
 

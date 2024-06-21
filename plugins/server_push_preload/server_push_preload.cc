@@ -142,7 +142,8 @@ public:
   explicit ServerPushRemap(void **instance_handle) : RemapPlugin(instance_handle) {}
 
   Result
-  doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect) override
+  doRemap(const Url & /* map_from_url ATS_UNUSED */, const Url & /* map_to_url ATS_UNUSED */, Transaction &transaction,
+          bool & /* redirect ATS_UNUSED */) override
   {
     transaction.addPlugin(new ServerPushTransaction(transaction));
     return RESULT_DID_REMAP;

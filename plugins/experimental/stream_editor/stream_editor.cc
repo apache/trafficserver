@@ -312,7 +312,8 @@ class rxmatch : public match_t
 
 public:
   bool
-  find(const char *buf, size_t len, size_t &found, size_t &found_len, const char *tmpl, std::string &repl) const override
+  find(const char *buf, size_t /* len ATS_UNUSED */, size_t &found, size_t &found_len, const char *tmpl,
+       std::string &repl) const override
   {
     regmatch_t pmatch[MAX_RX_MATCH];
     if (regexec(&rx, buf, MAX_RX_MATCH, pmatch, REG_NOTEOL) == 0) {
@@ -736,7 +737,7 @@ streamedit_process(TSCont contp)
   TSVIOReenable(contdata->out_vio);
 }
 static int
-streamedit_filter(TSCont contp, TSEvent event, void *edata)
+streamedit_filter(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   /* Our main function that does the work.
    * Called as a continuation for filtering.

@@ -119,7 +119,7 @@ private:
 ///////////////////////////////////////////////////////////////////////////
 // Dump a header on stderr, useful together with Dbg().
 void
-print_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &ss)
+print_headers(TSHttpTxn /* txn ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &ss)
 {
   TSIOBuffer        output_buffer;
   TSIOBufferReader  reader;

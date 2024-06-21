@@ -350,7 +350,7 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
 }
 
 bool
-handleNextServerHeader(Data *const data, TSCont const contp)
+handleNextServerHeader(Data *const data, TSCont const /* contp ATS_UNUSED */)
 {
   // block response header
   HttpHeader header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);

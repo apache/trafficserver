@@ -296,7 +296,7 @@ HeaderFieldStringSet(const StaticHitHttpHeader &http, const char *field_name, in
 }
 
 static TSReturnCode
-WriteResponseHeader(StaticHitRequest *trq, TSCont contp, TSHttpStatus status)
+WriteResponseHeader(StaticHitRequest *trq, TSCont /* contp ATS_UNUSED */, TSHttpStatus status)
 {
   StaticHitHttpHeader response;
 

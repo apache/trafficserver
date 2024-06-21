@@ -1215,7 +1215,7 @@ writeErrorResponse(InterceptData &int_data, int &n_bytes_written)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   TSUserArgSet(rh, arg_idx, (void *)1); /* Save for later hooks */
   return TSREMAP_NO_REMAP;              /* Continue with next remap plugin in chain */
@@ -1250,7 +1250,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+TSRemapNewInstance(int /* argc ATS_UNUSED */, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */,
+                   int /* errbuf_size ATS_UNUSED */)
 {
   *ih = nullptr;
 
@@ -1259,7 +1260,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 }
 
 void
-TSRemapDeleteInstance(void *ih)
+TSRemapDeleteInstance(void * /* ih ATS_UNUSED */)
 {
   return;
 }
