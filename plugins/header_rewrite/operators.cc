@@ -46,9 +46,22 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
     TSHttpTxn   fetchsm_txn = static_cast<TSHttpTxn>(edata);
     int         data_len;
     const char *data_start = TSFetchRespGet(fetchsm_txn, &data_len);
-    const char *data_end   = data_start + data_len;
-    if (data_start != nullptr) {
-      TSHttpTxnErrorBodySet(http_txn, TSstrdup(data_start), (data_end - data_start), nullptr);
+    if (data_start && (data_len > 0)) {
+      const char  *data_end = data_start + data_len;
+      TSHttpParser parser   = TSHttpParserCreate();
+      TSMBuffer    hdr_buf  = TSMBufferCreate();
+      TSMLoc       hdr_loc  = TSHttpHdrCreate(hdr_buf);
+      TSHttpHdrTypeSet(hdr_buf, hdr_loc, TS_HTTP_TYPE_RESPONSE);
+      if (TSHttpHdrParseResp(parser, hdr_buf, hdr_loc, &data_start, data_end) == TS_PARSE_DONE) {
+        TSHttpTxnErrorBodySet(http_txn, TSstrdup(data_start), (data_end - data_start), nullptr);
+      } else {
+        TSWarning("[%s] Unable to parse set-custom-body fetch response", __FUNCTION__);
+      }
+      TSHttpParserDestroy(parser);
+      TSHandleMLocRelease(hdr_buf, nullptr, hdr_loc);
+      TSMBufferDestroy(hdr_buf);
+    } else {
+      TSWarning("[%s] Successful set-custom-body fetch did not result in any content", __FUNCTION__);
     }
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_ERROR);
   } break;

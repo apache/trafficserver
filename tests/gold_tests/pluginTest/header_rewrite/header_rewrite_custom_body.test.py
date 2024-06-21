@@ -42,7 +42,7 @@ class HeaderRewriteCustomBodyTest:
         response_header = {
             "headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "404 Not Found"
         }
         self.server.addResponse("sessionfile.log", request_header, response_header)
         # Request/response for custom body transaction
@@ -54,7 +54,7 @@ class HeaderRewriteCustomBodyTest:
         response_header = {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": "Custom body found"
+            "body": "Custom body found\n"
         }
         self.server.addResponse("sessionfile.log", request_header, response_header)
 
@@ -73,13 +73,14 @@ class HeaderRewriteCustomBodyTest:
     def runTraffic(self):
         tr = Test.AddTestRun()
         tr.Processes.Default.Command = (
-            'curl --proxy 127.0.0.1:{0} "http://www.example.com/test" -H "Proxy-Connection: keep-alive" -verbose -silent'.format(
-                self.ts.Variables.port))
+            'curl -s -v --proxy 127.0.0.1:{0} "http://www.example.com/test"'.format(self.ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.StartBefore(self.server, ready=When.PortOpen(self.server.Variables.Port))
-        tr.Processes.Default.StartBefore(Test.Processes.ts)
-        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-custom_body.gold"
+        tr.Processes.Default.StartBefore(self.server)
+        tr.Processes.Default.StartBefore(self.ts)
+        tr.Processes.Default.Streams.stderr = "gold/header_rewrite-custom_body_headers.gold"
+        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-custom_body_body.gold"
         tr.StillRunningAfter = self.server
+
         self.ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
 
     def run(self):
