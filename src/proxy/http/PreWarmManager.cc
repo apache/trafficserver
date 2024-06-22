@@ -484,7 +484,7 @@ PreWarmSM::state_open(int event, void *data)
 }
 
 int
-PreWarmSM::state_closed(int event, void *data)
+PreWarmSM::state_closed(int event, void * /* data ATS_UNUSED */)
 {
   switch (event) {
   default:
@@ -673,7 +673,7 @@ PreWarmQueue::~PreWarmQueue()
 }
 
 int
-PreWarmQueue::state_init(int event, void *data)
+PreWarmQueue::state_init(int event, void * /* data ATS_UNUSED */)
 {
   switch (event) {
   case EVENT_IMMEDIATE: {
@@ -699,7 +699,7 @@ PreWarmQueue::state_init(int event, void *data)
 }
 
 int
-PreWarmQueue::state_running(int event, void *data)
+PreWarmQueue::state_running(int event, void * /* data ATS_UNUSED */)
 {
   switch (event) {
   case EVENT_INTERVAL: {

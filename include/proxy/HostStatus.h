@@ -208,7 +208,7 @@ public:
 
   // Deletes instance.
   int
-  mainEvent(int event, Event *e)
+  mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     sync_task();
 

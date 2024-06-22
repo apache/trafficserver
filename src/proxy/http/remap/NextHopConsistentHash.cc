@@ -271,7 +271,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
 }
 
 void
-NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
+NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_t now)
 {
   uint32_t const NO_RING_USE_POST_REMAP = uint32_t(0) - 1;
 

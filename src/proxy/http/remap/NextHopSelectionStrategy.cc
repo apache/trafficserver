@@ -276,7 +276,7 @@ NextHopSelectionStrategy::setHostHeader(TSHttpTxn txnp, const char *hostname)
 }
 
 bool
-NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp, void *ih)
+NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp, void * /* ih ATS_UNUSED */)
 {
   HttpSM *sm    = reinterpret_cast<HttpSM *>(txnp);
   int64_t sm_id = sm->sm_id;

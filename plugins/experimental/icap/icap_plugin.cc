@@ -924,7 +924,7 @@ transform_read_http_header_event(TSCont contp, TransformData *data, TSEvent even
 }
 
 static int
-transform_read_http_body_event(TSCont contp, TransformData *data, TSEvent event, void * /* edata ATS_UNUSED */)
+transform_read_http_body_event(TSCont /* contp ATS_UNUSED */, TransformData *data, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   switch (event) {
   case TS_EVENT_ERROR:

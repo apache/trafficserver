@@ -200,7 +200,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
 }
 
 uint32_t
-ParentRoundRobin::numParents(ParentResult *result) const
+ParentRoundRobin::numParents(ParentResult * /* result ATS_UNUSED */) const
 {
   return num_parents;
 }
