@@ -39,7 +39,7 @@ public:
 
   // This doesn't use the context so we can implement it here
   static Cript::string
-  _get(Cript::Context *context)
+  _get(Cript::Context * /* context ATS_UNUSED */)
   {
     TSUuid process = TSProcessUuidGet();
 

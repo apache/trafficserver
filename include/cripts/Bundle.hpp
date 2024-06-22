@@ -106,43 +106,43 @@ namespace Bundle
     }
 
     virtual bool
-    validate(std::vector<Cript::Bundle::Error> &errors) const
+    validate(std::vector<Cript::Bundle::Error> & /* errors ATS_UNUSED */) const
     {
       return true;
     }
 
     virtual void
-    doRemap(Cript::Context *context)
+    doRemap(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doPostRemap(Cript::Context *context)
+    doPostRemap(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doSendResponse(Cript::Context *context)
+    doSendResponse(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doCacheLookup(Cript::Context *context)
+    doCacheLookup(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doSendRequest(Cript::Context *context)
+    doSendRequest(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doReadResponse(Cript::Context *context)
+    doReadResponse(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doTxnClose(Cript::Context *context)
+    doTxnClose(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 

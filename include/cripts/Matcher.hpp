@@ -67,13 +67,13 @@ namespace Range
     }
 
     bool
-    match(sockaddr const *target, void **ptr) const
+    match(sockaddr const *target, void ** /* ptr ATS_UNUSED */) const
     {
       return contains(swoc::IPAddr(target));
     }
 
     bool
-    match(in_addr_t target, void **ptr) const
+    match(in_addr_t target, void ** /* ptr ATS_UNUSED */) const
     {
       return contains(swoc::IPAddr(target));
     }
