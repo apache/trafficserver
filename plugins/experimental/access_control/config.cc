@@ -82,7 +82,7 @@ makeConfigPath(const String &path)
  */
 template <class T>
 void
-loadLine(T &container, const String &line)
+loadLine(T & /* container ATS_UNUSED */, const String & /* line ATS_UNUSED */)
 {
 }
 

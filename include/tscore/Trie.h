@@ -119,9 +119,9 @@ private:
 
   // make copy-constructor and assignment operator private
   // till we properly implement them
-  Trie(const Trie<T> &rhs){};
+  Trie(const Trie<T> & /* rhs ATS_UNUSED */){};
   Trie &
-  operator=(const Trie<T> &rhs)
+  operator=(const Trie<T> & /* rhs ATS_UNUSED */)
   {
     return *this;
   }
