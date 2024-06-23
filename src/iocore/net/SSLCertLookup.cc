@@ -283,7 +283,7 @@ SSLCertLookup::~SSLCertLookup()
 }
 
 SSLCertContext *
-SSLCertLookup::find(const std::string &address, SSLCertContextType ctxType) const
+SSLCertLookup::find(const std::string &address, [[maybe_unused]] SSLCertContextType ctxType) const
 {
 #ifdef OPENSSL_IS_BORINGSSL
   // If the context is EC supportable, try finding that first.

@@ -49,7 +49,7 @@ sensitive_fields_t default_sensitive_fields = {
 };
 
 int
-TransactionData::response_buffer_handler(TSCont contp, TSEvent event, void *edata)
+TransactionData::response_buffer_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   auto *txnData = reinterpret_cast<TransactionData *>(TSContDataGet(contp));
   // This should always have been set by the TransactionData creator of this Transform.
@@ -396,7 +396,7 @@ TransactionData::write_proxy_response_node(TSMBuffer &buffer, TSMLoc &hdr_loc)
 
 // Transaction handler: writes headers to the log file using AIO
 int
-TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *edata)
+TransactionData::global_transaction_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 

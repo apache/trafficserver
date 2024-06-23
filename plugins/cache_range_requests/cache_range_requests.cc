@@ -188,7 +188,7 @@ delete_pluginconfig(pluginconfig *const pc)
  * Entry point when used as a global plugin.
  */
 int
-handle_read_request_header(TSCont txn_contp, TSEvent event, void *edata)
+handle_read_request_header(TSCont /* txn_contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 

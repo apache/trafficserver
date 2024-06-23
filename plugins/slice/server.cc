@@ -350,7 +350,7 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
 }
 
 bool
-handleNextServerHeader(Data *const data, TSCont const contp)
+handleNextServerHeader(Data *const data)
 {
   // block response header
   HttpHeader header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
@@ -554,7 +554,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
             break;
           }
         } else {
-          headerStat = handleNextServerHeader(data, contp);
+          headerStat = handleNextServerHeader(data);
         }
 
         data->m_server_block_header_parsed = true;

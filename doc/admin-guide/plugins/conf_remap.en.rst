@@ -95,7 +95,7 @@ should mirror how configuration directives are written in :file:`records.yaml`:
 
 .. code-block:: yaml
 
-   ts:
+   records:
      url_remap:
        pristine_host_hdr: 1
 

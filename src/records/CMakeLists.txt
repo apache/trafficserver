@@ -35,17 +35,19 @@ add_library(ts::records ALIAS records)
 
 target_link_libraries(
   records
-  PUBLIC ts::inkevent ts::tscore yaml-cpp::yaml-cpp
+  PUBLIC ts::tscore yaml-cpp::yaml-cpp
   PRIVATE ts::tsutil
 )
 
 if(BUILD_TESTING)
   add_executable(test_records unit_tests/unit_test_main.cc unit_tests/test_RecHttp.cc)
-  target_link_libraries(test_records PRIVATE records catch2::catch2 tscore libswoc::libswoc)
+  target_link_libraries(test_records PRIVATE records catch2::catch2 ts::tscore libswoc::libswoc)
   add_test(NAME test_records COMMAND test_records)
 
   add_executable(test_records_on_eventsystem unit_tests/unit_test_main_on_eventsystem.cc)
-  target_link_libraries(test_records_on_eventsystem PRIVATE records catch2::catch2 tscore libswoc::libswoc)
+  target_link_libraries(
+    test_records_on_eventsystem PRIVATE records catch2::catch2 ts::inkevent ts::tscore libswoc::libswoc
+  )
   add_test(NAME test_records_on_eventsystem COMMAND test_records_on_eventsystem)
 endif()
 

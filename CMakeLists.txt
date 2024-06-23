@@ -228,6 +228,7 @@ if(ENABLE_CRIPTS)
   # needed for cripts
   # however this might become a general requirement
   find_package(fmt 8.1 REQUIRED)
+  set(TS_HAS_CRIPTS TRUE)
 endif()
 
 find_package(Backtrace)
@@ -515,6 +516,7 @@ find_package(resolv)
 if(ENABLE_DOCS OR ENABLE_AUTEST)
   find_package(Python3 REQUIRED)
   find_program(PipEnv pipenv REQUIRED)
+  find_program(NETCAT_PROGRAM nc REQUIRED)
 endif()
 
 if(ENABLE_DOCS)

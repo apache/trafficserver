@@ -97,8 +97,8 @@ LogUtils::timestamp_to_str(long timestamp, char *buf, int size)
 char *
 LogUtils::timestamp_to_netscape_str(long timestamp)
 {
-  static char timebuf[64]; // NOTE: not MT safe
-  static long last_timestamp = 0;
+  static thread_local char timebuf[64];
+  static thread_local long last_timestamp = 0;
 
   // safety check
   if (timestamp < 0) {
@@ -149,8 +149,8 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
 char *
 LogUtils::timestamp_to_date_str(long timestamp)
 {
-  static char timebuf[64]; // NOTE: not MT safe
-  static long last_timestamp = 0;
+  static thread_local char timebuf[64];
+  static thread_local long last_timestamp = -1L;
 
   // safety check
   if (timestamp < 0) {
@@ -181,8 +181,8 @@ LogUtils::timestamp_to_date_str(long timestamp)
 char *
 LogUtils::timestamp_to_time_str(long timestamp)
 {
-  static char timebuf[64]; // NOTE: not MT safe
-  static long last_timestamp = 0;
+  static thread_local char timebuf[64];
+  static thread_local long last_timestamp = 0;
 
   // safety check
   if (timestamp < 0) {

@@ -15,6 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+#include <sstream>
 
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
@@ -42,6 +43,7 @@ Cript::Url::Scheme::getSV()
 Cript::Url::Scheme
 Cript::Url::Scheme::operator=(Cript::string_view scheme)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlSchemeSet(_owner->_bufp, _owner->_urlp, scheme.data(), scheme.size());
   _owner->_modified = true;
   reset();
@@ -68,6 +70,7 @@ Cript::Url::Host::getSV()
 Cript::Url::Host
 Cript::Url::Host::operator=(Cript::string_view host)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlHostSet(_owner->_bufp, _owner->_urlp, host.data(), host.size());
   _owner->_modified = true;
   reset();
@@ -88,6 +91,7 @@ Cript::Url::Port::operator integer() // This should not be explicit
 Cript::Url::Port
 Cript::Url::Port::operator=(int port)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlPortSet(_owner->_bufp, _owner->_urlp, port);
   _owner->_modified = true;
   reset();
@@ -138,6 +142,7 @@ Cript::Url::Path::operator[](Segments::size_type ix)
 Cript::Url::Path
 Cript::Url::Path::operator=(Cript::string_view path)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlPathSet(_owner->_bufp, _owner->_urlp, path.data(), path.size());
   _owner->_modified = true;
   reset();
@@ -163,6 +168,7 @@ Cript::Url::Path::operator+=(Cript::string_view add)
 Cript::Url::Path::String &
 Cript::Url::Path::String::operator=(const Cript::string_view str)
 {
+  TSReleaseAssert(!_owner->_owner->readOnly()); // This can not be a read-only URL
   _owner->_size          -= _owner->_segments[_ix].size();
   _owner->_segments[_ix]  = str;
   _owner->_size          += str.size();
@@ -209,6 +215,7 @@ Cript::Url::Path::_parser()
 Cript::Url::Query::Parameter &
 Cript::Url::Query::Parameter::operator=(const Cript::string_view str)
 {
+  TSReleaseAssert(!_owner->_owner->readOnly()); // This can not be a read-only URL
   auto iter = _owner->_hashed.find(_name);
 
   if (iter != _owner->_hashed.end()) {
@@ -268,6 +275,7 @@ Cript::Url::Query::getSV()
 Cript::Url::Query
 Cript::Url::Query::operator=(Cript::string_view query)
 {
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
   _owner->_modified = true;
   reset();
@@ -392,6 +400,33 @@ Cript::Url::Query::_parser()
       _hashed[key] = val;
     }
   }
+}
+
+Cript::string_view
+Cript::Url::Matrix::getSV()
+{
+  if (_owner && _data.empty()) {
+    const char *value = nullptr;
+    int         len   = 0;
+
+    value   = TSUrlHttpParamsGet(_owner->_bufp, _owner->_urlp, &len);
+    _data   = Cript::string_view(value, len);
+    _loaded = true;
+  }
+
+  return _data;
+}
+
+Cript::Url::Matrix
+Cript::Url::Matrix::operator=(Cript::string_view matrix)
+{
+  TSReleaseAssert(!_owner->readOnly()); // This can not be a read-only URL
+  TSUrlHttpParamsSet(_owner->_bufp, _owner->_urlp, matrix.data(), matrix.size());
+  _owner->_modified = true;
+  reset();
+  _loaded = false;
+
+  return *this;
 }
 
 Cript::string

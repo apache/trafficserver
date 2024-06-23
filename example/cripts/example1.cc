@@ -20,6 +20,7 @@
 #include <cripts/Preamble.hpp>
 
 #include <cripts/Bundles/Common.hpp>
+#include <cripts/Bundles/Caching.hpp>
 
 // Globals for this Cript
 static Matcher::Range::IP CRIPT_ALLOW({"192.168.201.0/24", "10.0.0.0/8"});
@@ -42,7 +43,8 @@ do_create_instance()
   instance.metrics[7] = Metrics::Counter::create("cript.example1.c7");
   instance.metrics[8] = Metrics::Counter::create("cript.example1.c8"); // This one should resize() the storage
 
-  Bundle::Common::activate().dscp(10).cache_control("max-age=259200");
+  Bundle::Common::activate().dscp(10);
+  Bundle::Caching::activate().cache_control("max-age=259200");
 }
 
 do_txn_close()
@@ -51,6 +53,14 @@ do_txn_close()
 
   conn.pacing = Cript::Pacing::Off;
   CDebug("Cool, TXN close also works");
+}
+
+do_cache_lookup()
+{
+  borrow url2 = Cache::URL::get();
+
+  CDebug("Cache URL: {}", url2.url());
+  CDebug("Cache Host: {}", url2.host);
 }
 
 do_send_request()
@@ -110,10 +120,6 @@ do_send_response()
     resp.status = 222;
   }
 
-  borrow url2 = Cache::URL::get();
-
-  CDebug("Cache URL: {}", url2.url());
-  CDebug("Cache Host: {}", url2.host);
   CDebug("Txn count: {}", conn.count());
 }
 
@@ -147,7 +153,7 @@ do_remap()
   CDebug("X-Miles = {}", req["X-Miles"]);
   CDebug("random(1000) = {}", Cript::random(1000));
 
-  borrow url      = Pristine::URL::get();
+  borrow url      = Client::URL::get();
   auto   old_port = url.port;
 
   CDebug("Method is {}", req.method);

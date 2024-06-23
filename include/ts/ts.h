@@ -879,16 +879,14 @@ TSReturnCode TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_
 TSReturnCode TSMimeHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_offset, TSMBuffer src_bufp, TSMLoc src_offset);
 
 /**
-    Formats the MIME header located at hdr_loc within bufp into the
+    Formats the MIME header located at hdr_loc into the
     TSIOBuffer iobufp.
 
-    @param bufp marshal buffer containing the header to be copied to
-      an TSIOBuffer.
-    @param offset
+    @param offset The offset of the header to be copied to a TSIOBuffer.
     @param iobufp target TSIOBuffer.
 
  */
-void TSMimeHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
+void TSMimeHdrPrint(TSMLoc offset, TSIOBuffer iobufp);
 
 /**
     Parses a MIME header. The MIME header must have already been

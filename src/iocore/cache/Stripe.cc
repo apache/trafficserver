@@ -934,6 +934,15 @@ Stripe::add_writer(CacheVC *vc)
 {
   ink_assert(vc);
   this->_write_buffer.add_bytes_pending_aggregation(vc->agg_len);
+  // An extra AGG_SIZE is added to the backlog here, but not in
+  // open_write, at the time I'm writing this comment. I venture to
+  // guess that because the stripe lock may be released between
+  // open_write and add_writer (I have checked this), the number of
+  // bytes pending aggregation lags and is inaccurate. Therefore the
+  // check in open_write is too permissive, and once we get to add_writer
+  // and update our bytes pending, we may discover we have more backlog
+  // than we thought we did. The solution to the problem was to permit
+  // an aggregation buffer extra of backlog here. That's my analysis.
   bool agg_error =
     (vc->agg_len > AGG_SIZE || vc->header_len + sizeof(Doc) > MAX_FRAG_SIZE ||
      (!vc->f.readers && (this->_write_buffer.get_bytes_pending_aggregation() > cache_config_agg_write_backlog + AGG_SIZE) &&

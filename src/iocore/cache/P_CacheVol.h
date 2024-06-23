@@ -27,7 +27,7 @@
 #include "P_CacheDoc.h"
 #include "P_CacheStats.h"
 #include "P_RamCache.h"
-#include "iocore/cache/AggregateWriteBuffer.h"
+#include "AggregateWriteBuffer.h"
 
 #include "iocore/eventsystem/EThread.h"
 
@@ -288,8 +288,9 @@ public:
    *   - Adding a Doc to the virtual connection header would exceed the
    *       maximum fragment size.
    *   - vc->f.readers is not set (this virtual connection is not an evacuator),
-   *       the writes waiting to be aggregated exceed the maximum backlog,
-   *       and the virtual connection has a non-zero write length.
+   *       is full, the writes waiting to be aggregated exceed the maximum
+   *       backlog plus the space in the aggregatation buffer, and the virtual
+   *       connection has a non-zero write length.
    *
    * @param vc: The virtual connection.
    * @return: Returns true if the operation was successfull, otherwise false.
@@ -328,6 +329,7 @@ private:
   void _init_dir();
   void _init_data_internal();
   void _init_data();
+  int  _agg_copy(CacheVC *vc);
   bool flush_aggregate_write_buffer();
 
   AggregateWriteBuffer _write_buffer;

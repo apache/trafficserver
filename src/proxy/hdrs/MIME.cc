@@ -2710,12 +2710,11 @@ mime_field_block_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 }
 
 int
-mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start, int buf_length, int *buf_index_inout,
-               int *buf_chars_to_skip_inout)
+mime_hdr_print(MIMEHdrImpl const *mh, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
-  MIMEFieldBlockImpl *fblock;
-  MIMEField          *field;
-  uint32_t            index;
+  MIMEFieldBlockImpl const *fblock;
+  MIMEField const          *field;
+  uint32_t                  index;
 
 #define SIMPLE_MIME_HDR_PRINT
 #ifdef SIMPLE_MIME_HDR_PRINT
@@ -2825,7 +2824,7 @@ mime_mem_print_lc(const char *src_d, int src_l, char *buf_start, int buf_length,
 }
 
 int
-mime_field_print(MIMEField *field, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+mime_field_print(MIMEField const *field, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
 #define TRY(x) \
   if (!x)      \

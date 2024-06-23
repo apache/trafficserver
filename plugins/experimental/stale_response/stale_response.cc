@@ -539,7 +539,7 @@ fetch_finish(StateInfo *state)
 
 /*-----------------------------------------------------------------------------------------------*/
 static int
-fetch_consume(TSCont contp, TSEvent event, void *edata)
+fetch_consume(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   StateInfo *state;
   state = static_cast<StateInfo *>(TSContDataGet(contp));
@@ -1016,7 +1016,7 @@ read_request_header_handler(TSHttpTxn const txnp, ConfigInfo *plugin_config)
 
 /*-----------------------------------------------------------------------------------------------*/
 static int
-global_request_header_hook(TSCont contp, TSEvent event, void *edata)
+global_request_header_hook(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   ConfigInfo     *plugin_config = static_cast<ConfigInfo *>(TSContDataGet(contp));
   TSHttpTxn const txnp          = static_cast<TSHttpTxn>(edata);

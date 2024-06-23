@@ -429,7 +429,7 @@ http_version_print(const HTTPVersion &version, char *buf, int bufsize, int *bufi
   -------------------------------------------------------------------------*/
 
 int
-http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *bufindex, int *dumpoffset)
+http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, int *dumpoffset)
 {
 #define TRY(x) \
   if (!x)      \
@@ -484,7 +484,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
         TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
       }
 
-      TRY(mime_hdr_print(heap, hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
 
     } else {
       TRY(mime_mem_print(hdr->u.req.m_ptr_method, hdr->u.req.m_len_method, buf, bufsize, bufindex, dumpoffset));
@@ -500,7 +500,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
 
       TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_hdr_print(heap, hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
     }
 
   } else { //  hdr->m_polarity == HTTP_TYPE_RESPONSE
@@ -540,7 +540,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
         TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
       }
 
-      TRY(mime_hdr_print(heap, hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
 
     } else {
       TRY(http_version_print(hdr->m_version, buf, bufsize, bufindex, dumpoffset));
@@ -559,7 +559,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
 
       TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_hdr_print(heap, hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
     }
   }
 

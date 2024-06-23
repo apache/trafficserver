@@ -241,7 +241,7 @@ settings have been configured as shown below:
 
 .. code-block:: yaml
 
-  ts:
+  records:
     http:
       cache:
         http: 1
@@ -380,7 +380,7 @@ entries:
 
 .. code-block:: yaml
 
-  ts:
+  records:
     http:
       cache:
         http: 1
@@ -431,7 +431,7 @@ forward proxy:
 
 .. code-block:: yaml
 
-   ts:
+   records:
      http:
        cache:
          http: 1
@@ -451,7 +451,7 @@ should be explicitly disabled:
 
 .. code-block:: yaml
 
-   ts:
+   records:
      reverse_proxy:
        enabled: 0
 

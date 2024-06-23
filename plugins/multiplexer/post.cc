@@ -119,7 +119,7 @@ postTransform(const TSCont c, PostState &s)
 }
 
 int
-handlePost(TSCont c, TSEvent e, void *data)
+handlePost(TSCont c, TSEvent e, [[maybe_unused]] void *data)
 {
   assert(c != nullptr);
   // TODO(dmorilha): assert on possible events.

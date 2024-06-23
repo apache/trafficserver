@@ -43,3 +43,9 @@ Error::Status::_set(Cript::Context *context, TSHttpStatus status)
   context->state.error.fail();
   context->state.error._status.setter(status);
 }
+
+TSHttpStatus
+Error::Status::_get(Cript::Context *context)
+{
+  return context->state.error._status.getter();
+}

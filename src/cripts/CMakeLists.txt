@@ -23,10 +23,13 @@ pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 
 # The source files, globbed so we can drop in local / custom Bundles and extensions.
 file(GLOB CPP_FILES ${PROJECT_SOURCE_DIR}/src/cripts/*.cc ${PROJECT_SOURCE_DIR}/src/cripts/*/*.cc)
+file(GLOB TEST_CPP_FILES ${PROJECT_SOURCE_DIR}/src/cripts/tests/*.cc)
+list(REMOVE_ITEM CPP_FILES ${TEST_CPP_FILES})
 
 set(CRIPTS_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/cripts/Bundle.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/ConfigsBase.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Connections.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Context.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Crypto.hpp
@@ -50,6 +53,7 @@ set(CRIPTS_PUBLIC_HEADERS
 set(CRIPTS_BUNDLE_HEADERS
     ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Common.hpp ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Headers.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/LogsMetrics.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Bundles/Caching.hpp
 )
 
 add_library(cripts SHARED ${CPP_FILES})

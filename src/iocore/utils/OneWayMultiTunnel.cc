@@ -226,7 +226,7 @@ OneWayMultiTunnel::startEvent(int event, void *data)
 }
 
 void
-OneWayMultiTunnel::close_target_vio(int result, VIO *vio)
+OneWayMultiTunnel::close_target_vio(int /* result ATS_UNUSED */, VIO *vio)
 {
   for (int i = 0; i < n_vioTargets; i++) {
     VIO *v = vioTargets[i];

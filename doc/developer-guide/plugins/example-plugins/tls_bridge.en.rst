@@ -76,7 +76,7 @@ useful case.
    :linenos:
    :emphasize-lines: 4
 
-   ts:
+   records:
       http:
          cache:
             http: 0
@@ -90,7 +90,7 @@ useful case.
       :linenos:
       :emphasize-lines: 3
 
-      ts:
+      records:
       http:
          server_ports: 4443:ssl
 
@@ -102,7 +102,7 @@ useful case.
       :linenos:
       :emphasize-lines: 3
 
-      ts:
+      records:
          http:
             connect_ports: 4443
 
@@ -117,7 +117,7 @@ useful case.
       :linenos:
       :emphasize-lines: 3
 
-      ts:
+      records:
         url_remap:
            remap_required: 0
 
@@ -149,7 +149,7 @@ useful case.
       :linenos:
       :emphasize-lines: 6
 
-      ts:
+      records:
          ssl:
             client:
                verify:
@@ -164,7 +164,7 @@ useful case.
       :linenos:
       :emphasize-lines: 6
 
-      ts:
+      records:
          ssl:
             client:
                CA:
@@ -178,7 +178,7 @@ useful case.
       :linenos:
       :emphasize-lines: 5-6
 
-      ts:
+      records:
          ssl:
             client:
                cert:
@@ -192,7 +192,7 @@ useful case.
       :linenos:
       :emphasize-lines: 4
 
-      ts:
+      records:
          ssl:
             client:
                certification_level: 2

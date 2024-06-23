@@ -200,7 +200,7 @@ in :file:`records.yaml`.:
 
 .. code-block:: yaml
 
-   ts:
+   records:
      exec_thread:
        affinity: 1
 
@@ -271,7 +271,7 @@ connections without submitting requests.
 
 .. code-block:: yaml
 
-   ts:
+   records:
      http:
        accept_no_activity_timeout: 120
 
@@ -287,7 +287,7 @@ situations where your origin servers stall connections without closing.
 
 .. code-block:: yaml
 
-   ts:
+   records:
      http:
        background_fill_active_timeout: 0
 
@@ -310,7 +310,7 @@ information on when this TTL value will actually be used).
 
 .. code-block:: yaml
 
-   ts:
+   records:
      hostdb:
        lookup_timeout: 30
        timeout: 1440
@@ -330,7 +330,7 @@ keepalive timeout which (if set lower) will likely take precedence.
 
 .. code-block:: yaml
 
-   ts:
+   records:
      http:
        keep_alive_no_activity_timeout_in: 120
        keep_alive_no_activity_timeout_out: 120
@@ -347,7 +347,7 @@ After the connection is established the value of
 
 .. code-block:: yaml
 
-   ts:
+   records:
      http:
        connect_attempts_timeout: 30
 
@@ -360,7 +360,7 @@ idle workloads, you may consider adjusting the polling timeout with
 
 .. code-block:: yaml
 
-   ts:
+   records:
      net:
        poll_timeout: 60
 
@@ -380,7 +380,7 @@ after which a retry will be performed (the delay is configured with
 
 .. code-block:: yaml
 
-   ts:
+   records:
      socks:
        server_connect_timeout: 10
        server_retry_time: 300
@@ -410,7 +410,7 @@ cached in |TS| using :ts:cv:`proxy.config.ssl.session_cache.timeout`.
 
 .. code-block:: yaml
 
-   ts:
+   records:
      ssl:
        handshake_timeout_in: 30
        ocsp:
@@ -457,7 +457,7 @@ values prove somewhat more generally applicable.
 
 .. code-block:: yaml
 
-   ts:
+   records:
      http:
        transaction_active_timeout_in: 900
        transaction_active_timeout_out: 0
@@ -475,7 +475,7 @@ for all WebSocket connections, regardless of their level of activity.
 
 .. code-block:: yaml
 
-   ts:
+   records:
      websocket:
        active_timeout: 3600
        no_activity_timeout: 600
@@ -518,7 +518,7 @@ status code for negative caching can be set with :ts:cv:`proxy.config.http.negat
 
 .. code-block:: yaml
 
-  ts:
+  records:
     http:
       negative_caching_enabled: 1
       negative_caching_lifetime: 10

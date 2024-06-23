@@ -1050,7 +1050,7 @@ cal_reload_delay(long time_diff)
 }
 
 int
-config_reloader(TSCont cont, TSEvent event, void *edata)
+config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   Dbg(dbg_ctl, "reloading configs");
   S3Config *s3 = static_cast<S3Config *>(TSContDataGet(cont));

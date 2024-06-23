@@ -80,7 +80,7 @@ ID::value(Cript::Context *context)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Bridge for the ID class
+// Bridge for the IP class
 class IP : public detail::HRWBridge
 {
   using self_type  = IP;
@@ -92,7 +92,7 @@ public:
   IP(const self_type &)             = delete;
   void operator=(const self_type &) = delete;
 
-  IP(const Cript::string_view &iP);
+  IP(const Cript::string_view &ip);
   ~IP() override = default;
 
   Cript::string_view value(Cript::Context *context) override;
@@ -101,18 +101,18 @@ private:
   Type _type = Type::none;
 };
 
-IP::IP(const Cript::string_view &ip) : super_type(ip)
+IP::IP(const Cript::string_view &type) : super_type(type)
 {
-  if (ip == "CLIENT") {
+  if (type == "CLIENT") {
     _type = Type::CLIENT;
-  } else if (ip == "INBOUND") {
+  } else if (type == "INBOUND") {
     _type = Type::INBOUND;
-  } else if (ip == "SERVER") {
+  } else if (type == "SERVER") {
     _type = Type::SERVER;
-  } else if (ip == "OUTBOUND") {
+  } else if (type == "OUTBOUND") {
     _type = Type::INBOUND;
   } else {
-    TSReleaseAssert(!"Invalid IP type in HRWBridge");
+    TSReleaseAssert(!"Invalid TYPE IP in HRWBridge");
   }
 }
 
@@ -140,6 +140,55 @@ IP::value(Cript::Context *context)
     _value = "";
     break;
   }
+
+  return _value;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Bridge for the CIDR class, this only deals with the client IP
+class CIDR : public detail::HRWBridge
+{
+  using self_type  = CIDR;
+  using super_type = detail::HRWBridge;
+
+public:
+  CIDR(const self_type &)           = delete;
+  void operator=(const self_type &) = delete;
+
+  CIDR(Cript::string_view &cidr);
+  ~CIDR() override = default;
+
+  Cript::string_view value(Cript::Context *context) override;
+
+private:
+  unsigned int _ipv4_cidr = 32;
+  unsigned int _ipv6_cidr = 128;
+};
+
+CIDR::CIDR(Cript::string_view &cidr) : super_type(cidr)
+{
+  auto ipv4 = cidr.split_prefix_at(',');
+
+  TSReleaseAssert(ipv4 != cidr); // No ' found
+
+  auto result = std::from_chars(ipv4.data(), ipv4.data() + ipv4.size(), _ipv4_cidr);
+
+  if (result.ec != std::errc()) {
+    TSReleaseAssert(!"Invalid CIDR parameters in HRWBridge");
+  }
+
+  result = std::from_chars(cidr.data(), cidr.data() + cidr.size(), _ipv6_cidr);
+  if (result.ec != std::errc()) {
+    TSReleaseAssert(!"Invalid CIDR parameters in HRWBridge");
+  }
+}
+
+Cript::string_view
+CIDR::value(Cript::Context *context)
+{
+  auto ip = Client::Connection::get().ip();
+
+  _value = ip.string(_ipv4_cidr, _ipv6_cidr);
 
   return _value;
 }
@@ -285,7 +334,7 @@ Bundle::Headers::bridgeFactory(const Cript::string &source)
 {
   Cript::string_view str = source;
 
-  str.trim_if(&isspace);
+  str.trim_if([](char c) { return std::isspace(c) || c == '"' || c == '\''; });
 
   if (str.starts_with("%{") && str.ends_with("}")) {
     str.remove_prefix_at('{');
@@ -297,7 +346,8 @@ Bundle::Headers::bridgeFactory(const Cript::string &source)
       return new detail::ID(str);
     } else if (key == "IP") {
       return new detail::IP(str);
-      // ToDo: We need CIDR:x,y support here, on the IP:CLIENT
+    } else if (key == "CIDR") {
+      return new detail::CIDR(str);
     } else if (key == "FROM-URL") {
       return new detail::URL(detail::URL::Type::REMAP_FROM, str);
     } else if (key == "TO-URL") {

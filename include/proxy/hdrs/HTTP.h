@@ -428,7 +428,7 @@ void         http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HT
 HTTPHdrImpl *http_hdr_clone(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HdrHeap *d_heap);
 void         http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHeap *d_heap, bool inherit_strs);
 
-int http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hh, char *buf, int bufsize, int *bufindex, int *dumpoffset);
+int http_hdr_print(HTTPHdrImpl const *hh, char *buf, int bufsize, int *bufindex, int *dumpoffset);
 
 void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 
@@ -506,7 +506,7 @@ public:
 
   int unmarshal(char *buf, int len, RefCountObj *block_ref);
 
-  int print(char *buf, int bufsize, int *bufindex, int *dumpoffset);
+  int print(char *buf, int bufsize, int *bufindex, int *dumpoffset) const;
 
   int length_get() const;
 
@@ -761,10 +761,10 @@ HTTPHdr::copy_shallow(const HTTPHdr *hdr)
   -------------------------------------------------------------------------*/
 
 inline int
-HTTPHdr::print(char *buf, int bufsize, int *bufindex, int *dumpoffset)
+HTTPHdr::print(char *buf, int bufsize, int *bufindex, int *dumpoffset) const
 {
   ink_assert(valid());
-  return http_hdr_print(m_heap, m_http, buf, bufsize, bufindex, dumpoffset);
+  return http_hdr_print(m_http, buf, bufsize, bufindex, dumpoffset);
 }
 
 /*-------------------------------------------------------------------------
@@ -1068,7 +1068,7 @@ HTTPHdr::url_set(const char *str, int length)
   -------------------------------------------------------------------------*/
 
 inline HTTPStatus
-http_hdr_status_get(HTTPHdrImpl *hh)
+http_hdr_status_get(HTTPHdrImpl const *hh)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
   return (HTTPStatus)hh->u.resp.m_status;

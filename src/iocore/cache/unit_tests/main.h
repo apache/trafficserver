@@ -141,7 +141,7 @@ public:
   }
 
   int
-  terminal_event(int event, void *e)
+  terminal_event(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
   {
     delete this;
     return 0;
@@ -163,13 +163,13 @@ public:
   }
 
   virtual void
-  do_io_read(size_t size = 0)
+  do_io_read(size_t /* size  ATS_UNUSED */ = 0)
   {
     REQUIRE(!"should not be called");
   }
 
   virtual void
-  do_io_write(size_t size = 0)
+  do_io_write(size_t /* size  ATS_UNUSED */ = 0)
   {
     REQUIRE(!"should not be called");
   }

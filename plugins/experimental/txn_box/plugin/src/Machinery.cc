@@ -2538,9 +2538,13 @@ Do_upstream_rsp_body::invoke(Context &ctx)
   struct State {
     TextView   _view;                ///< Source view for body.
     TSIOBuffer _tsio_buff = nullptr; ///< Buffer used to write body.
+    TSCont     _cont      = nullptr; ///< Transform continuation with which State is associated.
     /// Clean up the @c IOBuffer.
     ~State()
     {
+      if (_cont != nullptr) {
+        TSContDataSet(_cont, nullptr);
+      }
       if (_tsio_buff) {
         TSIOBufferDestroy(_tsio_buff);
       }
@@ -2550,6 +2554,10 @@ Do_upstream_rsp_body::invoke(Context &ctx)
   auto static transform = [](TSCont contp, TSEvent ev_code, void *) -> int {
     if (TSVConnClosedGet(contp)) {
       // IOBuffer is cleaned up at transaction close, not here.
+      if (auto state = static_cast<State *>(TSContDataGet(contp)); state) {
+        state->_cont = nullptr;
+        TSContDataSet(contp, nullptr);
+      }
       TSContDestroy(contp);
       return 0;
     }
@@ -2614,6 +2622,7 @@ Do_upstream_rsp_body::invoke(Context &ctx)
     auto state = ctx.make<State>();
     ctx.mark_for_cleanup(state);
     auto cont    = TSTransformCreate(transform, ctx._txn);
+    state->_cont = cont;
     state->_view = *content;
     TSContDataSet(cont, state);
     TSHttpTxnHookAdd(ctx._txn, TS_HTTP_RESPONSE_TRANSFORM_HOOK, cont);

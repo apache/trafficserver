@@ -1061,7 +1061,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   info("Instantiating a new compress plugin remap rule");
   info("Reading config from file = %s", argv[2]);
@@ -1094,7 +1094,7 @@ TSRemapDeleteInstance(void *instance)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   if (nullptr == instance) {
     info("No Rules configured, falling back to default");

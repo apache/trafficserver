@@ -759,7 +759,7 @@ ConditionNow::append_value(std::string &s, const Resources & /* res ATS_UNUSED *
 }
 
 bool
-ConditionNow::eval(const Resources &res)
+ConditionNow::eval(const Resources & /* res ATS_UNUSED */)
 {
   int64_t now = get_now_qualified(_now_qual);
 
@@ -768,14 +768,14 @@ ConditionNow::eval(const Resources &res)
 }
 
 std::string
-ConditionGeo::get_geo_string(const sockaddr *addr) const
+ConditionGeo::get_geo_string(const sockaddr * /* addr ATS_UNUSED */) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return "";
 }
 
 int64_t
-ConditionGeo::get_geo_int(const sockaddr *addr) const
+ConditionGeo::get_geo_int(const sockaddr * /* addr ATS_UNUSED */) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return 0;
@@ -1210,14 +1210,14 @@ ConditionStringLiteral::ConditionStringLiteral(const std::string &v)
 }
 
 void
-ConditionStringLiteral::append_value(std::string &s, const Resources &res)
+ConditionStringLiteral::append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
 {
   s += _literal;
   Dbg(pi_dbg_ctl, "Appending '%s' to evaluation value", _literal.c_str());
 }
 
 bool
-ConditionStringLiteral::eval(const Resources &res)
+ConditionStringLiteral::eval(const Resources & /* res ATS_UNUSED */)
 {
   Dbg(pi_dbg_ctl, "Evaluating StringLiteral");
 
@@ -1292,7 +1292,7 @@ ConditionTcpInfo::eval(const Resources &res)
 }
 
 void
-ConditionTcpInfo::append_value(std::string &s, Resources const &res)
+ConditionTcpInfo::append_value(std::string &s, Resources const & /* res ATS_UNUSED */)
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
   if (TSHttpTxnIsInternal(res.txnp)) {

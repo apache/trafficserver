@@ -274,7 +274,7 @@ def handle_file_input(args):
             idx = idx + 1
 
     ts = {}
-    ts['ts'] = config
+    ts['records'] = config
 
     if args.schema:
         err = validate_schema(ts, args.schema)

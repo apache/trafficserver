@@ -261,7 +261,6 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     Dbg(dbg_ctl_iocore_thread, "SO_INCOMING_CPU - fd=%d cpu=%d", fd, cpu);
   }
 #endif
-
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY) < 0) {
     goto Lerror;
   }
@@ -336,7 +335,7 @@ Lerror:
 }
 
 int
-Server::setup_fd_after_listen(const NetProcessor::AcceptOptions &opt)
+Server::setup_fd_after_listen([[maybe_unused]] const NetProcessor::AcceptOptions &opt)
 {
 #ifdef SO_ACCEPTFILTER
   // SO_ACCEPTFILTER needs to be set **after** listen

@@ -157,7 +157,7 @@ adding a configuration option to records.yaml.
    :linenos:
    :emphasize-lines: 4
 
-   ts:
+   records:
       plugin:
         lua:
           max_states: 64
@@ -316,7 +316,7 @@ We should write this TAG in :ts:cv:`proxy.config.diags.debug.tags` in records.ya
    :linenos:
    :emphasize-lines: 4
 
-   ts:
+   records:
      diags:
        debug:
          tags: TAG

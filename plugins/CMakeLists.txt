@@ -65,20 +65,10 @@ endif()
 # find_package() call to ensure the module doesn't try
 # to create the same target twice.
 if(NOT TARGET ImageMagick::Magick++)
-  auto_option(
-    WEBP_TRANSFORM
-    FEATURE_VAR
-    BUILD_WEBP_TRANSFORM
-    PACKAGE_DEPENDS
-    ImageMagick
-    COMPONENTS
-    Magick++
-  )
-
-  include(magick_target)
+  find_package(ImageMagick COMPONENTS Magick++)
 endif()
 
-if(BUILD_WEBP_TRANSFORM)
+if(TARGET ImageMagick::Magick++)
   add_subdirectory(webp_transform)
 endif()
 

@@ -66,7 +66,7 @@ writePostBody(TSHttpTxn txn, BodyBuilder *data)
 }
 
 static int
-body_transform(TSCont contp, TSEvent event, void *edata)
+body_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   TSHttpTxn    txn  = static_cast<TSHttpTxn>(TSContDataGet(contp));
   BodyBuilder *data = AuxDataMgr::data(txn).body_builder.get();

@@ -12,7 +12,7 @@
 #  With the default configurations, at least one remap rule is required. This
 #  can be relaxed with the following configuration in records.yaml:
 #
-#  ts:
+#  records:
 #    url_remap:
 #      remap_required: 0
 #
@@ -101,14 +101,14 @@
 #  regular expression strings - 2048.  In order to enable the 'deep linking
 #  protection' feature in Traffic Server, configure records.yaml with:
 #
-#  ts:
+#  records:
 #    http:
 #      referer_filter: 1
 #
 #
 #  In order to enable run-time formatting for redirect0URL, configure
 #
-#  ts:
+#  records:
 #    http:
 #      referer_format_redirect: 1
 #

@@ -466,13 +466,13 @@ public:
   }
 
   virtual int
-  populate_protocol(std::string_view *results, int n) const
+  populate_protocol(std::string_view * /* results ATS_UNUSED */, int /* n ATS_UNUSED */) const
   {
     return 0;
   }
 
   virtual const char *
-  protocol_contains(std::string_view prefix) const
+  protocol_contains(std::string_view /* prefix ATS_UNUSED */) const
   {
     return nullptr;
   }

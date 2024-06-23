@@ -17,10 +17,12 @@
 */
 #pragma once
 
+#include <utility>
+
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-#include <utility>
+#include "cripts/Lulu.hpp"
 
 namespace Cript
 {
@@ -35,9 +37,9 @@ public:
     using self_type = Reason;
 
   public:
-    Reason()                       = default;
-    Reason(const Reason &)         = delete;
-    void operator=(const Reason &) = delete;
+    Reason()                          = default;
+    Reason(const self_type &)         = delete;
+    void operator=(const self_type &) = delete;
 
     static void _set(Cript::Context *context, const Cript::string_view msg);
 
@@ -64,9 +66,9 @@ public:
     using self_type = Status;
 
   public:
-    Status()                       = default;
-    Status(const Status &)         = delete;
-    void operator=(const Status &) = delete;
+    Status()                          = default;
+    Status(const self_type &)         = delete;
+    void operator=(const self_type &) = delete;
 
     static void _set(Cript::Context *context, TSHttpStatus _status);
 
@@ -75,6 +77,8 @@ public:
     {
       _set(context, static_cast<TSHttpStatus>(_status));
     }
+
+    static TSHttpStatus _get(Cript::Context *context);
 
     [[nodiscard]] TSHttpStatus
     status() const
@@ -87,6 +91,12 @@ public:
     setter(TSHttpStatus status)
     {
       _status = status;
+    }
+
+    [[nodiscard]] TSHttpStatus
+    getter() const
+    {
+      return _status;
     }
 
   private:

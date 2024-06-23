@@ -288,7 +288,7 @@ for :ts:cv:`proxy.config.diags.debug.enabled` and
 
 .. code-block:: yaml
 
-   ts:
+   records:
      diags:
        debug:
          enabled: 1

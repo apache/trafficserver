@@ -24,7 +24,7 @@
 #include "fetch_policy_simple.h"
 
 bool
-FetchPolicySimple::init(const char *parameters)
+FetchPolicySimple::init(const char * /* parameters ATS_UNUSED */)
 {
   PrefetchDebug("initialized %s fetch policy", name());
   return true;

@@ -113,7 +113,7 @@ Client/|TS| connections, you must do the following:
 
    .. code-block:: yaml
 
-     ts:
+     records:
        ssl:
          server:
            cert:
@@ -140,7 +140,7 @@ Client/|TS| connections, you must do the following:
 
    .. code-block:: yaml
 
-      ts:
+      records:
         ssl:
           client:
             certification_level: 0
@@ -162,7 +162,7 @@ Client/|TS| connections, you must do the following:
 
    .. code-block:: yaml
 
-      ts:
+      records:
         ssl:
           CA:
             cert:
@@ -231,7 +231,7 @@ and origin server connections, you must do the following:
 
    .. code-block:: yaml
 
-      ts:
+      records:
         ssl:
           client:
             cert:
@@ -245,7 +245,7 @@ and origin server connections, you must do the following:
 
    .. code-block:: yaml
 
-      ts:
+      records:
         ssl:
           client:
             private_key:
@@ -259,7 +259,7 @@ and origin server connections, you must do the following:
 
 .. code-block:: yaml
 
-   ts:
+   records:
      ssl:
        client:
          verify:
@@ -273,7 +273,7 @@ and origin server connections, you must do the following:
 
 .. code-block:: yaml
 
-   ts:
+   records:
      ssl:
        client:
          CA:
@@ -389,7 +389,7 @@ To configure Split DNS:
 
 .. code-block:: yaml
 
-   ts:
+   records:
      dns:
        splitDNS:
          enabled: 1

@@ -17,16 +17,15 @@
 */
 #pragma once
 
-#include <cstring>
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
-#include "ts/remap.h"
 #include "ts/ts.h"
+#include "ts/remap.h"
+
+#include "cripts/Headers.hpp"
 
 namespace Cript
 {
@@ -512,10 +511,22 @@ public:
 
   }; // End class Url::Query
 
+  class Matrix : public Component
+  {
+    using super_type = Component;
+    using self_type  = Matrix;
+
+    friend class Url;
+
+  public:
+    Matrix() = default;
+    Cript::string_view getSV() override;
+    self_type          operator=(Cript::string_view matrix);
+
+  }; // End class Url::Matrix
+
 public:
   Url() = default;
-
-  ~Url() { reset(); }
 
   // Clear anything "cached" in the Url, this is rather draconian, but it's safe...
   virtual void
@@ -532,48 +543,53 @@ public:
     _state = nullptr;
   }
 
-  bool
+  [[nodiscard]] bool
   initialized() const
   {
     return (_state != nullptr);
   }
 
-  bool
+  [[nodiscard]] bool
   modified() const
   {
     return _modified;
   }
 
-  TSMLoc
+  [[nodiscard]] TSMLoc
   urlp() const
   {
     return _urlp;
   }
 
-  // Getters / setters for the full URL
-  Cript::string url() const;
+  [[nodiscard]] virtual bool
+  readOnly() const
+  {
+    return false;
+  }
 
-  Host   host;
+  // Getters / setters for the full URL
+  [[nodiscard]] Cript::string url() const;
+
   Scheme scheme;
+  Host   host;
+  Port   port;
   Path   path;
   Query  query;
-  Port   port;
+  Matrix matrix;
 
 protected:
   void
   _initialize(Cript::Transaction *state)
   {
-    _state      = state;
-    host._owner = path._owner = scheme._owner = query._owner = port._owner = this;
+    _state        = state;
+    scheme._owner = host._owner = port._owner = path._owner = query._owner = matrix._owner = this;
   }
 
-  TSMBuffer _bufp = nullptr;               // These two gets setup via initializing, pointing
-                                           // to appropriate headers
+  TSMBuffer           _bufp     = nullptr; // These two gets setup via initializing, to appropriate headers
   TSMLoc              _hdr_loc  = nullptr; // Do not release any of this within the URL classes!
   TSMLoc              _urlp     = nullptr; // This is owned by us.
   Cript::Transaction *_state    = nullptr; // Pointer into the owning Context's State
-  bool                _modified = false;   // We have pending changes on the path components or
-                                           // query parameters?
+  bool                _modified = false;   // We have pending changes on the path/query components
 
 }; // End class Url
 
@@ -588,12 +604,17 @@ class URL : public Cript::Url
   using self_type  = URL;
 
 public:
-  URL() = default;
+  URL()                             = default;
+  URL(const self_type &)            = delete;
+  void operator=(const self_type &) = delete;
 
-  URL(const URL &)            = delete;
-  void operator=(const URL &) = delete;
+  static self_type &_get(Cript::Context *context);
 
-  static URL &_get(Cript::Context *context);
+  [[nodiscard]] bool
+  readOnly() const override
+  {
+    return true;
+  }
 
 }; // End class Pristine::URL
 
@@ -607,9 +628,9 @@ class URL : public Cript::Url
   using self_type  = URL;
 
 public:
-  URL()                       = default;
-  URL(const URL &)            = delete;
-  void operator=(const URL &) = delete;
+  URL()                             = default;
+  URL(const self_type &)            = delete;
+  void operator=(const self_type &) = delete;
 
   // We must not release the bufp etc. since it comes from the RRI structure
   void
@@ -617,8 +638,8 @@ public:
   {
   }
 
-  static URL &_get(Cript::Context *context);
-  bool        _update(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
+  bool              _update(Cript::Context *context);
 
 private:
   void _initialize(Cript::Context *context);
@@ -637,9 +658,9 @@ namespace From
     using self_type  = URL;
 
   public:
-    URL()                       = default;
-    URL(const URL &)            = delete;
-    void operator=(const URL &) = delete;
+    URL()                             = default;
+    URL(const self_type &)            = delete;
+    void operator=(const self_type &) = delete;
 
     // We must not release the bufp etc. since it comes from the RRI structure
     void
@@ -647,8 +668,14 @@ namespace From
     {
     }
 
-    static URL &_get(Cript::Context *context);
-    bool        _update(Cript::Context *context);
+    [[nodiscard]] bool
+    readOnly() const override
+    {
+      return true;
+    }
+
+    static self_type &_get(Cript::Context *context);
+    bool              _update(Cript::Context *context);
 
   private:
     void _initialize(Cript::Context *context);
@@ -665,9 +692,9 @@ namespace To
     using self_type  = URL;
 
   public:
-    URL()                       = default;
-    URL(const URL &)            = delete;
-    void operator=(const URL &) = delete;
+    URL()                             = default;
+    URL(const self_type &)            = delete;
+    void operator=(const self_type &) = delete;
 
     // We must not release the bufp etc. since it comes from the RRI structure
     void
@@ -675,8 +702,14 @@ namespace To
     {
     }
 
-    static URL &_get(Cript::Context *context);
-    bool        _update(Cript::Context *context);
+    [[nodiscard]] bool
+    readOnly() const override
+    {
+      return true;
+    }
+
+    static self_type &_get(Cript::Context *context);
+    bool              _update(Cript::Context *context);
 
   private:
     void _initialize(Cript::Context *context);
@@ -695,12 +728,12 @@ class URL : public Cript::Url // ToDo: This can maybe be a subclass of Client::U
   using self_type  = URL;
 
 public:
-  URL()                       = default;
-  URL(const URL &)            = delete;
-  void operator=(const URL &) = delete;
+  URL()                             = default;
+  URL(const self_type &)            = delete;
+  void operator=(const self_type &) = delete;
 
-  static URL &_get(Cript::Context *context);
-  bool        _update(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
+  bool              _update(Cript::Context *context);
 
 private:
   void
@@ -724,12 +757,12 @@ class URL : public Cript::Url
   using self_type  = URL;
 
 public:
-  URL()                       = default;
-  URL(const URL &)            = delete;
-  void operator=(const URL &) = delete;
+  URL()                             = default;
+  URL(const self_type &)            = delete;
+  void operator=(const self_type &) = delete;
 
-  static URL &_get(Cript::Context *context);
-  bool        _update(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
+  bool              _update(Cript::Context *context);
 
 private:
   void
@@ -850,6 +883,21 @@ template <> struct formatter<Cript::Url::Query> {
   format(Cript::Url::Query &query, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", query.getSV());
+  }
+};
+
+template <> struct formatter<Cript::Url::Matrix> {
+  constexpr auto
+  parse(format_parse_context &ctx) -> decltype(ctx.begin())
+  {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto
+  format(Cript::Url::Matrix &matrix, FormatContext &ctx) -> decltype(ctx.out())
+  {
+    return fmt::format_to(ctx.out(), "{}", matrix.getSV());
   }
 };
 

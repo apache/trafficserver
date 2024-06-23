@@ -32,14 +32,15 @@ class TestHttpDataFetcher : public HttpDataFetcher
 public:
   TestHttpDataFetcher() {}
   bool
-  addFetchRequest(const std::string &url, FetchedDataProcessor *callback_obj = nullptr) override
+  addFetchRequest(const std::string & /* url ATS_UNUSED */,
+                  FetchedDataProcessor * /* callback_obj  ATS_UNUSED */ = nullptr) override
   {
     ++_n_pending_requests;
     return true;
   }
 
   DataStatus
-  getRequestStatus(const std::string &url) const override
+  getRequestStatus(const std::string & /* url ATS_UNUSED */) const override
   {
     if (_return_data) {
       return STATUS_DATA_AVAILABLE;

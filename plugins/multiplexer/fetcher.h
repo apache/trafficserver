@@ -173,7 +173,7 @@ template <class T> struct HttpTransaction {
   }
 
   static int
-  handle(TSCont c, TSEvent e, void *data)
+  handle(TSCont c, TSEvent e, void * /* data ATS_UNUSED */)
   {
     using multiplexer_ns::dbg_ctl;
 

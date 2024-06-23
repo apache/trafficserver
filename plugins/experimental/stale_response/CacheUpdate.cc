@@ -44,7 +44,7 @@ const int  SERVER_INTERCEPT_HEADER_LEN = sizeof(SERVER_INTERCEPT_HEADER) - 1;
 
 /*-----------------------------------------------------------------------------------------------*/
 static char *
-convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
+convert_mime_hdr_to_string(TSMLoc hdr_loc)
 {
   TSIOBuffer       output_buffer;
   TSIOBufferReader reader;
@@ -67,7 +67,7 @@ convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 
   /* This will print  just MIMEFields and not
      the http request line */
-  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  TSMimeHdrPrint(hdr_loc, output_buffer);
 
   /* Find out how the big the complete header is by
      seeing the total bytes in the buffer.  We need to
@@ -341,7 +341,7 @@ intercept_fetch_the_url(StateInfo *state)
   get_request.append(tmpStr, 8);
   get_request.append("\r\n");
 
-  char *allReqHeaders = convert_mime_hdr_to_string(state->req_info->http_hdr_buf, state->req_info->http_hdr_loc);
+  char *allReqHeaders = convert_mime_hdr_to_string(state->req_info->http_hdr_loc);
   get_request.append(allReqHeaders);
   TSfree(allReqHeaders);
   get_request.append("\r\n");

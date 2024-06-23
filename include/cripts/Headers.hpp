@@ -470,13 +470,12 @@ class Request : public RequestHeader
   using self_type  = Request;
 
 public:
-  Request() = default;
-
-  Request(const Request &)        = delete;
-  void operator=(const Request &) = delete;
+  Request()                         = default;
+  Request(const self_type &)        = delete;
+  void operator=(const self_type &) = delete;
 
   // Implemented later, because needs the context.
-  static Request &_get(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
 
 }; // End class Client::Request
 
@@ -486,13 +485,12 @@ class Response : public ResponseHeader
   using self_type  = Response;
 
 public:
-  Response() = default;
-
-  Response(const Response &)       = delete;
-  void operator=(const Response &) = delete;
+  Response()                        = default;
+  Response(const self_type &)       = delete;
+  void operator=(const self_type &) = delete;
 
   // Implemented later, because needs the context.
-  static Response &_get(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
 
 }; // End class Client::Response
 
@@ -506,10 +504,9 @@ class Request : public RequestHeader
   using self_type  = Request;
 
 public:
-  Request() = default;
-
-  Request(const Request &)        = delete;
-  void operator=(const Request &) = delete;
+  Request()                         = default;
+  Request(const self_type &)        = delete;
+  void operator=(const self_type &) = delete;
 
   // Implemented later, because needs the context.
   static Request &_get(Cript::Context *context);
@@ -521,13 +518,12 @@ class Response : public ResponseHeader
   using self_type  = Response;
 
 public:
-  Response() = default;
-
-  Response(const Response &)       = delete;
-  void operator=(const Response &) = delete;
+  Response()                        = default;
+  Response(const self_type &)       = delete;
+  void operator=(const self_type &) = delete;
 
   // Implemented later, because needs the context.
-  static Response &_get(Cript::Context *context);
+  static self_type &_get(Cript::Context *context);
 
 }; // End class Server::Response
 

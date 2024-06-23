@@ -108,7 +108,7 @@ cont_check_cacheable(TSHttpTxn txnp)
 // if a background fetch is allowed for this request
 //
 static int
-cont_handle_cache(TSCont contp, TSEvent event, void *edata)
+cont_handle_cache(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   if (TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE == event) {
@@ -147,7 +147,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 // We don't have any specific "instances" here, at least not yet.
 //
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
+TSRemapNewInstance(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */, void **ih, char * /* errbuf ATS_UNUSED */,
+                   int /* errbuf_size ATS_UNUSED */)
 {
   TSCont cont = TSContCreate(cont_handle_cache, nullptr);
   *ih         = cont;

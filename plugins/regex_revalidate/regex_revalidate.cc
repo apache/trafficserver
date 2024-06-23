@@ -543,7 +543,7 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
 }
 
 static int
-free_handler(TSCont cont, TSEvent event, void *edata)
+free_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   invalidate_t *iptr;
 
@@ -555,7 +555,7 @@ free_handler(TSCont cont, TSEvent event, void *edata)
 }
 
 static int
-config_handler(TSCont cont, TSEvent event, void *edata)
+config_handler(TSCont cont, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   plugin_state_t *pstate;
   invalidate_t   *i, *iptr;

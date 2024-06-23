@@ -76,7 +76,7 @@ MIOBufferWriter::operator>>(std::ostream &stream) const
 }
 
 ssize_t
-MIOBufferWriter::operator>>(int fd) const
+MIOBufferWriter::operator>>(int /* fd ATS_UNUSED */) const
 {
   return 0;
 }

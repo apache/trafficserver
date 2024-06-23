@@ -18,7 +18,6 @@
 #pragma once
 
 #include <filesystem>
-#include <iostream>
 #include <fstream>
 
 #include "cripts/Lulu.hpp"
@@ -26,7 +25,17 @@
 namespace File
 {
 
-using Path = std::filesystem::path;
+class Path : public std::filesystem::path
+{
+  using super_type = std::filesystem::path;
+  using self_type  = Path;
+
+public:
+  using super_type::super_type;
+
+  self_type &rebase();
+};
+
 using Type = std::filesystem::file_type;
 
 std::filesystem::file_status Status(const Path &path);
@@ -38,9 +47,9 @@ namespace Line
     using self_type = Reader;
 
   public:
-    Reader()                       = delete;
-    Reader(const Reader &)         = delete;
-    void operator=(const Reader &) = delete;
+    Reader()                          = delete;
+    Reader(const self_type &)         = delete;
+    void operator=(const self_type &) = delete;
 
     explicit Reader(const std::string &path) : _path(path), _stream{path} {}
     explicit Reader(const Cript::string_view path) : _path(path), _stream{_path} {}

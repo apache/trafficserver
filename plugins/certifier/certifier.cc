@@ -395,7 +395,7 @@ mkcrt(const std::string &commonName, int serial)
 }
 
 static int
-shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
+shadow_cert_generator(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   const char *servername = reinterpret_cast<const char *>(TSContDataGet(contp));
   std::string commonName(servername);
@@ -523,7 +523,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
 
 /// Callback at TS_SSL_CERT_HOOK, generate/look up shadow certificates based on SNI/FQDN
 static int
-cert_retriever(TSCont contp, TSEvent event, void *edata)
+cert_retriever(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSVConn         ssl_vc     = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj     = TSVConnSslConnectionGet(ssl_vc);

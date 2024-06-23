@@ -49,7 +49,7 @@ Sets the following variables in :file:`records.yaml` (in the Traffic Server
 
 .. code-block:: yaml
 
-   ts:
+   records:
      diags:
        debug:
          enabled: 1

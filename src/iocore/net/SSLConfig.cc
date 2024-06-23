@@ -189,7 +189,8 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 }
 
 int
-UpdateServerPolicy(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
+UpdateServerPolicy(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
+                   void * /* cookie ATS_UNUSED */)
 {
   SSLConfigParams *params        = SSLConfig::acquire();
   char            *verify_server = data.rec_string;
@@ -203,7 +204,8 @@ UpdateServerPolicy(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS
 }
 
 int
-UpdateServerPolicyProperties(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
+UpdateServerPolicyProperties(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
+                             void * /* cookie ATS_UNUSED */)
 {
   SSLConfigParams *params        = SSLConfig::acquire();
   char            *verify_server = data.rec_string;

@@ -29,7 +29,7 @@ DNSEventIO::start(EventLoop l, int fd, int events)
 }
 
 void
-DNSEventIO::process_event(int flags)
+DNSEventIO::process_event(int /* flags ATS_UNUSED */)
 {
   _c.trigger(); // Make sure the DNSHandler for this con knows we triggered
   refresh(EVENTIO_READ);

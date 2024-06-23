@@ -54,11 +54,11 @@
 //////////////////////////////////////////
 /// SUPPORT MACRO
 #define DEF_EXT_NEW_DEL(cls)               \
-  void *operator new(size_t sz)            \
+  void *operator new(size_t)               \
   {                                        \
     return ats_malloc(ext::sizeOf<cls>()); \
   }                                        \
-  void *operator new(size_t sz, void *ptr) \
+  void *operator new(size_t, void *ptr)    \
   {                                        \
     return ptr;                            \
   }                                        \
@@ -306,14 +306,14 @@ namespace details
 
   template <typename Derived_t, typename Field_t>
   Field_t const &
-  fieldGet(void const *fld_ptr, FieldId<Derived_t, Field_t> const &field)
+  fieldGet(void const *fld_ptr, FieldId<Derived_t, Field_t> const & /* field ATS_UNUSED */)
   {
     return *static_cast<Field_t const *>(fld_ptr);
   }
 
   template <typename Derived_t, typename Field_t>
   Field_t &
-  fieldSet(void *fld_ptr, FieldId<Derived_t, Field_t> const &field)
+  fieldSet(void *fld_ptr, FieldId<Derived_t, Field_t> const & /* field ATS_UNUSED */)
   {
     return *static_cast<Field_t *>(fld_ptr);
   }

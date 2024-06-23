@@ -151,7 +151,7 @@ namespace io
   }
 
   int
-  WriteOperation::Handle(const TSCont c, const TSEvent e, void *d)
+  WriteOperation::Handle(const TSCont c, const TSEvent e, [[maybe_unused]] void *d)
   {
     assert(c != nullptr);
     WriteOperationPointer *const p = static_cast<WriteOperationPointer *>(TSContDataGet(c));

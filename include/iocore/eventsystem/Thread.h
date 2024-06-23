@@ -140,6 +140,9 @@ public:
   ProxyAllocator INKContAllocator;
   ProxyAllocator INKVConnAllocator;
   ProxyAllocator mHandleAllocator;
+#if TS_HAS_CRIPTS == 1
+  ProxyAllocator criptContextAllocator;
+#endif
 
   /** Start the underlying thread.
 
