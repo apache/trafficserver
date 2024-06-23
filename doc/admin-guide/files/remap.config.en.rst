@@ -551,6 +551,8 @@ ATS evaluates multiple ACL filters in the following order:
 When an ACL filter is found, ATS stops processing ACL filters depending on the mathcing policy configured by
 :ts:cv:`proxy.config.url_remap.acl_matching_policy`.
 
+Note the step 1 happens at the start of the connection before any transactions are processed, unlike the other rules here.
+
 First Explicit Match Wins Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -568,7 +570,7 @@ found.
 
    # remap.config
    .definefilter named-filter-1 @action=deny @method=HEAD
-   .definefilter named-filter-2 @actio==allow @method=POST
+   .definefilter named-filter-2 @action=allow @method=POST
 
    .activatefilter named-filter-1
    .activatefilter named-filter-2
@@ -577,31 +579,33 @@ found.
 
 The result of this example is below. The evaluation applied from left to right until explicit match is found.
 
-====== ================ ================ ================ ================ =============
-Method In-line Filter   Named Filter 1   Named Filter 2   ip_allow.yaml    result
-====== ================ ================ ================ ================ =============
-GET    deny  (explicit) \-               \-               \-               denied  (403)
-HEAD   allow (implicit) deny  (explicit) \-               \-               denied  (403)
-POST   allow (implicit) allow (implicit) allow (explicit) \-               allowed (200)
-PUT    allow (implicit) allow (implicit) deny  (implicit) deny  (explicit) denied  (403)
-DELETE allow (implicit) allow (implicit) deny  (implicit) allow (implicit) allowed (200)
-====== ================ ================ ================ ================ =============
+====== ============== ============== ============== ================ =============
+Method In-line Filter Named Filter 1 Named Filter 2 ip_allow.yaml    result
+====== ============== ============== ============== ================ =============
+GET    deny           \-             \-             \-               denied  (403)
+HEAD   \-             deny           \-             \-               denied  (403)
+POST   \-             \-             allow          \-               allowed (200)
+PUT    \-             \-             \-             deny             denied  (403)
+DELETE \-             \-             \-             allow (implicit) allowed (200)
+====== ============== ============== ============== ================ =============
 
 
 First Filter Wins Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-ATS processes the first ACL filter only. This means following ACL filters are never processed.
+ATS processes only the first ACL filter. This means that subsequent ACL filters are never processed. When a filter is processed,
+the action is applied to the specified methods and its opposite to all other methods. This means that if a filter "denies" a
+method, all other methods are implicitly allowed. If the action is "deny," be careful to list all methods to be denied.
 
-====== ================ ================ ================ ================ =============
-Method In-line Filter   Named Filter 1   Named Filter 2   ip_allow.yaml    result
-====== ================ ================ ================ ================ =============
-GET    deny  (explicit) \-               \-               \-               denied  (403)
-HEAD   allow (implicit) deny  (explicit) \-               \-               allowed (200)
-POST   allow (implicit) \-               allow (explicit) \-               allowed (200)
-PUT    allow (implicit) \-               \-               deny  (explicit) allowed (200)
-DELETE allow (implicit) \-               \-               \-               allowed (200)
-====== ================ ================ ================ ================ =============
+====== ================ ============== ============== ============= =============
+Method In-line Filter   Named Filter 1 Named Filter 2 ip_allow.yaml result
+====== ================ ============== ============== ============= =============
+GET    deny             \-             \-             \-            denied  (403)
+HEAD   allow (implicit) deny           \-             \-            allowed (200)
+POST   allow (implicit) \-             allow          \-            allowed (200)
+PUT    allow (implicit) \-             \-             deny          allowed (200)
+DELETE allow (implicit) \-             \-             \-            allowed (200)
+====== ================ ============== ============== ============= =============
 
 
 Including Additional Remap Files
