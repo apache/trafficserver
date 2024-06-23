@@ -594,8 +594,10 @@ First Filter Wins Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 ATS processes only the first ACL filter. This means that subsequent ACL filters are never processed. When a filter is processed,
-the action is applied to the specified methods and its opposite to all other methods. This means that if a filter "denies" a
-method, all other methods are implicitly allowed. If the action is "deny," be careful to list all methods to be denied.
+the action is applied to the specified methods and its opposite to all other methods.
+
+If this matching policy is applied, then given the example remap rule above, all requests to ``www.example.com`` are filtered like
+an :file:`ip_allow.yaml` rule applies to them that denies GET requests and implicitly allows all other methods:
 
 ====== ================ ============== ============== ============= =============
 Method In-line Filter   Named Filter 1 Named Filter 2 ip_allow.yaml result
