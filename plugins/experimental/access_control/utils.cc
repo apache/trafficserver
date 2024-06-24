@@ -194,11 +194,13 @@ cryptoErrStr(char *buffer, size_t bufferLen)
  * @param dataLen message length
  * @param key ptr to a counted string containing the key (secret)
  * @param keyLen key length
- * @param out ptr to where to store the digest (must be at least MAX_MSDIGEST_BUFFER_SIZE)
+ * @param out ptr to where to store the digest
+ * @param outLen length of the out buffer (must be at least MAX_MSGDIGEST_BUFFER_SIZE)
  * @return the number of character actually written to the buffer.
  */
 size_t
-cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen, const char *key, size_t keyLen, char *out)
+cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen, const char *key, size_t keyLen, char *out,
+                       size_t /* outLen ATS_UNUSED */)
 {
   const EVP_MD *md  = nullptr;
   unsigned int  len = 0;

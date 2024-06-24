@@ -40,7 +40,8 @@ size_t urlDecode(const char *in, size_t inLen, char *out, size_t outLen);
 
 /* ******* Functions using OpenSSL library ******* */
 
-size_t cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen, const char *key, size_t keyLen, char *out);
+size_t cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen, const char *key, size_t keyLen, char *out,
+                              size_t outLen);
 bool   cryptoMessageDigestEqual(const char *md1, size_t md1Len, const char *md2, size_t md2Len);
 
 size_t cryptoBase64EncodedSize(size_t decodedSize);

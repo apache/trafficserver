@@ -26,7 +26,7 @@
 
 #include "access_control.h"
 
-size_t      calcMessageDigest(const StringView hf, const char *secret, const char *message, size_t messageLen, char *buffer);
+size_t calcMessageDigest(const StringView hf, const char *secret, const char *message, size_t messageLen, char *buffer, size_t len);
 const char *getSecretMap(const StringMap &map, const StringView &key, size_t &secretSize);
 
 /* AccessToken ***************************************************************************************************** */
@@ -108,7 +108,7 @@ AccessToken::validateSignature()
   /* Calculate signature. */
   char   computedMd[MAX_MSGDIGEST_BUFFER_SIZE];
   size_t computedMdLen = 0;
-  computedMdLen        = calcMessageDigest(_hashFunction, secret, _payload.data(), _payload.size(), computedMd);
+  computedMdLen = calcMessageDigest(_hashFunction, secret, _payload.data(), _payload.size(), computedMd, MAX_MSGDIGEST_BUFFER_SIZE);
   if (0 == computedMdLen) {
     ERROR_OUT("failed to calculate message digest");
     return _state = INVALID_SIGNATURE;
@@ -308,7 +308,7 @@ KvpAccessTokenBuilder::sign(const StringView kid, const StringView hf)
     return;
   }
 
-  size_t mdLen = calcMessageDigest(hf, secret, _buffer.data(), _buffer.size(), md);
+  size_t mdLen = calcMessageDigest(hf, secret, _buffer.data(), _buffer.size(), md, MAX_MSGDIGEST_BUFFER_SIZE);
   if (0 == mdLen) {
     DEBUG_OUT("failed to calculate message digest");
   } else {
@@ -358,14 +358,15 @@ static const std::map<String, String> _digestAlgosMap = createStaticDigestAlgoMa
  * @param secret secret
  * @param message input message
  * @param messageLen input message length
- * @param buffer output buffer for storing the message digest (must be at least MAX_MSDIGEST_BUFFER_SIZE)
+ * @param buffer output buffer for storing the message digest
+ * @param len output buffer length (must be at least MAX_MSDIGEST_BUFFER_SIZE)
  * @return number of characters actually written to the output buffer.
  */
 size_t
-calcMessageDigest(const StringView hf, const char *secret, const char *message, size_t messageLen, char *buffer)
+calcMessageDigest(const StringView hf, const char *secret, const char *message, size_t messageLen, char *buffer, size_t len)
 {
   if (hf.empty()) {
-    return cryptoMessageDigestGet(LIBSSL_HASH_SHA256, message, messageLen, secret, strlen(secret), buffer);
+    return cryptoMessageDigestGet(LIBSSL_HASH_SHA256, message, messageLen, secret, strlen(secret), buffer, len);
   } else {
     std::map<String, String>::const_iterator it = _digestAlgosMap.find(String(hf.data(), hf.size()));
     if (_digestAlgosMap.end() == it) {
@@ -373,7 +374,7 @@ calcMessageDigest(const StringView hf, const char *secret, const char *message, 
       return 0;
     }
 
-    return cryptoMessageDigestGet(it->second.c_str(), message, messageLen, secret, strlen(secret), buffer);
+    return cryptoMessageDigestGet(it->second.c_str(), message, messageLen, secret, strlen(secret), buffer, len);
   }
 }
 
