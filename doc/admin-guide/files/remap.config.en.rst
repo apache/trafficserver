@@ -553,11 +553,11 @@ When an ACL filter is found, ATS stops processing subsequent ACL filters dependi
 
 Note the step 1 happens at the start of the connection before any transactions are processed, unlike the other rules here.
 
-First Explicit Match Wins Policy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Match on IP and Method Policy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is the default matching policy. With this policy, ACL filters, in-line or named, only take effect if both IP and HTTP method
-match the incoming request. If it doesn't match, ATS processes next ACL filter.
+This is the default matching policy. With this policy, ACL filters, in-line or named, only take effect if both IP address and HTTP
+method match the incoming request. If there is no match, ATS proceeds to the next ACL filter to find a matching one.
 
 This policy is useful for organizations that want ACL rules to additively allow or deny specific methods in addition to other ACL
 filters and :file:`ip_allow.yaml` rules.
@@ -572,12 +572,11 @@ The implicit ``@src_ip`` is all client IP addresses, so this filter will match o
 from any client and its action will be to deny such POST requests. For all other methods, the filter will not take effect, thus
 allowing other active ACL filters or an :file:`ip_allow.yaml` rule to determine the action to take for any other transaction.
 
-First Filter Wins Policy
-~~~~~~~~~~~~~~~~~~~~~~~~
+Match on IP only Policy
+~~~~~~~~~~~~~~~~~~~~~~~
 
-With this policy ATS processes only the first ACL filter match solely based upon IP. This means that subsequent ACL filters are
-never processed. When a filter is processed, the action is applied to the specified methods and its opposite to all other methods
-like :file:`ip_allow.yaml` rules.
+With this policy, ACL filters match solely based upon IP address, meaning that ACL filters match like :file:`ip_allow.yaml` rules.
+When a filter is processed, the action is applied to the specified methods and its opposite to **all other** methods.
 
 This policy is useful for organizations that want to have ACL filters behave like :file:`ip_allow.yaml` rules specific to remap
 targets.
@@ -590,7 +589,7 @@ Consider a filter like the following:
 
 The implicit ``@src_ip`` is all client IP address, so this filter will apply to **all** requests matching this remap rule. Again,
 like an analogously crafted :file:`ip_allow.yaml` action rule, this will deny ``POST`` request while allowing **all** other methods
-to the ``www.example.com``. No other ACL filters or :file:`ip_allow.yaml` rules will be applied for this target.
+to the ``www.example.com``. No other ACL filters or :file:`ip_allow.yaml` rules will be applied for any request to this target.
 
 This policy is new to ATS 10.
 
@@ -609,7 +608,7 @@ This is an example of in-line filter, named filters in :file:`remap.config`, and
    # ip_allow.yaml
    ip_allow:
       - apply: in
-        ip_addrs: 198.51.100.0/24
+        ip_addrs: [0/0, ::/0]
         action: deny
         method: [PURGE, PUSH]
 
@@ -622,7 +621,7 @@ This is an example of in-line filter, named filters in :file:`remap.config`, and
 
    map http://www.example.com/ http://internal.example.com/ @action=deny @method=POST
 
-With the "First Explicit Match Wins Policy", the evaluation applied from left to right until explicit match is found:
+With the "Match on IP and Method Policy", the evaluation applied from left to right until match is found:
 
 ====== ============== ============== ============== ================ =============
 Method In-line Filter Named Filter 1 Named Filter 2 ip_allow.yaml    result
@@ -635,8 +634,8 @@ PURGE  \-             \-             \-             deny             denied  (40
 PUSH   \-             \-             \-             deny             denied  (403)
 ====== ============== ============== ============== ================ =============
 
-With the "First Filter Wins Policy", the in-line filter works like an :file:`ip_allow.yaml` rule applies to all requests to
-``www.example.com`` that denies GET requests and implicitly allows all other methods:
+With the "Match on IP only Policy", the in-line filter works like an :file:`ip_allow.yaml` rule applies to all requests to
+``www.example.com`` that denies ``GET`` requests and implicitly allows all other methods:
 
 ====== ================ ============== ============== ============= =============
 Method In-line Filter   Named Filter 1 Named Filter 2 ip_allow.yaml result

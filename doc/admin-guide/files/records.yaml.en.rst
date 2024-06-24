@@ -3550,12 +3550,12 @@ URL Remap Rules
 
    This controls matching policy of ACL filters in :file:`remap.config`. See :ref:`acl-filters` for more details.
 
-   ===== =========================
+   ===== =============================
    Value Description
-   ===== =========================
-   ``0`` First Explicit Match Wins
-   ``1`` First Filter Wins
-   ===== =========================
+   ===== =============================
+   ``0`` Match on IP and Method Policy
+   ``1`` Match on IP only Policy
+   ===== =============================
 
 .. _records-config-ssl-termination:
 
