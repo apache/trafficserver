@@ -518,8 +518,8 @@ Special Filter and ip_allow Named Filter
 ----------------------------------------
 
 If :file:`ip_allow.yaml` has a "deny all" filter, it is treated as a special filter that is applied before remapping for
-optimizaion. To control this for specific remap rules, a named filter called `ip_allow` is pre-defined. This named filter is
-activated implicitly in default. To stop applying the special rule, disable the `ip_allow` filter as shown below.
+optimizaion. To control this for specific remap rules, a named filter called ``ip_allow`` is pre-defined. This named filter is
+activated implicitly in default. To stop applying the special rule, disable the ``ip_allow`` filter as shown below.
 
 ::
 
@@ -545,10 +545,10 @@ ATS evaluates multiple ACL filters in the following order:
 
 1. Special "deny all" filter in :file:`ip_allow.yaml`
 2. In-line Filter in :file:`remap.config`
-3. Named Filter in :file:`remap.config`
+3. Named Filters in :file:`remap.config`
 4. Filters in :file:`ip_allow.yaml`
 
-When an ACL filter is found, ATS stops processing ACL filters depending on the mathcing policy configured by
+When an ACL filter is found, ATS stops processing subsequent ACL filters depending on the mathcing policy configured by
 :ts:cv:`proxy.config.url_remap.acl_matching_policy`.
 
 Note the step 1 happens at the start of the connection before any transactions are processed, unlike the other rules here.
@@ -556,8 +556,53 @@ Note the step 1 happens at the start of the connection before any transactions a
 First Explicit Match Wins Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is the default matching policy. ATS stops processing ACL filters only if an explicit match of IP address and HTTP method is
-found.
+This is the default matching policy. With this policy, ACL filters, in-line or named, only take effect if both IP and HTTP method
+match the incoming request. If it doesn't match, ATS processes next ACL filter.
+
+This policy is useful for organizations that want ACL rules to additively allow or deny specific methods in addition to other ACL
+filters and :file:`ip_allow.yaml` rules.
+
+Consider a filter like the following:
+
+::
+
+   map http://www.example.com/ http://internal.example.com/ @action=deny @method=POST
+
+The implicit ``@src_ip`` is all client IP addresses, so this filter will match on any ``POST`` request matched by this remap rule
+from any client and its action will be to deny such POST requests. For all other methods, the filter will not take effect, thus
+allowing other active ACL filters or an :file:`ip_allow.yaml` rule to determine the action to take for any other transaction.
+
+First Filter Wins Policy
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+With this policy ATS processes only the first ACL filter match solely based upon IP. This means that subsequent ACL filters are
+never processed. When a filter is processed, the action is applied to the specified methods and its opposite to all other methods
+like :file:`ip_allow.yaml` rules.
+
+This policy is useful for organizations that want to have ACL filters behave like :file:`ip_allow.yaml` rules specific to remap
+targets.
+
+Consider a filter like the following:
+
+::
+
+   map http://www.example.com/ http://internal.example.com/ @action=deny @method=POST
+
+The implicit ``@src_ip`` is all client IP address, so this filter will apply to **all** requests matching this remap rule. Again,
+like an analogously crafted :file:`ip_allow.yaml` action rule, this will deny ``POST`` request while allowing **all** other methods
+to the ``www.example.com``. No other ACL filters or :file:`ip_allow.yaml` rules will be applied for this target.
+
+This policy is new to ATS 10.
+
+.. warning::
+
+   When the ``@action=deny`` is used with this policy, be careful to list up **all** methods to deny. Otherwise, the cache control
+   methods like ``PURGE`` and ``PUSH`` are allowed unintentionally.
+
+Example of ACL filter combinations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is an example of in-line filter, named filters in :file:`remap.config`, and :file:`ip_allow.yaml`.
 
 ::
 
@@ -566,49 +611,43 @@ found.
       - apply: in
         ip_addrs: 198.51.100.0/24
         action: deny
-        method: PUT
+        method: [PURGE, PUSH]
 
    # remap.config
-   .definefilter named-filter-1 @action=deny @method=HEAD
-   .definefilter named-filter-2 @action=allow @method=POST
+   .definefilter named-filter-1 @action=allow @method=HEAD
+   .definefilter named-filter-2 @action=deny @method=DELETE
 
    .activatefilter named-filter-1
    .activatefilter named-filter-2
 
-   map http://www.example.com/ http://internal.example.com/ @action=deny @method=GET
+   map http://www.example.com/ http://internal.example.com/ @action=deny @method=POST
 
-The result of this example is below. The evaluation applied from left to right until explicit match is found.
+With the "First Explicit Match Wins Policy", the evaluation applied from left to right until explicit match is found:
 
 ====== ============== ============== ============== ================ =============
 Method In-line Filter Named Filter 1 Named Filter 2 ip_allow.yaml    result
 ====== ============== ============== ============== ================ =============
-GET    deny           \-             \-             \-               denied  (403)
-HEAD   \-             deny           \-             \-               denied  (403)
-POST   \-             \-             allow          \-               allowed (200)
-PUT    \-             \-             \-             deny             denied  (403)
-DELETE \-             \-             \-             allow (implicit) allowed (200)
+GET    \-             \-             \-             allow (implicit) allowed (200)
+POST   deny           \-             \-             \-               denied  (403)
+HEAD   \-             allow          \-             \-               allowed (200)
+DELETE \-             \-             deny           \-               denied  (403)
+PURGE  \-             \-             \-             deny             denied  (403)
+PUSH   \-             \-             \-             deny             denied  (403)
 ====== ============== ============== ============== ================ =============
 
-
-First Filter Wins Policy
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-ATS processes only the first ACL filter. This means that subsequent ACL filters are never processed. When a filter is processed,
-the action is applied to the specified methods and its opposite to all other methods.
-
-If this matching policy is applied, then given the example remap rule above, all requests to ``www.example.com`` are filtered like
-an :file:`ip_allow.yaml` rule applies to them that denies GET requests and implicitly allows all other methods:
+With the "First Filter Wins Policy", the in-line filter works like an :file:`ip_allow.yaml` rule applies to all requests to
+``www.example.com`` that denies GET requests and implicitly allows all other methods:
 
 ====== ================ ============== ============== ============= =============
 Method In-line Filter   Named Filter 1 Named Filter 2 ip_allow.yaml result
 ====== ================ ============== ============== ============= =============
-GET    deny             \-             \-             \-            denied  (403)
-HEAD   allow (implicit) deny           \-             \-            allowed (200)
-POST   allow (implicit) \-             allow          \-            allowed (200)
-PUT    allow (implicit) \-             \-             deny          allowed (200)
-DELETE allow (implicit) \-             \-             \-            allowed (200)
+GET    allow (implicit) \-             \-             \-            allowed (200)
+POST   deny             \-             \-             \-            denied  (403)
+HEAD   allow (implicit) allow          \-             \-            allowed (200)
+DELETE allow (implicit) \-             deny           \-            allowed (200)
+PURGE  allow (implicit) \-             \-             deny          allowed (200)
+PUSH   allow (implicit) \-             \-             deny          allowed (200)
 ====== ================ ============== ============== ============= =============
-
 
 Including Additional Remap Files
 ================================
