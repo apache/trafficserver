@@ -1,0 +1,237 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# This replay file tests the stale response plugin when no
+# --stale-while-revalidate-default and no --stale-if-error-default are
+# specified.
+
+sessions:
+
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn1 ]
+        - [ uuid, 1 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
+
+  - client-request:
+      method: GET
+      url: /path
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn1 ]
+        - [ uuid, 2 ]
+
+    proxy-response:
+      status: 404
+      headers:
+        fields:
+        - [ Cache-Control, { value: no-store, as: equal } ]
+        - [ Content-Type, { value: text/html, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: Error
+        verify: { as: contains }
+
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn2 ]
+        - [ uuid, 3 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: max-age=123, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
+
+  - client-request:
+      method: GET
+      url: /path
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn3 ]
+        - [ uuid, 4 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
+
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn4 ]
+        - [ uuid, 5 ]
+
+    proxy-response:
+      status: 412
+      headers:
+        fields:
+        - [ Server, { value: ATS, as: contains } ]
+
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn5 ]
+        - [ uuid, 6 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 10917, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: application/json, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: http://en.wikipedia.org/wiki/Main_Page
+        verify: { as: contains }
+
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn6 ]
+        - [ uuid, 7 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 0, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+
+  - client-request:
+      method: GET
+      url: /path
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn7 ]
+        - [ uuid, 8 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
+
+  - client-request:
+      method: GET
+      url: /path
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn8 ]
+        - [ uuid, 8 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
+
+  - client-request:
+      method: GET
+      url: /small_body.txt
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, fqdn9 ]
+        - [ uuid, 9 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 19, as: equal } ]
+        - [ Cache-Control, { value: no-cache, as: equal } ]
+        - [ Content-Type, { value: text/plain, as: equal } ]
+        - [ Server, { value: ATS, as: contains } ]
+      content:
+        encoding: plain
+        data: |
+          small body content
+        verify: { as: equal }
