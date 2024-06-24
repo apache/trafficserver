@@ -65,8 +65,8 @@ public:
   ~UrlRewrite() override;
 
   enum class ACLMatchingPolicy {
-    FIRST_EXPLICIT_MATCH_WINS = 0,
-    FIRST_ANY_MATCH_WINS,
+    MATCH_ON_IP_AND_METHOD = 0,
+    MATCH_ON_IP_ONLY,
   };
 
   /** Load the configuration.
@@ -231,7 +231,7 @@ public:
 
 private:
   bool              _valid               = false;
-  ACLMatchingPolicy _acl_matching_policy = ACLMatchingPolicy::FIRST_EXPLICIT_MATCH_WINS;
+  ACLMatchingPolicy _acl_matching_policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
 
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host, int request_host_len,
                       UrlMappingContainer &mapping_container);

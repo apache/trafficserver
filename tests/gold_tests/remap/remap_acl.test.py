@@ -337,6 +337,11 @@ test_named_acl_deny = Test_remap_acl(
 
 
 def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_response):
+    """
+    replay_proxy_response writes the given replay file (which expects a single GET & POST client-request)
+    with the given proxy_response value. This is only used to support the tests in the combination table.
+    """
+
     current_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
     path = os.path.join(current_dir, filename)
     data = None
@@ -374,7 +379,7 @@ for idx, test in enumerate(all_acl_combination_tests):
         replay_file=replay_file_name,
         ip_allow_content=test["ip_allow"],
         deactivate_ip_allow=False,
-        acl_matching_policy=0 if test["policy"] == "explicit" else 1,
+        acl_matching_policy=0 if test["policy"] == "ip_and_method" else 1,
         acl_configuration=test["inline"],
         named_acls=[("acl", test["named_acl"])] if test["named_acl"] != "" else [],
         expected_responses=[test["GET response"], test["POST response"]],
@@ -400,7 +405,7 @@ for idx, test in enumerate(all_deactivate_ip_allow_tests):
         replay_file=replay_file_name,
         ip_allow_content=test["ip_allow"],
         deactivate_ip_allow=test["deactivate_ip_allow"],
-        acl_matching_policy=0 if test["policy"] == "explicit" else 1,
+        acl_matching_policy=0 if test["policy"] == "ip_and_method" else 1,
         acl_configuration=test["inline"],
         named_acls=[("acl", test["named_acl"])] if test["named_acl"] != "" else [],
         expected_responses=[test["GET response"], test["POST response"]])

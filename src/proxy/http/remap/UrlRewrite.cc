@@ -132,10 +132,10 @@ UrlRewrite::load()
   REC_ReadConfigInteger(matching_policy, "proxy.config.url_remap.acl_matching_policy");
   switch (matching_policy) {
   case 0:
-    _acl_matching_policy = ACLMatchingPolicy::FIRST_EXPLICIT_MATCH_WINS;
+    _acl_matching_policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
     break;
   case 1:
-    _acl_matching_policy = ACLMatchingPolicy::FIRST_ANY_MATCH_WINS;
+    _acl_matching_policy = ACLMatchingPolicy::MATCH_ON_IP_ONLY;
     break;
   default:
     Warning("unkown ACL Matching Policy :%d", matching_policy);
@@ -551,25 +551,23 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
       if (ip_matches) {
         // The rule matches. Handle the method according to the rule.
         if (method_matches) {
-          // Explicit match
           // Did they specify allowing the listed methods, or denying them?
           Dbg(dbg_ctl_url_rewrite, "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
           s->client_connection_allowed = rp->allow_flag;
 
-          // Since we have a explicit matching ACL, no need to process other filters nor ip_allow.yaml rules
-          // regardless of ACLMatchingPolicy.
+          // Since both the IP and method match, this rule will be applied regardless of ACLMatchingPolicy and no need to process
+          // other filters nor ip_allow.yaml rules
           s->skip_ip_allow_yaml = true;
           break;
         }
 
-        if (_acl_matching_policy == ACLMatchingPolicy::FIRST_ANY_MATCH_WINS) {
-          // Flipping action with implicit match
+        if (_acl_matching_policy == ACLMatchingPolicy::MATCH_ON_IP_ONLY) {
+          // Flipping the action for unspecified methods.
           Dbg(dbg_ctl_url_rewrite, "ACL rule matched on IP but not on method, action: %s, %s the request",
               (rp->allow_flag ? "allow" : "deny"), (rp->allow_flag ? "denying" : "allowing"));
           s->client_connection_allowed = !rp->allow_flag;
 
-          // Since we have a implicit matching ACL with FIRST_ANY_MATCH_WINS policy, no need to process other filters nor
-          // ip_allow.yaml rules.
+          // Since IP match and configured policy is MATCH_ON_IP_ONLY, no need to process other filters nor ip_allow.yaml rules.
           s->skip_ip_allow_yaml = true;
           break;
         }
