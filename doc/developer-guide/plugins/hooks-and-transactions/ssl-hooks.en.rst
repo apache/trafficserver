@@ -66,6 +66,9 @@ TS_VCONN_CLOSE_HOOK
 This hook is invoked after the SSL handshake is done and when the IO is closing. The TSVConnArgs
 should be cleaned up here. A callback at this point must re-enable.
 
+This hook will not be invoked until all HTTP session and transaction hooks have
+completed.
+
 TS_SSL_CLIENT_HELLO_HOOK
 ------------------------
 
