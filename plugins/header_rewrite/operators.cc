@@ -42,7 +42,7 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
   TSHttpTxn http_txn = static_cast<TSHttpTxn>(TSContDataGet(cont));
 
   switch (static_cast<int>(event)) {
-  case OperatorSetCustomBody::TS_EVENT_FETCHSM_SUCCESS: {
+  case OperatorSetBodyFrom::TS_EVENT_FETCHSM_SUCCESS: {
     TSHttpTxn   fetchsm_txn = static_cast<TSHttpTxn>(edata);
     int         data_len;
     const char *data_start = TSFetchRespGet(fetchsm_txn, &data_len);
@@ -65,11 +65,11 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
     }
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_ERROR);
   } break;
-  case OperatorSetCustomBody::TS_EVENT_FETCHSM_FAILURE: {
+  case OperatorSetBodyFrom::TS_EVENT_FETCHSM_FAILURE: {
     Dbg(pi_dbg_ctl, "OperatorSetBodyCustom: Error getting custom body");
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
   } break;
-  case OperatorSetCustomBody::TS_EVENT_FETCHSM_TIMEOUT: {
+  case OperatorSetBodyFrom::TS_EVENT_FETCHSM_TIMEOUT: {
     Dbg(pi_dbg_ctl, "OperatorSetBodyCustom: Timeout getting custom body");
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
   } break;
@@ -1307,7 +1307,7 @@ OperatorRunPlugin::exec(const Resources &res) const
 
 // OperatorSetBody
 void
-OperatorSetCustomBody::initialize(Parser &p)
+OperatorSetBodyFrom::initialize(Parser &p)
 {
   Operator::initialize(p);
   // we want the arg since body only takes one value
@@ -1317,13 +1317,13 @@ OperatorSetCustomBody::initialize(Parser &p)
 }
 
 void
-OperatorSetCustomBody::initialize_hooks()
+OperatorSetBodyFrom::initialize_hooks()
 {
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
 }
 
 void
-OperatorSetCustomBody::exec(const Resources &res) const
+OperatorSetBodyFrom::exec(const Resources &res) const
 {
   if (TSHttpTxnIsInternal(res.txnp)) {
     // If this is triggered by an internal transaction, a infinte loop may occur

@@ -479,14 +479,14 @@ private:
   RemapPluginInst *_plugin = nullptr;
 };
 
-class OperatorSetCustomBody : public Operator
+class OperatorSetBodyFrom : public Operator
 {
 public:
-  OperatorSetCustomBody() { Dbg(pi_dbg_ctl, "Calling CTOR for OperatorSetBodyCustom"); }
+  OperatorSetBodyFrom() { Dbg(pi_dbg_ctl, "Calling CTOR for OperatorSetBodyCustom"); }
 
   // noncopyable
-  OperatorSetCustomBody(const OperatorSetCustomBody &) = delete;
-  void operator=(const OperatorSetCustomBody &)        = delete;
+  OperatorSetBodyFrom(const OperatorSetBodyFrom &) = delete;
+  void operator=(const OperatorSetBodyFrom &)      = delete;
 
   void initialize(Parser &p) override;
 

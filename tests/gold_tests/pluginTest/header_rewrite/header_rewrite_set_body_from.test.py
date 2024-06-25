@@ -15,13 +15,13 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test for successful response manipulation using set-custom-body
+Test for successful response manipulation using set-body-from
 '''
 Test.ContinueOnFail = True
-Test.testName = "CUSTOM_BODY"
+Test.testName = "SET_BODY_FROM"
 
 
-class HeaderRewriteCustomBodyTest:
+class HeaderRewriteSetBodyFromTest:
 
     def __init__(self):
         self.setUpOriginServer()
@@ -58,14 +58,10 @@ class HeaderRewriteCustomBodyTest:
         }
         self.server.addResponse("sessionfile.log", request_header, response_header)
 
-        self.ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'header.*',
-        })
         # Set header rewrite rules
-        self.ts.Setup.CopyAs('rules/rule_set_custom_body.conf', Test.RunDirectory)
+        self.ts.Setup.CopyAs('rules/rule_set_body_from.conf', Test.RunDirectory)
         self.ts.Disk.remap_config.AddLine(
-            'map http://www.example.com/test http://127.0.0.1:{0}/test @plugin=header_rewrite.so @pparam={1}/rule_set_custom_body.conf'
+            'map http://www.example.com/test http://127.0.0.1:{0}/test @plugin=header_rewrite.so @pparam={1}/rule_set_body_from.conf'
             .format(self.server.Variables.Port, Test.RunDirectory))
         self.ts.Disk.remap_config.AddLine(
             'map http://www.example.com/404 http://127.0.0.1:{0}/404'.format(self.server.Variables.Port))
@@ -77,12 +73,12 @@ class HeaderRewriteCustomBodyTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
-        tr.Processes.Default.Streams.stderr = "gold/header_rewrite-custom_body_headers.gold"
-        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-custom_body_body.gold"
+        tr.Processes.Default.Streams.stderr = "gold/header_rewrite-set_body_from_headers.gold"
+        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_body.gold"
         tr.StillRunningAfter = self.server
 
     def run(self):
         self.runTraffic()
 
 
-HeaderRewriteCustomBodyTest().run()
+HeaderRewriteSetBodyFromTest().run()
