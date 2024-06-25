@@ -23,54 +23,53 @@
 
  */
 
-
+/*
 BEGIN
 {
   @readlines = 1;
+  @min_conn_id = 0x7fffffffffffffff; 
+  @max_conn_id = 0;
 }
 
-/* usdt:*:new_session
-{
-  $client_ip = str(arg0);
-  $sm_id = arg1;
-  @readlines++;
-  printf("new_session1: %s, %ld\n", $client_ip, $sm_id);
-  @lasttransaction[$client_ip] = nsecs;
 
-}*/
-
-
-
-
-interval:s:1{
-
+ interval:s:1{
+$min_conn_id = @min_conn_id != 0xffffffffffffffff ? @min_conn_id : 0;
+$max_conn_id = @max_conn_id;
 $idle_threshold_ns = 60 * 1000000000;  
- $i = 0;
-    while ($i < 1000) {
-        if (@lasttransaction[$i] != 0) {
+ $i = $min_conn_id;
+ if ($min_conn_id < $max_conn_id)
+ {
+    while ($i <= $max_conn_id) 
+    {
+        if (@lasttransaction[$i] != 0) 
+        {
             $time_since_last_txn = nsecs - @lasttransaction[$i];
             printf("Time difference for IP index %d: %d ns\n", $i, (int64)$time_since_last_txn);
-            if ((int64)$time_since_last_txn > $idle_threshold_ns) {
+            if ((int64)$time_since_last_txn > $idle_threshold_ns) 
+            {
                 printf("Idle connection from IP index: %d\n", $i);
             }
         }
         $i++;
     }
+    }
+    
 }
 
 
 // Attach to the new_origin_server_connection probe
- //usdt:/tmp/ats-dev/bin/traffic_server:traffic_server:new_origin_server_connection
- //{
-     //printf("new_origin_server_connection: %s\n", str(arg0));
-     //@readlines++;
- //}
+ usdt:*:new_origin_server_connection
+ {
+     printf("new_origin_server_connection: %s\n", str(arg0));
+     @readlines++;
+ }
 
 // Attach to the start_connection_with_ip_addresses probe and count connections by client IP
 
 usdt:*:start_connection_with_ip_addresses
  {     
      $client_ip = str(arg0);
+     $conn_id = arg2;
 
      //printf("new_session from IP: %s\n", $client_ip);
      printf("Probe hit: %s\n", $client_ip);
@@ -78,6 +77,14 @@ usdt:*:start_connection_with_ip_addresses
      @readlines++;
      @lasttransaction[arg2] = nsecs;
      @countTransaction[arg2]++;
+     if ((int64)$conn_id < @min_conn_id) 
+     {
+        @min_conn_id = $conn_id;
+    }
+    if ((int64)$conn_id > @max_conn_id) 
+    {
+        @max_conn_id = $conn_id;
+    }
 
 }
 
@@ -85,33 +92,14 @@ usdt:*:start_connection_with_ip_addresses
 
 END
 {
-    $current_time = nsecs;
-    $idle_threshold_ns = 60 * 1000000000;  
+    
     printf("\nConnections by client IP:\n");
     print(@connections);
     printf("\nTotal lines read: %d\n", @readlines);
     printf("\nLast transaction stamps by client IP:\n");
     print(@lasttransaction);
+    printf("\nMin conn_id: %d\n", @min_conn_id);
+    printf("\nMax conn_id: %d\n", @max_conn_id);
     
-    // Use a temporary map to check idle connections
-/*
-    // Check each entry in the temporary map
-    $i = 0;
-    while ($i < 10000) {
-        if (@lasttransaction[$i] != 0) {
-            $time_since_last_txn = nsecs - @lasttransaction[$i];
-            printf("Time difference for IP index %d: %d ns\n", $i, (int64)$time_since_last_txn);
-            if ((int64)$time_since_last_txn > $idle_threshold_ns) {
-                printf("Idle connection from IP index: %d\n", $i);
-            }
-        }
-        $i++;
-    }
-*/
-
-
-    
-
-
-
 }
+    
