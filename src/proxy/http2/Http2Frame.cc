@@ -105,7 +105,7 @@ Http2HeadersFrame::write_to(MIOBuffer *iobuffer) const
 // PRIORITY Frame
 //
 int64_t
-Http2PriorityFrame::write_to(MIOBuffer *iobuffer) const
+Http2PriorityFrame::write_to(MIOBuffer * /* iobuffer ATS_UNUSED */) const
 {
   ink_abort("not supported yet");
 

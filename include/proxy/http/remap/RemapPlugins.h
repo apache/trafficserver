@@ -36,7 +36,10 @@
  **/
 struct RemapPlugins : public Continuation {
   RemapPlugins() = default;
-  RemapPlugins(HttpTransact::State *s, URL *u, HTTPHdr *h, host_hdr_info *hi) : _s(s), _request_url(u), _request_header(h) {}
+  RemapPlugins(HttpTransact::State *s, URL *u, HTTPHdr *h, host_hdr_info * /* hi ATS_UNUSED */)
+    : _s(s), _request_url(u), _request_header(h)
+  {
+  }
 
   // Some basic setters
   void

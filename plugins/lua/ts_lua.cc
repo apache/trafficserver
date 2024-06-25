@@ -208,7 +208,7 @@ publishStats(ts_lua_plugin_stats *const plugin_stats)
 
 // dump exhaustive per state summary stats
 static int
-statsHandler(TSCont contp, TSEvent event, void *edata)
+statsHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   ts_lua_plugin_stats *const plugin_stats = (ts_lua_plugin_stats *)TSContDataGet(contp);
 
@@ -238,7 +238,7 @@ get_time_now_str(char *const buf, size_t const buflen)
 
 // dump exhaustive per state summary stats
 static int
-lifecycleHandler(TSCont contp, TSEvent event, void *edata)
+lifecycleHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   // ensure the message is for ts_lua
   TSPluginMsg *const msgp = (TSPluginMsg *)edata;

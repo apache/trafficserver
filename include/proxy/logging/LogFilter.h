@@ -414,7 +414,7 @@ findPatternFromParamName(const char *lookup_query_param, const char *pattern)
  * replace param value whose name contains pattern with same count 'X' of original value str length
 ---------------------------------------------------------------------------*/
 static void
-updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos, char *buf_dest)
+updatePatternForFieldValue(char **field, const char *pattern_str, int /* field_pos ATS_UNUSED */, char *buf_dest)
 {
   int   buf_dest_len = strlen(buf_dest);
   char  buf_dest_to_field[buf_dest_len + 1];

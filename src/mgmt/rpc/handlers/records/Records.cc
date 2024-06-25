@@ -205,7 +205,7 @@ namespace rpc::handlers::records
 namespace err = rpc::handlers::errors;
 
 swoc::Rv<YAML::Node>
-lookup_records(std::string_view const &id, YAML::Node const &params)
+lookup_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
   // TODO: we may want to deal with our own object instead of a node here.
   YAML::Node recordList{YAML::NodeType::Sequence}, errorList{YAML::NodeType::Sequence};
@@ -248,7 +248,7 @@ lookup_records(std::string_view const &id, YAML::Node const &params)
 }
 
 swoc::Rv<YAML::Node>
-clear_all_metrics_records(std::string_view const &id, YAML::Node const &params)
+clear_all_metrics_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
 {
   using namespace rpc::handlers::records::utils;
   swoc::Rv<YAML::Node> resp;
@@ -260,7 +260,7 @@ clear_all_metrics_records(std::string_view const &id, YAML::Node const &params)
 }
 
 swoc::Rv<YAML::Node>
-clear_metrics_records(std::string_view const &id, YAML::Node const &params)
+clear_metrics_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
   using namespace rpc::handlers::records::utils;
 

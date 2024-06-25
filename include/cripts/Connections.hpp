@@ -151,7 +151,7 @@ class ConnBase
     void operator=(const self_type &) = delete;
 
     self_type &
-    operator=(Cript::string_view const &str)
+    operator=([[maybe_unused]] Cript::string_view const &str)
     {
       TSAssert(_owner);
 #if defined(TCP_CONGESTION)

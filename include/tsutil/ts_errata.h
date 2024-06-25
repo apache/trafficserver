@@ -67,7 +67,7 @@ make_errno_code(int err)
 
 template <typename... Args>
 void
-bw_log(DiagsLevel lvl, swoc::TextView fmt, Args &&...args)
+bw_log(DiagsLevel /* lvl ATS_UNUSED */, swoc::TextView fmt, Args &&...args)
 {
   swoc::bwprint_v(ts::bw_dbg, fmt, std::forward_as_tuple(args...));
 }

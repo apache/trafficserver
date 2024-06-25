@@ -33,7 +33,7 @@ NextHopRoundRobin::~NextHopRoundRobin()
 }
 
 void
-NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
+NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_t now)
 {
   HttpSM                     *sm             = reinterpret_cast<HttpSM *>(txnp);
   ParentResult               *result         = &sm->t_state.parent_result;

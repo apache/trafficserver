@@ -336,7 +336,7 @@ HttpSM::do_api_callout()
 }
 
 int
-HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
+HttpSM::state_add_to_list(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_START;
   if (do_api_callout() < 0) {
@@ -353,7 +353,7 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
 }
 
 int
-HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
+HttpSM::state_remove_from_list(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   // We're now ready to finish off the state machine
   terminate_sm         = true;
@@ -1314,7 +1314,7 @@ HttpSM::state_api_callback(int event, void *data)
 }
 
 int
-HttpSM::state_api_callout(int event, void *data)
+HttpSM::state_api_callout(int event, void * /* data ATS_UNUSED */)
 {
   // enum and variable for figuring out what the next action is after
   //   after we've finished the api state
@@ -2301,7 +2301,7 @@ HttpSM::process_hostdb_info(HostDBRecord *record)
 }
 
 int
-HttpSM::state_pre_resolve(int event, void *data)
+HttpSM::state_pre_resolve(int event, void * /* data ATS_UNUSED */)
 {
   STATE_ENTER(&HttpSM::state_hostdb_lookup, event);
   return 0;
@@ -2979,7 +2979,7 @@ HttpSM::tunnel_handler_push(int event, void *data)
 }
 
 int
-HttpSM::tunnel_handler(int event, void *data)
+HttpSM::tunnel_handler(int event, void * /* data ATS_UNUSED */)
 {
   STATE_ENTER(&HttpSM::tunnel_handler, event);
 

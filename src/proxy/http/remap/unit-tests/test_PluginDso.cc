@@ -73,11 +73,11 @@ public:
   {
   }
   virtual void
-  indicatePostReload(TSRemapReloadStatus reloadStatus) override
+  indicatePostReload(TSRemapReloadStatus /* reloadStatus ATS_UNUSED */) override
   {
   }
   virtual bool
-  init(std::string &error) override
+  init(std::string & /* error ATS_UNUSED */) override
   {
     return true;
   }

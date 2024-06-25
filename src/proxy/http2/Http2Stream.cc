@@ -287,7 +287,7 @@ Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_ta
 }
 
 void
-Http2Stream::send_headers(Http2ConnectionState &cstate)
+Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
 {
   if (closed) {
     return;
@@ -515,7 +515,7 @@ Http2Stream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 }
 
 VIO *
-Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner)
+Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool /* owner ATS_UNUSED */)
 {
   if (abuffer) {
     write_vio.buffer.reader_for(abuffer);
@@ -956,7 +956,7 @@ Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 }
 
 void
-Http2Stream::send_body(bool call_update)
+Http2Stream::send_body(bool /* call_update ATS_UNUSED */)
 {
   Http2ConnectionState &connection_state = this->get_connection_state();
   _timeout.update_inactivity();
@@ -1201,7 +1201,7 @@ Http2Stream::read_vio_read_avail()
 }
 
 bool
-Http2Stream::has_request_body(int64_t content_length, bool is_chunked_set) const
+Http2Stream::has_request_body(int64_t /* content_length ATS_UNUSED */, bool /* is_chunked_set ATS_UNUSED */) const
 {
   return has_body;
 }
@@ -1269,7 +1269,7 @@ Http2Stream::set_tx_error_code(ProxyError e)
 }
 
 HTTPVersion
-Http2Stream::get_version(HTTPHdr &hdr) const
+Http2Stream::get_version(HTTPHdr & /* hdr ATS_UNUSED */) const
 {
   return HTTP_2_0;
 }

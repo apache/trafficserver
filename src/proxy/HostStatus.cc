@@ -425,7 +425,7 @@ template <> struct convert<HostCmdInfo> {
 
 // JSON-RPC method to retrieve host status information.
 swoc::Rv<YAML::Node>
-server_get_status(std::string_view id, YAML::Node const &params)
+server_get_status(std::string_view /* id ATS_UNUSED */, YAML::Node const &params)
 {
   namespace err = rpc::handlers::errors;
   swoc::Rv<YAML::Node> resp;

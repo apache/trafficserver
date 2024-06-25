@@ -45,7 +45,7 @@
 #include "tscore/Layout.h"
 #include "iocore/utils/diags.i"
 
-#define DEFINE_JSONRPC_PROTO_FUNCTION(fn) swoc::Rv<YAML::Node> fn(std::string_view const &id, const YAML::Node &params)
+#define DEFINE_JSONRPC_PROTO_FUNCTION(fn) swoc::Rv<YAML::Node> fn(std::string_view const &, const YAML::Node &params)
 
 namespace fs = swoc::file;
 
@@ -76,7 +76,7 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
 
   // The whole test run starting
   void
-  testRunStarting(Catch::TestRunInfo const &testRunInfo) override
+  testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
   {
     Layout::create();
     init_diags("rpc|rpc.test", nullptr);
@@ -108,7 +108,7 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
 
   // The whole test run ending
   void
-  testRunEnded(Catch::TestRunStats const &testRunStats) override
+  testRunEnded(Catch::TestRunStats const & /* testRunStats ATS_UNUSED */) override
   {
     // jsonrpcServer->stop_thread();
     // delete main_thread;

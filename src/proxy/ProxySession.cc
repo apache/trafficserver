@@ -187,7 +187,7 @@ ProxySession::is_chunked_encoding_supported() const
 
 // Override if your session protocol cares.
 void
-ProxySession::set_half_close_flag(bool flag)
+ProxySession::set_half_close_flag(bool /* flag ATS_UNUSED */)
 {
 }
 
@@ -204,7 +204,7 @@ ProxySession::connection_id() const
 }
 
 bool
-ProxySession::attach_server_session(PoolableSession *ssession, bool transaction_done)
+ProxySession::attach_server_session(PoolableSession * /* ssession ATS_UNUSED */, bool /* transaction_done ATS_UNUSED */)
 {
   return false;
 }
@@ -222,7 +222,7 @@ ProxySession::is_protocol_framed() const
 }
 
 uint64_t
-ProxySession::get_received_frame_count(uint64_t type) const
+ProxySession::get_received_frame_count(uint64_t /* type ATS_UNUSED */) const
 {
   return 0;
 }

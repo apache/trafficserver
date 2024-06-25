@@ -117,7 +117,7 @@ memcpy_and_advance(uint8_t(&dst), byte_pointer &src)
 }
 
 bool
-http2_frame_header_is_valid(const Http2FrameHeader &hdr, unsigned max_frame_size)
+http2_frame_header_is_valid(const Http2FrameHeader &hdr, unsigned /* max_frame_size ATS_UNUSED */)
 {
   // 6.1 If a DATA frame is received whose stream identifier field is 0x0, the recipient MUST
   // respond with a connection error (Section 5.4.1) of type PROTOCOL_ERROR.

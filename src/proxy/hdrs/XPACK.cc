@@ -399,7 +399,7 @@ XpackDynamicTable::duplicate_entry(uint32_t current_index)
 }
 
 bool
-XpackDynamicTable::should_duplicate(uint32_t index)
+XpackDynamicTable::should_duplicate(uint32_t /* index ATS_UNUSED */)
 {
   // TODO: Check whether a specified entry should be duplicated
   // Just return false for now
@@ -553,7 +553,8 @@ XpackDynamicTableStorage::~XpackDynamicTableStorage()
 }
 
 void
-XpackDynamicTableStorage::read(uint32_t offset, const char **name, uint32_t name_len, const char **value, uint32_t value_len) const
+XpackDynamicTableStorage::read(uint32_t offset, const char **name, uint32_t name_len, const char **value,
+                               uint32_t /* value_len ATS_UNUSED */) const
 {
   *name  = reinterpret_cast<const char *>(this->_data + offset);
   *value = reinterpret_cast<const char *>(this->_data + offset + name_len);

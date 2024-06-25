@@ -42,7 +42,7 @@ public:
   ParentRoundRobin(ParentRecord *_parent_record, ParentRR_t _round_robin_type);
   ~ParentRoundRobin() override;
   pRecord *
-  getParents(ParentResult *result) override
+  getParents(ParentResult * /* result ATS_UNUSED */) override
   {
     return parents;
   }

@@ -145,7 +145,7 @@ Http1ServerSession::do_io_close(int alerrno)
 //   Releases the session for K-A reuse
 //
 void
-Http1ServerSession::release(ProxyTransaction *trans)
+Http1ServerSession::release(ProxyTransaction * /* trans ATS_UNUSED */)
 {
   Dbg(dbg_ctl_http_ss, "[%" PRId64 "] Releasing session, private_session=%d, sharing_match=%d", con_id, this->is_private(),
       sharing_match);

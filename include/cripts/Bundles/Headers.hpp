@@ -41,7 +41,7 @@ public:
   virtual ~HRWBridge() = default;
 
   virtual Cript::string_view
-  value(Cript::Context *context)
+  value(Cript::Context * /* context ATS_UNUSED */)
   {
     return _value;
   }

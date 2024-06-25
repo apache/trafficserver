@@ -28,7 +28,8 @@ public:
   CatchDiags() : Diags("catch", "", "", nullptr) {}
 
   void
-  error_va(DiagsLevel diags_level, const SourceLocation *loc, const char *fmt, va_list ap) const override
+  error_va(DiagsLevel /* diags_level ATS_UNUSED */, const SourceLocation * /* loc ATS_UNUSED */, const char *fmt,
+           va_list ap) const override
   {
     char buff[32768];
     vsnprintf(buff, sizeof(buff), fmt, ap);
