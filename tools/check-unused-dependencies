@@ -57,7 +57,6 @@ def get_dependencies(program):
 
         # clang+asan pulls in dependencies for these specific tools:
         if any(map(progbase.__eq__, [
-                'jtest',
                 'http_load',
                 'escape_mapper',
         ])):

@@ -745,17 +745,6 @@ Stripe::_agg_copy(CacheVC *vc)
       } else {
         iobufferblock_memcpy(doc->data(), vc->write_len, vc->blocks.get(), vc->offset);
       }
-#ifdef VERIFY_JTEST_DATA
-      if (f.use_first_key && header_len) {
-        int  ib = 0, xd = 0;
-        char xx[500];
-        new_info.request_get().url_get().print(xx, 500, &ib, &xd);
-        char *x = xx;
-        for (int q = 0; q < 3; q++)
-          x = strchr(x + 1, '/');
-        ink_assert(!memcmp(doc->hdr(), x, ib - (x - xx)));
-      }
-#endif
     }
     if (cache_config_enable_checksum) {
       doc->checksum = 0;

@@ -7555,14 +7555,6 @@ HttpSM::update_stats()
     }
   }
 
-  if (is_action_tag_set("assert_jtest_length")) {
-    if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTP_STATUS_OK) {
-      int64_t p_resp_cl = t_state.hdr_info.client_response.get_content_length();
-      int64_t resp_size = client_response_body_bytes;
-      ink_release_assert(p_resp_cl == -1 || p_resp_cl == resp_size || resp_size == 0);
-    }
-  }
-
   ink_hrtime total_time = milestones.elapsed(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH);
 
   // ua_close will not be assigned properly in some exceptional situation.
