@@ -83,7 +83,6 @@
 #cmakedefine HAVE_BIO_METH_GET_CTRL 1
 #cmakedefine HAVE_BIO_METH_GET_CREATE 1
 #cmakedefine HAVE_BIO_METH_GET_DESTROY 1
-#cmakedefine HAVE_HMAC_CTX_NEW 1
 #cmakedefine HAVE_MD5_INIT 1
 
 #cmakedefine HAVE_STRUCT_TCP_INFO 1
