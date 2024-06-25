@@ -366,7 +366,6 @@ private:
   int state_http_server_open(int event, void *data);
   int state_raw_http_server_open(int event, void *data);
   int state_send_server_request_header(int event, void *data);
-  int state_acquire_server_read(int event, void *data);
   int state_read_server_response_header(int event, void *data);
 
   // API
@@ -402,7 +401,7 @@ private:
   bool is_prewarm_enabled_or_sni_overridden(const TLSTunnelSupport &tts) const;
   void open_prewarmed_connection();
   void send_origin_throttled_response();
-  void do_setup_post_tunnel(HttpVC_t to_vc_type);
+  void do_setup_client_request_body_tunnel(HttpVC_t to_vc_type);
   void do_cache_prepare_write();
   void do_cache_prepare_write_transform();
   void do_cache_prepare_update();
@@ -507,7 +506,7 @@ public:
   bool    server_ssl_reused               = false;
   bool    server_connection_is_ssl        = false;
   bool    is_waiting_for_full_body        = false;
-  bool    is_using_post_buffer            = false;
+  bool    is_buffering_request_body       = false;
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls
   //  do_api_callout_internal()
