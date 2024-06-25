@@ -208,6 +208,9 @@ public:
     Internal backpointer to the VConnection for use in the reenable
     functions.
 
+    Despite the name, this may refer to either a client or server side
+    connection.
+
   */
   VConnection *vc_server = nullptr;
 

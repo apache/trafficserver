@@ -541,7 +541,8 @@ protected:
   bool got_local_addr  = false;
   bool got_remote_addr = false;
 
-  bool is_internal_request  = false;
+  bool is_internal_request = false;
+  /// Indicate whether remapping will be done for this connection.
   bool is_unmanaged_request = false;
   /// Set if this connection is transparent.
   bool is_transparent = false;

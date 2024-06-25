@@ -99,7 +99,9 @@ private:
     HCS_CLOSED,
   };
 
-  int  magic          = HTTP_CS_MAGIC_DEAD;
+  int magic = HTTP_CS_MAGIC_DEAD;
+
+  /// A monotonically increasing count of all transactions ever handled by the session.
   int  transact_count = 0;
   bool half_close     = false;
   bool conn_decrease  = false;
