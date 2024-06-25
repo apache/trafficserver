@@ -18,4 +18,7 @@
 add_atsplugin(webp_transform ImageTransform.cc)
 target_link_libraries(webp_transform PRIVATE ImageMagick::Magick++ tscppapi)
 
-verify_global_plugin(webp_transform ${CMAKE_CURRENT_SOURCE_DIR}/image_magic_dlopen_leak_suppression.txt)
+# There is a periodic issue with asan errors and imagemagick so disable this test for asan builds to reduce noise
+if(NOT ENABLE_ASAN)
+  verify_global_plugin(webp_transform ${CMAKE_CURRENT_SOURCE_DIR}/image_magic_dlopen_leak_suppression.txt)
+endif()

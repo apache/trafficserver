@@ -2079,7 +2079,7 @@ HttpSM::state_send_server_request_header(int event, void *data)
         } else {
           // Go ahead and set up the post tunnel if we are not waiting for a 100 response
           if (!t_state.hdr_info.client_request.m_100_continue_required) {
-            do_setup_post_tunnel(HTTP_SERVER_VC);
+            do_setup_client_request_body_tunnel(HTTP_SERVER_VC);
           }
         }
       }
@@ -2775,7 +2775,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
     // It's time to start reading the response
     if (is_waiting_for_full_body) {
       is_waiting_for_full_body  = false;
-      is_using_post_buffer      = true;
+      is_buffering_request_body = true;
       client_request_body_bytes = this->postbuf_buffer_avail();
 
       call_transact_and_set_next_state(HttpTransact::HandleRequestBufferDone);
@@ -2932,7 +2932,7 @@ HttpSM::tunnel_handler_100_continue(int event, void *data)
       t_state.hdr_info.server_response.create(HTTP_TYPE_RESPONSE);
       handle_server_setup_error(VC_EVENT_EOS, server_entry->read_vio);
     } else {
-      do_setup_post_tunnel(HTTP_SERVER_VC);
+      do_setup_client_request_body_tunnel(HTTP_SERVER_VC);
     }
   } else {
     terminate_sm = true;
@@ -3826,13 +3826,13 @@ HttpSM::tunnel_handler_for_partial_post(int event, void * /* data ATS_UNUSED */)
   tunnel.reset();
 
   t_state.redirect_info.redirect_in_process = false;
-  is_using_post_buffer                      = false;
+  is_buffering_request_body                 = false;
 
   if (post_failed) {
     post_failed = false;
     handle_post_failure();
   } else {
-    do_setup_post_tunnel(HTTP_SERVER_VC);
+    do_setup_client_request_body_tunnel(HTTP_SERVER_VC);
   }
 
   return 0;
@@ -5981,7 +5981,8 @@ HttpSM::handle_http_server_open()
         server_txn->has_request_body(t_state.hdr_info.request_content_length,
                                      t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) &&
         do_post_transform_open()) {
-      do_setup_post_tunnel(HTTP_TRANSFORM_VC); /* This doesn't seem quite right.  Should be sending the request header */
+      do_setup_client_request_body_tunnel(
+        HTTP_TRANSFORM_VC); /* This doesn't seem quite right.  Should be sending the request header */
     } else {
       setup_server_send_request_api();
     }
@@ -6186,7 +6187,7 @@ close_connection:
 }
 
 void
-HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
+HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
 {
   bool chunked = t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
                  t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL;
@@ -6196,7 +6197,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
   // YTS Team, yamsat Plugin
   // if redirect_in_process and redirection is enabled add static producer
 
-  if (is_using_post_buffer ||
+  if (is_buffering_request_body ||
       (t_state.redirect_info.redirect_in_process && enable_redirection && this->_postbuf.postdata_copy_buffer_start != nullptr)) {
     post_redirect = true;
     // copy the post data into a new producer buffer for static producer
@@ -6238,7 +6239,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
                                                 chunked ? _ua.get_txn()->get_remote_reader()->read_avail() : post_bytes);
 
     // If is_using_post_buffer has been used, then client_request_body_bytes
-    // will have already been set in wait_for_full_body and there will be
+    // will have already been sent in wait_for_full_body and there will be
     // zero bytes in this user agent buffer. We don't want to clobber
     // client_request_body_bytes with a zero value here in those cases.
     if (client_request_body_bytes == 0) {
