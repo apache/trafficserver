@@ -25,21 +25,18 @@ import argparse
 
 BACKSLASH = "\\"
 
-parser = argparse.ArgumentParser(
-    prog="cvt7to9",
-    description= "Convert remap configuration from ATS7 to ATS9"
-)
+parser = argparse.ArgumentParser(prog="cvt7to9", description="Convert remap configuration from ATS7 to ATS9")
 parser.add_argument("--filepath", default="remap.config", help="path specifier of remap config file")
 parser.add_argument("--prefix", default="1st-", help="prefix for new header_rewrite config files")
-parser.add_argument(
-    "--plugin", default=None, help="path specifier (relative to FILEPATH) of (global) plugins config file"
-)
+parser.add_argument("--plugin", default=None, help="path specifier (relative to FILEPATH) of (global) plugins config file")
 args = parser.parse_args()
 
 import sys
 
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
 
 # Prefix to add to file relative pathspecs before opening file.
 #
@@ -48,9 +45,11 @@ pathspec_prefix = None
 import os
 import copy
 
+
 # Remap or header rewrite config file.
 #
 class CfgFile:
+
     def __init__(self, param):
         if isinstance(param, CfgFile):
             # Making copy of header rewrite config file to use when header rewrite is first plugin for remap
@@ -119,11 +118,14 @@ class CfgFile:
                 eprint(f"fatal error: failure closing {ps}")
                 sys.exit(1)
 
+
 # A generic object.
 #
 class Obj:
+
     def __init__(self):
         pass
+
 
 # A dictionary that is a mapping from pathspecs for header rewrite config files to generic objects.  If the
 # object has a "first" attribute, it is a list of 2-tuples.  The first tuple entry is a reference to the
@@ -135,6 +137,7 @@ class Obj:
 # the value doesn't matter.)
 #
 header_rewrite_cfgs = dict()
+
 
 # Read in (global) header rewrite config file pathspecs from plugin.config file.
 #
@@ -189,10 +192,12 @@ def handle_global(gbl_pathspec):
 
         ln_num += num_ln_joined
 
+
 # A list of CfgFile instances for the main remap config file and any include files it contains, directly or
 # indirectly.
 #
 remap_cfgs = []
+
 
 # Handle the remap config file, and call this recursively to handle include files.
 #
@@ -251,7 +256,7 @@ def handle_remap(filepath):
             else:
                 # First, gzip.so -> compress.so
                 #
-                lnc  = ln[:len_content]
+                lnc = ln[:len_content]
                 lncr = lnc.replace("@plugin=gzip.so", "@plugin=compress.so")
                 if lncr != lnc:
                     ln = lncr + ln[len_content:]
@@ -273,7 +278,7 @@ def handle_remap(filepath):
                         while ofst < len_content:
                             ofst2 = ln[ofst:len_content].find("@")
                             if ofst2 < 0:
-                                break;
+                                break
 
                             ofst += ofst2
 
@@ -294,7 +299,7 @@ def handle_remap(filepath):
 
                             if hr_pathspec not in header_rewrite_cfgs:
                                 hr_obj = Obj()
-                                header_rewrite_cfgs[hr_pathspec] = hr_obj;
+                                header_rewrite_cfgs[hr_pathspec] = hr_obj
                             else:
                                 hr_obj = header_rewrite_cfgs[hr_pathspec]
 
@@ -313,8 +318,7 @@ def handle_remap(filepath):
                         else:
                             ofst2 += ofst
 
-                        if ((ln[ofst:ofst2].find("@pparam=pristine") < 0) and
-                            (ln[ofst:ofst2].find("@pparam=no-pristine") < 0)):
+                        if ((ln[ofst:ofst2].find("@pparam=pristine") < 0) and (ln[ofst:ofst2].find("@pparam=no-pristine") < 0)):
 
                             new_ln = ln[:ofst2]
 
@@ -374,13 +378,14 @@ def handle_remap(filepath):
 
                             if hr_pathspec not in header_rewrite_cfgs:
                                 hr_obj = Obj()
-                                header_rewrite_cfgs[hr_pathspec] = hr_obj;
+                                header_rewrite_cfgs[hr_pathspec] = hr_obj
                             else:
                                 hr_obj = header_rewrite_cfgs[hr_pathspec]
 
                             hr_obj.other = None  # Only the existence of this attr matters, not its value.
 
         ln_num += num_ln_joined
+
 
 def handle_header_rewrite(pathspec, obj):
 
@@ -391,7 +396,7 @@ def handle_header_rewrite(pathspec, obj):
         #
         def __init__(self, pathspec, obj):
             self._base = CfgFile(pathspec)
-            self._obj  = obj
+            self._obj = obj
 
         def has_first(self):
             return hasattr(self._obj, "first")
@@ -411,7 +416,7 @@ def handle_header_rewrite(pathspec, obj):
                     #
                     self._first = CfgFile(self._base)
                 else:
-                    self._first         = self._base
+                    self._first = self._base
                     self._first.changed = True
 
             self._first.lines[ln_num] = ln
@@ -423,7 +428,7 @@ def handle_header_rewrite(pathspec, obj):
                 self._first.lines[ln_num] = ln
 
             self._base.lines[ln_num] = ln
-            self._base.changed       = True
+            self._base.changed = True
 
         def close(self):
             self._base.close()
@@ -448,14 +453,14 @@ def handle_header_rewrite(pathspec, obj):
     def get_content_len(s):
         # States.
         #
-        COPYING           = 0
-        ESCAPE_COPYING    = 1
-        IN_QUOTED         = 2
-        ESCAPE_IN_QUOTED  = 3
+        COPYING = 0
+        ESCAPE_COPYING = 1
+        IN_QUOTED = 2
+        ESCAPE_IN_QUOTED = 3
         PERCENT_IN_QUOTED = 4
 
-        state              = COPYING
-        ofst               = 0
+        state = COPYING
+        ofst = 0
         variable_expansion = False
 
         while ofst < (len(s) - 1):
@@ -508,22 +513,20 @@ def handle_header_rewrite(pathspec, obj):
     lines = hrc.get_lines()
     ln_num = 0
     while ln_num < len(lines):
-        ln            = lines[ln_num]
+        ln = lines[ln_num]
         prepend_error = False
 
         len_content, variable_expansion = get_content_len(ln)
 
         if variable_expansion:
-            eprint(
-                f"error: {pathspec}, line {ln_num + 1}: variable expansions cannot be automatically converted"
-            )
+            eprint(f"error: {pathspec}, line {ln_num + 1}: variable expansions cannot be automatically converted")
             prepend_error = True
 
         lnc = ln[:len_content]
-        lnc = lnc.replace("%{CLIENT-IP}",     "%{INBOUND:REMOTE-ADDR}")
+        lnc = lnc.replace("%{CLIENT-IP}", "%{INBOUND:REMOTE-ADDR}")
         lnc = lnc.replace("%{INCOMING-PORT}", "%{INBOUND:LOCAL-PORT}")
-        lnc = lnc.replace("%{PATH}",          "%{URL:PATH}")
-        lnc = lnc.replace("%{QUERY}",         "%{URL:QUERY}")
+        lnc = lnc.replace("%{PATH}", "%{URL:PATH}")
+        lnc = lnc.replace("%{QUERY}", "%{URL:QUERY}")
 
         if hrc.has_other() and (prepend_error or (lnc != ln[:len_content])):
             if prepend_error:
@@ -541,8 +544,7 @@ def handle_header_rewrite(pathspec, obj):
                     if (ofst2 > 0) and lnc[ofst:(ofst + ofst2)].isspace():
                         eprint(
                             f"error: {pathspec}, line {ln_num + 1}: the functionality of set-destination PATH" +
-                            " for the first remap plugin does not exist in ATS9"
-                        )
+                            " for the first remap plugin does not exist in ATS9")
                         prepend_error = True
 
             lnc = lnc.replace("%{URL:", "%{CLIENT-URL:")
@@ -555,6 +557,7 @@ def handle_header_rewrite(pathspec, obj):
         ln_num += 1
 
     hrc.close()
+
 
 pathspec_prefix = os.path.dirname(args.filepath)
 if (pathspec_prefix != "") and (pathspec_prefix != "/"):

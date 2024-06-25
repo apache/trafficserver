@@ -79,6 +79,8 @@ _END_
   # Keep this list of Python extensions the same with the list of
   # extensions searched for in the tools/git/pre-commit hook.
   grep -E '\.py$|\.cli.ext$|\.test.ext$' ${files} > ${files_filtered}
+  # Add back in the tools Python scripts without a .py extension.
+  grep -rl '#!.*python' "${REPO_ROOT}/tools" | grep -vE '(yapf.sh|.py)' | sed "s:${REPO_ROOT}/::g" >> ${files_filtered}
   # Prepend the filenames with "./" to make the modified file output consistent
   # with the clang-format target output.
   sed -i'.bak' 's:^:\./:' ${files_filtered}
