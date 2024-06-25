@@ -485,7 +485,7 @@ Client::URL::_get(Cript::Context *context)
 }
 
 bool
-Client::URL::_update(Cript::Context *context)
+Client::URL::_update(Cript::Context * /* context ATS_UNUSED */)
 {
   path.flush();
   query.flush();

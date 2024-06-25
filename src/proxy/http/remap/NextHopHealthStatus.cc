@@ -43,7 +43,7 @@ NextHopHealthStatus::insert(std::vector<std::shared_ptr<HostRecord>> &hosts)
  * check that hostname is available for use.
  */
 bool
-NextHopHealthStatus::isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih)
+NextHopHealthStatus::isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void * /* ih ATS_UNUSED */)
 {
   HttpSM *sm    = reinterpret_cast<HttpSM *>(txn);
   int64_t sm_id = sm->sm_id;
@@ -64,8 +64,8 @@ NextHopHealthStatus::isNextHopAvailable(TSHttpTxn txn, const char *hostname, con
  * mark up or down the indicated host
  */
 void
-NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih,
-                                 const time_t now)
+NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status,
+                                 void * /* ih ATS_UNUSED */, const time_t now)
 {
   time_t _now;
   now == 0 ? _now = time(nullptr) : _now = now;

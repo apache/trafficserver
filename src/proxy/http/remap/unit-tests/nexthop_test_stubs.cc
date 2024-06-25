@@ -56,7 +56,7 @@ HttpVCTable::HttpVCTable(HttpSM *smp)
 }
 HttpCacheAction::HttpCacheAction() {}
 void
-HttpCacheAction::cancel(Continuation *c)
+HttpCacheAction::cancel(Continuation * /* c ATS_UNUSED */)
 {
 }
 PostDataBuffers::~PostDataBuffers() {}

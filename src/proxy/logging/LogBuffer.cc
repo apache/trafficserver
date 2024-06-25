@@ -483,8 +483,9 @@ LogBuffer::max_entry_bytes()
   -------------------------------------------------------------------------*/
 int
 LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char *read_from, char *write_to, int write_to_len,
-                                long timestamp, long timestamp_usec, unsigned buffer_version, LogFieldList *alt_fieldlist,
-                                char *alt_printf_str, LogEscapeType escape_type)
+                                long /* timestamp ATS_UNUSED */, long /* timestamp_usec ATS_UNUSED */,
+                                unsigned /* buffer_version ATS_UNUSED */, LogFieldList *alt_fieldlist, char *alt_printf_str,
+                                LogEscapeType escape_type)
 {
   if (fieldlist == nullptr || printf_str == nullptr) {
     return 0;

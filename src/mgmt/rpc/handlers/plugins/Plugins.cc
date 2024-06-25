@@ -57,7 +57,7 @@ namespace rpc::handlers::plugins
 namespace err = rpc::handlers::errors;
 
 swoc::Rv<YAML::Node>
-plugin_send_basic_msg(std::string_view const &id, YAML::Node const &params)
+plugin_send_basic_msg(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
   // The rpc could be ready before plugins are initialized.
   // We make sure it is ready.

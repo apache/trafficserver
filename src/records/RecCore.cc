@@ -551,7 +551,8 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
 }
 
 RecErrT
-RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(const RecRecord *, void *), void *data, bool lock)
+RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(const RecRecord *, void *), void *data,
+                         bool /* lock ATS_UNUSED */)
 {
   int num_records;
   DFA regex;

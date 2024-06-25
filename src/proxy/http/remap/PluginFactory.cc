@@ -328,7 +328,7 @@ PluginFactory::indicatePostReload(bool reloadSuccessful)
 }
 
 void
-PluginFactory::clean(std::string &error)
+PluginFactory::clean(std::string & /* error ATS_UNUSED */)
 {
   fs::remove_all(_runtimeDir, _ec);
 }

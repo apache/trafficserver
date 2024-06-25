@@ -273,7 +273,7 @@ ProxyTransaction::allow_half_open() const
 // For H2 it will initiate the drain logic.  So we make do nothing
 // the default action.
 void
-ProxyTransaction::set_close_connection(HTTPHdr &hdr) const
+ProxyTransaction::set_close_connection(HTTPHdr & /* hdr ATS_UNUSED */) const
 {
 }
 

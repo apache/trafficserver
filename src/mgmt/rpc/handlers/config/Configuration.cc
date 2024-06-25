@@ -104,7 +104,7 @@ namespace
 } // namespace
 
 swoc::Rv<YAML::Node>
-set_config_records(std::string_view const &id, YAML::Node const &params)
+set_config_records(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
   swoc::Rv<YAML::Node> resp;
 
@@ -185,7 +185,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 }
 
 swoc::Rv<YAML::Node>
-reload_config(std::string_view const &id, YAML::Node const &params)
+reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
 {
   ts::Metrics         &metrics     = ts::Metrics::instance();
   static auto          reconf_time = metrics.lookup("proxy.process.proxy.reconfigure_time");

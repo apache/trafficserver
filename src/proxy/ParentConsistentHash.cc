@@ -135,8 +135,8 @@ chash_lookup(ATSConsistentHash *fhash, uint64_t path_hash, ATSConsistentHashIter
 }
 
 void
-ParentConsistentHash::selectParent(bool first_call, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
-                                   unsigned int retry_time)
+ParentConsistentHash::selectParent(bool first_call, ParentResult *result, RequestData *rdata,
+                                   unsigned int /* fail_threshold ATS_UNUSED */, unsigned int retry_time)
 {
   ATSHash64Sip24     hash;
   ATSConsistentHash *fhash;

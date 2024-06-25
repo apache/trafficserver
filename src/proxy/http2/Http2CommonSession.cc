@@ -351,7 +351,7 @@ Http2CommonSession::do_complete_frame_read()
 }
 
 int
-Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame)
+Http2CommonSession::do_process_frame_read(int /* event ATS_UNUSED */, VIO *vio, bool inside_frame)
 {
   Http2SsnDebug("do_process_frame_read %" PRId64 " bytes ready", this->_read_buffer_reader->read_avail());
 
