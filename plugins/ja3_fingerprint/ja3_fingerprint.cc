@@ -47,6 +47,16 @@
 #include <string>
 #include <utility>
 
+namespace
+{
+//
+constexpr int ja3_hash_included_byte_count{16};
+static_assert(ja3_hash_included_byte_count <= MD5_DIGEST_LENGTH);
+
+constexpr int ja3_hash_hex_string_with_null_terminator_length{2 * ja3_hash_included_byte_count + 1};
+
+} // end anonymous namespace
+
 const char            *PLUGIN_NAME = "ja3_fingerprint";
 static DbgCtl          dbg_ctl{PLUGIN_NAME};
 static TSTextLogObject pluginlog                      = nullptr;
@@ -57,18 +67,18 @@ static int             global_modify_incoming_enabled = 0;
 
 struct ja3_data {
   std::string ja3_string;
-  char        md5_string[33];
+  char        md5_string[ja3_hash_hex_string_with_null_terminator_length];
   char        ip_addr[INET6_ADDRSTRLEN];
 
   char const *
   update_fingerprint()
   {
     // Validate that the buffer is the same size as we will be writing into.
-    static_assert((16 * 2 + 1) == sizeof(this->md5_string));
+    static_assert(ja3_hash_hex_string_with_null_terminator_length == sizeof(this->md5_string));
 
     unsigned char digest[MD5_DIGEST_LENGTH];
     MD5(reinterpret_cast<unsigned char const *>(this->ja3_string.c_str()), this->ja3_string.length(), digest);
-    for (int i{0}; i < 16; ++i) {
+    for (int i{0}; i < ja3_hash_included_byte_count; ++i) {
       std::snprintf(&(this->md5_string[i * 2]), sizeof(this->md5_string) - (i * 2), "%02x", static_cast<unsigned int>(digest[i]));
     }
     return this->md5_string;
