@@ -232,7 +232,7 @@ protected:
 
 template <typename T, size_t N, typename A> Vectray<T, N, A>::Vectray() {}
 
-template <typename T, size_t N, class A> Vectray<T, N, A>::Vectray(Vectray::size_type n, allocator_type const &) : Vectray() {
+template <typename T, size_t N, class A> Vectray<T, N, A>::Vectray(Vectray::size_type n, allocator_type const &alloc) : Vectray() {
   this->reserve(n);
   while (n-- > 0) {
     this->emplace_back();
