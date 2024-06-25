@@ -359,7 +359,7 @@ static const std::map<String, String> _digestAlgosMap = createStaticDigestAlgoMa
  * @param message input message
  * @param messageLen input message length
  * @param buffer output buffer for storing the message digest
- * @param len output buffer length
+ * @param len output buffer length (must be at least MAX_MSDIGEST_BUFFER_SIZE)
  * @return number of characters actually written to the output buffer.
  */
 size_t
