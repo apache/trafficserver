@@ -553,6 +553,12 @@ When an ACL filter is found, ATS stops processing subsequent ACL filters dependi
 
 Note the step 1 happens at the start of the connection before any transactions are processed, unlike the other rules here.
 
+.. note::
+
+   ATS v10 introduced following matching policies. Prior to the change, ATS traverses all matched ACL filters by IP and "deny"
+   action had priority.
+
+
 Match on IP and Method Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -572,6 +578,10 @@ The implicit ``@src_ip`` is all client IP addresses, so this filter will match o
 from any client and its action will be to deny such POST requests. For all other methods, the filter will not take effect, thus
 allowing other active ACL filters or an :file:`ip_allow.yaml` rule to determine the action to take for any other transaction.
 
+.. note::
+
+   This policy's behavior is similar to ATS v9 and older, but employs "first match wins" policy.
+
 Match on IP only Policy
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -581,7 +591,7 @@ When a filter is processed, the action is applied to the specified methods and i
 This policy is useful for organizations that want to have ACL filters behave like :file:`ip_allow.yaml` rules specific to remap
 targets.
 
-Consider a filter like the following:
+Consider a filter like the following (the same as above):
 
 ::
 
@@ -591,12 +601,20 @@ The implicit ``@src_ip`` is all client IP address, so this filter will apply to 
 like an analogously crafted :file:`ip_allow.yaml` action rule, this will deny ``POST`` request while allowing **all** other methods
 to the ``www.example.com``. No other ACL filters or :file:`ip_allow.yaml` rules will be applied for any request to this target.
 
-This policy is new to ATS 10.
+More realistic example is following:
+
+::
+
+   map http://www.example.com/ http://internal.example.com/ @action=allow @method=GET @method=HEAD
+
+The implicit ``@src_ip`` is all client IP address, so this filter will apply to all transactions matching this remap rule. Again,
+like an analogously crafted ip_allow allow rule, this will allow ``GET`` and ``HEAD`` requests while denying all other methods to
+the ``internal.example.com`` origin. No other ACL filters or ip_allow rules will apply for this target.
 
 .. warning::
 
-   When the ``@action=deny`` is used with this policy, be careful to list up **all** methods to deny. Otherwise, the cache control
-   methods like ``PURGE`` and ``PUSH`` are allowed unintentionally.
+   This policy has completly new behavior introduced by ATS v10. When the ``@action=deny`` is used with this policy, be careful to
+   list up **all** methods to deny. Otherwise, the cache control methods like ``PURGE`` and ``PUSH`` are allowed unintentionally.
 
 Example of ACL filter combinations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
