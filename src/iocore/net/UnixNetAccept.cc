@@ -322,7 +322,7 @@ NetAccept::do_listen()
 int
 NetAccept::do_blocking_listen()
 {
-  this->do_listen_impl(false);
+  return this->do_listen_impl(false);
 }
 
 int
