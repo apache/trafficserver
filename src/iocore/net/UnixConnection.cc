@@ -30,9 +30,6 @@
 #include "tscore/ink_sock.h"
 
 #define SET_NO_LINGER
-// set in the OS
-// #define RECV_BUF_SIZE            (1024*64)
-// #define SEND_BUF_SIZE            (1024*64)
 #define FIRST_RANDOM_PORT 16000
 #define LAST_RANDOM_PORT  32000
 
@@ -99,9 +96,8 @@ template <typename T> struct cleaner {
     @c nullptr which meant that the defaults had to be encoded in any
     methods that used it as well as the @c NetVCOptions
     constructor. Now they are controlled only in the latter and not in
-    any of the methods. This makes handling global default values
-    (such as @c RECV_BUF_SIZE) more robust. It doesn't have to be
-    checked in the method, only in the @c NetVCOptions constructor.
+    any of the methods. It doesn't have to be checked in the method,
+    only in the @c NetVCOptions constructor.
 
     The methods are simpler because they never have to check for the
     presence of the options, yet the clients aren't inconvenienced

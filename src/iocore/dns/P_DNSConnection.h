@@ -103,11 +103,7 @@ struct DNSConnection {
     }
   } tcp_data;
 
-  int connect(sockaddr const *addr, Options const &opt = DEFAULT_OPTIONS);
-  /*
-                bool non_blocking_connect = NON_BLOCKING_CONNECT,
-                bool use_tcp = CONNECT_WITH_TCP, bool non_blocking = NON_BLOCKING, bool bind_random_port = BIND_ANY_PORT);
-  */
+  int  connect(sockaddr const *addr, Options const &opt = DEFAULT_OPTIONS);
   int  close();
   void trigger();
 
