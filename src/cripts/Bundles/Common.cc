@@ -105,7 +105,7 @@ Common::via_header(const Cript::string_view &destination, const Cript::string_vi
 }
 
 Common &
-Common::set_config(const Cript::string_view name, const Cript::Records::ValueType value)
+Common::set_config(const Cript::string_view name, const Cript::Records::ValueType &value)
 {
   auto rec = Cript::Records::lookup(name); // These should be loaded at startup
 
@@ -116,7 +116,7 @@ Common::set_config(const Cript::string_view name, const Cript::Records::ValueTyp
 }
 
 Common &
-Common::set_config(std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> configs)
+Common::set_config(const std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> &configs)
 {
   for (auto &[name, value] : configs) {
     set_config(name, value);

@@ -68,8 +68,8 @@ public:
   }
 
   self_type &via_header(const Cript::string_view &destination, const Cript::string_view &value);
-  self_type &set_config(const Cript::string_view name, const Cript::Records::ValueType value);
-  self_type &set_config(std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> configs);
+  self_type &set_config(const Cript::string_view name, const Cript::Records::ValueType &value);
+  self_type &set_config(const std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> &configs);
 
   void doRemap(Cript::Context *context) override;
 
