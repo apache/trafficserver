@@ -32,6 +32,7 @@ add_library(
   UnixEThread.cc
   UnixEvent.cc
   UnixEventProcessor.cc
+  UnixSocket.cc
   ConfigProcessor.cc
   RecRawStatsImpl.cc
   RecProcess.cc
