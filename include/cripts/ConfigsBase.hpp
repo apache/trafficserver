@@ -19,8 +19,9 @@
 
 #pragma once
 
-#include "ts/ts.h"
+#include <unordered_map>
 
+#include "ts/ts.h"
 #include "cripts/Lulu.hpp"
 #include "cripts/Context.hpp"
 
@@ -75,7 +76,7 @@ public:
   }
 
   [[nodiscard]] bool
-  isInt() const
+  isInteger() const
   {
     return _type == TS_RECORDDATATYPE_INT;
   }
@@ -92,17 +93,22 @@ public:
     return _type == TS_RECORDDATATYPE_STRING;
   }
 
+  static void           add(const Records *rec);
+  static const Records *lookup(const Cript::string_view name);
+
 private:
   Cript::string          _name;
   TSOverridableConfigKey _key  = TS_CONFIG_NULL;
   TSRecordDataType       _type = TS_RECORDDATATYPE_NULL;
+
+  static std::unordered_map<Cript::string_view, const Records *> _gRecords;
 };
 
 class IntConfig
 {
 public:
   IntConfig() = delete;
-  explicit IntConfig(const Cript::string_view name) : _record(name) {}
+  explicit IntConfig(const Cript::string_view name) : _record(name) { Records::add(&_record); }
 
   float
   _get(Cript::Context *context) const
@@ -124,7 +130,7 @@ class FloatConfig
 {
 public:
   FloatConfig() = delete;
-  explicit FloatConfig(const Cript::string_view name) : _record(name) {}
+  explicit FloatConfig(const Cript::string_view name) : _record(name) { Records::add(&_record); }
 
   float
   _get(Cript::Context *context) const
@@ -146,7 +152,7 @@ class StringConfig
 {
 public:
   StringConfig() = delete;
-  explicit StringConfig(const Cript::string_view name) : _record(name) {}
+  explicit StringConfig(const Cript::string_view name) : _record(name) { Records::add(&_record); }
 
   std::string
   _get(Cript::Context *context) const

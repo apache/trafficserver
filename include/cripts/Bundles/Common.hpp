@@ -34,7 +34,7 @@ class Common : public Cript::Bundle::Base
   using super_type = Cript::Bundle::Base;
   using self_type  = Common;
 
-  using RecordsList = std::vector<std::pair<Cript::Records, const Cript::Records::ValueType>>;
+  using RecordsList = std::vector<std::pair<const Cript::Records *, const Cript::Records::ValueType>>;
 
 public:
   using super_type::Base;

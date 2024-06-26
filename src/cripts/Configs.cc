@@ -21,6 +21,9 @@
 
 namespace Cript
 {
+
+std::unordered_map<Cript::string_view, const Records *> Records::_gRecords;
+
 Records::Records(const Cript::string_view name)
 {
   TSOverridableConfigKey key;
@@ -145,6 +148,30 @@ Records::setSV(const Cript::Context *context, const Cript::string_view value) co
   }
 
   return true; // Success
+}
+
+// Static members for the records "cache"
+void
+Records::add(const Records *rec)
+{
+  TSReleaseAssert(rec->loaded());
+  auto it = _gRecords.find(rec->name());
+
+  TSReleaseAssert(it == _gRecords.end());
+  _gRecords[rec->name()] = rec;
+}
+
+const Records *
+Records::lookup(const Cript::string_view name)
+{
+  auto it = _gRecords.find(name);
+
+  if (it != _gRecords.end()) {
+    TSReleaseAssert(it->second->loaded());
+    return it->second;
+  }
+
+  return nullptr;
 }
 
 } // namespace Cript
