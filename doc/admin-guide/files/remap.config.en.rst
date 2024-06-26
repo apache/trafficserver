@@ -653,7 +653,7 @@ PUSH   \-             \-             \-             deny             denied  (40
 ====== ============== ============== ============== ================ =============
 
 With the "Match on IP only Policy", the in-line filter works like an :file:`ip_allow.yaml` rule applies to all requests to
-``www.example.com`` that denies ``GET`` requests and implicitly allows all other methods:
+``www.example.com`` that denies ``POST`` requests and implicitly allows all other methods:
 
 ====== ================ ============== ============== ============= =============
 Method In-line Filter   Named Filter 1 Named Filter 2 ip_allow.yaml result
