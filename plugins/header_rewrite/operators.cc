@@ -36,7 +36,7 @@ const unsigned int LOCAL_IP_ADDRESS = 0x0100007f;
 const unsigned int MAX_SIZE         = 256;
 const int          LOCAL_PORT       = 8080;
 
-static int
+int
 handleFetchEvents(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn http_txn = static_cast<TSHttpTxn>(TSContDataGet(cont));
@@ -66,11 +66,11 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_ERROR);
   } break;
   case OperatorSetBodyFrom::TS_EVENT_FETCHSM_FAILURE: {
-    Dbg(pi_dbg_ctl, "OperatorSetBodyCustom: Error getting custom body");
+    Dbg(pi_dbg_ctl, "OperatorSetBodyFrom: Error getting custom body");
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
   } break;
   case OperatorSetBodyFrom::TS_EVENT_FETCHSM_TIMEOUT: {
-    Dbg(pi_dbg_ctl, "OperatorSetBodyCustom: Timeout getting custom body");
+    Dbg(pi_dbg_ctl, "OperatorSetBodyFrom: Timeout getting custom body");
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
   } break;
   case TS_EVENT_HTTP_TXN_CLOSE: {
@@ -1328,7 +1328,7 @@ OperatorSetBodyFrom::exec(const Resources &res) const
   if (TSHttpTxnIsInternal(res.txnp)) {
     // If this is triggered by an internal transaction, a infinte loop may occur
     // It should only be triggered by the original transaction sent by the client
-    Dbg(pi_dbg_ctl, "OperatorSetCustomBody triggered by an internal transaction");
+    Dbg(pi_dbg_ctl, "OperatorSetBodyFrom triggered by an internal transaction");
     return;
   }
 
@@ -1358,6 +1358,6 @@ OperatorSetBodyFrom::exec(const Resources &res) const
     // Set here because res is the only structure that contains the original status code.
     TSHttpTxnStatusSet(res.txnp, res.resp_status);
   } else {
-    TSError(PLUGIN_NAME, "OperatorSetCustomBody:exec:: Could not create request");
+    TSError(PLUGIN_NAME, "OperatorSetBodyFrom:exec:: Could not create request");
   }
 }

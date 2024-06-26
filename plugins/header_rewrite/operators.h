@@ -482,7 +482,7 @@ private:
 class OperatorSetBodyFrom : public Operator
 {
 public:
-  OperatorSetBodyFrom() { Dbg(pi_dbg_ctl, "Calling CTOR for OperatorSetBodyCustom"); }
+  OperatorSetBodyFrom() { Dbg(pi_dbg_ctl, "Calling CTOR for OperatorSetBodyFrom"); }
 
   // noncopyable
   OperatorSetBodyFrom(const OperatorSetBodyFrom &) = delete;
