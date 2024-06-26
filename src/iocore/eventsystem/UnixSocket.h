@@ -89,17 +89,15 @@ private:
   int sock_fd{-1};
 };
 
-inline
-UnixSocket::UnixSocket(int fd) : sock_fd{fd} {}
+inline UnixSocket::UnixSocket(int fd) : sock_fd{fd} {}
 
-inline
-UnixSocket::UnixSocket(int domain, int type, int protocol)
+inline UnixSocket::UnixSocket(int domain, int type, int protocol)
 {
   this->sock_fd = socket(domain, type, protocol);
 }
 
 inline std::int64_t
-          UnixSocket::read(void *buf, int size) const
+UnixSocket::read(void *buf, int size) const
 {
   std::int64_t r;
   do {
@@ -165,7 +163,7 @@ UnixSocket::recvmmsg(struct mmsghdr *msgvec, int vlen, int flags, struct timespe
 #endif
 
 inline std::int64_t
-          UnixSocket::write(void *buf, int size) const
+UnixSocket::write(void *buf, int size) const
 {
   std::int64_t r;
   do {
