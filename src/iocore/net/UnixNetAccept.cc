@@ -316,7 +316,7 @@ int
 NetAccept::do_listen()
 {
   // non-blocking
-  this->do_listen_impl(true);
+  return this->do_listen_impl(true);
 }
 
 int
