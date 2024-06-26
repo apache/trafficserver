@@ -89,16 +89,16 @@ private:
   int sock_fd{-1};
 };
 
-TS_INLINE
+inline
 UnixSocket::UnixSocket(int fd) : sock_fd{fd} {}
 
-TS_INLINE
+inline
 UnixSocket::UnixSocket(int domain, int type, int protocol)
 {
   this->sock_fd = socket(domain, type, protocol);
 }
 
-TS_INLINE std::int64_t
+inline std::int64_t
           UnixSocket::read(void *buf, int size) const
 {
   std::int64_t r;
@@ -112,7 +112,7 @@ TS_INLINE std::int64_t
   return r;
 }
 
-TS_INLINE int
+inline int
 UnixSocket::recv(void *buf, int size, int flags) const
 {
   int r;
@@ -124,7 +124,7 @@ UnixSocket::recv(void *buf, int size, int flags) const
   return r;
 }
 
-TS_INLINE int
+inline int
 UnixSocket::recvfrom(void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen) const
 {
   int r;
@@ -137,7 +137,7 @@ UnixSocket::recvfrom(void *buf, int size, int flags, struct sockaddr *addr, sock
   return r;
 }
 
-TS_INLINE int
+inline int
 UnixSocket::recvmsg(struct msghdr *m, int flags) const
 {
   int r;
@@ -150,7 +150,7 @@ UnixSocket::recvmsg(struct msghdr *m, int flags) const
 }
 
 #ifdef HAVE_RECVMMSG
-TS_INLINE int
+inline int
 UnixSocket::recvmmsg(struct mmsghdr *msgvec, int vlen, int flags, struct timespec *timeout) const
 {
   int r;
@@ -164,7 +164,7 @@ UnixSocket::recvmmsg(struct mmsghdr *msgvec, int vlen, int flags, struct timespe
 }
 #endif
 
-TS_INLINE std::int64_t
+inline std::int64_t
           UnixSocket::write(void *buf, int size) const
 {
   std::int64_t r;
@@ -177,7 +177,7 @@ TS_INLINE std::int64_t
   return r;
 }
 
-TS_INLINE int
+inline int
 UnixSocket::send(void *buf, int size, int flags) const
 {
   int r;
@@ -189,7 +189,7 @@ UnixSocket::send(void *buf, int size, int flags) const
   return r;
 }
 
-TS_INLINE int
+inline int
 UnixSocket::sendto(void *buf, int len, int flags, struct sockaddr const *to, int tolen) const
 {
   int r;
@@ -201,7 +201,7 @@ UnixSocket::sendto(void *buf, int len, int flags, struct sockaddr const *to, int
   return r;
 }
 
-TS_INLINE int
+inline int
 UnixSocket::sendmsg(struct msghdr const *m, int flags) const
 {
   int r;
@@ -213,7 +213,7 @@ UnixSocket::sendmsg(struct msghdr const *m, int flags) const
   return r;
 }
 
-TS_INLINE int
+inline int
 UnixSocket::poll(struct pollfd *fds, unsigned long nfds, int timeout)
 {
   int r;
@@ -226,13 +226,13 @@ UnixSocket::poll(struct pollfd *fds, unsigned long nfds, int timeout)
   return r;
 }
 
-TS_INLINE int
+inline int
 UnixSocket::getsockname(struct sockaddr *sa, socklen_t *sz) const
 {
   return ::getsockname(this->sock_fd, sa, sz);
 }
 
-TS_INLINE int
+inline int
 UnixSocket::get_sndbuf_size() const
 {
   int bsz = 0;
@@ -243,7 +243,7 @@ UnixSocket::get_sndbuf_size() const
   return (r == 0 ? bsz : r);
 }
 
-TS_INLINE int
+inline int
 UnixSocket::get_rcvbuf_size() const
 {
   int bsz = 0;
@@ -254,19 +254,19 @@ UnixSocket::get_rcvbuf_size() const
   return (r == 0 ? bsz : r);
 }
 
-TS_INLINE int
+inline int
 UnixSocket::set_sndbuf_size(int bsz)
 {
   return safe_setsockopt(this->sock_fd, SOL_SOCKET, SO_SNDBUF, (char *)&bsz, sizeof(bsz));
 }
 
-TS_INLINE int
+inline int
 UnixSocket::set_rcvbuf_size(int bsz)
 {
   return safe_setsockopt(this->sock_fd, SOL_SOCKET, SO_RCVBUF, (char *)&bsz, sizeof(bsz));
 }
 
-TS_INLINE int
+inline int
 UnixSocket::shutdown(int how)
 {
   int res;
@@ -279,7 +279,7 @@ UnixSocket::shutdown(int how)
 }
 
 // This does not belong here. ^^
-TS_INLINE bool
+inline bool
 transient_error()
 {
   bool transient = (errno == EINTR);
