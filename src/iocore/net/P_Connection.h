@@ -54,13 +54,6 @@
 
 struct NetVCOptions;
 
-//
-// Defines
-//
-
-#define NON_BLOCKING true
-#define BLOCKING     false
-
 ///////////////////////////////////////////////////////////////////////
 //
 // Connection

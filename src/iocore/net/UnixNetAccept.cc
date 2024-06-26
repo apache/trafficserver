@@ -202,7 +202,7 @@ NetAccept::init_accept_loop()
   int    i, n;
   char   thr_name[MAX_THREAD_NAME_LENGTH];
   size_t stacksize;
-  if (do_listen(BLOCKING)) {
+  if (do_blocking_listen()) {
     return;
   }
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
@@ -242,7 +242,7 @@ NetAccept::init_accept(EThread *t)
     action_->mutex               = t->mutex;
   }
 
-  if (do_listen(NON_BLOCKING)) {
+  if (do_listen()) {
     return;
   }
 
@@ -258,7 +258,7 @@ NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
 
   if (listen_per_thread == 1) {
-    if (do_listen(NON_BLOCKING)) {
+    if (do_listen()) {
       Fatal("[NetAccept::accept_per_thread]:error listenting on ports");
       return -1;
     }
@@ -286,7 +286,7 @@ NetAccept::init_accept_per_thread()
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
 
   if (listen_per_thread == 0) {
-    if (do_listen(NON_BLOCKING)) {
+    if (do_listen()) {
       Fatal("[NetAccept::accept_per_thread]:error listenting on ports");
       return;
     }
@@ -313,7 +313,20 @@ NetAccept::stop_accept()
 }
 
 int
-NetAccept::do_listen(bool non_blocking)
+NetAccept::do_listen()
+{
+  // non-blocking
+  this->do_listen_impl(true);
+}
+
+int
+NetAccept::do_blocking_listen()
+{
+  this->do_listen_impl(false);
+}
+
+int
+NetAccept::do_listen_impl(bool non_blocking)
 {
   int res = 0;
 
