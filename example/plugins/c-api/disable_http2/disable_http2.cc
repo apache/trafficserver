@@ -44,7 +44,7 @@ using DomainSet = std::unordered_set<std::string>;
 DomainSet Domains;
 
 int
-CB_SNI(TSCont contp, TSEvent, void *cb_data)
+CB_SNI(TSCont /* contp ATS_UNUSED */, TSEvent, void *cb_data)
 {
   auto            vc       = static_cast<TSVConn>(cb_data);
   TSSslConnection ssl_conn = TSVConnSslConnectionGet(vc);

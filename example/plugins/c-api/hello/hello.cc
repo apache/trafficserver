@@ -33,7 +33,7 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
 

@@ -148,14 +148,14 @@ body_reader_helper(TSCont contp, TSEvent event, bool sync_response_body)
 
 /** The handler for transaction data sink for response bodies. */
 int
-response_body_reader(TSCont contp, TSEvent event, void *edata)
+response_body_reader(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   return body_reader_helper(contp, event, SINK_RESPONSE_BODY);
 }
 
 /** The handler for transaction data sink for request bodies. */
 int
-request_body_reader(TSCont contp, TSEvent event, void *edata)
+request_body_reader(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   return body_reader_helper(contp, event, SINK_REQUEST_BODY);
 }
@@ -211,7 +211,7 @@ response_sink_requested(TSHttpTxn txnp)
  * transaction data sink if X-Dump-Request or X-Dump-Response flags are used.
  */
 int
-main_hook(TSCont contp, TSEvent event, void *edata)
+main_hook(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
@@ -242,7 +242,7 @@ main_hook(TSCont contp, TSEvent event, void *edata)
 } // anonymous namespace
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
 
