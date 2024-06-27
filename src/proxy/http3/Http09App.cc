@@ -89,7 +89,7 @@ Http09App::on_stream_open(QUICStream &stream)
 }
 
 void
-Http09App::on_stream_close(QUICStream &stream)
+Http09App::on_stream_close(QUICStream & /* stream ATS_UNUSED */)
 {
 }
 

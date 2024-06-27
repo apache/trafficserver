@@ -82,7 +82,7 @@ Http3HeaderVIOAdaptor::is_complete()
 }
 
 int
-Http3HeaderVIOAdaptor::event_handler(int event, Event *data)
+Http3HeaderVIOAdaptor::event_handler(int event, Event * /* data ATS_UNUSED */)
 {
   switch (event) {
   case QPACK_EVENT_DECODE_COMPLETE:

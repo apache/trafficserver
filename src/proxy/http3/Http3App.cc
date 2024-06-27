@@ -382,13 +382,13 @@ Http3App::_handle_uni_stream_on_write_complete(int event, VIO *vio)
 }
 
 void
-Http3App::_handle_bidi_stream_on_eos(int /* event */, VIO *vio)
+Http3App::_handle_bidi_stream_on_eos(int /* event ATS_UNUSED */, VIO * /* vio ATS_UNUSED */)
 {
   // TODO: handle eos
 }
 
 void
-Http3App::_handle_uni_stream_on_eos(int /* event */, VIO *v)
+Http3App::_handle_uni_stream_on_eos(int /* event ATS_UNUSED */, VIO * /* v ATS_UNUSED */)
 {
   // TODO: handle eos
 }
