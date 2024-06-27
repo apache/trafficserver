@@ -59,7 +59,7 @@ public:
   void
   increment(int64_t inc) const
   {
-    TSReleaseAssert(_id != ts::Metrics::NOT_FOUND);
+    CAssert(_id != ts::Metrics::NOT_FOUND);
     _metric->increment(inc);
   }
 
@@ -72,7 +72,7 @@ public:
   void
   decrement(int64_t dec) const
   {
-    TSReleaseAssert(_id != ts::Metrics::NOT_FOUND);
+    CAssert(_id != ts::Metrics::NOT_FOUND);
     _metric->decrement(dec);
   }
 
@@ -85,14 +85,14 @@ public:
   [[nodiscard]] int64_t
   get() const
   {
-    TSReleaseAssert(_id != TS_ERROR);
+    CAssert(_id != TS_ERROR);
     return _metric->load();
   }
 
   void
   set(int64_t val)
   {
-    TSReleaseAssert(_id != TS_ERROR);
+    CAssert(_id != TS_ERROR);
     _metric->store(val);
   }
 

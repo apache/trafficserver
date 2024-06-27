@@ -42,6 +42,16 @@ namespace CFS = std::filesystem;           // Simplify the usage of std::filesys
 
 integer integer_helper(std::string_view sv);
 
+// Some convenience macros
+#define borrow         auto &
+#define CAssert(...)   TSReleaseAssert(__VA_ARGS__)
+#define CFatal(...)    TSFatal(__VA_ARGS__)
+#define AsBoolean(arg) std::get<boolean>(arg)
+#define AsString(arg)  std::get<Cript::string>(arg)
+#define AsInteger(arg) std::get<integer>(arg)
+#define AsFloat(arg)   std::get<double>(arg)
+#define AsPointer(arg) std::get<void *>(arg)
+
 namespace Cript
 {
 // Use Cript::string_view consistently, so that it's a one-stop shop for all string_view needs.

@@ -73,7 +73,7 @@ Headers::rm_headers(const Cript::string_view target, const HeaderList &headers)
     needCallback(Cript::Callbacks::DO_READ_RESPONSE);
     break;
   default:
-    TSReleaseAssert(!"Invalid target for rm_headers()");
+    CFatal("[Cripts::Headers] Unknown header target: %s.", target.data());
   }
 
   return *this;
@@ -102,7 +102,7 @@ Headers::set_headers(const Cript::string_view target, const HeaderValueList &hea
     needCallback(Cript::Callbacks::DO_READ_RESPONSE);
     break;
   default:
-    TSReleaseAssert(!"Invalid target for set_headers()");
+    CFatal("[Cripts::Headers] Unknown header target: %s.", target.data());
   }
 
   hdrs->reserve(headers.size());

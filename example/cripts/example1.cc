@@ -150,6 +150,7 @@ do_remap()
 
   CDebug("Int config cache.http = {}", proxy.config.http.cache.http.get());
   CDebug("Float config cache.heuristic_lm_factor = {}", proxy.config.http.cache.heuristic_lm_factor.get());
+  CDebug("String config http.response_server_str = {}", proxy.config.http.response_server_str.getSV(context));
   CDebug("X-Miles = {}", req["X-Miles"]);
   CDebug("random(1000) = {}", Cript::random(1000));
 

@@ -34,7 +34,7 @@ Matcher::PCRE::Result::malloc(PCRE2_SIZE size, void *context)
   auto      *result = static_cast<Result *>(context);
   std::byte *ret    = result->_ctx_data + result->_ctx_ix;
 
-  TSReleaseAssert(size < (sizeof(result->_ctx_data) - result->_ctx_ix));
+  CAssert(size < (sizeof(result->_ctx_data) - result->_ctx_ix));
   result->_ctx_ix += size;
 
   return ret;
@@ -52,13 +52,11 @@ Matcher::PCRE::add(Cript::string_view regex, uint32_t options, bool jit)
     PCRE2_UCHAR error[256];
 
     pcre2_get_error_message(errorcode, error, sizeof(error));
-    TSError("PCRE compile error `%s': %.*s", error, static_cast<int>(regex.length()), regex.data());
-    TSReleaseAssert(!"Failed to compile regex");
+    CFatal("[Matcher::PCRE]: PCRE compile error `%s': %.*s", error, static_cast<int>(regex.length()), regex.data());
   } else {
     if (jit) {
       if (0 != pcre2_jit_compile(re, PCRE2_JIT_COMPLETE)) {
-        TSError("PCRE JIT compile error: %.*s", static_cast<int>(regex.length()), regex.data());
-        TSReleaseAssert(!"Failed to JIT compile regex");
+        CFatal("[Matcher::PCRE]: PCRE JIT compile error: %.*s", static_cast<int>(regex.length()), regex.data());
       }
     }
     _regexes.emplace_back(regex, re);

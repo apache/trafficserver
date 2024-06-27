@@ -54,7 +54,7 @@ ID::ID(const Cript::string_view &id) : super_type(id)
   } else if (id == "UNIQUE") {
     _type = Type::UNIQUE;
   } else {
-    TSReleaseAssert(!"Invalid ID type in HRWBridge");
+    CFatal("[Cripts::Headers] Unknown HRWBridge ID type: %s.", id.data());
   }
 }
 
@@ -112,7 +112,7 @@ IP::IP(const Cript::string_view &type) : super_type(type)
   } else if (type == "OUTBOUND") {
     _type = Type::INBOUND;
   } else {
-    TSReleaseAssert(!"Invalid TYPE IP in HRWBridge");
+    CFatal("[Cripts::Headers] Unknown HRWBridge IP type: %s.", type.data());
   }
 }
 
@@ -169,17 +169,17 @@ CIDR::CIDR(Cript::string_view &cidr) : super_type(cidr)
 {
   auto ipv4 = cidr.split_prefix_at(',');
 
-  TSReleaseAssert(ipv4 != cidr); // No ' found
+  CAssert(ipv4 != cidr); // No ' found
 
   auto result = std::from_chars(ipv4.data(), ipv4.data() + ipv4.size(), _ipv4_cidr);
 
   if (result.ec != std::errc()) {
-    TSReleaseAssert(!"Invalid CIDR parameters in HRWBridge");
+    CFatal("[Cripts::Headers] Invalid IPv4 CIDR parameters: %s.", cidr.data());
   }
 
   result = std::from_chars(cidr.data(), cidr.data() + cidr.size(), _ipv6_cidr);
   if (result.ec != std::errc()) {
-    TSReleaseAssert(!"Invalid CIDR parameters in HRWBridge");
+    CFatal("[Cripts::Headers] Invalid IPv6 CIDR parameters: %s.", cidr.data());
   }
 }
 
@@ -251,7 +251,7 @@ URL::_getComponent(Cript::Url &url)
     break;
 
   default:
-    TSReleaseAssert(!"Invalid URL component in HRWBridge");
+    CFatal("[Cripts::Headers] Invalid URL component in HRWBridge.");
     break;
   }
 
@@ -275,7 +275,7 @@ URL::URL(Type utype, const Cript::string_view &comp) : super_type("")
   } else if (comp == "URL") {
     _comp = Component::URL;
   } else {
-    TSReleaseAssert(!"Invalid URL component in HRWBridge");
+    CFatal("[Cripts::Headers] Invalid URL component in HRWBridge.");
   }
 }
 
@@ -320,7 +320,7 @@ URL::value(Cript::Context *context)
   } break;
 
   default:
-    TSReleaseAssert(!"Invalid URL type in HRWBridge");
+    CFatal("[Cripts::Headers] Invalid URL type in HRWBridge.");
     break;
   }
 
