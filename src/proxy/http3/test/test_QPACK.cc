@@ -329,8 +329,7 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
 }
 
 static int
-test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int /* am ATS_UNUSED */,
-            const char * /* app_name ATS_UNUSED */)
+test_decode(const char *enc_file, const char *out_file, int dts, int mbs)
 {
   int ret = 0;
 
