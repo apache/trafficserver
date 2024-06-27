@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "UnixSocket.h"
+#include "iocore/eventsystem/UnixSocket.h"
 
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_config.h"
