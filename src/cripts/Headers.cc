@@ -318,9 +318,9 @@ Header::iterate()
 Client::Response &
 Client::Response::_get(Cript::Context *context)
 {
-  TSReleaseAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
-  TSReleaseAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
-  TSReleaseAssert(context->state.hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(context->state.hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
 
   Client::Response *response = &context->_client_resp_header;
 
@@ -339,10 +339,10 @@ Client::Response::_get(Cript::Context *context)
 Server::Request &
 Server::Request::_get(Cript::Context *context)
 {
-  TSReleaseAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
-  TSReleaseAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
-  TSReleaseAssert(context->state.hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
-  TSReleaseAssert(context->state.hook != TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(context->state.hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
+  CAssert(context->state.hook != TS_HTTP_READ_RESPONSE_HDR_HOOK);
 
   Server::Request *request = &context->_server_req_header;
 
@@ -361,10 +361,10 @@ Server::Request::_get(Cript::Context *context)
 Server::Response &
 Server::Response::_get(Cript::Context *context)
 {
-  TSReleaseAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
-  TSReleaseAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
-  TSReleaseAssert(context->state.hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
-  TSReleaseAssert(context->state.hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(context->state.hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
+  CAssert(context->state.hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
 
   Server::Response *response = &context->_server_resp_header;
 

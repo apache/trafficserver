@@ -24,6 +24,7 @@
 #include "ts/ts.h"
 
 #include "cripts/Transaction.hpp"
+#include "cripts/Lulu.hpp"
 
 class Header
 {
@@ -123,7 +124,7 @@ public:
     [[nodiscard]] Cript::string_view::const_pointer
     data() const
     {
-      TSReleaseAssert(_method.size() > 0);
+      CAssert(_method.size() > 0);
       return _method.data();
     }
 
@@ -319,7 +320,7 @@ public:
     operator++()
     {
       if (_tag != END_TAG) {
-        TSReleaseAssert(_tag == _owner->_iterator_tag);
+        CAssert(_tag == _owner->_iterator_tag);
 
         _view = _owner->iterate();
         if (_view.empty()) {

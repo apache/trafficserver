@@ -348,7 +348,7 @@ default_cont(TSCont contp, TSEvent event, void *edata)
     break;
     // This is for cleanup, and should always be called / wrapped
   default:
-    TSReleaseAssert(!"Unknown event to Cript plugin!");
+    CFatal("Cripts continuation: Unknown event %d", event);
     break;
   }
 

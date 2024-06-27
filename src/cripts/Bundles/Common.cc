@@ -42,28 +42,28 @@ Common::validate(std::vector<Cript::Bundle::Error> &errors) const
 
   // Make sure all configurations are of the correct type
   for (auto &[rec, value] : _configs) {
-    switch (rec.type()) {
+    switch (rec->type()) {
     case TS_RECORDDATATYPE_INT:
       if (!std::holds_alternative<TSMgmtInt>(value)) {
-        errors.emplace_back("Invalid value for config, expecting an integer", name(), rec.name());
+        errors.emplace_back("Invalid value for config, expecting an integer", name(), rec->name());
         good = false;
       }
       break;
     case TS_RECORDDATATYPE_FLOAT:
       if (!std::holds_alternative<TSMgmtFloat>(value)) {
-        errors.emplace_back("Invalid value for config, expecting a float", name(), rec.name());
+        errors.emplace_back("Invalid value for config, expecting a float", name(), rec->name());
         good = false;
       }
       break;
     case TS_RECORDDATATYPE_STRING:
       if (!std::holds_alternative<std::string>(value)) {
-        errors.emplace_back("Invalid value for config, expecting an integer", name(), rec.name());
+        errors.emplace_back("Invalid value for config, expecting an integer", name(), rec->name());
         good = false;
       }
       break;
 
     default:
-      errors.emplace_back("Invalid configuration type", name(), rec.name());
+      errors.emplace_back("Invalid configuration type", name(), rec->name());
       good = false;
       break;
     }
@@ -105,20 +105,22 @@ Common::via_header(const Cript::string_view &destination, const Cript::string_vi
 }
 
 Common &
-Common::set_config(const Cript::string_view name, const Cript::Records::ValueType value)
+Common::set_config(const Cript::string_view name, const Cript::Records::ValueType &value)
 {
-  Cript::Records rec(name);
+  auto rec = Cript::Records::lookup(name); // These should be loaded at startup
 
-  if (rec.loaded()) {
+  if (rec) {
     needCallback(Cript::Callbacks::DO_REMAP);
-    _configs.emplace_back(std::move(rec), value);
+    _configs.emplace_back(rec, value);
+  } else {
+    CFatal("[Common::set_config]: Unknown configuration '%.*s'", static_cast<int>(name.size()), name.data());
   }
 
   return *this;
 }
 
 Common &
-Common::set_config(std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> configs)
+Common::set_config(const std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> &configs)
 {
   for (auto &[name, value] : configs) {
     set_config(name, value);
@@ -150,7 +152,7 @@ Common::doRemap(Cript::Context *context)
 
   // .set_config()
   for (auto &[rec, value] : _configs) {
-    rec._set(context, value);
+    rec->_set(context, value);
   }
 }
 

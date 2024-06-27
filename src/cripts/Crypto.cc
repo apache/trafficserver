@@ -152,8 +152,8 @@ Crypto::detail::Cipher::_initialize()
   unsigned char iv[EVP_MAX_IV_LENGTH];
 
   TSAssert(_ctx == nullptr);
-  TSReleaseAssert(_cipher != nullptr);
-  TSReleaseAssert(_key_len == static_cast<int>(EVP_CIPHER_key_length(_cipher))); // Make sure the crypto key was correct size
+  CAssert(_cipher != nullptr);
+  CAssert(_key_len == static_cast<int>(EVP_CIPHER_key_length(_cipher))); // Make sure the crypto key was correct size
 
   memset(iv, 0, sizeof(iv)); // The IV is always '0x0'
   _ctx = EVP_CIPHER_CTX_new();

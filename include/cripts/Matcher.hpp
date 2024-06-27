@@ -27,6 +27,7 @@
 #include <tuple>
 
 #include "ts/ts.h"
+#include "cripts/Lulu.hpp"
 
 namespace Matcher
 {
@@ -84,7 +85,7 @@ namespace Range
       if (swoc::IPRange r; r.load(str)) {
         mark(r);
       } else {
-        TSReleaseAssert("Bad IP range");
+        CFatal("[Matcher::Range::IP] Invalid IP range: %.*s", static_cast<int>(str.size()), str.data());
       }
     }
 
