@@ -91,28 +91,28 @@ HQSession::get_transaction(QUICStreamId id)
 }
 
 void
-HQSession::do_io_close(int lerrno)
+HQSession::do_io_close(int /* lerrno ATS_UNUSED */)
 {
   // TODO
   return;
 }
 
 void
-HQSession::do_io_shutdown(ShutdownHowTo_t howto)
+HQSession::do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */)
 {
   ink_assert(false);
   return;
 }
 
 void
-HQSession::reenable(VIO *vio)
+HQSession::reenable(VIO * /* vio ATS_UNUSED */)
 {
   ink_assert(false);
   return;
 }
 
 void
-HQSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reade)
+HQSession::new_connection(NetVConnection *new_vc, MIOBuffer * /* iobuf ATS_UNUSED */, IOBufferReader * /* reader ATS_UNUSED */)
 {
   this->con_id = new_vc->get_service<QUICSupport>()->get_quic_connection()->connection_id();
   this->_handle_if_ssl(new_vc);
@@ -142,7 +142,7 @@ HQSession::free()
 }
 
 void
-HQSession::release(ProxyTransaction *trans)
+HQSession::release(ProxyTransaction * /* trans ATS_UNUSED */)
 {
   return;
 }
@@ -192,7 +192,7 @@ Http3Session::~Http3Session()
 }
 
 HTTPVersion
-Http3Session::get_version(HTTPHdr &hdr) const
+Http3Session::get_version(HTTPHdr & /* hdr ATS_UNUSED */) const
 {
   return HTTP_3_0;
 }
@@ -253,7 +253,7 @@ Http09Session::~Http09Session()
 }
 
 HTTPVersion
-Http09Session::get_version(HTTPHdr &hdr) const
+Http09Session::get_version(HTTPHdr & /* hdr ATS_UNUSED */) const
 {
   return HTTP_0_9;
 }

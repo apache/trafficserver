@@ -187,7 +187,7 @@ QPACK::on_stream_open(QUICStream &stream)
 }
 
 void
-QPACK::on_stream_close(QUICStream &stream)
+QPACK::on_stream_close(QUICStream & /* stream ATS_UNUSED */)
 {
 }
 
@@ -543,7 +543,7 @@ QPACK::_encode_indexed_header_field(uint16_t index, uint16_t base_index, bool dy
 }
 
 int
-QPACK::_encode_indexed_header_field_with_postbase_index(uint16_t index, uint16_t base_index, bool never_index,
+QPACK::_encode_indexed_header_field_with_postbase_index(uint16_t index, uint16_t base_index, bool /* never_index ATS_UNUSED */,
                                                         IOBufferBlock *compressed_header)
 {
   char *buf     = compressed_header->end();
@@ -1204,7 +1204,7 @@ QPACK::_on_encoder_write_ready(MIOBuffer &writer)
 }
 
 size_t
-QPACK::estimate_header_block_size(const HTTPHdr &hdr)
+QPACK::estimate_header_block_size(const HTTPHdr & /* hdr ATS_UNUSED */)
 {
   // FIXME Estimate it
   return 128 * 1024 * 1024;
@@ -1273,7 +1273,8 @@ QPACK::_calc_postbase_index_from_absolute_index(uint16_t base_index, uint16_t ab
 }
 
 void
-QPACK::_attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len, bool never_index)
+QPACK::_attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len,
+                      bool /* never_index ATS_UNUSED */)
 {
   // TODO If never_index is true, we need to mark this header as sensitive to not index the header when passing it to the other side
   MIMEField *new_field = hdr.field_create(name, name_len);

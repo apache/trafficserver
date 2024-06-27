@@ -23,17 +23,17 @@
 
 #include "proxy/http3/QPACK.h"
 void
-QPACK::update_max_field_section_size(uint32_t max_field_section_size)
+QPACK::update_max_field_section_size(uint32_t /* max_field_section_size ATS_UNUSED */)
 {
 }
 
 void
-QPACK::update_max_table_size(uint16_t max_table_size)
+QPACK::update_max_table_size(uint16_t /* max_table_size ATS_UNUSED */)
 {
 }
 
 void
-QPACK::update_max_blocking_streams(uint16_t max_blocking_streams)
+QPACK::update_max_blocking_streams(uint16_t /* max_blocking_streams ATS_UNUSED */)
 {
 }
 

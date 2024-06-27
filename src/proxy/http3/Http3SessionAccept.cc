@@ -46,7 +46,7 @@ Http3SessionAccept::Http3SessionAccept(const HttpSessionAccept::Options &_o) : S
 Http3SessionAccept::~Http3SessionAccept() {}
 
 bool
-Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
+Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSED */, IOBufferReader * /* reader ATS_UNUSED */)
 {
   sockaddr const *client_ip   = netvc->get_remote_addr();
   IpAllow::ACL    session_acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
