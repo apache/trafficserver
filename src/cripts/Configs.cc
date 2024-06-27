@@ -34,8 +34,7 @@ Records::Records(const Cript::string_view name)
     _key  = key;
     _type = type;
   } else {
-    TSError("Invalid configuration variable '%.*s'", static_cast<int>(name.size()), name.data());
-    TSReleaseAssert(!"Invalid configuration variable");
+    CFatal("[Records]: Invalid configuration variable '%.*s'", static_cast<int>(name.size()), name.data());
   }
 }
 
@@ -63,7 +62,7 @@ Records::_get(const Cript::Context *context) const
     return std::string{getSV(context)};
   } break;
   default:
-    TSReleaseAssert(!"Invalid configuration type");
+    CFatal("[Records]: Invalid configuration type");
     return 0;
   }
 
@@ -85,8 +84,8 @@ Records::getSV(const Cript::Context *context) const
     }
   } break;
   default:
-    TSReleaseAssert(!"Invalid configuration type for getSV()");
-    return {};
+    CFatal("[Records]: Invalid configuration type for getSV()");
+    break;
   }
 
   return {};
@@ -122,7 +121,7 @@ Records::_set(const Cript::Context *context, const ValueType &value) const
     setSV(context, {str.data(), str.size()});
   } break;
   default:
-    TSReleaseAssert(!"Invalid configuration type");
+    CFatal("[Records]: Invalid configuration type");
     return false;
   }
 
@@ -143,7 +142,7 @@ Records::setSV(const Cript::Context *context, const Cript::string_view value) co
     CDebug("Set string configuration '{}' to '{}'", _name.c_str(), value);
   } break;
   default:
-    TSReleaseAssert(!"Invalid configuration type");
+    CFatal("[Records]: Invalid configuration type for setSV()");
     return false;
   }
 
@@ -154,10 +153,10 @@ Records::setSV(const Cript::Context *context, const Cript::string_view value) co
 void
 Records::add(const Records *rec)
 {
-  TSReleaseAssert(rec->loaded());
+  CAssert(rec->loaded());
   auto it = _gRecords.find(rec->name());
 
-  TSReleaseAssert(it == _gRecords.end());
+  CAssert(it == _gRecords.end());
   _gRecords[rec->name()] = rec;
 }
 
@@ -167,7 +166,7 @@ Records::lookup(const Cript::string_view name)
   auto it = _gRecords.find(name);
 
   if (it != _gRecords.end()) {
-    TSReleaseAssert(it->second->loaded());
+    CAssert(it->second->loaded());
     return it->second;
   }
 

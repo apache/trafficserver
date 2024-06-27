@@ -96,7 +96,7 @@ Cript::IP::hasher(unsigned ipv4_cidr, unsigned ipv6_cidr)
 bool
 Cript::IP::sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
-  TSReleaseAssert(rate >= 0.0 && rate <= 1.0); // For detecting bugs in a Cript, 0.0 and 1.0 are valid though
+  CAssert(rate >= 0.0 && rate <= 1.0); // For detecting bugs in a Cript, 0.0 and 1.0 are valid though
 
   if (_sampler == 0) {
     // This only works until 2038

@@ -109,8 +109,12 @@ Common::set_config(const Cript::string_view name, const Cript::Records::ValueTyp
 {
   auto rec = Cript::Records::lookup(name); // These should be loaded at startup
 
-  needCallback(Cript::Callbacks::DO_REMAP);
-  _configs.emplace_back(rec, value);
+  if (rec) {
+    needCallback(Cript::Callbacks::DO_REMAP);
+    _configs.emplace_back(rec, value);
+  } else {
+    CFatal("[Common::set_config]: Unknown configuration '%.*s'", static_cast<int>(name.size()), name.data());
+  }
 
   return *this;
 }

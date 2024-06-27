@@ -108,13 +108,6 @@ private:
 #define transaction         context->state
 #define txn_data            context->data
 #define instance            context->p_instance
-#define borrow              auto &
 #define CDebug(...)         context->p_instance.debug(__VA_ARGS__)
 #define CDebugOn()          context->p_instance.debugOn()
-#define CAssert(...)        TSReleaseAssert(__VA_ARGS__)
 #define DisableCallback(cb) context->state.disableCallback(cb)
-#define AsBoolean(arg)      std::get<boolean>(arg)
-#define AsString(arg)       std::get<Cript::string>(arg)
-#define AsInteger(arg)      std::get<integer>(arg)
-#define AsFloat(arg)        std::get<double>(arg)
-#define AsPointer(arg)      std::get<void *>(arg)

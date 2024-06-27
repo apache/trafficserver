@@ -102,7 +102,7 @@ private:
   TSRecordDataType       _type = TS_RECORDDATATYPE_NULL;
 
   static std::unordered_map<Cript::string_view, const Records *> _gRecords;
-};
+}; // class Records
 
 class IntConfig
 {
@@ -124,7 +124,7 @@ public:
 
 private:
   const Records _record;
-}; // namespace Criptclass IntConfig
+}; // class IntConfig
 
 class FloatConfig
 {
@@ -146,7 +146,7 @@ public:
 
 private:
   const Records _record;
-};
+}; // class FloatConfig
 
 class StringConfig
 {
@@ -174,6 +174,6 @@ public:
 
 private:
   const Records _record;
-};
+}; // class StringConfig
 
 } // namespace Cript
