@@ -467,7 +467,7 @@ TEST_CASE("Decoding", "[qpack-decode]")
       stat(enc_file, &st);
       if (S_ISREG(st.st_mode) && strstr(d->d_name, pattern)) {
         snprintf(out_file + strlen(decdir), sizeof(out_file) - strlen(decdir), "/%s/%s.decoded", appname, d->d_name);
-        CHECK(test_decode(enc_file, out_file, tablesize, streams, ackmode, appname) == 0);
+        CHECK(test_decode(enc_file, out_file, tablesize, streams) == 0);
       }
     }
   }
