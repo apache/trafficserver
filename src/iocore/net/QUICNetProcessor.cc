@@ -50,7 +50,7 @@ DbgCtl dbg_ctl_iocore_net_processor{"iocore_net_processor"};
 } // end anonymous namespace
 
 static void
-debug_log(const char *line, void * /* argp ATS_UNUSED */)
+debug_log(const char *line)
 {
   Dbg(dbg_ctl_vv_quiche, "%s\n", line);
 }
