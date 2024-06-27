@@ -77,7 +77,7 @@ QUICMultiCertConfigLoader::default_server_ssl_ctx()
 }
 
 bool
-QUICMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
+QUICMultiCertConfigLoader::_setup_session_cache(SSL_CTX * /* ctx ATS_UNUSED */)
 {
   // Disabled for now
   // TODO Check if the logic in SSLMultiCertConfigLoader is reusable
@@ -85,14 +85,14 @@ QUICMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
 }
 
 bool
-QUICMultiCertConfigLoader::_set_cipher_suites_for_legacy_versions(SSL_CTX *ctx)
+QUICMultiCertConfigLoader::_set_cipher_suites_for_legacy_versions(SSL_CTX * /* ctx ATS_UNUSED */)
 {
   // Do not set this since QUIC only uses TLS 1.3
   return true;
 }
 
 bool
-QUICMultiCertConfigLoader::_set_info_callback(SSL_CTX *ctx)
+QUICMultiCertConfigLoader::_set_info_callback(SSL_CTX * /* ctx ATS_UNUSED */)
 {
   // Disabled for now
   // TODO Check if we need this for QUIC
@@ -100,7 +100,7 @@ QUICMultiCertConfigLoader::_set_info_callback(SSL_CTX *ctx)
 }
 
 bool
-QUICMultiCertConfigLoader::_set_npn_callback(SSL_CTX *ctx)
+QUICMultiCertConfigLoader::_set_npn_callback(SSL_CTX * /* ctx ATS_UNUSED */)
 {
   // Do not set a callback for NPN since QUIC doesn't use it
   return true;

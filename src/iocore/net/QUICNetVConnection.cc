@@ -57,14 +57,15 @@ QUICNetVConnection::QUICNetVConnection()
 QUICNetVConnection::~QUICNetVConnection() {}
 
 void
-QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *,
-                         QUICPacketHandler *)
+QUICNetVConnection::init(QUICVersion /* version ATS_UNUSED */, QUICConnectionId /* peer_cid ATS_UNUSED */,
+                         QUICConnectionId /* original_cid ATS_UNUSED */, UDPConnection *, QUICPacketHandler *)
 {
 }
 
 void
-QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
-                         QUICConnectionId retry_cid, UDPConnection *udp_con, quiche_conn *quiche_con,
+QUICNetVConnection::init(QUICVersion /* version ATS_UNUSED */, QUICConnectionId /* peer_cid ATS_UNUSED */,
+                         QUICConnectionId original_cid, QUICConnectionId /* first_cid ATS_UNUSED */,
+                         QUICConnectionId /* retry_cid ATS_UNUSED */, UDPConnection *udp_con, quiche_conn *quiche_con,
                          QUICPacketHandler *packet_handler, QUICConnectionTable *ctable, SSL *ssl)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
@@ -120,7 +121,7 @@ QUICNetVConnection::set_local_addr()
 }
 
 void
-QUICNetVConnection::free_thread(EThread *t)
+QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
 {
   QUICConDebug("Free connection");
 
@@ -147,7 +148,7 @@ QUICNetVConnection::free_thread(EThread *t)
 }
 
 void
-QUICNetVConnection::reenable(VIO *vio)
+QUICNetVConnection::reenable(VIO * /* vio ATS_UNUSED */)
 {
 }
 
@@ -292,7 +293,7 @@ QUICNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 }
 
 VIO *
-QUICNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+QUICNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool /* owner ATS_UNUSED */)
 {
   auto vio            = super::do_io_write(c, nbytes, buf);
   this->write.enabled = 1;
@@ -359,7 +360,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 }
 
 int
-QUICNetVConnection::connectUp(EThread *t, int fd)
+QUICNetVConnection::connectUp(EThread * /* t ATS_UNUSED */, int /* fd ATS_UNUSED */)
 {
   return 0;
 }
@@ -371,7 +372,7 @@ QUICNetVConnection::stream_manager()
 }
 
 void
-QUICNetVConnection::close_quic_connection(QUICConnectionErrorUPtr error)
+QUICNetVConnection::close_quic_connection(QUICConnectionErrorUPtr /* error ATS_UNUSED */)
 {
 }
 
@@ -506,7 +507,7 @@ QUICNetVConnection::is_handshake_completed() const
 }
 
 void
-QUICNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
+QUICNetVConnection::net_read_io(NetHandler * /* nh ATS_UNUSED */, EThread * /* lthread ATS_UNUSED */)
 {
   if (quiche_conn_is_readable(this->_quiche_con)) {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
@@ -515,7 +516,8 @@ QUICNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 }
 
 int64_t
-QUICNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs)
+QUICNetVConnection::load_buffer_and_write(int64_t /* towrite ATS_UNUSED */, MIOBufferAccessor & /* buf ATS_UNUSED */,
+                                          int64_t & /* total_written ATS_UNUSED */, int & /* needs ATS_UNUSED */)
 {
   return 0;
 }

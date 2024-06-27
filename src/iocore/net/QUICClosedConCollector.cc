@@ -24,7 +24,7 @@ QUICClosedConCollector::QUICClosedConCollector()
 }
 
 int
-QUICClosedConCollector::mainEvent(int event, Event *e)
+QUICClosedConCollector::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   EThread *t = this->mutex->thread_holding;
   ink_assert(t == this_thread());

@@ -74,12 +74,12 @@ QUICStream::final_offset() const
 }
 
 void
-QUICStream::stop_sending(QUICStreamErrorUPtr error)
+QUICStream::stop_sending(QUICStreamErrorUPtr /* error ATS_UNUSED */)
 {
 }
 
 void
-QUICStream::reset(QUICStreamErrorUPtr error)
+QUICStream::reset(QUICStreamErrorUPtr /* error ATS_UNUSED */)
 {
 }
 
