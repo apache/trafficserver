@@ -647,6 +647,7 @@ if(CURSES_FOUND)
   add_subdirectory(src/traffic_top)
 endif()
 add_subdirectory(src/traffic_via)
+
 if(ENABLE_CRIPTS)
   add_subdirectory(src/cripts)
 endif()
@@ -671,6 +672,9 @@ add_subdirectory(configs)
 if(ENABLE_EXAMPLE)
   add_subdirectory(example)
 endif()
+
+# add any extra subdirectories to the build here
+add_subdirectory(ext)
 
 if(ENABLE_DOCS)
   set(DOC_LANG
