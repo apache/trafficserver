@@ -234,21 +234,22 @@ class MockNetVConnection : public NetVConnection
 public:
   MockNetVConnection(NetVConnectionContext_t context = NET_VCONNECTION_OUT) : NetVConnection() { netvc_context = context; }
   VIO *
-  do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override
+  do_io_read(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, MIOBuffer * /* buf ATS_UNUSED */) override
   {
     return nullptr;
   };
   VIO *
-  do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override
+  do_io_write(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, IOBufferReader * /* buf ATS_UNUSED */,
+              bool /* owner  ATS_UNUSED */ = false) override
   {
     return nullptr;
   };
-  void do_io_close(int lerrno = -1) override {};
-  void do_io_shutdown(ShutdownHowTo_t howto) override {};
-  void reenable(VIO *vio) override {};
-  void reenable_re(VIO *vio) override {};
-  void set_active_timeout(ink_hrtime timeout_in) override {};
-  void set_inactivity_timeout(ink_hrtime timeout_in) override {};
+  void do_io_close(int /* lerrno  ATS_UNUSED */ = -1) override {};
+  void do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */) override{};
+  void reenable(VIO * /* vio ATS_UNUSED */) override {};
+  void reenable_re(VIO * /* vio ATS_UNUSED */) override {};
+  void set_active_timeout(ink_hrtime /* timeout_in ATS_UNUSED */) override{};
+  void set_inactivity_timeout(ink_hrtime /* timeout_in ATS_UNUSED */) override{};
   void cancel_active_timeout() override {};
   void cancel_inactivity_timeout() override {};
   void add_to_keep_alive_queue() override {};
@@ -275,12 +276,12 @@ public:
   SOCKET
   get_socket() override { return 0; }
   int
-  set_tcp_init_cwnd(int init_cwnd)
+  set_tcp_init_cwnd(int /* init_cwnd ATS_UNUSED */)
   {
     return 0;
   }
   int
-  set_tcp_congestion_control(int side) override
+  set_tcp_congestion_control(int /* side ATS_UNUSED */) override
   {
     return 0;
   }
@@ -364,7 +365,7 @@ public:
   }
 
   void
-  close_quic_connection(QUICConnectionErrorUPtr error) override
+  close_quic_connection(QUICConnectionErrorUPtr /* error ATS_UNUSED */) override
   {
   }
 
@@ -468,14 +469,15 @@ public:
   MockQUICStreamAdapter(QUICStream &stream) : QUICStreamAdapter(stream) {}
 
   void
-  write_to_stream(const uint8_t *buf, size_t len)
+  write_to_stream(const uint8_t * /* buf ATS_UNUSED */, size_t len)
   {
     this->_total_sending_data_len += len;
     this->_sending_data_len       += len;
   }
 
   int64_t
-  write(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin) override
+  write(QUICOffset /* offset ATS_UNUSED */, const uint8_t * /* data ATS_UNUSED */, uint64_t data_length,
+        bool /* fin ATS_UNUSED */) override
   {
     this->_total_receiving_data_len += data_length;
     this->_receiving_data_len       += data_length;
@@ -538,7 +540,7 @@ public:
   MockQUICApplication(QUICConnection *c) : QUICApplication(c) { SET_HANDLER(&MockQUICApplication::main_event_handler); }
 
   int
-  main_event_handler(int event, Event *data)
+  main_event_handler(int event, Event * /* data ATS_UNUSED */)
   {
     if (event == 12345) {}
     return EVENT_CONT;
@@ -553,7 +555,7 @@ public:
   }
 
   void
-  on_stream_close(QUICStream &stream) override
+  on_stream_close(QUICStream & /* stream ATS_UNUSED */) override
   {
   }
 
@@ -575,7 +577,7 @@ class MockContinuation : public Continuation
 public:
   MockContinuation(Ptr<ProxyMutex> m) : Continuation(m) { SET_HANDLER(&MockContinuation::event_handler); }
   int
-  event_handler(int event, Event *data)
+  event_handler(int /* event ATS_UNUSED */, Event * /* data ATS_UNUSED */)
   {
     return EVENT_CONT;
   }
@@ -602,7 +604,7 @@ class MockQUICRTTProvider : public QUICRTTProvider
   }
 
   ink_hrtime
-  congestion_period(uint32_t threshold) const override
+  congestion_period(uint32_t /* threshold ATS_UNUSED */) const override
   {
     return HRTIME_MSECONDS(1);
   }

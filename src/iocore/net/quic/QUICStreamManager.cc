@@ -39,18 +39,18 @@ QUICStreamManager::set_default_application(QUICApplication *app)
 }
 
 void
-QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
-                                            const std::shared_ptr<const QUICTransportParameters> &remote_tp)
+QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> & /* local_tp ATS_UNUSED */,
+                                            const std::shared_ptr<const QUICTransportParameters> & /* remote_tp ATS_UNUSED */)
 {
 }
 
 void
-QUICStreamManager::set_max_streams_bidi(uint64_t max_streams)
+QUICStreamManager::set_max_streams_bidi(uint64_t /* max_streams ATS_UNUSED */)
 {
 }
 
 void
-QUICStreamManager::set_max_streams_uni(uint64_t max_streams)
+QUICStreamManager::set_max_streams_uni(uint64_t /* max_streams ATS_UNUSED */)
 {
 }
 
@@ -101,13 +101,13 @@ QUICStreamManager::create_stream(QUICStreamId stream_id)
 }
 
 QUICConnectionErrorUPtr
-QUICStreamManager::create_uni_stream(QUICStreamId new_stream_id)
+QUICStreamManager::create_uni_stream(QUICStreamId /* new_stream_id ATS_UNUSED */)
 {
   return nullptr;
 }
 
 QUICConnectionErrorUPtr
-QUICStreamManager::create_bidi_stream(QUICStreamId new_stream_id)
+QUICStreamManager::create_bidi_stream(QUICStreamId /* new_stream_id ATS_UNUSED */)
 {
   return nullptr;
 }
@@ -128,11 +128,11 @@ QUICStreamManager::delete_stream(QUICStreamId stream_id)
 }
 
 void
-QUICStreamManager::reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error)
+QUICStreamManager::reset_stream(QUICStreamId /* stream_id ATS_UNUSED */, QUICStreamErrorUPtr /* error ATS_UNUSED */)
 {
 }
 
 void
-QUICStreamManager::on_stream_state_close(const QUICStream *stream)
+QUICStreamManager::on_stream_state_close(const QUICStream * /* stream ATS_UNUSED */)
 {
 }
