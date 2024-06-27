@@ -90,6 +90,7 @@ auto_option(
   PACKAGE_DEPENDS
   jemalloc
 )
+auto_option(MMAP FEATURE_VAR TS_USE_MMAP DEFAULT OFF)
 auto_option(
   MIMALLOC
   FEATURE_VAR

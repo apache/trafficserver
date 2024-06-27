@@ -34,6 +34,10 @@
 #include "iocore/eventsystem/EventSystem.h"
 #include "records/RecProcess.h"
 
+#if TS_USE_MMAP
+#include <sys/mman.h>
+#endif
+
 static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
 
 #define AIO_EVENT_DONE (AIO_EVENT_EVENTS_START + 0)
@@ -48,7 +52,21 @@ enum AIOBackend {
 };
 
 struct ink_aiocb {
+  #if TS_USE_MMAP
+  struct aio_mmap {
+    void *first = MAP_FAILED; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+    void *last  = nullptr;
+    operator char *() const { return (char *)first; }
+    void
+    operator=(void *p)
+    {
+      first = p;
+      last  = nullptr;
+    }
+  } aio_fildes;
+  #else
   int    aio_fildes = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+  #endif
   void  *aio_buf    = nullptr; /* buffer location */
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t  aio_offset = 0;       /* file offset */

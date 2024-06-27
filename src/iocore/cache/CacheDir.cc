@@ -32,6 +32,12 @@
 #define DIR_LOOP_THRESHOLD 1000
 #endif
 
+#if TS_USE_MMAP
+#define PRI_FD "%p"
+#else
+#define PRI_FD "%i"
+#endif
+
 namespace
 {
 
@@ -574,7 +580,7 @@ Lagain:
           goto Lcont;
         }
         if (dir_valid(stripe, e)) {
-          DDbg(dbg_ctl_dir_probe_hit, "found %X %X vol %d bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1),
+          DDbg(dbg_ctl_dir_probe_hit, "found %X %X vol " PRI_FD " bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1),
                stripe->fd, b, dir_offset(e));
           dir_assign(result, e);
           *last_collision = e;
@@ -601,7 +607,7 @@ Lagain:
     collision = nullptr;
     goto Lagain;
   }
-  DDbg(dbg_ctl_dir_probe_miss, "missed %X %X on vol %d bucket %d at %p", key->slice32(0), key->slice32(1), stripe->fd, b, seg);
+  DDbg(dbg_ctl_dir_probe_miss, "missed %X %X on vol " PRI_FD " bucket %d at %p", key->slice32(0), key->slice32(1), stripe->fd, b, seg);
   CHECK_DIR(d);
   return 0;
 }
@@ -664,7 +670,7 @@ Lfill:
   dir_assign_data(e, to_part);
   dir_set_tag(e, key->slice32(2));
   ink_assert(stripe->vol_offset(e) < (stripe->skip + stripe->len));
-  DDbg(dbg_ctl_dir_insert, "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), stripe->fd,
+  DDbg(dbg_ctl_dir_insert, "insert %p %X into vol " PRI_FD " bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), stripe->fd,
        bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   stripe->header->dirty = 1;
@@ -754,7 +760,7 @@ Lfill:
   dir_assign_data(e, dir);
   dir_set_tag(e, t);
   ink_assert(stripe->vol_offset(e) < stripe->skip + stripe->len);
-  DDbg(dbg_ctl_dir_overwrite, "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0),
+  DDbg(dbg_ctl_dir_overwrite, "overwrite %p %X into vol " PRI_FD " bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0),
        stripe->fd, bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   stripe->header->dirty = 1;
@@ -920,7 +926,11 @@ dir_sync_init()
 }
 
 void
+#if TS_USE_MMAP
+CacheSync::aio_write(ink_aiocb::aio_mmap &fd, char *b, int n, off_t o)
+#else
 CacheSync::aio_write(int fd, char *b, int n, off_t o)
+#endif
 {
   io.aiocb.aio_fildes = fd;
   io.aiocb.aio_offset = o;
