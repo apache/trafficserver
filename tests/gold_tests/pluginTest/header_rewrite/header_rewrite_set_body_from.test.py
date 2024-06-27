@@ -52,11 +52,6 @@ class HeaderRewriteSetBodyFromTest:
         plugin_success_1_request_header = {"headers": "GET /plugin_success HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
         self.server.addResponse("sessionfile.log", plugin_success_1_request_header, response_header)
 
-        # Request/response for custom body transaction that fails to retrieve body
-        fail_2_request_header = {"headers": "GET /502 HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
-        fail_2_response_header = {"headers": "HTTP/1.1 502 \r\nConnection: close\r\n\r\n", "body": "Fail\n"}
-        self.server.addResponse("sessionfile.log", fail_2_request_header, fail_2_response_header)
-
         # Request/response for custom body transaction that successfully retrieves body
         success_2_request_header = {"headers": "GET /404.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
         success_2_response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "Custom body found\n"}
@@ -68,6 +63,7 @@ class HeaderRewriteSetBodyFromTest:
         # Set header rewrite rules
         self.ts.Setup.CopyAs('rules/rule_set_body_from_remap.conf', Test.RunDirectory)
         self.ts.Setup.CopyAs('rules/rule_set_body_from_plugin.conf', Test.RunDirectory)
+
         self.ts.Disk.remap_config.AddLine(
             """\
              map http://www.example.com/remap_success http://127.0.0.1:{0}/remap_success @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_remap.conf
@@ -76,8 +72,8 @@ class HeaderRewriteSetBodyFromTest:
              map http://www.example.com/plugin_success http://127.0.0.1:{0}/plugin_success
              map http://www.example.com/plugin_fail http://127.0.0.1:{0}/plugin_fail
              map http://www.example.com/404.html http://127.0.0.1:{0}/404.html
-             map http://www.example.com/502 http://127.0.0.1:{0}/502
-             """.format(self.server.Variables.Port, Test.RunDirectory))
+             map http://www.example.com/plugin_no_server http://127.0.0.1::{2}/plugin_no_server
+             """.format(self.server.Variables.Port, Test.RunDirectory, Test.GetTcpPort("bad_port")))
         self.ts.Disk.plugin_config.AddLine('header_rewrite.so {0}/rule_set_body_from_plugin.conf'.format(Test.RunDirectory))
 
     def test_setBodyFromFails_remap(self):
