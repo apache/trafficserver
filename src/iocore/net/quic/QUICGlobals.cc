@@ -56,7 +56,7 @@ QUIC::init()
 }
 
 int
-QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
+QUIC::ssl_client_new_session([[maybe_unused]] SSL *ssl, [[maybe_unused]] SSL_SESSION *session)
 {
 #if TS_HAS_QUICHE
 #else
