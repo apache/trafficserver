@@ -276,7 +276,6 @@ UnixSocket::shutdown(int how)
   return res;
 }
 
-// This does not belong here. ^^
 inline bool
 transient_error()
 {
