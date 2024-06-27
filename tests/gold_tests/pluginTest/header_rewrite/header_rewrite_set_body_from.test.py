@@ -53,7 +53,7 @@ class HeaderRewriteSetBodyFromTest:
         self.server.addResponse("sessionfile.log", plugin_success_1_request_header, response_header)
 
         # Request/response for custom body transaction that fails to retrieve body
-        fail_2_request_header = {"headers": "GET /502.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        fail_2_request_header = {"headers": "GET /502 HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
         fail_2_response_header = {"headers": "HTTP/1.1 502 \r\nConnection: close\r\n\r\n", "body": "Fail\n"}
         self.server.addResponse("sessionfile.log", fail_2_request_header, fail_2_response_header)
 
@@ -76,7 +76,7 @@ class HeaderRewriteSetBodyFromTest:
              map http://www.example.com/plugin_success http://127.0.0.1:{0}/plugin_success
              map http://www.example.com/plugin_fail http://127.0.0.1:{0}/plugin_fail
              map http://www.example.com/404.html http://127.0.0.1:{0}/404.html
-             map http://www.example.com/502.html http://127.0.0.1:{0}/502.html
+             map http://www.example.com/502 http://127.0.0.1:{0}/502
              """.format(self.server.Variables.Port, Test.RunDirectory))
         self.ts.Disk.plugin_config.AddLine('header_rewrite.so {0}/rule_set_body_from_plugin.conf'.format(Test.RunDirectory))
 
@@ -84,6 +84,7 @@ class HeaderRewriteSetBodyFromTest:
         '''
         Test where set-body-from request fails
         Triggered from remap file
+        This uses the case where no remap rule is provided
         '''
         tr = Test.AddTestRun()
         tr.Processes.Default.Command = (
@@ -91,7 +92,7 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
-        tr.Processes.Default.Streams.All = "gold/header_rewrite-set_body_from_fail.gold"
+        tr.Processes.Default.Streams.All = "gold/header_rewrite-set_body_from_remap_fail.gold"
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromSucceeds_remap(self):
@@ -121,13 +122,14 @@ class HeaderRewriteSetBodyFromTest:
     def test_setBodyFromFails_plugin(self):
         '''
         Test where set-body-from request fails
+        This uses the case where the second endpoint cannot connect to the requested server
         Triggered from plugin file
         '''
         tr = Test.AddTestRun()
         tr.Processes.Default.Command = (
             'curl -s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_fail"'.format(self.ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.All = "gold/header_rewrite-set_body_from_fail.gold"
+        tr.Processes.Default.Streams.All = "gold/header_rewrite-set_body_from_conn_fail.gold"
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromSucceeds_200(self):
