@@ -34,7 +34,7 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 }
 
 static int
-proto_stack_cb(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
+proto_stack_cb(TSCont contp ATS_UNUSED, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSHttpTxn   txnp = static_cast<TSHttpTxn>(edata);
   const char *results[10];
