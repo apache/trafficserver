@@ -82,7 +82,7 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
     // The transaction is reenabled with the FetchSM transaction
     break;
   default:
-    TSWarning("Warning: handleFetchEvents got unknown event: %d", event);
+    TSError("Warning: handleFetchEvents got unknown event: %d", event);
     break;
   }
   return 0;
