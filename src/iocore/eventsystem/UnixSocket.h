@@ -29,6 +29,8 @@
 
 #include <cstdint>
 
+#define NO_SOCK -1
+
 #ifndef SOCK_NONBLOCK
 #define SOCK_NONBLOCK O_NONBLOCK
 #endif
@@ -51,7 +53,17 @@ class UnixSocket
 {
 public:
   UnixSocket(int fd);
+
+  /** Get a new socket.
+   *
+   * Call has_socket() to determine whether this call succeeded. If the call
+   * failed, errno will be set to indicate the error.
+   *
+   * @see has_socket
+   */
   UnixSocket(int domain, int ctype, int protocol);
+
+  bool has_socket() const;
 
   int bind(struct sockaddr const *name, int namelen);
   int accept4(struct sockaddr *addr, socklen_t *addrlen, int flags) const;
@@ -86,7 +98,7 @@ public:
   static bool client_fastopen_supported();
 
 private:
-  int sock_fd{-1};
+  int sock_fd{NO_SOCK};
 };
 
 inline UnixSocket::UnixSocket(int fd) : sock_fd{fd} {}
@@ -94,6 +106,12 @@ inline UnixSocket::UnixSocket(int fd) : sock_fd{fd} {}
 inline UnixSocket::UnixSocket(int domain, int type, int protocol)
 {
   this->sock_fd = socket(domain, type, protocol);
+}
+
+inline bool
+UnixSocket::has_socket() const
+{
+  return NO_SOCK != this->sock_fd;
 }
 
 inline std::int64_t
