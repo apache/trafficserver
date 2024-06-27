@@ -30,6 +30,5 @@ function(cripts_link_libraries)
 endfunction()
 
 function(cripts_install_bundle_headers bundle)
-  message(WARNING "Adding cripts bundle headers ${bundle}")
   install(FILES ${ARGN} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cripts/${bundle})
 endfunction()

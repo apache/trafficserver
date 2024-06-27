@@ -31,6 +31,10 @@ file(
 
 foreach(SDIR ${EXT_SUBDIRS})
   if(IS_DIRECTORY ${SDIR})
-    add_subdirectory(${SDIR})
+    if(EXISTS ${SDIR}/CMakeLists.txt)
+      add_subdirectory(${SDIR})
+    else()
+      message(WARNING "Extra directory ${SDIR} does not contain a CMakeLists.txt file. Ignoring")
+    endif()
   endif()
 endforeach()
