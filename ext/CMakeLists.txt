@@ -31,7 +31,6 @@ file(
 
 foreach(SDIR ${EXT_SUBDIRS})
   if(IS_DIRECTORY ${SDIR})
-    message(INFO "Matched ${SDIR}")
     add_subdirectory(${SDIR})
   endif()
 endforeach()
