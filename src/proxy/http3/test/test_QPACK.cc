@@ -95,7 +95,7 @@ public:
   TestQPACKEventHandler() : Continuation() { SET_HANDLER(&TestQPACKEventHandler::event_handler); }
 
   int
-  event_handler(int event, Event *data)
+  event_handler(int event, Event * /* data ATS_UNUSED */)
   {
     this->_event = event;
     return 0;
@@ -329,7 +329,8 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
 }
 
 static int
-test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am, const char *app_name)
+test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int /* am ATS_UNUSED */,
+            const char * /* app_name ATS_UNUSED */)
 {
   int ret = 0;
 

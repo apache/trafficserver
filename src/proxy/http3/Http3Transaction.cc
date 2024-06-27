@@ -139,7 +139,7 @@ HQTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 }
 
 VIO *
-HQTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+HQTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool /* owner ATS_UNUSED */)
 {
   if (buf) {
     this->_write_vio.buffer.reader_for(buf);
@@ -164,7 +164,7 @@ HQTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf,
 }
 
 void
-HQTransaction::do_io_close(int lerrno)
+HQTransaction::do_io_close(int /* lerrno ATS_UNUSED */)
 {
   this->_read_vio.buffer.clear();
   this->_read_vio.nbytes = 0;
@@ -178,7 +178,7 @@ HQTransaction::do_io_close(int lerrno)
 }
 
 void
-HQTransaction::do_io_shutdown(ShutdownHowTo_t howto)
+HQTransaction::do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */)
 {
   return;
 }
@@ -622,7 +622,7 @@ Http3Transaction::_process_write_vio()
 }
 
 bool
-Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) const
+Http3Transaction::has_request_body(int64_t content_length, bool /* is_chunked_set ATS_UNUSED */) const
 {
   // Has body if Content-Length != 0 (content_length can be -1 if it's undefined)
   if (content_length > 0) {
