@@ -116,7 +116,7 @@ Headers::set_headers(const Cript::string_view target, const HeaderValueList &hea
 void
 Headers::doRemap(Cript::Context *context)
 {
-  borrow req = Client::Request::get();
+  borrow req = Client::Request::Get();
 
   for (auto &header : _client_request.rm_headers) {
     req[header] = "";
@@ -130,7 +130,7 @@ Headers::doRemap(Cript::Context *context)
 void
 Headers::doSendResponse(Cript::Context *context)
 {
-  borrow resp = Client::Response::get();
+  borrow resp = Client::Response::Get();
 
   for (auto &header : _client_response.rm_headers) {
     resp[header] = "";
@@ -144,7 +144,7 @@ Headers::doSendResponse(Cript::Context *context)
 void
 Headers::doSendRequest(Cript::Context *context)
 {
-  borrow req = Server::Request::get();
+  borrow req = Server::Request::Get();
 
   for (auto &header : _server_request.rm_headers) {
     req[header] = "";
@@ -158,7 +158,7 @@ Headers::doSendRequest(Cript::Context *context)
 void
 Headers::doReadResponse(Cript::Context *context)
 {
-  borrow resp = Server::Response::get();
+  borrow resp = Server::Response::Get();
 
   for (auto &header : _server_response.rm_headers) {
     resp[header] = "";

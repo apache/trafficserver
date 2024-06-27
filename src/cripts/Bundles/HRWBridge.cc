@@ -121,19 +121,19 @@ IP::value(Cript::Context *context)
 {
   switch (_type) {
   case Type::CLIENT: {
-    auto ip = Client::Connection::get().ip();
+    auto ip = Client::Connection::Get().ip();
     _value  = ip.string();
   } break;
   case Type::INBOUND: {
-    auto ip = Client::Connection::get().localIP();
+    auto ip = Client::Connection::Get().localIP();
     _value  = ip.string();
   } break;
   case Type::SERVER: {
-    auto ip = Server::Connection::get().ip();
+    auto ip = Server::Connection::Get().ip();
     _value  = ip.string();
   } break;
   case Type::OUTBOUND: {
-    auto ip = Server::Connection::get().localIP();
+    auto ip = Server::Connection::Get().localIP();
     _value  = ip.string();
   } break;
   default:
@@ -186,7 +186,7 @@ CIDR::CIDR(Cript::string_view &cidr) : super_type(cidr)
 Cript::string_view
 CIDR::value(Cript::Context *context)
 {
-  auto ip = Client::Connection::get().ip();
+  auto ip = Client::Connection::Get().ip();
 
   _value = ip.string(_ipv4_cidr, _ipv6_cidr);
 
@@ -284,37 +284,37 @@ URL::value(Cript::Context *context)
 {
   switch (_type) {
   case Type::CLIENT: {
-    borrow url = Client::URL::get();
+    borrow url = Client::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::REMAP_FROM: {
-    borrow url = Remap::From::URL::get();
+    borrow url = Remap::From::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::REMAP_TO: {
-    borrow url = Remap::To::URL::get();
+    borrow url = Remap::To::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::PRISTINE: {
-    borrow url = Pristine::URL::get();
+    borrow url = Pristine::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::CACHE: {
-    borrow url = Cache::URL::get();
+    borrow url = Cache::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::PARENT: {
-    borrow url = Parent::URL::get();
+    borrow url = Parent::URL::Get();
 
     return _getComponent(url);
   } break;

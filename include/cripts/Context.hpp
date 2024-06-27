@@ -100,8 +100,8 @@ private:
 } // namespace Cript
 
 // This may be weird, but oh well for now.
-#define get()               _get(context)
-#define set(_value)         _set(context, _value)
+#define Get()               _get(context)
+#define Set(_value)         _set(context, _value)
 #define update()            _update(context)
 #define runRemap()          _runRemap(context)
 #define activate()          _activate(context->p_instance)
