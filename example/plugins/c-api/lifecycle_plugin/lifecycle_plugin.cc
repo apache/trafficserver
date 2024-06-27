@@ -67,7 +67,7 @@ CallbackHandler(TSCont, TSEvent id, void *data)
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
   TSCont                   cb;

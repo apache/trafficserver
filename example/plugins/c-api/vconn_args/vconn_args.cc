@@ -31,7 +31,7 @@ static DbgCtl dbg_ctl{PLUGIN_NAME};
 static int    last_arg = 0;
 
 static int
-vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
+vconn_arg_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
   switch (event) {
@@ -86,7 +86,7 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   Dbg(dbg_ctl, "Initializing plugin.");
   TSPluginRegistrationInfo info;

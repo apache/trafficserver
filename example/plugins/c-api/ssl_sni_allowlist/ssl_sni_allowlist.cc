@@ -72,7 +72,7 @@ CB_servername_allowlist(TSCont /* contp */, TSEvent /* event */, void *edata)
 
 // Called by ATS as our initialization point
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   bool                     success = false;
   TSPluginRegistrationInfo info;

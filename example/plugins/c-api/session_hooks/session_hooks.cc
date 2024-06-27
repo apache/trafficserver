@@ -36,7 +36,7 @@ static int transaction_count_stat;
 static int session_count_stat;
 
 static void
-txn_handler(TSHttpTxn txnp, TSCont contp)
+txn_handler(TSHttpTxn /* txnp ATS_UNUSED */, TSCont /* contp ATS_UNUSED */)
 {
   TSMgmtInt num_txns = 0;
 
@@ -84,7 +84,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSCont                   contp;
   TSPluginRegistrationInfo info;

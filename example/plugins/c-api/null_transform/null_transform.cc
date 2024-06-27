@@ -185,7 +185,7 @@ handle_transform(TSCont contp)
 }
 
 static int
-null_transform(TSCont contp, TSEvent event, void *edata)
+null_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   /* Check to see if the transformation has been closed by a call to
    * TSVConnClose.
@@ -277,7 +277,7 @@ transform_add(TSHttpTxn txnp)
 }
 
 static int
-transform_plugin(TSCont contp, TSEvent event, void *edata)
+transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
@@ -299,7 +299,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
 
