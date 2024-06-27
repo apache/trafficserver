@@ -49,7 +49,7 @@ do_create_instance()
 
 do_txn_close()
 {
-  borrow conn = Client::Connection::get();
+  borrow conn = Client::Connection::Get();
 
   conn.pacing = Cript::Pacing::Off;
   CDebug("Cool, TXN close also works");
@@ -57,7 +57,7 @@ do_txn_close()
 
 do_cache_lookup()
 {
-  borrow url2 = Cache::URL::get();
+  borrow url2 = Cache::URL::Get();
 
   CDebug("Cache URL: {}", url2.url());
   CDebug("Cache Host: {}", url2.host);
@@ -65,28 +65,28 @@ do_cache_lookup()
 
 do_send_request()
 {
-  borrow req = Server::Request::get();
+  borrow req = Server::Request::Get();
 
   req["X-Leif"] = "Meh";
 }
 
 do_read_response()
 {
-  borrow resp = Server::Response::get();
+  borrow resp = Server::Response::Get();
 
   resp["X-DBJ"] = "Vrooom!";
 }
 
 do_send_response()
 {
-  borrow resp = Client::Response::get();
-  borrow conn = Client::Connection::get();
+  borrow resp = Client::Response::Get();
+  borrow conn = Client::Connection::Get();
   string msg  = "Eliminate TSCPP";
 
   resp["Server"]         = "";        // Deletes the Server header
   resp["X-AMC"]          = msg;       // New header
   resp["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
-  resp["X-UUID"]         = UUID::Unique::get();
+  resp["X-UUID"]         = UUID::Unique::Get();
   resp["X-tcpinfo"]      = conn.tcpinfo.log();
   resp["X-Cache-Status"] = resp.cache;
   resp["X-Integer"]      = 666;
@@ -126,8 +126,8 @@ do_send_response()
 do_remap()
 {
   auto   now  = Time::Local::now();
-  borrow req  = Client::Request::get();
-  borrow conn = Client::Connection::get();
+  borrow req  = Client::Request::Get();
+  borrow conn = Client::Connection::Get();
   auto   ip   = conn.ip();
 
   if (CRIPT_ALLOW.contains(ip)) {
@@ -148,13 +148,13 @@ do_remap()
   // proxy.config.http.cache.http.set(1);
   // control.cache.nostore.set(true);
 
-  CDebug("Int config cache.http = {}", proxy.config.http.cache.http.get());
-  CDebug("Float config cache.heuristic_lm_factor = {}", proxy.config.http.cache.heuristic_lm_factor.get());
+  CDebug("Int config cache.http = {}", proxy.config.http.cache.http.Get());
+  CDebug("Float config cache.heuristic_lm_factor = {}", proxy.config.http.cache.heuristic_lm_factor.Get());
   CDebug("String config http.response_server_str = {}", proxy.config.http.response_server_str.getSV(context));
   CDebug("X-Miles = {}", req["X-Miles"]);
   CDebug("random(1000) = {}", Cript::random(1000));
 
-  borrow url      = Client::URL::get();
+  borrow url      = Client::URL::Get();
   auto   old_port = url.port;
 
   CDebug("Method is {}", req.method);
