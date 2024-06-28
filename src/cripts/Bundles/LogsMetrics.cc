@@ -98,11 +98,11 @@ LogsMetrics::propstats(const Cript::string_view &label)
 void
 LogsMetrics::doTxnClose(Cript::Context *context)
 {
-  borrow resp = Client::Response::get();
+  borrow resp = Client::Response::Get();
 
   // .tcpinfo(bool)
-  if (_tcpinfo && control.logging.get()) {
-    borrow conn = Client::Connection::get();
+  if (_tcpinfo && control.logging.Get()) {
+    borrow conn = Client::Connection::Get();
 
     resp["@TCPInfo"] += fmt::format(",TC; {}", conn.tcpinfo.log());
   }
@@ -147,8 +147,8 @@ LogsMetrics::doTxnClose(Cript::Context *context)
 void
 LogsMetrics::doSendResponse(Cript::Context *context)
 {
-  borrow resp = Client::Response::get();
-  borrow conn = Client::Connection::get();
+  borrow resp = Client::Response::Get();
+  borrow conn = Client::Connection::Get();
 
   // .sample(int)
   if (_log_sample > 0) {
@@ -156,7 +156,7 @@ LogsMetrics::doSendResponse(Cript::Context *context)
   }
 
   // .tcpinfo(bool)
-  if (_tcpinfo && control.logging.get()) {
+  if (_tcpinfo && control.logging.Get()) {
     resp["@TCPInfo"] = fmt::format("SR; {}", conn.tcpinfo.log());
   }
 }
@@ -182,7 +182,7 @@ LogsMetrics::doRemap(Cript::Context *context)
   // .logsample(int)
   if (_log_sample > 0) {
     if (Cript::random(_log_sample) != 1) {
-      control.logging.set(false);
+      control.logging.Set(false);
       sampled = false;
     }
     CDebug("Log sampling: 1 in {} -> {}", _log_sample, sampled);
@@ -190,8 +190,8 @@ LogsMetrics::doRemap(Cript::Context *context)
 
   // .tcpinfo(bool)
   if (_tcpinfo && sampled) {
-    borrow req      = Client::Request::get();
-    borrow conn     = Client::Connection::get();
+    borrow req      = Client::Request::Get();
+    borrow conn     = Client::Connection::Get();
     req["@TCPInfo"] = fmt::format("TS; {}", conn.tcpinfo.log());
   }
 }

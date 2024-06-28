@@ -134,7 +134,7 @@ Common::doRemap(Cript::Context *context)
 {
   // .dscp(int)
   if (_dscp > 0) {
-    borrow conn = Client::Connection::get();
+    borrow conn = Client::Connection::Get();
 
     CDebug("Setting DSCP = {}", _dscp);
     conn.dscp = _dscp;
@@ -143,11 +143,11 @@ Common::doRemap(Cript::Context *context)
   // .via_header()
   if (_client_via.second) {
     CDebug("Setting Client Via = {}", _client_via.first);
-    proxy.config.http.insert_response_via_str.set(_client_via.first);
+    proxy.config.http.insert_response_via_str.Set(_client_via.first);
   }
   if (_origin_via.second) {
     CDebug("Setting Origin Via = {}", _origin_via.first);
-    proxy.config.http.insert_request_via_str.set(_origin_via.first);
+    proxy.config.http.insert_request_via_str.Set(_origin_via.first);
   }
 
   // .set_config()
