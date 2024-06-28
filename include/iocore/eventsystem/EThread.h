@@ -326,10 +326,10 @@ public:
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
   char thread_private[PER_THREAD_DATA];
-  #if !TS_USE_MMAP
+#if !TS_USE_MMAP
   /** Private Data for the Disk Processor. */
   DiskHandler *diskHandler = nullptr;
-  #endif
+#endif
   /** Private Data for AIO. */
   Que(Continuation, link) aio_ops;
 

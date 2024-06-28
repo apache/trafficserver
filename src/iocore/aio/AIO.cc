@@ -232,12 +232,12 @@ aio_init_fildes(int fildes, int fromAPI = 0)
   RecInt thread_num;
 
   if (fromAPI) {
-    request->index    = 0;
-    #if TS_USE_MMAP
+    request->index = 0;
+#if TS_USE_MMAP
     request->filedes = MAP_FAILED;
-    #else
+#else
     request->filedes = -1;
-    #endif
+#endif
     aio_reqs[0]       = request;
     thread_is_created = 1;
     thread_num        = api_config_threads_per_disk;
@@ -349,18 +349,18 @@ aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
     }
     op->aio_req = req;
   }
-  #if TS_USE_MMAP
+#if TS_USE_MMAP
   if (fromAPI && (!req || req->filedes != MAP_FAILED)) {
-  #else
+#else
   if (fromAPI && (!req || req->filedes != -1)) {
-  #endif
+#endif
     ink_mutex_acquire(&insert_mutex);
     if (aio_reqs[0] == nullptr) {
-      #if TS_USE_MMAP
+#if TS_USE_MMAP
       req = aio_init_fildes(MAP_FAILED, 1);
-      #else
+#else
       req = aio_init_fildes(-1, 1);
-      #endif
+#endif
     } else {
       req = aio_reqs[0];
     }
@@ -401,26 +401,26 @@ cache_op(AIOCallbackInternal *op)
           err = aioFaultInjection.pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res,
                                         a->aio_offset + res);
 #else
-  #if TS_USE_MMAP
+#if TS_USE_MMAP
           ink_assert((static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + a->aio_nbytes) <= a->aio_fildes.last);
           memcpy(static_cast<char *>(a->aio_buf) + res, static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + res,
                  err = a->aio_nbytes - res);
-  #else
+#else
           err = pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
-  #endif
+#endif
 #endif
         } else {
 #ifdef AIO_FAULT_INJECTION
           err = aioFaultInjection.pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res,
                                          a->aio_offset + res);
 #else
-  #if TS_USE_MMAP
+#if TS_USE_MMAP
           ink_assert((static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + a->aio_nbytes) <= a->aio_fildes.last);
           memcpy(static_cast<char *>(a->aio_fildes.first) + a->aio_offset + res, static_cast<char const *>(a->aio_buf) + res,
                  err = a->aio_nbytes - res);
-  #else
+#else
           err = pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
-  #endif
+#endif
 #endif
         }
       } while ((err < 0) && (errno == EINTR || errno == ENOBUFS || errno == ENOMEM));
@@ -658,8 +658,8 @@ ink_aio_write(AIOCallback *op_in, int fromAPI)
     return 1;
   }
 #endif
-  op_in->aiocb.aio_lio_opcode = LIO_WRITE; 
+  op_in->aiocb.aio_lio_opcode = LIO_WRITE;
   aio_queue_req(static_cast<AIOCallbackInternal *>(op_in), fromAPI);
-  
+
   return 1;
 }

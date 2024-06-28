@@ -43,28 +43,28 @@
 #define ROUND_TO(_x, _y)         INK_ALIGN((_x), (_y))
 
 // Stripe
-#define STRIPE_MAGIC                 0xF1D0F00D
-#define START_BLOCKS                 16 // 8k, STORE_BLOCK_SIZE
-#define START_POS                    ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
-#define EVACUATION_SIZE              (2 * AGG_SIZE)      // 8MB
-#define STRIPE_BLOCK_SIZE            (1024 * 1024 * 128) // 128MB
-#define MIN_STRIPE_SIZE              STRIPE_BLOCK_SIZE
-#define MAX_STRIPE_SIZE              ((off_t)512 * 1024 * 1024 * 1024 * 1024) // 512TB
-#define MAX_FRAG_SIZE                (AGG_SIZE - sizeof(Doc))                 // true max
-#define LEAVE_FREE                   DEFAULT_MAX_BUFFER_SIZE
-#define PIN_SCAN_EVERY               16 // scan every 1/16 of disk
-#define STRIPE_HASH_TABLE_SIZE       32707
-#define STRIPE_HASH_EMPTY            0xFFFF
-#define STRIPE_HASH_ALLOC_SIZE       (8 * 1024 * 1024) // one chance per this unit
-#define LOOKASIDE_SIZE               256
-#define EVACUATION_BUCKET_SIZE       (2 * EVACUATION_SIZE) // 16MB
-#define RECOVERY_SIZE                EVACUATION_SIZE       // 8MB
+#define STRIPE_MAGIC           0xF1D0F00D
+#define START_BLOCKS           16 // 8k, STORE_BLOCK_SIZE
+#define START_POS              ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
+#define EVACUATION_SIZE        (2 * AGG_SIZE)      // 8MB
+#define STRIPE_BLOCK_SIZE      (1024 * 1024 * 128) // 128MB
+#define MIN_STRIPE_SIZE        STRIPE_BLOCK_SIZE
+#define MAX_STRIPE_SIZE        ((off_t)512 * 1024 * 1024 * 1024 * 1024) // 512TB
+#define MAX_FRAG_SIZE          (AGG_SIZE - sizeof(Doc))                 // true max
+#define LEAVE_FREE             DEFAULT_MAX_BUFFER_SIZE
+#define PIN_SCAN_EVERY         16 // scan every 1/16 of disk
+#define STRIPE_HASH_TABLE_SIZE 32707
+#define STRIPE_HASH_EMPTY      0xFFFF
+#define STRIPE_HASH_ALLOC_SIZE (8 * 1024 * 1024) // one chance per this unit
+#define LOOKASIDE_SIZE         256
+#define EVACUATION_BUCKET_SIZE (2 * EVACUATION_SIZE) // 16MB
+#define RECOVERY_SIZE          EVACUATION_SIZE       // 8MB
 #if TS_USE_MMAP
-#define AIO_NOT_IN_PROGRESS reinterpret_cast<void *>(-1)
+#define AIO_NOT_IN_PROGRESS       reinterpret_cast<void *>(-1)
 #define AIO_AGG_WRITE_IN_PROGRESS reinterpret_cast<void *>(-2)
 #else
-#define AIO_NOT_IN_PROGRESS          -1
-#define AIO_AGG_WRITE_IN_PROGRESS    -2
+#define AIO_NOT_IN_PROGRESS       -1
+#define AIO_AGG_WRITE_IN_PROGRESS -2
 #endif
 #define AUTO_SIZE_RAM_CACHE          -1                      // 1-1 with directory size
 #define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeof(Doc)) // 1MB
@@ -136,11 +136,11 @@ public:
   char          *path = nullptr;
   ats_scoped_str hash_text;
   CryptoHash     hash_id;
-  #if TS_USE_MMAP
+#if TS_USE_MMAP
   ink_aiocb::aio_mmap fd = {MAP_FAILED, nullptr};
-  #else
-  int            fd = -1;
-  #endif
+#else
+  int fd = -1;
+#endif
 
   char                *raw_dir             = nullptr;
   Dir                 *dir                 = nullptr;

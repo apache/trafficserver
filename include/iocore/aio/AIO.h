@@ -52,7 +52,7 @@ enum AIOBackend {
 };
 
 struct ink_aiocb {
-  #if TS_USE_MMAP
+#if TS_USE_MMAP
   struct aio_mmap {
     void *first = MAP_FAILED; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
     void *last  = nullptr;
@@ -64,9 +64,9 @@ struct ink_aiocb {
       last  = nullptr;
     }
   } aio_fildes;
-  #else
-  int    aio_fildes = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
-  #endif
+#else
+  int aio_fildes = -1; /* file descriptor or status: AIO_NOT_IN_PROGRESS */
+#endif
   void  *aio_buf    = nullptr; /* buffer location */
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t  aio_offset = 0;       /* file offset */

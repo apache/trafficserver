@@ -83,19 +83,19 @@ struct CacheDisk : public Continuation {
   off_t               skip              = 0;
   off_t               num_usable_blocks = 0;
   int                 hw_sector_size    = 0;
-  #if TS_USE_MMAP
+#if TS_USE_MMAP
   ink_aiocb::aio_mmap fd = {MAP_FAILED, nullptr};
-  #else
-  int                 fd                = -1;
-  #endif
-  off_t               free_space        = 0;
-  off_t               wasted_space      = 0;
-  DiskStripe        **disk_stripes      = nullptr;
-  DiskStripe         *free_blocks       = nullptr;
-  int                 num_errors        = 0;
-  int                 cleared           = 0;
-  bool                read_only_p       = false;
-  bool online = true; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
+#else
+  int fd = -1;
+#endif
+  off_t        free_space   = 0;
+  off_t        wasted_space = 0;
+  DiskStripe **disk_stripes = nullptr;
+  DiskStripe  *free_blocks  = nullptr;
+  int          num_errors   = 0;
+  int          cleared      = 0;
+  bool         read_only_p  = false;
+  bool         online = true; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
 
   // Extra configuration values
   int            forced_volume_num = -1; ///< Volume number for this disk.

@@ -6890,10 +6890,10 @@ TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
   pAIO->aiocb.aio_buf = buf;
   pAIO->action        = pCont;
   pAIO->thread        = pCont->mutex->thread_holding;
-  
-  #if TS_USE_MMAP
+
+#if TS_USE_MMAP
   pAIO->mutex = pCont->mutex;
-  #endif
+#endif
 
   if (ink_aio_read(pAIO, 1) == 1) {
     return TS_SUCCESS;

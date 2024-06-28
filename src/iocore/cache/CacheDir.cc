@@ -607,7 +607,8 @@ Lagain:
     collision = nullptr;
     goto Lagain;
   }
-  DDbg(dbg_ctl_dir_probe_miss, "missed %X %X on vol " PRI_FD " bucket %d at %p", key->slice32(0), key->slice32(1), stripe->fd, b, seg);
+  DDbg(dbg_ctl_dir_probe_miss, "missed %X %X on vol " PRI_FD " bucket %d at %p", key->slice32(0), key->slice32(1), stripe->fd, b,
+       seg);
   CHECK_DIR(d);
   return 0;
 }
@@ -670,8 +671,8 @@ Lfill:
   dir_assign_data(e, to_part);
   dir_set_tag(e, key->slice32(2));
   ink_assert(stripe->vol_offset(e) < (stripe->skip + stripe->len));
-  DDbg(dbg_ctl_dir_insert, "insert %p %X into vol " PRI_FD " bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), stripe->fd,
-       bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
+  DDbg(dbg_ctl_dir_insert, "insert %p %X into vol " PRI_FD " bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0),
+       stripe->fd, bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   stripe->header->dirty = 1;
   Metrics::Gauge::increment(cache_rsb.direntries_used);
@@ -760,8 +761,8 @@ Lfill:
   dir_assign_data(e, dir);
   dir_set_tag(e, t);
   ink_assert(stripe->vol_offset(e) < stripe->skip + stripe->len);
-  DDbg(dbg_ctl_dir_overwrite, "overwrite %p %X into vol " PRI_FD " bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0),
-       stripe->fd, bi, e, t, dir_tag(e), dir_offset(e));
+  DDbg(dbg_ctl_dir_overwrite, "overwrite %p %X into vol " PRI_FD " bucket %d at %p tag %X %X boffset %" PRId64 "", e,
+       key->slice32(0), stripe->fd, bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   stripe->header->dirty = 1;
   return res;

@@ -494,9 +494,9 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   io.action        = this;
   io.thread        = mutex->thread_holding->tt == DEDICATED ? AIO_CALLBACK_THREAD_ANY : mutex->thread_holding;
   SET_HANDLER(&CacheVC::handleReadDone);
-  #if TS_USE_MMAP
+#if TS_USE_MMAP
   io.mutex = mutex;
-  #endif
+#endif
   ink_assert(ink_aio_read(&io) >= 0);
 
 // ToDo: Why are these for debug only ??
@@ -902,9 +902,9 @@ Lread:
     io.aiocb.aio_nbytes = stripe->skip + stripe->len - io.aiocb.aio_offset;
   }
   offset = 0;
-  #if TS_USE_MMAP
+#if TS_USE_MMAP
   io.mutex = mutex;
-  #endif
+#endif
   ink_assert(ink_aio_read(&io) >= 0);
   Dbg(dbg_ctl_cache_scan_truss, "read %p:scanObject %" PRId64 " %zu", this, (int64_t)io.aiocb.aio_offset,
       (size_t)io.aiocb.aio_nbytes);
