@@ -43,8 +43,8 @@ do_create_instance()
   instance.metrics[7] = Metrics::Counter::create("cript.example1.c7");
   instance.metrics[8] = Metrics::Counter::create("cript.example1.c8"); // This one should resize() the storage
 
-  Bundle::Common::activate().dscp(10);
-  Bundle::Caching::activate().cache_control("max-age=259200");
+  Bundle::Common::Activate().dscp(10);
+  Bundle::Caching::Activate().cache_control("max-age=259200");
 }
 
 do_txn_close()
@@ -87,7 +87,7 @@ do_send_response()
   resp["X-AMC"]          = msg;       // New header
   resp["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
   resp["X-UUID"]         = UUID::Unique::Get();
-  resp["X-tcpinfo"]      = conn.tcpinfo.log();
+  resp["X-tcpinfo"]      = conn.tcpinfo.Log();
   resp["X-Cache-Status"] = resp.cache;
   resp["X-Integer"]      = 666;
   resp["X-Data"]         = AsString(txn_data[2]);
@@ -120,7 +120,7 @@ do_send_response()
     resp.status = 222;
   }
 
-  CDebug("Txn count: {}", conn.count());
+  CDebug("Txn count: {}", conn.Count());
 }
 
 do_remap()
@@ -128,7 +128,7 @@ do_remap()
   auto   now  = Time::Local::now();
   borrow req  = Client::Request::Get();
   borrow conn = Client::Connection::Get();
-  auto   ip   = conn.ip();
+  auto   ip   = conn.IP();
 
   if (CRIPT_ALLOW.contains(ip)) {
     CDebug("Client IP allowed: {}", ip.string(24, 64));
@@ -150,7 +150,7 @@ do_remap()
 
   CDebug("Int config cache.http = {}", proxy.config.http.cache.http.Get());
   CDebug("Float config cache.heuristic_lm_factor = {}", proxy.config.http.cache.heuristic_lm_factor.Get());
-  CDebug("String config http.response_server_str = {}", proxy.config.http.response_server_str.getSV(context));
+  CDebug("String config http.response_server_str = {}", proxy.config.http.response_server_str.GetSV(context));
   CDebug("X-Miles = {}", req["X-Miles"]);
   CDebug("random(1000) = {}", Cript::random(1000));
 
@@ -205,8 +205,8 @@ do_remap()
 
   // Some Crypto::Base64 tests
   static auto base64_test = "VGltZSB3aWxsIG5vdCBzbG93IGRvd24gd2hlbiBzb21ldGhpbmcgdW5wbGVhc2FudCBsaWVzIGFoZWFkLg==";
-  auto        hp          = Crypto::Base64::decode(base64_test);
-  auto        hp2         = Crypto::Base64::encode(hp);
+  auto        hp          = Crypto::Base64::Decode(base64_test);
+  auto        hp2         = Crypto::Base64::Encode(hp);
 
   CDebug("HP quote: {}", hp);
   if (base64_test != hp2) {
@@ -217,8 +217,8 @@ do_remap()
 
   // Some Crypto::Escape (URL escaping) tests
   static auto escape_test = "Hello_World_!@%23$%25%5E&*()_%2B%3C%3E?%2C.%2F";
-  auto        uri         = Crypto::Escape::decode(escape_test);
-  auto        uri2        = Crypto::Escape::encode(uri);
+  auto        uri         = Crypto::Escape::Decode(escape_test);
+  auto        uri2        = Crypto::Escape::Encode(uri);
 
   CDebug("Unescaped URI: {}", uri);
   if (escape_test != uri2) {
@@ -228,7 +228,7 @@ do_remap()
   }
 
   // Testing Crypto SHA and encryption
-  auto hex = format("{}", Crypto::SHA256::encode("Hello World"));
+  auto hex = format("{}", Crypto::SHA256::Encode("Hello World"));
 
   CDebug("SHA256 = {}", hex);
 

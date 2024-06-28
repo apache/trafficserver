@@ -455,7 +455,7 @@ Pristine::URL::_get(Cript::Context *context)
 
     TSAssert(context->state.txnp);
     if (TSHttpTxnPristineUrlGet(context->state.txnp, &url->_bufp, &url->_urlp) != TS_SUCCESS) {
-      context->state.error.fail();
+      context->state.error.Fail();
     } else {
       url->_initialize(&context->state);
     }
@@ -552,7 +552,7 @@ Cache::URL::_get(Cript::Context *context)
           url->_initialize(&context->state, &req);
         }
       } else {
-        context->state.error.fail();
+        context->state.error.Fail();
       }
       break;
     default: { // This means we have to clone. ToDo: For now, this is implicitly using Client::URL
@@ -561,7 +561,7 @@ Cache::URL::_get(Cript::Context *context)
       if (TSUrlClone(req.bufp(), req.bufp(), src.urlp(), &url->_urlp) == TS_SUCCESS) {
         url->_initialize(&context->state, &req);
       } else {
-        context->state.error.fail();
+        context->state.error.Fail();
       }
     } break;
     }
@@ -590,7 +590,7 @@ Cache::URL::_update(Cript::Context *context)
       if (context->p_instance.debugOn()) {
         context->p_instance.debug("Could not set the cache key to {}", url());
       }
-      context->state.error.fail();
+      context->state.error.Fail();
       return false;
     }
   }
@@ -612,7 +612,7 @@ Parent::URL::_get(Cript::Context *context)
         url->_initialize(&context->state, &req);
       }
     } else {
-      context->state.error.fail();
+      context->state.error.Fail();
     }
   }
 

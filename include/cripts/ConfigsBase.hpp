@@ -48,53 +48,53 @@ public:
 
   // Optimizations, we can't use string_view in the ValueType since we need persistent storage.
   // Be careful with the setSV() and make sure there's underlying storage!
-  const Cript::string_view getSV(const Cript::Context *context) const;
-  bool                     setSV(const Cript::Context *context, const Cript::string_view value) const;
+  const Cript::string_view GetSV(const Cript::Context *context) const;
+  bool                     SetSV(const Cript::Context *context, const Cript::string_view value) const;
 
   [[nodiscard]] TSOverridableConfigKey
-  key() const
+  Key() const
   {
     return _key;
   }
 
   [[nodiscard]] TSRecordDataType
-  type() const
+  Type() const
   {
     return _type;
   }
 
   [[nodiscard]] Cript::string_view
-  name() const
+  Name() const
   {
     return _name;
   }
 
   [[nodiscard]] bool
-  loaded() const
+  Loaded() const
   {
     return (_key != TS_CONFIG_NULL && _type != TS_RECORDDATATYPE_NULL);
   }
 
   [[nodiscard]] bool
-  isInteger() const
+  IsInteger() const
   {
     return _type == TS_RECORDDATATYPE_INT;
   }
 
   [[nodiscard]] bool
-  isFloat() const
+  IsFloat() const
   {
     return _type == TS_RECORDDATATYPE_FLOAT;
   }
 
   [[nodiscard]] bool
-  isString() const
+  IsString() const
   {
     return _type == TS_RECORDDATATYPE_STRING;
   }
 
-  static void           add(const Records *rec);
-  static const Records *lookup(const Cript::string_view name);
+  static void           Add(const Records *rec);
+  static const Records *Lookup(const Cript::string_view name);
 
 private:
   Cript::string          _name;
@@ -108,7 +108,7 @@ class IntConfig
 {
 public:
   IntConfig() = delete;
-  explicit IntConfig(const Cript::string_view name) : _record(name) { Records::add(&_record); }
+  explicit IntConfig(const Cript::string_view name) : _record(name) { Records::Add(&_record); }
 
   float
   _get(Cript::Context *context) const
@@ -130,7 +130,7 @@ class FloatConfig
 {
 public:
   FloatConfig() = delete;
-  explicit FloatConfig(const Cript::string_view name) : _record(name) { Records::add(&_record); }
+  explicit FloatConfig(const Cript::string_view name) : _record(name) { Records::Add(&_record); }
 
   float
   _get(Cript::Context *context) const
@@ -152,7 +152,7 @@ class StringConfig
 {
 public:
   StringConfig() = delete;
-  explicit StringConfig(const Cript::string_view name) : _record(name) { Records::add(&_record); }
+  explicit StringConfig(const Cript::string_view name) : _record(name) { Records::Add(&_record); }
 
   std::string
   _get(Cript::Context *context) const
@@ -163,13 +163,14 @@ public:
   void
   _set(Cript::Context *context, std::string &value)
   {
-    _record.setSV(context, value);
+    _record.SetSV(context, value);
   }
 
+  // Only for the string type!
   const std::string_view
-  getSV(Cript::Context *context) const
+  GetSV(Cript::Context *context) const
   {
-    return _record.getSV(context);
+    return _record.GetSV(context);
   }
 
 private:

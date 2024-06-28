@@ -82,7 +82,7 @@ LogsMetrics::propstats(const Cript::string_view &label)
   _label = label;
 
   if (_label.length() > 0) {
-    needCallback({Cript::Callbacks::DO_CACHE_LOOKUP, Cript::Callbacks::DO_TXN_CLOSE});
+    NeedCallback({Cript::Callbacks::DO_CACHE_LOOKUP, Cript::Callbacks::DO_TXN_CLOSE});
 
     for (int ix = 0; ix < Bundle::PROPSTAT_MAX; ++ix) {
       auto name = fmt::format("{}.{}", _label, Bundle::PROPSTAT_SUFFIXES[ix]);
@@ -104,7 +104,7 @@ LogsMetrics::doTxnClose(Cript::Context *context)
   if (_tcpinfo && control.logging.Get()) {
     borrow conn = Client::Connection::Get();
 
-    resp["@TCPInfo"] += fmt::format(",TC; {}", conn.tcpinfo.log());
+    resp["@TCPInfo"] += fmt::format(",TC; {}", conn.tcpinfo.Log());
   }
 
   // .label(str)
@@ -157,7 +157,7 @@ LogsMetrics::doSendResponse(Cript::Context *context)
 
   // .tcpinfo(bool)
   if (_tcpinfo && control.logging.Get()) {
-    resp["@TCPInfo"] = fmt::format("SR; {}", conn.tcpinfo.log());
+    resp["@TCPInfo"] = fmt::format("SR; {}", conn.tcpinfo.Log());
   }
 }
 
@@ -192,7 +192,7 @@ LogsMetrics::doRemap(Cript::Context *context)
   if (_tcpinfo && sampled) {
     borrow req      = Client::Request::Get();
     borrow conn     = Client::Connection::Get();
-    req["@TCPInfo"] = fmt::format("TS; {}", conn.tcpinfo.log());
+    req["@TCPInfo"] = fmt::format("TS; {}", conn.tcpinfo.Log());
   }
 }
 

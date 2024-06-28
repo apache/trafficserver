@@ -19,7 +19,7 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
-// Our include depedenencies are unfortunate ...
+// Our include dependencies are unfortunate ...
 extern std::string RecConfigReadConfigDir();
 
 std::filesystem::file_status
@@ -29,7 +29,7 @@ File::Status(const File::Path &path)
 }
 
 File::Path &
-File::Path::rebase()
+File::Path::Rebase()
 {
   if (std::filesystem::status(*this).type() != std::filesystem::file_type::regular) {
     *this = RecConfigReadConfigDir() + "/" + this->string();

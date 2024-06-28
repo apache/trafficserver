@@ -62,8 +62,8 @@ public:
   addBundle(Cript::Bundle::Base *bundle)
   {
     for (auto &it : bundles) {
-      if (it->name() == bundle->name()) {
-        CFatal("[Instance]: Duplicate bundle %s", bundle->name().c_str());
+      if (it->Name() == bundle->Name()) {
+        CFatal("[Instance]: Duplicate bundle %s", bundle->Name().c_str());
       }
     }
 

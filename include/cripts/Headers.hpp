@@ -38,17 +38,17 @@ public:
   public:
     Status() = default;
 
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
-
     operator integer(); // This should not be explicit, nor const
     self_type &operator=(int status);
 
   private:
     friend class Header;
+
+    void
+    _initialize(Header *owner)
+    {
+      _owner = owner;
+    }
 
     Header      *_owner  = nullptr;
     TSHttpStatus _status = TS_HTTP_STATUS_NONE;
@@ -62,16 +62,16 @@ public:
   public:
     Reason() = default;
 
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
-
     self_type &operator=(Cript::string_view reason);
 
   private:
     friend class Header;
+
+    void
+    _initialize(Header *owner)
+    {
+      _owner = owner;
+    }
 
     Header *_owner = nullptr;
   }; // End class Header::Reason
@@ -83,16 +83,16 @@ public:
   public:
     Body() = default;
 
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
-
     self_type &operator=(Cript::string_view body);
 
   private:
     friend class Header;
+
+    void
+    _initialize(Header *owner)
+    {
+      _owner = owner;
+    }
 
     Header *_owner = nullptr;
   }; // End class Header::Body
@@ -102,18 +102,14 @@ public:
     using self_type = Method;
 
   public:
-    Method() = default;
+    Method() = delete;
     Method(Cript::string_view const &method) : _method(method) {}
     Method(const char *const method, int len)
     {
       _method = Cript::string_view(method, static_cast<Cript::string_view::size_type>(len));
     }
 
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
+    Method(Header *owner) : _owner(owner) {}
 
     Cript::string_view getSV();
 
@@ -173,12 +169,6 @@ public:
   public:
     CacheStatus() = default;
 
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
-
     Cript::string_view getSV();
 
     operator Cript::string_view() { return getSV(); }
@@ -202,6 +192,14 @@ public:
     }
 
   private:
+    friend class Header;
+
+    void
+    _initialize(Header *owner)
+    {
+      _owner = owner;
+    }
+
     Header            *_owner = nullptr;
     Cript::string_view _cache;
 
@@ -357,6 +355,8 @@ public:
     static const Iterator _end;
   }; // Class Header::iterator
 
+  Header() = default;
+
   ~Header() { reset(); }
 
   // Clear anything "cached" in the Url, this is rather draconian, but it's
@@ -377,10 +377,10 @@ public:
   {
     _state = state;
 
-    status.initialize(this);
-    reason.initialize(this);
-    body.initialize(this);
-    cache.initialize(this);
+    status._initialize(this);
+    reason._initialize(this);
+    body._initialize(this);
+    cache._initialize(this);
   }
 
   [[nodiscard]] TSMBuffer
@@ -438,17 +438,15 @@ class RequestHeader : public Header
   using self_type  = RequestHeader;
 
 public:
-  RequestHeader() = default;
+  RequestHeader() : method(this) {} // Special case since only this header has a method
 
   void
   initialize(Cript::Transaction *state) override
   {
     Header::initialize(state);
-    method.initialize(this);
   }
 
   Method method;
-
 }; // End class RequestHeader
 
 class ResponseHeader : public Header

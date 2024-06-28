@@ -58,13 +58,13 @@ Cript::Context::reset()
 ClassAllocator<Cript::Context> criptContextAllocator("Cript::Context");
 
 Cript::Context *
-Cript::Context::factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst)
+Cript::Context::Factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst)
 {
   return THREAD_ALLOC(criptContextAllocator, this_thread(), txn_ptr, ssn_ptr, rri_ptr, inst);
 }
 
 void
-Cript::Context::release()
+Cript::Context::Release()
 {
   THREAD_FREE(this, criptContextAllocator, this_thread());
 }

@@ -144,6 +144,19 @@ cache for the shared object files. This is useful for large setups with many Cri
 In fact, moving the compilation details to be separate from the ATS process is a good
 idea with a lot of flexibility for the user.
 
+.. _cripts-overview-names:
+
+Names
+=====
+
+All classes and class and instance methods in Cripts are following the same naming
+convention, ``PascalCase``. Instance variables and members are always all lowercase. For example:
+
+.. code-block:: cpp
+
+   auto url = Client::URL::Get();
+   url.query.Keep({"foo", "bar"});
+
 .. _cripts-overview-hooks:
 
 Hooks

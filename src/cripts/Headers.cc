@@ -263,7 +263,7 @@ Client::Request::_get(Cript::Context *context)
   if (!request->initialized()) {
     TSAssert(context->state.txnp);
     if (TSHttpTxnClientReqGet(context->state.txnp, &request->_bufp, &request->_hdr_loc) != TS_SUCCESS) {
-      context->state.error.fail();
+      context->state.error.Fail();
     } else {
       request->initialize(&context->state); // Don't initialize unless properly setup
     }
@@ -327,7 +327,7 @@ Client::Response::_get(Cript::Context *context)
   if (!response->initialized()) {
     TSAssert(context->state.txnp);
     if (TSHttpTxnClientRespGet(context->state.txnp, &response->_bufp, &response->_hdr_loc) != TS_SUCCESS) {
-      context->state.error.fail();
+      context->state.error.Fail();
     } else {
       response->initialize(&context->state); // Don't initialize unless properly setup
     }
@@ -349,7 +349,7 @@ Server::Request::_get(Cript::Context *context)
   if (!request->initialized()) {
     TSAssert(context->state.txnp);
     if (TSHttpTxnServerReqGet(context->state.txnp, &request->_bufp, &request->_hdr_loc) != TS_SUCCESS) {
-      context->state.error.fail();
+      context->state.error.Fail();
     } else {
       request->initialize(&context->state); // Don't initialize unless properly setup
     }
@@ -371,7 +371,7 @@ Server::Response::_get(Cript::Context *context)
   if (!response->initialized()) {
     TSAssert(context->state.txnp);
     if (TSHttpTxnServerRespGet(context->state.txnp, &response->_bufp, &response->_hdr_loc) != TS_SUCCESS) {
-      context->state.error.fail();
+      context->state.error.Fail();
     } else {
       response->initialize(&context->state); // Don't initialize unless properly setup
     }
