@@ -59,7 +59,7 @@ using string_view = swoc::TextView;
 
 namespace details
 {
-  template <typename T> std::vector<T> splitter(T input, char delim);
+  template <typename T> std::vector<T> Splitter(T input, char delim);
 
 } // namespace details
 
@@ -87,43 +87,37 @@ public:
   operator integer() const { return integer_helper(_value); }
 
   [[nodiscard]] integer
-  toInteger() const
-  {
-    return integer(*this);
-  }
-
-  [[nodiscard]] integer
-  asInteger() const
+  ToInteger() const
   {
     return integer(*this);
   }
 
   [[nodiscard]] double
-  toFloat() const
+  ToFloat() const
   {
     return float(*this);
   }
 
   [[nodiscard]] bool
-  toBool() const
+  ToBool() const
   {
     return bool(*this);
   }
 
   std::vector<mixin_type>
-  splitter(mixin_type input, char delim)
+  Splitter(mixin_type input, char delim)
   {
-    return details::splitter<mixin_type>(input, delim);
+    return details::Splitter<mixin_type>(input, delim);
   }
 
   [[nodiscard]] std::vector<mixin_type>
   split(char delim)
   {
-    return splitter(_value, delim);
+    return Splitter(_value, delim);
   }
 
   [[nodiscard]] mixin_type
-  getSV() const
+  GetSV() const
   {
     return _value;
   }
@@ -381,48 +375,32 @@ public:
   operator float() const { return std::stod(*this); }
 
   [[nodiscard]] integer
-  toInteger() const
-  {
-    return integer(*this);
-  }
-
-  [[nodiscard]] integer
-  asInteger() const
+  ToInteger() const
   {
     return integer(*this);
   }
 
   [[nodiscard]] double
-  toFloat() const
+  ToFloat() const
   {
     return float(*this);
   }
 
   [[nodiscard]] bool
-  toBool() const
+  ToBool() const
   {
     return bool(*this);
   }
 
 }; // End class Cript::string
 
-// Helpers for deducting if a type is a static string
-template <typename T> struct isStatic : std::false_type {
-};
-
-template <std::size_t N> struct isStatic<const char[N]> : std::true_type {
-};
-
-template <std::size_t N> struct isStatic<char[N]> : std::true_type {
-};
-
 // Some helper functions, in the Cript:: generic namespace
-int                             random(int max);
-std::vector<Cript::string_view> splitter(Cript::string_view input, char delim);
-Cript::string                   hex(const Cript::string &str);
-Cript::string                   hex(Cript::string_view sv);
-Cript::string                   unhex(const Cript::string &str);
-Cript::string                   unhex(Cript::string_view sv);
+int                             Random(int max);
+std::vector<Cript::string_view> Splitter(Cript::string_view input, char delim);
+Cript::string                   Hex(const Cript::string &str);
+Cript::string                   Hex(Cript::string_view sv);
+Cript::string                   UnHex(const Cript::string &str);
+Cript::string                   UnHex(Cript::string_view sv);
 
 } // namespace Cript
 
@@ -477,36 +455,26 @@ public:
   Versions(const self_type &)       = delete;
   void operator=(const self_type &) = delete;
 
-  Cript::string_view
-  getSV()
-  {
-    if (_version.length() == 0) {
-      const char *ver = TSTrafficServerVersionGet();
+  Cript::string_view GetSV();
 
-      _version = Cript::string_view(ver, strlen(ver)); // ToDo: Annoyingly, we have ambiquity on the operator=
-    }
-
-    return _version;
-  }
-
-  operator Cript::string_view() { return getSV(); }
+  operator Cript::string_view() { return GetSV(); }
 
   Cript::string_view::const_pointer
-  data()
+  Data()
   {
-    return getSV().data();
+    return GetSV().data();
   }
 
   Cript::string_view::size_type
-  size()
+  Size()
   {
-    return getSV().size();
+    return GetSV().size();
   }
 
   Cript::string_view::size_type
-  length()
+  Length()
   {
-    return getSV().length();
+    return GetSV().length();
   }
 
 private:
@@ -584,7 +552,7 @@ template <> struct formatter<Versions> {
   auto
   format(Versions &version, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", version.getSV());
+    return fmt::format_to(ctx.out(), "{}", version.GetSV());
   }
 };
 

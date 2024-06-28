@@ -90,9 +90,9 @@ public:
 
     Method(Header *owner) : _owner(owner) {}
 
-    Cript::string_view getSV();
+    Cript::string_view GetSV();
 
-    operator Cript::string_view() { return getSV(); }
+    operator Cript::string_view() { return GetSV(); }
 
     // ToDo: This is a bit weird, but seems needed (for now) to allow for the
     // Header::Method::* constants.
@@ -106,31 +106,31 @@ public:
     Cript::string_view::const_pointer
     Data()
     {
-      return getSV().data();
+      return GetSV().data();
     }
 
     Cript::string_view::size_type
     Size()
     {
-      return getSV().size();
+      return GetSV().size();
     }
 
     Cript::string_view::size_type
     Length()
     {
-      return getSV().size();
+      return GetSV().size();
     }
 
     bool
     operator==(Method const &rhs)
     {
-      return getSV().data() == rhs.Data();
+      return GetSV().data() == rhs.Data();
     }
 
     bool
     operator!=(Method const &rhs)
     {
-      return getSV().data() != rhs.Data();
+      return GetSV().data() != rhs.Data();
     }
 
   private:
@@ -147,26 +147,26 @@ public:
     CacheStatus() = delete;
     CacheStatus(Header *owner) : _owner(owner) {}
 
-    Cript::string_view getSV();
+    Cript::string_view GetSV();
 
-    operator Cript::string_view() { return getSV(); }
+    operator Cript::string_view() { return GetSV(); }
 
     Cript::string_view::const_pointer
     Data()
     {
-      return getSV().data();
+      return GetSV().data();
     }
 
     Cript::string_view::size_type
     Size()
     {
-      return getSV().size();
+      return GetSV().size();
     }
 
     Cript::string_view::size_type
     Length()
     {
-      return getSV().size();
+      return GetSV().size();
     }
 
   private:
@@ -245,7 +245,7 @@ public:
     using self_type  = Name;
 
   public:
-    operator Cript::string_view() const { return getSV(); }
+    operator Cript::string_view() const { return GetSV(); }
 
     self_type &
     operator=(const Cript::string_view str) override
@@ -526,7 +526,7 @@ template <> struct formatter<Header::Method> {
   auto
   format(Header::Method &method, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", method.getSV());
+    return fmt::format_to(ctx.out(), "{}", method.GetSV());
   }
 };
 
@@ -541,7 +541,7 @@ template <> struct formatter<Header::String> {
   auto
   format(Header::String &str, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", str.getSV());
+    return fmt::format_to(ctx.out(), "{}", str.GetSV());
   }
 };
 
@@ -556,7 +556,7 @@ template <> struct formatter<Header::Name> {
   auto
   format(Header::Name &name, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", name.getSV());
+    return fmt::format_to(ctx.out(), "{}", name.GetSV());
   }
 };
 

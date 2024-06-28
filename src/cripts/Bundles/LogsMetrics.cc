@@ -181,7 +181,7 @@ LogsMetrics::doRemap(Cript::Context *context)
 
   // .logsample(int)
   if (_log_sample > 0) {
-    if (Cript::random(_log_sample) != 1) {
+    if (Cript::Random(_log_sample) != 1) {
       control.logging.Set(false);
       sampled = false;
     }

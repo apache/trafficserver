@@ -67,7 +67,7 @@ integer_helper(std::string_view sv)
 }
 
 int
-Cript::random(int max)
+Cript::Random(int max)
 {
   static std::random_device          r;
   static std::default_random_engine  e1(r());
@@ -81,7 +81,7 @@ namespace Cript::details
 
 template <typename T>
 std::vector<T>
-splitter(T input, char delim)
+Splitter(T input, char delim)
 {
   std::vector<T> output;
   size_t         first = 0;
@@ -104,25 +104,25 @@ splitter(T input, char delim)
 } // namespace Cript::details
 
 Cript::string
-Cript::hex(const Cript::string &str)
+Cript::Hex(const Cript::string &str)
 {
   return ts::hex(str);
 }
 
 Cript::string
-Cript::hex(Cript::string_view sv)
+Cript::Hex(Cript::string_view sv)
 {
   return ts::hex(sv);
 }
 
 Cript::string
-Cript::unhex(const Cript::string &str)
+Cript::UnHex(const Cript::string &str)
 {
   return ts::unhex(str);
 }
 
 Cript::string
-Cript::unhex(Cript::string_view sv)
+Cript::UnHex(Cript::string_view sv)
 {
   return ts::unhex(sv);
 }
@@ -157,13 +157,13 @@ Cript::string::operator bool() const
 std::vector<Cript::string_view>
 Cript::string::split(char delim) const &
 {
-  return details::splitter<Cript::string_view>(*this, delim);
+  return details::Splitter<Cript::string_view>(*this, delim);
 }
 
 std::vector<Cript::string_view>
-Cript::splitter(Cript::string_view input, char delim)
+Cript::Splitter(Cript::string_view input, char delim)
 {
-  return details::splitter<Cript::string_view>(input, delim);
+  return details::Splitter<Cript::string_view>(input, delim);
 }
 
 bool
@@ -176,6 +176,18 @@ void
 Control::Base::_set(Cript::Context *context, bool value)
 {
   TSHttpTxnCntlSet(context->state.txnp, _ctrl, value);
+}
+
+Cript::string_view
+Versions::GetSV()
+{
+  if (_version.length() == 0) {
+    const char *ver = TSTrafficServerVersionGet();
+
+    _version = Cript::string_view(ver, strlen(ver)); // ToDo: Annoyingly, we have ambiquity on the operator=
+  }
+
+  return _version;
 }
 
 // Globals

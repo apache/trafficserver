@@ -49,14 +49,14 @@ Context::reset()
   }
 
   // Clear the initialized URLs before calling next hook
-  if (_pristine_url.initialized()) {
-    _pristine_url.reset();
+  if (_pristine_url.Initialized()) {
+    _pristine_url.Reset();
   }
-  if (_cache_url.initialized()) {
-    _cache_url.reset();
+  if (_cache_url.Initialized()) {
+    _cache_url.Reset();
   }
-  if (_parent_url.initialized()) {
-    _parent_url.reset();
+  if (_parent_url.Initialized()) {
+    _parent_url.Reset();
   }
 }
 

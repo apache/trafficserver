@@ -226,7 +226,7 @@ URL::_getComponent(Cript::Url &url)
 {
   switch (_comp) {
   case Component::HOST:
-    return url.host.getSV();
+    return url.host.GetSV();
     break;
 
   case Component::PATH:

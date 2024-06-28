@@ -539,7 +539,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   // See if the Client URL was modified, which dicates the return code here.
-  if (Client::URL::_get(context).modified()) {
+  if (Client::URL::_get(context).Modified()) {
     context->p_instance.debug("Client::URL was modified, returning TSREMAP_DID_REMAP");
     return TSREMAP_DID_REMAP;
   } else {

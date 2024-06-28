@@ -84,7 +84,7 @@ Records::GetSV(const Cript::Context *context) const
     }
   } break;
   default:
-    CFatal("[Records]: Invalid configuration type for getSV()");
+    CFatal("[Records]: Invalid configuration type for GetSV()");
     break;
   }
 

@@ -30,7 +30,7 @@ must always be borrowed. The pattern for this is as follows:
 
 .. code-block:: cpp
 
-  borrow url = Client::URL::get();
+  borrow url = Client::URL::Get();
 
   auto path = url.path;
 
@@ -80,7 +80,7 @@ you can use the following:
 
 .. code-block:: cpp
 
-  borrow url = Client::URL::get();
+  borrow url = Client::URL::Get();
 
   auto path = url.path; // This is the entire path
   auto first = url.path[0]; // This is the first part of the path
@@ -90,25 +90,25 @@ indexed in a list. To get the value of a specific query parameter, you can use t
 
 .. code-block:: cpp
 
-  borrow url = Client::URL::get();
+  borrow url = Client::URL::Get();
 
   auto value = url.query["key"]; // This is the value of the key
 
-You can retrieve the size of the path or query using the ``size()`` method, and you can clear
-the path or query using the ``erase()`` method. To summarize the ``path`` and ``query`` components
+You can retrieve the size of the ``path`` or ``query`` using the ``Size()`` method, and you can clear
+the path or query using the ``Erase()`` method. To summarize the ``path`` and ``query`` components
 have the following methods available to them:
 
 =================   ===============================================================================
 Method / access     Description
 =================   ===============================================================================
 Index []            Access a specific part of the path or query.
-``size()``          Get the number of parts of the path or query.
-``erase()``         Clears the component. Also available as ``clear()``.
-``sort()``          Sorts the query parameters. **Note**: Only for query parameters.
-``flush()``         Flushes any changes. This is rarely used, since Cripts will manage flushing.
+``Size()``          Get the number of parts of the path or query.
+``Erase()``         Clears the component. Also available as ``Clear()``.
+``Sort()``          Sorts the query parameters. **Note**: Only for query parameters.
+``Flush()``         Flushes any changes. This is rarely used, since Cripts will manage flushing.
 =================   ===============================================================================
 
-In addition, the query parameters ``erase()`` method can take a single key, or a list of keys to
+In addition, the query parameters ``Erase()`` method can take a single key, or a list of keys to
 remove specific parameters. It also allows specify a list of keys to keep, and will remove all other
 keys. This is useful for filtering out unwanted query parameters.
 

@@ -89,7 +89,7 @@ Header::Body::operator=(Cript::string_view body)
 }
 
 Cript::string_view
-Header::Method::getSV()
+Header::Method::GetSV()
 {
   if (_method.size() == 0) {
     int         len;
@@ -102,7 +102,7 @@ Header::Method::getSV()
 }
 
 Cript::string_view
-Header::CacheStatus::getSV()
+Header::CacheStatus::GetSV()
 {
   static std::array<Cript::string_view, 4> names{
     "miss",      // TS_CACHE_LOOKUP_MISS,

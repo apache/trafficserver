@@ -162,7 +162,8 @@ convention, ``PascalCase``. Instance variables and members are always all lowerc
 .. note::
 
    This naming convention does not apply to ``string`` and ``string_view`` variables, which
-   follow the standard C++ conventions for method names.
+   follow the standard C++ conventions for the standard method names. Cripts specific Additions
+   do follow the ``PascalCase`` convention though.
 
 Hooks
 =====

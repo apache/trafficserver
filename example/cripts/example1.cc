@@ -59,7 +59,7 @@ do_cache_lookup()
 {
   borrow url2 = Cache::URL::Get();
 
-  CDebug("Cache URL: {}", url2.url());
+  CDebug("Cache URL: {}", url2.Getter());
   CDebug("Cache Host: {}", url2.host);
 }
 
@@ -152,7 +152,7 @@ do_remap()
   CDebug("Float config cache.heuristic_lm_factor = {}", proxy.config.http.cache.heuristic_lm_factor.Get());
   CDebug("String config http.response_server_str = {}", proxy.config.http.response_server_str.GetSV(context));
   CDebug("X-Miles = {}", req["X-Miles"]);
-  CDebug("random(1000) = {}", Cript::random(1000));
+  CDebug("random(1000) = {}", Cript::Random(1000));
 
   borrow url      = Client::URL::Get();
   auto   old_port = url.port;
