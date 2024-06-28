@@ -249,7 +249,7 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_send_request()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_SEND_REQUEST) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_SEND_REQUEST) {
         for (auto &bundle : context->p_instance.bundles) {
           if (bundle->Callbacks() & Cript::Callbacks::DO_SEND_REQUEST) {
             bundle->doSendRequest(context);
@@ -266,7 +266,7 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_read_response()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_READ_RESPONSE) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_READ_RESPONSE) {
         for (auto &bundle : context->p_instance.bundles) {
           if (bundle->Callbacks() & Cript::Callbacks::DO_READ_RESPONSE) {
             bundle->doReadResponse(context);
@@ -282,7 +282,7 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_send_response()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_SEND_RESPONSE) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_SEND_RESPONSE) {
         for (auto &bundle : context->p_instance.bundles) {
           if (bundle->Callbacks() & Cript::Callbacks::DO_SEND_RESPONSE) {
             bundle->doSendResponse(context);
@@ -298,7 +298,7 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_txn_close()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_TXN_CLOSE) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_TXN_CLOSE) {
         for (auto &bundle : context->p_instance.bundles) {
           if (bundle->Callbacks() & Cript::Callbacks::DO_TXN_CLOSE) {
             bundle->doTxnClose(context);
@@ -317,7 +317,7 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_cache_lookup()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_CACHE_LOOKUP) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_CACHE_LOOKUP) {
         for (auto &bundle : context->p_instance.bundles) {
           if (bundle->Callbacks() & Cript::Callbacks::DO_CACHE_LOOKUP) {
             bundle->doCacheLookup(context);
@@ -332,7 +332,7 @@ default_cont(TSCont contp, TSEvent event, void *edata)
     CDebug("Entering do_post_remap()");
 
     // Call any bundle callbacks that are registered for this hook
-    if (!context->state.error.Failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_POST_REMAP) {
+    if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_POST_REMAP) {
       for (auto &bundle : context->p_instance.bundles) {
         if (bundle->Callbacks() & Cript::Callbacks::DO_POST_REMAP) {
           bundle->doPostRemap(context);
@@ -404,13 +404,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     wrap_create_instance(&context, true, CaseArg);
   }
 
-  if (!inst->failed()) {
+  if (!inst->Failed()) {
     std::vector<Cript::Bundle::Error> errors;
 
     for (auto &bundle : inst->bundles) {
       // Collect all the callbacks needed from all bundles, and validate them
       if (bundle->Validate(errors)) {
-        inst->needCallback(bundle->Callbacks());
+        inst->NeedCallback(bundle->Callbacks());
       }
     }
 
@@ -472,7 +472,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   TSHttpSsn ssnp         = TSHttpTxnSsnGet(txnp);
   auto     *inst         = static_cast<Cript::Instance *>(ih);
-  auto      bundle_cbs   = inst->callbacks();
+  auto      bundle_cbs   = inst->Callbacks();
   auto     *context      = Cript::Context::Factory(txnp, ssnp, rri, *inst);
   bool      keep_context = false;
 

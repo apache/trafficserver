@@ -41,7 +41,7 @@ public:
   {
     auto *entry = new self_type(&inst);
 
-    inst.addBundle(entry);
+    inst.AddBundle(entry);
 
     return *entry;
   }

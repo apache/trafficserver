@@ -159,6 +159,11 @@ convention, ``PascalCase``. Instance variables and members are always all lowerc
 
 .. _cripts-overview-hooks:
 
+.. note::
+
+   This naming convention does not apply to ``string`` and ``string_view`` variables, which
+   follow the standard C++ conventions for method names.
+
 Hooks
 =====
 

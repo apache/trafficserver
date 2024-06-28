@@ -23,8 +23,14 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Context.hpp"
 
+// Freelist management. These are here to avoid polluting the Context includes with ATS core includes.
+ClassAllocator<Cript::Context> criptContextAllocator("Cript::Context");
+
+namespace Cript
+{
+
 void
-Cript::Context::reset()
+Context::reset()
 {
   // Clear the initialized headers before calling next hook
   // Note: we don't clear the pristine URL, nor the Remap From/To URLs, they are static.
@@ -54,17 +60,16 @@ Cript::Context::reset()
   }
 }
 
-// Freelist management. These are here to avoid polluting the Context includes with ATS core includes.
-ClassAllocator<Cript::Context> criptContextAllocator("Cript::Context");
-
-Cript::Context *
-Cript::Context::Factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst)
+Context *
+Context::Factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst)
 {
   return THREAD_ALLOC(criptContextAllocator, this_thread(), txn_ptr, ssn_ptr, rri_ptr, inst);
 }
 
 void
-Cript::Context::Release()
+Context::Release()
 {
   THREAD_FREE(this, criptContextAllocator, this_thread());
 }
+
+} // namespace Cript

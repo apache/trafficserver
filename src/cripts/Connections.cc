@@ -26,9 +26,12 @@ constexpr unsigned NORMALIZED_TIME_QUANTUM = 3600; // 1 hour
 const Matcher::Range::IP Cript::Net::Localhost({"127.0.0.1", "::1"});
 const Matcher::Range::IP Cript::Net::RFC1918({"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"});
 
+namespace Cript
+{
+
 // This is mostly copied out of header_rewrite of course
 Cript::string_view
-Cript::IP::GetSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
+IP::GetSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
   if (is_ip4()) {
     auto      addr = this->_addr._ip4.network_order();
@@ -63,7 +66,7 @@ Cript::IP::GetSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
 }
 
 uint64_t
-Cript::IP::Hasher(unsigned ipv4_cidr, unsigned ipv6_cidr)
+IP::Hasher(unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
   if (_hash == 0) {
     if (is_ip4()) {
@@ -94,7 +97,7 @@ Cript::IP::Hasher(unsigned ipv4_cidr, unsigned ipv6_cidr)
 }
 
 bool
-Cript::IP::Sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_cidr)
+IP::Sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
   CAssert(rate >= 0.0 && rate <= 1.0); // For detecting bugs in a Cript, 0.0 and 1.0 are valid though
 
@@ -137,6 +140,8 @@ Cript::IP::Sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_
   // To avoid picking sequential folded IPs bucketize them with a modulo of the sampler (just in case)
   return (_sampler % static_cast<uint16_t>(rate * UINT16_MAX)) == _sampler;
 }
+
+} // namespace Cript
 
 void
 detail::ConnBase::Pacing::operator=(uint32_t val)

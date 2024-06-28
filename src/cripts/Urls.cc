@@ -582,12 +582,12 @@ Cache::URL::_update(Cript::Context *context)
     TSAssert(context->state.txnp);
     _modified = false;
     if (TS_SUCCESS == TSHttpTxnCacheLookupUrlSet(context->state.txnp, _bufp, _urlp)) {
-      if (context->p_instance.debugOn()) {
+      if (context->p_instance.DebugOn()) {
         context->p_instance.debug("Successfully setting cache-key to {}", url());
       }
       return true;
     } else {
-      if (context->p_instance.debugOn()) {
+      if (context->p_instance.DebugOn()) {
         context->p_instance.debug("Could not set the cache key to {}", url());
       }
       context->state.error.Fail();
