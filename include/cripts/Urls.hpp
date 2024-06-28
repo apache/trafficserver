@@ -741,8 +741,8 @@ private:
   {
     Url::_initialize(state);
 
-    _bufp    = req->bufp();
-    _hdr_loc = req->mloc();
+    _bufp    = req->BufP();
+    _hdr_loc = req->MLoc();
   }
 
 }; // End class Cache::URL
@@ -770,8 +770,8 @@ private:
   {
     Url::_initialize(state);
 
-    _bufp    = req->bufp();
-    _hdr_loc = req->mloc();
+    _bufp    = req->BufP();
+    _hdr_loc = req->MLoc();
   }
 
 }; // End class Cache::URL

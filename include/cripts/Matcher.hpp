@@ -127,9 +127,9 @@ namespace List
     [[nodiscard]] bool
     contains(Header::Method method) const
     {
-      auto data = method.data();
+      auto data = method.Data();
 
-      return end() != std::find_if(begin(), end(), [&](const Header::Method &header) { return header.data() == data; });
+      return end() != std::find_if(begin(), end(), [&](const Header::Method &header) { return header.Data() == data; });
     }
 
     [[nodiscard]] bool

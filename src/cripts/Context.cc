@@ -29,17 +29,17 @@ Cript::Context::reset()
   // Clear the initialized headers before calling next hook
   // Note: we don't clear the pristine URL, nor the Remap From/To URLs, they are static.
   //      We also don't clear the client URL, since it's from the RRI.
-  if (_client_resp_header.initialized()) {
-    _client_resp_header.reset();
+  if (_client_resp_header.Initialized()) {
+    _client_resp_header.Reset();
   }
-  if (_server_resp_header.initialized()) {
-    _server_resp_header.reset();
+  if (_server_resp_header.Initialized()) {
+    _server_resp_header.Reset();
   }
-  if (_client_req_header.initialized()) {
-    _client_req_header.reset();
+  if (_client_req_header.Initialized()) {
+    _client_req_header.Reset();
   }
-  if (_server_req_header.initialized()) {
-    _server_req_header.reset();
+  if (_server_req_header.Initialized()) {
+    _server_req_header.Reset();
   }
 
   // Clear the initialized URLs before calling next hook

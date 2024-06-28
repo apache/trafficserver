@@ -247,9 +247,9 @@ Header::operator[](const Cript::string_view str)
     int         len   = 0;
     const char *value = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, field_loc, -1, &len);
 
-    ret.initialize(str, Cript::string_view(value, len), this, field_loc);
+    ret._initialize(str, Cript::string_view(value, len), this, field_loc);
   } else {
-    ret.initialize(str, {}, this, nullptr);
+    ret._initialize(str, {}, this, nullptr);
   }
 
   return ret;
@@ -260,12 +260,12 @@ Client::Request::_get(Cript::Context *context)
 {
   Client::Request *request = &context->_client_req_header;
 
-  if (!request->initialized()) {
+  if (!request->Initialized()) {
     TSAssert(context->state.txnp);
     if (TSHttpTxnClientReqGet(context->state.txnp, &request->_bufp, &request->_hdr_loc) != TS_SUCCESS) {
       context->state.error.Fail();
     } else {
-      request->initialize(&context->state); // Don't initialize unless properly setup
+      request->_initialize(&context->state); // Don't initialize unless properly setup
     }
   }
 
@@ -324,12 +324,12 @@ Client::Response::_get(Cript::Context *context)
 
   Client::Response *response = &context->_client_resp_header;
 
-  if (!response->initialized()) {
+  if (!response->Initialized()) {
     TSAssert(context->state.txnp);
     if (TSHttpTxnClientRespGet(context->state.txnp, &response->_bufp, &response->_hdr_loc) != TS_SUCCESS) {
       context->state.error.Fail();
     } else {
-      response->initialize(&context->state); // Don't initialize unless properly setup
+      response->_initialize(&context->state); // Don't initialize unless properly setup
     }
   }
 
@@ -346,12 +346,12 @@ Server::Request::_get(Cript::Context *context)
 
   Server::Request *request = &context->_server_req_header;
 
-  if (!request->initialized()) {
+  if (!request->Initialized()) {
     TSAssert(context->state.txnp);
     if (TSHttpTxnServerReqGet(context->state.txnp, &request->_bufp, &request->_hdr_loc) != TS_SUCCESS) {
       context->state.error.Fail();
     } else {
-      request->initialize(&context->state); // Don't initialize unless properly setup
+      request->_initialize(&context->state); // Don't initialize unless properly setup
     }
   }
 
@@ -368,12 +368,12 @@ Server::Response::_get(Cript::Context *context)
 
   Server::Response *response = &context->_server_resp_header;
 
-  if (!response->initialized()) {
+  if (!response->Initialized()) {
     TSAssert(context->state.txnp);
     if (TSHttpTxnServerRespGet(context->state.txnp, &response->_bufp, &response->_hdr_loc) != TS_SUCCESS) {
       context->state.error.Fail();
     } else {
-      response->initialize(&context->state); // Don't initialize unless properly setup
+      response->_initialize(&context->state); // Don't initialize unless properly setup
     }
   }
 

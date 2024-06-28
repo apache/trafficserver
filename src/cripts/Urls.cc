@@ -546,9 +546,9 @@ Cache::URL::_get(Cript::Context *context)
     case TS_HTTP_READ_RESPONSE_HDR_HOOK:
     case TS_HTTP_SEND_REQUEST_HDR_HOOK:
     case TS_HTTP_TXN_CLOSE_HOOK:
-      if (TSUrlCreate(req.bufp(), &url->_urlp) == TS_SUCCESS) {
+      if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
         TSAssert(context->state.txnp);
-        if (TSHttpTxnCacheLookupUrlGet(context->state.txnp, req.bufp(), url->_urlp) == TS_SUCCESS) {
+        if (TSHttpTxnCacheLookupUrlGet(context->state.txnp, req.BufP(), url->_urlp) == TS_SUCCESS) {
           url->_initialize(&context->state, &req);
         }
       } else {
@@ -558,7 +558,7 @@ Cache::URL::_get(Cript::Context *context)
     default: { // This means we have to clone. ToDo: For now, this is implicitly using Client::URL
       Client::URL &src = Client::URL::_get(context);
 
-      if (TSUrlClone(req.bufp(), req.bufp(), src.urlp(), &url->_urlp) == TS_SUCCESS) {
+      if (TSUrlClone(req.BufP(), req.BufP(), src.urlp(), &url->_urlp) == TS_SUCCESS) {
         url->_initialize(&context->state, &req);
       } else {
         context->state.error.Fail();
@@ -606,9 +606,9 @@ Parent::URL::_get(Cript::Context *context)
     Parent::URL     *url = &context->_parent_url;
     Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
 
-    if (TSUrlCreate(req.bufp(), &url->_urlp) == TS_SUCCESS) {
+    if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
       TSAssert(context->state.txnp);
-      if (TSHttpTxnParentSelectionUrlGet(context->state.txnp, req.bufp(), url->_urlp) == TS_SUCCESS) {
+      if (TSHttpTxnParentSelectionUrlGet(context->state.txnp, req.BufP(), url->_urlp) == TS_SUCCESS) {
         url->_initialize(&context->state, &req);
       }
     } else {
