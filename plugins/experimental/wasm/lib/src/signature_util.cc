@@ -55,7 +55,7 @@ template <size_t N> constexpr std::array<uint8_t, N> hex2pubkey(const char (&hex
 
 namespace proxy_wasm {
 
-bool SignatureUtil::verifySignature(std::string_view bytecode, std::string &message) {
+bool SignatureUtil::verifySignature([[maybe_unused]] std::string_view bytecode, [[maybe_unused]] std::string &message) {
 
 #ifdef PROXY_WASM_VERIFY_WITH_ED25519_PUBKEY
 

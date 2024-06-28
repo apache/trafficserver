@@ -90,7 +90,7 @@ TSRemapDeleteInstance(void *ih)
 }
 
 int
-add_cookie(TSCont cont, TSEvent event, void *edata)
+add_cookie(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   struct timer t;
   start_timer(&t);

@@ -113,7 +113,7 @@ set_request_header(TSMBuffer buf, TSMLoc hdr_loc, const char *key, int key_len, 
 }
 
 static void
-read_request(TSHttpTxn txnp, TSCont contp)
+read_request(TSHttpTxn txnp, TSCont /* contp */)
 {
   TSMBuffer buf;
   TSMLoc    hdr_loc;

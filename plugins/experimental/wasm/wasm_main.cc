@@ -256,7 +256,7 @@ transform_handler(TSCont contp, ats_wasm::TransformInfo *ti)
 }
 
 static int
-transform_entry(TSCont contp, TSEvent ev, void *edata)
+transform_entry(TSCont contp, TSEvent ev, void * /* edata ATS_UNUSED */)
 {
   int                      event;
   TSVIO                    input_vio;

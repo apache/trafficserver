@@ -38,7 +38,7 @@ public:
   ~STEKShareSM() {}
 
   nuraft::ptr<nuraft::buffer>
-  pre_commit(const uint64_t log_idx, nuraft::buffer &data) override
+  pre_commit(const uint64_t /* log_idx ATS_UNUSED */, nuraft::buffer & /* data ATS_UNUSED */) override
   {
     return nullptr;
   }
@@ -89,21 +89,21 @@ public:
   }
 
   void
-  commit_config(const uint64_t log_idx, nuraft::ptr<nuraft::cluster_config> &new_conf) override
+  commit_config(const uint64_t log_idx, nuraft::ptr<nuraft::cluster_config> & /* new_conf ATS_UNUSED */) override
   {
     // Nothing to do with configuration change. Just update committed index.
     last_committed_idx_ = log_idx;
   }
 
   void
-  rollback(const uint64_t log_idx, nuraft::buffer &data) override
+  rollback(const uint64_t /* log_idx ATS_UNUSED */, nuraft::buffer & /* data ATS_UNUSED */) override
   {
     // Nothing to do here since we don't have pre-commit.
   }
 
   int
-  read_logical_snp_obj(nuraft::snapshot &s, void *&user_snp_ctx, uint64_t obj_id, nuraft::ptr<nuraft::buffer> &data_out,
-                       bool &is_last_obj) override
+  read_logical_snp_obj(nuraft::snapshot            &s, void            *&/* user_snp_ctx ATS_UNUSED */, uint64_t /* obj_id ATS_UNUSED */,
+                       nuraft::ptr<nuraft::buffer> &data_out, bool &is_last_obj) override
   {
     // Dbg(dbg_ctl, "read snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
 
@@ -124,7 +124,8 @@ public:
   }
 
   void
-  save_logical_snp_obj(nuraft::snapshot &s, uint64_t &obj_id, nuraft::buffer &data, bool is_first_obj, bool is_last_obj) override
+  save_logical_snp_obj(nuraft::snapshot &s, uint64_t &obj_id, nuraft::buffer &data, bool /* is_first_obj ATS_UNUSED */,
+                       bool /* is_last_obj ATS_UNUSED */) override
   {
     // Dbg(dbg_ctl, "save snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
 
@@ -150,7 +151,7 @@ public:
   }
 
   bool
-  apply_snapshot(nuraft::snapshot &s) override
+  apply_snapshot(nuraft::snapshot & /* s ATS_UNUSED */) override
   {
     // Dbg(dbg_ctl, "apply snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
 
@@ -168,7 +169,7 @@ public:
   }
 
   void
-  free_user_snp_ctx(void *&user_snp_ctx) override
+  free_user_snp_ctx(void *& /* user_snp_ctx ATS_UNUSED */) override
   {
   }
 
