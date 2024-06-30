@@ -241,7 +241,7 @@ Using the ``UUID`` object is simple, via the ``Get()`` method. Here's an example
      resp["X-UUID"] = UUID::Unique::Get();
    }
 
-.. _cripts-metrics
+.. _cripts-metrics:
 
 Metrics
 =======
