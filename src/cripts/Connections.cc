@@ -103,7 +103,7 @@ IP::Sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_cidr)
 
   if (_sampler == 0) {
     // This only works until 2038
-    uint32_t now = (Time::Local::now().epoch() / NORMALIZED_TIME_QUANTUM) * NORMALIZED_TIME_QUANTUM;
+    uint32_t now = (Time::Local::Now().Epoch() / NORMALIZED_TIME_QUANTUM) * NORMALIZED_TIME_QUANTUM;
 
     if (is_ip4()) {
       auto      addr = this->_addr._ip4.network_order();

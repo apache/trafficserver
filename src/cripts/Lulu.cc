@@ -50,7 +50,7 @@ global_initialization()
 #endif
 
   // Initialize various sub modules
-  Plugin::Remap::initialize();
+  Plugin::Remap::Initialize();
 }
 
 integer

@@ -125,7 +125,7 @@ do_send_response()
 
 do_remap()
 {
-  auto   now  = Time::Local::now();
+  auto   now  = Time::Local::Now();
   borrow req  = Client::Request::Get();
   borrow conn = Client::Connection::Get();
   auto   ip   = conn.IP();
@@ -134,12 +134,12 @@ do_remap()
     CDebug("Client IP allowed: {}", ip.string(24, 64));
   }
 
-  CDebug("Epoch time is {} (or via .epoch(), {}", now, now.epoch());
-  CDebug("Year is {}", now.year());
-  CDebug("Month is {}", now.month());
-  CDebug("Day is {}", now.day());
-  CDebug("Hour is {}", now.hour());
-  CDebug("Day number is {}", now.yearday());
+  CDebug("Epoch time is {} (or via .epoch(), {}", now, now.Epoch());
+  CDebug("Year is {}", now.Year());
+  CDebug("Month is {}", now.Month());
+  CDebug("Day is {}", now.Day());
+  CDebug("Hour is {}", now.Hour());
+  CDebug("Day number is {}", now.YearDay());
 
   CDebug("from_url = {}", instance.from_url.c_str());
   CDebug("to_url = {}", instance.to_url.c_str());

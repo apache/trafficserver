@@ -136,7 +136,7 @@ LogsMetrics::doTxnClose(Cript::Context *context)
       instance.metrics[Bundle::PROPSTAT_RESPONSE_5xx]->Increment();
     }
 
-    if (transaction.aborted()) {
+    if (transaction.Aborted()) {
       instance.metrics[Bundle::PROPSTAT_CLIENT_ABORTED_REQUESTS]->Increment();
     } else {
       instance.metrics[Bundle::PROPSTAT_CLIENT_COMPLETED_REQUESTS]->Increment();
@@ -164,7 +164,7 @@ LogsMetrics::doSendResponse(Cript::Context *context)
 void
 LogsMetrics::doCacheLookup(Cript::Context *context)
 {
-  auto status = transaction.lookupStatus();
+  auto status = transaction.LookupStatus();
 
   // .label(str)
   if (_label.length() > 0) {

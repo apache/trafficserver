@@ -34,6 +34,11 @@ turning these common patterns into easily reusable components. A bundle
 must be activated in the ``do_create_instance()`` hook of a Cript. This
 does *not* exclude doing additional hooks in the Cript itself.
 
+.. note::
+   The member variables of a bundle are always lower case, and not
+   Pascal case like methods. This is because even though they technically
+   are functions, they act more like variables with a value.
+
 The following bundles are available in the core today:
 
 ============================   ====================================================================

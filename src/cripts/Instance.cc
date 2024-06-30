@@ -62,9 +62,9 @@ Instance::AddPlugin(const Cript::string &tag, const Cript::string &plugin, const
     return false;
   }
 
-  auto p = Plugin::Remap::create(tag, plugin, from_url, to_url, options);
+  auto p = Plugin::Remap::Create(tag, plugin, from_url, to_url, options);
 
-  if (p.valid()) {
+  if (p.Valid()) {
     plugins.emplace(tag, std::move(p));
 
     return true;

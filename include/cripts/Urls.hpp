@@ -83,6 +83,24 @@ class Url
       return GetSV().size();
     }
 
+    Cript::string_view::const_pointer
+    Data()
+    {
+      return GetSV().data();
+    }
+
+    Cript::string_view::size_type
+    Size()
+    {
+      return GetSV().size();
+    }
+
+    Cript::string_view::size_type
+    Length()
+    {
+      return GetSV().size();
+    }
+
     // This is not ideal, but best way I can think of for now to mixin the Cript::string_view mixin class
     // Remember to add things here when added to the Lulu.hpp file for the mixin class... :/
     [[nodiscard]] constexpr Cript::string_view
