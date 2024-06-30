@@ -152,7 +152,7 @@ detail::ConnBase::Pacing::operator=(uint32_t val)
   }
 
 #ifdef SO_MAX_PACING_RATE
-  int connfd = _owner->fd();
+  int connfd = _owner->FD();
   int res    = setsockopt(connfd, SOL_SOCKET, SO_MAX_PACING_RATE, (char *)&val, sizeof(val));
 
   // EBADF indicates possible client abort
@@ -168,7 +168,7 @@ detail::ConnBase::TcpInfo::initialize()
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
   if (!_ready) {
-    int connfd = _owner->fd();
+    int connfd = _owner->FD();
 
     TSAssert(_owner->_state->txnp);
     if (connfd < 0 || TSHttpTxnIsInternal(_owner->_state->txnp)) { // No TCPInfo for internal transactions

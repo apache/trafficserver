@@ -44,6 +44,19 @@ public:
 
   BaseMetrics(const Cript::string_view &name) : _name(name) {}
 
+  void
+  operator=(int64_t val)
+  {
+    CAssert(_id != TS_ERROR);
+    _metric->store(val);
+  }
+
+  operator int64_t() const
+  {
+    CAssert(_id != TS_ERROR);
+    return _metric->load();
+  }
+
   [[nodiscard]] Cript::string_view
   Name() const
   {
@@ -80,20 +93,6 @@ public:
   Decrement() const
   {
     Decrement(1);
-  }
-
-  [[nodiscard]] int64_t
-  Getter() const
-  {
-    CAssert(_id != TS_ERROR);
-    return _metric->load();
-  }
-
-  void
-  Setter(int64_t val)
-  {
-    CAssert(_id != TS_ERROR);
-    _metric->store(val);
   }
 
 protected:

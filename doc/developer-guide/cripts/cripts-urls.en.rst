@@ -52,6 +52,14 @@ hooks and have different meanings. The ``Client::URL`` is the most commonly used
 which you will also modify in the traditional remapping use case; for example changing
 the ``path`` or ``host`` before further processing.
 
+The full URL string can be copied via the ``String()`` method, for example:
+
+.. code-block:: cpp
+
+  borrow url = Client::URL::Get();
+
+  auto full = url.String();
+
 .. _cripts-urls-components:
 
 Components

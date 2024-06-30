@@ -430,7 +430,7 @@ Cript::Url::Matrix::operator=(Cript::string_view matrix)
 }
 
 Cript::string
-Cript::Url::Getter() const
+Cript::Url::String() const
 {
   Cript::string ret;
 
@@ -583,12 +583,12 @@ Cache::URL::_update(Cript::Context *context)
     _modified = false;
     if (TS_SUCCESS == TSHttpTxnCacheLookupUrlSet(context->state.txnp, _bufp, _urlp)) {
       if (context->p_instance.DebugOn()) {
-        context->p_instance.debug("Successfully setting cache-key to {}", Getter());
+        context->p_instance.debug("Successfully setting cache-key to {}", String());
       }
       return true;
     } else {
       if (context->p_instance.DebugOn()) {
-        context->p_instance.debug("Could not set the cache key to {}", Getter());
+        context->p_instance.debug("Could not set the cache key to {}", String());
       }
       context->state.error.Fail();
       return false;

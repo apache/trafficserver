@@ -137,7 +137,7 @@ class ConnBase
     {
       TSAssert(_owner);
 #if defined(TCP_CONGESTION)
-      int connfd = _owner->fd();
+      int connfd = _owner->FD();
       int res    = setsockopt(connfd, IPPROTO_TCP, TCP_CONGESTION, str.data(), str.size());
 
       // EBADF indicates possible client abort

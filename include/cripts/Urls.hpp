@@ -577,8 +577,8 @@ public:
     return false;
   }
 
-  // Getters / setters for the full URL
-  [[nodiscard]] Cript::string Getter() const;
+  // This is the full string for a URL, which needs allocations.
+  [[nodiscard]] Cript::string String() const;
 
   Scheme scheme;
   Host   host;

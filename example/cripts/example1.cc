@@ -59,7 +59,7 @@ do_cache_lookup()
 {
   borrow url2 = Cache::URL::Get();
 
-  CDebug("Cache URL: {}", url2.Getter());
+  CDebug("Cache URL: {}", url2.String());
   CDebug("Cache Host: {}", url2.host);
 }
 
