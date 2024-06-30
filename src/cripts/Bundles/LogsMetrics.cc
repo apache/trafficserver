@@ -88,7 +88,7 @@ LogsMetrics::propstats(const Cript::string_view &label)
       auto name = fmt::format("{}.{}", _label, Bundle::PROPSTAT_SUFFIXES[ix]);
 
       _inst->debug("Creating metrics for: {}", name);
-      _inst->metrics[ix] = Metrics::Counter::create(name);
+      _inst->metrics[ix] = Metrics::Counter::Create(name);
     }
   }
 
@@ -109,37 +109,37 @@ LogsMetrics::doTxnClose(Cript::Context *context)
 
   // .label(str)
   if (_label.length() > 0) {
-    instance.metrics[Bundle::PROPSTAT_CLIENT_BYTES_IN]->increment(TSHttpTxnClientReqHdrBytesGet(transaction.txnp) +
+    instance.metrics[Bundle::PROPSTAT_CLIENT_BYTES_IN]->Increment(TSHttpTxnClientReqHdrBytesGet(transaction.txnp) +
                                                                   TSHttpTxnClientReqBodyBytesGet(transaction.txnp));
-    instance.metrics[Bundle::PROPSTAT_CLIENT_BYTES_OUT]->increment(TSHttpTxnClientRespHdrBytesGet(transaction.txnp) +
+    instance.metrics[Bundle::PROPSTAT_CLIENT_BYTES_OUT]->Increment(TSHttpTxnClientRespHdrBytesGet(transaction.txnp) +
                                                                    TSHttpTxnClientRespBodyBytesGet(transaction.txnp));
-    instance.metrics[Bundle::PROPSTAT_SERVER_BYTES_IN]->increment(TSHttpTxnServerReqHdrBytesGet(transaction.txnp) +
+    instance.metrics[Bundle::PROPSTAT_SERVER_BYTES_IN]->Increment(TSHttpTxnServerReqHdrBytesGet(transaction.txnp) +
                                                                   TSHttpTxnServerReqBodyBytesGet(transaction.txnp));
-    instance.metrics[Bundle::PROPSTAT_SERVER_BYTES_OUT]->increment(TSHttpTxnServerRespHdrBytesGet(transaction.txnp) +
+    instance.metrics[Bundle::PROPSTAT_SERVER_BYTES_OUT]->Increment(TSHttpTxnServerRespHdrBytesGet(transaction.txnp) +
                                                                    TSHttpTxnServerRespBodyBytesGet(transaction.txnp));
 
     if (resp.status == 200) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_200]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_200]->Increment();
     } else if (resp.status == 206) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_206]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_206]->Increment();
     } else if (resp.status == 404) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_404]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_404]->Increment();
     } else if (resp.status == 504) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_504]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_504]->Increment();
     } else if (resp.status >= 200 && resp.status < 300) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_2xx]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_2xx]->Increment();
     } else if (resp.status >= 300 && resp.status < 400) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_3xx]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_3xx]->Increment();
     } else if (resp.status >= 400 && resp.status < 500) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_4xx]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_4xx]->Increment();
     } else if (resp.status >= 500 && resp.status < 600) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_5xx]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_5xx]->Increment();
     }
 
     if (transaction.aborted()) {
-      instance.metrics[Bundle::PROPSTAT_CLIENT_ABORTED_REQUESTS]->increment();
+      instance.metrics[Bundle::PROPSTAT_CLIENT_ABORTED_REQUESTS]->Increment();
     } else {
-      instance.metrics[Bundle::PROPSTAT_CLIENT_COMPLETED_REQUESTS]->increment();
+      instance.metrics[Bundle::PROPSTAT_CLIENT_COMPLETED_REQUESTS]->Increment();
     }
   }
 }
@@ -169,7 +169,7 @@ LogsMetrics::doCacheLookup(Cript::Context *context)
   // .label(str)
   if (_label.length() > 0) {
     if (status >= 0 && status <= 3) {
-      instance.metrics[status]->increment(); // This assumes the 4 cache stats are first
+      instance.metrics[status]->Increment(); // This assumes the 4 cache stats are first
     }
   }
 }

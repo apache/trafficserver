@@ -33,15 +33,15 @@ do_init()
 
 do_create_instance()
 {
-  instance.metrics[0] = Metrics::Counter::create("cript.example1.c0");
-  instance.metrics[1] = Metrics::Counter::create("cript.example1.c1");
-  instance.metrics[2] = Metrics::Counter::create("cript.example1.c2");
-  instance.metrics[3] = Metrics::Counter::create("cript.example1.c3");
-  instance.metrics[4] = Metrics::Counter::create("cript.example1.c4");
-  instance.metrics[5] = Metrics::Counter::create("cript.example1.c5");
-  instance.metrics[6] = Metrics::Counter::create("cript.example1.c6");
-  instance.metrics[7] = Metrics::Counter::create("cript.example1.c7");
-  instance.metrics[8] = Metrics::Counter::create("cript.example1.c8"); // This one should resize() the storage
+  instance.metrics[0] = Metrics::Counter::Create("cript.example1.c0");
+  instance.metrics[1] = Metrics::Counter::Create("cript.example1.c1");
+  instance.metrics[2] = Metrics::Counter::Create("cript.example1.c2");
+  instance.metrics[3] = Metrics::Counter::Create("cript.example1.c3");
+  instance.metrics[4] = Metrics::Counter::Create("cript.example1.c4");
+  instance.metrics[5] = Metrics::Counter::Create("cript.example1.c5");
+  instance.metrics[6] = Metrics::Counter::Create("cript.example1.c6");
+  instance.metrics[7] = Metrics::Counter::Create("cript.example1.c7");
+  instance.metrics[8] = Metrics::Counter::Create("cript.example1.c8"); // This one should resize() the storage
 
   Bundle::Common::Activate().dscp(10);
   Bundle::Caching::Activate().cache_control("max-age=259200");
@@ -189,10 +189,10 @@ do_remap()
   // Regular expressions
   static Matcher::PCRE pcre("^/([^/]+)/(.*)$");
 
-  auto res = pcre.match("/foo/bench/bar"); // Can also call contains(), same thing
+  auto res = pcre.Match("/foo/bench/bar"); // Can also call contains(), same thing
 
   if (res) {
-    CDebug("Ovector count is {}", res.count());
+    CDebug("Ovector count is {}", res.Count());
     CDebug("First capture is {}", res[1]);
     CDebug("Second capture is {}", res[2]);
   } else {
@@ -244,12 +244,12 @@ do_remap()
   static auto m1 = Metrics::Gauge("cript.example1.m1");
   static auto m2 = Metrics::Counter("cript.example1.m2");
 
-  m1.increment(100);
-  m1.decrement(10);
-  m2.increment();
+  m1.Increment(100);
+  m1.Decrement(10);
+  m2.Increment();
 
-  instance.metrics[0]->increment();
-  instance.metrics[8]->increment();
+  instance.metrics[0]->Increment();
+  instance.metrics[8]->Increment();
 }
 
 #include <cripts/Epilogue.hpp>

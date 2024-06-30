@@ -240,3 +240,37 @@ Using the ``UUID`` object is simple, via the ``Get()`` method. Here's an example
 
      resp["X-UUID"] = UUID::Unique::Get();
    }
+
+.. _cripts-metrics
+
+Metrics
+=======
+
+Cripts metrics are built directly on top of the atomic core ATS metrics. As such, they not only
+work the same as the core metrics, but they are also as efficient. There are two types of metrics:
+
+=========================   =======================================================================
+Metric                      Description
+=========================   =======================================================================
+``Metric::Counter``         A simple counter, which can only be incremented.
+``Metric::Gauge``           A gauge, which can be incremented and decremented, and set to a value.
+=========================   =======================================================================
+
+Example:
+
+.. code-block:: cpp
+
+   do_create_instance()
+   {
+     instance.metrics[0] = Metrics::Counter::Create("cript.example1.instance_calls");
+   }
+
+   do_remap()
+   {
+     static auto plugin_metric = Metrics::Counter("cript.example1.plugin_calls");
+
+     plugin_metric.Increment();
+     instance.metrics[0]->Increment();
+   }
+
+A ``Metric::Gauge`` can also be set via the ``Setter()`` method.
