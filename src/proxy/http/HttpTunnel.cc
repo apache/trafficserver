@@ -42,6 +42,9 @@
 #include "tscore/ParseRules.h"
 #include "tscore/ink_memory.h"
 
+#include <algorithm>
+#include <cstdint>
+
 namespace
 {
 DbgCtl dbg_ctl_http_chunk{"http_chunk"};
@@ -143,14 +146,14 @@ ChunkedHandler::set_max_chunk_size(int64_t size)
   max_chunk_header_len = snprintf(max_chunk_header, sizeof(max_chunk_header), CHUNK_HEADER_FMT, max_chunk_size);
 }
 
-void
+int64_t
 ChunkedHandler::read_size()
 {
-  int64_t bytes_used;
+  int64_t bytes_used = 0;
   bool    done = false;
   int     cr   = 0;
 
-  while (chunked_reader->read_avail() > 0 && !done) {
+  while (chunked_reader->is_read_avail_more_than(0) && !done) {
     const char *tmp       = chunked_reader->start();
     int64_t     data_size = chunked_reader->block_read_avail();
 
@@ -231,6 +234,7 @@ ChunkedHandler::read_size()
     }
     chunked_reader->consume(bytes_used);
   }
+  return bytes_used;
 }
 
 // int ChunkedHandler::transfer_bytes()
@@ -252,7 +256,7 @@ ChunkedHandler::transfer_bytes()
       chunked_size += moved;
     }
     chunked_reader->consume(moved);
-    cur_chunk_bytes_left = cur_chunk_bytes_left - moved;
+    cur_chunk_bytes_left -= moved;
     return moved;
   }
 
@@ -286,10 +290,10 @@ ChunkedHandler::transfer_bytes()
   return total_moved;
 }
 
-void
+int64_t
 ChunkedHandler::read_chunk()
 {
-  int64_t b = transfer_bytes();
+  int64_t transferred_bytes = transfer_bytes();
 
   ink_assert(cur_chunk_bytes_left >= 0);
   if (cur_chunk_bytes_left == 0) {
@@ -297,15 +301,16 @@ ChunkedHandler::read_chunk()
 
     state = CHUNK_READ_SIZE_START;
   } else if (cur_chunk_bytes_left > 0) {
-    Dbg(dbg_ctl_http_chunk, "read %" PRId64 " bytes of an %" PRId64 " chunk", b, cur_chunk_size);
+    Dbg(dbg_ctl_http_chunk, "read %" PRId64 " bytes of an %" PRId64 " chunk", transferred_bytes, cur_chunk_size);
   }
+  return transferred_bytes;
 }
 
-void
+int64_t
 ChunkedHandler::read_trailer()
 {
-  int64_t bytes_used;
-  bool    done = false;
+  int64_t bytes_used = 0;
+  bool    done       = false;
 
   while (chunked_reader->is_read_avail_more_than(0) && !done) {
     const char *tmp       = chunked_reader->start();
@@ -350,42 +355,46 @@ ChunkedHandler::read_trailer()
     }
     chunked_reader->consume(bytes_used);
   }
+  return bytes_used;
 }
 
-bool
+std::pair<int64_t, bool>
 ChunkedHandler::process_chunked_content()
 {
+  int64_t bytes_read = 0;
   while (chunked_reader->is_read_avail_more_than(0) && state != CHUNK_READ_DONE && state != CHUNK_READ_ERROR) {
     switch (state) {
     case CHUNK_READ_SIZE:
     case CHUNK_READ_SIZE_CRLF:
     case CHUNK_READ_SIZE_START:
-      read_size();
+      bytes_read += read_size();
       break;
     case CHUNK_READ_CHUNK:
-      read_chunk();
+      bytes_read += read_chunk();
       break;
     case CHUNK_READ_TRAILER_BLANK:
     case CHUNK_READ_TRAILER_CR:
     case CHUNK_READ_TRAILER_LINE:
-      read_trailer();
+      bytes_read += read_trailer();
       break;
     case CHUNK_FLOW_CONTROL:
-      return false;
+      return std::make_pair(bytes_read, false);
     default:
       ink_release_assert(0);
       break;
     }
   }
-  return (state == CHUNK_READ_DONE || state == CHUNK_READ_ERROR);
+  auto const done = (state == CHUNK_READ_DONE || state == CHUNK_READ_ERROR);
+  return std::make_pair(bytes_read, done);
 }
 
-bool
+std::pair<int64_t, bool>
 ChunkedHandler::generate_chunked_content()
 {
   char    tmp[16];
   bool    server_done = false;
   int64_t r_avail;
+  int64_t consumed_bytes = 0;
 
   ink_assert(max_chunk_header_len);
 
@@ -426,6 +435,7 @@ ChunkedHandler::generate_chunked_content()
     chunked_buffer->write(dechunked_reader, write_val);
     chunked_size += write_val;
     dechunked_reader->consume(write_val);
+    consumed_bytes += write_val;
 
     // Output the trailing CRLF.
     chunked_buffer->write("\r\n", 2);
@@ -438,9 +448,9 @@ ChunkedHandler::generate_chunked_content()
     // Add the chunked transfer coding trailer.
     chunked_buffer->write("0\r\n\r\n", 5);
     chunked_size += 5;
-    return true;
+    return std::make_pair(consumed_bytes, true);
   }
-  return false;
+  return std::make_pair(consumed_bytes, false);
 }
 
 HttpTunnelProducer::HttpTunnelProducer() : consumer_list() {}
@@ -690,7 +700,7 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
   ink_assert(reader_start->mbuf);
   if ((p = alloc_producer()) != nullptr) {
     p->vc              = vc;
-    p->nbytes          = nbytes_arg;
+    p->total_bytes     = nbytes_arg;
     p->buffer_start    = reader_start;
     p->read_buffer     = reader_start->mbuf;
     p->vc_handler      = sm_handler;
@@ -702,22 +712,23 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
     p->do_dechunking       = false;
     p->do_chunked_passthru = false;
 
-    p->init_bytes_done = reader_start->read_avail();
-    if (p->nbytes < 0) {
-      p->ntodo = p->nbytes;
+    p->init_bytes_done = p->buffer_start->read_avail();
+    if (p->total_bytes < 0 || p->total_bytes == INT64_MAX) {
+      p->total_bytes = INT64_MAX; // A negative nbytes_arg is a synonym for INT64_MAX.
+      p->ntodo       = INT64_MAX;
     } else { // The byte count given us includes bytes
       //  that already may be in the buffer.
       //  ntodo represents the number of bytes
       //  the tunneling mechanism needs to read
       //  for the producer
-      p->ntodo = p->nbytes - p->init_bytes_done;
+      p->ntodo = std::max(p->total_bytes - p->init_bytes_done, INT64_C(0));
       ink_assert(p->ntodo >= 0);
     }
 
     // We are static, the producer is never "alive"
     //   It just has data in the buffer
     if (vc == HTTP_TUNNEL_STATIC_PRODUCER) {
-      ink_assert(p->ntodo == 0);
+      ink_assert(p->ntodo >= 0);
       p->alive        = false;
       p->read_success = true;
     } else {
@@ -858,9 +869,15 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       }
     }
   }
+  if (!p->is_handling_chunked_content()) {
+    // If we are not handling chunked content, then we will be consuming all the
+    // bytes available in the reader, up until the total bytes that the tunnel
+    // will be processing.
+    p->bytes_consumed += std::min(p->total_bytes, p->init_bytes_done);
+  }
 
-  int64_t consumer_n;
-  int64_t producer_n;
+  int64_t consumer_n = 0;
+  int64_t producer_n = 0;
 
   ink_assert(p->vc != nullptr);
   active = true;
@@ -868,7 +885,10 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   IOBufferReader *chunked_buffer_start     = nullptr;
   IOBufferReader *dechunked_buffer_start   = nullptr;
   IOBufferReader *passthrough_buffer_start = nullptr;
-  if (p->do_chunking || p->do_dechunking || p->do_chunked_passthru) {
+  if (p->is_handling_chunked_content()) {
+    // For all the chunking cases, we must only copy bytes as we process them.
+    body_bytes_to_copy = 0;
+
     p->chunked_handler.init(p->buffer_start, p, this->http_drop_chunked_trailers);
 
     // Copy the header into the chunked/dechunked buffers.
@@ -902,15 +922,21 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
   int64_t read_start_pos = 0;
   if (p->vc_type == HT_CACHE_READ && sm->t_state.range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
-    ink_assert(sm->t_state.num_range_fields == 1); // we current just support only one range entry
+    ink_assert(sm->t_state.num_range_fields == 1); // we currently just support only one range entry
     read_start_pos = sm->t_state.ranges[0]._start;
     producer_n     = (sm->t_state.ranges[0]._end - sm->t_state.ranges[0]._start) + 1;
     consumer_n     = (producer_n + sm->client_response_hdr_bytes);
-  } else if (p->nbytes >= 0) {
-    consumer_n = p->nbytes;
+  } else if (p->total_bytes >= 0) {
+    consumer_n = p->total_bytes;
     producer_n = p->ntodo;
   } else {
     consumer_n = (producer_n = INT64_MAX);
+  }
+
+  if (!p->is_handling_chunked_content()) {
+    // No chunking being handled, so the user specified a number of bytes
+    // described by Content-Length. Use that value.
+    body_bytes_to_copy = producer_n - body_bytes_copied;
   }
 
   // At least set up the consumer readers first so the data
@@ -947,9 +973,9 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
     }
 
-    // Consume bytes of the reader if we skipping bytes
+    // Consume bytes from the reader if we are skipping bytes.
     if (c->skip_bytes > 0) {
-      ink_assert(c->skip_bytes <= c->buffer_reader->read_avail());
+      ink_release_assert(c->skip_bytes <= c->buffer_reader->read_avail());
       c->buffer_reader->consume(c->skip_bytes);
     }
   }
@@ -972,7 +998,8 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
         return;
       }
     } else {
-      sm->postbuf_copy_partial_data();
+      body_bytes_copied  += sm->postbuf_copy_partial_data(body_bytes_to_copy);
+      body_bytes_to_copy  = 0;
     }
   } // end of added logic for partial POST
 
@@ -980,6 +1007,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     // remove the chunked reader marker so that it doesn't act like a buffer guard
     p->chunked_handler.chunked_buffer->dealloc_reader(chunked_buffer_start);
     p->chunked_handler.dechunked_reader->consume(p->chunked_handler.skip_bytes);
+    p->bytes_consumed += p->chunked_handler.skip_bytes;
 
     // If there is data to process in the buffer, do it now
     producer_handler(VC_EVENT_READ_READY, p);
@@ -998,12 +1026,10 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
         p->chunked_handler.chunked_reader->read_avail());
     if (!transform_consumer && (p->chunked_handler.chunked_reader->read_avail() >= p->chunked_handler.skip_bytes)) {
       p->chunked_handler.chunked_reader->consume(p->chunked_handler.skip_bytes);
+      p->bytes_consumed += p->chunked_handler.skip_bytes;
       Dbg(dbg_ctl_http_tunnel, "[producer_run] do_dechunking p->chunked_handler.skip_bytes = %" PRId64 "",
           p->chunked_handler.skip_bytes);
     }
-    // if(p->chunked_handler.chunked_reader->read_avail() > 0)
-    // p->chunked_handler.chunked_reader->consume(
-    // p->chunked_handler.skip_bytes);
 
     producer_handler(VC_EVENT_READ_READY, p);
     if (sm->get_postbuf_done() && p->vc_type == HT_HTTP_CLIENT) { // read_avail() == 0
@@ -1129,8 +1155,11 @@ HttpTunnel::producer_handler_dechunked(int event, HttpTunnelProducer *p)
     p->alive = false; // Update the producer state for final_consumer_bytes_to_write
     /* fallthrough */
   case VC_EVENT_READ_READY:
-    p->last_event = p->chunked_handler.last_server_event = event;
-    if (p->chunked_handler.generate_chunked_content()) { // We are done, make sure the consumer is activated
+    p->last_event = p->chunked_handler.last_server_event  = event;
+    auto const [consumed_bytes, done]                     = p->chunked_handler.generate_chunked_content();
+    p->bytes_consumed                                    += consumed_bytes;
+    body_bytes_to_copy                                    = consumed_bytes;
+    if (done) { // We are done, make sure the consumer is activated
       HttpTunnelConsumer *c;
       for (c = p->consumer_list.head; c; c = c->link.next) {
         if (c->alive) {
@@ -1173,8 +1202,10 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
     return event;
   }
 
-  p->last_event = p->chunked_handler.last_server_event = event;
-  bool done                                            = p->chunked_handler.process_chunked_content();
+  p->last_event = p->chunked_handler.last_server_event  = event;
+  auto const [bytes_consumed, done]                     = p->chunked_handler.process_chunked_content();
+  p->bytes_consumed                                    += bytes_consumed;
+  body_bytes_to_copy                                    = bytes_consumed;
 
   // If we couldn't understand the encoding, return
   //   an error
@@ -1228,8 +1259,10 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
 
   // Handle chunking/dechunking/chunked-passthrough if necessary.
   if (p->do_chunking) {
+    // This will update body_bytes_to_copy with the number of bytes copied.
     event = producer_handler_dechunked(event, p);
   } else if (p->do_dechunking || p->do_chunked_passthru) {
+    // This will update body_bytes_to_copy with the number of bytes copied.
     event = producer_handler_chunked(event, p);
   } else {
     p->last_event = event;
@@ -1252,7 +1285,12 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
         event = VC_EVENT_ERROR;
       }
     } else {
-      sm->postbuf_copy_partial_data();
+      if (!p->is_handling_chunked_content()) {
+        // The chunk handlers didn't consume bytes. Pull bytes as needed.
+        body_bytes_to_copy = p->total_bytes - body_bytes_copied;
+      }
+      body_bytes_copied  += sm->postbuf_copy_partial_data(body_bytes_to_copy);
+      body_bytes_to_copy  = 0;
       if (event == VC_EVENT_READ_COMPLETE || event == HTTP_TUNNEL_EVENT_PRECOMPLETE || event == VC_EVENT_EOS) {
         sm->set_postbuf_done(true);
       }
@@ -1281,7 +1319,6 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     // If the write completes on the stack (as it can for http2), then
     // consumer could have called back by this point.  Must treat this as
     // a regular read complete (falling through to the following cases).
-    p->bytes_read = p->init_bytes_done;
     [[fallthrough]];
 
   case VC_EVENT_READ_COMPLETE:
@@ -1290,6 +1327,9 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     p->alive = false;
     if (p->read_vio) {
       p->bytes_read = p->read_vio->ndone;
+      if (!p->is_handling_chunked_content()) {
+        p->bytes_consumed += p->bytes_read;
+      }
     } else {
       // If we are chunked, we can receive the whole document
       //   along with the header without knowing it (due to
@@ -1314,7 +1354,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     for (c = p->consumer_list.head; c; c = c->link.next) {
       if (c->alive && c->write_vio) {
         if (c->write_vio->nbytes == INT64_MAX) {
-          c->write_vio->nbytes = p->bytes_read + p->init_bytes_done - c->skip_bytes;
+          c->write_vio->nbytes = p->bytes_consumed - c->skip_bytes;
         }
         c->write_vio->reenable();
       }
@@ -1329,6 +1369,9 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
       p->alive = false;
       if (p->read_vio) {
         p->bytes_read = p->read_vio->ndone;
+        if (!p->is_handling_chunked_content()) {
+          p->bytes_consumed += p->bytes_read;
+        }
       } else {
         p->bytes_read = 0;
       }
@@ -1553,6 +1596,9 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
     p->alive = false;
     if (p->read_vio) {
       p->bytes_read = p->read_vio->ndone;
+      if (!p->is_handling_chunked_content()) {
+        p->bytes_consumed += p->bytes_read;
+      }
     }
     if (p->self_consumer) {
       p->self_consumer->alive = false;
@@ -1570,8 +1616,8 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
 int64_t
 HttpTunnel::final_consumer_bytes_to_write(HttpTunnelProducer *p, HttpTunnelConsumer *c)
 {
-  int64_t total_bytes = 0;
-  int64_t consumer_n  = 0;
+  int64_t bytes_to_write = 0;
+  int64_t consumer_n     = 0;
   if (p->alive) {
     consumer_n = INT64_MAX;
   } else {
@@ -1581,25 +1627,25 @@ HttpTunnel::final_consumer_bytes_to_write(HttpTunnelProducer *p, HttpTunnelConsu
         switch (action) {
         case TCA_CHUNK_CONTENT:
         case TCA_PASSTHRU_DECHUNKED_CONTENT:
-          total_bytes = p->bytes_read + p->init_bytes_done;
+          bytes_to_write = p->bytes_consumed;
           break;
         case TCA_DECHUNK_CONTENT:
         case TCA_PASSTHRU_CHUNKED_CONTENT:
-          total_bytes = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
+          bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
           break;
         default:
           break;
         }
       } else if (action == TCA_CHUNK_CONTENT) {
-        total_bytes = p->chunked_handler.skip_bytes + p->chunked_handler.chunked_size;
+        bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.chunked_size;
       } else if (action == TCA_DECHUNK_CONTENT) {
-        total_bytes = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
+        bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
       } else if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
-        total_bytes = p->bytes_read + p->init_bytes_done;
+        bytes_to_write = p->bytes_consumed;
       } else {
-        total_bytes = p->bytes_read + p->init_bytes_done;
+        bytes_to_write = p->bytes_consumed;
       }
-      consumer_n = total_bytes - c->skip_bytes;
+      consumer_n = bytes_to_write - c->skip_bytes;
     }
   }
   return consumer_n;
@@ -1621,12 +1667,10 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
   TunnelChunkingAction_t action      = p->chunking_action;
 
   if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
-    // if the only chunked data was in the initial read, make sure we don't consume too much
+    // Verify that we consumed the number of bytes we accounted for via p->bytes_consumed.
     if (p->bytes_read == 0 && p->buffer_start != nullptr) {
       int num_read = p->buffer_start->read_avail() - p->chunked_handler.chunked_reader->read_avail();
-      if (num_read < p->init_bytes_done) {
-        p->init_bytes_done = num_read;
-      }
+      ink_release_assert(num_read == p->bytes_consumed);
     }
   }
 
@@ -1721,6 +1765,9 @@ HttpTunnel::close_vc(HttpTunnelConsumer *c)
     p->alive = false;
     if (p->read_vio) {
       p->bytes_read = p->read_vio->ndone;
+      if (!p->is_handling_chunked_content()) {
+        p->bytes_consumed += p->bytes_read;
+      }
     }
   }
 
