@@ -23,6 +23,7 @@
 
 #include "tscore/ink_config.h"
 #include "FetchSM.h"
+#include <cstdint>
 #include <cstdio>
 #include "HTTP.h"
 #include "PluginVC.h"
@@ -229,7 +230,7 @@ FetchSM::dechunk_body()
   //  - TS_FETCH_EVENT_EXT_BODY_READY.
   //  - TS_FETCH_EVENT_EXT_BODY_DONE.
   //
-  if (chunked_handler.process_chunked_content()) {
+  if (auto const [_, done] = chunked_handler.process_chunked_content(); done) {
     return TS_FETCH_EVENT_EXT_BODY_DONE;
   }
 

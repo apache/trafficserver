@@ -972,10 +972,8 @@ HttpSM::wait_for_full_body()
   // Next order of business if copy the remaining data from the
   //  header buffer into new buffer
   int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
-  client_request_body_bytes =
-    post_buffer->write(ua_txn->get_remote_reader(), chunked ? ua_txn->get_remote_reader()->read_avail() : post_bytes);
+  post_buffer->write(ua_txn->get_remote_reader(), chunked ? ua_txn->get_remote_reader()->read_avail() : post_bytes);
 
-  ua_txn->get_remote_reader()->consume(client_request_body_bytes);
   p = tunnel.add_producer(ua_entry->vc, post_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_BUFFER_READ, "ua post buffer");
   if (chunked) {
     bool const drop_chunked_trailers = t_state.http_config_param->oride.http_drop_chunked_trailers == 1;
@@ -3632,7 +3630,24 @@ int
 HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post_ua, event);
-  client_request_body_bytes = p->init_bytes_done + p->bytes_read;
+
+  // Now that the tunnel is done, it can tell us how many bytes were in the
+  // body.
+  if (client_request_body_bytes == 0) {
+    // This is invoked multiple times for a transaction when buffering request
+    // body data, so we only call this the first time when
+    // client_request_body_bytes is 0.
+    client_request_body_bytes     = p->bytes_consumed;
+    IOBufferReader *client_reader = ua_txn->get_remote_reader();
+    // p->bytes_consumed represents the number of body bytes the tunnel parsed
+    // and consumed from the client. However, not all those bytes may have been
+    // written to our _ua client transaction reader. We must not consume past
+    // the number of bytes available.
+    int64_t const bytes_to_consume = std::min(p->bytes_consumed, client_reader->read_avail());
+    SMDebug("http_tunnel", "Consuming %" PRId64 " bytes from client reader with p->bytes_consumed: %" PRId64 " available: %" PRId64,
+            bytes_to_consume, p->bytes_consumed, client_reader->read_avail());
+    client_reader->consume(bytes_to_consume);
+  }
 
   switch (event) {
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -6094,8 +6109,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     IOBufferReader *postdata_producer_reader = postdata_producer_buffer->alloc_reader();
 
     postdata_producer_buffer->write(this->_postbuf.postdata_copy_buffer_start);
-    int64_t post_bytes = postdata_producer_reader->read_avail();
-    transfered_bytes   = post_bytes;
+    int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
+    transferred_bytes  = post_bytes;
     p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, postdata_producer_reader, (HttpProducerHandler) nullptr,
                             HT_STATIC, "redirect static agent post");
   } else {
@@ -6124,12 +6139,16 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
 
     // Next order of business if copy the remaining data from the
     //  header buffer into new buffer
-    client_request_body_bytes =
-      post_buffer->write(ua_txn->get_remote_reader(), chunked ? ua_txn->get_remote_reader()->read_avail() : post_bytes);
 
-    ua_txn->get_remote_reader()->consume(client_request_body_bytes);
-    p = tunnel.add_producer(ua_entry->vc, post_bytes - transfered_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT,
-                            "user agent post");
+    // If is_using_post_buffer has been used, then client_request_body_bytes
+    // will have already been sent in wait_for_full_body and there will be
+    // zero bytes in this user agent buffer. We don't want to clobber
+    // client_request_body_bytes with a zero value here in those cases.
+    if (client_request_body_bytes <= 0) {
+      post_buffer->write(ua_txn->get_remote_reader(), chunked ? ua_txn->get_remote_reader()->read_avail() : post_bytes);
+    }
+    p = tunnel.add_producer(ua_entry->vc, post_bytes - transferred_bytes, buf_start, &HttpSM::tunnel_handler_post_ua,
+                            HT_HTTP_CLIENT, "user agent post");
   }
   ua_entry->in_tunnel = true;
 
@@ -6846,6 +6865,8 @@ HttpSM::server_transfer_init(MIOBuffer *buf, int hdr_size)
     //  we'll get is already in the buffer
     nbytes = server_txn->get_remote_reader()->read_avail() + hdr_size;
   } else if (t_state.hdr_info.response_content_length == HTTP_UNDEFINED_CL) {
+    // Chunked or otherwise, no length is defined. Pass -1 to tell the
+    // tunnel that the size is unknown.
     nbytes = -1;
   } else {
     //  Set to copy to the number of bytes we want to write as
@@ -8563,16 +8584,18 @@ HttpSM::rewind_state_machine()
 
 // YTS Team, yamsat Plugin
 // Function to copy the partial Post data while tunnelling
-void
-PostDataBuffers::copy_partial_post_data()
+int64_t
+PostDataBuffers::copy_partial_post_data(int64_t consumed_bytes)
 {
   if (post_data_buffer_done) {
-    return;
+    return 0;
   }
-  Debug("http_redirect", "[PostDataBuffers::copy_partial_post_data] wrote %" PRId64 " bytes to buffers %" PRId64 "",
-        this->ua_buffer_reader->read_avail(), this->postdata_copy_buffer_start->read_avail());
-  this->postdata_copy_buffer->write(this->ua_buffer_reader);
-  this->ua_buffer_reader->consume(this->ua_buffer_reader->read_avail());
+  int64_t const bytes_to_copy = std::min(consumed_bytes, this->ua_buffer_reader->read_avail());
+  Debug("http_redirect", "given %" PRId64 " bytes consumed, copying %" PRId64 " bytes to buffers with %" PRId64 " available bytes",
+        consumed_bytes, bytes_to_copy, this->ua_buffer_reader->read_avail());
+  this->postdata_copy_buffer->write(this->ua_buffer_reader, bytes_to_copy);
+  this->ua_buffer_reader->consume(bytes_to_copy);
+  return bytes_to_copy;
 }
 
 IOBufferReader *

@@ -112,7 +112,14 @@ struct ChunkedHandler {
    */
   bool drop_chunked_trailers = false;
 
-  bool truncation    = false;
+  bool truncation = false;
+
+  /** The number of bytes to skip from the reader because they are not body bytes.
+   *
+   * These skipped bytes are generally header bytes. We copy these in for any
+   * internal buffers we'll send to consumers, but skip them when parsing body
+   * bytes.
+   */
   int64_t skip_bytes = 0;
 
   ChunkedState state           = CHUNK_READ_CHUNK;
@@ -145,14 +152,54 @@ struct ChunkedHandler {
   /// If @a size is zero it is set to @c DEFAULT_MAX_CHUNK_SIZE.
   void set_max_chunk_size(int64_t size);
 
-  // Returns true if complete, false otherwise
-  bool process_chunked_content();
-  bool generate_chunked_content();
+  /** Consumes and processes chunked content.
+   *
+   * This consumes data from @a chunked_reader and, if dechunking, writes the
+   * dechunked body to @a dechunked_buffer.
+   *
+   * @return The number of bytes consumed from the chunked reader and true if
+   * the entire chunked content is processed, false otherwise.
+   */
+  std::pair<int64_t, bool> process_chunked_content();
+
+  /** Writes chunked content.
+   *
+   * This reads from @a dechunked_reader and writes chunked formatted content to
+   * @a chunked_buffer.
+   *
+   * @return The number of bytes consumed from the dechunked reader and true if
+   * the entire chunked content is written, false otherwise.
+   */
+  std::pair<int64_t, bool> generate_chunked_content();
 
 private:
-  void read_size();
-  void read_chunk();
-  void read_trailer();
+  /** Read a chunk header containing the size of the chunk.
+   *
+   * @return The number of bytes consumed from the chunked buffer reader.
+   */
+  int64_t read_size();
+
+  /** Read a chunk body.
+   *
+   * This is called after read_size so that the chunk size is known.
+   *
+   * @return The number of bytes consumed from the chunked buffer reader.
+   */
+  int64_t read_chunk();
+
+  /** Read a chunk trailer.
+   *
+   * @return The number of bytes consumed from the chunked buffer reader.
+   */
+  int64_t read_trailer();
+
+  /** Transfer body bytes from the chunked reader.
+   *
+   * This will either simply consume the chunked body bytes in the case of
+   * chunked passthrough, or transfer the chunked body to the dechunked buffer.
+   *
+   * @return The number of bytes consumed from the chunked buffer reader.
+   */
   int64_t transfer_bytes();
 
   constexpr static std::string_view FINAL_CRLF = "\r\n";
@@ -209,12 +256,51 @@ struct HttpTunnelProducer {
   bool do_dechunking       = false;
   bool do_chunked_passthru = false;
 
-  int64_t init_bytes_done = 0; // bytes passed in buffer
-  int64_t nbytes          = 0; // total bytes (client's perspective)
-  int64_t ntodo           = 0; // what this vc needs to do
-  int64_t bytes_read      = 0; // total bytes read from the vc
-  int handler_state       = 0; // state used the handlers
-  int last_event          = 0; ///< Tracking for flow control restarts.
+  /** The number of bytes available in the reader at the start of the tunnel.
+   *
+   * @note In the case of pipelined requests, not all these bytes should be used.
+   */
+  int64_t init_bytes_done = 0;
+
+  /** The total number of bytes read from the reader, including any @a skip_bytes.
+   *
+   * In straightforward cases where @a total_bytes is specified (non-INT64_MAX),
+   * these should wind up being the same as @a total_bytes. For unspecified,
+   * generally chunked content, this will be the number of bytes actually
+   * consumed from the reader.
+   *
+   * @note that in the case of pipelined requests, this may be less than @a
+   * init_bytes_done because some of those bytes might be for a future request
+   * rather than for this body/tunnel.
+   */
+  int64_t bytes_consumed = 0;
+
+  /** The total number of bytes to be transferred through the tunnel.
+   *
+   * This will include any bytes skipped at the start of the tunnel.
+   *
+   * @note This is set by the creator of the tunnel and in the simple case the
+   * value is precisely known via a Content-Length header value. However, a user
+   * may set this to INT64_MAX or any negative value to indicate that the total
+   * is unknown at the start of the tunnel (such as is the case with chunked
+   * encoded content).
+   */
+  int64_t total_bytes = 0;
+
+  /** The number of bytes still to read after @a init_bytes_done to reach @a
+   * total_bytes.
+   *
+   * A value of zero indicates that all the required bytes have already been
+   * read off the socket. @a ntodo will be used to indicate how much more we
+   * have to read.
+   */
+  int64_t ntodo = 0;
+
+  /** The number of bytes read from the vc since the start of the tunnel. */
+  int64_t bytes_read = 0;
+
+  int handler_state = 0; // state used the handlers
+  int last_event    = 0; ///< Tracking for flow control restarts.
 
   int num_consumers = 0;
 
@@ -232,6 +318,12 @@ struct HttpTunnelProducer {
    */
   uint64_t backlog(uint64_t limit = UINT64_MAX ///< More than this is irrelevant
   );
+  /** Indicate whether this producer is handling some kind of chunked content.
+   *
+   * @return True if this producer is handling chunked content, false
+   * otherwise.
+   */
+  bool is_handling_chunked_content() const;
   /// Check if producer is original (to ATS) source of data.
   /// @return @c true if this producer is the source of bytes from outside ATS.
   bool is_source() const;
@@ -301,10 +393,12 @@ public:
   /// A named variable for the @a drop_chunked_trailers parameter to @a set_producer_chunking_action.
   static constexpr bool DROP_CHUNKED_TRAILERS = true;
 
-  /** Configure how the producer should behave with chunked content.
-   * @param[in] p Producer to configure.
-   * @param[in] skip_bytes Number of bytes to skip at the beginning of the stream (typically the headers).
-   * @param[in] action Action to take with the chunked content.
+  /** Designate chunking behavior to the producer.
+   *
+   * @param[in] producer The producer being configured.
+   * @param[in] skip_bytes The number of bytes to consume off the stream before
+   * any chunked data is encountered. These are generally header bytes, if any.
+   * @param[in] action The chunking behavior to enact on incoming bytes.
    * @param[in] drop_chunked_trailers If @c true, chunked trailers are filtered
    *   out. Logically speaking, this is only applicable when proxying chunked
    *   content, thus only when @a action is @c TCA_PASSTHRU_CHUNKED_CONTENT.
@@ -388,6 +482,21 @@ private:
 
   /// Corresponds to proxy.config.http.drop_chunked_trailers having a value of 1.
   bool http_drop_chunked_trailers = false;
+
+  /** The number of body bytes processed in this last execution of the tunnel.
+   *
+   * This accounting is used to determine how many bytes to copy into the body
+   * buffer via HttpSM::postbuf_copy_partial_data.
+   */
+  int64_t body_bytes_to_copy = 0;
+
+  /** The cumulative number of bytes that all calls to
+   * HttpSM::post_copy_partial_data have copied.
+   *
+   * This is recorded so we don't copy more bytes than the creator of the tunnel
+   * told us to via nbytes.
+   */
+  int64_t body_bytes_copied = 0;
 };
 
 ////
@@ -542,7 +651,7 @@ HttpTunnel::append_message_to_producer_buffer(HttpTunnelProducer *p, const char 
   }
 
   p->read_buffer->write(msg, msg_len);
-  p->nbytes += msg_len;
+  p->total_bytes += msg_len;
   p->bytes_read += msg_len;
 }
 
@@ -607,6 +716,12 @@ inline bool
 HttpTunnelConsumer::is_sink() const
 {
   return HT_HTTP_CLIENT == vc_type || HT_CACHE_WRITE == vc_type;
+}
+
+inline bool
+HttpTunnelProducer::is_handling_chunked_content() const
+{
+  return do_chunking || do_dechunking || do_chunked_passthru;
 }
 
 inline bool

@@ -179,7 +179,7 @@ public:
 
   void clear();
   void init(IOBufferReader *ua_reader);
-  void copy_partial_post_data();
+  int64_t copy_partial_post_data(int64_t consumed_bytes);
   IOBufferReader *get_post_data_buffer_clone_reader();
   void
   set_post_data_buffer_done(bool done)
@@ -313,8 +313,8 @@ public:
   bool debug_on           = false; // Transaction specific debug flag
   char *redirect_url    = nullptr; // url for force redirect (provide users a functionality to redirect to another url when needed)
   int redirect_url_len  = 0;
-  int redirection_tries = 0;    // To monitor number of redirections
-  int64_t transfered_bytes = 0; // Added to calculate POST data
+  int redirection_tries = 0;     // To monitor number of redirections
+  int64_t transferred_bytes = 0; // Added to calculate POST data
 
   // Tunneling request to plugin
   HttpPluginTunnel_t plugin_tunnel_type = HTTP_NO_PLUGIN_TUNNEL;
@@ -331,7 +331,7 @@ public:
   int64_t postbuf_buffer_avail();
   void postbuf_clear();
   void disable_redirect();
-  void postbuf_copy_partial_data();
+  int64_t postbuf_copy_partial_data(int64_t consumed_bytes);
   void postbuf_init(IOBufferReader *ua_reader);
   void set_postbuf_done(bool done);
   IOBufferReader *get_postbuf_clone_reader();
@@ -750,10 +750,10 @@ HttpSM::disable_redirect()
   this->_postbuf.clear();
 }
 
-inline void
-HttpSM::postbuf_copy_partial_data()
+inline int64_t
+HttpSM::postbuf_copy_partial_data(int64_t consumed_bytes)
 {
-  this->_postbuf.copy_partial_post_data();
+  return this->_postbuf.copy_partial_post_data(consumed_bytes);
 }
 
 inline void
