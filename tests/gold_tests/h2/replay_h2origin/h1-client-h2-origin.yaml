@@ -314,7 +314,7 @@ sessions:
             encoding: esc_json
             fields:
               - [ Host, data.brian.example.com ]
-              - [ Content-Length, 3200 ]
+              - [ Transfer-Encoding, chunked ]
           content:
             encoding: plain
             size: 3200
