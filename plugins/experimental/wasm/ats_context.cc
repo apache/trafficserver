@@ -535,8 +535,8 @@ Context::getBuffer(WasmBufferType type)
 }
 
 WasmResult
-Context::httpCall(std::string_view target, const Pairs &request_headers, std::string_view request_body,
-                  const Pairs &request_trailers, int timeout_millisconds, uint32_t *token_ptr)
+Context::httpCall(std::string_view /* target ATS_UNUSED */, const Pairs &request_headers, std::string_view             request_body,
+                  const Pairs & /* request_trailers ATS_UNUSED */, int /* timeout_millisconds ATS_UNUSED */, uint32_t *token_ptr)
 {
   Wasm    *wasm         = this->wasm();
   Context *root_context = this->root_context();

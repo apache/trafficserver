@@ -22,7 +22,7 @@
 #include <cstring>
 
 bool
-match_hash(const char *needle, const char *haystack)
+match_hash(const char * /* needle ATS_UNUSED */, const char * /* haystack ATS_UNUSED */)
 {
   return false;
 }
