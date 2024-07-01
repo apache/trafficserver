@@ -53,9 +53,9 @@ public:
   // Clear the cached header mloc's etc.
   void reset();
 
-  // Freelist management, a thread_local freelist of Context objects. These are implemented in Lulu.cc.
-  static self_type *factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst);
-  void              release();
+  // This uses the ProxyAllocator to create a new Context object.
+  static self_type *Factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst);
+  void              Release();
 
   // These fields are preserving the parameters as setup in DoRemap()
   Cript::Transaction                       state;
@@ -102,12 +102,12 @@ private:
 // This may be weird, but oh well for now.
 #define Get()               _get(context)
 #define Set(_value)         _set(context, _value)
-#define update()            _update(context)
-#define runRemap()          _runRemap(context)
-#define activate()          _activate(context->p_instance)
-#define transaction         context->state
-#define txn_data            context->data
-#define instance            context->p_instance
+#define Update()            _update(context)
+#define RunRemap()          _runRemap(context)
+#define Activate()          _activate(context->p_instance)
 #define CDebug(...)         context->p_instance.debug(__VA_ARGS__)
 #define CDebugOn()          context->p_instance.debugOn()
 #define DisableCallback(cb) context->state.disableCallback(cb)
+#define transaction         context->state
+#define txn_data            context->data
+#define instance            context->p_instance

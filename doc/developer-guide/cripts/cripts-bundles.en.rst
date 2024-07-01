@@ -34,6 +34,11 @@ turning these common patterns into easily reusable components. A bundle
 must be activated in the ``do_create_instance()`` hook of a Cript. This
 does *not* exclude doing additional hooks in the Cript itself.
 
+.. note::
+   The member variables of a bundle are always lower case, and not
+   Pascal case like methods. This is because even though they technically
+   are functions, they act more like variables with a value.
+
 The following bundles are available in the core today:
 
 ============================   ====================================================================
@@ -56,16 +61,16 @@ This example shows how a Cript would enable both of these bundles with all featu
 
    do_create_instance()
    {
-     Bundle::Common::activate().dscp(10)
+     Bundle::Common::Activate().dscp(10)
                                .via_header("client", "basic")
                                .set_config({{"proxy.config.srv_enabled", 0},
                                             {"proxy.config.http.response_server_str", "ATS"});
 
-     Bundle::LogsMetrics::activate().logsample(100)
+     Bundle::LogsMetrics::Activate().logsample(100)
                                     .tcpinfo(true)
                                     .propstats("example.com");
 
-     Bundle::Caching::activate().cache_control("max-age=259200")
+     Bundle::Caching::Activate().cache_control("max-age=259200")
                                 .disable(true)
 
    }
@@ -123,7 +128,7 @@ operators from the ``header_rewrite`` plugin. For example:
 
    do_create_instance()
    {
-     Bundle::Headers::activate().rm_headers({"X-Header1", "X-Header2"})
+     Bundle::Headers::Activate().rm_headers({"X-Header1", "X-Header2"})
                                 .add_headers({{"X-Header3", "value3"},
                                               {"X-Header4", "%{FROM-URL:PATH}"},
                                               {"X-Header5", "%{ID:UNIQUE}"} });

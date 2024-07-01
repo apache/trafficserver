@@ -26,7 +26,7 @@
 #define DECODED_LEN(len) (((int)ceil((len) / 1.33 + 5)) + 1)
 
 Cript::string
-Crypto::Base64::encode(Cript::string_view str)
+Crypto::Base64::Encode(Cript::string_view str)
 {
   Cript::string ret;
   size_t        encoded_len = 0;
@@ -42,7 +42,7 @@ Crypto::Base64::encode(Cript::string_view str)
 }
 
 Cript::string
-Crypto::Base64::decode(Cript::string_view str)
+Crypto::Base64::Decode(Cript::string_view str)
 {
   Cript::string ret;
   size_t        decoded_len = 0;
@@ -59,7 +59,7 @@ Crypto::Base64::decode(Cript::string_view str)
 }
 
 Cript::string
-Crypto::Escape::encode(Cript::string_view str)
+Crypto::Escape::Encode(Cript::string_view str)
 {
   static const unsigned char map[32] = {
     0xFF, 0xFF, 0xFF,
@@ -94,7 +94,7 @@ Crypto::Escape::encode(Cript::string_view str)
 }
 
 Cript::string
-Crypto::Escape::decode(Cript::string_view str)
+Crypto::Escape::Decode(Cript::string_view str)
 {
   Cript::string ret;
   size_t        decoded_len = 0;
@@ -107,7 +107,7 @@ Crypto::Escape::decode(Cript::string_view str)
 }
 
 Crypto::SHA256
-Crypto::SHA256::encode(Cript::string_view str)
+Crypto::SHA256::Encode(Cript::string_view str)
 {
   SHA256_CTX     ctx;
   Crypto::SHA256 digest;
@@ -120,7 +120,7 @@ Crypto::SHA256::encode(Cript::string_view str)
 }
 
 Crypto::SHA512
-Crypto::SHA512::encode(Cript::string_view str)
+Crypto::SHA512::Encode(Cript::string_view str)
 {
   SHA512_CTX     ctx;
   Crypto::SHA512 digest;
@@ -133,7 +133,7 @@ Crypto::SHA512::encode(Cript::string_view str)
 }
 
 Crypto::MD5
-Crypto::MD5::encode(Cript::string_view str)
+Crypto::MD5::Encode(Cript::string_view str)
 {
   MD5_CTX     ctx;
   Crypto::MD5 digest;
@@ -161,7 +161,7 @@ Crypto::detail::Cipher::_initialize()
 }
 
 void
-Crypto::detail::Cipher::encrypt(Cript::string_view str)
+Crypto::detail::Cipher::Encrypt(Cript::string_view str)
 {
   int len = 0;
 
@@ -176,7 +176,7 @@ Crypto::detail::Cipher::encrypt(Cript::string_view str)
 }
 
 Cript::string_view
-Crypto::detail::Cipher::finalize()
+Crypto::detail::Cipher::Finalize()
 {
   int len = 0;
 
@@ -192,18 +192,18 @@ Crypto::detail::Cipher::finalize()
 }
 
 Crypto::AES256
-Crypto::AES256::encrypt(Cript::string_view str, const unsigned char *key)
+Crypto::AES256::Encrypt(Cript::string_view str, const unsigned char *key)
 {
   Crypto::AES256 crypt(key);
 
-  crypt.encrypt(str);
-  crypt.finalize();
+  crypt.Encrypt(str);
+  crypt.Finalize();
 
   return crypt;
 }
 
 Crypto::HMAC::SHA256
-Crypto::HMAC::SHA256::encrypt(Cript::string_view str, const Cript::string &key)
+Crypto::HMAC::SHA256::Encrypt(Cript::string_view str, const Cript::string &key)
 {
   Crypto::HMAC::SHA256 retval;
 

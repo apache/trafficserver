@@ -36,20 +36,13 @@ public:
     using self_type = Status;
 
   public:
-    Status() = default;
-
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
+    Status() = delete;
+    Status(Header *owner) : _owner(owner) {}
 
     operator integer(); // This should not be explicit, nor const
     self_type &operator=(int status);
 
   private:
-    friend class Header;
-
     Header      *_owner  = nullptr;
     TSHttpStatus _status = TS_HTTP_STATUS_NONE;
 
@@ -60,19 +53,12 @@ public:
     using self_type = Reason;
 
   public:
-    Reason() = default;
-
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
+    Reason() = delete;
+    Reason(Header *owner) : _owner(owner) {}
 
     self_type &operator=(Cript::string_view reason);
 
   private:
-    friend class Header;
-
     Header *_owner = nullptr;
   }; // End class Header::Reason
 
@@ -81,19 +67,12 @@ public:
     using self_type = Body;
 
   public:
-    Body() = default;
-
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
+    Body() = delete;
+    Body(Header *owner) : _owner(owner) {}
 
     self_type &operator=(Cript::string_view body);
 
   private:
-    friend class Header;
-
     Header *_owner = nullptr;
   }; // End class Header::Body
 
@@ -102,65 +81,59 @@ public:
     using self_type = Method;
 
   public:
-    Method() = default;
+    Method() = delete;
     Method(Cript::string_view const &method) : _method(method) {}
     Method(const char *const method, int len)
     {
       _method = Cript::string_view(method, static_cast<Cript::string_view::size_type>(len));
     }
 
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
+    Method(Header *owner) : _owner(owner) {}
 
-    Cript::string_view getSV();
+    Cript::string_view GetSV();
 
-    operator Cript::string_view() { return getSV(); }
+    operator Cript::string_view() { return GetSV(); }
 
     // ToDo: This is a bit weird, but seems needed (for now) to allow for the
     // Header::Method::* constants.
     [[nodiscard]] Cript::string_view::const_pointer
-    data() const
+    Data() const
     {
       CAssert(_method.size() > 0);
       return _method.data();
     }
 
     Cript::string_view::const_pointer
-    data()
+    Data()
     {
-      return getSV().data();
+      return GetSV().data();
     }
 
     Cript::string_view::size_type
-    size()
+    Size()
     {
-      return getSV().size();
+      return GetSV().size();
     }
 
     Cript::string_view::size_type
-    length()
+    Length()
     {
-      return getSV().size();
+      return GetSV().size();
     }
 
     bool
     operator==(Method const &rhs)
     {
-      return getSV().data() == rhs.data();
+      return GetSV().data() == rhs.Data();
     }
 
     bool
     operator!=(Method const &rhs)
     {
-      return getSV().data() != rhs.data();
+      return GetSV().data() != rhs.Data();
     }
 
   private:
-    friend class Header;
-
     Header            *_owner = nullptr;
     Cript::string_view _method;
 
@@ -171,34 +144,29 @@ public:
     using self_type = CacheStatus;
 
   public:
-    CacheStatus() = default;
+    CacheStatus() = delete;
+    CacheStatus(Header *owner) : _owner(owner) {}
 
-    void
-    initialize(Header *owner)
-    {
-      _owner = owner;
-    }
+    Cript::string_view GetSV();
 
-    Cript::string_view getSV();
-
-    operator Cript::string_view() { return getSV(); }
+    operator Cript::string_view() { return GetSV(); }
 
     Cript::string_view::const_pointer
-    data()
+    Data()
     {
-      return getSV().data();
+      return GetSV().data();
     }
 
     Cript::string_view::size_type
-    size()
+    Size()
     {
-      return getSV().size();
+      return GetSV().size();
     }
 
     Cript::string_view::size_type
-    length()
+    Length()
     {
-      return getSV().size();
+      return GetSV().size();
     }
 
   private:
@@ -221,15 +189,7 @@ public:
       }
     }
 
-    void
-    initialize(Cript::string_view name, Cript::string_view value, Header *owner, TSMLoc field_loc)
-    {
-      _setSV(value);
-      _name      = name;
-      _owner     = owner;
-      _field_loc = field_loc;
-    }
-
+  public:
     // Implemented in Headers.cc, they are pretty large
     self_type &operator=(const Cript::string_view str) override;
     self_type &operator=(integer val);
@@ -262,6 +222,17 @@ public:
     }
 
   private:
+    friend class Header;
+
+    void
+    _initialize(Cript::string_view name, Cript::string_view value, Header *owner, TSMLoc field_loc)
+    {
+      _setSV(value);
+      _name      = name;
+      _owner     = owner;
+      _field_loc = field_loc;
+    }
+
     Header            *_owner     = nullptr;
     TSMLoc             _field_loc = nullptr;
     Cript::string_view _name;
@@ -274,7 +245,7 @@ public:
     using self_type  = Name;
 
   public:
-    operator Cript::string_view() const { return getSV(); }
+    operator Cript::string_view() const { return GetSV(); }
 
     self_type &
     operator=(const Cript::string_view str) override
@@ -357,12 +328,14 @@ public:
     static const Iterator _end;
   }; // Class Header::iterator
 
-  ~Header() { reset(); }
+  Header() : status(this), reason(this), body(this), cache(this) {}
+
+  ~Header() { Reset(); }
 
   // Clear anything "cached" in the Url, this is rather draconian, but it's
   // safe...
   void
-  reset()
+  Reset()
   {
     if (_bufp && _hdr_loc) {
       TSHandleMLocRelease(_bufp, TS_NULL_MLOC, _hdr_loc);
@@ -372,25 +345,14 @@ public:
     _state = nullptr;
   }
 
-  virtual void
-  initialize(Cript::Transaction *state)
-  {
-    _state = state;
-
-    status.initialize(this);
-    reason.initialize(this);
-    body.initialize(this);
-    cache.initialize(this);
-  }
-
   [[nodiscard]] TSMBuffer
-  bufp() const
+  BufP() const
   {
     return _bufp;
   }
 
   [[nodiscard]] TSMLoc
-  mloc() const
+  MLoc() const
   {
     return _hdr_loc;
   }
@@ -398,13 +360,13 @@ public:
   String operator[](const Cript::string_view str);
 
   [[nodiscard]] bool
-  initialized() const
+  Initialized() const
   {
     return (_state != nullptr);
   }
 
   void
-  erase(const Cript::string_view header)
+  Erase(const Cript::string_view header)
   {
     operator[](header) = "";
   }
@@ -424,6 +386,12 @@ public:
   CacheStatus cache;
 
 protected:
+  void
+  _initialize(Cript::Transaction *state)
+  {
+    _state = state;
+  }
+
   TSMBuffer           _bufp         = nullptr;
   TSMLoc              _hdr_loc      = nullptr;
   Cript::Transaction *_state        = nullptr; // Pointer into the owning Context's State
@@ -438,17 +406,9 @@ class RequestHeader : public Header
   using self_type  = RequestHeader;
 
 public:
-  RequestHeader() = default;
-
-  void
-  initialize(Cript::Transaction *state) override
-  {
-    Header::initialize(state);
-    method.initialize(this);
-  }
+  RequestHeader() : method(this) {} // Special case since only this header has a method
 
   Method method;
-
 }; // End class RequestHeader
 
 class ResponseHeader : public Header
@@ -566,7 +526,7 @@ template <> struct formatter<Header::Method> {
   auto
   format(Header::Method &method, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", method.getSV());
+    return fmt::format_to(ctx.out(), "{}", method.GetSV());
   }
 };
 
@@ -581,7 +541,7 @@ template <> struct formatter<Header::String> {
   auto
   format(Header::String &str, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", str.getSV());
+    return fmt::format_to(ctx.out(), "{}", str.GetSV());
   }
 };
 
@@ -596,7 +556,7 @@ template <> struct formatter<Header::Name> {
   auto
   format(Header::Name &name, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", name.getSV());
+    return fmt::format_to(ctx.out(), "{}", name.GetSV());
   }
 };
 

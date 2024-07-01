@@ -33,7 +33,7 @@ class Path : public std::filesystem::path
 public:
   using super_type::super_type;
 
-  self_type &rebase();
+  self_type &Rebase();
 };
 
 using Type = std::filesystem::file_type;
@@ -54,10 +54,10 @@ namespace Line
     explicit Reader(const std::string &path) : _path(path), _stream{path} {}
     explicit Reader(const Cript::string_view path) : _path(path), _stream{_path} {}
 
-    operator Cript::string() { return line(); }
+    operator Cript::string() { return Line(); }
 
     Cript::string
-    line()
+    Line()
     {
       Cript::string line;
 

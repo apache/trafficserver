@@ -25,13 +25,13 @@
 PluginFactory gPluginFactory;
 
 void
-Plugin::Remap::initialize()
+Plugin::Remap::Initialize()
 {
   gPluginFactory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
 }
 
 Plugin::Remap
-Plugin::Remap::create(const std::string &tag, const std::string &plugin, const Cript::string &from_url, const Cript::string &to_url,
+Plugin::Remap::Create(const std::string &tag, const std::string &plugin, const Cript::string &from_url, const Cript::string &to_url,
                       const Plugin::Options &options)
 {
   Plugin::Remap          inst;
@@ -72,7 +72,7 @@ Plugin::Remap::create(const std::string &tag, const std::string &plugin, const C
 }
 
 void
-Plugin::Remap::cleanup()
+Plugin::Remap::Cleanup()
 {
   if (_plugin) {
     _plugin->done();

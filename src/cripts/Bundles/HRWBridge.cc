@@ -121,19 +121,19 @@ IP::value(Cript::Context *context)
 {
   switch (_type) {
   case Type::CLIENT: {
-    auto ip = Client::Connection::Get().ip();
+    auto ip = Client::Connection::Get().IP();
     _value  = ip.string();
   } break;
   case Type::INBOUND: {
-    auto ip = Client::Connection::Get().localIP();
+    auto ip = Client::Connection::Get().LocalIP();
     _value  = ip.string();
   } break;
   case Type::SERVER: {
-    auto ip = Server::Connection::Get().ip();
+    auto ip = Server::Connection::Get().IP();
     _value  = ip.string();
   } break;
   case Type::OUTBOUND: {
-    auto ip = Server::Connection::Get().localIP();
+    auto ip = Server::Connection::Get().LocalIP();
     _value  = ip.string();
   } break;
   default:
@@ -186,7 +186,7 @@ CIDR::CIDR(Cript::string_view &cidr) : super_type(cidr)
 Cript::string_view
 CIDR::value(Cript::Context *context)
 {
-  auto ip = Client::Connection::Get().ip();
+  auto ip = Client::Connection::Get().IP();
 
   _value = ip.string(_ipv4_cidr, _ipv6_cidr);
 
@@ -226,7 +226,7 @@ URL::_getComponent(Cript::Url &url)
 {
   switch (_comp) {
   case Component::HOST:
-    return url.host.getSV();
+    return url.host.GetSV();
     break;
 
   case Component::PATH:
@@ -330,7 +330,7 @@ URL::value(Cript::Context *context)
 } // namespace detail
 
 detail::HRWBridge *
-Bundle::Headers::bridgeFactory(const Cript::string &source)
+Bundle::Headers::BridgeFactory(const Cript::string &source)
 {
   Cript::string_view str = source;
 

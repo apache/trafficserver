@@ -45,9 +45,9 @@ making this easy.
 =========================   =======================================================================
 Function                    Description
 =========================   =======================================================================
-``Error::Status::set()``    Sets the response to the status code, and force the request to error.
-``Error::Status::get()``    Get the current response status for the request.
-``Error::Reason::set()``    Sets an explicit reason message with the status code. **TBD**
+``Error::Status::Set()``    Sets the response to the status code, and force the request to error.
+``Error::Status::Get()``    Get the current response status for the request.
+``Error::Reason::Set()``    Sets an explicit reason message with the status code. **TBD**
 =========================   =======================================================================
 
 Example:
@@ -59,11 +59,11 @@ Example:
      borrow req  = Client::Request::get();
 
      if (req["X-Header"] == "yes") {
-       Error::Status::set(403);
+       Error::Status::Set(403);
      }
      // Do more stuff here
 
-     if (Error::status::get() != 403) {
+     if (Error::status::Get() != 403) {
        // Do even more stuff here if we're not in error state
      }
    }
@@ -77,9 +77,9 @@ the following functions are available:
 =========================   =======================================================================
 Function                    Description
 =========================   =======================================================================
-``disableCallback()``       Disables a future callback in this Cript, for this transaction.
-``aborted()``               Has the transaction been aborted.
-``lookupStatus()``          Returns the cache lookup status for the transaction.
+``DisableCallback()``       Disables a future callback in this Cript, for this transaction.
+``Aborted()``               Has the transaction been aborted.
+``LookupStatus()``          Returns the cache lookup status for the transaction.
 =========================   =======================================================================
 
 When disabling a callback, use the following names:
@@ -116,7 +116,7 @@ Example usage to turn off a particular hook conditionally:
      static borrow req = Client::Request::get();
 
      if (req["X-Header"] == "yes") {
-       transaction.disableCallback(Cript::Callback::DO_READ_RESPONSE);
+       transaction.DisableCallback(Cript::Callback::DO_READ_RESPONSE);
      }
    }
 
@@ -129,24 +129,24 @@ Time
 
 Cripts has encapsulated some common time-related functions in the core.  At the
 moment only the localtime is available, via the ``Time::Local`` object and its
-``now()`` method. The ``now()`` method returns the current time as an object
+``Now()`` method. The ``Now()`` method returns the current time as an object
 with the following functions:
 
 =====================   ===========================================================================
 Function                Description
 =====================   ===========================================================================
-``epoch()``             Returns the number of seconds since the Unix epoch (00:00:00 UTC, January 1, 1970).
-``year()``              Returns the year.
-``month()``             Returns the month (1-12).
-``day()``               Returns the day of the month (1-31).
-``hour()``              Returns the hour (0-23).
-``minute()``            Returns the minute (0-59).
-``second()``            Returns the second (0-59).
-``weekday()``           Returns the day of the week (0-6, Sunday is 0).
-``yearday()``           Returns the day of the year (0-365).
+``Epoch()``             Returns the number of seconds since the Unix epoch (00:00:00 UTC, January 1, 1970).
+``Year()``              Returns the year.
+``Month()``             Returns the month (1-12).
+``Day()``               Returns the day of the month (1-31).
+``Hour()``              Returns the hour (0-23).
+``Minute()``            Returns the minute (0-59).
+``Second()``            Returns the second (0-59).
+``Weekday()``           Returns the day of the week (0-6, Sunday is 0).
+``Yearday()``           Returns the day of the year (0-365).
 =====================   ===========================================================================
 
-The time as returned by ``now()`` can also be used directly in comparisons with previous or future
+The time as returned by ``Now()`` can also be used directly in comparisons with previous or future
 times.
 
 .. _cripts-misc-plugins:
@@ -169,21 +169,21 @@ plugin based on the client request headers:
 
    do_create_instance()
    {
-     instance.addPlugin("my_ratelimit", "rate_limit.so", {"--limit=300", "--error=429"});
+     instance.AddPlugin("my_ratelimit", "rate_limit.so", {"--limit=300", "--error=429"});
    }
 
    do_remap()
    {
      static borrow plugin = instance.plugins["my_ratelimit"];
-     borrow        req    = Client::Request::get();
+     borrow        req    = Client::Request::Get();
 
      if (req["X-Header"] == "yes") {
-       plugin.runRemap();
+       plugin.RunRemap();
      }
    }
 
 .. note::
-   The name of the plugin instance, as specified to ``addPlugin()``, must be
+   The name of the plugin instance, as specified to ``AddPlugin()``, must be
    unique across all Cripts.
 
 .. _cripts-misc-files:
@@ -205,7 +205,7 @@ by the ``File::Line::Reader`` object. Some examples:
    {
      static const File::Path p1("/tmp/foo");
      static const File::Path p2("/tmp/secret.txt");
-     if (File::Status(p1).type() == File::Type::regular) {
+     if (File::Status(p1).Type() == File::Type::regular) {
        resp["X-Foo-Exists"] = "yes";
      } else {
        resp["X-Foo-Exists"] = "no";
@@ -230,13 +230,47 @@ Object                      Description
 ``UUID::Request``           Returns a unique id for this request.
 =========================   =======================================================================
 
-Using the ``UUID`` object is simple, via the ``::get()`` method. Here's an example:
+Using the ``UUID`` object is simple, via the ``Get()`` method. Here's an example:
 
 .. code-block:: cpp
 
    do_remap()
    {
-     static borrow req = Client::Request::get();
+     static borrow req = Client::Request::Get();
 
-     resp["X-UUID"] = UUID::Unique::get();
+     resp["X-UUID"] = UUID::Unique::Get();
    }
+
+.. _cripts-metrics:
+
+Metrics
+=======
+
+Cripts metrics are built directly on top of the atomic core ATS metrics. As such, they not only
+work the same as the core metrics, but they are also as efficient. There are two types of metrics:
+
+=========================   =======================================================================
+Metric                      Description
+=========================   =======================================================================
+``Metric::Counter``         A simple counter, which can only be incremented.
+``Metric::Gauge``           A gauge, which can be incremented and decremented, and set to a value.
+=========================   =======================================================================
+
+Example:
+
+.. code-block:: cpp
+
+   do_create_instance()
+   {
+     instance.metrics[0] = Metrics::Counter::Create("cript.example1.instance_calls");
+   }
+
+   do_remap()
+   {
+     static auto plugin_metric = Metrics::Counter("cript.example1.plugin_calls");
+
+     plugin_metric.Increment();
+     instance.metrics[0]->Increment();
+   }
+
+A ``Metric::Gauge`` can also be set via the ``Setter()`` method.

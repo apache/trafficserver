@@ -43,15 +43,17 @@ public:
 
     static void _set(Cript::Context *context, const Cript::string_view msg);
 
+  private:
+    friend class Error;
+
     [[nodiscard]] Cript::string_view
-    reason() const
+    _getter() const
     {
       return {_reason.c_str(), _reason.size()};
     }
 
-  private:
     void
-    setter(const Cript::string_view msg)
+    _setter(const Cript::string_view msg)
     {
       _reason = msg;
     }
@@ -80,23 +82,19 @@ public:
 
     static TSHttpStatus _get(Cript::Context *context);
 
+  private:
+    friend class Error;
+
     [[nodiscard]] TSHttpStatus
-    status() const
+    _getter() const
     {
       return _status;
     }
 
-  private:
     void
-    setter(TSHttpStatus status)
+    _setter(TSHttpStatus status)
     {
       _status = status;
-    }
-
-    [[nodiscard]] TSHttpStatus
-    getter() const
-    {
-      return _status;
     }
 
   private:
@@ -107,19 +105,19 @@ public:
   Error() = default;
 
   [[nodiscard]] bool
-  failed() const
+  Failed() const
   {
     return _failed;
   }
 
   void
-  fail()
+  Fail()
   {
     _failed = true;
   }
 
   // Check if we have an error, and set appropriate exit codes etc.
-  void execute(Cript::Context *context);
+  void Execute(Cript::Context *context);
 
 private:
   Reason _reason;

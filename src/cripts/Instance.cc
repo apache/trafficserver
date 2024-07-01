@@ -21,8 +21,11 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Instance.hpp"
 
+namespace Cript
+{
+
 void
-Cript::Instance::initialize(int argc, char *argv[], const char *filename)
+Instance::_initialize(int argc, char *argv[], const char *filename)
 {
   from_url = argv[0];
   to_url   = argv[1];
@@ -50,29 +53,29 @@ Cript::Instance::initialize(int argc, char *argv[], const char *filename)
   }
 
   dbg_ctl_cript.set(plugin_debug_tag.c_str());
-}
+} // namespace Instance::_initialize(intargc,char*argv[],constchar*filename)
 
 bool
-Cript::Instance::addPlugin(const Cript::string &tag, const Cript::string &plugin, const Plugin::Options &options)
+Instance::AddPlugin(const Cript::string &tag, const Cript::string &plugin, const Plugin::Options &options)
 {
   if (plugins.find(tag) != plugins.end()) {
     return false;
   }
 
-  auto p = Plugin::Remap::create(tag, plugin, from_url, to_url, options);
+  auto p = Plugin::Remap::Create(tag, plugin, from_url, to_url, options);
 
-  if (p.valid()) {
+  if (p.Valid()) {
     plugins.emplace(tag, std::move(p));
 
     return true;
   } else {
-    fail();
+    Fail();
     return false;
   }
 }
 
 bool
-Cript::Instance::deletePlugin(const Cript::string &tag)
+Instance::DeletePlugin(const Cript::string &tag)
 {
   auto p = plugins.find(tag);
 
@@ -84,3 +87,17 @@ Cript::Instance::deletePlugin(const Cript::string &tag)
     return false;
   }
 }
+
+void
+Instance::AddBundle(Cript::Bundle::Base *bundle)
+{
+  for (auto &it : bundles) {
+    if (it->Name() == bundle->Name()) {
+      CFatal("[Instance]: Duplicate bundle %s", bundle->Name().c_str());
+    }
+  }
+
+  bundles.push_back(bundle);
+}
+
+} // namespace Cript
