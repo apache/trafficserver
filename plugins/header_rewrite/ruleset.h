@@ -23,6 +23,8 @@
 
 #include <string>
 
+#include <tscore/ink_assert.h>
+
 #include "matcher.h"
 #include "factory.h"
 #include "resources.h"
@@ -104,7 +106,11 @@ public:
   OperModifiers
   exec(const Resources &res) const
   {
-    _oper->do_exec(res);
+    auto no_reenable_count{_oper->do_exec(res)};
+    ink_assert(no_reenable_count < 2);
+    if (no_reenable_count) {
+      return static_cast<OperModifiers>(_opermods | OPER_NO_REENABLE);
+    }
     return _opermods;
   }
 
