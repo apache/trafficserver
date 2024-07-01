@@ -58,19 +58,19 @@ Headers::rm_headers(const Cript::string_view target, const HeaderList &headers)
   switch (header_target(target)) {
   case CLIENT_REQUEST:
     _client_request.rm_headers.insert(_client_request.rm_headers.end(), headers.begin(), headers.end());
-    needCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(Cript::Callbacks::DO_REMAP);
     break;
   case CLIENT_RESPONSE:
     _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
-    needCallback(Cript::Callbacks::DO_SEND_RESPONSE);
+    NeedCallback(Cript::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
     _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
-    needCallback(Cript::Callbacks::DO_SEND_REQUEST);
+    NeedCallback(Cript::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
     _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
-    needCallback(Cript::Callbacks::DO_READ_RESPONSE);
+    NeedCallback(Cript::Callbacks::DO_READ_RESPONSE);
     break;
   default:
     CFatal("[Cripts::Headers] Unknown header target: %s.", target.data());
@@ -87,19 +87,19 @@ Headers::set_headers(const Cript::string_view target, const HeaderValueList &hea
   switch (header_target(target)) {
   case CLIENT_REQUEST:
     hdrs = &_client_request.set_headers;
-    needCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(Cript::Callbacks::DO_REMAP);
     break;
   case CLIENT_RESPONSE:
     hdrs = &_client_response.set_headers;
-    needCallback(Cript::Callbacks::DO_SEND_RESPONSE);
+    NeedCallback(Cript::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
     hdrs = &_server_request.set_headers;
-    needCallback(Cript::Callbacks::DO_SEND_REQUEST);
+    NeedCallback(Cript::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
     hdrs = &_server_response.set_headers;
-    needCallback(Cript::Callbacks::DO_READ_RESPONSE);
+    NeedCallback(Cript::Callbacks::DO_READ_RESPONSE);
     break;
   default:
     CFatal("[Cripts::Headers] Unknown header target: %s.", target.data());
@@ -107,7 +107,7 @@ Headers::set_headers(const Cript::string_view target, const HeaderValueList &hea
 
   hdrs->reserve(headers.size());
   for (const auto &hdr : headers) {
-    hdrs->emplace_back(hdr.first, Headers::bridgeFactory(hdr.second));
+    hdrs->emplace_back(hdr.first, Headers::BridgeFactory(hdr.second));
   }
 
   return *this;

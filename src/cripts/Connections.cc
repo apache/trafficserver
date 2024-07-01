@@ -26,9 +26,12 @@ constexpr unsigned NORMALIZED_TIME_QUANTUM = 3600; // 1 hour
 const Matcher::Range::IP Cript::Net::Localhost({"127.0.0.1", "::1"});
 const Matcher::Range::IP Cript::Net::RFC1918({"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"});
 
+namespace Cript
+{
+
 // This is mostly copied out of header_rewrite of course
 Cript::string_view
-Cript::IP::getSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
+IP::GetSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
   if (is_ip4()) {
     auto      addr = this->_addr._ip4.network_order();
@@ -63,7 +66,7 @@ Cript::IP::getSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
 }
 
 uint64_t
-Cript::IP::hasher(unsigned ipv4_cidr, unsigned ipv6_cidr)
+IP::Hasher(unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
   if (_hash == 0) {
     if (is_ip4()) {
@@ -94,13 +97,13 @@ Cript::IP::hasher(unsigned ipv4_cidr, unsigned ipv6_cidr)
 }
 
 bool
-Cript::IP::sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_cidr)
+IP::Sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
   CAssert(rate >= 0.0 && rate <= 1.0); // For detecting bugs in a Cript, 0.0 and 1.0 are valid though
 
   if (_sampler == 0) {
     // This only works until 2038
-    uint32_t now = (Time::Local::now().epoch() / NORMALIZED_TIME_QUANTUM) * NORMALIZED_TIME_QUANTUM;
+    uint32_t now = (Time::Local::Now().Epoch() / NORMALIZED_TIME_QUANTUM) * NORMALIZED_TIME_QUANTUM;
 
     if (is_ip4()) {
       auto      addr = this->_addr._ip4.network_order();
@@ -138,12 +141,34 @@ Cript::IP::sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_
   return (_sampler % static_cast<uint16_t>(rate * UINT16_MAX)) == _sampler;
 }
 
+} // namespace Cript
+
+void
+detail::ConnBase::Pacing::operator=(uint32_t val)
+{
+  TSAssert(_owner);
+  if (val == 0) {
+    val = Off;
+  }
+
+#ifdef SO_MAX_PACING_RATE
+  int connfd = _owner->FD();
+  int res    = setsockopt(connfd, SOL_SOCKET, SO_MAX_PACING_RATE, (char *)&val, sizeof(val));
+
+  // EBADF indicates possible client abort
+  if ((res < 0) && (errno != EBADF)) {
+    TSError("[fq_pacing] Error setting SO_MAX_PACING_RATE, errno=%d", errno);
+  }
+#endif
+  _val = val;
+}
+
 void
 detail::ConnBase::TcpInfo::initialize()
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
   if (!_ready) {
-    int connfd = _owner->fd();
+    int connfd = _owner->FD();
 
     TSAssert(_owner->_state->txnp);
     if (connfd < 0 || TSHttpTxnIsInternal(_owner->_state->txnp)) { // No TCPInfo for internal transactions
@@ -159,7 +184,7 @@ detail::ConnBase::TcpInfo::initialize()
 }
 
 Cript::string_view
-detail::ConnBase::TcpInfo::log()
+detail::ConnBase::TcpInfo::Log()
 {
   initialize();
   // We intentionally do not use the old tcpinfo that may be stored, since we may
@@ -183,7 +208,7 @@ Client::Connection::_get(Cript::Context *context)
 {
   Client::Connection *conn = &context->_client_conn;
 
-  if (!conn->initialized()) {
+  if (!conn->Initialized()) {
     TSAssert(context->state.ssnp);
     TSAssert(context->state.txnp);
 
@@ -196,7 +221,7 @@ Client::Connection::_get(Cript::Context *context)
 }
 
 int
-Client::Connection::fd() const
+Client::Connection::FD() const
 {
   int connfd = -1;
 
@@ -207,7 +232,7 @@ Client::Connection::fd() const
 }
 
 int
-Client::Connection::count() const
+Client::Connection::Count() const
 {
   TSHttpSsn ssn = TSHttpTxnSsnGet(_state->txnp);
 
@@ -221,7 +246,7 @@ Server::Connection::_get(Cript::Context *context)
 {
   Server::Connection *conn = &context->_server_conn;
 
-  if (!conn->initialized()) {
+  if (!conn->Initialized()) {
     TSAssert(context->state.ssnp);
 
     conn->_state  = &context->state;
@@ -233,7 +258,7 @@ Server::Connection::_get(Cript::Context *context)
 }
 
 int
-Server::Connection::fd() const
+Server::Connection::FD() const
 {
   int connfd = -1;
 
@@ -244,7 +269,7 @@ Server::Connection::fd() const
 }
 
 int
-Server::Connection::count() const
+Server::Connection::Count() const
 {
   return TSHttpTxnServerSsnTransactionCount(_state->txnp);
 }

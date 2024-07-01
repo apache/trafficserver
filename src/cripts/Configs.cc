@@ -59,7 +59,7 @@ Records::_get(const Cript::Context *context) const
     }
   } break;
   case TS_RECORDDATATYPE_STRING: {
-    return std::string{getSV(context)};
+    return std::string{GetSV(context)};
   } break;
   default:
     CFatal("[Records]: Invalid configuration type");
@@ -70,7 +70,7 @@ Records::_get(const Cript::Context *context) const
 }
 
 const Cript::string_view
-Records::getSV(const Cript::Context *context) const
+Records::GetSV(const Cript::Context *context) const
 {
   TSAssert(context->state.txnp);
 
@@ -84,7 +84,7 @@ Records::getSV(const Cript::Context *context) const
     }
   } break;
   default:
-    CFatal("[Records]: Invalid configuration type for getSV()");
+    CFatal("[Records]: Invalid configuration type for GetSV()");
     break;
   }
 
@@ -118,7 +118,7 @@ Records::_set(const Cript::Context *context, const ValueType &value) const
   case TS_RECORDDATATYPE_STRING: {
     auto &str = std::get<std::string>(value);
 
-    setSV(context, {str.data(), str.size()});
+    SetSV(context, {str.data(), str.size()});
   } break;
   default:
     CFatal("[Records]: Invalid configuration type");
@@ -129,7 +129,7 @@ Records::_set(const Cript::Context *context, const ValueType &value) const
 }
 
 bool
-Records::setSV(const Cript::Context *context, const Cript::string_view value) const
+Records::SetSV(const Cript::Context *context, const Cript::string_view value) const
 {
   TSAssert(context->state.txnp);
 
@@ -151,22 +151,22 @@ Records::setSV(const Cript::Context *context, const Cript::string_view value) co
 
 // Static members for the records "cache"
 void
-Records::add(const Records *rec)
+Records::Add(const Records *rec)
 {
-  CAssert(rec->loaded());
-  auto it = _gRecords.find(rec->name());
+  CAssert(rec->Loaded());
+  auto it = _gRecords.find(rec->Name());
 
   CAssert(it == _gRecords.end());
-  _gRecords[rec->name()] = rec;
+  _gRecords[rec->Name()] = rec;
 }
 
 const Records *
-Records::lookup(const Cript::string_view name)
+Records::Lookup(const Cript::string_view name)
 {
   auto it = _gRecords.find(name);
 
   if (it != _gRecords.end()) {
-    CAssert(it->second->loaded());
+    CAssert(it->second->Loaded());
     return it->second;
   }
 

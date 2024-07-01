@@ -42,8 +42,8 @@ public:
   Base64(const self_type &)         = delete;
   void operator=(const self_type &) = delete;
 
-  static Cript::string encode(Cript::string_view str);
-  static Cript::string decode(Cript::string_view str);
+  static Cript::string Encode(Cript::string_view str);
+  static Cript::string Decode(Cript::string_view str);
 
 }; // End class Crypto::Base64
 
@@ -56,8 +56,8 @@ public:
   Escape(const self_type &)         = delete;
   void operator=(const self_type &) = delete;
 
-  static Cript::string encode(Cript::string_view str);
-  static Cript::string decode(Cript::string_view str);
+  static Cript::string Encode(Cript::string_view str);
+  static Cript::string Decode(Cript::string_view str);
 
 }; // End class Crypto::Escape
 
@@ -76,27 +76,27 @@ namespace detail
     Digest(size_t len) : _length(len) { TSAssert(len <= EVP_MAX_MD_SIZE); }
 
     [[nodiscard]] Cript::string
-    hex() const
+    Hex() const
     {
       return ts::hex({reinterpret_cast<const char *>(_hash), _length});
     }
 
-    operator Cript::string() const { return hex(); }
+    operator Cript::string() const { return Hex(); }
 
     [[nodiscard]] Cript::string
-    string() const
+    String() const
     {
       return {reinterpret_cast<const char *>(_hash), _length};
     }
 
     [[nodiscard]] Cript::string
-    base64() const
+    Base64() const
     {
-      return Crypto::Base64::encode(Cript::string_view(reinterpret_cast<const char *>(_hash), _length));
+      return Crypto::Base64::Encode(Cript::string_view(reinterpret_cast<const char *>(_hash), _length));
     }
 
     [[nodiscard]] const unsigned char *
-    hash() const
+    Hash() const
     {
       return _hash;
     }
@@ -118,30 +118,30 @@ namespace detail
 
     ~Cipher() { EVP_CIPHER_CTX_free(_ctx); }
 
-    virtual void               encrypt(Cript::string_view str);
-    virtual Cript::string_view finalize();
+    virtual void               Encrypt(Cript::string_view str);
+    virtual Cript::string_view Finalize();
 
     operator Cript::string_view() const { return {_message}; }
 
     [[nodiscard]] Cript::string
-    message() const
+    Message() const
     {
       return _message;
     }
 
     [[nodiscard]] Cript::string
-    base64() const
+    Base64() const
     {
-      return Crypto::Base64::encode(_message);
+      return Crypto::Base64::Encode(_message);
     }
 
     [[nodiscard]] Cript::string
-    hex() const
+    Hex() const
     {
       return ts::hex(_message);
     }
 
-    operator Cript::string() const { return hex(); }
+    operator Cript::string() const { return Hex(); }
 
   protected:
     Cipher(const unsigned char *key, int len) : _key_len(len) { memcpy(_key, key, len); }
@@ -171,7 +171,7 @@ public:
   SHA256(const self_type &)         = delete;
   void operator=(const self_type &) = delete;
 
-  static self_type encode(Cript::string_view str);
+  static self_type Encode(Cript::string_view str);
 }; // End class SHA256
 
 class SHA512 : public detail::Digest
@@ -187,7 +187,7 @@ public:
   SHA512(const self_type &)         = delete;
   void operator=(const self_type &) = delete;
 
-  static self_type encode(Cript::string_view str);
+  static self_type Encode(Cript::string_view str);
 }; // End class SHA512
 
 class MD5 : public detail::Digest
@@ -203,7 +203,7 @@ public:
   MD5(const self_type &)            = delete;
   void operator=(const self_type &) = delete;
 
-  static self_type encode(Cript::string_view str);
+  static self_type Encode(Cript::string_view str);
 }; // End class MD5
 
 class AES256 : public detail::Cipher
@@ -215,21 +215,21 @@ class AES256 : public detail::Cipher
 
 public:
   using super_type::Cipher;
-  using super_type::encrypt;
+  using super_type::Encrypt;
 
-  AES256(const SHA256 &key) : super_type(key.hash(), SHA256_DIGEST_LENGTH) {}
+  AES256(const SHA256 &key) : super_type(key.Hash(), SHA256_DIGEST_LENGTH) {}
   AES256(const unsigned char *key) : super_type(key, SHA256_DIGEST_LENGTH) {}
 
   AES256(const self_type &)         = delete;
   void operator=(const self_type &) = delete;
 
   // The key has to be 256-bit afaik
-  static self_type encrypt(Cript::string_view str, const unsigned char *key);
+  static self_type Encrypt(Cript::string_view str, const unsigned char *key);
 
   static self_type
-  encrypt(Cript::string_view str, SHA256 &key)
+  Encrypt(Cript::string_view str, SHA256 &key)
   {
-    return encrypt(str, key.hash());
+    return Encrypt(str, key.Hash());
   }
 
 private:
@@ -257,7 +257,7 @@ namespace HMAC
     SHA256(const self_type &)         = delete;
     void operator=(const self_type &) = delete;
 
-    static self_type encrypt(Cript::string_view str, const Cript::string &key);
+    static self_type Encrypt(Cript::string_view str, const Cript::string &key);
   }; // End class SHA256
 } // namespace HMAC
 
@@ -277,7 +277,7 @@ template <> struct formatter<Crypto::SHA256> {
   auto
   format(Crypto::SHA256 &sha, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", sha.hex());
+    return fmt::format_to(ctx.out(), "{}", sha.Hex());
   }
 };
 
@@ -292,7 +292,7 @@ template <> struct formatter<Crypto::SHA512> {
   auto
   format(Crypto::SHA512 &sha, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", sha.hex());
+    return fmt::format_to(ctx.out(), "{}", sha.Hex());
   }
 };
 
@@ -307,7 +307,7 @@ template <> struct formatter<Crypto::AES256> {
   auto
   format(Crypto::AES256 &sha, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", Crypto::Base64::encode(sha.message()));
+    return fmt::format_to(ctx.out(), "{}", Crypto::Base64::Encode(sha.Message()));
   }
 };
 

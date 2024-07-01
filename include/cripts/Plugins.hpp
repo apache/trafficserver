@@ -45,23 +45,23 @@ public:
     other._plugin = nullptr;
   }
 
-  ~Remap() { cleanup(); }
+  ~Remap() { Cleanup(); }
 
   void _runRemap(Cript::Context *context);
 
-  void cleanup();
+  void Cleanup();
 
   [[nodiscard]] bool
-  valid() const
+  Valid() const
   {
     return _valid;
   }
 
   // Factory, sort of
-  static Remap create(const std::string &tag, const std::string &plugin, const Cript::string &from_url, const Cript::string &to_url,
+  static Remap Create(const std::string &tag, const std::string &plugin, const Cript::string &from_url, const Cript::string &to_url,
                       const Options &options);
 
-  static void initialize();
+  static void Initialize();
 
 private:
   RemapPluginInst *_plugin = nullptr;

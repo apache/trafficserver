@@ -39,58 +39,58 @@ public:
   BaseTime(const self_type &)       = delete;
   void operator=(const self_type &) = delete;
 
-  operator integer() const { return epoch(); }
+  operator integer() const { return Epoch(); }
 
   [[nodiscard]] integer
-  epoch() const
+  Epoch() const
   {
     return static_cast<integer>(_now);
   }
 
   [[nodiscard]] integer
-  year() const
+  Year() const
   {
     return static_cast<integer>(_result.tm_year) + 1900;
   }
 
   [[nodiscard]] integer
-  month() const
+  Month() const
   {
     return static_cast<integer>(1 + _result.tm_mon);
   }
 
   [[nodiscard]] integer
-  day() const
+  Day() const
   {
     return static_cast<integer>(_result.tm_mday);
   }
 
   [[nodiscard]] integer
-  hour() const
+  Hour() const
   {
     return static_cast<integer>(_result.tm_hour);
   }
 
   [[nodiscard]] integer
-  minute() const
+  Minute() const
   {
     return static_cast<integer>(_result.tm_min);
   }
 
   [[nodiscard]] integer
-  second() const
+  Second() const
   {
     return static_cast<integer>(_result.tm_sec);
   }
 
   [[nodiscard]] integer
-  weekday() const
+  WeekDay() const
   {
     return static_cast<integer>(_result.tm_wday) + 1;
   }
 
   [[nodiscard]] integer
-  yearday() const
+  YearDay() const
   {
     return static_cast<integer>(_result.tm_yday) + 1;
   }
@@ -118,7 +118,7 @@ public:
 
   // Factory, for consistency with ::get()
   static Local
-  now()
+  Now()
   {
     return {};
   }
@@ -141,7 +141,7 @@ template <> struct formatter<Time::Local> {
   auto
   format(Time::Local &time, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", time.epoch());
+    return fmt::format_to(ctx.out(), "{}", time.Epoch());
   }
 };
 } // namespace fmt

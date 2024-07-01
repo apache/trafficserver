@@ -41,13 +41,13 @@ public:
   {
     auto *entry = new self_type();
 
-    inst.addBundle(entry);
+    inst.AddBundle(entry);
 
     return *entry;
   }
 
   [[nodiscard]] const Cript::string &
-  name() const override
+  Name() const override
   {
     return _name;
   }
@@ -55,7 +55,7 @@ public:
   self_type &
   cache_control(Cript::string_view cc, bool force = false)
   {
-    needCallback(Cript::Callbacks::DO_READ_RESPONSE);
+    NeedCallback(Cript::Callbacks::DO_READ_RESPONSE);
     _cc       = cc;
     _force_cc = force;
 
@@ -65,7 +65,7 @@ public:
   self_type &
   disable(bool disable = true)
   {
-    needCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(Cript::Callbacks::DO_REMAP);
     _disabled = disable;
 
     return *this;

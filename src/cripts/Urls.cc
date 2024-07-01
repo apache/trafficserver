@@ -21,13 +21,13 @@
 #include "cripts/Preamble.hpp"
 
 std::vector<Cript::string_view>
-Cript::Url::Component::split(const char delim)
+Cript::Url::Component::Split(const char delim)
 {
-  return Cript::splitter(getSV(), delim);
+  return Cript::Splitter(GetSV(), delim);
 }
 
 Cript::string_view
-Cript::Url::Scheme::getSV()
+Cript::Url::Scheme::GetSV()
 {
   if (_owner && _data.empty()) {
     const char *value = nullptr;
@@ -43,17 +43,17 @@ Cript::Url::Scheme::getSV()
 Cript::Url::Scheme
 Cript::Url::Scheme::operator=(Cript::string_view scheme)
 {
-  CAssert(!_owner->readOnly()); // This can not be a read-only URL
+  CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlSchemeSet(_owner->_bufp, _owner->_urlp, scheme.data(), scheme.size());
   _owner->_modified = true;
-  reset();
+  Reset();
   _loaded = false;
 
   return *this;
 }
 
 Cript::string_view
-Cript::Url::Host::getSV()
+Cript::Url::Host::GetSV()
 {
   if (_owner && _data.empty()) {
     const char *value = nullptr;
@@ -70,10 +70,10 @@ Cript::Url::Host::getSV()
 Cript::Url::Host
 Cript::Url::Host::operator=(Cript::string_view host)
 {
-  CAssert(!_owner->readOnly()); // This can not be a read-only URL
+  CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHostSet(_owner->_bufp, _owner->_urlp, host.data(), host.size());
   _owner->_modified = true;
-  reset();
+  Reset();
   _loaded = false;
 
   return *this;
@@ -91,16 +91,16 @@ Cript::Url::Port::operator integer() // This should not be explicit
 Cript::Url::Port
 Cript::Url::Port::operator=(int port)
 {
-  CAssert(!_owner->readOnly()); // This can not be a read-only URL
+  CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlPortSet(_owner->_bufp, _owner->_urlp, port);
   _owner->_modified = true;
-  reset();
+  Reset();
 
   return *this;
 }
 
 Cript::string_view
-Cript::Url::Path::getSV()
+Cript::Url::Path::GetSV()
 {
   if (_segments.size() > 0) {
     std::ostringstream path;
@@ -142,10 +142,10 @@ Cript::Url::Path::operator[](Segments::size_type ix)
 Cript::Url::Path
 Cript::Url::Path::operator=(Cript::string_view path)
 {
-  CAssert(!_owner->readOnly()); // This can not be a read-only URL
+  CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlPathSet(_owner->_bufp, _owner->_urlp, path.data(), path.size());
   _owner->_modified = true;
-  reset();
+  Reset();
   _loaded = false;
 
   return *this;
@@ -157,7 +157,7 @@ Cript::Url::Path::operator+=(Cript::string_view add)
   Cript::string str;
 
   if (add.size() > 0) {
-    str.assign(getSV());
+    str.assign(GetSV());
     str += add;
     operator=(str);
   }
@@ -168,7 +168,7 @@ Cript::Url::Path::operator+=(Cript::string_view add)
 Cript::Url::Path::String &
 Cript::Url::Path::String::operator=(const Cript::string_view str)
 {
-  CAssert(!_owner->_owner->readOnly()); // This can not be a read-only URL
+  CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
   _owner->_size          -= _owner->_segments[_ix].size();
   _owner->_segments[_ix]  = str;
   _owner->_size          += str.size();
@@ -178,9 +178,9 @@ Cript::Url::Path::String::operator=(const Cript::string_view str)
 }
 
 void
-Cript::Url::Path::reset()
+Cript::Url::Path::Reset()
 {
-  Component::reset();
+  Component::Reset();
 
   _segments.clear();
   _storage  = "";
@@ -189,7 +189,7 @@ Cript::Url::Path::reset()
 }
 
 void
-Cript::Url::Path::push(Cript::string_view val)
+Cript::Url::Path::Push(Cript::string_view val)
 {
   _parser();
   _modified = true;
@@ -197,7 +197,7 @@ Cript::Url::Path::push(Cript::string_view val)
 }
 
 void
-Cript::Url::Path::insert(Segments::size_type ix, Cript::string_view val)
+Cript::Url::Path::Insert(Segments::size_type ix, Cript::string_view val)
 {
   _parser();
   _modified = true;
@@ -208,14 +208,14 @@ void
 Cript::Url::Path::_parser()
 {
   if (_segments.size() == 0) {
-    _segments = split('/');
+    _segments = Split('/');
   }
 }
 
 Cript::Url::Query::Parameter &
 Cript::Url::Query::Parameter::operator=(const Cript::string_view str)
 {
-  CAssert(!_owner->_owner->readOnly()); // This can not be a read-only URL
+  CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
   auto iter = _owner->_hashed.find(_name);
 
   if (iter != _owner->_hashed.end()) {
@@ -230,7 +230,7 @@ Cript::Url::Query::Parameter::operator=(const Cript::string_view str)
 }
 
 Cript::string_view
-Cript::Url::Query::getSV()
+Cript::Url::Query::GetSV()
 {
   if (_ordered.size() > 0) {
     _storage.clear();
@@ -275,10 +275,10 @@ Cript::Url::Query::getSV()
 Cript::Url::Query
 Cript::Url::Query::operator=(Cript::string_view query)
 {
-  CAssert(!_owner->readOnly()); // This can not be a read-only URL
+  CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
   _owner->_modified = true;
-  reset();
+  Reset();
   _loaded = false;
 
   return *this;
@@ -290,7 +290,7 @@ Cript::Url::Query::operator+=(Cript::string_view add)
   Cript::string str;
 
   if (add.size() > 0) {
-    str.assign(getSV());
+    str.assign(GetSV());
     str += add;
     operator=(str);
   }
@@ -317,7 +317,7 @@ Cript::Url::Query::operator[](Cript::string_view param)
 }
 
 void
-Cript::Url::Query::erase(Cript::string_view param)
+Cript::Url::Query::Erase(Cript::string_view param)
 {
   // Make sure the hash and vector are populated
   _parser();
@@ -334,14 +334,14 @@ Cript::Url::Query::erase(Cript::string_view param)
     _ordered.erase(viter);
 
     if (_ordered.size() == 0) {
-      reset();
+      Reset();
     }
     _modified = true; // Make sure to set this after we reset above ...
   }
 }
 
 void
-Cript::Url::Query::erase(std::initializer_list<Cript::string_view> list, bool keep)
+Cript::Url::Query::Erase(std::initializer_list<Cript::string_view> list, bool keep)
 {
   if (keep) {
     // Make sure the hash and vector are populated
@@ -362,19 +362,19 @@ Cript::Url::Query::erase(std::initializer_list<Cript::string_view> list, bool ke
       }
     }
     if (_ordered.size() == 0) {
-      reset();
+      Reset();
     }
   } else {
     for (auto &it : list) {
-      erase(it);
+      Erase(it);
     }
   }
 }
 
 void
-Cript::Url::Query::reset()
+Cript::Url::Query::Reset()
 {
-  Component::reset();
+  Component::Reset();
 
   _ordered.clear();
   _hashed.clear();
@@ -387,7 +387,7 @@ void
 Cript::Url::Query::_parser()
 {
   if (_ordered.size() == 0) {
-    for (const auto sv : split('&')) {
+    for (const auto sv : Split('&')) {
       const auto         eq  = sv.find_first_of('=');
       Cript::string_view key = sv.substr(0, eq);
       Cript::string_view val;
@@ -403,7 +403,7 @@ Cript::Url::Query::_parser()
 }
 
 Cript::string_view
-Cript::Url::Matrix::getSV()
+Cript::Url::Matrix::GetSV()
 {
   if (_owner && _data.empty()) {
     const char *value = nullptr;
@@ -420,17 +420,17 @@ Cript::Url::Matrix::getSV()
 Cript::Url::Matrix
 Cript::Url::Matrix::operator=(Cript::string_view matrix)
 {
-  CAssert(!_owner->readOnly()); // This can not be a read-only URL
+  CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHttpParamsSet(_owner->_bufp, _owner->_urlp, matrix.data(), matrix.size());
   _owner->_modified = true;
-  reset();
+  Reset();
   _loaded = false;
 
   return *this;
 }
 
 Cript::string
-Cript::Url::url() const
+Cript::Url::String() const
 {
   Cript::string ret;
 
@@ -450,12 +450,12 @@ Cript::Url::url() const
 Pristine::URL &
 Pristine::URL::_get(Cript::Context *context)
 {
-  if (!context->_pristine_url.initialized()) {
+  if (!context->_pristine_url.Initialized()) {
     Pristine::URL *url = &context->_pristine_url;
 
     TSAssert(context->state.txnp);
     if (TSHttpTxnPristineUrlGet(context->state.txnp, &url->_bufp, &url->_urlp) != TS_SUCCESS) {
-      context->state.error.fail();
+      context->state.error.Fail();
     } else {
       url->_initialize(&context->state);
     }
@@ -477,7 +477,7 @@ Client::URL::_initialize(Cript::Context *context)
 Client::URL &
 Client::URL::_get(Cript::Context *context)
 {
-  if (!context->_client_url.initialized()) {
+  if (!context->_client_url.Initialized()) {
     context->_client_url._initialize(context);
   }
 
@@ -487,8 +487,8 @@ Client::URL::_get(Cript::Context *context)
 bool
 Client::URL::_update(Cript::Context * /* context ATS_UNUSED */)
 {
-  path.flush();
-  query.flush();
+  path.Flush();
+  query.Flush();
 
   return _modified;
 }
@@ -506,7 +506,7 @@ Remap::From::URL::_initialize(Cript::Context *context)
 Remap::From::URL &
 Remap::From::URL::_get(Cript::Context *context)
 {
-  if (!context->_remap_from_url.initialized()) {
+  if (!context->_remap_from_url.Initialized()) {
     context->_remap_from_url._initialize(context);
   }
 
@@ -526,7 +526,7 @@ Remap::To::URL::_initialize(Cript::Context *context)
 Remap::To::URL &
 Remap::To::URL::_get(Cript::Context *context)
 {
-  if (!context->_remap_to_url.initialized()) {
+  if (!context->_remap_to_url.Initialized()) {
     context->_remap_to_url._initialize(context);
   }
 
@@ -536,7 +536,7 @@ Remap::To::URL::_get(Cript::Context *context)
 Cache::URL &
 Cache::URL::_get(Cript::Context *context)
 {
-  if (!context->_cache_url.initialized()) {
+  if (!context->_cache_url.Initialized()) {
     Cache::URL      *url = &context->_cache_url;
     Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
 
@@ -546,22 +546,22 @@ Cache::URL::_get(Cript::Context *context)
     case TS_HTTP_READ_RESPONSE_HDR_HOOK:
     case TS_HTTP_SEND_REQUEST_HDR_HOOK:
     case TS_HTTP_TXN_CLOSE_HOOK:
-      if (TSUrlCreate(req.bufp(), &url->_urlp) == TS_SUCCESS) {
+      if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
         TSAssert(context->state.txnp);
-        if (TSHttpTxnCacheLookupUrlGet(context->state.txnp, req.bufp(), url->_urlp) == TS_SUCCESS) {
+        if (TSHttpTxnCacheLookupUrlGet(context->state.txnp, req.BufP(), url->_urlp) == TS_SUCCESS) {
           url->_initialize(&context->state, &req);
         }
       } else {
-        context->state.error.fail();
+        context->state.error.Fail();
       }
       break;
     default: { // This means we have to clone. ToDo: For now, this is implicitly using Client::URL
       Client::URL &src = Client::URL::_get(context);
 
-      if (TSUrlClone(req.bufp(), req.bufp(), src.urlp(), &url->_urlp) == TS_SUCCESS) {
+      if (TSUrlClone(req.BufP(), req.BufP(), src.UrlP(), &url->_urlp) == TS_SUCCESS) {
         url->_initialize(&context->state, &req);
       } else {
-        context->state.error.fail();
+        context->state.error.Fail();
       }
     } break;
     }
@@ -575,22 +575,22 @@ bool
 Cache::URL::_update(Cript::Context *context)
 {
   // For correctness, we will also make sure the Path and Query objects are flushed
-  path.flush();
-  query.flush();
+  path.Flush();
+  query.Flush();
 
   if (_modified) {
     TSAssert(context->state.txnp);
     _modified = false;
     if (TS_SUCCESS == TSHttpTxnCacheLookupUrlSet(context->state.txnp, _bufp, _urlp)) {
-      if (context->p_instance.debugOn()) {
-        context->p_instance.debug("Successfully setting cache-key to {}", url());
+      if (context->p_instance.DebugOn()) {
+        context->p_instance.debug("Successfully setting cache-key to {}", String());
       }
       return true;
     } else {
-      if (context->p_instance.debugOn()) {
-        context->p_instance.debug("Could not set the cache key to {}", url());
+      if (context->p_instance.DebugOn()) {
+        context->p_instance.debug("Could not set the cache key to {}", String());
       }
-      context->state.error.fail();
+      context->state.error.Fail();
       return false;
     }
   }
@@ -602,17 +602,17 @@ Cache::URL::_update(Cript::Context *context)
 Parent::URL &
 Parent::URL::_get(Cript::Context *context)
 {
-  if (!context->_cache_url.initialized()) {
+  if (!context->_cache_url.Initialized()) {
     Parent::URL     *url = &context->_parent_url;
     Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
 
-    if (TSUrlCreate(req.bufp(), &url->_urlp) == TS_SUCCESS) {
+    if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
       TSAssert(context->state.txnp);
-      if (TSHttpTxnParentSelectionUrlGet(context->state.txnp, req.bufp(), url->_urlp) == TS_SUCCESS) {
+      if (TSHttpTxnParentSelectionUrlGet(context->state.txnp, req.BufP(), url->_urlp) == TS_SUCCESS) {
         url->_initialize(&context->state, &req);
       }
     } else {
-      context->state.error.fail();
+      context->state.error.Fail();
     }
   }
 

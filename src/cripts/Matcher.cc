@@ -41,7 +41,7 @@ Matcher::PCRE::Result::malloc(PCRE2_SIZE size, void *context)
 }
 
 void
-Matcher::PCRE::add(Cript::string_view regex, uint32_t options, bool jit)
+Matcher::PCRE::Add(Cript::string_view regex, uint32_t options, bool jit)
 {
   int         errorcode   = 0;
   PCRE2_SIZE  erroroffset = 0;
@@ -64,7 +64,7 @@ Matcher::PCRE::add(Cript::string_view regex, uint32_t options, bool jit)
 }
 
 Matcher::PCRE::Result
-Matcher::PCRE::contains(Cript::string_view subject, PCRE2_SIZE offset, uint32_t options)
+Matcher::PCRE::Contains(Cript::string_view subject, PCRE2_SIZE offset, uint32_t options)
 {
   Matcher::PCRE::Result  res(subject);
   pcre2_general_context *ctx =

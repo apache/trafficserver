@@ -39,7 +39,7 @@ class Common : public Cript::Bundle::Base
 public:
   using super_type::Base;
 
-  bool validate(std::vector<Cript::Bundle::Error> &errors) const override;
+  bool Validate(std::vector<Cript::Bundle::Error> &errors) const override;
 
   // This is the factory to create an instance of this bundle
   static self_type &
@@ -47,13 +47,13 @@ public:
   {
     auto *entry = new self_type();
 
-    inst.addBundle(entry);
+    inst.AddBundle(entry);
 
     return *entry;
   }
 
   [[nodiscard]] const Cript::string &
-  name() const override
+  Name() const override
   {
     return _name;
   }
@@ -61,7 +61,7 @@ public:
   self_type &
   dscp(int val)
   {
-    needCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(Cript::Callbacks::DO_REMAP);
     _dscp = val;
 
     return *this;

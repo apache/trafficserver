@@ -41,13 +41,13 @@ public:
   {
     auto *entry = new self_type(&inst);
 
-    inst.addBundle(entry);
+    inst.AddBundle(entry);
 
     return *entry;
   }
 
   [[nodiscard]] const Cript::string &
-  name() const override
+  Name() const override
   {
     return _name;
   }
@@ -57,7 +57,7 @@ public:
   self_type &
   logsample(int val)
   {
-    needCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(Cript::Callbacks::DO_REMAP);
     _log_sample = val;
 
     return *this;
@@ -67,7 +67,7 @@ public:
   tcpinfo(bool enable = true)
   {
     if (enable) {
-      needCallback({Cript::Callbacks::DO_REMAP, Cript::Callbacks::DO_SEND_RESPONSE, Cript::Callbacks::DO_TXN_CLOSE});
+      NeedCallback({Cript::Callbacks::DO_REMAP, Cript::Callbacks::DO_SEND_RESPONSE, Cript::Callbacks::DO_TXN_CLOSE});
     }
     _tcpinfo = enable;
 
