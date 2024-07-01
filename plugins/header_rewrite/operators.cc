@@ -130,7 +130,7 @@ OperatorSetConfig::initialize(Parser &p)
   }
 }
 
-void
+bool
 OperatorSetConfig::exec(const Resources &res) const
 {
   if (TS_CONFIG_NULL != _key) {
@@ -161,6 +161,7 @@ OperatorSetConfig::exec(const Resources &res) const
       break;
     }
   }
+  return true;
 }
 
 // OperatorSetStatus
@@ -193,7 +194,7 @@ OperatorSetStatus::initialize_hooks()
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
-void
+bool
 OperatorSetStatus::exec(const Resources &res) const
 {
   switch (get_hook()) {
@@ -212,6 +213,8 @@ OperatorSetStatus::exec(const Resources &res) const
   }
 
   Dbg(pi_dbg_ctl, "OperatorSetStatus::exec() invoked with status=%d", _status.get_int_value());
+
+  return true;
 }
 
 // OperatorSetStatusReason
@@ -232,7 +235,7 @@ OperatorSetStatusReason::initialize_hooks()
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
 
-void
+bool
 OperatorSetStatusReason::exec(const Resources &res) const
 {
   if (res.bufp && res.hdr_loc) {
@@ -244,6 +247,7 @@ OperatorSetStatusReason::exec(const Resources &res) const
       TSHttpHdrReasonSet(res.bufp, res.hdr_loc, reason.c_str(), reason.size());
     }
   }
+  return true;
 }
 
 // OperatorSetDestination
@@ -258,7 +262,7 @@ OperatorSetDestination::initialize(Parser &p)
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
 }
 
-void
+bool
 OperatorSetDestination::exec(const Resources &res) const
 {
   if (res._rri || (res.bufp && res.hdr_loc)) {
@@ -274,7 +278,7 @@ OperatorSetDestination::exec(const Resources &res) const
       bufp = res.bufp;
       if (TSHttpHdrUrlGet(res.bufp, res.hdr_loc, &url_m_loc) != TS_SUCCESS) {
         Dbg(pi_dbg_ctl, "TSHttpHdrUrlGet was unable to return the url m_loc");
-        return;
+        return true;
       }
     }
 
@@ -365,6 +369,7 @@ OperatorSetDestination::exec(const Resources &res) const
     Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
         res.hdr_loc, res._rri);
   }
+  return true;
 }
 
 #include <iostream>
@@ -401,7 +406,7 @@ OperatorRMDestination::initialize(Parser &p)
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
 }
 
-void
+bool
 OperatorRMDestination::exec(const Resources &res) const
 {
   if (res._rri || (res.bufp && res.hdr_loc)) {
@@ -417,7 +422,7 @@ OperatorRMDestination::exec(const Resources &res) const
       bufp = res.bufp;
       if (TSHttpHdrUrlGet(res.bufp, res.hdr_loc, &url_m_loc) != TS_SUCCESS) {
         Dbg(pi_dbg_ctl, "TSHttpHdrUrlGet was unable to return the url m_loc");
-        return;
+        return true;
       }
     }
 
@@ -467,6 +472,7 @@ OperatorRMDestination::exec(const Resources &res) const
     Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
         res.hdr_loc, res._rri);
   }
+  return true;
 }
 
 // OperatorSetRedirect
@@ -544,7 +550,7 @@ cont_add_location(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-void
+bool
 OperatorSetRedirect::exec(const Resources &res) const
 {
   if (res.bufp && res.hdr_loc && res.client_bufp && res.client_hdr_loc) {
@@ -620,7 +626,7 @@ OperatorSetRedirect::exec(const Resources &res) const
         TSHttpTxnHookAdd(res.txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
         TSHttpTxnHookAdd(res.txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
         TSHttpTxnReenable(res.txnp, TS_EVENT_HTTP_CONTINUE);
-        return;
+        return true;
       } break;
       default:
         break;
@@ -631,6 +637,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", value.c_str(),
         _status.get_int_value());
   }
+  return true;
 }
 
 // OperatorSetTimeoutOut
@@ -655,7 +662,7 @@ OperatorSetTimeoutOut::initialize(Parser &p)
   _timeout.set_value(p.get_value());
 }
 
-void
+bool
 OperatorSetTimeoutOut::exec(const Resources &res) const
 {
   switch (_type) {
@@ -682,6 +689,7 @@ OperatorSetTimeoutOut::exec(const Resources &res) const
     TSError("[%s] unsupported timeout", PLUGIN_NAME);
     break;
   }
+  return true;
 }
 
 // OperatorSkipRemap
@@ -696,15 +704,16 @@ OperatorSkipRemap::initialize(Parser &p)
   }
 }
 
-void
+bool
 OperatorSkipRemap::exec(const Resources &res) const
 {
   Dbg(pi_dbg_ctl, "OperatorSkipRemap::exec() skipping remap: %s", _skip_remap ? "True" : "False");
   TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_SKIP_REMAPPING, _skip_remap);
+  return true;
 }
 
 // OperatorRMHeader
-void
+bool
 OperatorRMHeader::exec(const Resources &res) const
 {
   TSMLoc field_loc, tmp;
@@ -720,6 +729,7 @@ OperatorRMHeader::exec(const Resources &res) const
       field_loc = tmp;
     }
   }
+  return true;
 }
 
 // OperatorAddHeader
@@ -731,7 +741,7 @@ OperatorAddHeader::initialize(Parser &p)
   _value.set_value(p.get_value());
 }
 
-void
+bool
 OperatorAddHeader::exec(const Resources &res) const
 {
   std::string value;
@@ -741,7 +751,7 @@ OperatorAddHeader::exec(const Resources &res) const
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {
     Dbg(pi_dbg_ctl, "Would set header %s to an empty value, skipping", _header.c_str());
-    return;
+    return true;
   }
 
   if (res.bufp && res.hdr_loc) {
@@ -756,6 +766,7 @@ OperatorAddHeader::exec(const Resources &res) const
       TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
     }
   }
+  return true;
 }
 
 // OperatorSetHeader
@@ -767,7 +778,7 @@ OperatorSetHeader::initialize(Parser &p)
   _value.set_value(p.get_value());
 }
 
-void
+bool
 OperatorSetHeader::exec(const Resources &res) const
 {
   std::string value;
@@ -777,7 +788,7 @@ OperatorSetHeader::exec(const Resources &res) const
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {
     Dbg(pi_dbg_ctl, "Would set header %s to an empty value, skipping", _header.c_str());
-    return;
+    return true;
   }
 
   if (res.bufp && res.hdr_loc) {
@@ -813,6 +824,7 @@ OperatorSetHeader::exec(const Resources &res) const
       }
     }
   }
+  return true;
 }
 
 // OperatorSetBody
@@ -831,7 +843,7 @@ OperatorSetBody::initialize_hooks()
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
 
-void
+bool
 OperatorSetBody::exec(const Resources &res) const
 {
   std::string value;
@@ -839,6 +851,7 @@ OperatorSetBody::exec(const Resources &res) const
   _value.append_value(value, res);
   char *msg = TSstrdup(_value.get_value().c_str());
   TSHttpTxnErrorBodySet(res.txnp, msg, _value.size(), nullptr);
+  return true;
 }
 
 // OperatorCounter
@@ -868,20 +881,21 @@ OperatorCounter::initialize(Parser &p)
   }
 }
 
-void
+bool
 OperatorCounter::exec(const Resources & /* ATS_UNUSED res */) const
 {
   // Sanity
   if (_counter == TS_ERROR) {
-    return;
+    return true;
   }
 
   Dbg(pi_dbg_ctl, "OperatorCounter::exec() invoked on %s", _counter_name.c_str());
   TSStatIntIncrement(_counter, 1);
+  return true;
 }
 
 // OperatorRMCookie
-void
+bool
 OperatorRMCookie::exec(const Resources &res) const
 {
   if (res.bufp && res.hdr_loc) {
@@ -892,7 +906,7 @@ OperatorRMCookie::exec(const Resources &res) const
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
     if (nullptr == field_loc) {
       Dbg(pi_dbg_ctl, "OperatorRMCookie::exec, no cookie");
-      return;
+      return true;
     }
 
     int         cookies_len = 0;
@@ -910,6 +924,7 @@ OperatorRMCookie::exec(const Resources &res) const
     }
     TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
   }
+  return true;
 }
 
 // OperatorAddCookie
@@ -920,7 +935,7 @@ OperatorAddCookie::initialize(Parser &p)
   _value.set_value(p.get_value());
 }
 
-void
+bool
 OperatorAddCookie::exec(const Resources &res) const
 {
   std::string value;
@@ -943,7 +958,7 @@ OperatorAddCookie::exec(const Resources &res) const
         }
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
       }
-      return;
+      return true;
     }
 
     int         cookies_len = 0;
@@ -955,6 +970,7 @@ OperatorAddCookie::exec(const Resources &res) const
       Dbg(pi_dbg_ctl, "OperatorAddCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
     }
   }
+  return true;
 }
 
 // OperatorSetCookie
@@ -965,7 +981,7 @@ OperatorSetCookie::initialize(Parser &p)
   _value.set_value(p.get_value());
 }
 
-void
+bool
 OperatorSetCookie::exec(const Resources &res) const
 {
   std::string value;
@@ -988,7 +1004,7 @@ OperatorSetCookie::exec(const Resources &res) const
         }
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
       }
-      return;
+      return true;
     }
 
     int         cookies_len = 0;
@@ -1001,6 +1017,7 @@ OperatorSetCookie::exec(const Resources &res) const
     }
     TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
   }
+  return true;
 }
 
 bool
@@ -1110,13 +1127,14 @@ OperatorSetConnDSCP::initialize_hooks()
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
-void
+bool
 OperatorSetConnDSCP::exec(const Resources &res) const
 {
   if (res.txnp) {
     TSHttpTxnClientPacketDscpSet(res.txnp, _ds_value.get_int_value());
     Dbg(pi_dbg_ctl, "   Setting DSCP to %d", _ds_value.get_int_value());
   }
+  return true;
 }
 
 // OperatorSetConnMark
@@ -1136,13 +1154,14 @@ OperatorSetConnMark::initialize_hooks()
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
-void
+bool
 OperatorSetConnMark::exec(const Resources &res) const
 {
   if (res.txnp) {
     TSHttpTxnClientPacketMarkSet(res.txnp, _ds_value.get_int_value());
     Dbg(pi_dbg_ctl, "   Setting MARK to %d", _ds_value.get_int_value());
   }
+  return true;
 }
 
 // OperatorSetDebug
@@ -1161,10 +1180,11 @@ OperatorSetDebug::initialize_hooks()
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
-void
+bool
 OperatorSetDebug::exec(const Resources &res) const
 {
   TSHttpTxnCntlSet(res.txnp, TS_HTTP_CNTL_TXN_DEBUG, true);
+  return true;
 }
 
 // OperatorSetHttpCntl
@@ -1223,7 +1243,7 @@ static const char *const HttpCntls[] = {
   "LOGGING", "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE", "SERVER_NO_STORE", "TXN_DEBUG", "SKIP_REMAP",
 };
 
-void
+bool
 OperatorSetHttpCntl::exec(const Resources &res) const
 {
   if (_flag) {
@@ -1233,6 +1253,7 @@ OperatorSetHttpCntl::exec(const Resources &res) const
     TSHttpTxnCntlSet(res.txnp, _cntl_qual, false);
     Dbg(pi_dbg_ctl, "   Turning OFF %s for transaction", HttpCntls[static_cast<size_t>(_cntl_qual)]);
   }
+  return true;
 }
 
 void
@@ -1295,7 +1316,7 @@ OperatorRunPlugin::initialize_hooks()
   require_resources(RSRC_CLIENT_REQUEST_HEADERS); // Need this for the txnp
 }
 
-void
+bool
 OperatorRunPlugin::exec(const Resources &res) const
 {
   TSReleaseAssert(_plugin != nullptr);
@@ -1303,6 +1324,7 @@ OperatorRunPlugin::exec(const Resources &res) const
   if (res._rri && res.txnp) {
     _plugin->doRemap(res.txnp, res._rri);
   }
+  return true;
 }
 
 // OperatorSetBody

@@ -44,7 +44,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   TSOverridableConfigKey _key  = TS_CONFIG_NULL;
@@ -67,7 +67,7 @@ public:
 
 protected:
   void initialize_hooks() override;
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value       _status;
@@ -88,7 +88,7 @@ public:
 
 protected:
   void initialize_hooks() override;
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _reason;
@@ -106,7 +106,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   UrlQualifiers _url_qual = URL_QUAL_NONE;
@@ -126,7 +126,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   UrlQualifiers                 _url_qual = URL_QUAL_NONE;
@@ -159,7 +159,7 @@ public:
   }
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _status;
@@ -176,7 +176,11 @@ public:
   void operator=(const OperatorNoOp &) = delete;
 
 protected:
-  void exec(const Resources & /* res ATS_UNUSED */) const override {};
+  bool
+  exec(const Resources & /* res ATS_UNUSED */) const override
+  {
+    return true;
+  };
 };
 
 class OperatorSetTimeoutOut : public Operator
@@ -191,7 +195,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   enum TimeoutOutType {
@@ -218,7 +222,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   bool _skip_remap = false;
@@ -235,7 +239,7 @@ public:
   void operator=(const OperatorRMHeader &)   = delete;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 };
 
 class OperatorAddHeader : public OperatorHeaders
@@ -250,7 +254,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _value;
@@ -268,7 +272,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _value;
@@ -286,7 +290,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   std::string _counter_name;
@@ -303,7 +307,7 @@ public:
   void operator=(const OperatorRMCookie &)   = delete;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 };
 
 class OperatorAddCookie : public OperatorCookies
@@ -318,7 +322,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _value;
@@ -336,7 +340,7 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _value;
@@ -367,7 +371,7 @@ public:
 
 protected:
   void initialize_hooks() override;
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _ds_value;
@@ -386,7 +390,7 @@ public:
 
 protected:
   void initialize_hooks() override;
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _ds_value;
@@ -405,7 +409,7 @@ public:
 
 protected:
   void initialize_hooks() override;
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 };
 
 class OperatorSetBody : public Operator
@@ -421,7 +425,7 @@ public:
 
 protected:
   void initialize_hooks() override;
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _value;
@@ -440,7 +444,7 @@ public:
 
 protected:
   void initialize_hooks() override;
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   bool           _flag = false;
@@ -473,7 +477,7 @@ public:
 
 protected:
   void initialize_hooks() override;
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   RemapPluginInst *_plugin = nullptr;

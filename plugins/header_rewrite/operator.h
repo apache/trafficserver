@@ -31,11 +31,12 @@
 
 // Operator modifiers
 enum OperModifiers {
-  OPER_NONE = 0,
-  OPER_LAST = 1,
-  OPER_NEXT = 2,
-  OPER_QSA  = 4,
-  OPER_INV  = 8,
+  OPER_NONE        = 0,
+  OPER_LAST        = 1,
+  OPER_NEXT        = 2,
+  OPER_QSA         = 4,
+  OPER_INV         = 8,
+  OPER_NO_REENABLE = 16,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -55,17 +56,23 @@ public:
   OperModifiers get_oper_modifiers() const;
   void          initialize(Parser &p) override;
 
-  void
+  // Only call TSHttpTxnReenable() if this returns true.
+  // NOTE:  This approach to controlling whether reenable is called only works because
+  // there is only one operator currently that defers the reenable.
+  bool
   do_exec(const Resources &res) const
   {
-    exec(res);
+    bool reenable{exec(res)};
     if (nullptr != _next) {
-      static_cast<Operator *>(_next)->do_exec(res);
+      reenable &&static_cast<Operator *>(_next)->do_exec(res);
     }
+    return reenable;
   }
 
 protected:
-  virtual void exec(const Resources &res) const = 0;
+  // Return false to disable call of TSHttpTxnReenable().  Operators executed in the remap pseudo-hook MUST return true,
+  // as reenable is implicit in remap execution.
+  virtual bool exec(const Resources &res) const = 0;
 
 private:
   OperModifiers _mods = OPER_NONE;

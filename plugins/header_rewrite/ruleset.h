@@ -104,8 +104,11 @@ public:
   OperModifiers
   exec(const Resources &res) const
   {
-    _oper->do_exec(res);
-    return _opermods;
+    auto mods{_opermods};
+    if (!_oper->do_exec(res)) {
+      mods = static_cast<OperModifiers>(mods | OPER_NO_REENABLE);
+    }
+    return mods;
   }
 
   RuleSet *next = nullptr; // Linked list
