@@ -18,7 +18,13 @@ Verify remap.config acl behavior.
 #  limitations under the License.
 
 import os
+import io
 import re
+import pathlib
+import inspect
+import tempfile
+from yaml import load, dump
+from yaml import CLoader as Loader
 from typing import List, Tuple
 
 Test.Summary = '''
@@ -34,8 +40,8 @@ class Test_remap_acl:
     _client_counter: int = 0
 
     def __init__(
-            self, name: str, replay_file: str, ip_allow_content: str, deactivate_ip_allow: bool, acl_configuration: str,
-            named_acls: List[Tuple[str, str]], expected_responses: List[int]):
+            self, name: str, replay_file: str, ip_allow_content: str, deactivate_ip_allow: bool, acl_matching_policy: int,
+            acl_configuration: str, named_acls: List[Tuple[str, str]], expected_responses: List[int]):
         """Initialize the test.
 
         :param name: The name of the test.
@@ -49,6 +55,7 @@ class Test_remap_acl:
         self._replay_file = replay_file
         self._ip_allow_content = ip_allow_content
         self._deactivate_ip_allow = deactivate_ip_allow
+        self._acl_matching_policy = acl_matching_policy
         self._acl_configuration = acl_configuration
         self._named_acls = named_acls
         self._expected_responses = expected_responses
@@ -79,18 +86,13 @@ class Test_remap_acl:
         Test_remap_acl._ts_counter += 1
         self._ts = ts
 
-        ts.addDefaultSSLFiles()
-        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
         ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|url|remap|ip_allow',
                 'proxy.config.http.push_method_enabled': 1,
-                'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-                'proxy.config.quic.no_activity_timeout_in': 0,
-                'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.http.connect_ports': self._server.Variables.http_port,
+                'proxy.config.url_remap.acl_matching_policy': self._acl_matching_policy,
             })
 
         remap_config_lines = []
@@ -115,14 +117,23 @@ class Test_remap_acl:
         """
 
         name = f"client-{Test_remap_acl._client_counter}"
-        p = tr.AddVerifierClientProcess(name, self._replay_file, https_ports=[self._ts.Variables.ssl_port])
+        p = tr.AddVerifierClientProcess(name, self._replay_file, http_ports=[self._ts.Variables.port])
         Test_remap_acl._client_counter += 1
         p.StartBefore(self._server)
         p.StartBefore(self._ts)
 
-        codes = [str(code) for code in self._expected_responses]
-        p.Streams.stdout += Testers.ContainsExpression(
-            '.*'.join(codes), "Verifying the expected order of responses", reflags=re.DOTALL | re.MULTILINE)
+        if self._expected_responses == [None, None]:
+            # If there are no expected responses, expect the Warning about the rejected ip.
+            self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+                "client '127.0.0.1' prohibited by ip-allow policy", "Verify the client rejection warning message.")
+
+            # Also, the client will complain about the broken connections.
+            p.ReturnCode = 1
+
+        else:
+            codes = [str(code) for code in self._expected_responses]
+            p.Streams.stdout += Testers.ContainsExpression(
+                '.*'.join(codes), "Verifying the expected order of responses", reflags=re.DOTALL | re.MULTILINE)
 
 
 IP_ALLOW_CONTENT = f'''
@@ -145,6 +156,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip=127.0.0.1 @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403])
@@ -154,6 +166,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip=1.2.3.4 @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 403, 403, 403, 403])
@@ -163,6 +176,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip=all @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403])
@@ -172,6 +186,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip_category=ACME_LOCAL @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403])
@@ -181,6 +196,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403])
@@ -190,6 +206,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_denied.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=deny @src_ip=127.0.0.1 @method=GET @method=POST',
     named_acls=[],
     expected_responses=[403, 403, 200, 200, 400])
@@ -199,6 +216,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_all_denied.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip=1.2.3.4 @method=GET @method=POST',
     named_acls=[('deny', '@action=deny')],
     expected_responses=[403, 403, 403, 403, 403])
@@ -208,6 +226,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_all_denied.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip=~127.0.0.1 @method=GET @method=POST',
     named_acls=[('deny', '@action=deny')],
     expected_responses=[403, 403, 403, 403, 403])
@@ -217,6 +236,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip=~3.4.5.6 @method=GET @method=POST',
     named_acls=[('deny', '@action=deny')],
     expected_responses=[200, 200, 403, 403, 403])
@@ -226,6 +246,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_all_denied.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip_category=~ACME_LOCAL @method=GET @method=POST',
     named_acls=[('deny', '@action=deny')],
     expected_responses=[403, 403, 403, 403, 403])
@@ -235,6 +256,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip_category=~ACME_EXTERNAL @method=GET @method=POST',
     named_acls=[('deny', '@action=deny')],
     expected_responses=[200, 200, 403, 403, 403])
@@ -244,6 +266,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_all_denied.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     # The rule will not match because, while @src_ip matches, @src_ip_category does not.
     acl_configuration='@action=allow @src_ip=127.0.0.1 @src_ip_category=ACME_EXTERNAL @method=GET @method=POST',
     # Therefore, this named deny filter will block.
@@ -255,6 +278,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip=127.0.0.1 @method=GET @method=POST',
     named_acls=[('deny', '@action=deny')],
     expected_responses=[200, 200, 403, 403, 403])
@@ -264,6 +288,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @src_ip=127.0.0.1 @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403])
@@ -273,6 +298,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_all_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=True,
+    acl_matching_policy=1,
     # This won't match, so nothing will match since ip_allow.yaml is off.
     acl_configuration='@action=allow @src_ip=1.2.3.4 @method=GET @method=POST',
     named_acls=[],
@@ -284,6 +310,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_post_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @in_ip=127.0.0.1 @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403])
@@ -293,6 +320,7 @@ test_ip_allow_optional_methods = Test_remap_acl(
     replay_file='remap_acl_get_allowed.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='@action=allow @in_ip=3.4.5.6 @method=GET @method=POST',
     named_acls=[],
     expected_responses=[200, 403, 403, 403, 403])
@@ -302,6 +330,82 @@ test_named_acl_deny = Test_remap_acl(
     replay_file='deny_head_post.replay.yaml',
     ip_allow_content=IP_ALLOW_CONTENT,
     deactivate_ip_allow=False,
+    acl_matching_policy=1,
     acl_configuration='',
     named_acls=[('deny', '@action=deny @method=HEAD @method=POST')],
     expected_responses=[200, 403, 403, 403])
+
+
+def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_response):
+    """
+    replay_proxy_response writes the given replay file (which expects a single GET & POST client-request)
+    with the given proxy_response value. This is only used to support the tests in the combination table.
+    """
+
+    current_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    path = os.path.join(current_dir, filename)
+    data = None
+    with open(path) as f:
+        data = load(f, Loader=Loader)
+        for session in data["sessions"]:
+            for transaction in session["transactions"]:
+                method = transaction["client-request"]["method"]
+                if method == "GET":
+                    transaction["proxy-response"]["status"] = 403 if get_proxy_response == None else get_proxy_response
+                elif method == "POST":
+                    transaction["proxy-response"]["status"] = 403 if post_proxy_response == None else post_proxy_response
+                else:
+                    raise Exception("Expected to find GET or POST request, found %s", method)
+    with open(replay_file, "w") as f:
+        f.write(dump(data))
+
+
+from deactivate_ip_allow import all_deactivate_ip_allow_tests
+from all_acl_combinations import all_acl_combination_tests
+"""
+Test all acl combinations
+"""
+for idx, test in enumerate(all_acl_combination_tests):
+    (_, replay_file_name) = tempfile.mkstemp(suffix="acl_table_test_{}.replay".format(idx))
+    replay_proxy_response(
+        "base.replay.yaml",
+        replay_file_name,
+        test["GET response"],
+        test["POST response"],
+    )
+    Test.Summary = "table test {0}".format(idx)
+    Test_remap_acl(
+        "{0} {1} {2}".format(test["inline"], test["named_acl"], test["ip_allow"]),
+        replay_file=replay_file_name,
+        ip_allow_content=test["ip_allow"],
+        deactivate_ip_allow=False,
+        acl_matching_policy=0 if test["policy"] == "ip_and_method" else 1,
+        acl_configuration=test["inline"],
+        named_acls=[("acl", test["named_acl"])] if test["named_acl"] != "" else [],
+        expected_responses=[test["GET response"], test["POST response"]],
+    )
+"""
+Test all ACL combinations
+"""
+for idx, test in enumerate(all_deactivate_ip_allow_tests):
+    try:
+        test["deactivate_ip_allow"]
+    except:
+        print(test)
+    (_, replay_file_name) = tempfile.mkstemp(suffix="deactivate_ip_allow_table_test_{}.replay".format(idx))
+    replay_proxy_response(
+        "base.replay.yaml",
+        replay_file_name,
+        test["GET response"],
+        test["POST response"],
+    )
+    Test.Summary = "table test {0}".format(idx)
+    Test_remap_acl(
+        "{0} {1} {2}".format(test["inline"], test["named_acl"], test["ip_allow"]),
+        replay_file=replay_file_name,
+        ip_allow_content=test["ip_allow"],
+        deactivate_ip_allow=test["deactivate_ip_allow"],
+        acl_matching_policy=0 if test["policy"] == "ip_and_method" else 1,
+        acl_configuration=test["inline"],
+        named_acls=[("acl", test["named_acl"])] if test["named_acl"] != "" else [],
+        expected_responses=[test["GET response"], test["POST response"]])

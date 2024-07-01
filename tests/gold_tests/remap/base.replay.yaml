@@ -18,16 +18,7 @@
 # methods.
 
 meta:
-  version: "1.0"
-
-  blocks:
-  - standard_response: &standard_response
-      server-response:
-        status: 200
-        reason: OK
-        headers:
-          fields:
-          - [ Content-Length, 20 ]
+  version: '1.0'
 
 sessions:
 - protocol:
@@ -36,8 +27,8 @@ sessions:
   transactions:
 
   - client-request:
-      method: "GET"
-      version: "1.1"
+      method: GET
+      version: '1.1'
       url: /test/ip_allow/test_get
       headers:
         fields:
@@ -45,54 +36,32 @@ sessions:
         - [ uuid, get ]
         - [ X-Request, get ]
 
-    <<: *standard_response
-
     proxy-response:
       status: 200
 
-  - client-request:
-      method: "HEAD"
-      version: "1.1"
-      url: /test/ip_allow/test_head
+    server-response:
+      status: 200
+      reason: OK
       headers:
         fields:
-        - [ Content-Length, 0 ]
-        - [ uuid, head ]
-        - [ X-Request, head ]
+        - [ Content-Length, 20 ]
 
-    <<: *standard_response
-
-    proxy-response:
-      status: 403
-
-  # POST rejected
   - client-request:
-      method: "POST"
-      version: "1.1"
+      method: POST
+      version: '1.1'
       url: /test/ip_allow/test_post
       headers:
         fields:
-        - [Content-Length, 10]
+        - [ Content-Length, 10 ]
         - [ uuid, post ]
         - [ X-Request, post ]
 
-    <<: *standard_response
-
-    proxy-response:
-      status: 403
-
-  - client-request:
-      method: "DELETE"
-      version: "1.1"
-      url: /test/ip_allow/test_delete
-      headers:
-        fields:
-        - [ Host, example.com ]
-        - [ uuid, delete ]
-        - [ X-Request, delete ]
-        - [ Content-Length, 0 ]
-
-    <<: *standard_response
-
     proxy-response:
       status: 200
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 20 ]

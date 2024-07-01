@@ -126,6 +126,22 @@ UrlRewrite::load()
   } else {
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
+
+  // ACL Matching Policy
+  int matching_policy = 0;
+  REC_ReadConfigInteger(matching_policy, "proxy.config.url_remap.acl_matching_policy");
+  switch (matching_policy) {
+  case 0:
+    _acl_matching_policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
+    break;
+  case 1:
+    _acl_matching_policy = ACLMatchingPolicy::MATCH_ON_IP_ONLY;
+    break;
+  default:
+    Warning("unkown ACL Matching Policy :%d", matching_policy);
+    _valid = false;
+  }
+
   return _valid;
 }
 
@@ -422,7 +438,7 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
 
 /** Perform fast ACL filtering. */
 void
-UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
+UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const map)
 {
   if (unlikely(!s || s->acl_filtering_performed || !s->client_connection_allowed)) {
     return;
@@ -538,14 +554,23 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
           // Did they specify allowing the listed methods, or denying them?
           Dbg(dbg_ctl_url_rewrite, "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
           s->client_connection_allowed = rp->allow_flag;
-        } else {
+
+          // Since both the IP and method match, this rule will be applied regardless of ACLMatchingPolicy and no need to process
+          // other filters nor ip_allow.yaml rules
+          s->skip_ip_allow_yaml = true;
+          break;
+        }
+
+        if (_acl_matching_policy == ACLMatchingPolicy::MATCH_ON_IP_ONLY) {
+          // Flipping the action for unspecified methods.
           Dbg(dbg_ctl_url_rewrite, "ACL rule matched on IP but not on method, action: %s, %s the request",
               (rp->allow_flag ? "allow" : "deny"), (rp->allow_flag ? "denying" : "allowing"));
           s->client_connection_allowed = !rp->allow_flag;
+
+          // Since IP match and configured policy is MATCH_ON_IP_ONLY, no need to process other filters nor ip_allow.yaml rules.
+          s->skip_ip_allow_yaml = true;
+          break;
         }
-        // Since we have a matching ACL, no need to process ip_allow.yaml rules.
-        map->ip_allow_check_enabled_p = false;
-        break;
       }
     }
   } /* end of for(rp = map->filter;rp;rp = rp->next) */
