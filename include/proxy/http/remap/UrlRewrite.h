@@ -63,6 +63,11 @@ public:
   UrlRewrite()   = default;
   ~UrlRewrite() override;
 
+  enum class ACLMatchingPolicy {
+    MATCH_ON_IP_AND_METHOD = 0,
+    MATCH_ON_IP_ONLY,
+  };
+
   /** Load the configuration.
    *
    * This access data in librecords to obtain the information needed for loading the configuration.
@@ -152,7 +157,7 @@ public:
     }
   };
 
-  void        PerformACLFiltering(HttpTransact::State *s, url_mapping *mapping);
+  void        PerformACLFiltering(HttpTransact::State *s, const url_mapping *const mapping);
   void        PrintStore(const MappingsStore &store) const;
   std::string PrintRemapHits();
   std::string PrintRemapHitsStore(MappingsStore &store);
@@ -224,7 +229,8 @@ public:
   NextHopStrategyFactory *strategyFactory = nullptr;
 
 private:
-  bool _valid = false;
+  bool              _valid               = false;
+  ACLMatchingPolicy _acl_matching_policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
 
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host, int request_host_len,
                       UrlMappingContainer &mapping_container);

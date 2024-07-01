@@ -6495,9 +6495,14 @@ HttpTransact::process_quick_http_filter(State *s, int method)
     return;
   }
 
-  // if ipallow rules are disabled by remap then don't modify anything
+  // if the "ip_allow" named filter is deactivated in the remap.config, then don't modify anything
   url_mapping *mp = s->url_map.getMapping();
   if (mp && !mp->ip_allow_check_enabled_p) {
+    return;
+  }
+
+  // if a ACL filter in the remap.config forces skipping ip_allow.yaml check, do nothing
+  if (s->skip_ip_allow_yaml) {
     return;
   }
 
