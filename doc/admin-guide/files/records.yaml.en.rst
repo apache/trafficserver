@@ -3545,6 +3545,18 @@ URL Remap Rules
 
    This is dynamic to enable different requirements for startup and reloading.
 
+.. ts:cv:: CONFIG proxy.config.url_remap.acl_matching_policy INT 0
+   :reloadable:
+
+   This controls matching policy of ACL filters in :file:`remap.config`. See :ref:`acl-filters` for more details.
+
+   ===== =============================
+   Value Description
+   ===== =============================
+   ``0`` Match on IP and Method Policy
+   ``1`` Match on IP only Policy
+   ===== =============================
+
 .. _records-config-ssl-termination:
 
 SSL Termination
