@@ -93,6 +93,9 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
     }
 
     if (this->_reading_state == READING_PAYLOAD) {
+      if (read_len == 0) {
+        break;
+      }
       if (this->_current_frame == nullptr) {
         // Create a frame
         // Type field length + Length field length + Payload length
@@ -110,11 +113,16 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
         ++frame_count;
       }
 
+      auto skip = std::min(static_cast<uint64_t>(reader.read_avail()), this->_bytes_to_skip);
+      reader.consume(skip);
+      this->_bytes_to_skip -= skip;
+      nread                += skip;
+
       if (this->_current_frame->update()) {
         // Dispatch
         Http3FrameType type = this->_current_frame->type();
-        Debug("http3", "[RX] [%" PRIu64 "] | %s size=%" PRIu64, stream_id, Http3DebugNames::frame_type(type),
-              this->_current_frame->total_length());
+        Debug("http3", "[RX] [%" PRIu64 "] | %s size=%" PRIu64 "/%" PRIu64, stream_id, Http3DebugNames::frame_type(type),
+              this->_current_frame->total_length() - _bytes_to_skip, this->_current_frame->total_length());
         std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
         for (auto h : handlers) {
           error = h->handle_frame(this->_current_frame, frame_count - 1, stream_type);
@@ -123,11 +131,6 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
           }
         }
       }
-
-      auto skip = std::min(static_cast<uint64_t>(reader.read_avail()), this->_bytes_to_skip);
-      reader.consume(skip);
-      this->_bytes_to_skip -= skip;
-      nread                += skip;
 
       if (this->_bytes_to_skip == 0) {
         this->_current_frame = nullptr;

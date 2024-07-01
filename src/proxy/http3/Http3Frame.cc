@@ -105,6 +105,7 @@ Http3Frame::Http3Frame(IOBufferReader &reader) : _reader(&reader)
 
   // Rest of the data is Frame Payload
   this->_reader->consume(type_field_length + length_field_length);
+  this->_payload_offset = type_field_length + length_field_length;
 }
 
 Http3Frame::Http3Frame(Http3FrameType type) : _type(type) {}
@@ -198,7 +199,10 @@ Http3UnknownFrame::to_io_buffer_block() const
 //
 // DATA Frame
 //
-Http3DataFrame::Http3DataFrame(IOBufferReader &reader) : Http3Frame(reader) {}
+Http3DataFrame::Http3DataFrame(IOBufferReader &reader) : Http3Frame(reader)
+{
+  this->_payload_len = this->_length;
+}
 
 Http3DataFrame::Http3DataFrame(ats_unique_buf payload, size_t payload_len)
   : Http3Frame(Http3FrameType::DATA), _payload_uptr(std::move(payload)), _payload_len(payload_len)
@@ -268,7 +272,9 @@ Http3HeadersFrame::Http3HeadersFrame(ats_unique_buf header_block, size_t header_
 
 Http3HeadersFrame::~Http3HeadersFrame()
 {
-  ats_free(this->_header_block);
+  if (this->_header_block_uptr == nullptr) {
+    ats_free(this->_header_block);
+  }
 }
 
 Ptr<IOBufferBlock>
@@ -387,12 +393,6 @@ Http3SettingsFrame::reset(IOBufferReader &reader)
   new (this) Http3SettingsFrame(reader);
 }
 
-bool
-Http3SettingsFrame::is_valid() const
-{
-  return this->_valid;
-}
-
 Http3ErrorUPtr
 Http3SettingsFrame::get_error() const
 {
@@ -441,6 +441,7 @@ Http3SettingsFrame::_parse()
     if (nsettings >= this->_max_settings) {
       this->_error_code   = Http3ErrorCode::H3_EXCESSIVE_LOAD;
       this->_error_reason = reinterpret_cast<const char *>("too many settings");
+      this->_is_valid     = false;
       break;
     }
 
@@ -480,8 +481,9 @@ Http3SettingsFrame::_parse()
     ++nsettings;
   }
 
-  if (len == this->_length) {
-    this->_valid = true;
+  if (len != this->_length) {
+    // TODO: make connection error with HTTP_MALFORMED_FRAME
+    this->_is_valid = false;
   }
 
   ats_free(buf);
@@ -506,7 +508,7 @@ Http3FrameFactory::create(IOBufferReader &reader)
 
   // FIXME Frame type can be longer than 1 byte
   uint8_t type_buf[1];
-  reader.read(type_buf, sizeof(type_buf));
+  reader.memcpy(type_buf, sizeof(type_buf));
   Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
 
   switch (type) {
@@ -536,7 +538,7 @@ Http3FrameFactory::fast_create(IOBufferReader &reader)
 {
   // FIXME Frame type can be longer than 1 byte
   uint8_t type_buf[1];
-  reader.read(type_buf, sizeof(type_buf));
+  reader.memcpy(type_buf, sizeof(type_buf));
   Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
   if (type == Http3FrameType::UNKNOWN) {
     if (!this->_unknown_frame) {

@@ -50,16 +50,16 @@ public:
   static Http3FrameType      type(const uint8_t *buf, size_t buf_len);
 
 protected:
-  IOBufferReader *_reader;
+  IOBufferReader *_reader           = nullptr;
   bool            _finished_reading = false;
   uint64_t        _length           = 0;
   Http3FrameType  _type             = Http3FrameType::UNKNOWN;
   size_t          _payload_offset   = 0;
+  bool            _is_valid         = true;
 
   virtual bool _parse();
 
 private:
-  bool _is_valid = true;
   bool _is_ready = false;
 };
 
@@ -149,7 +149,6 @@ public:
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
   void               reset(IOBufferReader &reader) override;
 
-  bool           is_valid() const;
   Http3ErrorUPtr get_error() const;
 
   bool     contains(Http3SettingsId id) const;
@@ -162,10 +161,8 @@ protected:
 private:
   uint32_t                            _max_settings = 0;
   std::map<Http3SettingsId, uint64_t> _settings;
-  // TODO: make connection error with HTTP_MALFORMED_FRAME
-  bool           _valid = false;
-  Http3ErrorCode _error_code;
-  const char    *_error_reason = nullptr;
+  Http3ErrorCode                      _error_code;
+  const char                         *_error_reason = nullptr;
 };
 
 using Http3FrameDeleterFunc  = void (*)(Http3Frame *p);
