@@ -481,7 +481,7 @@ Acl::loaddb(const YAML::Node &dbNode)
 }
 
 bool
-Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
+Acl::eval(TSRemapRequestInfo * /* rri ATS_UNUSED */, TSHttpTxn txnp)
 {
   bool ret = default_allow;
   int  mmdb_error;

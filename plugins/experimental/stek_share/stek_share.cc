@@ -89,7 +89,7 @@ restore_config(std::shared_ptr<PluginConfig> config)
 }
 
 static int
-shutdown_handler(TSCont contp, TSEvent event, void *edata)
+shutdown_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (event == TS_EVENT_LIFECYCLE_SHUTDOWN) {
     stek_share_server.raft_launcher.shutdown();
@@ -100,7 +100,7 @@ shutdown_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-message_handler(TSCont contp, TSEvent event, void *edata)
+message_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   if (event == TS_EVENT_LIFECYCLE_MSG) {
     TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
@@ -354,7 +354,7 @@ load_config_from_file()
 }
 
 void
-handle_result(raft_result &result, nuraft::ptr<std::exception> &err)
+handle_result(raft_result &result, nuraft::ptr<std::exception> & /* err ATS_UNUSED */)
 {
   if (result.get_result_code() != nuraft::cmd_result_code::OK) {
     // Something went wrong.
@@ -416,7 +416,7 @@ print_status()
 }
 
 static void *
-stek_updater(void *arg)
+stek_updater(void * /* arg ATS_UNUSED */)
 {
   plugin_threads.store(::pthread_self());
   ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
