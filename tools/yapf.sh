@@ -47,8 +47,8 @@ _END_
   fi
 
   REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
-  GIT_COMMON_DIR=$(cd $(dirname $0) && git rev-parse --path-format=absolute --git-common-dir)
-  YAPF_VENV=${YAPF_VENV:-${GIT_COMMON_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
+  GIT_DIR=$(git rev-parse --absolute-git-dir)
+  YAPF_VENV=${YAPF_VENV:-${GIT_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
   if [ ! -e ${YAPF_VENV} ]
   then
     python3 -m virtualenv ${YAPF_VENV}
@@ -108,6 +108,6 @@ _END_
 if [[ "$(basename -- "$0")" == 'yapf.sh' ]]; then
   main "$@"
 else
-  GIT_COMMON_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
-  YAPF_VENV=${YAPF_VENV:-${GIT_COMMON_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
+  GIT_DIR=$(git rev-parse --absolute-git-dir)
+  YAPF_VENV=${YAPF_VENV:-${GIT_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
 fi
