@@ -35,29 +35,39 @@ public:
   constexpr static size_t MAX_FRAM_HEADER_OVERHEAD = 128; ///< Type (i) + Length (i)
 
   Http3Frame() {}
-  Http3Frame(const uint8_t *buf, size_t len);
+  Http3Frame(IOBufferReader &reader);
   Http3Frame(Http3FrameType type);
-  virtual ~Http3Frame() {}
+  virtual ~Http3Frame();
 
+  bool                       is_valid() const;
   uint64_t                   total_length() const;
   uint64_t                   length() const;
   Http3FrameType             type() const;
+  bool                       update();
   virtual Ptr<IOBufferBlock> to_io_buffer_block() const;
-  virtual void               reset(const uint8_t *buf, size_t len);
+  virtual void               reset(IOBufferReader &reader);
   static int                 length(const uint8_t *buf, size_t buf_len, uint64_t &length);
   static Http3FrameType      type(const uint8_t *buf, size_t buf_len);
 
 protected:
-  uint64_t       _length         = 0;
-  Http3FrameType _type           = Http3FrameType::UNKNOWN;
-  size_t         _payload_offset = 0;
+  IOBufferReader *_reader           = nullptr;
+  bool            _finished_reading = false;
+  uint64_t        _length           = 0;
+  Http3FrameType  _type             = Http3FrameType::UNKNOWN;
+  size_t          _payload_offset   = 0;
+  bool            _is_valid         = true;
+
+  virtual bool _parse();
+
+private:
+  bool _is_ready = false;
 };
 
 class Http3UnknownFrame : public Http3Frame
 {
 public:
   Http3UnknownFrame() : Http3Frame() {}
-  Http3UnknownFrame(const uint8_t *buf, size_t len);
+  Http3UnknownFrame(IOBufferReader &reader);
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
 
@@ -74,14 +84,16 @@ class Http3DataFrame : public Http3Frame
 {
 public:
   Http3DataFrame() : Http3Frame() {}
-  Http3DataFrame(const uint8_t *buf, size_t len);
+  Http3DataFrame(IOBufferReader &reader);
   Http3DataFrame(ats_unique_buf payload, size_t payload_len);
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
-  void               reset(const uint8_t *buf, size_t len) override;
+  void               reset(IOBufferReader &reader) override;
 
   const uint8_t *payload() const;
   uint64_t       payload_length() const;
+
+  IOBufferReader *data() const;
 
 private:
   const uint8_t *_payload      = nullptr;
@@ -97,17 +109,21 @@ class Http3HeadersFrame : public Http3Frame
 {
 public:
   Http3HeadersFrame() : Http3Frame() {}
-  Http3HeadersFrame(const uint8_t *buf, size_t len);
+  Http3HeadersFrame(IOBufferReader &reader);
   Http3HeadersFrame(ats_unique_buf header_block, size_t header_block_len);
+  ~Http3HeadersFrame();
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
-  void               reset(const uint8_t *buf, size_t len) override;
+  void               reset(IOBufferReader &reader) override;
 
   const uint8_t *header_block() const;
   uint64_t       header_block_length() const;
 
+protected:
+  bool _parse() override;
+
 private:
-  const uint8_t *_header_block      = nullptr;
+  uint8_t       *_header_block      = nullptr;
   ats_unique_buf _header_block_uptr = {nullptr};
   size_t         _header_block_len  = 0;
 };
@@ -120,7 +136,7 @@ class Http3SettingsFrame : public Http3Frame
 {
 public:
   Http3SettingsFrame() : Http3Frame(Http3FrameType::SETTINGS) {}
-  Http3SettingsFrame(const uint8_t *buf, size_t len, uint32_t max_settings = 0);
+  Http3SettingsFrame(IOBufferReader &reader, uint32_t max_settings = 0);
 
   static constexpr size_t                         MAX_PAYLOAD_SIZE = 60;
   static constexpr std::array<Http3SettingsId, 4> VALID_SETTINGS_IDS{
@@ -131,21 +147,22 @@ public:
   };
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
-  void               reset(const uint8_t *buf, size_t len) override;
+  void               reset(IOBufferReader &reader) override;
 
-  bool           is_valid() const;
   Http3ErrorUPtr get_error() const;
 
   bool     contains(Http3SettingsId id) const;
   uint64_t get(Http3SettingsId id) const;
   void     set(Http3SettingsId id, uint64_t value);
 
+protected:
+  bool _parse() override;
+
 private:
+  uint32_t                            _max_settings = 0;
   std::map<Http3SettingsId, uint64_t> _settings;
-  // TODO: make connection error with HTTP_MALFORMED_FRAME
-  bool           _valid = false;
-  Http3ErrorCode _error_code;
-  const char    *_error_reason = nullptr;
+  Http3ErrorCode                      _error_code;
+  const char                         *_error_reason = nullptr;
 };
 
 using Http3FrameDeleterFunc  = void (*)(Http3Frame *p);
@@ -217,14 +234,13 @@ public:
   /*
    * This is used for creating a Http3Frame object based on received data.
    */
-  static Http3FrameUPtr create(const uint8_t *buf, size_t len);
+  static Http3FrameUPtr create(IOBufferReader &reader);
 
   /*
    * This works almost the same as create() but it reuses created objects for performance.
    * If you create a frame object which has the same frame type that you created before, the object will be reset by new data.
    */
-  std::shared_ptr<const Http3Frame> fast_create(IOBufferReader &reader, size_t frame_len);
-  std::shared_ptr<const Http3Frame> fast_create(const uint8_t *buf, size_t len);
+  std::shared_ptr<Http3Frame> fast_create(IOBufferReader &reader);
 
   /*
    * Creates a HEADERS frame.

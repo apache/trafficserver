@@ -37,38 +37,29 @@ TEST_CASE("Http3Frame Type", "[http3]")
 
 TEST_CASE("Load DATA Frame", "[http3]")
 {
-  SECTION("No flags")
+  SECTION("Normal")
   {
     uint8_t buf1[] = {
       0x00,                   // Type
       0x04,                   // Length
       0x11, 0x22, 0x33, 0x44, // Payload
     };
-    std::shared_ptr<const Http3Frame> frame1 = Http3FrameFactory::create(buf1, sizeof(buf1));
+    MIOBuffer *input = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+    input->write(buf1, sizeof(buf1));
+    IOBufferReader             *input_reader = input->alloc_reader();
+    std::shared_ptr<Http3Frame> frame1       = Http3FrameFactory::create(*input_reader);
+    frame1->update();
     CHECK(frame1->type() == Http3FrameType::DATA);
     CHECK(frame1->length() == 4);
 
-    std::shared_ptr<const Http3DataFrame> data_frame = std::dynamic_pointer_cast<const Http3DataFrame>(frame1);
+    std::shared_ptr<Http3DataFrame> data_frame = std::dynamic_pointer_cast<Http3DataFrame>(frame1);
     CHECK(data_frame);
     CHECK(data_frame->payload_length() == 4);
-    CHECK(memcmp(data_frame->payload(), "\x11\x22\x33\x44", 4) == 0);
-  }
+    IOBufferReader *data_reader = data_frame->data();
+    CHECK(data_reader->read_avail() == 4);
+    CHECK(memcmp(data_reader->start(), "\x11\x22\x33\x44", 4) == 0);
 
-  SECTION("Have flags (invalid)")
-  {
-    uint8_t buf1[] = {
-      0x00,                   // Type
-      0x04,                   // Length
-      0x11, 0x22, 0x33, 0x44, // Payload
-    };
-    std::shared_ptr<const Http3Frame> frame1 = Http3FrameFactory::create(buf1, sizeof(buf1));
-    CHECK(frame1->type() == Http3FrameType::DATA);
-    CHECK(frame1->length() == 4);
-
-    std::shared_ptr<const Http3DataFrame> data_frame = std::dynamic_pointer_cast<const Http3DataFrame>(frame1);
-    CHECK(data_frame);
-    CHECK(data_frame->payload_length() == 4);
-    CHECK(memcmp(data_frame->payload(), "\x11\x22\x33\x44", 4) == 0);
+    free_MIOBuffer(input);
   }
 }
 
@@ -144,16 +135,22 @@ TEST_CASE("Load SETTINGS Frame", "[http3]")
       0x4a, 0xba, // Identifier
       0x00,       // Value
     };
+    MIOBuffer *input = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+    input->write(buf, sizeof(buf));
+    IOBufferReader *input_reader = input->alloc_reader();
 
-    std::shared_ptr<const Http3Frame> frame = Http3FrameFactory::create(buf, sizeof(buf));
+    std::shared_ptr<Http3Frame> frame = Http3FrameFactory::create(*input_reader);
+    frame->update();
     CHECK(frame->type() == Http3FrameType::SETTINGS);
     CHECK(frame->length() == sizeof(buf) - 2);
 
-    std::shared_ptr<const Http3SettingsFrame> settings_frame = std::dynamic_pointer_cast<const Http3SettingsFrame>(frame);
+    std::shared_ptr<Http3SettingsFrame> settings_frame = std::dynamic_pointer_cast<Http3SettingsFrame>(frame);
     CHECK(settings_frame);
     CHECK(settings_frame->is_valid());
     CHECK(settings_frame->get(Http3SettingsId::MAX_FIELD_SECTION_SIZE) == 0x0400);
     CHECK(settings_frame->get(Http3SettingsId::NUM_PLACEHOLDERS) == 0x0f);
+
+    free_MIOBuffer(input);
   }
 }
 
@@ -219,10 +216,14 @@ TEST_CASE("Http3FrameFactory Create Unknown Frame", "[http3]")
     0x0f, // Type
     0x00, // Length
   };
-  std::shared_ptr<const Http3Frame> frame1 = Http3FrameFactory::create(buf1, sizeof(buf1));
+  MIOBuffer *input = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+  input->write(buf1, sizeof(buf1));
+  IOBufferReader                   *input_reader = input->alloc_reader();
+  std::shared_ptr<const Http3Frame> frame1       = Http3FrameFactory::create(*input_reader);
   CHECK(frame1);
   CHECK(frame1->type() == Http3FrameType::UNKNOWN);
   CHECK(frame1->length() == 0);
+  free_MIOBuffer(input);
 }
 
 TEST_CASE("Http3FrameFactory Fast Create Frame", "[http3]")
@@ -239,21 +240,31 @@ TEST_CASE("Http3FrameFactory Fast Create Frame", "[http3]")
     0x04,                   // Length
     0xaa, 0xbb, 0xcc, 0xdd, // Payload
   };
-  std::shared_ptr<const Http3Frame> frame1 = factory.fast_create(buf1, sizeof(buf1));
+  MIOBuffer *input1 = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+  input1->write(buf1, sizeof(buf1));
+  IOBufferReader *input_reader1 = input1->alloc_reader();
+  MIOBuffer      *input2        = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+  input2->write(buf2, sizeof(buf2));
+  IOBufferReader *input_reader2 = input2->alloc_reader();
+
+  std::shared_ptr<const Http3Frame> frame1 = factory.fast_create(*input_reader1);
   CHECK(frame1 != nullptr);
 
   std::shared_ptr<const Http3DataFrame> data_frame1 = std::dynamic_pointer_cast<const Http3DataFrame>(frame1);
   CHECK(data_frame1 != nullptr);
-  CHECK(memcmp(data_frame1->payload(), buf1 + 2, 4) == 0);
+  CHECK(memcmp(data_frame1->data()->start(), buf1 + 2, 4) == 0);
 
-  std::shared_ptr<const Http3Frame> frame2 = factory.fast_create(buf2, sizeof(buf2));
+  std::shared_ptr<const Http3Frame> frame2 = factory.fast_create(*input_reader2);
   CHECK(frame2 != nullptr);
 
   std::shared_ptr<const Http3DataFrame> data_frame2 = std::dynamic_pointer_cast<const Http3DataFrame>(frame2);
   CHECK(data_frame2 != nullptr);
-  CHECK(memcmp(data_frame2->payload(), buf2 + 2, 4) == 0);
+  CHECK(memcmp(data_frame2->data()->start(), buf2 + 2, 4) == 0);
 
   CHECK(frame1 == frame2);
+
+  free_MIOBuffer(input1);
+  free_MIOBuffer(input2);
 }
 
 TEST_CASE("Http3FrameFactory Fast Create Unknown Frame", "[http3]")
@@ -263,14 +274,18 @@ TEST_CASE("Http3FrameFactory Fast Create Unknown Frame", "[http3]")
   uint8_t buf1[] = {
     0x0f, // Type
   };
-  std::shared_ptr<const Http3Frame> frame1 = factory.fast_create(buf1, sizeof(buf1));
+  MIOBuffer *input = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+  input->write(buf1, sizeof(buf1));
+  IOBufferReader                   *input_reader = input->alloc_reader();
+  std::shared_ptr<const Http3Frame> frame1       = factory.fast_create(*input_reader);
   CHECK(frame1);
   CHECK(frame1->type() == Http3FrameType::UNKNOWN);
+  free_MIOBuffer(input);
 }
 
 TEST_CASE("SETTINGS frame handler", "[http3]")
 {
-  uint8_t input[] = {
+  uint8_t buf1[] = {
     0x04,       // Type
     0x08,       // Length
     0x06,       // Identifier
@@ -280,11 +295,15 @@ TEST_CASE("SETTINGS frame handler", "[http3]")
     0x4a, 0x0a, // Identifier
     0x00,       // Value
   };
+  MIOBuffer *input = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+  input->write(buf1, sizeof(buf1));
+  IOBufferReader *input_reader = input->alloc_reader();
 
   Http3SettingsHandler handler       = Http3SettingsHandler(nullptr);
-  Http3SettingsFrame   invalid_frame = Http3SettingsFrame(input, sizeof(input), 1);
+  Http3SettingsFrame   invalid_frame = Http3SettingsFrame(*input_reader, 1);
   Http3ErrorUPtr       error         = Http3ErrorUPtr(nullptr);
 
+  invalid_frame.update();
   CHECK(invalid_frame.is_valid() == false);
 
   std::shared_ptr<const Http3Frame> invalid_frame_ptr = std::make_shared<const Http3SettingsFrame>(invalid_frame);
@@ -293,11 +312,15 @@ TEST_CASE("SETTINGS frame handler", "[http3]")
   REQUIRE(error);
   CHECK(error->code == Http3ErrorCode::H3_EXCESSIVE_LOAD);
 
-  Http3SettingsFrame valid_frame = Http3SettingsFrame(input, sizeof(input), 3);
+  input->reset();
+  input->write(buf1, sizeof(buf1));
+  Http3SettingsFrame valid_frame = Http3SettingsFrame(*input_reader, 3);
 
   CHECK(valid_frame.is_valid() == true);
 
   std::shared_ptr<const Http3Frame> valid_frame_ptr = std::make_shared<const Http3SettingsFrame>(valid_frame);
   error                                             = handler.handle_frame(valid_frame_ptr);
   CHECK(error == nullptr);
+
+  free_MIOBuffer(input);
 }
