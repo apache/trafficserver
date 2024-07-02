@@ -4,7 +4,7 @@
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html
 ##############################################################################
 
-ts:
+records:
   accept_threads: 1
   cache:
     limits:
