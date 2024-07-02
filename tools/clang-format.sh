@@ -24,8 +24,8 @@ PKGDATE="20240430"
 function main() {
   set -e # exit on error
 
-  GIT_COMMON_DIR=$(cd $(dirname $0) && git rev-parse --path-format=absolute --git-common-dir)
-  ROOT=${ROOT:-${GIT_COMMON_DIR}/fmt/${PKGDATE}}
+  GIT_DIR=$(git rev-parse --absolute-git-dir)
+  ROOT=${ROOT:-${GIT_DIR}/fmt/${PKGDATE}}
   # The presence of this file indicates clang-format was successfully installed.
   INSTALLED_SENTINEL=${ROOT}/.clang-format-installed
 
@@ -38,7 +38,7 @@ function main() {
       exit 2
     fi
   fi
-  DIR=${@:-$(dirname ${GIT_COMMON_DIR})}
+  DIR=${@:-$(dirname ${GIT_DIR})}
   PACKAGE="clang-format-${PKGDATE}.tar.bz2"
   VERSION="clang-format version 18.1.2 (https://github.com/llvm/llvm-project.git 26a1d6601d727a96f4301d0d8647b5a42760ae0c)"
 
@@ -119,6 +119,6 @@ EOF
 if [[ "$(basename -- "$0")" == 'clang-format.sh' ]]; then
   main "$@"
 else
-  GIT_COMMON_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
-  ROOT=${ROOT:-${GIT_COMMON_DIR}/fmt/${PKGDATE}}
+  GIT_DIR=$(git rev-parse --absolute-git-dir)
+  ROOT=${ROOT:-${GIT_DIR}/fmt/${PKGDATE}}
 fi
