@@ -105,7 +105,7 @@ PluginDso::load(std::string &error, const fs::path &compilerPath)
           result = false;
         }
       }
-    } else if (isDynamicReloadEnabled() && !copy(_effectivePath, _runtimePath, ec)) {
+    } else if (isDynamicReloadEnabled() && !fs::copy(_effectivePath, _runtimePath, ec)) {
       concat_error(error, "failed to create a copy");
       concat_error(error, ec.message());
       result = false;
@@ -282,15 +282,15 @@ PluginDso::clean(std::string &error)
 void
 PluginDso::acquire()
 {
-  ++this->_instanceCount;
-  PluginDbg(_dbg_ctl(), "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->_instanceCount.load(), this);
+  this->refcount_inc();
+  PluginDbg(_dbg_ctl(), "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->refcount(), this);
 }
 
 void
 PluginDso::release()
 {
-  PluginDbg(_dbg_ctl(), "plugin DSO release (ref-count:%d, dso-addr:%p)", this->_instanceCount.load() - 1, this);
-  if (0 == --this->_instanceCount) {
+  PluginDbg(_dbg_ctl(), "plugin DSO release (ref-count:%d, dso-addr:%p)", this->refcount() - 1, this);
+  if (0 == this->refcount_dec()) {
     PluginDbg(_dbg_ctl(), "unloading plugin DSO '%s' (dso-addr:%p)", _configPath.c_str(), this);
     _plugins->remove(this);
   }

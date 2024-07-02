@@ -60,8 +60,6 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
 CATCH_REGISTER_LISTENER(EventProcessorListener);
 
-thread_local PluginThreadContext *pluginThreadContext;
-
 std::error_code ec;
 static void    *INSTANCE_HANDLER = (void *)789;
 
@@ -106,7 +104,7 @@ static fs::path sandboxDir     = getTemporaryDir();
 static fs::path runtimeRootDir = sandboxDir / "runtime";
 static fs::path runtimeDir     = runtimeRootDir / tempComponent;
 static fs::path searchDir      = sandboxDir / "search";
-static fs::path pluginBuildDir = fs::current_path();
+static fs::path pluginBuildDir = fs::path{SRC_BUILD_DIR} / "src/proxy/http/remap/unit-tests/.libs";
 
 void
 clean()
@@ -208,7 +206,7 @@ setupConfigPathTest(const fs::path &configPath, const fs::path &pluginBuildPath,
   if (0 != mtime) {
     struct stat    sb;
     struct utimbuf new_times;
-    stat(effectivePath.c_str(), &sb);
+    CHECK(stat(effectivePath.c_str(), &sb) == 0);
     new_times.actime  = sb.st_atime; /* keep atime unchanged */
     new_times.modtime = mtime;       /* set mtime to current time */
     utime(effectivePath.c_str(), &new_times);
@@ -472,7 +470,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
     fs::path              runtimePath1    = runtimeDir / effectivePath1.relative_path();
     fs::path              runtimePath2    = runtimeDir / effectivePath2.relative_path();
     fs::path              runtimePath3    = runtimeDir / effectivePath3.relative_path();
-    fs::path              pluginBuildPath = fs::current_path() / pluginName;
+    fs::path              pluginBuildPath = fs::path{SRC_BUILD_DIR} / "src/proxy/http/remap/unit-tests/.libs" / pluginName;
 
     std::string error;
 

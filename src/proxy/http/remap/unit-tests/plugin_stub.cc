@@ -1,6 +1,6 @@
 /** @file
 
-  A test plugin common testing functionality
+  Stub file for unit tests
 
   @section license License
 
@@ -19,34 +19,10 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
-  @section details Details
-
-  Implements code necessary for Reverse Proxy which mostly consists of
-  general purpose hostname substitution in URLs.
-
  */
 
-#include "plugin_testing_common.h"
+#include "iocore/eventsystem/Lock.h"
+#include "proxy/http/remap/PluginFactory.h"
 
-void
-PrintToStdErr(const char *fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  va_end(args);
-}
-
-fs::path
-getTemporaryDir()
-{
-  std::error_code ec;
-  fs::path        tmpDir  = fs::canonical(fs::temp_directory_path(), ec);
-  tmpDir                 /= "sandbox_XXXXXX";
-
-  char dirNameTemplate[tmpDir.string().length() + 1];
-  memcpy(dirNameTemplate, tmpDir.c_str(), sizeof(dirNameTemplate));
-
-  return fs::path(mkdtemp(dirNameTemplate));
-}
+thread_local PluginThreadContext *pluginThreadContext;
+ClassAllocator<ProxyMutex>        mutexAllocator("mutexAllocator");
