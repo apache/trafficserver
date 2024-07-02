@@ -331,7 +331,7 @@ QUICStreamVCAdapter::reenable(VIO * /* vio ATS_UNUSED */)
 bool
 QUICStreamVCAdapter::is_readable()
 {
-  return this->stream().direction() != QUICStreamDirection::SEND && _read_vio.nbytes == _read_vio.ndone;
+  return this->stream().direction() != QUICStreamDirection::SEND && _read_vio.nbytes != _read_vio.ndone;
 }
 
 bool

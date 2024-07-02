@@ -46,7 +46,8 @@ public:
   uint32_t    stream_count() const;
   QUICStream *find_stream(QUICStreamId stream_id);
 
-  QUICConnectionErrorUPtr create_stream(QUICStreamId stream_id);
+  QUICStream *create_stream(QUICStreamId stream_id, QUICConnectionError &err);
+
   QUICConnectionErrorUPtr create_uni_stream(QUICStreamId new_stream_id);
   QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId new_stream_id);
   QUICConnectionErrorUPtr delete_stream(QUICStreamId new_stream_id);
