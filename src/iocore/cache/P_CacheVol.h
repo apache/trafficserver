@@ -330,6 +330,8 @@ private:
   void _init_data_internal();
   void _init_data();
   int  _agg_copy(CacheVC *vc);
+  int  _copy_writer_to_aggregation(CacheVC *vc);
+  int  _copy_evacuator_to_aggregation(CacheVC *vc);
   bool flush_aggregate_write_buffer();
 
   AggregateWriteBuffer _write_buffer;
