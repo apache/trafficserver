@@ -42,6 +42,8 @@ class QUICStreamStateListener;
 class QUICStream
 {
 public:
+  using ErrorCode = uint64_t; //!<  recv/send stream application error codes.
+
   QUICStream() {}
   QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid);
   ~QUICStream();
