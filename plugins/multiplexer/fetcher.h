@@ -32,6 +32,7 @@
 
 #include "chunk-decoder.h"
 #include "ts.h"
+#include "ts/ts.h"
 
 #ifndef PLUGIN_TAG
 #error Please define a PLUGIN_TAG before including this file.
@@ -219,14 +220,17 @@ template <class T> struct HttpTransaction {
             available = self->chunkDecoder_->decode(self->in_->reader);
             if (available == 0) {
               self->t_.data(self->in_->reader, available);
+              available = TSIOBufferReaderAvail(self->in_->reader);
             }
             while (available > 0) {
               self->t_.data(self->in_->reader, available);
+              available = TSIOBufferReaderAvail(self->in_->reader);
               TSIOBufferReaderConsume(self->in_->reader, available);
               available = self->chunkDecoder_->decode(self->in_->reader);
             }
           } else {
             self->t_.data(self->in_->reader, available);
+            available = TSIOBufferReaderAvail(self->in_->reader);
             TSIOBufferReaderConsume(self->in_->reader, available);
           }
         }
