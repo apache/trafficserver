@@ -328,7 +328,7 @@ Http3HeadersFrame::_parse()
 
   this->_header_block_len = this->_length;
   this->_header_block     = static_cast<uint8_t *>(ats_malloc(this->_header_block_len));
-  this->_reader->memcpy(this->_header_block);
+  this->_reader->memcpy(this->_header_block, this->_header_block_len);
 
   return true;
 }
@@ -432,7 +432,7 @@ Http3SettingsFrame::_parse()
   }
 
   uint8_t *buf = static_cast<uint8_t *>(ats_malloc(this->_length));
-  this->_reader->memcpy(buf);
+  this->_reader->memcpy(buf, this->_length);
 
   size_t   len       = 0;
   uint32_t nsettings = 0;
