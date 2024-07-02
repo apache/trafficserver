@@ -4404,7 +4404,7 @@ HttpSM::do_remap_request(bool run_inline)
 
   if (!ret) {
     SMDbg(dbg_ctl_url_rewrite, "Could not find a valid remapping entry for this request");
-    Metrics::Counter::increment(http_rsb.no_remap_404);
+    Metrics::Counter::increment(http_rsb.no_remap_matched);
     if (!run_inline) {
       handleEvent(EVENT_REMAP_COMPLETE, nullptr);
     }

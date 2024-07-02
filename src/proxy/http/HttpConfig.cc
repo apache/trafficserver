@@ -335,7 +335,7 @@ register_stat_callbacks()
   http_rsb.misc_origin_server_bytes          = Metrics::Counter::createPtr("proxy.process.http.http_misc_origin_server_bytes");
   http_rsb.misc_user_agent_bytes             = Metrics::Counter::createPtr("proxy.process.http.misc_user_agent_bytes");
   http_rsb.missing_host_hdr                  = Metrics::Counter::createPtr("proxy.process.http.missing_host_hdr");
-  http_rsb.no_remap_404                      = Metrics::Counter::createPtr("proxy.process.http.no_remap_matched_404");
+  http_rsb.no_remap_matched                  = Metrics::Counter::createPtr("proxy.process.http.no_remap_matched");
   http_rsb.options_requests                  = Metrics::Counter::createPtr("proxy.process.http.options_requests");
   http_rsb.origin_body                       = Metrics::Counter::createPtr("proxy.process.http.origin.body");
   http_rsb.origin_close_private              = Metrics::Counter::createPtr("proxy.process.http.origin.close_private");
