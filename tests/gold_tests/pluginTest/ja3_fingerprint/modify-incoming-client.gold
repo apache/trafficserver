@@ -5,6 +5,6 @@ host: ``
 content-length: ``
 x-request: ``
 uuid: ``
-X-JA3-Sig: ``
-x-JA3-RAW: ``
+x-ja3-sig: ``
+x-ja3-raw: ``
 ``
