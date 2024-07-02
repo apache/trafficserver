@@ -252,11 +252,11 @@ modify_ja3_headers(TSCont contp, TSHttpTxn txnp, ja3_data const *ja3_vconn_data)
   }
 
   // Add JA3 md5 fingerprints
-  append_to_field(bufp, hdr_loc, "X-JA3-Sig", 9, ja3_vconn_data->md5_string, 32);
+  append_to_field(bufp, hdr_loc, "x-ja3-sig", 9, ja3_vconn_data->md5_string, 32);
 
   // If raw string is configured, added JA3 raw string to header as well
   if (raw_flag) {
-    append_to_field(bufp, hdr_loc, "x-JA3-RAW", 9, ja3_vconn_data->ja3_string.data(), ja3_vconn_data->ja3_string.size());
+    append_to_field(bufp, hdr_loc, "x-ja3-raw", 9, ja3_vconn_data->ja3_string.data(), ja3_vconn_data->ja3_string.size());
   }
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
