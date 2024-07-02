@@ -77,7 +77,8 @@ operator_factory(const std::string &op)
     o = new OperatorSetHttpCntl();
   } else if (op == "run-plugin") {
     o = new OperatorRunPlugin();
-
+  } else if (op == "set-body-from") {
+    o = new OperatorSetBodyFrom();
   } else {
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
     return nullptr;
