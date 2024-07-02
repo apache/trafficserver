@@ -388,12 +388,12 @@ BaseLogFile::display(FILE *fd)
  * Lowest level internal logging facility for BaseLogFile
  *
  * Since BaseLogFiles can potentially be created before the bootstrap
- * instance of Diags is ready, we cannot simply call something like Debug().
+ * instance of Diags is ready, we cannot simply call something like Dbg().
  * However, we still need to log the creation of BaseLogFile, since the
  * information is still useful. This function will print out log messages
  * into traffic.out if we happen to be bootstrapping Diags.
  *
- * TODO use Debug() for non bootstrap instances
+ * TODO use Dbg() for non bootstrap instances
  */
 void
 BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)

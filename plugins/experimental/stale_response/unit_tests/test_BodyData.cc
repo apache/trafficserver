@@ -22,7 +22,7 @@
 #include <string>
 #include <string_view>
 
-DEF_DBG_CTL(PLUGIN_TAG_BODY)
+DEF_DBG_CTL(TAG_BODY)
 
 std::string_view DATA_PACKET0{"The quick brown fox jumps over the lazy dog"};
 std::string_view DATA_PACKET1{"Now is the time for all good men to come to the aid of their country"};

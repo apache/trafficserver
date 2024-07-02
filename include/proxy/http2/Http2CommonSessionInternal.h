@@ -22,19 +22,31 @@
  */
 #include "proxy/http2/Http2CommonSession.h"
 
+namespace Http2CommonSessionInternalDbgCtl
+{
+inline DbgCtl &
+http2_cs()
+{
+  static DbgCtl dc{"http2_cs"};
+  return dc;
+}
+
+} // end namespace Http2CommonSessionInternalDbgCtl
+
 #define REMEMBER(e, r)                          \
   {                                             \
     this->remember(MakeSourceLocation(), e, r); \
   }
 
-#define STATE_ENTER(state_name, event)                                                       \
-  do {                                                                                       \
-    REMEMBER(event, this->recursion)                                                         \
-    SsnDebug(this, "http2_cs", "[%" PRId64 "] [%s, %s]", this->connection_id(), #state_name, \
-             HttpDebugNames::get_event_name(event));                                         \
+#define STATE_ENTER(state_name, event)                                                                                       \
+  do {                                                                                                                       \
+    REMEMBER(event, this->recursion)                                                                                         \
+    SsnDbg(this, Http2CommonSessionInternalDbgCtl::http2_cs(), "[%" PRId64 "] [%s, %s]", this->connection_id(), #state_name, \
+           HttpDebugNames::get_event_name(event));                                                                           \
   } while (0)
 
-#define Http2SsnDebug(fmt, ...) SsnDebug(this, "http2_cs", "[%" PRId64 "] " fmt, this->connection_id(), ##__VA_ARGS__)
+#define Http2SsnDebug(fmt, ...) \
+  SsnDbg(this, Http2CommonSessionInternalDbgCtl::http2_cs(), "[%" PRId64 "] " fmt, this->connection_id(), ##__VA_ARGS__)
 
 #define HTTP2_SET_SESSION_HANDLER(handler) \
   do {                                     \
