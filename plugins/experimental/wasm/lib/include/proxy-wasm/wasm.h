@@ -40,8 +40,8 @@ using WasmVmFactory = std::function<std::unique_ptr<WasmVm>()>;
 using CallOnThreadFunction = std::function<void(std::function<void()>)>;
 
 struct SanitizationConfig {
-  std::vector<std::string> argument_list;
-  bool is_allowlist;
+  std::vector<std::string> argument_list{};
+  bool is_allowlist{false};
 };
 using AllowedCapabilitiesMap = std::unordered_map<std::string, SanitizationConfig>;
 
