@@ -386,9 +386,11 @@ LayoutEngine::remove_runroot()
     }
     for (const auto &it : map) {
       std::string dir = it.second;
-      append_slash(dir);
-      // get the directory to remove: prefix/etc/trafficserver -> prefix/etc
-      dir = dir.substr(0, dir.substr(clean_root.size()).find_first_of("/") + clean_root.size());
+      if (dir.size() > clean_root.size() && dir.substr(0, clean_root.size()) == clean_root) {
+        append_slash(dir);
+        // get the directory to remove: prefix/etc/trafficserver -> prefix/etc
+        dir = dir.substr(0, dir.substr(clean_root.size()).find_first_of("/") + clean_root.size());
+      }
       // don't remove cwd
       if (cur_working_dir != dir) {
         remove_directory(dir);
