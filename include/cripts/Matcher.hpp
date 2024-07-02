@@ -68,25 +68,37 @@ namespace Range
     }
 
     bool
-    Match(sockaddr const *target, void ** /* ptr ATS_UNUSED */) const
+    Match(sockaddr const *target) const
     {
       return contains(swoc::IPAddr(target));
     }
 
     bool
-    Match(in_addr_t target, void ** /* ptr ATS_UNUSED */) const
+    Match(in_addr_t target) const
     {
       return contains(swoc::IPAddr(target));
     }
 
     bool
-    Contains(sockaddr const *target, void ** /* ptr ATS_UNUSED */) const
+    Match(swoc::IPAddr const &target) const
+    {
+      return contains(target);
+    }
+
+    bool
+    Contains(swoc::IPAddr const &target) const
+    {
+      return contains(target);
+    }
+
+    bool
+    Contains(sockaddr const *target) const
     {
       return contains(swoc::IPAddr(target));
     }
 
     bool
-    Contains(in_addr_t target, void ** /* ptr ATS_UNUSED */) const
+    Contains(in_addr_t target) const
     {
       return contains(swoc::IPAddr(target));
     }
