@@ -611,8 +611,8 @@ QUICNetVConnection::_handle_read_ready()
     QUICConVDebug("stream %" PRIu64 " is readable\n", s);
     QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(s));
     if (stream == nullptr) {
-      this->_stream_manager->create_stream(s);
-      stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(s));
+      [[maybe_unused]] QUICConnectionError err;
+      stream = this->_stream_manager->create_stream(s, err);
     }
     stream->receive_data(this->_quiche_con);
   }
@@ -628,8 +628,8 @@ QUICNetVConnection::_handle_write_ready()
     while (quiche_stream_iter_next(writable, &s)) {
       QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(s));
       if (stream == nullptr) {
-        this->_stream_manager->create_stream(s);
-        stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(s));
+        [[maybe_unused]] QUICConnectionError err;
+        stream = this->_stream_manager->create_stream(s, err);
       }
       stream->send_data(this->_quiche_con);
     }
