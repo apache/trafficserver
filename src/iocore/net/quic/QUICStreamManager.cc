@@ -30,7 +30,19 @@
 
 QUICStreamManager::QUICStreamManager(QUICContext *context, QUICApplicationMap *app_map) : _context(context), _app_map(app_map) {}
 
-QUICStreamManager::~QUICStreamManager() {}
+QUICStreamManager::~QUICStreamManager()
+{
+  // We attempt to remove any stream that's left on the list.
+  if (!stream_list.empty()) {
+    QUICStream *stream = stream_list.head;
+    while (stream) {
+      QUICStream *next = stream->link.next;
+      stream_list.remove(stream);
+      delete stream;
+      stream = next;
+    }
+  }
+}
 
 void
 QUICStreamManager::set_default_application(QUICApplication *app)
@@ -89,15 +101,15 @@ QUICStreamManager::find_stream(QUICStreamId stream_id)
   return nullptr;
 }
 
-QUICConnectionErrorUPtr
-QUICStreamManager::create_stream(QUICStreamId stream_id)
+QUICStream *
+QUICStreamManager::create_stream(QUICStreamId stream_id, QUICConnectionError &err)
 {
   QUICStream *stream = new QUICStream(this->_context->connection_info(), stream_id);
   this->stream_list.push(stream);
 
   QUICApplication *application = this->_app_map->get(stream_id);
   application->on_stream_open(*stream);
-  return nullptr;
+  return stream;
 }
 
 QUICConnectionErrorUPtr
@@ -121,7 +133,6 @@ QUICStreamManager::delete_stream(QUICStreamId stream_id)
   application->on_stream_close(*stream);
 
   stream_list.remove(stream);
-
   delete stream;
 
   return nullptr;
