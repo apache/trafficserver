@@ -52,7 +52,8 @@ This example ``CMakeLists.txt`` finds the tsapi package which provides the
 plugins module .so.  The function takes the plugin target name and a list of
 source files that make up the project.  If the plugin requires additional
 libraries, those can be linked with the ``target_link_libraries`` cmake
-function.
+function. If your plugin links OpenSSL (or the alternatives), put it in the
+beginning part of the list to avoid link issues.
 
 After the plugin target is created, a verify test target can be created.  This
 will add a cmake test declaration and at test time, will run traffic_server in

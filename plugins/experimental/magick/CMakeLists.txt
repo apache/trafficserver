@@ -20,7 +20,7 @@ add_atsplugin(magick magick.cc)
 # This creates the magic import target if necessary (older cmake)
 include(magick_target)
 
-target_link_libraries(magick PRIVATE ImageMagick::MagickWand ImageMagick::MagickCore ts::tscppapi OpenSSL::Crypto)
+target_link_libraries(magick PRIVATE OpenSSL::Crypto ImageMagick::MagickWand ImageMagick::MagickCore ts::tscppapi)
 
 # There is a periodic issue with asan errors and imagemagick so disable this test for asan builds to reduce noise
 if(NOT ENABLE_ASAN)

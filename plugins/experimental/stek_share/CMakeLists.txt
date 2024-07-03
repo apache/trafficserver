@@ -18,7 +18,7 @@
 if(nuraft_FOUND)
   add_atsplugin(stek_share common.cc log_store.cc stek_share.cc stek_utils.cc)
 
-  target_link_libraries(stek_share PRIVATE nuraft::nuraft OpenSSL::SSL yaml-cpp::yaml-cpp)
+  target_link_libraries(stek_share PRIVATE OpenSSL::SSL nuraft::nuraft yaml-cpp::yaml-cpp)
 else()
   message(STATUS "skipping stek_share plugin (missing nuraft)")
 
