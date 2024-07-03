@@ -734,10 +734,8 @@ Stripe::_agg_copy(CacheVC *vc)
         ProxyMutex *mutex ATS_UNUSED = this->mutex.get();
         ink_assert(mutex->thread_holding == this_ethread());
 
-#ifdef DEBUG
         Metrics::Counter::increment(cache_rsb.write_bytes, vc->write_len);
         Metrics::Counter::increment(this->cache_vol->vol_rsb.write_bytes, vc->write_len);
-#endif
       }
       if (vc->f.rewrite_resident_alt) {
         iobufferblock_memcpy(doc->data(), vc->write_len, res_alt_blk, 0);
@@ -776,10 +774,8 @@ Stripe::_agg_copy(CacheVC *vc)
     Doc *doc = reinterpret_cast<Doc *>(vc->buf->data());
     int  l   = this->round_to_approx_size(doc->len);
 
-#ifdef DEBUG
     Metrics::Counter::increment(cache_rsb.gc_frags_evacuated);
     Metrics::Counter::increment(this->cache_vol->vol_rsb.gc_frags_evacuated);
-#endif
 
     doc->sync_serial  = this->header->sync_serial;
     doc->write_serial = this->header->write_serial;
