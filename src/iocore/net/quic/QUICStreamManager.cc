@@ -35,9 +35,8 @@ QUICStreamManager::~QUICStreamManager()
   // We attempt to remove any stream that's left on the list.
   if (!stream_list.empty()) {
     QUICStream *stream = stream_list.head;
-    QUICStream *next   = nullptr;
     while (stream) {
-      next = stream->link.next;
+      QUICStream *next = stream->link.next;
       stream_list.remove(stream);
       delete stream;
       stream = next;
@@ -134,7 +133,6 @@ QUICStreamManager::delete_stream(QUICStreamId stream_id)
   application->on_stream_close(*stream);
 
   stream_list.remove(stream);
-
   delete stream;
 
   return nullptr;
