@@ -734,10 +734,9 @@ Stripe::_agg_copy(CacheVC *vc)
         ProxyMutex *mutex ATS_UNUSED = this->mutex.get();
         ink_assert(mutex->thread_holding == this_ethread());
 
-// ToDo: Why are these for debug only ?
 #ifdef DEBUG
-        Metrics::Counter::increment(cache_rsb.write_backlog_failure);
-        Metrics::Counter::increment(this->cache_vol->vol_rsb.write_backlog_failure);
+        Metrics::Counter::increment(cache_rsb.write_bytes, vc->write_len);
+        Metrics::Counter::increment(this->cache_vol->vol_rsb.write_bytes, vc->write_len);
 #endif
       }
       if (vc->f.rewrite_resident_alt) {
