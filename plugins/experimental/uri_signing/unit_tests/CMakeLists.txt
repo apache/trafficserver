@@ -32,7 +32,9 @@ target_compile_definitions(uri_signing_test PRIVATE UNITTEST)
 target_include_directories(uri_signing_test PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(
   uri_signing_test
-  PRIVATE catch2::catch2
+  PRIVATE OpenSSL::SSL
+          OpenSSL::Crypto
+          catch2::catch2
           jansson::jansson
           cjose::cjose
           ts::tsapi
@@ -43,8 +45,6 @@ target_link_libraries(
           ts::logging
           ts::inknet
           ts::overridable_txn_vars
-          OpenSSL::SSL
-          OpenSSL::Crypto
 )
 add_test(NAME uri_signing_test COMMAND uri_signing_test)
 set_tests_properties(
