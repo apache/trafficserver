@@ -9,5 +9,5 @@ Client-ip: ``
 X-Forwarded-For: ``
 Via: ``
 Transfer-Encoding: ``
-X-JA3-Sig: ``
+x-ja3-sig: ``
 ``

@@ -5,5 +5,5 @@ Host: ``
 Content-Type: ``
 uuid: ``
 x-request: ``
-X-JA3-Sig: ``
+x-ja3-sig: ``
 ``
