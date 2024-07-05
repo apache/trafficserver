@@ -714,6 +714,7 @@ Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a custom error respons
 and set the body with the result. Triggering this rule on an OK transaction will
 send a 500 status code to the client with the desired response. If this is triggered
 on any error status code, that original status code will be sent to the client.
+**Note**: This config should only be set using READ_RESPONSE_HDR_HOOK
 
 An example config would look like
 
