@@ -45,8 +45,8 @@ Http3StreamDataVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame,
   const Http3DataFrame *dframe = dynamic_cast<const Http3DataFrame *>(frame.get());
 
   // Need to wait for headers to be written
-  this->_buffer->write(dframe->payload(), dframe->payload_length());
-  this->_total_data_length += dframe->payload_length();
+  int64_t written           = this->_buffer->write(dframe->data());
+  this->_total_data_length += written;
 
   return Http3ErrorUPtr(nullptr);
 }

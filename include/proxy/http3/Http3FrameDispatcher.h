@@ -47,6 +47,8 @@ private:
   int64_t                          _reading_frame_type_len;
   int64_t                          _reading_frame_length_len;
   uint64_t                         _reading_frame_payload_len;
+  uint64_t                         _bytes_to_skip;
   Http3FrameFactory                _frame_factory;
+  std::shared_ptr<Http3Frame>      _current_frame = nullptr;
   std::vector<Http3FrameHandler *> _handlers[256];
 };
