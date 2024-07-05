@@ -456,9 +456,8 @@ ServerMaxEarlyData::SNIAction([[maybe_unused]] SSL &ssl, const Context & /* ctx 
   }
 
   snis->hints_from_sni.server_max_early_data = server_max_early_data;
-  const uint32_t EARLY_DATA_DEFAULT_SIZE     = 16384;
   const uint32_t server_recv_max_early_data =
-    server_max_early_data > 0 ? std::max(server_max_early_data, EARLY_DATA_DEFAULT_SIZE) : 0;
+    server_max_early_data > 0 ? std::max(server_max_early_data, TLSEarlyDataSupport::DEFAULT_MAX_EARLY_DATA_SIZE) : 0;
   eds->update_early_data_config(&ssl, server_max_early_data, server_recv_max_early_data);
 #endif
   return SSL_TLSEXT_ERR_OK;
