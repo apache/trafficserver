@@ -67,9 +67,9 @@ def send_response(sock: socket.socket, abort_early: bool) -> None:
     if abort_early:
         response = "HTTP/1."
     else:
-        response = (r"HTTP/1.1 200 OK\r\n"
-                    r"Content-Length: 0\r\n"
-                    r"\r\n")
+        response = ("HTTP/1.1 200 OK\r\n"
+                    "Content-Length: 0\r\n"
+                    "\r\n")
     print(f'Sending:\n{response}')
     sock.sendall(response.encode("utf-8"))
 
@@ -92,7 +92,7 @@ def main() -> int:
                     sock.close()
                     continue
 
-                # Send a response now, before headers are read. This implements
+                # Send a response now, before the body is read. This implements
                 # the "quick" attribute of this quick_server.
                 send_response(sock, args.abort_response_headers)
 
