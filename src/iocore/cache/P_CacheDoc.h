@@ -136,17 +136,6 @@ inline void
 Doc::set_data(int const len, IOBufferBlock const *block, int const offset)
 {
   iobufferblock_memcpy(this->data(), len, block, offset);
-#ifdef VERIFY_JTEST_DATA
-  if (f.use_first_key && header_len) {
-    int  ib = 0, xd = 0;
-    char xx[500];
-    new_info.request_get().url_get().print(xx, 500, &ib, &xd);
-    char *x = xx;
-    for (int q = 0; q < 3; q++)
-      x = strchr(x + 1, '/');
-    ink_assert(!memcmp(doc->hdr(), x, ib - (x - xx)));
-  }
-#endif
 }
 
 inline void
