@@ -1126,8 +1126,8 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
     [[maybe_unused]] ProxyMutex const *mutex = this->mutex.get();
     ink_assert(mutex->thread_holding == this_ethread());
 
-    Metrics::Counter::increment(cache_rsb.write_backlog_failure);
-    Metrics::Counter::increment(this->cache_vol->vol_rsb.write_backlog_failure);
+    Metrics::Counter::increment(cache_rsb.write_bytes);
+    Metrics::Counter::increment(this->cache_vol->vol_rsb.write_bytes);
 
     if (vc->f.rewrite_resident_alt) {
       doc->set_data(vc->write_len, res_alt_blk, 0);
