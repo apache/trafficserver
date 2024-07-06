@@ -388,19 +388,17 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
         std::string str;
 
         if (search) {
-          swoc::bwprint(str, "{}://{}:{}/{};{}?{}", std::string_view(url->m_ptr_scheme, url->m_len_scheme),
+          swoc::bwprint(str, "{}://{}:{}/{}?{}", std::string_view(url->m_ptr_scheme, url->m_len_scheme),
                         std::string_view(url->m_ptr_host, url->m_len_host), std::string_view(url->m_ptr_port, url->m_len_port),
-                        std::string_view(url->m_ptr_path, url->m_len_path), std::string_view(url->m_ptr_params, url->m_len_params),
-                        std::string_view(url->m_ptr_query, url->m_len_query));
+                        std::string_view(url->m_ptr_path, url->m_len_path), std::string_view(url->m_ptr_query, url->m_len_query));
           if (u_matcher->match(str.data())) {
             str = this->stripe->hashText + " " + str;
             std::cout << "match found " << str << std::endl;
           }
         } else {
-          swoc::bwprint(str, "stripe: {} : {}://{}:{}/{};{}?{}", std::string_view(this->stripe->hashText),
+          swoc::bwprint(str, "stripe: {} : {}://{}:{}/{}?{}", std::string_view(this->stripe->hashText),
                         std::string_view(url->m_ptr_scheme, url->m_len_scheme), std::string_view(url->m_ptr_host, url->m_len_host),
                         std::string_view(url->m_ptr_port, url->m_len_port), std::string_view(url->m_ptr_path, url->m_len_path),
-                        std::string_view(url->m_ptr_params, url->m_len_params),
                         std::string_view(url->m_ptr_query, url->m_len_query));
           std::cout << str << std::endl;
         }
