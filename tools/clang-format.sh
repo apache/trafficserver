@@ -24,8 +24,8 @@ PKGDATE="20200514"
 function main() {
   set -e # exit on error
 
-  GIT_COMMON_DIR=$(cd $(dirname $0) && git rev-parse --path-format=absolute --git-common-dir)
-  ROOT=${ROOT:-${GIT_COMMON_DIR}/fmt/${PKGDATE}}
+  GIT_DIR=$(git rev-parse --absolute-git-dir)
+  ROOT=${ROOT:-${GIT_DIR}/fmt/${PKGDATE}}
   # The presence of this file indicates clang-format was successfully installed.
   INSTALLED_SENTINEL=${ROOT}/.clang-format-installed
 
@@ -120,6 +120,6 @@ EOF
 if [[ "$(basename -- "$0")" == 'clang-format.sh' ]]; then
   main "$@"
 else
-  GIT_COMMON_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
-  ROOT=${ROOT:-${GIT_COMMON_DIR}/fmt/${PKGDATE}}
+  GIT_DIR=$(git rev-parse --absolute-git-dir)
+  ROOT=${ROOT:-${GIT_DIR}/fmt/${PKGDATE}}
 fi
