@@ -51,6 +51,7 @@
 #include "iocore/net/SSLDiags.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
+#include "iocore/net/TLSEarlyDataSupport.h"
 #include "iocore/net/YamlSNIConfig.h"
 
 int                SSLConfig::config_index                                = 0;
@@ -427,9 +428,8 @@ SSLConfigParams::initialize()
   REC_ReadConfigInteger(server_max_early_data, "proxy.config.ssl.server.max_early_data");
   REC_ReadConfigInt32(server_allow_early_data_params, "proxy.config.ssl.server.allow_early_data_params");
 
-  // According to OpenSSL the default value is 16384,
   // we keep it unless "server_max_early_data" is higher.
-  server_recv_max_early_data = std::max(server_max_early_data, EARLY_DATA_DEFAULT_SIZE);
+  server_recv_max_early_data = std::max(server_max_early_data, TLSEarlyDataSupport::DEFAULT_MAX_EARLY_DATA_SIZE);
 
   REC_ReadConfigStringAlloc(serverCertChainFilename, "proxy.config.ssl.server.cert_chain.filename");
   REC_ReadConfigStringAlloc(serverCertRelativePath, "proxy.config.ssl.server.cert.path");
