@@ -676,7 +676,9 @@ read_configuration()
                 for (const auto &i : ac_node) {
                   auto                           ac = i.as<std::string>();
                   proxy_wasm::SanitizationConfig sc;
-                  cap_maps[ac] = sc;
+                  sc.argument_list = {};
+                  sc.is_allowlist  = false;
+                  cap_maps[ac]     = sc;
                 }
               }
             }
