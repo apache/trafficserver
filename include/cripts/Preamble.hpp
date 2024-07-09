@@ -46,7 +46,7 @@
 #define do_send_request()    void _do_send_request(Cript::Context *context)
 #define do_read_response()   void _do_read_response(Cript::Context *context)
 #define do_txn_close()       void _do_txn_close(Cript::Context *context)
-#define do_init()            void _do_init(TSRemapInterface *api_info)
+#define do_init()            void _do_init(TSRemapInterface *)
 #define do_create_instance() void _do_create_instance(Cript::InstanceContext *context)
 #define do_delete_instance() void _do_delete_instance(Cript::InstanceContext *context)
 
@@ -57,7 +57,7 @@
 #define DoSendRequest()    void _do_send_request(Cript::Context *context)
 #define DoReadResponse()   void _do_read_response(Cript::Context *context)
 #define DoTxnClose()       void _do_txn_close(Cript::Context *context)
-#define DoInit()           void _do_init(TSRemapInterface *api_info)
+#define DoInit()           void _do_init(TSRemapInterface *)
 #define DoCreateInstance() void _do_create_instance(Cript::InstanceContext *context)
 #define DoDeleteInstance() void _do_delete_instance(Cript::InstanceContext *context)
 

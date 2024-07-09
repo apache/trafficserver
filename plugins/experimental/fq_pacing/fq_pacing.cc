@@ -197,7 +197,7 @@ reset_pacing_cont(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
+TSRemapDoRemap([[maybe_unused]] void *instance, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   if (TSHttpTxnClientProtocolStackContains(txnp, TS_PROTO_TAG_HTTP_2_0) != nullptr) {
     Dbg(dbg_ctl, "Skipping plugin execution for HTTP/2 requests");

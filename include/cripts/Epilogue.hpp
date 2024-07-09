@@ -63,7 +63,7 @@ wrap_do_remap(T *context, bool execute, CaseTag<1>) -> decltype(_do_remap(contex
 
 template <typename T>
 auto
-wrap_do_remap(T *context, bool execute, CaseTag<0>) -> bool
+wrap_do_remap(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -81,7 +81,7 @@ wrap_post_remap(T *context, bool execute, CaseTag<1>) -> decltype(_do_post_remap
 
 template <typename T>
 auto
-wrap_post_remap(T *context, bool execute, CaseTag<0>) -> bool
+wrap_post_remap(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -99,7 +99,7 @@ wrap_send_response(T *context, bool execute, CaseTag<1>) -> decltype(_do_send_re
 
 template <typename T>
 auto
-wrap_send_response(T *context, bool execute, CaseTag<0>) -> bool
+wrap_send_response(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -117,7 +117,7 @@ wrap_send_request(T *context, bool execute, CaseTag<1>) -> decltype(_do_send_req
 
 template <typename T>
 auto
-wrap_send_request(T *context, bool execute, CaseTag<0>) -> bool
+wrap_send_request(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -135,7 +135,7 @@ wrap_read_response(T *context, bool execute, CaseTag<1>) -> decltype(_do_read_re
 
 template <typename T>
 auto
-wrap_read_response(T *context, bool execute, CaseTag<0>) -> bool
+wrap_read_response(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -153,7 +153,7 @@ wrap_cache_lookup(T *context, bool execute, CaseTag<1>) -> decltype(_do_cache_lo
 
 template <typename T>
 auto
-wrap_cache_lookup(T *context, bool execute, CaseTag<0>) -> bool
+wrap_cache_lookup(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -171,7 +171,7 @@ wrap_txn_close(T *context, bool execute, CaseTag<1>) -> decltype(_do_txn_close(c
 
 template <typename T>
 auto
-wrap_txn_close(T *context, bool execute, CaseTag<0>) -> bool
+wrap_txn_close(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -191,7 +191,7 @@ wrap_plugin_init(T *context, bool execute, CaseTag<1>) -> decltype(_do_init(cont
 
 template <typename T>
 auto
-wrap_plugin_init(T *context, bool execute, CaseTag<0>) -> bool
+wrap_plugin_init(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -211,7 +211,7 @@ wrap_create_instance(T *context, bool execute, CaseTag<1>) -> decltype(_do_creat
 
 template <typename T>
 auto
-wrap_create_instance(T *context, bool execute, CaseTag<0>) -> bool
+wrap_create_instance(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -228,7 +228,7 @@ wrap_delete_instance(T *context, bool execute, CaseTag<1>) -> decltype(_do_delet
 
 template <typename T>
 auto
-wrap_delete_instance(T *context, bool execute, CaseTag<0>) -> bool
+wrap_delete_instance(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }

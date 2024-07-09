@@ -84,7 +84,7 @@ UDPPacket::new_UDPPacket()
 
 UDPPacket *
 UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size,
-                         struct timespec *send_at_hint)
+                         [[maybe_unused]] struct timespec *send_at_hint)
 {
   UDPPacket *p = udpPacketAllocator.alloc();
 
