@@ -61,7 +61,7 @@ ats_hugepage_enabled()
 }
 
 void
-ats_hugepage_init(int enabled)
+ats_hugepage_init([[maybe_unused]] int enabled)
 {
 #ifdef MAP_HUGETLB
   FILE *fp;
@@ -110,7 +110,7 @@ ats_hugepage_init(int enabled)
 }
 
 void *
-ats_alloc_hugepage(size_t s)
+ats_alloc_hugepage([[maybe_unused]] size_t s)
 {
 #ifdef MAP_HUGETLB
   size_t size;
@@ -128,14 +128,13 @@ ats_alloc_hugepage(size_t s)
   Debug(DEBUG_TAG, "Request/Allocation (%zu/%zu) {%p}", s, size, mem);
   return mem;
 #else
-  (void)s;
   Debug(DEBUG_TAG, "MAP_HUGETLB not defined");
   return nullptr;
 #endif
 }
 
 bool
-ats_free_hugepage(void *ptr, size_t s)
+ats_free_hugepage([[maybe_unused]] void *ptr, [[maybe_unused]] size_t s)
 {
 #ifdef MAP_HUGETLB
   size_t size;
@@ -143,8 +142,6 @@ ats_free_hugepage(void *ptr, size_t s)
   size = INK_ALIGN(s, ats_hugepage_size());
   return (munmap(ptr, size) == 0);
 #else
-  (void)ptr;
-  (void)s;
   Debug(DEBUG_TAG, "MAP_HUGETLB not defined");
   return false;
 #endif

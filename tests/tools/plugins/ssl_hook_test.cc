@@ -39,7 +39,7 @@ static DbgCtl dbg_ctl{PN};
 static bool   was_conn_closed;
 
 int
-ReenableSSL(TSCont cont, TSEvent event, void *edata)
+ReenableSSL(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   if (was_conn_closed) {
     TSContDestroy(cont);
@@ -155,7 +155,7 @@ CB_out_close(TSCont cont, TSEvent event, void *edata)
   return TS_SUCCESS;
 }
 int
-CB_Client_Hello_Immediate(TSCont cont, TSEvent event, void *edata)
+CB_Client_Hello_Immediate(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 
@@ -169,7 +169,7 @@ CB_Client_Hello_Immediate(TSCont cont, TSEvent event, void *edata)
 }
 
 int
-CB_Client_Hello(TSCont cont, TSEvent event, void *edata)
+CB_Client_Hello(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 
@@ -189,7 +189,7 @@ CB_Client_Hello(TSCont cont, TSEvent event, void *edata)
 }
 
 int
-CB_SNI(TSCont cont, TSEvent event, void *edata)
+CB_SNI(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 
@@ -203,7 +203,7 @@ CB_SNI(TSCont cont, TSEvent event, void *edata)
 }
 
 int
-CB_Cert_Immediate(TSCont cont, TSEvent event, void *edata)
+CB_Cert_Immediate(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 
@@ -216,7 +216,7 @@ CB_Cert_Immediate(TSCont cont, TSEvent event, void *edata)
 }
 
 int
-CB_Cert(TSCont cont, TSEvent event, void *edata)
+CB_Cert(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 

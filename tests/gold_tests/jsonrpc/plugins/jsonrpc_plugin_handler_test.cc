@@ -118,7 +118,7 @@ struct HostItem {
 };
 
 int
-CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
+CB_handle_rpc_io_call(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   namespace fs = swoc::file;
 
@@ -251,7 +251,7 @@ CB_handle_rpc_io_call(TSCont contp, TSEvent event, void *data)
 
 // Perform a field updated on a yaml file. Host will be added or updated
 void
-test_io_on_et_task(const char *id, TSYaml p)
+test_io_on_et_task(const char * /* id ATS_UNUSED */, TSYaml p)
 {
   // A possible scenario would be that a handler needs to perform a "heavy" operation or that the handler
   // is not yet ready to perform the operation when is called, under this scenarios(and some others)
@@ -263,7 +263,7 @@ test_io_on_et_task(const char *id, TSYaml p)
 } // namespace
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
 

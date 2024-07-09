@@ -35,6 +35,8 @@
 #include <netinet/tcp.h>
 #include <pthread.h>
 
+#include "tscore/ink_defs.h"
+
 #define NUM_THREADS 10
 
 char req_buf[10000];
@@ -48,7 +50,7 @@ struct thread_info {
 };
 
 void
-SSL_locking_callback(int mode, int type, const char *file, int line)
+SSL_locking_callback(int mode, int type, const char *file ATS_UNUSED, int line ATS_UNUSED)
 {
   if (mode & CRYPTO_LOCK) {
     pthread_mutex_lock(&mutex_buf[type]);

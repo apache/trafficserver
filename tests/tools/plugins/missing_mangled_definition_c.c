@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "tscore/ink_defs.h"
 #include "missing_mangled_definition.h"
 
 void
@@ -25,7 +26,7 @@ foo()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   foo();
 }
