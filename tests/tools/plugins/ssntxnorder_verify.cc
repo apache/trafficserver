@@ -301,7 +301,7 @@ handle_order(TSCont contp, TSEvent event, void *edata)
         - Initializes all statistics as described in the README
 */
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   Dbg(dbg_ctl_init, "initializing plugin");
 

@@ -55,7 +55,7 @@ struct thread_info {
 };
 
 void
-SSL_locking_callback(int mode, int type, const char *file, int line)
+SSL_locking_callback(int mode, int type, const char * /* file ATS_UNUSED */, int /* line ATS_UNUSED */)
 {
   if (mode & CRYPTO_LOCK) {
     pthread_mutex_lock(&mutex_buf[type]);
@@ -67,7 +67,7 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
 }
 
 void
-SSL_pthreads_thread_id(CRYPTO_THREADID *id)
+SSL_pthreads_thread_id([[maybe_unused]] CRYPTO_THREADID *id)
 {
   CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }

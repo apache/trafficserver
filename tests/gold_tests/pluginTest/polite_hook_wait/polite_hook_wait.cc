@@ -242,7 +242,7 @@ Blocking_action::_txn_cont_func(TSCont, TSEvent event, void *eventData)
 } // end anonymous namespace
 
 void
-TSPluginInit(int n_arg, char const *arg[])
+TSPluginInit(int /* n_arg ATS_UNUSED */, char const ** /* arg ATS_UNUSED */)
 {
   Dbg(dbg_ctl, "initializing plugin");
 

@@ -57,7 +57,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, const char *val)
 }
 
 static int
-cont_global(TSCont contp, TSEvent event, void *edata)
+cont_global(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSHttpTxn txnp   = static_cast<TSHttpTxn>(edata);
   TSHttpSsn ssnp   = TSHttpTxnSsnGet(txnp);
@@ -73,7 +73,7 @@ cont_global(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-cont_remap(TSCont contp, TSEvent event, void *edata)
+cont_remap(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSMBuffer   bufp;
   TSMLoc      hdrs;
@@ -96,7 +96,7 @@ cont_remap(TSCont contp, TSEvent event, void *edata)
 
 // Called by ATS as our initialization point
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
   info.plugin_name   = const_cast<char *>("user_args");
@@ -128,7 +128,7 @@ TSPluginInit(int argc, const char *argv[])
 }
 
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface *api_info, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   TSReleaseAssert(api_info != nullptr);
   TSReleaseAssert(api_info->size == sizeof(TSRemapInterface));
@@ -138,7 +138,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+TSRemapNewInstance(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */, void **ih, char * /* errbuf ATS_UNUSED */,
+                   int /* errbuf_size ATS_UNUSED */)
 {
   ArgIndexes *ix = new ArgIndexes;
 
@@ -173,7 +174,7 @@ TSRemapDeleteInstance(void *ih)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   ArgIndexes *ix = static_cast<ArgIndexes *>(ih);
 

@@ -54,7 +54,7 @@ static int TSContScheduleOnThread_handler_2(TSCont contp, TSEvent event, void *e
 static int TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata);
 
 static int
-TSContScheduleOnPool_handler_1(TSCont contp, TSEvent event, void *edata)
+TSContScheduleOnPool_handler_1(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   // This runs on ET_NET threads.
   Dbg(dbg_ctl_hdl, "TSContScheduleOnPool handler 1 thread [%p]", TSThreadSelf());
@@ -73,7 +73,7 @@ TSContScheduleOnPool_handler_1(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-TSContScheduleOnPool_handler_2(TSCont contp, TSEvent event, void *edata)
+TSContScheduleOnPool_handler_2(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   // This runs on ET_TASK threads.
   Dbg(dbg_ctl_hdl, "TSContScheduleOnPool handler 2 thread [%p]", TSThreadSelf());
@@ -116,7 +116,7 @@ TSContScheduleOnPool_test()
 }
 
 static int
-TSContScheduleOnThread_handler_1(TSCont contp, TSEvent event, void *edata)
+TSContScheduleOnThread_handler_1(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   // Mostly same as TSContScheduleOnPool_handler_1, no need to set affinity
   // since we are scheduling directly on to a thread.
@@ -140,7 +140,7 @@ TSContScheduleOnThread_handler_1(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-TSContScheduleOnThread_handler_2(TSCont contp, TSEvent event, void *edata)
+TSContScheduleOnThread_handler_2(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   Dbg(dbg_ctl_hdl, "TSContScheduleOnThread handler 2 thread [%p]", TSThreadSelf());
   if (thread_2 == nullptr) {
@@ -213,7 +213,7 @@ TSContThreadAffinity_test()
 }
 
 static int
-LifecycleHookTracer(TSCont contp, TSEvent event, void *edata)
+LifecycleHookTracer(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (event == TS_EVENT_LIFECYCLE_TASK_THREADS_READY) {
     switch (test_flag) {

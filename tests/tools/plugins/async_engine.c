@@ -30,6 +30,7 @@
 
 /* TLS_USE_TLS_ASYNC defined in ink_config.h */
 #include "tscore/ink_config.h"
+#include "tscore/ink_defs.h"
 #if TS_USE_TLS_ASYNC
 
 #include <stdio.h>
@@ -70,7 +71,7 @@ static int async_rsa_finish(RSA *rsa);
 static RSA_METHOD *async_rsa_method = NULL;
 
 EVP_PKEY *
-async_load_privkey(ENGINE *e, const char *s_key_id, UI_METHOD *ui_method, void *callback_data)
+async_load_privkey(ENGINE *e ATS_UNUSED, const char *s_key_id, UI_METHOD *ui_method ATS_UNUSED, void *callback_data ATS_UNUSED)
 {
   fprintf(stderr, "Loading key %s\n", s_key_id);
   FILE *f = fopen(s_key_id, "r");
@@ -151,26 +152,26 @@ engine_load_async_int(void)
 }
 
 static int
-engine_async_init(ENGINE *e)
+engine_async_init(ENGINE *e ATS_UNUSED)
 {
   return 1;
 }
 
 static int
-async_finish(ENGINE *e)
+async_finish(ENGINE *e ATS_UNUSED)
 {
   return 1;
 }
 
 static int
-async_destroy(ENGINE *e)
+async_destroy(ENGINE *e ATS_UNUSED)
 {
   RSA_meth_free(async_rsa_method);
   return 1;
 }
 
 static void
-wait_cleanup(ASYNC_WAIT_CTX *ctx, const void *key, OSSL_ASYNC_FD readfd, void *pvwritefd)
+wait_cleanup(ASYNC_WAIT_CTX *ctx ATS_UNUSED, const void *key ATS_UNUSED, OSSL_ASYNC_FD readfd, void *pvwritefd)
 {
   OSSL_ASYNC_FD *pwritefd = (OSSL_ASYNC_FD *)pvwritefd;
   close(readfd);

@@ -134,7 +134,7 @@ parse_arguments(int argc, char const *argv[])
 
 /** The handler which sets the user-specified origin. */
 int
-set_origin(TSCont cont, TSEvent event, void *edata)
+set_origin(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 {
   if (event != TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE) {
     TSError("Unexpected event: %d", event);
