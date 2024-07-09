@@ -44,6 +44,10 @@
 #include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 #include "mgmt/rpc/server/IPCSocketServer.h"
 
+#ifndef SOCK_NONBLOCK
+#define SOCK_NONBLOCK O_NONBLOCK
+#endif
+
 namespace
 {
 constexpr size_t MAX_REQUEST_BUFFER_SIZE{32000};

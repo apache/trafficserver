@@ -68,7 +68,7 @@ public:
           ink_assert(!"Buffer full, not enough space to read the response.");
           break;
         case IPCSocketClient::ReadStatus::STREAM_ERROR:
-          err_text = "STREAM_ERROR: Error while reading response.";
+          err_text = swoc::bwprint(err_text, "STREAM_ERROR: Error while reading response. {}({})", std::strerror(errno), errno);
           break;
         default:
           err_text = "Something happened, we can't read the response. Unknown error.";
