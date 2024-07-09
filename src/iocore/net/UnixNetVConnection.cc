@@ -1511,7 +1511,7 @@ UnixNetVConnection::protocol_contains(std::string_view tag) const
 }
 
 int
-UnixNetVConnection::set_tcp_congestion_control(int side)
+UnixNetVConnection::set_tcp_congestion_control([[maybe_unused]] int side)
 {
 #ifdef TCP_CONGESTION
   std::string_view ccp;
