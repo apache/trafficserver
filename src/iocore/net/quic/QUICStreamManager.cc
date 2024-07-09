@@ -102,7 +102,7 @@ QUICStreamManager::find_stream(QUICStreamId stream_id)
 }
 
 QUICStream *
-QUICStreamManager::create_stream(QUICStreamId stream_id, QUICConnectionError &err)
+QUICStreamManager::create_stream(QUICStreamId stream_id, QUICConnectionError & /* err ATS_UNUSED */)
 {
   QUICStream *stream = new QUICStream(this->_context->connection_info(), stream_id);
   this->stream_list.push(stream);
