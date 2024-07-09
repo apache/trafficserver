@@ -768,9 +768,9 @@ TEST_CASE("UrlParamsGet", "[url][params_get]")
   URL url;
   HdrHeap *heap = new_HdrHeap();
   url.create(heap);
-  url.parse("https://foo.test/path");
+  url.parse("https://foo.test/path;p=1");
   value = url.path_get(&value_len);
-  CHECK(std::string_view(value, value_len) == "path");
+  CHECK(std::string_view(value, value_len) == "path;p=1");
   url.params_set("param=1", 7);
   value = url.params_get(&value_len);
   CHECK(value == nullptr);

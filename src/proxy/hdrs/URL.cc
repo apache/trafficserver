@@ -551,17 +551,20 @@ URLImpl::set_path(HdrHeap *heap, const char *value, int length, bool copy_string
 void
 URLImpl::set_params(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
-  int   total_length    = this->m_len_path + 1 + length;
-  char *path_and_params = static_cast<char *>(alloca(total_length));
-  int   path_len        = this->m_len_path;
+  int path_len = this->m_len_path;
 
+  // Truncate the current param segment if it exists
   if (auto p = strchr(this->m_ptr_path, ';'); p != nullptr) {
     auto params_len  = path_len - (p - this->m_ptr_path);
     path_len        -= params_len;
   }
+
+  int   total_length    = path_len + 1 + length;
+  char *path_and_params = static_cast<char *>(alloca(total_length));
+
   memcpy(path_and_params, this->m_ptr_path, path_len);
-  memcpy(path_and_params + this->m_len_path, ";", 1);
-  memcpy(path_and_params + this->m_len_path + 1, value, length);
+  memcpy(path_and_params + path_len, ";", 1);
+  memcpy(path_and_params + path_len + 1, value, length);
 
   this->set_path(heap, path_and_params, total_length, true);
 }
