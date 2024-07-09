@@ -367,7 +367,7 @@ Span::init(const char *path, int64_t size)
   span_error_t        serr;
   ink_device_geometry geometry;
 
-  ats_scoped_fd fd(SocketManager::open(path, O_RDONLY));
+  ats_scoped_fd fd(safe_open(path, O_RDONLY));
   if (fd < 0) {
     serr = make_span_error(errno);
     Warning("unable to open '%s': %s", path, strerror(errno));
