@@ -125,8 +125,7 @@ def TxnBoxTest(
     # git_root = dirname(dirname(dirname(ts.TestRoot)))
     # txn_box_lib = os.path.join(git_root, "lib", "txn_box.so")
     # ts.Setup.Copy(txn_box_lib, plugin_dir, CopyLogic.SoftFiles)
-    self.PrepareTestPlugin(
-        os.path.join(self.Variables.AtsTestPluginsDir, '../../../../plugins/experimental/txn_box/plugin/txn_box.so'), ts)
+    self.PrepareInstalledPlugin('txn_box.so', ts)
 
     # Configure txn_box in Traffic Server if there's a config. Otherwise assume it's remap only.
     if config_path == 'Auto':
