@@ -92,7 +92,7 @@ load_file(const std::string &newname, struct stat *statdata, std::string &data_i
 }
 
 int
-CB_Load_Secret(TSCont cont, TSEvent event, void *edata)
+CB_Load_Secret(TSCont /* cont ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   TSSecretID *id = reinterpret_cast<TSSecretID *>(edata);
 
@@ -133,7 +133,7 @@ CB_Load_Secret(TSCont cont, TSEvent event, void *edata)
 }
 
 int
-CB_Update_Secret(TSCont cont, TSEvent event, void *edata)
+CB_Update_Secret(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   std::vector<std::string> updates;
   for (auto iter = secret_versions.begin(); iter != secret_versions.end(); ++iter) {
@@ -168,7 +168,7 @@ CB_Update_Secret(TSCont cont, TSEvent event, void *edata)
 
 // Called by ATS as our initialization point
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
   info.plugin_name   = const_cast<char *>("SSL secret load test");

@@ -251,7 +251,7 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
 } // end anonymous namespace
 
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface *api_info, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   Dbg(dbg_ctl, "TSRemapInit()");
 

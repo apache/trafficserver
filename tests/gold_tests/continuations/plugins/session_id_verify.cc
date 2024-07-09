@@ -34,7 +34,7 @@ static char support_email[] = "bneradt@apache.org";
 static DbgCtl dbg_ctl{plugin_name};
 
 int
-global_handler(TSCont continuation, TSEvent event, void *data)
+global_handler(TSCont /* continuation ATS_UNUSED */, TSEvent event, void *data)
 {
   TSHttpSsn session = static_cast<TSHttpSsn>(data);
 
@@ -62,7 +62,7 @@ global_handler(TSCont continuation, TSEvent event, void *data)
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   Dbg(dbg_ctl, "initializing plugin");
 

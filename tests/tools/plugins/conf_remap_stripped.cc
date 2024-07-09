@@ -23,19 +23,20 @@
 // Initialize the plugin as a remap plugin.
 //
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   return TS_SUCCESS; /* success */
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+TSRemapNewInstance(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */, void ** /* ih ATS_UNUSED */,
+                   char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   return TS_ERROR;
 }
 
 void
-TSRemapDeleteInstance(void *ih)
+TSRemapDeleteInstance(void * /* ih ATS_UNUSED */)
 {
 }
 
@@ -43,7 +44,7 @@ TSRemapDeleteInstance(void *ih)
 // Main entry point when used as a remap plugin.
 //
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */)
+TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn /* rh ATS_UNUSED */, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   return TSREMAP_NO_REMAP;
 }

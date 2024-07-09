@@ -417,7 +417,7 @@ Send_to_vconn::send(void const *data, int64_t n_bytes)
 }
 
 int
-Send_to_vconn::_cont_func(TSCont cont, TSEvent event, void *edata)
+Send_to_vconn::_cont_func(TSCont cont, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   auto stv = static_cast<Send_to_vconn *>(nonNullPtrDbg(TSContDataGet(nonNullPtrDbg(cont))));
 

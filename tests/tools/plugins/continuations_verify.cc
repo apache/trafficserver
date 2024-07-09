@@ -51,7 +51,7 @@ static int stat_txn_close_2 = 0; // number of TS_HTTP_TXN_CLOSE hooks caught by 
 static int stat_test_done   = 0; // Incremented when receiving a traffic_ctl message
 
 static int
-handle_msg(TSCont contp, TSEvent event, void *edata)
+handle_msg(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (event == TS_EVENT_LIFECYCLE_MSG) { // External trigger, such as traffic_ctl
     Dbg(dbg_ctl_msg, "event TS_EVENT_LIFECYCLE_MSG");
@@ -74,7 +74,7 @@ handle_msg(TSCont contp, TSEvent event, void *edata)
     to the corresponding events. Return value is irrelevant.
 */
 static int
-handle_order_1(TSCont contp, TSEvent event, void *edata)
+handle_order_1(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpSsn ssnp; // session data
   TSHttpTxn txnp; // transaction data
@@ -104,7 +104,7 @@ handle_order_1(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-handle_order_2(TSCont contp, TSEvent event, void *edata)
+handle_order_2(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpSsn ssnp; // session data
   TSHttpTxn txnp; // transaction data
@@ -141,7 +141,7 @@ handle_order_2(TSCont contp, TSEvent event, void *edata)
         - Initializes all statistics as described in the README
 */
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   Dbg(dbg_ctl_init, "initializing plugin");
 
