@@ -32,6 +32,7 @@ if(wamr_FOUND)
 endif()
 
 add_library(wasmlib STATIC ${CC_FILES})
+target_compile_options(wasmlib PUBLIC -Wno-unused-parameter)
 if(wamr_FOUND)
   target_compile_options(wasmlib PRIVATE -Wno-missing-field-initializers)
   target_link_libraries(wasmlib PUBLIC wamr::wamr)
