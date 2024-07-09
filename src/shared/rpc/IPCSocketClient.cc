@@ -108,10 +108,15 @@ IPCSocketClient::connect(std::chrono::milliseconds ms, int attempts)
   std::string text;
   int         err, tries{attempts};
   bool        done{false};
-  _sock = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
+  _sock = socket(AF_UNIX, SOCK_STREAM, 0);
 
   if (this->is_closed()) {
     throw std::runtime_error(swoc::bwprint(text, "connect: error creating new socket. Reason: {}\n", std::strerror(errno)));
+  }
+
+  if (safe_fcntl(_sock, F_SETFL, O_NONBLOCK) < 0) {
+    this->close();
+    throw std::runtime_error(swoc::bwprint(text, "connect: fcntl error. Reason: {}\n", std::strerror(errno)));
   }
 
   _server.sun_family = AF_UNIX;

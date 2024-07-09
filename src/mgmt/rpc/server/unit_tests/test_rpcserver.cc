@@ -43,6 +43,7 @@
 #include "shared/rpc/IPCSocketClient.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/Layout.h"
+#include "tscore/ink_sock.h"
 #include "iocore/utils/diags.i"
 
 #define DEFINE_JSONRPC_PROTO_FUNCTION(fn) swoc::Rv<YAML::Node> fn(std::string_view const &, const YAML::Node &params)
@@ -158,7 +159,7 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
     int  chunk_number{1};
     auto chunks = chunk<N>(data);
     for (auto &&part : chunks) {
-      if (::write(_sock, part.c_str(), part.size()) < 0) {
+      if (safe_write(_sock, part.c_str(), part.size()) < 0) {
         Debug(logTag, "error sending message :%s", std ::strerror(errno));
         break;
       }
