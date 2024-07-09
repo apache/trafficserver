@@ -62,11 +62,6 @@ bool fastopen_supported();
 // result is the socket or -errno
 SOCKET socket(int domain = AF_INET, int type = SOCK_STREAM, int protocol = 0);
 
-const mode_t DEFAULT_OPEN_MODE{0644};
-
-// result is the fd or -errno
-int open(const char *path, int oflag = O_RDWR | O_NDELAY | O_CREAT, mode_t mode = DEFAULT_OPEN_MODE);
-
 // result is the number of bytes or -errno
 int64_t read(int fd, void *buf, int len, void *pOLP = nullptr);
 
