@@ -80,10 +80,7 @@
 //
 #define INK_FILEPATH_TRUENAME 0x20
 
-namespace
-{
 inline constexpr mode_t DEFAULT_OPEN_MODE{0644};
-} // end anonymous namespace
 
 int safe_open(char const *path, int oflag = O_RDWR | O_NDELAY | O_CREAT, mode_t mode = DEFAULT_OPEN_MODE);
 
