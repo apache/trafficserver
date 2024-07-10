@@ -42,6 +42,21 @@ using ioctl_arg_t = union {
   off_t    off;
 };
 
+/** Open and possibly create a file.
+ *
+ * This is a wrapper for the POSIX open() call that will retry the call if a
+ * transient error occurs.
+ */
+int
+safe_open(char const *path, int oflag, mode_t mode)
+{
+  int r{-1};
+  do {
+    r = open(path, oflag, mode);
+  } while ((r < 0) && (errno == EINTR));
+  return r;
+}
+
 int
 ink_fputln(FILE *stream, const char *s)
 {

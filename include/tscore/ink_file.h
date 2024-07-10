@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "tscore/ink_config.h"
+#include "tscore/ink_platform.h"
 
 #include <cstdio>
 #include <sys/types.h>
@@ -79,6 +79,10 @@
 // trailing slash if a directory
 //
 #define INK_FILEPATH_TRUENAME 0x20
+
+inline constexpr mode_t DEFAULT_OPEN_MODE{0644};
+
+int safe_open(char const *path, int oflag = O_RDWR | O_NDELAY | O_CREAT, mode_t mode = DEFAULT_OPEN_MODE);
 
 int ink_fputln(FILE *stream, const char *s);
 int ink_file_fd_readline(int fd, int bufsize, char *buf);
