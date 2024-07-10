@@ -536,8 +536,8 @@ if(ENABLE_AUTEST)
       ""
       CACHE STRING "Additional options for autest (default \"\")"
   )
-  set(PROXY_VERIFIER_VERSION "v2.10.1")
-  set(PROXY_VERIFIER_HASH "SHA1=0f189a37596d7488b5b81b5547df6fc1eadf56a1")
+  set(PROXY_VERIFIER_VERSION "v2.12.0")
+  set(PROXY_VERIFIER_HASH "SHA1=8e9adc6e0b31251ca8e6fc2064ae54e5d752bb72")
   include(proxy-verifier)
 endif()
 
