@@ -119,7 +119,7 @@ done:
 }
 
 static int
-global_handler(TSCont contp, TSEvent event, void *edata)
+global_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp      = static_cast<TSHttpTxn>(edata);
   TSCont    txn_contp = nullptr;
@@ -140,7 +140,7 @@ global_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
 
