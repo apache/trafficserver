@@ -26,7 +26,7 @@
   SocketManager.cc
  ****************************************************************************/
 
-#include "UnixSocket.h"
+#include "iocore/eventsystem/UnixSocket.h"
 
 #include "tscore/ink_platform.h"
 #include "P_EventSystem.h"

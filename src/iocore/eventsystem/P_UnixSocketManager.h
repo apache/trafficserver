@@ -31,11 +31,10 @@
 ****************************************************************************/
 #pragma once
 
-#include "UnixSocket.h"
-
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sock.h"
 #include "iocore/eventsystem/SocketManager.h"
+#include "iocore/eventsystem/UnixSocket.h"
 
 //
 // These limits are currently disabled

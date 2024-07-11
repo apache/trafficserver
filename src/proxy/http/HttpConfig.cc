@@ -32,6 +32,7 @@
 #include "proxy/http/HttpConfig.h"
 #include "proxy/hdrs/HTTP.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/eventsystem/UnixSocket.h"
 #include "../../iocore/net/P_Net.h"
 #include "../../records/P_RecUtils.h"
 #include "records/RecHttp.h"
@@ -1148,7 +1149,7 @@ HttpConfig::reconfigure()
   params->oride.sock_packet_notsent_lowat = m_master.oride.sock_packet_notsent_lowat;
 
   // Clear the TCP Fast Open option if it is not supported on this host.
-  if ((params->oride.sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !SocketManager::fastopen_supported()) {
+  if ((params->oride.sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !UnixSocket::client_fastopen_supported()) {
     Status("disabling unsupported TCP Fast Open flag on proxy.config.net.sock_option_flag_out");
     params->oride.sock_option_flag_out &= ~NetVCOptions::SOCK_OPT_TCP_FAST_OPEN;
   }
