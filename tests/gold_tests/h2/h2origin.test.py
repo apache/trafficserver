@@ -32,6 +32,7 @@ ts = Test.MakeATSProcess("ts", enable_tls="true")
 ts.addDefaultSSLFiles()
 replay_file = "replay_h2origin/"
 server = Test.MakeVerifierServerProcess("h2-origin", replay_file)
+server_expect = Test.MakeVerifierServerProcess("server-expect", "expect_100_continue.yaml")
 ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -48,7 +49,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
     })
 
-ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.https_port))
+ts.Disk.remap_config.AddLines(
+    [f'map /expect http://127.0.0.1:{server_expect.Variables.http_port}', f'map / https://127.0.0.1:{server.Variables.https_port}'])
 ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 ts.Disk.logging_yaml.AddLines(
@@ -70,7 +72,14 @@ tr.AddVerifierClientProcess("client", replay_file, http_ports=[ts.Variables.port
 tr.StillRunningAfter = ts
 tr.TimeOut = 60
 
-tr = Test.AddTestRun("Wait squid.log to be written")
+# A regression test for #9857.
+tr = Test.AddTestRun("Test an empty body POST request with an Expect: 100-continue header")
+tr.AddVerifierClientProcess(
+    "client-expect", "expect_100_continue.yaml", http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
+tr.Processes.Default.StartBefore(server_expect)
+tr.Processes.Default.ReturnCode = 0
+
+tr = Test.AddTestRun("Wait for the squid.log to be written")
 timeout = 30
 watcher = tr.Processes.Process("watcher")
 watcher.Command = f"sleep {timeout}"
