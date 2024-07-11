@@ -26,10 +26,8 @@
 #include "iocore/eventsystem/IOBuffer.h"
 
 #include "tscore/CryptoHash.h"
-#include "tscore/ink_hrtime.h"
 
 #include <cstdint>
-#include <cstring>
 
 #define DOC_MAGIC       ((uint32_t)0x5F129B13)
 #define DOC_CORRUPT     ((uint32_t)0xDEADBABE)
@@ -103,59 +101,4 @@ inline char *
 Doc::data()
 {
   return this->hdr() + this->hlen;
-}
-
-static char *
-iobufferblock_memcpy(char *p, int len, IOBufferBlock const *ab, int offset)
-{
-  IOBufferBlock const *b = ab;
-  while (b && len >= 0) {
-    char *start      = b->_start;
-    char *end        = b->_end;
-    int   max_bytes  = end - start;
-    max_bytes       -= offset;
-    if (max_bytes <= 0) {
-      offset = -max_bytes;
-      b      = b->next.get();
-      continue;
-    }
-    int bytes = len;
-    if (bytes >= max_bytes) {
-      bytes = max_bytes;
-    }
-    ::memcpy(p, start + offset, bytes);
-    p      += bytes;
-    len    -= bytes;
-    b       = b->next.get();
-    offset  = 0;
-  }
-  return p;
-}
-
-inline void
-Doc::set_data(int const len, IOBufferBlock const *block, int const offset)
-{
-  iobufferblock_memcpy(this->data(), len, block, offset);
-}
-
-inline void
-Doc::calculate_checksum()
-{
-  this->checksum = 0;
-  for (char *b = this->hdr(); b < reinterpret_cast<char *>(this) + this->len; b++) {
-    this->checksum += *b;
-  }
-}
-
-inline void
-Doc::pin(std::uint32_t const pin_in_cache)
-{
-  // coverity[Y2K38_SAFETY:FALSE]
-  this->pinned = static_cast<uint32_t>(ink_get_hrtime() / HRTIME_SECOND) + pin_in_cache;
-}
-
-inline void
-Doc::unpin()
-{
-  this->pinned = 0;
 }

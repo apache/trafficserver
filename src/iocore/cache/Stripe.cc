@@ -1123,8 +1123,7 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
   }
   // move data
   if (vc->write_len) {
-    [[maybe_unused]] ProxyMutex const *mutex = this->mutex.get();
-    ink_assert(mutex->thread_holding == this_ethread());
+    ink_assert(this->mutex.get()->thread_holding == this_ethread());
 
     Metrics::Counter::increment(cache_rsb.write_bytes);
     Metrics::Counter::increment(this->cache_vol->vol_rsb.write_bytes);
