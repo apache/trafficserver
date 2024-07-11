@@ -916,7 +916,7 @@ msgid ""
 "`records.yaml`. ::"
 msgstr ""
 ":file:`records.yaml` の :ts:cv:`proxy.config.http.cache."
-"ignore_server_no_cache ` を編集してください。"
+"ignore_server_no_cache` を編集してください。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:460
 msgid "Configuring Traffic Server to Ignore WWW-Authenticate Headers"
@@ -964,7 +964,7 @@ msgid ""
 "`records.yaml`. ::"
 msgstr ""
 ":file:`records.yaml` の :ts:cv:`proxy.config.http.cache."
-"ignore_authentication ` を編集してください。"
+"ignore_authentication` を編集してください。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:486
 msgid "Configuration Directives"

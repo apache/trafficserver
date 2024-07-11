@@ -123,7 +123,7 @@ msgstr ""
 "す。 *リバースマップルール* では、ターゲット URL はオリジナルコンテントがあ"
 "る場所を指し、置換 URL は Traffic Server を指しています。 Traffic Server は"
 "マッピングルールを Traffic Server の ``config`` ディレクトリにある :file:"
-"``remap.config` に保存します。"
+"`remap.config` に保存します。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:284
 msgid ""
@@ -515,7 +515,7 @@ msgid ""
 "Traffic Server locates a map rule in the :file:`remap.config` file and "
 "remaps the request to the specified origin server (``realhost.com``)."
 msgstr ""
-"Traffic Server は :file:``remap.config` ファイル内にあるマップルールを見つ"
+"Traffic Server は :file:`remap.config` ファイル内にあるマップルールを見つ"
 "け、リクエストを指定されたオリジンサーバー (``realhost.com``) にリマップしま"
 "す。"
 
