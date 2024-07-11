@@ -154,11 +154,28 @@ IPCSocketClient::connect(std::chrono::milliseconds ms, int attempts)
   return *this;
 }
 
+ssize_t
+IPCSocketClient::_safe_write(int fd, const char *buffer, int len)
+{
+  ssize_t written{0};
+  while (written < len) {
+    const int ret = ::write(fd, buffer + written, len - written);
+    if (ret == -1) {
+      if (errno == EAGAIN || errno == EINTR) {
+        continue;
+      }
+      return -1;
+    }
+    written += ret;
+  }
+
+  return written;
+}
 IPCSocketClient::self_reference
 IPCSocketClient ::send(std::string_view data)
 {
   std::string msg{data};
-  if (safe_write(_sock, msg.c_str(), msg.size()) < 0) {
+  if (_safe_write(_sock, msg.c_str(), msg.size()) == -1) {
     this->close();
     std::string text;
     throw std::runtime_error{swoc::bwprint(text, "Error writing on stream socket {}({})", std::strerror(errno), errno)};

@@ -159,7 +159,7 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
     int  chunk_number{1};
     auto chunks = chunk<N>(data);
     for (auto &&part : chunks) {
-      if (safe_write(_sock, part.c_str(), part.size()) < 0) {
+      if (super::_safe_write(_sock, part.c_str(), part.size()) == -1) {
         Debug(logTag, "error sending message :%s", std ::strerror(errno));
         break;
       }
