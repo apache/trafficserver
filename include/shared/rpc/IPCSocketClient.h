@@ -85,6 +85,7 @@ struct IPCSocketClient {
   }
 
 protected:
+  ssize_t            _safe_write(int fd, const char *buffer, int len);
   std::string        _path;
   struct sockaddr_un _server;
 
