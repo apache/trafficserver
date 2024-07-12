@@ -56,14 +56,14 @@ public:
 
   /** Get a new socket.
    *
-   * Call has_socket() to determine whether this call succeeded. If the call
+   * Call ok() to determine whether this call succeeded. If the call
    * failed, errno will be set to indicate the error.
    *
-   * @see has_socket
+   * @see ok
    */
   UnixSocket(int domain, int ctype, int protocol);
 
-  bool has_socket() const;
+  bool ok() const;
 
   int bind(struct sockaddr const *name, int namelen);
   int accept4(struct sockaddr *addr, socklen_t *addrlen, int flags) const;
@@ -109,7 +109,7 @@ inline UnixSocket::UnixSocket(int domain, int type, int protocol)
 }
 
 inline bool
-UnixSocket::has_socket() const
+UnixSocket::ok() const
 {
   return NO_SOCK != this->sock_fd;
 }
