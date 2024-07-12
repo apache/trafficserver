@@ -51,6 +51,12 @@ static int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int fl
 static unsigned int read_uint_from_fd(int fd);
 
 int
+UnixSocket::set_nonblocking()
+{
+  return safe_set_fl(this->sock_fd, O_NONBLOCK);
+}
+
+int
 UnixSocket::bind(struct sockaddr const *name, int namelen)
 {
   return safe_bind(this->sock_fd, name, namelen);

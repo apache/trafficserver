@@ -65,6 +65,8 @@ public:
 
   bool ok() const;
 
+  int set_nonblocking();
+
   int bind(struct sockaddr const *name, int namelen);
   int accept4(struct sockaddr *addr, socklen_t *addrlen, int flags) const;
 
