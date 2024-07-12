@@ -36,9 +36,6 @@
 #define SET_TCP_NO_DELAY
 #define SET_NO_LINGER
 #define SET_SO_KEEPALIVE
-// set in the OS
-// #define RECV_BUF_SIZE            (1024*64)
-// #define SEND_BUF_SIZE            (1024*64)
 #define FIRST_RANDOM_PORT (16000)
 #define LAST_RANDOM_PORT  (60000)
 
@@ -180,9 +177,6 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
       goto Lerror;
     }
   }
-#endif
-#ifdef RECV_BUF_SIZE
-  SocketManager::set_rcvbuf_size(fd, RECV_BUF_SIZE);
 #endif
 #ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
