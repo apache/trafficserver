@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "iocore/eventsystem/IOBuffer.h"
+
 #include "tscore/CryptoHash.h"
 
 #include <cstdint>
@@ -63,6 +65,10 @@ struct Doc {
   int      single_fragment() const;
   char    *hdr();
   char    *data();
+  void     set_data(int len, IOBufferBlock const *block, int offset);
+  void     calculate_checksum();
+  void     pin(std::uint32_t const pin_in_cache);
+  void     unpin();
 
   using self_type = Doc;
 };
