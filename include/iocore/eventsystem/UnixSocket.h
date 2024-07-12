@@ -69,6 +69,7 @@ public:
 
   int bind(struct sockaddr const *name, int namelen);
   int accept4(struct sockaddr *addr, socklen_t *addrlen, int flags) const;
+  int connect(struct sockaddr const *addr, socklen_t addrlen);
 
   std::int64_t read(void *buf, int size) const;
 

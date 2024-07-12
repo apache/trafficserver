@@ -106,6 +106,12 @@ accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)
 #endif // !HAVE_ACCEPT4
 
 int
+UnixSocket::connect(struct sockaddr const *addr, socklen_t addrlen)
+{
+  return ::connect(this->sock_fd, addr, addrlen);
+}
+
+int
 UnixSocket::enable_option(int level, int optname)
 {
   int on = 1;
