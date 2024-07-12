@@ -94,6 +94,8 @@ public:
   int set_sndbuf_size(int bsz);
   int set_rcvbuf_size(int bsz);
 
+  int enable_option(int level, int optname);
+
   int close();
   int shutdown(int how);
 

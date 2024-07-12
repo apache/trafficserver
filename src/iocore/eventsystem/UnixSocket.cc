@@ -106,6 +106,13 @@ accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)
 #endif // !HAVE_ACCEPT4
 
 int
+UnixSocket::enable_option(int level, int optname)
+{
+  int on = 1;
+  return safe_setsockopt(this->sock_fd, level, optname, &on, sizeof(on));
+}
+
+int
 UnixSocket::close()
 {
   int res;
