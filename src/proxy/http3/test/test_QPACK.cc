@@ -95,7 +95,7 @@ public:
   TestQPACKEventHandler() : Continuation() { SET_HANDLER(&TestQPACKEventHandler::event_handler); }
 
   int
-  event_handler(int event, Event *data)
+  event_handler(int event, Event * /* data ATS_UNUSED */)
   {
     this->_event = event;
     return 0;
@@ -329,7 +329,7 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
 }
 
 static int
-test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am, const char *app_name)
+test_decode(const char *enc_file, const char *out_file, int dts, int mbs)
 {
   int ret = 0;
 
@@ -467,7 +467,7 @@ TEST_CASE("Decoding", "[qpack-decode]")
       stat(enc_file, &st);
       if (S_ISREG(st.st_mode) && strstr(d->d_name, pattern)) {
         snprintf(out_file + strlen(decdir), sizeof(out_file) - strlen(decdir), "/%s/%s.decoded", appname, d->d_name);
-        CHECK(test_decode(enc_file, out_file, tablesize, streams, ackmode, appname) == 0);
+        CHECK(test_decode(enc_file, out_file, tablesize, streams) == 0);
       }
     }
   }

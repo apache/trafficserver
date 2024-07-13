@@ -86,7 +86,7 @@ ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 
 #if !HAVE_GETRESUID
 static int
-getresuid(uid_t *uid, uid_t *euid, uid_t *suid)
+getresuid(uid_t *uid, uid_t *euid, uid_t * /* suid ATS_UNUSED */)
 {
   *uid  = getuid();
   *euid = geteuid();
@@ -96,7 +96,7 @@ getresuid(uid_t *uid, uid_t *euid, uid_t *suid)
 
 #if !HAVE_GETRESGID
 static int
-getresgid(gid_t *gid, gid_t *egid, gid_t *sgid)
+getresgid(gid_t *gid, gid_t *egid, gid_t * /* sgid ATS_UNUSED */)
 {
   *gid  = getgid();
   *egid = getegid();
@@ -333,7 +333,7 @@ RestrictCapabilities()
 }
 
 bool
-EnableCoreFile(bool flag)
+EnableCoreFile([[maybe_unused]] bool flag)
 {
   int zret = 0;
 
@@ -352,10 +352,8 @@ EnableCoreFile(bool flag)
 }
 
 void
-EnableDeathSignal(int signum)
+EnableDeathSignal([[maybe_unused]] int signum)
 {
-  (void)signum;
-
 #if defined(PR_SET_PDEATHSIG)
   if (prctl(PR_SET_PDEATHSIG, signum, 0, 0, 0) != 0) {
     Debug("privileges", "prctl(PR_SET_PDEATHSIG) failed: %s", strerror(errno));

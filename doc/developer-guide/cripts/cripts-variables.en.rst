@@ -59,7 +59,7 @@ get the length of a string, you can use the ``size()`` method:
 
 .. code-block:: cpp
 
-     borrow req  = Client::Request::get();
+     borrow req  = Client::Request::Get();
 
      if (req["Host"].size() > 3) {
          // Do something
@@ -113,10 +113,10 @@ Best way to understand this is to look at an example:
 
 .. code-block:: cpp
 
-   auto cache_on = proxy.config.http.cache.http.get();
+   auto cache_on = proxy.config.http.cache.http.Get();
 
    if (cache_on > 0) {
-     proxy.config.http.ignore_server_no_cache.set(1);
+     proxy.config.http.ignore_server_no_cache.Set(1);
    }
 
 This is a pretty artificial example, but shows the name space of these configurations, and how they
@@ -130,7 +130,7 @@ control planes with Cripts. This is done using the ``Records`` object, for examp
    do_remap() {
      auto http_cache = Cript::Records("proxy.config.http.cache.http");
 
-     if (AsInteger(http_cache.get()) > 0) {
+     if (AsInteger(http_cache.Get()) > 0) {
        CDebug("HTTP Cache is on");
      }
    }
@@ -157,14 +157,14 @@ Variable                       Description
 ============================   ====================================================================
 
 All of these are controlled via a boolean value, and can be set to either ``true`` or ``false``,
-using the same ``.get()`` and ``.set()`` as for configuration variables. As an example, lets randomly
+using the same ``Get()`` and ``Set()`` as for configuration variables. As an example, lets randomly
 turn off logging for some percentage of requests:
 
 .. code-block:: cpp
 
    do_remap() {
      if (Cript::random(1000) > 99) {
-       control.logging.set(false); // 10% log sampling
+       control.logging.Set(false); // 10% log sampling
      }
    }
 

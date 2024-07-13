@@ -153,7 +153,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     // Retry the cache open read if the number retries is less
     // than or equal to the max number of open read retries,
     // else treat as a cache miss.
-    ink_assert(open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries || write_locked);
+    ink_assert(open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries);
     Dbg(dbg_ctl_http_cache,
         "[%" PRId64 "] [state_cache_open_read] cache open read failure %d. "
         "retrying cache open read...",
@@ -300,11 +300,7 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
 {
   open_read_tries++;
   ink_assert(pending_action == nullptr);
-  if (write_locked) {
-    open_read_cb = false;
-  } else {
-    ink_assert(open_read_cb == false);
-  }
+  ink_assert(open_read_cb == false);
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
   Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params, this->read_pin_in_cache);
@@ -319,7 +315,7 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   if (open_read_cb == true) {
     return ACTION_RESULT_DONE;
   } else {
-    ink_assert(pending_action != nullptr || write_locked == true);
+    ink_assert(pending_action != nullptr);
     captive_action.cancelled = 0; // Make sure not cancelled before we hand it out
     return &captive_action;
   }

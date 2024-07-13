@@ -30,7 +30,7 @@ system, and must always be borrowed. The pattern for this is as follows:
 
 .. code-block:: cpp
 
-  borrow req = Client::Request::get();
+  borrow req = Client::Request::Get();
 
   auto foo = req["X-Foo"];
 
@@ -55,18 +55,18 @@ Assigning the empty value (``""``) to a header will remove it from the header li
 
 .. code-block:: cpp
 
-  borrow req = Client::Request::get();
+  borrow req = Client::Request::Get();
 
   req["X-Foo"] = "bar"; // Set the header
   req["X-Fie"] = "";    // Remove the header
 
-A header can also be removed by using the ``erase`` method, which is a little more explicit:
+A header can also be removed by using the ``Erase`` method, which is a little more explicit:
 
 .. code-block:: cpp
 
-  borrow req = Client::Request::get();
+  borrow req = Client::Request::Get();
 
-  req.erase("X-Foo");
+  req.Erase("X-Foo");
 
 .. note:: There is also a Cripts Bundle for headers, see :ref:`Bundles <cripts-bundles-headers>`.
 
@@ -80,7 +80,7 @@ a pattern such as the following example:
 
 .. code-block:: cpp
 
-  borrow req = Client::Request::get();
+  borrow req = Client::Request::Get();
 
   for (auto header : req) {
     CDebug("Header: {}: {}", header, req[header]); // This will print all headers and their values
@@ -117,7 +117,7 @@ These symbols can be used to compare against the method in the request object. F
 
 .. code-block:: cpp
 
-  borrow req = Client::Request::get();
+  borrow req = Client::Request::Get();
 
   if (req.method == Cript::Method::GET) {
       // Do something
@@ -157,7 +157,7 @@ fresh or stale. Example usage of the cache status:
 .. code-block:: cpp
 
   do_read_response() {
-    borrow resp = Server::Response::get();
+    borrow resp = Server::Response::Get();
 
     if (resp.cache == "miss") {
       // Do something

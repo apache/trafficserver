@@ -149,7 +149,7 @@ get_jws_from_cookie(const char **cookie, size_t *cookie_ct, const char *paramNam
 }
 
 struct jwt *
-validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_ct)
+validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t /* uri_ct ATS_UNUSED */)
 {
   struct timer t;
   int64_t      last_mark = 0;

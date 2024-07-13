@@ -82,13 +82,13 @@ LogsMetrics::propstats(const Cript::string_view &label)
   _label = label;
 
   if (_label.length() > 0) {
-    needCallback({Cript::Callbacks::DO_CACHE_LOOKUP, Cript::Callbacks::DO_TXN_CLOSE});
+    NeedCallback({Cript::Callbacks::DO_CACHE_LOOKUP, Cript::Callbacks::DO_TXN_CLOSE});
 
     for (int ix = 0; ix < Bundle::PROPSTAT_MAX; ++ix) {
       auto name = fmt::format("{}.{}", _label, Bundle::PROPSTAT_SUFFIXES[ix]);
 
       _inst->debug("Creating metrics for: {}", name);
-      _inst->metrics[ix] = Metrics::Counter::create(name);
+      _inst->metrics[ix] = Metrics::Counter::Create(name);
     }
   }
 
@@ -98,48 +98,48 @@ LogsMetrics::propstats(const Cript::string_view &label)
 void
 LogsMetrics::doTxnClose(Cript::Context *context)
 {
-  borrow resp = Client::Response::get();
+  borrow resp = Client::Response::Get();
 
   // .tcpinfo(bool)
-  if (_tcpinfo && control.logging.get()) {
-    borrow conn = Client::Connection::get();
+  if (_tcpinfo && control.logging.Get()) {
+    borrow conn = Client::Connection::Get();
 
-    resp["@TCPInfo"] += fmt::format(",TC; {}", conn.tcpinfo.log());
+    resp["@TCPInfo"] += fmt::format(",TC; {}", conn.tcpinfo.Log());
   }
 
   // .label(str)
   if (_label.length() > 0) {
-    instance.metrics[Bundle::PROPSTAT_CLIENT_BYTES_IN]->increment(TSHttpTxnClientReqHdrBytesGet(transaction.txnp) +
+    instance.metrics[Bundle::PROPSTAT_CLIENT_BYTES_IN]->Increment(TSHttpTxnClientReqHdrBytesGet(transaction.txnp) +
                                                                   TSHttpTxnClientReqBodyBytesGet(transaction.txnp));
-    instance.metrics[Bundle::PROPSTAT_CLIENT_BYTES_OUT]->increment(TSHttpTxnClientRespHdrBytesGet(transaction.txnp) +
+    instance.metrics[Bundle::PROPSTAT_CLIENT_BYTES_OUT]->Increment(TSHttpTxnClientRespHdrBytesGet(transaction.txnp) +
                                                                    TSHttpTxnClientRespBodyBytesGet(transaction.txnp));
-    instance.metrics[Bundle::PROPSTAT_SERVER_BYTES_IN]->increment(TSHttpTxnServerReqHdrBytesGet(transaction.txnp) +
+    instance.metrics[Bundle::PROPSTAT_SERVER_BYTES_IN]->Increment(TSHttpTxnServerReqHdrBytesGet(transaction.txnp) +
                                                                   TSHttpTxnServerReqBodyBytesGet(transaction.txnp));
-    instance.metrics[Bundle::PROPSTAT_SERVER_BYTES_OUT]->increment(TSHttpTxnServerRespHdrBytesGet(transaction.txnp) +
+    instance.metrics[Bundle::PROPSTAT_SERVER_BYTES_OUT]->Increment(TSHttpTxnServerRespHdrBytesGet(transaction.txnp) +
                                                                    TSHttpTxnServerRespBodyBytesGet(transaction.txnp));
 
     if (resp.status == 200) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_200]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_200]->Increment();
     } else if (resp.status == 206) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_206]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_206]->Increment();
     } else if (resp.status == 404) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_404]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_404]->Increment();
     } else if (resp.status == 504) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_504]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_504]->Increment();
     } else if (resp.status >= 200 && resp.status < 300) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_2xx]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_2xx]->Increment();
     } else if (resp.status >= 300 && resp.status < 400) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_3xx]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_3xx]->Increment();
     } else if (resp.status >= 400 && resp.status < 500) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_4xx]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_4xx]->Increment();
     } else if (resp.status >= 500 && resp.status < 600) {
-      instance.metrics[Bundle::PROPSTAT_RESPONSE_5xx]->increment();
+      instance.metrics[Bundle::PROPSTAT_RESPONSE_5xx]->Increment();
     }
 
-    if (transaction.aborted()) {
-      instance.metrics[Bundle::PROPSTAT_CLIENT_ABORTED_REQUESTS]->increment();
+    if (transaction.Aborted()) {
+      instance.metrics[Bundle::PROPSTAT_CLIENT_ABORTED_REQUESTS]->Increment();
     } else {
-      instance.metrics[Bundle::PROPSTAT_CLIENT_COMPLETED_REQUESTS]->increment();
+      instance.metrics[Bundle::PROPSTAT_CLIENT_COMPLETED_REQUESTS]->Increment();
     }
   }
 }
@@ -147,8 +147,8 @@ LogsMetrics::doTxnClose(Cript::Context *context)
 void
 LogsMetrics::doSendResponse(Cript::Context *context)
 {
-  borrow resp = Client::Response::get();
-  borrow conn = Client::Connection::get();
+  borrow resp = Client::Response::Get();
+  borrow conn = Client::Connection::Get();
 
   // .sample(int)
   if (_log_sample > 0) {
@@ -156,20 +156,20 @@ LogsMetrics::doSendResponse(Cript::Context *context)
   }
 
   // .tcpinfo(bool)
-  if (_tcpinfo && control.logging.get()) {
-    resp["@TCPInfo"] = fmt::format("SR; {}", conn.tcpinfo.log());
+  if (_tcpinfo && control.logging.Get()) {
+    resp["@TCPInfo"] = fmt::format("SR; {}", conn.tcpinfo.Log());
   }
 }
 
 void
 LogsMetrics::doCacheLookup(Cript::Context *context)
 {
-  auto status = transaction.lookupStatus();
+  auto status = transaction.LookupStatus();
 
   // .label(str)
   if (_label.length() > 0) {
     if (status >= 0 && status <= 3) {
-      instance.metrics[status]->increment(); // This assumes the 4 cache stats are first
+      instance.metrics[status]->Increment(); // This assumes the 4 cache stats are first
     }
   }
 }
@@ -181,8 +181,8 @@ LogsMetrics::doRemap(Cript::Context *context)
 
   // .logsample(int)
   if (_log_sample > 0) {
-    if (Cript::random(_log_sample) != 1) {
-      control.logging.set(false);
+    if (Cript::Random(_log_sample) != 1) {
+      control.logging.Set(false);
       sampled = false;
     }
     CDebug("Log sampling: 1 in {} -> {}", _log_sample, sampled);
@@ -190,9 +190,9 @@ LogsMetrics::doRemap(Cript::Context *context)
 
   // .tcpinfo(bool)
   if (_tcpinfo && sampled) {
-    borrow req      = Client::Request::get();
-    borrow conn     = Client::Connection::get();
-    req["@TCPInfo"] = fmt::format("TS; {}", conn.tcpinfo.log());
+    borrow req      = Client::Request::Get();
+    borrow conn     = Client::Connection::Get();
+    req["@TCPInfo"] = fmt::format("TS; {}", conn.tcpinfo.Log());
   }
 }
 

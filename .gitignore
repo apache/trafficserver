@@ -183,7 +183,6 @@ ETAGS
 CTAGS
 
 tools/http_load/http_load
-tools/jtest/jtest
 tools/trafficserver.pc
 tools/escape_mapper/escape_mapper
 

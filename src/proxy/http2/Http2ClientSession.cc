@@ -143,7 +143,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 // are scenarios where we would like to complete the outstanding streams.
 
 void
-Http2ClientSession::do_io_close(int alerrno)
+Http2ClientSession::do_io_close(int /* alerrno ATS_UNUSED */)
 {
   REMEMBER(NO_EVENT, this->recursion)
 
@@ -292,7 +292,7 @@ Http2ClientSession::get_protocol_string() const
 }
 
 void
-Http2ClientSession::release(ProxyTransaction *trans)
+Http2ClientSession::release(ProxyTransaction * /* trans ATS_UNUSED */)
 {
 }
 
@@ -338,7 +338,7 @@ Http2ClientSession::set_no_activity_timeout()
 }
 
 HTTPVersion
-Http2ClientSession::get_version(HTTPHdr &hdr) const
+Http2ClientSession::get_version(HTTPHdr & /* hdr ATS_UNUSED */) const
 {
   return HTTP_2_0;
 }

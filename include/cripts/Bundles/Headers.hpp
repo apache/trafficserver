@@ -41,7 +41,7 @@ public:
   virtual ~HRWBridge() = default;
 
   virtual Cript::string_view
-  value(Cript::Context *context)
+  value(Cript::Context * /* context ATS_UNUSED */)
   {
     return _value;
   }
@@ -95,18 +95,18 @@ public:
   {
     auto *entry = new self_type();
 
-    inst.addBundle(entry);
+    inst.AddBundle(entry);
 
     return *entry;
   }
 
   [[nodiscard]] const Cript::string &
-  name() const override
+  Name() const override
   {
     return _name;
   }
 
-  static detail::HRWBridge *bridgeFactory(const Cript::string &source);
+  static detail::HRWBridge *BridgeFactory(const Cript::string &source);
 
   self_type &rm_headers(const Cript::string_view target, const HeaderList &headers);
   self_type &set_headers(const Cript::string_view target, const HeaderValueList &headers);

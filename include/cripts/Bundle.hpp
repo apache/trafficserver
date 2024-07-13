@@ -44,19 +44,19 @@ namespace Bundle
     }
 
     [[nodiscard]] Cript::string_view
-    message() const
+    Message() const
     {
       return {_message};
     }
 
     [[nodiscard]] Cript::string_view
-    bundle() const
+    Bundle() const
     {
       return {_bundle};
     }
 
     [[nodiscard]] Cript::string_view
-    option() const
+    Option() const
     {
       return {_option};
     }
@@ -77,22 +77,22 @@ namespace Bundle
     void operator=(const self_type &) = delete;
     virtual ~Base()                   = default;
 
-    [[nodiscard]] virtual const Cript::string &name() const = 0;
+    [[nodiscard]] virtual const Cript::string &Name() const = 0;
 
     void
-    needCallback(Cript::Callbacks cb)
+    NeedCallback(Cript::Callbacks cb)
     {
       _callbacks |= cb;
     }
 
     void
-    needCallback(unsigned cbs)
+    NeedCallback(unsigned cbs)
     {
       _callbacks |= cbs;
     }
 
     void
-    needCallback(std::initializer_list<unsigned> cb_list)
+    NeedCallback(std::initializer_list<unsigned> cb_list)
     {
       for (auto &it : cb_list) {
         _callbacks |= it;
@@ -100,49 +100,49 @@ namespace Bundle
     }
 
     [[nodiscard]] unsigned
-    callbacks() const
+    Callbacks() const
     {
       return _callbacks;
     }
 
     virtual bool
-    validate(std::vector<Cript::Bundle::Error> &errors) const
+    Validate(std::vector<Cript::Bundle::Error> & /* errors ATS_UNUSED */) const
     {
       return true;
     }
 
     virtual void
-    doRemap(Cript::Context *context)
+    doRemap(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doPostRemap(Cript::Context *context)
+    doPostRemap(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doSendResponse(Cript::Context *context)
+    doSendResponse(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doCacheLookup(Cript::Context *context)
+    doCacheLookup(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doSendRequest(Cript::Context *context)
+    doSendRequest(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doReadResponse(Cript::Context *context)
+    doReadResponse(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doTxnClose(Cript::Context *context)
+    doTxnClose(Cript::Context * /* context ATS_UNUSED */)
     {
     }
 

@@ -84,7 +84,7 @@ UDPPacket::new_UDPPacket()
 
 UDPPacket *
 UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size,
-                         struct timespec *send_at_hint)
+                         [[maybe_unused]] struct timespec *send_at_hint)
 {
   UDPPacket *p = udpPacketAllocator.alloc();
 
@@ -408,6 +408,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
     msg.msg_namelen         = sizeof(fromaddr);
     msg.msg_iov             = tiovec;
     msg.msg_iovlen          = niov;
+    msg.msg_flags           = 0;
 
     static const size_t cmsg_size{CMSG_SPACE(sizeof(int))
 #ifdef IP_PKTINFO

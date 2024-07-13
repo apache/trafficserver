@@ -33,14 +33,14 @@ static char vendor_name[]   = "apache";
 static char support_email[] = "duke8253@apache.org";
 
 static int
-test_handler(TSCont contp, TSEvent event, void *edata)
+test_handler(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   Dbg(dbg_ctl, "failed to shutdown");
   return 0;
 }
 
 static int
-LifecycleHookTracer(TSCont contp, TSEvent event, void *edata)
+LifecycleHookTracer(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (event == TS_EVENT_LIFECYCLE_TASK_THREADS_READY) {
     TSCont contp = TSContCreate(test_handler, TSMutexCreate());
@@ -51,7 +51,7 @@ LifecycleHookTracer(TSCont contp, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
 

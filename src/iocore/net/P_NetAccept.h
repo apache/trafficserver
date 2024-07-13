@@ -108,8 +108,14 @@ struct NetAccept : public Continuation {
   virtual void       stop_accept();
   virtual NetAccept *clone() const;
 
-  // 0 == success
-  int do_listen(bool non_blocking);
+  /** Listen without blocking.
+   *
+   * For a blocking listen, use do_blocking_listen.
+   *
+   * @see do_blocking_listen
+   */
+  int do_listen();
+  int do_blocking_listen();
   int do_blocking_accept(EThread *t);
 
   virtual int acceptEvent(int event, void *e);
@@ -120,6 +126,9 @@ struct NetAccept : public Continuation {
 
   explicit NetAccept(const NetProcessor::AcceptOptions &);
   ~NetAccept() override { action_ = nullptr; }
+
+private:
+  int do_listen_impl(bool non_blocking);
 };
 
 extern Ptr<ProxyMutex>          naVecMutex;

@@ -6221,7 +6221,8 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 
 /************************   REC Stats API    **************************/
 int
-TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
+TSStatCreate(const char *the_name, TSRecordDataType /* the_type ATS_UNUSED */, TSStatPersistence /* persist ATS_UNUSED */,
+             TSStatSync /* sync ATS_UNUSED */)
 {
   int id = Metrics::Gauge::create(the_name); // Gauges allows for all "int" operations
 
@@ -7885,7 +7886,7 @@ public:
     SET_HANDLER(&TSSslCallback::event_handler);
   }
   int
-  event_handler(int event, void *)
+  event_handler(int /* event ATS_UNUSED */, void *)
   {
     m_vc->reenable(m_vc->nh, m_event);
     delete this;
@@ -8606,7 +8607,7 @@ TSHttpTxnServerProtocolStackContains(TSHttpTxn txnp, const char *tag)
 }
 
 const char *
-TSRegisterProtocolTag(const char *tag)
+TSRegisterProtocolTag(const char * /* tag ATS_UNUSED */)
 {
   return nullptr;
 }
@@ -8674,7 +8675,7 @@ TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
 void *
 TSRemapDLHandleGet(TSRemapPluginInfo plugin_info)
 {
-  sdk_assert(sdk_sanity_check_null_ptr(plugin_info));
+  sdk_assert(sdk_sanity_check_null_ptr(plugin_info) == TS_SUCCESS);
   RemapPluginInfo *info = reinterpret_cast<RemapPluginInfo *>(plugin_info);
 
   return info->dlh();

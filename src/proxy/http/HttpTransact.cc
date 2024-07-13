@@ -6495,9 +6495,14 @@ HttpTransact::process_quick_http_filter(State *s, int method)
     return;
   }
 
-  // if ipallow rules are disabled by remap then don't modify anything
+  // if the "ip_allow" named filter is deactivated in the remap.config, then don't modify anything
   url_mapping *mp = s->url_map.getMapping();
   if (mp && !mp->ip_allow_check_enabled_p) {
+    return;
+  }
+
+  // if a ACL filter in the remap.config forces skipping ip_allow.yaml check, do nothing
+  if (s->skip_ip_allow_yaml) {
     return;
   }
 
@@ -8568,8 +8573,8 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
 }
 
 void
-HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
-                                         ink_hrtime origin_server_read_time, int user_agent_request_header_size,
+HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime /* user_agent_write_time ATS_UNUSED */,
+                                         ink_hrtime /* origin_server_read_time ATS_UNUSED */, int user_agent_request_header_size,
                                          int64_t user_agent_request_body_size, int user_agent_response_header_size,
                                          int64_t user_agent_response_body_size, int origin_server_request_header_size,
                                          int64_t origin_server_request_body_size, int origin_server_response_header_size,

@@ -58,22 +58,22 @@ Headers::rm_headers(const Cript::string_view target, const HeaderList &headers)
   switch (header_target(target)) {
   case CLIENT_REQUEST:
     _client_request.rm_headers.insert(_client_request.rm_headers.end(), headers.begin(), headers.end());
-    needCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(Cript::Callbacks::DO_REMAP);
     break;
   case CLIENT_RESPONSE:
     _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
-    needCallback(Cript::Callbacks::DO_SEND_RESPONSE);
+    NeedCallback(Cript::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
     _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
-    needCallback(Cript::Callbacks::DO_SEND_REQUEST);
+    NeedCallback(Cript::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
     _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
-    needCallback(Cript::Callbacks::DO_READ_RESPONSE);
+    NeedCallback(Cript::Callbacks::DO_READ_RESPONSE);
     break;
   default:
-    TSReleaseAssert(!"Invalid target for rm_headers()");
+    CFatal("[Cripts::Headers] Unknown header target: %s.", target.data());
   }
 
   return *this;
@@ -87,27 +87,27 @@ Headers::set_headers(const Cript::string_view target, const HeaderValueList &hea
   switch (header_target(target)) {
   case CLIENT_REQUEST:
     hdrs = &_client_request.set_headers;
-    needCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(Cript::Callbacks::DO_REMAP);
     break;
   case CLIENT_RESPONSE:
     hdrs = &_client_response.set_headers;
-    needCallback(Cript::Callbacks::DO_SEND_RESPONSE);
+    NeedCallback(Cript::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
     hdrs = &_server_request.set_headers;
-    needCallback(Cript::Callbacks::DO_SEND_REQUEST);
+    NeedCallback(Cript::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
     hdrs = &_server_response.set_headers;
-    needCallback(Cript::Callbacks::DO_READ_RESPONSE);
+    NeedCallback(Cript::Callbacks::DO_READ_RESPONSE);
     break;
   default:
-    TSReleaseAssert(!"Invalid target for set_headers()");
+    CFatal("[Cripts::Headers] Unknown header target: %s.", target.data());
   }
 
   hdrs->reserve(headers.size());
   for (const auto &hdr : headers) {
-    hdrs->emplace_back(hdr.first, Headers::bridgeFactory(hdr.second));
+    hdrs->emplace_back(hdr.first, Headers::BridgeFactory(hdr.second));
   }
 
   return *this;
@@ -116,7 +116,7 @@ Headers::set_headers(const Cript::string_view target, const HeaderValueList &hea
 void
 Headers::doRemap(Cript::Context *context)
 {
-  borrow req = Client::Request::get();
+  borrow req = Client::Request::Get();
 
   for (auto &header : _client_request.rm_headers) {
     req[header] = "";
@@ -130,7 +130,7 @@ Headers::doRemap(Cript::Context *context)
 void
 Headers::doSendResponse(Cript::Context *context)
 {
-  borrow resp = Client::Response::get();
+  borrow resp = Client::Response::Get();
 
   for (auto &header : _client_response.rm_headers) {
     resp[header] = "";
@@ -144,7 +144,7 @@ Headers::doSendResponse(Cript::Context *context)
 void
 Headers::doSendRequest(Cript::Context *context)
 {
-  borrow req = Server::Request::get();
+  borrow req = Server::Request::Get();
 
   for (auto &header : _server_request.rm_headers) {
     req[header] = "";
@@ -158,7 +158,7 @@ Headers::doSendRequest(Cript::Context *context)
 void
 Headers::doReadResponse(Cript::Context *context)
 {
-  borrow resp = Server::Response::get();
+  borrow resp = Server::Response::Get();
 
   for (auto &header : _server_response.rm_headers) {
     resp[header] = "";

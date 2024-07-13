@@ -34,6 +34,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sock.h"
 #include "iocore/eventsystem/SocketManager.h"
+#include "iocore/eventsystem/UnixSocket.h"
 
 //
 // These limits are currently disabled
@@ -41,110 +42,48 @@
 // 1024 - stdin, stderr, stdout
 #define EPOLL_MAX_DESCRIPTOR_SIZE 32768
 
-TS_INLINE bool
-transient_error()
-{
-  bool transient = (errno == EINTR);
-#ifdef ENOMEM
-  transient = transient || (errno == ENOMEM);
-#endif
-#ifdef ENOBUFS
-  transient = transient || (errno == ENOBUFS);
-#endif
-  return transient;
-}
-
-TS_INLINE int
-SocketManager::open(const char *path, int oflag, mode_t mode)
-{
-  int s;
-  do {
-    s = ::open(path, oflag, mode);
-    if (likely(s >= 0)) {
-      break;
-    }
-    s = -errno;
-  } while (transient_error());
-  return s;
-}
-
 TS_INLINE int64_t
 SocketManager::read(int fd, void *buf, int size, void * /* pOLP ATS_UNUSED */)
 {
-  int64_t r;
-  do {
-    r = ::read(fd, buf, size);
-    if (likely(r >= 0)) {
-      break;
-    }
-    r = -errno;
-  } while (r == -EINTR);
-  return r;
+  UnixSocket sock{fd};
+  return sock.read(buf, size);
 }
 
 TS_INLINE int
 SocketManager::recv(int fd, void *buf, int size, int flags)
 {
-  int r;
-  do {
-    if (unlikely((r = ::recv(fd, (char *)buf, size, flags)) < 0)) {
-      r = -errno;
-    }
-  } while (r == -EINTR);
-  return r;
+  UnixSocket sock{fd};
+  return sock.recv(buf, size, flags);
 }
 
 TS_INLINE int
 SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen)
 {
-  int r;
-  do {
-    r = ::recvfrom(fd, (char *)buf, size, flags, addr, addrlen);
-    if (unlikely(r < 0)) {
-      r = -errno;
-    }
-  } while (r == -EINTR);
-  return r;
+  UnixSocket sock{fd};
+  return sock.recvfrom(buf, size, flags, addr, addrlen);
 }
 
 TS_INLINE int
 SocketManager::recvmsg(int fd, struct msghdr *m, int flags, void * /* pOLP ATS_UNUSED */)
 {
-  int r;
-  do {
-    if (unlikely((r = ::recvmsg(fd, m, flags)) < 0)) {
-      r = -errno;
-    }
-  } while (r == -EINTR);
-  return r;
+  UnixSocket sock{fd};
+  return sock.recvmsg(m, flags);
 }
 
 #ifdef HAVE_RECVMMSG
 TS_INLINE int
 SocketManager::recvmmsg(int fd, struct mmsghdr *msgvec, int vlen, int flags, struct timespec *timeout, void * /* pOLP ATS_UNUSED */)
 {
-  int r;
-  do {
-    if (unlikely((r = ::recvmmsg(fd, msgvec, vlen, flags, timeout)) < 0)) {
-      r = -errno;
-      // EINVAL can ocur if timeout is invalid.
-    }
-  } while (r == -EINTR);
-  return r;
+  UnixSocket sock{fd};
+  return sock.recvmmsg(msgvec, vlen, flags, timeout);
 }
 #endif
 
 TS_INLINE int64_t
 SocketManager::write(int fd, void *buf, int size, void * /* pOLP ATS_UNUSED */)
 {
-  int64_t r;
-  do {
-    if (likely((r = ::write(fd, buf, size)) >= 0)) {
-      break;
-    }
-    r = -errno;
-  } while (r == -EINTR);
-  return r;
+  UnixSocket sock{fd};
+  return sock.write(buf, size);
 }
 
 TS_INLINE int64_t
@@ -162,37 +101,22 @@ SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char * /* tag A
 TS_INLINE int
 SocketManager::send(int fd, void *buf, int size, int flags)
 {
-  int r;
-  do {
-    if (unlikely((r = ::send(fd, (char *)buf, size, flags)) < 0)) {
-      r = -errno;
-    }
-  } while (r == -EINTR);
-  return r;
+  UnixSocket sock{fd};
+  return sock.send(buf, size, flags);
 }
 
 TS_INLINE int
 SocketManager::sendto(int fd, void *buf, int len, int flags, struct sockaddr const *to, int tolen)
 {
-  int r;
-  do {
-    if (unlikely((r = ::sendto(fd, (char *)buf, len, flags, to, tolen)) < 0)) {
-      r = -errno;
-    }
-  } while (r == -EINTR);
-  return r;
+  UnixSocket sock{fd};
+  return sock.sendto(buf, len, flags, to, tolen);
 }
 
 TS_INLINE int
 SocketManager::sendmsg(int fd, struct msghdr *m, int flags, void * /* pOLP ATS_UNUSED */)
 {
-  int r;
-  do {
-    if (unlikely((r = ::sendmsg(fd, m, flags)) < 0)) {
-      r = -errno;
-    }
-  } while (r == -EINTR);
-  return r;
+  UnixSocket sock{fd};
+  return sock.sendmsg(m, flags);
 }
 
 TS_INLINE int64_t
@@ -222,54 +146,42 @@ SocketManager::fsync(int fildes)
 TS_INLINE int
 SocketManager::poll(struct pollfd *fds, unsigned long nfds, int timeout)
 {
-  int r;
-  do {
-    if ((r = ::poll(fds, nfds, timeout)) >= 0) {
-      break;
-    }
-    r = -errno;
-  } while (transient_error());
-  return r;
+  return UnixSocket::poll(fds, nfds, timeout);
 }
 
 TS_INLINE int
 SocketManager::get_sndbuf_size(int s)
 {
-  int bsz = 0;
-  int bszsz, r;
-
-  bszsz = sizeof(bsz);
-  r     = safe_getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&bsz, &bszsz);
-  return (r == 0 ? bsz : r);
+  UnixSocket sock{s};
+  return sock.get_sndbuf_size();
 }
 
 TS_INLINE int
 SocketManager::get_rcvbuf_size(int s)
 {
-  int bsz = 0;
-  int bszsz, r;
-
-  bszsz = sizeof(bsz);
-  r     = safe_getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&bsz, &bszsz);
-  return (r == 0 ? bsz : r);
+  UnixSocket sock{s};
+  return sock.get_rcvbuf_size();
 }
 
 TS_INLINE int
 SocketManager::set_sndbuf_size(int s, int bsz)
 {
-  return safe_setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&bsz, sizeof(bsz));
+  UnixSocket sock{s};
+  return sock.set_sndbuf_size(bsz);
 }
 
 TS_INLINE int
 SocketManager::set_rcvbuf_size(int s, int bsz)
 {
-  return safe_setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&bsz, sizeof(bsz));
+  UnixSocket sock{s};
+  return sock.set_rcvbuf_size(bsz);
 }
 
 TS_INLINE int
 SocketManager::getsockname(int s, struct sockaddr *sa, socklen_t *sz)
 {
-  return ::getsockname(s, sa, sz);
+  UnixSocket sock{s};
+  return sock.getsockname(sa, sz);
 }
 
 TS_INLINE int
@@ -281,11 +193,6 @@ SocketManager::socket(int domain, int type, int protocol)
 TS_INLINE int
 SocketManager::shutdown(int s, int how)
 {
-  int res;
-  do {
-    if (unlikely((res = ::shutdown(s, how)) < 0)) {
-      res = -errno;
-    }
-  } while (res == -EINTR);
-  return res;
+  UnixSocket sock{s};
+  return sock.shutdown(how);
 }

@@ -58,7 +58,7 @@ namespace rpc::handlers::storage
 namespace err = rpc::handlers::errors;
 
 swoc::Rv<YAML::Node>
-set_storage_offline(std::string_view const &id, YAML::Node const &params)
+set_storage_offline(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
   swoc::Rv<YAML::Node> resp;
 
@@ -84,7 +84,7 @@ set_storage_offline(std::string_view const &id, YAML::Node const &params)
 }
 
 swoc::Rv<YAML::Node>
-get_storage_status(std::string_view const &id, YAML::Node const &params)
+get_storage_status(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
   swoc::Rv<YAML::Node> resp;
 

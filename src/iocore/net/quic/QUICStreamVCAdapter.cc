@@ -277,7 +277,7 @@ QUICStreamVCAdapter::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 }
 
 VIO *
-QUICStreamVCAdapter::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+QUICStreamVCAdapter::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool /* owner ATS_UNUSED */)
 {
   if (buf) {
     this->_write_vio.buffer.reader_for(buf);
@@ -296,7 +296,7 @@ QUICStreamVCAdapter::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader
 }
 
 void
-QUICStreamVCAdapter::do_io_close(int lerrno)
+QUICStreamVCAdapter::do_io_close(int /* lerrno ATS_UNUSED */)
 {
   SET_HANDLER(&QUICStreamVCAdapter::state_stream_closed);
 
@@ -314,14 +314,14 @@ QUICStreamVCAdapter::do_io_close(int lerrno)
 }
 
 void
-QUICStreamVCAdapter::do_io_shutdown(ShutdownHowTo_t howto)
+QUICStreamVCAdapter::do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */)
 {
   ink_assert(false); // unimplemented yet
   return;
 }
 
 void
-QUICStreamVCAdapter::reenable(VIO *vio)
+QUICStreamVCAdapter::reenable(VIO * /* vio ATS_UNUSED */)
 {
   // TODO We probably need to tell QUICStream that the application consumed received data
   // to update receive window here. In other words, we should not update receive window
@@ -331,17 +331,17 @@ QUICStreamVCAdapter::reenable(VIO *vio)
 bool
 QUICStreamVCAdapter::is_readable()
 {
-  return this->stream().direction() != QUICStreamDirection::SEND && _read_vio.nbytes == _read_vio.ndone;
+  return this->stream().direction() != QUICStreamDirection::SEND && _read_vio.nbytes != _read_vio.ndone;
 }
 
 bool
 QUICStreamVCAdapter::is_writable()
 {
-  return this->stream().direction() != QUICStreamDirection::RECEIVE && _write_vio.nbytes != -1;
+  return this->stream().direction() != QUICStreamDirection::RECEIVE && _write_vio.nbytes != _read_vio.ndone;
 }
 
 int
-QUICStreamVCAdapter::state_stream_open(int event, void *data)
+QUICStreamVCAdapter::state_stream_open(int event, void * /* data ATS_UNUSED */)
 {
   QUICErrorUPtr error = nullptr;
 
@@ -372,7 +372,7 @@ QUICStreamVCAdapter::state_stream_open(int event, void *data)
 }
 
 int
-QUICStreamVCAdapter::state_stream_closed(int event, void *data)
+QUICStreamVCAdapter::state_stream_closed(int event, void * /* data ATS_UNUSED */)
 {
   switch (event) {
   case VC_EVENT_READ_READY:

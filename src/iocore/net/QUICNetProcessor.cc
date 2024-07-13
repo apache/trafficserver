@@ -50,7 +50,7 @@ DbgCtl dbg_ctl_iocore_net_processor{"iocore_net_processor"};
 } // end anonymous namespace
 
 static void
-debug_log(const char *line, void *argp)
+debug_log(const char *line, void * /* argp ATS_UNUSED */)
 {
   Dbg(dbg_ctl_vv_quiche, "%s\n", line);
 }
@@ -75,7 +75,7 @@ QUICNetProcessor::init()
 }
 
 int
-QUICNetProcessor::start(int, size_t stacksize)
+QUICNetProcessor::start(int, size_t /* stacksize ATS_UNUSED */)
 {
   QUIC::init();
   // This initialization order matters ...

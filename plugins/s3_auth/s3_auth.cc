@@ -930,22 +930,14 @@ S3Request::authorizeV2(S3Config *s3)
     Dbg(dbg_ctl, "%s", left);
   }
 
-// Produce the SHA1 MAC digest
-#ifndef HAVE_HMAC_CTX_NEW
-  HMAC_CTX ctx[1];
-#else
-  HMAC_CTX *ctx;
-#endif
+  // Produce the SHA1 MAC digest
+  HMAC_CTX     *ctx;
   unsigned int  hmac_len;
   size_t        hmac_b64_len;
   unsigned char hmac[SHA_DIGEST_LENGTH];
   char          hmac_b64[SHA_DIGEST_LENGTH * 2];
 
-#ifndef HAVE_HMAC_CTX_NEW
-  HMAC_CTX_init(ctx);
-#else
   ctx = HMAC_CTX_new();
-#endif
   HMAC_Init_ex(ctx, s3->secret(), s3->secret_len(), EVP_sha1(), nullptr);
   HMAC_Update(ctx, (unsigned char *)method, method_len);
   HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
@@ -968,11 +960,7 @@ S3Request::authorizeV2(S3Config *s3)
   }
 
   HMAC_Final(ctx, hmac, &hmac_len);
-#ifndef HAVE_HMAC_CTX_NEW
-  HMAC_CTX_cleanup(ctx);
-#else
   HMAC_CTX_free(ctx);
-#endif
 
   // Do the Base64 encoding and set the Authorization header.
   if (TS_SUCCESS == TSBase64Encode(reinterpret_cast<const char *>(hmac), hmac_len, hmac_b64, sizeof(hmac_b64) - 1, &hmac_b64_len)) {

@@ -125,6 +125,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *misc_origin_server_bytes;
   Metrics::Counter::AtomicType *misc_user_agent_bytes;
   Metrics::Counter::AtomicType *missing_host_hdr;
+  Metrics::Counter::AtomicType *no_remap_matched;
   Metrics::Counter::AtomicType *options_requests;
   Metrics::Counter::AtomicType *origin_body;
   Metrics::Counter::AtomicType *origin_close_private;

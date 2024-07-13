@@ -725,6 +725,7 @@ public:
     bool transparent_passthrough      = false;
     bool range_in_cache               = false;
     bool is_method_stats_incremented  = false;
+    bool skip_ip_allow_yaml           = false;
 
     /// True if the response is cacheable because of negative caching configuration.
     ///

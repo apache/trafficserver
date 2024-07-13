@@ -53,7 +53,7 @@ msgstr "この章では下記のトピックをカバーします。"
 
 #: ../../developer-guide/plugins/continuations/index.en.rst:38
 msgid "`Mutexes and Data`_"
-msgstr "ミューテックスとデータ"
+msgstr "`ミューテックスとデータ`_"
 
 #: ../../developer-guide/plugins/continuations/index.en.rst:114
 msgid ""

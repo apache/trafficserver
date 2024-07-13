@@ -31,6 +31,7 @@
 
 namespace shared::rpc
 {
+using namespace std::chrono_literals;
 /// The goal of this class is abstract the Unix Socket implementation and provide a JSONRPC Node client for Tests and client's
 /// applications like traffic_ctl and traffic_top.
 /// To make the usage easy and more readable this class provides a chained API, so you can do this like this:
@@ -50,7 +51,8 @@ struct IPCSocketClient {
   ~IPCSocketClient() { this->disconnect(); }
 
   /// Connect to the configured socket path.
-  self_reference connect();
+  /// Connection will retry every @c ms for @c attempts times if errno is EAGAIN
+  self_reference connect(std::chrono::milliseconds ms = 40ms, int attempts = 5);
 
   /// Send all the passed string to the socket.
   self_reference send(std::string_view data);
@@ -83,6 +85,7 @@ struct IPCSocketClient {
   }
 
 protected:
+  ssize_t            _safe_write(int fd, const char *buffer, int len);
   std::string        _path;
   struct sockaddr_un _server;
 

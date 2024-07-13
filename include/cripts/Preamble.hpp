@@ -38,6 +38,7 @@
 #include "cripts/Transaction.hpp"
 
 // This makes it nice and clean when the user of the framework defines the handlers in the cript.
+// Having both of these for now, until we decide which we like better...
 #define do_remap()           void _do_remap(Cript::Context *context)
 #define do_post_remap()      void _do_post_remap(Cript::Context *context)
 #define do_send_response()   void _do_send_response(Cript::Context *context)
@@ -45,9 +46,20 @@
 #define do_send_request()    void _do_send_request(Cript::Context *context)
 #define do_read_response()   void _do_read_response(Cript::Context *context)
 #define do_txn_close()       void _do_txn_close(Cript::Context *context)
-#define do_init()            void _do_init(TSRemapInterface *api_info)
+#define do_init()            void _do_init(TSRemapInterface *)
 #define do_create_instance() void _do_create_instance(Cript::InstanceContext *context)
 #define do_delete_instance() void _do_delete_instance(Cript::InstanceContext *context)
+
+#define DoRemap()          void _do_remap(Cript::Context *context)
+#define DoPostRemap()      void _do_post_remap(Cript::Context *context)
+#define DoSendResponse()   void _do_send_response(Cript::Context *context)
+#define DoCacheLookup()    void _do_cache_lookup(Cript::Context *context)
+#define DoSendRequest()    void _do_send_request(Cript::Context *context)
+#define DoReadResponse()   void _do_read_response(Cript::Context *context)
+#define DoTxnClose()       void _do_txn_close(Cript::Context *context)
+#define DoInit()           void _do_init(TSRemapInterface *)
+#define DoCreateInstance() void _do_create_instance(Cript::InstanceContext *context)
+#define DoDeleteInstance() void _do_delete_instance(Cript::InstanceContext *context)
 
 #include "cripts/Headers.hpp"
 #include "cripts/Urls.hpp"

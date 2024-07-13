@@ -63,7 +63,7 @@ wrap_do_remap(T *context, bool execute, CaseTag<1>) -> decltype(_do_remap(contex
 
 template <typename T>
 auto
-wrap_do_remap(T *context, bool execute, CaseTag<0>) -> bool
+wrap_do_remap(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -81,7 +81,7 @@ wrap_post_remap(T *context, bool execute, CaseTag<1>) -> decltype(_do_post_remap
 
 template <typename T>
 auto
-wrap_post_remap(T *context, bool execute, CaseTag<0>) -> bool
+wrap_post_remap(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -99,7 +99,7 @@ wrap_send_response(T *context, bool execute, CaseTag<1>) -> decltype(_do_send_re
 
 template <typename T>
 auto
-wrap_send_response(T *context, bool execute, CaseTag<0>) -> bool
+wrap_send_response(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -117,7 +117,7 @@ wrap_send_request(T *context, bool execute, CaseTag<1>) -> decltype(_do_send_req
 
 template <typename T>
 auto
-wrap_send_request(T *context, bool execute, CaseTag<0>) -> bool
+wrap_send_request(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -135,7 +135,7 @@ wrap_read_response(T *context, bool execute, CaseTag<1>) -> decltype(_do_read_re
 
 template <typename T>
 auto
-wrap_read_response(T *context, bool execute, CaseTag<0>) -> bool
+wrap_read_response(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -153,7 +153,7 @@ wrap_cache_lookup(T *context, bool execute, CaseTag<1>) -> decltype(_do_cache_lo
 
 template <typename T>
 auto
-wrap_cache_lookup(T *context, bool execute, CaseTag<0>) -> bool
+wrap_cache_lookup(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -171,7 +171,7 @@ wrap_txn_close(T *context, bool execute, CaseTag<1>) -> decltype(_do_txn_close(c
 
 template <typename T>
 auto
-wrap_txn_close(T *context, bool execute, CaseTag<0>) -> bool
+wrap_txn_close(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -191,7 +191,7 @@ wrap_plugin_init(T *context, bool execute, CaseTag<1>) -> decltype(_do_init(cont
 
 template <typename T>
 auto
-wrap_plugin_init(T *context, bool execute, CaseTag<0>) -> bool
+wrap_plugin_init(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -211,7 +211,7 @@ wrap_create_instance(T *context, bool execute, CaseTag<1>) -> decltype(_do_creat
 
 template <typename T>
 auto
-wrap_create_instance(T *context, bool execute, CaseTag<0>) -> bool
+wrap_create_instance(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -228,7 +228,7 @@ wrap_delete_instance(T *context, bool execute, CaseTag<1>) -> decltype(_do_delet
 
 template <typename T>
 auto
-wrap_delete_instance(T *context, bool execute, CaseTag<0>) -> bool
+wrap_delete_instance(T * /* context ATS_UNUSED */, bool /* execute ATS_UNUSED */, CaseTag<0>) -> bool
 {
   return false;
 }
@@ -245,30 +245,30 @@ default_cont(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
     context->state.hook = TS_HTTP_SEND_REQUEST_HDR_HOOK;
-    if (!context->state.error.failed()) {
+    if (!context->state.error.Failed()) {
       CDebug("Entering do_send_request()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_SEND_REQUEST) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_SEND_REQUEST) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->callbacks() & Cript::Callbacks::DO_SEND_REQUEST) {
+          if (bundle->Callbacks() & Cript::Callbacks::DO_SEND_REQUEST) {
             bundle->doSendRequest(context);
           }
         }
       }
       wrap_send_request(context, true, CaseArg);
-      Client::URL::_get(context).update(); // Make sure any changes to the request URL is updated
+      Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
     }
     break;
   case TS_EVENT_HTTP_READ_RESPONSE_HDR: // 60006
     context->state.hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
-    if (!context->state.error.failed()) {
+    if (!context->state.error.Failed()) {
       CDebug("Entering do_read_response()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_READ_RESPONSE) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_READ_RESPONSE) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->callbacks() & Cript::Callbacks::DO_READ_RESPONSE) {
+          if (bundle->Callbacks() & Cript::Callbacks::DO_READ_RESPONSE) {
             bundle->doReadResponse(context);
           }
         }
@@ -278,13 +278,13 @@ default_cont(TSCont contp, TSEvent event, void *edata)
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR: // 60007
     context->state.hook = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
-    if (!context->state.error.failed()) {
+    if (!context->state.error.Failed()) {
       CDebug("Entering do_send_response()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_SEND_RESPONSE) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_SEND_RESPONSE) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->callbacks() & Cript::Callbacks::DO_SEND_RESPONSE) {
+          if (bundle->Callbacks() & Cript::Callbacks::DO_SEND_RESPONSE) {
             bundle->doSendResponse(context);
           }
         }
@@ -298,9 +298,9 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_txn_close()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_TXN_CLOSE) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_TXN_CLOSE) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->callbacks() & Cript::Callbacks::DO_TXN_CLOSE) {
+          if (bundle->Callbacks() & Cript::Callbacks::DO_TXN_CLOSE) {
             bundle->doTxnClose(context);
           }
         }
@@ -309,17 +309,17 @@ default_cont(TSCont contp, TSEvent event, void *edata)
     }
 
     TSContDestroy(contp);
-    context->release();
+    context->Release();
     break;
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: // 60015
     context->state.hook = TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
-    if (!context->state.error.failed()) {
+    if (!context->state.error.Failed()) {
       CDebug("Entering do_cache_lookup()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_CACHE_LOOKUP) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_CACHE_LOOKUP) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->callbacks() & Cript::Callbacks::DO_CACHE_LOOKUP) {
+          if (bundle->Callbacks() & Cript::Callbacks::DO_CACHE_LOOKUP) {
             bundle->doCacheLookup(context);
           }
         }
@@ -332,23 +332,23 @@ default_cont(TSCont contp, TSEvent event, void *edata)
     CDebug("Entering do_post_remap()");
 
     // Call any bundle callbacks that are registered for this hook
-    if (!context->state.error.failed() && context->p_instance.callbacks() & Cript::Callbacks::DO_POST_REMAP) {
+    if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_POST_REMAP) {
       for (auto &bundle : context->p_instance.bundles) {
-        if (bundle->callbacks() & Cript::Callbacks::DO_POST_REMAP) {
+        if (bundle->Callbacks() & Cript::Callbacks::DO_POST_REMAP) {
           bundle->doPostRemap(context);
         }
       }
     }
     wrap_post_remap(context, true, CaseArg);
 
-    if (!context->state.error.failed()) {
-      Cache::URL::_get(context).update();  // Make sure the cache-key gets updated, if modified
-      Client::URL::_get(context).update(); // Make sure any changes to the request URL is updated
+    if (!context->state.error.Failed()) {
+      Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
+      Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
     }
     break;
     // This is for cleanup, and should always be called / wrapped
   default:
-    TSReleaseAssert(!"Unknown event to Cript plugin!");
+    CFatal("Cripts continuation: Unknown event %d", event);
     break;
   }
 
@@ -404,13 +404,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     wrap_create_instance(&context, true, CaseArg);
   }
 
-  if (!inst->failed()) {
+  if (!inst->Failed()) {
     std::vector<Cript::Bundle::Error> errors;
 
     for (auto &bundle : inst->bundles) {
       // Collect all the callbacks needed from all bundles, and validate them
-      if (bundle->validate(errors)) {
-        inst->needCallback(bundle->callbacks());
+      if (bundle->Validate(errors)) {
+        inst->NeedCallback(bundle->Callbacks());
       }
     }
 
@@ -419,10 +419,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
       for (auto &err : errors) {
         TSError("[Cript: %s] \tIn Bundle %.*s, option %.*s()", inst->plugin_debug_tag.c_str(),
-                static_cast<int>(err.bundle().size()), err.bundle().data(), static_cast<int>(err.option().size()),
-                err.option().data());
-        TSError("[Cript: %s] \t\t-> %.*s", inst->plugin_debug_tag.c_str(), static_cast<int>(err.message().size()),
-                err.message().data());
+                static_cast<int>(err.Bundle().size()), err.Bundle().data(), static_cast<int>(err.Option().size()),
+                err.Option().data());
+        TSError("[Cript: %s] \t\t-> %.*s", inst->plugin_debug_tag.c_str(), static_cast<int>(err.Message().size()),
+                err.Message().data());
       }
       delete inst;
       return TS_ERROR;
@@ -472,8 +472,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   TSHttpSsn ssnp         = TSHttpTxnSsnGet(txnp);
   auto     *inst         = static_cast<Cript::Instance *>(ih);
-  auto      bundle_cbs   = inst->callbacks();
-  auto     *context      = Cript::Context::factory(txnp, ssnp, rri, *inst);
+  auto      bundle_cbs   = inst->Callbacks();
+  auto     *context      = Cript::Context::Factory(txnp, ssnp, rri, *inst);
   bool      keep_context = false;
 
   context->state.hook          = TS_HTTP_READ_REQUEST_HDR_HOOK; // Not quite true
@@ -484,15 +484,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     for (auto &bundle : context->p_instance.bundles) {
       bundle->doRemap(context);
     }
-    if (!context->state.error.failed()) {
+    if (!context->state.error.Failed()) {
       wrap_do_remap(context, true, CaseArg); // This can fail the context
     }
   }
 
   // Don't do the callbacks when we are in a failure state.
-  if (!context->state.error.failed()) {
-    Cache::URL::_get(context).update();  // Make sure the cache-key gets updated, if modified
-    Client::URL::_get(context).update(); // Make sure any changes to the request URL is updated
+  if (!context->state.error.Failed()) {
+    Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
+    Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
 
     if (context->state.enabled_hooks >= Cript::Callbacks::DO_POST_REMAP) {
       context->default_cont = TSContCreate(default_cont, nullptr);
@@ -530,16 +530,16 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   // Check and deal with any failures here. Failures here are considered
   // catastrophic, and should give an error. ToDo: Do we want to have different
   // levels of failure here? Non-fatal vs fatal?
-  context->state.error.execute(context);
+  context->state.error.Execute(context);
 
   // For now, we always allocate the context, but a possible future optimization
   // could be to use stack allocation when there is only a do_remap() callback.
   if (!keep_context) {
-    context->release();
+    context->Release();
   }
 
   // See if the Client URL was modified, which dicates the return code here.
-  if (Client::URL::_get(context).modified()) {
+  if (Client::URL::_get(context).Modified()) {
     context->p_instance.debug("Client::URL was modified, returning TSREMAP_DID_REMAP");
     return TSREMAP_DID_REMAP;
   } else {

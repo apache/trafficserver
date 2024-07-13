@@ -47,8 +47,8 @@ _END_
   fi
 
   REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
-  GIT_COMMON_DIR=$(cd $(dirname $0) && git rev-parse --path-format=absolute --git-common-dir)
-  YAPF_VENV=${YAPF_VENV:-${GIT_COMMON_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
+  GIT_DIR=$(git rev-parse --absolute-git-dir)
+  YAPF_VENV=${YAPF_VENV:-${GIT_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
   if [ ! -e ${YAPF_VENV} ]
   then
     python3 -m virtualenv ${YAPF_VENV}
@@ -79,6 +79,8 @@ _END_
   # Keep this list of Python extensions the same with the list of
   # extensions searched for in the tools/git/pre-commit hook.
   grep -E '\.py$|\.cli.ext$|\.test.ext$' ${files} > ${files_filtered}
+  # Add back in the tools Python scripts without a .py extension.
+  grep -rl '#!.*python' "${REPO_ROOT}/tools" | grep -vE '(yapf.sh|.py)' | sed "s:${REPO_ROOT}/::g" >> ${files_filtered}
   # Prepend the filenames with "./" to make the modified file output consistent
   # with the clang-format target output.
   sed -i'.bak' 's:^:\./:' ${files_filtered}
@@ -106,6 +108,6 @@ _END_
 if [[ "$(basename -- "$0")" == 'yapf.sh' ]]; then
   main "$@"
 else
-  GIT_COMMON_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
-  YAPF_VENV=${YAPF_VENV:-${GIT_COMMON_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
+  GIT_DIR=$(git rev-parse --absolute-git-dir)
+  YAPF_VENV=${YAPF_VENV:-${GIT_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
 fi

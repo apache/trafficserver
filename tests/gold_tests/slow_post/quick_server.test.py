@@ -91,7 +91,10 @@ class QuickServerTest:
 
     def run(self):
         """Run the test."""
-        tr = Test.AddTestRun()
+        tr = Test.AddTestRun(
+            f'Aborting request: {self._should_abort_request}, '
+            f'Draining request: {self._should_drain_request}, '
+            f'Aborting response headers: {self._should_abort_response_headers}')
 
         self._configure_dns(tr)
         self._configure_server(tr)
@@ -107,12 +110,17 @@ class QuickServerTest:
                           f'{self._ts.Variables.port} ')
         if not self._should_abort_request:
             client_command += '--finish-request '
-        tr.Processes.Default.Command = client_command
+        p = tr.Processes.Default
+        p.Command = client_command
+        if self._should_abort_request or self._should_abort_response_headers:
+            p.Streams.All += Testers.ExcludesExpression('HTTP/1.1 200 OK', 'Verify response was received')
+        else:
+            p.Streams.All += Testers.ContainsExpression('HTTP/1.1 200 OK', 'Verify response was received')
 
-        tr.Processes.Default.ReturnCode = 0
+        p.ReturnCode = 0
         self._ts.StartBefore(self._dns)
         self._ts.StartBefore(self._server)
-        tr.Processes.Default.StartBefore(self._ts)
+        p.StartBefore(self._ts)
         tr.Timeout = 10
 
 

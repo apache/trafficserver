@@ -44,7 +44,7 @@ class Transaction
 {
 public:
   void
-  disableCallback(Callbacks cb)
+  DisableCallback(Callbacks cb)
   {
     enabled_hooks &= ~cb;
   }
@@ -61,7 +61,7 @@ public:
   unsigned     enabled_hooks = 0; // Which hooks are enabled, other than the mandatory ones
 
   [[nodiscard]] bool
-  aborted() const
+  Aborted() const
   {
     bool client_abort = false;
 
@@ -73,7 +73,7 @@ public:
   }
 
   [[nodiscard]] int
-  lookupStatus() const
+  LookupStatus() const
   {
     int status = 0;
 

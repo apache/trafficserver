@@ -336,7 +336,7 @@ HttpSM::do_api_callout()
 }
 
 int
-HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
+HttpSM::state_add_to_list(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_START;
   if (do_api_callout() < 0) {
@@ -353,7 +353,7 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
 }
 
 int
-HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
+HttpSM::state_remove_from_list(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   // We're now ready to finish off the state machine
   terminate_sm         = true;
@@ -1314,7 +1314,7 @@ HttpSM::state_api_callback(int event, void *data)
 }
 
 int
-HttpSM::state_api_callout(int event, void *data)
+HttpSM::state_api_callout(int event, void * /* data ATS_UNUSED */)
 {
   // enum and variable for figuring out what the next action is after
   //   after we've finished the api state
@@ -2301,7 +2301,7 @@ HttpSM::process_hostdb_info(HostDBRecord *record)
 }
 
 int
-HttpSM::state_pre_resolve(int event, void *data)
+HttpSM::state_pre_resolve(int event, void * /* data ATS_UNUSED */)
 {
   STATE_ENTER(&HttpSM::state_hostdb_lookup, event);
   return 0;
@@ -2979,7 +2979,7 @@ HttpSM::tunnel_handler_push(int event, void *data)
 }
 
 int
-HttpSM::tunnel_handler(int event, void *data)
+HttpSM::tunnel_handler(int event, void * /* data ATS_UNUSED */)
 {
   STATE_ENTER(&HttpSM::tunnel_handler, event);
 
@@ -4404,6 +4404,7 @@ HttpSM::do_remap_request(bool run_inline)
 
   if (!ret) {
     SMDbg(dbg_ctl_url_rewrite, "Could not find a valid remapping entry for this request");
+    Metrics::Counter::increment(http_rsb.no_remap_matched);
     if (!run_inline) {
       handleEvent(EVENT_REMAP_COMPLETE, nullptr);
     }
@@ -6189,6 +6190,11 @@ close_connection:
 void
 HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
 {
+  if (t_state.hdr_info.request_content_length == 0) {
+    // No tunnel is needed to transfer 0 bytes. Simply return without setting up
+    // a tunnel nor any of the other related logic around request bodies.
+    return;
+  }
   bool chunked = t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
                  t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL;
   bool post_redirect = false;
@@ -7552,14 +7558,6 @@ HttpSM::update_stats()
     } else if (client_request_hdr_bytes == 0) {
       Error("[%" PRId64 "] Zero length request header received", sm_id);
       dump_state_on_assert();
-    }
-  }
-
-  if (is_action_tag_set("assert_jtest_length")) {
-    if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTP_STATUS_OK) {
-      int64_t p_resp_cl = t_state.hdr_info.client_response.get_content_length();
-      int64_t resp_size = client_response_body_bytes;
-      ink_release_assert(p_resp_cl == -1 || p_resp_cl == resp_size || resp_size == 0);
     }
   }
 

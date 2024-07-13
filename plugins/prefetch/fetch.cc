@@ -94,8 +94,8 @@ getPrefetchMetricsNames(int metric)
 }
 
 static bool
-createStat(const String &prefix, const String &space, const char *module, const char *statName, TSRecordDataType statType,
-           int &statId)
+createStat(const String &prefix, const String &space, const char *module, const char *statName,
+           TSRecordDataType /* statType ATS_UNUSED */, int &statId)
 {
   String name(prefix);
   name.append(".").append(space);

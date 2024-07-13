@@ -70,7 +70,8 @@ TLSEarlyDataSupport::get_early_data_len() const
 }
 
 void
-TLSEarlyDataSupport::update_early_data_config(SSL *ssl, uint32_t max_early_data, uint32_t recv_max_early_data)
+TLSEarlyDataSupport::update_early_data_config([[maybe_unused]] SSL *ssl, [[maybe_unused]] uint32_t max_early_data,
+                                              [[maybe_unused]] uint32_t recv_max_early_data)
 {
 #if TS_HAS_TLS_EARLY_DATA
   // Must disable OpenSSL's internal anti-replay if external cache is used with
@@ -105,7 +106,12 @@ TLSEarlyDataSupport::update_early_data_config(SSL *ssl, uint32_t max_early_data,
   // If SSL_set_max_early_data is unavailable, it's probably BoringSSL,
   // and SSL_set_early_data_enabled should be available.
   SSL_set_early_data_enabled(ssl, max_early_data > 0 ? 1 : 0);
-  Warning("max_early_data is not used due to library limitations");
+  if (max_early_data != 0 && max_early_data != DEFAULT_MAX_EARLY_DATA_SIZE) {
+    Warning(
+      "Early Data was enabled, but max_early_data_size is not configurable due to library limitations. Use %u to silence this "
+      "warning.",
+      DEFAULT_MAX_EARLY_DATA_SIZE);
+  }
 #endif
 #endif
 }

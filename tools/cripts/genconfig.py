@@ -79,13 +79,11 @@ def print_class(tree, cur="", indent=0):
                 indentp("public:", indent - 1)
                 firstInstance = False
             if tree[k][1] == "TS_RECORDDATATYPE_INT":
-                indentp("Cript::IntConfig {}{{{}}};".format(k, tree[k][0]), indent)
+                indentp("Cript::IntConfig {}{{\"{}\"}};".format(k, tree[k][2]), indent)
             elif tree[k][1] == "TS_RECORDDATATYPE_FLOAT":
-                indentp("Cript::FloatConfig {}{{{}}};".format(k, tree[k][0]), indent)
+                indentp("Cript::FloatConfig {}{{\"{}\"}};".format(k, tree[k][2]), indent)
             elif tree[k][1] == "TS_RECORDDATATYPE_STRING":
-                pass
-                # ToDo: Support strings somehow??
-                # indentp("StringConfig {}{{{}}};".format(k, tree[k][0]), indent + 1)
+                indentp("Cript::StringConfig {}{{\"{}\"}};".format(k, tree[k][2]), indent)
             else:
                 print("The source file has a bad configuration data type: {}".format(tree[k][1]))
     if cur:
@@ -112,7 +110,6 @@ while i < len(lines):
         conf = conf.strip(" {\"").rstrip("\" ")
         enum = enum.strip(" {")
         type = type.strip(" ").rstrip(",}); ")
-        # parts = conf.split(".")
         elements.append((conf, enum, type))
     i += 1
 
@@ -120,13 +117,14 @@ tree = {}
 elements.sort()
 for elem in elements:
     cur = tree
+    name = elem[0]
     parts = elem[0].split(".")
     size = len(parts) - 1
     for ix, part in enumerate(parts):
         sub = cur.get(part)
         if sub is None:
             if ix == size:
-                cur[part] = (elem[1], elem[2])
+                cur[part] = (elem[1], elem[2], name)
             else:
                 cur[part] = {}
             cur = cur[part]

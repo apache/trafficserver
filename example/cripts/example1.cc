@@ -33,23 +33,23 @@ do_init()
 
 do_create_instance()
 {
-  instance.metrics[0] = Metrics::Counter::create("cript.example1.c0");
-  instance.metrics[1] = Metrics::Counter::create("cript.example1.c1");
-  instance.metrics[2] = Metrics::Counter::create("cript.example1.c2");
-  instance.metrics[3] = Metrics::Counter::create("cript.example1.c3");
-  instance.metrics[4] = Metrics::Counter::create("cript.example1.c4");
-  instance.metrics[5] = Metrics::Counter::create("cript.example1.c5");
-  instance.metrics[6] = Metrics::Counter::create("cript.example1.c6");
-  instance.metrics[7] = Metrics::Counter::create("cript.example1.c7");
-  instance.metrics[8] = Metrics::Counter::create("cript.example1.c8"); // This one should resize() the storage
+  instance.metrics[0] = Metrics::Counter::Create("cript.example1.c0");
+  instance.metrics[1] = Metrics::Counter::Create("cript.example1.c1");
+  instance.metrics[2] = Metrics::Counter::Create("cript.example1.c2");
+  instance.metrics[3] = Metrics::Counter::Create("cript.example1.c3");
+  instance.metrics[4] = Metrics::Counter::Create("cript.example1.c4");
+  instance.metrics[5] = Metrics::Counter::Create("cript.example1.c5");
+  instance.metrics[6] = Metrics::Counter::Create("cript.example1.c6");
+  instance.metrics[7] = Metrics::Counter::Create("cript.example1.c7");
+  instance.metrics[8] = Metrics::Counter::Create("cript.example1.c8"); // This one should resize() the storage
 
-  Bundle::Common::activate().dscp(10);
-  Bundle::Caching::activate().cache_control("max-age=259200");
+  Bundle::Common::Activate().dscp(10);
+  Bundle::Caching::Activate().cache_control("max-age=259200");
 }
 
 do_txn_close()
 {
-  borrow conn = Client::Connection::get();
+  borrow conn = Client::Connection::Get();
 
   conn.pacing = Cript::Pacing::Off;
   CDebug("Cool, TXN close also works");
@@ -57,37 +57,37 @@ do_txn_close()
 
 do_cache_lookup()
 {
-  borrow url2 = Cache::URL::get();
+  borrow url2 = Cache::URL::Get();
 
-  CDebug("Cache URL: {}", url2.url());
+  CDebug("Cache URL: {}", url2.String());
   CDebug("Cache Host: {}", url2.host);
 }
 
 do_send_request()
 {
-  borrow req = Server::Request::get();
+  borrow req = Server::Request::Get();
 
   req["X-Leif"] = "Meh";
 }
 
 do_read_response()
 {
-  borrow resp = Server::Response::get();
+  borrow resp = Server::Response::Get();
 
   resp["X-DBJ"] = "Vrooom!";
 }
 
 do_send_response()
 {
-  borrow resp = Client::Response::get();
-  borrow conn = Client::Connection::get();
+  borrow resp = Client::Response::Get();
+  borrow conn = Client::Connection::Get();
   string msg  = "Eliminate TSCPP";
 
   resp["Server"]         = "";        // Deletes the Server header
   resp["X-AMC"]          = msg;       // New header
   resp["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
-  resp["X-UUID"]         = UUID::Unique::get();
-  resp["X-tcpinfo"]      = conn.tcpinfo.log();
+  resp["X-UUID"]         = UUID::Unique::Get();
+  resp["X-tcpinfo"]      = conn.tcpinfo.Log();
   resp["X-Cache-Status"] = resp.cache;
   resp["X-Integer"]      = 666;
   resp["X-Data"]         = AsString(txn_data[2]);
@@ -120,26 +120,26 @@ do_send_response()
     resp.status = 222;
   }
 
-  CDebug("Txn count: {}", conn.count());
+  CDebug("Txn count: {}", conn.Count());
 }
 
 do_remap()
 {
-  auto   now  = Time::Local::now();
-  borrow req  = Client::Request::get();
-  borrow conn = Client::Connection::get();
-  auto   ip   = conn.ip();
+  auto   now  = Time::Local::Now();
+  borrow req  = Client::Request::Get();
+  borrow conn = Client::Connection::Get();
+  auto   ip   = conn.IP();
 
   if (CRIPT_ALLOW.contains(ip)) {
     CDebug("Client IP allowed: {}", ip.string(24, 64));
   }
 
-  CDebug("Epoch time is {} (or via .epoch(), {}", now, now.epoch());
-  CDebug("Year is {}", now.year());
-  CDebug("Month is {}", now.month());
-  CDebug("Day is {}", now.day());
-  CDebug("Hour is {}", now.hour());
-  CDebug("Day number is {}", now.yearday());
+  CDebug("Epoch time is {} (or via .epoch(), {}", now, now.Epoch());
+  CDebug("Year is {}", now.Year());
+  CDebug("Month is {}", now.Month());
+  CDebug("Day is {}", now.Day());
+  CDebug("Hour is {}", now.Hour());
+  CDebug("Day number is {}", now.YearDay());
 
   CDebug("from_url = {}", instance.from_url.c_str());
   CDebug("to_url = {}", instance.to_url.c_str());
@@ -148,12 +148,13 @@ do_remap()
   // proxy.config.http.cache.http.set(1);
   // control.cache.nostore.set(true);
 
-  CDebug("Int config cache.http = {}", proxy.config.http.cache.http.get());
-  CDebug("Float config cache.heuristic_lm_factor = {}", proxy.config.http.cache.heuristic_lm_factor.get());
+  CDebug("Int config cache.http = {}", proxy.config.http.cache.http.Get());
+  CDebug("Float config cache.heuristic_lm_factor = {}", proxy.config.http.cache.heuristic_lm_factor.Get());
+  CDebug("String config http.response_server_str = {}", proxy.config.http.response_server_str.GetSV(context));
   CDebug("X-Miles = {}", req["X-Miles"]);
-  CDebug("random(1000) = {}", Cript::random(1000));
+  CDebug("random(1000) = {}", Cript::Random(1000));
 
-  borrow url      = Client::URL::get();
+  borrow url      = Client::URL::Get();
   auto   old_port = url.port;
 
   CDebug("Method is {}", req.method);
@@ -188,10 +189,10 @@ do_remap()
   // Regular expressions
   static Matcher::PCRE pcre("^/([^/]+)/(.*)$");
 
-  auto res = pcre.match("/foo/bench/bar"); // Can also call contains(), same thing
+  auto res = pcre.Match("/foo/bench/bar"); // Can also call contains(), same thing
 
   if (res) {
-    CDebug("Ovector count is {}", res.count());
+    CDebug("Ovector count is {}", res.Count());
     CDebug("First capture is {}", res[1]);
     CDebug("Second capture is {}", res[2]);
   } else {
@@ -204,8 +205,8 @@ do_remap()
 
   // Some Crypto::Base64 tests
   static auto base64_test = "VGltZSB3aWxsIG5vdCBzbG93IGRvd24gd2hlbiBzb21ldGhpbmcgdW5wbGVhc2FudCBsaWVzIGFoZWFkLg==";
-  auto        hp          = Crypto::Base64::decode(base64_test);
-  auto        hp2         = Crypto::Base64::encode(hp);
+  auto        hp          = Crypto::Base64::Decode(base64_test);
+  auto        hp2         = Crypto::Base64::Encode(hp);
 
   CDebug("HP quote: {}", hp);
   if (base64_test != hp2) {
@@ -216,8 +217,8 @@ do_remap()
 
   // Some Crypto::Escape (URL escaping) tests
   static auto escape_test = "Hello_World_!@%23$%25%5E&*()_%2B%3C%3E?%2C.%2F";
-  auto        uri         = Crypto::Escape::decode(escape_test);
-  auto        uri2        = Crypto::Escape::encode(uri);
+  auto        uri         = Crypto::Escape::Decode(escape_test);
+  auto        uri2        = Crypto::Escape::Encode(uri);
 
   CDebug("Unescaped URI: {}", uri);
   if (escape_test != uri2) {
@@ -227,7 +228,7 @@ do_remap()
   }
 
   // Testing Crypto SHA and encryption
-  auto hex = format("{}", Crypto::SHA256::encode("Hello World"));
+  auto hex = format("{}", Crypto::SHA256::Encode("Hello World"));
 
   CDebug("SHA256 = {}", hex);
 
@@ -243,12 +244,12 @@ do_remap()
   static auto m1 = Metrics::Gauge("cript.example1.m1");
   static auto m2 = Metrics::Counter("cript.example1.m2");
 
-  m1.increment(100);
-  m1.decrement(10);
-  m2.increment();
+  m1.Increment(100);
+  m1.Decrement(10);
+  m2.Increment();
 
-  instance.metrics[0]->increment();
-  instance.metrics[8]->increment();
+  instance.metrics[0]->Increment();
+  instance.metrics[8]->Increment();
 }
 
 #include <cripts/Epilogue.hpp>

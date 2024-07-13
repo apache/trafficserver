@@ -87,7 +87,6 @@ DbgCtl dbg_ctl_cache_reenable{"cache_reenable"};
 #define SCAN_WRITER_LOCK_MAX_RETRY 5
 #define STORE_COLLISION            1
 #define USELESS_REENABLES          // allow them for now
-// #define VERIFY_JTEST_DATA
 
 extern int64_t cache_config_ram_cache_cutoff;
 
@@ -379,18 +378,6 @@ CacheVC::handleReadDone(int event, Event *e)
           doc->v_minor, stripe->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
       goto Ldone;
     }
-
-#ifdef VERIFY_JTEST_DATA
-    char xx[500];
-    if (read_key && *read_key == doc->key && request.valid() && !dir_head(&dir) && !vio.ndone) {
-      int ib = 0, xd = 0;
-      request.url_get()->print(xx, 500, &ib, &xd);
-      char *x = xx;
-      for (int q = 0; q < 3; q++)
-        x = strchr(x + 1, '/');
-      ink_assert(!memcmp(doc->data(), x, ib - (x - xx)));
-    }
-#endif
 
     if (dbg_ctl_cache_read.on()) {
       char xt[CRYPTO_HEX_SIZE];

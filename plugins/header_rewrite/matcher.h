@@ -187,7 +187,7 @@ private:
   }
 
   bool
-  test_reg(const std::string &t, bool nocase = false) const
+  test_reg(const std::string &t) const
   {
     int ovector[OVECCOUNT];
 

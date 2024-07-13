@@ -107,11 +107,11 @@ attach_tmpfile_to_stripe(Stripe &stripe)
 static std::FILE *
 init_stripe_for_writing(Stripe &stripe, StripteHeaderFooter &header, CacheVol &cache_vol)
 {
-  stripe.cache_vol                                = &cache_vol;
-  cache_rsb.write_backlog_failure                 = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
-  stripe.cache_vol->vol_rsb.write_backlog_failure = Metrics::Counter::createPtr("unit_test.write.backlog.failure");
-  cache_rsb.gc_frags_evacuated                    = Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
-  stripe.cache_vol->vol_rsb.gc_frags_evacuated    = Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
+  stripe.cache_vol                             = &cache_vol;
+  cache_rsb.write_bytes                        = Metrics::Counter::createPtr("unit_test.write.bytes");
+  stripe.cache_vol->vol_rsb.write_bytes        = Metrics::Counter::createPtr("unit_test.write.bytes");
+  cache_rsb.gc_frags_evacuated                 = Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
+  stripe.cache_vol->vol_rsb.gc_frags_evacuated = Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
 
   // A number of things must be initialized in a certain way for Stripe
   // not to segfault, hit an assertion, or exhibit zero-division.

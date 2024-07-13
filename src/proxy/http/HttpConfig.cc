@@ -32,6 +32,7 @@
 #include "proxy/http/HttpConfig.h"
 #include "proxy/hdrs/HTTP.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/eventsystem/UnixSocket.h"
 #include "../../iocore/net/P_Net.h"
 #include "../../records/P_RecUtils.h"
 #include "records/RecHttp.h"
@@ -335,6 +336,7 @@ register_stat_callbacks()
   http_rsb.misc_origin_server_bytes          = Metrics::Counter::createPtr("proxy.process.http.http_misc_origin_server_bytes");
   http_rsb.misc_user_agent_bytes             = Metrics::Counter::createPtr("proxy.process.http.misc_user_agent_bytes");
   http_rsb.missing_host_hdr                  = Metrics::Counter::createPtr("proxy.process.http.missing_host_hdr");
+  http_rsb.no_remap_matched                  = Metrics::Counter::createPtr("proxy.process.http.no_remap_matched");
   http_rsb.options_requests                  = Metrics::Counter::createPtr("proxy.process.http.options_requests");
   http_rsb.origin_body                       = Metrics::Counter::createPtr("proxy.process.http.origin.body");
   http_rsb.origin_close_private              = Metrics::Counter::createPtr("proxy.process.http.origin.close_private");
@@ -1147,7 +1149,7 @@ HttpConfig::reconfigure()
   params->oride.sock_packet_notsent_lowat = m_master.oride.sock_packet_notsent_lowat;
 
   // Clear the TCP Fast Open option if it is not supported on this host.
-  if ((params->oride.sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !SocketManager::fastopen_supported()) {
+  if ((params->oride.sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !UnixSocket::client_fastopen_supported()) {
     Status("disabling unsupported TCP Fast Open flag on proxy.config.net.sock_option_flag_out");
     params->oride.sock_option_flag_out &= ~NetVCOptions::SOCK_OPT_TCP_FAST_OPEN;
   }

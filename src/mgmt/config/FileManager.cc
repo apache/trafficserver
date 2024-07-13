@@ -336,7 +336,8 @@ FileManager::configFileChild(const char *parent, const char *child)
 }
 
 auto
-FileManager::get_files_registry_rpc_endpoint(std::string_view const &id, YAML::Node const &params) -> swoc::Rv<YAML::Node>
+FileManager::get_files_registry_rpc_endpoint(std::string_view const & /* id ATS_UNUSED */,
+                                             YAML::Node const & /* params ATS_UNUSED */) -> swoc::Rv<YAML::Node>
 {
   // If any error, the rpc manager will catch it and respond with it.
   YAML::Node configs{YAML::NodeType::Sequence};

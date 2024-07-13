@@ -82,7 +82,7 @@ public:
   }
 
   void
-  system_exit(const int exit_code) override
+  system_exit(const int /* exit_code ATS_UNUSED */) override
   {
   }
 

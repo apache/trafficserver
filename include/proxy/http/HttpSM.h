@@ -436,6 +436,13 @@ private:
   HttpTunnelProducer *setup_cache_read_transfer();
   void                setup_internal_transfer(HttpSMHandler handler);
   void                setup_error_transfer();
+
+  /** Prepare for sending both the 100 Continue and the second response header.
+   *
+   * This function sets up the tunnel to send the 100 Continue response and
+   * then prepares the state machine to send the second response that comes
+   * after the body is sent.
+   */
   void                setup_100_continue_transfer();
   HttpTunnelProducer *setup_push_transfer_to_cache();
   void                setup_transform_to_server_transfer();

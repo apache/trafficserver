@@ -223,12 +223,12 @@ flatten_node(CfgNode const &field, RecYAMLNodeHandler handler, swoc::Errata &err
 namespace swoc
 {
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, YAML::NodeType::value type)
+bwformat(BufferWriter &w, bwf::Spec const & /* spec ATS_UNUSED */, YAML::NodeType::value type)
 {
   return w.write(Node_Type_to_Str[type]);
 }
 BufferWriter &
-bwformat(BufferWriter &w, bwf::Spec const &spec, YAML::Node const &node)
+bwformat(BufferWriter &w, bwf::Spec const & /* spec ATS_UNUSED */, YAML::Node const &node)
 {
   return w.write(node.as<std::string>());
 }

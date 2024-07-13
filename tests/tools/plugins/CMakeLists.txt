@@ -37,6 +37,7 @@ add_autest_plugin(user_args user_args.cc)
 add_autest_plugin(async_engine async_engine.c)
 add_autest_plugin(hook_tunnel_plugin hook_tunnel_plugin.cc)
 add_autest_plugin(tunnel_transform tunnel_transform.cc)
+add_autest_plugin(http2_close_connection http2_close_connection.cc)
 
 target_link_libraries(continuations_verify PRIVATE OpenSSL::SSL)
 target_link_libraries(ssl_client_verify_test PRIVATE OpenSSL::SSL)

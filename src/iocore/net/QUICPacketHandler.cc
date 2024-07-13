@@ -174,7 +174,7 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
 }
 
 void
-QUICPacketHandlerIn::init_accept(EThread *t = nullptr)
+QUICPacketHandlerIn::init_accept(EThread * /* t  ATS_UNUSED */ = nullptr)
 {
   int i, n;
 
@@ -196,7 +196,7 @@ QUICPacketHandlerIn::_get_continuation()
 }
 
 void
-QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
+QUICPacketHandlerIn::_recv_packet(int /* event ATS_UNUSED */, UDPPacket *udp_packet)
 {
   size_t   buf_len{0};
   uint8_t *buf = udp_packet->get_entire_chain_buffer(&buf_len);
@@ -340,7 +340,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 }
 
 void
-QUICPacketHandlerOut::init(QUICNetVConnection *vc)
+QUICPacketHandlerOut::init(QUICNetVConnection * /* vc ATS_UNUSED */)
 {
 }
 
@@ -351,6 +351,6 @@ QUICPacketHandlerOut::_get_continuation()
 }
 
 void
-QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
+QUICPacketHandlerOut::_recv_packet(int /* event ATS_UNUSED */, UDPPacket * /* udp_packet ATS_UNUSED */)
 {
 }

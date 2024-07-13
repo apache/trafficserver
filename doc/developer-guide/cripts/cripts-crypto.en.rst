@@ -46,14 +46,14 @@ Object                              Description
 ``Crypto::HMAC::SHA256``            HMAC-SHA256 hashing.
 =================================   ===============================================================
 
-These objects all provide a ``encode()`` and ``decode()`` method, to hash and unhash strings.
+These objects all provide a ``Encode()`` and ``Decode()`` method, to hash and unhash strings.
 Examples:
 
 .. code-block:: cpp
 
    do_remap()
    {
-     CDebug("SHA256 = {}", Crypto::SHA256::encode("Hello World"));
+     CDebug("SHA256 = {}", Crypto::SHA256::Encode("Hello World"));
    }
 
 .. _cripts-misc-crypto-encryption:
@@ -62,8 +62,8 @@ Encryption
 ==========
 
 Currently only one encryption object is provides, for AES256. This object provides
-``encrypt()`` and ``decrypt()`` methods. A ``hex()`` method is also provided to retrieve
-the encrypted data as a hex string. For encrypting data in chunks, a ``finalize()`` method
+``Encrypt()`` and ``Decrypt()`` methods. A ``Hex()`` method is also provided to retrieve
+the encrypted data as a hex string. For encrypting data in chunks, a ``Finalize()`` method
 is provided to retrieve the final encrypted data.
 
 =================================   ===============================================================
@@ -87,4 +87,4 @@ Object                              Description
 ``Crypto::Escape``                  Methods for URL escaping.
 =================================   ===============================================================
 
-These objects all provide a ``encode()`` and ``decode()`` method, to encode and decode strings.
+These objects all provide a ``Encode()`` and ``Decode()`` method, to encode and decode strings.

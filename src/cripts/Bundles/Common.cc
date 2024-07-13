@@ -24,46 +24,46 @@ namespace Bundle
 const Cript::string Common::_name = "Bundle::Common";
 
 bool
-Common::validate(std::vector<Cript::Bundle::Error> &errors) const
+Common::Validate(std::vector<Cript::Bundle::Error> &errors) const
 {
   bool good = true;
 
   // The .dscp() can only be 0 - 63
   if (_dscp < 0 || _dscp > 63) {
-    errors.emplace_back("dscp must be between 0 and 63", name(), "dscp");
+    errors.emplace_back("dscp must be between 0 and 63", Name(), "dscp");
     good = false;
   }
 
   // Make sure we didn't encounter an error setting up the via headers
   if (_client_via.first == 999 || _origin_via.first == 999) {
-    errors.emplace_back("via_header must be one of: disable, protocol, basic, detailed, full", name(), "via_header");
+    errors.emplace_back("via_header must be one of: disable, protocol, basic, detailed, full", Name(), "via_header");
     good = false;
   }
 
   // Make sure all configurations are of the correct type
   for (auto &[rec, value] : _configs) {
-    switch (rec.type()) {
+    switch (rec->Type()) {
     case TS_RECORDDATATYPE_INT:
       if (!std::holds_alternative<TSMgmtInt>(value)) {
-        errors.emplace_back("Invalid value for config, expecting an integer", name(), rec.name());
+        errors.emplace_back("Invalid value for config, expecting an integer", Name(), rec->Name());
         good = false;
       }
       break;
     case TS_RECORDDATATYPE_FLOAT:
       if (!std::holds_alternative<TSMgmtFloat>(value)) {
-        errors.emplace_back("Invalid value for config, expecting a float", name(), rec.name());
+        errors.emplace_back("Invalid value for config, expecting a float", Name(), rec->Name());
         good = false;
       }
       break;
     case TS_RECORDDATATYPE_STRING:
       if (!std::holds_alternative<std::string>(value)) {
-        errors.emplace_back("Invalid value for config, expecting an integer", name(), rec.name());
+        errors.emplace_back("Invalid value for config, expecting an integer", Name(), rec->Name());
         good = false;
       }
       break;
 
     default:
-      errors.emplace_back("Invalid configuration type", name(), rec.name());
+      errors.emplace_back("Invalid configuration type", Name(), rec->Name());
       good = false;
       break;
     }
@@ -84,7 +84,7 @@ Common::via_header(const Cript::string_view &destination, const Cript::string_vi
     {"none",     999}  // This is an error
   };
 
-  needCallback(Cript::Callbacks::DO_REMAP);
+  NeedCallback(Cript::Callbacks::DO_REMAP);
 
   int  val = 999;
   auto it  = SettingValues.find(value);
@@ -105,20 +105,22 @@ Common::via_header(const Cript::string_view &destination, const Cript::string_vi
 }
 
 Common &
-Common::set_config(const Cript::string_view name, const Cript::Records::ValueType value)
+Common::set_config(const Cript::string_view name, const Cript::Records::ValueType &value)
 {
-  Cript::Records rec(name);
+  auto rec = Cript::Records::Lookup(name); // These should be loaded at startup
 
-  if (rec.loaded()) {
-    needCallback(Cript::Callbacks::DO_REMAP);
-    _configs.emplace_back(std::move(rec), value);
+  if (rec) {
+    NeedCallback(Cript::Callbacks::DO_REMAP);
+    _configs.emplace_back(rec, value);
+  } else {
+    CFatal("[Common::set_config]: Unknown configuration '%.*s'", static_cast<int>(name.size()), name.data());
   }
 
   return *this;
 }
 
 Common &
-Common::set_config(std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> configs)
+Common::set_config(const std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> &configs)
 {
   for (auto &[name, value] : configs) {
     set_config(name, value);
@@ -132,7 +134,7 @@ Common::doRemap(Cript::Context *context)
 {
   // .dscp(int)
   if (_dscp > 0) {
-    borrow conn = Client::Connection::get();
+    borrow conn = Client::Connection::Get();
 
     CDebug("Setting DSCP = {}", _dscp);
     conn.dscp = _dscp;
@@ -141,16 +143,16 @@ Common::doRemap(Cript::Context *context)
   // .via_header()
   if (_client_via.second) {
     CDebug("Setting Client Via = {}", _client_via.first);
-    proxy.config.http.insert_response_via_str.set(_client_via.first);
+    proxy.config.http.insert_response_via_str.Set(_client_via.first);
   }
   if (_origin_via.second) {
     CDebug("Setting Origin Via = {}", _origin_via.first);
-    proxy.config.http.insert_request_via_str.set(_origin_via.first);
+    proxy.config.http.insert_request_via_str.Set(_origin_via.first);
   }
 
   // .set_config()
   for (auto &[rec, value] : _configs) {
-    rec._set(context, value);
+    rec->_set(context, value);
   }
 }
 

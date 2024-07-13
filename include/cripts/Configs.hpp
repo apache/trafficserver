@@ -38,7 +38,8 @@ private:
     class Body_Factory
     {
     public:
-      Cript::IntConfig response_suppression_mode{TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE};
+      Cript::IntConfig    response_suppression_mode{"proxy.config.body_factory.response_suppression_mode"};
+      Cript::StringConfig template_base{"proxy.config.body_factory.template_base"};
     }; // End class Body_Factory
 
   public:
@@ -48,6 +49,7 @@ private:
     class Hostdb
     {
     public:
+      Cript::StringConfig ip_resolve{"proxy.config.hostdb.ip_resolve"};
     }; // End class Hostdb
 
   public:
@@ -57,61 +59,61 @@ private:
     class Http
     {
     public:
-      Cript::IntConfig   allow_half_open{TS_CONFIG_HTTP_ALLOW_HALF_OPEN};
-      Cript::IntConfig   allow_multi_range{TS_CONFIG_HTTP_ALLOW_MULTI_RANGE};
-      Cript::IntConfig   anonymize_remove_client_ip{TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP};
-      Cript::IntConfig   anonymize_remove_cookie{TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE};
-      Cript::IntConfig   anonymize_remove_from{TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM};
-      Cript::IntConfig   anonymize_remove_referer{TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER};
-      Cript::IntConfig   anonymize_remove_user_agent{TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT};
-      Cript::IntConfig   attach_server_session_to_client{TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT};
-      Cript::IntConfig   auth_server_session_private{TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE};
-      Cript::IntConfig   background_fill_active_timeout{TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT};
-      Cript::FloatConfig background_fill_completed_threshold{TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD};
+      Cript::IntConfig   allow_half_open{"proxy.config.http.allow_half_open"};
+      Cript::IntConfig   allow_multi_range{"proxy.config.http.allow_multi_range"};
+      Cript::IntConfig   anonymize_remove_client_ip{"proxy.config.http.anonymize_remove_client_ip"};
+      Cript::IntConfig   anonymize_remove_cookie{"proxy.config.http.anonymize_remove_cookie"};
+      Cript::IntConfig   anonymize_remove_from{"proxy.config.http.anonymize_remove_from"};
+      Cript::IntConfig   anonymize_remove_referer{"proxy.config.http.anonymize_remove_referer"};
+      Cript::IntConfig   anonymize_remove_user_agent{"proxy.config.http.anonymize_remove_user_agent"};
+      Cript::IntConfig   attach_server_session_to_client{"proxy.config.http.attach_server_session_to_client"};
+      Cript::IntConfig   auth_server_session_private{"proxy.config.http.auth_server_session_private"};
+      Cript::IntConfig   background_fill_active_timeout{"proxy.config.http.background_fill_active_timeout"};
+      Cript::FloatConfig background_fill_completed_threshold{"proxy.config.http.background_fill_completed_threshold"};
 
     private:
       class Cache
       {
       public:
-        Cript::IntConfig   cache_responses_to_cookies{TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES};
-        Cript::IntConfig   cache_urls_that_look_dynamic{TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC};
-        Cript::IntConfig   generation{TS_CONFIG_HTTP_CACHE_GENERATION};
-        Cript::IntConfig   guaranteed_max_lifetime{TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME};
-        Cript::IntConfig   guaranteed_min_lifetime{TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME};
-        Cript::FloatConfig heuristic_lm_factor{TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR};
-        Cript::IntConfig   heuristic_max_lifetime{TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME};
-        Cript::IntConfig   heuristic_min_lifetime{TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME};
-        Cript::IntConfig   http{TS_CONFIG_HTTP_CACHE_HTTP};
-        Cript::IntConfig   ignore_accept_charset_mismatch{TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH};
-        Cript::IntConfig   ignore_accept_encoding_mismatch{TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH};
-        Cript::IntConfig   ignore_accept_language_mismatch{TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH};
-        Cript::IntConfig   ignore_accept_mismatch{TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH};
-        Cript::IntConfig   ignore_authentication{TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION};
-        Cript::IntConfig   ignore_client_cc_max_age{TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE};
-        Cript::IntConfig   ignore_client_no_cache{TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE};
-        Cript::IntConfig   ignore_query{TS_CONFIG_HTTP_CACHE_IGNORE_QUERY};
-        Cript::IntConfig   ignore_server_no_cache{TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE};
-        Cript::IntConfig   ims_on_client_no_cache{TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE};
-        Cript::IntConfig   max_open_read_retries{TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES};
-        Cript::IntConfig   max_open_write_retries{TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES};
-        Cript::IntConfig   max_open_write_retry_timeout{TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRY_TIMEOUT};
-        Cript::IntConfig   max_stale_age{TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE};
-        Cript::IntConfig   open_read_retry_time{TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME};
-        Cript::IntConfig   open_write_fail_action{TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION};
+        Cript::IntConfig   cache_responses_to_cookies{"proxy.config.http.cache.cache_responses_to_cookies"};
+        Cript::IntConfig   cache_urls_that_look_dynamic{"proxy.config.http.cache.cache_urls_that_look_dynamic"};
+        Cript::IntConfig   generation{"proxy.config.http.cache.generation"};
+        Cript::IntConfig   guaranteed_max_lifetime{"proxy.config.http.cache.guaranteed_max_lifetime"};
+        Cript::IntConfig   guaranteed_min_lifetime{"proxy.config.http.cache.guaranteed_min_lifetime"};
+        Cript::FloatConfig heuristic_lm_factor{"proxy.config.http.cache.heuristic_lm_factor"};
+        Cript::IntConfig   heuristic_max_lifetime{"proxy.config.http.cache.heuristic_max_lifetime"};
+        Cript::IntConfig   heuristic_min_lifetime{"proxy.config.http.cache.heuristic_min_lifetime"};
+        Cript::IntConfig   http{"proxy.config.http.cache.http"};
+        Cript::IntConfig   ignore_accept_charset_mismatch{"proxy.config.http.cache.ignore_accept_charset_mismatch"};
+        Cript::IntConfig   ignore_accept_encoding_mismatch{"proxy.config.http.cache.ignore_accept_encoding_mismatch"};
+        Cript::IntConfig   ignore_accept_language_mismatch{"proxy.config.http.cache.ignore_accept_language_mismatch"};
+        Cript::IntConfig   ignore_accept_mismatch{"proxy.config.http.cache.ignore_accept_mismatch"};
+        Cript::IntConfig   ignore_authentication{"proxy.config.http.cache.ignore_authentication"};
+        Cript::IntConfig   ignore_client_cc_max_age{"proxy.config.http.cache.ignore_client_cc_max_age"};
+        Cript::IntConfig   ignore_client_no_cache{"proxy.config.http.cache.ignore_client_no_cache"};
+        Cript::IntConfig   ignore_query{"proxy.config.http.cache.ignore_query"};
+        Cript::IntConfig   ignore_server_no_cache{"proxy.config.http.cache.ignore_server_no_cache"};
+        Cript::IntConfig   ims_on_client_no_cache{"proxy.config.http.cache.ims_on_client_no_cache"};
+        Cript::IntConfig   max_open_read_retries{"proxy.config.http.cache.max_open_read_retries"};
+        Cript::IntConfig   max_open_write_retries{"proxy.config.http.cache.max_open_write_retries"};
+        Cript::IntConfig   max_open_write_retry_timeout{"proxy.config.http.cache.max_open_write_retry_timeout"};
+        Cript::IntConfig   max_stale_age{"proxy.config.http.cache.max_stale_age"};
+        Cript::IntConfig   open_read_retry_time{"proxy.config.http.cache.open_read_retry_time"};
+        Cript::IntConfig   open_write_fail_action{"proxy.config.http.cache.open_write_fail_action"};
 
       private:
         class Range
         {
         public:
-          Cript::IntConfig lookup{TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP};
-          Cript::IntConfig write{TS_CONFIG_HTTP_CACHE_RANGE_WRITE};
+          Cript::IntConfig lookup{"proxy.config.http.cache.range.lookup"};
+          Cript::IntConfig write{"proxy.config.http.cache.range.write"};
         }; // End class Range
 
       public:
         Range range;
 
-        Cript::IntConfig required_headers{TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS};
-        Cript::IntConfig when_to_revalidate{TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE};
+        Cript::IntConfig required_headers{"proxy.config.http.cache.required_headers"};
+        Cript::IntConfig when_to_revalidate{"proxy.config.http.cache.when_to_revalidate"};
       }; // End class Cache
 
     public:
@@ -121,13 +123,13 @@ private:
       class Chunking
       {
       public:
-        Cript::IntConfig size{TS_CONFIG_HTTP_CHUNKING_SIZE};
+        Cript::IntConfig size{"proxy.config.http.chunking.size"};
       }; // End class Chunking
 
     public:
       Chunking chunking;
 
-      Cript::IntConfig chunking_enabled{TS_CONFIG_HTTP_CHUNKING_ENABLED};
+      Cript::IntConfig chunking_enabled{"proxy.config.http.chunking_enabled"};
 
     private:
       class Connect
@@ -136,7 +138,7 @@ private:
         class Down
         {
         public:
-          Cript::IntConfig policy{TS_CONFIG_HTTP_CONNECT_DOWN_POLICY};
+          Cript::IntConfig policy{"proxy.config.http.connect.down.policy"};
         }; // End class Down
 
       public:
@@ -147,19 +149,19 @@ private:
     public:
       Connect connect;
 
-      Cript::IntConfig connect_attempts_max_retries{TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES};
-      Cript::IntConfig connect_attempts_max_retries_down_server{TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER};
-      Cript::IntConfig connect_attempts_rr_retries{TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES};
-      Cript::IntConfig connect_attempts_timeout{TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT};
-      Cript::IntConfig default_buffer_size{TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE};
-      Cript::IntConfig default_buffer_water_mark{TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK};
-      Cript::IntConfig doc_in_cache_skip_dns{TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS};
+      Cript::IntConfig connect_attempts_max_retries{"proxy.config.http.connect_attempts_max_retries"};
+      Cript::IntConfig connect_attempts_max_retries_down_server{"proxy.config.http.connect_attempts_max_retries_down_server"};
+      Cript::IntConfig connect_attempts_rr_retries{"proxy.config.http.connect_attempts_rr_retries"};
+      Cript::IntConfig connect_attempts_timeout{"proxy.config.http.connect_attempts_timeout"};
+      Cript::IntConfig default_buffer_size{"proxy.config.http.default_buffer_size"};
+      Cript::IntConfig default_buffer_water_mark{"proxy.config.http.default_buffer_water_mark"};
+      Cript::IntConfig doc_in_cache_skip_dns{"proxy.config.http.doc_in_cache_skip_dns"};
 
     private:
       class Down_Server
       {
       public:
-        Cript::IntConfig cache_time{TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME};
+        Cript::IntConfig cache_time{"proxy.config.http.down_server.cache_time"};
       }; // End class Down_Server
 
     public:
@@ -169,9 +171,9 @@ private:
       class Flow_Control
       {
       public:
-        Cript::IntConfig enabled{TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED};
-        Cript::IntConfig high_water{TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK};
-        Cript::IntConfig low_water{TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK};
+        Cript::IntConfig enabled{"proxy.config.http.flow_control.enabled"};
+        Cript::IntConfig high_water{"proxy.config.http.flow_control.high_water"};
+        Cript::IntConfig low_water{"proxy.config.http.flow_control.low_water"};
       }; // End class Flow_Control
 
     public:
@@ -181,43 +183,45 @@ private:
       class Forward
       {
       public:
-        Cript::IntConfig proxy_auth_to_parent{TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT};
+        Cript::IntConfig proxy_auth_to_parent{"proxy.config.http.forward.proxy_auth_to_parent"};
       }; // End class Forward
 
     public:
       Forward forward;
 
-      Cript::IntConfig forward_connect_method{TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD};
-      Cript::IntConfig insert_age_in_response{TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE};
-      Cript::IntConfig insert_client_ip{TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP};
-      Cript::IntConfig insert_request_via_str{TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR};
-      Cript::IntConfig insert_response_via_str{TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR};
-      Cript::IntConfig insert_squid_x_forwarded_for{TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR};
-      Cript::IntConfig keep_alive_enabled_in{TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN};
-      Cript::IntConfig keep_alive_enabled_out{TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT};
-      Cript::IntConfig keep_alive_no_activity_timeout_in{TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN};
-      Cript::IntConfig keep_alive_no_activity_timeout_out{TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT};
-      Cript::IntConfig keep_alive_post_out{TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT};
-      Cript::IntConfig max_proxy_cycles{TS_CONFIG_HTTP_MAX_PROXY_CYCLES};
-      Cript::IntConfig negative_caching_enabled{TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED};
-      Cript::IntConfig negative_caching_lifetime{TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME};
-      Cript::IntConfig negative_revalidating_enabled{TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED};
-      Cript::IntConfig negative_revalidating_lifetime{TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME};
-      Cript::IntConfig no_dns_just_forward_to_parent{TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT};
-      Cript::IntConfig normalize_ae{TS_CONFIG_HTTP_NORMALIZE_AE};
-      Cript::IntConfig number_of_redirections{TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS};
+      Cript::IntConfig    forward_connect_method{"proxy.config.http.forward_connect_method"};
+      Cript::StringConfig global_user_agent_header{"proxy.config.http.global_user_agent_header"};
+      Cript::IntConfig    insert_age_in_response{"proxy.config.http.insert_age_in_response"};
+      Cript::IntConfig    insert_client_ip{"proxy.config.http.insert_client_ip"};
+      Cript::StringConfig insert_forwarded{"proxy.config.http.insert_forwarded"};
+      Cript::IntConfig    insert_request_via_str{"proxy.config.http.insert_request_via_str"};
+      Cript::IntConfig    insert_response_via_str{"proxy.config.http.insert_response_via_str"};
+      Cript::IntConfig    insert_squid_x_forwarded_for{"proxy.config.http.insert_squid_x_forwarded_for"};
+      Cript::IntConfig    keep_alive_enabled_in{"proxy.config.http.keep_alive_enabled_in"};
+      Cript::IntConfig    keep_alive_enabled_out{"proxy.config.http.keep_alive_enabled_out"};
+      Cript::IntConfig    keep_alive_no_activity_timeout_in{"proxy.config.http.keep_alive_no_activity_timeout_in"};
+      Cript::IntConfig    keep_alive_no_activity_timeout_out{"proxy.config.http.keep_alive_no_activity_timeout_out"};
+      Cript::IntConfig    keep_alive_post_out{"proxy.config.http.keep_alive_post_out"};
+      Cript::IntConfig    max_proxy_cycles{"proxy.config.http.max_proxy_cycles"};
+      Cript::IntConfig    negative_caching_enabled{"proxy.config.http.negative_caching_enabled"};
+      Cript::IntConfig    negative_caching_lifetime{"proxy.config.http.negative_caching_lifetime"};
+      Cript::IntConfig    negative_revalidating_enabled{"proxy.config.http.negative_revalidating_enabled"};
+      Cript::IntConfig    negative_revalidating_lifetime{"proxy.config.http.negative_revalidating_lifetime"};
+      Cript::IntConfig    no_dns_just_forward_to_parent{"proxy.config.http.no_dns_just_forward_to_parent"};
+      Cript::IntConfig    normalize_ae{"proxy.config.http.normalize_ae"};
+      Cript::IntConfig    number_of_redirections{"proxy.config.http.number_of_redirections"};
 
     private:
       class Parent_Proxy
       {
       public:
-        Cript::IntConfig disable_parent_markdowns{TS_CONFIG_HTTP_DISABLE_PARENT_MARKDOWNS};
-        Cript::IntConfig enable_parent_timeout_markdowns{TS_CONFIG_HTTP_ENABLE_PARENT_TIMEOUT_MARKDOWNS};
-        Cript::IntConfig fail_threshold{TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD};
-        Cript::IntConfig mark_down_hostdb{TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB};
-        Cript::IntConfig per_parent_connect_attempts{TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS};
-        Cript::IntConfig retry_time{TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME};
-        Cript::IntConfig total_connect_attempts{TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS};
+        Cript::IntConfig disable_parent_markdowns{"proxy.config.http.parent_proxy.disable_parent_markdowns"};
+        Cript::IntConfig enable_parent_timeout_markdowns{"proxy.config.http.parent_proxy.enable_parent_timeout_markdowns"};
+        Cript::IntConfig fail_threshold{"proxy.config.http.parent_proxy.fail_threshold"};
+        Cript::IntConfig mark_down_hostdb{"proxy.config.http.parent_proxy.mark_down_hostdb"};
+        Cript::IntConfig per_parent_connect_attempts{"proxy.config.http.parent_proxy.per_parent_connect_attempts"};
+        Cript::IntConfig retry_time{"proxy.config.http.parent_proxy.retry_time"};
+        Cript::IntConfig total_connect_attempts{"proxy.config.http.parent_proxy.total_connect_attempts"};
       }; // End class Parent_Proxy
 
     public:
@@ -233,7 +237,7 @@ private:
           class Content_Length
           {
           public:
-            Cript::IntConfig enabled{TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED};
+            Cript::IntConfig enabled{"proxy.config.http.post.check.content_length.enabled"};
           }; // End class Content_Length
 
         public:
@@ -249,18 +253,20 @@ private:
     public:
       Post post;
 
-      Cript::IntConfig proxy_protocol_out{TS_CONFIG_HTTP_PROXY_PROTOCOL_OUT};
-      Cript::IntConfig redirect_use_orig_cache_key{TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY};
-      Cript::IntConfig request_buffer_enabled{TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED};
-      Cript::IntConfig request_header_max_size{TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE};
-      Cript::IntConfig response_header_max_size{TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE};
-      Cript::IntConfig response_server_enabled{TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED};
-      Cript::IntConfig send_http11_requests{TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS};
+      Cript::IntConfig    proxy_protocol_out{"proxy.config.http.proxy_protocol_out"};
+      Cript::IntConfig    redirect_use_orig_cache_key{"proxy.config.http.redirect_use_orig_cache_key"};
+      Cript::IntConfig    request_buffer_enabled{"proxy.config.http.request_buffer_enabled"};
+      Cript::IntConfig    request_header_max_size{"proxy.config.http.request_header_max_size"};
+      Cript::IntConfig    response_header_max_size{"proxy.config.http.response_header_max_size"};
+      Cript::IntConfig    response_server_enabled{"proxy.config.http.response_server_enabled"};
+      Cript::StringConfig response_server_str{"proxy.config.http.response_server_str"};
+      Cript::IntConfig    send_http11_requests{"proxy.config.http.send_http11_requests"};
 
     private:
       class Server_Session_Sharing
       {
       public:
+        Cript::StringConfig match{"proxy.config.http.server_session_sharing.match"};
       }; // End class Server_Session_Sharing
 
     public:
@@ -273,7 +279,7 @@ private:
         class Log
         {
         public:
-          Cript::IntConfig threshold{TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD};
+          Cript::IntConfig threshold{"proxy.config.http.slow.log.threshold"};
         }; // End class Log
 
       public:
@@ -284,11 +290,11 @@ private:
     public:
       Slow slow;
 
-      Cript::IntConfig transaction_active_timeout_in{TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN};
-      Cript::IntConfig transaction_active_timeout_out{TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT};
-      Cript::IntConfig transaction_no_activity_timeout_in{TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN};
-      Cript::IntConfig transaction_no_activity_timeout_out{TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT};
-      Cript::IntConfig uncacheable_requests_bypass_parent{TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT};
+      Cript::IntConfig transaction_active_timeout_in{"proxy.config.http.transaction_active_timeout_in"};
+      Cript::IntConfig transaction_active_timeout_out{"proxy.config.http.transaction_active_timeout_out"};
+      Cript::IntConfig transaction_no_activity_timeout_in{"proxy.config.http.transaction_no_activity_timeout_in"};
+      Cript::IntConfig transaction_no_activity_timeout_out{"proxy.config.http.transaction_no_activity_timeout_out"};
+      Cript::IntConfig uncacheable_requests_bypass_parent{"proxy.config.http.uncacheable_requests_bypass_parent"};
     }; // End class Http
 
   public:
@@ -298,13 +304,13 @@ private:
     class Net
     {
     public:
-      Cript::IntConfig default_inactivity_timeout{TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT};
-      Cript::IntConfig sock_notsent_lowat{TS_CONFIG_NET_SOCK_NOTSENT_LOWAT};
-      Cript::IntConfig sock_option_flag_out{TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT};
-      Cript::IntConfig sock_packet_mark_out{TS_CONFIG_NET_SOCK_PACKET_MARK_OUT};
-      Cript::IntConfig sock_packet_tos_out{TS_CONFIG_NET_SOCK_PACKET_TOS_OUT};
-      Cript::IntConfig sock_recv_buffer_size_out{TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT};
-      Cript::IntConfig sock_send_buffer_size_out{TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT};
+      Cript::IntConfig default_inactivity_timeout{"proxy.config.net.default_inactivity_timeout"};
+      Cript::IntConfig sock_notsent_lowat{"proxy.config.net.sock_notsent_lowat"};
+      Cript::IntConfig sock_option_flag_out{"proxy.config.net.sock_option_flag_out"};
+      Cript::IntConfig sock_packet_mark_out{"proxy.config.net.sock_packet_mark_out"};
+      Cript::IntConfig sock_packet_tos_out{"proxy.config.net.sock_packet_tos_out"};
+      Cript::IntConfig sock_recv_buffer_size_out{"proxy.config.net.sock_recv_buffer_size_out"};
+      Cript::IntConfig sock_send_buffer_size_out{"proxy.config.net.sock_send_buffer_size_out"};
     }; // End class Net
 
   public:
@@ -317,8 +323,8 @@ private:
       class Vc
       {
       public:
-        Cript::IntConfig default_buffer_index{TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX};
-        Cript::IntConfig default_buffer_water_mark{TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK};
+        Cript::IntConfig default_buffer_index{"proxy.config.plugin.vc.default_buffer_index"};
+        Cript::IntConfig default_buffer_water_mark{"proxy.config.plugin.vc.default_buffer_water_mark"};
       }; // End class Vc
 
     public:
@@ -330,7 +336,7 @@ private:
     Plugin plugin;
 
   public:
-    Cript::IntConfig srv_enabled{TS_CONFIG_SRV_ENABLED};
+    Cript::IntConfig srv_enabled{"proxy.config.srv_enabled"};
 
   private:
     class Ssl
@@ -345,6 +351,7 @@ private:
           class Cert
           {
           public:
+            Cript::StringConfig filename{"proxy.config.ssl.client.CA.cert.filename"};
           }; // End class Cert
 
         public:
@@ -356,10 +363,14 @@ private:
         Ca CA;
 
       public:
+        Cript::StringConfig alpn_protocols{"proxy.config.ssl.client.alpn_protocols"};
+
       private:
         class Cert
         {
         public:
+          Cript::StringConfig filename{"proxy.config.ssl.client.cert.filename"};
+          Cript::StringConfig path{"proxy.config.ssl.client.cert.path"};
         }; // End class Cert
 
       public:
@@ -369,10 +380,13 @@ private:
         class Private_Key
         {
         public:
+          Cript::StringConfig filename{"proxy.config.ssl.client.private_key.filename"};
         }; // End class Private_Key
 
       public:
         Private_Key private_key;
+
+        Cript::StringConfig sni_policy{"proxy.config.ssl.client.sni_policy"};
 
       private:
         class Verify
@@ -381,6 +395,8 @@ private:
           class Server
           {
           public:
+            Cript::StringConfig policy{"proxy.config.ssl.client.verify.server.policy"};
+            Cript::StringConfig properties{"proxy.config.ssl.client.verify.server.properties"};
           }; // End class Server
 
         public:
@@ -397,8 +413,8 @@ private:
       Client client;
 
     public:
-      Cript::IntConfig hsts_include_subdomains{TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS};
-      Cript::IntConfig hsts_max_age{TS_CONFIG_SSL_HSTS_MAX_AGE};
+      Cript::IntConfig hsts_include_subdomains{"proxy.config.ssl.hsts_include_subdomains"};
+      Cript::IntConfig hsts_max_age{"proxy.config.ssl.hsts_max_age"};
     }; // End class Ssl
 
   public:
@@ -408,7 +424,7 @@ private:
     class Url_Remap
     {
     public:
-      Cript::IntConfig pristine_host_hdr{TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR};
+      Cript::IntConfig pristine_host_hdr{"proxy.config.url_remap.pristine_host_hdr"};
     }; // End class Url_Remap
 
   public:
@@ -418,8 +434,8 @@ private:
     class Websocket
     {
     public:
-      Cript::IntConfig active_timeout{TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT};
-      Cript::IntConfig no_activity_timeout{TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT};
+      Cript::IntConfig active_timeout{"proxy.config.websocket.active_timeout"};
+      Cript::IntConfig no_activity_timeout{"proxy.config.websocket.no_activity_timeout"};
     }; // End class Websocket
 
   public:

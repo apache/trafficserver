@@ -43,12 +43,6 @@
 #include <sys/linker.h>
 #endif
 
-// set in the OS
-// #define RECV_BUF_SIZE            (1024*64)
-// #define SEND_BUF_SIZE            (1024*64)
-#define FIRST_RANDOM_PORT 16000
-#define LAST_RANDOM_PORT  32000
-
 namespace
 {
 DbgCtl dbg_ctl_http_tproxy{"http_tproxy"};
@@ -103,10 +97,6 @@ Server::accept(Connection *c)
     DbgPrint(dbg_ctl_iocore_net_server, "Connection accepted [Server]. %s -> %s", ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2)),
              ats_ip_nptop(&addr, ipb1, sizeof(ipb1)));
   }
-
-#ifdef SEND_BUF_SIZE
-  SocketManager::set_sndbuf_size(c->fd, SEND_BUF_SIZE);
-#endif
 
   return 0;
 }
@@ -165,24 +155,6 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     http_accept_filter = true;
     add_http_filter(fd);
   }
-
-#ifdef SEND_BUF_SIZE
-  {
-    int send_buf_size = SEND_BUF_SIZE;
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *)&send_buf_size, sizeof(int)) < 0)) {
-      goto Lerror;
-    }
-  }
-#endif
-
-#ifdef RECV_BUF_SIZE
-  {
-    int recv_buf_size = RECV_BUF_SIZE;
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *)&recv_buf_size, sizeof(int))) < 0) {
-      goto Lerror;
-    }
-  }
-#endif
 
   if (opt.recv_bufsize) {
     if (SocketManager::set_rcvbuf_size(fd, opt.recv_bufsize)) {

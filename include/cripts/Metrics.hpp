@@ -44,56 +44,55 @@ public:
 
   BaseMetrics(const Cript::string_view &name) : _name(name) {}
 
+  void
+  operator=(int64_t val)
+  {
+    CAssert(_id != TS_ERROR);
+    _metric->store(val);
+  }
+
+  operator int64_t() const
+  {
+    CAssert(_id != TS_ERROR);
+    return _metric->load();
+  }
+
   [[nodiscard]] Cript::string_view
-  name() const
+  Name() const
   {
     return {_name};
   }
 
   [[nodiscard]] detail::MetricID
-  id() const
+  Id() const
   {
     return _id;
   }
 
   void
-  increment(int64_t inc) const
+  Increment(int64_t inc) const
   {
-    TSReleaseAssert(_id != ts::Metrics::NOT_FOUND);
+    CAssert(_id != ts::Metrics::NOT_FOUND);
     _metric->increment(inc);
   }
 
   void
-  increment() const
+  Increment() const
   {
-    increment(1);
+    Increment(1);
   }
 
   void
-  decrement(int64_t dec) const
+  Decrement(int64_t dec) const
   {
-    TSReleaseAssert(_id != ts::Metrics::NOT_FOUND);
+    CAssert(_id != ts::Metrics::NOT_FOUND);
     _metric->decrement(dec);
   }
 
   void
-  decrement() const
+  Decrement() const
   {
-    decrement(1);
-  }
-
-  [[nodiscard]] int64_t
-  get() const
-  {
-    TSReleaseAssert(_id != TS_ERROR);
-    return _metric->load();
-  }
-
-  void
-  set(int64_t val)
-  {
-    TSReleaseAssert(_id != TS_ERROR);
-    _metric->store(val);
+    Decrement(1);
   }
 
 protected:
@@ -125,25 +124,25 @@ public:
   Counter(const Cript::string_view &name) : super_type(name) { _initialize(ts::Metrics::Counter::create(name)); }
 
   // Counters can only increment, so lets produce some nice compile time erorrs too
-  void decrement(int64_t) = delete;
-  void set(int64_t val)   = delete;
+  void Decrement(int64_t)  = delete;
+  void Setter(int64_t val) = delete;
 
   template <typename T>
   void
-  decrement(T)
+  Decrement(T)
   {
-    static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can only use decrement(), consider Metric::Gauge instead?");
+    static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can only use Increment(), consider Metric::Gauge instead?");
   }
 
   template <typename T>
   void
-  set(T)
+  Setter(T)
   {
     static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can not be set to a value), consider Metric::Gauge instead?");
   }
 
   static self_type *
-  create(const Cript::string_view &name)
+  Create(const Cript::string_view &name)
   {
     auto *ret = new self_type(name);
     auto  id  = ts::Metrics::Counter::create(name);
@@ -164,7 +163,7 @@ public:
   Gauge(const Cript::string_view &name) : super_type(name) { _initialize(ts::Metrics::Gauge::create(name)); }
 
   static self_type *
-  create(const Cript::string_view &name)
+  Create(const Cript::string_view &name)
   {
     auto *ret = new self_type(name);
     auto  id  = ts::Metrics::Gauge::create(name);

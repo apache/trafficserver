@@ -80,7 +80,7 @@ set_server_drain(bool drain)
 }
 
 swoc::Rv<YAML::Node>
-server_start_drain(std::string_view const &id, YAML::Node const &params)
+server_start_drain(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
   swoc::Rv<YAML::Node> resp;
   try {
@@ -103,7 +103,7 @@ server_start_drain(std::string_view const &id, YAML::Node const &params)
 }
 
 swoc::Rv<YAML::Node>
-server_stop_drain(std::string_view const &id, [[maybe_unused]] YAML::Node const &params)
+server_stop_drain(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
 {
   swoc::Rv<YAML::Node> resp;
   if (is_server_draining()) {

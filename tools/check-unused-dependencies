@@ -40,46 +40,35 @@ programs_re = re.compile(r'([^\n ]*_)PROGRAMS \+?= (.*)')
 
 
 def get_dependencies(program):
-    args = [
-        './libtool', '--mode=execute', 'ldd', '--unused', '--function-relocs',
-        program
-    ]
+    args = ['./libtool', '--mode=execute', 'ldd', '--unused', '--function-relocs', program]
     for dependency in subprocess.Popen(args, stdout=subprocess.PIPE).stdout:
         dependency = dependency.decode('utf-8')[:-1]
-        if any(
-            map(
+        if any(map(
                 os.path.basename(dependency).startswith,
-                [
-                    'libdl.so.',      # Because we add -ldl to LIBS
-                    'libgcc_s.so.',
-                    'libm.so.',       # Why does Libtool call ld with -lm?
-                    'libpthread.so.', # Because we add -lpthread to LIBS
-                ])):
+            [
+                'libdl.so.',  # Because we add -ldl to LIBS
+                'libgcc_s.so.',
+                'libm.so.',  # Why does Libtool call ld with -lm?
+                'libpthread.so.',  # Because we add -lpthread to LIBS
+            ])):
             continue
 
         progbase = os.path.basename(program)
 
         # clang+asan pulls in dependencies for these specific tools:
-        if any(
-            map(
-                progbase.__eq__,
-                [
-                    'jtest',
-                    'http_load',
-                    'escape_mapper',
-                ])):
-            if any(
-                map(
-                    os.path.basename(dependency).startswith,
-                    [
-                        'librt.so',
-                        'libresolv.so',
-                    ])):
+        if any(map(progbase.__eq__, [
+                'http_load',
+                'escape_mapper',
+        ])):
+            if any(map(os.path.basename(dependency).startswith, [
+                    'librt.so',
+                    'libresolv.so',
+            ])):
                 continue
-
 
         if re.sub(r'\s+', '', dependency):
             yield dependency
+
 
 success = True
 filename = 'config.status'
@@ -91,11 +80,7 @@ for filename in config_files.split():
         contents = open(filename).read()
         contents = contents.replace('\\\n', '')
         for prefix, programs in programs_re.findall(contents):
-            if prefix not in [
-                'EXTRA_',
-                'check_',
-                'noinst_'
-            ]:
+            if prefix not in ['EXTRA_', 'check_', 'noinst_']:
                 for program in programs.split():
                     program = os.path.join(os.path.dirname(filename), program)
                     if os.path.exists(program):

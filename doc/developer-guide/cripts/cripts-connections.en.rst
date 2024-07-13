@@ -34,8 +34,8 @@ implies that access to these objects must be ``borrowed``.
    do_remap()
    {
      static Matcher::Range::IP ALLOW_LIST({"192.168.201.0/24", "10.0.0.0/8"});
-     borrow conn = Client::Connection::get();
-     auto client_ip = conn.ip();
+     borrow conn = Client::Connection::Get();
+     auto client_ip = conn.IP();
 
      if (!ALLOW_LIST.contains(client_ip)) {
        // Deny the request (see examples for details)
@@ -52,7 +52,7 @@ Connection Object           Description
 =======================   =========================================================================
 
 As usual, the ``Server::Connection`` object is only available assuming that the request
-is a forward proxy request, and you borrow it with the ``get()`` method. On cache misses,
+is a forward proxy request, and you borrow it with the ``Get()`` method. On cache misses,
 there is no such connection.
 
 .. _cripts-connections-methods:
@@ -66,14 +66,14 @@ connections. These are:
 =======================   =========================================================================
 Method                    Description
 =======================   =========================================================================
-``count()``               The number of transactions processed on the connection so far.
-``ip()``                  The IP address of the connection.
-``localIP()``             The server (ATS) IP address of the connection.
-``isInternal()``          Returns ``true`` or ``false`` if the connection is internal to ATS.
-``socket()``              Returns the raw socket structure for the connection (use with care).
+``Count()``               The number of transactions processed on the connection so far.
+``IP()``                  The IP address of the connection.
+``LocalIP()``             The server (ATS) IP address of the connection.
+``IsInternal()``          Returns ``true`` or ``false`` if the connection is internal to ATS.
+``Socket()``              Returns the raw socket structure for the connection (use with care).
 =======================   =========================================================================
 
-The ``ip()`` and ``localIP()`` methods return the IP address as an object. In addition to the
+The ``IP()`` and ``LocalIP()`` methods return the IP address as an object. In addition to the
 automatic string conversion, it also has a special semantic string conversion which takes
 IPv4 and IPv6 CIDR sizes. For example:
 
@@ -81,8 +81,8 @@ IPv4 and IPv6 CIDR sizes. For example:
 
    do_remap()
    {
-     borrow conn = Client::Connection::get();
-     auto ip = conn.ip();
+     borrow conn = Client::Connection::Get();
+     auto ip = conn.IP();
 
      CDebug("Client IP CIDR: {}", ip.string(24, 64));
 
@@ -104,7 +104,7 @@ Variable                   Description
 ``mark``                  Manage the Mark value for the connection socket.
 =======================   =========================================================================
 
-For other advanced features, a Cript has access to the socket file descriptor, via the ``fd()``
+For other advanced features, a Cript has access to the socket file descriptor, via the ``FD()``
 method of the connection object.
 
 .. note::
@@ -116,7 +116,7 @@ Lets show an example of how one could use these variables:
 
    do_remap()
    {
-     borrow conn = Client::Connection::get();
+     borrow conn = Client::Connection::Get();
 
      conn.congestion = "bbrv2";
      conn.pacing = 100;
@@ -143,7 +143,7 @@ Field                     Description
 
 In addition to these convenience fields, the ``tcpinfo`` object provides a method to access the raw
 TCP information as well in the ``info`` field. There's also a predefined log format, which can be
-accessed via the ``log()`` method. See the ``tcpinfo`` plugin in ATS for details.
+accessed via the ``Log()`` method. See the ``tcpinfo`` plugin in ATS for details.
 
 .. _cripts-connections-geo-ip:
 

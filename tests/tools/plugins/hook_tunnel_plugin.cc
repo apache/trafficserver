@@ -34,7 +34,7 @@ static const char PLUGIN_TAG[] = PLUGIN_NAME;
 static DbgCtl     plugin_ctl{PLUGIN_TAG};
 
 static int
-tunnelStart(TSCont cont, TSEvent event, void *edata)
+tunnelStart(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp   = reinterpret_cast<TSHttpTxn>(edata);
   TSTxnType retval = TSHttpTxnTypeGet(txnp);
@@ -52,7 +52,7 @@ tunnelStart(TSCont cont, TSEvent event, void *edata)
 }
 
 static int
-transactionStart(TSCont cont, TSEvent event, void *edata)
+transactionStart(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp   = reinterpret_cast<TSHttpTxn>(edata);
   TSTxnType retval = TSHttpTxnTypeGet(txnp);
@@ -68,7 +68,7 @@ transactionStart(TSCont cont, TSEvent event, void *edata)
 }
 
 static int
-handleMsg(TSCont cont, TSEvent event, void *edata)
+handleMsg(TSCont /* cont ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   Dbg(plugin_ctl, "handleMsg event=%d", event);
   TSStatIntIncrement(stat_test_done, 1);
@@ -76,7 +76,7 @@ handleMsg(TSCont cont, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int argc, const char **argv)
+TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   TSPluginRegistrationInfo info;
 

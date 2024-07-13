@@ -104,7 +104,7 @@ sessionHandler(TSCont continuation, TSEvent event, void *d)
 }
 
 int
-globalHandler(TSCont continuation, TSEvent event, void *data)
+globalHandler(TSCont /* continuation ATS_UNUSED */, TSEvent event, void *data)
 {
   if (event == TS_EVENT_HTTP_SSN_START) {
     TSHttpSsn session = static_cast<TSHttpSsn>(data);

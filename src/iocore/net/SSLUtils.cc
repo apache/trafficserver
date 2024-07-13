@@ -477,7 +477,7 @@ DH_get_2048_256()
 #endif
 
 bool
-SSLMultiCertConfigLoader::_enable_ktls(SSL_CTX *ctx)
+SSLMultiCertConfigLoader::_enable_ktls([[maybe_unused]] SSL_CTX *ctx)
 {
 #ifdef SSL_OP_ENABLE_KTLS
   if (SSLConfigParams::ssl_ktls_enabled) {
@@ -1417,7 +1417,7 @@ SSLMultiCertConfigLoader::_set_cipher_suites_for_legacy_versions(SSL_CTX *ctx)
 }
 
 bool
-SSLMultiCertConfigLoader::_set_cipher_suites(SSL_CTX *ctx)
+SSLMultiCertConfigLoader::_set_cipher_suites([[maybe_unused]] SSL_CTX *ctx)
 {
 #if TS_USE_TLS_SET_CIPHERSUITES
   if (this->_params->server_tls13_cipher_suites != nullptr) {
@@ -1431,7 +1431,7 @@ SSLMultiCertConfigLoader::_set_cipher_suites(SSL_CTX *ctx)
 }
 
 bool
-SSLMultiCertConfigLoader::_set_curves(SSL_CTX *ctx)
+SSLMultiCertConfigLoader::_set_curves([[maybe_unused]] SSL_CTX *ctx)
 {
 #if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (this->_params->server_groups_list != nullptr) {

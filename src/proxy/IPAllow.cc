@@ -52,7 +52,7 @@ DbgCtl dbg_ctl_ip_allow("ip_allow");
 namespace swoc
 {
 BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, IpAllow const *obj)
+bwformat(BufferWriter &w, Spec const & /* spec ATS_UNUSED */, IpAllow const *obj)
 {
   return w.print("{}[{}]", obj->MODULE_NAME, obj->get_config_file().c_str());
 }
@@ -204,7 +204,7 @@ IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_conf
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, Spec const &spec, IpAllow::IpMap const &map)
+bwformat(BufferWriter &w, Spec const & /* spec ATS_UNUSED */, IpAllow::IpMap const &map)
 {
   w.print("{} entries", map.count());
   for (auto const &spot : map) {

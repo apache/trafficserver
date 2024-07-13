@@ -34,12 +34,12 @@ class Common : public Cript::Bundle::Base
   using super_type = Cript::Bundle::Base;
   using self_type  = Common;
 
-  using RecordsList = std::vector<std::pair<Cript::Records, const Cript::Records::ValueType>>;
+  using RecordsList = std::vector<std::pair<const Cript::Records *, const Cript::Records::ValueType>>;
 
 public:
   using super_type::Base;
 
-  bool validate(std::vector<Cript::Bundle::Error> &errors) const override;
+  bool Validate(std::vector<Cript::Bundle::Error> &errors) const override;
 
   // This is the factory to create an instance of this bundle
   static self_type &
@@ -47,13 +47,13 @@ public:
   {
     auto *entry = new self_type();
 
-    inst.addBundle(entry);
+    inst.AddBundle(entry);
 
     return *entry;
   }
 
   [[nodiscard]] const Cript::string &
-  name() const override
+  Name() const override
   {
     return _name;
   }
@@ -61,15 +61,15 @@ public:
   self_type &
   dscp(int val)
   {
-    needCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(Cript::Callbacks::DO_REMAP);
     _dscp = val;
 
     return *this;
   }
 
   self_type &via_header(const Cript::string_view &destination, const Cript::string_view &value);
-  self_type &set_config(const Cript::string_view name, const Cript::Records::ValueType value);
-  self_type &set_config(std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> configs);
+  self_type &set_config(const Cript::string_view name, const Cript::Records::ValueType &value);
+  self_type &set_config(const std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> &configs);
 
   void doRemap(Cript::Context *context) override;
 

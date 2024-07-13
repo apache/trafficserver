@@ -156,7 +156,7 @@ print_headers(TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &ss)
 }
 
 void
-log_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, char const *type_msg)
+log_headers(TSHttpTxn /* txn ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_loc, char const *type_msg)
 {
   if (dbg_ctl_hdrs.on()) {
     std::stringstream output;

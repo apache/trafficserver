@@ -17,15 +17,19 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+#include <unistd.h>
+
 #include <stdexcept>
 #include <chrono>
 #include <sstream>
 #include <utility>
+#include <thread>
 
 #include "tsutil/ts_bw_format.h"
 
 #include "shared/rpc/IPCSocketClient.h"
 #include <tscore/ink_assert.h>
+#include <tscore/ink_sock.h>
 
 namespace
 {
@@ -93,40 +97,88 @@ public:
     return _written ? _written : _bw.size();
   }
 };
-
 } // namespace
 
 namespace shared::rpc
 {
+
 IPCSocketClient::self_reference
-IPCSocketClient::connect()
+IPCSocketClient::connect(std::chrono::milliseconds ms, int attempts)
 {
+  std::string text;
+  int         err, tries{attempts};
+  bool        done{false};
   _sock = socket(AF_UNIX, SOCK_STREAM, 0);
+
   if (this->is_closed()) {
-    std::string text;
-    swoc::bwprint(text, "connect: error creating new socket. Why?: {}\n", std::strerror(errno));
-    throw std::runtime_error{text};
-  }
-  _server.sun_family = AF_UNIX;
-  std::strncpy(_server.sun_path, _path.c_str(), sizeof(_server.sun_path) - 1);
-  if (::connect(_sock, (struct sockaddr *)&_server, sizeof(struct sockaddr_un)) < 0) {
-    this->close();
-    std::string text;
-    swoc::bwprint(text, "connect: Couldn't open connection with {}. Why?: {}\n", _path, std::strerror(errno));
-    throw std::runtime_error{text};
+    throw std::runtime_error(swoc::bwprint(text, "connect: error creating new socket. Reason: {}\n", std::strerror(errno)));
   }
 
+  if (safe_fcntl(_sock, F_SETFL, O_NONBLOCK) < 0) {
+    this->close();
+    throw std::runtime_error(swoc::bwprint(text, "connect: fcntl error. Reason: {}\n", std::strerror(errno)));
+  }
+
+  _server.sun_family = AF_UNIX;
+  std::strncpy(_server.sun_path, _path.c_str(), sizeof(_server.sun_path) - 1);
+
+  // Very simple connect and retry. We will just try to connect to the Unix Domain
+  // Socket and if it tell us to retry we just wait for a few ms and try again for
+  // X times.
+  do {
+    --tries;
+    if (::connect(_sock, (struct sockaddr *)&_server, sizeof(struct sockaddr_un)) >= 0) {
+      done = true;
+      break;
+    }
+
+    if (errno == EAGAIN || errno == EINPROGRESS) {
+      // Connection cannot be completed immediately
+      // EAGAIN for UDS should suffice, but just in case.
+      std::this_thread::sleep_for(ms);
+      err = errno;
+      continue;
+    } else {
+      // No worth it.
+      err = errno;
+      break;
+    }
+  } while (tries != 0);
+
+  if ((tries == 0 && !done) || !done) {
+    this->close();
+    errno = err;
+    throw std::runtime_error(swoc::bwprint(text, "connect(attempts={}/{}): Couldn't open connection with {}. Last error: {}({})\n",
+                                           (attempts - tries), attempts, _path, std::strerror(errno), errno));
+  }
   return *this;
 }
 
+ssize_t
+IPCSocketClient::_safe_write(int fd, const char *buffer, int len)
+{
+  ssize_t written{0};
+  while (written < len) {
+    const int ret = ::write(fd, buffer + written, len - written);
+    if (ret == -1) {
+      if (errno == EAGAIN || errno == EINTR) {
+        continue;
+      }
+      return -1;
+    }
+    written += ret;
+  }
+
+  return written;
+}
 IPCSocketClient::self_reference
 IPCSocketClient ::send(std::string_view data)
 {
   std::string msg{data};
-  if (::write(_sock, msg.c_str(), msg.size()) < 0) {
+  if (_safe_write(_sock, msg.c_str(), msg.size()) == -1) {
     this->close();
     std::string text;
-    throw std::runtime_error{swoc::bwprint(text, "Error writing on stream socket {}", std ::strerror(errno))};
+    throw std::runtime_error{swoc::bwprint(text, "Error writing on stream socket {}({})", std::strerror(errno), errno)};
   }
 
   return *this;
@@ -144,9 +196,12 @@ IPCSocketClient::read_all(std::string &content)
 
   ReadStatus readStatus{ReadStatus::UNKNOWN};
   while (true) {
-    auto          buf     = bs.writable_data();
-    const auto    to_read = bs.available();
-    const ssize_t ret     = ::read(_sock, buf, to_read);
+    auto       buf     = bs.writable_data();
+    const auto to_read = bs.available();
+    ssize_t    ret{-1};
+    do {
+      ret = ::read(_sock, buf, to_read);
+    } while (ret < 0 && (errno == EAGAIN || errno == EINTR));
 
     if (ret > 0) {
       bs.save(ret);

@@ -29,6 +29,9 @@
 class TLSEarlyDataSupport
 {
 public:
+  // The default size on OpenSSL is 16384.
+  static constexpr uint32_t DEFAULT_MAX_EARLY_DATA_SIZE = 16384;
+
   virtual ~TLSEarlyDataSupport() = default;
 
   static void                 initialize();

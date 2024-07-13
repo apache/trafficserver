@@ -27,6 +27,7 @@
 #include <tuple>
 
 #include "ts/ts.h"
+#include "cripts/Lulu.hpp"
 
 namespace Matcher
 {
@@ -41,7 +42,7 @@ namespace Range
     IP()                              = delete;
     void operator=(const self_type &) = delete;
 
-    explicit IP(Cript::string_view ip) { add(ip); }
+    explicit IP(Cript::string_view ip) { Add(ip); }
 
     IP(self_type const &ip)
     {
@@ -62,29 +63,53 @@ namespace Range
     IP(std::initializer_list<Cript::string_view> list)
     {
       for (auto &it : list) {
-        add(it);
+        Add(it);
       }
     }
 
     bool
-    match(sockaddr const *target, void **ptr) const
+    Match(sockaddr const *target) const
     {
       return contains(swoc::IPAddr(target));
     }
 
     bool
-    match(in_addr_t target, void **ptr) const
+    Match(in_addr_t target) const
+    {
+      return contains(swoc::IPAddr(target));
+    }
+
+    bool
+    Match(swoc::IPAddr const &target) const
+    {
+      return contains(target);
+    }
+
+    bool
+    Contains(swoc::IPAddr const &target) const
+    {
+      return contains(target);
+    }
+
+    bool
+    Contains(sockaddr const *target) const
+    {
+      return contains(swoc::IPAddr(target));
+    }
+
+    bool
+    Contains(in_addr_t target) const
     {
       return contains(swoc::IPAddr(target));
     }
 
     void
-    add(Cript::string_view str)
+    Add(Cript::string_view str)
     {
       if (swoc::IPRange r; r.load(str)) {
         mark(r);
       } else {
-        TSReleaseAssert("Bad IP range");
+        CFatal("[Matcher::Range::IP] Invalid IP range: %.*s", static_cast<int>(str.size()), str.data());
       }
     }
 
@@ -124,17 +149,17 @@ namespace List
     // Make sure we only allow the Cript::Method::* constants
 
     [[nodiscard]] bool
-    contains(Header::Method method) const
+    Contains(Header::Method method) const
     {
-      auto data = method.data();
+      auto data = method.Data();
 
-      return end() != std::find_if(begin(), end(), [&](const Header::Method &header) { return header.data() == data; });
+      return end() != std::find_if(begin(), end(), [&](const Header::Method &header) { return header.Data() == data; });
     }
 
     [[nodiscard]] bool
-    match(Header::Method method) const
+    Match(Header::Method method) const
     {
-      return contains(method);
+      return Contains(method);
     }
 
   }; // End class Method
@@ -164,7 +189,7 @@ public:
     explicit
     operator bool() const
     {
-      return matched();
+      return Matched();
     }
 
     Cript::string_view
@@ -172,7 +197,7 @@ public:
     {
       Cript::string_view ret;
 
-      if ((count() > ix) && _ovector) {
+      if ((Count() > ix) && _ovector) {
         ret = {_subject.substr(_ovector[ix * 2], _ovector[ix * 2 + 1] - _ovector[ix * 2])};
       }
 
@@ -180,19 +205,19 @@ public:
     }
 
     [[nodiscard]] bool
-    matched() const
+    Matched() const
     {
       return _match != 0;
     }
 
     [[nodiscard]] RegexEntries::size_type
-    matchIX() const
+    MatchIX() const
     {
       return _match;
     }
 
     [[nodiscard]] uint32_t
-    count() const
+    Count() const
     {
       return _data ? pcre2_get_ovector_count(_data) : 0;
     }
@@ -213,24 +238,24 @@ public:
   PCRE(const self_type &)           = delete;
   void operator=(const self_type &) = delete;
 
-  PCRE(Cript::string_view regex, uint32_t options = 0) { add(regex, options); }
+  PCRE(Cript::string_view regex, uint32_t options = 0) { Add(regex, options); }
 
   PCRE(std::initializer_list<Cript::string_view> list, uint32_t options = 0)
   {
     for (auto &it : list) {
-      add(it, options);
+      Add(it, options);
     }
   }
 
   ~PCRE();
 
-  void   add(Cript::string_view regex, uint32_t options = 0, bool jit = true);
-  Result contains(Cript::string_view subject, PCRE2_SIZE offset = 0, uint32_t options = 0);
+  void   Add(Cript::string_view regex, uint32_t options = 0, bool jit = true);
+  Result Contains(Cript::string_view subject, PCRE2_SIZE offset = 0, uint32_t options = 0);
 
   Result
-  match(Cript::string_view subject, PCRE2_SIZE offset = 0, uint32_t options = 0)
+  Match(Cript::string_view subject, PCRE2_SIZE offset = 0, uint32_t options = 0)
   {
-    return contains(subject, offset, options);
+    return Contains(subject, offset, options);
   }
 
 private:

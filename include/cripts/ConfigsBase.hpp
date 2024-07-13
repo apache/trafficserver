@@ -19,40 +19,14 @@
 
 #pragma once
 
-#include "ts/ts.h"
+#include <unordered_map>
 
+#include "ts/ts.h"
 #include "cripts/Lulu.hpp"
 #include "cripts/Context.hpp"
 
 namespace Cript
 {
-class IntConfig
-{
-public:
-  IntConfig() = delete;
-  explicit IntConfig(TSOverridableConfigKey key) : _key(key) {}
-
-  // Implemented later in Configs.cc
-  integer _get(Cript::Context *context) const;
-  void    _set(Cript::Context *context, integer value);
-
-private:
-  const TSOverridableConfigKey _key;
-}; // namespace Criptclass IntConfig
-
-class FloatConfig
-{
-public:
-  FloatConfig() = delete;
-  explicit FloatConfig(TSOverridableConfigKey key) : _key(key) {}
-
-  // Implemented later in Configs.cc
-  float _get(Cript::Context *context) const;
-  void  _set(Cript::Context *context, float value);
-
-private:
-  const TSOverridableConfigKey _key;
-};
 
 class Records
 {
@@ -70,35 +44,137 @@ public:
   explicit Records(const Cript::string_view name);
 
   ValueType _get(const Cript::Context *context) const;
-  bool      _set(const Cript::Context *context, const ValueType value);
+  bool      _set(const Cript::Context *context, const ValueType &value) const;
+
+  // Optimizations, we can't use string_view in the ValueType since we need persistent storage.
+  // Be careful with the setSV() and make sure there's underlying storage!
+  const Cript::string_view GetSV(const Cript::Context *context) const;
+  bool                     SetSV(const Cript::Context *context, const Cript::string_view value) const;
 
   [[nodiscard]] TSOverridableConfigKey
-  key() const
+  Key() const
   {
     return _key;
   }
 
   [[nodiscard]] TSRecordDataType
-  type() const
+  Type() const
   {
     return _type;
   }
 
   [[nodiscard]] Cript::string_view
-  name() const
+  Name() const
   {
     return _name;
   }
 
   [[nodiscard]] bool
-  loaded() const
+  Loaded() const
   {
     return (_key != TS_CONFIG_NULL && _type != TS_RECORDDATATYPE_NULL);
   }
+
+  [[nodiscard]] bool
+  IsInteger() const
+  {
+    return _type == TS_RECORDDATATYPE_INT;
+  }
+
+  [[nodiscard]] bool
+  IsFloat() const
+  {
+    return _type == TS_RECORDDATATYPE_FLOAT;
+  }
+
+  [[nodiscard]] bool
+  IsString() const
+  {
+    return _type == TS_RECORDDATATYPE_STRING;
+  }
+
+  static void           Add(const Records *rec);
+  static const Records *Lookup(const Cript::string_view name);
 
 private:
   Cript::string          _name;
   TSOverridableConfigKey _key  = TS_CONFIG_NULL;
   TSRecordDataType       _type = TS_RECORDDATATYPE_NULL;
-};
+
+  static std::unordered_map<Cript::string_view, const Records *> _gRecords;
+}; // class Records
+
+class IntConfig
+{
+public:
+  IntConfig() = delete;
+  explicit IntConfig(const Cript::string_view name) : _record(name) { Records::Add(&_record); }
+
+  float
+  _get(Cript::Context *context) const
+  {
+    return std::get<TSMgmtInt>(_record._get(context));
+  }
+
+  void
+  _set(Cript::Context *context, integer value)
+  {
+    _record._set(context, value);
+  }
+
+private:
+  const Records _record;
+}; // class IntConfig
+
+class FloatConfig
+{
+public:
+  FloatConfig() = delete;
+  explicit FloatConfig(const Cript::string_view name) : _record(name) { Records::Add(&_record); }
+
+  float
+  _get(Cript::Context *context) const
+  {
+    return std::get<TSMgmtFloat>(_record._get(context));
+  }
+
+  void
+  _set(Cript::Context *context, float value)
+  {
+    _record._set(context, value);
+  }
+
+private:
+  const Records _record;
+}; // class FloatConfig
+
+class StringConfig
+{
+public:
+  StringConfig() = delete;
+  explicit StringConfig(const Cript::string_view name) : _record(name) { Records::Add(&_record); }
+
+  std::string
+  _get(Cript::Context *context) const
+  {
+    return std::get<std::string>(_record._get(context));
+  }
+
+  void
+  _set(Cript::Context *context, std::string &value)
+  {
+    _record.SetSV(context, value);
+  }
+
+  // Only for the string type!
+  const std::string_view
+  GetSV(Cript::Context *context) const
+  {
+    return _record.GetSV(context);
+  }
+
+private:
+  const Records _record;
+}; // class StringConfig
+
 } // namespace Cript

@@ -454,7 +454,6 @@ check_symbol_exists(BIO_get_shutdown "openssl/bio.h" HAVE_BIO_GET_SHUTDOWN)
 check_symbol_exists(BIO_meth_get_ctrl "openssl/bio.h" HAVE_BIO_METH_GET_CTRL)
 check_symbol_exists(BIO_meth_get_create "openssl/bio.h" HAVE_BIO_METH_GET_CREATE)
 check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTROY)
-check_symbol_exists(HMAC_CTX_new "openssl/hmac.h" HAVE_HMAC_CTX_NEW)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
 check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" TS_USE_HELLO_CB)
@@ -537,8 +536,8 @@ if(ENABLE_AUTEST)
       ""
       CACHE STRING "Additional options for autest (default \"\")"
   )
-  set(PROXY_VERIFIER_VERSION "v2.10.1")
-  set(PROXY_VERIFIER_HASH "SHA1=0f189a37596d7488b5b81b5547df6fc1eadf56a1")
+  set(PROXY_VERIFIER_VERSION "v2.12.0")
+  set(PROXY_VERIFIER_HASH "SHA1=8e9adc6e0b31251ca8e6fc2064ae54e5d752bb72")
   include(proxy-verifier)
 endif()
 
@@ -598,7 +597,7 @@ add_subdirectory(lib)
 # Keep this after lib because lib is made up of third party libraries, so if
 # there are warnings, we can't do anything about it.
 # Note: -DCMAKE_COMPILE_WARNING_AS_ERROR=ON will turn warnings into errors.
-add_compile_options(-pipe -Wall -Wextra -Wno-unused-parameter)
+add_compile_options(-pipe -Wall -Wextra)
 add_compile_options(
   "$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override;-Wno-vla-extension;-fno-strict-aliasing>"
 )
@@ -649,6 +648,7 @@ if(CURSES_FOUND)
   add_subdirectory(src/traffic_top)
 endif()
 add_subdirectory(src/traffic_via)
+
 if(ENABLE_CRIPTS)
   add_subdirectory(src/cripts)
 endif()
@@ -673,6 +673,9 @@ add_subdirectory(configs)
 if(ENABLE_EXAMPLE)
   add_subdirectory(example)
 endif()
+
+# add any extra subdirectories to the build here
+add_subdirectory(ext)
 
 if(ENABLE_DOCS)
   set(DOC_LANG

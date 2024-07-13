@@ -45,6 +45,17 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <utility>
+
+namespace
+{
+//
+constexpr int ja3_hash_included_byte_count{16};
+static_assert(ja3_hash_included_byte_count <= MD5_DIGEST_LENGTH);
+
+constexpr int ja3_hash_hex_string_with_null_terminator_length{2 * ja3_hash_included_byte_count + 1};
+
+} // end anonymous namespace
 
 const char            *PLUGIN_NAME = "ja3_fingerprint";
 static DbgCtl          dbg_ctl{PLUGIN_NAME};
@@ -56,8 +67,22 @@ static int             global_modify_incoming_enabled = 0;
 
 struct ja3_data {
   std::string ja3_string;
-  char        md5_string[33];
+  char        md5_string[ja3_hash_hex_string_with_null_terminator_length];
   char        ip_addr[INET6_ADDRSTRLEN];
+
+  char const *
+  update_fingerprint()
+  {
+    // Validate that the buffer is the same size as we will be writing into.
+    static_assert(ja3_hash_hex_string_with_null_terminator_length == sizeof(this->md5_string));
+
+    unsigned char digest[MD5_DIGEST_LENGTH];
+    MD5(reinterpret_cast<unsigned char const *>(this->ja3_string.c_str()), this->ja3_string.length(), digest);
+    for (int i{0}; i < ja3_hash_included_byte_count; ++i) {
+      std::snprintf(&(this->md5_string[i * 2]), sizeof(this->md5_string) - (i * 2), "%02x", static_cast<unsigned int>(digest[i]));
+    }
+    return this->md5_string;
+  }
 };
 
 struct ja3_remap_info {
@@ -163,57 +188,84 @@ append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, const char *field, int field_len
   TSHandleMLocRelease(bufp, hdr_loc, target);
 }
 
-static int
-client_hello_ja3_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
+static ja3_data *
+create_ja3_data(TSVConn const ssl_vc)
 {
-  TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
-  switch (event) {
-  case TS_EVENT_SSL_CLIENT_HELLO: {
-    TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
+  ja3_data         *result = new ja3_data;
+  std::string const raw_ja3_string{custom_get_ja3(reinterpret_cast<SSL *>(TSVConnSslConnectionGet(ssl_vc)))};
+  result->ja3_string = std::move(raw_ja3_string);
+  getIP(TSNetVConnRemoteAddrGet(ssl_vc), result->ip_addr);
+  return result;
+}
 
-    // OpenSSL handle
-    SSL *ssl = reinterpret_cast<SSL *>(sslobj);
-
-    ja3_data *data = new ja3_data;
-    data->ja3_string.append(custom_get_ja3(ssl));
-    getIP(TSNetVConnRemoteAddrGet(ssl_vc), data->ip_addr);
-
-    TSUserArgSet(ssl_vc, ja3_idx, static_cast<void *>(data));
-    Dbg(dbg_ctl, "client_hello_ja3_handler(): JA3: %s", data->ja3_string.c_str());
-
-    // MD5 hash
-    unsigned char digest[MD5_DIGEST_LENGTH];
-    MD5((unsigned char *)data->ja3_string.c_str(), data->ja3_string.length(), digest);
-
-    // Validate that the buffer is the same size as we will be writing into (compile time)
-    static_assert((16 * 2 + 1) == sizeof(data->md5_string));
-    for (int i = 0; i < 16; i++) {
-      snprintf(&(data->md5_string[i * 2]), sizeof(data->md5_string) - (i * 2), "%02x", static_cast<unsigned int>(digest[i]));
-    }
-    Dbg(dbg_ctl, "Fingerprint: %s", data->md5_string);
-    break;
+static int
+tls_client_hello_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
+{
+  if (TS_EVENT_SSL_CLIENT_HELLO != event) {
+    Dbg(dbg_ctl, "Unexpected event %d.", event);
+    // We ignore the event, but we don't want to reject the connection.
+    return TS_SUCCESS;
   }
-  case TS_EVENT_VCONN_CLOSE: {
-    // Clean up
-    ja3_data *data = static_cast<ja3_data *>(TSUserArgGet(ssl_vc, ja3_idx));
 
-    if (data == nullptr) {
-      Dbg(dbg_ctl, "client_hello_ja3_handler(): Failed to retrieve ja3 data at VCONN_CLOSE.");
-      return TS_ERROR;
-    }
-
-    TSUserArgSet(ssl_vc, ja3_idx, nullptr);
-
-    delete data;
-    break;
-  }
-  default: {
-    Dbg(dbg_ctl, "client_hello_ja3_handler(): Unexpected event.");
-    break;
-  }
-  }
+  TSVConn const ssl_vc{static_cast<TSVConn>(edata)};
+  ja3_data     *ja3_vconn_data{create_ja3_data(ssl_vc)};
+  TSUserArgSet(ssl_vc, ja3_idx, static_cast<void *>(ja3_vconn_data));
+  Dbg(dbg_ctl, "JA3 raw: %s", ja3_vconn_data->ja3_string.c_str());
+  char const *fingerprint{ja3_vconn_data->update_fingerprint()};
+  Dbg(dbg_ctl, "JA3 fingerprint: %s", fingerprint);
   TSVConnReenable(ssl_vc);
   return TS_SUCCESS;
+}
+
+static int
+vconn_close_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
+{
+  if (TS_EVENT_VCONN_CLOSE != event) {
+    Dbg(dbg_ctl, "Unexpected event %d.", event);
+    // We ignore the event, but we don't want to reject the connection.
+    return TS_SUCCESS;
+  }
+
+  TSVConn const ssl_vc{static_cast<TSVConn>(edata)};
+  delete static_cast<ja3_data *>(TSUserArgGet(ssl_vc, ja3_idx));
+  TSUserArgSet(ssl_vc, ja3_idx, nullptr);
+  TSVConnReenable(ssl_vc);
+  return TS_SUCCESS;
+}
+
+static void
+modify_ja3_headers(TSCont contp, TSHttpTxn txnp, ja3_data const *ja3_vconn_data)
+{
+  // Decide global or remap
+  ja3_remap_info *remap_info = static_cast<ja3_remap_info *>(TSContDataGet(contp));
+  bool            raw_flag   = remap_info ? remap_info->raw_enabled : global_raw_enabled;
+  bool            log_flag   = remap_info ? remap_info->log_enabled : global_log_enabled;
+  Dbg(dbg_ctl, "Found ja3 string.");
+
+  // Get handle to headers
+  TSMBuffer bufp;
+  TSMLoc    hdr_loc;
+  if (global_modify_incoming_enabled) {
+    TSAssert(TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc));
+  } else {
+    TSAssert(TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc));
+  }
+
+  // Add JA3 md5 fingerprints
+  append_to_field(bufp, hdr_loc, "x-ja3-sig", 9, ja3_vconn_data->md5_string, 32);
+
+  // If raw string is configured, added JA3 raw string to header as well
+  if (raw_flag) {
+    append_to_field(bufp, hdr_loc, "x-ja3-raw", 9, ja3_vconn_data->ja3_string.data(), ja3_vconn_data->ja3_string.size());
+  }
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+
+  // Write to logfile
+  if (log_flag) {
+    TSTextLogObjectWrite(pluginlog, "Client IP: %s\tJA3: %.*s\tMD5: %.*s", ja3_vconn_data->ip_addr,
+                         static_cast<int>(ja3_vconn_data->ja3_string.size()), ja3_vconn_data->ja3_string.data(), 32,
+                         ja3_vconn_data->md5_string);
+  }
 }
 
 static int
@@ -221,54 +273,26 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSEvent expected_event = global_modify_incoming_enabled ? TS_EVENT_HTTP_READ_REQUEST_HDR : TS_EVENT_HTTP_SEND_REQUEST_HDR;
   if (event != expected_event) {
-    TSError("[%s] req_hdr_ja3_handler(): Unexpected event, got %d, expected %d", PLUGIN_NAME, event, expected_event);
+    TSError("[%s] Unexpected event, got %d, expected %d", PLUGIN_NAME, event, expected_event);
     TSAssert(event == expected_event);
   }
 
-  TSHttpTxn txnp  = nullptr;
-  TSHttpSsn ssnp  = nullptr;
-  TSVConn   vconn = nullptr;
+  TSHttpTxn txnp{};
+  TSHttpSsn ssnp{};
+  TSVConn   vconn{};
   if ((txnp = static_cast<TSHttpTxn>(edata)) == nullptr || (ssnp = TSHttpTxnSsnGet(txnp)) == nullptr ||
       (vconn = TSHttpSsnClientVConnGet(ssnp)) == nullptr) {
-    Dbg(dbg_ctl, "req_hdr_ja3_handler(): Failure to retrieve txn/ssn/vconn object.");
+    Dbg(dbg_ctl, "Failure to retrieve txn/ssn/vconn object.");
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
 
   // Retrieve ja3_data from vconn args
-  ja3_data *data = static_cast<ja3_data *>(TSUserArgGet(vconn, ja3_idx));
-  if (data) {
-    // Decide global or remap
-    ja3_remap_info *remap_info = static_cast<ja3_remap_info *>(TSContDataGet(contp));
-    bool            raw_flag   = remap_info ? remap_info->raw_enabled : global_raw_enabled;
-    bool            log_flag   = remap_info ? remap_info->log_enabled : global_log_enabled;
-    Dbg(dbg_ctl, "req_hdr_ja3_handler(): Found ja3 string.");
-
-    // Get handle to headers
-    TSMBuffer bufp;
-    TSMLoc    hdr_loc;
-    if (global_modify_incoming_enabled) {
-      TSAssert(TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc));
-    } else {
-      TSAssert(TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc));
-    }
-
-    // Add JA3 md5 fingerprints
-    append_to_field(bufp, hdr_loc, "X-JA3-Sig", 9, data->md5_string, 32);
-
-    // If raw string is configured, added JA3 raw string to header as well
-    if (raw_flag) {
-      append_to_field(bufp, hdr_loc, "x-JA3-RAW", 9, data->ja3_string.data(), data->ja3_string.size());
-    }
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-
-    // Write to logfile
-    if (log_flag) {
-      TSTextLogObjectWrite(pluginlog, "Client IP: %s\tJA3: %.*s\tMD5: %.*s", data->ip_addr,
-                           static_cast<int>(data->ja3_string.size()), data->ja3_string.data(), 32, data->md5_string);
-    }
+  ja3_data const *ja3_vconn_data = static_cast<ja3_data *>(TSUserArgGet(vconn, ja3_idx));
+  if (ja3_vconn_data) {
+    modify_ja3_headers(contp, txnp, ja3_vconn_data);
   } else {
-    Dbg(dbg_ctl, "req_hdr_ja3_handler(): ja3 data not set. Not SSL vconn. Abort.");
+    Dbg(dbg_ctl, "ja3 data not set. Not SSL vconn. Abort.");
   }
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return TS_SUCCESS;
@@ -288,19 +312,19 @@ read_config_option(int argc, const char *argv[], int &raw, int &log, int &modify
   while ((opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopts, nullptr)) >= 0) {
     switch (opt) {
     case '?':
-      Dbg(dbg_ctl, "read_config_option(): Unrecognized command arguments.");
+      Dbg(dbg_ctl, "Unrecognized command arguments.");
     case 0:
     case -1:
       break;
     default:
-      Dbg(dbg_ctl, "read_config_option(): Unexpected options error.");
+      Dbg(dbg_ctl, "Unexpected options error.");
       return false;
     }
   }
 
-  Dbg(dbg_ctl, "read_config_option(): ja3 raw is %s", (raw == 1) ? "enabled" : "disabled");
-  Dbg(dbg_ctl, "read_config_option(): ja3 logging is %s", (log == 1) ? "enabled" : "disabled");
-  Dbg(dbg_ctl, "read_config_option(): ja3 modify-incoming is %s", (modify_incoming == 1) ? "enabled" : "disabled");
+  Dbg(dbg_ctl, "ja3 raw is %s", (raw == 1) ? "enabled" : "disabled");
+  Dbg(dbg_ctl, "ja3 logging is %s", (log == 1) ? "enabled" : "disabled");
+  Dbg(dbg_ctl, "ja3 modify-incoming is %s", (modify_incoming == 1) ? "enabled" : "disabled");
   return true;
 }
 
@@ -312,8 +336,8 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;
-  info.vendor_name   = "Oath";
-  info.support_email = "zeyuany@oath.com";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   // Options
   if (!read_config_option(argc, argv, global_raw_enabled, global_log_enabled, global_modify_incoming_enabled)) {
@@ -328,10 +352,9 @@ TSPluginInit(int argc, const char *argv[])
       Dbg(dbg_ctl, "log object created successfully");
     }
     // SNI handler
-    TSCont ja3_cont = TSContCreate(client_hello_ja3_handler, nullptr);
     TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "used to pass ja3", &ja3_idx);
-    TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, ja3_cont);
-    TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, ja3_cont);
+    TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, TSContCreate(tls_client_hello_handler, nullptr));
+    TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, TSContCreate(vconn_close_handler, nullptr));
 
     TSHttpHookID const hook = global_modify_incoming_enabled ? TS_HTTP_READ_REQUEST_HDR_HOOK : TS_HTTP_SEND_REQUEST_HDR_HOOK;
     TSHttpHookAdd(hook, TSContCreate(req_hdr_ja3_handler, nullptr));
@@ -348,15 +371,14 @@ TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_U
 
   // Check if there is config conflict as both global and remap plugin
   if (ja3_idx >= 0) {
-    TSError(PLUGIN_NAME, "TSRemapInit(): JA3 configured as both global and remap. Check plugin.config.");
+    TSError("[%s] JA3 configured as both global and remap. Check plugin.config.", PLUGIN_NAME);
     return TS_ERROR;
   }
 
   // Set up SNI handler for all TLS connections
-  TSCont ja3_cont = TSContCreate(client_hello_ja3_handler, nullptr);
   TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "Used to pass ja3", &ja3_idx);
-  TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, ja3_cont);
-  TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, ja3_cont);
+  TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, TSContCreate(tls_client_hello_handler, nullptr));
+  TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, TSContCreate(vconn_close_handler, nullptr));
 
   return TS_SUCCESS;
 }
@@ -371,7 +393,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   int discard_modify_incoming = -1; // Not used for remap.
   if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), remap_info->raw_enabled, remap_info->log_enabled,
                           discard_modify_incoming)) {
-    Dbg(dbg_ctl, "TSRemapNewInstance(): Bad arguments");
+    Dbg(dbg_ctl, "Bad arguments");
     return TS_ERROR;
   }
 
@@ -396,7 +418,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   // On remap, set up handler at send req hook to send JA3 data as header
   if (!remap_info || !rri || !(remap_info->handler)) {
-    TSError("[%s] TSRemapDoRemap(): Invalid private data or RRI or handler.", PLUGIN_NAME);
+    TSError("[%s] Invalid private data or RRI or handler.", PLUGIN_NAME);
   } else {
     TSHttpTxnHookAdd(rh, TS_HTTP_SEND_REQUEST_HDR_HOOK, remap_info->handler);
   }

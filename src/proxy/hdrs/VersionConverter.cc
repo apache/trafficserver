@@ -61,7 +61,7 @@ VersionConverter::convert(HTTPHdr &header, int from, int to) const
 }
 
 int
-VersionConverter::_convert_nop(HTTPHdr &header) const
+VersionConverter::_convert_nop(HTTPHdr & /* header ATS_UNUSED */) const
 {
   return 0;
 }

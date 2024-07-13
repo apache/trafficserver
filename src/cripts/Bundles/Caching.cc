@@ -28,7 +28,7 @@ Caching::doRemap(Cript::Context *context)
 {
   // .disable(bool)
   if (_disabled) {
-    proxy.config.http.cache.http.set(0);
+    proxy.config.http.cache.http.Set(0);
     CDebug("Caching disabled");
   }
 }
@@ -36,7 +36,7 @@ Caching::doRemap(Cript::Context *context)
 void
 Caching::doReadResponse(Cript::Context *context)
 {
-  borrow resp = Server::Response::get();
+  borrow resp = Server::Response::Get();
 
   // .cache_control(str)
   if (!_cc.empty() && (resp.status > 199) && (resp.status < 400) && (resp["Cache-Control"].empty() || _force_cc)) {

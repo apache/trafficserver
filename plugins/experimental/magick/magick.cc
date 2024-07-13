@@ -40,7 +40,7 @@
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 
-#if MAGICK_VERSION > 6
+#if __has_include(<MagickWand/MagickWand.h>)
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
