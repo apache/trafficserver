@@ -8732,7 +8732,7 @@ TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
 void *
 TSRemapDLHandleGet(TSRemapPluginInfo plugin_info)
 {
-  sdk_assert(sdk_sanity_check_null_ptr(plugin_info));
+  sdk_assert(sdk_sanity_check_null_ptr(plugin_info) == TS_SUCCESS);
   RemapPluginInfo *info = reinterpret_cast<RemapPluginInfo *>(plugin_info);
 
   return info->dlh();
