@@ -54,6 +54,7 @@
       "inherits": ["default"],
       "binaryDir": "${sourceDir}/build-autest",
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
         "ENABLE_AUTEST": "ON",
         "CMAKE_INSTALL_PREFIX": "/tmp/ts-autest",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
