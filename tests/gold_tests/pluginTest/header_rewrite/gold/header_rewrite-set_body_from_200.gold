@@ -1,10 +1,1 @@
-``
-< HTTP/1.1 500 INKApi Error
-< Date: ``
-< Proxy-Connection: keep-alive
-< Server: ATS/``
-< Content-Length: 18
-< Content-Type: text/html
-``
 Custom body found
-``

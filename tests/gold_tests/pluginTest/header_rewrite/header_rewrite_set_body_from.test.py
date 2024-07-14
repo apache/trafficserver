@@ -88,7 +88,8 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
-        tr.Processes.Default.Streams.All = "gold/header_rewrite-set_body_from_remap_fail.gold"
+        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_remap_fail.gold"
+        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromSucceeds_remap(self):
@@ -100,7 +101,8 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.Command = (
             'curl -s -v --proxy 127.0.0.1:{0} "http://www.example.com/remap_success"'.format(self.ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.All = "gold/header_rewrite-set_body_from_success.gold"
+        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
+        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromSucceeds_plugin(self):
@@ -112,7 +114,8 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.Command = (
             'curl -s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_success"'.format(self.ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.All = "gold/header_rewrite-set_body_from_success.gold"
+        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
+        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromFails_plugin(self):
@@ -125,7 +128,8 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.Command = (
             'curl -s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_fail"'.format(self.ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.All = "gold/header_rewrite-set_body_from_conn_fail.gold"
+        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_conn_fail.gold"
+        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromSucceeds_200(self):
@@ -139,7 +143,8 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.Command = (
             'curl -s -v --proxy 127.0.0.1:{0} "http://www.example.com/200"'.format(self.ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.All = "gold/header_rewrite-set_body_from_200.gold"
+        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_200.gold"
+        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("500 INKApi Error", "Expected 500 response")
         tr.StillRunningAfter = self.server
 
     def runTraffic(self):
