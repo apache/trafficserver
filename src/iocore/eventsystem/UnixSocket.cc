@@ -53,20 +53,20 @@ static unsigned int read_uint_from_fd(int fd);
 int
 UnixSocket::set_nonblocking()
 {
-  return safe_set_fl(this->sock_fd, O_NONBLOCK);
+  return safe_set_fl(this->fd, O_NONBLOCK);
 }
 
 int
 UnixSocket::bind(struct sockaddr const *name, int namelen)
 {
-  return safe_bind(this->sock_fd, name, namelen);
+  return safe_bind(this->fd, name, namelen);
 }
 
 int
 UnixSocket::accept4(struct sockaddr *addr, socklen_t *addrlen, int flags) const
 {
   do {
-    int fd = ::accept4(this->sock_fd, addr, addrlen, flags);
+    int fd = ::accept4(this->fd, addr, addrlen, flags);
     if (likely(fd >= 0)) {
       return fd;
     }
@@ -108,14 +108,14 @@ accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)
 int
 UnixSocket::connect(struct sockaddr const *addr, socklen_t addrlen)
 {
-  return ::connect(this->sock_fd, addr, addrlen);
+  return ::connect(this->fd, addr, addrlen);
 }
 
 int
 UnixSocket::enable_option(int level, int optname)
 {
   int on = 1;
-  return safe_setsockopt(this->sock_fd, level, optname, &on, sizeof(on));
+  return safe_setsockopt(this->fd, level, optname, &on, sizeof(on));
 }
 
 int
@@ -123,14 +123,14 @@ UnixSocket::close()
 {
   int res;
 
-  if (this->sock_fd == 0) {
+  if (this->fd == 0) {
     return -EACCES;
-  } else if (this->sock_fd < 0) {
+  } else if (this->fd < 0) {
     return -EINVAL;
   }
 
   do {
-    res = ::close(this->sock_fd);
+    res = ::close(this->fd);
     if (res == -1) {
       res = -errno;
     }

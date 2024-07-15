@@ -50,7 +50,7 @@
 bool transient_error();
 
 struct UnixSocket {
-  int sock_fd{NO_SOCK};
+  int fd{NO_SOCK};
 
   UnixSocket(int fd);
 
@@ -103,17 +103,17 @@ struct UnixSocket {
   static bool client_fastopen_supported();
 };
 
-inline UnixSocket::UnixSocket(int fd) : sock_fd{fd} {}
+inline UnixSocket::UnixSocket(int fd) : fd{fd} {}
 
 inline UnixSocket::UnixSocket(int domain, int type, int protocol)
 {
-  this->sock_fd = socket(domain, type, protocol);
+  this->fd = socket(domain, type, protocol);
 }
 
 inline bool
 UnixSocket::ok() const
 {
-  return NO_SOCK != this->sock_fd;
+  return NO_SOCK != this->fd;
 }
 
 inline std::int64_t
@@ -121,7 +121,7 @@ UnixSocket::read(void *buf, int size) const
 {
   std::int64_t r;
   do {
-    r = ::read(this->sock_fd, buf, size);
+    r = ::read(this->fd, buf, size);
     if (likely(r >= 0)) {
       break;
     }
@@ -135,7 +135,7 @@ UnixSocket::recv(void *buf, int size, int flags) const
 {
   int r;
   do {
-    if (unlikely((r = ::recv(this->sock_fd, static_cast<char *>(buf), size, flags)) < 0)) {
+    if (unlikely((r = ::recv(this->fd, static_cast<char *>(buf), size, flags)) < 0)) {
       r = -errno;
     }
   } while (r == -EINTR);
@@ -147,7 +147,7 @@ UnixSocket::recvfrom(void *buf, int size, int flags, struct sockaddr *addr, sock
 {
   int r;
   do {
-    r = ::recvfrom(this->sock_fd, static_cast<char *>(buf), size, flags, addr, addrlen);
+    r = ::recvfrom(this->fd, static_cast<char *>(buf), size, flags, addr, addrlen);
     if (unlikely(r < 0)) {
       r = -errno;
     }
@@ -160,7 +160,7 @@ UnixSocket::recvmsg(struct msghdr *m, int flags) const
 {
   int r;
   do {
-    if (unlikely((r = ::recvmsg(this->sock_fd, m, flags)) < 0)) {
+    if (unlikely((r = ::recvmsg(this->fd, m, flags)) < 0)) {
       r = -errno;
     }
   } while (r == -EINTR);
@@ -173,7 +173,7 @@ UnixSocket::recvmmsg(struct mmsghdr *msgvec, int vlen, int flags, struct timespe
 {
   int r;
   do {
-    if (unlikely((r = ::recvmmsg(this->sock_fd, msgvec, vlen, flags, timeout)) < 0)) {
+    if (unlikely((r = ::recvmmsg(this->fd, msgvec, vlen, flags, timeout)) < 0)) {
       r = -errno;
       // EINVAL can ocur if timeout is invalid.
     }
@@ -187,7 +187,7 @@ UnixSocket::write(void *buf, int size) const
 {
   std::int64_t r;
   do {
-    if (likely((r = ::write(this->sock_fd, buf, size)) >= 0)) {
+    if (likely((r = ::write(this->fd, buf, size)) >= 0)) {
       break;
     }
     r = -errno;
@@ -200,7 +200,7 @@ UnixSocket::send(void *buf, int size, int flags) const
 {
   int r;
   do {
-    if (unlikely((r = ::send(this->sock_fd, static_cast<char *>(buf), size, flags)) < 0)) {
+    if (unlikely((r = ::send(this->fd, static_cast<char *>(buf), size, flags)) < 0)) {
       r = -errno;
     }
   } while (r == -EINTR);
@@ -212,7 +212,7 @@ UnixSocket::sendto(void *buf, int len, int flags, struct sockaddr const *to, int
 {
   int r;
   do {
-    if (unlikely((r = ::sendto(this->sock_fd, (char *)buf, len, flags, to, tolen)) < 0)) {
+    if (unlikely((r = ::sendto(this->fd, (char *)buf, len, flags, to, tolen)) < 0)) {
       r = -errno;
     }
   } while (r == -EINTR);
@@ -224,7 +224,7 @@ UnixSocket::sendmsg(struct msghdr const *m, int flags) const
 {
   int r;
   do {
-    if (unlikely((r = ::sendmsg(this->sock_fd, m, flags)) < 0)) {
+    if (unlikely((r = ::sendmsg(this->fd, m, flags)) < 0)) {
       r = -errno;
     }
   } while (r == -EINTR);
@@ -247,7 +247,7 @@ UnixSocket::poll(struct pollfd *fds, unsigned long nfds, int timeout)
 inline int
 UnixSocket::getsockname(struct sockaddr *sa, socklen_t *sz) const
 {
-  return ::getsockname(this->sock_fd, sa, sz);
+  return ::getsockname(this->fd, sa, sz);
 }
 
 inline int
@@ -257,7 +257,7 @@ UnixSocket::get_sndbuf_size() const
   int bszsz, r;
 
   bszsz = sizeof(bsz);
-  r     = safe_getsockopt(this->sock_fd, SOL_SOCKET, SO_SNDBUF, (char *)&bsz, &bszsz);
+  r     = safe_getsockopt(this->fd, SOL_SOCKET, SO_SNDBUF, (char *)&bsz, &bszsz);
   return (r == 0 ? bsz : r);
 }
 
@@ -268,20 +268,20 @@ UnixSocket::get_rcvbuf_size() const
   int bszsz, r;
 
   bszsz = sizeof(bsz);
-  r     = safe_getsockopt(this->sock_fd, SOL_SOCKET, SO_RCVBUF, (char *)&bsz, &bszsz);
+  r     = safe_getsockopt(this->fd, SOL_SOCKET, SO_RCVBUF, (char *)&bsz, &bszsz);
   return (r == 0 ? bsz : r);
 }
 
 inline int
 UnixSocket::set_sndbuf_size(int bsz)
 {
-  return safe_setsockopt(this->sock_fd, SOL_SOCKET, SO_SNDBUF, (char *)&bsz, sizeof(bsz));
+  return safe_setsockopt(this->fd, SOL_SOCKET, SO_SNDBUF, (char *)&bsz, sizeof(bsz));
 }
 
 inline int
 UnixSocket::set_rcvbuf_size(int bsz)
 {
-  return safe_setsockopt(this->sock_fd, SOL_SOCKET, SO_RCVBUF, (char *)&bsz, sizeof(bsz));
+  return safe_setsockopt(this->fd, SOL_SOCKET, SO_RCVBUF, (char *)&bsz, sizeof(bsz));
 }
 
 inline int
@@ -289,7 +289,7 @@ UnixSocket::shutdown(int how)
 {
   int res;
   do {
-    if (unlikely((res = ::shutdown(this->sock_fd, how)) < 0)) {
+    if (unlikely((res = ::shutdown(this->fd, how)) < 0)) {
       res = -errno;
     }
   } while (res == -EINTR);
