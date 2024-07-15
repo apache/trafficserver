@@ -6669,7 +6669,6 @@ HttpSM::setup_server_read_response_header()
   if (server_txn->get_remote_reader()->read_avail() > 0) {
     state_read_server_response_header((server_entry->eos) ? VC_EVENT_EOS : VC_EVENT_READ_READY, server_entry->read_vio);
   }
-  ink_assert(server_entry->vc != nullptr);
 }
 
 HttpTunnelProducer *
