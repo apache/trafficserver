@@ -190,7 +190,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
   return 0;
 
 Lerror:
-  if (!this->sock.ok()) {
+  if (this->sock.ok()) {
     close();
   }
   return res;
