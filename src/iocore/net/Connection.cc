@@ -272,10 +272,13 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
 #ifdef TCP_FASTOPEN
   if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) {
-    if (opt.f_mptcp) {
-      Warning("[Server::listen] TCP_FASTOPEN socket option not valid on MPTCP socket level");
-    } else if (safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
-      goto Lerror;
+    if (safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
+      // EOPNOTSUPP also checked for general safeguarding of unsupported operations of socket functions
+      if (opt.f_mptcp && (errno == ENOPROTOOPT || errno == EOPNOTSUPP)) {
+        Warning("[Server::listen] TCP_FASTOPEN socket option not valid on MPTCP socket level");
+      } else {
+        goto Lerror;
+      }
     }
   }
 #endif

@@ -5088,8 +5088,8 @@ Sockets
         TCP_NOTSENT_LOWAT (64)
         INCOMING_CPU (128)
 
-   Note: If MPTCP is enabled, TCP_NODELAY is only supported on Linux kernels 5.17+. TCP_FASTOPEN
-   and TCP_NOTSENT_LOWAT socket options are currently not supported.
+   Note: If MPTCP is enabled, TCP_NODELAY is only supported on Linux kernels 5.17+ and TCP_FASTOPEN is
+   only supported on Linux kernels 6.2+. TCP_NOTSENT_LOWAT socket option is currently not supported.
 
 .. note::
 
