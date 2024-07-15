@@ -96,11 +96,13 @@ QUICStream::on_eos()
 void
 QUICStream::receive_data(quiche_conn *quiche_con)
 {
-  uint8_t buf[4096];
-  bool    fin;
-  ssize_t read_len = 0;
+  uint8_t                    buf[4096];
+  bool                       fin;
+  ssize_t                    read_len = 0;
+  [[maybe_unused]] ErrorCode error_code{0}; // Only set if QUICHE_ERR_STREAM_STOPPED(-15) or QUICHE_ERR_STREAM_RESET(-16) are
+                                            // returned by quiche_conn_stream_recv.
 
-  while ((read_len = quiche_conn_stream_recv(quiche_con, this->_id, buf, sizeof(buf), &fin)) > 0) {
+  while ((read_len = quiche_conn_stream_recv(quiche_con, this->_id, buf, sizeof(buf), &fin, &error_code)) > 0) {
     this->_adapter->write(this->_received_bytes, buf, read_len, fin);
     this->_received_bytes += read_len;
   }
@@ -112,8 +114,10 @@ QUICStream::receive_data(quiche_conn *quiche_con)
 void
 QUICStream::send_data(quiche_conn *quiche_con)
 {
-  bool    fin = false;
-  ssize_t len = 0;
+  bool                       fin = false;
+  ssize_t                    len = 0;
+  [[maybe_unused]] ErrorCode error_code{0}; // Only set if QUICHE_ERR_STREAM_STOPPED(-15) or QUICHE_ERR_STREAM_RESET(-16) are
+                                            // returned by quiche_conn_stream_send.
 
   len = quiche_conn_stream_capacity(quiche_con, this->_id);
   if (len <= 0) {
@@ -125,7 +129,7 @@ QUICStream::send_data(quiche_conn *quiche_con)
   }
   if (block->size() > 0 || fin) {
     ssize_t written_len =
-      quiche_conn_stream_send(quiche_con, this->_id, reinterpret_cast<uint8_t *>(block->start()), block->size(), fin);
+      quiche_conn_stream_send(quiche_con, this->_id, reinterpret_cast<uint8_t *>(block->start()), block->size(), fin, &error_code);
     if (written_len >= 0) {
       this->_sent_bytes += written_len;
     }
