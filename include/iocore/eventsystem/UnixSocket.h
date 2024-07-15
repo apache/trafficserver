@@ -49,9 +49,9 @@
 
 bool transient_error();
 
-class UnixSocket
-{
-public:
+struct UnixSocket {
+  int sock_fd{NO_SOCK};
+
   UnixSocket(int fd);
 
   /** Get a new socket.
@@ -101,9 +101,6 @@ public:
   int shutdown(int how);
 
   static bool client_fastopen_supported();
-
-private:
-  int sock_fd{NO_SOCK};
 };
 
 inline UnixSocket::UnixSocket(int fd) : sock_fd{fd} {}
