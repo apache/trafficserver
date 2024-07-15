@@ -704,6 +704,31 @@ set-body
 Sets the body to ``<text>``. Can also be used to delete a body with ``""``. This is only useful when overriding the origin status, i.e.
 intercepting/pre-empting a request so that you can override the body from the body-factory with your own.
 
+set-body-from
+~~~~~~~~~~~~~
+::
+
+  set-body-from <URL>
+
+Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a custom error response
+and set the body with the result. Triggering this rule on an OK transaction will
+send a 500 status code to the client with the desired response. If this is triggered
+on any error status code, that original status code will be sent to the client.
+**Note**: This config should only be set using READ_RESPONSE_HDR_HOOK
+
+An example config would look like
+
+   cond %{READ_RESPONSE_HDR_HOOK}
+   set-body-from http://www.example.com/second
+
+Where ``http://www.example.com/second`` is the destination to retrieve the custom response from.
+This can be enabled per-mapping or globally.
+Ensure there is a remap rule for the second endpoint as well!
+An example remap config would look like
+
+   map /first http://www.example.com/first @plugin=header_rewrite.so @pparam=cond1.conf
+   map /second http://www.example.com/second
+
 set-config
 ~~~~~~~~~~
 ::

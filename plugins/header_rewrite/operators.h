@@ -478,3 +478,24 @@ protected:
 private:
   RemapPluginInst *_plugin = nullptr;
 };
+
+class OperatorSetBodyFrom : public Operator
+{
+public:
+  OperatorSetBodyFrom() { Dbg(pi_dbg_ctl, "Calling CTOR for OperatorSetBodyFrom"); }
+
+  // noncopyable
+  OperatorSetBodyFrom(const OperatorSetBodyFrom &) = delete;
+  void operator=(const OperatorSetBodyFrom &)      = delete;
+
+  void initialize(Parser &p) override;
+
+  enum { TS_EVENT_FETCHSM_SUCCESS = 70000, TS_EVENT_FETCHSM_FAILURE = 70001, TS_EVENT_FETCHSM_TIMEOUT = 70002 };
+
+protected:
+  void initialize_hooks() override;
+  void exec(const Resources &res) const override;
+
+private:
+  Value _value;
+};
