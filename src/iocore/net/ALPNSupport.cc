@@ -104,7 +104,7 @@ ALPNSupport::select_next_protocol(const unsigned char **out, unsigned char *outl
   unsigned int         npnsize = 0;
   int                  retval  = SSL_TLSEXT_ERR_ALERT_FATAL;
 
-  if (this->getNPN(&npnptr, &npnsize) && npnsize > 0) {
+  if (inlen > 0 && this->getNPN(&npnptr, &npnsize) && npnsize > 0) {
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
     // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
     if (SSL_select_next_proto(const_cast<unsigned char **>(out), outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
