@@ -1131,17 +1131,13 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
       //   data as well as fix up the request header
       t_state.hdr_info.transform_request_cl = size;
       t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
-      setup_server_send_request_api();
-      break;
-    } else {
-      // No content length from the post.  This is a no go
-      //  since http spec requires content length when
-      //  sending a request message body.  Change the event
-      //  to an error and fall through
-      event = VC_EVENT_ERROR;
-      Log::error("Request transformation failed to set content length");
     }
-  // FALLTHROUGH
+    // If the post body is more than one packet, we may not have the total body size set.
+    // Continue on with the transform_request_cl set to the default value of -1. If the transform
+    // changes the content lenght of the post body, the data argument must be specified even after
+    // the first packet
+    setup_server_send_request_api();
+    break;
   default:
     state_common_wait_for_transform_read(&post_transform_info, &HttpSM::tunnel_handler_post, event, data);
     break;
