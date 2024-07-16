@@ -80,6 +80,9 @@
 #cmakedefine HAVE_BIO_SET_DATA 1
 #cmakedefine HAVE_BIO_GET_DATA 1
 #cmakedefine HAVE_BIO_GET_SHUTDOWN 1
+#cmakedefine HAVE_BIO_GET_EX_NEW_INDEX 1
+#cmakedefine HAVE_BIO_GET_EX_DATA 1
+#cmakedefine HAVE_BIO_SET_EX_DATA 1
 #cmakedefine HAVE_BIO_METH_GET_CTRL 1
 #cmakedefine HAVE_BIO_METH_GET_CREATE 1
 #cmakedefine HAVE_BIO_METH_GET_DESTROY 1
