@@ -509,7 +509,7 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
 
   Dbg(dbg_ctl_dns, "open_con: opening connection %s", ats_ip_nptop(target, ip_text, sizeof ip_text));
 
-  if (!cur_con.sock.ok()) { // Remove old FD from epoll fd
+  if (!cur_con.sock.is_ok()) { // Remove old FD from epoll fd
     cur_con.close();
   }
 

@@ -87,7 +87,7 @@ DNSConnection::trigger()
 int
 DNSConnection::connect(sockaddr const *addr, Options const &opt)
 {
-  ink_assert(!this->sock.ok());
+  ink_assert(!this->sock.is_ok());
   ink_assert(ats_is_ip(addr));
   this->opt = opt;
   this->tcp_data.reset();
@@ -103,7 +103,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
     this->sock = UnixSocket{af, SOCK_DGRAM, 0};
   }
 
-  if (!this->sock.ok()) {
+  if (!this->sock.is_ok()) {
     goto Lerror;
   }
 
@@ -190,7 +190,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
   return 0;
 
 Lerror:
-  if (this->sock.ok()) {
+  if (this->sock.is_ok()) {
     close();
   }
   return res;

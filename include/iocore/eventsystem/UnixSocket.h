@@ -56,14 +56,14 @@ struct UnixSocket {
 
   /** Get a new socket.
    *
-   * Call ok() to determine whether this call succeeded. If the call
+   * Call is_ok() to determine whether this call succeeded. If the call
    * failed, errno will be set to indicate the error.
    *
-   * @see ok
+   * @see s_ok
    */
   UnixSocket(int domain, int ctype, int protocol);
 
-  bool ok() const;
+  bool is_ok() const;
 
   int set_nonblocking();
 
@@ -111,7 +111,7 @@ inline UnixSocket::UnixSocket(int domain, int type, int protocol)
 }
 
 inline bool
-UnixSocket::ok() const
+UnixSocket::is_ok() const
 {
   return NO_SOCK != this->fd;
 }

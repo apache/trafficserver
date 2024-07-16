@@ -134,7 +134,7 @@ UnixSocket::close()
     if (res == -1) {
       res = -errno;
     } else {
-      this->fd = -1;
+      this->fd = NO_SOCK;
     }
   } while (res == -EINTR);
 
