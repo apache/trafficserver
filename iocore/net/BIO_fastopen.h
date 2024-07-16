@@ -28,8 +28,5 @@
 // Return a BIO_METHOD for a socket BIO that implements TCP Fast Open.
 const BIO_METHOD *BIO_s_fastopen();
 
-// OpenSSL 1.0.2h has BIO_set_conn_ip(), but master has BIO_set_conn_address(). Use
-// the API from master since it makes more sense.
-#if !defined(BIO_set_conn_address)
-#define BIO_set_conn_address(b, addr) BIO_ctrl(b, BIO_C_SET_CONNECT, 2, (char *)addr)
-#endif
+// Set destination address for a BIO for a fastopen TCP socket where the local host is the client.
+void BIO_fastopen_set_dest_addr(BIO *bio, const sockaddr *dest_addr);
