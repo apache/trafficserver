@@ -216,3 +216,4 @@ records:
 # https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-url-remap-pristine-host-hdr
     pristine_host_hdr: 0
     remap_required: 1
+    acl_matching_policy: 0

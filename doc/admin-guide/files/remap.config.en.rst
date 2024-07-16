@@ -571,7 +571,7 @@ ATS evaluates multiple ACL filters in the following order:
 3. Named Filters in :file:`remap.config`
 4. Filters in :file:`ip_allow.yaml`
 
-When an ACL filter is found, ATS stops processing subsequent ACL filters depending on the mathcing policy configured by
+When an ACL filter is found, ATS stops processing subsequent ACL filters depending on the policy configured by
 :ts:cv:`proxy.config.url_remap.acl_matching_policy`.
 
 Note the step 1 happens at the start of the connection before any transactions are processed, unlike the other rules here.
@@ -581,15 +581,55 @@ Note the step 1 happens at the start of the connection before any transactions a
    ATS v10 introduced following matching policies. Prior to the change, ATS traverses all matched ACL filters by IP and "deny"
    action had priority.
 
+ACL Action Behavior Changes for 10.x
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before |TS| 10.x, ACL filters used the same action names as :file:`ip_allow.yaml` (``allow`` and ``deny``) but these
+actions behaved differently.
+
+- As described in :file:`ip_allow.yaml`, for any transaction matching an :file:`ip_allow.yaml` rule whose action is
+  ``allow``, any request with a method in the allow list will be accepted, while all other methods are denied. ``deny``
+  actions instead list methods which are denied, while all other methods are implicitly allowed.
+- These same action names for ACL filters, on the other hand, functioned essentially additively in nature. For instance,
+  an ``allow`` ACL filter action would list a set of methods which would be allowed in addition to any other allowed
+  methods specified by :file:`ip_allow.yaml` rules.  Similarly, a ``deny`` ACL filter action would list a set of methods
+  which would be denied in addition to any other denied methods specified by :file:`ip_allow.yaml` rules.
+
+This difference in behavior lead at times to confusion as users would expect the two actions having the same name to
+behave the same across the ACL filter and :file:`ip_allow.yaml` rule systems.
+
+For |TS| 10.x, these ACL filter actions are transitioning to be more consistent with :file:`ip_allow.yaml` rules while
+still allowing additive action behavior via two new rules: ``add_allow`` and ``add_deny``:
+
+- ``allow``: as with ``allow`` actions for :file:`ip_allow.yaml` rules, this action specifies a list of HTTP methods
+  which are allowed. All requests with a methods in this list will be allowed, requests with methods not in this list
+  will be denied, and no other filters or :file:`ip_allow.yaml` rules will be applied.
+- ``deny``: as with ``deny`` actions for :file:`ip_allow.yaml` rules, this action now specifies a list of HTTP methods
+  which are denied. All requests with a method in this list will be denied, all other requests will be allowed, and no
+  other filters or :file:`ip_allow.yaml` rules will be applied.
+- ``add_allow``: this action, new to |TS| 10.x, behaves like ``allow`` used to behave for ACL filters pre |TS| 10.x:
+  that is, it adds methods which are allowed to the :file:`ip_allow.yaml` rule otherwise matched for the given
+  transaction.
+- ``add_deny``: this action, new to |TS| 10.x, behaves like ``deny`` used to behave for ACL filters pre |TS| 10.x: that
+  is, it adds methods which are denied the :file:`ip_allow.yaml` rule otherwise matched for the given transaction.
+
+This change to ``allow`` and ``deny`` ACL filter actions is backwards incompatible with pre |TS| 10.x releases. In order
+to avoid surprises when transitioning to |TS| 10.x, by default, the ``allow`` and ``deny`` ACL filter actions rather
+behave like they did in |TS| 9.x: that is, they behave the same as ``add_allow`` and ``add_deny``. This behavior is
+deprecated in |TS| 10.x with the ``allow`` and ``deny`` ACL filter actions acting like they do for :file:`ip_allow.yaml`
+being the default behavior for the future |TS| 11.x release. The behavior is configurable via the
+:ts:cv:`proxy.config.url_remap.acl_matching_policy` described below.
 
 Match on IP and Method Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is the default matching policy. With this policy, ACL filters, in-line or named, only take effect if both IP address and HTTP
-method match the incoming request. If there is no match, ATS proceeds to the next ACL filter to find a matching one.
-
-This policy is useful for organizations that want ACL rules to additively allow or deny specific methods in addition to other ACL
-filters and :file:`ip_allow.yaml` rules.
+This is the default ACL matching policy and it is configured by setting
+:ts:cv:`proxy.config.url_remap.acl_matching_policy` to ``0``. With this policy, ACL filter ``allow`` and ``deny``
+actions behave like they did pre |TS| 10.x: they additively add allowed or denied methods for transactions.
+Functionally, this means that with this legacy policy configured, ``allow`` is a synonym for ``add_allow`` and ``deny``
+is a synonym for ``add_deny``.  Because of this, an organization can easily, and incrementally prepare for the modern
+ACL filter action behavior by transitioning a rule one at a time by simply replacing ``allow`` with ``add_allow`` and
+``deny`` with ``add_deny``. Once all actions are transitioned, an organization can then switch to the modern policy.
 
 Consider a filter like the following:
 
@@ -597,22 +637,29 @@ Consider a filter like the following:
 
    map http://www.example.com/ http://internal.example.com/ @action=deny @method=POST
 
-The implicit ``@src_ip`` is all client IP addresses, so this filter will match on any ``POST`` request matched by this remap rule
-from any client and its action will be to deny such POST requests. For all other methods, the filter will not take effect, thus
-allowing other active ACL filters or an :file:`ip_allow.yaml` rule to determine the action to take for any other transaction.
+The implicit ``@src_ip`` is all client IP addresses, so this filter will match on any ``POST`` request matched by this
+remap rule from any client and its action will be to deny such POST requests. For all other methods, the filter will not
+take effect, thus allowing other active ACL filters or an :file:`ip_allow.yaml` rule to determine the action to take for
+any other transaction.
+
+With the legacy policy being described here, this filter acts identically with an ``add_deny`` action. Thus, the above
+rule is identical with:
+
+::
+
+   map http://www.example.com/ http://internal.example.com/ @action=add_deny @method=POST
 
 .. note::
 
    This policy's behavior is similar to ATS v9 and older, but employs "first match wins" policy.
 
-Match on IP only Policy
+Match on IP Only Policy
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-With this policy, ACL filters match solely based upon IP address, meaning that ACL filters match like :file:`ip_allow.yaml` rules.
-When a filter is processed, the action is applied to the specified methods and its opposite to **all other** methods.
-
-This policy is useful for organizations that want to have ACL filters behave like :file:`ip_allow.yaml` rules specific to remap
-targets.
+As described above, with this policy, ACL filter ``allow`` and ``deny`` actions function as they do for
+:file:`ip_allow.yaml` rules.  Filters that instead want to additively allow or deny methods to base
+:file:`ip_allow.yaml` rules should use the ``add_allow`` and ``add_deny`` actions.  Match on IP only ACL action policy
+is configured by setting :ts:cv:`proxy.config.url_remap.acl_matching_policy` to ``1``.
 
 Consider a filter like the following (the same as above):
 
@@ -620,27 +667,72 @@ Consider a filter like the following (the same as above):
 
    map http://www.example.com/ http://internal.example.com/ @action=deny @method=POST
 
-The implicit ``@src_ip`` is all client IP address, so this filter will apply to **all** requests matching this remap rule. Again,
-like an analogously crafted :file:`ip_allow.yaml` action rule, this will deny ``POST`` request while allowing **all** other methods
-to the ``www.example.com``. No other ACL filters or :file:`ip_allow.yaml` rules will be applied for any request to this target.
+The implicit ``@src_ip`` is all client IP address, so this filter will apply to **all** requests matching this remap
+rule. Again, like an analogously crafted :file:`ip_allow.yaml` action rule, this will deny ``POST`` requests while
+allowing **all** other methods to the ``www.example.com``. No other ACL filters or :file:`ip_allow.yaml` rules will be
+applied for any request to this target.
 
-More realistic example is following:
+On the other hand, if one wants to instead additively deny ``POST`` requests like they can in match on IP and method
+policy, they would simply use the ``add_deny`` action:
+
+::
+
+   map http://www.example.com/ http://internal.example.com/ @action=add_deny @method=POST
+
+This rule behaves identically with the corresponding ``@action=deny`` rule described above in the "Match on IP Only
+Policy" section: it will ensure that ``POST`` requests are denied while leaving all other methods to other
+:file:`ip_allow.yaml` rules or ACL filters to determine how they should be handled.
+
+Considering again the ``@action=deny`` example, it is naturally not very likely that someone will simply want to deny
+just ``POST`` methods while allowing all other methods. A more realistic ``@action=deny`` example is the following:
 
 ::
 
    map http://www.example.com/ http://internal.example.com/ @action=allow @method=GET @method=HEAD
 
-The implicit ``@src_ip`` is all client IP address, so this filter will apply to all transactions matching this remap rule. Again,
-like an analogously crafted ip_allow allow rule, this will allow ``GET`` and ``HEAD`` requests while denying all other methods to
-the ``internal.example.com`` origin. No other ACL filters or ip_allow rules will apply for this target.
+The implicit ``@src_ip`` is all client IP address, so this filter will apply to all transactions matching this remap
+rule. Again, like an analogously crafted :file:`ip_allow.yaml` rule, this will allow ``GET`` and ``HEAD`` requests while
+denying all other methods to the ``internal.example.com`` origin. No other ACL filters or ip_allow rules will apply for
+this target. Note that this demonstrates that the modern policy adds the ability to specify actions like
+:file:`ip_allow.yaml` rules via ``allow` and ``deny`` actions while also preserving the |TS| 9.x ability to additively
+specify allowed or denied methods via ``add_allow`` and ``add_deny`` actions. Thus, the modern policy is a feature
+superset compared to the match on IP and method policy.
 
 .. warning::
 
-   This policy has completly new behavior introduced by ATS v10. When the ``@action=deny`` is used with this policy, be careful to
-   list up **all** methods to deny. Otherwise, the cache control methods like ``PURGE`` and ``PUSH`` are allowed unintentionally.
+   As mentioned above, carefully consider that with the match on IP only ACL filter behavior, ``@action=deny`` and
+   ``@action=allow`` actions behave differently than they did in |TS| 9.x and older. Thus ACL filters will almost
+   certainly need to be updated when transitioning to the modern policy. As a start, one may simply want to replace
+   ``@action=allow`` with ``@action=add_allow`` and ``@action=deny`` with ``@action=add_deny`` to bring the rules to
+   parity with pre |TS| 10.x behavior. In any case, the default policy is the match on IP and Method policy to ease this transition
+   before this new behavior becomes the default in |TS| 11.x.
+
+Upgrade Notes
+~~~~~~~~~~~~~
+
+As explained above, for 10.x, by default :ts:cv:`proxy.config.url_remap.acl_matching_policy` is set to ``0`` to maintain
+ACL filter action backwards compatibility with |TS| 9.x and older :file:`remap.config` files. This means that ACL filter
+actions ``allow`` and ``deny`` behave additively like ``add_allow`` and ``add_deny`` just like they did for 9.x and
+older. This is to ease the transition to the modern ACL filter behavior.
+
+When an organization is ready to upgrade to the new ACL filter action behavior, they need to make sure that their
+:file:`remap.config` ACL filter actions are configured correctly for the expected action behavior. To maintain 9.x
+behavior, this simply means replacing ``allow`` with ``add_allow`` and ``deny`` with ``add_deny``. In case it is
+helpful, ``tools/remap/convert_remap_actions_to_10x`` is provided to do this replacement programmatically.  Once all
+rules are updated, an organization can then switch to the modern policy by setting
+:ts:cv:`proxy.config.url_remap.acl_matching_policy` to ``1``.  :ts:cv:`proxy.config.url_remap.acl_matching_policy` will
+be removed in 11.x and the match on IP only policy (``1``) will be the default and only behavior. As explained above,
+once an organization has transitioned to the new behavior, they are then able to use the new ``allow`` and ``deny``
+action functionality that behaves like :file:`ip_allow.yaml` rules (see "Match on IP Only Policy" above for details).
 
 Example of ACL filter combinations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As described above, the new ``add_allow`` and ``add_deny`` actions behave the same in both match on IP and method and
+match on IP only ACL filter policies: they add to underlying :file:`ip_allow.yaml` rules methods that are either allowed
+or denied, respectively. The difference in behavior with these policies is how ``allow`` and ``deny`` actions behave. To
+help ensure that the behaviors between these two modes is understood, this section walks through examples of differences
+between these two policies for ``allow`` and ``deny`` actions.
 
 This is an example of in-line filter, named filters in :file:`remap.config`, and :file:`ip_allow.yaml`.
 
@@ -675,18 +767,18 @@ PURGE  \-             \-             \-             deny             denied  (40
 PUSH   \-             \-             \-             deny             denied  (403)
 ====== ============== ============== ============== ================ =============
 
-With the "Match on IP only Policy", the in-line filter works like an :file:`ip_allow.yaml` rule applies to all requests to
-``www.example.com`` that denies ``POST`` requests and implicitly allows all other methods:
+With the match on IP only policy, the in-line filter works like an :file:`ip_allow.yaml` rule: it applies to all requests to
+``www.example.com`` and denies ``POST`` requests while allowing all other methods:
 
 ====== ================ ============== ============== ============= =============
 Method In-line Filter   Named Filter 1 Named Filter 2 ip_allow.yaml result
 ====== ================ ============== ============== ============= =============
-GET    allow (implicit) \-             \-             \-            allowed (200)
+GET    allow            \-             \-             \-            allowed (200)
 POST   deny             \-             \-             \-            denied  (403)
-HEAD   allow (implicit) allow          \-             \-            allowed (200)
-DELETE allow (implicit) \-             deny           \-            allowed (200)
-PURGE  allow (implicit) \-             \-             deny          allowed (200)
-PUSH   allow (implicit) \-             \-             deny          allowed (200)
+HEAD   allow            \-             \-             \-            allowed (200)
+DELETE allow            \-             \-             \-            allowed (200)
+PURGE  allow            \-             \-             \-            allowed (200)
+PUSH   allow            \-             \-             \-            allowed (200)
 ====== ================ ============== ============== ============= =============
 
 Including Additional Remap Files

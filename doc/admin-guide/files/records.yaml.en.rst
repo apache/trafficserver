@@ -3562,14 +3562,22 @@ URL Remap Rules
 .. ts:cv:: CONFIG proxy.config.url_remap.acl_matching_policy INT 0
    :reloadable:
 
-   This controls matching policy of ACL filters in :file:`remap.config`. See :ref:`acl-filters` for more details.
+   This controls the ACL filter matching policy in :file:`remap.config`. See :ref:`acl-filters` for more details.
 
    ===== =============================
    Value Description
    ===== =============================
    ``0`` Match on IP and Method Policy
-   ``1`` Match on IP only Policy
+   ``1`` Match on IP Only Policy
    ===== =============================
+
+   The value ``0`` provides ACL filter ``allow`` and ``deny`` action behavior that is backwards compatible
+   with previous versions of |TS|. ``0`` is the default value.
+
+.. note::
+
+   This configuration is deprecated in 10.x. Starting with 11.x, |TS| will always function
+   like this configuration is set to ``1`` ("Match on IP Only") and the configuration will be removed entirely.
 
 .. _records-config-ssl-termination:
 
