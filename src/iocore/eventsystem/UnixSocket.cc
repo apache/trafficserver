@@ -121,7 +121,7 @@ UnixSocket::enable_option(int level, int optname)
 int
 UnixSocket::close()
 {
-  int res;
+  int res{};
 
   if (this->fd == 0) {
     return -EACCES;
@@ -133,8 +133,11 @@ UnixSocket::close()
     res = ::close(this->fd);
     if (res == -1) {
       res = -errno;
+    } else {
+      this->fd = -1;
     }
   } while (res == -EINTR);
+
   return res;
 }
 
