@@ -129,7 +129,7 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
     for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
       ;
     }
-    errStr = remap_validate_filter_args(rpp, (const char **)bti->argv, bti->argc, errStrBuf, errStrBufSize, bti->matching_policy);
+    errStr = remap_validate_filter_args(rpp, (const char **)bti->argv, bti->argc, errStrBuf, errStrBufSize, bti->behavior_policy);
   }
 
   for (rp = bti->rules_list; rp; rp = rp->next) {
@@ -143,7 +143,7 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
         ;
       }
       if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize,
-                                               bti->matching_policy)) != nullptr) {
+                                               bti->behavior_policy)) != nullptr) {
         break;
       }
     }
@@ -200,7 +200,7 @@ parse_define_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbu
 
   flg = ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *)bti->paramv[1])) == nullptr) ? true : false;
   // coverity[alloc_arg]
-  if ((cstr = remap_validate_filter_args(&rp, (const char **)bti->argv, bti->argc, errbuf, errbufsize, bti->matching_policy)) ==
+  if ((cstr = remap_validate_filter_args(&rp, (const char **)bti->argv, bti->argc, errbuf, errbufsize, bti->behavior_policy)) ==
         nullptr &&
       rp) {
     if (flg) { // new filter - add to list
@@ -442,7 +442,7 @@ remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize)
 
 const char *
 remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize,
-                           ACLMatchingPolicy matching_policy)
+                           ACLBehaviorPolicy behavior_policy)
 {
   acl_filter_rule *rule;
   int              i, j;
@@ -632,7 +632,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     }
 
     if (ul & REMAP_OPTFLG_ACTION) { /* "action=" option */
-      if (matching_policy == ACLMatchingPolicy::MATCH_ON_IP_ONLY) {
+      if (behavior_policy == ACLBehaviorPolicy::ACL_BEHAVIOR_MODERN) {
         // With the new matching policy, we don't allow the legacy "allow" and
         // "deny" actions. Users must transition to either add_allow/add_deny or
         // set_allow/set_deny.
@@ -1066,12 +1066,12 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
   Dbg(dbg_ctl_url_rewrite, "[BuildTable] UrlRewrite::BuildTable()");
 
-  ACLMatchingPolicy matching_policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
-  if (!UrlRewrite::get_acl_matching_policy(matching_policy)) {
+  ACLBehaviorPolicy behavior_policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
+  if (!UrlRewrite::get_acl_behavior_policy(behavior_policy)) {
     Warning("Failed to get ACL matching policy.");
     return false;
   }
-  bti->matching_policy = matching_policy;
+  bti->behavior_policy = behavior_policy;
 
   for (cur_line = tokLine(content.data(), &tok_state, '\\'); cur_line != nullptr;) {
     reg_map      = nullptr;

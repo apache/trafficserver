@@ -99,7 +99,20 @@ The keys in a rule are:
    Either this or ``ip_addrs`` are required keys for a rule.
 
 ``action``
-   The action, which must be ``allow`` or ``deny``. This is a required key.
+   The action describing the behavior of the rule. This can be either ``set_allow`` or ``set_deny``.
+   ``set_allow`` provides a list of allowed methods, while all requests with other methods are
+   denied. ``set_deny`` provides a list of denied methods, while all requests with other methods are
+   allowed. This is a required key.
+
+.. note::
+   Prior to |TS| 10.x, these actions were named ``allow`` and ``deny``. In order to bring alignment
+   to the action names in remap ACL actions (see :ref:`acl-filters` for more details), these have
+   been renamed to ``set_allow`` and ``set_deny``. If
+   :ts:cv:`proxy.config.url_remap.acl_behavior_policy` is set to 0, which is the default, the old
+   ``allow`` and ``deny`` actions are still supported in order to provide backwards compatibility to
+   |TS| 9.x :file:`ip_allow.yaml` files. If it is set to 1, then the use of ``allow`` and ``deny``
+   will result in a fatal error with a message asking the user to use ``set_allow`` and ``set_deny``
+   instead.
 
 ``methods``
    This is optional. If not present, the rule action applies to all methods. If present, the rule
