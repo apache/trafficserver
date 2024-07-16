@@ -26,7 +26,7 @@
 #include "proxy/http/remap/AclFiltering.h"
 
 class UrlRewrite;
-enum class ACLMatchingPolicy;
+enum class ACLBehaviorPolicy;
 
 #define BUILD_TABLE_MAX_ARGS 2048
 
@@ -56,7 +56,7 @@ struct BUILD_TABLE_INFO {
   char         *paramv[BUILD_TABLE_MAX_ARGS];
   char         *argv[BUILD_TABLE_MAX_ARGS];
 
-  ACLMatchingPolicy matching_policy;
+  ACLBehaviorPolicy behavior_policy;
   bool              ip_allow_check_enabled_p = true;
   bool              accept_check_p           = true;
 
@@ -74,7 +74,7 @@ struct BUILD_TABLE_INFO {
 const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize);
 
 const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf,
-                                       size_t errStrBufSize, ACLMatchingPolicy matching_policy);
+                                       size_t errStrBufSize, ACLBehaviorPolicy behavior_policy);
 
 unsigned long remap_check_option(const char **argv, int argc, unsigned long findmode = 0, int *_ret_idx = nullptr,
                                  const char **argptr = nullptr);

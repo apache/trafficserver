@@ -230,7 +230,7 @@ class Test_ip_category:
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.http.connect_ports': Test_ip_category._server.Variables.http_port,
-                'proxy.config.url_remap.acl_matching_policy': 1,  # TODO: adjust expected_responses with the default config
+                'proxy.config.url_remap.acl_behavior_policy': 1,  # TODO: adjust expected_responses with the default config
             })
 
         ts.Disk.remap_config.AddLine(
