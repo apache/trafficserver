@@ -44,7 +44,7 @@ m4/ltversion.m4
 m4/lt~obsolete.m4
 
 # common directory name for out-of-tree CMake builds
-build*
+/build*
 
 configs/records.yaml.default
 configs/storage.config.default
