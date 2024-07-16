@@ -244,7 +244,8 @@ RecCoreInit(Diags *_diags)
     RecLog(DL_Note, "records parsing completed.");
     if (!err.empty()) {
       std::string text;
-      RecLog(DL_Note, "%s", swoc::bwprint(text, "{}", err).c_str());
+      RecLog(DL_Warning, "%s",
+             swoc::bwprint(text, "We have found the following issues when reading the records node:\n {}", err).c_str());
     }
   } else {
     RecLog(DL_Note, "%s does not exist.", g_rec_config_fpath);
