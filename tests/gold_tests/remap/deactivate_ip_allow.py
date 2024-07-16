@@ -91,6 +91,28 @@ deactivate_ip_allow_combinations = [
     [ 27,  "ip_and_method",  "@action=deny  @method=GET", "", True,  DENY_GET,           403, 200,   ],
     [ 28,  "ip_and_method",  "@action=deny  @method=GET", "", True,  DENY_GET_AND_POST,  403, 200,   ],
     [ 29,  "ip_and_method",  "@action=deny  @method=GET", "", True,  DENY_ALL,           403, 200,   ],
+
+    # Verify in ip_and_method mode that add_allow acts just like allow, and add_deny acts just like deny.
+    [ 30,  "ip_and_method",  "@action=add_allow @method=GET", "", False, ALLOW_GET_AND_POST, 200, 200,   ],
+    [ 31,  "ip_and_method",  "@action=add_allow @method=GET", "", False, ALLOW_GET,          200, 403,   ],
+    [ 32,  "ip_and_method",  "@action=add_allow @method=GET", "", False, DENY_GET,           200, 200,   ],
+    [ 33,  "ip_and_method",  "@action=add_allow @method=GET", "", False, DENY_GET_AND_POST,  200, 403,   ],
+    [ 34,  "ip_and_method",  "@action=add_allow @method=GET", "", False, DENY_ALL,           None, None, ],
+    [ 35,  "ip_and_method",  "@action=add_allow @method=GET", "", True,  ALLOW_GET_AND_POST, 200, 200,   ],
+    [ 36,  "ip_and_method",  "@action=add_allow @method=GET", "", True,  ALLOW_GET,          200, 200,   ],
+    [ 37,  "ip_and_method",  "@action=add_allow @method=GET", "", True,  DENY_GET,           200, 200,   ],
+    [ 38,  "ip_and_method",  "@action=add_allow @method=GET", "", True,  DENY_GET_AND_POST,  200, 200,   ],
+    [ 39,  "ip_and_method",  "@action=add_allow @method=GET", "", True,  DENY_ALL,           200, 200,   ],
+    [ 40,  "ip_and_method",  "@action=add_deny  @method=GET", "", False, ALLOW_GET_AND_POST, 403, 200,   ],
+    [ 41,  "ip_and_method",  "@action=add_deny  @method=GET", "", False, ALLOW_GET,          403, 403,   ],
+    [ 42,  "ip_and_method",  "@action=add_deny  @method=GET", "", False, DENY_GET,           403, 200,   ],
+    [ 43,  "ip_and_method",  "@action=add_deny  @method=GET", "", False, DENY_GET_AND_POST,  403, 403,   ],
+    [ 44,  "ip_and_method",  "@action=add_deny  @method=GET", "", False, DENY_ALL,           None, None, ],
+    [ 45,  "ip_and_method",  "@action=add_deny  @method=GET", "", True,  ALLOW_GET_AND_POST, 403, 200,   ],
+    [ 46,  "ip_and_method",  "@action=add_deny  @method=GET", "", True,  ALLOW_GET,          403, 200,   ],
+    [ 47,  "ip_and_method",  "@action=add_deny  @method=GET", "", True,  DENY_GET,           403, 200,   ],
+    [ 48,  "ip_and_method",  "@action=add_deny  @method=GET", "", True,  DENY_GET_AND_POST,  403, 200,   ],
+    [ 49,  "ip_and_method",  "@action=add_deny  @method=GET", "", True,  DENY_ALL,           403, 200,   ],
 ]
 all_deactivate_ip_allow_tests = [dict(zip(keys, test)) for test in deactivate_ip_allow_combinations]
 # yapf: enable
