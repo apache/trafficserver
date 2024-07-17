@@ -23,14 +23,16 @@
 
 #pragma once
 
-#ifdef OPENSSL_IS_BORINGSSL
+#include "tscore/ink_config.h"
+
+#if __has_include(<openssl/digest.h>)
 #include <openssl/digest.h>
 #include <openssl/cipher.h>
 #else
 #include <openssl/evp.h>
 #endif
 
-#ifdef OPENSSL_IS_OPENSSL3
+#if HAVE_OSSL_PARAM_CONSTRUCT_END
 #include <openssl/core.h>
 #endif
 
@@ -44,7 +46,7 @@ public:
              uint16_t length);
 
 protected:
-#ifdef OPENSSL_IS_OPENSSL3
+#if HAVE_OSSL_PARAM_CONSTRUCT_END
   EVP_KDF_CTX *_kctx = nullptr;
   OSSL_PARAM   params[5];
 #else
