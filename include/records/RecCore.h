@@ -276,12 +276,6 @@ RecCounter REC_readCounter(char *name, bool *found, bool lock = true);
 RecString  REC_readString(const char *name, bool *found, bool lock = true);
 
 //------------------------------------------------------------------------
-// Clear Statistics
-//------------------------------------------------------------------------
-RecErrT RecResetStatRecord(const char *name);
-RecErrT RecResetStatRecord(RecT type = RECT_NULL, bool all = false);
-
-//------------------------------------------------------------------------
 // Set RecRecord attributes
 //------------------------------------------------------------------------
 RecErrT RecSetSyncRequired(char *name, bool lock = true);

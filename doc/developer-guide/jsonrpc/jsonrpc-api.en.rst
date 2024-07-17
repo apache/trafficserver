@@ -323,7 +323,7 @@ The following errors could be generated when requesting record from the server.
 
    .. enumerator:: RECORD_WRITE_ERROR = 2006
 
-      Generic error while writing the record. ie: RecResetStatRecord() returns  REC_ERR_OKAY
+      Generic error while writing the record.
 
    .. enumerator:: REQUESTED_TYPE_MISMATCH = 2007
 
@@ -446,15 +446,10 @@ JSONRPC API
 
 * `admin_lookup_records`_
 
-* `admin_clear_all_metrics_records`_
 
 * `admin_config_set_records`_
 
 * `admin_config_reload`_
-
-* `admin_clear_metrics_records`_
-
-* `admin_clear_all_metrics_records`_
 
 * `admin_host_set_status`_
 
@@ -968,135 +963,8 @@ Validation:
 You can request for the record `proxy.process.proxy.reconfigure_time` which will be updated with the time of the requested update.
 
 
-.. _jsonrpc-api-management-metrics:
-
-Metrics
-=======
-
-.. _admin_clear_metrics_records:
-
-admin_clear_metrics_records
----------------------------
-
-|method|
-
-Description
-~~~~~~~~~~~
-
-Clear one or more metric values. This API will take the incoming metric names and reset their associated value. The format for the incoming
-request should follow the  `RecordRequest`_ .
-
-
-
-Parameters
-~~~~~~~~~~
-
-* ``params``: A list of `RecordRequest`_ objects.
-
-.. note::
-
-   Only the ``rec_name`` will be used, if this is not provided, the API will report it back as part of the `RecordErrorObject`_ .
-
-
-Result
-~~~~~~
-
-This api will only inform for errors during the metric update, all errors will be inside the  `RecordErrorObject`_ object.
-Successfully metric updates will not report back to the client. So it can be assumed that the records were properly updated.
-
-.. note::
-
-   As per our internal API if the metric could not be updated because there is no change in the value, ie: it's already ``0`` this will be reported back to the client as part of the  `RecordErrorObject`_
-
-Examples
-~~~~~~~~
-
-
-Request:
-
-.. code-block:: json
-   :linenos:
-
-   {
-      "id": "ded7018e-0720-11eb-abe2-001fc69cc946",
-      "jsonrpc": "2.0",
-      "method": "admin_clear_metrics_records",
-      "params": [
-            {
-               "record_name": "proxy.process.http.total_client_connections_ipv6"
-            },
-            {
-               "record_name": "proxy.config.log.rolling_intervi_should_fail"
-            }
-      ]
-   }
-
-
-Response:
-
-.. code-block:: json
-
-   {
-      "jsonrpc": "2.0",
-      "result": {
-         "errorList": [{
-            "code": "2006",
-            "record_name": "proxy.config.log.rolling_intervi_should_fail"
-         }]
-      },
-      "id": "ded7018e-0720-11eb-abe2-001fc69cc946"
-   }
-
-
-.. _admin_clear_all_metrics_records:
-
-admin_clear_all_metrics_records
--------------------------------
-
-|method|
-
-Description
-~~~~~~~~~~~
-
-Clear all the metrics.
-
-
-Parameters
-~~~~~~~~~~
-
-* ``params``: This can be Omitted
-
-
-Result
-~~~~~~
-
-This api will only inform for errors during the metric update. Errors will be tracked down in the `error` field.
-
-.. note::
-
-   As per our internal API if the metric could not be updated because there is no change in the value, ie: it's already ``0`` this
-   will be reported back to the client as part of the  `RecordErrorObject`_
-
-Examples
-~~~~~~~~
-
-Request:
-
-.. code-block:: json
-   :linenos:
-
-   {
-      "id": "dod7018e-0720-11eb-abe2-001fc69cc997",
-      "jsonrpc": "2.0",
-      "method": "admin_clear_all_metrics_records"
-   }
-
-
-
-Response:
-
-The response will contain the default `success_response`  or an error. :ref:`jsonrpc-node-errors`.
-
+Host
+====
 
 .. _admin_host_set_status:
 
@@ -1622,8 +1490,6 @@ Response:
                "admin_host_set_status",
                "admin_server_stop_drain",
                "admin_server_start_drain",
-               "admin_clear_metrics_records",
-               "admin_clear_all_metrics_records",
                "admin_plugin_send_basic_msg",
                "admin_lookup_records",
                "admin_config_set_records",
