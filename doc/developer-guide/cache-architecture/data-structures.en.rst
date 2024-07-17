@@ -27,9 +27,9 @@ Data Structures
 
    hide empty members
 
-   CacheHostRecord *-- "*" Stripe : stripe >
+   CacheHostRecord *-- "*" StripeSM : stripe >
    CacheHostRecord *-- "*" CacheVol : cp >
-   CacheVol *-- "*" Stripe : stripe >
+   CacheVol *-- "*" StripeSM : stripe >
 
 .. var:: size_t STORE_BLOCK_SIZE = 8192
 
@@ -58,7 +58,7 @@ Data Structures
 
       The cache volumes that are part of this cache host record.
 
-   .. member:: Stripe ** vols
+   .. member:: StripeSM ** vols
 
       The stripes that are part of the cache volumes. This is the union over the stripes of
       :member:`CacheHostRecord::cp`
@@ -133,7 +133,7 @@ Data Structures
 
    * Timestamps for request and response from :term:`origin server`.
 
-.. class:: Stripe
+.. class:: StripeSM
 
    This represents a :term:`storage unit` inside a :term:`cache volume`.
 
@@ -279,11 +279,11 @@ Data Structures
 
 .. class:: DiskStripeBlock
 
-   A description of a span stripe (Stripe) block . This is a serialized data structure.
+   A description of a span stripe (StripeSM) block . This is a serialized data structure.
 
    .. member:: uint64_t offset
 
-      Offset in the span of the start of the span stripe (Stripe) block, in bytes.
+      Offset in the span of the start of the span stripe (StripeSM) block, in bytes.
 
    .. member:: uint64_t len
 
@@ -356,7 +356,7 @@ Data Structures
 
    .. member:: int new_block
 
-      Indicates if this is a new stripe rather than an existing one. In case a stripe is new ATS decides to clear that stripe(:class:`Stripe`)
+      Indicates if this is a new stripe rather than an existing one. In case a stripe is new ATS decides to clear that stripe(:class:`StripeSM`)
 
    .. member:: LINK<DiskStripeBlockQueue> link
 
@@ -372,7 +372,7 @@ Data Structures
 
    .. member:: int vol_number
 
-      Identification number of the stripe (:class:`Stripe`)
+      Identification number of the stripe (:class:`StripeSM`)
 
    .. member:: uint64_t size
 
@@ -407,11 +407,11 @@ Data Structures
 
    .. member:: int num_vols
 
-      Number of stripes(:class:`Stripe`) contained in this volume
+      Number of stripes(:class:`StripeSM`) contained in this volume
 
-   .. member:: Stripe** vols
+   .. member:: StripeSM** vols
 
-      :class:`Stripe` represents a single stripe in the disk. vols contains all the stripes this volume is made up of
+      :class:`StripeSM` represents a single stripe in the disk. vols contains all the stripes this volume is made up of
 
    .. member:: DiskStripe** disk_vols
 
@@ -466,9 +466,9 @@ Data Structures
       A generic class:`CacheHostRecord` that contains all cache volumes that are not explicitly
       assigned in :file:`hosting.config`.
 
-   .. function:: Stripe * key_to_stripe(CryptoHash * key, const char * host, int host_len)
+   .. function:: StripeSM * key_to_stripe(CryptoHash * key, const char * host, int host_len)
 
-      Compute the stripe (:code:`Stripe *`) for a cache :arg:`key` and :arg:`host`. The :arg:`host` is
+      Compute the stripe (:code:`StripeSM *`) for a cache :arg:`key` and :arg:`host`. The :arg:`host` is
       used to find the appropriate :class:`CacheHostRecord` instance. From there the stripe
       assignment slot is determined by taking bits 64..83 (20 bits) of the cache :arg:`key` modulo
       the stripe assignment array count (:code:`STRIPE_HASH_TABLE_SIZE`). These bits are the third 32
