@@ -266,22 +266,22 @@ struct CacheSync : public Continuation {
 
 // Global Functions
 
-int      dir_probe(const CacheKey *, StripeSM *, Dir *, Dir **);
-int      dir_insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
-int      dir_overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-int      dir_delete(const CacheKey *key, StripeSM *stripe, Dir *del);
-int      dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, EvacuationBlock **eblock);
-int      dir_lookaside_insert(EvacuationBlock *b, StripeSM *stripe, Dir *to);
-int      dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
-void     dir_lookaside_cleanup(StripeSM *stripe);
-void     dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
-void     dir_free_entry(Dir *e, int s, StripeSM *stripe);
-void     dir_sync_init();
-int      check_dir(StripeSM *stripe);
-void     dir_clean_vol(StripeSM *stripe);
-void     dir_clear_range(off_t start, off_t end, StripeSM *stripe);
-int      dir_segment_accounted(int s, StripeSM *stripe, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
-                               int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
+int  dir_probe(const CacheKey *, StripeSM *, Dir *, Dir **);
+int  dir_insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
+int  dir_overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+int  dir_delete(const CacheKey *key, StripeSM *stripe, Dir *del);
+int  dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, EvacuationBlock **eblock);
+int  dir_lookaside_insert(EvacuationBlock *b, StripeSM *stripe, Dir *to);
+int  dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
+void dir_lookaside_cleanup(StripeSM *stripe);
+void dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
+void dir_free_entry(Dir *e, int s, StripeSM *stripe);
+void dir_sync_init();
+int  check_dir(StripeSM *stripe);
+void dir_clean_vol(StripeSM *stripe);
+void dir_clear_range(off_t start, off_t end, StripeSM *stripe);
+int  dir_segment_accounted(int s, StripeSM *stripe, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
+                           int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
 uint64_t dir_entries_used(StripeSM *stripe);
 void     sync_cache_dir_on_shutdown();
 int      dir_freelist_length(StripeSM *stripe, int s);

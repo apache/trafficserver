@@ -75,8 +75,8 @@ namespace ct
 /// A live volume.
 /// Volume data based on data from loaded spans.
 struct Volume {
-  int                   _idx;  ///< Volume index.
-  CacheStoreBlocks      _size; ///< Amount of storage allocated.
+  int                     _idx;  ///< Volume index.
+  CacheStoreBlocks        _size; ///< Amount of storage allocated.
   std::vector<StripeSM *> _stripes;
 
   /// Remove all data related to @a span.
@@ -197,16 +197,16 @@ struct Cache {
   void clearAllocation();
 
   enum class SpanDumpDepth { SPAN, STRIPE, DIRECTORY };
-  void    dumpSpans(SpanDumpDepth depth);
-  void    dumpVolumes();
-  void    build_stripe_hash_table();
+  void      dumpSpans(SpanDumpDepth depth);
+  void      dumpVolumes();
+  void      build_stripe_hash_table();
   StripeSM *key_to_stripe(CryptoHash *key, const char *hostname, int host_len);
   //  ts::CacheStripeBlocks calcTotalSpanPhysicalSize();
   ts::CacheStripeBlocks calcTotalSpanConfiguredSize();
 
   std::list<Span *>                  _spans;
   std::map<int, Volume>              _volumes;
-  std::vector<StripeSM *>              globalVec_stripe;
+  std::vector<StripeSM *>            globalVec_stripe;
   std::unordered_set<ts::CacheURL *> URLset;
   unsigned short                    *stripes_hash_table;
 };
@@ -483,7 +483,7 @@ Cache::loadSpanDirect(swoc::file::path const &path, int vol_idx, [[maybe_unused]
       int nspb = span->_header->num_diskvol_blks;
       for (auto i = 0; i < nspb; ++i) {
         ts::CacheStripeDescriptor &raw    = span->_header->stripes[i];
-        StripeSM                    *stripe = new StripeSM(span.get(), raw.offset, raw.len);
+        StripeSM                  *stripe = new StripeSM(span.get(), raw.offset, raw.len);
         stripe->_idx                      = i;
         if (raw.free == 0) {
           stripe->_vol_idx = raw.vol_idx;
@@ -789,7 +789,7 @@ Span::allocStripe(int vol_idx, const CacheStripeBlocks &len)
           stripe->_type    = 1;
           return stripe;
         } else {
-          StripeSM *ns      = new StripeSM(this, stripe->_start, len);
+          StripeSM *ns    = new StripeSM(this, stripe->_start, len);
           stripe->_start += len;
           stripe->_len   -= len;
           ns->_vol_idx    = vol_idx;

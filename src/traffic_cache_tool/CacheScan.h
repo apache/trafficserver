@@ -39,7 +39,7 @@ namespace ct
 {
 class CacheScan
 {
-  StripeSM      *stripe    = nullptr;
+  StripeSM    *stripe    = nullptr;
   url_matcher *u_matcher = nullptr;
 
 public:

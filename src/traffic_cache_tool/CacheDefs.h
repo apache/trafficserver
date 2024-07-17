@@ -456,7 +456,7 @@ struct Span {
   void clearPermanently();
 
   swoc::Rv<StripeSM *> allocStripe(int vol_idx, const CacheStripeBlocks &len);
-  Errata             updateHeader(); ///< Update serialized header and write to disk.
+  Errata               updateHeader(); ///< Update serialized header and write to disk.
 
   swoc::file::path _path;        ///< File system location of span.
   ats_scoped_fd    _fd;          ///< Open file descriptor for span.

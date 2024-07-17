@@ -230,7 +230,7 @@ CachePeriodicMetricsUpdate()
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
     for (int i = 0; i < gnstripes; ++i) {
       StripeSM *v    = gstripes[i];
-      int64_t used = cache_bytes_used(i);
+      int64_t   used = cache_bytes_used(i);
 
       Metrics::Gauge::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
       total_sum += used;
@@ -690,7 +690,7 @@ CacheProcessor::cacheInitialized()
 
       for (int i = 0; i < gnstripes; i++) {
         StripeSM *stripe          = gstripes[i];
-        int64_t ram_cache_bytes = 0;
+        int64_t   ram_cache_bytes = 0;
 
         if (stripe->cache_vol->ramcache_enabled) {
           if (http_ram_cache_size == 0) {
@@ -873,7 +873,7 @@ build_vol_hash_table(CacheHostRecord *cp)
 {
   int           num_vols = cp->num_vols;
   unsigned int *mapping  = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
-  StripeSM      **p        = static_cast<StripeSM **>(ats_malloc(sizeof(StripeSM *) * num_vols));
+  StripeSM    **p        = static_cast<StripeSM **>(ats_malloc(sizeof(StripeSM *) * num_vols));
 
   memset(mapping, 0, num_vols * sizeof(unsigned int));
   memset(p, 0, num_vols * sizeof(StripeSM *));
@@ -1226,8 +1226,8 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
     return ACTION_RESULT_DONE;
   }
 
-  StripeSM  *stripe = key_to_stripe(key, hostname, host_len);
-  CacheVC *c      = new_CacheVC(cont);
+  StripeSM *stripe = key_to_stripe(key, hostname, host_len);
+  CacheVC  *c      = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;
   c->op_type = static_cast<int>(CacheOpType::Lookup);

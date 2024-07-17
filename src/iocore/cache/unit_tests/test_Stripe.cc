@@ -137,7 +137,7 @@ init_stripe_for_writing(StripeSM &stripe, StripteHeaderFooter &header, CacheVol 
 
 TEST_CASE("The behavior of StripeSM::add_writer.")
 {
-  FakeVC vc;
+  FakeVC   vc;
   StripeSM stripe;
 
   SECTION("Branch tests.")
@@ -194,7 +194,7 @@ TEST_CASE("The behavior of StripeSM::add_writer.")
 // tmpfile for the StripeSM to write to.
 TEST_CASE("aggWrite behavior with f.evacuator unset")
 {
-  StripeSM              stripe;
+  StripeSM            stripe;
   StripteHeaderFooter header;
   CacheVol            cache_vol;
   auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};
@@ -304,7 +304,7 @@ TEST_CASE("aggWrite behavior with f.evacuator unset")
 // only on the presence of the f.evacuator flag.
 TEST_CASE("aggWrite behavior with f.evacuator set")
 {
-  StripeSM              stripe;
+  StripeSM            stripe;
   StripteHeaderFooter header;
   CacheVol            cache_vol;
   auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};

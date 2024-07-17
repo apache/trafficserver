@@ -176,7 +176,7 @@ free_CacheVCCommon(CacheVC *cont)
   static DbgCtl dbg_ctl{"cache_free"};
   Dbg(dbg_ctl, "free %p", cont);
   ProxyMutex *mutex  = cont->mutex.get();
-  StripeSM     *stripe = cont->stripe;
+  StripeSM   *stripe = cont->stripe;
 
   if (stripe) {
     Metrics::Gauge::decrement(cache_rsb.status[cont->op_type].active);
@@ -387,7 +387,7 @@ inline int
 StripeSM::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   StripeSM *stripe    = this;
-  bool    agg_error = false;
+  bool      agg_error = false;
   if (!cont->f.remove) {
     agg_error = (!cont->f.update && this->_write_buffer.get_bytes_pending_aggregation() > cache_config_agg_write_backlog);
 #ifdef CACHE_AGG_FAIL_RATE

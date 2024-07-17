@@ -80,8 +80,8 @@ public:
     REQUIRE(CacheProcessor::IsCacheEnabled() == CACHE_INITIALIZED);
     REQUIRE(gnstripes >= 1);
 
-    StripeSM  *stripe = gstripes[0];
-    EThread *thread = this_ethread();
+    StripeSM *stripe = gstripes[0];
+    EThread  *thread = this_ethread();
     MUTEX_TRY_LOCK(lock, stripe->mutex, thread);
     if (!lock.is_locked()) {
       CONT_SCHED_LOCK_RETRY(this);

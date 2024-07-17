@@ -52,9 +52,9 @@ struct RamCacheLRU : public RamCache {
   std::vector<bool> *seen = nullptr;
   Que(RamCacheLRUEntry, lru_link) lru;
   DList(RamCacheLRUEntry, hash_link) *bucket = nullptr;
-  int     nbuckets                           = 0;
-  int     ibuckets                           = 0;
-  StripeSM *stripe                             = nullptr;
+  int       nbuckets                         = 0;
+  int       ibuckets                         = 0;
+  StripeSM *stripe                           = nullptr;
 
   void              resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);

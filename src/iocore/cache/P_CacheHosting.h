@@ -51,7 +51,7 @@ struct CacheHostRecord {
   }
 
   CacheType       type           = CACHE_NONE_TYPE;
-  StripeSM        **stripes        = nullptr;
+  StripeSM      **stripes        = nullptr;
   int             num_vols       = 0;
   unsigned short *vol_hash_table = nullptr;
   CacheVol      **cp             = nullptr;

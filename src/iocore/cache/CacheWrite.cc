@@ -1384,9 +1384,9 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   intptr_t res = 0;
   CacheVC *c   = new_CacheVC(cont);
   SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
-  c->vio.op      = VIO::WRITE;
-  c->op_type     = static_cast<int>(CacheOpType::Write);
-  c->stripe      = key_to_stripe(key, hostname, host_len);
+  c->vio.op        = VIO::WRITE;
+  c->op_type       = static_cast<int>(CacheOpType::Write);
+  c->stripe        = key_to_stripe(key, hostname, host_len);
   StripeSM *stripe = c->stripe;
   Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
   Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
@@ -1463,11 +1463,11 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   do {
     rand_CacheKey(&c->key);
   } while (DIR_MASK_TAG(c->key.slice32(2)) == DIR_MASK_TAG(c->first_key.slice32(2)));
-  c->earliest_key = c->key;
-  c->frag_type    = CACHE_FRAG_TYPE_HTTP;
-  c->stripe       = key_to_stripe(key, hostname, host_len);
-  StripeSM *stripe  = c->stripe;
-  c->info         = info;
+  c->earliest_key  = c->key;
+  c->frag_type     = CACHE_FRAG_TYPE_HTTP;
+  c->stripe        = key_to_stripe(key, hostname, host_len);
+  StripeSM *stripe = c->stripe;
+  c->info          = info;
   if (c->info && (uintptr_t)info != CACHE_ALLOW_MULTIPLE_WRITES) {
     /*
        Update has the following code paths :

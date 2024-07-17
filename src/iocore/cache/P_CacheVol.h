@@ -349,7 +349,7 @@ struct CacheVol {
   off_t        size             = 0;
   int          num_vols         = 0;
   bool         ramcache_enabled = true;
-  StripeSM     **stripes          = nullptr;
+  StripeSM   **stripes          = nullptr;
   DiskStripe **disk_stripes     = nullptr;
   LINK(CacheVol, link);
   // per volume stats
@@ -360,7 +360,7 @@ struct CacheVol {
 
 // Global Data
 
-extern StripeSM                        **gstripes;
+extern StripeSM                      **gstripes;
 extern std::atomic<int>                gnstripes;
 extern ClassAllocator<OpenDirEntry>    openDirEntryAllocator;
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
