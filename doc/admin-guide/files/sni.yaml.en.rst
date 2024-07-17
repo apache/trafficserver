@@ -228,6 +228,10 @@ http2_max_continuation_frames_per_minute Inbound   Specifies how many CONTINUATI
                                                    By default this is :ts:cv:`proxy.config.http2.max_continuation_frames_per_minute`.
                                                    NOTE: Connection coalescing may prevent this from taking effect.
 
+http2_max_empty_frames_per_minute        Inbound   Specifies how many empty frames |TS| receives per minute at maximum.
+                                                   By default this is :ts:cv:`proxy.config.http2.max_empty_frames_per_minute`.
+                                                   NOTE: Connection coalescing may prevent this from taking effect.
+
 quic                                     Inbound   Indicates whether QUIC connections should be accepted. The valid values are :code:`on` or
                                                    :code:`off`. Note that this is a more specific setting to configure QUIC availability per server
                                                    name. More broadly, you will also need to configure :ts:cv:`proxy.config.http.server_ports` to
