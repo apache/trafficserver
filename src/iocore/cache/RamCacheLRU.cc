@@ -46,7 +46,7 @@ struct RamCacheLRU : public RamCache {
   int     fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
   int64_t size() const override;
 
-  void init(int64_t max_bytes, Stripe *stripe) override;
+  void init(int64_t max_bytes, StripeSM *stripe) override;
 
   // private
   std::vector<bool> *seen = nullptr;
@@ -54,7 +54,7 @@ struct RamCacheLRU : public RamCache {
   DList(RamCacheLRUEntry, hash_link) *bucket = nullptr;
   int     nbuckets                           = 0;
   int     ibuckets                           = 0;
-  Stripe *stripe                             = nullptr;
+  StripeSM *stripe                             = nullptr;
 
   void              resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
@@ -120,7 +120,7 @@ RamCacheLRU::resize_hashtable()
 }
 
 void
-RamCacheLRU::init(int64_t abytes, Stripe *astripe)
+RamCacheLRU::init(int64_t abytes, StripeSM *astripe)
 {
   stripe    = astripe;
   max_bytes = abytes;

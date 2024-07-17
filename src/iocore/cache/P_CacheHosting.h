@@ -30,7 +30,7 @@
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 
-class Stripe;
+class StripeSM;
 struct CacheVol;
 
 struct CacheHostResult;
@@ -51,7 +51,7 @@ struct CacheHostRecord {
   }
 
   CacheType       type           = CACHE_NONE_TYPE;
-  Stripe        **stripes        = nullptr;
+  StripeSM        **stripes        = nullptr;
   int             num_vols       = 0;
   unsigned short *vol_hash_table = nullptr;
   CacheVol      **cp             = nullptr;

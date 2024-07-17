@@ -97,7 +97,7 @@ extern int64_t cache_config_ram_cache_cutoff;
  * vol_map - precalculated map
  * offset - offset to start looking at (and data at this location has not been read yet). */
 static off_t
-next_in_map(Stripe *stripe, char *vol_map, off_t offset)
+next_in_map(StripeSM *stripe, char *vol_map, off_t offset)
 {
   off_t start_offset = stripe->vol_offset_to_offset(0);
   off_t new_off      = (offset - start_offset);
@@ -113,16 +113,16 @@ next_in_map(Stripe *stripe, char *vol_map, off_t offset)
 }
 
 // Function in CacheDir.cc that we need for make_vol_map().
-int dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe);
+int dir_bucket_loop_fix(Dir *start_dir, int s, StripeSM *stripe);
 
 // TODO: If we used a bit vector, we could make a smaller map structure.
 // TODO: If we saved a high water mark we could have a smaller buf, and avoid searching it
 // when we are asked about the highest interesting offset.
 /* Make map of what blocks in partition are used.
  *
- * d - Stripe to make a map of. */
+ * d - StripeSM to make a map of. */
 static char *
-make_vol_map(Stripe *stripe)
+make_vol_map(StripeSM *stripe)
 {
   // Map will be one byte for each SCAN_BUF_SIZE bytes.
   off_t  start_offset = stripe->vol_offset_to_offset(0);

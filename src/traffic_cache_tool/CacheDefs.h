@@ -137,7 +137,7 @@ struct SpanHeader {
   CacheStripeDescriptor stripes[1];
 };
 
-/** Stripe data, serialized format.
+/** StripeSM data, serialized format.
 
     @internal StripeHeaderFooter
  */
@@ -441,7 +441,7 @@ dir_to_offset(const CacheDirEntry *d, const CacheDirEntry *seg)
 #endif
 }
 
-struct Stripe;
+struct StripeSM;
 struct Span {
   Span(swoc::file::path const &path) : _path(path) {}
   Errata load();
@@ -455,7 +455,7 @@ struct Span {
   /// This is broken and needs to be cleaned up.
   void clearPermanently();
 
-  swoc::Rv<Stripe *> allocStripe(int vol_idx, const CacheStripeBlocks &len);
+  swoc::Rv<StripeSM *> allocStripe(int vol_idx, const CacheStripeBlocks &len);
   Errata             updateHeader(); ///< Update serialized header and write to disk.
 
   swoc::file::path _path;        ///< File system location of span.
@@ -472,10 +472,10 @@ struct Span {
   std::unique_ptr<ts::SpanHeader> _header;
   /// Live information about stripes.
   /// Seeded from @a _header and potentially augmented with direct probing.
-  std::list<Stripe *> _stripes;
+  std::list<StripeSM *> _stripes;
 };
 /* --------------------------------------------------------------------------------------- */
-struct Stripe {
+struct StripeSM {
   /// Meta data is stored in 4 copies A/B and Header/Footer.
   enum Copy { A = 0, B = 1 };
   enum { HEAD = 0, FOOT = 1 };
@@ -496,7 +496,7 @@ struct Stripe {
   };
 
   /// Construct from span header data.
-  Stripe(Span *span, const Bytes &start, const CacheStoreBlocks &len);
+  StripeSM(Span *span, const Bytes &start, const CacheStoreBlocks &len);
 
   /// Is stripe unallocated?
   bool isFree() const;
@@ -532,8 +532,8 @@ struct Stripe {
   Bytes            _content;         ///< Start of content.
   CacheStoreBlocks _len;             ///< Length of stripe.
   uint8_t          _vol_idx    = 0;  ///< Volume index.
-  uint8_t          _type       = 0;  ///< Stripe type.
-  int8_t           _idx        = -1; ///< Stripe index in span.
+  uint8_t          _type       = 0;  ///< StripeSM type.
+  int8_t           _idx        = -1; ///< StripeSM index in span.
   int              agg_buf_pos = 0;
 
   int64_t _buckets  = 0; ///< Number of buckets per segment.

@@ -36,7 +36,7 @@ extern int cache_config_max_disk_errors;
 
 #define DISK_HEADER_MAGIC 0xABCD1237
 
-/* each disk vol block has a corresponding Stripe object */
+/* each disk vol block has a corresponding StripeSM object */
 struct CacheDisk;
 
 struct DiskStripeBlock {

@@ -274,7 +274,7 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
 }
 
 EvacuationBlock *
-Stripe::force_evacuate_head(Dir const *evac_dir, int pinned)
+StripeSM::force_evacuate_head(Dir const *evac_dir, int pinned)
 {
   auto bucket = dir_evac_bucket(evac_dir);
   if (!evac_bucket_valid(bucket)) {
@@ -305,7 +305,7 @@ Stripe::force_evacuate_head(Dir const *evac_dir, int pinned)
 }
 
 void
-Stripe::scan_for_pinned_documents()
+StripeSM::scan_for_pinned_documents()
 {
   if (cache_config_permit_pinning) {
     // we can't evacuate anything between header->write_pos and
@@ -341,7 +341,7 @@ Stripe::scan_for_pinned_documents()
    eventProcessor.schedule_xxx().
    */
 int
-Stripe::aggWriteDone(int event, Event *e)
+StripeSM::aggWriteDone(int event, Event *e)
 {
   cancel_trigger();
 
@@ -403,7 +403,7 @@ Stripe::aggWriteDone(int event, Event *e)
 }
 
 CacheEvacuateDocVC *
-new_DocEvacuator(int nbytes, Stripe *stripe)
+new_DocEvacuator(int nbytes, StripeSM *stripe)
 {
   CacheEvacuateDocVC *c = new_CacheEvacuateDocVC(stripe);
   c->op_type            = static_cast<int>(CacheOpType::Evacuate);
@@ -418,7 +418,7 @@ new_DocEvacuator(int nbytes, Stripe *stripe)
 }
 
 static int
-evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Stripe *stripe)
+evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *stripe)
 {
   Dir dir, *last_collision = nullptr;
   int i = 0;
@@ -455,7 +455,7 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Stripe *str
 }
 
 int
-Stripe::evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e)
+StripeSM::evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e)
 {
   // push to front of aggregation write list, so it is written first
 
@@ -473,7 +473,7 @@ Stripe::evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e)
 }
 
 int
-Stripe::evacuateDocReadDone(int event, Event *e)
+StripeSM::evacuateDocReadDone(int event, Event *e)
 {
   cancel_trigger();
   if (event != AIO_EVENT_DONE) {
@@ -567,7 +567,7 @@ Ldone:
 }
 
 int
-Stripe::evac_range(off_t low, off_t high, int evac_phase)
+StripeSM::evac_range(off_t low, off_t high, int evac_phase)
 {
   off_t s  = this->offset_to_vol_offset(low);
   off_t e  = this->offset_to_vol_offset(high);
@@ -603,7 +603,7 @@ Stripe::evac_range(off_t low, off_t high, int evac_phase)
       io.action        = this;
       io.thread        = AIO_CALLBACK_THREAD_ANY;
       DDbg(dbg_ctl_cache_evac, "evac_range evacuating %X %d", (int)dir_tag(&first->dir), (int)dir_offset(&first->dir));
-      SET_HANDLER(&Stripe::evacuateDocReadDone);
+      SET_HANDLER(&StripeSM::evacuateDocReadDone);
       ink_assert(ink_aio_read(&io) >= 0);
       return -1;
     }
@@ -612,7 +612,7 @@ Stripe::evac_range(off_t low, off_t high, int evac_phase)
 }
 
 int
-Stripe::_agg_copy(CacheVC *vc)
+StripeSM::_agg_copy(CacheVC *vc)
 {
   if (vc->f.evacuator) {
     return this->_copy_evacuator_to_aggregation(vc);
@@ -622,7 +622,7 @@ Stripe::_agg_copy(CacheVC *vc)
 }
 
 inline void
-Stripe::evacuate_cleanup_blocks(int i)
+StripeSM::evacuate_cleanup_blocks(int i)
 {
   EvacuationBlock *b = evac_bucket_valid(i) ? evacuate[i].head : nullptr;
   while (b) {
@@ -640,7 +640,7 @@ Stripe::evacuate_cleanup_blocks(int i)
 }
 
 void
-Stripe::evacuate_cleanup()
+StripeSM::evacuate_cleanup()
 {
   int64_t eo = ((header->write_pos - start) / CACHE_BLOCK_SIZE) + 1;
   int64_t e  = dir_offset_evac_bucket(eo);
@@ -671,7 +671,7 @@ Stripe::evacuate_cleanup()
 }
 
 void
-Stripe::periodic_scan()
+StripeSM::periodic_scan()
 {
   evacuate_cleanup();
   scan_for_pinned_documents();
@@ -682,7 +682,7 @@ Stripe::periodic_scan()
 }
 
 void
-Stripe::agg_wrap()
+StripeSM::agg_wrap()
 {
   header->write_pos = start;
   header->phase     = !header->phase;
@@ -692,7 +692,7 @@ Stripe::agg_wrap()
   dir_lookaside_cleanup(this);
   dir_clean_vol(this);
   {
-    Stripe *stripe = this;
+    StripeSM *stripe = this;
     Metrics::Counter::increment(cache_rsb.directory_wrap);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_wrap);
     Note("Cache volume %d on disk '%s' wraps around", stripe->cache_vol->vol_number, stripe->hash_text.get());
@@ -708,7 +708,7 @@ Stripe::agg_wrap()
    the eventProcessor to schedule events
 */
 int
-Stripe::aggWrite(int event, void * /* e ATS_UNUSED */)
+StripeSM::aggWrite(int event, void * /* e ATS_UNUSED */)
 {
   ink_assert(!is_io_in_progress());
 
@@ -788,7 +788,7 @@ Lagain:
     for reads proceed independently.
    */
   io.thread = AIO_CALLBACK_THREAD_AIO;
-  SET_HANDLER(&Stripe::aggWriteDone);
+  SET_HANDLER(&StripeSM::aggWriteDone);
   ink_aio_write(&io);
 
 Lwait:
@@ -804,7 +804,7 @@ Lwait:
 }
 
 void
-Stripe::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &tocall)
+StripeSM::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &tocall)
 {
   for (auto *c = static_cast<CacheVC *>(this->_write_buffer.get_pending_writers().head); c;) {
     int writelen = c->agg_len;
@@ -1387,7 +1387,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   c->vio.op      = VIO::WRITE;
   c->op_type     = static_cast<int>(CacheOpType::Write);
   c->stripe      = key_to_stripe(key, hostname, host_len);
-  Stripe *stripe = c->stripe;
+  StripeSM *stripe = c->stripe;
   Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
   Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
@@ -1466,7 +1466,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   c->earliest_key = c->key;
   c->frag_type    = CACHE_FRAG_TYPE_HTTP;
   c->stripe       = key_to_stripe(key, hostname, host_len);
-  Stripe *stripe  = c->stripe;
+  StripeSM *stripe  = c->stripe;
   c->info         = info;
   if (c->info && (uintptr_t)info != CACHE_ALLOW_MULTIPLE_WRITES) {
     /*

@@ -95,7 +95,7 @@ bool                               CacheProcessor::check                = false;
 int                                CacheProcessor::start_internal_flags = 0;
 int                                CacheProcessor::auto_clear_flag      = 0;
 CacheProcessor                     cacheProcessor;
-Stripe                           **gstripes  = nullptr;
+StripeSM                         **gstripes  = nullptr;
 std::atomic<int>                   gnstripes = 0;
 ClassAllocator<CacheVC>            cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
@@ -229,7 +229,7 @@ CachePeriodicMetricsUpdate()
 
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
     for (int i = 0; i < gnstripes; ++i) {
-      Stripe *v    = gstripes[i];
+      StripeSM *v    = gstripes[i];
       int64_t used = cache_bytes_used(i);
 
       Metrics::Gauge::increment(v->cache_vol->vol_rsb.bytes_used, used); // This assumes they start at zero
@@ -559,8 +559,8 @@ CacheProcessor::diskInitialized()
     }
   }
 
-  gstripes = static_cast<Stripe **>(ats_malloc(gnstripes * sizeof(Stripe *)));
-  memset(gstripes, 0, gnstripes * sizeof(Stripe *));
+  gstripes = static_cast<StripeSM **>(ats_malloc(gnstripes * sizeof(StripeSM *)));
+  memset(gstripes, 0, gnstripes * sizeof(StripeSM *));
   gnstripes = 0;
   for (i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
@@ -631,7 +631,7 @@ CacheProcessor::cacheInitialized()
   }
   // scan the rest of the stripes.
   for (int i = 1; i < gnstripes; i++) {
-    Stripe *v = gstripes[i];
+    StripeSM *v = gstripes[i];
     if (v->header->version < cacheProcessor.min_stripe_version) {
       cacheProcessor.min_stripe_version = v->header->version;
     }
@@ -689,7 +689,7 @@ CacheProcessor::cacheInitialized()
       uint64_t total_ram_cache_bytes = 0;
 
       for (int i = 0; i < gnstripes; i++) {
-        Stripe *stripe          = gstripes[i];
+        StripeSM *stripe          = gstripes[i];
         int64_t ram_cache_bytes = 0;
 
         if (stripe->cache_vol->ramcache_enabled) {
@@ -873,10 +873,10 @@ build_vol_hash_table(CacheHostRecord *cp)
 {
   int           num_vols = cp->num_vols;
   unsigned int *mapping  = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_vols));
-  Stripe      **p        = static_cast<Stripe **>(ats_malloc(sizeof(Stripe *) * num_vols));
+  StripeSM      **p        = static_cast<StripeSM **>(ats_malloc(sizeof(StripeSM *) * num_vols));
 
   memset(mapping, 0, num_vols * sizeof(unsigned int));
-  memset(p, 0, num_vols * sizeof(Stripe *));
+  memset(p, 0, num_vols * sizeof(StripeSM *));
   uint64_t total    = 0;
   int      bad_vols = 0;
   int      map      = 0;
@@ -1181,13 +1181,13 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
   CacheVol *cp = cp_list.head;
   for (; cp; cp = cp->link.next) {
     if (cp->scheme == scheme) {
-      cp->stripes = static_cast<Stripe **>(ats_malloc(cp->num_vols * sizeof(Stripe *)));
+      cp->stripes = static_cast<StripeSM **>(ats_malloc(cp->num_vols * sizeof(StripeSM *)));
       int vol_no  = 0;
       for (i = 0; i < gndisks; i++) {
         if (cp->disk_stripes[i] && !DISK_BAD(cp->disk_stripes[i]->disk)) {
           DiskStripeBlockQueue *q = cp->disk_stripes[i]->dpb_queue.head;
           for (; q; q = q->link.next) {
-            cp->stripes[vol_no]            = new Stripe();
+            cp->stripes[vol_no]            = new StripeSM();
             CacheDisk *d                   = cp->disk_stripes[i]->disk;
             cp->stripes[vol_no]->disk      = d;
             cp->stripes[vol_no]->fd        = d->fd;
@@ -1226,7 +1226,7 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
     return ACTION_RESULT_DONE;
   }
 
-  Stripe  *stripe = key_to_stripe(key, hostname, host_len);
+  StripeSM  *stripe = key_to_stripe(key, hostname, host_len);
   CacheVC *c      = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;
@@ -1263,7 +1263,7 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
 
   CACHE_TRY_LOCK(lock, cont->mutex, this_ethread());
   ink_assert(lock.is_locked());
-  Stripe *stripe = key_to_stripe(key, hostname, host_len);
+  StripeSM *stripe = key_to_stripe(key, hostname, host_len);
   // coverity[var_decl]
   Dir result;
   dir_clear(&result); // initialized here, set result empty so we can recognize missed lock
@@ -1807,7 +1807,7 @@ rebuild_host_table(Cache *cache)
 }
 
 // if generic_host_rec.stripes == nullptr, what do we do???
-Stripe *
+StripeSM *
 Cache::key_to_stripe(const CacheKey *key, const char *hostname, int host_len)
 {
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);

@@ -81,18 +81,18 @@ std::array<AddWriterBranchTest, 32> add_writer_branch_test_cases = {
    }
 };
 
-/* Catch test helper to provide a Stripe with a valid file descriptor.
+/* Catch test helper to provide a StripeSM with a valid file descriptor.
  *
  * The file will be deleted automatically when the application ends normally.
- * If the Stripe already has a valid file descriptor, that file will NOT be
+ * If the StripeSM already has a valid file descriptor, that file will NOT be
  * closed.
  *
- * @param stripe: A Stripe object with no valid file descriptor.
+ * @param stripe: A StripeSM object with no valid file descriptor.
  * @return The std::FILE* stream if successful, otherwise the Catch test will
  *   be failed at the point of error.
  */
 static std::FILE *
-attach_tmpfile_to_stripe(Stripe &stripe)
+attach_tmpfile_to_stripe(StripeSM &stripe)
 {
   auto *file{std::tmpfile()};
   REQUIRE(file != nullptr);
@@ -105,7 +105,7 @@ attach_tmpfile_to_stripe(Stripe &stripe)
 // We can't return a stripe from this function because the copy
 // and move constructors are deleted.
 static std::FILE *
-init_stripe_for_writing(Stripe &stripe, StripteHeaderFooter &header, CacheVol &cache_vol)
+init_stripe_for_writing(StripeSM &stripe, StripteHeaderFooter &header, CacheVol &cache_vol)
 {
   stripe.cache_vol                             = &cache_vol;
   cache_rsb.write_bytes                        = Metrics::Counter::createPtr("unit_test.write.bytes");
@@ -135,10 +135,10 @@ init_stripe_for_writing(Stripe &stripe, StripteHeaderFooter &header, CacheVol &c
   return attach_tmpfile_to_stripe(stripe);
 }
 
-TEST_CASE("The behavior of Stripe::add_writer.")
+TEST_CASE("The behavior of StripeSM::add_writer.")
 {
   FakeVC vc;
-  Stripe stripe;
+  StripeSM stripe;
 
   SECTION("Branch tests.")
   {
@@ -189,12 +189,12 @@ TEST_CASE("The behavior of Stripe::add_writer.")
   }
 }
 
-// This test case demonstrates how to set up a Stripe and make
+// This test case demonstrates how to set up a StripeSM and make
 // a call to aggWrite without causing memory errors. It uses a
-// tmpfile for the Stripe to write to.
+// tmpfile for the StripeSM to write to.
 TEST_CASE("aggWrite behavior with f.evacuator unset")
 {
-  Stripe              stripe;
+  StripeSM              stripe;
   StripteHeaderFooter header;
   CacheVol            cache_vol;
   auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};
@@ -304,7 +304,7 @@ TEST_CASE("aggWrite behavior with f.evacuator unset")
 // only on the presence of the f.evacuator flag.
 TEST_CASE("aggWrite behavior with f.evacuator set")
 {
-  Stripe              stripe;
+  StripeSM              stripe;
   StripteHeaderFooter header;
   CacheVol            cache_vol;
   auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};

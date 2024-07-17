@@ -33,7 +33,7 @@
 // aio
 #include "iocore/aio/AIO.h"
 
-class Stripe;
+class StripeSM;
 struct InterimCacheVol;
 struct CacheVC;
 class CacheEvacuateDocVC;
@@ -205,7 +205,7 @@ struct Dir {
 // INKqa11166 - Cache can not store 2 HTTP alternates simultaneously.
 // To allow this, move the vector from the CacheVC to the OpenDirEntry.
 // Each CacheVC now maintains a pointer to this vector. Adding/Deleting
-// alternates from this vector is done under the Stripe::lock. The alternate
+// alternates from this vector is done under the StripeSM::lock. The alternate
 // is deleted/inserted into the vector just before writing the vector disk
 // (CacheVC::updateVector).
 LINK_FORWARD_DECLARATION(CacheVC, opendir_link) // forward declaration
@@ -266,29 +266,29 @@ struct CacheSync : public Continuation {
 
 // Global Functions
 
-int      dir_probe(const CacheKey *, Stripe *, Dir *, Dir **);
-int      dir_insert(const CacheKey *key, Stripe *stripe, Dir *to_part);
-int      dir_overwrite(const CacheKey *key, Stripe *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-int      dir_delete(const CacheKey *key, Stripe *stripe, Dir *del);
-int      dir_lookaside_probe(const CacheKey *key, Stripe *stripe, Dir *result, EvacuationBlock **eblock);
-int      dir_lookaside_insert(EvacuationBlock *b, Stripe *stripe, Dir *to);
-int      dir_lookaside_fixup(const CacheKey *key, Stripe *stripe);
-void     dir_lookaside_cleanup(Stripe *stripe);
-void     dir_lookaside_remove(const CacheKey *key, Stripe *stripe);
-void     dir_free_entry(Dir *e, int s, Stripe *stripe);
+int      dir_probe(const CacheKey *, StripeSM *, Dir *, Dir **);
+int      dir_insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
+int      dir_overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+int      dir_delete(const CacheKey *key, StripeSM *stripe, Dir *del);
+int      dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, EvacuationBlock **eblock);
+int      dir_lookaside_insert(EvacuationBlock *b, StripeSM *stripe, Dir *to);
+int      dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
+void     dir_lookaside_cleanup(StripeSM *stripe);
+void     dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
+void     dir_free_entry(Dir *e, int s, StripeSM *stripe);
 void     dir_sync_init();
-int      check_dir(Stripe *stripe);
-void     dir_clean_vol(Stripe *stripe);
-void     dir_clear_range(off_t start, off_t end, Stripe *stripe);
-int      dir_segment_accounted(int s, Stripe *stripe, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
+int      check_dir(StripeSM *stripe);
+void     dir_clean_vol(StripeSM *stripe);
+void     dir_clear_range(off_t start, off_t end, StripeSM *stripe);
+int      dir_segment_accounted(int s, StripeSM *stripe, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
                                int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
-uint64_t dir_entries_used(Stripe *stripe);
+uint64_t dir_entries_used(StripeSM *stripe);
 void     sync_cache_dir_on_shutdown();
-int      dir_freelist_length(Stripe *stripe, int s);
+int      dir_freelist_length(StripeSM *stripe, int s);
 
-int  dir_bucket_length(Dir *b, int s, Stripe *stripe);
-int  dir_freelist_length(Stripe *stripe, int s);
-void dir_clean_segment(int s, Stripe *stripe);
+int  dir_bucket_length(Dir *b, int s, StripeSM *stripe);
+int  dir_freelist_length(StripeSM *stripe, int s);
+void dir_clean_segment(int s, StripeSM *stripe);
 
 // Inline Functions
 
