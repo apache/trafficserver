@@ -4546,6 +4546,7 @@ HTTP/2 Configuration
    Specifies how many settings in an HTTP/2 SETTINGS frame |TS| accepts.
    Clients exceeded this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+   Any negative value configures no limit to the number of settings received.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 14
    :reloadable:
@@ -4553,6 +4554,7 @@ HTTP/2 Configuration
    Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
    Clients exceeded this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+   Any negative value configures no limit to the number of settings received.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_settings_frames_per_minute INT 14
    :reloadable:
@@ -4560,6 +4562,7 @@ HTTP/2 Configuration
    Specifies how many SETTINGS frames |TS| receives for a minute at maximum.
    Clients exceeded this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+   Any negative value configures no limit to the number of SETTINGS frames received.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute INT 60
    :reloadable:
@@ -4567,6 +4570,7 @@ HTTP/2 Configuration
    Specifies how many number of PING frames |TS| receives for a minute at maximum.
    Clients exceeded this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+   Any negative value configures no limit to the number of PING frames received.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_priority_frames_per_minute INT 120
    :reloadable:
@@ -4576,6 +4580,7 @@ HTTP/2 Configuration
    code of ENHANCE_YOUR_CALM. If this is set to 0, the limit logic is disabled.
    This limit only will be enforced if :ts:cv:`proxy.config.http2.stream_priority_enabled`
    is set to 1.
+   Any negative value configures no limit to the number of PRIORITY frames received.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_rst_stream_frames_per_minute INT 200
    :reloadable:
@@ -4583,6 +4588,7 @@ HTTP/2 Configuration
    Specifies how many RST_STREAM frames |TS| receives per minute at maximum.
    Clients exceeding this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+   Any negative value configures no limit to the number of RST_STREAM frames received.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_continuation_frames_per_minute INT 120
    :reloadable:
@@ -4590,6 +4596,19 @@ HTTP/2 Configuration
    Specifies how many CONTINUATION frames |TS| receives per minute at maximum.
    Clients exceeding this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+   Any negative value configures no limit to the number of CONTINUATION frames received.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_empty_frames_per_minute INT 0
+   :reloadable:
+
+   Specifies the maximum number of empty frames |TS| will receive per minute before it will start closing connections.
+   In this context, an "empty frame" means either a DATA frame that does not carry a payload
+   nor an END_STREAM flag, or a CONTINUATION frame that does not carry payload
+   nor an END_HEADERS flag.
+   Clients exceeding this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+   Any negative value configures no limit to the number of empty frames received.
+   ``0`` is the default configuration, meaning that no empty frames are allowed.
 
 .. ts:cv:: CONFIG proxy.config.http2.min_avg_window_update FLOAT 2560.0
    :reloadable:
