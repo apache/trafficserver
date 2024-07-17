@@ -4589,11 +4589,11 @@ HTTP/2 Configuration
 .. ts:cv:: CONFIG proxy.config.http2.max_empty_frames_per_minute INT 0
    :reloadable:
 
-   Specifies how many empty frames |TS| receives for a minute at maximum.
-   What "empty frames" means here is DATA frame that does not carry payload
-   nor END_STREAM flag, and CONTINUATION frame that does not carry payload
-   nor END_HEADERS flag.
-   Clients exceeded this limit will be immediately disconnected with an error
+   Specifies the maximum number of empty frames |TS| will receive per minute before it will start closing connections.
+   In this context, an "empty frame" means either a DATA frame that does not carry a payload
+   nor an END_STREAM flag, or a CONTINUATION frame that does not carry payload
+   nor an END_HEADERS flag.
+   Clients exceeding this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
    Any negative value configures no limit to the number of empty frames received.
    ``0`` is the default configuration, meaning that no empty frames are allowed.

@@ -183,7 +183,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
     if (configured_max_empty_frames_per_minute >= 0 &&
         this->get_received_empty_frame_count() > static_cast<uint32_t>(configured_max_empty_frames_per_minute)) {
       Metrics::Counter::increment(http2_rsb.max_empty_frames_per_minute_exceeded);
-      Http2StreamDebug(this->session, id, "Observed too frequent empty frames: %u within a last minute",
+      Http2StreamDebug(this->session, id, "Observed too many empty DATA frames: %u within the last minute",
                        this->get_received_empty_frame_count());
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                         "recv data too frequent empty frame");
@@ -1010,7 +1010,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     if (configured_max_empty_frames_per_minute >= 0 &&
         this->get_received_empty_frame_count() > static_cast<uint32_t>(configured_max_empty_frames_per_minute)) {
       Metrics::Counter::increment(http2_rsb.max_empty_frames_per_minute_exceeded);
-      Http2StreamDebug(this->session, stream_id, "Observed too frequent empty frames: %u within a last minute",
+      Http2StreamDebug(this->session, stream_id, "Observed too many empty CONTINUATION frames: %u within the last minute",
                        this->get_received_empty_frame_count());
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                         "recv continuation too frequent empty frame");
