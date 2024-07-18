@@ -195,7 +195,6 @@ public:
 
   int evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e);
   int evacuateDocReadDone(int event, Event *e);
-  int evacuateDoc(int event, Event *e);
 
   int              evac_range(off_t start, off_t end, int evac_phase);
   void             periodic_scan();
