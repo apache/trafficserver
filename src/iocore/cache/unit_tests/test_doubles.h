@@ -94,7 +94,7 @@ public:
 class WaitingVC final : public FakeVC
 {
 public:
-  WaitingVC(Stripe *stripe)
+  WaitingVC(StripeSM *stripe)
   {
     SET_HANDLER(&WaitingVC::handle_call);
     this->stripe = stripe;

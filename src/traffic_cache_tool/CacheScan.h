@@ -39,17 +39,17 @@ namespace ct
 {
 class CacheScan
 {
-  Stripe      *stripe    = nullptr;
+  StripeSM    *stripe    = nullptr;
   url_matcher *u_matcher = nullptr;
 
 public:
-  CacheScan(Stripe *str, swoc::file::path const &path) : stripe(str)
+  CacheScan(StripeSM *str, swoc::file::path const &path) : stripe(str)
   {
     if (!path.empty()) {
       u_matcher = new url_matcher(path);
     }
   };
-  CacheScan(Stripe *str) : stripe(str) {}
+  CacheScan(StripeSM *str) : stripe(str) {}
   ~CacheScan() { delete u_matcher; }
   Errata Scan(bool search = false);
   Errata get_alternates(const char *buf, int length, bool search);

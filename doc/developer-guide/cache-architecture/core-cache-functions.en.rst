@@ -96,7 +96,7 @@ Core Cache Types
 Core Cache Functions
 ====================
 
-.. cpp:function:: int dir_probe(const CacheKey * key, Stripe * d, Dir * result, Dir ** last_collision)
+.. cpp:function:: int dir_probe(const CacheKey * key, StripeSM * d, Dir * result, Dir ** last_collision)
 
   Probe the stripe directory for a candidate directory entry.
 

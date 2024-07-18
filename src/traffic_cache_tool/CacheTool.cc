@@ -75,9 +75,9 @@ namespace ct
 /// A live volume.
 /// Volume data based on data from loaded spans.
 struct Volume {
-  int                   _idx;  ///< Volume index.
-  CacheStoreBlocks      _size; ///< Amount of storage allocated.
-  std::vector<Stripe *> _stripes;
+  int                     _idx;  ///< Volume index.
+  CacheStoreBlocks        _size; ///< Amount of storage allocated.
+  std::vector<StripeSM *> _stripes;
 
   /// Remove all data related to @a span.
   //  void clearSpan(Span *span);
@@ -89,7 +89,7 @@ struct Volume {
 void
 Volume::clearSpan(Span* span)
 {
-  auto spot = std::remove_if(_stripes.begin(), _stripes.end(), [span,this](Stripe* stripe) { return stripe->_span == span ? ( this->_size -= stripe->_len , true ) : false; });
+  auto spot = std::remove_if(_stripes.begin(), _stripes.end(), [span,this](StripeSM* stripe) { return stripe->_span == span ? ( this->_size -= stripe->_len , true ) : false; });
   _stripes.erase(spot, _stripes.end());
 }
 #endif
@@ -197,16 +197,16 @@ struct Cache {
   void clearAllocation();
 
   enum class SpanDumpDepth { SPAN, STRIPE, DIRECTORY };
-  void    dumpSpans(SpanDumpDepth depth);
-  void    dumpVolumes();
-  void    build_stripe_hash_table();
-  Stripe *key_to_stripe(CryptoHash *key, const char *hostname, int host_len);
+  void      dumpSpans(SpanDumpDepth depth);
+  void      dumpVolumes();
+  void      build_stripe_hash_table();
+  StripeSM *key_to_stripe(CryptoHash *key, const char *hostname, int host_len);
   //  ts::CacheStripeBlocks calcTotalSpanPhysicalSize();
   ts::CacheStripeBlocks calcTotalSpanConfiguredSize();
 
   std::list<Span *>                  _spans;
   std::map<int, Volume>              _volumes;
-  std::vector<Stripe *>              globalVec_stripe;
+  std::vector<StripeSM *>            globalVec_stripe;
   std::unordered_set<ts::CacheURL *> URLset;
   unsigned short                    *stripes_hash_table;
 };
@@ -483,7 +483,7 @@ Cache::loadSpanDirect(swoc::file::path const &path, int vol_idx, [[maybe_unused]
       int nspb = span->_header->num_diskvol_blks;
       for (auto i = 0; i < nspb; ++i) {
         ts::CacheStripeDescriptor &raw    = span->_header->stripes[i];
-        Stripe                    *stripe = new Stripe(span.get(), raw.offset, raw.len);
+        StripeSM                  *stripe = new StripeSM(span.get(), raw.offset, raw.len);
         stripe->_idx                      = i;
         if (raw.free == 0) {
           stripe->_vol_idx = raw.vol_idx;
@@ -776,11 +776,11 @@ Span::loadDevice()
   return zret;
 }
 
-swoc::Rv<Stripe *>
+swoc::Rv<StripeSM *>
 Span::allocStripe(int vol_idx, const CacheStripeBlocks &len)
 {
   for (auto spot = _stripes.begin(), limit = _stripes.end(); spot != limit; ++spot) {
-    Stripe *stripe = *spot;
+    StripeSM *stripe = *spot;
     if (stripe->isFree()) {
       if (len < stripe->_len) {
         // If the remains would be less than a stripe block, just take it all.
@@ -789,7 +789,7 @@ Span::allocStripe(int vol_idx, const CacheStripeBlocks &len)
           stripe->_type    = 1;
           return stripe;
         } else {
-          Stripe *ns      = new Stripe(this, stripe->_start, len);
+          StripeSM *ns    = new StripeSM(this, stripe->_start, len);
           stripe->_start += len;
           stripe->_len   -= len;
           ns->_vol_idx    = vol_idx;
@@ -806,14 +806,14 @@ Span::allocStripe(int vol_idx, const CacheStripeBlocks &len)
 bool
 Span::isEmpty() const
 {
-  return std::all_of(_stripes.begin(), _stripes.end(), [](Stripe *s) { return s->_vol_idx == 0; });
+  return std::all_of(_stripes.begin(), _stripes.end(), [](StripeSM *s) { return s->_vol_idx == 0; });
 }
 
 Errata
 Span::clear()
 {
-  Stripe *stripe;
-  std::for_each(_stripes.begin(), _stripes.end(), [](Stripe *s) { delete s; });
+  StripeSM *stripe;
+  std::for_each(_stripes.begin(), _stripes.end(), [](StripeSM *s) { delete s; });
   _stripes.clear();
 
   // Gah, due to lack of anything better, TS depends on the number of usable blocks to be consistent
@@ -822,7 +822,7 @@ Span::clear()
   // The maximum number of volumes that can store stored, accounting for the space used to store the descriptors.
   int n   = (eff - sizeof(ts::SpanHeader)) / (CacheStripeBlocks::SCALE + sizeof(CacheStripeDescriptor));
   _offset = _base + round_up(sizeof(ts::SpanHeader) + (n - 1) * sizeof(CacheStripeDescriptor));
-  stripe  = new Stripe(this, _offset, _len - _offset);
+  stripe  = new StripeSM(this, _offset, _len - _offset);
   stripe->vol_init_data();
   stripe->InitializeMeta();
   _stripes.push_back(stripe);
@@ -1021,7 +1021,7 @@ Cache::build_stripe_hash_table()
   ats_free(rtable);
 }
 
-Stripe *
+StripeSM *
 Cache::key_to_stripe(CryptoHash *key, [[maybe_unused]] const char *hostname, [[maybe_unused]] int host_len)
 {
   uint32_t h = (key->slice32(2) >> DIR_TAG_WIDTH) % STRIPE_HASH_TABLE_SIZE;
@@ -1201,7 +1201,7 @@ Find_Stripe(swoc::file::path const &input_file_path)
       ctx.update(host->url.data(), host->url.size());
       ctx.update(&host->port, sizeof(host->port));
       ctx.finalize(hashT);
-      Stripe *stripe_ = cache.key_to_stripe(&hashT, host->url.data(), host->url.size());
+      StripeSM *stripe_ = cache.key_to_stripe(&hashT, host->url.data(), host->url.size());
       w.print("{}", hashT);
       printf("hash of %.*s is %.*s: Stripe  %s \n", static_cast<int>(host->url.size()), host->url.data(),
              static_cast<int>(w.size()), w.data(), stripe_->hashText.data());
@@ -1317,7 +1317,7 @@ Get_Response(swoc::file::path const &input_file_path)
       ctx.update(host->url.data(), host->url.size());
       ctx.update(&host->port, sizeof(host->port));
       ctx.finalize(hashT);
-      Stripe *stripe_ = cache.key_to_stripe(&hashT, host->url.data(), host->url.size());
+      StripeSM *stripe_ = cache.key_to_stripe(&hashT, host->url.data(), host->url.size());
       w.print("{}", hashT);
       printf("hash of %.*s is %.*s: Stripe  %s \n", static_cast<int>(host->url.size()), host->url.data(),
              static_cast<int>(w.size()), w.data(), stripe_->hashText.data());

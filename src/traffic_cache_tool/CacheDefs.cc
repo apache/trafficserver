@@ -178,7 +178,7 @@ int OPEN_RW_FLAG = O_RDONLY;
 namespace ct
 {
 bool
-Stripe::validate_sync_serial()
+StripeSM::validate_sync_serial()
 {
   // check if A sync_serials match and A is at least as updated as B
   return (_meta[0][0].sync_serial == _meta[0][1].sync_serial &&
@@ -188,7 +188,7 @@ Stripe::validate_sync_serial()
 }
 
 Errata
-Stripe::clear()
+StripeSM::clear()
 {
   Errata                   zret;
   alignas(512) static char zero[CacheStoreBlocks::SCALE]; // should be all zero, it's static.
@@ -203,17 +203,17 @@ Stripe::clear()
 
   return zret;
 }
-Stripe::Chunk::~Chunk()
+StripeSM::Chunk::~Chunk()
 {
   this->clear();
 }
 void
-Stripe::Chunk::append(MemSpan<void> m)
+StripeSM::Chunk::append(MemSpan<void> m)
 {
   _chain.push_back(m);
 }
 void
-Stripe::Chunk::clear()
+StripeSM::Chunk::clear()
 {
   for (auto &m : _chain) {
     free(const_cast<void *>(m.data()));
@@ -221,7 +221,7 @@ Stripe::Chunk::clear()
   _chain.clear();
 }
 
-Stripe::Stripe(Span *span, const Bytes &start, const CacheStoreBlocks &len) : _span(span), _start(start), _len(len)
+StripeSM::StripeSM(Span *span, const Bytes &start, const CacheStoreBlocks &len) : _span(span), _start(start), _len(len)
 {
   swoc::bwprint(hashText, "{} {}:{}", span->_path.view(), _start.count(), _len.count());
   CryptoContext().hash_immediate(hash_id, hashText.data(), static_cast<int>(hashText.size()));
@@ -229,14 +229,14 @@ Stripe::Stripe(Span *span, const Bytes &start, const CacheStoreBlocks &len) : _s
 }
 
 bool
-Stripe::isFree() const
+StripeSM::isFree() const
 {
   return 0 == _vol_idx;
 }
 
 // TODO: Implement the whole logic
 Errata
-Stripe::InitializeMeta()
+StripeSM::InitializeMeta()
 {
   Errata zret;
   // memset(this->raw_dir, 0, dir_len);
@@ -266,7 +266,7 @@ Stripe::InitializeMeta()
 
 // Need to be bit more robust at some point.
 bool
-Stripe::validateMeta(StripeMeta const *meta)
+StripeSM::validateMeta(StripeMeta const *meta)
 {
   // Need to be bit more robust at some point.
   return StripeMeta::MAGIC == meta->magic && meta->version._major <= ts::CACHE_DB_MAJOR_VERSION &&
@@ -275,7 +275,7 @@ Stripe::validateMeta(StripeMeta const *meta)
 }
 
 bool
-Stripe::probeMeta(MemSpan<void> &mem, StripeMeta const *base_meta)
+StripeSM::probeMeta(MemSpan<void> &mem, StripeMeta const *base_meta)
 {
   while (mem.size() >= sizeof(StripeMeta)) {
     StripeMeta const *meta = static_cast<StripeMeta *>(mem.data());
@@ -291,7 +291,7 @@ Stripe::probeMeta(MemSpan<void> &mem, StripeMeta const *base_meta)
 }
 
 Errata
-Stripe::updateHeaderFooter()
+StripeSM::updateHeaderFooter()
 {
   Errata zret;
   this->vol_init_data();
@@ -357,14 +357,14 @@ Stripe::updateHeaderFooter()
 }
 
 size_t
-Stripe::vol_dirlen()
+StripeSM::vol_dirlen()
 {
   return vol_headerlen() + ROUND_TO_STORE_BLOCK(((size_t)this->_buckets) * DIR_DEPTH * this->_segments * SIZEOF_DIR) +
          ROUND_TO_STORE_BLOCK(sizeof(StripeMeta));
 }
 
 void
-Stripe::vol_init_data_internal()
+StripeSM::vol_init_data_internal()
 {
   this->_buckets =
     ((this->_len.count() * 8192 - (this->_content - this->_start)) / cache_config_min_average_object_size) / DIR_DEPTH;
@@ -374,7 +374,7 @@ Stripe::vol_init_data_internal()
 }
 
 void
-Stripe::vol_init_data()
+StripeSM::vol_init_data()
 {
   // iteratively calculate start + buckets
   this->vol_init_data_internal();
@@ -383,7 +383,7 @@ Stripe::vol_init_data()
 }
 
 void
-Stripe::updateLiveData([[maybe_unused]] enum Copy c)
+StripeSM::updateLiveData([[maybe_unused]] enum Copy c)
 {
   //  CacheStoreBlocks delta{_meta_pos[c][FOOT] - _meta_pos[c][HEAD]};
   CacheStoreBlocks header_len(0);
@@ -418,31 +418,31 @@ dir_compare_tag(const CacheDirEntry *e, const CryptoHash *key)
 }
 
 int
-vol_in_phase_valid(Stripe *stripe, CacheDirEntry *e)
+vol_in_phase_valid(StripeSM *stripe, CacheDirEntry *e)
 {
   return (dir_offset(e) - 1 < ((stripe->_meta[0][0].write_pos + stripe->agg_buf_pos - stripe->_start) / CACHE_BLOCK_SIZE));
 }
 
 int
-vol_out_of_phase_valid(Stripe *stripe, CacheDirEntry *e)
+vol_out_of_phase_valid(StripeSM *stripe, CacheDirEntry *e)
 {
   return (dir_offset(e) - 1 >= ((stripe->_meta[0][0].agg_pos - stripe->_start) / CACHE_BLOCK_SIZE));
 }
 
 bool
-Stripe::dir_valid(CacheDirEntry *_e)
+StripeSM::dir_valid(CacheDirEntry *_e)
 {
   return (this->_meta[0][0].phase == dir_phase(_e) ? vol_in_phase_valid(this, _e) : vol_out_of_phase_valid(this, _e));
 }
 
 Bytes
-Stripe::stripe_offset(CacheDirEntry *e)
+StripeSM::stripe_offset(CacheDirEntry *e)
 {
   return this->_content + Bytes((dir_offset(e) * CACHE_BLOCK_SIZE) - CACHE_BLOCK_SIZE);
 }
 
 int
-Stripe::dir_probe(CryptoHash *key, [[maybe_unused]] CacheDirEntry *result, [[maybe_unused]] CacheDirEntry **last_collision)
+StripeSM::dir_probe(CryptoHash *key, [[maybe_unused]] CacheDirEntry *result, [[maybe_unused]] CacheDirEntry **last_collision)
 {
   int segment = key->slice32(0) % this->_segments;
   int bucket  = key->slice32(1) % this->_buckets;
@@ -495,7 +495,7 @@ Stripe::dir_probe(CryptoHash *key, [[maybe_unused]] CacheDirEntry *result, [[may
 }
 
 CacheDirEntry *
-Stripe::dir_delete_entry(CacheDirEntry *e, CacheDirEntry *p, int s)
+StripeSM::dir_delete_entry(CacheDirEntry *e, CacheDirEntry *p, int s)
 {
   CacheDirEntry *seg      = this->dir_segment(s);
   int            no       = dir_next(e);
@@ -525,7 +525,7 @@ Stripe::dir_delete_entry(CacheDirEntry *e, CacheDirEntry *p, int s)
 }
 
 void
-Stripe::walk_all_buckets()
+StripeSM::walk_all_buckets()
 {
   for (int s = 0; s < this->_segments; s++) {
     if (walk_bucket_chain(s)) {
@@ -535,7 +535,7 @@ Stripe::walk_all_buckets()
 }
 
 bool
-Stripe::walk_bucket_chain(int s)
+StripeSM::walk_bucket_chain(int s)
 {
   CacheDirEntry     *seg = this->dir_segment(s);
   std::bitset<65536> b_bitset;
@@ -571,7 +571,7 @@ Stripe::walk_bucket_chain(int s)
 }
 
 void
-Stripe::dir_free_entry(CacheDirEntry *e, int s)
+StripeSM::dir_free_entry(CacheDirEntry *e, int s)
 {
   CacheDirEntry *seg = this->dir_segment(s);
   unsigned int   fo  = this->freelist[s];
@@ -586,7 +586,7 @@ Stripe::dir_free_entry(CacheDirEntry *e, int s)
 // adds all the directory entries
 // in a segment to the segment freelist
 void
-Stripe::dir_init_segment(int s)
+StripeSM::dir_init_segment(int s)
 {
   this->freelist[s]  = 0;
   CacheDirEntry *seg = this->dir_segment(s);
@@ -601,7 +601,7 @@ Stripe::dir_init_segment(int s)
 }
 
 void
-Stripe::init_dir()
+StripeSM::init_dir()
 {
   for (int s = 0; s < this->_segments; s++) {
     this->freelist[s]  = 0;
@@ -618,7 +618,7 @@ Stripe::init_dir()
 }
 
 Errata
-Stripe::loadDir()
+StripeSM::loadDir()
 {
   Errata  zret;
   int64_t dirlen  = this->vol_dirlen();
@@ -669,7 +669,7 @@ dir_bucket_loop_check(CacheDirEntry *start_dir, CacheDirEntry *seg)
 #endif
 
 int
-Stripe::dir_freelist_length(int s)
+StripeSM::dir_freelist_length(int s)
 {
   int            free = 0;
   CacheDirEntry *seg  = this->dir_segment(s);
@@ -685,7 +685,7 @@ Stripe::dir_freelist_length(int s)
 }
 
 int
-Stripe::check_loop(int s)
+StripeSM::check_loop(int s)
 {
   // look for loop in the segment
   // rewrite the freelist if loop is present
@@ -716,7 +716,7 @@ compare_ushort(void const *a, void const *b)
 }
 
 void
-Stripe::dir_check()
+StripeSM::dir_check()
 {
   static int const SEGMENT_HISTOGRAM_WIDTH           = 16;
   int              hist[SEGMENT_HISTOGRAM_WIDTH + 1] = {0};
@@ -873,7 +873,7 @@ Stripe::dir_check()
 }
 
 Errata
-Stripe::loadMeta()
+StripeSM::loadMeta()
 {
   // Read from disk in chunks of this size. This needs to be a multiple of both the
   // store block size and the directory entry size so neither goes across read boundaries.

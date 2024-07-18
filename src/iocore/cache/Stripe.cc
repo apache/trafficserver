@@ -88,7 +88,7 @@ struct StripeInitInfo {
 //
 
 int
-Stripe::begin_read(CacheVC *cont) const
+StripeSM::begin_read(CacheVC *cont) const
 {
   ink_assert(cont->mutex->thread_holding == this_ethread());
   ink_assert(mutex->thread_holding == this_ethread());
@@ -119,7 +119,7 @@ Stripe::begin_read(CacheVC *cont) const
 }
 
 int
-Stripe::close_read(CacheVC *cont) const
+StripeSM::close_read(CacheVC *cont) const
 {
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t == this_ethread());
@@ -150,12 +150,12 @@ Stripe::close_read(CacheVC *cont) const
   Add AIO task to clear Dir.
  */
 int
-Stripe::clear_dir_aio()
+StripeSM::clear_dir_aio()
 {
   size_t dir_len = this->dirlen();
   this->_clear_init();
 
-  SET_HANDLER(&Stripe::handle_dir_clear);
+  SET_HANDLER(&StripeSM::handle_dir_clear);
 
   io.aiocb.aio_fildes = fd;
   io.aiocb.aio_buf    = raw_dir;
@@ -173,7 +173,7 @@ Stripe::clear_dir_aio()
   Clear Dir directly. This is mainly used by unit tests. The clear_dir_aio() is the suitable function in most cases.
  */
 int
-Stripe::clear_dir()
+StripeSM::clear_dir()
 {
   size_t dir_len = this->dirlen();
   this->_clear_init();
@@ -187,7 +187,7 @@ Stripe::clear_dir()
 }
 
 int
-Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
+StripeSM::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
   char        *seed_str       = disk->hash_base_string ? disk->hash_base_string : s;
   const size_t hash_seed_size = strlen(seed_str);
@@ -244,7 +244,7 @@ Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   off_t as = skip;
 
   Dbg(dbg_ctl_cache_init, "reading directory '%s'", hash_text.get());
-  SET_HANDLER(&Stripe::handle_header_read);
+  SET_HANDLER(&StripeSM::handle_header_read);
   init_info->vol_aio[0].aiocb.aio_offset = as;
   init_info->vol_aio[1].aiocb.aio_offset = as + footer_offset;
   off_t bs                               = skip + this->dirlen();
@@ -265,7 +265,7 @@ Stripe::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 }
 
 int
-Stripe::handle_dir_clear(int event, void *data)
+StripeSM::handle_dir_clear(int event, void *data)
 {
   size_t       dir_len = this->dirlen();
   AIOCallback *op;
@@ -288,7 +288,7 @@ Stripe::handle_dir_clear(int event, void *data)
       return EVENT_DONE;
     }
     set_io_not_in_progress();
-    SET_HANDLER(&Stripe::dir_init_done);
+    SET_HANDLER(&StripeSM::dir_init_done);
     dir_init_done(EVENT_IMMEDIATE, nullptr);
     /* mark the volume as bad */
   }
@@ -296,7 +296,7 @@ Stripe::handle_dir_clear(int event, void *data)
 }
 
 int
-Stripe::handle_dir_read(int event, void *data)
+StripeSM::handle_dir_read(int event, void *data)
 {
   AIOCallback *op = static_cast<AIOCallback *>(data);
 
@@ -327,9 +327,9 @@ Stripe::handle_dir_read(int event, void *data)
 }
 
 int
-Stripe::recover_data()
+StripeSM::recover_data()
 {
-  SET_HANDLER(&Stripe::handle_recover_from_data);
+  SET_HANDLER(&StripeSM::handle_recover_from_data);
   return handle_recover_from_data(EVENT_IMMEDIATE, nullptr);
 }
 
@@ -370,7 +370,7 @@ Stripe::recover_data()
       */
 
 int
-Stripe::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
+StripeSM::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 {
   uint32_t got_len         = 0;
   uint32_t max_sync_serial = header->sync_serial;
@@ -378,7 +378,7 @@ Stripe::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
   if (event == EVENT_IMMEDIATE) {
     if (header->sync_serial == 0) {
       io.aiocb.aio_buf = nullptr;
-      SET_HANDLER(&Stripe::handle_recover_write_dir);
+      SET_HANDLER(&StripeSM::handle_recover_write_dir);
       return handle_recover_write_dir(EVENT_IMMEDIATE, nullptr);
     }
     // initialize
@@ -556,7 +556,7 @@ Stripe::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 Ldone: {
   /* if we come back to the starting position, then we don't have to recover anything */
   if (recover_pos == header->write_pos && recover_wrapped) {
-    SET_HANDLER(&Stripe::handle_recover_write_dir);
+    SET_HANDLER(&StripeSM::handle_recover_write_dir);
     if (dbg_ctl_cache_init.on()) {
       Note("recovery wrapped around. nothing to clear\n");
     }
@@ -617,7 +617,7 @@ Ldone: {
   init_info->vol_aio[2].aiocb.aio_nbytes = footerlen;
   init_info->vol_aio[2].aiocb.aio_offset = ss + dirlen - footerlen;
 
-  SET_HANDLER(&Stripe::handle_recover_write_dir);
+  SET_HANDLER(&StripeSM::handle_recover_write_dir);
   ink_assert(ink_aio_write(init_info->vol_aio));
   return EVENT_CONT;
 }
@@ -631,7 +631,7 @@ Lclear:
 }
 
 int
-Stripe::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
+StripeSM::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   if (io.aiocb.aio_buf) {
     free(static_cast<char *>(io.aiocb.aio_buf));
@@ -641,12 +641,12 @@ Stripe::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data ATS_
   set_io_not_in_progress();
   scan_pos = header->write_pos;
   periodic_scan();
-  SET_HANDLER(&Stripe::dir_init_done);
+  SET_HANDLER(&StripeSM::dir_init_done);
   return dir_init_done(EVENT_IMMEDIATE, nullptr);
 }
 
 int
-Stripe::handle_header_read(int event, void *data)
+StripeSM::handle_header_read(int event, void *data)
 {
   AIOCallback         *op;
   StripteHeaderFooter *hf[4];
@@ -673,7 +673,7 @@ Stripe::handle_header_read(int event, void *data)
 
     if (hf[0]->sync_serial == hf[1]->sync_serial &&
         (hf[0]->sync_serial >= hf[2]->sync_serial || hf[2]->sync_serial != hf[3]->sync_serial)) {
-      SET_HANDLER(&Stripe::handle_dir_read);
+      SET_HANDLER(&StripeSM::handle_dir_read);
       if (dbg_ctl_cache_init.on()) {
         Note("using directory A for '%s'", hash_text.get());
       }
@@ -682,7 +682,7 @@ Stripe::handle_header_read(int event, void *data)
     }
     // try B
     else if (hf[2]->sync_serial == hf[3]->sync_serial) {
-      SET_HANDLER(&Stripe::handle_dir_read);
+      SET_HANDLER(&StripeSM::handle_dir_read);
       if (dbg_ctl_cache_init.on()) {
         Note("using directory B for '%s'", hash_text.get());
       }
@@ -704,7 +704,7 @@ Stripe::handle_header_read(int event, void *data)
 }
 
 int
-Stripe::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
+StripeSM::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   if (!cache->cache_read_done) {
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(5), ET_CALL);
@@ -713,14 +713,14 @@ Stripe::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
     int i = gnstripes++;
     ink_assert(!gstripes[i]);
     gstripes[i] = this;
-    SET_HANDLER(&Stripe::aggWrite);
+    SET_HANDLER(&StripeSM::aggWrite);
     cache->vol_initialized(fd != -1);
     return EVENT_DONE;
   }
 }
 
 int
-Stripe::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
+StripeSM::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
   static int const SEGMENT_HISTOGRAM_WIDTH           = 16;
   int              hist[SEGMENT_HISTOGRAM_WIDTH + 1] = {0};
@@ -876,7 +876,7 @@ Stripe::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this p
 }
 
 void
-Stripe::_clear_init()
+StripeSM::_clear_init()
 {
   size_t dir_len = this->dirlen();
   memset(this->raw_dir, 0, dir_len);
@@ -895,7 +895,7 @@ Stripe::_clear_init()
 }
 
 void
-Stripe::_init_dir()
+StripeSM::_init_dir()
 {
   int b, s, l;
 
@@ -912,7 +912,7 @@ Stripe::_init_dir()
 }
 
 void
-Stripe::_init_data_internal()
+StripeSM::_init_data_internal()
 {
   // step1: calculate the number of entries.
   off_t total_entries = (this->len - (this->start - this->skip)) / cache_config_min_average_object_size;
@@ -927,7 +927,7 @@ Stripe::_init_data_internal()
 }
 
 void
-Stripe::_init_data()
+StripeSM::_init_data()
 {
   // iteratively calculate start + buckets
   this->_init_data_internal();
@@ -936,7 +936,7 @@ Stripe::_init_data()
 }
 
 bool
-Stripe::add_writer(CacheVC *vc)
+StripeSM::add_writer(CacheVC *vc)
 {
   ink_assert(vc);
   this->_write_buffer.add_bytes_pending_aggregation(vc->agg_len);
@@ -972,7 +972,7 @@ Stripe::add_writer(CacheVC *vc)
 }
 
 void
-Stripe::shutdown(EThread *shutdown_thread)
+StripeSM::shutdown(EThread *shutdown_thread)
 {
   // the process is going down, do a blocking call
   // dont release the volume's lock, there could
@@ -1077,7 +1077,7 @@ update_document_key(CacheVC *vc, Doc *doc)
 }
 
 int
-Stripe::_copy_writer_to_aggregation(CacheVC *vc)
+StripeSM::_copy_writer_to_aggregation(CacheVC *vc)
 {
   off_t          doc_offset{this->header->write_pos + this->get_agg_buf_pos()};
   uint32_t       len         = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
@@ -1149,7 +1149,7 @@ Stripe::_copy_writer_to_aggregation(CacheVC *vc)
 }
 
 int
-Stripe::_copy_evacuator_to_aggregation(CacheVC *vc)
+StripeSM::_copy_evacuator_to_aggregation(CacheVC *vc)
 {
   Doc *doc         = reinterpret_cast<Doc *>(vc->buf->data());
   int  approx_size = this->round_to_approx_size(doc->len);
@@ -1170,7 +1170,7 @@ Stripe::_copy_evacuator_to_aggregation(CacheVC *vc)
 }
 
 bool
-Stripe::flush_aggregate_write_buffer()
+StripeSM::flush_aggregate_write_buffer()
 {
   // set write limit
   this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
@@ -1188,7 +1188,7 @@ Stripe::flush_aggregate_write_buffer()
 }
 
 bool
-Stripe::copy_from_aggregate_write_buffer(char *dest, Dir const &dir, size_t nbytes) const
+StripeSM::copy_from_aggregate_write_buffer(char *dest, Dir const &dir, size_t nbytes) const
 {
   if (!dir_agg_buf_valid(this, &dir)) {
     return false;

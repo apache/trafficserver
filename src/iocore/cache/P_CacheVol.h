@@ -73,7 +73,7 @@
 // Documents
 
 struct Cache;
-class Stripe;
+class StripeSM;
 struct CacheDisk;
 struct StripeInitInfo;
 struct DiskStripe;
@@ -125,7 +125,7 @@ struct EvacuationBlock {
   LINK(EvacuationBlock, link);
 };
 
-class Stripe : public Continuation
+class StripeSM : public Continuation
 {
 public:
   char          *path = nullptr;
@@ -269,10 +269,10 @@ public:
   off_t vol_offset_to_offset(off_t pos) const;
   off_t vol_relative_length(off_t start_offset) const;
 
-  Stripe() : Continuation(new_ProxyMutex())
+  StripeSM() : Continuation(new_ProxyMutex())
   {
     open_dir.mutex = mutex;
-    SET_HANDLER(&Stripe::aggWrite);
+    SET_HANDLER(&StripeSM::aggWrite);
   }
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
@@ -349,7 +349,7 @@ struct CacheVol {
   off_t        size             = 0;
   int          num_vols         = 0;
   bool         ramcache_enabled = true;
-  Stripe     **stripes          = nullptr;
+  StripeSM   **stripes          = nullptr;
   DiskStripe **disk_stripes     = nullptr;
   LINK(CacheVol, link);
   // per volume stats
@@ -360,7 +360,7 @@ struct CacheVol {
 
 // Global Data
 
-extern Stripe                        **gstripes;
+extern StripeSM                      **gstripes;
 extern std::atomic<int>                gnstripes;
 extern ClassAllocator<OpenDirEntry>    openDirEntryAllocator;
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
@@ -370,74 +370,74 @@ extern unsigned short                 *vol_hash_table;
 // inline Functions
 
 inline int
-Stripe::headerlen() const
+StripeSM::headerlen() const
 {
   return ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter) + sizeof(uint16_t) * (this->segments - 1));
 }
 
 inline Dir *
-Stripe::dir_segment(int s) const
+StripeSM::dir_segment(int s) const
 {
   return (Dir *)(((char *)this->dir) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
 
 inline size_t
-Stripe::dirlen() const
+StripeSM::dirlen() const
 {
   return this->headerlen() + ROUND_TO_STORE_BLOCK(((size_t)this->buckets) * DIR_DEPTH * this->segments * SIZEOF_DIR) +
          ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
 }
 
 inline int
-Stripe::direntries() const
+StripeSM::direntries() const
 {
   return this->buckets * DIR_DEPTH * this->segments;
 }
 
 inline int
-Stripe::vol_out_of_phase_valid(Dir const *e) const
+StripeSM::vol_out_of_phase_valid(Dir const *e) const
 {
   return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline int
-Stripe::vol_out_of_phase_agg_valid(Dir const *e) const
+StripeSM::vol_out_of_phase_agg_valid(Dir const *e) const
 {
   return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start + AGG_SIZE) / CACHE_BLOCK_SIZE));
 }
 
 inline int
-Stripe::vol_out_of_phase_write_valid(Dir const *e) const
+StripeSM::vol_out_of_phase_write_valid(Dir const *e) const
 {
   return (dir_offset(e) - 1 >= ((this->header->write_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline int
-Stripe::vol_in_phase_valid(Dir const *e) const
+StripeSM::vol_in_phase_valid(Dir const *e) const
 {
   return (dir_offset(e) - 1 < ((this->header->write_pos + this->_write_buffer.get_buffer_pos() - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline off_t
-Stripe::vol_offset(Dir const *e) const
+StripeSM::vol_offset(Dir const *e) const
 {
   return this->start + (off_t)dir_offset(e) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
 inline off_t
-Stripe::offset_to_vol_offset(off_t pos) const
+StripeSM::offset_to_vol_offset(off_t pos) const
 {
   return ((pos - this->start + CACHE_BLOCK_SIZE) / CACHE_BLOCK_SIZE);
 }
 
 inline off_t
-Stripe::vol_offset_to_offset(off_t pos) const
+StripeSM::vol_offset_to_offset(off_t pos) const
 {
   return this->start + pos * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
 inline int
-Stripe::vol_in_phase_agg_buf_valid(Dir const *e) const
+StripeSM::vol_in_phase_agg_buf_valid(Dir const *e) const
 {
   return (this->vol_offset(e) >= this->header->write_pos &&
           this->vol_offset(e) < (this->header->write_pos + this->_write_buffer.get_buffer_pos()));
@@ -445,7 +445,7 @@ Stripe::vol_in_phase_agg_buf_valid(Dir const *e) const
 
 // length of the partition not including the offset of location 0.
 inline off_t
-Stripe::vol_relative_length(off_t start_offset) const
+StripeSM::vol_relative_length(off_t start_offset) const
 {
   return (this->len + this->skip) - start_offset;
 }
@@ -453,7 +453,7 @@ Stripe::vol_relative_length(off_t start_offset) const
 // inline Functions
 
 inline EvacuationBlock *
-evacuation_block_exists(Dir const *dir, Stripe *stripe)
+evacuation_block_exists(Dir const *dir, StripeSM *stripe)
 {
   auto bucket = dir_evac_bucket(dir);
   if (stripe->evac_bucket_valid(bucket)) {
@@ -468,7 +468,7 @@ evacuation_block_exists(Dir const *dir, Stripe *stripe)
 }
 
 inline void
-Stripe::cancel_trigger()
+StripeSM::cancel_trigger()
 {
   if (trigger) {
     trigger->cancel_action();
@@ -500,13 +500,13 @@ free_EvacuationBlock(EvacuationBlock *b, EThread *t)
 }
 
 inline OpenDirEntry *
-Stripe::open_read(const CryptoHash *key) const
+StripeSM::open_read(const CryptoHash *key) const
 {
   return open_dir.open_read(key);
 }
 
 inline int
-Stripe::within_hit_evacuate_window(Dir const *xdir) const
+StripeSM::within_hit_evacuate_window(Dir const *xdir) const
 {
   off_t oft       = dir_offset(xdir) - 1;
   off_t write_off = (header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
@@ -518,38 +518,38 @@ Stripe::within_hit_evacuate_window(Dir const *xdir) const
 }
 
 inline uint32_t
-Stripe::round_to_approx_size(uint32_t l) const
+StripeSM::round_to_approx_size(uint32_t l) const
 {
   uint32_t ll = round_to_approx_dir_size(l);
   return ROUND_TO_SECTOR(this, ll);
 }
 
 inline bool
-Stripe::evac_bucket_valid(off_t bucket) const
+StripeSM::evac_bucket_valid(off_t bucket) const
 {
   return (bucket >= 0 && bucket < evacuate_size);
 }
 
 inline int
-Stripe::is_io_in_progress() const
+StripeSM::is_io_in_progress() const
 {
   return io.aiocb.aio_fildes != AIO_NOT_IN_PROGRESS;
 }
 
 inline void
-Stripe::set_io_not_in_progress()
+StripeSM::set_io_not_in_progress()
 {
   io.aiocb.aio_fildes = AIO_NOT_IN_PROGRESS;
 }
 
 inline Queue<CacheVC, Continuation::Link_link> &
-Stripe::get_pending_writers()
+StripeSM::get_pending_writers()
 {
   return this->_write_buffer.get_pending_writers();
 }
 
 inline int
-Stripe::get_agg_buf_pos() const
+StripeSM::get_agg_buf_pos() const
 {
   return this->_write_buffer.get_buffer_pos();
 }
