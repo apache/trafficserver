@@ -36,8 +36,8 @@ github:
     - c-taylor
     - etapia
     - lzx404243
-    - JosiahWI
     - phongn
+    - jasmine-nahrain
   protected_branches:
     master:
       required_status_checks:
