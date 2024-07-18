@@ -86,10 +86,10 @@ Enabling ESI
 - ``--first-byte-flush`` will enable the first byte flush feature, which will flush content to users as soon as the entire
   ESI document is received and parsed without all ESI includes fetched. The flushing will stop at the ESI include markup
   till that include is fetched.
-- ``--max-doc-size <number-of-bytes>`` gives the maximum size of the document, in bytes.  The number of bytes must be
-  be must an unsigned decimal integer, and can be followed (with no white space) by a K, to indicate the given number is
-  multiplied by 1024, or by M, to indicate the given number is multiplied by 1024 * 1024.  Example values: 500,
-  5K, 2M.  If this option is omitted, the maximum document size defaults to 1M.
+- ``--max-doc-size <number-of-bytes>`` (or ``--max-doc-size=<number-of-bytes>``) gives the maximum size of the document,
+  in bytes.  The number of bytes must be an unsigned decimal integer, and can be followed (with no white space) by
+  a K, to indicate the given number is multiplied by 1024, or by M, to indicate the given number is multiplied by
+  1024 * 1024.  Example values: 500, 5K, 2M.  If this option is omitted, the maximum document size defaults to 1M.
 
 3. ``HTTP_COOKIE`` variable support is turned off by default. It can be turned on with ``-f <handler_config>`` or
    ``-handler <handler_config>``. For example:
