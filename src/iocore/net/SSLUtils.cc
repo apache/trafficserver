@@ -299,7 +299,6 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   return preverify_ok;
 }
 
-#if TS_USE_HELLO_CB
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 // Pausable callback
 static int
@@ -371,7 +370,6 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 
   return ssl_select_cert_success;
 }
-#endif
 #endif
 
 /**
