@@ -75,7 +75,6 @@ Component         Description
 ``port``          The port number, this is an integer value.
 ``path``          The path.
 ``query``         The query parameters.
-``matrix``        The matrix parameters: Note: This is currently treated as a single string.
 ===============   =================================================================================
 
 .. note::
