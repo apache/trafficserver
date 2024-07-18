@@ -1212,8 +1212,11 @@ CacheVC::openReadStartHead(int event, Event *e)
       if (field) {
         uint64_t cl = static_cast<uint64_t>(field->value_get_int64());
         if (cl != doc_len) {
-          Warning("OpenReadHead failed for cachekey %X : alternate content length doesn't match doc_len %" PRId64 " != %" PRId64,
-                  key.slice32(0), cl, doc_len);
+          int         url_string_length = 0;
+          const char *url_string        = alternate.response_get()->url_get()->string_get_ref(&url_string_length);
+          Warning("OpenReadHead failed for cachekey %X : alternate content length doesn't match doc_len %" PRId64 " != %" PRId64
+                  " url: %.*s",
+                  key.slice32(0), cl, doc_len, url_string_length, url_string);
           Metrics::Counter::increment(cache_rsb.read_invalid);
           Metrics::Counter::increment(stripe->cache_vol->vol_rsb.read_invalid);
           err = ECACHE_BAD_META_DATA;
