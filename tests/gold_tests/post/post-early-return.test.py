@@ -63,15 +63,15 @@ ts.Disk.records_config.update(
 server1 = Test.Processes.Process(
     "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port1))
 server2 = Test.Processes.Process(
-    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port2))
+    "server2", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port2))
 server3 = Test.Processes.Process(
-    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port3))
+    "server3", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port3))
 server4 = Test.Processes.Process(
-    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port4))
+    "server4", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port4))
 server5 = Test.Processes.Process(
-    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port5))
+    "server5", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port5))
 server6 = Test.Processes.Process(
-    "server1", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port6))
+    "server6", "bash -c '" + Test.TestDirectory + "/server1.sh {} outserver1'".format(Test.Variables.upstream_port6))
 
 big_post_body = "0123456789" * 231070
 big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
