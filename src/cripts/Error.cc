@@ -30,6 +30,10 @@ Error::Execute(cripts::Context *context)
     // ToDo: So we can't set the reason phrase here, because ATS doesn't have that
     // as a transaction API, only on the response header...
   }
+
+  if (Redirected()) {
+    context->rri->redirect = 1;
+  }
 }
 
 // These are static, to be used with the set() wrapper define
@@ -45,6 +49,12 @@ Error::Status::_set(cripts::Context *context, TSHttpStatus status)
 {
   context->state.error.Fail();
   context->state.error._status._setter(status);
+
+  if (context->state.error.Redirected() || status == TS_HTTP_STATUS_MOVED_PERMANENTLY ||
+      status == TS_HTTP_STATUS_MOVED_TEMPORARILY || status == TS_HTTP_STATUS_TEMPORARY_REDIRECT ||
+      status == TS_HTTP_STATUS_PERMANENT_REDIRECT) {
+    context->state.error.Redirect();
+  }
 }
 
 TSHttpStatus

@@ -71,12 +71,12 @@ public:
     Status(const self_type &)         = delete;
     void operator=(const self_type &) = delete;
 
-    static void _set(cripts::Context *context, TSHttpStatus _status);
+    static void _set(cripts::Context *context, TSHttpStatus status);
 
     static void
-    _set(cripts::Context *context, int _status)
+    _set(cripts::Context *context, int status)
     {
-      _set(context, static_cast<TSHttpStatus>(_status));
+      _set(context, static_cast<TSHttpStatus>(status));
     }
 
     static TSHttpStatus _get(cripts::Context *context);
@@ -110,9 +110,22 @@ public:
   }
 
   void
-  Fail()
+  Fail(bool redirect = false)
   {
-    _failed = true;
+    _failed   = true;
+    _redirect = redirect;
+  }
+
+  void
+  Redirect()
+  {
+    _redirect = true;
+  }
+
+  [[nodiscard]] bool
+  Redirected() const
+  {
+    return _redirect;
   }
 
   // Check if we have an error, and set appropriate exit codes etc.
@@ -121,7 +134,8 @@ public:
 private:
   Reason _reason;
   Status _status;
-  bool   _failed = false;
+  bool   _failed   = false;
+  bool   _redirect = false;
 };
 
 } // namespace cripts
