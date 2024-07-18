@@ -549,7 +549,7 @@ URLImpl::set_path(HdrHeap *heap, const char *value, int length, bool copy_string
 // url_{params|query|fragment}_set()
 
 void
-URLImpl::set_params(HdrHeap *heap, const char *value, int length, bool copy_string)
+URLImpl::set_params(HdrHeap *heap, const char *value, int length, bool /* copy_string ATS_UNUSED */)
 {
   int path_len = this->m_len_path;
 
