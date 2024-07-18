@@ -80,7 +80,7 @@ public:
    *   have a correct len field, and its headers and data must follow it. This
    *   requires a pointer to a full document buffer - not just the Doc struct.
    * @param approx_size The approximate size of all headers and data as
-   *   determined by Stripe::round_to_approx_size. The document may not need
+   *   determined by StripeSM::round_to_approx_size. The document may not need
    *   this much space.
    *
    */
@@ -100,7 +100,7 @@ public:
    * The new document will be uninitialized.
    *
    * @param approx_size The approximate size of all headers and data as
-   *   determined by Stripe::round_to_approx_size. The document may not need
+   *   determined by StripeSM::round_to_approx_size. The document may not need
    *   this much space.
    * @return Returns a non-owning pointer to the new document.
    */

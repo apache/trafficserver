@@ -149,7 +149,7 @@ extern CacheSync                         *cacheDirSync;
 // Function Prototypes
 int                 cache_write(CacheVC *, CacheHTTPInfoVector *);
 int                 get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
-CacheEvacuateDocVC *new_DocEvacuator(int nbytes, Stripe *stripe);
+CacheEvacuateDocVC *new_DocEvacuator(int nbytes, StripeSM *stripe);
 
 // inline Functions
 
@@ -176,7 +176,7 @@ free_CacheVCCommon(CacheVC *cont)
   static DbgCtl dbg_ctl{"cache_free"};
   Dbg(dbg_ctl, "free %p", cont);
   ProxyMutex *mutex  = cont->mutex.get();
-  Stripe     *stripe = cont->stripe;
+  StripeSM   *stripe = cont->stripe;
 
   if (stripe) {
     Metrics::Gauge::decrement(cache_rsb.status[cont->op_type].active);
@@ -377,17 +377,17 @@ CacheVC::writer_done()
 }
 
 inline int
-Stripe::close_write(CacheVC *cont)
+StripeSM::close_write(CacheVC *cont)
 {
   return open_dir.close_write(cont);
 }
 
 // Returns 0 on success or a positive error code on failure
 inline int
-Stripe::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
+StripeSM::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
-  Stripe *stripe    = this;
-  bool    agg_error = false;
+  StripeSM *stripe    = this;
+  bool      agg_error = false;
   if (!cont->f.remove) {
     agg_error = (!cont->f.update && this->_write_buffer.get_bytes_pending_aggregation() > cache_config_agg_write_backlog);
 #ifdef CACHE_AGG_FAIL_RATE
@@ -409,7 +409,7 @@ Stripe::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 }
 
 inline int
-Stripe::close_write_lock(CacheVC *cont)
+StripeSM::close_write_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
@@ -420,7 +420,7 @@ Stripe::close_write_lock(CacheVC *cont)
 }
 
 inline int
-Stripe::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
+StripeSM::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
@@ -431,7 +431,7 @@ Stripe::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 }
 
 inline OpenDirEntry *
-Stripe::open_read_lock(CryptoHash *key, EThread *t)
+StripeSM::open_read_lock(CryptoHash *key, EThread *t)
 {
   CACHE_TRY_LOCK(lock, mutex, t);
   if (!lock.is_locked()) {
@@ -441,7 +441,7 @@ Stripe::open_read_lock(CryptoHash *key, EThread *t)
 }
 
 inline int
-Stripe::begin_read_lock(CacheVC *cont)
+StripeSM::begin_read_lock(CacheVC *cont)
 {
   // no need for evacuation as the entire document is already in memory
   if (cont->f.single_fragment) {
@@ -457,7 +457,7 @@ Stripe::begin_read_lock(CacheVC *cont)
 }
 
 inline int
-Stripe::close_read_lock(CacheVC *cont)
+StripeSM::close_read_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
@@ -468,7 +468,7 @@ Stripe::close_read_lock(CacheVC *cont)
 }
 
 inline int
-dir_delete_lock(CacheKey *key, Stripe *stripe, ProxyMutex *m, Dir *del)
+dir_delete_lock(CacheKey *key, StripeSM *stripe, ProxyMutex *m, Dir *del)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, stripe->mutex, thread);
@@ -479,7 +479,7 @@ dir_delete_lock(CacheKey *key, Stripe *stripe, ProxyMutex *m, Dir *del)
 }
 
 inline int
-dir_insert_lock(CacheKey *key, Stripe *stripe, Dir *to_part, ProxyMutex *m)
+dir_insert_lock(CacheKey *key, StripeSM *stripe, Dir *to_part, ProxyMutex *m)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, stripe->mutex, thread);
@@ -490,7 +490,7 @@ dir_insert_lock(CacheKey *key, Stripe *stripe, Dir *to_part, ProxyMutex *m)
 }
 
 inline int
-dir_overwrite_lock(CacheKey *key, Stripe *stripe, Dir *to_part, ProxyMutex *m, Dir *overwrite, bool must_overwrite = true)
+dir_overwrite_lock(CacheKey *key, StripeSM *stripe, Dir *to_part, ProxyMutex *m, Dir *overwrite, bool must_overwrite = true)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, stripe->mutex, thread);
@@ -563,7 +563,7 @@ CacheRemoveCont::event_handler(int event, void *data)
 }
 
 struct CacheHostRecord;
-class Stripe;
+class StripeSM;
 class CacheHostTable;
 
 struct Cache {
@@ -600,7 +600,7 @@ struct Cache {
 
   int open_done();
 
-  Stripe *key_to_stripe(const CacheKey *key, const char *hostname, int host_len);
+  StripeSM *key_to_stripe(const CacheKey *key, const char *hostname, int host_len);
 
   Cache() {}
 };

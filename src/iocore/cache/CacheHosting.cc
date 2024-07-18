@@ -441,7 +441,7 @@ CacheHostRecord::Init(CacheType typ)
     Warning("error: No volumes found for Cache Type %d", type);
     return -1;
   }
-  stripes     = static_cast<Stripe **>(ats_malloc(num_vols * sizeof(Stripe *)));
+  stripes     = static_cast<StripeSM **>(ats_malloc(num_vols * sizeof(StripeSM *)));
   int counter = 0;
   for (i = 0; i < num_cachevols; i++) {
     CacheVol *cachep1 = cp[i];
@@ -563,7 +563,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
   if (!num_vols) {
     return -1;
   }
-  stripes     = static_cast<Stripe **>(ats_malloc(num_vols * sizeof(Stripe *)));
+  stripes     = static_cast<StripeSM **>(ats_malloc(num_vols * sizeof(StripeSM *)));
   int counter = 0;
   for (i = 0; i < num_cachevols; i++) {
     CacheVol *cachep = cp[i];

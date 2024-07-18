@@ -90,12 +90,12 @@ public:
   int     fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
   int64_t size() const override;
 
-  void init(int64_t max_bytes, Stripe *stripe) override;
+  void init(int64_t max_bytes, StripeSM *stripe) override;
 
   void compress_entries(EThread *thread, int do_at_most = INT_MAX);
 
   // TODO move it to private.
-  Stripe *stripe = nullptr; // for stats
+  StripeSM *stripe = nullptr; // for stats
 private:
   int64_t _max_bytes = 0;
   int64_t _bytes     = 0;
@@ -203,7 +203,7 @@ RamCacheCLFUS::_resize_hashtable()
 }
 
 void
-RamCacheCLFUS::init(int64_t abytes, Stripe *astripe)
+RamCacheCLFUS::init(int64_t abytes, StripeSM *astripe)
 {
   ink_assert(astripe != nullptr);
   stripe           = astripe;
