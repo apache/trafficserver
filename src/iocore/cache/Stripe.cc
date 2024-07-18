@@ -164,6 +164,9 @@ Stripe::clear_dir_aio()
   io.action           = this;
   io.thread           = AIO_CALLBACK_THREAD_ANY;
   io.then             = nullptr;
+#if TS_USE_MMAP
+  io.mutex = mutex;
+#endif
   ink_assert(ink_aio_write(&io));
 
   return 0;
@@ -177,12 +180,14 @@ Stripe::clear_dir()
 {
   size_t dir_len = this->dirlen();
   this->_clear_init();
-
+#if TS_USE_MMAP
+  memcpy(static_cast<char *>(this->fd) + this->skip, this->raw_dir, dir_len);
+#else
   if (pwrite(this->fd, this->raw_dir, dir_len, this->skip) < 0) {
     Warning("unable to clear cache directory '%s'", this->hash_text.get());
     return -1;
   }
-
+#endif
   return 0;
 }
 
@@ -275,7 +280,11 @@ Stripe::handle_dir_clear(int event, void *data)
     if (!op->ok()) {
       Warning("unable to clear cache directory '%s'", hash_text.get());
       disk->incrErrors(op);
+#if TS_USE_MMAP
+      fd = MAP_FAILED;
+#else
       fd = -1;
+#endif
     }
 
     if (op->aiocb.aio_nbytes == dir_len) {
@@ -284,6 +293,9 @@ Stripe::handle_dir_clear(int event, void *data)
          skip + len */
       op->aiocb.aio_nbytes = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
       op->aiocb.aio_offset = skip + dir_len;
+#if TS_USE_MMAP
+      ink_assert(op->mutex);
+#endif
       ink_assert(ink_aio_write(op));
       return EVENT_DONE;
     }
@@ -550,6 +562,9 @@ Stripe::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
   }
   prev_recover_pos    = recover_pos;
   io.aiocb.aio_offset = recover_pos;
+#if TS_USE_MMAP
+  io.mutex = mutex;
+#endif
   ink_assert(ink_aio_read(&io));
   return EVENT_CONT;
 
@@ -678,6 +693,9 @@ Stripe::handle_header_read(int event, void *data)
         Note("using directory A for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip;
+#if TS_USE_MMAP
+      io.mutex = mutex;
+#endif
       ink_assert(ink_aio_read(&io));
     }
     // try B
@@ -687,6 +705,9 @@ Stripe::handle_header_read(int event, void *data)
         Note("using directory B for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip + this->dirlen();
+#if TS_USE_MMAP
+      io.mutex = mutex;
+#endif
       ink_assert(ink_aio_read(&io));
     } else {
       Note("no good directory, clearing '%s' since sync_serials on both A and B copies are invalid", hash_text.get());
@@ -714,7 +735,11 @@ Stripe::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
     ink_assert(!gstripes[i]);
     gstripes[i] = this;
     SET_HANDLER(&Stripe::aggWrite);
+#if TS_USE_MMAP
+    cache->vol_initialized(fd != MAP_FAILED);
+#else
     cache->vol_initialized(fd != -1);
+#endif
     return EVENT_DONE;
   }
 }
@@ -1011,7 +1036,12 @@ Stripe::shutdown(EThread *shutdown_thread)
   CHECK_DIR(d);
   size_t B     = this->header->sync_serial & 1;
   off_t  start = this->skip + (B ? dirlen : 0);
-  B            = pwrite(this->fd, this->raw_dir, dirlen, start);
+#if TS_USE_MMAP
+  B = dirlen;
+  memcpy(static_cast<char *>(this->fd) + start, this->raw_dir, dirlen);
+#else
+  B = pwrite(this->fd, this->raw_dir, dirlen, start);
+#endif
   ink_assert(B == dirlen);
   Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
 }
@@ -1175,9 +1205,20 @@ Stripe::flush_aggregate_write_buffer()
   // set write limit
   this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
 
+#if TS_USE_MMAP
+  printf("flush_aggregate_write_buffer");
+  int r = this->get_agg_buf_pos();
+  ink_assert(static_cast<char *>(this->fd) + this->header->write_pos + this->_write_buffer.get_buffer_pos() <= this->fd.last);
+  memcpy(static_cast<char *>(this->fd.first) + this->header->write_pos, this->_write_buffer.get_buffer(),
+         this->_write_buffer.get_buffer_pos());
+  if (r != get_agg_buf_pos()) {
+    ink_assert(!"flushing agg buffer failed");
+  }
+#else
   if (!this->_write_buffer.flush(this->fd, this->header->write_pos)) {
     return false;
   }
+#endif
   this->header->last_write_pos  = this->header->write_pos;
   this->header->write_pos      += this->_write_buffer.get_buffer_pos();
   ink_assert(this->header->write_pos == this->header->agg_pos);
