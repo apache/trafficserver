@@ -709,8 +709,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
         call_transact_and_set_next_state(HttpTransact::TooEarly);
         return 0;
       } else if (!SSLConfigParams::server_allow_early_data_params &&
-                 (t_state.hdr_info.client_request.m_http->u.req.m_url_impl->m_len_params > 0 ||
-                  t_state.hdr_info.client_request.m_http->u.req.m_url_impl->m_len_query > 0)) {
+                 t_state.hdr_info.client_request.m_http->u.req.m_url_impl->m_len_query > 0) {
         SMDbg(dbg_ctl_http, "client request was from early data but HAS parameters");
         call_transact_and_set_next_state(HttpTransact::TooEarly);
         return 0;

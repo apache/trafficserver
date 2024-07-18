@@ -697,3 +697,85 @@ TEST_CASE("UrlHashGet", "[url][hash_get]")
     }
   }
 }
+
+struct get_path_test_case {
+  const std::string description;
+  const std::string uri;
+  const std::string path;
+};
+
+// clang-format off
+std::vector<get_path_test_case> get_path_test_cases = {
+  {
+    "Semicolon in paths 1",
+    "http://foo.test/abc/xyz;p1=1,p2=2",
+    "abc/xyz;p1=1,p2=2",
+  },
+  {
+    "Semicolon in paths 2",
+    "http://foo.test/abc;p1=1,p2=2/xyz",
+    "abc;p1=1,p2=2/xyz",
+  },
+  {
+    "Semicolon in paths 3",
+    "http://foo.test/abc/xyz;p1=1,p2=2?q1=1",
+    "abc/xyz;p1=1,p2=2",
+  },
+  {
+    "Semicolon in paths 4",
+    "http://foo.test/abc;p1=1,p2=2/xyz?q1=1",
+    "abc;p1=1,p2=2/xyz",
+  },
+};
+
+/** Return the hash related to a URI.
+  *
+  * @param[in] uri The URI to hash.
+  * @return The hash of the URI.
+ */
+TEST_CASE("UrlPathGet", "[url][path_get]")
+{
+  for (auto const &test_case : get_path_test_cases) {
+    std::string description = test_case.description + ": " + test_case.uri + " -> " + test_case.path;
+    SECTION(description) {
+      URL url;
+      HdrHeap *heap = new_HdrHeap();
+      url.create(heap);
+      url.parse(test_case.uri);
+      const char *path;
+      int path_len;
+      path = url.path_get(&path_len);
+      CHECK(std::string_view(path, path_len) == test_case.path);
+      heap->destroy();
+    }
+  }
+}
+
+
+/**
+ * Tests for deprecated params_get/set
+ */
+TEST_CASE("UrlParamsGet", "[url][params_get]")
+{
+  // Expected behavior
+  // - ParamsGet always return empty string
+  // - ParamsSet appends the value to path
+  // - PathGet returns params appended by ParamsSet
+
+  const char *value;
+  int value_len;
+
+  URL url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+  url.parse("https://foo.test/path;p=1");
+  value = url.path_get(&value_len);
+  CHECK(std::string_view(value, value_len) == "path;p=1");
+  url.params_set("param=1", 7);
+  value = url.params_get(&value_len);
+  CHECK(value == nullptr);
+  CHECK(value_len == 0);
+  value = url.path_get(&value_len);
+  CHECK(std::string_view(value, value_len) == "path;param=1");
+  heap->destroy();
+}
