@@ -42,20 +42,17 @@ struct UrlComponents {
     int host_len;
     int path_len;
     int query_len;
-    int matrix_len;
 
     const char *scheme = TSUrlSchemeGet(bufp, urlLoc, &scheme_len);
     const char *host   = TSUrlHostGet(bufp, urlLoc, &host_len);
     const char *path   = TSUrlPathGet(bufp, urlLoc, &path_len);
     const char *query  = TSUrlHttpQueryGet(bufp, urlLoc, &query_len);
-    const char *matrix = TSUrlHttpParamsGet(bufp, urlLoc, &matrix_len);
     _port              = TSUrlPortGet(bufp, urlLoc);
 
     _scheme.assign(scheme, scheme_len);
     _host.assign(host, host_len);
     _path.assign(path, path_len);
     _query.assign(query, query_len);
-    _matrix.assign(matrix, matrix_len);
   }
 
   // get entire url (e.g.http://host/path?query)
@@ -65,29 +62,25 @@ struct UrlComponents {
     // schemeExtra= :// = 3
     // portExtra = :xxxxx = 6
     // just in case extra = 32
-    size_t iLen = _scheme.size() + _host.size() + _path.size() + _query.size() + _matrix.size() + 3 + 6 + 32;
+    size_t iLen = _scheme.size() + _host.size() + _path.size() + _query.size() + 3 + 6 + 32;
     url.reserve(iLen);
 
-    const int bitAddPort   = 1;
-    const int bitAddQuery  = 1 << 1;
-    const int bitAddMatrix = 1 << 2;
-    int       bitField     = bitAddPort; // add port by default
+    const int bitAddPort  = 1;
+    const int bitAddQuery = 1 << 1;
+    int       bitField    = bitAddPort; // add port by default
     if ((_scheme.compare("http") == 0 && _port == 80) || (_scheme.compare("https") == 0 && _port == 443)) {
       bitField &= ~bitAddPort;
     }
     if (_query.size() != 0) {
       bitField |= bitAddQuery;
     }
-    if (_matrix.size() != 0) {
-      bitField |= bitAddMatrix;
-    }
 
     switch (bitField) {
-    case 0: // default port, no query, no matrix
+    case 0: // default port, no query
       url = _scheme + "://" + _host + "/" + _path;
       break;
 
-    case bitAddPort: { //  port, no query, no matrix
+    case bitAddPort: { //  port, no query
       char sTemp[PORT_BUFFER_SIZE];
       url = _scheme + "://" + _host + ":";
       snprintf(sTemp, PORT_BUFFER_SIZE, "%d", _port);
@@ -96,19 +89,12 @@ struct UrlComponents {
       break;
     }
 
-    case bitAddQuery: //  default port, with query, no matrix
+    case bitAddQuery: //  default port, with query
       url = _scheme + "://" + _host + "/" + _path + "?" + _query;
       break;
-    case bitAddQuery | bitAddMatrix: //  default port, with query, with matrix (even possible?)
-      url = _scheme + "://" + _host + "/" + _path + ";" + _matrix + "?" + _query;
-      break;
 
-    case bitAddMatrix: //  default port, no query, with matrix
-      url = _scheme + "://" + _host + "/" + _path + ";" + _matrix;
-      break;
-
-    case bitAddPort | bitAddQuery: //  port, with query, no matrix
-    {                              // port, with query, with matrix (even possible?)
+    case bitAddPort | bitAddQuery: //  port, with query
+    {                              //  port, with query (even possible?)
       char sTemp[PORT_BUFFER_SIZE];
       url = _scheme + "://" + _host + ":";
       snprintf(sTemp, PORT_BUFFER_SIZE, "%d", _port);
@@ -116,61 +102,32 @@ struct UrlComponents {
       url += "/" + _path + "?" + _query;
       break;
     }
-
-    case bitAddPort | bitAddQuery | bitAddMatrix: { // port, with query, with matrix (even possible?)
-      char sTemp[PORT_BUFFER_SIZE];
-      url = _scheme + "://" + _host + ":";
-      snprintf(sTemp, PORT_BUFFER_SIZE, "%d", _port);
-      url += sTemp;
-      url += "/" + _path + ";" + _matrix + "?" + _query;
-      break;
-    }
-
-    case bitAddPort | bitAddMatrix: { //  port, no query, with matrix
-      char sTemp[PORT_BUFFER_SIZE];
-      url = _scheme + "://" + _host + ":";
-      snprintf(sTemp, PORT_BUFFER_SIZE, "%d", _port);
-      url += sTemp;
-      url += "/" + _path + ";" + _matrix;
-      break;
-    }
     }
   }
 
-  // get path w/query or matrix
+  // get path w/query
   void
   getCompletePathString(std::string &p)
   {
     // schemeExtra= :// = 3
     // portExtra = :xxxxx = 6
     // just in case extra = 32
-    size_t iLen = _path.size() + _query.size() + _matrix.size() + 3 + 6 + 32;
+    size_t iLen = _path.size() + _query.size() + 3 + 6 + 32;
     p.reserve(iLen);
 
-    int       bitField     = 0;
-    const int bitAddQuery  = 1 << 1;
-    const int bitAddMatrix = 1 << 2;
+    int       bitField    = 0;
+    const int bitAddQuery = 1 << 1;
     if (_query.size() != 0) {
       bitField |= bitAddQuery;
     }
-    if (_matrix.size() != 0) {
-      bitField |= bitAddMatrix;
-    }
 
     switch (bitField) {
-    case bitAddQuery: //  default path, with query, no matrix
+    case bitAddQuery: //  default path, with query
       p = "/" + _path + "?" + _query;
-      break;
-    case bitAddQuery | bitAddMatrix: //  default path, with query, with matrix (even possible?)
-      p = "/" + _path + ";" + _matrix + "?" + _query;
-      break;
-
-    case bitAddMatrix: //  default port, no query, with matrix
-      p = "/" + _path + ";" + _matrix;
       break;
 
     default:
-    case 0: // default path, no query, no matrix
+    case 0: // default path, no query
       p = "/" + _path;
       break;
     }
@@ -212,11 +169,6 @@ struct UrlComponents {
     _query = q;
   };
   void
-  setMatrix(std::string &m)
-  {
-    _matrix = m;
-  };
-  void
   setPoinht(int p)
   {
     _port = p;
@@ -242,11 +194,6 @@ struct UrlComponents {
   {
     return _query;
   };
-  const std::string &
-  getMatrix()
-  {
-    return _matrix;
-  };
   int
   getPort()
   {
@@ -260,6 +207,5 @@ private:
   std::string _host;
   std::string _path;
   std::string _query;
-  std::string _matrix;
   int         _port;
 };
