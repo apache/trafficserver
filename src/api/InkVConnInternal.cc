@@ -70,7 +70,7 @@ INKVConnInternal::destroy()
 VIO *
 INKVConnInternal::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  m_read_vio.buffer.writer_for(buf);
+  m_read_vio.set_writer(buf);
   m_read_vio.op = VIO::READ;
   m_read_vio.set_continuation(c);
   m_read_vio.nbytes    = nbytes;
@@ -89,14 +89,14 @@ VIO *
 INKVConnInternal::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
   ink_assert(!owner);
-  m_write_vio.buffer.reader_for(buf);
+  m_write_vio.set_reader(buf);
   m_write_vio.op = VIO::WRITE;
   m_write_vio.set_continuation(c);
   m_write_vio.nbytes    = nbytes;
   m_write_vio.ndone     = 0;
   m_write_vio.vc_server = this;
 
-  if (m_write_vio.buffer.reader()->read_avail() > 0) {
+  if (m_write_vio.get_reader()->read_avail() > 0) {
     if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
       ink_assert(!"not reached");
     }

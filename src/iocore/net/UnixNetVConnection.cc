@@ -609,7 +609,7 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   read.vio.ndone     = 0;
   read.vio.vc_server = (VConnection *)this;
   if (buf) {
-    read.vio.buffer.writer_for(buf);
+    read.vio.set_writer(buf);
     if (!read.enabled) {
       read.vio.reenable();
     }
@@ -635,7 +635,7 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
   write.vio.vc_server = (VConnection *)this;
   if (reader) {
     ink_assert(!owner);
-    write.vio.buffer.reader_for(reader);
+    write.vio.set_reader(reader);
     if (nbytes && !write.enabled) {
       write.vio.reenable();
     }

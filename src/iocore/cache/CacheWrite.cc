@@ -1113,11 +1113,11 @@ CacheVC::openWriteMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   int called_user = 0;
   ink_assert(!is_io_in_progress());
 Lagain:
-  if (!vio.buffer.writer()) {
+  if (!vio.get_writer()) {
     if (calluser(VC_EVENT_WRITE_READY) == EVENT_DONE) {
       return EVENT_DONE;
     }
-    if (!vio.buffer.writer()) {
+    if (!vio.get_writer()) {
       return EVENT_CONT;
     }
   }
@@ -1132,7 +1132,7 @@ Lagain:
     }
   }
   int64_t ntodo       = static_cast<int64_t>(vio.ntodo() + length);
-  int64_t total_avail = vio.buffer.reader()->read_avail();
+  int64_t total_avail = vio.get_reader()->read_avail();
   int64_t avail       = total_avail;
   int64_t towrite     = avail + length;
   if (towrite > ntodo) {
@@ -1144,11 +1144,11 @@ Lagain:
     towrite  = MAX_FRAG_SIZE;
   }
   if (!blocks && towrite) {
-    blocks = vio.buffer.reader()->block;
-    offset = vio.buffer.reader()->start_offset;
+    blocks = vio.get_reader()->block;
+    offset = vio.get_reader()->start_offset;
   }
   if (avail > 0) {
-    vio.buffer.reader()->consume(avail);
+    vio.get_reader()->consume(avail);
     vio.ndone += avail;
     total_len += avail;
   }

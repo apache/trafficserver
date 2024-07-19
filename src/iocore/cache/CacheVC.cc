@@ -170,7 +170,7 @@ VIO *
 CacheVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *abuf)
 {
   ink_assert(vio.op == VIO::READ);
-  vio.buffer.writer_for(abuf);
+  vio.set_writer(abuf);
   vio.set_continuation(c);
   vio.ndone     = 0;
   vio.nbytes    = nbytes;
@@ -188,7 +188,7 @@ VIO *
 CacheVC::do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *abuf, int64_t offset)
 {
   ink_assert(vio.op == VIO::READ);
-  vio.buffer.writer_for(abuf);
+  vio.set_writer(abuf);
   vio.set_continuation(c);
   vio.ndone     = 0;
   vio.nbytes    = nbytes;
@@ -208,7 +208,7 @@ CacheVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuf, bool
 {
   ink_assert(vio.op == VIO::WRITE);
   ink_assert(!owner);
-  vio.buffer.reader_for(abuf);
+  vio.set_reader(abuf);
   vio.set_continuation(c);
   vio.ndone     = 0;
   vio.nbytes    = nbytes;
@@ -245,9 +245,9 @@ CacheVC::reenable(VIO *avio)
   if (!trigger) {
 #ifndef USELESS_REENABLES
     if (vio.op == VIO::READ) {
-      if (vio.buffer.mbuf->max_read_avail() > vio.buffer.writer()->water_mark)
+      if (vio.buffer.mbuf->max_read_avail() > vio.get_writer->water_mark)
         ink_assert(!"useless reenable of cache read");
-    } else if (!vio.buffer.reader()->read_avail())
+    } else if (!vio.get_reader()->read_avail())
       ink_assert(!"useless reenable of cache write");
 #endif
     trigger = avio->mutex->thread_holding->schedule_imm_local(this);

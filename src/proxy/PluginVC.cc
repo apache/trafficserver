@@ -255,7 +255,7 @@ PluginVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
   if (buf) {
-    read_state.vio.buffer.writer_for(buf);
+    read_state.vio.set_writer(buf);
   } else {
     read_state.vio.buffer.clear();
   }
@@ -287,7 +287,7 @@ PluginVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, 
 
   if (abuffer) {
     ink_assert(!owner);
-    write_state.vio.buffer.reader_for(abuffer);
+    write_state.vio.set_reader(abuffer);
   } else {
     write_state.vio.buffer.clear();
   }
