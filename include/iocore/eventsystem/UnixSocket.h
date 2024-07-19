@@ -59,7 +59,7 @@ public:
    * Call is_ok() to determine whether this call succeeded. If the call
    * failed, errno will be set to indicate the error.
    *
-   * @see s_ok
+   * @see is_ok
    */
   UnixSocket(int domain, int ctype, int protocol);
 
