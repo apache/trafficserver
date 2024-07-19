@@ -104,8 +104,6 @@ Statement::parse_url_qualifier(const std::string &q) const
     qual = URL_QUAL_PATH;
   } else if (q == "QUERY") {
     qual = URL_QUAL_QUERY;
-  } else if (q == "MATRIX") {
-    qual = URL_QUAL_MATRIX;
   } else if (q == "SCHEME") {
     qual = URL_QUAL_SCHEME;
   } else if (q == "URL") {

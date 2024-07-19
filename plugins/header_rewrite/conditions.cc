@@ -339,11 +339,6 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     s.append(q_str, i);
     Dbg(pi_dbg_ctl, "   Query parameters to match is: %.*s", i, q_str);
     break;
-  case URL_QUAL_MATRIX:
-    q_str = TSUrlHttpParamsGet(bufp, url, &i);
-    s.append(q_str, i);
-    Dbg(pi_dbg_ctl, "   Matrix parameters to match is: %.*s", i, q_str);
-    break;
   case URL_QUAL_SCHEME:
     q_str = TSUrlSchemeGet(bufp, url, &i);
     s.append(q_str, i);
