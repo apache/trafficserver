@@ -1,0 +1,172 @@
+#!/usr/bin/env python3
+'''Convert allow and deny @actions to add_allow and add_deny.'''
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+import argparse
+import os
+import shutil
+import sys
+import tempfile
+from typing import Optional, TextIO, Tuple
+
+help = '''Convert allow and deny @actions to add_allow and add_deny.
+
+This script is used to convert a pre-10.x remap.config file to be functionally
+equivalent to a 10.x remap.config file. In 10.x, the pre-10.x @action=allow and
+@action=deny actions are renamed to @action=add_allow and @action=add_deny,
+respectively. This script will convert the former to the latter. For further
+details, see the remap.config documentation.
+'''
+
+
+def convert_line(input_line: str) -> str:
+    '''Convert an input line to an output line.
+
+    This function modifies the input line for that of the new 9.2.x format.
+
+    :param input_line: The line to convert.
+    :return: The converted line.
+
+    :examples:
+        >>> convert_line('# nothing to convert')
+        '# nothing to convert'
+        >>> convert_line('map http://example.com http://backend.example.com')
+        'map http://example.com http://backend.example.com'
+
+        >>> convert_line('map http://example.com http://backend.example.com @action=allow @method=GET')
+        'map http://example.com http://backend.example.com @action=add_allow @method=GET'
+        >>> convert_line('map http://example.com http://backend.example.com @action=deny @method=PUT')
+        'map http://example.com http://backend.example.com @action=add_deny @method=PUT'
+
+        # Verify that add_allow and add_deny are not converted.
+        >>> convert_line('map http://example.com http://backend.example.com @action=add_deny @method=PUT')
+        'map http://example.com http://backend.example.com @action=add_deny @method=PUT'
+        >>> convert_line('map http://example.com http://backend.example.com @action=add_allow @method=GET')
+        'map http://example.com http://backend.example.com @action=add_allow @method=GET'
+
+        # Comments should be converted too.
+        >>> convert_line('# Using @action=allow is nice.')
+        '# Using @action=add_allow is nice.'
+        >>> convert_line('# map http://example.com http://backend.example.com @action=allow @method=GET')
+        '# map http://example.com http://backend.example.com @action=add_allow @method=GET'
+    '''
+    output_line = input_line.replace('@action=allow', '@action=add_allow')
+    output_line = output_line.replace('@action=deny', '@action=add_deny')
+    return output_line
+
+
+def copy_input_file(input: str, no_backup: bool) -> str:
+    '''Create a copy of the input file.
+
+    :param input: The input file path from which to create a copy.
+
+    :param no_backup: Do not create a backup file from input. Rather simply
+    create a temporary file that will be later removed. Otherwise, create a
+    backup file of the format <input>.action_to_add.bak.<num>, where <num> is
+    one greater than the greatest value in the directory where @a input exists.
+
+    :return: The path to the copied file.
+    '''
+    if no_backup:
+        copy_path = tempfile.NamedTemporaryFile(delete=False).name
+    else:
+        input_dir = os.path.dirname(input)
+        input_dir = '.' if input_dir == '' else input_dir
+        input_base = os.path.basename(input)
+        # Find the largest <num> in input_dir/input_base.action_to_add.bak.<num>.
+        max_num = 0
+        for file in os.listdir(input_dir):
+            if file.startswith(f'{input_base}.action_to_add.bak.'):
+                try:
+                    num = int(file.split('.')[-1])
+                except ValueError:
+                    # The suffix is not a number. Ignore this file.
+                    continue
+                max_num = max(max_num, num)
+        copy_path = os.path.join(input_dir, f'{input_base}.action_to_add.bak.{max_num + 1}')
+    shutil.copyfile(input, copy_path)
+    return copy_path
+
+
+def prepare_files(input: str, output: Optional[str], no_backup: bool) -> Tuple[str, str]:
+    '''Prepare the input and output files.
+
+    :param input: The input file path.
+    :param output: The output file path.
+    :param no_backup: Do not create a backup of the input file when <input> is modified.
+
+    :return: A tuple containing the input and output filenames, in that order.
+    The input file will contain the content from which to copy, the output file
+    will reference a file whose content should be overridden. The caller should
+    delete the input filename if @a no_backup is true. Otherwise the input
+    filename will be the path to the backup file.
+    '''
+    if not os.path.exists(input):
+        raise FileNotFoundError(f'Input file does not exist: {input}')
+
+    if input == output:
+        input_path = copy_input_file(input, no_backup)
+        output_path = input
+    elif output is None:
+        input_path = copy_input_file(input, no_backup)
+        output_path = input
+    else:
+        input_path = input
+        output_path = output
+    return input_path, output_path
+
+
+def parse_args() -> argparse.Namespace:
+    '''Parse command line arguments.
+
+    :return: The parsed arguments.
+    '''
+    parser = argparse.ArgumentParser(description=help)
+    parser.add_argument('input', help='The input remap.config file to modify.')
+    parser.add_argument(
+        '-o',
+        '--output',
+        help='The output remap.config file. By default, output is written to <input> and a backup file is generated.')
+    parser.add_argument(
+        '-n', '--no-backup', action='store_true', help='Do not create a backup of the input file when <input> is modified.')
+    return parser.parse_args()
+
+
+def main() -> int:
+    '''Convert the input remap.config file.
+
+    :return: The process exit code.
+    '''
+
+    args = parse_args()
+    input_path, output_path = prepare_files(args.input, args.output, args.no_backup)
+
+    with open(input_path, 'r') as fd_in, open(output_path, 'w') as fd_out:
+        for input_line in fd_in:
+            output_line = convert_line(input_line)
+            fd_out.write(output_line)
+    if args.no_backup:
+        os.remove(input_path)
+    return 0
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+    sys.exit(main())
