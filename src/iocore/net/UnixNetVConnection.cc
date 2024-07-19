@@ -418,6 +418,12 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       if (vc->write.enabled) {
         nh->write_ready_list.in_or_enqueue(vc);
       }
+      // If this was driven by a zero length read, signal complete when
+      // the handshake is complete. Otherwise set up for continuing read
+      // operations.
+      if (s->vio.ntodo() <= 0) {
+        vc->readSignalDone(VC_EVENT_WRITE_COMPLETE, nh);
+      }
     } else {
       write_reschedule(nh, vc);
     }
