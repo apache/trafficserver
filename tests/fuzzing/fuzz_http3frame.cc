@@ -57,7 +57,7 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   MIOBuffer *input1 = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
   input1->write(input_data, size_data);
   IOBufferReader *input_reader1 = input1->alloc_reader();
-   
+
   Http3FrameFactory frame_factory;
   frame_factory.fast_create(*input_reader1);
 
