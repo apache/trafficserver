@@ -33,6 +33,8 @@
 #include "iocore/dns/DNSEventIO.h"
 #include "iocore/dns/DNSProcessor.h"
 
+#include "iocore/eventsystem/UnixSocket.h"
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_rand.h"
 #include "tscore/List.h"
@@ -80,7 +82,7 @@ struct DNSConnection {
     self &setLocalIpv4(sockaddr const *addr);
   };
 
-  int        fd;
+  UnixSocket sock{NO_SOCK};
   IpEndpoint ip;
   int        num = 0;
   Options    opt;

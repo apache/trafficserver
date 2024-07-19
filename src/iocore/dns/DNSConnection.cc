@@ -31,14 +31,12 @@
 #include "P_DNS.h"
 #include "P_DNSConnection.h"
 #include "P_DNSProcessor.h"
-#include "tscore/ink_sock.h"
+
+#include "iocore/eventsystem/UnixSocket.h"
 
 #define SET_TCP_NO_DELAY
 #define SET_NO_LINGER
 #define SET_SO_KEEPALIVE
-// set in the OS
-// #define RECV_BUF_SIZE            (1024*64)
-// #define SEND_BUF_SIZE            (1024*64)
 #define FIRST_RANDOM_PORT (16000)
 #define LAST_RANDOM_PORT  (60000)
 
@@ -55,8 +53,7 @@ DbgCtl dbg_ctl_dns{"dns"};
 // Functions
 //
 
-DNSConnection::DNSConnection()
-  : fd(NO_FD), generator(static_cast<uint32_t>(static_cast<uintptr_t>(time(nullptr)) ^ (uintptr_t)this))
+DNSConnection::DNSConnection() : generator(static_cast<uint32_t>(static_cast<uintptr_t>(time(nullptr)) ^ (uintptr_t)this))
 {
   memset(&ip, 0, sizeof(ip));
 }
@@ -70,15 +67,7 @@ int
 DNSConnection::close()
 {
   eio.stop();
-  // don't close any of the standards
-  if (fd >= 2) {
-    int fd_save = fd;
-    fd          = NO_FD;
-    return SocketManager::close(fd_save);
-  } else {
-    fd = NO_FD;
-    return -EBADF;
-  }
+  return this->sock.close();
 }
 
 void
@@ -98,30 +87,25 @@ DNSConnection::trigger()
 int
 DNSConnection::connect(sockaddr const *addr, Options const &opt)
 {
-  ink_assert(fd == NO_FD);
+  ink_assert(!this->sock.is_ok());
   ink_assert(ats_is_ip(addr));
   this->opt = opt;
   this->tcp_data.reset();
 
   int        res = 0;
-  short      Proto;
-  uint8_t    af = addr->sa_family;
+  uint8_t    af  = addr->sa_family;
   IpEndpoint bind_addr;
   size_t     bind_size = 0;
 
   if (opt._use_tcp) {
-    Proto = IPPROTO_TCP;
-    if ((res = SocketManager::socket(af, SOCK_STREAM, 0)) < 0) {
-      goto Lerror;
-    }
+    this->sock = UnixSocket{af, SOCK_STREAM, 0};
   } else {
-    Proto = IPPROTO_UDP;
-    if ((res = SocketManager::socket(af, SOCK_DGRAM, 0)) < 0) {
-      goto Lerror;
-    }
+    this->sock = UnixSocket{af, SOCK_DGRAM, 0};
   }
 
-  fd = res;
+  if (!this->sock.is_ok()) {
+    goto Lerror;
+  }
 
   memset(&bind_addr, 0, sizeof bind_addr);
   bind_addr.sa.sa_family = af;
@@ -152,7 +136,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
       p                               = static_cast<uint16_t>((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
       ats_ip_port_cast(&bind_addr.sa) = htons(p); // stuff port in sockaddr.
       Dbg(dbg_ctl_dns, "random port = %s", ats_ip_nptop(&bind_addr.sa, b, sizeof b));
-      if (SocketManager::ink_bind(fd, &bind_addr.sa, bind_size, Proto) < 0) {
+      if (this->sock.bind(&bind_addr.sa, bind_size) < 0) {
         continue;
       }
       goto Lok;
@@ -161,14 +145,14 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
   Lok:;
   } else if (ats_is_ip(&bind_addr.sa)) {
     ip_text_buffer b;
-    res = SocketManager::ink_bind(fd, &bind_addr.sa, bind_size, Proto);
+    res = this->sock.bind(&bind_addr.sa, bind_size);
     if (res < 0) {
       Warning("Unable to bind local address to %s.", ats_ip_ntop(&bind_addr.sa, b, sizeof b));
     }
   }
 
   if (opt._non_blocking_connect) {
-    if ((res = safe_nonblocking(fd)) < 0) {
+    if ((res = this->sock.set_nonblocking()) < 0) {
       goto Lerror;
     }
   }
@@ -176,27 +160,24 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 // cannot do this after connection on non-blocking connect
 #ifdef SET_TCP_NO_DELAY
   if (opt._use_tcp) {
-    if ((res = setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY)) < 0) {
+    if ((res = this->sock.enable_option(IPPROTO_TCP, TCP_NODELAY)) < 0) {
       goto Lerror;
     }
   }
 #endif
-#ifdef RECV_BUF_SIZE
-  SocketManager::set_rcvbuf_size(fd, RECV_BUF_SIZE);
-#endif
 #ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = setsockopt_on(fd, SOL_SOCKET, SO_KEEPALIVE)) < 0) {
+  if ((res = this->sock.enable_option(SOL_SOCKET, SO_KEEPALIVE)) < 0) {
     goto Lerror;
   }
 #endif
 
   ats_ip_copy(&ip.sa, addr);
-  res = ::connect(fd, addr, ats_ip_size(addr));
+  res = this->sock.connect(addr, ats_ip_size(addr));
 
   if (!res || ((res < 0) && (errno == EINPROGRESS || errno == EWOULDBLOCK))) {
     if (!opt._non_blocking_connect && opt._non_blocking_io) {
-      if ((res = safe_nonblocking(fd)) < 0) {
+      if ((res = this->sock.set_nonblocking()) < 0) {
         goto Lerror;
       }
     }
@@ -209,7 +190,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
   return 0;
 
 Lerror:
-  if (fd != NO_FD) {
+  if (this->sock.is_ok()) {
     close();
   }
   return res;
