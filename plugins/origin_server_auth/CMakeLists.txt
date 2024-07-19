@@ -15,14 +15,25 @@
 #
 #######################
 
-project(s3_auth)
+project(origin_server_auth)
 
-add_atsplugin(s3_auth s3_auth.cc aws_auth_v4.cc)
+add_atsplugin(origin_server_auth origin_server_auth.cc aws_auth_v4.cc)
 
-target_link_libraries(s3_auth PRIVATE OpenSSL::Crypto)
+target_link_libraries(origin_server_auth PRIVATE OpenSSL::Crypto)
 
-verify_remap_plugin(s3_auth)
+verify_remap_plugin(origin_server_auth)
 
 if(BUILD_TESTING)
   add_subdirectory(unit_tests)
 endif()
+
+# This allows s3_auth.so to be used
+# TODO: s3_auth is deprecated since 10.x. Remove this on a future release.
+
+project(s3_auth)
+
+add_atsplugin(s3_auth origin_server_auth.cc aws_auth_v4.cc)
+
+target_link_libraries(s3_auth PRIVATE OpenSSL::Crypto)
+
+verify_remap_plugin(s3_auth)

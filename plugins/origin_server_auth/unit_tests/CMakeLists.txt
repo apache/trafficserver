@@ -15,10 +15,10 @@
 #
 #######################
 
-add_executable(test_s3_auth test_aws_auth_v4.cc "${PROJECT_SOURCE_DIR}/aws_auth_v4.cc")
+add_executable(test_origin_server_auth test_aws_auth_v4.cc "${PROJECT_SOURCE_DIR}/aws_auth_v4.cc")
 
-target_link_libraries(test_s3_auth PRIVATE OpenSSL::Crypto catch2::catch2 ts::tsutil)
+target_link_libraries(test_origin_server_auth PRIVATE OpenSSL::Crypto catch2::catch2 ts::tsutil)
 
-target_compile_definitions(test_s3_auth PRIVATE AWS_AUTH_V4_UNIT_TEST)
+target_compile_definitions(test_origin_server_auth PRIVATE AWS_AUTH_V4_UNIT_TEST)
 
-add_test(NAME test_s3_auth COMMAND test_s3_auth)
+add_test(NAME test_origin_server_auth COMMAND test_origin_server_auth)

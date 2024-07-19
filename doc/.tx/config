@@ -427,9 +427,9 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/regex_remap.en.po
 source_file = _build/locale/pot/admin-guide/plugins/regex_remap.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--s3_auth_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/s3_auth.en.po
-source_file = _build/locale/pot/admin-guide/plugins/s3_auth.en.pot
+[apache-traffic-server-6x.admin-guide--plugins-origin_server_auth_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/origin_server_auth_en.en.po
+source_file = _build/locale/pot/admin-guide/plugins/origin_server_auth_en.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--plugins--sslheaders_en]

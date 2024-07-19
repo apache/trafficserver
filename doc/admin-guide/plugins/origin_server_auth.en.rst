@@ -1,6 +1,6 @@
 .. _admin-plugins-s3-auth:
 
-AWS S3 Authentication plugin
+Origin Server Authentication plugin
 ****************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
@@ -20,9 +20,16 @@ AWS S3 Authentication plugin
   specific language governing permissions and limitations
   under the License.
 
+.. important::
 
-This is a plugin for Apache Traffic Server that provides support for the
-``Amazon S3`` authentication features. This is useful if you for example want
+    s3_auth plugin was replaced with origin_server_auth, which is 100% compatible with s3_auth plugin.
+    For smooth transition, s3_auth plugin is available and provided as an alias of origin_server_auth
+    plugin on this version of ATS. It is recommended that both the plugin name on your config files and
+    the config file format for this plugin be updated as soon as possible. The alias and the support for
+    s3_auth config format will be removed on a future release.
+
+This is a plugin for Apache Traffic Server that provides support for
+``Amazon S3`` and ``Google Cloud Storage`` authentication features. This is useful if you for example want
 to use ``S3`` as your origin server, yet want to avoid direct user access to
 the content.
 
@@ -34,7 +41,7 @@ Using the plugin in a remap rule would be e.g.::
 
    # remap.config
 
-   ...  @plugin=s3_auth.so @pparam=--access_key @pparam=my-key \
+   ...  @plugin=origin_server_auth.so @pparam=--access_key @pparam=my-key \
                            @pparam=--secret_key @pparam=my-secret \
                            @pparam=--session_token @pparam=my-token \
                            @pparam=--virtual_host
@@ -44,7 +51,7 @@ Alternatively, you can store the access key and secret in an external configurat
 
    # remap.config
 
-   ...  @plugin=s3_auth.so @pparam=--config @pparam=s3_auth_v2.config
+   ...  @plugin=origin_server_auth.so @pparam=--config @pparam=s3_auth_v2.config
 
 
 Where ``s3.config`` could look like::
@@ -53,23 +60,45 @@ Where ``s3.config`` could look like::
 
     access_key=my-key
     secret_key=my-secret
-    version=2
+    version=awsv2
     virtual_host=yes
 
 Both ways could be combined as well
+
+Versions
+========
+
+New structure:
+
+  =====  =============================
+  Value  Description
+  =====  =============================
+  awsv2   AWS S3 version 2 (Default)
+  awsv4   AWS S3 version 4
+  gcpv1   Google Storage
+  =====  =============================
+
+Old structure (Deprecated):
+
+  =====  =============================
+  Value  Description
+  =====  =============================
+  2       AWS S3 version 2 (Default)
+  4       AWS S3 version 4
+  =====  =============================
 
 
 AWS Authentication version 4
 ============================
 
-The s3_auth plugin fully implements: `AWS Signing Version 4 <http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html>`_ / `Authorization Header <http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-auth-using-authorization-header.html>`_ / `Transferring Payload in a Single Chunk <http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html>`_ / Unsigned Payload Option
+The origin_server_auth plugin fully implements: `AWS Signing Version 4 <http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html>`_ / `Authorization Header <http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-auth-using-authorization-header.html>`_ / `Transferring Payload in a Single Chunk <http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html>`_ / Unsigned Payload Option
 
 Configuration options::
 
     # Mandatory options
     --access_key=<access_id>
     --secret_key=<key>
-    --version=4
+    --version=awsv4
 
     # Optional
     --session_token=<token>
@@ -90,7 +119,7 @@ The ``s3_auth_v4.config`` config file could look like this::
     access_key=<access_id>
     secret_key=<secret_key>
     session_token=<token>
-    version=4
+    version=awsv4
     v4-include-headers=<comma-separated-list-of-headers-to-be-signed>
     v4-exclude-headers=<comma-separated-list-of-headers-not-to-be-signed>
     v4-region-map=region_map.config
@@ -136,7 +165,7 @@ There are 4 plugin configuration options for version 2::
     --secret_key    <secret_key>
     --virtual_host
     --config        <config file>
-    --version=2
+    --version=awsv2
 
 This is a pretty bare bone start for the S3 services, it is missing a number of features:
 
@@ -148,3 +177,24 @@ This is a pretty bare bone start for the S3 services, it is missing a number of 
 
 
 Contributions to any of these would be appreciated.
+
+Google Cloud Storage
+====================
+
+Configuration options::
+
+    # Mandatory options
+    --access_key=<access_id>
+    --version=gcpv1
+
+If the following option is used then the options could be specified in a file::
+
+    @plugin=origin_server_auth.so @pparam=--config @pparam=gcp_auth.config
+
+
+The ``gcp_auth.config`` config file could look like this::
+
+    # gcp_auth.config
+
+    access_key=<access_id>
+    version=gcpv1

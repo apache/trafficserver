@@ -45,7 +45,6 @@ Plugins that are considered stable are installed by default in |TS| releases.
 .. toctree::
    :hidden:
 
-   AWS S3 Authentication <s3_auth.en>
    AuthProxy <authproxy.en>
    Background Fetch <background_fetch.en>
    Cache Key Manipulation <cachekey.en>
@@ -63,6 +62,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    HTTP Stats <http_stats.en>
    JA3 Fingerprint <ja3_fingerprint.en>
    Lua <lua.en>
+   Origin Server Authentication <origin_server_auth.en>
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
    Remap Purge <remap_purge.en>
@@ -76,9 +76,6 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`AuthProxy <authproxy.en>`
    Delegates the authorization decision of a request to an external HTTP service.
-
-:doc:`AWS S3 Authentication <s3_auth.en>`
-   Support for Amazon S3 authentication features.
 
 :doc:`Background Fetch <background_fetch.en>`
    Proactively fetch content from Origin in a way that it will fill the object into cache.
@@ -127,6 +124,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Lua <lua.en>`
    Allows plugins to be written in Lua instead of C code.
+
+:doc:`Origin Server Authentication <origin_server_auth.en>`
+   Support for Amazon S3 and Google Cloud Services authentication features.
 
 :doc:`Regex Remap <regex_remap.en>`
     Configure remapping rules using regular expressions.
