@@ -20,6 +20,8 @@
 
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3Config.h"
+#include "proxy/http3/Http3FrameDispatcher.h"
+#include "proxy/http3/Http3SettingsHandler.h"
 
 #include "records/RecordsConfig.h"
 #include "tscore/Layout.h"
@@ -52,8 +54,14 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
 
   static bool Initialized = DoInitialization();
 
+  MIOBuffer *input1 = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+  input1->write(input_data, size_data);
+  IOBufferReader *input_reader1 = input1->alloc_reader();
+   
   Http3FrameFactory frame_factory;
-  frame_factory.fast_create(input_data, size_data);
+  frame_factory.fast_create(*input_reader1);
+
+  free_MIOBuffer(input1);
 
   return 0;
 }
