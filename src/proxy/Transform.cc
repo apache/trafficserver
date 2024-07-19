@@ -275,7 +275,7 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
 VIO *
 TransformTerminus::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  m_read_vio.buffer.writer_for(buf);
+  m_read_vio.set_writer(buf);
   m_read_vio.op = VIO::READ;
   m_read_vio.set_continuation(c);
   m_read_vio.nbytes    = nbytes;
@@ -300,7 +300,7 @@ TransformTerminus::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *
 {
   // In the process of eliminating 'owner' mode so asserting against it
   ink_assert(!owner);
-  m_write_vio.buffer.reader_for(buf);
+  m_write_vio.set_reader(buf);
   m_write_vio.op = VIO::WRITE;
   m_write_vio.set_continuation(c);
   m_write_vio.nbytes    = nbytes;
@@ -506,7 +506,7 @@ TransformVConnection::backlog(uint64_t limit)
   MIOBuffer   *w;
   while (raw_vc && raw_vc != &m_terminus) {
     INKVConnInternal *vc = static_cast<INKVConnInternal *>(raw_vc);
-    if (nullptr != (w = vc->m_read_vio.buffer.writer())) {
+    if (nullptr != (w = vc->m_read_vio.get_writer())) {
       b += w->max_read_avail();
     }
     if (b >= limit) {
@@ -514,7 +514,7 @@ TransformVConnection::backlog(uint64_t limit)
     }
     raw_vc = vc->m_output_vc;
   }
-  if (nullptr != (w = m_terminus.m_read_vio.buffer.writer())) {
+  if (nullptr != (w = m_terminus.m_read_vio.get_writer())) {
     b += w->max_read_avail();
   }
   if (b >= limit) {

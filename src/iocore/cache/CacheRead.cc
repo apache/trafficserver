@@ -535,7 +535,7 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
   }
   b          = iobufferblock_clone(writer_buf.get(), writer_offset, bytes);
   writer_buf = iobufferblock_skip(writer_buf.get(), &writer_offset, &length, bytes);
-  vio.buffer.writer()->append_block(b);
+  vio.get_writer()->append_block(b);
   vio.ndone += bytes;
   if (vio.ntodo() <= 0) {
     return calluser(VC_EVENT_READ_COMPLETE);
@@ -790,7 +790,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (ntodo <= 0) {
     return EVENT_CONT;
   }
-  if (vio.buffer.writer()->max_read_avail() > vio.buffer.writer()->water_mark && vio.ndone) { // initiate read of first block
+  if (vio.get_writer()->max_read_avail() > vio.get_writer()->water_mark && vio.ndone) { // initiate read of first block
     return EVENT_CONT;
   }
   if ((bytes <= 0) && vio.ntodo() >= 0) {
@@ -801,7 +801,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
   b           = new_IOBufferBlock(buf, bytes, doc_pos);
   b->_buf_end = b->_end;
-  vio.buffer.writer()->append_block(b);
+  vio.get_writer()->append_block(b);
   vio.ndone += bytes;
   doc_pos   += bytes;
   if (vio.ntodo() <= 0) {
@@ -812,7 +812,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
     // we have to keep reading until we give the user all the
     // bytes it wanted or we hit the watermark.
-    if (vio.ntodo() > 0 && !vio.buffer.writer()->high_water()) {
+    if (vio.ntodo() > 0 && !vio.get_writer()->high_water()) {
       goto Lread;
     }
     return EVENT_CONT;
