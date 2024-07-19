@@ -49,9 +49,9 @@
 
 bool transient_error();
 
-struct UnixSocket {
-  int fd{NO_SOCK};
-
+class UnixSocket
+{
+public:
   UnixSocket(int fd);
 
   /** Get a new socket.
@@ -62,6 +62,8 @@ struct UnixSocket {
    * @see s_ok
    */
   UnixSocket(int domain, int ctype, int protocol);
+
+  int get_fd() const;
 
   bool is_ok() const;
 
@@ -101,6 +103,9 @@ struct UnixSocket {
   int shutdown(int how);
 
   static bool client_fastopen_supported();
+
+private:
+  int fd{NO_SOCK};
 };
 
 inline UnixSocket::UnixSocket(int fd) : fd{fd} {}
@@ -108,6 +113,12 @@ inline UnixSocket::UnixSocket(int fd) : fd{fd} {}
 inline UnixSocket::UnixSocket(int domain, int type, int protocol)
 {
   this->fd = socket(domain, type, protocol);
+}
+
+inline int
+UnixSocket::get_fd() const
+{
+  return this->fd;
 }
 
 inline bool

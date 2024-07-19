@@ -530,12 +530,12 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
     }
     return false;
   } else {
-    if (cur_con.eio.start(pd, cur_con.sock.fd, EVENTIO_READ) < 0) {
+    if (cur_con.eio.start(pd, cur_con.sock.get_fd(), EVENTIO_READ) < 0) {
       Error("[iocore_dns] open_con: Failed to add %d server to epoll list\n", icon);
     } else {
       cur_con.num   = icon;
       ns_down[icon] = 0;
-      Dbg(dbg_ctl_dns, "opening connection %s on fd %d SUCCEEDED for %d", ip_text, cur_con.sock.fd, icon);
+      Dbg(dbg_ctl_dns, "opening connection %s on fd %d SUCCEEDED for %d", ip_text, cur_con.sock.get_fd(), icon);
     }
     ret = true;
   }
@@ -1184,7 +1184,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
   }
   e->id[dns_retries - e->retries] = i;
   UnixSocket con_sock             = over_tcp ? h->tcpcon[h->name_server].sock : h->udpcon[h->name_server].sock;
-  Dbg(dbg_ctl_dns, "send query (qtype=%d) for %s to fd %d", e->qtype, e->qname, con_sock.fd);
+  Dbg(dbg_ctl_dns, "send query (qtype=%d) for %s to fd %d", e->qtype, e->qname, con_sock.get_fd());
 
   int s = con_sock.send(buffer, r, 0);
   if (s != r) {
