@@ -841,12 +841,11 @@ S3Request::authorizeV2(S3Config *s3)
 {
   TSHttpStatus status   = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   TSMLoc       host_loc = TS_NULL_MLOC, md5_loc = TS_NULL_MLOC, contype_loc = TS_NULL_MLOC;
-  int          method_len = 0, path_len = 0, param_len = 0, host_len = 0, con_md5_len = 0, con_type_len = 0, date_len = 0;
-  const char  *method = nullptr, *path = nullptr, *param = nullptr, *host = nullptr, *con_md5 = nullptr, *con_type = nullptr,
-             *host_endp = nullptr;
-  char      date[128]; // Plenty of space for a Date value
-  time_t    now = time(nullptr);
-  struct tm now_tm;
+  int          method_len = 0, path_len = 0, host_len = 0, con_md5_len = 0, con_type_len = 0, date_len = 0;
+  const char  *method = nullptr, *path = nullptr, *host = nullptr, *con_md5 = nullptr, *con_type = nullptr, *host_endp = nullptr;
+  char         date[128]; // Plenty of space for a Date value
+  time_t       now = time(nullptr);
+  struct tm    now_tm;
 
   // Start with some request resources we need
   if (nullptr == (method = TSHttpHdrMethodGet(_bufp, _hdr_loc, &method_len))) {
@@ -855,9 +854,6 @@ S3Request::authorizeV2(S3Config *s3)
   if (nullptr == (path = TSUrlPathGet(_bufp, _url_loc, &path_len))) {
     return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   }
-
-  // get matrix parameters
-  param = TSUrlHttpParamsGet(_bufp, _url_loc, &param_len);
 
   // Next, setup the Date: header, it's required.
   if (nullptr == gmtime_r(&now, &now_tm)) {
@@ -920,12 +916,7 @@ S3Request::authorizeV2(S3Config *s3)
       loff += str_concat(&left[loff], (left_size - loff), "/", 1);
     }
 
-    loff += str_concat(&left[loff], (left_size - loff), path, path_len);
-
-    if (param) {
-      loff += str_concat(&left[loff], (left_size - loff), ";", 1);
-      str_concat(&left[loff], (left_size - loff), param, param_len);
-    }
+    str_concat(&left[loff], (left_size - loff), path, path_len);
 
     Dbg(dbg_ctl, "%s", left);
   }
@@ -954,10 +945,6 @@ S3Request::authorizeV2(S3Config *s3)
   }
 
   HMAC_Update(ctx, (unsigned char *)path, path_len);
-  if (param) {
-    HMAC_Update(ctx, reinterpret_cast<const unsigned char *>(";"), 1); // TSUrlHttpParamsGet() does not include ';'
-    HMAC_Update(ctx, (unsigned char *)param, param_len);
-  }
 
   HMAC_Final(ctx, hmac, &hmac_len);
   HMAC_CTX_free(ctx);
