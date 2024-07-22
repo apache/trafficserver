@@ -38,7 +38,6 @@ Synopsis
 .. function:: TSReturnCode TSUrlPortSet(TSMBuffer bufp, TSMLoc offset, int port)
 .. function:: TSReturnCode TSUrlPathSet(TSMBuffer bufp, TSMLoc offset, const char * value, int length)
 .. function:: TSReturnCode TSUrlHttpQuerySet(TSMBuffer bufp, TSMLoc offset, const char * value, int length)
-.. function:: TSReturnCode TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc offset, const char * value, int length)
 .. function:: TSReturnCode TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc offset, const char * value, int length)
 
 Description
@@ -51,7 +50,7 @@ and retrieve or modify parts of URLs, such as their host, port or scheme
 information.
 
 :func:`TSUrlSchemeSet`, :func:`TSUrlUserSet`, :func:`TSUrlPasswordSet`,
-:func:`TSUrlHostSet`, :func:`TSUrlHttpParamsSet`, :func:`TSUrlHttpQuerySet`
+:func:`TSUrlHostSet`, :func:`TSUrlHttpQuerySet`
 and :func:`TSUrlHttpFragmentSet` each set the specified portion of the URL
 located at offset within the marshal buffer :arg:`bufp` to the string
 value. If :arg:`length` is :literal:`-1` then these functions assume that value

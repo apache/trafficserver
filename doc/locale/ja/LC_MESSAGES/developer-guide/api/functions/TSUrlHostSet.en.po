@@ -68,7 +68,7 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSUrlHostSet.en.rst:51
 msgid ""
 ":func:`TSUrlSchemeSet`, :func:`TSUrlUserSet`, :func:`TSUrlPasswordSet`, :"
-"func:`TSUrlHostSet`, :func:`TSUrlHttpParamsSet`, :func:`TSUrlHttpQuerySet` "
+"func:`TSUrlHostSet`, :func:`TSUrlHttpQuerySet` "
 "and :func:`TSUrlHttpFragmentSet` each set the specified portion of the URL "
 "located at offset within the marshal buffer :arg:`bufp` to the string "
 "value. If :arg:`length` is :literal:`-1` then these functions assume that "
