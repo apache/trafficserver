@@ -693,6 +693,8 @@ initialize_process_manager()
 
 extern void initializeRegistry();
 
+extern void Initialize_Errata_Settings();
+
 static void
 initialize_file_manager()
 {
@@ -1777,6 +1779,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #if defined(DEBUG) && defined(HAVE_MCHECK_PEDANTIC)
   mcheck_pedantic(NULL);
 #endif
+
+  // Override default swoc::Errata settings.
+  Initialize_Errata_Settings();
 
   pcre_malloc = ats_malloc;
   pcre_free   = ats_free;

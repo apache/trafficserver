@@ -25,9 +25,10 @@
 #include "tsutil/ts_diag_levels.h"
 #include "tsutil/ts_errata.h"
 
-static const bool INITIALIZED = []() -> bool {
+void
+Initialize_Errata_Settings()
+{
   swoc::Errata::DEFAULT_SEVERITY = ERRATA_ERROR;
   swoc::Errata::FAILURE_SEVERITY = ERRATA_WARN;
   swoc::Errata::SEVERITY_NAMES   = swoc::MemSpan<swoc::TextView const>(Severity_Names.data(), Severity_Names.size());
-  return true;
-}();
+}
