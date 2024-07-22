@@ -51,14 +51,6 @@ msgstr ""
 "次の任意のパラメーターがプラグインインスタンスの振る舞いを変更するために使用"
 "できます。 ::"
 
-#: ../../admin-guide/plugins/regex_remap.en.rst:83
-msgid ""
-"Finally, you can also include the matrix parameters in the string, using "
-"the option 'matrix-parameters', e.g. ::"
-msgstr ""
-"最後に、'matrix-parameters' オプションを使用することで、文字列内に行列パラ"
-"メーターを含めることができます。 ::"
-
 #: ../../admin-guide/plugins/regex_remap.en.rst:4
 msgid "Regex Remap Plugin"
 msgstr "Regex リマッププラグイン"
