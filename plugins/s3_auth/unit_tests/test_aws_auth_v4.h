@@ -95,12 +95,6 @@ public:
     return _path.c_str();
   }
   const char *
-  getParams(int *length) override
-  {
-    *length = _params.length();
-    return _params.c_str();
-  }
-  const char *
   getQuery(int *length) override
   {
     *length = _query.length();
@@ -120,7 +114,6 @@ public:
   String         _method;
   String         _host;
   String         _path;
-  String         _params;
   String         _query;
   HeaderMultiMap _headers;
 };
