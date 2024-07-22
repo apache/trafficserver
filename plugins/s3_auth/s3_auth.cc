@@ -916,7 +916,7 @@ S3Request::authorizeV2(S3Config *s3)
       loff += str_concat(&left[loff], (left_size - loff), "/", 1);
     }
 
-    loff += str_concat(&left[loff], (left_size - loff), path, path_len);
+    str_concat(&left[loff], (left_size - loff), path, path_len);
 
     Dbg(dbg_ctl, "%s", left);
   }
