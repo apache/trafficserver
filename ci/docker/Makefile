@@ -33,7 +33,7 @@ all: fedora centos
 fedora: fedora31 fedora32 fedora33 fedora34
 
 fedora31:
-	docker build -t ats_$@ --build-arg OS_VERSION=31 --build-arg OS_TYPE=fedora yum/
+	docker build -t ats_$@ --build- OS_VERSION=31 --build-arg OS_TYPE=fedora yum/
 
 fedora32:
 	docker build -t ats_$@ --build-arg OS_VERSION=32 --build-arg OS_TYPE=fedora yum/
