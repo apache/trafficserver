@@ -50,7 +50,6 @@ static void ts_lua_inject_server_request_get_header_size_api(lua_State *L);
 static void ts_lua_inject_server_request_get_body_size_api(lua_State *L);
 static void ts_lua_inject_server_request_uri_api(lua_State *L);
 static void ts_lua_inject_server_request_uri_args_api(lua_State *L);
-static void ts_lua_inject_server_request_uri_params_api(lua_State *L);
 static void ts_lua_inject_server_request_url_api(lua_State *L);
 static void ts_lua_inject_server_request_method_api(lua_State *L);
 
@@ -65,8 +64,6 @@ static int ts_lua_server_request_get_uri(lua_State *L);
 static int ts_lua_server_request_set_uri(lua_State *L);
 static int ts_lua_server_request_set_uri_args(lua_State *L);
 static int ts_lua_server_request_get_uri_args(lua_State *L);
-static int ts_lua_server_request_set_uri_params(lua_State *L);
-static int ts_lua_server_request_get_uri_params(lua_State *L);
 static int ts_lua_server_request_get_method(lua_State *L);
 static int ts_lua_server_request_set_method(lua_State *L);
 static int ts_lua_server_request_get_url_host(lua_State *L);
@@ -100,7 +97,6 @@ ts_lua_inject_server_request_api(lua_State *L)
   ts_lua_inject_server_request_method_api(L);
   ts_lua_inject_server_request_uri_api(L);
   ts_lua_inject_server_request_uri_args_api(L);
-  ts_lua_inject_server_request_uri_params_api(L);
 
   ts_lua_inject_server_request_url_api(L);
 
@@ -577,58 +573,6 @@ ts_lua_server_request_get_uri_args(lua_State *L)
   TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
 
   param = TSUrlHttpQueryGet(http_ctx->server_request_bufp, http_ctx->server_request_url, &param_len);
-
-  if (param && param_len > 0) {
-    lua_pushlstring(L, param, param_len);
-
-  } else {
-    lua_pushnil(L);
-  }
-
-  return 1;
-}
-
-static void
-ts_lua_inject_server_request_uri_params_api(lua_State *L)
-{
-  lua_pushcfunction(L, ts_lua_server_request_set_uri_params);
-  lua_setfield(L, -2, "set_uri_params");
-
-  lua_pushcfunction(L, ts_lua_server_request_get_uri_params);
-  lua_setfield(L, -2, "get_uri_params");
-}
-
-static int
-ts_lua_server_request_set_uri_params(lua_State *L)
-{
-  const char *param;
-  size_t      param_len;
-
-  ts_lua_http_ctx *http_ctx;
-
-  GET_HTTP_CONTEXT(http_ctx, L);
-
-  TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
-
-  param = luaL_checklstring(L, 1, &param_len);
-  TSUrlHttpParamsSet(http_ctx->server_request_bufp, http_ctx->server_request_url, param, param_len);
-
-  return 0;
-}
-
-static int
-ts_lua_server_request_get_uri_params(lua_State *L)
-{
-  const char *param;
-  int         param_len;
-
-  ts_lua_http_ctx *http_ctx;
-
-  GET_HTTP_CONTEXT(http_ctx, L);
-
-  TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
-
-  param = TSUrlHttpParamsGet(http_ctx->server_request_bufp, http_ctx->server_request_url, &param_len);
 
   if (param && param_len > 0) {
     lua_pushlstring(L, param, param_len);
