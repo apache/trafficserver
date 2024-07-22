@@ -433,7 +433,6 @@ TEST_CASE("AWSAuthSpecByExample: GET Object", "[AWS][auth][SpecByExample]")
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("test.txt");
-  api._params.assign("");
   api._query.assign("");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("Range", "bytes=0-9"));
@@ -479,7 +478,6 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket Lifecycle", "[AWS][auth][SpecByExamp
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("lifecycle");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("x-amz-content-sha256", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
@@ -524,7 +522,6 @@ TEST_CASE("AWSAuthSpecByExample: Get Bucket List Objects", "[AWS][auth][SpecByEx
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("x-amz-content-sha256", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
@@ -616,7 +613,6 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, unsigned pay-load, exc
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
@@ -666,7 +662,6 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, query param value alre
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("PATH==");
-  api._params.assign("");
   api._query.assign("key=TEST==");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
@@ -713,7 +708,6 @@ TEST_CASE("S3AuthV4UtilParams: signing multiple same name fields", "[AWS][auth][
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("Content-Type", "gzip"));
@@ -778,7 +772,6 @@ TEST_CASE("S3AuthV4UtilParams: include all headers by default", "[AWS][auth][uti
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("Content-Type", "gzip"));
@@ -813,7 +806,6 @@ TEST_CASE("S3AuthV4UtilParams: include all headers explicit", "[AWS][auth][SpecB
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("Content-Type", "gzip"));
@@ -884,7 +876,6 @@ TEST_CASE("S3AuthV4UtilParams: include/exclude non overlapping headers", "[AWS][
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("Content-Type", "gzip"));
@@ -919,7 +910,6 @@ TEST_CASE("S3AuthV4UtilParams: include/exclude overlapping headers", "[AWS][auth
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("Content-Type", "gzip"));
@@ -955,7 +945,6 @@ TEST_CASE("S3AuthV4UtilParams: include/exclude overlapping headers missing inclu
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("Content-Type", "gzip"));
@@ -991,7 +980,6 @@ TEST_CASE("S3AuthV4UtilParams: include/exclude overlapping headers missing exclu
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("Content-Type", "gzip"));
@@ -1030,7 +1018,6 @@ TEST_CASE("S3AuthV4UtilParams: include content type", "[AWS][auth][utility]")
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("Content-Type", "gzip"));
@@ -1064,7 +1051,6 @@ TEST_CASE("S3AuthV4UtilParams: include missing content type", "[AWS][auth][utili
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
-  api._params.assign("");
   api._query.assign("max-keys=2&prefix=J");
   api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
   api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
