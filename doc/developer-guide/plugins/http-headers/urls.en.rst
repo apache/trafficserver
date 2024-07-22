@@ -119,8 +119,6 @@ Traffic Server **URL functions** are listed below:
 :func:`TSUrlHostSet`
 :func:`TSUrlHttpFragmentGet`
 :func:`TSUrlHttpFragmentSet`
-:func:`TSUrlHttpParamsGet`
-:func:`TSUrlHttpParamsSet`
 :func:`TSUrlHttpQueryGet`
 :func:`TSUrlHttpQuerySet`
 :func:`TSUrlLengthGet`
