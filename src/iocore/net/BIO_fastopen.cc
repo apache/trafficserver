@@ -24,7 +24,9 @@
 #include <openssl/opensslv.h>
 
 #include "P_Net.h"
-#include "iocore/eventsystem/SocketManager.h"
+
+#include "iocore/eventsystem/UnixSocket.h"
+
 #include "tscore/ink_assert.h"
 #include "tscore/ink_config.h"
 
@@ -214,8 +216,9 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
 
   errno = 0;
   BIO_clear_retry_flags(bio);
-  int fd = BIO_get_fd(bio, nullptr);
-  ink_assert(fd != NO_FD);
+  int        fd = BIO_get_fd(bio, nullptr);
+  UnixSocket sock{fd};
+  ink_assert(sock.is_ok());
 
   void *dst_void = get_dest_addr_for_bio(bio);
   if (dst_void) {
@@ -225,14 +228,14 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
     // RFC 7413. If we get EINPROGRESS it means that the SYN has been
     // sent without data and we should retry.
     Metrics::Counter::increment(net_rsb.fastopen_attempts);
-    err = SocketManager::sendto(fd, (void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
+    err = sock.sendto((void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
     if (err >= 0) {
       Metrics::Counter::increment(net_rsb.fastopen_successes);
     }
 
     set_dest_addr_for_bio(bio, nullptr);
   } else {
-    err = SocketManager::write(fd, (void *)in, insz);
+    err = sock.write((void *)in, insz);
   }
 
   if (err < 0) {
@@ -252,12 +255,13 @@ fastopen_bread(BIO *bio, char *out, int outsz)
 
   errno = 0;
   BIO_clear_retry_flags(bio);
-  int fd = BIO_get_fd(bio, nullptr);
-  ink_assert(fd != NO_FD);
+  int        fd = BIO_get_fd(bio, nullptr);
+  UnixSocket sock{fd};
+  ink_assert(sock.is_ok());
 
   // TODO: If we haven't done the fastopen, ink_abort().
 
-  err = SocketManager::read(fd, out, outsz);
+  err = sock.read(out, outsz);
   if (err < 0) {
     errno = -err;
     if (BIO_sock_non_fatal_error(errno)) {

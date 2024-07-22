@@ -420,12 +420,12 @@ SSLNetVConnection::read_raw_data()
     buf_len = rattempted;
     b       = b->next.get();
 
-    r = SocketManager::read(this->con.fd, buffer, buf_len);
+    r = this->con.sock.read(buffer, buf_len);
     Metrics::Counter::increment(net_rsb.calls_to_read);
     total_read += rattempted;
 
     Dbg(dbg_ctl_ssl, "read_raw_data r=%" PRId64 " rattempted=%" PRId64 " total_read=%" PRId64 " fd=%d", r, rattempted, total_read,
-        con.fd);
+        con.sock.get_fd());
     // last read failed or was incomplete
     if (r != rattempted || !b) {
       break;
@@ -963,7 +963,7 @@ SSLNetVConnection::do_io_close(int lerrno)
       // at the same time we send the close-notify.  If so, the client will likely
       // send RST anyway
       char    c;
-      ssize_t x = recv(this->con.fd, &c, 1, MSG_PEEK);
+      ssize_t x = this->con.sock.recv(&c, 1, MSG_PEEK);
       // x < 0 means error.  x == 0 means fin sent
       bool do_shutdown = (x > 0);
       if (x < 0) {
@@ -1031,7 +1031,7 @@ SSLNetVConnection::free_thread(EThread *t)
   ink_release_assert(t == this_ethread());
 
   // close socket fd
-  if (con.fd != NO_FD) {
+  if (con.sock.is_ok()) {
     release_inbound_connection_tracking();
     Metrics::Gauge::decrement(net_rsb.connections_currently_open);
   }
@@ -1075,13 +1075,13 @@ SSLNetVConnection::free_thread(EThread *t)
 
   clear();
   SET_CONTINUATION_HANDLER(this, &SSLNetVConnection::startEvent);
-  ink_assert(con.fd == NO_FD);
+  ink_assert(!con.sock.is_ok());
   ink_assert(t == this_ethread());
 
   if (from_accept_thread) {
     sslNetVCAllocator.free(this);
   } else {
-    ink_assert(con.fd == NO_FD);
+    ink_assert(!con.sock.is_ok());
     THREAD_FREE(this, sslNetVCAllocator, t);
   }
 }
