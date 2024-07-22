@@ -77,7 +77,7 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSUrlHostGet.en.rst:51
 msgid ""
 ":func:`TSUrlSchemeGet`, :func:`TSUrlUserGet`, :func:`TSUrlPasswordGet`, :"
-"func:`TSUrlHostGet`, :func:`TSUrlHttpParamsGet`, :func:`TSUrlHttpQueryGet` "
+"func:`TSUrlHostGet`, :func:`TSUrlHttpQueryGet` "
 "and :func:`TSUrlHttpFragmentGet` each retrieve an internal pointer to the "
 "specified portion of the URL from the marshall buffer :arg:`bufp`. The "
 "length of the returned string is placed in :arg:`length` and a pointer to "
