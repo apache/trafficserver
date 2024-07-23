@@ -111,6 +111,7 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE`                  :ts:cv:`proxy.config.http.cache.when_to_revalidate`
 :c:macro:`TS_CONFIG_HTTP_CHUNKING_ENABLED`                          :ts:cv:`proxy.config.http.chunking_enabled`
 :c:macro:`TS_CONFIG_HTTP_CHUNKING_SIZE`                             :ts:cv:`proxy.config.http.chunking.size`
+:c:macro:`TS_CONFIG_HTTP_DROP_CHUNKED_TRAILERS`                     :ts:cv:`proxy.config.http.drop_chunked_trailers`
 :c:macro:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER`  :ts:cv:`proxy.config.http.connect_attempts_max_retries_dead_server`
 :c:macro:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES`              :ts:cv:`proxy.config.http.connect_attempts_max_retries`
 :c:macro:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES`               :ts:cv:`proxy.config.http.connect_attempts_rr_retries`

@@ -734,9 +734,10 @@ struct OverridableHttpConfigParams {
 
   MgmtInt background_fill_active_timeout;
 
-  MgmtInt http_chunking_size;   // Maximum chunk size for chunked output.
-  MgmtInt flow_high_water_mark; ///< Flow control high water mark.
-  MgmtInt flow_low_water_mark;  ///< Flow control low water mark.
+  MgmtInt http_chunking_size;          // Maximum chunk size for chunked output.
+  MgmtByte http_drop_chunked_trailers; ///< Whether to drop chunked trailers.
+  MgmtInt flow_high_water_mark;        ///< Flow control high water mark.
+  MgmtInt flow_low_water_mark;         ///< Flow control low water mark.
 
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;

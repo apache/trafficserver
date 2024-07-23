@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <atomic>
 
+#include "ts/apidefs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/I_Layout.h"
@@ -8098,6 +8099,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CHUNKING_SIZE:
     ret = _memberp_to_generic(&overridableHttpConfig->http_chunking_size, typep);
     break;
+  case TS_CONFIG_HTTP_DROP_CHUNKED_TRAILERS:
+    ret = _memberp_to_generic(&overridableHttpConfig->http_drop_chunked_trailers, typep);
+    break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->flow_control_enabled, typep);
     break;
@@ -8622,6 +8626,9 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 's':
       if (!strncmp(name, "proxy.config.http.doc_in_cache_skip_dns", length)) {
         cnf = TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS;
+      }
+      if (!strncmp(name, "proxy.config.http.drop_chunked_trailers", length)) {
+        cnf = TS_CONFIG_HTTP_DROP_CHUNKED_TRAILERS;
       }
       break;
     }
