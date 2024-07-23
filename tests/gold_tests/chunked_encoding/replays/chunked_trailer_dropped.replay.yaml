@@ -1,0 +1,68 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Verify that we handle dropping chunked trailers correctly. This assumes ATS is
+# configured to drop chunked trailers.
+
+sessions:
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /some/path
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, 1 ]
+      content:
+        transfer: plain
+        encoding: uri
+        # 3-byte chunk, abc.
+        # Then chunked trailers between 0\r\n and a final \r\n (per specification).
+        data: 3%0D%0Aabc%0D%0A0%0D%0AClient%3A%20ATS%0D%0AETag%3A%20%22abc%22%0D%0A%0D%0A
+
+    proxy-request:
+      content:
+        transfer: plain
+        encoding: uri
+        # Note: same as client-request, but the trailer is dropped.
+        data: 3%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        verify: { as: equal }
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Content-Type, text/html ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Note: same content as the client-request.
+        data: 3%0D%0Aabc%0D%0A0%0D%0ASever%3A%20ATS%0D%0AETag%3A%20%22def%22%0D%0A%0D%0A
+
+    proxy-request:
+      content:
+        transfer: plain
+        encoding: uri
+        # Note: same as server-response, but the trailer is dropped.
+        data: 3%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        verify: { as: equal }

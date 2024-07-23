@@ -188,6 +188,7 @@ records:
     doc_in_cache_skip_dns: 1
     down_server:
       cache_time: 60
+    drop_chunked_trailers: 1
     enable_http_stats: 1
     enabled: 1
     errors:
