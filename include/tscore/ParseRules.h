@@ -129,8 +129,8 @@ public:
   static CTypeResult is_alnum(char c);            // 0-9,A-Z,a-z
   static CTypeResult is_space(char c);            // ' ' HT,VT,NP,CR,LF
   static CTypeResult is_control(char c);          // 0x00-0x08, 0x0a-0x1f, 0x7f
-  static CTypeResult is_mime_sep(char c);         // ()<>,;\"/[]?{} \t
-  static CTypeResult is_http_field_name(char c);  // not : or mime_sep except for @
+  static CTypeResult is_mime_sep(char c);         // @()<>,;\"/[]?{} \t
+  static CTypeResult is_http_field_name(char c);  // not :, =, 0x80+, control, or mime_sep except for @
   static CTypeResult is_http_field_value(char c); // not CR, LF, comma, or "
 
   //////////////////
@@ -708,8 +708,9 @@ ParseRules::is_http_field_name(char c)
 #ifndef COMPILE_PARSE_RULES
   return (parseRulesCType[(unsigned char)c] & is_http_field_name_BIT);
 #else
-  if ((c == ':') || (is_mime_sep(c) && (c != '@')))
+  if (!is_char(c) || is_control(c) || (is_mime_sep(c) && c != '@') || c == '=' || c == ':') {
     return false;
+  }
   return true;
 #endif
 }
