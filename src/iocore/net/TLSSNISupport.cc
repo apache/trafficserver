@@ -87,22 +87,22 @@ TLSSNISupport::perform_sni_action(SSL &ssl)
   return SSL_TLSEXT_ERR_OK;
 }
 
-#if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
+#if TS_USE_HELLO_CB
 void
-#ifdef OPENSSL_IS_BORINGSSL
-TLSSNISupport::on_client_hello(const SSL_CLIENT_HELLO *client_hello)
-#else
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 TLSSNISupport::on_client_hello(SSL *ssl, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+TLSSNISupport::on_client_hello(const SSL_CLIENT_HELLO *client_hello)
 #endif
 {
   const char          *servername = nullptr;
   const unsigned char *p;
   size_t               remaining, len;
   // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
-#ifdef OPENSSL_IS_BORINGSSL
-  if (SSL_early_callback_ctx_extension_get(client_hello, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2)
-#else
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
   if (SSL_client_hello_get0_ext(ssl, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2)
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+  if (SSL_early_callback_ctx_extension_get(client_hello, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2)
 #endif
   {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree

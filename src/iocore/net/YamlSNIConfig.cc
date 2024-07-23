@@ -228,7 +228,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_http2_max_continuation_frames_per_minute,
                                                TS_quic,
                                                TS_ip_allow,
-#if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
+#if TS_USE_HELLO_CB
                                                TS_valid_tls_versions_in,
                                                TS_valid_tls_version_min_in,
                                                TS_valid_tls_version_max_in,
