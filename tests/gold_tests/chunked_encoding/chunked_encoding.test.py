@@ -146,3 +146,99 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("content-length:", "Response should not include content length")
 # Transfer encoding to origin, but no content-length
 # No extra bytes in body seen by origin
+
+
+class TestChunkedTrailers:
+    """Verify chunked trailer proxy behavior."""
+
+    _chunked_dropped_replay: str = "replays/chunked_trailer_dropped.replay.yaml"
+    _proxied_dropped_replay: str = "replays/chunked_trailer_proxied.replay.yaml"
+
+    def __init__(self, configure_drop_trailers: bool):
+        """Create a test to verify chunked trailer behavior.
+
+        :param configure_drop_trailers: Whether to configure ATS to drop
+        trailers or not.
+        """
+        self._configure_drop_trailers = configure_drop_trailers
+        self._replay_file = self._chunked_dropped_replay if configure_drop_trailers else self._proxied_dropped_replay
+        behavior_description = "drop" if configure_drop_trailers else "proxy"
+        tr = Test.AddTestRun(f'Verify chunked tailers behavior: {behavior_description}')
+        self._configure_dns(tr)
+        self._configure_server(tr)
+        self._configure_ts(tr)
+        self._configure_client(tr)
+
+    def _configure_dns(self, tr: 'TestRun') -> "Process":
+        """Configure DNS for the test run.
+
+        :param tr: The TestRun to configure DNS for.
+        :return: The DNS process.
+        """
+        name = 'dns-drop-trailers' if self._configure_drop_trailers else 'dns-proxy-trailers'
+        self._dns = tr.MakeDNServer(name, default='127.0.0.1')
+        return self._dns
+
+    def _configure_server(self, tr: 'TestRun') -> 'Process':
+        """Configure the origin server for the test run.
+
+        :param tr: The TestRun to configure the server for.
+        :return: The origin server process.
+        """
+        name = 'server-drop-trailers' if self._configure_drop_trailers else 'server-proxy-trailers'
+        self._server = tr.AddVerifierServerProcess(name, self._replay_file)
+        if self._configure_drop_trailers:
+            self._server.Streams.All += Testers.ExcludesExpression('Client: ATS', 'Verify the Client trailer was dropped.')
+            self._server.Streams.All += Testers.ExcludesExpression('ETag: "abc"', 'Verify the ETag trailer was dropped.')
+        else:
+            self._server.Streams.All += Testers.ContainsExpression('Client: ATS', 'Verify the Client trailer was proxied.')
+            self._server.Streams.All += Testers.ContainsExpression('ETag: "abc"', 'Verify the ETag trailer was proxied.')
+        return self._server
+
+    def _configure_ts(self, tr: 'TestRun') -> 'Process':
+        """Configure ATS for the test run.
+
+        :param tr: The TestRun to configure ATS for.
+        :return: The ATS process.
+        """
+        name = 'ts-drop-trailers' if self._configure_drop_trailers else 'ts-proxy-trailers'
+        ts = tr.MakeATSProcess(name, enable_cache=False)
+        self._ts = ts
+        port = self._server.Variables.http_port
+        ts.Disk.remap_config.AddLine(f'map / http://backend.example.com:{port}/')
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http',
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
+                'proxy.config.dns.resolv_conf': 'NULL'
+            })
+        if self._configure_drop_trailers:
+            ts.Disk.records_config.update({
+                'proxy.config.http.drop_chunked_trailers': 1,
+            })
+        return ts
+
+    def _configure_client(self, tr: 'TestRun') -> 'Process':
+        """Configure the client for the test run.
+
+        :param tr: The TestRun to configure the client for.
+        :return: The client process.
+        """
+        name = 'client-drop-trailers' if self._configure_drop_trailers else 'client-proxy-trailers'
+        self._client = tr.AddVerifierClientProcess(name, self._replay_file, http_ports=[self._ts.Variables.port])
+        self._client.StartBefore(self._dns)
+        self._client.StartBefore(self._server)
+        self._client.StartBefore(self._ts)
+
+        if self._configure_drop_trailers:
+            self._client.Streams.All += Testers.ExcludesExpression('Sever: ATS', 'Verify the Server trailer was dropped.')
+            self._client.Streams.All += Testers.ExcludesExpression('ETag: "def"', 'Verify the ETag trailer was dropped.')
+        else:
+            self._client.Streams.All += Testers.ContainsExpression('Sever: ATS', 'Verify the Server trailer was proxied.')
+            self._client.Streams.All += Testers.ContainsExpression('ETag: "def"', 'Verify the ETag trailer was proxied.')
+        return self._client
+
+
+TestChunkedTrailers(configure_drop_trailers=True)
+TestChunkedTrailers(configure_drop_trailers=False)

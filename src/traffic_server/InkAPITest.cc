@@ -8773,7 +8773,8 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.net.sock_notsent_lowat",
    "proxy.config.body_factory.response_suppression_mode",
    "proxy.config.http.parent_proxy.enable_parent_timeout_markdowns",
-   "proxy.config.http.parent_proxy.disable_parent_markdowns"}};
+   "proxy.config.http.parent_proxy.disable_parent_markdowns",
+   "proxy.config.http.drop_chunked_trailers"}};
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 

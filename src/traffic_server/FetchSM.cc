@@ -197,7 +197,7 @@ FetchSM::check_chunked()
 
     if (resp_is_chunked && (fetch_flags & TS_FETCH_FLAGS_DECHUNK)) {
       ChunkedHandler *ch = &chunked_handler;
-      ch->init_by_action(resp_reader, ChunkedHandler::ACTION_DECHUNK);
+      ch->init_by_action(resp_reader, ChunkedHandler::ACTION_DECHUNK, HttpTunnel::DROP_CHUNKED_TRAILERS);
       ch->dechunked_reader = ch->dechunked_buffer->alloc_reader();
       ch->state            = ChunkedHandler::CHUNK_READ_SIZE;
       resp_reader->dealloc();

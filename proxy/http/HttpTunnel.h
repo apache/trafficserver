@@ -105,15 +105,22 @@ struct ChunkedHandler {
   MIOBuffer *chunked_buffer        = nullptr;
   int64_t chunked_size             = 0;
 
+  /** When passing through chunked content, filter out chunked trailers.
+   *
+   * @note this is only true when: (1) we are passing through chunked content
+   * and (2) we are configured to filter out chunked trailers.
+   */
+  bool drop_chunked_trailers = false;
+
   bool truncation    = false;
   int64_t skip_bytes = 0;
 
-  ChunkedState state     = CHUNK_READ_CHUNK;
-  int64_t cur_chunk_size = 0;
-  int64_t bytes_left     = 0;
-  int last_server_event  = VC_EVENT_NONE;
+  ChunkedState state           = CHUNK_READ_CHUNK;
+  int64_t cur_chunk_size       = 0;
+  int64_t cur_chunk_bytes_left = 0;
+  int last_server_event        = VC_EVENT_NONE;
 
-  // Parsing Info
+  // Chunked header size parsing info.
   int running_sum = 0;
   int num_digits  = 0;
 
@@ -130,8 +137,8 @@ struct ChunkedHandler {
   //@}
   ChunkedHandler();
 
-  void init(IOBufferReader *buffer_in, HttpTunnelProducer *p);
-  void init_by_action(IOBufferReader *buffer_in, Action action);
+  void init(IOBufferReader *buffer_in, HttpTunnelProducer *p, bool drop_chunked_trailers);
+  void init_by_action(IOBufferReader *buffer_in, Action action, bool drop_chunked_trailers);
   void clear();
 
   /// Set the max chunk @a size.
@@ -147,6 +154,8 @@ private:
   void read_chunk();
   void read_trailer();
   int64_t transfer_bytes();
+
+  constexpr static std::string_view FINAL_CRLF = "\r\n";
 };
 
 struct HttpTunnelConsumer {
@@ -289,7 +298,19 @@ public:
   HttpTunnelProducer *add_producer(VConnection *vc, int64_t nbytes, IOBufferReader *reader_start, HttpProducerHandler sm_handler,
                                    HttpTunnelType_t vc_type, const char *name);
 
-  void set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_bytes, TunnelChunkingAction_t action);
+  /// A named variable for the @a drop_chunked_trailers parameter to @a set_producer_chunking_action.
+  static constexpr bool DROP_CHUNKED_TRAILERS = true;
+
+  /** Configure how the producer should behave with chunked content.
+   * @param[in] p Producer to configure.
+   * @param[in] skip_bytes Number of bytes to skip at the beginning of the stream (typically the headers).
+   * @param[in] action Action to take with the chunked content.
+   * @param[in] drop_chunked_trailers If @c true, chunked trailers are filtered
+   *   out. Logically speaking, this is only applicable when proxying chunked
+   *   content, thus only when @a action is @c TCA_PASSTHRU_CHUNKED_CONTENT.
+   */
+  void set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_bytes, TunnelChunkingAction_t action,
+                                    bool drop_chunked_trailers);
   /// Set the maximum (preferred) chunk @a size of chunked output for @a producer.
   void set_producer_chunking_size(HttpTunnelProducer *producer, int64_t size);
 
@@ -364,6 +385,9 @@ private:
 private:
   int reentrancy_count = 0;
   bool call_sm         = false;
+
+  /// Corresponds to proxy.config.http.drop_chunked_trailers having a value of 1.
+  bool http_drop_chunked_trailers = false;
 };
 
 ////

@@ -29,7 +29,7 @@ function main() {
 
   # Check for the option to just install clang-format without running it.
   just_install=0
-  if [ $1 = "--install" ] ; then
+  if [ $# -gt 0 ] && [ $1 = "--install" ] ; then
     just_install=1
     if [ $# -ne 1 ] ; then
       echo "No other arguments should be used with --install."
