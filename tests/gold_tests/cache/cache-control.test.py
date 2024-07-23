@@ -138,6 +138,24 @@ tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("proxy-verifier-client", replay_file, http_ports=[ts.Variables.port])
 
 #
+# Verify correct handling of various s-maxage directives in responses.
+#
+ts = Test.MakeATSProcess("ts-s-maxage")
+replay_file = "replay/cache-control-s-maxage.replay.yaml"
+server = Test.MakeVerifierServerProcess("s-maxage-server", replay_file)
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.http.insert_age_in_response': 0,
+    })
+ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.http_port))
+tr = Test.AddTestRun("Verify correct max-age cache-control behavior.")
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(ts)
+tr.AddVerifierClientProcess("s-maxage-client", replay_file, http_ports=[ts.Variables.port])
+
+#
 # Verify correct interaction between cache-control no-cache and pragma header
 #
 ts = Test.MakeATSProcess("ts-cache-control-pragma")
