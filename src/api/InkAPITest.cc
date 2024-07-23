@@ -1952,19 +1952,6 @@ REGRESSION_TEST(SDK_API_TSCache)(RegressionTest *test, int /* atype ATS_UNUSED *
   *pstatus          = REGRESSION_TEST_INPROGRESS;
   SDK_Cache_test    = test;
   SDK_Cache_pstatus = pstatus;
-  int is_ready      = 0;
-
-  // Check if Cache is ready
-  TSCacheReady(&is_ready);
-  if (!is_ready) {
-    SDK_RPRINT(test, "TSCacheReady", "TestCase1", TC_FAIL, "cache is not ready");
-
-    // no need to continue, return
-    *pstatus = REGRESSION_TEST_FAILED;
-    return;
-  } else {
-    SDK_RPRINT(test, "TSCacheReady", "TestCase1", TC_PASS, "ok");
-  }
 
   // Create CacheKey
   char       key_name[] = "key_for_regression_test";
@@ -5794,7 +5781,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdrParse)(RegressionTest *test, int /* atype ATS_U
 //////////////////////////////////////////////
 
 static char *
-convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
+convert_mime_hdr_to_string(TSMLoc hdr_loc)
 {
   TSIOBuffer       output_buffer;
   TSIOBufferReader reader;
@@ -5817,7 +5804,7 @@ convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 
   /* This will print  just MIMEFields and not
      the http request line */
-  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  TSMimeHdrPrint(hdr_loc, output_buffer);
 
   /* Find out how the big the complete header is by
      seeing the total bytes in the buffer.  We need to
@@ -5964,7 +5951,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
       SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned Error.");
     } else {
       if (retval == TS_PARSE_DONE) {
-        temp = convert_mime_hdr_to_string(bufp1, mime_hdr_loc1); // Implements TSMimeHdrPrint.
+        temp = convert_mime_hdr_to_string(mime_hdr_loc1); // Implements TSMimeHdrPrint.
         if (strcmp(parse_string, temp) == 0) {
           SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_PASS, "ok");
           SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_PASS, "ok");
@@ -6061,7 +6048,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
       if (TSMimeHdrCopy(bufp2, mime_hdr_loc2, bufp1, mime_hdr_loc1) == TS_ERROR) {
         SDK_RPRINT(test, "TSMimeHdrCopy", "TestCase1", TC_FAIL, "TSMimeHdrCopy returns TS_ERROR");
       } else {
-        temp = convert_mime_hdr_to_string(bufp2, mime_hdr_loc2); // Implements TSMimeHdrPrint.
+        temp = convert_mime_hdr_to_string(mime_hdr_loc2); // Implements TSMimeHdrPrint.
         if (strcmp(parse_string, temp) == 0) {
           SDK_RPRINT(test, "TSMimeHdrCopy", "TestCase1", TC_PASS, "ok");
           test_passed_mime_hdr_copy = true;
@@ -8713,9 +8700,9 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.parent_proxy.per_parent_connect_attempts", "proxy.config.http.normalize_ae",
    "proxy.config.http.insert_forwarded", "proxy.config.http.proxy_protocol_out",
    "proxy.config.http.allow_multi_range", "proxy.config.http.request_buffer_enabled",
-   "proxy.config.http.allow_half_open", OutboundConnTrack::CONFIG_VAR_MIN,
-   OutboundConnTrack::CONFIG_VAR_MAX,
-   OutboundConnTrack::CONFIG_VAR_MATCH,
+   "proxy.config.http.allow_half_open", ConnectionTracker::CONFIG_SERVER_VAR_MIN,
+   ConnectionTracker::CONFIG_SERVER_VAR_MAX,
+   ConnectionTracker::CONFIG_SERVER_VAR_MATCH,
    "proxy.config.ssl.client.verify.server.policy", "proxy.config.ssl.client.verify.server.properties",
    "proxy.config.ssl.client.sni_policy", "proxy.config.ssl.client.private_key.filename",
    "proxy.config.ssl.client.CA.cert.filename", "proxy.config.ssl.client.alpn_protocols",
@@ -9202,7 +9189,7 @@ cleanup:
   return;
 }
 
-REGRESSION_TEST(SDK_API_TSSslServerContextCreate)(RegressionTest *test, int level, int *pstatus)
+REGRESSION_TEST(SDK_API_TSSslServerContextCreate)(RegressionTest * /* test */, int /* level */, int *pstatus)
 {
   TSSslContext ctx;
 
@@ -9213,7 +9200,7 @@ REGRESSION_TEST(SDK_API_TSSslServerContextCreate)(RegressionTest *test, int leve
   TSSslContextDestroy(ctx);
 }
 
-REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int level, int *pstatus)
+REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int /* level */, int *pstatus)
 {
   const char name[] = "regression.test.metric";
   int        id;
