@@ -41,6 +41,25 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       // Field Name
       {"Content-Length: 10\r\n", PARSE_RESULT_CONT},
       {"Content-Length\x0b: 10\r\n", PARSE_RESULT_ERROR},
+      {"Content-Length\xff: 10\r\n", PARSE_RESULT_ERROR},
+      // Delimiters in field name
+      {"delimiter_\": 10\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_(: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_): 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_,: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_/: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_:: 0\r\n", PARSE_RESULT_CONT}, // Parsed as field name "delimiter_" and field value ": 0", which is valid
+      {"delimiter_;: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_<: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_=: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_>: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_?: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_@: 0\r\n", PARSE_RESULT_CONT}, // Not allowed by the spec, but we use it as internal header indicator
+      {"delimiter_[: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_\\: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_]: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_{: 0\r\n", PARSE_RESULT_ERROR},
+      {"delimiter_}: 0\r\n", PARSE_RESULT_ERROR},
       ////
       // Field Value
       // SP

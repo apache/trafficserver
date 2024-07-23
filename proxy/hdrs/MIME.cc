@@ -2695,7 +2695,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     if (field_name_wks_idx < 0) {
       for (int i = 0; i < field_name_length; ++i) {
-        if (ParseRules::is_control(field_name_first[i])) {
+        if (!ParseRules::is_http_field_name(field_name_first[i])) {
           return PARSE_RESULT_ERROR;
         }
       }
@@ -2703,6 +2703,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     // RFC 9110 Section 5.5. Field Values
     for (int i = 0; i < field_value_length; ++i) {
+      // FIXME: ParseRules::is_http_field_value() should be used but the implementation looks wrong
       if (ParseRules::is_control(field_value_first[i])) {
         return PARSE_RESULT_ERROR;
       }
