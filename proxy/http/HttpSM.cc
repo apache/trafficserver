@@ -4864,8 +4864,10 @@ HttpSM::do_cache_lookup_and_read()
   HttpCacheKey key;
   Cache::generate_key(&key, c_url, t_state.txn_conf->cache_generation_number);
 
+  t_state.hdr_info.cache_request.copy(&t_state.hdr_info.client_request);
+  HttpTransactHeaders::normalize_accept_encoding(t_state.txn_conf, &t_state.hdr_info.cache_request);
   Action *cache_action_handle = cache_sm.open_read(
-    &key, c_url, &t_state.hdr_info.client_request, t_state.txn_conf,
+    &key, c_url, &t_state.hdr_info.cache_request, t_state.txn_conf,
     static_cast<time_t>((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for));
   //
   // pin_in_cache value is an open_write parameter.
@@ -4979,7 +4981,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   Cache::generate_key(&key, s_url, t_state.txn_conf->cache_generation_number);
 
   Action *cache_action_handle =
-    c_sm->open_write(&key, s_url, &t_state.hdr_info.client_request, object_read_info,
+    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, object_read_info,
                      static_cast<time_t>((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for),
                      retry, allow_multiple);
   if (cache_action_handle != ACTION_RESULT_DONE) {
