@@ -1023,6 +1023,7 @@ public:
   static void HandleCacheOpenReadHitFreshness(State *s);
   static void HandleCacheOpenReadHit(State *s);
   static void HandleCacheOpenReadMiss(State *s);
+  static void set_cache_prepare_write_action_for_new_request(State *s);
   static void build_response_from_cache(State *s, HTTPWarningCode warning_code);
   static void handle_cache_write_lock(State *s);
   static void HandleResponse(State *s);
