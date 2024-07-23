@@ -104,7 +104,7 @@ TLSBasicSupport::get_tls_curve() const
     return nullptr;
   }
   ssl_curve_id curve = this->_get_tls_curve();
-#ifndef OPENSSL_IS_BORINGSSL
+#if !HAVE_SSL_GET_CURVE_NAME
   if (curve == NID_undef) {
     return nullptr;
   }

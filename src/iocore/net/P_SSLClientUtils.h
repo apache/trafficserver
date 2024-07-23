@@ -29,7 +29,7 @@
 #include <openssl/ssl.h>
 
 // BoringSSL does not have this include file
-#ifndef OPENSSL_IS_BORINGSSL
+#if __has_include(<openssl/opensslconf.h>)
 #include <openssl/opensslconf.h>
 #endif
 
