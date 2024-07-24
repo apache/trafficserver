@@ -143,7 +143,6 @@ main([[maybe_unused]] int argc, const char **argv)
   // metric commands
   metric_command.add_command("get", "Get one or more metric values", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); })
     .add_example_usage("traffic_ctl metric get METRIC [METRIC ...]");
-  metric_command.add_command("clear", "Clear all metric values", [&]() { command->execute(); });
   metric_command.add_command("describe", "Show detailed information about one or more metric values", "", MORE_THAN_ONE_ARG_N,
                              [&]() { command->execute(); }); // not implemented
   metric_command.add_command("match", "Get metrics matching a regular expression", "", MORE_THAN_ZERO_ARG_N,
@@ -158,7 +157,6 @@ main([[maybe_unused]] int argc, const char **argv)
                 "Terminate execution after requesting <count> metrics. If 0 is passed, program should be terminated by a SIGINT",
                 "", 1, "0")
     .add_option("--interval", "-i", "Wait interval seconds between sending each metric request. Minimum value is 1s.", "", 1, "5");
-  metric_command.add_command("zero", "Clear one or more metric values", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); });
 
   // plugin command
   plugin_command

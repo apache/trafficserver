@@ -43,10 +43,6 @@ register_admin_jsonrpc_handlers()
   using namespace rpc::handlers::records;
   rpc::add_method_handler("admin_lookup_records", &lookup_records, &core_ats_rpc_service_provider_handle,
                           {{rpc::NON_RESTRICTED_API}});
-  rpc::add_method_handler("admin_clear_all_metrics_records", &clear_all_metrics_records, &core_ats_rpc_service_provider_handle,
-                          {{rpc::RESTRICTED_API}});
-  rpc::add_method_handler("admin_clear_metrics_records", &clear_metrics_records, &core_ats_rpc_service_provider_handle,
-                          {{rpc::RESTRICTED_API}});
 
   // plugin
   using namespace rpc::handlers::plugins;
