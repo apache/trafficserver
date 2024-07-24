@@ -60,33 +60,6 @@ struct ConfigShowFileRegistryRequest : shared::rpc::ClientRequest {
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
-///
-/// @brief Models the clear 'all' metrics request.
-///
-struct ClearAllMetricRequest : shared::rpc::ClientRequest {
-  std::string
-  get_method() const override
-  {
-    return "admin_clear_all_metrics_records";
-  }
-};
-//------------------------------------------------------------------------------------------------------------------------------------
-///
-/// @brief Models the clear metrics request.
-///
-struct ClearMetricRequest : shared::rpc::ClientRequest {
-  using super = shared::rpc::ClientRequest;
-  struct Params {
-    std::vector<std::string> names; //!< client expects a list of record names.
-  };
-  ClearMetricRequest(Params p) { super::params = p; }
-  std::string
-  get_method() const override
-  {
-    return "admin_clear_metrics_records";
-  }
-};
-//------------------------------------------------------------------------------------------------------------------------------------
 struct ConfigSetRecordRequest : shared::rpc::ClientRequest {
   struct Params {
     std::string recName;

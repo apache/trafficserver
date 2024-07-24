@@ -153,12 +153,6 @@ add_testrun_for_jsonrpc_request(
     request_file_name='json/admin_config_reload_req.json',
     result_schema_file_name=success_schema_file_name_name)
 
-# admin_clear_metrics_records
-add_testrun_for_jsonrpc_request(
-    "Clear admin_clear_metrics_records",
-    request_file_name='json/admin_clear_metrics_records_req.json',
-    context={'record_name': 'proxy.process.http.404_responses'})
-
 # admin_host_set_status
 add_testrun_for_jsonrpc_request(
     "Test admin_host_set_status",

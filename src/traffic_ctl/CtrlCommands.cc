@@ -240,12 +240,6 @@ MetricCommand::MetricCommand(ts::Arguments *args) : RecordCommand(args)
   } else if (args->get(DESCRIBE_STR)) {
     _printer      = std::make_unique<RecordDescribePrinter>(printOpts);
     _invoked_func = [&]() { metric_describe(); };
-  } else if (args->get(CLEAR_STR)) {
-    _printer      = std::make_unique<GenericPrinter>(printOpts);
-    _invoked_func = [&]() { metric_clear(); };
-  } else if (args->get(ZERO_STR)) {
-    _printer      = std::make_unique<GenericPrinter>(printOpts);
-    _invoked_func = [&]() { metric_zero(); };
   } else if (args->get(MONITOR_STR)) {
     _printer      = std::make_unique<MetricRecordPrinter>(printOpts);
     _invoked_func = [&]() { metric_monitor(); };
@@ -268,22 +262,6 @@ void
 MetricCommand::metric_describe()
 {
   _printer->write_output(record_fetch(get_parsed_arguments()->get(DESCRIBE_STR), shared::rpc::NOT_REGEX, RecordQueryType::METRIC));
-}
-
-void
-MetricCommand::metric_clear()
-{
-  [[maybe_unused]] auto const &response = invoke_rpc(ClearAllMetricRequest{});
-}
-
-void
-MetricCommand::metric_zero()
-{
-  auto               records = get_parsed_arguments()->get(ZERO_STR);
-  ClearMetricRequest request{// names
-                             {{std::begin(records), std::end(records)}}};
-
-  [[maybe_unused]] auto const &response = invoke_rpc(request);
 }
 
 void
