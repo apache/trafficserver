@@ -157,8 +157,8 @@ cmake \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -Wno-error=stringop-overflow -UBORINGSSL_HAVE_LIBUNWIND' \
-  -DCMAKE_C_FLAGS=${BSSL_C_FLAGS} \
+  -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
+  -DCMAKE_C_FLAGS='-Wno-error=stringop-overflow ${BSSL_C_FLAGS}' \
   -DBUILD_SHARED_LIBS=0
 cmake --build build-shared -j ${num_threads}
 cmake --build build-static -j ${num_threads}
