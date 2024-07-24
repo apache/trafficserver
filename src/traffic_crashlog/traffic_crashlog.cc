@@ -156,7 +156,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
 
   if (wait_mode) {
-    EnableDeathSignal(SIGKILL);
+    EnableDeathSignal(SIGCONT);
     kill(getpid(), SIGSTOP);
   }
 
