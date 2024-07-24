@@ -66,6 +66,18 @@ TEST_CASE("Http3FrameHandler dispatch", "[http3]")
 
 TEST_CASE("control stream tests", "[http3]")
 {
+  Http3FrameDispatcher  http3FrameDispatcher;
+  Http3ProtocolEnforcer enforcer;
+  Http3MockFrameHandler handler;
+
+  http3FrameDispatcher.add_handler(&enforcer);
+  http3FrameDispatcher.add_handler(&handler);
+
+  MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+  IOBufferReader *reader = buf->alloc_reader();
+  uint64_t        nread  = 0;
+  Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
+
   SECTION("Only one SETTINGS frame is allowed per the control stream")
   {
     uint8_t input[] = {
@@ -87,18 +99,6 @@ TEST_CASE("control stream tests", "[http3]")
       0x00,       // Value
     };
 
-    Http3FrameDispatcher  http3FrameDispatcher;
-    Http3ProtocolEnforcer enforcer;
-    Http3MockFrameHandler handler;
-
-    http3FrameDispatcher.add_handler(&enforcer);
-    http3FrameDispatcher.add_handler(&handler);
-
-    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
-    IOBufferReader *reader = buf->alloc_reader();
-    uint64_t        nread  = 0;
-    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
-
     buf->write(input, sizeof(input));
 
     // Initial state
@@ -110,7 +110,6 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
-    free_MIOBuffer(buf);
   }
 
   SECTION("first frame of the control stream must be SETTINGS frame")
@@ -129,18 +128,6 @@ TEST_CASE("control stream tests", "[http3]")
       0x00,       // Value
     };
 
-    Http3FrameDispatcher  http3FrameDispatcher;
-    Http3ProtocolEnforcer enforcer;
-    Http3MockFrameHandler handler;
-
-    http3FrameDispatcher.add_handler(&enforcer);
-    http3FrameDispatcher.add_handler(&handler);
-
-    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
-    IOBufferReader *reader = buf->alloc_reader();
-    uint64_t        nread  = 0;
-    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
-
     buf->write(input, sizeof(input));
 
     // Initial state
@@ -152,7 +139,6 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_MISSING_SETTINGS);
     CHECK(handler.total_frame_received == 0);
     CHECK(nread == 3);
-    free_MIOBuffer(buf);
   }
 
   SECTION("DATA frame is not allowed on control stream")
@@ -169,18 +155,6 @@ TEST_CASE("control stream tests", "[http3]")
                        0x04,       // Length
                        0x11, 0x22, 0x33, 0x44};
 
-    Http3FrameDispatcher  http3FrameDispatcher;
-    Http3ProtocolEnforcer enforcer;
-    Http3MockFrameHandler handler;
-
-    http3FrameDispatcher.add_handler(&enforcer);
-    http3FrameDispatcher.add_handler(&handler);
-
-    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
-    IOBufferReader *reader = buf->alloc_reader();
-    uint64_t        nread  = 0;
-    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
-
     buf->write(input, sizeof(input));
 
     // Initial state
@@ -192,7 +166,6 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
-    free_MIOBuffer(buf);
   }
 
   SECTION("HEADERS frame is not allowed on control stream")
@@ -209,18 +182,6 @@ TEST_CASE("control stream tests", "[http3]")
                        0x04,       // Length
                        0x11, 0x22, 0x33, 0x44};
 
-    Http3FrameDispatcher  http3FrameDispatcher;
-    Http3ProtocolEnforcer enforcer;
-    Http3MockFrameHandler handler;
-
-    http3FrameDispatcher.add_handler(&enforcer);
-    http3FrameDispatcher.add_handler(&handler);
-
-    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
-    IOBufferReader *reader = buf->alloc_reader();
-    uint64_t        nread  = 0;
-    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
-
     buf->write(input, sizeof(input));
 
     // Initial state
@@ -232,7 +193,6 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
-    free_MIOBuffer(buf);
   }
 
   SECTION("RESERVED frame is not allowed on control stream")
@@ -249,18 +209,6 @@ TEST_CASE("control stream tests", "[http3]")
                        0x04,       // Length
                        0x11, 0x22, 0x33, 0x44};
 
-    Http3FrameDispatcher  http3FrameDispatcher;
-    Http3ProtocolEnforcer enforcer;
-    Http3MockFrameHandler handler;
-
-    http3FrameDispatcher.add_handler(&enforcer);
-    http3FrameDispatcher.add_handler(&handler);
-
-    MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
-    IOBufferReader *reader = buf->alloc_reader();
-    uint64_t        nread  = 0;
-    Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
-
     buf->write(input, sizeof(input));
 
     // Initial state
@@ -272,8 +220,9 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
-    free_MIOBuffer(buf);
   }
+
+  free_MIOBuffer(buf);
 }
 
 TEST_CASE("ignore unknown frames", "[http3]")
