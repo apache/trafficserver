@@ -42,7 +42,7 @@ for i in list(range(3594967639391, 3594967639391 + 3)):
 
 dns = Test.MakeDNServer("dns")
 
-ts = Test.MakeATSProcess("ts", use_traffic_out=False, command="traffic_server 2> trace.log")
+ts = Test.MakeATSProcess("ts")
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
@@ -68,7 +68,9 @@ tr.Processes.Default.Command = (
     f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://domain.in/texts/demo-3594967639391.txt')
 tr.Processes.Default.ReturnCode = 0
 
+Test.AddAwaitFileContainsTestRun('Await transactions to finish logging.', ts.Disk.traffic_out.Name, '3594967639394')
+
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = ("grep 'GET http://domain.in' trace.log")
+tr.Processes.Default.Command = (f"grep 'GET http://domain.in' {ts.Disk.traffic_out.Name}")
 tr.Streams.stdout = "prefetch_overflow.gold"
 tr.Processes.Default.ReturnCode = 0

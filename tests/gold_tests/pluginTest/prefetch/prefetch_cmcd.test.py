@@ -279,17 +279,11 @@ tr.Processes.Default.ReturnCode = 0
 
 condwaitpath = os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
 
-# look for ts transaction log
 ts0log = os.path.join(ts0.Variables.LOGDIR, 'transaction.log')
-tr = Test.AddTestRun()
-ps = tr.Processes.Default
-ps.Command = (condwaitpath + ' 60 1 -f ' + ts0log)
+Test.AddAwaitFileContainsTestRun('Await ts transactions to finish logging.', ts0log, 'crr.txt')
 
-# look for ts1 transaction log
 ts1log = os.path.join(ts1.Variables.LOGDIR, 'transaction.log')
-tr = Test.AddTestRun()
-ps = tr.Processes.Default
-ps.Command = (condwaitpath + ' 60 1 -f ' + ts1log)
+Test.AddAwaitFileContainsTestRun('Await ts1 transactions to finish logging.', ts1log, 'crr.txt')
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (f"cat {ts0log}")
