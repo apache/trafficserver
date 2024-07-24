@@ -890,7 +890,6 @@ allow:
     if (*new_path) {
       TSUrlPathSet(rri->requestBufp, rri->requestUrl, new_path, strlen(new_path));
     }
-    TSUrlHttpParamsSet(rri->requestBufp, rri->requestUrl, nullptr, 0);
   }
 
   TSfree((void *)current_url);
