@@ -1236,9 +1236,7 @@ public:
 
   const char *_location = nullptr;
 
-  MIOBuffer(void *b, int64_t bufsize, int64_t aWater_mark);
-  // cppcheck-suppress noExplicitConstructor; allow implicit conversion
-  MIOBuffer(int64_t default_size_index);
+  explicit MIOBuffer(int64_t default_size_index);
   MIOBuffer();
   ~MIOBuffer();
 };
