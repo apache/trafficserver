@@ -561,10 +561,16 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
           break;
         }
 
-        if (_acl_matching_policy == ACLMatchingPolicy::MATCH_ON_IP_ONLY) {
+        // @action=add_allow and @action=add_deny behave the same for each ACL
+        // policy behavior. The difference in behavior applies to @action=allow
+        // and @action=deny. For these, in Match on IP and Method mode they are
+        // synonyms for @action=add_allow and @action=add_deny because that is
+        // how they behaved pre-10.x.  For the Match on IP Only behavior, they
+        // behave like the corresponding ip_allow actions.
+        if (!rp->add_flag && _acl_matching_policy == ACLMatchingPolicy::MATCH_ON_IP_ONLY) {
           // Flipping the action for unspecified methods.
           Dbg(dbg_ctl_url_rewrite, "ACL rule matched on IP but not on method, action: %s, %s the request",
-              (rp->allow_flag ? "allow" : "deny"), (rp->allow_flag ? "denying" : "allowing"));
+              rp->get_action_description(), (rp->allow_flag ? "denying" : "allowing"));
           s->client_connection_allowed = !rp->allow_flag;
 
           // Since IP match and configured policy is MATCH_ON_IP_ONLY, no need to process other filters nor ip_allow.yaml rules.
