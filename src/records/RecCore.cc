@@ -576,8 +576,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
         callback(&tmp, data);
       }
     }
-    // all done for metrics
-    return REC_ERR_OKAY;
+    // Fall through to return any matching string metrics
   }
 
   num_records = g_num_records;
