@@ -617,28 +617,6 @@ IOBufferReader::reset()
 //
 ////////////////////////////////////////////////////////////////
 extern ClassAllocator<MIOBuffer> ioAllocator;
-////////////////////////////////////////////////////////////////
-//
-//  MIOBuffer::MIOBuffer()
-//
-//  This constructor accepts a pre-allocated memory buffer,
-//  wraps if in a IOBufferData and IOBufferBlock structures
-//  and sets it as the current block.
-//  NOTE that in this case the memory buffer will not be freed
-//  by the MIOBuffer class. It is the user responsibility to
-//  free the memory buffer. The wrappers (MIOBufferBlock and
-//  MIOBufferData) will be freed by this class.
-//
-////////////////////////////////////////////////////////////////
-TS_INLINE
-MIOBuffer::MIOBuffer(void *b, int64_t bufsize, int64_t aWater_mark)
-{
-  _location = nullptr;
-  set(b, bufsize);
-  water_mark = aWater_mark;
-  size_index = BUFFER_SIZE_NOT_ALLOCATED;
-  return;
-}
 
 TS_INLINE
 MIOBuffer::MIOBuffer(int64_t default_size_index)
