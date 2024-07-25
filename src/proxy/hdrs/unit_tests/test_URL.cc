@@ -750,32 +750,3 @@ TEST_CASE("UrlPathGet", "[url][path_get]")
     }
   }
 }
-
-
-/**
- * Tests for deprecated params_get/set
- */
-TEST_CASE("UrlParamsGet", "[url][params_get]")
-{
-  // Expected behavior
-  // - ParamsGet always return empty string
-  // - ParamsSet appends the value to path
-  // - PathGet returns params appended by ParamsSet
-
-  const char *value;
-  int value_len;
-
-  URL url;
-  HdrHeap *heap = new_HdrHeap();
-  url.create(heap);
-  url.parse("https://foo.test/path;p=1");
-  value = url.path_get(&value_len);
-  CHECK(std::string_view(value, value_len) == "path;p=1");
-  url.params_set("param=1", 7);
-  value = url.params_get(&value_len);
-  CHECK(value == nullptr);
-  CHECK(value_len == 0);
-  value = url.path_get(&value_len);
-  CHECK(std::string_view(value, value_len) == "path;param=1");
-  heap->destroy();
-}

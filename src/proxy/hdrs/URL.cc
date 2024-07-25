@@ -545,32 +545,8 @@ URLImpl::set_path(HdrHeap *heap, const char *value, int length, bool copy_string
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-// empties params/query/fragment component
-// url_{params|query|fragment}_set()
-
-void
-URLImpl::set_params(HdrHeap *heap, const char *value, int length, bool /* copy_string ATS_UNUSED */)
-{
-  int path_len = this->m_len_path;
-
-  // Truncate the current param segment if it exists
-  if (auto p = strchr(this->m_ptr_path, ';'); p != nullptr) {
-    auto params_len  = path_len - (p - this->m_ptr_path);
-    path_len        -= params_len;
-  }
-
-  int   total_length    = path_len + 1 + length;
-  char *path_and_params = static_cast<char *>(alloca(total_length));
-
-  memcpy(path_and_params, this->m_ptr_path, path_len);
-  memcpy(path_and_params + path_len, ";", 1);
-  memcpy(path_and_params + path_len + 1, value, length);
-
-  this->set_path(heap, path_and_params, total_length, true);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
+// empties query/fragment component
+// url_{query|fragment}_set()
 
 void
 URLImpl::set_query(HdrHeap *heap, const char *value, int length, bool copy_string)
@@ -790,16 +766,6 @@ URLImpl::get_path(int *length)
 {
   *length = this->m_len_path;
   return this->m_ptr_path;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-const char *
-URLImpl::get_params(int *length)
-{
-  *length = this->m_len_params;
-  return this->m_ptr_params;
 }
 
 /*-------------------------------------------------------------------------

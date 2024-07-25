@@ -122,21 +122,14 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()); field != nullptr) {
     int         value_len = 0;
     const char *value     = header.path_get(&value_len);
-    int         param_len = 0;
-    const char *param     = header.params_get(&param_len);
     int         query_len = 0;
     const char *query     = header.query_get(&query_len);
     int         path_len  = value_len + 1;
 
-    ts::LocalBuffer<char> buf(value_len + 1 + 1 + 1 + query_len + param_len);
+    ts::LocalBuffer<char> buf(value_len + 1 + 1 + 1 + query_len);
     char                 *path = buf.data();
     path[0]                    = '/';
     memcpy(path + 1, value, value_len);
-    if (param_len > 0) {
-      path[path_len] = ';';
-      memcpy(path + path_len + 1, param, param_len);
-      path_len += 1 + param_len;
-    }
     if (query_len > 0) {
       path[path_len] = '?';
       memcpy(path + path_len + 1, query, query_len);
