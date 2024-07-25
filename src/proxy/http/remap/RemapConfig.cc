@@ -628,9 +628,14 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     }
 
     if (ul & REMAP_OPTFLG_ACTION) { /* "action=" option */
-      if (is_inkeylist(argptr, "0", "off", "deny", "disable", nullptr)) {
+      if (is_inkeylist(argptr, "add_allow", "add_deny", nullptr)) {
+        rule->add_flag = 1;
+      } else {
+        rule->add_flag = 0;
+      }
+      if (is_inkeylist(argptr, "0", "off", "deny", "add_deny", "disable", nullptr)) {
         rule->allow_flag = 0;
-      } else if (is_inkeylist(argptr, "1", "on", "allow", "enable", nullptr)) {
+      } else if (is_inkeylist(argptr, "1", "on", "allow", "add_allow", "enable", nullptr)) {
         rule->allow_flag = 1;
       } else {
         Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Unknown argument \"%s\"", argv[i]);

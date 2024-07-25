@@ -447,6 +447,29 @@ In-line filters can be created to control access of specific remap lines. The ma
 is very similar to that of :file:`ip_allow.yaml`, with slight changes to
 accommodate remap markup.
 
+Actions
+~~~~~~~
+
+As is the case with :file:`ip_allow.yaml` rules, each ACL filter takes one of a number of actions. They are specified as
+``@action=<action>``, such as ``@action=add_allow``. There are four possible actions:
+
+- ``allow``: This behaves like the ``allow`` action in :file:`ip_allow.yaml` in which a list of allowed methods are
+  provided. Any request with a method in the list is allowed, while any request with a method not in the list is denied.
+  The exception to this is if :ts:cv:`proxy.config.url_remap.acl_matching_policy` is set to ``0``. In this case, the
+  ``allow`` action is a synonym for ``add_allow``, described below.
+- ``add_allow``: This action adds a list of allowed methods to whatever other methods are allowed in a subsequently
+  matched ACL filter or :file:`ip_allow.yaml` rule. Thus, if an ``add_allow`` ACL filter specifies the ``POST`` method,
+  and a subsequently matching :file:`ip_allow.yaml` rule allows the ``GET`` and ``HEAD`` methods, then any requests that
+  have ``POST``, ``GET``, or ``HEAD`` methods will be allowed while all others will be denied.
+- ``deny``: This behaves like the ``deny`` action in :file:`ip_allow.yaml` in which a list of denied methods are
+  provided. Any request with a method in the list is denied, while any request with a method not in the list is allowed.
+  The exception to this is if :ts:cv:`proxy.config.url_remap.acl_matching_policy` is set to ``0``. In this case, the
+  ``deny`` action is a synonym for ``add_deny``, described below.
+- ``add_deny``: This action adds a list of denied methods to whatever other methods are denied in a subsequently matched
+  ACL filter or :file:`ip_allow.yaml` rule. Thus, if an ``add_deny`` ACL filter specifies the ``POST`` method, and a
+  matching :file:`ip_allow.yaml` rule allows the ``GET``, ``HEAD``, and ``POST`` methods, then this ACL filter
+  effectively removes ``POST`` from the allowed method list. Thus only requests with the ``GET`` and ``HEAD`` methods
+  will be allowed.
 
 Examples
 ~~~~~~~~

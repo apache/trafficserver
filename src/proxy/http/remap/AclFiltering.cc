@@ -67,7 +67,8 @@ acl_filter_rule::reset()
   internal    = 0;
 }
 
-acl_filter_rule::acl_filter_rule() : allow_flag(1), src_ip_valid(0), src_ip_category_valid(0), active_queue_flag(0), internal(0)
+acl_filter_rule::acl_filter_rule()
+  : allow_flag(1), add_flag(0), src_ip_valid(0), src_ip_category_valid(0), active_queue_flag(0), internal(0)
 {
   standard_method_lookup.resize(HTTP_WKSIDX_METHODS_CNT);
   ink_zero(argv);
@@ -109,11 +110,12 @@ acl_filter_rule::print()
 {
   int i;
   printf("-----------------------------------------------------------------------------------------\n");
-  printf("Filter \"%s\" status: allow_flag=%s, src_ip_valid=%s, src_ip_category_valid=%s, in_ip_valid=%s, internal=%s, "
-         "active_queue_flag=%d\n",
-         filter_name ? filter_name : "<NONAME>", allow_flag ? "true" : "false", src_ip_valid ? "true" : "false",
-         src_ip_category_valid ? "true" : "false", in_ip_valid ? "true" : "false", internal ? "true" : "false",
-         static_cast<int>(active_queue_flag));
+  printf(
+    "Filter \"%s\" status: allow_flag=%s, add_flag=%s, src_ip_valid=%s, src_ip_category_valid=%s, in_ip_valid=%s, internal=%s, "
+    "active_queue_flag=%d\n",
+    filter_name ? filter_name : "<NONAME>", allow_flag ? "true" : "false", add_flag ? "true" : "false",
+    src_ip_valid ? "true" : "false", src_ip_category_valid ? "true" : "false", in_ip_valid ? "true" : "false",
+    internal ? "true" : "false", static_cast<int>(active_queue_flag));
   printf("standard methods=");
   for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
     if (standard_method_lookup[i]) {
@@ -147,6 +149,24 @@ acl_filter_rule::print()
   printf("\n");
   for (i = 0; i < argc; i++) {
     printf("argv[%d] = \"%s\"\n", i, argv[i]);
+  }
+}
+
+char const *
+acl_filter_rule::get_action_description() const
+{
+  if (allow_flag) {
+    if (add_flag) {
+      return "add_allow";
+    } else {
+      return "allow";
+    }
+  } else { // denying
+    if (add_flag) {
+      return "add_deny";
+    } else {
+      return "deny";
+    }
   }
 }
 
