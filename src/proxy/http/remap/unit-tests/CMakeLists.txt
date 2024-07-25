@@ -40,6 +40,8 @@ function(add_plugin_ut_lib name)
   remove_definitions(-DATS_BUILD) # remove the ATS_BUILD define for plugins to build without issue
 endfunction()
 
+add_compile_definitions(SRC_BUILD_DIR="${CMAKE_BINARY_DIR}")
+
 # Test plugins will not build on OSX
 #
 add_plugin_ut_lib(plugin_v1 plugin_misc_cb.cc plugin_stub.cc)
