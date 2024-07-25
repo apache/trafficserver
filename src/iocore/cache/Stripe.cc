@@ -720,7 +720,7 @@ StripeSM::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */
 }
 
 int
-StripeSM::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
+Stripe::dir_check()
 {
   static int const SEGMENT_HISTOGRAM_WIDTH           = 16;
   int              hist[SEGMENT_HISTOGRAM_WIDTH + 1] = {0};
@@ -876,7 +876,7 @@ StripeSM::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this
 }
 
 void
-StripeSM::_clear_init()
+Stripe::_clear_init()
 {
   size_t dir_len = this->dirlen();
   memset(this->raw_dir, 0, dir_len);
@@ -895,7 +895,7 @@ StripeSM::_clear_init()
 }
 
 void
-StripeSM::_init_dir()
+Stripe::_init_dir()
 {
   int b, s, l;
 
@@ -912,7 +912,7 @@ StripeSM::_init_dir()
 }
 
 void
-StripeSM::_init_data_internal()
+Stripe::_init_data_internal()
 {
   // step1: calculate the number of entries.
   off_t total_entries = (this->len - (this->start - this->skip)) / cache_config_min_average_object_size;
@@ -927,7 +927,7 @@ StripeSM::_init_data_internal()
 }
 
 void
-StripeSM::_init_data()
+Stripe::_init_data()
 {
   // iteratively calculate start + buckets
   this->_init_data_internal();
@@ -1170,7 +1170,7 @@ StripeSM::_copy_evacuator_to_aggregation(CacheVC *vc)
 }
 
 bool
-StripeSM::flush_aggregate_write_buffer()
+Stripe::flush_aggregate_write_buffer()
 {
   // set write limit
   this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
@@ -1188,7 +1188,7 @@ StripeSM::flush_aggregate_write_buffer()
 }
 
 bool
-StripeSM::copy_from_aggregate_write_buffer(char *dest, Dir const &dir, size_t nbytes) const
+Stripe::copy_from_aggregate_write_buffer(char *dest, Dir const &dir, size_t nbytes) const
 {
   if (!dir_agg_buf_valid(this, &dir)) {
     return false;
