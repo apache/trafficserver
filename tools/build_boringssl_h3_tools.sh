@@ -141,6 +141,9 @@ set -e
 # Note: -UBORINGSSL_HAVE_LIBUNWIND
 #   Disable related libunwind test builds, there are some version number issues
 #   with this pkg in Ubuntu 20.04, so disable this to make sure it builds.
+# Note: -Wno-error=stringop-overflow
+#   GCC 13 has a stringop-overflow false positive. It only affects the build
+#   of the static lib.
 cmake \
   -B build-shared \
   -DGO_EXECUTABLE=${GO_BINARY_PATH} \
@@ -155,7 +158,7 @@ cmake \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
-  -DCMAKE_C_FLAGS=${BSSL_C_FLAGS} \
+  -DCMAKE_C_FLAGS="-Wno-error=stringop-overflow ${BSSL_C_FLAGS}" \
   -DBUILD_SHARED_LIBS=0
 cmake --build build-shared -j ${num_threads}
 cmake --build build-static -j ${num_threads}
