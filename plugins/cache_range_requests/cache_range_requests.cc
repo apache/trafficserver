@@ -50,11 +50,10 @@ enum parent_select_mode_t {
   PS_CACHEKEY_URL, // Set parent selection url to cache_key url
 };
 
-using namespace std::string_view_literals;
-constexpr std::string_view DefaultImsHeader  = "X-Crr-Ims"sv;
-constexpr std::string_view SLICE_CRR_HEADER  = "Slice-Crr-Status"sv;
-constexpr std::string_view SLICE_CRR_VAL     = "1"sv;
-constexpr std::string_view SKIP_CRR_HDR_NAME = "X-Skip-Crr"sv;
+constexpr std::string_view DefaultImsHeader  = {"X-Crr-Ims"};
+constexpr std::string_view SLICE_CRR_HEADER  = {"Slice-Crr-Status"};
+constexpr std::string_view SLICE_CRR_VAL     = "1";
+constexpr std::string_view SKIP_CRR_HDR_NAME = {"X-Skip-Crr"};
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};

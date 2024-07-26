@@ -27,7 +27,7 @@
 #include <thread>
 #define CATCH_CONFIG_MAIN /* include main function */
 #include "catch.hpp"      /* catch unit-test framework */
-#include "../cache.h"
+#include "../ObjectSizeCache.h"
 
 using namespace std::string_view_literals;
 TEST_CASE("cache miss", "[slice][metadatacache]")

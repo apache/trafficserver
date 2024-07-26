@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "cache.h"
+#include "ObjectSizeCache.h"
 #include <cassert>
 
 ObjectSizeCache::ObjectSizeCache(cache_size_type cache_size)

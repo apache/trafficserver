@@ -19,7 +19,7 @@
 #pragma once
 
 #include "slice.h"
-#include "cache.h"
+#include "ObjectSizeCache.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
