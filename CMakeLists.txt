@@ -61,6 +61,7 @@ set(BUILD_NUMBER
     "0"
     CACHE STRING "The build number"
 )
+
 execute_process(
   COMMAND id -nu
   OUTPUT_VARIABLE BUILD_PERSON

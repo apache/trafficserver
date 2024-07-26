@@ -35,7 +35,6 @@
 #include "proxy/http/remap/PluginDso.h"
 
 class PluginContext;
-thread_local PluginThreadContext *pluginThreadContext;
 
 std::error_code ec;
 
@@ -43,13 +42,16 @@ std::error_code ec;
 static fs::path sandboxDir     = getTemporaryDir();
 static fs::path runtimeDir     = sandboxDir / fs::path("runtime");
 static fs::path searchDir      = sandboxDir / fs::path("search");
-static fs::path pluginBuildDir = fs::current_path();
+static fs::path pluginBuildDir = fs::path{SRC_BUILD_DIR} / "src/proxy/http/remap/unit-tests/.libs";
 
 /* The following are paths used in all scenarios in the unit tests */
-static fs::path configPath      = fs::path("plugin_v1.so");
-static fs::path pluginBuildPath = pluginBuildDir / configPath;
-static fs::path effectivePath   = searchDir / configPath;
-static fs::path runtimePath     = runtimeDir / configPath;
+static fs::path configPath             = fs::path("plugin_v1.so");
+static fs::path invalidSoPath          = fs::path("invalid.so");
+static fs::path pluginBuildPath        = pluginBuildDir / configPath;
+static fs::path effectivePath          = searchDir / configPath;
+static fs::path effectivePathInvalidSo = searchDir / invalidSoPath;
+static fs::path runtimePathInvalid     = runtimeDir / invalidSoPath;
+static fs::path runtimePath            = runtimeDir / configPath;
 
 void
 clean()
@@ -289,14 +291,14 @@ SCENARIO("loading plugins", "[plugin][core]")
     CHECK(fs::create_directories(searchDir, ec));
     CHECK(fs::create_directories(runtimeDir, ec));
     /* Create an invalid plugin and make sure the effective path to it exists */
-    std::ofstream file(effectivePath.string());
+    std::ofstream file(effectivePathInvalidSo.string());
     file << "Invalid plugin DSO content";
     file.close();
-    CHECK(fs::exists(effectivePath));
+    CHECK(fs::exists(effectivePathInvalidSo));
 
     /* Instantiate and initialize a plugin DSO instance. */
     std::string       error;
-    PluginDsoUnitTest plugin(configPath, effectivePath, runtimePath);
+    PluginDsoUnitTest plugin(invalidSoPath, effectivePathInvalidSo, runtimePathInvalid);
 
     WHEN("loading an invalid plugin")
     {
@@ -305,15 +307,15 @@ SCENARIO("loading plugins", "[plugin][core]")
       THEN("expect it to fail to load")
       {
         /* After calling load() the following should be set correctly */
-        CHECK(effectivePath == plugin.effectivePath());
-        CHECK(runtimePath == plugin.runtimePath());
+        CHECK(effectivePathInvalidSo == plugin.effectivePath());
+        CHECK(runtimePathInvalid == plugin.runtimePath());
 
         /* But the load should fail and an error should be returned */
         CHECK(false == result);
         CHECK_FALSE(error.empty());
 
         /* Runtime DSO should not exist since the load failed. */
-        CHECK_FALSE(fs::exists(runtimePath));
+        CHECK_FALSE(fs::exists(runtimePathInvalid));
       }
       CHECK(fs::remove_all(sandboxDir, ec) > 0);
     }

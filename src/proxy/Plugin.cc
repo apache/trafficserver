@@ -42,6 +42,18 @@ isPluginDynamicReloadEnabled()
 }
 
 void
+enablePluginDynamicReload()
+{
+  plugin_dynamic_reload_mode = PluginDynamicReloadMode::RELOAD_ON;
+}
+
+void
+disablePluginDynamicReload()
+{
+  plugin_dynamic_reload_mode = PluginDynamicReloadMode::RELOAD_OFF;
+}
+
+void
 parsePluginDynamicReloadConfig()
 {
   int int_plugin_dynamic_reload_mode;

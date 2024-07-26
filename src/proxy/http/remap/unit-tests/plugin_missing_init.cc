@@ -31,7 +31,7 @@
 #include "ts/remap.h"
 
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+TSRemapDoRemap([[maybe_unused]] void *ih, [[maybe_unused]] TSHttpTxn rh, [[maybe_unused]] TSRemapRequestInfo *rri)
 {
   return TSREMAP_NO_REMAP;
 }

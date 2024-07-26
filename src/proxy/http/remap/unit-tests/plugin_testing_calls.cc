@@ -52,7 +52,7 @@ handleInitRun(char *errbuf, int errbuf_size, int &counter)
 }
 
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit([[maybe_unused]] TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   TSReturnCode result = handleInitRun(errbuf, errbuf_size, debugObject.initCalled);
   return result;
@@ -87,14 +87,14 @@ TSRemapDeleteInstance(void *ih)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+TSRemapDoRemap([[maybe_unused]] void *ih, [[maybe_unused]] TSHttpTxn rh, [[maybe_unused]] TSRemapRequestInfo *rri)
 {
   debugObject.doRemapCalled++;
   return TSREMAP_NO_REMAP;
 }
 
 void
-TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
+TSRemapOSResponse([[maybe_unused]] void *ih, [[maybe_unused]] TSHttpTxn rh, [[maybe_unused]] int os_response_type)
 {
 }
 

@@ -31,19 +31,20 @@
 #include "ts/remap.h"
 
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit([[maybe_unused]] TSRemapInterface *api_info, [[maybe_unused]] char *errbuf, [[maybe_unused]] int errbuf_size)
 {
   return TS_SUCCESS;
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+TSRemapDoRemap([[maybe_unused]] void *ih, [[maybe_unused]] TSHttpTxn rh, [[maybe_unused]] TSRemapRequestInfo *rri)
 {
   return TSREMAP_NO_REMAP;
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+TSRemapNewInstance([[maybe_unused]] int argc, [[maybe_unused]] char *argv[], [[maybe_unused]] void **ih,
+                   [[maybe_unused]] char *errbuf, [[maybe_unused]] int errbuf_size)
 {
   return TS_SUCCESS;
 }
