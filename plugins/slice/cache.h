@@ -68,11 +68,11 @@ public:
 private:
   void find_eviction_slot();
 
-  cache_size_type _cache_capacity;
-  cache_size_type _hand{0};
-  std::vector<std::string> _urls;
-  std::vector<object_size_type> _object_sizes;
-  std::vector<bool> _visits;
+  cache_size_type                                       _cache_capacity;
+  cache_size_type                                       _hand{0};
+  std::vector<std::string>                              _urls;
+  std::vector<object_size_type>                         _object_sizes;
+  std::vector<bool>                                     _visits;
   std::unordered_map<std::string_view, cache_size_type> _index;
-  std::mutex _mutex;
+  std::mutex                                            _mutex;
 };

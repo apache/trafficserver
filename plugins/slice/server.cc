@@ -91,7 +91,7 @@ enum HeaderState {
 static void
 update_object_size(TSHttpTxn txnp, int64_t size, Config &config)
 {
-  int urllen   = 0;
+  int   urllen = 0;
   char *urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
   if (urlstr != nullptr) {
     if (size <= 0) {

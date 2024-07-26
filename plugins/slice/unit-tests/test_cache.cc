@@ -33,7 +33,7 @@ using namespace std::string_view_literals;
 TEST_CASE("cache miss", "[slice][metadatacache]")
 {
   ObjectSizeCache cache{1024};
-  std::optional res = cache.get("example.com"sv);
+  std::optional   res = cache.get("example.com"sv);
   CHECK(res == std::nullopt);
 }
 
@@ -60,7 +60,7 @@ TEST_CASE("cache remove", "[slice][metadatacache]")
 
 TEST_CASE("eviction", "[slice][metadatacache]")
 {
-  constexpr int cache_size = 10;
+  constexpr int   cache_size = 10;
   ObjectSizeCache cache{cache_size};
   for (uint64_t i = 0; i < cache_size * 100; i++) {
     std::stringstream ss;
@@ -82,7 +82,7 @@ TEST_CASE("eviction", "[slice][metadatacache]")
 
 TEST_CASE("tiny cache", "[slice][metadatacache]")
 {
-  constexpr int cache_size = 1;
+  constexpr int   cache_size = 1;
   ObjectSizeCache cache{cache_size};
   for (uint64_t i = 0; i < cache_size * 100; i++) {
     std::stringstream ss;
@@ -104,15 +104,15 @@ TEST_CASE("tiny cache", "[slice][metadatacache]")
 
 TEST_CASE("hit rate", "[slice][metadatacache]")
 {
-  constexpr int cache_size = 10;
-  ObjectSizeCache cache{cache_size};
-  std::mt19937 gen;
+  constexpr int                       cache_size = 10;
+  ObjectSizeCache                     cache{cache_size};
+  std::mt19937                        gen;
   std::poisson_distribution<uint64_t> d{cache_size};
-  std::atomic<int> hits{0}, misses{0};
+  std::atomic<int>                    hits{0}, misses{0};
 
   for (uint64_t i = 0; i < cache_size * 100; i++) {
     std::stringstream ss;
-    uint64_t obj = d(gen);
+    uint64_t          obj = d(gen);
 
     ss << "http://example.com/" << obj;
     std::optional<uint64_t> size = cache.get(ss.str());
@@ -132,18 +132,18 @@ TEST_CASE("hit rate", "[slice][metadatacache]")
 
 TEST_CASE("threads", "[slice][metadatacache]")
 {
-  constexpr int cache_size = 10;
+  constexpr int   cache_size = 10;
   ObjectSizeCache cache{cache_size};
 
-  std::mt19937 gen;
+  std::mt19937                        gen;
   std::poisson_distribution<uint64_t> d{cache_size};
-  std::vector<std::thread> threads;
-  std::atomic<int> hits{0}, misses{0};
+  std::vector<std::thread>            threads;
+  std::atomic<int>                    hits{0}, misses{0};
 
   auto runfunc = [&]() {
     for (uint64_t i = 0; i < cache_size * 100; i++) {
       std::stringstream ss;
-      uint64_t obj = d(gen);
+      uint64_t          obj = d(gen);
 
       ss << "http://example.com/" << obj;
       std::optional<uint64_t> size = cache.get(ss.str());

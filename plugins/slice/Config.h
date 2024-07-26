@@ -46,9 +46,9 @@ struct Config {
   int         m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
   int         m_prefetchcount{0}; // 0 disables prefetching
   enum RefType { First, Relative };
-  RefType m_reftype{First};       // reference slice is relative to request
-  bool m_head_strip_range{false}; // strip range header for head requests
-  uint64_t m_min_size_to_slice{0}; // Only strip objects larger than this
+  RefType  m_reftype{First};          // reference slice is relative to request
+  bool     m_head_strip_range{false}; // strip range header for head requests
+  uint64_t m_min_size_to_slice{0};    // Only strip objects larger than this
 
   std::string m_skip_header;
   std::string m_crr_ims_header;
@@ -86,12 +86,12 @@ struct Config {
 
   // Metadata cache stats
   std::string stat_prefix{};
-  int stat_TP{0}, stat_TN{0}, stat_FP{0}, stat_FN{0}, stat_no_cl{0}, stat_bad_cl{0}, stat_no_url{0};
-  bool stats_enabled{false};
+  int         stat_TP{0}, stat_TN{0}, stat_FP{0}, stat_FN{0}, stat_no_cl{0}, stat_bad_cl{0}, stat_no_url{0};
+  bool        stats_enabled{false};
 
 private:
-  TSHRTime   m_nextlogtime{0}; // next time to log in ns
-  std::mutex m_mutex;
+  TSHRTime                       m_nextlogtime{0}; // next time to log in ns
+  std::mutex                     m_mutex;
   std::optional<ObjectSizeCache> m_oscache;
-  void setCacheSize(size_t entries);
+  void                           setCacheSize(size_t entries);
 };

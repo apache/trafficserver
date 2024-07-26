@@ -49,7 +49,7 @@ TSCont global_read_resp_hdr_contp;
 static bool
 should_skip_this_obj(TSHttpTxn txnp, Config *const config)
 {
-  int len            = 0;
+  int         len    = 0;
   char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
 
   if (!config->isKnownLargeObj({urlstr, static_cast<size_t>(len)})) {
@@ -206,7 +206,7 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
 
       // we'll intercept this GET and do it ourselves
       TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
-      TSCont const icontp(TSContCreate(intercept_hook, mutex));
+      TSCont const  icontp(TSContCreate(intercept_hook, mutex));
       TSContDataSet(icontp, data.release());
 
       // Skip remap and remap rule requirement
@@ -227,7 +227,7 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
 static int
 read_resp_hdr(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp   = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn   txnp = static_cast<TSHttpTxn>(edata);
   PluginInfo *info = static_cast<PluginInfo *>(TSContDataGet(contp));
 
   // This function does the following things:
@@ -235,15 +235,15 @@ read_resp_hdr(TSCont contp, TSEvent event, void *edata)
   // 2. Cache the object size
   // 3. If the object will be sliced in subsequent requests, turn off the cache to avoid taking up space, and head-of-line blocking.
 
-  int urllen   = 0;
+  int   urllen = 0;
   char *urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
   if (urlstr != nullptr) {
-    TxnHdrMgr response;
+    TxnHdrMgr                response;
     TxnHdrMgr::HeaderGetFunc func = event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE ? TSHttpTxnCachedRespGet : TSHttpTxnServerRespGet;
     response.populateFrom(txnp, func);
     HttpHeader const resp_header(response.m_buffer, response.m_lochdr);
-    char constr[1024];
-    int conlen = sizeof constr;
+    char             constr[1024];
+    int              conlen = sizeof constr;
     bool const hasContentLength(resp_header.valueForKey(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, constr, &conlen));
     if (hasContentLength) {
       uint64_t content_length;

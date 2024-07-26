@@ -207,8 +207,8 @@ static bool
 has_skip_crr_header(TSHttpTxn txnp)
 {
   TSMBuffer hdr_buf = nullptr;
-  TSMLoc hdr_loc    = TS_NULL_MLOC;
-  bool ret          = false;
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
+  bool      ret     = false;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_buf, &hdr_loc)) {
     TSMLoc const skip_crr_loc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, SKIP_CRR_HDR_NAME.data(), SKIP_CRR_HDR_NAME.length());
