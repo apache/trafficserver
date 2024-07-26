@@ -105,7 +105,7 @@ PluginDso::load(std::string &error, const fs::path &compilerPath)
           result = false;
         }
       }
-    } else if (isDynamicReloadEnabled() && !copy(_effectivePath, _runtimePath, ec)) {
+    } else if (isDynamicReloadEnabled() && !fs::copy(_effectivePath, _runtimePath, ec)) {
       concat_error(error, "failed to create a copy");
       concat_error(error, ec.message());
       result = false;

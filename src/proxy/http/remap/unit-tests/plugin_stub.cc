@@ -1,6 +1,6 @@
 /** @file
 
-  A test plugin for testing Plugin's Dynamic Shared Objects (DSO)
+  Stub file for unit tests
 
   @section license License
 
@@ -19,30 +19,10 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
-  @section details Details
-
-  Implements code necessary for Reverse Proxy which mostly consists of
-  general purpose hostname substitution in URLs.
-
  */
 
-#include "ts/ts.h"
-#include "ts/remap.h"
+#include "iocore/eventsystem/Lock.h"
+#include "proxy/http/remap/PluginFactory.h"
 
-TSReturnCode
-TSRemapInit([[maybe_unused]] TSRemapInterface *api_info, [[maybe_unused]] char *errbuf, [[maybe_unused]] int errbuf_size)
-{
-  return TS_SUCCESS;
-}
-
-TSRemapStatus
-TSRemapDoRemap([[maybe_unused]] void *ih, [[maybe_unused]] TSHttpTxn rh, [[maybe_unused]] TSRemapRequestInfo *rri)
-{
-  return TSREMAP_NO_REMAP;
-}
-
-void
-TSRemapDeleteInstance(void *)
-{
-}
+thread_local PluginThreadContext *pluginThreadContext;
+ClassAllocator<ProxyMutex>        mutexAllocator("mutexAllocator");
