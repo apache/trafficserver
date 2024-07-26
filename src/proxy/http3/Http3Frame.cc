@@ -33,7 +33,9 @@ ClassAllocator<Http3SettingsFrame> http3SettingsFrameAllocator("http3SettingsFra
 
 namespace
 {
-constexpr int HEADER_OVERHEAD = 10; // This should work as long as a payload length is less than 64 bits
+// The frame type is a variable integer as defined in QUIC (RFC 9000).
+constexpr int FRAME_TYPE_MAX_BYTES = 8;
+constexpr int HEADER_OVERHEAD      = 10; // This should work as long as a payload length is less than 64 bits
 
 DbgCtl dbg_ctl_http3_frame_factory{"http3_frame_factory"};
 
@@ -506,8 +508,7 @@ Http3FrameFactory::create(IOBufferReader &reader)
   ts::Http3Config::scoped_config params;
   Http3Frame                    *frame = nullptr;
 
-  // FIXME Frame type can be longer than 1 byte
-  uint8_t type_buf[1];
+  uint8_t type_buf[FRAME_TYPE_MAX_BYTES];
   reader.memcpy(type_buf, sizeof(type_buf));
   Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
 
@@ -536,8 +537,7 @@ Http3FrameFactory::create(IOBufferReader &reader)
 std::shared_ptr<Http3Frame>
 Http3FrameFactory::fast_create(IOBufferReader &reader)
 {
-  // FIXME Frame type can be longer than 1 byte
-  uint8_t type_buf[1];
+  uint8_t type_buf[FRAME_TYPE_MAX_BYTES]{};
   reader.memcpy(type_buf, sizeof(type_buf));
   Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
   if (type == Http3FrameType::UNKNOWN) {
