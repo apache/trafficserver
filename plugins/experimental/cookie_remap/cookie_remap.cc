@@ -62,10 +62,6 @@ public:
       // we will just
       // append them to the path
       _d[pre_remap].path_str = _get_url_comp(urlh, TSUrlPathGet);
-      auto matrix            = _get_url_comp(urlh, TSUrlHttpParamsGet);
-      if (!matrix.empty()) {
-        _d[pre_remap].path_str.append(";", 1).append(matrix);
-      }
     }
     return _d[pre_remap].path_str;
   }
