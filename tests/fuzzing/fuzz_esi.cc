@@ -22,20 +22,10 @@
  */
 
 #include "EsiParser.h"
-#include "mgmt/rpc/handlers/common/Utils.h"
 #include "DocNode.h"
 
 #define kMinInputLength 10
 #define kMaxInputLength 1024
-
-void
-Debug(const char *tag, const char *fmt, ...)
-{
-}
-void
-Error(const char *fmt, ...)
-{
-}
 
 extern "C" int
 LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
@@ -46,8 +36,7 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
 
   std::string input(reinterpret_cast<const char *>(input_data), size_data);
 
-  EsiLib::Utils::init(&Debug, &Error);
-  EsiParser parser("parser_fuzzing", &Debug, &Error);
+  EsiParser parser{1024 * 1024};
 
   EsiLib::DocNodeList node_list;
   bool                ret = parser.completeParse(node_list, input);
