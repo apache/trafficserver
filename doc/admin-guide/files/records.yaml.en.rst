@@ -46,7 +46,9 @@ YAML structure
 ==============
 
 All fields are located inside the ``records``` root node. ATS supports reading multiple documents from
-the same YAML stream, subsequent documents overrides earlier fields.
+the same YAML stream, subsequent documents overrides earlier fields. If there is any error reading a
+particular node the default value(s) will be used.
+
 
 
 .. code-block:: yaml
