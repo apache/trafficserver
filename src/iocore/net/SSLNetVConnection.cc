@@ -1556,7 +1556,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
       // Outbound PROXY Protocol
       VIO    &vio     = this->write.vio;
       int64_t ntodo   = vio.ntodo();
-      int64_t towrite = vio.buffer.reader()->read_avail();
+      int64_t towrite = vio.get_reader()->read_avail();
 
       if (ntodo > 0 && towrite > 0) {
         MIOBufferAccessor &buf           = vio.buffer;
@@ -2240,7 +2240,7 @@ SSLNetVConnection::_propagateHandShakeBuffer(UnixNetVConnection *target, EThread
   // Take ownership of the handShake buffer
   this->sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
   NetState *s              = &target->read;
-  s->vio.buffer.writer_for(this->handShakeBuffer);
+  s->vio.set_writer(this->handShakeBuffer);
   s->vio.set_reader(this->handShakeHolder);
   this->handShakeHolder = nullptr;
   this->handShakeBuffer = nullptr;

@@ -211,7 +211,7 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   return preverify_ok;
 }
 
-#if TS_USE_HELLO_CB
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 // Pausable callback
 static int
 ssl_client_hello_callback(SSL *s, int *al, void *arg)
@@ -246,7 +246,7 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
 
   return SSL_CLIENT_HELLO_SUCCESS;
 }
-#elif defined(OPENSSL_IS_BORINGSSL)
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
 static ssl_select_cert_result_t
 ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 {
@@ -375,7 +375,7 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
   TLSSNISupport *snis = TLSSNISupport::getInstance(ssl);
   if (snis) {
     snis->on_servername(ssl, al, arg);
-#if !TS_USE_HELLO_CB && !defined(OPENSSL_IS_BORINGSSL)
+#if !TS_USE_HELLO_CB
     // Only call the SNI actions here if not already performed in the HELLO_CB
     int ret = snis->perform_sni_action(*ssl);
     if (ret != SSL_TLSEXT_ERR_OK) {
@@ -1032,14 +1032,14 @@ void
 SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 {
   // Make sure the callbacks are set
-#ifndef OPENSSL_IS_BORINGSSL
+#if !HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB // For OpenSSL < 1.1.1, we should be able to remove this
   SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, nullptr);
   SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
-
-#if TS_USE_HELLO_CB
-  SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
 #endif
-#else
+
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
   SSL_CTX_set_select_certificate_cb(ctx, [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
     ssl_select_cert_result_t res;
     res = ssl_client_hello_callback(client_hello);

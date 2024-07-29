@@ -501,7 +501,7 @@ VIO *
 Http2Stream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   if (buf) {
-    read_vio.buffer.writer_for(buf);
+    read_vio.set_writer(buf);
   } else {
     read_vio.buffer.clear();
   }
@@ -522,7 +522,7 @@ VIO *
 Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool /* owner ATS_UNUSED */)
 {
   if (abuffer) {
-    write_vio.buffer.reader_for(abuffer);
+    write_vio.set_reader(abuffer);
   } else {
     write_vio.buffer.clear();
   }
@@ -658,13 +658,13 @@ Http2Stream::initiating_close()
       }
 
       if (!sent_write_complete) {
-        if (write_vio.cont && write_vio.buffer.writer() &&
+        if (write_vio.cont && write_vio.get_writer() &&
             (!is_outbound_connection() || get_state() == Http2StreamState::HTTP2_STREAM_STATE_OPEN ||
              get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL)) {
           SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
           Http2StreamDebug("Send tracked event VC_EVENT_EOS on write_vio. sm_id: %" PRId64, _sm->sm_id);
           write_event = send_tracked_event(write_event, VC_EVENT_EOS, &write_vio);
-        } else if (read_vio.cont && read_vio.buffer.writer()) {
+        } else if (read_vio.cont && read_vio.get_writer()) {
           SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
           Http2StreamDebug("Send tracked event VC_EVENT_EOS on read_vio. sm_id: %" PRId64, _sm->sm_id);
           read_event = send_tracked_event(read_event, VC_EVENT_EOS, &read_vio);
@@ -738,7 +738,7 @@ Http2Stream::update_read_request(bool call_update)
     send_event = VC_EVENT_READ_COMPLETE;
   }
 
-  int64_t read_avail = this->read_vio.buffer.writer()->max_read_avail();
+  int64_t read_avail = this->read_vio.get_writer()->max_read_avail();
   if (read_avail > 0 || send_event == VC_EVENT_READ_COMPLETE) {
     if (call_update) { // Safe to call vio handler directly
       _timeout.update_inactivity();

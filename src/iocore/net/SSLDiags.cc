@@ -184,7 +184,7 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
 const char *
 SSLErrorName(int ssl_error)
 {
-#ifdef OPENSSL_IS_BORINGSSL
+#if HAVE_SSL_ERROR_DESCRIPTION
   const char *err_descr = SSL_error_description(ssl_error);
   return err_descr != nullptr ? err_descr : "unknown SSL error";
 #else

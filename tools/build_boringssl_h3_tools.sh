@@ -121,7 +121,7 @@ GO_BINARY_PATH=${BASE}/go/bin/go
 if [ ! -d boringssl ]; then
   git clone https://boringssl.googlesource.com/boringssl
   cd boringssl
-  git checkout a1843d660b47116207877614af53defa767be46a
+  git checkout 45b2464158379f48cec6e35a1ef503ddea1511a6
   cd ..
 fi
 cd boringssl
@@ -155,7 +155,7 @@ cmake \
   -DCMAKE_INSTALL_PREFIX=${BASE}/boringssl \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
-  -DCMAKE_C_FLAGS=${BSSL_C_FLAGS} \
+  -DCMAKE_C_FLAGS="${BSSL_C_FLAGS}" \
   -DBUILD_SHARED_LIBS=0
 cmake --build build-shared -j ${num_threads}
 cmake --build build-static -j ${num_threads}

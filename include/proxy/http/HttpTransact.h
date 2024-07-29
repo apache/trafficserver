@@ -664,6 +664,7 @@ public:
     HTTPHdr         server_request;
     HTTPHdr         server_response;
     HTTPHdr         transform_response;
+    HTTPHdr         cache_request;
     HTTPHdr         cache_response;
     int64_t         request_content_length     = HTTP_UNDEFINED_CL;
     int64_t         response_content_length    = HTTP_UNDEFINED_CL;
@@ -902,6 +903,7 @@ public:
       hdr_info.server_request.destroy();
       hdr_info.server_response.destroy();
       hdr_info.transform_response.destroy();
+      hdr_info.cache_request.destroy();
       hdr_info.cache_response.destroy();
       cache_info.lookup_url_storage.destroy();
       cache_info.parent_selection_url_storage.destroy();
@@ -1023,6 +1025,7 @@ public:
   static void HandleCacheOpenReadHitFreshness(State *s);
   static void HandleCacheOpenReadHit(State *s);
   static void HandleCacheOpenReadMiss(State *s);
+  static void set_cache_prepare_write_action_for_new_request(State *s);
   static void build_response_from_cache(State *s, HTTPWarningCode warning_code);
   static void handle_cache_write_lock(State *s);
   static void HandleResponse(State *s);

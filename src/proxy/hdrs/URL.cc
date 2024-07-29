@@ -549,10 +549,24 @@ URLImpl::set_path(HdrHeap *heap, const char *value, int length, bool copy_string
 // url_{params|query|fragment}_set()
 
 void
-URLImpl::set_params(HdrHeap *heap, const char *value, int length, bool copy_string)
+URLImpl::set_params(HdrHeap *heap, const char *value, int length, bool /* copy_string ATS_UNUSED */)
 {
-  url_called_set(this);
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_params), &(this->m_len_params), copy_string);
+  int path_len = this->m_len_path;
+
+  // Truncate the current param segment if it exists
+  if (auto p = strchr(this->m_ptr_path, ';'); p != nullptr) {
+    auto params_len  = path_len - (p - this->m_ptr_path);
+    path_len        -= params_len;
+  }
+
+  int   total_length    = path_len + 1 + length;
+  char *path_and_params = static_cast<char *>(alloca(total_length));
+
+  memcpy(path_and_params, this->m_ptr_path, path_len);
+  memcpy(path_and_params + path_len, ";", 1);
+  memcpy(path_and_params + path_len + 1, value, length);
+
+  this->set_path(heap, path_and_params, total_length, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -887,10 +901,6 @@ url_length_get(URLImpl *url, unsigned normalization_flags)
     length += 1; // +1 for "/"
   }
 
-  if (url->m_ptr_params && url->m_len_params > 0) {
-    length += url->m_len_params + 1; // +1 for ";"
-  }
-
   if (url->m_ptr_query && url->m_len_query > 0) {
     length += url->m_len_query + 1; // +1 for "?"
   }
@@ -961,12 +971,6 @@ url_to_string(URLImpl *url, Arena *arena, int *length)
 
   memcpy(&str[idx], url->m_ptr_path, url->m_len_path);
   idx += url->m_len_path;
-
-  if (url->m_ptr_params && url->m_len_params > 0) {
-    str[idx++] = ';';
-    memcpy(&str[idx], url->m_ptr_params, url->m_len_params);
-    idx += url->m_len_params;
-  }
 
   if (url->m_ptr_query && url->m_len_query > 0) {
     str[idx++] = '?';
@@ -1433,8 +1437,6 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
   const char *cur;
   const char *path_start     = nullptr;
   const char *path_end       = nullptr;
-  const char *params_start   = nullptr;
-  const char *params_end     = nullptr;
   const char *query_start    = nullptr;
   const char *query_end      = nullptr;
   const char *fragment_start = nullptr;
@@ -1456,13 +1458,9 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
   if (*cur == '/') {
     path_start = cur;
   }
-  mask = ';' & '?' & '#';
+  mask = '?' & '#';
 parse_path2:
   if ((*cur & mask) == mask) {
-    if (*cur == ';') {
-      path_end = cur;
-      goto parse_params1;
-    }
     if (*cur == '?') {
       path_end = cur;
       goto parse_query1;
@@ -1472,25 +1470,10 @@ parse_path2:
       goto parse_fragment1;
     }
   } else {
-    ink_assert((*cur != ';') && (*cur != '?') && (*cur != '#'));
+    ink_assert((*cur != '?') && (*cur != '#'));
   }
   GETNEXT(done);
   goto parse_path2;
-
-parse_params1:
-  params_start = cur + 1;
-  GETNEXT(done);
-parse_params2:
-  if (*cur == '?') {
-    params_end = cur;
-    goto parse_query1;
-  }
-  if (*cur == '#') {
-    params_end = cur;
-    goto parse_fragment1;
-  }
-  GETNEXT(done);
-  goto parse_params2;
 
 parse_query1:
   query_start = cur + 1;
@@ -1551,12 +1534,6 @@ done:
     // slash after the authority.  Users of URL expect this behavior. Thus the
     // nothing_after_host check.
     url->m_path_is_empty = true;
-  }
-  if (params_start) {
-    if (!params_end) {
-      params_end = cur;
-    }
-    url->set_params(heap, params_start, params_end - params_start, copy_strings);
   }
   if (query_start) {
     // There was a query string marked by '?'.
@@ -1715,11 +1692,6 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     TRY(mime_mem_print(url->m_ptr_path, url->m_len_path, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
-  if (url->m_ptr_params && url->m_len_params > 0) {
-    TRY(mime_mem_print(";", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    TRY(mime_mem_print(url->m_ptr_params, url->m_len_params, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-  }
-
   if (url->m_ptr_query && url->m_len_query > 0) {
     TRY(mime_mem_print("?", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     TRY(mime_mem_print(url->m_ptr_query, url->m_len_query, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
@@ -1753,8 +1725,6 @@ url_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
       obj->m_len_port, obj->m_port);
   Dbg(dbg_ctl_http, "\tPATH: \"%.*s\", PATH_LEN: %d,", obj->m_len_path, (obj->m_ptr_path ? obj->m_ptr_path : "NULL"),
       obj->m_len_path);
-  Dbg(dbg_ctl_http, "\tPARAMS: \"%.*s\", PARAMS_LEN: %d,", obj->m_len_params, (obj->m_ptr_params ? obj->m_ptr_params : "NULL"),
-      obj->m_len_params);
   Dbg(dbg_ctl_http, "\tQUERY: \"%.*s\", QUERY_LEN: %d,", obj->m_len_query, (obj->m_ptr_query ? obj->m_ptr_query : "NULL"),
       obj->m_len_query);
   Dbg(dbg_ctl_http, "\tFRAGMENT: \"%.*s\", FRAGMENT_LEN: %d]", obj->m_len_fragment,
@@ -1855,8 +1825,8 @@ url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &h
   ends[7] = strs[7] + 1;
   ends[8] = strs[8] + url->m_len_path;
 
-  strs[9]  = ";";
-  strs[10] = url->m_ptr_params;
+  strs[9]  = "";
+  strs[10] = nullptr;
   strs[11] = "?";
 
   // Special case for the query paramters, allowing us to ignore them if requested
@@ -1868,8 +1838,8 @@ url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &h
     ends[12] = nullptr;
   }
 
-  ends[9]  = strs[9] + 1;
-  ends[10] = strs[10] + url->m_len_params;
+  ends[9]  = strs[9] + 0;
+  ends[10] = strs[10] + 0;
   ends[11] = strs[11] + 1;
 
   p = buffer;
@@ -1927,7 +1897,7 @@ url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query, cach
 {
   URLHashContext ctx;
   if ((url_hash_method != 0) && (url->m_url_type == URL_TYPE_HTTP) &&
-      ((url->m_len_user + url->m_len_password + url->m_len_params + (ignore_query ? 0 : url->m_len_query)) == 0) &&
+      ((url->m_len_user + url->m_len_password + (ignore_query ? 0 : url->m_len_query)) == 0) &&
       (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
     url_CryptoHash_get_fast(url, ctx, hash, generation);

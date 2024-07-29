@@ -45,12 +45,10 @@ public:
 
   int perform_sni_action(SSL &ssl);
   // Callback functions for OpenSSL libraries
-#if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
-#ifdef OPENSSL_IS_BORINGSSL
-  void on_client_hello(const SSL_CLIENT_HELLO *client_hello);
-#else
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
   void on_client_hello(SSL *ssl, int *al, void *arg);
-#endif
+#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
+  void on_client_hello(const SSL_CLIENT_HELLO *client_hello);
 #endif
   void on_servername(SSL *ssl, int *al, void *arg);
 

@@ -118,7 +118,7 @@ VIO *
 HQTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   if (buf) {
-    this->_read_vio.buffer.writer_for(buf);
+    this->_read_vio.set_writer(buf);
   } else {
     this->_read_vio.buffer.clear();
   }
@@ -142,7 +142,7 @@ VIO *
 HQTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool /* owner ATS_UNUSED */)
 {
   if (buf) {
-    this->_write_vio.buffer.reader_for(buf);
+    this->_write_vio.set_reader(buf);
   } else {
     this->_write_vio.buffer.clear();
   }

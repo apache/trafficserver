@@ -280,11 +280,11 @@ start
    The offset for the start of the content, after the stripe metadata.
 
 length
-   Total number of bytes in the stripe. :cpp:member:`StripeSM::len`.
+   Total number of bytes in the stripe. :cpp:member:`Stripe::len`.
 
 data length
    Total number of blocks in the stripe available for content storage.
-   :cpp:member:`StripeSM::data_blocks`.
+   :cpp:member:`Stripe::data_blocks`.
 
 .. note::
 

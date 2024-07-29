@@ -71,20 +71,6 @@ template <> struct convert<HostSetStatusRequest::Params> {
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
-template <> struct convert<ClearMetricRequest::Params> {
-  static Node
-  encode(ClearMetricRequest::Params const &params)
-  {
-    Node node;
-    for (auto &name : params.names) {
-      Node n;
-      n["record_name"] = name;
-      node.push_back(n);
-    }
-    return node;
-  }
-};
-//------------------------------------------------------------------------------------------------------------------------------------
 template <> struct convert<BasicPluginMessageRequest::Params> {
   static Node
   encode(BasicPluginMessageRequest::Params const &params)

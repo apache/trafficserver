@@ -108,11 +108,6 @@ public:
     return TSUrlPathGet(_bufp, _url, len);
   }
   const char *
-  getParams(int *len) override
-  {
-    return TSUrlHttpParamsGet(_bufp, _url, len);
-  }
-  const char *
   getQuery(int *len) override
   {
     return TSUrlHttpQueryGet(_bufp, _url, len);

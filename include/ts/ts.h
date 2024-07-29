@@ -667,6 +667,9 @@ TSReturnCode TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc offset, int type);
     argument. Note: the returned string is not guaranteed to be
     null-terminated.
 
+    This function is deprecated and returns empty string.
+    Plugins that need "params" can call TSUrlPathGet to get a whole path string to parse it.
+
     @param bufp marshal buffer containing the URL.
     @param offset location of the URL.
     @param length of the returned string.
@@ -682,6 +685,9 @@ const char *TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc offset, int *length);
     the string value is taken to be length. TSUrlHttpParamsSet()
     copies the string to within bufp, so you can modify or delete
     value after calling TSUrlHttpParamsSet().
+
+    This function is deprecated. The value passed will be internally appended to the path portion.
+    Thus, TSUrlHttpParamsGet will not return the value set by this function.
 
     @param bufp marshal buffer containing the URL.
     @param offset location of the URL.

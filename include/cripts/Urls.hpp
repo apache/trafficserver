@@ -522,21 +522,8 @@ public:
 
   }; // End class Url::Query
 
-  class Matrix : public Component
-  {
-    using super_type = Component;
-    using self_type  = Matrix;
-
-  public:
-    using Component::Component;
-
-    Cript::string_view GetSV() override;
-    self_type          operator=(Cript::string_view matrix);
-
-  }; // End class Url::Matrix
-
 public:
-  Url() : scheme(this), host(this), port(this), path(this), query(this), matrix(this) {}
+  Url() : scheme(this), host(this), port(this), path(this), query(this) {}
 
   // Clear anything "cached" in the Url, this is rather draconian, but it's safe...
   virtual void
@@ -585,7 +572,6 @@ public:
   Port   port;
   Path   path;
   Query  query;
-  Matrix matrix;
 
 protected:
   void
@@ -892,21 +878,6 @@ template <> struct formatter<Cript::Url::Query> {
   format(Cript::Url::Query &query, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", query.GetSV());
-  }
-};
-
-template <> struct formatter<Cript::Url::Matrix> {
-  constexpr auto
-  parse(format_parse_context &ctx) -> decltype(ctx.begin())
-  {
-    return ctx.begin();
-  }
-
-  template <typename FormatContext>
-  auto
-  format(Cript::Url::Matrix &matrix, FormatContext &ctx) -> decltype(ctx.out())
-  {
-    return fmt::format_to(ctx.out(), "{}", matrix.GetSV());
   }
 };
 

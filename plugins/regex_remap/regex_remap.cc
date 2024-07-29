@@ -59,14 +59,14 @@ static const int MAX_SUBS  = 32; // No more than 32 substitution variables in th
 
 // Substitutions other than regex matches
 enum ExtraSubstitutions {
-  SUB_HOST       = 11,
-  SUB_FROM_HOST  = 12,
-  SUB_TO_HOST    = 13,
-  SUB_PORT       = 14,
-  SUB_SCHEME     = 15,
-  SUB_PATH       = 16,
-  SUB_QUERY      = 17,
-  SUB_MATRIX     = 18,
+  SUB_HOST      = 11,
+  SUB_FROM_HOST = 12,
+  SUB_TO_HOST   = 13,
+  SUB_PORT      = 14,
+  SUB_SCHEME    = 15,
+  SUB_PATH      = 16,
+  SUB_QUERY     = 17,
+  // 18 is unused, used to be matrix parameters
   SUB_CLIENT_IP  = 19,
   SUB_LOWER_PATH = 20,
 };
@@ -87,24 +87,21 @@ struct UrlComponents {
     host   = TSUrlHostGet(bufp, url, &host_len);
     path   = TSUrlPathGet(bufp, url, &path_len);
     query  = TSUrlHttpQueryGet(bufp, url, &query_len);
-    matrix = TSUrlHttpParamsGet(bufp, url, &matrix_len);
     port   = TSUrlPortGet(bufp, url);
 
-    url_len = scheme_len + host_len + path_len + query_len + matrix_len + 32;
+    url_len = scheme_len + host_len + path_len + query_len + 32;
   }
 
   const char *scheme = nullptr;
   const char *host   = nullptr;
   const char *path   = nullptr;
   const char *query  = nullptr;
-  const char *matrix = nullptr;
   int         port   = 0;
 
   int scheme_len = 0;
   int host_len   = 0;
   int path_len   = 0;
   int query_len  = 0;
-  int matrix_len = 0;
 
   int url_len = 0; // Full length, of all components
 };
@@ -442,9 +439,6 @@ RemapRegex::compile(const char *&error, int &erroffset)
         case 'q':
           ix = SUB_QUERY;
           break;
-        case 'm':
-          ix = SUB_MATRIX;
-          break;
         case 'i':
           ix = SUB_CLIENT_IP;
           break;
@@ -515,9 +509,6 @@ RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *
       case SUB_QUERY:
         len += req_url->query_len;
         break;
-      case SUB_MATRIX:
-        len += req_url->matrix_len;
-        break;
       case SUB_CLIENT_IP:
         len += INET6_ADDRSTRLEN;
         break;
@@ -583,10 +574,6 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
           str = req_url->query;
           len = req_url->query_len;
           break;
-        case SUB_MATRIX:
-          str = req_url->matrix;
-          len = req_url->matrix_len;
-          break;
         case SUB_CLIENT_IP:
           str = ats_ip_ntop(TSHttpTxnClientAddrGet(txnp), buff, INET6_ADDRSTRLEN);
           len = strlen(str);
@@ -627,17 +614,16 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
 struct RemapInstance {
   RemapInstance() : filename("unknown") {}
 
-  RemapRegex *first         = nullptr;
-  RemapRegex *last          = nullptr;
-  bool        pristine_url  = false;
-  bool        profile       = false;
-  bool        method        = false;
-  bool        query_string  = true;
-  bool        matrix_params = false;
-  bool        host          = false;
-  int         hits          = 0;
-  int         misses        = 0;
-  int         failures      = 0;
+  RemapRegex *first        = nullptr;
+  RemapRegex *last         = nullptr;
+  bool        pristine_url = false;
+  bool        profile      = false;
+  bool        method       = false;
+  bool        query_string = true;
+  bool        host         = false;
+  int         hits         = 0;
+  int         misses       = 0;
+  int         failures     = 0;
   std::string filename;
 };
 
@@ -689,10 +675,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       ri->query_string = true;
     } else if (strncmp(argv[i], "no-query-string", 15) == 0) {
       ri->query_string = false;
-    } else if (strncmp(argv[i], "matrix-parameters", 17) == 0) {
-      ri->matrix_params = true;
-    } else if (strncmp(argv[i], "no-matrix-parameters", 20) == 0) {
-      ri->matrix_params = false;
     } else if (strncmp(argv[i], "host", 4) == 0) {
       ri->host = true;
     } else if (strncmp(argv[i], "no-host", 7) == 0) {
@@ -955,12 +937,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (req_url.path && req_url.path_len > 0) {
     memcpy(match_buf + match_len, req_url.path, req_url.path_len);
     match_len += (req_url.path_len);
-  }
-
-  if (ri->matrix_params && req_url.matrix && req_url.matrix_len > 0) {
-    *(match_buf + match_len) = ';';
-    memcpy(match_buf + match_len + 1, req_url.matrix, req_url.matrix_len);
-    match_len += (req_url.matrix_len + 1);
   }
 
   if (ri->query_string && req_url.query && req_url.query_len > 0) {

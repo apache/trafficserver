@@ -451,69 +451,6 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
   return update_type;
 }
 
-static RecErrT
-reset_stat_record(RecRecord *rec)
-{
-  RecErrT err = REC_ERR_FAIL;
-
-  if (i_am_the_record_owner(rec->rec_type)) {
-    rec_mutex_acquire(&(rec->lock));
-    ++(rec->version);
-    err = RecDataSet(rec->data_type, &(rec->data), &(rec->data_default)) ? REC_ERR_OKAY : REC_ERR_FAIL;
-    rec_mutex_release(&(rec->lock));
-  }
-
-  return err;
-}
-
-//------------------------------------------------------------------------
-// RecResetStatRecord
-//------------------------------------------------------------------------
-RecErrT
-RecResetStatRecord(const char *name)
-{
-  RecErrT err = REC_ERR_FAIL;
-
-  if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
-    err = reset_stat_record(it->second);
-  }
-
-  return err;
-}
-
-//------------------------------------------------------------------------
-// RecResetStatRecord
-//------------------------------------------------------------------------
-RecErrT
-RecResetStatRecord(RecT type, bool all)
-{
-  int     i, num_records;
-  RecErrT err = REC_ERR_OKAY;
-
-  RecDebug(DL_Note, "Reset Statistics Records");
-
-  num_records = g_num_records;
-  for (i = 0; i < num_records; i++) {
-    RecRecord *r1 = &(g_records[i]);
-
-    if (!REC_TYPE_IS_STAT(r1->rec_type)) {
-      continue;
-    }
-
-    if (r1->data_type == RECD_STRING) {
-      continue;
-    }
-
-    if (((type == RECT_NULL) || (r1->rec_type == type)) && (all || (r1->stat_meta.persist_type != RECP_NON_PERSISTENT))) {
-      if (reset_stat_record(r1) != REC_ERR_OKAY) {
-        err = REC_ERR_FAIL;
-      }
-    }
-  }
-
-  return err;
-}
-
 RecErrT
 RecSetSyncRequired(char *name, bool lock)
 {

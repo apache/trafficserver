@@ -24,6 +24,7 @@
 #include "P_Cache.h"
 #include "P_CacheDir.h"
 #include "P_CacheDoc.h"
+#include "Stripe.h"
 
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"
@@ -214,7 +215,7 @@ dir_bucket_loop_check(Dir *start_dir, Dir *seg)
 // adds all the directory entries
 // in a segment to the segment freelist
 void
-dir_init_segment(int s, StripeSM *stripe)
+dir_init_segment(int s, Stripe *stripe)
 {
   stripe->header->freelist[s] = 0;
   Dir *seg                    = stripe->dir_segment(s);
@@ -231,7 +232,7 @@ dir_init_segment(int s, StripeSM *stripe)
 // break the infinite loop in directory entries
 // Note : abuse of the token bit in dir entries
 int
-dir_bucket_loop_fix(Dir *start_dir, int s, StripeSM *stripe)
+dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe)
 {
   if (!dir_bucket_loop_check(start_dir, stripe->dir_segment(s))) {
     Warning("Dir loop exists, clearing segment %d", s);
@@ -242,7 +243,7 @@ dir_bucket_loop_fix(Dir *start_dir, int s, StripeSM *stripe)
 }
 
 int
-dir_freelist_length(StripeSM *stripe, int s)
+dir_freelist_length(Stripe *stripe, int s)
 {
   int  free = 0;
   Dir *seg  = stripe->dir_segment(s);
@@ -258,7 +259,7 @@ dir_freelist_length(StripeSM *stripe, int s)
 }
 
 int
-dir_bucket_length(Dir *b, int s, StripeSM *stripe)
+dir_bucket_length(Dir *b, int s, Stripe *stripe)
 {
   Dir *e   = b;
   int  i   = 0;
@@ -278,7 +279,7 @@ dir_bucket_length(Dir *b, int s, StripeSM *stripe)
 }
 
 int
-check_dir(StripeSM *stripe)
+check_dir(Stripe *stripe)
 {
   int i, s;
   Dbg(dbg_ctl_cache_check_dir, "inside check dir");
@@ -301,7 +302,7 @@ check_dir(StripeSM *stripe)
 }
 
 inline void
-unlink_from_freelist(Dir *e, int s, StripeSM *stripe)
+unlink_from_freelist(Dir *e, int s, Stripe *stripe)
 {
   Dir *seg = stripe->dir_segment(s);
   Dir *p   = dir_from_offset(dir_prev(e), seg);
@@ -317,7 +318,7 @@ unlink_from_freelist(Dir *e, int s, StripeSM *stripe)
 }
 
 inline Dir *
-dir_delete_entry(Dir *e, Dir *p, int s, StripeSM *stripe)
+dir_delete_entry(Dir *e, Dir *p, int s, Stripe *stripe)
 {
   Dir *seg              = stripe->dir_segment(s);
   int  no               = dir_next(e);
@@ -347,7 +348,7 @@ dir_delete_entry(Dir *e, Dir *p, int s, StripeSM *stripe)
 }
 
 inline void
-dir_clean_bucket(Dir *b, int s, StripeSM *stripe)
+dir_clean_bucket(Dir *b, int s, Stripe *stripe)
 {
   Dir *e = b, *p = nullptr;
   Dir *seg = stripe->dir_segment(s);
@@ -380,7 +381,7 @@ dir_clean_bucket(Dir *b, int s, StripeSM *stripe)
 }
 
 void
-dir_clean_segment(int s, StripeSM *stripe)
+dir_clean_segment(int s, Stripe *stripe)
 {
   Dir *seg = stripe->dir_segment(s);
   for (int64_t i = 0; i < stripe->buckets; i++) {
@@ -390,7 +391,7 @@ dir_clean_segment(int s, StripeSM *stripe)
 }
 
 void
-dir_clean_vol(StripeSM *stripe)
+dir_clean_vol(Stripe *stripe)
 {
   for (int64_t i = 0; i < stripe->segments; i++) {
     dir_clean_segment(i, stripe);
@@ -399,7 +400,7 @@ dir_clean_vol(StripeSM *stripe)
 }
 
 void
-dir_clear_range(off_t start, off_t end, StripeSM *stripe)
+dir_clear_range(off_t start, off_t end, Stripe *stripe)
 {
   for (off_t i = 0; i < stripe->buckets * DIR_DEPTH * stripe->segments; i++) {
     Dir *e = dir_index(stripe, i);
@@ -426,7 +427,7 @@ check_bucket_not_contains(Dir *b, Dir *e, Dir *seg)
 }
 
 void
-freelist_clean(int s, StripeSM *stripe)
+freelist_clean(int s, Stripe *stripe)
 {
   dir_clean_segment(s, stripe);
   if (stripe->header->freelist[s]) {
@@ -450,7 +451,7 @@ freelist_clean(int s, StripeSM *stripe)
 }
 
 inline Dir *
-freelist_pop(int s, StripeSM *stripe)
+freelist_pop(int s, Stripe *stripe)
 {
   Dir *seg = stripe->dir_segment(s);
   Dir *e   = dir_from_offset(stripe->header->freelist[s], seg);
@@ -472,7 +473,7 @@ freelist_pop(int s, StripeSM *stripe)
 }
 
 int
-dir_segment_accounted(int s, StripeSM *stripe, int offby, int *f, int *u, int *et, int *v, int *av, int *as)
+dir_segment_accounted(int s, Stripe *stripe, int offby, int *f, int *u, int *et, int *v, int *av, int *as)
 {
   int     free = dir_freelist_length(stripe, s);
   int     used = 0, empty = 0;
@@ -525,7 +526,7 @@ dir_segment_accounted(int s, StripeSM *stripe, int offby, int *f, int *u, int *e
 }
 
 void
-dir_free_entry(Dir *e, int s, StripeSM *stripe)
+dir_free_entry(Dir *e, int s, Stripe *stripe)
 {
   Dir         *seg = stripe->dir_segment(s);
   unsigned int fo  = stripe->header->freelist[s];
@@ -932,7 +933,7 @@ CacheSync::aio_write(int fd, char *b, int n, off_t o)
 }
 
 uint64_t
-dir_entries_used(StripeSM *stripe)
+dir_entries_used(Stripe *stripe)
 {
   uint64_t full  = 0;
   uint64_t sfull = 0;

@@ -133,17 +133,13 @@ Data Structures
 
    * Timestamps for request and response from :term:`origin server`.
 
-.. class:: StripeSM
+.. class:: Stripe
 
    This represents a :term:`storage unit` inside a :term:`cache volume`.
 
    .. cpp:member:: off_t data_blocks
 
       The number of blocks of storage in the stripe.
-
-   .. cpp:member:: int aggWrite(int event, void * e)
-
-      Schedule the aggregation buffer to be written to disk.
 
    .. member:: off_t segments
 
@@ -158,14 +154,22 @@ Data Structures
       values this is around 16,384 (2^16 / 4). Buckets are used as the targets
       of the index hash.
 
+   .. member:: off_t len
+
+      Length of stripe in bytes.
+
+.. class:: StripeSM
+
+   Defined in :ts:git:`src/iocore/cache/Stripe.h`.
+
+   .. cpp:member:: int aggWrite(int event, void * e)
+
+      Schedule the aggregation buffer to be written to disk.
+
    .. member:: DLL<EvacuationBlock> evacuate
 
       Array of :class:`EvacuationBlock` buckets. This is sized so there
       is one bucket for every evacuation span.
-
-   .. member:: off_t len
-
-      Length of stripe in bytes.
 
    .. member:: int evac_range(off_t low, off_t high, int evac_phase)
 

@@ -785,10 +785,10 @@ CacheProcessor::stop()
 }
 
 int
-CacheProcessor::dir_check(bool afix)
+CacheProcessor::dir_check(bool /* afix ATS_UNUSED */)
 {
   for (int i = 0; i < gnstripes; i++) {
-    gstripes[i]->dir_check(afix);
+    gstripes[i]->dir_check();
   }
   return 0;
 }

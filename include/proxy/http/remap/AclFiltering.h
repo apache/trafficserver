@@ -99,7 +99,8 @@ private:
 public:
   acl_filter_rule *next        = nullptr;
   char            *filter_name = nullptr; // optional filter name
-  unsigned int     allow_flag : 1,        // action allow deny
+  unsigned int     allow_flag : 1,        // action allow or add_allow (1); or deny or add_deny (0)
+    add_flag                  : 1,        // add_allow/add_deny (1) or allow/deny (0)
     src_ip_valid              : 1,        // src_ip (client's src IP) range is specified and valid
     src_ip_category_valid     : 1,        // src_ip_category (client's src IP category) is specified and valid
     in_ip_valid               : 1,        // in_ip (client's dest IP) range is specified and valid
@@ -133,6 +134,12 @@ public:
   void name(const char *_name = nullptr);
   int  add_argv(int _argc, char *_argv[]);
   void print();
+
+  /** Return a description of the action.
+   *
+   * @return "allow", "add_allow", "deny", or "add_deny", as appropriate.
+   */
+  char const *get_action_description() const;
 
   static acl_filter_rule *find_byname(acl_filter_rule *list, const char *name);
   static void             delete_byname(acl_filter_rule **list, const char *name);

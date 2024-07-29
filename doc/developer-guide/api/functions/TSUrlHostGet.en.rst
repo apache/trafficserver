@@ -40,7 +40,6 @@ Synopsis
 .. function:: int TSUrlRawPortGet(TSMBuffer bufp, TSMLoc offset)
 .. function:: const char * TSUrlPathGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: const char * TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc offset, int * length)
-.. function:: const char * TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: const char * TSUrlHttpFragmentGet(TSMBuffer bufp, TSMLoc offset, int * length)
 
 Description
@@ -53,7 +52,7 @@ and retrieve or modify parts of URLs, such as their host, port or scheme
 information.
 
 :func:`TSUrlSchemeGet`, :func:`TSUrlRawSchemeGet`, :func:`TSUrlUserGet`, :func:`TSUrlPasswordGet`,
-:func:`TSUrlHostGet`, :func:`TSUrlPathGet`, :func:`TSUrlHttpParamsGet`, :func:`TSUrlHttpQueryGet`
+:func:`TSUrlHostGet`, :func:`TSUrlPathGet`, :func:`TSUrlHttpQueryGet`
 and :func:`TSUrlHttpFragmentGet` each retrieve an internal pointer to the
 specified portion of the URL from the marshall buffer :arg:`bufp`. The length
 of the returned string is placed in :arg:`length` and a pointer to the URL

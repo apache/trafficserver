@@ -306,13 +306,6 @@ traffic_ctl metric
    the given regular expression.
 
 .. program:: traffic_ctl metric
-.. option:: zero METRIC [METRIC...]
-
-   :ref:`admin_clear_metrics_records`
-
-   Reset the named statistics to zero.
-
-.. program:: traffic_ctl metric
 .. option:: describe RECORD [RECORD...]
 
    :ref:`admin_lookup_records`
@@ -518,8 +511,6 @@ but rather to the rpc endpoint, so you can directly send requests and receive re
       - admin_host_set_status
       - admin_server_stop_drain
       - admin_server_start_drain
-      - admin_clear_metrics_records
-      - admin_clear_all_metrics_records
       - admin_plugin_send_basic_msg
       - admin_lookup_records
       - admin_config_set_records
