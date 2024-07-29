@@ -20,8 +20,6 @@
 
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3Config.h"
-#include "proxy/http3/Http3FrameDispatcher.h"
-#include "proxy/http3/Http3SettingsHandler.h"
 
 #include "records/RecordsConfig.h"
 #include "tscore/Layout.h"
