@@ -245,9 +245,9 @@ Config::fromArgs(int const argc, char const *const argv[])
         size_t size = std::stoul(optarg);
         setCacheSize(size);
         DEBUG_LOG("Metadata cache size: %zu entries", size);
-      } catch (std::invalid_argument e) {
+      } catch (const std::invalid_argument &e) {
         ERROR_LOG("Invalid metadata cache size argument: %s", optarg);
-      } catch (std::out_of_range e) {
+      } catch (const std::out_of_range &e) {
         ERROR_LOG("Metadata cache size out of range: %s", optarg);
       }
     } break;
