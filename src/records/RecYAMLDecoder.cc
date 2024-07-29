@@ -146,7 +146,7 @@ ParseRecordsFromYAML(YAML::Node root, RecYAMLNodeHandler handler, bool lock /*fa
 
   swoc::Errata errata;
   if (YAML::NodeType::Map != root.Type()) {
-    return swoc::Errata(ERRATA_NOTE, "Node is expected to be a map, got '{}' instead.", root.Type());
+    return swoc::Errata(ERRATA_ERROR, "Node is expected to be a map, got '{}' instead.", root.Type());
   }
 
   if (auto ts = root[RECORD_YAML_ROOT_STR]; ts.size()) {
@@ -154,7 +154,8 @@ ParseRecordsFromYAML(YAML::Node root, RecYAMLNodeHandler handler, bool lock /*fa
       detail::flatten_node({n.first, n.second, CONFIG_RECORD_PREFIX}, handler, errata);
     }
   } else {
-    return swoc::Errata(ERRATA_NOTE, "'records' root key not present or no fields to read.");
+    return swoc::Errata(ERRATA_ERROR, "'{}' root key not present or no fields to read. Default values will be used",
+                        RECORD_YAML_ROOT_STR);
   }
 
   return errata;
