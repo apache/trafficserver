@@ -196,11 +196,31 @@ public:
   int evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e);
   int evacuateDocReadDone(int event, Event *e);
 
-  int              evac_range(off_t start, off_t end, int evac_phase);
-  void             periodic_scan();
-  void             scan_for_pinned_documents();
-  void             evacuate_cleanup_blocks(int i);
-  void             evacuate_cleanup();
+  int evac_range(off_t start, off_t end, int evac_phase);
+  /**
+   *
+   * The caller must hold the mutex.
+   */
+  void periodic_scan();
+  /**
+   *
+   * The caller must hold the mutex.
+   */
+  void scan_for_pinned_documents();
+  /**
+   *
+   * The caller must hold the mutex.
+   */
+  void evacuate_cleanup_blocks(int i);
+  /**
+   *
+   * The caller must hold the mutex.
+   */
+  void evacuate_cleanup();
+  /**
+   *
+   * The caller must hold the mutex.
+   */
   EvacuationBlock *force_evacuate_head(Dir const *dir, int pinned);
 
   int within_hit_evacuate_window(Dir const *dir) const;
