@@ -29,6 +29,7 @@
 #include "P_CacheDir.h"
 
 #include "CacheEvacuateDocVC.h"
+#include "PreservationTable.h"
 #include "Stripe.h"
 
 #include "iocore/cache/CacheDefs.h"
@@ -663,131 +664,9 @@ StripeSM::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data AT
   set_io_not_in_progress();
   scan_pos = header->write_pos;
   ink_assert(this->mutex->thread_holding = this_ethread());
-  periodic_scan();
+  periodic_scan(this);
   SET_HANDLER(&StripeSM::dir_init_done);
   return dir_init_done(EVENT_IMMEDIATE, nullptr);
-}
-
-void
-StripeSM::periodic_scan()
-{
-  evacuate_cleanup();
-  scan_for_pinned_documents();
-  if (header->write_pos == start) {
-    scan_pos = start;
-  }
-  scan_pos += len / PIN_SCAN_EVERY;
-}
-
-void
-StripeSM::evacuate_cleanup()
-{
-  int64_t eo = ((header->write_pos - start) / CACHE_BLOCK_SIZE) + 1;
-  int64_t e  = dir_offset_evac_bucket(eo);
-  int64_t sx = e - (evacuate_size / PIN_SCAN_EVERY) - 1;
-  int64_t s  = sx;
-  int     i;
-
-  if (e > evacuate_size) {
-    e = evacuate_size;
-  }
-  if (sx < 0) {
-    s = 0;
-  }
-  for (i = s; i < e; i++) {
-    evacuate_cleanup_blocks(i);
-  }
-
-  // if we have wrapped, handle the end bit
-  if (sx <= 0) {
-    s = evacuate_size + sx - 2;
-    if (s < 0) {
-      s = 0;
-    }
-    for (i = s; i < evacuate_size; i++) {
-      evacuate_cleanup_blocks(i);
-    }
-  }
-}
-
-inline void
-StripeSM::evacuate_cleanup_blocks(int i)
-{
-  EvacuationBlock *b = evac_bucket_valid(i) ? evacuate[i].head : nullptr;
-  while (b) {
-    if (b->f.done && ((header->phase != dir_phase(&b->dir) && header->write_pos > this->vol_offset(&b->dir)) ||
-                      (header->phase == dir_phase(&b->dir) && header->write_pos <= this->vol_offset(&b->dir)))) {
-      EvacuationBlock *x = b;
-      DDbg(dbg_ctl_cache_evac, "evacuate cleanup free %X offset %d", (int)b->evac_frags.key.slice32(0), (int)dir_offset(&b->dir));
-      b = b->link.next;
-      evacuate[i].remove(x);
-      free_EvacuationBlock(x);
-      continue;
-    }
-    b = b->link.next;
-  }
-}
-
-void
-StripeSM::scan_for_pinned_documents()
-{
-  if (cache_config_permit_pinning) {
-    // we can't evacuate anything between header->write_pos and
-    // header->write_pos + AGG_SIZE.
-    int ps                = this->offset_to_vol_offset(header->write_pos + AGG_SIZE);
-    int pe                = this->offset_to_vol_offset(header->write_pos + 2 * EVACUATION_SIZE + (len / PIN_SCAN_EVERY));
-    int vol_end_offset    = this->offset_to_vol_offset(len + skip);
-    int before_end_of_vol = pe < vol_end_offset;
-    DDbg(dbg_ctl_cache_evac, "scan %d %d", ps, pe);
-    for (int i = 0; i < this->direntries(); i++) {
-      // is it a valid pinned object?
-      if (!dir_is_empty(&dir[i]) && dir_pinned(&dir[i]) && dir_head(&dir[i])) {
-        // select objects only within this PIN_SCAN region
-        int o = dir_offset(&dir[i]);
-        if (dir_phase(&dir[i]) == header->phase) {
-          if (before_end_of_vol || o >= (pe - vol_end_offset)) {
-            continue;
-          }
-        } else {
-          if (o < ps || o >= pe) {
-            continue;
-          }
-        }
-        force_evacuate_head(&dir[i], 1);
-      }
-    }
-  }
-}
-
-EvacuationBlock *
-StripeSM::force_evacuate_head(Dir const *evac_dir, int pinned)
-{
-  auto bucket = dir_evac_bucket(evac_dir);
-  if (!evac_bucket_valid(bucket)) {
-    DDbg(dbg_ctl_cache_evac, "dir_evac_bucket out of bounds, skipping evacuate: %" PRId64 "(%d), %d, %d", bucket, evacuate_size,
-         (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
-    return nullptr;
-  }
-
-  // build an evacuation block for the object
-  EvacuationBlock *b = evacuation_block_exists(evac_dir, this);
-  // if we have already started evacuating this document, its too late
-  // to evacuate the head...bad luck
-  if (b && b->f.done) {
-    return b;
-  }
-
-  if (!b) {
-    b      = new_EvacuationBlock();
-    b->dir = *evac_dir;
-    DDbg(dbg_ctl_cache_evac, "force: %d, %d", (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
-    evacuate[bucket].push(b);
-  }
-  b->f.pinned        = pinned;
-  b->f.evacuate_head = 1;
-  b->evac_frags.key.clear(); // ensure that the block gets evacuated no matter what
-  b->readers = 0;            // ensure that the block does not disappear
-  return b;
 }
 
 CacheEvacuateDocVC *
@@ -905,7 +784,7 @@ StripeSM::aggWriteDone(int event, Event *e)
     ink_assert(header->write_pos == header->agg_pos);
     if (header->write_pos + EVACUATION_SIZE > scan_pos) {
       ink_assert(this->mutex->thread_holding == this_ethread());
-      periodic_scan();
+      periodic_scan(this);
     }
     this->_write_buffer.reset_buffer_pos();
     header->write_serial++;
@@ -1262,7 +1141,7 @@ StripeSM::agg_wrap()
     Note("Cache volume %d on disk '%s' wraps around", stripe->cache_vol->vol_number, stripe->hash_text.get());
   }
   ink_assert(this->mutex->thread_holding = this_ethread());
-  periodic_scan();
+  periodic_scan(this);
 }
 
 int

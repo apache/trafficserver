@@ -84,16 +84,12 @@ public:
   off_t                len{};
   off_t                data_blocks{};
 
-  int evacuate_size{};
-
   CacheDisk *disk{};
   uint32_t   sector_size{};
 
   CacheVol *cache_vol{};
 
   int dir_check();
-
-  bool evac_bucket_valid(off_t bucket) const;
 
   uint32_t round_to_approx_size(uint32_t l) const;
 
@@ -151,12 +147,6 @@ protected:
 private:
   void _init_data_internal();
 };
-
-inline bool
-Stripe::evac_bucket_valid(off_t bucket) const
-{
-  return (bucket >= 0 && bucket < evacuate_size);
-}
 
 inline uint32_t
 Stripe::round_to_approx_size(uint32_t l) const

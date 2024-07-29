@@ -24,6 +24,7 @@
 #include "P_Cache.h"
 #include "P_CacheDir.h"
 #include "P_CacheDoc.h"
+#include "PreservationTable.h"
 #include "Stripe.h"
 
 #include "tscore/hugepages.h"
