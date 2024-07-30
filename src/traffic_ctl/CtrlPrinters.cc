@@ -184,8 +184,7 @@ ConfigSetPrinter::write_output(YAML::Node const &result)
   static const TypeToStringMap Update_Type_To_String_Message = {
     {"0", "Set {}"                                                                                          }, // UNDEFINED
     {"1", "Set {}, please wait 10 seconds for traffic server to sync configuration, restart is not required"}, // DYNAMIC
-    {"2", "Set {}, restart required"                                                                        }, // RESTART_TS
-    {"3", "Set {}, restart required"                                                                        }  // RESTART TM, we take care of this in case we get it from TS.
+    {"2", "Set {}, restart required"                                                                        }  // RESTART_TS
   };
   std::string text;
   try {
