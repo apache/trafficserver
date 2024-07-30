@@ -380,10 +380,10 @@ traffic_ctl server
 
    Enables diagnostic messages at runtime. This is equivalent to
    manually setting the below records but this is done in one go.
-   
+
    Note that if you just set this to enable, the :ts:cv:`proxy.config.diags.debug.enabled`
    will be set to ``1`` unless you specify the ``--client_ip,-c`` option.
-    
+
    :ts:cv:`proxy.config.diags.debug.enabled`
 
    :ts:cv:`proxy.config.diags.debug.tags`
