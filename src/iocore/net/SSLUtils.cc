@@ -1117,7 +1117,7 @@ void
 SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 {
   // Make sure the callbacks are set
-#if !HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB // For OpenSSL < 1.1.1, we should be able to remove this
+#if !HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
   SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, nullptr);
   SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
 #endif
