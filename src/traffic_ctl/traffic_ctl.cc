@@ -186,6 +186,15 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--no-new-connection", "-N", "Wait for new connections down to threshold before starting draining")
     .add_option("--undo", "-U", "Recover server from the drain mode");
 
+  auto &debug_command =
+    server_command.add_command("debug", "Enable/Disable ATS for diagnostic messages at runtime").require_commands();
+  debug_command.add_command("enable", "Enables logging for diagnostic messages at runtime", [&]() { command->execute(); })
+    .add_option("--tags", "-t", "Debug tags", "TS_DEBUG_TAGS", 1)
+    .add_option("--client_ip", "-c", "Client's ip", "", 1, "")
+    .add_example_usage("traffic_ctl server debug enable -t my_tags -c X.X.X.X");
+  debug_command.add_command("disable", "Disables logging for diagnostic messages at runtime", [&]() { command->execute(); })
+    .add_example_usage("traffic_ctl server debug disable");
+
   // storage commands
   storage_command
     .add_command("offline", "Take one or more storage volumes offline", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); })
