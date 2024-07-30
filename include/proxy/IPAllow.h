@@ -138,8 +138,10 @@ public:
   static const inline std::string YAML_VALUE_APPLY_IN{"in"};
   static const inline std::string YAML_VALUE_APPLY_OUT{"out"};
   static const inline std::string YAML_TAG_ACTION{"action"};
-  static const inline std::string YAML_VALUE_ACTION_ALLOW{"allow"};
-  static const inline std::string YAML_VALUE_ACTION_DENY{"deny"};
+  static const inline std::string YAML_VALUE_ACTION_ALLOW{"set_allow"};
+  static const inline std::string YAML_VALUE_ACTION_ALLOW_OLD_NAME{"allow"};
+  static const inline std::string YAML_VALUE_ACTION_DENY{"set_deny"};
+  static const inline std::string YAML_VALUE_ACTION_DENY_OLD_NAME{"deny"};
   static const inline std::string YAML_TAG_METHODS{"methods"};
   static const inline std::string YAML_VALUE_METHODS_ALL{"all"};
 
@@ -280,6 +282,9 @@ private:
   IpCategories     ip_category_map; ///< Map of IP categories to IP spaces.
   /// Storage for records.
   swoc::MemArena _arena;
+
+  /// Whether to allow "allow" and "deny" as action tags.
+  bool _is_legacy_action_policy{true};
 
   friend swoc::BufferWriter &bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, IpAllow::IpMap const &map);
 };

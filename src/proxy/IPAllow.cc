@@ -123,7 +123,11 @@ IpAllow::reconfigure()
   if (auto errata = new_table->BuildTable(); !errata.is_ok()) {
     std::string text;
     swoc::bwprint(text, "{} failed to load\n{}", ts::filename::IP_ALLOW, errata);
-    Error("%s", text.c_str());
+    if (errata.severity() <= ERRATA_ERROR) {
+      Error("%s", text.c_str());
+    } else {
+      Fatal("%s", text.c_str());
+    }
     delete new_table;
     return;
   }
@@ -197,6 +201,13 @@ IpAllow::match(swoc::IPAddr const &addr, match_key_t key)
 IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_config_var)
   : ip_allow_config_file(ats_scoped_str(RecConfigReadConfigPath(ip_allow_config_var)).get())
 {
+  int matching_policy = 0;
+  REC_ReadConfigInteger(matching_policy, "proxy.config.url_remap.acl_matching_policy");
+  if (matching_policy == 0) {
+    this->_is_legacy_action_policy = true;
+  } else {
+    this->_is_legacy_action_policy = false;
+  }
   std::string const path = RecConfigReadConfigPath(ip_categories_config_var);
   if (!path.empty()) {
     ip_categories_config_file = ats_scoped_str(path).get();
@@ -399,15 +410,21 @@ IpAllow::YAMLLoadEntry(const YAML::Node &entry)
                           YAML_VALUE_APPLY_IN, YAML_VALUE_APPLY_OUT);
     }
   } else {
-    return swoc::Errata(ERRATA_ERROR, R"("Object at {} must have a "{}" key.)", entry.Mark(), YAML_TAG_APPLY);
+    return swoc::Errata(ERRATA_ERROR, R"(Object at {} must have a "{}" key.)", entry.Mark(), YAML_TAG_APPLY);
   }
 
   if (node = entry[YAML_TAG_ACTION]; node) {
     if (node.IsScalar()) {
       swoc::TextView value(node.Scalar());
-      if (value == YAML_VALUE_ACTION_ALLOW) {
+      if (!this->_is_legacy_action_policy &&
+          (value == YAML_VALUE_ACTION_ALLOW_OLD_NAME || value == YAML_VALUE_ACTION_DENY_OLD_NAME)) {
+        return swoc::Errata(
+          ERRATA_FATAL, R"(Legacy action name of "{}" detected at {}. Use "set_allow" or "set_deny" instead of "allow" or "deny".)",
+          value, entry.Mark());
+      }
+      if (value == YAML_VALUE_ACTION_ALLOW || value == YAML_VALUE_ACTION_ALLOW_OLD_NAME) {
         op = ACL_OP_ALLOW;
-      } else if (value == YAML_VALUE_ACTION_DENY) {
+      } else if (value == YAML_VALUE_ACTION_DENY || value == YAML_VALUE_ACTION_DENY_OLD_NAME) {
         op = ACL_OP_DENY;
       } else {
         return swoc::Errata(ERRATA_ERROR, "{} {} - item ignored, value for tag '{}' must be '{}' or '{}'", this, node.Mark(),

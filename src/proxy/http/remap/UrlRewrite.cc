@@ -58,6 +58,25 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 } // end anonymous namespace
 
 bool
+UrlRewrite::get_acl_matching_policy(ACLMatchingPolicy &policy)
+{
+  int matching_policy = 0;
+  REC_ReadConfigInteger(matching_policy, "proxy.config.url_remap.acl_matching_policy");
+  switch (matching_policy) {
+  case 0:
+    policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
+    break;
+  case 1:
+    policy = ACLMatchingPolicy::MATCH_ON_IP_ONLY;
+    break;
+  default:
+    Warning("unkown ACL Matching Policy: %d", matching_policy);
+    return false;
+  }
+  return true;
+}
+
+bool
 UrlRewrite::load()
 {
   ats_scoped_str config_file_path;
@@ -128,17 +147,7 @@ UrlRewrite::load()
   }
 
   // ACL Matching Policy
-  int matching_policy = 0;
-  REC_ReadConfigInteger(matching_policy, "proxy.config.url_remap.acl_matching_policy");
-  switch (matching_policy) {
-  case 0:
-    _acl_matching_policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
-    break;
-  case 1:
-    _acl_matching_policy = ACLMatchingPolicy::MATCH_ON_IP_ONLY;
-    break;
-  default:
-    Warning("unkown ACL Matching Policy :%d", matching_policy);
+  if (!get_acl_matching_policy(_acl_matching_policy)) {
     _valid = false;
   }
 
