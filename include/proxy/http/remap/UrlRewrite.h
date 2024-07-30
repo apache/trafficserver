@@ -53,6 +53,11 @@ enum mapping_type {
   NONE
 };
 
+enum class ACLMatchingPolicy {
+  MATCH_ON_IP_AND_METHOD = 0,
+  MATCH_ON_IP_ONLY,
+};
+
 /**
  *
  **/
@@ -63,10 +68,13 @@ public:
   UrlRewrite()   = default;
   ~UrlRewrite() override;
 
-  enum class ACLMatchingPolicy {
-    MATCH_ON_IP_AND_METHOD = 0,
-    MATCH_ON_IP_ONLY,
-  };
+  /** Retrieve the configured ACL matching policy.
+   *
+   * @param[out] policy The configured ACL matching policy.
+   * @return @c true if the policy is configured to an appropriate value, @c
+   * false if not.
+   */
+  static bool get_acl_matching_policy(ACLMatchingPolicy &policy);
 
   /** Load the configuration.
    *

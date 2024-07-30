@@ -129,7 +129,7 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
     for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
       ;
     }
-    errStr = remap_validate_filter_args(rpp, (const char **)bti->argv, bti->argc, errStrBuf, errStrBufSize);
+    errStr = remap_validate_filter_args(rpp, (const char **)bti->argv, bti->argc, errStrBuf, errStrBufSize, bti->matching_policy);
   }
 
   for (rp = bti->rules_list; rp; rp = rp->next) {
@@ -142,7 +142,8 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
       for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
         ;
       }
-      if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize)) != nullptr) {
+      if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize,
+                                               bti->matching_policy)) != nullptr) {
         break;
       }
     }
@@ -199,7 +200,9 @@ parse_define_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbu
 
   flg = ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *)bti->paramv[1])) == nullptr) ? true : false;
   // coverity[alloc_arg]
-  if ((cstr = remap_validate_filter_args(&rp, (const char **)bti->argv, bti->argc, errbuf, errbufsize)) == nullptr && rp) {
+  if ((cstr = remap_validate_filter_args(&rp, (const char **)bti->argv, bti->argc, errbuf, errbufsize, bti->matching_policy)) ==
+        nullptr &&
+      rp) {
     if (flg) { // new filter - add to list
       acl_filter_rule **rpp = nullptr;
       Dbg(dbg_ctl_url_rewrite, "[parse_directive] new rule \"%s\" was created", bti->paramv[1]);
@@ -438,7 +441,8 @@ remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize)
 }
 
 const char *
-remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize)
+remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize,
+                           ACLMatchingPolicy matching_policy)
 {
   acl_filter_rule *rule;
   int              i, j;
@@ -628,14 +632,35 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     }
 
     if (ul & REMAP_OPTFLG_ACTION) { /* "action=" option */
+      if (matching_policy == ACLMatchingPolicy::MATCH_ON_IP_ONLY) {
+        // With the new matching policy, we don't allow the legacy "allow" and
+        // "deny" actions. Users must transition to either add_allow/add_deny or
+        // set_allow/set_deny.
+        if (is_inkeylist(argptr, "allow", "deny", nullptr)) {
+          Dbg(
+            dbg_ctl_url_rewrite,
+            R"([validate_filter_args] "allow" and "deny" are no longer valid. Use add_allow/add_deny or set_allow/set_deny: "%s"")",
+            argv[i]);
+          snprintf(errStrBuf, errStrBufSize,
+                   R"("allow" and "deny" are no longer valid. Use add_allow/add_deny or set_allow/set_deny: "%s"")", argv[i]);
+          errStrBuf[errStrBufSize - 1] = 0;
+          if (new_rule_flg) {
+            delete rule;
+            *rule_pp = nullptr;
+          }
+          return (const char *)errStrBuf;
+        }
+      }
       if (is_inkeylist(argptr, "add_allow", "add_deny", nullptr)) {
         rule->add_flag = 1;
       } else {
         rule->add_flag = 0;
       }
-      if (is_inkeylist(argptr, "0", "off", "deny", "add_deny", "disable", nullptr)) {
+      // Remove "deny" from this list when MATCH_ON_IP_AND_METHOD is removed in 11.x.
+      if (is_inkeylist(argptr, "0", "off", "deny", "set_deny", "add_deny", "disable", nullptr)) {
         rule->allow_flag = 0;
-      } else if (is_inkeylist(argptr, "1", "on", "allow", "add_allow", "enable", nullptr)) {
+        // Remove "allow" from this list when MATCH_ON_IP_AND_METHOD is removed in 11.x.
+      } else if (is_inkeylist(argptr, "1", "on", "allow", "set_allow", "add_allow", "enable", nullptr)) {
         rule->allow_flag = 1;
       } else {
         Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Unknown argument \"%s\"", argv[i]);
@@ -1040,6 +1065,13 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   }
 
   Dbg(dbg_ctl_url_rewrite, "[BuildTable] UrlRewrite::BuildTable()");
+
+  ACLMatchingPolicy matching_policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
+  if (!UrlRewrite::get_acl_matching_policy(matching_policy)) {
+    Warning("Failed to get ACL matching policy.");
+    return false;
+  }
+  bti->matching_policy = matching_policy;
 
   for (cur_line = tokLine(content.data(), &tok_state, '\\'); cur_line != nullptr;) {
     reg_map      = nullptr;
