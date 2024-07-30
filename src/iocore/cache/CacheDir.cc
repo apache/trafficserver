@@ -833,7 +833,7 @@ dir_lookaside_insert(EvacuationBlock *eblock, StripeSM *stripe, Dir *to)
        (int)dir_phase(to));
   ink_assert(stripe->mutex->thread_holding == this_ethread());
   int              i         = key->slice32(3) % LOOKASIDE_SIZE;
-  EvacuationBlock *b         = new_EvacuationBlock(stripe->mutex->thread_holding);
+  EvacuationBlock *b         = new_EvacuationBlock();
   b->evac_frags.key          = *key;
   b->evac_frags.earliest_key = *key;
   b->earliest_evacuator      = eblock->earliest_evacuator;
@@ -858,7 +858,7 @@ dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe)
       int64_t o = dir_offset(&b->dir), n = dir_offset(&b->new_dir);
       stripe->ram_cache->fixup(key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
       stripe->lookaside[i].remove(b);
-      free_EvacuationBlock(b, stripe->mutex->thread_holding);
+      free_EvacuationBlock(b);
       return res;
     }
     b = b->link.next;
@@ -880,7 +880,7 @@ dir_lookaside_cleanup(StripeSM *stripe)
              b->evac_frags.earliest_key.slice32(1));
         i.remove(b);
         free_CacheEvacuateDocVC(b->earliest_evacuator);
-        free_EvacuationBlock(b, stripe->mutex->thread_holding);
+        free_EvacuationBlock(b);
         b = nb;
         goto Lagain;
       }
@@ -901,7 +901,7 @@ dir_lookaside_remove(const CacheKey *key, StripeSM *stripe)
       DDbg(dbg_ctl_dir_lookaside, "remove %X %X offset %" PRId64 " phase %d", key->slice32(0), key->slice32(1),
            dir_offset(&b->new_dir), dir_phase(&b->new_dir));
       stripe->lookaside[i].remove(b);
-      free_EvacuationBlock(b, stripe->mutex->thread_holding);
+      free_EvacuationBlock(b);
       return;
     }
     b = b->link.next;

@@ -330,9 +330,9 @@ StripeSM::cancel_trigger()
 }
 
 inline EvacuationBlock *
-new_EvacuationBlock(EThread *t)
+new_EvacuationBlock()
 {
-  EvacuationBlock *b      = THREAD_ALLOC(evacuationBlockAllocator, t);
+  EvacuationBlock *b      = THREAD_ALLOC(evacuationBlockAllocator, this_ethread());
   b->init                 = 0;
   b->readers              = 0;
   b->earliest_evacuator   = nullptr;
@@ -341,7 +341,7 @@ new_EvacuationBlock(EThread *t)
 }
 
 inline void
-free_EvacuationBlock(EvacuationBlock *b, EThread *t)
+free_EvacuationBlock(EvacuationBlock *b)
 {
   EvacuationKey *e = b->evac_frags.link.next;
   while (e) {
@@ -349,7 +349,7 @@ free_EvacuationBlock(EvacuationBlock *b, EThread *t)
     evacuationKeyAllocator.free(e);
     e = n;
   }
-  THREAD_FREE(b, evacuationBlockAllocator, t);
+  THREAD_FREE(b, evacuationBlockAllocator, this_ethread());
 }
 
 inline OpenDirEntry *

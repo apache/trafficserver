@@ -133,8 +133,7 @@ StripeSM::begin_read(CacheVC *cont) const
   }
   // we don't actually need to preserve this block as it is already in
   // memory, but this is easier, and evacuations are rare
-  EThread *t        = cont->mutex->thread_holding;
-  b                 = new_EvacuationBlock(t);
+  b                 = new_EvacuationBlock();
   b->readers        = 1;
   b->dir            = cont->earliest_dir;
   b->evac_frags.key = cont->earliest_key;
@@ -161,7 +160,7 @@ StripeSM::close_read(CacheVC *cont) const
     }
     if (b->readers && !--b->readers) {
       evacuate[i].remove(b);
-      free_EvacuationBlock(b, t);
+      free_EvacuationBlock(b);
       break;
     }
     b = next;
@@ -722,7 +721,7 @@ StripeSM::evacuate_cleanup_blocks(int i)
       DDbg(dbg_ctl_cache_evac, "evacuate cleanup free %X offset %d", (int)b->evac_frags.key.slice32(0), (int)dir_offset(&b->dir));
       b = b->link.next;
       evacuate[i].remove(x);
-      free_EvacuationBlock(x, this_ethread());
+      free_EvacuationBlock(x);
       continue;
     }
     b = b->link.next;
@@ -779,7 +778,7 @@ StripeSM::force_evacuate_head(Dir const *evac_dir, int pinned)
   }
 
   if (!b) {
-    b      = new_EvacuationBlock(this_ethread());
+    b      = new_EvacuationBlock();
     b->dir = *evac_dir;
     DDbg(dbg_ctl_cache_evac, "force: %d, %d", (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
     evacuate[bucket].push(b);
@@ -1419,7 +1418,7 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *s
     }
     EvacuationBlock *b = evacuation_block_exists(&dir, stripe);
     if (!b) {
-      b                          = new_EvacuationBlock(this_ethread());
+      b                          = new_EvacuationBlock();
       b->dir                     = dir;
       b->evac_frags.key          = *key;
       b->evac_frags.earliest_key = *earliest_key;
