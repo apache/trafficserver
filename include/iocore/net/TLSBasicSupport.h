@@ -29,6 +29,8 @@
 #include "tscore/ink_hrtime.h"
 #include "iocore/net/SSLTypes.h"
 
+using TLSHandle = SSL *;
+
 class TLSBasicSupport
 {
 public:
@@ -39,6 +41,7 @@ public:
   static void             bind(SSL *ssl, TLSBasicSupport *srs);
   static void             unbind(SSL *ssl);
 
+  TLSHandle   get_tls_handle() const;
   const char *get_tls_protocol_name() const;
   const char *get_tls_cipher_suite() const;
   const char *get_tls_curve() const;
