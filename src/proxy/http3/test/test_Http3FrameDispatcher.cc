@@ -281,8 +281,6 @@ TEST_CASE("control stream tests", "[http3]")
 
     CHECK(handler.total_frame_received == 1);
     CHECK(total_nread == 6);
-
-    free_MIOBuffer(buf);
   }
 
   free_MIOBuffer(buf);
