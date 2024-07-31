@@ -63,9 +63,9 @@ cp /opt/h3-tools-boringssl/boringssl/lib/libcrypto.so $OUT/lib/
 cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/
 cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/libquiche.so.0
 export LD_LIBRARY_PATH=$OUT/lib/
-cd $OUT/lib/
-ldconfig
-cd $OUT/
+#cd $OUT/lib/
+#ldconfig
+#cd $OUT/
 ldconfig
 
 if [[ $SANITIZER = undefined ]]
