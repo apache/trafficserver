@@ -29,7 +29,7 @@ add_executable(fuzz_rec_http fuzz_rec_http.cc)
 add_executable(fuzz_yamlcpp fuzz_yamlcpp.cc)
 add_executable(fuzz_http3frame fuzz_http3frame.cc)
 
-target_link_libraries(fuzz_esi PRIVATE esi-common esicore tscore tsapi inkevent)
+target_link_libraries(fuzz_esi PRIVATE esi-common esicore tscore tsapi inkevent http)
 target_link_options(fuzz_esi PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_hpack PRIVATE records tscore hdrs inkevent)
 target_link_libraries(fuzz_http PRIVATE ts::hdrs ts::tscore ts::inkevent)
