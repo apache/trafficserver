@@ -35,8 +35,7 @@ Http3FrameCounter::interests()
 }
 
 Http3ErrorUPtr
-Http3FrameCounter::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq ATS_UNUSED */,
-                                Http3StreamType /* s_type ATS_UNUSED */)
+Http3FrameCounter::handle_frame(std::shared_ptr<const Http3Frame> frame, Http3StreamType /* s_type ATS_UNUSED */)
 {
   Http3ErrorUPtr error  = Http3ErrorUPtr(nullptr);
   Http3FrameType f_type = frame->type();
