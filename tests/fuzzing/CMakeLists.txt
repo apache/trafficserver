@@ -20,7 +20,8 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} $ENV{LIB_FUZZING_ENGINE}")
 set(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
-add_executable(fuzz_esi fuzz_esi.cc)
+#  Need to rewrite the ESI Parser to remove dependencies on TS API
+#add_executable(fuzz_esi fuzz_esi.cc)
 add_executable(fuzz_hpack fuzz_hpack.cc)
 add_executable(fuzz_http fuzz_http.cc)
 add_executable(fuzz_json fuzz_json.cc)
@@ -29,8 +30,9 @@ add_executable(fuzz_rec_http fuzz_rec_http.cc)
 add_executable(fuzz_yamlcpp fuzz_yamlcpp.cc)
 add_executable(fuzz_http3frame fuzz_http3frame.cc)
 
-target_link_libraries(fuzz_esi PRIVATE esi-common esicore tscore tsapi inkevent http)
-target_link_options(fuzz_esi PRIVATE "-fuse-ld=lld")
+#  Need to rewrite the ESI Parser to remove dependencies on TS API
+#target_link_libraries(fuzz_esi PRIVATE esi-common esicore tscore tsapi inkevent http)
+#target_link_options(fuzz_esi PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_hpack PRIVATE records tscore hdrs inkevent)
 target_link_libraries(fuzz_http PRIVATE ts::hdrs ts::tscore ts::inkevent)
 target_link_libraries(fuzz_json PRIVATE libswoc::libswoc yaml-cpp ts::jsonrpc_protocol)
@@ -48,10 +50,11 @@ target_sources(
 target_include_directories(fuzz_json PRIVATE ${CMAKE_SOURCE_DIR}/lib)
 target_include_directories(fuzz_proxy_protocol PRIVATE ${CATCH_INCLUDE_DIR})
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-add_custom_command(
-  TARGET fuzz_esi
-  POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libswoc> ${CMAKE_CURRENT_BINARY_DIR}/lib/
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ts::tsapi> ${CMAKE_CURRENT_BINARY_DIR}/lib/
-)
+#  Need to rewrite the ESI Parser to remove dependencies on TS API
+#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+#add_custom_command(
+#  TARGET fuzz_esi
+#  POST_BUILD
+#  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libswoc> ${CMAKE_CURRENT_BINARY_DIR}/lib/
+#  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ts::tsapi> ${CMAKE_CURRENT_BINARY_DIR}/lib/
+#)
