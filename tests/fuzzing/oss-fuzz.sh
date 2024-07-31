@@ -61,9 +61,11 @@ cp $SRC/trafficserver/tests/fuzzing/*.zip  $OUT/
 cp /opt/h3-tools-boringssl/boringssl/lib/libssl.so $OUT/lib/
 cp /opt/h3-tools-boringssl/boringssl/lib/libcrypto.so $OUT/lib/
 cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/
-
-ln -s $OUT/lib/libquiche.so $OUT/lib/libquiche.so.0
+cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/libquiche.so.0
 export LD_LIBRARY_PATH=$OUT/lib/
+cd $OUT/lib/
+ldconfig
+cd $OUT/
 ldconfig
 
 if [[ $SANITIZER = undefined ]]
