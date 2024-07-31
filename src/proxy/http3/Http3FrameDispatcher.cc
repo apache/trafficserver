@@ -52,7 +52,6 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
 {
   Http3ErrorUPtr error = Http3ErrorUPtr(nullptr);
   nread                = 0;
-  uint32_t frame_count = 0;
 
   while (true) {
     // Read a length of Type field and hopefully a length of Length field too
@@ -110,7 +109,6 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
           break;
         }
         this->_bytes_to_skip = this->_current_frame->total_length();
-        ++frame_count;
       }
 
       auto skip = std::min(static_cast<uint64_t>(reader.read_avail()), this->_bytes_to_skip);
@@ -125,7 +123,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
               this->_current_frame->total_length() - _bytes_to_skip, this->_current_frame->total_length());
         std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
         for (auto h : handlers) {
-          error = h->handle_frame(this->_current_frame, frame_count - 1, stream_type);
+          error = h->handle_frame(this->_current_frame, stream_type);
           if (error && error->cls != Http3ErrorClass::UNDEFINED) {
             return error;
           }

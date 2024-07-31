@@ -39,7 +39,7 @@ Http3SettingsHandler::interests()
 }
 
 Http3ErrorUPtr
-Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t /* frame_seq */, Http3StreamType /* s_type */)
+Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame, Http3StreamType /* s_type */)
 {
   ink_assert(frame->type() == Http3FrameType::SETTINGS);
 

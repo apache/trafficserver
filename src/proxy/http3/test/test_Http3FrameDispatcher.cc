@@ -258,44 +258,32 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(nread == sizeof(input));
   }
 
-  free_MIOBuffer(buf);
-}
+  SECTION("padding should not be interpreted as a DATA frame", "[http3]")
+  {
+    uint8_t input[] = {
+      0x40, 0x04, // Type
+      0x03,       // Length
+      0x06,       // Identifier
+      0x44, 0x00, // Value
+    };
 
-// This test needs to run without an enforcer due to a frame counting bug.
-// Add a ProtocolEnforcer handler to reproduce.
-TEST_CASE("padding should not be interpreted as a DATA frame", "[http3]")
-{
-  Http3FrameDispatcher  http3FrameDispatcher;
-  Http3MockFrameHandler handler;
+    // Initial state
+    CHECK(handler.total_frame_received == 0);
+    CHECK(nread == 0);
 
-  http3FrameDispatcher.add_handler(&handler);
+    int total_nread{};
+    for (uint8_t *it{input}; it < input + sizeof(input); ++it) {
+      buf->write(it, 1);
+      error        = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
+      total_nread += nread;
+      CHECK(!error);
+    }
 
-  MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
-  IOBufferReader *reader = buf->alloc_reader();
-  uint64_t        nread  = 0;
-  Http3ErrorUPtr  error  = Http3ErrorUPtr(nullptr);
+    CHECK(handler.total_frame_received == 1);
+    CHECK(total_nread == 6);
 
-  uint8_t input[] = {
-    0x40, 0x04, // Type
-    0x03,       // Length
-    0x06,       // Identifier
-    0x44, 0x00, // Value
-  };
-
-  // Initial state
-  CHECK(handler.total_frame_received == 0);
-  CHECK(nread == 0);
-
-  int total_nread{};
-  for (uint8_t *it{input}; it < input + sizeof(input); ++it) {
-    buf->write(it, 1);
-    error        = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
-    total_nread += nread;
-    CHECK(!error);
+    free_MIOBuffer(buf);
   }
-
-  CHECK(handler.total_frame_received == 1);
-  CHECK(total_nread == 6);
 
   free_MIOBuffer(buf);
 }
