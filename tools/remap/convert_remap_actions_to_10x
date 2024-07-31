@@ -18,14 +18,19 @@
 # limitations under the License.
 #
 
+# NOTE: there is a corresponding
+# tests/tools_tests/test_convert_remap_actions_to_10x test script that is
+# associated with this file. As this file is updated, please update that script
+# as appropriate and make sure it passes all tests.
+
 import argparse
 import os
 import shutil
 import sys
 import tempfile
-from typing import Optional, TextIO, Tuple
+from typing import Optional, Tuple
 
-help = '''Convert allow and deny @actions to add_allow and add_deny.
+CLI_HELP_TEXT = '''Convert allow and deny @actions to add_allow and add_deny.
 
 This script is used to convert a pre-10.x remap.config file to be functionally
 equivalent to a 10.x remap.config file. In 10.x, the pre-10.x @action=allow and
@@ -44,41 +49,71 @@ def convert_line(input_line: str) -> str:
     :return: The converted line.
 
     :examples:
-        >>> convert_line('# nothing to convert')
-        '# nothing to convert'
-        >>> convert_line('map http://example.com http://backend.example.com')
-        'map http://example.com http://backend.example.com'
+    >>> convert_line('# nothing to convert')
+    '# nothing to convert'
+    >>> convert_line('map http://example.com http://backend.example.com')
+    'map http://example.com http://backend.example.com'
 
-        >>> convert_line('map http://example.com http://backend.example.com @action=allow @method=GET')
-        'map http://example.com http://backend.example.com @action=add_allow @method=GET'
-        >>> convert_line('map http://example.com http://backend.example.com @action=deny @method=PUT')
-        'map http://example.com http://backend.example.com @action=add_deny @method=PUT'
+    >>> convert_line('map http://example.com http://backend.example.com @action=allow @method=GET')
+    'map http://example.com http://backend.example.com @action=add_allow @method=GET'
+    >>> convert_line('map http://example.com http://backend.example.com @action=deny @method=PUT')
+    'map http://example.com http://backend.example.com @action=add_deny @method=PUT'
 
-        # Verify that add_allow and add_deny are not converted.
-        >>> convert_line('map http://example.com http://backend.example.com @action=add_deny @method=PUT')
-        'map http://example.com http://backend.example.com @action=add_deny @method=PUT'
-        >>> convert_line('map http://example.com http://backend.example.com @action=add_allow @method=GET')
-        'map http://example.com http://backend.example.com @action=add_allow @method=GET'
+    # Verify that add_allow and add_deny are not converted.
+    >>> convert_line('map http://example.com http://backend.example.com @action=add_deny @method=PUT')
+    'map http://example.com http://backend.example.com @action=add_deny @method=PUT'
+    >>> convert_line('map http://example.com http://backend.example.com @action=add_allow @method=GET')
+    'map http://example.com http://backend.example.com @action=add_allow @method=GET'
 
-        # Comments should be converted too.
-        >>> convert_line('# Using @action=allow is nice.')
-        '# Using @action=add_allow is nice.'
-        >>> convert_line('# map http://example.com http://backend.example.com @action=allow @method=GET')
-        '# map http://example.com http://backend.example.com @action=add_allow @method=GET'
+    # Comments should be converted too.
+    >>> convert_line('# Using @action=allow is nice.')
+    '# Using @action=add_allow is nice.'
+    >>> convert_line('# map http://example.com http://backend.example.com @action=allow @method=GET')
+    '# map http://example.com http://backend.example.com @action=add_allow @method=GET'
     '''
     output_line = input_line.replace('@action=allow', '@action=add_allow')
     output_line = output_line.replace('@action=deny', '@action=add_deny')
     return output_line
 
 
-def copy_input_file(input: str, no_backup: bool) -> str:
+def get_max_rotation_index(files: list[str], rotation_base: str) -> int:
+    '''Find the largest <num> in <rotation_base>.convert_actions.bak.<num>.
+
+    :param files: The list of files to search for backup files for.
+    :rotation base: The base backup prefix preceding the index.
+    :return: The index for the highest rotation index. -1 if no backup files are found.
+
+    :examples:
+    >>> get_max_rotation_index(['base.0', 'base.1', 'base.2'], 'base.')
+    2
+    >>> get_max_rotation_index([], 'base.')
+    -1
+    >>> get_max_rotation_index(['some', 'other', 'files'], 'base.')
+    -1
+    >>> get_max_rotation_index(['some', 'other', 'files', 'base.0', 'base.1'], 'base.')
+    1
+    >>> get_max_rotation_index(['remap.config', 'remap.config.convert_actions.bak.0', 'remap.config.convert_actions.bak.1'], 'remap.config.convert_actions.bak.')
+    1
+    '''
+    max_index = -1
+    for file in files:
+        if not file.startswith(rotation_base):
+            continue
+        suffix = file.split('.')[-1]
+        if not suffix.isnumeric():
+            continue
+        max_index = max(max_index, int(suffix))
+    return max_index
+
+
+def copy_input_file(input: str, /, no_backup: bool) -> str:
     '''Create a copy of the input file.
 
     :param input: The input file path from which to create a copy.
 
     :param no_backup: Do not create a backup file from input. Rather simply
     create a temporary file that will be later removed. Otherwise, create a
-    backup file of the format <input>.action_to_add.bak.<num>, where <num> is
+    backup file of the format <input>.convert_actions.bak.<num>, where <num> is
     one greater than the greatest value in the directory where @a input exists.
 
     :return: The path to the copied file.
@@ -88,48 +123,35 @@ def copy_input_file(input: str, no_backup: bool) -> str:
     else:
         input_dir = os.path.dirname(input)
         input_dir = '.' if input_dir == '' else input_dir
-        input_base = os.path.basename(input)
-        # Find the largest <num> in input_dir/input_base.action_to_add.bak.<num>.
-        max_num = 0
-        for file in os.listdir(input_dir):
-            if file.startswith(f'{input_base}.action_to_add.bak.'):
-                try:
-                    num = int(file.split('.')[-1])
-                except ValueError:
-                    # The suffix is not a number. Ignore this file.
-                    continue
-                max_num = max(max_num, num)
-        copy_path = os.path.join(input_dir, f'{input_base}.action_to_add.bak.{max_num + 1}')
+        rotation_base = f'{os.path.basename(input)}.convert_actions.bak'
+        max_index = get_max_rotation_index(os.listdir(input_dir), rotation_base)
+        copy_path = os.path.join(input_dir, f'{rotation_base}.{max_index + 1}')
     shutil.copyfile(input, copy_path)
     return copy_path
 
 
-def prepare_files(input: str, output: Optional[str], no_backup: bool) -> Tuple[str, str]:
+def prepare_files(input: str, output: Optional[str], /, no_backup: bool) -> Tuple[str, str, bool]:
     '''Prepare the input and output files.
 
     :param input: The input file path.
     :param output: The output file path.
     :param no_backup: Do not create a backup of the input file when <input> is modified.
 
-    :return: A tuple containing the input and output filenames, in that order.
-    The input file will contain the content from which to copy, the output file
-    will reference a file whose content should be overridden. The caller should
-    delete the input filename if @a no_backup is true. Otherwise the input
-    filename will be the path to the backup file.
+    :return: A tuple containing the input and output filenames, in that order, and
+    a boolean telling the caller whether to delete the input file.
     '''
     if not os.path.exists(input):
         raise FileNotFoundError(f'Input file does not exist: {input}')
 
-    if input == output:
-        input_path = copy_input_file(input, no_backup)
+    if input == output or output is None:
+        input_path = copy_input_file(input, no_backup=no_backup)
         output_path = input
-    elif output is None:
-        input_path = copy_input_file(input, no_backup)
-        output_path = input
+        delete_input_file = no_backup
     else:
         input_path = input
         output_path = output
-    return input_path, output_path
+        delete_input_file = False
+    return input_path, output_path, delete_input_file
 
 
 def parse_args() -> argparse.Namespace:
@@ -137,14 +159,13 @@ def parse_args() -> argparse.Namespace:
 
     :return: The parsed arguments.
     '''
-    parser = argparse.ArgumentParser(description=help)
+    parser = argparse.ArgumentParser(description=CLI_HELP_TEXT)
     parser.add_argument('input', help='The input remap.config file to modify.')
     parser.add_argument(
         '-o',
         '--output',
         help='The output remap.config file. By default, output is written to <input> and a backup file is generated.')
-    parser.add_argument(
-        '-n', '--no-backup', action='store_true', help='Do not create a backup of the input file when <input> is modified.')
+    parser.add_argument('-n', '--no-backup', action='store_true', help='Do not create a backup file.')
     return parser.parse_args()
 
 
@@ -155,14 +176,17 @@ def main() -> int:
     '''
 
     args = parse_args()
-    input_path, output_path = prepare_files(args.input, args.output, args.no_backup)
+    input_path, output_path, should_delete_input = prepare_files(args.input, args.output, no_backup=args.no_backup)
 
-    with open(input_path, 'r') as fd_in, open(output_path, 'w') as fd_out:
-        for input_line in fd_in:
-            output_line = convert_line(input_line)
-            fd_out.write(output_line)
-    if args.no_backup:
-        os.remove(input_path)
+    try:
+        with open(input_path, 'r') as fd_in, open(output_path, 'w') as fd_out:
+            for input_line in fd_in:
+                output_line = convert_line(input_line)
+                fd_out.write(output_line)
+    finally:
+        if should_delete_input and os.path.exists(input_path):
+            os.remove(input_path)
+
     return 0
 
 
