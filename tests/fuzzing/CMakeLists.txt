@@ -29,15 +29,16 @@ add_executable(fuzz_rec_http fuzz_rec_http.cc)
 add_executable(fuzz_yamlcpp fuzz_yamlcpp.cc)
 add_executable(fuzz_http3frame fuzz_http3frame.cc)
 
-target_link_libraries(fuzz_esi PRIVATE esi-common esicore ts::tscore ts::tsutil ts::tsapi ts::inkevent)
+target_link_libraries(fuzz_esi PRIVATE esi-common esicore tscore tsapi inkevent)
 target_link_options(fuzz_esi PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_hpack PRIVATE records tscore hdrs inkevent)
 target_link_libraries(fuzz_http PRIVATE ts::hdrs ts::tscore ts::inkevent)
 target_link_libraries(fuzz_json PRIVATE libswoc::libswoc yaml-cpp ts::jsonrpc_protocol)
-target_link_libraries(fuzz_proxy_protocol PRIVATE inknet inkevent ts::tscore yaml-cpp libswoc::libswoc)
+target_link_libraries(fuzz_proxy_protocol PRIVATE inknet inkevent tscore yaml-cpp)
+
 target_link_libraries(fuzz_rec_http PRIVATE records tscore libswoc::libswoc)
 target_link_libraries(fuzz_yamlcpp PRIVATE yaml-cpp)
-target_link_libraries(fuzz_http3frame PRIVATE ts::tscore ts::quic ts::records ts::tsutil ts::hdrs)
+target_link_libraries(fuzz_http3frame PRIVATE ts::tscore ts::quic)
 target_link_options(fuzz_http3frame PRIVATE "-fuse-ld=lld")
 
 target_sources(
@@ -52,5 +53,5 @@ add_custom_command(
   TARGET fuzz_esi
   POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libswoc> ${CMAKE_CURRENT_BINARY_DIR}/lib/
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ts::tsutil> ${CMAKE_CURRENT_BINARY_DIR}/lib/
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ts::tsapi> ${CMAKE_CURRENT_BINARY_DIR}/lib/
 )
