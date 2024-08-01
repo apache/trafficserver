@@ -55,6 +55,7 @@ cmake -DENABLE_POSIX_CAP=OFF -DENABLE_FUZZING=ON -DYAML_BUILD_SHARED_LIBS=OFF -D
 make -j$(nproc) --ignore-errors
 
 cp tests/fuzzing/fuzz_* $OUT/
+mkdir -p tests/fuzzing/lib/
 cp -r tests/fuzzing/lib/ $OUT/
 cp $SRC/trafficserver/tests/fuzzing/*.zip  $OUT/
 
