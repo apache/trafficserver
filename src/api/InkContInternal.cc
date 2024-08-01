@@ -42,6 +42,13 @@
 
 ClassAllocator<INKContInternal> INKContAllocator("INKContAllocator");
 
+namespace
+{
+
+DbgCtl dbg_ctl_plugin{"plugin"};
+
+} // end anonymous namespace
+
 INKContInternal::INKContInternal()
   : DummyVConnection(nullptr),
     mdata(nullptr),
@@ -144,7 +151,7 @@ INKContInternal::handle_event(int event, void *edata)
     if (m_deletable) {
       this->free();
     } else {
-      Debug("plugin", "INKCont Deletable but not deleted %d", m_event_count);
+      Dbg(dbg_ctl_plugin, "INKCont Deletable but not deleted %d", m_event_count);
     }
   } else {
     /* set the plugin context */

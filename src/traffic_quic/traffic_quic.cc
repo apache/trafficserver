@@ -41,9 +41,16 @@
 
 #include "iocore/eventsystem/RecProcess.h"
 
+namespace
+{
+
 #define THREADS 1
 
 constexpr size_t stacksize = 1048576;
+
+DbgCtl dbg_ctl_quic_client{"quic_client"};
+
+} // end anonymous namespace
 
 // TODO: Support QUIC version, cipher suite ...etc
 // TODO: Support qdrive tests
@@ -88,7 +95,7 @@ main(int argc, const char **argv)
   RecProcessInit();
   LibRecordsConfigInit();
 
-  Debug("quic_client", "Load configs from %s", RecConfigReadConfigDir().c_str());
+  Dbg(dbg_ctl_quic_client, "Load configs from %s", RecConfigReadConfigDir().c_str());
 
   Thread *main_thread = new EThread;
   main_thread->set_specific();

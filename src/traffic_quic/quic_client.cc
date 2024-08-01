@@ -35,8 +35,18 @@
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
 // Should be integrate with IP_PROTO_TAG_HTTP_QUIC in ts/ink_inet.h ?
 using namespace std::literals;
-static constexpr std::string_view HQ_ALPN_PROTO_LIST("\5hq-29\5hq-27"sv);
-static constexpr std::string_view H3_ALPN_PROTO_LIST("\5h3-29\5h3-27"sv);
+
+namespace
+{
+
+constexpr std::string_view HQ_ALPN_PROTO_LIST("\5hq-29\5hq-27"sv);
+constexpr std::string_view H3_ALPN_PROTO_LIST("\5h3-29\5h3-27"sv);
+
+DbgCtl dbg_ctl_quic_client{"quic_client"};
+DbgCtl dbg_ctl_quic_client_app{"quic_client_app"};
+DbgCtl dbg_ctl_v_quic_client_app{"v_quic_client_app"};
+
+} // end anonymous namespace
 
 QUICClient::QUICClient(const QUICClientConfig *config) : Continuation(new_ProxyMutex()), _config(config)
 {
@@ -63,7 +73,7 @@ QUICClient::start(int, void *)
 
   int res = getaddrinfo(this->_config->addr, this->_config->port, &hints, &this->_remote_addr_info);
   if (res < 0) {
-    Debug("quic_client", "Error: %s (%d)", strerror(errno), errno);
+    Dbg(dbg_ctl_quic_client, "Error: %s (%d)", strerror(errno), errno);
     return EVENT_DONE;
   }
 
@@ -105,7 +115,7 @@ QUICClient::state_http_server_open(int event, void *data)
   switch (event) {
   case NET_EVENT_OPEN: {
     // TODO: create ProxyServerSession / ProxyServerTransaction
-    Debug("quic_client", "start proxy server ssn/txn");
+    Dbg(dbg_ctl_quic_client, "start proxy server ssn/txn");
 
     QUICNetVConnection *conn = static_cast<QUICNetVConnection *>(data);
 
@@ -142,8 +152,8 @@ QUICClient::state_http_server_open(int event, void *data)
 //
 // Http09ClientApp
 //
-#define Http09ClientAppDebug(fmt, ...)  Debug("quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
-#define Http09ClientAppVDebug(fmt, ...) Debug("v_quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
+#define Http09ClientAppDebug(fmt, ...)  Dbg(dbg_ctl_quic_client_app, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
+#define Http09ClientAppVDebug(fmt, ...) Dbg(dbg_ctl_v_quic_client_app, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
 Http09ClientApp::Http09ClientApp(QUICNetVConnection *qvc, const QUICClientConfig *config) : QUICApplication(qvc), _config(config)
 {
@@ -396,7 +406,7 @@ RespHandler::set_read_vio(VIO *vio)
 int
 RespHandler::main_event_handler(int event, Event *data)
 {
-  Debug("v_http3", "%s", get_vc_event_name(event));
+  Dbg(dbg_ctl_v_http3, "%s", get_vc_event_name(event));
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {

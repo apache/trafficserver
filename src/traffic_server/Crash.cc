@@ -34,12 +34,17 @@
 #include <ucontext.h>
 #endif
 
-static constexpr int NO_FD = swoc::file::NO_FD;
+namespace
+{
 
-static pid_t crash_logger_pid = -1;
-static int   crash_logger_fd  = NO_FD;
+constexpr int NO_FD = swoc::file::NO_FD;
 
-static char *
+pid_t crash_logger_pid = -1;
+int   crash_logger_fd  = NO_FD;
+
+DbgCtl dbg_ctl_server{"server"};
+
+char *
 create_logger_path()
 {
   RecString      name;
@@ -63,7 +68,7 @@ create_logger_path()
   return fullpath.release();
 }
 
-static bool
+bool
 check_logger_path(const char *path)
 {
   struct stat sbuf;
@@ -80,6 +85,8 @@ check_logger_path(const char *path)
 
   return true;
 }
+
+} // end anonymous namespace
 
 void
 crash_logger_init(const char *user)
@@ -133,7 +140,7 @@ crash_logger_init(const char *user)
 
   // Wait for the helper to stop
   if (waitpid(crash_logger_pid, &status, WUNTRACED) > 0) {
-    Debug("server", "waited on PID %ld, %s", (long)crash_logger_pid, WIFSTOPPED(status) ? "STOPPED" : "???");
+    Dbg(dbg_ctl_server, "waited on PID %ld, %s", (long)crash_logger_pid, WIFSTOPPED(status) ? "STOPPED" : "???");
 
     if (WIFEXITED(status)) {
       Warning("crash logger '%s' unexpectedly exited with status %d", (const char *)logger, WEXITSTATUS(status));

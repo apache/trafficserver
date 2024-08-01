@@ -45,6 +45,8 @@ namespace
 {
 using threadlist = std::vector<pid_t>;
 
+DbgCtl dbg_ctl_backtrace{"backtrace"};
+
 static threadlist
 threads_for_process(pid_t proc)
 {
@@ -73,7 +75,7 @@ threads_for_process(pid_t proc)
     threadid = strtol(entry->d_name, nullptr, 10);
     if (threadid > 0) {
       threads.push_back(threadid);
-      Debug("backtrace", "found thread %ld\n", (long)threadid);
+      Dbg(dbg_ctl_backtrace, "found thread %ld\n", (long)threadid);
     }
   }
 
@@ -98,32 +100,32 @@ backtrace_for_thread(pid_t threadid, TextBuffer &text)
   // First, attach to the child, causing it to stop.
   status = ptrace(PTRACE_ATTACH, threadid, 0, 0);
   if (status < 0) {
-    Debug("backtrace", "ptrace(ATTACH, %ld) -> %s (%d)\n", (long)threadid, strerror(errno), errno);
+    Dbg(dbg_ctl_backtrace, "ptrace(ATTACH, %ld) -> %s (%d)\n", (long)threadid, strerror(errno), errno);
     return;
   }
 
   // Wait for it to stop (XXX should be a timed wait ...)
   target = waitpid(threadid, &status, __WALL | WUNTRACED);
-  Debug("backtrace", "waited for target %ld, found PID %ld, %s\n", (long)threadid, (long)target,
-        WIFSTOPPED(status) ? "STOPPED" : "???");
+  Dbg(dbg_ctl_backtrace, "waited for target %ld, found PID %ld, %s\n", (long)threadid, (long)target,
+      WIFSTOPPED(status) ? "STOPPED" : "???");
   if (target < 0) {
     goto done;
   }
 
   ap = _UPT_create(threadid);
-  Debug("backtrace", "created UPT %p", ap);
+  Dbg(dbg_ctl_backtrace, "created UPT %p", ap);
   if (ap == nullptr) {
     goto done;
   }
 
   addr_space = unw_create_addr_space(&_UPT_accessors, 0 /* byteorder */);
-  Debug("backtrace", "created address space %p\n", addr_space);
+  Dbg(dbg_ctl_backtrace, "created address space %p\n", addr_space);
   if (addr_space == nullptr) {
     goto done;
   }
 
   status = unw_init_remote(&cursor, addr_space, ap);
-  Debug("backtrace", "unw_init_remote(...) -> %d\n", status);
+  Dbg(dbg_ctl_backtrace, "unw_init_remote(...) -> %d\n", status);
   if (status != 0) {
     goto done;
   }
@@ -157,7 +159,7 @@ done:
   }
 
   status = ptrace(PTRACE_DETACH, target, NULL, NULL);
-  Debug("backtrace", "ptrace(DETACH, %ld) -> %d (errno %d)\n", (long)target, status, errno);
+  Dbg(dbg_ctl_backtrace, "ptrace(DETACH, %ld) -> %d (errno %d)\n", (long)target, status, errno);
 }
 } // namespace
 int
@@ -168,10 +170,10 @@ ServerBacktrace(unsigned /* options */, int pid, char **trace)
   threadlist threads(threads_for_process(pid));
   TextBuffer text(0);
 
-  Debug("backtrace", "tracing %zd threads for traffic_server PID %ld\n", threads.size(), (long)pid);
+  Dbg(dbg_ctl_backtrace, "tracing %zd threads for traffic_server PID %ld\n", threads.size(), (long)pid);
 
   for (auto threadid : threads) {
-    Debug("backtrace", "tracing thread %ld\n", (long)threadid);
+    Dbg(dbg_ctl_backtrace, "tracing thread %ld\n", (long)threadid);
     // Get the thread name using /proc/PID/comm
     ats_scoped_fd fd;
     char          threadname[128];

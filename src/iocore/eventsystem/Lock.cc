@@ -33,10 +33,16 @@
 
 ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
 
+namespace
+{
+DbgCtl dbg_ctl_locks{"locks"};
+
+} // end anonymous namespace
+
 void
 lock_waiting(const SourceLocation &srcloc, const char *handler)
 {
-  if (is_diags_on("locks")) {
+  if (dbg_ctl_locks.on()) {
     char buf[128];
     fprintf(stderr, "WARNING: waiting on lock %s for %s\n", srcloc.str(buf, sizeof(buf)), handler ? handler : "UNKNOWN");
   }
@@ -45,7 +51,7 @@ lock_waiting(const SourceLocation &srcloc, const char *handler)
 void
 lock_holding(const SourceLocation &srcloc, const char *handler)
 {
-  if (is_diags_on("locks")) {
+  if (dbg_ctl_locks.on()) {
     char buf[128];
     fprintf(stderr, "WARNING: holding lock %s too long for %s\n", srcloc.str(buf, sizeof(buf)), handler ? handler : "UNKNOWN");
   }
@@ -54,7 +60,7 @@ lock_holding(const SourceLocation &srcloc, const char *handler)
 void
 lock_taken(const SourceLocation &srcloc, const char *handler)
 {
-  if (is_diags_on("locks")) {
+  if (dbg_ctl_locks.on()) {
     char buf[128];
     fprintf(stderr, "WARNING: lock %s taken too many times for %s\n", srcloc.str(buf, sizeof(buf)), handler ? handler : "UNKNOWN");
   }

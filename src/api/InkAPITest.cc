@@ -1617,10 +1617,17 @@ struct CacheVConnStruct {
   TSCacheKey key;
 };
 
+namespace
+{
+
+DbgCtl dbg_ctl_sdk_ut_cache_write{"sdk_ut_cache_write"};
+
+} // end anonymous namespace
+
 int
 cache_handler(TSCont contp, TSEvent event, void *data)
 {
-  Debug("sdk_ut_cache_write", "Event %d data %p", event, data);
+  Dbg(dbg_ctl_sdk_ut_cache_write, "Event %d data %p", event, data);
 
   CacheVConnStruct *cache_vconn = static_cast<CacheVConnStruct *>(TSContDataGet(contp));
 
