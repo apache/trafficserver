@@ -27,6 +27,29 @@
 
 #include "proxy/HttpAPIHooks.h"
 
+#include "tscore/BaseLogFile.h"
+#include "tscore/Diags.h"
+
+class InitDiags
+{
+public:
+  InitDiags() : base_log_file{new BaseLogFile("stderr")}
+  {
+    DiagsPtr::set(new Diags("cache unit test", "*" /* tags */, "" /* actions */, this->base_log_file));
+  }
+
+  ~InitDiags() { delete this->base_log_file; }
+
+private:
+  BaseLogFile *base_log_file;
+};
+
+// The FetchSM class allocator below uses the diags in its constructor, so we
+// force them to be initialized prior to that. This gets "leaked" at shutdown
+// to ensure that the log file remains valid if accessed by other threads
+// during static object destruction.
+InitDiags const *g_init_diags_dummy = new InitDiags{};
+
 void
 HttpHookState::init(TSHttpHookID /* id ATS_UNUSED */, HttpAPIHooks const * /* global ATS_UNUSED */,
                     HttpAPIHooks const * /* ssn ATS_UNUSED */, HttpAPIHooks const * /* txn ATS_UNUSED */)

@@ -121,10 +121,8 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
 
   void
-  testRunStarting(Catch::TestRunInfo const &testRunInfo) override
+  testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
   {
-    BaseLogFile *base_log_file = new BaseLogFile("stderr");
-    DiagsPtr::set(new Diags(testRunInfo.name, "*" /* tags */, "" /* actions */, base_log_file));
     diags()->activate_taglist("cache.*|agg.*|locks", DiagsTagType_Debug);
     diags()->config.enabled(DiagsTagType_Debug, 1);
     diags()->show_location = SHOW_LOCATION_DEBUG;
