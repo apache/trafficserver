@@ -23,7 +23,6 @@
 
 #include "proxy/http2/HTTP2.h"
 #include "proxy/hdrs/HuffmanCodec.h"
-#include "tscore/Diags.h"
 
 #define kMinInputLength 8
 #define kMaxInputLength 128
@@ -33,7 +32,6 @@
 #define MAX_TABLE_SIZE          4096
 
 extern int cmd_disable_pfreelist;
-int        net_config_poll_timeout = 10;
 
 extern "C" int
 LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
@@ -43,7 +41,6 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   }
 
   cmd_disable_pfreelist = true;
-  DiagsPtr::set(new Diags("fuzzing", "", "", nullptr));
 
   hpack_huffman_init();
 
@@ -54,7 +51,6 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   hpack_decode_header_block(indexing_table, headers.get(), input_data, size_data, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
 
   headers->destroy();
-  delete diags();
 
   return 0;
 }
