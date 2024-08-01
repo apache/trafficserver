@@ -33,13 +33,18 @@ add_executable(fuzz_http3frame fuzz_http3frame.cc)
 #  Need to rewrite the ESI Parser to remove dependencies on TS API
 #target_link_libraries(fuzz_esi PRIVATE esi-common esicore tscore tsapi inkevent http)
 #target_link_options(fuzz_esi PRIVATE "-fuse-ld=lld")
-target_link_libraries(fuzz_hpack PRIVATE records tscore hdrs inkevent)
+target_link_libraries(fuzz_hpack PRIVATE inknet inkevent tscore)
+target_link_options(fuzz_hpack PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_http PRIVATE ts::hdrs ts::tscore ts::inkevent)
+target_link_options(fuzz_http PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_json PRIVATE libswoc::libswoc yaml-cpp ts::jsonrpc_protocol)
+target_link_options(fuzz_json PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_proxy_protocol PRIVATE inknet inkevent tscore yaml-cpp)
-
+target_link_options(fuzz_proxy_protocol PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_rec_http PRIVATE records tscore libswoc::libswoc)
+target_link_options(fuzz_rec_http PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_yamlcpp PRIVATE yaml-cpp)
+target_link_options(fuzz_yamlcpp PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_http3frame PRIVATE ts::tscore ts::quic)
 target_link_options(fuzz_http3frame PRIVATE "-fuse-ld=lld")
 
@@ -50,11 +55,10 @@ target_sources(
 target_include_directories(fuzz_json PRIVATE ${CMAKE_SOURCE_DIR}/lib)
 target_include_directories(fuzz_proxy_protocol PRIVATE ${CATCH_INCLUDE_DIR})
 
-#  Need to rewrite the ESI Parser to remove dependencies on TS API
-#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-#add_custom_command(
-#  TARGET fuzz_esi
-#  POST_BUILD
-#  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libswoc> ${CMAKE_CURRENT_BINARY_DIR}/lib/
-#  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ts::tsapi> ${CMAKE_CURRENT_BINARY_DIR}/lib/
-#)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+add_custom_command(
+  TARGET fuzz_http
+  POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libswoc> ${CMAKE_CURRENT_BINARY_DIR}/lib/
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ts::tsapi> ${CMAKE_CURRENT_BINARY_DIR}/lib/
+)
