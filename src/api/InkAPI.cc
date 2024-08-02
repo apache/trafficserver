@@ -7919,11 +7919,10 @@ TSVConnTunnel(TSVConn sslp)
 TSSslConnection
 TSVConnSslConnectionGet(TSVConn sslp)
 {
-  TSSslConnection    ssl    = nullptr;
-  NetVConnection    *vc     = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
-  if (ssl_vc != nullptr) {
-    ssl = reinterpret_cast<TSSslConnection>(ssl_vc->ssl);
+  TSSslConnection ssl   = nullptr;
+  NetVConnection *netvc = reinterpret_cast<NetVConnection *>(sslp);
+  if (auto tbs = netvc->get_service<TLSBasicSupport>(); tbs) {
+    ssl = reinterpret_cast<TSSslConnection>(tbs->get_tls_handle());
   }
   return ssl;
 }

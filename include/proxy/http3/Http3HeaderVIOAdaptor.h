@@ -35,8 +35,7 @@ public:
 
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
-  Http3ErrorUPtr              handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t frame_seq = -1,
-                                           Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
+  Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame, Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
 
   bool is_complete();
   int  event_handler(int event, Event *data);

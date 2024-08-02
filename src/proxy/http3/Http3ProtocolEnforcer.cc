@@ -34,15 +34,15 @@ Http3ProtocolEnforcer::interests()
 }
 
 Http3ErrorUPtr
-Http3ProtocolEnforcer::handle_frame(std::shared_ptr<const Http3Frame> frame, int32_t frame_seq, Http3StreamType s_type)
+Http3ProtocolEnforcer::handle_frame(std::shared_ptr<const Http3Frame> frame, Http3StreamType s_type)
 {
   Http3ErrorUPtr error  = Http3ErrorUPtr(nullptr);
   Http3FrameType f_type = frame->type();
   if (s_type == Http3StreamType::CONTROL) {
-    if (frame_seq == 0 && f_type != Http3FrameType::SETTINGS) {
+    if (!this->_is_first_frame_received_on_control && f_type != Http3FrameType::SETTINGS) {
       error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_MISSING_SETTINGS,
                                            "first frame of the control stream must be SETTINGS frame");
-    } else if (frame_seq != 0 && f_type == Http3FrameType::SETTINGS) {
+    } else if (this->_is_first_frame_received_on_control && f_type == Http3FrameType::SETTINGS) {
       error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_FRAME_UNEXPECTED,
                                            "only one SETTINGS frame is allowed per the control stream");
     } else if (f_type == Http3FrameType::DATA || f_type == Http3FrameType::HEADERS || f_type == Http3FrameType::X_RESERVED_1 ||
@@ -50,6 +50,9 @@ Http3ProtocolEnforcer::handle_frame(std::shared_ptr<const Http3Frame> frame, int
       std::string error_msg = Http3DebugNames::frame_type(f_type);
       error_msg.append(" frame is not allowed on control stream");
       error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_FRAME_UNEXPECTED, error_msg.c_str());
+    }
+    if (!this->_is_first_frame_received_on_control) {
+      this->_is_first_frame_received_on_control = true;
     }
   } else {
     if (f_type == Http3FrameType::X_RESERVED_1 || f_type == Http3FrameType::X_RESERVED_2 ||

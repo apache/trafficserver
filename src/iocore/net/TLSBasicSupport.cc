@@ -67,6 +67,12 @@ TLSBasicSupport::clear()
   this->_tls_handshake_end_time   = 0;
 }
 
+TLSHandle
+TLSBasicSupport::get_tls_handle() const
+{
+  return this->_get_ssl_object();
+}
+
 const char *
 TLSBasicSupport::get_tls_protocol_name() const
 {

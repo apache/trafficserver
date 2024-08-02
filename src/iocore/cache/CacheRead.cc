@@ -24,6 +24,10 @@
 #include "P_Cache.h"
 #include "P_CacheDoc.h"
 
+#ifdef DEBUG
+#include "iocore/eventsystem/EThread.h"
+#endif
+
 namespace
 {
 
@@ -559,6 +563,7 @@ CacheVC::openReadClose(int event, Event * /* e ATS_UNUSED */)
     VC_SCHED_LOCK_RETRY();
   }
   if (f.hit_evacuate && dir_valid(stripe, &first_dir) && closed > 0) {
+    ink_assert(stripe->mutex->thread_holding == this_ethread());
     if (f.single_fragment) {
       stripe->force_evacuate_head(&first_dir, dir_pinned(&first_dir));
     } else if (dir_valid(stripe, &earliest_dir)) {

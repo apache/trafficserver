@@ -271,7 +271,7 @@ IP_ALLOW_CONTENT = f'''
 ip_allow:
   - apply: in
     ip_categories: ACME_INTERNAL
-    action: allow
+    action: set_allow
     methods:
       - GET
       - HEAD
@@ -279,18 +279,18 @@ ip_allow:
       - PUSH
   - apply: in
     ip_categories: ACME_EXTERNAL
-    action: allow
+    action: set_allow
     methods:
       - GET
       - HEAD
   - apply: in
     ip_categories: ACME_ALL
-    action: allow
+    action: set_allow
     methods:
       - HEAD
   - apply: in
     ip_categories: ALL
-    action: deny
+    action: set_deny
 '''
 
 test_ip_allow_optional_methods = Test_ip_category(
@@ -325,5 +325,5 @@ test_ip_allow_optional_methods = Test_ip_category(
     replay_file='replays/https_categories_external_remap.replay.yaml',
     ip_allow_config=IP_ALLOW_CONTENT,
     ip_category_config=localhost_is_external,
-    acl_configuration='@action=deny @src_ip_category=ACME_REMAP_EXTERNAL @method=GET',
+    acl_configuration='@action=set_deny @src_ip_category=ACME_REMAP_EXTERNAL @method=GET',
     expected_responses=[403, 200, 200])
