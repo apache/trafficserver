@@ -41,7 +41,7 @@ enum class SSLCertContextType {
   EC       ///< EC-based Context
 };
 
-#ifndef OPENSSL_IS_BORINGSSL
+#if HAVE_SSL_GET_SHARED_CURVE
 using ssl_curve_id = int;
 #else
 using ssl_curve_id = uint16_t;
