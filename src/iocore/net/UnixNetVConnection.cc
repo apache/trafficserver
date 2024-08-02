@@ -654,9 +654,6 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 void
 UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 {
-  // FIXME: the nh must not nullptr.
-  ink_assert(nh);
-
   // The vio continuations will be cleared in ::clear called from ::free_thread
   read.enabled    = 0;
   write.enabled   = 0;
