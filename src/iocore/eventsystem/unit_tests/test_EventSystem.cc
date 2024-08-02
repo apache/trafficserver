@@ -101,9 +101,9 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
 CATCH_REGISTER_LISTENER(EventProcessorListener);
 
-TEST_CASE("EventSystemSocketManager", "[iocore][sock_mgr]")
+TEST_CASE("EventSystemUnixSocket", "[iocore][sock]")
 {
-  if (SocketManager::fastopen_supported()) {
+  if (UnixSocket::client_fastopen_supported()) {
     if (MSG_FASTOPEN == 0) {
       std::printf("TCP Fast Open is supported, MSG_FASTOPEN must not be 0\n");
       CHECK(false);

@@ -30,6 +30,7 @@
 #include <cstdint>
 
 #define NO_SOCK -1
+#define SOCKET  int
 
 #ifndef SOCK_NONBLOCK
 #define SOCK_NONBLOCK O_NONBLOCK

@@ -509,7 +509,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
   do {
     socklen_t  sz = sizeof(con.addr);
-    UnixSocket sock{server.sock.accept4(&con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC)};
+    UnixSocket sock{-1};
+    if (int res{server.sock.accept4(&con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC)}; res >= 0) {
+      sock = UnixSocket{res};
+    }
     con.sock = sock;
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
 
