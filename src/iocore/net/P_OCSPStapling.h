@@ -21,16 +21,10 @@
 
 #pragma once
 
-#include "tscore/ink_config.h"
-
 #include <openssl/ssl.h>
 
 void ssl_stapling_ex_init();
 bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const char *rsp_file);
 void ocsp_update();
 
-#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_IS_AWSLC)
-int ssl_callback_ocsp_stapling(SSL *);
-#else
 int ssl_callback_ocsp_stapling(SSL *, void *);
-#endif
