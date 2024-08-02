@@ -397,7 +397,7 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
   }
 
   SSLCertContextType ctxType = SSLCertContextType::GENERIC;
-#ifdef OPENSSL_IS_BORINGSSL
+#ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
   if (arg != nullptr) {
     const SSL_CLIENT_HELLO *client_hello         = (const SSL_CLIENT_HELLO *)arg;
     const bool              client_ecdsa_capable = BoringSSLUtils::isClientEcdsaCapable(client_hello);
@@ -1217,7 +1217,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
 
   bool generate_default_ctx = data.cert_names_list.empty();
   if (!generate_default_ctx) {
-#ifdef OPENSSL_IS_BORINGSSL
+#ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
     for (auto const &name : data.cert_names_list) {
       cert_names.emplace_back(std::vector({name}));
     }
@@ -2236,7 +2236,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
     }
 
     if (certType != nullptr) {
-#ifdef OPENSSL_IS_BORINGSSL
+#ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
       std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> public_key(X509_get_pubkey(cert), &EVP_PKEY_free);
       int                                                 pkey_id = EVP_PKEY_id(public_key.get());
 
