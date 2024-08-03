@@ -58,19 +58,19 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 } // end anonymous namespace
 
 bool
-UrlRewrite::get_acl_matching_policy(ACLMatchingPolicy &policy)
+UrlRewrite::get_acl_behavior_policy(ACLBehaviorPolicy &policy)
 {
-  int matching_policy = 0;
-  REC_ReadConfigInteger(matching_policy, "proxy.config.url_remap.acl_matching_policy");
-  switch (matching_policy) {
+  int behavior_policy = 0;
+  REC_ReadConfigInteger(behavior_policy, "proxy.config.url_remap.acl_behavior_policy");
+  switch (behavior_policy) {
   case 0:
-    policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
+    policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
     break;
   case 1:
-    policy = ACLMatchingPolicy::MATCH_ON_IP_ONLY;
+    policy = ACLBehaviorPolicy::ACL_BEHAVIOR_MODERN;
     break;
   default:
-    Warning("unkown ACL Matching Policy: %d", matching_policy);
+    Warning("unkown ACL Behavior Policy: %d", behavior_policy);
     return false;
   }
   return true;
@@ -147,7 +147,7 @@ UrlRewrite::load()
   }
 
   // ACL Matching Policy
-  if (!get_acl_matching_policy(_acl_matching_policy)) {
+  if (!get_acl_behavior_policy(_acl_behavior_policy)) {
     _valid = false;
   }
 
@@ -570,13 +570,13 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
           break;
         }
 
-        // @action=add_allow and @action=add_deny behave the same for each ACL
-        // policy behavior. The difference in behavior applies to @action=allow
-        // and @action=deny. For these, in Match on IP and Method mode they are
-        // synonyms for @action=add_allow and @action=add_deny because that is
-        // how they behaved pre-10.x.  For the Match on IP Only behavior, they
-        // behave like the corresponding ip_allow actions.
-        if (!rp->add_flag && _acl_matching_policy == ACLMatchingPolicy::MATCH_ON_IP_ONLY) {
+        // @action=add_allow and @action=add_deny behave the same for legacy and
+        // modern behavior. The difference in behavior applies to @action=allow
+        // and @action=deny. For these, in legacy mode they are synonyms for
+        // @action=add_allow and @action=add_deny because that is how they
+        // behaved pre-10.x.  For modern behavior, they behave like the
+        // corresponding ip_allow actions.
+        if (!rp->add_flag && _acl_behavior_policy == ACLBehaviorPolicy::ACL_BEHAVIOR_MODERN) {
           // Flipping the action for unspecified methods.
           Dbg(dbg_ctl_url_rewrite, "ACL rule matched on IP but not on method, action: %s, %s the request",
               rp->get_action_description(), (rp->allow_flag ? "denying" : "allowing"));
