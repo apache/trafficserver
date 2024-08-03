@@ -23,8 +23,8 @@
  */
 #pragma once
 
-#include "tscore/ink_config.h"
 #include "tscore/ink_memory.h"
+#include "SSLTypes.h"
 
 #include <netinet/in.h>
 #include <openssl/ssl.h>
@@ -36,6 +36,19 @@
 class TLSSNISupport
 {
 public:
+  class ClientHello
+  {
+  public:
+    ClientHello(ClientHelloContainer chc) : _chc(chc) {}
+    /**
+     * @return 1 if successful
+     */
+    int getExtension(int type, const uint8_t **out, size_t *outlen);
+
+  private:
+    ClientHelloContainer _chc;
+  };
+
   virtual ~TLSSNISupport() = default;
 
   static void           initialize();
@@ -45,11 +58,7 @@ public:
 
   int perform_sni_action(SSL &ssl);
   // Callback functions for OpenSSL libraries
-#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
-  void on_client_hello(SSL *ssl, int *al, void *arg);
-#elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
-  void on_client_hello(const SSL_CLIENT_HELLO *client_hello);
-#endif
+  void on_client_hello(ClientHello &client_hello);
   void on_servername(SSL *ssl, int *al, void *arg);
 
   const char *get_sni_server_name() const;

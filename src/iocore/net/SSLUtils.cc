@@ -302,75 +302,47 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 // Pausable callback
 static int
-ssl_client_hello_callback(SSL *s, int *al, void *arg)
+ssl_client_hello_callback(SSL *s, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
 {
-  TLSSNISupport *snis = TLSSNISupport::getInstance(s);
-  if (snis) {
-    snis->on_client_hello(s, al, arg);
-    int ret = snis->perform_sni_action(*s);
-    if (ret != SSL_TLSEXT_ERR_OK) {
-      return SSL_CLIENT_HELLO_ERROR;
-    }
-  } else {
-    // This error suggests either of these:
-    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
-    // 2) Call back on stale netvc
-    Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
-    return SSL_CLIENT_HELLO_ERROR;
-  }
-
-  SSLNetVConnection *netvc = dynamic_cast<SSLNetVConnection *>(snis);
-  if (netvc) {
-    if (netvc->ssl != s) {
-      Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
-      return SSL_CLIENT_HELLO_ERROR;
-    }
-
-    bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
-    if (!reenabled) {
-      return SSL_CLIENT_HELLO_RETRY;
-    }
-  }
-
-  return SSL_CLIENT_HELLO_SUCCESS;
-}
+  TLSSNISupport::ClientHello ch = {s};
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
 static ssl_select_cert_result_t
 ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 {
-  SSL           *s    = client_hello->ssl;
-  TLSSNISupport *snis = TLSSNISupport::getInstance(s);
+  SSL                       *s  = client_hello->ssl;
+  TLSSNISupport::ClientHello ch = {client_hello};
+#endif
 
+  TLSSNISupport *snis = TLSSNISupport::getInstance(s);
   if (snis) {
-    snis->on_client_hello(client_hello);
+    snis->on_client_hello(ch);
     int ret = snis->perform_sni_action(*s);
     if (ret != SSL_TLSEXT_ERR_OK) {
-      return ssl_select_cert_error;
+      return CLIENT_HELLO_ERROR;
     }
   } else {
     // This error suggests either of these:
     // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
     // 2) Call back on stale netvc
     Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
-    return ssl_select_cert_error;
+    return CLIENT_HELLO_ERROR;
   }
 
   SSLNetVConnection *netvc = dynamic_cast<SSLNetVConnection *>(snis);
   if (netvc) {
     if (netvc->ssl != s) {
       Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
-      return ssl_select_cert_error;
+      return CLIENT_HELLO_ERROR;
     }
 
     bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
     if (!reenabled) {
-      return ssl_select_cert_retry;
+      return CLIENT_HELLO_RETRY;
     }
   }
 
-  return ssl_select_cert_success;
+  return CLIENT_HELLO_SUCCESS;
 }
-#endif
 
 /**
  * Called before either the server or the client certificate is used
