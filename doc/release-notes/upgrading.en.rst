@@ -70,6 +70,9 @@ The records.yaml entry proxy.config.http.connect_attempts_max_retries_dead_serve
 
 The records.yaml entry proxy.config.http.connect.dead.policy has been renamed to proxy.config.http.connect.down.policy.
 
+The records.yaml entry proxy.config.http.parent_proxy.connect_attempts_timeout and proxy.config.http.post_connect_attempts_timeout
+have been removed. Instead use proxy.config.http.connect_attempts_timeout to control all connection to origin timeouts.
+
 Plugins
 -------
 
