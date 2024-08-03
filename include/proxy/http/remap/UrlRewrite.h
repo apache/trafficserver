@@ -53,9 +53,9 @@ enum mapping_type {
   NONE
 };
 
-enum class ACLMatchingPolicy {
-  MATCH_ON_IP_AND_METHOD = 0,
-  MATCH_ON_IP_ONLY,
+enum class ACLBehaviorPolicy {
+  ACL_BEHAVIOR_LEGACY = 0,
+  ACL_BEHAVIOR_MODERN,
 };
 
 /**
@@ -70,11 +70,11 @@ public:
 
   /** Retrieve the configured ACL matching policy.
    *
-   * @param[out] policy The configured ACL matching policy.
+   * @param[out] policy The configured ACL behavior policy.
    * @return @c true if the policy is configured to an appropriate value, @c
    * false if not.
    */
-  static bool get_acl_matching_policy(ACLMatchingPolicy &policy);
+  static bool get_acl_behavior_policy(ACLBehaviorPolicy &policy);
 
   /** Load the configuration.
    *
@@ -238,7 +238,7 @@ public:
 
 private:
   bool              _valid               = false;
-  ACLMatchingPolicy _acl_matching_policy = ACLMatchingPolicy::MATCH_ON_IP_AND_METHOD;
+  ACLBehaviorPolicy _acl_behavior_policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
 
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host, int request_host_len,
                       UrlMappingContainer &mapping_container);
