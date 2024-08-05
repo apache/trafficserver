@@ -3926,7 +3926,6 @@ SSL Termination
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 
   For more information see https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_num_tickets.html
-  [Requires OpenSSL v1.1.1 and higher]
 
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
    :overridable:
