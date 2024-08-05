@@ -660,41 +660,6 @@ TSReturnCode TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc offset, int type);
 
 /* --------------------------------------------------------------------------
    HTTP specific URLs */
-/**
-    Retrieves the HTTP params portion of the URL located at url_loc
-    within bufp. The length of the returned string is in the length
-    argument. Note: the returned string is not guaranteed to be
-    null-terminated.
-
-    This function is deprecated and returns empty string.
-    Plugins that need "params" can call TSUrlPathGet to get a whole path string to parse it.
-
-    @param bufp marshal buffer containing the URL.
-    @param offset location of the URL.
-    @param length of the returned string.
-    @return HTTP params portion of the URL.
-
- */
-const char *TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc offset, int *length);
-
-/**
-    Sets the HTTP params portion of the URL located at url_loc within
-    bufp to the string value. If length is -1 that TSUrlHttpParamsSet()
-    assumes that value is null-terminated. Otherwise, the length of
-    the string value is taken to be length. TSUrlHttpParamsSet()
-    copies the string to within bufp, so you can modify or delete
-    value after calling TSUrlHttpParamsSet().
-
-    This function is deprecated. The value passed will be internally appended to the path portion.
-    Thus, TSUrlHttpParamsGet will not return the value set by this function.
-
-    @param bufp marshal buffer containing the URL.
-    @param offset location of the URL.
-    @param value HTTP params string to set in the URL.
-    @param length string length of the new HTTP params value.
-
- */
-TSReturnCode TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
 
 /**
     Retrieves the HTTP query portion of the URL located at url_loc

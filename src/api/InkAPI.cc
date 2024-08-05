@@ -1243,18 +1243,6 @@ TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc obj, int type)
 /* HTTP specific URLs */
 
 const char *
-TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc obj, int *length)
-{
-  return URLPartGet(bufp, obj, length, &URL::params_get);
-}
-
-TSReturnCode
-TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
-{
-  return URLPartSet(bufp, obj, value, length, &URL::params_set);
-}
-
-const char *
 TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::query_get);
