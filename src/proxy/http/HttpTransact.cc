@@ -5992,10 +5992,6 @@ HttpTransact::url_looks_dynamic(URL *url)
   // (1) If URL contains query stuff in it, call it dynamic //
   ////////////////////////////////////////////////////////////
 
-  part = url->params_get(&part_length);
-  if (part != nullptr) {
-    return true;
-  }
   part = url->query_get(&part_length);
   if (part != nullptr) {
     return true;
