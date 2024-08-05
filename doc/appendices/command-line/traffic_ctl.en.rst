@@ -129,6 +129,13 @@ traffic_ctl alarm
 traffic_ctl config
 ------------------
 
+   Manipulate configuration records.
+
+   .. program:: traffic_ctl config
+   .. option:: --records
+
+   Display the config output in YAML format. This out can be used directly into ATS if needed.
+
 .. program:: traffic_ctl config
 .. option:: defaults [--records]
 

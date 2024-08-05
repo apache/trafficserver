@@ -19,6 +19,11 @@
 */
 #pragma once
 
+#include <vector>
+#include <utility>
+#include <yaml-cpp/yaml.h>
+#include <swoc/TextView.h>
+
 // Record access control, indexed by RecAccessT.
 static const char *
 rec_accessof(int rec_access)
@@ -92,3 +97,32 @@ rec_sourceof(int rec_source)
     return "unknown";
   }
 }
+
+[[maybe_unused]] static bool WithDefaults{true};
+[[maybe_unused]] static bool WithoutDefaults{false};
+
+class RecNameToYaml
+{
+  using RecordInfo          = std::tuple<std::string /*name*/, std::string /*value*/, std::string /*def_val*/>;
+  using RecList             = std::vector<std::pair<RecordInfo, bool /*keep track if a record was already converted.*/>>;
+  using RecordsMatchTracker = std::vector<std::pair<RecordInfo &, bool &>>;
+
+  RecordsMatchTracker find_all_keys_with_prefix(swoc::TextView prefix, RecList &vars);
+  void                process_var_from_prefix(std::string prefix, RecList &vars, bool &in_a_map);
+  void                build_yaml(RecList vars);
+
+public:
+  using RecInfoList = std::vector<RecordInfo>;
+  RecNameToYaml()   = default;
+  RecNameToYaml(RecInfoList recs, bool include_defaults);
+
+  std::string
+  string() const
+  {
+    return doc.good() ? doc.c_str() : "";
+  }
+
+private:
+  bool          include_defaults{false};
+  YAML::Emitter doc;
+};

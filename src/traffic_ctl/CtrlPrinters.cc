@@ -105,6 +105,8 @@ RecordPrinter::write_output(YAML::Node const &result)
 {
   auto const &response = result.as<shared::rpc::RecordLookUpResponse>();
   std::string text;
+  // if yaml is needed
+  RecNameToYaml::RecInfoList recordList;
   for (auto &&recordInfo : response.recordList) {
     if (!recordInfo.registered) {
       std::cout << recordInfo.name
@@ -114,9 +116,12 @@ RecordPrinter::write_output(YAML::Node const &result)
     if (!_printAsRecords) {
       std::cout << recordInfo.name << ": " << recordInfo.currentValue << '\n';
     } else {
-      std::cout << swoc::bwprint(text, "{} {} {} {} # default: {}\n", rec_labelof(recordInfo.rclass), recordInfo.name,
-                                 recordInfo.dataType, recordInfo.currentValue, recordInfo.defaultValue);
+      recordList.push_back(std::make_tuple(recordInfo.name, recordInfo.currentValue, recordInfo.defaultValue));
     }
+  }
+
+  if (_printAsRecords && recordList.size() > 0) {
+    std::cout << RecNameToYaml{recordList, WithoutDefaults}.string() << '\n';
   }
   // we print errors if found.
   print_record_error_list(response.errorList);
@@ -135,8 +140,11 @@ MetricRecordPrinter::write_output(YAML::Node const &result)
 void
 DiffConfigPrinter::write_output(YAML::Node const &result)
 {
-  std::string text;
   auto        response = result.as<shared::rpc::RecordLookUpResponse>();
+  std::string text;
+
+  // if yaml is needed
+  RecNameToYaml::RecInfoList recordList;
   for (auto &&recordInfo : response.recordList) {
     auto const &currentValue = recordInfo.currentValue;
     auto const &defaultValue = recordInfo.defaultValue;
@@ -147,10 +155,13 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
         std::cout << swoc::bwprint(text, "\tCurrent Value: {}\n", currentValue);
         std::cout << swoc::bwprint(text, "\tDefault Value: {}\n", defaultValue);
       } else {
-        std::cout << swoc::bwprint(text, "{} {} {} {} # default: {}\n", rec_labelof(recordInfo.rclass), recordInfo.name,
-                                   recordInfo.dataType, recordInfo.currentValue, recordInfo.defaultValue);
+        recordList.push_back(std::make_tuple(recordInfo.name, recordInfo.currentValue, recordInfo.defaultValue));
       }
     }
+  }
+
+  if (_printAsRecords && recordList.size() > 0) {
+    std::cout << RecNameToYaml{recordList, WithDefaults}.string() << '\n';
   }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
