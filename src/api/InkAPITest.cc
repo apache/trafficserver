@@ -3777,8 +3777,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   const char       *path     = "about/overview.html";
   const char       *path_get;
   const char       *params = "abcdef";
-  const char       *params_get;
-  const char       *query = "name=xxx";
+  const char       *query  = "name=xxx";
   const char       *query_get;
   const char       *fragment = "yyy";
   const char       *fragment_get;
@@ -3802,7 +3801,6 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   bool test_passed_host     = false;
   bool test_passed_port     = false;
   bool test_passed_path     = false;
-  bool test_passed_params   = false;
   bool test_passed_query    = false;
   bool test_passed_fragment = false;
   bool test_passed_copy     = false;
@@ -4101,11 +4099,10 @@ print_results:
   }
   if ((test_passed_create == false) || (test_passed_scheme == false) || (test_passed_user == false) ||
       (test_passed_password == false) || (test_passed_host == false) || (test_passed_port == false) ||
-      (test_passed_path == false) || (test_passed_params == false) || (test_passed_query == false) ||
-      (test_passed_fragment == false) || (test_passed_copy == false) || (test_passed_clone == false) ||
-      (test_passed_string1 == false) || (test_passed_string2 == false) || (test_passed_print == false) ||
-      (test_passed_length1 == false) || (test_passed_length2 == false) || (test_passed_type == false) ||
-      (test_passed_ipv6 == false)) {
+      (test_passed_path == false) || (test_passed_query == false) || (test_passed_fragment == false) ||
+      (test_passed_copy == false) || (test_passed_clone == false) || (test_passed_string1 == false) ||
+      (test_passed_string2 == false) || (test_passed_print == false) || (test_passed_length1 == false) ||
+      (test_passed_length2 == false) || (test_passed_type == false) || (test_passed_ipv6 == false)) {
     /*** Debugging the test itself....
     (test_passed_create == false)?printf("test_passed_create is false\n"):printf("");
     (test_passed_destroy == false)?printf("test_passed_destroy is false\n"):printf("");
@@ -4114,7 +4111,6 @@ print_results:
     (test_passed_host == false)?printf("test_passed_host is false\n"):printf("");
     (test_passed_port == false)?printf("test_passed_port is false\n"):printf("");
     (test_passed_path == false)?printf("test_passed_path is false\n"):printf("");
-    (test_passed_params == false)?printf("test_passed_params is false\n"):printf("");
     (test_passed_query == false)?printf("test_passed_query is false\n"):printf("");
     (test_passed_fragment == false)?printf("test_passed_fragment is false\n"):printf("");
     (test_passed_copy == false)?printf("test_passed_copy is false\n"):printf("");
