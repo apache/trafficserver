@@ -25,7 +25,7 @@
 #include <swoc/TextView.h>
 
 // Record access control, indexed by RecAccessT.
-static const char *
+[[maybe_unused]] static const char *
 rec_accessof(int rec_access)
 {
   switch (rec_access) {
@@ -38,7 +38,8 @@ rec_accessof(int rec_access)
     return "default";
   }
 }
-static const char *
+
+[[maybe_unused]] static const char *
 rec_updateof(int rec_updatetype)
 {
   switch (rec_updatetype) {
@@ -69,7 +70,8 @@ rec_checkof(int rec_checktype)
     return "none";
   }
 }
-static const char *
+
+[[maybe_unused]] static const char *
 rec_labelof(int rec_class)
 {
   switch (rec_class) {
@@ -81,7 +83,8 @@ rec_labelof(int rec_class)
     return "unknown";
   }
 }
-static const char *
+
+[[maybe_unused]] static const char *
 rec_sourceof(int rec_source)
 {
   switch (rec_source) {
