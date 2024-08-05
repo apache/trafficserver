@@ -30,6 +30,7 @@ add_library(
   CacheVol.cc
   CacheWrite.cc
   HttpTransactCache.cc
+  PreservationTable.cc
   RamCacheCLFUS.cc
   RamCacheLRU.cc
   Store.cc

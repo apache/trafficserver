@@ -75,4 +75,27 @@ def FileContains(haystack, needle, desired_count=1):
         return False
 
 
+def AddAwaitFileContainsTestRun(test, name, file_path, needle, desired_count=1) -> 'TestRun':
+    '''Add a test run to await upon the presence of a string in a file.
+
+    :param test: The Test object to which the TestRun is added.
+    :param name: The name of the TestRun.
+    :param file_path: The path to the file to be inspected.
+    :param needle: The content to look for in the file. This can be a regular
+        expression which will be used in Python's re.search function.
+    :param desired_count: How many times the caller desires to see needle in
+        the file before considering the TestRun successful. The default is 1.
+    :return: The TestRun object that was added to the Test.
+    '''
+    tr = test.AddTestRun(name)
+    p = tr.Processes.Default
+    p.Command = f'echo waiting for {needle} in {file_path}'
+    await_process = tr.Processes.Process('await', 'sleep 60')
+    await_process.Ready = When.FileContains(file_path, needle, desired_count)
+    await_process.StartupTimeout = 30
+    p.StartBefore(await_process)
+    return tr
+
+
 AddWhenFunction(FileContains)
+ExtendTest(AddAwaitFileContainsTestRun, name="AddAwaitFileContainsTestRun")

@@ -166,16 +166,20 @@ Data Structures
 
       Schedule the aggregation buffer to be written to disk.
 
-   .. member:: DLL<EvacuationBlock> evacuate
-
-      Array of :class:`EvacuationBlock` buckets. This is sized so there
-      is one bucket for every evacuation span.
-
    .. member:: int evac_range(off_t low, off_t high, int evac_phase)
 
          Start an evacuation if there is any :class:`EvacuationBlock` in the range
          from :arg:`low` to :arg:`high`. Return ``0`` if no evacuation was started,
          non-zero otherwise.
+
+.. class:: PreservationTable
+
+   Defined in :ts:git:`src/iocore/cache/PreservationTable.h`.
+
+   .. member:: DLL<EvacuationBlock> evacuate
+
+      Array of :class:`EvacuationBlock` buckets. This is sized so there
+      is one bucket for every evacuation span.
 
 .. class:: Doc
 

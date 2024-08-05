@@ -31,6 +31,7 @@
 #include "iocore/eventsystem/Continuation.h"
 
 // aio
+#include "../aio/P_AIO.h"
 #include "iocore/aio/AIO.h"
 
 class Stripe;

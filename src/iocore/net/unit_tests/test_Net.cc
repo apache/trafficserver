@@ -1,5 +1,7 @@
 /** @file
 
+  Catch based unit tests for inknet
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -19,12 +21,14 @@
   limitations under the License.
  */
 
-#pragma once
+#include "iocore/net/NetProcessor.h"
+#include "iocore/net/NetVConnection.h"
 
-#include <openssl/ssl.h>
+#include <catch.hpp>
 
-void ssl_stapling_ex_init();
-bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const char *rsp_file);
-void ocsp_update();
-
-int ssl_callback_ocsp_stapling(SSL *, void *);
+TEST_CASE("When we allocate a VC, it should not have a server name yet.")
+{
+  NetVConnection *vc{netProcessor.allocate_vc(this_ethread())};
+  CHECK(nullptr == vc->get_server_name());
+  vc->do_io_close();
+}
