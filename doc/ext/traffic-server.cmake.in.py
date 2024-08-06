@@ -141,7 +141,7 @@ class TSConfVar(std.Target):
 
         # Build the object
         add_object(config, name, cv_default, cv_type)
-        ts['ts'] = config
+        ts['records'] = config
         code = get_code(ts)
         literal = nodes.literal_block(code, code)
         literal['linenos'] = True

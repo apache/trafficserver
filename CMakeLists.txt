@@ -458,6 +458,7 @@ check_symbol_exists(BIO_set_ex_data "openssl/bio.h" HAVE_BIO_SET_EX_DATA)
 check_symbol_exists(BIO_meth_get_ctrl "openssl/bio.h" HAVE_BIO_METH_GET_CTRL)
 check_symbol_exists(BIO_meth_get_create "openssl/bio.h" HAVE_BIO_METH_GET_CREATE)
 check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTROY)
+check_symbol_exists(CRYPTO_set_ex_data "openssl/bio.h" HAVE_CRYPTO_SET_EX_DATA)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
 check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_CLIENT_HELLO_CB)
@@ -508,7 +509,22 @@ endif()
 
 check_source_compiles(
   C "#include <openssl/ssl.h>
-  void main() { int x = SSL_CTRL_GET_EXTRA_CHAIN_CERTS; }" HAVE_NATIVE_DUAL_CERT_SUPPORT
+  int main() { int x = SSL_CTRL_GET_EXTRA_CHAIN_CERTS; return 0; }" HAVE_NATIVE_DUAL_CERT_SUPPORT
+)
+check_source_compiles(
+  C "#include <openssl/ex_data.h>
+  int main() { CRYPTO_EX_unused x; return 0; }" HAVE_CRYPTO_EX_UNUSED
+)
+check_cxx_source_compiles(
+  "#include <openssl/crypto.h>
+  #if __has_include(<openssl/ex_data.h>)
+  #include <openssl/ex_data.h>
+  #endif
+  int main() {
+  CRYPTO_EX_dup *cb = [] (CRYPTO_EX_DATA *to, const CRYPTO_EX_DATA *from, void **from_d, int idx, long argl, void *argp) -> int { return 0; };
+  return 0;
+  }"
+  HAVE_CRYPTO_EX_DUP_TYPE1
 )
 
 set(CMAKE_REQUIRED_INCLUDES netinet/in.h netinet/tcp.h)

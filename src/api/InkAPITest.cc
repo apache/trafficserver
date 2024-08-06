@@ -3680,8 +3680,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd)(RegressionTest *test, int /* atyp
 //                    TSUrlPortSet
 //                    TSUrlPathGet
 //                    TSUrlPathSet
-//                    TSUrlHttpParamsGet
-//                    TSUrlHttpParamsSet
 //                    TSUrlHttpQueryGet
 //                    TSUrlHttpQuerySet
 //                    TSUrlHttpFragmentGet
@@ -3938,19 +3936,6 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
       test_passed_path = true;
     } else {
       SDK_RPRINT(test, "TSUrlPathSet&Get", "TestCase1", TC_FAIL, "Values don't match");
-    }
-  }
-
-  // Params
-  if (TSUrlHttpParamsSet(bufp1, url_loc1, params, -1) != TS_SUCCESS) {
-    SDK_RPRINT(test, "TSUrlHttpParamsSet", "TestCase1", TC_FAIL, "Returned TS_ERROR");
-  } else {
-    params_get = TSUrlHttpParamsGet(bufp1, url_loc1, &length);
-    if (params_get != nullptr && strncmp(params, params_get, length) == 0) {
-      SDK_RPRINT(test, "TSUrlHttpParamsSet&Get", "TestCase1", TC_PASS, "ok");
-      test_passed_params = true;
-    } else {
-      SDK_RPRINT(test, "TSUrlHttpParamsSet&Get", "TestCase1", TC_FAIL, "Values don't match");
     }
   }
 

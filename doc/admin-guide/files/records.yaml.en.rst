@@ -508,6 +508,7 @@ Network
    and active requests that |TS| can handle at any given instant. The delta
    between `proxy.config.net.max_connections_in` and `proxy.config.net.max_requests_in`
    is the amount of maximum idle (keepalive) connections |TS| will maintain.
+   If this is set to 0, the throttling logic is disabled.
 
 .. ts:cv:: CONFIG proxy.config.net.per_client.max_connections_in INT 0
    :reloadable:
@@ -3874,7 +3875,6 @@ SSL Termination
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 
   For more information see https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_num_tickets.html
-  [Requires OpenSSL v1.1.1 and higher]
 
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
    :overridable:

@@ -30,14 +30,6 @@
 
 #include "BIO_fastopen.h"
 
-#if defined(BORINGLIKE)
-#error
-#elif defined(OPENSSL_IS_BORINGSSL) || defined(OPENSSL_IS_AWSLC)
-#define BORINGLIKE 1
-#else
-#define BORINGLIKE 0
-#endif
-
 namespace
 {
 
@@ -61,7 +53,7 @@ public:
   }
 
 private:
-#if BORINGLIKE
+#if HAVE_CRYPTO_EX_UNUSED
   static constexpr CRYPTO_EX_unused *_new{nullptr};
 #else
   static void
@@ -71,7 +63,7 @@ private:
   }
 #endif
 
-#if BORINGLIKE
+#if !HAVE_CRYPTO_SET_EX_DATA
   static void
   _free(void * /* parent */, void * /* ptr */, CRYPTO_EX_DATA * /* ad */, int /* idx_ */, long /* argl */, void * /* argp */)
   {
@@ -84,7 +76,7 @@ private:
   }
 #endif
 
-#if BORINGLIKE || (OPENSSL_VERSION_MAJOR >= 3)
+#if HAVE_CRYPTO_EX_DUP_TYPE1
   using _Type_from_d = void **;
 #else
   using _Type_from_d = void *;

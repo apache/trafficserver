@@ -839,8 +839,10 @@ set-redirect
 When invoked, sends a redirect response to the client, with HTTP status
 ``<code>``, and a new location of ``<destination>``. If the ``QSA`` flag is
 enabled, the original query string will be preserved and added to the new
-location automatically. This operator supports
-`String concatenations`_ for ``<destination>``.
+location automatically. This operator supports `String concatenations`_ for
+``<destination>``.  This operator can only execute on the
+``READ_RESPONSE_HDR_HOOK`` (the default when the plugin is global), the
+``SEND_RESPONSE_HDR_HOOK``, or the ``REMAP_PSEUDO_HOOK``.
 
 set-status
 ~~~~~~~~~~
