@@ -669,10 +669,10 @@ check_config_directories()
 }
 
 //
-// Startup process manager
+// Initialize records related features.
 //
 static void
-initialize_process_manager()
+initialize_records()
 {
   RecProcessInit(diags());
   LibRecordsConfigInit();
@@ -1847,8 +1847,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // fprintf's before those calls
   bind_outputs(bind_stdout, bind_stderr);
 
-  // Local process manager
-  initialize_process_manager();
+  // Records init
+  initialize_records();
 
   // Initialize file manager for TS.
   initialize_file_manager();
