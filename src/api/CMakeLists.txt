@@ -17,6 +17,9 @@
 
 # plugin api *only*
 add_library(tsapi SHARED InkAPI.cc InkAPIInternal.cc InkIOCoreAPI.cc)
+if(BUILD_REGRESSION_TESTING)
+  target_sources(tsapi PRIVATE InkAPITest.cc)
+endif()
 add_library(ts::tsapi ALIAS tsapi)
 
 set(TSAPI_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/include/ts/ts.h ${PROJECT_SOURCE_DIR}/include/ts/remap.h
