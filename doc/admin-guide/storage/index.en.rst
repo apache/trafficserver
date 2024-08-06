@@ -339,43 +339,6 @@ Then, to push the object, post the object using the PUSH method: ::
 
       $ curl -s -o /dev/null -X PUSH --data-binary @/path/to/file "http://example.com/push_me.html"
 
-.. _inspecting-the-cache:
-
-Using the Cache Inspector Utility
----------------------------------
-
-The Cache Inspector Utility provides several options that enable you to view and
-delete the contents of your cache.
-
-Lookup URL
-    Search for a particular URL in the cache. When Traffic Server finds the URL
-    in the cache, it will display details of the object that corresponds to the
-    URL (e.g. header length and number of alternates). The option to delete the
-    URL from the cache will be presented.
-
-Delete URL
-    Delete the object from the cache which corresponds to the given URL. Success
-    or failure will be indicated after a delete has been attempted.
-
-Regex Lookup
-    Search URLs within the cache using one or more regular expressions.
-
-Regex Delete
-    Deletes all objects from the cache which match the provided regular
-    expressions.
-
-Regex Invalidate
-    Marks any objects in the cache which match the given regular expressions as
-    stale. Traffic Server will contact the relevant origin server(s) to confirm
-    the validity and freshness of the cached object, updating the cached object
-    if necessary.
-
-.. note::
-
-    Only one administrator should delete and invalidate cache entries from the
-    Cache Inspector at any point in time. Changes made by multiple
-    administrators at the same time can lead to unpredictable results.
-
 If-Modified-Since/If-None-Match
 -------------------------------
 
