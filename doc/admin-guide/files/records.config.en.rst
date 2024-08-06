@@ -460,6 +460,7 @@ Network
    and active requests that |TS| can handle at any given instant. The delta
    between `proxy.config.net.max_connections_in` and `proxy.config.net.max_requests_in`
    is the amount of maximum idle (keepalive) connections |TS| will maintain.
+   If this is set to 0, the throttling logic is disabled.
 
 .. ts:cv:: CONFIG proxy.config.net.max_requests_in INT 0
 
