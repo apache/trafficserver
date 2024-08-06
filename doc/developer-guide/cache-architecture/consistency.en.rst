@@ -20,13 +20,6 @@
 
 .. _developer-cache-consistency:
 
-Cache Tools
-~~~~~~~~~~~
-
-Tools and techniques for cache monitoring and inspection.
-
-* :ref:`The cache inspector <inspecting-the-cache>`.
-
 Topics to be done
 ~~~~~~~~~~~~~~~~~
 

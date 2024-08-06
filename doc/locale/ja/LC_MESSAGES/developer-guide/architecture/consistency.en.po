@@ -36,10 +36,6 @@ msgstr ""
 msgid "Tools and techniques for cache monitoring and inspection."
 msgstr ""
 
-#: ../../developer-guide/architecture/consistency.en.rst:27
-msgid ":ref:`The cache inspector <inspecting-the-cache>`."
-msgstr ""
-
 #: ../../developer-guide/architecture/consistency.en.rst:30
 msgid "Topics to be done"
 msgstr ""
