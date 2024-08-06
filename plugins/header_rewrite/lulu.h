@@ -40,8 +40,12 @@ extern const char PLUGIN_NAME_DBG[];
 
 namespace header_rewrite_ns
 {
-extern DbgCtl        dbg_ctl;
-extern DbgCtl        pi_dbg_ctl;
-extern PluginFactory plugin_factory;
+extern DbgCtl           dbg_ctl;
+extern DbgCtl           pi_dbg_ctl;
+extern PluginFactory    plugin_factory;
+extern std::atomic<int> defer;
+
+extern void deferRuleDone(TSHttpTxn txnp);
+extern void addDeferRule();
 } // namespace header_rewrite_ns
 using namespace header_rewrite_ns;

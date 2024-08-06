@@ -64,14 +64,17 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
       TSWarning("[%s] Successful set-custom-body fetch did not result in any content", __FUNCTION__);
     }
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_ERROR);
+    deferRuleDone(http_txn);
   } break;
   case OperatorSetBodyFrom::TS_EVENT_FETCHSM_FAILURE: {
     Dbg(pi_dbg_ctl, "OperatorSetBodyFrom: Error getting custom body");
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
+    deferRuleDone(http_txn);
   } break;
   case OperatorSetBodyFrom::TS_EVENT_FETCHSM_TIMEOUT: {
     Dbg(pi_dbg_ctl, "OperatorSetBodyFrom: Timeout getting custom body");
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
+    deferRuleDone(http_txn);
   } break;
   case TS_EVENT_HTTP_TXN_CLOSE: {
     TSContDestroy(cont);
@@ -1344,14 +1347,14 @@ OperatorSetBodyFrom::initialize_hooks()
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
 }
 
-void
+bool
 OperatorSetBodyFrom::exec(const Resources &res) const
 {
   if (TSHttpTxnIsInternal(res.txnp)) {
     // If this is triggered by an internal transaction, a infinte loop may occur
     // It should only be triggered by the original transaction sent by the client
     Dbg(pi_dbg_ctl, "OperatorSetBodyFrom triggered by an internal transaction");
-    return;
+    return true;
   }
 
   char req_buf[MAX_SIZE];
@@ -1379,7 +1382,10 @@ OperatorSetBodyFrom::exec(const Resources &res) const
     // the code or another condition was set conflicting with this one.
     // Set here because res is the only structure that contains the original status code.
     TSHttpTxnStatusSet(res.txnp, res.resp_status);
+    return false;
+
   } else {
     TSError(PLUGIN_NAME, "OperatorSetBodyFrom:exec:: Could not create request");
+    return true;
   }
 }

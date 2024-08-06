@@ -42,8 +42,27 @@ namespace header_rewrite_ns
 DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
 DbgCtl pi_dbg_ctl{PLUGIN_NAME};
 
-std::once_flag initHRWLibs;
-PluginFactory  plugin_factory;
+std::once_flag   initHRWLibs;
+PluginFactory    plugin_factory;
+std::atomic<int> defer{0};
+
+void
+deferRuleDone(TSHttpTxn txnp)
+{
+  defer--;
+  Dbg(pi_dbg_ctl, "Removing defer rule. Count=%d", defer.load());
+  if (defer.load() == 0) {
+    Dbg(pi_dbg_ctl, "Defer rules complete. Reenabling transaction");
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  }
+}
+
+void
+addDeferRule()
+{
+  defer++;
+  Dbg(pi_dbg_ctl, "Adding defer rule. Count=%d", defer.load());
+}
 } // namespace header_rewrite_ns
 
 static void
@@ -299,7 +318,6 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     break;
   }
 
-  bool reenable{true};
   if (hook != TS_HTTP_LAST_HOOK) {
     const RuleSet *rule = conf->rule(hook);
     Resources      res(txnp, contp);
@@ -313,7 +331,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
         OperModifiers rt = rule->exec(res);
 
         if (rt & OPER_NO_REENABLE) {
-          reenable = false;
+          addDeferRule();
         }
 
         if (rule->last() || (rt & OPER_LAST)) {
@@ -324,7 +342,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     }
   }
 
-  if (reenable) {
+  if (defer.load() == 0) {
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   }
   return 0;

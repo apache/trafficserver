@@ -498,7 +498,7 @@ public:
 
 protected:
   void initialize_hooks() override;
-  void exec(const Resources &res) const override;
+  bool exec(const Resources &res) const override;
 
 private:
   Value _value;
