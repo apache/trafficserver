@@ -383,6 +383,15 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(dt.maximum_size() == 4096);
     REQUIRE(dt.is_empty());
     REQUIRE(dt.count() == 0);
+
+    // Test to insert 10k random size entries
+    for (int i = 0; i < 10000; i++) {
+      int         name_size  = rand() % 20000;
+      int         value_size = rand() % 20000;
+      std::string name       = get_long_string(name_size);
+      std::string value      = get_long_string(value_size);
+      dt.insert_entry(name, value);
+    }
   }
 }
 

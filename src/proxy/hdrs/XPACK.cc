@@ -501,17 +501,19 @@ XpackDynamicTable::_make_space(uint64_t extra_space_needed)
     return extra_space_needed == 0;
   }
   uint32_t freed = 0;
-  uint32_t tail  = this->_calc_index(this->_entries_tail, 1);
+  uint32_t tail  = this->_entries_tail;
 
   while (extra_space_needed > freed) {
-    if (this->_entries_head < tail) {
-      break;
-    }
+    tail = this->_calc_index(tail, 1); // Move to the next entry
+
     if (this->_entries[tail].ref_count) {
       break;
     }
     freed += this->_entries[tail].name_len + this->_entries[tail].value_len + ADDITIONAL_32_BYTES;
-    tail   = this->_calc_index(tail, 1);
+    if (this->_entries_head == tail) {
+      // The table is empty
+      break;
+    }
   }
 
   // Evict
@@ -519,7 +521,8 @@ XpackDynamicTable::_make_space(uint64_t extra_space_needed)
     XPACKDbg("Evict entries: from %u to %u", this->_entries[this->_calc_index(this->_entries_tail, 1)].index,
              this->_entries[tail - 1].index);
     this->_available    += freed;
-    this->_entries_tail  = tail - 1;
+    this->_entries_tail  = tail;
+
     XPACKDbg("Available size: %u", this->_available);
   }
 
