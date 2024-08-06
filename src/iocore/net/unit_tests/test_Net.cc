@@ -1,6 +1,6 @@
 /** @file
 
-  fuzzing proxy/http2
+  Catch based unit tests for inknet
 
   @section license License
 
@@ -21,36 +21,14 @@
   limitations under the License.
  */
 
-#include "proxy/http2/HTTP2.h"
-#include "proxy/hdrs/HuffmanCodec.h"
+#include "iocore/net/NetProcessor.h"
+#include "iocore/net/NetVConnection.h"
 
-#define kMinInputLength 8
-#define kMaxInputLength 128
+#include <catch.hpp>
 
-#define INITIAL_TABLE_SIZE      4096
-#define MAX_REQUEST_HEADER_SIZE 131072
-#define MAX_TABLE_SIZE          4096
-
-extern int cmd_disable_pfreelist;
-
-extern "C" int
-LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
+TEST_CASE("When we allocate a VC, it should not have a server name yet.")
 {
-  if (size_data < kMinInputLength || size_data > kMaxInputLength) {
-    return 0;
-  }
-
-  cmd_disable_pfreelist = true;
-
-  hpack_huffman_init();
-
-  HpackIndexingTable       indexing_table(INITIAL_TABLE_SIZE);
-  std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
-  headers->create(HTTP_TYPE_REQUEST);
-
-  hpack_decode_header_block(indexing_table, headers.get(), input_data, size_data, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
-
-  headers->destroy();
-
-  return 0;
+  NetVConnection *vc{netProcessor.allocate_vc(this_ethread())};
+  CHECK(nullptr == vc->get_server_name());
+  vc->do_io_close();
 }

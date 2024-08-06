@@ -1068,7 +1068,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.url_remap.min_rules_required", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-9]+", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.url_remap.acl_matching_policy", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.url_remap.acl_behavior_policy", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
 
   //##############################################################################

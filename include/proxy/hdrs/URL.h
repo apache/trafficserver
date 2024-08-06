@@ -302,8 +302,6 @@ public:
   int  type_code_get();
   void type_code_set(int type);
 
-  const char *params_get(int *length);
-  void        params_set(const char *value, int length);
   const char *query_get(int *length);
   void        query_set(const char *value, int length);
   const char *fragment_get(int *length);
@@ -674,26 +672,6 @@ URL::type_code_set(int typecode)
 {
   ink_assert(valid());
   m_url_impl->set_type_code(typecode);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline const char *
-URL::params_get(int *length)
-{
-  ink_assert(valid());
-  return m_url_impl->get_params(length);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline void
-URL::params_set(const char *value, int length)
-{
-  ink_assert(valid());
-  m_url_impl->set_params(m_heap, value, length, true);
 }
 
 /*-------------------------------------------------------------------------

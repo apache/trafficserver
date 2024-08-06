@@ -302,75 +302,47 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 // Pausable callback
 static int
-ssl_client_hello_callback(SSL *s, int *al, void *arg)
+ssl_client_hello_callback(SSL *s, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
 {
-  TLSSNISupport *snis = TLSSNISupport::getInstance(s);
-  if (snis) {
-    snis->on_client_hello(s, al, arg);
-    int ret = snis->perform_sni_action(*s);
-    if (ret != SSL_TLSEXT_ERR_OK) {
-      return SSL_CLIENT_HELLO_ERROR;
-    }
-  } else {
-    // This error suggests either of these:
-    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
-    // 2) Call back on stale netvc
-    Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
-    return SSL_CLIENT_HELLO_ERROR;
-  }
-
-  SSLNetVConnection *netvc = dynamic_cast<SSLNetVConnection *>(snis);
-  if (netvc) {
-    if (netvc->ssl != s) {
-      Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
-      return SSL_CLIENT_HELLO_ERROR;
-    }
-
-    bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
-    if (!reenabled) {
-      return SSL_CLIENT_HELLO_RETRY;
-    }
-  }
-
-  return SSL_CLIENT_HELLO_SUCCESS;
-}
+  TLSSNISupport::ClientHello ch = {s};
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
 static ssl_select_cert_result_t
 ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 {
-  SSL           *s    = client_hello->ssl;
-  TLSSNISupport *snis = TLSSNISupport::getInstance(s);
+  SSL                       *s  = client_hello->ssl;
+  TLSSNISupport::ClientHello ch = {client_hello};
+#endif
 
+  TLSSNISupport *snis = TLSSNISupport::getInstance(s);
   if (snis) {
-    snis->on_client_hello(client_hello);
+    snis->on_client_hello(ch);
     int ret = snis->perform_sni_action(*s);
     if (ret != SSL_TLSEXT_ERR_OK) {
-      return ssl_select_cert_error;
+      return CLIENT_HELLO_ERROR;
     }
   } else {
     // This error suggests either of these:
     // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
     // 2) Call back on stale netvc
     Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
-    return ssl_select_cert_error;
+    return CLIENT_HELLO_ERROR;
   }
 
   SSLNetVConnection *netvc = dynamic_cast<SSLNetVConnection *>(snis);
   if (netvc) {
     if (netvc->ssl != s) {
       Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
-      return ssl_select_cert_error;
+      return CLIENT_HELLO_ERROR;
     }
 
     bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
     if (!reenabled) {
-      return ssl_select_cert_retry;
+      return CLIENT_HELLO_RETRY;
     }
   }
 
-  return ssl_select_cert_success;
+  return CLIENT_HELLO_SUCCESS;
 }
-#endif
 
 /**
  * Called before either the server or the client certificate is used
@@ -397,7 +369,7 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
   }
 
   SSLCertContextType ctxType = SSLCertContextType::GENERIC;
-#ifdef OPENSSL_IS_BORINGSSL
+#ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
   if (arg != nullptr) {
     const SSL_CLIENT_HELLO *client_hello         = (const SSL_CLIENT_HELLO *)arg;
     const bool              client_ecdsa_capable = BoringSSLUtils::isClientEcdsaCapable(client_hello);
@@ -1217,7 +1189,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
 
   bool generate_default_ctx = data.cert_names_list.empty();
   if (!generate_default_ctx) {
-#ifdef OPENSSL_IS_BORINGSSL
+#ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
     for (auto const &name : data.cert_names_list) {
       cert_names.emplace_back(std::vector({name}));
     }
@@ -1480,19 +1452,16 @@ SSLMultiCertConfigLoader::_set_verify_path(SSL_CTX *ctx, const SSLMultiCertConfi
 bool
 SSLMultiCertConfigLoader::_setup_session_ticket(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings)
 {
-#if defined(SSL_OP_NO_TICKET)
   // Session tickets are enabled by default. Disable if explicitly requested.
   if (sslMultCertSettings->session_ticket_enabled == 0) {
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     Dbg(dbg_ctl_ssl_load, "ssl session ticket is disabled");
   }
-#endif
-#if defined(TLS1_3_VERSION) && !defined(LIBRESSL_VERSION_NUMBER) && !defined(OPENSSL_IS_BORINGSSL)
+
   if (!(this->_params->ssl_ctx_options & SSL_OP_NO_TLSv1_3)) {
     SSL_CTX_set_num_tickets(ctx, sslMultCertSettings->session_ticket_number);
     Dbg(dbg_ctl_ssl_load, "ssl session ticket number set to %d", sslMultCertSettings->session_ticket_number);
   }
-#endif
   return true;
 }
 
@@ -2236,7 +2205,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
     }
 
     if (certType != nullptr) {
-#ifdef OPENSSL_IS_BORINGSSL
+#ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
       std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> public_key(X509_get_pubkey(cert), &EVP_PKEY_free);
       int                                                 pkey_id = EVP_PKEY_id(public_key.get());
 

@@ -55,12 +55,16 @@ cmake -DENABLE_POSIX_CAP=OFF -DENABLE_FUZZING=ON -DYAML_BUILD_SHARED_LIBS=OFF -D
 make -j$(nproc) --ignore-errors
 
 cp tests/fuzzing/fuzz_* $OUT/
+mkdir -p tests/fuzzing/lib/
 cp -r tests/fuzzing/lib/ $OUT/
 cp $SRC/trafficserver/tests/fuzzing/*.zip  $OUT/
 
 cp /opt/h3-tools-boringssl/boringssl/lib/libssl.so $OUT/lib/
 cp /opt/h3-tools-boringssl/boringssl/lib/libcrypto.so $OUT/lib/
 cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/
+cp /opt/h3-tools-boringssl/quiche/lib/libquiche.so $OUT/lib/libquiche.so.0
+export LD_LIBRARY_PATH=$OUT/lib/
+ldconfig
 
 if [[ $SANITIZER = undefined ]]
 then

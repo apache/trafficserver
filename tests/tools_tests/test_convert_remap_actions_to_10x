@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# Verify convert_remap_actions_to_10x behavior.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+tmp_dir=$(mktemp -d -t test_convert_remap_actions_to_10x_XXXXXXXX)
+start_remap_config=${tmp_dir}/remap.config
+start_remap_copy=${tmp_dir}/remap.orig
+expected_10x_config=${tmp_dir}/remap.gold
+backup_base=remap.config.convert_actions.bak
+script=$(realpath $(dirname $0)/../../tools/remap/convert_remap_actions_to_10x)
+
+fail()
+{
+  echo $1
+  exit 1
+}
+
+create_start_remap_config()
+{
+  cat > ${start_remap_config} <<EOF
+# Some comment.
+map http://one.com http://backend.one.com @action=allow @method=GET
+
+# Some comment with @action=allow
+map http:://two.com http://backend.two.com
+map http://three.com http://backend.three.com @action=deny @method=POST
+EOF
+}
+
+reset_test_directory()
+{
+  rm -rf ${tmp_dir}
+  mkdir -p ${tmp_dir}
+  cd ${tmp_dir}
+  create_start_remap_config
+  cp ${start_remap_config} ${start_remap_copy}
+  cp ${start_remap_config} ${expected_10x_config}
+  sed -i 's/@action=allow/@action=add_allow/g' ${expected_10x_config}
+  sed -i 's/@action=deny/@action=add_deny/g' ${expected_10x_config}
+}
+
+[ -f ${script} -a -x ${script} ] || fail "${script} is not an executable file."
+
+# Test a run without parameters. A backup file should be created.
+reset_test_directory
+${script} remap.config
+diff remap.config ${expected_10x_config} || fail "Unexpected content after \"${script} remap.config\"."
+[ -f ${backup_base}.0 ] || fail "${backup_base}.0 does not exist."
+diff ${backup_base}.0 ${start_remap_copy} || fail "Wrong ${backup_base}.0 content."
+
+# Re-run on the same file that is now updated. A new backup should be created.
+${script} remap.config
+diff remap.config ${expected_10x_config} || fail "Unexpected content after second \"${script} remap.config\"."
+[ -f ${backup_base}.1 ] || fail "${backup_base}.1 does not exist."
+diff ${backup_base}.1 ${expected_10x_config} || fail "Wrong ${backup_base}.1 content."
+
+# Verify that a third backup is created after re-applying the start content.
+cp ${start_remap_copy} remap.config
+${script} remap.config
+diff remap.config ${expected_10x_config} || fail "Unexpected content after third \"${script} remap.config\"."
+[ -f ${backup_base}.2 ] || fail "${backup_base}.2 does not exist."
+diff ${backup_base}.2 ${start_remap_copy} || fail "Wrong ${backup_base}.2 content."
+
+# Test the --no-backup option.
+cp ${start_remap_copy} remap.config
+${script} remap.config -n
+diff remap.config ${expected_10x_config} || fail "Unexpected content after \"${script} remap.config -n\"."
+[ -f ${backup_base}.3 ] && fail "${backup_base}.3 should not have been created."
+
+# Test -o option.
+reset_test_directory
+${script} remap.config -o myremap.config
+diff remap.config ${start_remap_copy} || fail "Unexpected input content after \"${script} remap.config -o myremap.config\""
+diff myremap.config ${expected_10x_config} || fail "Unexpected myremap.config content."
+
+# Verify sane -o with -n behavior.
+reset_test_directory
+${script} remap.config -o myremap2.config -n
+diff remap.config ${start_remap_copy} || fail "Unexpected input content after \"${script} remap.config -o myremap.config -n\""
+diff myremap2.config ${expected_10x_config} || fail "Unexpected myremap2.config output."
+
+# Cleanup
+rm -rf ${tmp_dir}

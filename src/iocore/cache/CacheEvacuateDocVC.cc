@@ -33,6 +33,7 @@
 #include "P_CacheInternal.h"
 #include "P_CacheVol.h"
 #include "CacheEvacuateDocVC.h"
+#include "PreservationTable.h"
 
 // tscore
 #include "tscore/Diags.h"

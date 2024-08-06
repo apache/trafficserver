@@ -159,6 +159,8 @@ public:
   }
 
 protected:
+  void initialize_hooks() override;
+
   bool exec(const Resources &res) const override;
 
 private:

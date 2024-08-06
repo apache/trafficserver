@@ -3559,17 +3559,28 @@ URL Remap Rules
 
    This is dynamic to enable different requirements for startup and reloading.
 
-.. ts:cv:: CONFIG proxy.config.url_remap.acl_matching_policy INT 0
+.. ts:cv:: CONFIG proxy.config.url_remap.acl_behavior_policy INT 0
    :reloadable:
 
-   This controls matching policy of ACL filters in :file:`remap.config`. See :ref:`acl-filters` for more details.
+   This controls how the ACL filter ``allow`` and ``deny`` actions behave in :file:`remap.config`. See
+   :ref:`acl-filters` for more details.
 
-   ===== =============================
+   ===== =================================
    Value Description
-   ===== =============================
-   ``0`` Match on IP and Method Policy
-   ``1`` Match on IP only Policy
-   ===== =============================
+   ===== =================================
+   ``0`` Legacy (9.x and below) behavior.
+   ``1`` Modern (10.x and above) behavior.
+   ===== =================================
+
+   The value ``0`` provides ACL filter ``allow`` and ``deny`` action behavior that is backwards compatible with previous
+   versions of |TS|. The value ``1`` results in a fatal log message if ``allow`` or ``deny`` is used with a message
+   encouraging the user to transition to either ``set_allow`` or ``set_deny`` or ``add_allow`` or ``add_deny`` actions.
+   ``0`` is the default value.
+
+.. note::
+
+   This configuration is deprecated in 10.x. Starting with 11.x, |TS| will always function like this configuration is
+   set to ``1`` (modern) and the configuration will be removed entirely.
 
 .. _records-config-ssl-termination:
 
@@ -3915,7 +3926,6 @@ SSL Termination
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 
   For more information see https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_num_tickets.html
-  [Requires OpenSSL v1.1.1 and higher]
 
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
    :overridable:

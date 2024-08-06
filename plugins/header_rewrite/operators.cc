@@ -498,6 +498,14 @@ OperatorSetRedirect::initialize(Parser &p)
 }
 
 void
+OperatorSetRedirect::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+}
+
+void
 EditRedirectResponse(TSHttpTxn txnp, const std::string &location, TSHttpStatus status, TSMBuffer bufp, TSMLoc hdr_loc)
 {
   // Set new location.
@@ -522,35 +530,6 @@ EditRedirectResponse(TSHttpTxn txnp, const std::string &location, TSHttpStatus s
                            " The new location is \"" +
                            location + "\".\n</B></FONT>\n<HR>\n</BODY>\n";
   TSHttpTxnErrorBodySet(txnp, TSstrdup(msg.c_str()), msg.length(), TSstrdup("text/html"));
-}
-
-static int
-cont_add_location(TSCont contp, TSEvent event, void *edata)
-{
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-
-  OperatorSetRedirect *osd = static_cast<OperatorSetRedirect *>(TSContDataGet(contp));
-  // Set the new status code and reason.
-  TSHttpStatus status = osd->get_status();
-  switch (event) {
-  case TS_EVENT_HTTP_SEND_RESPONSE_HDR: {
-    TSMBuffer bufp;
-    TSMLoc    hdr_loc;
-    if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
-      EditRedirectResponse(txnp, osd->get_location(), status, bufp, hdr_loc);
-    } else {
-      Dbg(pi_dbg_ctl, "Could not retrieve the response header");
-    }
-
-  } break;
-
-  case TS_EVENT_HTTP_TXN_CLOSE:
-    TSContDestroy(contp);
-    break;
-  default:
-    break;
-  }
-  return 0;
 }
 
 bool
@@ -619,21 +598,9 @@ OperatorSetRedirect::exec(const Resources &res) const
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
+      Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() hook=%d", int(get_hook()));
       // Set the new status code and reason.
       TSHttpStatus status = static_cast<TSHttpStatus>(_status.get_int_value());
-      switch (get_hook()) {
-      case TS_HTTP_PRE_REMAP_HOOK: {
-        TSHttpTxnStatusSet(res.txnp, status);
-        TSCont contp = TSContCreate(cont_add_location, nullptr);
-        TSContDataSet(contp, const_cast<OperatorSetRedirect *>(this));
-        TSHttpTxnHookAdd(res.txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
-        TSHttpTxnHookAdd(res.txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
-        TSHttpTxnReenable(res.txnp, TS_EVENT_HTTP_CONTINUE);
-        return true;
-      } break;
-      default:
-        break;
-      }
       TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status);
       EditRedirectResponse(res.txnp, value, status, res.bufp, res.hdr_loc);
     }

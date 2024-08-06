@@ -28,6 +28,7 @@
 #include "P_CacheStats.h"
 #include "P_RamCache.h"
 #include "AggregateWriteBuffer.h"
+#include "PreservationTable.h"
 #include "Stripe.h"
 
 #include "iocore/eventsystem/EThread.h"
@@ -40,28 +41,20 @@
 #define STRIPE_MAGIC                 0xF1D0F00D
 #define START_BLOCKS                 16 // 8k, STORE_BLOCK_SIZE
 #define START_POS                    ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
-#define EVACUATION_SIZE              (2 * AGG_SIZE)      // 8MB
 #define STRIPE_BLOCK_SIZE            (1024 * 1024 * 128) // 128MB
 #define MIN_STRIPE_SIZE              STRIPE_BLOCK_SIZE
 #define MAX_STRIPE_SIZE              ((off_t)512 * 1024 * 1024 * 1024 * 1024) // 512TB
 #define MAX_FRAG_SIZE                (AGG_SIZE - sizeof(Doc))                 // true max
 #define LEAVE_FREE                   DEFAULT_MAX_BUFFER_SIZE
-#define PIN_SCAN_EVERY               16 // scan every 1/16 of disk
 #define STRIPE_HASH_TABLE_SIZE       32707
 #define STRIPE_HASH_EMPTY            0xFFFF
 #define STRIPE_HASH_ALLOC_SIZE       (8 * 1024 * 1024) // one chance per this unit
 #define LOOKASIDE_SIZE               256
-#define EVACUATION_BUCKET_SIZE       (2 * EVACUATION_SIZE) // 16MB
 #define AIO_NOT_IN_PROGRESS          -1
 #define AIO_AGG_WRITE_IN_PROGRESS    -2
 #define AUTO_SIZE_RAM_CACHE          -1                      // 1-1 with directory size
 #define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeof(Doc)) // 1MB
 #define STORE_BLOCKS_PER_STRIPE      (STRIPE_BLOCK_SIZE / STORE_BLOCK_SIZE)
-
-#define dir_offset_evac_bucket(_o) (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
-#define dir_evac_bucket(_e)        dir_offset_evac_bucket(dir_offset(_e))
-#define offset_evac_bucket(_d, _o) \
-  dir_offset_evac_bucket((_d->offset_to_vol_offset(_o)
 
 // Documents
 
@@ -73,34 +66,7 @@ struct DiskStripe;
 struct CacheVol;
 class CacheEvacuateDocVC;
 
-// Key and Earliest key for each fragment that needs to be evacuated
-struct EvacuationKey {
-  SLink<EvacuationKey> link;
-  CryptoHash           key;
-  CryptoHash           earliest_key;
-};
-
-struct EvacuationBlock {
-  union {
-    unsigned int init;
-    struct {
-      unsigned int done          : 1; // has been evacuated
-      unsigned int pinned        : 1; // check pinning timeout
-      unsigned int evacuate_head : 1; // check pinning timeout
-      unsigned int unused        : 29;
-    } f;
-  };
-
-  int readers;
-  Dir dir;
-  Dir new_dir;
-  // we need to have a list of evacuationkeys because of collision.
-  EvacuationKey       evac_frags;
-  CacheEvacuateDocVC *earliest_evacuator;
-  LINK(EvacuationBlock, link);
-};
-
-class StripeSM : public Continuation, public Stripe
+class StripeSM : public Continuation, public Stripe, public PreservationTable
 {
 public:
   CryptoHash hash_id;
@@ -115,11 +81,10 @@ public:
 
   Event *trigger = nullptr;
 
-  OpenDir               open_dir;
-  RamCache             *ram_cache = nullptr;
-  DLL<EvacuationBlock> *evacuate  = nullptr;
-  DLL<EvacuationBlock>  lookaside[LOOKASIDE_SIZE];
-  CacheEvacuateDocVC   *doc_evacuator = nullptr;
+  OpenDir              open_dir;
+  RamCache            *ram_cache = nullptr;
+  DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
+  CacheEvacuateDocVC  *doc_evacuator = nullptr;
 
   StripeInitInfo *init_info = nullptr;
 
@@ -197,31 +162,6 @@ public:
   int evacuateDocReadDone(int event, Event *e);
 
   int evac_range(off_t start, off_t end, int evac_phase);
-  /**
-   *
-   * The caller must hold the mutex.
-   */
-  void periodic_scan();
-  /**
-   *
-   * The caller must hold the mutex.
-   */
-  void scan_for_pinned_documents();
-  /**
-   *
-   * The caller must hold the mutex.
-   */
-  void evacuate_cleanup_blocks(int i);
-  /**
-   *
-   * The caller must hold the mutex.
-   */
-  void evacuate_cleanup();
-  /**
-   *
-   * The caller must hold the mutex.
-   */
-  EvacuationBlock *force_evacuate_head(Dir const *dir, int pinned);
 
   int within_hit_evacuate_window(Dir const *dir) const;
 
@@ -294,31 +234,12 @@ struct CacheVol {
 
 // Global Data
 
-extern StripeSM                      **gstripes;
-extern std::atomic<int>                gnstripes;
-extern ClassAllocator<OpenDirEntry>    openDirEntryAllocator;
-extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
-extern ClassAllocator<EvacuationKey>   evacuationKeyAllocator;
-extern unsigned short                 *vol_hash_table;
+extern StripeSM                   **gstripes;
+extern std::atomic<int>             gnstripes;
+extern ClassAllocator<OpenDirEntry> openDirEntryAllocator;
+extern unsigned short              *vol_hash_table;
 
 // inline Functions
-
-// inline Functions
-
-inline EvacuationBlock *
-evacuation_block_exists(Dir const *dir, StripeSM *stripe)
-{
-  auto bucket = dir_evac_bucket(dir);
-  if (stripe->evac_bucket_valid(bucket)) {
-    EvacuationBlock *b = stripe->evacuate[bucket].head;
-    for (; b; b = b->link.next) {
-      if (dir_offset(&b->dir) == dir_offset(dir)) {
-        return b;
-      }
-    }
-  }
-  return nullptr;
-}
 
 inline void
 StripeSM::cancel_trigger()
@@ -327,29 +248,6 @@ StripeSM::cancel_trigger()
     trigger->cancel_action();
     trigger = nullptr;
   }
-}
-
-inline EvacuationBlock *
-new_EvacuationBlock()
-{
-  EvacuationBlock *b      = THREAD_ALLOC(evacuationBlockAllocator, this_ethread());
-  b->init                 = 0;
-  b->readers              = 0;
-  b->earliest_evacuator   = nullptr;
-  b->evac_frags.link.next = nullptr;
-  return b;
-}
-
-inline void
-free_EvacuationBlock(EvacuationBlock *b)
-{
-  EvacuationKey *e = b->evac_frags.link.next;
-  while (e) {
-    EvacuationKey *n = e->link.next;
-    evacuationKeyAllocator.free(e);
-    e = n;
-  }
-  THREAD_FREE(b, evacuationBlockAllocator, this_ethread());
 }
 
 inline OpenDirEntry *

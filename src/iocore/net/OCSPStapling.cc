@@ -26,6 +26,7 @@
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
 
+#include "tscore/ink_config.h"
 #include "tscore/ink_memory.h"
 #include "tscore/Encoding.h"
 #include "tscore/ink_base64.h"
@@ -1267,7 +1268,7 @@ ocsp_update()
   SSLCertificateConfig::scoped_config certLookup;
 
   Dbg(dbg_ctl_ssl_ocsp, "updating OCSP data");
-#ifndef OPENSSL_IS_BORINGSSL
+#ifdef HAVE_NATIVE_DUAL_CERT_SUPPORT
   const SSLCertContextType ctxTypes[] = {SSLCertContextType::GENERIC};
 #else
   const SSLCertContextType ctxTypes[] = {SSLCertContextType::RSA, SSLCertContextType::EC};
@@ -1309,11 +1310,7 @@ ocsp_update()
 
 // RFC 6066 Section-8: Certificate Status Request
 int
-#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_IS_AWSLC)
-ssl_callback_ocsp_stapling(SSL *ssl)
-#else
 ssl_callback_ocsp_stapling(SSL *ssl, void *)
-#endif
 {
   // Assume SSL_get_SSL_CTX() is the same as reaching into the ssl structure
   // Using the official call, to avoid leaking internal openssl knowledge
@@ -1337,7 +1334,7 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
   }
 
   certinfo *cinf = nullptr;
-#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_IS_AWSLC)
+#if HAVE_NATIVE_DUAL_CERT_SUPPORT
   certinfo_map::iterator iter = map->find(cert);
   if (iter != map->end()) {
     cinf = iter->second;
