@@ -34,7 +34,7 @@
 
 #ifdef DEBUG
 DEF_DBG(cache_evac)
-#endif DEBUG
+#endif
 
 void
 PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
