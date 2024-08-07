@@ -32,7 +32,9 @@
 
 #include <cinttypes>
 
+#ifdef DEBUG
 DEF_DBG(cache_evac)
+#endif DEBUG
 
 void
 PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
