@@ -551,6 +551,7 @@ IOBufferReader::is_read_avail_more_than(int64_t size)
 TS_INLINE void
 IOBufferReader::consume(int64_t n)
 {
+  ink_assert(read_avail() >= n);
   start_offset += n;
   if (size_limit != INT64_MAX) {
     size_limit -= n;
