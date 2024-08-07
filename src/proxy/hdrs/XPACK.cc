@@ -496,22 +496,17 @@ XpackDynamicTable::_expand_storage_size(uint32_t new_storage_size)
 bool
 XpackDynamicTable::_make_space(uint64_t extra_space_needed)
 {
-  if (is_empty()) {
-    // If the table is empty, there's nothing to free.
-    return extra_space_needed == 0;
-  }
   uint32_t freed = 0;
-  uint32_t tail  = this->_calc_index(this->_entries_tail, 1);
+  uint32_t tail  = this->_entries_tail;
 
-  while (extra_space_needed > freed) {
-    if (this->_entries_head < tail) {
-      break;
-    }
+  // Check to see if we need more space and that we have entries to evict
+  while (extra_space_needed > freed && this->_entries_head != tail) {
+    tail = this->_calc_index(tail, 1); // Move to the next entry
+
     if (this->_entries[tail].ref_count) {
       break;
     }
     freed += this->_entries[tail].name_len + this->_entries[tail].value_len + ADDITIONAL_32_BYTES;
-    tail   = this->_calc_index(tail, 1);
   }
 
   // Evict
@@ -519,7 +514,8 @@ XpackDynamicTable::_make_space(uint64_t extra_space_needed)
     XPACKDbg("Evict entries: from %u to %u", this->_entries[this->_calc_index(this->_entries_tail, 1)].index,
              this->_entries[tail - 1].index);
     this->_available    += freed;
-    this->_entries_tail  = tail - 1;
+    this->_entries_tail  = tail;
+
     XPACKDbg("Available size: %u", this->_available);
   }
 
