@@ -25,6 +25,9 @@
 
 #include "P_NetAccept.h"
 #include "iocore/net/ConnectionTracker.h"
+
+#include "iocore/eventsystem/UnixSocket.h"
+
 #include "tscore/ink_platform.h"
 #include "tscore/InkErrno.h"
 
@@ -273,7 +276,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       msg.msg_namelen = ats_ip_size(vc->get_remote_addr());
       msg.msg_iov     = &tiovec[0];
       msg.msg_iovlen  = niov;
-      r               = SocketManager::recvmsg(vc->con.fd, &msg, 0);
+      r               = vc->con.sock.recvmsg(&msg, 0);
 
       Metrics::Counter::increment(net_rsb.calls_to_read);
 
@@ -703,7 +706,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 {
   switch (howto) {
   case IO_SHUTDOWN_READ:
-    SocketManager::shutdown((this)->con.fd, 0);
+    this->con.sock.shutdown(0);
     read.enabled = 0;
     read.vio.buffer.clear();
     read.vio.nbytes  = 0;
@@ -711,7 +714,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     f.shutdown      |= NetEvent::SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
-    SocketManager::shutdown((this)->con.fd, 1);
+    this->con.sock.shutdown(1);
     write.enabled = 0;
     write.vio.buffer.clear();
     write.vio.nbytes  = 0;
@@ -719,7 +722,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     f.shutdown       |= NetEvent::SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:
-    SocketManager::shutdown((this)->con.fd, 2);
+    this->con.sock.shutdown(2);
     read.enabled  = 0;
     write.enabled = 0;
     read.vio.buffer.clear();
@@ -935,7 +938,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
       Metrics::Counter::increment(net_rsb.fastopen_attempts);
       flags = MSG_FASTOPEN;
     }
-    r = SocketManager::sendmsg(con.fd, &msg, flags);
+    r = con.sock.sendmsg(&msg, flags);
     if (!this->con.is_connected && this->options.f_tcp_fastopen) {
       if (r < 0) {
         if (r == -EINPROGRESS || r == -EWOULDBLOCK) {
@@ -1161,7 +1164,7 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void * /* arg 
   ink_assert(this->nh != nullptr);
   SET_HANDLER(&UnixNetVConnection::mainEvent);
   this->nh->startCop(this);
-  ink_assert(this->con.fd != NO_FD);
+  ink_assert(this->con.sock.is_ok());
   return EVENT_DONE;
 }
 
@@ -1169,7 +1172,8 @@ int
 UnixNetVConnection::connectUp(EThread *t, int fd)
 {
   ink_assert(get_NetHandler(t)->mutex->thread_holding == this_ethread());
-  int res;
+  int        res;
+  UnixSocket sock{fd};
 
   thread = t;
   if (check_net_throttle(CONNECT)) {
@@ -1194,7 +1198,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
   // If this is getting called from the TS API, then we are wiring up a file descriptor
   // provided by the caller. In that case, we know that the socket is already connected.
-  if (fd == NO_FD) {
+  if (!sock.is_ok()) {
     // Due to multi-threads system, the fd returned from con.open() may exceed the limitation of check_net_throttle().
     res = con.open(options);
     if (res != 0) {
@@ -1207,8 +1211,8 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     // eventfd or a regular file fd.  That is ok, because sock_type
     // is only used when setting up the socket.
     safe_getsockopt(fd, SOL_SOCKET, SO_TYPE, reinterpret_cast<char *>(&con.sock_type), &len);
-    safe_nonblocking(fd);
-    con.fd           = fd;
+    sock.set_nonblocking();
+    con.sock         = sock;
     con.is_connected = true;
     con.is_bound     = true;
   }
@@ -1219,7 +1223,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     goto fail;
   }
 
-  if (fd == NO_FD) {
+  if (!sock.is_ok()) {
     res = con.connect(nullptr, options);
     if (res != 0) {
       // fast stopIO
@@ -1229,7 +1233,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
   // Did not fail, increment connection count
   Metrics::Gauge::increment(net_rsb.connections_currently_open);
-  ink_release_assert(con.fd != NO_FD);
+  ink_release_assert(con.sock.is_ok());
 
   // Setup a timeout callback handler.
   SET_HANDLER(&UnixNetVConnection::mainEvent);
@@ -1245,8 +1249,8 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 fail:
   lerrno = -res;
   action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)static_cast<intptr_t>(res));
-  if (fd != NO_FD) {
-    con.fd = NO_FD;
+  if (con.sock.is_ok()) {
+    con.sock = UnixSocket{NO_FD};
   }
   if (nullptr != nh) {
     nh->free_netevent(this);
@@ -1305,7 +1309,7 @@ UnixNetVConnection::free_thread(EThread *t)
   ink_release_assert(t == this_ethread());
 
   // close socket fd
-  if (con.fd != NO_FD) {
+  if (con.sock.is_ok()) {
     release_inbound_connection_tracking();
     Metrics::Gauge::decrement(net_rsb.connections_currently_open);
   }
@@ -1328,7 +1332,7 @@ UnixNetVConnection::free_thread(EThread *t)
 
   clear();
   SET_CONTINUATION_HANDLER(this, &UnixNetVConnection::startEvent);
-  ink_assert(con.fd == NO_FD);
+  ink_assert(!con.sock.is_ok());
   ink_assert(t == this_ethread());
 
   if (from_accept_thread) {
@@ -1526,13 +1530,13 @@ UnixNetVConnection::set_tcp_congestion_control([[maybe_unused]] int side)
   }
 
   if (!ccp.empty()) {
-    int rv = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<const void *>(ccp.data()), ccp.size());
+    int rv = setsockopt(con.sock.get_fd(), IPPROTO_TCP, TCP_CONGESTION, static_cast<const void *>(ccp.data()), ccp.size());
 
     if (rv < 0) {
-      Error("Unable to set TCP congestion control on socket %d to \"%s\", errno=%d (%s)", con.fd, ccp.data(), errno,
+      Error("Unable to set TCP congestion control on socket %d to \"%s\", errno=%d (%s)", con.sock.get_fd(), ccp.data(), errno,
             strerror(errno));
     } else {
-      Dbg(dbg_ctl_socket, "Setting TCP congestion control on socket [%d] to \"%s\" -> %d", con.fd, ccp.data(), rv);
+      Dbg(dbg_ctl_socket, "Setting TCP congestion control on socket [%d] to \"%s\" -> %d", con.sock.get_fd(), ccp.data(), rv);
     }
     return 0;
   }

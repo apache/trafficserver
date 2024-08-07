@@ -24,6 +24,7 @@
 
 #include "iocore/eventsystem/EventSystem.h"
 #include "../eventsystem/P_EventSystem.h" // TODO: less? just need ET_TASK
+#include "iocore/eventsystem/UnixSocket.h"
 
 #include "swoc/IntrusiveHashMap.h"
 
@@ -564,12 +565,12 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::strin
   RefCountCacheHeader tmpHeader = RefCountCacheHeader();
   int                 read_ret  = read(fd, (char *)&tmpHeader, sizeof(RefCountCacheHeader));
   if (read_ret != sizeof(RefCountCacheHeader)) {
-    SocketManager::close(fd);
+    UnixSocket{fd}.close();
     Warning("Error reading cache header from disk (expected %ld): %d", sizeof(RefCountCacheHeader), read_ret);
     return -1;
   }
   if (!cache.get_header().compatible(&tmpHeader)) {
-    SocketManager::close(fd);
+    UnixSocket{fd}.close();
     Warning("Incompatible cache at %s, not loading.", filepath.c_str());
     return -1; // TODO: specific code for incompatible
   }
@@ -593,6 +594,6 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::strin
     }
   };
 
-  SocketManager::close(fd);
+  UnixSocket{fd}.close();
   return 0;
 }

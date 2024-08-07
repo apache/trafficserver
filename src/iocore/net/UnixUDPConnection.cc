@@ -57,10 +57,9 @@ UnixUDPConnection::~UnixUDPConnection()
     callbackAction = nullptr;
   }
   Dbg(dbg_ctl_udpnet, "Destroying udp port = %d", getPortNum());
-  if (fd != NO_FD) {
-    SocketManager::close(fd);
+  if (sock.is_ok()) {
+    sock.close();
   }
-  fd = NO_FD;
 }
 
 // called with continuation lock taken out

@@ -110,8 +110,8 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   ink_assert(0 < opt.local_port && opt.local_port < 65536);
   accept_ip.network_order_port() = htons(opt.local_port);
 
-  na->accept_fn = net_accept; // All callers used this.
-  na->server.fd = fd;
+  na->accept_fn   = net_accept; // All callers used this.
+  na->server.sock = UnixSocket{fd};
   ats_ip_copy(&na->server.accept_addr, &accept_ip);
 
   if (opt.f_inbound_transparent) {

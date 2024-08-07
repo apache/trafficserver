@@ -26,7 +26,6 @@ add_library(
   Processor.cc
   ProtectedQueue.cc
   ProxyAllocator.cc
-  SocketManager.cc
   Tasks.cc
   Thread.cc
   UnixEThread.cc

@@ -34,6 +34,8 @@
 #include "iocore/net/quic/QUICConfig.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
 
+#include "iocore/eventsystem/UnixSocket.h"
+
 //
 // Global Data
 //
@@ -246,8 +248,8 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   ink_assert(0 < opt.local_port && opt.local_port < 65536);
   accept_ip.network_order_port() = htons(opt.local_port);
 
-  na->accept_fn = net_accept;
-  na->server.fd = fd;
+  na->accept_fn   = net_accept;
+  na->server.sock = UnixSocket{fd};
   ats_ip_copy(&na->server.accept_addr, &accept_ip);
 
   na->action_         = new NetAcceptAction();

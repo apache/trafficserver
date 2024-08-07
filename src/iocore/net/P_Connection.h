@@ -52,6 +52,8 @@
 #include "tscore/ink_platform.h"
 #include "iocore/net/NetProcessor.h"
 
+#include "iocore/eventsystem/UnixSocket.h"
+
 struct NetVCOptions;
 
 ///////////////////////////////////////////////////////////////////////
@@ -60,7 +62,7 @@ struct NetVCOptions;
 //
 ///////////////////////////////////////////////////////////////////////
 struct Connection {
-  SOCKET     fd;                   ///< Socket for connection.
+  UnixSocket sock{NO_FD};
   IpEndpoint addr;                 ///< Associated address.
   bool       is_bound     = false; ///< Flag for already bound to a local address.
   bool       is_connected = false; ///< Flag for already connected.

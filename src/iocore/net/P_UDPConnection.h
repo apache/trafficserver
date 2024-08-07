@@ -30,8 +30,11 @@
  ****************************************************************************/
 #pragma once
 
-#include "tscore/ink_atomic.h"
 #include "iocore/net/UDPNet.h"
+
+#include "iocore/eventsystem/UnixSocket.h"
+
+#include "tscore/ink_atomic.h"
 
 class UDPConnectionInternal : public UDPConnection
 {
@@ -42,7 +45,7 @@ public:
   Continuation *continuation = nullptr;
   int           refcount     = 0; // public for assertion
 
-  SOCKET     fd = -1;
+  UnixSocket sock{-1};
   IpEndpoint binding{};
   bool       binding_valid     = false;
   int        tobedestroyed     = 0;
@@ -59,7 +62,7 @@ UDPConnectionInternal::~UDPConnectionInternal()
 TS_INLINE SOCKET
 UDPConnection::getFd()
 {
-  return static_cast<UDPConnectionInternal *>(this)->fd;
+  return static_cast<UDPConnectionInternal *>(this)->sock.get_fd();
 }
 
 TS_INLINE void

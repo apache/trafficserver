@@ -35,7 +35,7 @@ UDPEventIO::start(EventLoop l, UnixUDPConnection *uc, UDPNetHandler *uh, int eve
 {
   _uc = uc;
   _uh = uh;
-  return start_common(l, uc->fd, events);
+  return start_common(l, uc->getFd(), events);
 }
 
 void

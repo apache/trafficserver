@@ -41,6 +41,7 @@
 #endif
 #include "P_Net.h"
 #include "P_UDPNet.h"
+#include "iocore/eventsystem/UnixSocket.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_sock.h"
 #include <netinet/udp.h>
@@ -430,7 +431,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
     msg.msg_controllen      = cmsg_size;
 
     // receive data by recvmsg
-    r = SocketManager::recvmsg(uc->getFd(), &msg, 0);
+    r = uc->sock.recvmsg(&msg, 0);
     if (r <= 0) {
       // error
       break;
@@ -563,7 +564,7 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
     mmsg[msg_num].msg_hdr.msg_controllen = cmsg_size;
   }
 
-  const int return_val = SocketManager::recvmmsg(uc->getFd(), mmsg, MAX_RECEIVE_MSG_PER_CALL, MSG_WAITFORONE, nullptr);
+  const int return_val = uc->sock.recvmmsg(mmsg, MAX_RECEIVE_MSG_PER_CALL, MSG_WAITFORONE, nullptr);
 
   if (return_val <= 0) {
     Dbg(dbg_ctl_udp_read, "Done. recvmmsg() ret is %d, errno %s", return_val, strerror(errno));
@@ -865,8 +866,9 @@ UDPReadContinuation::readPollEvent(int event_, Event *e)
 
   c = completionUtil::getContinuation(event);
   // do read
-  socklen_t tmp_fromlen = *fromaddrlen;
-  int       rlen        = SocketManager::recvfrom(fd, readbuf->end(), readlen, 0, ats_ip_sa_cast(fromaddr), &tmp_fromlen);
+  socklen_t  tmp_fromlen = *fromaddrlen;
+  UnixSocket sock{fd};
+  int        rlen = sock.recvfrom(readbuf->end(), readlen, 0, ats_ip_sa_cast(fromaddr), &tmp_fromlen);
 
   completionUtil::setThread(event, e->ethread);
   // call back user with their event
@@ -934,11 +936,12 @@ UDPNetProcessor::recvfrom_re(Continuation *cont, void *token, int fd, struct soc
 
   completionUtil::setContinuation(event, cont);
   completionUtil::setHandle(event, token);
-  actual = SocketManager::recvfrom(fd, buf->end(), len, 0, fromaddr, fromaddrlen);
+  UnixSocket sock{fd};
+  actual = sock.recvfrom(buf->end(), len, 0, fromaddr, fromaddrlen);
 
   if (actual > 0) {
     completionUtil::setThread(event, this_ethread());
-    completionUtil::setInfo(event, fd, make_ptr(buf), actual, errno);
+    completionUtil::setInfo(event, sock.get_fd(), make_ptr(buf), actual, errno);
     buf->fill(actual);
     cont->handleEvent(NET_EVENT_DATAGRAM_READ_COMPLETE, event);
     completionUtil::destroy(event);
@@ -946,14 +949,14 @@ UDPNetProcessor::recvfrom_re(Continuation *cont, void *token, int fd, struct soc
   } else if (actual == 0 || actual == -EAGAIN) {
     UDPReadContinuation *c = udpReadContAllocator.alloc();
     c->init_token(event);
-    c->init_read(fd, buf, len, fromaddr, fromaddrlen);
+    c->init_read(sock.get_fd(), buf, len, fromaddr, fromaddrlen);
     if (timeout) {
       c->set_timer(timeout);
     }
     return event;
   } else {
     completionUtil::setThread(event, this_ethread());
-    completionUtil::setInfo(event, fd, make_ptr(buf), actual, errno);
+    completionUtil::setInfo(event, sock.get_fd(), make_ptr(buf), actual, errno);
     cont->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
     completionUtil::destroy(event);
     return ACTION_IO_ERROR;
@@ -977,16 +980,17 @@ UDPNetProcessor::sendmsg_re(Continuation *cont, void *token, int fd, struct msgh
   completionUtil::setContinuation(event, cont);
   completionUtil::setHandle(event, token);
 
-  actual = SocketManager::sendmsg(fd, msg, 0);
+  UnixSocket sock{fd};
+  actual = sock.sendmsg(msg, 0);
   if (actual >= 0) {
     completionUtil::setThread(event, this_ethread());
-    completionUtil::setInfo(event, fd, msg, actual, errno);
+    completionUtil::setInfo(event, sock.get_fd(), msg, actual, errno);
     cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_COMPLETE, event);
     completionUtil::destroy(event);
     return ACTION_RESULT_DONE;
   } else {
     completionUtil::setThread(event, this_ethread());
-    completionUtil::setInfo(event, fd, msg, actual, errno);
+    completionUtil::setInfo(event, sock.get_fd(), msg, actual, errno);
     cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, event);
     completionUtil::destroy(event);
     return ACTION_IO_ERROR;
@@ -1010,7 +1014,8 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
 {
   (void)token;
   ink_assert(buf->read_avail() >= len);
-  int nbytes_sent = SocketManager::sendto(fd, buf->start(), len, 0, toaddr, toaddrlen);
+  UnixSocket sock{fd};
+  int        nbytes_sent = sock.sendto(buf->start(), len, 0, toaddr, toaddrlen);
 
   if (nbytes_sent >= 0) {
     ink_assert(nbytes_sent == len);
@@ -1026,9 +1031,8 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
 bool
 UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions const &opt)
 {
-  int        res = 0, fd = -1;
   IpEndpoint local_addr;
-  int        local_addr_len = sizeof(local_addr.sa);
+  socklen_t  local_addr_len = sizeof(local_addr.sa);
 
   // Need to do address calculations first, so we can determine the
   // address family for socket creation.
@@ -1051,22 +1055,22 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   }
 
   *resfd = -1;
-  if ((res = SocketManager::socket(remote_addr->sa_family, SOCK_DGRAM, 0)) < 0) {
+  UnixSocket sock{remote_addr->sa_family, SOCK_DGRAM, 0};
+  if (!sock.is_ok()) {
     goto HardError;
   }
 
-  fd = res;
-  if (safe_fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+  if (safe_fcntl(sock.get_fd(), F_SETFL, O_NONBLOCK) < 0) {
     goto HardError;
   }
 
   if (opt.socket_recv_bufsize > 0) {
-    if (unlikely(SocketManager::set_rcvbuf_size(fd, opt.socket_recv_bufsize))) {
+    if (unlikely(sock.set_rcvbuf_size(opt.socket_recv_bufsize))) {
       Dbg(dbg_ctl_udpnet, "set_dnsbuf_size(%d) failed", opt.socket_recv_bufsize);
     }
   }
   if (opt.socket_send_bufsize > 0) {
-    if (unlikely(SocketManager::set_sndbuf_size(fd, opt.socket_send_bufsize))) {
+    if (unlikely(sock.set_sndbuf_size(opt.socket_send_bufsize))) {
       Dbg(dbg_ctl_udpnet, "set_dnsbuf_size(%d) failed", opt.socket_send_bufsize);
     }
   }
@@ -1074,12 +1078,12 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   if (opt.ip_family == AF_INET) {
     bool succeeded = false;
 #ifdef IP_PKTINFO
-    if (setsockopt_on(fd, IPPROTO_IP, IP_PKTINFO) == 0) {
+    if (sock.enable_option(IPPROTO_IP, IP_PKTINFO) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IP_RECVDSTADDR
-    if (setsockopt_on(fd, IPPROTO_IP, IP_RECVDSTADDR) == 0) {
+    if (sock.enable_option(IPPROTO_IP, IP_RECVDSTADDR) == 0) {
       succeeded = true;
     }
 #endif
@@ -1090,12 +1094,12 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   } else if (opt.ip_family == AF_INET6) {
     bool succeeded = false;
 #ifdef IPV6_PKTINFO
-    if (setsockopt_on(fd, IPPROTO_IPV6, IPV6_PKTINFO) == 0) {
+    if (sock.enable_option(IPPROTO_IPV6, IPV6_PKTINFO) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IPV6_RECVPKTINFO
-    if (setsockopt_on(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO) == 0) {
+    if (sock.enable_option(IPPROTO_IPV6, IPV6_RECVPKTINFO) == 0) {
       succeeded = true;
     }
 #endif
@@ -1106,35 +1110,35 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   }
 
   if (local_addr.network_order_port() || !is_any_address) {
-    if (-1 == SocketManager::ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
+    if (-1 == sock.bind(&local_addr.sa, ats_ip_size(&local_addr.sa))) {
       char buff[INET6_ADDRPORTSTRLEN];
       Dbg(dbg_ctl_udpnet, "ink bind failed on %s", ats_ip_nptop(local_addr, buff, sizeof(buff)));
       goto SoftError;
     }
 
-    if (safe_getsockname(fd, &local_addr.sa, &local_addr_len) < 0) {
+    if (sock.getsockname(&local_addr.sa, &local_addr_len) < 0) {
       Dbg(dbg_ctl_udpnet, "CreateUdpsocket: getsockname didn't work");
       goto HardError;
     }
   }
 
-  *resfd  = fd;
+  *resfd  = sock.get_fd();
   *status = nullptr;
   Dbg(dbg_ctl_udpnet, "creating a udp socket port = %d, %d---success", ats_ip_port_host_order(remote_addr),
       ats_ip_port_host_order(local_addr));
   return true;
 SoftError:
   Dbg(dbg_ctl_udpnet, "creating a udp socket port = %d---soft failure", ats_ip_port_host_order(local_addr));
-  if (fd != -1) {
-    SocketManager::close(fd);
+  if (sock.is_ok()) {
+    sock.close();
   }
   *resfd  = -1;
   *status = nullptr;
   return false;
 HardError:
   Dbg(dbg_ctl_udpnet, "creating a udp socket port = %d---hard failure", ats_ip_port_host_order(local_addr));
-  if (fd != -1) {
-    SocketManager::close(fd);
+  if (sock.is_ok()) {
+    sock.close();
   }
   *resfd  = -1;
   *status = ACTION_IO_ERROR;
@@ -1144,35 +1148,35 @@ HardError:
 Action *
 UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int send_bufsize, int recv_bufsize)
 {
-  int                res = 0;
-  UnixUDPConnection *n   = nullptr;
+  UnixUDPConnection *n = nullptr;
   IpEndpoint         myaddr;
-  int                myaddr_len = sizeof(myaddr);
+  socklen_t          myaddr_len = sizeof(myaddr);
   PollCont          *pc         = nullptr;
   PollDescriptor    *pd         = nullptr;
   bool               need_bind  = true;
+  UnixSocket         sock{fd};
 
-  if (fd == -1) {
-    if ((res = SocketManager::socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
+  if (!sock.is_ok()) {
+    sock = UnixSocket{addr->sa_family, SOCK_DGRAM, 0};
+    if (!sock.is_ok()) {
       goto Lerror;
     }
-    fd = res;
   } else {
     need_bind = false;
   }
-  if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+  if (fcntl(sock.get_fd(), F_SETFL, O_NONBLOCK) < 0) {
     goto Lerror;
   }
 
   if (addr->sa_family == AF_INET) {
     bool succeeded = false;
 #ifdef IP_PKTINFO
-    if (setsockopt_on(fd, IPPROTO_IP, IP_PKTINFO) == 0) {
+    if (sock.enable_option(IPPROTO_IP, IP_PKTINFO) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IP_RECVDSTADDR
-    if (setsockopt_on(fd, IPPROTO_IP, IP_RECVDSTADDR) == 0) {
+    if (sock.enable_option(IPPROTO_IP, IP_RECVDSTADDR) == 0) {
       succeeded = true;
     }
 #endif
@@ -1182,19 +1186,19 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
     }
 #ifdef IP_MTU_DISCOVER
     int probe = IP_PMTUDISC_PROBE; // Set DF but ignore Path MTU
-    if (safe_setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &probe, sizeof(probe)) == -1) {
+    if (safe_setsockopt(sock.get_fd(), IPPROTO_IP, IP_MTU_DISCOVER, &probe, sizeof(probe)) == -1) {
       Dbg(dbg_ctl_udpnet, "setsockeopt for IP_MTU_DISCOVER failed");
     }
 #endif
   } else if (addr->sa_family == AF_INET6) {
     bool succeeded = false;
 #ifdef IPV6_PKTINFO
-    if (setsockopt_on(fd, IPPROTO_IPV6, IPV6_PKTINFO) == 0) {
+    if (sock.enable_option(IPPROTO_IPV6, IPV6_PKTINFO) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IPV6_RECVPKTINFO
-    if (setsockopt_on(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO) == 0) {
+    if (sock.enable_option(IPPROTO_IPV6, IPV6_RECVPKTINFO) == 0) {
       succeeded = true;
     }
 #endif
@@ -1204,7 +1208,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
     }
 #ifdef IPV6_MTU_DISCOVER
     int probe = IPV6_PMTUDISC_PROBE; // Set DF but ignore Path MTU
-    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &probe, sizeof(probe)) == -1) {
+    if (safe_setsockopt(sock.get_fd(), IPPROTO_IPV6, IPV6_MTU_DISCOVER, &probe, sizeof(probe)) == -1) {
       Dbg(dbg_ctl_udpnet, "setsockeopt for IPV6_MTU_DISCOVER failed");
     }
 #endif
@@ -1213,7 +1217,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
 #ifdef SOL_UDP
   if (G_udp_config.enable_gro) {
     int gro = 1;
-    if (safe_setsockopt(fd, IPPROTO_UDP, UDP_GRO, (char *)&gro, sizeof(gro)) == -1) {
+    if (safe_setsockopt(sock.get_fd(), IPPROTO_UDP, UDP_GRO, (char *)&gro, sizeof(gro)) == -1) {
       Dbg(dbg_ctl_udpnet, "setsockopt UDP_GRO. errno=%d", errno);
     }
   }
@@ -1224,55 +1228,55 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
 
   sk_txtime.clockid = CLOCK_MONOTONIC;
   sk_txtime.flags   = 0;
-  if (setsockopt(fd, SOL_SOCKET, SO_TXTIME, &sk_txtime, sizeof(sk_txtime)) == -1) {
+  if (setsockopt(sock.get_fd(), SOL_SOCKET, SO_TXTIME, &sk_txtime, sizeof(sk_txtime)) == -1) {
     Dbg(dbg_ctl_udpnet, "Failed to setsockopt SO_TXTIME. errno=%d", errno);
   }
 #endif
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
   if (ats_is_ip_multicast(addr)) {
-    if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEADDR) < 0) {
+    if (sock.enable_option(SOL_SOCKET, SO_REUSEADDR) < 0) {
       goto Lerror;
     }
   }
 
-  if (need_bind && ats_is_ip6(addr) && setsockopt_on(fd, IPPROTO_IPV6, IPV6_V6ONLY) < 0) {
+  if (need_bind && ats_is_ip6(addr) && sock.enable_option(IPPROTO_IPV6, IPV6_V6ONLY) < 0) {
     goto Lerror;
   }
 
-  if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT) < 0) {
+  if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT) < 0) {
     Dbg(dbg_ctl_udpnet, "setsockopt for SO_REUSEPORT failed");
     goto Lerror;
   }
 
 #ifdef SO_REUSEPORT_LB
-  if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
+  if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
     Dbg(dbg_ctl_udpnet, "setsockopt for SO_REUSEPORT_LB failed");
     goto Lerror;
   }
 #endif
 
-  if (need_bind && (SocketManager::ink_bind(fd, addr, ats_ip_size(addr)) < 0)) {
+  if (need_bind && (sock.bind(addr, ats_ip_size(addr)) < 0)) {
     Dbg(dbg_ctl_udpnet, "ink_bind failed");
     goto Lerror;
   }
 
   // check this for GRO
   if (recv_bufsize) {
-    if (unlikely(SocketManager::set_rcvbuf_size(fd, recv_bufsize))) {
+    if (unlikely(sock.set_rcvbuf_size(recv_bufsize))) {
       Dbg(dbg_ctl_udpnet, "set_dnsbuf_size(%d) failed", recv_bufsize);
     }
   }
   if (send_bufsize) {
-    if (unlikely(SocketManager::set_sndbuf_size(fd, send_bufsize))) {
+    if (unlikely(sock.set_sndbuf_size(send_bufsize))) {
       Dbg(dbg_ctl_udpnet, "set_dnsbuf_size(%d) failed", send_bufsize);
     }
   }
-  if (safe_getsockname(fd, &myaddr.sa, &myaddr_len) < 0) {
+  if (sock.getsockname(&myaddr.sa, &myaddr_len) < 0) {
     goto Lerror;
   }
-  n = new UnixUDPConnection(fd);
+  n = new UnixUDPConnection(sock.get_fd());
 
-  Dbg(dbg_ctl_udpnet, "UDPNetProcessor::UDPBind: %p fd=%d", n, fd);
+  Dbg(dbg_ctl_udpnet, "UDPNetProcessor::UDPBind: %p fd=%d", n, sock.get_fd());
   n->setBinding(&myaddr.sa);
   n->bindToThread(cont, cont->getThreadAffinity());
 
@@ -1284,8 +1288,8 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   cont->handleEvent(NET_EVENT_DATAGRAM_OPEN, n);
   return ACTION_RESULT_DONE;
 Lerror:
-  if (fd != NO_FD) {
-    SocketManager::close(fd);
+  if (sock.is_ok()) {
+    sock.close();
   }
   Dbg(dbg_ctl_udpnet, "Error: %s (%d)", strerror(errno), errno);
 

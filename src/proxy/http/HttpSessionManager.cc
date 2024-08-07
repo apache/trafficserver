@@ -312,7 +312,7 @@ ServerSessionPool::eventHandler(int event, void *data)
       char peer_ip[INET6_ADDRPORTSTRLEN];
       ats_ip_nptop(unix_net_vc->get_remote_addr(), peer_ip, sizeof(peer_ip));
 
-      Warning("Connection leak from http keep-alive system fd=%d closed=%d peer_ip_port=%s", unix_net_vc->con.fd,
+      Warning("Connection leak from http keep-alive system fd=%d closed=%d peer_ip_port=%s", unix_net_vc->get_fd(),
               unix_net_vc->closed, peer_ip);
     }
     ink_assert(0);

@@ -167,7 +167,7 @@ public:
   virtual int
   get_fd() override
   {
-    return this->con.fd;
+    return this->con.sock.get_fd();
   }
 
   virtual EThread *
@@ -298,7 +298,7 @@ UnixNetVConnection::set_local_addr()
   // This call will fail if fd is closed already. That is ok, because the
   // `local_addr` is checked within get_local_addr() and the `got_local_addr`
   // is set only with a valid `local_addr`.
-  ATS_UNUSED_RETURN(safe_getsockname(con.fd, &local_addr.sa, &local_sa_size));
+  ATS_UNUSED_RETURN(safe_getsockname(get_fd(), &local_addr.sa, &local_sa_size));
 }
 
 // Update the internal VC state variable for MPTCP
@@ -310,7 +310,7 @@ UnixNetVConnection::set_mptcp_state()
   int               minfo_len = sizeof(minfo);
 
   Dbg(_dbg_ctl_socket_mptcp, "MPTCP_INFO and struct mptcp_info defined");
-  if (0 == safe_getsockopt(con.fd, SOL_MPTCP, MPTCP_INFO, &minfo, &minfo_len)) {
+  if (0 == safe_getsockopt(get_fd(), SOL_MPTCP, MPTCP_INFO, &minfo, &minfo_len)) {
     if (minfo_len > 0) {
       Dbg(_dbg_ctl_socket_mptcp, "MPTCP socket state (remote key received): %d",
           (minfo.mptcpi_flags & MPTCP_INFO_FLAG_REMOTE_KEY_RECEIVED));
@@ -319,7 +319,7 @@ UnixNetVConnection::set_mptcp_state()
     }
   } else {
     mptcp_state = 0;
-    Dbg(_dbg_ctl_socket_mptcp, "MPTCP failed getsockopt(%d, MPTCP_INFO): %s", con.fd, strerror(errno));
+    Dbg(_dbg_ctl_socket_mptcp, "MPTCP failed getsockopt(%d, MPTCP_INFO): %s", get_fd(), strerror(errno));
   }
 #endif
 }
@@ -368,7 +368,7 @@ inline UnixNetVConnection::~UnixNetVConnection()
 inline SOCKET
 UnixNetVConnection::get_socket()
 {
-  return con.fd;
+  return get_fd();
 }
 
 inline void

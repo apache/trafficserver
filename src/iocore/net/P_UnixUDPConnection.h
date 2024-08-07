@@ -62,14 +62,14 @@ private:
 TS_INLINE
 UnixUDPConnection::UnixUDPConnection(int the_fd)
 {
-  fd = the_fd;
+  sock = UnixSocket{the_fd};
   SET_HANDLER(&UnixUDPConnection::callbackHandler);
 }
 
 TS_INLINE void
 UnixUDPConnection::init(int the_fd)
 {
-  fd              = the_fd;
+  sock            = UnixSocket{the_fd};
   onCallbackQueue = 0;
   callbackAction  = nullptr;
   ethread         = nullptr;
