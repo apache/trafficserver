@@ -23,10 +23,7 @@
 
 #include "P_Cache.h"
 
-namespace
-{
-DbgCtl dbg_ctl_cache_scan_truss{"cache_scan_truss"};
-} // end anonymous namespace
+DEF_DBG(cache_scan_truss);
 
 #define SCAN_BUF_SIZE              RECOVERY_SIZE
 #define SCAN_WRITER_LOCK_MAX_RETRY 5
@@ -34,7 +31,7 @@ DbgCtl dbg_ctl_cache_scan_truss{"cache_scan_truss"};
 Action *
 Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_second)
 {
-  Dbg(dbg_ctl_cache_scan_truss, "inside scan");
+  Dbg(get_dbg_cache_scan_truss(), "inside scan");
   if (!CacheProcessor::IsCacheReady(CACHE_FRAG_TYPE_HTTP)) {
     cont->handleEvent(CACHE_EVENT_SCAN_FAILED, nullptr);
     return ACTION_RESULT_DONE;

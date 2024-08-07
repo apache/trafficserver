@@ -34,26 +34,21 @@
 #define DIR_LOOP_THRESHOLD 1000
 #endif
 
-namespace
-{
-
-DbgCtl dbg_ctl_cache_dir_sync{"dir_sync"};
-DbgCtl dbg_ctl_cache_check_dir{"cache_check_dir"};
-DbgCtl dbg_ctl_dir_clean{"dir_clean"};
+DEF_DBG(dir_sync)
+DEF_DBG(cache_check_dir)
+DEF_DBG(dir_clean)
 
 #ifdef DEBUG
 
-DbgCtl dbg_ctl_cache_stats{"cache_stats"};
-DbgCtl dbg_ctl_dir_probe_hit{"dir_probe_hit"};
-DbgCtl dbg_ctl_dir_probe_tag{"dir_probe_tag"};
-DbgCtl dbg_ctl_dir_probe_miss{"dir_probe_miss"};
-DbgCtl dbg_ctl_dir_insert{"dir_insert"};
-DbgCtl dbg_ctl_dir_overwrite{"dir_overwrite"};
-DbgCtl dbg_ctl_dir_lookaside{"dir_lookaside"};
+DEF_DBG(cache_stats)
+DEF_DBG(dir_probe_hit)
+DEF_DBG(dir_probe_tag)
+DEF_DBG(dir_probe_miss)
+DEF_DBG(dir_insert)
+DEF_DBG(dir_overwrite)
+DEF_DBG(dir_lookaside)
 
 #endif
-
-} // end anonymous namespace
 
 // Globals
 
@@ -283,7 +278,7 @@ int
 check_dir(Stripe *stripe)
 {
   int i, s;
-  Dbg(dbg_ctl_cache_check_dir, "inside check dir");
+  Dbg(get_dbg_cache_check_dir(), "inside check dir");
   for (s = 0; s < stripe->segments; s++) {
     Dir *seg = stripe->dir_segment(s);
     for (i = 0; i < stripe->buckets; i++) {
@@ -365,9 +360,9 @@ dir_clean_bucket(Dir *b, int s, Stripe *stripe)
     }
 #endif
     if (!dir_valid(stripe, e) || !dir_offset(e)) {
-      if (dbg_ctl_dir_clean.on()) {
-        Dbg(dbg_ctl_dir_clean, "cleaning Stripe:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", stripe->hash_text.get(),
-            e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, stripe));
+      if (get_dbg_dir_clean().on()) {
+        Dbg(get_dbg_dir_clean(), "cleaning Stripe:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d",
+            stripe->hash_text.get(), e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, stripe));
       }
       if (dir_offset(e)) {
         Metrics::Gauge::decrement(cache_rsb.direntries_used);
@@ -569,14 +564,14 @@ Lagain:
             // for the same document and so the collision stat
             // may not accurately reflect the number of documents
             // having the same first_key
-            DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
+            DDbg(get_dbg_cache_stats(), "Incrementing dir collisions");
             Metrics::Counter::increment(cache_rsb.directory_collision);
             Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_collision);
           }
           goto Lcont;
         }
         if (dir_valid(stripe, e)) {
-          DDbg(dbg_ctl_dir_probe_hit, "found %X %X vol %d bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1),
+          DDbg(get_dbg_dir_probe_hit(), "found %X %X vol %d bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1),
                stripe->fd, b, dir_offset(e));
           dir_assign(result, e);
           *last_collision = e;
@@ -589,7 +584,7 @@ Lagain:
           continue;
         }
       } else {
-        DDbg(dbg_ctl_dir_probe_tag, "tag mismatch %p %X vs expected %X", e, dir_tag(e), key->slice32(3));
+        DDbg(get_dbg_dir_probe_tag(), "tag mismatch %p %X vs expected %X", e, dir_tag(e), key->slice32(3));
       }
     Lcont:
       p = e;
@@ -597,13 +592,13 @@ Lagain:
     } while (e);
   }
   if (collision) { // last collision no longer in the list, retry
-    DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
+    DDbg(get_dbg_cache_stats(), "Incrementing dir collisions");
     Metrics::Counter::increment(cache_rsb.directory_collision);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_collision);
     collision = nullptr;
     goto Lagain;
   }
-  DDbg(dbg_ctl_dir_probe_miss, "missed %X %X on vol %d bucket %d at %p", key->slice32(0), key->slice32(1), stripe->fd, b, seg);
+  DDbg(get_dbg_dir_probe_miss(), "missed %X %X on vol %d bucket %d at %p", key->slice32(0), key->slice32(1), stripe->fd, b, seg);
   CHECK_DIR(d);
   return 0;
 }
@@ -666,8 +661,8 @@ Lfill:
   dir_assign_data(e, to_part);
   dir_set_tag(e, key->slice32(2));
   ink_assert(stripe->vol_offset(e) < (stripe->skip + stripe->len));
-  DDbg(dbg_ctl_dir_insert, "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), stripe->fd,
-       bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
+  DDbg(get_dbg_dir_insert(), "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0),
+       stripe->fd, bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   stripe->header->dirty = 1;
   Metrics::Gauge::increment(cache_rsb.direntries_used);
@@ -756,7 +751,7 @@ Lfill:
   dir_assign_data(e, dir);
   dir_set_tag(e, t);
   ink_assert(stripe->vol_offset(e) < stripe->skip + stripe->len);
-  DDbg(dbg_ctl_dir_overwrite, "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0),
+  DDbg(get_dbg_dir_overwrite(), "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0),
        stripe->fd, bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   stripe->header->dirty = 1;
@@ -813,7 +808,7 @@ dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, Evacuati
     if (b->evac_frags.key == *key) {
       if (dir_valid(stripe, &b->new_dir)) {
         *result = b->new_dir;
-        DDbg(dbg_ctl_dir_lookaside, "probe %X success", key->slice32(0));
+        DDbg(get_dbg_dir_lookaside(), "probe %X success", key->slice32(0));
         if (eblock) {
           *eblock = b;
         }
@@ -822,7 +817,7 @@ dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, Evacuati
     }
     b = b->link.next;
   }
-  DDbg(dbg_ctl_dir_lookaside, "probe %X failed", key->slice32(0));
+  DDbg(get_dbg_dir_lookaside(), "probe %X failed", key->slice32(0));
   return 0;
 }
 
@@ -830,7 +825,7 @@ int
 dir_lookaside_insert(EvacuationBlock *eblock, StripeSM *stripe, Dir *to)
 {
   CacheKey *key = &eblock->evac_frags.earliest_key;
-  DDbg(dbg_ctl_dir_lookaside, "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int)dir_offset(to),
+  DDbg(get_dbg_dir_lookaside(), "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int)dir_offset(to),
        (int)dir_phase(to));
   ink_assert(stripe->mutex->thread_holding == this_ethread());
   int              i         = key->slice32(3) % LOOKASIDE_SIZE;
@@ -854,7 +849,7 @@ dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe)
   while (b) {
     if (b->evac_frags.key == *key) {
       int res = dir_overwrite(key, stripe, &b->new_dir, &b->dir, false);
-      DDbg(dbg_ctl_dir_lookaside, "fixup %X %X offset %" PRId64 " phase %d %d", key->slice32(0), key->slice32(1),
+      DDbg(get_dbg_dir_lookaside(), "fixup %X %X offset %" PRId64 " phase %d %d", key->slice32(0), key->slice32(1),
            dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
       int64_t o = dir_offset(&b->dir), n = dir_offset(&b->new_dir);
       stripe->ram_cache->fixup(key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
@@ -864,7 +859,7 @@ dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe)
     }
     b = b->link.next;
   }
-  DDbg(dbg_ctl_dir_lookaside, "fixup %X %X failed", key->slice32(0), key->slice32(1));
+  DDbg(get_dbg_dir_lookaside(), "fixup %X %X failed", key->slice32(0), key->slice32(1));
   return 0;
 }
 
@@ -877,7 +872,7 @@ dir_lookaside_cleanup(StripeSM *stripe)
     while (b) {
       if (!dir_valid(stripe, &b->new_dir)) {
         EvacuationBlock *nb = b->link.next;
-        DDbg(dbg_ctl_dir_lookaside, "cleanup %X %X cleaned up", b->evac_frags.earliest_key.slice32(0),
+        DDbg(get_dbg_dir_lookaside(), "cleanup %X %X cleaned up", b->evac_frags.earliest_key.slice32(0),
              b->evac_frags.earliest_key.slice32(1));
         i.remove(b);
         free_CacheEvacuateDocVC(b->earliest_evacuator);
@@ -899,7 +894,7 @@ dir_lookaside_remove(const CacheKey *key, StripeSM *stripe)
   EvacuationBlock *b = stripe->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
-      DDbg(dbg_ctl_dir_lookaside, "remove %X %X offset %" PRId64 " phase %d", key->slice32(0), key->slice32(1),
+      DDbg(get_dbg_dir_lookaside(), "remove %X %X offset %" PRId64 " phase %d", key->slice32(0), key->slice32(1),
            dir_offset(&b->new_dir), dir_phase(&b->new_dir));
       stripe->lookaside[i].remove(b);
       free_EvacuationBlock(b);
@@ -907,7 +902,7 @@ dir_lookaside_remove(const CacheKey *key, StripeSM *stripe)
     }
     b = b->link.next;
   }
-  DDbg(dbg_ctl_dir_lookaside, "remove %X %X failed", key->slice32(0), key->slice32(1));
+  DDbg(get_dbg_dir_lookaside(), "remove %X %X failed", key->slice32(0), key->slice32(1));
   return;
 }
 
@@ -970,12 +965,12 @@ dir_entries_used(Stripe *stripe)
 void
 sync_cache_dir_on_shutdown()
 {
-  Dbg(dbg_ctl_cache_dir_sync, "sync started");
+  Dbg(get_dbg_dir_sync(), "sync started");
   EThread *t = (EThread *)0xdeadbeef;
   for (int i = 0; i < gnstripes; i++) {
     gstripes[i]->shutdown(t);
   }
-  Dbg(dbg_ctl_cache_dir_sync, "sync done");
+  Dbg(get_dbg_dir_sync(), "sync done");
 }
 
 int
@@ -999,7 +994,7 @@ Lrestart:
       buf      = nullptr;
       buf_huge = false;
     }
-    Dbg(dbg_ctl_cache_dir_sync, "sync done");
+    Dbg(get_dbg_dir_sync(), "sync done");
     if (event == EVENT_INTERVAL) {
       trigger = e->ethread->schedule_in(this, HRTIME_SECONDS(cache_config_dir_sync_frequency));
     } else {
@@ -1044,25 +1039,25 @@ Lrestart:
     size_t dirlen    = stripe->dirlen();
     if (!writepos) {
       // start
-      Dbg(dbg_ctl_cache_dir_sync, "sync started");
+      Dbg(get_dbg_dir_sync(), "sync started");
       /* Don't sync the directory to disk if its not dirty. Syncing the
          clean directory to disk is also the cause of INKqa07151. Increasing
          the serial number causes the cache to recover more data than necessary.
          The dirty bit it set in dir_insert, dir_overwrite and dir_delete_entry
        */
       if (!stripe->header->dirty) {
-        Dbg(dbg_ctl_cache_dir_sync, "Dir %s not dirty", stripe->hash_text.get());
+        Dbg(get_dbg_dir_sync(), "Dir %s not dirty", stripe->hash_text.get());
         goto Ldone;
       }
       if (stripe->is_io_in_progress() || stripe->get_agg_buf_pos()) {
-        Dbg(dbg_ctl_cache_dir_sync, "Dir %s: waiting for agg buffer", stripe->hash_text.get());
+        Dbg(get_dbg_dir_sync(), "Dir %s: waiting for agg buffer", stripe->hash_text.get());
         stripe->dir_sync_waiting = true;
         if (!stripe->is_io_in_progress()) {
           stripe->aggWrite(EVENT_IMMEDIATE, nullptr);
         }
         return EVENT_CONT;
       }
-      Dbg(dbg_ctl_cache_dir_sync, "pos: %" PRIu64 " Dir %s dirty...syncing to disk", stripe->header->write_pos,
+      Dbg(get_dbg_dir_sync(), "pos: %" PRIu64 " Dir %s dirty...syncing to disk", stripe->header->write_pos,
           stripe->hash_text.get());
       stripe->header->dirty = 0;
       if (buflen < dirlen) {

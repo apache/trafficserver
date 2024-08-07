@@ -24,21 +24,14 @@
 #include "P_Cache.h"
 #include "P_CacheDoc.h"
 
-namespace
-{
-
-DbgCtl dbg_ctl_cache_update{"cache_update"};
-DbgCtl dbg_ctl_cache_update_alt{"cache_update_alt"};
+DEF_DBG(cache_update)
+DEF_DBG(cache_update_alt)
 
 #ifdef DEBUG
-
-DbgCtl dbg_ctl_cache_stats{"cache_stats"};
-DbgCtl dbg_ctl_cache_write{"cache_write"};
-DbgCtl dbg_ctl_cache_insert{"cache_insert"};
-
+DEF_DBG(cache_stats)
+DEF_DBG(cache_write)
+DEF_DBG(cache_insert)
 #endif
-
-} // end anonymous namespace
 
 // Given a key, finds the index of the alternate which matches
 // used to get the alternate which is actually present in the document
@@ -83,7 +76,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (f.update) {
       // all Update cases. Need to get the alternate index.
       alternate_index = get_alternate_index(write_vector, update_key);
-      Dbg(dbg_ctl_cache_update, "updating alternate index %d frags %d", alternate_index,
+      Dbg(get_dbg_cache_update(), "updating alternate index %d frags %d", alternate_index,
           alternate_index >= 0 ? write_vector->get(alternate_index)->get_frag_offset_count() : -1);
       // if its an alternate delete
       if (!vec) {
@@ -179,7 +172,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         od->move_resident_alt  = false;
         f.rewrite_resident_alt = 1;
         write_len              = doc->data_len();
-        Dbg(dbg_ctl_cache_update_alt, "rewriting resident alt size: %d key: %X, first_key: %X", write_len, doc->key.slice32(0),
+        Dbg(get_dbg_cache_update_alt(), "rewriting resident alt size: %d key: %X, first_key: %X", write_len, doc->key.slice32(0),
             first_key.slice32(0));
       }
     }
@@ -277,18 +270,18 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
       dir_delete(&earliest_key, stripe, &earliest_dir);
     }
   }
-  if (dbg_ctl_cache_update.on()) {
+  if (get_dbg_cache_update().on()) {
     if (f.update && closed > 0) {
       if (!total_len && !f.allow_empty_doc && alternate_index != CACHE_ALT_REMOVED) {
-        Dbg(dbg_ctl_cache_update, "header only %d (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
-            update_key.b[1]);
+        Dbg(get_dbg_cache_update(), "header only %d (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)),
+            update_key.b[0], update_key.b[1]);
 
       } else if ((total_len || f.allow_empty_doc) && alternate_index != CACHE_ALT_REMOVED) {
-        Dbg(dbg_ctl_cache_update, "header body, %d, (%" PRIu64 ", %" PRIu64 "), (%" PRIu64 ", %" PRIu64 ")",
+        Dbg(get_dbg_cache_update(), "header body, %d, (%" PRIu64 ", %" PRIu64 "), (%" PRIu64 ", %" PRIu64 ")",
             DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0], update_key.b[1], earliest_key.b[0], earliest_key.b[1]);
       } else if (!total_len && alternate_index == CACHE_ALT_REMOVED) {
-        Dbg(dbg_ctl_cache_update, "alt delete, %d, (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
-            update_key.b[1]);
+        Dbg(get_dbg_cache_update(), "alt delete, %d, (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)),
+            update_key.b[0], update_key.b[1]);
       }
     }
   }
@@ -298,7 +291,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   // updates we dont decrement the variable corresponding the old
   // size of the document
   if ((closed == 1) && (total_len > 0 || f.allow_empty_doc)) {
-    DDbg(dbg_ctl_cache_stats, "Fragment = %d", fragment);
+    DDbg(get_dbg_cache_stats(), "Fragment = %d", fragment);
 
     Metrics::Counter::increment(cache_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
@@ -513,7 +506,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
     ++fragment;
     write_pos += write_len;
     dir_insert(&key, stripe, &dir);
-    DDbg(dbg_ctl_cache_insert, "WriteDone: %X, %X, %d", key.slice32(0), first_key.slice32(0), write_len);
+    DDbg(get_dbg_cache_insert(), "WriteDone: %X, %X, %d", key.slice32(0), first_key.slice32(0), write_len);
     blocks = iobufferblock_skip(blocks.get(), &offset, &length, write_len);
     next_CacheKey(&key, &key);
   }
@@ -690,7 +683,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
          to nullptr.
        */
       if (!dir_valid(stripe, &dir)) {
-        DDbg(dbg_ctl_cache_write, "OpenReadStartDone: Dir not valid: Write Head: %" PRId64 ", Dir: %" PRId64,
+        DDbg(get_dbg_cache_write(), "OpenReadStartDone: Dir not valid: Write Head: %" PRId64 ", Dir: %" PRId64,
              (int64_t)stripe->offset_to_vol_offset(stripe->header->write_pos), dir_offset(&dir));
         last_collision = nullptr;
         goto Lcollision;
@@ -925,7 +918,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
      */
     c->f.update = 1;
     c->op_type  = static_cast<int>(CacheOpType::Update);
-    DDbg(dbg_ctl_cache_update, "Update called");
+    DDbg(get_dbg_cache_update(), "Update called");
     info->object_key_get(&c->update_key);
     ink_assert(!(c->update_key.is_zero()));
     c->update_len = info->object_size_get();

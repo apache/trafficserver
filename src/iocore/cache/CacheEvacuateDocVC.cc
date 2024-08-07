@@ -42,17 +42,14 @@
 // ts
 #include "tsutil/DbgCtl.h"
 
-namespace
-{
-DbgCtl dbg_ctl_cache_evac{"cache_evac"};
-} // end anonymous namespace
+DEF_DBG(cache_evac)
 
 int
 CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   ink_assert(this->stripe->mutex->thread_holding == this_ethread());
   Doc *doc = reinterpret_cast<Doc *>(this->buf->data());
-  DDbg(dbg_ctl_cache_evac, "evacuateDocDone %X o %d p %d new_o %d new_p %d", (int)key.slice32(0),
+  DDbg(get_dbg_cache_evac(), "evacuateDocDone %X o %d p %d new_o %d new_p %d", (int)key.slice32(0),
        (int)dir_offset(&this->overwrite_dir), (int)dir_phase(&this->overwrite_dir), (int)dir_offset(&this->dir),
        (int)dir_phase(&this->dir));
   int i = dir_evac_bucket(&this->overwrite_dir);
@@ -78,7 +75,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
           break;
         }
         if (evac->earliest_key.fold()) {
-          DDbg(dbg_ctl_cache_evac, "evacdocdone: evacuating key %X earliest %X", evac->key.slice32(0),
+          DDbg(get_dbg_cache_evac(), "evacdocdone: evacuating key %X earliest %X", evac->key.slice32(0),
                evac->earliest_key.slice32(0));
           EvacuationBlock *eblock = nullptr;
           Dir              dir_tmp;
@@ -100,16 +97,16 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
       // Cache::open_write). Once we know its the vector, we can
       // safely overwrite the first_key in the directory.
       if (dir_head(&this->overwrite_dir) && b->f.evacuate_head) {
-        DDbg(dbg_ctl_cache_evac, "evacuateDocDone evacuate_head %X %X hlen %d offset %d", (int)key.slice32(0),
+        DDbg(get_dbg_cache_evac(), "evacuateDocDone evacuate_head %X %X hlen %d offset %d", (int)key.slice32(0),
              (int)doc->key.slice32(0), doc->hlen, (int)dir_offset(&this->overwrite_dir));
 
         if (dir_compare_tag(&this->overwrite_dir, &doc->first_key)) {
           OpenDirEntry *cod;
-          DDbg(dbg_ctl_cache_evac, "evacuating vector: %X %d", (int)doc->first_key.slice32(0),
+          DDbg(get_dbg_cache_evac(), "evacuating vector: %X %d", (int)doc->first_key.slice32(0),
                (int)dir_offset(&this->overwrite_dir));
           if ((cod = this->stripe->open_read(&doc->first_key))) {
             // writer  exists
-            DDbg(dbg_ctl_cache_evac, "overwriting the open directory %X %d %d", (int)doc->first_key.slice32(0),
+            DDbg(get_dbg_cache_evac(), "overwriting the open directory %X %d %d", (int)doc->first_key.slice32(0),
                  (int)dir_offset(&cod->first_dir), (int)dir_offset(&this->dir));
             cod->first_dir = this->dir;
           }
@@ -118,7 +115,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
             this->stripe->ram_cache->fixup(&doc->first_key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
           }
         } else {
-          DDbg(dbg_ctl_cache_evac, "evacuating earliest: %X %d", (int)doc->key.slice32(0), (int)dir_offset(&this->overwrite_dir));
+          DDbg(get_dbg_cache_evac(), "evacuating earliest: %X %d", (int)doc->key.slice32(0), (int)dir_offset(&this->overwrite_dir));
           ink_assert(dir_compare_tag(&this->overwrite_dir, &doc->key));
           ink_assert(b->earliest_evacuator == this);
           this->total_len    += doc->data_len();
@@ -174,7 +171,7 @@ CacheEvacuateDocVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e AT
     }
     alternate_tmp = vector.get(alternate_index);
     doc_len       = alternate_tmp->object_size_get();
-    Dbg(dbg_ctl_cache_evac, "evacuateReadHead http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0),
+    Dbg(get_dbg_cache_evac(), "evacuateReadHead http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0),
         this->first_key.slice32(0), doc_len);
   } else {
     // non-http document
@@ -184,7 +181,7 @@ CacheEvacuateDocVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e AT
       goto Ldone;
     }
     doc_len = doc->total_len;
-    DDbg(dbg_ctl_cache_evac, "evacuateReadHead non-http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0),
+    DDbg(get_dbg_cache_evac(), "evacuateReadHead non-http earliest %X first: %X len: %" PRId64, earliest_key.slice32(0),
          this->first_key.slice32(0), doc_len);
   }
   if (doc_len == this->total_len) {

@@ -164,8 +164,8 @@ new_CacheVC(Continuation *cont)
   c->start_time       = ink_get_hrtime();
   c->setThreadAffinity(t);
   ink_assert(c->trigger == nullptr);
-  static DbgCtl dbg_ctl{"cache_new"};
-  Dbg(dbg_ctl, "new %p", c);
+  static DbgCtl *dbg_ctl{new DbgCtl{"cache_new"}};
+  Dbg(*dbg_ctl, "new %p", c);
   dir_clear(&c->dir);
   return c;
 }
@@ -173,8 +173,8 @@ new_CacheVC(Continuation *cont)
 inline int
 free_CacheVCCommon(CacheVC *cont)
 {
-  static DbgCtl dbg_ctl{"cache_free"};
-  Dbg(dbg_ctl, "free %p", cont);
+  static DbgCtl *dbg_ctl{new DbgCtl{"cache_free"}};
+  Dbg(*dbg_ctl, "free %p", cont);
   ProxyMutex *mutex  = cont->mutex.get();
   StripeSM   *stripe = cont->stripe;
 

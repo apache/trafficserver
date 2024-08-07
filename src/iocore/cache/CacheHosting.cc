@@ -29,13 +29,8 @@
 #include "tscore/Tokenizer.h"
 #include "tscore/Filenames.h"
 
-namespace
-{
-
-DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
-DbgCtl dbg_ctl_matcher{"matcher"};
-
-} // end anonymous namespace
+DEF_DBG(cache_hosting)
+DEF_DBG(matcher)
 
 /*************************************************************
  *   Begin class HostMatcher
@@ -174,7 +169,7 @@ CacheHostMatcher::NewEntry(matcher_line *line_info)
     memset(static_cast<void *>(cur_d), 0, sizeof(CacheHostRecord));
     return;
   }
-  Dbg(dbg_ctl_cache_hosting, "hostname: %s, host record: %p", match_data, cur_d);
+  Dbg(get_dbg_cache_hosting(), "hostname: %s, host record: %p", match_data, cur_d);
   // Fill in the matching info
   host_lookup->NewEntry(match_data, (line_info->type == MATCH_DOMAIN) ? true : false, cur_d);
 
@@ -389,7 +384,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 
   ink_assert(second_pass == numEntries);
 
-  if (dbg_ctl_matcher.on()) {
+  if (get_dbg_matcher().on()) {
     Print();
   }
   return numEntries;
@@ -431,7 +426,7 @@ CacheHostRecord::Init(CacheType typ)
   CacheVol *cachep = cp_list.head;
   for (; cachep; cachep = cachep->link.next) {
     if (cachep->scheme == type) {
-      Dbg(dbg_ctl_cache_hosting, "Host Record: %p, Volume: %d, size: %" PRId64, this, cachep->vol_number, (int64_t)cachep->size);
+      Dbg(get_dbg_cache_hosting(), "Host Record: %p, Volume: %d, size: %" PRId64, this, cachep->vol_number, (int64_t)cachep->size);
       cp[num_cachevols] = cachep;
       num_cachevols++;
       num_vols += cachep->num_vols;
@@ -522,7 +517,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
             if (cachep->vol_number == volume_number) {
               is_vol_present = 1;
               if (cachep->scheme == type) {
-                Dbg(dbg_ctl_cache_hosting, "Host Record: %p, Volume: %d, size: %ld", this, volume_number,
+                Dbg(get_dbg_cache_hosting(), "Host Record: %p, Volume: %d, size: %ld", this, volume_number,
                     (long)(cachep->size * STORE_BLOCK_SIZE));
                 cp[num_cachevols] = cachep;
                 num_cachevols++;
@@ -785,8 +780,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       } else {
         ink_release_assert(!"Unexpected non-HTTP cache volume");
       }
-      Dbg(dbg_ctl_cache_hosting, "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number, scheme, size,
-          in_percent, ramcache_enabled);
+      Dbg(get_dbg_cache_hosting(), "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number, scheme,
+          size, in_percent, ramcache_enabled);
     }
 
     tmp = bufTok.iterNext(&i_state);

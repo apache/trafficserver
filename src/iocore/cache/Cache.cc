@@ -104,15 +104,10 @@ ClassAllocator<CacheRemoveCont>    cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey>      evacuationKeyAllocator("evacuationKey");
 std::unordered_set<std::string>    known_bad_disks;
 
-namespace
-{
-
-DbgCtl dbg_ctl_cache_init{"cache_init"};
-DbgCtl dbg_ctl_cache_remove{"cache_remove"};
-DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
-DbgCtl dbg_ctl_ram_cache{"ram_cache"};
-
-} // end anonymous namespace
+DEF_DBG(cache_init)
+DEF_DBG(cache_remove)
+DEF_DBG(cache_hosting)
+DEF_DBG(ram_cache)
 
 void        cplist_init();
 static void cplist_update();
@@ -479,7 +474,7 @@ CacheProcessor::start_internal(int flags)
     int64_t blocks = sd->blocks - (skip >> STORE_BLOCK_SHIFT);
     gdisks[j]->open(paths[j], blocks, skip, sector_sizes[j], fds[j], clear);
 
-    Dbg(dbg_ctl_cache_hosting, "Disk: %d:%s, blocks: %" PRId64 "", gndisks, paths[j], blocks);
+    Dbg(get_dbg_cache_hosting(), "Disk: %d:%s, blocks: %" PRId64 "", gndisks, paths[j], blocks);
   }
 
   return 0;
@@ -564,15 +559,15 @@ CacheProcessor::diskInitialized()
   gnstripes = 0;
   for (i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
-    if (dbg_ctl_cache_hosting.on()) {
+    if (get_dbg_cache_hosting().on()) {
       int j;
-      DbgPrint(dbg_ctl_cache_hosting, "Disk: %d:%s: Stripe Blocks: %u: Free space: %" PRIu64, i, d->path,
+      DbgPrint(get_dbg_cache_hosting(), "Disk: %d:%s: Stripe Blocks: %u: Free space: %" PRIu64, i, d->path,
                d->header->num_diskvol_blks, d->free_space);
       for (j = 0; j < static_cast<int>(d->header->num_volumes); j++) {
-        DbgPrint(dbg_ctl_cache_hosting, "\tStripe: %d Size: %" PRIu64, d->disk_stripes[j]->vol_number, d->disk_stripes[j]->size);
+        DbgPrint(get_dbg_cache_hosting(), "\tStripe: %d Size: %" PRIu64, d->disk_stripes[j]->vol_number, d->disk_stripes[j]->size);
       }
       for (j = 0; j < static_cast<int>(d->header->num_diskvol_blks); j++) {
-        DbgPrint(dbg_ctl_cache_hosting, "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
+        DbgPrint(get_dbg_cache_hosting(), "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
                  d->header->vol_info[j].len, d->header->vol_info[j].free);
       }
     }
@@ -597,12 +592,12 @@ void
 CacheProcessor::cacheInitialized()
 {
   if (theCache == nullptr) {
-    Dbg(dbg_ctl_cache_init, "theCache is nullptr");
+    Dbg(get_dbg_cache_init(), "theCache is nullptr");
     return;
   }
 
   if (theCache->ready == CACHE_INITIALIZING) {
-    Dbg(dbg_ctl_cache_init, "theCache is initializing");
+    Dbg(get_dbg_cache_init(), "theCache is initializing");
     return;
   }
 
@@ -613,10 +608,10 @@ CacheProcessor::cacheInitialized()
   int64_t total_size = 0; // count in HTTP & MIXT
 
   total_size += theCache->cache_size;
-  Dbg(dbg_ctl_cache_init, "theCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
+  Dbg(get_dbg_cache_init(), "theCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
       total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
   if (theCache->ready == CACHE_INIT_FAILED) {
-    Dbg(dbg_ctl_cache_init, "failed to initialize the cache for http: cache disabled");
+    Dbg(get_dbg_cache_init(), "failed to initialize the cache for http: cache disabled");
     Warning("failed to initialize the cache for http: cache disabled\n");
   } else {
     caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
@@ -641,7 +636,7 @@ CacheProcessor::cacheInitialized()
   }
 
   if (caches_ready) {
-    Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,
+    Dbg(get_dbg_cache_init(), "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,
         gnstripes.load());
 
     if (gnstripes) {
@@ -662,24 +657,24 @@ CacheProcessor::cacheInitialized()
 
       // let us calculate the Size
       if (cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE) {
-        Dbg(dbg_ctl_cache_init, "cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
+        Dbg(get_dbg_cache_init(), "cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
       } else {
         // we got configured memory size
         // TODO, should we check the available system memories, or you will
         //   OOM or swapout, that is not a good situation for the server
-        Dbg(dbg_ctl_cache_init, "%" PRId64 " != AUTO_SIZE_RAM_CACHE", cache_config_ram_cache_size);
+        Dbg(get_dbg_cache_init(), "%" PRId64 " != AUTO_SIZE_RAM_CACHE", cache_config_ram_cache_size);
         http_ram_cache_size =
           static_cast<int64_t>((static_cast<double>(theCache->cache_size) / total_size) * cache_config_ram_cache_size);
 
-        Dbg(dbg_ctl_cache_init, "http_ram_cache_size = %" PRId64 " = %" PRId64 "Mb", http_ram_cache_size,
+        Dbg(get_dbg_cache_init(), "http_ram_cache_size = %" PRId64 " = %" PRId64 "Mb", http_ram_cache_size,
             http_ram_cache_size / (1024 * 1024));
         int64_t stream_ram_cache_size = cache_config_ram_cache_size - http_ram_cache_size;
 
-        Dbg(dbg_ctl_cache_init, "stream_ram_cache_size = %" PRId64 " = %" PRId64 "Mb", stream_ram_cache_size,
+        Dbg(get_dbg_cache_init(), "stream_ram_cache_size = %" PRId64 " = %" PRId64 "Mb", stream_ram_cache_size,
             stream_ram_cache_size / (1024 * 1024));
 
         // Dump some ram_cache size information in debug mode.
-        Dbg(dbg_ctl_ram_cache, "config: size = %" PRId64 ", cutoff = %" PRId64 "", cache_config_ram_cache_size,
+        Dbg(get_dbg_ram_cache(), "config: size = %" PRId64 ", cutoff = %" PRId64 "", cache_config_ram_cache_size,
             cache_config_ram_cache_cutoff);
       }
 
@@ -700,7 +695,7 @@ CacheProcessor::cacheInitialized()
             ink_assert(stripe->cache != nullptr);
 
             double factor = static_cast<double>(static_cast<int64_t>(stripe->len >> STORE_BLOCK_SHIFT)) / theCache->cache_size;
-            Dbg(dbg_ctl_cache_init, "factor = %f", factor);
+            Dbg(get_dbg_cache_init(), "factor = %f", factor);
 
             ram_cache_bytes = static_cast<int64_t>(http_ram_cache_size * factor);
           }
@@ -709,7 +704,7 @@ CacheProcessor::cacheInitialized()
           total_ram_cache_bytes += ram_cache_bytes;
           Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes_total, ram_cache_bytes);
 
-          Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
+          Dbg(get_dbg_cache_init(), "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
               ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
         }
 
@@ -718,7 +713,7 @@ CacheProcessor::cacheInitialized()
         Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.bytes_total, vol_total_cache_bytes);
         Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.stripes);
 
-        Dbg(dbg_ctl_cache_init, "total_cache_bytes = %" PRId64 " = %" PRId64 "Mb", total_cache_bytes,
+        Dbg(get_dbg_cache_init(), "total_cache_bytes = %" PRId64 " = %" PRId64 "Mb", total_cache_bytes,
             total_cache_bytes / (1024 * 1024));
 
         uint64_t vol_total_direntries  = stripe->buckets * stripe->segments * DIR_DEPTH;
@@ -815,7 +810,7 @@ CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag
 Action *
 CacheProcessor::remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
 {
-  Dbg(dbg_ctl_cache_remove, "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));
+  Dbg(get_dbg_cache_remove(), "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));
   return caches[frag_type]->remove(cont, key, frag_type, hostname, host_len);
 }
 
@@ -961,7 +956,8 @@ build_vol_hash_table(CacheHostRecord *cp)
     gotvol[rtable[i].idx]++;
   }
   for (int i = 0; i < num_vols; i++) {
-    Dbg(dbg_ctl_cache_init, "build_vol_hash_table index %d mapped to %d requested %d got %d", i, mapping[i], forvol[i], gotvol[i]);
+    Dbg(get_dbg_cache_init(), "build_vol_hash_table index %d mapped to %d requested %d got %d", i, mapping[i], forvol[i],
+        gotvol[i]);
   }
   // install new table
   if (nullptr != (old_table = ink_atomic_swap(&(cp->vol_hash_table), ttable))) {
@@ -1175,7 +1171,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
   total_good_nvol       = 0;
 
   REC_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
-  Dbg(dbg_ctl_cache_init, "Cache::open - proxy.config.cache.min_average_object_size = %d",
+  Dbg(get_dbg_cache_init(), "Cache::open - proxy.config.cache.min_average_object_size = %d",
       (int)cache_config_min_average_object_size);
 
   CacheVol *cp = cp_list.head;
@@ -1434,7 +1430,7 @@ fillExclusiveDisks(CacheVol *cp)
   int diskCount     = 0;
   int volume_number = cp->vol_number;
 
-  Dbg(dbg_ctl_cache_init, "volume %d", volume_number);
+  Dbg(get_dbg_cache_init(), "volume %d", volume_number);
   for (int i = 0; i < gndisks; i++) {
     if (gdisks[i]->forced_volume_num != volume_number) {
       continue;
@@ -1476,7 +1472,7 @@ fillExclusiveDisks(CacheVol *cp)
         cp->size  += dpb->len;
         cp->num_vols++;
       } else {
-        Dbg(dbg_ctl_cache_init, "create_volume failed");
+        Dbg(get_dbg_cache_init(), "create_volume failed");
         break;
       }
     } while ((size_diff > 0));
@@ -1516,7 +1512,7 @@ cplist_reconfigure()
         int      vols       = (free_space / MAX_STRIPE_SIZE) + 1;
         for (int p = 0; p < vols; p++) {
           off_t b = gdisks[i]->free_space / (vols - p);
-          Dbg(dbg_ctl_cache_hosting, "blocks = %" PRId64, (int64_t)b);
+          Dbg(get_dbg_cache_hosting(), "blocks = %" PRId64, (int64_t)b);
           DiskStripeBlock *dpb = gdisks[i]->create_volume(0, b, CACHE_HTTP_TYPE);
           ink_assert(dpb && dpb->len == (uint64_t)b);
         }
@@ -1596,7 +1592,7 @@ cplist_reconfigure()
                 (int64_t)config_vol->size, 128);
         Warning("volume %d is not created", config_vol->number);
       }
-      Dbg(dbg_ctl_cache_hosting, "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number, (int64_t)config_vol->size,
+      Dbg(get_dbg_cache_hosting(), "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number, (int64_t)config_vol->size,
           config_vol->ramcache_enabled);
     }
     cplist_update();
@@ -1736,7 +1732,7 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
   cp->vol_number = volume_number;
   cp->scheme     = scheme;
   if (fillExclusiveDisks(cp)) {
-    Dbg(dbg_ctl_cache_init, "volume successfully filled from forced disks: volume_number=%d", volume_number);
+    Dbg(get_dbg_cache_init(), "volume successfully filled from forced disks: volume_number=%d", volume_number);
     return 0;
   }
 
@@ -1822,20 +1818,20 @@ Cache::key_to_stripe(const CacheKey *key, const char *hostname, int host_len)
     if (res.record) {
       unsigned short *host_hash_table = res.record->vol_hash_table;
       if (host_hash_table) {
-        if (dbg_ctl_cache_hosting.on()) {
+        if (get_dbg_cache_hosting().on()) {
           char format_str[50];
           snprintf(format_str, sizeof(format_str), "Volume: %%xd for host: %%.%ds", host_len);
-          Dbg(dbg_ctl_cache_hosting, format_str, res.record, hostname);
+          Dbg(get_dbg_cache_hosting(), format_str, res.record, hostname);
         }
         return res.record->stripes[host_hash_table[h]];
       }
     }
   }
   if (hash_table) {
-    if (dbg_ctl_cache_hosting.on()) {
+    if (get_dbg_cache_hosting().on()) {
       char format_str[50];
       snprintf(format_str, sizeof(format_str), "Generic volume: %%xd for host: %%.%ds", host_len);
-      Dbg(dbg_ctl_cache_hosting, format_str, host_rec, hostname);
+      Dbg(get_dbg_cache_hosting(), format_str, host_rec, hostname);
     }
     return host_rec->stripes[hash_table[h]];
   } else {
@@ -1862,7 +1858,7 @@ ink_cache_init(ts::ModuleVersion v)
   ink_release_assert(v.check(CACHE_MODULE_VERSION));
 
   REC_EstablishStaticConfigInteger(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.ram_cache.size = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_size,
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.ram_cache.size = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_size,
       cache_config_ram_cache_size / (1024 * 1024));
 
   REC_EstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
@@ -1871,42 +1867,42 @@ ink_cache_init(ts::ModuleVersion v)
   REC_ReadConfigInt32(cache_config_ram_cache_use_seen_filter, "proxy.config.cache.ram_cache.use_seen_filter");
 
   REC_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
 
   REC_EstablishStaticConfigInt32(cache_config_log_alternate_eviction, "proxy.config.cache.log.alternate.eviction");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.log.alternate.eviction = %d", cache_config_log_alternate_eviction);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.log.alternate.eviction = %d", cache_config_log_alternate_eviction);
 
   REC_EstablishStaticConfigInteger(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
-  Dbg(dbg_ctl_cache_init, "cache_config_ram_cache_cutoff = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_cutoff,
+  Dbg(get_dbg_cache_init(), "cache_config_ram_cache_cutoff = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_cutoff,
       cache_config_ram_cache_cutoff / (1024 * 1024));
 
   REC_EstablishStaticConfigInt32(cache_config_permit_pinning, "proxy.config.cache.permit.pinning");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.permit.pinning = %d", cache_config_permit_pinning);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.permit.pinning = %d", cache_config_permit_pinning);
 
   REC_EstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
 
   REC_EstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);
 
   REC_EstablishStaticConfigInt32(cache_config_max_doc_size, "proxy.config.cache.max_doc_size");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.max_doc_size = %d = %dMb", cache_config_max_doc_size,
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.max_doc_size = %d = %dMb", cache_config_max_doc_size,
       cache_config_max_doc_size / (1024 * 1024));
 
   REC_EstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
 
   REC_EstablishStaticConfigInt32(cache_config_read_while_writer_max_retries, "proxy.config.cache.read_while_writer.max_retries");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.read_while_writer.max_retries = %d", cache_config_read_while_writer_max_retries);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.read_while_writer.max_retries = %d", cache_config_read_while_writer_max_retries);
 
   REC_EstablishStaticConfigInt32(cache_read_while_writer_retry_delay, "proxy.config.cache.read_while_writer_retry.delay");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.read_while_writer_retry.delay = %dms", cache_read_while_writer_retry_delay);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.read_while_writer_retry.delay = %dms", cache_read_while_writer_retry_delay);
 
   REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
 
   REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_size_limit, "proxy.config.cache.hit_evacuate_size_limit");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
 
   REC_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
 
@@ -1919,28 +1915,28 @@ ink_cache_init(ts::ModuleVersion v)
   }
 
   REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
 
   REC_EstablishStaticConfigInt32(cache_config_agg_write_backlog, "proxy.config.cache.agg_write_backlog");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.agg_write_backlog = %d", cache_config_agg_write_backlog);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.agg_write_backlog = %d", cache_config_agg_write_backlog);
 
   REC_EstablishStaticConfigInt32(cache_config_enable_checksum, "proxy.config.cache.enable_checksum");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.enable_checksum = %d", cache_config_enable_checksum);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.enable_checksum = %d", cache_config_enable_checksum);
 
   REC_EstablishStaticConfigInt32(cache_config_alt_rewrite_max_size, "proxy.config.cache.alt_rewrite_max_size");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.alt_rewrite_max_size = %d", cache_config_alt_rewrite_max_size);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.alt_rewrite_max_size = %d", cache_config_alt_rewrite_max_size);
 
   REC_EstablishStaticConfigInt32(cache_config_read_while_writer, "proxy.config.cache.enable_read_while_writer");
   cache_config_read_while_writer = validate_rww(cache_config_read_while_writer);
   REC_RegisterConfigUpdateFunc("proxy.config.cache.enable_read_while_writer", update_cache_config, nullptr);
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
 
   register_cache_stats(&cache_rsb, "proxy.process.cache");
 
   REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
 
   REC_EstablishStaticConfigInt32(cache_config_persist_bad_disks, "proxy.config.cache.persist_bad_disks");
-  Dbg(dbg_ctl_cache_init, "proxy.config.cache.persist_bad_disks = %d", cache_config_persist_bad_disks);
+  Dbg(get_dbg_cache_init(), "proxy.config.cache.persist_bad_disks = %d", cache_config_persist_bad_disks);
   if (cache_config_persist_bad_disks) {
     std::filesystem::path localstatedir{Layout::get()->localstatedir};
     std::filesystem::path bad_disks_path{localstatedir / ts::filename::BAD_DISKS};

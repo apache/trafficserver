@@ -185,3 +185,15 @@ private:
       }                               \
     }                                 \
   } while (false)
+
+// Shorthand for creating a global DbgCtl instance with static lifetime. The
+// instance must be allocated on the heap so that its destructor isn't called;
+// thus it remains valid until the program is finished and the memory that we
+// allocated for it is counted as being in use at exit. This macro should be
+// used from a .cc file.
+#define DEF_DBG(name)                                 \
+  static DbgCtl &get_dbg_##name()                     \
+  {                                                   \
+    static DbgCtl *dbg_ctl_##name{new DbgCtl{#name}}; \
+    return *dbg_ctl_##name;                           \
+  }

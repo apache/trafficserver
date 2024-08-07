@@ -71,19 +71,19 @@ namespace
 
 short int const CACHE_DB_MAJOR_VERSION_COMPATIBLE = 21;
 
-DbgCtl dbg_ctl_cache_dir_sync{"dir_sync"};
-DbgCtl dbg_ctl_cache_disk_error{"cache_disk_error"};
-DbgCtl dbg_ctl_cache_evac{"cache_evac"};
-DbgCtl dbg_ctl_cache_init{"cache_init"};
+} // namespace
+
+DEF_DBG(dir_sync)
+DEF_DBG(cache_disk_error)
+DEF_DBG(cache_evac)
+DEF_DBG(cache_init)
 
 #ifdef DEBUG
 
-DbgCtl dbg_ctl_agg_read{"agg_read"};
-DbgCtl dbg_ctl_cache_agg{"cache_agg"};
+DEF_DBG(agg_read)
+DEF_DBG(cache_agg)
 
 #endif
-
-} // namespace
 
 static void init_document(CacheVC const *vc, Doc *doc, int const len);
 static void update_document_key(CacheVC *vc, Doc *doc);
@@ -218,7 +218,7 @@ StripeSM::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   evacuate      = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
   memset(static_cast<void *>(evacuate), 0, evac_len);
 
-  Dbg(dbg_ctl_cache_init, "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
+  Dbg(get_dbg_cache_init(), "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
       (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
 
   raw_dir = nullptr;
@@ -244,7 +244,7 @@ StripeSM::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   // try A
   off_t as = skip;
 
-  Dbg(dbg_ctl_cache_init, "reading directory '%s'", hash_text.get());
+  Dbg(get_dbg_cache_init(), "reading directory '%s'", hash_text.get());
   SET_HANDLER(&StripeSM::handle_header_read);
   init_info->vol_aio[0].aiocb.aio_offset = as;
   init_info->vol_aio[1].aiocb.aio_offset = as + footer_offset;
@@ -580,7 +580,7 @@ Ldone: {
   /* if we come back to the starting position, then we don't have to recover anything */
   if (recover_pos == header->write_pos && recover_wrapped) {
     SET_HANDLER(&StripeSM::handle_recover_write_dir);
-    if (dbg_ctl_cache_init.on()) {
+    if (get_dbg_cache_init().on()) {
       Note("recovery wrapped around. nothing to clear\n");
     }
     return handle_recover_write_dir(EVENT_IMMEDIATE, nullptr);
@@ -588,7 +588,7 @@ Ldone: {
 
   recover_pos += EVACUATION_SIZE; // safely cover the max write size
   if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
-    Dbg(dbg_ctl_cache_init, "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos,
+    Dbg(get_dbg_cache_init(), "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos,
         recover_wrapped);
     Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
     goto Lclear;
@@ -713,7 +713,7 @@ StripeSM::handle_header_read(int event, void *data)
     if (hf[0]->sync_serial == hf[1]->sync_serial &&
         (hf[0]->sync_serial >= hf[2]->sync_serial || hf[2]->sync_serial != hf[3]->sync_serial)) {
       SET_HANDLER(&StripeSM::handle_dir_read);
-      if (dbg_ctl_cache_init.on()) {
+      if (get_dbg_cache_init().on()) {
         Note("using directory A for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip;
@@ -722,7 +722,7 @@ StripeSM::handle_header_read(int event, void *data)
     // try B
     else if (hf[2]->sync_serial == hf[3]->sync_serial) {
       SET_HANDLER(&StripeSM::handle_dir_read);
-      if (dbg_ctl_cache_init.on()) {
+      if (get_dbg_cache_init().on()) {
         Note("using directory B for '%s'", hash_text.get());
       }
       io.aiocb.aio_offset = skip + this->dirlen();
@@ -779,7 +779,7 @@ StripeSM::aggWriteDone(int event, Event *e)
     header->last_write_pos  = header->write_pos;
     header->write_pos      += io.aiocb.aio_nbytes;
     ink_assert(header->write_pos >= start);
-    DDbg(dbg_ctl_cache_agg, "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "", hash_text.get(), header->write_pos,
+    DDbg(get_dbg_cache_agg(), "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "", hash_text.get(), header->write_pos,
          header->last_write_pos);
     ink_assert(header->write_pos == header->agg_pos);
     if (header->write_pos + EVACUATION_SIZE > scan_pos) {
@@ -791,7 +791,7 @@ StripeSM::aggWriteDone(int event, Event *e)
   } else {
     // delete all the directory entries that we inserted
     // for fragments is this aggregation buffer
-    Dbg(dbg_ctl_cache_disk_error, "Write error on disk %s\n \
+    Dbg(get_dbg_cache_disk_error(), "Write error on disk %s\n \
             write range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
         hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
         (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
@@ -940,7 +940,7 @@ StripeSM::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &toca
         this->header->write_pos + this->_write_buffer.get_buffer_pos() + writelen > (this->skip + this->len)) {
       break;
     }
-    DDbg(dbg_ctl_agg_read, "copying: %d, %" PRIu64 ", key: %d", this->_write_buffer.get_buffer_pos(),
+    DDbg(get_dbg_agg_read(), "copying: %d, %" PRIu64 ", key: %d", this->_write_buffer.get_buffer_pos(),
          this->header->write_pos + this->_write_buffer.get_buffer_pos(), c->first_key.slice32(0));
     [[maybe_unused]] int wrotelen = this->_agg_copy(c);
     ink_assert(writelen == wrotelen);
@@ -1180,7 +1180,7 @@ StripeSM::evac_range(off_t low, off_t high, int evac_phase)
       io.aiocb.aio_buf = doc_evacuator->buf->data();
       io.action        = this;
       io.thread        = AIO_CALLBACK_THREAD_ANY;
-      DDbg(dbg_ctl_cache_evac, "evac_range evacuating %X %d", (int)dir_tag(&first->dir), (int)dir_offset(&first->dir));
+      DDbg(get_dbg_cache_evac(), "evac_range evacuating %X %d", (int)dir_tag(&first->dir), (int)dir_offset(&first->dir));
       SET_HANDLER(&StripeSM::evacuateDocReadDone);
       ink_assert(ink_aio_read(&io) >= 0);
       return -1;
@@ -1204,12 +1204,12 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
   EvacuationBlock *b      = nullptr;
   auto             bucket = dir_evac_bucket(&doc_evacuator->overwrite_dir);
   if (doc->magic != DOC_MAGIC) {
-    Dbg(dbg_ctl_cache_evac, "DOC magic: %X %d", (int)dir_tag(&doc_evacuator->overwrite_dir),
+    Dbg(get_dbg_cache_evac(), "DOC magic: %X %d", (int)dir_tag(&doc_evacuator->overwrite_dir),
         (int)dir_offset(&doc_evacuator->overwrite_dir));
     ink_assert(doc->magic == DOC_MAGIC);
     goto Ldone;
   }
-  DDbg(dbg_ctl_cache_evac, "evacuateDocReadDone %X offset %d", (int)doc->key.slice32(0),
+  DDbg(get_dbg_cache_evac(), "evacuateDocReadDone %X offset %d", (int)doc->key.slice32(0),
        (int)dir_offset(&doc_evacuator->overwrite_dir));
 
   if (evac_bucket_valid(bucket)) {
@@ -1236,7 +1236,7 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
     if (dir_compare_tag(&b->dir, &doc->first_key)) {
       doc_evacuator->key = doc->first_key;
       b->evac_frags.key  = doc->first_key;
-      DDbg(dbg_ctl_cache_evac, "evacuating vector %X offset %d", (int)doc->first_key.slice32(0),
+      DDbg(get_dbg_cache_evac(), "evacuating vector %X offset %d", (int)doc->first_key.slice32(0),
            (int)dir_offset(&doc_evacuator->overwrite_dir));
       b->f.unused = 57;
     } else {
@@ -1249,7 +1249,7 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
       b->evac_frags.key           = doc->key;
       b->evac_frags.earliest_key  = doc->key;
       b->earliest_evacuator       = doc_evacuator;
-      DDbg(dbg_ctl_cache_evac, "evacuating earliest %X %X evac: %p offset: %d", (int)b->evac_frags.key.slice32(0),
+      DDbg(get_dbg_cache_evac(), "evacuating earliest %X %X evac: %p offset: %d", (int)b->evac_frags.key.slice32(0),
            (int)doc->key.slice32(0), doc_evacuator, (int)dir_offset(&doc_evacuator->overwrite_dir));
       b->f.unused = 67;
     }
@@ -1265,7 +1265,8 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
     }
     doc_evacuator->key          = ek->key;
     doc_evacuator->earliest_key = ek->earliest_key;
-    DDbg(dbg_ctl_cache_evac, "evacuateDocReadDone key: %X earliest: %X", (int)ek->key.slice32(0), (int)ek->earliest_key.slice32(0));
+    DDbg(get_dbg_cache_evac(), "evacuateDocReadDone key: %X earliest: %X", (int)ek->key.slice32(0),
+         (int)ek->earliest_key.slice32(0));
     b->f.unused = 87;
   }
   // if the tag in the c->dir does match the first_key in the
@@ -1315,7 +1316,7 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *s
     if (force) {
       b->readers = 0;
     }
-    DDbg(dbg_ctl_cache_evac, "next fragment %X Earliest: %X offset %d phase %d force %d", (int)key->slice32(0),
+    DDbg(get_dbg_cache_evac(), "next fragment %X Earliest: %X offset %d phase %d force %d", (int)key->slice32(0),
          (int)earliest_key->slice32(0), (int)dir_offset(&dir), (int)dir_phase(&dir), force);
   }
   return i;
@@ -1384,13 +1385,13 @@ StripeSM::shutdown(EThread *shutdown_thread)
   MUTEX_TAKE_LOCK(this->mutex, shutdown_thread);
 
   if (DISK_BAD(this->disk)) {
-    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- bad disk", this->hash_text.get());
+    Dbg(get_dbg_dir_sync(), "Dir %s: ignoring -- bad disk", this->hash_text.get());
     return;
   }
   size_t dirlen = this->dirlen();
   ink_assert(dirlen > 0); // make clang happy - if not > 0 the vol is seriously messed up
   if (!this->header->dirty && !this->dir_sync_in_progress) {
-    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- not dirty", this->hash_text.get());
+    Dbg(get_dbg_dir_sync(), "Dir %s: ignoring -- not dirty", this->hash_text.get());
     return;
   }
   // recompute hit_evacuate_window
@@ -1400,7 +1401,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
   // dont worry about the cachevc s in the agg queue
   // directories have not been inserted for these writes
   if (!this->_write_buffer.is_empty()) {
-    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
+    Dbg(get_dbg_dir_sync(), "Dir %s: flushing agg buffer first", this->hash_text.get());
     this->flush_aggregate_write_buffer();
   }
 
@@ -1408,7 +1409,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
   if (!this->dir_sync_in_progress) {
     this->header->sync_serial++;
   } else {
-    Dbg(dbg_ctl_cache_dir_sync, "Periodic dir sync in progress -- overwriting");
+    Dbg(get_dbg_dir_sync(), "Periodic dir sync in progress -- overwriting");
   }
   this->footer->sync_serial = this->header->sync_serial;
 
@@ -1417,5 +1418,5 @@ StripeSM::shutdown(EThread *shutdown_thread)
   off_t  start = this->skip + (B ? dirlen : 0);
   B            = pwrite(this->fd, this->raw_dir, dirlen, start);
   ink_assert(B == dirlen);
-  Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
+  Dbg(get_dbg_dir_sync(), "done syncing dir for vol %s", this->hash_text.get());
 }

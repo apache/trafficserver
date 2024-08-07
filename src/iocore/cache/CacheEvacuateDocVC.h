@@ -61,8 +61,8 @@ new_CacheEvacuateDocVC(Continuation *cont)
   c->start_time         = ink_get_hrtime();
   c->setThreadAffinity(t);
   ink_assert(c->trigger == nullptr);
-  static DbgCtl dbg_ctl{"cache_new"};
-  Dbg(dbg_ctl, "new %p", c);
+  static DbgCtl *dbg_ctl{new DbgCtl{"cache_new"}};
+  Dbg(*dbg_ctl, "new %p", c);
   dir_clear(&c->dir);
 
   return c;

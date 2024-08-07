@@ -32,19 +32,14 @@
 
 #include <cinttypes>
 
-namespace
-{
-
-DbgCtl dbg_ctl_cache_evac{"cache_evac"};
-
-} // namespace
+DEF_DBG(cache_evac)
 
 void
 PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
 {
   auto bucket = dir_evac_bucket(evac_dir);
   if (!evac_bucket_valid(bucket)) {
-    DDbg(dbg_ctl_cache_evac, "dir_evac_bucket out of bounds, skipping evacuate: %" PRId64 "(%d), %d, %d", bucket, evacuate_size,
+    DDbg(get_dbg_cache_evac(), "dir_evac_bucket out of bounds, skipping evacuate: %" PRId64 "(%d), %d, %d", bucket, evacuate_size,
          (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
     return;
   }
@@ -60,7 +55,7 @@ PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
   if (!b) {
     b      = new_EvacuationBlock();
     b->dir = *evac_dir;
-    DDbg(dbg_ctl_cache_evac, "force: %d, %d", (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
+    DDbg(get_dbg_cache_evac(), "force: %d, %d", (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
     evacuate[bucket].push(b);
   }
   b->f.pinned        = pinned;
@@ -90,7 +85,7 @@ PreservationTable::scan_for_pinned_documents(Stripe const *stripe)
     int pe = stripe->offset_to_vol_offset(stripe->header->write_pos + 2 * EVACUATION_SIZE + (stripe->len / PIN_SCAN_EVERY));
     int vol_end_offset    = stripe->offset_to_vol_offset(stripe->len + stripe->skip);
     int before_end_of_vol = pe < vol_end_offset;
-    DDbg(dbg_ctl_cache_evac, "scan %d %d", ps, pe);
+    DDbg(get_dbg_cache_evac(), "scan %d %d", ps, pe);
     for (int i = 0; i < stripe->direntries(); i++) {
       // is it a valid pinned object?
       if (!dir_is_empty(&stripe->dir[i]) && dir_pinned(&stripe->dir[i]) && dir_head(&stripe->dir[i])) {
@@ -150,7 +145,7 @@ PreservationTable::remove_finished_blocks(Stripe const *stripe, int bucket)
     if (b->f.done && ((stripe->header->phase != dir_phase(&b->dir) && stripe->header->write_pos > stripe->vol_offset(&b->dir)) ||
                       (stripe->header->phase == dir_phase(&b->dir) && stripe->header->write_pos <= stripe->vol_offset(&b->dir)))) {
       EvacuationBlock *x = b;
-      DDbg(dbg_ctl_cache_evac, "evacuate cleanup free %X offset %d", (int)b->evac_frags.key.slice32(0), (int)dir_offset(&b->dir));
+      DDbg(get_dbg_cache_evac(), "evacuate cleanup free %X offset %d", (int)b->evac_frags.key.slice32(0), (int)dir_offset(&b->dir));
       b = b->link.next;
       evacuate[bucket].remove(x);
       free_EvacuationBlock(x);

@@ -69,18 +69,16 @@
 #include <cstring>
 #include <ctime>
 
-namespace
-{
-DbgCtl dbg_ctl_cache_bc{"cache_bc"};
-DbgCtl dbg_ctl_cache_disk_error{"cache_disk_error"};
-DbgCtl dbg_ctl_cache_read{"cache_read"};
-DbgCtl dbg_ctl_cache_scan{"cache_scan"};
-DbgCtl dbg_ctl_cache_scan_truss{"cache_scan_truss"};
+DEF_DBG(cache_bc)
+DEF_DBG(cache_disk_error)
+DEF_DBG(cache_read)
+DEF_DBG(cache_scan)
+DEF_DBG(cache_scan_truss)
+
 #ifdef DEBUG
-DbgCtl dbg_ctl_cache_close{"cache_close"};
-DbgCtl dbg_ctl_cache_reenable{"cache_reenable"};
+DEF_DBG(cache_close)
+DEF_DBG(cache_reenable)
 #endif
-} // end anonymous namespace
 
 // Compilation Options
 #define SCAN_BUF_SIZE              RECOVERY_SIZE
@@ -228,7 +226,7 @@ CacheVC::do_io_close(int alerrno)
   ink_assert(mutex->thread_holding == this_ethread());
   int previous_closed = closed;
   closed              = (alerrno == -1) ? 1 : -1; // Stupid default arguments
-  DDbg(dbg_ctl_cache_close, "do_io_close %p %d %d", this, alerrno, closed);
+  DDbg(get_dbg_cache_close(), "do_io_close %p %d %d", this, alerrno, closed);
   if (!previous_closed && !recursive) {
     die();
   }
@@ -237,7 +235,7 @@ CacheVC::do_io_close(int alerrno)
 void
 CacheVC::reenable(VIO *avio)
 {
-  DDbg(dbg_ctl_cache_reenable, "reenable %p", this);
+  DDbg(get_dbg_cache_reenable(), "reenable %p", this);
   (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
@@ -257,7 +255,7 @@ CacheVC::reenable(VIO *avio)
 void
 CacheVC::reenable_re(VIO *avio)
 {
-  DDbg(dbg_ctl_cache_reenable, "reenable_re %p", this);
+  DDbg(get_dbg_cache_reenable(), "reenable_re %p", this);
   (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
@@ -359,7 +357,7 @@ CacheVC::handleReadDone(int event, Event *e)
     }
     if ((!dir_valid(stripe, &dir)) || (!io.ok())) {
       if (!io.ok()) {
-        Dbg(dbg_ctl_cache_disk_error, "Read error on disk %s\n \
+        Dbg(get_dbg_cache_disk_error(), "Read error on disk %s\n \
 	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
             stripe->hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
             (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
@@ -374,14 +372,14 @@ CacheVC::handleReadDone(int event, Event *e)
     if (ts::VersionNumber(doc->v_major, doc->v_minor) > CACHE_DB_VERSION) {
       // future version, count as corrupted
       doc->magic = DOC_CORRUPT;
-      Dbg(dbg_ctl_cache_bc, "Object is future version %d:%d - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", doc->v_major,
+      Dbg(get_dbg_cache_bc(), "Object is future version %d:%d - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", doc->v_major,
           doc->v_minor, stripe->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
       goto Ldone;
     }
 
-    if (dbg_ctl_cache_read.on()) {
+    if (get_dbg_cache_read().on()) {
       char xt[CRYPTO_HEX_SIZE];
-      Dbg(dbg_ctl_cache_read,
+      Dbg(get_dbg_cache_read(),
           "Read complete on fragment %s. Length: data payload=%d this fragment=%d total doc=%" PRId64 " prefix=%d",
           doc->key.toHexStr(xt), doc->data_len(), doc->len, doc->total_len, doc->prefix_len());
     }
@@ -627,7 +625,7 @@ Lfree:
 int
 CacheVC::scanStripe(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  Dbg(dbg_ctl_cache_scan_truss, "%p", this);
+  Dbg(get_dbg_cache_scan_truss(), "%p", this);
   if (_action.cancelled) {
     return free_CacheVC(this);
   }
@@ -670,7 +668,7 @@ Ldone:
 int
 CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  Dbg(dbg_ctl_cache_scan_truss, "inside %p:scanObject", this);
+  Dbg(get_dbg_cache_scan_truss(), "inside %p:scanObject", this);
 
   Doc  *doc    = nullptr;
   void *result = nullptr;
@@ -688,7 +686,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
   if (!lock.is_locked()) {
-    Dbg(dbg_ctl_cache_scan_truss, "delay %p:scanObject", this);
+    Dbg(get_dbg_cache_scan_truss(), "delay %p:scanObject", this);
     mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
     return EVENT_CONT;
   }
@@ -704,7 +702,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     io.aiocb.aio_buf    = buf->data();
     io.action           = this;
     io.thread           = AIO_CALLBACK_THREAD_ANY;
-    Dbg(dbg_ctl_cache_scan_truss, "read %p:scanObject", this);
+    Dbg(get_dbg_cache_scan_truss(), "read %p:scanObject", this);
     goto Lread;
   }
 
@@ -733,7 +731,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
     if (doc->magic != DOC_MAGIC) {
       next_object_len = CACHE_BLOCK_SIZE;
-      Dbg(dbg_ctl_cache_scan_truss, "blockskip %p:scanObject", this);
+      Dbg(get_dbg_cache_scan_truss(), "blockskip %p:scanObject", this);
       continue;
     }
 
@@ -781,7 +779,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       if (!hostinfo_copied) {
         memccpy(hname, vector.get(i)->request_get()->host_get(&hlen), 0, 500);
         hname[hlen] = 0;
-        Dbg(dbg_ctl_cache_scan, "hostname = '%s', hostlen = %d", hname, hlen);
+        Dbg(get_dbg_cache_scan(), "hostname = '%s', hostlen = %d", hname, hlen);
         hostinfo_copied = true;
       }
       vector.get(i)->object_key_get(&key);
@@ -865,9 +863,9 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     scan_fix_buffer_offset  = partial_object_len;
   } else { // Normal case, where we ended on a object boundary.
     io.aiocb.aio_offset += (reinterpret_cast<char *>(doc) - buf->data()) + next_object_len;
-    Dbg(dbg_ctl_cache_scan_truss, "next %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
+    Dbg(get_dbg_cache_scan_truss(), "next %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
     io.aiocb.aio_offset = next_in_map(stripe, scan_stripe_map, io.aiocb.aio_offset);
-    Dbg(dbg_ctl_cache_scan_truss, "next_in_map %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
+    Dbg(get_dbg_cache_scan_truss(), "next_in_map %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
     io.aiocb.aio_nbytes    = SCAN_BUF_SIZE;
     io.aiocb.aio_buf       = buf->data();
     scan_fix_buffer_offset = 0;
@@ -887,12 +885,12 @@ Lread:
   }
   offset = 0;
   ink_assert(ink_aio_read(&io) >= 0);
-  Dbg(dbg_ctl_cache_scan_truss, "read %p:scanObject %" PRId64 " %zu", this, (int64_t)io.aiocb.aio_offset,
+  Dbg(get_dbg_cache_scan_truss(), "read %p:scanObject %" PRId64 " %zu", this, (int64_t)io.aiocb.aio_offset,
       (size_t)io.aiocb.aio_nbytes);
   return EVENT_CONT;
 
 Ldone:
-  Dbg(dbg_ctl_cache_scan_truss, "done %p:scanObject", this);
+  Dbg(get_dbg_cache_scan_truss(), "done %p:scanObject", this);
   _action.continuation->handleEvent(CACHE_EVENT_SCAN_DONE, result);
 Lcancel:
   return free_CacheVC(this);
@@ -901,8 +899,8 @@ Lcancel:
 int
 CacheVC::scanRemoveDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  Dbg(dbg_ctl_cache_scan_truss, "inside %p:scanRemoveDone", this);
-  Dbg(dbg_ctl_cache_scan, "remove done.");
+  Dbg(get_dbg_cache_scan_truss(), "inside %p:scanRemoveDone", this);
+  Dbg(get_dbg_cache_scan(), "remove done.");
   alternate.destroy();
   SET_HANDLER(&CacheVC::scanObject);
   return handleEvent(EVENT_IMMEDIATE, nullptr);
@@ -911,12 +909,12 @@ CacheVC::scanRemoveDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 int
 CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  Dbg(dbg_ctl_cache_scan_truss, "inside %p:scanOpenWrite", this);
+  Dbg(get_dbg_cache_scan_truss(), "inside %p:scanOpenWrite", this);
   cancel_trigger();
   // get volume lock
   if (writer_lock_retry > SCAN_WRITER_LOCK_MAX_RETRY) {
     int r = _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_BLOCKED, nullptr);
-    Dbg(dbg_ctl_cache_scan, "still haven't got the writer lock, asking user..");
+    Dbg(get_dbg_cache_scan(), "still haven't got the writer lock, asking user..");
     switch (r) {
     case CACHE_SCAN_RESULT_RETRY:
       writer_lock_retry = 0;
@@ -930,11 +928,11 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
-      Dbg(dbg_ctl_cache_scan, "stripe->mutex %p:scanOpenWrite", this);
+      Dbg(get_dbg_cache_scan(), "stripe->mutex %p:scanOpenWrite", this);
       VC_SCHED_LOCK_RETRY();
     }
 
-    Dbg(dbg_ctl_cache_scan, "trying for writer lock");
+    Dbg(get_dbg_cache_scan(), "trying for writer lock");
     if (stripe->open_write(this, false, 1)) {
       writer_lock_retry++;
       SET_HANDLER(&CacheVC::scanOpenWrite);
@@ -952,7 +950,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     vector.clear(false);
     // check that the directory entry was not overwritten
     // if so return failure
-    Dbg(dbg_ctl_cache_scan, "got writer lock");
+    Dbg(get_dbg_cache_scan(), "got writer lock");
     Dir *l = nullptr;
     Dir  d;
     Doc *doc = reinterpret_cast<Doc *>(buf->data() + offset);
@@ -976,7 +974,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         return handleEvent(EVENT_IMMEDIATE, nullptr);
       }
       if (memcmp(&dir, &d, SIZEOF_DIR)) {
-        Dbg(dbg_ctl_cache_scan, "dir entry has changed");
+        Dbg(get_dbg_cache_scan(), "dir entry has changed");
         continue;
       }
       break;
@@ -1000,7 +998,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 int
 CacheVC::scanUpdateDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  Dbg(dbg_ctl_cache_scan_truss, "inside %p:scanUpdateDone", this);
+  Dbg(get_dbg_cache_scan_truss(), "inside %p:scanUpdateDone", this);
   cancel_trigger();
   // get volume lock
   CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
