@@ -7950,10 +7950,10 @@ TSVConnSslSniGet(TSVConn sslp, int *length)
 TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
 {
-  NetVConnection    *vc     = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
-  if (ssl_vc != nullptr) {
-    return reinterpret_cast<TSSslVerifyCTX>(ssl_vc->get_verify_cert());
+  NetVConnection  *vc    = reinterpret_cast<NetVConnection *>(sslp);
+  TLSBasicSupport *tlsbs = vc->get_service<TLSBasicSupport>();
+  if (tlsbs != nullptr) {
+    return reinterpret_cast<TSSslVerifyCTX>(tlsbs->get_tls_cert_to_verify());
   }
   return nullptr;
 }

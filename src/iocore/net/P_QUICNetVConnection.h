@@ -165,6 +165,7 @@ protected:
   // TLSBasicSupport
   SSL         *_get_ssl_object() const override;
   ssl_curve_id _get_tls_curve() const override;
+  int          _verify_certificate(X509_STORE_CTX *ctx) override;
 
   // TLSSNISupport
   in_port_t _get_local_port() override;
@@ -235,6 +236,9 @@ private:
 
   QUICStreamManager  *_stream_manager  = nullptr;
   QUICApplicationMap *_application_map = nullptr;
+
+  bool _is_verifying_cert = false;
+  bool _is_cert_verified  = false;
 };
 
 extern ClassAllocator<QUICNetVConnection> quicNetVCAllocator;

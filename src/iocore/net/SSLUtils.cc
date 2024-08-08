@@ -283,20 +283,14 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   Dbg(dbg_ctl_ssl_verify, "Callback: verify client cert");
   auto              *ssl   = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  TLSBasicSupport   *tbs   = TLSBasicSupport::getInstance(ssl);
 
-  if (!netvc || netvc->ssl != ssl) {
-    Dbg(dbg_ctl_ssl_verify, "ssl_verify_client_callback call back on stale netvc");
+  if (tbs == nullptr) {
+    Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
     return false;
   }
 
-  netvc->set_verify_cert(ctx);
-  TLSEventSupport *es = TLSEventSupport::getInstance(ssl);
-  if (es) {
-    es->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
-  }
-  netvc->set_verify_cert(nullptr);
-
-  if (netvc->getSSLHandShakeComplete()) { // hook moved the handshake state to terminal
+  if (tbs->verify_certificate(ctx) == 1) { // hook moved the handshake state to terminal
     Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", netvc->options.sni_servername.get());
     return false;
   }

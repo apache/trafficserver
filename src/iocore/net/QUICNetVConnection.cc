@@ -769,8 +769,13 @@ QUICNetVConnection::get_quic_connection()
 }
 
 void
-QUICNetVConnection::reenable(int /* event ATS_UNUSED */)
+QUICNetVConnection::reenable(int event)
 {
+  this->_is_verifying_cert = false;
+
+  if (event == TS_EVENT_ERROR) {
+    this->_is_cert_verified = false;
+  }
 }
 
 Continuation *
@@ -805,6 +810,38 @@ QUICNetVConnection::_get_tls_curve() const
   } else {
     return SSLGetCurveNID(this->_ssl);
   }
+}
+
+int
+QUICNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
+{
+  TSEvent      eventId;
+  TSHttpHookID hookId;
+  APIHook     *hook = nullptr;
+
+  // TODO Simply call callHooks once QUICNetVC implements TLSEventSupport
+  if (get_context() == NET_VCONNECTION_IN) {
+    eventId = TS_EVENT_SSL_VERIFY_CLIENT;
+    hookId  = TS_SSL_VERIFY_CLIENT_HOOK;
+  } else {
+    eventId = TS_EVENT_SSL_VERIFY_SERVER;
+    hookId  = TS_SSL_VERIFY_SERVER_HOOK;
+  }
+  hook = SSLAPIHooks::instance()->get(TSSslHookInternalID(hookId));
+  if (hook != nullptr) {
+    this->_is_verifying_cert = true;
+    WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
+    hook->invoke(eventId, this);
+  }
+
+  // According to the implementation in SSLNetVC,
+  // we can assume that reenable() is called during the event handling.
+  ink_assert(this->_is_verifying_cert == false);
+  if (this->_is_cert_verified) {
+    return 1;
+  }
+
+  return 0;
 }
 
 in_port_t

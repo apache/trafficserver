@@ -1964,6 +1964,27 @@ SSLNetVConnection::_get_tls_curve() const
   }
 }
 
+int
+SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
+{
+  // Currently, TS_EVENT_SSL_VERIFY_CLIENT/SERVER are invoked only with a NetVC instance.
+  // This requires plugins to call TSSslVerifyCTX in their event handler.
+  // We could pass a structure that has both a cert to verify and a NetVC.
+  // It would allow us to remove confusing TSSslVerifyCTX and its internal implementation that are only available during a very
+  // limited time.
+  if (get_context() == NET_VCONNECTION_IN) {
+    this->callHooks(TS_EVENT_SSL_VERIFY_CLIENT /* , ctx */);
+  } else {
+    this->callHooks(TS_EVENT_SSL_VERIFY_SERVER /* , ctx */);
+  }
+
+  if (this->sslHandshakeStatus == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
+    return 1;
+  }
+
+  return 0;
+}
+
 ssl_error_t
 SSLNetVConnection::_ssl_accept()
 {

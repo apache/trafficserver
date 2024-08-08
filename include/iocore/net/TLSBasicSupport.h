@@ -47,10 +47,29 @@ public:
   const char *get_tls_curve() const;
   ink_hrtime  get_tls_handshake_begin_time() const;
   ink_hrtime  get_tls_handshake_end_time() const;
+  /**
+   * Returns a certificate that neeed to be verified.
+   *
+   * Note: This function is only available during verify_certification is being called.
+   * This function is probably just for TSVConnSslVerifyCTXGet.
+   * We could (and probably should) pass a cert to verify as an argument of TS_EVENT_SSL_VERIFY_CLIENT/SERVER event.
+   */
+  X509_STORE_CTX *get_tls_cert_to_verify() const;
 
   void set_valid_tls_version_min(int min);
   void set_valid_tls_version_max(int max);
   void set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask);
+
+  /**
+   * Give the plugin access to the data structure passed in during the underlying
+   * openssl callback so the plugin can make more detailed decisions about the
+   * validity of the certificate in their cases.
+   *
+   * This function is supposed to be called from callback functions for TLS libraries.
+   *
+   * @return 1 if verification failed
+   */
+  int verify_certificate(X509_STORE_CTX *ctx);
 
 protected:
   void clear();
@@ -61,8 +80,17 @@ protected:
   void _record_tls_handshake_begin_time();
   void _record_tls_handshake_end_time();
 
+  /**
+   * Implementation should schedule either TS_EVENT_SSL_VERIFY_SERVER or TS_EVENT_SSL_VERIFY_CLIENT accordingly.
+   *
+   * @return 1 if verification failed
+   */
+  virtual int _verify_certificate(X509_STORE_CTX *ctx) = 0;
+
 private:
   static int _ex_data_index;
+
+  X509_STORE_CTX *_cert_to_verify = nullptr;
 
   ink_hrtime _tls_handshake_begin_time = 0;
   ink_hrtime _tls_handshake_end_time   = 0;
