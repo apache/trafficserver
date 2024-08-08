@@ -1140,7 +1140,7 @@ StripeSM::agg_wrap()
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_wrap);
     Note("Cache volume %d on disk '%s' wraps around", stripe->cache_vol->vol_number, stripe->hash_text.get());
   }
-  ink_assert(this->mutex->thread_holding = this_ethread());
+  ink_assert(this->mutex->thread_holding == this_ethread());
   periodic_scan(this);
 }
 
