@@ -45,7 +45,7 @@ hex(const std::string_view input)
   result.resize(input.size() * 2);
 
   char *p   = result.data();
-  char *end = result.data() + result.size();
+  char *end = p + result.size();
   for (unsigned char x : input) {
     if (x < 0x10) {
       *p++ = '0';
