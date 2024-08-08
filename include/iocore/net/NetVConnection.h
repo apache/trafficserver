@@ -526,6 +526,7 @@ protected:
     TLS_ALPN,
     TLS_Basic,
     TLS_CertSwitch,
+    TLS_Event,
     TLS_EarlyData,
     TLS_SNI,
     TLS_SessionResumption,
@@ -617,6 +618,20 @@ inline void
 NetVConnection::_set_service(TLSBasicSupport *instance)
 {
   this->_set_service(NetVConnection::Service::TLS_Basic, instance);
+}
+
+class TLSEventSupport;
+template <>
+inline TLSEventSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSEventSupport *>(this->_get_service(NetVConnection::Service::TLS_Event));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSEventSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_Event, instance);
 }
 
 class TLSEarlyDataSupport;

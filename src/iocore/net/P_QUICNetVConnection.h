@@ -43,6 +43,7 @@
 #include "P_UDPNet.h"
 #include "iocore/net/TLSALPNSupport.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSEventSupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "iocore/net/TLSSNISupport.h"
 #include "iocore/net/TLSCertSwitchSupport.h"
@@ -59,6 +60,7 @@
 #include <netinet/in.h>
 #include <quiche.h>
 
+class EThread;
 class QUICPacketHandler;
 class QUICResetTokenTable;
 class QUICConnectionTable;
@@ -70,6 +72,7 @@ class QUICNetVConnection : public UnixNetVConnection,
                            public TLSSNISupport,
                            public TLSSessionResumptionSupport,
                            public TLSCertSwitchSupport,
+                           public TLSEventSupport,
                            public TLSBasicSupport,
                            public QUICSupport
 {
@@ -144,6 +147,12 @@ public:
   // QUICNetVConnection
   int in_closed_queue = 0;
 
+  // TLSEventSupport
+  void            reenable(int event) override;
+  Continuation   *getContinuationForTLSEvents() override;
+  EThread        *getThreadForTLSEvents() override;
+  Ptr<ProxyMutex> getMutexForTLSEvents() override;
+
   bool shouldDestroy();
   void destroy(EThread *t);
   void remove_connection_ids();
@@ -170,6 +179,19 @@ protected:
   bool           _isTryingRenegotiation() const override;
   shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) override;
   shared_SSL_CTX _lookupContextByIP() override;
+
+  // TLSEventSupport
+  bool
+  _is_tunneling_requested() override
+  {
+    // FIXME Not Supported
+    return false;
+  }
+  void
+  _switch_to_tunneling_mode() override
+  {
+    // FIXME Not supported
+  }
 
 private:
   SSL                      *_ssl;
