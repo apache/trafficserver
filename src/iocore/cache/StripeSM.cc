@@ -663,7 +663,7 @@ StripeSM::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data AT
   init_info = nullptr;
   set_io_not_in_progress();
   scan_pos = header->write_pos;
-  ink_assert(this->mutex->thread_holding = this_ethread());
+  ink_assert(this->mutex->thread_holding == this_ethread());
   periodic_scan(this);
   SET_HANDLER(&StripeSM::dir_init_done);
   return dir_init_done(EVENT_IMMEDIATE, nullptr);
