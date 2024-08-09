@@ -56,9 +56,9 @@ swoc::Errata RecYAMLConfigFileParse(const char *path, RecYAMLNodeHandler handler
 /// @brief This function parses the YAML root node ("records") and convert each field
 ///        into a record style object.
 ///
-/// As we keep the internal records without a change we should rebuild each records name
+/// As we keep the internal records without a change we should rebuild each record name
 /// from a YAML structure, this function parses the yaml and while walking down to the scalar
-/// node it builds the record name, this where the handler gets called.
+/// node it builds up the record name, once finishes the handler gets called.
 ///
 /// Example:
 ///
