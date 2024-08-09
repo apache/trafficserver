@@ -299,6 +299,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     break;
   }
 
+  bool reenable{true};
   if (hook != TS_HTTP_LAST_HOOK) {
     const RuleSet *rule = conf->rule(hook);
     Resources      res(txnp, contp);
@@ -311,6 +312,10 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
       if (rule->eval(res)) {
         OperModifiers rt = rule->exec(res);
 
+        if (rt & OPER_NO_REENABLE) {
+          reenable = false;
+        }
+
         if (rule->last() || (rt & OPER_LAST)) {
           break; // Conditional break, force a break with [L]
         }
@@ -319,7 +324,9 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     }
   }
 
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  if (reenable) {
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  }
   return 0;
 }
 
@@ -522,6 +529,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   while (rule) {
     if (rule->eval(res)) {
       OperModifiers rt = rule->exec(res);
+
+      ink_assert((rt & OPER_NO_REENABLE) == 0);
 
       if (res.changed_url == true) {
         rval = TSREMAP_DID_REMAP;
