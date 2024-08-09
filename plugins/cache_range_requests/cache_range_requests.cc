@@ -50,9 +50,10 @@ enum parent_select_mode_t {
   PS_CACHEKEY_URL, // Set parent selection url to cache_key url
 };
 
-constexpr std::string_view DefaultImsHeader = {"X-Crr-Ims"};
-constexpr std::string_view SLICE_CRR_HEADER = {"Slice-Crr-Status"};
-constexpr std::string_view SLICE_CRR_VAL    = "1";
+constexpr std::string_view DefaultImsHeader  = {"X-Crr-Ims"};
+constexpr std::string_view SLICE_CRR_HEADER  = {"Slice-Crr-Status"};
+constexpr std::string_view SLICE_CRR_VAL     = "1";
+constexpr std::string_view SKIP_CRR_HDR_NAME = {"X-Skip-Crr"};
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
@@ -86,6 +87,7 @@ bool                 set_header(TSMBuffer, TSMLoc, const char *, int, const char
 int                  transaction_handler(TSCont, TSEvent, void *);
 struct pluginconfig *create_pluginconfig(int argc, char *const argv[]);
 void                 delete_pluginconfig(pluginconfig *const);
+static bool          has_skip_crr_header(TSHttpTxn);
 
 /**
  * Creates pluginconfig data structure
@@ -192,10 +194,30 @@ handle_read_request_header(TSCont /* txn_contp ATS_UNUSED */, TSEvent /* event A
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
-  range_header_check(txnp, gPluginConfig);
+  if (!has_skip_crr_header(txnp)) {
+    range_header_check(txnp, gPluginConfig);
+  }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
+}
+
+static bool
+has_skip_crr_header(TSHttpTxn txnp)
+{
+  TSMBuffer hdr_buf = nullptr;
+  TSMLoc    hdr_loc = TS_NULL_MLOC;
+  bool      ret     = false;
+
+  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_buf, &hdr_loc)) {
+    TSMLoc const skip_crr_loc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, SKIP_CRR_HDR_NAME.data(), SKIP_CRR_HDR_NAME.length());
+    if (TS_NULL_MLOC != skip_crr_loc) {
+      TSHandleMLocRelease(hdr_buf, hdr_loc, skip_crr_loc);
+      ret = true;
+    }
+    TSHandleMLocRelease(hdr_buf, TS_NULL_MLOC, hdr_loc);
+  }
+  return ret;
 }
 
 /**
@@ -682,7 +704,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 {
   pluginconfig *const pc = static_cast<pluginconfig *>(ih);
 
-  range_header_check(txnp, pc);
+  if (!has_skip_crr_header(txnp)) {
+    range_header_check(txnp, pc);
+  }
 
   return TSREMAP_NO_REMAP;
 }
