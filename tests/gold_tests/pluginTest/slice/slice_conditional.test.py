@@ -65,10 +65,8 @@ server.addResponse("sessionlog.json", req_large, res_large)
 large_body = "large object sliced!"
 body_len = len(large_body)
 slice_begin = 0
-slice_end = 0
 slice_block_size = 10
-while (slice_end < body_len):
-    # 1st slice
+while (slice_begin < body_len):
     slice_end = slice_begin + slice_block_size
     req_large_slice = {
         "headers": "GET /large HTTP/1.1\r\n" + "Host: www.example.com\r\n" + f"Range: bytes={slice_begin}-{slice_end - 1}" + "\r\n",
@@ -83,7 +81,7 @@ while (slice_end < body_len):
         "body": large_body[slice_begin:slice_end]
     }
     server.addResponse("sessionlog.json", req_large_slice, res_large_slice)
-    slice_begin = slice_end
+    slice_begin += slice_block_size
 
 # set up slice plugin with remap host into cache_range_requests
 ts.Disk.remap_config.AddLines(

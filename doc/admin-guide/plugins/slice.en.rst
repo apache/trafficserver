@@ -342,6 +342,36 @@ The functionality works with `--ref-relative` both enabled and disabled. If `--r
 disabled (using slice 0 as the reference block), requesting to PURGE a block that does not have
 slice 0 in its range will still PURGE the slice 0 block, as the reference block is always processed.
 
+Conditional Slicing
+-------------------
+
+The goal of conditional slicing is to slice large objects and avoid the cost of slicing on small
+objects.  If `--minimum-size` is specified, conditional slicing is enabled and works as follows.
+
+The plugin builds a object size cache in memory.  The key is the URL of the object.  Only
+large object URLs are written to the cache.  The object size cache uses CLOCK eviction algorithm
+in order to have lazy promotion behavior.
+
+When a URL not found in the object size cache, the plugin treats the object as a small object.  It
+will not intercept the request.  The request is processed by ATS without any slice logic.  Upon
+receiving a response, the slice plugin will check the response content length to update the object
+size cache if necessary.
+
+When a large URL is requested for the first time, conditional slicing will not intercept that
+request since the URL is not known to be large.  This will cause an ATS cache miss and the request
+will go to origin server.  Slice plugin will turn off writing to cache for this response, because
+it expects to slice this object in future requests.
+
+If the object size cache evicts a URL, the size of the object for that URL will need to be learned
+again in a subsequent request, and the behavior above will happen again.
+
+If the URL is found in the object size cache, conditional slicing treats the object as a large object
+and will activate the slicing logic as described in the rest of this document.
+
+If the client sends a range request, and that URL is not in the object size cache, the slice plugin
+will forward the range request to ATS core.  It also attaches an internal header in order to deactivate
+the `cache_range_requests` plugin for this range request.
+
 Important Notes
 ===============
 
