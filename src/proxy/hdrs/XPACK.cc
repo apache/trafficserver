@@ -179,8 +179,8 @@ xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value,
 int64_t
 xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, uint64_t value_len, uint8_t n)
 {
-  uint8_t *p           = buf_start;
-  bool     use_huffman = true;
+  uint8_t       *p           = buf_start;
+  constexpr bool use_huffman = true;
 
   ts::LocalBuffer<uint8_t, 4096> local_buffer(value_len * 4);
   uint8_t                       *data     = local_buffer.data();
