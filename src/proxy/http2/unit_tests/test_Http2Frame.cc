@@ -41,6 +41,7 @@ TEST_CASE("Http2Frame", "[http2][Http2Frame]")
     Http2PushPromiseFrame frame(id, flags, pp, hdr_block, hdr_block_len);
     int64_t               written = frame.write_to(miob);
 
+    REQUIRE(written != -1);
     CHECK(written == static_cast<int64_t>(HTTP2_FRAME_HEADER_LEN + sizeof(Http2StreamId) + hdr_block_len));
     CHECK(written == miob_r->read_avail());
 
