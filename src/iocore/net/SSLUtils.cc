@@ -2376,7 +2376,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
 
     if (secret_key_data.empty()) {
       Dbg(dbg_ctl_ssl_load, "empty private key for public key %s", cert_names_list[i].c_str());
-      secret_key_data = secret_data;
+      secret_key_data = std::move(secret_data);
     }
     if (!SSLPrivateKeyHandler(ctx, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
       SSLError("failed to load certificate: %s of length %ld with key path: %s", cert_names_list[i].c_str(), secret_key_data.size(),
