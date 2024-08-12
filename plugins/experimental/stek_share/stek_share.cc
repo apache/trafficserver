@@ -25,6 +25,7 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <utility>
 
 #include <openssl/ssl.h>
 #include <ts/ts.h>
@@ -85,7 +86,7 @@ void
 restore_config(std::shared_ptr<PluginConfig> config)
 {
   std::unique_lock lock(plugin_config_mutex);
-  plugin_config = config;
+  plugin_config = std::move(config);
 }
 
 static int
