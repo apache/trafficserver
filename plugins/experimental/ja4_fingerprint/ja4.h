@@ -81,7 +81,7 @@ public:
 private:
   std::vector<std::uint16_t> _ciphers;
   std::vector<std::uint16_t> _extensions;
-  int                        _extension_count_including_sni_and_alpn;
+  int                        _extension_count_including_sni_and_alpn{0};
 };
 
 /**
