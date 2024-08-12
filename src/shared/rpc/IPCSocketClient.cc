@@ -154,12 +154,12 @@ IPCSocketClient::connect(std::chrono::milliseconds ms, int attempts)
   return *this;
 }
 
-ssize_t
+std::int64_t
 IPCSocketClient::_safe_write(int fd, const char *buffer, int len)
 {
-  ssize_t written{0};
+  std::int64_t written{0};
   while (written < len) {
-    const int ret = ::write(fd, buffer + written, len - written);
+    const ssize_t ret = ::write(fd, buffer + written, len - written);
     if (ret == -1) {
       if (errno == EAGAIN || errno == EINTR) {
         continue;
