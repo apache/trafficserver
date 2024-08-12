@@ -363,7 +363,7 @@ LayoutEngine::remove_runroot()
     return;
   }
 
-  std::string clean_root = path;
+  std::string clean_root = std::move(path);
   append_slash(clean_root);
 
   if (arguments.get("force")) {
