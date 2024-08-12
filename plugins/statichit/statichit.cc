@@ -33,7 +33,6 @@
 #include <sstream>
 
 #include <string>
-#include <filesystem>
 #include <getopt.h>
 
 #include <netinet/in.h>
@@ -41,6 +40,8 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
+
+#include <utility>
 
 constexpr char PLUGIN[] = "statichit";
 
@@ -71,7 +72,7 @@ struct StaticHitConfig {
     base_path = std::filesystem::weakly_canonical(base_path);
 
     if (std::filesystem::is_directory(base_path)) {
-      dirPath      = base_path;
+      dirPath      = std::move(base_path);
       filePath     = "";
       disableExact = true;
     } else {
