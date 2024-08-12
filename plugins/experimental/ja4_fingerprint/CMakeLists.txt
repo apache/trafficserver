@@ -21,4 +21,3 @@ if(BUILD_TESTING)
 
   add_test(test_ja4 test_ja4)
 endif()
-
