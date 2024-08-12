@@ -18,6 +18,7 @@ limitations under the License.
 // This file is based on the example code from https://github.com/eBay/NuRaft/tree/master/examples
 
 #include <cassert>
+#include <utility>
 
 #include <libnuraft/nuraft.hxx>
 
@@ -90,7 +91,7 @@ STEKShareLogStore::write_at(uint64_t index, nuraft::ptr<nuraft::log_entry> &entr
   while (itr != logs_.end()) {
     itr = logs_.erase(itr);
   }
-  logs_[index] = clone;
+  logs_[index] = std::move(clone);
 }
 
 nuraft::ptr<std::vector<nuraft::ptr<nuraft::log_entry>>>
