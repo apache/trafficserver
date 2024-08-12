@@ -153,6 +153,41 @@ The slice plugin supports the following options::
         Enable slice plugin to strip Range header for HEAD requests.
         -h for short
 
+    --minimum-size (optional)
+    --metadata-cache-size (optional)
+    --stats-prefix (optional)
+        In combination, these three options allow for conditional slice.
+        Specify the minimum size object to slice with --minimum-size.  Allowed
+        values are the same as --blockbytes.  Conditional slicing uses a cache
+        of object sizes to make the decision of whether to slice.  The cache
+        will only store the URL of large objects as they are discovered in
+        origin responses.  You should set the --metadata-cache-size to by
+        estimating the working set size of large objects.  You can use
+        stats to determine whether --metadata-cache-size was set optimally.
+        Stat names are prefixed with the value of --stats-prefix.  The names
+        are:
+
+        <prefix>.metadata_cache.true_large_objects - large object cache hits
+        <prefix>.metadata_cache.true_small_objects - small object cache hits
+        <prefix>.metadata_cache.false_large_objects - large object cache misses
+        <prefix>.metadata_cache.false_small_objects - small object cache misses
+        <prefix>.metadata_cache.no_content_length - number of responses without content length
+        <prefix>.metadata_cache.bad_content_length - number of responses with invalid content length
+        <prefix>.metadata_cache.no_url - number of responses where URL parsing failed
+
+        If an object size is not found in the object size cache, the plugin
+        will not slice the object, and will turn off ATS cache on this request.
+        The object size will be cached in following requests, and slice will
+        proceed normally if the object meets the minimum size requirement.
+
+        Range requests from the client for small objects are passed through the
+        plugin unchanged.  If you use the `cache_range_requests` plugin, slice plugin
+        will communicate with `cache_range_requests` using an internal header
+        that causes `cache_range_requests` to be bypassed in such requests, and
+        allow ATS to handle those range requests internally.
+
+
+
 Examples::
 
     @plugin=slice.so @pparam=--blockbytes=1000000 @plugin=cache_range_requests.so
@@ -306,6 +341,36 @@ slice will not continue to purge the following blocks.
 The functionality works with `--ref-relative` both enabled and disabled. If `--ref-relative` is
 disabled (using slice 0 as the reference block), requesting to PURGE a block that does not have
 slice 0 in its range will still PURGE the slice 0 block, as the reference block is always processed.
+
+Conditional Slicing
+-------------------
+
+The goal of conditional slicing is to slice large objects and avoid the cost of slicing on small
+objects.  If `--minimum-size` is specified, conditional slicing is enabled and works as follows.
+
+The plugin builds a object size cache in memory.  The key is the URL of the object.  Only
+large object URLs are written to the cache.  The object size cache uses CLOCK eviction algorithm
+in order to have lazy promotion behavior.
+
+When a URL not found in the object size cache, the plugin treats the object as a small object.  It
+will not intercept the request.  The request is processed by ATS without any slice logic.  Upon
+receiving a response, the slice plugin will check the response content length to update the object
+size cache if necessary.
+
+When a large URL is requested for the first time, conditional slicing will not intercept that
+request since the URL is not known to be large.  This will cause an ATS cache miss and the request
+will go to origin server.  Slice plugin will turn off writing to cache for this response, because
+it expects to slice this object in future requests.
+
+If the object size cache evicts a URL, the size of the object for that URL will need to be learned
+again in a subsequent request, and the behavior above will happen again.
+
+If the URL is found in the object size cache, conditional slicing treats the object as a large object
+and will activate the slicing logic as described in the rest of this document.
+
+If the client sends a range request, and that URL is not in the object size cache, the slice plugin
+will forward the range request to ATS core.  It also attaches an internal header in order to deactivate
+the `cache_range_requests` plugin for this range request.
 
 Important Notes
 ===============
