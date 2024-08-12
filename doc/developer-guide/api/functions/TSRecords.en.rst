@@ -52,6 +52,7 @@ Return Values
 =============
 
 :func:`TSMgmtStringCreate` and :func:`TSMgmtIntCreate` return :const:`TS_SUCCESS` if the management value was created and :const:`TS_ERROR` if not.
+It is important to note that if a check type is expected then the ``data_default`` must pass the ``check_regex`` (Consistency check).
 
 See Also
 ========
