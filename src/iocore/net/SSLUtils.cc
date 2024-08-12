@@ -78,6 +78,8 @@
 #include <openssl/ts.h>
 #endif
 
+#include <utility>
+
 using namespace std::literals;
 
 // ssl_multicert.config field names:
@@ -1677,7 +1679,8 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get());
   for (const auto &loadingctx : ctxs) {
     shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
-    if (!sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, loadingctx.ctx_type, common_names)) {
+    if (!sslMultCertSettings ||
+        !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, std::move(ctx), loadingctx.ctx_type, common_names)) {
       if (!common_names.empty()) {
         std::string names;
         for (auto const &name : data.cert_names_list) {
