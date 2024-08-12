@@ -79,7 +79,7 @@ void
 backup_config(std::shared_ptr<PluginConfig> config)
 {
   std::unique_lock lock(plugin_config_old_mutex);
-  plugin_config_old = config;
+  plugin_config_old = std::move(config);
 }
 
 void
