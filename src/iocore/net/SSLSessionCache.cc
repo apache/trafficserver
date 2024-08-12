@@ -26,6 +26,7 @@
 #include <cstring>
 #include <memory>
 #include <shared_mutex>
+#include <utility>
 
 #define SSLSESSIONCACHE_STRINGIFY0(x) #x
 #define SSLSESSIONCACHE_STRINGIFY(x)  SSLSESSIONCACHE_STRINGIFY0(x)
@@ -353,7 +354,7 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
   // Create the shared pointer to the session, with the custom deleter
   std::shared_ptr<SSL_SESSION>      shared_sess(sess_ptr, SSLSessDeleter);
   ssl_curve_id                      curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
-  std::unique_ptr<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, curve, shared_sess));
+  std::unique_ptr<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, curve, std::move(shared_sess)));
   auto                              new_node = ssl_orig_session.release();
 
   std::unique_lock lock(mutex);
