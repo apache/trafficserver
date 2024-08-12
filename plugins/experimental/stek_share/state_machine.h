@@ -21,9 +21,10 @@ limitations under the License.
 
 #include <atomic>
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <mutex>
-#include <cstring>
+#include <utility>
 
 #include <libnuraft/nuraft.hxx>
 
@@ -144,7 +145,7 @@ public:
 
     {
       std::lock_guard<std::mutex> l(snapshot_lock_);
-      snapshot_ = ctx;
+      snapshot_ = std::move(ctx);
     }
 
     obj_id++;
