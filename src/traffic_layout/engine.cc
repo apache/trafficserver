@@ -36,6 +36,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <utility>
 #include <ftw.h>
 #include <yaml-cpp/yaml.h>
 #include <grp.h>
@@ -276,7 +277,7 @@ LayoutEngine::create_runroot()
         std::string value = it.second.as<std::string>();
         auto        iter  = new_map.find(key);
         if (iter != new_map.end()) {
-          iter->second = value;
+          iter->second = std::move(value);
         } else {
           if (key != "prefix") {
             ink_warning("Unknown item from %s: '%s'", layout_file.c_str(), key.c_str());
