@@ -33,6 +33,7 @@
 #include <sstream>
 
 #include <string>
+#include <filesystem>
 #include <getopt.h>
 
 #include <netinet/in.h>
