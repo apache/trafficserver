@@ -35,7 +35,7 @@ namespace
 {
 /// @brief Simple buffer to store the jsonrpc server's response.
 ///
-///        With small content it will just use the LocalBufferWritter, if the
+///        With small content it will just use the LocalBufferWriter, if the
 ///        content gets bigger, then it will just save the buffer into a stream
 ///        and reuse the already created BufferWritter.
 template <size_t N> class BufferStream
