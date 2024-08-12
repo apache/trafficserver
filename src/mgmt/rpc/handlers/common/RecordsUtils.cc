@@ -22,6 +22,7 @@
 
 #include <system_error>
 #include <string>
+#include <utility>
 
 #include "convert.h"
 #include "../../../../records/P_RecCore.h"
@@ -197,7 +198,7 @@ get_yaml_record(std::string const &name, ValidateRecType check)
   Context ctx;
 
   // Set the validation callback.
-  ctx.checkCb = check;
+  ctx.checkCb = std::move(check);
 
   // librecords will use the callback we provide in the ctx.checkCb to run the validation.
   get_record_impl(name, ctx);
