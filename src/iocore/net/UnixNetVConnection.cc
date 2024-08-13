@@ -1174,6 +1174,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   ink_assert(get_NetHandler(t)->mutex->thread_holding == this_ethread());
   int        res;
   UnixSocket sock{fd};
+  bool       already_connected{sock.is_ok()};
 
   thread = t;
   if (check_net_throttle(CONNECT)) {
@@ -1198,7 +1199,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
   // If this is getting called from the TS API, then we are wiring up a file descriptor
   // provided by the caller. In that case, we know that the socket is already connected.
-  if (!sock.is_ok()) {
+  if (!already_connected) {
     // Due to multi-threads system, the fd returned from con.open() may exceed the limitation of check_net_throttle().
     res = con.open(options);
     if (res != 0) {
@@ -1212,7 +1213,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     // is only used when setting up the socket.
     safe_getsockopt(fd, SOL_SOCKET, SO_TYPE, reinterpret_cast<char *>(&con.sock_type), &len);
     sock.set_nonblocking();
-    con.sock         = sock;
+    con.sock         = std::move(sock);
     con.is_connected = true;
     con.is_bound     = true;
   }
@@ -1223,7 +1224,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     goto fail;
   }
 
-  if (!sock.is_ok()) {
+  if (!already_connected) {
     res = con.connect(nullptr, options);
     if (res != 0) {
       // fast stopIO

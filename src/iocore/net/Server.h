@@ -29,6 +29,8 @@
 #include "tscore/ink_inet.h"
 #include "tscore/ink_memory.h"
 
+#include <memory>
+
 struct Server {
   /// Client side (inbound) local IP address.
   IpEndpoint accept_addr;

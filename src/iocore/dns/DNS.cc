@@ -679,7 +679,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
     open_cons(&m_res->nsaddr_list[ndx].sa, true, ndx);
   }
   bool          over_tcp = dns_conn_mode == DNS_CONN_MODE::TCP_ONLY;
-  UnixSocket    con_sock = over_tcp ? tcpcon[ndx].sock : udpcon[ndx].sock;
+  UnixSocket   &con_sock = over_tcp ? tcpcon[ndx].sock : udpcon[ndx].sock;
   unsigned char buffer[MAX_DNS_REQUEST_LEN];
   Dbg(dbg_ctl_dns, "trying to resolve '%s' from DNS connection, ndx %d", try_server_names[try_servers], ndx);
   int r       = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer, over_tcp);
@@ -703,7 +703,7 @@ DNSHandler::try_primary_named(bool reopen)
   if ((t - last_primary_retry) > DNS_PRIMARY_RETRY_PERIOD) {
     unsigned char buffer[MAX_DNS_REQUEST_LEN];
     bool          over_tcp = dns_conn_mode == DNS_CONN_MODE::TCP_ONLY;
-    UnixSocket    con_sock = over_tcp ? tcpcon[0].sock : udpcon[0].sock;
+    UnixSocket   &con_sock = over_tcp ? tcpcon[0].sock : udpcon[0].sock;
     last_primary_retry     = t;
     Dbg(dbg_ctl_dns, "trying to resolve '%s' from primary DNS connection", try_server_names[try_servers]);
     int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer, over_tcp);
@@ -1183,7 +1183,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
     h->release_query_id(e->id[dns_retries - e->retries]);
   }
   e->id[dns_retries - e->retries] = i;
-  UnixSocket con_sock             = over_tcp ? h->tcpcon[h->name_server].sock : h->udpcon[h->name_server].sock;
+  UnixSocket &con_sock            = over_tcp ? h->tcpcon[h->name_server].sock : h->udpcon[h->name_server].sock;
   Dbg(dbg_ctl_dns, "send query (qtype=%d) for %s to fd %d", e->qtype, e->qname, con_sock.get_fd());
 
   int s = con_sock.send(buffer, r, 0);

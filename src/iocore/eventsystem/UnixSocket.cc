@@ -23,6 +23,7 @@
 
 #include "iocore/eventsystem/UnixSocket.h"
 
+#include "tscore/Diags.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_config.h"
 #include "tscore/TextBuffer.h"
@@ -49,6 +50,27 @@ enum class TCPFastopenMask {
 static int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags);
 #endif
 static unsigned int read_uint_from_fd(int fd);
+
+UnixSocket::~UnixSocket()
+{
+  if (this->is_ok()) {
+    Warning("Dropped UnixSocket without closing socket.\n");
+  }
+}
+
+UnixSocket::UnixSocket(UnixSocket &&other)
+{
+  this->fd = other.fd;
+  other.fd = NO_SOCK;
+}
+
+UnixSocket &
+UnixSocket::operator=(UnixSocket &&other)
+{
+  this->fd = other.fd;
+  other.fd = NO_SOCK;
+  return *this;
+}
 
 int
 UnixSocket::set_nonblocking()
