@@ -26,7 +26,6 @@
   Connection.h
   Description:
   struct Connection
-  struct Server
   struct ConnectionManager
 
   struct ConnectionManager
@@ -131,31 +130,4 @@ protected:
    */
   Connection &operator=(Connection const &that) = default;
   void        _cleanup();
-};
-
-///////////////////////////////////////////////////////////////////////
-//
-// Server
-//
-///////////////////////////////////////////////////////////////////////
-struct Server : public Connection {
-  /// Client side (inbound) local IP address.
-  IpEndpoint accept_addr;
-
-  /// If set, a kernel HTTP accept filter
-  bool http_accept_filter = false;
-
-  int accept(Connection *c);
-
-  //
-  // Listen on a socket. We assume the port is in host by order, but
-  // that the IP address (specified by accept_addr) has already been
-  // converted into network byte order
-  //
-
-  int listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
-  int setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
-  int setup_fd_after_listen(const NetProcessor::AcceptOptions &opt);
-
-  Server() : Connection() { ink_zero(accept_addr); }
 };
