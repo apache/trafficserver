@@ -84,10 +84,10 @@ public:
   int recvmmsg(struct mmsghdr *msgvec, int vlen, int flags, struct timespec *timeout) const;
 #endif
 
-  std::int64_t write(void *buf, int size) const;
+  std::int64_t write(void const *buf, int size) const;
 
-  int send(void *buf, int size, int flags) const;
-  int sendto(void *buf, int size, int flags, struct sockaddr const *to, int tolen) const;
+  int send(void const *buf, int size, int flags) const;
+  int sendto(void const *buf, int size, int flags, struct sockaddr const *to, int tolen) const;
   int sendmsg(struct msghdr const *m, int flags) const;
 
   static int poll(struct pollfd *fds, unsigned long nfds, int timeout);
@@ -203,7 +203,7 @@ UnixSocket::recvmmsg(struct mmsghdr *msgvec, int vlen, int flags, struct timespe
 #endif
 
 inline std::int64_t
-UnixSocket::write(void *buf, int size) const
+UnixSocket::write(void const *buf, int size) const
 {
   std::int64_t r;
   do {
@@ -216,11 +216,11 @@ UnixSocket::write(void *buf, int size) const
 }
 
 inline int
-UnixSocket::send(void *buf, int size, int flags) const
+UnixSocket::send(void const *buf, int size, int flags) const
 {
   int r;
   do {
-    if (unlikely((r = ::send(this->fd, static_cast<char *>(buf), size, flags)) < 0)) {
+    if (unlikely((r = ::send(this->fd, static_cast<char const *>(buf), size, flags)) < 0)) {
       r = -errno;
     }
   } while (r == -EINTR);
@@ -228,7 +228,7 @@ UnixSocket::send(void *buf, int size, int flags) const
 }
 
 inline int
-UnixSocket::sendto(void *buf, int len, int flags, struct sockaddr const *to, int tolen) const
+UnixSocket::sendto(void const *buf, int len, int flags, struct sockaddr const *to, int tolen) const
 {
   int r;
   do {
