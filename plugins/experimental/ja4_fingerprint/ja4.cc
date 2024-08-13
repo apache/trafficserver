@@ -50,6 +50,7 @@ std::string
 JA4::make_JA4_a_raw(TLSClientHelloSummary const &TLS_summary)
 {
   std::string result;
+  result.reserve(9);
   result.push_back(convert_protocol_to_char(TLS_summary.protocol));
   result.append(convert_TLS_version_to_string(TLS_summary.TLS_version));
   result.push_back(convert_SNI_to_char(TLS_summary.SNI_type));
@@ -116,6 +117,7 @@ std::string
 JA4::make_JA4_b_raw(TLSClientHelloSummary const &TLS_summary)
 {
   std::string result;
+  result.reserve(12);
   std::vector temp = TLS_summary.get_ciphers();
   std::sort(temp.begin(), temp.end());
 
@@ -131,6 +133,7 @@ std::string
 JA4::make_JA4_c_raw(TLSClientHelloSummary const &TLS_summary)
 {
   std::string result;
+  result.reserve(12);
   std::vector temp = TLS_summary.get_extensions();
   std::sort(temp.begin(), temp.end());
 
