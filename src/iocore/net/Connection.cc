@@ -71,7 +71,7 @@ NetVCOptions::toString(addr_bind_style s)
   return ANY_ADDR == s ? "any" : INTF_ADDR == s ? "interface" : "foreign";
 }
 
-Connection::Connection() : fd(NO_FD)
+Connection::Connection()
 {
   memset(&addr, 0, sizeof(addr));
 }
@@ -87,11 +87,11 @@ Server::accept(Connection *c)
   int       res = 0;
   socklen_t sz  = sizeof(c->addr);
 
-  res = SocketManager::accept4(fd, &c->addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
+  res = sock.accept4(&c->addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
   if (res < 0) {
     return res;
   }
-  c->fd = res;
+  c->sock = UnixSocket{res};
   if (dbg_ctl_iocore_net_server.on()) {
     ip_port_text_buffer ipb1, ipb2;
     DbgPrint(dbg_ctl_iocore_net_server, "Connection accepted [Server]. %s -> %s", ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2)),
@@ -107,12 +107,10 @@ Connection::close()
   is_connected = false;
   is_bound     = false;
   // don't close any of the standards
-  if (fd >= 2) {
-    int fd_save = fd;
-    fd          = NO_FD;
-    return SocketManager::close(fd_save);
+  if (sock.get_fd() >= 2) {
+    return sock.close();
   } else {
-    fd = NO_FD;
+    sock = UnixSocket{NO_FD};
     return -EBADF;
   }
 }
@@ -126,15 +124,15 @@ Connection::move(Connection &orig)
 {
   this->is_connected = orig.is_connected;
   this->is_bound     = orig.is_bound;
-  this->fd           = orig.fd;
+  this->sock         = orig.sock;
   // The target has taken ownership of the file descriptor
-  orig.fd         = NO_FD;
+  orig.sock       = UnixSocket{NO_FD};
   this->addr      = orig.addr;
   this->sock_type = orig.sock_type;
 }
 
 static int
-add_http_filter(int fd ATS_UNUSED)
+add_http_filter([[maybe_unused]] int fd)
 {
   int err = -1;
 #if defined(SOL_FILTER) && defined(FIL_ATTACH)
@@ -149,19 +147,19 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   int res               = 0;
   int listen_per_thread = 0;
 
-  ink_assert(fd != NO_FD);
+  ink_assert(sock.is_ok());
 
   if (opt.defer_accept > 0) {
     http_accept_filter = true;
-    add_http_filter(fd);
+    add_http_filter(sock.get_fd());
   }
 
   if (opt.recv_bufsize) {
-    if (SocketManager::set_rcvbuf_size(fd, opt.recv_bufsize)) {
+    if (sock.set_rcvbuf_size(opt.recv_bufsize)) {
       // Round down until success
       int rbufsz = ROUNDUP(opt.recv_bufsize, 1024);
       while (rbufsz) {
-        if (SocketManager::set_rcvbuf_size(fd, rbufsz)) {
+        if (sock.set_rcvbuf_size(rbufsz)) {
           rbufsz -= 1024;
         } else {
           break;
@@ -171,11 +169,11 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
   if (opt.send_bufsize) {
-    if (SocketManager::set_sndbuf_size(fd, opt.send_bufsize)) {
+    if (sock.set_sndbuf_size(opt.send_bufsize)) {
       // Round down until success
       int sbufsz = ROUNDUP(opt.send_bufsize, 1024);
       while (sbufsz) {
-        if (SocketManager::set_sndbuf_size(fd, sbufsz)) {
+        if (sock.set_sndbuf_size(sbufsz)) {
           sbufsz -= 1024;
         } else {
           break;
@@ -184,7 +182,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     }
   }
 
-  if (safe_fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
+  if (safe_fcntl(sock.get_fd(), F_SETFD, FD_CLOEXEC) < 0) {
     goto Lerror;
   }
 
@@ -193,25 +191,25 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     l.l_onoff  = 0;
     l.l_linger = 0;
     if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) &&
-        safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l)) < 0) {
+        safe_setsockopt(sock.get_fd(), SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l)) < 0) {
       goto Lerror;
     }
   }
 
-  if (ats_is_ip6(&addr) && setsockopt_on(fd, IPPROTO_IPV6, IPV6_V6ONLY) < 0) {
+  if (ats_is_ip6(&addr) && sock.enable_option(IPPROTO_IPV6, IPV6_V6ONLY) < 0) {
     goto Lerror;
   }
 
-  if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEADDR) < 0) {
+  if (sock.enable_option(SOL_SOCKET, SO_REUSEADDR) < 0) {
     goto Lerror;
   }
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
   if (listen_per_thread == 1) {
-    if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT) < 0) {
+    if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT) < 0) {
       goto Lerror;
     }
 #ifdef SO_REUSEPORT_LB
-    if (setsockopt_on(fd, SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
+    if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
       goto Lerror;
     }
 #endif
@@ -227,24 +225,24 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #else
     cpu = ethread->id;
 #endif
-    if (safe_setsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu)) < 0) {
+    if (safe_setsockopt(sock.get_fd(), SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu)) < 0) {
       goto Lerror;
     }
-    Dbg(dbg_ctl_iocore_thread, "SO_INCOMING_CPU - fd=%d cpu=%d", fd, cpu);
+    Dbg(dbg_ctl_iocore_thread, "SO_INCOMING_CPU - fd=%d cpu=%d", sock.get_fd(), cpu);
   }
 #endif
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && setsockopt_on(fd, IPPROTO_TCP, TCP_NODELAY) < 0) {
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && sock.enable_option(IPPROTO_TCP, TCP_NODELAY) < 0) {
     goto Lerror;
   }
 
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) && setsockopt_on(fd, SOL_SOCKET, SO_KEEPALIVE) < 0) {
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) && sock.enable_option(SOL_SOCKET, SO_KEEPALIVE) < 0) {
     goto Lerror;
   }
 
 #ifdef TCP_FASTOPEN
   if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) {
-    if (safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
+    if (safe_setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
       // EOPNOTSUPP also checked for general safeguarding of unsupported operations of socket functions
       if (opt.f_mptcp && (errno == ENOPROTOOPT || errno == EOPNOTSUPP)) {
         Warning("[Server::listen] TCP_FASTOPEN socket option not valid on MPTCP socket level");
@@ -258,7 +256,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   if (opt.f_inbound_transparent) {
 #if TS_USE_TPROXY
     Dbg(dbg_ctl_http_tproxy, "Listen port inbound transparency enabled.");
-    if (setsockopt_on(fd, SOL_IP, TS_IP_TRANSPARENT) < 0) {
+    if (sock.enable_option(SOL_IP, TS_IP_TRANSPARENT) < 0) {
       Fatal("[Server::listen] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
     }
 #else
@@ -274,7 +272,8 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   if (NetProcessor::accept_mss > 0) {
     if (opt.f_mptcp) {
       Warning("[Server::listen] TCP_MAXSEG socket option not valid on MPTCP socket level");
-    } else if (safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss), sizeof(int)) < 0) {
+    } else if (safe_setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss),
+                               sizeof(int)) < 0) {
       goto Lerror;
     }
   }
@@ -283,7 +282,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
-  if (opt.defer_accept > 0 && setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
+  if (opt.defer_accept > 0 && setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
     // FIXME: should we go to the error
     // goto error;
     Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
@@ -291,7 +290,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #endif
 
   if (non_blocking) {
-    if (safe_nonblocking(fd) < 0) {
+    if (sock.set_nonblocking() < 0) {
       goto Lerror;
     }
   }
@@ -302,7 +301,7 @@ Lerror:
   res = -errno;
 
   // coverity[check_after_sink]
-  if (fd != NO_FD) {
+  if (sock.is_ok()) {
     close();
   }
 
@@ -328,7 +327,7 @@ Server::setup_fd_after_listen([[maybe_unused]] const NetProcessor::AcceptOptions
       bzero(&afa, sizeof(afa));
       strcpy(afa.af_name, "dataready");
 
-      if (setsockopt(this->fd, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa)) < 0) {
+      if (setsockopt(this->sock.get_fd(), SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa)) < 0) {
         Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
         return -errno;
       }
@@ -342,10 +341,10 @@ Server::setup_fd_after_listen([[maybe_unused]] const NetProcessor::AcceptOptions
 int
 Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 {
-  ink_assert(fd == NO_FD);
-  int res = 0;
-  int namelen;
-  int prot = IPPROTO_TCP;
+  ink_assert(!sock.is_ok());
+  int       res = 0;
+  socklen_t namelen;
+  int       prot = IPPROTO_TCP;
 
   if (!ats_is_ip(&accept_addr)) {
     ats_ip4_set(&addr, INADDR_ANY, 0);
@@ -358,8 +357,8 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     prot = IPPROTO_MPTCP;
   }
 
-  fd = res = SocketManager::socket(addr.sa.sa_family, SOCK_STREAM, prot);
-  if (res < 0) {
+  sock = UnixSocket{addr.sa.sa_family, SOCK_STREAM, prot};
+  if (!sock.is_ok()) {
     goto Lerror;
   }
 
@@ -368,11 +367,11 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     goto Lerror;
   }
 
-  if ((res = SocketManager::ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), prot)) < 0) {
+  if ((res = sock.bind(&addr.sa, ats_ip_size(&addr.sa))) < 0) {
     goto Lerror;
   }
 
-  if ((res = safe_listen(fd, get_listen_backlog())) < 0) {
+  if ((res = safe_listen(sock.get_fd(), get_listen_backlog())) < 0) {
     goto Lerror;
   }
 
@@ -383,16 +382,15 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 
   // Original just did this on port == 0.
   namelen = sizeof(addr);
-  if ((res = safe_getsockname(fd, &addr.sa, &namelen))) {
+  if ((res = sock.getsockname(&addr.sa, &namelen))) {
     goto Lerror;
   }
 
   return 0;
 
 Lerror:
-  if (fd != NO_FD) {
+  if (sock.is_ok()) {
     close();
-    fd = NO_FD;
   }
 
   Fatal("Could not bind or listen to port %d, mptcp enabled: %d (error: %d) %s %d", ats_ip_port_host_order(&addr),

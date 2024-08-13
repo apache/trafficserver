@@ -24,12 +24,14 @@
 #pragma once
 
 #include "tscore/ink_apidefs.h"
+#include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sock.h"
 
 #include <cstdint>
 
 #define NO_SOCK -1
+#define SOCKET  int
 
 #ifndef SOCK_NONBLOCK
 #define SOCK_NONBLOCK O_NONBLOCK
@@ -108,7 +110,14 @@ private:
   int fd{NO_SOCK};
 };
 
-inline UnixSocket::UnixSocket(int fd) : fd{fd} {}
+inline UnixSocket::UnixSocket(int fd) : fd{fd}
+{
+  // A value of -1 means no socket, and a positive value means a valid
+  // file descriptor (unless it's higher than the max file descriptor, but
+  // we don't check this). This is intended to catch if we try to use
+  // something like `-errno` to initialize the file descriptor.
+  ink_assert(fd >= -1);
+}
 
 inline UnixSocket::UnixSocket(int domain, int type, int protocol)
 {
