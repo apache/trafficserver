@@ -478,10 +478,10 @@ NetAccept::acceptEvent(int event, void *ep)
     if ((res = accept_fn(this, e, false)) < 0) {
       Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
       /* INKqa11179 */
-      Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.accept_addr), res);
+      Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);
       Warning("Traffic Server may be unable to accept more network"
               "connections on %d",
-              ats_ip_port_host_order(&server.accept_addr));
+              ats_ip_port_host_order(&server.addr));
       e->cancel();
       delete this;
       return EVENT_DONE;
