@@ -83,6 +83,7 @@ STEKShareLogStore::append(nuraft::ptr<nuraft::log_entry> &entry)
 void
 STEKShareLogStore::write_at(uint64_t index, nuraft::ptr<nuraft::log_entry> &entry)
 {
+  // We prepare what we can taking the logs lock to minimize time holding it.
   nuraft::ptr<nuraft::log_entry> clone = make_clone(entry);
 
   // Discard all logs equal to or greater than "index".
