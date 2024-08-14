@@ -29,8 +29,10 @@
 #include "../../../src/iocore/net/P_SSLUtils.h"
 #include "ts/apidefs.h"
 #include <openssl/ssl.h>
-#include <mutex>
 #include <tsutil/TsSharedMutex.h>
+
+#include <mutex>
+#include <utility>
 
 #define SSL_MAX_SESSION_SIZE      256
 #define SSL_MAX_ORIG_SESSION_SIZE 4096
@@ -192,7 +194,7 @@ public:
   std::shared_ptr<SSL_SESSION> shared_sess = nullptr;
 
   SSLOriginSession(const std::string &lookup_key, ssl_curve_id curve, std::shared_ptr<SSL_SESSION> session)
-    : key(lookup_key), curve_id(curve), shared_sess(session)
+    : key(lookup_key), curve_id(curve), shared_sess(std::move(session))
   {
   }
 

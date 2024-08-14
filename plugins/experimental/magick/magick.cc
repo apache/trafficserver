@@ -25,6 +25,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cassert>
@@ -358,7 +359,7 @@ struct QueryMap {
   std::string content_;
   Map         map_;
 
-  QueryMap(std::string &&s) : content_(s) { parse(); }
+  QueryMap(std::string &&s) : content_(std::move(s)) { parse(); }
 
   template <typename T>
   const Vector &

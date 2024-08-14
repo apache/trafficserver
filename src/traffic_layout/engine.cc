@@ -36,6 +36,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <utility>
 #include <ftw.h>
 #include <yaml-cpp/yaml.h>
 #include <grp.h>
@@ -272,11 +273,10 @@ LayoutEngine::create_runroot()
     try {
       YAML::Node yamlfile = YAML::LoadFile(layout_file);
       for (const auto &it : yamlfile) {
-        std::string key   = it.first.as<std::string>();
-        std::string value = it.second.as<std::string>();
-        auto        iter  = new_map.find(key);
+        std::string key  = it.first.as<std::string>();
+        auto        iter = new_map.find(key);
         if (iter != new_map.end()) {
-          iter->second = value;
+          iter->second = it.second.as<std::string>();
         } else {
           if (key != "prefix") {
             ink_warning("Unknown item from %s: '%s'", layout_file.c_str(), key.c_str());
@@ -362,7 +362,7 @@ LayoutEngine::remove_runroot()
     return;
   }
 
-  std::string clean_root = path;
+  std::string &clean_root = path;
   append_slash(clean_root);
 
   if (arguments.get("force")) {

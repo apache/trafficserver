@@ -42,6 +42,8 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
+#include <utility>
+
 constexpr char PLUGIN[] = "statichit";
 
 static DbgCtl dbg_ctl{PLUGIN};
@@ -71,12 +73,12 @@ struct StaticHitConfig {
     base_path = std::filesystem::weakly_canonical(base_path);
 
     if (std::filesystem::is_directory(base_path)) {
-      dirPath      = base_path;
+      dirPath      = std::move(base_path);
       filePath     = "";
       disableExact = true;
     } else {
       dirPath      = "";
-      filePath     = base_path;
+      filePath     = std::move(base_path);
       disableExact = exact;
     }
   }

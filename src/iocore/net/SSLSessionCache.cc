@@ -350,11 +350,10 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
 
   Dbg(dbg_ctl_ssl_origin_session_cache, "insert session: %s = %p", lookup_key.c_str(), sess_ptr);
 
-  // Create the shared pointer to the session, with the custom deleter
-  std::shared_ptr<SSL_SESSION>      shared_sess(sess_ptr, SSLSessDeleter);
   ssl_curve_id                      curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
-  std::unique_ptr<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, curve, shared_sess));
-  auto                              new_node = ssl_orig_session.release();
+  std::unique_ptr<SSLOriginSession> ssl_orig_session(
+    new SSLOriginSession(lookup_key, curve, std::shared_ptr<SSL_SESSION>{sess_ptr, SSLSessDeleter}));
+  auto new_node = ssl_orig_session.release();
 
   std::unique_lock lock(mutex);
   auto             entry = orig_sess_map.find(lookup_key);

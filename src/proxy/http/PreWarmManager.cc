@@ -35,6 +35,7 @@
 #include "tsutil/PostScript.h"
 
 #include <algorithm>
+#include <utility>
 
 #define PreWarmSMDbg(fmt, ...)  Dbg(dbg_ctl_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
 #define PreWarmSMVDbg(fmt, ...) Dbg(dbg_ctl_v_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
@@ -1131,7 +1132,7 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
       );
       // clang-format on
 
-      parsed_conf[dst] = conf;
+      parsed_conf[dst] = std::move(conf);
     }
   }
 }
