@@ -78,7 +78,7 @@ struct StaticHitConfig {
       disableExact = true;
     } else {
       dirPath      = "";
-      filePath     = base_path;
+      filePath     = std::move(base_path);
       disableExact = exact;
     }
   }

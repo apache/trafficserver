@@ -1678,9 +1678,9 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 
   std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get());
   for (const auto &loadingctx : ctxs) {
-    shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
     if (!sslMultCertSettings ||
-        !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, std::move(ctx), loadingctx.ctx_type, common_names)) {
+        !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free}, loadingctx.ctx_type,
+                                     common_names)) {
       if (!common_names.empty()) {
         std::string names;
         for (auto const &name : data.cert_names_list) {
@@ -1712,8 +1712,8 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 
     std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, sslMultCertSettings.get());
     for (const auto &loadingctx : ctxs) {
-      shared_SSL_CTX unique_ctx(loadingctx.ctx, SSL_CTX_free);
-      if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, std::move(unique_ctx), loadingctx.ctx_type, iter->second)) {
+      if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free},
+                                       loadingctx.ctx_type, iter->second)) {
         retval = false;
       } else {
         lookup->register_cert_secrets(data.cert_names_list, iter->second);
