@@ -93,3 +93,7 @@ Logging
 ------------------
 
 The ``cqtx`` log field has been removed, but can be replaced by ``cqhm pqu cqpv``.
+
+The ``cqhv`` log field has been removed.
+
+The ``cpu``, ``cquc``, ``cqup``, and ``cqus`` log fields have new names, ``pqu``, ``pquc``, ``pqup``, and ``pqus``. The old names have been deprecated.
