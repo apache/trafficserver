@@ -39,6 +39,10 @@ removed in the next major release of ATS.
 
   * Next Protocol Negotiation (NPN) support has been deprecated from ATS and will be removed in the next major release.
 
+* Removed Libraries
+
+  * mgmt_c - Client library for traffic_manager
+
 Changes to Features
 ~~~~~~~~~~~~~~~~~~~
 The following features have been changed in this version of ATS.
@@ -47,10 +51,6 @@ The following features have been changed in this version of ATS.
 
    Fixes with @action=allow to deny transactions that are not explicitly allowed.  Changed in-line ACLs to match before activated ACL rules.
    For detail refer to: https://github.com/apache/trafficserver/pull/11033
-
-* Removed Internal Libraries
-
-  * mgmt_c - Client library for traffic_manager
 
 API Changes
 -----------
