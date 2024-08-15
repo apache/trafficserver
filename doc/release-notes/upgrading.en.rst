@@ -128,6 +128,8 @@ The following :file:`records.yaml` changes have been made:
 - The per server origin connection feature had a few configurations that were not used removed.
   ``proxy.config.http.per_server.connection.queue_size`` and ``proxy.config.http.per_server.connection.queue_delay``
   have been removed.
+- The default values for ``proxy.config.http.request_header_max_size``, ``proxy.config.http.response_header_max_size``, and
+  ``proxy.config.http.header_field_max_size`` have been changed to 32KB.
 
 The following changes have been made to the :file:`sni.yaml` file:
 
