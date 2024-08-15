@@ -128,6 +128,9 @@ The following :file:`records.yaml` chnages have been made:
 - The per server origin connection feature had a few configurations that were not used removed.
   ``proxy.config.http.per_server.connection.queue_size`` and ``proxy.config.http.per_server.connection.queue_delay``
   have been removed.
+- The records.yaml entries ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
+  ``proxy.config.http.post_connect_attempts_timeout`` were previously referenced in default config
+  files, but they did not have any effect.  These have been removed from default configs files.
 
 Plugins
 -------
