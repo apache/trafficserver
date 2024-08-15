@@ -53,10 +53,10 @@ class TLSClientHelloSummary
 public:
   using difference_type = std::iterator_traits<std::vector<std::uint16_t>::iterator>::difference_type;
 
-  Protocol    protocol;
-  SNI         SNI_type;
-  std::string TLS_version;
-  std::string ALPN;
+  Protocol      protocol;
+  SNI           SNI_type;
+  std::uint16_t TLS_version;
+  std::string   ALPN;
 
   std::vector<std::uint16_t> const &get_ciphers() const;
   void                              add_cipher(std::uint16_t cipher);

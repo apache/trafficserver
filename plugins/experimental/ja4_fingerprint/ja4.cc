@@ -27,14 +27,14 @@
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <iterator>
 #include <string>
 #include <string_view>
 
 static char        convert_protocol_to_char(JA4::Protocol protocol);
-static std::string convert_TLS_version_to_string(std::string_view TLS_version);
-static std::string filter_only_digits(std::string_view src);
+static std::string convert_TLS_version_to_string(std::uint16_t TLS_version);
 static char        convert_SNI_to_char(JA4::SNI SNI_type);
 static std::string convert_count_to_two_digit_string(std::size_t count);
 static std::string convert_ALPN_to_two_char_string(std::string_view ALPN);
@@ -67,18 +67,32 @@ convert_protocol_to_char(JA4::Protocol protocol)
 }
 
 static std::string
-convert_TLS_version_to_string(std::string_view TLS_version)
+convert_TLS_version_to_string(std::uint16_t TLS_version)
 {
-  std::string result{filter_only_digits(TLS_version)};
-  return result.empty() ? "  " : result;
-}
-
-static std::string
-filter_only_digits(std::string_view src)
-{
-  std::string result{};
-  std::copy_if(src.begin(), src.end(), std::back_inserter(result), [](unsigned char c) { return std::isdigit(c); });
-  return result;
+  switch (TLS_version) {
+  case 0x304:
+    return "13";
+  case 0x303:
+    return "12";
+  case 0x302:
+    return "11";
+  case 0x301:
+    return "10";
+  case 0x300:
+    return "s3";
+  case 0x200:
+    return "s2";
+  case 0x100:
+    return "s1";
+  case 0xfeff:
+    return "d1";
+  case 0xfefd:
+    return "d2";
+  case 0xfefc:
+    return "d3";
+  default:
+    return "00";
+  }
 }
 
 static char
