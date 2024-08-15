@@ -821,6 +821,73 @@ configure_file(Findtsapi.cmake.in Findtsapi.cmake @ONLY)
 install(FILES "${PROJECT_BINARY_DIR}/ts.pc" DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 install(FILES "${PROJECT_BINARY_DIR}/Findtsapi.cmake" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake)
 
+# Release Targets
+set(DISTTMP /tmp/asf-dist)
+set(DISTFILENAME trafficserver-${TS_VERSION_STRING})
+
+add_custom_target(
+  asf-distdir
+  COMMENT "Create distribution tarball for ASF"
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMAND rm -rf ${DISTTMP} && mkdir /tmp/asf-dist
+  COMMAND git archive --format=tar HEAD | tar -C ${DISTTMP} -xf -
+  COMMAND rm -rf ${DISTTMP}/ci
+  COMMAND grep -v img.shields.io ${DISTTMP}/README.md > ${DISTTMP}/README.md.clean
+  COMMAND mv ${DISTTMP}/README.md.clean ${DISTTMP}/README.md
+)
+
+add_custom_target(
+  asf-dist
+  COMMENT "Create distribution tarball for ASF release"
+  DEPENDS asf-distdir
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMAND tar -C ${DISTTMP} -c . | bzip2 -9 -c > ${DISTFILENAME}.tar.bz2
+  COMMAND rm -rf ${DISTTMP}
+)
+
+add_custom_target(
+  asf-dist-rc
+  COMMENT "Create distribution tarball for ASF release candidate"
+  DEPENDS asf-distdir
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMAND tar -C ${DISTTMP} -c . | bzip2 -9 -c > ${DISTFILENAME}-rc$ENV{RC}.tar.bz2
+  COMMAND rm -rf ${DISTTMP}
+)
+
+add_custom_target(
+  asf-dist-sign
+  COMMENT "Create and sign distribution tarball for ASF release"
+  DEPENDS asf-dist
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMAND shasum -a512 -b ${DISTFILENAME}.tar.bz2 > ${DISTFILENAME}.tar.bz2.sha512
+  COMMAND gpg --armor --output ${DISTFILENAME}.tar.bz2.asc --detach-sig ${DISTFILENAME}.tar.bz2
+)
+
+add_custom_target(
+  asf-dist-sign-rc
+  COMMENT "Create and sign distribution tarball for ASF release candidate"
+  DEPENDS asf-dist-rc
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMAND shasum -a512 -b ${DISTFILENAME}-rc$ENV{RC}.tar.bz2 > ${DISTFILENAME}-rc$ENV{RC}.tar.bz2.sha512
+  COMMAND gpg --armor --output ${DISTFILENAME}-rc$ENV{RC}.tar.bz2.asc --detach-sig ${DISTFILENAME}-rc$ENV{RC}.tar.bz2
+)
+
+add_custom_target(
+  release
+  COMMENT "Create release"
+  DEPENDS asf-dist-sign
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMAND git tag -fs -m "Release ${TS_VERSION_STRING}" ${TS_VERSION_STRING}
+)
+
+add_custom_target(
+  rel-candidate
+  COMMENT "Create release candidate"
+  DEPENDS asf-dist-sign-rc
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMAND git tag -fs -m "Release Candidate ${TS_VERSION_STRING}-rc$ENV{RC}" ${TS_VERSION_STRING}-rc$ENV{RC}
+)
+
 # Display build summary
 include(CMakePrintHelpers)
 message(STATUS "Build Summary:")
