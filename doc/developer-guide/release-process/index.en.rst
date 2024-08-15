@@ -67,7 +67,7 @@ Build
 #. Go to the top level source directory.
 
 #. Check the version in ``CMakeLists.txt``. There is a ``project`` line near the
-   top with the version number.  Make sure that is correct for the release
+   top with the version number.  Make sure that is correct for the release.
 
 #. Execute the following commands to make the distribution files where A is the
    next release candidate number (start with 0). ::
@@ -111,8 +111,7 @@ Build the distribution files with the command ::
 
 Be sure to not have changed anything since the release candidate was built so
 the checksums are identical. This will create a signed git tag of the form
-``X.Y.Z`` and produce the distribution files. Push the tag to the ASF repository
-with the command ::
+``X.Y.Z`` and produce the distribution files.
 
 The distribution files must be added to an SVN repository. This can be accessed
 with the command::
