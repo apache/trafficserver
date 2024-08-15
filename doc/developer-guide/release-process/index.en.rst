@@ -107,17 +107,12 @@ Official Release
 
 Build the distribution files with the command ::
 
-   make release
+   cmake --build build-release -t release
 
 Be sure to not have changed anything since the release candidate was built so
 the checksums are identical. This will create a signed git tag of the form
 ``X.Y.Z`` and produce the distribution files. Push the tag to the ASF repository
 with the command ::
-
-   git push origin X.Y.Z
-
-This presumes ``origin`` is the name for the ASF remote repository which is
-correct if you originally clone from the ASF repository.
 
 The distribution files must be added to an SVN repository. This can be accessed
 with the command::
@@ -162,8 +157,4 @@ Finally, update various files after the release:
 * The ``STATUS`` file for master and for the release branch to include this version.
 
 * The ``CHANGES`` file to have a header for the next version.
-
-* ``configure.ac`` to be set to the next version.
-
-* In the top level ``Makefile.am`` change ``RC`` to have the value ``0``.
 
