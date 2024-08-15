@@ -55,18 +55,20 @@ The following APIs have changed, either in semantics, interfaces, or both.
 
 * Removed TS API
 
-  * TSHttpTxnArgSet
-  * TSHttpTxnArgGet
   * TSHttpSsnArgSet
   * TSHttpSsnArgGet
-  * TSVConnArgSet
-  * TSVConnArgGet
-  * TSHttpTxnArgIndexReserve
-  * TSHttpTxnArgIndexNameLookup
-  * TSHttpTxnArgIndexLookup
   * TSHttpSsnArgIndexReserve
   * TSHttpSsnArgIndexNameLookup
   * TSHttpSsnArgIndexLookup
+  * TSHttpTxnArgSet
+  * TSHttpTxnArgGet
+  * TSHttpTxnArgIndexReserve
+  * TSHttpTxnArgIndexNameLookup
+  * TSHttpTxnArgIndexLookup
+  * TSUrlHttpParamsGet
+  * TSUrlHttpParamsSet
+  * TSVConnArgSet
+  * TSVConnArgGet
   * TSVConnArgIndexReserve
   * TSVConnArgIndexNameLookup
   * TSVConnArgIndexLookup
@@ -112,6 +114,13 @@ Removed Plugins
 The following plugins have been removed from the ATS source code in this version of ATS:
 
   * mysql_remap - Dynamic remapping of URLs using data from a MySQL database.
+
+Changes to Features
+~~~~~~~~~~~~~~~~~~~
+The following plugins have been changed in this version of ATS.
+
+* regex_remap - matrix-parameters parameter has been removed. The string that follows a semicolon is now included in path.
+* header_rewrite - MATRIX part specifier has been removed. The string that follows a semicolon is now included in PATH part.
 
 Lua Plugin
 ~~~~~~~~~~
