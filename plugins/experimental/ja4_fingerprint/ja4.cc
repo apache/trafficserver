@@ -32,6 +32,7 @@
 #include <iterator>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 static char        convert_protocol_to_char(JA4::Protocol protocol);
 static std::string convert_TLS_version_to_string(std::uint16_t TLS_version);
