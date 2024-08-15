@@ -50,6 +50,11 @@ Logging and Metrics
 Plugins
 -------
 
+* authproxy - ``--forward-header-prefix`` parameter has been added
+* prefetch - Cmcd-Request header support has been added
+* xdebug - ``--enable`` option to selectively enable features has been added
+* system_stats - Stats about memory have been added
+
 Switch to C++20
 ^^^^^^^^^^^^^^^
 
