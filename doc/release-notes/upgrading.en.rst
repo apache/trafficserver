@@ -196,10 +196,8 @@ Metrics
 -------
 
 - The HTTP connection metric proxy.process.http.dead_server.no_requests has been renamed to proxy.process.http.down_server.no_requests.
-- The network metric ``proxy.process.net.calls_to_readfromnet_afterpoll`` has been
-removed
-- The network metric ``proxy.process.net.calls_to_writetonet_afterpoll`` has been
-removed
+- The network metric ``proxy.process.net.calls_to_readfromnet_afterpoll`` has been removed
+- The network metric ``proxy.process.net.calls_to_writetonet_afterpoll`` has been removed
 - New cache metrics ``proxy.process.cache.stripes`` and
   ``proxy.process.cache.volume_X.stripes`` that counts cache stripes
 - All metric names that ended in ``_stat`` have had that suffix dropped and no
