@@ -33,10 +33,11 @@ The following features, configurations and plugins are either removed or depreca
 version of ATS. Deprecated features should be avoided, with the expectation that they will be
 removed in the next major release of ATS.
 
-* Removed NPN support
+* Removed Features
 
-  The Next Protocol Negotiation (NPN) support has been removed from ATS. This is due to the fact that
-  NPN has been deprecated in favor of ALPN.
+* Deprecated Features
+
+  * Next Protocol Negotiation (NPN) support has been deprecated from ATS and will be removed in the next major release.
 
 Changes to Features
 ~~~~~~~~~~~~~~~~~~~
