@@ -77,7 +77,7 @@ Plugins
 -------
 
 Removed Plugins
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 The following plugins have been removed from the ATS source code in this version of ATS:
 
   * mysql_remap - Dynamic remapping of URLs using data from a MySQL database.
