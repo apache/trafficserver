@@ -27,6 +27,12 @@ Upgrading to ATS v10.x
 Feature Changes
 ---------------
 
+New Features
+~~~~~~~~~~~~
+
+- traffic_ctl new command ``monitor`` do show a continuously updating list of
+  metrics
+
 Removed and Deprecated Features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The following features, configurations and plugins are either removed or deprecated in this
