@@ -107,6 +107,12 @@ have been removed. Instead use proxy.config.http.connect_attempts_timeout to con
 Plugins
 -------
 
+Removed Plugins
+~~~~~~~~~~~~~~~
+The following plugins have been removed from the ATS source code in this version of ATS:
+
+  * mysql_remap - Dynamic remapping of URLs using data from a MySQL database.
+
 Lua Plugin
 ~~~~~~~~~~
 The following Http config constants have been renamed:
