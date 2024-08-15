@@ -34,6 +34,8 @@ version of ATS. Deprecated features should be avoided, with the expectation that
 removed in the next major release of ATS.
 
 * Removed Features
+  * HostDB no longer supports persistent storage for DNS resolution
+  * Removed support for the MMH crypto hash function
 
   * Traffic Manager is no longer part of |TS|. Administrative tools now interact with |TS| directly by using the :ref:`jsonrpc-node`.
 
@@ -146,10 +148,21 @@ The following :file:`records.yaml` changes have been made:
   files, but they did not have any effect.  These have been removed from default configs files.
 - The default values for ``proxy.config.http.request_header_max_size``, ``proxy.config.http.response_header_max_size``, and
   ``proxy.config.http.header_field_max_size`` have been changed to 32KB.
+- The records.yaml entry ``proxy.config.http.server_ports`` now also accepts the
+  ``allow-plain`` option
+- The records.yaml entry ``proxy.config.http.down_server.abort_threshold`` has
+  been removed
+- The records.yaml entry ``proxy.config.http.cache.max_open_write_retry_timeout`` has been added to specify a timeout for starting a write to cache
+- The records.yaml entry ``proxy.config.net.per_client.max_connections_in`` has
+  been added to limit the number of connections from a client IP
+- The records.yaml entry ``proxy.config.http.no_dns_just_forward_to_parent`` is
+  not overridable
 
 The following changes have been made to the :file:`sni.yaml` file:
 
 - ``disable_h2`` has been removed. Use ``http2`` with :code:`off` instead.
+- The ``ip_allow`` key can now take a reference to a file containing the ip
+  allow rules
 
 Plugins
 -------
@@ -178,7 +191,15 @@ TS_LUA_CONFIG_HTTP_CONNECT_DEAD_POLICY has been renamed to TS_LUA_CONFIG_HTTP_CO
 Metrics
 -------
 
-The HTTP connection metric proxy.process.http.dead_server.no_requests has been renamed to proxy.process.http.down_server.no_requests.
+- The HTTP connection metric proxy.process.http.dead_server.no_requests has been renamed to proxy.process.http.down_server.no_requests.
+- The network metric ``proxy.process.net.calls_to_readfromnet_afterpoll`` has been
+removed
+- The network metric ``proxy.process.net.calls_to_writetonet_afterpoll`` has been
+removed
+- New cache metrics ``proxy.process.cache.stripes`` and
+  ``proxy.process.cache.volume_X.stripes`` that counts cache stripes
+- All metric names that ended in ``_stat`` have had that suffix dropped and no
+  longer end with ``_stat``
 
 Logging
 -------
