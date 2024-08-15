@@ -41,17 +41,20 @@ Combined Connect Timeouts
 The configuration settings :ts:cv: `proxy.config.http.parent_proxy.connect_attempts_timeout` and :ts:cv: `proxy.config.http.post_connect_attempts_timeout` have been removed.
 All connect timeouts are controlled by :ts:cv: `proxy.config.http.connect_attempts_timeout`.
 
+
+
+
 Logging and Metrics
 -------------------
 
 Plugins
 -------
 
-Switch to C++17
+Switch to C++20
 ^^^^^^^^^^^^^^^
 
 Plugins are now required to be compiled as C++ code, rather than straight C.
-The API is tested with C++17, so code compatible with this version is preferred.
+The API is tested with C++20, so code compatible with this version is preferred.
 ``TSDebug`` and related functions are removed.  Debug tracing should now be done
 using cpp:func:`Dbg` and related functions, as in |TS| core code.
 

@@ -23,13 +23,35 @@ Upgrading to ATS v10.x
 ======================
 
 .. toctree::
-   :maxdepth: 1
 
-Deprecated or Removed Features
-------------------------------
+Feature Changes
+---------------
+
+Removed and Deprecated Features
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The following features, configurations and plugins are either removed or deprecated in this
 version of ATS. Deprecated features should be avoided, with the expectation that they will be
 removed in the next major release of ATS.
+
+* Removed Features
+
+* Deprecated Features
+
+  * Next Protocol Negotiation (NPN) support has been deprecated from ATS and will be removed in the next major release.
+
+Changes to Features
+~~~~~~~~~~~~~~~~~~~
+The following features have been changed in this version of ATS.
+
+* Remap ACLs
+
+   Fixes with @action=allow to deny transactions that are not explicitly allowed.  Changed in-line ACLs to match before activated ACL rules.
+   For detail refer to: https://github.com/apache/trafficserver/pull/11033
+
+
+API Changes
+-----------
+The following APIs have changed, either in semantics, interfaces, or both.
 
 * Removed TS API
 
@@ -49,10 +71,19 @@ removed in the next major release of ATS.
   * TSVConnArgIndexNameLookup
   * TSVConnArgIndexLookup
 
+* Removed INK UDP API
 
-API Changes
------------
-The following APIs have changed, either in semantics, interfaces, or both.
+  * INKUDPBind
+  * INKUDPSendTo
+  * INKUDPRecvFrom
+  * INKUDPConnFdGet
+  * INKUDPPacketCreate
+  * INKUDPPacketBufferBlockGet
+  * INKUDPPacketFromAddressGet
+  * INKUDPPacketFromPortGet
+  * INKUDPPacketConnGet
+  * INKUDPPacketDestroy
+  * INKUDPPacketGet
 
 
 Cache
@@ -60,7 +91,7 @@ Cache
 The cache in this releases of ATS is compatible with previous versions of ATS. You would not expect
 to lose your cache, or have to reinitialize the cache when upgrading.
 
-Configuration changes
+Configuration Changes
 ---------------------
 The following incompatible changes to the configurations have been made in this version of ATS.
 
@@ -85,11 +116,11 @@ TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER has been renamed to 
 TS_LUA_CONFIG_HTTP_CONNECT_DEAD_POLICY has been renamed to TS_LUA_CONFIG_HTTP_CONNECT_DOWN_POLICY.
 
 Metrics
-------------------
+-------
 
 The HTTP connection metric proxy.process.http.dead_server.no_requests has been renamed to proxy.process.http.down_server.no_requests.
 
 Logging
-------------------
+-------
 
 The ``cqtx`` log field has been removed, but can be replaced by ``cqhm pqu cqpv``.
