@@ -67,3 +67,9 @@ Symbols With INKUDP Prefix
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the plugin API, all types and functions starting with the prefix INKUDP are removed.
+
+New plugin hook for request sink transformation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new hook, ``TS_HTTP_REQUEST_CLIENT_HOOK``, has been added. This provides the analoguas functionality of
+``TS_HTTP_RESPONSE_CLIENT_HOOK``, for request bodies.
