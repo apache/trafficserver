@@ -50,6 +50,8 @@ Logging and Metrics
 Plugins
 -------
 
+* authproxy - ``--forward-header-prefix`` parameter has been added
+
 Switch to C++20
 ^^^^^^^^^^^^^^^
 
