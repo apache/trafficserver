@@ -117,7 +117,7 @@ The following incompatible changes to the configurations have been made in this 
 
 The ``records.config`` file has been renamed to :file:`records.yaml` and now it is structured in YAML format.
 
-The following :file:`records.yaml` chnages have been made:
+The following :file:`records.yaml` changes have been made:
 
 - The records.yaml entry ``proxy.config.http.down_server.abort_threshold`` has been removed.
 - The records.yaml entry ``proxy.config.http.connect_attempts_max_retries_dead_server`` has been renamed to ``proxy.config.http.connect_attempts_max_retries_down_server``.
@@ -128,6 +128,10 @@ The following :file:`records.yaml` chnages have been made:
 - The per server origin connection feature had a few configurations that were not used removed.
   ``proxy.config.http.per_server.connection.queue_size`` and ``proxy.config.http.per_server.connection.queue_delay``
   have been removed.
+
+The following changes have been made to the :file:`sni.yaml` file:
+
+- ``disable_h2`` has been removed. Use ``http2`` with :code:`off` instead.
 
 Plugins
 -------
