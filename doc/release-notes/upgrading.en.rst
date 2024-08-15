@@ -53,6 +53,10 @@ API Changes
 -----------
 The following APIs have changed, either in semantics, interfaces, or both.
 
+* Changed TS API
+
+  * TSHttpTxnAborted
+
 * Removed TS API
 
   * TSHttpSsnArgSet
@@ -65,6 +69,9 @@ The following APIs have changed, either in semantics, interfaces, or both.
   * TSHttpTxnArgIndexReserve
   * TSHttpTxnArgIndexNameLookup
   * TSHttpTxnArgIndexLookup
+  * TSHttpTxnClientPacketTosSet
+  * TSHttpTxnServerPacketTosSet
+  * TSMgmtConfigIntSet
   * TSUrlHttpParamsGet
   * TSUrlHttpParamsSet
   * TSVConnArgSet
@@ -72,6 +79,8 @@ The following APIs have changed, either in semantics, interfaces, or both.
   * TSVConnArgIndexReserve
   * TSVConnArgIndexNameLookup
   * TSVConnArgIndexLookup
+  * TSRecordType::TS_RECORDTYPE_CLUSTER
+  * TSRecordType::TS_RECORDTYPE_LOCAL
 
 * Removed INK UDP API
 
@@ -86,6 +95,15 @@ The following APIs have changed, either in semantics, interfaces, or both.
   * INKUDPPacketConnGet
   * INKUDPPacketDestroy
   * INKUDPPacketGet
+
+* Removed Lua API
+
+  * ts.http.client_packet_tos_set
+  * ts.http.server_packet_tos_set
+  * ts.client_request.get_uri_params
+  * ts.client_request.set_uri_params
+  * ts.server_request.get_uri_params
+  * ts.server_request.set_uri_params
 
 
 Cache
