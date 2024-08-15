@@ -163,6 +163,15 @@ The following changes have been made to the :file:`sni.yaml` file:
 - The ``ip_allow`` key can now take a reference to a file containing the ip
   allow rules
 
+The records.yaml entry proxy.config.allocator.iobuf_chunk_sizes has been added
+to enable more control of iobuffer allocation
+
+The records.yaml entry proxy.config.cache.dir.enable_hugepages enables hugepage
+allocations for internal cache datastructures
+
+The records.yaml entry proxy.config.allocator.iobuf_use_hugepages will enable
+allocating iobuffers from hugepages
+
 Plugins
 -------
 
