@@ -66,19 +66,14 @@ Build
 
 #. Go to the top level source directory.
 
-#. Check the version in ``configure.ac``. There are two values near the top that
-   need to be set, ``TS_VERSION_S`` and ``TS_VERSION_N``. These are the release
-   version number in different encodings.
+#. Check the version in ``CMakeLists.txt``. There is a ``project`` line near the
+   top with the version number.  Make sure that is correct for the release
 
-#. Check the variable ``RC`` in the top level ``Makefile.am``. This should be
-   the point release value. This needs to be changed for every release
-   candidate. The first release candidate is ``0`` (zero).
+#. Execute the following commands to make the distribution files where A is the
+   next release candidate number (start with 0). ::
 
-#. Execute the following commands to make the distribution files. ::
-
-      autoreconf -i
-      ./configure
-      make rel-candidate
+      cmake --preset release
+      RC=A cmake --build build-release -t rel-candidate
 
 These steps will create the distribution files and sign them using your key.
 Expect to be prompted twice for your passphrase unless you use an ssh key agent.
