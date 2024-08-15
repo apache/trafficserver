@@ -31,6 +31,7 @@
 #include <cctype>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 static std::string call_JA4(JA4::TLSClientHelloSummary const &TLS_summary);
 static std::string inc(std::string_view sv);
