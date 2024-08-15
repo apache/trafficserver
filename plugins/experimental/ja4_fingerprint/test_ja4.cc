@@ -64,20 +64,36 @@ TEST_CASE("JA4")
     CHECK(call_JA4(TLS_summary).starts_with('d'));
   }
 
-  SECTION("Given the TLS version is 1.2, "
+  SECTION("Given the TLS version is unknown, "
           "when we create a JA4 fingerprint, "
-          "then indices [1,2] thereof should be \"12\".")
+          "then indices [1,2] thereof should contain \"00\".")
   {
-    TLS_summary.TLS_version = "1.2";
-    CHECK("12" == call_JA4(TLS_summary).substr(1, 2));
+    TLS_summary.TLS_version = 0x123;
+    CHECK("00" == call_JA4(TLS_summary).substr(1, 2));
+    TLS_summary.TLS_version = 0x234;
+    CHECK("00" == call_JA4(TLS_summary).substr(1, 2));
   }
 
-  SECTION("Given the TLS version is 1.2, "
+  SECTION("Given the TLS version is known, "
           "when we create a JA4 fingerprint, "
-          "then indices [1,2] thereof should contain \"13\".")
+          "then indices [1,2] thereof should contain the correct value.")
   {
-    TLS_summary.TLS_version = "1.3";
-    CHECK("13" == call_JA4(TLS_summary).substr(1, 2));
+    std::unordered_map<std::uint16_t, std::string> values{
+      {0x304,  "13"},
+      {0x303,  "12"},
+      {0x302,  "11"},
+      {0x301,  "10"},
+      {0x300,  "s3"},
+      {0x200,  "s2"},
+      {0x100,  "s1"},
+      {0xfeff, "d1"},
+      {0xfefd, "d2"},
+      {0xfefc, "d3"}
+    };
+    for (auto const &[version, expected] : values) {
+      TLS_summary.TLS_version = version;
+      CHECK(expected == call_JA4(TLS_summary).substr(1, 2));
+    }
   }
 
   SECTION("Given the SNI is a domain name, "
