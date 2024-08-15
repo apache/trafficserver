@@ -50,8 +50,7 @@ The following features have been changed in this version of ATS.
 
 * Removed Internal Libraries
 
-  * mgmt_p
-  * mgmt_c
+  * mgmt_c - Client library for traffic_manager
 
 API Changes
 -----------
