@@ -1317,7 +1317,7 @@ allow-plain
    request target and HTTP version string except when the request is made using absolute
    URI in which case the request line may also include the request scheme and domain name.
 
-.. ts:cv:: CONFIG proxy.config.http.header_field_max_size INT 131070
+.. ts:cv:: CONFIG proxy.config.http.header_field_max_size INT 32768
    :reloadable:
 
    Controls the maximum size, in bytes, of an HTTP header field in requests. Headers
