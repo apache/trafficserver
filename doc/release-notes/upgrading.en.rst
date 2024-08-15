@@ -97,14 +97,19 @@ Configuration Changes
 ---------------------
 The following incompatible changes to the configurations have been made in this version of ATS.
 
-The records.yaml entry proxy.config.http.down_server.abort_threshold has been removed.
+The ``records.config`` file has been renamed to :file:`records.yaml` and now it is structured in YAML format.
 
-The records.yaml entry proxy.config.http.connect_attempts_max_retries_dead_server has been renamed to proxy.config.http.connect_attempts_max_retries_down_server.
+The following :file:`records.yaml` chnages have been made:
 
-The records.yaml entry proxy.config.http.connect.dead.policy has been renamed to proxy.config.http.connect.down.policy.
-
-The records.yaml entry proxy.config.http.parent_proxy.connect_attempts_timeout and proxy.config.http.post_connect_attempts_timeout
-have been removed. Instead use proxy.config.http.connect_attempts_timeout to control all connection to origin timeouts.
+- The records.yaml entry ``proxy.config.http.down_server.abort_threshold`` has been removed.
+- The records.yaml entry ``proxy.config.http.connect_attempts_max_retries_dead_server`` has been renamed to ``proxy.config.http.connect_attempts_max_retries_down_server``.
+- The entry ``proxy.config.http.connect.dead.policy`` has been renamed to ``proxy.config.http.connect.down.policy``.
+- The records.yaml entry ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
+  ``proxy.config.http.post_connect_attempts_timeout`` have been removed. Instead use
+  ``proxy.config.http.connect_attempts_timeout`` to control all connection to origin timeouts.
+- The per server origin connection feature had a few configurations that were not used removed.
+  ``proxy.config.http.per_server.connection.queue_size`` and ``proxy.config.http.per_server.connection.queue_delay``
+  have been removed.
 
 Plugins
 -------
