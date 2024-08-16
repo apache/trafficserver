@@ -131,6 +131,7 @@ Configuration Changes
 The following incompatible changes to the configurations have been made in this version of ATS.
 
 The ``records.config`` file has been renamed to :file:`records.yaml` and now it is structured in YAML format.
+Check :ref:`rec-config-to-yaml` and :file:`records.yaml`  for more details.
 
 The following :file:`records.yaml` changes have been made:
 
@@ -160,6 +161,13 @@ The following :file:`records.yaml` changes have been made:
   same as :ts:cv:`proxy.config.http.per_server.connection.max`
 - The records.yaml entry :ts:cv:`proxy.config.http.no_dns_just_forward_to_parent` is
   not overridable
+- The records.yaml entry ``proxy.config.output.logfile`` has been renamed to :ts:cv:`proxy.config.output.logfile.name`.
+- The records.yaml entry ``proxy.config.exec_thread.autoconfig`` has been renamed to :ts:cv:`proxy.config.exec_thread.autoconfig.enabled`.
+- The records.yaml entry ``proxy.config.tunnel.prewarm`` has been renamed to :ts:cv:`proxy.config.tunnel.prewarm.enabled`.
+- The records.yaml entry ``proxy.config.ssl.origin_session_cache`` has been renamed to :ts:cv:`proxy.config.ssl.origin_session_cache.enabled`.
+- The records.yaml entry ``proxy.config.ssl.session_cache`` has been renamed to :ts:cv:`proxy.config.ssl.session_cache.enabled`.
+- The records.yaml entry ``proxy.config.ssl.TLSv1_3`` has been renamed to :ts:cv:`proxy.config.ssl.TLSv1_3.enabled`.
+- The records.yaml entry ``proxy.config.ssl.client.TLSv1_3`` has been renamed to :ts:cv:`proxy.config.ssl.client.TLSv1_3.enabled`.
 - The records.yaml entry :ts:cv:`proxy.config.allocator.iobuf_chunk_sizes` has been added
   to enable more control of iobuffer allocation.
 - The records.yaml entry :ts:cv:`proxy.config.allocator.hugepages` will enable
