@@ -116,6 +116,7 @@ Configuration Changes
 The following incompatible changes to the configurations have been made in this version of ATS.
 
 The ``records.config`` file has been renamed to :file:`records.yaml` and now it is structured in YAML format.
+Check :ref:`rec-config-to-yaml` and :file:`records.yaml`  for more details.
 
 The following :file:`records.yaml` changes have been made:
 
@@ -130,6 +131,14 @@ The following :file:`records.yaml` changes have been made:
   have been removed.
 - The default values for ``proxy.config.http.request_header_max_size``, ``proxy.config.http.response_header_max_size``, and
   ``proxy.config.http.header_field_max_size`` have been changed to 32KB.
+- The records.yaml entry ``proxy.config.output.logfile`` has been renamed to ``proxy.config.output.logfile.name``.
+- The records.yaml entry ``proxy.config.exec_thread.autoconfig`` has been renamed to ``proxy.config.exec_thread.autoconfig.enabled``.
+- The records.yaml entry ``proxy.config.tunnel.prewarm`` has been renamed to ``proxy.config.tunnel.prewarm.enabled``.
+- The records.yaml entry ``proxy.config.ssl.origin_session_cache`` has been renamed to ``proxy.config.ssl.origin_session_cache.enabled``.
+- The records.yaml entry ``proxy.config.ssl.session_cache`` has been renamed to ``proxy.config.ssl.session_cache.enabled``.
+- The records.yaml entry ``proxy.config.ssl.TLSv1_3`` has been renamed to ``proxy.config.ssl.TLSv1_3.enabled``.
+- The records.yaml entry ``proxy.config.ssl.client.TLSv1_3`` has been renamed to ``proxy.config.ssl.client.TLSv1_3.enabled``.
+
 
 The following changes have been made to the :file:`sni.yaml` file:
 
