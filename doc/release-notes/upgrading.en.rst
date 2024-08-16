@@ -146,15 +146,10 @@ The following :file:`records.yaml` changes have been made:
 - The records.yaml entries ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
   ``proxy.config.http.post_connect_attempts_timeout`` were previously referenced in default config
   files, but they did not have any effect.  These have been removed from default configs files.
-- The default values for ``proxy.config.http.request_header_max_size``, ``proxy.config.http.response_header_max_size``, and
-  ``proxy.config.http.header_field_max_size`` have been changed to 32KB.
-- The records.yaml entry ``proxy.config.http.server_ports`` now also accepts the
 - The default values for :ts:cv:``proxy.config.http.request_header_max_size``, :ts:cv:``proxy.config.http.response_header_max_size``, and
   :ts:cv:``proxy.config.http.header_field_max_size`` have been changed to 32KB.
 - The records.yaml entry :ts:cv:``proxy.config.http.server_ports`` now also accepts the
   ``allow-plain`` option
-- The records.yaml entry ``proxy.config.http.down_server.abort_threshold`` has
-  been removed
 - The records.yaml entry :ts:cv:``proxy.config.http.cache.max_open_write_retry_timeout`` has been added to specify a timeout for starting a write to cache
 - The records.yaml entry :ts:cv:``proxy.config.net.per_client.max_connections_in`` has
   been added to limit the number of connections from a client IP. This works the
