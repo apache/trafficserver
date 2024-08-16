@@ -53,8 +53,8 @@ The following features have been changed in this version of ATS.
 
 * Remap ACLs
 
-   Fixes with @action=allow to deny transactions that are not explicitly allowed.  Changed in-line ACLs to match before activated ACL rules.
-   For detail refer to: https://github.com/apache/trafficserver/pull/11033
+   Changed in-line ACLs to match before activated ACL rules.
+   For details refer to: https://github.com/apache/trafficserver/pull/11033 and :ref:`acl-filters`.
 
 
 
