@@ -35,10 +35,11 @@ New Features
 
    |TS| now exposes a JSON-RPC node to interact with external tools. Check :ref:`developer-guide-jsonrpc` for more details.
 
+* traffic_ctl has a new command ``monitor`` to show a continuously updating list of metrics
+
 * :file:`ip_allow.yaml` and :file:`remap.config` now support named IP ranges via IP
   Categories. See the ``ip_categories`` key definition in :file:`ip_allow.yaml`
   for information about their use and definitions.
-
 
 New or modified Configurations
 ------------------------------
@@ -70,6 +71,9 @@ Plugins
 -------
 
 * authproxy - ``--forward-header-prefix`` parameter has been added
+* prefetch - Cmcd-Request header support has been added
+* xdebug - ``--enable`` option to selectively enable features has been added
+* system_stats - Stats about memory have been added
 
 JSON-RPC
 ^^^^^^^^
