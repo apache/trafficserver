@@ -113,15 +113,6 @@ The following APIs have changed, either in semantics, interfaces, or both.
   * INKUDPPacketDestroy
   * INKUDPPacketGet
 
-* Removed Lua API
-
-  * ts.http.client_packet_tos_set
-  * ts.http.server_packet_tos_set
-  * ts.client_request.get_uri_params
-  * ts.client_request.set_uri_params
-  * ts.server_request.get_uri_params
-  * ts.server_request.set_uri_params
-
 
 Cache
 -----
@@ -183,11 +174,21 @@ The following plugins have been changed in this version of ATS.
 
 Lua Plugin
 ~~~~~~~~~~
-The following Http config constants have been renamed:
+* The following Http config constants have been renamed:
 
 TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER has been renamed to TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER.
 
 TS_LUA_CONFIG_HTTP_CONNECT_DEAD_POLICY has been renamed to TS_LUA_CONFIG_HTTP_CONNECT_DOWN_POLICY.
+
+* The following functions have been removed:
+
+  * ts.http.client_packet_tos_set
+  * ts.http.server_packet_tos_set
+  * ts.client_request.get_uri_params
+  * ts.client_request.set_uri_params
+  * ts.server_request.get_uri_params
+  * ts.server_request.set_uri_params
+
 
 Metrics
 -------
