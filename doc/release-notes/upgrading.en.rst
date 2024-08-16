@@ -35,6 +35,12 @@ removed in the next major release of ATS.
 
 * Removed Features
 
+  * Traffic Manager is no longer part of |TS|. Administrative tools now interact with |TS| directly by using the :ref:`jsonrpc-node`.
+
+    * traffic_ctl ``server``
+
+      As a part of the above feature removal the ``backtrace``, ``restart``, ``start``, ``status`` options are no longer available in this |TS| version.
+
 * Deprecated Features
 
   * Next Protocol Negotiation (NPN) support has been deprecated from ATS and will be removed in the next major release.
@@ -47,6 +53,13 @@ The following features have been changed in this version of ATS.
 
    Fixes with @action=allow to deny transactions that are not explicitly allowed.  Changed in-line ACLs to match before activated ACL rules.
    For detail refer to: https://github.com/apache/trafficserver/pull/11033
+
+
+
+* Administrative API (RPC)
+
+  Moved away from the binary serialization mechanism used to comunicate between |TS| and the tools to a JSON-RPC text based protocol. Underlying
+  Unix Domain Socket protocol remains the same. Check :ref:`jsonrpc-protocol` for more details.
 
 
 API Changes
