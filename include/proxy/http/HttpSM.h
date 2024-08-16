@@ -456,7 +456,6 @@ private:
   HttpTunnelProducer *setup_server_transfer_to_transform();
   HttpTunnelProducer *setup_transfer_from_transform();
   HttpTunnelProducer *setup_cache_transfer_to_transform();
-  HttpTunnelProducer *setup_transfer_from_transform_to_cache_only();
 
   /** Configure consumers for client response transform plugins.
    *

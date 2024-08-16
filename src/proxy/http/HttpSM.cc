@@ -7082,33 +7082,6 @@ HttpSM::setup_transfer_from_transform()
 }
 
 HttpTunnelProducer *
-HttpSM::setup_transfer_from_transform_to_cache_only()
-{
-  int64_t         alloc_index = find_server_buffer_size();
-  MIOBuffer      *buf         = new_MIOBuffer(alloc_index);
-  IOBufferReader *buf_start   = buf->alloc_reader();
-
-  HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
-  ink_assert(c != nullptr);
-  ink_assert(c->vc == transform_info.vc);
-  ink_assert(c->vc_type == HT_TRANSFORM);
-
-  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
-
-  HttpTunnelProducer *p = tunnel.add_producer(transform_info.vc, INT64_MAX, buf_start, &HttpSM::tunnel_handler_transform_read,
-                                              HT_TRANSFORM, "transform read");
-  tunnel.chain(c, p);
-
-  transform_info.entry->in_tunnel = true;
-
-  ink_assert(t_state.cache_info.transform_action == HttpTransact::CACHE_DO_WRITE);
-
-  perform_transform_cache_write_action();
-
-  return p;
-}
-
-HttpTunnelProducer *
 HttpSM::setup_server_transfer()
 {
   SMDbg(dbg_ctl_http, "Setup Server Transfer");
