@@ -66,19 +66,14 @@ Build
 
 #. Go to the top level source directory.
 
-#. Check the version in ``configure.ac``. There are two values near the top that
-   need to be set, ``TS_VERSION_S`` and ``TS_VERSION_N``. These are the release
-   version number in different encodings.
+#. Check the version in ``CMakeLists.txt``. There is a ``project`` line near the
+   top with the version number.  Make sure that is correct for the release.
 
-#. Check the variable ``RC`` in the top level ``Makefile.am``. This should be
-   the point release value. This needs to be changed for every release
-   candidate. The first release candidate is ``0`` (zero).
+#. Execute the following commands to make the distribution files where A is the
+   next release candidate number (start with 0). ::
 
-#. Execute the following commands to make the distribution files. ::
-
-      autoreconf -i
-      ./configure
-      make rel-candidate
+      cmake --preset release
+      RC=A cmake --build build-release -t rel-candidate
 
 These steps will create the distribution files and sign them using your key.
 Expect to be prompted twice for your passphrase unless you use an ssh key agent.
@@ -112,17 +107,11 @@ Official Release
 
 Build the distribution files with the command ::
 
-   make release
+   cmake --build build-release -t release
 
 Be sure to not have changed anything since the release candidate was built so
 the checksums are identical. This will create a signed git tag of the form
-``X.Y.Z`` and produce the distribution files. Push the tag to the ASF repository
-with the command ::
-
-   git push origin X.Y.Z
-
-This presumes ``origin`` is the name for the ASF remote repository which is
-correct if you originally clone from the ASF repository.
+``X.Y.Z`` and produce the distribution files.
 
 The distribution files must be added to an SVN repository. This can be accessed
 with the command::
@@ -167,8 +156,4 @@ Finally, update various files after the release:
 * The ``STATUS`` file for master and for the release branch to include this version.
 
 * The ``CHANGES`` file to have a header for the next version.
-
-* ``configure.ac`` to be set to the next version.
-
-* In the top level ``Makefile.am`` change ``RC`` to have the value ``0``.
 
