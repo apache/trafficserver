@@ -136,6 +136,8 @@ The following :file:`records.yaml` changes have been made:
 - The per server origin connection feature had a few configurations that were not used removed.
   ``proxy.config.http.per_server.connection.queue_size`` and ``proxy.config.http.per_server.connection.queue_delay``
   have been removed.
+- The default value for records.yaml entry ``proxy.config.ssl.client.verify.server.policy`` has been changed
+  from ``PERMISSIVE`` to ``STRICT``.
 - The records.yaml entry ``proxy.config.http.keepalive_internal_vc`` has been removed.  This entry
   was previously undocumented.
 - The records.yaml entries ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
