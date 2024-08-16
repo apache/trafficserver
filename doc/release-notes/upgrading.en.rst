@@ -144,6 +144,8 @@ The following :file:`records.yaml` changes have been made:
   have been removed.
 - The default value for records.yaml entry ``proxy.config.ssl.client.verify.server.policy`` has been changed
   from ``PERMISSIVE`` to ``STRICT``.
+- All ``proxy.config.ssl.TLSv*`` and ``proxy.config.ssl.client.TLSv*`` have been deprecated. Use
+  ``proxy.config.ssl.server.version.min/max`` and ``proxy.config.ssl.client.version.min/max`` instead.
 - The records.yaml entry ``proxy.config.http.keepalive_internal_vc`` has been removed.  This entry
   was previously undocumented.
 - The records.yaml entries ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
@@ -165,6 +167,7 @@ The following changes have been made to the :file:`sni.yaml` file:
 - ``disable_h2`` has been removed. Use ``http2`` with :code:`off` instead.
 - The ``ip_allow`` key can now take a reference to a file containing the ip
   allow rules
+- ``valid_tls_versions_in`` has been deprecated. Use ``valid_tls_version_min_in`` and ``valid_tls_version_max_in`` instead.
 
 Plugins
 -------
