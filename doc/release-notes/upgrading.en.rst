@@ -181,6 +181,7 @@ The following :file:`records.yaml` changes have been made:
   allocating iobuffers and cache volumes from hugepages if configured in the
   system.
 - The records.yaml entry :ts:cv:``proxy.config.system_clock`` was added to control the underlying system clock that ATS uses for internal timing
+- The records.yaml entry :ts:cv:`proxy.config.system_clock` was added to control the underlying system clock that ATS uses for internal timing
 
 The following changes have been made to the :file:`sni.yaml` file:
 
