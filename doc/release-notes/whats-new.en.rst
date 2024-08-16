@@ -37,6 +37,10 @@ New Features
 
 * traffic_ctl has a new command ``monitor`` to show a continuously updating list of metrics
 
+* :file:`ip_allow.yaml` and :file:`remap.config` now support named IP ranges via IP
+  Categories. See the ``ip_categories`` key definition in :file:`ip_allow.yaml`
+  for information about their use and definitions.
+
 New or modified Configurations
 ------------------------------
 
@@ -47,6 +51,17 @@ The configuration settings :ts:cv: `proxy.config.http.parent_proxy.connect_attem
 All connect timeouts are controlled by :ts:cv: `proxy.config.http.connect_attempts_timeout`.
 
 
+ip_allow.yaml and remap.config ACL actions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are two new sets of actions for HTTP request method filtering introduced in |TS| 10.x:
+
+- Both :file:`ip_allow.yaml` and :file:`remap.config` now support the ``set_allow`` and ``set_deny`` actions. These
+  actions both behave like ``allow`` and ``deny`` did for :file:`ip_allow.yaml` pre |TS| 10.x.
+- In addition, :file:`remap.config` now supports ``add_allow`` and ``add_deny`` actions. These behave like ``allow``
+  and ``deny`` actions did for :file:`remap.config` ACLs pre |TS| 10.x.
+
+The details about the motivation and behavior of these actions are documented in :ref:`acl-filters`.
 
 
 Logging and Metrics
