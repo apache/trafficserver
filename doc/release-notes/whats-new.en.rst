@@ -41,8 +41,8 @@ New or modified Configurations
 Combined Connect Timeouts
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The configuration settings :ts:cv: `proxy.config.http.parent_proxy.connect_attempts_timeout` and :ts:cv: `proxy.config.http.post_connect_attempts_timeout` have been removed.
-All connect timeouts are controlled by :ts:cv: `proxy.config.http.connect_attempts_timeout`.
+The configuration settings ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and ``proxy.config.http.post_connect_attempts_timeout`` have been removed.
+All connect timeouts are controlled by :ts:cv:`proxy.config.http.connect_attempts_timeout`.
 
 
 

@@ -133,19 +133,16 @@ The ``records.config`` file has been renamed to :file:`records.yaml` and now it 
 The following :file:`records.yaml` changes have been made:
 
 - The records.yaml entry ``proxy.config.http.down_server.abort_threshold`` has been removed.
-- The records.yaml entry ``proxy.config.http.connect_attempts_max_retries_dead_server`` has been renamed to ``proxy.config.http.connect_attempts_max_retries_down_server``.
-- The entry ``proxy.config.http.connect.dead.policy`` has been renamed to ``proxy.config.http.connect.down.policy``.
+- The records.yaml entry ``proxy.config.http.connect_attempts_max_retries_dead_server`` has been renamed to :ts:cv:`proxy.config.http.connect_attempts_max_retries_down_server`.
+- The entry ``proxy.config.http.connect.dead.policy`` has been renamed to :ts:cv:`proxy.config.http.connect.down.policy`.
 - The records.yaml entry ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
   ``proxy.config.http.post_connect_attempts_timeout`` have been removed. Instead use
-  ``proxy.config.http.connect_attempts_timeout`` to control all connection to origin timeouts.
+  :ts:cv:`proxy.config.http.connect_attempts_timeout` to control all connection to origin timeouts.
 - The per server origin connection feature had a few configurations that were not used removed.
   ``proxy.config.http.per_server.connection.queue_size`` and ``proxy.config.http.per_server.connection.queue_delay``
   have been removed.
-- The records.yaml entries ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
-  ``proxy.config.http.post_connect_attempts_timeout`` were previously referenced in default config
-  files, but they did not have any effect.  These have been removed from default configs files.
-- The default values for ``proxy.config.http.request_header_max_size``, ``proxy.config.http.response_header_max_size``, and
-  ``proxy.config.http.header_field_max_size`` have been changed to 32KB.
+- The default values for :ts:cv:`proxy.config.http.request_header_max_size`, :ts:cv:`proxy.config.http.response_header_max_size`, and
+  :ts:cv:`proxy.config.http.header_field_max_size` have been changed to 32KB.
 
 The following changes have been made to the :file:`sni.yaml` file:
 
