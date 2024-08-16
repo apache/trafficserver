@@ -160,12 +160,18 @@ The following :file:`records.yaml` changes have been made:
   same as :ts:cv:`proxy.config.http.per_server.connection.max`
 - The records.yaml entry :ts:cv:`proxy.config.http.no_dns_just_forward_to_parent` is
   not overridable
+- The records.yaml entry :ts:cv:`proxy.config.allocator.iobuf_chunk_sizes` has been added
+  to enable more control of iobuffer allocation.
+- The records.yaml entry :ts:cv:`proxy.config.allocator.hugepages` will enable
+  allocating iobuffers and cache volumes from hugepages if configured in the
+  system.
 
 The following changes have been made to the :file:`sni.yaml` file:
 
 - ``disable_h2`` has been removed. Use ``http2`` with :code:`off` instead.
 - The ``ip_allow`` key can now take a reference to a file containing the ip
   allow rules
+
 
 Plugins
 -------
