@@ -846,10 +846,11 @@ add_custom_target(
   asf-distdir
   COMMENT "Create distribution tarball for ASF"
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-  COMMAND rm -rf /tmp/asf-dist && mkdir /tmp/asf-dist
-  COMMAND git archive --format=tar HEAD | tar --delete ci | tar -C /tmp/asf-dist -xf -
-  COMMAND grep -v img.shields.io /tmp/asf-dist/README.md > /tmp/asf-dist/README.md.clean
-  COMMAND mv /tmp/asf-dist/README.md.clean /tmp/asf-dist/README.md
+  COMMAND rm -rf ${DISTTMP} && mkdir /tmp/asf-dist
+  COMMAND git archive --format=tar HEAD | tar -C ${DISTTMP} -xf -
+  COMMAND rm -rf ${DISTTMP}/ci
+  COMMAND grep -v img.shields.io ${DISTTMP}/README.md > ${DISTTMP}/README.md.clean
+  COMMAND mv ${DISTTMP}/README.md.clean ${DISTTMP}/README.md
 )
 
 add_custom_target(
@@ -875,7 +876,7 @@ add_custom_target(
   COMMENT "Create and sign distribution tarball for ASF release"
   DEPENDS asf-dist
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-  COMMAND sha512sum -b ${DISTFILENAME}.tar.bz2 > ${DISTFILENAME}.tar.bz2.sha512
+  COMMAND shasum -a512 -b ${DISTFILENAME}.tar.bz2 > ${DISTFILENAME}.tar.bz2.sha512
   COMMAND gpg --armor --output ${DISTFILENAME}.tar.bz2.asc --detach-sig ${DISTFILENAME}.tar.bz2
 )
 
@@ -884,7 +885,7 @@ add_custom_target(
   COMMENT "Create and sign distribution tarball for ASF release candidate"
   DEPENDS asf-dist-rc
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-  COMMAND sha512sum -b ${DISTFILENAME}-rc$ENV{RC}.tar.bz2 > ${DISTFILENAME}-rc$ENV{RC}.tar.bz2.sha512
+  COMMAND shasum -a512 -b ${DISTFILENAME}-rc$ENV{RC}.tar.bz2 > ${DISTFILENAME}-rc$ENV{RC}.tar.bz2.sha512
   COMMAND gpg --armor --output ${DISTFILENAME}-rc$ENV{RC}.tar.bz2.asc --detach-sig ${DISTFILENAME}-rc$ENV{RC}.tar.bz2
 )
 

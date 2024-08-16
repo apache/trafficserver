@@ -31,6 +31,9 @@ total of <z> contributors have participated in this development cycle.
 New Features
 ------------
 
+* JSON-RPC based interface for administrative API
+
+   |TS| now exposes a JSON-RPC node to interact with external tools. Check :ref:`developer-guide-jsonrpc` for more details.
 
 New or modified Configurations
 ------------------------------
@@ -54,6 +57,11 @@ Plugins
 * prefetch - Cmcd-Request header support has been added
 * xdebug - ``--enable`` option to selectively enable features has been added
 * system_stats - Stats about memory have been added
+
+JSON-RPC
+^^^^^^^^
+
+   Remote clients, like :ref:`traffic_ctl_jsonrpc` have now bi-directional access to the plugin space. For more details check :ref:`jsonrpc_development`.
 
 Switch to C++20
 ^^^^^^^^^^^^^^^
