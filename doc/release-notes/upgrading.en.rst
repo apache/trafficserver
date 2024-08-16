@@ -74,8 +74,14 @@ The following APIs have changed, either in semantics, interfaces, or both.
   * TSMimeHdrPrint
   * Enum values for hooks and events have been changed (ABI incompatible change)
 
+* New TS API
+
+  * TSContScheduleOnEntirePool
+  * TSContScheduleEveryOnEntirePool
+
 * Removed TS API
 
+  * TSContSchedule
   * TSHttpSsnArgSet
   * TSHttpSsnArgGet
   * TSHttpSsnArgIndexReserve
