@@ -158,10 +158,9 @@ The following :file:`records.yaml` changes have been made:
   not overridable
 - The records.yaml entry :ts:cv:`proxy.config.allocator.iobuf_chunk_sizes` has been added
   to enable more control of iobuffer allocation.
-- The records.yaml entry :ts:cv:`proxy.config.cache.dir.enable_hugepages` enables hugepage
-  allocations for internal cache datastructures.
-- The records.yaml entry :ts:cv:`proxy.config.allocator.iobuf_use_hugepages` will enable
-  allocating iobuffers from hugepages.
+- The records.yaml entry :ts:cv:`proxy.config.allocator.hugepages` will enable
+  allocating iobuffers and cache volumes from hugepages if configured in the
+  system.
 
 The following changes have been made to the :file:`sni.yaml` file:
 
