@@ -70,7 +70,13 @@ Logging and Metrics
 Plugins
 -------
 
-* JSON-RPC
+* authproxy - ``--forward-header-prefix`` parameter has been added
+* prefetch - Cmcd-Request header support has been added
+* xdebug - ``--enable`` option to selectively enable features has been added
+* system_stats - Stats about memory have been added
+
+JSON-RPC
+^^^^^^^^
 
    Remote clients, like :ref:`traffic_ctl_jsonrpc` have now bi-directional access to the plugin space. For more details check :ref:`jsonrpc_development`.
 
