@@ -71,6 +71,8 @@ The following APIs have changed, either in semantics, interfaces, or both.
 * Changed TS API
 
   * TSHttpTxnAborted
+  * TSMimeHdrPrint
+  * Enum values for hooks and events have been changed (ABI incompatible change)
 
 * Removed TS API
 
