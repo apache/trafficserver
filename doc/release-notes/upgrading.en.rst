@@ -47,6 +47,10 @@ removed in the next major release of ATS.
 
   * Next Protocol Negotiation (NPN) support has been deprecated from ATS and will be removed in the next major release.
 
+* Removed Libraries
+
+  * mgmt_c - Client library for traffic_manager
+
 Changes to Features
 ~~~~~~~~~~~~~~~~~~~
 The following features have been changed in this version of ATS.
@@ -56,13 +60,10 @@ The following features have been changed in this version of ATS.
    Changed in-line ACLs to match before activated ACL rules.
    For details refer to: https://github.com/apache/trafficserver/pull/11033 and :ref:`acl-filters`.
 
-
-
 * Administrative API (RPC)
 
   Moved away from the binary serialization mechanism used to comunicate between |TS| and the tools to a JSON-RPC text based protocol. Underlying
   Unix Domain Socket protocol remains the same. Check :ref:`jsonrpc-protocol` for more details.
-
 
 API Changes
 -----------
@@ -74,8 +75,14 @@ The following APIs have changed, either in semantics, interfaces, or both.
   * TSMimeHdrPrint
   * Enum values for hooks and events have been changed (ABI incompatible change)
 
+* New TS API
+
+  * TSContScheduleOnEntirePool
+  * TSContScheduleEveryOnEntirePool
+
 * Removed TS API
 
+  * TSContSchedule
   * TSHttpSsnArgSet
   * TSHttpSsnArgGet
   * TSHttpSsnArgIndexReserve
@@ -154,8 +161,6 @@ The following :file:`records.yaml` changes have been made:
   same as :ts:cv:`proxy.config.http.per_server.connection.max`
 - The records.yaml entry :ts:cv:`proxy.config.http.no_dns_just_forward_to_parent` is
   not overridable
-- The default values for ``proxy.config.http.request_header_max_size``, ``proxy.config.http.response_header_max_size``, and
-  ``proxy.config.http.header_field_max_size`` have been changed to 32KB.
 - The records.yaml entry ``proxy.config.output.logfile`` has been renamed to :ts:cv:`proxy.config.output.logfile.name`.
 - The records.yaml entry ``proxy.config.exec_thread.autoconfig`` has been renamed to :ts:cv:`proxy.config.exec_thread.autoconfig.enabled`.
 - The records.yaml entry ``proxy.config.tunnel.prewarm`` has been renamed to :ts:cv:`proxy.config.tunnel.prewarm.enabled`.
@@ -163,12 +168,18 @@ The following :file:`records.yaml` changes have been made:
 - The records.yaml entry ``proxy.config.ssl.session_cache`` has been renamed to :ts:cv:`proxy.config.ssl.session_cache.enabled`.
 - The records.yaml entry ``proxy.config.ssl.TLSv1_3`` has been renamed to :ts:cv:`proxy.config.ssl.TLSv1_3.enabled`.
 - The records.yaml entry ``proxy.config.ssl.client.TLSv1_3`` has been renamed to :ts:cv:`proxy.config.ssl.client.TLSv1_3.enabled`.
+- The records.yaml entry :ts:cv:`proxy.config.allocator.iobuf_chunk_sizes` has been added
+  to enable more control of iobuffer allocation.
+- The records.yaml entry :ts:cv:`proxy.config.allocator.hugepages` will enable
+  allocating iobuffers and cache volumes from hugepages if configured in the
+  system.
 
 The following changes have been made to the :file:`sni.yaml` file:
 
 - ``disable_h2`` has been removed. Use ``http2`` with :code:`off` instead.
 - The ``ip_allow`` key can now take a reference to a file containing the ip
   allow rules
+
 
 Plugins
 -------
