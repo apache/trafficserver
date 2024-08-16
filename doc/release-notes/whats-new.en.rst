@@ -35,6 +35,8 @@ New Features
 
    |TS| now exposes a JSON-RPC node to interact with external tools. Check :ref:`developer-guide-jsonrpc` for more details.
 
+* traffic_ctl has a new command ``monitor`` do show a continuously updating list of metrics
+
 New or modified Configurations
 ------------------------------
 
