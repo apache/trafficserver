@@ -70,8 +70,14 @@ The following APIs have changed, either in semantics, interfaces, or both.
 
   * TSHttpTxnAborted
 
+* New TS API
+
+  * TSContScheduleOnEntirePool
+  * TSContScheduleEveryOnEntirePool
+
 * Removed TS API
 
+  * TSContSchedule
   * TSHttpSsnArgSet
   * TSHttpSsnArgGet
   * TSHttpSsnArgIndexReserve
