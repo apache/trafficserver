@@ -103,3 +103,10 @@ New plugin hook for request sink transformation
 
 A new hook, ``TS_HTTP_REQUEST_CLIENT_HOOK``, has been added. This provides the analoguas functionality of
 ``TS_HTTP_RESPONSE_CLIENT_HOOK``, for request bodies.
+
+HTTP/2
+^^^^^^
+
+* Support for HTTP/2 on origin server connections has been added. This is disabled by default. For more details check :ts:cv:`proxy.config.ssl.client.alpn_protocols`
+* Support for CONNECT method has been added.
+* Window size control has been improved. For more details check :ts:cv:`proxy.config.http2.flow_control.policy_in`
