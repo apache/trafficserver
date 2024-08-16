@@ -8057,8 +8057,9 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE: {
-    ink_assert(cache_sm.cache_write_vc == nullptr);
+    ink_assert((cache_sm.cache_write_vc == nullptr) || t_state.redirect_info.redirect_in_process);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_write);
+
     do_cache_prepare_write();
     break;
   }
