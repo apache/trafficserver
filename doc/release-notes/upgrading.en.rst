@@ -65,6 +65,11 @@ The following features have been changed in this version of ATS.
   Moved away from the binary serialization mechanism used to comunicate between |TS| and the tools to a JSON-RPC text based protocol. Underlying
   Unix Domain Socket protocol remains the same. Check :ref:`jsonrpc-protocol` for more details.
 
+* Other changes
+
+  * It is now a fatal error when ATS cannot bind or listen to a configured port
+  * Propagate socket options specified in :ts:cv:`proxy.config.net.sock_option_flag_in` to newly accepted connections
+
 API Changes
 -----------
 The following APIs have changed, either in semantics, interfaces, or both.
@@ -74,6 +79,7 @@ The following APIs have changed, either in semantics, interfaces, or both.
   * TSHttpTxnAborted
   * TSMimeHdrPrint
   * Enum values for hooks and events have been changed (ABI incompatible change)
+  * TSSslSecretGet
 
 * New TS API
 
@@ -237,3 +243,5 @@ The ``cqtx`` log field has been removed, but can be replaced by ``cqhm pqu cqpv`
 The ``cqhv`` log field has been removed.
 
 The ``cpu``, ``cquc``, ``cqup``, and ``cqus`` log fields have new names, ``pqu``, ``pquc``, ``pqup``, and ``pqus``. The old names have been deprecated.
+
+The ``chi`` log field now represents the IP address of the previous hop if :ref:`Proxy Protocol <proxy-protocol>` is used.
