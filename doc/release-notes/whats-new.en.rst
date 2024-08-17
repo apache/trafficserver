@@ -80,6 +80,11 @@ JSON-RPC
 
    Remote clients, like :ref:`traffic_ctl_jsonrpc` have now bi-directional access to the plugin space. For more details check :ref:`jsonrpc_development`.
 
+Replaced autotools build system with cmake
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+See :ref:`admin-installing` for more information
+
 Switch to C++20
 ^^^^^^^^^^^^^^^
 
@@ -110,3 +115,11 @@ HTTP/2
 * Support for HTTP/2 on origin server connections has been added. This is disabled by default. For more details check :ts:cv:`proxy.config.ssl.client.alpn_protocols`
 * Support for CONNECT method has been added.
 * Window size control has been improved. For more details check :ts:cv:`proxy.config.http2.flow_control.policy_in`
+
+HTTP UI Removed
+^^^^^^^^^^^^^^^
+
+The stats and cache inspector pages were unmaintained and removed in this
+release.
+
+
