@@ -156,9 +156,6 @@ The following :file:`records.yaml` changes have been made:
   ``proxy.config.ssl.server.version.min/max`` and ``proxy.config.ssl.client.version.min/max`` instead.
 - The records.yaml entry ``proxy.config.http.keepalive_internal_vc`` has been removed.  This entry
   was previously undocumented.
-- The records.yaml entries ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
-  ``proxy.config.http.post_connect_attempts_timeout`` were previously referenced in default config
-  files, but they did not have any effect.  These have been removed from default configs files.
 - The default values for :ts:cv:`proxy.config.http.request_header_max_size`, :ts:cv:`proxy.config.http.response_header_max_size`, and
   :ts:cv:`proxy.config.http.header_field_max_size` have been changed to 32KB.
 - The records.yaml entry :ts:cv:`proxy.config.http.server_ports` now also accepts the

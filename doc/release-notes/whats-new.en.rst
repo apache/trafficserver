@@ -44,13 +44,6 @@ New Features
 New or modified Configurations
 ------------------------------
 
-Combined Connect Timeouts
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The configuration settings :ts:cv: `proxy.config.http.parent_proxy.connect_attempts_timeout` and :ts:cv: `proxy.config.http.post_connect_attempts_timeout` have been removed.
-All connect timeouts are controlled by :ts:cv: `proxy.config.http.connect_attempts_timeout`.
-
-
 ip_allow.yaml and remap.config ACL actions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -62,7 +55,6 @@ There are two new sets of actions for HTTP request method filtering introduced i
   and ``deny`` actions did for :file:`remap.config` ACLs pre |TS| 10.x.
 
 The details about the motivation and behavior of these actions are documented in :ref:`acl-filters`.
-
 
 Logging and Metrics
 -------------------
