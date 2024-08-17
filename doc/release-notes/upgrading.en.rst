@@ -243,7 +243,7 @@ Metrics
 - The metric ``proxy.node.config.reconfigure_time`` was renamed to
   ``proxy.process.proxy.reconfigure_time``
 - The metric ``proxy.node.config.restart_required.proxy`` was renamed to
-  ```proxy.process.proxy.restart_required`
+  ``proxy.process.proxy.restart_required``
 - The metric ``proxy.node.restarts.proxy.cache_ready_time`` was renamed to
   ``proxy.process.proxy.cache_ready_time``
 - The metric ``proxy.node.restarts.proxy.stop_time`` was renamed to
