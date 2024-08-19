@@ -72,6 +72,10 @@ JA4::TLSClientHelloSummary::add_extension(std::uint16_t extension)
     return;
   }
 
+  if (extension_SNI == extension) {
+    this->_SNI_type = SNI::to_domain;
+  }
+
   ++this->_extension_count_including_sni_and_alpn;
   if (!is_ignored_non_GREASE_extension(extension)) {
     this->_extensions.push_back(extension);
@@ -100,4 +104,10 @@ bool
 is_ignored_non_GREASE_extension(std::uint16_t extension)
 {
   return (extension_SNI == extension) || (extension_ALPN == extension);
+}
+
+JA4::SNI
+JA4::TLSClientHelloSummary::get_SNI_type() const
+{
+  return this->_SNI_type;
 }

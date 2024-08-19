@@ -53,7 +53,7 @@ JA4::make_JA4_a_raw(TLSClientHelloSummary const &TLS_summary)
   result.reserve(9);
   result.push_back(convert_protocol_to_char(TLS_summary.protocol));
   result.append(convert_TLS_version_to_string(TLS_summary.TLS_version));
-  result.push_back(convert_SNI_to_char(TLS_summary.SNI_type));
+  result.push_back(convert_SNI_to_char(TLS_summary.get_SNI_type()));
   result.append(convert_count_to_two_digit_string(TLS_summary.get_cipher_count()));
   result.append(convert_count_to_two_digit_string(TLS_summary.get_extension_count()));
   result.append(convert_ALPN_to_two_char_string(TLS_summary.ALPN));
