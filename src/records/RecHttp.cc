@@ -94,14 +94,15 @@ SessionProtocolSet DEFAULT_QUIC_SESSION_PROTOCOL_SET;
 static bool
 mptcp_supported()
 {
+  int value = 0;
+#if defined(HAVE_STRUCT_MPTCP_INFO_SUBFLOWS) && defined(MPTCP_INFO) && MPTCP_INFO == 1
   ats_scoped_fd fd(::open("/proc/sys/net/mptcp/enabled", O_RDONLY));
-  int           value = 0;
-
   if (fd > 0) {
     TextBuffer buffer(16);
     buffer.slurp(fd.get());
     value = atoi(buffer.bufPtr());
   }
+#endif
 
   return value != 0;
 }
