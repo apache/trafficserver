@@ -195,6 +195,9 @@ Removed Plugins
 The following plugins have been removed from the ATS source code in this version of ATS:
 
   * mysql_remap - Dynamic remapping of URLs using data from a MySQL database.
+  * acme
+  * cache_key_genid
+  * fast_cgi
 
 Changes to Features
 ~~~~~~~~~~~~~~~~~~~
@@ -231,6 +234,25 @@ Metrics
   ``proxy.process.cache.volume_X.stripes`` that counts cache stripes
 - All metric names that ended in ``_stat`` have had that suffix dropped and no
   longer end with ``_stat``
+- The metric ``proxy.node.cache.contents.num_doc`` was removed
+- The metric ``proxy.node.config.reconfigure_required`` was renamed to
+  ``proxy.process.proxy.reconfigure_required``
+- The metric ``proxy.node.config.reconfigure_time`` was renamed to
+  ``proxy.process.proxy.reconfigure_time``
+- The metric ``proxy.node.config.restart_required.proxy`` was renamed to
+  ``proxy.process.proxy.restart_required``
+- The metric ``proxy.node.restarts.proxy.cache_ready_time`` was renamed to
+  ``proxy.process.proxy.cache_ready_time``
+- The metric ``proxy.node.restarts.proxy.stop_time`` was renamed to
+  ``proxy.process.proxy.start_time``
+- The following traffic_manager metrics have been removed:
+  - proxy.node.hostname_FQ
+  - proxy.node.hostname
+  - proxy.node.proxy_running
+  - proxy.node.restarts.proxy.restart_count
+  - proxy.node.restarts.proxy.start_time
+  - proxy.node.http.parent_proxy_total_response_bytes
+
 
 Logging
 -------
