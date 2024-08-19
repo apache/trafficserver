@@ -41,6 +41,11 @@ New Features
   Categories. See the ``ip_categories`` key definition in :file:`ip_allow.yaml`
   for information about their use and definitions.
 
+* :file:`sni.yaml` ``fqdn:tunnel_route``, beside the already supported match group
+  number, configuration now also supports the destination port using a variable specification
+  either for the incoming connection port or the port that was specified by the
+  incoming Proxy Protocol payload. Check :file:`sni.yaml` for more information.
+
 New or modified Configurations
 ------------------------------
 
