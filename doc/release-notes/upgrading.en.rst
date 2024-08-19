@@ -69,6 +69,8 @@ The following features have been changed in this version of ATS.
 
   * It is now a fatal error when ATS cannot bind or listen to a configured port
   * Propagate socket options specified in :ts:cv:`proxy.config.net.sock_option_flag_in` to newly accepted connections
+  * HostDB internals were restructured, this should (externally) be backwards compatible.
+    In any case you can check :ref:`developer-doc-hostdb` for more details.
 
 API Changes
 -----------
@@ -205,6 +207,13 @@ The following plugins have been changed in this version of ATS.
 
 * regex_remap - matrix-parameters parameter has been removed. The string that follows a semicolon is now included in path.
 * header_rewrite - MATRIX part specifier has been removed. The string that follows a semicolon is now included in PATH part.
+* rate_limit - Few changes were made on this plugin:
+
+  * A ``YAML`` based configuration, reloadable even as global plugin.
+  * SNI aliases
+  * The IP reputation objects are now shareable for many SNIs.
+
+  for more details, please check :ref:`admin-plugins-rate-limit`.
 
 Lua Plugin
 ~~~~~~~~~~

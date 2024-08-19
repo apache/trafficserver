@@ -71,6 +71,7 @@ Plugins
 * prefetch - Cmcd-Request header support has been added
 * xdebug - ``--enable`` option to selectively enable features has been added
 * system_stats - Stats about memory have been added
+* slice plugin - This plugin was promoted to stable.
 
 JSON-RPC
 ^^^^^^^^
