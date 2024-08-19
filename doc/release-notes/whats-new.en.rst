@@ -46,6 +46,9 @@ New Features
   either for the incoming connection port or the port that was specified by the
   incoming Proxy Protocol payload. Check :file:`sni.yaml` for more information.
 
+* The records.yaml entry :ts:cv:`proxy.config.system_clock` was added to control the underlying
+  system clock that ATS uses for internal timing
+
 New or modified Configurations
 ------------------------------
 
