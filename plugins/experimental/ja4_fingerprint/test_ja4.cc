@@ -97,20 +97,19 @@ TEST_CASE("JA4")
     }
   }
 
-  SECTION("Given the SNI is a domain name, "
+  SECTION("Given the SNI extension is present, "
           "when we create a JA4 fingerprint, "
           "then index 3 thereof should contain 'd'.")
   {
-    TLS_summary.SNI_type = JA4::SNI::to_domain;
-    INFO(call_JA4(TLS_summary));
+    TLS_summary.add_extension(0x0);
     CHECK("d" == call_JA4(TLS_summary).substr(3, 1));
   }
 
-  SECTION("Given the SNI is an IP, "
+  SECTION("Given the SNI extension is not present, "
           "when we create a JA4 fingerprint, "
           "then index 3 thereof should contain 'i'.")
   {
-    TLS_summary.SNI_type = JA4::SNI::to_IP;
+    TLS_summary.add_extension(0x31);
     CHECK("i" == call_JA4(TLS_summary).substr(3, 1));
   }
 

@@ -54,7 +54,6 @@ public:
   using difference_type = std::iterator_traits<std::vector<std::uint16_t>::iterator>::difference_type;
 
   Protocol      protocol;
-  SNI           SNI_type;
   std::uint16_t TLS_version;
   std::string   ALPN;
 
@@ -78,10 +77,17 @@ public:
    */
   difference_type get_extension_count() const;
 
+  /** Get the SNI type, domain or IP.
+   *
+   * @return Returns SNI::to_domain or SNI::to_IP.
+   */
+  SNI get_SNI_type() const;
+
 private:
   std::vector<std::uint16_t> _ciphers;
   std::vector<std::uint16_t> _extensions;
   int                        _extension_count_including_sni_and_alpn{0};
+  SNI                        _SNI_type{SNI::to_IP};
 };
 
 /**
