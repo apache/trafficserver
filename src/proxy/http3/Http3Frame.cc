@@ -508,7 +508,7 @@ Http3FrameFactory::create(IOBufferReader &reader)
   ts::Http3Config::scoped_config params;
   Http3Frame                    *frame = nullptr;
 
-  uint8_t type_buf[FRAME_TYPE_MAX_BYTES];
+  uint8_t type_buf[FRAME_TYPE_MAX_BYTES] = {0};
   reader.memcpy(type_buf, sizeof(type_buf));
   Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
 
