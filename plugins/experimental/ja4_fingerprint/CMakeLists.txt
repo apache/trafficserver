@@ -15,6 +15,9 @@
 #
 #######################
 
+add_atsplugin(ja4_fingerprint ja4.cc plugin.cc tls_client_hello_summary.cc)
+target_link_libraries(ja4_fingerprint PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+
 if(BUILD_TESTING)
   add_executable(test_ja4 test_ja4.cc ja4.cc tls_client_hello_summary.cc)
   target_link_libraries(test_ja4 PRIVATE catch2::catch2)

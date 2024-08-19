@@ -40,7 +40,6 @@ constexpr std::uint16_t                 extension_ALPN{0x10};
 
 } // end anonymous namespace
 
-static bool is_GREASE(std::uint16_t value);
 static bool is_ignored_non_GREASE_extension(std::uint16_t extension);
 
 std::vector<std::uint16_t> const &
@@ -88,12 +87,6 @@ JA4::TLSClientHelloSummary::get_cipher_count() const
   return this->_ciphers.size();
 }
 
-bool
-is_GREASE(std::uint16_t value)
-{
-  return std::binary_search(GREASE_values.begin(), GREASE_values.end(), value);
-}
-
 JA4::TLSClientHelloSummary::difference_type
 JA4::TLSClientHelloSummary::get_extension_count() const
 {
@@ -110,4 +103,10 @@ JA4::SNI
 JA4::TLSClientHelloSummary::get_SNI_type() const
 {
   return this->_SNI_type;
+}
+
+bool
+JA4::is_GREASE(std::uint16_t value)
+{
+  return std::binary_search(GREASE_values.begin(), GREASE_values.end(), value);
 }

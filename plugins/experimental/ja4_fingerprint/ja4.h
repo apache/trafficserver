@@ -159,4 +159,15 @@ make_JA4_fingerprint(TLSClientHelloSummary const &TLS_summary, UnaryOp hasher)
   return result;
 }
 
+/**
+ * Check whether @a value is a GREASE value.
+ *
+ * These are reserved extensions randomly advertised to keep implementations
+ * well lubricated. They are ignored in all parts of JA4 because of their
+ * random nature.
+ *
+ * @return Returns true if the value is a GREASE value, fales otherwise.
+ */
+bool is_GREASE(std::uint16_t value);
+
 } // end namespace JA4
