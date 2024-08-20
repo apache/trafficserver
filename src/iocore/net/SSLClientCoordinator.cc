@@ -24,6 +24,7 @@
 #include "P_SSLClientCoordinator.h"
 #include "P_SSLConfig.h"
 #include "iocore/net/SSLSNIConfig.h"
+#include "iocore/net/QUICMultiCertConfigLoader.h"
 
 std::unique_ptr<ConfigUpdateHandler<SSLClientCoordinator>> sslClientUpdate;
 
@@ -36,6 +37,7 @@ SSLClientCoordinator::reconfigure()
   SSLConfig::reconfigure();
   SNIConfig::reconfigure();
   SSLCertificateConfig::reconfigure();
+  QUICCertConfig::reconfigure();
 }
 
 void
