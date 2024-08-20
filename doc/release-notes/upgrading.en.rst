@@ -65,6 +65,13 @@ The following features have been changed in this version of ATS.
   Moved away from the binary serialization mechanism used to comunicate between |TS| and the tools to a JSON-RPC text based protocol. Underlying
   Unix Domain Socket protocol remains the same. Check :ref:`jsonrpc-protocol` for more details.
 
+* Other changes
+
+  * It is now a fatal error when ATS cannot bind or listen to a configured port
+  * Propagate socket options specified in :ts:cv:`proxy.config.net.sock_option_flag_in` to newly accepted connections
+  * HostDB internals were restructured, this should (externally) be backwards compatible.
+    In any case you can check :ref:`developer-doc-hostdb` for more details.
+
 API Changes
 -----------
 The following APIs have changed, either in semantics, interfaces, or both.
@@ -74,6 +81,7 @@ The following APIs have changed, either in semantics, interfaces, or both.
   * TSHttpTxnAborted
   * TSMimeHdrPrint
   * Enum values for hooks and events have been changed (ABI incompatible change)
+  * TSSslSecretGet
 
 * New TS API
 
@@ -146,11 +154,10 @@ The following :file:`records.yaml` changes have been made:
   have been removed.
 - The default value for records.yaml entry ``proxy.config.ssl.client.verify.server.policy`` has been changed
   from ``PERMISSIVE`` to ``STRICT``.
+- All ``proxy.config.ssl.TLSv*`` and ``proxy.config.ssl.client.TLSv*`` have been deprecated. Use
+  ``proxy.config.ssl.server.version.min/max`` and ``proxy.config.ssl.client.version.min/max`` instead.
 - The records.yaml entry ``proxy.config.http.keepalive_internal_vc`` has been removed.  This entry
   was previously undocumented.
-- The records.yaml entries ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
-  ``proxy.config.http.post_connect_attempts_timeout`` were previously referenced in default config
-  files, but they did not have any effect.  These have been removed from default configs files.
 - The default values for :ts:cv:`proxy.config.http.request_header_max_size`, :ts:cv:`proxy.config.http.response_header_max_size`, and
   :ts:cv:`proxy.config.http.header_field_max_size` have been changed to 32KB.
 - The records.yaml entry :ts:cv:`proxy.config.http.server_ports` now also accepts the
@@ -179,6 +186,7 @@ The following changes have been made to the :file:`sni.yaml` file:
 - ``disable_h2`` has been removed. Use ``http2`` with :code:`off` instead.
 - The ``ip_allow`` key can now take a reference to a file containing the ip
   allow rules
+- ``valid_tls_versions_in`` has been deprecated. Use ``valid_tls_version_min_in`` and ``valid_tls_version_max_in`` instead.
 
 
 Plugins
@@ -189,6 +197,9 @@ Removed Plugins
 The following plugins have been removed from the ATS source code in this version of ATS:
 
   * mysql_remap - Dynamic remapping of URLs using data from a MySQL database.
+  * acme
+  * cache_key_genid
+  * fast_cgi
 
 Changes to Features
 ~~~~~~~~~~~~~~~~~~~
@@ -197,6 +208,13 @@ The following plugins have been changed in this version of ATS.
 * regex_remap - matrix-parameters parameter has been removed. The string that follows a semicolon is now included in path.
 * header_rewrite - MATRIX part specifier has been removed. The string that follows a semicolon is now included in PATH part.
 * maxmind_acl - The regex part in its configuration takes the entire URL of a request, not just the path.
+* rate_limit - Few changes were made on this plugin:
+
+  * A ``YAML`` based configuration, reloadable even as global plugin.
+  * SNI aliases
+  * The IP reputation objects are now shareable for many SNIs.
+
+  for more details, please check :ref:`admin-plugins-rate-limit`.
 
 Lua Plugin
 ~~~~~~~~~~
@@ -226,6 +244,25 @@ Metrics
   ``proxy.process.cache.volume_X.stripes`` that counts cache stripes
 - All metric names that ended in ``_stat`` have had that suffix dropped and no
   longer end with ``_stat``
+- The metric ``proxy.node.cache.contents.num_doc`` was removed
+- The metric ``proxy.node.config.reconfigure_required`` was renamed to
+  ``proxy.process.proxy.reconfigure_required``
+- The metric ``proxy.node.config.reconfigure_time`` was renamed to
+  ``proxy.process.proxy.reconfigure_time``
+- The metric ``proxy.node.config.restart_required.proxy`` was renamed to
+  ``proxy.process.proxy.restart_required``
+- The metric ``proxy.node.restarts.proxy.cache_ready_time`` was renamed to
+  ``proxy.process.proxy.cache_ready_time``
+- The metric ``proxy.node.restarts.proxy.stop_time`` was renamed to
+  ``proxy.process.proxy.start_time``
+- The following traffic_manager metrics have been removed:
+  - proxy.node.hostname_FQ
+  - proxy.node.hostname
+  - proxy.node.proxy_running
+  - proxy.node.restarts.proxy.restart_count
+  - proxy.node.restarts.proxy.start_time
+  - proxy.node.http.parent_proxy_total_response_bytes
+
 
 Logging
 -------
@@ -235,3 +272,5 @@ The ``cqtx`` log field has been removed, but can be replaced by ``cqhm pqu cqpv`
 The ``cqhv`` log field has been removed.
 
 The ``cpu``, ``cquc``, ``cqup``, and ``cqus`` log fields have new names, ``pqu``, ``pquc``, ``pqup``, and ``pqus``. The old names have been deprecated.
+
+The ``chi`` log field now represents the IP address of the previous hop if :ref:`Proxy Protocol <proxy-protocol>` is used.
