@@ -42,7 +42,7 @@ DbgCtl dbg_ctl_v_net_queue{"v_net_queue"};
 
 } // end anonymous namespace
 
-std::atomic<uint32_t> NetHandler::additional_accepts{0};
+std::atomic<int32_t>  NetHandler::additional_accepts{0};
 std::atomic<uint32_t> NetHandler::per_client_max_connections_in{0};
 
 // NetHandler method definitions
@@ -185,13 +185,16 @@ NetHandler::init_for_process()
   REC_ReadConfigInt32(global_config.default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
 
   // Atomic configurations.
-  uint32_t val = 0;
-
-  REC_ReadConfigInt32(val, "proxy.config.net.additional_accepts");
-  additional_accepts.store(val, std::memory_order_relaxed);
-
-  REC_ReadConfigInt32(val, "proxy.config.net.per_client.max_connections_in");
-  per_client_max_connections_in.store(val, std::memory_order_relaxed);
+  {
+    int32_t val = 0;
+    REC_ReadConfigInt32(val, "proxy.config.net.additional_accepts");
+    additional_accepts.store(val, std::memory_order_relaxed);
+  }
+  {
+    uint32_t val = 0;
+    REC_ReadConfigInt32(val, "proxy.config.net.per_client.max_connections_in");
+    per_client_max_connections_in.store(val, std::memory_order_relaxed);
+  }
 
   RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.max_requests_in", update_nethandler_config, nullptr);
