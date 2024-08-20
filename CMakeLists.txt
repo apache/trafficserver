@@ -847,10 +847,10 @@ add_custom_target(
   COMMENT "Create distribution tarball for ASF"
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
   COMMAND rm -rf ${DISTTMP} && mkdir /tmp/asf-dist
-  COMMAND git archive --format=tar HEAD | tar -C ${DISTTMP} -xf -
-  COMMAND rm -rf ${DISTTMP}/ci
-  COMMAND grep -v img.shields.io ${DISTTMP}/README.md > ${DISTTMP}/README.md.clean
-  COMMAND mv ${DISTTMP}/README.md.clean ${DISTTMP}/README.md
+  COMMAND git archive --format=tar --prefix=${DISTFILENAME}/ HEAD | tar -C ${DISTTMP} -xf -
+  COMMAND rm -rf ${DISTTMP}/${DISTFILENAME}/ci
+  COMMAND grep -v img.shields.io ${DISTTMP}/${DISTFILENAME}/README.md > ${DISTTMP}/${DISTFILENAME}/README.md.clean
+  COMMAND mv ${DISTTMP}/${DISTFILENAME}/README.md.clean ${DISTTMP}/${DISTFILENAME}/README.md
 )
 
 add_custom_target(
@@ -858,7 +858,7 @@ add_custom_target(
   COMMENT "Create distribution tarball for ASF release"
   DEPENDS asf-distdir
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-  COMMAND tar -C ${DISTTMP} -c . | bzip2 -9 -c > ${DISTFILENAME}.tar.bz2
+  COMMAND tar -C ${DISTTMP} -c ${DISTFILENAME} | bzip2 -9 -c > ${DISTFILENAME}.tar.bz2
   COMMAND rm -rf ${DISTTMP}
 )
 
@@ -867,7 +867,7 @@ add_custom_target(
   COMMENT "Create distribution tarball for ASF release candidate"
   DEPENDS asf-distdir
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-  COMMAND tar -C ${DISTTMP} -c . | bzip2 -9 -c > ${DISTFILENAME}-rc$ENV{RC}.tar.bz2
+  COMMAND tar -C ${DISTTMP} -c ${DISTFILENAME} | bzip2 -9 -c > ${DISTFILENAME}-rc$ENV{RC}.tar.bz2
   COMMAND rm -rf ${DISTTMP}
 )
 
