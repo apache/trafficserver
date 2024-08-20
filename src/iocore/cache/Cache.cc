@@ -105,6 +105,7 @@ namespace
 DbgCtl dbg_ctl_cache_scan_truss{"cache_scan_truss"};
 DbgCtl dbg_ctl_cache_init{"cache_init"};
 DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
+DbgCtl dbg_ctl_cache_update{"cache_update"};
 
 } // end anonymous namespace
 
