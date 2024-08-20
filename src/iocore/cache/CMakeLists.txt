@@ -28,7 +28,6 @@ add_library(
   CacheProcessor.cc
   CacheRead.cc
   CacheVC.cc
-  CacheVol.cc
   CacheWrite.cc
   HttpTransactCache.cc
   PreservationTable.cc
