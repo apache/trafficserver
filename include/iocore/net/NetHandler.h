@@ -236,7 +236,7 @@ private:
   // TS_EVENT_MGMT_UPDATE event like with the Config settings above because
   // accept threads are not always on a standard NET thread with a NetHandler
   // that has TS_EVENT_MGMT_UPDATE handling logic.
-  static std::atomic<uint32_t> additional_accepts;
+  static std::atomic<int32_t>  additional_accepts;
   static std::atomic<uint32_t> per_client_max_connections_in;
 
   void _close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count);

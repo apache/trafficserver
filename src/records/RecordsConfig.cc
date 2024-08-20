@@ -722,7 +722,7 @@ static const RecordElement RecordsConfig[] =
   //#
   //##############################################################################
 
-  {RECT_CONFIG, "proxy.config.net.additional_accepts", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_INT, "^-1|[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.net.additional_accepts", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-1|[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.connections_throttle", RECD_INT, "30000", RECU_RESTART_TS, RR_REQUIRED, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
