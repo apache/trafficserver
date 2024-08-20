@@ -211,6 +211,7 @@ The following plugins have been changed in this version of ATS.
 
 * regex_remap - matrix-parameters parameter has been removed. The string that follows a semicolon is now included in path.
 * header_rewrite - MATRIX part specifier has been removed. The string that follows a semicolon is now included in PATH part.
+* maxmind_acl - The regex part in its configuration takes the entire URL of a request, not just the path.
 * rate_limit - Few changes were made on this plugin:
 
   * A ``YAML`` based configuration, reloadable even as global plugin.
