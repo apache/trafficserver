@@ -1,0 +1,1737 @@
+Changes with Apache Traffic Server 10.0.0
+  #6602 - TSContSchedule API renaming
+  #7302 - Remove the queuing option from proxy.config.http.per_server.connection
+  #7335 - Unify all the connect timeouts into one
+  #7478 - JSONRPC based interface for administrative API
+  #7485 - PR to prevent thundering parent retries.
+  #7547 - Removes deprecated sni.yaml option: disable_h2
+  #7587 - Change the default value for verify.server.policy
+  #7693 - Remove undocumented keepalive_internal_vc setting
+  #7756 - Remove references to removed options
+  #7782 - Short circuit remap reload when a valid remap file is not specified
+  #7901 - Update TSHttpTxnAborted API to distinguish client/server aborts
+  #8049 - Add PS debug to store requesting URL and add to notes
+  #8066 - Fixing TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK enum value
+  #8077 - Removes down_server.abort_threshold completely
+  #8286 - Add AuTest for POST & connect_attempts_timeout
+  #8301 - Make separate read and write vc_handlers
+  #8321 - Remove dir_token, since it is never set
+  #8335 - stats_over_http c++/ipmap updates
+  #8353 - remove unused RecConfigFileEntry struct
+  #8388 - body factory does not respect runroot
+  #8394 - Increased the max number of operations for marking PR and issues stale to 100
+  #8413 - Added required checks before merging
+  #8416 - Don't require branch to be up to date before merging
+  #8425 - add hacktoberfest label
+  #8431 - Make header_rewrite_cond_cache test version indepdendent
+  #8463 - Propagate proxy.config.net.sock_option_flag_in to newly accepted connections
+  #8465 - Add some checking to validate the scheme matches the wire protocol.
+  #8467 - Move MIME field iterator from MIMEHdr to MIMEHdrImpl
+  #8468 - Tweak MimeHdr::get_host_port_values to not run over the end of the TextView
+  #8470 - Dismiss stale reviews when PR has been updated
+  #8486 - Revert "Add some checking to validate the scheme matches the wire protocol."
+  #8504 - Change TSMimeHdrFieldNext to use field iterators for better performance.
+  #8516 - Change event loop to be cleaner.
+  #8521 - Remove unused RemapPlugins::_hh_ptr
+  #8522 - KIWF - remove unused RemapPlugins::run_remap
+  #8526 - Add a knob to enable kTLS 
+  #8530 - Enable GitHub wiki for trafficserver
+  #8545 - TSHttpTxnCacheLookupStatusGet: handle cannot respond cases
+  #8560 - Remove drand48() usage
+  #8572 - Remove unused argument, and make sure condition checks are consistent
+  #8575 - LGTM: Fix pointless comparison of unsigined value to zero
+  #8576 - LGTM: Fix constant comparison
+  #8577 - Exclude 3rd party libs from LGTM checks
+  #8581 - Reduce overhead incurred by enabling debug output.
+  #8582 - Add TLSEarlyDataSupport
+  #8584 - memcache plugin fix
+  #8591 - add proxy.config.http.cache.max_open_write_retry_timeout parameter
+  #8596 - Cleanup: Remove old SDKTest for thread_pool example plugin
+  #8610 - Make TLS Early Data available with BoringSSL
+  #8612 - Introduce TLSTunnelSupport interface
+  #8615 - OpenSSL 3: Switched to non-deprecated APIs and removed code that was not being used
+  #8617 - TSHttpTxnCacheLookupStatusGet: call need_to_revalidate
+  #8619 - Remove leftovers from SSL wire tracing
+  #8621 - Commenting TSHttpTxnCacheLookupStatusGet need_to_revalidate
+  #8622 - Revert "Propagate proxy.config.net.sock_option_flag_in to newly accepted connections (#8463)"
+  #8623 - Propagate proxy.config.net.sock_option_flag_in to newly accepted connections
+  #8627 - Move the string_view utilities out of TextView into their own files.
+  #8628 - Add libswoc to ATS for core and plugins.
+  #8630 - [JSONRPC] - Introduce TS Plugin API - Proposal
+  #8633 - Remove traffic_manager and related code.
+  #8637 - Revert fixes for #8539
+  #8641 - Test: Make trafficserver ext test use runroot file by default.
+  #8644 - Autest: Add delay before updating a config file. (regex_revalidate_miss)
+  #8658 - Fix clang build issue for libswoc.
+  #8666 - slice and cache_range_requests: allow header override
+  #8669 - Fix a libswoc build error on macOS
+  #8670 - Make SSL writes more efficient when using dynamic record sizing
+  #8678 - Fix test_QUIC unit test builds.
+  #8679 - Update asf.yaml to require Rocky over CentOS build
+  #8684 - Fix warnings from GCC 12.0.1
+  #8685 - Fix Clang 13.0.1 compiler warnings
+  #8689 - Hoststatus remove stats creation.
+  #8694 - Autest - Fix failing test(10-Dev).
+  #8695 - traffic_ctl - Add rpc invoke option.
+  #8696 - MGMT - Improve invalid rpc param error description and some cleanup.
+  #8704 - traffic_ctl - Use better format output options.
+  #8709 - libswoc - Update to 1.3.7
+  #8710 - Move Sterror class from TsSharedMutex.h to its own include file.
+  #8719 - Fixed memory leaks with CryptoContext
+  #8733 - libswoc: Make libswoc implementation overridable, header export optional
+  #8740 - Require use of 'override' keyword when valid. (#8737) 
+  #8741 - fix: properly process If-Range headers in client requests
+  #8744 - Remove null check before ats_free calls
+  #8749 - marks the HostStatusGetRequest::get_method as an override.
+  #8750 - Use Sphinx 4.x
+  #8754 - Revert "Use Sphinx 4.x"
+  #8757 - Use Sphinx 4.x (second attempt)
+  #8771 - Revert "Use Sphinx 4.x (second attempt) (#8757)"
+  #8776 - Fix incrementation and logging of server connection attempts.
+  #8782 - Fixes the cache unit tests by removing an undeclared class function.
+  #8791 - MiMalloc nodump allocator
+  #8794 - test_jsonrpcserver: do not remove files from /tmp
+  #8795 - 10-Dev: gitignore updates for JSONRPC generated files
+  #8802 - Change remap loading to be fatal during startup.
+  #8804 - Add support for request body transaction data sink
+  #8818 - Expose setting some HTTP/2 tunables via sni.yaml
+  #8825 - JSONRPC - Add default config file and make some changes to the docs.
+  #8830 - Change ip-allow debug tag to ip_allow.
+  #8839 - gcc 12.1.1 fix warning about reading larger than the buffer
+  #8840 - Remove CODEOWNERS file
+  #8852 - traffic_ctl - JSONRPC: make sure we display the error regardless of the formatting type.
+  #8856 - Fix traffic_ctl server drain(undo) jsonrpc api call. 
+  #8864 - Update the GitHub stale action to use the new version
+  #8865 - JSON-RPC: Add support for handler to pass information about the specifics when registering.
+  #8872 - remap_reload AuTest: await config reload messages
+  #8879 - Adds a new member for TSRemapInterface tracking the plugin loaded
+  #8885 - Update to libswoc 1.3.8
+  #8888 - Make FileManager ctor private. 
+  #8889 - remap_reload test: Spacing out file modification and reload
+  #8891 - Cleanup: Get rid of afterpoll net stats
+  #8893 - Fix %<chi> with PROXY Protocol
+  #8895 - Autest: This tests seems not happy when using traffic_manager instead of traffic_server.
+  #8904 - iocore/cache test_Alternate: up timeout to allow vc to write out
+  #8905 - File change monitoring on s3_auth
+  #8911 - Override LogField constructor to avoid reinterpret_cast at call site
+  #8916 - JSONRPC:  replace std::string with std::string_view when registring a new endpoint.
+  #8921 - stek_share test: compare output with the correct Process
+  #8922 - Use std::variant to clean up handling of unmarshal functions.
+  #8923 - JSONRPC: Deal with an empty id as an id error.
+  #8932 - Initialize TLSTunnelSupport on startup
+  #8940 - Fix the body_buffer AuTest for 10-Dev
+  #8945 - Grants some karma to active contributors which are not committers
+  #8946 - Remove use of sbrk()
+  #8947 - Enable warning for deprecated declarations on macOS
+  #8953 - Hostdb Restructure
+  #8956 - Use quiche as QUIC implementation
+  #8957 - Remove unneccessary const qualifiers
+  #8972 - Adding origin-side ALPN configuration.
+  #8981 - Register task threads before scheduling tasks
+  #8982 - Add anonymous mmdb support
+  #8985 - Fix autest: Add missing config value for origin's dead policy.
+  #8986 - Cleanup of SocketManager (struct -> namespace).
+  #8987 - Cleanup: Don't refer to P_*.h from header files in proxy dir
+  #8988 - Change H2 frame handlers to member functions
+  #8990 - Add HTTP header version converter
+  #8991 - Initial Checkin for Wasm plugin
+  #8992 - Experimental io_uring AIO implementation for disk IO
+  #8994 - Cleanup: Remove dependency on SSLNetVC from ProxySession
+  #8995 - Cleanup: Simplify dependency around SSLNetVC and SNIConfig
+  #9003 - Make TLSSNISupport::get_sni_server_name public
+  #9004 - Clean up some errors in output of ASAN build.
+  #9018 - dns error logging to diags
+  #9019 - Add log field names pqu* and deprecates cqu*
+  #9020 - Removes unused ProtectedQueue::remove(Event *e)
+  #9021 - aio_thread_main does not have to be static
+  #9029 - Doc: Fix merge issue for traffic_ctl docs. 
+  #9030 - traffic_ctl: Tidy up.
+  #9035 - Add Au test for various HTTP requests that are not RFC compliant.
+  #9037 - Add support for sendmmsg and UDP GSO
+  #9039 - utilize proxy.config.hostdb.host_file.interval config variable
+  #9043 - Support reverse lookups from the host file.
+  #9044 - Au test spawning a blocking thread in a transaction hook continuation.
+  #9054 - fix: ensure DNS resolution for parent proxy
+  #9059 - Test: add nameserver to proxy_serve_stale test
+  #9060 - Third party build update
+  #9062 - Support autest sharding of 4 for required autest checks
+  #9063 - Add Au test for TSVConnFdCreate().
+  #9068 - Resolve a warning about uninitialized variable in header version converter
+  #9074 - Updates to origin side ALPN configuration implementation
+  #9075 - coverity 1497452: Uninitialized pointer read
+  #9076 - 10-Dev: active_timeout.test.py: do not enable QUIC yet
+  #9078 - Fix strerror_r() usage in ts::Strerror class.
+  #9079 - Fix ATS original QUIC impl
+  #9080 - Move Cleanup.h from plugins/xdebug to include/tscpp/api .
+  #9083 - Updating build_h3_tools.sh for OpenSSL 1.1.1q+quic
+  #9084 - HTTP/2 name changes
+  #9085 - Make HTTP/2 session and stream windows configurable
+  #9086 - Add gdb helpers script to help debugging
+  #9092 - better logic for checking if a server allows storing
+  #9096 - Fast log buffer
+  #9099 - Log trnx visited parent attempts
+  #9104 - Fix outbound client cert override to support disable
+  #9108 - Allocator that just uses malloc and bypasses custom jemalloc/freelist
+  #9109 - Change use of std::shared_mutex to ts::shared_mutex.
+  #9114 - Add event loop timing histogram data.
+  #9116 - traffic_ctl: Fix invalid format option from cli args.
+  #9117 - Fix HTTP/2 session receive window handling for small sizes
+  #9121 - Reply with a 503 response when per_server.connection.max is exceeded
+  #9125 - Fix a bug in H3 event handling
+  #9126 - Remove unused functions in SocketManager namespace.
+  #9127 - In NetHandler, don't use a union to do a ratchet conversion to base class.
+  #9138 - MaxMind change regex to operate on the full pristine URL and not just the path
+  #9142 - tests: select_ports defaults to True, remove explicit setting
+  #9143 - tests: enable_cache defaults to True, remove explicit setting
+  #9144 - Replace ts::MemSpan with swoc::MemSpan
+  #9150 - Fix transparent tr-pass
+  #9151 - Add missing Makefile for wasm example and fix doc format
+  #9152 - Update to libswoc 1.3.11
+  #9153 - Cleanup: Remove dead code (CacheLink)
+  #9155 - More HTTP/2 local and server renaming
+  #9157 - 10-Dev: Remove MakeATSProcess default paramater invocations in AuTests
+  #9163 - reconfigure should not apply a bad config even if exit_on_load_fail i…
+  #9164 - Output diags to stderr before reconfig
+  #9165 - Cleanup: const correctness of Vol and Doc
+  #9166 - Cleanup: Remove unused functions of cache
+  #9169 - TSan: Fix data race of RecMutex::thread_holding
+  #9170 - TSan: Fix data race of g_num_records
+  #9171 - Add ThreadSanitizer suppressions file to ignore data race of freelist
+  #9172 - TSan: Fix data race of hostdb_current_timestamp
+  #9182 - per_server.connection.max: CONNECT requests
+  #9183 - TSAN fix for fake_global_for_ink_queue.
+  #9185 - Don't abort for inactivity timeout during tunneling.
+  #9189 - Removed most sprintf and ignore sprintf warnings in bind code
+  #9190 - Fix missing virtual destructor in JSON RPC request.
+  #9191 - Add include path for libswoc to base CMake file.
+  #9192 - oscp crashfix: add check for the validity of the certLookup
+  #9193 - Refurbish IPAllow with libswoc.
+  #9194 - Update .gitignore for overridable_txn_vars.cc in mgmt/
+  #9196 - Delete .lgtm.yml
+  #9197 - Create codeql.yml
+  #9198 - Update README.md for C++17.
+  #9199 - Errata severity
+  #9200 - libswoc: update to 1.4.0
+  #9201 - update gdb-helpers
+  #9202 - Update codeql.yml
+  #9203 - libswoc - replace string_view_util with libswoc version.
+  #9205 - Add CMake build directories to .gitignore.
+  #9206 - libswoc: Replace ts::Scalar with swoc::Scalar
+  #9207 - Upgrade stats over http to use libswoc.
+  #9208 - libswoc: update maxmind plugin to IPSpace.
+  #9209 - libswoc: Add ATS IP address utitilies on top of libswoc.
+  #9210 - libswoc: Export "ts_diag_levels.h".
+  #9211 - libswoc: Fix "string_view_util.h" export duplication
+  #9212 - traffic_ctl -  Fix number of mandatory arguments when sending a plugin msg.
+  #9213 - strategy.yaml loading: give remap rule context in debug for troubleshooting
+  #9214 - up limits of lua string length and url length
+  #9215 - Traffic Dump AuTest Update: remove unneeded extra param
+  #9216 - Fix codeql finding
+  #9217 - Clean RefCountObj
+  #9218 - Removes unused STORE_BLOCKS_PER_CACHE_BLOCK
+  #9219 - Removes unused no_data_in_fragment
+  #9226 - Fix format specifier for 64 bit integer
+  #9227 - Doc: records.config - Fix indentation which makes sphinx fields invalid.
+  #9228 - Hugepage support for iobuffer
+  #9231 - fix a type mistake
+  #9232 - Add support for CMCD-Request header nor field to prefetch plugin
+  #9233 - Bug fix and add example for Wasm plugin
+  #9234 - Header rewrite doc fix
+  #9235 - RefCountObj - further improvements wrt copy construction.
+  #9239 - Fix ordering Via response header values
+  #9249 - Add enable option to xdebug plugin
+  #9250 - Remove a left over directory from the new RPC impl.
+  #9251 - Update TS API docs for RPC handling.
+  #9253 - Add release procedures doc
+  #9254 - In HttpSM, remove pointless use of protected rather than private.
+  #9255 - Make plugin DSO work on macOS
+  #9256 - Use snprintf instead of sprintf
+  #9257 - Remove mysql_remap plugin
+  #9258 - Remove cqhv log field
+  #9259 - Fix a leak in HostDBRecord
+  #9262 - Add macOS arm64 badge
+  #9263 - This adds a simple (static) metric for counting cache stripes
+  #9264 - records.config to records.yaml
+  #9267 - fix ProxyVerifier version check
+  #9268 - Make net.default_inactivity_timeout overridable
+  #9269 - std::atomic - replace use of core atomics in tsmemcache plugin.
+  #9271 - Add param to forward headers from the auth server to the origin
+  #9272 - Fix crashes at shutdown due to references to stale debug control registry.
+  #9273 - Remove deprecated TS API
+  #9278 - Make redundant HttpTransact::State::state_machine_id variable into function.
+  #9281 - Remove doc about disable_h2
+  #9282 - Updated documentation and added test coverage for some caching behavior 
+  #9288 - Updated logic for server no-cache and no-store
+  #9290 - improve cmake support
+  #9292 - Drop autoconf checking for readline/libedit
+  #9293 - build: use non-deprecated form of autoconf help macro
+  #9294 - Don't initialize the member variables of HistoryEntry and SourceLocation
+  #9295 - Fix test_jsonrpcserver library ordering link issue
+  #9296 - Use std:array instead of std:vector for H2 receive window history
+  #9297 - Optimize HPACK string comparison
+  #9298 - Limit the serching range of static table by the first letter of header name
+  #9301 - Updated certifier plugin to generate certificate with SAN extension
+  #9304 - Fix build issues in H3 unit tests
+  #9305 - Updates to the h3 tool build script
+  #9308 - Change to WAMR for wasm runtime
+  #9312 - Adds 9.2.x to the list of docs versions
+  #9313 - Don't pass invalid cert file paths to Quiche
+  #9314 - Register ET_UDP thread type even if no UDP threads are requested
+  #9315 - Added http connect Autest with proxy verifier
+  #9321 - Fix return types of equality operators
+  #9322 - Add TLSCertSwitchSupport
+  #9323 - Support config reloading using plugin msg for STEK Share Plugin
+  #9324 - Memory leaks with storing configuration filenames
+  #9334 - Fix an error on SSL config reload (plus some cleanup)
+  #9340 - Update the roadmap / branch management doc page
+  #9341 - Proxy protocol out fixes
+  #9342 - Fixed memory leaks with http/3
+  #9346 - Make Http3App class responsible for H3 transaction creation/deletion
+  #9347 - Enables switching SSL certificates on QUIC with QUICHE
+  #9348 - Add an SNI action to reject QUIC connections
+  #9349 - Roadmap typo fix: striaght -> straight
+  #9350 - Cleanup of legacy, makes newer clang-format crash right now
+  #9352 - Merge 10 dev into master
+  #9355 - Upgrades master branch to use clang-format v15.0.7
+  #9356 - Clang-format 15.0.7 is finicky, does not like old school array inits
+  #9357 - Add dockerfile for building h3 tools for testing
+  #9358 - tunnel_route: Support local inbound and proxy protocol ports
+  #9360 - Updates the release roadmap, adjusting for delays
+  #9363 - Fixes spelling across the tree
+  #9364 - Fixes type qualifier warning
+  #9365 - Fix the autest Proxy Verifier version check
+  #9366 - Http2 to origin
+  #9367 - [Docs] - Records config to records.yaml documentation(migration guide).
+  #9368 - Fix clang-format error ... array
+  #9372 - Fix autest flakiness
+  #9375 - Fixed some memory leaks with http/3 (#9336)
+  #9378 - Make sure we let the user know we are about to perform an invalid conversion.
+  #9379 - Added memory info to system_stats plugin
+  #9380 - Try shasum with algo option if sha256sum is unavailable
+  #9381 - Fix stack overflow on sending UDP packets
+  #9382 - Use snprintf
+  #9383 - Proxy Protocol: Allow for no Proxy Protocol header
+  #9385 - Use IOBufferBlock instead of alloc to avoid stackoverflow
+  #9386 - Enable UDP GSO by default
+  #9388 - Remove mgmt library
+  #9390 - Add support for WasmEdge for Wasm Plugin
+  #9391 - Make autest ts shutdown tests more reliable
+  #9393 - Fix missing semi-colon
+  #9394 - Add BRAVO Reader-Writer Lock
+  #9397 - Build: improve libswoc building.
+  #9398 - CMake: Update for post 10-Dev merge.
+  #9401 - Removes the UglyStub file
+  #9402 - This removes the support for Solaris
+  #9403 - Add 14 metrics for TCP connections created for tunnels.
+  #9404 - records.yaml - Add support to load multiple YAML docs from the same file and let traffic_ctl to modify a records.yaml file
+  #9405 - Clean up the formatting of build options
+  #9406 - Honor the BASE for Quiche builds
+  #9407 - Added a log message when individual plugin is loaded
+  #9408 - Cleanup: records.config cleanup for references and comments.
+  #9409 - update cmake for rpc and swoc
+  #9410 - Fixes the compile to work with LLVM15
+  #9412 - QUIC: Remove hardcoded quiche set_initial_max_streams and use config values instead.
+  #9413 - Remove UDP_stubs.h
+  #9414 - P_SSLUtils.h include updates
+  #9415 - Make jsonrcp restricted_api false by default.
+  #9416 - FileManager string update
+  #9417 - Histogram: rename members because Zwoop.
+  #9423 - traffic_ctl: Add support to monitor metrics.
+  #9424 - combine UDPPacket and UDPPacketInternal
+  #9425 - Cleanup: removing some traffic_manager leftovers.
+  #9429 - tscore: Remove unneeded and mispelled libswoc reference.
+  #9433 - Ethread::process_event(): make sure event mutex is unlocked before freeing event.
+  #9435 - records.yaml: Make sure we fail if we found a legacy records.config file.
+  #9436 - quic: make sure we create a stream if none available.
+  #9437 - libswoc: replace TextView in src/tscore/HostLookup.cc
+  #9438 - libswoc: Remove internal TextView from inet.cc
+  #9439 - Use TSDbg in webp_transform plugin
+  #9440 - Human readable timestamp for traffic_ctl config status
+  #9441 - Fixes comparison with the wrong type
+  #9442 - Replace exclusive locks with rwlocks in hostdb
+  #9443 - cleanup cache inlines to avoid duplicate symbol definitions
+  #9447 - QUIC: Use configured disable_active_migration param at quiche transport configuration.
+  #9449 - QUIC: Support active_connection_id_limit for quche impl.
+  #9452 - Eliminates the anonymous struct, which is not standard C++
+  #9456 - Add clang-format-tests to clang-format target
+  #9458 - Make the plugin load tests expensive
+  #9459 - cmake fixes to build on Linux
+  #9460 - Use SSL_get1_peer_certificate on OpenSSL3 build
+  #9461 - QUIC: Make some adjustment to the qlog configuration
+  #9462 - Io uring lib
+  #9463 - Build: remove configure check for sys/mount.h, use C++17 builtin.
+  #9465 - Make header prefix matching case-insensitive in authProxy
+  #9466 - records.yaml - Make some changes on the convert script.
+  #9467 - Added more debugging output for the xdebug plugin
+  #9469 - Use deprecated OpenSSL APIs for MD5 and SHA256 if available
+  #9471 - traffic_ctl - Remove legacy/pretty format output options.
+  #9472 - records.yaml: NULL strings should explicitly be set to null.
+  #9474 - Avoid memory allocation in CryptoHash
+  #9475 - Replace httpbin with go-httpbin
+  #9476 - Remove support for port event polling
+  #9477 - QUIC: Make sure the some of the quic configs get set into the quiche impl.
+  #9479 - Hugepage config cleanup
+  #9481 - Eliminates padding from some common structs
+  #9482 - Add interface for NetVC services
+  #9483 - Add support for multiple yaml config files for wasm plugin
+  #9484 - QUIC: Avoid crash when IO is disabled by the caller. 
+  #9485 - Unit parser
+  #9486 - QUIC: Add support to configure UDP max payload limit. 
+  #9487 - Cleanup: Remove RecModeT from the code.
+  #9490 - Minor cleanup, prioritize HTTP/1.1
+  #9492 - Fix pre-warm std::string parameter
+  #9493 - TLS tunnel destination parse fix
+  #9495 - libswoc: update to 1.4.4
+  #9498 - traffic_ctl: config set/get --cold tidy.
+  #9499 - libswoc: Replace IpMap in ControlMatcher.
+  #9500 - HttpSM: fix no_dns_forward_to_parent for cache stale
+  #9501 - Enable external file loading for sni.yaml.
+  #9502 - Cleanup: More const-crrectness of cache read
+  #9504 - records.yaml - Fix record name comparison logic.
+  #9505 - records.yaml - Allow the records.yaml parser to keep reading further docs even when an error is detected
+  #9506 - libswoc: remove IpMap from header_rewrite
+  #9507 - libswoc: Replace ts::IpAddrSet with swoc::IPRangeSet
+  #9509 - Reduce the size of the APIHooks, eliminating enum gap
+  #9510 - CMake: Update src/tscpp/util.
+  #9511 - Fix records events deps
+  #9512 - Remove inactive include of IpMapConf.h
+  #9513 - mime header field parsing fix trailing quote handling
+  #9514 - Change RecHttpLoadIp to use ts::AddrPair
+  #9515 - Adds the AR env variable to config.nice
+  #9517 - autest - Minor fix on the verifier_client test ext to allow setting only the http3 ports.
+  #9518 - Fix, add metrics testing to tls_tunnel Au test.
+  #9519 - Fix .asf.yaml
+  #9521 - CryptoContext: Clean up to avoid compiler problem.
+  #9522 - Update to libswoc 1.4.5
+  #9523 - Refresh SOCKs logic, remove IpMapConf
+  #9524 - Link boringocsp lib to unit tests
+  #9527 - Fixes silent header duplication that occurs upon successful revalidation when duplicate headers are present
+  #9530 - libswoc: Update to 1.4.6
+  #9531 - Update logfilter to remove use of IpMap
+  #9532 - Remove unused IpMap include.
+  #9535 - Improve comment on Au test extension function MakeATSProcess().
+  #9538 - CMake: clean up dead references to IpMapConf
+  #9539 - Change IpMap to IPSpace for IP address based redirect actions.
+  #9540 - Add files generated by "make check" to ignore list.
+  #9541 - Remove IpMap dependency from NetVConnection infrastructure.
+  #9543 - QUIC: Test basic scenarios around the ts.quic.no_activity_timeout_in config
+  #9547 - Add TS_HAS_QUICHE feature variable.
+  #9548 - libswoc: Final elimination of obsolete IpMap.
+  #9549 - libswoc: Remove ts::MemArena.
+  #9551 - records to yaml convert script update.
+  #9555 - [IO_URING] Change submit_and_wait to take ink_hrtime. Fix test_AIO for io_uring.
+  #9556 - coverity 1497413: Use of 32-bit time_t
+  #9557 - Define BIO macros in ink_ssl.h
+  #9558 - Require use of BoringSSL if Quiche is used
+  #9560 - Update codeql.yml
+  #9561 - Drop support for old quiche
+  #9564 - QUIC: Ignore default_inactivity_timeout in favour of proxy.config.quic.no_activity_timeout_in.
+  #9565 - Cleanup: Remove lib/perl code.
+  #9566 - Cleanup: Use swoc::meta instead of ts::meta.
+  #9567 - Add timestamp to SOH
+  #9568 - Fix log format specifications
+  #9569 - codeql 24: Multiplication result converted to larger type
+  #9570 - traffic_ctl: metric monitor. Handle SIGINT to drop collected stats.
+  #9571 - fixup cmake build for master and add conditional for io_uring support
+  #9574 - Add allow-plain server ports attribute
+  #9575 - Add CMake to the required PR CI builds
+  #9577 - Add a hyphen between PACKAGE_VERSION and BUILD_NUMBER
+  #9578 - Move system stats to be a c++ plugin to be able to use time functions
+  #9580 - Always load initial SSL configuration.
+  #9581 - libswoc: Replace ts::file with swoc::file
+  #9582 - Term standardization: dead/down server -> down server
+  #9583 - Check CXXSTD to use a specified C++ standard
+  #9586 - Fix clang 16 warnings
+  #9589 - Converting typedef aliases to using aliases
+  #9590 - Adds a new hash_url directive to strategies
+  #9591 - Use FetchSM for OCSP HTTP requests
+  #9592 - libswoc: Update to 1.4.9.
+  #9594 - Add support for tunnel route config that has both match group and port variable
+  #9597 - Cmake plugins and install things
+  #9599 - TS API - records.yaml Add API to parse YAML nodes that are expected to be read as legacy records.
+  #9600 - Replace __gnu_cxx::hash_map with std::unordered_map
+  #9603 - records.yaml - Remove duplicate code.
+  #9604 - Make a couple of the threads configs correct
+  #9605 - Doc cleanup - more clean up around the TM removal
+  #9606 - tools: H3 tools build script. Add go+boringssl
+  #9607 - Convert sprintf to snprintf
+  #9608 - Update build_h3_tools for mac
+  #9610 - traffic_ctl: plugin msg command, print out the response from server.
+  #9611 - Upgrade to Proxy Verifier v2.7.0
+  #9612 - Plugin: change system_stats to use std::chrono instead of ink_hrtime.
+  #9613 - Replace deprecated Debug() macro with Dbg() in SocksProxy.cc.
+  #9614 - Standardization: Use chrono instead of core for stats_over_http
+  #9615 - Ensure a reason phrase when sending an HTTP/1 response
+  #9616 - Add support for CONNECT method on HTTP/2 connection
+  #9617 - Fix debian symbol not found for test_HttpTransact
+  #9619 - Cleanup: Rename d with vol
+  #9620 - Return current parent max retry count for parent proxy
+  #9621 - Cleanup: Get rid of dead code from Cache
+  #9622 - quic: Fix session cleanup assert.
+  #9623 - Add OTHER to TLS cipher metrics
+  #9624 - Remove dependency on OpenSSL's OCSP API
+  #9628 - add traffic_ctl to cmake
+  #9629 - DOC: Fix variable name proxy.config.exec_thread.autoconfig.enabled.(docs only)
+  #9630 - Make io_uring or thread AIO modes a startup time decision (vs compile time)
+  #9631 - Change remap filter behavior to match ip_allow.yaml
+  #9632 - Fix Proxy Protocol outbound
+  #9633 - Updates for the new go-httpbin v2.6.0 release.
+  #9634 - Bumps to clang-format with LLVM16
+  #9638 - Add 'how it works' section to the slice plugin docs
+  #9642 - Fix nullptr dereference on QUIC connection
+  #9643 - Allow plugins to use WKS header strings
+  #9645 - add targets for clang-format
+  #9648 - cmake build, fixed warning using older openssl APIs
+  #9650 - Replace deprecated Debug() macro with Dbg() in cache_scan.cc.
+  #9651 - Autest updates for recent versions of curl
+  #9654 - Doc: Add example of --enable-lto build option with LLVM
+  #9655 - rename attempts to retry_attempts
+  #9656 - Prefer the __linux__ macro over linux.
+  #9657 - Remove deprecated debug output functions from 10 source files.
+  #9658 - Remove deprecated debug output functions from 14 source files.
+  #9659 - Remove obsolete signals check.
+  #9661 - Cleanup: remove TsBuffer.h from MIME.cc
+  #9662 - OCSP: Fix unitialized variable error.
+  #9663 - Cleanup: remove ts::Buffer from URL.cc
+  #9664 - Cleanup: remove ts::Buffer from ControlBase.
+  #9665 - Cleanup: remove ts::Buffer from LogField.
+  #9667 - Add new settings to specify TLS versions to use
+  #9668 - QUIC: Add a unit tests to validate that the qlog file is generated (and no crashes)
+  #9669 - setup pre-commit hook at cmake generation time
+  #9670 - Don't build native QUIC implementation
+  #9672 - Fixes crashes around OCSP with FetchSM
+  #9673 - cmake: enable ctest and add some tests.
+  #9674 - Add error log for invalid OCSP response
+  #9675 - Fix leak in MultiTextMod in ControlBase.
+  #9676 - Remove deprecated debug output functions from 13 source files.
+  #9677 - Cleanup: remove ts::buffer from HostDB.
+  #9679 - autoconf: Add lib flags for the quiche build test.
+  #9682 - Add support for TS_HTTP_REQUEST_CLIENT/TS_HTTP_RESPONSE_CLIENT for lua plugin
+  #9683 - Remove deprecated debug output functions from 21 source files.
+  #9684 - Replace curl with proxy verifier in proxy protocol tests
+  #9685 - Added Zhengxi to the asf contributors
+  #9688 - Remove flask from tests/Pipfile
+  #9692 - Fix event queue corruption on PreWarmManager::reconfigure
+  #9694 - Add ssrc and surc log fields for server simple/unavail retry counts.
+  #9698 - Fix PROXY protocol out with tls
+  #9700 - libswoc: Update to 1.4.10
+  #9701 - Changes for C++20
+  #9702 - Don't throw exceptions if io_uring cannot be initialized. 
+  #9703 - Changes for C++23
+  #9707 - Add a new configuration to ignore query params in cache keys
+  #9708 - Increase BUFSIZE to modern sizing
+  #9709 - fix: consider the case where m_start_time is 0 in BaseLogFile::roll
+  #9710 - build_h3_tools.sh: Remove an unneeded dir check
+  #9711 - Only need to include eventfd for native mode.
+  #9714 - Fix H3 transaction leak
+  #9715 - Fix a potential crash due to use-after-free on QUIC connections
+  #9716 - Fix protocol version in request Via header
+  #9719 - Fix cqpv log field value on H3 connections
+  #9720 - Add automatic detection of ccache for cmake
+  #9721 - Add CentOS to the required builds
+  #9723 - system_stats: fix buffer overflow caught by asan
+  #9724 - Fix TS_HTTP_REQUEST_TRANSFORM_HOOK Tunnel Processing
+  #9725 - Cleanup: Fix format of doc corruption message
+  #9726 - Don't build traffic_quic command
+  #9727 - Remove old header on CMakeLists.txt
+  #9728 - Make config.proxy.http.no_dns_just_forward_to_parent overridable
+  #9729 - Fix a crash when H3 transaction ends early
+  #9732 - Use Dbg() for debug output in both core and plugins.
+  #9733 - Add configuration for UDP poll timeout
+  #9734 - sni: new hint 'http2_initial_window_size_in'
+  #9735 - Updates to cmake install to get a running ATS from a fresh install
+  #9736 - Improve performance of finding SNI Actions
+  #9737 - Fix quic_no_activity_timeout test
+  #9738 - Fix a crash caused by a HTTP/2 GET request with a body
+  #9740 - Update build badge list
+  #9741 - Add support for using sni to enabled/disable 0-rtt
+  #9742 - HostDB: cancelled action check when triggering pending
+  #9753 - Fix autest for OpenSSL 3.0
+  #9756 - Disable proxies when running autest
+  #9758 - Fix Via header on H3 connections
+  #9759 - Fix records config to yaml autest for out of tree build
+  #9760 - Improve PluginDso error formatting.
+  #9761 - Skip body buffer autest if plugin was not built
+  #9763 - Add HTTP/2 no_activity_timeout tests
+  #9765 - UDP/QUIC: Make sure quiche gets the entire rx buffer from the udp packet.
+  #9766 - Add HTTP/3 POST request handling
+  #9767 - Filter SNI based on port
+  #9770 - Break the circular dependency between iocore and tscore.
+  #9771 - tools: use a private directory to build H3 dependencies
+  #9774 - doc: update the autest README
+  #9775 - cmake: add OPENSSL_ROOT_DIR to rpath to load the correct lib
+  #9776 - build: remove the SOCKS_WITH_TS build condition
+  #9777 - 9773 autest "list" subcommand doesn't seem to be present
+  #9781 - Added Autest for H2 CONNECT and fix a crash triggered by the test
+  #9784 - Add back push_method_enabled enforcement
+  #9786 - Fix crash on H3 transaction
+  #9790 - Fix spelling and add context around changelog
+  #9791 - config: records.yaml default file. Remove duplicated node
+  #9792 - Avoid crash on traffic_server shutdown
+  #9793 - Update HTTP/3 error codes
+  #9798 - fix: memory leak when using modsecurity
+  #9799 - remove acme plugin
+  #9801 - WCCP pre-fix cleanup
+  #9802 - Use strncpy() in regex_remap plugin to make Coverity happy
+  #9804 - Initialize signature in aws plugin, for Coverity
+  #9805 - Fix build issue on mac
+  #9806 - coverity 1508867: Unchecked dynamic_cast
+  #9807 - coverity 1497349: use after free
+  #9808 - coverity 1512723: Argument cannot be negative
+  #9810 - parent selection coverity driven fixes
+  #9811 - Add support for hwloc library to CMake build
+  #9812 - First stab at cleaning up experimental.h deps
+  #9814 - Remove proxy/Main.h and associated globals.
+  #9815 - Move Catch from tests/include to lib/catch2
+  #9817 - Resolve circular dep in esi components
+  #9818 - Deprecated APIs removal
+  #9820 - Add support for jemalloc in CMake build
+  #9822 - Add esi plugin and tests to CMake build
+  #9823 - Remove unused global g_socks_conf_stuff.
+  #9824 - WCCP update - remove ts::Buffer.
+  #9825 - Clean up UnixNetProcessor entanglements.
+  #9826 - Remove TS_HAS_LIBZ
+  #9827 - Add LZMA support to CMake build
+  #9828 - Add brotli support to CMake build
+  #9830 - Update to libswoc 1.5.0
+  #9832 - Add support for TCMalloc in CMake build
+  #9834 - Update to Proxy Verifier v2.8.1
+  #9835 - Fix error due to bad generator expression
+  #9836 - Rename h3 settings parameter name
+  #9837 - Convert esi tests to use Catch framework
+  #9838 - Untangle some classes in iocore
+  #9839 - Add mimalloc support to CMake build
+  #9841 - Search for and enable backtrace in CMake build
+  #9842 - Search for and link profiler in CMake build
+  #9843 - Search for IN6_IS_ADDR_UNSPECIFIED in CMake build
+  #9844 - Fix misuse of unique_ptr.release.
+  #9845 - Extract apply_ip_allow_filter
+  #9846 - Add ENABLE_XXX options for all malloc substitutes
+  #9849 - Remove unneeded DEBUG conditionals.
+  #9850 - Set SIZEOF_VOIDP in CMake build
+  #9851 - Check for 128bit CAS in CMake build
+  #9852 - Add support for POSIX Cap in CMake build
+  #9853 - Add option to enable fast SDK in CMake build
+  #9854 - Check for SO_MARK in CMake build
+  #9855 - Check for SO_PEERCRED in CMake build
+  #9856 - Check for TLS1.3 in CMake build
+  #9858 - libswoc - update to 1.5.1
+  #9859 - Extract opening a pre_warm connection
+  #9860 - Fixes Coverity 1513058, introduced with #9643
+  #9862 - Add support for libunwind in CMake build
+  #9863 - Add option to build regression tests
+  #9864 - Enforce SETTINGS frame rules
+  #9865 - add some missing libs for clang
+  #9866 - cleanup cast warning with reinterpret_cast
+  #9867 - Add traffic_wccp to CMake build
+  #9868 - Adds some casts to avoid pedantic compile warnings
+  #9869 - Extract HttpUserAgent class from HttpSM
+  #9870 - Check for symbol IP_TOS in CMake build
+  #9871 - libswoc: Update IntrusiveHashMap in log rolling
+  #9872 - libswoc: Update IntrusiveHashMap in HTTP session manager.
+  #9873 - libswoc: Update IntrusvieHashMap in Http connection tracking.
+  #9874 - libswoc: Update IntrusiveHashMap in HostDB.
+  #9875 - libswoc: Update WCCP use of Errata.
+  #9876 - RAT license fix: renamed_records.out -> .gold
+  #9878 - libswoc: Update Errata use in cache tool.
+  #9881 - Fix autests for fedora 38
+  #9883 - Add max thread count options to CMake build
+  #9884 - Add transparent proxy support to CMake build
+  #9885 - Add missing yaml libs reference to HTTP proxy test suite. 
+  #9890 - Add header_rewrite plugin to CMake build
+  #9891 - tests: minor autest script fixes
+  #9892 - Add support for quic to CMake build
+  #9893 - Install libswoc headers by default, can be disabled instead
+  #9894 - Add missing source file to http3 target
+  #9895 - Build traffic_layout in CMake build
+  #9896 - Add support for async requests for wasm plugin
+  #9897 - records.yaml - Rename few records that I missed in the original
+  #9899 - For xdebug plugin, add doublequotes around the URL of X-Effective-URL.
+  #9902 - Add traffic_layout to installation targets
+  #9903 - Export traffic_server symbols
+  #9905 - Add support for recvmmsg and UDP GRO
+  #9907 - Fix incorrect include path in CMake build
+  #9908 - Enforce more CONTROL stream rules
+  #9909 - build_h3_tools: fix path navigation
+  #9910 - Add back python3-devel check for autests
+  #9912 - Add some proxy/http tests to CMake build
+  #9913 - Add healthcheck plugin to CMake build
+  #9915 - Remove TCMalloc support
+  #9916 - Rename build/ to m4/
+  #9917 - use PRIVATE scope for linker
+  #9918 - healthchecks plugin is linux only
+  #9919 - Move URL escapify functions into tscore
+  #9920 - Tools: build_h3_tools - Add support for FreeBSD
+  #9921 - Fixes defines for the version strings
+  #9922 - cmake: added endian.h detection for Linux
+  #9923 - Remove proxy.config.stat_api.max_stats_allowed, it's dead Jim
+  #9924 - Check openssl version and add appropriate defines
+  #9925 - Add escalate plugin to CMake build
+  #9926 - Add multiplexer plugin to CMake build
+  #9927 - Update openssl build_h3_tools to latest versions
+  #9928 - Detect SSL_CTX_set_keylog_callback in CMake build
+  #9929 - Remove reference to linux/hdreg.h
+  #9930 - Require new line at EOF
+  #9931 - Use string copy for the SNI server name.
+  #9932 - Fix automated code formatting.
+  #9933 - Define DEBUG and _DEBUG in CMake Debug mode
+  #9934 - Add more debug to the regex_revalidate main handler.
+  #9935 - Remove socket option globals.
+  #9936 - more tests for checking rule enforcement
+  #9937 - tls_client_versions_minmax: update for OpenSSL 3.0
+  #9938 - Update build_h3_tools to use OpenSSL 3.0
+  #9942 - records.yaml  - conf_remap update to use records.yaml as input files.
+  #9945 - Clean up: Remove mgmt/api folder (unused functions and types)
+  #9946 - build_h3_tools: update for lib64
+  #9947 - OpenSSL 3.0 tls autest updates
+  #9948 - Remove obsolete ink_inet_addr function.
+  #9950 - Converts core ats:: namespace to ts::
+  #9951 - Allow specifying multiple port ranges in sni.yaml
+  #9953 - Add libloader plugin to CMake build
+  #9954 - Build prefetch plugin and test in CMake build
+  #9955 - Check CMakeLists.txt files in RAT
+  #9956 - Build TSVConnFD.so and place in correct directory
+  #9957 - Add parser.cc to header_rewrite sources in CMake
+  #9958 - Build traffic_crashlog executable in CMake build
+  #9960 - Adding host URL to NextHop Strategies debug message during host mark down.
+  #9962 - Build s3_auth plugin in CMake build
+  #9963 - Build regex_remap plugin in CMake build
+  #9964 - Fix build_h3_tools for Mac builds
+  #9965 - Build binaries for bigobj AuTest
+  #9966 - Build binary for chunked_encoding AuTest
+  #9967 - Fix test plugin for mac build
+  #9968 - Add missing source file to CMake esi lib target
+  #9970 - RPC client: Increase message buffer size.
+  #9972 - Remove the useless std::vector calls in plugin_agents_cleanup.
+  #9973 - Don't use std::min when we don't care which value is smaller
+  #9974 - Switch libtscore to static and deal with the fallout
+  #9975 - Clean up certifier plugin debug messages.
+  #9977 - Build stats_over_http plugin in CMake build
+  #9978 - Build remap_purge plugin in CMake build
+  #9979 - Build regex_revalidate in CMake build
+  #9980 - libswoc: Remove legacy TextView
+  #9981 - Build tcpinfo plugin in CMake build
+  #9982 - Build server_push_preload plugin in CMake build
+  #9983 - Add config to disable http/0.9 over QUIC by default
+  #9984 - Strategies vhost support
+  #9985 - prefetch: widen evaluations from 32 to 64 bits
+  #9986 - Changes libtscore to an archive lib for the standard Makefile.am build
+  #9987 - Support gRPC traffic
+  #9988 - New API Metrics, and start of a libtsapi.so structure
+  #9990 - Build tslua plugin in CMake build
+  #9996 - Fix CMake build to install traffic_ctl target
+  #9997 - Give a chance to send a response before receiving next request on H2
+  #9998 - Cleanup: Collect micro-benchmark programs
+  #9999 - Better debug and error logging for memory_profile
+  #10000 - cmake: asan support
+  #10002 - Use cmake-format for consistent CMakeLists.txt formatting
+  #10003 - Use NetVC::get_service
+  #10004 - Add support for request/response transform for Wasm plugin
+  #10005 - Fix compiling wth both jemalloc with quiche
+  #10006 - Only set ENABLE_POSIX_CAP default ON on Linux
+  #10007 - Require ATS plugins to be compiled with C++17
+  #10009 - libswoc: Update to 1.5.2 - bring in TextView teaks for PR 9980.
+  #10021 - Cleanup mgmt
+  #10033 - cmake: build the traffic_dump plugin
+  #10034 - Require options parameter for NetProcessor::connect_re().
+  #10035 - Use dynamic dispatch for EventIO
+  #10036 - cmake: add a format custom target
+  #10037 - cmake: add some experimental plugins
+  #10039 - CID 1513230: Fix control flow issues in traffic_ctl
+  #10041 - coverity 1517813: null pointer dereference
+  #10042 - coverity 1512701: remove the necessity of copy and move
+  #10043 - coverity 1508912: Avoid copy
+  #10044 - Fix CID 1513228: Performance inefficiencies (AUTO_CAUSES_COPY)
+  #10045 - cmake: add support for building some more experimental plugins
+  #10046 - cmake: add even more experimental plugin build support
+  #10048 - prefetch: make char explicitly signed
+  #10049 - cmake: add build support for even more more experimental plugins
+  #10050 - cmake: -Wall -Wextra flags
+  #10053 - Bump minimum CMake version from 3.20 to 3.26
+  #10055 - clang-analyzer fixes for clang14
+  #10058 - Require PCRE and clean up usage in CMakeLists
+  #10059 - Confine some warning flags to GNU compiler builds
+  #10060 - Don't link overridable_txn_vars.o twice
+  #10063 - Remove remaining PCRE_LIBRARY uses that I missed
+  #10064 - LSan: Fix memory leak of test_HostFile
+  #10065 - Revert "Bump minimum CMake version from 3.20 to 3.26"
+  #10067 - Fix a broken release alert in HttpSM
+  #10068 - Use of uninitialized variables reported by oss-fuzz
+  #10069 - libswoc: Remove legacy BufferWriter.
+  #10071 - Fix a compiler warning in P_SNIActionPerformer.h
+  #10072 - LSan: Suppress memory leak report of RegressionTest_UDPNet_echo
+  #10073 - Fix missing PCRE includes in CMake by linking to tscore
+  #10074 - Clean up link libraries for traffic_server target
+  #10076 - h2origin.test.py: use FileContains for squid.log entry
+  #10077 - Shutdown tests: update backing sleep command to 10
+  #10078 - Fix OpenSSL dependency tree for CMake build
+  #10079 - Fix yaml-cpp dependency tree for CMake build
+  #10080 - Fix inkevent dependency tree for CMake build
+  #10081 - Fix inkaio/cache/hostdb dependency tree for CMake
+  #10083 - Proxy Verifier: update to v2.9.0
+  #10084 - ASan: Fix alloc-dealloc-mismatch of test_HostFile
+  #10085 - Fix proxy dependency tree in CMake build
+  #10086 - compress plugin: add minimum-content-length default value to docs
+  #10087 - Several fixes around the H3 and QUICHE build.
+  #10090 - Do not set @SECLEVEL with boringssl. (round 2)
+  #10092 - Add remaining autest plugins to CMake build
+  #10094 - Update to libswoc 1.5.3
+  #10095 - Remove most dynamic_cast from SNIActionPerformer
+  #10096 - Tools: Update common.m4 TS_ADDTO_RPATH function to use a generic rpath setting
+  #10097 - Add some AuTest plugins that I missed to CMake
+  #10098 - Allow configurable number of accepts per event loop
+  #10099 - resize string so it doesn't over flow
+  #10100 - build_h3_tools: use openssl-3.1
+  #10102 - Add quiche openssl lib to LDFLAGS
+  #10104 - libswoc: Remove legacy IntrusiveHashMap
+  #10106 - Remove legacy IntrusiveDList
+  #10108 - Add test of transaction logging to ip_allow Au test.
+  #10109 - libswoc - remove legacy RbTree.
+  #10110 - Check for SSL_CTX_set_client_hello_cb in CMake
+  #10111 - Remove cqtx log field
+  #10113 - Reject reserved h2 to h3 frame types
+  #10114 - Pull INKContInternal out of InkAPI.cc as inkcont
+  #10115 - TLS early data: logging updates
+  #10117 - HttpSessionManager: add global_locked pool option.
+  #10118 - Remove version check when setting early data related config
+  #10120 - Make cmake builds work on macOS again
+  #10121 - Remove global symbols for zero hashes.
+  #10122 - Remove unused cache Store code.
+  #10126 - Correctly handle encoding for cache hash generation
+  #10130 - Fix a crash triggered by invalid range header
+  #10135 - TXN var config string set. Add nullptr check for non-specific variable string handling.
+  #10136 - cmake: improve installing config files
+  #10139 - Extracted pseudo header validation logic to use in both h2 and h3
+  #10144 - Strictly follow Content-Length header ABNF rule
+  #10145 - Clean up some leftovers from the alarms removal.
+  #10146 - Unrequire remap rules for OCSP
+  #10147 - Wasm plugin: Upgrade to the latest proxy-wasm-cpp-host and remove reference to WAVM
+  #10148 - Move APIHook classes to tsapicore
+  #10150 - Eliminate function-scope thread_local in Regex.cc.
+  #10151 - [Fuzzing] add fuzzing test
+  #10152 - CID 1516688: Fix uninitialized member of AcceptOptions
+  #10154 - Fix Throttler initialization.
+  #10155 - libswoc: Update to 1.5.4
+  #10156 - Fix: CID 1497247 - unitialized variable.
+  #10157 - Fix KeyEqual param for ConnectingIpPool declaration
+  #10158 - Add AutoOptionHelpers.cmake
+  #10159 - Add comment about thread_local variables in Regex.cc.
+  #10161 - LSan: Fix memory leak of test_X509HostnameValidator
+  #10162 - Fix incorrect indentation in sni.yaml Sphinx docs
+  #10163 - Make sure that the thread local time is updated timely
+  #10165 - Remove Http3NoError allocations
+  #10167 - Fixed h3 crash in accept() triggered by ip_allow rejection
+  #10169 - cmake: add check for clock_gettime
+  #10172 - Makes cmake build again, on macOS
+  #10173 - Remove autoconf headers during CMake configuration
+  #10175 - Use the new Metrics module for core metrics
+  #10177 - Fix conf_remap plugin build on macOS
+  #10178 - LSan: Fix memory leak of test_EventSystem
+  #10179 - LSan: Fix leak of test_Metrics
+  #10181 - mgmt: make libconfigmanager a true static library
+  #10182 - ink_ink_get_hrtime -> ink_get_hrtime
+  #10184 - Check SNI in h3
+  #10185 - test_QUICLossDetector.cc: Add back get_hrtime()
+  #10189 - Fixing TSHttpTxnServerAddrSet
+  #10190 - Fix editor config for makefiles.
+  #10191 - Import of the Cripts scripting / plugin wrapper library and includes
+  #10192 - Add tests for disk failure
+  #10211 - Add example subdir to cmake enabled with 'ENABLE_EXAMPLE' cmake option
+  #10212 - Coverity 1518060: Uninitialized scalar variable
+  #10234 - fix(http): do reverse dns resolution only for IP addresses
+  #10235 - remove example/plugins/cpp-api
+  #10236 - fall back to configure file for older cmake versions
+  #10237 - Make OSX and FreeBSD not required temporarily
+  #10245 - Coverity 1508984: Dereference null return value
+  #10246 - Fix ip_allow optional methods specification
+  #10248 - Revert "Make OSX and FreeBSD not required temporarily (#10237)"
+  #10249 - Upgrade yaml-cpp version to 0.8.0
+  #10250 - This dependency is not needed, cmake got it right and don't need fixing
+  #10252 - cmake out of source doc build support
+  #10253 - Make remap API compatibility checks consistent.
+  #10258 - Fix m4 quoting on configure error messages.
+  #10259 - Add version range up to CMake 3.27
+  #10260 - CID 1508887 fix parent_select plugin stat Time of check.
+  #10261 - Add stek_share plugin to CMake build
+  #10262 - CID 1216305/1497374 regex_revalidate file stat fixes
+  #10265 - CID 1518143: String not null terminated money_trace plugin
+  #10267 - Check the inet_pton return value for IP reputations
+  #10268 - Replace time_t with std::chrono 
+  #10269 - remove deprecated 'NATIVE' AIO mode
+  #10270 - Update the HTTP/3 library dependencies
+  #10272 - Check return value of stat()
+  #10273 - Make sure open() and read() succeeded
+  #10274 - build_h3_tools: explicitly chmod the destination directory
+  #10275 - Fix CID 1508992, 1508976, 1508972: uninitialized scalar variables
+  #10277 - Initialize variable
+  #10278 - Suppress coverity false positive on race condition
+  #10281 - Fix CID 1508979: unchecked return value
+  #10282 - Fix CID 1508970: Uninitialized scalar variable
+  #10283 - cmake: add tests for proxy/hdrs
+  #10284 - cmake: add more executables
+  #10288 - untangle fds_limit global
+  #10289 - replace net_config_poll_timeout with EThread::default_wait_interval_ms
+  #10292 - tools/jtest: use @SWOC_LIBS@
+  #10293 - Fix missing virtual destructor.
+  #10294 - Fix connect failure count
+  #10297 - ts_lua_transform: input_reader may be used uninitialized
+  #10298 - Adjust CMakeLists with git worktree
+  #10299 - setup default install path, runtime user and group
+  #10301 - cmake: add unit tests for proxy/logging
+  #10302 - add tests for src/records
+  #10303 - Plugin promotions, deprecations and deletions
+  #10305 - Cmake: Add tests in proxy/http proxy/http2
+  #10306 - Add support for OCSP requests by GET method
+  #10308 - Add TS_HTTP_TUNNEL_START_HOOK and TSHttpTxnTypeGet API
+  #10309 - Remove in_addr forward declaration from experimental.h.
+  #10310 - cmake: add tests for proxy/http3
+  #10311 - Constify cachekey tables and reduce aliasing.
+  #10312 - RPC plugin handler: Add check for the lifecycle hooks.
+  #10314 - Add support for transform plugins on tunnels.
+  #10315 - Move InkAPI.cc into src/api
+  #10316 - cmake: Add support for building benchmarks
+  #10317 - Make bad disk detection more robust
+  #10319 - Fix lua plugin build
+  #10321 - Disable copying/moving for DbgCtl.
+  #10322 - Update Proxy Verifier to v2.10.1
+  #10325 - Remove test references to DelayTransformation.so
+  #10326 - Fix example plugins build
+  #10327 - Cmake autest
+  #10366 - cmake: add unit tests from mgmt/rpc
+  #10367 - cmake: Generate files in rc, install the trafficserver script
+  #10368 - Removes all HostDB persistent storage
+  #10370 - Eliminate unreachable code covered by switch default
+  #10371 - Fix a couple of Coverity issues in health check plugin, around filenames
+  #10372 - Minor parent.config a/an change
+  #10373 - money_trace cid 1518569: string not null terminated
+  #10374 - Fixes some build issues that happens with  other changes
+  #10375 - Allow DbgCtl tag to be set after instance construction.
+  #10376 - Fix more build dep issues, for later PRs to work
+  #10378 - make alternate tests wait a multiple of cache_config_mutex_retry_delay
+  #10379 - Fixes the TSMgmt metrics APIs for new API metrics
+  #10380 - Removes unused Errata functions from WCCP
+  #10381 - fix: check whether a protocol is enabled during the length calculation in create_npn_advertisement
+  #10382 - prefetch_cmcd: make autests more robust by removing need for gold file wildcard
+  #10383 - Check return values, log errors, and more tests
+  #10384 - Coverity 1518612: Remove dead code
+  #10385 - Allow origins to do TLS renegotiation
+  #10387 - URL.cc: url_length_get consider ipv6 address with added []
+  #10388 - Restores the traffic_server option for --maxRecords
+  #10390 - Remove TSDebug() and TSIsDebugTagSet() TS API functions.
+  #10392 - Fix bug with reverse dns lookup from hosts files
+  #10394 - CID 1518583: Unchecked return value
+  #10395 - cmake: Add remaining plugins without external deps
+  #10397 - CID-1508974
+  #10398 - CID-1508987
+  #10400 - include/ts: comma on all last enum elements
+  #10401 - Coverity 1518564: fix off by one
+  #10402 - Fixes some make test build problems
+  #10403 - Fix CID-1518256
+  #10404 - Fix CID 1518257
+  #10406 - Fix hwloc build
+  #10407 - cmake: fix support for je/mi malloc and the mallocallocator
+  #10408 - Fixed differences between cmake rc files and autotools
+  #10409 - Fixed HTTP method metrics not updating
+  #10410 - Add a pristine option for strategies peering
+  #10411 - Fix potential resource leak in ja3_fingerprint plugin.
+  #10416 - Unnecessary change to cookie_remap plugin for Coverity.
+  #10440 - Restore original metrics names, these were typos
+  #10441 - This drops the _stat suffix from some metrics
+  #10442 - Fix Coverity issue in inliner plugin.
+  #10443 - CID1508860: double lock confusion
+  #10444 - Promotes slice plugin to stable
+  #10445 - Make sure new metrics are always considered
+  #10446 - Use PRIu64 for stream id
+  #10447 - Stop using functions that are unavailable on the latest quiche
+  #10449 - [Fuzzing] linker error
+  #10451 - CID-1512740 - Some sort of "fix" to mute coverity.
+  #10452 - CID-1512733: Fix coverity issue
+  #10453 - Make Cripts buildable on Fedora 39
+  #10456 - Fix cmake autooptions
+  #10457 - Cmake presets
+  #10458 - Relax some of the build deps
+  #10460 - Make Cripts buildable with autotools
+  #10461 - Make Cripts buildable with BoringSSL
+  #10462 - [Fuzzing] add cifuzz
+  #10465 - Use ts::Metrics for PreWarm stats
+  #10466 - [Fuzzing] move build.sh in trafficserver
+  #10467 - CID-1512726: Mute coverity, use explicit check for iterator use past end
+  #10468 - Set the proper variable when find_package fails to find the package
+  #10469 - CID 1508882: initialize pointer
+  #10470 - slice/Data.h: CID 1508924: Uninitialized scalar field
+  #10471 - stub.cc cleanup
+  #10472 - Refactor and rename restart metrics
+  #10473 - Cleanup io_uring metrics and the cmake build
+  #10474 - add conveinience function to lookup name->IntType*
+  #10475 - CID-1508880: Re-work function to avoid dead-code.
+  #10478 - cmake: compile jsonrpc_protocol with -fPIC
+  #10481 - cmake: bigobj subdir has executables, not plugins
+  #10483 - Fix unchecked dynamic_cast
+  #10484 - Remove REC_ConfigReadCounter
+  #10485 - Remove dead code
+  #10486 - Remove an unused variable
+  #10487 - Allow to bulk allocate span's of Metrics
+  #10488 - Coverity 1521541: Uninitialized pointer field
+  #10489 - cmake: Update gaps in config checks
+  #10490 - Quiet Coverity memory leak detection in stream_editor plugin.
+  #10491 - Coverity 1518592: check cachekey valid
+  #10492 - Coverity 1497421: Uninitialized scalar variable
+  #10493 - Coverity 1497381: Uninitialized scalar variable
+  #10494 - Coverity 1497247: Uninitialized scalar variable
+  #10495 - Coverity: 1497262 Using a moved object
+  #10496 - Coverity 1497246: AUTO_CAUSES_COPY
+  #10497 - Coverity 1497427: Uninitialized pointer field
+  #10498 - Coverity 1021744: Uninitialized scalar field
+  #10499 - Coverity 1353617: Uninitialized pointer field
+  #10500 - Coverity 610276: Uninitialized scalar field
+  #10501 - Coverity 1361277: Uninitialized scalar field
+  #10502 - Coverity 1518607: Use of 32-bit time_t
+  #10505 - Coverity 1497353: Use of 32-bit time_t
+  #10506 - Coverity 1508901: Use of 32-bit time_t in access_control plugin
+  #10508 - Coverity 1022028: Unchecked return value from library in logcat - posix_fadvise
+  #10509 - Coverity 1518610: Uninitialized scalar field in icap plugin TransformData
+  #10510 - Coverity 1518592: Uninitialized pointer field in CacheKey
+  #10511 - Coverity 1518572: Uninitialized pointer field in CacheScan
+  #10512 - Coverity 1508925: Uninitialized scalar field - IPCSocketClient member
+  #10513 - Coverity 1508907: Uninitialized pointer field in statichit plugin
+  #10514 - Make traffic_cache_tool fail for directory spans.
+  #10515 - Fix problem with debug and add support for Wasmtime for wasm plugin
+  #10516 - Assigning variables in asserts in the example intercept plugin
+  #10517 - CID 1508836 - Fix uninitialized  field
+  #10518 - Move sandbox path into runtime directory
+  #10519 - Add sslheaders and remove extra cert_update plugin
+  #10521 - CID 1518613: Traffic Dump: fix a use after free of a mutex
+  #10522 - CID 1518594
+  #10523 - libswoc: Update to 1.5.5
+  #10524 - Use static asserts to verify cache event constants.
+  #10525 - Suppress leak of pcre_jit_stack_alloc for unit tests
+  #10526 - background fetch plugin docs for origins that can't do range requests
+  #10527 - macOS compiler error with clang
+  #10528 - fix filename for hook_tunnel_plugin cmake
+  #10529 - Compile all sources passed to the add_autest_plugin function
+  #10532 - Ran clang-tidy over the example plugins
+  #10533 - Add cmake preset for running autest on ci
+  #10534 - NextHopRoundRobin.cc: fix for cid 1518590
+  #10535 - Ran clang-tidy over tscore
+  #10536 - NextHopHealthStatus: CID 1518604: Use of 32-bit time_t
+  #10538 - Stat names changed, updates needed for traffic_top
+  #10542 - LSan: Fix memory leak of test_proxy_hdrs
+  #10544 - CID-1508851: Possible "fix" for a false positive issue from coverity.
+  #10545 - Fix build issue with Ubuntu 20.04 using clang
+  #10546 - Upgrades to use LLVM 17 clang-format
+  #10548 - Build unit tests only with BUILD_TESTING
+  #10549 - Change unable to bind or listen to a fatal error
+  #10550 - Ran clang-tidy over the experimental plugins
+  #10553 - CID 1508828: Resource leak
+  #10554 - cmake: Support external yaml-cpp
+  #10557 - doc: fix typo min to max, and disabled by default for TLSv1 and TLSv1_0
+  #10559 - Refactors rate_limit plugin with YAML configurations
+  #10561 - Make build_h3_tools.sh more reliable
+  #10563 - Add an HTTP/2 related rate limiting
+  #10570 - APIs to get the h2 error codes and a plugin to use them
+  #10574 - Add support for vconn start handler for lua plugin
+  #10576 - Prevent HttpSM to be added to wrong ConnectingEntry
+  #10581 - lua plugin: update CMakeLists.txt for ts_lua_vconn.cc
+  #10582 - Fix tunnel_transform.cc build for cmake
+  #10583 - Fix H2 debug message for a rate limit
+  #10584 - Fixed h2spec 6.4.3 test
+  #10585 - Move DbgCtl.cc from tscore to tsapicore
+  #10586 - Enforce h2 MAX_* settings before SETTINGS ACK
+  #10587 - Break cycle between iocore/inknet and proxy/http
+  #10588 - Honor BUILD_SHARED_LIBS for tscore.
+  #10592 - Fixes some build issues around cripts
+  #10594 - Remove unused http headers from Cache.cc
+  #10595 - Break cycle between iocore/hostdb and proxy/http libraries
+  #10596 - Add QUICSupport as a NetVC service
+  #10597 - Break inkdns->inkcache and inkhostdb->inkcache cycles
+  #10598 - Add library dirs to luajit target
+  #10599 - Split CacheVC into its own source file
+  #10600 - Cleanup: Move Vol implementations into Vol.cc
+  #10601 - Move CacheVC struct and methods from Vol
+  #10602 - sslhdr library needs public ssl
+  #10603 - Extract CacheEvacuateDocVC from CacheVC
+  #10604 - Move the H3 metrics stubs to new Metrics
+  #10605 - Removes the old DynamicStats, which are no longer used
+  #10606 - Update doc/README.md for cmake
+  #10611 - Fixed logically dead code
+  #10612 - Change CMAKE_CXX_STANDARD to cache variable
+  #10613 - Convert ENABLE_POSIX_CAP to auto option
+  #10614 - Add rat target
+  #10619 - Fixes the gitignore, after plugin migration
+  #10624 - Add resolv find package script
+  #10626 - Upgrade disk error message to an error
+  #10627 - Add metrics for H2/3 frames and a way to access them from plugins
+  #10629 - Add presets for debian and ubuntu with hardening flags
+  #10630 - Manually apply upstream fix for deprecation warning
+  #10631 - Cmake freebsd fix
+  #10632 - Fix freebsd ci build
+  #10633 - fix case on cache var
+  #10635 - Convert CacheDir regression tests into unit tests
+  #10637 - Fix QUICSupport
+  #10638 - Move mgmt, iocore, proxy to src/ and include/
+  #10639 - Version.cc: make clang-analyzer happy for cmake
+  #10642 - Improve the TSMgmtUpdateRegister with an optional file name
+  #10643 - Remove the CMake build requirement
+  #10644 - Fix the builds after previous migrations
+  #10645 - Rename cache/test/ to cache/unit_tests/
+  #10646 - Add a cmake preset for clang-analyzer
+  #10649 - Convert CacheVol regression tests into unit tests
+  #10650 - cmake: Install include files
+  #10653 - Cmake readme
+  #10654 - #10300 issue reworked please check
+  #10655 - List all includes explicitly in dns headers
+  #10656 - Remove unused getbyxxx methods from DNSProcessor
+  #10659 - Fix race of shutdown & retry of CacheDir unit test
+  #10661 - cmake: disable in-source builds.
+  #10662 - Improve seen list for the RAM cache
+  #10664 - Fix good_request_after_bad AuTest
+  #10665 - CMake: Fix binaryDir of presets
+  #10666 - Rename Vol to Stripe
+  #10667 - generate svg files from uml for docs
+  #10668 - cmake: remkove -Wno-cast-function-type
+  #10671 - Unified include paths
+  #10672 - Don't make boringssl mandatory when QUIC & quiche is enabled/used.
+  #10675 - Fix target_include_directories for maxmind_acl plugin.
+  #10677 - Add ENABLE_EVENT_TRACKER option
+  #10679 - cmake: add ENABLE_FIPS option
+  #10680 - Fix cmake test for 128 bit CAS.
+  #10682 - CacheVC::openWriteCloseDir: fix metric array indexing
+  #10683 - Deprecate the C++ API.
+  #10685 - make doc lang configurable with cmake
+  #10687 - Update ACCEPT thread configurations
+  #10688 - proxy.config.net.per_client.max_connections_in
+  #10689 - Cleanup: Remove unused members of CacheHostRecord
+  #10690 - cmake: install traffic_logstats
+  #10691 - Codeql cmake
+  #10693 - cmake: resolve install prefix later to pickup prefix override
+  #10694 - Refactor new metrics with Counter vs Gauge types
+  #10695 - cmake: use cmake to implement layout setup
+  #10696 - HttpConnectionCount move to iocore/net
+  #10697 - Revert "coverity 1497413: Use of 32-bit time_t (#9556)"
+  #10698 - cmake: chown some paths at install time
+  #10699 - Add len to urlsig debug printing
+  #10700 - Fix release builds on linux
+  #10701 - Support upstream MPTCP
+  #10702 - Add CMake support for building uri_signing plugin
+  #10703 - Remove the original QUIC implementation
+  #10704 - Add assert of CacheDisk is not nullptr
+  #10705 - Remove dependency of ProxyMutex from rand_CacheKey
+  #10706 - Extract Stripe::aggregate_pending_writes
+  #10708 - Removes the cache_key_genid plugin, as agreed
+  #10709 - Create library target for overridable_txn_vars
+  #10710 - Removes all the stats and cache inspector pages
+  #10711 - Remove the dependency for HttpConfig from iocore/cache
+  #10712 - Cleanup AppVersionInfo and turn it into a singleton
+  #10713 - link inknet for EventSystem test for release build
+  #10714 - Remove fastcgi plugin
+  #10715 - Fix libunwind findpackage script.
+  #10716 - Fixes some compiler warnings
+  #10717 - cmake: adding a release preset
+  #10718 - Extract class AggregateWriteBuffer from Stripe
+  #10719 - Don't include headers in proxy/http from iocore/cache
+  #10721 - Remove the direct dependency for HttpCacheSM from iocore/cache
+  #10722 - Export Regex support to plugins.
+  #10723 - uri_signing cmake: clean up unit test cmake and change suggested github repo
+  #10724 - add hint to options to help user
+  #10725 - Cleanup build with tsapibackend
+  #10726 - Harden the tunnel_transform Autest
+  #10727 - Cleanup P_SNIActionPerformer 
+  #10728 - Cleanup of the rate_limit simulator
+  #10729 - Fixes Cripts compilation on gcc platforms
+  #10733 - logcat/CMakeLists: add inkevent as library dependency
+  #10734 - Add logic to find nuraft
+  #10735 - Report plugin is not being built.
+  #10736 - Standardize maxminddb package_find()
+  #10737 - Rename vol to stripe (defined in the CacheVC.h)
+  #10738 - min_keep_alive_conns -> _min_keep_alive_conns;
+  #10739 - Cleanup: Move stripe init functions
+  #10740 - ConectionTracker: remove include dep in proxy/http
+  #10741 - Add auto options for maxmind_acl, stek_share, and uri_signing plugins
+  #10745 - Only close on successful open
+  #10746 - cmake-format target and pre-commit hook
+  #10747 - Fix typo in autopep8.sh
+  #10748 - Move back private header files into src directory
+  #10749 - Fix sni.yaml's ip_allow
+  #10750 - Fix Coverity issue CID 1518577 in TSVConnFd.cc.
+  #10751 - Cleanup: Remove unimplemented event handlers from CacheVC
+  #10752 - Add check for config existence before cont creation
+  #10753 - Fix script error in clang-format.sh.
+  #10755 - Rename VOL macros to STRIPE
+  #10758 - Move find_package() to root build file
+  #10759 - Fix capitalization of LuaJIT package and update
+  #10760 - Enable quiche on rocky ci preset
+  #10761 - Fix sni.yaml ip_allow tunnel_route
+  #10762 - Display auto_option hint in all cases
+  #10763 - Removes all WCCP code and utilities, updates docs
+  #10764 - Run cmake-format on .cmake files
+  #10765 - cmake: Fix CMAKE_INSTALL_CACHEDIR STRING value
+  #10768 - Cleanup/Flatten out some headers inclusion
+  #10769 - remove odd include paths
+  #10771 - Remove unused EventName.[h|cc]
+  #10774 - tscore depends on tscpputil
+  #10776 - cmake: Update pre-commit even if it exists
+  #10777 - report yaml-cpp being used when external version is used.
+  #10778 - require at least OpenSSL version 1.1.1
+  #10779 - CI cmake preset updates
+  #10780 - Add logic to allow for external libswoc to be used
+  #10781 - Depend upon the Format job instead of Clang-Format
+  #10782 - Remove HAVE_ALLOCA_H build var
+  #10783 - Remove HAVE_CPIO_H build var
+  #10786 - Obliterate Stripe::reset_agg_buf_pos
+  #10787 - Fix CID-15233643 - use move instead of assign.
+  #10788 - Coverity 1523685: Use of 32-bit time_t in test_Hdrs.cc
+  #10789 - Coverity 1497291: Use of 32-bit time_t in MIME.cc
+  #10790 - Removes the tsxs command line tool
+  #10791 - Coverity 1497253: Use of 32-bit time_t in RefCountCachePartition
+  #10792 - Remove code for old openssl
+  #10793 - stek_share: resize instead of reserve
+  #10794 - remove autotools
+  #10795 - Cleanup Cript includes, and metrics
+  #10796 - Add check in ts.h that language is C++, version 17 or later
+  #10798 - stek_share: fix memcp usage
+  #10799 - cmake: Add -fPIC when checking for symbols
+  #10800 - Cleanup Cripts CMakeLists.txt
+  #10802 - MPTCP warnings and clean up
+  #10803 - Remove HAVE_FLOAT_H build var
+  #10804 - Fix compiler warning on m1 macs printing time_t
+  #10805 - Remove HAVE_STDINT_H build var
+  #10807 - Make dubiously correct changes to Japanese docs for TSDebug -> Dbg.
+  #10808 - Remove and reorganize HAS_*_ENDIAN_H, HAS_SYS_BYTEORDER_H and HAS_SYS_TYPES_H build vars
+  #10809 - Add Errata support to YAML configuration support (promoted from IPAllow)
+  #10810 - For vscode users, automatically use ms-vscode.cmake-tools
+  #10811 - trafic_crashlog: Moving the removed ATS backtrace logs.
+  #10812 - Add CMAKE_COLOR_DIAGNOSTICS to the dev preset
+  #10813 - Add phongn as an ASF collaborator
+  #10814 - remove curl depends from traffic_top
+  #10816 - stek_share: fix osx builds for undefined symbols
+  #10817 - Coverity fixes
+  #10818 - Add support to disable jit in using lua plugin in remap
+  #10819 - stek_share: fix pthread_t print format warning
+  #10820 - Remove HAVE_LINUX_MAJOR_H build envs
+  #10821 - Add missing stdint.h to ink_file.h
+  #10824 - Remove many standard UNIX HAVE_*_H build envs
+  #10825 - ConnectionTracker: Remove queue implementation
+  #10827 - Remove Stripe::add_agg_todo
+  #10831 - Pull out down origin check from HttpSM::apply_ip_allow_filter
+  #10833 - Coverity 1523683: Uninitialized scalar variable in s3_auth unit test
+  #10835 - Coverity 1497314: Uninitialized scalar variable in ESI plugin
+  #10836 - Coverity 1497273: Uninitialized scalar variable in Machine class
+  #10837 - Coverity 1497238: Uninitialized scalar variable in DiagsConfigState class
+  #10838 - Coverity 1521594: Uninitialized pointer read for InterceptIO::vc
+  #10842 - Coverity 1518587: Buffer not null terminated in healthchecks plugin
+  #10843 - Cleanup: remove some autotools files from .gitignore.
+  #10847 - Rename vol to stripe (local vars & args)
+  #10848 - Cripts: Adds txn counts for outbound conns & cleanup
+  #10849 - Update to libswoc 1.5.8
+  #10851 - Update _read_vio.cont/_write_vio.cont when application is changed to QPACK
+  #10852 - Move FetchSM out of tsapi to break cycle
+  #10853 - Fix chunked-encoding test to run with more basic netcat
+  #10854 - Coverity 1528667: Use of 32-bit time_t in mime_days_since_epoch_to_mdy_slowcase
+  #10855 - Coverity 1523685: Use of 32-bit time_t in test_mime
+  #10857 - Coverity 1497378: Use of 32-bit time_t in CacheVC
+  #10858 - Updates / cleanup of the vscode directory paths
+  #10860 - yapf: use yapf instead of autopep8
+  #10861 - Simplify bad-fmt test use of nc
+  #10863 - Cleanup ink_thread.h of wrong BSD checks assuming missing pthread functions
+  #10865 - Update links in records.yaml to be valid
+  #10866 - Remove netcat from bigobj test
+  #10867 - Remove POSIX_THREAD constants and fix unmigrated HAVE_PTHREAD_MUTEXATTR_SETTYPE
+  #10868 - Remove unnecessary nc to fix u22 test
+  #10869 - Fix connect test for ubuntu22
+  #10870 - traffic_ctl: Remove the hardcoded big buffer and use a stream buffer instead.
+  #10871 - ja3_fingerprint: autest and README update.
+  #10874 - Fix double to watch for done like the other continuation tests
+  #10875 - Adjust gold file to deal curl case differences
+  #10876 - Coverity 1528709: Pointer to local outside scope in PreWarmSM::state_dns_lookup
+  #10877 - Coverity 1497446: Wrapper object use after free in GzipInflateTransformation
+  #10878 - Adjust nc usage in fix-post-early-return test
+  #10879 - Coverity 1497350: Wrapper object use after free in GzipDeflateTransformation
+  #10880 - Coverity 1523692: Calling risky function in test_AcidPtr
+  #10882 - Coverity 1497456: Time of check time of use in LogFile::trim_rolled
+  #10883 - Reenable management control for TS logging
+  #10884 - Fix logging path for regex_revalidate_state
+  #10885 - Fix remap_inc test for systems with dash
+  #10886 - ja3_fingerprint: add modify-incoming option
+  #10887 - Fix nc use in tls-forward-test
+  #10888 - Add new config option to support CUBIC
+  #10889 - Remove dependency of apicore on tscore
+  #10890 - Coverity 1523673: Resource leak in test_MMH
+  #10891 - Coverity 1497333: Resource leak in object in LogConfig
+  #10894 - Minor an/a replacement in strategies.yaml
+  #10895 - Fixing the git pre-commit hook for yapf
+  #10897 - fix race condition with session thread migration
+  #10898 - Coverity 1508836: Uninitialized pointer field in JsonRPCManager
+  #10899 - remove ts_bwf.cc and update locations where its used
+  #10901 - Fix for building on Rocky Linux 8
+  #10902 - Coverity 1523647: No virtual destructor
+  #10904 - Adjust ReturnCode for MakeATSProcess on ubuntu22
+  #10905 - Coverity 1523682: Out-of-bounds access
+  #10906 - Coverity 1497426: Unintentional integer overflow
+  #10907 - Coverity 1497364: Side effect in assertion
+  #10908 - Fix server stopping on ubuntu using trafficserver script
+  #10910 - Change default C++ standard to 20
+  #10911 - Coverity 1529710: Resource leak in object in CacheScan
+  #10912 - Coverity 1528674: Uncaught exception in test_MIOBufferWriter's _ink_assert
+  #10913 - Coverity 1497320: Use of auto that causes a copy
+  #10915 - Coverity 1497388: Dereference after null check
+  #10916 - Cleans up obsolete and old experimental APIs
+  #10917 - header_freq: Fix msg lock issues
+  #10918 - Removes experimental.h, moving remaining declarations to ts.h
+  #10920 - Remove deprecated debug output functions from 17 proxy source files.
+  #10923 - Fix cache.volume_N.stripes metric issue by cleaning up CacheProcessor::cacheInitialized
+  #10924 - In VIA header, cW means a fresh Read While Write cache hit
+  #10926 - [Fuzzing] Add http2 response parser and http3 request/response parser to fuzzing
+  #10928 - Introduce tsutil from tsapicore and tscpputil
+  #10929 - Change volatile to atomic in EThread.h.
+  #10931 - UDP: Set  the "Don't Fragment" (DF) bit  at IP layer for QUIC.
+  #10932 - KIWF: remove ink_res_getservers
+  #10933 - IP: Adjust ats_force_order_by_family parameters for less type dependency
+  #10935 - cmake: Add tsutil/Assert.h to public headers
+  #10938 - Update cmake for cleaner install with static vs shared
+  #10940 - Arena; avoid use of temporary.
+  #10941 - Arena: Avoid use of temporary.
+  #10942 - clear up plugin string usage ambiguities reported by gcc
+  #10943 - add branch- presets into CMakePresets.json
+  #10944 - Update to libswoc 1.5.9
+  #10945 - cmake: small fixes to install
+  #10946 - KIWF: Remove useless declaration in IpAllow
+  #10949 - cmake: Add a check for BoringSSL version
+  #10952 - Cleanup: Span and Store
+  #10953 - Cleanup: Rename gvol to gstripes
+  #10956 - boringssl: Add a type declaration
+  #10957 - Support elevated access option when loading client certs
+  #10958 - Added config to support exit on client cert load failure
+  #10959 - Fix a bug in OCSP update with dual cert configuration
+  #10960 - Persist bad disks
+  #10961 - Cleanup of HdrHeap::HeapGuard and HdrStrHeap classes.
+  #10963 - multiplexer: set up transforms for PUT requests
+  #10964 - multiplexer: debug logging and variable name updates
+  #10965 - multiplexer: Correctly Handle Large Content-Length POST/PUT Request Bodies
+  #10967 - Add auto options for all experimental plugins
+  #10968 - Add tscore to access_control dependencies
+  #10970 - tools/install_cmake.sh
+  #10971 - Fix problem with the negation in TextView/libswoc
+  #10972 - Allow passing options to autest with AUTEST_OPTIONS cache var
+  #10973 - HttpSM.cc::do_http_server_open SMDebug -> SMDbg
+  #10974 - Fix a leak in tls_hooks_client_verify test
+  #10976 - Cleanup of Thread and EThread classes.
+  #10977 - cmake/Findluajit: don't require luajit_LIBRARY_DIRS for rockylinux builds
+  #10978 - Avoid arena temporary.
+  #10980 - TSFile - remove from background_fetch plugin
+  #10982 - Update build_h3_tools.sh
+  #10983 - CMAKE_INSTALL_FULL_LOGDIR and CMAKE_INSTALL_FULL_CACHEDIR
+  #10984 - OCSP update: fix ctxCount to be specific about the type
+  #10985 - CMake: Make sure pthread is available when checking for some of the library functions.
+  #10986 - libsowc - remove legacy Errata.
+  #10987 - Move some logic from CacheVC to Stripe and AggregateWriteBuffer
+  #10990 - sslheader Plugin: Remap params fix.
+  #10991 - Clarify cache_config_agg_write_backlog
+  #10992 - Restore IntrusiveHashMap insert code from tscore (ats92)
+  #10993 - Refactor sync_cache_dir_on_shutdown
+  #10994 - cleanup: TM removal leftovers -  RecUpdateT cleanup.
+  #10995 - traffic_top: avoid abort when rpc node is not available.
+  #10996 - Move session pool metrics calls outside critical section
+  #10997 - Unify Dynamic Table implementation
+  #10998 - Cleanup: CacheProcessor::start_internal
+  #11001 - Fix Findunwind.cmake on RHEL
+  #11002 - Fix src/api/CMakeLists.txt formatting
+  #11003 - Set TS_HAS_TLS_SESSION_TICKET correctly
+  #11004 - Core implementation of IP categories for ip_allow.yaml
+  #11007 - traffic_top cleanup - remove unused curl related code.
+  #11008 - Add utility files for building external plugins
+  #11011 - Fix esi-fetcher-plugin libswoc include issue
+  #11013 - Revert "Coverity 1497378: Use of 32-bit time_t in CacheVC (#10857)"
+  #11014 - Change Regex class to use PCRE2
+  #11015 - CMake: use --git-common-dir to find the git dir
+  #11016 - Updated the vscode launch and tasks files to work with cmake
+  #11017 - stale_response: RFC 5861 Cache-Control Directives
+  #11018 - Cleanup: Rename key_to_vol
+  #11019 - Cleanup io_uring.
+  #11020 - Make Dir parameters const in all Stripe methods
+  #11023 - Fix stripe metrics in the exclusive span case
+  #11024 - Reuse arena for header compression
+  #11025 - txn_box: Add it as an experimental plugin.
+  #11027 - Cleanup SSLSNIConfig
+  #11028 - docs: Fix pipfile package compatible release clause.
+  #11029 - Remove many old HAVE_*_H configure build vars
+  #11033 - Remap ACL changes for 10
+  #11035 - ensure dns lookup happens after dns_info.lookup_name changes
+  #11039 - Make linking libraries to plugins optional
+  #11040 - Don't install fastlz
+  #11041 - Add basic check for pcre2
+  #11042 - tidy: Add virtual dtor. Mute compiler warnings.
+  #11045 - Deprecate the support for NPN
+  #11046 - Add autest to make sure H2 grace shutdown is working as intended
+  #11047 - Move ts/parentselectdefs.h contents into ts/apidefs.h
+  #11048 - Building webp_transform plugin with cmake
+  #11049 - XPACK: Fix an ats_malloc/delete mismatch
+  #11050 - Add auto_option for ImageMagick and add support for specifying a COMP…
+  #11051 - SSLConfig: free temporary ALPN string
+  #11052 - include swoc/bwf_base.h so templates work
+  #11054 - Fix an assertion failure on QPACK
+  #11055 - clean up namespace of plugin API
+  #11056 - Add support for verifying plugins at test time
+  #11057 - cleanup: remove notes from removed  parts related to traffic_manager
+  #11058 - verify global plugins
+  #11059 - Change the constructor for LocalBufferWriter to be noexcept
+  #11060 - Remove ssl_session_reuse plugin
+  #11061 - work on otel_tracer plugin
+  #11062 - Fix MacOS linking warning for xcode 15
+  #11063 - Remove header files generated by autotools automatically
+  #11064 - Fix 2 HTTP/2 trailing header memory leaks
+  #11065 - traffic_top: Allow traffic_top to be running while TS is down.
+  #11066 - remove tsapi::c namespace
+  #11067 - tools/clang-format.sh: don't run on lib
+  #11069 - Change malloc template to TSRalloc (fixes Ubuntu build).
+  #11070 - qpack: Don't block decoding if Required Insert Count is zero
+  #11071 - http3: Propagate events from QUICNetVC
+  #11072 - Handle EVENT_INTERVAL in HttpSM::state_raw_http_server_open and HttpSM::state_http_server_open
+  #11074 - quic: Cancel events when streams get closed
+  #11075 - Rename Http2FrequencyCounter to FrequencyCounter
+  #11076 - ESI plugin:  make maximum document size configurable.
+  #11078 - docs: Update cmake documentation for experimental plugins.
+  #11079 - add cmake autest_no_install target to run against and existing install
+  #11080 - http3: Don't use chunked encoding unnecessarily
+  #11082 - http3: Separate out Http3SettingsFramer
+  #11086 - Cleanup cripts headers
+  #11087 - Docs: Fix few things related to the docs.
+  #11088 - http3: Fix use-after-free
+  #11090 - IPRange.h: resolve compiler error about dangling pointer to temporary
+  #11092 - Remove dependency between tscore and iocore/eventsystem
+  #11093 - ipspace: introduce intermediate temporary to restore the structed bining decl
+  #11094 - NOT_WRITE_AVAIL: schedule event to resend data frames
+  #11097 - Python3.8: fix list type hints
+  #11098 - cmake README.md tweaks
+  #11099 - TSVConnFd: replace autest wait condition
+  #11101 - Revert "fix race condition with session thread migration (#10897)"
+  #11104 - fix hostdb.host_file.interval to be set at reconfig time
+  #11105 - Only work around dup lib issue on appleclang
+  #11106 - Add libswoc unit tests
+  #11107 - xpack: Fix division by zero error
+  #11109 - Fix package name in build system.
+  #11111 - Coverity fixes. CID 1534726 ,  CID 1534745, CID1534723
+  #11112 - Coverity:  trying fixing some of the issues related to an unitialized variant member.
+  #11116 - Added namespace fmt to function call format_to in Cripts
+  #11117 - Mute some coverity issues.
+  #11119 - dont install static libraries
+  #11120 - cmake: Link pcre2 to src/api
+  #11121 - http3: Propagate edata as well
+  #11122 - rate_limit plugin: Decouple metrics and queue config
+  #11124 - test_ip: add iterator temporary for gcc release builds
+  #11126 - CI osx and fedora: -DENABLE_CRIPTS
+  #11127 - Fix for issue 11123.  Do not return metrics when a config record is requested.
+  #11128 - [Fuzzing] Add fuzzing harness for `HTTP3Frame`
+  #11129 - cleanup cript example. add missing function
+  #11130 - Fixes broken refactoring to new Metrics
+  #11133 - CID1534716: use after move on txn_box ip_space module.
+  #11134 - CID1534729: txnbox - avoid copying object.
+  #11136 - http3: Fix a crash on READ_READY event for QPACK
+  #11137 - Fix a couple misspellings
+  #11138 - Fix asan and valgrind issues with libswoc unit test
+  #11139 - Fixed asan issue for test_AIO when an argument wasn't set on the command line
+  #11141 - install tsutil files even if tsutil is static
+  #11143 - Fix HTTP/2 Buffering Issues
+  #11145 - http3: Add missing declaration
+  #11146 - Adds 10.0.x to the list of docs version
+  #11147 - Work around a GCC bug for __sync_val_compare_and_swap on ARMv8.1+
+  #11148 - Docs: header rewrite regex has case insensitive pcre flag
+  #11149 - Fix validation regex for http.connect_ports
+  #11151 - Add copying of _templates dir so sphinx can generate the version menu
+  #11152 - This adds support for NOCASE on string compare / regex
+  #11154 - set CMAKE_HOST for TS_BUILD_CANONICAL_HOST
+  #11156 - txn_box - Fix ASAN issue on txn_box string trie.
+  #11159 - Adds a conn.mark= operation for a connection
+  #11160 - Test failure checks for Stripe::add_writer
+  #11161 - records.yaml - Make sure we validate the input value with the configured check expr.
+  #11162 - Fix a build error
+  #11163 - Adds TSHttpTxnErrorBodyGet() corresponding to the Set
+  #11165 - Fix a build issue with autest plugins
+  #11166 - CID1508922 - Fix Uncaught exception.
+  #11167 - Restore alignment for structs stored in cache
+  #11169 - set compile definition to turn on maxminddb
+  #11171 - Remove symbols with prefix INKUDP from plugin API
+  #11172 - Support rate limit on active connections instead of txn
+  #11174 - H3 deps build script update.
+  #11175 - Update HTTP3 test to use hostname instead of numeric address.
+  #11176 - SSL Diags - Use boringssl API to fetch a proper error description.
+  #11177 - Version update: libswoc 1.5.11
+  #11179 - Fix external libswoc builds
+  #11180 - Fixes for SRV records handling in hostdb rewrite
+  #11181 - rate_limit: Set initialized flag of SieveLru when loading yaml is done
+  #11182 - Fix external yaml-cpp builds
+  #11183 - magick.so: explicitly reference wand/core libraries
+  #11184 - Fixed asan leak issues with RegexContext
+  #11185 - Build an extra static boringssl for NuRaft
+  #11187 - Print warning about valid_tls_versions_in on startup
+  #11189 - Fix GCC 14.0.1 -std=c++20 build failures
+  #11190 - swoc: install swoc_ip_util.h
+  #11191 - Fix warnings from clang 18
+  #11192 - Allow Cripts to be used directly as @plugin
+  #11193 - Fix logic around srv records at other code path
+  #11195 - CMakePresets: branch-quiche: use boringssl nuraft
+  #11196 - Don't delete QUIC stream until both read and write complete
+  #11201 - Restore private key passphrase behavior
+  #11202 - ja3_fingerprint: Add condition to run test only if the plugin was built.
+  #11205 - Add proxy.config.http2.max_continuation_frames_per_minute
+  #11208 - Clean up some of Cripts strings with modern libSWOC
+  #11210 - http2: Set SSN active on create_stream
+  #11211 - Fix RelWithDebInfo to be release with debug info
+  #11212 - Update asan settings and fail if other allocators are used
+  #11213 - Fix TLS tunneling
+  #11214 - Refactor Metrics storage to preserve lifetime
+  #11215 - Check the appropriate functions and set variables correctly
+  #11217 - Remove deprecated debug output functions from proxy/http source files.
+  #11218 - Fix test_TSHttpSsnInfo: Use host name instead of numeric address.
+  #11219 - Make code buildable with AWS-LC
+  #11220 - Fix parent proxy connection stat overcounting
+  #11221 - Fix fuzz build by commenting out http3frame fuzz test with ubsan
+  #11222 - Terminate H2 connection by COMPRESSION_ERROR
+  #11223 - find PkgConfig earlier
+  #11224 - Manage storage for ssl hooks
+  #11225 - Remove noisy retransmit Note messages
+  #11229 - Use large IOBufferBlock only on sending DATA frame
+  #11230 - AuTest: Make ja3_fingerprint test stable
+  #11231 - add missing CMakeLists.txt for otel_tracer plugin
+  #11232 - Update curl library references to CURL
+  #11233 - CI: have rocky and fedora builds use curl in /opt
+  #11234 - Cleanup: rename client_vc to txn
+  #11235 - Cleanup: Http2ConnectionState
+  #11236 - jsonrpc: small cleanup.
+  #11237 - cleanup asan odr violations
+  #11238 - header_rewrite: add debug to accompany parse_line errors
+  #11239 - Fix asan leak errors for cachevol test
+  #11240 - IP Allow: document when rules are applied
+  #11241 - CID 1534718: txn_box - Fix invalid use of signed index.
+  #11242 - HttpSM::tunnel_handler: Handle WRITE events
+  #11243 - txn_box ramp autest reliability improvements
+  #11244 - Regex: fix memory leak if the match buffer is too small
+  #11246 - Avoid including pcre2.h in Regex.h.
+  #11248 - CID 1374999: plugin stale_response, delete pointer on early exit.
+  #11249 - CID 1534744: txn_box: Move config object insetad of copy.
+  #11250 - Fixes the HRW regexes after refactoring in #11152
+  #11251 - Findwamr.cmake: a find script for the WAMR library
+  #11252 - CMakePresets: add opentelemetry_ROOT with CURL_ROOT
+  #11254 - AuTest: Make ja3_fingerprint test more stable
+  #11255 - libswoc: fix unresolved function type for transform_view_of.
+  #11256 - libswoc: version update to 1.5.12
+  #11258 - wasm plugin: Add build support
+  #11259 - Raise unit tests for src/proxy/http/remap from the dead.
+  #11261 - Adds missing empty line for rate limit docs
+  #11262 - http2: Track scheduled events
+  #11266 - Add nullptr guards in ActivityCop functions
+  #11270 - tools: Dual build for openssl and boringssl H3 tools.
+  #11272 - tslua.so: handle unrecognized status codes
+  #11275 - Eliminate leaking of HostStatusSync instances.
+  #11276 - CMake: add missing verify_remap_plugin() calls.
+  #11277 - CMake. Fix yamlcpp version definition when an external yaml lib is set.
+  #11278 - RPC: Add log when handler fail yamlcpp validation on registration.
+  #11282 - lsan suppression files for ImageMagic plugins
+  #11283 - Remove reduntant link of ts:: libraries in plugins
+  #11286 - txn_box autests: prefix each with 'txn_box'
+  #11287 - Update XPACK.cc to fix use-of-uninitialized-pointer-field case
+  #11290 - Fedora 40: update autest output expectations
+  #11291 - Update the build_h3_tools.sh curl version to 8.7.1
+  #11293 - Add Au testing for statichit.so plugin.
+  #11295 - http2.test.py: Name TestRun entities
+  #11296 - Fedora 40: autest output updates for new curl and openssl
+  #11297 - Restore derived metrics using new metrics
+  #11298 - Remove obsolete debug output calls in 23 source files.
+  #11299 - port clang-format changes from master
+  #11300 - ci-fedora-cxx20 preset: build cripts
+  #11303 - -fno-strict-aliasing
+  #11304 - Fixes clang-format v18.1.2 on linux AARCH64
+  #11305 - Don't assume LogAccess::m_client_req_unmapped_url_canon_str is null terminated.
+  #11306 - H3 build tools. Fix missing include detected on Fedora 40.
+  #11307 - Remove obsolete debug output calls in 18 source files.
+  #11308 - Fix case where 206 could be returned for range revalidates
+  #11309 - compress autest: verify compressed bodies
+  #11312 - clang-format.sh: format .hpp files
+  #11314 - This assures that plugins in a Cript are destructed
+  #11315 - Coverity 1544458: Uninitialized scalar variable in NextHop unit test
+  #11317 - Send EOS event when QUIC connection becomes draining state
+  #11318 - Updates for new build_h3_tools for quiche on openssl
+  #11319 - Coverity 1518564: Out-of-bounds write in fq_pacing plugin
+  #11320 - Adds a run-plugin operator to HRW
+  #11321 - Remove obsolete debug output calls in 44 source files.
+  #11323 - Coverity 1534638: Resource leak in object for stale_response plugin
+  #11324 - Fix some warnings from libswoc when building on FreeBSD 13.1.
+  #11326 - libswoc: Remove unused variables. Part 2.
+  #11327 - Fix memory leaks in H3 unit tests
+  #11328 - CMakePresets: test nuraft on openssl
+  #11329 - Fix compiler warning when using GCC 13.2
+  #11330 - UDP-Net: Add support to use SO_TXTIME if available.
+  #11331 - systemtap: add sdt.h header-only file
+  #11334 - CMakePresets: -DENABLE_PROBES for ci-fedora
+  #11335 - CID-1544424 and CID1544430: use after free fix.
+  #11336 - Coverity 1534725: Uninitialized scalar variable
+  #11338 - Coverity 1523684: Resource leak
+  #11339 - ATS_PROBE: add SystemTap ATS probe autest
+  #11344 - Reduce the default size of max header sizes
+  #11345 - Add HTTP/2 Empty CONTINUATION & DATA frame counter
+  #11346 - Handle EOS events during server open
+  #11352 - Allow query parameters to erase() 'all but'
+  #11354 - Add http2.incomplete_header_timeout_in
+  #11356 - Fix undefined behavior doing memcpy from `timespec**`
+  #11357 - Remove the need of `-Wno-stringop-overflow` warning suppression
+  #11359 - Adding Cripts documentation structure
+  #11362 - ASAN new and free mismatch in stale response plugin
+  #11365 - Continued updates to the Cripts docs
+  #11366 - Add SO_INCOMING_CPU support to net.sock_option_flag_in
+  #11367 - Unit test: enable plugin dso logic to build and run unit tests.
+  #11368 - Handle VC_EVENT_EOS in more places
+  #11369 - Some Cripts cleanup and fixes
+  #11371 - doc/cache-architecture grammar & broken link fix.
+  #11380 - Update shields on README
+  #11381 - Make sure to use proper allocator to free
+  #11382 - Pass url_len when emplacing in Http2CommonSession::_h2_pushed_urls
+  #11383 - Coverity 1545950: Uninitialized scalar variable in background_fetch plugin
+  #11384 - HRW: Adds an optional list of query params to remove/keep
+  #11385 - Coverity 1545945: Uninitialized scalar variable in icap plugin
+  #11386 - Coverity 1545947: Resource leak in header_rewrite plugin
+  #11387 - Coverity 1545946: Uninitialized scalar variable in server transform plugin example
+  #11389 - Add Sphinx documentation for statichit plugin.
+  #11392 - Add ts::hex and ts::unhex
+  #11393 - Remove unused length parameter in the `plugin/multiplexer/dispatch.cc`
+  #11394 - Fix unused parameters in `tsutil`
+  #11396 - XPACK: update_maximum_size for storage
+  #11398 - Fixes Bundles errors, and better checks
+  #11400 - Update Http3Frame.cc - fix Use-of-uninitialized-value error
+  #11401 - Pass unused length parameter in HeaderField::append function
+  #11402 - Fix unused parameters in the tscpp source code
+  #11404 - Some cleanup of error handling in statichit plugin.
+  #11406 - Fix unused parameters in tscore
+  #11408 - Fix XpackDynamicTable::_make_space return value
+  #11410 - Http2ConnectionState::restart_receiving: check for closed peer
+  #11411 - Fix unused parameters in `traffic_*` utilities
+  #11412 - Unit-Tests: Make jsonrpc tests write the socket/lock file inside the build directory.
+  #11413 - Add metrics to memory Allocators
+  #11414 - Fix acl_remap bug
+  #11415 - Tweak a string to be checked in tls_tunnel autest
+  #11417 - Adds a bridge betwen Cripts and HRW operators
+  #11420 - 10.0.x: Fix some doc generation warnings (#11370)
+  #11424 - Modernize ja3 fingerprint encoding implementation 
+  #11425 - 10.0.x: Fix all Sphinx doc generation warnings (#11419)
+  #11426 - Make Cripts contexts use Proxy Allocator, and cleanup
+  #11428 - txn_box: Address use after free in Do_upstream_rsp_body
+  #11429 - support full range of unsigned char for hex conversion.  
+  #11430 - Add missing experimental plugins to build
+  #11432 - Fix race condition causing interleaved logs 
+  #11433 - Change remap ACL matching policy to 'Match on IP and Method'
+  #11435 - Fix building without HWLOC
+  #11437 - Clean up destination buffer overrun handling in logging unmarshalling.
+  #11439 - access_control: Remove unused dumpHeaders
+  #11442 - Properly handle string return from function
+  #11445 - Coverity Fixes.
+  #11447 - Add exec argument to traffic_crashlog
+  #11448 - Doc: Clarification of ACL filters
+  #11452 - Fix unused parameters in iocore
+  #11454 - records.yaml -  Rename 'ts' yaml tag to 'records'.
+  #11458 - Make NetDbg available on release builds (#11451)
+  #11460 - More cripts
+  #11462 - Clean up ja3_fingerprint continuation handlers
+  #11463 - HttpSM request tunneling naming updates
+  #11466 - Fix unused function parameters in the plugins functionality
+  #11469 - Restore webp_transform to build
+  #11470 - Skip verify imagemagick plugins for asan builds
+  #11471 - Fix last left unused parameters in the project
+  #11475 - Remove unused `alloc` parameter in swoc/Vectray functionality
+  #11476 - yapf.sh: run on non-.py tools/ scripts
+  #11478 - Restructure the Config objects
+  #11481 - Fix unused parameters in `exemple/plugins/c-api`
+  #11482 - Fix unused parameters in `proxy/http3` functionality
+  #11483 - Fix unused parameters in the `iocore` functionality (SSL and QUIC related code)
+  #11487 - Add optional way to extend the build
+  #11488 - cripts: rename get/set macros to Get/Set
+  #11490 - H3: Make sure we remove streams when needed.
+  #11491 - Fix unused parameters in conditionally built experimental plugins
+  #11492 - Pascal case
+  #11493 - Update code and build scripts to use latest quiche(0.22.0) release.
+  #11494 - records.yaml - Some more cleanup from the records.yaml root key rename.
+  #11495 - Use "git rev-parse --absolute-git-dir" in tools scripts.
+  #11497 - Enable receiving large H3 frames
+  #11499 - multiplexer: fix consume of too many bytes
+  #11500 - Fixes broken matchers after PascalCase
+  #11501 - Fix for OpenSSL 3.2+.
+  #11502 - records.yaml - Some more cleanup after renaming the root node.
+  #11503 - wasm plugin: provide defaults for struct SanitizationConfig
+  #11505 - traffic_layout: remove directories not in runroot
+  #11506 - No remap rules matched metric
+  #11507 - wasm plugin: Initialize SanitizationConfig  
+  #11511 - Prioritize the library path for SSL library
+  #11512 - Fix quick_server autest to verify server response
+  #11514 - Provide a way to silence the warning about max_early_data
+  #11517 - Try TCP_FASTOPEN socket option with mptcp
+  #11519 - Deprecate the support for URL param segment
+  #11521 - Use PrepareInstalledPlugin to prep txn_box.so
+  #11522 - Fix unused parameters in cripts, experimental plugins and iocore
+  #11523 - Tools: JSON-RPC - Change the Unix Domain Socket client to retry and wait when connection to the server.
+  #11525 - Fix unused parameters in tscore/ink_cap
+  #11527 - Fix conditionally unused parameter in UnixNetVConnection
+  #11528 - Fix for imagemagick 7
+  #11531 - CID-1550426: Uninitialized scalar variable Fix.
+  #11532 - Fix incorrect metric for agg_copy bytes written
+  #11533 - Fix unused parameters in the test plugins (#11524)
+  #11534 - Proxy Verifier: Update to version v2.12.0
+  #11536 - Http/2: Fix a crash with empty bodied Expect: 100-continue
+  #11537 - JSONRPC Client - Fix OSX/FreeBSD write socket issue.
+  #11539 - Fix Japanese translation Sphinx docs warnings
+  #11540 - H3 Tools: Disable libunwind build tests for boringssl.
+  #11542 - Reuse prepared cache write on redirected request
+  #11544 - Fixes the assertion in TSRemapDLHandleGet
+  #11545 - Check incoming protocol list length first
+  #11548 - setup_server_read_response_header: remove assertion
+  #11554 - Errata: Make sure the initialization of the errata members are in place.
+  #11560 - records.yaml: Improve the output a little bit to make it clear what's the outcome in some error scenarios.
+  #11561 - Metrics: Remove code related to clear/reset metrics at runtime.
+  #11563 - Fix server names for post-early-return
+  #11564 - Reduce the number of checks for BoringSSL
+  #11568 - add_allow and add_deny ACL filter actions
+  #11569 - Removes the Matrix parameters from Cripts
+  #11570 - Removes matrix parameters from HRW
+  #11571 - Removes matrix parameters from regex_remap plugin
+  #11572 - stale_response: remove matrix parameters
+  #11574 - Dispatch WRITE_COMPLETE when TLS handshake completes
+  #11576 - Added Jasmin and remove Josiah from the collaborators list
+  #11577 - Set `TS_HAVE_TLS_EARLY_DATA` correctly
+  #11578 - Comment out an unused parameter in URLImpl::set_params
+  #11579 - Remove matrix parameters from the cookie remap plugin
+  #11580 - Remove support of matrix parameters in Lua plugin
+  #11583 - remap_action_to_add: helper script for new ACL actions
+  #11586 - Remove matrix parameters from s3_auth plugin
+  #11587 - Remove matrix parameters from the documentation
+  #11593 - Stricten field name check
+  #11594 - Normalized ae cache lookup before cache lookup 
+  #11599 - Remove pathset for urlsig
+  #11601 - Add an autest for s-maxage Cache-Control response directive
+  #11602 - Set -Werror=no-stringop-overflow for boringssl
+  #11603 - proxy.config.http.drop_chunked_trailers
+  #11606 - Run regression tests for InkAPI
+  #11608 - Remove duplicate setup in http3 tests
+  #11609 - Restore returning string metrics from traffic_ctl match
+  #11611 - Parse frame types consisting of multiple bytes
+  #11612 - prefetch autests: await log file content
+  #11614 - traffic_crashlog: use SIGCONT for parent death
+  #11615 - Update boringssl in build-h3-tools script
+  #11619 - ACL filters: set_allow/set_deny
+  #11624 - Remove TSUrlHttpParamsGet/Set and their internal implementation
+  #11627 - Cleanup: remove invalid option from traffic_ctl
+  #11630 - Remove a false comment
+  #11631 - Make TSVConnSslConnectionGet available on QUIC connections
+  #11632 - Remove H3 frame sequence number tracking
+  #11635 - ACL filter action documentation updates
+  #11637 - Reduce the number of checks for BoringSSL
+  #11644 - Add upgrade notes for connection_attempts_timeout changes
+  #11646 - Document 0 for max_conections_in disables it
+  #11648 - Docs: Make sure we use the right YAML root name when building records.yaml docs. `ts` -> `records`
+  #11651 - Disable mptcp if proper header files are not available
+  #11655 - cleanup: Change legacy function name to actually reflect the logic.
+  #11656 - Remove rest of cache inspector references
+  #11657 - Fixed crash in XPACK when making space for a new entry
+  #11659 - NetHandler - Use the right type to hold `additional_accepts` config value.
+  #11672 - Add ASF release targets
+  #11682 - Update release docs
+  #11685 - add max_open_write_retry_timeout to recordsconfig
+  #11695 - Reduce the default size for http.header_field_max_size
+  #11702 - Document records.yaml changes
+  #11706 - Revert cache redirect following fix for ATS 10 release
+  #11727 - release target: Fix tarball so it contains the distribution name
