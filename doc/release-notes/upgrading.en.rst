@@ -184,10 +184,14 @@ The following :file:`records.yaml` changes have been made:
 The following changes have been made to the :file:`sni.yaml` file:
 
 - ``disable_h2`` has been removed. Use ``http2`` with :code:`off` instead.
-- The ``ip_allow`` key can now take a reference to a file containing the ip
-  allow rules
+- The ``ip_allow`` key can now take a reference to a file containing the ip allow rules
 - ``valid_tls_versions_in`` has been deprecated. Use ``valid_tls_version_min_in`` and ``valid_tls_version_max_in`` instead.
+- Simplify wildcard support and matching order of the ``fqdn`` field
 
+  * Allow single left-most ``*``
+  * Do NOT support regex
+  * Allow ``$1`` (capturing) support in the ``tunnel_route`` field
+  * Matching depends on the order of entries (like :file:`remap.config`)
 
 Plugins
 -------
@@ -207,6 +211,7 @@ The following plugins have been changed in this version of ATS.
 
 * regex_remap - matrix-parameters parameter has been removed. The string that follows a semicolon is now included in path.
 * header_rewrite - MATRIX part specifier has been removed. The string that follows a semicolon is now included in PATH part.
+* maxmind_acl - The regex part in its configuration takes the entire URL of a request, not just the path.
 * rate_limit - Few changes were made on this plugin:
 
   * A ``YAML`` based configuration, reloadable even as global plugin.
