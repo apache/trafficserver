@@ -159,6 +159,8 @@ private:
   void cleanup(Stripe const *stripe);
   void remove_finished_blocks(Stripe const *stripe, int bucket);
   void scan_for_pinned_documents(Stripe const *stripe);
+
+  EvacuationBlock *find(Dir const &dir, int bucket) const;
 };
 
 inline bool

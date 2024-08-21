@@ -73,23 +73,19 @@ PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
 int
 PreservationTable::acquire(Dir const &dir, CacheKey const &key) const
 {
-  int              bucket = dir_evac_bucket(&dir);
-  EvacuationBlock *b;
-  for (b = this->evacuate[bucket].head; b; b = b->link.next) {
-    if (dir_offset(&b->dir) != dir_offset(&dir)) {
-      continue;
-    }
+  int bucket = dir_evac_bucket(&dir);
+  if (EvacuationBlock * b{this->find(dir, bucket)}; nullptr != b) {
     if (b->readers) {
-      b->readers = b->readers + 1;
+      ++b->readers;
     }
     return 0;
   }
   // we don't actually need to preserve this block as it is already in
   // memory, but this is easier, and evacuations are rare
-  b                 = new_EvacuationBlock();
-  b->readers        = 1;
-  b->dir            = dir;
-  b->evac_frags.key = key;
+  EvacuationBlock *b = new_EvacuationBlock();
+  b->readers         = 1;
+  b->dir             = dir;
+  b->evac_frags.key  = key;
   this->evacuate[bucket].push(b);
   return 1;
 }
@@ -97,20 +93,12 @@ PreservationTable::acquire(Dir const &dir, CacheKey const &key) const
 void
 PreservationTable::release(Dir const &dir) const
 {
-  int              bucket = dir_evac_bucket(&dir);
-  EvacuationBlock *b;
-  for (b = this->evacuate[bucket].head; b;) {
-    EvacuationBlock *next = b->link.next;
-    if (dir_offset(&b->dir) != dir_offset(&dir)) {
-      b = next;
-      continue;
-    }
+  int bucket = dir_evac_bucket(&dir);
+  if (EvacuationBlock * b{this->find(dir, bucket)}; nullptr != b) {
     if (b->readers && !--b->readers) {
       this->evacuate[bucket].remove(b);
       free_EvacuationBlock(b);
-      break;
     }
-    b = next;
   }
 }
 
@@ -203,4 +191,14 @@ PreservationTable::remove_finished_blocks(Stripe const *stripe, int bucket)
     }
     b = b->link.next;
   }
+}
+
+EvacuationBlock *
+PreservationTable::find(Dir const &dir, int bucket) const
+{
+  EvacuationBlock *b{this->evacuate[bucket].head};
+  while (b && (dir_offset(&b->dir) != dir_offset(&dir))) {
+    b = b->link.next;
+  }
+  return b;
 }
