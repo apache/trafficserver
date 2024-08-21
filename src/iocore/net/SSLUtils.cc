@@ -1938,7 +1938,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 
   const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
 
-  Note("%s loading ...", ts::filename::SSL_MULTICERT);
+  Note("(%s) %s loading ...", this->_debug_tag(), ts::filename::SSL_MULTICERT);
 
   std::error_code ec;
   std::string     content{swoc::file::load(swoc::file::path{params->configFilePath}, ec)};
