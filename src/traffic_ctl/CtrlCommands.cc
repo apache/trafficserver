@@ -559,6 +559,9 @@ ServerCommand::ServerCommand(ts::Arguments *args) : CtrlCommand(args)
   if (get_parsed_arguments()->get(DRAIN_STR)) {
     _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { server_drain(); };
+  } else if (get_parsed_arguments()->get(DEBUG_STR)) {
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
+    _invoked_func = [&]() { server_debug(); };
   }
 }
 
@@ -578,6 +581,34 @@ ServerCommand::server_drain()
 
   _printer->write_output(response);
 }
+
+void
+ServerCommand::server_debug()
+{
+  // Set ATS to enable or disable debug at runtime.
+  const bool enable = get_parsed_arguments()->get(ENABLE_STR);
+
+  // If the following is not passed as options then the request will ignore them as default values
+  // will be set.
+  const std::string tags      = get_parsed_arguments()->get(TAGS_STR).value();
+  const std::string client_ip = get_parsed_arguments()->get(CLIENT_IP_STR).value();
+
+  const SetDebugServerRequest         request{enable, tags, client_ip};
+  shared::rpc::JSONRPCResponse const &response = invoke_rpc(request);
+
+  swoc::LocalBufferWriter<512> bw;
+
+  bw.print("■ TS Runtime debug set to »{}({})«", enable ? "ON" : "OFF", enable ? (!client_ip.empty() ? "2" : "1") : "0");
+  if (enable) {
+    bw.print(" - tags »\"{}\"«, client_ip »{}«", !tags.empty() ? tags : "unchanged", !client_ip.empty() ? client_ip : "unchanged");
+  }
+  if (response.is_error()) {
+    _printer->write_output(response);
+  } else {
+    _printer->write_output(bw.view());
+  }
+}
+
 // //------------------------------------------------------------------------------------------------------------------------------------
 StorageCommand::StorageCommand(ts::Arguments *args) : CtrlCommand(args)
 {

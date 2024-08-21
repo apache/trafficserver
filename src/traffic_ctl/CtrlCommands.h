@@ -214,7 +214,14 @@ private:
   static inline const std::string UNDO_STR{"undo"};
   static inline const std::string NO_NEW_CONN_STR{"no-new-connection"};
 
+  static inline const std::string DEBUG_STR{"debug"};
+  static inline const std::string ENABLE_STR{"enable"};
+  static inline const std::string DISABLE_STR{"disable"};
+  static inline const std::string TAGS_STR{"tags"};
+  static inline const std::string CLIENT_IP_STR{"client_ip"};
+
   void server_drain();
+  void server_debug();
 };
 //
 // -----------------------------------------------------------------------------------------------------------------------------------

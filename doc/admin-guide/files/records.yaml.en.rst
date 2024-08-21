@@ -3404,6 +3404,8 @@ Diagnostic Logging Configuration
 
    When set to 2, interprets the :ts:cv:`proxy.config.diags.debug.client_ip` setting determine whether diagnostic messages are logged.
 
+   See the :ref:`Enable debug using traffic_ctl<traffic-control-command-server-debug>` for a convenient way to handle this.
+
 .. ts:cv:: CONFIG proxy.config.diags.debug.client_ip STRING NULL
 
    if :ts:cv:`proxy.config.diags.debug.enabled` is set to 2, this value is tested against the source IP of the incoming connection.  If there is a match, all the diagnostic messages for that connection and the related outgoing connection will be logged.
