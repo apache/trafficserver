@@ -50,8 +50,9 @@ struct RPCResponseInfo {
   RPCResponseInfo(std::string const &id_) : id{id_} {} // Convenient
   RPCResponseInfo() = default;
   struct Error {
-    std::error_code ec;   // protocol error track.
-    swoc::Errata    data; // internal error detail.
+    std::error_code ec; // Protocol error track, @see rpc::error::RPCErrorCode. !Important: If there is an internal error happening
+                        // before we call the rpc handler this should be set, otherwise the encoder wont render the error properly.
+    swoc::Errata data;  // Internal error detail. Optional.
   };
 
   std::string id; //!< incoming request id (only used for method calls, empty means it's a notification as requests with empty id
