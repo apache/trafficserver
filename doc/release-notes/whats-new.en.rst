@@ -49,7 +49,7 @@ New Features
 * The records.yaml entry :ts:cv:`proxy.config.system_clock` was added to control the underlying
   system clock that ATS uses for internal timing
 
-* OCSP requests is now be able to use GET method. See ts:cv`proxy.config.ssl.ocsp.request_mode` for more information.
+* OCSP requests is now be able to use GET method. See :ts:cv:`proxy.config.ssl.ocsp.request_mode` for more information.
 
 * TSHttpSsnInfoIntGet has been added.
 
