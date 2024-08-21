@@ -57,7 +57,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
        (int)dir_phase(&this->dir));
   int i = dir_evac_bucket(&this->overwrite_dir);
   // nasty beeping race condition, need to have the EvacuationBlock here
-  EvacuationBlock *b = this->stripe->evac_bucket_valid(i) ? this->stripe->evacuate[i].head : nullptr;
+  EvacuationBlock *b = this->stripe->evac_bucket_valid(i) ? this->stripe->get_evac_bucket(i).head : nullptr;
   for (; b; b = b->link.next) {
     if (dir_offset(&b->dir) == dir_offset(&this->overwrite_dir)) {
       // If the document is single fragment (although not tied to the vector),

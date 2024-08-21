@@ -90,6 +90,8 @@ struct EvacuationBlock {
 class PreservationTable
 {
 public:
+  int evacuate_size{};
+
   /**
    * The table of preserved documents.
    *
@@ -113,9 +115,6 @@ public:
    */
   void force_evacuate_head(Dir const *evac_dir, int pinned);
 
-protected:
-  int evacuate_size{};
-
   /**
    * Acquire the evacuation block for @a dir.
    *
@@ -127,7 +126,7 @@ protected:
    * @param key The key for the directory entry.
    * @return Returns 1 if a new block was created, otherwise 0.
    */
-  int acquire(Dir const &dir, CacheKey const &key) const;
+  int acquire(Dir const &dir, CacheKey const &key);
 
   /** Release the evacuation block for @a dir.
    *
@@ -143,7 +142,7 @@ protected:
    * @param dir The directory entry to release.
    * @see force_evacuate_head
    */
-  void release(Dir const &dir) const;
+  void release(Dir const &dir);
 
   /**
    * Remove completed documents from the table and add pinned documents.

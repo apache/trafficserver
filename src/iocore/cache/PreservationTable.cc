@@ -71,7 +71,7 @@ PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
 }
 
 int
-PreservationTable::acquire(Dir const &dir, CacheKey const &key) const
+PreservationTable::acquire(Dir const &dir, CacheKey const &key)
 {
   int bucket = dir_evac_bucket(&dir);
   if (EvacuationBlock * b{this->find(dir, bucket)}; nullptr != b) {
@@ -91,7 +91,7 @@ PreservationTable::acquire(Dir const &dir, CacheKey const &key) const
 }
 
 void
-PreservationTable::release(Dir const &dir) const
+PreservationTable::release(Dir const &dir)
 {
   int bucket = dir_evac_bucket(&dir);
   if (EvacuationBlock * b{this->find(dir, bucket)}; nullptr != b) {
