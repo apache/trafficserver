@@ -116,6 +116,14 @@ public:
   void force_evacuate_head(Dir const *evac_dir, int pinned);
 
   /**
+   * Find the evacuation block corresponding to @a dir.
+   *
+   * @param dir The directory entry to search for.
+   * @return Returns the corresponding block if it exists, nullptr otherwise.
+   */
+  EvacuationBlock *find(Dir const &dir) const;
+
+  /**
    * Acquire the evacuation block for @a dir.
    *
    * Any number of readers may acquire the block at a time to prevent the
@@ -170,21 +178,6 @@ PreservationTable::evac_bucket_valid(off_t bucket) const
 
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
 extern ClassAllocator<EvacuationKey>   evacuationKeyAllocator;
-
-inline EvacuationBlock *
-evacuation_block_exists(Dir const *dir, PreservationTable *stripe)
-{
-  auto bucket = dir_evac_bucket(dir);
-  if (stripe->evac_bucket_valid(bucket)) {
-    EvacuationBlock *b = stripe->evacuate[bucket].head;
-    for (; b; b = b->link.next) {
-      if (dir_offset(&b->dir) == dir_offset(dir)) {
-        return b;
-      }
-    }
-  }
-  return nullptr;
-}
 
 inline EvacuationBlock *
 new_EvacuationBlock()

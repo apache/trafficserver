@@ -40,6 +40,12 @@ DbgCtl dbg_ctl_cache_evac{"cache_evac"};
 
 } // namespace
 
+EvacuationBlock *
+PreservationTable::find(Dir const &dir) const
+{
+  return this->find(dir, dir_evac_bucket(&dir));
+}
+
 void
 PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
 {
@@ -51,7 +57,7 @@ PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
   }
 
   // build an evacuation block for the object
-  EvacuationBlock *b = evacuation_block_exists(evac_dir, this);
+  EvacuationBlock *b = this->find(*evac_dir);
   // if we have already started evacuating this document, its too late
   // to evacuate the head...bad luck
   if (b && b->f.done) {

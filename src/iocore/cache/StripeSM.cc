@@ -1261,7 +1261,7 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *s
     if (dir_head(&dir)) {
       continue;
     }
-    EvacuationBlock *b = evacuation_block_exists(&dir, &stripe->get_preserved_dirs());
+    EvacuationBlock *b = stripe->get_preserved_dirs().find(dir);
     if (!b) {
       b                          = new_EvacuationBlock();
       b->dir                     = dir;
