@@ -180,6 +180,7 @@ The following :file:`records.yaml` changes have been made:
 - The records.yaml entry :ts:cv:`proxy.config.allocator.hugepages` will enable
   allocating iobuffers and cache volumes from hugepages if configured in the
   system.
+- The records.yaml entry ``proxy.config.plugin.compiler_path`` has been added to specify an optional compiler tool path for compiling plugins.
 
 The following changes have been made to the :file:`sni.yaml` file:
 
