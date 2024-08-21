@@ -121,25 +121,7 @@ StripeSM::begin_read(CacheVC *cont) const
   if (cont->f.single_fragment) {
     return 0;
   }
-  int              i = dir_evac_bucket(&cont->earliest_dir);
-  EvacuationBlock *b;
-  for (b = evacuate[i].head; b; b = b->link.next) {
-    if (dir_offset(&b->dir) != dir_offset(&cont->earliest_dir)) {
-      continue;
-    }
-    if (b->readers) {
-      b->readers = b->readers + 1;
-    }
-    return 0;
-  }
-  // we don't actually need to preserve this block as it is already in
-  // memory, but this is easier, and evacuations are rare
-  b                 = new_EvacuationBlock();
-  b->readers        = 1;
-  b->dir            = cont->earliest_dir;
-  b->evac_frags.key = cont->earliest_key;
-  evacuate[i].push(b);
-  return 1;
+  return acquire(cont->earliest_dir, cont->earliest_key);
 }
 
 int

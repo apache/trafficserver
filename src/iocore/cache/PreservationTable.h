@@ -24,6 +24,7 @@
 #pragma once
 
 #include "AggregateWriteBuffer.h"
+#include "iocore/cache/CacheDefs.h"
 #include "P_CacheDir.h"
 #include "Stripe.h"
 
@@ -116,7 +117,23 @@ protected:
   int evacuate_size{};
 
   /**
+   * Acquire the evacuation block for @a dir.
+   *
+   * Any number of readers may acquire the block at a time to prevent the
+   * block from being removed from the table. If no block for the directory
+   * entry is in the table yet, one will be added with @a key.
+   *
+   * @param dir The directory entry to acquire.
+   * @param key The key for the directory entry.
+   * @return Returns 1 if a new block was created, otherwise 0.
+   */
+  int acquire(Dir const &dir, CacheKey const &key) const;
+
+  /**
    * Remove completed documents from the table and add pinned documents.
+   *
+   * Documents that were acquired by a reader and not released are not removed.
+   * Invalidates pointers to evacuation blocks unless they have been acquired.
    *
    * @param Stripe The stripe to scan for pinned documents to preserve.
    */
