@@ -95,6 +95,26 @@ PreservationTable::acquire(Dir const &dir, CacheKey const &key) const
 }
 
 void
+PreservationTable::release(Dir const &dir) const
+{
+  int              bucket = dir_evac_bucket(&dir);
+  EvacuationBlock *b;
+  for (b = this->evacuate[bucket].head; b;) {
+    EvacuationBlock *next = b->link.next;
+    if (dir_offset(&b->dir) != dir_offset(&dir)) {
+      b = next;
+      continue;
+    }
+    if (b->readers && !--b->readers) {
+      this->evacuate[bucket].remove(b);
+      free_EvacuationBlock(b);
+      break;
+    }
+    b = next;
+  }
+}
+
+void
 PreservationTable::periodic_scan(Stripe *stripe)
 {
   cleanup(stripe);

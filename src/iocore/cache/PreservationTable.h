@@ -129,6 +129,22 @@ protected:
    */
   int acquire(Dir const &dir, CacheKey const &key) const;
 
+  /** Release the evacuation block for @a dir.
+   *
+   * When a block has been released once for every time it was acquired, it
+   * may be removed from the table, invalidating all pointers to it. Note that
+   * releasing more than once from the same reader may cause the block to be
+   * removed from the table while other readers that acquired it think it's
+   * valid. Be careful.
+   *
+   * A block that was evacuated with force_evacuate_head will not be removed
+   * from the table when it is released.
+   *
+   * @param dir The directory entry to release.
+   * @see force_evacuate_head
+   */
+  void release(Dir const &dir) const;
+
   /**
    * Remove completed documents from the table and add pinned documents.
    *

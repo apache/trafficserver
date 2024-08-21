@@ -130,25 +130,9 @@ StripeSM::close_read(CacheVC *cont) const
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t == this_ethread());
   ink_assert(t == mutex->thread_holding);
-  if (dir_is_empty(&cont->earliest_dir)) {
-    return 1;
+  if (!dir_is_empty(&cont->earliest_dir)) {
+    release(cont->earliest_dir);
   }
-  int              i = dir_evac_bucket(&cont->earliest_dir);
-  EvacuationBlock *b;
-  for (b = evacuate[i].head; b;) {
-    EvacuationBlock *next = b->link.next;
-    if (dir_offset(&b->dir) != dir_offset(&cont->earliest_dir)) {
-      b = next;
-      continue;
-    }
-    if (b->readers && !--b->readers) {
-      evacuate[i].remove(b);
-      free_EvacuationBlock(b);
-      break;
-    }
-    b = next;
-  }
-
   return 1;
 }
 
