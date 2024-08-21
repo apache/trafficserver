@@ -89,7 +89,10 @@ macro(_CHECK_VAR_DEPENDS _OPTION_VAR _VAR_DEPENDS _FEATURE_VAR)
       message(STATUS "${_FEATURE_VAR} requires ${VAR_NAME} -- found")
     else()
       if(NOT ${${_OPTION_VAR}} STREQUAL AUTO AND ${${_OPTION_VAR}})
-        message(FATAL_ERROR "${_FEATURE_VAR} requires ${VAR_NAME} (hint: add -D${_OPTION_VAR}=OFF to disable)")
+        message(
+          FATAL_ERROR
+            "${_FEATURE_VAR} requires ${VAR_NAME} (hint: add -D${_OPTION_VAR}=OFF to disable this feature, or enable the missing dependency)"
+        )
       else()
         message(STATUS "${_FEATURE_VAR} requires ${VAR_NAME} -- not found")
       endif()
