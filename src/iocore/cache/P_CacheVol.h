@@ -244,21 +244,6 @@ struct AIO_failure_handler : public Continuation {
   AIO_failure_handler() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AIO_failure_handler::handle_disk_failure); }
 };
 
-struct CacheVol {
-  int          vol_number       = -1;
-  int          scheme           = 0;
-  off_t        size             = 0;
-  int          num_vols         = 0;
-  bool         ramcache_enabled = true;
-  StripeSM   **stripes          = nullptr;
-  DiskStripe **disk_stripes     = nullptr;
-  LINK(CacheVol, link);
-  // per volume stats
-  CacheStatsBlock vol_rsb;
-
-  CacheVol() {}
-};
-
 // Global Data
 
 extern StripeSM                   **gstripes;

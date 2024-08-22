@@ -26,6 +26,7 @@
 #include "AggregateWriteBuffer.h"
 #include "P_CacheDir.h"
 #include "P_CacheDisk.h"
+#include "P_CacheStats.h"
 
 #include "iocore/cache/Store.h"
 
@@ -45,7 +46,20 @@
 // This is defined here so CacheVC can avoid including P_CacheVol.h.
 #define RECOVERY_SIZE EVACUATION_SIZE // 8MB
 
-struct CacheVol;
+struct CacheVol {
+  int          vol_number       = -1;
+  int          scheme           = 0;
+  off_t        size             = 0;
+  int          num_vols         = 0;
+  bool         ramcache_enabled = true;
+  StripeSM   **stripes          = nullptr;
+  DiskStripe **disk_stripes     = nullptr;
+  LINK(CacheVol, link);
+  // per volume stats
+  CacheStatsBlock vol_rsb;
+
+  CacheVol() {}
+};
 
 struct StripteHeaderFooter {
   unsigned int      magic;
