@@ -32,7 +32,6 @@
 
 #include "tscore/ink_align.h"
 #include "tscore/ink_memory.h"
-#include "tscore/ink_platform.h"
 
 #include <cstdint>
 

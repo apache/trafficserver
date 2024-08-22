@@ -24,8 +24,6 @@
 #pragma once
 
 #include "P_CacheDir.h"
-#include "P_CacheDoc.h"
-#include "P_CacheStats.h"
 #include "P_RamCache.h"
 #include "AggregateWriteBuffer.h"
 #include "PreservationTable.h"

@@ -35,8 +35,6 @@
 #include "iocore/cache/CacheDefs.h"
 #include "iocore/cache/CacheVC.h"
 
-#include "proxy/hdrs/HTTP.h"
-
 #include "iocore/aio/AIO.h"
 
 #include "iocore/eventsystem/Continuation.h"
@@ -53,7 +51,6 @@
 #include "tscore/hugepages.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_hrtime.h"
-#include "tscore/ink_platform.h"
 #include "tscore/List.h"
 
 #include <cinttypes>

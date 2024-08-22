@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "P_CacheDoc.h"
 #include "P_CacheInternal.h"
 #include "StripeSM.h"
 
