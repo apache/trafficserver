@@ -43,7 +43,12 @@ DbgCtl dbg_ctl_cache_evac{"cache_evac"};
 EvacuationBlock *
 PreservationTable::find(Dir const &dir) const
 {
-  return this->find(dir, dir_evac_bucket(&dir));
+  int bucket{dir_evac_bucket(&dir)};
+  if (this->evac_bucket_valid(bucket)) {
+    return this->find(dir, bucket);
+  } else {
+    return nullptr;
+  }
 }
 
 void

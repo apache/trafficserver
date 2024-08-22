@@ -121,7 +121,7 @@ StripeSM::begin_read(CacheVC *cont) const
   if (cont->f.single_fragment) {
     return 0;
   }
-  return this->preserved_dirs.acquire(cont->earliest_dir, cont->earliest_key);
+  return this->_preserved_dirs.acquire(cont->earliest_dir, cont->earliest_key);
 }
 
 int
@@ -131,7 +131,7 @@ StripeSM::close_read(CacheVC *cont) const
   ink_assert(t == this_ethread());
   ink_assert(t == mutex->thread_holding);
   if (!dir_is_empty(&cont->earliest_dir)) {
-    this->preserved_dirs.release(cont->earliest_dir);
+    this->_preserved_dirs.release(cont->earliest_dir);
   }
   return 1;
 }
@@ -179,10 +179,10 @@ StripeSM::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   data_blocks         = (len - (start - skip)) / STORE_BLOCK_SIZE;
   hit_evacuate_window = (data_blocks * cache_config_hit_evacuate_percent) / 100;
 
-  this->preserved_dirs.evacuate_size = static_cast<int>(len / EVACUATION_BUCKET_SIZE) + 2;
-  int evac_len                       = this->preserved_dirs.evacuate_size * sizeof(DLL<EvacuationBlock>);
-  this->preserved_dirs.evacuate      = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
-  memset(static_cast<void *>(this->preserved_dirs.evacuate), 0, evac_len);
+  this->_preserved_dirs.evacuate_size = static_cast<int>(len / EVACUATION_BUCKET_SIZE) + 2;
+  int evac_len                        = this->_preserved_dirs.evacuate_size * sizeof(DLL<EvacuationBlock>);
+  this->_preserved_dirs.evacuate      = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
+  memset(static_cast<void *>(this->_preserved_dirs.evacuate), 0, evac_len);
 
   Dbg(dbg_ctl_cache_init, "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
       (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
@@ -630,7 +630,7 @@ StripeSM::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data AT
   set_io_not_in_progress();
   scan_pos = header->write_pos;
   ink_assert(this->mutex->thread_holding == this_ethread());
-  this->preserved_dirs.periodic_scan(this);
+  this->_preserved_dirs.periodic_scan(this);
   SET_HANDLER(&StripeSM::dir_init_done);
   return dir_init_done(EVENT_IMMEDIATE, nullptr);
 }
@@ -750,7 +750,7 @@ StripeSM::aggWriteDone(int event, Event *e)
     ink_assert(header->write_pos == header->agg_pos);
     if (header->write_pos + EVACUATION_SIZE > scan_pos) {
       ink_assert(this->mutex->thread_holding == this_ethread());
-      this->preserved_dirs.periodic_scan(this);
+      this->_preserved_dirs.periodic_scan(this);
     }
     this->_write_buffer.reset_buffer_pos();
     header->write_serial++;
@@ -1107,7 +1107,7 @@ StripeSM::agg_wrap()
     Note("Cache volume %d on disk '%s' wraps around", stripe->cache_vol->vol_number, stripe->hash_text.get());
   }
   ink_assert(this->mutex->thread_holding == this_ethread());
-  this->preserved_dirs.periodic_scan(this);
+  this->_preserved_dirs.periodic_scan(this);
 }
 
 int
@@ -1119,7 +1119,7 @@ StripeSM::evac_range(off_t low, off_t high, int evac_phase)
   int   ei = dir_offset_evac_bucket(e);
 
   for (int i = si; i <= ei; i++) {
-    EvacuationBlock *b            = this->preserved_dirs.evacuate[i].head;
+    EvacuationBlock *b            = this->_preserved_dirs.evacuate[i].head;
     EvacuationBlock *first        = nullptr;
     int64_t          first_offset = INT64_MAX;
     for (; b; b = b->link.next) {
@@ -1179,7 +1179,7 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
        (int)dir_offset(&doc_evacuator->overwrite_dir));
 
   if (evac_bucket_valid(bucket)) {
-    b = this->preserved_dirs.evacuate[bucket].head;
+    b = this->_preserved_dirs.evacuate[bucket].head;
   }
   while (b) {
     if (dir_offset(&b->dir) == dir_offset(&doc_evacuator->overwrite_dir)) {

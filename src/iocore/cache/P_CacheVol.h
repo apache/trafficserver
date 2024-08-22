@@ -209,29 +209,29 @@ public:
   bool
   evac_bucket_valid(off_t bucket) const
   {
-    return this->preserved_dirs.evac_bucket_valid(bucket);
+    return this->_preserved_dirs.evac_bucket_valid(bucket);
   }
 
   DLL<EvacuationBlock>
   get_evac_bucket(off_t bucket) const
   {
-    return this->preserved_dirs.evacuate[bucket];
+    return this->_preserved_dirs.evacuate[bucket];
   }
 
   void
   force_evacuate_head(Dir const *evac_dir, int pinned)
   {
-    return this->preserved_dirs.force_evacuate_head(evac_dir, pinned);
+    return this->_preserved_dirs.force_evacuate_head(evac_dir, pinned);
   }
 
   PreservationTable &
   get_preserved_dirs()
   {
-    return this->preserved_dirs;
+    return this->_preserved_dirs;
   }
 
 private:
-  mutable PreservationTable preserved_dirs;
+  mutable PreservationTable _preserved_dirs;
 
   int _agg_copy(CacheVC *vc);
   int _copy_writer_to_aggregation(CacheVC *vc);

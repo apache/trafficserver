@@ -55,9 +55,8 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
   DDbg(dbg_ctl_cache_evac, "evacuateDocDone %X o %d p %d new_o %d new_p %d", (int)key.slice32(0),
        (int)dir_offset(&this->overwrite_dir), (int)dir_phase(&this->overwrite_dir), (int)dir_offset(&this->dir),
        (int)dir_phase(&this->dir));
-  int i = dir_evac_bucket(&this->overwrite_dir);
   // nasty beeping race condition, need to have the EvacuationBlock here
-  EvacuationBlock *b = this->stripe->evac_bucket_valid(i) ? this->stripe->get_preserved_dirs().find(this->overwrite_dir) : nullptr;
+  EvacuationBlock *b = this->stripe->get_preserved_dirs().find(this->overwrite_dir);
   if (b) {
     // If the document is single fragment (although not tied to the vector),
     // then we don't have to put the directory entry in the lookaside
@@ -74,7 +73,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
       }
       ink_assert(evac);
       if (!evac) {
-        goto RET;
+        return free_CacheEvacuateDocVC(this);
       }
       if (evac->earliest_key.fold()) {
         DDbg(dbg_ctl_cache_evac, "evacdocdone: evacuating key %X earliest %X", evac->key.slice32(0), evac->earliest_key.slice32(0));
@@ -134,7 +133,6 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
       }
     }
   }
-RET:
   return free_CacheEvacuateDocVC(this);
 }
 
