@@ -108,15 +108,11 @@ public:
   int open_write(CacheVC *cont, int allow_if_writers, int max_writers);
   int open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
   int close_write(CacheVC *cont);
-  int close_write_lock(CacheVC *cont);
   int begin_read(CacheVC *cont) const;
-  int begin_read_lock(CacheVC *cont);
   // unused read-write interlock code
   // currently http handles a write-lock failure by retrying the read
   OpenDirEntry *open_read(const CryptoHash *key) const;
-  OpenDirEntry *open_read_lock(CryptoHash *key, EThread *t);
   int           close_read(CacheVC *cont) const;
-  int           close_read_lock(CacheVC *cont);
 
   int clear_dir_aio();
   int clear_dir();
@@ -286,8 +282,9 @@ StripeSM::within_hit_evacuate_window(Dir const *xdir) const
   off_t oft       = dir_offset(xdir) - 1;
   off_t write_off = (header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
   off_t delta     = oft - write_off;
-  if (delta >= 0)
+  if (delta >= 0) {
     return delta < hit_evacuate_window;
-  else
+  } else {
     return -delta > (data_blocks - hit_evacuate_window) && -delta < data_blocks;
+  }
 }
