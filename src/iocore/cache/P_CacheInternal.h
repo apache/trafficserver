@@ -151,6 +151,12 @@ int                 cache_write(CacheVC *, CacheHTTPInfoVector *);
 int                 get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
 CacheEvacuateDocVC *new_DocEvacuator(int nbytes, StripeSM *stripe);
 
+struct AIO_failure_handler : public Continuation {
+  int handle_disk_failure(int event, void *data);
+
+  AIO_failure_handler() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AIO_failure_handler::handle_disk_failure); }
+};
+
 // inline Functions
 
 inline CacheVC *

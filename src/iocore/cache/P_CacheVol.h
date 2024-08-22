@@ -238,12 +238,6 @@ private:
   int _copy_evacuator_to_aggregation(CacheVC *vc);
 };
 
-struct AIO_failure_handler : public Continuation {
-  int handle_disk_failure(int event, void *data);
-
-  AIO_failure_handler() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AIO_failure_handler::handle_disk_failure); }
-};
-
 // Global Data
 
 extern StripeSM                   **gstripes;
