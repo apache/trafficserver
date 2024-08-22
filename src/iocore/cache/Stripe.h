@@ -183,7 +183,7 @@ Stripe::direntries() const
 inline Dir *
 Stripe::dir_segment(int s) const
 {
-  return (Dir *)(((char *)this->dir) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
+  return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
 
 inline size_t
@@ -227,7 +227,7 @@ Stripe::vol_in_phase_agg_buf_valid(Dir const *e) const
 inline off_t
 Stripe::vol_offset(Dir const *e) const
 {
-  return this->start + (off_t)dir_offset(e) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
+  return this->start + reinterpret_cast<off_t>(dir_offset(e)) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
 inline off_t

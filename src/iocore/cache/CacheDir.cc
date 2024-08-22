@@ -971,7 +971,7 @@ void
 sync_cache_dir_on_shutdown()
 {
   Dbg(dbg_ctl_cache_dir_sync, "sync started");
-  EThread *t = (EThread *)0xdeadbeef;
+  EThread *t = reinterpret_cast<EThread *>(0xdeadbeef);
   for (int i = 0; i < gnstripes; i++) {
     gstripes[i]->shutdown(t);
   }

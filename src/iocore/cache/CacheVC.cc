@@ -162,8 +162,9 @@ int CacheVC::size_to_init = -1;
 
 CacheVC::CacheVC()
 {
-  size_to_init = sizeof(CacheVC) - (size_t) & ((CacheVC *)nullptr)->vio;
-  memset((void *)&vio, 0, size_to_init);
+  // Initialize Region C
+  size_to_init = sizeof(CacheVC) - (size_t) & (static_cast<CacheVC *>(nullptr))->vio;
+  memset(reinterpret_cast<void *>(&vio), 0, size_to_init);
 }
 
 VIO *
@@ -264,7 +265,7 @@ CacheVC::reenable_re(VIO *avio)
 #endif
   if (!trigger) {
     if (!is_io_in_progress() && !recursive) {
-      handleEvent(EVENT_NONE, (void *)nullptr);
+      handleEvent(EVENT_NONE);
     } else {
       trigger = avio->mutex->thread_holding->schedule_imm_local(this);
     }
@@ -616,7 +617,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
   }
   ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
-  _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, (void *)-ECACHE_NO_DOC);
+  _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   goto Lfree;
 Lremoved:
   _action.continuation->handleEvent(CACHE_EVENT_REMOVE, nullptr);
@@ -709,7 +710,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
 
   if (!io.ok()) {
-    result = (void *)-ECACHE_READ_FAIL;
+    result = reinterpret_cast<void *>(-ECACHE_READ_FAIL);
     goto Ldone;
   }
 

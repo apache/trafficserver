@@ -306,7 +306,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   if (f.close_complete) {
     recursive++;
     ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
-    vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, (void *)&vio);
+    vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, reinterpret_cast<void *>(&vio));
     recursive--;
   }
   return free_CacheVC(this);
@@ -718,7 +718,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
     }
 
   Lcollision:
-    int if_writers = ((uintptr_t)info == CACHE_ALLOW_MULTIPLE_WRITES);
+    int if_writers = (reinterpret_cast<uintptr_t>(info) == CACHE_ALLOW_MULTIPLE_WRITES);
     if (!od) {
       if ((err = stripe->open_write(this, if_writers, cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0) {
         goto Lfailure;
@@ -754,7 +754,7 @@ Lsuccess:
 Lfailure:
   Metrics::Counter::increment(cache_rsb.status[op_type].failure);
   Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
+  _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-err));
 Lcancel:
   if (od) {
     od->reading_vec = false;
@@ -779,7 +779,7 @@ CacheVC::openWriteStartBegin(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED
     Metrics::Counter::increment(cache_rsb.status[op_type].failure);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
     free_CacheVC(this);
-    _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
+    _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-err));
     return EVENT_DONE;
   }
   if (err < 0) {

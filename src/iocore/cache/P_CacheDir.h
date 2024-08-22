@@ -326,9 +326,9 @@ inline int64_t
 dir_to_offset(const Dir *d, const Dir *seg)
 {
 #if DIR_DEPTH < 5
-  return (((char *)d) - ((char *)seg)) / SIZEOF_DIR;
+  return (reinterpret_cast<const char *>(d) - reinterpret_cast<const char *>(seg)) / SIZEOF_DIR;
 #else
-  int64_t i = (int64_t)((((char *)d) - ((char *)seg)) / SIZEOF_DIR);
+  int64_t i = static_cast<int64_t>((reinterpret_cast<const char *>(d) - reinterpret_cast<const char *>(seg)) / SIZEOF_DIR);
   i         = i - (i / DIR_DEPTH);
   return i;
 #endif

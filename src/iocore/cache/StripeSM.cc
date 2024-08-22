@@ -908,12 +908,12 @@ StripeSM::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &toca
          this->header->write_pos + this->_write_buffer.get_buffer_pos(), c->first_key.slice32(0));
     [[maybe_unused]] int wrotelen = this->_agg_copy(c);
     ink_assert(writelen == wrotelen);
-    CacheVC *n = (CacheVC *)c->link.next;
+    CacheVC *n = static_cast<CacheVC *>(c->link.next);
     this->_write_buffer.get_pending_writers().dequeue();
     if (c->f.sync && c->f.use_first_key) {
       CacheVC *last = this->sync.tail;
       while (last && UINT_WRAP_LT(c->write_serial, last->write_serial)) {
-        last = (CacheVC *)last->link.prev;
+        last = static_cast<CacheVC *>(last->link.prev);
       }
       this->sync.insert(c, last);
     } else if (c->f.evacuator) {
@@ -1295,7 +1295,7 @@ StripeSM::evacuateWrite(CacheEvacuateDocVC *evacuator, int event, Event *e)
   /* insert the evacuator after all the other evacuators */
   CacheVC *cur   = static_cast<CacheVC *>(this->_write_buffer.get_pending_writers().head);
   CacheVC *after = nullptr;
-  for (; cur && cur->f.evacuator; cur = (CacheVC *)cur->link.next) {
+  for (; cur && cur->f.evacuator; cur = static_cast<CacheVC *>(cur->link.next)) {
     after = cur;
   }
   ink_assert(evacuator->agg_len <= AGG_SIZE);
