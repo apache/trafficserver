@@ -27,6 +27,8 @@
 // Cache Inspector and State Pages
 #include "P_CacheTest.h"
 
+#include "Stripe.h"
+
 #include "tscore/Filenames.h"
 #include "tscore/Layout.h"
 
@@ -42,6 +44,9 @@
 #include <string>
 #include <system_error>
 #include <filesystem>
+
+#define SCAN_BUF_SIZE              RECOVERY_SIZE
+#define SCAN_WRITER_LOCK_MAX_RETRY 5
 
 extern void register_cache_stats(CacheStatsBlock *rsb, const std::string prefix);
 
@@ -97,8 +102,10 @@ std::unordered_set<std::string>    known_bad_disks;
 namespace
 {
 
+DbgCtl dbg_ctl_cache_scan_truss{"cache_scan_truss"};
 DbgCtl dbg_ctl_cache_init{"cache_init"};
 DbgCtl dbg_ctl_cache_hosting{"cache_hosting"};
+DbgCtl dbg_ctl_cache_update{"cache_update"};
 
 } // end anonymous namespace
 
@@ -338,6 +345,141 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
 }
 
 Action *
+Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
+{
+  if (!CacheProcessor::IsCacheReady(type)) {
+    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NOT_READY);
+    return ACTION_RESULT_DONE;
+  }
+  ink_assert(caches[type] == this);
+
+  StripeSM     *stripe = key_to_stripe(key, hostname, host_len);
+  Dir           result, *last_collision = nullptr;
+  ProxyMutex   *mutex = cont->mutex.get();
+  OpenDirEntry *od    = nullptr;
+  CacheVC      *c     = nullptr;
+  {
+    CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
+    if (!lock.is_locked() || (od = stripe->open_read(key)) || dir_probe(key, stripe, &result, &last_collision)) {
+      c = new_CacheVC(cont);
+      SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
+      c->vio.op  = VIO::READ;
+      c->op_type = static_cast<int>(CacheOpType::Read);
+      Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+      Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+      c->first_key = c->key = c->earliest_key = *key;
+      c->stripe                               = stripe;
+      c->frag_type                            = type;
+      c->od                                   = od;
+    }
+    if (!c) {
+      goto Lmiss;
+    }
+    if (!lock.is_locked()) {
+      CONT_SCHED_LOCK_RETRY(c);
+      return &c->_action;
+    }
+    if (c->od) {
+      goto Lwriter;
+    }
+    c->dir            = result;
+    c->last_collision = last_collision;
+    switch (c->do_read_call(&c->key)) {
+    case EVENT_DONE:
+      return ACTION_RESULT_DONE;
+    case EVENT_RETURN:
+      goto Lcallreturn;
+    default:
+      return &c->_action;
+    }
+  }
+Lmiss:
+  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
+  return ACTION_RESULT_DONE;
+Lwriter:
+  SET_CONTINUATION_HANDLER(c, &CacheVC::openReadFromWriter);
+  if (c->handleEvent(EVENT_IMMEDIATE, nullptr) == EVENT_DONE) {
+    return ACTION_RESULT_DONE;
+  }
+  return &c->_action;
+Lcallreturn:
+  if (c->handleEvent(AIO_EVENT_DONE, nullptr) == EVENT_DONE) {
+    return ACTION_RESULT_DONE;
+  }
+  return &c->_action;
+}
+
+// main entry point for writing of non-http documents
+Action *
+Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options, time_t apin_in_cache,
+                  const char *hostname, int host_len)
+{
+  if (!CacheProcessor::IsCacheReady(frag_type)) {
+    cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-ECACHE_NOT_READY);
+    return ACTION_RESULT_DONE;
+  }
+
+  ink_assert(caches[frag_type] == this);
+
+  intptr_t res = 0;
+  CacheVC *c   = new_CacheVC(cont);
+  SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
+  c->vio.op        = VIO::WRITE;
+  c->op_type       = static_cast<int>(CacheOpType::Write);
+  c->stripe        = key_to_stripe(key, hostname, host_len);
+  StripeSM *stripe = c->stripe;
+  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+  c->first_key = c->key = *key;
+  c->frag_type          = frag_type;
+  /*
+     The transition from single fragment document to a multi-fragment document
+     would cause a problem if the key and the first_key collide. In case of
+     a collision, old vector data could be served to HTTP. Need to avoid that.
+     Also, when evacuating a fragment, we have to decide if its the first_key
+     or the earliest_key based on the dir_tag.
+   */
+  do {
+    rand_CacheKey(&c->key);
+  } while (DIR_MASK_TAG(c->key.slice32(2)) == DIR_MASK_TAG(c->first_key.slice32(2)));
+  c->earliest_key     = c->key;
+  c->info             = nullptr;
+  c->f.overwrite      = (options & CACHE_WRITE_OPT_OVERWRITE) != 0;
+  c->f.close_complete = (options & CACHE_WRITE_OPT_CLOSE_COMPLETE) != 0;
+  c->f.sync           = (options & CACHE_WRITE_OPT_SYNC) == CACHE_WRITE_OPT_SYNC;
+  // coverity[Y2K38_SAFETY:FALSE]
+  c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
+
+  if ((res = c->stripe->open_write_lock(c, false, 1)) > 0) {
+    // document currently being written, abort
+    Metrics::Counter::increment(cache_rsb.status[c->op_type].failure);
+    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[c->op_type].failure);
+    cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-res);
+    free_CacheVC(c);
+    return ACTION_RESULT_DONE;
+  }
+  if (res < 0) {
+    SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteStartBegin);
+    c->trigger = CONT_SCHED_LOCK_RETRY(c);
+    return &c->_action;
+  }
+  if (!c->f.overwrite) {
+    SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteMain);
+    c->callcont(CACHE_EVENT_OPEN_WRITE);
+    return ACTION_RESULT_DONE;
+  } else {
+    SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteOverwrite);
+    if (c->openWriteOverwrite(EVENT_IMMEDIATE, nullptr) == EVENT_DONE) {
+      return ACTION_RESULT_DONE;
+    } else {
+      return &c->_action;
+    }
+  }
+}
+
+Action *
 Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
@@ -379,8 +521,245 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
     return &c->_action;
   }
 }
-// CacheVConnection
 
+Action *
+Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_second)
+{
+  Dbg(dbg_ctl_cache_scan_truss, "inside scan");
+  if (!CacheProcessor::IsCacheReady(CACHE_FRAG_TYPE_HTTP)) {
+    cont->handleEvent(CACHE_EVENT_SCAN_FAILED, nullptr);
+    return ACTION_RESULT_DONE;
+  }
+
+  CacheVC *c = new_CacheVC(cont);
+  c->stripe  = nullptr;
+  /* do we need to make a copy */
+  c->hostname        = const_cast<char *>(hostname);
+  c->host_len        = host_len;
+  c->op_type         = static_cast<int>(CacheOpType::Scan);
+  c->buf             = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(SCAN_BUF_SIZE), MEMALIGNED);
+  c->scan_msec_delay = (SCAN_BUF_SIZE / KB_per_second);
+  c->offset          = 0;
+  SET_CONTINUATION_HANDLER(c, &CacheVC::scanStripe);
+  eventProcessor.schedule_in(c, HRTIME_MSECONDS(c->scan_msec_delay));
+  cont->handleEvent(CACHE_EVENT_SCAN, c);
+  return &c->_action;
+}
+
+Action *
+Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
+                 CacheFragType type, const char *hostname, int host_len)
+{
+  if (!CacheProcessor::IsCacheReady(type)) {
+    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NOT_READY);
+    return ACTION_RESULT_DONE;
+  }
+  ink_assert(caches[type] == this);
+
+  StripeSM     *stripe = key_to_stripe(key, hostname, host_len);
+  Dir           result, *last_collision = nullptr;
+  ProxyMutex   *mutex = cont->mutex.get();
+  OpenDirEntry *od    = nullptr;
+  CacheVC      *c     = nullptr;
+
+  {
+    CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
+    if (!lock.is_locked() || (od = stripe->open_read(key)) || dir_probe(key, stripe, &result, &last_collision)) {
+      c            = new_CacheVC(cont);
+      c->first_key = c->key = c->earliest_key = *key;
+      c->stripe                               = stripe;
+      c->vio.op                               = VIO::READ;
+      c->op_type                              = static_cast<int>(CacheOpType::Read);
+      Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+      Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+      c->request.copy_shallow(request);
+      c->frag_type = CACHE_FRAG_TYPE_HTTP;
+      c->params    = params;
+      c->od        = od;
+    }
+    if (!lock.is_locked()) {
+      SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
+      CONT_SCHED_LOCK_RETRY(c);
+      return &c->_action;
+    }
+    if (!c) {
+      goto Lmiss;
+    }
+    if (c->od) {
+      goto Lwriter;
+    }
+    // hit
+    c->dir = c->first_dir = result;
+    c->last_collision     = last_collision;
+    SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
+    switch (c->do_read_call(&c->key)) {
+    case EVENT_DONE:
+      return ACTION_RESULT_DONE;
+    case EVENT_RETURN:
+      goto Lcallreturn;
+    default:
+      return &c->_action;
+    }
+  }
+Lmiss:
+  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
+  return ACTION_RESULT_DONE;
+Lwriter:
+  cont->handleEvent(CACHE_EVENT_OPEN_READ_RWW, nullptr);
+  SET_CONTINUATION_HANDLER(c, &CacheVC::openReadFromWriter);
+  if (c->handleEvent(EVENT_IMMEDIATE, nullptr) == EVENT_DONE) {
+    return ACTION_RESULT_DONE;
+  }
+  return &c->_action;
+Lcallreturn:
+  if (c->handleEvent(AIO_EVENT_DONE, nullptr) == EVENT_DONE) {
+    return ACTION_RESULT_DONE;
+  }
+  return &c->_action;
+}
+
+// main entry point for writing of http documents
+Action *
+Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
+                  const CacheKey * /* key1 ATS_UNUSED */, CacheFragType type, const char *hostname, int host_len)
+{
+  if (!CacheProcessor::IsCacheReady(type)) {
+    cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-ECACHE_NOT_READY);
+    return ACTION_RESULT_DONE;
+  }
+
+  ink_assert(caches[type] == this);
+  intptr_t err        = 0;
+  int      if_writers = (uintptr_t)info == CACHE_ALLOW_MULTIPLE_WRITES;
+  CacheVC *c          = new_CacheVC(cont);
+  c->vio.op           = VIO::WRITE;
+  c->first_key        = *key;
+  /*
+     The transition from single fragment document to a multi-fragment document
+     would cause a problem if the key and the first_key collide. In case of
+     a collision, old vector data could be served to HTTP. Need to avoid that.
+     Also, when evacuating a fragment, we have to decide if its the first_key
+     or the earliest_key based on the dir_tag.
+   */
+  do {
+    rand_CacheKey(&c->key);
+  } while (DIR_MASK_TAG(c->key.slice32(2)) == DIR_MASK_TAG(c->first_key.slice32(2)));
+  c->earliest_key  = c->key;
+  c->frag_type     = CACHE_FRAG_TYPE_HTTP;
+  c->stripe        = key_to_stripe(key, hostname, host_len);
+  StripeSM *stripe = c->stripe;
+  c->info          = info;
+  if (c->info && (uintptr_t)info != CACHE_ALLOW_MULTIPLE_WRITES) {
+    /*
+       Update has the following code paths :
+       a) Update alternate header only :
+       In this case the vector has to be rewritten. The content
+       length(update_len) and the key for the document are set in the
+       new_info in the set_http_info call.
+       HTTP OPERATIONS
+       open_write with info set
+       set_http_info new_info
+       (total_len == 0)
+       close
+       b) Update alternate and data
+       In this case both the vector and the data needs to be rewritten.
+       This case is similar to the standard write of a document case except
+       that the new_info is inserted into the vector at the alternate_index
+       (overwriting the old alternate) rather than the end of the vector.
+       HTTP OPERATIONS
+       open_write with info set
+       set_http_info new_info
+       do_io_write =>  (total_len > 0)
+       close
+       c) Delete an alternate
+       The vector may need to be deleted (if there was only one alternate) or
+       rewritten (if there were more than one alternate).
+       HTTP OPERATIONS
+       open_write with info set
+       close
+     */
+    c->f.update = 1;
+    c->op_type  = static_cast<int>(CacheOpType::Update);
+    DDbg(dbg_ctl_cache_update, "Update called");
+    info->object_key_get(&c->update_key);
+    ink_assert(!(c->update_key.is_zero()));
+    c->update_len = info->object_size_get();
+  } else {
+    c->op_type = static_cast<int>(CacheOpType::Write);
+  }
+
+  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+  // coverity[Y2K38_SAFETY:FALSE]
+  c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
+
+  {
+    CACHE_TRY_LOCK(lock, c->stripe->mutex, cont->mutex->thread_holding);
+    if (lock.is_locked()) {
+      if ((err = c->stripe->open_write(c, if_writers, cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0) {
+        goto Lfailure;
+      }
+      // If there are multiple writers, then this one cannot be an update.
+      // Only the first writer can do an update. If that's the case, we can
+      // return success to the state machine now.;
+      if (c->od->has_multiple_writers()) {
+        goto Lmiss;
+      }
+      if (!dir_probe(key, c->stripe, &c->dir, &c->last_collision)) {
+        if (c->f.update) {
+          // fail update because vector has been GC'd
+          // This situation can also arise in openWriteStartDone
+          err = ECACHE_NO_DOC;
+          goto Lfailure;
+        }
+        // document doesn't exist, begin write
+        goto Lmiss;
+      } else {
+        c->od->reading_vec = true;
+        // document exists, read vector
+        SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteStartDone);
+        switch (c->do_read_call(&c->first_key)) {
+        case EVENT_DONE:
+          return ACTION_RESULT_DONE;
+        case EVENT_RETURN:
+          goto Lcallreturn;
+        default:
+          return &c->_action;
+        }
+      }
+    }
+    // missed lock
+    SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteStartDone);
+    CONT_SCHED_LOCK_RETRY(c);
+    return &c->_action;
+  }
+
+Lmiss:
+  SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteMain);
+  c->callcont(CACHE_EVENT_OPEN_WRITE);
+  return ACTION_RESULT_DONE;
+
+Lfailure:
+  Metrics::Counter::increment(cache_rsb.status[c->op_type].failure);
+  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[c->op_type].failure);
+  cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
+  if (c->od) {
+    c->openWriteCloseDir(EVENT_IMMEDIATE, nullptr);
+    return ACTION_RESULT_DONE;
+  }
+  free_CacheVC(c);
+  return ACTION_RESULT_DONE;
+
+Lcallreturn:
+  if (c->handleEvent(AIO_EVENT_DONE, nullptr) == EVENT_DONE) {
+    return ACTION_RESULT_DONE;
+  }
+  return &c->_action;
+}
+
+// CacheVConnection
 CacheVConnection::CacheVConnection() : VConnection(nullptr) {}
 
 // if generic_host_rec.stripes == nullptr, what do we do???
