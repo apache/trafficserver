@@ -25,7 +25,7 @@
 #include "P_CacheDoc.h"
 #include "P_CacheInternal.h"
 #include "P_CacheStats.h"
-#include "P_CacheVol.h"
+#include "StripeSM.h"
 #include "P_CacheDir.h"
 
 #include "CacheEvacuateDocVC.h"
