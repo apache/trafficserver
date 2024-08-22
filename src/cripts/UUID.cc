@@ -19,6 +19,9 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
+namespace Cript
+{
+
 Cript::string
 UUID::Unique::_get(Cript::Context *context)
 {
@@ -39,3 +42,5 @@ UUID::Request::_get(Cript::Context *context)
 
   return ret;
 }
+
+} // namespace Cript

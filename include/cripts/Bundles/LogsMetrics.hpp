@@ -26,7 +26,7 @@
 #include "cripts/Instance.hpp"
 #include "cripts/Bundle.hpp"
 
-namespace Bundle
+namespace Cript::Bundle
 {
 class LogsMetrics : public Cript::Bundle::Base
 {
@@ -87,4 +87,4 @@ private:
   bool                       _tcpinfo    = false; // Turn on TCP info logging
 };
 
-} // namespace Bundle
+} // namespace Cript::Bundle

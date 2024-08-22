@@ -83,18 +83,18 @@ private:
 
   // These are "pre-allocated", but not initialized. They will be initialized
   // when used via a factory.
-  Client::Response   _client_resp_header;
-  Client::Request    _client_req_header;
-  Client::Connection _client_conn;
-  Client::URL        _client_url;
-  Remap::From::URL   _remap_from_url;
-  Remap::To::URL     _remap_to_url;
-  Pristine::URL      _pristine_url;
-  Server::Response   _server_resp_header;
-  Server::Request    _server_req_header;
-  Server::Connection _server_conn;
-  Cache::URL         _cache_url;
-  Parent::URL        _parent_url;
+  Cript::Client::Response   _client_resp_header;
+  Cript::Client::Request    _client_req_header;
+  Cript::Client::Connection _client_conn;
+  Cript::Client::URL        _client_url;
+  Cript::Remap::From::URL   _remap_from_url;
+  Cript::Remap::To::URL     _remap_to_url;
+  Cript::Pristine::URL      _pristine_url;
+  Cript::Server::Response   _server_resp_header;
+  Cript::Server::Request    _server_req_header;
+  Cript::Server::Connection _server_conn;
+  Cript::Cache::URL         _cache_url;
+  Cript::Parent::URL        _parent_url;
 }; // End class Context
 
 } // namespace Cript

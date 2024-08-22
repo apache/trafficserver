@@ -25,6 +25,9 @@
 #define ENCODED_LEN(len) (((int)ceil(1.34 * (len) + 5)) + 1)
 #define DECODED_LEN(len) (((int)ceil((len) / 1.33 + 5)) + 1)
 
+namespace Cript
+{
+
 Cript::string
 Crypto::Base64::Encode(Cript::string_view str)
 {
@@ -212,3 +215,5 @@ Crypto::HMAC::SHA256::Encrypt(Cript::string_view str, const Cript::string &key)
 
   return retval;
 }
+
+} // namespace Cript

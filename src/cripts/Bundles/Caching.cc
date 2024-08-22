@@ -19,7 +19,7 @@
 #include "cripts/Preamble.hpp"
 #include "cripts/Bundles/Caching.hpp"
 
-namespace Bundle
+namespace Cript::Bundle
 {
 const Cript::string Caching::_name = "Bundle::Caching";
 
@@ -36,7 +36,7 @@ Caching::doRemap(Cript::Context *context)
 void
 Caching::doReadResponse(Cript::Context *context)
 {
-  borrow resp = Server::Response::Get();
+  borrow resp = Cript::Server::Response::Get();
 
   // .cache_control(str)
   if (!_cc.empty() && (resp.status > 199) && (resp.status < 400) && (resp["Cache-Control"].empty() || _force_cc)) {
@@ -44,4 +44,4 @@ Caching::doReadResponse(Cript::Context *context)
   }
 }
 
-} // namespace Bundle
+} // namespace Cript::Bundle

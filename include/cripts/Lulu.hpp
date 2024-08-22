@@ -402,8 +402,6 @@ Cript::string                   Hex(Cript::string_view sv);
 Cript::string                   UnHex(const Cript::string &str);
 Cript::string                   UnHex(Cript::string_view sv);
 
-} // namespace Cript
-
 class Control
 {
   class Base
@@ -538,10 +536,12 @@ public:
   Patch patch;
 }; // End class Versions
 
+} // namespace Cript
+
 // Formatters for {fmt}
 namespace fmt
 {
-template <> struct formatter<Versions> {
+template <> struct formatter<Cript::Versions> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -550,13 +550,13 @@ template <> struct formatter<Versions> {
 
   template <typename FormatContext>
   auto
-  format(Versions &version, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Versions &version, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", version.GetSV());
   }
 };
 
-template <> struct formatter<Versions::Major> {
+template <> struct formatter<Cript::Versions::Major> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -565,13 +565,13 @@ template <> struct formatter<Versions::Major> {
 
   template <typename FormatContext>
   auto
-  format(Versions::Major &major, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Versions::Major &major, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(major));
   }
 };
 
-template <> struct formatter<Versions::Minor> {
+template <> struct formatter<Cript::Versions::Minor> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -580,13 +580,13 @@ template <> struct formatter<Versions::Minor> {
 
   template <typename FormatContext>
   auto
-  format(Versions::Minor &minor, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Versions::Minor &minor, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(minor));
   }
 };
 
-template <> struct formatter<Versions::Patch> {
+template <> struct formatter<Cript::Versions::Patch> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -595,7 +595,7 @@ template <> struct formatter<Versions::Patch> {
 
   template <typename FormatContext>
   auto
-  format(Versions::Patch &patch, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Versions::Patch &patch, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(patch));
   }

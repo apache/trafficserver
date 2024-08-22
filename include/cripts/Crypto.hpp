@@ -31,7 +31,7 @@
 
 #include "cripts/Lulu.hpp"
 
-namespace Crypto
+namespace Cript::Crypto
 {
 class Base64
 {
@@ -261,12 +261,12 @@ namespace HMAC
   }; // End class SHA256
 } // namespace HMAC
 
-} // namespace Crypto
+} // namespace Cript::Crypto
 
 // Formatters for {fmt}
 namespace fmt
 {
-template <> struct formatter<Crypto::SHA256> {
+template <> struct formatter<Cript::Crypto::SHA256> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -275,13 +275,13 @@ template <> struct formatter<Crypto::SHA256> {
 
   template <typename FormatContext>
   auto
-  format(Crypto::SHA256 &sha, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Crypto::SHA256 &sha, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", sha.Hex());
   }
 };
 
-template <> struct formatter<Crypto::SHA512> {
+template <> struct formatter<Cript::Crypto::SHA512> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -290,13 +290,13 @@ template <> struct formatter<Crypto::SHA512> {
 
   template <typename FormatContext>
   auto
-  format(Crypto::SHA512 &sha, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Crypto::SHA512 &sha, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", sha.Hex());
   }
 };
 
-template <> struct formatter<Crypto::AES256> {
+template <> struct formatter<Cript::Crypto::AES256> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -305,9 +305,9 @@ template <> struct formatter<Crypto::AES256> {
 
   template <typename FormatContext>
   auto
-  format(Crypto::AES256 &sha, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Crypto::AES256 &sha, FormatContext &ctx) -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", Crypto::Base64::Encode(sha.Message()));
+    return fmt::format_to(ctx.out(), "{}", Cript::Crypto::Base64::Encode(sha.Message()));
   }
 };
 

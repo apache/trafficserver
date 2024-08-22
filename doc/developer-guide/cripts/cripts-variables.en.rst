@@ -59,7 +59,7 @@ get the length of a string, you can use the ``size()`` method:
 
 .. code-block:: cpp
 
-     borrow req  = Client::Request::Get();
+     borrow req  = Cript::Client::Request::Get();
 
      if (req["Host"].size() > 3) {
          // Do something
@@ -128,7 +128,7 @@ control planes with Cripts. This is done using the ``Records`` object, for examp
 .. code-block:: cpp
 
    do_remap() {
-     auto http_cache = Cript::Records("proxy.config.http.cache.http");
+     auto http_cache = Cript::Cript::Records("proxy.config.http.cache.http");
 
      if (AsInteger(http_cache.Get()) > 0) {
        CDebug("HTTP Cache is on");

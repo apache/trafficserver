@@ -40,10 +40,10 @@ Hash
 =================================   ===============================================================
 Object                              Description
 =================================   ===============================================================
-``Crypto::MD5``                     MD5 hashing.
-``Crypto::SHA256``                  SHA256 hashing.
-``Crypto::SHA512``                  SHA512 hashing.
-``Crypto::HMAC::SHA256``            HMAC-SHA256 hashing.
+``Cript::Crypto::MD5``              MD5 hashing.
+``Cript::Crypto::SHA256``           SHA256 hashing.
+``Cript::Crypto::SHA512``           SHA512 hashing.
+``Cript::Crypto::HMAC::SHA256``     HMAC-SHA256 hashing.
 =================================   ===============================================================
 
 These objects all provide a ``Encode()`` and ``Decode()`` method, to hash and unhash strings.
@@ -53,7 +53,7 @@ Examples:
 
    do_remap()
    {
-     CDebug("SHA256 = {}", Crypto::SHA256::Encode("Hello World"));
+     CDebug("SHA256 = {}", Cript::Crypto::SHA256::Encode("Hello World"));
    }
 
 .. _cripts-misc-crypto-encryption:
@@ -69,7 +69,7 @@ is provided to retrieve the final encrypted data.
 =================================   ===============================================================
 Object                              Description
 =================================   ===============================================================
-``Crypto::AES256``                  AES256 encryption and decryption.
+``Cript::Crypto::AES256``           AES256 encryption and decryption.
 =================================   ===============================================================
 
 .. _cripts-misc-crypto-encoding:
@@ -83,8 +83,8 @@ as a URL escaping object, ``Escape``.
 =================================   ===============================================================
 Object                              Description
 =================================   ===============================================================
-``Crypto::Base64``                  Methods for Base64 encoding.
-``Crypto::Escape``                  Methods for URL escaping.
+``Cript::Crypto::Base64``           Methods for Base64 encoding.
+``Cript::Crypto::Escape``           Methods for URL escaping.
 =================================   ===============================================================
 
 These objects all provide a ``Encode()`` and ``Decode()`` method, to encode and decode strings.

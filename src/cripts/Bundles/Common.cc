@@ -19,7 +19,7 @@
 #include "cripts/Preamble.hpp"
 #include "cripts/Bundles/Common.hpp"
 
-namespace Bundle
+namespace Cript::Bundle
 {
 const Cript::string Common::_name = "Bundle::Common";
 
@@ -134,7 +134,7 @@ Common::doRemap(Cript::Context *context)
 {
   // .dscp(int)
   if (_dscp > 0) {
-    borrow conn = Client::Connection::Get();
+    borrow conn = Cript::Client::Connection::Get();
 
     CDebug("Setting DSCP = {}", _dscp);
     conn.dscp = _dscp;
@@ -156,4 +156,4 @@ Common::doRemap(Cript::Context *context)
   }
 }
 
-} // namespace Bundle
+} // namespace Cript::Bundle

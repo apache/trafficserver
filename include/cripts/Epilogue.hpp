@@ -257,7 +257,7 @@ default_cont(TSCont contp, TSEvent event, void *edata)
         }
       }
       wrap_send_request(context, true, CaseArg);
-      Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+      Cript::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
     }
     break;
   case TS_EVENT_HTTP_READ_RESPONSE_HDR: // 60006
@@ -342,8 +342,8 @@ default_cont(TSCont contp, TSEvent event, void *edata)
     wrap_post_remap(context, true, CaseArg);
 
     if (!context->state.error.Failed()) {
-      Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
-      Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+      Cript::Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
+      Cript::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
     }
     break;
     // This is for cleanup, and should always be called / wrapped
@@ -491,8 +491,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   // Don't do the callbacks when we are in a failure state.
   if (!context->state.error.Failed()) {
-    Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
-    Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+    Cript::Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
+    Cript::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
 
     if (context->state.enabled_hooks >= Cript::Callbacks::DO_POST_REMAP) {
       context->default_cont = TSContCreate(default_cont, nullptr);
@@ -539,7 +539,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   // See if the Client URL was modified, which dicates the return code here.
-  if (Client::URL::_get(context).Modified()) {
+  if (Cript::Client::URL::_get(context).Modified()) {
     context->p_instance.debug("Client::URL was modified, returning TSREMAP_DID_REMAP");
     return TSREMAP_DID_REMAP;
   } else {

@@ -59,6 +59,15 @@ def print_header():
 
 #include "cripts/ConfigsBase.hpp"
 
+namespace Cript
+{
+""")
+
+
+def print_footer():
+    print("""
+
+} // namespace Cript
 """)
 
 
@@ -133,5 +142,6 @@ for elem in elements:
 
 print_header()
 print_class(tree)
+print_footer()
 # pp = pprint.PrettyPrinter(indent=4)
 # pp.pprint(tree)

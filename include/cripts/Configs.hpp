@@ -27,6 +27,9 @@
 
 #include "cripts/ConfigsBase.hpp"
 
+namespace Cript
+{
+
 class Proxy
 {
 private:
@@ -166,6 +169,8 @@ private:
 
     public:
       Down_Server down_server;
+
+      Cript::IntConfig drop_chunked_trailers{"proxy.config.http.drop_chunked_trailers"};
 
     private:
       class Flow_Control
@@ -447,3 +452,5 @@ public:
   Config config;
 
 }; // End class Proxy
+
+} // namespace Cript

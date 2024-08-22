@@ -82,6 +82,6 @@ using fmt::format;
 #include "cripts/Context.hpp"
 
 // These are globals, making certain operations nice and convenient, without wasting plugin space
-extern Proxy    proxy;   // Access to all overridable configurations
-extern Control  control; // Access to the HTTP control mechanism
-extern Versions version; // Access to the ATS version information
+extern Cript::Proxy    proxy;   // Access to all overridable configurations
+extern Cript::Control  control; // Access to the HTTP control mechanism
+extern Cript::Versions version; // Access to the ATS version information

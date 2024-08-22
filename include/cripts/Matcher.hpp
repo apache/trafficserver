@@ -29,7 +29,7 @@
 #include "ts/ts.h"
 #include "cripts/Lulu.hpp"
 
-namespace Matcher
+namespace Cript::Matcher
 {
 namespace Range
 {
@@ -73,19 +73,19 @@ namespace Range
       return contains(swoc::IPAddr(target));
     }
 
-    bool
+    [[nodiscard]] bool
     Match(in_addr_t target) const
     {
       return contains(swoc::IPAddr(target));
     }
 
-    bool
+    [[nodiscard]] bool
     Match(swoc::IPAddr const &target) const
     {
       return contains(target);
     }
 
-    bool
+    [[nodiscard]] bool
     Contains(swoc::IPAddr const &target) const
     {
       return contains(target);
@@ -97,7 +97,7 @@ namespace Range
       return contains(swoc::IPAddr(target));
     }
 
-    bool
+    [[nodiscard]] bool
     Contains(in_addr_t target) const
     {
       return contains(swoc::IPAddr(target));
@@ -118,19 +118,19 @@ namespace Range
 
 namespace List
 {
-  class Method : public std::vector<Header::Method>
+  class Method : public std::vector<Cript::Header::Method>
   {
 #undef DELETE // ToDo: macOS shenanigans here, defining DELETE as a macro
 
-    using super_type = std::vector<Header::Method>;
+    using super_type = std::vector<Cript::Header::Method>;
     using self_type  = Method;
 
   public:
     Method() = delete;
-    explicit Method(Header::Method method) : std::vector<Header::Method>() { push_back(method); }
+    explicit Method(Cript::Header::Method method) : std::vector<Cript::Header::Method>() { push_back(method); }
     void operator=(const self_type &) = delete;
 
-    Method(self_type const &method) : std::vector<Header::Method>() { insert(end(), std::begin(method), std::end(method)); }
+    Method(self_type const &method) : std::vector<Cript::Header::Method>() { insert(end(), std::begin(method), std::end(method)); }
 
     Method(const std::initializer_list<self_type> &list)
     {
@@ -139,7 +139,7 @@ namespace List
       }
     }
 
-    Method(std::initializer_list<Header::Method> list)
+    Method(std::initializer_list<Cript::Header::Method> list)
     {
       for (auto &it : list) {
         push_back(it);
@@ -149,15 +149,15 @@ namespace List
     // Make sure we only allow the Cript::Method::* constants
 
     [[nodiscard]] bool
-    Contains(Header::Method method) const
+    Contains(Cript::Header::Method method) const
     {
       auto data = method.Data();
 
-      return end() != std::find_if(begin(), end(), [&](const Header::Method &header) { return header.Data() == data; });
+      return end() != std::find_if(begin(), end(), [&](const Cript::Header::Method &header) { return header.Data() == data; });
     }
 
     [[nodiscard]] bool
-    Match(Header::Method method) const
+    Match(Cript::Header::Method method) const
     {
       return Contains(method);
     }
@@ -262,4 +262,4 @@ private:
   RegexEntries _regexes;
 };
 
-} // namespace Matcher
+} // namespace Cript::Matcher

@@ -27,7 +27,7 @@
 #include "cripts/Bundle.hpp"
 #include <cripts/ConfigsBase.hpp>
 
-namespace Bundle
+namespace Cript::Bundle
 {
 class Common : public Cript::Bundle::Base
 {
@@ -81,4 +81,4 @@ private:
   RecordsList                _configs;
 };
 
-} // namespace Bundle
+} // namespace Cript::Bundle

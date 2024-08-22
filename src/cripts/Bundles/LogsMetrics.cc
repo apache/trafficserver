@@ -20,7 +20,7 @@
 #include "cripts/Preamble.hpp"
 #include "cripts/Bundles/LogsMetrics.hpp"
 
-namespace Bundle
+namespace Cript::Bundle
 {
 const Cript::string LogsMetrics::_name = "Bundle::LogsMetrics";
 
@@ -88,7 +88,7 @@ LogsMetrics::propstats(const Cript::string_view &label)
       auto name = fmt::format("{}.{}", _label, Bundle::PROPSTAT_SUFFIXES[ix]);
 
       _inst->debug("Creating metrics for: {}", name);
-      _inst->metrics[ix] = Metrics::Counter::Create(name);
+      _inst->metrics[ix] = Cript::Metrics::Counter::Create(name);
     }
   }
 
@@ -98,11 +98,11 @@ LogsMetrics::propstats(const Cript::string_view &label)
 void
 LogsMetrics::doTxnClose(Cript::Context *context)
 {
-  borrow resp = Client::Response::Get();
+  borrow resp = Cript::Client::Response::Get();
 
   // .tcpinfo(bool)
   if (_tcpinfo && control.logging.Get()) {
-    borrow conn = Client::Connection::Get();
+    borrow conn = Cript::Client::Connection::Get();
 
     resp["@TCPInfo"] += fmt::format(",TC; {}", conn.tcpinfo.Log());
   }
@@ -147,8 +147,8 @@ LogsMetrics::doTxnClose(Cript::Context *context)
 void
 LogsMetrics::doSendResponse(Cript::Context *context)
 {
-  borrow resp = Client::Response::Get();
-  borrow conn = Client::Connection::Get();
+  borrow resp = Cript::Client::Response::Get();
+  borrow conn = Cript::Client::Connection::Get();
 
   // .sample(int)
   if (_log_sample > 0) {
@@ -190,10 +190,10 @@ LogsMetrics::doRemap(Cript::Context *context)
 
   // .tcpinfo(bool)
   if (_tcpinfo && sampled) {
-    borrow req      = Client::Request::Get();
-    borrow conn     = Client::Connection::Get();
+    borrow req      = Cript::Client::Request::Get();
+    borrow conn     = Cript::Client::Connection::Get();
     req["@TCPInfo"] = fmt::format("TS; {}", conn.tcpinfo.Log());
   }
 }
 
-} // namespace Bundle
+} // namespace Cript::Bundle

@@ -50,7 +50,7 @@ global_initialization()
 #endif
 
   // Initialize various sub modules
-  Plugin::Remap::Initialize();
+  Cript::Plugin::Remap::Initialize();
 }
 
 integer
@@ -167,19 +167,19 @@ Cript::Splitter(Cript::string_view input, char delim)
 }
 
 bool
-Control::Base::_get(Cript::Context *context) const
+Cript::Control::Base::_get(Cript::Context *context) const
 {
   return TSHttpTxnCntlGet(context->state.txnp, _ctrl);
 }
 
 void
-Control::Base::_set(Cript::Context *context, bool value)
+Cript::Control::Base::_set(Cript::Context *context, bool value)
 {
   TSHttpTxnCntlSet(context->state.txnp, _ctrl, value);
 }
 
 Cript::string_view
-Versions::GetSV()
+Cript::Versions::GetSV()
 {
   if (_version.length() == 0) {
     const char *ver = TSTrafficServerVersionGet();
@@ -191,9 +191,9 @@ Versions::GetSV()
 }
 
 // Globals
-Proxy    proxy;
-Control  control;
-Versions version;
+Cript::Proxy    proxy;
+Cript::Control  control;
+Cript::Versions version;
 
 std::string plugin_debug_tag;
 

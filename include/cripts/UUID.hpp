@@ -18,60 +18,61 @@
 #pragma once
 
 #include "cripts/Lulu.hpp"
-namespace Cript
-{
-class Context;
-}
-
 #include "ts/ts.h"
 #include "ts/remap.h"
 
+namespace Cript
+{
+class Context;
+
 namespace UUID
 {
-class Process
-{
-  using self_type = Process;
-
-public:
-  Process()                         = delete;
-  Process(const self_type &)        = delete;
-  void operator=(const self_type &) = delete;
-
-  // This doesn't use the context so we can implement it here
-  static Cript::string
-  _get(Cript::Context * /* context ATS_UNUSED */)
+  class Process
   {
-    TSUuid process = TSProcessUuidGet();
+    using self_type = Process;
 
-    return TSUuidStringGet(process);
-  }
+  public:
+    Process()                         = delete;
+    Process(const self_type &)        = delete;
+    void operator=(const self_type &) = delete;
 
-}; // End class UUID::Process
+    // This doesn't use the context so we can implement it here
+    static Cript::string
+    _get(Cript::Context * /* context ATS_UNUSED */)
+    {
+      TSUuid process = TSProcessUuidGet();
 
-class Unique
-{
-  using self_type = Unique;
+      return TSUuidStringGet(process);
+    }
 
-public:
-  Unique()                          = delete;
-  Unique(const self_type &)         = delete;
-  void operator=(const self_type &) = delete;
+  }; // End class UUID::Process
 
-  static Cript::string _get(Cript::Context *context);
+  class Unique
+  {
+    using self_type = Unique;
 
-}; // End class UUID::Unique
+  public:
+    Unique()                          = delete;
+    Unique(const self_type &)         = delete;
+    void operator=(const self_type &) = delete;
 
-class Request
-{
-  using self_type = Request;
+    static Cript::string _get(Cript::Context *context);
 
-public:
-  Request()                         = delete;
-  Request(const self_type &)        = delete;
-  void operator=(const self_type &) = delete;
+  }; // End class UUID::Unique
 
-  static Cript::string _get(Cript::Context *context);
+  class Request
+  {
+    using self_type = Request;
 
-}; // End class UUID::Request
+  public:
+    Request()                         = delete;
+    Request(const self_type &)        = delete;
+    void operator=(const self_type &) = delete;
+
+    static Cript::string _get(Cript::Context *context);
+
+  }; // End class UUID::Request
 
 } // namespace UUID
+
+} // namespace Cript

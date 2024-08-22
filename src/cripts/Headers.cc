@@ -20,23 +20,26 @@
 #include "cripts/Preamble.hpp"
 
 // Constants
-const Header::Iterator Header::Iterator::_end = Header::Iterator("__END__", Header::Iterator::END_TAG);
+const Cript::Header::Iterator Cript::Header::Iterator::_end = Cript::Header::Iterator("__END__", Cript::Header::Iterator::END_TAG);
 
-namespace Cript::Method
+namespace Cript
+{
+
+namespace Method
 {
 #undef DELETE // ToDo: macOS shenanigans here, defining DELETE as a macro
-const Header::Method GET(TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET);
-const Header::Method HEAD(TS_HTTP_METHOD_HEAD, TS_HTTP_LEN_HEAD);
-const Header::Method POST(TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST);
-const Header::Method PUT(TS_HTTP_METHOD_PUT, TS_HTTP_LEN_PUT);
-const Header::Method PUSH(TS_HTTP_METHOD_PUSH, TS_HTTP_LEN_PUSH);
-const Header::Method DELETE(TS_HTTP_METHOD_DELETE, TS_HTTP_LEN_DELETE);
-const Header::Method OPTIONS(TS_HTTP_METHOD_OPTIONS, TS_HTTP_LEN_OPTIONS);
-const Header::Method CONNECT(TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT);
-const Header::Method TRACE(TS_HTTP_METHOD_TRACE, TS_HTTP_LEN_TRACE);
-// This is a special feature of ATS
-const Header::Method PURGE(TS_HTTP_METHOD_PURGE, TS_HTTP_LEN_PURGE);
-} // namespace Cript::Method
+  const Cript::Header::Method GET(TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET);
+  const Cript::Header::Method HEAD(TS_HTTP_METHOD_HEAD, TS_HTTP_LEN_HEAD);
+  const Cript::Header::Method POST(TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST);
+  const Cript::Header::Method PUT(TS_HTTP_METHOD_PUT, TS_HTTP_LEN_PUT);
+  const Cript::Header::Method PUSH(TS_HTTP_METHOD_PUSH, TS_HTTP_LEN_PUSH);
+  const Cript::Header::Method DELETE(TS_HTTP_METHOD_DELETE, TS_HTTP_LEN_DELETE);
+  const Cript::Header::Method OPTIONS(TS_HTTP_METHOD_OPTIONS, TS_HTTP_LEN_OPTIONS);
+  const Cript::Header::Method CONNECT(TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT);
+  const Cript::Header::Method TRACE(TS_HTTP_METHOD_TRACE, TS_HTTP_LEN_TRACE);
+  // This is a special feature of ATS
+  const Cript::Header::Method PURGE(TS_HTTP_METHOD_PURGE, TS_HTTP_LEN_PURGE);
+} // namespace Method
 
 Header::Status &
 Header::Status::operator=(int status)
@@ -315,7 +318,7 @@ Header::iterate()
   }
 }
 
-Client::Response &
+Cript::Client::Response &
 Client::Response::_get(Cript::Context *context)
 {
   CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
@@ -379,3 +382,5 @@ Server::Response::_get(Cript::Context *context)
 
   return context->_server_resp_header;
 }
+
+} // namespace Cript

@@ -19,6 +19,9 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
+namespace Cript
+{
+
 Matcher::PCRE::~PCRE()
 {
   for (auto &it : _regexes) {
@@ -84,3 +87,5 @@ Matcher::PCRE::Contains(Cript::string_view subject, PCRE2_SIZE offset, uint32_t 
 
   return res;
 }
+
+} // namespace Cript

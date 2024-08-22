@@ -63,13 +63,13 @@ ID::value(Cript::Context *context)
 {
   switch (_type) {
   case Type::REQUEST:
-    _value = UUID::Request::_get(context);
+    _value = Cript::UUID::Request::_get(context);
     break;
   case Type::PROCESS:
-    _value = UUID::Process::_get(context);
+    _value = Cript::UUID::Process::_get(context);
     break;
   case Type::UNIQUE:
-    _value = UUID::Unique::_get(context);
+    _value = Cript::UUID::Unique::_get(context);
     break;
   default:
     _value = "";
@@ -121,19 +121,19 @@ IP::value(Cript::Context *context)
 {
   switch (_type) {
   case Type::CLIENT: {
-    auto ip = Client::Connection::Get().IP();
+    auto ip = Cript::Client::Connection::Get().IP();
     _value  = ip.string();
   } break;
   case Type::INBOUND: {
-    auto ip = Client::Connection::Get().LocalIP();
+    auto ip = Cript::Client::Connection::Get().LocalIP();
     _value  = ip.string();
   } break;
   case Type::SERVER: {
-    auto ip = Server::Connection::Get().IP();
+    auto ip = Cript::Server::Connection::Get().IP();
     _value  = ip.string();
   } break;
   case Type::OUTBOUND: {
-    auto ip = Server::Connection::Get().LocalIP();
+    auto ip = Cript::Server::Connection::Get().LocalIP();
     _value  = ip.string();
   } break;
   default:
@@ -186,7 +186,7 @@ CIDR::CIDR(Cript::string_view &cidr) : super_type(cidr)
 Cript::string_view
 CIDR::value(Cript::Context *context)
 {
-  auto ip = Client::Connection::Get().IP();
+  auto ip = Cript::Client::Connection::Get().IP();
 
   _value = ip.string(_ipv4_cidr, _ipv6_cidr);
 
@@ -284,37 +284,37 @@ URL::value(Cript::Context *context)
 {
   switch (_type) {
   case Type::CLIENT: {
-    borrow url = Client::URL::Get();
+    borrow url = Cript::Client::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::REMAP_FROM: {
-    borrow url = Remap::From::URL::Get();
+    borrow url = Cript::Remap::From::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::REMAP_TO: {
-    borrow url = Remap::To::URL::Get();
+    borrow url = Cript::Remap::To::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::PRISTINE: {
-    borrow url = Pristine::URL::Get();
+    borrow url = Cript::Pristine::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::CACHE: {
-    borrow url = Cache::URL::Get();
+    borrow url = Cript::Cache::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::PARENT: {
-    borrow url = Parent::URL::Get();
+    borrow url = Cript::Parent::URL::Get();
 
     return _getComponent(url);
   } break;
@@ -330,7 +330,7 @@ URL::value(Cript::Context *context)
 } // namespace detail
 
 detail::HRWBridge *
-Bundle::Headers::BridgeFactory(const Cript::string &source)
+Cript::Bundle::Headers::BridgeFactory(const Cript::string &source)
 {
   Cript::string_view str = source;
 

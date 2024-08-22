@@ -22,7 +22,7 @@
 
 #include "cripts/Lulu.hpp"
 
-namespace File
+namespace Cript::File
 {
 
 class Path : public std::filesystem::path
@@ -75,4 +75,4 @@ namespace Line
 
 } // namespace Line
 
-} // namespace File
+} // namespace Cript::File

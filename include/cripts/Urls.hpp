@@ -588,190 +588,190 @@ protected:
 
 }; // End class Url
 
-} // namespace Cript
-
 // The Pristine URL is immutable, we should "delete" the operator= methods
 namespace Pristine
 {
-class URL : public Cript::Url
-{
-  using super_type = Cript::Url;
-  using self_type  = URL;
-
-public:
-  URL()                             = default;
-  URL(const self_type &)            = delete;
-  void operator=(const self_type &) = delete;
-
-  static self_type &_get(Cript::Context *context);
-
-  [[nodiscard]] bool
-  ReadOnly() const override
+  class URL : public Cript::Url
   {
-    return true;
-  }
+    using super_type = Cript::Url;
+    using self_type  = URL;
 
-}; // End class Pristine::URL
+  public:
+    URL()                             = default;
+    URL(const self_type &)            = delete;
+    void operator=(const self_type &) = delete;
+
+    static self_type &_get(Cript::Context *context);
+
+    [[nodiscard]] bool
+    ReadOnly() const override
+    {
+      return true;
+    }
+
+  }; // End class Pristine::URL
 
 } // namespace Pristine
 
 namespace Client
 {
-class URL : public Cript::Url
-{
-  using super_type = Cript::Url;
-  using self_type  = URL;
-
-public:
-  URL()                             = default;
-  URL(const self_type &)            = delete;
-  void operator=(const self_type &) = delete;
-
-  // We must not release the bufp etc. since it comes from the RRI structure
-  void
-  Reset() override
+  class URL : public Cript::Url
   {
-  }
+    using super_type = Cript::Url;
+    using self_type  = URL;
 
-  static self_type &_get(Cript::Context *context);
-  bool              _update(Cript::Context *context);
+  public:
+    URL()                             = default;
+    URL(const self_type &)            = delete;
+    void operator=(const self_type &) = delete;
 
-private:
-  void _initialize(Cript::Context *context);
+    // We must not release the bufp etc. since it comes from the RRI structure
+    void
+    Reset() override
+    {
+    }
 
-}; // End class Client::URL
+    static self_type &_get(Cript::Context *context);
+    bool              _update(Cript::Context *context);
+
+  private:
+    void _initialize(Cript::Context *context);
+
+  }; // End class Client::URL
 
 } // namespace Client
 
 namespace Remap
 {
-namespace From
-{
-  class URL : public Cript::Url
+  namespace From
   {
-    using super_type = Cript::Url;
-    using self_type  = URL;
-
-  public:
-    URL()                             = default;
-    URL(const self_type &)            = delete;
-    void operator=(const self_type &) = delete;
-
-    // We must not release the bufp etc. since it comes from the RRI structure
-    void
-    Reset() override
+    class URL : public Cript::Url
     {
-    }
+      using super_type = Cript::Url;
+      using self_type  = URL;
 
-    [[nodiscard]] bool
-    ReadOnly() const override
-    {
-      return true;
-    }
+    public:
+      URL()                             = default;
+      URL(const self_type &)            = delete;
+      void operator=(const self_type &) = delete;
 
-    static self_type &_get(Cript::Context *context);
-    bool              _update(Cript::Context *context);
+      // We must not release the bufp etc. since it comes from the RRI structure
+      void
+      Reset() override
+      {
+      }
 
-  private:
-    void _initialize(Cript::Context *context);
+      [[nodiscard]] bool
+      ReadOnly() const override
+      {
+        return true;
+      }
 
-  }; // End class Client::URL
+      static self_type &_get(Cript::Context *context);
+      bool              _update(Cript::Context *context);
 
-} // namespace From
+    private:
+      void _initialize(Cript::Context *context);
 
-namespace To
-{
-  class URL : public Cript::Url
+    }; // End class Client::URL
+
+  } // namespace From
+
+  namespace To
   {
-    using super_type = Cript::Url;
-    using self_type  = URL;
-
-  public:
-    URL()                             = default;
-    URL(const self_type &)            = delete;
-    void operator=(const self_type &) = delete;
-
-    // We must not release the bufp etc. since it comes from the RRI structure
-    void
-    Reset() override
+    class URL : public Cript::Url
     {
-    }
+      using super_type = Cript::Url;
+      using self_type  = URL;
 
-    [[nodiscard]] bool
-    ReadOnly() const override
-    {
-      return true;
-    }
+    public:
+      URL()                             = default;
+      URL(const self_type &)            = delete;
+      void operator=(const self_type &) = delete;
 
-    static self_type &_get(Cript::Context *context);
-    bool              _update(Cript::Context *context);
+      // We must not release the bufp etc. since it comes from the RRI structure
+      void
+      Reset() override
+      {
+      }
 
-  private:
-    void _initialize(Cript::Context *context);
+      [[nodiscard]] bool
+      ReadOnly() const override
+      {
+        return true;
+      }
 
-  }; // End class Client::URL
+      static self_type &_get(Cript::Context *context);
+      bool              _update(Cript::Context *context);
 
-} // namespace To
+    private:
+      void _initialize(Cript::Context *context);
+
+    }; // End class Client::URL
+
+  } // namespace To
 
 } // namespace Remap
 
 namespace Cache
 {
-class URL : public Cript::Url // ToDo: This can maybe be a subclass of Client::URL ?
-{
-  using super_type = Cript::Url;
-  using self_type  = URL;
-
-public:
-  URL()                             = default;
-  URL(const self_type &)            = delete;
-  void operator=(const self_type &) = delete;
-
-  static self_type &_get(Cript::Context *context);
-  bool              _update(Cript::Context *context);
-
-private:
-  void
-  _initialize(Cript::Transaction *state, Client::Request *req)
+  class URL : public Cript::Url // ToDo: This can maybe be a subclass of Client::URL ?
   {
-    Url::_initialize(state);
+    using super_type = Cript::Url;
+    using self_type  = URL;
 
-    _bufp    = req->BufP();
-    _hdr_loc = req->MLoc();
-  }
+  public:
+    URL()                             = default;
+    URL(const self_type &)            = delete;
+    void operator=(const self_type &) = delete;
 
-}; // End class Cache::URL
+    static self_type &_get(Cript::Context *context);
+    bool              _update(Cript::Context *context);
+
+  private:
+    void
+    _initialize(Cript::Transaction *state, Client::Request *req)
+    {
+      Url::_initialize(state);
+
+      _bufp    = req->BufP();
+      _hdr_loc = req->MLoc();
+    }
+
+  }; // End class Cache::URL
 
 } // namespace Cache
 
 namespace Parent
 {
-class URL : public Cript::Url
-{
-  using super_type = Cript::Url;
-  using self_type  = URL;
-
-public:
-  URL()                             = default;
-  URL(const self_type &)            = delete;
-  void operator=(const self_type &) = delete;
-
-  static self_type &_get(Cript::Context *context);
-  bool              _update(Cript::Context *context);
-
-private:
-  void
-  _initialize(Cript::Transaction *state, Client::Request *req)
+  class URL : public Cript::Url
   {
-    Url::_initialize(state);
+    using super_type = Cript::Url;
+    using self_type  = URL;
 
-    _bufp    = req->BufP();
-    _hdr_loc = req->MLoc();
-  }
+  public:
+    URL()                             = default;
+    URL(const self_type &)            = delete;
+    void operator=(const self_type &) = delete;
 
-}; // End class Cache::URL
+    static self_type &_get(Cript::Context *context);
+    bool              _update(Cript::Context *context);
+
+  private:
+    void
+    _initialize(Cript::Transaction *state, Client::Request *req)
+    {
+      Url::_initialize(state);
+
+      _bufp    = req->BufP();
+      _hdr_loc = req->MLoc();
+    }
+
+  }; // End class Cache::URL
 
 } // namespace Parent
+
+} // namespace Cript
 
 // Formatters for {fmt}
 namespace fmt

@@ -101,7 +101,7 @@ protected:
 };
 } // namespace detail
 
-namespace Time
+namespace Cript::Time
 {
 // ToDo: Right now, we only have localtime, but we should support e.g. UTC and
 // other time zone instances.
@@ -125,12 +125,12 @@ public:
 
 }; // End class Time::Local
 
-} // namespace Time
+} // namespace Cript::Time
 
 // Formatters for {fmt}
 namespace fmt
 {
-template <> struct formatter<Time::Local> {
+template <> struct formatter<Cript::Time::Local> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -139,7 +139,7 @@ template <> struct formatter<Time::Local> {
 
   template <typename FormatContext>
   auto
-  format(Time::Local &time, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Time::Local &time, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", time.Epoch());
   }

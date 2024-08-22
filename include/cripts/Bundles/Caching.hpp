@@ -25,7 +25,7 @@
 #include "cripts/Instance.hpp"
 #include "cripts/Bundle.hpp"
 
-namespace Bundle
+namespace Cript::Bundle
 {
 class Caching : public Cript::Bundle::Base
 {
@@ -81,4 +81,4 @@ private:
   bool                       _disabled = false;
 };
 
-} // namespace Bundle
+} // namespace Cript::Bundle

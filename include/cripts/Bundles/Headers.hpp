@@ -76,7 +76,7 @@ public:
 };
 } // namespace detail
 
-namespace Bundle
+namespace Cript::Bundle
 {
 class Headers : public Cript::Bundle::Base
 {
@@ -125,4 +125,4 @@ private:
   detail::HeadersType _server_response;
 };
 
-} // namespace Bundle
+} // namespace Cript::Bundle

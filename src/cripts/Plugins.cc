@@ -21,6 +21,9 @@
 
 #include "cripts/Preamble.hpp"
 
+namespace Cript
+{
+
 // This is global for all Cripts, and it will not get reloaded on a config reload.
 PluginFactory gPluginFactory;
 
@@ -85,3 +88,5 @@ Plugin::Remap::_runRemap(Cript::Context *context)
 {
   _plugin->doRemap(context->state.txnp, context->rri);
 }
+
+} // namespace Cript

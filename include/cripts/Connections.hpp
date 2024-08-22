@@ -346,81 +346,86 @@ protected:
 
 } // namespace detail
 
+namespace Cript
+{
+
 namespace Client
 {
-class Connection : public detail::ConnBase
-{
-  using pe        = detail::ConnBase;
-  using self_type = Connection;
-
-public:
-  Connection()                      = default;
-  Connection(const self_type &)     = delete;
-  void operator=(const self_type &) = delete;
-
-  [[nodiscard]] int  FD() const override;
-  [[nodiscard]] int  Count() const override;
-  static Connection &_get(Cript::Context *context);
-
-  void
-  SetDscp(int val) override
+  class Connection : public detail::ConnBase
   {
-    TSHttpTxnClientPacketDscpSet(_state->txnp, val);
-  }
+    using pe        = detail::ConnBase;
+    using self_type = Connection;
 
-  void
-  SetMark(int val) override
-  {
-    TSHttpTxnClientPacketMarkSet(_state->txnp, val);
-  }
+  public:
+    Connection()                      = default;
+    Connection(const self_type &)     = delete;
+    void operator=(const self_type &) = delete;
 
-  [[nodiscard]] Cript::IP
-  LocalIP() const override
-  {
-    return Cript::IP{TSHttpTxnIncomingAddrGet(_state->txnp)};
-  }
+    [[nodiscard]] int  FD() const override;
+    [[nodiscard]] int  Count() const override;
+    static Connection &_get(Cript::Context *context);
 
-}; // End class Client::Connection
+    void
+    SetDscp(int val) override
+    {
+      TSHttpTxnClientPacketDscpSet(_state->txnp, val);
+    }
+
+    void
+    SetMark(int val) override
+    {
+      TSHttpTxnClientPacketMarkSet(_state->txnp, val);
+    }
+
+    [[nodiscard]] Cript::IP
+    LocalIP() const override
+    {
+      return Cript::IP{TSHttpTxnIncomingAddrGet(_state->txnp)};
+    }
+
+  }; // End class Client::Connection
 
 } // namespace Client
 
 namespace Server
 {
-class Connection : public detail::ConnBase
-{
-  using pe        = detail::ConnBase;
-  using self_type = Connection;
-
-public:
-  Connection()                      = default;
-  Connection(const self_type &)     = delete;
-  void operator=(const self_type &) = delete;
-
-  [[nodiscard]] int  FD() const override;
-  [[nodiscard]] int  Count() const override;
-  static Connection &_get(Cript::Context *context);
-
-  void
-  SetDscp(int val) override
+  class Connection : public detail::ConnBase
   {
-    TSHttpTxnServerPacketDscpSet(_state->txnp, val);
-  }
+    using pe        = detail::ConnBase;
+    using self_type = Connection;
 
-  void
-  SetMark(int val) override
-  {
-    TSHttpTxnServerPacketMarkSet(_state->txnp, val);
-  }
+  public:
+    Connection()                      = default;
+    Connection(const self_type &)     = delete;
+    void operator=(const self_type &) = delete;
 
-  [[nodiscard]] Cript::IP
-  LocalIP() const override
-  {
-    return Cript::IP{TSHttpTxnOutgoingAddrGet(_state->txnp)};
-  }
+    [[nodiscard]] int  FD() const override;
+    [[nodiscard]] int  Count() const override;
+    static Connection &_get(Cript::Context *context);
 
-}; // End class Server::Connection
+    void
+    SetDscp(int val) override
+    {
+      TSHttpTxnServerPacketDscpSet(_state->txnp, val);
+    }
+
+    void
+    SetMark(int val) override
+    {
+      TSHttpTxnServerPacketMarkSet(_state->txnp, val);
+    }
+
+    [[nodiscard]] Cript::IP
+    LocalIP() const override
+    {
+      return Cript::IP{TSHttpTxnOutgoingAddrGet(_state->txnp)};
+    }
+
+  }; // End class Server::Connection
 
 } // namespace Server
+
+} // namespace Cript
 
 // Formatters for {fmt}
 namespace fmt

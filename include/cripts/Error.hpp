@@ -27,7 +27,6 @@
 namespace Cript
 {
 class Context;
-}
 
 class Error
 {
@@ -124,3 +123,5 @@ private:
   Status _status;
   bool   _failed = false;
 };
+
+} // namespace Cript

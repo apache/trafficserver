@@ -26,6 +26,9 @@
 #include "cripts/Transaction.hpp"
 #include "cripts/Lulu.hpp"
 
+namespace Cript
+{
+
 class Header
 {
   using self_type = Header;
@@ -46,7 +49,7 @@ public:
     Header      *_owner  = nullptr;
     TSHttpStatus _status = TS_HTTP_STATUS_NONE;
 
-  }; // End class Header::Status
+  }; // End class Cript::Header::Status
 
   class Reason
   {
@@ -60,7 +63,7 @@ public:
 
   private:
     Header *_owner = nullptr;
-  }; // End class Header::Reason
+  }; // End class Cript::Header::Reason
 
   class Body
   {
@@ -74,7 +77,7 @@ public:
 
   private:
     Header *_owner = nullptr;
-  }; // End class Header::Body
+  }; // End class Cript::Header::Body
 
   class Method
   {
@@ -95,7 +98,7 @@ public:
     operator Cript::string_view() { return GetSV(); }
 
     // ToDo: This is a bit weird, but seems needed (for now) to allow for the
-    // Header::Method::* constants.
+    // Cript::Header::Method::* constants.
     [[nodiscard]] Cript::string_view::const_pointer
     Data() const
     {
@@ -137,7 +140,7 @@ public:
     Header            *_owner = nullptr;
     Cript::string_view _method;
 
-  }; // End class Header::Method
+  }; // End class Cript::Header::Method
 
   class CacheStatus
   {
@@ -173,7 +176,7 @@ public:
     Header            *_owner = nullptr;
     Cript::string_view _cache;
 
-  }; // Class Header::CacheStatus
+  }; // Class Cript::Header::CacheStatus
 
   class String : public Cript::StringViewMixin<String>
   {
@@ -237,7 +240,7 @@ public:
     TSMLoc             _field_loc = nullptr;
     Cript::string_view _name;
 
-  }; // Class Header::String
+  }; // Class Cript::Header::String
 
   class Name : public Cript::StringViewMixin<Name>
   {
@@ -257,7 +260,7 @@ public:
 
     using super_type::StringViewMixin;
 
-  }; // Class Header::Name
+  }; // Class Cript::Header::Name
 
 public:
   class Iterator
@@ -326,7 +329,7 @@ public:
     Header  *_owner = nullptr;
 
     static const Iterator _end;
-  }; // Class Header::iterator
+  }; // Class Cript::Header::iterator
 
   Header() : status(this), reason(this), body(this), cache(this) {}
 
@@ -424,89 +427,87 @@ public:
 
 namespace Client
 {
-class URL;
-class Request : public RequestHeader
-{
-  using super_type = RequestHeader;
-  using self_type  = Request;
+  class URL;
+  class Request : public RequestHeader
+  {
+    using super_type = RequestHeader;
+    using self_type  = Request;
 
-public:
-  Request()                         = default;
-  Request(const self_type &)        = delete;
-  void operator=(const self_type &) = delete;
+  public:
+    Request()                         = default;
+    Request(const self_type &)        = delete;
+    void operator=(const self_type &) = delete;
 
-  // Implemented later, because needs the context.
-  static self_type &_get(Cript::Context *context);
+    // Implemented later, because needs the context.
+    static self_type &_get(Cript::Context *context);
 
-}; // End class Client::Request
+  }; // End class Client::Request
 
-class Response : public ResponseHeader
-{
-  using super_type = ResponseHeader;
-  using self_type  = Response;
+  class Response : public ResponseHeader
+  {
+    using super_type = ResponseHeader;
+    using self_type  = Response;
 
-public:
-  Response()                        = default;
-  Response(const self_type &)       = delete;
-  void operator=(const self_type &) = delete;
+  public:
+    Response()                        = default;
+    Response(const self_type &)       = delete;
+    void operator=(const self_type &) = delete;
 
-  // Implemented later, because needs the context.
-  static self_type &_get(Cript::Context *context);
+    // Implemented later, because needs the context.
+    static self_type &_get(Cript::Context *context);
 
-}; // End class Client::Response
+  }; // End class Client::Response
 
 } // namespace Client
 
 namespace Server
 {
-class Request : public RequestHeader
-{
-  using super_type = RequestHeader;
-  using self_type  = Request;
+  class Request : public RequestHeader
+  {
+    using super_type = RequestHeader;
+    using self_type  = Request;
 
-public:
-  Request()                         = default;
-  Request(const self_type &)        = delete;
-  void operator=(const self_type &) = delete;
+  public:
+    Request()                         = default;
+    Request(const self_type &)        = delete;
+    void operator=(const self_type &) = delete;
 
-  // Implemented later, because needs the context.
-  static Request &_get(Cript::Context *context);
-}; // End class Server::Request
+    // Implemented later, because needs the context.
+    static Request &_get(Cript::Context *context);
+  }; // End class Server::Request
 
-class Response : public ResponseHeader
-{
-  using super_type = ResponseHeader;
-  using self_type  = Response;
+  class Response : public ResponseHeader
+  {
+    using super_type = ResponseHeader;
+    using self_type  = Response;
 
-public:
-  Response()                        = default;
-  Response(const self_type &)       = delete;
-  void operator=(const self_type &) = delete;
+  public:
+    Response()                        = default;
+    Response(const self_type &)       = delete;
+    void operator=(const self_type &) = delete;
 
-  // Implemented later, because needs the context.
-  static self_type &_get(Cript::Context *context);
+    // Implemented later, because needs the context.
+    static self_type &_get(Cript::Context *context);
 
-}; // End class Server::Response
+  }; // End class Server::Response
 
 } // namespace Server
 
 // Some static methods for the Method class
-namespace Cript
-{
 namespace Method
 {
 #undef DELETE // ToDo: macOS shenanigans here, defining DELETE as a macro
-  extern const Header::Method GET;
-  extern const Header::Method HEAD;
-  extern const Header::Method POST;
-  extern const Header::Method PUT;
-  extern const Header::Method PUSH;
-  extern const Header::Method DELETE;
-  extern const Header::Method OPTIONS;
-  extern const Header::Method CONNECT;
-  extern const Header::Method TRACE;
+  extern const Cript::Header::Method GET;
+  extern const Cript::Header::Method HEAD;
+  extern const Cript::Header::Method POST;
+  extern const Cript::Header::Method PUT;
+  extern const Cript::Header::Method PUSH;
+  extern const Cript::Header::Method DELETE;
+  extern const Cript::Header::Method OPTIONS;
+  extern const Cript::Header::Method CONNECT;
+  extern const Cript::Header::Method TRACE;
   // This is a special feature of ATS
-  extern const Header::Method PURGE;
+  extern const Cript::Header::Method PURGE;
 } // namespace Method
 
 class Context;
@@ -515,7 +516,7 @@ class Context;
 // Formatters for {fmt}
 namespace fmt
 {
-template <> struct formatter<Header::Method> {
+template <> struct formatter<Cript::Header::Method> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -524,13 +525,13 @@ template <> struct formatter<Header::Method> {
 
   template <typename FormatContext>
   auto
-  format(Header::Method &method, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Header::Method &method, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", method.GetSV());
   }
 };
 
-template <> struct formatter<Header::String> {
+template <> struct formatter<Cript::Header::String> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -539,13 +540,13 @@ template <> struct formatter<Header::String> {
 
   template <typename FormatContext>
   auto
-  format(Header::String &str, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Header::String &str, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", str.GetSV());
   }
 };
 
-template <> struct formatter<Header::Name> {
+template <> struct formatter<Cript::Header::Name> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -554,7 +555,7 @@ template <> struct formatter<Header::Name> {
 
   template <typename FormatContext>
   auto
-  format(Header::Name &name, FormatContext &ctx) -> decltype(ctx.out())
+  format(Cript::Header::Name &name, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", name.GetSV());
   }

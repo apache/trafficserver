@@ -42,13 +42,13 @@ making this easy.
 .. note::
     Explicitly forcing an HTTP error overrides any other response status that may have been set.
 
-=========================   =======================================================================
-Function                    Description
-=========================   =======================================================================
-``Error::Status::Set()``    Sets the response to the status code, and force the request to error.
-``Error::Status::Get()``    Get the current response status for the request.
-``Error::Reason::Set()``    Sets an explicit reason message with the status code. **TBD**
-=========================   =======================================================================
+================================   =======================================================================
+Function                           Description
+================================   =======================================================================
+``Cript::Error::Status::Set()``    Sets the response to the status code, and force the request to error.
+``Cript::Error::Status::Get()``    Get the current response status for the request.
+``Cript::Error::Reason::Set()``    Sets an explicit reason message with the status code. **TBD**
+================================   =======================================================================
 
 Example:
 
@@ -56,14 +56,14 @@ Example:
 
    do_remap()
    {
-     borrow req  = Client::Request::get();
+     borrow req  = Cript::Client::Request::get();
 
      if (req["X-Header"] == "yes") {
-       Error::Status::Set(403);
+       Cript::Error::Status::Set(403);
      }
      // Do more stuff here
 
-     if (Error::status::Get() != 403) {
+     if (Cript::Error::status::Get() != 403) {
        // Do even more stuff here if we're not in error state
      }
    }
@@ -113,7 +113,7 @@ Example usage to turn off a particular hook conditionally:
 
    do_remap()
    {
-     static borrow req = Client::Request::get();
+     static borrow req = Cript::Client::Request::get();
 
      if (req["X-Header"] == "yes") {
        transaction.DisableCallback(Cript::Callback::DO_READ_RESPONSE);
@@ -128,7 +128,7 @@ Time
 ====
 
 Cripts has encapsulated some common time-related functions in the core.  At the
-moment only the localtime is available, via the ``Time::Local`` object and its
+moment only the localtime is available, via the ``Cript::Time::Local`` object and its
 ``Now()`` method. The ``Now()`` method returns the current time as an object
 with the following functions:
 
@@ -175,7 +175,7 @@ plugin based on the client request headers:
    do_remap()
    {
      static borrow plugin = instance.plugins["my_ratelimit"];
-     borrow        req    = Client::Request::Get();
+     borrow        req    = Cript::Client::Request::Get();
 
      if (req["X-Header"] == "yes") {
        plugin.RunRemap();
@@ -195,22 +195,23 @@ In same cases, albeit not likely, you may need to read lines of text from A
 file. Cripts of course allows this to be done with C or C++ standard file APIs,
 but we also provide a few convenience functions to make this easier.
 
-The ``File`` object encapsulates the common C++ files operations. For convenience,
+The ``Cript::File`` object encapsulates the common C++ files operations. For convenience,
 and being such a common use case, reading a single line from a file is provided
-by the ``File::Line::Reader`` object. Some examples:
+by the ``Cript::File::Line::Reader`` object. Some examples:
 
 .. code-block:: cpp
 
    do_remap()
    {
-     static const File::Path p1("/tmp/foo");
-     static const File::Path p2("/tmp/secret.txt");
-     if (File::Status(p1).Type() == File::Type::regular) {
+     static const Cript::File::Path p1("/tmp/foo");
+     static const Cript::File::Path p2("/tmp/secret.txt");
+
+     if (Cript::File::Status(p1).Type() == Cript::File::Type::regular) {
        resp["X-Foo-Exists"] = "yes";
      } else {
        resp["X-Foo-Exists"] = "no";
      }
-     string secret = File::Line::Reader(p2);
+     string secret = Cript::File::Line::Reader(p2);
      CDebug("Read secret = {}", secret);
    }
 
@@ -225,9 +226,9 @@ different purposes. The ``UUID`` class provides the following objects:
 =========================   =======================================================================
 Object                      Description
 =========================   =======================================================================
-``UUID::Process``           Returns a UUID for the running process (changes on ATS startup).
-``UUID::Unique``            Returns a completely unique UUID for the server and transacion.
-``UUID::Request``           Returns a unique id for this request.
+``Cript::UUID::Process``    Returns a UUID for the running process (changes on ATS startup).
+``Cript::UUID::Unique``     Returns a completely unique UUID for the server and transacion.
+``Cript::UUID::Request``    Returns a unique id for this request.
 =========================   =======================================================================
 
 Using the ``UUID`` object is simple, via the ``Get()`` method. Here's an example:
@@ -236,9 +237,9 @@ Using the ``UUID`` object is simple, via the ``Get()`` method. Here's an example
 
    do_remap()
    {
-     static borrow req = Client::Request::Get();
+     static borrow req = Cript::Client::Request::Get();
 
-     resp["X-UUID"] = UUID::Unique::Get();
+     resp["X-UUID"] = Cript::UUID::Unique::Get();
    }
 
 .. _cripts-metrics:
@@ -249,12 +250,12 @@ Metrics
 Cripts metrics are built directly on top of the atomic core ATS metrics. As such, they not only
 work the same as the core metrics, but they are also as efficient. There are two types of metrics:
 
-=========================   =======================================================================
-Metric                      Description
-=========================   =======================================================================
-``Metric::Counter``         A simple counter, which can only be incremented.
-``Metric::Gauge``           A gauge, which can be incremented and decremented, and set to a value.
-=========================   =======================================================================
+================================   =======================================================================
+Metric                             Description
+================================   =======================================================================
+``Cript::Metric::Counter``         A simple counter, which can only be incremented.
+``Cript::Metric::Gauge``           A gauge, which can be incremented and decremented, and set to a value.
+================================   =======================================================================
 
 Example:
 
@@ -262,15 +263,15 @@ Example:
 
    do_create_instance()
    {
-     instance.metrics[0] = Metrics::Counter::Create("cript.example1.instance_calls");
+     instance.metrics[0] = Cript::Metrics::Counter::Create("cript.example1.instance_calls");
    }
 
    do_remap()
    {
-     static auto plugin_metric = Metrics::Counter("cript.example1.plugin_calls");
+     static auto plugin_metric = Cript::Metrics::Counter("cript.example1.plugin_calls");
 
      plugin_metric.Increment();
      instance.metrics[0]->Increment();
    }
 
-A ``Metric::Gauge`` can also be set via the ``Setter()`` method.
+A ``Cript::Metric::Gauge`` can also be set via the ``Setter()`` method.

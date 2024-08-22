@@ -23,8 +23,68 @@
 constexpr unsigned NORMALIZED_TIME_QUANTUM = 3600; // 1 hour
 
 // Some common network ranges
-const Matcher::Range::IP Cript::Net::Localhost({"127.0.0.1", "::1"});
-const Matcher::Range::IP Cript::Net::RFC1918({"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"});
+const Cript::Matcher::Range::IP Cript::Net::Localhost({"127.0.0.1", "::1"});
+const Cript::Matcher::Range::IP Cript::Net::RFC1918({"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"});
+
+void
+detail::ConnBase::Pacing::operator=(uint32_t val)
+{
+  TSAssert(_owner);
+  if (val == 0) {
+    val = Off;
+  }
+
+#ifdef SO_MAX_PACING_RATE
+  int connfd = _owner->FD();
+  int res    = setsockopt(connfd, SOL_SOCKET, SO_MAX_PACING_RATE, (char *)&val, sizeof(val));
+
+  // EBADF indicates possible client abort
+  if ((res < 0) && (errno != EBADF)) {
+    TSError("[fq_pacing] Error setting SO_MAX_PACING_RATE, errno=%d", errno);
+  }
+#endif
+  _val = val;
+}
+
+void
+detail::ConnBase::TcpInfo::initialize()
+{
+#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
+  if (!_ready) {
+    int connfd = _owner->FD();
+
+    TSAssert(_owner->_state->txnp);
+    if (connfd < 0 || TSHttpTxnIsInternal(_owner->_state->txnp)) { // No TCPInfo for internal transactions
+      _ready = false;
+      // ToDo: Deal with errors?
+    } else {
+      if (getsockopt(connfd, IPPROTO_TCP, TCP_INFO, &info, &info_len) == 0) {
+        _ready = (info_len > 0);
+      }
+    }
+  }
+#endif
+}
+
+Cript::string_view
+detail::ConnBase::TcpInfo::Log()
+{
+  initialize();
+  // We intentionally do not use the old tcpinfo that may be stored, since we may
+  // request this numerous times (measurements). Also make sure there's always a value.
+  _logging = "-";
+
+  if (_ready) {
+    // A lot of this is taken verbatim from header_rewrite, may want to rewrite this with sstreams
+#if HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS
+    _logging = fmt::format("{};{};{};{}", info.tcpi_rtt, info.tcpi_rto, info.tcpi_snd_cwnd, info.tcpi_retrans);
+#elif HAVE_STRUCT_TCP_INFO___TCPI_RETRANS
+    _logging = fmt::format("{};{};{};{}", info.tcpi_rtt, info.tcpi_rto, info.tcpi_snd_cwnd, info.__tcpi_retrans);
+#endif
+  }
+
+  return _logging;
+}
 
 namespace Cript
 {
@@ -141,68 +201,6 @@ IP::Sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_cidr)
   return (_sampler % static_cast<uint16_t>(rate * UINT16_MAX)) == _sampler;
 }
 
-} // namespace Cript
-
-void
-detail::ConnBase::Pacing::operator=(uint32_t val)
-{
-  TSAssert(_owner);
-  if (val == 0) {
-    val = Off;
-  }
-
-#ifdef SO_MAX_PACING_RATE
-  int connfd = _owner->FD();
-  int res    = setsockopt(connfd, SOL_SOCKET, SO_MAX_PACING_RATE, (char *)&val, sizeof(val));
-
-  // EBADF indicates possible client abort
-  if ((res < 0) && (errno != EBADF)) {
-    TSError("[fq_pacing] Error setting SO_MAX_PACING_RATE, errno=%d", errno);
-  }
-#endif
-  _val = val;
-}
-
-void
-detail::ConnBase::TcpInfo::initialize()
-{
-#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
-  if (!_ready) {
-    int connfd = _owner->FD();
-
-    TSAssert(_owner->_state->txnp);
-    if (connfd < 0 || TSHttpTxnIsInternal(_owner->_state->txnp)) { // No TCPInfo for internal transactions
-      _ready = false;
-      // ToDo: Deal with errors?
-    } else {
-      if (getsockopt(connfd, IPPROTO_TCP, TCP_INFO, &info, &info_len) == 0) {
-        _ready = (info_len > 0);
-      }
-    }
-  }
-#endif
-}
-
-Cript::string_view
-detail::ConnBase::TcpInfo::Log()
-{
-  initialize();
-  // We intentionally do not use the old tcpinfo that may be stored, since we may
-  // request this numerous times (measurements). Also make sure there's always a value.
-  _logging = "-";
-
-  if (_ready) {
-    // A lot of this is taken verbatim from header_rewrite, may want to rewrite this with sstreams
-#if HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS
-    _logging = fmt::format("{};{};{};{}", info.tcpi_rtt, info.tcpi_rto, info.tcpi_snd_cwnd, info.tcpi_retrans);
-#elif HAVE_STRUCT_TCP_INFO___TCPI_RETRANS
-    _logging = fmt::format("{};{};{};{}", info.tcpi_rtt, info.tcpi_rto, info.tcpi_snd_cwnd, info.__tcpi_retrans);
-#endif
-  }
-
-  return _logging;
-}
-
 Client::Connection &
 Client::Connection::_get(Cript::Context *context)
 {
@@ -244,7 +242,7 @@ Client::Connection::Count() const
 Server::Connection &
 Server::Connection::_get(Cript::Context *context)
 {
-  Server::Connection *conn = &context->_server_conn;
+  Cript::Server::Connection *conn = &context->_server_conn;
 
   if (!conn->Initialized()) {
     TSAssert(context->state.ssnp);
@@ -273,3 +271,5 @@ Server::Connection::Count() const
 {
   return TSHttpTxnServerSsnTransactionCount(_state->txnp);
 }
+
+} // namespace Cript

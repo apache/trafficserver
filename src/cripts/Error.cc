@@ -19,6 +19,9 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
+namespace Cript
+{
+
 void
 Error::Execute(Cript::Context *context)
 {
@@ -49,3 +52,5 @@ Error::Status::_get(Cript::Context *context)
 {
   return context->state.error._status._getter();
 }
+
+} // namespace Cript

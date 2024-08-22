@@ -24,7 +24,7 @@
 
 class RemapPluginInst; // Opaque to the Cripts, but needed in the implementation.
 
-namespace Plugin
+namespace Cript::Plugin
 {
 using Options = std::vector<Cript::string>;
 
@@ -68,4 +68,4 @@ private:
   bool             _valid  = false;
 }; // End class Plugin::Remap
 
-} // namespace Plugin
+} // namespace Cript::Plugin

@@ -113,72 +113,73 @@ private:
 
 } // namespace detail
 
+namespace Cript
+{
+
 namespace Metrics
 {
-class Counter : public detail::BaseMetrics
-{
-  using super_type = detail::BaseMetrics;
-  using self_type  = Counter;
-
-public:
-  Counter(const Cript::string_view &name) : super_type(name) { _initialize(ts::Metrics::Counter::create(name)); }
-
-  // Counters can only increment, so lets produce some nice compile time erorrs too
-  void Decrement(int64_t)  = delete;
-  void Setter(int64_t val) = delete;
-
-  template <typename T>
-  void
-  Decrement(T)
+  class Counter : public detail::BaseMetrics
   {
-    static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can only use Increment(), consider Metric::Gauge instead?");
-  }
+    using super_type = detail::BaseMetrics;
+    using self_type  = Counter;
 
-  template <typename T>
-  void
-  Setter(T)
+  public:
+    Counter(const Cript::string_view &name) : super_type(name) { _initialize(ts::Metrics::Counter::create(name)); }
+
+    // Counters can only increment, so lets produce some nice compile time erorrs too
+    void Decrement(int64_t)  = delete;
+    void Setter(int64_t val) = delete;
+
+    template <typename T>
+    void
+    Decrement(T)
+    {
+      static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can only use Increment(), consider Metric::Gauge instead?");
+    }
+
+    template <typename T>
+    void
+    Setter(T)
+    {
+      static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can not be set to a value), consider Metric::Gauge instead?");
+    }
+
+    static self_type *
+    Create(const Cript::string_view &name)
+    {
+      auto *ret = new self_type(name);
+      auto  id  = ts::Metrics::Counter::create(name);
+
+      ret->_initialize(id);
+
+      return ret;
+    }
+
+  }; // class Counter
+
+  class Gauge : public detail::BaseMetrics
   {
-    static_assert(std::is_same_v<T, int64_t>, "A Metric::Counter can not be set to a value), consider Metric::Gauge instead?");
-  }
+    using super_type = detail::BaseMetrics;
+    using self_type  = Gauge;
 
-  static self_type *
-  Create(const Cript::string_view &name)
-  {
-    auto *ret = new self_type(name);
-    auto  id  = ts::Metrics::Counter::create(name);
+  public:
+    Gauge(const Cript::string_view &name) : super_type(name) { _initialize(ts::Metrics::Gauge::create(name)); }
 
-    ret->_initialize(id);
+    static self_type *
+    Create(const Cript::string_view &name)
+    {
+      auto *ret = new self_type(name);
+      auto  id  = ts::Metrics::Gauge::create(name);
 
-    return ret;
-  }
+      ret->_initialize(id);
 
-}; // class Counter
+      return ret;
+    }
 
-class Gauge : public detail::BaseMetrics
-{
-  using super_type = detail::BaseMetrics;
-  using self_type  = Gauge;
-
-public:
-  Gauge(const Cript::string_view &name) : super_type(name) { _initialize(ts::Metrics::Gauge::create(name)); }
-
-  static self_type *
-  Create(const Cript::string_view &name)
-  {
-    auto *ret = new self_type(name);
-    auto  id  = ts::Metrics::Gauge::create(name);
-
-    ret->_initialize(id);
-
-    return ret;
-  }
-
-}; // class Counter
+  }; // class Counter
 
 } // namespace Metrics
 
-namespace Cript
-{
 class MetricStorage
 {
   using self_type = MetricStorage;

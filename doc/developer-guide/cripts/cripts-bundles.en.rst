@@ -41,14 +41,14 @@ does *not* exclude doing additional hooks in the Cript itself.
 
 The following bundles are available in the core today:
 
-============================   ====================================================================
-Bundle                         Description
-============================   ====================================================================
-``Bundle::Common``             For DSCP and an overridable Cache-Control header.
-``Bundle::LogsMetrics``        Log sampling, TCPInfo  and per-remap metrics.
-``Bundle::Headers``            For removing or adding headers.
-``Bundle::Caching``            Various cache controlling behavior.
-============================   ====================================================================
+===================================   ====================================================================
+Bundle                                Description
+===================================   ====================================================================
+``Cript::Bundle::Common``             For DSCP and an overridable Cache-Control header.
+``Cript::Bundle::LogsMetrics``        Log sampling, TCPInfo  and per-remap metrics.
+``Cript::Bundle::Headers``            For removing or adding headers.
+``Cript::Bundle::Caching``            Various cache controlling behavior.
+===================================   ====================================================================
 
 This example shows how a Cript would enable both of these bundles with all features:
 
@@ -61,17 +61,17 @@ This example shows how a Cript would enable both of these bundles with all featu
 
    do_create_instance()
    {
-     Bundle::Common::Activate().dscp(10)
-                               .via_header("client", "basic")
-                               .set_config({{"proxy.config.srv_enabled", 0},
-                                            {"proxy.config.http.response_server_str", "ATS"});
+     Cript::Bundle::Common::Activate().dscp(10)
+                                      .via_header("client", "basic")
+                                      .set_config({{"proxy.config.srv_enabled", 0},
+                                                   {"proxy.config.http.response_server_str", "ATS"});
 
-     Bundle::LogsMetrics::Activate().logsample(100)
-                                    .tcpinfo(true)
-                                    .propstats("example.com");
+     Cript::Bundle::LogsMetrics::Activate().logsample(100)
+                                           .tcpinfo(true)
+                                           .propstats("example.com");
 
-     Bundle::Caching::Activate().cache_control("max-age=259200")
-                                .disable(true)
+     Cript::Bundle::Caching::Activate().cache_control("max-age=259200")
+                                       .disable(true)
 
    }
 
@@ -91,7 +91,7 @@ to make a list.
 Via Header
 ==========
 
-The ``Bundle::Common`` bundle has a function called ``via_header()`` that adds a Via header to the
+The ``Cript::Bundle::Common`` bundle has a function called ``via_header()`` that adds a Via header to the
 client response or the origin request. The first argument is ``client`` or ``origin``, and the second
 argument is the type of Via header to be used:
 
@@ -110,9 +110,9 @@ Type                           Description
 Headers
 =======
 
-Even though adding or removing headers in Cripts is very straight forward, we've added the ``Bundle::Headers``
-for not only convenience, but also for easier integration and migratino with existing configurations. There
-are two main functions in this bundle:
+Even though adding or removing headers in Cripts is very straight forward, we've added the
+``Cript::Bundle::Headers`` for not only convenience, but also for easier integration and
+migration with existing configurations. There are two main functions in this bundle:
 
 - ``rm_headers()``: Add a header to the request or response.
 - ``add_headers()``: Remove a header from the request or response.
@@ -128,8 +128,8 @@ operators from the ``header_rewrite`` plugin. For example:
 
    do_create_instance()
    {
-     Bundle::Headers::Activate().rm_headers({"X-Header1", "X-Header2"})
-                                .add_headers({{"X-Header3", "value3"},
-                                              {"X-Header4", "%{FROM-URL:PATH}"},
-                                              {"X-Header5", "%{ID:UNIQUE}"} });
+     Cript::Bundle::Headers::Activate().rm_headers({"X-Header1", "X-Header2"})
+                                       .add_headers({{"X-Header3", "value3"},
+                                                     {"X-Header4", "%{FROM-URL:PATH}"},
+                                                     {"X-Header5", "%{ID:UNIQUE}"} });
    }
