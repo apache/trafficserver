@@ -58,11 +58,7 @@
 // Documents
 
 struct Cache;
-class StripeSM;
-struct CacheDisk;
 struct StripeInitInfo;
-struct DiskStripe;
-struct CacheVol;
 class CacheEvacuateDocVC;
 
 class StripeSM : public Continuation, public Stripe
