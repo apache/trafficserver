@@ -88,20 +88,19 @@ Stripe::Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size, 
   : frag_size{fragment_size},
     skip{ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip))},
     start{skip},
-    len{blocks * STORE_BLOCK_SIZE},
-    disk{disk}
+    len{blocks * STORE_BLOCK_SIZE}
 {
   ink_assert(this->len < MAX_STRIPE_SIZE);
 
-  this->_init_hash_text(disk->path, blocks, dir_skip);
+  this->_init_hash_text(disk, blocks, dir_skip);
   this->_init_data(STORE_BLOCK_SIZE, avg_obj_size);
   this->_init_directory(this->dirlen(), this->headerlen(), DIRECTORY_FOOTER_SIZE);
 }
 
 void
-Stripe::_init_hash_text(char const *seed, off_t blocks, off_t dir_skip)
+Stripe::_init_hash_text(CacheDisk const *disk, off_t blocks, off_t dir_skip)
 {
-  char const  *seed_str       = this->disk->hash_base_string ? this->disk->hash_base_string : seed;
+  char const  *seed_str       = disk->hash_base_string ? disk->hash_base_string : disk->path;
   const size_t hash_seed_size = strlen(seed_str);
   const size_t hash_text_size = hash_seed_size + 32;
 

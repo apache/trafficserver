@@ -78,6 +78,8 @@ public:
 
   Event *trigger = nullptr;
 
+  CacheDisk *disk{};
+
   OpenDir              open_dir;
   RamCache            *ram_cache = nullptr;
   DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
