@@ -148,7 +148,7 @@ CacheEvacuateDocVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e AT
     goto Ldone;
   }
   // a directory entry which is no longer valid may have been overwritten
-  if (!dir_valid(this->stripe, &this->dir)) {
+  if (!this->stripe->dir_valid(&this->dir)) {
     last_collision = nullptr;
     goto Lcollision;
   }

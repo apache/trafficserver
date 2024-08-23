@@ -421,11 +421,11 @@ CacheVC::openReadClose(int event, Event * /* e ATS_UNUSED */)
   if (!lock.is_locked()) {
     VC_SCHED_LOCK_RETRY();
   }
-  if (f.hit_evacuate && dir_valid(stripe, &first_dir) && closed > 0) {
+  if (f.hit_evacuate && stripe->dir_valid(&first_dir) && closed > 0) {
     ink_assert(stripe->mutex->thread_holding == this_ethread());
     if (f.single_fragment) {
       stripe->force_evacuate_head(&first_dir, dir_pinned(&first_dir));
-    } else if (dir_valid(stripe, &earliest_dir)) {
+    } else if (stripe->dir_valid(&earliest_dir)) {
       stripe->force_evacuate_head(&first_dir, dir_pinned(&first_dir));
       stripe->force_evacuate_head(&earliest_dir, dir_pinned(&earliest_dir));
     }
@@ -453,7 +453,7 @@ CacheVC::openReadReadDone(int event, Event *e)
       goto Lerror;
     }
     if (last_collision &&        // no missed lock
-        dir_valid(stripe, &dir)) // object still valid
+        stripe->dir_valid(&dir)) // object still valid
     {
       doc = reinterpret_cast<Doc *>(buf->data());
       if (doc->magic != DOC_MAGIC) {
@@ -765,9 +765,9 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     }
     // an object needs to be outside the aggregation window in order to be
     // be evacuated as it is read
-    if (!dir_agg_valid(stripe, &dir)) {
+    if (!stripe->dir_agg_valid(&dir)) {
       // a directory entry which is no longer valid may have been overwritten
-      if (!dir_valid(stripe, &dir)) {
+      if (!stripe->dir_valid(&dir)) {
         last_collision = nullptr;
       }
       goto Lread;
@@ -972,9 +972,9 @@ CacheVC::openReadStartHead(int event, Event *e)
     }
     // an object needs to be outside the aggregation window in order to be
     // be evacuated as it is read
-    if (!dir_agg_valid(stripe, &dir)) {
+    if (!stripe->dir_agg_valid(&dir)) {
       // a directory entry which is no longer valid may have been overwritten
-      if (!dir_valid(stripe, &dir)) {
+      if (!stripe->dir_valid(&dir)) {
         last_collision = nullptr;
       }
       goto Lread;
