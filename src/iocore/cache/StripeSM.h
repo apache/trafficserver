@@ -66,6 +66,7 @@ class StripeSM : public Continuation, public Stripe
 {
 public:
   CryptoHash hash_id;
+  int        fd{-1};
 
   int hit_evacuate_window{};
 
