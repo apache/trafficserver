@@ -174,7 +174,7 @@ protected:
 
   void _clear_init();
   void _init_dir();
-  bool flush_aggregate_write_buffer();
+  bool flush_aggregate_write_buffer(int fd);
 
 private:
   void _init_hash_text(char const *seed, off_t blocks, off_t dir_skip);

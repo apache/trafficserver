@@ -1339,7 +1339,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
   // directories have not been inserted for these writes
   if (!this->_write_buffer.is_empty()) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
-    this->flush_aggregate_write_buffer();
+    this->flush_aggregate_write_buffer(this->fd);
   }
 
   // We already asserted that dirlen > 0.

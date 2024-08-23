@@ -359,12 +359,12 @@ Stripe::_init_dir()
 }
 
 bool
-Stripe::flush_aggregate_write_buffer()
+Stripe::flush_aggregate_write_buffer(int fd)
 {
   // set write limit
   this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
 
-  if (!this->_write_buffer.flush(this->fd, this->header->write_pos)) {
+  if (!this->_write_buffer.flush(fd, this->header->write_pos)) {
     return false;
   }
   this->header->last_write_pos  = this->header->write_pos;
