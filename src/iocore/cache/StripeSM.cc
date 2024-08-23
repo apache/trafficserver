@@ -25,7 +25,7 @@
 #include "P_CacheDoc.h"
 #include "P_CacheInternal.h"
 #include "P_CacheStats.h"
-#include "P_CacheVol.h"
+#include "StripeSM.h"
 #include "P_CacheDir.h"
 
 #include "CacheEvacuateDocVC.h"
@@ -34,8 +34,6 @@
 
 #include "iocore/cache/CacheDefs.h"
 #include "iocore/cache/CacheVC.h"
-
-#include "proxy/hdrs/HTTP.h"
 
 #include "iocore/aio/AIO.h"
 
@@ -48,11 +46,11 @@
 #include "tsutil/DbgCtl.h"
 #include "tsutil/Metrics.h"
 
+#include "tscore/InkErrno.h"
 #include "tscore/Diags.h"
 #include "tscore/hugepages.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_hrtime.h"
-#include "tscore/ink_platform.h"
 #include "tscore/List.h"
 
 #include <cinttypes>
@@ -1384,4 +1382,47 @@ StripeSM::shutdown(EThread *shutdown_thread)
   B            = pwrite(this->fd, this->raw_dir, dirlen, start);
   ink_assert(B == dirlen);
   Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
+}
+
+// Returns 0 on success or a positive error code on failure
+int
+StripeSM::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
+{
+  StripeSM *stripe    = this;
+  bool      agg_error = false;
+  if (!cont->f.remove) {
+    agg_error = (!cont->f.update && this->_write_buffer.get_bytes_pending_aggregation() > cache_config_agg_write_backlog);
+#ifdef CACHE_AGG_FAIL_RATE
+    agg_error = agg_error || ((uint32_t)mutex->thread_holding->generator.random() < (uint32_t)(UINT_MAX * CACHE_AGG_FAIL_RATE));
+#endif
+  }
+
+  if (agg_error) {
+    Metrics::Counter::increment(cache_rsb.write_backlog_failure);
+    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
+
+    return ECACHE_WRITE_FAIL;
+  }
+
+  if (open_dir.open_write(cont, allow_if_writers, max_writers)) {
+    return 0;
+  }
+  return ECACHE_DOC_BUSY;
+}
+
+int
+StripeSM::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
+{
+  EThread *t = cont->mutex->thread_holding;
+  CACHE_TRY_LOCK(lock, mutex, t);
+  if (!lock.is_locked()) {
+    return -1;
+  }
+  return open_write(cont, allow_if_writers, max_writers);
+}
+
+int
+StripeSM::close_write(CacheVC *cont)
+{
+  return open_dir.close_write(cont);
 }

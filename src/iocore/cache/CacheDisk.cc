@@ -22,7 +22,7 @@
  */
 
 #include "P_Cache.h"
-#include "P_CacheVol.h"
+#include "StripeSM.h"
 
 void
 CacheDisk::incrErrors(const AIOCallback *io)

@@ -183,7 +183,7 @@ Data Structures
 
 .. class:: Doc
 
-   Defined in :ts:git:`iocore/cache/P_CacheVol.h`.
+   Defined in :ts:git:`iocore/cache/StripeSM.h`.
 
    .. member:: uint32_t magic
 

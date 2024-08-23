@@ -26,7 +26,7 @@
 #include "iocore/cache/Store.h"
 #include "P_CacheDisk.h"
 #include "P_CacheInternal.h"
-#include "P_CacheVol.h"
+#include "StripeSM.h"
 #include "Stripe.h"
 
 // Must be included after P_CacheInternal.h.

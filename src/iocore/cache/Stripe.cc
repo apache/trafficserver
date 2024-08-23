@@ -21,9 +21,8 @@
   limitations under the License.
  */
 
-#include "P_CacheDoc.h"
 #include "P_CacheInternal.h"
-#include "P_CacheVol.h"
+#include "StripeSM.h"
 
 #include "tscore/ink_assert.h"
 #include "tscore/ink_memory.h"

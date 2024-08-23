@@ -26,12 +26,12 @@
 #include "AggregateWriteBuffer.h"
 #include "P_CacheDir.h"
 #include "P_CacheDisk.h"
+#include "P_CacheStats.h"
 
 #include "iocore/cache/Store.h"
 
 #include "tscore/ink_align.h"
 #include "tscore/ink_memory.h"
-#include "tscore/ink_platform.h"
 
 #include <cstdint>
 
@@ -42,10 +42,23 @@
 #define ROUND_TO_SECTOR(_p, _x)  INK_ALIGN((_x), _p->sector_size)
 #define ROUND_TO(_x, _y)         INK_ALIGN((_x), (_y))
 
-// This is defined here so CacheVC can avoid including P_CacheVol.h.
+// This is defined here so CacheVC can avoid including StripeSM.h.
 #define RECOVERY_SIZE EVACUATION_SIZE // 8MB
 
-struct CacheVol;
+struct CacheVol {
+  int          vol_number       = -1;
+  int          scheme           = 0;
+  off_t        size             = 0;
+  int          num_vols         = 0;
+  bool         ramcache_enabled = true;
+  StripeSM   **stripes          = nullptr;
+  DiskStripe **disk_stripes     = nullptr;
+  LINK(CacheVol, link);
+  // per volume stats
+  CacheStatsBlock vol_rsb;
+
+  CacheVol() {}
+};
 
 struct StripteHeaderFooter {
   unsigned int      magic;

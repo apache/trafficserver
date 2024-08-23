@@ -24,8 +24,6 @@
 #pragma once
 
 #include "P_CacheDir.h"
-#include "P_CacheDoc.h"
-#include "P_CacheStats.h"
 #include "P_RamCache.h"
 #include "AggregateWriteBuffer.h"
 #include "PreservationTable.h"
@@ -60,11 +58,7 @@
 // Documents
 
 struct Cache;
-class StripeSM;
-struct CacheDisk;
 struct StripeInitInfo;
-struct DiskStripe;
-struct CacheVol;
 class CacheEvacuateDocVC;
 
 class StripeSM : public Continuation, public Stripe
@@ -108,15 +102,11 @@ public:
   int open_write(CacheVC *cont, int allow_if_writers, int max_writers);
   int open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
   int close_write(CacheVC *cont);
-  int close_write_lock(CacheVC *cont);
   int begin_read(CacheVC *cont) const;
-  int begin_read_lock(CacheVC *cont);
   // unused read-write interlock code
   // currently http handles a write-lock failure by retrying the read
   OpenDirEntry *open_read(const CryptoHash *key) const;
-  OpenDirEntry *open_read_lock(CryptoHash *key, EThread *t);
   int           close_read(CacheVC *cont) const;
-  int           close_read_lock(CacheVC *cont);
 
   int clear_dir_aio();
   int clear_dir();
@@ -238,27 +228,6 @@ private:
   int _copy_evacuator_to_aggregation(CacheVC *vc);
 };
 
-struct AIO_failure_handler : public Continuation {
-  int handle_disk_failure(int event, void *data);
-
-  AIO_failure_handler() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AIO_failure_handler::handle_disk_failure); }
-};
-
-struct CacheVol {
-  int          vol_number       = -1;
-  int          scheme           = 0;
-  off_t        size             = 0;
-  int          num_vols         = 0;
-  bool         ramcache_enabled = true;
-  StripeSM   **stripes          = nullptr;
-  DiskStripe **disk_stripes     = nullptr;
-  LINK(CacheVol, link);
-  // per volume stats
-  CacheStatsBlock vol_rsb;
-
-  CacheVol() {}
-};
-
 // Global Data
 
 extern StripeSM                   **gstripes;
@@ -307,8 +276,9 @@ StripeSM::within_hit_evacuate_window(Dir const *xdir) const
   off_t oft       = dir_offset(xdir) - 1;
   off_t write_off = (header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
   off_t delta     = oft - write_off;
-  if (delta >= 0)
+  if (delta >= 0) {
     return delta < hit_evacuate_window;
-  else
+  } else {
     return -delta > (data_blocks - hit_evacuate_window) && -delta < data_blocks;
+  }
 }

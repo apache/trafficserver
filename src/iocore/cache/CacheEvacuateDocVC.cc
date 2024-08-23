@@ -31,7 +31,7 @@
 #include "P_CacheDoc.h"
 #include "P_CacheHttp.h"
 #include "P_CacheInternal.h"
-#include "P_CacheVol.h"
+#include "StripeSM.h"
 #include "CacheEvacuateDocVC.h"
 #include "PreservationTable.h"
 
