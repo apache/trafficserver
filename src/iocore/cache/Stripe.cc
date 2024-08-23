@@ -322,7 +322,7 @@ Stripe::dir_check()
 }
 
 void
-Stripe::_clear_init()
+Stripe::_clear_init(std::uint32_t hw_sector_size)
 {
   size_t dir_len = this->dirlen();
   memset(this->raw_dir, 0, dir_len);
@@ -336,7 +336,7 @@ Stripe::_clear_init()
   this->header->cycle                                              = 0;
   this->header->create_time                                        = time(nullptr);
   this->header->dirty                                              = 0;
-  this->sector_size = this->header->sector_size = this->disk->hw_sector_size;
+  this->sector_size = this->header->sector_size = hw_sector_size;
   *this->footer                                 = *this->header;
 }
 

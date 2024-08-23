@@ -171,7 +171,7 @@ public:
 protected:
   AggregateWriteBuffer _write_buffer;
 
-  void _clear_init();
+  void _clear_init(std::uint32_t hw_sector_size);
   void _init_dir();
   bool flush_aggregate_write_buffer(int fd);
 
