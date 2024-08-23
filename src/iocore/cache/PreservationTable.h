@@ -24,6 +24,7 @@
 #pragma once
 
 #include "AggregateWriteBuffer.h"
+#include "iocore/cache/CacheDefs.h"
 #include "P_CacheDir.h"
 #include "Stripe.h"
 
@@ -89,6 +90,8 @@ struct EvacuationBlock {
 class PreservationTable
 {
 public:
+  int evacuate_size{};
+
   /**
    * The table of preserved documents.
    *
@@ -112,11 +115,48 @@ public:
    */
   void force_evacuate_head(Dir const *evac_dir, int pinned);
 
-protected:
-  int evacuate_size{};
+  /**
+   * Find the evacuation block corresponding to @a dir.
+   *
+   * @param dir The directory entry to search for.
+   * @return Returns the corresponding block if it exists, nullptr otherwise.
+   */
+  EvacuationBlock *find(Dir const &dir) const;
+
+  /**
+   * Acquire the evacuation block for @a dir.
+   *
+   * Any number of readers may acquire the block at a time to prevent the
+   * block from being removed from the table. If no block for the directory
+   * entry is in the table yet, one will be added with @a key.
+   *
+   * @param dir The directory entry to acquire.
+   * @param key The key for the directory entry.
+   * @return Returns 1 if a new block was created, otherwise 0.
+   */
+  int acquire(Dir const &dir, CacheKey const &key);
+
+  /** Release the evacuation block for @a dir.
+   *
+   * When a block has been released once for every time it was acquired, it
+   * may be removed from the table, invalidating all pointers to it. Note that
+   * releasing more than once from the same reader may cause the block to be
+   * removed from the table while other readers that acquired it think it's
+   * valid. Be careful.
+   *
+   * A block that was evacuated with force_evacuate_head will not be removed
+   * from the table when it is released.
+   *
+   * @param dir The directory entry to release.
+   * @see force_evacuate_head
+   */
+  void release(Dir const &dir);
 
   /**
    * Remove completed documents from the table and add pinned documents.
+   *
+   * Documents that were acquired by a reader and not released are not removed.
+   * Invalidates pointers to evacuation blocks unless they have been acquired.
    *
    * @param Stripe The stripe to scan for pinned documents to preserve.
    */
@@ -126,6 +166,8 @@ private:
   void cleanup(Stripe const *stripe);
   void remove_finished_blocks(Stripe const *stripe, int bucket);
   void scan_for_pinned_documents(Stripe const *stripe);
+
+  EvacuationBlock *find(Dir const &dir, int bucket) const;
 };
 
 inline bool
@@ -136,21 +178,6 @@ PreservationTable::evac_bucket_valid(off_t bucket) const
 
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
 extern ClassAllocator<EvacuationKey>   evacuationKeyAllocator;
-
-inline EvacuationBlock *
-evacuation_block_exists(Dir const *dir, PreservationTable *stripe)
-{
-  auto bucket = dir_evac_bucket(dir);
-  if (stripe->evac_bucket_valid(bucket)) {
-    EvacuationBlock *b = stripe->evacuate[bucket].head;
-    for (; b; b = b->link.next) {
-      if (dir_offset(&b->dir) == dir_offset(dir)) {
-        return b;
-      }
-    }
-  }
-  return nullptr;
-}
 
 inline EvacuationBlock *
 new_EvacuationBlock()

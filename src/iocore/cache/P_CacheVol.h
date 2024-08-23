@@ -34,6 +34,7 @@
 #include "iocore/eventsystem/EThread.h"
 
 #include "tscore/CryptoHash.h"
+#include "tscore/List.h"
 
 #include <atomic>
 
@@ -66,7 +67,7 @@ struct DiskStripe;
 struct CacheVol;
 class CacheEvacuateDocVC;
 
-class StripeSM : public Continuation, public Stripe, public PreservationTable
+class StripeSM : public Continuation, public Stripe
 {
 public:
   CryptoHash hash_id;
@@ -205,7 +206,33 @@ public:
    */
   void shutdown(EThread *shutdown_thread);
 
+  bool
+  evac_bucket_valid(off_t bucket) const
+  {
+    return this->_preserved_dirs.evac_bucket_valid(bucket);
+  }
+
+  DLL<EvacuationBlock>
+  get_evac_bucket(off_t bucket) const
+  {
+    return this->_preserved_dirs.evacuate[bucket];
+  }
+
+  void
+  force_evacuate_head(Dir const *evac_dir, int pinned)
+  {
+    return this->_preserved_dirs.force_evacuate_head(evac_dir, pinned);
+  }
+
+  PreservationTable &
+  get_preserved_dirs()
+  {
+    return this->_preserved_dirs;
+  }
+
 private:
+  mutable PreservationTable _preserved_dirs;
+
   int _agg_copy(CacheVC *vc);
   int _copy_writer_to_aggregation(CacheVC *vc);
   int _copy_evacuator_to_aggregation(CacheVC *vc);

@@ -121,25 +121,7 @@ StripeSM::begin_read(CacheVC *cont) const
   if (cont->f.single_fragment) {
     return 0;
   }
-  int              i = dir_evac_bucket(&cont->earliest_dir);
-  EvacuationBlock *b;
-  for (b = evacuate[i].head; b; b = b->link.next) {
-    if (dir_offset(&b->dir) != dir_offset(&cont->earliest_dir)) {
-      continue;
-    }
-    if (b->readers) {
-      b->readers = b->readers + 1;
-    }
-    return 0;
-  }
-  // we don't actually need to preserve this block as it is already in
-  // memory, but this is easier, and evacuations are rare
-  b                 = new_EvacuationBlock();
-  b->readers        = 1;
-  b->dir            = cont->earliest_dir;
-  b->evac_frags.key = cont->earliest_key;
-  evacuate[i].push(b);
-  return 1;
+  return this->_preserved_dirs.acquire(cont->earliest_dir, cont->earliest_key);
 }
 
 int
@@ -148,25 +130,9 @@ StripeSM::close_read(CacheVC *cont) const
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t == this_ethread());
   ink_assert(t == mutex->thread_holding);
-  if (dir_is_empty(&cont->earliest_dir)) {
-    return 1;
+  if (!dir_is_empty(&cont->earliest_dir)) {
+    this->_preserved_dirs.release(cont->earliest_dir);
   }
-  int              i = dir_evac_bucket(&cont->earliest_dir);
-  EvacuationBlock *b;
-  for (b = evacuate[i].head; b;) {
-    EvacuationBlock *next = b->link.next;
-    if (dir_offset(&b->dir) != dir_offset(&cont->earliest_dir)) {
-      b = next;
-      continue;
-    }
-    if (b->readers && !--b->readers) {
-      evacuate[i].remove(b);
-      free_EvacuationBlock(b);
-      break;
-    }
-    b = next;
-  }
-
   return 1;
 }
 
@@ -213,10 +179,10 @@ StripeSM::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   data_blocks         = (len - (start - skip)) / STORE_BLOCK_SIZE;
   hit_evacuate_window = (data_blocks * cache_config_hit_evacuate_percent) / 100;
 
-  evacuate_size = static_cast<int>(len / EVACUATION_BUCKET_SIZE) + 2;
-  int evac_len  = evacuate_size * sizeof(DLL<EvacuationBlock>);
-  evacuate      = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
-  memset(static_cast<void *>(evacuate), 0, evac_len);
+  this->_preserved_dirs.evacuate_size = static_cast<int>(len / EVACUATION_BUCKET_SIZE) + 2;
+  int evac_len                        = this->_preserved_dirs.evacuate_size * sizeof(DLL<EvacuationBlock>);
+  this->_preserved_dirs.evacuate      = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
+  memset(static_cast<void *>(this->_preserved_dirs.evacuate), 0, evac_len);
 
   Dbg(dbg_ctl_cache_init, "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
       (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
@@ -664,7 +630,7 @@ StripeSM::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data AT
   set_io_not_in_progress();
   scan_pos = header->write_pos;
   ink_assert(this->mutex->thread_holding == this_ethread());
-  periodic_scan(this);
+  this->_preserved_dirs.periodic_scan(this);
   SET_HANDLER(&StripeSM::dir_init_done);
   return dir_init_done(EVENT_IMMEDIATE, nullptr);
 }
@@ -784,7 +750,7 @@ StripeSM::aggWriteDone(int event, Event *e)
     ink_assert(header->write_pos == header->agg_pos);
     if (header->write_pos + EVACUATION_SIZE > scan_pos) {
       ink_assert(this->mutex->thread_holding == this_ethread());
-      periodic_scan(this);
+      this->_preserved_dirs.periodic_scan(this);
     }
     this->_write_buffer.reset_buffer_pos();
     header->write_serial++;
@@ -1141,7 +1107,7 @@ StripeSM::agg_wrap()
     Note("Cache volume %d on disk '%s' wraps around", stripe->cache_vol->vol_number, stripe->hash_text.get());
   }
   ink_assert(this->mutex->thread_holding == this_ethread());
-  periodic_scan(this);
+  this->_preserved_dirs.periodic_scan(this);
 }
 
 int
@@ -1153,7 +1119,7 @@ StripeSM::evac_range(off_t low, off_t high, int evac_phase)
   int   ei = dir_offset_evac_bucket(e);
 
   for (int i = si; i <= ei; i++) {
-    EvacuationBlock *b            = evacuate[i].head;
+    EvacuationBlock *b            = this->_preserved_dirs.evacuate[i].head;
     EvacuationBlock *first        = nullptr;
     int64_t          first_offset = INT64_MAX;
     for (; b; b = b->link.next) {
@@ -1213,7 +1179,7 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
        (int)dir_offset(&doc_evacuator->overwrite_dir));
 
   if (evac_bucket_valid(bucket)) {
-    b = evacuate[bucket].head;
+    b = this->_preserved_dirs.evacuate[bucket].head;
   }
   while (b) {
     if (dir_offset(&b->dir) == dir_offset(&doc_evacuator->overwrite_dir)) {
@@ -1295,13 +1261,13 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *s
     if (dir_head(&dir)) {
       continue;
     }
-    EvacuationBlock *b = evacuation_block_exists(&dir, stripe);
+    EvacuationBlock *b = stripe->get_preserved_dirs().find(dir);
     if (!b) {
       b                          = new_EvacuationBlock();
       b->dir                     = dir;
       b->evac_frags.key          = *key;
       b->evac_frags.earliest_key = *earliest_key;
-      stripe->evacuate[dir_evac_bucket(&dir)].push(b);
+      stripe->get_evac_bucket(dir_evac_bucket(&dir)).push(b);
       i++;
     } else {
       ink_assert(dir_offset(&dir) == dir_offset(&b->dir));

@@ -125,8 +125,8 @@ init_stripe_for_writing(StripeSM &stripe, StripteHeaderFooter &header, CacheVol 
   stripe.raw_dir     = static_cast<char *>(ats_memalign(ats_pagesize(), stripe.dirlen()));
   stripe.dir         = reinterpret_cast<Dir *>(stripe.raw_dir + stripe.headerlen());
 
-  stripe.evacuate = static_cast<DLL<EvacuationBlock> *>(ats_malloc(2024));
-  memset(static_cast<void *>(stripe.evacuate), 0, 2024);
+  stripe.get_preserved_dirs().evacuate = static_cast<DLL<EvacuationBlock> *>(ats_malloc(2024));
+  memset(static_cast<void *>(stripe.get_preserved_dirs().evacuate), 0, 2024);
 
   header.write_pos = 50000;
   header.agg_pos   = 1;
@@ -295,7 +295,7 @@ TEST_CASE("aggWrite behavior with f.evacuator unset")
   }
 
   ats_free(stripe.raw_dir);
-  ats_free(stripe.evacuate);
+  ats_free(stripe.get_preserved_dirs().evacuate);
 }
 
 // When f.evacuator is set, vc.buf must contain a Doc object including headers
@@ -392,5 +392,5 @@ TEST_CASE("aggWrite behavior with f.evacuator set")
 
   delete[] source;
   ats_free(stripe.raw_dir);
-  ats_free(stripe.evacuate);
+  ats_free(stripe.get_preserved_dirs().evacuate);
 }

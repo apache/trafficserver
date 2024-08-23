@@ -26,6 +26,7 @@
 #include "PreservationTable.h"
 
 #include "AggregateWriteBuffer.h"
+#include "iocore/cache/CacheDefs.h"
 #include "Stripe.h"
 
 #include "tsutil/DbgCtl.h"
@@ -39,6 +40,17 @@ DbgCtl dbg_ctl_cache_evac{"cache_evac"};
 
 } // namespace
 
+EvacuationBlock *
+PreservationTable::find(Dir const &dir) const
+{
+  auto bucket{dir_evac_bucket(&dir)};
+  if (this->evac_bucket_valid(bucket)) {
+    return this->find(dir, bucket);
+  } else {
+    return nullptr;
+  }
+}
+
 void
 PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
 {
@@ -50,7 +62,7 @@ PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
   }
 
   // build an evacuation block for the object
-  EvacuationBlock *b = evacuation_block_exists(evac_dir, this);
+  EvacuationBlock *b = this->find(*evac_dir);
   // if we have already started evacuating this document, its too late
   // to evacuate the head...bad luck
   if (b && b->f.done) {
@@ -67,6 +79,38 @@ PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
   b->f.evacuate_head = 1;
   b->evac_frags.key.clear(); // ensure that the block gets evacuated no matter what
   b->readers = 0;            // ensure that the block does not disappear
+}
+
+int
+PreservationTable::acquire(Dir const &dir, CacheKey const &key)
+{
+  int bucket = dir_evac_bucket(&dir);
+  if (EvacuationBlock * b{this->find(dir, bucket)}; nullptr != b) {
+    if (b->readers) {
+      ++b->readers;
+    }
+    return 0;
+  }
+  // we don't actually need to preserve this block as it is already in
+  // memory, but this is easier, and evacuations are rare
+  EvacuationBlock *b = new_EvacuationBlock();
+  b->readers         = 1;
+  b->dir             = dir;
+  b->evac_frags.key  = key;
+  this->evacuate[bucket].push(b);
+  return 1;
+}
+
+void
+PreservationTable::release(Dir const &dir)
+{
+  int bucket = dir_evac_bucket(&dir);
+  if (EvacuationBlock * b{this->find(dir, bucket)}; nullptr != b) {
+    if (b->readers && !--b->readers) {
+      this->evacuate[bucket].remove(b);
+      free_EvacuationBlock(b);
+    }
+  }
 }
 
 void
@@ -158,4 +202,14 @@ PreservationTable::remove_finished_blocks(Stripe const *stripe, int bucket)
     }
     b = b->link.next;
   }
+}
+
+EvacuationBlock *
+PreservationTable::find(Dir const &dir, int bucket) const
+{
+  EvacuationBlock *b{this->evacuate[bucket].head};
+  while (b && (dir_offset(&b->dir) != dir_offset(&dir))) {
+    b = b->link.next;
+  }
+  return b;
 }
