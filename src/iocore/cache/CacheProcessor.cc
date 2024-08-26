@@ -586,7 +586,7 @@ build_vol_hash_table(CacheHostRecord *cp)
   }
   // generate random numbers proportional to allocation
   rtable_pair *rtable = static_cast<rtable_pair *>(ats_malloc(sizeof(rtable_pair) * rtable_size));
-  int          rindex = 0;
+  unsigned int rindex = 0;
   for (int i = 0; i < num_vols; i++) {
     for (int j = 0; j < static_cast<int>(rtable_entries[i]); j++) {
       rtable[rindex].rval = next_rand(&rnd[i]);
@@ -594,7 +594,7 @@ build_vol_hash_table(CacheHostRecord *cp)
       rindex++;
     }
   }
-  ink_assert(rindex == (int)rtable_size);
+  ink_assert(rindex == rtable_size);
   // sort (rand #, vol $ pairs)
   qsort(rtable, rtable_size, sizeof(rtable_pair), cmprtable);
   unsigned int width = (1LL << 32) / STRIPE_HASH_TABLE_SIZE;
@@ -630,8 +630,8 @@ build_vol_hash_table(CacheHostRecord *cp)
 int
 cmprtable(const void *aa, const void *bb)
 {
-  rtable_pair *a = reinterpret_cast<rtable_pair *>(const_cast<void *>(aa));
-  rtable_pair *b = reinterpret_cast<rtable_pair *>(const_cast<void *>(bb));
+  const rtable_pair *a = reinterpret_cast<const rtable_pair *>(aa);
+  const rtable_pair *b = reinterpret_cast<const rtable_pair *>(bb);
   if (a->rval < b->rval) {
     return -1;
   }
@@ -1072,7 +1072,7 @@ cplist_init()
       CacheVol *p = cp_list.head;
       while (p) {
         if (p->vol_number == dp[j]->vol_number) {
-          ink_assert(p->scheme == (int)dp[j]->dpb_queue.head->b->type);
+          ink_assert(p->scheme == static_cast<int>(dp[j]->dpb_queue.head->b->type));
           p->size            += dp[j]->size;
           p->num_vols        += dp[j]->num_volblocks;
           p->disk_stripes[i]  = dp[j];

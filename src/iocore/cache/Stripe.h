@@ -227,7 +227,7 @@ Stripe::vol_in_phase_agg_buf_valid(Dir const *e) const
 inline off_t
 Stripe::vol_offset(Dir const *e) const
 {
-  return this->start + reinterpret_cast<off_t>(dir_offset(e)) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
+  return this->start + static_cast<off_t>(dir_offset(e)) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
 inline off_t

@@ -239,7 +239,6 @@ void
 CacheVC::reenable(VIO *avio)
 {
   DDbg(dbg_ctl_cache_reenable, "reenable %p", this);
-  (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
 #endif
@@ -259,7 +258,6 @@ void
 CacheVC::reenable_re(VIO *avio)
 {
   DDbg(dbg_ctl_cache_reenable, "reenable_re %p", this);
-  (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
 #endif
@@ -337,7 +335,7 @@ unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
 
 // [amc] I think this is where all disk reads from cache funnel through here.
 int
-CacheVC::handleReadDone(int event, Event *e)
+CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
 {
   cancel_trigger();
   ink_assert(this_ethread() == mutex->thread_holding);
@@ -408,7 +406,6 @@ CacheVC::handleReadDone(int event, Event *e)
           okay       = 0;
         }
       }
-      (void)e; // Avoid compiler warnings
       bool http_copy_hdr = false;
       http_copy_hdr =
         cache_config_ram_cache_compress && !f.doc_from_ram_cache && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen;

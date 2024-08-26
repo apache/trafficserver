@@ -334,8 +334,8 @@ CacheVC::openReadFromWriter(int event, Event *e)
   if (write_vc->fragment) {
     doc_len        = write_vc->vio.nbytes;
     last_collision = nullptr;
-    DDbg(dbg_ctl_cache_read_agg, "%p: key: %X closed: %d, fragment: %d, len: %d starting first fragment", this,
-         first_key.slice32(1), write_vc->closed, write_vc->fragment, (int)doc_len);
+    DDbg(dbg_ctl_cache_read_agg, "%p: key: %X closed: %d, fragment: %d, len: %" PRIu64 " starting first fragment", this,
+         first_key.slice32(1), write_vc->closed, write_vc->fragment, doc_len);
     MUTEX_RELEASE(writer_lock);
     // either a header + body update or a new document
     SET_HANDLER(&CacheVC::openReadStartEarliest);
@@ -378,7 +378,7 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
     if (is_action_tag_set("cache")) {
       ink_release_assert(false);
     }
-    Warning("Document %X truncated at %d of %d, reading from writer", first_key.slice32(1), (int)vio.ndone, (int)doc_len);
+    Warning("Document %X truncated at %" PRId64 " of %" PRIu64 ", reading from writer", first_key.slice32(1), vio.ndone, doc_len);
     return calluser(VC_EVENT_ERROR);
   }
   /* its possible that the user did a do_io_close before
@@ -483,20 +483,20 @@ CacheVC::openReadReadDone(int event, Event *e)
         last_collision = nullptr;
         while (dir_probe(&earliest_key, stripe, &dir, &last_collision)) {
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
-            DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead complete: %d", this, first_key.slice32(1), (int)vio.ndone);
+            DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead complete: %" PRId64, this, first_key.slice32(1), vio.ndone);
             doc_len = vio.ndone;
             goto Ldone;
           }
         }
-        DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead writer aborted: %d", this, first_key.slice32(1), (int)vio.ndone);
+        DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead writer aborted: %" PRId64, this, first_key.slice32(1), vio.ndone);
         goto Lerror;
       }
       if (writer_lock_retry < cache_config_read_while_writer_max_retries) {
-        DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead retrying: %d", this, first_key.slice32(1), (int)vio.ndone);
+        DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead retrying: %" PRId64, this, first_key.slice32(1), vio.ndone);
         VC_SCHED_WRITER_RETRY(); // wait for writer
       } else {
-        DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead retries exhausted, bailing..: %d", this, first_key.slice32(1),
-             (int)vio.ndone);
+        DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead retries exhausted, bailing..: %" PRId64, this, first_key.slice32(1),
+             vio.ndone);
         goto Ldone;
       }
     }
@@ -710,22 +710,22 @@ Lread: {
       last_collision = nullptr;
       while (dir_probe(&earliest_key, stripe, &dir, &last_collision)) {
         if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
-          DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadMain complete: %d", this, first_key.slice32(1), (int)vio.ndone);
+          DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadMain complete: %" PRId64, this, first_key.slice32(1), vio.ndone);
           doc_len = vio.ndone;
           goto Leos;
         }
       }
-      DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadMain writer aborted: %d", this, first_key.slice32(1), (int)vio.ndone);
+      DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadMain writer aborted: %" PRId64, this, first_key.slice32(1), vio.ndone);
       goto Lerror;
     }
-    DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadMain retrying: %d", this, first_key.slice32(1), (int)vio.ndone);
+    DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadMain retrying: %" PRId64, this, first_key.slice32(1), vio.ndone);
     SET_HANDLER(&CacheVC::openReadMain);
     VC_SCHED_WRITER_RETRY();
   }
   if (is_action_tag_set("cache")) {
     ink_release_assert(false);
   }
-  Warning("Document %X truncated at %d of %d, missing fragment %X", first_key.slice32(1), (int)vio.ndone, (int)doc_len,
+  Warning("Document %X truncated at %" PRId64 " of %" PRIu64 ", missing fragment %X", first_key.slice32(1), vio.ndone, doc_len,
           key.slice32(1));
   // remove the directory entry
   dir_delete(&earliest_key, stripe, &earliest_dir);

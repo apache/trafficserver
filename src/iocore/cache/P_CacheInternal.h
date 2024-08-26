@@ -469,10 +469,8 @@ free_CacheRemoveCont(CacheRemoveCont *cache_rm)
 }
 
 inline int
-CacheRemoveCont::event_handler(int event, void *data)
+CacheRemoveCont::event_handler(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  (void)event;
-  (void)data;
   free_CacheRemoveCont(this);
   return EVENT_DONE;
 }

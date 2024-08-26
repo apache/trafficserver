@@ -830,8 +830,8 @@ int
 dir_lookaside_insert(EvacuationBlock *eblock, StripeSM *stripe, Dir *to)
 {
   CacheKey *key = &eblock->evac_frags.earliest_key;
-  DDbg(dbg_ctl_dir_lookaside, "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int)dir_offset(to),
-       (int)dir_phase(to));
+  DDbg(dbg_ctl_dir_lookaside, "insert %X %X, offset %" PRId64 " phase %d", key->slice32(0), key->slice32(1), dir_offset(to),
+       dir_phase(to));
   ink_assert(stripe->mutex->thread_holding == this_ethread());
   int              i         = key->slice32(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b         = new_EvacuationBlock();

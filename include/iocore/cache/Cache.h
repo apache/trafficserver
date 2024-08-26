@@ -175,9 +175,8 @@ struct CacheVConnection : public VConnection {
   void         reenable(VIO *avio) override                                                                   = 0;
   void         reenable_re(VIO *avio) override                                                                = 0;
   void
-  do_io_shutdown(ShutdownHowTo_t howto) override
+  do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */) override
   {
-    (void)howto;
     ink_assert(!"CacheVConnection::do_io_shutdown unsupported");
   }
 

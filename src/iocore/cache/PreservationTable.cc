@@ -56,8 +56,8 @@ PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
 {
   auto bucket = dir_evac_bucket(evac_dir);
   if (!evac_bucket_valid(bucket)) {
-    DDbg(dbg_ctl_cache_evac, "dir_evac_bucket out of bounds, skipping evacuate: %" PRId64 "(%d), %d, %d", bucket, evacuate_size,
-         (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
+    DDbg(dbg_ctl_cache_evac, "dir_evac_bucket out of bounds, skipping evacuate: %" PRId64 "(%d), %" PRId64 " , %d", bucket,
+         evacuate_size, dir_offset(evac_dir), dir_phase(evac_dir));
     return;
   }
 
@@ -72,7 +72,7 @@ PreservationTable::force_evacuate_head(Dir const *evac_dir, int pinned)
   if (!b) {
     b      = new_EvacuationBlock();
     b->dir = *evac_dir;
-    DDbg(dbg_ctl_cache_evac, "force: %d, %d", (int)dir_offset(evac_dir), (int)dir_phase(evac_dir));
+    DDbg(dbg_ctl_cache_evac, "force: %" PRId64 ", %d", dir_offset(evac_dir), dir_phase(evac_dir));
     evacuate[bucket].push(b);
   }
   b->f.pinned        = pinned;
@@ -194,7 +194,7 @@ PreservationTable::remove_finished_blocks(Stripe const *stripe, int bucket)
     if (b->f.done && ((stripe->header->phase != dir_phase(&b->dir) && stripe->header->write_pos > stripe->vol_offset(&b->dir)) ||
                       (stripe->header->phase == dir_phase(&b->dir) && stripe->header->write_pos <= stripe->vol_offset(&b->dir)))) {
       EvacuationBlock *x = b;
-      DDbg(dbg_ctl_cache_evac, "evacuate cleanup free %X offset %d", (int)b->evac_frags.key.slice32(0), (int)dir_offset(&b->dir));
+      DDbg(dbg_ctl_cache_evac, "evacuate cleanup free %X offset %" PRId64, b->evac_frags.key.slice32(0), dir_offset(&b->dir));
       b = b->link.next;
       evacuate[bucket].remove(x);
       free_EvacuationBlock(x);

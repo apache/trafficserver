@@ -183,7 +183,7 @@ StripeSM::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   memset(static_cast<void *>(this->_preserved_dirs.evacuate), 0, evac_len);
 
   Dbg(dbg_ctl_cache_init, "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
-      (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
+      static_cast<long long>(this->len), static_cast<double>(dirlen()) / static_cast<double>(this->len) * 100.0);
 
   raw_dir = nullptr;
   if (ats_hugepage_enabled()) {
@@ -1144,7 +1144,7 @@ StripeSM::evac_range(off_t low, off_t high, int evac_phase)
       io.aiocb.aio_buf = doc_evacuator->buf->data();
       io.action        = this;
       io.thread        = AIO_CALLBACK_THREAD_ANY;
-      DDbg(dbg_ctl_cache_evac, "evac_range evacuating %X %d", (int)dir_tag(&first->dir), (int)dir_offset(&first->dir));
+      DDbg(dbg_ctl_cache_evac, "evac_range evacuating %X %" PRId64, dir_tag(&first->dir), dir_offset(&first->dir));
       SET_HANDLER(&StripeSM::evacuateDocReadDone);
       ink_assert(ink_aio_read(&io) >= 0);
       return -1;
@@ -1168,13 +1168,13 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
   EvacuationBlock *b      = nullptr;
   auto             bucket = dir_evac_bucket(&doc_evacuator->overwrite_dir);
   if (doc->magic != DOC_MAGIC) {
-    Dbg(dbg_ctl_cache_evac, "DOC magic: %X %d", (int)dir_tag(&doc_evacuator->overwrite_dir),
-        (int)dir_offset(&doc_evacuator->overwrite_dir));
+    Dbg(dbg_ctl_cache_evac, "DOC magic: %X %" PRId64, dir_tag(&doc_evacuator->overwrite_dir),
+        dir_offset(&doc_evacuator->overwrite_dir));
     ink_assert(doc->magic == DOC_MAGIC);
     goto Ldone;
   }
-  DDbg(dbg_ctl_cache_evac, "evacuateDocReadDone %X offset %d", (int)doc->key.slice32(0),
-       (int)dir_offset(&doc_evacuator->overwrite_dir));
+  DDbg(dbg_ctl_cache_evac, "evacuateDocReadDone %X offset %" PRId64, doc->key.slice32(0),
+       dir_offset(&doc_evacuator->overwrite_dir));
 
   if (evac_bucket_valid(bucket)) {
     b = this->_preserved_dirs.evacuate[bucket].head;
@@ -1200,8 +1200,8 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
     if (dir_compare_tag(&b->dir, &doc->first_key)) {
       doc_evacuator->key = doc->first_key;
       b->evac_frags.key  = doc->first_key;
-      DDbg(dbg_ctl_cache_evac, "evacuating vector %X offset %d", (int)doc->first_key.slice32(0),
-           (int)dir_offset(&doc_evacuator->overwrite_dir));
+      DDbg(dbg_ctl_cache_evac, "evacuating vector %X offset %" PRId64, doc->first_key.slice32(0),
+           dir_offset(&doc_evacuator->overwrite_dir));
       b->f.unused = 57;
     } else {
       // if its an earliest fragment (alternate) evacuation, things get
@@ -1213,8 +1213,8 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
       b->evac_frags.key           = doc->key;
       b->evac_frags.earliest_key  = doc->key;
       b->earliest_evacuator       = doc_evacuator;
-      DDbg(dbg_ctl_cache_evac, "evacuating earliest %X %X evac: %p offset: %d", (int)b->evac_frags.key.slice32(0),
-           (int)doc->key.slice32(0), doc_evacuator, (int)dir_offset(&doc_evacuator->overwrite_dir));
+      DDbg(dbg_ctl_cache_evac, "evacuating earliest %X %X evac: %p offset: %" PRId64, b->evac_frags.key.slice32(0),
+           doc->key.slice32(0), doc_evacuator, dir_offset(&doc_evacuator->overwrite_dir));
       b->f.unused = 67;
     }
   } else {
@@ -1229,7 +1229,7 @@ StripeSM::evacuateDocReadDone(int event, Event *e)
     }
     doc_evacuator->key          = ek->key;
     doc_evacuator->earliest_key = ek->earliest_key;
-    DDbg(dbg_ctl_cache_evac, "evacuateDocReadDone key: %X earliest: %X", (int)ek->key.slice32(0), (int)ek->earliest_key.slice32(0));
+    DDbg(dbg_ctl_cache_evac, "evacuateDocReadDone key: %X earliest: %X", ek->key.slice32(0), ek->earliest_key.slice32(0));
     b->f.unused = 87;
   }
   // if the tag in the c->dir does match the first_key in the
@@ -1279,8 +1279,8 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *s
     if (force) {
       b->readers = 0;
     }
-    DDbg(dbg_ctl_cache_evac, "next fragment %X Earliest: %X offset %d phase %d force %d", (int)key->slice32(0),
-         (int)earliest_key->slice32(0), (int)dir_offset(&dir), (int)dir_phase(&dir), force);
+    DDbg(dbg_ctl_cache_evac, "next fragment %X Earliest: %X offset %" PRId64 " phase %d force %d", key->slice32(0),
+         earliest_key->slice32(0), dir_offset(&dir), dir_phase(&dir), force);
   }
   return i;
 }

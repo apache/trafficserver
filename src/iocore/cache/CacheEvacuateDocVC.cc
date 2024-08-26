@@ -52,9 +52,8 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
 {
   ink_assert(this->stripe->mutex->thread_holding == this_ethread());
   Doc *doc = reinterpret_cast<Doc *>(this->buf->data());
-  DDbg(dbg_ctl_cache_evac, "evacuateDocDone %X o %d p %d new_o %d new_p %d", (int)key.slice32(0),
-       (int)dir_offset(&this->overwrite_dir), (int)dir_phase(&this->overwrite_dir), (int)dir_offset(&this->dir),
-       (int)dir_phase(&this->dir));
+  DDbg(dbg_ctl_cache_evac, "evacuateDocDone %X o %" PRId64 " p %d new_o %" PRId64 " new_p %d", key.slice32(0),
+       dir_offset(&this->overwrite_dir), dir_phase(&this->overwrite_dir), dir_offset(&this->dir), dir_phase(&this->dir));
   // nasty beeping race condition, need to have the EvacuationBlock here
   EvacuationBlock *b = this->stripe->get_preserved_dirs().find(this->overwrite_dir);
   if (b) {
@@ -97,16 +96,16 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
     // Cache::open_write). Once we know its the vector, we can
     // safely overwrite the first_key in the directory.
     if (dir_head(&this->overwrite_dir) && b->f.evacuate_head) {
-      DDbg(dbg_ctl_cache_evac, "evacuateDocDone evacuate_head %X %X hlen %d offset %d", (int)key.slice32(0),
-           (int)doc->key.slice32(0), doc->hlen, (int)dir_offset(&this->overwrite_dir));
+      DDbg(dbg_ctl_cache_evac, "evacuateDocDone evacuate_head %X %X hlen %d offset %" PRId64, key.slice32(0), doc->key.slice32(0),
+           doc->hlen, dir_offset(&this->overwrite_dir));
 
       if (dir_compare_tag(&this->overwrite_dir, &doc->first_key)) {
         OpenDirEntry *cod;
-        DDbg(dbg_ctl_cache_evac, "evacuating vector: %X %d", (int)doc->first_key.slice32(0), (int)dir_offset(&this->overwrite_dir));
+        DDbg(dbg_ctl_cache_evac, "evacuating vector: %X %" PRId64, doc->first_key.slice32(0), dir_offset(&this->overwrite_dir));
         if ((cod = this->stripe->open_read(&doc->first_key))) {
           // writer  exists
-          DDbg(dbg_ctl_cache_evac, "overwriting the open directory %X %d %d", (int)doc->first_key.slice32(0),
-               (int)dir_offset(&cod->first_dir), (int)dir_offset(&this->dir));
+          DDbg(dbg_ctl_cache_evac, "overwriting the open directory %X %" PRId64 " %" PRId64, doc->first_key.slice32(0),
+               dir_offset(&cod->first_dir), dir_offset(&this->dir));
           cod->first_dir = this->dir;
         }
         if (dir_overwrite(&doc->first_key, this->stripe, &this->dir, &this->overwrite_dir)) {
@@ -114,7 +113,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
           this->stripe->ram_cache->fixup(&doc->first_key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
         }
       } else {
-        DDbg(dbg_ctl_cache_evac, "evacuating earliest: %X %d", (int)doc->key.slice32(0), (int)dir_offset(&this->overwrite_dir));
+        DDbg(dbg_ctl_cache_evac, "evacuating earliest: %X %" PRId64, doc->key.slice32(0), dir_offset(&this->overwrite_dir));
         ink_assert(dir_compare_tag(&this->overwrite_dir, &doc->key));
         ink_assert(b->earliest_evacuator == this);
         this->total_len    += doc->data_len();

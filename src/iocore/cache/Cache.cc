@@ -273,8 +273,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
   total_good_nvol       = 0;
 
   REC_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
-  Dbg(dbg_ctl_cache_init, "Cache::open - proxy.config.cache.min_average_object_size = %d",
-      (int)cache_config_min_average_object_size);
+  Dbg(dbg_ctl_cache_init, "Cache::open - proxy.config.cache.min_average_object_size = %d", cache_config_min_average_object_size);
 
   CacheVol *cp = cp_list.head;
   for (; cp; cp = cp->link.next) {
