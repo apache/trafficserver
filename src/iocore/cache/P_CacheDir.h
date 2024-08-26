@@ -282,8 +282,6 @@ void     dir_sync_init();
 int      check_dir(Stripe *stripe);
 void     dir_clean_vol(Stripe *stripe);
 void     dir_clear_range(off_t start, off_t end, Stripe *stripe);
-int      dir_segment_accounted(int s, Stripe *stripe, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
-                               int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
 uint64_t dir_entries_used(Stripe *stripe);
 void     sync_cache_dir_on_shutdown();
 

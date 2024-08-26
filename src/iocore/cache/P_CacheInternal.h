@@ -382,39 +382,6 @@ CacheVC::writer_done()
   return false;
 }
 
-inline int
-dir_delete_lock(CacheKey *key, StripeSM *stripe, ProxyMutex *m, Dir *del)
-{
-  EThread *thread = m->thread_holding;
-  CACHE_TRY_LOCK(lock, stripe->mutex, thread);
-  if (!lock.is_locked()) {
-    return -1;
-  }
-  return dir_delete(key, stripe, del);
-}
-
-inline int
-dir_insert_lock(CacheKey *key, StripeSM *stripe, Dir *to_part, ProxyMutex *m)
-{
-  EThread *thread = m->thread_holding;
-  CACHE_TRY_LOCK(lock, stripe->mutex, thread);
-  if (!lock.is_locked()) {
-    return -1;
-  }
-  return dir_insert(key, stripe, to_part);
-}
-
-inline int
-dir_overwrite_lock(CacheKey *key, StripeSM *stripe, Dir *to_part, ProxyMutex *m, Dir *overwrite, bool must_overwrite = true)
-{
-  EThread *thread = m->thread_holding;
-  CACHE_TRY_LOCK(lock, stripe->mutex, thread);
-  if (!lock.is_locked()) {
-    return -1;
-  }
-  return dir_overwrite(key, stripe, to_part, overwrite, must_overwrite);
-}
-
 void inline rand_CacheKey(CacheKey *next_key)
 {
   EThread *ethread = this_ethread();

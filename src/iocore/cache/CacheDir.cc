@@ -473,59 +473,6 @@ freelist_pop(int s, Stripe *stripe)
   return e;
 }
 
-int
-dir_segment_accounted(int s, Stripe *stripe, int offby, int *f, int *u, int *et, int *v, int *av, int *as)
-{
-  int     free = dir_freelist_length(stripe, s);
-  int     used = 0, empty = 0;
-  int     valid = 0, agg_valid = 0;
-  int64_t agg_size = 0;
-  Dir    *seg      = stripe->dir_segment(s);
-  for (int bi = 0; bi < stripe->buckets; bi++) {
-    Dir *b = dir_bucket(bi, seg);
-    Dir *e = b;
-    while (e) {
-      if (!dir_offset(e)) {
-        ink_assert(e == b);
-        empty++;
-      } else {
-        used++;
-        if (dir_valid(stripe, e)) {
-          valid++;
-        }
-        if (dir_agg_valid(stripe, e)) {
-          agg_valid++;
-        }
-        agg_size += dir_approx_size(e);
-      }
-      e = next_dir(e, seg);
-      if (!e) {
-        break;
-      }
-    }
-  }
-  if (f) {
-    *f = free;
-  }
-  if (u) {
-    *u = used;
-  }
-  if (et) {
-    *et = empty;
-  }
-  if (v) {
-    *v = valid;
-  }
-  if (av) {
-    *av = agg_valid;
-  }
-  if (as) {
-    *as = used ? static_cast<int>(agg_size / used) : 0;
-  }
-  ink_assert(stripe->buckets * DIR_DEPTH - (free + used + empty) <= offby);
-  return stripe->buckets * DIR_DEPTH - (free + used + empty) <= offby;
-}
-
 void
 dir_free_entry(Dir *e, int s, Stripe *stripe)
 {
