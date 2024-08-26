@@ -72,6 +72,7 @@ public:
       RPC          = 1 << 2, // Print JSONRPC request and response + default output.
       SHOW_DEFAULT = 1 << 3  // Add the default values alongside with the actual value.
     };
+    Options() = default;
     Options(FormatFlags flags) : _format(flags) {}
     mutable FormatFlags _format{FormatFlags::NOT_SET}; //!< selected(passed) format.
   };

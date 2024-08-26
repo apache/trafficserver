@@ -4,7 +4,7 @@ records:
       enabled: 1  # default: 0
       tags: rpc  # default: http|dns
   http:
-    server_ports: 61000 61001:ipv6  # default: 8080 8080:ipv6
+    server_ports: ``  # default: 8080 8080:ipv6
     wait_for_cache: 1  # default: 0
   udp:
     threads: 1  # default: 0
