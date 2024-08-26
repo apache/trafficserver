@@ -1,0 +1,5 @@
+proxy.config.udp.threads: 1 # default 0
+proxy.config.accept_threads: 1 # default 1
+proxy.config.task_threads: 2 # default 2
+proxy.config.cache.threads_per_disk: 8 # default 8
+proxy.config.log.preproc_threads: 1 # default 1

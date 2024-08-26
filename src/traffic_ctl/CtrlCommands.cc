@@ -39,34 +39,34 @@ namespace
 /// We use yamlcpp as codec implementation.
 using Codec = yamlcpp_json_emitter;
 
-using StringToOutputFormatMap                  = std::unordered_map<std::string_view, BasePrinter::Options::OutputFormat>;
-const StringToOutputFormatMap _Fmt_str_to_enum = {
-  {"json", BasePrinter::Options::OutputFormat::JSON},
-  {"rpc",  BasePrinter::Options::OutputFormat::RPC }
+using StringToFormatFlagsMap                  = std::unordered_map<std::string_view, BasePrinter::Options::FormatFlags>;
+const StringToFormatFlagsMap _Fmt_str_to_enum = {
+  {"json", BasePrinter::Options::FormatFlags::JSON},
+  {"rpc",  BasePrinter::Options::FormatFlags::RPC }
 };
 } // namespace
 
-BasePrinter::Options::OutputFormat
-parse_format(ts::Arguments *args)
+BasePrinter::Options::FormatFlags
+parse_print_opts(ts::Arguments *args)
 {
-  if (args->get("records")) {
-    return BasePrinter::Options::OutputFormat::RECORDS;
+  BasePrinter::Options::FormatFlags val{BasePrinter::Options::FormatFlags::NOT_SET};
+
+  if (args->get("default")) {
+    val |= BasePrinter::Options::FormatFlags::SHOW_DEFAULT;
   }
 
-  BasePrinter::Options::OutputFormat val{BasePrinter::Options::OutputFormat::NOT_SET};
+  if (args->get("records")) { // records overrule the rest of the formats.
+    val |= BasePrinter::Options::FormatFlags::RECORDS;
+    return val;
+  }
 
   if (auto data = args->get("format"); data) {
-    StringToOutputFormatMap::const_iterator search = _Fmt_str_to_enum.find(data.value());
+    StringToFormatFlagsMap::const_iterator search = _Fmt_str_to_enum.find(data.value());
     if (search != std::end(_Fmt_str_to_enum)) {
-      val = search->second;
+      val |= search->second;
     }
   }
   return val;
-}
-BasePrinter::Options
-parse_print_opts(ts::Arguments *args)
-{
-  return {parse_format(args)};
 }
 
 std::atomic_int CtrlCommand::Signal_Flagged{0};
@@ -121,7 +121,7 @@ RPCAccessor::invoke_rpc(shared::rpc::ClientRequest const &request, std::string &
 // -----------------------------------------------------------------------------------------------------------------------------------
 ConfigCommand::ConfigCommand(ts::Arguments *args) : RecordCommand(args)
 {
-  BasePrinter::Options printOpts{parse_print_opts(args)};
+  BasePrinter::Options printOpts(parse_print_opts(args));
   if (args->get(MATCH_STR)) {
     _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_match(); };
@@ -450,9 +450,9 @@ DirectRPCCommand::DirectRPCCommand(ts::Arguments *args) : CtrlCommand(args)
     _invoked_func = [&]() { read_from_input(); };
   } else if (get_parsed_arguments()->get(INVOKE_STR)) {
     _invoked_func = [&]() { invoke_method(); };
-    if (printOpts._format == BasePrinter::Options::OutputFormat::NOT_SET) {
+    if (printOpts._format & BasePrinter::Options::FormatFlags::NOT_SET) {
       // overwrite this and let it drop json instead.
-      printOpts._format = BasePrinter::Options::OutputFormat::RPC;
+      printOpts._format |= BasePrinter::Options::FormatFlags::RPC;
     }
   }
 

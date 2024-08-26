@@ -1,0 +1,14 @@
+name            : proxy.config.http.server_ports
+current value   : ``
+default value   : ``
+record type     : ``
+data type       : ``
+access control  : ``
+update type     : ``
+update status   : ``
+source          : ``
+syntax check    : ``
+overridable     : ``
+version         : ``
+order           : ``
+raw stat block  : ``

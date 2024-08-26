@@ -113,15 +113,19 @@ RecordPrinter::write_output(YAML::Node const &result)
                 << ": Unrecognized configuration value. Record is a configuration name/value but is not registered\n";
       continue;
     }
-    if (!_printAsRecords) {
-      std::cout << recordInfo.name << ": " << recordInfo.currentValue << '\n';
+    if (!is_records_format()) {
+      std::cout << recordInfo.name << ": " << recordInfo.currentValue;
+      if (should_include_default()) {
+        std::cout << " # default " << recordInfo.defaultValue;
+      }
+      std::cout << '\n';
     } else {
       recordList.push_back(std::make_tuple(recordInfo.name, recordInfo.currentValue, recordInfo.defaultValue));
     }
   }
 
-  if (_printAsRecords && recordList.size() > 0) {
-    std::cout << RecNameToYaml{recordList, WithoutDefaults}.string() << '\n';
+  if (is_records_format() && recordList.size() > 0) {
+    std::cout << RecNameToYaml{recordList, should_include_default()}.string() << '\n';
   }
   // we print errors if found.
   print_record_error_list(response.errorList);
@@ -150,7 +154,7 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
     auto const &defaultValue = recordInfo.defaultValue;
     const bool  hasChanged   = (currentValue != defaultValue);
     if (hasChanged) {
-      if (!_printAsRecords) {
+      if (!is_records_format()) {
         std::cout << swoc::bwprint(text, "{} has changed\n", recordInfo.name);
         std::cout << swoc::bwprint(text, "\tCurrent Value: {}\n", currentValue);
         std::cout << swoc::bwprint(text, "\tDefault Value: {}\n", defaultValue);
@@ -160,7 +164,7 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
     }
   }
 
-  if (_printAsRecords && recordList.size() > 0) {
+  if (is_records_format() && recordList.size() > 0) {
     std::cout << RecNameToYaml{recordList, WithDefaults}.string() << '\n';
   }
 }

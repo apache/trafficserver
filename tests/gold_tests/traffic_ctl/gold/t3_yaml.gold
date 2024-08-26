@@ -1,0 +1,7 @@
+records:
+  diags:
+    debug:
+      enabled: 1  # default: 0
+      tags: rpc  # default: http|dns
+      throttling_interval_msec: 0  # default: 0
+``
