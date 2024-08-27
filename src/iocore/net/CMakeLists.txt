@@ -34,6 +34,7 @@ add_library(
   PollCont.cc
   ProxyProtocol.cc
   ReadWriteEventIO.cc
+  Server.cc
   Socks.cc
   SSLAPIHooks.cc
   SSLCertLookup.cc
