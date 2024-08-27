@@ -819,11 +819,6 @@ QUICNetVConnection::_get_tls_curve() const
   }
 }
 
-void
-QUICNetVConnection::_fire_ssl_servername_event()
-{
-}
-
 in_port_t
 QUICNetVConnection::_get_local_port()
 {

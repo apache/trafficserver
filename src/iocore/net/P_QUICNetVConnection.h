@@ -169,7 +169,6 @@ protected:
   ssl_curve_id _get_tls_curve() const override;
 
   // TLSSNISupport
-  void      _fire_ssl_servername_event() override;
   in_port_t _get_local_port() override;
 
   // TLSSessionResumptionSupport

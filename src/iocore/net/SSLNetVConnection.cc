@@ -1771,12 +1771,6 @@ SSLNetVConnection::protocol_contains(std::string_view prefix) const
   return retval;
 }
 
-void
-SSLNetVConnection::_fire_ssl_servername_event()
-{
-  this->callHooks(TS_EVENT_SSL_SERVERNAME);
-}
-
 in_port_t
 SSLNetVConnection::_get_local_port()
 {

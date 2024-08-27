@@ -356,7 +356,6 @@ protected:
   }
 
   // TLSSNISupport
-  void      _fire_ssl_servername_event() override;
   in_port_t _get_local_port() override;
 
   bool           _isTryingRenegotiation() const override;

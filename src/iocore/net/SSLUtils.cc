@@ -290,9 +290,9 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   }
 
   netvc->set_verify_cert(ctx);
-  TLSEventSupport *tes = TLSEventSupport::getInstance(ssl);
-  if (tes) {
-    tes->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
+  TLSEventSupport *es = TLSEventSupport::getInstance(ssl);
+  if (es) {
+    es->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
   }
   netvc->set_verify_cert(nullptr);
 
@@ -333,9 +333,9 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     return CLIENT_HELLO_ERROR;
   }
 
-  TLSEventSupport *tes = TLSEventSupport::getInstance(s);
-  if (tes) {
-    bool reenabled = tes->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+  TLSEventSupport *es = TLSEventSupport::getInstance(s);
+  if (es) {
+    bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
     if (!reenabled) {
       return CLIENT_HELLO_RETRY;
     }
@@ -435,6 +435,9 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
 {
   TLSSNISupport *snis = TLSSNISupport::getInstance(ssl);
   if (snis) {
+    if (TLSEventSupport *es = TLSEventSupport::getInstance(ssl); es) {
+      es->callHooks(TS_EVENT_SSL_SERVERNAME);
+    }
     snis->on_servername(ssl, al, arg);
 #if !TS_USE_HELLO_CB
     // Only call the SNI actions here if not already performed in the HELLO_CB
