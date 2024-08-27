@@ -7928,17 +7928,17 @@ TSVConnFdGet(TSVConn vconnp)
 const char *
 TSVConnSslSniGet(TSVConn sslp, int *length)
 {
-  char const     *server_name = nullptr;
-  NetVConnection *vc          = reinterpret_cast<NetVConnection *>(sslp);
-
-  if (vc == nullptr) {
+  if (sslp == nullptr) {
     return nullptr;
   }
 
-  server_name = vc->get_server_name();
-
-  if (length) {
-    *length = server_name ? strlen(server_name) : 0;
+  char const     *server_name = nullptr;
+  NetVConnection *vc          = reinterpret_cast<NetVConnection *>(sslp);
+  if (auto snis = vc->get_service<TLSSNISupport>(); snis) {
+    server_name = snis->get_sni_server_name();
+    if (length) {
+      *length = server_name ? strlen(server_name) : 0;
+    }
   }
 
   return server_name;

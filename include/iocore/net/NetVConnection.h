@@ -163,15 +163,6 @@ public:
   */
   void do_io_shutdown(ShutdownHowTo_t howto) override = 0;
 
-  /**
-    Return the server name that is appropriate for the network VC type
-  */
-  virtual const char *
-  get_server_name() const
-  {
-    return nullptr;
-  }
-
   ////////////////////////////////////////////////////////////
   // Set the timeouts associated with this connection.      //
   // active_timeout is for the total elapsed time of        //
@@ -325,22 +316,6 @@ public:
   get_context() const
   {
     return netvc_context;
-  }
-
-  /**
-   * Returns true if the network protocol
-   * supports a client provided SNI value
-   */
-  virtual bool
-  support_sni() const
-  {
-    return false;
-  }
-
-  virtual const char *
-  get_sni_servername() const
-  {
-    return nullptr;
   }
 
   virtual bool

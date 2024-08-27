@@ -23,14 +23,15 @@
 
 #include "SSLProxySession.h"
 #include "iocore/net/NetVConnection.h"
+#include "iocore/net/TLSSNISupport.h"
 
 class TLSSNISupport;
 
 void
 SSLProxySession::init(NetVConnection const &new_vc)
 {
-  if (new_vc.get_service<TLSSNISupport>() != nullptr) {
-    if (char const *name = new_vc.get_server_name()) {
+  if (auto *snis = new_vc.get_service<TLSSNISupport>(); snis != nullptr) {
+    if (char const *name = snis->get_sni_server_name()) {
       _client_sni_server_name.assign(name);
     }
   }

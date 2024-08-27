@@ -61,6 +61,11 @@ public:
   void on_client_hello(ClientHello &client_hello);
   void on_servername(SSL *ssl, int *al, void *arg);
 
+  /**
+   * Get the server name in SNI
+   *
+   * @return Either a pointer to the (null-terminated) name fetched from the TLS object or the empty string.
+   */
   const char *get_sni_server_name() const;
   bool        would_have_actions_for(const char *servername, IpEndpoint remote, int &enforcement_policy);
 
