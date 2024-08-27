@@ -448,7 +448,6 @@ IPCSocketServer::Config::Config()
 void
 IPCSocketServer::late_check_peer_credentials(int peedFd, TSRPCHandlerOptions const &options, swoc::Errata &errata) const
 {
-  swoc::LocalBufferWriter<256> w;
   // For privileged calls, ensure we have caller credentials and that the caller is privileged.
   auto ecode = [](UnauthorizedErrorCode c) -> std::error_code {
     return std::error_code(static_cast<unsigned>(c), std::generic_category());
