@@ -23,8 +23,8 @@
 constexpr unsigned NORMALIZED_TIME_QUANTUM = 3600; // 1 hour
 
 // Some common network ranges
-const Cript::Matcher::Range::IP Cript::Net::Localhost({"127.0.0.1", "::1"});
-const Cript::Matcher::Range::IP Cript::Net::RFC1918({"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"});
+const cripts::Matcher::Range::IP cripts::Net::Localhost({"127.0.0.1", "::1"});
+const cripts::Matcher::Range::IP cripts::Net::RFC1918({"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"});
 
 void
 detail::ConnBase::Pacing::operator=(uint32_t val)
@@ -66,7 +66,7 @@ detail::ConnBase::TcpInfo::initialize()
 #endif
 }
 
-Cript::string_view
+cripts::string_view
 detail::ConnBase::TcpInfo::Log()
 {
   initialize();
@@ -86,11 +86,11 @@ detail::ConnBase::TcpInfo::Log()
   return _logging;
 }
 
-namespace Cript
+namespace cripts
 {
 
 // This is mostly copied out of header_rewrite of course
-Cript::string_view
+cripts::string_view
 IP::GetSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
 {
   if (is_ip4()) {
@@ -202,7 +202,7 @@ IP::Sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_cidr)
 }
 
 Client::Connection &
-Client::Connection::_get(Cript::Context *context)
+Client::Connection::_get(cripts::Context *context)
 {
   Client::Connection *conn = &context->_client_conn;
 
@@ -240,9 +240,9 @@ Client::Connection::Count() const
 }
 
 Server::Connection &
-Server::Connection::_get(Cript::Context *context)
+Server::Connection::_get(cripts::Context *context)
 {
-  Cript::Server::Connection *conn = &context->_server_conn;
+  cripts::Server::Connection *conn = &context->_server_conn;
 
   if (!conn->Initialized()) {
     TSAssert(context->state.ssnp);
@@ -272,4 +272,4 @@ Server::Connection::Count() const
   return TSHttpTxnServerSsnTransactionCount(_state->txnp);
 }
 
-} // namespace Cript
+} // namespace cripts

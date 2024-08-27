@@ -27,23 +27,23 @@
 #include "cripts/Bundle.hpp"
 #include <cripts/ConfigsBase.hpp>
 
-namespace Cript::Bundle
+namespace cripts::Bundle
 {
-class Common : public Cript::Bundle::Base
+class Common : public cripts::Bundle::Base
 {
-  using super_type = Cript::Bundle::Base;
+  using super_type = cripts::Bundle::Base;
   using self_type  = Common;
 
-  using RecordsList = std::vector<std::pair<const Cript::Records *, const Cript::Records::ValueType>>;
+  using RecordsList = std::vector<std::pair<const cripts::Records *, const cripts::Records::ValueType>>;
 
 public:
   using super_type::Base;
 
-  bool Validate(std::vector<Cript::Bundle::Error> &errors) const override;
+  bool Validate(std::vector<cripts::Bundle::Error> &errors) const override;
 
   // This is the factory to create an instance of this bundle
   static self_type &
-  _activate(Cript::Instance &inst)
+  _activate(cripts::Instance &inst)
   {
     auto *entry = new self_type();
 
@@ -52,7 +52,7 @@ public:
     return *entry;
   }
 
-  [[nodiscard]] const Cript::string &
+  [[nodiscard]] const cripts::string &
   Name() const override
   {
     return _name;
@@ -61,24 +61,24 @@ public:
   self_type &
   dscp(int val)
   {
-    NeedCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(cripts::Callbacks::DO_REMAP);
     _dscp = val;
 
     return *this;
   }
 
-  self_type &via_header(const Cript::string_view &destination, const Cript::string_view &value);
-  self_type &set_config(const Cript::string_view name, const Cript::Records::ValueType &value);
-  self_type &set_config(const std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> &configs);
+  self_type &via_header(const cripts::string_view &destination, const cripts::string_view &value);
+  self_type &set_config(const cripts::string_view name, const cripts::Records::ValueType &value);
+  self_type &set_config(const std::vector<std::pair<const cripts::string_view, const cripts::Records::ValueType>> &configs);
 
-  void doRemap(Cript::Context *context) override;
+  void doRemap(cripts::Context *context) override;
 
 private:
-  static const Cript::string _name;
-  int                        _dscp       = 0;
-  std::pair<int, bool>       _client_via = {0, false}; // Flag indicates if it's been set at all
-  std::pair<int, bool>       _origin_via = {0, false};
-  RecordsList                _configs;
+  static const cripts::string _name;
+  int                         _dscp       = 0;
+  std::pair<int, bool>        _client_via = {0, false}; // Flag indicates if it's been set at all
+  std::pair<int, bool>        _origin_via = {0, false};
+  RecordsList                 _configs;
 };
 
-} // namespace Cript::Bundle
+} // namespace cripts::Bundle

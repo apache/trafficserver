@@ -94,7 +94,7 @@ depending on your preference. The file must be readable by the ATS process. Exam
 
    do_remap()
    {
-     borrow url = Cript::Client::URL::get();
+     borrow url = cripts::Client::URL::get();
 
      url.query.keep({"foo", "bar"});
    }
@@ -154,7 +154,7 @@ convention, ``PascalCase``. Instance variables and members are always all lowerc
 
 .. code-block:: cpp
 
-   auto url = Cript::Client::URL::Get();
+   auto url = cripts::Client::URL::Get();
    url.query.Keep({"foo", "bar"});
 
 .. _cripts-overview-hooks:

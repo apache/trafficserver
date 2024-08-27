@@ -36,18 +36,18 @@ public:
   HRWBridge(const self_type &)      = delete;
   void operator=(const self_type &) = delete;
 
-  HRWBridge(const Cript::string_view &str) : _value(str) {}
+  HRWBridge(const cripts::string_view &str) : _value(str) {}
 
   virtual ~HRWBridge() = default;
 
-  virtual Cript::string_view
-  value(Cript::Context * /* context ATS_UNUSED */)
+  virtual cripts::string_view
+  value(cripts::Context * /* context ATS_UNUSED */)
   {
     return _value;
   }
 
 protected:
-  Cript::string _value;
+  cripts::string _value;
 
 }; // class HRWBridge
 
@@ -57,8 +57,8 @@ class HeadersType
   using self_type = HeadersType;
 
 public:
-  using HeaderList      = std::vector<Cript::string>;
-  using HeaderValueList = std::vector<std::pair<const Cript::string, detail::HRWBridge *>>;
+  using HeaderList      = std::vector<cripts::string>;
+  using HeaderValueList = std::vector<std::pair<const cripts::string, detail::HRWBridge *>>;
 
   HeadersType()                     = default;
   HeadersType(const self_type &)    = delete;
@@ -76,22 +76,22 @@ public:
 };
 } // namespace detail
 
-namespace Cript::Bundle
+namespace cripts::Bundle
 {
-class Headers : public Cript::Bundle::Base
+class Headers : public cripts::Bundle::Base
 {
-  using super_type = Cript::Bundle::Base;
+  using super_type = cripts::Bundle::Base;
   using self_type  = Headers;
 
 public:
-  using HeaderList      = std::vector<Cript::string>;
-  using HeaderValueList = std::vector<std::pair<const Cript::string, const Cript::string>>;
+  using HeaderList      = std::vector<cripts::string>;
+  using HeaderValueList = std::vector<std::pair<const cripts::string, const cripts::string>>;
 
   using super_type::Base;
 
   // This is the factory to create an instance of this bundle
   static self_type &
-  _activate(Cript::Instance &inst)
+  _activate(cripts::Instance &inst)
   {
     auto *entry = new self_type();
 
@@ -100,24 +100,24 @@ public:
     return *entry;
   }
 
-  [[nodiscard]] const Cript::string &
+  [[nodiscard]] const cripts::string &
   Name() const override
   {
     return _name;
   }
 
-  static detail::HRWBridge *BridgeFactory(const Cript::string &source);
+  static detail::HRWBridge *BridgeFactory(const cripts::string &source);
 
-  self_type &rm_headers(const Cript::string_view target, const HeaderList &headers);
-  self_type &set_headers(const Cript::string_view target, const HeaderValueList &headers);
+  self_type &rm_headers(const cripts::string_view target, const HeaderList &headers);
+  self_type &set_headers(const cripts::string_view target, const HeaderValueList &headers);
 
-  void doRemap(Cript::Context *context) override;
-  void doSendResponse(Cript::Context *context) override;
-  void doSendRequest(Cript::Context *context) override;
-  void doReadResponse(Cript::Context *context) override;
+  void doRemap(cripts::Context *context) override;
+  void doSendResponse(cripts::Context *context) override;
+  void doSendRequest(cripts::Context *context) override;
+  void doReadResponse(cripts::Context *context) override;
 
 private:
-  static const Cript::string _name;
+  static const cripts::string _name;
 
   detail::HeadersType _client_request;
   detail::HeadersType _client_response;
@@ -125,4 +125,4 @@ private:
   detail::HeadersType _server_response;
 };
 
-} // namespace Cript::Bundle
+} // namespace cripts::Bundle

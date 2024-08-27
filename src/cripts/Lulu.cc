@@ -28,8 +28,8 @@
 #if CRIPTS_HAS_MAXMIND
 #include <maxminddb.h>
 
-MMDB_s             *gMaxMindDB    = nullptr;
-const Cript::string maxMindDBPath = CRIPTS_MAXMIND_DB;
+MMDB_s              *gMaxMindDB    = nullptr;
+const cripts::string maxMindDBPath = CRIPTS_MAXMIND_DB;
 #endif
 
 void
@@ -50,7 +50,7 @@ global_initialization()
 #endif
 
   // Initialize various sub modules
-  Cript::Plugin::Remap::Initialize();
+  cripts::Plugin::Remap::Initialize();
 }
 
 integer
@@ -67,7 +67,7 @@ integer_helper(std::string_view sv)
 }
 
 int
-Cript::Random(int max)
+cripts::Random(int max)
 {
   static std::random_device          r;
   static std::default_random_engine  e1(r());
@@ -76,7 +76,7 @@ Cript::Random(int max)
   return uniform_dist(e1);
 }
 
-namespace Cript::details
+namespace cripts::details
 {
 
 template <typename T>
@@ -92,7 +92,7 @@ Splitter(T input, char delim)
     if (first != second) {
       output.emplace_back(input.substr(first, second - first));
     }
-    if (second == Cript::string_view::npos) {
+    if (second == cripts::string_view::npos) {
       break;
     }
     first = second + 1;
@@ -101,39 +101,39 @@ Splitter(T input, char delim)
   return output; // RVO
 }
 
-} // namespace Cript::details
+} // namespace cripts::details
 
-Cript::string
-Cript::Hex(const Cript::string &str)
+cripts::string
+cripts::Hex(const cripts::string &str)
 {
   return ts::hex(str);
 }
 
-Cript::string
-Cript::Hex(Cript::string_view sv)
+cripts::string
+cripts::Hex(cripts::string_view sv)
 {
   return ts::hex(sv);
 }
 
-Cript::string
-Cript::UnHex(const Cript::string &str)
+cripts::string
+cripts::UnHex(const cripts::string &str)
 {
   return ts::unhex(str);
 }
 
-Cript::string
-Cript::UnHex(Cript::string_view sv)
+cripts::string
+cripts::UnHex(cripts::string_view sv)
 {
   return ts::unhex(sv);
 }
 
-Cript::string::operator integer() const
+cripts::string::operator integer() const
 {
   return swoc::svtoi(*this);
 }
 
 // This doesn't deal with upper/lower case
-Cript::string::operator bool() const
+cripts::string::operator bool() const
 {
   if (empty()) {
     return false;
@@ -154,46 +154,46 @@ Cript::string::operator bool() const
   return false;
 }
 
-std::vector<Cript::string_view>
-Cript::string::split(char delim) const &
+std::vector<cripts::string_view>
+cripts::string::split(char delim) const &
 {
-  return details::Splitter<Cript::string_view>(*this, delim);
+  return details::Splitter<cripts::string_view>(*this, delim);
 }
 
-std::vector<Cript::string_view>
-Cript::Splitter(Cript::string_view input, char delim)
+std::vector<cripts::string_view>
+cripts::Splitter(cripts::string_view input, char delim)
 {
-  return details::Splitter<Cript::string_view>(input, delim);
+  return details::Splitter<cripts::string_view>(input, delim);
 }
 
 bool
-Cript::Control::Base::_get(Cript::Context *context) const
+cripts::Control::Base::_get(cripts::Context *context) const
 {
   return TSHttpTxnCntlGet(context->state.txnp, _ctrl);
 }
 
 void
-Cript::Control::Base::_set(Cript::Context *context, bool value)
+cripts::Control::Base::_set(cripts::Context *context, bool value)
 {
   TSHttpTxnCntlSet(context->state.txnp, _ctrl, value);
 }
 
-Cript::string_view
-Cript::Versions::GetSV()
+cripts::string_view
+cripts::Versions::GetSV()
 {
   if (_version.length() == 0) {
     const char *ver = TSTrafficServerVersionGet();
 
-    _version = Cript::string_view(ver, strlen(ver)); // ToDo: Annoyingly, we have ambiquity on the operator=
+    _version = cripts::string_view(ver, strlen(ver)); // ToDo: Annoyingly, we have ambiquity on the operator=
   }
 
   return _version;
 }
 
 // Globals
-Cript::Proxy    proxy;
-Cript::Control  control;
-Cript::Versions version;
+cripts::Proxy    proxy;
+cripts::Control  control;
+cripts::Versions version;
 
 std::string plugin_debug_tag;
 

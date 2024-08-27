@@ -59,7 +59,7 @@ def print_header():
 
 #include "cripts/ConfigsBase.hpp"
 
-namespace Cript
+namespace cripts
 {
 """)
 
@@ -67,7 +67,7 @@ namespace Cript
 def print_footer():
     print("""
 
-} // namespace Cript
+} // namespace cripts
 """)
 
 
@@ -78,7 +78,7 @@ def print_class(tree, cur="", indent=0):
             if indent > 0:
                 indentp("private:", indent - 1)
                 if cur == "proxy":
-                    indentp("friend class Cript::Context; // Needed to set the state", indent)
+                    indentp("friend class cripts::Context; // Needed to set the state", indent)
                     print()
             indentp("class {}".format(k.title()), indent)
             indentp("{", indent)
@@ -88,11 +88,11 @@ def print_class(tree, cur="", indent=0):
                 indentp("public:", indent - 1)
                 firstInstance = False
             if tree[k][1] == "TS_RECORDDATATYPE_INT":
-                indentp("Cript::IntConfig {}{{\"{}\"}};".format(k, tree[k][2]), indent)
+                indentp("cripts::IntConfig {}{{\"{}\"}};".format(k, tree[k][2]), indent)
             elif tree[k][1] == "TS_RECORDDATATYPE_FLOAT":
-                indentp("Cript::FloatConfig {}{{\"{}\"}};".format(k, tree[k][2]), indent)
+                indentp("cripts::FloatConfig {}{{\"{}\"}};".format(k, tree[k][2]), indent)
             elif tree[k][1] == "TS_RECORDDATATYPE_STRING":
-                indentp("Cript::StringConfig {}{{\"{}\"}};".format(k, tree[k][2]), indent)
+                indentp("cripts::StringConfig {}{{\"{}\"}};".format(k, tree[k][2]), indent)
             else:
                 print("The source file has a bad configuration data type: {}".format(tree[k][1]))
     if cur:

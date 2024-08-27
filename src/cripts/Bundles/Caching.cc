@@ -19,12 +19,12 @@
 #include "cripts/Preamble.hpp"
 #include "cripts/Bundles/Caching.hpp"
 
-namespace Cript::Bundle
+namespace cripts::Bundle
 {
-const Cript::string Caching::_name = "Bundle::Caching";
+const cripts::string Caching::_name = "Bundle::Caching";
 
 void
-Caching::doRemap(Cript::Context *context)
+Caching::doRemap(cripts::Context *context)
 {
   // .disable(bool)
   if (_disabled) {
@@ -34,9 +34,9 @@ Caching::doRemap(Cript::Context *context)
 }
 
 void
-Caching::doReadResponse(Cript::Context *context)
+Caching::doReadResponse(cripts::Context *context)
 {
-  borrow resp = Cript::Server::Response::Get();
+  borrow resp = cripts::Server::Response::Get();
 
   // .cache_control(str)
   if (!_cc.empty() && (resp.status > 199) && (resp.status < 400) && (resp["Cache-Control"].empty() || _force_cc)) {
@@ -44,4 +44,4 @@ Caching::doReadResponse(Cript::Context *context)
   }
 }
 
-} // namespace Cript::Bundle
+} // namespace cripts::Bundle

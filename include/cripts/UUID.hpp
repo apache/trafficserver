@@ -21,7 +21,7 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-namespace Cript
+namespace cripts
 {
 class Context;
 
@@ -37,8 +37,8 @@ namespace UUID
     void operator=(const self_type &) = delete;
 
     // This doesn't use the context so we can implement it here
-    static Cript::string
-    _get(Cript::Context * /* context ATS_UNUSED */)
+    static cripts::string
+    _get(cripts::Context * /* context ATS_UNUSED */)
     {
       TSUuid process = TSProcessUuidGet();
 
@@ -56,7 +56,7 @@ namespace UUID
     Unique(const self_type &)         = delete;
     void operator=(const self_type &) = delete;
 
-    static Cript::string _get(Cript::Context *context);
+    static cripts::string _get(cripts::Context *context);
 
   }; // End class UUID::Unique
 
@@ -69,10 +69,10 @@ namespace UUID
     Request(const self_type &)        = delete;
     void operator=(const self_type &) = delete;
 
-    static Cript::string _get(Cript::Context *context);
+    static cripts::string _get(cripts::Context *context);
 
   }; // End class UUID::Request
 
 } // namespace UUID
 
-} // namespace Cript
+} // namespace cripts

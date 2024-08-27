@@ -238,7 +238,7 @@ int
 default_cont(TSCont contp, TSEvent event, void *edata)
 {
   auto  txnp    = static_cast<TSHttpTxn>(edata);
-  auto *context = static_cast<Cript::Context *>(TSContDataGet(contp));
+  auto *context = static_cast<cripts::Context *>(TSContDataGet(contp));
 
   context->reset(); // Clears the cached handles to internal ATS data (mloc's etc.)
 
@@ -249,15 +249,15 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_send_request()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_SEND_REQUEST) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & cripts::Callbacks::DO_SEND_REQUEST) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->Callbacks() & Cript::Callbacks::DO_SEND_REQUEST) {
+          if (bundle->Callbacks() & cripts::Callbacks::DO_SEND_REQUEST) {
             bundle->doSendRequest(context);
           }
         }
       }
       wrap_send_request(context, true, CaseArg);
-      Cript::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+      cripts::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
     }
     break;
   case TS_EVENT_HTTP_READ_RESPONSE_HDR: // 60006
@@ -266,9 +266,9 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_read_response()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_READ_RESPONSE) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & cripts::Callbacks::DO_READ_RESPONSE) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->Callbacks() & Cript::Callbacks::DO_READ_RESPONSE) {
+          if (bundle->Callbacks() & cripts::Callbacks::DO_READ_RESPONSE) {
             bundle->doReadResponse(context);
           }
         }
@@ -282,9 +282,9 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_send_response()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_SEND_RESPONSE) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & cripts::Callbacks::DO_SEND_RESPONSE) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->Callbacks() & Cript::Callbacks::DO_SEND_RESPONSE) {
+          if (bundle->Callbacks() & cripts::Callbacks::DO_SEND_RESPONSE) {
             bundle->doSendResponse(context);
           }
         }
@@ -294,13 +294,13 @@ default_cont(TSCont contp, TSEvent event, void *edata)
     break;
   case TS_EVENT_HTTP_TXN_CLOSE: // 60012
     context->state.hook = TS_HTTP_TXN_CLOSE_HOOK;
-    if (context->state.enabled_hooks & Cript::Callbacks::DO_TXN_CLOSE) {
+    if (context->state.enabled_hooks & cripts::Callbacks::DO_TXN_CLOSE) {
       CDebug("Entering do_txn_close()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_TXN_CLOSE) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & cripts::Callbacks::DO_TXN_CLOSE) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->Callbacks() & Cript::Callbacks::DO_TXN_CLOSE) {
+          if (bundle->Callbacks() & cripts::Callbacks::DO_TXN_CLOSE) {
             bundle->doTxnClose(context);
           }
         }
@@ -317,9 +317,9 @@ default_cont(TSCont contp, TSEvent event, void *edata)
       CDebug("Entering do_cache_lookup()");
 
       // Call any bundle callbacks that are registered for this hook
-      if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_CACHE_LOOKUP) {
+      if (!context->state.error.Failed() && context->p_instance.Callbacks() & cripts::Callbacks::DO_CACHE_LOOKUP) {
         for (auto &bundle : context->p_instance.bundles) {
-          if (bundle->Callbacks() & Cript::Callbacks::DO_CACHE_LOOKUP) {
+          if (bundle->Callbacks() & cripts::Callbacks::DO_CACHE_LOOKUP) {
             bundle->doCacheLookup(context);
           }
         }
@@ -332,9 +332,9 @@ default_cont(TSCont contp, TSEvent event, void *edata)
     CDebug("Entering do_post_remap()");
 
     // Call any bundle callbacks that are registered for this hook
-    if (!context->state.error.Failed() && context->p_instance.Callbacks() & Cript::Callbacks::DO_POST_REMAP) {
+    if (!context->state.error.Failed() && context->p_instance.Callbacks() & cripts::Callbacks::DO_POST_REMAP) {
       for (auto &bundle : context->p_instance.bundles) {
-        if (bundle->Callbacks() & Cript::Callbacks::DO_POST_REMAP) {
+        if (bundle->Callbacks() & cripts::Callbacks::DO_POST_REMAP) {
           bundle->doPostRemap(context);
         }
       }
@@ -342,8 +342,8 @@ default_cont(TSCont contp, TSEvent event, void *edata)
     wrap_post_remap(context, true, CaseArg);
 
     if (!context->state.error.Failed()) {
-      Cript::Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
-      Cript::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+      cripts::Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
+      cripts::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
     }
     break;
     // This is for cleanup, and should always be called / wrapped
@@ -396,16 +396,16 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  auto                  *inst = new Cript::Instance(argc, argv);
-  Cript::InstanceContext context(*inst);
-  bool                   needs_create_instance = wrap_create_instance(&context, false, CaseArg);
+  auto                   *inst = new cripts::Instance(argc, argv);
+  cripts::InstanceContext context(*inst);
+  bool                    needs_create_instance = wrap_create_instance(&context, false, CaseArg);
 
   if (needs_create_instance) {
     wrap_create_instance(&context, true, CaseArg);
   }
 
   if (!inst->Failed()) {
-    std::vector<Cript::Bundle::Error> errors;
+    std::vector<cripts::Bundle::Error> errors;
 
     for (auto &bundle : inst->bundles) {
       // Collect all the callbacks needed from all bundles, and validate them
@@ -431,7 +431,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     *ih = static_cast<void *>(inst);
 
     inst->debug("Created a new instance for Cript = {}", inst->plugin_debug_tag);
-    inst->debug("The context data size = {}", sizeof(Cript::Context));
+    inst->debug("The context data size = {}", sizeof(cripts::Context));
 
     return TS_SUCCESS;
   } else {
@@ -443,9 +443,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 void
 TSRemapDeleteInstance(void *ih)
 {
-  auto                   inst = static_cast<Cript::Instance *>(ih);
-  Cript::InstanceContext context(*inst);
-  bool                   needs_delete_instance = wrap_delete_instance(&context, false, CaseArg);
+  auto                    inst = static_cast<cripts::Instance *>(ih);
+  cripts::InstanceContext context(*inst);
+  bool                    needs_delete_instance = wrap_delete_instance(&context, false, CaseArg);
 
   if (needs_delete_instance) {
     wrap_delete_instance(&context, true, CaseArg);
@@ -461,25 +461,25 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   // Check to see if we need to setup future hooks with a continuation. This
   // should only happen once.
-  static bool     cript_needs_do_remap = wrap_do_remap(static_cast<Cript::Context *>(nullptr), false, CaseArg);
+  static bool     cript_needs_do_remap = wrap_do_remap(static_cast<cripts::Context *>(nullptr), false, CaseArg);
   static unsigned cript_enabled_hooks =
-    (wrap_post_remap(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_POST_REMAP : 0) |
-    (wrap_send_response(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_SEND_RESPONSE : 0) |
-    (wrap_send_request(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_SEND_REQUEST : 0) |
-    (wrap_read_response(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_READ_RESPONSE : 0) |
-    (wrap_cache_lookup(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_CACHE_LOOKUP : 0) |
-    (wrap_txn_close(static_cast<Cript::Context *>(nullptr), false, CaseArg) ? Cript::Callbacks::DO_TXN_CLOSE : 0);
+    (wrap_post_remap(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_POST_REMAP : 0) |
+    (wrap_send_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_SEND_RESPONSE : 0) |
+    (wrap_send_request(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_SEND_REQUEST : 0) |
+    (wrap_read_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_READ_RESPONSE : 0) |
+    (wrap_cache_lookup(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_CACHE_LOOKUP : 0) |
+    (wrap_txn_close(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_TXN_CLOSE : 0);
 
   TSHttpSsn ssnp         = TSHttpTxnSsnGet(txnp);
-  auto     *inst         = static_cast<Cript::Instance *>(ih);
+  auto     *inst         = static_cast<cripts::Instance *>(ih);
   auto      bundle_cbs   = inst->Callbacks();
-  auto     *context      = Cript::Context::Factory(txnp, ssnp, rri, *inst);
+  auto     *context      = cripts::Context::Factory(txnp, ssnp, rri, *inst);
   bool      keep_context = false;
 
   context->state.hook          = TS_HTTP_READ_REQUEST_HDR_HOOK; // Not quite true
   context->state.enabled_hooks = (cript_enabled_hooks | bundle_cbs);
 
-  if (cript_needs_do_remap || bundle_cbs & Cript::Callbacks::DO_REMAP) {
+  if (cript_needs_do_remap || bundle_cbs & cripts::Callbacks::DO_REMAP) {
     CDebug("Entering do_remap()");
     for (auto &bundle : context->p_instance.bundles) {
       bundle->doRemap(context);
@@ -491,30 +491,30 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   // Don't do the callbacks when we are in a failure state.
   if (!context->state.error.Failed()) {
-    Cript::Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
-    Cript::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+    cripts::Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
+    cripts::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
 
-    if (context->state.enabled_hooks >= Cript::Callbacks::DO_POST_REMAP) {
+    if (context->state.enabled_hooks >= cripts::Callbacks::DO_POST_REMAP) {
       context->default_cont = TSContCreate(default_cont, nullptr);
       TSContDataSet(context->default_cont, context);
 
-      if (context->state.enabled_hooks & Cript::Callbacks::DO_POST_REMAP) {
+      if (context->state.enabled_hooks & cripts::Callbacks::DO_POST_REMAP) {
         TSHttpTxnHookAdd(txnp, TS_HTTP_POST_REMAP_HOOK, context->default_cont);
       }
 
-      if (context->state.enabled_hooks & Cript::Callbacks::DO_SEND_RESPONSE) {
+      if (context->state.enabled_hooks & cripts::Callbacks::DO_SEND_RESPONSE) {
         TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, context->default_cont);
       }
 
-      if (context->state.enabled_hooks & Cript::Callbacks::DO_SEND_REQUEST) {
+      if (context->state.enabled_hooks & cripts::Callbacks::DO_SEND_REQUEST) {
         TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, context->default_cont);
       }
 
-      if (context->state.enabled_hooks & Cript::Callbacks::DO_READ_RESPONSE) {
+      if (context->state.enabled_hooks & cripts::Callbacks::DO_READ_RESPONSE) {
         TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, context->default_cont);
       }
 
-      if (context->state.enabled_hooks & Cript::Callbacks::DO_CACHE_LOOKUP) {
+      if (context->state.enabled_hooks & cripts::Callbacks::DO_CACHE_LOOKUP) {
         TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, context->default_cont);
       }
 
@@ -539,7 +539,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   // See if the Client URL was modified, which dicates the return code here.
-  if (Cript::Client::URL::_get(context).Modified()) {
+  if (cripts::Client::URL::_get(context).Modified()) {
     context->p_instance.debug("Client::URL was modified, returning TSREMAP_DID_REMAP");
     return TSREMAP_DID_REMAP;
   } else {

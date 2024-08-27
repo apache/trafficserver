@@ -17,7 +17,7 @@
 */
 #pragma once
 
-namespace Cript
+namespace cripts
 {
 class Context;
 }
@@ -28,7 +28,7 @@ class Context;
 #include "cripts/Lulu.hpp"
 #include "cripts/Matcher.hpp"
 
-namespace Cript
+namespace cripts
 {
 namespace Net
 {
@@ -46,8 +46,8 @@ public:
   IP(const self_type &)             = delete;
   void operator=(const self_type &) = delete;
 
-  Cript::string_view GetSV(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
-  Cript::string_view
+  cripts::string_view GetSV(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
+  cripts::string_view
   string(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128)
   {
     return GetSV(ipv4_cidr, ipv6_cidr);
@@ -62,7 +62,7 @@ private:
   uint16_t _sampler = 0;
 };
 
-} // namespace Cript
+} // namespace cripts
 
 namespace detail
 {
@@ -133,7 +133,7 @@ class ConnBase
     void operator=(const self_type &) = delete;
 
     self_type &
-    operator=([[maybe_unused]] Cript::string_view const &str)
+    operator=([[maybe_unused]] cripts::string_view const &str)
     {
       TSAssert(_owner);
 #if defined(TCP_CONGESTION)
@@ -191,10 +191,10 @@ class ConnBase
     Geo()                             = default;
     void operator=(const self_type &) = delete;
 
-    [[nodiscard]] Cript::string ASN() const;
-    [[nodiscard]] Cript::string ASNName() const;
-    [[nodiscard]] Cript::string Country() const;
-    [[nodiscard]] Cript::string CountryCode() const;
+    [[nodiscard]] cripts::string ASN() const;
+    [[nodiscard]] cripts::string ASNName() const;
+    [[nodiscard]] cripts::string Country() const;
+    [[nodiscard]] cripts::string CountryCode() const;
 
   private:
     ConnBase *_owner = nullptr;
@@ -211,7 +211,7 @@ class ConnBase
     TcpInfo(const self_type &)        = delete;
     void operator=(const self_type &) = delete;
 
-    Cript::string_view Log();
+    cripts::string_view Log();
 
     [[nodiscard]] bool
     Ready() const
@@ -282,9 +282,9 @@ class ConnBase
   private:
     void initialize();
 
-    ConnBase     *_owner = nullptr;
-    bool          _ready = false;
-    Cript::string _logging; // Storage for the logformat of the tcpinfo
+    ConnBase      *_owner = nullptr;
+    bool           _ready = false;
+    cripts::string _logging; // Storage for the logformat of the tcpinfo
 
   }; // End class ConnBase::TcpInfo
 
@@ -303,11 +303,11 @@ public:
     return TSNetVConnRemoteAddrGet(_vc);
   }
 
-  [[nodiscard]] Cript::IP
+  [[nodiscard]] cripts::IP
   IP() const
   {
     TSAssert(Initialized());
-    return Cript::IP{Socket()};
+    return cripts::IP{Socket()};
   }
 
   [[nodiscard]] bool
@@ -322,10 +322,10 @@ public:
     return TSHttpTxnIsInternal(_state->txnp);
   }
 
-  [[nodiscard]] virtual Cript::IP LocalIP() const  = 0;
-  [[nodiscard]] virtual int       Count() const    = 0;
-  virtual void                    SetDscp(int val) = 0;
-  virtual void                    SetMark(int val) = 0;
+  [[nodiscard]] virtual cripts::IP LocalIP() const  = 0;
+  [[nodiscard]] virtual int        Count() const    = 0;
+  virtual void                     SetDscp(int val) = 0;
+  virtual void                     SetMark(int val) = 0;
 
   Dscp       dscp;
   Congestion congestion;
@@ -334,10 +334,10 @@ public:
   Pacing     pacing;
   Mark       mark;
 
-  Cript::string_view string(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
+  cripts::string_view string(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
 
 protected:
-  Cript::Transaction    *_state  = nullptr;
+  cripts::Transaction   *_state  = nullptr;
   struct sockaddr const *_socket = nullptr;
   TSVConn                _vc     = nullptr;
   char                   _str[INET6_ADDRSTRLEN + 1];
@@ -346,7 +346,7 @@ protected:
 
 } // namespace detail
 
-namespace Cript
+namespace cripts
 {
 
 namespace Client
@@ -363,7 +363,7 @@ namespace Client
 
     [[nodiscard]] int  FD() const override;
     [[nodiscard]] int  Count() const override;
-    static Connection &_get(Cript::Context *context);
+    static Connection &_get(cripts::Context *context);
 
     void
     SetDscp(int val) override
@@ -377,10 +377,10 @@ namespace Client
       TSHttpTxnClientPacketMarkSet(_state->txnp, val);
     }
 
-    [[nodiscard]] Cript::IP
+    [[nodiscard]] cripts::IP
     LocalIP() const override
     {
-      return Cript::IP{TSHttpTxnIncomingAddrGet(_state->txnp)};
+      return cripts::IP{TSHttpTxnIncomingAddrGet(_state->txnp)};
     }
 
   }; // End class Client::Connection
@@ -401,7 +401,7 @@ namespace Server
 
     [[nodiscard]] int  FD() const override;
     [[nodiscard]] int  Count() const override;
-    static Connection &_get(Cript::Context *context);
+    static Connection &_get(cripts::Context *context);
 
     void
     SetDscp(int val) override
@@ -415,22 +415,22 @@ namespace Server
       TSHttpTxnServerPacketMarkSet(_state->txnp, val);
     }
 
-    [[nodiscard]] Cript::IP
+    [[nodiscard]] cripts::IP
     LocalIP() const override
     {
-      return Cript::IP{TSHttpTxnOutgoingAddrGet(_state->txnp)};
+      return cripts::IP{TSHttpTxnOutgoingAddrGet(_state->txnp)};
     }
 
   }; // End class Server::Connection
 
 } // namespace Server
 
-} // namespace Cript
+} // namespace cripts
 
 // Formatters for {fmt}
 namespace fmt
 {
-template <> struct formatter<Cript::IP> {
+template <> struct formatter<cripts::IP> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -439,7 +439,7 @@ template <> struct formatter<Cript::IP> {
 
   template <typename FormatContext>
   auto
-  format(Cript::IP &ip, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::IP &ip, FormatContext &ctx) -> decltype(ctx.out())
   {
     return format_to(ctx.out(), "{}", ip.GetSV());
   }

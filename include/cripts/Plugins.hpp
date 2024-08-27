@@ -24,9 +24,9 @@
 
 class RemapPluginInst; // Opaque to the Cripts, but needed in the implementation.
 
-namespace Cript::Plugin
+namespace cripts::Plugin
 {
-using Options = std::vector<Cript::string>;
+using Options = std::vector<cripts::string>;
 
 class Remap
 {
@@ -47,7 +47,7 @@ public:
 
   ~Remap() { Cleanup(); }
 
-  void _runRemap(Cript::Context *context);
+  void _runRemap(cripts::Context *context);
 
   void Cleanup();
 
@@ -58,8 +58,8 @@ public:
   }
 
   // Factory, sort of
-  static Remap Create(const std::string &tag, const std::string &plugin, const Cript::string &from_url, const Cript::string &to_url,
-                      const Options &options);
+  static Remap Create(const std::string &tag, const std::string &plugin, const cripts::string &from_url,
+                      const cripts::string &to_url, const Options &options);
 
   static void Initialize();
 
@@ -68,4 +68,4 @@ private:
   bool             _valid  = false;
 }; // End class Plugin::Remap
 
-} // namespace Cript::Plugin
+} // namespace cripts::Plugin

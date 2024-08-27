@@ -22,7 +22,7 @@
 // Our include dependencies are unfortunate ...
 extern std::string RecConfigReadConfigDir();
 
-namespace Cript
+namespace cripts
 {
 
 std::filesystem::file_status
@@ -41,4 +41,4 @@ File::Path::Rebase()
   return *this;
 }
 
-} // namespace Cript
+} // namespace cripts

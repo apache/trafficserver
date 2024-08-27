@@ -36,16 +36,16 @@ public:
   ID(const self_type &)             = delete;
   void operator=(const self_type &) = delete;
 
-  ID(const Cript::string_view &id);
+  ID(const cripts::string_view &id);
   ~ID() override = default;
 
-  Cript::string_view value(Cript::Context *context) override;
+  cripts::string_view value(cripts::Context *context) override;
 
 private:
   Type _type = Type::none;
 };
 
-ID::ID(const Cript::string_view &id) : super_type(id)
+ID::ID(const cripts::string_view &id) : super_type(id)
 {
   if (id == "REQUEST") {
     _type = Type::REQUEST;
@@ -58,18 +58,18 @@ ID::ID(const Cript::string_view &id) : super_type(id)
   }
 }
 
-Cript::string_view
-ID::value(Cript::Context *context)
+cripts::string_view
+ID::value(cripts::Context *context)
 {
   switch (_type) {
   case Type::REQUEST:
-    _value = Cript::UUID::Request::_get(context);
+    _value = cripts::UUID::Request::_get(context);
     break;
   case Type::PROCESS:
-    _value = Cript::UUID::Process::_get(context);
+    _value = cripts::UUID::Process::_get(context);
     break;
   case Type::UNIQUE:
-    _value = Cript::UUID::Unique::_get(context);
+    _value = cripts::UUID::Unique::_get(context);
     break;
   default:
     _value = "";
@@ -92,16 +92,16 @@ public:
   IP(const self_type &)             = delete;
   void operator=(const self_type &) = delete;
 
-  IP(const Cript::string_view &ip);
+  IP(const cripts::string_view &ip);
   ~IP() override = default;
 
-  Cript::string_view value(Cript::Context *context) override;
+  cripts::string_view value(cripts::Context *context) override;
 
 private:
   Type _type = Type::none;
 };
 
-IP::IP(const Cript::string_view &type) : super_type(type)
+IP::IP(const cripts::string_view &type) : super_type(type)
 {
   if (type == "CLIENT") {
     _type = Type::CLIENT;
@@ -116,24 +116,24 @@ IP::IP(const Cript::string_view &type) : super_type(type)
   }
 }
 
-Cript::string_view
-IP::value(Cript::Context *context)
+cripts::string_view
+IP::value(cripts::Context *context)
 {
   switch (_type) {
   case Type::CLIENT: {
-    auto ip = Cript::Client::Connection::Get().IP();
+    auto ip = cripts::Client::Connection::Get().IP();
     _value  = ip.string();
   } break;
   case Type::INBOUND: {
-    auto ip = Cript::Client::Connection::Get().LocalIP();
+    auto ip = cripts::Client::Connection::Get().LocalIP();
     _value  = ip.string();
   } break;
   case Type::SERVER: {
-    auto ip = Cript::Server::Connection::Get().IP();
+    auto ip = cripts::Server::Connection::Get().IP();
     _value  = ip.string();
   } break;
   case Type::OUTBOUND: {
-    auto ip = Cript::Server::Connection::Get().LocalIP();
+    auto ip = cripts::Server::Connection::Get().LocalIP();
     _value  = ip.string();
   } break;
   default:
@@ -155,17 +155,17 @@ public:
   CIDR(const self_type &)           = delete;
   void operator=(const self_type &) = delete;
 
-  CIDR(Cript::string_view &cidr);
+  CIDR(cripts::string_view &cidr);
   ~CIDR() override = default;
 
-  Cript::string_view value(Cript::Context *context) override;
+  cripts::string_view value(cripts::Context *context) override;
 
 private:
   unsigned int _ipv4_cidr = 32;
   unsigned int _ipv6_cidr = 128;
 };
 
-CIDR::CIDR(Cript::string_view &cidr) : super_type(cidr)
+CIDR::CIDR(cripts::string_view &cidr) : super_type(cidr)
 {
   auto ipv4 = cidr.split_prefix_at(',');
 
@@ -183,10 +183,10 @@ CIDR::CIDR(Cript::string_view &cidr) : super_type(cidr)
   }
 }
 
-Cript::string_view
-CIDR::value(Cript::Context *context)
+cripts::string_view
+CIDR::value(cripts::Context *context)
 {
-  auto ip = Cript::Client::Connection::Get().IP();
+  auto ip = cripts::Client::Connection::Get().IP();
 
   _value = ip.string(_ipv4_cidr, _ipv6_cidr);
 
@@ -208,21 +208,21 @@ public:
   URL(const self_type &)           = delete;
   URL operator=(const self_type &) = delete;
 
-  URL(const Cript::string_view &) = delete;
-  URL(Type utype, const Cript::string_view &comp);
+  URL(const cripts::string_view &) = delete;
+  URL(Type utype, const cripts::string_view &comp);
   ~URL() override = default;
 
-  Cript::string_view value(Cript::Context *context) override;
+  cripts::string_view value(cripts::Context *context) override;
 
 private:
-  Cript::string_view _getComponent(Cript::Url &url);
+  cripts::string_view _getComponent(cripts::Url &url);
 
   Type      _type = Type::none;
   Component _comp = Component::none;
 };
 
-Cript::string_view
-URL::_getComponent(Cript::Url &url)
+cripts::string_view
+URL::_getComponent(cripts::Url &url)
 {
   switch (_comp) {
   case Component::HOST:
@@ -234,7 +234,7 @@ URL::_getComponent(Cript::Url &url)
     break;
 
   case Component::PORT:
-    _value = Cript::string(std::to_string(url.port));
+    _value = cripts::string(std::to_string(url.port));
     break;
 
   case Component::QUERY:
@@ -258,7 +258,7 @@ URL::_getComponent(Cript::Url &url)
   return ""; // Should never happen
 }
 
-URL::URL(Type utype, const Cript::string_view &comp) : super_type("")
+URL::URL(Type utype, const cripts::string_view &comp) : super_type("")
 {
   _type = utype;
 
@@ -279,42 +279,42 @@ URL::URL(Type utype, const Cript::string_view &comp) : super_type("")
   }
 }
 
-Cript::string_view
-URL::value(Cript::Context *context)
+cripts::string_view
+URL::value(cripts::Context *context)
 {
   switch (_type) {
   case Type::CLIENT: {
-    borrow url = Cript::Client::URL::Get();
+    borrow url = cripts::Client::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::REMAP_FROM: {
-    borrow url = Cript::Remap::From::URL::Get();
+    borrow url = cripts::Remap::From::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::REMAP_TO: {
-    borrow url = Cript::Remap::To::URL::Get();
+    borrow url = cripts::Remap::To::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::PRISTINE: {
-    borrow url = Cript::Pristine::URL::Get();
+    borrow url = cripts::Pristine::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::CACHE: {
-    borrow url = Cript::Cache::URL::Get();
+    borrow url = cripts::Cache::URL::Get();
 
     return _getComponent(url);
   } break;
 
   case Type::PARENT: {
-    borrow url = Cript::Parent::URL::Get();
+    borrow url = cripts::Parent::URL::Get();
 
     return _getComponent(url);
   } break;
@@ -330,9 +330,9 @@ URL::value(Cript::Context *context)
 } // namespace detail
 
 detail::HRWBridge *
-Cript::Bundle::Headers::BridgeFactory(const Cript::string &source)
+cripts::Bundle::Headers::BridgeFactory(const cripts::string &source)
 {
-  Cript::string_view str = source;
+  cripts::string_view str = source;
 
   str.trim_if([](char c) { return std::isspace(c) || c == '"' || c == '\''; });
 

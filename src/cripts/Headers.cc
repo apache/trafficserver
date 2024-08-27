@@ -20,25 +20,26 @@
 #include "cripts/Preamble.hpp"
 
 // Constants
-const Cript::Header::Iterator Cript::Header::Iterator::_end = Cript::Header::Iterator("__END__", Cript::Header::Iterator::END_TAG);
+const cripts::Header::Iterator cripts::Header::Iterator::_end =
+  cripts::Header::Iterator("__END__", cripts::Header::Iterator::END_TAG);
 
-namespace Cript
+namespace cripts
 {
 
 namespace Method
 {
 #undef DELETE // ToDo: macOS shenanigans here, defining DELETE as a macro
-  const Cript::Header::Method GET(TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET);
-  const Cript::Header::Method HEAD(TS_HTTP_METHOD_HEAD, TS_HTTP_LEN_HEAD);
-  const Cript::Header::Method POST(TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST);
-  const Cript::Header::Method PUT(TS_HTTP_METHOD_PUT, TS_HTTP_LEN_PUT);
-  const Cript::Header::Method PUSH(TS_HTTP_METHOD_PUSH, TS_HTTP_LEN_PUSH);
-  const Cript::Header::Method DELETE(TS_HTTP_METHOD_DELETE, TS_HTTP_LEN_DELETE);
-  const Cript::Header::Method OPTIONS(TS_HTTP_METHOD_OPTIONS, TS_HTTP_LEN_OPTIONS);
-  const Cript::Header::Method CONNECT(TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT);
-  const Cript::Header::Method TRACE(TS_HTTP_METHOD_TRACE, TS_HTTP_LEN_TRACE);
+  const cripts::Header::Method GET(TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET);
+  const cripts::Header::Method HEAD(TS_HTTP_METHOD_HEAD, TS_HTTP_LEN_HEAD);
+  const cripts::Header::Method POST(TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST);
+  const cripts::Header::Method PUT(TS_HTTP_METHOD_PUT, TS_HTTP_LEN_PUT);
+  const cripts::Header::Method PUSH(TS_HTTP_METHOD_PUSH, TS_HTTP_LEN_PUSH);
+  const cripts::Header::Method DELETE(TS_HTTP_METHOD_DELETE, TS_HTTP_LEN_DELETE);
+  const cripts::Header::Method OPTIONS(TS_HTTP_METHOD_OPTIONS, TS_HTTP_LEN_OPTIONS);
+  const cripts::Header::Method CONNECT(TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT);
+  const cripts::Header::Method TRACE(TS_HTTP_METHOD_TRACE, TS_HTTP_LEN_TRACE);
   // This is a special feature of ATS
-  const Cript::Header::Method PURGE(TS_HTTP_METHOD_PURGE, TS_HTTP_LEN_PURGE);
+  const cripts::Header::Method PURGE(TS_HTTP_METHOD_PURGE, TS_HTTP_LEN_PURGE);
 } // namespace Method
 
 Header::Status &
@@ -71,7 +72,7 @@ Header::Status::operator integer()
 }
 
 Header::Reason &
-Header::Reason::operator=(Cript::string_view reason)
+Header::Reason::operator=(cripts::string_view reason)
 {
   TSHttpHdrReasonSet(_owner->_bufp, _owner->_hdr_loc, reason.data(), reason.size());
   _owner->_state->context->p_instance.debug("Setting reason = {}", reason);
@@ -80,7 +81,7 @@ Header::Reason::operator=(Cript::string_view reason)
 }
 
 Header::Body &
-Header::Body::operator=(Cript::string_view body)
+Header::Body::operator=(cripts::string_view body)
 {
   auto b = static_cast<char *>(TSmalloc(body.size() + 1));
 
@@ -91,23 +92,23 @@ Header::Body::operator=(Cript::string_view body)
   return *this;
 }
 
-Cript::string_view
+cripts::string_view
 Header::Method::GetSV()
 {
   if (_method.size() == 0) {
     int         len;
     const char *value = TSHttpHdrMethodGet(_owner->_bufp, _owner->_hdr_loc, &len);
 
-    _method = Cript::string_view(value, static_cast<Cript::string_view::size_type>(len));
+    _method = cripts::string_view(value, static_cast<cripts::string_view::size_type>(len));
   }
 
   return _method;
 }
 
-Cript::string_view
+cripts::string_view
 Header::CacheStatus::GetSV()
 {
-  static std::array<Cript::string_view, 4> names{
+  static std::array<cripts::string_view, 4> names{
     "miss",      // TS_CACHE_LOOKUP_MISS,
     "hit-stale", // TS_CACHE_LOOKUP_HIT_STALE,
     "hit-fresh", // TS_CACHE_LOOKUP_HIT_FRESH,
@@ -128,7 +129,7 @@ Header::CacheStatus::GetSV()
 }
 
 Header::String &
-Header::String::operator=(const Cript::string_view str)
+Header::String::operator=(const cripts::string_view str)
 {
   if (_field_loc) {
     if (str.empty()) {
@@ -215,7 +216,7 @@ Header::String::operator=(integer val)
 }
 
 Header::String &
-Header::String::operator+=(const Cript::string_view str)
+Header::String::operator+=(const cripts::string_view str)
 {
   if (_field_loc) {
     if (!str.empty()) {
@@ -239,7 +240,7 @@ Header::String::operator+=(const Cript::string_view str)
 }
 
 Header::String
-Header::operator[](const Cript::string_view str)
+Header::operator[](const cripts::string_view str)
 {
   TSAssert(_bufp && _hdr_loc);
 
@@ -250,7 +251,7 @@ Header::operator[](const Cript::string_view str)
     int         len   = 0;
     const char *value = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, field_loc, -1, &len);
 
-    ret._initialize(str, Cript::string_view(value, len), this, field_loc);
+    ret._initialize(str, cripts::string_view(value, len), this, field_loc);
   } else {
     ret._initialize(str, {}, this, nullptr);
   }
@@ -259,7 +260,7 @@ Header::operator[](const Cript::string_view str)
 }
 
 Client::Request &
-Client::Request::_get(Cript::Context *context)
+Client::Request::_get(cripts::Context *context)
 {
   Client::Request *request = &context->_client_req_header;
 
@@ -289,9 +290,9 @@ Header::begin()
   _iterator_loc = TSMimeHdrFieldGet(_bufp, _hdr_loc, 0);
 
   if (_iterator_loc) {
-    int                name_len;
-    const char        *name = TSMimeHdrFieldNameGet(_bufp, _hdr_loc, _iterator_loc, &name_len);
-    Cript::string_view name_view(name, name_len);
+    int                 name_len;
+    const char         *name = TSMimeHdrFieldNameGet(_bufp, _hdr_loc, _iterator_loc, &name_len);
+    cripts::string_view name_view(name, name_len);
 
     return {name_view, _iterator_tag, this};
 
@@ -300,7 +301,7 @@ Header::begin()
   }
 }
 
-Cript::string_view
+cripts::string_view
 Header::iterate()
 {
   TSMLoc next_loc = TSMimeHdrFieldNext(_bufp, _hdr_loc, _iterator_loc);
@@ -312,14 +313,14 @@ Header::iterate()
     int         name_len;
     const char *name = TSMimeHdrFieldNameGet(_bufp, _hdr_loc, _iterator_loc, &name_len);
 
-    return {name, static_cast<Cript::string_view::size_type>(name_len)};
+    return {name, static_cast<cripts::string_view::size_type>(name_len)};
   } else {
     return "";
   }
 }
 
-Cript::Client::Response &
-Client::Response::_get(Cript::Context *context)
+cripts::Client::Response &
+Client::Response::_get(cripts::Context *context)
 {
   CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
   CAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
@@ -340,7 +341,7 @@ Client::Response::_get(Cript::Context *context)
 }
 
 Server::Request &
-Server::Request::_get(Cript::Context *context)
+Server::Request::_get(cripts::Context *context)
 {
   CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
   CAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
@@ -362,7 +363,7 @@ Server::Request::_get(Cript::Context *context)
 }
 
 Server::Response &
-Server::Response::_get(Cript::Context *context)
+Server::Response::_get(cripts::Context *context)
 {
   CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
   CAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
@@ -383,4 +384,4 @@ Server::Response::_get(Cript::Context *context)
   return context->_server_resp_header;
 }
 
-} // namespace Cript
+} // namespace cripts

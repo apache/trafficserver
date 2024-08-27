@@ -30,32 +30,32 @@ system, and must always be borrowed. The pattern for this is as follows:
 
 .. code-block:: cpp
 
-  borrow req = Cript::Client::Request::Get();
+  borrow req = cripts::Client::Request::Get();
 
   auto foo = req["X-Foo"];
 
 There are four types of headers that can be borrowed:
 
-============================   ===========================================================================
-Header Object                  Description
-============================   ===========================================================================
-``Cript::Client::Request``     The client request headers. Always available.
-``Cript::Client::Response``    The client response headers.
-``Cript::Server::Request``     The server request headers.
-``Cript::Server::Response``    The server response headers.
-============================   ===========================================================================
+=============================   ===========================================================================
+Header Object                   Description
+=============================   ===========================================================================
+``cripts::Client::Request``     The client request headers. Always available.
+``cripts::Client::Response``    The client response headers.
+``cripts::Server::Request``     The server request headers.
+``cripts::Server::Response``    The server response headers.
+=============================   ===========================================================================
 
 .. note::
 
-   For all of these headers, except the ``Cript::Client::Request``, the headers are not
-   available until the respective hook is called. For example, the ``Cript::Client::Response`` headers
+   For all of these headers, except the ``cripts::Client::Request``, the headers are not
+   available until the respective hook is called. For example, the ``cripts::Client::Response`` headers
    are not available until the response headers are received from the origin server or cache lookup.
 
 Assigning the empty value (``""``) to a header will remove it from the header list. For example:
 
 .. code-block:: cpp
 
-  borrow req = Cript::Client::Request::Get();
+  borrow req = cripts::Client::Request::Get();
 
   req["X-Foo"] = "bar"; // Set the header
   req["X-Fie"] = "";    // Remove the header
@@ -64,7 +64,7 @@ A header can also be removed by using the ``Erase`` method, which is a little mo
 
 .. code-block:: cpp
 
-  borrow req = Cript::Client::Request::Get();
+  borrow req = cripts::Client::Request::Get();
 
   req.Erase("X-Foo");
 
@@ -80,7 +80,7 @@ a pattern such as the following example:
 
 .. code-block:: cpp
 
-  borrow req = Cript::Client::Request::Get();
+  borrow req = cripts::Client::Request::Get();
 
   for (auto header : req) {
     CDebug("Header: {}: {}", header, req[header]); // This will print all headers and their values
@@ -95,31 +95,31 @@ Methods
 -------
 
 In addition to holding all the request headers, the request objects also holds the ``method`` verb.
-For the ``Cript::Client::Request`` object, this is the client request method (GET, POST, etc.). For the
-``Cript::Server::Request`` object, this is the method that will be sent to the origin server (GET, POST, etc.).
+For the ``cripts::Client::Request`` object, this is the client request method (GET, POST, etc.). For the
+``cripts::Server::Request`` object, this is the method that will be sent to the origin server (GET, POST, etc.).
 
 Cripts provides the following convenience symbols for common methods (and performance):
 
-==========================   ======================================================================
-Method                       Description
-==========================   ======================================================================
-``Cript::Method::GET``       The GET method.
-``Cript::Method::POST``      The POST method.
-``Cript::Method::PUT``       The PUT method.
-``Cript::Method::DELETE``    The DELETE method.
-``Cript::Method::HEAD``      The HEAD method.
-``Cript::Method::OPTIONS``   The OPTIONS method.
-``Cript::Method::CONNECT``   The CONNECT method.
-``Cript::Method::TRACE``     The TRACE method.
-==========================   ======================================================================
+============================   ======================================================================
+Method                         Description
+============================   ======================================================================
+``cripts::Method::GET``        The GET method.
+``cripts::Method::POST``       The POST method.
+``cripts::Method::PUT``        The PUT method.
+``cripts::Method::DELETE``     The DELETE method.
+``cripts::Method::HEAD``       The HEAD method.
+``cripts::Method::OPTIONS``    The OPTIONS method.
+``cripts::Method::CONNECT``    The CONNECT method.
+``cripts::Method::TRACE``      The TRACE method.
+============================   ======================================================================
 
 These symbols can be used to compare against the method in the request object. For example:
 
 .. code-block:: cpp
 
-  borrow req = Cript::Client::Request::Get();
+  borrow req = cripts::Client::Request::Get();
 
-  if (req.method == Cript::Method::GET) {
+  if (req.method == cripts::Method::GET) {
       // Do something
   }
 
@@ -157,7 +157,7 @@ fresh or stale. Example usage of the cache status:
 .. code-block:: cpp
 
   do_read_response() {
-    borrow resp = Cript::Server::Response::Get();
+    borrow resp = cripts::Server::Response::Get();
 
     if (resp.cache == "miss") {
       // Do something

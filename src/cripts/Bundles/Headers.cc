@@ -31,7 +31,7 @@ enum HeaderTargets : uint8_t {
 };
 
 HeaderTargets
-header_target(const Cript::string_view &target)
+header_target(const cripts::string_view &target)
 {
   if (target == "Client::Request") {
     return CLIENT_REQUEST;
@@ -48,29 +48,29 @@ header_target(const Cript::string_view &target)
 
 } // namespace
 
-namespace Cript::Bundle
+namespace cripts::Bundle
 {
-const Cript::string Headers::_name = "Bundle::Headers";
+const cripts::string Headers::_name = "Bundle::Headers";
 
 Headers::self_type &
-Headers::rm_headers(const Cript::string_view target, const HeaderList &headers)
+Headers::rm_headers(const cripts::string_view target, const HeaderList &headers)
 {
   switch (header_target(target)) {
   case CLIENT_REQUEST:
     _client_request.rm_headers.insert(_client_request.rm_headers.end(), headers.begin(), headers.end());
-    NeedCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(cripts::Callbacks::DO_REMAP);
     break;
   case CLIENT_RESPONSE:
     _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
-    NeedCallback(Cript::Callbacks::DO_SEND_RESPONSE);
+    NeedCallback(cripts::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
     _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
-    NeedCallback(Cript::Callbacks::DO_SEND_REQUEST);
+    NeedCallback(cripts::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
     _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
-    NeedCallback(Cript::Callbacks::DO_READ_RESPONSE);
+    NeedCallback(cripts::Callbacks::DO_READ_RESPONSE);
     break;
   default:
     CFatal("[Cripts::Headers] Unknown header target: %s.", target.data());
@@ -80,26 +80,26 @@ Headers::rm_headers(const Cript::string_view target, const HeaderList &headers)
 }
 
 Headers::self_type &
-Headers::set_headers(const Cript::string_view target, const HeaderValueList &headers)
+Headers::set_headers(const cripts::string_view target, const HeaderValueList &headers)
 {
   detail::HeadersType::HeaderValueList *hdrs = nullptr;
 
   switch (header_target(target)) {
   case CLIENT_REQUEST:
     hdrs = &_client_request.set_headers;
-    NeedCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(cripts::Callbacks::DO_REMAP);
     break;
   case CLIENT_RESPONSE:
     hdrs = &_client_response.set_headers;
-    NeedCallback(Cript::Callbacks::DO_SEND_RESPONSE);
+    NeedCallback(cripts::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
     hdrs = &_server_request.set_headers;
-    NeedCallback(Cript::Callbacks::DO_SEND_REQUEST);
+    NeedCallback(cripts::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
     hdrs = &_server_response.set_headers;
-    NeedCallback(Cript::Callbacks::DO_READ_RESPONSE);
+    NeedCallback(cripts::Callbacks::DO_READ_RESPONSE);
     break;
   default:
     CFatal("[Cripts::Headers] Unknown header target: %s.", target.data());
@@ -114,9 +114,9 @@ Headers::set_headers(const Cript::string_view target, const HeaderValueList &hea
 }
 
 void
-Headers::doRemap(Cript::Context *context)
+Headers::doRemap(cripts::Context *context)
 {
-  borrow req = Cript::Client::Request::Get();
+  borrow req = cripts::Client::Request::Get();
 
   for (auto &header : _client_request.rm_headers) {
     req[header] = "";
@@ -128,9 +128,9 @@ Headers::doRemap(Cript::Context *context)
 }
 
 void
-Headers::doSendResponse(Cript::Context *context)
+Headers::doSendResponse(cripts::Context *context)
 {
-  borrow resp = Cript::Client::Response::Get();
+  borrow resp = cripts::Client::Response::Get();
 
   for (auto &header : _client_response.rm_headers) {
     resp[header] = "";
@@ -142,9 +142,9 @@ Headers::doSendResponse(Cript::Context *context)
 }
 
 void
-Headers::doSendRequest(Cript::Context *context)
+Headers::doSendRequest(cripts::Context *context)
 {
-  borrow req = Cript::Server::Request::Get();
+  borrow req = cripts::Server::Request::Get();
 
   for (auto &header : _server_request.rm_headers) {
     req[header] = "";
@@ -156,9 +156,9 @@ Headers::doSendRequest(Cript::Context *context)
 }
 
 void
-Headers::doReadResponse(Cript::Context *context)
+Headers::doReadResponse(cripts::Context *context)
 {
-  borrow resp = Cript::Server::Response::Get();
+  borrow resp = cripts::Server::Response::Get();
 
   for (auto &header : _server_response.rm_headers) {
     resp[header] = "";
@@ -169,4 +169,4 @@ Headers::doReadResponse(Cript::Context *context)
   }
 }
 
-} // namespace Cript::Bundle
+} // namespace cripts::Bundle

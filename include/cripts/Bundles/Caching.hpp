@@ -25,11 +25,11 @@
 #include "cripts/Instance.hpp"
 #include "cripts/Bundle.hpp"
 
-namespace Cript::Bundle
+namespace cripts::Bundle
 {
-class Caching : public Cript::Bundle::Base
+class Caching : public cripts::Bundle::Base
 {
-  using super_type = Cript::Bundle::Base;
+  using super_type = cripts::Bundle::Base;
   using self_type  = Caching;
 
 public:
@@ -37,7 +37,7 @@ public:
 
   // This is the factory to create an instance of this bundle
   static self_type &
-  _activate(Cript::Instance &inst)
+  _activate(cripts::Instance &inst)
   {
     auto *entry = new self_type();
 
@@ -46,16 +46,16 @@ public:
     return *entry;
   }
 
-  [[nodiscard]] const Cript::string &
+  [[nodiscard]] const cripts::string &
   Name() const override
   {
     return _name;
   }
 
   self_type &
-  cache_control(Cript::string_view cc, bool force = false)
+  cache_control(cripts::string_view cc, bool force = false)
   {
-    NeedCallback(Cript::Callbacks::DO_READ_RESPONSE);
+    NeedCallback(cripts::Callbacks::DO_READ_RESPONSE);
     _cc       = cc;
     _force_cc = force;
 
@@ -65,20 +65,20 @@ public:
   self_type &
   disable(bool disable = true)
   {
-    NeedCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(cripts::Callbacks::DO_REMAP);
     _disabled = disable;
 
     return *this;
   }
 
-  void doReadResponse(Cript::Context *context) override;
-  void doRemap(Cript::Context *context) override;
+  void doReadResponse(cripts::Context *context) override;
+  void doRemap(cripts::Context *context) override;
 
 private:
-  static const Cript::string _name;
-  Cript::string              _cc       = "";
-  bool                       _force_cc = false;
-  bool                       _disabled = false;
+  static const cripts::string _name;
+  cripts::string              _cc       = "";
+  bool                        _force_cc = false;
+  bool                        _disabled = false;
 };
 
-} // namespace Cript::Bundle
+} // namespace cripts::Bundle

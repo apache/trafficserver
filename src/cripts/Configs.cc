@@ -19,12 +19,12 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
-namespace Cript
+namespace cripts
 {
 
-std::unordered_map<Cript::string_view, const Records *> Records::_gRecords;
+std::unordered_map<cripts::string_view, const Records *> Records::_gRecords;
 
-Records::Records(const Cript::string_view name)
+Records::Records(const cripts::string_view name)
 {
   TSOverridableConfigKey key;
   TSRecordDataType       type;
@@ -39,7 +39,7 @@ Records::Records(const Cript::string_view name)
 }
 
 Records::ValueType
-Records::_get(const Cript::Context *context) const
+Records::_get(const cripts::Context *context) const
 {
   TSAssert(context->state.txnp);
 
@@ -69,8 +69,8 @@ Records::_get(const Cript::Context *context) const
   return 0;
 }
 
-const Cript::string_view
-Records::GetSV(const Cript::Context *context) const
+const cripts::string_view
+Records::GetSV(const cripts::Context *context) const
 {
   TSAssert(context->state.txnp);
 
@@ -92,7 +92,7 @@ Records::GetSV(const Cript::Context *context) const
 }
 
 bool
-Records::_set(const Cript::Context *context, const ValueType &value) const
+Records::_set(const cripts::Context *context, const ValueType &value) const
 {
   TSAssert(context->state.txnp);
 
@@ -129,7 +129,7 @@ Records::_set(const Cript::Context *context, const ValueType &value) const
 }
 
 bool
-Records::SetSV(const Cript::Context *context, const Cript::string_view value) const
+Records::SetSV(const cripts::Context *context, const cripts::string_view value) const
 {
   TSAssert(context->state.txnp);
 
@@ -161,7 +161,7 @@ Records::Add(const Records *rec)
 }
 
 const Records *
-Records::Lookup(const Cript::string_view name)
+Records::Lookup(const cripts::string_view name)
 {
   auto it = _gRecords.find(name);
 
@@ -173,4 +173,4 @@ Records::Lookup(const Cript::string_view name)
   return nullptr;
 }
 
-} // namespace Cript
+} // namespace cripts

@@ -33,8 +33,8 @@ implies that access to these objects must be ``borrowed``.
 
    do_remap()
    {
-     static Cript::Matcher::Range::IP ALLOW_LIST({"192.168.201.0/24", "10.0.0.0/8"});
-     borrow conn = Cript::Client::Connection::Get();
+     static cripts::Matcher::Range::IP ALLOW_LIST({"192.168.201.0/24", "10.0.0.0/8"});
+     borrow conn = cripts::Client::Connection::Get();
      auto client_ip = conn.IP();
 
      if (!ALLOW_LIST.contains(client_ip)) {
@@ -44,14 +44,14 @@ implies that access to these objects must be ``borrowed``.
 
 There are two kinds of connections provided by the run-time system:
 
-==============================   =========================================================================
-Connection Object                Description
-==============================   =========================================================================
-``Cript::Client::Connection``    The connection from the client to the ATS server.
-``Cript::Server::Connection``    The connection from ATS to parent or origin server.
-==============================   =========================================================================
+================================   =========================================================================
+Connection Object                  Description
+================================   =========================================================================
+``cripts::Client::Connection``     The connection from the client to the ATS server.
+``cripts::Server::Connection``     The connection from ATS to parent or origin server.
+================================   =========================================================================
 
-As usual, the ``Cript::Server::Connection`` object is only available assuming that the request
+As usual, the ``cripts::Server::Connection`` object is only available assuming that the request
 is a forward proxy request, and you borrow it with the ``Get()`` method. On cache misses,
 there is no such connection.
 
@@ -81,7 +81,7 @@ IPv4 and IPv6 CIDR sizes. For example:
 
    do_remap()
    {
-     borrow conn = Cript::Client::Connection::Get();
+     borrow conn = cripts::Client::Connection::Get();
      auto ip = conn.IP();
 
      CDebug("Client IP CIDR: {}", ip.string(24, 64));
@@ -108,7 +108,7 @@ For other advanced features, a Cript has access to the socket file descriptor, v
 method of the connection object.
 
 .. note::
-   For pacing, the special value ``Cript::Pacing::Off`` can be used to disable pacing.
+   For pacing, the special value ``cripts::Pacing::Off`` can be used to disable pacing.
 
 Lets show an example of how one could use these variables:
 
@@ -116,7 +116,7 @@ Lets show an example of how one could use these variables:
 
    do_remap()
    {
-     borrow conn = Cript::Client::Connection::Get();
+     borrow conn = cripts::Client::Connection::Get();
 
      conn.congestion = "bbrv2";
      conn.pacing = 100;

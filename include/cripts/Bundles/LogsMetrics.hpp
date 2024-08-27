@@ -26,18 +26,18 @@
 #include "cripts/Instance.hpp"
 #include "cripts/Bundle.hpp"
 
-namespace Cript::Bundle
+namespace cripts::Bundle
 {
-class LogsMetrics : public Cript::Bundle::Base
+class LogsMetrics : public cripts::Bundle::Base
 {
-  using super_type = Cript::Bundle::Base;
+  using super_type = cripts::Bundle::Base;
   using self_type  = LogsMetrics;
 
 public:
-  LogsMetrics(Cript::Instance *inst) : _inst(inst) {}
+  LogsMetrics(cripts::Instance *inst) : _inst(inst) {}
 
   static self_type &
-  _activate(Cript::Instance &inst)
+  _activate(cripts::Instance &inst)
   {
     auto *entry = new self_type(&inst);
 
@@ -46,18 +46,18 @@ public:
     return *entry;
   }
 
-  [[nodiscard]] const Cript::string &
+  [[nodiscard]] const cripts::string &
   Name() const override
   {
     return _name;
   }
 
-  self_type &propstats(const Cript::string_view &label); // In LogsMetrics.cc
+  self_type &propstats(const cripts::string_view &label); // In LogsMetrics.cc
 
   self_type &
   logsample(int val)
   {
-    NeedCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(cripts::Callbacks::DO_REMAP);
     _log_sample = val;
 
     return *this;
@@ -67,24 +67,24 @@ public:
   tcpinfo(bool enable = true)
   {
     if (enable) {
-      NeedCallback({Cript::Callbacks::DO_REMAP, Cript::Callbacks::DO_SEND_RESPONSE, Cript::Callbacks::DO_TXN_CLOSE});
+      NeedCallback({cripts::Callbacks::DO_REMAP, cripts::Callbacks::DO_SEND_RESPONSE, cripts::Callbacks::DO_TXN_CLOSE});
     }
     _tcpinfo = enable;
 
     return *this;
   }
 
-  void doCacheLookup(Cript::Context *context) override;
-  void doSendResponse(Cript::Context *context) override;
-  void doTxnClose(Cript::Context *context) override;
-  void doRemap(Cript::Context *context) override;
+  void doCacheLookup(cripts::Context *context) override;
+  void doSendResponse(cripts::Context *context) override;
+  void doTxnClose(cripts::Context *context) override;
+  void doRemap(cripts::Context *context) override;
 
 private:
-  static const Cript::string _name;
-  Cript::Instance           *_inst;               // This Bundle needs the instance for access to the instance metrics
-  Cript::string              _label      = "";    // Propstats label
-  int                        _log_sample = 0;     // Log sampling
-  bool                       _tcpinfo    = false; // Turn on TCP info logging
+  static const cripts::string _name;
+  cripts::Instance           *_inst;               // This Bundle needs the instance for access to the instance metrics
+  cripts::string              _label      = "";    // Propstats label
+  int                         _log_sample = 0;     // Log sampling
+  bool                        _tcpinfo    = false; // Turn on TCP info logging
 };
 
-} // namespace Cript::Bundle
+} // namespace cripts::Bundle

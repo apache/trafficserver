@@ -21,7 +21,7 @@
 
 #include "cripts/Preamble.hpp"
 
-namespace Cript
+namespace cripts
 {
 
 // This is global for all Cripts, and it will not get reloaded on a config reload.
@@ -34,8 +34,8 @@ Plugin::Remap::Initialize()
 }
 
 Plugin::Remap
-Plugin::Remap::Create(const std::string &tag, const std::string &plugin, const Cript::string &from_url, const Cript::string &to_url,
-                      const Plugin::Options &options)
+Plugin::Remap::Create(const std::string &tag, const std::string &plugin, const cripts::string &from_url,
+                      const cripts::string &to_url, const Plugin::Options &options)
 {
   Plugin::Remap          inst;
   int                    argc = options.size() + 1;
@@ -84,9 +84,9 @@ Plugin::Remap::Cleanup()
 }
 
 void
-Plugin::Remap::_runRemap(Cript::Context *context)
+Plugin::Remap::_runRemap(cripts::Context *context)
 {
   _plugin->doRemap(context->state.txnp, context->rri);
 }
 
-} // namespace Cript
+} // namespace cripts

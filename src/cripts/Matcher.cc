@@ -19,7 +19,7 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
-namespace Cript
+namespace cripts
 {
 
 Matcher::PCRE::~PCRE()
@@ -44,7 +44,7 @@ Matcher::PCRE::Result::malloc(PCRE2_SIZE size, void *context)
 }
 
 void
-Matcher::PCRE::Add(Cript::string_view regex, uint32_t options, bool jit)
+Matcher::PCRE::Add(cripts::string_view regex, uint32_t options, bool jit)
 {
   int         errorcode   = 0;
   PCRE2_SIZE  erroroffset = 0;
@@ -67,7 +67,7 @@ Matcher::PCRE::Add(Cript::string_view regex, uint32_t options, bool jit)
 }
 
 Matcher::PCRE::Result
-Matcher::PCRE::Contains(Cript::string_view subject, PCRE2_SIZE offset, uint32_t options)
+Matcher::PCRE::Contains(cripts::string_view subject, PCRE2_SIZE offset, uint32_t options)
 {
   Matcher::PCRE::Result  res(subject);
   pcre2_general_context *ctx =
@@ -88,4 +88,4 @@ Matcher::PCRE::Contains(Cript::string_view subject, PCRE2_SIZE offset, uint32_t 
   return res;
 }
 
-} // namespace Cript
+} // namespace cripts

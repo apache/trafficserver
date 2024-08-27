@@ -29,7 +29,7 @@
 #include "ts/ts.h"
 #include "cripts/Lulu.hpp"
 
-namespace Cript::Matcher
+namespace cripts::Matcher
 {
 namespace Range
 {
@@ -42,7 +42,7 @@ namespace Range
     IP()                              = delete;
     void operator=(const self_type &) = delete;
 
-    explicit IP(Cript::string_view ip) { Add(ip); }
+    explicit IP(cripts::string_view ip) { Add(ip); }
 
     IP(self_type const &ip)
     {
@@ -60,7 +60,7 @@ namespace Range
       }
     }
 
-    IP(std::initializer_list<Cript::string_view> list)
+    IP(std::initializer_list<cripts::string_view> list)
     {
       for (auto &it : list) {
         Add(it);
@@ -104,7 +104,7 @@ namespace Range
     }
 
     void
-    Add(Cript::string_view str)
+    Add(cripts::string_view str)
     {
       if (swoc::IPRange r; r.load(str)) {
         mark(r);
@@ -118,19 +118,19 @@ namespace Range
 
 namespace List
 {
-  class Method : public std::vector<Cript::Header::Method>
+  class Method : public std::vector<cripts::Header::Method>
   {
 #undef DELETE // ToDo: macOS shenanigans here, defining DELETE as a macro
 
-    using super_type = std::vector<Cript::Header::Method>;
+    using super_type = std::vector<cripts::Header::Method>;
     using self_type  = Method;
 
   public:
     Method() = delete;
-    explicit Method(Cript::Header::Method method) : std::vector<Cript::Header::Method>() { push_back(method); }
+    explicit Method(cripts::Header::Method method) : std::vector<cripts::Header::Method>() { push_back(method); }
     void operator=(const self_type &) = delete;
 
-    Method(self_type const &method) : std::vector<Cript::Header::Method>() { insert(end(), std::begin(method), std::end(method)); }
+    Method(self_type const &method) : std::vector<cripts::Header::Method>() { insert(end(), std::begin(method), std::end(method)); }
 
     Method(const std::initializer_list<self_type> &list)
     {
@@ -139,25 +139,25 @@ namespace List
       }
     }
 
-    Method(std::initializer_list<Cript::Header::Method> list)
+    Method(std::initializer_list<cripts::Header::Method> list)
     {
       for (auto &it : list) {
         push_back(it);
       }
     }
 
-    // Make sure we only allow the Cript::Method::* constants
+    // Make sure we only allow the cripts::Method::* constants
 
     [[nodiscard]] bool
-    Contains(Cript::Header::Method method) const
+    Contains(cripts::Header::Method method) const
     {
       auto data = method.Data();
 
-      return end() != std::find_if(begin(), end(), [&](const Cript::Header::Method &header) { return header.Data() == data; });
+      return end() != std::find_if(begin(), end(), [&](const cripts::Header::Method &header) { return header.Data() == data; });
     }
 
     [[nodiscard]] bool
-    Match(Cript::Header::Method method) const
+    Match(cripts::Header::Method method) const
     {
       return Contains(method);
     }
@@ -171,7 +171,7 @@ class PCRE
 public:
   static constexpr size_t MAX_CAPTURES = 32;
 
-  using Regex        = std::tuple<Cript::string, pcre2_code *>;
+  using Regex        = std::tuple<cripts::string, pcre2_code *>;
   using RegexEntries = std::vector<Regex>;
 
   using self_type = PCRE;
@@ -182,7 +182,7 @@ public:
     friend class PCRE;
 
     Result() = delete;
-    Result(Cript::string_view subject) : _subject(subject) {}
+    Result(cripts::string_view subject) : _subject(subject) {}
 
     ~Result() { pcre2_match_data_free(_data); }
 
@@ -192,10 +192,10 @@ public:
       return Matched();
     }
 
-    Cript::string_view
+    cripts::string_view
     operator[](size_t ix) const
     {
-      Cript::string_view ret;
+      cripts::string_view ret;
 
       if ((Count() > ix) && _ovector) {
         ret = {_subject.substr(_ovector[ix * 2], _ovector[ix * 2 + 1] - _ovector[ix * 2])};
@@ -231,16 +231,16 @@ public:
     PCRE2_SIZE             *_ovector = nullptr;
     PCRE2_SIZE              _ctx_ix  = 0;
     std::byte               _ctx_data[24 * 2 + 96 + 16 * MAX_CAPTURES];
-    Cript::string_view      _subject;
+    cripts::string_view     _subject;
   };
 
   PCRE()                            = default;
   PCRE(const self_type &)           = delete;
   void operator=(const self_type &) = delete;
 
-  PCRE(Cript::string_view regex, uint32_t options = 0) { Add(regex, options); }
+  PCRE(cripts::string_view regex, uint32_t options = 0) { Add(regex, options); }
 
-  PCRE(std::initializer_list<Cript::string_view> list, uint32_t options = 0)
+  PCRE(std::initializer_list<cripts::string_view> list, uint32_t options = 0)
   {
     for (auto &it : list) {
       Add(it, options);
@@ -249,11 +249,11 @@ public:
 
   ~PCRE();
 
-  void   Add(Cript::string_view regex, uint32_t options = 0, bool jit = true);
-  Result Contains(Cript::string_view subject, PCRE2_SIZE offset = 0, uint32_t options = 0);
+  void   Add(cripts::string_view regex, uint32_t options = 0, bool jit = true);
+  Result Contains(cripts::string_view subject, PCRE2_SIZE offset = 0, uint32_t options = 0);
 
   Result
-  Match(Cript::string_view subject, PCRE2_SIZE offset = 0, uint32_t options = 0)
+  Match(cripts::string_view subject, PCRE2_SIZE offset = 0, uint32_t options = 0)
   {
     return Contains(subject, offset, options);
   }
@@ -262,4 +262,4 @@ private:
   RegexEntries _regexes;
 };
 
-} // namespace Cript::Matcher
+} // namespace cripts::Matcher

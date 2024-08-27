@@ -29,7 +29,7 @@
 #include "cripts/Transaction.hpp"
 #include "cripts/Bundle.hpp"
 
-namespace Cript
+namespace cripts
 {
 
 class Instance
@@ -37,7 +37,7 @@ class Instance
   using self_type = Instance;
 
 public:
-  using DataType = std::variant<integer, double, boolean, void *, Cript::string>;
+  using DataType = std::variant<integer, double, boolean, void *, cripts::string>;
 
   Instance()                        = delete;
   Instance(const self_type &)       = delete;
@@ -54,13 +54,13 @@ public:
     }
   }
 
-  bool AddPlugin(const Cript::string &tag, const Cript::string &plugin, const Plugin::Options &options);
-  bool DeletePlugin(const Cript::string &tag);
-  void AddBundle(Cript::Bundle::Base *bundle);
+  bool AddPlugin(const cripts::string &tag, const cripts::string &plugin, const Plugin::Options &options);
+  bool DeletePlugin(const cripts::string &tag);
+  void AddBundle(cripts::Bundle::Base *bundle);
 
   // This allows Bundles to require hooks as well.
   void
-  NeedCallback(Cript::Callbacks cb)
+  NeedCallback(cripts::Callbacks cb)
   {
     _callbacks |= cb;
   }
@@ -113,12 +113,12 @@ public:
   }
 
   std::array<DataType, 32>                       data;
-  Cript::string                                  to_url;
-  Cript::string                                  from_url;
-  Cript::string                                  plugin_debug_tag;
+  cripts::string                                 to_url;
+  cripts::string                                 from_url;
+  cripts::string                                 plugin_debug_tag;
   std::unordered_map<std::string, Plugin::Remap> plugins;
-  Cript::MetricStorage                           metrics{8};
-  std::vector<Cript::Bundle::Base *>             bundles;
+  cripts::MetricStorage                          metrics{8};
+  std::vector<cripts::Bundle::Base *>            bundles;
 
 private:
   void _initialize(int argc, char *argv[], const char *filename);
@@ -138,9 +138,9 @@ struct InstanceContext {
   InstanceContext(const self_type &) = delete;
   void operator=(const self_type &)  = delete;
 
-  InstanceContext(Cript::Instance &inst) : p_instance(inst) {}
+  InstanceContext(cripts::Instance &inst) : p_instance(inst) {}
 
-  Cript::Instance &p_instance;
+  cripts::Instance &p_instance;
 }; // End struct InstanceContext
 
-} // namespace Cript
+} // namespace cripts

@@ -24,7 +24,7 @@
 
 #include "cripts/Lulu.hpp"
 
-namespace Cript
+namespace cripts
 {
 class Context;
 
@@ -40,24 +40,24 @@ public:
     Reason(const self_type &)         = delete;
     void operator=(const self_type &) = delete;
 
-    static void _set(Cript::Context *context, const Cript::string_view msg);
+    static void _set(cripts::Context *context, const cripts::string_view msg);
 
   private:
     friend class Error;
 
-    [[nodiscard]] Cript::string_view
+    [[nodiscard]] cripts::string_view
     _getter() const
     {
       return {_reason.c_str(), _reason.size()};
     }
 
     void
-    _setter(const Cript::string_view msg)
+    _setter(const cripts::string_view msg)
     {
       _reason = msg;
     }
 
-    Cript::string _reason;
+    cripts::string _reason;
   };
 
 #undef Status
@@ -71,15 +71,15 @@ public:
     Status(const self_type &)         = delete;
     void operator=(const self_type &) = delete;
 
-    static void _set(Cript::Context *context, TSHttpStatus _status);
+    static void _set(cripts::Context *context, TSHttpStatus _status);
 
     static void
-    _set(Cript::Context *context, int _status)
+    _set(cripts::Context *context, int _status)
     {
       _set(context, static_cast<TSHttpStatus>(_status));
     }
 
-    static TSHttpStatus _get(Cript::Context *context);
+    static TSHttpStatus _get(cripts::Context *context);
 
   private:
     friend class Error;
@@ -116,7 +116,7 @@ public:
   }
 
   // Check if we have an error, and set appropriate exit codes etc.
-  void Execute(Cript::Context *context);
+  void Execute(cripts::Context *context);
 
 private:
   Reason _reason;
@@ -124,4 +124,4 @@ private:
   bool   _failed = false;
 };
 
-} // namespace Cript
+} // namespace cripts

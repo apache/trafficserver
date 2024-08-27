@@ -44,10 +44,10 @@ The following bundles are available in the core today:
 ===================================   ====================================================================
 Bundle                                Description
 ===================================   ====================================================================
-``Cript::Bundle::Common``             For DSCP and an overridable Cache-Control header.
-``Cript::Bundle::LogsMetrics``        Log sampling, TCPInfo  and per-remap metrics.
-``Cript::Bundle::Headers``            For removing or adding headers.
-``Cript::Bundle::Caching``            Various cache controlling behavior.
+``cripts::Bundle::Common``            For DSCP and an overridable Cache-Control header.
+``cripts::Bundle::LogsMetrics``       Log sampling, TCPInfo  and per-remap metrics.
+``cripts::Bundle::Headers``           For removing or adding headers.
+``cripts::Bundle::Caching``           Various cache controlling behavior.
 ===================================   ====================================================================
 
 This example shows how a Cript would enable both of these bundles with all features:
@@ -61,17 +61,17 @@ This example shows how a Cript would enable both of these bundles with all featu
 
    do_create_instance()
    {
-     Cript::Bundle::Common::Activate().dscp(10)
-                                      .via_header("client", "basic")
-                                      .set_config({{"proxy.config.srv_enabled", 0},
-                                                   {"proxy.config.http.response_server_str", "ATS"});
+     cripts::Bundle::Common::Activate().dscp(10)
+                                       .via_header("client", "basic")
+                                       .set_config({{"proxy.config.srv_enabled", 0},
+                                                    {"proxy.config.http.response_server_str", "ATS"});
 
-     Cript::Bundle::LogsMetrics::Activate().logsample(100)
-                                           .tcpinfo(true)
-                                           .propstats("example.com");
+     cripts::Bundle::LogsMetrics::Activate().logsample(100)
+                                            .tcpinfo(true)
+                                            .propstats("example.com");
 
-     Cript::Bundle::Caching::Activate().cache_control("max-age=259200")
-                                       .disable(true)
+     cripts::Bundle::Caching::Activate().cache_control("max-age=259200")
+                                        .disable(true)
 
    }
 
@@ -91,7 +91,7 @@ to make a list.
 Via Header
 ==========
 
-The ``Cript::Bundle::Common`` bundle has a function called ``via_header()`` that adds a Via header to the
+The ``cripts::Bundle::Common`` bundle has a function called ``via_header()`` that adds a Via header to the
 client response or the origin request. The first argument is ``client`` or ``origin``, and the second
 argument is the type of Via header to be used:
 
@@ -111,7 +111,7 @@ Headers
 =======
 
 Even though adding or removing headers in Cripts is very straight forward, we've added the
-``Cript::Bundle::Headers`` for not only convenience, but also for easier integration and
+``cripts::Bundle::Headers`` for not only convenience, but also for easier integration and
 migration with existing configurations. There are two main functions in this bundle:
 
 - ``rm_headers()``: Add a header to the request or response.
@@ -128,8 +128,8 @@ operators from the ``header_rewrite`` plugin. For example:
 
    do_create_instance()
    {
-     Cript::Bundle::Headers::Activate().rm_headers({"X-Header1", "X-Header2"})
-                                       .add_headers({{"X-Header3", "value3"},
-                                                     {"X-Header4", "%{FROM-URL:PATH}"},
-                                                     {"X-Header5", "%{ID:UNIQUE}"} });
+     cripts::Bundle::Headers::Activate().rm_headers({"X-Header1", "X-Header2"})
+                                        .add_headers({{"X-Header3", "value3"},
+                                                      {"X-Header4", "%{FROM-URL:PATH}"},
+                                                      {"X-Header5", "%{ID:UNIQUE}"} });
    }

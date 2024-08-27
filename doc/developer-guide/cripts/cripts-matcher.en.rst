@@ -33,9 +33,9 @@ currently three types of matchers:
 ===================================   ====================================================================
 Matcher                               Description
 ===================================   ====================================================================
-``Cript::Matcher::Range``             Matching IP addresses against one or many IP ranges.
-``Cript::Matcher::PCRE``              Matching strings against one or many regular expressions.
-``Cript::Matcher::List::Method``      Match a request method against a list of methods.
+``cripts::Matcher::Range``            Matching IP addresses against one or many IP ranges.
+``cripts::Matcher::PCRE``             Matching strings against one or many regular expressions.
+``cripts::Matcher::List::Method``     Match a request method against a list of methods.
 ===================================   ====================================================================
 
 Often you will declare these ranges once, and then use them over and over again. For this purpose,
@@ -47,9 +47,9 @@ Here's an example using the regular expression matcher:
 
    do_remap()
    {
-     static Cript::Matcher::PCRE pcre({"^/([^/]+)/(.*)$", "^(.*)$"}); // Nonsensical ...
+     static cripts::Matcher::PCRE pcre({"^/([^/]+)/(.*)$", "^(.*)$"}); // Nonsensical ...
 
-     borrow url = Cript::Client::URL::Get();
+     borrow url = cripts::Client::URL::Get();
 
      if (pcre.Match(url.path)) {
        // Do something with the match
@@ -83,7 +83,7 @@ Matcher::PCRE
 =============
 
 The PCRE matcher is used to match strings against one or many regular expressions. When a match
-is found, a ``Cript::Matcher::PCRE::Result`` object is returned. This object has the following functions
+is found, a ``cripts::Matcher::PCRE::Result`` object is returned. This object has the following functions
 to deal with the matched results and the capture groups:
 
 ============================   ====================================================================
@@ -101,9 +101,9 @@ Lets show an example:
 
    do_remap()
    {
-     static Cript::Matcher::PCRE allow({"^([a-c][^/]*)/?(.*)", "^([g-h][^/]*)/?(.*)"});
+     static cripts::Matcher::PCRE allow({"^([a-c][^/]*)/?(.*)", "^([g-h][^/]*)/?(.*)"});
 
-     borrow url = Cript::Client::URL::Get();
+     borrow url = cripts::Client::URL::Get();
 
      auto res = allow.Match(url.path);
 

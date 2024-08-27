@@ -20,9 +20,9 @@
 #include "cripts/Preamble.hpp"
 #include "cripts/Bundles/LogsMetrics.hpp"
 
-namespace Cript::Bundle
+namespace cripts::Bundle
 {
-const Cript::string LogsMetrics::_name = "Bundle::LogsMetrics";
+const cripts::string LogsMetrics::_name = "Bundle::LogsMetrics";
 
 namespace
 {
@@ -50,7 +50,7 @@ namespace
   };
 
   // This has to align with the enum above!!
-  static constexpr Cript::string_view PROPSTAT_SUFFIXES[] = {
+  static constexpr cripts::string_view PROPSTAT_SUFFIXES[] = {
     // clang-format off
     "cache.miss",
     "cache.hit_stale",
@@ -77,18 +77,18 @@ namespace
 
 // The .propstats(str) is particularly complicated, since it has to create all the metrics
 LogsMetrics::self_type &
-LogsMetrics::propstats(const Cript::string_view &label)
+LogsMetrics::propstats(const cripts::string_view &label)
 {
   _label = label;
 
   if (_label.length() > 0) {
-    NeedCallback({Cript::Callbacks::DO_CACHE_LOOKUP, Cript::Callbacks::DO_TXN_CLOSE});
+    NeedCallback({cripts::Callbacks::DO_CACHE_LOOKUP, cripts::Callbacks::DO_TXN_CLOSE});
 
     for (int ix = 0; ix < Bundle::PROPSTAT_MAX; ++ix) {
       auto name = fmt::format("{}.{}", _label, Bundle::PROPSTAT_SUFFIXES[ix]);
 
       _inst->debug("Creating metrics for: {}", name);
-      _inst->metrics[ix] = Cript::Metrics::Counter::Create(name);
+      _inst->metrics[ix] = cripts::Metrics::Counter::Create(name);
     }
   }
 
@@ -96,13 +96,13 @@ LogsMetrics::propstats(const Cript::string_view &label)
 }
 
 void
-LogsMetrics::doTxnClose(Cript::Context *context)
+LogsMetrics::doTxnClose(cripts::Context *context)
 {
-  borrow resp = Cript::Client::Response::Get();
+  borrow resp = cripts::Client::Response::Get();
 
   // .tcpinfo(bool)
   if (_tcpinfo && control.logging.Get()) {
-    borrow conn = Cript::Client::Connection::Get();
+    borrow conn = cripts::Client::Connection::Get();
 
     resp["@TCPInfo"] += fmt::format(",TC; {}", conn.tcpinfo.Log());
   }
@@ -145,10 +145,10 @@ LogsMetrics::doTxnClose(Cript::Context *context)
 }
 
 void
-LogsMetrics::doSendResponse(Cript::Context *context)
+LogsMetrics::doSendResponse(cripts::Context *context)
 {
-  borrow resp = Cript::Client::Response::Get();
-  borrow conn = Cript::Client::Connection::Get();
+  borrow resp = cripts::Client::Response::Get();
+  borrow conn = cripts::Client::Connection::Get();
 
   // .sample(int)
   if (_log_sample > 0) {
@@ -162,7 +162,7 @@ LogsMetrics::doSendResponse(Cript::Context *context)
 }
 
 void
-LogsMetrics::doCacheLookup(Cript::Context *context)
+LogsMetrics::doCacheLookup(cripts::Context *context)
 {
   auto status = transaction.LookupStatus();
 
@@ -175,13 +175,13 @@ LogsMetrics::doCacheLookup(Cript::Context *context)
 }
 
 void
-LogsMetrics::doRemap(Cript::Context *context)
+LogsMetrics::doRemap(cripts::Context *context)
 {
   bool sampled = true;
 
   // .logsample(int)
   if (_log_sample > 0) {
-    if (Cript::Random(_log_sample) != 1) {
+    if (cripts::Random(_log_sample) != 1) {
       control.logging.Set(false);
       sampled = false;
     }
@@ -190,10 +190,10 @@ LogsMetrics::doRemap(Cript::Context *context)
 
   // .tcpinfo(bool)
   if (_tcpinfo && sampled) {
-    borrow req      = Cript::Client::Request::Get();
-    borrow conn     = Cript::Client::Connection::Get();
+    borrow req      = cripts::Client::Request::Get();
+    borrow conn     = cripts::Client::Connection::Get();
     req["@TCPInfo"] = fmt::format("TS; {}", conn.tcpinfo.Log());
   }
 }
 
-} // namespace Cript::Bundle
+} // namespace cripts::Bundle
