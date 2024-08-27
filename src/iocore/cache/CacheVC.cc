@@ -142,7 +142,7 @@ make_vol_map(Stripe *stripe)
         break;
       }
       while (e) {
-        if (dir_offset(e) && dir_valid(stripe, e) && dir_agg_valid(stripe, e) && dir_head(e)) {
+        if (dir_offset(e) && stripe->dir_valid(e) && stripe->dir_agg_valid(e) && dir_head(e)) {
           off_t offset = stripe->vol_offset(e) - start_offset;
           if (offset <= vol_len) {
             vol_map[offset / SCAN_BUF_SIZE] = 1;
@@ -357,7 +357,7 @@ CacheVC::handleReadDone(int event, Event *e)
     if (!lock.is_locked()) {
       VC_SCHED_LOCK_RETRY();
     }
-    if ((!dir_valid(stripe, &dir)) || (!io.ok())) {
+    if ((!stripe->dir_valid(&dir)) || (!io.ok())) {
       if (!io.ok()) {
         Dbg(dbg_ctl_cache_disk_error, "Read error on disk %s\n \
 	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
@@ -529,7 +529,7 @@ CacheVC::load_from_last_open_read_call()
 bool
 CacheVC::load_from_aggregation_buffer()
 {
-  if (!dir_agg_buf_valid(this->stripe, &this->dir)) {
+  if (!this->stripe->dir_agg_buf_valid(&this->dir)) {
     return false;
   }
 
@@ -575,7 +575,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (!buf) {
       goto Lcollision;
     }
-    if (!dir_valid(stripe, &dir)) {
+    if (!stripe->dir_valid(&dir)) {
       last_collision = nullptr;
       goto Lcollision;
     }
@@ -746,7 +746,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       if (!dir_probe(&doc->first_key, stripe, &dir, &last_collision)) {
         goto Lskip;
       }
-      if (!dir_agg_valid(stripe, &dir) || !dir_head(&dir) ||
+      if (!stripe->dir_agg_valid(&dir) || !dir_head(&dir) ||
           (stripe->vol_offset(&dir) != io.aiocb.aio_offset + (reinterpret_cast<char *>(doc) - buf->data()))) {
         continue;
       }

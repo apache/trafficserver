@@ -364,7 +364,7 @@ dir_clean_bucket(Dir *b, int s, Stripe *stripe)
         return;
     }
 #endif
-    if (!dir_valid(stripe, e) || !dir_offset(e)) {
+    if (!stripe->dir_valid(e) || !dir_offset(e)) {
       if (dbg_ctl_dir_clean.on()) {
         Dbg(dbg_ctl_dir_clean, "cleaning Stripe:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", stripe->hash_text.get(),
             e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, stripe));
@@ -522,7 +522,7 @@ Lagain:
           }
           goto Lcont;
         }
-        if (dir_valid(stripe, e)) {
+        if (stripe->dir_valid(e)) {
           DDbg(dbg_ctl_dir_probe_hit, "found %X %X vol %d bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1),
                stripe->fd, b, dir_offset(e));
           dir_assign(result, e);
@@ -758,7 +758,7 @@ dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, Evacuati
   EvacuationBlock *b = stripe->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
-      if (dir_valid(stripe, &b->new_dir)) {
+      if (stripe->dir_valid(&b->new_dir)) {
         *result = b->new_dir;
         DDbg(dbg_ctl_dir_lookaside, "probe %X success", key->slice32(0));
         if (eblock) {
@@ -822,7 +822,7 @@ dir_lookaside_cleanup(StripeSM *stripe)
   for (auto &i : stripe->lookaside) {
     EvacuationBlock *b = i.head;
     while (b) {
-      if (!dir_valid(stripe, &b->new_dir)) {
+      if (!stripe->dir_valid(&b->new_dir)) {
         EvacuationBlock *nb = b->link.next;
         DDbg(dbg_ctl_dir_lookaside, "cleanup %X %X cleaned up", b->evac_frags.earliest_key.slice32(0),
              b->evac_frags.earliest_key.slice32(1));

@@ -338,7 +338,7 @@ CacheVC::openWriteCloseHeadDone(int event, Event *e)
         dir_overwrite(&first_key, stripe, &dir, &od->first_dir, false);
         // insert moved resident alternate
         if (od->move_resident_alt) {
-          if (dir_valid(stripe, &od->single_doc_dir)) {
+          if (stripe->dir_valid(&od->single_doc_dir)) {
             dir_insert(&od->single_doc_key, stripe, &od->single_doc_dir);
           }
           od->move_resident_alt = false;
@@ -689,7 +689,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
          We need to start afresh from the beginning by setting last_collision
          to nullptr.
        */
-      if (!dir_valid(stripe, &dir)) {
+      if (!stripe->dir_valid(&dir)) {
         DDbg(dbg_ctl_cache_write, "OpenReadStartDone: Dir not valid: Write Head: %" PRId64 ", Dir: %" PRId64,
              (int64_t)stripe->offset_to_vol_offset(stripe->header->write_pos), dir_offset(&dir));
         last_collision = nullptr;

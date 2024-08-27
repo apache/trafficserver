@@ -119,8 +119,12 @@ public:
   /* Calculates the total length of the header, directories and footer.
    */
   size_t dirlen() const;
-  int    vol_out_of_phase_valid(Dir const *e) const;
 
+  bool dir_valid(const Dir *dir) const;
+  bool dir_agg_valid(const Dir *dir) const;
+  bool dir_agg_buf_valid(const Dir *dir) const;
+
+  int vol_out_of_phase_valid(Dir const *e) const;
   int vol_out_of_phase_agg_valid(Dir const *e) const;
   int vol_out_of_phase_write_valid(Dir const *e) const;
   int vol_in_phase_valid(Dir const *e) const;
@@ -191,6 +195,30 @@ Stripe::dirlen() const
 {
   return this->headerlen() + ROUND_TO_STORE_BLOCK(((size_t)this->buckets) * DIR_DEPTH * this->segments * SIZEOF_DIR) +
          ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+}
+
+/**
+  entry is valid
+ */
+inline bool
+Stripe::dir_valid(const Dir *dir) const
+{
+  return (this->header->phase == dir_phase(dir) ? this->vol_in_phase_valid(dir) : this->vol_out_of_phase_valid(dir));
+}
+
+/**
+  entry is valid and outside of write aggregation region
+ */
+inline bool
+Stripe::dir_agg_valid(const Dir *dir) const
+{
+  return (this->header->phase == dir_phase(dir) ? this->vol_in_phase_valid(dir) : this->vol_out_of_phase_agg_valid(dir));
+}
+
+inline bool
+Stripe::dir_agg_buf_valid(const Dir *dir) const
+{
+  return (this->header->phase == dir_phase(dir) && this->vol_in_phase_agg_buf_valid(dir));
 }
 
 inline int
