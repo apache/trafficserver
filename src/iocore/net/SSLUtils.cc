@@ -381,28 +381,30 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
   }
 #endif
 
-  if (sslnetvc) {
-    // Do the common certificate lookup only once.  If we pause
-    // and restart processing, do not execute the common logic again
-    if (tes && !tes->calledHooks(TS_EVENT_SSL_CERT)) {
-      retval = tcss->selectCertificate(ssl, ctxType);
-      if (retval != 1) {
-        return retval;
+  if (tcss) {
+    if (tes) {
+      // Do the common certificate lookup only once.  If we pause
+      // and restart processing, do not execute the common logic again
+      if (!tes->calledHooks(TS_EVENT_SSL_CERT)) {
+        retval = tcss->selectCertificate(ssl, ctxType);
+        if (retval != 1) {
+          return retval;
+        }
       }
-    }
 
-    // Call the plugin cert code
-    reenabled = tes->callHooks(TS_EVENT_SSL_CERT);
-    // If it did not re-enable, return the code to
-    // stop the accept processing
-    if (!reenabled) {
-      retval = -1; // Pause
-    }
-  } else {
-    if (tcss && tcss->selectCertificate(ssl, ctxType) == 1) {
-      retval = 1;
+      // Call the plugin cert code
+      reenabled = tes->callHooks(TS_EVENT_SSL_CERT);
+      // If it did not re-enable, return the code to
+      // stop the accept processing
+      if (!reenabled) {
+        retval = -1; // Pause
+      }
     } else {
-      retval = 0;
+      if (tcss->selectCertificate(ssl, ctxType) == 1) {
+        retval = 1;
+      } else {
+        retval = 0;
+      }
     }
   }
 
