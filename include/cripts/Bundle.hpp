@@ -22,7 +22,7 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Transaction.hpp"
 
-namespace Cript
+namespace cripts
 {
 // We have to forward declare this, to avoid some circular dependencies
 class Context;
@@ -38,33 +38,33 @@ namespace Bundle
     void operator=(const self_type &) = delete;
     virtual ~Error()                  = default;
 
-    Error(const Cript::string &message, Cript::string_view bundle, Cript::string_view option)
+    Error(const cripts::string &message, cripts::string_view bundle, cripts::string_view option)
       : _message(message), _bundle(bundle), _option(option)
     {
     }
 
-    [[nodiscard]] Cript::string_view
+    [[nodiscard]] cripts::string_view
     Message() const
     {
       return {_message};
     }
 
-    [[nodiscard]] Cript::string_view
+    [[nodiscard]] cripts::string_view
     Bundle() const
     {
       return {_bundle};
     }
 
-    [[nodiscard]] Cript::string_view
+    [[nodiscard]] cripts::string_view
     Option() const
     {
       return {_option};
     }
 
   private:
-    std::string        _message;
-    Cript::string_view _bundle;
-    Cript::string_view _option;
+    std::string         _message;
+    cripts::string_view _bundle;
+    cripts::string_view _option;
   };
 
   class Base
@@ -77,10 +77,10 @@ namespace Bundle
     void operator=(const self_type &) = delete;
     virtual ~Base()                   = default;
 
-    [[nodiscard]] virtual const Cript::string &Name() const = 0;
+    [[nodiscard]] virtual const cripts::string &Name() const = 0;
 
     void
-    NeedCallback(Cript::Callbacks cb)
+    NeedCallback(cripts::Callbacks cb)
     {
       _callbacks |= cb;
     }
@@ -106,43 +106,43 @@ namespace Bundle
     }
 
     virtual bool
-    Validate(std::vector<Cript::Bundle::Error> & /* errors ATS_UNUSED */) const
+    Validate(std::vector<cripts::Bundle::Error> & /* errors ATS_UNUSED */) const
     {
       return true;
     }
 
     virtual void
-    doRemap(Cript::Context * /* context ATS_UNUSED */)
+    doRemap(cripts::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doPostRemap(Cript::Context * /* context ATS_UNUSED */)
+    doPostRemap(cripts::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doSendResponse(Cript::Context * /* context ATS_UNUSED */)
+    doSendResponse(cripts::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doCacheLookup(Cript::Context * /* context ATS_UNUSED */)
+    doCacheLookup(cripts::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doSendRequest(Cript::Context * /* context ATS_UNUSED */)
+    doSendRequest(cripts::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doReadResponse(Cript::Context * /* context ATS_UNUSED */)
+    doReadResponse(cripts::Context * /* context ATS_UNUSED */)
     {
     }
 
     virtual void
-    doTxnClose(Cript::Context * /* context ATS_UNUSED */)
+    doTxnClose(cripts::Context * /* context ATS_UNUSED */)
     {
     }
 
@@ -152,4 +152,4 @@ namespace Bundle
 
 } // namespace Bundle
 
-} // namespace Cript
+} // namespace cripts

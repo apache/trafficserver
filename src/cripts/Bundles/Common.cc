@@ -19,12 +19,12 @@
 #include "cripts/Preamble.hpp"
 #include "cripts/Bundles/Common.hpp"
 
-namespace Bundle
+namespace cripts::Bundle
 {
-const Cript::string Common::_name = "Bundle::Common";
+const cripts::string Common::_name = "Bundle::Common";
 
 bool
-Common::Validate(std::vector<Cript::Bundle::Error> &errors) const
+Common::Validate(std::vector<cripts::Bundle::Error> &errors) const
 {
   bool good = true;
 
@@ -73,9 +73,9 @@ Common::Validate(std::vector<Cript::Bundle::Error> &errors) const
 }
 
 Common::self_type &
-Common::via_header(const Cript::string_view &destination, const Cript::string_view &value)
+Common::via_header(const cripts::string_view &destination, const cripts::string_view &value)
 {
-  static const std::unordered_map<Cript::string_view, int> SettingValues = {
+  static const std::unordered_map<cripts::string_view, int> SettingValues = {
     {"disable",  0  },
     {"protocol", 1  },
     {"basic",    2  },
@@ -84,7 +84,7 @@ Common::via_header(const Cript::string_view &destination, const Cript::string_vi
     {"none",     999}  // This is an error
   };
 
-  NeedCallback(Cript::Callbacks::DO_REMAP);
+  NeedCallback(cripts::Callbacks::DO_REMAP);
 
   int  val = 999;
   auto it  = SettingValues.find(value);
@@ -105,12 +105,12 @@ Common::via_header(const Cript::string_view &destination, const Cript::string_vi
 }
 
 Common &
-Common::set_config(const Cript::string_view name, const Cript::Records::ValueType &value)
+Common::set_config(const cripts::string_view name, const cripts::Records::ValueType &value)
 {
-  auto rec = Cript::Records::Lookup(name); // These should be loaded at startup
+  auto rec = cripts::Records::Lookup(name); // These should be loaded at startup
 
   if (rec) {
-    NeedCallback(Cript::Callbacks::DO_REMAP);
+    NeedCallback(cripts::Callbacks::DO_REMAP);
     _configs.emplace_back(rec, value);
   } else {
     CFatal("[Common::set_config]: Unknown configuration '%.*s'", static_cast<int>(name.size()), name.data());
@@ -120,7 +120,7 @@ Common::set_config(const Cript::string_view name, const Cript::Records::ValueTyp
 }
 
 Common &
-Common::set_config(const std::vector<std::pair<const Cript::string_view, const Cript::Records::ValueType>> &configs)
+Common::set_config(const std::vector<std::pair<const cripts::string_view, const cripts::Records::ValueType>> &configs)
 {
   for (auto &[name, value] : configs) {
     set_config(name, value);
@@ -130,11 +130,11 @@ Common::set_config(const std::vector<std::pair<const Cript::string_view, const C
 }
 
 void
-Common::doRemap(Cript::Context *context)
+Common::doRemap(cripts::Context *context)
 {
   // .dscp(int)
   if (_dscp > 0) {
-    borrow conn = Client::Connection::Get();
+    borrow conn = cripts::Client::Connection::Get();
 
     CDebug("Setting DSCP = {}", _dscp);
     conn.dscp = _dscp;
@@ -156,4 +156,4 @@ Common::doRemap(Cript::Context *context)
   }
 }
 
-} // namespace Bundle
+} // namespace cripts::Bundle

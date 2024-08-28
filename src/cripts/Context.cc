@@ -24,9 +24,9 @@
 #include "cripts/Context.hpp"
 
 // Freelist management. These are here to avoid polluting the Context includes with ATS core includes.
-ClassAllocator<Cript::Context> criptContextAllocator("Cript::Context");
+ClassAllocator<cripts::Context> criptContextAllocator("cripts::Context");
 
-namespace Cript
+namespace cripts
 {
 
 void
@@ -61,7 +61,7 @@ Context::reset()
 }
 
 Context *
-Context::Factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst)
+Context::Factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, cripts::Instance &inst)
 {
   return THREAD_ALLOC(criptContextAllocator, this_thread(), txn_ptr, ssn_ptr, rri_ptr, inst);
 }
@@ -72,4 +72,4 @@ Context::Release()
   THREAD_FREE(this, criptContextAllocator, this_thread());
 }
 
-} // namespace Cript
+} // namespace cripts

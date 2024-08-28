@@ -30,14 +30,14 @@ enum Qualifiers {
   GEO_QUAL_ASN_NAME,
 };
 
-Cript::string
+cripts::string
 get_geo_string(const sockaddr *addr, Qualifiers q)
 {
   ink_release_assert(gMaxMindDB != nullptr);
   ink_release_assert(addr != nullptr);
 
-  Cript::string ret = "(unknown)";
-  int           mmdb_error;
+  cripts::string ret = "(unknown)";
+  int            mmdb_error;
 
   MMDB_lookup_result_s result = MMDB_lookup_sockaddr(gMaxMindDB, addr, &mmdb_error);
 
@@ -79,7 +79,7 @@ get_geo_string(const sockaddr *addr, Qualifiers q)
   if (MMDB_SUCCESS != status) {
     return ret;
   }
-  ret = Cript::string(entry_data.utf8_string, entry_data.data_size);
+  ret = cripts::string(entry_data.utf8_string, entry_data.data_size);
 
   if (nullptr != entry_data_list) {
     MMDB_free_entry_data_list(entry_data_list);
@@ -88,34 +88,34 @@ get_geo_string(const sockaddr *addr, Qualifiers q)
   return ret;
 }
 
-Cript::string
+cripts::string
 detail::ConnBase::Geo::ASN() const
 {
   return get_geo_string(this->_owner->socket(), GEO_QUAL_ASN);
 }
 
-Cript::string
+cripts::string
 detail::ConnBase::Geo::ASNName() const
 {
-  Cript::string ret;
+  cripts::string ret;
   ret = get_geo_string(this->_owner->socket(), GEO_QUAL_ASN_NAME);
 
   return ret; // RVO
 }
 
-Cript::string
+cripts::string
 detail::ConnBase::Geo::Country() const
 {
-  Cript::string ret;
+  cripts::string ret;
   ret = get_geo_string(this->_owner->socket(), GEO_QUAL_COUNTRY);
 
   return ret; // RVO
 }
 
-Cript::string
+cripts::string
 detail::ConnBase::Geo::CountryCode() const
 {
-  Cript::string ret;
+  cripts::string ret;
   ret = get_geo_string(this->_owner->socket(), GEO_QUAL_COUNTRY_ISO);
 
   return ret; // RVO
@@ -123,25 +123,25 @@ detail::ConnBase::Geo::CountryCode() const
 
 #else
 
-Cript::string
+cripts::string
 detail::ConnBase::Geo::ASN() const
 {
   return "(unavailable)";
 }
 
-Cript::string
+cripts::string
 detail::ConnBase::Geo::ASNName() const
 {
   return "(unavailable)";
 }
 
-Cript::string
+cripts::string
 detail::ConnBase::Geo::Country() const
 {
   return "(unavailable)";
 }
 
-Cript::string
+cripts::string
 detail::ConnBase::Geo::CountryCode() const
 {
   return "(unavailable)";

@@ -19,11 +19,14 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
-Cript::string
-UUID::Unique::_get(Cript::Context *context)
+namespace cripts
 {
-  Cript::string ret;
-  char          uuid[TS_CRUUID_STRING_LEN + 1];
+
+cripts::string
+UUID::Unique::_get(cripts::Context *context)
+{
+  cripts::string ret;
+  char           uuid[TS_CRUUID_STRING_LEN + 1];
 
   if (TS_SUCCESS == TSClientRequestUuidGet(context->state.txnp, uuid)) {
     ret = uuid;
@@ -31,11 +34,13 @@ UUID::Unique::_get(Cript::Context *context)
   return ret; // RVO
 }
 
-Cript::string
-UUID::Request::_get(Cript::Context *context)
+cripts::string
+UUID::Request::_get(cripts::Context *context)
 {
-  uint64_t      uuid = TSHttpTxnIdGet(context->state.txnp);
-  Cript::string ret  = std::to_string(uuid);
+  uint64_t       uuid = TSHttpTxnIdGet(context->state.txnp);
+  cripts::string ret  = std::to_string(uuid);
 
   return ret;
 }
+
+} // namespace cripts

@@ -26,6 +26,9 @@
 #include "cripts/Transaction.hpp"
 #include "cripts/Lulu.hpp"
 
+namespace cripts
+{
+
 class Header
 {
   using self_type = Header;
@@ -46,7 +49,7 @@ public:
     Header      *_owner  = nullptr;
     TSHttpStatus _status = TS_HTTP_STATUS_NONE;
 
-  }; // End class Header::Status
+  }; // End class cripts::Header::Status
 
   class Reason
   {
@@ -56,11 +59,11 @@ public:
     Reason() = delete;
     Reason(Header *owner) : _owner(owner) {}
 
-    self_type &operator=(Cript::string_view reason);
+    self_type &operator=(cripts::string_view reason);
 
   private:
     Header *_owner = nullptr;
-  }; // End class Header::Reason
+  }; // End class cripts::Header::Reason
 
   class Body
   {
@@ -70,11 +73,11 @@ public:
     Body() = delete;
     Body(Header *owner) : _owner(owner) {}
 
-    self_type &operator=(Cript::string_view body);
+    self_type &operator=(cripts::string_view body);
 
   private:
     Header *_owner = nullptr;
-  }; // End class Header::Body
+  }; // End class cripts::Header::Body
 
   class Method
   {
@@ -82,40 +85,40 @@ public:
 
   public:
     Method() = delete;
-    Method(Cript::string_view const &method) : _method(method) {}
+    Method(cripts::string_view const &method) : _method(method) {}
     Method(const char *const method, int len)
     {
-      _method = Cript::string_view(method, static_cast<Cript::string_view::size_type>(len));
+      _method = cripts::string_view(method, static_cast<cripts::string_view::size_type>(len));
     }
 
     Method(Header *owner) : _owner(owner) {}
 
-    Cript::string_view GetSV();
+    cripts::string_view GetSV();
 
-    operator Cript::string_view() { return GetSV(); }
+    operator cripts::string_view() { return GetSV(); }
 
     // ToDo: This is a bit weird, but seems needed (for now) to allow for the
-    // Header::Method::* constants.
-    [[nodiscard]] Cript::string_view::const_pointer
+    // cripts::Header::Method::* constants.
+    [[nodiscard]] cripts::string_view::const_pointer
     Data() const
     {
       CAssert(_method.size() > 0);
       return _method.data();
     }
 
-    Cript::string_view::const_pointer
+    cripts::string_view::const_pointer
     Data()
     {
       return GetSV().data();
     }
 
-    Cript::string_view::size_type
+    cripts::string_view::size_type
     Size()
     {
       return GetSV().size();
     }
 
-    Cript::string_view::size_type
+    cripts::string_view::size_type
     Length()
     {
       return GetSV().size();
@@ -134,10 +137,10 @@ public:
     }
 
   private:
-    Header            *_owner = nullptr;
-    Cript::string_view _method;
+    Header             *_owner = nullptr;
+    cripts::string_view _method;
 
-  }; // End class Header::Method
+  }; // End class cripts::Header::Method
 
   class CacheStatus
   {
@@ -147,37 +150,37 @@ public:
     CacheStatus() = delete;
     CacheStatus(Header *owner) : _owner(owner) {}
 
-    Cript::string_view GetSV();
+    cripts::string_view GetSV();
 
-    operator Cript::string_view() { return GetSV(); }
+    operator cripts::string_view() { return GetSV(); }
 
-    Cript::string_view::const_pointer
+    cripts::string_view::const_pointer
     Data()
     {
       return GetSV().data();
     }
 
-    Cript::string_view::size_type
+    cripts::string_view::size_type
     Size()
     {
       return GetSV().size();
     }
 
-    Cript::string_view::size_type
+    cripts::string_view::size_type
     Length()
     {
       return GetSV().size();
     }
 
   private:
-    Header            *_owner = nullptr;
-    Cript::string_view _cache;
+    Header             *_owner = nullptr;
+    cripts::string_view _cache;
 
-  }; // Class Header::CacheStatus
+  }; // Class cripts::Header::CacheStatus
 
-  class String : public Cript::StringViewMixin<String>
+  class String : public cripts::StringViewMixin<String>
   {
-    using super_type = Cript::StringViewMixin<String>;
+    using super_type = cripts::StringViewMixin<String>;
     using self_type  = String;
 
   public:
@@ -191,41 +194,41 @@ public:
 
   public:
     // Implemented in Headers.cc, they are pretty large
-    self_type &operator=(const Cript::string_view str) override;
+    self_type &operator=(const cripts::string_view str) override;
     self_type &operator=(integer val);
-    self_type &operator+=(const Cript::string_view str);
+    self_type &operator+=(const cripts::string_view str);
 
     // These specialized assignment operators all use the above
     template <size_t N>
     self_type &
     operator=(const char (&str)[N])
     {
-      return operator=(Cript::string_view(str, str[N - 1] ? N : N - 1));
+      return operator=(cripts::string_view(str, str[N - 1] ? N : N - 1));
     }
 
     self_type &
     operator=(char *&str)
     {
-      return operator=(Cript::string_view(str, strlen(str)));
+      return operator=(cripts::string_view(str, strlen(str)));
     }
 
     self_type &
     operator=(char const *&str)
     {
-      return operator=(Cript::string_view(str, strlen(str)));
+      return operator=(cripts::string_view(str, strlen(str)));
     }
 
     self_type &
     operator=(const std::string &str)
     {
-      return operator=(Cript::string_view(str));
+      return operator=(cripts::string_view(str));
     }
 
   private:
     friend class Header;
 
     void
-    _initialize(Cript::string_view name, Cript::string_view value, Header *owner, TSMLoc field_loc)
+    _initialize(cripts::string_view name, cripts::string_view value, Header *owner, TSMLoc field_loc)
     {
       _setSV(value);
       _name      = name;
@@ -233,22 +236,22 @@ public:
       _field_loc = field_loc;
     }
 
-    Header            *_owner     = nullptr;
-    TSMLoc             _field_loc = nullptr;
-    Cript::string_view _name;
+    Header             *_owner     = nullptr;
+    TSMLoc              _field_loc = nullptr;
+    cripts::string_view _name;
 
-  }; // Class Header::String
+  }; // Class cripts::Header::String
 
-  class Name : public Cript::StringViewMixin<Name>
+  class Name : public cripts::StringViewMixin<Name>
   {
-    using super_type = Cript::StringViewMixin<Name>;
+    using super_type = cripts::StringViewMixin<Name>;
     using self_type  = Name;
 
   public:
-    operator Cript::string_view() const { return GetSV(); }
+    operator cripts::string_view() const { return GetSV(); }
 
     self_type &
-    operator=(const Cript::string_view str) override
+    operator=(const cripts::string_view str) override
     {
       _setSV(str);
 
@@ -257,7 +260,7 @@ public:
 
     using super_type::StringViewMixin;
 
-  }; // Class Header::Name
+  }; // Class cripts::Header::Name
 
 public:
   class Iterator
@@ -326,7 +329,7 @@ public:
     Header  *_owner = nullptr;
 
     static const Iterator _end;
-  }; // Class Header::iterator
+  }; // Class cripts::Header::iterator
 
   Header() : status(this), reason(this), body(this), cache(this) {}
 
@@ -357,7 +360,7 @@ public:
     return _hdr_loc;
   }
 
-  String operator[](const Cript::string_view str);
+  String operator[](const cripts::string_view str);
 
   [[nodiscard]] bool
   Initialized() const
@@ -366,13 +369,13 @@ public:
   }
 
   void
-  Erase(const Cript::string_view header)
+  Erase(const cripts::string_view header)
   {
     operator[](header) = "";
   }
 
-  Iterator           begin();
-  Cript::string_view iterate(); // This is a little helper for the iterators
+  Iterator            begin();
+  cripts::string_view iterate(); // This is a little helper for the iterators
 
   [[nodiscard]] Iterator
   end() const
@@ -387,16 +390,16 @@ public:
 
 protected:
   void
-  _initialize(Cript::Transaction *state)
+  _initialize(cripts::Transaction *state)
   {
     _state = state;
   }
 
-  TSMBuffer           _bufp         = nullptr;
-  TSMLoc              _hdr_loc      = nullptr;
-  Cript::Transaction *_state        = nullptr; // Pointer into the owning Context's State
-  TSMLoc              _iterator_loc = nullptr;
-  uint32_t            _iterator_tag = 0; // This is used to assure that we don't have more than one active iterator on a header
+  TSMBuffer            _bufp         = nullptr;
+  TSMLoc               _hdr_loc      = nullptr;
+  cripts::Transaction *_state        = nullptr; // Pointer into the owning Context's State
+  TSMLoc               _iterator_loc = nullptr;
+  uint32_t             _iterator_tag = 0; // This is used to assure that we don't have more than one active iterator on a header
 
 }; // End class Header
 
@@ -424,98 +427,96 @@ public:
 
 namespace Client
 {
-class URL;
-class Request : public RequestHeader
-{
-  using super_type = RequestHeader;
-  using self_type  = Request;
+  class URL;
+  class Request : public RequestHeader
+  {
+    using super_type = RequestHeader;
+    using self_type  = Request;
 
-public:
-  Request()                         = default;
-  Request(const self_type &)        = delete;
-  void operator=(const self_type &) = delete;
+  public:
+    Request()                         = default;
+    Request(const self_type &)        = delete;
+    void operator=(const self_type &) = delete;
 
-  // Implemented later, because needs the context.
-  static self_type &_get(Cript::Context *context);
+    // Implemented later, because needs the context.
+    static self_type &_get(cripts::Context *context);
 
-}; // End class Client::Request
+  }; // End class Client::Request
 
-class Response : public ResponseHeader
-{
-  using super_type = ResponseHeader;
-  using self_type  = Response;
+  class Response : public ResponseHeader
+  {
+    using super_type = ResponseHeader;
+    using self_type  = Response;
 
-public:
-  Response()                        = default;
-  Response(const self_type &)       = delete;
-  void operator=(const self_type &) = delete;
+  public:
+    Response()                        = default;
+    Response(const self_type &)       = delete;
+    void operator=(const self_type &) = delete;
 
-  // Implemented later, because needs the context.
-  static self_type &_get(Cript::Context *context);
+    // Implemented later, because needs the context.
+    static self_type &_get(cripts::Context *context);
 
-}; // End class Client::Response
+  }; // End class Client::Response
 
 } // namespace Client
 
 namespace Server
 {
-class Request : public RequestHeader
-{
-  using super_type = RequestHeader;
-  using self_type  = Request;
+  class Request : public RequestHeader
+  {
+    using super_type = RequestHeader;
+    using self_type  = Request;
 
-public:
-  Request()                         = default;
-  Request(const self_type &)        = delete;
-  void operator=(const self_type &) = delete;
+  public:
+    Request()                         = default;
+    Request(const self_type &)        = delete;
+    void operator=(const self_type &) = delete;
 
-  // Implemented later, because needs the context.
-  static Request &_get(Cript::Context *context);
-}; // End class Server::Request
+    // Implemented later, because needs the context.
+    static Request &_get(cripts::Context *context);
+  }; // End class Server::Request
 
-class Response : public ResponseHeader
-{
-  using super_type = ResponseHeader;
-  using self_type  = Response;
+  class Response : public ResponseHeader
+  {
+    using super_type = ResponseHeader;
+    using self_type  = Response;
 
-public:
-  Response()                        = default;
-  Response(const self_type &)       = delete;
-  void operator=(const self_type &) = delete;
+  public:
+    Response()                        = default;
+    Response(const self_type &)       = delete;
+    void operator=(const self_type &) = delete;
 
-  // Implemented later, because needs the context.
-  static self_type &_get(Cript::Context *context);
+    // Implemented later, because needs the context.
+    static self_type &_get(cripts::Context *context);
 
-}; // End class Server::Response
+  }; // End class Server::Response
 
 } // namespace Server
 
 // Some static methods for the Method class
-namespace Cript
-{
 namespace Method
 {
 #undef DELETE // ToDo: macOS shenanigans here, defining DELETE as a macro
-  extern const Header::Method GET;
-  extern const Header::Method HEAD;
-  extern const Header::Method POST;
-  extern const Header::Method PUT;
-  extern const Header::Method PUSH;
-  extern const Header::Method DELETE;
-  extern const Header::Method OPTIONS;
-  extern const Header::Method CONNECT;
-  extern const Header::Method TRACE;
+  extern const cripts::Header::Method GET;
+  extern const cripts::Header::Method HEAD;
+  extern const cripts::Header::Method POST;
+  extern const cripts::Header::Method PUT;
+  extern const cripts::Header::Method PUSH;
+  extern const cripts::Header::Method DELETE;
+  extern const cripts::Header::Method OPTIONS;
+  extern const cripts::Header::Method CONNECT;
+  extern const cripts::Header::Method TRACE;
   // This is a special feature of ATS
-  extern const Header::Method PURGE;
+  extern const cripts::Header::Method PURGE;
 } // namespace Method
 
 class Context;
-} // namespace Cript
+} // namespace cripts
 
 // Formatters for {fmt}
 namespace fmt
 {
-template <> struct formatter<Header::Method> {
+template <> struct formatter<cripts::Header::Method> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -524,13 +525,13 @@ template <> struct formatter<Header::Method> {
 
   template <typename FormatContext>
   auto
-  format(Header::Method &method, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Header::Method &method, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", method.GetSV());
   }
 };
 
-template <> struct formatter<Header::String> {
+template <> struct formatter<cripts::Header::String> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -539,13 +540,13 @@ template <> struct formatter<Header::String> {
 
   template <typename FormatContext>
   auto
-  format(Header::String &str, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Header::String &str, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", str.GetSV());
   }
 };
 
-template <> struct formatter<Header::Name> {
+template <> struct formatter<cripts::Header::Name> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -554,7 +555,7 @@ template <> struct formatter<Header::Name> {
 
   template <typename FormatContext>
   auto
-  format(Header::Name &name, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Header::Name &name, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", name.GetSV());
   }
