@@ -24,6 +24,7 @@
 #include "cripts/Preamble.hpp"
 
 #include "tsutil/StringConvert.h"
+#include "tscore/Random.h"
 
 #if CRIPTS_HAS_MAXMIND
 #include <maxminddb.h>
@@ -69,11 +70,7 @@ integer_helper(std::string_view sv)
 int
 cripts::Random(int max)
 {
-  static std::random_device          r;
-  static std::default_random_engine  e1(r());
-  std::uniform_int_distribution<int> uniform_dist(1, max);
-
-  return uniform_dist(e1);
+  return ts::Random::random() % max + 1; // [1..max]
 }
 
 namespace cripts::details
