@@ -630,8 +630,8 @@ build_vol_hash_table(CacheHostRecord *cp)
 int
 cmprtable(const void *aa, const void *bb)
 {
-  const rtable_pair *a = reinterpret_cast<const rtable_pair *>(aa);
-  const rtable_pair *b = reinterpret_cast<const rtable_pair *>(bb);
+  const rtable_pair *a = static_cast<const rtable_pair *>(aa);
+  const rtable_pair *b = static_cast<const rtable_pair *>(bb);
   if (a->rval < b->rval) {
     return -1;
   }
