@@ -163,7 +163,7 @@ int CacheVC::size_to_init = -1;
 CacheVC::CacheVC()
 {
   // Initialize Region C
-  size_to_init = sizeof(CacheVC) - (size_t) & (static_cast<CacheVC *>(nullptr))->vio;
+  size_to_init = sizeof(CacheVC) - reinterpret_cast<size_t>(&(static_cast<CacheVC *>(nullptr))->vio);
   memset(reinterpret_cast<void *>(&vio), 0, size_to_init);
 }
 
