@@ -342,7 +342,7 @@ DFA::build(const std::string_view pattern, unsigned flags)
 
 //----------------------------------------------------------------------------
 int32_t
-DFA::compile(std::string_view pattern, unsigned flags)
+DFA::compile(const std::string_view pattern, unsigned flags)
 {
   release_assert(_patterns.empty());
   this->build(pattern, flags);
@@ -351,7 +351,7 @@ DFA::compile(std::string_view pattern, unsigned flags)
 
 //----------------------------------------------------------------------------
 int32_t
-DFA::compile(std::string_view *patterns, int npatterns, unsigned flags)
+DFA::compile(const std::string_view *const patterns, int npatterns, unsigned flags)
 {
   _patterns.reserve(npatterns); // try to pre-allocate.
   for (int i = 0; i < npatterns; ++i) {
@@ -362,7 +362,7 @@ DFA::compile(std::string_view *patterns, int npatterns, unsigned flags)
 
 //----------------------------------------------------------------------------
 int32_t
-DFA::compile(const char **patterns, int npatterns, unsigned flags)
+DFA::compile(const char *const *patterns, int npatterns, unsigned flags)
 {
   _patterns.reserve(npatterns); // try to pre-allocate.
   for (int i = 0; i < npatterns; ++i) {

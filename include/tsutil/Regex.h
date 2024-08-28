@@ -166,11 +166,11 @@ public:
   ~DFA();
 
   /// @return The number of patterns successfully compiled.
-  int32_t compile(std::string_view pattern, unsigned flags = 0);
+  int32_t compile(const std::string_view pattern, unsigned flags = 0);
   /// @return The number of patterns successfully compiled.
-  int32_t compile(std::string_view *patterns, int npatterns, unsigned flags = 0);
+  int32_t compile(const std::string_view *const patterns, int npatterns, unsigned flags = 0);
   /// @return The number of patterns successfully compiled.
-  int32_t compile(const char **patterns, int npatterns, unsigned flags = 0);
+  int32_t compile(const char *const *patterns, int npatterns, unsigned flags = 0);
 
   /** Match @a str against the internal patterns.
    *
