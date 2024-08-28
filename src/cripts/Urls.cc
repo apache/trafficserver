@@ -20,28 +20,31 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
-std::vector<Cript::string_view>
-Cript::Url::Component::Split(const char delim)
+namespace cripts
 {
-  return Cript::Splitter(GetSV(), delim);
+
+std::vector<cripts::string_view>
+Url::Component::Split(const char delim)
+{
+  return cripts::Splitter(GetSV(), delim);
 }
 
-Cript::string_view
-Cript::Url::Scheme::GetSV()
+cripts::string_view
+Url::Scheme::GetSV()
 {
   if (_owner && _data.empty()) {
     const char *value = nullptr;
     int         len   = 0;
 
     value = TSUrlSchemeGet(_owner->_bufp, _owner->_urlp, &len);
-    _data = Cript::string_view(value, len);
+    _data = cripts::string_view(value, len);
   }
 
   return _data;
 }
 
-Cript::Url::Scheme
-Cript::Url::Scheme::operator=(Cript::string_view scheme)
+Url::Scheme
+Url::Scheme::operator=(cripts::string_view scheme)
 {
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlSchemeSet(_owner->_bufp, _owner->_urlp, scheme.data(), scheme.size());
@@ -52,23 +55,23 @@ Cript::Url::Scheme::operator=(Cript::string_view scheme)
   return *this;
 }
 
-Cript::string_view
-Cript::Url::Host::GetSV()
+cripts::string_view
+Url::Host::GetSV()
 {
   if (_owner && _data.empty()) {
     const char *value = nullptr;
     int         len   = 0;
 
     value   = TSUrlHostGet(_owner->_bufp, _owner->_urlp, &len);
-    _data   = Cript::string_view(value, len);
+    _data   = cripts::string_view(value, len);
     _loaded = true;
   }
 
   return _data;
 }
 
-Cript::Url::Host
-Cript::Url::Host::operator=(Cript::string_view host)
+Url::Host
+Url::Host::operator=(cripts::string_view host)
 {
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHostSet(_owner->_bufp, _owner->_urlp, host.data(), host.size());
@@ -79,7 +82,7 @@ Cript::Url::Host::operator=(Cript::string_view host)
   return *this;
 }
 
-Cript::Url::Port::operator integer() // This should not be explicit
+Url::Port::operator integer() // This should not be explicit
 {
   if (_owner && _port < 0) {
     _port = TSUrlPortGet(_owner->_bufp, _owner->_urlp);
@@ -88,8 +91,8 @@ Cript::Url::Port::operator integer() // This should not be explicit
   return _port;
 }
 
-Cript::Url::Port
-Cript::Url::Port::operator=(int port)
+Url::Port
+Url::Port::operator=(int port)
 {
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlPortSet(_owner->_bufp, _owner->_urlp, port);
@@ -99,13 +102,13 @@ Cript::Url::Port::operator=(int port)
   return *this;
 }
 
-Cript::string_view
-Cript::Url::Path::GetSV()
+cripts::string_view
+Url::Path::GetSV()
 {
   if (_segments.size() > 0) {
     std::ostringstream path;
 
-    std::copy(_segments.begin(), _segments.end(), std::ostream_iterator<Cript::string_view>(path, "/"));
+    std::copy(_segments.begin(), _segments.end(), std::ostream_iterator<cripts::string_view>(path, "/"));
     _storage.reserve(_size);
     _storage = std::string_view(path.str());
     if (_storage.size() > 0) {
@@ -118,7 +121,7 @@ Cript::Url::Path::GetSV()
     int         len   = 0;
 
     value   = TSUrlPathGet(_owner->_bufp, _owner->_urlp, &len);
-    _data   = Cript::string_view(value, len);
+    _data   = cripts::string_view(value, len);
     _size   = len;
     _loaded = true;
   }
@@ -126,8 +129,8 @@ Cript::Url::Path::GetSV()
   return _data;
 }
 
-Cript::Url::Path::String
-Cript::Url::Path::operator[](Segments::size_type ix)
+Url::Path::String
+Url::Path::operator[](Segments::size_type ix)
 {
   Url::Path::String ret;
 
@@ -139,8 +142,8 @@ Cript::Url::Path::operator[](Segments::size_type ix)
   return ret; // RVO
 }
 
-Cript::Url::Path
-Cript::Url::Path::operator=(Cript::string_view path)
+Url::Path
+Url::Path::operator=(cripts::string_view path)
 {
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlPathSet(_owner->_bufp, _owner->_urlp, path.data(), path.size());
@@ -151,10 +154,10 @@ Cript::Url::Path::operator=(Cript::string_view path)
   return *this;
 }
 
-Cript::string
-Cript::Url::Path::operator+=(Cript::string_view add)
+cripts::string
+Url::Path::operator+=(cripts::string_view add)
 {
-  Cript::string str;
+  cripts::string str;
 
   if (add.size() > 0) {
     str.assign(GetSV());
@@ -165,8 +168,8 @@ Cript::Url::Path::operator+=(Cript::string_view add)
   return str; // RVO
 }
 
-Cript::Url::Path::String &
-Cript::Url::Path::String::operator=(const Cript::string_view str)
+Url::Path::String &
+Url::Path::String::operator=(const cripts::string_view str)
 {
   CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
   _owner->_size          -= _owner->_segments[_ix].size();
@@ -178,7 +181,7 @@ Cript::Url::Path::String::operator=(const Cript::string_view str)
 }
 
 void
-Cript::Url::Path::Reset()
+Url::Path::Reset()
 {
   Component::Reset();
 
@@ -189,7 +192,7 @@ Cript::Url::Path::Reset()
 }
 
 void
-Cript::Url::Path::Push(Cript::string_view val)
+Url::Path::Push(cripts::string_view val)
 {
   _parser();
   _modified = true;
@@ -197,7 +200,7 @@ Cript::Url::Path::Push(Cript::string_view val)
 }
 
 void
-Cript::Url::Path::Insert(Segments::size_type ix, Cript::string_view val)
+Url::Path::Insert(Segments::size_type ix, cripts::string_view val)
 {
   _parser();
   _modified = true;
@@ -205,15 +208,15 @@ Cript::Url::Path::Insert(Segments::size_type ix, Cript::string_view val)
 }
 
 void
-Cript::Url::Path::_parser()
+Url::Path::_parser()
 {
   if (_segments.size() == 0) {
     _segments = Split('/');
   }
 }
 
-Cript::Url::Query::Parameter &
-Cript::Url::Query::Parameter::operator=(const Cript::string_view str)
+Url::Query::Parameter &
+Url::Query::Parameter::operator=(const cripts::string_view str)
 {
   CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
   auto iter = _owner->_hashed.find(_name);
@@ -229,8 +232,8 @@ Cript::Url::Query::Parameter::operator=(const Cript::string_view str)
   return *this;
 }
 
-Cript::string_view
-Cript::Url::Query::GetSV()
+cripts::string_view
+Url::Query::GetSV()
 {
   if (_ordered.size() > 0) {
     _storage.clear();
@@ -264,7 +267,7 @@ Cript::Url::Query::GetSV()
     int         len   = 0;
 
     value   = TSUrlHttpQueryGet(_owner->_bufp, _owner->_urlp, &len);
-    _data   = Cript::string_view(value, len);
+    _data   = cripts::string_view(value, len);
     _size   = len;
     _loaded = true;
   }
@@ -272,8 +275,8 @@ Cript::Url::Query::GetSV()
   return _data;
 }
 
-Cript::Url::Query
-Cript::Url::Query::operator=(Cript::string_view query)
+Url::Query
+Url::Query::operator=(cripts::string_view query)
 {
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
@@ -284,10 +287,10 @@ Cript::Url::Query::operator=(Cript::string_view query)
   return *this;
 }
 
-Cript::string
-Cript::Url::Query::operator+=(Cript::string_view add)
+cripts::string
+Url::Query::operator+=(cripts::string_view add)
 {
-  Cript::string str;
+  cripts::string str;
 
   if (add.size() > 0) {
     str.assign(GetSV());
@@ -298,8 +301,8 @@ Cript::Url::Query::operator+=(Cript::string_view add)
   return str; // RVO
 }
 
-Cript::Url::Query::Parameter
-Cript::Url::Query::operator[](Cript::string_view param)
+Url::Query::Parameter
+Url::Query::operator[](cripts::string_view param)
 {
   // Make sure the hash and vector are populated
   _parser();
@@ -317,7 +320,7 @@ Cript::Url::Query::operator[](Cript::string_view param)
 }
 
 void
-Cript::Url::Query::Erase(Cript::string_view param)
+Url::Query::Erase(cripts::string_view param)
 {
   // Make sure the hash and vector are populated
   _parser();
@@ -341,7 +344,7 @@ Cript::Url::Query::Erase(Cript::string_view param)
 }
 
 void
-Cript::Url::Query::Erase(std::initializer_list<Cript::string_view> list, bool keep)
+Url::Query::Erase(std::initializer_list<cripts::string_view> list, bool keep)
 {
   if (keep) {
     // Make sure the hash and vector are populated
@@ -372,7 +375,7 @@ Cript::Url::Query::Erase(std::initializer_list<Cript::string_view> list, bool ke
 }
 
 void
-Cript::Url::Query::Reset()
+Url::Query::Reset()
 {
   Component::Reset();
 
@@ -384,15 +387,15 @@ Cript::Url::Query::Reset()
 }
 
 void
-Cript::Url::Query::_parser()
+Url::Query::_parser()
 {
   if (_ordered.size() == 0) {
     for (const auto sv : Split('&')) {
-      const auto         eq  = sv.find_first_of('=');
-      Cript::string_view key = sv.substr(0, eq);
-      Cript::string_view val;
+      const auto          eq  = sv.find_first_of('=');
+      cripts::string_view key = sv.substr(0, eq);
+      cripts::string_view val;
 
-      if (eq != Cript::string_view::npos) {
+      if (eq != cripts::string_view::npos) {
         val = sv.substr(eq + 1);
       }
 
@@ -402,10 +405,10 @@ Cript::Url::Query::_parser()
   }
 }
 
-Cript::string
-Cript::Url::String() const
+cripts::string
+Url::String() const
 {
-  Cript::string ret;
+  cripts::string ret;
 
   if (_state) {
     int   full_len = 0;
@@ -421,7 +424,7 @@ Cript::Url::String() const
 }
 
 Pristine::URL &
-Pristine::URL::_get(Cript::Context *context)
+Pristine::URL::_get(cripts::Context *context)
 {
   if (!context->_pristine_url.Initialized()) {
     Pristine::URL *url = &context->_pristine_url;
@@ -438,7 +441,7 @@ Pristine::URL::_get(Cript::Context *context)
 }
 
 void
-Client::URL::_initialize(Cript::Context *context)
+Client::URL::_initialize(cripts::Context *context)
 {
   Url::_initialize(&context->state);
 
@@ -448,7 +451,7 @@ Client::URL::_initialize(Cript::Context *context)
 }
 
 Client::URL &
-Client::URL::_get(Cript::Context *context)
+Client::URL::_get(cripts::Context *context)
 {
   if (!context->_client_url.Initialized()) {
     context->_client_url._initialize(context);
@@ -458,7 +461,7 @@ Client::URL::_get(Cript::Context *context)
 }
 
 bool
-Client::URL::_update(Cript::Context * /* context ATS_UNUSED */)
+Client::URL::_update(cripts::Context * /* context ATS_UNUSED */)
 {
   path.Flush();
   query.Flush();
@@ -467,7 +470,7 @@ Client::URL::_update(Cript::Context * /* context ATS_UNUSED */)
 }
 
 void
-Remap::From::URL::_initialize(Cript::Context *context)
+Remap::From::URL::_initialize(cripts::Context *context)
 {
   Url::_initialize(&context->state);
 
@@ -477,7 +480,7 @@ Remap::From::URL::_initialize(Cript::Context *context)
 }
 
 Remap::From::URL &
-Remap::From::URL::_get(Cript::Context *context)
+Remap::From::URL::_get(cripts::Context *context)
 {
   if (!context->_remap_from_url.Initialized()) {
     context->_remap_from_url._initialize(context);
@@ -487,7 +490,7 @@ Remap::From::URL::_get(Cript::Context *context)
 }
 
 void
-Remap::To::URL::_initialize(Cript::Context *context)
+Remap::To::URL::_initialize(cripts::Context *context)
 {
   Url::_initialize(&context->state);
 
@@ -497,7 +500,7 @@ Remap::To::URL::_initialize(Cript::Context *context)
 }
 
 Remap::To::URL &
-Remap::To::URL::_get(Cript::Context *context)
+Remap::To::URL::_get(cripts::Context *context)
 {
   if (!context->_remap_to_url.Initialized()) {
     context->_remap_to_url._initialize(context);
@@ -507,7 +510,7 @@ Remap::To::URL::_get(Cript::Context *context)
 }
 
 Cache::URL &
-Cache::URL::_get(Cript::Context *context)
+Cache::URL::_get(cripts::Context *context)
 {
   if (!context->_cache_url.Initialized()) {
     Cache::URL      *url = &context->_cache_url;
@@ -543,9 +546,9 @@ Cache::URL::_get(Cript::Context *context)
   return context->_cache_url;
 }
 
-// This has to be implemented here, since the Cript::Context is not complete yet
+// This has to be implemented here, since the cripts::Context is not complete yet
 bool
-Cache::URL::_update(Cript::Context *context)
+Cache::URL::_update(cripts::Context *context)
 {
   // For correctness, we will also make sure the Path and Query objects are flushed
   path.Flush();
@@ -573,7 +576,7 @@ Cache::URL::_update(Cript::Context *context)
 
 // ToDo: This may need more work, to understand which hooks the parent URL is actually available
 Parent::URL &
-Parent::URL::_get(Cript::Context *context)
+Parent::URL::_get(cripts::Context *context)
 {
   if (!context->_cache_url.Initialized()) {
     Parent::URL     *url = &context->_parent_url;
@@ -591,3 +594,5 @@ Parent::URL::_get(Cript::Context *context)
 
   return context->_parent_url;
 }
+
+} // namespace cripts

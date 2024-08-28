@@ -21,7 +21,7 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Instance.hpp"
 
-namespace Cript
+namespace cripts
 {
 
 void
@@ -30,7 +30,7 @@ Instance::_initialize(int argc, char *argv[], const char *filename)
   from_url = argv[0];
   to_url   = argv[1];
   for (int i = 2; i < argc; i++) {
-    auto s = Cript::string(argv[i]);
+    auto s = cripts::string(argv[i]);
 
     s.trim("\"\'");
     data[i - 2] = s;
@@ -44,11 +44,11 @@ Instance::_initialize(int argc, char *argv[], const char *filename)
   auto slash       = plugin_debug_tag.find_last_of('/');
   auto period      = plugin_debug_tag.find_last_of('.');
 
-  if (slash == Cript::string::npos) {
+  if (slash == cripts::string::npos) {
     slash = 0;
   }
 
-  if (period != Cript::string::npos) {
+  if (period != cripts::string::npos) {
     plugin_debug_tag = std::string_view(plugin_debug_tag.substr(slash + 1, period - slash - 1));
   }
 
@@ -56,7 +56,7 @@ Instance::_initialize(int argc, char *argv[], const char *filename)
 } // namespace Instance::_initialize(intargc,char*argv[],constchar*filename)
 
 bool
-Instance::AddPlugin(const Cript::string &tag, const Cript::string &plugin, const Plugin::Options &options)
+Instance::AddPlugin(const cripts::string &tag, const cripts::string &plugin, const Plugin::Options &options)
 {
   if (plugins.find(tag) != plugins.end()) {
     return false;
@@ -75,7 +75,7 @@ Instance::AddPlugin(const Cript::string &tag, const Cript::string &plugin, const
 }
 
 bool
-Instance::DeletePlugin(const Cript::string &tag)
+Instance::DeletePlugin(const cripts::string &tag)
 {
   auto p = plugins.find(tag);
 
@@ -89,7 +89,7 @@ Instance::DeletePlugin(const Cript::string &tag)
 }
 
 void
-Instance::AddBundle(Cript::Bundle::Base *bundle)
+Instance::AddBundle(cripts::Bundle::Base *bundle)
 {
   for (auto &it : bundles) {
     if (it->Name() == bundle->Name()) {
@@ -100,4 +100,4 @@ Instance::AddBundle(Cript::Bundle::Base *bundle)
   bundles.push_back(bundle);
 }
 
-} // namespace Cript
+} // namespace cripts

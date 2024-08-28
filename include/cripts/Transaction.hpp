@@ -26,7 +26,7 @@
 // This had to be extraced out of the CriptContex class, to avoid the circular references. And
 // doing this lets us have the various headers, URLs etc. as uninitialized members of the Context.
 
-namespace Cript
+namespace cripts
 {
 // This is a bitfield, used to disable a particular callback from a previous hook
 enum Callbacks : std::uint8_t {
@@ -86,4 +86,4 @@ public:
 
 }; // class Transaction
 
-} // namespace Cript
+} // namespace cripts
