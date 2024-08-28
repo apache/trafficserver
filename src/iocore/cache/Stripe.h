@@ -82,8 +82,6 @@ class Stripe
 {
 public:
   ats_scoped_str hash_text;
-  char          *path = nullptr;
-  int            fd{-1};
 
   char                *raw_dir{nullptr};
   Dir                 *dir{};
@@ -97,8 +95,7 @@ public:
   off_t                len{};
   off_t                data_blocks{};
 
-  CacheDisk *disk{};
-  uint32_t   sector_size{};
+  uint32_t sector_size{};
 
   CacheVol *cache_vol{};
 
@@ -156,10 +153,10 @@ public:
 protected:
   AggregateWriteBuffer _write_buffer;
 
-  void _clear_init();
+  void _clear_init(std::uint32_t hw_sector_size);
   void _init_dir();
   void _init_data();
-  bool flush_aggregate_write_buffer();
+  bool flush_aggregate_write_buffer(int fd);
 
 private:
   void _init_data_internal();

@@ -65,6 +65,8 @@ class StripeSM : public Continuation, public Stripe
 {
 public:
   CryptoHash hash_id;
+  char      *path = nullptr;
+  int        fd{-1};
 
   int hit_evacuate_window{};
 
@@ -75,6 +77,8 @@ public:
   Queue<CacheVC, Continuation::Link_link> sync;
 
   Event *trigger = nullptr;
+
+  CacheDisk *disk{};
 
   OpenDir              open_dir;
   RamCache            *ram_cache = nullptr;

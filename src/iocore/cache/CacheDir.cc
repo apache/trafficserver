@@ -428,7 +428,7 @@ check_bucket_not_contains(Dir *b, Dir *e, Dir *seg)
 }
 
 void
-freelist_clean(int s, Stripe *stripe)
+freelist_clean(int s, StripeSM *stripe)
 {
   dir_clean_segment(s, stripe);
   if (stripe->header->freelist[s]) {
@@ -452,7 +452,7 @@ freelist_clean(int s, Stripe *stripe)
 }
 
 inline Dir *
-freelist_pop(int s, Stripe *stripe)
+freelist_pop(int s, StripeSM *stripe)
 {
   Dir *seg = stripe->dir_segment(s);
   Dir *e   = dir_from_offset(stripe->header->freelist[s], seg);

@@ -225,7 +225,7 @@ Stripe::dir_check()
 }
 
 void
-Stripe::_clear_init()
+Stripe::_clear_init(std::uint32_t hw_sector_size)
 {
   size_t dir_len = this->dirlen();
   memset(this->raw_dir, 0, dir_len);
@@ -239,7 +239,7 @@ Stripe::_clear_init()
   this->header->cycle                                              = 0;
   this->header->create_time                                        = time(nullptr);
   this->header->dirty                                              = 0;
-  this->sector_size = this->header->sector_size = this->disk->hw_sector_size;
+  this->sector_size = this->header->sector_size = hw_sector_size;
   *this->footer                                 = *this->header;
 }
 
@@ -285,12 +285,12 @@ Stripe::_init_data()
 }
 
 bool
-Stripe::flush_aggregate_write_buffer()
+Stripe::flush_aggregate_write_buffer(int fd)
 {
   // set write limit
   this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
 
-  if (!this->_write_buffer.flush(this->fd, this->header->write_pos)) {
+  if (!this->_write_buffer.flush(fd, this->header->write_pos)) {
     return false;
   }
   this->header->last_write_pos  = this->header->write_pos;

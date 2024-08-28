@@ -141,7 +141,7 @@ int
 StripeSM::clear_dir()
 {
   size_t dir_len = this->dirlen();
-  this->_clear_init();
+  this->_clear_init(this->disk->hw_sector_size);
 
   if (pwrite(this->fd, this->raw_dir, dir_len, this->skip) < 0) {
     Warning("unable to clear cache directory '%s'", this->hash_text.get());
@@ -298,7 +298,7 @@ int
 StripeSM::clear_dir_aio()
 {
   size_t dir_len = this->dirlen();
-  this->_clear_init();
+  this->_clear_init(this->disk->hw_sector_size);
 
   SET_HANDLER(&StripeSM::handle_dir_clear);
 
@@ -1365,7 +1365,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
   // directories have not been inserted for these writes
   if (!this->_write_buffer.is_empty()) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
-    this->flush_aggregate_write_buffer();
+    this->flush_aggregate_write_buffer(this->fd);
   }
 
   // We already asserted that dirlen > 0.
