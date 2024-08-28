@@ -336,7 +336,7 @@ bool
 ProxySession::support_sni() const
 {
   if (this->_vc) {
-    return this->_vc->get_service<TLSSNISupport>() == nullptr;
+    return this->_vc->get_service<TLSSNISupport>() != nullptr;
   } else {
     return false;
   }
