@@ -81,8 +81,8 @@ If you have multiple keys you will need to set the default appropriately
 beforehand, as no option will be provided to select the signing key. The files
 should have names that start with ``trafficserver-X.Y.Z-rcA.tar.bz2`` where
 ``X.Y.Z`` is the version and ``A`` is the release candidate counter. There
-should be four such files, one with no extension and three others with the
-extensions ``asc``, ``md5``, and ``sha1``. This will also create a signed git
+should be three such files, one with no extension and two others with the
+extensions ``asc``,  and ``sha512``. This will also create a signed git
 tag of the form ``X.Y.Z-rcA``.
 
 Distribute
@@ -118,14 +118,14 @@ with the command::
 
    svn co https://dist.apache.org/repos/dist/release/trafficserver <local-directory>
 
-All four of the distribution files go here. If you are making a point release
+All three (.tar.bz2, .asc and .sha512) of the distribution files go here. If you are making a point release
 then you should also remove the distribution files for the previous release.
 Allow 24 hours for the files to be distributed through the ASF infrastructure.
 
-The Traffic Server website must be updated. This is an SVN repository which you
-can access with ::
+The Traffic Server website must be updated. There is a git repository which you
+can access at ::
 
-   svn co https://svn.apache.org/repos/asf/trafficserver/site/trunk <local-directory>
+   https://github.com/apache/trafficserver-site
 
 The files of interest are in the ``content`` directory.
 
@@ -133,17 +133,14 @@ The files of interest are in the ``content`` directory.
    This is the front page. The places to edit here are any security
    announcements at the top and the "News" section.
 
-``downloads.en.mdtext``
-   Update the downloads page to point to the new download objects.
+``downloads.html``
+   Update the downloads page to adjust the links, version numbers and dates.
 
-After making changes, commit them and then run ::
+Commiting to the `asf-site` branch will deploy to the trafficserver website
+here::
 
-   publish.pl trafficserver <apache-id>
+   https://trafficserver.apache.org/
 
-On the ``people.apache.org`` host.
-
-If needed, update the Wiki page for the release to point at the release
-distribution files.
 
 Update the announcement, if needed, to refer to the release distribution files
 and remove the comments concerning the release candidate. This announcement
@@ -151,9 +148,9 @@ should be sent to the *users* and *dev* mailing lists. It should also be sent
 to the ASF announcement list, which must be done using an ``apache.org`` email
 address.
 
-Finally, update various files after the release:
+Prepare for the next minor release
+==================================
 
-* The ``STATUS`` file for master and for the release branch to include this version.
-
-* The ``CHANGES`` file to have a header for the next version.
-
+Update the version in ``CMakeLists.txt`` by incrementing the minor version
+number.  This should be the first commit of the point release after the release
+tag.
