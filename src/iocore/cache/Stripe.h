@@ -158,7 +158,7 @@ protected:
 
   void _clear_init();
   void _init_dir();
-  void _init_data();
+  void _init_data(off_t blocks, off_t dir_skip);
   bool flush_aggregate_write_buffer();
 
 private:
