@@ -273,8 +273,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
   total_good_nvol       = 0;
 
   REC_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
-  Dbg(dbg_ctl_cache_init, "Cache::open - proxy.config.cache.min_average_object_size = %d",
-      (int)cache_config_min_average_object_size);
+  Dbg(dbg_ctl_cache_init, "Cache::open - proxy.config.cache.min_average_object_size = %d", cache_config_min_average_object_size);
 
   CacheVol *cp = cp_list.head;
   for (; cp; cp = cp->link.next) {
@@ -348,7 +347,7 @@ Action *
 Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
-    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NOT_READY);
+    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
     return ACTION_RESULT_DONE;
   }
   ink_assert(caches[type] == this);
@@ -396,7 +395,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
 Lmiss:
   Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
+  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   return ACTION_RESULT_DONE;
 Lwriter:
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadFromWriter);
@@ -417,7 +416,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
                   const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(frag_type)) {
-    cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-ECACHE_NOT_READY);
+    cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
     return ACTION_RESULT_DONE;
   }
 
@@ -456,7 +455,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
     // document currently being written, abort
     Metrics::Counter::increment(cache_rsb.status[c->op_type].failure);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[c->op_type].failure);
-    cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-res);
+    cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-res));
     free_CacheVC(c);
     return ACTION_RESULT_DONE;
   }
@@ -551,7 +550,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
                  CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
-    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NOT_READY);
+    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
     return ACTION_RESULT_DONE;
   }
   ink_assert(caches[type] == this);
@@ -604,7 +603,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
 Lmiss:
   Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
+  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   return ACTION_RESULT_DONE;
 Lwriter:
   cont->handleEvent(CACHE_EVENT_OPEN_READ_RWW, nullptr);
@@ -626,13 +625,13 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
                   const CacheKey * /* key1 ATS_UNUSED */, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
-    cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-ECACHE_NOT_READY);
+    cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
     return ACTION_RESULT_DONE;
   }
 
   ink_assert(caches[type] == this);
   intptr_t err        = 0;
-  int      if_writers = (uintptr_t)info == CACHE_ALLOW_MULTIPLE_WRITES;
+  int      if_writers = reinterpret_cast<uintptr_t>(info) == CACHE_ALLOW_MULTIPLE_WRITES;
   CacheVC *c          = new_CacheVC(cont);
   c->vio.op           = VIO::WRITE;
   c->first_key        = *key;
@@ -651,7 +650,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   c->stripe        = key_to_stripe(key, hostname, host_len);
   StripeSM *stripe = c->stripe;
   c->info          = info;
-  if (c->info && (uintptr_t)info != CACHE_ALLOW_MULTIPLE_WRITES) {
+  if (c->info && reinterpret_cast<uintptr_t>(info) != CACHE_ALLOW_MULTIPLE_WRITES) {
     /*
        Update has the following code paths :
        a) Update alternate header only :
@@ -744,7 +743,7 @@ Lmiss:
 Lfailure:
   Metrics::Counter::increment(cache_rsb.status[c->op_type].failure);
   Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[c->op_type].failure);
-  cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
+  cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-err));
   if (c->od) {
     c->openWriteCloseDir(EVENT_IMMEDIATE, nullptr);
     return ACTION_RESULT_DONE;

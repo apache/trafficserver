@@ -188,7 +188,7 @@ create_config(int num)
       CacheType scheme = (random_size % 2) ? CACHE_HTTP_TYPE : CACHE_RTSP_TYPE;
       random_size      = ROUND_TO_VOL_SIZE(random_size);
       off_t blocks     = random_size / STORE_BLOCK_SIZE;
-      ink_assert(blocks <= (int)total_space);
+      ink_assert(blocks <= total_space);
       total_space -= blocks;
 
       ConfigVol *cp = new ConfigVol();

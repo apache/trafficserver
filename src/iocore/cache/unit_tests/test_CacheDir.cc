@@ -45,9 +45,9 @@ regress_rand_init(unsigned int i)
 }
 
 static void
-regress_rand_CacheKey(const CacheKey *key)
+regress_rand_CacheKey(CacheKey *key)
 {
-  unsigned int *x = (unsigned int *)key;
+  unsigned int *x = reinterpret_cast<unsigned int *>(key);
   for (int i = 0; i < 4; i++) {
     x[i] = next_rand(&regress_rand_seed);
   }

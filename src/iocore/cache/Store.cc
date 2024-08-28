@@ -234,7 +234,7 @@ Store::read_config()
   fd = ::open(storage_path, O_RDONLY);
   if (fd < 0) {
     Error("%s failed to load", ts::filename::STORAGE);
-    return Result::failure("open %s: %s", (const char *)storage_path, strerror(errno));
+    return Result::failure("open %s: %s", storage_path.get(), strerror(errno));
   }
 
   // For each line

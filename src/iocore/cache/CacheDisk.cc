@@ -80,7 +80,7 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
   disk_stripes      = static_cast<DiskStripe **>(ats_calloc((l / MIN_STRIPE_SIZE + 1), sizeof(DiskStripe *)));
   header_len        = ROUND_TO_STORE_BLOCK(header_len);
   start             = skip + header_len;
-  num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - askip)) >> STORE_BLOCK_SHIFT;
+  num_usable_blocks = (static_cast<off_t>(len * STORE_BLOCK_SIZE) - (start - askip)) >> STORE_BLOCK_SHIFT;
 
   header = static_cast<DiskHeader *>(ats_memalign(ats_pagesize(), header_len));
   memset(header, 0, header_len);

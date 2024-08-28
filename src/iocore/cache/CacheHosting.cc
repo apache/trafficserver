@@ -523,7 +523,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
               is_vol_present = 1;
               if (cachep->scheme == type) {
                 Dbg(dbg_ctl_cache_hosting, "Host Record: %p, Volume: %d, size: %ld", this, volume_number,
-                    (long)(cachep->size * STORE_BLOCK_SIZE));
+                    (static_cast<long>(cachep->size * STORE_BLOCK_SIZE)));
                 cp[num_cachevols] = cachep;
                 num_cachevols++;
                 num_vols += cachep->num_vols;

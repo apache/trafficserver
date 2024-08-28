@@ -222,7 +222,7 @@ free_CacheVCCommon(CacheVC *cont)
 
   ats_free(cont->scan_stripe_map);
 
-  memset((char *)&cont->vio, 0, cont->size_to_init);
+  memset(reinterpret_cast<char *>(&cont->vio), 0, cont->size_to_init);
 #ifdef DEBUG
   SET_CONTINUATION_HANDLER(cont, &CacheVC::dead);
 #endif
@@ -250,7 +250,7 @@ CacheVC::calluser(int event)
 {
   recursive++;
   ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
-  vio.cont->handleEvent(event, (void *)&vio);
+  vio.cont->handleEvent(event, &vio);
   recursive--;
   if (closed) {
     die();
@@ -316,7 +316,7 @@ CacheVC::die()
     return EVENT_CONT;
   } else {
     if (is_io_in_progress()) {
-      save_handler = (ContinuationHandler)&CacheVC::openReadClose;
+      save_handler = reinterpret_cast<ContinuationHandler>(&CacheVC::openReadClose);
     } else {
       SET_HANDLER(&CacheVC::openReadClose);
       if (!recursive) {
@@ -373,7 +373,7 @@ CacheVC::writer_done()
   // original writer, since we never choose a writer that started
   // after the reader. The original writer was deallocated and then
   // reallocated for the same first_key
-  for (; w && (w != write_vc || w->start_time > start_time); w = (CacheVC *)w->opendir_link.next) {
+  for (; w && (w != write_vc || w->start_time > start_time); w = w->opendir_link.next) {
     ;
   }
   if (!w) {
@@ -436,10 +436,8 @@ free_CacheRemoveCont(CacheRemoveCont *cache_rm)
 }
 
 inline int
-CacheRemoveCont::event_handler(int event, void *data)
+CacheRemoveCont::event_handler(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  (void)event;
-  (void)data;
   free_CacheRemoveCont(this);
   return EVENT_DONE;
 }
@@ -464,15 +462,15 @@ struct Cache {
 
   Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len);
   Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int len);
-  Action *open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options = 0,
-                     time_t pin_in_cache = (time_t)0, const char *hostname = nullptr, int host_len = 0);
+  Action *open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options = 0, time_t pin_in_cache = 0,
+                     const char *hostname = nullptr, int host_len = 0);
   Action *remove(Continuation *cont, const CacheKey *key, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,
                  int host_len = 0);
   Action *scan(Continuation *cont, const char *hostname = nullptr, int host_len = 0, int KB_per_second = 2500);
 
   Action     *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
                         CacheFragType type, const char *hostname, int host_len);
-  Action     *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
+  Action     *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = 0,
                          const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,
                          int host_len = 0);
   static void generate_key(CryptoHash *hash, CacheURL *url);
@@ -507,6 +505,6 @@ inline unsigned int
 cache_hash(const CryptoHash &hash)
 {
   uint64_t     f     = hash.fold();
-  unsigned int mhash = (unsigned int)(f >> 32);
+  unsigned int mhash = static_cast<unsigned int>(f >> 32);
   return mhash;
 }

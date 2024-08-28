@@ -40,7 +40,7 @@
 // #define CHECK_ACOUNTING 1 // very expensive double checking of all sizes
 
 #define REQUEUE_HITS(_h)              ((_h) ? ((_h) - 1) : 0)
-#define CACHE_VALUE_HITS_SIZE(_h, _s) ((float)((_h) + 1) / ((_s) + ENTRY_OVERHEAD))
+#define CACHE_VALUE_HITS_SIZE(_h, _s) (static_cast<float>(((_h) + 1) / ((_s) + ENTRY_OVERHEAD)))
 #define CACHE_VALUE(_x)               CACHE_VALUE_HITS_SIZE((_x)->hits, (_x)->size)
 
 #define AVERAGE_VALUE_OVER 100

@@ -162,8 +162,9 @@ int CacheVC::size_to_init = -1;
 
 CacheVC::CacheVC()
 {
-  size_to_init = sizeof(CacheVC) - (size_t) & ((CacheVC *)nullptr)->vio;
-  memset((void *)&vio, 0, size_to_init);
+  // Initialize Region C
+  size_to_init = sizeof(CacheVC) - reinterpret_cast<size_t>(&(static_cast<CacheVC *>(nullptr))->vio);
+  memset(reinterpret_cast<void *>(&vio), 0, size_to_init);
 }
 
 VIO *
@@ -238,7 +239,6 @@ void
 CacheVC::reenable(VIO *avio)
 {
   DDbg(dbg_ctl_cache_reenable, "reenable %p", this);
-  (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
 #endif
@@ -258,13 +258,12 @@ void
 CacheVC::reenable_re(VIO *avio)
 {
   DDbg(dbg_ctl_cache_reenable, "reenable_re %p", this);
-  (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
 #endif
   if (!trigger) {
     if (!is_io_in_progress() && !recursive) {
-      handleEvent(EVENT_NONE, (void *)nullptr);
+      handleEvent(EVENT_NONE);
     } else {
       trigger = avio->mutex->thread_holding->schedule_imm_local(this);
     }
@@ -336,7 +335,7 @@ unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
 
 // [amc] I think this is where all disk reads from cache funnel through here.
 int
-CacheVC::handleReadDone(int event, Event *e)
+CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
 {
   cancel_trigger();
   ink_assert(this_ethread() == mutex->thread_holding);
@@ -407,7 +406,6 @@ CacheVC::handleReadDone(int event, Event *e)
           okay       = 0;
         }
       }
-      (void)e; // Avoid compiler warnings
       bool http_copy_hdr = false;
       http_copy_hdr =
         cache_config_ram_cache_compress && !f.doc_from_ram_cache && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen;
@@ -616,7 +614,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
   }
   ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
-  _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, (void *)-ECACHE_NO_DOC);
+  _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   goto Lfree;
 Lremoved:
   _action.continuation->handleEvent(CACHE_EVENT_REMOVE, nullptr);
@@ -709,7 +707,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
 
   if (!io.ok()) {
-    result = (void *)-ECACHE_READ_FAIL;
+    result = reinterpret_cast<void *>(-ECACHE_READ_FAIL);
     goto Ldone;
   }
 
