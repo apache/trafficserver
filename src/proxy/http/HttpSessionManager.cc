@@ -94,7 +94,7 @@ ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
     // original request
     if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
       const char *session_sni = snis->get_sni_server_name();
-      if (session_sni) {
+      if (session_sni && session_sni[0] != '\0') {
         // TS-4468: If the connection matches, make sure the SNI server
         // name (if present) matches the request hostname
         int         len      = 0;
