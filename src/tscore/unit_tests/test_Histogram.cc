@@ -45,7 +45,7 @@ TEST_CASE("Histogram Basic", "[libts][histogram]")
   REQUIRE(h.min_for_bucket(16) == 32);
   REQUIRE(h.min_for_bucket(17) == 40);
 
-  for (auto x : {0, 1, 4, 6, 19, 27, 36, 409, 16000, 1097}) {
+  for (auto x : {0, 1, 4, 6, 19, 27, 36, 409, 16000, 1097, 512}) {
     h(x);
   }
   REQUIRE(h[0] == 1);
