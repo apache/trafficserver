@@ -41,22 +41,41 @@ _END_
 
   set -e # exit on error
 
+  if command -v pip3 &> /dev/null; then
+    PIP_CMD="pip3"
+  elif command -v pip &> /dev/null; then
+    PIP_CMD="pip"
+  else
+    echo "pip is not installed."
+    exit 1
+  fi
+
   if ! type virtualenv >/dev/null 2>/dev/null
   then
-    pip install -q virtualenv
+    ${PIP_CMD} install -q virtualenv
   fi
+
+  if python3 -m venv --help &> /dev/null; then
+    VENV_LIB="venv"
+  elif python3 -m virtualenv --help &> /dev/null; then
+    VENV_LIB="virtualenv"
+  else
+    echo "Neither venv nor virtualenv is available."
+    exit 1
+  fi
+
 
   REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
   GIT_DIR=$(git rev-parse --absolute-git-dir)
   YAPF_VENV=${YAPF_VENV:-${GIT_DIR}/fmt/yapf_${YAPF_VERSION}_venv}
   if [ ! -e ${YAPF_VENV} ]
   then
-    python3 -m virtualenv ${YAPF_VENV}
+    python3 -m ${VENV_LIB} ${YAPF_VENV}
   fi
   source ${YAPF_VENV}/bin/activate
 
-  pip install -q --upgrade pip
-  pip install -q "yapf==${YAPF_VERSION}"
+  ${PIP_CMD} install -q --upgrade pip
+  ${PIP_CMD} install -q "yapf==${YAPF_VERSION}"
 
   ver=$(yapf --version 2>&1)
   if [ "$ver" != "$VERSION" ]
