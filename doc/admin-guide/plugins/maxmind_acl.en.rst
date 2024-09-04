@@ -108,3 +108,9 @@ For example in the above if an IP had both vpn and hosting true in the database 
 The allow IP and deny IP fields also will work while using the anonymous blocking if you wish to allow specific known IPs or block specific IPs. Keep in mind that the same rule about reversing the logic
 applies, so that even if you are only doing anonymous IP blocking, and then set allowable IPs to allow certain anonymous IP through (if desired), this will reverse the logic and default to blocking all
 IPs unless they fall into a range in the allow list.
+
+The plugin also supports optional fields from GeoGuard databases which includes:
+``vpn_datacenter``
+``relay_proxy``
+``proxy_over_vpn``
+``smart_dns_proxy``

@@ -112,6 +112,11 @@ Acl::init(char const *filename)
   _residential_proxy  = false;
   _public_proxy       = false;
 
+  _vpn_datacenter  = false;
+  _relay_proxy     = false;
+  _proxy_over_vpn  = false;
+  _smart_dns_proxy = false;
+
   if (loadallow(maxmind["allow"])) {
     Dbg(dbg_ctl, "Loaded Allow ruleset");
     status = true;
@@ -190,6 +195,27 @@ Acl::loadanonymous(const YAML::Node &anonNode)
     if (anonNode["residential"].as<bool>(false)) {
       Dbg(dbg_ctl, "saw residential proxy true");
       _residential_proxy = true;
+    }
+
+    // GeoGuard specific fields
+    if (anonNode["vpn_datacenter"].as<bool>(false)) {
+      Dbg(dbg_ctl, "saw vpn datacenter true");
+      _vpn_datacenter = true;
+    }
+
+    if (anonNode["relay_proxy"].as<bool>(false)) {
+      Dbg(dbg_ctl, "saw relay proxy true");
+      _relay_proxy = true;
+    }
+
+    if (anonNode["proxy_over_vpn"].as<bool>(false)) {
+      Dbg(dbg_ctl, "saw proxy over vpn true");
+      _proxy_over_vpn = true;
+    }
+
+    if (anonNode["smart_dns_proxy"].as<bool>(false)) {
+      Dbg(dbg_ctl, "saw smart dns proxy true");
+      _smart_dns_proxy = true;
     }
 
   } catch (const YAML::Exception &e) {
@@ -676,6 +702,55 @@ Acl::eval_anonymous(MMDB_entry_s *entry)
       if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
         if (entry_data.boolean == true) {
           Dbg(dbg_ctl, "saw is_residential set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  // GeoGuard specific fields
+  if (_vpn_datacenter) {
+    status = MMDB_get_value(entry, &entry_data, "is_vpn_datacenter", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          Dbg(dbg_ctl, "saw is_vpn_datacenter set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  if (_relay_proxy) {
+    status = MMDB_get_value(entry, &entry_data, "is_relay_proxy", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          Dbg(dbg_ctl, "saw is_relay_proxy set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  if (_proxy_over_vpn) {
+    status = MMDB_get_value(entry, &entry_data, "is_proxy_over_vpn", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          Dbg(dbg_ctl, "saw is_proxy_over_vpn set to true bool");
+          return false;
+        }
+      }
+    }
+  }
+
+  if (_smart_dns_proxy) {
+    status = MMDB_get_value(entry, &entry_data, "is_smart_dns_proxy", NULL);
+    if ((MMDB_SUCCESS == status) && (entry_data.has_data)) {
+      if (entry_data.type == MMDB_DATA_TYPE_BOOLEAN) {
+        if (entry_data.boolean == true) {
+          Dbg(dbg_ctl, "saw is_smart_dns_proxy set to true bool");
           return false;
         }
       }
