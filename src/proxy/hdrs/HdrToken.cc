@@ -38,8 +38,8 @@ namespace
 DbgCtl dbg_ctl_hdr_token{"hdr_token"};
 
 /*
- You SHOULD add to _hdrtoken_commonly_tokenized_strs, with the same ordering
- ** important, ordering matters **
+ WARNING:  Indexes into this array are stored on disk for cached objects.  New strings must be added at the end of the array to
+ avoid changing the indexes of pre-existing entries, unless the cache format version number is increased.
 
  You want a regexp like 'Accept' after "greedier" choices so it doesn't match 'Accept-Ranges' earlier than
  it should. The regexp are anchored (^Accept), but I dont see a way with the current system to
@@ -49,9 +49,11 @@ DbgCtl dbg_ctl_hdr_token{"hdr_token"};
  So, the current hack is to have "Accept" follow "Accept-.*", lame, I know
 
   /ericb
+
+
 */
 
-const char *_hdrtoken_strs[] = {
+const char *const _hdrtoken_strs[] = {
   // MIME Field names
   "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
   "Approved", // NNTP
@@ -306,83 +308,6 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-// WARNING:  Indexes into this array are stored on disk for cached objects.  New strings must be added at the end of the array to
-// avoid changing the indexes of pre-existing entries, unless the cache format version number is increased.
-//
-static const char *_hdrtoken_commonly_tokenized_strs[] = {
-  // MIME Field names
-  "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
-  "Approved", // NNTP
-  "Authorization",
-  "Bytes", // NNTP
-  "Cache-Control", "Client-ip", "Connection", "Content-Base", "Content-Encoding", "Content-Language", "Content-Length",
-  "Content-Location", "Content-MD5", "Content-Range", "Content-Type",
-  "Control", // NNTP
-  "Cookie", "Date",
-  "Distribution", // NNTP
-  "Etag", "Expect", "Expires",
-  "Followup-To", // NNTP
-  "From", "Host", "If-Match", "If-Modified-Since", "If-None-Match", "If-Range", "If-Unmodified-Since", "Keep-Alive",
-  "Keywords", // NNTP
-  "Last-Modified",
-  "Lines", // NNTP
-  "Location", "Max-Forwards",
-  "Message-ID", // NNTP
-  "MIME-Version",
-  "Newsgroups",   // NNTP
-  "Organization", // NNTP
-  "Path",         // NNTP
-  "Pragma", "Proxy-Authenticate", "Proxy-Authorization", "Proxy-Connection", "Public", "Range",
-  "References", // NNTP
-  "Referer",
-  "Reply-To", // NNTP
-  "Retry-After",
-  "Sender", // NNTP
-  "Server", "Set-Cookie",
-  "Subject", // NNTP
-  "Summary", // NNTP
-  "Transfer-Encoding", "Upgrade", "User-Agent", "Vary", "Via", "Warning", "Www-Authenticate",
-  "Xref",          // NNTP
-  "@Ats-Internal", // Internal Hack
-
-  // Accept-Encoding
-  "compress", "deflate", "gzip", "identity",
-
-  // Cache-Control flags
-  "max-age", "max-stale", "min-fresh", "must-revalidate", "no-cache", "no-store", "no-transform", "only-if-cached", "private",
-  "proxy-revalidate", "s-maxage", "need-revalidate-once",
-
-  // HTTP miscellaneous
-  "none", "chunked", "close",
-
-  // WS
-  "websocket", "Sec-WebSocket-Key", "Sec-WebSocket-Version",
-
-  // HTTP/2 cleartext
-  MIME_UPGRADE_H2C_TOKEN, "HTTP2-Settings",
-
-  // URL schemes
-  "file", "ftp", "gopher", "https", "http", "mailto", "news", "nntp", "prospero", "telnet", "tunnel", "wais", "pnm", "rtspu",
-  "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
-
-  // HTTP methods
-  "CONNECT", "DELETE", "GET", "POST", "HEAD", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
-
-  // Header extensions
-  "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",
-
-  // RFC-2739
-  "Forwarded",
-
-  // RFC-8470
-  "Early-Data",
-
-  // RFC-7932
-  "br"};
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 void
 hdrtoken_hash_init()
 {
@@ -392,12 +317,11 @@ hdrtoken_hash_init()
   memset(hdrtoken_hash_table, 0, sizeof(hdrtoken_hash_table));
   num_collisions = 0;
 
-  for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_commonly_tokenized_strs); i++) {
+  for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_strs); i++) {
     // convert the common string to the well-known token
     unsigned const char *wks;
     int                  wks_idx =
-      hdrtoken_tokenize_dfa(_hdrtoken_commonly_tokenized_strs[i], static_cast<int>(strlen(_hdrtoken_commonly_tokenized_strs[i])),
-                            reinterpret_cast<const char **>(&wks));
+      hdrtoken_tokenize_dfa(_hdrtoken_strs[i], static_cast<int>(strlen(_hdrtoken_strs[i])), reinterpret_cast<const char **>(&wks));
     ink_release_assert(wks_idx >= 0);
 
     uint32_t hash = hdrtoken_hash(wks, hdrtoken_str_lengths[wks_idx]);
