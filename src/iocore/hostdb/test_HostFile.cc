@@ -30,6 +30,9 @@
 
 #include "iocore/hostdb/HostFile.h"
 #include "P_HostDBProcessor.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "tscore/Layout.h"
+#include "iocore/utils/diags.i"
 
 using namespace std::literals;
 
@@ -41,6 +44,25 @@ DbgCtl dbg_ctl_hostdb{"hostdb"};
 const std::string_view hosts_data = "127.0.0.1 localhost\n::1 localhost\n1.2.3.4  host1\n4.3.2.1 host2 host3\n";
 
 } // end anonymous namespace
+struct EventProcessorListener : Catch::TestEventListenerBase {
+  using TestEventListenerBase::TestEventListenerBase;
+
+  void
+  testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
+  {
+    Layout::create();
+    init_diags("", nullptr);
+    RecProcessInit();
+
+    ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
+    eventProcessor.start(2);
+
+    EThread *main_thread = new EThread;
+    main_thread->set_specific();
+  }
+};
+
+CATCH_REGISTER_LISTENER(EventProcessorListener);
 
 void
 spit(const swoc::file::path &p, std::string_view data)
@@ -135,4 +157,45 @@ TEST_CASE("HostFile", "[hostdb]")
     REQUIRE(result);
     REQUIRE(result->name_view() == h.host_name);
   }
+}
+
+// NOTE(cmcfarlen): need this destructor defined so we don't have to link in the entire project for this test
+HostDBHash::~HostDBHash() {}
+
+#include "swoc/Scalar.h"
+
+HostDBRecord *
+HostDBRecord::alloc(swoc::TextView query_name, unsigned int rr_count, size_t srv_name_size)
+{
+  const swoc::Scalar<8, ssize_t> qn_size = swoc::round_up(query_name.size() + 1);
+  const swoc::Scalar<8, ssize_t> r_size =
+    swoc::round_up(sizeof(self_type) + qn_size + rr_count * sizeof(HostDBInfo) + srv_name_size);
+  auto ptr = malloc(r_size);
+  memset(ptr, 0, r_size);
+  auto self = static_cast<self_type *>(ptr);
+  new (self) self_type();
+  self->_iobuffer_index = 0;
+  self->_record_size    = r_size;
+
+  Dbg(dbg_ctl_hostdb, "allocating %ld bytes for %.*s with %d RR records at [%p]", r_size.value(), int(query_name.size()),
+      query_name.data(), rr_count, self);
+
+  // where in our block of memory we are
+  int offset = sizeof(self_type);
+  memcpy(self->apply_offset<void>(offset), query_name);
+  offset          += qn_size;
+  self->rr_offset  = offset;
+  self->rr_count   = rr_count;
+  // Construct the info instances to a valid state.
+  for (auto &info : self->rr_info()) {
+    new (&info) std::remove_reference_t<decltype(info)>;
+  }
+
+  return self;
+}
+
+void
+HostDBRecord::free()
+{
+  std::free(this);
 }

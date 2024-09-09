@@ -43,9 +43,37 @@
 
 #include "iocore/hostdb/HostDB.h"
 
-#include <latch>
 #include <random>
 #include <fstream>
+
+#if __has_include(<latch>)
+#include <latch>
+using latch = std::latch;
+#else
+struct latch {
+  int                     count;
+  std::mutex              m;
+  std::condition_variable cv;
+
+  latch(int count) : count(count) {}
+
+  void
+  wait()
+  {
+    std::unique_lock lock{m};
+    cv.wait(lock, [this] { return count == 0; });
+  }
+
+  void
+  count_down()
+  {
+    std::unique_lock lock{m};
+    if (0 == --count) {
+      cv.notify_all();
+    }
+  }
+};
+#endif
 
 namespace
 {
@@ -140,13 +168,13 @@ struct StartDNS : Continuation {
 
   HostList           hostlist;
   int                id;
-  std::latch        &done_latch;
+  latch             &done_latch;
   HostList::iterator it;
   ResultList         results;
   Clock::time_point  start_time;
   bool               is_callback;
 
-  StartDNS(const std::vector<std::string> &hlist, int id, std::latch &l)
+  StartDNS(const std::vector<std::string> &hlist, int id, latch &l)
     : Continuation(new_ProxyMutex()), hostlist(hlist), id(id), done_latch(l)
   {
     std::random_device rd;
@@ -194,6 +222,7 @@ struct StartDNS : Continuation {
     case EVENT_HOST_DB_LOOKUP:
       is_callback = true;
       handle_hostdb(reinterpret_cast<HostDBRecord *>(ep));
+      [[fallthrough]];
     default:
       Dbg(dbg_ctl_hostdb_test, "start_dns event %d", e);
       do {
@@ -252,7 +281,7 @@ main(int argc, char **argv)
   auto threads = eventProcessor.active_group_threads(ET_CALL);
   int  count   = threads.end() - threads.begin();
 
-  std::latch              l{count};
+  latch                   l{count};
   std::vector<StartDNS *> tests;
 
   for (auto &t : eventProcessor.active_group_threads(ET_CALL)) {
@@ -297,3 +326,6 @@ main(int argc, char **argv)
   printf("Total results: %d average lookup %f\n", results_count, total_duration.count() / results_count);
   hdb.shutdown();
 }
+
+class HttpSessionAccept;
+HttpSessionAccept *plugin_http_accept = nullptr;

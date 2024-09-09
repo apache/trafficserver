@@ -23,13 +23,32 @@ target_link_libraries(inkhostdb PUBLIC ts::inkdns ts::inkevent ts::tscore)
 clang_tidy_check(inkhostdb)
 
 if(BUILD_TESTING)
-  macro(add_hostdb_test name)
-    add_executable(${name} ${ARGN})
-    target_link_libraries(${name} PRIVATE ts::inkhostdb catch2::catch2)
-    add_test(NAME test_hostdb_${name} COMMAND $<TARGET_FILE:${name}>)
-  endmacro()
+  # macro(add_hostdb_test name)
+  #   add_executable(${name} ${ARGN})
+  #   target_link_libraries(
+  #     ${name} PRIVATE ts::tsutil ts::inkcache ts::http ts::inkhostdb ts::tsapi ts::configmanager catch2::catch2
+  #   )
+  #   add_test(NAME test_hostdb_${name} COMMAND $<TARGET_FILE:${name}>)
+  # endmacro()
 
-  add_hostdb_test(benchmark_HostDB benchmark_HostDB.cc)
-  add_hostdb_test(test_HostFile test_HostFile.cc)
-  add_hostdb_test(test_RefCountCache test_RefCountCache.cc)
+  add_executable(benchmark_HostDB benchmark_HostDB.cc)
+  target_link_libraries(
+    benchmark_HostDB
+    PRIVATE ts::tscore
+            ts::tsutil
+            ts::inkevent
+            ts::http
+            ts::http_remap
+            ts::inkcache
+            ts::inkhostdb
+  )
+
+  add_executable(test_HostFile test_HostFile.cc HostFile.cc HostDBInfo.cc)
+  target_link_libraries(test_HostFile PRIVATE ts::tscore ts::tsutil ts::inkevent catch2::catch2)
+  add_test(NAME test_hostdb_HostFile COMMAND $<TARGET_FILE:test_HostFile>)
+
+  add_executable(test_RefCountCache test_RefCountCache.cc)
+  target_link_libraries(test_RefCountCache PRIVATE ts::tscore ts::tsutil ts::inkevent catch2::catch2)
+  add_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_RefCountCache>)
+
 endif()
