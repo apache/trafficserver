@@ -118,6 +118,9 @@ EventMetricStatSync(const char *, RecDataT, RecData *, RecRawStatBlock *rsb, int
     slice_stat_update(ID::LOOP_EVENTS, id, slice->_events._total);
     slice_stat_update(ID::LOOP_EVENTS_MIN, id, slice->_events._min);
     slice_stat_update(ID::LOOP_EVENTS_MAX, id, slice->_events._max);
+    slice_stat_update(ID::LOOP_DRAIN_QUEUE_MAX, id, slice->_duration._max_drain_queue);
+    slice_stat_update(ID::LOOP_IO_WAIT_MAX, id, slice->_duration._max_io_wait);
+    slice_stat_update(ID::LOOP_IO_WORK_MAX, id, slice->_duration._max_io_work);
   }
 
   // Next are the event loop histogram buckets.
