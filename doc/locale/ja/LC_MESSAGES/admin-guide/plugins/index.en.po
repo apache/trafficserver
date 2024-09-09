@@ -161,11 +161,11 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:129
-msgid ":doc:`AWS S3 Authentication <s3_auth.en>`"
+msgid ":doc:`Origin Server Authentication <origin_server_auth.en>`"
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:129
-msgid "Support for Amazon S3 authentication features."
+msgid "Support for Amazon S3 and Google Cloud Services authentication features."
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:132

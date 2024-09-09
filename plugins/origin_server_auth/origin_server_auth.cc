@@ -56,7 +56,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Some constants.
 //
-static const char PLUGIN_NAME[] = "s3_auth";
+static const char PLUGIN_NAME[] = "origin_server_auth";
 static const char DATE_FMT[]    = "%a, %d %b %Y %H:%M:%S %z";
 
 static DbgCtl dbg_ctl{PLUGIN_NAME};
@@ -228,12 +228,19 @@ public:
   valid() const
   {
     /* Check mandatory parameters first */
-    if (!_secret || !(_secret_len > 0) || !_keyid || !(_keyid_len > 0) || (2 != _version && 4 != _version)) {
+    if (versions::gcpv1 == _version && (!_token || !(_token_len > 0))) {
+      Dbg(dbg_ctl, "version = %s; keyid = %s", versionString(), _keyid);
+      TSWarning("[%s] missing mandatory configs for version: %s", PLUGIN_NAME, versionString());
+      return false;
+    } else if ((versions::awsv2 == _version || versions::awsv4 == _version) &&
+               (!_secret || !(_secret_len > 0) || !_keyid || !(_keyid_len > 0))) {
+      Dbg(dbg_ctl, "version = %s; keyid = %s; secret = %s", versionString(), _keyid, _secret);
+      TSWarning("[%s] missing mandatory configs for version: %s", PLUGIN_NAME, versionString());
       return false;
     }
 
     /* Optional parameters, issue warning if v2 parameters are used with v4 and vice-versa (wrong parameters are ignored anyways) */
-    if (2 == _version) {
+    if (versions::awsv2 == _version) {
       if (_v4includeHeaders_modified && !_v4includeHeaders.empty()) {
         Dbg(dbg_ctl, "headers are not being signed with AWS auth v2, included headers parameter ignored");
       }
@@ -247,7 +254,7 @@ public:
         Dbg(dbg_ctl, "session token support with AWS auth v2 is not implemented, parameter ignored");
       }
     } else {
-      /* 4 == _version */
+      /* awsv4 == _version || gcpv1 == _version */
       // NOTE: virtual host not used with AWS auth v4, parameter ignored
     }
     return true;
@@ -358,6 +365,25 @@ public:
     return _version;
   }
 
+  const char *
+  versionString() const
+  {
+    switch (_version) {
+    case versions::awsv2:
+      return "awsv2";
+      break;
+    case versions::awsv4:
+      return "awsv4";
+      break;
+    case versions::gcpv1:
+      return "gcpv1";
+      break;
+    default:
+      return "unknown";
+      break;
+    }
+  }
+
   const StringSet &
   v4includeHeaders()
   {
@@ -425,7 +451,17 @@ public:
   void
   set_version(const char *s)
   {
-    _version          = strtol(s, nullptr, 10);
+    // Translate package and version to int
+    // Supports old configuration
+    if (strcmp("awsv2", s) == 0 || strcmp("2", s) == 0) {
+      _version = versions::awsv2;
+    } else if (strcmp("awsv4", s) == 0 || strcmp("4", s) == 0) {
+      _version = versions::awsv4;
+    } else if (strcmp("gcpv1", s) == 0) {
+      _version = versions::gcpv1;
+    } else {
+      Dbg(dbg_ctl, "Invalid version");
+    }
     _version_modified = true;
   }
 
@@ -507,6 +543,7 @@ public:
   }
 
   ts::shared_mutex reload_mutex;
+  enum versions { awsv2 = 0, awsv4 = 1, gcpv1 = 2 };
 
 private:
   char     *_secret             = nullptr;
@@ -516,7 +553,7 @@ private:
   char     *_token              = nullptr;
   size_t    _token_len          = 0;
   bool      _virt_host          = false;
-  int       _version            = 2;
+  versions  _version            = versions::awsv2;
   bool      _version_modified   = false;
   bool      _virt_host_modified = false;
   TSCont    _cont               = nullptr;
@@ -651,7 +688,7 @@ ConfigCache::get(const char *fname)
     // Create a new cached file.
     s3 = new S3Config(false); // false == this config does not get the continuation
 
-    Dbg(dbg_ctl, "Parsing and caching configuration from %s, version:%d", config_fname.c_str(), s3->version());
+    Dbg(dbg_ctl, "Parsing and caching configuration from %s, version:%s", config_fname.c_str(), s3->versionString());
     if (s3->parse_config(config_fname)) {
       s3->set_conf_fname(fname);
       _cache.emplace(config_fname, _ConfigData(s3, tv.tv_sec));
@@ -690,8 +727,9 @@ public:
     return true;
   }
 
-  TSHttpStatus authorizeV2(S3Config *s3);
-  TSHttpStatus authorizeV4(S3Config *s3);
+  TSHttpStatus authorizeAwsV2(S3Config *s3);
+  TSHttpStatus authorizeAwsV4(S3Config *s3);
+  TSHttpStatus authorizeGcp(S3Config *s3);
   TSHttpStatus authorize(S3Config *s3);
   bool         set_header(const char *header, int header_len, const char *val, int val_len);
 
@@ -769,11 +807,14 @@ S3Request::authorize(S3Config *s3)
 {
   TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   switch (s3->version()) {
-  case 2:
-    status = authorizeV2(s3);
+  case S3Config::versions::awsv2:
+    status = authorizeAwsV2(s3);
     break;
-  case 4:
-    status = authorizeV4(s3);
+  case S3Config::versions::awsv4:
+    status = authorizeAwsV4(s3);
+    break;
+  case S3Config::versions::gcpv1:
+    status = authorizeGcp(s3);
     break;
   default:
     break;
@@ -782,7 +823,7 @@ S3Request::authorize(S3Config *s3)
 }
 
 TSHttpStatus
-S3Request::authorizeV4(S3Config *s3)
+S3Request::authorizeAwsV4(S3Config *s3)
 {
   TsApi  api(_bufp, _hdr_loc, _url_loc);
   time_t now = time(nullptr);
@@ -837,7 +878,7 @@ S3Request::authorizeV4(S3Config *s3)
 //  Note: This assumes that the URI path has been appropriately canonicalized by remapping
 //
 TSHttpStatus
-S3Request::authorizeV2(S3Config *s3)
+S3Request::authorizeAwsV2(S3Config *s3)
 {
   TSHttpStatus status   = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   TSMLoc       host_loc = TS_NULL_MLOC, md5_loc = TS_NULL_MLOC, contype_loc = TS_NULL_MLOC;
@@ -980,6 +1021,18 @@ S3Request::authorizeV2(S3Config *s3)
   return status;
 }
 
+TSHttpStatus
+S3Request::authorizeGcp(S3Config *s3)
+{
+  char auth[2048];
+  int  auth_len = snprintf(auth, sizeof(auth), "Bearer %s", s3->token());
+
+  if (!set_header(TS_MIME_FIELD_AUTHORIZATION, TS_MIME_LEN_AUTHORIZATION, auth, auth_len)) {
+    return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  }
+  return TS_HTTP_STATUS_OK;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main continuation.
 int
@@ -1001,9 +1054,9 @@ event_handler(TSCont cont, TSEvent event, void *edata)
       }
 
       if (TS_HTTP_STATUS_OK == status) {
-        Dbg(dbg_ctl, "Successfully signed the AWS S3 URL");
+        Dbg(dbg_ctl, "Successfully signed the URL");
       } else {
-        Dbg(dbg_ctl, "Failed to sign the AWS S3 URL, status = %d", status);
+        Dbg(dbg_ctl, "Failed to sign the URL, status = %d", status);
         TSHttpTxnStatusSet(txnp, status);
         enable_event = TS_EVENT_HTTP_ERROR;
       }
@@ -1046,7 +1099,7 @@ config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
   S3Config *file_config = gConfCache.get(s3->conf_fname());
 
   if (!file_config || !file_config->valid()) {
-    TSError("[%s] requires both shared and AWS secret configuration", PLUGIN_NAME);
+    TSError("[%s] invalid configuration. Check mandatory fields.", PLUGIN_NAME);
     return TS_ERROR;
   }
 
@@ -1163,10 +1216,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (file_config) {
     s3->copy_changes_from(file_config);
   }
-
-  // Make sure we got both the shared secret and the AWS secret
+  // Make sure the configuration is valid
   if (!s3->valid()) {
-    TSError("[%s] requires both shared and AWS secret configuration", PLUGIN_NAME);
+    TSError("[%s] invalid configuration. Check mandatory fields.", PLUGIN_NAME);
     *ih = nullptr;
     return TS_ERROR;
   }
@@ -1189,7 +1241,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   *ih = static_cast<void *>(s3);
-  Dbg(dbg_ctl, "New rule: access_key=%s, virtual_host=%s, version=%d", s3->keyid(), s3->virt_host() ? "yes" : "no", s3->version());
+  Dbg(dbg_ctl, "New rule: access_key=%s, virtual_host=%s, version=%s", s3->keyid(), s3->virt_host() ? "yes" : "no",
+      s3->versionString());
 
   return TS_SUCCESS;
 }
