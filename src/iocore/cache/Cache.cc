@@ -122,21 +122,6 @@ force_link_CacheTestCaller()
 }
 #endif
 
-// ToDo: This gets called as part of librecords collection continuation, probably change this later.
-inline int64_t
-cache_bytes_used(int index)
-{
-  if (!DISK_BAD(gstripes[index]->disk)) {
-    if (!gstripes[index]->header->cycle) {
-      return gstripes[index]->header->write_pos - gstripes[index]->start;
-    } else {
-      return gstripes[index]->len - gstripes[index]->dirlen() - EVACUATION_SIZE;
-    }
-  }
-
-  return 0;
-}
-
 static int
 validate_rww(int new_value)
 {
