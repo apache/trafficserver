@@ -34,7 +34,7 @@ Changes with Apache Traffic Server 10.0.0
   #8516 - Change event loop to be cleaner.
   #8521 - Remove unused RemapPlugins::_hh_ptr
   #8522 - KIWF - remove unused RemapPlugins::run_remap
-  #8526 - Add a knob to enable kTLS 
+  #8526 - Add a knob to enable kTLS
   #8530 - Enable GitHub wiki for trafficserver
   #8545 - TSHttpTxnCacheLookupStatusGet: handle cannot respond cases
   #8560 - Remove drand48() usage
@@ -79,7 +79,7 @@ Changes with Apache Traffic Server 10.0.0
   #8710 - Move Sterror class from TsSharedMutex.h to its own include file.
   #8719 - Fixed memory leaks with CryptoContext
   #8733 - libswoc: Make libswoc implementation overridable, header export optional
-  #8740 - Require use of 'override' keyword when valid. (#8737) 
+  #8740 - Require use of 'override' keyword when valid. (#8737)
   #8741 - fix: properly process If-Range headers in client requests
   #8744 - Remove null check before ats_free calls
   #8749 - marks the HostStatusGetRequest::get_method as an override.
@@ -100,13 +100,13 @@ Changes with Apache Traffic Server 10.0.0
   #8839 - gcc 12.1.1 fix warning about reading larger than the buffer
   #8840 - Remove CODEOWNERS file
   #8852 - traffic_ctl - JSONRPC: make sure we display the error regardless of the formatting type.
-  #8856 - Fix traffic_ctl server drain(undo) jsonrpc api call. 
+  #8856 - Fix traffic_ctl server drain(undo) jsonrpc api call.
   #8864 - Update the GitHub stale action to use the new version
   #8865 - JSON-RPC: Add support for handler to pass information about the specifics when registering.
   #8872 - remap_reload AuTest: await config reload messages
   #8879 - Adds a new member for TSRemapInterface tracking the plugin loaded
   #8885 - Update to libswoc 1.3.8
-  #8888 - Make FileManager ctor private. 
+  #8888 - Make FileManager ctor private.
   #8889 - remap_reload test: Spacing out file modification and reload
   #8891 - Cleanup: Get rid of afterpoll net stats
   #8893 - Fix %<chi> with PROXY Protocol
@@ -144,7 +144,7 @@ Changes with Apache Traffic Server 10.0.0
   #9019 - Add log field names pqu* and deprecates cqu*
   #9020 - Removes unused ProtectedQueue::remove(Event *e)
   #9021 - aio_thread_main does not have to be static
-  #9029 - Doc: Fix merge issue for traffic_ctl docs. 
+  #9029 - Doc: Fix merge issue for traffic_ctl docs.
   #9030 - traffic_ctl: Tidy up.
   #9035 - Add Au test for various HTTP requests that are not RFC compliant.
   #9037 - Add support for sendmmsg and UDP GSO
@@ -260,7 +260,7 @@ Changes with Apache Traffic Server 10.0.0
   #9273 - Remove deprecated TS API
   #9278 - Make redundant HttpTransact::State::state_machine_id variable into function.
   #9281 - Remove doc about disable_h2
-  #9282 - Updated documentation and added test coverage for some caching behavior 
+  #9282 - Updated documentation and added test coverage for some caching behavior
   #9288 - Updated logic for server no-cache and no-store
   #9290 - improve cmake support
   #9292 - Drop autoconf checking for readline/libedit
@@ -374,9 +374,9 @@ Changes with Apache Traffic Server 10.0.0
   #9481 - Eliminates padding from some common structs
   #9482 - Add interface for NetVC services
   #9483 - Add support for multiple yaml config files for wasm plugin
-  #9484 - QUIC: Avoid crash when IO is disabled by the caller. 
+  #9484 - QUIC: Avoid crash when IO is disabled by the caller.
   #9485 - Unit parser
-  #9486 - QUIC: Add support to configure UDP max payload limit. 
+  #9486 - QUIC: Add support to configure UDP max payload limit.
   #9487 - Cleanup: Remove RecModeT from the code.
   #9490 - Minor cleanup, prioritize HTTP/1.1
   #9492 - Fix pre-warm std::string parameter
@@ -516,7 +516,7 @@ Changes with Apache Traffic Server 10.0.0
   #9698 - Fix PROXY protocol out with tls
   #9700 - libswoc: Update to 1.4.10
   #9701 - Changes for C++20
-  #9702 - Don't throw exceptions if io_uring cannot be initialized. 
+  #9702 - Don't throw exceptions if io_uring cannot be initialized.
   #9703 - Changes for C++23
   #9707 - Add a new configuration to ignore query params in cache keys
   #9708 - Increase BUFSIZE to modern sizing
@@ -637,7 +637,7 @@ Changes with Apache Traffic Server 10.0.0
   #9881 - Fix autests for fedora 38
   #9883 - Add max thread count options to CMake build
   #9884 - Add transparent proxy support to CMake build
-  #9885 - Add missing yaml libs reference to HTTP proxy test suite. 
+  #9885 - Add missing yaml libs reference to HTTP proxy test suite.
   #9890 - Add header_rewrite plugin to CMake build
   #9891 - tests: minor autest script fixes
   #9892 - Add support for quic to CMake build
@@ -856,7 +856,7 @@ Changes with Apache Traffic Server 10.0.0
   #10262 - CID 1216305/1497374 regex_revalidate file stat fixes
   #10265 - CID 1518143: String not null terminated money_trace plugin
   #10267 - Check the inet_pton return value for IP reputations
-  #10268 - Replace time_t with std::chrono 
+  #10268 - Replace time_t with std::chrono
   #10269 - remove deprecated 'NATIVE' AIO mode
   #10270 - Update the HTTP/3 library dependencies
   #10272 - Check return value of stat()
@@ -1135,7 +1135,7 @@ Changes with Apache Traffic Server 10.0.0
   #10724 - add hint to options to help user
   #10725 - Cleanup build with tsapibackend
   #10726 - Harden the tunnel_transform Autest
-  #10727 - Cleanup P_SNIActionPerformer 
+  #10727 - Cleanup P_SNIActionPerformer
   #10728 - Cleanup of the rate_limit simulator
   #10729 - Fixes Cripts compilation on gcc platforms
   #10733 - logcat/CMakeLists: add inkevent as library dependency
@@ -1609,13 +1609,13 @@ Changes with Apache Traffic Server 10.0.0
   #11415 - Tweak a string to be checked in tls_tunnel autest
   #11417 - Adds a bridge betwen Cripts and HRW operators
   #11420 - 10.0.x: Fix some doc generation warnings (#11370)
-  #11424 - Modernize ja3 fingerprint encoding implementation 
+  #11424 - Modernize ja3 fingerprint encoding implementation
   #11425 - 10.0.x: Fix all Sphinx doc generation warnings (#11419)
   #11426 - Make Cripts contexts use Proxy Allocator, and cleanup
   #11428 - txn_box: Address use after free in Do_upstream_rsp_body
-  #11429 - support full range of unsigned char for hex conversion.  
+  #11429 - support full range of unsigned char for hex conversion.
   #11430 - Add missing experimental plugins to build
-  #11432 - Fix race condition causing interleaved logs 
+  #11432 - Fix race condition causing interleaved logs
   #11433 - Change remap ACL matching policy to 'Match on IP and Method'
   #11435 - Fix building without HWLOC
   #11437 - Clean up destination buffer overrun handling in logging unmarshalling.
@@ -1656,7 +1656,7 @@ Changes with Apache Traffic Server 10.0.0
   #11503 - wasm plugin: provide defaults for struct SanitizationConfig
   #11505 - traffic_layout: remove directories not in runroot
   #11506 - No remap rules matched metric
-  #11507 - wasm plugin: Initialize SanitizationConfig  
+  #11507 - wasm plugin: Initialize SanitizationConfig
   #11511 - Prioritize the library path for SSL library
   #11512 - Fix quick_server autest to verify server response
   #11514 - Provide a way to silence the warning about max_early_data
@@ -1700,7 +1700,7 @@ Changes with Apache Traffic Server 10.0.0
   #11586 - Remove matrix parameters from s3_auth plugin
   #11587 - Remove matrix parameters from the documentation
   #11593 - Stricten field name check
-  #11594 - Normalized ae cache lookup before cache lookup 
+  #11594 - Normalized ae cache lookup before cache lookup
   #11599 - Remove pathset for urlsig
   #11601 - Add an autest for s-maxage Cache-Control response directive
   #11602 - Set -Werror=no-stringop-overflow for boringssl
