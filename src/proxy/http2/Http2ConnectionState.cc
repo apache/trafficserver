@@ -1537,7 +1537,11 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   case HTTP2_SESSION_EVENT_DATA: {
     REMEMBER(event, this->recursion);
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    // mark the retry flag here so if the writes fail again we will
+    // backoff the next attempt
+    _data_event_retry = true;
     this->restart_streams();
+    _data_event_retry = false;
   } break;
 
   case HTTP2_SESSION_EVENT_XMIT: {
@@ -2169,7 +2173,13 @@ Http2ConnectionState::schedule_stream_to_send_data_frames(Http2Stream *stream)
 
   if (_data_event == nullptr) {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
-    _data_event = this_ethread()->schedule_in(static_cast<Continuation *>(this), HRTIME_MSECOND, HTTP2_SESSION_EVENT_DATA);
+    // exponential backoff scheduling event if we are in a retry.
+    // assume a slow reader will always be slow so don't reset the backoff
+    if (_data_event_retry) {
+      _data_event_backoff = std::min(DATA_EVENT_BACKOFF_MAX, _data_event_backoff << 1);
+    }
+    _data_event = this_ethread()->schedule_in(static_cast<Continuation *>(this), HRTIME_MSECONDS(_data_event_backoff),
+                                              HTTP2_SESSION_EVENT_DATA);
   }
 }
 
