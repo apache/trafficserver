@@ -23,14 +23,6 @@ target_link_libraries(inkhostdb PUBLIC ts::inkdns ts::inkevent ts::tscore)
 clang_tidy_check(inkhostdb)
 
 if(BUILD_TESTING)
-  # macro(add_hostdb_test name)
-  #   add_executable(${name} ${ARGN})
-  #   target_link_libraries(
-  #     ${name} PRIVATE ts::tsutil ts::inkcache ts::http ts::inkhostdb ts::tsapi ts::configmanager catch2::catch2
-  #   )
-  #   add_test(NAME test_hostdb_${name} COMMAND $<TARGET_FILE:${name}>)
-  # endmacro()
-
   add_executable(benchmark_HostDB benchmark_HostDB.cc)
   target_link_libraries(
     benchmark_HostDB

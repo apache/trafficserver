@@ -81,8 +81,11 @@ namespace
 DbgCtl          dbg_ctl_hostdb_test{"hostdb_test"};
 HostDBProcessor hdb;
 
-struct Dude : Continuation {
-  Dude(std::function<int(int, Event *)> &&f) : Continuation(new_ProxyMutex()), f(f) { SET_HANDLER(&Dude::handle); }
+struct FContinuation : Continuation {
+  FContinuation(std::function<int(int, Event *)> &&f) : Continuation(new_ProxyMutex()), f(f)
+  {
+    SET_HANDLER(&FContinuation::handle);
+  }
 
   int
   handle(int event, Event *e)
@@ -290,7 +293,7 @@ main(int argc, char **argv)
     tests.push_back(startDns);
   }
 
-  Dude killer(stop_events);
+  FContinuation killer(stop_events);
   eventProcessor.schedule_in(&killer, HRTIME_SECONDS(300));
 
   l.wait();
