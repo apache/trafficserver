@@ -21,83 +21,15 @@
 
 #include <stdexcept>
 #include <chrono>
-#include <sstream>
 #include <utility>
 #include <thread>
 
 #include "tsutil/ts_bw_format.h"
 
 #include "shared/rpc/IPCSocketClient.h"
+#include "shared/rpc/MessageStorage.h"
 #include <tscore/ink_assert.h>
 #include <tscore/ink_sock.h>
-
-namespace
-{
-/// @brief Simple buffer to store the jsonrpc server's response.
-///
-///        With small content it will just use the LocalBufferWriter, if the
-///        content gets bigger, then it will just save the buffer into a stream
-///        and reuse the already created BufferWritter.
-template <size_t N> class BufferStream
-{
-  std::ostringstream         _os;
-  swoc::LocalBufferWriter<N> _bw;
-  size_t                     _written{0};
-
-public:
-  char *
-  writable_data()
-  {
-    return _bw.aux_data();
-  }
-
-  void
-  save(size_t n)
-  {
-    _bw.commit(n);
-
-    if (_bw.remaining() == 0) { // no more space available, flush what's on the bw
-                                // and reset it.
-      flush();
-    }
-  }
-
-  size_t
-  available() const
-  {
-    return _bw.remaining();
-  }
-
-  void
-  flush()
-  {
-    if (_bw.size() == 0) {
-      return;
-    }
-    _os.write(_bw.view().data(), _bw.size());
-    _written += _bw.size();
-
-    _bw.clear();
-  }
-
-  std::string
-  str()
-  {
-    if (stored() <= _bw.size()) {
-      return {_bw.data(), _bw.size()};
-    }
-
-    flush();
-    return _os.str();
-  }
-
-  size_t
-  stored() const
-  {
-    return _written ? _written : _bw.size();
-  }
-};
-} // namespace
 
 namespace shared::rpc
 {
@@ -192,12 +124,12 @@ IPCSocketClient::read_all(std::string &content)
     return {};
   }
 
-  BufferStream<356000> bs;
+  MessageStorage<356000> bs;
 
   ReadStatus readStatus{ReadStatus::UNKNOWN};
   while (true) {
     auto       buf     = bs.writable_data();
-    const auto to_read = bs.available();
+    const auto to_read = bs.available(); // Available in the current memory chunk.
     ssize_t    ret{-1};
     do {
       ret = ::read(_sock, buf, to_read);

@@ -46,8 +46,7 @@
 
 namespace
 {
-constexpr size_t MAX_REQUEST_BUFFER_SIZE{32000};
-constexpr auto   logTag = "rpc.net";
+constexpr auto logTag = "rpc.net";
 
 // Quick check for errors(base on the errno);
 bool check_for_transient_errors();
@@ -207,7 +206,6 @@ IPCSocketServer::run()
 {
   _running.store(true);
 
-  swoc::LocalBufferWriter<MAX_REQUEST_BUFFER_SIZE> bw;
   while (_running) {
     // poll till socket it's ready.
     if (!this->poll_for_new_client()) {
@@ -219,11 +217,12 @@ IPCSocketServer::run()
 
     std::error_code ec;
     if (int fd = this->accept(ec); !ec) {
-      Client client{fd};
+      Client client{fd, _conf.incomingRequestMaxBufferSize};
+      Buffer bw;
 
       if (auto [ok, errStr] = client.read_all(bw); ok) {
-        const auto   json = std::string{bw.data(), bw.size()};
-        rpc::Context ctx;
+        const std::string &json = bw.str();
+        rpc::Context       ctx;
         // we want to make sure the peer's credentials are ok.
         ctx.get_auth().add_checker(
           [&](TSRPCHandlerOptions const &opt, swoc::Errata &errata) -> void { late_check_peer_credentials(fd, opt, errata); });
@@ -240,8 +239,6 @@ IPCSocketServer::run()
     } else {
       Debug(logTag, "Error while accepting a new connection on the socket: %s", ec.message().c_str());
     }
-
-    bw.clear();
   }
 
   this->close();
@@ -294,13 +291,14 @@ IPCSocketServer::accept(std::error_code &ec) const
 void
 IPCSocketServer::bind(std::error_code &ec)
 {
-  int lock_fd = open(_conf.lockPathName.c_str(), O_RDONLY | O_CREAT, 0600);
-  if (lock_fd == -1) {
+  _lock_fd = open(_conf.lockPathName.c_str(), O_RDONLY | O_CREAT, 0600);
+  if (_lock_fd == -1) {
     ec = std::make_error_code(static_cast<std::errc>(errno));
     return;
   }
 
-  int ret = flock(lock_fd, LOCK_EX | LOCK_NB);
+  int ret = flock(_lock_fd, LOCK_EX | LOCK_NB);
+
   if (ret != 0) {
     ec = std::make_error_code(static_cast<std::errc>(errno));
     return;
@@ -346,10 +344,15 @@ IPCSocketServer::close()
     ::close(_socket);
     _socket = -1;
   }
+
+  if (_lock_fd > 0) {
+    ::close(_lock_fd);
+    _lock_fd = -1;
+  }
 }
 //// client
 
-IPCSocketServer::Client::Client(int fd) : _fd{fd} {}
+IPCSocketServer::Client::Client(int fd, size_t max_req_size) : _fd{fd}, _max_req_size{max_req_size} {}
 IPCSocketServer::Client::~Client()
 {
   this->close();
@@ -395,11 +398,11 @@ IPCSocketServer::Client::read(swoc::MemSpan<char> span) const
 }
 
 std::tuple<bool, std::string>
-IPCSocketServer::Client::read_all(swoc::FixedBufferWriter &bw) const
+IPCSocketServer::Client::read_all(Buffer &bw) const
 {
   std::string buff;
-  while (bw.remaining() > 0) {
-    auto ret = read({bw.aux_data(), bw.remaining()});
+  while (true) {
+    auto ret = read({bw.writable_data(), bw.available()});
     if (ret < 0) {
       if (check_for_transient_errors()) {
         continue;
@@ -409,20 +412,20 @@ IPCSocketServer::Client::read_all(swoc::FixedBufferWriter &bw) const
     }
 
     if (ret == 0) {
-      if (bw.size()) {
-        return {false, swoc::bwprint(buff, "Peer disconnected after reading {} bytes.", bw.size())};
+      if (bw.stored()) {
+        return {false, swoc::bwprint(buff, "Peer disconnected after reading {} bytes.", bw.stored())};
       }
       return {false, swoc::bwprint(buff, "Peer disconnected. EOF")};
     }
-    bw.commit(ret);
-    if (bw.remaining() > 0) {
+    bw.save(ret);
+    if (_max_req_size - bw.stored() > 0) { // we can still read more.
       using namespace std::chrono_literals;
       if (!this->poll_for_data(1ms)) {
         return {true, buff};
       }
       continue;
     } else {
-      swoc::bwprint(buff, "Buffer is full, we hit the limit: {}", bw.capacity());
+      swoc::bwprint(buff, "Buffer is full, we hit the limit: {}", _max_req_size);
       break;
     }
   }
@@ -494,6 +497,9 @@ template <> struct convert<rpc::comm::IPCSocketServer::Config> {
     }
     if (auto n = node[config::RESTRICTED_API]) {
       rhs.restrictedAccessApi = n.as<bool>();
+    }
+    if (auto n = node[config::MAX_BUFFER_SIZE]) {
+      rhs.incomingRequestMaxBufferSize = n.as<size_t>();
     }
     return true;
   }
