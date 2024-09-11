@@ -75,6 +75,19 @@ or :file:`remap.config`.
    This option is only useful when the plugin is configured as a global plugin. By default this
    is not enabled.
 
+.. option:: --preserve
+
+   There may be situations in a network where there are multiple proxies handling the same requests.
+   In these situations, each proxy may be configured to add ja* header fields. By default, |TS| will
+   append the ``;`` separated signature values to the already existing header fields characteristic
+   of the client-side connection for the given proxy in the chain. However, it may be that only the
+   signatures for the proxy closest to the client are interesting for fingerprinting and no other
+   signatures are desired to be appended to the fields. In these situations, this option causes the
+   plugin to inspect the request to see whether the ja header field already exists, and, if so, no
+   further signatures are added to the field value.
+
+   By default this is not enabled.
+
 Requirement
 =============
 

@@ -27,6 +27,11 @@ Add flag --modify-incoming if it is desired that the plugin modify the incoming
     plugin) not as a remap plugin.  This is because remap plugins by definition
     are enaged upon remap completion and by that point it is too late to
     meaningfully modify the client request headers.
+Add flag --preserve for situations where there may be multiple proxies
+    handling a request and the first one, the one closest to the client, is
+    the one whose ja value is the most useful. If --preserve is used, then ja
+    values are not appended to already existing values in the request. By
+    default, ja header field values are appened if one exists already.
 
 3. plugin.config
 In plugin.config, supply name of the plugin and any desired options. For example:

@@ -80,6 +80,7 @@ sessions:
         - [ content-type, image/jpeg ]
         - [ uuid, http2-request ]
         - [ x-request, http2-request ]
+        - [ x-ja3-raw, first-signature ]
       content:
         size: 399
 
