@@ -81,29 +81,6 @@ namespace
 DbgCtl          dbg_ctl_hostdb_test{"hostdb_test"};
 HostDBProcessor hdb;
 
-struct FContinuation : Continuation {
-  FContinuation(std::function<int(int, Event *)> &&f) : Continuation(new_ProxyMutex()), f(f)
-  {
-    SET_HANDLER(&FContinuation::handle);
-  }
-
-  int
-  handle(int event, Event *e)
-  {
-    return f(event, e);
-  }
-
-  std::function<int(int, Event *)> f;
-};
-
-int
-stop_events(int, Event *)
-{
-  std::printf("Killered\n");
-  TSSystemState::shut_down_event_system();
-  return 0;
-}
-
 } // end anonymous namespace
 
 std::string
@@ -146,7 +123,7 @@ init_ts(std::string_view name, int debug_on = 0)
 
   netProcessor.init();
 
-  int nproc = ink_number_of_processors();
+  const int nproc = ink_number_of_processors();
   eventProcessor.start(nproc);
   dnsProcessor.start(0, 1024 * 1024);
 
@@ -293,9 +270,6 @@ main(int argc, char **argv)
     tests.push_back(startDns);
   }
 
-  FContinuation killer(stop_events);
-  eventProcessor.schedule_in(&killer, HRTIME_SECONDS(300));
-
   l.wait();
 
   int                          results_count{};
@@ -309,12 +283,12 @@ main(int argc, char **argv)
   for (auto *test : tests) {
     test->print_results();
     results_count += test->results.size();
-    for (auto &r : test->results) {
+    for (const auto &r : test->results) {
       total_duration += r.d;
       if (!r.immediate) {
-        dns_count++;
-        min_d = std::min(min_d, r.d);
-        max_d = std::max(max_d, r.d);
+        dns_count += 1;
+        min_d      = std::min(min_d, r.d);
+        max_d      = std::max(max_d, r.d);
       } else {
         min_i = std::min(min_i, r.d);
         max_i = std::max(max_i, r.d);
