@@ -808,24 +808,20 @@ LogFilterList::~LogFilterList()
 bool
 LogFilterList::operator==(LogFilterList &rhs)
 {
-  if (m_does_conjunction == rhs.does_conjunction()) {
-    LogFilter *f    = first();
-    LogFilter *rhsf = rhs.first();
+  LogFilter *f    = first();
+  LogFilter *rhsf = rhs.first();
 
-    while (true) {
-      if (!(f || rhsf)) {
-        return true;
-      } else if (!f || !rhsf) {
-        return false;
-      } else if (!filters_are_equal(f, rhsf)) {
-        return false;
-      } else {
-        f    = next(f);
-        rhsf = rhs.next(rhsf);
-      }
+  while (true) {
+    if (!(f || rhsf)) {
+      return true;
+    } else if (!f || !rhsf) {
+      return false;
+    } else if (!filters_are_equal(f, rhsf)) {
+      return false;
+    } else {
+      f    = next(f);
+      rhsf = rhs.next(rhsf);
     }
-  } else {
-    return false;
   }
 }
 
@@ -872,31 +868,18 @@ LogFilterList::add(LogFilter *filter, bool copy)
 bool
 LogFilterList::toss_this_entry(LogAccess *lad)
 {
-  if (m_does_conjunction) {
-    // toss if any filter rejects the entry (all filters should accept)
-    //
-    bool retval = false;
+  bool retval = false;
 
-    for (LogFilter *f = first(); f; f = next(f)) {
-      if (f->toss_this_entry(lad)) {
-        if (m_has_wipe) { // Continue filters evaluation if there is a wipe filter in the list
-          retval = true;
-        } else {
-          return true;
-        }
+  for (LogFilter *f = first(); f; f = next(f)) {
+    if (f->toss_this_entry(lad)) {
+      if (m_has_wipe) { // Continue filters evaluation if there is a wipe filter in the list
+        retval = true;
+      } else {
+        return true;
       }
     }
-    return retval;
-  } else {
-    // toss if all filters reject the entry (any filter accepts)
-    //
-    for (LogFilter *f = first(); f; f = next(f)) {
-      if (!f->toss_this_entry(lad)) {
-        return false;
-      }
-    }
-    return true;
   }
+  return retval;
 }
 
 /*-------------------------------------------------------------------------
