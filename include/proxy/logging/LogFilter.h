@@ -66,6 +66,10 @@ public:
     CASE_INSENSITIVE_MATCH,
     CONTAIN,
     CASE_INSENSITIVE_CONTAIN,
+    LT,
+    LTE,
+    GT,
+    GTE,
     N_OPERATORS,
   };
 

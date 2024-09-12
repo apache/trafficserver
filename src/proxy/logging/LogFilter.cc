@@ -46,8 +46,9 @@
 #include "proxy/logging/LogConfig.h"
 #include "proxy/logging/Log.h"
 
-const char *LogFilter::OPERATOR_NAME[] = {"MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN"};
-const char *LogFilter::ACTION_NAME[]   = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
+const char *LogFilter::OPERATOR_NAME[] = {
+  "MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN", "LT", "LTE", "GT", "GTE"};
+const char *LogFilter::ACTION_NAME[] = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
 
 namespace
 {
@@ -479,8 +480,14 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
                                            // pointer in @c field.
 
   if (n) {
+    if (m_operator >= Operator::LT && m_operator <= Operator::GTE && n > 1) {
+      Fatal("Operator %s can only have one value", OPERATOR_NAME[m_operator]);
+      return;
+    }
+
     val_array = new int64_t[n];
     char *t;
+
     while (t = tok.getNext(), t != nullptr) {
       int64_t ival;
       if (!_convertStringToInt(t, &ival, field_map.get())) {
@@ -561,24 +568,39 @@ LogFilterInt::toss_this_entry(LogAccess *lad)
   int64_t value;
 
   m_field->marshal(lad, reinterpret_cast<char *>(&value));
-  // This used to do an ntohl() on value, but that breaks various filters.
-  // Long term we should move IPs to their own log type.
-
-  // we don't use m_operator because we consider all operators to be
-  // equivalent to "MATCH" for an integer field
-  //
-
-  // most common case is single value, speed it up a little bit by unrolling
-  //
-  if (m_num_values == 1) {
-    cond_satisfied = (value == *m_value);
-  } else {
-    for (size_t i = 0; i < m_num_values; ++i) {
-      if (value == m_value[i]) {
-        cond_satisfied = true;
-        break;
+  switch (m_operator) {
+  case MATCH:
+    // most common case is single value, speed it up a little bit by unrolling
+    //
+    if (m_num_values == 1) {
+      cond_satisfied = (value == *m_value);
+    } else {
+      for (size_t i = 0; i < m_num_values; ++i) {
+        if (value == m_value[i]) {
+          cond_satisfied = true;
+          break;
+        }
       }
     }
+    break;
+  case LT:
+    ink_assert(m_num_values == 1);
+    cond_satisfied = (value < *m_value);
+    break;
+  case LTE:
+    ink_assert(m_num_values == 1);
+    cond_satisfied = (value <= *m_value);
+    break;
+  case GT:
+    ink_assert(m_num_values == 1);
+    cond_satisfied = (value > *m_value);
+    break;
+  case GTE:
+    ink_assert(m_num_values == 1);
+    cond_satisfied = (value >= *m_value);
+    break;
+  default:
+    ink_assert(!"INVALID FILTER OPERATOR");
   }
 
   return (m_action == REJECT && cond_satisfied) || (m_action == ACCEPT && !cond_satisfied);
