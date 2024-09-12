@@ -279,18 +279,6 @@ public:
   unsigned count() const;
   void     display(FILE *fd = stdout);
 
-  bool
-  does_conjunction() const
-  {
-    return m_does_conjunction;
-  }
-
-  void
-  set_conjunction(bool c)
-  {
-    m_does_conjunction = c;
-  }
-
   // noncopyable
   // -- member functions that are not allowed --
   LogFilterList(const LogFilterList &rhs)            = delete;
@@ -299,14 +287,7 @@ public:
 private:
   Queue<LogFilter> m_filter_list;
 
-  bool m_has_wipe         = false;
-  bool m_does_conjunction = true;
-  // If m_does_conjunction = true
-  // toss_this_entry returns true
-  // if ANY filter tosses entry away.
-  // If m_does_conjunction = false,
-  // toss this entry returns true if
-  // ALL filters toss away entry
+  bool m_has_wipe = false;
 };
 
 /*-------------------------------------------------------------------------
