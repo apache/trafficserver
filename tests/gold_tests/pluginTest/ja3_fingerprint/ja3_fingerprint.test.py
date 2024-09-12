@@ -134,7 +134,11 @@ class JA3FingerprintTest:
         """
         name = f'client{self._client_counter}'
         p = tr.AddVerifierClientProcess(
-            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port])
+            name,
+            self._replay_file,
+            http_ports=[self._ts.Variables.port],
+            https_ports=[self._ts.Variables.ssl_port],
+            other_args='--thread-limit 1')
         JA3FingerprintTest._client_counter += 1
 
         p.StartBefore(self._dns)
