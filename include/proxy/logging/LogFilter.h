@@ -92,8 +92,13 @@ public:
     return m_num_values;
   }
 
+  bool
+  is_wipe() const
+  {
+    return m_action == WIPE_FIELD_VALUE;
+  }
+
   virtual bool toss_this_entry(LogAccess *lad) = 0;
-  virtual bool wipe_this_entry(LogAccess *lad) = 0;
   virtual void display(FILE *fd = stdout)      = 0;
 
   static LogFilter *parse(const char *name, Action action, const char *condition);
@@ -133,7 +138,6 @@ public:
   bool operator==(LogFilterString &rhs);
 
   bool toss_this_entry(LogAccess *lad) override;
-  bool wipe_this_entry(LogAccess *lad) override;
   void display(FILE *fd = stdout) override;
 
   // noncopyable
@@ -193,7 +197,6 @@ public:
   bool operator==(LogFilterInt &rhs);
 
   bool toss_this_entry(LogAccess *lad) override;
-  bool wipe_this_entry(LogAccess *lad) override;
   void display(FILE *fd = stdout) override;
 
   // noncopyable
@@ -226,7 +229,6 @@ public:
   bool operator==(LogFilterIP &rhs);
 
   bool toss_this_entry(LogAccess *lad) override;
-  bool wipe_this_entry(LogAccess *lad) override;
   void display(FILE *fd = stdout) override;
 
   // noncopyable
@@ -259,7 +261,6 @@ public:
 
   void       add(LogFilter *filter, bool copy = true);
   bool       toss_this_entry(LogAccess *lad);
-  bool       wipe_this_entry(LogAccess *lad);
   LogFilter *find_by_name(const char *name);
   void       clear();
 
@@ -298,6 +299,7 @@ public:
 private:
   Queue<LogFilter> m_filter_list;
 
+  bool m_has_wipe         = false;
   bool m_does_conjunction = true;
   // If m_does_conjunction = true
   // toss_this_entry returns true
