@@ -30,6 +30,9 @@
 
 #include "iocore/hostdb/HostFile.h"
 #include "P_HostDBProcessor.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "tscore/Layout.h"
+#include "iocore/utils/diags.i"
 
 using namespace std::literals;
 
@@ -41,6 +44,25 @@ DbgCtl dbg_ctl_hostdb{"hostdb"};
 const std::string_view hosts_data = "127.0.0.1 localhost\n::1 localhost\n1.2.3.4  host1\n4.3.2.1 host2 host3\n";
 
 } // end anonymous namespace
+struct EventProcessorListener : Catch::TestEventListenerBase {
+  using TestEventListenerBase::TestEventListenerBase;
+
+  void
+  testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
+  {
+    Layout::create();
+    init_diags("", nullptr);
+    RecProcessInit();
+
+    ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
+    eventProcessor.start(2);
+
+    EThread *main_thread = new EThread;
+    main_thread->set_specific();
+  }
+};
+
+CATCH_REGISTER_LISTENER(EventProcessorListener);
 
 void
 spit(const swoc::file::path &p, std::string_view data)

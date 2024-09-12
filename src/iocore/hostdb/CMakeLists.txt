@@ -21,3 +21,26 @@ add_library(ts::inkhostdb ALIAS inkhostdb)
 target_link_libraries(inkhostdb PUBLIC ts::inkdns ts::inkevent ts::tscore)
 
 clang_tidy_check(inkhostdb)
+
+if(BUILD_TESTING)
+  add_executable(benchmark_HostDB benchmark_HostDB.cc)
+  target_link_libraries(
+    benchmark_HostDB
+    PRIVATE ts::tscore
+            ts::tsutil
+            ts::inkevent
+            ts::http
+            ts::http_remap
+            ts::inkcache
+            ts::inkhostdb
+  )
+
+  add_executable(test_HostFile test_HostFile.cc HostFile.cc HostDBInfo.cc)
+  target_link_libraries(test_HostFile PRIVATE ts::tscore ts::tsutil ts::inkevent catch2::catch2)
+  add_test(NAME test_hostdb_HostFile COMMAND $<TARGET_FILE:test_HostFile>)
+
+  add_executable(test_RefCountCache test_RefCountCache.cc)
+  target_link_libraries(test_RefCountCache PRIVATE ts::tscore ts::tsutil ts::inkevent catch2::catch2)
+  add_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_RefCountCache>)
+
+endif()
