@@ -25,11 +25,10 @@
 
 #include "swoc/swoc_ip.h"
 
-#include "tscore/ink_platform.h"
+#include "tscore/ink_inet.h"
 #include "tscore/Ptr.h"
 #include "proxy/logging/LogAccess.h"
 #include "proxy/logging/LogField.h"
-#include "proxy/logging/LogFormat.h"
 
 /*-------------------------------------------------------------------------
   LogFilter
