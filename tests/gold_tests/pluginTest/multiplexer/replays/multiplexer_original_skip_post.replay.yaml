@@ -156,3 +156,36 @@ sessions:
       headers:
         fields:
         - [ X-Response, { value: fourth, as: equal } ]
+
+ # Custom method with body. Should not be skipped because it is neither a PUT or POST.
+  - client-request:
+      method: "MYCUSTOMMETHOD"
+      version: "1.1"
+      url: /path/mycustommethod
+      headers:
+        fields:
+        - [ Host, origin.server.com ]
+        - [ Content-Length, 320000 ]
+        - [ X-Request, fifth ]
+        - [ uuid, MYCUSTOMMETHOD ]
+
+    proxy-request:
+      method: "MYCUSTOMMETHOD"
+      headers:
+        fields:
+        - [ X-Request, { value: fifth, as: equal } ]
+        - [ X-Multiplexer, { value: original, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 320000 ]
+        - [ X-Response, fifth ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: fifth, as: equal } ]

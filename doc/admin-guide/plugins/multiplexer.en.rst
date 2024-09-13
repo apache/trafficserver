@@ -24,8 +24,9 @@
 
 |Name| is a remap plug-in that allows requests to certain origins to be multiplexed (i.e.,
 duplicated and dispatched in parallel) to one or more other hosts.  The headers are copied into the
-new requests as well as POST bodies.  Optionally POST and PUT requests can be skipped via
-``pparam=proxy.config.multiplexer.skip_post_put=1``.
+new requests as well as request bodies specified via Content-Length. Chunk encoded request bodies
+are not supported for multiplexing, but they will pass through to the non-multiplexed origin.
+Optionally POST and PUT requests can be skipped via ``pparam=proxy.config.multiplexer.skip_post_put=1``.
 
 Description
 ===========
@@ -90,54 +91,3 @@ Here are some example :file:`remap.config` configuration lines::
 #. The fourth entry will multiplex requests sent to ``http://www.example.com`` with a path of ``/d``
    to both ``host1.example.com`` and ``host2.example.com``, but POST and PUT requests will
    not be multiplexed.
-
-Implementation
-==============
-
-Parsing Chunk Encoded Data
---------------------------
-
-|Name| parses chunked data with its own home brew parser. In the parser :code:`size_` is the size of
-a chunk to be consumed. The local variable / parameter :code:`size` is raw input size as read from an
-:code:`TSIOBufferBlock`. The "size states" are marked blue.
-
-.. uml::
-   :align: center
-
-   @startuml
-
-   skinparam state {
-      backgroundColor<<SIZE_STATE>> SkyBlue
-   }
-
-   state kSize <<SIZE_STATE>>
-   kSize : Accumulate size_\nfrom hex input.
-   [*] --> kSize
-   kSize --> kSize : hex digit
-   kSize --> kDataN : CR,size_ > 0
-   kSize --> kEndN : CR, size_ == 0
-   kSize --> kInvalid : *
-
-   state kDataN <<SIZE_STATE>>
-   kDataN --> kData : LF
-   kDataN --> kInvalid : *
-   kDataN : ASSERT(size_ > 0)
-
-   state kEndN <<SIZE_STATE>>
-   kEndN --> kEnd : LF
-   kEndN --> kInvalid : *
-
-   kData : Consume size_\nbytes of input.
-   kData --> kSizeR : Input consumed
-
-   state kSizeR <<SIZE_STATE>>
-   kSizeR --> kSizeN : CR
-   kSizeR --> kInvalid : *
-
-   state kSizeN <<SIZE_STATE>>
-   kSizeN --> kSize : LF
-   kSizeN --> kInvalid : *
-
-   kInvalid --> [*]
-   kEnd --> [*]
-   @enduml
