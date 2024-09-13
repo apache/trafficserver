@@ -4023,7 +4023,7 @@ Client-Related Configuration
 
    You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_properties<override-verify-server-properties>` attribute.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in .:file:`sni.yaml`
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in :file:`sni.yaml`.
 
 :code:`NONE`
    Check nothing in the standard callback.  Rely entirely on plugins to check the certificate.
