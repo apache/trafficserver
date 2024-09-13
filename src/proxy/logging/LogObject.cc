@@ -35,7 +35,6 @@
 #include "proxy/logging/LogConfig.h"
 #include "proxy/logging/LogAccess.h"
 #include "proxy/logging/Log.h"
-#include "tscore/TestBox.h"
 
 #include <algorithm>
 #include <vector>
@@ -1393,6 +1392,7 @@ LogObjectManager::flush_all_objects()
 }
 
 #if TS_HAS_TESTS
+#include "tscore/TestBox.h"
 
 static LogObject *
 MakeTestLogObject(const char *name)
