@@ -147,6 +147,29 @@ public:
   // noncopyable
   LogFilterString &operator=(LogFilterString &rhs) = delete;
 
+  // This assumes that s1 is all uppercase, hence we hide this in here specifically
+  static const char *
+  strstrcase(const char *s0, const char *s1)
+  {
+    while (*s0) {
+      const char *h = s0;
+      const char *n = s1;
+
+      while (*n && (std::toupper((unsigned char)*h) == *n)) {
+        ++h;
+        ++n;
+      }
+
+      if (!*n) {
+        return s0;
+      }
+
+      ++s0;
+    }
+
+    return nullptr;
+  }
+
 private:
   char **m_value = nullptr; // the array of values
 
@@ -161,22 +184,21 @@ private:
   // (as strcmp does)
   using OperatorFunction = int (*)(const char *, const char *);
 
+  // return 0 if s1 is substring of s0 and 1 otherwise, to conform to strcmp etc.
   static int
   _isSubstring(const char *s0, const char *s1)
   {
-    // return 0 if s1 is substring of s0 and 1 otherwise
-    // this reverse behavior is to conform to the behavior of strcmp
-    // which returns 0 if strings match
     return (strstr(s0, s1) == nullptr ? 1 : 0);
   }
 
-  enum LengthCondition {
-    DATA_LENGTH_EQUAL = 0,
-    DATA_LENGTH_LARGER,
-  };
+  //
+  static int
+  _isSubstringUpper(const char *s0, const char *s1)
+  {
+    return (strstrcase(s0, s1) == nullptr) ? 1 : 0;
+  }
 
-  bool _checkConditionAndWipe(OperatorFunction f, char **field_value, size_t field_value_length, char **val,
-                              const char *uppercase_field_value, LengthCondition lc);
+  bool _checkConditionAndWipe(OperatorFunction f, char *field_value, size_t field_value_length, char **val, bool uppercase = false);
 
   // -- member functions that are not allowed --
   LogFilterString();
