@@ -402,9 +402,12 @@ cache_op(AIOCallbackInternal *op)
                                         a->aio_offset + res);
 #else
 #if TS_USE_MMAP
-          ink_assert((static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + a->aio_nbytes) <= a->aio_fildes.last);
-          memcpy(static_cast<char *>(a->aio_buf) + res, static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + res,
+          if ((static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + a->aio_nbytes) <= a->aio_fildes.last) {
+            memcpy(static_cast<char *>(a->aio_buf) + res, static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + res,
                  err = a->aio_nbytes - res);
+          } else {
+            err = -1;
+          }
 #else
           err = pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
 #endif
@@ -415,9 +418,12 @@ cache_op(AIOCallbackInternal *op)
                                          a->aio_offset + res);
 #else
 #if TS_USE_MMAP
-          ink_assert((static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + a->aio_nbytes) <= a->aio_fildes.last);
-          memcpy(static_cast<char *>(a->aio_fildes.first) + a->aio_offset + res, static_cast<char const *>(a->aio_buf) + res,
+          if ((static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + a->aio_nbytes) <= a->aio_fildes.last) {
+            memcpy(static_cast<char *>(a->aio_buf) + res, static_cast<char const *>(a->aio_fildes.first) + a->aio_offset + res,
                  err = a->aio_nbytes - res);
+          } else {
+            err = -1;
+          }
 #else
           err = pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
 #endif
