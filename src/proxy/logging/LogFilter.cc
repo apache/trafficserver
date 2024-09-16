@@ -560,7 +560,6 @@ LogFilterInt::_setValues(size_t n, int64_t *value)
   }
 }
 
-// TODO: ival should be int64_t
 int
 LogFilterInt::_convertStringToInt(char *value, int64_t *ival, LogFieldAliasMap *map)
 {
