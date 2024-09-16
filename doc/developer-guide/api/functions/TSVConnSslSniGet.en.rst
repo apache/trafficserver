@@ -32,3 +32,5 @@ Synopsis
 Description
 -----------
 Get the SNI (Server Name Indication) that corresponds to SSL connection :arg:`sslp`.
+
+If :arg:`length` is not null, the length of the returned string (or 0 if this function returns null) will be stored.

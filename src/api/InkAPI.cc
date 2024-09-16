@@ -7929,6 +7929,9 @@ const char *
 TSVConnSslSniGet(TSVConn sslp, int *length)
 {
   if (sslp == nullptr) {
+    if (length) {
+      *length = 0;
+    }
     return nullptr;
   }
 
