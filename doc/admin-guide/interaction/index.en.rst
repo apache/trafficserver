@@ -30,6 +30,3 @@ Traffic Control
 
 Stats Over HTTP
 ===============
-
-Cache Inspector
-===============

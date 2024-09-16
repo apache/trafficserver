@@ -39,6 +39,7 @@
 #endif
 
 #include <cstdlib>
+#include <utility>
 
 namespace
 {
@@ -407,7 +408,7 @@ PluginDso::LoadedPlugins::addPluginPathToDsoOptOutTable(std::string_view pluginP
 
   {
     SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
-    _optoutDsoReloadPlugins.push_front(DisableDSOReloadPluginInfo{effectivePath});
+    _optoutDsoReloadPlugins.push_front(DisableDSOReloadPluginInfo{std::move(effectivePath)});
   }
 
   return true;

@@ -75,7 +75,7 @@ public:
   /// Samples less than this go in the underflow range.
   static constexpr raw_type UNDERFLOW_BOUND = static_cast<raw_type>(1) << N_SPAN_BITS;
   /// Sample equal or greater than this  go in the overflow bucket.
-  static constexpr raw_type OVERFLOW_BOUND = static_cast<raw_type>(1) << (N_RANGE_BITS + N_SPAN_BITS + 1);
+  static constexpr raw_type OVERFLOW_BOUND = static_cast<raw_type>(1) << (N_RANGE_BITS + N_SPAN_BITS);
 
   /** Add @sample to the histogram.
    *

@@ -25,11 +25,14 @@
 #define ENCODED_LEN(len) (((int)ceil(1.34 * (len) + 5)) + 1)
 #define DECODED_LEN(len) (((int)ceil((len) / 1.33 + 5)) + 1)
 
-Cript::string
-Crypto::Base64::Encode(Cript::string_view str)
+namespace cripts
 {
-  Cript::string ret;
-  size_t        encoded_len = 0;
+
+cripts::string
+Crypto::Base64::Encode(cripts::string_view str)
+{
+  cripts::string ret;
+  size_t         encoded_len = 0;
 
   ret.resize(ENCODED_LEN(str.size())); // Don't use reserve() here, or bad things happens.
   if (TS_SUCCESS != TSBase64Encode(str.data(), str.size(), ret.data(), ret.capacity(), &encoded_len)) {
@@ -41,11 +44,11 @@ Crypto::Base64::Encode(Cript::string_view str)
   return ret; // RVO
 }
 
-Cript::string
-Crypto::Base64::Decode(Cript::string_view str)
+cripts::string
+Crypto::Base64::Decode(cripts::string_view str)
 {
-  Cript::string ret;
-  size_t        decoded_len = 0;
+  cripts::string ret;
+  size_t         decoded_len = 0;
 
   ret.resize(DECODED_LEN(str.size())); // Don't use reserve() here, or bad things happens.
   if (TS_SUCCESS !=
@@ -58,8 +61,8 @@ Crypto::Base64::Decode(Cript::string_view str)
   return ret; // RVO
 }
 
-Cript::string
-Crypto::Escape::Encode(Cript::string_view str)
+cripts::string
+Crypto::Escape::Encode(cripts::string_view str)
 {
   static const unsigned char map[32] = {
     0xFF, 0xFF, 0xFF,
@@ -83,8 +86,8 @@ Crypto::Escape::Encode(Cript::string_view str)
     0x00 //               .
   };
 
-  Cript::string ret;
-  size_t        encoded_len = 0;
+  cripts::string ret;
+  size_t         encoded_len = 0;
 
   ret.resize(str.size() * 3 + 1); // Don't use reserve() here, or bad things happens.
   TSStringPercentEncode(str.data(), str.size(), ret.data(), ret.capacity(), &encoded_len, map);
@@ -93,11 +96,11 @@ Crypto::Escape::Encode(Cript::string_view str)
   return ret; // RVO
 }
 
-Cript::string
-Crypto::Escape::Decode(Cript::string_view str)
+cripts::string
+Crypto::Escape::Decode(cripts::string_view str)
 {
-  Cript::string ret;
-  size_t        decoded_len = 0;
+  cripts::string ret;
+  size_t         decoded_len = 0;
 
   ret.resize(str.size() + 1); // Don't use reserve() here, or bad things happens.
   TSStringPercentDecode(str.data(), str.size(), ret.data(), ret.capacity(), &decoded_len);
@@ -107,7 +110,7 @@ Crypto::Escape::Decode(Cript::string_view str)
 }
 
 Crypto::SHA256
-Crypto::SHA256::Encode(Cript::string_view str)
+Crypto::SHA256::Encode(cripts::string_view str)
 {
   SHA256_CTX     ctx;
   Crypto::SHA256 digest;
@@ -120,7 +123,7 @@ Crypto::SHA256::Encode(Cript::string_view str)
 }
 
 Crypto::SHA512
-Crypto::SHA512::Encode(Cript::string_view str)
+Crypto::SHA512::Encode(cripts::string_view str)
 {
   SHA512_CTX     ctx;
   Crypto::SHA512 digest;
@@ -133,7 +136,7 @@ Crypto::SHA512::Encode(Cript::string_view str)
 }
 
 Crypto::MD5
-Crypto::MD5::Encode(Cript::string_view str)
+Crypto::MD5::Encode(cripts::string_view str)
 {
   MD5_CTX     ctx;
   Crypto::MD5 digest;
@@ -161,7 +164,7 @@ Crypto::detail::Cipher::_initialize()
 }
 
 void
-Crypto::detail::Cipher::Encrypt(Cript::string_view str)
+Crypto::detail::Cipher::Encrypt(cripts::string_view str)
 {
   int len = 0;
 
@@ -175,7 +178,7 @@ Crypto::detail::Cipher::Encrypt(Cript::string_view str)
   _length += len;
 }
 
-Cript::string_view
+cripts::string_view
 Crypto::detail::Cipher::Finalize()
 {
   int len = 0;
@@ -192,7 +195,7 @@ Crypto::detail::Cipher::Finalize()
 }
 
 Crypto::AES256
-Crypto::AES256::Encrypt(Cript::string_view str, const unsigned char *key)
+Crypto::AES256::Encrypt(cripts::string_view str, const unsigned char *key)
 {
   Crypto::AES256 crypt(key);
 
@@ -203,7 +206,7 @@ Crypto::AES256::Encrypt(Cript::string_view str, const unsigned char *key)
 }
 
 Crypto::HMAC::SHA256
-Crypto::HMAC::SHA256::Encrypt(Cript::string_view str, const Cript::string &key)
+Crypto::HMAC::SHA256::Encrypt(cripts::string_view str, const cripts::string &key)
 {
   Crypto::HMAC::SHA256 retval;
 
@@ -212,3 +215,5 @@ Crypto::HMAC::SHA256::Encrypt(Cript::string_view str, const Cript::string &key)
 
   return retval;
 }
+
+} // namespace cripts

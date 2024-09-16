@@ -83,13 +83,33 @@ macro(_CHECK_HEADER_DEPENDS _OPTION_VAR _HEADER_DEPENDS _FEATURE_VAR)
   endforeach()
 endmacro()
 
+macro(_CHECK_VAR_DEPENDS _OPTION_VAR _VAR_DEPENDS _FEATURE_VAR)
+  foreach(VAR_NAME ${_VAR_DEPENDS})
+    if(${${VAR_NAME}})
+      message(STATUS "${_FEATURE_VAR} requires ${VAR_NAME} -- found")
+    else()
+      if(NOT ${${_OPTION_VAR}} STREQUAL AUTO AND ${${_OPTION_VAR}})
+        message(
+          FATAL_ERROR
+            "${_FEATURE_VAR} requires ${VAR_NAME} (hint: add -D${_OPTION_VAR}=OFF to disable this feature, or enable the missing dependency)"
+        )
+      else()
+        message(STATUS "${_FEATURE_VAR} requires ${VAR_NAME} -- not found")
+      endif()
+      set(${_FEATURE_VAR} FALSE)
+      break()
+    endif()
+  endforeach()
+endmacro()
+
 # auto_option(<feature_name>
 #   [DESCRIPTION <description>]
 #   [DEFAULT <default>]
 #   [FEATURE_VAR <feature_var>]
 #   [COMPONENT <component>]
-#   [PACKAGE_DEPENDS <package_one> <package_two> ...]
-#   [HEADER_DEPENDS <header_one> <header_two> ...]
+#   [PACKAGE_DEPENDS <package_one> ...]
+#   [HEADER_DEPENDS <header_one> ...]
+#   [VAR_DEPENDS <variable_one> ...]
 # )
 #
 # This macro registers a new auto option and sets its corresponding feature
@@ -126,8 +146,12 @@ endmacro()
 #
 # HEADER_DEPENDS is a list of headers that are required for the feature.
 #
+# VAR_DEPENDS is a list of variables that must be truthy.
+#
 macro(auto_option _FEATURE_NAME)
-  cmake_parse_arguments(ARG "" "DESCRIPTION;DEFAULT;FEATURE_VAR" "PACKAGE_DEPENDS;HEADER_DEPENDS;COMPONENTS" ${ARGN})
+  cmake_parse_arguments(
+    ARG "" "DESCRIPTION;DEFAULT;FEATURE_VAR" "PACKAGE_DEPENDS;HEADER_DEPENDS;VAR_DEPENDS;COMPONENTS" ${ARGN}
+  )
 
   set(OPTION_VAR "ENABLE_${_FEATURE_NAME}")
   if(ARG_FEATURE_VAR)
@@ -156,6 +180,7 @@ macro(auto_option _FEATURE_NAME)
       _check_package_depends(${OPTION_VAR} "${ARG_PACKAGE_DEPENDS}" ${FEATURE_VAR})
     endif()
     _check_header_depends(${OPTION_VAR} "${ARG_HEADER_DEPENDS}" ${FEATURE_VAR})
+    _check_var_depends(${OPTION_VAR} "${ARG_VAR_DEPENDS}" ${FEATURE_VAR})
   else()
     set(${FEATURE_VAR} FALSE)
   endif()

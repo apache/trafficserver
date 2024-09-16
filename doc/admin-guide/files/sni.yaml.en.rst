@@ -57,7 +57,26 @@ The following fields make up the key for each item in the configuration file.
 ========================= ========= ========================================================================================
 Key                       Direction Meaning
 ========================= ========= ========================================================================================
-fqdn                      Both      Fully Qualified Domain Name.
+fqdn                      Both      Fully Qualified Domain Name. Matching depends on the order of entries (like :file:`remap.config`)
+
+                                    Wildcard Support:
+                                      1. Allow single left-most ``*``
+                                      2. Do NOT support regex
+                                      3. Allow ``$1`` (capturing) support in the ``tunnel_route`` field
+
+                                      For example:
+                                        Supported:
+                                          - ``*.example.com``
+                                          - ``*``
+
+                                        NOT Supported:
+                                          - ``foo[0-9]+.example.com`` (regex)
+                                          - ``bar.*.example.net`` (``*`` in the middle)
+                                          - ``*.bar.*.com`` (multiple ``*``)
+                                          - ``*.*.baz.com`` (multiple ``*``)
+                                          - ``baz*.example.net`` (partial wildcard)
+                                          - ``*baz.example.net`` (partial wildcard)
+                                          - ``b*z.example.net`` (partial wildcard)
 
 inbound_port_ranges       Inbound   The port ranges for the inbound connection in the form ``port`` or
                                     ``min-max``.
@@ -155,7 +174,7 @@ valid_tls_version_min_in                 Inbound   This specifies the minimum TL
                                                    the TLS negotiation.  This replaces the global settings in
                                                    :ts:cv:`proxy.config.ssl.server.version.min`,
                                                    :ts:cv:`proxy.config.ssl.TLSv1`, :ts:cv:`proxy.config.ssl.TLSv1_1`,
-                                                   :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential
+                                                   :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3.enabled`. The potential
                                                    values are TLSv1, TLSv1_1, TLSv1_2, and TLSv1_3. This key is only valid for OpenSSL
                                                    1.1.0 and later and BoringSSL. Older versions of OpenSSL do not provide a hook early enough to update
                                                    the SSL object.  It is a syntax error for |TS| built against earlier versions.
@@ -164,7 +183,7 @@ valid_tls_version_max_in                 Inbound   This specifies the minimum TL
                                                    the TLS negotiation.  This replaces the global settings in
                                                    :ts:cv:`proxy.config.ssl.server.version.max`,
                                                    :ts:cv:`proxy.config.ssl.TLSv1`, :ts:cv:`proxy.config.ssl.TLSv1_1`,
-                                                   :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential
+                                                   :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3.enabled`. The potential
                                                    values are TLSv1, TLSv1_1, TLSv1_2, and TLSv1_3. This key is only valid for OpenSSL
                                                    1.1.0 and later and BoringSSL. Older versions of OpenSSL do not provide a hook early enough to update
                                                    the SSL object.  It is a syntax error for |TS| built against earlier versions.
@@ -172,7 +191,7 @@ valid_tls_version_max_in                 Inbound   This specifies the minimum TL
 valid_tls_versions_in                    Inbound   Deprecated. This specifies the list of TLS protocols that will be offered to user agents during
                                                    the TLS negotiation.  This replaces the global settings in
                                                    :ts:cv:`proxy.config.ssl.TLSv1`, :ts:cv:`proxy.config.ssl.TLSv1_1`,
-                                                   :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential
+                                                   :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3.enabled`. The potential
                                                    values are TLSv1, TLSv1_1, TLSv1_2, and TLSv1_3.  You must list all protocols that |TS|
                                                    should offer to the client when using this key.  This key is only valid for OpenSSL
                                                    1.1.0 and later and BoringSSL. Older versions of OpenSSL do not provide a hook early enough to update
@@ -237,9 +256,8 @@ quic                                     Inbound   Indicates whether QUIC connec
                                                    name. More broadly, you will also need to configure :ts:cv:`proxy.config.http.server_ports` to
                                                    open ports for QUIC.
 
-tunnel_route                             Inbound   Destination as an FQDN and port, separated by a colon ``:``.
-                                                   Match group number can be specified by ``$N`` where N should refer to a specified group
-                                                   in the FQDN, ``tunnel_route: $1.domain``.
+tunnel_route                             Inbound   Destination as an FQDN and port, separated by a colon ``:``. Capturing matched wildcard in
+                                                   the ``fqdn`` field is supported by ``$1``. For example: ``tunnel_route: $1.domain``.
 
                                                    This will forward all traffic to the specified destination without first terminating
                                                    the incoming TLS connection.
@@ -295,7 +313,7 @@ Pre-warming TLS Tunnel
 =============================== ========================================================================================
 Key                             Meaning
 =============================== ========================================================================================
-tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm` in records.yaml.
+tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm.enabled` in records.yaml.
 
 tunnel_prewarm_srv              Enable SRV record lookup on pre-warming. Default is ``false``.
 
@@ -408,13 +426,9 @@ Use FQDN captured group to match in ``tunnel_route``.
    sni:
    - fqdn: '*.foo.com'
      tunnel_route: '$1.myfoo'
-   - fqdn: '*.bar.*.com'
-     tunnel_route: '$2.some.$1.yahoo'
 
 FQDN ``some.foo.com`` will match and the captured string will be replaced in the ``tunnel_route`` which will end up being
 ``some.myfoo``.
-Second part is using multiple groups, having ``bob.bar.example.com`` as FQDN, ``tunnel_route`` will end up being
-``bar.some.bob.yahoo``.
 
 Establish a blind tunnel to the backend server, connecting to the server's port with the destination port specified
 in the Proxy Protocol from the inbound connection. Remember to add any expected values for ``{proxy_protocol_port}`` to

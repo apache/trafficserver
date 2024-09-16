@@ -19,33 +19,48 @@
 #include "cripts/Lulu.hpp"
 #include "cripts/Preamble.hpp"
 
+namespace cripts
+{
+
 void
-Error::Execute(Cript::Context *context)
+Error::Execute(cripts::Context *context)
 {
   if (Failed()) {
     TSHttpTxnStatusSet(context->state.txnp, _status._getter());
     // ToDo: So we can't set the reason phrase here, because ATS doesn't have that
     // as a transaction API, only on the response header...
   }
+
+  if (Redirected()) {
+    context->rri->redirect = 1;
+  }
 }
 
 // These are static, to be used with the set() wrapper define
 void
-Error::Reason::_set(Cript::Context *context, const Cript::string_view msg)
+Error::Reason::_set(cripts::Context *context, const cripts::string_view msg)
 {
   context->state.error.Fail();
   context->state.error._reason._setter(msg);
 }
 
 void
-Error::Status::_set(Cript::Context *context, TSHttpStatus status)
+Error::Status::_set(cripts::Context *context, TSHttpStatus status)
 {
   context->state.error.Fail();
   context->state.error._status._setter(status);
+
+  if (context->state.error.Redirected() || status == TS_HTTP_STATUS_MOVED_PERMANENTLY ||
+      status == TS_HTTP_STATUS_MOVED_TEMPORARILY || status == TS_HTTP_STATUS_TEMPORARY_REDIRECT ||
+      status == TS_HTTP_STATUS_PERMANENT_REDIRECT) {
+    context->state.error.Redirect();
+  }
 }
 
 TSHttpStatus
-Error::Status::_get(Cript::Context *context)
+Error::Status::_get(cripts::Context *context)
 {
   return context->state.error._status._getter();
 }
+
+} // namespace cripts

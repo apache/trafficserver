@@ -1454,7 +1454,7 @@ client_handler(TSCont contp, TSEvent event, void *data)
     // happen until data arrives on the socket. Because we're just testing the accept()
     // we write a small amount of ignored data to make sure this gets triggered.
     UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(data);
-    ink_release_assert(::write(vc->con.fd, "Bob's your uncle", 16) != 0);
+    ink_release_assert(vc->con.sock.write("Bob's your uncle", 16) != 0);
 
     sleep(1); // XXX this sleep ensures the server end gets the accept event.
 
@@ -1952,19 +1952,6 @@ REGRESSION_TEST(SDK_API_TSCache)(RegressionTest *test, int /* atype ATS_UNUSED *
   *pstatus          = REGRESSION_TEST_INPROGRESS;
   SDK_Cache_test    = test;
   SDK_Cache_pstatus = pstatus;
-  int is_ready      = 0;
-
-  // Check if Cache is ready
-  TSCacheReady(&is_ready);
-  if (!is_ready) {
-    SDK_RPRINT(test, "TSCacheReady", "TestCase1", TC_FAIL, "cache is not ready");
-
-    // no need to continue, return
-    *pstatus = REGRESSION_TEST_FAILED;
-    return;
-  } else {
-    SDK_RPRINT(test, "TSCacheReady", "TestCase1", TC_PASS, "ok");
-  }
 
   // Create CacheKey
   char       key_name[] = "key_for_regression_test";
@@ -3787,10 +3774,8 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   int               port = 2021;
   char              port_char[10];
   int               port_get = 80;
-  const char       *path     = "about/overview.html";
+  const char       *path     = "about/overview.html;abcdef";
   const char       *path_get;
-  const char       *params = "abcdef";
-  const char       *params_get;
   const char       *query = "name=xxx";
   const char       *query_get;
   const char       *fragment = "yyy";
@@ -3815,7 +3800,6 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   bool test_passed_host     = false;
   bool test_passed_port     = false;
   bool test_passed_path     = false;
-  bool test_passed_params   = false;
   bool test_passed_query    = false;
   bool test_passed_fragment = false;
   bool test_passed_copy     = false;
@@ -3841,17 +3825,17 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   url_expected_length =
     strlen(scheme) + strlen("://") + ((user == nullptr) ? 0 : strlen(user)) +
     ((password == nullptr) ? ((user == nullptr) ? 0 : strlen("@")) : strlen(":") + strlen(password) + strlen("@")) + strlen(host) +
-    strlen(port_char) + strlen(":") + strlen("/") + strlen(path) + ((params == nullptr) ? 0 : strlen(";") + strlen(params)) +
-    ((query == nullptr) ? 0 : strlen("?") + strlen(query)) + ((fragment == nullptr) ? 0 : strlen("#") + strlen(fragment));
+    strlen(port_char) + strlen(":") + strlen("/") + strlen(path) + ((query == nullptr) ? 0 : strlen("?") + strlen(query)) +
+    ((fragment == nullptr) ? 0 : strlen("#") + strlen(fragment));
 
   size_t len          = url_expected_length + 1;
   url_expected_string = static_cast<char *>(TSmalloc(len * sizeof(char)));
   memset(url_expected_string, 0, url_expected_length + 1);
-  snprintf(url_expected_string, len, "%s://%s%s%s%s%s%s%s/%s%s%s%s%s%s%s", scheme, ((user == nullptr) ? "" : user),
+  snprintf(url_expected_string, len, "%s://%s%s%s%s%s%s%s/%s%s%s%s%s", scheme, ((user == nullptr) ? "" : user),
            ((password == nullptr) ? "" : ":"), ((password == nullptr) ? "" : password),
            (((user == nullptr) && (password == nullptr)) ? "" : "@"), host, ":", port_char, ((path == nullptr) ? "" : path),
-           ((params == nullptr) ? "" : ";"), ((params == nullptr) ? "" : params), ((query == nullptr) ? "" : "?"),
-           ((query == nullptr) ? "" : query), ((fragment == nullptr) ? "" : "#"), ((fragment == nullptr) ? "" : fragment));
+           ((query == nullptr) ? "" : "?"), ((query == nullptr) ? "" : query), ((fragment == nullptr) ? "" : "#"),
+           ((fragment == nullptr) ? "" : fragment));
 
   // Set Functions
 
@@ -4114,11 +4098,10 @@ print_results:
   }
   if ((test_passed_create == false) || (test_passed_scheme == false) || (test_passed_user == false) ||
       (test_passed_password == false) || (test_passed_host == false) || (test_passed_port == false) ||
-      (test_passed_path == false) || (test_passed_params == false) || (test_passed_query == false) ||
-      (test_passed_fragment == false) || (test_passed_copy == false) || (test_passed_clone == false) ||
-      (test_passed_string1 == false) || (test_passed_string2 == false) || (test_passed_print == false) ||
-      (test_passed_length1 == false) || (test_passed_length2 == false) || (test_passed_type == false) ||
-      (test_passed_ipv6 == false)) {
+      (test_passed_path == false) || (test_passed_query == false) || (test_passed_fragment == false) ||
+      (test_passed_copy == false) || (test_passed_clone == false) || (test_passed_string1 == false) ||
+      (test_passed_string2 == false) || (test_passed_print == false) || (test_passed_length1 == false) ||
+      (test_passed_length2 == false) || (test_passed_type == false) || (test_passed_ipv6 == false)) {
     /*** Debugging the test itself....
     (test_passed_create == false)?printf("test_passed_create is false\n"):printf("");
     (test_passed_destroy == false)?printf("test_passed_destroy is false\n"):printf("");
@@ -4127,7 +4110,6 @@ print_results:
     (test_passed_host == false)?printf("test_passed_host is false\n"):printf("");
     (test_passed_port == false)?printf("test_passed_port is false\n"):printf("");
     (test_passed_path == false)?printf("test_passed_path is false\n"):printf("");
-    (test_passed_params == false)?printf("test_passed_params is false\n"):printf("");
     (test_passed_query == false)?printf("test_passed_query is false\n"):printf("");
     (test_passed_fragment == false)?printf("test_passed_fragment is false\n"):printf("");
     (test_passed_copy == false)?printf("test_passed_copy is false\n"):printf("");
@@ -5794,7 +5776,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdrParse)(RegressionTest *test, int /* atype ATS_U
 //////////////////////////////////////////////
 
 static char *
-convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
+convert_mime_hdr_to_string(TSMLoc hdr_loc)
 {
   TSIOBuffer       output_buffer;
   TSIOBufferReader reader;
@@ -5817,7 +5799,7 @@ convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 
   /* This will print  just MIMEFields and not
      the http request line */
-  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  TSMimeHdrPrint(hdr_loc, output_buffer);
 
   /* Find out how the big the complete header is by
      seeing the total bytes in the buffer.  We need to
@@ -5964,7 +5946,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
       SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned Error.");
     } else {
       if (retval == TS_PARSE_DONE) {
-        temp = convert_mime_hdr_to_string(bufp1, mime_hdr_loc1); // Implements TSMimeHdrPrint.
+        temp = convert_mime_hdr_to_string(mime_hdr_loc1); // Implements TSMimeHdrPrint.
         if (strcmp(parse_string, temp) == 0) {
           SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_PASS, "ok");
           SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_PASS, "ok");
@@ -6061,7 +6043,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
       if (TSMimeHdrCopy(bufp2, mime_hdr_loc2, bufp1, mime_hdr_loc1) == TS_ERROR) {
         SDK_RPRINT(test, "TSMimeHdrCopy", "TestCase1", TC_FAIL, "TSMimeHdrCopy returns TS_ERROR");
       } else {
-        temp = convert_mime_hdr_to_string(bufp2, mime_hdr_loc2); // Implements TSMimeHdrPrint.
+        temp = convert_mime_hdr_to_string(mime_hdr_loc2); // Implements TSMimeHdrPrint.
         if (strcmp(parse_string, temp) == 0) {
           SDK_RPRINT(test, "TSMimeHdrCopy", "TestCase1", TC_PASS, "ok");
           test_passed_mime_hdr_copy = true;
@@ -8713,9 +8695,9 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.parent_proxy.per_parent_connect_attempts", "proxy.config.http.normalize_ae",
    "proxy.config.http.insert_forwarded", "proxy.config.http.proxy_protocol_out",
    "proxy.config.http.allow_multi_range", "proxy.config.http.request_buffer_enabled",
-   "proxy.config.http.allow_half_open", OutboundConnTrack::CONFIG_VAR_MIN,
-   OutboundConnTrack::CONFIG_VAR_MAX,
-   OutboundConnTrack::CONFIG_VAR_MATCH,
+   "proxy.config.http.allow_half_open", ConnectionTracker::CONFIG_SERVER_VAR_MIN,
+   ConnectionTracker::CONFIG_SERVER_VAR_MAX,
+   ConnectionTracker::CONFIG_SERVER_VAR_MATCH,
    "proxy.config.ssl.client.verify.server.policy", "proxy.config.ssl.client.verify.server.properties",
    "proxy.config.ssl.client.sni_policy", "proxy.config.ssl.client.private_key.filename",
    "proxy.config.ssl.client.CA.cert.filename", "proxy.config.ssl.client.alpn_protocols",
@@ -9202,7 +9184,7 @@ cleanup:
   return;
 }
 
-REGRESSION_TEST(SDK_API_TSSslServerContextCreate)(RegressionTest *test, int level, int *pstatus)
+REGRESSION_TEST(SDK_API_TSSslServerContextCreate)(RegressionTest * /* test */, int /* level */, int *pstatus)
 {
   TSSslContext ctx;
 
@@ -9213,7 +9195,7 @@ REGRESSION_TEST(SDK_API_TSSslServerContextCreate)(RegressionTest *test, int leve
   TSSslContextDestroy(ctx);
 }
 
-REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int level, int *pstatus)
+REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int /* level */, int *pstatus)
 {
   const char name[] = "regression.test.metric";
   int        id;

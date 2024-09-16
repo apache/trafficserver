@@ -142,7 +142,7 @@ make_vol_map(Stripe *stripe)
         break;
       }
       while (e) {
-        if (dir_offset(e) && dir_valid(stripe, e) && dir_agg_valid(stripe, e) && dir_head(e)) {
+        if (dir_offset(e) && stripe->dir_valid(e) && stripe->dir_agg_valid(e) && dir_head(e)) {
           off_t offset = stripe->vol_offset(e) - start_offset;
           if (offset <= vol_len) {
             vol_map[offset / SCAN_BUF_SIZE] = 1;
@@ -162,8 +162,9 @@ int CacheVC::size_to_init = -1;
 
 CacheVC::CacheVC()
 {
-  size_to_init = sizeof(CacheVC) - (size_t) & ((CacheVC *)nullptr)->vio;
-  memset((void *)&vio, 0, size_to_init);
+  // Initialize Region C
+  size_to_init = sizeof(CacheVC) - reinterpret_cast<size_t>(&(static_cast<CacheVC *>(nullptr))->vio);
+  memset(reinterpret_cast<void *>(&vio), 0, size_to_init);
 }
 
 VIO *
@@ -238,7 +239,6 @@ void
 CacheVC::reenable(VIO *avio)
 {
   DDbg(dbg_ctl_cache_reenable, "reenable %p", this);
-  (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
 #endif
@@ -258,13 +258,12 @@ void
 CacheVC::reenable_re(VIO *avio)
 {
   DDbg(dbg_ctl_cache_reenable, "reenable_re %p", this);
-  (void)avio;
 #ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
 #endif
   if (!trigger) {
     if (!is_io_in_progress() && !recursive) {
-      handleEvent(EVENT_NONE, (void *)nullptr);
+      handleEvent(EVENT_NONE);
     } else {
       trigger = avio->mutex->thread_holding->schedule_imm_local(this);
     }
@@ -336,7 +335,7 @@ unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
 
 // [amc] I think this is where all disk reads from cache funnel through here.
 int
-CacheVC::handleReadDone(int event, Event *e)
+CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
 {
   cancel_trigger();
   ink_assert(this_ethread() == mutex->thread_holding);
@@ -357,7 +356,7 @@ CacheVC::handleReadDone(int event, Event *e)
     if (!lock.is_locked()) {
       VC_SCHED_LOCK_RETRY();
     }
-    if ((!dir_valid(stripe, &dir)) || (!io.ok())) {
+    if ((!stripe->dir_valid(&dir)) || (!io.ok())) {
       if (!io.ok()) {
         Dbg(dbg_ctl_cache_disk_error, "Read error on disk %s\n \
 	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
@@ -407,7 +406,6 @@ CacheVC::handleReadDone(int event, Event *e)
           okay       = 0;
         }
       }
-      (void)e; // Avoid compiler warnings
       bool http_copy_hdr = false;
       http_copy_hdr =
         cache_config_ram_cache_compress && !f.doc_from_ram_cache && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen;
@@ -529,7 +527,7 @@ CacheVC::load_from_last_open_read_call()
 bool
 CacheVC::load_from_aggregation_buffer()
 {
-  if (!dir_agg_buf_valid(this->stripe, &this->dir)) {
+  if (!this->stripe->dir_agg_buf_valid(&this->dir)) {
     return false;
   }
 
@@ -575,7 +573,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (!buf) {
       goto Lcollision;
     }
-    if (!dir_valid(stripe, &dir)) {
+    if (!stripe->dir_valid(&dir)) {
       last_collision = nullptr;
       goto Lcollision;
     }
@@ -616,7 +614,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
   }
   ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
-  _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, (void *)-ECACHE_NO_DOC);
+  _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   goto Lfree;
 Lremoved:
   _action.continuation->handleEvent(CACHE_EVENT_REMOVE, nullptr);
@@ -709,7 +707,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
 
   if (!io.ok()) {
-    result = (void *)-ECACHE_READ_FAIL;
+    result = reinterpret_cast<void *>(-ECACHE_READ_FAIL);
     goto Ldone;
   }
 
@@ -746,7 +744,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       if (!dir_probe(&doc->first_key, stripe, &dir, &last_collision)) {
         goto Lskip;
       }
-      if (!dir_agg_valid(stripe, &dir) || !dir_head(&dir) ||
+      if (!stripe->dir_agg_valid(&dir) || !dir_head(&dir) ||
           (stripe->vol_offset(&dir) != io.aiocb.aio_offset + (reinterpret_cast<char *>(doc) - buf->data()))) {
         continue;
       }

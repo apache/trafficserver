@@ -16,7 +16,7 @@
 #######################
 
 add_executable(
-  traffic_ctl traffic_ctl.cc CtrlCommands.cc CtrlPrinters.cc FileConfigCommand.cc
+  traffic_ctl traffic_ctl.cc CtrlCommands.cc CtrlPrinters.cc FileConfigCommand.cc PrintUtils.cc
               ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
 )
 

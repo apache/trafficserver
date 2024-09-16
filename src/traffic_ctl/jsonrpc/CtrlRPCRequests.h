@@ -65,7 +65,8 @@ struct ConfigSetRecordRequest : shared::rpc::ClientRequest {
     std::string recName;
     std::string recValue;
   };
-  using super = shared::rpc::ClientRequest;
+  using super              = shared::rpc::ClientRequest;
+  ConfigSetRecordRequest() = default;
   ConfigSetRecordRequest(Params d) { super::params.push_back(d); }
   std::string
   get_method() const override
@@ -222,5 +223,22 @@ struct ConfigStatusRequest : shared::rpc::RecordLookupRequest {
     for (auto &&recordName : statusFieldsNames) {
       super::emplace_rec(recordName, shared::rpc::NOT_REGEX, shared::rpc::METRIC_REC_TYPES);
     }
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
+struct SetDebugServerRequest : ConfigSetRecordRequest {
+  SetDebugServerRequest(bool enabled, std::string tags, std::string client_ip)
+  {
+    std::string enable_value{(enabled ? "1" : "0")};
+    if (!client_ip.empty()) {
+      super::params.push_back(Params{"proxy.config.diags.debug.client_ip", client_ip});
+      // proxy.config.diags.debug.enabled needs to be set to 2 if client_ip is used.
+      enable_value = "2";
+    }
+    if (!tags.empty()) {
+      super::params.push_back(Params{"proxy.config.diags.debug.tags", tags});
+    }
+
+    super::params.push_back(Params{"proxy.config.diags.debug.enabled", enable_value});
   }
 };

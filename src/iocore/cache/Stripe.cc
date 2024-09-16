@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "P_CacheDoc.h"
 #include "P_CacheInternal.h"
-#include "P_CacheVol.h"
+#include "StripeSM.h"
 
+#include "tscore/hugepages.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_memory.h"
 
@@ -135,7 +135,7 @@ Stripe::dir_check()
             chain_mark[e_idx] = mark;
           }
 
-          if (!dir_valid(this, e)) {
+          if (!this->dir_valid(e)) {
             ++seg_stale;
           } else {
             uint64_t size = dir_approx_size(e);
@@ -277,12 +277,35 @@ Stripe::_init_data_internal()
 }
 
 void
-Stripe::_init_data()
+Stripe::_init_data(off_t blocks, off_t dir_skip)
 {
+  len = blocks * STORE_BLOCK_SIZE;
+  ink_assert(len <= MAX_STRIPE_SIZE);
+
+  skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
+
+  // successive approximation, directory/meta data eats up some storage
+  start = skip;
+
   // iteratively calculate start + buckets
   this->_init_data_internal();
   this->_init_data_internal();
   this->_init_data_internal();
+
+  data_blocks = (len - (start - skip)) / STORE_BLOCK_SIZE;
+
+  // raw_dir
+  raw_dir = nullptr;
+  if (ats_hugepage_enabled()) {
+    raw_dir = static_cast<char *>(ats_alloc_hugepage(this->dirlen()));
+  }
+  if (raw_dir == nullptr) {
+    raw_dir = static_cast<char *>(ats_memalign(ats_pagesize(), this->dirlen()));
+  }
+
+  dir    = reinterpret_cast<Dir *>(raw_dir + this->headerlen());
+  header = reinterpret_cast<StripteHeaderFooter *>(raw_dir);
+  footer = reinterpret_cast<StripteHeaderFooter *>(raw_dir + this->dirlen() - ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter)));
 }
 
 bool
@@ -306,7 +329,7 @@ Stripe::flush_aggregate_write_buffer()
 bool
 Stripe::copy_from_aggregate_write_buffer(char *dest, Dir const &dir, size_t nbytes) const
 {
-  if (!dir_agg_buf_valid(this, &dir)) {
+  if (!this->dir_agg_buf_valid(&dir)) {
     return false;
   }
 

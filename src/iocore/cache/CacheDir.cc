@@ -364,7 +364,7 @@ dir_clean_bucket(Dir *b, int s, Stripe *stripe)
         return;
     }
 #endif
-    if (!dir_valid(stripe, e) || !dir_offset(e)) {
+    if (!stripe->dir_valid(e) || !dir_offset(e)) {
       if (dbg_ctl_dir_clean.on()) {
         Dbg(dbg_ctl_dir_clean, "cleaning Stripe:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", stripe->hash_text.get(),
             e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, stripe));
@@ -473,59 +473,6 @@ freelist_pop(int s, Stripe *stripe)
   return e;
 }
 
-int
-dir_segment_accounted(int s, Stripe *stripe, int offby, int *f, int *u, int *et, int *v, int *av, int *as)
-{
-  int     free = dir_freelist_length(stripe, s);
-  int     used = 0, empty = 0;
-  int     valid = 0, agg_valid = 0;
-  int64_t agg_size = 0;
-  Dir    *seg      = stripe->dir_segment(s);
-  for (int bi = 0; bi < stripe->buckets; bi++) {
-    Dir *b = dir_bucket(bi, seg);
-    Dir *e = b;
-    while (e) {
-      if (!dir_offset(e)) {
-        ink_assert(e == b);
-        empty++;
-      } else {
-        used++;
-        if (dir_valid(stripe, e)) {
-          valid++;
-        }
-        if (dir_agg_valid(stripe, e)) {
-          agg_valid++;
-        }
-        agg_size += dir_approx_size(e);
-      }
-      e = next_dir(e, seg);
-      if (!e) {
-        break;
-      }
-    }
-  }
-  if (f) {
-    *f = free;
-  }
-  if (u) {
-    *u = used;
-  }
-  if (et) {
-    *et = empty;
-  }
-  if (v) {
-    *v = valid;
-  }
-  if (av) {
-    *av = agg_valid;
-  }
-  if (as) {
-    *as = used ? static_cast<int>(agg_size / used) : 0;
-  }
-  ink_assert(stripe->buckets * DIR_DEPTH - (free + used + empty) <= offby);
-  return stripe->buckets * DIR_DEPTH - (free + used + empty) <= offby;
-}
-
 void
 dir_free_entry(Dir *e, int s, Stripe *stripe)
 {
@@ -575,7 +522,7 @@ Lagain:
           }
           goto Lcont;
         }
-        if (dir_valid(stripe, e)) {
+        if (stripe->dir_valid(e)) {
           DDbg(dbg_ctl_dir_probe_hit, "found %X %X vol %d bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1),
                stripe->fd, b, dir_offset(e));
           dir_assign(result, e);
@@ -811,7 +758,7 @@ dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, Evacuati
   EvacuationBlock *b = stripe->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
-      if (dir_valid(stripe, &b->new_dir)) {
+      if (stripe->dir_valid(&b->new_dir)) {
         *result = b->new_dir;
         DDbg(dbg_ctl_dir_lookaside, "probe %X success", key->slice32(0));
         if (eblock) {
@@ -830,8 +777,8 @@ int
 dir_lookaside_insert(EvacuationBlock *eblock, StripeSM *stripe, Dir *to)
 {
   CacheKey *key = &eblock->evac_frags.earliest_key;
-  DDbg(dbg_ctl_dir_lookaside, "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int)dir_offset(to),
-       (int)dir_phase(to));
+  DDbg(dbg_ctl_dir_lookaside, "insert %X %X, offset %" PRId64 " phase %d", key->slice32(0), key->slice32(1), dir_offset(to),
+       dir_phase(to));
   ink_assert(stripe->mutex->thread_holding == this_ethread());
   int              i         = key->slice32(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b         = new_EvacuationBlock();
@@ -875,7 +822,7 @@ dir_lookaside_cleanup(StripeSM *stripe)
   for (auto &i : stripe->lookaside) {
     EvacuationBlock *b = i.head;
     while (b) {
-      if (!dir_valid(stripe, &b->new_dir)) {
+      if (!stripe->dir_valid(&b->new_dir)) {
         EvacuationBlock *nb = b->link.next;
         DDbg(dbg_ctl_dir_lookaside, "cleanup %X %X cleaned up", b->evac_frags.earliest_key.slice32(0),
              b->evac_frags.earliest_key.slice32(1));
@@ -971,7 +918,7 @@ void
 sync_cache_dir_on_shutdown()
 {
   Dbg(dbg_ctl_cache_dir_sync, "sync started");
-  EThread *t = (EThread *)0xdeadbeef;
+  EThread *t = reinterpret_cast<EThread *>(0xdeadbeef);
   for (int i = 0; i < gnstripes; i++) {
     gstripes[i]->shutdown(t);
   }

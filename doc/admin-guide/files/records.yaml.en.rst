@@ -281,14 +281,14 @@ System Variables
    of the contents and interpretations of log files.
 
 
-.. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
+.. ts:cv:: CONFIG proxy.config.output.logfile.name  STRING traffic.out
 
    This is used for log rolling configuration so |TS| knows the path of the
    output file that should be rolled. This configuration takes the name of the
    file receiving :program:`traffic_server`
    process output that is set via the ``--bind_stdout`` and ``--bind_stderr``
    :ref:`command-line options <traffic_server>`.
-   :ts:cv:`proxy.config.output.logfile` is used only to identify the name of
+   :ts:cv:`proxy.config.output.logfile.name` is used only to identify the name of
    the output file for log rolling purposes and does not override the values
    set via ``--bind_stdout`` and ``--bind_stderr``.
 
@@ -1317,7 +1317,7 @@ allow-plain
    request target and HTTP version string except when the request is made using absolute
    URI in which case the request line may also include the request scheme and domain name.
 
-.. ts:cv:: CONFIG proxy.config.http.header_field_max_size INT 131070
+.. ts:cv:: CONFIG proxy.config.http.header_field_max_size INT 32768
    :reloadable:
 
    Controls the maximum size, in bytes, of an HTTP header field in requests. Headers
@@ -3289,7 +3289,7 @@ Logging Configuration
 
    If set to a non-zero value :arg:`N` then any connection that takes longer than :arg:`N` milliseconds from accept to
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
+   <proxy.config.output.logfile.name>`. This is identifying data about the transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
 
 .. ts:cv:: CONFIG proxy.config.http2.connection.slow.log.threshold INT 0
    :reloadable:
@@ -3298,7 +3298,7 @@ Logging Configuration
    If set to a non-zero value :arg:`N` then any HTTP/2 connection
    that takes longer than :arg:`N` milliseconds from open to close will cause
    its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile>`. This is identifying data about the
+   <proxy.config.output.logfile.name>`. This is identifying data about the
    transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
 
 .. ts:cv:: CONFIG proxy.config.http2.stream.slow.log.threshold INT 0
@@ -3308,7 +3308,7 @@ Logging Configuration
    If set to a non-zero value :arg:`N` then any HTTP/2 stream
    that takes longer than :arg:`N` milliseconds from open to close will cause
    its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile>`. This is identifying data about the
+   <proxy.config.output.logfile.name>`. This is identifying data about the
    transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
 
 .. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
@@ -3403,6 +3403,8 @@ Diagnostic Logging Configuration
    When set to 1, enables logging for diagnostic messages whose log level is `diag` or `debug`.
 
    When set to 2, interprets the :ts:cv:`proxy.config.diags.debug.client_ip` setting determine whether diagnostic messages are logged.
+
+   See the :ref:`Enable debug using traffic_ctl<traffic-control-command-server-debug>` for a convenient way to handle this.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.client_ip STRING NULL
 
@@ -3722,7 +3724,7 @@ SSL Termination
 
    Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
 
-.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_3 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_3.enabled INT 1
    :deprecated:
 
    This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.server.version.min` and
@@ -3843,7 +3845,7 @@ SSL Termination
   a single segment after ~1 second of inactivity and the record size ramping
   mechanism is repeated again.
 
-.. ts:cv:: CONFIG proxy.config.ssl.origin_session_cache INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.origin_session_cache.enabled INT 1
 
    This configuration enables the SSL session cache for the origin server
    when set to ``1``.
@@ -3868,9 +3870,9 @@ SSL Termination
   Take into account that setting the value to 0 will disable session caching for TLSv1.3
   connections.
 
-  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache`` is enabled because
+  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.enabled`` is enabled because
   otherwise for every new TLSv1.3 connection two session IDs will be inserted in the session cache.
-  On the other hand, if ``proxy.config.ssl.session_cache``  is disabled, using the default value is recommended.
+  On the other hand, if ``proxy.config.ssl.session_cache.enabled``  is disabled, using the default value is recommended.
   In those scenarios, increasing the number of tickets could be potentially beneficial for clients performing
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 
@@ -3969,7 +3971,7 @@ Client-Related Configuration
 
    You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_properties<override-verify-server-properties>` attribute.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in .:file:`sni.yaml`
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in :file:`sni.yaml`.
 
 :code:`NONE`
    Check nothing in the standard callback.  Rely entirely on plugins to check the certificate.
@@ -4135,7 +4137,7 @@ Client-Related Configuration
 
    Enables (``1``) or disables (``0``) TLSv1_2 in the ATS client context. If not specified, enabled by default
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3.enabled INT 1
    :deprecated:
 
    This setting is deprecated in favor of :ts:cv:`proxy.config.ssl.client.version.min` and
@@ -4241,7 +4243,7 @@ SNI Routing
    Frequency of checking the activity of SNI Routing Tunnel. Set to ``0`` to disable monitoring of the activity of the SNI tunnels.
    The feature is disabled by default.
 
-.. ts:cv:: CONFIG proxy.config.tunnel.prewarm INT 0
+.. ts:cv:: CONFIG proxy.config.tunnel.prewarm.enabled INT 0
 
    Enable :ref:`pre-warming-tls-tunnel`. The feature is disabled by default.
 

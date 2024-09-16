@@ -42,13 +42,13 @@ making this easy.
 .. note::
     Explicitly forcing an HTTP error overrides any other response status that may have been set.
 
-=========================   =======================================================================
-Function                    Description
-=========================   =======================================================================
-``Error::Status::Set()``    Sets the response to the status code, and force the request to error.
-``Error::Status::Get()``    Get the current response status for the request.
-``Error::Reason::Set()``    Sets an explicit reason message with the status code. **TBD**
-=========================   =======================================================================
+==================================   =======================================================================
+Function                             Description
+==================================   =======================================================================
+``cripts::Error::Status::Set()``     Sets the response to the status code, and force the request to error.
+``cripts::Error::Status::Get()``     Get the current response status for the request.
+``cripts::Error::Reason::Set()``     Sets an explicit reason message with the status code. **TBD**
+==================================   =======================================================================
 
 Example:
 
@@ -56,14 +56,14 @@ Example:
 
    do_remap()
    {
-     borrow req  = Client::Request::get();
+     borrow req  = cripts::Client::Request::get();
 
      if (req["X-Header"] == "yes") {
-       Error::Status::Set(403);
+       cripts::Error::Status::Set(403);
      }
      // Do more stuff here
 
-     if (Error::status::Get() != 403) {
+     if (cripts::Error::status::Get() != 403) {
        // Do even more stuff here if we're not in error state
      }
    }
@@ -84,17 +84,17 @@ Function                    Description
 
 When disabling a callback, use the following names:
 
-=======================================   =========================================================
-Callback                                  Description
-=======================================   =========================================================
-``Cript::Callback::DO_REMAP``             The ``do_remap()`` hook.
-``Cript::Callback::DO_POST_REMAP``        The ``do_post_remap()`` hook.
-``Cript::Callback::DO_SEND_RESPONSE``     The ``do_send_response()`` hook.
-``Cript::Callback::DO_CACHE_LOOKUP``      The ``do_cache_lookup()`` hook.
-``Cript::Callback::DO_SEND_REQUEST``      The ``do_send_request()`` hook.
-``Cript::Callback::DO_READ_RESPONSE``     The ``do_read_response()`` hook.
-``Cript::Callback::DO_TXN_CLOSE``         The ``do_txn_close()`` hook.
-=======================================   =========================================================
+========================================   =========================================================
+Callback                                   Description
+========================================   =========================================================
+``cripts::Callback::DO_REMAP``             The ``do_remap()`` hook.
+``cripts::Callback::DO_POST_REMAP``        The ``do_post_remap()`` hook.
+``cripts::Callback::DO_SEND_RESPONSE``     The ``do_send_response()`` hook.
+``cripts::Callback::DO_CACHE_LOOKUP``      The ``do_cache_lookup()`` hook.
+``cripts::Callback::DO_SEND_REQUEST``      The ``do_send_request()`` hook.
+``cripts::Callback::DO_READ_RESPONSE``     The ``do_read_response()`` hook.
+``cripts::Callback::DO_TXN_CLOSE``         The ``do_txn_close()`` hook.
+========================================   =========================================================
 
 Finally, the ``transaction`` object also provides access to these ATS objects, which can be used
 with the lower level ATS APIs:
@@ -113,10 +113,10 @@ Example usage to turn off a particular hook conditionally:
 
    do_remap()
    {
-     static borrow req = Client::Request::get();
+     static borrow req = cripts::Client::Request::get();
 
      if (req["X-Header"] == "yes") {
-       transaction.DisableCallback(Cript::Callback::DO_READ_RESPONSE);
+       transaction.DisableCallback(cripts::Callback::DO_READ_RESPONSE);
      }
    }
 
@@ -128,7 +128,7 @@ Time
 ====
 
 Cripts has encapsulated some common time-related functions in the core.  At the
-moment only the localtime is available, via the ``Time::Local`` object and its
+moment only the localtime is available, via the ``cripts::Time::Local`` object and its
 ``Now()`` method. The ``Now()`` method returns the current time as an object
 with the following functions:
 
@@ -175,7 +175,7 @@ plugin based on the client request headers:
    do_remap()
    {
      static borrow plugin = instance.plugins["my_ratelimit"];
-     borrow        req    = Client::Request::Get();
+     borrow        req    = cripts::Client::Request::Get();
 
      if (req["X-Header"] == "yes") {
        plugin.RunRemap();
@@ -195,22 +195,23 @@ In same cases, albeit not likely, you may need to read lines of text from A
 file. Cripts of course allows this to be done with C or C++ standard file APIs,
 but we also provide a few convenience functions to make this easier.
 
-The ``File`` object encapsulates the common C++ files operations. For convenience,
+The ``cripts::File`` object encapsulates the common C++ files operations. For convenience,
 and being such a common use case, reading a single line from a file is provided
-by the ``File::Line::Reader`` object. Some examples:
+by the ``cripts::File::Line::Reader`` object. Some examples:
 
 .. code-block:: cpp
 
    do_remap()
    {
-     static const File::Path p1("/tmp/foo");
-     static const File::Path p2("/tmp/secret.txt");
-     if (File::Status(p1).Type() == File::Type::regular) {
+     static const cripts::File::Path p1("/tmp/foo");
+     static const cripts::File::Path p2("/tmp/secret.txt");
+
+     if (cripts::File::Status(p1).Type() == cripts::File::Type::regular) {
        resp["X-Foo-Exists"] = "yes";
      } else {
        resp["X-Foo-Exists"] = "no";
      }
-     string secret = File::Line::Reader(p2);
+     string secret = cripts::File::Line::Reader(p2);
      CDebug("Read secret = {}", secret);
    }
 
@@ -222,13 +223,13 @@ UUID
 Cripts supports generating a few different UUID (Universally Unique Identifier), for
 different purposes. The ``UUID`` class provides the following objects:
 
-=========================   =======================================================================
-Object                      Description
-=========================   =======================================================================
-``UUID::Process``           Returns a UUID for the running process (changes on ATS startup).
-``UUID::Unique``            Returns a completely unique UUID for the server and transacion.
-``UUID::Request``           Returns a unique id for this request.
-=========================   =======================================================================
+==========================   =======================================================================
+Object                       Description
+==========================   =======================================================================
+``cripts::UUID::Process``    Returns a UUID for the running process (changes on ATS startup).
+``cripts::UUID::Unique``     Returns a completely unique UUID for the server and transacion.
+``cripts::UUID::Request``    Returns a unique id for this request.
+==========================   =======================================================================
 
 Using the ``UUID`` object is simple, via the ``Get()`` method. Here's an example:
 
@@ -236,9 +237,9 @@ Using the ``UUID`` object is simple, via the ``Get()`` method. Here's an example
 
    do_remap()
    {
-     static borrow req = Client::Request::Get();
+     static borrow req = cripts::Client::Request::Get();
 
-     resp["X-UUID"] = UUID::Unique::Get();
+     resp["X-UUID"] = cripts::UUID::Unique::Get();
    }
 
 .. _cripts-metrics:
@@ -249,12 +250,12 @@ Metrics
 Cripts metrics are built directly on top of the atomic core ATS metrics. As such, they not only
 work the same as the core metrics, but they are also as efficient. There are two types of metrics:
 
-=========================   =======================================================================
-Metric                      Description
-=========================   =======================================================================
-``Metric::Counter``         A simple counter, which can only be incremented.
-``Metric::Gauge``           A gauge, which can be incremented and decremented, and set to a value.
-=========================   =======================================================================
+================================   =======================================================================
+Metric                             Description
+================================   =======================================================================
+``cripts::Metric::Counter``        A simple counter, which can only be incremented.
+``cripts::Metric::Gauge``          A gauge, which can be incremented and decremented, and set to a value.
+================================   =======================================================================
 
 Example:
 
@@ -262,15 +263,15 @@ Example:
 
    do_create_instance()
    {
-     instance.metrics[0] = Metrics::Counter::Create("cript.example1.instance_calls");
+     instance.metrics[0] = cripts::Metrics::Counter::Create("cript.example1.instance_calls");
    }
 
    do_remap()
    {
-     static auto plugin_metric = Metrics::Counter("cript.example1.plugin_calls");
+     static auto plugin_metric = cripts::Metrics::Counter("cript.example1.plugin_calls");
 
      plugin_metric.Increment();
      instance.metrics[0]->Increment();
    }
 
-A ``Metric::Gauge`` can also be set via the ``Setter()`` method.
+A ``cripts::Metric::Gauge`` can also be set via the ``Setter()`` method.

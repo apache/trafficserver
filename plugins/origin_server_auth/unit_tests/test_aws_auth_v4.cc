@@ -36,7 +36,7 @@ TEST_CASE("uriEncode(): encode empty input", "[AWS][auth][utility]")
   CHECK(0 == encoded.length()); /* 0 encoded because of the invalid input */
 }
 
-TEST_CASE("uriEncode(): encode unreserved chars", "[s3_auth]")
+TEST_CASE("uriEncode(): encode unreserved chars", "[origin_server_auth]")
 {
   const String in      = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          "abcdefghijklmnopqrstuvwxyz"

@@ -17,7 +17,6 @@
 */
 #pragma once
 
-#include <random>
 #include <filesystem>
 
 #include <cstring>
@@ -47,14 +46,14 @@ integer integer_helper(std::string_view sv);
 #define CAssert(...)   TSReleaseAssert(__VA_ARGS__)
 #define CFatal(...)    TSFatal(__VA_ARGS__)
 #define AsBoolean(arg) std::get<boolean>(arg)
-#define AsString(arg)  std::get<Cript::string>(arg)
+#define AsString(arg)  std::get<cripts::string>(arg)
 #define AsInteger(arg) std::get<integer>(arg)
 #define AsFloat(arg)   std::get<double>(arg)
 #define AsPointer(arg) std::get<void *>(arg)
 
-namespace Cript
+namespace cripts
 {
-// Use Cript::string_view consistently, so that it's a one-stop shop for all string_view needs.
+// Use cripts::string_view consistently, so that it's a one-stop shop for all string_view needs.
 using string_view = swoc::TextView;
 
 namespace details
@@ -74,13 +73,13 @@ class Context;
 template <typename ChildT> class StringViewMixin
 {
   using self_type  = StringViewMixin;
-  using mixin_type = Cript::string_view;
+  using mixin_type = cripts::string_view;
 
 public:
   constexpr StringViewMixin() = default;
   constexpr StringViewMixin(const char *s) { _value = mixin_type(s, strlen(s)); }
   constexpr StringViewMixin(const char *s, mixin_type::size_type count) { _value = mixin_type(s, count); }
-  constexpr StringViewMixin(const Cript::string_view &str) { _value = str; }
+  constexpr StringViewMixin(const cripts::string_view &str) { _value = str; }
 
   virtual self_type &operator=(const mixin_type str) = 0;
 
@@ -125,7 +124,7 @@ public:
   self_type &
   clear()
   {
-    _value = Cript::string_view();
+    _value = cripts::string_view();
     return *this;
   }
 
@@ -240,31 +239,31 @@ public:
   }
 
   [[nodiscard]] constexpr bool
-  ends_with(Cript::string_view const suffix) const
+  ends_with(cripts::string_view const suffix) const
   {
     return _value.ends_with(suffix);
   }
 
   [[nodiscard]] constexpr bool
-  starts_with(Cript::string_view const prefix) const
+  starts_with(cripts::string_view const prefix) const
   {
     return _value.starts_with(prefix);
   }
 
   [[nodiscard]] constexpr mixin_type::size_type
-  find(Cript::string_view const substr, mixin_type::size_type pos = 0) const
+  find(cripts::string_view const substr, mixin_type::size_type pos = 0) const
   {
     return _value.find(substr, pos);
   }
 
   [[nodiscard]] constexpr mixin_type::size_type
-  rfind(Cript::string_view const substr, mixin_type::size_type pos = 0) const
+  rfind(cripts::string_view const substr, mixin_type::size_type pos = 0) const
   {
     return _value.rfind(substr, pos);
   }
 
   [[nodiscard]] constexpr bool
-  contains(Cript::string_view const substr) const
+  contains(cripts::string_view const substr) const
   {
     return (_value.find(substr) != _value.npos);
   }
@@ -278,7 +277,7 @@ protected:
 
 private:
   mixin_type _value;
-}; // End class Cript::StringViewMixin
+}; // End class cripts::StringViewMixin
 
 class string : public std::string
 {
@@ -289,7 +288,7 @@ public:
   using std::string::string;
 
   // ToDo: This broke when switching to swoc::TextView
-  // using std::string::operator Cript::string_view;
+  // using std::string::operator cripts::string_view;
   using super_type::operator+=;
   using super_type::operator[];
 
@@ -301,7 +300,7 @@ public:
   }
 
   self_type &
-  operator=(const Cript::string_view &str)
+  operator=(const cripts::string_view &str)
   {
     super_type::operator=(str);
     return *this;
@@ -316,11 +315,11 @@ public:
 
   string(const self_type &that) : super_type(that) {}
 
-  // This allows for a std::string to be moved to a Cript::string
+  // This allows for a std::string to be moved to a cripts::string
   string(super_type &&that) : super_type(std::move(that)) {}
   string(self_type &&that) noexcept : super_type(that) {}
 
-  operator Cript::string_view() const { return {this->c_str(), this->size()}; }
+  operator cripts::string_view() const { return {this->c_str(), this->size()}; }
 
   // Make sure to keep these updated with C++20 ...
   self_type &
@@ -363,12 +362,12 @@ public:
     return this->ltrim(chars).rtrim(chars);
   }
 
-  [[nodiscard]] std::vector<Cript::string_view> split(char delim) const &;
+  [[nodiscard]] std::vector<cripts::string_view> split(char delim) const &;
 
   // delete the rvalue ref overload to prevent dangling string_views
-  // If you are getting an error here, you need to assign a variable to the Cript::string before calling split
+  // If you are getting an error here, you need to assign a variable to the cripts::string before calling split
   // and make sure its lifetime is longer than the returned vector
-  [[nodiscard]] std::vector<Cript::string_view> split(char delim) const && = delete;
+  [[nodiscard]] std::vector<cripts::string_view> split(char delim) const && = delete;
 
   operator integer() const;
   operator bool() const;
@@ -392,17 +391,15 @@ public:
     return bool(*this);
   }
 
-}; // End class Cript::string
+}; // End class cripts::string
 
-// Some helper functions, in the Cript:: generic namespace
-int                             Random(int max);
-std::vector<Cript::string_view> Splitter(Cript::string_view input, char delim);
-Cript::string                   Hex(const Cript::string &str);
-Cript::string                   Hex(Cript::string_view sv);
-Cript::string                   UnHex(const Cript::string &str);
-Cript::string                   UnHex(Cript::string_view sv);
-
-} // namespace Cript
+// Some helper functions, in the cripts:: generic namespace
+int                              Random(int max);
+std::vector<cripts::string_view> Splitter(cripts::string_view input, char delim);
+cripts::string                   Hex(const cripts::string &str);
+cripts::string                   Hex(cripts::string_view sv);
+cripts::string                   UnHex(const cripts::string &str);
+cripts::string                   UnHex(cripts::string_view sv);
 
 class Control
 {
@@ -416,8 +413,8 @@ class Control
     void operator=(const self_type &) = delete;
 
     explicit Base(TSHttpCntlType ctrl) : _ctrl(ctrl) {}
-    bool _get(Cript::Context *context) const;
-    void _set(Cript::Context *context, bool flag);
+    bool _get(cripts::Context *context) const;
+    void _set(cripts::Context *context, bool flag);
 
   protected:
     TSHttpCntlType _ctrl;
@@ -455,23 +452,23 @@ public:
   Versions(const self_type &)       = delete;
   void operator=(const self_type &) = delete;
 
-  Cript::string_view GetSV();
+  cripts::string_view GetSV();
 
-  operator Cript::string_view() { return GetSV(); }
+  operator cripts::string_view() { return GetSV(); }
 
-  Cript::string_view::const_pointer
+  cripts::string_view::const_pointer
   Data()
   {
     return GetSV().data();
   }
 
-  Cript::string_view::size_type
+  cripts::string_view::size_type
   Size()
   {
     return GetSV().size();
   }
 
-  Cript::string_view::size_type
+  cripts::string_view::size_type
   Length()
   {
     return GetSV().length();
@@ -530,7 +527,7 @@ private:
   friend struct fmt::formatter<Versions::Minor>;
   friend struct fmt::formatter<Versions::Patch>;
 
-  Cript::string_view _version;
+  cripts::string_view _version;
 
 public:
   Major major;
@@ -538,10 +535,12 @@ public:
   Patch patch;
 }; // End class Versions
 
+} // namespace cripts
+
 // Formatters for {fmt}
 namespace fmt
 {
-template <> struct formatter<Versions> {
+template <> struct formatter<cripts::Versions> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -550,13 +549,13 @@ template <> struct formatter<Versions> {
 
   template <typename FormatContext>
   auto
-  format(Versions &version, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Versions &version, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", version.GetSV());
   }
 };
 
-template <> struct formatter<Versions::Major> {
+template <> struct formatter<cripts::Versions::Major> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -565,13 +564,13 @@ template <> struct formatter<Versions::Major> {
 
   template <typename FormatContext>
   auto
-  format(Versions::Major &major, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Versions::Major &major, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(major));
   }
 };
 
-template <> struct formatter<Versions::Minor> {
+template <> struct formatter<cripts::Versions::Minor> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -580,13 +579,13 @@ template <> struct formatter<Versions::Minor> {
 
   template <typename FormatContext>
   auto
-  format(Versions::Minor &minor, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Versions::Minor &minor, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(minor));
   }
 };
 
-template <> struct formatter<Versions::Patch> {
+template <> struct formatter<cripts::Versions::Patch> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -595,7 +594,7 @@ template <> struct formatter<Versions::Patch> {
 
   template <typename FormatContext>
   auto
-  format(Versions::Patch &patch, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Versions::Patch &patch, FormatContext &ctx) -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(patch));
   }

@@ -342,8 +342,8 @@ template <> struct convert<YamlSNIConfig::Item> {
       if (!dir.empty() && (dir[0] != '/')) {
         dir = RecConfigReadConfigDir() + '/' + dir;
       }
-      item.verify_client_ca_file = file;
-      item.verify_client_ca_dir  = dir;
+      item.verify_client_ca_file = std::move(file);
+      item.verify_client_ca_dir  = std::move(dir);
 #endif
     }
 

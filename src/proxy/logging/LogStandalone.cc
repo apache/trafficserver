@@ -75,11 +75,11 @@ init_system(bool notify_syslog)
 }
 
 /*-------------------------------------------------------------------------
-  initialize_process_manager
+  initialize_records
   -------------------------------------------------------------------------*/
 
 static void
-initialize_process_manager()
+initialize_records()
 {
   // diags should have been initialized by caller, e.g.: sac.cc
   ink_assert(diags());
@@ -167,7 +167,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
   openlog(pgm_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
   init_system(true);
-  initialize_process_manager();
+  initialize_records();
   diagsConfig = new DiagsConfig(pgm_name, logfile, error_tags, action_tags);
 }
 
@@ -178,7 +178,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
   simple standalone applications that do not read the records.yaml file
   and that do not need a process manager, thus it:
 
-  1) does not call initialize_process_manager
+  1) does not call initialize_records
   2) initializes the diags with use_records = false
   3) assumes multiple copies of the application can run, so does not
      do lock checking

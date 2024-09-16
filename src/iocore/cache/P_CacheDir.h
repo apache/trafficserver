@@ -97,15 +97,7 @@ class CacheEvacuateDocVC;
     dir_assign(_e, _x);                 \
     dir_set_next(_e, next);             \
   } while (0)
-// entry is valid
-#define dir_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? _d->vol_in_phase_valid(_e) : _d->vol_out_of_phase_valid(_e))
-// entry is valid and outside of write aggregation region
-#define dir_agg_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? _d->vol_in_phase_valid(_e) : _d->vol_out_of_phase_agg_valid(_e))
-// entry may be valid or overwritten in the last aggregated write
-#define dir_write_valid(_d, _e) \
-  (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) : vol_out_of_phase_write_valid(_d, _e))
-#define dir_agg_buf_valid(_d, _e) (_d->header->phase == dir_phase(_e) && _d->vol_in_phase_agg_buf_valid(_e))
-#define dir_is_empty(_e)          (!dir_offset(_e))
+#define dir_is_empty(_e) (!dir_offset(_e))
 #define dir_clear(_e) \
   do {                \
     (_e)->w[0] = 0;   \
@@ -282,8 +274,6 @@ void     dir_sync_init();
 int      check_dir(Stripe *stripe);
 void     dir_clean_vol(Stripe *stripe);
 void     dir_clear_range(off_t start, off_t end, Stripe *stripe);
-int      dir_segment_accounted(int s, Stripe *stripe, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
-                               int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
 uint64_t dir_entries_used(Stripe *stripe);
 void     sync_cache_dir_on_shutdown();
 
@@ -326,9 +316,9 @@ inline int64_t
 dir_to_offset(const Dir *d, const Dir *seg)
 {
 #if DIR_DEPTH < 5
-  return (((char *)d) - ((char *)seg)) / SIZEOF_DIR;
+  return (reinterpret_cast<const char *>(d) - reinterpret_cast<const char *>(seg)) / SIZEOF_DIR;
 #else
-  int64_t i = (int64_t)((((char *)d) - ((char *)seg)) / SIZEOF_DIR);
+  int64_t i = static_cast<int64_t>((reinterpret_cast<const char *>(d) - reinterpret_cast<const char *>(seg)) / SIZEOF_DIR);
   i         = i - (i / DIR_DEPTH);
   return i;
 #endif

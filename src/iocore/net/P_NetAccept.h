@@ -40,9 +40,10 @@
 
 #include "iocore/net/NetProcessor.h"
 #include "iocore/net/NetAcceptEventIO.h"
+#include "Server.h"
+
 #include <vector>
 #include "tscore/ink_platform.h"
-#include "P_Connection.h"
 
 struct NetAccept;
 struct HttpProxyPort;

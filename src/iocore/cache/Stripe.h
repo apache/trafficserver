@@ -26,12 +26,12 @@
 #include "AggregateWriteBuffer.h"
 #include "P_CacheDir.h"
 #include "P_CacheDisk.h"
+#include "P_CacheStats.h"
 
 #include "iocore/cache/Store.h"
 
 #include "tscore/ink_align.h"
 #include "tscore/ink_memory.h"
-#include "tscore/ink_platform.h"
 
 #include <cstdint>
 
@@ -42,10 +42,23 @@
 #define ROUND_TO_SECTOR(_p, _x)  INK_ALIGN((_x), _p->sector_size)
 #define ROUND_TO(_x, _y)         INK_ALIGN((_x), (_y))
 
-// This is defined here so CacheVC can avoid including P_CacheVol.h.
+// This is defined here so CacheVC can avoid including StripeSM.h.
 #define RECOVERY_SIZE EVACUATION_SIZE // 8MB
 
-struct CacheVol;
+struct CacheVol {
+  int          vol_number       = -1;
+  int          scheme           = 0;
+  off_t        size             = 0;
+  int          num_vols         = 0;
+  bool         ramcache_enabled = true;
+  StripeSM   **stripes          = nullptr;
+  DiskStripe **disk_stripes     = nullptr;
+  LINK(CacheVol, link);
+  // per volume stats
+  CacheStatsBlock vol_rsb;
+
+  CacheVol() {}
+};
 
 struct StripteHeaderFooter {
   unsigned int      magic;
@@ -106,8 +119,12 @@ public:
   /* Calculates the total length of the header, directories and footer.
    */
   size_t dirlen() const;
-  int    vol_out_of_phase_valid(Dir const *e) const;
 
+  bool dir_valid(const Dir *dir) const;
+  bool dir_agg_valid(const Dir *dir) const;
+  bool dir_agg_buf_valid(const Dir *dir) const;
+
+  int vol_out_of_phase_valid(Dir const *e) const;
   int vol_out_of_phase_agg_valid(Dir const *e) const;
   int vol_out_of_phase_write_valid(Dir const *e) const;
   int vol_in_phase_valid(Dir const *e) const;
@@ -141,7 +158,7 @@ protected:
 
   void _clear_init();
   void _init_dir();
-  void _init_data();
+  void _init_data(off_t blocks, off_t dir_skip);
   bool flush_aggregate_write_buffer();
 
 private:
@@ -170,7 +187,7 @@ Stripe::direntries() const
 inline Dir *
 Stripe::dir_segment(int s) const
 {
-  return (Dir *)(((char *)this->dir) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
+  return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
 
 inline size_t
@@ -178,6 +195,30 @@ Stripe::dirlen() const
 {
   return this->headerlen() + ROUND_TO_STORE_BLOCK(((size_t)this->buckets) * DIR_DEPTH * this->segments * SIZEOF_DIR) +
          ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
+}
+
+/**
+  entry is valid
+ */
+inline bool
+Stripe::dir_valid(const Dir *dir) const
+{
+  return (this->header->phase == dir_phase(dir) ? this->vol_in_phase_valid(dir) : this->vol_out_of_phase_valid(dir));
+}
+
+/**
+  entry is valid and outside of write aggregation region
+ */
+inline bool
+Stripe::dir_agg_valid(const Dir *dir) const
+{
+  return (this->header->phase == dir_phase(dir) ? this->vol_in_phase_valid(dir) : this->vol_out_of_phase_agg_valid(dir));
+}
+
+inline bool
+Stripe::dir_agg_buf_valid(const Dir *dir) const
+{
+  return (this->header->phase == dir_phase(dir) && this->vol_in_phase_agg_buf_valid(dir));
 }
 
 inline int
@@ -214,7 +255,7 @@ Stripe::vol_in_phase_agg_buf_valid(Dir const *e) const
 inline off_t
 Stripe::vol_offset(Dir const *e) const
 {
-  return this->start + (off_t)dir_offset(e) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
+  return this->start + static_cast<off_t>(dir_offset(e)) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
 inline off_t

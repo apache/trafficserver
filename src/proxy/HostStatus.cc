@@ -20,13 +20,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include <fstream>
 #include "tsutil/ts_bw_format.h"
 #include "proxy/HostStatus.h"
 #include "iocore/eventsystem/Tasks.h"
 
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include "shared/rpc/RPCRequests.h"
+
+#include <fstream>
+#include <utility>
 
 namespace
 {
@@ -170,7 +172,7 @@ HostStatus::loadFromPersistentStore()
         const YAML::Node &host     = *it;
         std::string       hostName = host[HOST_NAME_KEY].as<std::string>();
         std::string       status   = host[STATUS_KEY].as<std::string>();
-        HostStatRec       h(status);
+        HostStatRec       h(std::move(status));
         loadRecord(hostName, h);
       }
     } catch (std::exception const &ex) {

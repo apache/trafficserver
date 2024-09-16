@@ -212,7 +212,7 @@ CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj *block_p
     if (tmp < 0) {
       return -1;
     }
-    info.m_alt  = (HTTPCacheAlt *)buf;
+    info.m_alt  = reinterpret_cast<HTTPCacheAlt *>(const_cast<char *>(buf));
     buf        += tmp;
 
     data(xcount).alternate = info;

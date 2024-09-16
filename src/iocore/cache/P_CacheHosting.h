@@ -267,11 +267,8 @@ struct CacheHostTableConfig : public Continuation {
   ~CacheHostTableConfig() {}
 
   int
-  mainEvent(int event, Event *e)
+  mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    (void)e;
-    (void)event;
-
     CacheType type  = CACHE_HTTP_TYPE;
     Cache    *cache = nullptr;
     {

@@ -78,6 +78,8 @@
 #include <openssl/ts.h>
 #endif
 
+#include <utility>
+
 using namespace std::literals;
 
 // ssl_multicert.config field names:
@@ -1551,8 +1553,9 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 
   std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get());
   for (const auto &loadingctx : ctxs) {
-    shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
-    if (!sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, loadingctx.ctx_type, common_names)) {
+    if (!sslMultCertSettings ||
+        !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free}, loadingctx.ctx_type,
+                                     common_names)) {
       if (!common_names.empty()) {
         std::string names;
         for (auto const &name : data.cert_names_list) {
@@ -1584,8 +1587,8 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 
     std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, sslMultCertSettings.get());
     for (const auto &loadingctx : ctxs) {
-      shared_SSL_CTX unique_ctx(loadingctx.ctx, SSL_CTX_free);
-      if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, unique_ctx, loadingctx.ctx_type, iter->second)) {
+      if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free},
+                                       loadingctx.ctx_type, iter->second)) {
         retval = false;
       } else {
         lookup->register_cert_secrets(data.cert_names_list, iter->second);
@@ -1810,7 +1813,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 
   const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
 
-  Note("%s loading ...", ts::filename::SSL_MULTICERT);
+  Note("(%s) %s loading ...", this->_debug_tag(), ts::filename::SSL_MULTICERT);
 
   std::error_code ec;
   std::string     content{swoc::file::load(swoc::file::path{params->configFilePath}, ec)};
@@ -2248,7 +2251,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
 
     if (secret_key_data.empty()) {
       Dbg(dbg_ctl_ssl_load, "empty private key for public key %s", cert_names_list[i].c_str());
-      secret_key_data = secret_data;
+      secret_key_data = std::move(secret_data);
     }
     if (!SSLPrivateKeyHandler(ctx, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
       SSLError("failed to load certificate: %s of length %ld with key path: %s", cert_names_list[i].c_str(), secret_key_data.size(),

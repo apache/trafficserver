@@ -94,24 +94,24 @@ main([[maybe_unused]] int argc, const char **argv)
   // config commands
   config_command.add_command("defaults", "Show default information configuration values", [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config defaults [OPTIONS]")
-    .add_option("--records", "", "Emit output in records.config format");
+    .add_option("--records", "", "Emit output in YAML format");
   config_command
     .add_command("describe", "Show detailed information about configuration values", "", MORE_THAN_ONE_ARG_N,
                  [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config describe RECORD [RECORD ...]");
   config_command.add_command("diff", "Show non-default configuration values", [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config diff [OPTIONS]")
-    .add_option("--records", "", "Emit output in records.config format");
+    .add_option("--records", "", "Emit output in YAML format");
   config_command.add_command("get", "Get one or more configuration values", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config get [OPTIONS] RECORD [RECORD ...]")
     .add_option("--cold", "-c",
                 "Save the value in a configuration file. This does not save the value in TS. Local file change only",
                 "TS_RECORD_YAML", MORE_THAN_ZERO_ARG_N)
-    .add_option("--records", "", "Emit output in records.config format");
+    .add_option("--records", "", "Emit output in YAML format");
   config_command
     .add_command("match", "Get configuration matching a regular expression", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config match [OPTIONS] REGEX [REGEX ...]")
-    .add_option("--records", "", "Emit output in records.config format");
+    .add_option("--records", "", "Emit output in YAML format");
   config_command.add_command("reload", "Request a configuration reload", [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config reload");
   config_command.add_command("status", "Check the configuration status", [&]() { command->execute(); })
@@ -183,6 +183,15 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_example_usage("traffic_ctl server drain [OPTIONS]")
     .add_option("--no-new-connection", "-N", "Wait for new connections down to threshold before starting draining")
     .add_option("--undo", "-U", "Recover server from the drain mode");
+
+  auto &debug_command =
+    server_command.add_command("debug", "Enable/Disable ATS for diagnostic messages at runtime").require_commands();
+  debug_command.add_command("enable", "Enables logging for diagnostic messages at runtime", [&]() { command->execute(); })
+    .add_option("--tags", "-t", "Debug tags", "TS_DEBUG_TAGS", 1)
+    .add_option("--client_ip", "-c", "Client's ip", "", 1, "")
+    .add_example_usage("traffic_ctl server debug enable -t my_tags -c X.X.X.X");
+  debug_command.add_command("disable", "Disables logging for diagnostic messages at runtime", [&]() { command->execute(); })
+    .add_example_usage("traffic_ctl server debug disable");
 
   // storage commands
   storage_command

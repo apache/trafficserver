@@ -23,7 +23,7 @@
 #include <cripts/Bundles/Caching.hpp>
 
 // Globals for this Cript
-static Matcher::Range::IP CRIPT_ALLOW({"192.168.201.0/24", "10.0.0.0/8"});
+static cripts::Matcher::Range::IP CRIPT_ALLOW({"192.168.201.0/24", "10.0.0.0/8"});
 
 // This is called only when the plugin is initialized
 do_init()
@@ -33,31 +33,31 @@ do_init()
 
 do_create_instance()
 {
-  instance.metrics[0] = Metrics::Counter::Create("cript.example1.c0");
-  instance.metrics[1] = Metrics::Counter::Create("cript.example1.c1");
-  instance.metrics[2] = Metrics::Counter::Create("cript.example1.c2");
-  instance.metrics[3] = Metrics::Counter::Create("cript.example1.c3");
-  instance.metrics[4] = Metrics::Counter::Create("cript.example1.c4");
-  instance.metrics[5] = Metrics::Counter::Create("cript.example1.c5");
-  instance.metrics[6] = Metrics::Counter::Create("cript.example1.c6");
-  instance.metrics[7] = Metrics::Counter::Create("cript.example1.c7");
-  instance.metrics[8] = Metrics::Counter::Create("cript.example1.c8"); // This one should resize() the storage
+  instance.metrics[0] = cripts::Metrics::Counter::Create("cript.example1.c0");
+  instance.metrics[1] = cripts::Metrics::Counter::Create("cript.example1.c1");
+  instance.metrics[2] = cripts::Metrics::Counter::Create("cript.example1.c2");
+  instance.metrics[3] = cripts::Metrics::Counter::Create("cript.example1.c3");
+  instance.metrics[4] = cripts::Metrics::Counter::Create("cript.example1.c4");
+  instance.metrics[5] = cripts::Metrics::Counter::Create("cript.example1.c5");
+  instance.metrics[6] = cripts::Metrics::Counter::Create("cript.example1.c6");
+  instance.metrics[7] = cripts::Metrics::Counter::Create("cript.example1.c7");
+  instance.metrics[8] = cripts::Metrics::Counter::Create("cript.example1.c8"); // This one should resize() the storage
 
-  Bundle::Common::Activate().dscp(10);
-  Bundle::Caching::Activate().cache_control("max-age=259200");
+  cripts::Bundle::Common::Activate().dscp(10);
+  cripts::Bundle::Caching::Activate().cache_control("max-age=259200");
 }
 
 do_txn_close()
 {
-  borrow conn = Client::Connection::Get();
+  borrow conn = cripts::Client::Connection::Get();
 
-  conn.pacing = Cript::Pacing::Off;
+  conn.pacing = cripts::Pacing::Off;
   CDebug("Cool, TXN close also works");
 }
 
 do_cache_lookup()
 {
-  borrow url2 = Cache::URL::Get();
+  borrow url2 = cripts::Cache::URL::Get();
 
   CDebug("Cache URL: {}", url2.String());
   CDebug("Cache Host: {}", url2.host);
@@ -65,28 +65,28 @@ do_cache_lookup()
 
 do_send_request()
 {
-  borrow req = Server::Request::Get();
+  borrow req = cripts::Server::Request::Get();
 
   req["X-Leif"] = "Meh";
 }
 
 do_read_response()
 {
-  borrow resp = Server::Response::Get();
+  borrow resp = cripts::Server::Response::Get();
 
   resp["X-DBJ"] = "Vrooom!";
 }
 
 do_send_response()
 {
-  borrow resp = Client::Response::Get();
-  borrow conn = Client::Connection::Get();
+  borrow resp = cripts::Client::Response::Get();
+  borrow conn = cripts::Client::Connection::Get();
   string msg  = "Eliminate TSCPP";
 
   resp["Server"]         = "";        // Deletes the Server header
   resp["X-AMC"]          = msg;       // New header
   resp["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
-  resp["X-UUID"]         = UUID::Unique::Get();
+  resp["X-UUID"]         = cripts::UUID::Unique::Get();
   resp["X-tcpinfo"]      = conn.tcpinfo.Log();
   resp["X-Cache-Status"] = resp.cache;
   resp["X-Integer"]      = 666;
@@ -104,16 +104,16 @@ do_send_response()
   conn.mark       = 17;
 
   // Some file operations (note that the paths aren't required here, can just be strings, but it's a good practice)
-  static const File::Path p1("/tmp/foo");
-  static const File::Path p2("/tmp/secret.txt");
+  static const cripts::File::Path p1("/tmp/foo");
+  static const cripts::File::Path p2("/tmp/secret.txt");
 
-  if (File::Status(p1).type() == File::Type::regular) {
+  if (cripts::File::Status(p1).type() == cripts::File::Type::regular) {
     resp["X-Foo-Exists"] = "yes";
   } else {
     resp["X-Foo-Exists"] = "no";
   }
 
-  string secret = File::Line::Reader(p2);
+  string secret = cripts::File::Line::Reader(p2);
   CDebug("Read secret = {}", secret);
 
   if (resp.status == 200) {
@@ -125,9 +125,9 @@ do_send_response()
 
 do_remap()
 {
-  auto   now  = Time::Local::Now();
-  borrow req  = Client::Request::Get();
-  borrow conn = Client::Connection::Get();
+  auto   now  = cripts::Time::Local::Now();
+  borrow req  = cripts::Client::Request::Get();
+  borrow conn = cripts::Client::Connection::Get();
   auto   ip   = conn.IP();
 
   if (CRIPT_ALLOW.contains(ip)) {
@@ -152,9 +152,9 @@ do_remap()
   CDebug("Float config cache.heuristic_lm_factor = {}", proxy.config.http.cache.heuristic_lm_factor.Get());
   CDebug("String config http.response_server_str = {}", proxy.config.http.response_server_str.GetSV(context));
   CDebug("X-Miles = {}", req["X-Miles"]);
-  CDebug("random(1000) = {}", Cript::Random(1000));
+  CDebug("random(1000) = {}", cripts::Random(1000));
 
-  borrow url      = Client::URL::Get();
+  borrow url      = cripts::Client::URL::Get();
   auto   old_port = url.port;
 
   CDebug("Method is {}", req.method);
@@ -187,7 +187,7 @@ do_remap()
   txn_data[2] = "DBJ";
 
   // Regular expressions
-  static Matcher::PCRE pcre("^/([^/]+)/(.*)$");
+  static cripts::Matcher::PCRE pcre("^/([^/]+)/(.*)$");
 
   auto res = pcre.Match("/foo/bench/bar"); // Can also call contains(), same thing
 
@@ -205,8 +205,8 @@ do_remap()
 
   // Some Crypto::Base64 tests
   static auto base64_test = "VGltZSB3aWxsIG5vdCBzbG93IGRvd24gd2hlbiBzb21ldGhpbmcgdW5wbGVhc2FudCBsaWVzIGFoZWFkLg==";
-  auto        hp          = Crypto::Base64::Decode(base64_test);
-  auto        hp2         = Crypto::Base64::Encode(hp);
+  auto        hp          = cripts::Crypto::Base64::Decode(base64_test);
+  auto        hp2         = cripts::Crypto::Base64::Encode(hp);
 
   CDebug("HP quote: {}", hp);
   if (base64_test != hp2) {
@@ -217,8 +217,8 @@ do_remap()
 
   // Some Crypto::Escape (URL escaping) tests
   static auto escape_test = "Hello_World_!@%23$%25%5E&*()_%2B%3C%3E?%2C.%2F";
-  auto        uri         = Crypto::Escape::Decode(escape_test);
-  auto        uri2        = Crypto::Escape::Encode(uri);
+  auto        uri         = cripts::Crypto::Escape::Decode(escape_test);
+  auto        uri2        = cripts::Crypto::Escape::Encode(uri);
 
   CDebug("Unescaped URI: {}", uri);
   if (escape_test != uri2) {
@@ -228,7 +228,7 @@ do_remap()
   }
 
   // Testing Crypto SHA and encryption
-  auto hex = format("{}", Crypto::SHA256::Encode("Hello World"));
+  auto hex = format("{}", cripts::Crypto::SHA256::Encode("Hello World"));
 
   CDebug("SHA256 = {}", hex);
 
@@ -241,8 +241,8 @@ do_remap()
   }
 
   // Testing some simple metrics
-  static auto m1 = Metrics::Gauge("cript.example1.m1");
-  static auto m2 = Metrics::Counter("cript.example1.m2");
+  static auto m1 = cripts::Metrics::Gauge("cript.example1.m1");
+  static auto m2 = cripts::Metrics::Counter("cript.example1.m2");
 
   m1.Increment(100);
   m1.Decrement(10);

@@ -15,10 +15,13 @@
 #
 #######################
 
-add_executable(test_s3_auth test_aws_auth_v4.cc "${PROJECT_SOURCE_DIR}/aws_auth_v4.cc")
+add_atsplugin(ja4_fingerprint ja4.cc plugin.cc tls_client_hello_summary.cc)
+target_link_libraries(ja4_fingerprint PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+verify_global_plugin(ja4_fingerprint)
 
-target_link_libraries(test_s3_auth PRIVATE OpenSSL::Crypto catch2::catch2 ts::tsutil)
+if(BUILD_TESTING)
+  add_executable(test_ja4 test_ja4.cc ja4.cc tls_client_hello_summary.cc)
+  target_link_libraries(test_ja4 PRIVATE catch2::catch2)
 
-target_compile_definitions(test_s3_auth PRIVATE AWS_AUTH_V4_UNIT_TEST)
-
-add_test(NAME test_s3_auth COMMAND test_s3_auth)
+  add_test(test_ja4 test_ja4)
+endif()

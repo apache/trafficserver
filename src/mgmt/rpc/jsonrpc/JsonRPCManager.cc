@@ -62,12 +62,11 @@ swoc::Rv<YAML::Node>    g_rpcHandlerResponseData;
 bool                    g_rpcHandlerProcessingCompleted{false};
 
 // --- Helpers
-swoc::Errata
+std::pair<swoc::Errata, error::RPCErrorCode>
 check_for_blockers(Context const &ctx, TSRPCHandlerOptions const &options)
 {
-  if (auto err = ctx.get_auth().is_blocked(options); !err.is_ok()) {
-    return std::move(err.note(swoc::Errata(std::error_code(unsigned(error::RPCErrorCode::Unauthorized), std::generic_category()),
-                                           ERRATA_ERROR, swoc::Errata::AUTO)));
+  if (auto &&err = ctx.get_auth().is_blocked(options); !err.is_ok()) {
+    return std::make_pair(std::move(err), error::RPCErrorCode::Unauthorized);
   }
   return {};
 }
@@ -112,7 +111,7 @@ JsonRPCManager::Dispatcher::dispatch(Context const &ctx, specs::RPCRequestInfo c
   }
 
   // We have got a valid handler, we will now check if the context holds any restriction for this handler to be called.
-  if (auto errata = check_for_blockers(ctx, handler.get_options()); !errata.is_ok()) {
+  if (auto &&[errata, ec] = check_for_blockers(ctx, handler.get_options()); !errata.is_ok()) {
     specs::RPCResponseInfo resp{request.id};
     resp.error.ec   = ec;
     resp.error.data = std::move(errata);

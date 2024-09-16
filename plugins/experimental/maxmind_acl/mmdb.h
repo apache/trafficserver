@@ -108,6 +108,12 @@ protected:
   bool _tor_exit_node     = false;
   bool _residential_proxy = false;
 
+  // GeoGuard specific fields
+  bool _vpn_datacenter  = false;
+  bool _relay_proxy     = false;
+  bool _proxy_over_vpn  = false;
+  bool _smart_dns_proxy = false;
+
   bool _anonymous_blocking = false;
 
   // Do we want to allow by default or not? Useful

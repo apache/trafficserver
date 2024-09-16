@@ -52,6 +52,7 @@
 #include <pcre.h>
 #include <algorithm>
 #include <functional>
+#include <utility>
 
 namespace
 {
@@ -384,5 +385,5 @@ SNIConfig::release(SNIConfigParams *params)
 void
 SNIConfig::set_on_reconfigure_callback(std::function<void()> cb)
 {
-  SNIConfig::on_reconfigure = cb;
+  SNIConfig::on_reconfigure = std::move(cb);
 }

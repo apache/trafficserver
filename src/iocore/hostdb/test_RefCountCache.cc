@@ -22,10 +22,10 @@
  */
 
 #include <iostream>
-#include <RefCountCache.cc>
+#include "RefCountCache.cc"
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/Layout.h"
-#include <diags.i>
+#include "iocore/utils/diags.i"
 #include <set>
 
 // TODO: add tests with expiry_time

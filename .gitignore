@@ -134,7 +134,7 @@ plugins/esi/*_test
 plugins/experimental/cookie_remap/test_cookiejar
 plugins/header_rewrite/header_rewrite_test
 plugins/prefetch/test_*
-plugins/s3_auth/test_s3auth
+plugins/origin_server_auth/test_originserverauth
 plugins/slice/test_*
 plugins/traffic_dump/test_*
 plugins/experimental/esi/*_test

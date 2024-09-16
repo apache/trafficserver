@@ -41,10 +41,10 @@
 #include "iocore/eventsystem/Processor.h"
 #include "iocore/eventsystem/ProtectedQueue.h"
 #include "iocore/eventsystem/Thread.h"
+#include "iocore/eventsystem/UnixSocket.h"
 #include "iocore/eventsystem/VIO.h"
 #include "iocore/eventsystem/VConnection.h"
 #include "records/RecProcess.h"
-#include "iocore/eventsystem/SocketManager.h"
 #include "iocore/eventsystem/RecProcess.h"
 
 static constexpr ts::ModuleVersion EVENT_SYSTEM_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);

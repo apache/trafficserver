@@ -30,12 +30,12 @@
 // These are pretty arbitrary for now
 constexpr int CONTEXT_DATA_SLOTS = 4;
 
-namespace Cript
+namespace cripts
 {
 class Context
 {
   using self_type = Context;
-  using DataType  = std::variant<integer, double, boolean, void *, Cript::string>;
+  using DataType  = std::variant<integer, double, boolean, void *, cripts::string>;
 
 public:
   Context()                         = delete;
@@ -43,7 +43,8 @@ public:
   void operator=(const self_type &) = delete;
 
   // This will, and should, only be called via the ProxyAllocator as used in the factory.
-  Context(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst) : rri(rri_ptr), p_instance(inst)
+  Context(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, cripts::Instance &inst)
+    : rri(rri_ptr), p_instance(inst)
   {
     state.txnp    = txn_ptr;
     state.ssnp    = ssn_ptr;
@@ -54,15 +55,15 @@ public:
   void reset();
 
   // This uses the ProxyAllocator to create a new Context object.
-  static self_type *Factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, Cript::Instance &inst);
+  static self_type *Factory(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, cripts::Instance &inst);
   void              Release();
 
   // These fields are preserving the parameters as setup in DoRemap()
-  Cript::Transaction                       state;
+  cripts::Transaction                      state;
   std::array<DataType, CONTEXT_DATA_SLOTS> data;
   TSCont                                   default_cont = nullptr;
   TSRemapRequestInfo                      *rri          = nullptr;
-  Cript::Instance                         &p_instance; // p_ == public_, since we can't use "instance"
+  cripts::Instance                        &p_instance; // p_ == public_, since we can't use "instance"
 
   // These are private, but needs to be visible to our friend classes that
   // depends on the Context.
@@ -83,21 +84,21 @@ private:
 
   // These are "pre-allocated", but not initialized. They will be initialized
   // when used via a factory.
-  Client::Response   _client_resp_header;
-  Client::Request    _client_req_header;
-  Client::Connection _client_conn;
-  Client::URL        _client_url;
-  Remap::From::URL   _remap_from_url;
-  Remap::To::URL     _remap_to_url;
-  Pristine::URL      _pristine_url;
-  Server::Response   _server_resp_header;
-  Server::Request    _server_req_header;
-  Server::Connection _server_conn;
-  Cache::URL         _cache_url;
-  Parent::URL        _parent_url;
+  cripts::Client::Response   _client_resp_header;
+  cripts::Client::Request    _client_req_header;
+  cripts::Client::Connection _client_conn;
+  cripts::Client::URL        _client_url;
+  cripts::Remap::From::URL   _remap_from_url;
+  cripts::Remap::To::URL     _remap_to_url;
+  cripts::Pristine::URL      _pristine_url;
+  cripts::Server::Response   _server_resp_header;
+  cripts::Server::Request    _server_req_header;
+  cripts::Server::Connection _server_conn;
+  cripts::Cache::URL         _cache_url;
+  cripts::Parent::URL        _parent_url;
 }; // End class Context
 
-} // namespace Cript
+} // namespace cripts
 
 // This may be weird, but oh well for now.
 #define Get()               _get(context)

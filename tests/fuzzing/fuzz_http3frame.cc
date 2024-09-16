@@ -29,6 +29,8 @@
 
 #define TEST_THREADS 1
 
+extern int cmd_disable_pfreelist;
+
 bool
 DoInitialization()
 {
@@ -49,6 +51,8 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   if (size_data < kMinInputLength || size_data > kMaxInputLength) {
     return 1;
   }
+
+  cmd_disable_pfreelist = true;
 
   static bool Initialized = DoInitialization();
 

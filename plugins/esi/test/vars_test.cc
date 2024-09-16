@@ -21,9 +21,10 @@
   limitations under the License.
  */
 
+#include <cstdarg>
 #include <cstdio>
 #include <string>
-#include <cstdarg>
+#include <utility>
 
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
@@ -63,7 +64,7 @@ TEST_CASE("esi vars test")
     allowlistCookies.push_back("c4");
     allowlistCookies.push_back("c5");
     int         dummy;
-    Variables   esi_vars(&dummy, allowlistCookies);
+    Variables   esi_vars(&dummy, std::move(allowlistCookies));
     const char *strings[] = {"Cookie",
                              "; c1=v1; c2=v2; ;   c3; c4=;    c5=v5  ",
                              "Host",
@@ -290,7 +291,7 @@ TEST_CASE("esi vars test")
   {
     enableFakeDebugLog();
     int       dummy;
-    Variables esi_vars(&dummy, allowlistCookies);
+    Variables esi_vars(&dummy, std::move(allowlistCookies));
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Referer", -1, "google.com", -1));
@@ -329,7 +330,7 @@ TEST_CASE("esi vars test")
     allowlistCookies.push_back("t5");
     allowlistCookies.push_back("c1");
     int       dummy;
-    Variables esi_vars(&dummy, allowlistCookies);
+    Variables esi_vars(&dummy, std::move(allowlistCookies));
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Referer", -1, "google.com", -1));
@@ -373,7 +374,7 @@ TEST_CASE("esi vars test")
     allowlistCookies.push_back("a");
     allowlistCookies.push_back("c");
     int       dummy;
-    Variables esi_vars(&dummy, allowlistCookies);
+    Variables esi_vars(&dummy, std::move(allowlistCookies));
     string    cookie_str("FPS=dl; mb=d=OPsv7rvU4FFaAOoIRi75BBuqdMdbMLFuDwQmk6nKrCgno7L4xuN44zm7QBQJRmQSh8ken6GSVk8-&v=1; C=mg=1; "
                             "Y=v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us; "
                             "F=a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW.Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE."
@@ -416,7 +417,7 @@ TEST_CASE("esi vars test")
   SECTION("Test 5")
   {
     int       dummy;
-    Variables esi_vars(&dummy, allowlistCookies);
+    Variables esi_vars(&dummy, std::move(allowlistCookies));
     esi_vars.populate(HttpHeader("hdr1", -1, "hval1", -1));
     esi_vars.populate(HttpHeader("Hdr2", -1, "hval2", -1));
     esi_vars.populate(HttpHeader("@Intenal-hdr1", -1, "internal-hval1", -1));
@@ -434,7 +435,7 @@ TEST_CASE("esi vars test")
   {
     allowlistCookies.push_back("*");
     int       dummy;
-    Variables esi_vars(&dummy, allowlistCookies);
+    Variables esi_vars(&dummy, std::move(allowlistCookies));
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Cookie", -1, "age=21; grade=-5; avg=4.3; t1=\" \"; t2=0.0", -1));

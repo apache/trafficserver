@@ -72,7 +72,7 @@ handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<Connection
 static void
 safe_delay(int msec)
 {
-  SocketManager::poll(nullptr, 0, msec);
+  UnixSocket::poll(nullptr, 0, msec);
 }
 
 //
@@ -102,7 +102,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE) {
         goto Ldone;
       }
-      if (na->server.fd != NO_FD && !na->action_->cancelled) {
+      if (na->server.sock.is_ok() && !na->action_->cancelled) {
         if (!blockable) {
           na->action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
         } else {
@@ -330,7 +330,7 @@ NetAccept::do_listen_impl(bool non_blocking)
 {
   int res = 0;
 
-  if (server.fd != NO_FD) {
+  if (server.sock.is_ok()) {
     if ((res = server.setup_fd_for_listen(non_blocking, opt))) {
       Warning("unable to listen on main accept port %d: errno = %d, %s", server.accept_addr.host_order_port(), errno,
               strerror(errno));
@@ -508,12 +508,15 @@ NetAccept::acceptFastEvent(int event, void *ep)
   int                 additional_accepts = NetHandler::get_additional_accepts();
 
   do {
-    socklen_t sz = sizeof(con.addr);
-    int       fd = SocketManager::accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
-    con.fd       = fd;
+    socklen_t  sz = sizeof(con.addr);
+    UnixSocket sock{-1};
+    if (int res{server.sock.accept4(&con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC)}; res >= 0) {
+      sock = UnixSocket{res};
+    }
+    con.sock = sock;
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
 
-    if (likely(fd >= 0)) {
+    if (likely(sock.is_ok())) {
       // check for throttle
       if (check_net_throttle(ACCEPT)) {
         // close the connection as we are in throttle state
@@ -525,13 +528,13 @@ NetAccept::acceptFastEvent(int event, void *ep)
         con.close();
         continue;
       }
-      Dbg(dbg_ctl_iocore_net, "accepted a new socket: %d", fd);
+      Dbg(dbg_ctl_iocore_net, "accepted a new socket: %d", sock.get_fd());
       Metrics::Counter::increment(net_rsb.tcp_accept);
       if (opt.send_bufsize > 0) {
-        if (unlikely(SocketManager::set_sndbuf_size(fd, opt.send_bufsize))) {
+        if (unlikely(sock.set_sndbuf_size(opt.send_bufsize))) {
           bufsz = ROUNDUP(opt.send_bufsize, 1024);
           while (bufsz > 0) {
-            if (!SocketManager::set_sndbuf_size(fd, bufsz)) {
+            if (!sock.set_sndbuf_size(bufsz)) {
               break;
             }
             bufsz -= 1024;
@@ -539,10 +542,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
         }
       }
       if (opt.recv_bufsize > 0) {
-        if (unlikely(SocketManager::set_rcvbuf_size(fd, opt.recv_bufsize))) {
+        if (unlikely(sock.set_rcvbuf_size(opt.recv_bufsize))) {
           bufsz = ROUNDUP(opt.recv_bufsize, 1024);
           while (bufsz > 0) {
-            if (!SocketManager::set_rcvbuf_size(fd, bufsz)) {
+            if (!sock.set_rcvbuf_size(bufsz)) {
               break;
             }
             bufsz -= 1024;
@@ -550,7 +553,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
         }
       }
     } else {
-      res = fd;
+      res = sock.get_fd();
     }
     // check return value from accept()
     if (res < 0) {

@@ -106,8 +106,9 @@ struct CacheTestSM : public RegressionSM {
   void
   cancel_timeout()
   {
-    if (timeout)
+    if (timeout) {
       timeout->cancel();
+    }
     timeout = nullptr;
   }
 

@@ -42,6 +42,7 @@
 #include "proxy/ControlMatcher.h"
 #include "proxy/hdrs/HdrUtils.h"
 
+#include <utility>
 #include <vector>
 
 /** Used for printing IP address.
@@ -126,7 +127,7 @@ TimeMod::make(char *value, const char **error)
     *error = "Malformed time range";
   } else if (nullptr == (*error = timeOfDayToSeconds(rangeTok[0], &tmp.start_time)) &&
              nullptr == (*error = timeOfDayToSeconds(rangeTok[1], &tmp.end_time))) {
-    mod = new TimeMod(tmp);
+    mod = new TimeMod(std::move(tmp));
   }
   return mod;
 }

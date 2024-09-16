@@ -22,7 +22,7 @@
 
 #include "cripts/Lulu.hpp"
 
-namespace File
+namespace cripts::File
 {
 
 class Path : public std::filesystem::path
@@ -52,14 +52,14 @@ namespace Line
     void operator=(const self_type &) = delete;
 
     explicit Reader(const std::string &path) : _path(path), _stream{path} {}
-    explicit Reader(const Cript::string_view path) : _path(path), _stream{_path} {}
+    explicit Reader(const cripts::string_view path) : _path(path), _stream{_path} {}
 
-    operator Cript::string() { return Line(); }
+    operator cripts::string() { return Line(); }
 
-    Cript::string
+    cripts::string
     Line()
     {
-      Cript::string line;
+      cripts::string line;
 
       if (_stream) {
         std::getline(_stream, line);
@@ -75,4 +75,4 @@ namespace Line
 
 } // namespace Line
 
-} // namespace File
+} // namespace cripts::File

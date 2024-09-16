@@ -27,6 +27,7 @@
 #include <ctime>          /* strftime(), time(), gmtime_r() */
 #include <iomanip>        /* std::setw */
 #include <sstream>        /* std::stringstream */
+#include <utility>        /* std::move */
 #include <openssl/sha.h>  /* SHA(), sha256_Update(), SHA256_Final, etc. */
 #include <openssl/hmac.h> /* HMAC() */
 
@@ -397,7 +398,7 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
 
     signedHeadersSet.insert(lowercaseName);
     if (headersMap.find(lowercaseName) == headersMap.end()) {
-      headersMap[lowercaseName] = trimValue;
+      headersMap[lowercaseName] = std::move(trimValue);
     } else {
       headersMap[lowercaseName].append(",").append(trimValue);
     }

@@ -129,6 +129,13 @@ traffic_ctl alarm
 traffic_ctl config
 ------------------
 
+   Manipulate configuration records.
+
+   .. program:: traffic_ctl config
+   .. option:: --records
+
+   Display the config output in YAML format. This out can be used directly into ATS if needed.
+
 .. program:: traffic_ctl config
 .. option:: defaults [--records]
 
@@ -365,6 +372,50 @@ traffic_ctl server
 .. option:: status
 
    Option not yet available
+
+.. _traffic-control-command-server-debug:
+
+.. program:: traffic_ctl server
+.. option:: debug enable
+
+   Enables diagnostic messages at runtime. This is equivalent to
+   manually setting the below records but this is done in one go.
+
+   Note that if you just set this to enable, the :ts:cv:`proxy.config.diags.debug.enabled`
+   will be set to ``1`` unless you specify the ``--client_ip,-c`` option.
+
+   :ts:cv:`proxy.config.diags.debug.enabled`
+
+   :ts:cv:`proxy.config.diags.debug.tags`
+
+   :ts:cv:`proxy.config.diags.debug.client_ip`
+
+
+   Enables logging for diagnostic messages. See :ts:cv:`proxy.config.diags.debug.enabled` for information.
+
+   .. option:: --tags, -t  tags
+
+   This string should contain an anchored regular expression that filters the messages based on the debug tag tag.
+   Please refer to :ts:cv:`proxy.config.diags.debug.tags` for more information
+
+   .. option:: --client_ip, -c ip
+
+   Please see :ts:cv:`proxy.config.diags.debug.client_ip` for information.
+
+
+
+.. program:: traffic_ctl server
+.. option:: debug disable
+
+   Disables logging for diagnostic messages. Equivalent to set :ts:cv:`proxy.config.diags.debug.enabled` to ``0``.
+
+
+   Example:
+
+   .. code-block:: bash
+
+      $ traffic_ctl server debug enable --tags "quic|quiche"
+      ■ TS Runtime debug set to »ON(1)« - tags »"quic|quiche"«, client_ip »unchanged«
 
 .. _traffic-control-command-storage:
 

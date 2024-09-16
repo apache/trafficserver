@@ -30,25 +30,25 @@ must always be borrowed. The pattern for this is as follows:
 
 .. code-block:: cpp
 
-  borrow url = Client::URL::Get();
+  borrow url = cripts::Client::URL::Get();
 
   auto path = url.path;
 
 There are four types of URLs that can be borrowed:
 
-=====================   =============================================================================
-URL Object              Description
-=====================   =============================================================================
-``Client::URL``         The client request URL, as it currently stands (may be modified).
-``Pristine:URL``        The pristine client request URL, as it was coming into the ATS server.
-``Parent::URL``         The outgoing server URL, as sent to the next server (parent or origin).
-``Cache::URL``          The cache URL, which will be used for the cache lookups.
-``Remap::From::URL``    The remap ``from`` URL, from :file:`remap.config`.
-``Remap::To::URL``      The remap ``to`` URL, from :file:`remap.config`.
-=====================   =============================================================================
+==============================   =============================================================================
+URL Object                       Description
+==============================   =============================================================================
+``cripts::Client::URL``          The client request URL, as it currently stands (may be modified).
+``cripts::Pristine:URL``         The pristine client request URL, as it was coming into the ATS server.
+``cripts::Parent::URL``          The outgoing server URL, as sent to the next server (parent or origin).
+``cripts::Cache::URL``           The cache URL, which will be used for the cache lookups.
+``cripts::Remap::From::URL``     The remap ``from`` URL, from :file:`remap.config`.
+``cripts::Remap::To::URL``       The remap ``to`` URL, from :file:`remap.config`.
+==============================   =============================================================================
 
 These URLs all have the same methods and properties, but they are used in different
-hooks and have different meanings. The ``Client::URL`` is the most commonly used URL,
+hooks and have different meanings. The ``cripts::Client::URL`` is the most commonly used URL,
 which you will also modify in the traditional remapping use case; for example changing
 the ``path`` or ``host`` before further processing.
 
@@ -56,7 +56,7 @@ The full URL string can be copied via the ``String()`` method, for example:
 
 .. code-block:: cpp
 
-  borrow url = Client::URL::Get();
+  borrow url = cripts::Client::URL::Get();
 
   auto full = url.String();
 
@@ -87,7 +87,7 @@ you can use the following:
 
 .. code-block:: cpp
 
-  borrow url = Client::URL::Get();
+  borrow url = cripts::Client::URL::Get();
 
   auto path = url.path; // This is the entire path
   auto first = url.path[0]; // This is the first part of the path
@@ -97,7 +97,7 @@ indexed in a list. To get the value of a specific query parameter, you can use t
 
 .. code-block:: cpp
 
-  borrow url = Client::URL::Get();
+  borrow url = cripts::Client::URL::Get();
 
   auto value = url.query["key"]; // This is the value of the key
 
@@ -123,7 +123,7 @@ For example:
 
 .. code-block:: cpp
 
-  borrow url = Client::URL::get();
+  borrow url = cripts::Client::URL::get();
 
   url.query.erase("key"); // Removes the key from the query
   url.query.erase({"key1", "key2"}); // Removes both keys from the query

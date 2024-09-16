@@ -21,41 +21,38 @@
   limitations under the License.
  */
 
-/****************************************************************************
-
-  SocketManager.cc
- ****************************************************************************/
+#include "iocore/net/NetProcessor.h"
+#include "P_Connection.h"
 
 #include "iocore/eventsystem/UnixSocket.h"
 
-#include "tscore/ink_platform.h"
-#include "P_EventSystem.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_memory.h"
 
-#include "tscore/TextBuffer.h"
+struct Server {
+  /// Client side (inbound) local IP address.
+  IpEndpoint accept_addr;
+  /// Associated address.
+  IpEndpoint addr;
 
-int
-SocketManager::accept4(int s, struct sockaddr *addr, socklen_t *addrlen, int flags)
-{
-  UnixSocket sock{s};
-  return sock.accept4(addr, addrlen, flags);
-}
+  /// If set, a kernel HTTP accept filter
+  bool http_accept_filter = false;
 
-int
-SocketManager::ink_bind(int s, struct sockaddr const *name, int namelen, short /* Proto ATS_UNUSED */)
-{
-  UnixSocket sock{s};
-  return sock.bind(name, namelen);
-}
+  UnixSocket sock{NO_SOCK};
 
-int
-SocketManager::close(int s)
-{
-  UnixSocket sock{s};
-  return sock.close();
-}
+  int accept(Connection *c);
 
-bool
-SocketManager::fastopen_supported()
-{
-  return UnixSocket::client_fastopen_supported();
-}
+  int close();
+
+  //
+  // Listen on a socket. We assume the port is in host by order, but
+  // that the IP address (specified by accept_addr) has already been
+  // converted into network byte order
+  //
+
+  int listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
+  int setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
+  int setup_fd_after_listen(const NetProcessor::AcceptOptions &opt);
+
+  Server() { ink_zero(accept_addr); }
+};
