@@ -490,6 +490,38 @@ db_mark_for(IpAddr const &ip)
 }
 
 HostDBRecord::Handle
+probe_ip(HostDBHash const &hash)
+{
+  HostDBRecord::Handle result;
+
+  if (hash.is_byname()) {
+    Dbg(dbg_ctl_hostdb, "DNS %.*s", int(hash.host_name.size()), hash.host_name.data());
+    IpAddr tip;
+    if (0 == tip.load(hash.host_name)) {
+      result            = HostDBRecord::Handle{HostDBRecord::alloc(hash.host_name, 1)};
+      result->af_family = tip.family();
+      auto &info        = result->rr_info()[0];
+      info.assign(tip);
+    }
+  }
+
+  return result;
+}
+
+HostDBRecord::Handle
+probe_hostfile(HostDBHash const &hash)
+{
+  HostDBRecord::Handle result;
+  // Check if this can be fulfilled by the host file
+  //
+  if (auto static_hosts = hostDB.acquire_host_file(); static_hosts) {
+    result = static_hosts->lookup(hash);
+  }
+
+  return result;
+}
+
+HostDBRecord::Handle
 probe(HostDBHash const &hash, bool ignore_timeout)
 {
   static const Ptr<HostDBRecord> NO_RECORD;
@@ -511,6 +543,10 @@ probe(HostDBHash const &hash, bool ignore_timeout)
     record = hostDB.refcountcache->get(folded_hash);
     // If there was nothing in the cache-- this is a miss
     if (record.get() == nullptr) {
+      record = probe_ip(hash);
+      if (!record) {
+        record = probe_hostfile(hash);
+      }
       return record;
     }
 
@@ -555,9 +591,10 @@ probe(HostDBHash const &hash, bool ignore_timeout)
 Action *
 HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_result, HostDBHash &hash, Options const &opt)
 {
-  bool            force_dns = false;
-  EThread        *thread    = this_ethread();
-  Ptr<ProxyMutex> mutex     = thread->mutex;
+  bool            force_dns        = false;
+  bool            delay_reschedule = false;
+  EThread        *thread           = this_ethread();
+  Ptr<ProxyMutex> mutex            = thread->mutex;
   ip_text_buffer  ipb;
 
   if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS) {
@@ -579,6 +616,7 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
     } else {
       MUTEX_TRY_LOCK(lock, cont->mutex, thread);
       if (!lock.is_locked()) {
+        delay_reschedule = true;
         goto Lretry;
       }
       cont->handleEvent(EVENT_HOST_DB_LOOKUP, nullptr);
@@ -650,7 +688,11 @@ Lretry:
   c->init(hash, copt);
   SET_CONTINUATION_HANDLER(c, &HostDBContinuation::probeEvent);
 
-  c->timeout = thread->schedule_in(c, MUTEX_RETRY_DELAY);
+  if (delay_reschedule) {
+    c->timeout = thread->schedule_in(c, MUTEX_RETRY_DELAY);
+  } else {
+    thread->schedule_imm(c);
+  }
 
   return &c->action;
 }
@@ -784,9 +826,9 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
 {
   ink_assert(record);
   if (query_name.empty()) {
-    if (is_byname()) {
+    if (hash.is_byname()) {
       Dbg(dbg_ctl_hostdb, "lookup_done() failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
-    } else if (is_srv()) {
+    } else if (hash.is_srv()) {
       Dbg(dbg_ctl_dns_srv, "SRV failed for '%.*s'", int(hash.host_name.size()), hash.host_name.data());
     } else {
       ip_text_buffer b;
@@ -795,9 +837,9 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
     record->ip_timestamp        = hostdb_current_timestamp;
     record->ip_timeout_interval = ts_seconds(std::clamp(hostdb_ip_fail_timeout_interval, 1u, HOST_DB_MAX_TTL));
 
-    if (is_srv()) {
+    if (hash.is_srv()) {
       record->record_type = HostDBType::SRV;
-    } else if (!is_byname()) {
+    } else if (!hash.is_byname()) {
       record->record_type = HostDBType::HOST;
     }
 
@@ -829,9 +871,9 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
     record->ip_timestamp        = hostdb_current_timestamp;
     record->ip_timeout_interval = std::clamp(answer_ttl, ts_seconds(1), ts_seconds(HOST_DB_MAX_TTL));
 
-    if (is_byname()) {
+    if (hash.is_byname()) {
       Dbg_bw(dbg_ctl_hostdb, "done {} TTL {}", hash.host_name, answer_ttl);
-    } else if (is_srv()) {
+    } else if (hash.is_srv()) {
       ink_assert(srv && srv->hosts.size() && srv->hosts.size() <= hostdb_round_robin_max_count);
 
       record->record_type = HostDBType::SRV;
@@ -935,7 +977,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
 
     // Find the first record and total number of records.
     if (!failed) {
-      if (is_srv()) {
+      if (hash.is_srv()) {
         valid_records = e->srv_hosts.hosts.size();
       } else {
         void *ptr; // tmp for current entry.
@@ -978,9 +1020,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     if (failed && old_r && old_r->serve_stale_but_revalidate()) {
       r           = old_r;
       serve_stale = true;
-    } else if (is_byname()) {
+    } else if (hash.is_byname()) {
       lookup_done(hash.host_name, ttl, failed ? nullptr : &e->srv_hosts, r);
-    } else if (is_srv()) {
+    } else if (hash.is_srv()) {
       lookup_done(hash.host_name, /* hostname */
                   ttl,            /* ttl in seconds */
                   failed ? nullptr : &e->srv_hosts, r);
@@ -993,7 +1035,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     if (!failed) { // implies r != old_r
       auto rr_info = r->rr_info();
       // Fill in record type specific data.
-      if (is_srv()) {
+      if (hash.is_srv()) {
         char *pos = rr_info.rebind<char>().end();
         SRV  *q[valid_records];
         ink_assert(valid_records <= (int)hostdb_round_robin_max_count);
@@ -1067,7 +1109,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
           if (action.continuation->mutex) {
             ink_release_assert(action.continuation->mutex == action.mutex);
           }
-          reply_to_cont(action.continuation, r.get(), is_srv());
+          reply_to_cont(action.continuation, r.get(), hash.is_srv());
         }
         need_to_reschedule = false;
       }
@@ -1190,14 +1232,14 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   if (!force_dns) {
     // Do the probe
     //
-    Ptr<HostDBRecord> r = probe(hash, false);
+    HostDBRecord::Handle r = probe(hash, false);
 
     if (r) {
       Metrics::Counter::increment(hostdb_rsb.total_hits);
     }
 
     if (action.continuation && r) {
-      reply_to_cont(action.continuation, r.get(), is_srv());
+      reply_to_cont(action.continuation, r.get(), hash.is_srv());
     }
 
     // If it succeeds or it was a remote probe, we are done
@@ -1283,37 +1325,6 @@ void
 HostDBContinuation::do_dns()
 {
   ink_assert(!action.cancelled);
-  if (is_byname()) {
-    Dbg(dbg_ctl_hostdb, "DNS %.*s", int(hash.host_name.size()), hash.host_name.data());
-    IpAddr tip;
-    if (0 == tip.load(hash.host_name)) {
-      // Need to consider if this is necessary - could the record in ResolveInfo be left null and
-      // just the resolved address set?
-      if (action.continuation) {
-        HostDBRecord::Handle r{HostDBRecord::alloc(hash.host_name, 1)};
-        r->af_family = tip.family();
-        auto &info   = r->rr_info()[0];
-        info.assign(tip);
-        // tricksy - @a reply_to_cont must use an intrusive pointer to @a r if it needs to persist
-        // @a r doesn't go out of scope until after this returns. This continuation shares the mutex
-        // of the target continuation therefore this is always dispatched synchronously.
-        reply_to_cont(action.continuation, r.get());
-      }
-      hostdb_cont_free(this);
-      return;
-    }
-  }
-
-  // Check if this can be fulfilled by the host file
-  if (auto static_hosts = hostDB.acquire_host_file(); static_hosts) {
-    if (auto r = static_hosts->lookup(hash); r && action.continuation) {
-      // Set the TTL based on how often we stat() the host file
-      r = lookup_done(r->name_view(), static_hosts->ttl, nullptr, r);
-      reply_to_cont(action.continuation, r.get());
-      hostdb_cont_free(this);
-      return;
-    }
-  }
 
   if (hostdb_lookup_timeout) {
     EThread *thread = this_ethread();
@@ -1326,12 +1337,12 @@ HostDBContinuation::do_dns()
     opt.timeout        = dns_lookup_timeout;
     opt.host_res_style = host_res_style_for(hash.db_mark);
     SET_HANDLER(&HostDBContinuation::dnsEvent);
-    if (is_byname()) {
+    if (hash.is_byname()) {
       if (hash.dns_server) {
         opt.handler = hash.dns_server->x_dnsH;
       }
       pending_action = dnsProcessor.gethostbyname(this, hash.host_name, opt);
-    } else if (is_srv()) {
+    } else if (hash.is_srv()) {
       Dbg(dbg_ctl_dns_srv, "SRV lookup of %.*s", int(hash.host_name.size()), hash.host_name.data());
       pending_action = dnsProcessor.getSRVbyname(this, hash.host_name, opt);
     } else {

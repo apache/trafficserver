@@ -196,6 +196,24 @@ struct HostDBHash {
   {
     return this->set_host(swoc::TextView{name, strlen(name)});
   }
+
+  bool
+  is_byname() const
+  {
+    return db_mark == HOSTDB_MARK_IPV4 || db_mark == HOSTDB_MARK_IPV6;
+  }
+
+  bool
+  is_srv() const
+  {
+    return db_mark == HOSTDB_MARK_SRV;
+  }
+
+  bool
+  is_reverse() const
+  {
+    return !is_byname() && !is_srv();
+  }
 };
 
 //
@@ -238,23 +256,6 @@ struct HostDBContinuation : public Continuation {
   /// Recompute the hash and update ancillary values.
   void refresh_hash();
   void do_dns();
-  bool
-  is_byname()
-  {
-    return hash.db_mark == HOSTDB_MARK_IPV4 || hash.db_mark == HOSTDB_MARK_IPV6;
-  }
-  bool
-  is_srv()
-  {
-    return hash.db_mark == HOSTDB_MARK_SRV;
-  }
-
-  bool
-  is_reverse()
-  {
-    return !is_byname() && !is_srv();
-  }
-
   Ptr<HostDBRecord>
   lookup_done(const char *query_name, ts_seconds answer_ttl, SRVHosts *s = nullptr, Ptr<HostDBRecord> record = Ptr<HostDBRecord>{})
   {
