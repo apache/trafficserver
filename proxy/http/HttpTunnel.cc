@@ -137,7 +137,7 @@ ChunkedHandler::set_max_chunk_size(int64_t size)
 int64_t
 ChunkedHandler::read_size()
 {
-  int64_t bytes_used = 0;
+  int64_t bytes_consumed = 0;
   bool done = false;
   int cr    = 0;
 
@@ -146,7 +146,7 @@ ChunkedHandler::read_size()
     int64_t data_size = chunked_reader->block_read_avail();
 
     ink_assert(data_size > 0);
-    bytes_used = 0;
+    int64_t bytes_used = 0;
 
     while (data_size > 0) {
       bytes_used++;
@@ -221,8 +221,9 @@ ChunkedHandler::read_size()
       chunked_size += bytes_used;
     }
     chunked_reader->consume(bytes_used);
+    bytes_consumed += bytes_used;
   }
-  return bytes_used;
+  return bytes_consumed;
 }
 
 // int ChunkedHandler::transfer_bytes()
@@ -297,14 +298,15 @@ ChunkedHandler::read_chunk()
 int64_t
 ChunkedHandler::read_trailer()
 {
-  int64_t bytes_used = 0;
-  bool done          = false;
+  int64_t bytes_consumed = 0;
+  bool done              = false;
 
   while (chunked_reader->is_read_avail_more_than(0) && !done) {
     const char *tmp   = chunked_reader->start();
     int64_t data_size = chunked_reader->block_read_avail();
 
     ink_assert(data_size > 0);
+    int64_t bytes_used = 0;
     for (bytes_used = 0; data_size > 0; data_size--) {
       bytes_used++;
 
@@ -342,8 +344,9 @@ ChunkedHandler::read_trailer()
       tmp++;
     }
     chunked_reader->consume(bytes_used);
+    bytes_consumed += bytes_used;
   }
-  return bytes_used;
+  return bytes_consumed;
 }
 
 std::pair<int64_t, bool>
