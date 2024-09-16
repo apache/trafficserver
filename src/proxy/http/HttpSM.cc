@@ -501,7 +501,11 @@ HttpSM::setup_blind_tunnel_port()
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       } else {
-        t_state.hdr_info.client_request.url_get()->host_set(netvc->get_server_name(), strlen(netvc->get_server_name()));
+        const char *server_name = "";
+        if (auto *snis = netvc->get_service<TLSSNISupport>(); snis) {
+          server_name = snis->get_sni_server_name();
+        }
+        t_state.hdr_info.client_request.url_get()->host_set(server_name, strlen(server_name));
         t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
@@ -1375,7 +1379,11 @@ plugins required to work with sni_routing.
             t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
           }
         } else {
-          t_state.hdr_info.client_request.url_get()->host_set(netvc->get_server_name(), strlen(netvc->get_server_name()));
+          const char *server_name = "";
+          if (auto *snis = netvc->get_service<TLSSNISupport>(); snis) {
+            server_name = snis->get_sni_server_name();
+          }
+          t_state.hdr_info.client_request.url_get()->host_set(server_name, strlen(server_name));
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       }
@@ -4318,7 +4326,7 @@ HttpSM::check_sni_host()
     // In a SNI/Host mismatch where the Host would have triggered SNI policy, mark the transaction
     // to be considered for rejection after the remap phase passes.  Gives the opportunity to conf_remap
     // override the policy to be rejected in the end_remap logic
-    const char *sni_value    = netvc->get_server_name();
+    const char *sni_value    = snis->get_sni_server_name();
     const char *action_value = host_sni_policy == 2 ? "terminate" : "continue";
     if (!sni_value || sni_value[0] == '\0') { // No SNI
       Warning("No SNI for TLS request with hostname %.*s action=%s", host_len, host_name, action_value);
@@ -5132,9 +5140,11 @@ HttpSM::get_outbound_sni() const
   swoc::TextView zret;
   swoc::TextView policy{t_state.txn_conf->ssl_client_sni_policy, swoc::TextView::npos};
 
+  TLSSNISupport *snis = nullptr;
   if (_ua.get_txn()) {
     if (auto *netvc = _ua.get_txn()->get_netvc(); netvc) {
-      if (auto *snis = netvc->get_service<TLSSNISupport>(); snis && snis->hints_from_sni.outbound_sni_policy.has_value()) {
+      snis = netvc->get_service<TLSSNISupport>();
+      if (snis && snis->hints_from_sni.outbound_sni_policy.has_value()) {
         policy.assign(snis->hints_from_sni.outbound_sni_policy->data(), swoc::TextView::npos);
       }
     }
@@ -5146,7 +5156,12 @@ HttpSM::get_outbound_sni() const
     char const *ptr = t_state.hdr_info.server_request.host_get(&len);
     zret.assign(ptr, len);
   } else if (_ua.get_txn() && policy == "server_name"_tv) {
-    zret.assign(_ua.get_txn()->get_netvc()->get_server_name(), swoc::TextView::npos);
+    const char *server_name = snis->get_sni_server_name();
+    if (server_name[0] == '\0') {
+      zret.assign(nullptr, swoc::TextView::npos);
+    } else {
+      zret.assign(snis->get_sni_server_name(), swoc::TextView::npos);
+    }
   } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
     zret = policy.remove_prefix(1);
   } else {

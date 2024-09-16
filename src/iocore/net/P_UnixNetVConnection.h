@@ -60,12 +60,6 @@ public:
 
   bool get_data(int id, void *data) override;
 
-  const char *
-  get_server_name() const override
-  {
-    return nullptr;
-  }
-
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
 
