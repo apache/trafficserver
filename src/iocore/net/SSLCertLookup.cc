@@ -29,8 +29,6 @@
 #include "swoc/BufferWriter.h"
 #include "swoc/bwf_base.h"
 
-#include "tscore/TestBox.h"
-
 #include "tsutil/Convert.h"
 
 #include "P_SSLUtils.h"
@@ -527,6 +525,8 @@ SSLContextStorage::lookup(const std::string &name)
 }
 
 #if TS_HAS_TESTS
+
+#include "tscore/TestBox.h"
 
 static char *
 reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
