@@ -54,6 +54,11 @@ RuleSet::add_condition(Parser &p, const char *filename, int lineno)
               TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
       return false;
     }
+    if (c->get_cond_op() == MATCH_ERROR) {
+      delete c;
+      TSError("[%s] in %s:%d: Invalid operator", PLUGIN_NAME, filename, lineno);
+      return false;
+    }
     if (nullptr == _cond) {
       _cond = c;
     } else {
