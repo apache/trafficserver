@@ -75,11 +75,12 @@ TEST_CASE("Store DATA Frame", "[http3]")
       0x11, 0x22, 0x33, 0x44, // Payload
     };
 
-    uint8_t        raw1[]   = "\x11\x22\x33\x44";
-    ats_unique_buf payload1 = ats_unique_malloc(4);
-    memcpy(payload1.get(), raw1, 4);
-
-    Http3DataFrame data_frame(std::move(payload1), 4);
+    uint8_t    raw1[]   = "\x11\x22\x33\x44";
+    MIOBuffer *payload1 = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+    payload1->set(raw1, 4);
+    IOBufferReader *payload1_reader = payload1->alloc_reader();
+    Http3DataFrame  data_frame(*payload1_reader, 4);
+    free_MIOBuffer(payload1);
     CHECK(data_frame.length() == 4);
 
     auto           ibb = data_frame.to_io_buffer_block();
