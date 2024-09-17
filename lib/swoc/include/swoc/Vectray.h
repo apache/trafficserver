@@ -248,7 +248,7 @@ template <typename T, size_t N, class A> template <size_t M> Vectray<T, N, A>::V
     if (span.size() > N) {
     } else {
       for (auto &&item : span) {
-        this->template emplace_back(std::move(item));
+        this->template emplace_back<T, N, A>(std::move(item));
       }
     }
   }
@@ -287,7 +287,7 @@ Vectray<T, N, A>::operator[](size_type idx) {
 template <typename T, size_t N, typename A>
 T const &
 Vectray<T, N, A>::operator[](size_type idx) const {
-  return this->items[idx];
+  return this->items()[idx];
 }
 
 template <typename T, size_t N, typename A>
