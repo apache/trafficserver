@@ -24,11 +24,9 @@
 #pragma once
 
 #include "ts/apidefs.h"
-
-#include "tscore/ink_platform.h"
 #include "tscore/ink_hrtime.h"
 
-#include "iocore/eventsystem/EventSystem.h"
+#include <array>
 
 template <class T, size_t entries> class Milestones
 {
