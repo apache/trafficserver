@@ -86,7 +86,9 @@ QUICNetProcessor::start(int, size_t /* stacksize ATS_UNUSED */)
   QUICCertConfig::startup();
   QUICConfig::scoped_config params;
 
-  quiche_enable_debug_logging(debug_log, NULL);
+  if (dbg_ctl_vv_quiche.tag_on()) {
+    quiche_enable_debug_logging(debug_log, NULL);
+  }
   this->_quiche_config = quiche_config_new(QUICHE_PROTOCOL_VERSION);
 
   std::string quic_app_protos = "\02h3\x05h3-29\x05h3-27";
