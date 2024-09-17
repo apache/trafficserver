@@ -785,7 +785,7 @@ template <> struct formatter<cripts::Url::Scheme> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Url::Scheme &scheme, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Url::Scheme &scheme, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", scheme.GetSV());
   }
@@ -800,7 +800,7 @@ template <> struct formatter<cripts::Url::Host> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Url::Host &host, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Url::Host &host, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", host.GetSV());
   }
@@ -815,7 +815,7 @@ template <> struct formatter<cripts::Url::Port> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Url::Port &port, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Url::Port &port, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(port));
   }
@@ -830,7 +830,7 @@ template <> struct formatter<cripts::Url::Path::String> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Url::Path::String &path, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Url::Path::String &path, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", path.GetSV());
   }
@@ -845,7 +845,7 @@ template <> struct formatter<cripts::Url::Path> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Url::Path &path, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Url::Path &path, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", path.GetSV());
   }
@@ -860,7 +860,7 @@ template <> struct formatter<cripts::Url::Query::Parameter> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Url::Query::Parameter &param, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Url::Query::Parameter &param, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", param.GetSV());
   }
@@ -875,7 +875,7 @@ template <> struct formatter<cripts::Url::Query> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Url::Query &query, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Url::Query &query, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", query.GetSV());
   }

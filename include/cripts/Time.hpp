@@ -139,7 +139,7 @@ template <> struct formatter<cripts::Time::Local> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Time::Local &time, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Time::Local &time, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", time.Epoch());
   }

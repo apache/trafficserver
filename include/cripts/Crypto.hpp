@@ -275,7 +275,7 @@ template <> struct formatter<cripts::Crypto::SHA256> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Crypto::SHA256 &sha, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Crypto::SHA256 &sha, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", sha.Hex());
   }
@@ -290,7 +290,7 @@ template <> struct formatter<cripts::Crypto::SHA512> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Crypto::SHA512 &sha, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Crypto::SHA512 &sha, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", sha.Hex());
   }
@@ -305,7 +305,7 @@ template <> struct formatter<cripts::Crypto::AES256> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Crypto::AES256 &sha, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Crypto::AES256 &sha, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", cripts::Crypto::Base64::Encode(sha.Message()));
   }
