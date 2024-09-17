@@ -525,7 +525,7 @@ template <> struct formatter<cripts::Header::Method> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Header::Method &method, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Header::Method &method, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", method.GetSV());
   }
@@ -540,7 +540,7 @@ template <> struct formatter<cripts::Header::String> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Header::String &str, FormatContext &ctx) -> decltype(ctx.out())
+  format(const cripts::Header::String &str, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", str.GetSV());
   }
@@ -555,7 +555,7 @@ template <> struct formatter<cripts::Header::Name> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Header::Name &name, FormatContext &ctx) -> decltype(ctx.out())
+  format(const cripts::Header::Name &name, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", name.GetSV());
   }

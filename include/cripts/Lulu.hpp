@@ -549,7 +549,7 @@ template <> struct formatter<cripts::Versions> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Versions &version, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Versions &version, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", version.GetSV());
   }
@@ -564,7 +564,7 @@ template <> struct formatter<cripts::Versions::Major> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Versions::Major &major, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Versions::Major &major, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(major));
   }
@@ -579,7 +579,7 @@ template <> struct formatter<cripts::Versions::Minor> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Versions::Minor &minor, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Versions::Minor &minor, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(minor));
   }
@@ -594,7 +594,7 @@ template <> struct formatter<cripts::Versions::Patch> {
 
   template <typename FormatContext>
   auto
-  format(cripts::Versions::Patch &patch, FormatContext &ctx) -> decltype(ctx.out())
+  format(cripts::Versions::Patch &patch, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", integer(patch));
   }
@@ -609,7 +609,7 @@ template <> struct formatter<TSHttpStatus> {
 
   template <typename FormatContext>
   auto
-  format(const TSHttpStatus &stat, FormatContext &ctx) -> decltype(ctx.out())
+  format(const TSHttpStatus &stat, FormatContext &ctx) const -> decltype(ctx.out())
   {
     return fmt::format_to(ctx.out(), "{}", static_cast<int>(stat));
   }
