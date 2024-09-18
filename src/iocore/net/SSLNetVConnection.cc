@@ -812,6 +812,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 
   Dbg(dbg_ctl_ssl, "towrite=%" PRId64, towrite);
 
+  ERR_clear_error();
   do {
     // What is remaining left in the next block?
     l                   = buf.reader()->block_read_avail();
@@ -2491,7 +2492,6 @@ SSLNetVConnection::_ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &n
   if (unlikely(nbytes == 0)) {
     return SSL_ERROR_NONE;
   }
-  ERR_clear_error();
 
   int ret;
   // If SSL_write_early_data is available, it's probably OpenSSL,
