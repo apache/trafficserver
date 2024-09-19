@@ -72,8 +72,8 @@ protected:
   int                   invoke_tls_event();
   void                  resume_tls_event();
 
-  virtual bool _is_tunneling_requested()   = 0;
-  virtual void _switch_to_tunneling_mode() = 0;
+  virtual bool _is_tunneling_requested() const = 0;
+  virtual void _switch_to_tunneling_mode()     = 0;
 
 private:
   static int _ex_data_index;

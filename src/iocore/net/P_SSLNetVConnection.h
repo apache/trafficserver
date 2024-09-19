@@ -364,7 +364,7 @@ protected:
 
   // TLSEventSupport
   bool
-  _is_tunneling_requested() override
+  _is_tunneling_requested() const override
   {
     return SSL_HOOK_OP_TUNNEL == hookOpRequested;
   }

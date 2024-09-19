@@ -181,7 +181,7 @@ protected:
 
   // TLSEventSupport
   bool
-  _is_tunneling_requested() override
+  _is_tunneling_requested() const override
   {
     // FIXME Not Supported
     return false;
