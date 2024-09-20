@@ -127,8 +127,6 @@ TLSSNISupport::on_client_hello(ClientHello &client_hello)
 void
 TLSSNISupport::on_servername(SSL *ssl, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
 {
-  this->_fire_ssl_servername_event();
-
   const char *name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (name) {
     this->_set_sni_server_name(name);

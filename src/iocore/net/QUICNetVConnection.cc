@@ -24,9 +24,12 @@
 #include "P_SSLUtils.h"
 #include "P_QUICNetVConnection.h"
 #include "P_QUICPacketHandler.h"
+#include "api/APIHook.h"
+#include "iocore/eventsystem/EThread.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
 #include "iocore/net/quic/QUICStream.h"
 #include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/SSLAPIHooks.h"
 
 #include <netinet/in.h>
 #include <quiche.h>
@@ -49,6 +52,7 @@ QUICNetVConnection::QUICNetVConnection()
 {
   this->_set_service(static_cast<ALPNSupport *>(this));
   this->_set_service(static_cast<TLSBasicSupport *>(this));
+  this->_set_service(static_cast<TLSEventSupport *>(this));
   this->_set_service(static_cast<TLSCertSwitchSupport *>(this));
   this->_set_service(static_cast<TLSSNISupport *>(this));
   this->_set_service(static_cast<TLSSessionResumptionSupport *>(this));
@@ -142,6 +146,7 @@ QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
   super::clear();
   ALPNSupport::clear();
   TLSBasicSupport::clear();
+  TLSEventSupport::clear();
   TLSCertSwitchSupport::_clear();
 
   this->_packet_handler->close_connection(this);
@@ -540,6 +545,7 @@ void
 QUICNetVConnection::_bindSSLObject()
 {
   TLSBasicSupport::bind(this->_ssl, this);
+  TLSEventSupport::bind(this->_ssl, this);
   ALPNSupport::bind(this->_ssl, this);
   TLSSessionResumptionSupport::bind(this->_ssl, this);
   TLSSNISupport::bind(this->_ssl, this);
@@ -551,6 +557,7 @@ void
 QUICNetVConnection::_unbindSSLObject()
 {
   TLSBasicSupport::unbind(this->_ssl);
+  TLSEventSupport::unbind(this->_ssl);
   ALPNSupport::unbind(this->_ssl);
   TLSSessionResumptionSupport::unbind(this->_ssl);
   TLSSNISupport::unbind(this->_ssl);
@@ -761,6 +768,29 @@ QUICNetVConnection::get_quic_connection()
   return static_cast<QUICConnection *>(this);
 }
 
+void
+QUICNetVConnection::reenable(int /* event ATS_UNUSED */)
+{
+}
+
+Continuation *
+QUICNetVConnection::getContinuationForTLSEvents()
+{
+  return this;
+}
+
+EThread *
+QUICNetVConnection::getThreadForTLSEvents()
+{
+  return this->thread;
+}
+
+Ptr<ProxyMutex>
+QUICNetVConnection::getMutexForTLSEvents()
+{
+  return this->nh->mutex;
+}
+
 SSL *
 QUICNetVConnection::_get_ssl_object() const
 {
@@ -775,11 +805,6 @@ QUICNetVConnection::_get_tls_curve() const
   } else {
     return SSLGetCurveNID(this->_ssl);
   }
-}
-
-void
-QUICNetVConnection::_fire_ssl_servername_event()
-{
 }
 
 in_port_t

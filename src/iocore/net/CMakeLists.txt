@@ -55,6 +55,7 @@ add_library(
   SSLUtils.cc
   OCSPStapling.cc
   TLSBasicSupport.cc
+  TLSEventSupport.cc
   TLSCertSwitchSupport.cc
   TLSEarlyDataSupport.cc
   TLSKeyLogger.cc
