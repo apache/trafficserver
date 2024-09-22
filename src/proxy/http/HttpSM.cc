@@ -193,6 +193,7 @@ initialize_thread_for_connecting_pools(EThread *thread)
   {                                                                                      \
     /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE); */ REMEMBER(event, reentrancy_count);   \
     SMDbg(dbg_ctl_http, "[%s, %s]", #state_name, HttpDebugNames::get_event_name(event)); \
+    ATS_PROBE1(state_name, sm_id);                                                       \
   }
 
 #define HTTP_SM_SET_DEFAULT_HANDLER(_h)   \
@@ -277,6 +278,7 @@ HttpSM::destroy()
 void
 HttpSM::init(bool from_early_data)
 {
+  ATS_PROBE1(milestone_sm_start, sm_id);
   milestones[TS_MILESTONE_SM_START] = ink_get_hrtime();
 
   _from_early_data = from_early_data;
@@ -373,6 +375,7 @@ HttpSM::start_sub_sm()
 void
 HttpSM::attach_client_session(ProxyTransaction *txn)
 {
+  ATS_PROBE1(milestone_ua_begin, sm_id);
   milestones[TS_MILESTONE_UA_BEGIN] = ink_get_hrtime();
   ink_assert(txn != nullptr);
 
@@ -501,7 +504,11 @@ HttpSM::setup_blind_tunnel_port()
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       } else {
-        t_state.hdr_info.client_request.url_get()->host_set(netvc->get_server_name(), strlen(netvc->get_server_name()));
+        const char *server_name = "";
+        if (auto *snis = netvc->get_service<TLSSNISupport>(); snis) {
+          server_name = snis->get_sni_server_name();
+        }
+        t_state.hdr_info.client_request.url_get()->host_set(server_name, strlen(server_name));
         t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
@@ -562,6 +569,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   //   the accept timeout by the ProxyTransaction
   //
   if ((_ua.get_txn()->get_remote_reader()->read_avail() > 0) && (client_request_hdr_bytes == 0)) {
+    ATS_PROBE1(milestone_ua_first_read, sm_id);
     milestones[TS_MILESTONE_UA_FIRST_READ] = ink_get_hrtime();
     _ua.get_txn()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
   }
@@ -632,6 +640,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     _ua.get_entry()->vc_read_handler  = &HttpSM::state_watch_for_client_abort;
     _ua.get_entry()->vc_write_handler = &HttpSM::state_watch_for_client_abort;
     _ua.get_txn()->cancel_inactivity_timeout();
+    ATS_PROBE1(milestone_ua_read_header_done, sm_id);
     milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = ink_get_hrtime();
   }
 
@@ -882,6 +891,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
     if (_ua.get_entry()->read_vio) {
       _ua.get_entry()->read_vio->nbytes = _ua.get_entry()->read_vio->ndone;
     }
+    ATS_PROBE1(milestone_ua_close, sm_id);
     milestones[TS_MILESTONE_UA_CLOSE] = ink_get_hrtime();
     set_ua_abort(HttpTransact::ABORTED, event);
 
@@ -1030,6 +1040,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
     // Disable further IO
     _ua.get_entry()->read_vio->nbytes = _ua.get_entry()->read_vio->ndone;
     http_parser_clear(&http_parser);
+    ATS_PROBE1(milestone_server_read_header_done, sm_id);
     milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = ink_get_hrtime();
   }
 
@@ -1064,6 +1075,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_raw_http_server_open, event);
   ink_assert(server_entry == nullptr);
+  ATS_PROBE1(milestone_server_connect_end, sm_id);
   milestones[TS_MILESTONE_SERVER_CONNECT_END] = ink_get_hrtime();
   NetVConnection *netvc                       = nullptr;
 
@@ -1375,7 +1387,11 @@ plugins required to work with sni_routing.
             t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
           }
         } else {
-          t_state.hdr_info.client_request.url_get()->host_set(netvc->get_server_name(), strlen(netvc->get_server_name()));
+          const char *server_name = "";
+          if (auto *snis = netvc->get_service<TLSSNISupport>(); snis) {
+            server_name = snis->get_sni_server_name();
+          }
+          t_state.hdr_info.client_request.url_get()->host_set(server_name, strlen(server_name));
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       }
@@ -1752,6 +1768,7 @@ HttpSM::state_http_server_open(int event, void *data)
   if (event != NET_EVENT_OPEN) {
     pending_action = nullptr;
   }
+  ATS_PROBE1(milestone_server_connect_end, sm_id);
   milestones[TS_MILESTONE_SERVER_CONNECT_END] = ink_get_hrtime();
 
   switch (event) {
@@ -1911,6 +1928,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   //   the connect timeout when we set up to read the header
   //
   if (server_response_hdr_bytes == 0) {
+    ATS_PROBE1(milestone_server_first_read, sm_id);
     milestones[TS_MILESTONE_SERVER_FIRST_READ] = ink_get_hrtime();
 
     server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
@@ -1945,6 +1963,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     // Disable further IO
     server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
+    ATS_PROBE1(milestone_server_read_header_done, sm_id);
     milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = ink_get_hrtime();
 
     // Any other events to the end
@@ -2290,6 +2309,7 @@ HttpSM::process_hostdb_info(HostDBRecord *record)
     SMDbg(dbg_ctl_http, "[%" PRId64 "] resolution failed for '%s'", sm_id, t_state.dns_info.lookup_name);
   }
 
+  ATS_PROBE1(milestone_dns_lookup_end, sm_id);
   milestones[TS_MILESTONE_DNS_LOOKUP_END] = ink_get_hrtime();
 
   if (dbg_ctl_http_timeout.on()) {
@@ -2427,6 +2447,7 @@ HttpSM::state_cache_open_write(int event, void *data)
 
   pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
 
+  ATS_PROBE1(milestone_cache_open_write_end, sm_id);
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_END] = ink_get_hrtime();
   pending_action                                = nullptr;
 
@@ -2589,6 +2610,7 @@ HttpSM::state_cache_open_read(int event, void *data)
     break;
   }
 
+  ATS_PROBE1(milestone_cache_open_read_end, sm_id);
   milestones[TS_MILESTONE_CACHE_OPEN_READ_END] = ink_get_hrtime();
 
   return 0;
@@ -3046,6 +3068,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   // TS_MILESTONE_SERVER_CONNECT is set (non-zero), lest certain time
   // statistics are calculated from epoch time.
   if (0 != milestones[TS_MILESTONE_SERVER_CONNECT]) {
+    ATS_PROBE1(milestone_server_close, sm_id);
     milestones[TS_MILESTONE_SERVER_CLOSE] = ink_get_hrtime();
   }
 
@@ -3412,6 +3435,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
 
   STATE_ENTER(&HttpSM::tunnel_handler_ua, event);
   ink_assert(c->vc == _ua.get_txn());
+  ATS_PROBE1(milestone_ua_close, sm_id);
   milestones[TS_MILESTONE_UA_CLOSE] = ink_get_hrtime();
 
   switch (event) {
@@ -3547,6 +3571,7 @@ HttpSM::tunnel_handler_trailer_ua(int event, HttpTunnelConsumer *c)
 
   STATE_ENTER(&HttpSM::tunnel_handler_trailer_ua, event);
   ink_assert(c->vc == _ua.get_txn());
+  ATS_PROBE1(milestone_ua_close, sm_id);
   milestones[TS_MILESTONE_UA_CLOSE] = ink_get_hrtime();
 
   switch (event) {
@@ -4318,7 +4343,7 @@ HttpSM::check_sni_host()
     // In a SNI/Host mismatch where the Host would have triggered SNI policy, mark the transaction
     // to be considered for rejection after the remap phase passes.  Gives the opportunity to conf_remap
     // override the policy to be rejected in the end_remap logic
-    const char *sni_value    = netvc->get_server_name();
+    const char *sni_value    = snis->get_sni_server_name();
     const char *action_value = host_sni_policy == 2 ? "terminate" : "continue";
     if (!sni_value || sni_value[0] == '\0') { // No SNI
       Warning("No SNI for TLS request with hostname %.*s action=%s", host_len, host_name, action_value);
@@ -4424,6 +4449,7 @@ HttpSM::do_hostdb_lookup()
   ink_assert(t_state.dns_info.lookup_name != nullptr);
   ink_assert(pending_action.empty());
 
+  ATS_PROBE1(milestone_dns_lookup_begin, sm_id);
   milestones[TS_MILESTONE_DNS_LOOKUP_BEGIN] = ink_get_hrtime();
 
   // If directed to not look up fqdns then mark as resolved
@@ -4932,6 +4958,7 @@ HttpSM::do_cache_lookup_and_read()
 
   Metrics::Counter::increment(http_rsb.cache_lookups);
 
+  ATS_PROBE1(milestone_cache_open_read_begin, sm_id);
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
   t_state.cache_lookup_result                    = HttpTransact::CACHE_LOOKUP_NONE;
   t_state.cache_info.lookup_count++;
@@ -4985,6 +5012,7 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
 inline void
 HttpSM::do_cache_prepare_write()
 {
+  ATS_PROBE1(milestone_cache_open_write_begin, sm_id);
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN] = ink_get_hrtime();
   do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, true);
 }
@@ -5132,9 +5160,11 @@ HttpSM::get_outbound_sni() const
   swoc::TextView zret;
   swoc::TextView policy{t_state.txn_conf->ssl_client_sni_policy, swoc::TextView::npos};
 
+  TLSSNISupport *snis = nullptr;
   if (_ua.get_txn()) {
     if (auto *netvc = _ua.get_txn()->get_netvc(); netvc) {
-      if (auto *snis = netvc->get_service<TLSSNISupport>(); snis && snis->hints_from_sni.outbound_sni_policy.has_value()) {
+      snis = netvc->get_service<TLSSNISupport>();
+      if (snis && snis->hints_from_sni.outbound_sni_policy.has_value()) {
         policy.assign(snis->hints_from_sni.outbound_sni_policy->data(), swoc::TextView::npos);
       }
     }
@@ -5146,7 +5176,12 @@ HttpSM::get_outbound_sni() const
     char const *ptr = t_state.hdr_info.server_request.host_get(&len);
     zret.assign(ptr, len);
   } else if (_ua.get_txn() && policy == "server_name"_tv) {
-    zret.assign(_ua.get_txn()->get_netvc()->get_server_name(), swoc::TextView::npos);
+    const char *server_name = snis->get_sni_server_name();
+    if (server_name[0] == '\0') {
+      zret.assign(nullptr, swoc::TextView::npos);
+    } else {
+      zret.assign(snis->get_sni_server_name(), swoc::TextView::npos);
+    }
   } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
     zret = policy.remove_prefix(1);
   } else {
@@ -5300,8 +5335,10 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   SMDbg(dbg_ctl_http_seq, "Sending request to server");
 
   // set the server first connect milestone here in case we return in the plugin_tunnel case that follows
+  ATS_PROBE1(milestone_server_connect, sm_id);
   milestones[TS_MILESTONE_SERVER_CONNECT] = ink_get_hrtime();
   if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] == 0) {
+    ATS_PROBE1(milestone_server_first_connect, sm_id);
     milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] = milestones[TS_MILESTONE_SERVER_CONNECT];
   }
 
@@ -5694,7 +5731,8 @@ HttpSM::do_api_callout_internal()
     cur_hook_id = TS_HTTP_READ_RESPONSE_HDR_HOOK;
     break;
   case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
-    cur_hook_id                             = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
+    cur_hook_id = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
+    ATS_PROBE1(milestone_ua_begin_write, sm_id);
     milestones[TS_MILESTONE_UA_BEGIN_WRITE] = ink_get_hrtime();
     break;
   case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
@@ -6624,6 +6662,7 @@ HttpSM::setup_server_send_request()
     server_request_body_bytes  = msg_len;
   }
 
+  ATS_PROBE1(milestone_server_begin_write, sm_id);
   milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = ink_get_hrtime();
   server_entry->write_vio                     = server_entry->vc->do_io_write(this, hdr_length, buf_start);
 
@@ -7201,6 +7240,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
   IOBufferReader     *r_from      = from_ua_buf->alloc_reader();
   IOBufferReader     *r_to        = to_ua_buf->alloc_reader();
 
+  ATS_PROBE1(milestone_server_begin_write, sm_id);
   milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = ink_get_hrtime();
   if (send_response_hdr) {
     client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, to_ua_buf);
@@ -7524,6 +7564,7 @@ HttpSM::kill_this()
 void
 HttpSM::update_stats()
 {
+  ATS_PROBE1(milestone_sm_finish, sm_id);
   milestones[TS_MILESTONE_SM_FINISH] = ink_get_hrtime();
 
   if (is_action_tag_set("bad_length_state_dump")) {
@@ -7545,6 +7586,7 @@ HttpSM::update_stats()
   // ua_close will not be assigned properly in some exceptional situation.
   // TODO: Assign ua_close with suitable value when HttpTunnel terminates abnormally.
   if (milestones[TS_MILESTONE_UA_CLOSE] == 0 && milestones[TS_MILESTONE_UA_READ_HEADER_DONE] > 0) {
+    ATS_PROBE1(milestone_ua_close, sm_id);
     milestones[TS_MILESTONE_UA_CLOSE] = ink_get_hrtime();
   }
 

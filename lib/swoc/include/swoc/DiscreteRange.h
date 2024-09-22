@@ -464,7 +464,7 @@ template <typename T>
 auto
 DiscreteRange<T>::relationship(self_type const &that) const -> Relation {
   Relation retval = Relation::NONE;
-  if (this->has_intersection(that)) {
+  if (this->has_intersection_with(that)) {
     if (*this == that)
       retval = Relation::EQUAL;
     else if (this->is_subset_of(that))
@@ -568,7 +568,7 @@ DiscreteRange<T>::max() const {
 template <typename T>
 bool
 DiscreteRange<T>::has_union(DiscreteRange::self_type const &that) const {
-  return this->has_intersection(that) || this->is_adjacent_to(that);
+  return this->has_intersection_with(that) || this->is_adjacent_to(that);
 }
 
 template <typename T>
@@ -644,7 +644,7 @@ operator!=(DiscreteRange<T> const &lhs, DiscreteRange<T> const &rhs) {
 template <typename T>
 bool
 operator^(DiscreteRange<T> const &lhs, DiscreteRange<T> const &rhs) {
-  return lhs.has_intersection(rhs);
+  return lhs.has_intersection_with(rhs);
 }
 
 /** Containment ordering.

@@ -80,6 +80,13 @@ class JA3FingerprintTest:
         JA3FingerprintTest._server_counter += 1
         self._server.Streams.All += Testers.ContainsExpression("https-request", "Verify the HTTPS request was received.")
         self._server.Streams.All += Testers.ContainsExpression("http2-request", "Verify the HTTP/2 request was received.")
+        if not self._test_remap:
+            # Verify --preserve worked.
+            self._server.Streams.All += Testers.ContainsExpression("x-ja3-raw: .*,", "Verify the new raw header was added.")
+            self._server.Streams.All += Testers.ContainsExpression(
+                "x-ja3-raw: first-signature", "Verify the already-existing raw header was preserved.")
+            self._server.Streams.All += Testers.ExcludesExpression(
+                "x-ja3-raw: first-signature;", "Verify no extra values were added due to preserve.")
 
     def _configure_trafficserver(self) -> None:
         """Configure Traffic Server to be used in the test."""
@@ -97,7 +104,7 @@ class JA3FingerprintTest:
                 f'map https://http2.server.com https://http2.backend.com:{server_port} '
                 '@plugin=ja3_fingerprint.so @pparam=--ja3log')
         else:
-            arguments = '--ja3log --ja3raw'
+            arguments = '--ja3log --ja3raw --preserve'
             if self._modify_incoming:
                 arguments += ' --modify-incoming'
             self._ts.Disk.plugin_config.AddLine(f'ja3_fingerprint.so {arguments}')

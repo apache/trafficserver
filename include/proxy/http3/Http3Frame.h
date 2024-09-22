@@ -85,20 +85,19 @@ class Http3DataFrame : public Http3Frame
 public:
   Http3DataFrame() : Http3Frame() {}
   Http3DataFrame(IOBufferReader &reader);
-  Http3DataFrame(ats_unique_buf payload, size_t payload_len);
+  Http3DataFrame(IOBufferReader &reader, size_t payload_len);
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
   void               reset(IOBufferReader &reader) override;
 
-  const uint8_t *payload() const;
-  uint64_t       payload_length() const;
+  uint64_t payload_length() const;
 
   IOBufferReader *data() const;
 
 private:
-  const uint8_t *_payload      = nullptr;
-  ats_unique_buf _payload_uptr = {nullptr};
-  size_t         _payload_len  = 0;
+  // Head of IOBufferBlock chain to send
+  Ptr<IOBufferBlock> _whole_frame;
+  uint64_t           _payload_len = 0;
 };
 
 //
@@ -251,7 +250,6 @@ public:
   /*
    * Creates a DATA frame.
    */
-  static Http3DataFrameUPtr create_data_frame(const uint8_t *data, size_t data_len);
   static Http3DataFrameUPtr create_data_frame(IOBufferReader *reader, size_t data_len);
 
 private:

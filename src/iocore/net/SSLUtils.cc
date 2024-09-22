@@ -202,7 +202,10 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   }
 
   netvc->set_verify_cert(ctx);
-  netvc->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
+  TLSEventSupport *es = TLSEventSupport::getInstance(ssl);
+  if (es) {
+    es->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
+  }
   netvc->set_verify_cert(nullptr);
 
   if (netvc->getSSLHandShakeComplete()) { // hook moved the handshake state to terminal
@@ -242,17 +245,15 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     return CLIENT_HELLO_ERROR;
   }
 
-  SSLNetVConnection *netvc = dynamic_cast<SSLNetVConnection *>(snis);
-  if (netvc) {
-    if (netvc->ssl != s) {
-      Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
-      return CLIENT_HELLO_ERROR;
-    }
-
-    bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+  TLSEventSupport *es = TLSEventSupport::getInstance(s);
+  if (es) {
+    bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
     if (!reenabled) {
       return CLIENT_HELLO_RETRY;
     }
+  } else {
+    Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
+    return CLIENT_HELLO_ERROR;
   }
 
   return CLIENT_HELLO_SUCCESS;
@@ -266,6 +267,7 @@ static int
 ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 {
   TLSCertSwitchSupport *tcss     = TLSCertSwitchSupport::getInstance(ssl);
+  TLSEventSupport      *tes      = TLSEventSupport::getInstance(ssl);
   SSLNetVConnection    *sslnetvc = dynamic_cast<SSLNetVConnection *>(tcss);
   bool                  reenabled;
   int                   retval = 1;
@@ -291,28 +293,30 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
   }
 #endif
 
-  if (sslnetvc) {
-    // Do the common certificate lookup only once.  If we pause
-    // and restart processing, do not execute the common logic again
-    if (!sslnetvc->calledHooks(TS_EVENT_SSL_CERT)) {
-      retval = sslnetvc->selectCertificate(ssl, ctxType);
-      if (retval != 1) {
-        return retval;
+  if (tcss) {
+    if (tes) {
+      // Do the common certificate lookup only once.  If we pause
+      // and restart processing, do not execute the common logic again
+      if (!tes->calledHooks(TS_EVENT_SSL_CERT)) {
+        retval = tcss->selectCertificate(ssl, ctxType);
+        if (retval != 1) {
+          return retval;
+        }
       }
-    }
 
-    // Call the plugin cert code
-    reenabled = sslnetvc->callHooks(TS_EVENT_SSL_CERT);
-    // If it did not re-enable, return the code to
-    // stop the accept processing
-    if (!reenabled) {
-      retval = -1; // Pause
-    }
-  } else {
-    if (tcss && tcss->selectCertificate(ssl, ctxType) == 1) {
-      retval = 1;
+      // Call the plugin cert code
+      reenabled = tes->callHooks(TS_EVENT_SSL_CERT);
+      // If it did not re-enable, return the code to
+      // stop the accept processing
+      if (!reenabled) {
+        retval = -1; // Pause
+      }
     } else {
-      retval = 0;
+      if (tcss->selectCertificate(ssl, ctxType) == 1) {
+        retval = 1;
+      } else {
+        retval = 0;
+      }
     }
   }
 
@@ -348,6 +352,9 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
 {
   TLSSNISupport *snis = TLSSNISupport::getInstance(ssl);
   if (snis) {
+    if (TLSEventSupport *es = TLSEventSupport::getInstance(ssl); es) {
+      es->callHooks(TS_EVENT_SSL_SERVERNAME);
+    }
     snis->on_servername(ssl, al, arg);
 #if !TS_USE_HELLO_CB
     // Only call the SNI actions here if not already performed in the HELLO_CB
@@ -815,6 +822,7 @@ SSLInitializeLibrary()
   ssl_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
 
   TLSBasicSupport::initialize();
+  TLSEventSupport::initialize();
   ALPNSupport::initialize();
   TLSSessionResumptionSupport::initialize();
   TLSSNISupport::initialize();

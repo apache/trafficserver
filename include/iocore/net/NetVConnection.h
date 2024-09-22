@@ -163,15 +163,6 @@ public:
   */
   void do_io_shutdown(ShutdownHowTo_t howto) override = 0;
 
-  /**
-    Return the server name that is appropriate for the network VC type
-  */
-  virtual const char *
-  get_server_name() const
-  {
-    return nullptr;
-  }
-
   ////////////////////////////////////////////////////////////
   // Set the timeouts associated with this connection.      //
   // active_timeout is for the total elapsed time of        //
@@ -325,22 +316,6 @@ public:
   get_context() const
   {
     return netvc_context;
-  }
-
-  /**
-   * Returns true if the network protocol
-   * supports a client provided SNI value
-   */
-  virtual bool
-  support_sni() const
-  {
-    return false;
-  }
-
-  virtual const char *
-  get_sni_servername() const
-  {
-    return nullptr;
   }
 
   virtual bool
@@ -526,6 +501,7 @@ protected:
     TLS_ALPN,
     TLS_Basic,
     TLS_CertSwitch,
+    TLS_Event,
     TLS_EarlyData,
     TLS_SNI,
     TLS_SessionResumption,
@@ -617,6 +593,20 @@ inline void
 NetVConnection::_set_service(TLSBasicSupport *instance)
 {
   this->_set_service(NetVConnection::Service::TLS_Basic, instance);
+}
+
+class TLSEventSupport;
+template <>
+inline TLSEventSupport *
+NetVConnection::get_service() const
+{
+  return static_cast<TLSEventSupport *>(this->_get_service(NetVConnection::Service::TLS_Event));
+}
+template <>
+inline void
+NetVConnection::_set_service(TLSEventSupport *instance)
+{
+  this->_set_service(NetVConnection::Service::TLS_Event, instance);
 }
 
 class TLSEarlyDataSupport;

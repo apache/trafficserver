@@ -34,6 +34,7 @@
 #include "proxy/ProxySession.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
+#include "iocore/net/TLSSNISupport.h"
 #include <iterator>
 
 namespace
@@ -91,14 +92,18 @@ ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
     // by fetching the hostname from the server request.  So the connection should only
     // be reused if the hostname in the new request is the same as the host name in the
     // original request
-    const char *session_sni = netvc->get_sni_servername();
-    if (session_sni) {
-      // TS-4468: If the connection matches, make sure the SNI server
-      // name (if present) matches the request hostname
-      int         len      = 0;
-      const char *req_host = sm->t_state.hdr_info.server_request.host_get(&len);
-      retval               = strncasecmp(session_sni, req_host, len) == 0;
-      Dbg(dbg_ctl_http_ss, "validate_host_sni host=%*.s, sni=%s", len, req_host, session_sni);
+    if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
+      const char *session_sni = snis->get_sni_server_name();
+      if (session_sni && session_sni[0] != '\0') {
+        // TS-4468: If the connection matches, make sure the SNI server
+        // name (if present) matches the request hostname
+        int         len      = 0;
+        const char *req_host = sm->t_state.hdr_info.server_request.host_get(&len);
+        retval               = strncasecmp(session_sni, req_host, len) == 0;
+        Dbg(dbg_ctl_http_ss, "validate_host_sni host=%*.s, sni=%s", len, req_host, session_sni);
+      }
+    } else {
+      retval = false;
     }
   }
   return retval;
@@ -112,14 +117,18 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
   // a new connection.
   //
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
-    const char      *session_sni  = netvc->get_sni_servername();
-    std::string_view proposed_sni = sm->get_outbound_sni();
-    Dbg(dbg_ctl_http_ss, "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
-        session_sni);
-    if (!session_sni || proposed_sni.length() == 0) {
-      retval = session_sni == nullptr && proposed_sni.length() == 0;
+    if (auto snis = netvc->get_service<TLSSNISupport>(); snis) {
+      const char      *session_sni  = snis->get_sni_server_name();
+      std::string_view proposed_sni = sm->get_outbound_sni();
+      Dbg(dbg_ctl_http_ss, "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
+          session_sni);
+      if (!session_sni || session_sni[0] == '\0' || proposed_sni.length() == 0) {
+        retval = session_sni == nullptr && proposed_sni.length() == 0;
+      } else {
+        retval = proposed_sni.compare(session_sni) == 0;
+      }
     } else {
-      retval = proposed_sni.compare(session_sni) == 0;
+      retval = false;
     }
   }
   return retval;
