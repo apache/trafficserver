@@ -110,6 +110,10 @@ Field Name                            Description
                                       ``true`` by default.
                                       In case of an unauthorized call is made, a corresponding rpc error will be returned, you can
                                       check :ref:`jsonrpc-node-errors-unauthorized-action` for details about the errors.
+``incoming_request_max_size``         Maximum allowed size for the incoming jsonrpc request. Default ``96000`` bytes. Size must be
+                                      specified in bytes. Note that memory will not be allocated all at once, if incoming message
+                                      does not fit in the first chunk of memory(32K) an extra amount will be allocated, till the
+                                      requests size hits the max size.
 ===================================== =========================================================================================
 
 
