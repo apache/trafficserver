@@ -1080,15 +1080,10 @@ Log::init(int flags)
     REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
   }
 
-  // if remote management is enabled, do all necessary initialization to
-  // be able to handle a logging mode change
-  //
-  if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
-    REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
-  }
-
   init_fields();
   if (!(config_flags & LOGCAT)) {
+    REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
+
     Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
     config->init();
     init_when_enabled();
@@ -1102,11 +1097,7 @@ Log::init_when_enabled()
   ink_release_assert(config->initialized == true);
 
   if (!(init_status & FULLY_INITIALIZED)) {
-    // register callbacks
-    //
-    if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
-      LogConfig::register_config_callbacks();
-    }
+    LogConfig::register_config_callbacks();
 
     // create the flush thread
     create_threads();
