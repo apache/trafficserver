@@ -1,0 +1,4 @@
+records:
+  diags:
+    debug:
+      tags: rpc

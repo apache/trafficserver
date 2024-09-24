@@ -107,11 +107,13 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--cold", "-c",
                 "Save the value in a configuration file. This does not save the value in TS. Local file change only",
                 "TS_RECORD_YAML", MORE_THAN_ZERO_ARG_N)
-    .add_option("--records", "", "Emit output in YAML format");
+    .add_option("--records", "", "Emit output in YAML format")
+    .add_option("--default", "", "Include default value");
   config_command
     .add_command("match", "Get configuration matching a regular expression", "", MORE_THAN_ONE_ARG_N, [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config match [OPTIONS] REGEX [REGEX ...]")
-    .add_option("--records", "", "Emit output in YAML format");
+    .add_option("--records", "", "Emit output in YAML format")
+    .add_option("--default", "", "Include the default value");
   config_command.add_command("reload", "Request a configuration reload", [&]() { command->execute(); })
     .add_example_usage("traffic_ctl config reload");
   config_command.add_command("status", "Check the configuration status", [&]() { command->execute(); })

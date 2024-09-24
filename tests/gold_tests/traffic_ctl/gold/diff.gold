@@ -1,0 +1,15 @@
+proxy.config.diags.debug.enabled has changed
+``Current Value: 1
+``Default Value: 0
+proxy.config.diags.debug.tags has changed
+``Current Value: rpc
+``Default Value: http|dns
+proxy.config.http.server_ports has changed
+``Current Value: ``
+``Default Value: 8080 8080:ipv6
+proxy.config.http.wait_for_cache has changed
+``Current Value: 1
+``Default Value: 0
+proxy.config.udp.threads has changed
+``Current Value: 1
+``Default Value: 0

@@ -65,15 +65,16 @@ class BasePrinter
 public:
   /// This enum maps the --format flag coming from traffic_ctl. (also --records is included here, see comments down below.)
   struct Options {
-    enum class OutputFormat {
-      NOT_SET = 0, // nothing set.
-      JSON,        // Json formatting
-      RECORDS,     // only valid for configs, but it's handy to have it here.
-      RPC          // Print JSONRPC request and response + default output.
+    enum FormatFlags {
+      NOT_SET      = 0,      // nothing set.
+      JSON         = 1 << 0, // Json formatting
+      RECORDS      = 1 << 1, // only valid for configs, but it's handy to have it here.
+      RPC          = 1 << 2, // Print JSONRPC request and response + default output.
+      SHOW_DEFAULT = 1 << 3  // Add the default values alongside with the actual value.
     };
     Options() = default;
-    Options(OutputFormat fmt) : _format(fmt) {}
-    OutputFormat _format{OutputFormat::NOT_SET}; //!< selected(passed) format.
+    Options(FormatFlags flags) : _format(flags) {}
+    mutable FormatFlags _format{FormatFlags::NOT_SET}; //!< selected(passed) format.
   };
 
   /// Printer constructor. Needs the format as it will be used by derived classes.
@@ -105,18 +106,37 @@ public:
   virtual void write_output(std::string_view output) const;
   virtual void write_debug(std::string_view output) const;
 
-  /// OutputFormat getters.
-  Options::OutputFormat get_format() const;
-  bool                  print_rpc_message() const;
-  bool                  is_json_format() const;
-  bool                  is_records_format() const;
+  /// FormatFlags getters.
+  Options::FormatFlags get_format() const;
+  bool                 print_rpc_message() const;
+  bool                 is_json_format() const;
+  bool                 is_records_format() const;
+  bool                 should_include_default() const;
 
 protected:
   void    write_output_json(YAML::Node const &node) const;
   Options _printOpt;
 };
 
-inline BasePrinter::Options::OutputFormat
+constexpr enum BasePrinter::Options::FormatFlags
+operator|(const enum BasePrinter::Options::FormatFlags rhs, const enum BasePrinter::Options::FormatFlags lhs)
+{
+  return static_cast<BasePrinter::Options::FormatFlags>(static_cast<uint32_t>(rhs) | static_cast<uint32_t>(lhs));
+}
+
+constexpr enum BasePrinter::Options::FormatFlags &
+operator|=(BasePrinter::Options::FormatFlags &rhs, BasePrinter::Options::FormatFlags lhs)
+{
+  return rhs = rhs | lhs;
+}
+
+constexpr enum BasePrinter::Options::FormatFlags
+operator&(BasePrinter::Options::FormatFlags rhs, BasePrinter::Options::FormatFlags lhs)
+{
+  return static_cast<BasePrinter::Options::FormatFlags>(static_cast<uint32_t>(rhs) & static_cast<uint32_t>(lhs));
+}
+
+inline BasePrinter::Options::FormatFlags
 BasePrinter::get_format() const
 {
   return _printOpt._format;
@@ -125,19 +145,24 @@ BasePrinter::get_format() const
 inline bool
 BasePrinter::print_rpc_message() const
 {
-  return get_format() == Options::OutputFormat::RPC;
+  return _printOpt._format & Options::FormatFlags::RPC;
 }
 
 inline bool
 BasePrinter::is_json_format() const
 {
-  return get_format() == Options::OutputFormat::JSON;
+  return _printOpt._format & Options::FormatFlags::JSON;
 }
 
 inline bool
 BasePrinter::is_records_format() const
 {
-  return get_format() == Options::OutputFormat::RECORDS;
+  return _printOpt._format & Options::FormatFlags::RECORDS;
+}
+inline bool
+BasePrinter::should_include_default() const
+{
+  return _printOpt._format & Options::FormatFlags::SHOW_DEFAULT;
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 class GenericPrinter : public BasePrinter
@@ -157,10 +182,9 @@ class RecordPrinter : public BasePrinter
   void write_output(YAML::Node const &result) override;
 
 public:
-  RecordPrinter(Options opt) : BasePrinter(opt) { _printAsRecords = is_records_format(); }
+  RecordPrinter(Options opt) : BasePrinter(opt) {}
 
 protected:
-  bool _printAsRecords{false};
 };
 
 class MetricRecordPrinter : public BasePrinter

@@ -136,6 +136,23 @@ traffic_ctl config
 
    Display the config output in YAML format. This out can be used directly into ATS if needed.
 
+
+   .. program:: traffic_ctl config
+   .. option:: --default
+
+   Include the default value alonside with the current value. This can be used in combination with ``--records``
+
+   .. code-block:: bash
+
+      $ traffic_ctl config match proxy.config.diags.debug --records --default
+      records:
+         diags:
+            debug:
+               client_ip: "null"  # default: null
+               enabled: 1  # default: 0
+               tags: quic  # default: http|dns
+               throttling_interval_msec: 0  # default: 0
+
 .. program:: traffic_ctl config
 .. option:: defaults [--records]
 
@@ -161,7 +178,7 @@ traffic_ctl config
    behavior as :option:`traffic_ctl config get --records`.
 
 .. program:: traffic_ctl config
-.. option:: get [--records] RECORD [RECORD...]
+.. option:: get [--records, --default] RECORD [RECORD...]
 
    :ref:`admin_lookup_records`
 
@@ -175,7 +192,7 @@ Display the current value of a configuration record.
    The option :ref:`--cold <traffic_ctl_config_cold>` is available to get the values from a file.
 
 .. program:: traffic_ctl config
-.. option:: match [--records] REGEX [REGEX...]
+.. option:: match [--records, --default] REGEX [REGEX...]
 
    :ref:`admin_lookup_records`
 
