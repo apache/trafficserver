@@ -88,7 +88,7 @@ Parser::parse_line(const std::string &original_line)
         _empty = true;
         return false;
       }
-    } else if ((state == PARSER_DEFAULT) && (line[i - 1] != '%' && line[i] == '{')) {
+    } else if ((state == PARSER_DEFAULT) && ((i == 0 || line[i - 1] != '%') && line[i] == '{')) {
       state            = PARSER_IN_BRACE;
       extracting_token = true;
       cur_token_start  = i;
