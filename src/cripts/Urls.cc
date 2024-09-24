@@ -445,9 +445,20 @@ Client::URL::_initialize(cripts::Context *context)
 {
   Url::_initialize(&context->state);
 
-  _bufp    = context->rri->requestBufp;
-  _hdr_loc = context->rri->requestHdrp;
-  _urlp    = context->rri->requestUrl;
+  if (context->rri) {
+    _bufp    = context->rri->requestBufp;
+    _hdr_loc = context->rri->requestHdrp;
+    _urlp    = context->rri->requestUrl;
+  } else {
+    Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
+
+    _bufp    = req.BufP();
+    _hdr_loc = req.MLoc();
+
+    if (TSHttpHdrUrlGet(_bufp, _hdr_loc, &_urlp) != TS_SUCCESS) {
+      context->state.error.Fail();
+    }
+  }
 }
 
 Client::URL &

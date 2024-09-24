@@ -147,7 +147,7 @@ namespace Bundle
     }
 
   protected:
-    unsigned _callbacks = 0;
+    uint32_t _callbacks = 0;
   }; // Class Base
 
 } // namespace Bundle
