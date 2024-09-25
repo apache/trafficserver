@@ -151,7 +151,7 @@ private:
   std::unordered_map<std::string, std::tuple<INKContInternal *, swoc::file::path, swoc::file::file_time_type>> cb_table;
 };
 
-#include "proxy/HttpAPIHooks.h"
+#include "api/HttpAPIHooks.h"
 
 class HttpHookState
 {
