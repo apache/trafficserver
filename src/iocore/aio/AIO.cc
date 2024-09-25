@@ -614,10 +614,10 @@ io_uring_prep_ops_internal(AIOCallback *op_in, int op_type)
     if (op->then) {
       sqe->flags |= IOSQE_IO_LINK;
     } else if (op->aio_op == nullptr) { // This condition leaves an existing aio_op in place if there is one. (EAGAIN)
-      op->aio_op = static_cast<AIOCallback *>(op_in);
+      op->aio_op = op_in;
     }
 
-    op = static_cast<AIOCallback *>(op->then);
+    op = op->then;
   }
 }
 
@@ -648,11 +648,11 @@ AIOCallback::handle_complete(io_uring_cqe *cqe)
 
   if (op->aio_result > 0) {
     if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
-      Metrics::Counter::increment(aio_rsb.write_count);
-      Metrics::Counter::increment(aio_rsb.kb_write, op->aiocb.aio_nbytes >> 10);
+      ts::Metrics::Counter::increment(aio_rsb.write_count);
+      ts::Metrics::Counter::increment(aio_rsb.kb_write, op->aiocb.aio_nbytes >> 10);
     } else {
-      Metrics::Counter::increment(aio_rsb.read_count);
-      Metrics::Counter::increment(aio_rsb.kb_read, op->aiocb.aio_nbytes >> 10);
+      ts::Metrics::Counter::increment(aio_rsb.read_count);
+      ts::Metrics::Counter::increment(aio_rsb.kb_read, op->aiocb.aio_nbytes >> 10);
     }
   }
 

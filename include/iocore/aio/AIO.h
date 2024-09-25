@@ -35,6 +35,10 @@
 #include "iocore/eventsystem/EventSystem.h"
 #include "records/RecProcess.h"
 
+#if TS_USE_LINUX_IO_URING
+#include "iocore/io_uring/IO_URING.h"
+#endif
+
 static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
 
 #define AIO_EVENT_DONE (AIO_EVENT_EVENTS_START + 0)
