@@ -693,14 +693,22 @@ TSPluginInit(int argc, const char *argv[])
 {
   static bool     has_glb_txn_start = wrap_glb_txn_start(static_cast<cripts::Context *>(nullptr), false, CaseArg);
   static unsigned enabled_txn_hooks =
-    (wrap_glb_read_request(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_READ_REQUEST : 0) |
-    (wrap_glb_pre_remap(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_PRE_REMAP : 0) |
-    (wrap_glb_post_remap(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_POST_REMAP : 0) |
-    (wrap_glb_cache_lookup(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_CACHE_LOOKUP : 0) |
-    (wrap_glb_send_request(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_SEND_REQUEST : 0) |
-    (wrap_glb_read_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_READ_RESPONSE : 0) |
-    (wrap_glb_send_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_SEND_RESPONSE : 0) |
-    (wrap_glb_txn_close(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_TXN_CLOSE : 0);
+    (wrap_glb_read_request(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_READ_REQUEST :
+                                                                                      cripts::Callbacks::NONE) |
+    (wrap_glb_pre_remap(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_PRE_REMAP :
+                                                                                   cripts::Callbacks::NONE) |
+    (wrap_glb_post_remap(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_POST_REMAP :
+                                                                                    cripts::Callbacks::NONE) |
+    (wrap_glb_cache_lookup(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_CACHE_LOOKUP :
+                                                                                      cripts::Callbacks::NONE) |
+    (wrap_glb_send_request(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_SEND_REQUEST :
+                                                                                      cripts::Callbacks::NONE) |
+    (wrap_glb_read_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_READ_RESPONSE :
+                                                                                       cripts::Callbacks::NONE) |
+    (wrap_glb_send_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_SEND_RESPONSE :
+                                                                                       cripts::Callbacks::NONE) |
+    (wrap_glb_txn_close(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::GLB_TXN_CLOSE :
+                                                                                   cripts::Callbacks::NONE);
   // ToDo: Add more global hooks here in enabled_other_hooks
 
   TSPluginRegistrationInfo info;
@@ -845,12 +853,18 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   // should only happen once.
   static bool     needs_do_remap = wrap_do_remap(static_cast<cripts::Context *>(nullptr), false, CaseArg);
   static uint32_t enabled_hooks =
-    (wrap_post_remap(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_POST_REMAP : 0) |
-    (wrap_cache_lookup(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_CACHE_LOOKUP : 0) |
-    (wrap_send_request(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_SEND_REQUEST : 0) |
-    (wrap_read_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_READ_RESPONSE : 0) |
-    (wrap_send_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_SEND_RESPONSE : 0) |
-    (wrap_txn_close(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_TXN_CLOSE : 0);
+    (wrap_post_remap(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_POST_REMAP :
+                                                                                cripts::Callbacks::NONE) |
+    (wrap_cache_lookup(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_CACHE_LOOKUP :
+                                                                                  cripts::Callbacks::NONE) |
+    (wrap_send_request(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_SEND_REQUEST :
+                                                                                  cripts::Callbacks::NONE) |
+    (wrap_read_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_READ_RESPONSE :
+                                                                                   cripts::Callbacks::NONE) |
+    (wrap_send_response(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_SEND_RESPONSE :
+                                                                                   cripts::Callbacks::NONE) |
+    (wrap_txn_close(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_TXN_CLOSE :
+                                                                               cripts::Callbacks::NONE);
 
   TSHttpSsn ssnp         = TSHttpTxnSsnGet(txnp);
   auto     *inst         = static_cast<cripts::Instance *>(ih);
