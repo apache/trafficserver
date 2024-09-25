@@ -251,7 +251,7 @@ public:
   void
   lock_shared(Token &token)
   {
-    ink_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
+    debug_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
 
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
@@ -279,7 +279,7 @@ public:
   bool
   try_lock_shared(Token &token)
   {
-    ink_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
+    debug_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
 
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
