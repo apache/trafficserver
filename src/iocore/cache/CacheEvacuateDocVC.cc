@@ -24,7 +24,7 @@
 // make sure there are no incomplete types
 
 // aio
-#include "../aio/P_AIO.h"
+#include "iocore/aio/AIO.h"
 
 // inkcache
 #include "iocore/cache/CacheDefs.h"

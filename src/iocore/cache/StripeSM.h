@@ -68,9 +68,9 @@ public:
 
   int hit_evacuate_window{};
 
-  off_t               recover_pos      = 0;
-  off_t               prev_recover_pos = 0;
-  AIOCallbackInternal io;
+  off_t       recover_pos      = 0;
+  off_t       prev_recover_pos = 0;
+  AIOCallback io;
 
   Queue<CacheVC, Continuation::Link_link> sync;
 

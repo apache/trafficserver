@@ -88,9 +88,9 @@ static void update_header_info(CacheVC *vc, Doc *doc);
 static int  evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *stripe);
 
 struct StripeInitInfo {
-  off_t               recover_pos;
-  AIOCallbackInternal vol_aio[4];
-  char               *vol_h_f;
+  off_t       recover_pos;
+  AIOCallback vol_aio[4];
+  char       *vol_h_f;
 
   StripeInitInfo()
   {

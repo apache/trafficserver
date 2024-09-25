@@ -25,7 +25,6 @@
 
 #include "tscore/ink_platform.h"
 #include "../eventsystem/P_EventSystem.h"
-#include "../aio/P_AIO.h"
 
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/MIME.h"

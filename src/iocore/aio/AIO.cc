@@ -25,12 +25,14 @@
  * Async Disk IO operations.
  */
 
+#include "iocore/aio/AIO.h"
 #include "tscore/TSSystemState.h"
+#include "tscore/ink_atomic.h"
 #include "tscore/ink_hw.h"
 
-#include <atomic>
-
-#include "P_AIO.h"
+#if TS_USE_LINUX_IO_URING
+#include "iocore/io_uring/IO_URING.h"
+#endif
 
 #ifdef AIO_FAULT_INJECTION
 #include "iocore/aio/AIO_fault_injection.h"
@@ -39,6 +41,11 @@
 #define MAX_DISKS_POSSIBLE 100
 
 // globals
+static constexpr ts::ModuleVersion AIO_MODULE_INTERNAL_VERSION{AIO_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};
+
+// for debugging
+// #define AIO_STATS 1
+
 #if TS_USE_LINUX_IO_URING
 static bool use_io_uring = false;
 
@@ -49,6 +56,7 @@ void setup_prep_ops(IOUringContext *);
 #endif
 
 /* structure to hold information about each file descriptor */
+struct AIO_Reqs;
 AIO_Reqs *aio_reqs[MAX_DISKS_POSSIBLE];
 /* number of unique file descriptors in the aio_reqs array */
 int num_filedes = 1;
@@ -62,8 +70,72 @@ int thread_is_created = 0;
 RecInt cache_config_threads_per_disk = 12;
 RecInt api_config_threads_per_disk   = 12;
 
-AIOStatsBlock aio_rsb;
 Continuation *aio_err_callback = nullptr;
+
+/* internal definitions */
+int
+AIOCallback::io_complete(int event, void *data)
+{
+  (void)event;
+  (void)data;
+  if (aio_err_callback && !ok()) {
+    AIOCallback *err_op          = new AIOCallback();
+    err_op->aiocb.aio_fildes     = this->aiocb.aio_fildes;
+    err_op->aiocb.aio_lio_opcode = this->aiocb.aio_lio_opcode;
+    err_op->mutex                = aio_err_callback->mutex;
+    err_op->action               = aio_err_callback;
+
+    // Take this lock in-line because we want to stop other I/O operations on this disk ASAP
+    SCOPED_MUTEX_LOCK(lock, aio_err_callback->mutex, this_ethread());
+    err_op->action.continuation->handleEvent(EVENT_NONE, err_op);
+  }
+  if (!action.cancelled && action.continuation) {
+    action.continuation->handleEvent(AIO_EVENT_DONE, this);
+  }
+  return EVENT_DONE;
+}
+
+struct AIO_Reqs {
+  Que(AIOCallback, link) aio_todo; /* queue for AIO operations */
+                                   /* Atomic list to temporarily hold the request if the
+                                      lock for a particular queue cannot be acquired */
+  ASLL(AIOCallback, alink) aio_temp_list;
+  ink_mutex aio_mutex;
+  ink_cond  aio_cond;
+  int       index           = 0;  /* position of this struct in the aio_reqs array */
+  int       pending         = 0;  /* number of outstanding requests on the disk */
+  int       queued          = 0;  /* total number of aio_todo requests */
+  int       filedes         = -1; /* the file descriptor for the requests or status IO_NOT_IN_PROGRESS */
+  int       requests_queued = 0;
+};
+
+#ifdef AIO_STATS
+class AIOTestData : public Continuation
+{
+public:
+  int        num_req;
+  int        num_temp;
+  int        num_queue;
+  ink_hrtime start;
+
+  int ink_aio_stats(int event, void *data);
+
+  AIOTestData() : Continuation(new_ProxyMutex()), num_req(0), num_temp(0), num_queue(0)
+  {
+    start = ink_get_hrtime();
+    SET_HANDLER(&AIOTestData::ink_aio_stats);
+  }
+};
+#endif
+
+struct AIOStatsBlock {
+  ts::Metrics::Counter::AtomicType *read_count;
+  ts::Metrics::Counter::AtomicType *kb_read;
+  ts::Metrics::Counter::AtomicType *write_count;
+  ts::Metrics::Counter::AtomicType *kb_write;
+};
+
+AIOStatsBlock aio_rsb;
 
 #ifdef AIO_STATS
 /* total number of requests received - for debugging */
@@ -93,7 +165,7 @@ AIOTestData::ink_aio_stats(int event, void *d)
 AIOCallback *
 new_AIOCallback()
 {
-  return new AIOCallbackInternal;
+  return new AIOCallback;
 }
 
 void
@@ -107,10 +179,10 @@ ink_aio_init(ts::ModuleVersion v, [[maybe_unused]] AIOBackend backend)
 {
   ink_release_assert(v.check(AIO_MODULE_INTERNAL_VERSION));
 
-  aio_rsb.read_count  = Metrics::Counter::createPtr("proxy.process.cache.aio.read_count");
-  aio_rsb.write_count = Metrics::Counter::createPtr("proxy.process.cache.aio.write_count");
-  aio_rsb.kb_read     = Metrics::Counter::createPtr("proxy.process.cache.aio.KB_read");
-  aio_rsb.kb_write    = Metrics::Counter::createPtr("proxy.process.cache.aio.KB_write");
+  aio_rsb.read_count  = ts::Metrics::Counter::createPtr("proxy.process.cache.aio.read_count");
+  aio_rsb.write_count = ts::Metrics::Counter::createPtr("proxy.process.cache.aio.write_count");
+  aio_rsb.kb_read     = ts::Metrics::Counter::createPtr("proxy.process.cache.aio.KB_read");
+  aio_rsb.kb_write    = ts::Metrics::Counter::createPtr("proxy.process.cache.aio.KB_write");
 
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
@@ -276,8 +348,8 @@ aio_move(AIO_Reqs *req)
     return;
   }
 
-  AIOCallbackInternal *cbi;
-  SList(AIOCallbackInternal, alink) aq(req->aio_temp_list.popall());
+  AIOCallback *cbi;
+  SList(AIOCallback, alink) aq(req->aio_temp_list.popall());
 
   // flip the list
   Queue<AIOCallback> cbq;
@@ -293,7 +365,7 @@ aio_move(AIO_Reqs *req)
 
 /* queue the new request */
 static void
-aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
+aio_queue_req(AIOCallback *op, int fromAPI = 0)
 {
   int       thread_ndx = 1;
   AIO_Reqs *req        = op->aio_req;
@@ -365,10 +437,10 @@ aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
 }
 
 static inline int
-cache_op(AIOCallbackInternal *op)
+cache_op(AIOCallback *op)
 {
   bool read = (op->aiocb.aio_lio_opcode == LIO_READ);
-  for (; op; op = (AIOCallbackInternal *)op->then) {
+  for (; op; op = op->then) {
     ink_aiocb *a = &op->aiocb;
     ssize_t    err, res = 0;
 
@@ -440,13 +512,13 @@ AIOThreadInfo::aio_thread_main(AIOThreadInfo *thr_info)
 
       // update the stats;
       if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
-        Metrics::Counter::increment(aio_rsb.write_count);
-        Metrics::Counter::increment(aio_rsb.kb_write, op->aiocb.aio_nbytes >> 10);
+        ts::Metrics::Counter::increment(aio_rsb.write_count);
+        ts::Metrics::Counter::increment(aio_rsb.kb_write, op->aiocb.aio_nbytes >> 10);
       } else {
-        Metrics::Counter::increment(aio_rsb.read_count);
-        Metrics::Counter::increment(aio_rsb.kb_read, op->aiocb.aio_nbytes >> 10);
+        ts::Metrics::Counter::increment(aio_rsb.read_count);
+        ts::Metrics::Counter::increment(aio_rsb.kb_read, op->aiocb.aio_nbytes >> 10);
       }
-      cache_op(reinterpret_cast<AIOCallbackInternal *>(op));
+      cache_op(reinterpret_cast<AIOCallback *>(op));
       ink_atomic_increment(&my_aio_req->requests_queued, -1);
 #ifdef AIO_STATS
       ink_atomic_increment(&my_aio_req->pending, -1);
@@ -477,13 +549,13 @@ namespace
 {
 
 void
-prep_read(io_uring_sqe *sqe, AIOCallbackInternal *op)
+prep_read(io_uring_sqe *sqe, AIOCallback *op)
 {
   io_uring_prep_read(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
 }
 
 void
-prep_readv(io_uring_sqe *sqe, AIOCallbackInternal *op)
+prep_readv(io_uring_sqe *sqe, AIOCallback *op)
 {
   op->iov.iov_len  = op->aiocb.aio_nbytes;
   op->iov.iov_base = op->aiocb.aio_buf;
@@ -491,20 +563,20 @@ prep_readv(io_uring_sqe *sqe, AIOCallbackInternal *op)
 }
 
 void
-prep_write(io_uring_sqe *sqe, AIOCallbackInternal *op)
+prep_write(io_uring_sqe *sqe, AIOCallback *op)
 {
   io_uring_prep_write(sqe, op->aiocb.aio_fildes, op->aiocb.aio_buf, op->aiocb.aio_nbytes, op->aiocb.aio_offset);
 }
 
 void
-prep_writev(io_uring_sqe *sqe, AIOCallbackInternal *op)
+prep_writev(io_uring_sqe *sqe, AIOCallback *op)
 {
   op->iov.iov_len  = op->aiocb.aio_nbytes;
   op->iov.iov_base = op->aiocb.aio_buf;
   io_uring_prep_writev(sqe, op->aiocb.aio_fildes, &op->iov, 1, op->aiocb.aio_offset);
 }
 
-using prep_op = void (*)(io_uring_sqe *, AIOCallbackInternal *);
+using prep_op = void (*)(io_uring_sqe *, AIOCallback *);
 
 prep_op prep_ops[] = {
   nullptr,
@@ -526,10 +598,10 @@ setup_prep_ops(IOUringContext *ur)
 }
 
 void
-io_uring_prep_ops_internal(AIOCallbackInternal *op_in, int op_type)
+io_uring_prep_ops_internal(AIOCallback *op_in, int op_type)
 {
-  IOUringContext      *ur = IOUringContext::local_context();
-  AIOCallbackInternal *op = op_in;
+  IOUringContext *ur = IOUringContext::local_context();
+  AIOCallback    *op = op_in;
   while (op) {
     op->this_op       = op;
     io_uring_sqe *sqe = ur->next_sqe(op);
@@ -542,19 +614,19 @@ io_uring_prep_ops_internal(AIOCallbackInternal *op_in, int op_type)
     if (op->then) {
       sqe->flags |= IOSQE_IO_LINK;
     } else if (op->aio_op == nullptr) { // This condition leaves an existing aio_op in place if there is one. (EAGAIN)
-      op->aio_op = static_cast<AIOCallbackInternal *>(op_in);
+      op->aio_op = static_cast<AIOCallback *>(op_in);
     }
 
-    op = static_cast<AIOCallbackInternal *>(op->then);
+    op = static_cast<AIOCallback *>(op->then);
   }
 }
 
 } // namespace
 
 void
-AIOCallbackInternal::handle_complete(io_uring_cqe *cqe)
+AIOCallback::handle_complete(io_uring_cqe *cqe)
 {
-  AIOCallbackInternal *op = this_op;
+  AIOCallback *op = this_op;
 
   // Re-submit the request on EAGAIN.
   // we might need to re-submit the entire rest of the chain, so just call prep again
@@ -605,12 +677,12 @@ ink_aio_read(AIOCallback *op_in, int fromAPI)
 {
 #if TS_USE_LINUX_IO_URING
   if (use_io_uring) {
-    io_uring_prep_ops_internal(static_cast<AIOCallbackInternal *>(op_in), LIO_READ);
+    io_uring_prep_ops_internal(op_in, LIO_READ);
     return 1;
   }
 #endif
   op_in->aiocb.aio_lio_opcode = LIO_READ;
-  aio_queue_req(static_cast<AIOCallbackInternal *>(op_in), fromAPI);
+  aio_queue_req(op_in, fromAPI);
 
   return 1;
 }
@@ -620,12 +692,12 @@ ink_aio_write(AIOCallback *op_in, int fromAPI)
 {
 #if TS_USE_LINUX_IO_URING
   if (use_io_uring) {
-    io_uring_prep_ops_internal(static_cast<AIOCallbackInternal *>(op_in), LIO_WRITE);
+    io_uring_prep_ops_internal(op_in, LIO_WRITE);
     return 1;
   }
 #endif
   op_in->aiocb.aio_lio_opcode = LIO_WRITE;
-  aio_queue_req(static_cast<AIOCallbackInternal *>(op_in), fromAPI);
+  aio_queue_req(op_in, fromAPI);
 
   return 1;
 }
