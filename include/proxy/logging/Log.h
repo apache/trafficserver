@@ -135,8 +135,7 @@ public:
   };
 
   enum ConfigFlags {
-    NO_REMOTE_MANAGEMENT = 1,
-    LOGCAT               = 4,
+    LOGCAT = 1,
   };
 
   enum RollingEnabledValues {

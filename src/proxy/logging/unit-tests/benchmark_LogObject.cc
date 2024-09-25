@@ -111,7 +111,7 @@ TEST_CASE("LogObject", "[proxy/logging]")
 
   pmgmt = new ProcessManager(false);
 
-  Log::init(Log::NO_REMOTE_MANAGEMENT);
+  Log::init();
 
   LogFormat *fmt = MakeTextLogFormat();
 

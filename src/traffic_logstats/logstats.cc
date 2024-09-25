@@ -2459,7 +2459,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
 
   // initialize this application for standalone logging operation
   init_log_standalone_basic(PROGRAM_NAME);
-  Log::init(Log::NO_REMOTE_MANAGEMENT | Log::LOGCAT);
+  Log::init(Log::LOGCAT);
 
   // Do we have a list of Origins on the command line?
   if (cl.origin_list[0] != '\0') {

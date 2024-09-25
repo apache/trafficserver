@@ -276,7 +276,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   //
   init_log_standalone_basic(PROGRAM_NAME);
 
-  Log::init(Log::NO_REMOTE_MANAGEMENT | Log::LOGCAT);
+  Log::init(Log::LOGCAT);
 
   // setup output file
   //
