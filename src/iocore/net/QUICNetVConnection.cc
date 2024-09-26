@@ -401,7 +401,7 @@ QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 {
   size_t   buf_len{0};
   uint8_t *buf = packet->get_entire_chain_buffer(&buf_len);
-  net_activity(this, this_ethread());
+  this->netActivity();
   quiche_recv_info recv_info = {
     &packet->from.sa,
     static_cast<socklen_t>(packet->from.isIp4() ? sizeof(packet->from.sin) : sizeof(packet->from.sin6)),
@@ -522,7 +522,7 @@ QUICNetVConnection::is_handshake_completed() const
 }
 
 void
-QUICNetVConnection::net_read_io(NetHandler * /* nh ATS_UNUSED */, EThread * /* lthread ATS_UNUSED */)
+QUICNetVConnection::net_read_io(NetHandler * /* nh ATS_UNUSED */)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   this->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
@@ -714,7 +714,7 @@ QUICNetVConnection::_handle_write_ready()
       segment_size = max_udp_payload_size;
     }
     this->_packet_handler->send_packet(this->_udp_con, this->con.addr, udp_payload, segment_size, &send_at_hint);
-    net_activity(this, this_ethread());
+    this->netActivity();
   }
 }
 

@@ -283,7 +283,7 @@ NetHandler::process_ready_list()
     if (ne->closed) {
       free_netevent(ne);
     } else if (ne->read.enabled && ne->read.triggered) {
-      ne->net_read_io(this, this->thread);
+      ne->net_read_io(this);
     } else if (!ne->read.enabled) {
       read_ready_list.remove(ne);
     }
@@ -293,7 +293,7 @@ NetHandler::process_ready_list()
     if (ne->closed) {
       free_netevent(ne);
     } else if (ne->write.enabled && ne->write.triggered) {
-      ne->net_write_io(this, this->thread);
+      ne->net_write_io(this);
     } else if (!ne->write.enabled) {
       write_ready_list.remove(ne);
     }
