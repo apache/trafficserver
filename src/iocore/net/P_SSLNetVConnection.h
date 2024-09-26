@@ -126,12 +126,6 @@ public:
     return retval;
   }
 
-  SSLHandshakeStatus
-  getSSLHandshakeStatus() const
-  {
-    return sslHandshakeStatus;
-  }
-
   bool
   getSSLHandShakeComplete() const override
   {
@@ -252,21 +246,6 @@ public:
   bool          protocol_mask_set = false;
   unsigned long protocol_mask     = 0;
 
-  // Only applies during the VERIFY certificate hooks (client and server side)
-  // Means to give the plugin access to the data structure passed in during the underlying
-  // openssl callback so the plugin can make more detailed decisions about the
-  // validity of the certificate in their cases
-  X509_STORE_CTX *
-  get_verify_cert()
-  {
-    return verify_cert;
-  }
-  void
-  set_verify_cert(X509_STORE_CTX *ctx)
-  {
-    verify_cert = ctx;
-  }
-
   bool
   peer_provided_cert() const override
   {
@@ -327,6 +306,7 @@ protected:
     return this->ssl;
   }
   ssl_curve_id _get_tls_curve() const override;
+  int          _verify_certificate(X509_STORE_CTX *ctx) override;
 
   // TLSSessionResumptionSupport
   const IpEndpoint &
@@ -375,8 +355,6 @@ private:
   int sent_cert = 0;
 
   int64_t redoWriteSize = 0;
-
-  X509_STORE_CTX *verify_cert = nullptr;
 
   // Null-terminated string, or nullptr if there is no SNI server name.
   std::unique_ptr<char[]> _ca_cert_file;
