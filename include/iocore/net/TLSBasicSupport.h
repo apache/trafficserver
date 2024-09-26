@@ -48,9 +48,9 @@ public:
   ink_hrtime  get_tls_handshake_begin_time() const;
   ink_hrtime  get_tls_handshake_end_time() const;
   /**
-   * Returns a certificate that neeed to be verified.
+   * Returns a certificate that need to be verified.
    *
-   * Note: This function is only available during verify_certification is being called.
+   * Note: This function is only available when verify_certification is being called.
    * This function is probably just for TSVConnSslVerifyCTXGet.
    * We could (and probably should) pass a cert to verify as an argument of TS_EVENT_SSL_VERIFY_CLIENT/SERVER event.
    */
