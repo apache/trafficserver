@@ -22,7 +22,6 @@ add_library(
   ControlBase.cc
   ControlMatcher.cc
   HostStatus.cc
-  HttpAPIHooks.cc
   IPAllow.cc
   ParentConsistentHash.cc
   ParentRoundRobin.cc

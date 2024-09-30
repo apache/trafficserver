@@ -37,6 +37,7 @@
 
 #include "tscore/Version.h"
 #include "api/InkAPIInternal.h"
+#include "api/HttpAPIHooks.h"
 #include "proxy/logging/Log.h"
 #include "proxy/hdrs/URL.h"
 #include "proxy/hdrs/MIME.h"
@@ -44,7 +45,6 @@
 #include "proxy/ProxySession.h"
 #include "proxy/http2/Http2ClientSession.h"
 #include "proxy/PoolableSession.h"
-#include "proxy/HttpAPIHooks.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpConfig.h"
 #include "proxy/PluginHttpConnect.h"

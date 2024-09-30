@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "proxy/HttpAPIHooks.h"
+#include "api/HttpAPIHooks.h"
 
 HttpAPIHooks *http_global_hooks = nullptr;
 

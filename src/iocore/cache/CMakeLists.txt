@@ -49,7 +49,7 @@ target_include_directories(inkcache PRIVATE ${CMAKE_SOURCE_DIR}/lib)
 target_link_libraries(
   inkcache
   PUBLIC ts::aio ts::hdrs ts::inkevent ts::tscore
-  PRIVATE ts::proxy fastlz ZLIB::ZLIB
+  PRIVATE ts::tsapibackend fastlz ZLIB::ZLIB
 )
 
 if(HAVE_LZMA_H)
