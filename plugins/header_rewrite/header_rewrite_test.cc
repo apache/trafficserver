@@ -236,6 +236,28 @@ test_parsing()
   }
 
   {
+    ParserTest p(R"(cond %{INBOUND:REMOTE-ADDR} {192.168.201.0/24,10.0.0.0/8})");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "cond");
+    CHECK_EQ(p.getTokens()[1], "%{INBOUND:REMOTE-ADDR}");
+    CHECK_EQ(p.getTokens()[2], "{192.168.201.0/24,10.0.0.0/8}");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(cond %{INBOUND:REMOTE-ADDR} { 192.168.201.0/24,10.0.0.0/8 })");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "cond");
+    CHECK_EQ(p.getTokens()[1], "%{INBOUND:REMOTE-ADDR}");
+    CHECK_EQ(p.getTokens()[2], "{ 192.168.201.0/24,10.0.0.0/8 }");
+
+    END_TEST();
+  }
+
+  {
     ParserTest p("add-header X-HeaderRewriteApplied true");
 
     CHECK_EQ(p.getTokens().size(), 3UL);
