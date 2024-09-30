@@ -28,7 +28,7 @@
 
 #include "parser.h"
 
-enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX, PARSER_IN_EXPANSION };
+enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX, PARSER_IN_EXPANSION, PARSER_IN_BRACE };
 
 bool
 Parser::parse_line(const std::string &original_line)
@@ -88,6 +88,15 @@ Parser::parse_line(const std::string &original_line)
         _empty = true;
         return false;
       }
+    } else if ((state == PARSER_DEFAULT) && ((i == 0 || line[i - 1] != '%') && line[i] == '{')) {
+      state            = PARSER_IN_BRACE;
+      extracting_token = true;
+      cur_token_start  = i;
+    } else if ((state == PARSER_IN_BRACE) && (line[i] == '}')) {
+      cur_token_length = i - cur_token_start + 1;
+      _tokens.push_back(line.substr(cur_token_start, cur_token_length));
+      state            = PARSER_DEFAULT;
+      extracting_token = false;
     } else if (!extracting_token) {
       if (_tokens.empty() && line[i] == '#') {
         // this is a comment line (it may have had leading whitespace before the #)
