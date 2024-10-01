@@ -115,10 +115,10 @@ safe_clr_fl(int fd, int arg)
   return flags;
 }
 
-int
+std::int64_t
 safe_write(int fd, const char *buffer, int len)
 {
-  int num_written = 0;
+  std::int64_t num_written = 0;
   while (num_written < len) {
     int const ret = write(fd, buffer + num_written, len - num_written);
     if (ret == -1) {
