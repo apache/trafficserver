@@ -418,10 +418,15 @@ public:
 
       /// Data for timing of the loop.
       struct Duration {
-        ink_hrtime _start = 0;         ///< The time of the first loop for this sample. Used to mark valid entries.
-        ink_hrtime _min   = INT64_MAX; ///< Shortest loop time.
-        ink_hrtime _max   = 0;         ///< Longest loop time.
-        Duration()        = default;
+        ink_hrtime _start           = 0;         ///< The time of the first loop for this sample. Used to mark valid entries.
+        ink_hrtime _min             = INT64_MAX; ///< Shortest loop time.
+        ink_hrtime _max             = 0;         ///< Longest loop time.
+        ink_hrtime _max_io_wait     = 0;         ///< Longest time spent waiting for IO activity
+        ink_hrtime _max_io_work     = 0;         ///< Longest time spent processing IO ready list
+        ink_hrtime _max_drain_queue = 0;         ///< Longest time spent draining the event queue
+        ink_hrtime _last_io_work    = 0;         ///< time spent processing IO this loop, needed for ratio
+        ink_hrtime _io_work_at_max  = 0;         ///< the time spent processing IO within the longest loop time
+        Duration()                  = default;
       } _duration;
 
       /// Events in the slice.
@@ -456,6 +461,21 @@ public:
        */
       self_type &record_event_count(int count);
 
+      /** Record duration of loop spent processing event queue.
+       *
+       * @param time Time spent processing the queue
+       * @return @a this.
+       */
+      self_type &record_drain_queue(ink_hrtime time);
+
+      /** Record time spent doing IO, both poll and processing time.
+       *
+       * @param io_wait Time spent polling for IO activity
+       * @param io_work Time spent processing the ready list
+       * @return @a this.
+       */
+      self_type &record_io_stats(ink_hrtime io_wait, ink_hrtime io_work);
+
       /// Add @a that to @a this data.
       /// This embodies the custom logic per member concerning whether each is a sum, min, or max.
       Slice &operator+=(Slice const &that);
@@ -465,16 +485,19 @@ public:
           More than one part of the code depends on this exact order. Be careful and thorough when changing.
       */
       enum class STAT_ID {
-        LOOP_COUNT,      ///< # of event loops executed.
-        LOOP_EVENTS,     ///< # of events
-        LOOP_EVENTS_MIN, ///< min # of events dispatched in a loop
-        LOOP_EVENTS_MAX, ///< max # of events dispatched in a loop
-        LOOP_WAIT,       ///< # of loops that did a conditional wait.
-        LOOP_TIME_MIN,   ///< Shortest time spent in loop.
-        LOOP_TIME_MAX,   ///< Longest time spent in loop.
+        LOOP_COUNT,           ///< # of event loops executed.
+        LOOP_EVENTS,          ///< # of events
+        LOOP_EVENTS_MIN,      ///< min # of events dispatched in a loop
+        LOOP_EVENTS_MAX,      ///< max # of events dispatched in a loop
+        LOOP_WAIT,            ///< # of loops that did a conditional wait.
+        LOOP_TIME_MIN,        ///< Shortest time spent in loop.
+        LOOP_TIME_MAX,        ///< Longest time spent in loop.
+        LOOP_DRAIN_QUEUE_MAX, ///< Max time Draining the event queue
+        LOOP_IO_WAIT_MAX,     ///< Min time spent IO waiting
+        LOOP_IO_WORK_MAX,     ///< Max time spent IO processing
       };
       /// Number of statistics for a slice.
-      static constexpr unsigned N_STAT_ID = unsigned(STAT_ID::LOOP_TIME_MAX) + 1;
+      static constexpr unsigned N_STAT_ID = unsigned(STAT_ID::LOOP_IO_WORK_MAX) + 1;
 
       /// Statistic name stems.
       /// These will be qualified by time scale.
@@ -578,7 +601,8 @@ inline auto
 EThread::Metrics::Slice::record_loop_duration(ink_hrtime delta) -> self_type &
 {
   if (delta > _duration._max) {
-    _duration._max = delta;
+    _duration._max            = delta;
+    _duration._io_work_at_max = _duration._last_io_work;
   }
   if (delta < _duration._min) {
     _duration._min = delta;
@@ -596,6 +620,34 @@ EThread::Metrics::Slice::record_event_count(int count) -> self_type &
     _events._max = _count;
   }
   _events._total += count;
+  return *this;
+}
+
+inline auto
+EThread::Metrics::Slice::record_drain_queue(ink_hrtime drain_queue) -> self_type &
+{
+  if (drain_queue > 0) {
+    if (drain_queue > _duration._max_drain_queue) {
+      _duration._max_drain_queue = drain_queue;
+    }
+  }
+  return *this;
+}
+
+inline auto
+EThread::Metrics::Slice::record_io_stats(ink_hrtime io_wait, ink_hrtime io_work) -> self_type &
+{
+  if (io_wait > 0) {
+    if (io_wait > _duration._max_io_wait) {
+      _duration._max_io_wait = io_wait;
+    }
+  }
+  if (io_work > 0) {
+    _duration._last_io_work = io_work;
+    if (io_work > _duration._max_io_work) {
+      _duration._max_io_work = io_work;
+    }
+  }
   return *this;
 }
 
