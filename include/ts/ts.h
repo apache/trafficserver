@@ -332,6 +332,12 @@ TSMBuffer TSMBufferCreate(void);
  */
 TSReturnCode TSMBufferDestroy(TSMBuffer bufp);
 
+/**
+   Check to see if an MBuffer is still valid, from since the time
+   it was acquired.
+ */
+bool TSMBufferIsValid(TSMBuffer bufp);
+
 /* --------------------------------------------------------------------------
    URLs */
 /**
