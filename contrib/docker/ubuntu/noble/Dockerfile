@@ -236,4 +236,4 @@ ENV PATH="$PATH:/opt/bin"
 
 EXPOSE 8080
 
-CMD ["traffic_server", "-T", "http"]
+CMD ["traffic_server"]
