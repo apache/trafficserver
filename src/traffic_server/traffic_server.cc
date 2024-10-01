@@ -1571,8 +1571,8 @@ struct RegressionCont : public Continuation {
 
     TSSystemState::shut_down_event_system();
     fprintf(stderr, "REGRESSION_TEST DONE: %s\n", regression_status_string(res));
-    ::exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
-    return EVENT_CONT;
+
+    return EVENT_DONE;
   }
 
   RegressionCont() : Continuation(new_ProxyMutex()) { SET_HANDLER(&RegressionCont::mainEvent); }
@@ -2324,6 +2324,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 
   delete main_thread;
+
+#if TS_HAS_TESTS
+  if (RegressionTest::check_status(regression_level) == REGRESSION_TEST_PASSED) {
+    std::exit(0);
+  } else {
+    std::exit(1);
+  }
+#endif
 }
 
 static void
