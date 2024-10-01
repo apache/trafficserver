@@ -232,3 +232,8 @@ RUN apt update \
 
 COPY --from=build /opt /opt
 RUN chown nobody /opt/var/trafficserver /opt/var/log/trafficserver
+ENV PATH="$PATH:/opt/bin"
+
+EXPOSE 8080
+
+CMD ["traffic_server", "-T", "http"]
