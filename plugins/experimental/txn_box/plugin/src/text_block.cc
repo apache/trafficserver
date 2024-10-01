@@ -304,7 +304,7 @@ Do_text_block_define::Updater::operator()()
     if (!ec) { // swap in updated content.
       {
         std::unique_lock lock(_block->_content_mutex);
-        _block->_content       = content;
+        _block->_content       = std::move(content);
         _block->_last_modified = mtime;
       }
       if (_block->_notify_idx != FeatureGroup::INVALID_IDX) {
