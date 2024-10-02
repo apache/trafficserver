@@ -991,9 +991,9 @@ Mod_as_integer::operator()(Context &ctx, Feature &feature)
   if (errata.is_ok()) {
     return Feature{value};
   }
-  auto invalid{ctx.extract(_value)};
+
   if (errata.is_ok()) {
-    return Feature{invalid};
+    return Feature{ctx.extract(_value)};
   }
   return feature;
 }

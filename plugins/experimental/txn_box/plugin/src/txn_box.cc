@@ -127,7 +127,7 @@ Task_ConfigReload()
     auto            errata = cfg->load_cli_args(cfg, G._args, 1);
     if (errata.is_ok()) {
       std::unique_lock lock(Plugin_Config_Mutex);
-      Plugin_Config = cfg;
+      Plugin_Config = std::move(cfg);
     } else {
       std::string err_str;
       swoc::bwprint(err_str, "{}: Failed to reload configuration.\n{}", Config::PLUGIN_NAME, errata);
