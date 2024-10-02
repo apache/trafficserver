@@ -83,7 +83,7 @@ public:
 };
 
 RemapPluginUnitTest *
-setupSandBox(const fs::path configPath)
+setupSandBox(const fs::path &configPath)
 {
   std::string error;
   clean();
