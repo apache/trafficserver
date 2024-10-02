@@ -29,6 +29,7 @@
 ***************************************************************************/
 #pragma once
 
+#include <cstdint>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_apidefs.h"
 
@@ -64,7 +65,7 @@ setsockopt_off(int s, int level, int optname)
  * the file descriptor. If -1 is returned, errno should indicate why the
  * write failed.
  */
-int safe_write(int fd, const char *buffer, int len);
+std::int64_t safe_write(int fd, const char *buffer, int len);
 
 int safe_fcntl(int fd, int cmd, int arg);
 int safe_ioctl(int fd, int request, char *arg);
