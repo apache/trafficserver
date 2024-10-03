@@ -2215,6 +2215,21 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       REC_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
     }
 
+    ats_scoped_str server_ports(255);
+    *server_ports = '\0';
+    REC_ReadConfigString(server_ports, "proxy.config.http.server_ports", 255);
+    bool quic_server_port = strstr(server_ports, "/quic/") != server_ports;
+
+#if TS_USE_QUIC == 0
+    if (quic_server_port) {
+      Fatal("proxy.config.http.server_ports listening for quic but traffic_server wasn't built with quic support.");
+    }
+#endif
+
+    if (quic_server_port && num_of_udp_threads == 0) {
+      Fatal("proxy.config.http.server_ports listening for quic but proxy.config.udp.threads is 0.");
+    }
+
     udpNet.register_event_type();
     if (num_of_udp_threads) {
       udpNet.start(num_of_udp_threads, stacksize);
