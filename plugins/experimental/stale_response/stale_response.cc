@@ -957,12 +957,14 @@ parse_args(int argc, char const *argv[])
     TSTextLogObjectCreate(plugin_config->log_info.filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object));
   }
 
-  TSDebug(PLUGIN_TAG, "[%s] global stale if error override = %d", __FUNCTION__, (int)plugin_config->stale_if_error_override);
-  TSDebug(PLUGIN_TAG, "[%s] global stale while revalidate override = %d", __FUNCTION__,
-          (int)plugin_config->stale_while_revalidate_override);
-  TSDebug(PLUGIN_TAG, "[%s] global stale if error default = %d", __FUNCTION__, (int)plugin_config->stale_if_error_default);
-  TSDebug(PLUGIN_TAG, "[%s] global stale while revalidate default = %d", __FUNCTION__,
-          (int)plugin_config->stale_while_revalidate_default);
+  TSDebug(PLUGIN_TAG, "[%s] global stale if error override = %" PRIdMAX, __FUNCTION__,
+          static_cast<intmax_t>(plugin_config->stale_if_error_override));
+  TSDebug(PLUGIN_TAG, "[%s] global stale while revalidate override = %" PRIdMAX, __FUNCTION__,
+          static_cast<intmax_t>(plugin_config->stale_while_revalidate_override));
+  TSDebug(PLUGIN_TAG, "[%s] global stale if error default = %" PRIdMAX, __FUNCTION__,
+          static_cast<intmax_t>(plugin_config->stale_if_error_default));
+  TSDebug(PLUGIN_TAG, "[%s] global stale while revalidate default = %" PRIdMAX, __FUNCTION__,
+          static_cast<intmax_t>(plugin_config->stale_while_revalidate_default));
   TSDebug(PLUGIN_TAG, "[%s] global intercept reroute = %d", __FUNCTION__, (int)plugin_config->intercept_reroute);
   TSDebug(PLUGIN_TAG, "[%s] global force parallel async = %d", __FUNCTION__, (int)plugin_config->force_parallel_async);
   TSDebug(PLUGIN_TAG, "[%s] global max memory usage = %" PRId64, __FUNCTION__, plugin_config->max_body_data_memory_usage);
