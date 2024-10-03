@@ -95,7 +95,11 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   socklen_t namelen;
   int       prot = IPPROTO_TCP;
 
-  if (!ats_is_ip(&accept_addr)) {
+  if (ats_is_unix(&accept_addr)) {
+    prot = 0;
+    ats_ip_copy(&addr, &accept_addr);
+    unlink(accept_addr.sun.sun_path);
+  } else if (!ats_is_ip(&accept_addr)) {
     ats_ip4_set(&addr, INADDR_ANY, 0);
   } else {
     ats_ip_copy(&addr, &accept_addr);

@@ -32,6 +32,7 @@
 #include "proxy/logging/LogBuffer.h"
 #include "tscore/Encoding.h"
 #include "../private/SSLProxySession.h"
+#include "tscore/ink_inet.h"
 
 char INVALID_STR[] = "!INVALID_STR!";
 
@@ -427,6 +428,12 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
       data._ip6._addr   = ats_ip6_addr_cast(ip);
     }
     len = sizeof(data._ip6);
+  } else if (ats_is_unix(ip)) {
+    if (dest) {
+      data._un._family = AF_UNIX;
+      strncpy(data._un._path, ats_unix_cast(ip)->sun_path, TS_UNIX_SIZE);
+    }
+    len = sizeof(data._un);
   } else {
     data._ip._family = AF_UNSPEC;
   }
