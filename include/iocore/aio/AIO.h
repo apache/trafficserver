@@ -30,9 +30,14 @@
  ****************************************************************************/
 #pragma once
 
+#include "iocore/eventsystem/Continuation.h"
 #include "tscore/ink_platform.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "records/RecProcess.h"
+
+#if TS_USE_LINUX_IO_URING
+#include "iocore/io_uring/IO_URING.h"
+#endif
 
 static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
 
@@ -63,17 +68,40 @@ bool ink_aio_thread_num_set(int thread_num);
 #define AIO_CALLBACK_THREAD_ANY ((EThread *)0) // any regular event thread
 #define AIO_CALLBACK_THREAD_AIO ((EThread *)-1)
 
+struct AIO_Reqs;
+
+#if TS_USE_LINUX_IO_URING
+struct AIOCallback : public Continuation, public IOUringCompletionHandler {
+#else
 struct AIOCallback : public Continuation {
+#endif
   // set before calling aio_read/aio_write
   ink_aiocb    aiocb;
   Action       action;
   EThread     *thread = AIO_CALLBACK_THREAD_ANY;
   AIOCallback *then   = nullptr;
   // set on return from aio_read/aio_write
-  int64_t aio_result = 0;
+  int64_t    aio_result = 0;
+  AIO_Reqs  *aio_req    = nullptr;
+  ink_hrtime sleep_time = 0;
+  SLINK(AIOCallback, alink); /* for AIO_Reqs::aio_temp_list */
+#if TS_USE_LINUX_IO_URING
+  iovec        iov     = {}; // this is to support older kernels that only support readv/writev
+  AIOCallback *this_op = nullptr;
+  AIOCallback *aio_op  = nullptr;
 
-  int ok();
-  AIOCallback() {}
+  void handle_complete(io_uring_cqe *) override;
+#endif
+
+  int io_complete(int event, void *data);
+
+  int
+  ok()
+  {
+    return (aiocb.aio_nbytes == static_cast<size_t>(aio_result)) && (aio_result >= 0);
+  }
+
+  AIOCallback() { SET_HANDLER(&AIOCallback::io_complete); }
 };
 
 void ink_aio_init(ts::ModuleVersion version, AIOBackend backend = AIO_BACKEND_AUTO);

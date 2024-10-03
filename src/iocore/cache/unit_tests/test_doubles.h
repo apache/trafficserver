@@ -26,6 +26,12 @@
 #include "main.h"
 
 #include "tscore/EventNotify.h"
+#include "tscore/ink_config.h"
+#include "tscore/ink_hrtime.h"
+
+#if TS_USE_LINUX_IO_URING
+#include "iocore/io_uring/IO_URING.h"
+#endif
 
 #include <cstdint>
 #include <cstring>
@@ -106,7 +112,15 @@ public:
   {
     this->_notifier.lock();
     while (!this->_got_callback) {
+#if TS_USE_LINUX_IO_URING
+      // The cache tests make some assumptions that AIO is done on other threads
+      // and don't go through the event loop but instead call this.  This means
+      // that io_uring ops aren't submitted or serviced.  Having this here
+      // gets io_uring going again.
+      IOUringContext::local_context()->submit_and_wait(HRTIME_MSECONDS(100));
+#else
       this->_notifier.wait();
+#endif
     }
     this->_notifier.unlock();
   }

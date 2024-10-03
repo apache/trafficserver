@@ -31,7 +31,6 @@
 #include "iocore/eventsystem/Continuation.h"
 
 // aio
-#include "../aio/P_AIO.h"
 #include "iocore/aio/AIO.h"
 
 class Stripe;
@@ -244,16 +243,16 @@ struct OpenDir : public Continuation {
 };
 
 struct CacheSync : public Continuation {
-  int                 stripe_index = 0;
-  char               *buf          = nullptr;
-  size_t              buflen       = 0;
-  bool                buf_huge     = false;
-  off_t               writepos     = 0;
-  AIOCallbackInternal io;
-  Event              *trigger    = nullptr;
-  ink_hrtime          start_time = 0;
-  int                 mainEvent(int event, Event *e);
-  void                aio_write(int fd, char *b, int n, off_t o);
+  int         stripe_index = 0;
+  char       *buf          = nullptr;
+  size_t      buflen       = 0;
+  bool        buf_huge     = false;
+  off_t       writepos     = 0;
+  AIOCallback io;
+  Event      *trigger    = nullptr;
+  ink_hrtime  start_time = 0;
+  int         mainEvent(int event, Event *e);
+  void        aio_write(int fd, char *b, int n, off_t o);
 
   CacheSync() : Continuation(new_ProxyMutex()) { SET_HANDLER(&CacheSync::mainEvent); }
 };

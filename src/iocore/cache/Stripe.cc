@@ -44,9 +44,9 @@ compare_ushort(void const *a, void const *b)
 } // namespace
 
 struct StripeInitInfo {
-  off_t               recover_pos;
-  AIOCallbackInternal vol_aio[4];
-  char               *vol_h_f;
+  off_t       recover_pos;
+  AIOCallback vol_aio[4];
+  char       *vol_h_f;
 
   StripeInitInfo()
   {
