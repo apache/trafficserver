@@ -26,7 +26,6 @@
 #include "proxy/http/remap/AclFiltering.h"
 
 class UrlRewrite;
-enum class ACLBehaviorPolicy;
 
 #define BUILD_TABLE_MAX_ARGS 2048
 
@@ -46,6 +45,11 @@ enum class ACLBehaviorPolicy;
 #define REMAP_OPTFLG_ALL_FILTERS \
   (REMAP_OPTFLG_METHOD | REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_SRC_IP_CATEGORY | REMAP_OPTFLG_ACTION | REMAP_OPTFLG_INTERNAL)
 
+enum class ACLBehaviorPolicy {
+  ACL_BEHAVIOR_LEGACY = 0,
+  ACL_BEHAVIOR_MODERN,
+};
+
 struct BUILD_TABLE_INFO {
   BUILD_TABLE_INFO();
   ~BUILD_TABLE_INFO();
@@ -56,7 +60,7 @@ struct BUILD_TABLE_INFO {
   char         *paramv[BUILD_TABLE_MAX_ARGS];
   char         *argv[BUILD_TABLE_MAX_ARGS];
 
-  ACLBehaviorPolicy behavior_policy;
+  ACLBehaviorPolicy behavior_policy{ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY}; // Default 0.
   bool              ip_allow_check_enabled_p = true;
   bool              accept_check_p           = true;
 
