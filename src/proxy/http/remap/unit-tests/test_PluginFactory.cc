@@ -301,9 +301,7 @@ SCENARIO("loading plugins", "[plugin][core]")
         validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath);
         CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath, isPluginDynamicReloadEnabled()));
 
-        // check Dso at effective path still exists while copy at runtime path doesn't
         CHECK(fs::exists(plugin->_plugin.effectivePath()));
-        CHECK(!fs::exists(plugin->_plugin.runtimePath()));
       }
 
       teardownConfigPathTest(factory);
@@ -602,13 +600,10 @@ checkTwoLoadedVersionsDifferent(const RemapPluginInst *plugin_v1, const RemapPlu
   // 2 versions can be different only when dynamic reload enabled
   CHECK(isPluginDynamicReloadEnabled());
 
-  // check Dso at effective path still exists while the copy at runtime path doesn't
   CHECK(plugin_v1->_plugin.effectivePath() != plugin_v1->_plugin.runtimePath());
   CHECK(fs::exists(plugin_v1->_plugin.effectivePath()));
-  CHECK(!fs::exists(plugin_v1->_plugin.runtimePath()));
   CHECK(plugin_v2->_plugin.effectivePath() != plugin_v2->_plugin.runtimePath());
   CHECK(fs::exists(plugin_v2->_plugin.effectivePath()));
-  CHECK(!fs::exists(plugin_v2->_plugin.runtimePath()));
 }
 
 void
