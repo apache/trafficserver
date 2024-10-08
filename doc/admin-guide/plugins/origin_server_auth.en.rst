@@ -184,7 +184,7 @@ Google Cloud Storage
 Configuration options::
 
     # Mandatory options
-    --access_key=<access_id>
+    --session_token=<session_token>
     --version=gcpv1
 
 If the following option is used then the options could be specified in a file::
@@ -196,5 +196,5 @@ The ``gcp_auth.config`` config file could look like this::
 
     # gcp_auth.config
 
-    access_key=<access_id>
+    session_token=<access_id>
     version=gcpv1
