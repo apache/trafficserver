@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "P_CacheDisk.h"
 #include "P_CacheInternal.h"
 #include "StripeSM.h"
 
@@ -83,13 +84,32 @@ struct StripeInitInfo {
 // Stripe
 //
 
-Stripe::Stripe(off_t blocks, off_t dir_skip)
-  : skip{ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip))}, start{skip}, len{blocks * STORE_BLOCK_SIZE}
+Stripe::Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip)
+  : path{ats_strdup(disk->path)},
+    fd{disk->fd},
+    skip{ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip))},
+    start{skip},
+    len{blocks * STORE_BLOCK_SIZE},
+    disk{disk}
 {
   ink_assert(this->len < MAX_STRIPE_SIZE);
 
+  this->_init_hash_text(disk->path, blocks, dir_skip);
   this->_init_data(STORE_BLOCK_SIZE);
   this->_init_directory(this->dirlen(), this->headerlen(), DIRECTORY_FOOTER_SIZE);
+}
+
+void
+Stripe::_init_hash_text(char const *seed, off_t blocks, off_t dir_skip)
+{
+  char const  *seed_str       = this->disk->hash_base_string ? this->disk->hash_base_string : seed;
+  const size_t hash_seed_size = strlen(seed_str);
+  const size_t hash_text_size = hash_seed_size + 32;
+
+  this->hash_text = static_cast<char *>(ats_malloc(hash_text_size));
+  ink_strlcpy(hash_text, seed_str, hash_text_size);
+  snprintf(hash_text + hash_seed_size, (hash_text_size - hash_seed_size), " %" PRIu64 ":%" PRIu64 "",
+           static_cast<uint64_t>(dir_skip), static_cast<uint64_t>(blocks));
 }
 
 void

@@ -81,6 +81,17 @@ std::array<AddWriterBranchTest, 32> add_writer_branch_test_cases = {
    }
 };
 
+static void
+init_disk(CacheDisk &disk)
+{
+  disk.path                = static_cast<char *>(ats_malloc(1));
+  disk.path[0]             = '\0';
+  disk.disk_stripes        = static_cast<DiskStripe **>(ats_malloc(sizeof(DiskStripe *)));
+  disk.disk_stripes[0]     = nullptr;
+  disk.header              = static_cast<DiskHeader *>(ats_malloc(sizeof(DiskHeader)));
+  disk.header->num_volumes = 0;
+}
+
 /* Catch test helper to provide a StripeSM with a valid file descriptor.
  *
  * The file will be deleted automatically when the application ends normally.
@@ -124,8 +135,10 @@ init_stripe_for_writing(StripeSM &stripe, StripteHeaderFooter &header, CacheVol 
 
 TEST_CASE("The behavior of StripeSM::add_writer.")
 {
-  FakeVC   vc;
-  StripeSM stripe{10, 0};
+  FakeVC    vc;
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
 
   SECTION("Branch tests.")
   {
@@ -181,7 +194,9 @@ TEST_CASE("The behavior of StripeSM::add_writer.")
 // tmpfile for the StripeSM to write to.
 TEST_CASE("aggWrite behavior with f.evacuator unset")
 {
-  StripeSM            stripe{10, 0};
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM            stripe{&disk, 10, 0};
   StripteHeaderFooter header;
   CacheVol            cache_vol;
   auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};
@@ -291,7 +306,9 @@ TEST_CASE("aggWrite behavior with f.evacuator unset")
 // only on the presence of the f.evacuator flag.
 TEST_CASE("aggWrite behavior with f.evacuator set")
 {
-  StripeSM            stripe{10, 0};
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM            stripe{&disk, 10, 0};
   StripteHeaderFooter header;
   CacheVol            cache_vol;
   auto               *file{init_stripe_for_writing(stripe, header, cache_vol)};
