@@ -68,11 +68,7 @@ static fs::path tempComponent = fs::path("c71e2bab-90dc-4770-9535-c9304c3de38e")
 class PluginFactoryUnitTest : public PluginFactory
 {
 public:
-  PluginFactoryUnitTest(const fs::path &tempComponent)
-  {
-    _tempComponent      = tempComponent;
-    _preventiveCleaning = false;
-  }
+  PluginFactoryUnitTest(const fs::path &tempComponent) { _tempComponent = tempComponent; }
 
 protected:
   const char *
