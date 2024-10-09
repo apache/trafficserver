@@ -103,13 +103,15 @@ PluginFactory::~PluginFactory()
   _instList.apply([](RemapPluginInst *pluginInst) -> void { delete pluginInst; });
   _instList.clear();
 
-  {
+  if (!TSSystemState::is_event_system_shut_down()) {
     uint32_t elevate_access = 0;
 
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     fs::remove_all(_runtimeDir, _ec);
+  } else {
+    fs::remove_all(_runtimeDir, _ec); // Try anyways
   }
 
   PluginDbg(_dbg_ctl(), "destroyed plugin factory %s", getUuid());
@@ -285,7 +287,7 @@ void
 PluginFactory::cleanup()
 {
   std::error_code ec;
-  auto            path = RecConfigReadRuntimeDir();
+  std::string     path(RecConfigReadRuntimeDir());
 
   try {
     if (path.starts_with("/") && std::filesystem::is_directory(path)) {
