@@ -25,6 +25,7 @@
 
 #include <chrono>
 #include <atomic>
+#include <utility>
 
 #include "tscore/HashFNV.h"
 #include "tscore/ink_time.h"
@@ -167,6 +168,8 @@ struct HostDBInfo {
    */
   bool mark_down(ts_time now);
 
+  std::pair<bool, uint8_t> increment_fail_count(ts_time now, uint8_t max_retries);
+
   /** Mark the target as up / alive.
    *
    * @return Previous alive state of the target.
@@ -243,8 +246,12 @@ HostDBInfo::is_down(ts_time now, ts_seconds fail_window)
 inline bool
 HostDBInfo::mark_up()
 {
-  auto t = last_failure.exchange(TS_TIME_ZERO);
-  return t != TS_TIME_ZERO;
+  auto t        = last_failure.exchange(TS_TIME_ZERO);
+  bool was_down = t != TS_TIME_ZERO;
+  if (was_down) {
+    fail_count.store(0);
+  }
+  return was_down;
 }
 
 inline bool
@@ -254,6 +261,17 @@ HostDBInfo::mark_down(ts_time now)
   return last_failure.compare_exchange_strong(t0, now);
 }
 
+inline std::pair<bool, uint8_t>
+HostDBInfo::increment_fail_count(ts_time now, uint8_t max_retries)
+{
+  auto fcount      = ++fail_count;
+  bool marked_down = false;
+  if (fcount >= max_retries) {
+    marked_down = mark_down(now);
+  }
+  return std::make_pair(marked_down, fcount);
+}
+
 inline bool
 HostDBInfo::select(ts_time now, ts_seconds fail_window)
 {
@@ -261,14 +279,15 @@ HostDBInfo::select(ts_time now, ts_seconds fail_window)
   if (t0 == TS_TIME_ZERO) {
     return true; // it's alive and so is valid for selection.
   }
-  // Success means this is a zombie and this thread updated the failure time.
-  return (t0 + fail_window < now) && last_failure.compare_exchange_strong(t0, now);
+  // Return true and give it a try if enough time is elapsed since the last failure
+  return (t0 + fail_window < now);
 }
 
 inline void
 HostDBInfo::migrate_from(HostDBInfo::self_type const &that)
 {
   this->last_failure = that.last_failure.load();
+  this->fail_count   = that.fail_count.load();
   this->http_version = that.http_version;
 }
 

@@ -47,6 +47,7 @@
 #include "proxy/http/HttpBodyFactory.h"
 #include "proxy/IPAllow.h"
 #include "iocore/utils/Machine.h"
+#include "ts/ats_probe.h"
 
 DbgCtl HttpTransact::State::_dbg_ctl{"http"};
 
@@ -521,8 +522,7 @@ HttpTransact::is_server_negative_cached(State *s)
     //   down to 2*down_server_timeout
     if (s->dns_info.active &&
         ts_clock::from_time_t(s->client_request_time) + s->txn_conf->down_server_timeout < s->dns_info.active->last_fail_time()) {
-      s->dns_info.active->last_failure = TS_TIME_ZERO;
-      s->dns_info.active->fail_count   = 0;
+      s->dns_info.active->mark_up();
       ink_assert(!"extreme clock skew");
       return true;
     }
