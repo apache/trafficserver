@@ -287,17 +287,21 @@ PluginFactory::cleanup()
   std::error_code ec;
   auto            path = RecConfigReadRuntimeDir();
 
-  if (path.starts_with("/") && std::filesystem::is_directory(path)) {
-    for (const auto &entry : std::filesystem::directory_iterator(path, ec)) {
-      if (entry.is_directory()) {
-        std::string dir_name   = entry.path().string();
-        int         dash_count = std::count(dir_name.begin(), dir_name.end(), '-'); // All UUIDs have 4 dashes
+  try {
+    if (path.starts_with("/") && std::filesystem::is_directory(path)) {
+      for (const auto &entry : std::filesystem::directory_iterator(path, ec)) {
+        if (entry.is_directory()) {
+          std::string dir_name   = entry.path().string();
+          int         dash_count = std::count(dir_name.begin(), dir_name.end(), '-'); // All UUIDs have 4 dashes
 
-        if (dash_count == 4) {
-          std::filesystem::remove_all(dir_name, ec);
+          if (dash_count == 4) {
+            std::filesystem::remove_all(dir_name, ec);
+          }
         }
       }
     }
+  } catch (std::exception &e) {
+    PluginError("Error cleaning up runtime directory: %s", e.what());
   }
 }
 
