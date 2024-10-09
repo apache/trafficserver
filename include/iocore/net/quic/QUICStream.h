@@ -95,19 +95,48 @@ public:
   virtual ~QUICStreamStateListener()                           = default; // Some compilers may warn about this.
 };
 
-#define QUICStreamDebug(fmt, ...)                                                                        \
-  Debug("quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
-        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+namespace QUICStreamDbgCtl
+{
+inline DbgCtl &
+quic_stream()
+{
+  static DbgCtl dc{"quic_stream"};
+  return dc;
+}
+inline DbgCtl &
+v_quic_stream()
+{
+  static DbgCtl dc{"v_quic_stream"};
+  return dc;
+}
+inline DbgCtl &
+quic_flow_ctrl()
+{
+  static DbgCtl dc{"quic_flow_ctrl"};
+  return dc;
+}
+inline DbgCtl &
+v_quic_flow_ctrl()
+{
+  static DbgCtl dc{"v_quic_flow_ctrl"};
+  return dc;
+}
 
-#define QUICVStreamDebug(fmt, ...)                                                                         \
-  Debug("v_quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
-        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+} // namespace QUICStreamDbgCtl
 
-#define QUICStreamFCDebug(fmt, ...)                                                                         \
-  Debug("quic_flow_ctrl", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
-        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
-#define QUICVStreamFCDebug(fmt, ...)                                                                          \
-  Debug("v_quic_flow_ctrl", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
-        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+#define QUICStreamDebug(fmt, ...)                                                                                        \
+  Dbg(QUICStreamDbgCtl::quic_stream(), "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+      QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+
+#define QUICVStreamDebug(fmt, ...)                                                                                         \
+  Dbg(QUICStreamDbgCtl::v_quic_stream(), "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+      QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+
+#define QUICStreamFCDebug(fmt, ...)                                                                                         \
+  Dbg(QUICStreamDbgCtl::quic_flow_ctrl(), "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+      QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+#define QUICVStreamFCDebug(fmt, ...)                                                                                          \
+  Dbg(QUICStreamDbgCtl::v_quic_flow_ctrl(), "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+      QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
 
 extern const uint32_t MAX_STREAM_FRAME_OVERHEAD;

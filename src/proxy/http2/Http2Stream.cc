@@ -39,8 +39,14 @@
     this->_history.push_back(MakeSourceLocation(), e, r); \
   }
 
+namespace
+{
+DbgCtl dbg_ctl_http2_stream{"http2_stream"};
+
+} // end anonymous namespace
+
 #define Http2StreamDebug(fmt, ...) \
-  SsnDebug(_proxy_ssn, "http2_stream", "[%" PRId64 "] [%u] " fmt, _proxy_ssn->connection_id(), this->get_id(), ##__VA_ARGS__);
+  SsnDbg(_proxy_ssn, dbg_ctl_http2_stream, "[%" PRId64 "] [%u] " fmt, _proxy_ssn->connection_id(), this->get_id(), ##__VA_ARGS__);
 
 ClassAllocator<Http2Stream, true> http2StreamAllocator("http2StreamAllocator");
 

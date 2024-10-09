@@ -55,7 +55,8 @@ public:
   void
   init(Continuation *cont, TSFetchWakeUpOptions options, TSFetchEvent events, const char *headers, int length, sockaddr const *addr)
   {
-    Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%.*s\n--", __FUNCTION__, length, headers);
+    static DbgCtl dbg_ctl{"FetchSM"};
+    Dbg(dbg_ctl, "[%s] FetchSM initialized for request with headers\n--\n%.*s\n--", __FUNCTION__, length, headers);
     init_comm();
     contp            = cont;
     callback_events  = events;

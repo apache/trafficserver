@@ -36,7 +36,9 @@ constexpr unsigned int c_chunk_add_count = 64;
 
 #define PLUGIN_TAG_BODY "stale_response_body"
 
-EXT_DBG_CTL(PLUGIN_TAG_BODY)
+EXT_DBG_CTL(TAG_BODY)
+
+extern DbgCtl state_response_body_dbg_ctl;
 
 /*-----------------------------------------------------------------------------------------------*/
 // This struct needs to newed not malloced

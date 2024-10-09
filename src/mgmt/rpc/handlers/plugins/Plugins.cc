@@ -25,9 +25,9 @@
 
 namespace
 {
-const std::string     PLUGIN_TAG_KEY{"tag"};
-const std::string     PLUGIN_DATA_KEY{"data"};
-static constexpr auto logTag{"rpc.plugins"};
+const std::string PLUGIN_TAG_KEY{"tag"};
+const std::string PLUGIN_DATA_KEY{"data"};
+DbgCtl            dbg_ctl{"rpc.plugins"};
 
 struct PluginMsgInfo {
   std::string data;
@@ -83,7 +83,7 @@ plugin_send_basic_msg(std::string_view const & /* id ATS_UNUSED */, YAML::Node c
       hook = hook->next();
     }
   } catch (std::exception const &ex) {
-    Debug(logTag, "Invalid params %s", ex.what());
+    Dbg(dbg_ctl, "Invalid params %s", ex.what());
     resp = err::make_errata(err::Codes::PLUGIN, "Error parsing the incoming data: {}", ex.what());
   }
 

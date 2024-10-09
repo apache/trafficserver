@@ -39,8 +39,8 @@ const unsigned int c_hashSeed = 99991;
 extern const char  PLUGIN_TAG[];
 extern const char  PLUGIN_TAG_BAD[];
 
-EXT_DBG_CTL(PLUGIN_TAG)
-EXT_DBG_CTL(PLUGIN_TAG_BAD)
+EXT_DBG_CTL(TAG)
+EXT_DBG_CTL(TAG_BAD)
 
 struct LogInfo {
   TSTextLogObject object                 = nullptr;

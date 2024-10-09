@@ -97,12 +97,12 @@ SSLSecret::loadFile(const std::string &name)
     Dbg(dbg_ctl_ssl_secret, "Loading file: %s failed ", name.c_str());
     return std::string{};
   }
-  if (is_debug_tag_set("ssl_secret")) {
+  if (dbg_ctl_ssl_secret.on()) {
     char         hash_str[EVP_MAX_MD_SIZE * 2];
     unsigned int hash_len;
     get_hash_str(data, hash_str, &hash_len);
-    Dbg(dbg_ctl_ssl_secret, "Secret hash: %.*s", hash_len, hash_str);
-    Dbg(dbg_ctl_ssl_secret, "Secret data: %.50s", data.c_str());
+    DbgPrint(dbg_ctl_ssl_secret, "Secret hash: %.*s", hash_len, hash_str);
+    DbgPrint(dbg_ctl_ssl_secret, "Secret data: %.50s", data.c_str());
   }
   if (SSLConfigParams::load_ssl_file_cb) {
     SSLConfigParams::load_ssl_file_cb(name.c_str());
@@ -133,11 +133,11 @@ SSLSecret::getSecret(const std::string &name) const
     return std::string{};
   }
   // The full secret data can be sensitive. Print only the first 50 bytes.
-  if (is_debug_tag_set("ssl_secret")) {
+  if (dbg_ctl_ssl_secret.on()) {
     char         hash_str[EVP_MAX_MD_SIZE * 2];
     unsigned int hash_len;
     get_hash_str(iter->second, hash_str, &hash_len);
-    Dbg(dbg_ctl_ssl_secret, "Get secret for %s: hash=%.*s %.50s", name.c_str(), hash_len, hash_str, iter->second.c_str());
+    DbgPrint(dbg_ctl_ssl_secret, "Get secret for %s: hash=%.*s %.50s", name.c_str(), hash_len, hash_str, iter->second.c_str());
   }
   return iter->second;
 }

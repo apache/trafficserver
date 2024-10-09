@@ -60,7 +60,7 @@ convert_mime_hdr_to_string(TSMLoc hdr_loc)
   output_buffer = TSIOBufferCreate();
 
   if (!output_buffer) {
-    TSDebug(PLUGIN_TAG_BAD, "[%s] couldn't allocate IOBuffer", __FUNCTION__);
+    SRDBG(TAG_BAD, "[%s] couldn't allocate IOBuffer", __FUNCTION__);
   }
 
   reader = TSIOBufferReaderAlloc(output_buffer);
@@ -136,7 +136,7 @@ has_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
     bFound = true;
   }
   TSHandleMLocRelease(hdr_url_buf, hdr_url_loc, url_loc);
-  TSDebug(PLUGIN_TAG, "[%s] %d", __FUNCTION__, bFound);
+  SRDBG(TAG, "[%s] %d", __FUNCTION__, bFound);
   return bFound;
 }
 
@@ -165,7 +165,7 @@ add_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
   const char *end   = newUrl.size() + start;
   TSUrlParse(hdr_url_buf, url_loc, &start, end);
 
-  TSDebug(PLUGIN_TAG, "[%s] [%s]", __FUNCTION__, newQuery.c_str());
+  SRDBG(TAG, "[%s] [%s]", __FUNCTION__, newQuery.c_str());
   TSHandleMLocRelease(hdr_url_buf, hdr_url_loc, url_loc);
 }
 
@@ -193,7 +193,7 @@ strip_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
     TSUrlHttpQuerySet(hdr_url_buf, url_loc, newQuery.c_str(), newQuery.size());
   }
   TSHandleMLocRelease(hdr_url_buf, hdr_url_loc, url_loc);
-  TSDebug(PLUGIN_TAG, "[%s] stripped=%d [%s]", __FUNCTION__, stripped, newQuery.c_str());
+  SRDBG(TAG, "[%s] stripped=%d [%s]", __FUNCTION__, stripped, newQuery.c_str());
   return stripped;
 }
 
@@ -206,7 +206,7 @@ fix_connection_close(StateInfo *state)
                                           TS_MIME_LEN_CONNECTION);
 
   while (connection_hdr_loc != TS_NULL_MLOC) {
-    TSDebug(PLUGIN_TAG, "[%s] {%u} Found old Connection hdr", __FUNCTION__, state->req_info->key_hash);
+    SRDBG(TAG, "[%s] {%u} Found old Connection hdr", __FUNCTION__, state->req_info->key_hash);
     connection_hdr_dup_loc =
       TSMimeHdrFieldNextDup(state->req_info->http_hdr_buf, state->req_info->http_hdr_loc, connection_hdr_loc);
     TSMimeHdrFieldRemove(state->req_info->http_hdr_buf, state->req_info->http_hdr_loc, connection_hdr_loc);
@@ -215,7 +215,7 @@ fix_connection_close(StateInfo *state)
     connection_hdr_loc = connection_hdr_dup_loc;
   }
 
-  TSDebug(PLUGIN_TAG, "[%s] {%u} Creating Connection:close hdr", __FUNCTION__, state->req_info->key_hash);
+  SRDBG(TAG, "[%s] {%u} Creating Connection:close hdr", __FUNCTION__, state->req_info->key_hash);
   TSMimeHdrFieldCreateNamed(state->req_info->http_hdr_buf, state->req_info->http_hdr_loc, TS_MIME_FIELD_CONNECTION,
                             TS_MIME_LEN_CONNECTION, &connection_hdr_loc);
   TSMimeHdrFieldValueStringInsert(state->req_info->http_hdr_buf, state->req_info->http_hdr_loc, connection_hdr_loc, -1,
@@ -239,9 +239,9 @@ get_pristine_url(StateInfo *state)
     TSfree(url);
     // release the buffer and loc
     TSHandleMLocRelease(hdr_url_buf, TS_NULL_MLOC, url_loc);
-    TSDebug(PLUGIN_TAG, "[%s] {%u} pristine=[%s]", __FUNCTION__, state->req_info->key_hash, state->pristine_url);
+    SRDBG(TAG, "[%s] {%u} pristine=[%s]", __FUNCTION__, state->req_info->key_hash, state->pristine_url);
   } else {
-    TSDebug(PLUGIN_TAG_BAD, "[%s] {%u} TSHttpTxnPristineUrlGet failed!", __FUNCTION__, state->req_info->key_hash);
+    SRDBG(TAG_BAD, "[%s] {%u} TSHttpTxnPristineUrlGet failed!", __FUNCTION__, state->req_info->key_hash);
   }
 }
 
@@ -258,7 +258,7 @@ intercept_get_key(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len
     retval = true;
   }
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-  // TSDebug(PLUGIN_TAG, "[%s] key=[%s] found=%d",__FUNCTION__,name,key.c_str(),retval);
+  // SRDBG(TAG, "[%s] key=[%s] found=%d",__FUNCTION__,name,key.c_str(),retval);
   return retval;
 }
 
@@ -272,14 +272,14 @@ intercept_check_request(StateInfo *state)
   uint32_t  oldKey     = state->req_info->key_hash;
 
   if (!TSHttpTxnIsInternal(txnp)) {
-    TSDebug(PLUGIN_TAG, "[%s] Skipping external request", __FUNCTION__);
+    SRDBG(TAG, "[%s] Skipping external request", __FUNCTION__);
     return pBodyFound;
   }
 
   TSMBuffer bufp;
   TSMLoc    hdr_loc;
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSDebug(PLUGIN_TAG_BAD, "[%s] TSHttpTxnClientReqGet failed!", __FUNCTION__);
+    SRDBG(TAG_BAD, "[%s] TSHttpTxnClientReqGet failed!", __FUNCTION__);
     return pBodyFound;
   }
 
@@ -287,7 +287,7 @@ intercept_check_request(StateInfo *state)
   int         method_len;
   const char *method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
   if (!method) {
-    TSDebug(PLUGIN_TAG_BAD, "[%s] TSHttpHdrMethodGet failed!", __FUNCTION__);
+    SRDBG(TAG_BAD, "[%s] TSHttpHdrMethodGet failed!", __FUNCTION__);
   } else {
     if ((method_len == TS_HTTP_LEN_GET) && (strncasecmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0)) {
       valid_request = true;
@@ -303,13 +303,13 @@ intercept_check_request(StateInfo *state)
         // header key can be differnt because of ATS port wierdness, so make state the same
         state->req_info->key_hash = newKey;
       } else {
-        TSDebug(PLUGIN_TAG_BAD, "[%s] key miss %u this should not happen!", __FUNCTION__, newKey);
+        SRDBG(TAG_BAD, "[%s] key miss %u this should not happen!", __FUNCTION__, newKey);
       }
     }
   }
 
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-  TSDebug(PLUGIN_TAG, "[%s] {%u} oldKey=%u pBodyFound=%p", __FUNCTION__, newKey, oldKey, pBodyFound);
+  SRDBG(TAG, "[%s] {%u} oldKey=%u pBodyFound=%p", __FUNCTION__, newKey, oldKey, pBodyFound);
   return pBodyFound;
 }
 
@@ -320,9 +320,9 @@ intercept_fetch_the_url(StateInfo *state)
   bool bGood = false;
 
   if (state->pristine_url == nullptr) {
-    TSDebug(PLUGIN_TAG_BAD, "[%s] {%u} pristine url nullptr should not happen", __FUNCTION__, state->req_info->key_hash);
+    SRDBG(TAG_BAD, "[%s] {%u} pristine url nullptr should not happen", __FUNCTION__, state->req_info->key_hash);
     if (!async_remove_active(state->req_info->key_hash, state->plugin_config)) {
-      TSDebug(PLUGIN_TAG_BAD, "[%s] didnt delete async active", __FUNCTION__);
+      SRDBG(TAG_BAD, "[%s] didnt delete async active", __FUNCTION__);
     }
     return bGood;
   }
@@ -346,21 +346,21 @@ intercept_fetch_the_url(StateInfo *state)
   TSfree(allReqHeaders);
   get_request.append("\r\n");
 
-  // TSDebug(PLUGIN_TAG, "[%s] req len %d ",__FUNCTION__,(int)get_request.length());
-  // TSDebug(PLUGIN_TAG, "[%s] reg \r\n|%s|\r\n",__FUNCTION__,get_request.c_str());
+  // SRDBG(TAG, "[%s] req len %d ",__FUNCTION__,(int)get_request.length());
+  // SRDBG(TAG, "[%s] reg \r\n|%s|\r\n",__FUNCTION__,get_request.c_str());
 
   BodyData *pBody = async_check_active(state->req_info->key_hash, state->plugin_config);
   if (pBody) {
-    // TSDebug(PLUGIN_TAG_BAD, "[%s] sleep 4",__FUNCTION__); sleep(4);
+    // SRDBG(TAG_BAD, "[%s] sleep 4",__FUNCTION__); sleep(4);
     // This should be safe outside of locks
     pBody->intercept_active = true;
     TSFetchEvent event_ids  = {0, 0, 0};
     TSFetchUrl(get_request.data(), get_request.size(), state->req_info->client_addr, state->transaction_contp, NO_CALLBACK,
                event_ids);
     bGood = true;
-    TSDebug(PLUGIN_TAG, "[%s] {%u} length=%d", __FUNCTION__, state->req_info->key_hash, (int)pBody->getSize());
+    SRDBG(TAG, "[%s] {%u} length=%d", __FUNCTION__, state->req_info->key_hash, (int)pBody->getSize());
   } else {
-    TSDebug(PLUGIN_TAG_BAD, "[%s] {%u} cant find body", __FUNCTION__, state->req_info->key_hash);
+    SRDBG(TAG_BAD, "[%s] {%u} cant find body", __FUNCTION__, state->req_info->key_hash);
   }
 
   return bGood;

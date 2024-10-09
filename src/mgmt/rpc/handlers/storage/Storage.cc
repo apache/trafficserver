@@ -22,6 +22,12 @@
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
 #include "../../../../iocore/cache/P_Cache.h"
 
+namespace
+{
+DbgCtl dbg_ctl_rpc_server{"rpc.server"};
+
+} // end anonymous namespace
+
 namespace rpc::handlers::storage::field_names
 {
 static constexpr auto PATH{"path"};
@@ -67,7 +73,7 @@ set_storage_offline(std::string_view const & /* id ATS_UNUSED */, YAML::Node con
     CacheDisk  *d      = cacheProcessor.find_by_path(device.c_str(), (device.size()));
 
     if (d) {
-      Debug("rpc.server", "Marking %s offline", device.c_str());
+      Dbg(dbg_ctl_rpc_server, "Marking %s offline", device.c_str());
 
       YAML::Node n;
       auto       ret               = cacheProcessor.mark_storage_offline(d, /* admin */ true);
