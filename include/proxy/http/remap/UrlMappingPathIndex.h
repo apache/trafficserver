@@ -87,7 +87,8 @@ private:
     if (search) { // normal search
       group_iter = m_tries.find(UrlMappingTrieKey(idx, port));
     } else { // return the first trie arbitrarily
-      Debug("UrlMappingPathIndex::_GetTrie", "Not performing search; will return first available trie");
+      static DbgCtl dc{"UrlMappingPathIndex::_GetTrie"};
+      Dbg(dc, "Not performing search; will return first available trie");
       group_iter = m_tries.begin();
     }
     if (group_iter != m_tries.end()) {

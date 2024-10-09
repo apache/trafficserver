@@ -51,9 +51,13 @@
 #include "proxy/http/HttpSM.h"
 #include "tscore/TestBox.h"
 
+namespace
+{
 // This used to be in InkAPITestTool.cc, which we'd just #include here... But that seemed silly.
 DbgCtl dbg_ctl_SockServer{"SockServer"};
 DbgCtl dbg_ctl_SockClient{"SockClient"};
+
+} // end anonymous namespace
 
 #define IP(a, b, c, d) htonl((a) << 24 | (b) << 16 | (c) << 8 | (d))
 
@@ -1134,11 +1138,15 @@ synserver_txn_main_handler(TSCont contp, TSEvent event, void *data)
 #define TC_PASS 1
 #define TC_FAIL 0
 
+namespace
+{
 DbgCtl dbg_ctl_sdk_ut{"sdk_ut"};
 DbgCtl dbg_ctl_sdk_ut_cache_event{"sdk_ut_cache_event"};
 DbgCtl dbg_ctl_sdk_ut_cache_read{"sdk_ut_cache_read"};
 DbgCtl dbg_ctl_sdk_ut_cache_write{"sdk_ut_cache_write"};
 DbgCtl dbg_ctl_sdk_ut_transform{"sdk_ut_transform"};
+
+} // end anonymous namespace
 
 // Since there's no way to unregister global hooks, tests that register a hook
 // have to co-operate once they are complete by re-enabling and transactions
@@ -1620,7 +1628,7 @@ struct CacheVConnStruct {
 int
 cache_handler(TSCont contp, TSEvent event, void *data)
 {
-  Debug("sdk_ut_cache_write", "Event %d data %p", event, data);
+  Dbg(dbg_ctl_sdk_ut_cache_write, "Event %d data %p", event, data);
 
   CacheVConnStruct *cache_vconn = static_cast<CacheVConnStruct *>(TSContDataGet(contp));
 

@@ -42,13 +42,14 @@
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000)
 #endif
 
-static constexpr auto logTag{"filemanager"};
 namespace
 {
+DbgCtl dbg_ctl{"filemanager"};
+
 swoc::Errata
 handle_file_reload(std::string const &fileName, std::string const &configName)
 {
-  Debug(logTag, "handling reload %s - %s", fileName.c_str(), configName.c_str());
+  Dbg(dbg_ctl, "handling reload %s - %s", fileName.c_str(), configName.c_str());
   swoc::Errata ret;
   // TODO: make sure records holds the name after change, if not we should change it.
   if (fileName == ts::filename::RECORDS) {
@@ -164,13 +165,13 @@ FileManager::getConfigObj(const char *fileName, ConfigManager **rbPtr)
 swoc::Errata
 FileManager::fileChanged(std::string const &fileName, std::string const &configName)
 {
-  Debug("filemanager", "file changed %s", fileName.c_str());
+  Dbg(dbg_ctl, "file changed %s", fileName.c_str());
   swoc::Errata ret;
 
   std::lock_guard<std::mutex> guard(_callbacksMutex);
   for (auto const &call : _configCallbacks) {
     if (auto const &r = call(fileName, configName); !r) {
-      Debug("filemanager", "something back from callback %s", fileName.c_str());
+      Dbg(dbg_ctl, "something back from callback %s", fileName.c_str());
       if (ret.empty()) {
         ret.note("Errors while reloading configurations.");
       }
@@ -193,7 +194,7 @@ FileManager::registerConfigPluginCallbacks(ConfigUpdateCbTable *cblist)
 void
 FileManager::invokeConfigPluginCallbacks()
 {
-  Debug("filemanager", "invoke plugin callbacks");
+  Dbg(dbg_ctl, "invoke plugin callbacks");
   if (_pluginCallbackList) {
     _pluginCallbackList->invoke();
   }
@@ -222,7 +223,7 @@ FileManager::rereadConfig()
     // ToDo: rb->isVersions() was always true before, because numberBackups was always >= 1. So ROLLBACK_CHECK_ONLY could not
     // happen at all...
     if (rb->checkForUserUpdate(FileManager::ROLLBACK_CHECK_AND_UPDATE)) {
-      Debug(logTag, "File %s changed.", it.first.c_str());
+      Dbg(dbg_ctl, "File %s changed.", it.first.c_str());
       auto const &r = fileChanged(rb->getFileName(), rb->getConfigName());
 
       if (!r) {
@@ -328,7 +329,7 @@ FileManager::configFileChild(const char *parent, const char *child)
   ConfigManager *parentConfig = nullptr;
   ink_mutex_acquire(&accessLock);
   if (auto it = bindings.find(parent); it != bindings.end()) {
-    Debug(logTag, "Adding child file %s to %s parent", child, parent);
+    Dbg(dbg_ctl, "Adding child file %s to %s parent", child, parent);
     parentConfig = it->second;
     addFileHelper(child, "", parentConfig->rootAccessNeeded(), parentConfig->getIsRequired(), parentConfig);
   }
@@ -385,10 +386,10 @@ FileManager::ConfigManager::ConfigManager(const char *fileName_, const char *con
   // Check to make sure that our configuration file exists
   //
   if (statFile(&fileInfo) < 0) {
-    Debug(logTag, "%s  Unable to load: %s", fileName.c_str(), strerror(errno));
+    Dbg(dbg_ctl, "%s  Unable to load: %s", fileName.c_str(), strerror(errno));
 
     if (isRequired) {
-      Debug(logTag, " Unable to open required configuration file %s\n\t failed :%s", fileName.c_str(), strerror(errno));
+      Dbg(dbg_ctl, " Unable to open required configuration file %s\n\t failed :%s", fileName.c_str(), strerror(errno));
     }
   } else {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
@@ -435,7 +436,7 @@ FileManager::ConfigManager::checkForUserUpdate(FileManager::RollBackCheckType ho
       fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
       // TODO: syslog????
     }
-    Debug(logTag, "User has changed config file %s\n", fileName.c_str());
+    Dbg(dbg_ctl, "User has changed config file %s\n", fileName.c_str());
     result = true;
   } else {
     result = false;
