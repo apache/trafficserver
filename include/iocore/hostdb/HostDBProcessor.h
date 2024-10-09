@@ -151,7 +151,7 @@ struct HostDBInfo {
    * If a zombie is selected the failure time is updated to make it appear down to other threads in a thread safe
    * manner. The caller should check @c last_fail_time to see if a zombie was selected.
    */
-  bool select(ts_time now, ts_seconds fail_window);
+  bool select(ts_time now, ts_seconds fail_window) const;
 
   /// Check if this info is valid.
   bool is_valid() const;
@@ -273,7 +273,7 @@ HostDBInfo::increment_fail_count(ts_time now, uint8_t max_retries)
 }
 
 inline bool
-HostDBInfo::select(ts_time now, ts_seconds fail_window)
+HostDBInfo::select(ts_time now, ts_seconds fail_window) const
 {
   auto t0 = this->last_fail_time();
   if (t0 == TS_TIME_ZERO) {
