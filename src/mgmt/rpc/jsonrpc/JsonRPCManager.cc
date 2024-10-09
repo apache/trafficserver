@@ -44,9 +44,9 @@ const std::string RPC_SERVICE_NOTIFICATIONS_KEY{"notifications"};
 const std::string RPC_SERVICE_PRIVILEGED_KEY{"privileged"};
 const std::string RPC_SERVICE_N_A_STR{"N/A"};
 
-// jsonrpc log tag.
-constexpr auto logTag    = "rpc";
-constexpr auto logTagMsg = "rpc.msg";
+// jsonrpc debug control.
+DbgCtl dbg_ctl{"rpc"};
+DbgCtl dbg_ctl_msg{"rpc.msg"};
 } // namespace
 
 namespace rpc
@@ -164,7 +164,7 @@ JsonRPCManager::Dispatcher::invoke_method_handler(JsonRPCManager::Dispatcher::In
       response.callResult.errata = std::move(rv.errata());
     }
   } catch (std::exception const &e) {
-    Debug(logTag, "Oops, something happened during the callback invocation: %s", e.what());
+    Dbg(dbg_ctl, "Oops, something happened during the callback invocation: %s", e.what());
     response.error.ec = error::RPCErrorCode::ExecutionError;
   }
 
@@ -178,7 +178,7 @@ JsonRPCManager::Dispatcher::invoke_notification_handler(JsonRPCManager::Dispatch
   try {
     handler.invoke(notification);
   } catch (std::exception const &e) {
-    Debug(logTag, "Oops, something happened during the callback(notification) invocation: %s", e.what());
+    Dbg(dbg_ctl, "Oops, something happened during the callback(notification) invocation: %s", e.what());
     // it's a notification so we do not care much.
   }
 
@@ -207,7 +207,7 @@ JsonRPCManager::remove_handler(std::string_view name)
 std::optional<std::string>
 JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
 {
-  Debug(logTagMsg, "--> JSONRPC request\n'%s'", request.c_str());
+  Dbg(dbg_ctl_msg, "--> JSONRPC request\n'%s'", request.c_str());
 
   std::error_code ec;
   try {
@@ -252,7 +252,7 @@ JsonRPCManager::handle_call(Context const &ctx, std::string const &request)
 
     if (!response.is_notification()) {
       resp = Encoder::encode(response);
-      Debug(logTagMsg, "<-- JSONRPC Response\n '%s'", (*resp).c_str());
+      Dbg(dbg_ctl_msg, "<-- JSONRPC Response\n '%s'", (*resp).c_str());
     }
 
     return resp;

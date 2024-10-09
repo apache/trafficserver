@@ -46,7 +46,7 @@
 
 namespace
 {
-constexpr auto logTag = "rpc.net";
+DbgCtl dbg_ctl{"rpc.net"};
 
 // Quick check for errors(base on the errno);
 bool check_for_transient_errors();
@@ -147,7 +147,7 @@ IPCSocketServer::init()
   // Need to run some validations on the pathname to avoid issue. Normally this would not be an issue, but some tests may fail on
   // this.
   if (_conf.sockPathName.empty() || _conf.sockPathName.size() > sizeof _serverAddr.sun_path) {
-    Debug(logTag, "Invalid unix path name, check the size.");
+    Dbg(dbg_ctl, "Invalid unix path name, check the size.");
     return std::make_error_code(static_cast<std::errc>(ENAMETOOLONG));
   }
 
@@ -157,7 +157,7 @@ IPCSocketServer::init()
     return ec;
   }
 
-  Debug(logTag, "Using %s as socket path.", _conf.sockPathName.c_str());
+  Dbg(dbg_ctl, "Using %s as socket path.", _conf.sockPathName.c_str());
   _serverAddr.sun_family = AF_UNIX;
   std::strncpy(_serverAddr.sun_path, _conf.sockPathName.c_str(), sizeof(_serverAddr.sun_path) - 1);
 
@@ -230,14 +230,14 @@ IPCSocketServer::run()
         if (auto response = rpc::JsonRPCManager::instance().handle_call(ctx, json); response) {
           // seems a valid response.
           if (client.write(*response, ec); ec) {
-            Debug(logTag, "Error sending the response: %s", ec.message().c_str());
+            Dbg(dbg_ctl, "Error sending the response: %s", ec.message().c_str());
           }
         } // it was a notification.
       } else {
-        Debug(logTag, "Error detected while reading: %s", errStr.c_str());
+        Dbg(dbg_ctl, "Error detected while reading: %s", errStr.c_str());
       }
     } else {
-      Debug(logTag, "Error while accepting a new connection on the socket: %s", ec.message().c_str());
+      Dbg(dbg_ctl, "Error while accepting a new connection on the socket: %s", ec.message().c_str());
     }
   }
 

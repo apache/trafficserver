@@ -34,17 +34,9 @@
 
 constexpr char const DEBUG_TAG[] = "txn_box";
 
-#if TS_VERSION_MAJOR >= 10
-
 extern DbgCtl txn_box_dbg_ctl;
 
 #define TS_DBG(...) Dbg(txn_box_dbg_ctl, __VA_ARGS__)
-
-#else
-
-#define TS_DBG(...) TSDebug(DEBUG_TAG, __VA_ARGS__)
-
-#endif
 
 /** Convert a TS hook ID to the local TxB enum.
  *

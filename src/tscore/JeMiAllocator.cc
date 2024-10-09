@@ -31,6 +31,13 @@
 #include "tscore/JeMiAllocator.h"
 #include "tscore/Diags.h"
 
+namespace
+{
+
+DbgCtl dbg_ctl_JeAllocator{"JeAllocator"};
+
+} // end anonymous namespace
+
 namespace je_mi_malloc
 {
 #if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
@@ -82,7 +89,7 @@ JeMiNodumpAllocator::extend_and_setup_arena()
     ink_abort("Unable to set the hooks: %s", std::strerror(ret));
   }
 
-  Debug("JeAllocator", "arena \"%ud\" created with flags \"%d\"", arena_id, flags);
+  Dbg(dbg_ctl_JeAllocator, "arena \"%ud\" created with flags \"%d\"", arena_id, flags);
 
   arena_flags = flags;
 

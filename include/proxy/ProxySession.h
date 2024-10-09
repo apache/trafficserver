@@ -37,9 +37,6 @@
 // member function.
 #define SsnDbg(ssn, dbg_ctl, ...) SpecificDbg((ssn)->debug(), dbg_ctl, __VA_ARGS__)
 
-// deprecated
-#define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
-
 class ProxyTransaction;
 class PoolableSession;
 class SSLProxySession;
