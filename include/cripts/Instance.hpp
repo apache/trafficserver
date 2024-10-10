@@ -44,7 +44,7 @@ public:
   void operator=(const self_type &) = delete;
 
   // This has to be in the .hpp file, otherwise we will not get the correct debug tag!
-  Instance(int argc, char *argv[]) { _initialize(argc, argv, __BASE_FILE__); }
+  Instance(int argc, const char *argv[], bool remap = true) { _initialize(argc, argv, __BASE_FILE__, remap); }
   ~Instance()
   {
     plugins.clear();
@@ -58,7 +58,7 @@ public:
   bool DeletePlugin(const cripts::string &tag);
   void AddBundle(cripts::Bundle::Base *bundle);
 
-  // This allows Bundles to require hooks as well.
+  // This allows Bundles and global plugins to require hooks as well.
   void
   NeedCallback(cripts::Callbacks cb)
   {
@@ -121,11 +121,11 @@ public:
   std::vector<cripts::Bundle::Base *>            bundles;
 
 private:
-  void _initialize(int argc, char *argv[], const char *filename);
+  void _initialize(int argc, const char *argv[], const char *filename, bool remap);
 
   size_t   _size      = 0;
   bool     _failed    = false;
-  unsigned _callbacks = 0;
+  uint32_t _callbacks = 0;
   DbgCtl   dbg_ctl_cript;
 }; // End class Instance
 

@@ -41,10 +41,10 @@
 // Having both of these for now, until we decide which we like better...
 #define do_remap()           void _do_remap(cripts::Context *context)
 #define do_post_remap()      void _do_post_remap(cripts::Context *context)
-#define do_send_response()   void _do_send_response(cripts::Context *context)
 #define do_cache_lookup()    void _do_cache_lookup(cripts::Context *context)
 #define do_send_request()    void _do_send_request(cripts::Context *context)
 #define do_read_response()   void _do_read_response(cripts::Context *context)
+#define do_send_response()   void _do_send_response(cripts::Context *context)
 #define do_txn_close()       void _do_txn_close(cripts::Context *context)
 #define do_init()            void _do_init(TSRemapInterface *)
 #define do_create_instance() void _do_create_instance(cripts::InstanceContext *context)
@@ -52,14 +52,36 @@
 
 #define DoRemap()          void _do_remap(cripts::Context *context)
 #define DoPostRemap()      void _do_post_remap(cripts::Context *context)
-#define DoSendResponse()   void _do_send_response(cripts::Context *context)
 #define DoCacheLookup()    void _do_cache_lookup(cripts::Context *context)
 #define DoSendRequest()    void _do_send_request(cripts::Context *context)
 #define DoReadResponse()   void _do_read_response(cripts::Context *context)
+#define DoSendResponse()   void _do_send_response(cripts::Context *context)
 #define DoTxnClose()       void _do_txn_close(cripts::Context *context)
 #define DoInit()           void _do_init(TSRemapInterface *)
 #define DoCreateInstance() void _do_create_instance(cripts::InstanceContext *context)
 #define DoDeleteInstance() void _do_delete_instance(cripts::InstanceContext *context)
+
+// For the global plugins
+#define glb_txn_start()     void _glb_txn_start(cripts::Context *context)
+#define glb_read_request()  void _glb_read_request(cripts::Context *context)
+#define glb_pre_remap()     void _glb_pre_remap(cripts::Context *context)
+#define glb_post_remap()    void _glb_post_remap(cripts::Context *context)
+#define glb_cache_lookup()  void _glb_cache_lookup(cripts::Context *context)
+#define glb_send_request()  void _glb_send_request(cripts::Context *context)
+#define glb_read_response() void _glb_read_response(cripts::Context *context)
+#define glb_send_response() void _glb_send_response(cripts::Context *context)
+#define glb_txn_close()     void _glb_txn_close(cripts::Context *context)
+#define glb_init()          void _glb_init(cripts::InstanceContext *context)
+
+#define GlbTxnStart()     void _glb_txn_start(cripts::Context *context)
+#define GlbReadRequest()  void _glb_read_request(cripts::Context *context)
+#define GlbPreRemap()     void _glb_pre_remap(cripts::Context *context)
+#define GlbPostRemap()    void _glb_post_remap(cripts::Context *context)
+#define GlbSendRequest()  void _glb_send_request(cripts::Context *context)
+#define GlbReadResponse() void _glb_read_response(cripts::Context *context)
+#define GlbSendResponse() void _glb_send_response(cripts::Context *context)
+#define GlbTxnClose()     void _glb_txn_close(cripts::Context *context)
+#define GlbInit()         void _glb_init(cripts::InstanceContext *context)
 
 #include "cripts/Headers.hpp"
 #include "cripts/Urls.hpp"

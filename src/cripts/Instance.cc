@@ -25,17 +25,19 @@ namespace cripts
 {
 
 void
-Instance::_initialize(int argc, char *argv[], const char *filename)
+Instance::_initialize(int argc, const char *argv[], const char *filename, bool remap)
 {
-  from_url = argv[0];
-  to_url   = argv[1];
-  for (int i = 2; i < argc; i++) {
-    auto s = cripts::string(argv[i]);
+  if (remap) {
+    from_url = argv[0];
+    to_url   = argv[1];
+    for (int i = 2; i < argc; i++) {
+      auto s = cripts::string(argv[i]);
 
-    s.trim("\"\'");
-    data[i - 2] = s;
+      s.trim("\"\'");
+      data[i - 2] = s;
+    }
+    _size = argc - 2;
   }
-  _size = argc - 2;
 
   // Set the debug tag for this plugin, slightly annoying that we have to calculate
   // this for every instantiation, but in general, each Cript is used primarily for
@@ -53,7 +55,7 @@ Instance::_initialize(int argc, char *argv[], const char *filename)
   }
 
   dbg_ctl_cript.set(plugin_debug_tag.c_str());
-} // namespace Instance::_initialize(intargc,char*argv[],constchar*filename)
+}
 
 bool
 Instance::AddPlugin(const cripts::string &tag, const cripts::string &plugin, const Plugin::Options &options)
