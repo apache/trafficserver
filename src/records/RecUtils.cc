@@ -51,11 +51,6 @@ RecRecordFree(RecRecord *r)
 RecRecord *
 RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 {
-  if (g_num_records >= REC_MAX_RECORDS) {
-    Warning("too many stats/configs, please report a bug to dev@trafficserver.apache.org");
-    return nullptr;
-  }
-
   int        i = g_num_records++;
   RecRecord *r = &(g_records[i]);
 
