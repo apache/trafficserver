@@ -24,6 +24,7 @@
 #pragma once
 
 #include "P_CacheDir.h"
+#include "P_CacheDisk.h"
 #include "P_RamCache.h"
 #include "AggregateWriteBuffer.h"
 #include "PreservationTable.h"
@@ -111,7 +112,7 @@ public:
   int clear_dir_aio();
   int clear_dir();
 
-  int init(char *s, off_t blocks, off_t dir_skip, bool clear);
+  int init(bool clear);
 
   int handle_dir_clear(int event, void *data);
   int handle_dir_read(int event, void *data);
@@ -156,11 +157,18 @@ public:
 
   int within_hit_evacuate_window(Dir const *dir) const;
 
-  StripeSM() : Continuation(new_ProxyMutex())
-  {
-    open_dir.mutex = mutex;
-    SET_HANDLER(&StripeSM::aggWrite);
-  }
+  /**
+   * StripeSM constructor.
+   *
+   * @param disk: The disk object to associate with this stripe.
+   * The disk path must be non-null.
+   * @param blocks: Number of blocks. Must be at least 10.
+   * @param dir_skip: Offset into the disk at which to start the stripe.
+   * If this value is less than START_POS, START_POS will be used instead.
+   *
+   * @see START_POS
+   */
+  StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip);
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
 
