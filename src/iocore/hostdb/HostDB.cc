@@ -1418,46 +1418,49 @@ HostDBRecord::select_best_http(ts_time now, ts_seconds fail_window, sockaddr con
   HostDBInfo *best_alive = nullptr;
 
   auto info{this->rr_info()};
-
-  if (HostDBProcessor::hostdb_strict_round_robin) {
-    // Always select the next viable target - select failure means no valid targets at all.
-    best_alive = best_any = this->select_next_rr(now, fail_window);
-    Dbg(dbg_ctl_hostdb, "Using strict round robin - index %d", this->index_of(best_alive));
-  } else if (HostDBProcessor::hostdb_timed_round_robin > 0) {
-    auto ctime = rr_ctime.load(); // cache for atomic update.
-    auto ntime = ctime + ts_seconds(HostDBProcessor::hostdb_timed_round_robin);
-    // Check and update RR if it's time - this always yields a valid target if there is one.
-    if (now > ntime && rr_ctime.compare_exchange_strong(ctime, ntime)) {
+  if (info.count() > 1) {
+    if (HostDBProcessor::hostdb_strict_round_robin) {
+      // Always select the next viable target - select failure means no valid targets at all.
       best_alive = best_any = this->select_next_rr(now, fail_window);
-      Dbg(dbg_ctl_hostdb, "Round robin timed interval expired - index %d", this->index_of(best_alive));
-    } else { // pick the current index, which may be down.
-      best_any = &info[this->rr_idx()];
-    }
-    Dbg(dbg_ctl_hostdb, "Using timed round robin - index %d", this->index_of(best_any));
-  } else {
-    // Walk the entries and find the best (largest) hash.
-    unsigned int best_hash = 0; // any hash is better than this.
-    for (auto &target : info) {
-      unsigned int h = HOSTDB_CLIENT_IP_HASH(hash_addr, target.data.ip);
-      if (best_hash <= h) {
-        best_any  = &target;
-        best_hash = h;
+      Dbg(dbg_ctl_hostdb, "Using strict round robin - index %d", this->index_of(best_alive));
+    } else if (HostDBProcessor::hostdb_timed_round_robin > 0) {
+      auto ctime = rr_ctime.load(); // cache for atomic update.
+      auto ntime = ctime + ts_seconds(HostDBProcessor::hostdb_timed_round_robin);
+      // Check and update RR if it's time - this always yields a valid target if there is one.
+      if (now > ntime && rr_ctime.compare_exchange_strong(ctime, ntime)) {
+        best_alive = best_any = this->select_next_rr(now, fail_window);
+        Dbg(dbg_ctl_hostdb, "Round robin timed interval expired - index %d", this->index_of(best_alive));
+      } else { // pick the current index, which may be down.
+        best_any = &info[this->rr_idx()];
       }
+      Dbg(dbg_ctl_hostdb, "Using timed round robin - index %d", this->index_of(best_any));
+    } else {
+      // Walk the entries and find the best (largest) hash.
+      unsigned int best_hash = 0; // any hash is better than this.
+      for (auto &target : info) {
+        unsigned int h = HOSTDB_CLIENT_IP_HASH(hash_addr, target.data.ip);
+        if (best_hash <= h) {
+          best_any  = &target;
+          best_hash = h;
+        }
+      }
+      Dbg(dbg_ctl_hostdb, "Using client affinity - index %d", this->index_of(best_any));
     }
-    Dbg(dbg_ctl_hostdb, "Using client affinity - index %d", this->index_of(best_any));
-  }
 
-  // If there is a base choice, search for valid target starting there.
-  // Otherwise there is no valid target in the record.
-  if (best_any && !best_alive) {
-    // Starting at the current target, search for a valid one.
-    for (unsigned short i = 0; i < rr_count; i++) {
-      auto target = &info[this->rr_idx(i)];
-      if (target->select(now, fail_window)) {
-        best_alive = target;
-        break;
+    // If there is a base choice, search for valid target starting there.
+    // Otherwise there is no valid target in the record.
+    if (best_any && !best_alive) {
+      // Starting at the current target, search for a valid one.
+      for (unsigned short i = 0; i < rr_count; i++) {
+        auto target = &info[this->rr_idx(i)];
+        if (target->select(now, fail_window)) {
+          best_alive = target;
+          break;
+        }
       }
     }
+  } else {
+    best_alive = &info[0];
   }
 
   return best_alive;

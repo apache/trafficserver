@@ -81,9 +81,8 @@ class DownCachedOriginServerTest:
             os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
             os.path.join(self._ts.Variables.LOGDIR, 'error.log'))
 
-        self._ts.Disk.error_log.Content = Testers.ContainsExpression("/dns/mark/down' marking down", "host should be marked down")
         self._ts.Disk.error_log.Content = Testers.ContainsExpression(
-            "DNS Error: no valid server http://resolve.this.com", "DNS lookup should fail")
+            "/dns/mark/down' fail_count='1' marking down", "host should be marked down")
 
     def run(self):
         self._test_host_mark_down()
