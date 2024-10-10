@@ -106,3 +106,8 @@ Copyright (c) 2021 Andrey Pechkurov (MIT License)
 
 lib/systemtap/sys/sdt.h is from SystemTap.  This file is dedicated to the public domain, pursuant to CC0.
 https://fossies.org/linux/systemtap/includes/sys/sdt.h
+
+~~
+
+tools/ebpf/trylock-stats is try lock version of lockstat-solution.py of goldshtn/linux-tracing-workshop
+Copyright (c) 2017 Sasha Goldshtein (MIT License)
