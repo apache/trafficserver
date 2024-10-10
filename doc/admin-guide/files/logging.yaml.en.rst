@@ -210,6 +210,22 @@ be any one of the following:
     True if the value of ``field`` contains ``value`` (i.e. ``value`` is a
     substring of the contents of ``field``). Case-insensitive.
 
+``LT``
+    True if the value of ``field`` is less than the value of ``value``.
+    Only valid for integer fields.
+
+``LTE``
+    True if the value of ``field`` is less than or equal to the value of
+    ``value``. Only valid for integer fields.
+
+``GT``
+    True if the value of ``field`` is greater than the value of ``value``.
+    Only valid for integer fields.
+
+``GTE``
+    True if the value of ``field`` is less than or equal to the value of
+    ``value``. Only valid for integer fields.
+
 Filter Values
 ~~~~~~~~~~~~~
 
