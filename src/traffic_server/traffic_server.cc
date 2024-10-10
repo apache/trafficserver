@@ -1786,7 +1786,6 @@ configure_io_uring()
 //
 // Main
 //
-
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
@@ -1925,6 +1924,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     crash_logger_init(user);
     signal_register_crash_handler(crash_logger_invoke);
   }
+
+  // Clean out any remnant temporary plugin (UUID named) directories.
+  PluginFactory::cleanup();
 
 #if TS_USE_POSIX_CAP
   // Change the user of the process.

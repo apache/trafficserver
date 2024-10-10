@@ -36,6 +36,7 @@
 #include "../../../iocore/eventsystem/P_EventSystem.h"
 
 #include <algorithm> /* std::swap */
+#include <filesystem>
 
 RemapPluginInst::RemapPluginInst(RemapPluginInfo &plugin) : _plugin(plugin)
 {
@@ -102,7 +103,16 @@ PluginFactory::~PluginFactory()
   _instList.apply([](RemapPluginInst *pluginInst) -> void { delete pluginInst; });
   _instList.clear();
 
-  fs::remove_all(_runtimeDir, _ec);
+  if (!TSSystemState::is_event_system_shut_down()) {
+    uint32_t elevate_access = 0;
+
+    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
+
+    fs::remove_all(_runtimeDir, _ec);
+  } else {
+    fs::remove_all(_runtimeDir, _ec); // Try anyways
+  }
 
   PluginDbg(_dbg_ctl(), "destroyed plugin factory %s", getUuid());
   delete _uuid;
@@ -226,9 +236,6 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
           delete plugin;
         }
 
-        if (dynamicReloadEnabled && _preventiveCleaning) {
-          clean(error);
-        }
       } else {
         /* Plugin DSO load failed. */
         PluginDbg(_dbg_ctl(), "plugin '%s' DSO load failed", configPath.c_str());
@@ -274,6 +281,30 @@ PluginFactory::getEffectivePath(const fs::path &configPath)
   }
 
   return path;
+}
+
+void
+PluginFactory::cleanup()
+{
+  std::error_code ec;
+  std::string     path(RecConfigReadRuntimeDir());
+
+  try {
+    if (path.starts_with("/") && std::filesystem::is_directory(path)) {
+      for (const auto &entry : std::filesystem::directory_iterator(path, ec)) {
+        if (entry.is_directory()) {
+          std::string dir_name   = entry.path().string();
+          int         dash_count = std::count(dir_name.begin(), dir_name.end(), '-'); // All UUIDs have 4 dashes
+
+          if (dash_count == 4) {
+            std::filesystem::remove_all(dir_name, ec);
+          }
+        }
+      }
+    }
+  } catch (std::exception &e) {
+    PluginError("Error cleaning up runtime directory: %s", e.what());
+  }
 }
 
 /**
@@ -325,10 +356,4 @@ PluginFactory::indicatePostReload(bool reloadSuccessful)
   }
 
   PluginDso::loadedPlugins()->indicatePostReload(reloadSuccessful, pluginUsed, getUuid());
-}
-
-void
-PluginFactory::clean(std::string & /* error ATS_UNUSED */)
-{
-  fs::remove_all(_runtimeDir, _ec);
 }

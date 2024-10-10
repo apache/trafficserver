@@ -99,11 +99,12 @@ public:
   RemapPluginInst *getRemapPlugin(const fs::path &configPath, int argc, char **argv, std::string &error, bool dynamicReloadEnabled);
 
   virtual const char *getUuid();
-  void                clean(std::string &error);
 
   void deactivate();
   void indicatePreReload();
   void indicatePostReload(bool reloadSuccessful);
+
+  static void cleanup(); // For startup, clean out all temporary directory we may have left from before
 
 protected:
   PluginDso *findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled);
@@ -117,7 +118,6 @@ protected:
 
   ATSUuid        *_uuid = nullptr;
   std::error_code _ec;
-  bool            _preventiveCleaning = true;
 
   static constexpr const char *const _tag = "plugin_factory"; /** @brief log tag used by this class */
   static const DbgCtl               &_dbg_ctl();
