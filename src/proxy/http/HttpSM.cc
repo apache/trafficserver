@@ -4555,12 +4555,14 @@ HttpSM::do_hostdb_update_if_necessary()
     this->mark_host_failure(&t_state.dns_info, ts_clock::from_time_t(t_state.client_request_time));
   } else {
     if (t_state.dns_info.mark_active_server_alive()) {
+      char addrbuf[INET6_ADDRPORTSTRLEN];
+      ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
+      ATS_PROBE2(mark_active_server_alive, sm_id, addrbuf);
       if (t_state.dns_info.record->is_srv()) {
-        SMDbg(dbg_ctl_http, "[%" PRId64 "] hostdb update marking SRV: %s as up", sm_id, t_state.dns_info.record->name());
+        SMDbg(dbg_ctl_http, "[%" PRId64 "] hostdb update marking SRV: %s(%s) as up", sm_id, t_state.dns_info.record->name(),
+              addrbuf);
       } else {
-        char addrbuf[INET6_ADDRPORTSTRLEN];
-        SMDbg(dbg_ctl_http, "[%" PRId64 "] hostdb update marking IP: %s as up", sm_id,
-              ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+        SMDbg(dbg_ctl_http, "[%" PRId64 "] hostdb update marking IP: %s as up", sm_id, addrbuf);
       }
     }
   }
@@ -5768,30 +5770,26 @@ HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
 
   if (info->active) {
     if (time_down != TS_TIME_ZERO) {
+      ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
       // Increment the fail_count
-      if (++info->active->fail_count >= t_state.txn_conf->connect_attempts_rr_retries) {
-        if (info->active) {
-          if (info->active->last_failure.load() == TS_TIME_ZERO) {
-            char            *url_str = t_state.hdr_info.client_request.url_string_get_ref(nullptr);
-            int              host_len;
-            const char      *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
-            std::string_view host_name{host_name_ptr, size_t(host_len)};
-            swoc::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' marking down",
-                          swoc::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
-                          swoc::bwf::FirstOf(url_str, "<none>"));
-            Log::error("%s", error_bw_buffer.c_str());
-          }
-          info->active->last_failure = time_down;
-          SMDbg(dbg_ctl_http, "hostdb update marking IP: %s as down",
-                ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
-        } else {
-          SMDbg(dbg_ctl_http, "hostdb increment IP failcount %s to %d",
-                ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), info->active->fail_count.load());
-        }
+      if (auto [down, fail_count] = info->active->increment_fail_count(time_down, t_state.txn_conf->connect_attempts_rr_retries);
+          down) {
+        char            *url_str = t_state.hdr_info.client_request.url_string_get_ref(nullptr);
+        int              host_len;
+        const char      *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
+        std::string_view host_name{host_name_ptr, static_cast<size_t>(host_len)};
+        swoc::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' fail_count='{}' marking down",
+                      swoc::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
+                      swoc::bwf::FirstOf(url_str, "<none>"), fail_count);
+        Log::error("%s", error_bw_buffer.c_str());
+        SMDbg(dbg_ctl_http, "hostdb update marking IP: %s as down", addrbuf);
+        ATS_PROBE2(hostdb_mark_ip_as_down, sm_id, addrbuf);
+      } else {
+        ATS_PROBE3(hostdb_inc_ip_failcount, sm_id, addrbuf, fail_count);
+        SMDbg(dbg_ctl_http, "hostdb increment IP failcount %s to %d", addrbuf, fail_count);
       }
     } else { // Clear the failure
-      info->active->fail_count   = 0;
-      info->active->last_failure = time_down;
+      info->active->mark_up();
     }
   }
 #ifdef DEBUG
@@ -8118,6 +8116,7 @@ HttpSM::set_next_state()
 
   case HttpTransact::SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN: {
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_mark_os_down);
+    ATS_PROBE(next_state_SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN);
 
     ink_assert(t_state.dns_info.looking_up == ResolveInfo::ORIGIN_SERVER);
 
