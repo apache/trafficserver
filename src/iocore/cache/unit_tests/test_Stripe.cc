@@ -126,7 +126,11 @@ init_stripe_for_writing(StripeSM &stripe, StripteHeaderFooter &header, CacheVol 
 
   stripe.sector_size = 256;
 
-  header.write_pos = 50000;
+  // This is the minimum value for header.write_pos. Offsets are calculated
+  // based on the distance of the write_pos from this point. If we ever move
+  // the write head before the start of the stripe data section, we will
+  // underflow offset calculations and end up in big trouble.
+  header.write_pos = stripe.start;
   header.agg_pos   = 1;
   header.phase     = 0;
   stripe.header    = &header;
