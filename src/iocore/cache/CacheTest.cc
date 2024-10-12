@@ -450,7 +450,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   disk.num_errors = 0;
 
   for (int i = 0; i < MAX_VOLS; ++i) {
-    stripes[i]     = new StripeSM{&disk, static_cast<off_t>(DEFAULT_STRIPE_SIZE / BLOCK_SIZE), 0};
+    stripes[i]     = new StripeSM{&disk, static_cast<off_t>(DEFAULT_STRIPE_SIZE / STORE_BLOCK_SIZE), 0};
     stripe_ptrs[i] = stripes[i];
     snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64, 'a' + i, DEFAULT_SKIP, stripes[i]->len);
     CryptoContext().hash_immediate(stripes[i]->hash_id, buff, strlen(buff));
