@@ -66,8 +66,6 @@ public:
   PluginDsoUnitTest(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath)
     : PluginDso(configPath, effectivePath, runtimePath)
   {
-    /* don't remove runtime DSO copy preventively so we can check if it was created properly */
-    _preventiveCleaning = false;
   }
 
   virtual void
