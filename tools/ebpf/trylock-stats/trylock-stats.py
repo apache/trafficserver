@@ -26,7 +26,7 @@ import sys
 import itertools
 from time import sleep
 from bcc import BPF
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 BPF_SRC_FILE = "./trylock-stats.bpf.c"
 
@@ -69,9 +69,10 @@ def print_stack(bpf, pid, stacks, stack_id):
         print_frame(bpf, pid, addr)
 
 
-def run(pid, duration, glibc_path):
+def run(args):
+    pid = args.pid
     bpf = BPF(src_file=BPF_SRC_FILE)
-    attach(bpf, pid, glibc_path)
+    attach(bpf, pid, args.glibc_path)
 
     init_stacks = bpf["init_stacks"]
     stacks = bpf["stacks"]
@@ -79,7 +80,7 @@ def run(pid, duration, glibc_path):
     mutex_lock_hist = bpf["mutex_lock_hist"]
     mutex_wait_hist = bpf["mutex_wait_hist"]
 
-    sleep(duration)
+    sleep(args.duration)
 
     mutex_ids = {}
     next_mutex_id = 1
@@ -111,12 +112,9 @@ def run(pid, duration, glibc_path):
 
 
 if __name__ == "__main__":
-    usage = "usage: %prog [options]"
-    parser = OptionParser(usage=usage)
-    parser.add_option("-p", "--pid", dest="pid", help="process id", type=int)
-    parser.add_option("-d", "--duration", dest="duration", help="duration to run", default=10, type=float)
-    parser.add_option("-l", "--glibc", dest="glibc_path", help="path to the glibc", default="/lib64/libc.so.6")
+    parser = ArgumentParser()
+    parser.add_argument("-p", "--pid", dest="pid", help="process id", type=int, required=True)
+    parser.add_argument("-d", "--duration", dest="duration", help="duration to run", default=10, type=float)
+    parser.add_argument("-l", "--glibc", dest="glibc_path", help="path to the glibc", default="/lib64/libc.so.6")
 
-    (options, args) = parser.parse_args()
-
-    run(options.pid, options.duration, options.glibc_path)
+    run(parser.parse_args())
