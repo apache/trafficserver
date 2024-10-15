@@ -80,7 +80,7 @@ of the function dictates the underlying ATS hook.
 glb_txn_start()
 ^^^^^^^^^^^^^^^
 
-The ``glb_txn_start()`` hook is called at the beginning of a transactio. This is also
+The ``glb_txn_start()`` hook is called at the beginning of a transaction. This is also
 where Cripts will setup other HTTP hooks as necessary. Note that in this hook, the
 client request has not yet been read, so you cannot access the request headers.
 
@@ -98,7 +98,7 @@ has not yet been applied, so the URL may not be the final URL, or even complete.
 glb_pre_remap()
 ^^^^^^^^^^^^^^^
 
-This hook may not be particuarly useful in Cripts, as remap rules are not applied her yet
+This hook may not be particularly useful in Cripts, as remap rules are not applied here yet
 as well. We've added it for completeness.
 
 .. _cripts-global-hooks-post-remap:
