@@ -151,11 +151,20 @@ public:
   static const char *
   strstrcase(const char *s0, const char *s1)
   {
-    while (*s0) {
+    size_t len_s0 = std::strlen(s0);
+    size_t len_s1 = std::strlen(s1);
+
+    if (len_s1 > len_s0) {
+      return nullptr; // If s1 is longer than s0, there's no match
+    }
+
+    const char *end = s0 + len_s0 - len_s1;
+
+    while (s0 < end) {
       const char *h = s0;
       const char *n = s1;
 
-      while (*n && (std::toupper((unsigned char)*h) == *n)) {
+      while (*n && (std::toupper(static_cast<unsigned char>(*h)) == *n)) {
         ++h;
         ++n;
       }
