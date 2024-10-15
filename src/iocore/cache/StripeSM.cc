@@ -164,6 +164,8 @@ StripeSM::clear_dir()
 int
 StripeSM::init(bool clear)
 {
+  CryptoContext().hash_immediate(hash_id, hash_text, strlen(hash_text));
+
   // Evacuation
   this->hit_evacuate_window = (this->data_blocks * cache_config_hit_evacuate_percent) / 100;
 
