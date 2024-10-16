@@ -66,6 +66,10 @@ public:
     CASE_INSENSITIVE_MATCH,
     CONTAIN,
     CASE_INSENSITIVE_CONTAIN,
+    LT,
+    LTE,
+    GT,
+    GTE,
     N_OPERATORS,
   };
 
@@ -92,8 +96,13 @@ public:
     return m_num_values;
   }
 
+  bool
+  is_wipe() const
+  {
+    return m_action == WIPE_FIELD_VALUE;
+  }
+
   virtual bool toss_this_entry(LogAccess *lad) = 0;
-  virtual bool wipe_this_entry(LogAccess *lad) = 0;
   virtual void display(FILE *fd = stdout)      = 0;
 
   static LogFilter *parse(const char *name, Action action, const char *condition);
@@ -133,11 +142,42 @@ public:
   bool operator==(LogFilterString &rhs);
 
   bool toss_this_entry(LogAccess *lad) override;
-  bool wipe_this_entry(LogAccess *lad) override;
   void display(FILE *fd = stdout) override;
 
   // noncopyable
   LogFilterString &operator=(LogFilterString &rhs) = delete;
+
+  // This assumes that s1 is all uppercase, hence we hide this in here specifically
+  static const char *
+  strstrcase(const char *s0, const char *s1)
+  {
+    size_t len_s0 = std::strlen(s0);
+    size_t len_s1 = std::strlen(s1);
+
+    if (len_s1 > len_s0) {
+      return nullptr; // If s1 is longer than s0, there's no match
+    }
+
+    const char *end = s0 + len_s0 - len_s1;
+
+    while (s0 < end) {
+      const char *h = s0;
+      const char *n = s1;
+
+      while (*n && (std::toupper(static_cast<unsigned char>(*h)) == *n)) {
+        ++h;
+        ++n;
+      }
+
+      if (!*n) {
+        return s0;
+      }
+
+      ++s0;
+    }
+
+    return nullptr;
+  }
 
 private:
   char **m_value = nullptr; // the array of values
@@ -153,25 +193,21 @@ private:
   // (as strcmp does)
   using OperatorFunction = int (*)(const char *, const char *);
 
+  // return 0 if s1 is substring of s0 and 1 otherwise, to conform to strcmp etc.
   static int
   _isSubstring(const char *s0, const char *s1)
   {
-    // return 0 if s1 is substring of s0 and 1 otherwise
-    // this reverse behavior is to conform to the behavior of strcmp
-    // which returns 0 if strings match
     return (strstr(s0, s1) == nullptr ? 1 : 0);
   }
 
-  enum LengthCondition {
-    DATA_LENGTH_EQUAL = 0,
-    DATA_LENGTH_LARGER,
-  };
+  //
+  static int
+  _isSubstringUpper(const char *s0, const char *s1)
+  {
+    return (strstrcase(s0, s1) == nullptr) ? 1 : 0;
+  }
 
-  inline bool _checkCondition(OperatorFunction f, const char *field_value, size_t field_value_length, char **val,
-                              LengthCondition lc);
-
-  inline bool _checkConditionAndWipe(OperatorFunction f, char **field_value, size_t field_value_length, char **val,
-                                     const char *uppercase_field_value, LengthCondition lc);
+  bool _checkConditionAndWipe(OperatorFunction f, char *field_value, size_t field_value_length, char **val, bool uppercase = false);
 
   // -- member functions that are not allowed --
   LogFilterString();
@@ -193,7 +229,6 @@ public:
   bool operator==(LogFilterInt &rhs);
 
   bool toss_this_entry(LogAccess *lad) override;
-  bool wipe_this_entry(LogAccess *lad) override;
   void display(FILE *fd = stdout) override;
 
   // noncopyable
@@ -226,7 +261,6 @@ public:
   bool operator==(LogFilterIP &rhs);
 
   bool toss_this_entry(LogAccess *lad) override;
-  bool wipe_this_entry(LogAccess *lad) override;
   void display(FILE *fd = stdout) override;
 
   // noncopyable
@@ -259,7 +293,6 @@ public:
 
   void       add(LogFilter *filter, bool copy = true);
   bool       toss_this_entry(LogAccess *lad);
-  bool       wipe_this_entry(LogAccess *lad);
   LogFilter *find_by_name(const char *name);
   void       clear();
 
@@ -278,18 +311,6 @@ public:
   unsigned count() const;
   void     display(FILE *fd = stdout);
 
-  bool
-  does_conjunction() const
-  {
-    return m_does_conjunction;
-  }
-
-  void
-  set_conjunction(bool c)
-  {
-    m_does_conjunction = c;
-  }
-
   // noncopyable
   // -- member functions that are not allowed --
   LogFilterList(const LogFilterList &rhs)            = delete;
@@ -298,263 +319,5 @@ public:
 private:
   Queue<LogFilter> m_filter_list;
 
-  bool m_does_conjunction = true;
-  // If m_does_conjunction = true
-  // toss_this_entry returns true
-  // if ANY filter tosses entry away.
-  // If m_does_conjunction = false,
-  // toss this entry returns true if
-  // ALL filters toss away entry
+  bool m_has_wipe = false;
 };
-
-/*-------------------------------------------------------------------------
-  Inline functions
-  -------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------
-  _checkCondition
-
-  check all values for a matching condition
-
-  the arguments to the function are:
-
-  - a function f of type OperatorFunction that determines if the
-    condition is true for a single filter value. Note that this function
-    must return 0 if the condition is true.
-  - the value of the field from the log record
-  - the length of this field
-  - the array of filter values to compare to note that we pass this as an
-    argument because it can be either m_value or m_value_uppercase
-  - a LengthCondition argument that determines if the length of the field value
-    must be equal or larger to the length of the filter value (this is to
-    compare strings only if really needed
-    ------------------------------------------------------------------------*/
-
-inline bool
-LogFilterString::_checkCondition(OperatorFunction f, const char *field_value, size_t field_value_length, char **val,
-                                 LengthCondition lc)
-{
-  bool retVal = false;
-
-  // make single value case a little bit faster by taking it out of loop
-  //
-  if (m_num_values == 1) {
-    switch (lc) {
-    case DATA_LENGTH_EQUAL:
-      retVal = (field_value_length == *m_length ? ((*f)(field_value, *val) == 0 ? true : false) : false);
-      break;
-    case DATA_LENGTH_LARGER:
-      retVal = (field_value_length > *m_length ? ((*f)(field_value, *val) == 0 ? true : false) : false);
-      break;
-    default:
-      ink_assert(!"LogFilterString::checkCondition "
-                  "unknown LengthCondition");
-    }
-  } else {
-    size_t i;
-    switch (lc) {
-    case DATA_LENGTH_EQUAL:
-      for (i = 0; i < m_num_values; ++i) {
-        // condition is satisfied if f returns zero
-        if (field_value_length == m_length[i] && (*f)(field_value, val[i]) == 0) {
-          retVal = true;
-          break;
-        }
-      }
-      break;
-    case DATA_LENGTH_LARGER:
-      for (i = 0; i < m_num_values; ++i) {
-        // condition is satisfied if f returns zero
-        if (field_value_length > m_length[i] && (*f)(field_value, val[i]) == 0) {
-          retVal = true;
-          break;
-        }
-      }
-      break;
-    default:
-      ink_assert(!"LogFilterString::checkCondition "
-                  "unknown LengthCondition");
-    }
-  }
-  return retVal;
-}
-
-/*---------------------------------------------------------------------------
- * find pattern from the query param
- * 1) if pattern is not in the query param, return nullptr
- * 2) if got the pattern in one param's value, search again until it's in one param name, or nullptr if can't find it from param
-name
----------------------------------------------------------------------------*/
-static const char *
-findPatternFromParamName(const char *lookup_query_param, const char *pattern)
-{
-  const char *pattern_in_query_param = strstr(lookup_query_param, pattern);
-  while (pattern_in_query_param) {
-    // wipe pattern in param name, need to search again if find pattern in param value
-    const char *param_value_str = strchr(pattern_in_query_param, '=');
-    if (!param_value_str) {
-      // no "=" after pattern_in_query_param, means pattern_in_query_param is not in the param name, and no more param after it
-      pattern_in_query_param = nullptr;
-      break;
-    }
-    const char *param_name_str = strchr(pattern_in_query_param, '&');
-    if (param_name_str && param_value_str > param_name_str) {
-      //"=" is after "&" followd by pattern_in_query_param, means pattern_in_query_param is not in the param name
-      pattern_in_query_param = strstr(param_name_str, pattern);
-      continue;
-    }
-    // ensure pattern_in_query_param is in the param name now
-    break;
-  }
-  return pattern_in_query_param;
-}
-
-/*---------------------------------------------------------------------------
- * replace param value whose name contains pattern with same count 'X' of original value str length
----------------------------------------------------------------------------*/
-static void
-updatePatternForFieldValue(char **field, const char *pattern_str, int /* field_pos ATS_UNUSED */, char *buf_dest)
-{
-  int   buf_dest_len = strlen(buf_dest);
-  char  buf_dest_to_field[buf_dest_len + 1];
-  char *temp_text = buf_dest_to_field;
-  memcpy(temp_text, buf_dest, (pattern_str - buf_dest));
-  temp_text             += (pattern_str - buf_dest);
-  const char *value_str  = strchr(pattern_str, '=');
-  if (value_str) {
-    value_str++;
-    memcpy(temp_text, pattern_str, (value_str - pattern_str));
-    temp_text                  += (value_str - pattern_str);
-    const char *next_param_str  = strchr(value_str, '&');
-    if (next_param_str) {
-      for (int i = 0; i < (next_param_str - value_str); i++) {
-        temp_text[i] = 'X';
-      }
-      temp_text += (next_param_str - value_str);
-      memcpy(temp_text, next_param_str, ((buf_dest + buf_dest_len) - next_param_str));
-    } else {
-      for (int i = 0; i < ((buf_dest + buf_dest_len) - value_str); i++) {
-        temp_text[i] = 'X';
-      }
-    }
-  } else {
-    return;
-  }
-
-  buf_dest_to_field[buf_dest_len] = '\0';
-  strcpy(*field, buf_dest_to_field);
-}
-
-/*---------------------------------------------------------------------------
-  wipeField : Given a dest buffer, wipe the first occurrence of the value of the
-  field in the buffer.
-
---------------------------------------------------------------------------*/
-static void
-wipeField(char **field, char *pattern, const char *uppercase_field)
-{
-  char       *buf_dest    = *field;
-  const char *lookup_dest = uppercase_field ? uppercase_field : *field;
-
-  if (buf_dest) {
-    char       *query_param        = strchr(buf_dest, '?');
-    const char *lookup_query_param = strchr(lookup_dest, '?');
-    if (!query_param || !lookup_query_param) {
-      return;
-    }
-
-    const char *pattern_in_param_name = findPatternFromParamName(lookup_query_param, pattern);
-    while (pattern_in_param_name) {
-      int field_pos         = pattern_in_param_name - lookup_query_param;
-      pattern_in_param_name = query_param + field_pos;
-      updatePatternForFieldValue(field, pattern_in_param_name, field_pos, buf_dest);
-
-      // search new param again
-      const char *new_param = strchr(lookup_query_param + field_pos, '&');
-      if (new_param && *(new_param + 1)) {
-        pattern_in_param_name = findPatternFromParamName(new_param + 1, pattern);
-      } else {
-        break;
-      }
-    }
-  }
-}
-
-/*-------------------------------------------------------------------------
-  _checkConditionAndWipe
-
-  check all values for a matching condition and perform wipe action
-
-  the arguments to the function are:
-
-  - a function f of type OperatorFunction that determines if the
-    condition is true for a single filter value. Note that this function
-    must return 0 if the condition is true.
-  - the value of the field from the log record
-  - the length of this field
-  - the array of filter values to compare to note that we pass this as an
-    argument because it can be either m_value or m_value_uppercase
-  - a LengthCondition argument that determines if the length of the field value
-    must be equal or larger to the length of the filter value (this is to
-    compare strings only if really needed
-    ------------------------------------------------------------------------*/
-
-inline bool
-LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, size_t field_value_length, char **val,
-                                        const char *uppercase_field_value, LengthCondition lc)
-{
-  bool retVal = false;
-
-  if (m_action != WIPE_FIELD_VALUE) {
-    return false;
-  }
-
-  // make single value case a little bit faster by taking it out of loop
-  //
-  const char *lookup_field_value = uppercase_field_value ? uppercase_field_value : *field_value;
-  if (m_num_values == 1) {
-    switch (lc) {
-    case DATA_LENGTH_EQUAL:
-      retVal = (field_value_length == *m_length ? ((*f)(lookup_field_value, *val) == 0 ? true : false) : false);
-      if (retVal) {
-        wipeField(field_value, *val, uppercase_field_value);
-      }
-      break;
-    case DATA_LENGTH_LARGER:
-      retVal = (field_value_length > *m_length ? ((*f)(lookup_field_value, *val) == 0 ? true : false) : false);
-      if (retVal) {
-        wipeField(field_value, *val, uppercase_field_value);
-      }
-      break;
-    default:
-      ink_assert(!"LogFilterString::checkCondition "
-                  "unknown LengthCondition");
-    }
-  } else {
-    size_t i;
-    switch (lc) {
-    case DATA_LENGTH_EQUAL:
-      for (i = 0; i < m_num_values; ++i) {
-        // condition is satisfied if f returns zero
-        if (field_value_length == m_length[i] && (*f)(lookup_field_value, val[i]) == 0) {
-          retVal = true;
-          wipeField(field_value, val[i], uppercase_field_value);
-        }
-      }
-      break;
-    case DATA_LENGTH_LARGER:
-      for (i = 0; i < m_num_values; ++i) {
-        // condition is satisfied if f returns zero
-        if (field_value_length > m_length[i] && (*f)(lookup_field_value, val[i]) == 0) {
-          retVal = true;
-          wipeField(field_value, val[i], uppercase_field_value);
-        }
-      }
-      break;
-    default:
-      ink_assert(!"LogFilterString::checkConditionAndWipe "
-                  "unknown LengthConditionAndWipe");
-    }
-  }
-  return retVal;
-}
