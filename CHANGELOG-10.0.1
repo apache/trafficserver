@@ -1,4 +1,8 @@
 Changes with Apache Traffic Server 10.0.1
+  #11310 - Print the hash of secret data
+  #11450 - Fix use of uninitialized stack memory in records
+  #11464 - Remove remaining use of obsolete debug output functions.
+  #11567 - Make the error handle deal with remap redirects
   #11723 - QUIC: Fix a bug that ssl_multicert.config is not reloaded for QUIC
   #11734 - Changes all of Cripts to be in cripts:: namespace
   #11747 - Add geoguard specific fields to maxmind anonymous blocking
@@ -6,3 +10,14 @@ Changes with Apache Traffic Server 10.0.1
   #11752 - Fix an infinite loop in Histogram
   #11755 - Adds some more checks around Python tooling for YAPF
   #11759 - http2: use exponential backoff for restarting streams when going past watermark
+  #11764 - hostdb: remove latency with cache misses
+  #11766 - ja3_fingerprint.test.py: address race condition
+  #11767 - Fix sni.yaml link in records.config
+  #11777 - Add const to cripts formatter format functions
+  #11785 - header_rewrite: Fix condition parser
+  #11788 - autest target: PYTHONPATH for remap_acl.test.py
+  #11790 - Build unit tests for BRAVO
+  #11802 - INKVConnInternal::do_io_*: handle null buffer (#11789)
+  #11804 - Coverity: Fix for CID-1534640 - Use of 32-bit time_t
+  #11809 - Add support for ATS_PROBES with up to twelve arguments
+  #11814 - Fixes to HostDB marking IPs up/down
