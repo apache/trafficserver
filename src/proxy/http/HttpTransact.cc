@@ -3140,6 +3140,7 @@ HttpTransact::handle_cache_write_lock(State *s)
   case CACHE_WL_FAIL:
     // No write lock, ignore the cache and proxy only;
     // FIX: Should just serve from cache if this is a revalidate
+    Metrics::Counter::increment(http_rsb.cache_open_write_fail_count);
     s->cache_info.action = CACHE_DO_NO_ACTION;
     switch (s->cache_open_write_fail_action) {
     case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS:
