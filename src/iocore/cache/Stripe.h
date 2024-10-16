@@ -33,6 +33,7 @@
 #include "tscore/ink_align.h"
 #include "tscore/ink_memory.h"
 
+#include <cstddef>
 #include <cstdint>
 
 #define CACHE_BLOCK_SHIFT        9
@@ -102,6 +103,19 @@ public:
 
   CacheVol *cache_vol{};
 
+  /**
+   * Stripe constructor.
+   *
+   * @param disk: The disk object to associate with this stripe.
+   * The disk path must be non-null.
+   * @param blocks: Number of blocks. Must be at least 10.
+   * @param dir_skip: Offset into the disk at which to start the stripe.
+   * If this value is less than START_POS, START_POS will be used instead.
+   *
+   * @see START_POS
+   */
+  Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip);
+
   int dir_check();
 
   uint32_t round_to_approx_size(uint32_t l) const;
@@ -158,11 +172,13 @@ protected:
 
   void _clear_init();
   void _init_dir();
-  void _init_data(off_t blocks, off_t dir_skip);
   bool flush_aggregate_write_buffer();
 
 private:
+  void _init_hash_text(char const *seed, off_t blocks, off_t dir_skip);
+  void _init_data(off_t store_block_size);
   void _init_data_internal();
+  void _init_directory(std::size_t directory_size, int header_size, int footer_size);
 };
 
 inline uint32_t

@@ -269,16 +269,14 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
         if (cp->disk_stripes[i] && !DISK_BAD(cp->disk_stripes[i]->disk)) {
           DiskStripeBlockQueue *q = cp->disk_stripes[i]->dpb_queue.head;
           for (; q; q = q->link.next) {
-            cp->stripes[vol_no]            = new StripeSM();
+            blocks                         = q->b->len;
             CacheDisk *d                   = cp->disk_stripes[i]->disk;
-            cp->stripes[vol_no]->disk      = d;
-            cp->stripes[vol_no]->fd        = d->fd;
+            cp->stripes[vol_no]            = new StripeSM(d, blocks, q->b->offset);
             cp->stripes[vol_no]->cache     = this;
             cp->stripes[vol_no]->cache_vol = cp;
-            blocks                         = q->b->len;
 
             bool vol_clear = clear || d->cleared || q->new_block;
-            cp->stripes[vol_no]->init(d->path, blocks, q->b->offset, vol_clear);
+            cp->stripes[vol_no]->init(vol_clear);
             vol_no++;
             cache_size += blocks;
           }
