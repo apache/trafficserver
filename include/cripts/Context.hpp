@@ -59,11 +59,11 @@ public:
   void              Release();
 
   // These fields are preserving the parameters as setup in DoRemap()
-  cripts::Transaction                      state;
-  std::array<DataType, CONTEXT_DATA_SLOTS> data;
-  TSCont                                   default_cont = nullptr;
-  TSRemapRequestInfo                      *rri          = nullptr;
-  cripts::Instance                        &p_instance; // p_ == public_, since we can't use "instance"
+  cripts::Transaction                      state;           // This is the transaction state
+  std::array<DataType, CONTEXT_DATA_SLOTS> data;            // Context data
+  TSCont                                   contp = nullptr; // Remap or global continuation
+  TSRemapRequestInfo                      *rri   = nullptr; // This may be nullptr, if not a remap
+  cripts::Instance                        &p_instance;      // p_ == public_, since we can't use "instance"
 
   // These are private, but needs to be visible to our friend classes that
   // depends on the Context.
