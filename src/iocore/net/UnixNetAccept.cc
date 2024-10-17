@@ -28,6 +28,8 @@
 #include "P_Net.h"
 #include "tscore/ink_inet.h"
 
+#include <memory>
+
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
 
 namespace
@@ -98,11 +100,11 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
-    if ((res = na->server.accept(&con)) < 0) {
+    if ((res = na->server->accept(&con)) < 0) {
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE) {
         goto Ldone;
       }
-      if (na->server.sock.is_ok() && !na->action_->cancelled) {
+      if (na->server->sock.is_ok() && !na->action_->cancelled) {
         if (!blockable) {
           na->action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
         } else {
@@ -142,7 +144,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     }
 #ifdef USE_EDGE_TRIGGER
     // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
-    if (na->server.http_accept_filter) {
+    if (na->server->http_accept_filter) {
       vc->read.triggered = 1;
     }
 #endif
@@ -216,10 +218,10 @@ NetAccept::init_accept_loop()
 
   for (i = 0; i < n; i++) {
     NetAccept *a = (i < n - 1) ? clone() : this;
-    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i, ats_ip_port_host_order(&server.accept_addr));
+    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i, ats_ip_port_host_order(&server->accept_addr));
     eventProcessor.spawn_thread(a, thr_name, stacksize);
     Dbg(dbg_ctl_iocore_net_accept_start, "Created accept thread #%d for port %d", i + 1,
-        ats_ip_port_host_order(&server.accept_addr));
+        ats_ip_port_host_order(&server->accept_addr));
   }
 }
 
@@ -309,7 +311,7 @@ NetAccept::stop_accept()
   if (!action_->cancelled) {
     action_->cancel();
   }
-  server.close();
+  server->close();
 }
 
 int
@@ -330,16 +332,16 @@ NetAccept::do_listen_impl(bool non_blocking)
 {
   int res = 0;
 
-  if (server.sock.is_ok()) {
-    if ((res = server.setup_fd_for_listen(non_blocking, opt))) {
-      Warning("unable to listen on main accept port %d: errno = %d, %s", server.accept_addr.host_order_port(), errno,
+  if (server->sock.is_ok()) {
+    if ((res = server->setup_fd_for_listen(non_blocking, opt))) {
+      Warning("unable to listen on main accept port %d: errno = %d, %s", server->accept_addr.host_order_port(), errno,
               strerror(errno));
       goto Lretry;
     }
   } else {
   Lretry:
-    if ((res = server.listen(non_blocking, opt))) {
-      Warning("unable to listen on port %d: %d %d, %s", server.accept_addr.host_order_port(), res, errno, strerror(errno));
+    if ((res = server->listen(non_blocking, opt))) {
+      Warning("unable to listen on port %d: %d %d, %s", server->accept_addr.host_order_port(), res, errno, strerror(errno));
     }
   }
 
@@ -360,7 +362,7 @@ NetAccept::do_blocking_accept(EThread *t)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
-    if ((res = server.accept(&con)) < 0) {
+    if ((res = server->accept(&con)) < 0) {
       int seriousness = accept_error_seriousness(res);
       switch (seriousness) {
       case 0:
@@ -435,7 +437,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->accept_object = this;
 #ifdef USE_EDGE_TRIGGER
     // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
-    if (server.http_accept_filter) {
+    if (server->http_accept_filter) {
       vc->read.triggered = 1;
     }
 #endif
@@ -478,10 +480,10 @@ NetAccept::acceptEvent(int event, void *ep)
     if ((res = accept_fn(this, e, false)) < 0) {
       Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
       /* INKqa11179 */
-      Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);
+      Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server->addr), res);
       Warning("Traffic Server may be unable to accept more network"
               "connections on %d",
-              ats_ip_port_host_order(&server.addr));
+              ats_ip_port_host_order(&server->addr));
       e->cancel();
       delete this;
       return EVENT_DONE;
@@ -508,15 +510,13 @@ NetAccept::acceptFastEvent(int event, void *ep)
   int                 additional_accepts = NetHandler::get_additional_accepts();
 
   do {
-    socklen_t  sz = sizeof(con.addr);
-    UnixSocket sock{-1};
-    if (int res{server.sock.accept4(&con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC)}; res >= 0) {
-      sock = UnixSocket{res};
+    socklen_t sz = sizeof(con.addr);
+    if (int res{server->sock.accept4(&con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC)}; res >= 0) {
+      con.sock = UnixSocket{res};
     }
-    con.sock = sock;
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
 
-    if (likely(sock.is_ok())) {
+    if (likely(con.sock.is_ok())) {
       // check for throttle
       if (check_net_throttle(ACCEPT)) {
         // close the connection as we are in throttle state
@@ -528,13 +528,13 @@ NetAccept::acceptFastEvent(int event, void *ep)
         con.close();
         continue;
       }
-      Dbg(dbg_ctl_iocore_net, "accepted a new socket: %d", sock.get_fd());
+      Dbg(dbg_ctl_iocore_net, "accepted a new socket: %d", con.sock.get_fd());
       Metrics::Counter::increment(net_rsb.tcp_accept);
       if (opt.send_bufsize > 0) {
-        if (unlikely(sock.set_sndbuf_size(opt.send_bufsize))) {
+        if (unlikely(con.sock.set_sndbuf_size(opt.send_bufsize))) {
           bufsz = ROUNDUP(opt.send_bufsize, 1024);
           while (bufsz > 0) {
-            if (!sock.set_sndbuf_size(bufsz)) {
+            if (!con.sock.set_sndbuf_size(bufsz)) {
               break;
             }
             bufsz -= 1024;
@@ -542,10 +542,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
         }
       }
       if (opt.recv_bufsize > 0) {
-        if (unlikely(sock.set_rcvbuf_size(opt.recv_bufsize))) {
+        if (unlikely(con.sock.set_rcvbuf_size(opt.recv_bufsize))) {
           bufsz = ROUNDUP(opt.recv_bufsize, 1024);
           while (bufsz > 0) {
-            if (!sock.set_rcvbuf_size(bufsz)) {
+            if (!con.sock.set_rcvbuf_size(bufsz)) {
               break;
             }
             bufsz -= 1024;
@@ -553,7 +553,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
         }
       }
     } else {
-      res = sock.get_fd();
+      res = con.sock.get_fd();
     }
     // check return value from accept()
     if (res < 0) {
@@ -601,7 +601,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
 #ifdef USE_EDGE_TRIGGER
     // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
-    if (server.http_accept_filter) {
+    if (server->http_accept_filter) {
       vc->read.triggered = 1;
     }
 #endif
@@ -626,7 +626,7 @@ Ldone:
   return EVENT_CONT;
 
 Lerror:
-  server.close();
+  server->close();
   e->cancel();
   Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
   delete this;
@@ -655,7 +655,9 @@ NetAccept::acceptLoopEvent(int event, Event *e)
 //
 //
 
-NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt) : Continuation(nullptr), opt(_opt) {}
+NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt) : Continuation(nullptr), server{std::make_shared<Server>()}, opt(_opt)
+{
+}
 
 //
 // Stop listening.  When the next poll takes place, an error will result.
@@ -665,15 +667,14 @@ void
 NetAccept::cancel()
 {
   action_->cancel();
-  server.close();
+  server->close();
 }
 
 NetAccept *
 NetAccept::clone() const
 {
   NetAccept *na;
-  na  = new NetAccept(opt);
-  *na = *this;
+  na = new NetAccept{*this};
   return na;
 }
 

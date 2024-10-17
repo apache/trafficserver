@@ -42,8 +42,10 @@
 #include "iocore/net/NetAcceptEventIO.h"
 #include "Server.h"
 
-#include <vector>
 #include "tscore/ink_platform.h"
+
+#include <memory>
+#include <vector>
 
 struct NetAccept;
 struct HttpProxyPort;
@@ -62,7 +64,7 @@ class UnixNetVConnection;
 
 // TODO fix race between cancel accept and call back
 struct NetAcceptAction : public Action, public RefCountObjInHeap {
-  Server *server;
+  std::shared_ptr<Server> server;
 
   void
   cancel(Continuation *cont = nullptr) override
@@ -89,14 +91,14 @@ struct NetAcceptAction : public Action, public RefCountObjInHeap {
 // Handles accepting connections.
 //
 struct NetAccept : public Continuation {
-  ink_hrtime             period = 0;
-  Server                 server;
-  AcceptFunctionPtr      accept_fn = nullptr;
-  int                    ifd       = NO_FD;
-  int                    id        = -1;
-  Ptr<NetAcceptAction>   action_;
-  SSLNextProtocolAccept *snpa = nullptr;
-  NetAcceptEventIO       ep;
+  ink_hrtime              period = 0;
+  std::shared_ptr<Server> server;
+  AcceptFunctionPtr       accept_fn = nullptr;
+  int                     ifd       = NO_FD;
+  int                     id        = -1;
+  Ptr<NetAcceptAction>    action_;
+  SSLNextProtocolAccept  *snpa = nullptr;
+  NetAcceptEventIO        ep;
 
   HttpProxyPort *proxyPort = nullptr;
   AcceptOptions  opt;
