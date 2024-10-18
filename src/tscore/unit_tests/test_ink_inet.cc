@@ -270,10 +270,14 @@ TEST_CASE("ink_inet_unix", "[libts][inet][unix]")
   ep.assign(addr);
   w.print("{}", ep);
   REQUIRE(w.view() == "/tmp/sock.test");
+#if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
   REQUIRE(ep.sun.sun_len == SUN_LEN(&ep.sun));
+#endif
 
   ats_unix_append_id(&ep.sun, 0);
   w.clear().print("{}", ep);
   REQUIRE(w.view() == "/tmp/sock.test-0");
+#if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
   REQUIRE(ep.sun.sun_len == SUN_LEN(&ep.sun));
+#endif
 }

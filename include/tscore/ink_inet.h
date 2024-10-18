@@ -326,7 +326,9 @@ ats_unix_append_id(sockaddr_un *s, int id)
   int  cnt = snprintf(tmp, sizeof(tmp), "-%d", id);
   if (static_cast<size_t>(ats_unix_path_len(s) + cnt) < TS_UNIX_SIZE) {
     strncat(s->sun_path, tmp, cnt);
+#if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
     s->sun_len = SUN_LEN(s);
+#endif
   }
 }
 
@@ -1672,7 +1674,9 @@ IpEndpoint::assign(UnAddr const &addr)
 {
   sa.sa_family = AF_UNIX;
   strncpy(ats_unix_cast(&sa)->sun_path, addr._path, TS_UNIX_SIZE);
+#if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
   sa.sa_len = SUN_LEN(&sun);
+#endif
   return *this;
 }
 
