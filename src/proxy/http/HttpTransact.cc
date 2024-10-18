@@ -5023,8 +5023,8 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     //   may be a dup we've already copied in.  If
     //   dups show up we look through the remaining
     //   header fields in the new response, nuke
-    //   them in the cached response and then add in
-    //   the remaining fields one by one from the
+    //   the dup headers in the cached response and then
+    //   add them back in one by one from the
     //   response header
     //
     if (field.m_next_dup) {
@@ -5038,8 +5038,10 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
         for (auto spot2 = spot; spot2 != limit; ++spot2) {
           MIMEField &field2{*spot2};
           name2 = field2.name_get(&name_len2);
-
-          cached_header->field_delete(name2, name_len2);
+          // Only delete the duplicated headers
+          if (name2 == name) {
+            cached_header->field_delete(name2, name_len2);
+          }
         }
         dups_seen = true;
       }

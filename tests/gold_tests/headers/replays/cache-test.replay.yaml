@@ -1,0 +1,257 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Note 1:
+# When testing duplicate headers here, replay files cannot
+# handle two seperate values. So make sure that duplicate headers
+# have the same value in testing.
+
+sessions:
+  - transactions:
+      # Test 0: Cache fill with content-type after duplicate headers
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /1
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, fill_1]
+              - [x-debug, "x-cache,x-cache-key,via"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 23 Sep 2024 14:22:14 GMT"]
+              - [X-Reveal-Duplicate, same]
+              - [Cache-Control, "max-age=1, stale-if-error=1, stale-while-revalidate=1, public"]
+              - [Content-Length, 3]
+              - [Content-Type, application/javascript]
+              - [Expires, "Mon, 23 Sep 2024 14:22:44 GMT"]
+              - [Last-Modified, "Mon, 23 Sep 2024 14:22:14 GMT"]
+              - [X-Reveal-Duplicate, same]
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
+              - [Content-Length, { value: 3, as: equal }]
+              - [Content-Type, { value: application/javascript, as: equal }]
+              - [Expires, { value: "Mon, 23 Sep 2024 14:22:44 GMT", as: equal }]
+              - [Last-Modified, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Cache, { value: miss, as: equal }]
+              - [X-Reveal-Duplicate, { value: same, as: equal }]
+
+      # Test 1: Cache hit stale with content-type after duplicate headers
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /1
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, stale_1]
+              - [x-debug, "x-cache,x-cache-key,via"]
+
+        server-response:
+          status: 304
+          reason: Not Modified
+          headers:
+            fields:
+              - [Date, "Mon, 23 Sep 2024 14:22:14 GMT"]
+              - [X-Reveal-Duplicate, same]
+              - [Cache-Control, "max-age=1, stale-if-error=1, stale-while-revalidate=1, public"]
+              - [Content-Length, 3]
+              - [Content-Type, application/javascript]
+              - [Expires, "Mon, 23 Sep 2024 14:22:44 GMT"]
+              - [Last-Modified, "Mon, 23 Sep 2024 14:22:14 GMT"]
+              - [X-Reveal-Duplicate, same]
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
+              - [Content-Length, { value: 3, as: equal }]
+              - [Content-Type, { value: application/javascript, as: equal }]
+              - [Expires, { value: "Mon, 23 Sep 2024 14:22:44 GMT", as: equal }]
+              - [Last-Modified, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Cache, { value: hit-stale, as: equal }]
+              - [X-Reveal-Duplicate, { value: same, as: equal }]
+
+      # Test 2: Cache fill with content-type before duplicate headers
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /2
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, fill_2]
+              - [x-debug, "x-cache,x-cache-key,via"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 23 Sep 2024 14:22:14 GMT"]
+              - [Content-Type, application/javascript]
+              - [X-Reveal-Duplicate, same]
+              - [Cache-Control, "max-age=1, stale-if-error=1, stale-while-revalidate=1, public"]
+              - [Content-Length, 3]
+              - [Expires, "Mon, 23 Sep 2024 14:22:44 GMT"]
+              - [Last-Modified, "Mon, 23 Sep 2024 14:22:14 GMT"]
+              - [X-Reveal-Duplicate, same]
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
+              - [Content-Length, { value: 3, as: equal }]
+              - [Content-Type, { value: application/javascript, as: equal }]
+              - [Expires, { value: "Mon, 23 Sep 2024 14:22:44 GMT", as: equal }]
+              - [Last-Modified, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Cache, { value: miss, as: equal }]
+              - [X-Reveal-Duplicate, { value: same, as: equal }]
+
+      # Test 3: Cache hit stale with content-type before duplicate headers
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /2
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, stale_2]
+              - [x-debug, "x-cache,x-cache-key,via"]
+
+        server-response:
+          status: 304
+          reason: Not Modified
+          headers:
+            fields:
+              - [Date, "Mon, 23 Sep 2024 14:22:14 GMT"]
+              - [Content-Type, application/javascript]
+              - [X-Reveal-Duplicate, same]
+              - [X-Reveal-Duplicate, same]
+              - [Cache-Control, "max-age=1, stale-if-error=1, stale-while-revalidate=1, public"]
+              - [Content-Length, 3]
+              - [Expires, "Mon, 23 Sep 2024 14:22:44 GMT"]
+              - [Last-Modified, "Mon, 23 Sep 2024 14:22:14 GMT"]
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
+              - [Content-Length, { value: 3, as: equal }]
+              - [Content-Type, { value: application/javascript, as: equal }]
+              - [Expires, { value: "Mon, 23 Sep 2024 14:22:44 GMT", as: equal }]
+              - [Last-Modified, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Cache, { value: hit-stale, as: equal }]
+
+      # Test 4: Cache fill with no duplicate headers
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /3
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, fill_3]
+              - [x-debug, "x-cache,x-cache-key,via"]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, "Mon, 23 Sep 2024 14:22:14 GMT"]
+              - [Content-Type, application/javascript]
+              - [Cache-Control, "max-age=1, stale-if-error=1, stale-while-revalidate=1, public"]
+              - [Content-Length, 3]
+              - [Expires, "Mon, 23 Sep 2024 14:22:44 GMT"]
+              - [Last-Modified, "Mon, 23 Sep 2024 14:22:14 GMT"]
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
+              - [Content-Length, { value: 3, as: equal }]
+              - [Content-Type, { value: application/javascript, as: equal }]
+              - [Expires, { value: "Mon, 23 Sep 2024 14:22:44 GMT", as: equal }]
+              - [Last-Modified, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Cache, { value: miss, as: equal }]
+
+      # Test 5: Cache hit stale no duplicate headers
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: /3
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, stale_3]
+              - [x-debug, "x-cache,x-cache-key,via"]
+
+        server-response:
+          status: 304
+          reason: Not Modified
+          headers:
+            fields:
+              - [Date, "Mon, 23 Sep 2024 14:22:14 GMT"]
+              - [Content-Type, application/javascript]
+              - [Cache-Control, "max-age=1, stale-if-error=1, stale-while-revalidate=1, public"]
+              - [Content-Length, 3]
+              - [Expires, "Mon, 23 Sep 2024 14:22:44 GMT"]
+              - [Last-Modified, "Mon, 23 Sep 2024 14:22:14 GMT"]
+
+        proxy-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
+              - [Content-Length, { value: 3, as: equal }]
+              - [Content-Type, { value: application/javascript, as: equal }]
+              - [Expires, { value: "Mon, 23 Sep 2024 14:22:44 GMT", as: equal }]
+              - [Last-Modified, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
+              - [X-Cache, { value: hit-stale, as: equal }]
