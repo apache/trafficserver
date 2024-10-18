@@ -52,7 +52,8 @@ RecRecord *
 RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 {
   if (g_num_records >= REC_MAX_RECORDS) {
-    Warning("too many stats/configs, please report a bug to dev@trafficserver.apache.org");
+    Warning("too many stats/configs (%d), max=%d. Please report a bug to dev@trafficserver.apache.org", g_num_records,
+            REC_MAX_RECORDS);
     return nullptr;
   }
 
