@@ -260,3 +260,20 @@ TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
   w.clear().print("{}", swoc::bwf::As_Hex(ats_ip6_addr_cast(ep)));
   REQUIRE(w.view() == "ffee00000000000024c333493cee0143");
 }
+
+TEST_CASE("ink_inet_unix", "[libts][inet][unix]")
+{
+  auto                          addr = UnAddr("/tmp/sock.test");
+  swoc::LocalBufferWriter<1024> w;
+
+  IpEndpoint ep;
+  ep.assign(addr);
+  w.print("{}", ep);
+  REQUIRE(w.view() == "/tmp/sock.test");
+  REQUIRE(ep.sun.sun_len == SUN_LEN(&ep.sun));
+
+  ats_unix_append_id(&ep.sun, 0);
+  w.clear().print("{}", ep);
+  REQUIRE(w.view() == "/tmp/sock.test-0");
+  REQUIRE(ep.sun.sun_len == SUN_LEN(&ep.sun));
+}

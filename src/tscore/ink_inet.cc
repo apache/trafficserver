@@ -71,6 +71,9 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
   case AF_INET6:
     zret = inet_ntop(AF_INET6, &ats_ip6_addr_cast(addr), dst, size);
     break;
+  case AF_UNIX:
+    zret = strncpy(dst, ats_unix_cast(addr)->sun_path, size);
+    break;
   default:
     zret = dst;
     snprintf(dst, size, "*Not IP address [%u]*", addr->sa_family);
@@ -791,6 +794,10 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr)
         bracket_p = true; // take a note - put in the trailing bracket.
       }
       bwformat(w, spec, ats_ip6_addr_cast(addr));
+      break;
+    case AF_UNIX:
+      bwformat(w, spec, ats_unix_cast(addr)->sun_path);
+      port_p = false;
       break;
     default:
       w.print("*Not IP address [{}]*", addr->sa_family);

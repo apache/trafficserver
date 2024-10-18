@@ -312,6 +312,24 @@ ats_ip_are_compatible(sockaddr const *lhs, ///< Address to test.
   return lhs->sa_family == rhs;
 }
 
+/// @return the path length including the \0
+inline int
+ats_unix_path_len(sockaddr_un *s)
+{
+  return strnlen(s->sun_path, TS_UNIX_SIZE);
+}
+
+inline void
+ats_unix_append_id(sockaddr_un *s, int id)
+{
+  char tmp[16];
+  int  cnt = snprintf(tmp, sizeof(tmp), "-%d", id);
+  if (static_cast<size_t>(ats_unix_path_len(s) + cnt) < TS_UNIX_SIZE) {
+    strncat(s->sun_path, tmp, cnt);
+    s->sun_len = SUN_LEN(s);
+  }
+}
+
 // IP address casting.
 // sa_cast to cast to sockaddr*.
 // ss_cast to cast to sockaddr_storage*.
@@ -1654,6 +1672,7 @@ IpEndpoint::assign(UnAddr const &addr)
 {
   sa.sa_family = AF_UNIX;
   strncpy(ats_unix_cast(&sa)->sun_path, addr._path, TS_UNIX_SIZE);
+  sa.sa_len = SUN_LEN(&sun);
   return *this;
 }
 
