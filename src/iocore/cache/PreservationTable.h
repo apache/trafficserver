@@ -112,6 +112,9 @@ public:
   PreservationTable(PreservationTable const &that)            = delete;
   PreservationTable &operator=(PreservationTable const &that) = delete;
 
+  PreservationTable(PreservationTable &&that);
+  PreservationTable &operator=(PreservationTable &&that);
+
   /**
    * Check whether the hash table may be indexed with the given offset.
    *

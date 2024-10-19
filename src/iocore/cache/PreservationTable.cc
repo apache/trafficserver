@@ -53,6 +53,24 @@ PreservationTable::PreservationTable(int size) : evacuate_size{(size / EVACUATIO
   memset(static_cast<void *>(this->evacuate), 0, evac_len);
 }
 
+PreservationTable::PreservationTable(PreservationTable &&that)
+{
+  this->evacuate_size = that.evacuate_size;
+  this->evacuate      = that.evacuate;
+  that.evacuate_size  = 0;
+  that.evacuate       = nullptr;
+}
+
+PreservationTable &
+PreservationTable::operator=(PreservationTable &&that)
+{
+  this->evacuate_size = that.evacuate_size;
+  this->evacuate      = that.evacuate;
+  that.evacuate_size  = 0;
+  that.evacuate       = nullptr;
+  return *this;
+}
+
 EvacuationBlock *
 PreservationTable::find(Dir const &dir) const
 {
