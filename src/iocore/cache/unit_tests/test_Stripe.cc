@@ -193,7 +193,6 @@ TEST_CASE("The behavior of StripeSM::add_writer.")
   }
 
   ats_free(stripe.raw_dir);
-  ats_free(stripe.get_preserved_dirs().evacuate);
   ats_free(stripe.path);
 }
 
@@ -305,7 +304,6 @@ TEST_CASE("aggWrite behavior with f.evacuator unset")
   }
 
   ats_free(stripe.raw_dir);
-  ats_free(stripe.get_preserved_dirs().evacuate);
   ats_free(stripe.path);
 }
 
@@ -405,6 +403,5 @@ TEST_CASE("aggWrite behavior with f.evacuator set")
 
   delete[] source;
   ats_free(stripe.raw_dir);
-  ats_free(stripe.get_preserved_dirs().evacuate);
   ats_free(stripe.path);
 }

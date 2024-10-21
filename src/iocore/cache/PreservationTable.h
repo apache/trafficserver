@@ -109,6 +109,8 @@ public:
    */
   PreservationTable(int size);
 
+  ~PreservationTable();
+
   PreservationTable(PreservationTable const &that)            = delete;
   PreservationTable &operator=(PreservationTable const &that) = delete;
 

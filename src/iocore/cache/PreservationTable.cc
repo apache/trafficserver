@@ -53,6 +53,12 @@ PreservationTable::PreservationTable(int size) : evacuate_size{(size / EVACUATIO
   memset(static_cast<void *>(this->evacuate), 0, evac_len);
 }
 
+PreservationTable::~PreservationTable()
+{
+  ats_free(this->evacuate);
+  this->evacuate = nullptr;
+}
+
 PreservationTable::PreservationTable(PreservationTable &&that)
 {
   this->evacuate_size = that.evacuate_size;
