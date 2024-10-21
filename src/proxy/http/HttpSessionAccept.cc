@@ -45,6 +45,10 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
       Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
       return false;
     }
+  } else {
+    // This is for unix sockets where ip-based acls are not relevant
+    // TODO(cmcfarlen): POC
+    acl = IpAllow::makeAllowAllACL();
   }
 
   // Set the transport type if not already set
