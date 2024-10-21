@@ -51,6 +51,11 @@ RecRecordFree(RecRecord *r)
 RecRecord *
 RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 {
+  if (g_num_records >= max_records_entries) {
+    Fatal("Too many config records already registered (%d). Hint: increase --maxRecords param.", max_records_entries);
+    return nullptr;
+  }
+
   int        i = g_num_records++;
   RecRecord *r = &(g_records[i]);
 
