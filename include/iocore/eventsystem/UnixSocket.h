@@ -65,6 +65,14 @@ public:
    */
   UnixSocket(int domain, int ctype, int protocol);
 
+  ~UnixSocket();
+
+  UnixSocket(UnixSocket const &other)            = delete;
+  UnixSocket &operator=(UnixSocket const &other) = delete;
+
+  UnixSocket(UnixSocket &&other);
+  UnixSocket &operator=(UnixSocket &&other);
+
   int get_fd() const;
 
   bool is_ok() const;
