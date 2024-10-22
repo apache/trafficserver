@@ -179,7 +179,7 @@ valid_tls_version_min_in                 Inbound   This specifies the minimum TL
                                                    1.1.0 and later and BoringSSL. Older versions of OpenSSL do not provide a hook early enough to update
                                                    the SSL object.  It is a syntax error for |TS| built against earlier versions.
 
-valid_tls_version_max_in                 Inbound   This specifies the minimum TLS version that will be offered to user agents during
+valid_tls_version_max_in                 Inbound   This specifies the maximum TLS version that will be offered to user agents during
                                                    the TLS negotiation.  This replaces the global settings in
                                                    :ts:cv:`proxy.config.ssl.server.version.max`,
                                                    :ts:cv:`proxy.config.ssl.TLSv1`, :ts:cv:`proxy.config.ssl.TLSv1_1`,
