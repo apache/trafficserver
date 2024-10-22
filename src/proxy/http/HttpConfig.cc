@@ -292,6 +292,7 @@ register_stat_callbacks()
   http_rsb.cache_open_write_adjust_thread    = Metrics::Counter::createPtr("proxy.process.http.cache.open_write.adjust_thread");
   http_rsb.cache_open_write_begin_time       = Metrics::Counter::createPtr("proxy.process.http.milestone.cache_open_write_begin");
   http_rsb.cache_open_write_end_time         = Metrics::Counter::createPtr("proxy.process.http.milestone.cache_open_write_end");
+  http_rsb.cache_open_write_fail_count       = Metrics::Counter::createPtr("proxy.process.http.cache_open_write_fail_count");
   http_rsb.cache_read_error                  = Metrics::Counter::createPtr("proxy.process.http.cache_read_error");
   http_rsb.cache_read_errors                 = Metrics::Counter::createPtr("proxy.process.http.cache_read_errors");
   http_rsb.cache_updates                     = Metrics::Counter::createPtr("proxy.process.http.cache_updates");
