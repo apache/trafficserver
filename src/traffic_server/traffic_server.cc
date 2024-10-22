@@ -150,8 +150,9 @@ const long MAX_LOGIN = ink_login_name_max();
 
 void init_ssl_ctx_callback(void *ctx, bool server);
 
-void load_ssl_file_callback(const char *ssl_file);
-void task_threads_started_callback();
+void        load_ssl_file_callback(const char *ssl_file);
+void        task_threads_started_callback();
+static void check_max_records_argument(const ArgumentDescription *arg, unsigned int nargs, const char *val);
 
 int num_of_net_threads = ink_number_of_processors();
 int num_accept_threads = 0;
@@ -208,39 +209,39 @@ int cmd_block = 0;
 int delay_listen_for_cache = 0;
 
 ArgumentDescription argument_descriptions[] = {
-  {"net_threads",       'n', "Number of Net Threads",                                                                               "I",     &num_of_net_threads,             "PROXY_NET_THREADS",       nullptr},
-  {"udp_threads",       'U', "Number of UDP Threads",                                                                               "I",     &num_of_udp_threads,             "PROXY_UDP_THREADS",       nullptr},
-  {"accept_thread",     'a', "Use an Accept Thread",                                                                                "T",     &num_accept_threads,             "PROXY_ACCEPT_THREAD",     nullptr},
-  {"httpport",          'p', "Port descriptor for HTTP Accept",                                                                     "S*",    &http_accept_port_descriptor,    "PROXY_HTTP_ACCEPT_PORT",  nullptr},
-  {"disable_freelist",  'f', "Disable the freelist memory allocator",                                                               "T",     &cmd_disable_freelist,           "PROXY_DPRINTF_LEVEL",     nullptr},
+  {"net_threads",       'n', "Number of Net Threads",                                                                               "I",     &num_of_net_threads,             "PROXY_NET_THREADS",       nullptr                    },
+  {"udp_threads",       'U', "Number of UDP Threads",                                                                               "I",     &num_of_udp_threads,             "PROXY_UDP_THREADS",       nullptr                    },
+  {"accept_thread",     'a', "Use an Accept Thread",                                                                                "T",     &num_accept_threads,             "PROXY_ACCEPT_THREAD",     nullptr                    },
+  {"httpport",          'p', "Port descriptor for HTTP Accept",                                                                     "S*",    &http_accept_port_descriptor,    "PROXY_HTTP_ACCEPT_PORT",  nullptr                    },
+  {"disable_freelist",  'f', "Disable the freelist memory allocator",                                                               "T",     &cmd_disable_freelist,           "PROXY_DPRINTF_LEVEL",     nullptr                    },
   {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator",                                             "T",     &cmd_disable_pfreelist,
-   "PROXY_DPRINTF_LEVEL",                                                                                                                                                                                nullptr},
+   "PROXY_DPRINTF_LEVEL",                                                                                                                                                                                nullptr                    },
   {"maxRecords",        'm', "Max number of librecords metrics and configurations (default & minimum: 2048)",                       "I",     &max_records_entries,
-   "PROXY_MAX_RECORDS",                                                                                                                                                                                  nullptr},
+   "PROXY_MAX_RECORDS",                                                                                                                                                                                  &check_max_records_argument},
 
 #if TS_HAS_TESTS
-  {"regression",        'R', "Regression Level (quick:1..long:3)",                                                                  "I",     &regression_level,               "PROXY_REGRESSION",        nullptr},
-  {"regression_test",   'r', "Run Specific Regression Test",                                                                        "S512",  regression_test,                 "PROXY_REGRESSION_TEST",   nullptr},
-  {"regression_list",   'l', "List Regression Tests",                                                                               "T",     &regression_list,                "PROXY_REGRESSION_LIST",   nullptr},
+  {"regression",        'R', "Regression Level (quick:1..long:3)",                                                                  "I",     &regression_level,               "PROXY_REGRESSION",        nullptr                    },
+  {"regression_test",   'r', "Run Specific Regression Test",                                                                        "S512",  regression_test,                 "PROXY_REGRESSION_TEST",   nullptr                    },
+  {"regression_list",   'l', "List Regression Tests",                                                                               "T",     &regression_list,                "PROXY_REGRESSION_LIST",   nullptr                    },
 #endif  // TS_HAS_TESTS
 
 #if TS_USE_DIAGS
-  {"debug_tags",        'T', "Vertical-bar-separated Debug Tags",                                                                   "S1023", error_tags,                      "PROXY_DEBUG_TAGS",        nullptr},
-  {"action_tags",       'B', "Vertical-bar-separated Behavior Tags",                                                                "S1023", action_tags,                     "PROXY_BEHAVIOR_TAGS",     nullptr},
+  {"debug_tags",        'T', "Vertical-bar-separated Debug Tags",                                                                   "S1023", error_tags,                      "PROXY_DEBUG_TAGS",        nullptr                    },
+  {"action_tags",       'B', "Vertical-bar-separated Behavior Tags",                                                                "S1023", action_tags,                     "PROXY_BEHAVIOR_TAGS",     nullptr                    },
 #endif
 
-  {"interval",          'i', "Statistics Interval",                                                                                 "I",     &show_statistics,                "PROXY_STATS_INTERVAL",    nullptr},
+  {"interval",          'i', "Statistics Interval",                                                                                 "I",     &show_statistics,                "PROXY_STATS_INTERVAL",    nullptr                    },
   {"command",           'C',
    "Maintenance Command to Execute\n"
-   "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, verify_global_plugin, verify_remap_plugin, help", "S511",  &command_string,                 "PROXY_COMMAND_STRING",    nullptr},
-  {"conf_dir",          'D', "config dir to verify",                                                                                "S511",  &conf_dir,                       "PROXY_CONFIG_CONFIG_DIR", nullptr},
-  {"clear_hostdb",      'k', "Clear HostDB on Startup",                                                                             "F",     &auto_clear_hostdb_flag,         "PROXY_CLEAR_HOSTDB",      nullptr},
-  {"clear_cache",       'K', "Clear Cache on Startup",                                                                              "F",     &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE",       nullptr},
-  {"bind_stdout",       '-', "Regular file to bind stdout to",                                                                      "S512",  &bind_stdout,                    "PROXY_BIND_STDOUT",       nullptr},
-  {"bind_stderr",       '-', "Regular file to bind stderr to",                                                                      "S512",  &bind_stderr,                    "PROXY_BIND_STDERR",       nullptr},
-  {"accept_mss",        '-', "MSS for client connections",                                                                          "I",     &accept_mss,                     nullptr,                   nullptr},
-  {"poll_timeout",      't', "poll timeout in milliseconds",                                                                        "I",     &poll_timeout,                   nullptr,                   nullptr},
-  {"block",             '-', "block for debug attach",                                                                              "T",     &cmd_block,                      nullptr,                   nullptr},
+   "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, verify_global_plugin, verify_remap_plugin, help", "S511",  &command_string,                 "PROXY_COMMAND_STRING",    nullptr                    },
+  {"conf_dir",          'D', "config dir to verify",                                                                                "S511",  &conf_dir,                       "PROXY_CONFIG_CONFIG_DIR", nullptr                    },
+  {"clear_hostdb",      'k', "Clear HostDB on Startup",                                                                             "F",     &auto_clear_hostdb_flag,         "PROXY_CLEAR_HOSTDB",      nullptr                    },
+  {"clear_cache",       'K', "Clear Cache on Startup",                                                                              "F",     &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE",       nullptr                    },
+  {"bind_stdout",       '-', "Regular file to bind stdout to",                                                                      "S512",  &bind_stdout,                    "PROXY_BIND_STDOUT",       nullptr                    },
+  {"bind_stderr",       '-', "Regular file to bind stderr to",                                                                      "S512",  &bind_stderr,                    "PROXY_BIND_STDERR",       nullptr                    },
+  {"accept_mss",        '-', "MSS for client connections",                                                                          "I",     &accept_mss,                     nullptr,                   nullptr                    },
+  {"poll_timeout",      't', "poll timeout in milliseconds",                                                                        "I",     &poll_timeout,                   nullptr,                   nullptr                    },
+  {"block",             '-', "block for debug attach",                                                                              "T",     &cmd_block,                      nullptr,                   nullptr                    },
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
   RUNROOT_ARGUMENT_DESCRIPTION(),
@@ -2379,6 +2380,23 @@ task_threads_started_callback()
     WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
     hook->invoke(TS_EVENT_LIFECYCLE_TASK_THREADS_READY, nullptr);
     hook = hook->next();
+  }
+}
+static void
+check_max_records_argument(const ArgumentDescription * /* ATS_UNUSED arg*/, unsigned int /* nargs ATS_UNUSED */, const char *val)
+{
+  int32_t cmd_arg{0};
+  try {
+    cmd_arg = std::stoi(val);
+    if (cmd_arg < REC_DEFAULT_ELEMENTS_SIZE) {
+      fprintf(stderr, "[WARNING] Passed maxRecords value=%d is lower than the default value %d. Default will be used.\n", cmd_arg,
+              REC_DEFAULT_ELEMENTS_SIZE);
+      max_records_entries = REC_DEFAULT_ELEMENTS_SIZE;
+    }
+    // max_records_entries keeps the passed value.
+  } catch (std::exception const &ex) {
+    fprintf(stderr, "[ERROR] Invalid %d value for maxRecords. Default  %d will be used.\n", cmd_arg, REC_DEFAULT_ELEMENTS_SIZE);
+    max_records_entries = REC_DEFAULT_ELEMENTS_SIZE;
   }
 }
 

@@ -58,8 +58,8 @@ RecRecordFree(RecRecord *r)
 RecRecord *
 RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 {
-  if (g_num_records >= REC_MAX_RECORDS) {
-    Warning("too many stats/configs, please report a bug to dev@trafficserver.apache.org");
+  if (g_num_records >= max_records_entries) {
+    Fatal("Too many config records already registered (%d). Hint: increase --maxRecords param.", max_records_entries);
     return nullptr;
   }
 
