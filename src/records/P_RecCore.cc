@@ -188,6 +188,10 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       goto Ldone;
     }
     r1 = RecAlloc(rec_type, name, data_type);
+    if (r1 == nullptr) {
+      err = REC_ERR_FAIL;
+      goto Ldone;
+    }
     RecDataSet(data_type, &(r1->data), data);
     if (REC_TYPE_IS_STAT(r1->rec_type) && (data_raw != nullptr)) {
       r1->stat_meta.data_raw = *data_raw;

@@ -60,28 +60,32 @@ initialize_record(const RecordElement *record, void *)
     }
 
     RecDataSetFromString(record->value_type, &data, value);
-
+    RecErrT reg_status{REC_ERR_FAIL};
     switch (record->value_type) {
     case RECD_INT:
-      RecRegisterConfigInt(type, record->name, data.rec_int, update, check, record->regex, source, access);
+      reg_status = RecRegisterConfigInt(type, record->name, data.rec_int, update, check, record->regex, source, access);
       break;
 
     case RECD_FLOAT:
-      RecRegisterConfigFloat(type, record->name, data.rec_float, update, check, record->regex, source, access);
+      reg_status = RecRegisterConfigFloat(type, record->name, data.rec_float, update, check, record->regex, source, access);
       break;
 
     case RECD_STRING:
-      RecRegisterConfigString(type, record->name, data.rec_string, update, check, record->regex, source, access);
+      reg_status = RecRegisterConfigString(type, record->name, data.rec_string, update, check, record->regex, source, access);
       break;
 
     case RECD_COUNTER:
-      RecRegisterConfigCounter(type, record->name, data.rec_counter, update, check, record->regex, source, access);
+      reg_status = RecRegisterConfigCounter(type, record->name, data.rec_counter, update, check, record->regex, source, access);
       break;
 
     default:
       ink_assert(true);
       break;
     } // switch
+
+    if (reg_status != REC_ERR_OKAY) {
+      ink_fatal("%s cannot be registered. Please check the logs.", record->name);
+    }
 
     RecDataZero(record->value_type, &data);
   } else { // Everything else, except PROCESS, are stats. TODO: Should modularize this too like PROCESS was done.
