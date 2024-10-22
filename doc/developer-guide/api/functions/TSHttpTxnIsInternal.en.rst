@@ -54,7 +54,7 @@ had generated while fetching portions of an ESI document:
 
 .. literalinclude:: ../../../../plugins/esi/esi.cc
   :language: c
-  :lines: 1395-1398
+  :lines: 1339-1342
 
 See also
 ========
