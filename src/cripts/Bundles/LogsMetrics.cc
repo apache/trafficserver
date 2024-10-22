@@ -100,6 +100,12 @@ LogsMetrics::doTxnClose(cripts::Context *context)
 {
   borrow resp = cripts::Client::Response::Get();
 
+  // It's possible that the client response here is not valid, because the client went
+  // away prematurely.
+  if (!resp.Initialized()) {
+    return;
+  }
+
   // .tcpinfo(bool)
   if (_tcpinfo && control.logging.Get()) {
     borrow conn = cripts::Client::Connection::Get();
