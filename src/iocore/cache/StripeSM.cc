@@ -109,13 +109,9 @@ struct StripeInitInfo {
   }
 };
 
-StripeSM::StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip) : Continuation(new_ProxyMutex()), Stripe{disk, blocks, dir_skip}
+StripeSM::StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip)
+  : Continuation(new_ProxyMutex()), Stripe{disk, blocks, dir_skip}, _preserved_dirs{static_cast<int>(len)}
 {
-  this->_preserved_dirs.evacuate_size = static_cast<int>(len / EVACUATION_BUCKET_SIZE) + 2;
-  int evac_len                        = this->_preserved_dirs.evacuate_size * sizeof(DLL<EvacuationBlock>);
-  this->_preserved_dirs.evacuate      = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
-  memset(static_cast<void *>(this->_preserved_dirs.evacuate), 0, evac_len);
-
   open_dir.mutex = this->mutex;
   SET_HANDLER(&StripeSM::aggWrite);
 }
