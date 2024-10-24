@@ -966,7 +966,7 @@ Lrestart:
     }
     Metrics::Counter::increment(cache_rsb.directory_sync_bytes, io.aio_result);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_sync_bytes, io.aio_result);
-    trigger = eventProcessor.schedule_in(this, SYNC_DELAY);
+    trigger = eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_dir_sync_delay));
     return EVENT_CONT;
   }
   {
@@ -1046,7 +1046,7 @@ Lrestart:
       writepos += headerlen;
     } else if (writepos < static_cast<off_t>(dirlen) - headerlen) {
       // write part of body
-      int l = SYNC_MAX_WRITE;
+      int l = cache_config_dir_sync_max_write;
       if (writepos + l > static_cast<off_t>(dirlen) - headerlen) {
         l = dirlen - headerlen - writepos;
       }

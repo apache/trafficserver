@@ -2475,6 +2475,25 @@ Cache Control
 
    Objects larger than the limit are not hit evacuated. A value of 0 disables the limit.
 
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_frequency INT 60
+   :units: seconds
+
+   How often we will sync the cache directory entries to disk. Note that this is
+   a minimum time, and the actual sync may be delayed if the disks are larger than
+   how fast we allow it to write to disk (see next options).
+
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_max_writes INT 2097152
+   :units: bytes
+
+   How much of a stripes cache directory we will write to disk in each write cycle.
+   Together with the sync_delay, this controls how fast we can sync the entire directory
+   structure to disk. The default is 2MB.
+
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_delay INT 500
+   :units: millisecond
+
+   How long to wait between each write cycle when syncing the cache directory to disk.
+
 .. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
    The maximum number of alternates that are allowed for any given URL.
