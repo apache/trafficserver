@@ -108,7 +108,7 @@ public:
   bool    getSSLHandShakeComplete() const override;
 
   // NetEvent
-  virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
+  virtual void net_read_io(NetHandler *nh) override;
 
   // NetVConnection
   int         populate_protocol(std::string_view *results, int n) const override;
