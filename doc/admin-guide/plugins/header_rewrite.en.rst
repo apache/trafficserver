@@ -282,7 +282,7 @@ These operators can be used both as conditionals, as well as values for
 setting headers. For example::
 
     cond %{SEND_RESPONSE_HDR_HOOK} [AND]
-    cond %${GEO:COUNTRY} =US
+    cond %{GEO:COUNTRY} =US
         set-header ATS-Geo-Country %{GEO:COUNTRY}
         set-header ATS-Geo-Country-ISO %{GEO:COUNTRY-ISO}
         set-header ATS-Geo-ASN %{GEO:ASN}
