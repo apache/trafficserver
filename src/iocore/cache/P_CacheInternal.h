@@ -101,6 +101,8 @@ extern CacheStatsBlock cache_rsb;
 
 // Configuration
 extern int cache_config_dir_sync_frequency;
+extern int cache_config_dir_sync_delay;
+extern int cache_config_dir_sync_max_write;
 extern int cache_config_http_max_alts;
 extern int cache_config_log_alternate_eviction;
 extern int cache_config_permit_pinning;

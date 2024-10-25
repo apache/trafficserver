@@ -62,6 +62,8 @@ int     cache_config_ram_cache_use_seen_filter     = 1;
 int     cache_config_http_max_alts                 = 3;
 int     cache_config_log_alternate_eviction        = 0;
 int     cache_config_dir_sync_frequency            = 60;
+int     cache_config_dir_sync_delay                = 500;
+int     cache_config_dir_sync_max_write            = (2 * 1024 * 1024);
 int     cache_config_permit_pinning                = 0;
 int     cache_config_select_alternate              = 1;
 int     cache_config_max_doc_size                  = 0;
@@ -823,6 +825,12 @@ ink_cache_init(ts::ModuleVersion v)
 
   REC_EstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
+
+  REC_EstablishStaticConfigInt32(cache_config_dir_sync_delay, "proxy.config.cache.dir.sync_delay");
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_delay = %d", cache_config_dir_sync_delay);
+
+  REC_EstablishStaticConfigInt32(cache_config_dir_sync_max_write, "proxy.config.cache.dir.sync_max_write");
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_max_write = %d", cache_config_dir_sync_max_write);
 
   REC_EstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);

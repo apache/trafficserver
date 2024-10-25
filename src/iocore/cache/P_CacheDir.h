@@ -64,8 +64,6 @@ class CacheEvacuateDocVC;
 #define DIR_OFFSET_BITS         40
 #define DIR_OFFSET_MAX          ((((off_t)1) << DIR_OFFSET_BITS) - 1)
 
-#define SYNC_MAX_WRITE     (2 * 1024 * 1024)
-#define SYNC_DELAY         HRTIME_MSECONDS(500)
 #define DO_NOT_REMOVE_THIS 0
 
 // Debugging Options
