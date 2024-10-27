@@ -33,11 +33,11 @@
 
 .. |InkAPI.cc| replace:: ``InkAPI.cc``
 
-.. _InkAPI.cc: https://github.com/apache/trafficserver/blob/master/src/traffic_server/InkAPI.cc
+.. _InkAPI.cc: https://github.com/apache/trafficserver/blob/master/src/api/InkAPI.cc
 
 .. |InkAPITest.cc| replace:: ``InkAPITest.cc``
 
-.. _InkAPITest.cc: https://github.com/apache/trafficserver/blob/master/src/traffic_server/InkAPITest.cc
+.. _InkAPITest.cc: https://github.com/apache/trafficserver/blob/master/src/api/InkAPITest.cc
 
 .. |overridable_txn_vars.cc| replace:: ``overridable_txn_vars.cc``
 
@@ -49,7 +49,7 @@
 
 .. |TSHttpOverridableConfig.en.rst| replace:: ``TSHttpOverridableConfig.en.rst``
 
-.. _TSHttpOverridableConfig.en.rst: https://github.com/apache/trafficserver/blob/master/doc/reference/api/TSHttpOverridableConfig.en.rst
+.. _TSHttpOverridableConfig.en.rst: https://github.com/apache/trafficserver/blob/master/doc/developer-guide/api/functions/TSHttpOverridableConfig.en.rst
 
 .. Referenced enumeration values
 
