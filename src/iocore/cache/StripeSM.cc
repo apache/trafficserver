@@ -109,6 +109,9 @@ struct StripeInitInfo {
   }
 };
 
+// This is weird: the len passed to the constructor for _preserved_dirs is
+// initialized in the superclasse's constructor. This is safe because the
+// superclass should always be initialized first.
 StripeSM::StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip)
   : Continuation(new_ProxyMutex()), Stripe{disk, blocks, dir_skip}, _preserved_dirs{static_cast<int>(len)}
 {

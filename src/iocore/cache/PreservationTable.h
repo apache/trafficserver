@@ -85,6 +85,9 @@ struct EvacuationBlock {
  * This class is not safe for concurrent access. It should be protected
  * by a lock.
  *
+ * Destructing this object without first releasing all blocks and calling
+ * periodic_scan may result in memory leaks.
+ *
  * @see Stripe
  */
 class PreservationTable
