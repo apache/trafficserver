@@ -5123,6 +5123,17 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
           MIMEField &field2{*spot2};
           name2 = field2.name_get(&name_len2);
 
+          // It is specified above that content type should not
+          // be altered here however when a duplicate header
+          // is present, all headers following are delete and
+          // re-added back. This includes content type if it follows
+          // any duplicate header. This leads to the loss of
+          // content type in the client response.
+          // This ensures that it is not altered when duplicate
+          // headers are present.
+          if (name2 == MIME_FIELD_CONTENT_TYPE) {
+            continue;
+          }
           cached_header->field_delete(name2, name_len2);
         }
         dups_seen = true;
