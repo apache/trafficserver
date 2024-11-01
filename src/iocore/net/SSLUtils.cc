@@ -1531,6 +1531,15 @@ SSLMultiCertConfigLoader::_set_cipher_suites([[maybe_unused]] SSL_CTX *ctx)
 bool
 SSLMultiCertConfigLoader::_set_curves([[maybe_unused]] SSL_CTX *ctx)
 {
+#ifdef OPENSSL_IS_BORINGSSL
+  if (this->_params->server_groups_list != nullptr) {
+    if (!SSL_CTX_set1_groups_list(ctx, this->_params->server_groups_list)) {
+      SSLError("invalid groups list for server in %s", ts::filename::RECORDS);
+      return false;
+    }
+  }
+
+#else
 #if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (this->_params->server_groups_list != nullptr) {
 #ifdef SSL_CTX_set1_groups_list
@@ -1543,6 +1552,7 @@ SSLMultiCertConfigLoader::_set_curves([[maybe_unused]] SSL_CTX *ctx)
     }
   }
 #endif
+#endif // OPENSSL_IS_BORINGSSL
   return true;
 }
 
