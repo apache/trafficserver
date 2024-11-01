@@ -168,7 +168,7 @@ public:
    *
    * @see START_POS
    */
-  StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip);
+  StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size = -1);
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
 

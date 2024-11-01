@@ -84,7 +84,7 @@ struct StripeInitInfo {
 // Stripe
 //
 
-Stripe::Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip)
+Stripe::Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size)
   : path{ats_strdup(disk->path)},
     fd{disk->fd},
     skip{ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip))},
@@ -95,7 +95,7 @@ Stripe::Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip)
   ink_assert(this->len < MAX_STRIPE_SIZE);
 
   this->_init_hash_text(disk->path, blocks, dir_skip);
-  this->_init_data(STORE_BLOCK_SIZE);
+  this->_init_data(STORE_BLOCK_SIZE, avg_obj_size);
   this->_init_directory(this->dirlen(), this->headerlen(), DIRECTORY_FOOTER_SIZE);
 }
 
@@ -113,21 +113,25 @@ Stripe::_init_hash_text(char const *seed, off_t blocks, off_t dir_skip)
 }
 
 void
-Stripe::_init_data(off_t store_block_size)
+Stripe::_init_data(off_t store_block_size, int avg_obj_size)
 {
   // iteratively calculate start + buckets; updates this->start
-  this->_init_data_internal();
-  this->_init_data_internal();
-  this->_init_data_internal();
+  this->_init_data_internal(avg_obj_size);
+  this->_init_data_internal(avg_obj_size);
+  this->_init_data_internal(avg_obj_size);
 
   this->data_blocks = (this->len - (this->start - this->skip)) / store_block_size;
 }
 
 void
-Stripe::_init_data_internal()
+Stripe::_init_data_internal(int avg_obj_size)
 {
+  if (avg_obj_size <= 0) {
+    avg_obj_size = cache_config_min_average_object_size;
+  }
+
   // step1: calculate the number of entries.
-  off_t total_entries = (this->len - (this->start - this->skip)) / cache_config_min_average_object_size;
+  off_t total_entries = (this->len - (this->start - this->skip)) / avg_obj_size;
   // step2: calculate the number of buckets
   off_t total_buckets = total_entries / DIR_DEPTH;
   // step3: calculate the number of segments, no segment has more than 16384 buckets
