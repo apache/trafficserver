@@ -55,9 +55,9 @@ class NetEvent
 public:
   NetEvent() = default;
   virtual ~NetEvent() {}
-  virtual void net_read_io(NetHandler *nh, EThread *lthread)  = 0;
-  virtual void net_write_io(NetHandler *nh, EThread *lthread) = 0;
-  virtual void free_thread(EThread *t)                        = 0;
+  virtual void net_read_io(NetHandler *nh)  = 0;
+  virtual void net_write_io(NetHandler *nh) = 0;
+  virtual void free_thread(EThread *t)      = 0;
 
   // since we want this class to be independent from VConnection, Continutaion. There should be
   // a pure virtual function which connect sub class and NetHandler.
