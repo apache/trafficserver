@@ -57,7 +57,8 @@ struct IPCSocketClient {
   /// Send all the passed string to the socket.
   self_reference send(std::string_view data);
 
-  /// Read all the content from the socket till the message is complete or it times out.
+  /// Read all the content until the fd closes or timeout( @c timeout_ms * @c attempts) has passed.
+  /// @return @c ReadStatus will be set accordingly with the operation result.
   ReadStatus read_all(std::string &content, std::chrono::milliseconds timeout_ms = 1000ms, int attempts = 10);
 
   /// Closes the socket.
