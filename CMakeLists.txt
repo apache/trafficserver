@@ -593,7 +593,6 @@ endif(HOST_OS STREQUAL "linux")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL AppleClang)
   set(CMAKE_MACOSX_RPATH 1)
-  link_libraries("-ld_classic")
 endif()
 
 if(HOST_OS STREQUAL "freebsd")
