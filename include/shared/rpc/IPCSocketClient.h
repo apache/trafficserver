@@ -43,7 +43,7 @@ using namespace std::chrono_literals;
 ///
 /// Error handling: Enclose this inside a try/catch because if any error is detected functions will throw.
 struct IPCSocketClient {
-  enum class ReadStatus { NO_ERROR = 0, BUFFER_FULL, STREAM_ERROR, UNKNOWN };
+  enum class ReadStatus { NO_ERROR = 0, BUFFER_FULL, READ_ERROR, TIMEOUT, UNKNOWN };
   using self_reference = IPCSocketClient &;
 
   IPCSocketClient(std::string path = "/tmp/jsonrpc20.sock") : _path{std::move(path)} { memset(&_server, 0, sizeof(_server)); }
@@ -52,13 +52,14 @@ struct IPCSocketClient {
 
   /// Connect to the configured socket path.
   /// Connection will retry every @c ms for @c attempts times if errno is EAGAIN
-  self_reference connect(std::chrono::milliseconds ms = 40ms, int attempts = 5);
+  self_reference connect(std::chrono::milliseconds wait_ms = 40ms, int attempts = 5);
 
   /// Send all the passed string to the socket.
   self_reference send(std::string_view data);
 
-  /// Read all the content from the socket till the message is complete.
-  ReadStatus read_all(std::string &content);
+  /// Read all the content until the fd closes or timeout( @c timeout_ms * @c attempts) has passed.
+  /// @return @c ReadStatus will be set accordingly with the operation result.
+  ReadStatus read_all(std::string &content, std::chrono::milliseconds timeout_ms = 1000ms, int attempts = 10);
 
   /// Closes the socket.
   void
