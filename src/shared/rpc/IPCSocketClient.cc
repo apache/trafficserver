@@ -35,7 +35,7 @@ namespace shared::rpc
 {
 
 IPCSocketClient::self_reference
-IPCSocketClient::connect(std::chrono::milliseconds ms, int attempts)
+IPCSocketClient::connect(std::chrono::milliseconds wait_ms, int attempts)
 {
   std::string text;
   int         err, tries{attempts};
@@ -67,7 +67,7 @@ IPCSocketClient::connect(std::chrono::milliseconds ms, int attempts)
     if (errno == EAGAIN || errno == EINPROGRESS) {
       // Connection cannot be completed immediately
       // EAGAIN for UDS should suffice, but just in case.
-      std::this_thread::sleep_for(ms);
+      std::this_thread::sleep_for(wait_ms);
       err = errno;
       continue;
     } else {
@@ -117,35 +117,52 @@ IPCSocketClient ::send(std::string_view data)
 }
 
 IPCSocketClient::ReadStatus
-IPCSocketClient::read_all(std::string &content)
+IPCSocketClient::read_all(std::string &content, std::chrono::milliseconds timeout_ms, int attempts)
 {
   if (this->is_closed()) {
     // we had a failure.
-    return {};
+    return ReadStatus::UNKNOWN;
   }
 
   MessageStorage<356000> bs;
-
-  ReadStatus readStatus{ReadStatus::UNKNOWN};
-  while (true) {
+  int                    attempts_left{attempts};
+  ReadStatus             readStatus{ReadStatus::NO_ERROR};
+  // Try to read all the data from the socket. If a timeout happens we retry
+  // 'attemps' times. On error we just stop.
+  while (attempts_left > 0 || readStatus == ReadStatus::NO_ERROR) {
     auto       buf     = bs.writable_data();
     const auto to_read = bs.available(); // Available in the current memory chunk.
-    ssize_t    ret{-1};
-    do {
-      ret = ::read(_sock, buf, to_read);
-    } while (ret < 0 && (errno == EAGAIN || errno == EINTR));
+    ssize_t    nread{-1};
 
-    if (ret > 0) {
-      bs.save(ret);
+    // Try again if timed out.
+    if (auto const r = read_ready(_sock, timeout_ms.count()); r == 0) {
+      readStatus = ReadStatus::TIMEOUT;
+      --attempts_left;
       continue;
-    } else {
-      if (bs.stored() > 0) {
-        readStatus = ReadStatus::NO_ERROR;
-        break;
-      }
-      readStatus = ReadStatus::STREAM_ERROR;
+    } else if (r < 0) {
+      // No more tries.
+      readStatus = ReadStatus::READ_ERROR;
       break;
     }
+
+    nread = ::read(_sock, buf, to_read);
+    if (nread > 0) {
+      bs.save(nread);
+      continue;
+    } else if (nread == -1) {
+      if (errno == EAGAIN || errno == EINTR) {
+        continue;
+      }
+      readStatus = ReadStatus::READ_ERROR;
+      break;
+    }
+    // EOF
+    if (bs.stored() > 0) {
+      readStatus = ReadStatus::NO_ERROR;
+      break;
+    }
+    readStatus = ReadStatus::READ_ERROR;
+    break;
   }
   content = bs.str();
   return readStatus;
