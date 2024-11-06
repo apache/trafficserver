@@ -30,6 +30,9 @@
 #include <iterator>
 #include <map>
 
+#include "swoc/IPEndpoint.h"
+#include "swoc/TextView.h"
+
 // Constants and some declarations
 
 const char PLUGIN_NAME[] = "escalate";
@@ -72,12 +75,19 @@ struct EscalationState {
 char *
 MakeEscalateUrl(TSMBuffer mbuf, TSMLoc url, const char *host, size_t host_len, int &url_len)
 {
-  char *url_str = nullptr;
-
+  swoc::TextView   input_host_view{host, host_len};
+  std::string_view host_view;
+  std::string_view port_view;
+  swoc::IPEndpoint::tokenize(input_host_view, &host_view, &port_view);
   // Update the request URL with the new Host to try.
-  TSUrlHostSet(mbuf, url, host, host_len);
-  url_str = TSUrlStringGet(mbuf, url, &url_len);
-  Dbg(dbg_ctl, "Setting new URL to %.*s", url_len, url_str);
+  TSUrlHostSet(mbuf, url, host_view.data(), host_view.size());
+  if (port_view.size()) {
+    int const port_int = swoc::svtou(port_view);
+    TSUrlPortSet(mbuf, url, port_int);
+    Dbg(dbg_ctl, "Setting port to %d", port_int);
+  }
+  char *url_str = TSUrlStringGet(mbuf, url, &url_len);
+  Dbg(dbg_ctl, "Setting new URL from configured %.*s to %.*s", (int)host_len, host, url_len, url_str);
 
   return url_str;
 }
@@ -88,58 +98,76 @@ MakeEscalateUrl(TSMBuffer mbuf, TSMLoc url, const char *host, size_t host_len, i
 static int
 EscalateResponse(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn                                      txn = static_cast<TSHttpTxn>(edata);
-  EscalationState                               *es  = static_cast<EscalationState *>(TSContDataGet(cont));
-  EscalationState::StatusMapType::const_iterator entry;
-  TSMBuffer                                      mbuf;
-  TSMLoc                                         hdrp, url;
-  TSHttpStatus                                   status;
-  char                                          *url_str = nullptr;
-  int                                            url_len, tries;
+  TSHttpTxn        txn = static_cast<TSHttpTxn>(edata);
+  EscalationState *es  = static_cast<EscalationState *>(TSContDataGet(cont));
+  TSMBuffer        mbuf;
+  TSMLoc           hdrp, url;
 
-  TSAssert(event == TS_EVENT_HTTP_READ_RESPONSE_HDR);
+  TSAssert(event == TS_EVENT_HTTP_READ_RESPONSE_HDR || event == TS_EVENT_HTTP_SEND_RESPONSE_HDR);
+  bool const processing_connection_error = (event == TS_EVENT_HTTP_SEND_RESPONSE_HDR);
 
-  // First, we need the server response ...
-  if (TS_SUCCESS != TSHttpTxnServerRespGet(txn, &mbuf, &hdrp)) {
-    goto no_action;
+  if (processing_connection_error) {
+    TSServerState const state = TSHttpTxnServerStateGet(txn);
+    if (state == TS_SRVSTATE_CONNECTION_ALIVE) {
+      // There is no connection error, so nothing to do.
+      TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+      return TS_EVENT_NONE;
+    }
   }
 
-  tries = TSHttpTxnRedirectRetries(txn);
+  int const tries = TSHttpTxnRedirectRetries(txn);
   if (0 != tries) { // ToDo: Future support for more than one retry-URL
-    goto no_action;
+    Dbg(dbg_ctl, "Not pursuing failover due previous redirect already, num tries: %d", tries);
+    TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+    return TS_EVENT_NONE;
   }
-  Dbg(dbg_ctl, "This is try %d, proceeding", tries);
+
+  int ret = 0;
+  if (processing_connection_error) {
+    ret = TSHttpTxnClientRespGet(txn, &mbuf, &hdrp);
+  } else {
+    ret = TSHttpTxnServerRespGet(txn, &mbuf, &hdrp);
+  }
+  if (TS_SUCCESS != ret) {
+    TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+    return TS_EVENT_NONE;
+  }
 
   // Next, the response status ...
-  status = TSHttpHdrStatusGet(mbuf, hdrp);
-  TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdrp); // Don't need this any more
+  TSHttpStatus const status = TSHttpHdrStatusGet(mbuf, hdrp);
+  TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdrp);
 
-  // See if we have an escalation retry config for this response code
-  entry = es->status_map.find(static_cast<unsigned>(status));
+  // See if we have an escalation retry config for this response code.
+  auto const entry = es->status_map.find(status);
   if (entry == es->status_map.end()) {
-    goto no_action;
+    TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+    return TS_EVENT_NONE;
   }
+  EscalationState::RetryInfo const &retry_info = entry->second;
 
-  Dbg(dbg_ctl, "Found an entry for HTTP status %u", static_cast<unsigned>(status));
-  if (EscalationState::RETRY_URL == entry->second.type) {
-    url_str = TSstrdup(entry->second.target.c_str());
-    url_len = entry->second.target.size();
+  Dbg(dbg_ctl, "Handling failover redirect for HTTP status %d", status);
+  char const *url_str = nullptr;
+  int         url_len = 0;
+  if (EscalationState::RETRY_URL == retry_info.type) {
+    url_str = TSstrdup(retry_info.target.c_str());
+    url_len = retry_info.target.size();
     Dbg(dbg_ctl, "Setting new URL to %.*s", url_len, url_str);
-  } else if (EscalationState::RETRY_HOST == entry->second.type) {
+  } else if (EscalationState::RETRY_HOST == retry_info.type) {
     if (es->use_pristine) {
       if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txn, &mbuf, &url)) {
-        url_str = MakeEscalateUrl(mbuf, url, entry->second.target.c_str(), entry->second.target.size(), url_len);
+        url_str = MakeEscalateUrl(mbuf, url, retry_info.target.c_str(), retry_info.target.size(), url_len);
         TSHandleMLocRelease(mbuf, TS_NULL_MLOC, url);
       }
     } else {
       if (TS_SUCCESS == TSHttpTxnClientReqGet(txn, &mbuf, &hdrp)) {
         if (TS_SUCCESS == TSHttpHdrUrlGet(mbuf, hdrp, &url)) {
-          url_str = MakeEscalateUrl(mbuf, url, entry->second.target.c_str(), entry->second.target.size(), url_len);
+          url_str = MakeEscalateUrl(mbuf, url, retry_info.target.c_str(), retry_info.target.size(), url_len);
         }
         // Release the request MLoc
         TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdrp);
       }
     }
+    Dbg(dbg_ctl, "Setting host URL to %.*s", url_len, url_str);
   }
 
   // Now update the Redirect URL, if set
@@ -147,8 +175,7 @@ EscalateResponse(TSCont cont, TSEvent event, void *edata)
     TSHttpTxnRedirectUrlSet(txn, url_str, url_len); // Transfers ownership
   }
 
-// Set the transaction free ...
-no_action:
+  // Set the transaction free ...
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   return TS_EVENT_NONE;
 }
@@ -229,5 +256,6 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
   EscalationState *es = static_cast<EscalationState *>(instance);
 
   TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, es->cont);
+  TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, es->cont);
   return TSREMAP_NO_REMAP;
 }
