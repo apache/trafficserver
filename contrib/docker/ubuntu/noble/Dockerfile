@@ -223,6 +223,9 @@ RUN apt update \
     libbrotli1 \
     luajit \
     libcap2 \
+    libevent-2.1-7t64 \
+    libev4t64 \
+    libcares2 \
     libmagick++-6.q16-9t64 \
     libmagickcore-6.q16-7t64 \
     libmagickwand-6.q16-7t64 \
