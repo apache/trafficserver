@@ -1578,7 +1578,6 @@ SSLMultiCertConfigLoader::_set_cipher_suites(SSL_CTX *ctx)
 bool
 SSLMultiCertConfigLoader::_set_curves(SSL_CTX *ctx)
 {
-#if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (this->_params->server_groups_list != nullptr) {
 #ifdef SSL_CTX_set1_groups_list
     if (!SSL_CTX_set1_groups_list(ctx, this->_params->server_groups_list)) {
@@ -1589,7 +1588,7 @@ SSLMultiCertConfigLoader::_set_curves(SSL_CTX *ctx)
       return false;
     }
   }
-#endif
+
   return true;
 }
 
