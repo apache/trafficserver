@@ -31,7 +31,12 @@
 
 #include "tsutil/DbgCtl.h"
 
+#include "tscore/ink_assert.h"
+#include "tscore/ink_memory.h"
+#include "tscore/List.h"
+
 #include <cinttypes>
+#include <cstring>
 
 namespace
 {
@@ -39,6 +44,38 @@ namespace
 DbgCtl dbg_ctl_cache_evac{"cache_evac"};
 
 } // namespace
+
+PreservationTable::PreservationTable(int size) : evacuate_size{(size / EVACUATION_BUCKET_SIZE) + 2}
+{
+  ink_assert(size > 0);
+  int evac_len   = this->evacuate_size * sizeof(DLL<EvacuationBlock>);
+  this->evacuate = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
+  memset(static_cast<void *>(this->evacuate), 0, evac_len);
+}
+
+PreservationTable::~PreservationTable()
+{
+  ats_free(this->evacuate);
+  this->evacuate = nullptr;
+}
+
+PreservationTable::PreservationTable(PreservationTable &&that)
+{
+  this->evacuate_size = that.evacuate_size;
+  this->evacuate      = that.evacuate;
+  that.evacuate_size  = 0;
+  that.evacuate       = nullptr;
+}
+
+PreservationTable &
+PreservationTable::operator=(PreservationTable &&that)
+{
+  this->evacuate_size = that.evacuate_size;
+  this->evacuate      = that.evacuate;
+  that.evacuate_size  = 0;
+  that.evacuate       = nullptr;
+  return *this;
+}
 
 EvacuationBlock *
 PreservationTable::find(Dir const &dir) const
