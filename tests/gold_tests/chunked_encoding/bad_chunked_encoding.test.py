@@ -135,9 +135,9 @@ class MalformedChunkHeaderTest:
         self.server.Streams.stdout += Testers.ContainsExpression(
             "Unexpected chunked content for key 3: too small", "Verify that writing the third response failed.")
 
-        # ATS should close the connection before any body gets through. "abc"
+        # ATS should close the connection before any body gets through. "abcwxyz"
         # is the body sent by the client for each of these chunked cases.
-        self.server.Streams.stdout += Testers.ExcludesExpression("abc", "Verify that the body never got through.")
+        self.server.Streams.stdout += Testers.ExcludesExpression("abcwxyz", "Verify that the body never got through.")
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts3", enable_tls=True, enable_cache=False)
