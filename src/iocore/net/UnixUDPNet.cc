@@ -524,9 +524,9 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
   struct iovec   tiovec[MAX_RECEIVE_MSG_PER_CALL][max_niov];
 
   // Addresses
-  sockaddr_in6 fromaddr[MAX_RECEIVE_MSG_PER_CALL];
-  sockaddr_in6 toaddr[MAX_RECEIVE_MSG_PER_CALL];
-  int          toaddr_len = sizeof(toaddr);
+  sockaddr_storage fromaddr[MAX_RECEIVE_MSG_PER_CALL];
+  sockaddr_storage toaddr[MAX_RECEIVE_MSG_PER_CALL];
+  int              toaddr_len = sizeof(toaddr);
 
   size_t total_bytes_read{0};
 
@@ -592,7 +592,7 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
       return;
     }
 
-    safe_getsockname(xuc->getFd(), reinterpret_cast<struct sockaddr *>(&toaddr[packet_num]), &toaddr_len);
+    toaddr.ss_family = AF_UNDEF;
     if (mhdr.msg_controllen > 0) {
       for (auto cmsg = CMSG_FIRSTHDR(&mhdr); cmsg != nullptr; cmsg = CMSG_NXTHDR(&mhdr, cmsg)) {
         if (get_ip_address_from_cmsg(cmsg, &toaddr[packet_num])) {
@@ -607,6 +607,9 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
         }
 #endif
       }
+    }
+    if (toaddr.ss_family == AF_UNDEF) {
+      safe_getsockname(xuc->getFd(), reinterpret_cast<struct sockaddr *>(&toaddr[packet_num]), &toaddr_len);
     }
 
     const int64_t received  = mmsg[packet_num].msg_len;
