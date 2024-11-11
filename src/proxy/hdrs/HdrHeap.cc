@@ -92,7 +92,6 @@ HdrHeap::init()
 {
   m_data_start = m_free_start = (reinterpret_cast<char *>(this)) + HDR_HEAP_HDR_SIZE;
   m_magic                     = HDR_BUF_MAGIC_ALIVE;
-  m_genid                     = 0;
   m_writeable                 = true;
 
   m_next      = nullptr;
@@ -370,8 +369,6 @@ HdrHeap::coalesce_str_heaps(int incoming_size)
   int new_heap_size = incoming_size;
   ink_assert(incoming_size >= 0);
   ink_assert(m_writeable);
-
-  ++m_genid;
 
   new_heap_size += required_space_for_evacuation();
 

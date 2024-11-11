@@ -274,7 +274,6 @@ public:
   char    *m_free_start;
   char    *m_data_start;
   uint32_t m_size;
-  uint32_t m_genid;
 
   bool m_writeable;
 
@@ -485,8 +484,7 @@ public:
   void        set(const HdrHeapSDKHandle *from);
   const char *make_sdk_string(const char *raw_str, int raw_str_len);
 
-  HdrHeap *m_heap  = nullptr;
-  uint32_t m_genid = 0;
+  HdrHeap *m_heap = nullptr;
 
   // In order to prevent gratitous refcounting,
   //  automatic C++ copies are disabled!
