@@ -592,7 +592,7 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
       return;
     }
 
-    toaddr.ss_family = AF_UNDEF;
+    toaddr.ss_family = AF_UNSPEC;
     if (mhdr.msg_controllen > 0) {
       for (auto cmsg = CMSG_FIRSTHDR(&mhdr); cmsg != nullptr; cmsg = CMSG_NXTHDR(&mhdr, cmsg)) {
         if (get_ip_address_from_cmsg(cmsg, &toaddr[packet_num])) {
@@ -608,7 +608,7 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
 #endif
       }
     }
-    if (toaddr.ss_family == AF_UNDEF) {
+    if (toaddr.ss_family == AF_UNSPEC) {
       safe_getsockname(xuc->getFd(), reinterpret_cast<struct sockaddr *>(&toaddr[packet_num]), &toaddr_len);
     }
 
