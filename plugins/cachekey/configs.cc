@@ -208,6 +208,20 @@ ConfigQuery::name() const
   return _NAME;
 }
 
+bool
+ConfigMatrix::finalize()
+{
+  _remove = noIncludeExcludeRules();
+  return true;
+}
+
+const String ConfigMatrix::_NAME = "matrix parameter";
+inline const String &
+ConfigMatrix::name() const
+{
+  return _NAME;
+}
+
 /**
  * @briefs finalizes the headers related configuration.
  *

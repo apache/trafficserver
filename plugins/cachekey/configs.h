@@ -112,6 +112,16 @@ private:
   static const String _NAME;
 };
 
+class ConfigMatrix : public ConfigElements
+{
+public:
+  bool finalize() override;
+
+private:
+  const String &name() const override;
+  static const String _NAME;
+};
+
 /**
  * @brief Headers configuration class.
  */
@@ -210,6 +220,7 @@ public:
   /* Make the following members public to avoid unnecessary accessors */
   ConfigQuery _query;        /**< @brief query parameter related configuration */
   ConfigHeaders _headers;    /**< @brief headers related configuration */
+  ConfigMatrix _matrix;      /**< @brief matrix parameter related configuration */
   ConfigCookies _cookies;    /**< @brief cookies related configuration */
   Pattern _uaCapture;        /**< @brief the capture groups and the replacement string used for the User-Agent header capture */
   String _prefix;            /**< @brief cache key prefix string */
