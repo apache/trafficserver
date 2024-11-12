@@ -160,7 +160,9 @@ impersonate(const struct passwd *pwd, ImpersonationLevel level)
 #endif
 
   // Always repopulate the supplementary group list for the new user.
-  initgroups(pwd->pw_name, pwd->pw_gid);
+  if (initgroups(pwd->pw_name, pwd->pw_gid) != 0) {
+    Fatal("switching to user %s, failed to initialize supplementary groups ID %ld", pwd->pw_name, (long)pwd->pw_gid);
+  }
 
   switch (level) {
   case IMPERSONATE_PERMANENT:
