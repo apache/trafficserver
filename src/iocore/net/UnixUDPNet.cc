@@ -455,7 +455,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
       }
 #endif
     }
-    // Use the local address if none of the cmsg to get the destination address is unavailable
+    // Use the local address if we couldn't get the destination address from any cmsgs
     if (toaddr.ss_family == AF_UNSPEC) {
       xuc->getBinding(reinterpret_cast<struct sockaddr *>(&toaddr));
     }
