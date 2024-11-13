@@ -526,7 +526,6 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
   // Addresses
   sockaddr_storage fromaddr[MAX_RECEIVE_MSG_PER_CALL];
   sockaddr_storage toaddr[MAX_RECEIVE_MSG_PER_CALL];
-  int              toaddr_len = sizeof(toaddr);
 
   size_t total_bytes_read{0};
 
