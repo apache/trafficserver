@@ -76,6 +76,17 @@ line. This overrides the global :ts:cv:`proxy.config.cache.min_average_object_si
 configuration for this volume. This is useful if you have a volume that is dedicated
 for say very small objects, and you need a lot of directory entries to store them.
 
+Optional fragment size setting
+------------------------------
+
+You can also add an option ``fragment_size=<size>`` to the volume configuration
+line. This overrides the global :ts:cv:`proxy.config.cache.target_fragment_size`
+configuration for this volume. This allows for a smaller, or larger, fragment size
+for a particular volume. This may be useful together with ``avg_obj_size`` as well,
+since a larger fragment size could reduce the number of directory entries needed
+for a large object.
+
+Note that this setting has a maximmum value of 4MB.
 
 Exclusive spans and volume sizes
 ================================
@@ -116,4 +127,4 @@ ramcache has been disabled.::
     volume=2 scheme=http size=20%
     volume=3 scheme=http size=20%
     volume=4 scheme=http size=20% avg_obj_size=4096
-    volume=5 scheme=http size=20% ramcache=false
+    volume=5 scheme=http size=20% ramcache=false fragment_size=524288

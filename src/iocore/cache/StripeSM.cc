@@ -112,8 +112,10 @@ struct StripeInitInfo {
 // This is weird: the len passed to the constructor for _preserved_dirs is
 // initialized in the superclasse's constructor. This is safe because the
 // superclass should always be initialized first.
-StripeSM::StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size)
-  : Continuation(new_ProxyMutex()), Stripe{disk, blocks, dir_skip, avg_obj_size}, _preserved_dirs{static_cast<int>(len)}
+StripeSM::StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size, int fragment_size)
+  : Continuation(new_ProxyMutex()),
+    Stripe{disk, blocks, dir_skip, avg_obj_size, fragment_size},
+    _preserved_dirs{static_cast<int>(len)}
 {
   open_dir.mutex = this->mutex;
   SET_HANDLER(&StripeSM::aggWrite);
