@@ -654,6 +654,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     int         size             = 0;
     int         in_percent       = 0;
     bool        ramcache_enabled = true;
+    int         avg_obj_size     = -1; // Defaults
 
     while (true) {
       // skip all blank spaces at beginning of line
@@ -741,6 +742,13 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
         } else {
           in_percent = 0;
         }
+      } else if (strcasecmp(tmp, "avg_obj_size") == 0) { // match avg_obj_size
+        tmp          += 13;
+        avg_obj_size  = atoi(tmp);
+
+        while (ParseRules::is_digit(*tmp)) {
+          tmp++;
+        }
       } else if (strcasecmp(tmp, "ramcache") == 0) { // match ramcache
         tmp += 9;
         if (!strcasecmp(tmp, "false")) {
@@ -767,7 +775,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       /* add the config */
 
       ConfigVol *configp = new ConfigVol();
-      configp->number    = volume_number;
+
+      configp->number = volume_number;
       if (in_percent) {
         configp->percent    = size;
         configp->in_percent = true;
@@ -776,6 +785,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       }
       configp->scheme           = scheme;
       configp->size             = size;
+      configp->avg_obj_size     = avg_obj_size;
       configp->cachep           = nullptr;
       configp->ramcache_enabled = ramcache_enabled;
       cp_queue.enqueue(configp);
