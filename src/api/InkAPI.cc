@@ -7323,6 +7323,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->post_check_content_length_enabled, conv);
     break;
+  case TS_CONFIG_HTTP_CACHE_POST_METHOD:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_post_method, conv);
+    break;
   case TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->request_buffer_enabled, conv);
     break;

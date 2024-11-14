@@ -131,6 +131,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN, TS_RECORDDATATYPE_INT}                                                                  },
     {"proxy.config.http.post.check.content_length.enabled",
      {TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED, TS_RECORDDATATYPE_INT}                                                                  },
+    {"proxy.config.http.cache.post_method",                            {TS_CONFIG_HTTP_CACHE_POST_METHOD, TS_RECORDDATATYPE_INT}                },
     {"proxy.config.http.cache.cache_urls_that_look_dynamic",
      {TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC, TS_RECORDDATATYPE_INT}                                                                 },
     {"proxy.config.http.transaction_no_activity_timeout_in",
