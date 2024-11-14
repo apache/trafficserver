@@ -30,7 +30,6 @@
 #include <cstdlib>
 #include <climits>
 #include <cctype>
-#include <cmath>
 
 #include <fstream> /* std::ifstream */
 #include <string>
@@ -1102,7 +1101,7 @@ config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 
   if (!file_config || !file_config->valid()) {
     TSError("[%s] invalid configuration. Check mandatory fields. Scheduling reload", PLUGIN_NAME);
-    long delay = pow(s3->incr_invalid_file_count(), 2);
+    long delay = 1 << s3->incr_invalid_file_count();
     s3->schedule_conf_reload(delay);
     return TS_ERROR;
   }
