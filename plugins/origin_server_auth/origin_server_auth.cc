@@ -30,6 +30,7 @@
 #include <cstdlib>
 #include <climits>
 #include <cctype>
+#include <cmath>
 
 #include <fstream> /* std::ifstream */
 #include <string>
