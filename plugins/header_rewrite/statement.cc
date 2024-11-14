@@ -114,3 +114,30 @@ Statement::parse_url_qualifier(const std::string &q) const
 
   return qual;
 }
+
+// Parse HTTP Ctrl qualifiers
+TSHttpCntlType
+Statement::parse_cntl_qualifier(const std::string &q) const
+{
+  TSHttpCntlType qual = TS_HTTP_CNTL_LOGGING_MODE;
+
+  if (q == "LOGGING") {
+    qual = TS_HTTP_CNTL_LOGGING_MODE;
+  } else if (q == "INTERCEPT_RETRY") {
+    qual = TS_HTTP_CNTL_INTERCEPT_RETRY_MODE;
+  } else if (q == "RESP_CACHEABLE") {
+    qual = TS_HTTP_CNTL_RESPONSE_CACHEABLE;
+  } else if (q == "REQ_CACHEABLE") {
+    qual = TS_HTTP_CNTL_REQUEST_CACHEABLE;
+  } else if (q == "SERVER_NO_STORE") {
+    qual = TS_HTTP_CNTL_SERVER_NO_STORE;
+  } else if (q == "TXN_DEBUG") {
+    qual = TS_HTTP_CNTL_TXN_DEBUG;
+  } else if (q == "SKIP_REMAP") {
+    qual = TS_HTTP_CNTL_SKIP_REMAPPING;
+  } else {
+    TSError("[%s] Invalid HTTP-CNTL() qualifier: %s", PLUGIN_NAME, q.c_str());
+  }
+
+  return qual;
+}

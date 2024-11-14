@@ -152,6 +152,7 @@ protected:
 
   UrlQualifiers     parse_url_qualifier(const std::string &q) const;
   NextHopQualifiers parse_next_hop_qualifier(const std::string &q) const;
+  TSHttpCntlType    parse_cntl_qualifier(const std::string &q) const;
 
   void
   require_resources(const ResourceIDs ids)
