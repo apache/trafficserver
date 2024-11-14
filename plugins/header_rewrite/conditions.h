@@ -627,3 +627,35 @@ protected:
 private:
   NextHopQualifiers _next_hop_qual = NEXT_HOP_NONE;
 };
+
+// HTTP CNTL
+class ConditionHttpCntl : public Condition
+{
+public:
+  explicit ConditionHttpCntl() { Dbg(dbg_ctl, "Calling CTOR for ConditionHttpCntl"); }
+
+  // noncopyable
+  ConditionHttpCntl(const ConditionHttpCntl &) = delete;
+  void operator=(const ConditionHttpCntl &)    = delete;
+
+  void initialize(Parser &p) override;
+  void set_qualifier(const std::string &q) override;
+
+  void
+  append_value(std::string &s, const Resources &res) override
+  {
+    s += TSHttpTxnCntlGet(res.txnp, _http_cntl_qual) ? "TRUE" : "FALSE";
+    Dbg(pi_dbg_ctl, "Evaluating HTTP-CNTL(%s)", _qualifier.c_str());
+  }
+
+protected:
+  bool
+  eval(const Resources &res) override
+  {
+    Dbg(pi_dbg_ctl, "Evaluating HTTP-CNTL()");
+    return TSHttpTxnCntlGet(res.txnp, _http_cntl_qual);
+  }
+
+private:
+  TSHttpCntlType _http_cntl_qual = TS_HTTP_CNTL_LOGGING_MODE;
+};

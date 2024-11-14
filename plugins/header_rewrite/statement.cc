@@ -115,9 +115,9 @@ Statement::parse_url_qualifier(const std::string &q) const
   return qual;
 }
 
-// Parse HTTP Ctrl qualifiers
+// Parse HTTP CNTL qualifiers
 TSHttpCntlType
-Statement::parse_cntl_qualifier(const std::string &q) const
+Statement::parse_http_cntl_qualifier(const std::string &q) const
 {
   TSHttpCntlType qual = TS_HTTP_CNTL_LOGGING_MODE;
 

@@ -1154,7 +1154,7 @@ void
 OperatorSetHttpCntl::initialize(Parser &p)
 {
   Operator::initialize(p);
-  _cntl_qual = parse_cntl_qualifier(p.get_arg());
+  _cntl_qual = parse_http_cntl_qualifier(p.get_arg());
 
   std::string flag = p.copy_value();
 
