@@ -762,6 +762,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.net.sock_notsent_lowat", RECD_INT, "32768", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.net.use_ebpf", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.net.poll_timeout", RECD_INT, "10", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.default_inactivity_timeout", RECD_INT, "86400", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -817,6 +819,10 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.use_seen_filter", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-9]", RECA_NULL}
   ,
+  #if TS_USE_NUMA
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.numa_duplicate", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  #endif
   {RECT_CONFIG, "proxy.config.cache.ram_cache.compress", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.compress_percent", RECD_INT, "90", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}

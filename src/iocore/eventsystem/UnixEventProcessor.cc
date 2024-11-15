@@ -32,6 +32,7 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_hw.h"
 #include "tscore/hugepages.h"
+#include "tscore/NUMADebug.h"
 
 namespace
 {
@@ -40,6 +41,11 @@ DbgCtl dbg_ctl_iocore_thread{"iocore_thread"};
 DbgCtl dbg_ctl_iocore_thread_start{"iocore_thread_start"};
 
 } // end anonymous namespace
+
+#if TS_USE_NUMA
+#include <numa.h>
+#include <numaif.h>
+#endif
 
 /// Global singleton.
 class EventProcessor eventProcessor;
@@ -59,6 +65,19 @@ public:
   /// @internal This is the external entry point and is different depending on
   /// whether HWLOC is enabled.
   void *alloc_stack(EThread *t, size_t stacksize);
+
+#if TS_USE_HWLOC
+  hwloc_obj_type_t
+  get_obj_type()
+  {
+    return obj_type;
+  }
+  int
+  get_obj_count()
+  {
+    return obj_count;
+  }
+#endif
 
 protected:
   /// Allocate a hugepage stack.
@@ -206,7 +225,7 @@ ThreadAffinityInitializer::do_alloc_stack(size_t stacksize)
 #endif
   void *stack_and_guard = mmap(nullptr, size, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
   if (stack_and_guard == MAP_FAILED) {
-    Error("Failed to allocate stack pages: size = %zu", size);
+    Error("Failed to allocate stack pages: size = %zu , errno=%d", size, errno);
     return nullptr;
   }
 
@@ -261,9 +280,21 @@ ThreadAffinityInitializer::init()
   Dbg(dbg_ctl_iocore_thread, "Affinity: %d %ss: %d PU: %d", affinity, obj_name, obj_count, ink_number_of_processors());
 }
 
+void
+set_mem_affinity_by_touch()
+{
+  // This does not work either
+  int err = hwloc_set_membind(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_FIRSTTOUCH,
+                              HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_BYNODESET | HWLOC_MEMBIND_STRICT);
+  if (err != 0) {
+    Error("hwloc_set_membind failed");
+  }
+}
+
 int
 ThreadAffinityInitializer::set_affinity(int, Event *)
 {
+  NUMA_CHECK_SET_THREAD_KIND(1);
   EThread *t = this_ethread();
 
   if (obj_count > 0) {
@@ -279,7 +310,21 @@ ThreadAffinityInitializer::set_affinity(int, Event *)
 #else
     Dbg(dbg_ctl_iocore_thread, "EThread: %d %s: %d", _name, obj->logical_index);
 #endif // HWLOC_API_VERSION
-    hwloc_set_thread_cpubind(ink_get_topology(), t->tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
+
+    // Determine desired NUMA node and set it for validation
+    hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    // Find the NUMA node set that correlates to our thread CPU set
+    hwloc_cpuset_to_nodeset(ink_get_topology(), obj->cpuset, nodeset);
+    if (hwloc_bitmap_weight(nodeset) == 1) {
+      int node = hwloc_bitmap_next(nodeset, -1);
+      Dbg(dbg_ctl_iocore_thread, "EThread: %p %s: %d node: %d\n", t, obj_name, obj->logical_index, node);
+    }
+    int err = hwloc_set_thread_cpubind(ink_get_topology(), t->tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
+    if (err != 0) {
+      Error("hwloc_set_thread_cpubind failed");
+    }
+    hwloc_bitmap_free(nodeset);
+
   } else {
     Warning("hwloc returned an unexpected number of objects -- CPU affinity disabled");
   }
@@ -297,21 +342,34 @@ ThreadAffinityInitializer::alloc_numa_stack(EThread *t, size_t stacksize)
 
   // Find the NUMA node set that correlates to our next thread CPU set
   hwloc_cpuset_to_nodeset(ink_get_topology(), obj->cpuset, nodeset);
+
+  int   numa_mask_len = hwloc_bitmap_snprintf(nullptr, 0, nodeset) + 1;
+  char *numa_mask     = static_cast<char *>(alloca(numa_mask_len));
+  hwloc_bitmap_snprintf(numa_mask, numa_mask_len, nodeset);
+  Dbg(dbg_ctl_iocore_thread, "NUMA mask for stack allocation: %s\n", numa_mask);
+
   // How many NUMA nodes will we be needing to allocate across?
-  num_nodes = hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), obj->cpuset, HWLOC_OBJ_NODE);
+  num_nodes = hwloc_bitmap_weight(nodeset);
 
   if (num_nodes == 1) {
     // The preferred memory policy. The thread lives in one NUMA node.
     mem_policy = HWLOC_MEMBIND_BIND;
+    Dbg(dbg_ctl_iocore_thread, "Requesting bind stack allocation.");
   } else if (num_nodes > 1) {
     // If we have mode than one NUMA node we should interleave over them.
     mem_policy = HWLOC_MEMBIND_INTERLEAVE;
+    Dbg(dbg_ctl_iocore_thread, "Requesting interleaved stack allocation.");
+  } else {
+    Dbg(dbg_ctl_iocore_thread, "Requesting default stack allocation.");
   }
 
   if (mem_policy != HWLOC_MEMBIND_DEFAULT) {
     // Let's temporarily set the memory binding to our destination NUMA node
 #if HWLOC_API_VERSION >= 0x20000
-    hwloc_set_membind(ink_get_topology(), nodeset, mem_policy, HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_BYNODESET);
+    int err = hwloc_set_membind(ink_get_topology(), nodeset, mem_policy, HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_BYNODESET);
+    if (err != 0) {
+      Error("hwloc_set_membind failed");
+    }
 #else
     hwloc_set_membind_nodeset(ink_get_topology(), nodeset, mem_policy, HWLOC_MEMBIND_THREAD);
 #endif
@@ -469,7 +527,13 @@ EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t sta
     Dbg(dbg_ctl_iocore_thread_start, "Created %s thread #%d", tg->_name.c_str(), i + 1);
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[%s %d]", tg->_name.c_str(), i);
     void *stack = Thread_Affinity_Initializer.alloc_stack(tg->_thread[i], stacksize);
-    tg->_thread[i]->start(thr_name, stack, stacksize);
+
+#if TS_USE_HWLOC
+    hwloc_obj_t obj = hwloc_get_obj_by_type(ink_get_topology(), Thread_Affinity_Initializer.get_obj_type(),
+                                            tg->_thread[i]->id % Thread_Affinity_Initializer.get_obj_count());
+    tg->_thread[i]->set_start_affinity(obj->cpuset);
+#endif
+    tg->_thread[i]->start(thr_name, stack, stacksize, ThreadFunction());
   }
 
   Dbg(dbg_ctl_iocore_thread, "Created thread group '%s' id %d with %d threads", tg->_name.c_str(), ev_type, n_threads);
@@ -585,12 +649,21 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
   e->ethread  = new EThread(DEDICATED, e);
   e->mutex    = e->ethread->mutex;
   cont->mutex = e->ethread->mutex;
+  // Used for setting affinity
+  int thread_index = 0;
   {
     ink_scoped_mutex_lock lock(dedicated_thread_spawn_mutex);
     ink_release_assert(n_dthreads < MAX_EVENT_THREADS);
     all_dthreads[n_dthreads] = e->ethread;
+    thread_index             = n_dthreads;
     ++n_dthreads; // Be very sure this is after the array element update.
   }
+
+#if TS_USE_HWLOC // TODO: allow configuring affinity for dthreads?
+  auto        n_objs = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_NODE);
+  hwloc_obj_t obj    = hwloc_get_obj_by_type(ink_get_topology(), HWLOC_OBJ_NODE, thread_index % n_objs);
+  e->ethread->set_start_affinity(obj->cpuset);
+#endif
 
   e->ethread->start(thr_name, nullptr, stacksize);
 

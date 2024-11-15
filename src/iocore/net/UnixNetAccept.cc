@@ -27,6 +27,9 @@
 #include "iocore/net/ConnectionTracker.h"
 #include "P_Net.h"
 #include "tscore/ink_inet.h"
+#if TS_USE_NUMA
+#include <numa.h>
+#endif
 
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
 
@@ -162,7 +165,14 @@ net_accept(NetAccept *na, void *ep, bool blockable)
         vc->handleEvent(EVENT_NONE, e);
       }
     } else {
-      t = eventProcessor.assign_thread(ET_NET);
+#if TS_USE_NUMA
+      int optVal;
+      int optLen = sizeof(int);
+      safe_getsockopt(vc->con.sock.get_fd(), SOL_SOCKET, SO_INCOMING_CPU, (char *)&optVal, &optLen);
+      t = eventProcessor.assign_thread(ET_NET, numa_node_of_cpu(optVal));
+#else
+      t = eventProcessor.assign_thread(ET_NET, -1);
+#endif
       h = get_NetHandler(t);
       // Assign NetHandler->mutex to NetVC
       vc->mutex = h->mutex;
@@ -234,7 +244,9 @@ void
 NetAccept::init_accept(EThread *t)
 {
   if (!t) {
-    t = eventProcessor.assign_thread(ET_NET);
+    unsigned int cpu = 0, node = 0;
+    getcpu(&cpu, &node);
+    t = eventProcessor.assign_thread(ET_NET, node);
   }
 
   if (!action_->continuation->mutex) {
@@ -441,8 +453,18 @@ NetAccept::do_blocking_accept(EThread *t)
 #endif
     SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::acceptEvent);
 
-    EThread    *localt = eventProcessor.assign_thread(ET_NET);
-    NetHandler *h      = get_NetHandler(localt);
+#if TS_USE_NUMA
+    int optVal = 0;
+    int optLen = sizeof(int);
+    int err    = safe_getsockopt(vc->con.sock.get_fd(), SOL_SOCKET, SO_INCOMING_CPU, (char *)&optVal, &optLen);
+    if (err < 0) {
+      Warning("Unable to get SO_INCOMING_CPU, using round robin to assign thread");
+    }
+    EThread *localt = eventProcessor.assign_thread(ET_NET, err == 0 ? numa_node_of_cpu(optVal) : -1);
+#else
+    EThread *localt = eventProcessor.assign_thread(ET_NET, -1);
+#endif
+    NetHandler *h = get_NetHandler(localt);
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
     localt->schedule_imm(vc);
