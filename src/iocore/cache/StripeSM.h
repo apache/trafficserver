@@ -165,6 +165,10 @@ public:
    * @param blocks: Number of blocks. Must be at least 10.
    * @param dir_skip: Offset into the disk at which to start the stripe.
    * If this value is less than START_POS, START_POS will be used instead.
+   * @param avg_obj_size: Optional average object size. If not provided, use default
+   * from proxy.config.cache.min_average_object_size.
+   * @param fragment_size: Optional fragment size. If not provided, use default
+   * from proxy.config.cache.target_fragment_size.
    *
    * @see START_POS
    */
