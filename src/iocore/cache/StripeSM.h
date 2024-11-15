@@ -165,10 +165,14 @@ public:
    * @param blocks: Number of blocks. Must be at least 10.
    * @param dir_skip: Offset into the disk at which to start the stripe.
    * If this value is less than START_POS, START_POS will be used instead.
+   * @param avg_obj_size: Optional average object size. If not provided, use default
+   * from proxy.config.cache.min_average_object_size.
+   * @param fragment_size: Optional fragment size. If not provided, use default
+   * from proxy.config.cache.target_fragment_size.
    *
    * @see START_POS
    */
-  StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size = -1);
+  StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size = -1, int fragment_size = -1);
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
 

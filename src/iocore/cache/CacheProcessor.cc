@@ -1178,6 +1178,7 @@ cplist_update()
         if (cp->scheme == config_vol->scheme) {
           cp->ramcache_enabled = config_vol->ramcache_enabled;
           cp->avg_obj_size     = config_vol->avg_obj_size;
+          cp->fragment_size    = config_vol->fragment_size;
           config_vol->cachep   = cp;
         } else {
           /* delete this volume from all the disks */

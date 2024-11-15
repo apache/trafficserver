@@ -525,9 +525,10 @@ CacheVC::openWriteWriteDone(int event, Event *e)
 }
 
 static inline int
-target_fragment_size()
+target_fragment_size(int target_frag_size)
 {
-  uint64_t value = cache_config_target_fragment_size - sizeof(Doc);
+  uint64_t value = (target_frag_size > 0 ? target_frag_size : cache_config_target_fragment_size) - sizeof(Doc);
+
   ink_release_assert(value <= MAX_FRAG_SIZE);
   return value;
 }
@@ -561,6 +562,8 @@ Lagain:
   int64_t total_avail = vio.get_reader()->read_avail();
   int64_t avail       = total_avail;
   int64_t towrite     = avail + length;
+  int     frag_size   = target_fragment_size(stripe->frag_size);
+
   if (towrite > ntodo) {
     avail   -= (towrite - ntodo);
     towrite  = ntodo;
@@ -579,12 +582,12 @@ Lagain:
     total_len += avail;
   }
   length = static_cast<uint64_t>(towrite);
-  if (length > target_fragment_size() && (length < target_fragment_size() + target_fragment_size() / 4)) {
-    write_len = target_fragment_size();
+  if (length > frag_size && (length < frag_size + frag_size / 4)) {
+    write_len = frag_size;
   } else {
     write_len = length;
   }
-  bool not_writing = towrite != ntodo && towrite < target_fragment_size();
+  bool not_writing = towrite != ntodo && towrite < frag_size;
   if (!called_user) {
     if (not_writing) {
       called_user = 1;

@@ -273,7 +273,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
           for (; q; q = q->link.next) {
             blocks                         = q->b->len;
             CacheDisk *d                   = cp->disk_stripes[i]->disk;
-            cp->stripes[vol_no]            = new StripeSM(d, blocks, q->b->offset, cp->avg_obj_size);
+            cp->stripes[vol_no]            = new StripeSM(d, blocks, q->b->offset, cp->avg_obj_size, cp->fragment_size);
             cp->stripes[vol_no]->cache     = this;
             cp->stripes[vol_no]->cache_vol = cp;
 
