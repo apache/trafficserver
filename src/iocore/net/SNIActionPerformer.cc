@@ -269,8 +269,8 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
         real_dst += *c;
         continue;
       }
-      const std::size_t group_index = swoc::svtoi(number_str);
-      if ((group_index - 1) < groups.size()) {
+      const int group_index = swoc::svtoi(number_str);
+      if ((group_index - 1) < static_cast<int>(groups.size())) {
         // place the captured group.
         real_dst += groups[group_index - 1];
         if (is_writing_port) {
