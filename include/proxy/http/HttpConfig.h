@@ -526,6 +526,8 @@ struct OverridableHttpConfigParams {
   ////////////////////////
   MgmtByte post_check_content_length_enabled = 1;
 
+  MgmtByte cache_post_method = 0;
+
   ////////////////////////////////////////////////
   // Buffer post body before connecting servers //
   ////////////////////////////////////////////////
@@ -751,8 +753,6 @@ public:
   MgmtByte use_client_source_port = 0;
 
   MgmtByte enable_http_stats = 1; // Can be "slow"
-
-  MgmtByte cache_post_method = 0;
 
   MgmtByte push_method_enabled = 0;
 
