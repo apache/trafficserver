@@ -89,5 +89,11 @@ Thread::start(const char *name, void *stack, size_t stacksize, ThreadFunction co
   if (stacksize == 0) {
     stacksize = DEFAULT_STACKSIZE;
   }
-  ink_thread_create(&tid, spawn_thread_internal, p, 0, stacksize, stack);
+
+  ink_thread_create(&tid, spawn_thread_internal, p, 0, stacksize, stack
+#if TS_USE_HWLOC
+                    ,
+                    cpuset
+#endif
+  );
 }

@@ -15,17 +15,33 @@
 #
 #######################
 
-add_executable(benchmark_FreeList benchmark_FreeList.cc)
-target_link_libraries(benchmark_FreeList PRIVATE catch2::catch2 ts::tscore libswoc::libswoc)
-if(TS_USE_HWLOC)
-  target_link_libraries(benchmark_FreeList PRIVATE hwloc)
-endif()
-if(TS_USE_NUMA)
-  target_link_libraries(benchmark_FreeList PRIVATE numa)
+# Findnuma.cmake
+#
+# This will define the following variables
+#
+#     numa_FOUND
+#     numa_LIBRARY
+#     numa_INCLUDE_DIRS
+#
+# and the following imported targets
+#
+#     numa::numa
+#
+
+find_library(numa_LIBRARY NAMES numa)
+find_path(numa_INCLUDE_DIR NAMES numa.h)
+
+mark_as_advanced(numa_FOUND numa_LIBRARY numa_INCLUDE_DIR)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(numa REQUIRED_VARS numa_LIBRARY numa_INCLUDE_DIR)
+
+if(numa_FOUND)
+  set(numa_INCLUDE_DIRS ${numa_INCLUDE_DIR})
 endif()
 
-add_executable(benchmark_ProxyAllocator benchmark_ProxyAllocator.cc)
-target_link_libraries(benchmark_ProxyAllocator PRIVATE catch2::catch2 ts::tscore ts::inkevent libswoc::libswoc)
-
-add_executable(benchmark_SharedMutex benchmark_SharedMutex.cc)
-target_link_libraries(benchmark_SharedMutex PRIVATE catch2::catch2 ts::tscore libswoc::libswoc)
+if(numa_FOUND AND NOT TARGET numa::numa)
+  add_library(numa::numa INTERFACE IMPORTED)
+  target_include_directories(numa::numa INTERFACE ${numa_INCLUDE_DIRS})
+  target_link_libraries(numa::numa INTERFACE ${numa_LIBRARY})
+endif()

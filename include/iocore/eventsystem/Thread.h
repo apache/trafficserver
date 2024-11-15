@@ -144,6 +144,19 @@ public:
   ProxyAllocator criptContextAllocator;
 #endif
 
+#if TS_USE_HWLOC
+  /**
+   * Set the affinity used when starting the thread.
+
+     The affinity is set to @a cpuset_. It is only used when starting a thread using @c start (setting it after the thread was
+   started has no effect).
+   */
+  void
+  set_start_affinity(hwloc_cpuset_t cpuset_)
+  {
+    cpuset = cpuset_;
+  }
+#endif
   /** Start the underlying thread.
 
       The thread name is set to @a name. The stack for the thread is either @a stack or, if that is
@@ -168,6 +181,9 @@ public:
 
 protected:
   Thread();
+#if TS_USE_HWLOC
+  hwloc_cpuset_t cpuset = nullptr;
+#endif
 };
 
 extern Thread *this_thread();

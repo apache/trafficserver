@@ -33,6 +33,9 @@
 #include "iocore/eventsystem/PriorityEventQueue.h"
 #include "iocore/eventsystem/ProtectedQueue.h"
 #include "tsutil/Histogram.h"
+#if TS_USE_NUMA
+#include <numa.h>
+#endif
 
 #if TS_USE_HWLOC
 struct hwloc_obj;
@@ -317,6 +320,7 @@ public:
 
   EThread();
   EThread(ThreadType att, int anid);
+  EThread(ThreadType att, int anid, int numa_node);
   EThread(ThreadType att, Event *e);
   EThread(const EThread &)            = delete;
   EThread &operator=(const EThread &) = delete;
@@ -584,8 +588,11 @@ public:
 
   Metrics metrics;
 
+  int get_numa_node();
+
 private:
   void cons_common();
+  int  numa_node = -1;
 };
 
 // --- Inline implementation
@@ -689,6 +696,17 @@ EThread::Metrics::decay() -> self_type &
     --_decay_count;
   }
   return *this;
+}
+
+inline int
+EThread::get_numa_node()
+{
+  if (this->numa_node == -1) {
+    unsigned int cpu, node;
+    getcpu(&cpu, &node);
+    this->numa_node = node;
+  }
+  return this->numa_node;
 }
 
 /**

@@ -23,6 +23,10 @@ if(TS_USE_HWLOC)
   target_link_libraries(traffic_layout PRIVATE hwloc::hwloc)
 endif()
 
+if(TS_USE_NUMA)
+  target_link_libraries(traffic_layout PRIVATE numa::numa)
+endif()
+
 if(HAVE_LZMA_H)
   target_link_libraries(traffic_layout PRIVATE LibLZMA::LibLZMA)
 endif()

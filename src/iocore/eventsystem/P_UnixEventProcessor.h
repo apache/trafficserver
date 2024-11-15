@@ -51,17 +51,27 @@ EventProcessor::allocate(int size)
 }
 
 TS_INLINE EThread *
-EventProcessor::assign_thread(EventType etype)
+EventProcessor::assign_thread(EventType etype, int numa_node)
 {
-  int                    next;
-  ThreadGroupDescriptor *tg = &thread_group[etype];
-
+  int                    next = 0;
+  ThreadGroupDescriptor *tg   = &thread_group[etype];
   ink_assert(etype < MAX_EVENT_TYPES);
+
   if (tg->_count > 1) {
-    next = ++tg->_next_round_robin % tg->_count;
-  } else {
-    next = 0;
+    if (numa_node < 0) {
+      next = ++tg->_next_round_robin % tg->_count;
+    } else {
+      // Scan through all threads, return one with matching numa node if found, otherwise choose next thread
+      // Make sure round robin will terminate even if requested numa node can not be found
+      for (int i = 0; i <= tg->_count; ++i) {
+        next = ++tg->_next_round_robin % tg->_count;
+        if (tg->_thread[next]->get_numa_node() == numa_node) {
+          break;
+        }
+      }
+    }
   }
+
   return tg->_thread[next];
 }
 
@@ -79,7 +89,11 @@ EventProcessor::assign_affinity_by_type(Continuation *cont, EventType etype)
   if (!ethread->is_event_type(etype)) {
     ethread = cont->getThreadAffinity();
     if (ethread == nullptr || !ethread->is_event_type(etype)) {
-      ethread = assign_thread(etype);
+      if (ethread != nullptr) {
+        ethread = assign_thread(etype, ethread->get_numa_node());
+      } else {
+        ethread = assign_thread(etype, -1);
+      }
     }
   }
 
@@ -108,7 +122,11 @@ EventProcessor::schedule(Event *e, EventType etype)
     if (curr_thread != nullptr && curr_thread->is_event_type(etype)) {
       e->ethread = curr_thread;
     } else {
-      e->ethread = assign_thread(etype);
+      if (curr_thread != nullptr) {
+        e->ethread = assign_thread(etype, curr_thread->get_numa_node());
+      } else {
+        e->ethread = assign_thread(etype, -1);
+      }
     }
     if (affinity_thread == nullptr) {
       e->continuation->setThreadAffinity(e->ethread);

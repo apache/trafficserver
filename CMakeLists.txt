@@ -83,6 +83,18 @@ include(AutoOptionHelpers)
 find_package(PkgConfig)
 auto_option(HWLOC FEATURE_VAR TS_USE_HWLOC PACKAGE_DEPENDS hwloc)
 auto_option(
+  NUMA
+  DESCRIPTION
+  "Enable NUMA optimizations."
+  FEATURE_VAR
+  TS_USE_NUMA
+  DEFAULT
+  OFF
+  PACKAGE_DEPENDS
+  numa
+)
+
+auto_option(
   JEMALLOC
   FEATURE_VAR
   TS_HAS_JEMALLOC
@@ -136,6 +148,7 @@ option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
 option(LINK_PLUGINS "Link core libraries to plugins (default OFF)")
 option(ENABLE_PROBES "Enable ATS SystemTap probes (default OFF)")
+option(ENABLE_NUMA_DEBUG "Enable debugging of NUMA support (default OFF)")
 option(ENABLE_VERIFY_PLUGINS "Enable plugin verification tests (default ON)" ON)
 
 # Setup user
@@ -335,6 +348,7 @@ endif()
 
 set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
+set(TS_ENABLE_NUMA_DEBUG ${ENABLE_NUMA_DEBUG})
 find_package(ZLIB REQUIRED)
 
 # ncurses is used in traffic_top

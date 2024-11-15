@@ -31,6 +31,11 @@
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_defs.h"
 #include <sched.h>
+#if TS_USE_HWLOC
+#include <hwloc.h>
+#include <hwloc/glibc-sched.h>
+#include "tscore/ink_hw.h"
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -101,7 +106,12 @@ using ink_timestruc = struct timespec;
 // NOTE(cmcfarlen): removed posix thread local key functions, use thread_local
 
 static inline void
-ink_thread_create(ink_thread *tid, void *(*f)(void *), void *a, int detached, size_t stacksize, void *stack)
+ink_thread_create(ink_thread *tid, void *(*f)(void *), void *a, int detached, size_t stacksize, void *stack
+#if TS_USE_HWLOC
+                  ,
+                  hwloc_cpuset_t cpuset = nullptr
+#endif
+)
 {
   ink_thread     t;
   int            ret;
@@ -121,6 +131,21 @@ ink_thread_create(ink_thread *tid, void *(*f)(void *), void *a, int detached, si
       pthread_attr_setstacksize(&attr, stacksize);
     }
   }
+
+#if TS_USE_HWLOC
+  if (cpuset) {
+    size_t     schedset_sz = CPU_ALLOC_SIZE(ink_number_of_processors());
+    cpu_set_t *schedset    = (cpu_set_t *)alloca(schedset_sz);
+    int        err         = hwloc_cpuset_to_glibc_sched_affinity(ink_get_topology(), cpuset, schedset, schedset_sz);
+    if (err != 0) {
+      ink_abort("hwloc_cpuset_to_glibc_sched_affinity failed: %d", err);
+    }
+    err = pthread_attr_setaffinity_np(&attr, schedset_sz, schedset);
+    if (err != 0) {
+      ink_abort("pthread_attr_setaffinity_np failed: %d", err);
+    }
+  }
+#endif
 
   if (detached) {
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);

@@ -320,8 +320,15 @@ public:
   | Unix & non NT Interface                                |
   \*------------------------------------------------------*/
 
-  Event   *schedule(Event *e, EventType etype);
-  EThread *assign_thread(EventType etype);
+  Event *schedule(Event *e, EventType etype);
+  /**
+   * @brief Choose thread based on type and numa node
+   *
+   * @param etype Type of the event (determines choice of thread pool)
+   * @param numa_node Numa node or -1 if we don't care
+   * @return EThread* Thread matching selection criteria
+   */
+  EThread *assign_thread(EventType etype, int numa_node);
   EThread *assign_affinity_by_type(Continuation *cont, EventType etype);
 
   EThread *all_dthreads[MAX_EVENT_THREADS];
@@ -372,6 +379,9 @@ public:
     ThreadGroupDescriptor const &group{thread_group[type]};
     return {group._thread, group._count};
   }
+
+  // static field for storing number of net threads
+  int net_threads = -1;
 
 private:
   void initThreadState(EThread *);

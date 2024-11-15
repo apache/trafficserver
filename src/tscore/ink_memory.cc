@@ -27,6 +27,7 @@
 #include "tscore/ink_stack_trace.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_atomic.h"
+#include "tscore/NUMADebug.h"
 
 #if TS_HAS_MIMALLOC
 #include <mimalloc-new-delete.h>
@@ -66,6 +67,7 @@ ats_malloc(size_t size)
       ink_abort("couldn't allocate %zu bytes", size);
     }
   }
+  NUMA_CHECK(ptr, size);
   return ptr;
 } /* End ats_malloc */
 
@@ -76,6 +78,7 @@ ats_calloc(size_t nelem, size_t elsize)
   if (unlikely(ptr == nullptr)) {
     ink_abort("couldn't allocate %zu %zu byte elements", nelem, elsize);
   }
+  NUMA_CHECK(ptr, nelem * elsize);
   return ptr;
 } /* End ats_calloc */
 
@@ -86,6 +89,7 @@ ats_realloc(void *ptr, size_t size)
   if (unlikely(newptr == nullptr)) {
     ink_abort("couldn't reallocate %zu bytes", size);
   }
+  NUMA_CHECK(newptr, size);
   return newptr;
 } /* End ats_realloc */
 
@@ -116,6 +120,7 @@ ats_memalign(size_t alignment, size_t size)
       ink_abort("couldn't allocate %zu bytes at alignment %zu - unknown error %d", size, alignment, retcode);
     }
   }
+  NUMA_CHECK(ptr, size);
 
   return ptr;
 } /* End ats_memalign */

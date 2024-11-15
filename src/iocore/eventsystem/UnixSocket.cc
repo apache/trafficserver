@@ -29,6 +29,10 @@
 #include "tscore/ink_memory.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sock.h"
+#include "tscore/Diags.h"
+#if TS_USE_NUMA
+#include <numa.h>
+#endif
 
 #include <cstdlib>
 
@@ -68,6 +72,28 @@ UnixSocket::accept4(struct sockaddr *addr, socklen_t *addrlen, int flags) const
   do {
     int fd = ::accept4(this->fd, addr, addrlen, flags);
     if (likely(fd >= 0)) {
+#if TS_ENABLE_NUMA_DEBUG
+      unsigned thread_cpu, thread_numa;
+      getcpu(&thread_cpu, &thread_numa);
+
+      unsigned socket_cpu     = UINT_MAX;
+      int      socket_cpu_len = sizeof(socket_cpu);
+
+      int ret = safe_getsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &socket_cpu, &socket_cpu_len);
+      if (ret != 0) {
+        Debug("numa", "Unable to get SO_INCOMING_CPU");
+      } else {
+        std::string status;
+        if (thread_numa == numa_node_of_cpu(socket_cpu)) {
+          status = "OK";
+        } else {
+          status = "NOT OK";
+        }
+        Debug("numa", "NUMA thread affinity for Thread id: %d, Thread cpu: %d, Thread numa: %d, \
+                Socket cpu: %d, Socket numa: %d, %s",
+              gettid(), thread_cpu, thread_numa, socket_cpu, numa_node_of_cpu(socket_cpu), status.c_str());
+      }
+#endif
       return fd;
     }
   } while (transient_error());
