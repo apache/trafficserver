@@ -52,8 +52,8 @@
 #define LOOKASIDE_SIZE               256
 #define AIO_NOT_IN_PROGRESS          -1
 #define AIO_AGG_WRITE_IN_PROGRESS    -2
-#define AUTO_SIZE_RAM_CACHE          -1                      // 1-1 with directory size
-#define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeof(Doc)) // 1MB
+#define AUTO_SIZE_RAM_CACHE          -1       // 1-1 with directory size
+#define DEFAULT_TARGET_FRAGMENT_SIZE 1048576; // 1MB. Note: Should not exclude sizeof(Doc)
 #define STORE_BLOCKS_PER_STRIPE      (STRIPE_BLOCK_SIZE / STORE_BLOCK_SIZE)
 
 // Documents

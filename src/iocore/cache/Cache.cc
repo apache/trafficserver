@@ -860,8 +860,11 @@ ink_cache_init(ts::ModuleVersion v)
              REC_ERR_FAIL);
   REC_ReadConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
 
-  if (cache_config_target_fragment_size == 0 || cache_config_target_fragment_size - sizeof(Doc) > MAX_FRAG_SIZE) {
+  if (cache_config_target_fragment_size == 0) {
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
+  } else if (cache_config_target_fragment_size - sizeof(Doc) > MAX_FRAG_SIZE) {
+    Warning("The fragments size exceed the limitation, setting to MAX_FRAG_SIZE (%ld)", MAX_FRAG_SIZE + sizeof(Doc));
+    cache_config_target_fragment_size = MAX_FRAG_SIZE + sizeof(Doc);
   }
 
   REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
