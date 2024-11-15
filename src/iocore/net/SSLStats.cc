@@ -29,12 +29,18 @@
 #include "P_SSLUtils.h"
 #include "../../records/P_RecProcess.h"
 
+#include <string_view>
+
 SSLStatsBlock                                                   ssl_rsb;
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
 
 namespace
 {
 DbgCtl dbg_ctl_ssl{"ssl"};
+
+#if defined(OPENSSL_IS_BORINGSSL)
+constexpr std::string_view UNKNOWN_CIPHER{"(NONE)"};
+#endif
 
 } // end anonymous namespace
 
@@ -87,10 +93,6 @@ add_cipher_stat(const char *cipherName, const std::string &statName)
 void
 SSLInitializeStatistics()
 {
-  SSL_CTX *ctx;
-  SSL     *ssl;
-  STACK_OF(SSL_CIPHER) * ciphers;
-
   // For now, register with the librecords global sync.
   RecRegNewSyncStatSync(SSLPeriodicMetricsUpdate);
 
@@ -153,14 +155,28 @@ SSLInitializeStatistics()
   ssl_rsb.user_agent_unknown_cert            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_unknown_cert");
   ssl_rsb.user_agent_wrong_version           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_wrong_version");
 
+#if defined(OPENSSL_IS_BORINGSSL)
+  size_t                    n = SSL_get_all_cipher_names(nullptr, 0);
+  std::vector<const char *> cipher_list(n);
+  SSL_get_all_cipher_names(cipher_list.data(), cipher_list.size());
+  for (auto cipher_name : cipher_list) {
+    if (UNKNOWN_CIPHER.compare(cipher_name) == 0) {
+      continue;
+    }
+
+    std::string stat_name = "proxy.process.ssl.cipher.user_agent." + std::string(cipher_name);
+
+    add_cipher_stat(cipher_name, stat_name);
+  }
+#else
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
   // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
   // configuration reloads and works for the case where we honor the client cipher preference.
   SSLMultiCertConfigLoader loader(nullptr);
-  ctx     = loader.default_server_ssl_ctx();
-  ssl     = SSL_new(ctx);
-  ciphers = SSL_get_ciphers(ssl);
+  SSL_CTX                 *ctx  = loader.default_server_ssl_ctx();
+  SSL                     *ssl  = SSL_new(ctx);
+  STACK_OF(SSL_CIPHER) *ciphers = SSL_get_ciphers(ssl);
 
   // BoringSSL has sk_SSL_CIPHER_num() return a size_t (well, sk_num() is)
   for (int index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
@@ -171,9 +187,10 @@ SSLInitializeStatistics()
     add_cipher_stat(cipherName, statName);
   }
 
-  // Add "OTHER" for ciphers not on the map
-  add_cipher_stat(SSL_CIPHER_STAT_OTHER.c_str(), "proxy.process.ssl.cipher.user_agent." + SSL_CIPHER_STAT_OTHER);
-
   SSL_free(ssl);
   SSLReleaseContext(ctx);
+#endif
+
+  // Add "OTHER" for ciphers not on the map
+  add_cipher_stat(SSL_CIPHER_STAT_OTHER.c_str(), "proxy.process.ssl.cipher.user_agent." + SSL_CIPHER_STAT_OTHER);
 }
