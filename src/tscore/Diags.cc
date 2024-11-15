@@ -533,7 +533,8 @@ Diags::should_roll_diagslog()
   log_log_trace("%s: rolling_enabled = %d, output_rolling_size = %d, output_rolling_interval = %d\n", __func__,
                 diagslog_rolling_enabled, diagslog_rolling_size, diagslog_rolling_interval);
   log_log_trace("%s: RollingEnabledValues::ROLL_ON_TIME = %d\n", __func__, RollingEnabledValues::ROLL_ON_TIME);
-  log_log_trace("%s: time(0) - last_roll_time = %d\n", __func__, time(nullptr) - diagslog_time_last_roll);
+  log_log_trace("%s: time(0) - last_roll_time = %" PRId64 "\n", __func__,
+                static_cast<int64_t>(time(nullptr) - diagslog_time_last_roll));
 
   // Roll diags_log if necessary
   if (diags_log && diags_log->is_init()) {
@@ -619,7 +620,8 @@ Diags::should_roll_outputlog()
   log_log_trace("%s: rolling_enabled = %d, output_rolling_size = %d, output_rolling_interval = %d\n", __func__,
                 outputlog_rolling_enabled, outputlog_rolling_size, outputlog_rolling_interval);
   log_log_trace("%s: RollingEnabledValues::ROLL_ON_TIME = %d\n", __func__, RollingEnabledValues::ROLL_ON_TIME);
-  log_log_trace("%s: time(0) - last_roll_time = %d\n", __func__, time(nullptr) - outputlog_time_last_roll);
+  log_log_trace("%s: time(0) - last_roll_time = %" PRId64 "\n", __func__,
+                static_cast<int64_t>(time(nullptr) - outputlog_time_last_roll));
   log_log_trace("%s: stdout_log = %p\n", __func__, stdout_log);
 
   // Roll stdout_log if necessary
