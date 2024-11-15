@@ -34,6 +34,7 @@
 #include "tscore/ink_platform.h"
 
 #include <cstdio>
+#include <cstdint>
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdint.h>
@@ -84,10 +85,10 @@ inline constexpr mode_t DEFAULT_OPEN_MODE{0644};
 
 int safe_open(char const *path, int oflag = O_RDWR | O_NDELAY | O_CREAT, mode_t mode = DEFAULT_OPEN_MODE);
 
-int ink_fputln(FILE *stream, const char *s);
-int ink_file_fd_readline(int fd, int bufsize, char *buf);
-int ink_file_fd_writestring(int fd, const char *buf);
-int ink_filepath_merge(char *buf, int bufsz, const char *rootpath, const char *addpath, int flags = INK_FILEPATH_TRUENAME);
+std::int64_t ink_fputln(FILE *stream, const char *s);
+int          ink_file_fd_readline(int fd, int bufsize, char *buf);
+int          ink_file_fd_writestring(int fd, const char *buf);
+int          ink_filepath_merge(char *buf, int bufsz, const char *rootpath, const char *addpath, int flags = INK_FILEPATH_TRUENAME);
 /**
  Add addpath to the rootpath prepending slash if rootpath
  is not nullptr and doesn't end with the slash already and put the

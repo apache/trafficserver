@@ -57,7 +57,7 @@ safe_open(char const *path, int oflag, mode_t mode)
   return r;
 }
 
-int
+std::int64_t
 ink_fputln(FILE *stream, const char *s)
 {
   if (stream && s) {
