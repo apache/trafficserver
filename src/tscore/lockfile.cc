@@ -43,7 +43,7 @@ Lockfile::Open(pid_t *holding_pid)
 
   struct flock lock;
   char        *t;
-  int          size;
+  size_t       size;
 
   fd = -1;
 
