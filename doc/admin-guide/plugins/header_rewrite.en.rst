@@ -212,6 +212,41 @@ phase of the transaction.  This happens when there is no host in the incoming UR
 and only set as a host header.  During the remap phase the host header is copied
 to the CLIENT-URL.  Use CLIENT-HEADER:Host if you are going to match the host.
 
+CIDR
+~~~~
+::
+
+   set-header @Client-CIDR %{CIDR:24,48}
+
+This condition takes the client IP, and applies the provided CIDR style masks
+to the IP, before producing a string. The typical use of this conditions is as
+above, producing a header that contains a IP representation which has some
+privacy properties. It can of course also be used as a regular condition, and
+the output is a string that can be compared against. The two optional
+arguments are as follows::
+
+    IPv4-Mask    Length, in bits, of the IPv4 address to preserve. Default: 24
+    IPv6-Mask    Length, in bits, of the IPv6 address to preserve. Default: 48
+
+The two arguments, if provided, are comma separated. Valid syntax includes::
+
+    %{CIDR}         Defaults to 24,48 (as above)
+    %{CIDR:16}      IPv4 CIDR mask is 16 bits, IPv6 mask is 48
+    %{CIDR:18,42}   IPv4 CIDR mask is 18 bits, IPv6 mask is 42 bits
+
+A typical use case is to insert the @-prefixed header as above, and then use
+this header in a custom log format, rather than logging the full client
+IP. Another use case could be to make a special condition on a sub-net,
+e.g.::
+
+    cond %{CIDR:8} ="8.0.0.0"
+        set-header X-Is-Eight "Yes"
+    cond %{CIDR:,8} ="fd00::" #note the IPv6 Mask is in the second position
+        set-header IPv6Internal "true"
+
+This condition has no requirements other than access to the Client IP, hence,
+it should work in any and all hooks.
+
 COOKIE
 ~~~~~~
 ::
@@ -236,32 +271,6 @@ Per-Mapping`_ above.
 
 The ``<part>`` allows the operand to match against just a component of the URL,
 as documented in `URL Parts`_ below.
-
-NEXT-HOP
-~~~~~~~~
-::
-
-    cond %{NEXT-HOP:<part>} <operand>
-
-Returns next hop current selected parent information.  The following qualifiers
-are supported::
-
-    %{NEXT-HOP:HOST} Name of the current selected parent.
-    %{NEXT-HOP:PORT} Port of the current selected parent.
-
-Note that the ``<part>`` of NEXT-HOP will likely not be available unless
-an origin server connection is attempted at which point it will available
-as part of the ``SEND_REQUEST_HDR_HOOK``.
-
-For example::
-
-    cond %{SEND_REQUEST_HDR_HOOK} [AND]
-    cond %{NEXT-HOP:HOST} =www.firstparent.com
-        set-header Host vhost.firstparent.com
-
-    cond %{SEND_REQUEST_HDR_HOOK} [AND]
-    cond %{NEXT-HOP:HOST} =www.secondparent.com
-        set-header Host vhost.secondparent.com
 
 GEO
 ~~~
@@ -309,6 +318,20 @@ separated string of the values from every occurrence of the header. Refer to
 If you wish to use a client request header, regardless of hook context, you may
 consider using the `CLIENT-HEADER`_ condition instead.
 
+HTTP-CNTL
+~~~~~~~~~
+::
+
+    cond %{HTTP-CNTL:<controller>}
+
+This condition allows you to check the state of various HTTP controls. The controls
+are of the same name as for `set-http-cntl`. This condition returns a ``true`` or
+``false`` value, depending on the state of the control. For example::
+
+    cond %{HTTP-CNTL:LOGGING} [NOT]
+
+would only continue evaluation if logging is turned off.
+
 ID
 ~~
 ::
@@ -328,41 +351,6 @@ Now, even though these are conditionals, their primary use are as value
 arguments to another operator. For example::
 
     set-header ATS-Req-UUID %{ID:UNIQUE}
-
-CIDR
-~~~~
-::
-
-   set-header @Client-CIDR %{CIDR:24,48}
-
-This condition takes the client IP, and applies the provided CIDR style masks
-to the IP, before producing a string. The typical use of this conditions is as
-above, producing a header that contains a IP representation which has some
-privacy properties. It can of course also be used as a regular condition, and
-the output is a string that can be compared against. The two optional
-arguments are as follows::
-
-    IPv4-Mask    Length, in bits, of the IPv4 address to preserve. Default: 24
-    IPv6-Mask    Length, in bits, of the IPv6 address to preserve. Default: 48
-
-The two arguments, if provided, are comma separated. Valid syntax includes::
-
-    %{CIDR}         Defaults to 24,48 (as above)
-    %{CIDR:16}      IPv4 CIDR mask is 16 bits, IPv6 mask is 48
-    %{CIDR:18,42}   IPv4 CIDR mask is 18 bits, IPv6 mask is 42 bits
-
-A typical use case is to insert the @-prefixed header as above, and then use
-this header in a custom log format, rather than logging the full client
-IP. Another use case could be to make a special condition on a sub-net,
-e.g.::
-
-    cond %{CIDR:8} ="8.0.0.0"
-        set-header X-Is-Eight "Yes"
-    cond %{CIDR:,8} ="fd00::" #note the IPv6 Mask is in the second position
-        set-header IPv6Internal "true"
-
-This condition has no requirements other than access to the Client IP, hence,
-it should work in any and all hooks.
 
 INBOUND
 ~~~~~~~
@@ -462,6 +450,32 @@ METHOD
 
 The HTTP method (e.g. ``GET``, ``HEAD``, ``POST``, and so on) used by the
 client for this transaction.
+
+NEXT-HOP
+~~~~~~~~
+::
+
+    cond %{NEXT-HOP:<part>} <operand>
+
+Returns next hop current selected parent information.  The following qualifiers
+are supported::
+
+    %{NEXT-HOP:HOST} Name of the current selected parent.
+    %{NEXT-HOP:PORT} Port of the current selected parent.
+
+Note that the ``<part>`` of NEXT-HOP will likely not be available unless
+an origin server connection is attempted at which point it will available
+as part of the ``SEND_REQUEST_HDR_HOOK``.
+
+For example::
+
+    cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    cond %{NEXT-HOP:HOST} =www.firstparent.com
+        set-header Host vhost.firstparent.com
+
+    cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    cond %{NEXT-HOP:HOST} =www.secondparent.com
+        set-header Host vhost.secondparent.com
 
 NOW
 ~~~
@@ -679,6 +693,24 @@ no-op
 
 This operator does nothing, takes no arguments, and has no side effects.
 
+rm-destination
+~~~~~~~~~~~~~~
+::
+
+  rm-destination <part>
+
+Removes individual components of the remapped destination's address. When
+changing the remapped destination, ``<part>`` should be used to indicate the
+component that is being modified (see `URL Parts`_). Currently the only valid
+parts for rm-destination are QUERY, PATH, and PORT.
+
+For the query parameter, this operator takes an optional second argument,
+which is a list of query parameters to remove (or keep with ``[INV]`` modifier).
+
+::
+
+  rm-destination QUERY <comma separate list of query parameter>
+
 rm-header
 ~~~~~~~~~
 ::
@@ -694,6 +726,15 @@ rm-cookie
   rm-cookie <name>
 
 Removes the cookie ``<name>``.
+
+run-plugin
+~~~~~~~~~~~~~~
+::
+
+  run-plugin <plugin-name>.so "<plugin-argument> ..."
+
+This allows to run an existing remap plugin, conditionally, from within a
+header rewrite rule.
 
 set-body
 ~~~~~~~~
@@ -774,7 +815,7 @@ the appropriate logs even when the debug tag has not been enabled. For
 additional information on |TS| debugging statements, refer to
 :ref:`developer-debug-tags` in the developer's documentation.
 
-**Note**: This operator is deprecated, use the ``set-http-cntl`` operator instead,
+**Note**: This operator is deprecated, use the `set-http-cntl` operator instead,
 with the ``TXN_DEBUG`` control.
 
 set-destination
@@ -789,34 +830,6 @@ component that is being modified (see `URL Parts`_), and ``<value>`` will be
 used as its replacement. You must supply a non-zero length value, otherwise
 this operator will be an effective no-op (though a warning will be emitted to
 the logs if debugging is enabled).
-
-rm-destination
-~~~~~~~~~~~~~~
-::
-
-  rm-destination <part>
-
-Removes individual components of the remapped destination's address. When
-changing the remapped destination, ``<part>`` should be used to indicate the
-component that is being modified (see `URL Parts`_). Currently the only valid
-parts for rm-destination are QUERY, PATH, and PORT.
-
-For the query parameter, this operator takes an optional second argument,
-which is a list of query parameters to remove (or keep with ``[INV]`` modifier).
-
-::
-
-  rm-destination QUERY <comma separate list of query parameter>
-
-
-run-plugin
-~~~~~~~~~~~~~~
-::
-
-  run-plugin <plugin-name>.so "<plugin-argument> ..."
-
-This allows to run an existing remap plugin, conditionally, from within a
-header rewrite rule.
 
 set-header
 ~~~~~~~~~~
@@ -886,7 +899,7 @@ When invoked, and when ``<value>`` is any of ``1``, ``true``, or ``TRUE``, this
 operator causes |TS| to abort further request remapping. Any other value and
 the operator will effectively be a no-op.
 
-**Note**: This operator is deprecated, use the ``set-http-cntl`` operator instead,
+**Note**: This operator is deprecated, use the `set-http-cntl` operator instead,
 with the ``SKIP_REMAP`` control.
 
 set-cookie
