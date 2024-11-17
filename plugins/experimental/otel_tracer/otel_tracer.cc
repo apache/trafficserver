@@ -334,17 +334,23 @@ TSPluginInit(int argc, const char *argv[])
   std::string url          = "";
   std::string service_name = "otel_tracer";
   double      rate         = 1.0;
+  int qsize                = 25;
+  int delay                = 3000;
+  int bsize                = 10;
   if (argc > 1) {
     int                        c;
     static const struct option longopts[] = {
       {const_cast<char *>("url"),           required_argument, nullptr, 'u'},
       {const_cast<char *>("service-name"),  required_argument, nullptr, 's'},
       {const_cast<char *>("sampling-rate"), required_argument, nullptr, 'r'},
+      {const_cast<char *>("queue-size"),    required_argument, nullptr, 'q'},
+      {const_cast<char *>("delay"),         required_argument, nullptr, 'd'},
+      {const_cast<char *>("batch-size"),    required_argument, nullptr, 'b'},
       {nullptr,                             0,                 nullptr, 0  },
     };
 
     int longindex = 0;
-    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "u:s:r:", longopts, &longindex)) != -1) {
+    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "u:s:r:q:d:b:", longopts, &longindex)) != -1) {
       switch (c) {
       case 'u':
         url = optarg;
@@ -354,13 +360,26 @@ TSPluginInit(int argc, const char *argv[])
         break;
       case 'r':
         rate = atof(optarg);
+        if (rate < 0) { TSEmergency("[otel_tracer][%s] Invalid rate parameter", __FUNCTION__); }
+        break;
+      case 'q':
+        qsize = atoi(optarg);
+        if (qsize < 0) { TSEmergency("[otel_tracer][%s] Invalid queue size parameter", __FUNCTION__); }
+        break;
+      case 'd':
+        delay = atoi(optarg);
+        if (delay < 0) { TSEmergency("[otel_tracer][%s] Invalid delay parameter", __FUNCTION__); }
+        break;
+      case 'b':
+        bsize = atoi(optarg);
+        if (bsize < 0) { TSEmergency("[otel_tracer][%s] Invalid batch size parameter", __FUNCTION__); }
         break;
       default:
         break;
       }
     }
   }
-  InitTracer(url, service_name, rate);
+  InitTracer(url, service_name, rate, qsize, delay, bsize);
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[%s] Plugin registration failed", PLUGIN_NAME);

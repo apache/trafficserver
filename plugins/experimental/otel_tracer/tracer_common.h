@@ -23,6 +23,7 @@
 
 #include "opentelemetry/exporters/ostream/span_exporter.h"
 #include "opentelemetry/sdk/trace/simple_processor.h"
+#include "opentelemetry/sdk/trace/tracer_context.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "opentelemetry/trace/provider.h"
 
@@ -34,6 +35,13 @@
 #include "opentelemetry/sdk/trace/samplers/always_on.h"
 #include "opentelemetry/sdk/trace/samplers/parent.h"
 #include "opentelemetry/sdk/trace/samplers/trace_id_ratio.h"
+
+#include "opentelemetry/exporters/otlp/otlp_http_exporter_factory.h"
+#include "opentelemetry/sdk/trace/simple_processor_factory.h"
+#include "opentelemetry/sdk/trace/batch_span_processor_factory.h"
+#include "opentelemetry/sdk/trace/batch_span_processor_options.h"
+#include "opentelemetry/sdk/trace/tracer_context_factory.h"
+#include "opentelemetry/sdk/trace/tracer_provider_factory.h"
 
 #include <cstring>
 #include <iostream>
@@ -112,7 +120,7 @@ struct ExtraRequestData {
 };
 
 void
-InitTracer(const std::string &url, const std::string &service_name, double rate)
+InitTracer(const std::string &url, const std::string &service_name, double rate, int qsize, int delay, int bsize)
 {
   otlp::OtlpHttpExporterOptions opts;
 
@@ -120,8 +128,13 @@ InitTracer(const std::string &url, const std::string &service_name, double rate)
     opts.url = url;
   }
 
-  auto exporter  = std::unique_ptr<sdktrace::SpanExporter>(new otlp::OtlpHttpExporter(opts));
-  auto processor = std::unique_ptr<sdktrace::SpanProcessor>(new sdktrace::SimpleSpanProcessor(std::move(exporter)));
+  auto exporter = otlp::OtlpHttpExporterFactory::Create(opts);
+
+  sdktrace::BatchSpanProcessorOptions options{};
+  options.max_queue_size        = qsize;
+  options.schedule_delay_millis = std::chrono::milliseconds(delay);
+  options.max_export_batch_size = bsize;
+  auto processor                = sdktrace::BatchSpanProcessorFactory::Create(std::move(exporter), options);
 
   std::vector<std::unique_ptr<sdktrace::SpanProcessor>> processors;
   processors.push_back(std::move(processor));
@@ -132,11 +145,12 @@ InitTracer(const std::string &url, const std::string &service_name, double rate)
     {"version",      (uint32_t)1 }
   };
   auto resource = opentelemetry::sdk::resource::Resource::Create(attributes);
+  auto context  = sdktrace::TracerContextFactory::Create(std::move(processors), resource,
+                                                         std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(
+                                                           std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
 
-  auto context  = std::make_shared<sdktrace::TracerContext>(std::move(processors), resource,
-                                                            std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(
-                                                             std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
-  auto provider = nostd::shared_ptr<trace::TracerProvider>(new sdktrace::TracerProvider(context));
+  // create provider through factory
+  std::shared_ptr<trace::TracerProvider> provider = sdktrace::TracerProviderFactory::Create(std::move(context));
 
   // Set the global trace provider
   trace::Provider::SetTracerProvider(provider);
