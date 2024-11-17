@@ -147,7 +147,7 @@ InitTracer(const std::string &url, const std::string &service_name, double rate,
   auto resource = opentelemetry::sdk::resource::Resource::Create(attributes);
   auto context  = sdktrace::TracerContextFactory::Create(std::move(processors), resource,
                                                          std::unique_ptr<sdktrace::Sampler>(new sdktrace::ParentBasedSampler(
-                                                           std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
+                                                          std::make_shared<sdktrace::TraceIdRatioBasedSampler>(rate))));
 
   // create provider through factory
   std::shared_ptr<trace::TracerProvider> provider = sdktrace::TracerProviderFactory::Create(std::move(context));

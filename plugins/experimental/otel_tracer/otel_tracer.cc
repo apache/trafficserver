@@ -334,9 +334,9 @@ TSPluginInit(int argc, const char *argv[])
   std::string url          = "";
   std::string service_name = "otel_tracer";
   double      rate         = 1.0;
-  int qsize                = 25;
-  int delay                = 3000;
-  int bsize                = 10;
+  int         qsize        = 25;
+  int         delay        = 3000;
+  int         bsize        = 10;
   if (argc > 1) {
     int                        c;
     static const struct option longopts[] = {
@@ -360,19 +360,27 @@ TSPluginInit(int argc, const char *argv[])
         break;
       case 'r':
         rate = atof(optarg);
-        if (rate < 0) { TSEmergency("[otel_tracer][%s] Invalid rate parameter", __FUNCTION__); }
+        if (rate < 0) {
+          TSEmergency("[otel_tracer][%s] Invalid rate parameter", __FUNCTION__);
+        }
         break;
       case 'q':
         qsize = atoi(optarg);
-        if (qsize < 0) { TSEmergency("[otel_tracer][%s] Invalid queue size parameter", __FUNCTION__); }
+        if (qsize < 0) {
+          TSEmergency("[otel_tracer][%s] Invalid queue size parameter", __FUNCTION__);
+        }
         break;
       case 'd':
         delay = atoi(optarg);
-        if (delay < 0) { TSEmergency("[otel_tracer][%s] Invalid delay parameter", __FUNCTION__); }
+        if (delay < 0) {
+          TSEmergency("[otel_tracer][%s] Invalid delay parameter", __FUNCTION__);
+        }
         break;
       case 'b':
         bsize = atoi(optarg);
-        if (bsize < 0) { TSEmergency("[otel_tracer][%s] Invalid batch size parameter", __FUNCTION__); }
+        if (bsize < 0) {
+          TSEmergency("[otel_tracer][%s] Invalid batch size parameter", __FUNCTION__);
+        }
         break;
       default:
         break;
