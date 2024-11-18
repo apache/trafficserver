@@ -394,6 +394,12 @@ public:
     return _conf_reload_count++;
   }
 
+  int
+  incr_invalid_file_count()
+  {
+    return _invalid_file_count++;
+  }
+
   // Setters
   void
   set_secret(const char *s)
@@ -474,6 +480,12 @@ public:
     _conf_reload_count = 0;
   }
 
+  void
+  reset_invalid_file_count()
+  {
+    _invalid_file_count = 0;
+  }
+
   // Parse configs from an external file
   bool parse_config(const std::string &filename);
 
@@ -531,6 +543,7 @@ private:
   long      _expiration          = 0;
   char     *_conf_fname          = nullptr;
   int       _conf_reload_count   = 0;
+  int       _invalid_file_count  = 0;
 };
 
 bool
@@ -1046,9 +1059,12 @@ config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
   S3Config *file_config = gConfCache.get(s3->conf_fname());
 
   if (!file_config || !file_config->valid()) {
-    TSError("[%s] requires both shared and AWS secret configuration", PLUGIN_NAME);
+    TSError("[%s] invalid configuration. Check mandatory fields. Scheduling reload", PLUGIN_NAME);
+    long delay = 1 << s3->incr_invalid_file_count();
+    s3->schedule_conf_reload(delay);
     return TS_ERROR;
   }
+  s3->reset_invalid_file_count();
 
   {
     std::unique_lock lock(s3->reload_mutex);
