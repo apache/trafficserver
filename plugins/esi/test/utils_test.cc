@@ -122,7 +122,8 @@ TEST_CASE("esi utils test")
     Utils::KeyValueMap     kv;
     Utils::HeaderValueList list;
     Utils::parseKeyValueConfig(lines, kv, list);
-    REQUIRE(kv.find("a")->second == "b");
+    const auto b = kv.find("a");
+    REQUIRE((b != std::end(kv) && b->second == "b"));
     REQUIRE(list.back() == "GRADE");
     list.pop_back();
     REQUIRE(list.back() == "AGE");
