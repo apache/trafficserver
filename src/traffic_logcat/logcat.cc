@@ -123,8 +123,8 @@ follow_rotate(const char *input_file, ino_t old_inode_num)
 int
 process_file(int in_fd, int out_fd)
 {
-  char buffer[MAX_LOGBUFFER_SIZE];
-  int  nread, buffer_bytes;
+  char    buffer[MAX_LOGBUFFER_SIZE];
+  ssize_t nread, buffer_bytes;
 
   while (true) {
     // read the next buffer from file descriptor
@@ -182,7 +182,7 @@ process_file(int in_fd, int out_fd)
     // Read the next full buffer (allowing for "partial" reads)
     nread = 0;
     while (nread < buffer_bytes) {
-      int rc = read(in_fd, &buffer[header_size] + nread, buffer_bytes - nread);
+      auto rc = read(in_fd, &buffer[header_size] + nread, buffer_bytes - nread);
 
       if ((rc == EOF) && (!follow_flag)) {
         fprintf(stderr, "Bad LogBuffer read!\n");
