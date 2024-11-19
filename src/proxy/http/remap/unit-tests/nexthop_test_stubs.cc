@@ -207,5 +207,6 @@ HostStatus::setHostStatus(const std::string_view host, TSHostStatus status, unsi
   this->hosts_statuses[std::string(host)]->status          = status;
   this->hosts_statuses[std::string(host)]->reasons         = reason;
   this->hosts_statuses[std::string(host)]->local_down_time = down_time;
-  NH_Dbg(DbgCtl{"next_hop"}, "setting host status for '%.*s' to %s", host.size(), host.data(), HostStatusNames[status]);
+  NH_Dbg(DbgCtl{"next_hop"}, "setting host status for '%.*s' to %s", static_cast<int>(host.size()), host.data(),
+         HostStatusNames[status]);
 }
