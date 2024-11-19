@@ -402,13 +402,13 @@ main(int argc, const char **argv)
 
   if (*cmd_input_dir) {
     input_dir = cmd_input_dir;
-    if (*input_dir.end() != '/') {
+    if (input_dir.back() != '/') {
       input_dir += '/';
     }
   }
   if (*cmd_output_dir) {
     output_dir = cmd_output_dir;
-    if (*output_dir.end() != '/') {
+    if (output_dir.back() != '/') {
       output_dir += '/';
     }
   }
