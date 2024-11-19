@@ -42,16 +42,13 @@ namespace
 void
 print_record_error_list(std::vector<shared::rpc::RecordLookUpResponse::RecordError> const &errors)
 {
-  if (errors.size()) {
+  if (auto iter = std::begin(errors); iter != std::end(errors)) {
     std::cout << "------------ Errors ----------\n";
-    auto iter = std::begin(errors);
-    if (iter != std::end(errors)) {
-      std::cout << *iter;
-    }
+    std::cout << *iter;
     ++iter;
-    for (auto err = iter; err != std::end(errors); ++err) {
+    for (; iter != std::end(errors); ++iter) {
       std::cout << "--\n";
-      std::cout << *err;
+      std::cout << *iter;
     }
   }
 }
