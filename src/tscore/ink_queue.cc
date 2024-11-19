@@ -101,11 +101,13 @@ const ink_freelist_ops *freelist_global_ops = default_ops;
 
 DbgCtl dbg_ctl_freelist_init{"freelist_init"};
 
+#ifdef SANITY
 inline void
 dummy_forced_read(void *mem)
 {
   static_cast<void>(*const_cast<int volatile *>(reinterpret_cast<int *>(mem)));
 }
+#endif
 
 } // end anonymous namespace
 
