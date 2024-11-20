@@ -1349,7 +1349,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       // make sure we're open & ready to write
       logfile->check_fd();
       if (!logfile->is_open()) {
-        SiteThrottledWarning("File:%s was closed, have dropped (%" PRId64 ") bytes.", logfile->get_name(), total_bytes);
+        SiteThrottledWarning("File:%s was closed, have dropped (%ld) bytes.", logfile->get_name(), total_bytes);
 
         Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes);
         delete fdata;
@@ -1364,8 +1364,8 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       //
       while (total_bytes - bytes_written) {
         if (Log::config->logging_space_exhausted) {
-          Dbg(dbg_ctl_log, "logging space exhausted, failed to write file:%s, have dropped (%" PRId64 ") bytes.",
-              logfile->get_name(), (total_bytes - bytes_written));
+          Dbg(dbg_ctl_log, "logging space exhausted, failed to write file:%s, have dropped (%ld) bytes.", logfile->get_name(),
+              (total_bytes - bytes_written));
 
           Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
           break;
@@ -1374,7 +1374,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
         len = ::write(logfilefd, &buf[bytes_written], total_bytes - bytes_written);
 
         if (len < 0) {
-          SiteThrottledError("Failed to write log to %s: [tried %" PRId64 ", wrote %" PRId64 ", %s]", logfile->get_name(),
+          SiteThrottledError("Failed to write log to %s: [tried %ld, wrote %ld, %s]", logfile->get_name(),
                              total_bytes - bytes_written, bytes_written, strerror(errno));
 
           Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);

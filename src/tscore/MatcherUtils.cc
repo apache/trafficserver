@@ -113,7 +113,7 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
     // Didn't get the whole file, drop everything. We don't want to return
     //   something partially read because, ie. with configs, the behaviour
     //   is undefined.
-    Error("%s Only able to read %" PRId64 " bytes out %" PRId64 " for %s file", module_name, read_size, file_size, file_path);
+    Error("%s Only able to read %ld bytes out %ld for %s file", module_name, read_size, file_size, file_path);
     ats_free(file_buf);
     file_buf = nullptr;
   }
