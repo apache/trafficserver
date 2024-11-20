@@ -313,7 +313,7 @@ UDPNetProcessorInternal::start(int n_upd_threads, size_t stacksize)
 namespace
 {
 bool
-get_ip_address_from_cmsg(struct cmsghdr *cmsg, sockaddr_in6 *toaddr)
+get_ip_address_from_cmsg(struct cmsghdr *cmsg, sockaddr_storage *toaddr)
 {
 #ifdef IP_PKTINFO
   if (IP_PKTINFO == cmsg->cmsg_type) {
@@ -337,7 +337,7 @@ get_ip_address_from_cmsg(struct cmsghdr *cmsg, sockaddr_in6 *toaddr)
   if (IPV6_PKTINFO == cmsg->cmsg_type) { // IPV6_RECVPKTINFO uses IPV6_PKTINFO too
     if (cmsg->cmsg_level == IPPROTO_IPV6) {
       struct in6_pktinfo *pktinfo = reinterpret_cast<struct in6_pktinfo *>(CMSG_DATA(cmsg));
-      memcpy(toaddr->sin6_addr.s6_addr, &pktinfo->ipi6_addr, 16);
+      memcpy(reinterpret_cast<sockaddr_in6 *>(toaddr)->sin6_addr.s6_addr, &pktinfo->ipi6_addr, 16);
     }
     return true;
   }
@@ -400,14 +400,13 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
     unsigned int niov = build_iovec_block_chain(max_niov, size_index, chain, tiovec);
 
     // build struct msghdr
-    sockaddr_in6 fromaddr;
-    sockaddr_in6 toaddr;
-    int          toaddr_len = sizeof(toaddr);
-    msg.msg_name            = &fromaddr;
-    msg.msg_namelen         = sizeof(fromaddr);
-    msg.msg_iov             = tiovec;
-    msg.msg_iovlen          = niov;
-    msg.msg_flags           = 0;
+    sockaddr_storage fromaddr;
+    sockaddr_storage toaddr;
+    msg.msg_name    = &fromaddr;
+    msg.msg_namelen = sizeof(fromaddr);
+    msg.msg_iov     = tiovec;
+    msg.msg_iovlen  = niov;
+    msg.msg_flags   = 0;
 
     static const size_t cmsg_size{CMSG_SPACE(sizeof(int))
 #ifdef IP_PKTINFO
@@ -440,7 +439,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
       Dbg(dbg_ctl_udp_read, "The UDP packet is truncated");
     }
 
-    safe_getsockname(xuc->getFd(), reinterpret_cast<struct sockaddr *>(&toaddr), &toaddr_len);
+    toaddr.ss_family = AF_UNSPEC;
     for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (get_ip_address_from_cmsg(cmsg, &toaddr)) {
         break;
@@ -453,6 +452,10 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
         break;
       }
 #endif
+    }
+    // Use the local address if we couldn't get the destination address from any cmsgs
+    if (toaddr.ss_family == AF_UNSPEC) {
+      xuc->getBinding(reinterpret_cast<struct sockaddr *>(&toaddr));
     }
 
     // If gro was used, then the kernel will tell us the size of each part that was spliced together.
@@ -519,9 +522,8 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
   struct iovec   tiovec[MAX_RECEIVE_MSG_PER_CALL][max_niov];
 
   // Addresses
-  sockaddr_in6 fromaddr[MAX_RECEIVE_MSG_PER_CALL];
-  sockaddr_in6 toaddr[MAX_RECEIVE_MSG_PER_CALL];
-  int          toaddr_len = sizeof(toaddr);
+  sockaddr_storage fromaddr[MAX_RECEIVE_MSG_PER_CALL];
+  sockaddr_storage toaddr[MAX_RECEIVE_MSG_PER_CALL];
 
   size_t total_bytes_read{0};
 
@@ -587,7 +589,7 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
       return;
     }
 
-    safe_getsockname(xuc->getFd(), reinterpret_cast<struct sockaddr *>(&toaddr[packet_num]), &toaddr_len);
+    toaddr[packet_num].ss_family = AF_UNSPEC;
     if (mhdr.msg_controllen > 0) {
       for (auto cmsg = CMSG_FIRSTHDR(&mhdr); cmsg != nullptr; cmsg = CMSG_NXTHDR(&mhdr, cmsg)) {
         if (get_ip_address_from_cmsg(cmsg, &toaddr[packet_num])) {
@@ -602,6 +604,9 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
         }
 #endif
       }
+    }
+    if (toaddr[packet_num].ss_family == AF_UNSPEC) {
+      xuc->getBinding(reinterpret_cast<struct sockaddr *>(&toaddr[packet_num]));
     }
 
     const int64_t received  = mmsg[packet_num].msg_len;
