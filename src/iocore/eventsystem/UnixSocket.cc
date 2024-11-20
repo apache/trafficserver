@@ -38,6 +38,9 @@
 
 namespace
 {
+#if TS_USE_NUMA
+DbgCtl dbg_ctl_numa{"numa"};
+#endif
 enum class TCPFastopenMask {
   CLIENT_ENABLE = 1,
   SERVER_ENABLE,
@@ -81,7 +84,7 @@ UnixSocket::accept4(struct sockaddr *addr, socklen_t *addrlen, int flags) const
 
       int ret = safe_getsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &socket_cpu, &socket_cpu_len);
       if (ret != 0) {
-        Debug("numa", "Unable to get SO_INCOMING_CPU");
+        Dbg(dbg_ctl_numa, "Unable to get SO_INCOMING_CPU");
       } else {
         std::string status;
         if (thread_numa == numa_node_of_cpu(socket_cpu)) {
@@ -89,9 +92,9 @@ UnixSocket::accept4(struct sockaddr *addr, socklen_t *addrlen, int flags) const
         } else {
           status = "NOT OK";
         }
-        Debug("numa", "NUMA thread affinity for Thread id: %d, Thread cpu: %d, Thread numa: %d, \
+        Dbg(dbg_ctl_numa, "NUMA thread affinity for Thread id: %d, Thread cpu: %d, Thread numa: %d, \
                 Socket cpu: %d, Socket numa: %d, %s",
-              gettid(), thread_cpu, thread_numa, socket_cpu, numa_node_of_cpu(socket_cpu), status.c_str());
+            gettid(), thread_cpu, thread_numa, socket_cpu, numa_node_of_cpu(socket_cpu), status.c_str());
       }
 #endif
       return fd;
