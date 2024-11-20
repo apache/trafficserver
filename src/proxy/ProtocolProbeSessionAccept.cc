@@ -136,7 +136,12 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     } // end of Proxy Protocol processing
 
     if (proto_is_http2(reader)) {
-      key = PROTO_HTTP2;
+      if (netvc->get_service<TLSBasicSupport>() == nullptr) {
+        key = PROTO_HTTP2;
+      } else {
+        Dbg(dbg_ctl_http, "HTTP/2 preface was received on a TLS connection (protocol violation). Using HTTP/1 instead.");
+        key = PROTO_HTTP;
+      }
     } else {
       key = PROTO_HTTP;
     }
