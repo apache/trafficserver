@@ -70,6 +70,10 @@ DbgCtl dbg_ctl_http_tproxy{"http_tproxy"};
 DbgCtl dbg_ctl_iocore_net_server{"iocore_net_server"};
 DbgCtl dbg_ctl_iocore_thread{"iocore_thread"};
 DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
+#if TS_USE_NUMA
+DbgCtl dbg_ctl_numa{"numa"};
+DbgCtl dbg_ctl_numa_sequencer{"numa_sequencer"};
+#endif
 
 } // end anonymous namespace
 
@@ -126,30 +130,24 @@ public:
     int my_thread_id = this_ethread()->id;
     int my_numa_node = this_ethread()->get_numa_node();
 
-    Debug("numa_sequencer", "[NUMASequencer] Thread %d (NUMA node %d) entered run_sequential.", my_thread_id, my_numa_node);
-
     // Initialize and populate the thread IDs vector
     if (!initialized) {
       initialized = true;
       thread_ids.reserve(eventProcessor.net_threads); // Preallocate space
-      Debug("numa_sequencer", "[NUMASequencer] Initialized thread ID vector with capacity %d.", eventProcessor.net_threads);
     }
 
     // Add the current thread ID to the list if it's not already present
     if (std::find(thread_ids.begin(), thread_ids.end(), my_thread_id) == thread_ids.end()) {
       thread_ids.push_back(my_thread_id);
-      Debug("numa_sequencer", "[NUMASequencer] Added Thread %d to the thread ID list. Total threads collected: %zu", my_thread_id,
-            thread_ids.size());
     }
 
     // If all threads have been added (assuming their number is equal to eventProcessor.net_threads), sort the thread IDs and set
     // ready_to_run to true
-    if (thread_ids.size() == eventProcessor.net_threads) {
+    if (thread_ids.size() == static_cast<size_t>(eventProcessor.net_threads)) {
       std::sort(thread_ids.begin(), thread_ids.end());
-      Debug("numa_sequencer", "[NUMASequencer] All thread IDs collected. Sorting thread IDs...");
-      Debug("numa_sequencer", "[NUMASequencer] Thread IDs sorted. Execution will follow this order:");
+      Dbg(dbg_ctl_numa_sequencer, "[NUMASequencer] All thread IDs collected and sorted. Execution will follow this order:");
       for (size_t i = 0; i < thread_ids.size(); ++i) {
-        Debug("numa_sequencer", "[NUMASequencer] Execution order %zu: Thread ID %d", i + 1, thread_ids[i]);
+        Dbg(dbg_ctl_numa_sequencer, "[NUMASequencer] Execution order %zu: Thread ID %d", i + 1, thread_ids[i]);
       }
       ready_to_run = true;
       convar.notify_all(); // Notify all threads that execution can begin
@@ -157,44 +155,33 @@ public:
 
     // Wait until all thread IDs are collected and ready_to_run is true
     while (!ready_to_run) {
-      Debug("numa_sequencer", "[NUMASequencer] Thread %d is waiting for all thread IDs to be collected.", my_thread_id);
       convar.wait(lock);
     }
-
-    // Logging the current state before entering the wait loop
-    Debug("numa_sequencer", "[NUMASequencer] Thread %d (NUMA node %d) waiting to execute. Current sequence index: %zu",
-          my_thread_id, my_numa_node, cur_index);
 
     // Wait until it's this thread's turn based on sorted IDs
     while (cur_index < thread_ids.size() && thread_ids[cur_index] != my_thread_id) {
-      Debug("numa_sequencer", "[NUMASequencer] Thread %d is not yet in sequence. Waiting...", my_thread_id);
       convar.wait(lock);
     }
-
-    // Log when the thread has been awakened and is about to execute the function
-    Debug("numa_sequencer", "[NUMASequencer] Thread %d (NUMA node %d) awakened. About to execute function.", my_thread_id,
-          my_numa_node);
 
     // Execute the function
     bool result = func();
 
     // More detailed logging for debugging
     if (result) {
-      Debug("numa_sequencer", "[NUMASequencer] Thread %d successfully executed the function on NUMA node %d.", this_ethread()->id,
-            my_numa_node);
+      Dbg(dbg_ctl_numa_sequencer, "[NUMASequencer] Thread %d successfully executed the function on NUMA node %d.",
+          this_ethread()->id, my_numa_node);
     } else {
       Error("[NUMASequencer] Thread %d failed to execute the function on NUMA node %d.", this_ethread()->id, my_numa_node);
     }
 
     // Move to the next thread in the sequence
     cur_index++;
-    Debug("numa_sequencer", "[NUMASequencer] Thread %d completed execution. Moving to next thread. New index: %zu.", my_thread_id,
-          cur_index);
+    Dbg(dbg_ctl_numa_sequencer, "[NUMASequencer] Thread %d completed execution. Moving to next thread. New index: %zu.",
+        my_thread_id, cur_index);
 
     // If we've completed one pass through all threads, reset the index and increment the repeat counter
     if (cur_index >= thread_ids.size()) {
       cur_index = 0;
-      Debug("numa_sequencer", "[NUMASequencer] Completed a full pass through all threads. Resetting index.");
     }
 
     // Notify all threads about the change in sequence
@@ -221,13 +208,12 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   // Define the initialization function that will be run sequentially
   auto init_func = [&]() -> bool {
     // Additional setup after listen
-    Debug("numa", "[Server::listen] Attempting to set up fd after listen with options: %d", opt);
     if ((res = setup_fd_after_listen(opt)) < 0) {
       Error("[Server::listen] Failed to setup fd after listen: %d", res);
       return false;
     }
 
-    Debug("numa", "[Server::listen] Thread %d successfully set up the socket.", this_ethread()->id);
+    Dbg(dbg_ctl_numa, "[Server::listen] Thread %d successfully set up the socket.", this_ethread()->id);
     return true;
   };
 #endif
@@ -244,8 +230,6 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   }
 
   // Create the socket
-  Debug("numa", "[Server::listen] Attempting to create socket with family: %d, type: %d, protocol: %d", addr.sa.sa_family,
-        SOCK_STREAM, prot);
   sock = UnixSocket{addr.sa.sa_family, SOCK_STREAM, prot};
   if (!sock.is_ok()) {
     Error("[Server::listen] Failed to create socket: %d", res);
@@ -253,21 +237,18 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   }
 
   // Set up the file descriptor for listening
-  Debug("numa", "[Server::listen] Attempting to set up fd for listen with non_blocking: %d, options: %d", non_blocking, opt);
   if ((res = setup_fd_for_listen(non_blocking, opt)) < 0) {
     Error("[Server::listen] Failed to setup fd for listen: %d", res);
     goto Lerror;
   }
 
   // Bind the socket to the specified address and protocol
-  Debug("numa", "[Server::listen] Attempting to bind socket with fd: %d, protocol: %d", sock.get_fd(), prot);
   if ((res = sock.bind(&addr.sa, ats_ip_size(&addr.sa))) < 0) {
     Error("[Server::listen] Failed to bind socket: %d", res);
     goto Lerror;
   }
 
   // Set the socket to listen for incoming connections
-  Debug("numa", "[Server::listen] Attempting to listen on socket with fd: %d", sock.get_fd());
   if ((res = safe_listen(sock.get_fd(), get_listen_backlog())) < 0) {
     Error("[Server::listen] Failed to listen on socket: %d", res);
     goto Lerror;
@@ -279,14 +260,12 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   REC_ReadConfigInteger(use_ebpf, "proxy.config.net.use_ebpf");
   REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
 
-  Debug("numa", "[Server::listen] NUMA settings: use_ebpf = %d, affinity = %d", use_ebpf, affinity);
-
   if (use_ebpf && affinity == 1) {
     // Sequentialize the execution of socket initialization and eBPF setup
-    Debug("numa", "[Server::listen] Sequentializing socket setup using NUMASequencer.");
+    Dbg(dbg_ctl_numa, "[Server::listen] Sequentializing socket setup using NUMASequencer.");
     success = numa_sequencer.run_sequential(init_func);
   } else {
-    Debug("numa", "[Server::listen] Running socket setup without NUMASequencer.");
+    Dbg(dbg_ctl_numa, "[Server::listen] Running socket setup without NUMASequencer.");
     success = init_func();
   }
   if (!success) {
@@ -294,7 +273,6 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   }
 #else
 
-  Debug("numa", "[Server::listen] Attempting to set up fd after listen with options: %d", opt);
   res = setup_fd_after_listen(opt);
   if (res < 0) {
     Error("[Server::listen] Failed to setup fd after listen: %d", res);
@@ -540,8 +518,6 @@ Server::setup_fd_after_listen([[maybe_unused]] const NetProcessor::AcceptOptions
   int use_ebpf = 0;
   REC_ReadConfigInteger(use_ebpf, "proxy.config.net.use_ebpf");
 
-  Debug("numa", "[Server::setup_fd_after_listen] Thread %d checking NUMA and eBPF settings.", this_ethread()->id);
-
   if (use_ebpf) {
     int no_of_numa_nodes = numa_max_node() + 1;
 
@@ -555,8 +531,6 @@ Server::setup_fd_after_listen([[maybe_unused]] const NetProcessor::AcceptOptions
     static char       bpf_log_buf[65536];
     static const char bpf_license[] = "";
     int               bpf_fd;
-
-    Debug("numa", "[Server::setup_fd_after_listen] Loading BPF program.");
 
     const struct bpf_insn prog[] = {
       // instead of random

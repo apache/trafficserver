@@ -163,12 +163,6 @@ cripts::Splitter(cripts::string_view input, char delim)
   return details::Splitter<cripts::string_view>(input, delim);
 }
 
-std::vector<Cript::string_view>
-Cript::splitter(Cript::string_view input, char delim)
-{
-  return details::splitter<Cript::string_view>(input, delim);
-}
-
 bool
 cripts::Control::Base::_get(cripts::Context *context) const
 {

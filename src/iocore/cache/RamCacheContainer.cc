@@ -93,7 +93,7 @@ RamCacheContainer::init_one_cache()
 }
 
 RamCache *
-RamCacheContainer::get_cache(unsigned int my_node, unsigned int node)
+RamCacheContainer::get_cache(unsigned int /* my_node ATS_UNUSED */, unsigned int node)
 {
   return caches[node];
 }
@@ -145,6 +145,7 @@ page_count(const void *ptr, size_t size)
 }
 
 // returns true if consistent
+#if NUMA_CONSISTENCY_CHECK
 static bool
 check_pages_consistency(void *data, size_t size, const char *name = "")
 {
@@ -190,6 +191,7 @@ check_pages_consistency(void *data, size_t size, const char *name = "")
   }
   return !inconsistent;
 }
+#endif
 
 int
 RamCacheContainer::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey)
@@ -266,14 +268,6 @@ move_pages_to_numa_zone(void *data, size_t size, int dest_numa)
     }
     ink_notice("Inconsistent pages after move_pages %s", print.c_str());
   }
-}
-
-static void
-move_pages_to_current_numa_zone(void *data, size_t size)
-{
-  unsigned int data_numa_node = 0;
-  getcpu(nullptr, &data_numa_node);
-  move_pages_to_numa_zone(data, size, data_numa_node);
 }
 
 int
