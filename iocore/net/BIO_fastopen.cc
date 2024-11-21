@@ -21,11 +21,114 @@
  *  limitations under the License.
  */
 
+#include <openssl/opensslv.h>
+
 #include "P_Net.h"
 #include "I_SocketManager.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ink_config.h"
 
 #include "BIO_fastopen.h"
+
+#if defined(BORINGLIKE)
+#error
+#elif defined(OPENSSL_IS_BORINGSSL) || defined(OPENSSL_IS_AWSLC)
+#define BORINGLIKE 1
+#else
+#define BORINGLIKE 0
+#endif
+
+namespace
+{
+#if defined(HAVE_BIO_GET_EX_NEW_INDEX) && defined(HAVE_BIO_GET_EX_DATA) && defined(HAVE_BIO_SET_EX_DATA)
+
+class ExData
+{
+public:
+  // Pseudo-namespace
+  ExData() = delete;
+
+  static int
+  idx()
+  {
+    static int idx_ = []() -> int {
+      int i = BIO_get_ex_new_index(0, nullptr, _new, _dup, _free);
+      ink_release_assert(i >= 0);
+      return i;
+    }();
+    return idx_;
+  }
+
+private:
+#if BORINGLIKE
+  static constexpr CRYPTO_EX_unused *_new{nullptr};
+#else
+  static void
+  _new(void * /* parent */, void * /* ptr */, CRYPTO_EX_DATA *ad, int idx_, long /* argl */, void * /* argp */)
+  {
+    ink_release_assert(CRYPTO_set_ex_data(ad, idx_, nullptr) == 1);
+  }
+#endif
+
+#if BORINGLIKE
+  static void
+  _free(void * /* parent */, void * /* ptr */, CRYPTO_EX_DATA * /* ad */, int /* idx_ */, long /* argl */, void * /* argp */)
+  {
+  }
+#else
+  static void
+  _free(void * /* parent */, void * /* ptr */, CRYPTO_EX_DATA *ad, int idx_, long /* argl */, void * /* argp */)
+  {
+    ink_release_assert(CRYPTO_set_ex_data(ad, idx_, nullptr) == 1);
+  }
+#endif
+
+#if BORINGLIKE || (OPENSSL_VERSION_MAJOR >= 3)
+  using _Type_from_d = void **;
+#else
+  using _Type_from_d = void *;
+#endif
+
+  static int
+  _dup(CRYPTO_EX_DATA * /* to */, const CRYPTO_EX_DATA * /* from */, _Type_from_d /* from_d */, int /* idx */, long /* argl */,
+       void * /* argp */)
+  {
+    ink_assert(false);
+    return 0;
+  }
+};
+
+inline void
+set_dest_addr_for_bio(BIO *b, void *dest_addr)
+{
+  ink_assert(BIO_set_ex_data(b, ExData::idx(), dest_addr) == 1);
+}
+
+inline void *
+get_dest_addr_for_bio(BIO *b)
+{
+  return BIO_get_ex_data(b, ExData::idx());
+}
+
+#else // no BIO ex data in SSL library
+
+// Fall back on the krufty way this was done using older SSL libraries.
+
+inline void
+set_dest_addr_for_bio(BIO *b, void *dest_addr)
+{
+  BIO_set_data(b, dest_addr);
+}
+
+inline void *
+get_dest_addr_for_bio(BIO *b)
+{
+  return BIO_get_data(b);
+}
+
+#endif
+
+} // end anonymous namespace
 
 // For BoringSSL, which for some reason doesn't have this function.
 // (In BoringSSL, sock_read() and sock_write() use the internal
@@ -113,13 +216,14 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
   int fd = BIO_get_fd(bio, nullptr);
   ink_assert(fd != NO_FD);
 
-  if (BIO_get_data(bio)) {
+  void *dst_void = get_dest_addr_for_bio(bio);
+  if (dst_void) {
+    auto dst = static_cast<sockaddr *>(dst_void);
     // On the first write only, make a TFO request if TFO is enabled.
     // The best documentation on the behavior of the Linux API is in
     // RFC 7413. If we get EINPROGRESS it means that the SYN has been
     // sent without data and we should retry.
-    const sockaddr *dst = reinterpret_cast<const sockaddr *>(BIO_get_data(bio));
-    ProxyMutex *mutex   = this_ethread()->mutex.get();
+    ProxyMutex *mutex = this_ethread()->mutex.get();
 
     NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
 
@@ -128,7 +232,7 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
       NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
     }
 
-    BIO_set_data(bio, nullptr);
+    set_dest_addr_for_bio(bio, nullptr);
   } else {
     err = socketManager.write(fd, (void *)in, insz);
   }
@@ -166,21 +270,14 @@ fastopen_bread(BIO *bio, char *out, int outsz)
   return err < 0 ? -1 : err;
 }
 
+#ifndef HAVE_BIO_METH_NEW
+
 static long
 fastopen_ctrl(BIO *bio, int cmd, long larg, void *ptr)
 {
-  switch (cmd) {
-  case BIO_C_SET_CONNECT:
-    // We only support BIO_set_conn_address(), which sets a sockaddr.
-    ink_assert(larg == 2);
-    BIO_set_data(bio, ptr);
-    return 0;
-  }
-
   return BIO_meth_get_ctrl(const_cast<BIO_METHOD *>(BIO_s_socket()))(bio, cmd, larg, ptr);
 }
 
-#ifndef HAVE_BIO_METH_NEW
 static const BIO_METHOD fastopen_methods[] = {{
   .type          = BIO_TYPE_SOCKET,
   .name          = "fastopen",
@@ -193,12 +290,12 @@ static const BIO_METHOD fastopen_methods[] = {{
   .destroy       = fastopen_destroy,
   .callback_ctrl = nullptr,
 }};
-#else
+#else // defined(HAVE_BIO_METH_NEW)
 static const BIO_METHOD *fastopen_methods = [] {
   BIO_METHOD *methods = BIO_meth_new(BIO_TYPE_SOCKET, "fastopen");
   BIO_meth_set_write(methods, fastopen_bwrite);
   BIO_meth_set_read(methods, fastopen_bread);
-  BIO_meth_set_ctrl(methods, fastopen_ctrl);
+  BIO_meth_set_ctrl(methods, BIO_meth_get_ctrl(const_cast<BIO_METHOD *>(BIO_s_socket())));
   BIO_meth_set_create(methods, fastopen_create);
   BIO_meth_set_destroy(methods, fastopen_destroy);
   return methods;
@@ -209,4 +306,10 @@ const BIO_METHOD *
 BIO_s_fastopen()
 {
   return fastopen_methods;
+}
+
+void
+BIO_fastopen_set_dest_addr(BIO *bio, const sockaddr *dest_addr)
+{
+  set_dest_addr_for_bio(bio, const_cast<sockaddr *>(dest_addr));
 }
