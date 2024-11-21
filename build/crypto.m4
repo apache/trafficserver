@@ -450,3 +450,32 @@ AC_DEFUN([TS_CHECK_VERIFY_CERT_STORE], [
 
   AC_SUBST(has_verify_cert_store)
 ])
+
+AC_DEFUN([TS_CHECK_BIO_GET_EX_NEW_INDEX], [
+  _saved_LIBS=$LIBS
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  bio_get_ex_new_index_check=no
+  has_verify_cert_store=0
+  AC_MSG_CHECKING([for BIO_get_ex_new_index  macro])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
+                     [[
+                     #ifndef BIO_get_ex_new_index
+                     #error
+                     #endif
+                     ]])
+    ],
+    [
+      bio_get_ex_new_index_check=yes
+      have_bio_get_ex_new_index=1
+    ],
+    []
+  )
+  AC_MSG_RESULT([$bio_get_ex_new_index_check])
+
+  LIBS=$_saved_LIBS
+
+
+  AC_SUBST(have_bio_get_ex_new_index)
+])

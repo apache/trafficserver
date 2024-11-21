@@ -1354,7 +1354,11 @@ AC_CHECK_FUNCS([ \
   SHA256_Init \
   MD5_Init \
   SSL_SESSION_dup \
+  BIO_get_ex_data \
+  BIO_set_ex_data \
 ])
+
+TS_CHECK_BIO_GET_EX_NEW_INDEX
 
 AC_CHECK_FUNC([ASN1_STRING_get0_data], [],
               [AC_DEFINE([ASN1_STRING_get0_data], [ASN1_STRING_data], [Added in OpenSSL 1.1])])
