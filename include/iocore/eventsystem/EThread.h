@@ -701,11 +701,13 @@ EThread::Metrics::decay() -> self_type &
 inline int
 EThread::get_numa_node()
 {
+#if TS_USE_NUMA
   if (this->numa_node == -1) {
     unsigned int cpu, node;
     getcpu(&cpu, &node);
     this->numa_node = node;
   }
+#endif
   return this->numa_node;
 }
 

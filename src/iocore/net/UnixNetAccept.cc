@@ -244,9 +244,13 @@ void
 NetAccept::init_accept(EThread *t)
 {
   if (!t) {
+#if TS_USE_NUMA
     unsigned int cpu = 0, node = 0;
     getcpu(&cpu, &node);
     t = eventProcessor.assign_thread(ET_NET, node);
+#else
+    t = eventProcessor.assign_thread(ET_NET, -1);
+#endif
   }
 
   if (!action_->continuation->mutex) {
