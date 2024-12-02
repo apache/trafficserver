@@ -93,7 +93,6 @@ class IPCSocketServer : public BaseCommInterface
 
 public:
   IPCSocketServer() = default;
-  virtual ~IPCSocketServer() override;
 
   /// Configure the  local socket.
   bool configure(YAML::Node const &params) override;

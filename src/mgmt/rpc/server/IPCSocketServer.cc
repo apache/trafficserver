@@ -124,11 +124,6 @@ get_peereid(int fd, uid_t *euid, gid_t *egid)
 
 namespace rpc::comm
 {
-IPCSocketServer::~IPCSocketServer()
-{
-  unlink(_conf.sockPathName.c_str());
-}
-
 bool
 IPCSocketServer::configure(YAML::Node const &params)
 {
