@@ -1835,15 +1835,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     sleep(1);
   }
 
-  if (command_valid && commands[command_index].preinit) {
-    int cmd_ret = cmd_mode();
-    if (cmd_ret >= 0) {
-      ::exit(0); // everything is OK
-    } else {
-      ::exit(1); // in error
-    }
-  }
-
   ink_freelist_init_ops(cmd_disable_freelist, cmd_disable_pfreelist);
 
 #if TS_HAS_TESTS
@@ -1879,6 +1870,15 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Still needed despite the set_std{err,out}_output() calls later since there are
   // fprintf's before those calls
   bind_outputs(bind_stdout, bind_stderr);
+
+  if (command_valid && commands[command_index].preinit) {
+    int cmd_ret = cmd_mode();
+    if (cmd_ret >= 0) {
+      ::exit(0); // everything is OK
+    } else {
+      ::exit(1); // in error
+    }
+  }
 
   // Records init
   initialize_records();
