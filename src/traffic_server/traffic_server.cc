@@ -30,6 +30,7 @@
 
  ****************************************************************************/
 
+#include "tscore/TSSystemState.h"
 #include "tscore/Version.h"
 #include "swoc/swoc_file.h"
 
@@ -1033,6 +1034,9 @@ enum class plugin_type_t {
 bool
 try_loading_plugin(plugin_type_t plugin_type, const fs::path &plugin_path, std::string &error)
 {
+  // At least one plugin checks this during plugin unload, so act like the event system is shutdown
+  TSSystemState::shut_down_event_system();
+
   switch (plugin_type) {
   case plugin_type_t::GLOBAL: {
     void      *handle        = nullptr;
@@ -1139,15 +1143,16 @@ const struct CMD {
   const char *h; // help string (multi-line)
   int (*f)(char *);
   bool no_process_lock; /// If set this command doesn't need a process level lock.
+  bool preinit = false;
 } commands[] = {
-  {"list",                 "List cache configuration",
+  {"list", "List cache configuration",
    "LIST\n"
    "\n"
    "FORMAT: list\n"
    "\n"
    "List the sizes of the Host Database and Cache Index,\n"
-   "and the storage available to the cache.\n",                        cmd_list,                 false},
-  {"check",                "Check the cache (do not make any changes)",
+   "and the storage available to the cache.\n", cmd_list, false},
+  {"check", "Check the cache (do not make any changes)",
    "CHECK\n"
    "\n"
    "FORMAT: check\n"
@@ -1155,51 +1160,51 @@ const struct CMD {
    "Check the cache for inconsistencies or corruption.\n"
    "CHECK does not make any changes to the data stored in\n"
    "the cache. CHECK requires a scan of the contents of the\n"
-   "cache and may take a long time for large caches.\n",               cmd_check,                true },
-  {"clear",                "Clear the entire cache",
+   "cache and may take a long time for large caches.\n", cmd_check, true},
+  {"clear", "Clear the entire cache",
    "CLEAR\n"
    "\n"
    "FORMAT: clear\n"
    "\n"
    "Clear the entire cache.  All data in the cache is\n"
    "lost and the cache is reconfigured based on the current\n"
-   "description of database sizes and available storage.\n",           cmd_clear,                false},
-  {"clear_cache",          "Clear the document cache",
+   "description of database sizes and available storage.\n", cmd_clear, false},
+  {"clear_cache", "Clear the document cache",
    "CLEAR_CACHE\n"
    "\n"
    "FORMAT: clear_cache\n"
    "\n"
    "Clear the document cache.  All documents in the cache are\n"
    "lost and the cache is reconfigured based on the current\n"
-   "description of database sizes and available storage.\n",           cmd_clear,                false},
-  {"clear_hostdb",         "Clear the hostdb cache",
+   "description of database sizes and available storage.\n", cmd_clear, false},
+  {"clear_hostdb", "Clear the hostdb cache",
    "CLEAR_HOSTDB\n"
    "\n"
    "FORMAT: clear_hostdb\n"
    "\n"
    "Clear the entire hostdb cache.  All host name resolution\n"
-   "information is lost.\n",                                           cmd_clear,                false},
-  {CMD_VERIFY_CONFIG,      "Verify the config",
+   "information is lost.\n", cmd_clear, false},
+  {CMD_VERIFY_CONFIG, "Verify the config",
    "\n"
    "\n"
    "FORMAT: verify_config\n"
    "\n"
-   "Load the config and verify traffic_server comes up correctly. \n", cmd_verify,               true },
+   "Load the config and verify traffic_server comes up correctly. \n", cmd_verify, true},
   {"verify_global_plugin", "Verify a global plugin's shared object file",
    "VERIFY_GLOBAL_PLUGIN\n"
    "\n"
    "FORMAT: verify_global_plugin [global_plugin_so_file]\n"
    "\n"
    "Load a global plugin's shared object file and verify it meets\n"
-   "minimal plugin API requirements. \n",                              cmd_verify_global_plugin, true },
-  {"verify_remap_plugin",  "Verify a remap plugin's shared object file",
+   "minimal plugin API requirements. \n", cmd_verify_global_plugin, true, true},
+  {"verify_remap_plugin", "Verify a remap plugin's shared object file",
    "VERIFY_REMAP_PLUGIN\n"
    "\n"
    "FORMAT: verify_remap_plugin [remap_plugin_so_file]\n"
    "\n"
    "Load a remap plugin's shared object file and verify it meets\n"
-   "minimal plugin API requirements. \n",                              cmd_verify_remap_plugin,  true },
-  {"help",                 "Obtain a short description of a command (e.g. 'help clear')",
+   "minimal plugin API requirements. \n", cmd_verify_remap_plugin, true, true},
+  {"help", "Obtain a short description of a command (e.g. 'help clear')",
    "HELP\n"
    "\n"
    "FORMAT: help [command_name]\n"
@@ -1207,7 +1212,7 @@ const struct CMD {
    "EXAMPLES: help help\n"
    "          help commit\n"
    "\n"
-   "Provide a short description of a command (like this).\n",          cmd_help,                 false},
+   "Provide a short description of a command (like this).\n", cmd_help, false},
 };
 
 int
@@ -1828,6 +1833,15 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   //
   while (cmd_block) {
     sleep(1);
+  }
+
+  if (command_valid && commands[command_index].preinit) {
+    int cmd_ret = cmd_mode();
+    if (cmd_ret >= 0) {
+      ::exit(0); // everything is OK
+    } else {
+      ::exit(1); // in error
+    }
   }
 
   ink_freelist_init_ops(cmd_disable_freelist, cmd_disable_pfreelist);
