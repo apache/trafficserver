@@ -30,6 +30,9 @@
 
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_defs.h"
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <sched.h>
 #if TS_USE_HWLOC
 #include <hwloc.h>

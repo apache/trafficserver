@@ -267,7 +267,7 @@ QUICPacketHandlerIn::_recv_packet(int /* event ATS_UNUSED */, UDPPacket *udp_pac
     Connection con;
     con.setRemote(&udp_packet->from.sa);
 
-    eth                           = eventProcessor.assign_thread(ET_NET);
+    eth                           = eventProcessor.assign_thread(ET_NET, -1);
     QUICConnectionId original_cid = {dcid, static_cast<uint8_t>(dcid_len)};
     QUICConnectionId peer_cid     = {scid, static_cast<uint8_t>(scid_len)};
 
