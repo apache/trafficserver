@@ -658,6 +658,7 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
     thread_index             = n_dthreads;
     ++n_dthreads; // Be very sure this is after the array element update.
   }
+  (void)thread_index;
 
 #if TS_USE_HWLOC // TODO: allow configuring affinity for dthreads?
   auto        n_objs = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_NODE);
