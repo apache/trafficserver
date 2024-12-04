@@ -46,8 +46,7 @@
 
 namespace
 {
-constexpr size_t MAX_REQUEST_BUFFER_SIZE{32000};
-DbgCtl           dbg_ctl{"rpc.net"};
+DbgCtl dbg_ctl{"rpc.net"};
 
 // Quick check for errors(base on the errno);
 bool check_for_transient_errors();
