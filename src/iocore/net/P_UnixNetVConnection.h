@@ -188,6 +188,9 @@ public:
     return this->control_flags;
   }
 
+  void handle_linux_splice_for_net_read_io(NetHandler *nh, NetState *s, MIOBufferAccessor &buf, int64_t ntodo, MutexTryLock &lock,
+                                           bool &handled);
+
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
   void            readDisable(NetHandler *nh);
   void            readSignalError(NetHandler *nh, int err);

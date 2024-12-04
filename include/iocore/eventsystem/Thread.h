@@ -134,6 +134,9 @@ public:
   ProxyAllocator ioDataAllocator;
   ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
+#if TS_USE_LINUX_SPLICE
+  ProxyAllocator pipeIOAllocator;
+#endif
   ProxyAllocator preWarmSMAllocator;
   // From InkAPI (plugins wrappers)
   ProxyAllocator apiHookAllocator;

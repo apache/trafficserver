@@ -90,6 +90,11 @@ public:
   int sendto(void const *buf, int size, int flags, struct sockaddr const *to, int tolen) const;
   int sendmsg(struct msghdr const *m, int flags) const;
 
+#if TS_USE_LINUX_SPLICE
+  int splice_from(int pipe_fd, size_t len, int flags = 0) const;
+  int splice_to(int pipe_fd, size_t len, int flags = 0) const;
+#endif
+
   static int poll(struct pollfd *fds, unsigned long nfds, int timeout);
 
   int getsockname(struct sockaddr *sa, socklen_t *sz) const;
@@ -250,6 +255,41 @@ UnixSocket::sendmsg(struct msghdr const *m, int flags) const
   } while (r == -EINTR);
   return r;
 }
+
+#if TS_USE_LINUX_SPLICE
+// In non-blocking mode, there are following possible return values for raw splice(2) calls:
+// 1. return value > 0: number of bytes transferred
+// 2. return value == 0: End of input.
+// If the input file descriptor refers to a pipe, the write end of the pipe is closed but the read end is not.
+// If the input file descriptor refers to a socket, the socket is shut down.
+// 3. return value == -1 and errno == EAGAIN: No data available
+// 4. return value == -1 and errno == EINTR: Interrupted by signal
+// 5. return value == -1 and other errno: Error
+
+inline int
+UnixSocket::splice_from(int pipe_fd, size_t len, int flags) const
+{
+  int r;
+  do {
+    if (unlikely((r = ::splice(pipe_fd, nullptr, this->fd, nullptr, len, flags)) < 0)) {
+      r = -errno;
+    }
+  } while (r == -EINTR);
+  return r;
+}
+
+inline int
+UnixSocket::splice_to(int pipe_fd, size_t len, int flags) const
+{
+  int r;
+  do {
+    if (unlikely((r = ::splice(this->fd, nullptr, pipe_fd, nullptr, len, flags)) < 0)) {
+      r = -errno;
+    }
+  } while (r == -EINTR);
+  return r;
+}
+#endif
 
 inline int
 UnixSocket::poll(struct pollfd *fds, unsigned long nfds, int timeout)

@@ -429,6 +429,21 @@ list(APPEND CMAKE_REQUIRED_LIBRARIES pthread)
 check_symbol_exists(pthread_getname_np pthread.h HAVE_PTHREAD_GETNAME_NP)
 check_symbol_exists(pthread_get_name_np pthread.h HAVE_PTHREAD_GET_NAME_NP)
 
+option(USE_SPLICE "Enable the use of splice(2) for zero copy (default OFF) (linux only)" OFF)
+
+# Check for the splice function
+include(CheckFunctionExists)
+check_function_exists(splice HAVE_SPLICE)
+
+# Configure USE_SPLICE based on both availability and user option
+if(HAVE_SPLICE AND USE_SPLICE)
+  message(STATUS "splice is available and enabled.")
+  set(TS_USE_LINUX_SPLICE 1) # Use ON for true
+else()
+  message(STATUS "splice is either not available or disabled by the user.")
+  set(TS_USE_LINUX_SPLICE 0) # Use OFF for false
+endif()
+
 check_source_compiles(
   C "#include <pthread.h>
   void main() { pthread_setname_np(\"name\"); }" HAVE_PTHREAD_SETNAME_NP_1

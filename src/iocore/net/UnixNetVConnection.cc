@@ -508,6 +508,13 @@ UnixNetVConnection::net_read_io(NetHandler *nh)
     read_disable(nh, this);
     return;
   }
+#if TS_USE_LINUX_SPLICE
+  bool handled = false;
+  this->handle_linux_splice_for_net_read_io(nh, s, buf, ntodo, lock, handled);
+  if (handled) {
+    return;
+  }
+#endif
   int64_t toread = buf.writer()->write_avail();
   if (toread > ntodo) {
     toread = ntodo;
@@ -627,6 +634,85 @@ UnixNetVConnection::net_read_io(NetHandler *nh)
   }
 
   read_reschedule(nh, this);
+}
+
+void
+UnixNetVConnection::handle_linux_splice_for_net_read_io(NetHandler *nh, NetState *s, MIOBufferAccessor &buf, int64_t ntodo,
+                                                        MutexTryLock &lock, bool &handled)
+{
+  int64_t       r           = 0;
+  PipeIOBuffer *pipe_buffer = dynamic_cast<PipeIOBuffer *>(buf.writer());
+  if (pipe_buffer) {
+    handled = true;
+    // Use splice_to to transfer data from socket directly to pipe with SPLICE_F_MORE hint
+    int64_t to_splice = std::min(ntodo, pipe_buffer->write_avail());
+    if (to_splice > 0) {
+      r = con.sock.splice_to(pipe_buffer->fd[1], to_splice, SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+
+      if (r <= 0) {
+        // Temporary Unavailable, Non-Blocking I/O
+        if (r == -EAGAIN || r == -ENOTCONN) {
+          Metrics::Counter::increment(net_rsb.calls_to_read_nodata);
+          this->read.triggered = 0;
+          nh->read_ready_list.remove(this);
+          return;
+        }
+        // End of stream detected if splice returns 0
+        if (!r || r == -ECONNRESET) {
+          this->read.triggered = 0;
+          nh->read_ready_list.remove(this);
+          read_signal_done(VC_EVENT_EOS, nh, this);
+          return;
+        }
+        // For other errors, signal error
+        this->read.triggered = 0;
+        read_signal_error(nh, this, static_cast<int>(-r)); // pass the negative errno to signal error
+        return;
+      }
+      Metrics::Counter::increment(net_rsb.read_bytes, r);
+      Metrics::Counter::increment(net_rsb.read_bytes_count);
+
+      // Successfully spliced data from socket to pipe
+      pipe_buffer->fill(r);
+      s->vio.ndone += r;
+      this->netActivity();
+    } else {
+      r = 0;
+    }
+
+    // Signal read ready, check if user is not done
+    if (r) {
+      // If there are no more bytes to read, signal read complete
+      ink_assert(ntodo >= 0);
+      if (s->vio.ntodo() <= 0) {
+        read_signal_done(VC_EVENT_READ_COMPLETE, nh, this);
+        return;
+      } else {
+        if (read_signal_and_update(VC_EVENT_READ_READY, this) != EVENT_CONT) {
+          return;
+        }
+
+        // change of lock... don't look at shared variables!
+        if (lock.get_mutex() != s->vio.mutex.get()) {
+          read_reschedule(nh, this);
+          return;
+        }
+      }
+    }
+
+    // If here are is no more room, or nothing to do, disable the connection
+    if (s->vio.ntodo() <= 0 || !s->enabled || !pipe_buffer->write_avail()) {
+      read_disable(nh, this);
+      return;
+    }
+
+    // We should only splice once to the pipe until the pipe is cleared by consumer
+    // Linux splice() does not merge pipe buffer page so there is no guarantee that
+    // we can splice to pipe again without receiving EAGAIN from pipe even if data_in_pipe < pipe_capacity
+    // Disable read until consumer finish a successful splice from pipe to socket operation and the pipe is empty
+    read_disable(nh, this);
+    return;
+  }
 }
 
 //
@@ -810,6 +896,12 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
     int e = 0;
     if (!signalled || (s->vio.ntodo() > 0 && !buf.writer()->high_water())) {
       e = VC_EVENT_WRITE_READY;
+#if TS_USE_LINUX_SPLICE
+      PipeIOBufferReader *pipe_reader = dynamic_cast<PipeIOBufferReader *>(buf.reader());
+      if (pipe_reader && pipe_reader->read_avail() > 0) {
+        e = 0;
+      }
+#endif
     } else if (wbe_event != this->write_buffer_empty_event) {
       // @a signalled means we won't send an event, and the event values differing means we
       // had a write buffer trap and cleared it, so we need to send it now.
@@ -852,7 +944,29 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
 int64_t
 UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs)
 {
-  int64_t         r            = 0;
+  int64_t r = 0;
+#if TS_USE_LINUX_SPLICE
+  // Check if buf.reader() is a PipeIOBufferReader
+  PipeIOBufferReader *pipe_reader = dynamic_cast<PipeIOBufferReader *>(buf.reader());
+  if (pipe_reader) {
+    // Use splice_from to write directly from the pipe to the socket
+    // if the reader is a PipeIOBufferReader, then the buffer must be a PipeIOBuffer (derived from MIOBuffer)
+    PipeIOBuffer *pipe_buffer = static_cast<PipeIOBuffer *>(pipe_reader->mbuf);
+    int64_t       to_splice   = std::min(towrite, pipe_reader->read_avail());
+    if (to_splice > 0) {
+      r = con.sock.splice_from(pipe_buffer->fd[0], to_splice, SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+      if (r > 0) {
+        pipe_buffer->consume(r);
+        total_written += r;
+      }
+    }
+
+    needs |= EVENTIO_WRITE;
+
+    return r;
+  }
+#endif
+  // Fallback to sendmsg for non-PipeIOBufferReaders
   int64_t         try_to_write = 0;
   IOBufferReader *tmp_reader   = buf.reader()->clone();
 

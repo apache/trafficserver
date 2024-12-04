@@ -39,6 +39,7 @@
 #include "P_Thread.h"
 #include "P_VIO.h"
 #include "P_IOBuffer.h"
+#include "P_PipeIOBuffer.h"
 #include "P_VConnection.h"
 #include "P_UnixEvent.h"
 #include "P_UnixEThread.h"

@@ -7274,6 +7274,32 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
   //  header buffer into new buffer
   client_request_body_bytes += from_ua_buf->write(_ua.get_txn()->get_remote_reader());
 
+#if TS_USE_LINUX_SPLICE
+  MIOBuffer *from_ua_pipe_buf = new_PipeIOBuffer(BUFFER_SIZE_INDEX_32K);
+  MIOBuffer *to_ua_pipe_buf   = new_PipeIOBuffer(BUFFER_SIZE_INDEX_32K);
+  // copy the data from from_ua_buf to from_ua_pipe_buf
+  int64_t avail;
+  if (r_from && (avail = r_from->read_avail()) > 0) {
+    char buffer[avail];
+    r_from->read(buffer, avail);
+    from_ua_pipe_buf->write(buffer, avail);
+  }
+  // copy the data from to_ua_buf to to_ua_pipe_buf
+  if (r_to && (avail = r_to->read_avail()) > 0) {
+    char buffer[avail];
+    r_to->read(buffer, avail);
+    to_ua_pipe_buf->write(buffer, avail);
+  }
+  // release old buffers and readers
+  free_MIOBuffer(from_ua_buf);
+  free_MIOBuffer(to_ua_buf);
+  // reassign the buffers and readers
+  from_ua_buf = from_ua_pipe_buf;
+  to_ua_buf   = to_ua_pipe_buf;
+  r_from      = from_ua_pipe_buf->alloc_reader();
+  r_to        = to_ua_buf->alloc_reader();
+#endif
+
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
   this->do_transform_open();

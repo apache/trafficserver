@@ -656,9 +656,7 @@ new_MIOBuffer_internal(const char *location, int64_t size_index)
 TS_INLINE void
 free_MIOBuffer(MIOBuffer *mio)
 {
-  mio->_writer = nullptr;
-  mio->dealloc_all_readers();
-  THREAD_FREE(mio, ioAllocator, this_thread());
+  mio->free();
 }
 
 TS_INLINE MIOBuffer *
