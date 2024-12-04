@@ -990,7 +990,7 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Aget: Mozilla/5.0\r\nAccept: */
 :ref:`TOP <admin-plugins-ts-lua>`
 
 ts.client_request.get_header_block
------------------------------
+----------------------------------
 **syntax:** *ts.client_request.get_header_block()*
 
 **context:** do_remap/do_os_response or do_global_* or later
