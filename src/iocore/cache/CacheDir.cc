@@ -434,7 +434,7 @@ freelist_clean(int s, Stripe *stripe)
   if (stripe->header->freelist[s]) {
     return;
   }
-  Warning("cache directory overflow on '%s' segment %d, purging...", stripe->path, s);
+  Warning("cache directory overflow on '%s' segment %d, purging...", stripe->disk->path, s);
   int  n   = 0;
   Dir *seg = stripe->dir_segment(s);
   for (int bi = 0; bi < stripe->buckets; bi++) {

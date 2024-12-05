@@ -85,8 +85,7 @@ struct StripeInitInfo {
 //
 
 Stripe::Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size, int fragment_size)
-  : path{ats_strdup(disk->path)},
-    fd{disk->fd},
+  : fd{disk->fd},
     frag_size{fragment_size},
     skip{ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip))},
     start{skip},
