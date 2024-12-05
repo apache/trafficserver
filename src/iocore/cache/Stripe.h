@@ -85,7 +85,6 @@ class Stripe
 {
 public:
   ats_scoped_str hash_text;
-  char          *path = nullptr;
   int            fd{-1};
   int            frag_size{-1};
 
@@ -101,8 +100,8 @@ public:
   off_t                len{};
   off_t                data_blocks{};
 
-  CacheDisk *disk{};
-  uint32_t   sector_size{};
+  CacheDisk *const disk{};
+  uint32_t         sector_size{};
 
   CacheVol *cache_vol{};
 

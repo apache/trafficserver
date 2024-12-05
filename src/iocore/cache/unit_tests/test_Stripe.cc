@@ -193,7 +193,6 @@ TEST_CASE("The behavior of StripeSM::add_writer.")
   }
 
   ats_free(stripe.raw_dir);
-  ats_free(stripe.path);
 }
 
 // This test case demonstrates how to set up a StripeSM and make
@@ -304,7 +303,6 @@ TEST_CASE("aggWrite behavior with f.evacuator unset")
   }
 
   ats_free(stripe.raw_dir);
-  ats_free(stripe.path);
 }
 
 // When f.evacuator is set, vc.buf must contain a Doc object including headers
@@ -403,5 +401,4 @@ TEST_CASE("aggWrite behavior with f.evacuator set")
 
   delete[] source;
   ats_free(stripe.raw_dir);
-  ats_free(stripe.path);
 }
