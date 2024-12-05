@@ -154,7 +154,7 @@ StripeSM::clear_dir()
   size_t dir_len = this->dirlen();
   this->_clear_init();
 
-  if (pwrite(this->fd, this->raw_dir, dir_len, this->skip) < 0) {
+  if (pwrite(this->disk->fd, this->raw_dir, dir_len, this->skip) < 0) {
     Warning("unable to clear cache directory '%s'", this->hash_text.get());
     return -1;
   }
@@ -192,7 +192,7 @@ StripeSM::init(bool clear)
 
   for (unsigned i = 0; i < countof(init_info->vol_aio); i++) {
     AIOCallback *aio      = &(init_info->vol_aio[i]);
-    aio->aiocb.aio_fildes = fd;
+    aio->aiocb.aio_fildes = disk->fd;
     aio->aiocb.aio_buf    = &(init_info->vol_h_f[i * STORE_BLOCK_SIZE]);
     aio->aiocb.aio_nbytes = footerlen;
     aio->action           = this;
@@ -214,7 +214,7 @@ StripeSM::handle_dir_clear(int event, void *data)
     if (!op->ok()) {
       Warning("unable to clear cache directory '%s'", hash_text.get());
       disk->incrErrors(op);
-      fd = -1;
+      disk->fd = -1;
     }
 
     if (op->aiocb.aio_nbytes == dir_len) {

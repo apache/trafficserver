@@ -109,7 +109,7 @@ attach_tmpfile_to_stripe(StripeSM &stripe)
   REQUIRE(file != nullptr);
   int fd{fileno(file)};
   REQUIRE(fd != -1);
-  stripe.fd = fd;
+  stripe.disk->fd = fd;
   return file;
 }
 
