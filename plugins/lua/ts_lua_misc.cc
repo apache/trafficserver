@@ -32,6 +32,7 @@ static int ts_lua_note(lua_State *L);
 static int ts_lua_warning(lua_State *L);
 static int ts_lua_alert(lua_State *L);
 static int ts_lua_sleep(lua_State *L);
+static int ts_lua_sleep_ms(lua_State *L);
 static int ts_lua_host_lookup(lua_State *L);
 static int ts_lua_schedule(lua_State *L);
 static int ts_lua_get_install_dir(lua_State *L);
@@ -102,6 +103,10 @@ ts_lua_inject_misc_api(lua_State *L)
   /* ts.sleep(...) */
   lua_pushcfunction(L, ts_lua_sleep);
   lua_setfield(L, -2, "sleep");
+
+  /* ts.sleep_ms(...) */
+  lua_pushcfunction(L, ts_lua_sleep_ms);
+  lua_setfield(L, -2, "sleep_ms");
 
   /* ts.schedule(...) */
   lua_pushcfunction(L, ts_lua_schedule);
@@ -392,6 +397,36 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
 
 done:
   return 0;
+}
+
+static int
+ts_lua_sleep_ms(lua_State *L)
+{
+  int                msec;
+  TSAction           action;
+  TSCont             contp;
+  ts_lua_async_item *ai;
+  ts_lua_cont_info  *ci;
+
+  ci = ts_lua_get_cont_info(L);
+  if (ci == nullptr) {
+    TSError("[ts_lua][%s] no cont info found", __FUNCTION__);
+    TSReleaseAssert(!"Unexpected fetch of cont info");
+    return 0;
+  }
+
+  msec = luaL_checknumber(L, 1);
+  if (msec < 1) {
+    msec = 1;
+  }
+
+  contp  = TSContCreate(ts_lua_sleep_handler, ci->mutex);
+  action = TSContScheduleOnPool(contp, msec, TS_THREAD_POOL_NET);
+
+  ai = ts_lua_async_create_item(contp, ts_lua_sleep_cleanup, (void *)action, ci);
+  TSContDataSet(contp, ai);
+
+  return lua_yield(L, 0);
 }
 
 static int
