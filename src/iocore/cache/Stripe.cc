@@ -85,24 +85,22 @@ struct StripeInitInfo {
 //
 
 Stripe::Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size, int fragment_size)
-  : fd{disk->fd},
-    frag_size{fragment_size},
+  : frag_size{fragment_size},
     skip{ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip))},
     start{skip},
-    len{blocks * STORE_BLOCK_SIZE},
-    disk{disk}
+    len{blocks * STORE_BLOCK_SIZE}
 {
   ink_assert(this->len < MAX_STRIPE_SIZE);
 
-  this->_init_hash_text(disk->path, blocks, dir_skip);
+  this->_init_hash_text(disk, blocks, dir_skip);
   this->_init_data(STORE_BLOCK_SIZE, avg_obj_size);
   this->_init_directory(this->dirlen(), this->headerlen(), DIRECTORY_FOOTER_SIZE);
 }
 
 void
-Stripe::_init_hash_text(char const *seed, off_t blocks, off_t dir_skip)
+Stripe::_init_hash_text(CacheDisk const *disk, off_t blocks, off_t dir_skip)
 {
-  char const  *seed_str       = this->disk->hash_base_string ? this->disk->hash_base_string : seed;
+  char const  *seed_str       = disk->hash_base_string ? disk->hash_base_string : disk->path;
   const size_t hash_seed_size = strlen(seed_str);
   const size_t hash_text_size = hash_seed_size + 32;
 
@@ -323,7 +321,7 @@ Stripe::dir_check()
 }
 
 void
-Stripe::_clear_init()
+Stripe::_clear_init(std::uint32_t hw_sector_size)
 {
   size_t dir_len = this->dirlen();
   memset(this->raw_dir, 0, dir_len);
@@ -337,7 +335,7 @@ Stripe::_clear_init()
   this->header->cycle                                              = 0;
   this->header->create_time                                        = time(nullptr);
   this->header->dirty                                              = 0;
-  this->sector_size = this->header->sector_size = this->disk->hw_sector_size;
+  this->sector_size = this->header->sector_size = hw_sector_size;
   *this->footer                                 = *this->header;
 }
 
@@ -359,12 +357,12 @@ Stripe::_init_dir()
 }
 
 bool
-Stripe::flush_aggregate_write_buffer()
+Stripe::flush_aggregate_write_buffer(int fd)
 {
   // set write limit
   this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
 
-  if (!this->_write_buffer.flush(this->fd, this->header->write_pos)) {
+  if (!this->_write_buffer.flush(fd, this->header->write_pos)) {
     return false;
   }
   this->header->last_write_pos  = this->header->write_pos;
