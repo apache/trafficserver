@@ -46,7 +46,8 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_COMPILE_WARNING_AS_ERROR": "OFF",
         "CMAKE_INSTALL_PREFIX": "/opt/ats",
-        "BUILD_EXPERIMENTAL_PLUGINS": "ON"
+        "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_VERIFY_PLUGINS": "OFF"
       }
     },
     {
