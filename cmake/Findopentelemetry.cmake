@@ -33,6 +33,8 @@ set(OTEL_LIBS
     opentelemetry_exporter_ostream_span
     opentelemetry_exporter_otlp_http
     opentelemetry_exporter_otlp_http_client
+    opentelemetry_exporter_otlp_http_log
+    opentelemetry_exporter_otlp_http_metric
     opentelemetry_http_client_curl
     opentelemetry_metrics
     opentelemetry_otlp_recordable
@@ -41,6 +43,8 @@ set(OTEL_LIBS
     opentelemetry_trace
     opentelemetry_version
     opentelemetry_common
+    opentelemetry_metrics
+    opentelemetry_logs
 )
 
 find_path(opentelemetry_INCLUDE_DIR NAMES opentelemetry/version.h)

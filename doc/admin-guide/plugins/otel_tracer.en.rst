@@ -50,28 +50,14 @@ Compiling the Plugin
 
 To compile this plugin, we need nlohmann-json, protobuf and opentelemetry-cpp
 
-nlohmann-json:
-
-::
-
-  cd
-  wget https://github.com/nlohmann/json/archive/refs/tags/v3.9.1.tar.gz
-  tar zxvf v3.9.1.tar.gz
-  cd json-3.9.1
-  mkdir build
-  cd build
-  cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON
-  make
-  make install
-
 protobuf:
 
 ::
 
   cd
-  wget https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.19.4.tar.gz
-  tar zxvf v3.19.4.tar.gz
-  cd protobuf-3.19.4
+  wget https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.21.12.tar.gz
+  tar zxvf v3.21.12.tar.gz
+  cd protobuf-3.21.12
   ./autogen.sh
   ./configure --enable-shared=no --enable-static=yes CXXFLAGS="-std=c++17 -fPIC" CFLAGS="-fPIC"
   make
@@ -82,12 +68,12 @@ opentelemetry-cpp
 ::
 
   cd
-  wget https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.3.0.tar.gz
-  tar zxvf v1.3.0.tar.gz
-  cd opentelemetry-cpp-1.3.0
+  wget https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.11.0.tar.gz
+  tar zxvf v1.11.0.tar.gz
+  cd opentelemetry-cpp-1.11.0
   mkdir build
   cd build
-  cmake .. -DBUILD_TESTING=OFF -DWITH_EXAMPLES=OFF -DWITH_JAEGER=OFF -DWITH_OTLP=ON -DWITH_OTLP_GRPC=OFF -DWITH_OTLP_HTTP=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON
+  cmake .. -DBUILD_TESTING=OFF -DWITH_EXAMPLES=OFF -DWITH_JAEGER=OFF -DWITH_OTLP_GRPC=OFF -DWITH_OTLP_HTTP=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DWITH_ABSEIL=OFF
   cmake --build . --target all
   cmake --install . --config Debug --prefix /usr/local/
 
@@ -112,3 +98,15 @@ This is the service name that will be sent as part of the information to the OTL
 * ``-r=[sampling rate]`` (default: ``1.0``)
 
 The value can be between 0.0 to 1.0. It controls the sampling rate of the trace information.
+
+* ``-q=[queue size]`` (default: ``25``)
+
+The size of the batch processor queue.
+
+* ``-d=[delay]`` (default: ``3000``)
+
+The time interval between two consecutive exports in milliseconds.
+
+* ``-b=[batch size]`` (default: ``10``)
+
+The maximum batch size of every export. Should be smaller than queue size.
