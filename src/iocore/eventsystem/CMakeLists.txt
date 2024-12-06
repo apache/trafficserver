@@ -50,6 +50,10 @@ if(TS_USE_HWLOC)
   target_link_libraries(inkevent PRIVATE hwloc::hwloc)
 endif()
 
+if(TS_USE_NUMA)
+  target_link_libraries(inkevent PRIVATE numa::numa)
+endif()
+
 if(BUILD_TESTING)
   add_executable(test_EventSystem unit_tests/test_EventSystem.cc)
   target_link_libraries(test_EventSystem ts::inkevent catch2::catch2)

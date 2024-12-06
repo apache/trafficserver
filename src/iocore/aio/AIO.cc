@@ -251,6 +251,7 @@ struct AIOThreadInfo : public Continuation {
   {
     (void)event;
     (void)e;
+#if !TS_USE_NUMA // When using numa awareness, we no longer want interleaved allocations
 #if TS_USE_HWLOC
 #if HWLOC_API_VERSION >= 0x20000
     hwloc_set_membind(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_INTERLEAVE,
@@ -260,6 +261,8 @@ struct AIOThreadInfo : public Continuation {
                               HWLOC_MEMBIND_THREAD);
 #endif
 #endif
+#endif
+
     aio_thread_main(this);
     delete this;
     return EVENT_DONE;
