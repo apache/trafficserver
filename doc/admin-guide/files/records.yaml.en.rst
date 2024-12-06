@@ -3879,7 +3879,7 @@ SSL Termination
   Setting a value less than or equal to ``0`` effectively disables
   SSL session cache for the origin server.
 
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.enabled INT 2
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.value INT 2
 
    Enables the SSL session cache:
 
@@ -3899,7 +3899,7 @@ SSL Termination
   entries in seconds. If it is ``0``, then the SSL library will use
   a default value, typically 300 seconds. Note: This option has no affect
   when using the |TS| session cache (option ``2`` in
-  ``proxy.config.ssl.session_cache.enabled``)
+  ``proxy.config.ssl.session_cache.value``)
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -3941,9 +3941,9 @@ SSL Termination
   Take into account that setting the value to 0 will disable session caching for TLSv1.3
   connections.
 
-  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.enabled`` is enabled because
+  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache.value`` is enabled because
   otherwise for every new TLSv1.3 connection two session IDs will be inserted in the session cache.
-  On the other hand, if ``proxy.config.ssl.session_cache.enabled``  is disabled, using the default value is recommended.
+  On the other hand, if ``proxy.config.ssl.session_cache.value``  is disabled, using the default value is recommended.
   In those scenarios, increasing the number of tickets could be potentially beneficial for clients performing
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 
