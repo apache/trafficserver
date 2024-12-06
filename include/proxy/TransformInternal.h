@@ -31,6 +31,7 @@ class TransformTerminus : public VConnection
 {
 public:
   TransformTerminus(TransformVConnection *tvc);
+  ~TransformTerminus() override;
 
   int handle_event(int event, void *edata);
 
@@ -49,6 +50,12 @@ public:
   int                   m_deletable;
   int                   m_closed;
   int                   m_called_user;
+
+private:
+  Event *_read_event     = nullptr;
+  bool   _read_disabled  = false;
+  Event *_write_event    = nullptr;
+  bool   _write_disabled = false;
 };
 
 class TransformVConnection : public TransformVCChain
