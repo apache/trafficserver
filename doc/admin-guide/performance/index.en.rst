@@ -528,7 +528,7 @@ SSL-Specific Options
 ~~~~~~~~~~~~~~~~~~~~
 
 :ts:cv:`proxy.config.ssl.max_record_size`
-:ts:cv:`proxy.config.ssl.session_cache.enabled`
+:ts:cv:`proxy.config.ssl.session_cache.value`
 :ts:cv:`proxy.config.ssl.session_cache.size`
 
 Thread Types
