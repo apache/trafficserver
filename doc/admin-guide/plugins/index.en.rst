@@ -52,7 +52,6 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Cache Range Requests <cache_range_requests.en>
    Combo Handler <combo_handler.en>
    Configuration Remap <conf_remap.en>
-   Cookie Remap <cookie_remap.en>
    ESI <esi.en>
    Escalate <escalate.en>
    Compress <compress.en>
@@ -172,6 +171,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Cache Fill <cache_fill.en>
    Certifier <certifier.en>
    Cert Reporting Tool <cert_reporting_tool.en>
+   Cookie Remap <cookie_remap.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
    Header Frequency <header_freq.en>
@@ -207,6 +207,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Cert Reporting Tool <cert_reporting_tool.en>`
    Examines and logs information on loaded certificates.
+
+:doc:`Cookie Remap <cookie_remap.en>`
+   Makes decisions on destinations based on cookies.
 
 :doc:`FQ Pacing <fq_pacing.en>`
    FQ Pacing: Rate Limit TCP connections using Linux's Fair Queuing queue discipline
