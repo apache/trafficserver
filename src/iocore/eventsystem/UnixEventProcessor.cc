@@ -280,17 +280,6 @@ ThreadAffinityInitializer::init()
   Dbg(dbg_ctl_iocore_thread, "Affinity: %d %ss: %d PU: %d", affinity, obj_name, obj_count, ink_number_of_processors());
 }
 
-void
-set_mem_affinity_by_touch()
-{
-  // This does not work either
-  int err = hwloc_set_membind(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_FIRSTTOUCH,
-                              HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_BYNODESET | HWLOC_MEMBIND_STRICT);
-  if (err != 0) {
-    Error("hwloc_set_membind failed");
-  }
-}
-
 int
 ThreadAffinityInitializer::set_affinity(int, Event *)
 {

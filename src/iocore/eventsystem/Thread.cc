@@ -91,7 +91,7 @@ Thread::start(const char *name, void *stack, size_t stacksize, ThreadFunction co
   }
 
   ink_thread_create(&tid, spawn_thread_internal, p, 0, stacksize, stack
-#if TS_USE_HWLOC
+#if TS_USE_HWLOC && TS_USE_NUMA
                     ,
                     cpuset
 #endif
