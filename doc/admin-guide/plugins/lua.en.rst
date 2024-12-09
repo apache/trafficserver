@@ -3884,13 +3884,15 @@ We will get the response like this:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
-ts.sleep
---------
+ts.sleep or ts.sleep_ms
+-----------------------
 **syntax:** *ts.sleep(sec)*
+
+**syntax:** *ts.sleep_ms(msec)*
 
 **context:** *hook point functions added after do_remap*
 
-**description:** Sleeps for the specified seconds without blocking.
+**description:** Sleeps for the specified seconds (or milliseconds) without blocking.
 
 Behind the scene, this method makes use of the ATS event model.
 
