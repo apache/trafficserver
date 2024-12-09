@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#if TS_USE_NUMA
+
 #include "P_Cache.h"
 #include <array>
 #include <mutex>
@@ -314,3 +316,5 @@ RamCacheContainer::size() const
   }
   return result;
 }
+
+#endif

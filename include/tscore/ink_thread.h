@@ -30,13 +30,12 @@
 
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_defs.h"
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #include <sched.h>
 #if TS_USE_HWLOC
 #include <hwloc.h>
+#if USE_NUMA
 #include <hwloc/glibc-sched.h>
+#endif
 #include "tscore/ink_hw.h"
 #endif
 
@@ -110,7 +109,7 @@ using ink_timestruc = struct timespec;
 
 static inline void
 ink_thread_create(ink_thread *tid, void *(*f)(void *), void *a, int detached, size_t stacksize, void *stack
-#if TS_USE_HWLOC
+#if TS_USE_HWLOC && TS_USE_NUMA
                   ,
                   hwloc_cpuset_t cpuset = nullptr
 #endif
@@ -135,7 +134,7 @@ ink_thread_create(ink_thread *tid, void *(*f)(void *), void *a, int detached, si
     }
   }
 
-#if TS_USE_HWLOC
+#if TS_USE_HWLOC && TS_USE_NUMA
   if (cpuset) {
     size_t     schedset_sz = CPU_ALLOC_SIZE(ink_number_of_processors());
     cpu_set_t *schedset    = (cpu_set_t *)alloca(schedset_sz);
