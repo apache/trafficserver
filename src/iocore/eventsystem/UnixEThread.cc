@@ -38,6 +38,8 @@
 #include <sys/eventfd.h>
 #endif
 
+#include <typeinfo>
+
 struct AIOCallback;
 
 #define NO_HEARTBEAT                  -1
@@ -73,6 +75,7 @@ EThread::set_specific()
 {
   this_ethread_ptr = this;
   Thread::set_specific();
+  this->get_numa_node();
 }
 
 void

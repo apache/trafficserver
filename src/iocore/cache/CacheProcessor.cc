@@ -1440,14 +1440,24 @@ CacheProcessor::cacheInitialized()
     if (gnstripes) {
       // new ram_caches, with algorithm from the config
       for (int i = 0; i < gnstripes; i++) {
-        switch (cache_config_ram_cache_algorithm) {
-        default:
-        case RAM_CACHE_ALGORITHM_CLFUS:
-          gstripes[i]->ram_cache = new_RamCacheCLFUS();
-          break;
-        case RAM_CACHE_ALGORITHM_LRU:
-          gstripes[i]->ram_cache = new_RamCacheLRU();
-          break;
+#if TS_USE_NUMA
+        int cache_config_ram_cache_numa_duplicate = 0;
+        REC_ReadConfigInt32(cache_config_ram_cache_numa_duplicate, "proxy.config.cache.ram_cache.numa_duplicate");
+        bool use_container = cache_config_ram_cache_numa_duplicate > 0;
+        if (use_container) {
+          gstripes[i]->ram_cache = new_RamCacheContainer();
+        } else
+#endif
+        {
+          switch (cache_config_ram_cache_algorithm) {
+          default:
+          case RAM_CACHE_ALGORITHM_CLFUS:
+            gstripes[i]->ram_cache = new_RamCacheCLFUS();
+            break;
+          case RAM_CACHE_ALGORITHM_LRU:
+            gstripes[i]->ram_cache = new_RamCacheLRU();
+            break;
+          }
         }
       }
 
