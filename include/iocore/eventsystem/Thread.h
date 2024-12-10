@@ -144,7 +144,7 @@ public:
   ProxyAllocator criptContextAllocator;
 #endif
 
-#if TS_USE_HWLOC
+#if TS_USE_HWLOC && TS_USE_NUMA
   /**
    * Set the affinity used when starting the thread.
 
@@ -181,7 +181,7 @@ public:
 
 protected:
   Thread();
-#if TS_USE_HWLOC
+#if TS_USE_HWLOC && TS_USE_NUMA
   hwloc_cpuset_t cpuset = nullptr;
 #endif
 };
