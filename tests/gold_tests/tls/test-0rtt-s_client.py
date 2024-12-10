@@ -42,10 +42,15 @@ def main():
     else:
         sni_str = ''
 
+    if args.http_ver == 'h2':
+        alpn_str = '-alpn h2'
+    else:
+        alpn_str = ''
+
     s_client_cmd_1 = shlex.split(
-        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_out {sess_file_path} {sni_str}')
+        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_out {sess_file_path} {sni_str} {alpn_str}')
     s_client_cmd_2 = shlex.split(
-        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_in {sess_file_path} -early_data {early_data_file_path} {sni_str}'
+        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_in {sess_file_path} -early_data {early_data_file_path} {sni_str} {alpn_str}'
     )
 
     create_sess_proc = subprocess.Popen(

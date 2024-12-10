@@ -2390,6 +2390,7 @@ SSLNetVConnection::_ssl_accept()
           }
           block->fill(nread);
           this->_early_data_buf->append_block(block);
+          this->_increment_early_data_len(nread);
           Metrics::Counter::increment(ssl_rsb.early_data_received_count);
 
           if (dbg_ctl_ssl_early_data_show_received.on()) {
