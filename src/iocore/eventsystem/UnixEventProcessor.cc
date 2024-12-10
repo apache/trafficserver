@@ -66,7 +66,7 @@ public:
   /// whether HWLOC is enabled.
   void *alloc_stack(EThread *t, size_t stacksize);
 
-#if TS_USE_HWLOC
+#if TS_USE_HWLOC && TS_USE_NUMA
   hwloc_obj_type_t
   get_obj_type()
   {
@@ -517,7 +517,7 @@ EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t sta
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[%s %d]", tg->_name.c_str(), i);
     void *stack = Thread_Affinity_Initializer.alloc_stack(tg->_thread[i], stacksize);
 
-#if TS_USE_HWLOC
+#if TS_USE_HWLOC && TS_USE_NUMA
     hwloc_obj_t obj = hwloc_get_obj_by_type(ink_get_topology(), Thread_Affinity_Initializer.get_obj_type(),
                                             tg->_thread[i]->id % Thread_Affinity_Initializer.get_obj_count());
     tg->_thread[i]->set_start_affinity(obj->cpuset);
@@ -649,7 +649,7 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
   }
   (void)thread_index;
 
-#if TS_USE_HWLOC // TODO: allow configuring affinity for dthreads?
+#if TS_USE_HWLOC && TS_USE_NUMA // TODO: allow configuring affinity for dthreads?
   auto        n_objs = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_NODE);
   hwloc_obj_t obj    = hwloc_get_obj_by_type(ink_get_topology(), HWLOC_OBJ_NODE, thread_index % n_objs);
   e->ethread->set_start_affinity(obj->cpuset);

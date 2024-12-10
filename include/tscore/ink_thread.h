@@ -32,11 +32,10 @@
 #include "tscore/ink_defs.h"
 #include <sched.h>
 #if TS_USE_HWLOC
-#include <hwloc.h>
+#include "tscore/ink_hw.h"
 #if USE_NUMA
 #include <hwloc/glibc-sched.h>
 #endif
-#include "tscore/ink_hw.h"
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
