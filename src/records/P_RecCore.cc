@@ -33,6 +33,7 @@
 #include "records/RecYAMLDecoder.h"
 
 #include "swoc/bwf_std.h"
+#include "swoc/swoc_meta.h"
 
 #include <fstream>
 #include <iterator>
@@ -81,21 +82,47 @@ _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default
   REC_REGISTER_STAT_XXX(rec_counter, RECD_COUNTER);
 }
 
+template <typename T>
+static bool
+_ConsistencyCheck(T value, RecCheckT checkType, const char *pattern)
+{
+  if (checkType == RECC_NULL && pattern == nullptr) { // this well could be the case if no check is required.
+    return true;                                      // Ignore no check needed.
+  }
+
+  if constexpr (swoc::meta::is_any_of_v<T, RecString, RecStringConst>) {
+    return value == nullptr ? true : RecordValidityCheck(value, checkType, pattern);
+  } else {
+    auto v = std::to_string(value); // should use SMO.
+    return RecordValidityCheck(v.c_str(), checkType, pattern);
+  }
+  return false;
+}
+
 //-------------------------------------------------------------------------
 // RecRegisterConfigXXX
 //-------------------------------------------------------------------------
-#define REC_REGISTER_CONFIG_XXX(A, B)                                                                                           \
-  RecRecord *r;                                                                                                                 \
-  RecData    my_data_default;                                                                                                   \
-  my_data_default.A = data_default;                                                                                             \
-  if ((r = RecRegisterConfig(rec_type, name, B, my_data_default, update_type, check_type, check_regex, source, access_type)) != \
-      nullptr) {                                                                                                                \
-    if (i_am_the_record_owner(r->rec_type)) {                                                                                   \
-      r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                             \
-    }                                                                                                                           \
-    return REC_ERR_OKAY;                                                                                                        \
-  } else {                                                                                                                      \
-    return REC_ERR_FAIL;                                                                                                        \
+#define REC_REGISTER_CONFIG_XXX(A, B)                                                                                             \
+  RecRecord *r;                                                                                                                   \
+  RecData    my_data_default;                                                                                                     \
+  my_data_default.A = data_default;                                                                                               \
+  if (!_ConsistencyCheck(data_default, check_type, check_regex)) {                                                                \
+    std::string buf;                                                                                                              \
+    buf.reserve(512);                                                                                                             \
+    RecLog(DL_Error,                                                                                                              \
+           swoc::bwprint(buf, "{}: Consistency check for the default value={} failed. pattern={}. Record will not be registered", \
+                         name, data_default, check_regex)                                                                         \
+             .c_str());                                                                                                           \
+    return REC_ERR_FAIL;                                                                                                          \
+  }                                                                                                                               \
+  if ((r = RecRegisterConfig(rec_type, name, B, my_data_default, update_type, check_type, check_regex, source, access_type)) !=   \
+      nullptr) {                                                                                                                  \
+    if (i_am_the_record_owner(r->rec_type)) {                                                                                     \
+      r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                               \
+    }                                                                                                                             \
+    return REC_ERR_OKAY;                                                                                                          \
+  } else {                                                                                                                        \
+    return REC_ERR_FAIL;                                                                                                          \
   }
 
 RecErrT
