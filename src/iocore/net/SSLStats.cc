@@ -35,6 +35,12 @@
 SSLStatsBlock                                                   ssl_rsb;
 std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
 
+#ifdef OPENSSL_IS_BORINGSSL
+std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_map;
+#elif defined(SSL_get_negotiated_group)
+std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_map;
+#endif
+
 namespace
 {
 DbgCtl dbg_ctl_ssl{"ssl"};
@@ -42,6 +48,64 @@ DbgCtl dbg_ctl_ssl{"ssl"};
 #if defined(OPENSSL_IS_BORINGSSL)
 constexpr std::string_view UNKNOWN_CIPHER{"(NONE)"};
 #endif
+
+#if defined(OPENSSL_IS_BORINGSSL) || defined(SSL_get_negotiated_group)
+
+template <typename T>
+void
+add_group_stat(T key, const std::string &name)
+{
+  // If not already registered ...
+  if (tls_group_map.find(key) == tls_group_map.end()) {
+    Metrics::Counter::AtomicType *metric = Metrics::Counter::createPtr("proxy.process.ssl.group.user_agent." + name);
+
+    tls_group_map.emplace(key, metric);
+    Dbg(dbg_ctl_ssl, "registering SSL group metric '%s'", name.c_str());
+  }
+}
+#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
+
+#if not defined(OPENSSL_IS_BORINGSSL) and defined(SSL_get_negotiated_group) // OPENSSL 3.x
+
+struct TLSGroup {
+  int         nid;
+  std::string name;
+};
+
+// NID and Group table. Some groups are not defined by some library.
+const TLSGroup TLS_GROUPS[] = {
+  {SSL_GROUP_STAT_OTHER_KEY, "OTHER"         },
+  {NID_X9_62_prime256v1,     "P-256"         },
+  {NID_secp384r1,            "P-384"         },
+  {NID_secp521r1,            "P-521"         },
+  {NID_X25519,               "X25519"        },
+#ifdef NID_secp224r1
+  {NID_secp224r1,            "P-224"         },
+#endif
+#ifdef NID_X448
+  {NID_X448,                 "X448"          },
+#endif
+#ifdef NID_ffdhe2048
+  {NID_ffdhe2048,            "ffdhe2048"     },
+#endif
+#ifdef NID_ffdhe3072
+  {NID_ffdhe3072,            "ffdhe3072"     },
+#endif
+#ifdef NID_ffdhe4096
+  {NID_ffdhe4096,            "ffdhe4096"     },
+#endif
+#ifdef NID_ffdhe6144
+  {NID_ffdhe6144,            "ffdhe6144"     },
+#endif
+#ifdef NID_ffdhe8192
+  {NID_ffdhe8192,            "ffdhe8192"     },
+#endif
+#ifdef NID_X25519MLKEM768
+  {NID_X25519MLKEM768,       "X25519MLKEM768"},
+#endif
+};
+
+#endif // OPENSSL 3.x
 
 } // end anonymous namespace
 
@@ -194,4 +258,19 @@ SSLInitializeStatistics()
 
   // Add "OTHER" for ciphers not on the map
   add_cipher_stat(SSL_CIPHER_STAT_OTHER.c_str(), "proxy.process.ssl.cipher.user_agent." + SSL_CIPHER_STAT_OTHER);
+
+  // TLS Group
+#if defined(OPENSSL_IS_BORINGSSL)
+  size_t                    list_size = SSL_get_all_group_names(nullptr, 0);
+  std::vector<const char *> group_list(list_size);
+  SSL_get_all_group_names(group_list.data(), group_list.size());
+
+  for (const char *name : group_list) {
+    add_group_stat<std::string>(name, name);
+  }
+#elif defined(SSL_get_negotiated_group)
+  for (auto group : TLS_GROUPS) {
+    add_group_stat<int>(group.nid, group.name);
+  }
+#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
 }
