@@ -31,6 +31,9 @@
 find_library(hwloc_LIBRARY NAMES hwloc)
 find_path(hwloc_INCLUDE_DIR NAMES hwloc.h)
 
+message(STATUS "hwloc_LIBRARY: ${hwloc_LIBRARY}")
+message(STATUS "hwloc_INCLUDE_DIR: ${hwloc_INCLUDE_DIR}")
+
 mark_as_advanced(hwloc_FOUND hwloc_LIBRARY hwloc_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
