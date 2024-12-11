@@ -42,3 +42,6 @@ public:
 
 RamCache *new_RamCacheLRU();
 RamCache *new_RamCacheCLFUS();
+#if TS_USE_NUMA
+RamCache *new_RamCacheContainer();
+#endif
