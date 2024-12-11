@@ -47,6 +47,9 @@ target_link_libraries(
 )
 
 if(TS_USE_HWLOC)
+  message(STATUS "iocore/eventsystem hwloc_INCLUDE_DIR: ${hwloc_INCLUDE_DIR}")
+  message(STATUS "iocore/eventsystem hwloc_LIBRARY: ${hwloc_LIBRARY}")
+  target_include_directories(tscore PUBLIC ${hwloc_INCLUDE_DIR})
   target_link_libraries(inkevent PRIVATE hwloc::hwloc)
 endif()
 

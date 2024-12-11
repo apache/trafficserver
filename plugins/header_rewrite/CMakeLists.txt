@@ -42,6 +42,13 @@ target_link_libraries(
   PUBLIC libswoc::libswoc
 )
 
+if(TS_USE_HWLOC)
+  message(STATUS "header_rewrite hwloc_INCLUDE_DIR: ${hwloc_INCLUDE_DIR}")
+  message(STATUS "header_rewrite hwloc_LIBRARY: ${hwloc_LIBRARY}")
+  target_include_directories(tscore PUBLIC ${hwloc_INCLUDE_DIR})
+  target_link_libraries(tscore PUBLIC hwloc::hwloc)
+endif()
+
 if(maxminddb_FOUND)
   target_compile_definitions(header_rewrite PUBLIC TS_USE_HRW_MAXMINDDB=1)
   target_sources(header_rewrite PRIVATE conditions_geo_maxmind.cc)
