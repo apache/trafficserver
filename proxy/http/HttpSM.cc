@@ -900,6 +900,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
           SMDebug("http_seq", "send 100 Continue response to client");
           int64_t nbytes      = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
           ua_entry->write_vio = ua_txn->do_io_write(this, nbytes, buf_start);
+          t_state.hdr_info.client_request.m_100_continue_sent = true;
         } else {
           t_state.hdr_info.client_request.m_100_continue_required = true;
         }
