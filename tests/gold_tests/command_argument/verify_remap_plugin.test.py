@@ -24,6 +24,7 @@ Test that the TrafficServer verify_remap_plugin command works as expected.
 '''
 
 process_counter = 0
+no_log_data = {'diags': 'stderr', 'error': 'stderr', 'manager': 'stderr'}
 
 
 def create_ts_process():
@@ -33,7 +34,7 @@ def create_ts_process():
     global process_counter
     process_counter += 1
 
-    ts = Test.MakeATSProcess("ts{counter}".format(counter=process_counter))
+    ts = Test.MakeATSProcess("ts{counter}".format(counter=process_counter), log_data=no_log_data)
 
     # Ideally we would set the test run's Processes.Default to ts, but deep
     # copy of processes is not currently implemented in autest. Therefore we
@@ -88,7 +89,6 @@ tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*missing required function TSRemapInit", "Should warn about the need for the TSRemapInit symbol")
-ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "ERROR: .*missing required function TSRemapInit")
 """
 TEST: verify_remap_plugin should complain if the plugin has the global
 plugin symbols but not the remap ones.
@@ -104,7 +104,6 @@ tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*missing required function TSRemapInit", "Should warn about the need for the TSRemapInit symbol")
-ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "ERROR: .*missing required function TSRemapInit")
 """
 TEST: The happy case: a remap plugin shared object file is passed as an
 argument that has the definition for the expected Plugin symbols.
