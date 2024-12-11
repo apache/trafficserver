@@ -998,6 +998,25 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Aget: Mozilla/5.0\r\nAccept: */
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.client_request.get_header_block
+----------------------------------
+**syntax:** *ts.client_request.get_header_block()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** Returns a string holding all the headers for the current client request.
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        block = ts.client_request.get_header_block()
+        ts.debug(block)
+    end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.client_request.client_addr.get_addr
 --------------------------------------
 **syntax:** *ts.client_request.client_addr.get_addr()*
