@@ -37,6 +37,12 @@ add_library(
   Stripe.cc
   StripeSM.cc
 )
+
+if(TS_USE_NUMA)
+  target_sources(inkcache PRIVATE RamCacheContainer.cc)
+  target_link_libraries(inkcache PRIVATE numa::numa)
+endif()
+
 add_library(ts::inkcache ALIAS inkcache)
 
 if(BUILD_REGRESSION_TESTING)

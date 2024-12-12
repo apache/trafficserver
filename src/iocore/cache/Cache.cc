@@ -54,11 +54,14 @@ constexpr ts::VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MI
 
 // Configuration
 
-int64_t cache_config_ram_cache_size                = AUTO_SIZE_RAM_CACHE;
-int     cache_config_ram_cache_algorithm           = 1;
-int     cache_config_ram_cache_compress            = 0;
-int     cache_config_ram_cache_compress_percent    = 90;
-int     cache_config_ram_cache_use_seen_filter     = 1;
+int64_t cache_config_ram_cache_size             = AUTO_SIZE_RAM_CACHE;
+int     cache_config_ram_cache_algorithm        = 1;
+int     cache_config_ram_cache_compress         = 0;
+int     cache_config_ram_cache_compress_percent = 90;
+int     cache_config_ram_cache_use_seen_filter  = 1;
+#if TS_USE_NUMA
+int cache_config_ram_cache_numa_duplicate = 0;
+#endif
 int     cache_config_http_max_alts                 = 3;
 int     cache_config_log_alternate_eviction        = 0;
 int     cache_config_dir_sync_frequency            = 60;
@@ -809,6 +812,9 @@ ink_cache_init(ts::ModuleVersion v)
   REC_EstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
   REC_EstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
   REC_ReadConfigInt32(cache_config_ram_cache_use_seen_filter, "proxy.config.cache.ram_cache.use_seen_filter");
+#if TS_USE_NUMA
+  REC_ReadConfigInt32(cache_config_ram_cache_numa_duplicate, "proxy.config.cache.ram_cache.numa_duplicate");
+#endif
 
   REC_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
