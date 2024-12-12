@@ -140,7 +140,22 @@ all_acl_combinations = [
     [ 85,  "modern",       "@action=set_deny  @method=GET", "@action=set_deny  @method=GET", ALLOW_GET,          403, 200, ],
     [ 86,  "modern",       "@action=set_deny  @method=GET", "@action=set_deny  @method=GET", DENY_GET,           403, 200, ],
     [ 87,  "modern",       "@action=set_deny  @method=GET", "@action=set_deny  @method=GET", DENY_GET_AND_POST,  403, 200, ],
-    [ 88,  "legacy",       "@src_ip=1.2.3.0-1.2.3.255 @action=allow",    "",                 ALLOW_GET_AND_POST, 403, 403, ],
+    [ 88,  "legacy",       "@action=allow @src_ip=127.0.0.1",    "",                         ALLOW_GET_AND_POST, 200, 200, ],
+    [ 89,  "legacy",       "@action=allow @src_ip=127.0.0.1",    "",                         ALLOW_GET,          200, 403, ],
+    [ 90,  "legacy",       "@action=allow @src_ip=127.0.0.1",    "",                         DENY_GET,           403, 200, ],
+    [ 91,  "legacy",       "@action=allow @src_ip=127.0.0.1",    "",                         DENY_GET_AND_POST,  403, 403, ],
+    [ 92,  "legacy",       "@action=deny  @src_ip=127.0.0.1",    "",                         ALLOW_GET_AND_POST, 403, 403, ],
+    [ 93,  "legacy",       "@action=deny  @src_ip=127.0.0.1",    "",                         ALLOW_GET,          403, 403, ],
+    [ 94,  "legacy",       "@action=deny  @src_ip=127.0.0.1",    "",                         DENY_GET,           403, 403, ],
+    [ 95,  "legacy",       "@action=deny  @src_ip=127.0.0.1",    "",                         DENY_GET_AND_POST,  403, 403, ],
+    [ 96,  "legacy",       "@action=allow @src_ip=192.0.2.1/24", "",                         ALLOW_GET_AND_POST, 403, 403, ],
+    [ 97,  "legacy",       "@action=allow @src_ip=192.0.2.1/24", "",                         ALLOW_GET,          403, 403, ],
+    [ 98,  "legacy",       "@action=allow @src_ip=192.0.2.0/24", "",                         DENY_GET,           403, 403, ],
+    [ 99,  "legacy",       "@action=allow @src_ip=192.0.2.0/24", "",                         DENY_GET_AND_POST,  403, 403, ],
+    [100,  "legacy",       "@action=deny  @src_ip=192.0.2.1/24", "",                         ALLOW_GET_AND_POST, 200, 200, ],
+    [101,  "legacy",       "@action=deny  @src_ip=192.0.2.1/24", "",                         ALLOW_GET,          200, 403, ],
+    [102,  "legacy",       "@action=deny  @src_ip=192.0.2.0/24", "",                         DENY_GET,           403, 200, ],
+    [103,  "legacy",       "@action=deny  @src_ip=192.0.2.0/24", "",                         DENY_GET_AND_POST,  403, 403, ],
 ]
 # yapf: enable
 
