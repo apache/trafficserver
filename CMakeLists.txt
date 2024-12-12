@@ -135,6 +135,7 @@ option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
 option(LINK_PLUGINS "Link core libraries to plugins (default OFF)")
 option(ENABLE_PROBES "Enable ATS SystemTap probes (default OFF)")
+option(ENABLE_VERIFY_PLUGINS "Enable plugin verification tests (default ON)" ON)
 
 # Setup user
 # NOTE: this is the user trafficserver runs as

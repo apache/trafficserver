@@ -24,6 +24,7 @@ Test that the TrafficServer verify_global_plugin command works as expected.
 '''
 
 process_counter = 0
+no_log_data = {'diags': 'stderr', 'error': 'stderr', 'manager': 'stderr'}
 
 
 def create_ts_process():
@@ -33,7 +34,7 @@ def create_ts_process():
     global process_counter
     process_counter += 1
 
-    ts = Test.MakeATSProcess("ts{counter}".format(counter=process_counter))
+    ts = Test.MakeATSProcess("ts{counter}".format(counter=process_counter), log_data=no_log_data)
 
     # Ideally we would set the test run's Processes.Default to ts, but deep
     # copy of processes is not currently implemented in autest. Therefore we
@@ -88,7 +89,7 @@ tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*unable to find TSPluginInit function in", "Should warn about the need for the TSPluginInit symbol")
-ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "ERROR: .*unable to find TSPluginInit function in")
+ts.Disk.diags_log.Content = []
 """
 TEST: Verify that passing a remap plugin produces a warning because
 it doesn't have the global plugin symbols.
@@ -104,7 +105,7 @@ tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*unable to find TSPluginInit function in", "Should warn about the need for the TSPluginInit symbol")
-ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "ERROR: .*unable to find TSPluginInit function in")
+ts.Disk.diags_log.Content = []
 """
 TEST: The happy case: a global plugin shared object file is passed as an
 argument that has the definition for the expected Plugin symbols.
@@ -139,4 +140,4 @@ tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR:.*unable to load", "Should log failure to load shared object")
-ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Should log failure to load shared object")
+ts.Disk.diags_log.Content = []

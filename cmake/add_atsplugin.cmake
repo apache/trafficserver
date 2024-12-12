@@ -37,19 +37,25 @@ function(add_atsplugin name)
 endfunction()
 
 function(verify_remap_plugin target)
-  add_test(NAME verify_remap_${target} COMMAND $<TARGET_FILE:traffic_server> -C
-                                               "verify_remap_plugin $<TARGET_FILE:${target}>"
-  )
+  if(ENABLE_VERIFY_PLUGINS)
+    add_test(NAME verify_remap_${target} COMMAND $<TARGET_FILE:traffic_server> -C
+                                                 "verify_remap_plugin $<TARGET_FILE:${target}>"
+    )
+  endif()
 endfunction()
 
 function(verify_global_plugin target)
-  add_test(NAME verify_global_${target} COMMAND $<TARGET_FILE:traffic_server> -C
-                                                "verify_global_plugin $<TARGET_FILE:${target}>"
-  )
-  # Process the optional suppression file parameter.
-  set(suppression_file ${ARGV1})
-  if(suppression_file)
-    set_tests_properties(verify_global_${target} PROPERTIES ENVIRONMENT "LSAN_OPTIONS=suppressions=${suppression_file}")
+  if(ENABLE_VERIFY_PLUGINS)
+    add_test(NAME verify_global_${target} COMMAND $<TARGET_FILE:traffic_server> -C
+                                                  "verify_global_plugin $<TARGET_FILE:${target}>"
+    )
+    # Process the optional suppression file parameter.
+    set(suppression_file ${ARGV1})
+    if(suppression_file)
+      set_tests_properties(
+        verify_global_${target} PROPERTIES ENVIRONMENT "LSAN_OPTIONS=suppressions=${suppression_file}"
+      )
+    endif()
   endif()
 endfunction()
 
