@@ -1383,12 +1383,12 @@ The following ruleset removes any query parameters set by the client.::
    cond %{REMAP_PSEUDO_HOOK}
    rm-destination QUERY
 
-Remove only a few select query parameters:
+Remove only a few select query parameters::
 
    cond %{REMAP_PSEUDO_HOOK}
    rm-destination QUERY foo,bar
 
-Keep only a few select query parameters -- removing the rest:
+Keep only a few select query parameters -- removing the rest::
 
    cond %{REMAP_PSEUDO_HOOK}
    rm-destination QUERY foo,bar [I]
