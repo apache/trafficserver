@@ -139,6 +139,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       if (netvc->get_service<TLSBasicSupport>() == nullptr) {
         key = PROTO_HTTP2;
       } else {
+        // RFC 9113 Section 3.3: Prior knowledge is only permissible for HTTP/2 over plaintext (non-TLS) connections.
         Dbg(dbg_ctl_http, "HTTP/2 prior knowledge was used on a TLS connection (protocol violation). Selecting HTTP/1 instead.");
         key = PROTO_HTTP;
       }
