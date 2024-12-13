@@ -268,7 +268,6 @@ Stripe::handle_dir_clear(int event, void *data)
     if (!op->ok()) {
       Warning("unable to clear cache directory '%s'", hash_text.get());
       disk->incrErrors(op);
-      fd = -1;
     }
 
     if (op->aiocb.aio_nbytes == dir_len) {
