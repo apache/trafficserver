@@ -1097,7 +1097,7 @@ config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
   S3Config *s3 = static_cast<S3Config *>(TSContDataGet(cont));
   s3->check_current_action(edata);
   S3Config   *file_config  = gConfCache.get(s3->conf_fname());
-  std::string config_fname = makeConfigPath(file_config->conf_fname());
+  std::string config_fname = makeConfigPath(s3->conf_fname());
 
   if (!file_config || !file_config->valid()) {
     TSError("[%s] invalid configuration in file: %s. Check mandatory fields. Scheduling reload", PLUGIN_NAME, config_fname.c_str());
