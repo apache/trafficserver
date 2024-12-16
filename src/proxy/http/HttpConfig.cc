@@ -546,6 +546,49 @@ register_stat_callbacks()
   http_rsb.websocket_current_active_client_connections =
     Metrics::Gauge::createPtr("proxy.process.http.websocket.current_active_client_connections");
 
+  // Speed bucket stats for client and origin
+  http_rsb.user_agent_speed_bytes_per_sec_100 =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100");
+  http_rsb.user_agent_speed_bytes_per_sec_1k = Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_1K");
+  http_rsb.user_agent_speed_bytes_per_sec_10k =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_10K");
+  http_rsb.user_agent_speed_bytes_per_sec_100k =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100K");
+  http_rsb.user_agent_speed_bytes_per_sec_1M = Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_1M");
+  http_rsb.user_agent_speed_bytes_per_sec_10M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_10M");
+  http_rsb.user_agent_speed_bytes_per_sec_100M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100M");
+  http_rsb.user_agent_speed_bytes_per_sec_200M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_200M");
+  http_rsb.user_agent_speed_bytes_per_sec_400M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_400M");
+  http_rsb.user_agent_speed_bytes_per_sec_800M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_800M");
+  http_rsb.user_agent_speed_bytes_per_sec_1G = Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_1G");
+  http_rsb.origin_server_speed_bytes_per_sec_100 =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_100");
+  http_rsb.origin_server_speed_bytes_per_sec_1k =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_1K");
+  http_rsb.origin_server_speed_bytes_per_sec_10k =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_10K");
+  http_rsb.origin_server_speed_bytes_per_sec_100k =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_100K");
+  http_rsb.origin_server_speed_bytes_per_sec_1M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_1M");
+  http_rsb.origin_server_speed_bytes_per_sec_10M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_10M");
+  http_rsb.origin_server_speed_bytes_per_sec_100M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_100M");
+  http_rsb.origin_server_speed_bytes_per_sec_200M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_200M");
+  http_rsb.origin_server_speed_bytes_per_sec_400M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_400M");
+  http_rsb.origin_server_speed_bytes_per_sec_800M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_800M");
+  http_rsb.origin_server_speed_bytes_per_sec_1G =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_1G");
+
   Metrics::Derived::derive({
     // Total bytes of client request body + headers
     {"proxy.process.http.user_agent_total_request_bytes",

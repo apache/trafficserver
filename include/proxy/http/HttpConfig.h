@@ -304,6 +304,28 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *user_agent_response_document_total_size;
   Metrics::Counter::AtomicType *user_agent_response_header_total_size;
   Metrics::Gauge::AtomicType   *websocket_current_active_client_connections;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_100;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_1k;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_10k;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_100k;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_1M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_10M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_100M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_200M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_400M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_800M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_1G;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_100;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_1k;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_10k;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_100k;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_1M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_10M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_100M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_200M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_400M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_800M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_1G;
 };
 
 enum CacheOpenWriteFailAction_t {
