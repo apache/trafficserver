@@ -3638,7 +3638,7 @@ SSL Termination
 
    TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256
 
-   This configuration works with OpenSSL v1.1.1 and above.
+   This configuration works with OpenSSL v1.1.1 and above. BoringSSL does not support customizing the list.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.honor_cipher_order INT 1
 
@@ -3650,13 +3650,13 @@ SSL Termination
    By enabling it (``1``) |TS| will temporarily reprioritize ChaCha20-Poly1305 ciphers to the top of the
    server cipher list if a ChaCha20-Poly1305 cipher is at the top of the client cipher list.
 
-   This configuration works with OpenSSL v1.1.1 and above.
+   This configuration works with OpenSSL v1.1.1 and above. BoringSSL does not support this.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3.cipher_suites STRING <See notes under proxy.config.ssl.server.tls.cipher_suites>
 
    Configures the cipher_suites which |TS| will use for TLSv1.3
    connections to origin or next hop. This configuration works
-   with OpenSSL v1.1.1 and above.
+   with OpenSSL v1.1.1 and above. BoringSSL does not support customizing the list.
 
    The current default is:
 
