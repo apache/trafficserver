@@ -158,7 +158,11 @@ public:
 
   int evac_range(off_t start, off_t end, int evac_phase);
 
-  int within_hit_evacuate_window(Dir const *dir) const;
+  /**
+   * Recompute the hit evacuate window after a config change.
+   */
+  void recompute_hit_evacuate_window();
+  int  within_hit_evacuate_window(Dir const *dir) const;
 
   /**
    * StripeSM constructor.
