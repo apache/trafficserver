@@ -1206,6 +1206,15 @@ done:
     obj_describe(s->hdr_info.client_request.m_http, true);
   }
 
+  // If the client failed ACLs, send error response
+  // This extra condition was added to separate it from the logic below that might allow
+  // requests that use some types of plugins as that code was allowing requests that didn't
+  // pass ACL checks. ACL mismatches are also not counted as invalid client requests
+  if (!s->client_connection_allowed) {
+    TxnDbg(dbg_ctl_http_trans, "END HttpTransact::EndRemapRequest: connection not allowed");
+    TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+  }
+
   /*
     if s->reverse_proxy == false, we can assume remapping failed in some way
       -however-
