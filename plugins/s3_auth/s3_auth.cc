@@ -595,7 +595,7 @@ S3Config::parse_config(const std::string &config_fname)
       } else if (key_str == "expiration") {
         set_expiration(val_str.c_str());
       } else {
-        TSWarning("[%s] unknown config key: %s", PLUGIN_NAME, key_str.c_str());
+        TSWarning("[%s] unknown config key: %s in file: %s", PLUGIN_NAME, key_str.c_str(), config_fname.c_str());
       }
     }
   }
@@ -1055,11 +1055,11 @@ config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
   Dbg(dbg_ctl, "reloading configs");
   S3Config *s3 = static_cast<S3Config *>(TSContDataGet(cont));
   s3->check_current_action(edata);
-
-  S3Config *file_config = gConfCache.get(s3->conf_fname());
+  S3Config   *file_config  = gConfCache.get(s3->conf_fname());
+  std::string config_fname = makeConfigPath(s3->conf_fname());
 
   if (!file_config || !file_config->valid()) {
-    TSError("[%s] invalid configuration. Check mandatory fields. Scheduling reload", PLUGIN_NAME);
+    TSError("[%s] invalid configuration in file: %s. Check mandatory fields. Scheduling reload", PLUGIN_NAME, config_fname.c_str());
     long delay = 1 << s3->incr_invalid_file_count();
     s3->schedule_conf_reload(delay);
     return TS_ERROR;
@@ -1079,13 +1079,14 @@ config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
                      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     if (time_diff > 0) {
       long delay = cal_reload_delay(time_diff);
-      Dbg(dbg_ctl, "scheduling config reload with %ld seconds delay", delay);
+      TSNote("scheduling config reload with %ld seconds delay for file: %s", delay, config_fname.c_str());
       s3->reset_conf_reload_count();
       s3->schedule_conf_reload(delay);
     } else {
-      Dbg(dbg_ctl, "config expiration time is in the past, re-checking in 1 minute");
-      if (s3->incr_conf_reload_count() == 10) {
-        TSError("[%s] tried to reload config automatically but failed, please try manual reloading the config", PLUGIN_NAME);
+      Dbg(dbg_ctl, "config expiration time for file: %s is in the past, re-checking in 1 minute", config_fname.c_str());
+      if (s3->incr_conf_reload_count() % 10 == 0) {
+        TSError("[%s] tried to reload config automatically but failed, please try manual reloading the config file: %s",
+                PLUGIN_NAME, config_fname.c_str());
       }
       s3->schedule_conf_reload(60);
     }
@@ -1180,26 +1181,27 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     s3->copy_changes_from(file_config);
   }
 
-  // Make sure we got both the shared secret and the AWS secret
+  std::string config_fname = makeConfigPath(s3->conf_fname());
+  // Make sure the configuration is valid
   if (!s3->valid()) {
-    TSError("[%s] requires both shared and AWS secret configuration", PLUGIN_NAME);
+    TSError("[%s] invalid configuration file: %s. Check mandatory fields.", PLUGIN_NAME, config_fname.c_str());
     *ih = nullptr;
     return TS_ERROR;
   }
 
   if (s3->expiration() == 0) {
-    Dbg(dbg_ctl, "disabling auto config reload");
+    Dbg(dbg_ctl, "disabling auto config reload for file: %s", config_fname.c_str());
   } else {
     // auto reload is scheduled to be 5 minutes before the expiration time to get some headroom
     long time_diff = s3->expiration() -
                      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     if (time_diff > 0) {
       long delay = cal_reload_delay(time_diff);
-      Dbg(dbg_ctl, "scheduling config reload with %ld seconds delay", delay);
+      TSNote("[%s] scheduling config reload with %ld seconds delay for file: %s", PLUGIN_NAME, delay, config_fname.c_str());
       s3->reset_conf_reload_count();
       s3->schedule_conf_reload(delay);
     } else {
-      Dbg(dbg_ctl, "config expiration time is in the past, re-checking in 1 minute");
+      Dbg(dbg_ctl, "config expiration time for file %s is in the past, re-checking in 1 minute", config_fname.c_str());
       s3->schedule_conf_reload(60);
     }
   }
