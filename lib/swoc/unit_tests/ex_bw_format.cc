@@ -127,10 +127,10 @@ struct Context {
 
 void
 EX_BWF_Format_Init() {
-  swoc::bwf::Global_Names.assign("timestamp", &BWF_Timestamp);
-  swoc::bwf::Global_Names.assign("now", &BWF_Now);
-  swoc::bwf::Global_Names.assign("version", &BWF_Version);
-  swoc::bwf::Global_Names.assign("dave", &BWF_EvilDave);
+  swoc::bwf::Global_Names().assign("timestamp", &BWF_Timestamp);
+  swoc::bwf::Global_Names().assign("now", &BWF_Now);
+  swoc::bwf::Global_Names().assign("version", &BWF_Version);
+  swoc::bwf::Global_Names().assign("dave", &BWF_EvilDave);
 }
 
 // Work with external / global names.
