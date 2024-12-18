@@ -97,7 +97,6 @@ public:
   off_t                skip{};  // start of headers
   off_t                start{}; // start of data
   off_t                len{};
-  off_t                data_blocks{};
 
   uint32_t sector_size{};
 
@@ -168,6 +167,7 @@ public:
   bool copy_from_aggregate_write_buffer(char *dest, Dir const &dir, size_t nbytes) const;
 
 protected:
+  off_t                data_blocks{};
   AggregateWriteBuffer _write_buffer;
 
   void _clear_init(std::uint32_t hw_sector_size);
