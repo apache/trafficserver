@@ -290,12 +290,22 @@ struct Directory {
   /* Total number of dir entries.
    */
   int entries() const;
+
+  /* Returns the first dir in segment @a s.
+   */
+  Dir *get_segment(int s) const;
 };
 
 inline int
 Directory::entries() const
 {
   return this->buckets * DIR_DEPTH * this->segments;
+}
+
+inline Dir *
+Directory::get_segment(int s) const
+{
+  return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
 
 // Global Functions

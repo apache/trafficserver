@@ -219,7 +219,7 @@ void
 dir_init_segment(int s, Stripe *stripe)
 {
   stripe->directory.header->freelist[s] = 0;
-  Dir *seg                              = stripe->dir_segment(s);
+  Dir *seg                              = stripe->directory.get_segment(s);
   int  l, b;
   memset(static_cast<void *>(seg), 0, SIZEOF_DIR * DIR_DEPTH * stripe->directory.buckets);
   for (l = 1; l < DIR_DEPTH; l++) {
@@ -235,7 +235,7 @@ dir_init_segment(int s, Stripe *stripe)
 int
 dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe)
 {
-  if (!dir_bucket_loop_check(start_dir, stripe->dir_segment(s))) {
+  if (!dir_bucket_loop_check(start_dir, stripe->directory.get_segment(s))) {
     Warning("Dir loop exists, clearing segment %d", s);
     dir_init_segment(s, stripe);
     return 1;
@@ -247,7 +247,7 @@ int
 dir_freelist_length(Stripe *stripe, int s)
 {
   int  free = 0;
-  Dir *seg  = stripe->dir_segment(s);
+  Dir *seg  = stripe->directory.get_segment(s);
   Dir *e    = dir_from_offset(stripe->directory.header->freelist[s], seg);
   if (dir_bucket_loop_fix(e, s, stripe)) {
     return (DIR_DEPTH - 1) * stripe->directory.buckets;
@@ -264,7 +264,7 @@ dir_bucket_length(Dir *b, int s, Stripe *stripe)
 {
   Dir *e   = b;
   int  i   = 0;
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
 #ifdef LOOP_CHECK_MODE
   if (dir_bucket_loop_fix(b, s, vol))
     return 1;
@@ -285,7 +285,7 @@ check_dir(Stripe *stripe)
   int i, s;
   Dbg(dbg_ctl_cache_check_dir, "inside check dir");
   for (s = 0; s < stripe->directory.segments; s++) {
-    Dir *seg = stripe->dir_segment(s);
+    Dir *seg = stripe->directory.get_segment(s);
     for (i = 0; i < stripe->directory.buckets; i++) {
       Dir *b = dir_bucket(i, seg);
       if (!(dir_bucket_length(b, s, stripe) >= 0)) {
@@ -305,7 +305,7 @@ check_dir(Stripe *stripe)
 inline void
 unlink_from_freelist(Dir *e, int s, Stripe *stripe)
 {
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
   Dir *p   = dir_from_offset(dir_prev(e), seg);
   if (p) {
     dir_set_next(p, dir_next(e));
@@ -321,7 +321,7 @@ unlink_from_freelist(Dir *e, int s, Stripe *stripe)
 inline Dir *
 dir_delete_entry(Dir *e, Dir *p, int s, Stripe *stripe)
 {
-  Dir *seg                        = stripe->dir_segment(s);
+  Dir *seg                        = stripe->directory.get_segment(s);
   int  no                         = dir_next(e);
   stripe->directory.header->dirty = 1;
   if (p) {
@@ -352,7 +352,7 @@ inline void
 dir_clean_bucket(Dir *b, int s, Stripe *stripe)
 {
   Dir *e = b, *p = nullptr;
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
 #ifdef LOOP_CHECK_MODE
   int loop_count = 0;
 #endif
@@ -384,7 +384,7 @@ dir_clean_bucket(Dir *b, int s, Stripe *stripe)
 void
 dir_clean_segment(int s, Stripe *stripe)
 {
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
   for (int64_t i = 0; i < stripe->directory.buckets; i++) {
     dir_clean_bucket(dir_bucket(i, seg), s, stripe);
     ink_assert(!dir_next(dir_bucket(i, seg)) || dir_offset(dir_bucket(i, seg)));
@@ -436,7 +436,7 @@ freelist_clean(int s, StripeSM *stripe)
   }
   Warning("cache directory overflow on '%s' segment %d, purging...", stripe->disk->path, s);
   int  n   = 0;
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
   for (int bi = 0; bi < stripe->directory.buckets; bi++) {
     Dir *b = dir_bucket(bi, seg);
     for (int l = 0; l < DIR_DEPTH; l++) {
@@ -454,7 +454,7 @@ freelist_clean(int s, StripeSM *stripe)
 inline Dir *
 freelist_pop(int s, StripeSM *stripe)
 {
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
   Dir *e   = dir_from_offset(stripe->directory.header->freelist[s], seg);
   if (!e) {
     freelist_clean(s, stripe);
@@ -476,7 +476,7 @@ freelist_pop(int s, StripeSM *stripe)
 void
 dir_free_entry(Dir *e, int s, Stripe *stripe)
 {
-  Dir         *seg = stripe->dir_segment(s);
+  Dir         *seg = stripe->directory.get_segment(s);
   unsigned int fo  = stripe->directory.header->freelist[s];
   unsigned int eo  = dir_to_offset(e, seg);
   dir_set_next(e, fo);
@@ -492,7 +492,7 @@ dir_probe(const CacheKey *key, StripeSM *stripe, Dir *result, Dir **last_collisi
   ink_assert(stripe->mutex->thread_holding == this_ethread());
   int  s   = key->slice32(0) % stripe->directory.segments;
   int  b   = key->slice32(1) % stripe->directory.buckets;
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
   Dir *e = nullptr, *p = nullptr, *collision = *last_collision;
   CHECK_DIR(d);
 #ifdef LOOP_CHECK_MODE
@@ -562,7 +562,7 @@ dir_insert(const CacheKey *key, StripeSM *stripe, Dir *to_part)
   int s  = key->slice32(0) % stripe->directory.segments, l;
   int bi = key->slice32(1) % stripe->directory.buckets;
   ink_assert(dir_approx_size(to_part) <= MAX_FRAG_SIZE + sizeof(Doc));
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
   Dir *e   = nullptr;
   Dir *b   = dir_bucket(bi, seg);
 #if defined(DEBUG) && defined(DO_CHECK_DIR_FAST)
@@ -629,7 +629,7 @@ dir_overwrite(const CacheKey *key, StripeSM *stripe, Dir *dir, Dir *overwrite, b
   ink_assert(stripe->mutex->thread_holding == this_ethread());
   int          s   = key->slice32(0) % stripe->directory.segments, l;
   int          bi  = key->slice32(1) % stripe->directory.buckets;
-  Dir         *seg = stripe->dir_segment(s);
+  Dir         *seg = stripe->directory.get_segment(s);
   Dir         *e   = nullptr;
   Dir         *b   = dir_bucket(bi, seg);
   unsigned int t   = DIR_MASK_TAG(key->slice32(2));
@@ -716,7 +716,7 @@ dir_delete(const CacheKey *key, StripeSM *stripe, Dir *del)
   ink_assert(stripe->mutex->thread_holding == this_ethread());
   int  s   = key->slice32(0) % stripe->directory.segments;
   int  b   = key->slice32(1) % stripe->directory.buckets;
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
   Dir *e = nullptr, *p = nullptr;
 #ifdef LOOP_CHECK_MODE
   int loop_count = 0;
@@ -886,7 +886,7 @@ dir_entries_used(Stripe *stripe)
   uint64_t full  = 0;
   uint64_t sfull = 0;
   for (int s = 0; s < stripe->directory.segments; full += sfull, s++) {
-    Dir *seg = stripe->dir_segment(s);
+    Dir *seg = stripe->directory.get_segment(s);
     sfull    = 0;
     for (int b = 0; b < stripe->directory.buckets; b++) {
       Dir *e = dir_bucket(b, seg);

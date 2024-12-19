@@ -191,7 +191,7 @@ Stripe::dir_check()
   printf("  Entries:   %" PRIu64 "\n", total_entries);
 
   for (int s = 0; s < directory.segments; s++) {
-    Dir *seg                = this->dir_segment(s);
+    Dir *seg                = this->directory.get_segment(s);
     int  seg_chain_max      = 0;
     int  seg_empty          = 0;
     int  seg_in_use         = 0;
@@ -346,7 +346,7 @@ Stripe::_init_dir()
 
   for (s = 0; s < this->directory.segments; s++) {
     this->directory.header->freelist[s] = 0;
-    Dir *seg                            = this->dir_segment(s);
+    Dir *seg                            = this->directory.get_segment(s);
     for (l = 1; l < DIR_DEPTH; l++) {
       for (b = 0; b < this->directory.buckets; b++) {
         Dir *bucket = dir_bucket(b, seg);
