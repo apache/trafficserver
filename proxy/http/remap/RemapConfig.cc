@@ -450,6 +450,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     Debug("url_rewrite", "[validate_filter_args] new acl_filter_rule class was created during remap rule processing");
   }
 
+  bool action_flag = false;
   for (i = 0; i < argc; i++) {
     unsigned long ul;
     bool hasarg;
@@ -572,6 +573,13 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     }
 
     if (ul & REMAP_OPTFLG_ACTION) { /* "action=" option */
+      if (action_flag) {
+        std::string_view err = "Only one @action= is allowed per remap ACL";
+        Debug("url_rewrite", "%s", err.data());
+        // For 9.2.x, making Warning instead of Error for compatibility
+        Warning("%s", err.data());
+      }
+      action_flag = true;
       if (is_inkeylist(argptr, "0", "off", "deny", "disable", nullptr)) {
         rule->allow_flag = 0;
       } else if (is_inkeylist(argptr, "1", "on", "allow", "enable", nullptr)) {
