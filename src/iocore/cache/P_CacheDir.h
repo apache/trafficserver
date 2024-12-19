@@ -33,6 +33,12 @@
 // aio
 #include "iocore/aio/AIO.h"
 
+#include "tscore/ink_platform.h"
+#include "tscore/Version.h"
+
+#include <cstdint>
+#include <ctime>
+
 class Stripe;
 class StripeSM;
 struct InterimCacheVol;
@@ -253,6 +259,33 @@ struct CacheSync : public Continuation {
   void        aio_write(int fd, char *b, int n, off_t o);
 
   CacheSync() : Continuation(new_ProxyMutex()) { SET_HANDLER(&CacheSync::mainEvent); }
+};
+
+struct StripteHeaderFooter {
+  unsigned int      magic;
+  ts::VersionNumber version;
+  time_t            create_time;
+  off_t             write_pos;
+  off_t             last_write_pos;
+  off_t             agg_pos;
+  uint32_t          generation; // token generation (vary), this cannot be 0
+  uint32_t          phase;
+  uint32_t          cycle;
+  uint32_t          sync_serial;
+  uint32_t          write_serial;
+  uint32_t          dirty;
+  uint32_t          sector_size;
+  uint32_t          unused; // pad out to 8 byte boundary
+  uint16_t          freelist[1];
+};
+
+struct Directory {
+  char                *raw_dir{nullptr};
+  Dir                 *dir{};
+  StripteHeaderFooter *header{};
+  StripteHeaderFooter *footer{};
+  int                  segments{};
+  off_t                buckets{};
 };
 
 // Global Functions
