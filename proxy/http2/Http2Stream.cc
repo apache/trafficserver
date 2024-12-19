@@ -1033,6 +1033,12 @@ Http2Stream::get_transaction_priority_dependence() const
   }
 }
 
+bool
+Http2Stream::is_read_closed() const
+{
+  return this->recv_end_stream;
+}
+
 int64_t
 Http2Stream::read_vio_read_avail()
 {

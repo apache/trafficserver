@@ -6140,12 +6140,23 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     // Next order of business if copy the remaining data from the
     //  header buffer into new buffer
 
+    int64_t num_body_bytes = 0;
     // If is_using_post_buffer has been used, then client_request_body_bytes
     // will have already been sent in wait_for_full_body and there will be
     // zero bytes in this user agent buffer. We don't want to clobber
     // client_request_body_bytes with a zero value here in those cases.
-    if (client_request_body_bytes <= 0) {
-      post_buffer->write(ua_txn->get_remote_reader(), chunked ? ua_txn->get_remote_reader()->read_avail() : post_bytes);
+    if (client_request_body_bytes > 0) {
+      num_body_bytes = client_request_body_bytes;
+    } else {
+      num_body_bytes = post_buffer->write(ua_txn->get_remote_reader(),
+                                          chunked ? ua_txn->get_remote_reader()->read_avail() : post_bytes);
+    }
+    // Don't consume post_bytes here from ua_txn->get_remote_reader() since
+    // we are not sure how many bytes the tunnel will use yet. Wait until
+    // HttpSM::tunnel_handler_post_ua to consume the bytes.
+    // The user agent has already sent all it has
+    if (ua_txn->is_read_closed()) {
+      post_bytes = num_body_bytes;
     }
     p = tunnel.add_producer(ua_entry->vc, post_bytes - transferred_bytes, buf_start, &HttpSM::tunnel_handler_post_ua,
                             HT_HTTP_CLIENT, "user agent post");
