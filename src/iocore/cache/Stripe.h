@@ -81,22 +81,26 @@ struct StripteHeaderFooter {
   uint16_t          freelist[1];
 };
 
-class Stripe
-{
-public:
-  ats_scoped_str hash_text;
-  int            frag_size{-1};
-
+struct Directory {
   char                *raw_dir{nullptr};
   Dir                 *dir{};
   StripteHeaderFooter *header{};
   StripteHeaderFooter *footer{};
   int                  segments{};
   off_t                buckets{};
-  off_t                scan_pos{};
-  off_t                skip{};  // start of headers
-  off_t                start{}; // start of data
-  off_t                len{};
+};
+
+class Stripe
+{
+public:
+  ats_scoped_str hash_text;
+  int            frag_size{-1};
+
+  Directory directory;
+  off_t     scan_pos{};
+  off_t     skip{};  // start of headers
+  off_t     start{}; // start of data
+  off_t     len{};
 
   uint32_t sector_size{};
 
@@ -191,25 +195,27 @@ Stripe::round_to_approx_size(uint32_t l) const
 inline int
 Stripe::headerlen() const
 {
-  return ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter) + sizeof(uint16_t) * (this->segments - 1));
+  return ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter) + sizeof(uint16_t) * (this->directory.segments - 1));
 }
 
 inline int
 Stripe::direntries() const
 {
-  return this->buckets * DIR_DEPTH * this->segments;
+  return this->directory.buckets * DIR_DEPTH * this->directory.segments;
 }
 
 inline Dir *
 Stripe::dir_segment(int s) const
 {
-  return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
+  return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->directory.dir)) +
+                                 (s * this->directory.buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
 
 inline size_t
 Stripe::dirlen() const
 {
-  return this->headerlen() + ROUND_TO_STORE_BLOCK(((size_t)this->buckets) * DIR_DEPTH * this->segments * SIZEOF_DIR) +
+  return this->headerlen() +
+         ROUND_TO_STORE_BLOCK(((size_t)this->directory.buckets) * DIR_DEPTH * this->directory.segments * SIZEOF_DIR) +
          ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
 }
 
@@ -219,7 +225,7 @@ Stripe::dirlen() const
 inline bool
 Stripe::dir_valid(const Dir *dir) const
 {
-  return (this->header->phase == dir_phase(dir) ? this->vol_in_phase_valid(dir) : this->vol_out_of_phase_valid(dir));
+  return (this->directory.header->phase == dir_phase(dir) ? this->vol_in_phase_valid(dir) : this->vol_out_of_phase_valid(dir));
 }
 
 /**
@@ -228,44 +234,45 @@ Stripe::dir_valid(const Dir *dir) const
 inline bool
 Stripe::dir_agg_valid(const Dir *dir) const
 {
-  return (this->header->phase == dir_phase(dir) ? this->vol_in_phase_valid(dir) : this->vol_out_of_phase_agg_valid(dir));
+  return (this->directory.header->phase == dir_phase(dir) ? this->vol_in_phase_valid(dir) : this->vol_out_of_phase_agg_valid(dir));
 }
 
 inline bool
 Stripe::dir_agg_buf_valid(const Dir *dir) const
 {
-  return (this->header->phase == dir_phase(dir) && this->vol_in_phase_agg_buf_valid(dir));
+  return (this->directory.header->phase == dir_phase(dir) && this->vol_in_phase_agg_buf_valid(dir));
 }
 
 inline int
 Stripe::vol_out_of_phase_valid(Dir const *e) const
 {
-  return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((this->directory.header->agg_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline int
 Stripe::vol_out_of_phase_agg_valid(Dir const *e) const
 {
-  return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start + AGG_SIZE) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((this->directory.header->agg_pos - this->start + AGG_SIZE) / CACHE_BLOCK_SIZE));
 }
 
 inline int
 Stripe::vol_out_of_phase_write_valid(Dir const *e) const
 {
-  return (dir_offset(e) - 1 >= ((this->header->write_pos - this->start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((this->directory.header->write_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline int
 Stripe::vol_in_phase_valid(Dir const *e) const
 {
-  return (dir_offset(e) - 1 < ((this->header->write_pos + this->_write_buffer.get_buffer_pos() - this->start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 <
+          ((this->directory.header->write_pos + this->_write_buffer.get_buffer_pos() - this->start) / CACHE_BLOCK_SIZE));
 }
 
 inline int
 Stripe::vol_in_phase_agg_buf_valid(Dir const *e) const
 {
-  return (this->vol_offset(e) >= this->header->write_pos &&
-          this->vol_offset(e) < (this->header->write_pos + this->_write_buffer.get_buffer_pos()));
+  return (this->vol_offset(e) >= this->directory.header->write_pos &&
+          this->vol_offset(e) < (this->directory.header->write_pos + this->_write_buffer.get_buffer_pos()));
 }
 
 inline off_t

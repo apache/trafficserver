@@ -694,7 +694,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
        */
       if (!stripe->dir_valid(&dir)) {
         DDbg(dbg_ctl_cache_write, "OpenReadStartDone: Dir not valid: Write Head: %" PRId64 ", Dir: %" PRId64,
-             (int64_t)stripe->offset_to_vol_offset(stripe->header->write_pos), dir_offset(&dir));
+             (int64_t)stripe->offset_to_vol_offset(stripe->directory.header->write_pos), dir_offset(&dir));
         last_collision = nullptr;
         goto Lcollision;
       }

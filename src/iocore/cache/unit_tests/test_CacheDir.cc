@@ -97,12 +97,12 @@ public:
     dir_set_head(&dir, true);
     dir_set_offset(&dir, 1);
 
-    stripe->header->agg_pos = stripe->header->write_pos += 1024;
+    stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
 
     CacheKey key;
     rand_CacheKey(&key);
 
-    int  s   = key.slice32(0) % stripe->segments, i, j;
+    int  s   = key.slice32(0) % stripe->directory.segments, i, j;
     Dir *seg = stripe->dir_segment(s);
 
     // test insert
@@ -118,7 +118,7 @@ public:
     CHECK(static_cast<unsigned int>(inserted - free) <= 1);
 
     // test delete
-    for (i = 0; i < stripe->buckets; i++) {
+    for (i = 0; i < stripe->directory.buckets; i++) {
       for (j = 0; j < DIR_DEPTH; j++) {
         dir_set_offset(dir_bucket_row(dir_bucket(i, seg), j), 0); // delete
       }
@@ -223,8 +223,8 @@ public:
 #else
       // test corruption detection
       rand_CacheKey(&key);
-      s1 = key.slice32(0) % stripe->segments;
-      b1 = key.slice32(1) % stripe->buckets;
+      s1 = key.slice32(0) % stripe->directory.segments;
+      b1 = key.slice32(1) % stripe->directory.buckets;
 
       dir_insert(&key, stripe, &dir1);
       dir_insert(&key, stripe, &dir1);
