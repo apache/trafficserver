@@ -154,7 +154,7 @@ public:
       Dbg(dbg_ctl_cache_dir_test, "probe rate = %d / second", static_cast<int>((newfree * static_cast<uint64_t>(1000000)) / us));
     }
 
-    for (int c = 0; c < stripe->direntries() * 0.75; c++) {
+    for (int c = 0; c < stripe->directory.entries() * 0.75; c++) {
       regress_rand_CacheKey(&key);
       dir_insert(&key, stripe, &dir);
     }

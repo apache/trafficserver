@@ -100,9 +100,6 @@ public:
   /* Calculates the total length of the vol header and the freelist.
    */
   int headerlen() const;
-  /* Total number of dir entries.
-   */
-  int direntries() const;
   /* Returns the first dir in segment @a s.
    */
   Dir *dir_segment(int s) const;
@@ -169,12 +166,6 @@ inline int
 Stripe::headerlen() const
 {
   return ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter) + sizeof(uint16_t) * (this->directory.segments - 1));
-}
-
-inline int
-Stripe::direntries() const
-{
-  return this->directory.buckets * DIR_DEPTH * this->directory.segments;
 }
 
 inline Dir *
