@@ -63,33 +63,6 @@ struct CacheVol {
   CacheVol() {}
 };
 
-struct StripteHeaderFooter {
-  unsigned int      magic;
-  ts::VersionNumber version;
-  time_t            create_time;
-  off_t             write_pos;
-  off_t             last_write_pos;
-  off_t             agg_pos;
-  uint32_t          generation; // token generation (vary), this cannot be 0
-  uint32_t          phase;
-  uint32_t          cycle;
-  uint32_t          sync_serial;
-  uint32_t          write_serial;
-  uint32_t          dirty;
-  uint32_t          sector_size;
-  uint32_t          unused; // pad out to 8 byte boundary
-  uint16_t          freelist[1];
-};
-
-struct Directory {
-  char                *raw_dir{nullptr};
-  Dir                 *dir{};
-  StripteHeaderFooter *header{};
-  StripteHeaderFooter *footer{};
-  int                  segments{};
-  off_t                buckets{};
-};
-
 class Stripe
 {
 public:
