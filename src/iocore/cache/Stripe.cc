@@ -133,9 +133,9 @@ Stripe::_init_data_internal(int avg_obj_size)
   // step2: calculate the number of buckets
   off_t total_buckets = total_entries / DIR_DEPTH;
   // step3: calculate the number of segments, no segment has more than 16384 buckets
-  this->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
+  this->directory.segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
   // step4: divide total_buckets into segments on average.
-  this->buckets = (total_buckets + this->segments - 1) / this->segments;
+  this->directory.buckets = (total_buckets + this->directory.segments - 1) / this->directory.segments;
   // step5: set the start pointer.
   this->start = this->skip + 2 * this->dirlen();
 }
@@ -153,15 +153,15 @@ Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_
   Dbg(dbg_ctl_cache_init, "Stripe %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(),
       directory_size, (long long)this->len, percent(directory_size, this->len));
   if (ats_hugepage_enabled()) {
-    this->raw_dir = static_cast<char *>(ats_alloc_hugepage(directory_size));
+    this->directory.raw_dir = static_cast<char *>(ats_alloc_hugepage(directory_size));
   }
-  if (nullptr == this->raw_dir) {
-    this->raw_dir = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
+  if (nullptr == this->directory.raw_dir) {
+    this->directory.raw_dir = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
   }
-  this->dir    = reinterpret_cast<Dir *>(this->raw_dir + header_size);
-  this->header = reinterpret_cast<StripteHeaderFooter *>(this->raw_dir);
+  this->directory.dir    = reinterpret_cast<Dir *>(this->directory.raw_dir + header_size);
+  this->directory.header = reinterpret_cast<StripteHeaderFooter *>(this->directory.raw_dir);
   std::size_t const footer_offset{directory_size - static_cast<std::size_t>(footer_size)};
-  this->footer = reinterpret_cast<StripteHeaderFooter *>(this->raw_dir + footer_offset);
+  this->directory.footer = reinterpret_cast<StripteHeaderFooter *>(this->directory.raw_dir + footer_offset);
 }
 
 int
@@ -171,7 +171,7 @@ Stripe::dir_check()
   int              hist[SEGMENT_HISTOGRAM_WIDTH + 1] = {0};
   unsigned short   chain_tag[MAX_ENTRIES_PER_SEGMENT];
   int32_t          chain_mark[MAX_ENTRIES_PER_SEGMENT];
-  uint64_t         total_buckets = buckets * segments;
+  uint64_t         total_buckets = directory.buckets * directory.segments;
   uint64_t         total_entries = total_buckets * DIR_DEPTH;
   int              frag_demographics[1 << DIR_SIZE_WIDTH][DIR_BLOCK_SIZES];
 
@@ -186,12 +186,12 @@ Stripe::dir_check()
 
   printf("Stripe '[%s]'\n", hash_text.get());
   printf("  Directory Bytes: %" PRIu64 "\n", total_buckets * SIZEOF_DIR);
-  printf("  Segments:  %d\n", segments);
-  printf("  Buckets per segment:   %" PRIu64 "\n", buckets);
+  printf("  Segments:  %d\n", directory.segments);
+  printf("  Buckets per segment:   %" PRIu64 "\n", directory.buckets);
   printf("  Entries:   %" PRIu64 "\n", total_entries);
 
-  for (int s = 0; s < segments; s++) {
-    Dir *seg                = this->dir_segment(s);
+  for (int s = 0; s < directory.segments; s++) {
+    Dir *seg                = this->directory.get_segment(s);
     int  seg_chain_max      = 0;
     int  seg_empty          = 0;
     int  seg_in_use         = 0;
@@ -203,7 +203,7 @@ Stripe::dir_check()
     ink_zero(chain_tag);
     memset(chain_mark, -1, sizeof(chain_mark));
 
-    for (int b = 0; b < buckets; b++) {
+    for (int b = 0; b < directory.buckets; b++) {
       Dir *root = dir_bucket(b, seg);
       int  h    = 0; // chain length starting in this bucket
 
@@ -289,13 +289,13 @@ Stripe::dir_check()
   printf("    Objects:         %d\n", head);
   printf("    Average Size:    %" PRIu64 "\n", head ? (bytes_in_use / head) : 0);
   printf("    Average Frags:   %.2f\n", head ? static_cast<float>(in_use) / head : 0);
-  printf("    Write Position:  %" PRIu64 "\n", header->write_pos - start);
-  printf("    Wrap Count:      %d\n", header->cycle);
-  printf("    Phase:           %s\n", header->phase ? "true" : "false");
-  ink_ctime_r(&header->create_time, tt);
+  printf("    Write Position:  %" PRIu64 "\n", directory.header->write_pos - start);
+  printf("    Wrap Count:      %d\n", directory.header->cycle);
+  printf("    Phase:           %s\n", directory.header->phase ? "true" : "false");
+  ink_ctime_r(&directory.header->create_time, tt);
   tt[strlen(tt) - 1] = 0;
-  printf("    Sync Serial:     %u\n", header->sync_serial);
-  printf("    Write Serial:    %u\n", header->write_serial);
+  printf("    Sync Serial:     %u\n", directory.header->sync_serial);
+  printf("    Write Serial:    %u\n", directory.header->write_serial);
   printf("    Create Time:     %s\n", tt);
   printf("\n");
   printf("  Fragment size demographics\n");
@@ -324,19 +324,19 @@ void
 Stripe::_clear_init(std::uint32_t hw_sector_size)
 {
   size_t dir_len = this->dirlen();
-  memset(this->raw_dir, 0, dir_len);
+  memset(this->directory.raw_dir, 0, dir_len);
   this->_init_dir();
-  this->header->magic          = STRIPE_MAGIC;
-  this->header->version._major = CACHE_DB_MAJOR_VERSION;
-  this->header->version._minor = CACHE_DB_MINOR_VERSION;
-  this->scan_pos = this->header->agg_pos = this->header->write_pos = this->start;
-  this->header->last_write_pos                                     = this->header->write_pos;
-  this->header->phase                                              = 0;
-  this->header->cycle                                              = 0;
-  this->header->create_time                                        = time(nullptr);
-  this->header->dirty                                              = 0;
-  this->sector_size = this->header->sector_size = hw_sector_size;
-  *this->footer                                 = *this->header;
+  this->directory.header->magic          = STRIPE_MAGIC;
+  this->directory.header->version._major = CACHE_DB_MAJOR_VERSION;
+  this->directory.header->version._minor = CACHE_DB_MINOR_VERSION;
+  this->scan_pos = this->directory.header->agg_pos = this->directory.header->write_pos = this->start;
+  this->directory.header->last_write_pos                                               = this->directory.header->write_pos;
+  this->directory.header->phase                                                        = 0;
+  this->directory.header->cycle                                                        = 0;
+  this->directory.header->create_time                                                  = time(nullptr);
+  this->directory.header->dirty                                                        = 0;
+  this->sector_size = this->directory.header->sector_size = hw_sector_size;
+  *this->directory.footer                                 = *this->directory.header;
 }
 
 void
@@ -344,11 +344,11 @@ Stripe::_init_dir()
 {
   int b, s, l;
 
-  for (s = 0; s < this->segments; s++) {
-    this->header->freelist[s] = 0;
-    Dir *seg                  = this->dir_segment(s);
+  for (s = 0; s < this->directory.segments; s++) {
+    this->directory.header->freelist[s] = 0;
+    Dir *seg                            = this->directory.get_segment(s);
     for (l = 1; l < DIR_DEPTH; l++) {
-      for (b = 0; b < this->buckets; b++) {
+      for (b = 0; b < this->directory.buckets; b++) {
         Dir *bucket = dir_bucket(b, seg);
         dir_free_entry(dir_bucket_row(bucket, l), s, this);
       }
@@ -360,16 +360,16 @@ bool
 Stripe::flush_aggregate_write_buffer(int fd)
 {
   // set write limit
-  this->header->agg_pos = this->header->write_pos + this->_write_buffer.get_buffer_pos();
+  this->directory.header->agg_pos = this->directory.header->write_pos + this->_write_buffer.get_buffer_pos();
 
-  if (!this->_write_buffer.flush(fd, this->header->write_pos)) {
+  if (!this->_write_buffer.flush(fd, this->directory.header->write_pos)) {
     return false;
   }
-  this->header->last_write_pos  = this->header->write_pos;
-  this->header->write_pos      += this->_write_buffer.get_buffer_pos();
-  ink_assert(this->header->write_pos == this->header->agg_pos);
+  this->directory.header->last_write_pos  = this->directory.header->write_pos;
+  this->directory.header->write_pos      += this->_write_buffer.get_buffer_pos();
+  ink_assert(this->directory.header->write_pos == this->directory.header->agg_pos);
   this->_write_buffer.reset_buffer_pos();
-  this->header->write_serial++;
+  this->directory.header->write_serial++;
 
   return true;
 }
@@ -381,7 +381,7 @@ Stripe::copy_from_aggregate_write_buffer(char *dest, Dir const &dir, size_t nbyt
     return false;
   }
 
-  int agg_offset = this->vol_offset(&dir) - this->header->write_pos;
+  int agg_offset = this->vol_offset(&dir) - this->directory.header->write_pos;
   this->_write_buffer.copy_from(dest, agg_offset, nbytes);
   return true;
 }

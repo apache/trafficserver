@@ -104,7 +104,7 @@ public:
   {
     SET_HANDLER(&WaitingVC::handle_call);
     this->stripe = stripe;
-    this->dir    = *stripe->dir;
+    this->dir    = *stripe->directory.dir;
   }
 
   void
