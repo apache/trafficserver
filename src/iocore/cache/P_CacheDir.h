@@ -286,7 +286,17 @@ struct Directory {
   StripteHeaderFooter *footer{};
   int                  segments{};
   off_t                buckets{};
+
+  /* Total number of dir entries.
+   */
+  int entries() const;
 };
+
+inline int
+Directory::entries() const
+{
+  return this->buckets * DIR_DEPTH * this->segments;
+}
 
 // Global Functions
 

@@ -456,7 +456,7 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
 
   for (p = 0; p < gnstripes; p++) {
     if (d->fd == gstripes[p]->fd) {
-      total_dir_delete   += gstripes[p]->directory.buckets * gstripes[p]->directory.segments * DIR_DEPTH;
+      total_dir_delete   += gstripes[p]->directory.entries();
       used_dir_delete    += dir_entries_used(gstripes[p]);
       total_bytes_delete += gstripes[p]->len - gstripes[p]->dirlen();
     }
@@ -1514,7 +1514,7 @@ CacheProcessor::cacheInitialized()
         Dbg(dbg_ctl_cache_init, "total_cache_bytes = %" PRId64 " = %" PRId64 "Mb", total_cache_bytes,
             total_cache_bytes / (1024 * 1024));
 
-        uint64_t vol_total_direntries  = stripe->directory.buckets * stripe->directory.segments * DIR_DEPTH;
+        uint64_t vol_total_direntries  = stripe->directory.entries();
         total_direntries              += vol_total_direntries;
         Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
 

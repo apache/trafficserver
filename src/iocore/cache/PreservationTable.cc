@@ -173,7 +173,7 @@ PreservationTable::scan_for_pinned_documents(Stripe const *stripe)
     int vol_end_offset    = stripe->offset_to_vol_offset(stripe->len + stripe->skip);
     int before_end_of_vol = pe < vol_end_offset;
     DDbg(dbg_ctl_cache_evac, "scan %d %d", ps, pe);
-    for (int i = 0; i < stripe->direntries(); i++) {
+    for (int i = 0; i < stripe->directory.entries(); i++) {
       // is it a valid pinned object?
       if (!dir_is_empty(&stripe->directory.dir[i]) && dir_pinned(&stripe->directory.dir[i]) &&
           dir_head(&stripe->directory.dir[i])) {

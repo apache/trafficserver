@@ -403,7 +403,7 @@ dir_clean_vol(Stripe *stripe)
 void
 dir_clear_range(off_t start, off_t end, Stripe *stripe)
 {
-  for (off_t i = 0; i < stripe->directory.buckets * DIR_DEPTH * stripe->directory.segments; i++) {
+  for (off_t i = 0; i < stripe->directory.entries(); i++) {
     Dir *e = dir_index(stripe, i);
     if (dir_offset(e) >= static_cast<int64_t>(start) && dir_offset(e) < static_cast<int64_t>(end)) {
       Metrics::Gauge::decrement(cache_rsb.direntries_used);
