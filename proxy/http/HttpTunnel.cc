@@ -1237,14 +1237,6 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   if (p->do_chunking) {
     // This will update body_bytes_to_copy with the number of bytes copied.
     event = producer_handler_dechunked(event, p);
-
-    // If we were in PRECOMPLETE when this function was called
-    // and we are doing chunking, then we just wrote the last
-    // chunk in the function call above.  We are done with the
-    // tunnel.
-    if (event == HTTP_TUNNEL_EVENT_PRECOMPLETE) {
-      event = VC_EVENT_EOS;
-    }
   } else if (p->do_dechunking || p->do_chunked_passthru) {
     // This will update body_bytes_to_copy with the number of bytes copied.
     event = producer_handler_chunked(event, p);

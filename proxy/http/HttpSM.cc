@@ -6148,8 +6148,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     if (client_request_body_bytes > 0) {
       num_body_bytes = client_request_body_bytes;
     } else {
-      num_body_bytes = post_buffer->write(ua_txn->get_remote_reader(),
-                                          chunked ? ua_txn->get_remote_reader()->read_avail() : post_bytes);
+      num_body_bytes =
+        post_buffer->write(ua_txn->get_remote_reader(), chunked ? ua_txn->get_remote_reader()->read_avail() : post_bytes);
     }
     // Don't consume post_bytes here from ua_txn->get_remote_reader() since
     // we are not sure how many bytes the tunnel will use yet. Wait until
