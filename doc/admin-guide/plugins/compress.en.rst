@@ -107,7 +107,9 @@ range-request
 -------------
 
 When set to ``true``, causes |TS| to compress responses to Range Requests.
-Disabled by default. Setting this to true while setting cache to false leads to delivering corrupted content.
+Disabled by default. 
+
+WARNING! Do NOT set this to true if cache is set to false. This combination will deliver corrupt content.
 
 compressible-content-type
 -------------------------
