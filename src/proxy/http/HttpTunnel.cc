@@ -148,6 +148,7 @@ ChunkedHandler::read_size()
 {
   int64_t bytes_used;
   bool    done = false;
+  int     cr   = 0;
 
   while (chunked_reader->read_avail() > 0 && !done) {
     const char *tmp       = chunked_reader->start();
@@ -195,7 +196,15 @@ ChunkedHandler::read_size()
           cur_chunk_bytes_left = (cur_chunk_size = running_sum);
           state                = (running_sum == 0) ? CHUNK_READ_TRAILER_BLANK : CHUNK_READ_CHUNK;
           done                 = true;
+          cr                   = 0;
           break;
+        } else if (ParseRules::is_cr(*tmp)) {
+          if (cr != 0) {
+            state = CHUNK_READ_ERROR;
+            done  = true;
+            break;
+          }
+          cr++;
         }
       } else if (state == CHUNK_READ_SIZE_START) {
         if (ParseRules::is_cr(*tmp)) {
