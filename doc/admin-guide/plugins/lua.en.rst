@@ -989,6 +989,25 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Aget: Mozilla/5.0\r\nAccept: */
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.client_request.get_header_block
+----------------------------------
+**syntax:** *ts.client_request.get_header_block()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** Returns a string holding all the headers for the current client request.
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        block = ts.client_request.get_header_block()
+        ts.debug(block)
+    end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.client_request.client_addr.get_addr
 --------------------------------------
 **syntax:** *ts.client_request.client_addr.get_addr()*
@@ -3884,13 +3903,15 @@ We will get the response like this:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
-ts.sleep
---------
+ts.sleep or ts.sleep_ms
+-----------------------
 **syntax:** *ts.sleep(sec)*
+
+**syntax:** *ts.sleep_ms(msec)*
 
 **context:** *hook point functions added after do_remap*
 
-**description:** Sleeps for the specified seconds without blocking.
+**description:** Sleeps for the specified seconds (or milliseconds) without blocking.
 
 Behind the scene, this method makes use of the ATS event model.
 
@@ -4174,6 +4195,7 @@ Http config constants
     TS_LUA_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK
     TS_LUA_CONFIG_NET_SOCK_NOTSENT_LOWAT
     TS_LUA_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE
+    TS_LUA_CONFIG_HTTP_CACHE_POST_METHOD
     TS_LUA_CONFIG_LAST_ENTRY
 
 :ref:`TOP <admin-plugins-ts-lua>`

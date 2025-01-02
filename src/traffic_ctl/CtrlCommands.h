@@ -237,5 +237,4 @@ private:
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 
-BasePrinter::Options::OutputFormat parse_format(ts::Arguments *args);
-BasePrinter::Options               parse_print_opts(ts::Arguments *args);
+BasePrinter::Options::FormatFlags parse_print_opts(ts::Arguments *args);

@@ -25,18 +25,8 @@
 
 #include "ts/ts.h"
 
-#if TS_VERSION_MAJOR >= 10
+#define EXT_DBG_CTL(_ID) extern DbgCtl stale_response_dbg_ctl_##_ID;
 
-#define TSDebug(TAG_ID, ...) Dbg(stale_response_dbg_ctl_##TAG_ID, __VA_ARGS__)
+#define DEF_DBG_CTL(_ID) DbgCtl stale_response_dbg_ctl_##_ID{PLUGIN_##_ID};
 
-#define EXT_DBG_CTL(TAG_ID) extern DbgCtl stale_response_dbg_ctl_##TAG_ID;
-
-#define DEF_DBG_CTL(TAG_ID) DbgCtl stale_response_dbg_ctl_##TAG_ID{TAG_ID};
-
-#else
-
-#define EXT_DBG_CTL(TAG_ID)
-
-#define DEF_DBG_CTL(TAG_ID)
-
-#endif
+#define SRDBG(_ID, ...) Dbg(stale_response_dbg_ctl_##_ID, __VA_ARGS__)

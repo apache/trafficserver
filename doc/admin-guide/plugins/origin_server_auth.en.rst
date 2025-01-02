@@ -184,7 +184,7 @@ Google Cloud Storage
 Configuration options::
 
     # Mandatory options
-    --access_key=<access_id>
+    --session_token=<session_token>
     --version=gcpv1
 
 If the following option is used then the options could be specified in a file::
@@ -196,5 +196,12 @@ The ``gcp_auth.config`` config file could look like this::
 
     # gcp_auth.config
 
-    access_key=<access_id>
+    session_token=<access_id>
     version=gcpv1
+
+Retrying config loading
+=======================
+
+If the specified configuration file cannot be opened or is missing required options, ATS will attempt to reload the file repeatedly with exponential backoff.
+
+If the configuration file includes an `expiration` parameter and the file has exceeded its expiration time, ATS will retry loading the file every minute for a duration of 10 minutes. After 10 minutes, the file must be manually reloaded.

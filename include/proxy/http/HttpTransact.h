@@ -1141,6 +1141,8 @@ public:
   static void milestone_start_api_time(State *s);
   static void milestone_update_api_time(State *s);
   static void client_result_stat(State *s, ink_hrtime total_time, ink_hrtime request_process_time);
+  static void origin_server_connection_speed(ink_hrtime transfer_time, int64_t nbytes);
+  static void user_agent_connection_speed(ink_hrtime transfer_time, int64_t nbytes);
   static void delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code);
   static bool is_connection_collapse_checks_success(State *s); // YTS Team, yamsat
   static void update_method_stat(int method);

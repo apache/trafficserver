@@ -191,6 +191,7 @@ TSOverridableConfigKey Value                                              Config
 :enumerator:`TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK`             :ts:cv:`proxy.config.plugin.vc.default_buffer_water_mark`
 :enumerator:`TS_CONFIG_NET_SOCK_NOTSENT_LOWAT`                          :ts:cv:`proxy.config.net.sock_notsent_lowat`
 :enumerator:`TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE`          :ts:cv:`proxy.config.body_factory.response_suppression_mode`
+:enumerator:`TS_CONFIG_HTTP_CACHE_POST_METHOD`                          :ts:cv:`proxy.config.http.cache.post_method`
 ======================================================================  ====================================================================
 
 Examples

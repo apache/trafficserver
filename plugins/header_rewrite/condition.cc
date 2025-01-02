@@ -43,13 +43,23 @@ parse_matcher_op(std::string &arg)
     break;
   case '/':
     arg.erase(0, 1);
-    arg.erase(arg.length() - 1, arg.length());
-    return MATCH_REGULAR_EXPRESSION;
+    // There should be a slash at the end
+    if (arg.length() >= 1 && arg[arg.length() - 1] == '/') {
+      arg.erase(arg.length() - 1, arg.length());
+      return MATCH_REGULAR_EXPRESSION;
+    } else {
+      return MATCH_ERROR;
+    }
     break;
   case '{':
     arg.erase(0, 1);
-    arg.erase(arg.length() - 1, arg.length());
-    return MATCH_IP_RANGES;
+    // There should be a right brace at the end
+    if (arg.length() >= 1 && arg[arg.length() - 1] == '}') {
+      arg.erase(arg.length() - 1, arg.length());
+      return MATCH_IP_RANGES;
+    } else {
+      return MATCH_ERROR;
+    }
   default:
     return MATCH_EQUAL;
     break;

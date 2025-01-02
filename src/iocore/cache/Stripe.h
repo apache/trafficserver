@@ -33,6 +33,7 @@
 #include "tscore/ink_align.h"
 #include "tscore/ink_memory.h"
 
+#include <cstddef>
 #include <cstdint>
 
 #define CACHE_BLOCK_SHIFT        9
@@ -50,6 +51,8 @@ struct CacheVol {
   int          scheme           = 0;
   off_t        size             = 0;
   int          num_vols         = 0;
+  int          avg_obj_size     = -1; // Defer to the records.config if not overriden
+  int          fragment_size    = -1; // Defer to the records.config if not overriden
   bool         ramcache_enabled = true;
   StripeSM   **stripes          = nullptr;
   DiskStripe **disk_stripes     = nullptr;
@@ -82,8 +85,7 @@ class Stripe
 {
 public:
   ats_scoped_str hash_text;
-  char          *path = nullptr;
-  int            fd{-1};
+  int            frag_size{-1};
 
   char                *raw_dir{nullptr};
   Dir                 *dir{};
@@ -97,10 +99,22 @@ public:
   off_t                len{};
   off_t                data_blocks{};
 
-  CacheDisk *disk{};
-  uint32_t   sector_size{};
+  uint32_t sector_size{};
 
   CacheVol *cache_vol{};
+
+  /**
+   * Stripe constructor.
+   *
+   * @param disk: The disk object to associate with this stripe.
+   * The disk path must be non-null.
+   * @param blocks: Number of blocks. Must be at least 10.
+   * @param dir_skip: Offset into the disk at which to start the stripe.
+   * If this value is less than START_POS, START_POS will be used instead.
+   *
+   * @see START_POS
+   */
+  Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size = -1, int fragment_size = -1);
 
   int dir_check();
 
@@ -156,13 +170,15 @@ public:
 protected:
   AggregateWriteBuffer _write_buffer;
 
-  void _clear_init();
+  void _clear_init(std::uint32_t hw_sector_size);
   void _init_dir();
-  void _init_data(off_t blocks, off_t dir_skip);
-  bool flush_aggregate_write_buffer();
+  bool flush_aggregate_write_buffer(int fd);
 
 private:
-  void _init_data_internal();
+  void _init_hash_text(CacheDisk const *disk, off_t blocks, off_t dir_skip);
+  void _init_data(off_t store_block_size, int avg_obj_size = -1);
+  void _init_data_internal(int avg_obj_size = -1); // Defaults to cache_config_min_average_object_size;
+  void _init_directory(std::size_t directory_size, int header_size, int footer_size);
 };
 
 inline uint32_t

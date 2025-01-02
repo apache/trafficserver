@@ -68,6 +68,7 @@ PluginDso::PluginDso(const fs::path &configPath, const fs::path &effectivePath, 
 PluginDso::~PluginDso()
 {
   std::string error;
+
   (void)unload(error);
 }
 
@@ -135,11 +136,6 @@ PluginDso::load(std::string &error, const fs::path &compilerPath)
 
         PluginError("plugin '%s' failed to load: %s", _configPath.c_str(), error.c_str());
       }
-    }
-
-    /* Remove the runtime DSO copy even if we succeed loading to avoid leftovers after crashes */
-    if (_preventiveCleaning) {
-      clean(error);
     }
   }
   PluginDbg(_dbg_ctl(), "plugin '%s' finished loading DSO", _configPath.c_str());

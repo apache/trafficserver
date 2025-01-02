@@ -32,6 +32,7 @@
 #include "tsutil/Regex.h"
 #include "proxy/http/remap/PluginFactory.h"
 #include "proxy/http/remap/NextHopStrategyFactory.h"
+#include "proxy/http/remap/RemapConfig.h"
 
 #include <memory>
 
@@ -52,11 +53,6 @@ enum mapping_type {
   FORWARD_MAP_REFERER,
   FORWARD_MAP_WITH_RECV_PORT,
   NONE
-};
-
-enum class ACLBehaviorPolicy {
-  ACL_BEHAVIOR_LEGACY = 0,
-  ACL_BEHAVIOR_MODERN,
 };
 
 /**
@@ -111,7 +107,8 @@ public:
   {
     if (0 == this->refcount_dec()) {
       // Delete this on an ET_TASK thread, which avoids doing potentially slow things on an ET_NET thread.
-      Debug("url_rewrite", "Deleting old configuration immediately");
+      static DbgCtl dc{"url_rewrite"};
+      Dbg(dc, "Deleting old configuration immediately");
       new_Deleter(this, 0);
     }
   }

@@ -292,6 +292,7 @@ register_stat_callbacks()
   http_rsb.cache_open_write_adjust_thread    = Metrics::Counter::createPtr("proxy.process.http.cache.open_write.adjust_thread");
   http_rsb.cache_open_write_begin_time       = Metrics::Counter::createPtr("proxy.process.http.milestone.cache_open_write_begin");
   http_rsb.cache_open_write_end_time         = Metrics::Counter::createPtr("proxy.process.http.milestone.cache_open_write_end");
+  http_rsb.cache_open_write_fail_count       = Metrics::Counter::createPtr("proxy.process.http.cache_open_write_fail_count");
   http_rsb.cache_read_error                  = Metrics::Counter::createPtr("proxy.process.http.cache_read_error");
   http_rsb.cache_read_errors                 = Metrics::Counter::createPtr("proxy.process.http.cache_read_errors");
   http_rsb.cache_updates                     = Metrics::Counter::createPtr("proxy.process.http.cache_updates");
@@ -547,6 +548,49 @@ register_stat_callbacks()
   http_rsb.websocket_current_active_client_connections =
     Metrics::Gauge::createPtr("proxy.process.http.websocket.current_active_client_connections");
 
+  // Speed bucket stats for client and origin
+  http_rsb.user_agent_speed_bytes_per_sec_100 =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100");
+  http_rsb.user_agent_speed_bytes_per_sec_1k = Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_1K");
+  http_rsb.user_agent_speed_bytes_per_sec_10k =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_10K");
+  http_rsb.user_agent_speed_bytes_per_sec_100k =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100K");
+  http_rsb.user_agent_speed_bytes_per_sec_1M = Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_1M");
+  http_rsb.user_agent_speed_bytes_per_sec_10M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_10M");
+  http_rsb.user_agent_speed_bytes_per_sec_100M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100M");
+  http_rsb.user_agent_speed_bytes_per_sec_200M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_200M");
+  http_rsb.user_agent_speed_bytes_per_sec_400M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_400M");
+  http_rsb.user_agent_speed_bytes_per_sec_800M =
+    Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_800M");
+  http_rsb.user_agent_speed_bytes_per_sec_1G = Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_1G");
+  http_rsb.origin_server_speed_bytes_per_sec_100 =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_100");
+  http_rsb.origin_server_speed_bytes_per_sec_1k =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_1K");
+  http_rsb.origin_server_speed_bytes_per_sec_10k =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_10K");
+  http_rsb.origin_server_speed_bytes_per_sec_100k =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_100K");
+  http_rsb.origin_server_speed_bytes_per_sec_1M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_1M");
+  http_rsb.origin_server_speed_bytes_per_sec_10M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_10M");
+  http_rsb.origin_server_speed_bytes_per_sec_100M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_100M");
+  http_rsb.origin_server_speed_bytes_per_sec_200M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_200M");
+  http_rsb.origin_server_speed_bytes_per_sec_400M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_400M");
+  http_rsb.origin_server_speed_bytes_per_sec_800M =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_800M");
+  http_rsb.origin_server_speed_bytes_per_sec_1G =
+    Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_1G");
+
   Metrics::Derived::derive({
     // Total bytes of client request body + headers
     {"proxy.process.http.user_agent_total_request_bytes",
@@ -788,6 +832,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.flow_high_water_mark, "proxy.config.http.flow_control.high_water");
   HttpEstablishStaticConfigLongLong(c.oride.flow_low_water_mark, "proxy.config.http.flow_control.low_water");
   HttpEstablishStaticConfigByte(c.oride.post_check_content_length_enabled, "proxy.config.http.post.check.content_length.enabled");
+  HttpEstablishStaticConfigByte(c.oride.cache_post_method, "proxy.config.http.cache.post_method");
   HttpEstablishStaticConfigByte(c.oride.request_buffer_enabled, "proxy.config.http.request_buffer_enabled");
   HttpEstablishStaticConfigByte(c.strict_uri_parsing, "proxy.config.http.strict_uri_parsing");
 
@@ -922,7 +967,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_auth, "proxy.config.http.cache.ignore_authentication");
   HttpEstablishStaticConfigByte(c.oride.cache_urls_that_look_dynamic, "proxy.config.http.cache.cache_urls_that_look_dynamic");
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_query, "proxy.config.http.cache.ignore_query");
-  HttpEstablishStaticConfigByte(c.cache_post_method, "proxy.config.http.cache.post_method");
 
   HttpEstablishStaticConfigByte(c.oride.ignore_accept_mismatch, "proxy.config.http.cache.ignore_accept_mismatch");
   HttpEstablishStaticConfigByte(c.oride.ignore_accept_language_mismatch, "proxy.config.http.cache.ignore_accept_language_mismatch");
@@ -1085,6 +1129,7 @@ HttpConfig::reconfigure()
   params->oride.http_chunking_size = m_master.oride.http_chunking_size;
 
   params->oride.post_check_content_length_enabled = INT_TO_BOOL(m_master.oride.post_check_content_length_enabled);
+  params->oride.cache_post_method                 = INT_TO_BOOL(m_master.oride.cache_post_method);
 
   params->oride.request_buffer_enabled = INT_TO_BOOL(m_master.oride.request_buffer_enabled);
 
@@ -1214,7 +1259,6 @@ HttpConfig::reconfigure()
   params->oride.cache_ignore_auth              = INT_TO_BOOL(m_master.oride.cache_ignore_auth);
   params->oride.cache_urls_that_look_dynamic   = INT_TO_BOOL(m_master.oride.cache_urls_that_look_dynamic);
   params->oride.cache_ignore_query             = INT_TO_BOOL(m_master.oride.cache_ignore_query);
-  params->cache_post_method                    = INT_TO_BOOL(m_master.cache_post_method);
 
   params->oride.ignore_accept_mismatch          = m_master.oride.ignore_accept_mismatch;
   params->oride.ignore_accept_language_mismatch = m_master.oride.ignore_accept_language_mismatch;

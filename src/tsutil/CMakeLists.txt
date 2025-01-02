@@ -72,8 +72,9 @@ endif()
 if(BUILD_TESTING)
   add_executable(
     test_tsutil
-    unit_tests/test_Metrics.cc
+    unit_tests/test_Bravo.cc
     unit_tests/test_LocalBuffer.cc
+    unit_tests/test_Metrics.cc
     unit_tests/test_PostScript.cc
     unit_tests/test_Strerror.cc
     unit_tests/test_StringConvert.cc

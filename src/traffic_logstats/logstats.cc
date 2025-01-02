@@ -53,11 +53,14 @@
 #include <unordered_set>
 #include <string_view>
 
+using namespace std;
+
+namespace
+{
+
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif
-
-using namespace std;
 
 // Constants, please update the VERSION number when you make a new build!!!
 #define PROGRAM_NAME "traffic_logstats"
@@ -93,12 +96,16 @@ const int PLAI_AS_INT = 1767992432; // For "plain"
 const int IMAG_AS_INT = 1734438249; // For "image"
 const int HTTP_AS_INT = 1886680168; // For "http" followed by "s://" or "://"
 
+DbgCtl dbg_ctl_logstats{"logstats"};
+DbgCtl dbg_ctl_logstats_partial_read{"logstats_partial_read"};
+DbgCtl dbg_ctl_logstats_failed_retries{"logstats_failed_retries"};
+
 // Store our "state" (position in log file etc.)
 struct LastState {
   off_t offset;
   ino_t st_ino;
 };
-static LastState last_state;
+LastState last_state;
 
 // Store the collected counters and stats, per Origin Server, URL or total
 struct StatsCounter {
@@ -587,11 +594,11 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 // Globals, holding the accumulated stats (ok, I'm lazy ...)
-static OriginStats   totals;
-static OriginStorage origins;
-static OriginSet    *origin_set;
-static UrlLru       *urls;
-static int           parse_errors;
+OriginStats   totals;
+OriginStorage origins;
+OriginSet    *origin_set;
+UrlLru       *urls;
+int           parse_errors;
 
 // Command line arguments (parsing)
 struct CommandLineArgs {
@@ -627,9 +634,9 @@ struct CommandLineArgs {
   void parse_arguments(const char **argv);
 };
 
-static CommandLineArgs cl;
+CommandLineArgs cl;
 
-static ArgumentDescription argument_descriptions[] = {
+ArgumentDescription argument_descriptions[] = {
   {"log_file",        'f', "Specific logfile to parse",                                "S1023", cl.log_file,         nullptr, nullptr},
   {"origin_list",     'o', "Only show stats for listed Origins",                       "S4095", cl.origin_list,      nullptr, nullptr},
   {"origin_file",     'O', "File listing Origins to show",                             "S1023", cl.origin_file,      nullptr, nullptr},
@@ -655,7 +662,7 @@ static ArgumentDescription argument_descriptions[] = {
   RUNROOT_ARGUMENT_DESCRIPTION()
 };
 
-static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-binshv]";
+const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-binshv]";
 
 void
 CommandLineArgs::parse_arguments(const char **argv)
@@ -1764,9 +1771,9 @@ process_file(int in_fd, off_t offset, unsigned max_age)
   char buffer[MAX_LOGBUFFER_SIZE];
   int  nread, buffer_bytes;
 
-  Debug("logstats", "Processing file [offset=%" PRId64 "].", (int64_t)offset);
+  Dbg(dbg_ctl_logstats, "Processing file [offset=%" PRId64 "].", (int64_t)offset);
   while (true) {
-    Debug("logstats", "Reading initial header.");
+    Dbg(dbg_ctl_logstats, "Reading initial header.");
     buffer[0] = '\0';
 
     unsigned         first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
@@ -1776,10 +1783,10 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     // particularly optimal, but we should only have to do this
     // once, and hopefully we'll be aligned immediately.
     if (offset > 0) {
-      Debug("logstats", "Re-aligning file read.");
+      Dbg(dbg_ctl_logstats, "Re-aligning file read.");
       while (true) {
         if (lseek(in_fd, offset, SEEK_SET) < 0) {
-          Debug("logstats", "Internal seek failed (offset=%" PRId64 ").", (int64_t)offset);
+          Dbg(dbg_ctl_logstats, "Internal seek failed (offset=%" PRId64 ").", (int64_t)offset);
           return 1;
         }
 
@@ -1807,12 +1814,12 @@ process_file(int in_fd, off_t offset, unsigned max_age)
 
       // ensure that this is a valid logbuffer header
       if (header->cookie != LOG_SEGMENT_COOKIE) {
-        Debug("logstats", "Invalid segment cookie (expected %d, got %d)", LOG_SEGMENT_COOKIE, header->cookie);
+        Dbg(dbg_ctl_logstats, "Invalid segment cookie (expected %d, got %d)", LOG_SEGMENT_COOKIE, header->cookie);
         return 1;
       }
     }
 
-    Debug("logstats", "LogBuffer version %d, current = %d", header->version, LOG_SEGMENT_VERSION);
+    Dbg(dbg_ctl_logstats, "LogBuffer version %d, current = %d", header->version, LOG_SEGMENT_VERSION);
     if (header->version != LOG_SEGMENT_VERSION) {
       return 1;
     }
@@ -1821,20 +1828,20 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
     nread                     = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || EOF == nread) {
-      Debug("logstats", "Second read of header failed (attempted %d bytes at offset %d, got nothing), errno=%d.", second_read_size,
-            first_read_size, errno);
+      Dbg(dbg_ctl_logstats, "Second read of header failed (attempted %d bytes at offset %d, got nothing), errno=%d.",
+          second_read_size, first_read_size, errno);
       return 1;
     }
 
     // read the rest of the buffer
     if (header->byte_count > sizeof(buffer)) {
-      Debug("logstats", "Header byte count [%d] > expected [%zu]", header->byte_count, sizeof(buffer));
+      Dbg(dbg_ctl_logstats, "Header byte count [%d] > expected [%zu]", header->byte_count, sizeof(buffer));
       return 1;
     }
 
     buffer_bytes = header->byte_count - sizeof(LogBufferHeader);
     if (buffer_bytes <= 0 || (unsigned int)buffer_bytes > (sizeof(buffer) - sizeof(LogBufferHeader))) {
-      Debug("logstats", "Buffer payload [%d] is wrong.", buffer_bytes);
+      Dbg(dbg_ctl_logstats, "Buffer payload [%d] is wrong.", buffer_bytes);
       return 1;
     }
 
@@ -1844,8 +1851,8 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     do {
       nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
       if (EOF == nread || !nread) { // just bail on error
-        Debug("logstats", "Read failed while reading log buffer, wanted %d bytes, nread=%d, errno=%d", buffer_bytes - total_read,
-              nread, errno);
+        Dbg(dbg_ctl_logstats, "Read failed while reading log buffer, wanted %d bytes, nread=%d, errno=%d",
+            buffer_bytes - total_read, nread, errno);
         return 1;
       } else {
         total_read += nread;
@@ -1853,14 +1860,14 @@ process_file(int in_fd, off_t offset, unsigned max_age)
 
       if (total_read < buffer_bytes) {
         if (--read_tries_remaining <= 0) {
-          Debug("logstats_failed_retries", "Unable to read after %d tries, total_read=%d, buffer_bytes=%d", MAX_READ_TRIES,
-                total_read, buffer_bytes);
+          Dbg(dbg_ctl_logstats_failed_retries, "Unable to read after %d tries, total_read=%d, buffer_bytes=%d", MAX_READ_TRIES,
+              total_read, buffer_bytes);
           return 1;
         }
         // let's wait until we get more data on this file descriptor
-        Debug("logstats_partial_read",
-              "Failed to read buffer payload [%d bytes], total_read=%d, buffer_bytes=%d, tries_remaining=%d",
-              buffer_bytes - total_read, total_read, buffer_bytes, read_tries_remaining);
+        Dbg(dbg_ctl_logstats_partial_read,
+            "Failed to read buffer payload [%d bytes], total_read=%d, buffer_bytes=%d, tries_remaining=%d",
+            buffer_bytes - total_read, total_read, buffer_bytes, read_tries_remaining);
         usleep(50 * 1000); // wait 50ms
       }
     } while (total_read < buffer_bytes);
@@ -1868,11 +1875,11 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     // Possibly skip too old entries (the entire buffer is skipped)
     if (header->high_timestamp >= max_age) {
       if (parse_log_buff(header, cl.summary != 0, cl.report_per_user != 0) != 0) {
-        Debug("logstats", "Failed to parse log buffer.");
+        Dbg(dbg_ctl_logstats, "Failed to parse log buffer.");
         return 1;
       }
     } else {
-      Debug("logstats", "Skipping old buffer (age=%d, max=%d)", header->high_timestamp, max_age);
+      Dbg(dbg_ctl_logstats, "Skipping old buffer (age=%d, max=%d)", header->high_timestamp, max_age);
     }
   }
 
@@ -2420,6 +2427,8 @@ open_main_log(ExitStatus &status)
   return main_fd;
 }
 
+} // end anonymous namespace
+
 ///////////////////////////////////////////////////////////////////////////////
 // main
 int
@@ -2459,7 +2468,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
 
   // initialize this application for standalone logging operation
   init_log_standalone_basic(PROGRAM_NAME);
-  Log::init(Log::NO_REMOTE_MANAGEMENT | Log::LOGCAT);
+  Log::init(Log::LOGCAT);
 
   // Do we have a list of Origins on the command line?
   if (cl.origin_list[0] != '\0') {

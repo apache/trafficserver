@@ -21,29 +21,7 @@
   limitations under the License.
  */
 
-#include "iocore/net/SSLAPIHooks.h"
-
-#include "api/InkAPIInternal.h"
-
-#include "proxy/HttpAPIHooks.h"
-
-void
-HttpHookState::init(TSHttpHookID /* id ATS_UNUSED */, HttpAPIHooks const * /* global ATS_UNUSED */,
-                    HttpAPIHooks const * /* ssn ATS_UNUSED */, HttpAPIHooks const * /* txn ATS_UNUSED */)
-{
-}
-
-void
-api_init()
-{
-}
-
-APIHook const *
-HttpHookState::getNext()
-{
-  return nullptr;
-}
-
+#include "ts/apidefs.h"
 TSVConn
 TSHttpConnectWithPluginId(sockaddr const * /* addr ATS_UNUSED */, const char * /* tag ATS_UNUSED */, int64_t /* id ATS_UNUSED */)
 {

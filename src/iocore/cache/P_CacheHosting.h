@@ -28,6 +28,8 @@
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
 
+#include "tsutil/Bravo.h"
+
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 
 class StripeSM;
@@ -148,8 +150,8 @@ public:
   class ScopedReader
   {
   public:
-    ScopedReader(ReplaceablePtr<T> *ptr) : ptr(ptr) { ptr->m.lock_shared(); }
-    ~ScopedReader() { ptr->m.unlock_shared(); }
+    ScopedReader(ReplaceablePtr<T> *ptr) : ptr(ptr) { ptr->m.lock_shared(_token); }
+    ~ScopedReader() { ptr->m.unlock_shared(_token); }
 
     const T *
     operator->()
@@ -168,6 +170,7 @@ public:
     ScopedReader &operator=(const ScopedReader &) = delete;
 
     ReplaceablePtr<T> *ptr;
+    ts::bravo::Token   _token = 0;
   };
 
   // ScopedWriter constructs an object which is allowed to read and modify the
@@ -206,8 +209,8 @@ private:
   ReplaceablePtr(const ReplaceablePtr &)            = delete;
   ReplaceablePtr &operator=(const ReplaceablePtr &) = delete;
 
-  std::unique_ptr<T> h = nullptr;
-  std::shared_mutex  m;
+  std::unique_ptr<T>      h = nullptr;
+  ts::bravo::shared_mutex m;
 
   friend class ReplaceablePtr::ScopedReader;
 };
@@ -293,6 +296,8 @@ struct ConfigVol {
   bool      in_percent;
   bool      ramcache_enabled;
   int       percent;
+  int       avg_obj_size;
+  int       fragment_size;
   CacheVol *cachep;
   LINK(ConfigVol, link);
 };

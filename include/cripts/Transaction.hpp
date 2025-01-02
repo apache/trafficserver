@@ -29,15 +29,24 @@
 namespace cripts
 {
 // This is a bitfield, used to disable a particular callback from a previous hook
-enum Callbacks : std::uint8_t {
-  NONE             = 0,
-  DO_REMAP         = 1,
-  DO_POST_REMAP    = 2,
-  DO_SEND_RESPONSE = 4,
-  DO_CACHE_LOOKUP  = 8,
-  DO_SEND_REQUEST  = 16,
-  DO_READ_RESPONSE = 32,
-  DO_TXN_CLOSE     = 64
+enum Callbacks : std::uint32_t {
+  NONE              = 0,
+  DO_REMAP          = 1 << 0,
+  DO_POST_REMAP     = 1 << 1,
+  DO_CACHE_LOOKUP   = 1 << 2,
+  DO_SEND_REQUEST   = 1 << 3,
+  DO_READ_RESPONSE  = 1 << 4,
+  DO_SEND_RESPONSE  = 1 << 5,
+  DO_TXN_CLOSE      = 1 << 6,
+  GLB_TXN_START     = 1 << 7,
+  GLB_READ_REQUEST  = 1 << 8,
+  GLB_PRE_REMAP     = 1 << 9,
+  GLB_POST_REMAP    = 1 << 10,
+  GLB_CACHE_LOOKUP  = 1 << 11,
+  GLB_SEND_REQUEST  = 1 << 12,
+  GLB_READ_RESPONSE = 1 << 13,
+  GLB_SEND_RESPONSE = 1 << 14,
+  GLB_TXN_CLOSE     = 1 << 15,
 };
 
 class Transaction
@@ -58,7 +67,7 @@ public:
   // Keep track of which hook we're currently in. ToDo: Do we still need this with the
   // tests being moved out to the linter?
   TSHttpHookID hook          = TS_HTTP_LAST_HOOK;
-  unsigned     enabled_hooks = 0; // Which hooks are enabled, other than the mandatory ones
+  uint32_t     enabled_hooks = 0; // Which hooks are enabled, other than the mandatory ones
 
   [[nodiscard]] bool
   Aborted() const

@@ -36,8 +36,8 @@
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"
 
-#define EVACUATION_BUCKET_SIZE (2 * EVACUATION_SIZE) // 16MB
 #define EVACUATION_SIZE        (2 * AGG_SIZE)        // 8MB
+#define EVACUATION_BUCKET_SIZE (2 * EVACUATION_SIZE) // 16MB
 #define PIN_SCAN_EVERY         16                    // scan every 1/16 of disk
 
 #define dir_offset_evac_bucket(_o) (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
@@ -85,6 +85,9 @@ struct EvacuationBlock {
  * This class is not safe for concurrent access. It should be protected
  * by a lock.
  *
+ * Destructing this object without first releasing all blocks and calling
+ * periodic_scan may result in memory leaks.
+ *
  * @see Stripe
  */
 class PreservationTable
@@ -98,6 +101,24 @@ public:
    * This is implemented as a hash table using separate chaining.
    */
   DLL<EvacuationBlock> *evacuate{nullptr};
+
+  /**
+   * PreservationTable constructor
+   *
+   * This will abort the program if it is unable to allocate memory.
+   *
+   * @param size The total number of directory entries the table must
+   * be able to store. The size must be a positive number.
+   */
+  PreservationTable(int size);
+
+  ~PreservationTable();
+
+  PreservationTable(PreservationTable const &that)            = delete;
+  PreservationTable &operator=(PreservationTable const &that) = delete;
+
+  PreservationTable(PreservationTable &&that);
+  PreservationTable &operator=(PreservationTable &&that);
 
   /**
    * Check whether the hash table may be indexed with the given offset.

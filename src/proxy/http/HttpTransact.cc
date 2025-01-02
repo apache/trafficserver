@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "proxy/http/HttpConfig.h"
 #include "tscore/ink_inet.h"
 #include "tsutil/ts_bw_format.h"
 
@@ -47,6 +48,7 @@
 #include "proxy/http/HttpBodyFactory.h"
 #include "proxy/IPAllow.h"
 #include "iocore/utils/Machine.h"
+#include "ts/ats_probe.h"
 
 DbgCtl HttpTransact::State::_dbg_ctl{"http"};
 
@@ -521,8 +523,7 @@ HttpTransact::is_server_negative_cached(State *s)
     //   down to 2*down_server_timeout
     if (s->dns_info.active &&
         ts_clock::from_time_t(s->client_request_time) + s->txn_conf->down_server_timeout < s->dns_info.active->last_fail_time()) {
-      s->dns_info.active->last_failure = TS_TIME_ZERO;
-      s->dns_info.active->fail_count   = 0;
+      s->dns_info.active->mark_up();
       ink_assert(!"extreme clock skew");
       return true;
     }
@@ -776,7 +777,7 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
 }
 
 inline static bool
-does_method_require_cache_copy_deletion(const HttpConfigParams *http_config_param, const int method)
+does_method_require_cache_copy_deletion(const OverridableHttpConfigParams *http_config_param, const int method)
 {
   return ((method != HTTP_WKSIDX_GET) &&
           (method == HTTP_WKSIDX_DELETE || method == HTTP_WKSIDX_PURGE || method == HTTP_WKSIDX_PUT ||
@@ -2053,7 +2054,7 @@ HttpTransact::OSDNSLookup(State *s)
       } else if (s->cache_lookup_result == CACHE_LOOKUP_MISS || s->cache_info.action == CACHE_DO_NO_ACTION) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
         // DNS lookup is done if the lookup failed and need to call Handle Cache Open Read Miss
-      } else if (s->cache_info.action == CACHE_PREPARE_TO_WRITE && s->http_config_param->cache_post_method == 1 &&
+      } else if (s->cache_info.action == CACHE_PREPARE_TO_WRITE && s->txn_conf->cache_post_method == 1 &&
                  s->method == HTTP_WKSIDX_POST) {
         // By virtue of being here, we are intending to forward the request on
         // to the server. If we marked this as CACHE_PREPARE_TO_WRITE and this
@@ -2452,7 +2453,7 @@ HttpTransact::issue_revalidate(State *s)
     // request to the server. is_cache_response_returnable will ensure
     // that we forward the request. We now specify what the cache
     // action should be when the response is received.
-    if (does_method_require_cache_copy_deletion(s->http_config_param, s->method)) {
+    if (does_method_require_cache_copy_deletion(s->txn_conf, s->method)) {
       s->cache_info.action = CACHE_PREPARE_TO_DELETE;
       TxnDbg(dbg_ctl_http_seq, "cache action: DELETE");
     } else {
@@ -3044,7 +3045,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
   // fall through
   default:
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_HIT_SERVED);
-    if (s->method == HTTP_WKSIDX_GET || (s->http_config_param->cache_post_method == 1 && s->method == HTTP_WKSIDX_POST) ||
+    if (s->method == HTTP_WKSIDX_GET || (s->txn_conf->cache_post_method == 1 && s->method == HTTP_WKSIDX_POST) ||
         s->api_resp_cacheable == true) {
       // send back the full document to the client.
       TxnDbg(dbg_ctl_http_trans, "Match! Serving full document.");
@@ -3140,6 +3141,7 @@ HttpTransact::handle_cache_write_lock(State *s)
   case CACHE_WL_FAIL:
     // No write lock, ignore the cache and proxy only;
     // FIX: Should just serve from cache if this is a revalidate
+    Metrics::Counter::increment(http_rsb.cache_open_write_fail_count);
     s->cache_info.action = CACHE_DO_NO_ACTION;
     switch (s->cache_open_write_fail_action) {
     case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS:
@@ -3277,7 +3279,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   }
   // We do a cache lookup for some non-GET requests as well.
   // We must, however, not cache the responses to these requests.
-  if (does_method_require_cache_copy_deletion(s->http_config_param, s->method) && s->api_req_cacheable == false) {
+  if (does_method_require_cache_copy_deletion(s->txn_conf, s->method) && s->api_req_cacheable == false) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
   } else if ((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
              does_method_effect_cache(s->method) == false || s->range_setup == RANGE_NOT_SATISFIABLE ||
@@ -5039,6 +5041,17 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
           MIMEField &field2{*spot2};
           name2 = field2.name_get(&name_len2);
 
+          // It is specified above that content type should not
+          // be altered here however when a duplicate header
+          // is present, all headers following are delete and
+          // re-added back. This includes content type if it follows
+          // any duplicate header. This leads to the loss of
+          // content type in the client response.
+          // This ensures that it is not altered when duplicate
+          // headers are present.
+          if (name2 == MIME_FIELD_CONTENT_TYPE) {
+            continue;
+          }
           cached_header->field_delete(name2, name_len2);
         }
         dups_seen = true;
@@ -5892,7 +5905,7 @@ HttpTransact::is_cache_response_returnable(State *s)
     return false;
   }
 
-  if (!HttpTransactHeaders::is_method_cacheable(s->http_config_param, s->method) && s->api_resp_cacheable == false) {
+  if (!HttpTransactHeaders::is_method_cacheable(s->txn_conf, s->method) && s->api_resp_cacheable == false) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
     return false;
@@ -6172,7 +6185,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // Basically, the problem is the resp for POST url1 req should not
   // be served to a GET url1 request, but we just match URL not method.
   int req_method = request->method_get_wksidx();
-  if (!(HttpTransactHeaders::is_method_cacheable(s->http_config_param, req_method)) && s->api_req_cacheable == false) {
+  if (!(HttpTransactHeaders::is_method_cacheable(s->txn_conf, req_method)) && s->api_req_cacheable == false) {
     TxnDbg(dbg_ctl_http_trans, "only GET, and some HEAD and POST are cacheable");
     return false;
   }
@@ -8268,6 +8281,71 @@ HttpTransact::milestone_update_api_time(State *s)
   s->state_machine->milestone_update_api_time();
 }
 
+void
+HttpTransact::origin_server_connection_speed(ink_hrtime transfer_time, int64_t nbytes)
+{
+  float bytes_per_hrtime =
+    (transfer_time == 0) ? (nbytes) : (static_cast<float>(nbytes) / static_cast<float>(static_cast<int64_t>(transfer_time)));
+  int bytes_per_sec = static_cast<int>(bytes_per_hrtime * HRTIME_SECOND);
+
+  if (bytes_per_sec <= 100) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_100);
+  } else if (bytes_per_sec <= 1024) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_1k);
+  } else if (bytes_per_sec <= 10240) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_10k);
+  } else if (bytes_per_sec <= 102400) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_100k);
+  } else if (bytes_per_sec <= 1048576) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_1M);
+  } else if (bytes_per_sec <= 10485760) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_10M);
+  } else if (bytes_per_sec <= 104857600) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_100M);
+  } else if (bytes_per_sec <= 2 * 104857600) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_200M);
+  } else if (bytes_per_sec <= 4 * 104857600) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_400M);
+  } else if (bytes_per_sec <= 8 * 104857600) {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_800M);
+  } else {
+    Metrics::Counter::increment(http_rsb.user_agent_speed_bytes_per_sec_1G);
+  }
+  return;
+}
+
+void
+HttpTransact::user_agent_connection_speed(ink_hrtime transfer_time, int64_t nbytes)
+{
+  float bytes_per_hrtime =
+    (transfer_time == 0) ? (nbytes) : (static_cast<float>(nbytes) / static_cast<float>(static_cast<int64_t>(transfer_time)));
+  int64_t bytes_per_sec = static_cast<int64_t>(bytes_per_hrtime * HRTIME_SECOND);
+
+  if (bytes_per_sec <= 100) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_100);
+  } else if (bytes_per_sec <= 1024) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_1k);
+  } else if (bytes_per_sec <= 10240) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_10k);
+  } else if (bytes_per_sec <= 102400) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_100k);
+  } else if (bytes_per_sec <= 1048576) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_1M);
+  } else if (bytes_per_sec <= 10485760) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_10M);
+  } else if (bytes_per_sec <= 104857600) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_100M);
+  } else if (bytes_per_sec <= 2 * 104857600) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_200M);
+  } else if (bytes_per_sec <= 4 * 104857600) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_400M);
+  } else if (bytes_per_sec <= 8 * 104857600) {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_800M);
+  } else {
+    Metrics::Counter::increment(http_rsb.origin_server_speed_bytes_per_sec_1G);
+  }
+}
+
 /*
  * added request_process_time stat for loadshedding foo
  */
@@ -8586,8 +8664,8 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
 }
 
 void
-HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime /* user_agent_write_time ATS_UNUSED */,
-                                         ink_hrtime /* origin_server_read_time ATS_UNUSED */, int user_agent_request_header_size,
+HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
+                                         ink_hrtime origin_server_read_time, int user_agent_request_header_size,
                                          int64_t user_agent_request_body_size, int user_agent_response_header_size,
                                          int64_t user_agent_response_body_size, int origin_server_request_header_size,
                                          int64_t origin_server_request_body_size, int origin_server_response_header_size,
@@ -8717,6 +8795,14 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
     Metrics::Counter::increment(http_rsb.origin_server_response_header_total_size, origin_server_response_header_size);
     Metrics::Counter::increment(http_rsb.origin_server_request_document_total_size, origin_server_request_body_size);
     Metrics::Counter::increment(http_rsb.origin_server_response_document_total_size, origin_server_response_body_size);
+  }
+
+  if (user_agent_write_time >= 0) {
+    user_agent_connection_speed(user_agent_write_time, user_agent_response_size);
+  }
+
+  if (origin_server_request_header_size > 0 && origin_server_read_time > 0) {
+    origin_server_connection_speed(origin_server_read_time, origin_server_response_size);
   }
 
   if (s->method == HTTP_WKSIDX_PUSH) {

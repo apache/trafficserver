@@ -39,6 +39,7 @@ enum MatcherOps {
   MATCH_GREATER_THEN,
   MATCH_REGULAR_EXPRESSION,
   MATCH_IP_RANGES,
+  MATCH_ERROR,
 };
 
 // Condition modifiers

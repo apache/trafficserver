@@ -50,7 +50,7 @@ DbgCtl dbg_ctl_anon{"anon"};
 } // end anonymous namespace
 
 bool
-HttpTransactHeaders::is_method_cacheable(const HttpConfigParams *http_config_param, const int method)
+HttpTransactHeaders::is_method_cacheable(const OverridableHttpConfigParams *http_config_param, const int method)
 {
   return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD ||
           (http_config_param->cache_post_method == 1 && method == HTTP_WKSIDX_POST));

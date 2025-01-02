@@ -37,6 +37,7 @@
 
 #include "tscore/Version.h"
 #include "api/InkAPIInternal.h"
+#include "api/HttpAPIHooks.h"
 #include "proxy/logging/Log.h"
 #include "proxy/hdrs/URL.h"
 #include "proxy/hdrs/MIME.h"
@@ -44,7 +45,6 @@
 #include "proxy/ProxySession.h"
 #include "proxy/http2/Http2ClientSession.h"
 #include "proxy/PoolableSession.h"
-#include "proxy/HttpAPIHooks.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpConfig.h"
 #include "proxy/PluginHttpConnect.h"
@@ -147,6 +147,20 @@ static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle")
 // forward declarations
 TSReturnCode sdk_sanity_check_null_ptr(void const *ptr);
 TSReturnCode sdk_sanity_check_mbuffer(TSMBuffer bufp);
+
+namespace
+{
+
+DbgCtl dbg_ctl_plugin{"plugin"};
+DbgCtl dbg_ctl_parent_select{"parent_select"};
+DbgCtl dbg_ctl_iocore_net{"iocore_net"};
+DbgCtl dbg_ctl_cache_url{"cache_url"};
+DbgCtl dbg_ctl_ssl{"ssl"};
+DbgCtl dbg_ctl_ssl_cert_update{"ssl.cert_update"};
+DbgCtl dbg_ctl_ssl_session_cache_insert{"ssl.session_cache.insert"};
+DbgCtl dbg_ctl_rpc_api{"rpc.api"};
+
+} // end anonymous namespace
 
 /******************************************************/
 /* Allocators for field handles and standalone fields */
@@ -3937,7 +3951,7 @@ TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_
   auto hdr_handle = reinterpret_cast<HTTPHdrImpl *>(hdr_loc);
 
   if (hdr_handle->m_polarity != HTTP_TYPE_REQUEST) {
-    Debug("plugin", "Trying to get a URL from response header %p", hdr_loc);
+    Dbg(dbg_ctl_plugin, "Trying to get a URL from response header %p", hdr_loc);
     return TS_ERROR;
   }
 
@@ -4956,8 +4970,8 @@ TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
     l_url->copy(&u);
   }
 
-  Debug("parent_select", "TSHttpTxnParentSelectionUrlSet() parent_selection_url : addr = %p val = %p",
-        &(sm->t_state.cache_info.parent_selection_url), sm->t_state.cache_info.parent_selection_url);
+  Dbg(dbg_ctl_parent_select, "TSHttpTxnParentSelectionUrlSet() parent_selection_url : addr = %p val = %p",
+      &(sm->t_state.cache_info.parent_selection_url), sm->t_state.cache_info.parent_selection_url);
 
   return TS_SUCCESS;
 }
@@ -5685,7 +5699,7 @@ struct ActionSink : public Continuation {
   mainEvent(int event, void *edata)
   {
     // Just sink the event ...
-    Debug("iocore_net", "sinking event=%d (%s), edata=%p", event, HttpDebugNames::get_event_name(event), edata);
+    Dbg(dbg_ctl_iocore_net, "sinking event=%d (%s), edata=%p", event, HttpDebugNames::get_event_name(event), edata);
     return EVENT_CONT;
   }
 };
@@ -6463,10 +6477,10 @@ TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *)txnp;
-  Debug("cache_url", "[TSCacheUrlSet]");
+  Dbg(dbg_ctl_cache_url, "[TSCacheUrlSet]");
 
   if (sm->t_state.cache_info.lookup_url == nullptr) {
-    Debug("cache_url", "[TSCacheUrlSet] changing the cache url to: %s", url);
+    Dbg(dbg_ctl_cache_url, "[TSCacheUrlSet] changing the cache url to: %s", url);
 
     if (length == -1) {
       length = strlen(url);
@@ -7261,6 +7275,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->post_check_content_length_enabled, conv);
     break;
+  case TS_CONFIG_HTTP_CACHE_POST_METHOD:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_post_method, conv);
+    break;
   case TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->request_buffer_enabled, conv);
     break;
@@ -7948,10 +7965,10 @@ TSVConnSslSniGet(TSVConn sslp, int *length)
 TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
 {
-  NetVConnection    *vc     = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
-  if (ssl_vc != nullptr) {
-    return reinterpret_cast<TSSslVerifyCTX>(ssl_vc->get_verify_cert());
+  NetVConnection  *vc    = reinterpret_cast<NetVConnection *>(sslp);
+  TLSBasicSupport *tlsbs = vc->get_service<TLSBasicSupport>();
+  if (tlsbs != nullptr) {
+    return reinterpret_cast<TSSslVerifyCTX>(tlsbs->get_tls_cert_to_verify());
   }
   return nullptr;
 }
@@ -8009,13 +8026,13 @@ TSSslSecretSet(const char *secret_name, int secret_name_length, const char *secr
   SSLConfigParams  *load_params = SSLConfig::load_acquire();
   SSLConfigParams  *params      = SSLConfig::acquire();
   if (load_params != nullptr) { // Update the current data structure
-    Debug("ssl.cert_update", "Setting secrets in SSLConfig load for: %.*s", secret_name_length, secret_name);
+    Dbg(dbg_ctl_ssl_cert_update, "Setting secrets in SSLConfig load for: %.*s", secret_name_length, secret_name);
     load_params->secrets.setSecret(secret_name_str, std::string_view(secret_data, secret_data_len));
     load_params->updateCTX(secret_name_str);
     SSLConfig::load_release(load_params);
   }
   if (params != nullptr) {
-    Debug("ssl.cert_update", "Setting secrets in SSLConfig for: %.*s", secret_name_length, secret_name);
+    Dbg(dbg_ctl_ssl_cert_update, "Setting secrets in SSLConfig for: %.*s", secret_name_length, secret_name);
     params->secrets.setSecret(secret_name_str, std::string_view(secret_data, secret_data_len));
     params->updateCTX(secret_name_str);
     SSLConfig::release(params);
@@ -8178,7 +8195,7 @@ TSSslClientCertUpdate(const char *cert_path, const char *key_path)
 
   // Generate second level key for client context lookup
   swoc::bwprint(key, "{}:{}", cert_path, key_path);
-  Debug("ssl.cert_update", "TSSslClientCertUpdate(): Use %.*s as key for lookup", static_cast<int>(key.size()), key.data());
+  Dbg(dbg_ctl_ssl_cert_update, "TSSslClientCertUpdate(): Use %.*s as key for lookup", static_cast<int>(key.size()), key.data());
 
   if (nullptr != params) {
     // Try to update client contexts maps
@@ -8265,7 +8282,7 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
       // Embedded null char
       return TS_ERROR;
     }
-    Debug("ssl.cert_update", "Updating from %s with common name %s", cert_path, common_name_str);
+    Dbg(dbg_ctl_ssl_cert_update, "Updating from %s with common name %s", cert_path, common_name_str);
 
     // Update context to use cert
     cc = lookup->find(common_name_str);
@@ -8328,7 +8345,7 @@ TSAcceptorGetbyID(int ID)
 {
   SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
   auto ret = naVec.at(ID);
-  Debug("ssl", "getNetAccept in INK API.cc %p", ret);
+  Dbg(dbg_ctl_ssl, "getNetAccept in INK API.cc %p", ret);
   return reinterpret_cast<TSAcceptor>(ret);
 }
 
@@ -8755,8 +8772,8 @@ TSRPCRegister(const char *provider_name, size_t provider_len, const char *yaml_v
   // TSYaml to the YAML::Node, in order for them to make sure the version compatibility they need to register here and make sure
   // the version is the same.
   if (std::string_view{yaml_version, yamlcpp_lib_len} != YAMLCPP_LIB_VERSION) {
-    Debug("rpc.api", "[%.*s] YAML version check failed. Passed='%.*s', expected='%s'", static_cast<int>(provider_len),
-          provider_name, static_cast<int>(yamlcpp_lib_len), yaml_version, YAMLCPP_LIB_VERSION);
+    Dbg(dbg_ctl_rpc_api, "[%.*s] YAML version check failed. Passed='%.*s', expected='%s'", static_cast<int>(provider_len),
+        provider_name, static_cast<int>(yamlcpp_lib_len), yaml_version, YAMLCPP_LIB_VERSION);
 
     return nullptr;
   }
@@ -8802,25 +8819,25 @@ TSRPCRegisterNotificationHandler(const char *name, size_t name_len, TSRPCNotific
 TSReturnCode
 TSRPCHandlerDone(TSYaml resp)
 {
-  Debug("rpc.api", ">> Handler seems to be done");
+  Dbg(dbg_ctl_rpc_api, ">> Handler seems to be done");
   std::lock_guard<std::mutex> lock(::rpc::g_rpcHandlingMutex);
   auto                        data       = *(YAML::Node *)resp;
   ::rpc::g_rpcHandlerResponseData        = data;
   ::rpc::g_rpcHandlerProcessingCompleted = true;
   ::rpc::g_rpcHandlingCompletion.notify_one();
-  Debug("rpc.api", ">> all set.");
+  Dbg(dbg_ctl_rpc_api, ">> all set.");
   return TS_SUCCESS;
 }
 
 TSReturnCode
 TSRPCHandlerError(int ec, const char *descr, size_t descr_len)
 {
-  Debug("rpc.api", ">> Handler seems to be done with an error");
+  Dbg(dbg_ctl_rpc_api, ">> Handler seems to be done with an error");
   std::lock_guard<std::mutex> lock(rpc::g_rpcHandlingMutex);
   ::rpc::g_rpcHandlerResponseData        = swoc::Errata(ts::make_errno_code(ec), "{}", swoc::TextView{descr, descr_len});
   ::rpc::g_rpcHandlerProcessingCompleted = true;
   ::rpc::g_rpcHandlingCompletion.notify_one();
-  Debug("rpc.api", ">> error  flagged.");
+  Dbg(dbg_ctl_rpc_api, ">> error  flagged.");
   return TS_SUCCESS;
 }
 
@@ -8848,7 +8865,7 @@ TSRecYAMLConfigParse(TSYaml node, TSYAMLRecNodeHandler handler, void *data)
   // Drop API logs in case of an error.
   if (!err.empty()) {
     std::string buf;
-    Debug("plugin", "%s", swoc::bwprint(buf, "{}", err).c_str());
+    Dbg(dbg_ctl_plugin, "%s", swoc::bwprint(buf, "{}", err).c_str());
   }
 
   return err.empty() ? TS_SUCCESS : TS_ERROR;

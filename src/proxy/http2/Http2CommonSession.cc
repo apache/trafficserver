@@ -274,8 +274,9 @@ Http2CommonSession::do_start_frame_read(Http2ErrorCode &ret_error)
     this->cur_frame_from_early_data  = true;
   }
 
-  Http2SsnDebug("frame header length=%u, type=%u, flags=0x%x, streamid=%u", (unsigned)this->current_hdr.length,
-                (unsigned)this->current_hdr.type, (unsigned)this->current_hdr.flags, this->current_hdr.streamid);
+  Http2SsnDebug("frame header length=%u, type=%u, flags=0x%x, streamid=%u, early_data=%d", (unsigned)this->current_hdr.length,
+                (unsigned)this->current_hdr.type, (unsigned)this->current_hdr.flags, this->current_hdr.streamid,
+                this->cur_frame_from_early_data);
 
   this->_read_buffer_reader->consume(nbytes);
 

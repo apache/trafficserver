@@ -82,6 +82,10 @@ class Arguments
 {
 public:
   Arguments();
+  Arguments(const Arguments &)            = default;
+  Arguments(Arguments &&)                 = default;
+  Arguments &operator=(const Arguments &) = default;
+  Arguments &operator=(Arguments &&)      = default;
   ~Arguments();
 
   ArgumentData get(std::string const &name);
@@ -135,6 +139,10 @@ public:
   public:
     // Constructor and destructor
     Command();
+    Command(const Command &)            = default;
+    Command(Command &&)                 = default;
+    Command &operator=(const Command &) = default;
+    Command &operator=(Command &&)      = default;
     ~Command();
     /** Add an option to current command
         @return The Option object.

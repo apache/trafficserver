@@ -400,7 +400,7 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
         ink_assert(checksum == doc->checksum);
         if (checksum != doc->checksum) {
           Note("cache: checksum error for [%" PRIu64 " %" PRIu64 "] len %d, hlen %d, disk %s, offset %" PRIu64 " size %zu",
-               doc->first_key.b[0], doc->first_key.b[1], doc->len, doc->hlen, stripe->path, (uint64_t)io.aiocb.aio_offset,
+               doc->first_key.b[0], doc->first_key.b[1], doc->len, doc->hlen, stripe->disk->path, (uint64_t)io.aiocb.aio_offset,
                (size_t)io.aiocb.aio_nbytes);
           doc->magic = DOC_CORRUPT;
           okay       = 0;

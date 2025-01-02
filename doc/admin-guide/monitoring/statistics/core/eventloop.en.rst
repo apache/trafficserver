@@ -80,6 +80,21 @@ high then it is likely transactions are experiencing significant latency.
 
     The maximum amount of time spent in a single loop in the last 10 seconds.
 
+.. ts:stat:: global proxy.process.eventloop.drain.queue.max.10s integer
+   :units: nanoseconds
+
+    The maximum amount of time spent draining the event queue in a single loop in the last 10 seconds.
+
+.. ts:stat:: global proxy.process.eventloop.io.wait.max.10s integer
+   :units: nanoseconds
+
+    The maximum amount of time spent waiting for network IO in a single loop in the last 10 seconds.
+
+.. ts:stat:: global proxy.process.eventloop.io.work.max.10s integer
+   :units: nanoseconds
+
+    The maximum amount of time spent processing network IO in a single loop in the last 10 seconds.
+
 .. rubric:: 100 Second Metrics
 
 .. ts:stat:: global proxy.process.eventloop.count.100s integer
@@ -113,6 +128,21 @@ high then it is likely transactions are experiencing significant latency.
 
     The maximum amount of time spent in a single loop in the last 100 seconds.
 
+.. ts:stat:: global proxy.process.eventloop.drain.queue.max.100s integer
+   :units: nanoseconds
+
+    The maximum amount of time spent draining the event queue in a single loop in the last 100 seconds.
+
+.. ts:stat:: global proxy.process.eventloop.io.wait.max.100s integer
+   :units: nanoseconds
+
+    The maximum amount of time spent waiting for network IO in a single loop in the last 100 seconds.
+
+.. ts:stat:: global proxy.process.eventloop.io.work.max.100s integer
+   :units: nanoseconds
+
+    The maximum amount of time spent processing network IO in a single loop in the last 100 seconds.
+
 .. rubric:: 1000 Second Metrics
 
 .. ts:stat:: global proxy.process.eventloop.count.1000s integer
@@ -145,6 +175,21 @@ high then it is likely transactions are experiencing significant latency.
     :units: nanoseconds
 
     The maximum amount of time spent in a single loop in the last 1000 seconds.
+
+.. ts:stat:: global proxy.process.eventloop.drain.queue.max.1000s integer
+   :units: nanoseconds
+
+    The maximum amount of time spent draining the event queue in a single loop in the last 1000 seconds.
+
+.. ts:stat:: global proxy.process.eventloop.io.wait.max.1000s integer
+   :units: nanoseconds
+
+    The maximum amount of time spent waiting for network IO in a single loop in the last 1000 seconds.
+
+.. ts:stat:: global proxy.process.eventloop.io.work.max.1000s integer
+   :units: nanoseconds
+
+    The maximum amount of time spent processing network IO in a single loop in the last 1000 seconds.
 
 .. rubric:: Histogram Metrics
 

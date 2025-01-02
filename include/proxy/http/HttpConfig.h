@@ -85,6 +85,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *cache_open_write_adjust_thread;
   Metrics::Counter::AtomicType *cache_open_write_begin_time;
   Metrics::Counter::AtomicType *cache_open_write_end_time;
+  Metrics::Counter::AtomicType *cache_open_write_fail_count;
   Metrics::Counter::AtomicType *cache_read_error;
   Metrics::Counter::AtomicType *cache_read_errors;
   Metrics::Counter::AtomicType *cache_updates;
@@ -304,6 +305,28 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *user_agent_response_document_total_size;
   Metrics::Counter::AtomicType *user_agent_response_header_total_size;
   Metrics::Gauge::AtomicType   *websocket_current_active_client_connections;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_100;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_1k;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_10k;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_100k;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_1M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_10M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_100M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_200M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_400M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_800M;
+  Metrics::Counter::AtomicType *user_agent_speed_bytes_per_sec_1G;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_100;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_1k;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_10k;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_100k;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_1M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_10M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_100M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_200M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_400M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_800M;
+  Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_1G;
 };
 
 enum CacheOpenWriteFailAction_t {
@@ -524,6 +547,8 @@ struct OverridableHttpConfigParams {
   // Check Post request //
   ////////////////////////
   MgmtByte post_check_content_length_enabled = 1;
+
+  MgmtByte cache_post_method = 0;
 
   ////////////////////////////////////////////////
   // Buffer post body before connecting servers //
@@ -750,8 +775,6 @@ public:
   MgmtByte use_client_source_port = 0;
 
   MgmtByte enable_http_stats = 1; // Can be "slow"
-
-  MgmtByte cache_post_method = 0;
 
   MgmtByte push_method_enabled = 0;
 

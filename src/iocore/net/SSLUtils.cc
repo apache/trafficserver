@@ -195,20 +195,14 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   Dbg(dbg_ctl_ssl_verify, "Callback: verify client cert");
   auto              *ssl   = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  TLSBasicSupport   *tbs   = TLSBasicSupport::getInstance(ssl);
 
-  if (!netvc || netvc->ssl != ssl) {
-    Dbg(dbg_ctl_ssl_verify, "ssl_verify_client_callback call back on stale netvc");
+  if (tbs == nullptr) {
+    Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
     return false;
   }
 
-  netvc->set_verify_cert(ctx);
-  TLSEventSupport *es = TLSEventSupport::getInstance(ssl);
-  if (es) {
-    es->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
-  }
-  netvc->set_verify_cert(nullptr);
-
-  if (netvc->getSSLHandShakeComplete()) { // hook moved the handshake state to terminal
+  if (tbs->verify_certificate(ctx) == 1) { // hook moved the handshake state to terminal
     Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", netvc->options.sni_servername.get());
     return false;
   }
@@ -1007,6 +1001,28 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
       }
       Metrics::Counter::increment(it->second);
     }
+
+#if defined(OPENSSL_IS_BORINGSSL)
+    uint16_t group_id = SSL_get_group_id(ssl);
+    if (group_id != 0) {
+      const char *group_name = SSL_get_group_name(group_id);
+      if (auto it = tls_group_map.find(group_name); it != tls_group_map.end()) {
+        Metrics::Counter::increment(it->second);
+      } else {
+        Warning("Unknown TLS Group");
+      }
+    }
+#elif defined(SSL_get_negotiated_group)
+    int nid = SSL_get_negotiated_group(const_cast<SSL *>(ssl));
+    if (nid != NID_undef) {
+      if (auto it = tls_group_map.find(nid); it != tls_group_map.end()) {
+        Metrics::Counter::increment(it->second);
+      } else {
+        auto other = tls_group_map.find(SSL_GROUP_STAT_OTHER_KEY);
+        Metrics::Counter::increment(other->second);
+      }
+    }
+#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
   }
 }
 
@@ -1152,6 +1168,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     Dbg(dbg_ctl_ssl_load, "Creating new context %p cert_count=%ld initial: %s", ctx, cert_names_list.size(),
         cert_names_list[0].c_str());
 
+    SSL_CTX_set_min_proto_version(ctx, TLS1_VERSION);
     SSL_CTX_set_options(ctx, _params->ssl_ctx_options);
 
     if (_params->server_tls_ver_min >= 0 || _params->server_tls_ver_max >= 0) {
@@ -1410,20 +1427,15 @@ SSLMultiCertConfigLoader::_set_cipher_suites([[maybe_unused]] SSL_CTX *ctx)
 }
 
 bool
-SSLMultiCertConfigLoader::_set_curves([[maybe_unused]] SSL_CTX *ctx)
+SSLMultiCertConfigLoader::_set_curves(SSL_CTX *ctx)
 {
-#if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (this->_params->server_groups_list != nullptr) {
-#ifdef SSL_CTX_set1_groups_list
     if (!SSL_CTX_set1_groups_list(ctx, this->_params->server_groups_list)) {
-#else
-    if (!SSL_CTX_set1_curves_list(ctx, this->_params->server_groups_list)) {
-#endif
       SSLError("invalid groups list for server in %s", ts::filename::RECORDS);
       return false;
     }
   }
-#endif
+
   return true;
 }
 

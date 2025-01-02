@@ -212,123 +212,6 @@ phase of the transaction.  This happens when there is no host in the incoming UR
 and only set as a host header.  During the remap phase the host header is copied
 to the CLIENT-URL.  Use CLIENT-HEADER:Host if you are going to match the host.
 
-COOKIE
-~~~~~~
-::
-
-    cond %{COOKIE:<name>} <operand>
-
-Value of the cookie ``<name>``. This does not expose or match against a
-cookie's expiration, the domain(s) on which it is valid, whether it is protocol
-restricted, or any of the other metadata; simply the current value of the
-cookie as presented by the client.
-
-FROM-URL
-~~~~~~~~
-::
-
-    cond %{FROM-URL:<part>} <operand>
-
-In a remapping context, this condition matches against the source URL from
-which the remapping was generated. This condition is valid only within
-configurations provided through :file:`remap.config` as described in `Enabling
-Per-Mapping`_ above.
-
-The ``<part>`` allows the operand to match against just a component of the URL,
-as documented in `URL Parts`_ below.
-
-NEXT-HOP
-~~~~~~~~
-::
-
-    cond %{NEXT-HOP:<part>} <operand>
-
-Returns next hop current selected parent information.  The following qualifiers
-are supported::
-
-    %{NEXT-HOP:HOST} Name of the current selected parent.
-    %{NEXT-HOP:PORT} Port of the current selected parent.
-
-Note that the ``<part>`` of NEXT-HOP will likely not be available unless
-an origin server connection is attempted at which point it will available
-as part of the ``SEND_REQUEST_HDR_HOOK``.
-
-For example::
-
-    cond %{SEND_REQUEST_HDR_HOOK} [AND]
-    cond %{NEXT-HOP:HOST} =www.firstparent.com
-        set-header Host vhost.firstparent.com
-
-    cond %{SEND_REQUEST_HDR_HOOK} [AND]
-    cond %{NEXT-HOP:HOST} =www.secondparent.com
-        set-header Host vhost.secondparent.com
-
-GEO
-~~~
-::
-
-    cond %{GEO:<part>} <operand>
-
-Perform a GeoIP lookup of the client-IP, using a 3rd party library and
-DB. Currently the MaxMind GeoIP and MaxMindDB APIs are supported. The default is to
-do a Country lookup, but the following qualifiers are supported::
-
-    %{GEO:COUNTRY}      The country code (e.g. "US")
-    %{GEO:COUNTRY-ISO}  The country ISO code (e.g. 225)
-    %{GEO:ASN}          The AS number for the provider network (e.g. 7922)
-    %{GEO:ASN-NAME}     A descriptive string of the AS provider
-
-These operators can be used both as conditionals, as well as values for
-setting headers. For example::
-
-    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
-    cond %${GEO:COUNTRY} =US
-        set-header ATS-Geo-Country %{GEO:COUNTRY}
-        set-header ATS-Geo-Country-ISO %{GEO:COUNTRY-ISO}
-        set-header ATS-Geo-ASN %{GEO:ASN}
-        set-header ATS-Geo-ASN-NAME %{GEO:ASN-NAME}
-
-
-HEADER
-~~~~~~
-::
-
-    cond %{HEADER:<name>} <operand>
-
-Value of the header ``<name>`` from either the original client request or the
-origin server's response, depending upon the hook context in which the rule is
-being evaluated. Consult `Requests vs. Responses`_ for more information on how
-to distinguish the two, as well as enforce that a rule is always evaluated in
-the desired context.
-
-Note that some headers may appear in an HTTP message more than once. In these
-cases, the value of the header operated on by this condition will be a comma
-separated string of the values from every occurrence of the header. Refer to
-`Repeated Headers`_ for more information.
-
-If you wish to use a client request header, regardless of hook context, you may
-consider using the `CLIENT-HEADER`_ condition instead.
-
-ID
-~~
-::
-
-   cond %{ID:REQUEST} >100
-
-This condition provides access to three identifier values that ATS uses
-internally for things like logging and debugging. Since these are IDs, they
-are mostly useful as a value (operand) to other operators. The three types of
-IDs are ::
-
-    %{ID:REQUEST}    A unique, sequence number for the transaction
-    %{ID:PROCESS}    A UUID string, generated every time ATS restarts
-    %{ID:UNIQUE}     The combination of the previous two IDs
-
-Now, even though these are conditionals, their primary use are as value
-arguments to another operator. For example::
-
-    set-header ATS-Req-UUID %{ID:UNIQUE}
-
 CIDR
 ~~~~
 ::
@@ -363,6 +246,111 @@ e.g.::
 
 This condition has no requirements other than access to the Client IP, hence,
 it should work in any and all hooks.
+
+COOKIE
+~~~~~~
+::
+
+    cond %{COOKIE:<name>} <operand>
+
+Value of the cookie ``<name>``. This does not expose or match against a
+cookie's expiration, the domain(s) on which it is valid, whether it is protocol
+restricted, or any of the other metadata; simply the current value of the
+cookie as presented by the client.
+
+FROM-URL
+~~~~~~~~
+::
+
+    cond %{FROM-URL:<part>} <operand>
+
+In a remapping context, this condition matches against the source URL from
+which the remapping was generated. This condition is valid only within
+configurations provided through :file:`remap.config` as described in `Enabling
+Per-Mapping`_ above.
+
+The ``<part>`` allows the operand to match against just a component of the URL,
+as documented in `URL Parts`_ below.
+
+GEO
+~~~
+::
+
+    cond %{GEO:<part>} <operand>
+
+Perform a GeoIP lookup of the client-IP, using a 3rd party library and
+DB. Currently the MaxMind GeoIP and MaxMindDB APIs are supported. The default is to
+do a Country lookup, but the following qualifiers are supported::
+
+    %{GEO:COUNTRY}      The country code (e.g. "US")
+    %{GEO:COUNTRY-ISO}  The country ISO code (e.g. 225)
+    %{GEO:ASN}          The AS number for the provider network (e.g. 7922)
+    %{GEO:ASN-NAME}     A descriptive string of the AS provider
+
+These operators can be used both as conditionals, as well as values for
+setting headers. For example::
+
+    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    cond %{GEO:COUNTRY} =US
+        set-header ATS-Geo-Country %{GEO:COUNTRY}
+        set-header ATS-Geo-Country-ISO %{GEO:COUNTRY-ISO}
+        set-header ATS-Geo-ASN %{GEO:ASN}
+        set-header ATS-Geo-ASN-NAME %{GEO:ASN-NAME}
+
+
+HEADER
+~~~~~~
+::
+
+    cond %{HEADER:<name>} <operand>
+
+Value of the header ``<name>`` from either the original client request or the
+origin server's response, depending upon the hook context in which the rule is
+being evaluated. Consult `Requests vs. Responses`_ for more information on how
+to distinguish the two, as well as enforce that a rule is always evaluated in
+the desired context.
+
+Note that some headers may appear in an HTTP message more than once. In these
+cases, the value of the header operated on by this condition will be a comma
+separated string of the values from every occurrence of the header. Refer to
+`Repeated Headers`_ for more information.
+
+If you wish to use a client request header, regardless of hook context, you may
+consider using the `CLIENT-HEADER`_ condition instead.
+
+HTTP-CNTL
+~~~~~~~~~
+::
+
+    cond %{HTTP-CNTL:<controller>}
+
+This condition allows you to check the state of various HTTP controls. The controls
+are of the same name as for `set-http-cntl`. This condition returns a ``true`` or
+``false`` value, depending on the state of the control. For example::
+
+    cond %{HTTP-CNTL:LOGGING} [NOT]
+
+would only continue evaluation if logging is turned off.
+
+ID
+~~
+::
+
+   cond %{ID:REQUEST} >100
+
+This condition provides access to three identifier values that ATS uses
+internally for things like logging and debugging. Since these are IDs, they
+are mostly useful as a value (operand) to other operators. The three types of
+IDs are ::
+
+    %{ID:REQUEST}    A unique, sequence number for the transaction
+    %{ID:PROCESS}    A UUID string, generated every time ATS restarts
+    %{ID:UNIQUE}     The combination of the previous two IDs
+
+Now, even though these are conditionals, their primary use are as value
+arguments to another operator. For example::
+
+    set-header ATS-Req-UUID %{ID:UNIQUE}
 
 INBOUND
 ~~~~~~~
@@ -462,6 +450,32 @@ METHOD
 
 The HTTP method (e.g. ``GET``, ``HEAD``, ``POST``, and so on) used by the
 client for this transaction.
+
+NEXT-HOP
+~~~~~~~~
+::
+
+    cond %{NEXT-HOP:<part>} <operand>
+
+Returns next hop current selected parent information.  The following qualifiers
+are supported::
+
+    %{NEXT-HOP:HOST} Name of the current selected parent.
+    %{NEXT-HOP:PORT} Port of the current selected parent.
+
+Note that the ``<part>`` of NEXT-HOP will likely not be available unless
+an origin server connection is attempted at which point it will available
+as part of the ``SEND_REQUEST_HDR_HOOK``.
+
+For example::
+
+    cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    cond %{NEXT-HOP:HOST} =www.firstparent.com
+        set-header Host vhost.firstparent.com
+
+    cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    cond %{NEXT-HOP:HOST} =www.secondparent.com
+        set-header Host vhost.secondparent.com
 
 NOW
 ~~~
@@ -679,6 +693,24 @@ no-op
 
 This operator does nothing, takes no arguments, and has no side effects.
 
+rm-destination
+~~~~~~~~~~~~~~
+::
+
+  rm-destination <part>
+
+Removes individual components of the remapped destination's address. When
+changing the remapped destination, ``<part>`` should be used to indicate the
+component that is being modified (see `URL Parts`_). Currently the only valid
+parts for rm-destination are QUERY, PATH, and PORT.
+
+For the query parameter, this operator takes an optional second argument,
+which is a list of query parameters to remove (or keep with ``[INV]`` modifier).
+
+::
+
+  rm-destination QUERY <comma separate list of query parameter>
+
 rm-header
 ~~~~~~~~~
 ::
@@ -694,6 +726,15 @@ rm-cookie
   rm-cookie <name>
 
 Removes the cookie ``<name>``.
+
+run-plugin
+~~~~~~~~~~~~~~
+::
+
+  run-plugin <plugin-name>.so "<plugin-argument> ..."
+
+This allows to run an existing remap plugin, conditionally, from within a
+header rewrite rule.
 
 set-body
 ~~~~~~~~
@@ -774,7 +815,7 @@ the appropriate logs even when the debug tag has not been enabled. For
 additional information on |TS| debugging statements, refer to
 :ref:`developer-debug-tags` in the developer's documentation.
 
-**Note**: This operator is deprecated, use the ``set-http-cntl`` operator instead,
+**Note**: This operator is deprecated, use the `set-http-cntl` operator instead,
 with the ``TXN_DEBUG`` control.
 
 set-destination
@@ -789,34 +830,6 @@ component that is being modified (see `URL Parts`_), and ``<value>`` will be
 used as its replacement. You must supply a non-zero length value, otherwise
 this operator will be an effective no-op (though a warning will be emitted to
 the logs if debugging is enabled).
-
-rm-destination
-~~~~~~~~~~~~~~
-::
-
-  rm-destination <part>
-
-Removes individual components of the remapped destination's address. When
-changing the remapped destination, ``<part>`` should be used to indicate the
-component that is being modified (see `URL Parts`_). Currently the only valid
-parts for rm-destination are QUERY, PATH, and PORT.
-
-For the query parameter, this operator takes an optional second argument,
-which is a list of query parameters to remove (or keep with ``[INV]`` modifier).
-
-::
-
-  rm-destination QUERY <comma separate list of query parameter>
-
-
-run-plugin
-~~~~~~~~~~~~~~
-::
-
-  run-plugin <plugin-name>.so "<plugin-argument> ..."
-
-This allows to run an existing remap plugin, conditionally, from within a
-header rewrite rule.
 
 set-header
 ~~~~~~~~~~
@@ -886,7 +899,7 @@ When invoked, and when ``<value>`` is any of ``1``, ``true``, or ``TRUE``, this
 operator causes |TS| to abort further request remapping. Any other value and
 the operator will effectively be a no-op.
 
-**Note**: This operator is deprecated, use the ``set-http-cntl`` operator instead,
+**Note**: This operator is deprecated, use the `set-http-cntl` operator instead,
 with the ``SKIP_REMAP`` control.
 
 set-cookie
@@ -1370,12 +1383,12 @@ The following ruleset removes any query parameters set by the client.::
    cond %{REMAP_PSEUDO_HOOK}
    rm-destination QUERY
 
-Remove only a few select query parameters:
+Remove only a few select query parameters::
 
    cond %{REMAP_PSEUDO_HOOK}
    rm-destination QUERY foo,bar
 
-Keep only a few select query parameters -- removing the rest:
+Keep only a few select query parameters -- removing the rest::
 
    cond %{REMAP_PSEUDO_HOOK}
    rm-destination QUERY foo,bar [I]

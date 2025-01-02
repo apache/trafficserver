@@ -31,7 +31,6 @@
 #include "iocore/eventsystem/Continuation.h"
 
 // aio
-#include "../aio/P_AIO.h"
 #include "iocore/aio/AIO.h"
 
 class Stripe;
@@ -65,8 +64,6 @@ class CacheEvacuateDocVC;
 #define DIR_OFFSET_BITS         40
 #define DIR_OFFSET_MAX          ((((off_t)1) << DIR_OFFSET_BITS) - 1)
 
-#define SYNC_MAX_WRITE     (2 * 1024 * 1024)
-#define SYNC_DELAY         HRTIME_MSECONDS(500)
 #define DO_NOT_REMOVE_THIS 0
 
 // Debugging Options
@@ -244,16 +241,16 @@ struct OpenDir : public Continuation {
 };
 
 struct CacheSync : public Continuation {
-  int                 stripe_index = 0;
-  char               *buf          = nullptr;
-  size_t              buflen       = 0;
-  bool                buf_huge     = false;
-  off_t               writepos     = 0;
-  AIOCallbackInternal io;
-  Event              *trigger    = nullptr;
-  ink_hrtime          start_time = 0;
-  int                 mainEvent(int event, Event *e);
-  void                aio_write(int fd, char *b, int n, off_t o);
+  int         stripe_index = 0;
+  char       *buf          = nullptr;
+  size_t      buflen       = 0;
+  bool        buf_huge     = false;
+  off_t       writepos     = 0;
+  AIOCallback io;
+  Event      *trigger    = nullptr;
+  ink_hrtime  start_time = 0;
+  int         mainEvent(int event, Event *e);
+  void        aio_write(int fd, char *b, int n, off_t o);
 
   CacheSync() : Continuation(new_ProxyMutex()) { SET_HANDLER(&CacheSync::mainEvent); }
 };

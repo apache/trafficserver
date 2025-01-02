@@ -33,7 +33,7 @@ class HttpTransactHeaders
 {
 public:
   static bool is_this_http_method_supported(int method);
-  static bool is_method_cacheable(const HttpConfigParams *http_config_param, const int method);
+  static bool is_method_cacheable(const OverridableHttpConfigParams *http_config_param, const int method);
   static bool is_method_cache_lookupable(int method);
   static bool is_this_a_hop_by_hop_header(const char *field_name_wks);
   static bool is_this_method_supported(int the_scheme, int the_method);

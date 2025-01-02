@@ -758,7 +758,7 @@ Config::load_cli_args(Handle handle, const std::vector<std::string> &args, int a
   for (auto const &arg : args) {
     argv[idx++] = arg.c_str();
   }
-  return this->load_cli_args(handle, argv, arg_idx, cache);
+  return this->load_cli_args(std::move(handle), argv, arg_idx, cache);
 }
 
 Errata

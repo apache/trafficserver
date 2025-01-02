@@ -34,7 +34,7 @@ IOUringEventIO::start(EventLoop l, IOUringContext *h)
 }
 
 void
-IOUringEventIO::process_event(int flags)
+IOUringEventIO::process_event(int /* flags ATS_UNUSED */)
 {
   _h->service();
 }

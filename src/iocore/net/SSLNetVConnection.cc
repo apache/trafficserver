@@ -178,7 +178,7 @@ debug_certificate_name(const char *msg, X509_NAME *name)
 }
 
 int
-SSLNetVConnection::_ssl_read_from_net(EThread *lthread, int64_t &ret)
+SSLNetVConnection::_ssl_read_from_net(int64_t &ret)
 {
   NetState          *s          = &this->read;
   MIOBufferAccessor &buf        = s->vio.buffer;
@@ -221,7 +221,7 @@ SSLNetVConnection::_ssl_read_from_net(EThread *lthread, int64_t &ret)
       bytes_read += nread;
       if (nread > 0) {
         buf.writer()->fill(nread); // Tell the buffer, we've used the bytes
-        this->netActivity(lthread);
+        this->netActivity();
       }
       break;
     case SSL_ERROR_WANT_WRITE:
@@ -275,7 +275,7 @@ SSLNetVConnection::_ssl_read_from_net(EThread *lthread, int64_t &ret)
     Dbg(dbg_ctl_ssl, "bytes_read=%" PRId64, bytes_read);
 
     s->vio.ndone += bytes_read;
-    this->netActivity(lthread);
+    this->netActivity();
 
     ret = bytes_read;
 
@@ -454,7 +454,7 @@ SSLNetVConnection::update_rbio(bool move_to_socket)
 
 // changed by YTS Team, yamsat
 void
-SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
+SSLNetVConnection::net_read_io(NetHandler *nh)
 {
   int       ret;
   int64_t   r     = 0;
@@ -462,11 +462,11 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   NetState *s     = &this->read;
 
   if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == this->attributes) {
-    this->super::net_read_io(nh, lthread);
+    this->super::net_read_io(nh);
     return;
   }
 
-  MUTEX_TRY_LOCK(lock, s->vio.mutex, lthread);
+  MUTEX_TRY_LOCK(lock, s->vio.mutex, nh->thread);
   if (!lock.is_locked()) {
     readReschedule(nh);
     return;
@@ -475,7 +475,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   // The closed flag should be stable once we get the s->vio.mutex in that case
   // (the global session pool mutex).
   if (this->closed) {
-    this->super::net_read_io(nh, lthread);
+    this->super::net_read_io(nh);
     return;
   }
   // If the key renegotiation failed it's over, just signal the error and finish.
@@ -614,7 +614,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   // this comment if you know
   int ssl_read_errno = 0;
   do {
-    ret = this->_ssl_read_from_net(lthread, r);
+    ret = this->_ssl_read_from_net(r);
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
       bytes += r;
     }
@@ -1964,6 +1964,27 @@ SSLNetVConnection::_get_tls_curve() const
   }
 }
 
+int
+SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
+{
+  // Currently, TS_EVENT_SSL_VERIFY_CLIENT/SERVER are invoked only with a NetVC instance.
+  // This requires plugins to call TSSslVerifyCTX in their event handler.
+  // We could pass a structure that has both a cert to verify and a NetVC.
+  // It would allow us to remove confusing TSSslVerifyCTX and its internal implementation that are only available during a very
+  // limited time.
+  if (get_context() == NET_VCONNECTION_IN) {
+    this->callHooks(TS_EVENT_SSL_VERIFY_CLIENT /* , ctx */);
+  } else {
+    this->callHooks(TS_EVENT_SSL_VERIFY_SERVER /* , ctx */);
+  }
+
+  if (this->sslHandshakeStatus == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
+    return 1;
+  }
+
+  return 0;
+}
+
 ssl_error_t
 SSLNetVConnection::_ssl_accept()
 {
@@ -2041,6 +2062,7 @@ SSLNetVConnection::_ssl_accept()
           }
           block->fill(nread);
           this->_early_data_buf->append_block(block);
+          this->_increment_early_data_len(nread);
           Metrics::Counter::increment(ssl_rsb.early_data_received_count);
 
           if (dbg_ctl_ssl_early_data_show_received.on()) {

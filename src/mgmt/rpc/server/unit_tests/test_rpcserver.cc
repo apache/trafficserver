@@ -65,11 +65,17 @@ add_method_handler(const std::string &name, Func &&call)
   return rpc::JsonRPCManager::instance().add_method_handler(name, std::forward<Func>(call), nullptr, {});
 }
 } // namespace rpc
-static const std::string sockPath{"tests/var/jsonrpc20_test.sock"};
-static const std::string lockPath{"tests/var/jsonrpc20_test.lock"};
-static constexpr int     default_backlog{5};
-static constexpr int     default_maxRetriesOnTransientErrors{64};
-static constexpr auto    logTag{"rpc.test.client"};
+
+namespace
+{
+const std::string sockPath{"tests/var/jsonrpc20_test.sock"};
+const std::string lockPath{"tests/var/jsonrpc20_test.lock"};
+constexpr int     default_backlog{5};
+constexpr int     default_maxRetriesOnTransientErrors{64};
+constexpr size_t  default_incoming_req_max_size{32000 * 3};
+DbgCtl            dbg_ctl{"rpc.test.client"};
+
+} // end anonymous namespace
 
 struct RPCServerTestListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
@@ -80,7 +86,7 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
   testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
   {
     Layout::create();
-    init_diags("rpc|rpc.test", nullptr);
+    init_diags("rpc", nullptr);
     RecProcessInit();
 
     signal(SIGPIPE, SIG_IGN);
@@ -95,7 +101,7 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
     rpc::config::RPCConfig serverConfig;
 
     auto confStr{R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
-                 R"(",  "backlog": 5,"max_retry_on_transient_errors": 64 }}})"};
+                 R"(",  "backlog": 5,"max_retry_on_transient_errors": 64, "incoming_request_max_size": 32000 }}})"};
     YAML::Node configNode = YAML::Load(confStr);
     serverConfig.load(configNode["rpc"]);
     try {
@@ -103,7 +109,7 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
 
       jsonrpcServer->start_thread();
     } catch (std::exception const &ex) {
-      Debug(logTag, "Oops: %s", ex.what());
+      Dbg(dbg_ctl, "Oops: %s", ex.what());
     }
   }
 
@@ -111,20 +117,35 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
   void
   testRunEnded(Catch::TestRunStats const & /* testRunStats ATS_UNUSED */) override
   {
-    // jsonrpcServer->stop_thread();
-    // delete main_thread;
     if (jsonrpcServer) {
-      delete jsonrpcServer;
+      delete jsonrpcServer; // will stop the thread
     }
   }
 
 private:
-  // std::unique_ptr<rpc::RPCServer> jrpcServer;
   std::unique_ptr<EThread> main_thread;
 };
 CATCH_REGISTER_LISTENER(RPCServerTestListener)
 
 RPCServerTestListener::~RPCServerTestListener() {}
+
+void
+restart_json_rpc_server(YAML::Node n)
+{
+  rpc::config::RPCConfig serverConfig;
+  serverConfig.load(n["rpc"]);
+
+  if (jsonrpcServer) {
+    delete jsonrpcServer;
+  }
+
+  try {
+    jsonrpcServer = new rpc::RPCServer(serverConfig);
+    jsonrpcServer->start_thread();
+  } catch (std::exception const &ex) {
+    Dbg(dbg_ctl, "Oops: %s", ex.what());
+  }
+}
 
 DEFINE_JSONRPC_PROTO_FUNCTION(some_foo) // id, params
 {
@@ -160,12 +181,12 @@ struct ScopedLocalSocket : shared::rpc::IPCSocketClient {
     auto chunks = chunk<N>(data);
     for (auto &&part : chunks) {
       if (super::_safe_write(_sock, part.c_str(), part.size()) == -1) {
-        Debug(logTag, "error sending message :%s", std ::strerror(errno));
+        Dbg(dbg_ctl, "error sending message :%s", std ::strerror(errno));
         break;
       }
 
       if (disconnect_after_chunk_n == chunk_number) {
-        Debug(logTag, "Disconnecting it after chunk %d", chunk_number);
+        Dbg(dbg_ctl, "Disconnecting it after chunk %d", chunk_number);
         super::disconnect();
         return;
       }
@@ -320,12 +341,12 @@ TEST_CASE("Basic message sending to a running server", "[socket]")
 
 TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "[buffer][error]")
 {
-  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_method_handler("do_nothing32000", &do_nothing));
+  const int S{32000}; // + the rest of the json message.
+  auto json{R"({"jsonrpc": "2.0", "method": "do_nothing32000", "params": {"msg":")" + random_string(S) + R"("}, "id":"32k_1"})"};
 
   SECTION("Message larger than the the accepted size.")
   {
-    const int S{32000}; // + the rest of the json message.
-    auto      json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
     REQUIRE_NOTHROW([&]() {
       ScopedLocalSocket rpc_client;
       auto              resp = rpc_client.query(json);
@@ -333,7 +354,19 @@ TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "
     }());
   }
 
-  REQUIRE(rpc::test_remove_handler("do_nothing"));
+  SECTION("Retry the big message after reconfigure(restart rpc server) the incoming request size limit.")
+  {
+    auto confStr{R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
+                 R"(",  "backlog": 5,"max_retry_on_transient_errors": 64, "incoming_request_max_size": 62000 }}})"};
+    YAML::Node n = YAML::Load(confStr);
+    restart_json_rpc_server(n);
+    REQUIRE_NOTHROW([&]() {
+      ScopedLocalSocket rpc_client;
+      auto              resp = rpc_client.query(json);
+      REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": "32000"}, "id": "32k_1"})");
+    }());
+  }
+  REQUIRE(rpc::test_remove_handler("do_nothing32000"));
 }
 
 TEST_CASE("Test with invalid json message", "[socket]")
@@ -510,6 +543,7 @@ TEST_CASE("Test configuration parsing from a YAML node. UDS values", "[string]")
   REQUIRE(socket->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
   REQUIRE(socket->get_conf().sockPathName == sockPath);
   REQUIRE(socket->get_conf().lockPathName == lockPath);
+  REQUIRE(socket->get_conf().incomingRequestMaxBufferSize == default_incoming_req_max_size);
 }
 
 TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")

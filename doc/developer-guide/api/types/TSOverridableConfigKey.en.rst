@@ -158,6 +158,7 @@ Enumeration Members
 .. enumerator:: TS_CONFIG_NET_DEFAULT_INACTIVITY_TIMEOUT
 .. enumerator:: TS_CONFIG_HTTP_NO_DNS_JUST_FORWARD_TO_PARENT
 .. enumerator:: TS_CONFIG_HTTP_CACHE_IGNORE_QUERY
+.. enumerator:: TS_CONFIG_HTTP_CACHE_POST_METHOD
 
 
 Description

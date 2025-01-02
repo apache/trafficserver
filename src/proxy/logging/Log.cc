@@ -1080,15 +1080,10 @@ Log::init(int flags)
     REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
   }
 
-  // if remote management is enabled, do all necessary initialization to
-  // be able to handle a logging mode change
-  //
-  if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
-    REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
-  }
-
   init_fields();
   if (!(config_flags & LOGCAT)) {
+    REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
+
     Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
     config->init();
     init_when_enabled();
@@ -1102,11 +1097,7 @@ Log::init_when_enabled()
   ink_release_assert(config->initialized == true);
 
   if (!(init_status & FULLY_INITIALIZED)) {
-    // register callbacks
-    //
-    if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
-      LogConfig::register_config_callbacks();
-    }
+    LogConfig::register_config_callbacks();
 
     // create the flush thread
     create_threads();
@@ -1315,7 +1306,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   LogBuffer                                 *logbuffer;
   LogFlushData                              *fdata;
   ink_hrtime                                 now, last_time = 0;
-  int                                        len, total_bytes;
+  ssize_t                                    len, total_bytes;
   SLL<LogFlushData, LogFlushData::Link_link> link, invert_link;
 
   Log::flush_notify->lock();
@@ -1337,7 +1328,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     //
     while ((fdata = invert_link.pop())) {
       char    *buf           = nullptr;
-      int      bytes_written = 0;
+      ssize_t  bytes_written = 0;
       LogFile *logfile       = fdata->m_logfile.get();
 
       if (logfile->m_file_format == LOG_FILE_BINARY) {
@@ -1358,7 +1349,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       // make sure we're open & ready to write
       logfile->check_fd();
       if (!logfile->is_open()) {
-        SiteThrottledWarning("File:%s was closed, have dropped (%d) bytes.", logfile->get_name(), total_bytes);
+        SiteThrottledWarning("File:%s was closed, have dropped (%ld) bytes.", logfile->get_name(), total_bytes);
 
         Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes);
         delete fdata;
@@ -1373,7 +1364,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       //
       while (total_bytes - bytes_written) {
         if (Log::config->logging_space_exhausted) {
-          Dbg(dbg_ctl_log, "logging space exhausted, failed to write file:%s, have dropped (%d) bytes.", logfile->get_name(),
+          Dbg(dbg_ctl_log, "logging space exhausted, failed to write file:%s, have dropped (%ld) bytes.", logfile->get_name(),
               (total_bytes - bytes_written));
 
           Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);
@@ -1383,7 +1374,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
         len = ::write(logfilefd, &buf[bytes_written], total_bytes - bytes_written);
 
         if (len < 0) {
-          SiteThrottledError("Failed to write log to %s: [tried %d, wrote %d, %s]", logfile->get_name(),
+          SiteThrottledError("Failed to write log to %s: [tried %ld, wrote %ld, %s]", logfile->get_name(),
                              total_bytes - bytes_written, bytes_written, strerror(errno));
 
           Metrics::Counter::increment(log_rsb.bytes_lost_before_written_to_disk, total_bytes - bytes_written);

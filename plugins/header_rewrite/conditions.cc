@@ -1425,3 +1425,19 @@ ConditionNextHop::eval(const Resources &res)
 
   return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
+
+// ConditionHttpCntl: request header.
+void
+ConditionHttpCntl::initialize(Parser &p)
+{
+  Condition::initialize(p);
+}
+
+void
+ConditionHttpCntl::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+
+  Dbg(pi_dbg_ctl, "\tParsing %%{HTTP-CNTL:%s}", q.c_str());
+  _http_cntl_qual = parse_http_cntl_qualifier(q);
+}

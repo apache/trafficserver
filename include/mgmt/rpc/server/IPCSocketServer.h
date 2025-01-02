@@ -35,6 +35,7 @@
 
 #include "mgmt/rpc/server/CommBase.h"
 #include "mgmt/rpc/config/JsonRPCConfig.h"
+#include "shared/rpc/MessageStorage.h"
 
 namespace rpc::comm
 {
@@ -53,6 +54,8 @@ class IPCSocketServer : public BaseCommInterface
     PEER_CREDENTIALS_ERROR = 1, ///< Error while trying to read the peer credentials from the unix socket.
     PERMISSION_DENIED      = 2  ///< Client's socket credential didn't wasn't sufficient to execute the method.
   };
+  static const size_t INTERNAL_BUFFER_SIZE{32000};
+  using Buffer = MessageStorage<INTERNAL_BUFFER_SIZE>;
   ///
   /// @brief Connection abstraction class that deals with sending and receiving data from the connected peer.
   ///
@@ -60,7 +63,7 @@ class IPCSocketServer : public BaseCommInterface
   /// the client object around.
   struct Client {
     /// @param fd Peer's socket.
-    Client(int fd);
+    Client(int fd, size_t max_req_size);
     /// Destructor will close the socket(if opened);
     ~Client();
 
@@ -74,7 +77,7 @@ class IPCSocketServer : public BaseCommInterface
     /// The size of the buffer to be read is not defined in this function, but rather passed in the @c bw parameter.
     /// @return A tuple with a boolean flag indicating if the operation did success or not, in case of any error, a text will
     /// be added with a description.
-    std::tuple<bool, std::string> read_all(swoc::FixedBufferWriter &bw) const;
+    std::tuple<bool, std::string> read_all(Buffer &bw) const;
     /// Write the the socket with the passed data.
     /// @return std::error_code.
     void write(std::string const &data, std::error_code &ec) const;
@@ -83,13 +86,13 @@ class IPCSocketServer : public BaseCommInterface
   private:
     /// Wait for data to be ready for reading.
     /// @return true if the data is ready, false otherwise.
-    bool poll_for_data(std::chrono::milliseconds timeout) const;
-    int  _fd; ///< connected peer's socket.
+    bool   poll_for_data(std::chrono::milliseconds timeout) const;
+    int    _fd;           ///< connected peer's socket.
+    size_t _max_req_size; ///< Max incoming request size.
   };
 
 public:
   IPCSocketServer() = default;
-  virtual ~IPCSocketServer() override;
 
   /// Configure the  local socket.
   bool configure(YAML::Node const &params) override;
@@ -114,6 +117,7 @@ protected: // unit test access
     static constexpr auto BACKLOG_KEY_STR{"backlog"};
     static constexpr auto MAX_RETRY_ON_TR_ERROR_KEY_STR{"max_retry_on_transient_errors"};
     static constexpr auto RESTRICTED_API{"restricted_api"};
+    static constexpr auto MAX_BUFFER_SIZE{"incoming_request_max_size"};
     // is it safe to call Layout now?
     std::string sockPathName;
     std::string lockPathName;
@@ -122,6 +126,7 @@ protected: // unit test access
     int  maxRetriesOnTransientErrors{64};
     bool restrictedAccessApi{
       NON_RESTRICTED_API}; // This config value will drive the permissions of the jsonrpc socket(either 0700(default) or 0777).
+    size_t incomingRequestMaxBufferSize{INTERNAL_BUFFER_SIZE * 3};
   };
 
   friend struct YAML::convert<rpc::comm::IPCSocketServer::Config>;
@@ -142,5 +147,6 @@ private:
 
   struct sockaddr_un _serverAddr;
   int                _socket{-1};
+  int                _lock_fd{-1};
 };
 } // namespace rpc::comm

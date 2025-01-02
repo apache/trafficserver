@@ -24,7 +24,7 @@ rpc::RPCServer *jsonrpcServer = nullptr;
 
 namespace rpc
 {
-static const auto logTag{"rpc"};
+static DbgCtl dbg_ctl{"rpc"};
 
 RPCServer::RPCServer(config::RPCConfig const &conf)
 {
@@ -32,7 +32,7 @@ RPCServer::RPCServer(config::RPCConfig const &conf)
   case config::RPCConfig::CommType::UNIX: {
     _socketImpl = std::make_unique<comm::IPCSocketServer>();
     if (!_socketImpl->configure(conf.get_comm_config_params())) {
-      Debug(logTag, "Unable to configure the socket: Stick to the default configuration.");
+      Dbg(dbg_ctl, "Unable to configure the socket: Stick to the default configuration.");
     }
   } break;
   default:;
@@ -64,14 +64,14 @@ RPCServer::run_thread(void *a)
     jsonrpcServer->_rpcThread = jsonrpcServer->_init();
   }
   jsonrpcServer->_socketImpl->run();
-  Debug(logTag, "Socket stopped");
+  Dbg(dbg_ctl, "Socket stopped");
   return ret;
 }
 
 void
 RPCServer::start_thread(std::function<TSThread()> const &cb_init, std::function<void(TSThread)> const &cb_destroy)
 {
-  Debug(logTag, "Starting RPC Server on: %s", _socketImpl->name().c_str());
+  Dbg(dbg_ctl, "Starting RPC Server on: %s", _socketImpl->name().c_str());
   _init    = cb_init;
   _destroy = cb_destroy;
 
@@ -85,6 +85,6 @@ RPCServer::stop_thread()
 
   ink_thread_join(_this_thread);
   _this_thread = ink_thread_null();
-  Debug(logTag, "Stopping RPC server on: %s", _socketImpl->name().c_str());
+  Dbg(dbg_ctl, "Stopping RPC server on: %s", _socketImpl->name().c_str());
 }
 } // namespace rpc

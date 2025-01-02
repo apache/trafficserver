@@ -1,0 +1,10 @@
+records:
+  diags:
+    logfile:
+      filename: diags.log
+      rolling_enabled: 0
+      rolling_interval_sec: 3600
+      rolling_min_count: 0
+      rolling_size_mb: 10
+    logfile_perm: rw-r--r--
+``

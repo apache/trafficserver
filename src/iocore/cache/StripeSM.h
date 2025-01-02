@@ -24,6 +24,7 @@
 #pragma once
 
 #include "P_CacheDir.h"
+#include "P_CacheDisk.h"
 #include "P_RamCache.h"
 #include "AggregateWriteBuffer.h"
 #include "PreservationTable.h"
@@ -51,8 +52,8 @@
 #define LOOKASIDE_SIZE               256
 #define AIO_NOT_IN_PROGRESS          -1
 #define AIO_AGG_WRITE_IN_PROGRESS    -2
-#define AUTO_SIZE_RAM_CACHE          -1                      // 1-1 with directory size
-#define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeof(Doc)) // 1MB
+#define AUTO_SIZE_RAM_CACHE          -1       // 1-1 with directory size
+#define DEFAULT_TARGET_FRAGMENT_SIZE 1048576; // 1MB. Note: Should not exclude sizeof(Doc)
 #define STORE_BLOCKS_PER_STRIPE      (STRIPE_BLOCK_SIZE / STORE_BLOCK_SIZE)
 
 // Documents
@@ -65,16 +66,19 @@ class StripeSM : public Continuation, public Stripe
 {
 public:
   CryptoHash hash_id;
+  int        fd{-1};
 
   int hit_evacuate_window{};
 
-  off_t               recover_pos      = 0;
-  off_t               prev_recover_pos = 0;
-  AIOCallbackInternal io;
+  off_t       recover_pos      = 0;
+  off_t       prev_recover_pos = 0;
+  AIOCallback io;
 
   Queue<CacheVC, Continuation::Link_link> sync;
 
   Event *trigger = nullptr;
+
+  CacheDisk *disk{};
 
   OpenDir              open_dir;
   RamCache            *ram_cache = nullptr;
@@ -111,7 +115,7 @@ public:
   int clear_dir_aio();
   int clear_dir();
 
-  int init(char *s, off_t blocks, off_t dir_skip, bool clear);
+  int init(bool clear);
 
   int handle_dir_clear(int event, void *data);
   int handle_dir_read(int event, void *data);
@@ -156,11 +160,22 @@ public:
 
   int within_hit_evacuate_window(Dir const *dir) const;
 
-  StripeSM() : Continuation(new_ProxyMutex())
-  {
-    open_dir.mutex = mutex;
-    SET_HANDLER(&StripeSM::aggWrite);
-  }
+  /**
+   * StripeSM constructor.
+   *
+   * @param disk: The disk object to associate with this stripe.
+   * The disk path must be non-null.
+   * @param blocks: Number of blocks. Must be at least 10.
+   * @param dir_skip: Offset into the disk at which to start the stripe.
+   * If this value is less than START_POS, START_POS will be used instead.
+   * @param avg_obj_size: Optional average object size. If not provided, use default
+   * from proxy.config.cache.min_average_object_size.
+   * @param fragment_size: Optional fragment size. If not provided, use default
+   * from proxy.config.cache.target_fragment_size.
+   *
+   * @see START_POS
+   */
+  StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size = -1, int fragment_size = -1);
 
   Queue<CacheVC, Continuation::Link_link> &get_pending_writers();
 

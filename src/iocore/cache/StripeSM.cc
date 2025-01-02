@@ -88,9 +88,9 @@ static void update_header_info(CacheVC *vc, Doc *doc);
 static int  evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *stripe);
 
 struct StripeInitInfo {
-  off_t               recover_pos;
-  AIOCallbackInternal vol_aio[4];
-  char               *vol_h_f;
+  off_t       recover_pos;
+  AIOCallback vol_aio[4];
+  char       *vol_h_f;
 
   StripeInitInfo()
   {
@@ -108,6 +108,20 @@ struct StripeInitInfo {
     free(vol_h_f);
   }
 };
+
+// This is weird: the len passed to the constructor for _preserved_dirs is
+// initialized in the superclasse's constructor. This is safe because the
+// superclass should always be initialized first.
+StripeSM::StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size, int fragment_size)
+  : Continuation(new_ProxyMutex()),
+    Stripe{disk, blocks, dir_skip, avg_obj_size, fragment_size},
+    fd{disk->fd},
+    disk{disk},
+    _preserved_dirs{static_cast<int>(len)}
+{
+  open_dir.mutex = this->mutex;
+  SET_HANDLER(&StripeSM::aggWrite);
+}
 
 int
 StripeSM::begin_read(CacheVC *cont) const
@@ -140,7 +154,7 @@ int
 StripeSM::clear_dir()
 {
   size_t dir_len = this->dirlen();
-  this->_clear_init();
+  this->_clear_init(this->disk->hw_sector_size);
 
   if (pwrite(this->fd, this->raw_dir, dir_len, this->skip) < 0) {
     Warning("unable to clear cache directory '%s'", this->hash_text.get());
@@ -151,35 +165,12 @@ StripeSM::clear_dir()
 }
 
 int
-StripeSM::init(char *s, off_t blocks, off_t dir_skip, bool clear)
+StripeSM::init(bool clear)
 {
-  // Hash
-  char        *seed_str       = disk->hash_base_string ? disk->hash_base_string : s;
-  const size_t hash_seed_size = strlen(seed_str);
-  const size_t hash_text_size = hash_seed_size + 32;
-
-  hash_text = static_cast<char *>(ats_malloc(hash_text_size));
-  ink_strlcpy(hash_text, seed_str, hash_text_size);
-  snprintf(hash_text + hash_seed_size, (hash_text_size - hash_seed_size), " %" PRIu64 ":%" PRIu64 "",
-           static_cast<uint64_t>(dir_skip), static_cast<uint64_t>(blocks));
   CryptoContext().hash_immediate(hash_id, hash_text, strlen(hash_text));
-
-  path = ats_strdup(s);
-
-  // Stripe
-  this->_init_data(blocks, dir_skip);
 
   // Evacuation
   this->hit_evacuate_window = (this->data_blocks * cache_config_hit_evacuate_percent) / 100;
-
-  // PreservationTable
-  this->_preserved_dirs.evacuate_size = static_cast<int>(len / EVACUATION_BUCKET_SIZE) + 2;
-  int evac_len                        = this->_preserved_dirs.evacuate_size * sizeof(DLL<EvacuationBlock>);
-  this->_preserved_dirs.evacuate      = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));
-  memset(static_cast<void *>(this->_preserved_dirs.evacuate), 0, evac_len);
-
-  Dbg(dbg_ctl_cache_init, "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
-      static_cast<long long>(this->len), static_cast<double>(dirlen()) / static_cast<double>(this->len) * 100.0);
 
   // AIO
   if (clear) {
@@ -225,7 +216,6 @@ StripeSM::handle_dir_clear(int event, void *data)
     if (!op->ok()) {
       Warning("unable to clear cache directory '%s'", hash_text.get());
       disk->incrErrors(op);
-      fd = -1;
     }
 
     if (op->aiocb.aio_nbytes == dir_len) {
@@ -283,7 +273,7 @@ int
 StripeSM::clear_dir_aio()
 {
   size_t dir_len = this->dirlen();
-  this->_clear_init();
+  this->_clear_init(this->disk->hw_sector_size);
 
   SET_HANDLER(&StripeSM::handle_dir_clear);
 
@@ -1350,7 +1340,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
   // directories have not been inserted for these writes
   if (!this->_write_buffer.is_empty()) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
-    this->flush_aggregate_write_buffer();
+    this->flush_aggregate_write_buffer(this->fd);
   }
 
   // We already asserted that dirlen > 0.

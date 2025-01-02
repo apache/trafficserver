@@ -38,6 +38,7 @@ add_library(
   InkVConnInternal.cc # proxy, http
   APIHook.cc # iocore
   APIHooks.cc # proxy
+  HttpAPIHooks.cc # proxy, cache
   LifecycleAPIHooks.cc # proxy, http
   HttpHookState.cc # proxy, http
 )

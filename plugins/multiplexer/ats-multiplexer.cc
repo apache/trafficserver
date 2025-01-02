@@ -158,7 +158,7 @@ DoRemap(const Instance &i, TSHttpTxn t)
     generateRequests(i.origins, buffer, location, requests);
     assert(requests.size() == i.origins.size());
 
-    if (is_post_or_put) {
+    if (is_post_or_put || content_length > 0) {
       const TSVConn vconnection = TSTransformCreate(handlePost, t);
       assert(vconnection != nullptr);
       PostState *state = new PostState(requests, content_length);

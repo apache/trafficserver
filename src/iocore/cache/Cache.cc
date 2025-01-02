@@ -62,6 +62,8 @@ int     cache_config_ram_cache_use_seen_filter     = 1;
 int     cache_config_http_max_alts                 = 3;
 int     cache_config_log_alternate_eviction        = 0;
 int     cache_config_dir_sync_frequency            = 60;
+int     cache_config_dir_sync_delay                = 500;
+int     cache_config_dir_sync_max_write            = (2 * 1024 * 1024);
 int     cache_config_permit_pinning                = 0;
 int     cache_config_select_alternate              = 1;
 int     cache_config_max_doc_size                  = 0;
@@ -269,16 +271,14 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
         if (cp->disk_stripes[i] && !DISK_BAD(cp->disk_stripes[i]->disk)) {
           DiskStripeBlockQueue *q = cp->disk_stripes[i]->dpb_queue.head;
           for (; q; q = q->link.next) {
-            cp->stripes[vol_no]            = new StripeSM();
+            blocks                         = q->b->len;
             CacheDisk *d                   = cp->disk_stripes[i]->disk;
-            cp->stripes[vol_no]->disk      = d;
-            cp->stripes[vol_no]->fd        = d->fd;
+            cp->stripes[vol_no]            = new StripeSM(d, blocks, q->b->offset, cp->avg_obj_size, cp->fragment_size);
             cp->stripes[vol_no]->cache     = this;
             cp->stripes[vol_no]->cache_vol = cp;
-            blocks                         = q->b->len;
 
             bool vol_clear = clear || d->cleared || q->new_block;
-            cp->stripes[vol_no]->init(d->path, blocks, q->b->offset, vol_clear);
+            cp->stripes[vol_no]->init(vol_clear);
             vol_no++;
             cache_size += blocks;
           }
@@ -826,6 +826,12 @@ ink_cache_init(ts::ModuleVersion v)
   REC_EstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
 
+  REC_EstablishStaticConfigInt32(cache_config_dir_sync_delay, "proxy.config.cache.dir.sync_delay");
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_delay = %d", cache_config_dir_sync_delay);
+
+  REC_EstablishStaticConfigInt32(cache_config_dir_sync_max_write, "proxy.config.cache.dir.sync_max_write");
+  Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_max_write = %d", cache_config_dir_sync_max_write);
+
   REC_EstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);
 
@@ -854,8 +860,11 @@ ink_cache_init(ts::ModuleVersion v)
              REC_ERR_FAIL);
   REC_ReadConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
 
-  if (cache_config_target_fragment_size == 0 || cache_config_target_fragment_size - sizeof(Doc) > MAX_FRAG_SIZE) {
+  if (cache_config_target_fragment_size == 0) {
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
+  } else if (cache_config_target_fragment_size - sizeof(Doc) > MAX_FRAG_SIZE) {
+    Warning("The fragments size exceed the limitation, setting to MAX_FRAG_SIZE (%ld)", MAX_FRAG_SIZE + sizeof(Doc));
+    cache_config_target_fragment_size = MAX_FRAG_SIZE + sizeof(Doc);
   }
 
   REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");

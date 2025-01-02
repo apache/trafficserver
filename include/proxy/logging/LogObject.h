@@ -55,11 +55,11 @@
 
 #define ACQUIRE_API_MUTEX(_f)   \
   ink_mutex_acquire(_APImutex); \
-  Debug("log-api-mutex", _f)
+  Dbg(_APImutex_dbg_ctl(), _f)
 
 #define RELEASE_API_MUTEX(_f)   \
   ink_mutex_release(_APImutex); \
-  Debug("log-api-mutex", _f)
+  Dbg(_APImutex_dbg_ctl(), _f)
 
 class LogBufferManager
 {
@@ -341,6 +341,13 @@ private:
 
 public:
   ink_mutex *_APImutex; // synchronize access to array of API objects
+  static DbgCtl &
+  _APImutex_dbg_ctl()
+  {
+    static DbgCtl dc{"log-api-mutex"};
+    return dc;
+  }
+
 private:
   int         _manage_object(LogObject *log_object, bool is_api_object, int maxConflicts);
   static bool _has_internal_filename_conflict(std::string_view filename, LogObjectList &objects);

@@ -126,12 +126,6 @@ public:
     return retval;
   }
 
-  SSLHandshakeStatus
-  getSSLHandshakeStatus() const
-  {
-    return sslHandshakeStatus;
-  }
-
   bool
   getSSLHandShakeComplete() const override
   {
@@ -146,7 +140,7 @@ public:
 
   int     sslServerHandShakeEvent(int &err);
   int     sslClientHandShakeEvent(int &err);
-  void    net_read_io(NetHandler *nh, EThread *lthread) override;
+  void    net_read_io(NetHandler *nh) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
   void    do_io_close(int lerrno = -1) override;
 
@@ -252,21 +246,6 @@ public:
   bool          protocol_mask_set = false;
   unsigned long protocol_mask     = 0;
 
-  // Only applies during the VERIFY certificate hooks (client and server side)
-  // Means to give the plugin access to the data structure passed in during the underlying
-  // openssl callback so the plugin can make more detailed decisions about the
-  // validity of the certificate in their cases
-  X509_STORE_CTX *
-  get_verify_cert()
-  {
-    return verify_cert;
-  }
-  void
-  set_verify_cert(X509_STORE_CTX *ctx)
-  {
-    verify_cert = ctx;
-  }
-
   bool
   peer_provided_cert() const override
   {
@@ -327,6 +306,7 @@ protected:
     return this->ssl;
   }
   ssl_curve_id _get_tls_curve() const override;
+  int          _verify_certificate(X509_STORE_CTX *ctx) override;
 
   // TLSSessionResumptionSupport
   const IpEndpoint &
@@ -376,8 +356,6 @@ private:
 
   int64_t redoWriteSize = 0;
 
-  X509_STORE_CTX *verify_cert = nullptr;
-
   // Null-terminated string, or nullptr if there is no SNI server name.
   std::unique_ptr<char[]> _ca_cert_file;
   std::unique_ptr<char[]> _ca_cert_dir;
@@ -398,7 +376,7 @@ private:
   UnixNetVConnection *_migrateFromSSL();
   void                _propagateHandShakeBuffer(UnixNetVConnection *target, EThread *t);
 
-  int         _ssl_read_from_net(EThread *lthread, int64_t &ret);
+  int         _ssl_read_from_net(int64_t &ret);
   ssl_error_t _ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread);
   ssl_error_t _ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &nwritten);
   ssl_error_t _ssl_connect();

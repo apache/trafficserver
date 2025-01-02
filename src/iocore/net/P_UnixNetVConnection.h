@@ -150,8 +150,8 @@ public:
   }
 
   // NetEvent
-  virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
-  virtual void net_write_io(NetHandler *nh, EThread *lthread) override;
+  virtual void net_read_io(NetHandler *nh) override;
+  virtual void net_write_io(NetHandler *nh) override;
   virtual void free_thread(EThread *t) override;
   virtual int
   close() override
@@ -195,7 +195,7 @@ public:
   int             readSignalAndUpdate(int event);
   void            readReschedule(NetHandler *nh);
   void            writeReschedule(NetHandler *nh);
-  void            netActivity(EThread *lthread);
+  void            netActivity();
   /**
    * If the current object's thread does not match the t argument, create a new
    * NetVC in the thread t context based on the socket and ssl information in the
@@ -233,8 +233,6 @@ public:
   void         set_remote_addr(const sockaddr *) override;
   int          set_tcp_congestion_control(int side) override;
   void         apply_options() override;
-
-  friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
 
   // set_context() should be called before calling this member function.
   void mark_as_tunnel_endpoint() override;
@@ -376,9 +374,3 @@ UnixNetVConnection::get_action() const
 {
   return &action_;
 }
-
-// declarations for local use (within the net module)
-
-void write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
-void write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
-void net_activity(UnixNetVConnection *vc, EThread *thread);

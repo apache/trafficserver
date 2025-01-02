@@ -99,6 +99,18 @@ class MultiplexerTestBase:
         self.server_https.Streams.All += Testers.ExcludesExpression(
             'uuid: CHUNKED_POST', 'We do not expect a multiplexed chunked POST.')
 
+        # Verify that the CUSTOM_METHOD is sent to all servers.
+        self.server_origin.Streams.All += Testers.ContainsExpression(
+            'uuid: MYCUSTOMMETHOD', "Verify the client's original target received the MYCUSTOMMETHOD transaction.")
+        self.server_http.Streams.All += Testers.ContainsExpression(
+            'uuid: MYCUSTOMMETHOD', "Verify the HTTP server received the MYCUSTOMMETHOD request.")
+        self.server_http.Streams.All += Testers.ContainsExpression(
+            'x-response: fifth', "Verify the HTTP server sent the MYCUSTOMMETHOD response.")
+        self.server_https.Streams.All += Testers.ContainsExpression(
+            'uuid: MYCUSTOMMETHOD', "Verify the HTTPS server received the MYCUSTOMMETHOD request.")
+        self.server_https.Streams.All += Testers.ContainsExpression(
+            'x-response: fifth', "Verify the HTTPS server sent the MYCUSTOMMETHOD response.")
+
         # Verify that the HTTPS server receives a TLS connection.
         self.server_https.Streams.All += Testers.ContainsExpression(
             'Finished accept using TLSSession', "Verify the HTTPS was indeed used by the HTTPS server.")
@@ -172,11 +184,19 @@ class MultiplexerTest(MultiplexerTestBase):
             'x-response: second', "Verify the HTTP server sent the POST response.")
         self.server_https.Streams.All += Testers.ContainsExpression(
             'x-response: second', "Verify the HTTPS server sent the POST response.")
+        self.server_https.Streams.All += Testers.ContainsExpression(
+            'x-response: fifth', "Verify the HTTPS server sent the custom method response.")
 
         # Same with PUT
         self.server_http.Streams.All += Testers.ContainsExpression('uuid: PUT', "Verify the HTTP server received the PUT request.")
         self.server_https.Streams.All += Testers.ContainsExpression(
             'uuid: PUT', "Verify the HTTPS server received the PUT request.")
+
+        # Same with MYCUSTOMMETHOD
+        self.server_http.Streams.All += Testers.ContainsExpression(
+            'uuid: MYCUSTOMMETHOD', "Verify the HTTP server received the custom method request.")
+        self.server_https.Streams.All += Testers.ContainsExpression(
+            'uuid: MYCUSTOMMETHOD', "Verify the HTTPS server received the custom method request.")
 
 
 class MultiplexerSkipPostTest(MultiplexerTestBase):

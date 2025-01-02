@@ -1,0 +1,5 @@
+records:
+  diags:
+    debug:
+      tags: rpc  # default: http|dns
+``

@@ -30,6 +30,8 @@
 
 #include "tsutil/Metrics.h"
 
+#include <openssl/ssl.h>
+
 using ts::Metrics;
 
 // For some odd reason, these have to be initialized with nullptr, because the order
@@ -99,6 +101,13 @@ struct SSLStatsBlock {
 
 extern SSLStatsBlock                                                   ssl_rsb;
 extern std::unordered_map<std::string, Metrics::Counter::AtomicType *> cipher_map;
+
+#if defined(OPENSSL_IS_BORINGSSL)
+extern std::unordered_map<std::string, Metrics::Counter::AtomicType *> tls_group_map;
+#elif defined(SSL_get_negotiated_group)
+extern std::unordered_map<int, Metrics::Counter::AtomicType *> tls_group_map;
+constexpr int                                                  SSL_GROUP_STAT_OTHER_KEY = 0;
+#endif
 
 // Initialize SSL statistics.
 void SSLInitializeStatistics();

@@ -92,7 +92,15 @@ SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_QUIC_SESSION_PROTOCOL_SET;
 
-static bool
+namespace
+{
+
+DbgCtl dbg_ctl_config{"config"};
+DbgCtl dbg_ctl_ssl_alpn{"ssl_alpn"};
+
+} // end anonymous namespace
+
+bool
 mptcp_supported()
 {
   int value = 0;
@@ -151,17 +159,17 @@ RecHttpLoadIpAddrsFromConfVar(const char *value_name, swoc::IPRangeSet &addrs)
   char value[1024];
 
   if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value))) {
-    Debug("config", "RecHttpLoadIpAddrsFromConfVar: parsing the name [%s] and value [%s]", value_name, value);
+    Dbg(dbg_ctl_config, "RecHttpLoadIpAddrsFromConfVar: parsing the name [%s] and value [%s]", value_name, value);
     swoc::TextView text(value, std::strlen(value));
     while (text) {
       auto token = text.take_prefix_at(',');
       if (swoc::IPRange r; r.load(token)) {
-        Debug("config", "RecHttpLoadIpAddrsFromConfVar: marking the value [%.*s]", int(token.size()), token.data());
+        Dbg(dbg_ctl_config, "RecHttpLoadIpAddrsFromConfVar: marking the value [%.*s]", int(token.size()), token.data());
         addrs.mark(r);
       }
     }
   }
-  Debug("config", "RecHttpLoadIpMap: parsed %zu IpMap entries", addrs.count());
+  Dbg(dbg_ctl_config, "RecHttpLoadIpMap: parsed %zu IpMap entries", addrs.count());
 }
 
 const char *const HttpProxyPort::DEFAULT_VALUE = "8080";
@@ -938,7 +946,7 @@ convert_alpn_to_wire_format(std::string_view protocols_sv, unsigned char *wire_f
     end += len;
   }
   wire_format_buffer_len = computed_alpn_array_len;
-  Debug("ssl_alpn", "Successfully converted ALPN list to wire format: \"%.*s\"", static_cast<int>(protocols.size()),
-        protocols.data());
+  Dbg(dbg_ctl_ssl_alpn, "Successfully converted ALPN list to wire format: \"%.*s\"", static_cast<int>(protocols.size()),
+      protocols.data());
   return true;
 }

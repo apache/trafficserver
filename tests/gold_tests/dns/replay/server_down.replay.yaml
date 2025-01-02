@@ -55,7 +55,5 @@ sessions:
     server-response:
       status: 200
 
-    # Previous request marked host down so DNS lookup returns unsuccessful
-    # 500 response indicates no valid server
     proxy-response:
-      status: 500
+      status: 502

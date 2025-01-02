@@ -48,9 +48,9 @@ using namespace std;
 const char PLUGIN_TAG[]     = "stale_response";
 const char PLUGIN_TAG_BAD[] = "stale_response_bad";
 
-DEF_DBG_CTL(PLUGIN_TAG)
-DEF_DBG_CTL(PLUGIN_TAG_BAD)
-DEF_DBG_CTL(PLUGIN_TAG_BODY)
+DEF_DBG_CTL(TAG)
+DEF_DBG_CTL(TAG_BAD)
+DEF_DBG_CTL(TAG_BODY)
 
 static const char VENDOR_NAME[]   = "Apache Software Foundation";
 static const char SUPPORT_EMAIL[] = "dev@trafficserver.apache.org";
@@ -118,7 +118,7 @@ create_request_info(TSHttpTxn txnp)
   // create the lookup key fron the effective url
   MurmurHash3_x86_32(req_info->effective_url, req_info->effective_url_length, c_hashSeed, &(req_info->key_hash));
 
-  TSDebug(PLUGIN_TAG, "[%s] {%u} url=[%s]", __FUNCTION__, req_info->key_hash, req_info->effective_url);
+  SRDBG(TAG, "[%s] {%u} url=[%s]", __FUNCTION__, req_info->key_hash, req_info->effective_url);
 
   return req_info;
 }
@@ -229,7 +229,7 @@ async_check_active(uint32_t key_hash, ConfigInfo *plugin_config)
   }
   TSMutexUnlock(plugin_config->body_data_mutex);
 
-  TSDebug(PLUGIN_TAG, "[%s] {%u} pFound=%p", __FUNCTION__, key_hash, pFound);
+  SRDBG(TAG, "[%s] {%u} pFound=%p", __FUNCTION__, key_hash, pFound);
   return pFound;
 }
 
@@ -250,7 +250,7 @@ async_check_and_add_active(uint32_t key_hash, ConfigInfo *plugin_config)
   int tempSize = plugin_config->body_data->size();
   TSMutexUnlock(plugin_config->body_data_mutex);
 
-  TSDebug(PLUGIN_TAG, "[%s] {%u} isNew=%d size=%d", __FUNCTION__, key_hash, isNew, tempSize);
+  SRDBG(TAG, "[%s] {%u} isNew=%d size=%d", __FUNCTION__, key_hash, isNew, tempSize);
   return isNew;
 }
 
@@ -260,14 +260,14 @@ add_header(TSMBuffer &reqp, TSMLoc &hdr_loc, string header, string value)
 {
   bool bReturn = false;
   if (value.size() <= 0) {
-    TSDebug(PLUGIN_TAG, "\tWould set header %s to an empty value, skipping", header.c_str());
+    SRDBG(TAG, "\tWould set header %s to an empty value, skipping", header.c_str());
   } else {
     TSMLoc new_field;
 
     if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(reqp, hdr_loc, header.data(), header.size(), &new_field)) {
       if (TS_SUCCESS == TSMimeHdrFieldValueStringInsert(reqp, hdr_loc, new_field, -1, value.data(), value.size())) {
         if (TS_SUCCESS == TSMimeHdrFieldAppend(reqp, hdr_loc, new_field)) {
-          TSDebug(PLUGIN_TAG, "\tAdded header %s: %s", header.c_str(), value.c_str());
+          SRDBG(TAG, "\tAdded header %s: %s", header.c_str(), value.c_str());
           bReturn = true;
         }
       } else {
@@ -294,7 +294,7 @@ async_remove_active(uint32_t key_hash, ConfigInfo *plugin_config)
   int tempSize = plugin_config->body_data->size();
   TSMutexUnlock(plugin_config->body_data_mutex);
 
-  TSDebug(PLUGIN_TAG, "[%s] {%u} wasActive=%d size=%d", __FUNCTION__, key_hash, wasActive, tempSize);
+  SRDBG(TAG, "[%s] {%u} wasActive=%d size=%d", __FUNCTION__, key_hash, wasActive, tempSize);
   return wasActive;
 }
 /*-----------------------------------------------------------------------------------------------*/
@@ -309,7 +309,7 @@ async_intercept_active(uint32_t key_hash, ConfigInfo *plugin_config)
   }
   TSMutexUnlock(plugin_config->body_data_mutex);
 
-  TSDebug(PLUGIN_TAG, "[%s] {%u} interceptActive=%d", __FUNCTION__, key_hash, interceptActive);
+  SRDBG(TAG, "[%s] {%u} interceptActive=%d", __FUNCTION__, key_hash, interceptActive);
   return interceptActive;
 }
 
@@ -361,12 +361,12 @@ get_cached_header_info(StateInfo *state)
       for (int i = 0; i < cr_cache_control_count; ++i) {
         int         val_len = 0;
         char const *v       = TSMimeHdrFieldValueStringGet(cr_buf, cr_hdr_loc, cr_cache_control_loc, i, &val_len);
-        TSDebug(PLUGIN_TAG, "Processing directives: %.*s", val_len, v);
+        SRDBG(TAG, "Processing directives: %.*s", val_len, v);
         swoc::TextView cache_control_value{v, static_cast<size_t>(val_len)};
         directives.merge(DirectiveParser{cache_control_value});
       }
-      TSDebug(PLUGIN_TAG, "max-age: %ld, stale-while-revalidate: %ld, stale-if-error: %ld", directives.get_max_age(),
-              directives.get_stale_while_revalidate(), directives.get_stale_if_error());
+      SRDBG(TAG, "max-age: %ld, stale-while-revalidate: %ld, stale-if-error: %ld", directives.get_max_age(),
+            directives.get_stale_while_revalidate(), directives.get_stale_if_error());
       if (directives.get_max_age() >= 0) {
         chi->max_age = directives.get_max_age();
       }
@@ -384,8 +384,8 @@ get_cached_header_info(StateInfo *state)
     TSHandleMLocRelease(cr_buf, TS_NULL_MLOC, cr_hdr_loc);
   }
 
-  TSDebug(PLUGIN_TAG, "[%s] item_count=%d max_age=%ld swr=%ld sie=%ld", __FUNCTION__, cr_cache_control_count, chi->max_age,
-          chi->stale_while_revalidate, chi->stale_if_error);
+  SRDBG(TAG, "[%s] item_count=%d max_age=%ld swr=%ld sie=%ld", __FUNCTION__, cr_cache_control_count, chi->max_age,
+        chi->stale_while_revalidate, chi->stale_if_error);
 
   // load the config mins/default
   if ((chi->stale_if_error == -1) && state->plugin_config->stale_if_error_default) {
@@ -411,8 +411,8 @@ get_cached_header_info(StateInfo *state)
   chi->stale_while_revalidate = std::max(chi->stale_while_revalidate, 0l);
   chi->stale_if_error         = std::max(chi->stale_if_error, 0l);
 
-  TSDebug(PLUGIN_TAG, "[%s] after defaults item_count=%d max_age=%ld swr=%ld sie=%ld", __FUNCTION__, cr_cache_control_count,
-          chi->max_age, chi->stale_while_revalidate, chi->stale_if_error);
+  SRDBG(TAG, "[%s] after defaults item_count=%d max_age=%ld swr=%ld sie=%ld", __FUNCTION__, cr_cache_control_count, chi->max_age,
+        chi->stale_while_revalidate, chi->stale_if_error);
 
   return chi;
 }
@@ -461,7 +461,7 @@ fetch_parse_response(StateInfo *state)
   if (pr != TS_PARSE_CONT) {
     state->resp_info->status = TSHttpHdrStatusGet(state->resp_info->http_hdr_buf, state->resp_info->http_hdr_loc);
     state->resp_info->parsed = true;
-    TSDebug(PLUGIN_TAG, "[%s] {%u} HTTP Status: %d", __FUNCTION__, state->req_info->key_hash, state->resp_info->status);
+    SRDBG(TAG, "[%s] {%u} HTTP Status: %d", __FUNCTION__, state->req_info->key_hash, state->resp_info->status);
   }
 }
 
@@ -473,7 +473,7 @@ fetch_read_the_data(StateInfo *state)
   if (state->cur_save_body) {
     fetch_save_response(state, state->cur_save_body);
   } else {
-    TSDebug(PLUGIN_TAG_BAD, "[%s] no BodyData", __FUNCTION__);
+    SRDBG(TAG_BAD, "[%s] no BodyData", __FUNCTION__);
   }
   // get the resp code
   if (!state->resp_info->parsed) {
@@ -489,13 +489,13 @@ fetch_read_the_data(StateInfo *state)
 static void
 fetch_finish(StateInfo *state)
 {
-  TSDebug(PLUGIN_TAG, "[%s] {%u} swr=%d sie=%d", __FUNCTION__, state->req_info->key_hash, state->swr_active, state->sie_active);
+  SRDBG(TAG, "[%s] {%u} swr=%d sie=%d", __FUNCTION__, state->req_info->key_hash, state->swr_active, state->sie_active);
   if (state->swr_active) {
-    TSDebug(PLUGIN_TAG, "[%s] {%u} SWR Unlock URL / Post request", __FUNCTION__, state->req_info->key_hash);
+    SRDBG(TAG, "[%s] {%u} SWR Unlock URL / Post request", __FUNCTION__, state->req_info->key_hash);
     if (state->sie_active && valid_sie_status(state->resp_info->status)) {
-      TSDebug(PLUGIN_TAG, "[%s] {%u} SWR Bad Data skipping", __FUNCTION__, state->req_info->key_hash);
+      SRDBG(TAG, "[%s] {%u} SWR Bad Data skipping", __FUNCTION__, state->req_info->key_hash);
       if (!async_remove_active(state->req_info->key_hash, state->plugin_config)) {
-        TSDebug(PLUGIN_TAG_BAD, "[%s] {%u} didnt delete async active", __FUNCTION__, state->req_info->key_hash);
+        SRDBG(TAG_BAD, "[%s] {%u} didnt delete async active", __FUNCTION__, state->req_info->key_hash);
       }
     } else {
       // this will place the new data in cache by server intercept
@@ -503,10 +503,9 @@ fetch_finish(StateInfo *state)
     }
   } else // state->sie_active
   {
-    TSDebug(PLUGIN_TAG, "[%s] {%u} SIE in sync path Reenable %d", __FUNCTION__, state->req_info->key_hash,
-            state->resp_info->status);
+    SRDBG(TAG, "[%s] {%u} SIE in sync path Reenable %d", __FUNCTION__, state->req_info->key_hash, state->resp_info->status);
     if (valid_sie_status(state->resp_info->status)) {
-      TSDebug(PLUGIN_TAG, "[%s] {%u} SIE sending stale data", __FUNCTION__, state->req_info->key_hash);
+      SRDBG(TAG, "[%s] {%u} SIE sending stale data", __FUNCTION__, state->req_info->key_hash);
       if (state->plugin_config->log_info.object &&
           (state->plugin_config->log_info.all || state->plugin_config->log_info.stale_if_error)) {
         CachedHeaderInfo *chi = get_cached_header_info(state);
@@ -517,7 +516,7 @@ fetch_finish(StateInfo *state)
       // send out the stale data
       send_stale_response(state);
     } else {
-      TSDebug(PLUGIN_TAG, "[%s] SIE {%u} sending new data", __FUNCTION__, state->req_info->key_hash);
+      SRDBG(TAG, "[%s] SIE {%u} sending new data", __FUNCTION__, state->req_info->key_hash);
       // load the data as if we are OS by ServerIntercept
       BodyData *pBody = state->sie_body;
       state->sie_body = nullptr;
@@ -547,10 +546,10 @@ fetch_consume(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
     // We shouldn't get here because we specify the exact size of the buffer.
-    TSDebug(PLUGIN_TAG, "[%s] {%u} Write Ready", __FUNCTION__, state->req_info->key_hash);
+    SRDBG(TAG, "[%s] {%u} Write Ready", __FUNCTION__, state->req_info->key_hash);
     // fallthrough
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug(PLUGIN_TAG, "[%s] {%u} Write Complete", __FUNCTION__, state->req_info->key_hash);
+    SRDBG(TAG, "[%s] {%u} Write Complete", __FUNCTION__, state->req_info->key_hash);
     break;
 
   case TS_EVENT_VCONN_READ_READY:
@@ -566,15 +565,15 @@ fetch_consume(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     // Don't free the reference to the state object
     // The txnp object may already be freed at this point
     if (event == TS_EVENT_VCONN_INACTIVITY_TIMEOUT) {
-      TSDebug(PLUGIN_TAG, "[%s] {%u} Inactivity Timeout", __FUNCTION__, state->req_info->key_hash);
+      SRDBG(TAG, "[%s] {%u} Inactivity Timeout", __FUNCTION__, state->req_info->key_hash);
       TSVConnAbort(state->vconn, TS_VC_CLOSE_ABORT);
     } else {
       if (event == TS_EVENT_VCONN_READ_COMPLETE) {
-        TSDebug(PLUGIN_TAG, "[%s] {%u} Vconn Read Complete", __FUNCTION__, state->req_info->key_hash);
+        SRDBG(TAG, "[%s] {%u} Vconn Read Complete", __FUNCTION__, state->req_info->key_hash);
       } else if (event == TS_EVENT_VCONN_EOS) {
-        TSDebug(PLUGIN_TAG, "[%s] {%u} Vconn Eos", __FUNCTION__, state->req_info->key_hash);
+        SRDBG(TAG, "[%s] {%u} Vconn Eos", __FUNCTION__, state->req_info->key_hash);
       } else if (event == TS_EVENT_ERROR) {
-        TSDebug(PLUGIN_TAG, "[%s] {%u} Error Event", __FUNCTION__, state->req_info->key_hash);
+        SRDBG(TAG, "[%s] {%u} Error Event", __FUNCTION__, state->req_info->key_hash);
       }
       TSVConnClose(state->vconn);
     }
@@ -589,7 +588,7 @@ fetch_consume(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     break;
 
   default:
-    TSDebug(PLUGIN_TAG_BAD, "[%s] {%u} Unknown event %d.", __FUNCTION__, state->req_info->key_hash, event);
+    SRDBG(TAG_BAD, "[%s] {%u} Unknown event %d.", __FUNCTION__, state->req_info->key_hash, event);
     break;
   }
 
@@ -604,8 +603,7 @@ fetch_resource(TSCont contp, TSEvent, void *)
   TSCont     consume_contp;
   state = static_cast<StateInfo *>(TSContDataGet(contp));
 
-  TSDebug(PLUGIN_TAG, "[%s] {%u} Start swr=%d sie=%d ", __FUNCTION__, state->req_info->key_hash, state->swr_active,
-          state->sie_active);
+  SRDBG(TAG, "[%s] {%u} Start swr=%d sie=%d ", __FUNCTION__, state->req_info->key_hash, state->swr_active, state->sie_active);
   consume_contp = TSContCreate(fetch_consume, TSMutexCreate());
   TSContDataSet(consume_contp, state);
 
@@ -648,8 +646,7 @@ static void
 fetch_start(StateInfo *state, TSCont contp)
 {
   TSCont fetch_contp = nullptr;
-  TSDebug(PLUGIN_TAG, "[%s] {%u} Start swr=%d sie=%d ", __FUNCTION__, state->req_info->key_hash, state->swr_active,
-          state->sie_active);
+  SRDBG(TAG, "[%s] {%u} Start swr=%d sie=%d ", __FUNCTION__, state->req_info->key_hash, state->swr_active, state->sie_active);
 
   ConfigInfo *plugin_config = static_cast<ConfigInfo *>(TSContDataGet(contp));
 
@@ -657,7 +654,7 @@ fetch_start(StateInfo *state, TSCont contp)
     bool isNew = async_check_and_add_active(state->req_info->key_hash, state->plugin_config);
     // If already doing async lookup lets just close shop and go home
     if (!isNew && !plugin_config->force_parallel_async) {
-      TSDebug(PLUGIN_TAG, "[%s] {%u} async in progress skip", __FUNCTION__, state->req_info->key_hash);
+      SRDBG(TAG, "[%s] {%u} async in progress skip", __FUNCTION__, state->req_info->key_hash);
       TSStatIntIncrement(state->plugin_config->rfc_stat_swr_hit_skip, 1);
       // free state
       TSUserArgSet(state->txnp, state->plugin_config->txn_slot, nullptr);
@@ -692,7 +689,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
   ConfigInfo     *plugin_config = static_cast<ConfigInfo *>(TSContDataGet(contp));
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    TSDebug(PLUGIN_TAG, "[%s] TS_EVENT_HTTP_READ_REQUEST_HDR", __FUNCTION__);
+    SRDBG(TAG, "[%s] TS_EVENT_HTTP_READ_REQUEST_HDR", __FUNCTION__);
     assert(false);
     break;
 
@@ -708,22 +705,22 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
     // get the cache status default to miss
     if (TSHttpTxnCacheLookupStatusGet(txnp, &status) != TS_SUCCESS) {
       status = TS_CACHE_LOOKUP_MISS;
-      TSDebug(PLUGIN_TAG_BAD, "[%s] TSHttpTxnCacheLookupStatusGet failed", __FUNCTION__);
+      SRDBG(TAG_BAD, "[%s] TSHttpTxnCacheLookupStatusGet failed", __FUNCTION__);
     }
 
     if (TSHttpTxnIsInternal(txnp)) {
       bool cache_fresh = (status == TS_CACHE_LOOKUP_HIT_FRESH);
-      TSDebug(PLUGIN_TAG, "[%s] {%u} CacheLookupComplete Internal fresh=%d", __FUNCTION__, state->req_info->key_hash, cache_fresh);
+      SRDBG(TAG, "[%s] {%u} CacheLookupComplete Internal fresh=%d", __FUNCTION__, state->req_info->key_hash, cache_fresh);
 
       // We dont want our internal requests to ever hit cache
       if (cache_fresh && state->intercept_request) {
-        TSDebug(PLUGIN_TAG, "[%s] {%u} Set Cache to miss", __FUNCTION__, state->req_info->key_hash);
+        SRDBG(TAG, "[%s] {%u} Set Cache to miss", __FUNCTION__, state->req_info->key_hash);
         if (TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_MISS) != TS_SUCCESS) {
-          TSDebug(PLUGIN_TAG_BAD, "[%s] {%u} TSHttpTxnCacheLookupStatusSet failed", __FUNCTION__, state->req_info->key_hash);
+          SRDBG(TAG_BAD, "[%s] {%u} TSHttpTxnCacheLookupStatusSet failed", __FUNCTION__, state->req_info->key_hash);
         }
       } else if (cache_fresh) // I dont think this can happen
       {
-        TSDebug(PLUGIN_TAG_BAD, "[%s] {%u} cache fresh not in stripped or intercept", __FUNCTION__, state->req_info->key_hash);
+        SRDBG(TAG_BAD, "[%s] {%u} cache fresh not in stripped or intercept", __FUNCTION__, state->req_info->key_hash);
       }
 
       TSUserArgSet(state->txnp, state->plugin_config->txn_slot, nullptr);
@@ -739,17 +736,17 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
         state->sie_active = ((((state->txn_start - chi->date) + 1) < (chi->max_age + chi->stale_if_error)) && chi->stale_if_error);
         state->over_max_memory = (aync_memory_total_get(plugin_config) > plugin_config->max_body_data_memory_usage);
 
-        TSDebug(PLUGIN_TAG, "[%s] {%u} CacheLookup Stale swr=%d sie=%d over=%d", __FUNCTION__, state->req_info->key_hash,
-                state->swr_active, state->sie_active, state->over_max_memory);
+        SRDBG(TAG, "[%s] {%u} CacheLookup Stale swr=%d sie=%d over=%d", __FUNCTION__, state->req_info->key_hash, state->swr_active,
+              state->sie_active, state->over_max_memory);
         // see if we are using too much memory and if so do not swr/sie
         if (state->over_max_memory) {
-          TSDebug(PLUGIN_TAG, "[%s] {%u} Over memory Usage %" PRId64, __FUNCTION__, state->req_info->key_hash,
-                  aync_memory_total_get(plugin_config));
+          SRDBG(TAG, "[%s] {%u} Over memory Usage %" PRId64, __FUNCTION__, state->req_info->key_hash,
+                aync_memory_total_get(plugin_config));
           TSStatIntIncrement(state->plugin_config->rfc_stat_memory_over, 1);
         }
 
         if (state->swr_active) {
-          TSDebug(PLUGIN_TAG, "[%s] {%u} swr return stale - async refresh", __FUNCTION__, state->req_info->key_hash);
+          SRDBG(TAG, "[%s] {%u} swr return stale - async refresh", __FUNCTION__, state->req_info->key_hash);
           TSStatIntIncrement(plugin_config->rfc_stat_swr_hit, 1);
           if (plugin_config->log_info.object && (plugin_config->log_info.all || plugin_config->log_info.stale_while_revalidate)) {
             TSTextLogObjectWrite(plugin_config->log_info.object, "stale-while-revalidate: %ld - %ld < %ld + %ld [%s]",
@@ -769,7 +766,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
           // reenable here
           TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
         } else if (state->sie_active) {
-          TSDebug(PLUGIN_TAG, "[%s] {%u} sie wait response - return stale if 50x", __FUNCTION__, state->req_info->key_hash);
+          SRDBG(TAG, "[%s] {%u} sie wait response - return stale if 50x", __FUNCTION__, state->req_info->key_hash);
           TSStatIntIncrement(plugin_config->rfc_stat_sie_hit, 1);
           // lookup sync
           if (!state->over_max_memory) {
@@ -791,11 +788,11 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
         }
         TSfree(chi);
       } else if (status != TS_CACHE_LOOKUP_HIT_FRESH) {
-        TSDebug(PLUGIN_TAG, "[%s] {%u} CacheLookup Miss/Skipped", __FUNCTION__, state->req_info->key_hash);
+        SRDBG(TAG, "[%s] {%u} CacheLookup Miss/Skipped", __FUNCTION__, state->req_info->key_hash);
 
         // this is just for stats
         if (async_check_active(state->req_info->key_hash, plugin_config) != nullptr) {
-          TSDebug(PLUGIN_TAG, "[%s] {%u} not_stale aync in progress", __FUNCTION__, state->req_info->key_hash);
+          SRDBG(TAG, "[%s] {%u} not_stale aync in progress", __FUNCTION__, state->req_info->key_hash);
           TSStatIntIncrement(plugin_config->rfc_stat_swr_miss_locked, 1);
         }
 
@@ -805,7 +802,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
           TSMLoc    hdr_loc;
           TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc);
           if (strip_trailing_parameter(buf, hdr_loc)) {
-            TSDebug(PLUGIN_TAG_BAD, "[%s] {%u} missed fake internal cache lookup", __FUNCTION__, state->req_info->key_hash);
+            SRDBG(TAG_BAD, "[%s] {%u} missed fake internal cache lookup", __FUNCTION__, state->req_info->key_hash);
           }
           TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
         }
@@ -816,7 +813,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
         TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       } else // TS_CACHE_LOOKUP_HIT_FRESH
       {
-        TSDebug(PLUGIN_TAG, "[%s] {%u} CacheLookup Fresh", __FUNCTION__, state->req_info->key_hash);
+        SRDBG(TAG, "[%s] {%u} CacheLookup Fresh", __FUNCTION__, state->req_info->key_hash);
 
         // free state - reenable - had check
         TSUserArgSet(state->txnp, state->plugin_config->txn_slot, nullptr);
@@ -827,7 +824,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_HTTP_SEND_REQUEST_HDR: {
-    TSDebug(PLUGIN_TAG, "[%s]: strip_trailing_parameter", __FUNCTION__);
+    SRDBG(TAG, "[%s]: strip_trailing_parameter", __FUNCTION__);
     TSHttpTxnServerReqGet(txnp, &buf, &loc);
     strip_trailing_parameter(buf, loc);
     TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
@@ -843,7 +840,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
     TSHttpTxnServerRespGet(txnp, &buf, &loc);
     http_status = TSHttpHdrStatusGet(buf, loc);
     if (valid_sie_status(http_status)) {
-      TSDebug(PLUGIN_TAG, "[%s] Set non-cachable %d", __FUNCTION__, http_status);
+      SRDBG(TAG, "[%s] Set non-cachable %d", __FUNCTION__, http_status);
       TSHttpTxnServerRespNoStoreSet(txnp, 1);
     }
     TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
@@ -852,7 +849,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     // add in the stale warning header -- no state variable
-    TSDebug(PLUGIN_TAG, "[%s] set warning header", __FUNCTION__);
+    SRDBG(TAG, "[%s] set warning header", __FUNCTION__);
     TSHttpTxnClientRespGet(txnp, &buf, &loc);
     if (!add_header(buf, loc, TS_MIME_FIELD_WARNING, HTTP_VALUE_STALE_WARNING)) {
       TSError("stale_response [%s] error inserting header %s", __FUNCTION__, TS_MIME_FIELD_WARNING);
@@ -902,7 +899,7 @@ parse_args(int argc, char const *argv[])
     {nullptr,                          0,                 nullptr, 0  }
   };
 
-  TSDebug(PLUGIN_TAG, "[%s] [%s]", __FUNCTION__, argv[1]);
+  SRDBG(TAG, "[%s] [%s]", __FUNCTION__, argv[1]);
   while ((c = getopt_long(argc, const_cast<char *const *>(argv), "akref:EFGH:", longopts, nullptr)) != -1) {
     switch (c) {
     case 'a':
@@ -953,19 +950,21 @@ parse_args(int argc, char const *argv[])
   }
 
   if (plugin_config->log_info.all || plugin_config->log_info.stale_while_revalidate || plugin_config->log_info.stale_if_error) {
-    TSDebug(PLUGIN_TAG, "[%s] Logging to %s", __FUNCTION__, plugin_config->log_info.filename);
+    SRDBG(TAG, "[%s] Logging to %s", __FUNCTION__, plugin_config->log_info.filename);
     TSTextLogObjectCreate(plugin_config->log_info.filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object));
   }
 
-  TSDebug(PLUGIN_TAG, "[%s] global stale if error override = %d", __FUNCTION__, (int)plugin_config->stale_if_error_override);
-  TSDebug(PLUGIN_TAG, "[%s] global stale while revalidate override = %d", __FUNCTION__,
-          (int)plugin_config->stale_while_revalidate_override);
-  TSDebug(PLUGIN_TAG, "[%s] global stale if error default = %d", __FUNCTION__, (int)plugin_config->stale_if_error_default);
-  TSDebug(PLUGIN_TAG, "[%s] global stale while revalidate default = %d", __FUNCTION__,
-          (int)plugin_config->stale_while_revalidate_default);
-  TSDebug(PLUGIN_TAG, "[%s] global intercept reroute = %d", __FUNCTION__, (int)plugin_config->intercept_reroute);
-  TSDebug(PLUGIN_TAG, "[%s] global force parallel async = %d", __FUNCTION__, (int)plugin_config->force_parallel_async);
-  TSDebug(PLUGIN_TAG, "[%s] global max memory usage = %" PRId64, __FUNCTION__, plugin_config->max_body_data_memory_usage);
+  SRDBG(TAG, "[%s] global stale if error override = %" PRIdMAX, __FUNCTION__,
+        static_cast<intmax_t>(plugin_config->stale_if_error_override));
+  SRDBG(TAG, "[%s] global stale while revalidate override = %" PRIdMAX, __FUNCTION__,
+        static_cast<intmax_t>(plugin_config->stale_while_revalidate_override));
+  SRDBG(TAG, "[%s] global stale if error default = %" PRIdMAX, __FUNCTION__,
+        static_cast<intmax_t>(plugin_config->stale_if_error_default));
+  SRDBG(TAG, "[%s] global stale while revalidate default = %" PRIdMAX, __FUNCTION__,
+        static_cast<intmax_t>(plugin_config->stale_while_revalidate_default));
+  SRDBG(TAG, "[%s] global intercept reroute = %d", __FUNCTION__, (int)plugin_config->intercept_reroute);
+  SRDBG(TAG, "[%s] global force parallel async = %d", __FUNCTION__, (int)plugin_config->force_parallel_async);
+  SRDBG(TAG, "[%s] global max memory usage = %" PRId64, __FUNCTION__, plugin_config->max_body_data_memory_usage);
 
   return plugin_config;
 }
@@ -981,16 +980,16 @@ read_request_header_handler(TSHttpTxn const txnp, ConfigInfo *plugin_config)
 
   if (TSHttpTxnIsInternal(txnp)) {
     // This is insufficient if there are other plugins using TSHttpConnect
-    TSDebug(PLUGIN_TAG, "[%s] {%u} ReadRequestHdr Internal", __FUNCTION__, state->req_info->key_hash);
+    SRDBG(TAG, "[%s] {%u} ReadRequestHdr Internal", __FUNCTION__, state->req_info->key_hash);
     BodyData *pBody = intercept_check_request(state);
     if (pBody) {
-      TSDebug(PLUGIN_TAG, "[%s] {%u} ReadRequestHdr Intercept", __FUNCTION__, state->req_info->key_hash);
+      SRDBG(TAG, "[%s] {%u} ReadRequestHdr Intercept", __FUNCTION__, state->req_info->key_hash);
       // key hash will have whats in header here
       serverInterceptSetup(txnp, pBody, plugin_config);
       state->intercept_request = true;
     } else {
       // not sure this is needed since we wont serve intercept in this case
-      TSDebug(PLUGIN_TAG, "[%s] {%u} ReadRequestHdr add response hook", __FUNCTION__, state->req_info->key_hash);
+      SRDBG(TAG, "[%s] {%u} ReadRequestHdr add response hook", __FUNCTION__, state->req_info->key_hash);
       // dont cache if valid sie status code to myself
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, transaction_contp);
     }
@@ -1005,7 +1004,7 @@ read_request_header_handler(TSHttpTxn const txnp, ConfigInfo *plugin_config)
         TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc);
         add_trailing_parameter(buf, hdr_loc);
         TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
-        TSDebug(PLUGIN_TAG, "[%s] {%u} add async parm to get fake cached item", __FUNCTION__, state->req_info->key_hash);
+        SRDBG(TAG, "[%s] {%u} add async parm to get fake cached item", __FUNCTION__, state->req_info->key_hash);
       }
     }
   }
@@ -1053,7 +1052,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError("Plugin registration failed.");
     return;
   }
-  TSDebug(PLUGIN_TAG, "Plugin registration succeeded.");
+  SRDBG(TAG, "Plugin registration succeeded.");
 
   TSMgmtString value = nullptr;
   TSMgmtStringGet("proxy.config.http.server_session_sharing.pool", &value);
@@ -1077,7 +1076,7 @@ TSPluginInit(int argc, const char *argv[])
 
   create_plugin_stats(plugin_config);
 
-  TSDebug(PLUGIN_TAG, "[%s] Plugin Init Complete", __FUNCTION__);
+  SRDBG(TAG, "[%s] Plugin Init Complete", __FUNCTION__);
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -1090,7 +1089,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
-  TSDebug(PLUGIN_TAG, "[%s] Plugin Remap Init Complete", __FUNCTION__);
+  SRDBG(TAG, "[%s] Plugin Remap Init Complete", __FUNCTION__);
 
   return TS_SUCCESS;
 }
@@ -1108,7 +1107,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /*errbuf */, int /*
     return TS_ERROR;
   }
   create_plugin_stats(plugin_config);
-  TSDebug(PLUGIN_TAG, "[%s] Plugin Remap New Instance Complete", __FUNCTION__);
+  SRDBG(TAG, "[%s] Plugin Remap New Instance Complete", __FUNCTION__);
   return TS_SUCCESS;
 }
 
@@ -1117,7 +1116,7 @@ TSRemapDeleteInstance(void *ih)
 {
   ConfigInfo *const plugin_config = static_cast<ConfigInfo *>(ih);
   delete plugin_config;
-  TSDebug(PLUGIN_TAG, "[%s] Plugin Remap Delete Instance Complete", __FUNCTION__);
+  SRDBG(TAG, "[%s] Plugin Remap Delete Instance Complete", __FUNCTION__);
 }
 
 /**

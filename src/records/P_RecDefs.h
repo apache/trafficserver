@@ -30,7 +30,7 @@
 // We need at least this many internal record entries for our configurations and metrics.
 // This may need adjustments if we make significant additions to librecords. Note that
 // plugins are using their own metrics systems.
-#define REC_MAX_RECORDS               2048
+#define REC_DEFAULT_ELEMENTS_SIZE     2048
 #define REC_CONFIG_UPDATE_INTERVAL_MS 3000
 #define REC_REMOTE_SYNC_INTERVAL_MS   5000
 

@@ -21,89 +21,21 @@
 
 #include <stdexcept>
 #include <chrono>
-#include <sstream>
 #include <utility>
 #include <thread>
 
 #include "tsutil/ts_bw_format.h"
 
 #include "shared/rpc/IPCSocketClient.h"
+#include "shared/rpc/MessageStorage.h"
 #include <tscore/ink_assert.h>
 #include <tscore/ink_sock.h>
-
-namespace
-{
-/// @brief Simple buffer to store the jsonrpc server's response.
-///
-///        With small content it will just use the LocalBufferWriter, if the
-///        content gets bigger, then it will just save the buffer into a stream
-///        and reuse the already created BufferWritter.
-template <size_t N> class BufferStream
-{
-  std::ostringstream         _os;
-  swoc::LocalBufferWriter<N> _bw;
-  size_t                     _written{0};
-
-public:
-  char *
-  writable_data()
-  {
-    return _bw.aux_data();
-  }
-
-  void
-  save(size_t n)
-  {
-    _bw.commit(n);
-
-    if (_bw.remaining() == 0) { // no more space available, flush what's on the bw
-                                // and reset it.
-      flush();
-    }
-  }
-
-  size_t
-  available() const
-  {
-    return _bw.remaining();
-  }
-
-  void
-  flush()
-  {
-    if (_bw.size() == 0) {
-      return;
-    }
-    _os.write(_bw.view().data(), _bw.size());
-    _written += _bw.size();
-
-    _bw.clear();
-  }
-
-  std::string
-  str()
-  {
-    if (stored() <= _bw.size()) {
-      return {_bw.data(), _bw.size()};
-    }
-
-    flush();
-    return _os.str();
-  }
-
-  size_t
-  stored() const
-  {
-    return _written ? _written : _bw.size();
-  }
-};
-} // namespace
 
 namespace shared::rpc
 {
 
 IPCSocketClient::self_reference
-IPCSocketClient::connect(std::chrono::milliseconds ms, int attempts)
+IPCSocketClient::connect(std::chrono::milliseconds wait_ms, int attempts)
 {
   std::string text;
   int         err, tries{attempts};
@@ -135,7 +67,7 @@ IPCSocketClient::connect(std::chrono::milliseconds ms, int attempts)
     if (errno == EAGAIN || errno == EINPROGRESS) {
       // Connection cannot be completed immediately
       // EAGAIN for UDS should suffice, but just in case.
-      std::this_thread::sleep_for(ms);
+      std::this_thread::sleep_for(wait_ms);
       err = errno;
       continue;
     } else {
@@ -185,35 +117,52 @@ IPCSocketClient ::send(std::string_view data)
 }
 
 IPCSocketClient::ReadStatus
-IPCSocketClient::read_all(std::string &content)
+IPCSocketClient::read_all(std::string &content, std::chrono::milliseconds timeout_ms, int attempts)
 {
   if (this->is_closed()) {
     // we had a failure.
-    return {};
+    return ReadStatus::UNKNOWN;
   }
 
-  BufferStream<356000> bs;
-
-  ReadStatus readStatus{ReadStatus::UNKNOWN};
-  while (true) {
+  MessageStorage<356000> bs;
+  int                    attempts_left{attempts};
+  ReadStatus             readStatus{ReadStatus::NO_ERROR};
+  // Try to read all the data from the socket. If a timeout happens we retry
+  // 'attemps' times. On error we just stop.
+  while (attempts_left > 0 || readStatus == ReadStatus::NO_ERROR) {
     auto       buf     = bs.writable_data();
-    const auto to_read = bs.available();
-    ssize_t    ret{-1};
-    do {
-      ret = ::read(_sock, buf, to_read);
-    } while (ret < 0 && (errno == EAGAIN || errno == EINTR));
+    const auto to_read = bs.available(); // Available in the current memory chunk.
+    ssize_t    nread{-1};
 
-    if (ret > 0) {
-      bs.save(ret);
+    // Try again if timed out.
+    if (auto const r = read_ready(_sock, timeout_ms.count()); r == 0) {
+      readStatus = ReadStatus::TIMEOUT;
+      --attempts_left;
       continue;
-    } else {
-      if (bs.stored() > 0) {
-        readStatus = ReadStatus::NO_ERROR;
-        break;
-      }
-      readStatus = ReadStatus::STREAM_ERROR;
+    } else if (r < 0) {
+      // No more tries.
+      readStatus = ReadStatus::READ_ERROR;
       break;
     }
+
+    nread = ::read(_sock, buf, to_read);
+    if (nread > 0) {
+      bs.save(nread);
+      continue;
+    } else if (nread == -1) {
+      if (errno == EAGAIN || errno == EINTR) {
+        continue;
+      }
+      readStatus = ReadStatus::READ_ERROR;
+      break;
+    }
+    // EOF
+    if (bs.stored() > 0) {
+      readStatus = ReadStatus::NO_ERROR;
+      break;
+    }
+    readStatus = ReadStatus::READ_ERROR;
+    break;
   }
   content = bs.str();
   return readStatus;

@@ -130,15 +130,14 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
       return !enforce_mode;
     }
   }
-  // If the previous configured checks passed, give the hook a try
-  netvc->set_verify_cert(ctx);
-  TLSEventSupport *es = TLSEventSupport::getInstance(ssl);
-  if (es) {
-    es->callHooks(TS_EVENT_SSL_VERIFY_SERVER);
-  }
-  netvc->set_verify_cert(nullptr);
 
-  if (netvc->getSSLHandshakeStatus() == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
+  // If the previous configured checks passed, give the hook a try
+  TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
+  if (tbs == nullptr) {
+    Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
+    return false;
+  }
+  if (tbs->verify_certificate(ctx) == 1) {
     // Verify server hook failed and set the status to SSL_HANDSHAKE_ERROR
     unsigned char *sni_name;
     char           buff[INET6_ADDRSTRLEN];

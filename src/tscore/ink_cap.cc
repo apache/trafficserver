@@ -42,31 +42,30 @@
 // and if it does, it is likely that some fundamental security assumption has been violated. In that case
 // it is dangerous to continue.
 
-#if !TS_USE_POSIX_CAP
-ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
-#endif
+namespace
+{
 
-#define DEBUG_CREDENTIALS(tag)                                                                                               \
+#define DEBUG_CREDENTIALS(ctl)                                                                                               \
   do {                                                                                                                       \
-    if (diags()->on(tag)) {                                                                                                  \
+    if ((ctl).on()) {                                                                                                        \
       uid_t uid = -1, euid = -1, suid = -1;                                                                                  \
       gid_t gid = -1, egid = -1, sgid = -1;                                                                                  \
       getresuid(&uid, &euid, &suid);                                                                                         \
       getresgid(&gid, &egid, &sgid);                                                                                         \
-      Debug(tag, "uid=%ld, gid=%ld, euid=%ld, egid=%ld, suid=%ld, sgid=%ld", static_cast<long>(uid), static_cast<long>(gid), \
-            static_cast<long>(euid), static_cast<long>(egid), static_cast<long>(suid), static_cast<long>(sgid));             \
+      Dbg((ctl), "uid=%ld, gid=%ld, euid=%ld, egid=%ld, suid=%ld, sgid=%ld", static_cast<long>(uid), static_cast<long>(gid), \
+          static_cast<long>(euid), static_cast<long>(egid), static_cast<long>(suid), static_cast<long>(sgid));               \
     }                                                                                                                        \
   } while (0)
 
 #if TS_USE_POSIX_CAP
 
-#define DEBUG_PRIVILEGES(tag)                                                                                    \
+#define DEBUG_PRIVILEGES(ctl)                                                                                    \
   do {                                                                                                           \
-    if (diags()->on(tag)) {                                                                                      \
+    if ((ctl).on()) {                                                                                            \
       cap_t caps      = cap_get_proc();                                                                          \
       char *caps_text = cap_to_text(caps, nullptr);                                                              \
-      Debug(tag, "caps='%s', core=%s, death signal=%d, thread=0x%llx", caps_text, is_dumpable(), death_signal(), \
-            (unsigned long long)pthread_self());                                                                 \
+      Dbg((ctl), "caps='%s', core=%s, death signal=%d, thread=0x%llx", caps_text, is_dumpable(), death_signal(), \
+          (unsigned long long)pthread_self());                                                                   \
       cap_free(caps_text);                                                                                       \
       cap_free(caps);                                                                                            \
     }                                                                                                            \
@@ -74,15 +73,17 @@ ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 
 #else /* TS_USE_POSIX_CAP */
 
-#define DEBUG_PRIVILEGES(tag)                                                                       \
+#define DEBUG_PRIVILEGES(ctl)                                                                       \
   do {                                                                                              \
-    if (diags()->on(tag)) {                                                                         \
-      Debug(tag, "caps='', core=%s, death signal=%d, thread=0x%llx", is_dumpable(), death_signal(), \
-            (unsigned long long)pthread_self());                                                    \
+    if ((ctl).on()) {                                                                               \
+      Dbg((ctl), "caps='', core=%s, death signal=%d, thread=0x%llx", is_dumpable(), death_signal(), \
+          (unsigned long long)pthread_self());                                                      \
     }                                                                                               \
   } while (0)
 
 #endif /* TS_USE_POSIX_CAP */
+
+DbgCtl dbg_ctl_privileges{"privileges"};
 
 #if !HAVE_GETRESUID
 static int
@@ -139,21 +140,14 @@ death_signal()
   return signum;
 }
 
-void
-DebugCapabilities(const char *tag)
-{
-  DEBUG_CREDENTIALS(tag);
-  DEBUG_PRIVILEGES(tag);
-}
-
 static void
 impersonate(const struct passwd *pwd, ImpersonationLevel level)
 {
   int  deathsig = death_signal();
   bool dumpable = false;
 
-  DEBUG_CREDENTIALS("privileges");
-  DEBUG_PRIVILEGES("privileges");
+  DEBUG_CREDENTIALS(dbg_ctl_privileges);
+  DEBUG_PRIVILEGES(dbg_ctl_privileges);
 
   ink_release_assert(pwd != nullptr);
 
@@ -162,7 +156,11 @@ impersonate(const struct passwd *pwd, ImpersonationLevel level)
 #endif
 
   // Always repopulate the supplementary group list for the new user.
-  initgroups(pwd->pw_name, pwd->pw_gid);
+  if (geteuid() == 0) { // check that we have enough rights to call initgroups()
+    if (initgroups(pwd->pw_name, pwd->pw_gid) != 0) {
+      Fatal("switching to user %s, failed to initialize supplementary groups ID %ld", pwd->pw_name, (long)pwd->pw_gid);
+    }
+  }
 
   switch (level) {
   case IMPERSONATE_PERMANENT:
@@ -195,8 +193,17 @@ impersonate(const struct passwd *pwd, ImpersonationLevel level)
     EnableDeathSignal(deathsig);
   }
 
-  DEBUG_CREDENTIALS("privileges");
-  DEBUG_PRIVILEGES("privileges");
+  DEBUG_CREDENTIALS(dbg_ctl_privileges);
+  DEBUG_PRIVILEGES(dbg_ctl_privileges);
+}
+
+} // end anonymous namespace
+
+void
+DebugCapabilities(DbgCtl &dbg_ctl)
+{
+  DEBUG_CREDENTIALS(dbg_ctl);
+  DEBUG_PRIVILEGES(dbg_ctl);
 }
 
 void
@@ -252,7 +259,7 @@ PreserveCapabilities()
 #if TS_USE_POSIX_CAP
   zret = prctl(PR_SET_KEEPCAPS, 1);
 #endif
-  Debug("privileges", "[PreserveCapabilities] zret : %d", zret);
+  Dbg(dbg_ctl_privileges, "[PreserveCapabilities] zret : %d", zret);
   return zret == 0;
 }
 
@@ -280,7 +287,7 @@ RestrictCapabilities()
     if (cap_set_flag(caps, CAP_PERMITTED, 1, perm_list + i, CAP_SET) < 0) {
     } else {
       if (cap_set_proc(caps) == -1) { // it failed, back out
-        Debug("privileges", "CAP_PERMITTED failed for option %d", i);
+        Dbg(dbg_ctl_privileges, "CAP_PERMITTED failed for option %d", i);
       } else {
         if (cap_set_flag(caps_good, CAP_PERMITTED, 1, perm_list + i, CAP_SET) < 0) {}
       }
@@ -295,7 +302,7 @@ RestrictCapabilities()
     if (cap_set_flag(caps, CAP_EFFECTIVE, 1, eff_list + i, CAP_SET) < 0) {
     } else {
       if (cap_set_proc(caps) == -1) { // it failed, back out
-        Debug("privileges", "CAP_EFFECTIVE failed for option %d", i);
+        Dbg(dbg_ctl_privileges, "CAP_EFFECTIVE failed for option %d", i);
       } else {
         if (cap_set_flag(caps_good, CAP_EFFECTIVE, 1, eff_list + i, CAP_SET) < 0) {}
       }
@@ -314,21 +321,21 @@ RestrictCapabilities()
     cap_flag_value_t val;
     if (cap_get_flag(caps_good, perm_list[i], CAP_PERMITTED, &val) < 0) {
     } else {
-      Debug("privileges", "CAP_PERMITTED offset %d is %s", i, val == CAP_SET ? "set" : "unset");
+      Dbg(dbg_ctl_privileges, "CAP_PERMITTED offset %d is %s", i, val == CAP_SET ? "set" : "unset");
     }
   }
   for (int i = 0; i < EFF_CAP_COUNT; i++) {
     cap_flag_value_t val;
     if (cap_get_flag(caps_good, eff_list[i], CAP_EFFECTIVE, &val) < 0) {
     } else {
-      Debug("privileges", "CAP_EFFECTIVE offset %d is %s", i, val == CAP_SET ? "set" : "unset");
+      Dbg(dbg_ctl_privileges, "CAP_EFFECTIVE offset %d is %s", i, val == CAP_SET ? "set" : "unset");
     }
   }
 
   cap_free(caps_good);
   cap_free(caps_orig);
 #endif
-  Debug("privileges", "[RestrictCapabilities] zret : %d", zret);
+  Dbg(dbg_ctl_privileges, "[RestrictCapabilities] zret : %d", zret);
   return zret == 0;
 }
 
@@ -347,7 +354,7 @@ EnableCoreFile([[maybe_unused]] bool flag)
   }
 #endif // linux check
 
-  Debug("privileges", "[EnableCoreFile] zret : %d", zret);
+  Dbg(dbg_ctl_privileges, "[EnableCoreFile] zret : %d", zret);
   return zret == 0;
 }
 
@@ -356,7 +363,7 @@ EnableDeathSignal([[maybe_unused]] int signum)
 {
 #if defined(PR_SET_PDEATHSIG)
   if (prctl(PR_SET_PDEATHSIG, signum, 0, 0, 0) != 0) {
-    Debug("privileges", "prctl(PR_SET_PDEATHSIG) failed: %s", strerror(errno));
+    Dbg(dbg_ctl_privileges, "prctl(PR_SET_PDEATHSIG) failed: %s", strerror(errno));
   }
 #endif
 }
@@ -416,7 +423,12 @@ elevating_stat(const char *path, struct stat *buff)
   return ret;
 }
 
-#if TS_USE_POSIX_CAP
+#if !TS_USE_POSIX_CAP
+
+ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
+
+#else
+
 /** Acquire file access privileges to bypass DAC.
     @a level is a mask of the specific file access capabilities to acquire.
  */
@@ -427,7 +439,7 @@ ElevateAccess::acquirePrivilege(unsigned priv_mask)
   cap_value_t cap_list[3];
   cap_t       new_cap_state;
 
-  Debug("privileges", "[acquirePrivilege] level= %x", level);
+  Dbg(dbg_ctl_privileges, "[acquirePrivilege] level= %x", level);
 
   ink_assert(nullptr == cap_state);
 
@@ -471,7 +483,7 @@ ElevateAccess::acquirePrivilege(unsigned priv_mask)
 void
 ElevateAccess::releasePrivilege()
 {
-  Debug("privileges", "[releaseFileAccessCap]");
+  Dbg(dbg_ctl_privileges, "[releaseFileAccessCap]");
 
   if (this->cap_state) {
     if (cap_set_proc(static_cast<cap_t>(cap_state)) != 0) {
@@ -493,9 +505,9 @@ ElevateAccess::ElevateAccess(unsigned lvl)
 {
   elevate(level);
 #if !TS_USE_POSIX_CAP
-  DEBUG_CREDENTIALS("privileges");
+  DEBUG_CREDENTIALS(dbg_ctl_privileges);
 #endif
-  DEBUG_PRIVILEGES("privileges");
+  DEBUG_PRIVILEGES(dbg_ctl_privileges);
 }
 
 ElevateAccess::~ElevateAccess()
@@ -503,9 +515,9 @@ ElevateAccess::~ElevateAccess()
   if (elevated) {
     demote();
 #if !TS_USE_POSIX_CAP
-    DEBUG_CREDENTIALS("privileges");
+    DEBUG_CREDENTIALS(dbg_ctl_privileges);
 #endif
-    DEBUG_PRIVILEGES("privileges");
+    DEBUG_PRIVILEGES(dbg_ctl_privileges);
   }
 }
 

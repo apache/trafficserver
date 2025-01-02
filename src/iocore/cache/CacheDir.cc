@@ -428,13 +428,13 @@ check_bucket_not_contains(Dir *b, Dir *e, Dir *seg)
 }
 
 void
-freelist_clean(int s, Stripe *stripe)
+freelist_clean(int s, StripeSM *stripe)
 {
   dir_clean_segment(s, stripe);
   if (stripe->header->freelist[s]) {
     return;
   }
-  Warning("cache directory overflow on '%s' segment %d, purging...", stripe->path, s);
+  Warning("cache directory overflow on '%s' segment %d, purging...", stripe->disk->path, s);
   int  n   = 0;
   Dir *seg = stripe->dir_segment(s);
   for (int bi = 0; bi < stripe->buckets; bi++) {
@@ -452,7 +452,7 @@ freelist_clean(int s, Stripe *stripe)
 }
 
 inline Dir *
-freelist_pop(int s, Stripe *stripe)
+freelist_pop(int s, StripeSM *stripe)
 {
   Dir *seg = stripe->dir_segment(s);
   Dir *e   = dir_from_offset(stripe->header->freelist[s], seg);
@@ -966,7 +966,7 @@ Lrestart:
     }
     Metrics::Counter::increment(cache_rsb.directory_sync_bytes, io.aio_result);
     Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_sync_bytes, io.aio_result);
-    trigger = eventProcessor.schedule_in(this, SYNC_DELAY);
+    trigger = eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_dir_sync_delay));
     return EVENT_CONT;
   }
   {
@@ -1046,7 +1046,7 @@ Lrestart:
       writepos += headerlen;
     } else if (writepos < static_cast<off_t>(dirlen) - headerlen) {
       // write part of body
-      int l = SYNC_MAX_WRITE;
+      int l = cache_config_dir_sync_max_write;
       if (writepos + l > static_cast<off_t>(dirlen) - headerlen) {
         l = dirlen - headerlen - writepos;
       }

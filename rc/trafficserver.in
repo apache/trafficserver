@@ -17,8 +17,8 @@
 #
 # chkconfig: - 90 10
 # description: Apache Traffic Server is a fast, scalable and extensible  \
-#             HTTP/1.1 compliant caching proxy server.
-# processname: traffic_manager traffic_server
+#             HTTP/1.1 and HTTP/2 compliant caching proxy server.
+# processname: traffic_server
 # config: /etc/trafficserver
 # config: /etc/sysconfig/trafficserver
 #

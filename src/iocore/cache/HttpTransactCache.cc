@@ -29,7 +29,7 @@
 #include "api/InkAPIInternal.h"
 #include "iocore/cache/HttpTransactCache.h"
 #include <ctime>
-#include "proxy/HttpAPIHooks.h"
+#include "api/HttpAPIHooks.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HttpCompat.h"
 

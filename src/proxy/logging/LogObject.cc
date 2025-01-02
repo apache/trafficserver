@@ -603,10 +603,6 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
     return Log::SKIP;
   }
 
-  if (lad && m_filter_list.wipe_this_entry(lad)) {
-    Dbg(dbg_ctl_log, "entry wiped, ...");
-  }
-
   if (lad && m_format->is_aggregate()) {
     // marshal the field data into the temp space provided by the
     // LogFormat object for aggregate formats

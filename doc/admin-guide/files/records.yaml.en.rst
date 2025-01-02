@@ -2475,6 +2475,25 @@ Cache Control
 
    Objects larger than the limit are not hit evacuated. A value of 0 disables the limit.
 
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_frequency INT 60
+   :units: seconds
+
+   How often we will sync the cache directory entries to disk. Note that this is
+   a minimum time, and the actual sync may be delayed if the disks are larger than
+   how fast we allow it to write to disk (see next options).
+
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_max_writes INT 2097152
+   :units: bytes
+
+   How much of a stripes cache directory we will write to disk in each write cycle.
+   Together with the sync_delay, this controls how fast we can sync the entire directory
+   structure to disk. The default is 2MB.
+
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_delay INT 500
+   :units: millisecond
+
+   How long to wait between each write cycle when syncing the cache directory to disk.
+
 .. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
    The maximum number of alternates that are allowed for any given URL.
@@ -3619,7 +3638,7 @@ SSL Termination
 
    TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256
 
-   This configuration works with OpenSSL v1.1.1 and above.
+   This configuration works with OpenSSL v1.1.1 and above. BoringSSL does not support customizing the list.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.honor_cipher_order INT 1
 
@@ -3631,13 +3650,13 @@ SSL Termination
    By enabling it (``1``) |TS| will temporarily reprioritize ChaCha20-Poly1305 ciphers to the top of the
    server cipher list if a ChaCha20-Poly1305 cipher is at the top of the client cipher list.
 
-   This configuration works with OpenSSL v1.1.1 and above.
+   This configuration works with OpenSSL v1.1.1 and above. BoringSSL does not support this.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3.cipher_suites STRING <See notes under proxy.config.ssl.server.tls.cipher_suites>
 
    Configures the cipher_suites which |TS| will use for TLSv1.3
    connections to origin or next hop. This configuration works
-   with OpenSSL v1.1.1 and above.
+   with OpenSSL v1.1.1 and above. BoringSSL does not support customizing the list.
 
    The current default is:
 

@@ -43,7 +43,7 @@ using ts::Metrics;
 
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
 // and used (read) from several binaries / modules.
-int                                          max_records_entries = REC_MAX_RECORDS;
+int                                          max_records_entries = REC_DEFAULT_ELEMENTS_SIZE;
 static bool                                  g_initialized       = false;
 RecRecord                                   *g_records           = nullptr;
 std::unordered_map<std::string, RecRecord *> g_records_ht;
