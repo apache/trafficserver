@@ -2112,11 +2112,6 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/release-process/index.en
 source_file = _build/locale/pot/developer-guide/release-process/index.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--testing-with-vagrant--index_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/testing-with-vagrant/index.en.po
-source_file = _build/locale/pot/developer-guide/testing-with-vagrant/index.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.developer-guide--troubleshooting-tips--unable-to-load-plugins_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/troubleshooting-tips/unable-to-load-plugins.en.po
 source_file = _build/locale/pot/developer-guide/troubleshooting-tips/unable-to-load-plugins.en.pot
