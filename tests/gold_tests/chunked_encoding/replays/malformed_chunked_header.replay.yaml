@@ -90,7 +90,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 4 ]
+        - [ uuid, 101 ]
 
     # The connection will be dropped and this response will not go out.
     server-response:
@@ -113,7 +113,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 5 ]
+        - [ uuid, 102 ]
 
     # The connection will be dropped and this response will not go out.
     server-response:
@@ -136,7 +136,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 6 ]
+        - [ uuid, 103 ]
 
     # The connection will be dropped and this response will not go out.
     server-response:
