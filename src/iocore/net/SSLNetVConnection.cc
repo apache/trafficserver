@@ -23,7 +23,6 @@
 
 #include "iocore/net/NetVConnection.h"
 #include "tscore/ink_config.h"
-#include "tscore/EventNotify.h"
 #include "tscore/Layout.h"
 #include "tscore/InkErrno.h"
 #include "tscore/TSSystemState.h"

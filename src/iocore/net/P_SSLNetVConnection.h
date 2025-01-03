@@ -31,10 +31,8 @@
  ****************************************************************************/
 #pragma once
 
-#include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
 
-#include "../eventsystem/P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
 #include "iocore/net/TLSALPNSupport.h"
@@ -83,12 +81,12 @@
 
 struct SSLCertLookup;
 
-typedef enum {
+using SslVConnOp = enum {
   SSL_HOOK_OP_DEFAULT,                     ///< Null / initialization value. Do normal processing.
   SSL_HOOK_OP_TUNNEL,                      ///< Switch to blind tunnel
   SSL_HOOK_OP_TERMINATE,                   ///< Termination connection / transaction.
   SSL_HOOK_OP_LAST = SSL_HOOK_OP_TERMINATE ///< End marker value.
-} SslVConnOp;
+};
 
 enum class SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHAKE_ERROR };
 
@@ -109,7 +107,7 @@ class SSLNetVConnection : public UnixNetVConnection,
                           public TLSEventSupport,
                           public TLSBasicSupport
 {
-  typedef UnixNetVConnection super; ///< Parent type.
+  using super = UnixNetVConnection; ///< Parent type.
 
 public:
   int  sslStartHandShake(int event, int &err) override;
@@ -386,6 +384,6 @@ private:
   void _out_context_tunnel() override;
 };
 
-typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
+using SSLNetVConnHandler = int (SSLNetVConnection::*)(int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
