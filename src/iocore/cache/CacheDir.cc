@@ -980,8 +980,7 @@ Lrestart:
       start_time = ink_get_hrtime();
     }
 
-    // recompute hit_evacuate_window
-    stripe->hit_evacuate_window = (stripe->data_blocks * cache_config_hit_evacuate_percent) / 100;
+    stripe->recompute_hit_evacuate_window();
 
     if (DISK_BAD(stripe->disk)) {
       goto Ldone;
