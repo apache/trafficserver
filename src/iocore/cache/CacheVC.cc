@@ -134,9 +134,9 @@ make_vol_map(Stripe *stripe)
 
   // Scan directories.
   // Copied from dir_entries_used() and modified to fill in the map instead.
-  for (int s = 0; s < stripe->segments; s++) {
-    Dir *seg = stripe->dir_segment(s);
-    for (int b = 0; b < stripe->buckets; b++) {
+  for (int s = 0; s < stripe->directory.segments; s++) {
+    Dir *seg = stripe->directory.get_segment(s);
+    for (int b = 0; b < stripe->directory.buckets; b++) {
       Dir *e = dir_bucket(b, seg);
       if (dir_bucket_loop_fix(e, s, stripe)) {
         break;
