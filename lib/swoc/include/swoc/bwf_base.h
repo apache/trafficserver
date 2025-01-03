@@ -467,7 +467,7 @@ protected:
  * This nameset is used if no other is provided. Therefore bindings added to this nameset will be
  * available in the default formatting use.
  */
-extern ExternalNames Global_Names;
+extern ExternalNames& Global_Names();
 
 // --------------- Implementation --------------------
 /// --- Spec ---
@@ -919,25 +919,25 @@ BufferWriter::print_nfv(Binding &&names, Extractor &&ex, bwf::ArgPack const &arg
 template <typename... Args>
 BufferWriter &
 BufferWriter::print(const TextView &fmt, Args &&...args) {
-  return this->print_nfv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), bwf::ArgTuple{std::forward_as_tuple(args...)});
+  return this->print_nfv(bwf::Global_Names().bind(), bwf::Format::bind(fmt), bwf::ArgTuple{std::forward_as_tuple(args...)});
 }
 
 template <typename... Args>
 BufferWriter &
 BufferWriter::print(bwf::Format const &fmt, Args &&...args) {
-  return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), bwf::ArgTuple{std::forward_as_tuple(args...)});
+  return this->print_nfv(bwf::Global_Names().bind(), fmt.bind(), bwf::ArgTuple{std::forward_as_tuple(args...)});
 }
 
 template <typename... Args>
 BufferWriter &
 BufferWriter::print_v(TextView const &fmt, std::tuple<Args...> const &args) {
-  return this->print_nfv(bwf::Global_Names.bind(), bwf::Format::bind(fmt), bwf::ArgTuple{args});
+  return this->print_nfv(bwf::Global_Names().bind(), bwf::Format::bind(fmt), bwf::ArgTuple{args});
 }
 
 template <typename... Args>
 BufferWriter &
 BufferWriter::print_v(const bwf::Format &fmt, const std::tuple<Args...> &args) {
-  return this->print_nfv(bwf::Global_Names.bind(), fmt.bind(), bwf::ArgTuple{args});
+  return this->print_nfv(bwf::Global_Names().bind(), fmt.bind(), bwf::ArgTuple{args});
 }
 
 template <typename Binding, typename Extractor>
