@@ -188,7 +188,7 @@ ChunkedHandler::read_size()
             break;
           } else {
             if (ParseRules::is_cr(*tmp)) {
-              cr++;
+              ++cr;
             }
             state = CHUNK_READ_SIZE_CRLF; // now look for CRLF
           }
@@ -207,7 +207,7 @@ ChunkedHandler::read_size()
             done  = true;
             break;
           }
-          cr++;
+          ++cr;
         }
       } else if (state == CHUNK_READ_SIZE_START) {
         if (ParseRules::is_cr(*tmp)) {
