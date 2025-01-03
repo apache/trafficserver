@@ -78,6 +78,26 @@ sessions:
     server-response:
       status: 200
 
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /malformed/chunk/header3
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, 4 ]
+      content:
+        transfer: plain
+        encoding: uri
+        # BWS cannot have CR
+        data: 3%0D%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+
   #
   # Now repeat the above two malformed chunk header tests, but on the server
   # side.
@@ -150,3 +170,26 @@ sessions:
         encoding: uri
         # Super large chunk header, larger than will fit in an int.
         data: 111111113%0D%0Adef%0D%0A0%0D%0A%0D%0A
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /response/malformed/chunk/size2
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 104 ]
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+      content:
+        transfer: plain
+        encoding: uri
+        # BWS cannot have CR
+        data: 3%0D%0D%0Aabc%0D%0A0%0D%0A%0D%0A
