@@ -387,7 +387,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
-        "ENABLE_EXAMPLE": "ON"
+        "ENABLE_EXAMPLE": "ON",
+        "ENABLE_CCACHE": "OFF"
       }
     },
     {
