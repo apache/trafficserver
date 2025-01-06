@@ -83,7 +83,6 @@
 #define TS_HAS_TLS_EARLY_DATA @has_tls_early_data@
 #define TS_HAS_TLS_SESSION_TICKET @has_tls_session_ticket@
 #define TS_HAS_VERIFY_CERT_STORE @has_verify_cert_store@
-#define TS_HAS_VERIFY_CERT_STORE @has_verify_cert_store@
 #define HAVE_BIO_GET_EX_NEW_INDEX @have_bio_get_ex_new_index@
 
 #define TS_USE_HRW_GEOIP @use_hrw_geoip@

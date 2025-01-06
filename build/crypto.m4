@@ -456,7 +456,7 @@ AC_DEFUN([TS_CHECK_BIO_GET_EX_NEW_INDEX], [
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   bio_get_ex_new_index_check=no
-  has_verify_cert_store=0
+  have_bio_get_ex_new_index=0
   AC_MSG_CHECKING([for BIO_get_ex_new_index  macro])
   AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
