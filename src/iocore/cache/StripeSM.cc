@@ -170,7 +170,7 @@ StripeSM::init(bool clear)
   CryptoContext().hash_immediate(hash_id, hash_text, strlen(hash_text));
 
   // Evacuation
-  this->hit_evacuate_window = (this->data_blocks * cache_config_hit_evacuate_percent) / 100;
+  this->recompute_hit_evacuate_window();
 
   // AIO
   if (clear) {
@@ -1332,8 +1332,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- not dirty", this->hash_text.get());
     return;
   }
-  // recompute hit_evacuate_window
-  this->hit_evacuate_window = (this->data_blocks * cache_config_hit_evacuate_percent) / 100;
+  this->recompute_hit_evacuate_window();
 
   // check if we have data in the agg buffer
   // dont worry about the cachevc s in the agg queue
@@ -1400,4 +1399,10 @@ int
 StripeSM::close_write(CacheVC *cont)
 {
   return open_dir.close_write(cont);
+}
+
+void
+StripeSM::recompute_hit_evacuate_window()
+{
+  this->hit_evacuate_window = (this->data_blocks * cache_config_hit_evacuate_percent) / 100;
 }
