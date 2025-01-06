@@ -471,6 +471,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] new acl_filter_rule class was created during remap rule processing");
   }
 
+  bool action_flag  = false;
   bool ip_is_listed = false;
   for (i = 0; i < argc; i++) {
     unsigned long ul;
@@ -632,6 +633,13 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     }
 
     if (ul & REMAP_OPTFLG_ACTION) { /* "action=" option */
+      if (action_flag) {
+        std::string_view err = "Only one @action= is allowed per remap ACL";
+        Dbg(dbg_ctl_url_rewrite, "%s", err.data());
+        // For 10.0.x, making Warning instead of Error for compatibility
+        Warning("%s", err.data());
+      }
+      action_flag = true;
       if (behavior_policy == ACLBehaviorPolicy::ACL_BEHAVIOR_MODERN) {
         // With the new matching policy, we don't allow the legacy "allow" and
         // "deny" actions. Users must transition to either add_allow/add_deny or
