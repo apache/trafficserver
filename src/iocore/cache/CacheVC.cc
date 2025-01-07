@@ -597,7 +597,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
   Lcollision:
     // check for collision
-    if (dir_probe(&key, stripe, &dir, &last_collision) > 0) {
+    if (stripe->directory.probe(&key, stripe, &dir, &last_collision) > 0) {
       int ret = do_read_call(&key);
       if (ret == EVENT_RETURN) {
         goto Lread;
@@ -739,7 +739,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
     last_collision = nullptr;
     while (true) {
-      if (!dir_probe(&doc->first_key, stripe, &dir, &last_collision)) {
+      if (!stripe->directory.probe(&doc->first_key, stripe, &dir, &last_collision)) {
         goto Lskip;
       }
       if (!stripe->dir_agg_valid(&dir) || !dir_head(&dir) ||
@@ -787,7 +787,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       // verify that the earliest block exists, reducing 'false hit' callbacks
       if (!(key == doc->key)) {
         last_collision = nullptr;
-        if (!dir_probe(&key, stripe, &earliest_dir, &last_collision)) {
+        if (!stripe->directory.probe(&key, stripe, &earliest_dir, &last_collision)) {
           continue;
         }
       }
@@ -968,7 +968,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
 
     while (true) {
-      if (!dir_probe(&first_key, stripe, &d, &l)) {
+      if (!stripe->directory.probe(&first_key, stripe, &d, &l)) {
         stripe->close_write(this);
         _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_FAILED, nullptr);
         SET_HANDLER(&CacheVC::scanObject);

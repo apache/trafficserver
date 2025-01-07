@@ -146,7 +146,7 @@ public:
     for (i = 0; i < newfree; i++) {
       Dir *last_collision = nullptr;
       regress_rand_CacheKey(&key);
-      CHECK(dir_probe(&key, stripe, &dir, &last_collision));
+      CHECK(stripe->directory.probe(&key, stripe, &dir, &last_collision));
     }
     us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
     // On windows us is sometimes 0. I don't know why.
@@ -167,14 +167,14 @@ public:
     Dbg(dbg_ctl_cache_dir_test, "corrupt_bucket test");
     for (int ntimes = 0; ntimes < 10; ntimes++) {
 #ifdef LOOP_CHECK_MODE
-      // dir_probe in bucket with loop
+      // probe in bucket with loop
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       dir_insert(&key, vol, &dir);
       Dir *last_collision = 0;
-      dir_probe(&key, vol, &dir, &last_collision);
+      vol->directory.probe(&key, vol, &dir, &last_collision);
 
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
@@ -182,7 +182,7 @@ public:
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
 
       last_collision = 0;
-      dir_probe(&key, vol, &dir, &last_collision);
+      vol->directory.probe(&key, vol, &dir, &last_collision);
 
       // dir_overwrite in bucket with loop
       rand_CacheKey(&key);

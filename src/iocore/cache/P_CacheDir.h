@@ -287,6 +287,8 @@ struct Directory {
   /* Returns the first dir in segment @a s.
    */
   Dir *get_segment(int s) const;
+
+  int probe(const CacheKey *, StripeSM *, Dir *, Dir **);
 };
 
 inline int
@@ -303,7 +305,6 @@ Directory::get_segment(int s) const
 
 // Global Functions
 
-int      dir_probe(const CacheKey *, StripeSM *, Dir *, Dir **);
 int      dir_insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
 int      dir_overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
 int      dir_delete(const CacheKey *key, StripeSM *stripe, Dir *del);

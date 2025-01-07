@@ -1230,7 +1230,7 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *s
 {
   Dir dir, *last_collision = nullptr;
   int i = 0;
-  while (dir_probe(key, stripe, &dir, &last_collision)) {
+  while (stripe->directory.probe(key, stripe, &dir, &last_collision)) {
     // next fragment cannot be a head...if it is, it must have been a
     // directory collision.
     if (dir_head(&dir)) {

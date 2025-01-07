@@ -488,12 +488,12 @@ dir_free_entry(Dir *e, int s, Stripe *stripe)
 }
 
 int
-dir_probe(const CacheKey *key, StripeSM *stripe, Dir *result, Dir **last_collision)
+Directory::probe(const CacheKey *key, StripeSM *stripe, Dir *result, Dir **last_collision)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int  s   = key->slice32(0) % stripe->directory.segments;
-  int  b   = key->slice32(1) % stripe->directory.buckets;
-  Dir *seg = stripe->directory.get_segment(s);
+  int  s   = key->slice32(0) % this->segments;
+  int  b   = key->slice32(1) % this->buckets;
+  Dir *seg = this->get_segment(s);
   Dir *e = nullptr, *p = nullptr, *collision = *last_collision;
   CHECK_DIR(d);
 #ifdef LOOP_CHECK_MODE
