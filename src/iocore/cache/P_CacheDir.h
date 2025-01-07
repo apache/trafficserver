@@ -301,6 +301,7 @@ struct Directory {
   int  remove(const CacheKey *key, StripeSM *stripe, Dir *del);
   void free_entry(Dir *e, int s);
   int  check(Stripe *stripe);
+  void cleanup(Stripe *stripe);
 };
 
 inline int
@@ -323,7 +324,6 @@ int      dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
 void     dir_lookaside_cleanup(StripeSM *stripe);
 void     dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
 void     dir_sync_init();
-void     dir_clean_vol(Stripe *stripe);
 void     dir_clear_range(off_t start, off_t end, Stripe *stripe);
 uint64_t dir_entries_used(Stripe *stripe);
 void     sync_cache_dir_on_shutdown();
