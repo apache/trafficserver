@@ -226,7 +226,7 @@ dir_init_segment(int s, Stripe *stripe)
   for (l = 1; l < DIR_DEPTH; l++) {
     for (b = 0; b < stripe->directory.buckets; b++) {
       Dir *bucket = dir_bucket(b, seg);
-      dir_free_entry(dir_bucket_row(bucket, l), s, stripe);
+      stripe->directory.free_entry(dir_bucket_row(bucket, l), s);
     }
   }
 }
@@ -475,16 +475,16 @@ freelist_pop(int s, StripeSM *stripe)
 }
 
 void
-dir_free_entry(Dir *e, int s, Stripe *stripe)
+Directory::free_entry(Dir *e, int s)
 {
-  Dir         *seg = stripe->directory.get_segment(s);
-  unsigned int fo  = stripe->directory.header->freelist[s];
+  Dir         *seg = this->get_segment(s);
+  unsigned int fo  = this->header->freelist[s];
   unsigned int eo  = dir_to_offset(e, seg);
   dir_set_next(e, fo);
   if (fo) {
     dir_set_prev(dir_from_offset(fo, seg), eo);
   }
-  stripe->directory.header->freelist[s] = eo;
+  this->header->freelist[s] = eo;
 }
 
 int

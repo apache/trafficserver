@@ -288,10 +288,11 @@ struct Directory {
    */
   Dir *get_segment(int s) const;
 
-  int probe(const CacheKey *, StripeSM *, Dir *, Dir **);
-  int insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
-  int overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-  int remove(const CacheKey *key, StripeSM *stripe, Dir *del);
+  int  probe(const CacheKey *, StripeSM *, Dir *, Dir **);
+  int  insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
+  int  overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+  int  remove(const CacheKey *key, StripeSM *stripe, Dir *del);
+  void free_entry(Dir *e, int s);
 };
 
 inline int
@@ -313,7 +314,6 @@ int      dir_lookaside_insert(EvacuationBlock *b, StripeSM *stripe, Dir *to);
 int      dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
 void     dir_lookaside_cleanup(StripeSM *stripe);
 void     dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
-void     dir_free_entry(Dir *e, int s, Stripe *stripe);
 void     dir_sync_init();
 int      check_dir(Stripe *stripe);
 void     dir_clean_vol(Stripe *stripe);
