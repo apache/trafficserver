@@ -296,6 +296,7 @@ struct Directory {
   Dir *get_segment(int s) const;
 
   int probe(const CacheKey *, StripeSM *, Dir *, Dir **);
+  int insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
 };
 
 inline int
@@ -312,7 +313,6 @@ Directory::get_segment(int s) const
 
 // Global Functions
 
-int      dir_insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
 int      dir_overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
 int      dir_delete(const CacheKey *key, StripeSM *stripe, Dir *del);
 int      dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, EvacuationBlock **eblock);
