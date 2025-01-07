@@ -226,7 +226,7 @@ public:
     SCOPED_MUTEX_LOCK(lock, vc->stripe->mutex, this->mutex->thread_holding);
     vc->vector.data[1].alternate.object_key_get(&key);
     REQUIRE(vc->stripe->directory.probe(&key, vc->stripe, &dir, &last_collision) != 0);
-    REQUIRE(dir_delete(&key, vc->stripe, &dir));
+    REQUIRE(vc->stripe->directory.remove(&key, vc->stripe, &dir));
   }
 };
 

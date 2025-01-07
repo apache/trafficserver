@@ -515,7 +515,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     } else {
       Warning("Document %s truncated .. clearing", earliest_key.toHexStr(tmpstring));
     }
-    dir_delete(&earliest_key, stripe, &earliest_dir);
+    stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
   }
   }
   return calluser(VC_EVENT_ERROR);
@@ -651,7 +651,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         VC_SCHED_LOCK_RETRY();
       }
 
-      dir_delete(&earliest_key, stripe, &earliest_dir);
+      stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
       goto Lerror;
     }
   }
@@ -732,7 +732,7 @@ Lread: {
   Warning("Document %X truncated at %" PRId64 " of %" PRIu64 ", missing fragment %X", first_key.slice32(1), vio.ndone, doc_len,
           key.slice32(1));
   // remove the directory entry
-  dir_delete(&earliest_key, stripe, &earliest_dir);
+  stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
 }
 Lerror:
   return calluser(VC_EVENT_ERROR);
@@ -788,7 +788,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         Warning("Earliest: Doc magic does not match for %s", key.toHexStr(tmpstring));
       }
       // remove the dir entry
-      dir_delete(&key, stripe, &dir);
+      stripe->directory.remove(&key, stripe, &dir);
       // try going through the directory entries again
       // in case the dir entry we deleted doesnt correspond
       // to the key we are looking for. This is possible
@@ -834,7 +834,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
           // sometimes the delete fails when there is a race and another read
           // finds that the directory entry has been overwritten
           // (cannot assert on the return value)
-          dir_delete(&first_key, stripe, &first_dir);
+          stripe->directory.remove(&first_key, stripe, &first_dir);
         } else {
           buf             = nullptr;
           last_collision  = nullptr;
@@ -996,7 +996,7 @@ CacheVC::openReadStartHead(int event, Event *e)
         Warning("Head: Doc magic does not match for %s", key.toHexStr(tmpstring));
       }
       // remove the dir entry
-      dir_delete(&key, stripe, &dir);
+      stripe->directory.remove(&key, stripe, &dir);
       // try going through the directory entries again
       // in case the dir entry we deleted doesnt correspond
       // to the key we are looking for. This is possible
@@ -1040,7 +1040,7 @@ CacheVC::openReadStartHead(int event, Event *e)
                 CacheAltMagic::MARSHALED == alt->m_magic ? "serial" :
                 CacheAltMagic::DEAD == alt->m_magic      ? "dead" :
                                                            "bogus"));
-          dir_delete(&key, stripe, &dir);
+          stripe->directory.remove(&key, stripe, &dir);
         }
         err = ECACHE_BAD_META_DATA;
         goto Ldone;
@@ -1058,7 +1058,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       if (!alternate_tmp->valid()) {
         if (buf) {
           Note("OpenReadHead failed for cachekey %X : alternate inconsistency", key.slice32(0));
-          dir_delete(&key, stripe, &dir);
+          stripe->directory.remove(&key, stripe, &dir);
         }
         goto Ldone;
       }
@@ -1188,6 +1188,6 @@ CacheVC::openReadDirDelete(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
     VC_SCHED_LOCK_RETRY();
   }
 
-  dir_delete(&earliest_key, stripe, &earliest_dir);
+  stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
   return calluser(VC_EVENT_ERROR);
 }

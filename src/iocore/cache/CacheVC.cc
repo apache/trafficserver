@@ -585,7 +585,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       /* should be first_key not key..right?? */
       if (doc->first_key == key) {
         ink_assert(doc->magic == DOC_MAGIC);
-        if (dir_delete(&key, stripe, &dir) > 0) {
+        if (stripe->directory.remove(&key, stripe, &dir) > 0) {
           if (od) {
             stripe->close_write(this);
           }
