@@ -402,9 +402,9 @@ Directory::cleanup(Stripe *stripe)
 }
 
 void
-dir_clear_range(off_t start, off_t end, Stripe *stripe)
+Directory::clear_range(off_t start, off_t end, Stripe *stripe)
 {
-  for (off_t i = 0; i < stripe->directory.entries(); i++) {
+  for (off_t i = 0; i < this->entries(); i++) {
     Dir *e = dir_index(stripe, i);
     if (dir_offset(e) >= static_cast<int64_t>(start) && dir_offset(e) < static_cast<int64_t>(end)) {
       ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
@@ -412,7 +412,7 @@ dir_clear_range(off_t start, off_t end, Stripe *stripe)
       dir_set_offset(e, 0); // delete
     }
   }
-  stripe->directory.cleanup(stripe);
+  this->cleanup(stripe);
 }
 
 void
