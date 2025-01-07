@@ -350,7 +350,7 @@ Stripe::_init_dir()
     for (l = 1; l < DIR_DEPTH; l++) {
       for (b = 0; b < this->directory.buckets; b++) {
         Dir *bucket = dir_bucket(b, seg);
-        dir_free_entry(dir_bucket_row(bucket, l), s, this);
+        this->directory.free_entry(dir_bucket_row(bucket, l), s);
       }
     }
   }
