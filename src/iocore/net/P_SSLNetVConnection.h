@@ -66,7 +66,7 @@
 #define SSL_TLSEXT_ERR_NOACK 3
 #endif
 
-#define SSL_OP_HANDSHAKE 0x16
+constexpr char SSL_OP_HANDSHAKE = 0x16;
 
 // TS-2503: dynamic TLS record sizing
 // For smaller records, we should also reserve space for various TCP options
@@ -74,18 +74,17 @@
 // (another 20-60 bytes on average, depending on the negotiated ciphersuite [2]).
 // All in all: 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
 // For larger records, the size is determined by TLS protocol record size
-#define SSL_DEF_TLS_RECORD_SIZE           1300  // 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
-#define SSL_MAX_TLS_RECORD_SIZE           16383 // 2^14 - 1
-#define SSL_DEF_TLS_RECORD_BYTE_THRESHOLD 1000000
-#define SSL_DEF_TLS_RECORD_MSEC_THRESHOLD 1000
+constexpr uint32_t SSL_DEF_TLS_RECORD_SIZE           = 1300; // 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
+constexpr uint32_t SSL_MAX_TLS_RECORD_SIZE           = 16383; // 2^14 - 1
+constexpr int64_t  SSL_DEF_TLS_RECORD_BYTE_THRESHOLD = 1000000;
+constexpr int      SSL_DEF_TLS_RECORD_MSEC_THRESHOLD = 1000;
 
 struct SSLCertLookup;
 
-using SslVConnOp = enum {
-  SSL_HOOK_OP_DEFAULT,                     ///< Null / initialization value. Do normal processing.
-  SSL_HOOK_OP_TUNNEL,                      ///< Switch to blind tunnel
-  SSL_HOOK_OP_TERMINATE,                   ///< Termination connection / transaction.
-  SSL_HOOK_OP_LAST = SSL_HOOK_OP_TERMINATE ///< End marker value.
+enum class SslVConnOp {
+  SSL_HOOK_OP_DEFAULT,  ///< Null / initialization value. Do normal processing.
+  SSL_HOOK_OP_TUNNEL,   ///< Switch to blind tunnel
+  SSL_HOOK_OP_TERMINATE ///< Termination connection / transaction.
 };
 
 enum class SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHAKE_ERROR };
@@ -235,7 +234,7 @@ public:
   std::shared_ptr<SSL_SESSION> client_sess = nullptr;
 
   /// Set by asynchronous hooks to request a specific operation.
-  SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
+  SslVConnOp hookOpRequested = SslVConnOp::SSL_HOOK_OP_DEFAULT;
 
   // noncopyable
   SSLNetVConnection(const SSLNetVConnection &)            = delete;
@@ -324,7 +323,7 @@ protected:
   bool
   _is_tunneling_requested() const override
   {
-    return SSL_HOOK_OP_TUNNEL == hookOpRequested;
+    return SslVConnOp::SSL_HOOK_OP_TUNNEL == hookOpRequested;
   }
   void
   _switch_to_tunneling_mode() override

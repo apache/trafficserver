@@ -27,7 +27,6 @@
 #include "tscore/InkErrno.h"
 #include "tscore/TSSystemState.h"
 
-#include "api/InkAPIInternal.h" // Added to include the ssl_hook definitions
 #include "iocore/net/ProxyProtocol.h"
 #include "iocore/net/SSLSNIConfig.h"
 
@@ -917,7 +916,7 @@ SSLNetVConnection::clear()
   sslTotalBytesSent           = 0;
   sslClientRenegotiationAbort = false;
 
-  hookOpRequested = SSL_HOOK_OP_DEFAULT;
+  hookOpRequested = SslVConnOp::SSL_HOOK_OP_DEFAULT;
   free_handshake_buffers();
 
   super::clear();
@@ -1033,7 +1032,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
           this->ssl = nullptr;
           return EVENT_DONE;
         } else {
-          hookOpRequested = SSL_HOOK_OP_TUNNEL;
+          hookOpRequested = SslVConnOp::SSL_HOOK_OP_TUNNEL;
         }
       }
 
@@ -1193,7 +1192,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   // without data replay.
   // Note we can't arrive here if a hook is active.
 
-  if (SSL_HOOK_OP_TUNNEL == hookOpRequested) {
+  if (SslVConnOp::SSL_HOOK_OP_TUNNEL == hookOpRequested) {
     this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
     SSL_free(this->ssl);
     this->ssl = nullptr;
@@ -1202,7 +1201,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // we get out of this callback, and then will shuffle
     // over the buffered handshake packets to the O.S.
     return EVENT_DONE;
-  } else if (SSL_HOOK_OP_TERMINATE == hookOpRequested) {
+  } else if (SslVConnOp::SSL_HOOK_OP_TERMINATE == hookOpRequested) {
     sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
     return EVENT_DONE;
   }
@@ -1394,7 +1393,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   case SSL_ERROR_PENDING_CERTIFICATE:
 #endif
 #if defined(SSL_ERROR_WANT_SNI_RESOLVE) || defined(SSL_ERROR_WANT_X509_LOOKUP) || defined(SSL_ERROR_PENDING_CERTIFICATE)
-    if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || SSL_HOOK_OP_TUNNEL == hookOpRequested) {
+    if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || SslVConnOp::SSL_HOOK_OP_TUNNEL == hookOpRequested) {
       this->attributes   = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
       return EVENT_CONT;
