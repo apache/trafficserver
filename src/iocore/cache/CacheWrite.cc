@@ -340,7 +340,7 @@ CacheVC::openWriteCloseHeadDone(int event, Event *e)
         stripe->directory.insert(&first_key, stripe, &dir);
       } else {
         // multiple fragment vector write
-        dir_overwrite(&first_key, stripe, &dir, &od->first_dir, false);
+        stripe->directory.overwrite(&first_key, stripe, &dir, &od->first_dir, false);
         // insert moved resident alternate
         if (od->move_resident_alt) {
           if (stripe->dir_valid(&od->single_doc_dir)) {
