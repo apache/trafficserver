@@ -41,7 +41,6 @@ duplicate bugs is encouraged, but not required.
    introduction/index.en
    release-process/index.en
    contributing/index.en
-   testing-with-vagrant/index.en
    debugging/index.en
    threads-and-events.en
    cache-architecture/index.en
