@@ -224,7 +224,7 @@ public:
     Dir     *last_collision = nullptr;
     SCOPED_MUTEX_LOCK(lock, vc->stripe->mutex, this->mutex->thread_holding);
     vc->vector.data[0].alternate.object_key_get(&key);
-    REQUIRE(dir_probe(&key, vc->stripe, &dir, &last_collision) != 0);
+    REQUIRE(vc->stripe->directory.probe(&key, vc->stripe, &dir, &last_collision) != 0);
     REQUIRE(dir_delete(&key, vc->stripe, &dir));
   }
 };

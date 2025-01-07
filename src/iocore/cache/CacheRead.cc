@@ -476,7 +476,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     if (last_collision && dir_offset(&dir) != dir_offset(last_collision)) {
       last_collision = nullptr; // object has been/is being overwritten
     }
-    if (dir_probe(&key, stripe, &dir, &last_collision)) {
+    if (stripe->directory.probe(&key, stripe, &dir, &last_collision)) {
       int ret = do_read_call(&key);
       if (ret == EVENT_RETURN) {
         goto Lcallreturn;
@@ -485,7 +485,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     } else if (write_vc) {
       if (writer_done()) {
         last_collision = nullptr;
-        while (dir_probe(&earliest_key, stripe, &dir, &last_collision)) {
+        while (stripe->directory.probe(&earliest_key, stripe, &dir, &last_collision)) {
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
             DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead complete: %" PRId64, this, first_key.slice32(1), vio.ndone);
             doc_len = vio.ndone;
@@ -702,7 +702,7 @@ Lread: {
     SET_HANDLER(&CacheVC::openReadMain);
     VC_SCHED_LOCK_RETRY();
   }
-  if (dir_probe(&key, stripe, &dir, &last_collision)) {
+  if (stripe->directory.probe(&key, stripe, &dir, &last_collision)) {
     SET_HANDLER(&CacheVC::openReadReadDone);
     int ret = do_read_call(&key);
     if (ret == EVENT_RETURN) {
@@ -712,7 +712,7 @@ Lread: {
   } else if (write_vc) {
     if (writer_done()) {
       last_collision = nullptr;
-      while (dir_probe(&earliest_key, stripe, &dir, &last_collision)) {
+      while (stripe->directory.probe(&earliest_key, stripe, &dir, &last_collision)) {
         if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
           DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadMain complete: %" PRId64, this, first_key.slice32(1), vio.ndone);
           doc_len = vio.ndone;
@@ -812,7 +812,8 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     }
     goto Lsuccess;
   Lread:
-    if (dir_probe(&key, stripe, &earliest_dir, &last_collision) || dir_lookaside_probe(&key, stripe, &earliest_dir, nullptr)) {
+    if (stripe->directory.probe(&key, stripe, &earliest_dir, &last_collision) ||
+        dir_lookaside_probe(&key, stripe, &earliest_dir, nullptr)) {
       dir = earliest_dir;
       if ((ret = do_read_call(&key)) == EVENT_RETURN) {
         goto Lcallreturn;
@@ -1137,7 +1138,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       SET_HANDLER(&CacheVC::openReadFromWriter);
       return handleEvent(EVENT_IMMEDIATE, nullptr);
     }
-    if (dir_probe(&key, stripe, &dir, &last_collision)) {
+    if (stripe->directory.probe(&key, stripe, &dir, &last_collision)) {
       first_dir = dir;
       int ret   = do_read_call(&key);
       if (ret == EVENT_RETURN) {

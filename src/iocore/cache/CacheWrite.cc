@@ -647,7 +647,7 @@ Lcollision: {
   if (!lock.is_locked()) {
     VC_LOCK_RETRY_EVENT();
   }
-  int res = dir_probe(&first_key, stripe, &dir, &last_collision);
+  int res = stripe->directory.probe(&first_key, stripe, &dir, &last_collision);
   if (res > 0) {
     if ((res = do_read_call(&first_key)) == EVENT_RETURN) {
       goto Lcallreturn;
@@ -738,7 +738,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
       }
     }
     // check for collision
-    if (dir_probe(&first_key, stripe, &dir, &last_collision)) {
+    if (stripe->directory.probe(&first_key, stripe, &dir, &last_collision)) {
       od->reading_vec = true;
       int ret         = do_read_call(&first_key);
       if (ret == EVENT_RETURN) {
