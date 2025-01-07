@@ -97,7 +97,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           write_vector->remove(alternate_index, true);
           alternate_index = CACHE_ALT_REMOVED;
           if (!write_vector->count()) {
-            dir_delete(&first_key, stripe, &od->first_dir);
+            stripe->directory.remove(&first_key, stripe, &od->first_dir);
           }
         }
         // the alternate is not there any more. somebody might have
@@ -279,7 +279,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
     }
     stripe->close_write(this);
     if (closed < 0 && fragment) {
-      dir_delete(&earliest_key, stripe, &earliest_dir);
+      stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
     }
   }
   if (dbg_ctl_cache_update.on()) {
