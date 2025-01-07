@@ -220,7 +220,7 @@ public:
       // dir_bucket_length in bucket with loop
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       dir_bucket_length(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      CHECK(check_dir(vol));
+      CHECK(vol->directory.check(vol));
 #else
       // test corruption detection
       rand_CacheKey(&key);
@@ -233,7 +233,7 @@ public:
       stripe->directory.insert(&key, stripe, &dir1);
       stripe->directory.insert(&key, stripe, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
-      CHECK(!check_dir(stripe));
+      CHECK(!stripe->directory.check(stripe));
 #endif
     }
     stripe->clear_dir();
