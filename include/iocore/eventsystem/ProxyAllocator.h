@@ -84,17 +84,23 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 
 #endif
 
-#define THREAD_FREE(_p, _a, _tin)                                                                  \
-  do {                                                                                             \
-    ::_a.destroy_if_enabled(_p);                                                                   \
-    Thread *_t = (_tin);                                                                           \
-    if (_t && !cmd_disable_pfreelist) {                                                            \
-      *(char **)_p    = (char *)_t->_a.freelist;                                                   \
-      _t->_a.freelist = _p;                                                                        \
-      _t->_a.allocated++;                                                                          \
-      if (thread_freelist_high_watermark > 0 && _t->_a.allocated > thread_freelist_high_watermark) \
-        thread_freeup(::_a.raw(), _t->_a);                                                         \
-    } else {                                                                                       \
-      ::_a.raw().free_void(_p);                                                                    \
-    }                                                                                              \
-  } while (0)
+class Thread;
+
+#define THREAD_FREE(_p, _a, _tin) thread_free(_p, ::_a, _tin->_a, _tin)
+
+template <class T>
+void
+thread_free(T *p, Allocator &global_allocator, ProxyAllocator &thread_allocator, Thread *tin)
+{
+  global_allocator.destroy_if_enabled(p);
+  if (tin && !cmd_disable_pfreelist) {
+    *(reinterpret_cast<char **>(p)) = reinterpret_cast<char *>(thread_allocator.freelist);
+    thread_allocator.freelist       = p;
+    thread_allocator.allocated++;
+    if (thread_freelist_high_watermark > 0 && thread_allocator.allocated > thread_freelist_high_watermark) {
+      thread_freeup(global_allocator.raw(), thread_allocator);
+    }
+  } else {
+    global_allocator.raw().free_void(p);
+  }
+}
