@@ -1074,7 +1074,7 @@ StripeSM::agg_wrap()
   directory.header->cycle++;
   directory.header->agg_pos = directory.header->write_pos;
   dir_lookaside_cleanup(this);
-  dir_clean_vol(this);
+  this->directory.cleanup(this);
   {
     StripeSM *stripe = this;
     ts::Metrics::Counter::increment(cache_rsb.directory_wrap);
