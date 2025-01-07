@@ -111,7 +111,7 @@ public:
     int free     = dir_freelist_length(stripe, s);
     int n        = free;
     while (n--) {
-      if (!dir_insert(&key, stripe, &dir)) {
+      if (!stripe->directory.insert(&key, stripe, &dir)) {
         break;
       }
       inserted++;
@@ -133,7 +133,7 @@ public:
     ttime = ink_get_hrtime();
     for (i = 0; i < newfree; i++) {
       regress_rand_CacheKey(&key);
-      dir_insert(&key, stripe, &dir);
+      stripe->directory.insert(&key, stripe, &dir);
     }
     uint64_t us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
     // On windows us is sometimes 0. I don't know why.
@@ -157,7 +157,7 @@ public:
 
     for (int c = 0; c < stripe->directory.entries() * 0.75; c++) {
       regress_rand_CacheKey(&key);
-      dir_insert(&key, stripe, &dir);
+      stripe->directory.insert(&key, stripe, &dir);
     }
 
     Dir dir1;
@@ -172,7 +172,7 @@ public:
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      dir_insert(&key, vol, &dir);
+      stripe->directory.insert(&key, vol, &dir);
       Dir *last_collision = 0;
       vol->directory.probe(&key, vol, &dir, &last_collision);
 
@@ -192,10 +192,10 @@ public:
       key1.b[1] = 127;
       dir1      = dir;
       dir_set_offset(&dir1, 23);
-      dir_insert(&key1, vol, &dir1);
-      dir_insert(&key, vol, &dir);
+      stripe->directory.insert(&key1, vol, &dir1);
+      stripe->directory.insert(&key, vol, &dir);
       key1.b[1] = 80;
-      dir_insert(&key1, vol, &dir1);
+      stripe->directory.insert(&key1, vol, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       dir_overwrite(&key, vol, &dir, &dir, 1);
 
@@ -203,7 +203,7 @@ public:
       s1       = key.slice32(0) % vol->segments;
       b1       = key.slice32(1) % vol->buckets;
       key.b[1] = 23;
-      dir_insert(&key, vol, &dir1);
+      stripe->directory.insert(&key, vol, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       dir_overwrite(&key, vol, &dir, &dir, 0);
 
@@ -227,11 +227,11 @@ public:
       s1 = key.slice32(0) % stripe->directory.segments;
       b1 = key.slice32(1) % stripe->directory.buckets;
 
-      dir_insert(&key, stripe, &dir1);
-      dir_insert(&key, stripe, &dir1);
-      dir_insert(&key, stripe, &dir1);
-      dir_insert(&key, stripe, &dir1);
-      dir_insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
       CHECK(!check_dir(stripe));
 #endif
