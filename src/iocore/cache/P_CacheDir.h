@@ -80,7 +80,7 @@ class CacheEvacuateDocVC;
 // Macros
 
 #ifdef DO_CHECK_DIR
-#define CHECK_DIR(_d) ink_assert(check_dir(_d))
+#define CHECK_DIR(_d) ink_assert(_d->check())
 #else
 #define CHECK_DIR(_d) ((void)0)
 #endif
@@ -300,6 +300,7 @@ struct Directory {
   int  overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
   int  remove(const CacheKey *key, StripeSM *stripe, Dir *del);
   void free_entry(Dir *e, int s);
+  int  check(Stripe *stripe);
 };
 
 inline int
@@ -322,7 +323,6 @@ int      dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
 void     dir_lookaside_cleanup(StripeSM *stripe);
 void     dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
 void     dir_sync_init();
-int      check_dir(Stripe *stripe);
 void     dir_clean_vol(Stripe *stripe);
 void     dir_clear_range(off_t start, off_t end, Stripe *stripe);
 uint64_t dir_entries_used(Stripe *stripe);
