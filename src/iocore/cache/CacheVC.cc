@@ -1005,7 +1005,7 @@ CacheVC::scanUpdateDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
   if (lock.is_locked()) {
     // insert a directory entry for the previous fragment
-    dir_overwrite(&first_key, stripe, &dir, &od->first_dir, false);
+    stripe->directory.overwrite(&first_key, stripe, &dir, &od->first_dir, false);
     if (od->move_resident_alt) {
       stripe->directory.insert(&od->single_doc_key, stripe, &od->single_doc_dir);
     }

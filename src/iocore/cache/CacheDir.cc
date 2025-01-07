@@ -625,12 +625,12 @@ Lfill:
 }
 
 int
-dir_overwrite(const CacheKey *key, StripeSM *stripe, Dir *dir, Dir *overwrite, bool must_overwrite)
+Directory::overwrite(const CacheKey *key, StripeSM *stripe, Dir *dir, Dir *overwrite, bool must_overwrite)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int          s   = key->slice32(0) % stripe->directory.segments, l;
-  int          bi  = key->slice32(1) % stripe->directory.buckets;
-  Dir         *seg = stripe->directory.get_segment(s);
+  int          s   = key->slice32(0) % this->segments, l;
+  int          bi  = key->slice32(1) % this->buckets;
+  Dir         *seg = this->get_segment(s);
   Dir         *e   = nullptr;
   Dir         *b   = dir_bucket(bi, seg);
   unsigned int t   = DIR_MASK_TAG(key->slice32(2));
@@ -697,7 +697,7 @@ Llink:
   do {
     prev = last;
     last = next_dir(last, seg);
-  } while (last && (++l <= stripe->directory.buckets * DIR_DEPTH));
+  } while (last && (++l <= this->buckets * DIR_DEPTH));
 
   dir_set_next(e, 0);
   dir_set_next(prev, dir_to_offset(e, seg));
@@ -708,7 +708,7 @@ Lfill:
   DDbg(dbg_ctl_dir_overwrite, "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0),
        stripe->fd, bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
-  stripe->directory.header->dirty = 1;
+  this->header->dirty = 1;
   return res;
 }
 
@@ -802,7 +802,7 @@ dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe)
   EvacuationBlock *b = stripe->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
-      int res = dir_overwrite(key, stripe, &b->new_dir, &b->dir, false);
+      int res = stripe->directory.overwrite(key, stripe, &b->new_dir, &b->dir, false);
       DDbg(dbg_ctl_dir_lookaside, "fixup %X %X offset %" PRId64 " phase %d %d", key->slice32(0), key->slice32(1),
            dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
       int64_t o = dir_offset(&b->dir), n = dir_offset(&b->new_dir);
@@ -996,7 +996,7 @@ Lrestart:
       /* Don't sync the directory to disk if its not dirty. Syncing the
          clean directory to disk is also the cause of INKqa07151. Increasing
          the serial number causes the cache to recover more data than necessary.
-         The dirty bit it set in dir_insert, dir_overwrite and dir_delete_entry
+         The dirty bit it set in dir_insert, overwrite and dir_delete_entry
        */
       if (!stripe->directory.header->dirty) {
         Dbg(dbg_ctl_cache_dir_sync, "Dir %s not dirty", stripe->hash_text.get());

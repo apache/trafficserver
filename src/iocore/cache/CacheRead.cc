@@ -923,7 +923,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
       alternate_index = CACHE_ALT_INDEX_DEFAULT;
       f.use_first_key = 0;
       vio.op          = VIO::READ;
-      dir_overwrite(&first_key, stripe, &dir, &od->first_dir);
+      stripe->directory.overwrite(&first_key, stripe, &dir, &od->first_dir);
       if (od->move_resident_alt) {
         stripe->directory.insert(&od->single_doc_key, stripe, &od->single_doc_dir);
       }

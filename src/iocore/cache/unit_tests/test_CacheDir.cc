@@ -184,7 +184,7 @@ public:
       last_collision = 0;
       vol->directory.probe(&key, vol, &dir, &last_collision);
 
-      // dir_overwrite in bucket with loop
+      // overwrite in bucket with loop
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
@@ -197,7 +197,7 @@ public:
       key1.b[1] = 80;
       stripe->directory.insert(&key1, vol, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      dir_overwrite(&key, vol, &dir, &dir, 1);
+      vol->directory.overwrite(&key, vol, &dir, &dir, 1);
 
       rand_CacheKey(&key);
       s1       = key.slice32(0) % vol->segments;
@@ -205,7 +205,7 @@ public:
       key.b[1] = 23;
       stripe->directory.insert(&key, vol, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      dir_overwrite(&key, vol, &dir, &dir, 0);
+      vol->directory.overwrite(&key, vol, &dir, &dir, 0);
 
       rand_CacheKey(&key);
       s1        = key.slice32(0) % vol->segments;
