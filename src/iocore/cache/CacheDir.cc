@@ -393,9 +393,9 @@ dir_clean_segment(int s, Stripe *stripe)
 }
 
 void
-dir_clean_vol(Stripe *stripe)
+Directory::cleanup(Stripe *stripe)
 {
-  for (int64_t i = 0; i < stripe->directory.segments; i++) {
+  for (int64_t i = 0; i < this->segments; i++) {
     dir_clean_segment(i, stripe);
   }
   CHECK_DIR(d);
@@ -412,7 +412,7 @@ dir_clear_range(off_t start, off_t end, Stripe *stripe)
       dir_set_offset(e, 0); // delete
     }
   }
-  dir_clean_vol(stripe);
+  stripe->directory.cleanup(stripe);
 }
 
 void
