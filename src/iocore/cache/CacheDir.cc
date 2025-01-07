@@ -281,13 +281,13 @@ dir_bucket_length(Dir *b, int s, Stripe *stripe)
 }
 
 int
-check_dir(Stripe *stripe)
+Directory::check(Stripe *stripe)
 {
   int i, s;
   Dbg(dbg_ctl_cache_check_dir, "inside check dir");
-  for (s = 0; s < stripe->directory.segments; s++) {
-    Dir *seg = stripe->directory.get_segment(s);
-    for (i = 0; i < stripe->directory.buckets; i++) {
+  for (s = 0; s < this->segments; s++) {
+    Dir *seg = this->get_segment(s);
+    for (i = 0; i < this->buckets; i++) {
       Dir *b = dir_bucket(i, seg);
       if (!(dir_bucket_length(b, s, stripe) >= 0)) {
         return 0;
