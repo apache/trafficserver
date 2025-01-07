@@ -1007,7 +1007,7 @@ CacheVC::scanUpdateDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     // insert a directory entry for the previous fragment
     dir_overwrite(&first_key, stripe, &dir, &od->first_dir, false);
     if (od->move_resident_alt) {
-      dir_insert(&od->single_doc_key, stripe, &od->single_doc_dir);
+      stripe->directory.insert(&od->single_doc_key, stripe, &od->single_doc_dir);
     }
     ink_assert(stripe->open_read(&first_key));
     ink_assert(this->od);

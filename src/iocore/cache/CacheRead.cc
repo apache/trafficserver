@@ -925,7 +925,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
       vio.op          = VIO::READ;
       dir_overwrite(&first_key, stripe, &dir, &od->first_dir);
       if (od->move_resident_alt) {
-        dir_insert(&od->single_doc_key, stripe, &od->single_doc_dir);
+        stripe->directory.insert(&od->single_doc_key, stripe, &od->single_doc_dir);
       }
       int alt_ndx = HttpTransactCache::SelectFromAlternates(write_vector, &request, params);
       stripe->close_write(this);

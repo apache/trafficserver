@@ -557,13 +557,13 @@ Lagain:
 }
 
 int
-dir_insert(const CacheKey *key, StripeSM *stripe, Dir *to_part)
+Directory::insert(const CacheKey *key, StripeSM *stripe, Dir *to_part)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int s  = key->slice32(0) % stripe->directory.segments, l;
-  int bi = key->slice32(1) % stripe->directory.buckets;
+  int s  = key->slice32(0) % this->segments, l;
+  int bi = key->slice32(1) % this->buckets;
   ink_assert(dir_approx_size(to_part) <= MAX_FRAG_SIZE + sizeof(Doc));
-  Dir *seg = stripe->directory.get_segment(s);
+  Dir *seg = this->get_segment(s);
   Dir *e   = nullptr;
   Dir *b   = dir_bucket(bi, seg);
 #if defined(DEBUG) && defined(DO_CHECK_DIR_FAST)
@@ -606,7 +606,7 @@ Llink:
   do {
     prev = last;
     last = next_dir(last, seg);
-  } while (last && (++l <= stripe->directory.buckets * DIR_DEPTH));
+  } while (last && (++l <= this->buckets * DIR_DEPTH));
 
   dir_set_next(e, 0);
   dir_set_next(prev, dir_to_offset(e, seg));

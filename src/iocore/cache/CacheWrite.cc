@@ -337,14 +337,14 @@ CacheVC::openWriteCloseHeadDone(int event, Event *e)
     ink_assert(f.use_first_key);
     if (!od->dont_update_directory) {
       if (dir_is_empty(&od->first_dir)) {
-        dir_insert(&first_key, stripe, &dir);
+        stripe->directory.insert(&first_key, stripe, &dir);
       } else {
         // multiple fragment vector write
         dir_overwrite(&first_key, stripe, &dir, &od->first_dir, false);
         // insert moved resident alternate
         if (od->move_resident_alt) {
           if (stripe->dir_valid(&od->single_doc_dir)) {
-            dir_insert(&od->single_doc_key, stripe, &od->single_doc_dir);
+            stripe->directory.insert(&od->single_doc_key, stripe, &od->single_doc_dir);
           }
           od->move_resident_alt = false;
         }
@@ -421,7 +421,7 @@ CacheVC::openWriteCloseDataDone(int event, Event *e)
     }
     fragment++;
     write_pos += write_len;
-    dir_insert(&key, stripe, &dir);
+    stripe->directory.insert(&key, stripe, &dir);
     blocks = iobufferblock_skip(blocks.get(), &offset, &length, write_len);
     next_CacheKey(&key, &key);
     if (length) {
@@ -517,7 +517,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
     }
     ++fragment;
     write_pos += write_len;
-    dir_insert(&key, stripe, &dir);
+    stripe->directory.insert(&key, stripe, &dir);
     DDbg(dbg_ctl_cache_insert, "WriteDone: %X, %X, %d", key.slice32(0), first_key.slice32(0), write_len);
     blocks = iobufferblock_skip(blocks.get(), &offset, &length, write_len);
     next_CacheKey(&key, &key);
