@@ -88,7 +88,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
           }
         }
       }
-      dir_overwrite(&doc->key, this->stripe, &this->dir, &this->overwrite_dir);
+      this->stripe->directory.overwrite(&doc->key, this->stripe, &this->dir, &this->overwrite_dir);
     }
     // if the tag in the overwrite_dir matches the first_key in the
     // document, then it has to be the vector. We guarantee that
@@ -108,7 +108,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
                dir_offset(&cod->first_dir), dir_offset(&this->dir));
           cod->first_dir = this->dir;
         }
-        if (dir_overwrite(&doc->first_key, this->stripe, &this->dir, &this->overwrite_dir)) {
+        if (this->stripe->directory.overwrite(&doc->first_key, this->stripe, &this->dir, &this->overwrite_dir)) {
           int64_t o = dir_offset(&this->overwrite_dir), n = dir_offset(&this->dir);
           this->stripe->ram_cache->fixup(&doc->first_key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
         }
