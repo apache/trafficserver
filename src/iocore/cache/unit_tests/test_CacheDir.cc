@@ -108,7 +108,7 @@ public:
 
     // test insert
     int inserted = 0;
-    int free     = stripe->directory.freelist_length(stripe, s);
+    int free     = stripe->directory.freelist_length(s);
     int n        = free;
     while (n--) {
       if (!stripe->directory.insert(&key, stripe, &dir)) {
@@ -125,7 +125,7 @@ public:
       }
     }
     stripe->directory.clean_segment(s, stripe);
-    int newfree = stripe->directory.freelist_length(stripe, s);
+    int newfree = stripe->directory.freelist_length(s);
     CHECK(static_cast<unsigned int>(newfree - free) <= 1);
 
     // test insert-delete
@@ -212,7 +212,7 @@ public:
       Dir *seg1 = vol->directory.get_segment(s1);
       // freelist_length in freelist with loop
       dir_corrupt_bucket(dir_from_offset(vol->header->freelist[s], seg1), s1, vol);
-      vol->directory.freelist_length(vol, s1);
+      vol->directory.freelist_length(s1);
 
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
@@ -220,7 +220,7 @@ public:
       // bucket_length in bucket with loop
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       vol->directory.bucket_length(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      CHECK(vol->directory.check(vol));
+      CHECK(vol->directory.check());
 #else
       // test corruption detection
       rand_CacheKey(&key);
@@ -233,7 +233,7 @@ public:
       stripe->directory.insert(&key, stripe, &dir1);
       stripe->directory.insert(&key, stripe, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
-      CHECK(!stripe->directory.check(stripe));
+      CHECK(!stripe->directory.check());
 #endif
     }
     stripe->clear_dir();
