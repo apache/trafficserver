@@ -245,7 +245,7 @@ dir_bucket_loop_fix(Dir *start_dir, int s, Directory *directory)
 }
 
 int
-Directory::freelist_length(Stripe * /* ATS_UNUSED */, int s)
+Directory::freelist_length(int s)
 {
   int  free = 0;
   Dir *seg  = this->get_segment(s);
@@ -281,7 +281,7 @@ Directory::bucket_length(Dir *b, int s)
 }
 
 int
-Directory::check(Stripe * /* ATS_UNUSED */)
+Directory::check()
 {
   int i, s;
   Dbg(dbg_ctl_cache_check_dir, "inside check dir");
@@ -883,7 +883,7 @@ CacheSync::aio_write(int fd, char *b, int n, off_t o)
 }
 
 uint64_t
-Directory::entries_used(Stripe * /* ATS_UNUSED */)
+Directory::entries_used()
 {
   uint64_t full  = 0;
   uint64_t sfull = 0;
