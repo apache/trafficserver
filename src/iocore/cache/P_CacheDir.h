@@ -297,6 +297,7 @@ struct Directory {
   void     cleanup(Stripe *stripe);
   void     clear_range(off_t start, off_t end, Stripe *stripe);
   uint64_t entries_used(Stripe *stripe);
+  int      bucket_length(Dir *b, int s);
 };
 
 inline int
@@ -321,7 +322,6 @@ void dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
 void dir_sync_init();
 void sync_cache_dir_on_shutdown();
 
-int  dir_bucket_length(Dir *b, int s, Stripe *stripe);
 int  dir_freelist_length(Stripe *stripe, int s);
 void dir_clean_segment(int s, Stripe *stripe);
 
