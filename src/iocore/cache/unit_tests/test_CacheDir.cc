@@ -124,7 +124,7 @@ public:
         dir_set_offset(dir_bucket_row(dir_bucket(i, seg), j), 0); // delete
       }
     }
-    dir_clean_segment(s, stripe);
+    stripe->directory.clean_segment(s, stripe);
     int newfree = stripe->directory.freelist_length(stripe, s);
     CHECK(static_cast<unsigned int>(newfree - free) <= 1);
 
