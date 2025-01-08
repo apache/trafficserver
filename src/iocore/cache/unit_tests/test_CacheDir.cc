@@ -57,7 +57,7 @@ regress_rand_CacheKey(CacheKey *key)
 void
 dir_corrupt_bucket(Dir *b, int s, StripeSM *stripe)
 {
-  int  l   = (static_cast<int>(dir_bucket_length(b, s, stripe) * ts::Random::drandom()));
+  int  l   = (static_cast<int>(stripe->directory.bucket_length(b, s) * ts::Random::drandom()));
   Dir *e   = b;
   Dir *seg = stripe->directory.get_segment(s);
   for (int i = 0; i < l; i++) {
@@ -217,9 +217,9 @@ public:
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
-      // dir_bucket_length in bucket with loop
+      // bucket_length in bucket with loop
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      dir_bucket_length(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
+      vol->directory.bucket_length(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       CHECK(vol->directory.check(vol));
 #else
       // test corruption detection

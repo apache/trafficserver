@@ -261,11 +261,11 @@ dir_freelist_length(Stripe *stripe, int s)
 }
 
 int
-dir_bucket_length(Dir *b, int s, Stripe *stripe)
+Directory::bucket_length(Dir *b, int s)
 {
   Dir *e   = b;
   int  i   = 0;
-  Dir *seg = stripe->directory.get_segment(s);
+  Dir *seg = this->get_segment(s);
 #ifdef LOOP_CHECK_MODE
   if (dir_bucket_loop_fix(b, s, vol))
     return 1;
@@ -281,7 +281,7 @@ dir_bucket_length(Dir *b, int s, Stripe *stripe)
 }
 
 int
-Directory::check(Stripe *stripe)
+Directory::check(Stripe * /* ATS_UNUSED */)
 {
   int i, s;
   Dbg(dbg_ctl_cache_check_dir, "inside check dir");
@@ -289,7 +289,7 @@ Directory::check(Stripe *stripe)
     Dir *seg = this->get_segment(s);
     for (i = 0; i < this->buckets; i++) {
       Dir *b = dir_bucket(i, seg);
-      if (!(dir_bucket_length(b, s, stripe) >= 0)) {
+      if (!(this->bucket_length(b, s) >= 0)) {
         return 0;
       }
       if (!(!dir_next(b) || dir_offset(b))) {
@@ -368,7 +368,7 @@ dir_clean_bucket(Dir *b, int s, Stripe *stripe)
     if (!stripe->dir_valid(e) || !dir_offset(e)) {
       if (dbg_ctl_dir_clean.on()) {
         Dbg(dbg_ctl_dir_clean, "cleaning Stripe:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", stripe->hash_text.get(),
-            e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, stripe));
+            e, dir_tag(e), dir_offset(e), b, p, stripe->directory.bucket_length(b, s));
       }
       if (dir_offset(e)) {
         ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
