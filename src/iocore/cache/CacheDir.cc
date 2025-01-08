@@ -383,10 +383,10 @@ dir_clean_bucket(Dir *b, int s, Stripe *stripe)
 }
 
 void
-dir_clean_segment(int s, Stripe *stripe)
+Directory::clean_segment(int s, Stripe *stripe)
 {
-  Dir *seg = stripe->directory.get_segment(s);
-  for (int64_t i = 0; i < stripe->directory.buckets; i++) {
+  Dir *seg = this->get_segment(s);
+  for (int64_t i = 0; i < this->buckets; i++) {
     dir_clean_bucket(dir_bucket(i, seg), s, stripe);
     ink_assert(!dir_next(dir_bucket(i, seg)) || dir_offset(dir_bucket(i, seg)));
   }
@@ -396,7 +396,7 @@ void
 Directory::cleanup(Stripe *stripe)
 {
   for (int64_t i = 0; i < this->segments; i++) {
-    dir_clean_segment(i, stripe);
+    this->clean_segment(i, stripe);
   }
   CHECK_DIR(d);
 }
@@ -431,7 +431,7 @@ check_bucket_not_contains(Dir *b, Dir *e, Dir *seg)
 void
 freelist_clean(int s, StripeSM *stripe)
 {
-  dir_clean_segment(s, stripe);
+  stripe->directory.clean_segment(s, stripe);
   if (stripe->directory.header->freelist[s]) {
     return;
   }
@@ -449,7 +449,7 @@ freelist_clean(int s, StripeSM *stripe)
       }
     }
   }
-  dir_clean_segment(s, stripe);
+  stripe->directory.clean_segment(s, stripe);
 }
 
 inline Dir *
