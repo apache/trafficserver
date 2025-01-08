@@ -245,13 +245,13 @@ dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe)
 }
 
 int
-dir_freelist_length(Stripe *stripe, int s)
+Directory::freelist_length(Stripe *stripe, int s)
 {
   int  free = 0;
-  Dir *seg  = stripe->directory.get_segment(s);
-  Dir *e    = dir_from_offset(stripe->directory.header->freelist[s], seg);
+  Dir *seg  = this->get_segment(s);
+  Dir *e    = dir_from_offset(this->header->freelist[s], seg);
   if (dir_bucket_loop_fix(e, s, stripe)) {
-    return (DIR_DEPTH - 1) * stripe->directory.buckets;
+    return (DIR_DEPTH - 1) * this->buckets;
   }
   while (e) {
     free++;

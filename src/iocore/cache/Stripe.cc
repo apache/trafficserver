@@ -260,7 +260,7 @@ Stripe::dir_check()
       ++hist[std::min(h, SEGMENT_HISTOGRAM_WIDTH)];
       seg_chain_max = std::max(seg_chain_max, h);
     }
-    int fl_size       = dir_freelist_length(this, s);
+    int fl_size       = directory.freelist_length(this, s);
     in_use           += seg_in_use;
     empty            += seg_empty;
     stale            += seg_stale;
