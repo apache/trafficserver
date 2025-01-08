@@ -77,10 +77,10 @@ struct BUILD_TABLE_INFO {
 
 const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize);
 
-const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf,
+const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, int argc, char *errStrBuf,
                                        size_t errStrBufSize, ACLBehaviorPolicy behavior_policy);
 
-unsigned long remap_check_option(const char **argv, int argc, unsigned long findmode = 0, int *_ret_idx = nullptr,
+unsigned long remap_check_option(const char *const *argv, int argc, unsigned long findmode = 0, int *_ret_idx = nullptr,
                                  const char **argptr = nullptr);
 
 bool remap_parse_config(const char *path, UrlRewrite *rewrite);
