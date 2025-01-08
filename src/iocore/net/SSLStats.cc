@@ -209,16 +209,23 @@ SSLInitializeStatistics()
   ssl_rsb.user_agent_bad_cert                = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_bad_cert");
   ssl_rsb.user_agent_cert_verify_failed      = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_cert_verify_failed");
   ssl_rsb.user_agent_decryption_failed       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_decryption_failed");
-  ssl_rsb.user_agent_expired_cert            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_expired_cert");
-  ssl_rsb.user_agent_other_errors            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_other_errors");
-  ssl_rsb.user_agent_revoked_cert            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_revoked_cert");
-  ssl_rsb.user_agent_session_hit             = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_hit");
-  ssl_rsb.user_agent_session_miss            = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_miss");
-  ssl_rsb.user_agent_session_timeout         = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_timeout");
-  ssl_rsb.user_agent_sessions                = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_sessions");
-  ssl_rsb.user_agent_unknown_ca              = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_unknown_ca");
-  ssl_rsb.user_agent_unknown_cert            = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_unknown_cert");
-  ssl_rsb.user_agent_wrong_version           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_wrong_version");
+  ssl_rsb.user_agent_decryption_failed_or_bad_record_mac =
+    Metrics::Counter::createPtr("proxy.process.ssl.user_agent_decryption_failed_or_bad_record_mac");
+  ssl_rsb.user_agent_expired_cert           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_expired_cert");
+  ssl_rsb.user_agent_http_request           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_http_request");
+  ssl_rsb.user_agent_inappropriate_fallback = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_inappropriate_fallback");
+  ssl_rsb.user_agent_no_shared_cipher       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_no_shared_cipher");
+  ssl_rsb.user_agent_other_errors           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_other_errors");
+  ssl_rsb.user_agent_revoked_cert           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_revoked_cert");
+  ssl_rsb.user_agent_session_hit            = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_hit");
+  ssl_rsb.user_agent_session_miss           = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_miss");
+  ssl_rsb.user_agent_session_timeout        = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_timeout");
+  ssl_rsb.user_agent_sessions               = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_sessions");
+  ssl_rsb.user_agent_unknown_ca             = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_unknown_ca");
+  ssl_rsb.user_agent_unknown_cert           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_unknown_cert");
+  ssl_rsb.user_agent_version_too_high       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_version_too_high");
+  ssl_rsb.user_agent_version_too_low        = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_version_too_low");
+  ssl_rsb.user_agent_wrong_version          = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_wrong_version");
 
 #if defined(OPENSSL_IS_BORINGSSL)
   size_t                    n = SSL_get_all_cipher_names(nullptr, 0);
