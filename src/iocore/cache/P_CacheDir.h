@@ -33,6 +33,12 @@
 // aio
 #include "iocore/aio/AIO.h"
 
+#include "tscore/ink_platform.h"
+#include "tscore/Version.h"
+
+#include <cstdint>
+#include <ctime>
+
 class Stripe;
 class StripeSM;
 struct InterimCacheVol;
@@ -79,7 +85,7 @@ class CacheEvacuateDocVC;
 #define CHECK_DIR(_d) ((void)0)
 #endif
 
-#define dir_index(_e, _i) ((Dir *)((char *)(_e)->dir + (SIZEOF_DIR * (_i))))
+#define dir_index(_e, _i) ((Dir *)((char *)(_e)->directory.dir + (SIZEOF_DIR * (_i))))
 #define dir_assign(_e, _x)   \
   do {                       \
     (_e)->w[0] = (_x)->w[0]; \
@@ -254,6 +260,53 @@ struct CacheSync : public Continuation {
 
   CacheSync() : Continuation(new_ProxyMutex()) { SET_HANDLER(&CacheSync::mainEvent); }
 };
+
+struct StripteHeaderFooter {
+  unsigned int      magic;
+  ts::VersionNumber version;
+  time_t            create_time;
+  off_t             write_pos;
+  off_t             last_write_pos;
+  off_t             agg_pos;
+  uint32_t          generation; // token generation (vary), this cannot be 0
+  uint32_t          phase;
+  uint32_t          cycle;
+  uint32_t          sync_serial;
+  uint32_t          write_serial;
+  uint32_t          dirty;
+  uint32_t          sector_size;
+  uint32_t          unused; // pad out to 8 byte boundary
+  uint16_t          freelist[1];
+};
+
+struct Directory {
+  char                *raw_dir{nullptr};
+  Dir                 *dir{};
+  StripteHeaderFooter *header{};
+  StripteHeaderFooter *footer{};
+  int                  segments{};
+  off_t                buckets{};
+
+  /* Total number of dir entries.
+   */
+  int entries() const;
+
+  /* Returns the first dir in segment @a s.
+   */
+  Dir *get_segment(int s) const;
+};
+
+inline int
+Directory::entries() const
+{
+  return this->buckets * DIR_DEPTH * this->segments;
+}
+
+inline Dir *
+Directory::get_segment(int s) const
+{
+  return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
+}
 
 // Global Functions
 

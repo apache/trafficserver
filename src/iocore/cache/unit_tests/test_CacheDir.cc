@@ -58,7 +58,7 @@ dir_corrupt_bucket(Dir *b, int s, StripeSM *stripe)
 {
   int  l   = (static_cast<int>(dir_bucket_length(b, s, stripe) * ts::Random::drandom()));
   Dir *e   = b;
-  Dir *seg = stripe->dir_segment(s);
+  Dir *seg = stripe->directory.get_segment(s);
   for (int i = 0; i < l; i++) {
     ink_release_assert(e);
     e = next_dir(e, seg);
@@ -97,13 +97,13 @@ public:
     dir_set_head(&dir, true);
     dir_set_offset(&dir, 1);
 
-    stripe->header->agg_pos = stripe->header->write_pos += 1024;
+    stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
 
     CacheKey key;
     rand_CacheKey(&key);
 
-    int  s   = key.slice32(0) % stripe->segments, i, j;
-    Dir *seg = stripe->dir_segment(s);
+    int  s   = key.slice32(0) % stripe->directory.segments, i, j;
+    Dir *seg = stripe->directory.get_segment(s);
 
     // test insert
     int inserted = 0;
@@ -118,7 +118,7 @@ public:
     CHECK(static_cast<unsigned int>(inserted - free) <= 1);
 
     // test delete
-    for (i = 0; i < stripe->buckets; i++) {
+    for (i = 0; i < stripe->directory.buckets; i++) {
       for (j = 0; j < DIR_DEPTH; j++) {
         dir_set_offset(dir_bucket_row(dir_bucket(i, seg), j), 0); // delete
       }
@@ -154,7 +154,7 @@ public:
       Dbg(dbg_ctl_cache_dir_test, "probe rate = %d / second", static_cast<int>((newfree * static_cast<uint64_t>(1000000)) / us));
     }
 
-    for (int c = 0; c < stripe->direntries() * 0.75; c++) {
+    for (int c = 0; c < stripe->directory.entries() * 0.75; c++) {
       regress_rand_CacheKey(&key);
       dir_insert(&key, stripe, &dir);
     }
@@ -170,7 +170,7 @@ public:
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
-      dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
+      dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       dir_insert(&key, vol, &dir);
       Dir *last_collision = 0;
       dir_probe(&key, vol, &dir, &last_collision);
@@ -178,7 +178,7 @@ public:
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
-      dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
+      dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
 
       last_collision = 0;
       dir_probe(&key, vol, &dir, &last_collision);
@@ -195,7 +195,7 @@ public:
       dir_insert(&key, vol, &dir);
       key1.b[1] = 80;
       dir_insert(&key1, vol, &dir1);
-      dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
+      dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       dir_overwrite(&key, vol, &dir, &dir, 1);
 
       rand_CacheKey(&key);
@@ -203,12 +203,12 @@ public:
       b1       = key.slice32(1) % vol->buckets;
       key.b[1] = 23;
       dir_insert(&key, vol, &dir1);
-      dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
+      dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       dir_overwrite(&key, vol, &dir, &dir, 0);
 
       rand_CacheKey(&key);
       s1        = key.slice32(0) % vol->segments;
-      Dir *seg1 = vol->dir_segment(s1);
+      Dir *seg1 = vol->directory.get_segment(s1);
       // dir_freelist_length in freelist with loop
       dir_corrupt_bucket(dir_from_offset(vol->header->freelist[s], seg1), s1, vol);
       dir_freelist_length(vol, s1);
@@ -217,21 +217,21 @@ public:
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
       // dir_bucket_length in bucket with loop
-      dir_corrupt_bucket(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
-      dir_bucket_length(dir_bucket(b1, vol->dir_segment(s1)), s1, vol);
+      dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
+      dir_bucket_length(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
       CHECK(check_dir(vol));
 #else
       // test corruption detection
       rand_CacheKey(&key);
-      s1 = key.slice32(0) % stripe->segments;
-      b1 = key.slice32(1) % stripe->buckets;
+      s1 = key.slice32(0) % stripe->directory.segments;
+      b1 = key.slice32(1) % stripe->directory.buckets;
 
       dir_insert(&key, stripe, &dir1);
       dir_insert(&key, stripe, &dir1);
       dir_insert(&key, stripe, &dir1);
       dir_insert(&key, stripe, &dir1);
       dir_insert(&key, stripe, &dir1);
-      dir_corrupt_bucket(dir_bucket(b1, stripe->dir_segment(s1)), s1, stripe);
+      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
       CHECK(!check_dir(stripe));
 #endif
     }

@@ -155,7 +155,7 @@ PreservationTable::periodic_scan(Stripe *stripe)
 {
   cleanup(stripe);
   scan_for_pinned_documents(stripe);
-  if (stripe->header->write_pos == stripe->start) {
+  if (stripe->directory.header->write_pos == stripe->start) {
     stripe->scan_pos = stripe->start;
   }
   stripe->scan_pos += stripe->len / PIN_SCAN_EVERY;
@@ -167,17 +167,19 @@ PreservationTable::scan_for_pinned_documents(Stripe const *stripe)
   if (cache_config_permit_pinning) {
     // we can't evacuate anything between header->write_pos and
     // header->write_pos + AGG_SIZE.
-    int ps = stripe->offset_to_vol_offset(stripe->header->write_pos + AGG_SIZE);
-    int pe = stripe->offset_to_vol_offset(stripe->header->write_pos + 2 * EVACUATION_SIZE + (stripe->len / PIN_SCAN_EVERY));
+    int ps = stripe->offset_to_vol_offset(stripe->directory.header->write_pos + AGG_SIZE);
+    int pe =
+      stripe->offset_to_vol_offset(stripe->directory.header->write_pos + 2 * EVACUATION_SIZE + (stripe->len / PIN_SCAN_EVERY));
     int vol_end_offset    = stripe->offset_to_vol_offset(stripe->len + stripe->skip);
     int before_end_of_vol = pe < vol_end_offset;
     DDbg(dbg_ctl_cache_evac, "scan %d %d", ps, pe);
-    for (int i = 0; i < stripe->direntries(); i++) {
+    for (int i = 0; i < stripe->directory.entries(); i++) {
       // is it a valid pinned object?
-      if (!dir_is_empty(&stripe->dir[i]) && dir_pinned(&stripe->dir[i]) && dir_head(&stripe->dir[i])) {
+      if (!dir_is_empty(&stripe->directory.dir[i]) && dir_pinned(&stripe->directory.dir[i]) &&
+          dir_head(&stripe->directory.dir[i])) {
         // select objects only within this PIN_SCAN region
-        int o = dir_offset(&stripe->dir[i]);
-        if (dir_phase(&stripe->dir[i]) == stripe->header->phase) {
+        int o = dir_offset(&stripe->directory.dir[i]);
+        if (dir_phase(&stripe->directory.dir[i]) == stripe->directory.header->phase) {
           if (before_end_of_vol || o >= (pe - vol_end_offset)) {
             continue;
           }
@@ -186,7 +188,7 @@ PreservationTable::scan_for_pinned_documents(Stripe const *stripe)
             continue;
           }
         }
-        force_evacuate_head(&stripe->dir[i], 1);
+        force_evacuate_head(&stripe->directory.dir[i], 1);
       }
     }
   }
@@ -195,7 +197,7 @@ PreservationTable::scan_for_pinned_documents(Stripe const *stripe)
 void
 PreservationTable::cleanup(Stripe const *stripe)
 {
-  int64_t eo = ((stripe->header->write_pos - stripe->start) / CACHE_BLOCK_SIZE) + 1;
+  int64_t eo = ((stripe->directory.header->write_pos - stripe->start) / CACHE_BLOCK_SIZE) + 1;
   int64_t e  = dir_offset_evac_bucket(eo);
   int64_t sx = e - (evacuate_size / PIN_SCAN_EVERY) - 1;
   int64_t s  = sx;
@@ -228,8 +230,10 @@ PreservationTable::remove_finished_blocks(Stripe const *stripe, int bucket)
 {
   EvacuationBlock *b = evac_bucket_valid(bucket) ? evacuate[bucket].head : nullptr;
   while (b) {
-    if (b->f.done && ((stripe->header->phase != dir_phase(&b->dir) && stripe->header->write_pos > stripe->vol_offset(&b->dir)) ||
-                      (stripe->header->phase == dir_phase(&b->dir) && stripe->header->write_pos <= stripe->vol_offset(&b->dir)))) {
+    if (b->f.done && ((stripe->directory.header->phase != dir_phase(&b->dir) &&
+                       stripe->directory.header->write_pos > stripe->vol_offset(&b->dir)) ||
+                      (stripe->directory.header->phase == dir_phase(&b->dir) &&
+                       stripe->directory.header->write_pos <= stripe->vol_offset(&b->dir)))) {
       EvacuationBlock *x = b;
       DDbg(dbg_ctl_cache_evac, "evacuate cleanup free %X offset %" PRId64, b->evac_frags.key.slice32(0), dir_offset(&b->dir));
       b = b->link.next;
