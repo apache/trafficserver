@@ -883,14 +883,14 @@ CacheSync::aio_write(int fd, char *b, int n, off_t o)
 }
 
 uint64_t
-dir_entries_used(Stripe *stripe)
+Directory::entries_used(Stripe *stripe)
 {
   uint64_t full  = 0;
   uint64_t sfull = 0;
-  for (int s = 0; s < stripe->directory.segments; full += sfull, s++) {
-    Dir *seg = stripe->directory.get_segment(s);
+  for (int s = 0; s < this->segments; full += sfull, s++) {
+    Dir *seg = this->get_segment(s);
     sfull    = 0;
-    for (int b = 0; b < stripe->directory.buckets; b++) {
+    for (int b = 0; b < this->buckets; b++) {
       Dir *e = dir_bucket(b, seg);
       if (dir_bucket_loop_fix(e, s, stripe)) {
         sfull = 0;

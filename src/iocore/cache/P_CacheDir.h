@@ -288,14 +288,15 @@ struct Directory {
    */
   Dir *get_segment(int s) const;
 
-  int  probe(const CacheKey *, StripeSM *, Dir *, Dir **);
-  int  insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
-  int  overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-  int  remove(const CacheKey *key, StripeSM *stripe, Dir *del);
-  void free_entry(Dir *e, int s);
-  int  check(Stripe *stripe);
-  void cleanup(Stripe *stripe);
-  void clear_range(off_t start, off_t end, Stripe *stripe);
+  int      probe(const CacheKey *, StripeSM *, Dir *, Dir **);
+  int      insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
+  int      overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+  int      remove(const CacheKey *key, StripeSM *stripe, Dir *del);
+  void     free_entry(Dir *e, int s);
+  int      check(Stripe *stripe);
+  void     cleanup(Stripe *stripe);
+  void     clear_range(off_t start, off_t end, Stripe *stripe);
+  uint64_t entries_used(Stripe *stripe);
 };
 
 inline int
@@ -312,14 +313,13 @@ Directory::get_segment(int s) const
 
 // Global Functions
 
-int      dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, EvacuationBlock **eblock);
-int      dir_lookaside_insert(EvacuationBlock *b, StripeSM *stripe, Dir *to);
-int      dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
-void     dir_lookaside_cleanup(StripeSM *stripe);
-void     dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
-void     dir_sync_init();
-uint64_t dir_entries_used(Stripe *stripe);
-void     sync_cache_dir_on_shutdown();
+int  dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, EvacuationBlock **eblock);
+int  dir_lookaside_insert(EvacuationBlock *b, StripeSM *stripe, Dir *to);
+int  dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
+void dir_lookaside_cleanup(StripeSM *stripe);
+void dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
+void dir_sync_init();
+void sync_cache_dir_on_shutdown();
 
 int  dir_bucket_length(Dir *b, int s, Stripe *stripe);
 int  dir_freelist_length(Stripe *stripe, int s);

@@ -460,7 +460,7 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
   for (p = 0; p < gnstripes; p++) {
     if (d->fd == gstripes[p]->fd) {
       total_dir_delete   += gstripes[p]->directory.entries();
-      used_dir_delete    += dir_entries_used(gstripes[p]);
+      used_dir_delete    += gstripes[p]->directory.entries_used(gstripes[p]);
       total_bytes_delete += gstripes[p]->len - gstripes[p]->dirlen();
     }
   }
@@ -1512,7 +1512,7 @@ CacheProcessor::cacheInitialized()
         total_direntries              += vol_total_direntries;
         ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
 
-        uint64_t vol_used_direntries = dir_entries_used(stripe);
+        uint64_t vol_used_direntries = stripe->directory.entries_used(stripe);
         ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
         used_direntries += vol_used_direntries;
       }
