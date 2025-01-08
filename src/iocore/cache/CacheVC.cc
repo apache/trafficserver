@@ -111,7 +111,7 @@ next_in_map(Stripe *stripe, char *vol_map, off_t offset)
 }
 
 // Function in CacheDir.cc that we need for make_vol_map().
-int dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe);
+int dir_bucket_loop_fix(Dir *start_dir, int s, Directory *directory);
 
 // TODO: If we used a bit vector, we could make a smaller map structure.
 // TODO: If we saved a high water mark we could have a smaller buf, and avoid searching it
@@ -136,7 +136,7 @@ make_vol_map(Stripe *stripe)
     Dir *seg = stripe->directory.get_segment(s);
     for (int b = 0; b < stripe->directory.buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (dir_bucket_loop_fix(e, s, stripe)) {
+      if (dir_bucket_loop_fix(e, s, &stripe->directory)) {
         break;
       }
       while (e) {
