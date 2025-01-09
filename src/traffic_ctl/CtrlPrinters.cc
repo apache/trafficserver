@@ -122,7 +122,7 @@ RecordPrinter::write_output(YAML::Node const &result)
   }
 
   if (is_records_format() && recordList.size() > 0) {
-    std::cout << RecNameToYaml{recordList, should_include_default()}.string() << '\n';
+    std::cout << RecNameToYaml{std::move(recordList), should_include_default()}.string() << '\n';
   }
   // we print errors if found.
   print_record_error_list(response.errorList);
@@ -162,7 +162,7 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
   }
 
   if (is_records_format() && recordList.size() > 0) {
-    std::cout << RecNameToYaml{recordList, WithDefaults}.string() << '\n';
+    std::cout << RecNameToYaml{std::move(recordList), WithDefaults}.string() << '\n';
   }
 }
 //------------------------------------------------------------------------------------------------------------------------------------

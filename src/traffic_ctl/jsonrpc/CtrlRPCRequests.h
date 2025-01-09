@@ -227,7 +227,7 @@ struct ConfigStatusRequest : shared::rpc::RecordLookupRequest {
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 struct SetDebugServerRequest : ConfigSetRecordRequest {
-  SetDebugServerRequest(bool enabled, std::string tags, std::string client_ip)
+  SetDebugServerRequest(bool enabled, std::string const &tags, std::string const &client_ip)
   {
     std::string enable_value{(enabled ? "1" : "0")};
     if (!client_ip.empty()) {
@@ -239,6 +239,6 @@ struct SetDebugServerRequest : ConfigSetRecordRequest {
       super::params.push_back(Params{"proxy.config.diags.debug.tags", tags});
     }
 
-    super::params.push_back(Params{"proxy.config.diags.debug.enabled", enable_value});
+    super::params.push_back(Params{"proxy.config.diags.debug.enabled", std::move(enable_value)});
   }
 };
