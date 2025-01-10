@@ -232,7 +232,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   crashlog_write_procname(fp, target);
   crashlog_write_exename(fp, target);
-  fprintf(fp, LABELFMT "Traffic Server %s\n", "Version:", PACKAGE_VERSION);
+  fprintf(fp, LABELFMT "%s\n", "Version:", version.full_version());
   crashlog_write_uname(fp, target);
   crashlog_write_datime(fp, target);
 
