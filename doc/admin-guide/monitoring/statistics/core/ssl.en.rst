@@ -194,6 +194,44 @@ SSL/TLS
    Incoming client SSL connections which presented a client certificate that had
    been revoked, since statistics collection began.
 
+.. ts:stat:: global proxy.process.ssl.user_agent_decryption_failed_or_bad_record_mac integer
+   :type: counter
+
+   Incoming client SSL connections which failed decryption or had a mismatched
+   MAC, since statistics collection began.
+
+.. ts:stat:: global proxy.process.ssl.user_agent_http_request integer
+   :type: counter
+
+   Incoming client SSL connections which attempted to use plaintext HTTP without
+   SSL encryption, since statistics collection began.
+
+.. ts:stat:: global proxy.process.ssl.user_agent_inappropriate_fallback integer
+   :type: counter
+
+   Incoming client SSL connections which used a fallback to an older TLS version
+   that |TS| doesn't support, since statistics collection began.
+
+.. ts:stat:: global proxy.process.ssl.user_agent_no_shared_cipher integer
+   :type: counter
+
+   Incoming client SSL connections which failed due to no match in supported
+   ciphers between the client and |TS|, since statistics collection began.
+
+.. ts:stat:: global proxy.process.ssl.user_agent_version_too_high integer
+   :type: counter
+
+   Incoming client SSL connections which failed due to the client only
+   supporting TLS versions that are too high for |TS| to support, since
+   statistics collection began.
+
+.. ts:stat:: global proxy.process.ssl.user_agent_version_too_low integer
+   :type: counter
+
+   Incoming client SSL connections which failed due to the client only
+   supporting TLS versions that are too low for |TS| to accept, since statistics
+   collection began.
+
 .. ts:stat:: global proxy.process.ssl.user_agent_session_hit integer
    :type: counter
 
