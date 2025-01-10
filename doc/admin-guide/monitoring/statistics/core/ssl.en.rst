@@ -225,12 +225,18 @@ SSL/TLS
    supporting TLS versions that are too high for |TS| to support, since
    statistics collection began.
 
+   This stat is only incremented when |TS| is built against an SSL library, such
+   as OpenSSL, that supports the ``SSL_R_VERSION_TOO_HIGH`` error.
+
 .. ts:stat:: global proxy.process.ssl.user_agent_version_too_low integer
    :type: counter
 
    Incoming client SSL connections which failed due to the client only
    supporting TLS versions that are too low for |TS| to accept, since statistics
    collection began.
+
+   This stat is only incremented when |TS| is built against an SSL library, such
+   as OpenSSL, that supports the ``SSL_R_VERSION_TOO_LOW`` error.
 
 .. ts:stat:: global proxy.process.ssl.user_agent_session_hit integer
    :type: counter
