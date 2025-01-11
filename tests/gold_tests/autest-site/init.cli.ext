@@ -30,7 +30,7 @@ if AuTestVersion() < needed_autest_version:
         "Please update AuTest:\n  pipenv --rm && pipenv install\n",
         show_stack=False)
 
-needed_microserver_version = "1.0.6"
+needed_microserver_version = "1.0.8"
 found_microserver_version = microserver.__version__
 if found_microserver_version < needed_microserver_version:
     host.WriteError(

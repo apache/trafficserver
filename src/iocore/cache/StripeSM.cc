@@ -156,7 +156,7 @@ StripeSM::clear_dir()
   size_t dir_len = this->dirlen();
   this->_clear_init(this->disk->hw_sector_size);
 
-  if (pwrite(this->fd, this->raw_dir, dir_len, this->skip) < 0) {
+  if (pwrite(this->fd, this->directory.raw_dir, dir_len, this->skip) < 0) {
     Warning("unable to clear cache directory '%s'", this->hash_text.get());
     return -1;
   }
@@ -248,20 +248,21 @@ StripeSM::handle_dir_read(int event, void *data)
     }
   }
 
-  if (!(header->magic == STRIPE_MAGIC && footer->magic == STRIPE_MAGIC &&
-        CACHE_DB_MAJOR_VERSION_COMPATIBLE <= header->version._major && header->version._major <= CACHE_DB_MAJOR_VERSION)) {
+  if (!(directory.header->magic == STRIPE_MAGIC && directory.footer->magic == STRIPE_MAGIC &&
+        CACHE_DB_MAJOR_VERSION_COMPATIBLE <= directory.header->version._major &&
+        directory.header->version._major <= CACHE_DB_MAJOR_VERSION)) {
     Warning("bad footer in cache directory for '%s', clearing", hash_text.get());
     Note("STRIPE_MAGIC %d\n header magic: %d\n footer_magic %d\n CACHE_DB_MAJOR_VERSION_COMPATIBLE %d\n major version %d\n"
          "CACHE_DB_MAJOR_VERSION %d\n",
-         STRIPE_MAGIC, header->magic, footer->magic, CACHE_DB_MAJOR_VERSION_COMPATIBLE, header->version._major,
-         CACHE_DB_MAJOR_VERSION);
+         STRIPE_MAGIC, directory.header->magic, directory.footer->magic, CACHE_DB_MAJOR_VERSION_COMPATIBLE,
+         directory.header->version._major, CACHE_DB_MAJOR_VERSION);
     Note("clearing cache directory '%s'", hash_text.get());
     clear_dir_aio();
     return EVENT_DONE;
   }
   CHECK_DIR(this);
 
-  sector_size = header->sector_size;
+  sector_size = directory.header->sector_size;
 
   return this->recover_data();
 }
@@ -278,7 +279,7 @@ StripeSM::clear_dir_aio()
   SET_HANDLER(&StripeSM::handle_dir_clear);
 
   io.aiocb.aio_fildes = fd;
-  io.aiocb.aio_buf    = raw_dir;
+  io.aiocb.aio_buf    = directory.raw_dir;
   io.aiocb.aio_nbytes = dir_len;
   io.aiocb.aio_offset = skip;
   io.action           = this;
@@ -311,10 +312,10 @@ StripeSM::recover_data()
 
    2. All the docs written to the disk
    after the directory was synced will have their sync_serial <=
-   header->sync_serial + 1,  because the write aggregation can take
+   directory.header->sync_serial + 1,  because the write aggregation can take
    indeterminate amount of time to sync. The doc->sync_serial can be
-   equal to header->sync_serial + 1, because we increment the sync_serial
-   before we sync the directory to disk.
+   equal to directory.header->sync_serial + 1, because we increment the
+   sync_serial before we sync the directory to disk.
 
    3. The doc->sync_serial will always increase. If doc->sync_serial
    decreases, the document was written in the previous phase
@@ -322,23 +323,23 @@ StripeSM::recover_data()
    If either of these conditions fail and we are not too close to the end
    (see the next comment ) then we're done
 
-   We actually start from header->last_write_pos instead of header->write_pos
-   to make sure that we haven't wrapped around the whole disk without
-   syncing the directory.  Since the sync serial is 60 seconds, it is
-   entirely possible to write through the whole cache without
+   We actually start from directory.header->last_write_pos instead of
+   header->write_pos to make sure that we haven't wrapped around the whole
+   disk without syncing the directory.  Since the sync serial is 60 seconds,
+   it is entirely possible to write through the whole cache without
    once syncing the directory. In this case, we need to clear the
-   cache.The documents written right before we synced the
-   directory to disk should have the write_serial <= header->sync_serial.
+   cache.The documents written right before we synced the directory
+   to disk should have the write_serial <= directory.header->sync_serial.
 
       */
 int
 StripeSM::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 {
   uint32_t got_len         = 0;
-  uint32_t max_sync_serial = header->sync_serial;
+  uint32_t max_sync_serial = directory.header->sync_serial;
   char    *s, *e = nullptr;
   if (event == EVENT_IMMEDIATE) {
-    if (header->sync_serial == 0) {
+    if (directory.header->sync_serial == 0) {
       io.aiocb.aio_buf = nullptr;
       SET_HANDLER(&StripeSM::handle_recover_write_dir);
       return handle_recover_write_dir(EVENT_IMMEDIATE, nullptr);
@@ -347,7 +348,7 @@ StripeSM::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
     recover_wrapped   = false;
     last_sync_serial  = 0;
     last_write_serial = 0;
-    recover_pos       = header->last_write_pos;
+    recover_pos       = directory.header->last_write_pos;
     if (recover_pos >= skip + len) {
       recover_wrapped = true;
       recover_pos     = start;
@@ -363,19 +364,19 @@ StripeSM::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
       disk->incrErrors(&io);
       goto Lclear;
     }
-    if (io.aiocb.aio_offset == header->last_write_pos) {
+    if (io.aiocb.aio_offset == directory.header->last_write_pos) {
       /* check that we haven't wrapped around without syncing
          the directory. Start from last_write_serial (write pos the documents
          were written to just before syncing the directory) and make sure
-         that all documents have write_serial <= header->write_serial.
+         that all documents have write_serial <= directory.header->write_serial.
        */
-      uint32_t to_check = header->write_pos - header->last_write_pos;
+      uint32_t to_check = directory.header->write_pos - directory.header->last_write_pos;
       ink_assert(to_check && to_check < (uint32_t)io.aiocb.aio_nbytes);
       uint32_t done = 0;
       s             = static_cast<char *>(io.aiocb.aio_buf);
       while (done < to_check) {
         Doc *doc = reinterpret_cast<Doc *>(s + done);
-        if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
+        if (doc->magic != DOC_MAGIC || doc->write_serial > directory.header->write_serial) {
           Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
           goto Lclear;
         }
@@ -417,7 +418,7 @@ StripeSM::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 
       if (doc->magic != DOC_MAGIC || doc->sync_serial != last_sync_serial) {
         if (doc->magic == DOC_MAGIC) {
-          if (doc->sync_serial > header->sync_serial) {
+          if (doc->sync_serial > directory.header->sync_serial) {
             max_sync_serial = doc->sync_serial;
           }
 
@@ -425,15 +426,16 @@ StripeSM::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
              doc->magic == DOC_MAGIC, but doc->sync_serial != last_sync_serial
              This might happen in the following situations
              1. We are starting off recovery. In this case the
-             last_sync_serial == header->sync_serial, but the doc->sync_serial
-             can be anywhere in the range (0, header->sync_serial + 1]
+             last_sync_serial == directory.header->sync_serial, but the
+             doc->sync_serial can be anywhere in the range
+             (0, directory.header->sync_serial + 1]
              If this is the case, update last_sync_serial and continue;
 
              2. A dir sync started between writing documents to the
              aggregation buffer and hence the doc->sync_serial went up.
              If the doc->sync_serial is greater than the last
-             sync serial and less than (header->sync_serial + 2) then
-             continue;
+             sync serial and less than (directory.header->sync_serial + 2)
+             then continue;
 
              3. If the position we are recovering from is within AGG_SIZE
              from the disk end, then we can't trust this document. The
@@ -448,14 +450,14 @@ StripeSM::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 
           // case 1
           // case 2
-          if (doc->sync_serial > last_sync_serial && doc->sync_serial <= header->sync_serial + 1) {
+          if (doc->sync_serial > last_sync_serial && doc->sync_serial <= directory.header->sync_serial + 1) {
             last_sync_serial  = doc->sync_serial;
             s                += round_to_approx_size(doc->len);
             continue;
           }
           // case 3 - we have already recovered some data and
           // (doc->sync_serial < last_sync_serial) ||
-          // (doc->sync_serial > header->sync_serial + 1).
+          // (doc->sync_serial > directory.header->sync_serial + 1).
           // if we are too close to the end, wrap around
           else if (recover_pos - (e - s) > (skip + len) - AGG_SIZE) {
             recover_wrapped     = true;
@@ -517,7 +519,7 @@ StripeSM::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 
 Ldone: {
   /* if we come back to the starting position, then we don't have to recover anything */
-  if (recover_pos == header->write_pos && recover_wrapped) {
+  if (recover_pos == directory.header->write_pos && recover_wrapped) {
     SET_HANDLER(&StripeSM::handle_recover_write_dir);
     if (dbg_ctl_cache_init.on()) {
       Note("recovery wrapped around. nothing to clear\n");
@@ -526,8 +528,8 @@ Ldone: {
   }
 
   recover_pos += EVACUATION_SIZE; // safely cover the max write size
-  if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
-    Dbg(dbg_ctl_cache_init, "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos,
+  if (recover_pos < directory.header->write_pos && (recover_pos + EVACUATION_SIZE >= directory.header->write_pos)) {
+    Dbg(dbg_ctl_cache_init, "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", directory.header->write_pos, recover_pos,
         recover_wrapped);
     Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
     goto Lclear;
@@ -539,11 +541,11 @@ Ldone: {
   // bump sync number so it is different from that in the Doc structs
   uint32_t next_sync_serial = max_sync_serial + 1;
   // make that the next sync does not overwrite our good copy!
-  if (!(header->sync_serial & 1) == !(next_sync_serial & 1)) {
+  if (!(directory.header->sync_serial & 1) == !(next_sync_serial & 1)) {
     next_sync_serial++;
   }
   // clear effected portion of the cache
-  off_t clear_start = this->offset_to_vol_offset(header->write_pos);
+  off_t clear_start = this->offset_to_vol_offset(directory.header->write_pos);
   off_t clear_end   = this->offset_to_vol_offset(recover_pos);
   if (clear_start <= clear_end) {
     dir_clear_range(clear_start, clear_end, this);
@@ -553,9 +555,9 @@ Ldone: {
   }
 
   Note("recovery clearing offsets of Stripe %s : [%" PRIu64 ", %" PRIu64 "] sync_serial %d next %d\n", hash_text.get(),
-       header->write_pos, recover_pos, header->sync_serial, next_sync_serial);
+       directory.header->write_pos, recover_pos, directory.header->sync_serial, next_sync_serial);
 
-  footer->sync_serial = header->sync_serial = next_sync_serial;
+  directory.footer->sync_serial = directory.header->sync_serial = next_sync_serial;
 
   for (int i = 0; i < 3; i++) {
     AIOCallback *aio      = &(init_info->vol_aio[i]);
@@ -566,16 +568,16 @@ Ldone: {
   }
   int    footerlen = ROUND_TO_STORE_BLOCK(sizeof(StripteHeaderFooter));
   size_t dirlen    = this->dirlen();
-  int    B         = header->sync_serial & 1;
+  int    B         = directory.header->sync_serial & 1;
   off_t  ss        = skip + (B ? dirlen : 0);
 
-  init_info->vol_aio[0].aiocb.aio_buf    = raw_dir;
+  init_info->vol_aio[0].aiocb.aio_buf    = directory.raw_dir;
   init_info->vol_aio[0].aiocb.aio_nbytes = footerlen;
   init_info->vol_aio[0].aiocb.aio_offset = ss;
-  init_info->vol_aio[1].aiocb.aio_buf    = raw_dir + footerlen;
+  init_info->vol_aio[1].aiocb.aio_buf    = directory.raw_dir + footerlen;
   init_info->vol_aio[1].aiocb.aio_nbytes = dirlen - 2 * footerlen;
   init_info->vol_aio[1].aiocb.aio_offset = ss + footerlen;
-  init_info->vol_aio[2].aiocb.aio_buf    = raw_dir + dirlen - footerlen;
+  init_info->vol_aio[2].aiocb.aio_buf    = directory.raw_dir + dirlen - footerlen;
   init_info->vol_aio[2].aiocb.aio_nbytes = footerlen;
   init_info->vol_aio[2].aiocb.aio_offset = ss + dirlen - footerlen;
 
@@ -601,7 +603,7 @@ StripeSM::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data AT
   delete init_info;
   init_info = nullptr;
   set_io_not_in_progress();
-  scan_pos = header->write_pos;
+  scan_pos = directory.header->write_pos;
   ink_assert(this->mutex->thread_holding == this_ethread());
   this->_preserved_dirs.periodic_scan(this);
   SET_HANDLER(&StripeSM::dir_init_done);
@@ -644,7 +646,7 @@ StripeSM::handle_header_read(int event, void *data)
 
     io.aiocb.aio_fildes = fd;
     io.aiocb.aio_nbytes = this->dirlen();
-    io.aiocb.aio_buf    = raw_dir;
+    io.aiocb.aio_buf    = directory.raw_dir;
     io.action           = this;
     io.thread           = AIO_CALLBACK_THREAD_ANY;
     io.then             = nullptr;
@@ -715,18 +717,18 @@ StripeSM::aggWriteDone(int event, Event *e)
     return EVENT_CONT;
   }
   if (io.ok()) {
-    header->last_write_pos  = header->write_pos;
-    header->write_pos      += io.aiocb.aio_nbytes;
-    ink_assert(header->write_pos >= start);
-    DDbg(dbg_ctl_cache_agg, "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "", hash_text.get(), header->write_pos,
-         header->last_write_pos);
-    ink_assert(header->write_pos == header->agg_pos);
-    if (header->write_pos + EVACUATION_SIZE > scan_pos) {
+    directory.header->last_write_pos  = directory.header->write_pos;
+    directory.header->write_pos      += io.aiocb.aio_nbytes;
+    ink_assert(directory.header->write_pos >= start);
+    DDbg(dbg_ctl_cache_agg, "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "", hash_text.get(), directory.header->write_pos,
+         directory.header->last_write_pos);
+    ink_assert(directory.header->write_pos == directory.header->agg_pos);
+    if (directory.header->write_pos + EVACUATION_SIZE > scan_pos) {
       ink_assert(this->mutex->thread_holding == this_ethread());
       this->_preserved_dirs.periodic_scan(this);
     }
     this->_write_buffer.reset_buffer_pos();
-    header->write_serial++;
+    directory.header->write_serial++;
   } else {
     // delete all the directory entries that we inserted
     // for fragments is this aggregation buffer
@@ -738,7 +740,7 @@ StripeSM::aggWriteDone(int event, Event *e)
     dir_clear(&del_dir);
     for (int done = 0; done < this->_write_buffer.get_buffer_pos();) {
       Doc *doc = reinterpret_cast<Doc *>(this->_write_buffer.get_buffer() + done);
-      dir_set_offset(&del_dir, header->write_pos + done);
+      dir_set_offset(&del_dir, directory.header->write_pos + done);
       dir_delete(&doc->key, this, &del_dir);
       done += round_to_approx_size(doc->len);
     }
@@ -748,7 +750,7 @@ StripeSM::aggWriteDone(int event, Event *e)
   // callback ready sync CacheVCs
   CacheVC *c = nullptr;
   while ((c = sync.dequeue())) {
-    if (UINT_WRAP_LTE(c->write_serial + 2, header->write_serial)) {
+    if (UINT_WRAP_LTE(c->write_serial + 2, directory.header->write_serial)) {
       eventProcessor.schedule_imm(c, ET_CALL, AIO_EVENT_DONE);
     } else {
       sync.push(c); // put it back on the front
@@ -790,7 +792,7 @@ Lagain:
     if (!this->_write_buffer.get_pending_writers().head && !sync.head) { // nothing to get
       return EVENT_CONT;
     }
-    if (header->write_pos == start) {
+    if (directory.header->write_pos == start) {
       // write aggregation too long, bad bad, punt on everything.
       Note("write aggregation exceeds vol size");
       ink_assert(!tocall.head);
@@ -809,12 +811,12 @@ Lagain:
   }
 
   // evacuate space
-  off_t end = header->write_pos + this->_write_buffer.get_buffer_pos() + EVACUATION_SIZE;
-  if (evac_range(header->write_pos, end, !header->phase) < 0) {
+  off_t end = directory.header->write_pos + this->_write_buffer.get_buffer_pos() + EVACUATION_SIZE;
+  if (evac_range(directory.header->write_pos, end, !directory.header->phase) < 0) {
     goto Lwait;
   }
   if (end > skip + len) {
-    if (evac_range(start, start + (end - (skip + len)), header->phase) < 0) {
+    if (evac_range(start, start + (end - (skip + len)), directory.header->phase) < 0) {
       goto Lwait;
     }
   }
@@ -835,15 +837,15 @@ Lagain:
     memset(static_cast<void *>(d), 0, sizeof(Doc));
     d->magic        = DOC_MAGIC;
     d->len          = l;
-    d->sync_serial  = header->sync_serial;
-    d->write_serial = header->write_serial;
+    d->sync_serial  = directory.header->sync_serial;
+    d->write_serial = directory.header->write_serial;
   }
 
   // set write limit
-  header->agg_pos = header->write_pos + this->_write_buffer.get_buffer_pos();
+  directory.header->agg_pos = directory.header->write_pos + this->_write_buffer.get_buffer_pos();
 
   io.aiocb.aio_fildes = fd;
-  io.aiocb.aio_offset = header->write_pos;
+  io.aiocb.aio_offset = directory.header->write_pos;
   io.aiocb.aio_buf    = this->_write_buffer.get_buffer();
   io.aiocb.aio_nbytes = this->_write_buffer.get_buffer_pos();
   io.action           = this;
@@ -876,11 +878,11 @@ StripeSM::aggregate_pending_writes(Queue<CacheVC, Continuation::Link_link> &toca
     // [amc] this is checked multiple places, on here was it strictly less.
     ink_assert(writelen <= AGG_SIZE);
     if (this->_write_buffer.get_buffer_pos() + writelen > AGG_SIZE ||
-        this->header->write_pos + this->_write_buffer.get_buffer_pos() + writelen > (this->skip + this->len)) {
+        this->directory.header->write_pos + this->_write_buffer.get_buffer_pos() + writelen > (this->skip + this->len)) {
       break;
     }
     DDbg(dbg_ctl_agg_read, "copying: %d, %" PRIu64 ", key: %d", this->_write_buffer.get_buffer_pos(),
-         this->header->write_pos + this->_write_buffer.get_buffer_pos(), c->first_key.slice32(0));
+         this->directory.header->write_pos + this->_write_buffer.get_buffer_pos(), c->first_key.slice32(0));
     [[maybe_unused]] int wrotelen = this->_agg_copy(c);
     ink_assert(writelen == wrotelen);
     CacheVC *n = static_cast<CacheVC *>(c->link.next);
@@ -919,22 +921,22 @@ StripeSM::_copy_evacuator_to_aggregation(CacheVC *vc)
   Metrics::Counter::increment(cache_rsb.gc_frags_evacuated);
   Metrics::Counter::increment(this->cache_vol->vol_rsb.gc_frags_evacuated);
 
-  doc->sync_serial  = this->header->sync_serial;
-  doc->write_serial = this->header->write_serial;
+  doc->sync_serial  = this->directory.header->sync_serial;
+  doc->write_serial = this->directory.header->write_serial;
 
-  off_t doc_offset{this->header->write_pos + this->_write_buffer.get_buffer_pos()};
+  off_t doc_offset{this->directory.header->write_pos + this->_write_buffer.get_buffer_pos()};
   this->_write_buffer.add(doc, approx_size);
 
   vc->dir = vc->overwrite_dir;
   dir_set_offset(&vc->dir, this->offset_to_vol_offset(doc_offset));
-  dir_set_phase(&vc->dir, this->header->phase);
+  dir_set_phase(&vc->dir, this->directory.header->phase);
   return approx_size;
 }
 
 int
 StripeSM::_copy_writer_to_aggregation(CacheVC *vc)
 {
-  off_t          doc_offset{this->header->write_pos + this->get_agg_buf_pos()};
+  off_t          doc_offset{this->directory.header->write_pos + this->get_agg_buf_pos()};
   uint32_t       len         = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
   Doc           *doc         = this->_write_buffer.emplace(this->round_to_approx_size(len));
   IOBufferBlock *res_alt_blk = nullptr;
@@ -945,12 +947,12 @@ StripeSM::_copy_writer_to_aggregation(CacheVC *vc)
   dir_set_approx_size(&vc->dir, vc->agg_len);
   dir_set_offset(&vc->dir, this->offset_to_vol_offset(doc_offset));
   ink_assert(this->vol_offset(&vc->dir) < (this->skip + this->len));
-  dir_set_phase(&vc->dir, this->header->phase);
+  dir_set_phase(&vc->dir, this->directory.header->phase);
 
   // fill in document header
   init_document(vc, doc, len);
-  doc->sync_serial = this->header->sync_serial;
-  vc->write_serial = doc->write_serial = this->header->write_serial;
+  doc->sync_serial = this->directory.header->sync_serial;
+  vc->write_serial = doc->write_serial = this->directory.header->write_serial;
   if (vc->get_pin_in_cache()) {
     dir_set_pinned(&vc->dir, 1);
     doc->pin(vc->get_pin_in_cache());
@@ -1066,11 +1068,11 @@ update_header_info(CacheVC *vc, Doc *doc)
 void
 StripeSM::agg_wrap()
 {
-  header->write_pos = start;
-  header->phase     = !header->phase;
+  directory.header->write_pos = start;
+  directory.header->phase     = !directory.header->phase;
 
-  header->cycle++;
-  header->agg_pos = header->write_pos;
+  directory.header->cycle++;
+  directory.header->agg_pos = directory.header->write_pos;
   dir_lookaside_cleanup(this);
   dir_clean_vol(this);
   {
@@ -1328,7 +1330,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
   }
   size_t dirlen = this->dirlen();
   ink_assert(dirlen > 0); // make clang happy - if not > 0 the vol is seriously messed up
-  if (!this->header->dirty && !this->dir_sync_in_progress) {
+  if (!this->directory.header->dirty && !this->dir_sync_in_progress) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- not dirty", this->hash_text.get());
     return;
   }
@@ -1344,16 +1346,16 @@ StripeSM::shutdown(EThread *shutdown_thread)
 
   // We already asserted that dirlen > 0.
   if (!this->dir_sync_in_progress) {
-    this->header->sync_serial++;
+    this->directory.header->sync_serial++;
   } else {
     Dbg(dbg_ctl_cache_dir_sync, "Periodic dir sync in progress -- overwriting");
   }
-  this->footer->sync_serial = this->header->sync_serial;
+  this->directory.footer->sync_serial = this->directory.header->sync_serial;
 
   CHECK_DIR(d);
-  size_t B     = this->header->sync_serial & 1;
+  size_t B     = this->directory.header->sync_serial & 1;
   off_t  start = this->skip + (B ? dirlen : 0);
-  B            = pwrite(this->fd, this->raw_dir, dirlen, start);
+  B            = pwrite(this->fd, this->directory.raw_dir, dirlen, start);
   ink_assert(B == dirlen);
   Dbg(dbg_ctl_cache_dir_sync, "done syncing dir for vol %s", this->hash_text.get());
 }

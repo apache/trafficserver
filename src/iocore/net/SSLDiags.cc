@@ -30,6 +30,7 @@
 #include "P_SSLNetVConnection.h"
 
 static DbgCtl ssl_diags_dbg_ctl{"ssl-diag"};
+static DbgCtl ssl_error_dbg_ctl{"ssl-error"};
 
 // return true if we have a stat for the error
 static bool
@@ -37,6 +38,7 @@ increment_ssl_client_error(unsigned long err)
 {
   // we only look for LIB_SSL errors atm
   if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
+    Dbg(ssl_error_dbg_ctl, "User agent SSL error not ERR_LIB_SSL: %lu", err);
     Metrics::Counter::increment(ssl_rsb.user_agent_other_errors);
     return false;
   }
@@ -69,7 +71,31 @@ increment_ssl_client_error(unsigned long err)
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
     Metrics::Counter::increment(ssl_rsb.user_agent_unknown_ca);
     break;
+  case SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC:
+    Metrics::Counter::increment(ssl_rsb.user_agent_decryption_failed_or_bad_record_mac);
+    break;
+  case SSL_R_HTTP_REQUEST:
+    Metrics::Counter::increment(ssl_rsb.user_agent_http_request);
+    break;
+  case SSL_R_INAPPROPRIATE_FALLBACK:
+    Metrics::Counter::increment(ssl_rsb.user_agent_inappropriate_fallback);
+    break;
+  case SSL_R_NO_SHARED_CIPHER:
+    Metrics::Counter::increment(ssl_rsb.user_agent_no_shared_cipher);
+    break;
+#ifdef SSL_R_VERSION_TOO_HIGH
+  case SSL_R_VERSION_TOO_HIGH:
+    Metrics::Counter::increment(ssl_rsb.user_agent_version_too_high);
+    break;
+#endif /* SSL_R_VERSION_TOO_HIGH */
+#ifdef SSL_R_VERSION_TOO_LOW
+  case SSL_R_VERSION_TOO_LOW:
+    Metrics::Counter::increment(ssl_rsb.user_agent_version_too_low);
+    break;
+#endif /* SSL_R_VERSION_TOO_LOW */
+
   default:
+    Dbg(ssl_error_dbg_ctl, "Unknown user agent SSL error: %d", ERR_GET_REASON(err));
     Metrics::Counter::increment(ssl_rsb.user_agent_other_errors);
     return false;
   }
@@ -84,6 +110,7 @@ increment_ssl_server_error(unsigned long err)
 {
   // we only look for LIB_SSL errors atm
   if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
+    Dbg(ssl_error_dbg_ctl, "Origin server SSL error not ERR_LIB_SSL: %lu", err);
     Metrics::Counter::increment(ssl_rsb.origin_server_other_errors);
     return false;
   }
@@ -117,6 +144,7 @@ increment_ssl_server_error(unsigned long err)
     Metrics::Counter::increment(ssl_rsb.origin_server_unknown_ca);
     break;
   default:
+    Dbg(ssl_error_dbg_ctl, "Unknown origin server SSL error: %d", ERR_GET_REASON(err));
     Metrics::Counter::increment(ssl_rsb.origin_server_other_errors);
     return false;
   }

@@ -118,7 +118,7 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
 
   if (unlikely(!mp || !bti || !errStrBuf || errStrBufSize <= 0)) {
     Dbg(dbg_ctl_url_rewrite, "[process_filter_opt] Invalid argument(s)");
-    return (const char *)"[process_filter_opt] Invalid argument(s)";
+    return "[process_filter_opt] Invalid argument(s)";
   }
   // ACLs are processed in this order:
   // 1. A remap.config ACL line for an individual remap rule.
@@ -129,7 +129,7 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
     for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
       ;
     }
-    errStr = remap_validate_filter_args(rpp, (const char **)bti->argv, bti->argc, errStrBuf, errStrBufSize, bti->behavior_policy);
+    errStr = remap_validate_filter_args(rpp, bti->argv, bti->argc, errStrBuf, errStrBufSize, bti->behavior_policy);
   }
 
   for (rp = bti->rules_list; rp; rp = rp->next) {
@@ -142,8 +142,8 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
       for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
         ;
       }
-      if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize,
-                                               bti->behavior_policy)) != nullptr) {
+      if ((errStr = remap_validate_filter_args(rpp, rp->argv, rp->argc, errStrBuf, errStrBufSize, bti->behavior_policy)) !=
+          nullptr) {
         break;
       }
     }
@@ -190,19 +190,17 @@ parse_define_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbu
   if (bti->paramc < 2) {
     snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
     Dbg(dbg_ctl_url_rewrite, "[parse_directive] %s", errbuf);
-    return (const char *)errbuf;
+    return errbuf;
   }
   if (bti->argc < 1) {
     snprintf(errbuf, errbufsize, "Directive \"%s\" must have filter parameter(s)", directive);
     Dbg(dbg_ctl_url_rewrite, "[parse_directive] %s", errbuf);
-    return (const char *)errbuf;
+    return errbuf;
   }
 
-  flg = ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *)bti->paramv[1])) == nullptr) ? true : false;
+  flg = ((rp = acl_filter_rule::find_byname(bti->rules_list, bti->paramv[1])) == nullptr) ? true : false;
   // coverity[alloc_arg]
-  if ((cstr = remap_validate_filter_args(&rp, (const char **)bti->argv, bti->argc, errbuf, errbufsize, bti->behavior_policy)) ==
-        nullptr &&
-      rp) {
+  if ((cstr = remap_validate_filter_args(&rp, bti->argv, bti->argc, errbuf, errbufsize, bti->behavior_policy)) == nullptr && rp) {
     if (flg) { // new filter - add to list
       acl_filter_rule **rpp = nullptr;
       Dbg(dbg_ctl_url_rewrite, "[parse_directive] new rule \"%s\" was created", bti->paramv[1]);
@@ -224,10 +222,10 @@ parse_delete_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbu
   if (bti->paramc < 2) {
     snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
     Dbg(dbg_ctl_url_rewrite, "[parse_directive] %s", errbuf);
-    return (const char *)errbuf;
+    return errbuf;
   }
 
-  acl_filter_rule::delete_byname(&bti->rules_list, (const char *)bti->paramv[1]);
+  acl_filter_rule::delete_byname(&bti->rules_list, bti->paramv[1]);
   return nullptr;
 }
 
@@ -239,19 +237,19 @@ parse_activate_directive(const char *directive, BUILD_TABLE_INFO *bti, char *err
   if (bti->paramc < 2) {
     snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
     Dbg(dbg_ctl_url_rewrite, "[parse_directive] %s", errbuf);
-    return (const char *)errbuf;
+    return errbuf;
   }
 
   // Check if for ip_allow filter
-  if (strcmp((const char *)bti->paramv[1], "ip_allow") == 0) {
+  if (strcmp(bti->paramv[1], "ip_allow") == 0) {
     bti->ip_allow_check_enabled_p = true;
     return nullptr;
   }
 
-  if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *)bti->paramv[1])) == nullptr) {
+  if ((rp = acl_filter_rule::find_byname(bti->rules_list, bti->paramv[1])) == nullptr) {
     snprintf(errbuf, errbufsize, R"(Undefined filter "%s" in directive "%s")", bti->paramv[1], directive);
     Dbg(dbg_ctl_url_rewrite, "[parse_directive] %s", errbuf);
-    return (const char *)errbuf;
+    return errbuf;
   }
 
   acl_filter_rule::requeue_in_active_list(&bti->rules_list, rp);
@@ -266,19 +264,19 @@ parse_deactivate_directive(const char *directive, BUILD_TABLE_INFO *bti, char *e
   if (bti->paramc < 2) {
     snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
     Dbg(dbg_ctl_url_rewrite, "[parse_directive] %s", errbuf);
-    return (const char *)errbuf;
+    return errbuf;
   }
 
   // Check if for ip_allow filter
-  if (strcmp((const char *)bti->paramv[1], "ip_allow") == 0) {
+  if (strcmp(bti->paramv[1], "ip_allow") == 0) {
     bti->ip_allow_check_enabled_p = false;
     return nullptr;
   }
 
-  if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *)bti->paramv[1])) == nullptr) {
+  if ((rp = acl_filter_rule::find_byname(bti->rules_list, bti->paramv[1])) == nullptr) {
     snprintf(errbuf, errbufsize, R"(Undefined filter "%s" in directive "%s")", bti->paramv[1], directive);
     Dbg(dbg_ctl_url_rewrite, "[parse_directive] %s", errbuf);
-    return (const char *)errbuf;
+    return errbuf;
   }
 
   acl_filter_rule::requeue_in_passive_list(&bti->rules_list, rp);
@@ -306,7 +304,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
 
   if (access(path, R_OK) == -1) {
     snprintf(errbuf, errbufsize, "%s: %s", path, strerror(errno));
-    return (const char *)errbuf;
+    return errbuf;
   }
 
   nbti.rules_list = bti->rules_list;
@@ -324,7 +322,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
     load_remap_file_cb(ts::filename::REMAP, path);
   } else {
     snprintf(errbuf, errbufsize, "failed to parse included file %s", path);
-    return (const char *)errbuf;
+    return errbuf;
   }
 
   return nullptr;
@@ -336,7 +334,7 @@ parse_include_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errb
   if (bti->paramc < 2) {
     snprintf(errbuf, errbufsize, "Directive \"%s\" must have a path argument", directive);
     Dbg(dbg_ctl_url_rewrite, "[%s] %s", __func__, errbuf);
-    return (const char *)errbuf;
+    return errbuf;
   }
 
   for (unsigned i = 1; i < static_cast<unsigned>(bti->paramc); ++i) {
@@ -353,7 +351,7 @@ parse_include_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errb
       n_entries = scandir(path, &entrylist, nullptr, alphasort);
       if (n_entries == -1) {
         snprintf(errbuf, errbufsize, "failed to open %s: %s", path.get(), strerror(errno));
-        return (const char *)errbuf;
+        return errbuf;
       }
 
       for (int j = 0; j < n_entries; ++j) {
@@ -437,11 +435,11 @@ remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize)
 
   snprintf(errbuf, errbufsize, "Unknown directive \"%s\"", directive);
   Dbg(dbg_ctl_url_rewrite, "[parse_directive] %s", errbuf);
-  return (const char *)errbuf;
+  return errbuf;
 }
 
 const char *
-remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize,
+remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, int argc, char *errStrBuf, size_t errStrBufSize,
                            ACLBehaviorPolicy behavior_policy)
 {
   acl_filter_rule *rule;
@@ -450,7 +448,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
 
   if (!rule_pp) {
     Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Invalid argument(s)");
-    return (const char *)"Invalid argument(s)";
+    return "Invalid argument(s)";
   }
 
   if (dbg_ctl_url_rewrite.on()) {
@@ -465,7 +463,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     rule = new acl_filter_rule();
     if (unlikely((*rule_pp = rule) == nullptr)) {
       Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] Memory allocation error");
-      return (const char *)"Memory allocation Error";
+      return "Memory allocation Error";
     }
     new_rule_flg = true;
     Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] new acl_filter_rule class was created during remap rule processing");
@@ -486,7 +484,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         delete rule;
         *rule_pp = nullptr;
       }
-      return (const char *)errStrBuf;
+      return errStrBuf;
     }
 
     // Every filter operator requires an argument except @internal.
@@ -500,7 +498,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         delete rule;
         *rule_pp = nullptr;
       }
-      return (const char *)errStrBuf;
+      return errStrBuf;
     }
 
     if (ul & REMAP_OPTFLG_METHOD) { /* "method=" option */
@@ -526,7 +524,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
           delete rule;
           *rule_pp = nullptr;
         }
-        return (const char *)errStrBuf;
+        return errStrBuf;
       }
       src_ip_info_t *ipi = &rule->src_ip_array[rule->src_ip_cnt];
       if (ul & REMAP_OPTFLG_INVERT) {
@@ -543,7 +541,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
           delete rule;
           *rule_pp = nullptr;
         }
-        return (const char *)errStrBuf;
+        return errStrBuf;
       }
       for (j = 0; j < rule->src_ip_cnt; j++) {
         if (rule->src_ip_array[j].start == ipi->start && rule->src_ip_array[j].end == ipi->end) {
@@ -568,7 +566,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
           delete rule;
           *rule_pp = nullptr;
         }
-        return (const char *)errStrBuf;
+        return errStrBuf;
       }
       src_ip_category_info_t *ipi = &rule->src_ip_category_array[rule->src_ip_category_cnt];
       ipi->category.assign(argptr);
@@ -598,7 +596,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
           delete rule;
           *rule_pp = nullptr;
         }
-        return (const char *)errStrBuf;
+        return errStrBuf;
       }
       src_ip_info_t *ipi = &rule->in_ip_array[rule->in_ip_cnt];
       if (ul & REMAP_OPTFLG_INVERT) {
@@ -616,7 +614,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
           delete rule;
           *rule_pp = nullptr;
         }
-        return (const char *)errStrBuf;
+        return errStrBuf;
       }
       for (j = 0; j < rule->in_ip_cnt; j++) {
         if (rule->in_ip_array[j].start == ipi->start && rule->in_ip_array[j].end == ipi->end) {
@@ -656,7 +654,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
             delete rule;
             *rule_pp = nullptr;
           }
-          return (const char *)errStrBuf;
+          return errStrBuf;
         }
       }
       if (is_inkeylist(argptr, "add_allow", "add_deny", nullptr)) {
@@ -678,7 +676,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
           delete rule;
           *rule_pp = nullptr;
         }
-        return (const char *)errStrBuf;
+        return errStrBuf;
       }
     }
 
@@ -704,7 +702,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
 }
 
 unsigned long
-remap_check_option(const char **argv, int argc, unsigned long findmode, int *_ret_idx, const char **argptr)
+remap_check_option(const char *const *argv, int argc, unsigned long findmode, int *_ret_idx, const char **argptr)
 {
   unsigned long ret_flags = 0;
   int           idx       = 0;
@@ -849,7 +847,7 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
  * @return success - true, failure - false
  */
 bool
-remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, int errbufsize, int jump_to_argc,
+remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errbuf, int errbufsize, int jump_to_argc,
                   int *plugin_found_at, UrlRewrite *rewrite)
 {
   char       *c, *err;
@@ -1132,7 +1130,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       goto MAP_ERROR;
     }
     // just check all major flags/optional arguments
-    bti->remap_optflg = remap_check_option((const char **)bti->argv, bti->argc);
+    bti->remap_optflg = remap_check_option(bti->argv, bti->argc);
 
     // Check directive keywords (starting from '.')
     if (bti->paramv[0][0] == '.') {
@@ -1190,7 +1188,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     new_mapping->map_id = 0;
     if ((bti->remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
       int idx = 0;
-      int ret = remap_check_option((const char **)bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
+      int ret = remap_check_option(bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
       if (ret & REMAP_OPTFLG_MAP_ID) {
         char *c             = strchr(bti->argv[idx], static_cast<int>('='));
         new_mapping->map_id = static_cast<unsigned int>(atoi(++c));
@@ -1422,12 +1420,12 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // Check "remap" plugin options and load .so object
     if ((bti->remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 &&
         (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
-      if ((remap_check_option((const char **)bti->argv, bti->argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
+      if ((remap_check_option(bti->argv, bti->argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
         int plugin_found_at = 0;
         int jump_to_argc    = 0;
 
         // this loads the first plugin
-        if (!remap_load_plugin((const char **)bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at,
+        if (!remap_load_plugin(bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at,
                                bti->rewrite)) {
           Dbg(dbg_ctl_remap_plugin, "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
           errStr = errStrBuf;
@@ -1436,8 +1434,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         // this loads any subsequent plugins (if present)
         while (plugin_found_at) {
           jump_to_argc += plugin_found_at;
-          if (!remap_load_plugin((const char **)bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc,
-                                 &plugin_found_at, bti->rewrite)) {
+          if (!remap_load_plugin(bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc, &plugin_found_at,
+                                 bti->rewrite)) {
             Dbg(dbg_ctl_remap_plugin, "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
             errStr = errStrBuf;
             goto MAP_ERROR;

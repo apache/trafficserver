@@ -87,7 +87,7 @@ RecNameToYaml::RecNameToYaml(RecInfoList records, bool p_include_defaults) : inc
     recs.push_back(std::make_pair(e, false));
   }
 
-  build_yaml(recs);
+  build_yaml(std::move(recs));
 }
 
 RecNameToYaml::RecordsMatchTracker
@@ -156,7 +156,7 @@ RecNameToYaml::process_var_from_prefix(std::string prefix, RecNameToYaml::RecLis
 
       in_a_map = true; // no need for a map down the line if we will just add k,v.
       YAML_begin_map(doc);
-      process_var_from_prefix(nprefix, vars, in_a_map);
+      process_var_from_prefix(std::move(nprefix), vars, in_a_map);
       YAML_end_map(doc);
     }
   }
@@ -197,7 +197,7 @@ RecNameToYaml::build_yaml(RecNameToYaml::RecList vars)
     }
     bool in_a_map = true;
     YAML_begin_map(doc);
-    process_var_from_prefix(prefix, vars, in_a_map);
+    process_var_from_prefix(std::move(prefix), vars, in_a_map);
     YAML_end_map(doc);
   }
 
