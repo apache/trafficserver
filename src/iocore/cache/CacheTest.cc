@@ -24,7 +24,7 @@
 
 #include "P_Cache.h"
 #include "P_CacheTest.h"
-#include "proxy/RegressionSM.h"
+#include "RegressionSM.h"
 #include "tscore/Random.h"
 #include <vector>
 #include <cmath>

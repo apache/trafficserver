@@ -25,7 +25,7 @@
 
 #include "P_Cache.h"
 #include "P_CacheDoc.h"
-#include "proxy/RegressionSM.h"
+#include "RegressionSM.h"
 
 #define MAX_HOSTS_POSSIBLE    256
 #define PINNED_DOC_TABLE_SIZE 16
