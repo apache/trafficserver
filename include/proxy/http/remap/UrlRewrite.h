@@ -25,7 +25,6 @@
 #pragma once
 
 #include "iocore/eventsystem/Freer.h"
-#include "tscore/ink_config.h"
 #include "proxy/http/remap/UrlMapping.h"
 #include "proxy/http/remap/UrlMappingPathIndex.h"
 #include "proxy/http/HttpTransact.h"
@@ -40,9 +39,8 @@
 #define URL_REMAP_FILTER_REFERER      0x00000001 /* enable "referer" header validation */
 #define URL_REMAP_FILTER_REDIRECT_FMT 0x00010000 /* enable redirect URL formatting */
 
-struct BUILD_TABLE_INFO;
-
 /**
+
  * used for redirection, mapping, and reverse mapping
  **/
 enum mapping_type {

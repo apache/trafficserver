@@ -269,3 +269,20 @@ target_link_libraries(
 )
 
 add_test(NAME test_NextHopConsistentHash COMMAND $<TARGET_FILE:test_NextHopConsistentHash>)
+
+### test_RemapRules ########################################################################
+add_executable(test_RemapRules test_RemapRules.cc)
+
+target_link_libraries(
+  test_RemapRules
+  PRIVATE catch2::catch2
+          tscore
+          ts::inkevent
+          ts::hdrs
+          ts::inkutils
+          ts::proxy
+          libswoc::libswoc
+          yaml-cpp::yaml-cpp
+)
+
+add_test(NAME test_RemapRules COMMAND $<TARGET_FILE:test_RemapRules>)
