@@ -94,7 +94,7 @@ thread_free(T *p, Allocator &global_allocator, ProxyAllocator &thread_allocator,
 {
   global_allocator.destroy_if_enabled(p);
   if (tin && !cmd_disable_pfreelist) {
-    *(reinterpret_cast<char **>(p)) = reinterpret_cast<char *>(thread_allocator.freelist);
+    *(reinterpret_cast<void **>(p)) = thread_allocator.freelist;
     thread_allocator.freelist       = p;
     ++thread_allocator.allocated;
     if (thread_freelist_high_watermark > 0 && thread_allocator.allocated > thread_freelist_high_watermark) {
