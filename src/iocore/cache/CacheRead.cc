@@ -472,7 +472,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     if (last_collision && dir_offset(&dir) != dir_offset(last_collision)) {
       last_collision = nullptr; // object has been/is being overwritten
     }
-    if (dir_probe(&key, stripe, &dir, &last_collision)) {
+    if (stripe->directory.probe(&key, stripe, &dir, &last_collision)) {
       int ret = do_read_call(&key);
       if (ret == EVENT_RETURN) {
         goto Lcallreturn;
@@ -481,7 +481,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     } else if (write_vc) {
       if (writer_done()) {
         last_collision = nullptr;
-        while (dir_probe(&earliest_key, stripe, &dir, &last_collision)) {
+        while (stripe->directory.probe(&earliest_key, stripe, &dir, &last_collision)) {
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
             DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead complete: %" PRId64, this, first_key.slice32(1), vio.ndone);
             doc_len = vio.ndone;
@@ -511,7 +511,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     } else {
       Warning("Document %s truncated .. clearing", earliest_key.toHexStr(tmpstring));
     }
-    dir_delete(&earliest_key, stripe, &earliest_dir);
+    stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
   }
   }
   return calluser(VC_EVENT_ERROR);
@@ -647,7 +647,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         VC_SCHED_LOCK_RETRY();
       }
 
-      dir_delete(&earliest_key, stripe, &earliest_dir);
+      stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
       goto Lerror;
     }
   }
@@ -698,7 +698,7 @@ Lread: {
     SET_HANDLER(&CacheVC::openReadMain);
     VC_SCHED_LOCK_RETRY();
   }
-  if (dir_probe(&key, stripe, &dir, &last_collision)) {
+  if (stripe->directory.probe(&key, stripe, &dir, &last_collision)) {
     SET_HANDLER(&CacheVC::openReadReadDone);
     int ret = do_read_call(&key);
     if (ret == EVENT_RETURN) {
@@ -708,7 +708,7 @@ Lread: {
   } else if (write_vc) {
     if (writer_done()) {
       last_collision = nullptr;
-      while (dir_probe(&earliest_key, stripe, &dir, &last_collision)) {
+      while (stripe->directory.probe(&earliest_key, stripe, &dir, &last_collision)) {
         if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
           DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadMain complete: %" PRId64, this, first_key.slice32(1), vio.ndone);
           doc_len = vio.ndone;
@@ -728,7 +728,7 @@ Lread: {
   Warning("Document %X truncated at %" PRId64 " of %" PRIu64 ", missing fragment %X", first_key.slice32(1), vio.ndone, doc_len,
           key.slice32(1));
   // remove the directory entry
-  dir_delete(&earliest_key, stripe, &earliest_dir);
+  stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
 }
 Lerror:
   return calluser(VC_EVENT_ERROR);
@@ -784,7 +784,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         Warning("Earliest: Doc magic does not match for %s", key.toHexStr(tmpstring));
       }
       // remove the dir entry
-      dir_delete(&key, stripe, &dir);
+      stripe->directory.remove(&key, stripe, &dir);
       // try going through the directory entries again
       // in case the dir entry we deleted doesnt correspond
       // to the key we are looking for. This is possible
@@ -808,7 +808,8 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     }
     goto Lsuccess;
   Lread:
-    if (dir_probe(&key, stripe, &earliest_dir, &last_collision) || dir_lookaside_probe(&key, stripe, &earliest_dir, nullptr)) {
+    if (stripe->directory.probe(&key, stripe, &earliest_dir, &last_collision) ||
+        dir_lookaside_probe(&key, stripe, &earliest_dir, nullptr)) {
       dir = earliest_dir;
       if ((ret = do_read_call(&key)) == EVENT_RETURN) {
         goto Lcallreturn;
@@ -829,7 +830,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
           // sometimes the delete fails when there is a race and another read
           // finds that the directory entry has been overwritten
           // (cannot assert on the return value)
-          dir_delete(&first_key, stripe, &first_dir);
+          stripe->directory.remove(&first_key, stripe, &first_dir);
         } else {
           buf             = nullptr;
           last_collision  = nullptr;
@@ -918,9 +919,9 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
       alternate_index = CACHE_ALT_INDEX_DEFAULT;
       f.use_first_key = 0;
       vio.op          = VIO::READ;
-      dir_overwrite(&first_key, stripe, &dir, &od->first_dir);
+      stripe->directory.overwrite(&first_key, stripe, &dir, &od->first_dir);
       if (od->move_resident_alt) {
-        dir_insert(&od->single_doc_key, stripe, &od->single_doc_dir);
+        stripe->directory.insert(&od->single_doc_key, stripe, &od->single_doc_dir);
       }
       int alt_ndx = HttpTransactCache::SelectFromAlternates(write_vector, &request, params);
       stripe->close_write(this);
@@ -991,7 +992,7 @@ CacheVC::openReadStartHead(int event, Event *e)
         Warning("Head: Doc magic does not match for %s", key.toHexStr(tmpstring));
       }
       // remove the dir entry
-      dir_delete(&key, stripe, &dir);
+      stripe->directory.remove(&key, stripe, &dir);
       // try going through the directory entries again
       // in case the dir entry we deleted doesnt correspond
       // to the key we are looking for. This is possible
@@ -1035,7 +1036,7 @@ CacheVC::openReadStartHead(int event, Event *e)
                 CACHE_ALT_MAGIC_MARSHALED == alt->m_magic ? "serial" :
                 CACHE_ALT_MAGIC_DEAD == alt->m_magic      ? "dead" :
                                                             "bogus"));
-          dir_delete(&key, stripe, &dir);
+          stripe->directory.remove(&key, stripe, &dir);
         }
         err = ECACHE_BAD_META_DATA;
         goto Ldone;
@@ -1053,7 +1054,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       if (!alternate_tmp->valid()) {
         if (buf) {
           Note("OpenReadHead failed for cachekey %X : alternate inconsistency", key.slice32(0));
-          dir_delete(&key, stripe, &dir);
+          stripe->directory.remove(&key, stripe, &dir);
         }
         goto Ldone;
       }
@@ -1133,7 +1134,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       SET_HANDLER(&CacheVC::openReadFromWriter);
       return handleEvent(EVENT_IMMEDIATE, nullptr);
     }
-    if (dir_probe(&key, stripe, &dir, &last_collision)) {
+    if (stripe->directory.probe(&key, stripe, &dir, &last_collision)) {
       first_dir = dir;
       int ret   = do_read_call(&key);
       if (ret == EVENT_RETURN) {
@@ -1183,6 +1184,6 @@ CacheVC::openReadDirDelete(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
     VC_SCHED_LOCK_RETRY();
   }
 
-  dir_delete(&earliest_key, stripe, &earliest_dir);
+  stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
   return calluser(VC_EVENT_ERROR);
 }
