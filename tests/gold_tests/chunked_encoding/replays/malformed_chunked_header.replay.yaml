@@ -192,4 +192,4 @@ sessions:
         transfer: plain
         encoding: uri
         # BWS cannot have CR
-        data: 3%0D%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        data: 3%0D%0D%0Adef%0D%0A0%0D%0A%0D%0A
