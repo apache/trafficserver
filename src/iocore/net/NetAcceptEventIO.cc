@@ -28,7 +28,7 @@ int
 NetAcceptEventIO::start(EventLoop l, NetAccept *na, int events)
 {
   _na = na;
-  return start_common(l, _na->server.sock.get_fd(), events);
+  return start_common(l, _na->server->sock.get_fd(), events);
 }
 void
 NetAcceptEventIO::process_event(int /* flags ATS_UNUSED */)

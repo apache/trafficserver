@@ -160,7 +160,7 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
   } else if (event == EVENT_IMMEDIATE) {
     this->setThreadAffinity(this_ethread());
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    udpNet.UDPBind((Continuation *)this, &this->server.accept_addr.sa, -1, 1048576, 1048576);
+    udpNet.UDPBind((Continuation *)this, &this->server->accept_addr.sa, -1, 1048576, 1048576);
     return EVENT_CONT;
   }
 
