@@ -227,7 +227,11 @@
       "name": "ci-ubuntu",
       "displayName": "CI Ubuntu Hardened Build",
       "description": "CI Pipeline config for Ubuntu with hardening flags",
-      "inherits": ["ci", "hardened"]
+      "inherits": ["ci", "hardened"],
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
     },
     {
       "name": "ci-clang-analyzer",
