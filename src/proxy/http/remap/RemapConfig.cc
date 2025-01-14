@@ -639,6 +639,10 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         std::string_view err = "Only one @action= is allowed per remap ACL";
         Dbg(dbg_ctl_url_rewrite, "%s", err.data());
         snprintf(errStrBuf, errStrBufSize, "%s", err.data());
+        if (new_rule_flg) {
+          delete rule;
+          *rule_pp = nullptr;
+        }
         return errStrBuf;
       }
       action_flag = true;

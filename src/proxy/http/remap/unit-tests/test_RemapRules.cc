@@ -78,6 +78,17 @@ write_test_remap(const std::string &config, const std::string &tag)
   return path;
 }
 
+void
+clear_rules_list(BUILD_TABLE_INFO *bti)
+{
+  auto *rp = bti->rules_list;
+  while (rp != nullptr) {
+    auto *tmp = rp->next;
+    delete rp;
+    rp = tmp;
+  }
+}
+
 SCENARIO("Parsing ACL named filters", "[proxy][remap]")
 {
   GIVEN("Named filter definitions with multiple actions")
@@ -113,6 +124,7 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
         REQUIRE(bti.rules_list->next == nullptr);
         REQUIRE(bti.rules_list->allow_flag == true);
       }
+      clear_rules_list(&bti);
     }
   }
 }
