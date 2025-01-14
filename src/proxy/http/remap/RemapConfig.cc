@@ -97,6 +97,14 @@ BUILD_TABLE_INFO::BUILD_TABLE_INFO()
 BUILD_TABLE_INFO::~BUILD_TABLE_INFO()
 {
   this->reset();
+
+  // clean up any leftover named filter rules
+  auto *rp = rules_list;
+  while (rp != nullptr) {
+    auto *tmp = rp->next;
+    delete rp;
+    rp = tmp;
+  }
 }
 
 void
@@ -105,12 +113,6 @@ BUILD_TABLE_INFO::reset()
   this->paramc = this->argc = 0;
   clear_xstr_array(this->paramv, sizeof(this->paramv) / sizeof(char *));
   clear_xstr_array(this->argv, sizeof(this->argv) / sizeof(char *));
-  auto *rp = rules_list;
-  while (rp != nullptr) {
-    auto *tmp = rp->next;
-    delete rp;
-    rp = tmp;
-  }
 }
 
 static const char *
