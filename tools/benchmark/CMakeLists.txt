@@ -15,10 +15,16 @@
 #
 #######################
 
+add_executable(benchmark_EventSystem benchmark_Eventsystem.cc)
+target_link_libraries(benchmark_EventSystem PRIVATE catch2::catch2 ts::inkevent libswoc::libswoc)
+if(TS_USE_HWLOC)
+  target_link_libraries(benchmark_EventSystem PRIVATE hwloc::hwloc)
+endif()
+
 add_executable(benchmark_FreeList benchmark_FreeList.cc)
 target_link_libraries(benchmark_FreeList PRIVATE catch2::catch2 ts::tscore libswoc::libswoc)
 if(TS_USE_HWLOC)
-  target_link_libraries(benchmark_FreeList PRIVATE hwloc)
+  target_link_libraries(benchmark_FreeList PRIVATE hwloc::hwloc)
 endif()
 
 add_executable(benchmark_ProxyAllocator benchmark_ProxyAllocator.cc)
