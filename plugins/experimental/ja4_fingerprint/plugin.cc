@@ -95,7 +95,7 @@ get_log_handle()
 static constexpr TSPluginRegistrationInfo
 get_registration_info()
 {
-  TSPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info{};
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = PLUGIN_VENDOR;
   info.support_email = PLUGIN_SUPPORT_EMAIL;
@@ -179,7 +179,7 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 std::string
 get_fingerprint(SSL *ssl)
 {
-  JA4::TLSClientHelloSummary summary;
+  JA4::TLSClientHelloSummary summary{};
   summary.protocol    = JA4::Protocol::TLS;
   summary.TLS_version = get_version(ssl);
   summary.ALPN        = get_first_ALPN(ssl);
