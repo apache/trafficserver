@@ -91,6 +91,14 @@ BUILD_TABLE_INFO::BUILD_TABLE_INFO()
 BUILD_TABLE_INFO::~BUILD_TABLE_INFO()
 {
   this->reset();
+
+  // clean up any leftover named filter rules
+  auto *rp = rules_list;
+  while (rp != nullptr) {
+    auto *tmp = rp->next;
+    delete rp;
+    rp = tmp;
+  }
 }
 
 void
