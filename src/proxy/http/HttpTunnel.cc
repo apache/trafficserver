@@ -1105,6 +1105,15 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     }
   }
 
+#if TS_USE_LINUX_SPLICE
+  Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] [tunnel_run] producer_run done", sm->sm_id);
+  // If we are using splice, we need to make sure that we don't deallocate the buffer reader since we only have one
+  // Check whether read_buffer is PipeIOBuffer through dynamic_cast
+  // if so, don't deallocate it by returning
+  if (p->read_buffer && dynamic_cast<PipeIOBuffer *>(p->read_buffer)) {
+    return;
+  }
+#endif
   // Now that the tunnel has started, we must remove producer's reader so
   // that it doesn't act like a buffer guard
   if (p->read_buffer && p->buffer_start) {
