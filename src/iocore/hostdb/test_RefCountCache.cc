@@ -194,6 +194,8 @@ testclear()
   ret |= item->refcount() != 0;
   ret |= item->idx != -1;
 
+  delete cache;
+
   return ret;
 }
 
