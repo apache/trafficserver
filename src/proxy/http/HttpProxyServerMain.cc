@@ -66,10 +66,10 @@ bool                    et_udp_threads_ready = false;
 
 // File / process scope initializations
 static bool HTTP_SERVER_INITIALIZED __attribute__((unused)) = []() -> bool {
-  swoc::bwf::Global_Names.assign("ts-thread", [](swoc::BufferWriter &w, swoc::bwf::Spec const &spec) -> swoc::BufferWriter & {
+  swoc::bwf::Global_Names().assign("ts-thread", [](swoc::BufferWriter &w, swoc::bwf::Spec const &spec) -> swoc::BufferWriter & {
     return bwformat(w, spec, this_thread());
   });
-  swoc::bwf::Global_Names.assign("ts-ethread", [](swoc::BufferWriter &w, swoc::bwf::Spec const &spec) -> swoc::BufferWriter & {
+  swoc::bwf::Global_Names().assign("ts-ethread", [](swoc::BufferWriter &w, swoc::bwf::Spec const &spec) -> swoc::BufferWriter & {
     return bwformat(w, spec, this_ethread());
   });
   return true;
