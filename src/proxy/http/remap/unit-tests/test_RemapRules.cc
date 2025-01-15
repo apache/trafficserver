@@ -93,9 +93,9 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
       .definefilter deny_methods @action=deny @method=CONNECT @action=allow @method=PUT @method=DELETE
       )RMCFG";
       auto        cpath  = write_test_remap(config, "test2");
-      THEN("The remap parse fails with an error")
+      THEN("For ATS 10.0.x, this doesnt fail")
       {
-        REQUIRE(remap_parse_config_bti(cpath.c_str(), &bti) == false);
+        REQUIRE(remap_parse_config_bti(cpath.c_str(), &bti) == true);
       }
     }
 
