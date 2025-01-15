@@ -24,12 +24,16 @@
 using namespace std::literals;
 using namespace swoc::literals;
 
-swoc::bwf::ExternalNames swoc::bwf::Global_Names;
+
 using swoc::svto_radix;
 
 namespace swoc { inline namespace SWOC_VERSION_NS {
 
 namespace bwf {
+ExternalNames& Global_Names() {
+  static swoc::bwf::ExternalNames Global_Names;
+  return Global_Names;
+}
 
 const Spec Spec::DEFAULT;
 
