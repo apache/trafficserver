@@ -34,16 +34,16 @@ sessions:
       content:
         transfer: plain
         encoding: uri
-        # 3-byte chunk, abc.
+        # 7-byte chunk, abcwxyz.
         # Then chunked trailers between 0\r\n and a final \r\n (per specification).
-        data: 3%0D%0Aabc%0D%0A0%0D%0AClient%3A%20ATS%0D%0AETag%3A%20%22abc%22%0D%0A%0D%0A
+        data: 7%0D%0Aabcwxyz%0D%0A0%0D%0AClient%3A%20ATS%0D%0AETag%3A%20%22abc%22%0D%0A%0D%0A
 
     proxy-request:
       content:
         transfer: plain
         encoding: uri
         # Note: same as client-request, but the trailer is dropped.
-        data: 3%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        data: 7%0D%0Aabcwxyz%0D%0A0%0D%0A%0D%0A
         verify: { as: equal }
 
     server-response:
@@ -57,12 +57,12 @@ sessions:
         transfer: plain
         encoding: uri
         # Note: same content as the client-request.
-        data: 3%0D%0Aabc%0D%0A0%0D%0ASever%3A%20ATS%0D%0AETag%3A%20%22def%22%0D%0A%0D%0A
+        data: 7%0D%0Aabcwxyz%0D%0A0%0D%0ASever%3A%20ATS%0D%0AETag%3A%20%22def%22%0D%0A%0D%0A
 
     proxy-request:
       content:
         transfer: plain
         encoding: uri
         # Note: same as server-response, but the trailer is dropped.
-        data: 3%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        data: 7%0D%0Aabcwxyz%0D%0A0%0D%0A%0D%0A
         verify: { as: equal }

@@ -32,7 +32,7 @@ sessions:
         transfer: plain
         encoding: uri
         # Chunk header sizes are in hex, so a size of `z` is malformed.
-        data: z%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        data: z%0D%0Aabcwxyz%0D%0A0%0D%0A%0D%0A
 
     # The connection will be dropped and this response will not go out.
     server-response:
@@ -52,7 +52,7 @@ sessions:
         transfer: plain
         encoding: uri
         # Chunk header sizes are in hex, so a size of `3z` is malformed.
-        data: 3z%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        data: 3z%0D%0Aabcwxyz%0D%0A0%0D%0A%0D%0A
 
     # The connection will be dropped and this response will not go out.
     server-response:
@@ -72,7 +72,7 @@ sessions:
         transfer: plain
         encoding: uri
         # Super large chunk header, larger than will fit in an int.
-        data: 111111113%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+        data: 111111113%0D%0Aabcwxyz%0D%0A0%0D%0A%0D%0A
 
     # The connection will be dropped and this response will not go out.
     server-response:
