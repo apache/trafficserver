@@ -594,7 +594,7 @@ Headers::size_type
 Headers::count(const char *key, int length)
 {
   size_type ret_count = 0;
-  size_t    len       = (length < 0) ? strlen(key) : length;
+  size_t len          = (length < 0) ? strlen(key) : length;
   for (header_field_iterator it = begin(); it != end(); ++it) {
     HeaderFieldName nm = (*it).name();
     if ((nm.length() == len) && (::strncasecmp(nm.c_str(), key, len) == 0)) {
