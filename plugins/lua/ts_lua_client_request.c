@@ -406,15 +406,15 @@ ts_lua_client_request_get_headers(lua_State *L)
 static int
 ts_lua_client_request_get_header_block(lua_State *L)
 {
-  TSIOBuffer       output_buffer;
+  TSIOBuffer output_buffer;
   TSIOBufferReader reader;
-  int              total_avail;
+  int total_avail;
 
   TSIOBufferBlock block;
-  const char     *block_start;
-  int64_t         block_avail;
+  const char *block_start;
+  int64_t block_avail;
 
-  char   *output_string;
+  char *output_string;
   int64_t output_len;
 
   ts_lua_http_ctx *http_ctx;
@@ -424,11 +424,11 @@ ts_lua_client_request_get_header_block(lua_State *L)
   output_buffer = TSIOBufferCreate();
   reader        = TSIOBufferReaderAlloc(output_buffer);
 
-  TSMimeHdrPrint(http_ctx->client_request_hdrp, output_buffer);
+  TSMimeHdrPrint(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, output_buffer);
 
   total_avail = TSIOBufferReaderAvail(reader);
 
-  output_string = static_cast<char *>(TSmalloc(total_avail + 1));
+  output_string = (char *)(TSmalloc(total_avail + 1));
   output_len    = 0;
 
   block = TSIOBufferReaderStart(reader);
