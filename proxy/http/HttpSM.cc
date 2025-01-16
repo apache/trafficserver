@@ -1389,6 +1389,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
     }
   // FALLTHROUGH
   case VC_EVENT_ERROR:
+  case VC_EVENT_EOS:
     // Transform VC sends NULL on error conditions
     if (!c) {
       c = tunnel.get_consumer(t_info->vc);
