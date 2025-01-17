@@ -476,7 +476,7 @@ PluginVC::process_write_side()
   need_write_process = false;
 
   // Check write_state
-  if (write_state.vio.op != VIO::WRITE || closed || write_state.shutdown) {
+  if (write_state.vio.cont == nullptr || write_state.vio.op != VIO::WRITE || closed || write_state.shutdown) {
     return;
   }
 
@@ -487,8 +487,12 @@ PluginVC::process_write_side()
   }
 
   IOBufferReader *reader = write_state.vio.get_reader();
-  int64_t bytes_avail    = reader->read_avail();
-  int64_t act_on         = std::min(bytes_avail, ntodo);
+  if (reader == nullptr) {
+    return;
+  }
+
+  int64_t bytes_avail = reader->read_avail();
+  int64_t act_on      = std::min(bytes_avail, ntodo);
 
   Debug("pvc", "[%u] %s: process_write_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
@@ -594,7 +598,8 @@ PluginVC::process_read_side()
   need_read_process = false;
 
   // Check read_state
-  if (read_state.vio.op != VIO::READ || closed || read_state.shutdown || !read_state.vio.ntodo()) {
+  if (read_state.vio.cont == nullptr || read_state.vio.op != VIO::READ || closed || read_state.shutdown ||
+      !read_state.vio.ntodo()) {
     return;
   }
 
