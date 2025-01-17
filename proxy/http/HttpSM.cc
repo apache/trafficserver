@@ -1253,6 +1253,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     break;
   }
   case VC_EVENT_ERROR:
+  case VC_EVENT_EOS:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::OPEN_RAW_ERROR;
     // use this value just to get around other values
@@ -1948,6 +1949,7 @@ HttpSM::state_http_server_open(int event, void *data)
     t_state.set_connect_fail(ETIMEDOUT);
   /* fallthrough */
   case VC_EVENT_ERROR:
+  case VC_EVENT_EOS:
   case NET_EVENT_OPEN_FAILED: {
     if (server_txn) {
       NetVConnection *vc = server_txn->get_netvc();
