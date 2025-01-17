@@ -211,6 +211,8 @@ template <class T> struct HttpTransaction {
             self->t_.header(self->parser_.buffer_, self->parser_.location_);
             self->parsingHeaders_ = false;
           }
+          // Parsing headers will indirectly read from our reader. Update available accordingly.
+          available = TSIOBufferReaderAvail(self->in_->reader);
         }
         if (!self->parsingHeaders_) {
           if (self->chunkDecoder_ != NULL) {
