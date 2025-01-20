@@ -106,8 +106,21 @@ by the origin. Enabled by default.
 range-request
 -------------
 
-When set to ``true``, causes |TS| to compress responses to Range Requests.
-Disabled by default. Setting this to true while setting cache to false leads to delivering corrupted content.
+This config controls behavior of this plugin when a client send ``Range`` header and ``Accept-Encoding`` header in the same time.
+
+============== =================================================================
+Value          Description
+============== =================================================================
+ignore-range   Remove ``Range`` header if the request has both headers (Default)
+false          Same as ``ignore-range`` for compatiblity
+no-compression Remove ``Accept-Encoding`` header if the request has both headers
+none           Do nothing
+true           Same as ``none`` for compatibility
+============== =================================================================
+
+.. important::
+
+   Do NOT set this to ``none`` (or ``true``) if the cache config is set to ``false``. This combination will deliver corrupted content.
 
 compressible-content-type
 -------------------------
