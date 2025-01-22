@@ -174,6 +174,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Parent Select <parent_select.en>
    Rate Limit <rate_limit.en>
    Remap Stats <remap_stats.en>
+   Static Hit <statichit.en>
    URI Signing <uri_signing.en>
    Legacy Signed URLs <url_sig.en>
    Slice <slice.en>
@@ -259,6 +260,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Remap Purge <remap_purge.en>`
    This remap plugin allows the administrator to easily setup remotely
    controlled ``PURGE`` for the content of an entire remap rule.
+
+:doc:`Static Hit <statichit.en>`
+    Serve static content from proxy's local filesystem.
 
 :doc:`URI Signing <uri_signing.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access,
