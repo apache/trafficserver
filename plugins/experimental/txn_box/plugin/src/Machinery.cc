@@ -1832,7 +1832,7 @@ protected:
     auto
     operator()(T &&t) -> EnableForFeatureTypes<T, void>
     {
-      this->assign(_ctx.template render_transient([&t](BufferWriter &w) { bwformat(w, bwf::Spec::DEFAULT, t); }));
+      this->assign(_ctx.render_transient([&t](BufferWriter &w) { bwformat(w, bwf::Spec::DEFAULT, t); }));
       this->clear_dups();
     }
   };

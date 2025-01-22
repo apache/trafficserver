@@ -185,13 +185,13 @@ constexpr std::array<ValueType, FeatureTypeList::size> FeatureIndexToValue{
 namespace detail
 {
 template <typename GENERATOR, size_t... IDX>
-constexpr std::initializer_list<std::result_of_t<GENERATOR(size_t)>>
+constexpr std::initializer_list<std::invoke_result_t<GENERATOR, size_t>>
 indexed_init_list(GENERATOR &&g, std::index_sequence<IDX...> &&)
 {
   return {g(IDX)...};
 }
 template <size_t N, typename GENERATOR>
-constexpr std::initializer_list<std::result_of_t<GENERATOR(size_t)>>
+constexpr std::initializer_list<std::invoke_result_t<GENERATOR, size_t>>
 indexed_init_list(GENERATOR &&g)
 {
   return indexed_init_list(std::forward<GENERATOR>(g), std::make_index_sequence<N>());
@@ -204,7 +204,7 @@ indexed_array(GENERATOR &&g, std::index_sequence<IDX...> &&)
   return std::array<std::invoke_result_t<GENERATOR, size_t>, sizeof...(IDX)>{g(IDX)...};
 }
 template <size_t N, typename GENERATOR>
-constexpr std::array<std::result_of_t<GENERATOR(size_t)>, N>
+constexpr std::array<std::invoke_result_t<GENERATOR, size_t>, N>
 indexed_array(GENERATOR &&g)
 {
   return indexed_array(std::forward<GENERATOR>(g), std::make_index_sequence<N>());
