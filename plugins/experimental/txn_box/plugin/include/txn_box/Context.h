@@ -793,7 +793,7 @@ Context::render_transient(F const &f)
   // create the writer and clean it up. Also, the outer is responsible for finalizing the
   // transient buffer used.
   if (!_transient_writer.has_value()) {
-    _transient_writer.template emplace(this->transient_buffer());
+    _transient_writer.emplace(this->transient_buffer());
     outer_p = true;
   } else {
     base = _transient_writer->extent();
