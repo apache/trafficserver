@@ -48,7 +48,7 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
+#include "iocore/net/Net.h"
 #include "iocore/net/NetProcessor.h"
 
 #include "iocore/eventsystem/UnixSocket.h"

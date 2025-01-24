@@ -21,7 +21,9 @@
 
 #include "P_SSLConfig.h"
 #include "SSLSessionCache.h"
+#include "P_SSLUtils.h"
 #include "SSLStats.h"
+#include "../eventsystem/P_IOBuffer.h"
 
 #include <cstring>
 #include <memory>

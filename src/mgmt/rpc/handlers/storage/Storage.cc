@@ -18,9 +18,9 @@
   limitations under the License.
 */
 
+#include "../../../../iocore/cache/P_CacheDisk.h"
 #include "mgmt/rpc/handlers/storage/Storage.h"
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
-#include "../../../../iocore/cache/P_Cache.h"
 
 namespace
 {

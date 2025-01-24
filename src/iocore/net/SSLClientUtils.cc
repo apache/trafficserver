@@ -19,20 +19,16 @@
   limitations under the License.
  */
 
-#include "tscore/ink_config.h"
-#include "records/RecHttp.h"
-#include "tscore/ink_platform.h"
-#include "tscore/Filenames.h"
-#include "tscore/X509HostnameValidator.h"
-
-#include "P_Net.h"
 #include "P_SSLClientUtils.h"
 #include "P_SSLConfig.h"
 #include "P_SSLNetVConnection.h"
 #include "P_TLSKeyLogger.h"
+#include "SSLSessionCache.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "iocore/net/SSLDiags.h"
-#include "SSLSessionCache.h"
+#include "tscore/ink_config.h"
+#include "tscore/Filenames.h"
+#include "tscore/X509HostnameValidator.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>

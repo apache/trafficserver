@@ -25,6 +25,7 @@
 #pragma once
 
 #include "iocore/eventsystem/Lock.h"
+#include <openssl/ssl.h>
 
 class Continuation;
 

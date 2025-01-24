@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <atomic>
+#include "iocore/net/NetProcessor.h"
 #include <mutex>
 #include <condition_variable>
 

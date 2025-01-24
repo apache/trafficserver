@@ -24,7 +24,6 @@ add_library(
   Connection.cc
   ConnectionTracker.cc
   EventIO.cc
-  Inline.cc
   YamlSNIConfig.cc
   Net.cc
   NetHandler.cc

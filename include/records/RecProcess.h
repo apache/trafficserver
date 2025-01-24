@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "records/RecCore.h"
-#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/EThread.h"
+#include "records/RecDefs.h"
 
 //-------------------------------------------------------------------------
 // RawStat Registration

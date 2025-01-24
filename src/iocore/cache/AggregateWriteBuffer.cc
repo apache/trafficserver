@@ -21,16 +21,9 @@
   limitations under the License.
  */
 
-#include "P_CacheInternal.h"
-#include "P_CacheDir.h"
 #include "P_CacheDoc.h"
 #include "AggregateWriteBuffer.h"
-#include "iocore/cache/CacheDefs.h"
-
-#include "iocore/aio/AIO_fault_injection.h"
-
 #include "tscore/ink_assert.h"
-#include "tscore/ink_platform.h"
 
 #include <cstring>
 

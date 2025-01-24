@@ -21,8 +21,13 @@
   limitations under the License.
  */
 
-#include "P_Cache.h"
+#include "CacheVC.h"
 #include "P_CacheDoc.h"
+#include "P_CacheHttp.h"
+#include "P_CacheInternal.h"
+#include "iocore/cache/Cache.h"
+#include "tscore/InkErrno.h"
+#include "tsutil/DbgCtl.h"
 
 namespace
 {
@@ -245,10 +250,10 @@ CacheVC::handleWrite(int event, Event * /* e ATS_UNUSED */)
   // Make sure the size is correct for checking error conditions before calling add_writer(this).
   agg_len = stripe->round_to_approx_size(write_len + header_len + frag_len + sizeof(Doc));
   if (max_doc_error || !stripe->add_writer(this)) {
-    Metrics::Counter::increment(cache_rsb.write_backlog_failure);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
-    Metrics::Counter::increment(cache_rsb.status[op_type].failure);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
+    ts::Metrics::Counter::increment(cache_rsb.write_backlog_failure);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
+    ts::Metrics::Counter::increment(cache_rsb.status[op_type].failure);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
     io.aio_result = AIO_SOFT_FAILURE;
     if (event == EVENT_CALL) {
       return EVENT_RETURN;
@@ -300,8 +305,8 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   if ((closed == 1) && (total_len > 0 || f.allow_empty_doc)) {
     DDbg(dbg_ctl_cache_stats, "Fragment = %d", fragment);
 
-    Metrics::Counter::increment(cache_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
+    ts::Metrics::Counter::increment(cache_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.fragment_document_count[std::clamp(fragment, 0, 2)]);
   }
   if (f.close_complete) {
     recursive++;
@@ -755,8 +760,8 @@ Lsuccess:
   return callcont(CACHE_EVENT_OPEN_WRITE);
 
 Lfailure:
-  Metrics::Counter::increment(cache_rsb.status[op_type].failure);
-  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
+  ts::Metrics::Counter::increment(cache_rsb.status[op_type].failure);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-err));
 Lcancel:
   if (od) {
@@ -779,8 +784,8 @@ CacheVC::openWriteStartBegin(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED
     return free_CacheVC(this);
   }
   if (((err = stripe->open_write_lock(this, false, 1)) > 0)) {
-    Metrics::Counter::increment(cache_rsb.status[op_type].failure);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
+    ts::Metrics::Counter::increment(cache_rsb.status[op_type].failure);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
     free_CacheVC(this);
     _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-err));
     return EVENT_DONE;

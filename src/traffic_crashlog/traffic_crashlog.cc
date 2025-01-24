@@ -27,7 +27,7 @@
 #include "tscore/Version.h"
 #include "tscore/Layout.h"
 #include "tscore/ink_syslog.h"
-#include "records/RecProcess.h"
+#include "records/RecCore.h"
 #include "records/RecordsConfig.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/runroot.h"

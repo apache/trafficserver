@@ -23,6 +23,8 @@
  */
 
 #include "iocore/net/PollCont.h"
+#include "iocore/net/NetHandler.h"
+#include "P_UnixPollDescriptor.h"
 #include "P_Net.h"
 
 namespace

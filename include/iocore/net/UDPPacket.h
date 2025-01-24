@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "iocore/eventsystem/IOBuffer.h"
 #include "iocore/net/UDPConnection.h"
 
 struct UDPPacketInternal {

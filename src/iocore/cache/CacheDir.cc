@@ -21,9 +21,10 @@
   limitations under the License.
  */
 
-#include "P_Cache.h"
+#include "CacheVC.h"
 #include "P_CacheDir.h"
 #include "P_CacheDoc.h"
+#include "P_CacheInternal.h"
 #include "PreservationTable.h"
 #include "Stripe.h"
 
@@ -370,8 +371,8 @@ dir_clean_bucket(Dir *b, int s, Stripe *stripe)
             e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, stripe));
       }
       if (dir_offset(e)) {
-        Metrics::Gauge::decrement(cache_rsb.direntries_used);
-        Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
+        ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
+        ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
       }
       e = dir_delete_entry(e, p, s, stripe);
       continue;
@@ -406,8 +407,8 @@ dir_clear_range(off_t start, off_t end, Stripe *stripe)
   for (off_t i = 0; i < stripe->directory.entries(); i++) {
     Dir *e = dir_index(stripe, i);
     if (dir_offset(e) >= static_cast<int64_t>(start) && dir_offset(e) < static_cast<int64_t>(end)) {
-      Metrics::Gauge::decrement(cache_rsb.direntries_used);
-      Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
+      ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
+      ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
       dir_set_offset(e, 0); // delete
     }
   }
@@ -442,8 +443,8 @@ freelist_clean(int s, StripeSM *stripe)
     for (int l = 0; l < DIR_DEPTH; l++) {
       Dir *e = dir_bucket_row(b, l);
       if (dir_head(e) && !(n++ % 10)) {
-        Metrics::Gauge::decrement(cache_rsb.direntries_used);
-        Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
+        ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
+        ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
         dir_set_offset(e, 0); // delete
       }
     }
@@ -517,8 +518,8 @@ Lagain:
             // may not accurately reflect the number of documents
             // having the same first_key
             DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
-            Metrics::Counter::increment(cache_rsb.directory_collision);
-            Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_collision);
+            ts::Metrics::Counter::increment(cache_rsb.directory_collision);
+            ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_collision);
           }
           goto Lcont;
         }
@@ -530,8 +531,8 @@ Lagain:
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < stripe->len);
           return 1;
         } else { // delete the invalid entry
-          Metrics::Gauge::decrement(cache_rsb.direntries_used);
-          Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
+          ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
+          ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
           e = dir_delete_entry(e, p, s, stripe);
           continue;
         }
@@ -545,8 +546,8 @@ Lagain:
   }
   if (collision) { // last collision no longer in the list, retry
     DDbg(dbg_ctl_cache_stats, "Incrementing dir collisions");
-    Metrics::Counter::increment(cache_rsb.directory_collision);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_collision);
+    ts::Metrics::Counter::increment(cache_rsb.directory_collision);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_collision);
     collision = nullptr;
     goto Lagain;
   }
@@ -617,8 +618,8 @@ Lfill:
        bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   stripe->directory.header->dirty = 1;
-  Metrics::Gauge::increment(cache_rsb.direntries_used);
-  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used);
+  ts::Metrics::Gauge::increment(cache_rsb.direntries_used);
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used);
 
   return 1;
 }
@@ -668,8 +669,8 @@ Lagain:
   // get from this row first
   e = b;
   if (dir_is_empty(e)) {
-    Metrics::Gauge::increment(cache_rsb.direntries_used);
-    Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used);
+    ts::Metrics::Gauge::increment(cache_rsb.direntries_used);
+    ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used);
     goto Lfill;
   }
   for (l = 1; l < DIR_DEPTH; l++) {
@@ -685,8 +686,8 @@ Lagain:
     goto Lagain;
   }
 Llink:
-  Metrics::Gauge::increment(cache_rsb.direntries_used);
-  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used);
+  ts::Metrics::Gauge::increment(cache_rsb.direntries_used);
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used);
   // as with dir_insert above, need to insert new entries at the tail of the linked list
   Dir *prev, *last;
 
@@ -734,8 +735,8 @@ dir_delete(const CacheKey *key, StripeSM *stripe, Dir *del)
       }
 #endif
       if (dir_compare_tag(e, key) && dir_offset(e) == dir_offset(del)) {
-        Metrics::Gauge::decrement(cache_rsb.direntries_used);
-        Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
+        ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
+        ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
         dir_delete_entry(e, p, s, stripe);
         CHECK_DIR(d);
         return 1;
@@ -964,8 +965,8 @@ Lrestart:
       event = EVENT_NONE;
       goto Ldone;
     }
-    Metrics::Counter::increment(cache_rsb.directory_sync_bytes, io.aio_result);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_sync_bytes, io.aio_result);
+    ts::Metrics::Counter::increment(cache_rsb.directory_sync_bytes, io.aio_result);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_sync_bytes, io.aio_result);
     trigger = eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_dir_sync_delay));
     return EVENT_CONT;
   }
@@ -1058,10 +1059,10 @@ Lrestart:
       writepos += headerlen;
     } else {
       stripe->dir_sync_in_progress = false;
-      Metrics::Counter::increment(cache_rsb.directory_sync_count);
-      Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_sync_count);
-      Metrics::Counter::increment(cache_rsb.directory_sync_time, ink_get_hrtime() - start_time);
-      Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_sync_time, ink_get_hrtime() - start_time);
+      ts::Metrics::Counter::increment(cache_rsb.directory_sync_count);
+      ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_sync_count);
+      ts::Metrics::Counter::increment(cache_rsb.directory_sync_time, ink_get_hrtime() - start_time);
+      ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_sync_time, ink_get_hrtime() - start_time);
       start_time = 0;
       goto Ldone;
     }

@@ -27,15 +27,13 @@
 
  ***************************************************************************/
 
+#include "records/RecCore.h"
 #include "tscore/Version.h"
-#include "tscore/ink_platform.h"
 #include "tscore/ink_lockfile.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/signals.h"
+#include "tscore/Layout.h"
 #include "proxy/shared/DiagsConfig.h"
-
-#include "../../iocore/eventsystem/P_EventSystem.h"
-#include "../../records/P_RecProcess.h"
 
 // Needs LibRecordsConfigInit()
 #include "records/RecordsConfig.h"

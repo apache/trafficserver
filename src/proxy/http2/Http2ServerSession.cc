@@ -22,6 +22,7 @@
  */
 
 #include "proxy/http2/Http2ServerSession.h"
+#include "iocore/net/NetVConnection.h"
 #include "iocore/net/TLSSNISupport.h"
 #include "proxy/http/HttpDebugNames.h"
 #include "tscore/ink_base64.h"
@@ -115,7 +116,7 @@ Http2ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   Http2SsnDebug("session born, netvc %p", this->_vc);
 
-  this->_vc->set_tcp_congestion_control(CLIENT_SIDE);
+  this->_vc->set_tcp_congestion_control(NetVConnection::tcp_congestion_control_side::CLIENT_SIDE);
 
   this->read_buffer             = iobuf ? iobuf : new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
   this->read_buffer->water_mark = connection_state.local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE);

@@ -120,7 +120,7 @@ EchoServer::handle_packet(int event, void *data)
 }
 
 void
-signal_handler(int signum)
+signal_handler([[maybe_unused]] int signum)
 {
   std::exit(EXIT_SUCCESS);
 }

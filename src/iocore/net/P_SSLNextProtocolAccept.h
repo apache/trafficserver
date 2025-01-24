@@ -23,11 +23,9 @@
 
 #pragma once
 
-#include "P_Net.h"
-#include "../eventsystem/P_EventSystem.h"
-#include "P_UnixNet.h"
 #include "P_SSLNextProtocolSet.h"
 #include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/net/SessionAccept.h"
 #include "records/RecHttp.h"
 
 class SSLNextProtocolAccept : public SessionAccept

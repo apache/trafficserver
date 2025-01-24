@@ -34,18 +34,20 @@
 #define __APPLE_USE_RFC_3542
 #endif
 
+#include "P_UnixPollDescriptor.h"
+#include "P_UnixUDPConnection.h"
+#include "P_UDPNet.h"
+#include "P_CompletionUtil.h"
+#include "records/RecCore.h"
 #include "iocore/net/AsyncSignalEventIO.h"
-#include "iocore/aio/AIO.h"
+#include "iocore/net/Net.h"
+#include "iocore/eventsystem/UnixSocket.h"
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IO_URING.h"
 #endif
-#include "P_Net.h"
-#include "P_UDPNet.h"
-#include "iocore/eventsystem/UnixSocket.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_sock.h"
 #include <netinet/udp.h>
-#include "P_UnixNet.h"
 #ifdef HAVE_SO_TXTIME
 #include <linux/net_tstamp.h>
 #endif
@@ -92,8 +94,9 @@ UDPPacket::new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBuffe
   p->p.in_the_priority_queue = 0;
   p->p.in_heap               = 0;
   p->p.delivery_time         = when;
-  if (to)
+  if (to) {
     ats_ip_copy(&p->to, to);
+  }
   p->p.chain        = buf;
   p->p.segment_size = segment_size;
 #ifdef HAVE_SO_TXTIME
@@ -167,8 +170,9 @@ void
 UDPPacket::free()
 {
   p.chain = nullptr;
-  if (p.conn)
+  if (p.conn) {
     p.conn->Release();
+  }
   p.conn = nullptr;
 
   if (this->_payload) {
@@ -381,7 +385,7 @@ build_iovec_block_chain(unsigned max_niov, int64_t size_index, Ptr<IOBufferBlock
 void
 UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConnection *xuc)
 {
-  UnixUDPConnection *uc = (UnixUDPConnection *)xuc;
+  UnixUDPConnection *uc = static_cast<UnixUDPConnection *>(xuc);
 
   // receive packet and queue onto UDPConnection.
   // don't call back connection at this time.
@@ -675,10 +679,9 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
 }
 
 int
-UDPNetProcessorInternal::udp_callback(UDPNetHandler *nh, UDPConnection *xuc, EThread *thread)
+UDPNetProcessorInternal::udp_callback(UDPNetHandler *, UDPConnection *xuc, EThread *thread)
 {
-  (void)nh;
-  UnixUDPConnection *uc = (UnixUDPConnection *)xuc;
+  UnixUDPConnection *uc = static_cast<UnixUDPConnection *>(xuc);
 
   if (uc->continuation && uc->mutex) {
     MUTEX_TRY_LOCK(lock, uc->mutex, thread);
@@ -1025,10 +1028,10 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
   if (nbytes_sent >= 0) {
     ink_assert(nbytes_sent == len);
     buf->consume(nbytes_sent);
-    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_COMPLETE, (void *)-1);
+    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_COMPLETE, reinterpret_cast<void *>(-1));
     return ACTION_RESULT_DONE;
   } else {
-    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, (void *)static_cast<intptr_t>(nbytes_sent));
+    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, reinterpret_cast<void *>(nbytes_sent));
     return ACTION_IO_ERROR;
   }
 }

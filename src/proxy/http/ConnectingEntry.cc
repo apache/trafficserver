@@ -22,6 +22,7 @@
 
  */
 
+#include "../../iocore/net/P_UnixNetVConnection.h"
 #include "tsutil/DbgCtl.h"
 #include "proxy/http/ConnectingEntry.h"
 #include "proxy/http/HttpSM.h"

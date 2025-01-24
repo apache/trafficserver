@@ -21,16 +21,14 @@
 
 #pragma once
 
-#include "tscore/List.h"
-#include "tscore/ink_mutex.h"
-#include "../../../src/iocore/eventsystem/P_EventSystem.h"
-#include "records/RecProcess.h"
-#include "tscore/ink_platform.h"
-#include "../../../src/iocore/net/P_SSLUtils.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/net/SSLTypes.h"
 #include "ts/apidefs.h"
-#include <openssl/ssl.h>
-#include <tsutil/TsSharedMutex.h>
+#include "tscore/List.h"
+#include "tscore/Ptr.h"
+#include "tsutil/TsSharedMutex.h"
 
+#include <openssl/ssl.h>
 #include <mutex>
 #include <utility>
 
@@ -60,8 +58,9 @@ struct SSLSessionID : public TSSslSessionID {
 
   SSLSessionID(const SSLSessionID &other)
   {
-    if (other.len)
+    if (other.len) {
       memcpy(bytes, other.bytes, other.len);
+    }
 
     len = other.len;
     hash();
@@ -70,8 +69,9 @@ struct SSLSessionID : public TSSslSessionID {
   bool
   operator<(const SSLSessionID &other) const
   {
-    if (len != other.len)
+    if (len != other.len) {
       return len < other.len;
+    }
 
     return (memcmp(bytes, other.bytes, len) < 0);
   }
@@ -79,8 +79,9 @@ struct SSLSessionID : public TSSslSessionID {
   SSLSessionID &
   operator=(const SSLSessionID &other)
   {
-    if (other.len)
+    if (other.len) {
       memcpy(bytes, other.bytes, other.len);
+    }
 
     len = other.len;
     return *this;
@@ -89,8 +90,9 @@ struct SSLSessionID : public TSSslSessionID {
   bool
   operator==(const SSLSessionID &other) const
   {
-    if (len != other.len)
+    if (len != other.len) {
       return false;
+    }
 
     // memcmp returns 0 on equal
     return (memcmp(bytes, other.bytes, len) == 0);

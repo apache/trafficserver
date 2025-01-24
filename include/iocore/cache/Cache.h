@@ -23,11 +23,8 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
 #include "iocore/eventsystem/EventSystem.h"
-#include "iocore/aio/AIO.h"
 #include "iocore/cache/CacheDefs.h"
-#include "iocore/cache/Store.h"
 #include "iocore/cache/HttpConfigAccessor.h"
 
 static constexpr ts::ModuleVersion CACHE_MODULE_VERSION(1, 0);

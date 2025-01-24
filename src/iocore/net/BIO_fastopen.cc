@@ -29,6 +29,7 @@
 
 #include "tscore/ink_assert.h"
 #include "tscore/ink_config.h"
+#include "tscore/ink_inet.h"
 
 #include "BIO_fastopen.h"
 
@@ -220,14 +221,14 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
     // RFC 7413. If we get EINPROGRESS it means that the SYN has been
     // sent without data and we should retry.
     Metrics::Counter::increment(net_rsb.fastopen_attempts);
-    err = sock.sendto((void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
+    err = sock.sendto(in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
     if (err >= 0) {
       Metrics::Counter::increment(net_rsb.fastopen_successes);
     }
 
     set_dest_addr_for_bio(bio, nullptr);
   } else {
-    err = sock.write((void *)in, insz);
+    err = sock.write(in, insz);
   }
 
   if (err < 0) {

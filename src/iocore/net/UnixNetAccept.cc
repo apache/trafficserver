@@ -21,12 +21,15 @@
   limitations under the License.
  */
 
-#include <tscore/TSSystemState.h>
-#include <tscore/ink_defs.h>
-
-#include "iocore/net/ConnectionTracker.h"
+#include "P_NetAccept.h"
 #include "P_Net.h"
+#include "P_UnixNet.h"
+#include "P_UnixNetVConnection.h"
+#include "iocore/net/ConnectionTracker.h"
+#include "iocore/net/NetHandler.h"
+#include "tscore/TSSystemState.h"
 #include "tscore/ink_inet.h"
+#include "tscore/ink_defs.h"
 
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
 
@@ -104,10 +107,10 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       }
       if (na->server.sock.is_ok() && !na->action_->cancelled) {
         if (!blockable) {
-          na->action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
+          na->action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
         } else {
           SCOPED_MUTEX_LOCK(lock, na->action_->mutex, e->ethread);
-          na->action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
+          na->action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
         }
       }
       count = res;
@@ -380,7 +383,7 @@ NetAccept::do_blocking_accept(EThread *t)
       default:
         if (!action_->cancelled) {
           SCOPED_MUTEX_LOCK(lock, action_->mutex ? action_->mutex : t->mutex, t);
-          action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
+          action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
           Warning("accept thread received fatal error: errno = %d", errno);
         }
         return -1;
@@ -407,7 +410,7 @@ NetAccept::do_blocking_accept(EThread *t)
     Metrics::Counter::increment(net_rsb.tcp_accept);
 
     // Use 'nullptr' to Bypass thread allocator
-    vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(nullptr);
+    vc = static_cast<UnixNetVConnection *>(this->getNetProcessor()->allocate_vc(nullptr));
     if (unlikely(!vc)) {
       return -1;
     }
@@ -570,12 +573,12 @@ NetAccept::acceptFastEvent(int event, void *ep)
         goto Ldone;
       }
       if (!action_->cancelled) {
-        action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
+        action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
       }
       goto Lerror;
     }
 
-    vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
+    vc = static_cast<UnixNetVConnection *>(this->getNetProcessor()->allocate_vc(e->ethread));
     ink_release_assert(vc);
     vc->enable_inbound_connection_tracking(conn_track_group);
 

@@ -19,11 +19,6 @@
   limitations under the License.
  */
 
-#include "tscore/ink_config.h"
-
-#include "P_Net.h"
-#include "tscore/Layout.h"
-#include "records/RecHttp.h"
 #include "P_SSLUtils.h"
 #include "P_OCSPStapling.h"
 #include "SSLStats.h"

@@ -48,8 +48,6 @@ class UnixNetVConnection;
 class NetHandler;
 struct PollDescriptor;
 
-enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
-
 // WARNING:  many or most of the member functions of UnixNetVConnection should only be used when it is instantiated
 // directly.  They should not be used when UnixNetVConnection is a base class.
 class UnixNetVConnection : public NetVConnection, public NetEvent
@@ -75,17 +73,17 @@ public:
   // called when handing an  event from this NetVConnection,//
   // or the NetVConnection creation callback.               //
   ////////////////////////////////////////////////////////////
-  virtual void  set_active_timeout(ink_hrtime timeout_in) override;
-  virtual void  set_inactivity_timeout(ink_hrtime timeout_in) override;
-  virtual void  set_default_inactivity_timeout(ink_hrtime timeout_in) override;
-  virtual bool  is_default_inactivity_timeout() override;
-  virtual void  cancel_active_timeout() override;
-  virtual void  cancel_inactivity_timeout() override;
+  void          set_active_timeout(ink_hrtime timeout_in) override;
+  void          set_inactivity_timeout(ink_hrtime timeout_in) override;
+  void          set_default_inactivity_timeout(ink_hrtime timeout_in) override;
+  bool          is_default_inactivity_timeout() override;
+  void          cancel_active_timeout() override;
+  void          cancel_inactivity_timeout() override;
   void          set_action(Continuation *c) override;
   const Action *get_action() const;
-  virtual void  add_to_keep_alive_queue() override;
-  virtual void  remove_from_keep_alive_queue() override;
-  virtual bool  add_to_active_queue() override;
+  void          add_to_keep_alive_queue() override;
+  void          remove_from_keep_alive_queue() override;
+  bool          add_to_active_queue() override;
   virtual void  remove_from_active_queue();
 
   // The public interface is VIO::reenable()
@@ -227,12 +225,12 @@ public:
   ink_hrtime get_inactivity_timeout() override;
   ink_hrtime get_active_timeout() override;
 
-  virtual void set_local_addr() override;
-  void         set_mptcp_state() override;
-  virtual void set_remote_addr() override;
-  void         set_remote_addr(const sockaddr *) override;
-  int          set_tcp_congestion_control(int side) override;
-  void         apply_options() override;
+  void set_local_addr() override;
+  void set_mptcp_state() override;
+  void set_remote_addr() override;
+  void set_remote_addr(const sockaddr *) override;
+  int  set_tcp_congestion_control(tcp_congestion_control_side side) override;
+  void apply_options() override;
 
   // set_context() should be called before calling this member function.
   void mark_as_tunnel_endpoint() override;

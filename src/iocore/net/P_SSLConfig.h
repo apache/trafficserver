@@ -30,20 +30,13 @@
  ****************************************************************************/
 #pragma once
 
-#include <atomic>
-
-#include <openssl/rand.h>
-
-#include "swoc/swoc_ip.h"
-
-#include "tscore/ink_inet.h"
-#include "iocore/eventsystem/ConfigProcessor.h"
-
+#include "P_SSLSecret.h"
 #include "SSLSessionCache.h"
+#include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/YamlSNIConfig.h"
 
-#include "P_SSLUtils.h"
-#include "P_SSLSecret.h"
+#include <openssl/rand.h>
+#include <atomic>
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;

@@ -30,10 +30,10 @@
 
  ****************************************************************************/
 
+#include "iocore/aio/AIO.h"
+#include "iocore/cache/Store.h"
 #include "tscore/TSSystemState.h"
 #include "tscore/Version.h"
-#include "swoc/swoc_file.h"
-
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/ink_args.h"
@@ -44,8 +44,10 @@
 #include "tscore/hugepages.h"
 #include "tscore/runroot.h"
 #include "tscore/Filenames.h"
+#include "../iocore/net/P_Socks.h"
 
 #include "ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
+#include "swoc/swoc_file.h"
 
 #include <syslog.h>
 #include <algorithm>
@@ -75,10 +77,10 @@ extern "C" int plock(int);
 #include "../iocore/net/P_QUICNetProcessor.h"
 #endif
 #include "../iocore/net/P_UDPNet.h"
-#include "../iocore/dns/P_DNS.h"
-#include "../iocore/dns/P_SplitDNS.h"
+#include "../iocore/net/P_UnixNet.h"
+#include "../iocore/net/P_SSLUtils.h"
+#include "../iocore/dns/P_SplitDNSProcessor.h"
 #include "../iocore/hostdb/P_HostDB.h"
-#include "../iocore/cache/P_Cache.h"
 #include "../records/P_RecCore.h"
 #include "tscore/Layout.h"
 #include "iocore/utils/Machine.h"

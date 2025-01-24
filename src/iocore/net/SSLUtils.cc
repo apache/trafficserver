@@ -19,47 +19,34 @@
   limitations under the License.
  */
 
-#include "swoc/swoc_file.h"
-#include "swoc/Errata.h"
-#include "swoc/bwf_std.h"
-
+#include "BoringSSLUtils.h"
 #include "P_SSLUtils.h"
+#include "P_Net.h"
+#include "P_OCSPStapling.h"
+#include "P_SSLConfig.h"
+#include "P_SSLNetVConnection.h"
+#include "P_TLSKeyLogger.h"
+#include "SSLStats.h"
 
+#include "records/RecHttp.h"
+#include "iocore/net/SSLMultiCertConfigLoader.h"
+#include "iocore/net/SSLAPIHooks.h"
+#include "SSLSessionCache.h"
+#include "SSLSessionTicket.h"
+#include "iocore/net/SSLDiags.h"
+#include "iocore/net/TLSSessionResumptionSupport.h"
+#include "tscore/MatcherUtils.h"
 #include "tscore/ink_config.h"
-#include "tscore/ink_platform.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/Layout.h"
 #include "tscore/ink_cap.h"
 #include "tscore/ink_mutex.h"
 #include "tscore/Filenames.h"
-#include "records/RecHttp.h"
-
-#include "P_Net.h"
-#include "api/InkAPIInternal.h"
-
-#include "P_OCSPStapling.h"
-#include "P_SSLConfig.h"
-#include "P_TLSKeyLogger.h"
-#include "BoringSSLUtils.h"
-#include "iocore/net/SSLMultiCertConfigLoader.h"
-#include "iocore/net/ProxyProtocol.h"
-#include "iocore/net/SSLAPIHooks.h"
-#include "SSLSessionCache.h"
-#include "SSLSessionTicket.h"
-#include "SSLDynlock.h"
-#include "iocore/net/SSLDiags.h"
-#include "SSLStats.h"
-#include "iocore/net/TLSSessionResumptionSupport.h"
 #if TS_USE_QUIC == 1
 #include "iocore/net/QUICSupport.h"
 #endif
-#include "P_SSLNetVConnection.h"
-
-#include <string>
-#include <unistd.h>
-#include <termios.h>
-#include <vector>
-
+#include "swoc/swoc_file.h"
+#include "swoc/Errata.h"
 #include <openssl/asn1.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
@@ -73,12 +60,15 @@
 #include <openssl/rand.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
-
 #if HAVE_OPENSSL_TS_H
 #include <openssl/ts.h>
 #endif
 
 #include <utility>
+#include <string>
+#include <unistd.h>
+#include <termios.h>
+#include <vector>
 
 using namespace std::literals;
 
@@ -1684,7 +1674,7 @@ SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams  &
    Do NOT call SSL_CTX_set_* functions from here. SSL_CTX should be set up by SSLMultiCertConfigLoader::init_server_ssl_ctx().
  */
 bool
-SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams sslMultCertSettings)
+SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings)
 {
   bool                                           retval = true;
   std::set<std::string>                          common_names;
@@ -2146,12 +2136,12 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   const SSLMultiCertConfigParams *sslMultCertSettings, std::set<std::string> &common_names,
   std::unordered_map<int, std::set<std::string>> &unique_names, SSLCertContextType *certType)
 {
-  SimpleTokenizer cert_tok(sslMultCertSettings && sslMultCertSettings->cert ? (const char *)sslMultCertSettings->cert : "",
+  SimpleTokenizer cert_tok(sslMultCertSettings && sslMultCertSettings->cert ? sslMultCertSettings->cert : "",
                            SSL_CERT_SEPARATE_DELIM);
 
   SimpleTokenizer key_tok(SSL_CERT_SEPARATE_DELIM);
   if (sslMultCertSettings && sslMultCertSettings->key) {
-    key_tok.setString((const char *)sslMultCertSettings->key);
+    key_tok.setString(sslMultCertSettings->key);
   } else {
     key_tok.setString("");
   }

@@ -182,7 +182,7 @@ ticket_block_create(char *ticket_key_data, int ticket_key_len)
   // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
   // with any key (for rotation purposes).
   for (unsigned i = 0; i < num_ticket_keys; ++i) {
-    const char *data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
+    const char *data = ticket_key_data + (i * sizeof(ssl_ticket_key_t));
 
     memcpy(keyblock->keys[i].key_name, data, sizeof(keyblock->keys[i].key_name));
     memcpy(keyblock->keys[i].hmac_secret, data + sizeof(keyblock->keys[i].key_name), sizeof(keyblock->keys[i].hmac_secret));

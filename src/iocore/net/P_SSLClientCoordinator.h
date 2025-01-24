@@ -21,9 +21,6 @@
   limitations under the License.
  */
 
-#include "iocore/eventsystem/ConfigProcessor.h"
-#include <memory>
-
 // A class to pass the ConfigUpdateHandler, so both SSLConfig and SNIConfig get updated
 // when the relevant files/configs get updated.
 class SSLClientCoordinator

@@ -23,20 +23,13 @@
 
 #pragma once
 
-#include "iocore/eventsystem/Continuation.h"
-#include "tscore/ink_platform.h"
-#include "tscore/InkErrno.h"
-
-#include "proxy/hdrs/HTTP.h"
-#include "P_CacheDoc.h"
-#include "P_CacheHttp.h"
 #include "P_CacheHosting.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "P_CacheHttp.h"
 #include "tsutil/Metrics.h"
 
-#include "iocore/cache/CacheVC.h"
+#include "CacheVC.h"
 #include "CacheEvacuateDocVC.h"
-
-using ts::Metrics;
 
 struct EvacuationBlock;
 
@@ -187,11 +180,11 @@ free_CacheVCCommon(CacheVC *cont)
   StripeSM   *stripe = cont->stripe;
 
   if (stripe) {
-    Metrics::Gauge::decrement(cache_rsb.status[cont->op_type].active);
-    Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.status[cont->op_type].active);
+    ts::Metrics::Gauge::decrement(cache_rsb.status[cont->op_type].active);
+    ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.status[cont->op_type].active);
     if (cont->closed > 0) {
-      Metrics::Counter::increment(cache_rsb.status[cont->op_type].success);
-      Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[cont->op_type].success);
+      ts::Metrics::Counter::increment(cache_rsb.status[cont->op_type].success);
+      ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[cont->op_type].success);
     } // else abort,cancel
   }
   ink_assert(mutex->thread_holding == this_ethread());

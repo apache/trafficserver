@@ -22,13 +22,13 @@
  */
 
 #pragma once
-#include <memory>
-#include <shared_mutex>
-#include "P_Cache.h"
+#include "iocore/cache/CacheDefs.h"
+#include "records/RecCore.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
-
 #include "tsutil/Bravo.h"
+
+#include <memory>
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 

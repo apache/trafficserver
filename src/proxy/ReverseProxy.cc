@@ -31,7 +31,6 @@
 #include "tscore/Filenames.h"
 #include <dlfcn.h>
 #include "../iocore/eventsystem/P_EventSystem.h"
-#include "../iocore/cache/P_Cache.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "proxy/ReverseProxy.h"
 #include "tscore/MatcherUtils.h"

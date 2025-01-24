@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-#include "P_Cache.h"
-
 #include "iocore/cache/Store.h"
-
+#include "records/RecCore.h"
+#include "tscore/Diags.h"
 #include "tscore/ink_platform.h"
 #include "tscore/Layout.h"
 #include "tscore/Filenames.h"
 #include "tscore/ink_file.h"
 #include "tscore/SimpleTokenizer.h"
+#include "tsutil/DbgCtl.h"
 
 #if defined(__linux__)
 #include <linux/major.h>

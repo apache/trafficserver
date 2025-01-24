@@ -30,16 +30,9 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
-
-#include "../dns/P_SplitDNS.h"
-#include "../eventsystem/P_EventSystem.h"
-
 #include "iocore/hostdb/HostDB.h"
 
 // HostDB files
-#include "../dns/P_DNS.h"
-#include "P_RefCountCache.h"
 #include "P_HostDBProcessor.h"
 
 static constexpr ts::ModuleVersion HOSTDB_MODULE_INTERNAL_VERSION{HOSTDB_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};

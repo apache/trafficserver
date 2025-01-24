@@ -61,6 +61,7 @@
 struct Cache;
 struct StripeInitInfo;
 class CacheEvacuateDocVC;
+class RamCache;
 
 class StripeSM : public Continuation, public Stripe
 {

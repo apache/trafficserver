@@ -28,6 +28,7 @@
    Description:
 
  ****************************************************************************/
+#include "iocore/net/NetVConnection.h"
 #include "tscore/ink_config.h"
 #include "tsutil/ts_bw_format.h"
 #include "tscore/Allocator.h"
@@ -99,7 +100,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   Dbg(dbg_ctl_http_ss, "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
   state = INIT;
 
-  new_vc->set_tcp_congestion_control(SERVER_SIDE);
+  new_vc->set_tcp_congestion_control(NetVConnection::tcp_congestion_control_side::SERVER_SIDE);
 }
 
 void

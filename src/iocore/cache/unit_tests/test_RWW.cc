@@ -27,6 +27,7 @@
 #define DEFAULT_URL "http://www.scw00.com/"
 
 #include "main.h"
+#include "../P_CacheInternal.h"
 
 int  cache_vols           = 1;
 bool reuse_existing_cache = false;

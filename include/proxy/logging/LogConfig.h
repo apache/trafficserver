@@ -26,6 +26,7 @@
 #include <string_view>
 #include <string>
 
+#include "iocore/eventsystem/IOBuffer.h"
 #include "tscore/ink_platform.h"
 #include "records/RecProcess.h"
 #include "iocore/eventsystem/ConfigProcessor.h"

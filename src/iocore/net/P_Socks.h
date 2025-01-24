@@ -23,14 +23,11 @@
 
 #pragma once
 
-#include "swoc/TextView.h"
-#include "swoc/swoc_ip.h"
-
-#include "../eventsystem/P_EventSystem.h"
+#include "P_UnixNetVConnection.h"
 #include "iocore/net/Socks.h"
-#include "tsutil/ts_errata.h"
-
 #include "proxy/ParentSelection.h"
+#include "swoc/TextView.h"
+#include "swoc/IPRange.h"
 
 enum {
   // types of events for Socks auth handlers
@@ -74,7 +71,7 @@ using SocksAuthHandler = int (*)(int, unsigned char *, void (**)());
 TS_INLINE int
 invokeSocksAuthHandler(SocksAuthHandler &h, int arg1, unsigned char *arg2)
 {
-  return (h)(arg1, arg2, (void (**)(void))(&h));
+  return (h)(arg1, arg2, reinterpret_cast<void (**)(void)>(&h));
 }
 
 void loadSocksConfiguration(socks_conf_struct *socks_conf_stuff);
@@ -129,14 +126,3 @@ struct SocksEntry : public Continuation {
 using SocksEntryHandler = int (SocksEntry::*)(int, void *);
 
 extern ClassAllocator<SocksEntry> socksAllocator;
-
-TS_INLINE void
-SocksAddrType::reset()
-{
-  if (type != SOCKS_ATYPE_IPV4 && addr.buf) {
-    ats_free(addr.buf);
-  }
-
-  addr.buf = nullptr;
-  type     = SOCKS_ATYPE_NONE;
-}

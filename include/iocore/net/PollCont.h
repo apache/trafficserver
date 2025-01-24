@@ -24,7 +24,7 @@
 #pragma once
 
 #include "iocore/eventsystem/Continuation.h"
-#include "iocore/net/Net.h"
+#include "iocore/eventsystem/EThread.h"
 
 class NetHandler;
 struct PollDescriptor;

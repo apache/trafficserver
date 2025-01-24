@@ -34,7 +34,6 @@
 #include "ts/apidefs.h"
 
 #include "P_UnixNetVConnection.h"
-#include "P_UnixNet.h"
 #include "iocore/net/TLSALPNSupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "iocore/net/TLSSNISupport.h"

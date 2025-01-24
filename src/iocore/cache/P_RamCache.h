@@ -23,9 +23,12 @@
 
 #pragma once
 
-#include "iocore/cache/Cache.h"
-
 // Generic Ram Cache interface
+
+#include "iocore/eventsystem/IOBuffer.h"
+#include "tscore/CryptoHash.h"
+
+class StripeSM;
 
 class RamCache
 {

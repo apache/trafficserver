@@ -23,7 +23,8 @@
 
 #pragma once
 
-#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/Action.h"
+#include "iocore/eventsystem/Continuation.h"
 #include "tscore/Regression.h"
 
 /*

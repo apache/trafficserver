@@ -21,7 +21,12 @@
   limitations under the License.
  */
 
-#include "P_Cache.h"
+#include "P_RamCache.h"
+#include "P_CacheInternal.h"
+#include "StripeSM.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "tscore/CryptoHash.h"
+#include "tscore/List.h"
 #include <vector>
 #include <iterator>
 
@@ -145,16 +150,16 @@ RamCacheLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey)
       lru.enqueue(e);
       (*ret_data) = e->data;
       DDbg(dbg_ctl_ram_cache, "get %X %" PRIu64 " HIT", key->slice32(3), auxkey);
-      Metrics::Counter::increment(cache_rsb.ram_cache_hits);
-      Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_hits);
+      ts::Metrics::Counter::increment(cache_rsb.ram_cache_hits);
+      ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_hits);
 
       return 1;
     }
     e = e->hash_link.next;
   }
   DDbg(dbg_ctl_ram_cache, "get %X %" PRIu64 " MISS", key->slice32(3), auxkey);
-  Metrics::Counter::increment(cache_rsb.ram_cache_misses);
-  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_misses);
+  ts::Metrics::Counter::increment(cache_rsb.ram_cache_misses);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_misses);
 
   return 0;
 }
@@ -167,8 +172,8 @@ RamCacheLRU::remove(RamCacheLRUEntry *e)
   bucket[b].remove(e);
   lru.remove(e);
   bytes -= ENTRY_OVERHEAD + e->data->block_size();
-  Metrics::Gauge::decrement(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
-  Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
+  ts::Metrics::Gauge::decrement(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
+  ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
 
   DDbg(dbg_ctl_ram_cache, "put %X %" PRIu64 " FREED", e->key.slice32(3), e->auxkey);
   e->data = nullptr;
@@ -222,8 +227,8 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t 
   lru.enqueue(e);
   bytes += ENTRY_OVERHEAD + data->block_size();
   objects++;
-  Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
-  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
+  ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
   while (bytes > max_bytes) {
     RamCacheLRUEntry *ee = lru.dequeue();
     if (ee) {

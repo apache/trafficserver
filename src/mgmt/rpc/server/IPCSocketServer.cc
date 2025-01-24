@@ -36,7 +36,7 @@
 
 #include "tscore/Diags.h"
 #include "tsutil/ts_bw_format.h"
-#include "records/RecProcess.h"
+#include "records/RecCore.h"
 #include "tscore/ink_sock.h"
 
 #include <ts/ts.h>

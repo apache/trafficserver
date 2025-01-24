@@ -45,7 +45,7 @@
 #include "ts/ts.h"
 #include "records/RecCore.h"
 
-#include "../iocore/net/P_Net.h"
+#include "../iocore/net/P_UnixNetVConnection.h"
 #include "records/RecHttp.h"
 
 #include "proxy/http/HttpSM.h"
@@ -200,7 +200,7 @@ static int    synserver_txn_main_handler(TSCont contp, TSEvent event, void *data
 static char *
 get_body_ptr(const char *request)
 {
-  char *ptr = const_cast<char *>(strstr(request, (const char *)"\r\n\r\n"));
+  char *ptr = const_cast<char *>(strstr(request, "\r\n\r\n"));
   return (ptr != nullptr) ? (ptr + 4) : nullptr;
 }
 

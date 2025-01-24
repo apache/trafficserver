@@ -29,6 +29,7 @@
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/http/HttpTransact.h"
 #include "iocore/utils/Machine.h"
+#include "tscore/Regression.h"
 #include "tscore/Tokenizer.h"
 
 #define MAX_SIMPLE_RETRIES             5
@@ -853,7 +854,7 @@ ParentRecord::Init(matcher_line *line_info)
 void
 ParentRecord::UpdateMatch(ParentResult *result, RequestData *rdata)
 {
-  if (this->CheckForMatch((HttpRequestData *)rdata, result->line_number) == true) {
+  if (this->CheckForMatch(static_cast<HttpRequestData *>(rdata), result->line_number) == true) {
     result->rec         = this;
     result->line_number = this->line_num;
 

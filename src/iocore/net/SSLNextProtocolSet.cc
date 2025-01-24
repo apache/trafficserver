@@ -21,10 +21,8 @@
   limitations under the License.
  */
 
-#include "tscore/ink_config.h"
-#include "ts/apidefs.h"
-#include "tscore/ink_platform.h"
 #include "P_SSLNextProtocolSet.h"
+#include "tsutil/DbgCtl.h"
 #include "swoc/TextView.h"
 
 namespace

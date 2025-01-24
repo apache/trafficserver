@@ -23,9 +23,10 @@
 
 #pragma once
 
-#include "P_Cache.h"
-#include "P_CacheDoc.h"
 #include "RegressionSM.h"
+#include "iocore/cache/Cache.h"
+#include "iocore/cache/CacheDefs.h"
+#include "proxy/hdrs/HTTP.h"
 
 #define MAX_HOSTS_POSSIBLE    256
 #define PINNED_DOC_TABLE_SIZE 16

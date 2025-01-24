@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
+#include "tscore/List.h"
 #include "tscore/Result.h"
 
 #define STORE_BLOCK_SIZE       8192

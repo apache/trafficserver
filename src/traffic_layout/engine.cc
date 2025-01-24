@@ -24,6 +24,7 @@
 // for engine of traffic runroot
 // function introduction in engine.h
 
+#include "records/RecCore.h"
 #include "tscore/runroot.h"
 #include "tscore/Layout.h"
 #include "tscore/ink_error.h"
