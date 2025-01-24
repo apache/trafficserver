@@ -78,7 +78,7 @@ def main():
                     line.startswith(bytes('SSL3 alert', 'utf-8')) or \
                     bytes('Can\'t use SSL_get_servername', 'utf-8') in line:
                 continue
-           data += line
+            data += line
         d = h2_early_decode.Decoder()
         frames = d.decode(data)
         for frame in frames:
