@@ -133,7 +133,8 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     } // end of Proxy Protocol processing
 
     if (proto_is_http2(reader)) {
-      if (netvc->get_service<TLSBasicSupport>() == nullptr) {
+      // We use support_sni test here to determine if an SSLNetVC was used
+      if (netvc->support_sni() == false) {
         key = PROTO_HTTP2;
       } else {
         // RFC 9113 Section 3.3: Prior knowledge is only permissible for HTTP/2 over plaintext (non-TLS) connections.
