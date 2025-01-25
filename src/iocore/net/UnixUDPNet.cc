@@ -34,6 +34,7 @@
 #define __APPLE_USE_RFC_3542
 #endif
 
+#include "P_UnixNet.h"
 #include "P_UnixPollDescriptor.h"
 #include "P_UnixUDPConnection.h"
 #include "P_UDPNet.h"
@@ -518,7 +519,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
 void
 UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPConnection *xuc)
 {
-  UnixUDPConnection *uc = (UnixUDPConnection *)xuc;
+  UnixUDPConnection *uc = static_cast<UnixUDPConnection *>(xuc);
 
   std::array<Ptr<IOBufferBlock>, MAX_RECEIVE_MSG_PER_CALL> buffer_chain;
   unsigned                                                 max_niov = 32;
@@ -830,7 +831,7 @@ UDPReadContinuation::setupPollDescriptor()
 {
 #if TS_USE_EPOLL
   Pollfd   *pfd;
-  EThread  *et = (EThread *)this_thread();
+  EThread  *et = static_cast<EThread *>(this_thread());
   PollCont *pc = get_PollCont(et);
   if (pc->nextPollDescriptor == nullptr) {
     pc->nextPollDescriptor = new PollDescriptor();
@@ -1225,7 +1226,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
 #ifdef SOL_UDP
   if (G_udp_config.enable_gro) {
     int gro = 1;
-    if (safe_setsockopt(sock.get_fd(), IPPROTO_UDP, UDP_GRO, (char *)&gro, sizeof(gro)) == -1) {
+    if (safe_setsockopt(sock.get_fd(), IPPROTO_UDP, UDP_GRO, reinterpret_cast<char *>(&gro), sizeof(gro)) == -1) {
       Dbg(dbg_ctl_udpnet, "setsockopt UDP_GRO. errno=%d", errno);
     }
   }
@@ -1479,7 +1480,7 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
     cm->cmsg_len   = CMSG_LEN(sizeof(uint64_t));
 
     // Convert struct timespec to nanoseconds.
-    *((uint64_t *)CMSG_DATA(cm)) = p->p.send_at.tv_sec * (1000ULL * 1000 * 1000) + p->p.send_at.tv_nsec;
+    *(reinterpret_cast<uint64_t *>(CMSG_DATA(cm))) = p->p.send_at.tv_sec * (1000ULL * 1000 * 1000) + p->p.send_at.tv_nsec;
   }
 #endif
 
@@ -1506,10 +1507,10 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
         msg.msg_controllen += sizeof(u.buf);
         cm                  = CMSG_NXTHDR(&msg, cm);
       }
-      cm->cmsg_level               = SOL_UDP;
-      cm->cmsg_type                = UDP_SEGMENT;
-      cm->cmsg_len                 = CMSG_LEN(sizeof(uint16_t));
-      *((uint16_t *)CMSG_DATA(cm)) = p->p.segment_size;
+      cm->cmsg_level                                 = SOL_UDP;
+      cm->cmsg_type                                  = UDP_SEGMENT;
+      cm->cmsg_len                                   = CMSG_LEN(sizeof(uint16_t));
+      *(reinterpret_cast<uint16_t *>(CMSG_DATA(cm))) = p->p.segment_size;
 
       count = 0;
       while (true) {
@@ -1687,7 +1688,8 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
       cm->cmsg_len   = CMSG_LEN(sizeof(uint64_t));
 
       // Convert struct timespec to nanoseconds.
-      *((uint64_t *)CMSG_DATA(cm)) = packet->p.send_at.tv_sec * (1000ULL * 1000 * 1000) + packet->p.send_at.tv_nsec;
+      *(reinterpret_cast<uint64_t *>(CMSG_DATA(cm))) =
+        packet->p.send_at.tv_sec * (1000ULL * 1000 * 1000) + packet->p.send_at.tv_nsec;
       ;
     }
 #endif
@@ -1720,10 +1722,10 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
           cm                   = CMSG_NXTHDR(msg, cm);
         }
 
-        cm->cmsg_level               = SOL_UDP;
-        cm->cmsg_type                = UDP_SEGMENT;
-        cm->cmsg_len                 = CMSG_LEN(sizeof(uint16_t));
-        *((uint16_t *)CMSG_DATA(cm)) = packet->p.segment_size;
+        cm->cmsg_level                                 = SOL_UDP;
+        cm->cmsg_type                                  = UDP_SEGMENT;
+        cm->cmsg_len                                   = CMSG_LEN(sizeof(uint16_t));
+        *(reinterpret_cast<uint16_t *>(CMSG_DATA(cm))) = packet->p.segment_size;
         vlen++;
       } else {
 #endif

@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "netinet/udp.h"
 #include "P_UnixUDPConnection.h"
 #include "iocore/net/UDPNet.h"
 #include "iocore/net/PollCont.h"

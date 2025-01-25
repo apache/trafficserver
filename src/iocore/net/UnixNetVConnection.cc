@@ -1496,7 +1496,7 @@ UnixNetVConnection::set_tcp_congestion_control([[maybe_unused]] tcp_congestion_c
 #ifdef TCP_CONGESTION
   std::string_view ccp;
 
-  if (side == CLIENT_SIDE) {
+  if (side == tcp_congestion_control_side::CLIENT_SIDE) {
     ccp = net_ccp_in;
   } else {
     ccp = net_ccp_out;
