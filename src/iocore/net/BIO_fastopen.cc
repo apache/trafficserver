@@ -21,17 +21,15 @@
  *  limitations under the License.
  */
 
-#include <openssl/opensslv.h>
-
+#include "BIO_fastopen.h"
 #include "P_Net.h"
-
 #include "iocore/eventsystem/UnixSocket.h"
-
 #include "tscore/ink_assert.h"
 #include "tscore/ink_config.h"
 #include "tscore/ink_inet.h"
-
-#include "BIO_fastopen.h"
+#include "tscore/ink_ssl.h" // IWYU pragma: keep - This header is needed to provide back-ups for BIO_meth_get_*
+#include <openssl/bio.h>
+#include <openssl/opensslv.h>
 
 namespace
 {

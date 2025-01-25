@@ -30,10 +30,13 @@
 
 #pragma once
 
-#include "netinet/udp.h"
 #include "P_UnixUDPConnection.h"
 #include "iocore/net/UDPNet.h"
 #include "iocore/net/PollCont.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/udp.h>
 
 // added by YTS Team, yamsat
 static inline PollCont *get_UDPPollCont(EThread *);
