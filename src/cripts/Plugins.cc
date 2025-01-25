@@ -17,6 +17,7 @@
 */
 
 #include "proxy/http/remap/PluginFactory.h"
+#include "records/RecCore.h"
 #include <swoc/swoc_file.h>
 
 #include "cripts/Preamble.hpp"
