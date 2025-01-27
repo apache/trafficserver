@@ -1,0 +1,30 @@
+Changes with Apache Traffic Server 10.0.3
+  #11771 - Fix libswoc compile with clang 20
+  #11827 - check if client response is still valid on txn close
+  #11833 - Update references in configuration variable implementation
+  #11840 - Fix setting TLS groups with BoringSSL
+  #11845 - Remove deprecated ld_classic linker flag
+  #11848 - Have dummy_forced_read only if it's used
+  #11849 - [BoringSSL] Add TLS 1.3 cipher metrics
+  #11850 - Don't call getsockname on every packet
+  #11857 - jsonrpc: improve buffering and socket IO  #11763 #11815 
+  #11872 - Invoke initgroups() iff we got enough privileges (#11869)
+  #11881 - Disable h2 prior knowledge on tls
+  #11883 - Record the amount of early data correctly
+  #11889 - Updates to allow verify plugin tests to run without install
+  #11892 - s3_auth does not retry after a file read error (#11864)
+  #11894 - Fix merge issue from PR #11857
+  #11899 - Fix records length for log roll and normalize
+  #11909 - Do not touch fd from StripeSM::handle_dir_clear (#11906)
+  #11910 - Fix the boxes around rm-destination example
+  #11913 - Restore speed bucket metrics with more buckets
+  #11914 - Add better logging for origin_server_auth (#11885)
+  #11925 - [10.0.x] Make warning if remap ACL has more than one @action (#11911)
+  #11936 - Do not allow extra CRs in chunks
+  #11939 - Turn off ccache for coverity build
+  #11941 - Configure autests to use microserver 1.0.8
+  #11946 - Adding more ssl user agent error stats
+  #11955 - ci-ubuntu preset: use clang
+  #11956 - Fix a test case for malformed chunk header
+  #11957 - Add unit tests for remap rules. Fix release-assert crasher (#11951) 
+  #11961 - Add nullptr check in PluginVC read and write
