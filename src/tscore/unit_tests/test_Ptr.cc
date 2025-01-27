@@ -49,7 +49,7 @@ TEST_CASE("Ptr", "[libts][ptr]")
   REQUIRE(p1->refcount() == 3);
   p3 = nullptr; // clear ref drops ref count.
   REQUIRE(p1->refcount() == 2);
-  p2->refcount_dec();
+  REQUIRE(p2->refcount_dec() == 1);
   delete p1.detach();
   // If that doesn't work, the subsequent alive counts will be off.
 
@@ -72,7 +72,7 @@ TEST_CASE("Ptr", "[libts][ptr]")
     Ptr<PtrObject> pn2(pn1);
     REQUIRE(pn1->refcount() == 2);
 
-    Ptr<PtrObject> pn3 = p1;
+    Ptr<PtrObject> pn3 = std::move(p1);
   }
 
   // Everything goes out of scope, so the refcounts should drop to zero.

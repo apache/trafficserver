@@ -248,10 +248,10 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
     sockaddr_in sa2 = {};
     sa1.sin_port    = 10000;
     sa1.sin_family  = AF_INET;
-    inet_pton(AF_INET, "192.168.1.1", &(sa1.sin_addr));
+    REQUIRE(inet_pton(AF_INET, "192.168.1.1", &(sa1.sin_addr)) == 1);
     sa2.sin_port   = 10001;
     sa2.sin_family = AF_INET;
-    inet_pton(AF_INET, "192.168.1.2", &(sa2.sin_addr));
+    REQUIRE(inet_pton(AF_INET, "192.168.1.2", &(sa2.sin_addr)) == 1);
     HttpSM        sm;
     ParentResult *result = &sm.t_state.parent_result;
     TSHttpTxn     txnp   = reinterpret_cast<TSHttpTxn>(&sm);
