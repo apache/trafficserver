@@ -44,6 +44,10 @@
 #include "tscore/hugepages.h"
 #include "tscore/runroot.h"
 #include "tscore/Filenames.h"
+#if TS_USE_NUMA
+#include <numaif.h>
+#include "tscore/NUMADebug.h"
+#endif
 
 #include "ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 
@@ -1808,6 +1812,15 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Override default swoc::Errata settings.
   Initialize_Errata_Settings();
 
+#if TS_USE_NUMA
+  // Set local allocation policy for NUMA
+  long mpol_result = set_mempolicy(MPOL_LOCAL, NULL, 0);
+  if (mpol_result != 0) {
+    perror("set_mempolicy failed!");
+  }
+  NUMA_CHECK_SET_THREAD_KIND(-1);
+#endif
+
   pcre_malloc = ats_malloc;
   pcre_free   = ats_free;
 
@@ -2146,6 +2159,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // !! ET_NET threads start here !!
   // This means any spawn scheduling must be done before this point.
   eventProcessor.start(num_of_net_threads, stacksize);
+  eventProcessor.net_threads = num_of_net_threads;
 
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);

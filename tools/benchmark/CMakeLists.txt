@@ -26,6 +26,9 @@ target_link_libraries(benchmark_FreeList PRIVATE catch2::catch2 ts::tscore libsw
 if(TS_USE_HWLOC)
   target_link_libraries(benchmark_FreeList PRIVATE hwloc::hwloc)
 endif()
+if(TS_USE_NUMA)
+  target_link_libraries(benchmark_FreeList PRIVATE numa)
+endif()
 
 add_executable(benchmark_ProxyAllocator benchmark_ProxyAllocator.cc)
 target_link_libraries(benchmark_ProxyAllocator PRIVATE catch2::catch2 ts::tscore ts::inkevent libswoc::libswoc)

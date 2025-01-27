@@ -2627,6 +2627,24 @@ RAM Cache
    Compression runs on task threads. To use more cores for RAM cache
    compression, increase :ts:cv:`proxy.config.task_threads`.
 
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.numa_duplicate INT 0
+
+   Only available if NUMA support has been enabled during compilation with ENABLE_NUMA cmake setting.
+   This option controls duplication of cache index structures on systems with non uniform memory access.
+
+   Normally, trafficserver memory cache is shared between all NUMA nodes.
+   This setting enables duplication across the NUMA zones to reduce cross NUMA latency.
+
+   Possible values are:
+
+   ======== ===================================================================
+   Value    Description
+   ======== ===================================================================
+   ``0``    No duplication
+   ``1``    Duplicate cache index across NUMA nodes, but not the data stored in the cache.
+   ``>1``   Reserved for future NUMA caching optimizations; do not use.
+   ======== ===================================================================
+
 .. _admin-heuristic-expiration:
 
 Heuristic Expiration
@@ -5247,6 +5265,23 @@ Sockets
    :overridable:
 
    Set socket option TCP_NOTSENT_LOWAT to specified value for a connection
+
+.. ts:cv:: CONFIG proxy.config.net.use_ebpf INT 0
+
+   Only available if NUMA support has been enabled during compilation.
+   This option enables use of extended Berkeley Packet Filters to direct connections originating
+   from several network interfaces that are physically connected to different CPU sockets,
+   to their respective CPUs.
+
+   Possible values are:
+
+   ======== ===================================================================
+   Value    Description
+   ======== ===================================================================
+   ``0``    No use of eBPF
+   ``1``    Use eBPF (also requires ``proxy.config.exec_thread.listen`` to be set to 1)
+   ======== ===================================================================
+
 
 .. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10
 
