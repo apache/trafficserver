@@ -405,6 +405,11 @@ Configuration::Parse(const char *path)
   // Update the defaults for the last host configuration too, if needed.
   current_host_configuration->update_defaults();
 
+  // Check combination of configs
+  if (!current_host_configuration->cache() && current_host_configuration->range_request()) {
+    warning("Combination of 'cache false' and 'range-request true' might deliver corrupted content");
+  }
+
   if (state != kParseStart) {
     warning("the parser state indicates that data was expected when it reached the end of the file (%d)", state);
   }
