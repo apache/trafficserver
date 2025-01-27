@@ -269,3 +269,21 @@ target_link_libraries(
 )
 
 add_test(NAME test_NextHopConsistentHash COMMAND $<TARGET_FILE:test_NextHopConsistentHash>)
+
+### test_RemapRules ########################################################################
+add_executable(test_RemapRules "${PROJECT_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc" test_RemapRules.cc)
+
+target_link_libraries(
+  test_RemapRules
+  PRIVATE catch2::catch2
+          ts::http
+          ts::hdrs # transitive
+          logging # transitive
+          ts::http_remap # transitive
+          ts::proxy
+          inkdns # transitive
+          ts::inknet
+          ts::jsonrpc_protocol
+)
+
+add_test(NAME test_RemapRules COMMAND $<TARGET_FILE:test_RemapRules>)

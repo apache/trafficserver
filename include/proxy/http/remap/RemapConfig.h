@@ -76,6 +76,7 @@ struct BUILD_TABLE_INFO {
 };
 
 const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize);
+bool        remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti);
 
 const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, int argc, char *errStrBuf,
                                        size_t errStrBufSize, ACLBehaviorPolicy behavior_policy);

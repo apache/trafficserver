@@ -46,9 +46,6 @@ namespace
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 DbgCtl dbg_ctl_remap_plugin{"remap_plugin"};
 DbgCtl dbg_ctl_url_rewrite_regex{"url_rewrite_regex"};
-
-bool remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti);
-
 } // end anonymous namespace
 
 /**
@@ -100,6 +97,14 @@ BUILD_TABLE_INFO::BUILD_TABLE_INFO()
 BUILD_TABLE_INFO::~BUILD_TABLE_INFO()
 {
   this->reset();
+
+  // clean up any leftover named filter rules
+  auto *rp = rules_list;
+  while (rp != nullptr) {
+    auto *tmp = rp->next;
+    delete rp;
+    rp = tmp;
+  }
 }
 
 void
@@ -145,6 +150,15 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
       if ((errStr = remap_validate_filter_args(rpp, rp->argv, rp->argc, errStrBuf, errStrBufSize, bti->behavior_policy)) !=
           nullptr) {
         break;
+      }
+      if (auto rule = *rpp; rule) {
+        // If no IP addresses are listed, treat that like `@src_ip=all`.
+        if (rule->src_ip_valid == 0 && rule->src_ip_cnt == 0) {
+          src_ip_info_t *ipi       = &rule->src_ip_array[rule->src_ip_cnt];
+          ipi->match_all_addresses = true;
+          rule->src_ip_cnt++;
+          rule->src_ip_valid = 1;
+        }
       }
     }
   }
@@ -469,8 +483,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, i
     Dbg(dbg_ctl_url_rewrite, "[validate_filter_args] new acl_filter_rule class was created during remap rule processing");
   }
 
-  bool action_flag  = false;
-  bool ip_is_listed = false;
+  bool action_flag = false;
   for (i = 0; i < argc; i++) {
     unsigned long ul;
     bool          hasarg;
@@ -553,7 +566,6 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, i
       if (ipi) {
         rule->src_ip_cnt++;
         rule->src_ip_valid = 1;
-        ip_is_listed       = true;
       }
     }
 
@@ -583,7 +595,6 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, i
       if (ipi) {
         rule->src_ip_category_cnt++;
         rule->src_ip_category_valid = 1;
-        ip_is_listed                = true;
       }
     }
 
@@ -626,7 +637,6 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, i
       if (ipi) {
         rule->in_ip_cnt++;
         rule->in_ip_valid = 1;
-        ip_is_listed      = true;
       }
     }
 
@@ -635,6 +645,10 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, i
         std::string_view err = "Only one @action= is allowed per remap ACL";
         Dbg(dbg_ctl_url_rewrite, "%s", err.data());
         snprintf(errStrBuf, errStrBufSize, "%s", err.data());
+        if (new_rule_flg) {
+          delete rule;
+          *rule_pp = nullptr;
+        }
         return errStrBuf;
       }
       action_flag = true;
@@ -683,15 +697,6 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, i
     if (ul & REMAP_OPTFLG_INTERNAL) {
       rule->internal = 1;
     }
-  }
-
-  if (!ip_is_listed) {
-    // If no IP addresses are listed, treat that like `@src_ip=all`.
-    ink_release_assert(rule->src_ip_valid == 0 && rule->src_ip_cnt == 0);
-    src_ip_info_t *ipi       = &rule->src_ip_array[rule->src_ip_cnt];
-    ipi->match_all_addresses = true;
-    rule->src_ip_cnt++;
-    rule->src_ip_valid = 1;
   }
 
   if (dbg_ctl_url_rewrite.on()) {
@@ -1023,8 +1028,6 @@ lFail:
   return false;
 }
 
-namespace
-{
 bool
 remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 {
@@ -1470,7 +1473,6 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   IpAllow::enableAcceptCheck(bti->accept_check_p);
   return true;
 }
-} // end anonymous namespace
 
 bool
 remap_parse_config(const char *path, UrlRewrite *rewrite)

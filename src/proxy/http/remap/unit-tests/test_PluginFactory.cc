@@ -468,7 +468,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
 
     std::string error;
 
-    for (auto searchDir : searchDirs) {
+    for (auto const &searchDir : searchDirs) {
       CHECK(fs::create_directories(searchDir, ec));
       fs::copy(pluginBuildPath, searchDir, ec);
     }
@@ -477,7 +477,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
     /* Instantiate and initialize a plugin DSO instance. */
     PluginFactoryUnitTest factory(tempComponent);
     factory.setRuntimeDir(runtimeRootDir);
-    for (auto searchDir : searchDirs) {
+    for (auto const &searchDir : searchDirs) {
       factory.addSearchDir(searchDir);
     }
 
