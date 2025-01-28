@@ -27,14 +27,15 @@
 #include "P_SSLNetVConnection.h"
 #include "P_TLSKeyLogger.h"
 #include "SSLStats.h"
-
-#include "records/RecHttp.h"
-#include "iocore/net/SSLMultiCertConfigLoader.h"
-#include "iocore/net/SSLAPIHooks.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
+#include "SSLDynlock.h" // IWYU pragma: keep - for ssl_dyn_*
+
+#include "iocore/net/SSLMultiCertConfigLoader.h"
+#include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
+#include "records/RecHttp.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/ink_config.h"
 #include "tscore/SimpleTokenizer.h"
