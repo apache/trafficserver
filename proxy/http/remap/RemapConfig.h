@@ -63,7 +63,7 @@ struct BUILD_TABLE_INFO {
 
   // Free acl_filter_rule in the list
   void clear_acl_rules_list();
-  
+
   // noncopyable
   BUILD_TABLE_INFO(const BUILD_TABLE_INFO &) = delete;            // disabled
   BUILD_TABLE_INFO &operator=(const BUILD_TABLE_INFO &) = delete; // disabled
