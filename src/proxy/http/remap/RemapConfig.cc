@@ -97,14 +97,6 @@ BUILD_TABLE_INFO::BUILD_TABLE_INFO()
 BUILD_TABLE_INFO::~BUILD_TABLE_INFO()
 {
   this->reset();
-
-  // clean up any leftover named filter rules
-  auto *rp = rules_list;
-  while (rp != nullptr) {
-    auto *tmp = rp->next;
-    delete rp;
-    rp = tmp;
-  }
 }
 
 void
@@ -113,6 +105,18 @@ BUILD_TABLE_INFO::reset()
   this->paramc = this->argc = 0;
   clear_xstr_array(this->paramv, sizeof(this->paramv) / sizeof(char *));
   clear_xstr_array(this->argv, sizeof(this->argv) / sizeof(char *));
+}
+
+void
+BUILD_TABLE_INFO::clear_acl_rules_list()
+{
+  // clean up any leftover named filter rules
+  auto *rp = rules_list;
+  while (rp != nullptr) {
+    auto *tmp = rp->next;
+    delete rp;
+    rp = tmp;
+  }
 }
 
 static const char *
@@ -1487,6 +1491,8 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
   /* Now after we parsed the configuration and (re)loaded plugins and plugin instances
    * accordingly notify all plugins that we are done */
   rewrite->pluginFactory.indicatePostReload(status);
+
+  bti.clear_acl_rules_list();
 
   return status;
 }
