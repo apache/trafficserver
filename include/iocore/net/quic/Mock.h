@@ -25,7 +25,6 @@
 
 #include "iocore/net/quic/QUICApplication.h"
 #include "iocore/net/quic/QUICStreamManager.h"
-#include "iocore/net/quic/QUICEvents.h"
 #include "iocore/net/quic/QUICStreamAdapter.h"
 #include "iocore/net/quic/QUICStream.h"
 
@@ -280,7 +279,6 @@ public:
   {
     return 0;
   }
-  enum class tcp_congestion_control_side { CLIENT_SIDE, SERVER_SIDE };
   int
   set_tcp_congestion_control(tcp_congestion_control_side /* side ATS_UNUSED */) override
   {

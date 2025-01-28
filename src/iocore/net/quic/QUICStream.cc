@@ -22,7 +22,6 @@
  */
 
 #include "iocore/net/quic/QUICStream.h"
-#include "iocore/net/quic/QUICStreamManager.h"
 #include "iocore/net/quic/QUICStreamAdapter.h"
 
 constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;

@@ -23,11 +23,9 @@
 
 #pragma once
 
-#include "tscore/ink_config.h"
-
-#include "P_QUICNetVConnection.h"
 #include "P_SSLNextProtocolSet.h"
 #include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/net/SessionAccept.h"
 
 class QUICNextProtocolAccept : public SessionAccept
 {

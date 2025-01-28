@@ -23,8 +23,6 @@
 
 #pragma once
 
-#include "tscore/ink_config.h"
-
 /****************************************************************************
 
   QUICNetVConnection.h
@@ -35,27 +33,21 @@
  ****************************************************************************/
 #pragma once
 
-#include "tscore/ink_platform.h"
-#include "P_Net.h"
-#include "../eventsystem/P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
-#include "P_UnixNet.h"
-#include "P_UDPNet.h"
+#include "iocore/net/QUICSupport.h"
 #include "iocore/net/TLSALPNSupport.h"
 #include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/TLSEventSupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "iocore/net/TLSSNISupport.h"
 #include "iocore/net/TLSCertSwitchSupport.h"
-#include "iocore/net/QUICSupport.h"
-#include "tscore/ink_apidefs.h"
-#include "tscore/List.h"
-
+#include "iocore/net/UDPConnection.h"
 #include "iocore/net/quic/QUICConfig.h"
 #include "iocore/net/quic/QUICConnection.h"
 #include "iocore/net/quic/QUICConnectionTable.h"
 #include "iocore/net/quic/QUICContext.h"
 #include "iocore/net/quic/QUICStreamManager.h"
+#include "tscore/List.h"
 
 #include <netinet/in.h>
 #include <quiche.h>

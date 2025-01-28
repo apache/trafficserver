@@ -22,8 +22,7 @@
  */
 
 #include "iocore/net/quic/QUICIntUtil.h"
-#include "tscore/ink_endian.h"
-#include <memory>
+#include "tscore/ink_endian.h" // IWYU pragma: keep - for be64toh
 #include <cstring>
 
 size_t

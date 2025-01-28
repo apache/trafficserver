@@ -23,14 +23,9 @@
 
 #pragma once
 
-#include <bitset>
-
-#include "tscore/ink_platform.h"
-
-#include "P_Net.h"
-#include "iocore/net/quic/QUICTypes.h"
 #include "P_QUICNetProcessor.h"
 #include "P_QUICNetVConnection.h"
+#include "iocore/net/UDPPacket.h"
 
 class NetHandler;
 using NetContHandler = int (NetHandler::*)(int, void *);
@@ -76,7 +71,7 @@ private:
 static inline QUICPollCont *
 get_QUICPollCont(EThread *t)
 {
-  return (QUICPollCont *)ETHREAD_GET_PTR(t, quic_NetProcessor.quicPollCont_offset);
+  return static_cast<QUICPollCont *>(ETHREAD_GET_PTR(t, quic_NetProcessor.quicPollCont_offset));
 }
 
 extern ClassAllocator<QUICPollEvent> quicPollEventAllocator;

@@ -22,6 +22,7 @@
  */
 
 #include "P_QUICNextProtocolAccept.h"
+#include "P_QUICNetVConnection.h"
 
 namespace
 {

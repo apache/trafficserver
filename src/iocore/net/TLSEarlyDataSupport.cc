@@ -26,7 +26,7 @@
 #include "tscore/Diags.h" // IWYU pragma: keep - for Warning()
 #include "tscore/ink_config.h"
 #include "tscore/ink_assert.h"
-#include "tsutil/DbgCtl.h"
+#include "tsutil/DbgCtl.h" // IWYU pragma: keep - for DbgCtl
 
 #include <openssl/ssl.h>
 

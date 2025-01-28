@@ -23,6 +23,7 @@
 
 #include "iocore/eventsystem/IOBuffer.h"
 #include "iocore/net/quic/QUICStreamAdapter.h"
+#include "iocore/net/quic/QUICTransferProgressProvider.h"
 
 void
 QUICTransferProgressProviderSA::set_stream_adapter(QUICStreamAdapter *adapter)
