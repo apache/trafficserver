@@ -35,9 +35,15 @@ DbgCtl dbg_ctl_http_seq{"http_seq"};
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const     *client_ip = netvc->get_remote_addr();
+  sockaddr const     *client_ip;
   IpAllow::ACL        acl;
   ip_port_text_buffer ipb;
+
+  if (netvc->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
+    client_ip = netvc->get_remote_addr();
+  } else {
+    client_ip = netvc->get_proxy_protocol_src_addr();
+  }
 
   if (ats_is_ip(client_ip)) {
     acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
@@ -46,8 +52,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
       return false;
     }
   } else {
-    // This is for unix sockets where ip-based acls are not relevant
-    // TODO(cmcfarlen): POC
+    // If IP address is unprovided (e.g. UDS without PROXY protocol), IP-based ACLs are not relevant
     acl = IpAllow::makeAllowAllACL();
   }
 
