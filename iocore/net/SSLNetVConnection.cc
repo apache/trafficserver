@@ -2030,6 +2030,7 @@ SSLNetVConnection::_ssl_accept()
           }
           block->fill(nread);
           this->early_data_buf->append_block(block);
+          this->read_from_early_data += nread;
           SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
 
           if (is_debug_tag_set("ssl_early_data_show_received")) {
