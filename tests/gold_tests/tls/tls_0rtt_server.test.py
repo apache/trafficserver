@@ -22,12 +22,11 @@ Test.Summary = '''
 Test ATS TLSv1.3 0-RTT support
 '''
 
-Test.SkipUnless(
-    Condition.HasOpenSSLVersion('1.1.1'),
-    Condition.IsOpenSSL(),
-)
+# Checking only OpenSSL version allows you to run this test with BoringSSL (and it should pass).
+Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'),)
 
-ts = Test.MakeATSProcess('ts', enable_tls=True)
+ts1 = Test.MakeATSProcess('ts1', enable_tls=True)
+ts2 = Test.MakeATSProcess('ts2', enable_tls=True)
 server = Test.MakeOriginServer('server')
 
 request_header1 = {'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n', 'timestamp': '1469733493.993', 'body': ''}
@@ -85,26 +84,26 @@ server.addResponse('sessionlog.json', request_header4, response_header4)
 server.addResponse('sessionlog.json', request_header5, response_header5)
 server.addResponse('sessionlog.json', request_header6, response_header6)
 
-ts.addSSLfile('ssl/server.pem')
-ts.addSSLfile('ssl/server.key')
+ts1.addSSLfile('ssl/server.pem')
+ts1.addSSLfile('ssl/server.key')
 
-ts.Setup.Copy('test-0rtt-s_client.py')
-ts.Setup.Copy('h2_early_decode.py')
-ts.Setup.Copy('early_h1_get.txt')
-ts.Setup.Copy('early_h1_post.txt')
-ts.Setup.Copy('early_h2_get.txt')
-ts.Setup.Copy('early_h2_post.txt')
-ts.Setup.Copy('early_h2_multi1.txt')
-ts.Setup.Copy('early_h2_multi2.txt')
+ts1.Setup.Copy('test-0rtt-s_client.py')
+ts1.Setup.Copy('h2_early_decode.py')
+ts1.Setup.Copy('early_h1_get.txt')
+ts1.Setup.Copy('early_h1_post.txt')
+ts1.Setup.Copy('early_h2_get.txt')
+ts1.Setup.Copy('early_h2_post.txt')
+ts1.Setup.Copy('early_h2_multi1.txt')
+ts1.Setup.Copy('early_h2_multi2.txt')
 
-ts.Disk.records_config.update(
+ts1.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
         'proxy.config.exec_thread.autoconfig': 0,
         'proxy.config.exec_thread.limit': 8,
-        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
         'proxy.config.ssl.session_cache': 2,
         'proxy.config.ssl.session_cache.size': 512000,
         'proxy.config.ssl.session_cache.timeout': 7200,
@@ -116,68 +115,105 @@ ts.Disk.records_config.update(
             'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts1.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+ts1.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+
+ts1.Disk.sni_yaml.AddLines([
+    'sni:',
+    '- fqdn: example-no.com',
+    '  server_max_early_data: 0',
+])
+
+ts2.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
+        'proxy.config.exec_thread.autoconfig': 0,
+        'proxy.config.exec_thread.limit': 8,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
+        'proxy.config.ssl.session_cache': 2,
+        'proxy.config.ssl.session_cache.size': 512000,
+        'proxy.config.ssl.session_cache.timeout': 7200,
+        'proxy.config.ssl.session_cache.num_buckets': 32768,
+        'proxy.config.ssl.server.session_ticket.enable': 1,
+        'proxy.config.ssl.server.max_early_data': 0,
+        'proxy.config.ssl.server.allow_early_data_params': 0,
+        'proxy.config.ssl.server.cipher_suite':
+            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
+    })
+
+ts2.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+
+ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+
+ts2.Disk.sni_yaml.AddLines([
+    'sni:',
+    '- fqdn: example-yes.com',
+    '  server_max_early_data: 16384',
+])
 
 tr = Test.AddTestRun('Basic Curl Test')
-tr.Processes.Default.Command = 'curl https://127.0.0.1:{0} -k'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -k --resolve example.com:{0}:127.0.0.1 https://example.com:{0}'.format(ts1.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts)
+tr.Processes.Default.StartBefore(ts1)
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('curl test', 'Making sure the basics still work')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('early data accepted', '')
 tr.StillRunningAfter = server
-tr.StillRunningAfter += ts
+tr.StillRunningAfter += ts1
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 GET)')
-tr.Processes.Default.Command = f'{sys.executable} test-0rtt-s_client.py {ts.Variables.ssl_port} h1 get {Test.RunDirectory}'
+tr.Processes.Default.Command = f'{sys.executable} {Test.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h1 -t get -r {Test.RunDirectory}'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
 tr.StillRunningAfter = server
-tr.StillRunningAfter += ts
+tr.StillRunningAfter += ts1
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 POST)')
-tr.Processes.Default.Command = f'{sys.executable} test-0rtt-s_client.py {ts.Variables.ssl_port} h1 post {Test.RunDirectory}'
+tr.Processes.Default.Command = f'{sys.executable} {Test.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h1 -t post -r {Test.RunDirectory}'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('HTTP/1.1 425 Too Early', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('early data accepted', '')
 tr.StillRunningAfter = server
-tr.StillRunningAfter += ts
+tr.StillRunningAfter += ts1
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 GET)')
-tr.Processes.Default.Command = f'{sys.executable} test-0rtt-s_client.py {ts.Variables.ssl_port} h2 get {Test.RunDirectory}'
+tr.Processes.Default.Command = f'{sys.executable} {Test.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h2 -t get -r {Test.RunDirectory}'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
 tr.StillRunningAfter = server
-tr.StillRunningAfter += ts
+tr.StillRunningAfter += ts1
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 POST)')
-tr.Processes.Default.Command = f'{sys.executable} test-0rtt-s_client.py {ts.Variables.ssl_port} h2 post {Test.RunDirectory}'
+tr.Processes.Default.Command = f'{sys.executable} {Test.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h2 -t post -r {Test.RunDirectory}'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(':status 425', 'Only safe methods are allowed')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('early data accepted', '')
 tr.StillRunningAfter = server
-tr.StillRunningAfter += ts
+tr.StillRunningAfter += ts1
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 Multiplex)')
-tr.Processes.Default.Command = f'{sys.executable} test-0rtt-s_client.py {ts.Variables.ssl_port} h2 multi1 {Test.RunDirectory}'
+tr.Processes.Default.Command = f'{sys.executable} {Test.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h2 -t multi1 -r {Test.RunDirectory}'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted multi_1', '')
 tr.Processes.Default.Streams.All += Testers.ContainsExpression('early data accepted multi_2', '')
 tr.Processes.Default.Streams.All += Testers.ContainsExpression('early data accepted multi_3', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
 tr.StillRunningAfter = server
-tr.StillRunningAfter += ts
+tr.StillRunningAfter += ts1
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 Multiplex with POST)')
-tr.Processes.Default.Command = f'{sys.executable} test-0rtt-s_client.py {ts.Variables.ssl_port} h2 multi2 {Test.RunDirectory}'
+tr.Processes.Default.Command = f'{sys.executable} {Test.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h2 -t multi2 -r {Test.RunDirectory}'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted multi_1', '')
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(':status 425', 'Only safe methods are allowed')
 tr.Processes.Default.Streams.All += Testers.ContainsExpression('early data accepted multi_3', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
+tr.StillRunningAfter = server
+tr.StillRunningAfter += ts1

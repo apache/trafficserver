@@ -22,25 +22,40 @@ import sys
 import os
 import shlex
 import h2_early_decode
+import argparse
 
 
 def main():
-    ats_port = sys.argv[1]
-    http_ver = sys.argv[2]
-    test = sys.argv[3]
-    sess_file_path = os.path.join(sys.argv[4], 'sess.dat')
-    early_data_file_path = os.path.join(sys.argv[4], 'early_{0}_{1}.txt'.format(http_ver, test))
+    parser = argparse.ArgumentParser(description='Process some args.')
+    parser.add_argument('-p', '--ats-port', type=int, dest='ats_port', required=True, help='ATS port number')
+    parser.add_argument('-v', '--http-version', type=str, dest='http_ver', choices=['h1', 'h2'], required=True, help='HTTP version')
+    parser.add_argument('-t', '--test-name', type=str, dest='test_name', required=True, help='Name of the test to run')
+    parser.add_argument('-r', '--run-dir', type=str, dest='run_dir', required=True, help='Path to the autest run directory')
+    parser.add_argument('-s', '--server-name', type=str, dest='sni', required=False, help='Server Name')
+    args = parser.parse_args()
 
+    sess_file_path = os.path.join(args.run_dir, 'sess.dat')
+    early_data_file_path = os.path.join(args.run_dir, 'early_{0}_{1}.txt'.format(args.http_ver, args.test_name))
+
+    if args.sni != '' and args.sni is not None:
+        sni_str = '-servername {0}'.format(args.sni)
+    else:
+        sni_str = ''
+
+    if args.http_ver == 'h2':
+        alpn_str = '-alpn h2'
+    else:
+        alpn_str = ''
     s_client_cmd_1 = shlex.split(
-        'openssl s_client -connect 127.0.0.1:{0} -tls1_3 -quiet -sess_out {1}'.format(ats_port, sess_file_path))
+        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_out {sess_file_path} {sni_str} {alpn_str}')
     s_client_cmd_2 = shlex.split(
-        'openssl s_client -connect 127.0.0.1:{0} -tls1_3 -quiet -sess_in {1} -early_data {2}'.format(
-            ats_port, sess_file_path, early_data_file_path))
+        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_in {sess_file_path} -early_data {early_data_file_path} {sni_str} {alpn_str}'
+    )
 
     create_sess_proc = subprocess.Popen(
         s_client_cmd_1, env=os.environ.copy(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
-        output = create_sess_proc.communicate(timeout=1)[0]
+        output = create_sess_proc.communicate(input=bytes(b'GET / HTTP/1.0\r\n\r\n'), timeout=1)[0]
     except subprocess.TimeoutExpired:
         create_sess_proc.kill()
         output = create_sess_proc.communicate()[0]
@@ -53,7 +68,7 @@ def main():
         reuse_sess_proc.kill()
         output = reuse_sess_proc.communicate()[0]
 
-    if http_ver == 'h2':
+    if args.http_ver == 'h2':
         lines = output.split(bytes('\n', 'utf-8'))
         data = b''
         for line in lines:
@@ -70,6 +85,7 @@ def main():
             print(frame)
     else:
         print(output.decode('utf-8'))
+
 
     exit(0)
 
