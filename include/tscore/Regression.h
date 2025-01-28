@@ -23,9 +23,8 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
 #include "tsutil/Regex.h"
-#include "tscore/Diags.h"
+#include "tsutil/SourceLocation.h"
 
 //   Each module should provide one or more regression tests
 //

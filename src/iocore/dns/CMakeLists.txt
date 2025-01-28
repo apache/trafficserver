@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(inkdns STATIC DNS.cc DNSConnection.cc DNSEventIO.cc Inline.cc SplitDNS.cc)
+add_library(inkdns STATIC DNS.cc DNSConnection.cc DNSEventIO.cc SplitDNS.cc)
 add_library(ts::inkdns ALIAS inkdns)
 
 target_include_directories(

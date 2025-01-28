@@ -23,6 +23,8 @@
 
 // To make compile faster
 // https://github.com/philsquared/Catch/blob/master/docs/slow-compiles.md
+#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/RecProcess.h"
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
@@ -37,7 +39,7 @@
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
 
-  virtual void
+  void
   testRunStarting(Catch::TestRunInfo const &testRunInfo) override
   {
     BaseLogFile *base_log_file = new BaseLogFile("stderr");

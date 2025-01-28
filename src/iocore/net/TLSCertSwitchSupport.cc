@@ -20,7 +20,8 @@
  */
 
 #include "iocore/net/TLSCertSwitchSupport.h"
-#include "P_SSLCertLookup.h"
+#include "tscore/ink_assert.h"
+#include "tsutil/DbgCtl.h"
 
 namespace
 {

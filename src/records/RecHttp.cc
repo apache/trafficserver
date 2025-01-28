@@ -21,18 +21,13 @@
   limitations under the License.
 */
 
-#include "swoc/swoc_ip.h"
-
 #include "records/RecCore.h"
 #include "records/RecHttp.h"
-#include "tscore/ink_defs.h"
-#include "tscore/TextBuffer.h"
 #include "tscore/Tokenizer.h"
 #include <cstring>
 #include <strings.h>
 #include "tscore/ink_inet.h"
 #include "swoc/BufferWriter.h"
-#include "swoc/bwf_ip.h"
 #include <cstring>
 #include <string_view>
 #include <unordered_set>

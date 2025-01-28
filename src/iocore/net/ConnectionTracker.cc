@@ -21,13 +21,9 @@
   limitations under the License.
  */
 
-#include <algorithm>
-#include <deque>
 #include "P_Net.h" // For Metrics.
 #include "iocore/net/ConnectionTracker.h"
 #include "records/RecCore.h"
-#include "tsutil/ts_bw_format.h"
-#include "../../records/P_RecDefs.h"
 
 using namespace std::literals;
 

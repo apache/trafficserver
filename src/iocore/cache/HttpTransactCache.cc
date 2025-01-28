@@ -23,18 +23,15 @@
 
 #include "P_CacheHttp.h"
 
-#include "tscore/ink_platform.h"
-
 #include "api/APIHook.h"
 #include "api/InkAPIInternal.h"
-#include "iocore/cache/HttpTransactCache.h"
-#include <ctime>
 #include "api/HttpAPIHooks.h"
+#include "iocore/cache/HttpTransactCache.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HttpCompat.h"
-
-#include "tscore/InkErrno.h"
 #include "tscore/ink_time.h"
+
+#include <ctime>
 
 namespace
 {

@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(inkhostdb STATIC HostDB.cc Inline.cc RefCountCache.cc HostFile.cc HostDBInfo.cc)
+add_library(inkhostdb STATIC HostDB.cc RefCountCache.cc HostFile.cc HostDBInfo.cc)
 add_library(ts::inkhostdb ALIAS inkhostdb)
 
 target_link_libraries(inkhostdb PUBLIC ts::inkdns ts::inkevent ts::tscore)

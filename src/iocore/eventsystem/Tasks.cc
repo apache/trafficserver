@@ -22,6 +22,7 @@
  */
 
 #include "iocore/eventsystem/Tasks.h"
+#include "iocore/eventsystem/EventProcessor.h"
 
 // Globals
 EventType      ET_TASK = ET_CALL;

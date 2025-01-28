@@ -22,8 +22,11 @@
   limitations under the License.
  */
 
-#include "iocore/net/TLSBasicSupport.h"
 #include "SSLStats.h"
+#include "iocore/net/TLSBasicSupport.h"
+#include "tsutil/DbgCtl.h"
+
+#include <cinttypes>
 
 int TLSBasicSupport::_ex_data_index = -1;
 

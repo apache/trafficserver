@@ -23,10 +23,8 @@
 
 #pragma once
 
-#include "iocore/net/quic/QUICTypes.h"
 #include "iocore/net/quic/QUICConnection.h"
 #include "iocore/net/quic/QUICConfig.h"
-#include "iocore/net/quic/QUICEvents.h"
 
 class QUICNetVConnection;
 

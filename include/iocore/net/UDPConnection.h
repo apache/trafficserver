@@ -31,7 +31,9 @@
 
 #pragma once
 
-#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/Action.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/UnixSocket.h"
 #define INK_ETHERNET_MTU_SIZE 1472
 class UDPPacket;
 /**

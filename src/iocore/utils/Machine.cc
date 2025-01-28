@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_assert.h"
 #include "tscore/Diags.h"

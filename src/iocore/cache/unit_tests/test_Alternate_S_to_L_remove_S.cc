@@ -25,6 +25,7 @@
 #define SMALL_FILE 10 * 1024
 
 #include "main.h"
+#include "../P_CacheInternal.h"
 
 int  cache_vols           = 1;
 bool reuse_existing_cache = false;

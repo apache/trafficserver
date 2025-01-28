@@ -24,7 +24,7 @@
 #pragma once
 
 #include <openssl/bio.h>
-#include "tscore/ink_ssl.h"
+#include <sys/socket.h>
 
 // Return a BIO_METHOD for a socket BIO that implements TCP Fast Open.
 const BIO_METHOD *BIO_s_fastopen();

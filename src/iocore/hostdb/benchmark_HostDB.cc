@@ -33,13 +33,10 @@
 #include "tscore/Layout.h"
 #include "iocore/eventsystem/RecProcess.h"
 #include "iocore/hostdb/HostDBProcessor.h"
-#include "tscore/TSSystemState.h"
 #include "tscore/Version.h"
-#include "tscore/ink_hrtime.h"
 #include "tscore/ink_hw.h"
 #include "tsutil/DbgCtl.h"
 #include <algorithm>
-#include <functional>
 
 #include "iocore/hostdb/HostDB.h"
 

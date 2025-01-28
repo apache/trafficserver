@@ -21,25 +21,16 @@
 
 #pragma once
 
-#define OPENSSL_THREAD_DEFINES
+#include "P_SSLCertLookup.h"
+#include "iocore/net/SSLTypes.h"
+#include "tscore/Diags.h"
 
+#define OPENSSL_THREAD_DEFINES
 #if __has_include(<openssl/opensslconf.h>)
 #include <openssl/opensslconf.h>
 #endif
 #include <openssl/ssl.h>
-
-#include "tsutil/ts_errata.h"
-
-#include "tscore/ink_config.h"
-#include "tscore/Diags.h"
-#include "records/RecCore.h"
-#include "P_SSLCertLookup.h"
-#include "iocore/net/SSLTypes.h"
-
-#include <set>
 #include <memory>
-#include <unordered_map>
-#include <vector>
 
 class SSLNetVConnection;
 

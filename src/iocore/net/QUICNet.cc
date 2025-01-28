@@ -21,9 +21,14 @@
   limitations under the License.
  */
 
-#include "P_Net.h"
+#include "P_QUICNetVConnection.h"
 #include "P_QUICNet.h"
-#include "iocore/net/quic/QUICEvents.h"
+#include "P_UDPNet.h"
+#include "P_UnixNet.h"
+#include "iocore/net/NetHandler.h"
+#include "iocore/net/UDPPacket.h"
+#include "tscore/ink_atomic.h"
+#include <quiche.h>
 
 ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");
 

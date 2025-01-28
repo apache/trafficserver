@@ -31,6 +31,9 @@
  ****************************************************************************/
 #pragma once
 
+#include "iocore/eventsystem/Lock.h"
+#include "tscore/ink_memory.h"
+
 #define MT_HASHTABLE_PARTITION_BITS    6
 #define MT_HASHTABLE_PARTITIONS        (1 << MT_HASHTABLE_PARTITION_BITS)
 #define MT_HASHTABLE_PARTITION_MASK    (MT_HASHTABLE_PARTITIONS - 1)
@@ -43,7 +46,7 @@ template <class key_t, class data_t> struct HashTableEntry {
   static HashTableEntry *
   alloc()
   {
-    return (HashTableEntry *)ats_malloc(sizeof(HashTableEntry));
+    return static_cast<HashTableEntry *>(ats_malloc(sizeof(HashTableEntry)));
   }
 
   static void
@@ -101,7 +104,7 @@ public:
   int
   bucket_id(key_t key, int a_bucket_num)
   {
-    return (int)(((key >> MT_HASHTABLE_PARTITION_BITS) ^ key) % a_bucket_num);
+    return static_cast<int>(((key >> MT_HASHTABLE_PARTITION_BITS) ^ key) % a_bucket_num);
   }
 
   int
@@ -217,7 +220,7 @@ IMTHashTable<key_t, data_t>::insert_entry(key_t key, data_t data)
   }
   if (cur != NULL) {
     if (data == cur->data) {
-      return (data_t)0;
+      return static_cast<data_t>(0);
     } else {
       data_t tmp = cur->data;
       cur->data  = data;
@@ -238,7 +241,7 @@ IMTHashTable<key_t, data_t>::insert_entry(key_t key, data_t data)
       resize(bucket_num * 2);
     }
   }
-  return (data_t)0;
+  return static_cast<data_t>(0);
 }
 
 template <class key_t, class data_t>
@@ -246,7 +249,7 @@ inline data_t
 IMTHashTable<key_t, data_t>::remove_entry(key_t key)
 {
   int                            id   = bucket_id(key);
-  data_t                         ret  = (data_t)0;
+  data_t                         ret  = static_cast<data_t>(0);
   HashTableEntry<key_t, data_t> *cur  = buckets[id];
   HashTableEntry<key_t, data_t> *prev = NULL;
   while (cur != NULL && cur->key != key) {
@@ -272,7 +275,7 @@ inline data_t
 IMTHashTable<key_t, data_t>::lookup_entry(key_t key)
 {
   int                            id  = bucket_id(key);
-  data_t                         ret = (data_t)0;
+  data_t                         ret = static_cast<data_t>(0);
   HashTableEntry<key_t, data_t> *cur = buckets[id];
   while (cur != NULL && cur->key != key) {
     cur = cur->next;
@@ -292,7 +295,7 @@ IMTHashTable<key_t, data_t>::first_entry(int bucket_id, HashTableIteratorState<k
   if (*(s->ppcur) != NULL) {
     return (*(s->ppcur))->data;
   }
-  return (data_t)0;
+  return static_cast<data_t>(0);
 }
 
 template <class key_t, class data_t>
@@ -305,7 +308,7 @@ IMTHashTable<key_t, data_t>::next_entry(HashTableIteratorState<key_t, data_t> *s
       return (*(s->ppcur))->data;
     }
   }
-  return (data_t)0;
+  return static_cast<data_t>(0);
 }
 
 template <class key_t, class data_t>
@@ -313,7 +316,7 @@ inline data_t
 IMTHashTable<key_t, data_t>::cur_entry(HashTableIteratorState<key_t, data_t> *s)
 {
   if (*(s->ppcur) == NULL) {
-    return (data_t)0;
+    return static_cast<data_t>(0);
   }
   return (*(s->ppcur))->data;
 }
@@ -322,7 +325,7 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::remove_entry(HashTableIteratorState<key_t, data_t> *s)
 {
-  data_t                         data   = (data_t)0;
+  data_t                         data   = static_cast<data_t>(0);
   HashTableEntry<key_t, data_t> *pEntry = *(s->ppcur);
   if (pEntry != NULL) {
     data          = pEntry->data;
@@ -368,7 +371,7 @@ public:
   int
   part_num(key_t key)
   {
-    return (int)(key & MT_HASHTABLE_PARTITION_MASK);
+    return static_cast<int>(key & MT_HASHTABLE_PARTITION_MASK);
   }
   data_t
   insert_entry(key_t key, data_t data)
@@ -391,14 +394,14 @@ public:
   data_t
   first_entry(int part_id, HashTableIteratorState<key_t, data_t> *s)
   {
-    data_t ret = (data_t)0;
+    data_t ret = static_cast<data_t>(0);
     for (int i = 0; i < hashTables[part_id]->getBucketNum(); i++) {
       ret = hashTables[part_id]->first_entry(i, s);
-      if (ret != (data_t)0) {
+      if (ret != static_cast<data_t>(0)) {
         return ret;
       }
     }
-    return (data_t)0;
+    return static_cast<data_t>(0);
   }
 
   data_t
@@ -414,16 +417,16 @@ public:
   next_entry(int part_id, HashTableIteratorState<key_t, data_t> *s)
   {
     data_t ret = IMTHashTable<key_t, data_t>::next_entry(s);
-    if (ret != (data_t)0) {
+    if (ret != static_cast<data_t>(0)) {
       return ret;
     }
     for (int i = s->cur_buck + 1; i < hashTables[part_id]->getBucketNum(); i++) {
       ret = hashTables[part_id]->first_entry(i, s);
-      if (ret != (data_t)0) {
+      if (ret != static_cast<data_t>(0)) {
         return ret;
       }
     }
-    return (data_t)0;
+    return static_cast<data_t>(0);
   }
   data_t
   remove_entry(int part_id, HashTableIteratorState<key_t, data_t> *s)

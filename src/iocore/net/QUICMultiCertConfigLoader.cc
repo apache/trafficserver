@@ -21,16 +21,10 @@
  *  limitations under the License.
  */
 
-#include "iocore/net/QUICMultiCertConfigLoader.h"
+#include "P_SSLCertLookup.h"
 #include "P_SSLConfig.h"
-#include "P_SSLNextProtocolSet.h"
-#include "P_OCSPStapling.h"
-#include "iocore/net/quic/QUICGlobals.h"
+#include "iocore/net/QUICMultiCertConfigLoader.h"
 #include "iocore/net/quic/QUICConfig.h"
-#include "iocore/net/quic/QUICConnection.h"
-#include "iocore/net/quic/QUICTypes.h"
-#include "tscore/Filenames.h"
-// #include "iocore/net/quic/QUICGlobals.h"
 
 int QUICCertConfig::_config_id = 0;
 

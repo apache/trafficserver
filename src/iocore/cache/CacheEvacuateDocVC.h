@@ -27,7 +27,7 @@
 #include "../../../src/iocore/cache/P_CacheDir.h"
 */
 
-#include "iocore/cache/CacheVC.h"
+#include "CacheVC.h"
 
 // eventsystem
 #include "iocore/eventsystem/Continuation.h"

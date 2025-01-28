@@ -41,8 +41,8 @@
 #pragma once
 
 #include "tscore/Version.h"
-#include "iocore/eventsystem/EventSystem.h"
 #include <netinet/in.h>
+#include <string_view>
 
 #ifndef UIO_MAXIOV
 #define NET_MAX_IOV 16 // UIO_MAXIOV shall be at least 16 1003.1g (5.4.1.1)

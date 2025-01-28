@@ -23,14 +23,11 @@
 
 #pragma once
 
-#include <unordered_map>
-
-#include "records/RecProcess.h"
-#include "iocore/net/SSLDiags.h"
-
 #include "tsutil/Metrics.h"
 
 #include <openssl/ssl.h>
+
+#include <unordered_map>
 
 using ts::Metrics;
 

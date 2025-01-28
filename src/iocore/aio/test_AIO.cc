@@ -21,7 +21,9 @@
   limitations under the License.
  */
 
-#include "api/InkAPIInternal.h"
+#include "iocore/aio/AIO.h"
+#include "iocore/eventsystem/EventSystem.h"
+#include "tscore/ink_atomic.h"
 #include "tscore/ink_hw.h"
 #include "tscore/Layout.h"
 #include "tscore/TSSystemState.h"
@@ -290,7 +292,7 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (io->aiocb.aio_lio_opcode == LIO_READ) {
     ink_assert(!do_check_data(io->aiocb.aio_nbytes, io->aiocb.aio_offset));
   }
-  memset((void *)buf, 0, max_size);
+  memset(buf, 0, max_size);
   io->aiocb.aio_fildes = fd;
   io->aiocb.aio_buf    = buf;
   io->action           = this;
@@ -398,14 +400,14 @@ read_config(const char *config_filename)
 #endif
     else if (strcmp(field_name, "disk_path") == 0)
     {
-      assert(n_disk_path < MAX_DISK_THREADS);
+      ink_assert(n_disk_path < MAX_DISK_THREADS);
       fin >> field_value;
       disk_path[n_disk_path] = strdup(field_value);
       cout << "reading disk_path = " << disk_path[n_disk_path] << endl;
       n_disk_path++;
     }
   }
-  assert(read_size > 0);
+  ink_assert(read_size > 0);
   int t                  = seq_read_size + seq_write_size + rand_read_size;
   real_seq_read_percent  = seq_read_percent;
   real_seq_write_percent = seq_write_percent;

@@ -21,13 +21,16 @@
   limitations under the License.
  */
 
+#include "P_CacheHosting.h"
+#include "Stripe.h"
+#include "iocore/cache/CacheDefs.h"
+#include "iocore/eventsystem/Tasks.h"
 #include "swoc/swoc_file.h"
 
-#include "P_Cache.h"
-#include "tscore/Layout.h"
 #include "tscore/HostLookup.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Filenames.h"
+#include "tsutil/DbgCtl.h"
 
 namespace
 {

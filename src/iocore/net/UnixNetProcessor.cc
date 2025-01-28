@@ -22,10 +22,16 @@
  */
 
 #include "P_Net.h"
+#include "P_NetAccept.h"
+#include "P_Socks.h"
+#include "P_UnixNet.h"
+#include "P_UnixNetProcessor.h"
+#include "P_UnixNetVConnection.h"
+#include "iocore/net/SessionAccept.h"
 #include "tscore/InkErrno.h"
-#include "tscore/ink_sock.h"
 #include "tscore/TSSystemState.h"
 #include "P_SSLNextProtocolAccept.h"
+#include "tscore/ink_atomic.h"
 
 // For Stat Pages
 
@@ -175,7 +181,7 @@ UnixNetProcessor::connect_re(Continuation *cont, sockaddr const *target, NetVCOp
   }
 
   EThread            *t  = eventProcessor.assign_affinity_by_type(cont, opt.etype);
-  UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
+  UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(this->allocate_vc(t));
 
   vc->options = opt;
 

@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/quic/QUICTypes.h"
 

@@ -30,10 +30,9 @@
  ****************************************************************************/
 #pragma once
 
+#include "iocore/eventsystem/Action.h"
 #include "iocore/eventsystem/Continuation.h"
-#include "tscore/ink_platform.h"
-#include "iocore/eventsystem/EventSystem.h"
-#include "records/RecProcess.h"
+#include "tscore/Version.h"
 
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IO_URING.h"

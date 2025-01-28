@@ -37,7 +37,6 @@
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_inet.h"
-#include "tscore/ink_platform.h"
 #include "tscore/ink_rand.h"
 #include "tscore/ink_resolver.h"
 #include "tscore/List.h"
@@ -158,8 +157,9 @@ struct DNSEntry : public Continuation {
 
   DNSEntry()
   {
-    for (int &i : id)
+    for (int &i : id) {
       i = -1;
+    }
     memset(qname, 0, MAXDNAME);
   }
 };
@@ -216,8 +216,9 @@ struct DNSHandler : public Continuation {
   {
     ++failover_number[name_server];
     Dbg(_dbg_ctl_dns, "sent_one: failover_number for resolver %d is %d", name_server, failover_number[name_server]);
-    if (failover_number[name_server] >= dns_failover_number && !crossed_failover_number[name_server])
+    if (failover_number[name_server] >= dns_failover_number && !crossed_failover_number[name_server]) {
       crossed_failover_number[name_server] = ink_get_hrtime();
+    }
   }
 
   bool
@@ -258,19 +259,19 @@ struct DNSHandler : public Continuation {
   void
   release_query_id(uint16_t qid)
   {
-    qid_in_flight[qid >> 6] &= (uint64_t) ~(0x1ULL << (qid & 0x3F));
+    qid_in_flight[qid >> 6] &= static_cast<uint64_t>(~(0x1ULL << (qid & 0x3F)));
   };
 
   void
   set_query_id_in_use(uint16_t qid)
   {
-    qid_in_flight[qid >> 6] |= (uint64_t)(0x1ULL << (qid & 0x3F));
+    qid_in_flight[qid >> 6] |= static_cast<uint64_t>(0x1ULL << (qid & 0x3F));
   };
 
   bool
   query_id_in_use(uint16_t qid)
   {
-    return (qid_in_flight[(uint16_t)(qid) >> 6] & (uint64_t)(0x1ULL << ((uint16_t)(qid) & 0x3F))) != 0;
+    return (qid_in_flight[(qid) >> 6] & static_cast<uint64_t>(0x1ULL << ((qid) & 0x3F))) != 0;
   };
 
   DNSHandler();
@@ -318,7 +319,7 @@ TS_INLINE
 DNSHandler::DNSHandler()
   : Continuation(nullptr),
 
-    generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this))
+    generator(static_cast<uint32_t>(static_cast<uintptr_t>(time(nullptr)) ^ reinterpret_cast<uintptr_t>(this)))
 {
   ats_ip_invalidate(&ip);
   for (int i = 0; i < MAX_NAMED; i++) {

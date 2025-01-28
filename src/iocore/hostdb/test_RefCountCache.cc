@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include <iostream>
 #include "RefCountCache.cc"
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/Layout.h"
@@ -73,7 +72,7 @@ public:
       return nullptr;
     }
     ExampleStruct *ret = ExampleStruct::alloc(size - sizeof(ExampleStruct));
-    memcpy((void *)ret, buf, size);
+    memcpy(static_cast<void *>(ret), buf, size);
     // Reset the refcount back to 0, this is a bit ugly-- but I'm not sure we want to expose a method
     // to mess with the refcount, since this is a fairly unique use case
     ret = new (ret) ExampleStruct();

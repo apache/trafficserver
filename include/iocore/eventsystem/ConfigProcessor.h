@@ -25,7 +25,9 @@
 
 #include <atomic>
 
+#include "iocore/eventsystem/EventProcessor.h"
 #include "iocore/eventsystem/Tasks.h"
+#include "records/RecCore.h"
 
 class ProxyMutex;
 

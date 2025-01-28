@@ -24,7 +24,6 @@ add_library(
   Connection.cc
   ConnectionTracker.cc
   EventIO.cc
-  Inline.cc
   YamlSNIConfig.cc
   Net.cc
   NetHandler.cc
@@ -123,9 +122,18 @@ if(BUILD_TESTING)
              unit_tests/test_YamlSNIConfig.cc unit_tests/unit_test_main.cc
   )
   target_link_libraries(test_net PRIVATE ts::inknet catch2::catch2)
+  if(NOT APPLE)
+    target_link_options(test_net PRIVATE -Wl,--allow-multiple-definition)
+  endif()
   set(LIBINKNET_UNIT_TEST_DIR "${CMAKE_SOURCE_DIR}/src/iocore/net/unit_tests")
   target_compile_definitions(test_net PRIVATE LIBINKNET_UNIT_TEST_DIR=${LIBINKNET_UNIT_TEST_DIR})
   add_test(NAME test_net COMMAND test_net)
+
+  if(NOT APPLE)
+    # Disable ORD violation caused by double definition inside a stub file libinknet_stub.cc
+    # see remap_test_dlopen_leak_suppression.txt for more info.
+    set_tests_properties(test_net PROPERTIES ENVIRONMENT "ASAN_OPTIONS=detect_odr_violation=0")
+  endif()
 endif()
 
 clang_tidy_check(inknet)

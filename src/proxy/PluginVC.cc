@@ -75,6 +75,9 @@
 #include "../iocore/eventsystem/P_EventSystem.h"
 #include "../iocore/net/P_Net.h"
 #include "tscore/Regression.h"
+#if TS_HAS_TESTS
+#include "../iocore/net/P_NetVCTest.h"
+#endif
 
 #define PVC_LOCK_RETRY_TIME      HRTIME_MSECONDS(10)
 #define MIN_BLOCK_TRANSFER_BYTES 128
@@ -922,7 +925,7 @@ PluginVC::set_mptcp_state()
 }
 
 int
-PluginVC::set_tcp_congestion_control(int ATS_UNUSED)
+PluginVC::set_tcp_congestion_control(tcp_congestion_control_side ATS_UNUSED)
 {
   return -1;
 }

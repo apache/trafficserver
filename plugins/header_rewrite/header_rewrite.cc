@@ -27,6 +27,7 @@
 #include "ts/remap_version.h"
 
 #include "proxy/http/remap/PluginFactory.h"
+#include "records/RecCore.h"
 
 #include "parser.h"
 #include "ruleset.h"

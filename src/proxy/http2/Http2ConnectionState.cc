@@ -22,6 +22,7 @@
  */
 
 #include "../../iocore/net/P_Net.h"
+#include "../../iocore/net/P_UnixNetVConnection.h"
 #include "iocore/eventsystem/Lock.h"
 #include "proxy/http2/HTTP2.h"
 #include "proxy/http2/Http2ConnectionState.h"

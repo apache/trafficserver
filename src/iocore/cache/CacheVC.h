@@ -23,17 +23,16 @@
 
 #pragma once
 
-// aio
 #include "iocore/aio/AIO.h"
-
-// inkevent
 #include "iocore/eventsystem/Action.h"
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/eventsystem/Event.h"
 #include "iocore/eventsystem/IOBuffer.h"
 #include "iocore/eventsystem/VIO.h"
-
-// tscore
+#include "iocore/cache/Cache.h"
+#include "P_CacheDoc.h"
+#include "Stripe.h"
+#include "StripeSM.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/List.h"
 #include "tscore/Ptr.h"
@@ -66,7 +65,7 @@ struct CacheVC : public CacheVConnection {
   get_header(void **ptr, int *len) override
   {
     if (first_buf) {
-      Doc *doc = (Doc *)first_buf->data();
+      Doc *doc = reinterpret_cast<Doc *>(first_buf->data());
       *ptr     = doc->hdr();
       *len     = doc->hlen;
       return 0;
@@ -87,7 +86,7 @@ struct CacheVC : public CacheVConnection {
   get_single_data(void **ptr, int *len) override
   {
     if (first_buf) {
-      Doc *doc = (Doc *)first_buf->data();
+      Doc *doc = reinterpret_cast<Doc *>(first_buf->data());
       if (doc->data_len() == doc->total_len) {
         *ptr = doc->data();
         *len = doc->data_len();

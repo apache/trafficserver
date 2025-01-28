@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "tscore/ink_config.h"
+#include "P_UnixNetProcessor.h"
 
 /****************************************************************************
 
@@ -41,8 +41,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "tscore/ink_platform.h"
-#include "P_Net.h"
+#include "P_UnixNetProcessor.h"
 #include "iocore/net/quic/QUICConnectionTable.h"
 #include <quiche.h>
 

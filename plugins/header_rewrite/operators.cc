@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <iomanip>
 
+#include "records/RecCore.h"
 #include "ts/ts.h"
 #include "swoc/swoc_file.h"
 

@@ -23,7 +23,7 @@
  */
 
 #include "iocore/net/AsyncSignalEventIO.h"
-#include "iocore/eventsystem/EThread.h"
+#include "tscore/ink_assert.h"
 
 int
 AsyncSignalEventIO::start(EventLoop l, int fd, int events)

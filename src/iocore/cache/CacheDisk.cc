@@ -21,7 +21,8 @@
   limitations under the License.
  */
 
-#include "P_Cache.h"
+#include "P_CacheDisk.h"
+#include "P_CacheInternal.h"
 #include "StripeSM.h"
 
 void
@@ -30,8 +31,8 @@ CacheDisk::incrErrors(const AIOCallback *io)
   if (0 == this->num_errors) {
     /* This it the first read/write error on this span since ATS started.
      * Move the newly failing span from "online" to "failing" bucket. */
-    Metrics::Gauge::decrement(cache_rsb.span_online);
-    Metrics::Gauge::increment(cache_rsb.span_failing);
+    ts::Metrics::Gauge::decrement(cache_rsb.span_online);
+    ts::Metrics::Gauge::increment(cache_rsb.span_failing);
   }
   this->num_errors++;
 
@@ -41,11 +42,11 @@ CacheDisk::incrErrors(const AIOCallback *io)
   switch (io->aiocb.aio_lio_opcode) {
   case LIO_READ:
     opname = "READ";
-    Metrics::Counter::increment(cache_rsb.span_errors_read);
+    ts::Metrics::Counter::increment(cache_rsb.span_errors_read);
     break;
   case LIO_WRITE:
     opname = "WRITE";
-    Metrics::Counter::increment(cache_rsb.span_errors_write);
+    ts::Metrics::Counter::increment(cache_rsb.span_errors_write);
     break;
   default:
     break;

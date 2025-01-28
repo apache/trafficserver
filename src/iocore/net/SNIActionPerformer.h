@@ -23,16 +23,12 @@
 
 #pragma once
 
-#include "swoc/TextView.h"
-#include "swoc/swoc_ip.h"
-
-#include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/SNIActionItem.h"
 #include "iocore/net/SSLTypes.h"
 #include "iocore/net/YamlSNIConfig.h"
-
 #include "tscore/ink_inet.h"
 
+#include "swoc/TextView.h"
 #include <vector>
 
 class SSLNetVConnection;

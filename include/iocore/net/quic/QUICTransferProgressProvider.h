@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 class VIO;
 class QUICStreamAdapter;
 

@@ -30,14 +30,12 @@
   duplicated in UnixNet.cc and NTNetProcessor.cc
 */
 
-#include "swoc/swoc_file.h"
-#include "swoc/bwf_std.h"
-#include "swoc/bwf_ex.h"
-
+#include "P_Socks.h"
 #include "P_Net.h"
-#include "tscore/Layout.h"
-#include "tscore/ink_sock.h"
+#include "../eventsystem/P_VConnection.h"
+#include "iocore/net/NetProcessor.h"
 #include "tscore/InkErrno.h"
+#include "swoc/swoc_file.h"
 
 using namespace swoc::literals;
 
@@ -165,7 +163,7 @@ SocksEntry::free()
     if (lerrno || !netVConnection) {
       Dbg(dbg_ctl_Socks, "retryevent: Sent errno %d to HTTP", lerrno);
       Metrics::Counter::increment(net_rsb.socks_connections_unsuccessful);
-      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)static_cast<intptr_t>(-lerrno));
+      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, reinterpret_cast<void *>(-lerrno));
     } else {
       netVConnection->do_io_read(this, 0, nullptr);
       netVConnection->do_io_write(this, 0, nullptr);
@@ -542,8 +540,8 @@ loadSocksAuthInfo(swoc::TextView content, socks_conf_struct *socks_stuff)
 
       if (!user_name.empty() && !password.empty()) {
         Dbg(dbg_ctl_Socks, "%s", swoc::bwprint(text, "Read auth credentials \"{}\" : \"{}\"", user_name, password).c_str());
-        swoc::bwprint(socks_stuff->user_name_n_passwd, "{}{}{}{}", char(user_name.size()), user_name, char(password.size()),
-                      password);
+        swoc::bwprint(socks_stuff->user_name_n_passwd, "{}{}{}{}", static_cast<char>(user_name.size()), user_name,
+                      static_cast<char>(password.size()), password);
       }
     }
   }
@@ -693,4 +691,15 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     break;
   }
   return ret;
+}
+
+void
+SocksAddrType::reset()
+{
+  if (type != SOCKS_ATYPE_IPV4 && addr.buf) {
+    ats_free(addr.buf);
+  }
+
+  addr.buf = nullptr;
+  type     = SOCKS_ATYPE_NONE;
 }

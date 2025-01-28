@@ -21,18 +21,19 @@
   limitations under the License.
  */
 
-#include "iocore/cache/Cache.h"
-
-#include "P_CacheDoc.h"
 // Cache Inspector and State Pages
+
+#include "CacheEvacuateDocVC.h"
+#include "CacheVC.h"
+#include "P_CacheDoc.h"
+#include "P_CacheInternal.h"
 #include "P_CacheTest.h"
-
 #include "Stripe.h"
-
+#include "StripeSM.h"
+#include "iocore/cache/Cache.h"
 #include "tscore/Filenames.h"
+#include "tscore/InkErrno.h"
 #include "tscore/Layout.h"
-
-#include "../../records/P_RecProcess.h"
 
 #ifdef AIO_FAULT_INJECTION
 #include "iocore/aio/AIO_fault_injection.h"
@@ -42,13 +43,12 @@
 #include <unordered_set>
 #include <fstream>
 #include <string>
-#include <system_error>
 #include <filesystem>
 
 #define SCAN_BUF_SIZE              RECOVERY_SIZE
 #define SCAN_WRITER_LOCK_MAX_RETRY 5
 
-extern void register_cache_stats(CacheStatsBlock *rsb, const std::string prefix);
+extern void register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix);
 
 constexpr ts::VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION);
 
@@ -313,8 +313,8 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;
   c->op_type = static_cast<int>(CacheOpType::Lookup);
-  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->frag_type          = type;
   c->f.lookup           = 1;
@@ -349,8 +349,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       c->vio.op  = VIO::READ;
       c->op_type = static_cast<int>(CacheOpType::Read);
-      Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-      Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+      ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+      ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
       c->first_key = c->key = c->earliest_key = *key;
       c->stripe                               = stripe;
       c->frag_type                            = type;
@@ -378,8 +378,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
     }
   }
 Lmiss:
-  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   return ACTION_RESULT_DONE;
 Lwriter:
@@ -414,8 +414,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   c->op_type       = static_cast<int>(CacheOpType::Write);
   c->stripe        = key_to_stripe(key, hostname, host_len);
   StripeSM *stripe = c->stripe;
-  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->frag_type          = frag_type;
   /*
@@ -438,8 +438,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
 
   if ((res = c->stripe->open_write_lock(c, false, 1)) > 0) {
     // document currently being written, abort
-    Metrics::Counter::increment(cache_rsb.status[c->op_type].failure);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[c->op_type].failure);
+    ts::Metrics::Counter::increment(cache_rsb.status[c->op_type].failure);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[c->op_type].failure);
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-res));
     free_CacheVC(c);
     return ACTION_RESULT_DONE;
@@ -490,8 +490,8 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
   c->vio.op    = VIO::NONE;
   c->frag_type = type;
   c->op_type   = static_cast<int>(CacheOpType::Remove);
-  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
   c->first_key = c->key = *key;
   c->stripe             = stripe;
   c->dir                = result;
@@ -554,8 +554,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
       c->stripe                               = stripe;
       c->vio.op                               = VIO::READ;
       c->op_type                              = static_cast<int>(CacheOpType::Read);
-      Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-      Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+      ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+      ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
       c->request.copy_shallow(request);
       c->frag_type = CACHE_FRAG_TYPE_HTTP;
       c->params    = params;
@@ -586,8 +586,8 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
     }
   }
 Lmiss:
-  Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   return ACTION_RESULT_DONE;
 Lwriter:
@@ -674,8 +674,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
     c->op_type = static_cast<int>(CacheOpType::Write);
   }
 
-  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
   // coverity[Y2K38_SAFETY:FALSE]
   c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
 
@@ -726,8 +726,8 @@ Lmiss:
   return ACTION_RESULT_DONE;
 
 Lfailure:
-  Metrics::Counter::increment(cache_rsb.status[c->op_type].failure);
-  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[c->op_type].failure);
+  ts::Metrics::Counter::increment(cache_rsb.status[c->op_type].failure);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[c->op_type].failure);
   cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-err));
   if (c->od) {
     c->openWriteCloseDir(EVENT_IMMEDIATE, nullptr);

@@ -21,12 +21,22 @@
   limitations under the License.
  */
 
-#include "P_DNS.h"
-#include "tscore/ink_inet.h"
-
-#include "iocore/dns/SplitDNS.h"
-
+#include "P_DNSProcessor.h"
+#include "iocore/dns/SplitDNSProcessor.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/EventProcessor.h"
 #include "iocore/eventsystem/UnixSocket.h"
+#include "iocore/hostdb/HostDB.h"
+#include "iocore/hostdb/HostDBProcessor.h"
+#include "records/RecCore.h"
+#include "tscore/ink_inet.h"
+// TODO: make these go away
+#include "../net/P_UnixNetProcessor.h"
+#include "../net/P_UnixNet.h"
+
+#if TS_HAS_TESTS
+#include "tscore/Regression.h"
+#endif
 
 #define SRV_COST    (RRFIXEDSZ + 0)
 #define SRV_WEIGHT  (RRFIXEDSZ + 2)
@@ -107,7 +117,7 @@ strnchr(char *s, char c, int len)
   while (*s && *s != c && len) {
     ++s, --len;
   }
-  return *s == c ? s : (char *)nullptr;
+  return *s == c ? s : nullptr;
 }
 
 static inline uint16_t
@@ -236,8 +246,7 @@ DNSProcessor::start(int, size_t stacksize)
 
   if (dns_thread > 0) {
     // TODO: Hmmm, should we just get a single thread some other way?
-    ET_DNS                                  = eventProcessor.register_event_type("ET_DNS");
-    NetHandler::active_thread_types[ET_DNS] = true;
+    ET_DNS = eventProcessor.register_event_type("ET_DNS");
     eventProcessor.schedule_spawn(&initialize_thread_for_net, ET_DNS);
     eventProcessor.spawn_event_threads(ET_DNS, 1, stacksize);
   } else {
@@ -889,7 +898,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           }
         }
         // continue reading data
-        void *buf_start = (char *)dnsc->tcp_data.buf_ptr->buf + dnsc->tcp_data.done_reading;
+        void *buf_start = dnsc->tcp_data.buf_ptr->buf + dnsc->tcp_data.done_reading;
         res             = dnsc->sock.recv(buf_start, dnsc->tcp_data.total_length - dnsc->tcp_data.done_reading, 0);
         if (res == -EAGAIN) {
           break;
@@ -1674,7 +1683,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     //
     u_char **ap          = buf->host_aliases;
     buf->ent.h_aliases   = reinterpret_cast<char **>(buf->host_aliases);
-    u_char **hap         = (u_char **)buf->h_addr_ptrs;
+    u_char **hap         = buf->h_addr_ptrs;
     *hap                 = nullptr;
     buf->ent.h_addr_list = reinterpret_cast<char **>(buf->h_addr_ptrs);
 
@@ -1845,7 +1854,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           buflen -= nn;
         }
         // attempt to use the original buffer (if it is word aligned)
-        if (!(((uintptr_t)cp) % sizeof(unsigned int))) {
+        if (!((reinterpret_cast<uintptr_t>(cp)) % sizeof(unsigned int))) {
           *hap++  = cp;
           cp     += n;
         } else {

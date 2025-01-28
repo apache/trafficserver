@@ -21,9 +21,10 @@
   limitations under the License.
  */
 
-#include "iocore/net/AsyncSignalEventIO.h"
+#include "P_UnixNetProcessor.h"
 #include "P_Net.h"
 #include "P_UnixNet.h"
+#include "iocore/net/AsyncSignalEventIO.h"
 #include "tscore/ink_hrtime.h"
 
 #if TS_USE_LINUX_IO_URING
