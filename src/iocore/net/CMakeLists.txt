@@ -122,7 +122,7 @@ if(BUILD_TESTING)
     test_net libinknet_stub.cc NetVCTest.cc unit_tests/test_ProxyProtocol.cc unit_tests/test_SSLSNIConfig.cc
              unit_tests/test_YamlSNIConfig.cc unit_tests/unit_test_main.cc
   )
-  target_link_libraries(test_net PRIVATE catch2::catch2 tscore ts::proxy ts::inknet ts::inkevent)
+  target_link_libraries(test_net PRIVATE catch2::catch2 tscore ts::proxy ts::http_remap ts::inknet ts::inkevent)
   if(NOT APPLE)
     target_link_options(test_net PRIVATE -Wl,--allow-multiple-definition)
   endif()
