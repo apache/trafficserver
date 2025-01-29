@@ -216,8 +216,6 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
 /**
    PROXY Protocol v2 Parser
 
-   TODO: TLVs Support
-
    @return read length
  */
 size_t
@@ -232,6 +230,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
   // length check
   const uint16_t len       = ntohs(hdr_v2->len);
   const size_t   total_len = PPv2_CONNECTION_HEADER_LEN + len;
+  uint16_t       tlv_len   = 0;
 
   if (msg.size() < total_len) {
     return 0;
@@ -256,6 +255,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
       if (len < PPv2_ADDR_LEN_INET) {
         return 0;
       }
+      tlv_len = len - PPv2_ADDR_LEN_INET;
 
       IpAddr src_addr(reinterpret_cast<in_addr_t>(hdr_v2->addr.ip4.src_addr));
       pp_info->src_addr.assign(src_addr, hdr_v2->addr.ip4.src_port);
@@ -272,6 +272,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
       if (len < PPv2_ADDR_LEN_INET6) {
         return 0;
       }
+      tlv_len = len - PPv2_ADDR_LEN_INET6;
 
       IpAddr src_addr(reinterpret_cast<in6_addr const &>(hdr_v2->addr.ip6.src_addr));
       pp_info->src_addr.assign(src_addr, hdr_v2->addr.ip6.src_port);
@@ -299,7 +300,11 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
       return 0;
     }
 
-    // TODO: Parse TLVs
+    if (tlv_len > 0) {
+      if (pp_info->set_additional_data(msg.substr(msg.length() - tlv_len)) < 0) {
+        return 0;
+      }
+    }
 
     return total_len;
   }
@@ -506,4 +511,43 @@ proxy_protocol_version_cast(int i)
   default:
     return ProxyProtocolVersion::UNDEFINED;
   }
+}
+
+int
+ProxyProtocol::set_additional_data(std::string_view data)
+{
+  uint16_t len    = data.length();
+  additional_data = static_cast<char *>(ats_malloc(len));
+  if (additional_data == nullptr) {
+    return -1;
+  }
+  data.copy(additional_data, len);
+
+  const char *p   = additional_data;
+  const char *end = p + len;
+  while (p != end) {
+    if (end - p < 3) {
+      // The size of a TLV entry must be 3 bytes or more
+      return -2;
+    }
+
+    // Type
+    uint8_t type  = *p;
+    p            += 1;
+
+    // Length
+    uint16_t length  = ntohs(*reinterpret_cast<const uint16_t *>(p));
+    p               += 2;
+
+    // Value
+    if (end - p < length) {
+      // Does not have enough data
+      return -3;
+    }
+    Dbg(dbg_ctl_proxyprotocol, "TLV: ID=%u LEN=%hu", type, length);
+    tlv.emplace(type, std::string_view(p, length));
+    p += length;
+  }
+
+  return 0;
 }
