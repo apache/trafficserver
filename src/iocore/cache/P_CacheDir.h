@@ -23,17 +23,10 @@
 
 #pragma once
 
-#include "P_CacheDoc.h"
-
-#include "iocore/cache/CacheDefs.h"
 #include "P_CacheHttp.h"
-#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/cache/CacheDefs.h"
 #include "iocore/eventsystem/Continuation.h"
-
-// aio
 #include "iocore/aio/AIO.h"
-
-#include "tscore/ink_platform.h"
 #include "tscore/Version.h"
 
 #include <cstdint>

@@ -21,16 +21,14 @@
 
 #pragma once
 
-#include "tscore/List.h"
-#include "tscore/ink_mutex.h"
-#include "../../../src/iocore/eventsystem/P_EventSystem.h"
-#include "records/RecProcess.h"
-#include "tscore/ink_platform.h"
-#include "../../../src/iocore/net/P_SSLUtils.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/net/SSLTypes.h"
 #include "ts/apidefs.h"
-#include <openssl/ssl.h>
-#include <tsutil/TsSharedMutex.h>
+#include "tscore/List.h"
+#include "tscore/Ptr.h"
+#include "tsutil/TsSharedMutex.h"
 
+#include <openssl/ssl.h>
 #include <mutex>
 #include <utility>
 

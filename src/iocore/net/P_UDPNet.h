@@ -30,17 +30,16 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
+#include "P_UnixUDPConnection.h"
 #include "iocore/net/UDPNet.h"
 #include "iocore/net/PollCont.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/udp.h>
 
 // added by YTS Team, yamsat
 static inline PollCont *get_UDPPollCont(EThread *);
-
-#include "P_UnixUDPConnection.h"
-#include "P_UDPIOEvent.h"
-
-#include "netinet/udp.h"
 
 class UDPNetHandler;
 
@@ -112,8 +111,9 @@ public:
 
     ink_assert(delivery_time[now_slot]);
 
-    if (e->p.delivery_time < now)
+    if (e->p.delivery_time < now) {
       e->p.delivery_time = now;
+    }
 
     ink_hrtime s = e->p.delivery_time - delivery_time[now_slot];
 
@@ -209,10 +209,12 @@ public:
       // this is to handle weirdness where someone is trying to queue a
       // packet to be sent in SLOT_TIME_MSEC * N_SLOTS * (2+)---the packet
       // will get back to longTermQ and we'll have an infinite loop.
-      while ((p = longTermQ.dequeue()) != nullptr)
+      while ((p = longTermQ.dequeue()) != nullptr) {
         tempQ.enqueue(p);
-      while ((p = tempQ.dequeue()) != nullptr)
+      }
+      while ((p = tempQ.dequeue()) != nullptr) {
         addPacket(p);
+      }
     }
 
     while (!bucket[s].head && (t > delivery_time[s] + SLOT_TIME)) {

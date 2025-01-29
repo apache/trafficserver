@@ -22,21 +22,18 @@
  */
 #pragma once
 
-#include "iocore/eventsystem/EventSystem.h"
-#include "../eventsystem/P_EventSystem.h" // TODO: less? just need ET_TASK
 #include "iocore/eventsystem/UnixSocket.h"
+#include "tscore/Allocator.h"
+#include "tscore/Diags.h"
+#include "tscore/PriorityQueue.h"
+#include "tscore/Ptr.h"
+#include "tsutil/TsSharedMutex.h"
+#include "tscore/Version.h"
+#include "tscore/ink_hrtime.h"
+#include "tscore/ink_time.h"
+#include "tsutil/Metrics.h"
 
 #include "swoc/IntrusiveHashMap.h"
-
-#include "tscore/PriorityQueue.h"
-
-#include "tscore/List.h"
-#include "tscore/ink_hrtime.h"
-
-#include "tscore/Version.h"
-#include "tsutil/TsSharedMutex.h"
-
-#include "tsutil/Metrics.h"
 #include <cstdint>
 #include <unistd.h>
 
@@ -109,7 +106,7 @@ public:
   {
     // Since the Value is actually RefCountObj-- when this gets deleted normally it calls the wrong
     // `free` method, this forces the delete/decr to happen with the right type
-    Ptr<C> *tmp = (Ptr<C> *)&e->item;
+    Ptr<C> *tmp = reinterpret_cast<Ptr<C> *>(&e->item);
     tmp->clear();
 
     e->~RefCountCacheHashEntry();
@@ -239,7 +236,7 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, time_t expire_ti
   if (expire_time >= 0) {
     Dbg(dbg_ctl, "partition %d adding entry with expire_time=%" PRIdMAX, this->part_num, expire_time);
     PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry = expiryQueueEntry.alloc();
-    new ((void *)expiry_entry) PriorityQueueEntry<RefCountCacheHashEntry *>(val);
+    new (expiry_entry) PriorityQueueEntry<RefCountCacheHashEntry *>(val);
     expiry_queue.push(expiry_entry);
     val->expiry_entry = expiry_entry;
   }
@@ -248,7 +245,7 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, time_t expire_ti
   this->item_map.insert(val);
   this->size += val->meta.size;
   this->items++;
-  Metrics::Gauge::increment(this->rsb->refcountcache_current_size, (int64_t)val->meta.size);
+  Metrics::Gauge::increment(this->rsb->refcountcache_current_size, static_cast<int64_t>(val->meta.size));
   Metrics::Gauge::increment(this->rsb->refcountcache_current_items);
 }
 
@@ -395,7 +392,7 @@ template <class C> class RefCountCache
 public:
   // Constructor
   RefCountCache(unsigned int num_partitions, int size = -1, int items = -1, ts::VersionNumber object_version = ts::VersionNumber(),
-                const std::string metrics_prefix = ".refcountcache");
+                const std::string &metrics_prefix = ".refcountcache");
   // Destructor
   ~RefCountCache();
 
@@ -426,7 +423,7 @@ private:
 
 template <class C>
 RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items, ts::VersionNumber object_version,
-                                const std::string metrics_prefix)
+                                const std::string &metrics_prefix)
   : header(RefCountCacheHeader(object_version))
 {
   this->max_size       = size;
@@ -563,7 +560,7 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::strin
 
   // read in the header
   RefCountCacheHeader tmpHeader = RefCountCacheHeader();
-  int                 read_ret  = read(fd, (char *)&tmpHeader, sizeof(RefCountCacheHeader));
+  int                 read_ret  = read(fd, reinterpret_cast<char *>(&tmpHeader), sizeof(RefCountCacheHeader));
   if (read_ret != sizeof(RefCountCacheHeader)) {
     UnixSocket{fd}.close();
     Warning("Error reading cache header from disk (expected %ld): %d", sizeof(RefCountCacheHeader), read_ret);
@@ -577,18 +574,18 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::strin
 
   RefCountCacheItemMeta tmpValue = RefCountCacheItemMeta(0, 0);
   while (true) { // TODO: better loop
-    read_ret = read(fd, (char *)&tmpValue, sizeof(tmpValue));
+    read_ret = read(fd, reinterpret_cast<char *>(&tmpValue), sizeof(tmpValue));
     if (read_ret != sizeof(tmpValue)) {
       break;
     }
     char buf[tmpValue.size];
-    read_ret = read(fd, (char *)&buf, tmpValue.size);
-    if (read_ret != (int)tmpValue.size) {
+    read_ret = read(fd, reinterpret_cast<char *>(&buf), tmpValue.size);
+    if (read_ret != static_cast<int>(tmpValue.size)) {
       Warning("Encountered error reading item from cache: %d", read_ret);
       break;
     }
 
-    CacheEntryType *newItem = load_func((char *)&buf, tmpValue.size);
+    CacheEntryType *newItem = load_func(reinterpret_cast<char *>(&buf), tmpValue.size);
     if (newItem != nullptr) {
       cache.put(tmpValue.key, newItem, tmpValue.size - sizeof(CacheEntryType));
     }

@@ -25,6 +25,7 @@
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 
 #include "iocore/net/TLSSessionResumptionSupport.h"
+#include "P_SSLCertLookup.h"
 #include "iocore/net/SSLAPIHooks.h"
 
 #include "P_SSLConfig.h"
@@ -34,8 +35,6 @@
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
 #include <openssl/core_names.h>
 #endif
-#include "api/InkAPIInternal.h"
-#include "tscore/ink_config.h"
 
 // Remove this when drop OpenSSL 1.0.2 support
 #ifndef evp_md_func

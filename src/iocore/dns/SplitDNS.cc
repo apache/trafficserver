@@ -28,7 +28,7 @@
  *
  ****************************************************************************/
 
-#include "tscore/ink_platform.h"
+#include "P_SplitDNSProcessor.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Filenames.h"
 

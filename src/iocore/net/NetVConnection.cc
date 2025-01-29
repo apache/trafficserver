@@ -30,10 +30,10 @@
 
  ****************************************************************************/
 
+#include "iocore/net/NetVConnection.h"
+#include "iocore/eventsystem/IOBuffer.h"
+#include "tsutil/DbgCtl.h"
 #include <swoc/TextView.h>
-
-#include "P_Net.h"
-#include "ts/apidefs.h"
 
 namespace
 {

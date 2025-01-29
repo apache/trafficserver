@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
 #include "iocore/eventsystem/Thread.h"
 #include "iocore/eventsystem/Continuation.h"
 

@@ -293,7 +293,7 @@ public:
     SET_HANDLER(&HTTPRequest::event_handler);
   }
 
-  ~HTTPRequest()
+  ~HTTPRequest() override
   {
     this->_fsm->ext_destroy();
     OPENSSL_free(this->_req_body);
@@ -432,8 +432,9 @@ TS_OCSP_cert_id_new(const EVP_MD *dgst, const X509_NAME *issuerName, const ASN1_
   TS_OCSP_CERTID *cid = nullptr;
   unsigned char   md[EVP_MAX_MD_SIZE];
 
-  if ((cid = TS_OCSP_CERTID_new()) == nullptr)
+  if ((cid = TS_OCSP_CERTID_new()) == nullptr) {
     goto err;
+  }
 
   alg = cid->hashAlgorithm;
   ASN1_OBJECT_free(alg->algorithm);
@@ -441,27 +442,34 @@ TS_OCSP_cert_id_new(const EVP_MD *dgst, const X509_NAME *issuerName, const ASN1_
     Dbg(dbg_ctl_ssl_ocsp, "Unknown NID");
     goto err;
   }
-  if ((alg->algorithm = OBJ_nid2obj(nid)) == nullptr)
+  if ((alg->algorithm = OBJ_nid2obj(nid)) == nullptr) {
     goto err;
-  if ((alg->parameter = ASN1_TYPE_new()) == nullptr)
+  }
+  if ((alg->parameter = ASN1_TYPE_new()) == nullptr) {
     goto err;
+  }
   alg->parameter->type = V_ASN1_NULL;
 
-  if (!X509_NAME_digest(issuerName, dgst, md, &i))
+  if (!X509_NAME_digest(issuerName, dgst, md, &i)) {
     goto digerr;
-  if (!(ASN1_OCTET_STRING_set(cid->issuerNameHash, md, i)))
+  }
+  if (!(ASN1_OCTET_STRING_set(cid->issuerNameHash, md, i))) {
     goto err;
+  }
 
   /* Calculate the issuerKey hash, excluding tag and length */
-  if (!EVP_Digest(issuerKey->data, issuerKey->length, md, &i, dgst, nullptr))
+  if (!EVP_Digest(issuerKey->data, issuerKey->length, md, &i, dgst, nullptr)) {
     goto err;
+  }
 
-  if (!(ASN1_OCTET_STRING_set(cid->issuerKeyHash, md, i)))
+  if (!(ASN1_OCTET_STRING_set(cid->issuerKeyHash, md, i))) {
     goto err;
+  }
 
   if (serialNumber) {
-    if (ASN1_STRING_copy(cid->serialNumber, serialNumber) == 0)
+    if (ASN1_STRING_copy(cid->serialNumber, serialNumber) == 0) {
       goto err;
+    }
   }
   return cid;
 digerr:
@@ -478,8 +486,9 @@ TS_OCSP_cert_to_id(const EVP_MD *dgst, const X509 *subject, const X509 *issuer)
   const ASN1_INTEGER *serial;
   ASN1_BIT_STRING    *ikey;
 
-  if (!dgst)
+  if (!dgst) {
     dgst = EVP_sha1();
+  }
   if (subject) {
     iname  = X509_get_issuer_name(subject);
     serial = X509_get0_serialNumber(subject);
@@ -522,8 +531,9 @@ TS_OCSP_check_validity(ASN1_GENERALIZEDTIME *thisupd, ASN1_GENERALIZEDTIME *next
     }
   }
 
-  if (nextupd == nullptr)
+  if (nextupd == nullptr) {
     return ret;
+  }
 
   /* Check nextUpdate is valid and not more than nsec in the past */
   if (!ASN1_GENERALIZEDTIME_check(nextupd)) {
@@ -551,8 +561,9 @@ TS_OCSP_request_add0_id(TS_OCSP_REQUEST *req, TS_OCSP_CERTID *cid)
 {
   TS_OCSP_ONEREQ *one = nullptr;
 
-  if ((one = TS_OCSP_ONEREQ_new()) == nullptr)
+  if ((one = TS_OCSP_ONEREQ_new()) == nullptr) {
     return nullptr;
+  }
   TS_OCSP_CERTID_free(one->reqCert);
   one->reqCert = cid;
   if (req && !sk_TS_OCSP_ONEREQ_push(req->tbsRequest->requestList, one)) {
@@ -585,11 +596,13 @@ TS_OCSP_id_issuer_cmp(const TS_OCSP_CERTID *a, const TS_OCSP_CERTID *b)
 {
   int ret;
   ret = OBJ_cmp(a->hashAlgorithm->algorithm, b->hashAlgorithm->algorithm);
-  if (ret)
+  if (ret) {
     return ret;
+  }
   ret = ASN1_OCTET_STRING_cmp(a->issuerNameHash, b->issuerNameHash);
-  if (ret)
+  if (ret) {
     return ret;
+  }
   return ASN1_OCTET_STRING_cmp(a->issuerKeyHash, b->issuerKeyHash);
 }
 
@@ -598,8 +611,9 @@ TS_OCSP_id_cmp(const TS_OCSP_CERTID *a, const TS_OCSP_CERTID *b)
 {
   int ret;
   ret = TS_OCSP_id_issuer_cmp(a, b);
-  if (ret)
+  if (ret) {
     return ret;
+  }
   return ASN1_INTEGER_cmp(a->serialNumber, b->serialNumber);
 }
 
@@ -610,17 +624,20 @@ TS_OCSP_resp_find(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int last)
   STACK_OF(TS_OCSP_SINGLERESP) * sresp;
   TS_OCSP_SINGLERESP *single;
 
-  if (bs == nullptr)
+  if (bs == nullptr) {
     return -1;
-  if (last < 0)
+  }
+  if (last < 0) {
     last = 0;
-  else
+  } else {
     last++;
+  }
   sresp = bs->tbsResponseData->responses;
   for (i = last; i < static_cast<int>(sk_TS_OCSP_SINGLERESP_num(sresp)); i++) {
     single = sk_TS_OCSP_SINGLERESP_value(sresp, i);
-    if (!TS_OCSP_id_cmp(id, single->certId))
+    if (!TS_OCSP_id_cmp(id, single->certId)) {
       return i;
+    }
   }
   return -1;
 }
@@ -628,8 +645,9 @@ TS_OCSP_resp_find(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int last)
 TS_OCSP_SINGLERESP *
 TS_OCSP_resp_get0(TS_OCSP_BASICRESP *bs, int idx)
 {
-  if (bs == nullptr)
+  if (bs == nullptr) {
     return nullptr;
+  }
   return sk_TS_OCSP_SINGLERESP_value(bs->tbsResponseData->responses, idx);
 }
 
@@ -640,26 +658,31 @@ TS_OCSP_single_get0_status(TS_OCSP_SINGLERESP *single, int *reason, ASN1_GENERAL
   int                 ret;
   TS_OCSP_CERTSTATUS *cst;
 
-  if (single == nullptr)
+  if (single == nullptr) {
     return -1;
+  }
   cst = single->certStatus;
   ret = cst->type;
   if (ret == TS_OCSP_CERTSTATUS_REVOKED) {
     TS_OCSP_REVOKEDINFO *rev = cst->value.revoked;
 
-    if (revtime)
+    if (revtime) {
       *revtime = rev->revocationTime;
+    }
     if (reason) {
-      if (rev->revocationReason)
+      if (rev->revocationReason) {
         *reason = ASN1_ENUMERATED_get(rev->revocationReason);
-      else
+      } else {
         *reason = -1;
+      }
     }
   }
-  if (thisupd != nullptr)
+  if (thisupd != nullptr) {
     *thisupd = single->thisUpdate;
-  if (nextupd != nullptr)
+  }
+  if (nextupd != nullptr) {
     *nextupd = single->nextUpdate;
+  }
   return ret;
 }
 
@@ -671,15 +694,17 @@ TS_OCSP_resp_find_status(TS_OCSP_BASICRESP *bs, TS_OCSP_CERTID *id, int *status,
   TS_OCSP_SINGLERESP *single;
 
   /* Maybe check for multiple responses and give an error? */
-  if (i < 0)
+  if (i < 0) {
     return 0;
+  }
   single = TS_OCSP_resp_get0(bs, i);
   i      = TS_OCSP_single_get0_status(single, reason, revtime, thisupd, nextupd);
   if (i < 0) {
     return 0;
   }
-  if (status != nullptr)
+  if (status != nullptr) {
     *status = i;
+  }
   return 1;
 }
 
@@ -700,8 +725,8 @@ certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*i
     return;
   }
 
-  for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
-    certinfo *cinf = iter->second;
+  for (auto &iter : *map) {
+    certinfo *cinf = iter.second;
     if (cinf->uri) {
       OPENSSL_free(cinf->uri);
     }
@@ -1033,7 +1058,8 @@ query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, i
 
   // Content-Type, Content-Length, Request Body
   if (!use_get) {
-    if (httpreq.set_body("application/ocsp-request", ASN1_ITEM_rptr(TS_OCSP_REQUEST), (const ASN1_VALUE *)req) != 1) {
+    if (httpreq.set_body("application/ocsp-request", ASN1_ITEM_rptr(TS_OCSP_REQUEST), reinterpret_cast<const ASN1_VALUE *>(req)) !=
+        1) {
       Error("failed to make a request for OCSP server; uri=%s", uri);
       return nullptr;
     }

@@ -39,8 +39,6 @@
 #pragma once
 #define I_IOBuffer_h
 
-#include "tscore/ink_platform.h"
-#include "tscore/ink_apidefs.h"
 #include "tscore/Allocator.h"
 #include "tscore/Ptr.h"
 #include "tscore/ink_assert.h"
@@ -317,7 +315,7 @@ public:
   int64_t
   size()
   {
-    return (int64_t)(_end - _start);
+    return static_cast<int64_t>(_end - _start);
   }
 
   /**
@@ -330,7 +328,7 @@ public:
   int64_t
   read_avail() const
   {
-    return (int64_t)(_end - _start);
+    return static_cast<int64_t>(_end - _start);
   }
 
   /**
@@ -342,7 +340,7 @@ public:
   int64_t
   write_avail()
   {
-    return (int64_t)(_buf_end - _end);
+    return static_cast<int64_t>(_buf_end - _end);
   }
 
   /**
@@ -1413,9 +1411,9 @@ IOBufferChain::operator=(self_type const &that)
 inline IOBufferChain &
 IOBufferChain::operator+=(self_type const &that)
 {
-  if (_head == nullptr)
+  if (_head == nullptr) {
     *this = that;
-  else {
+  } else {
     _tail->next  = that._head;
     _tail        = that._tail;
     _len        += that._len;

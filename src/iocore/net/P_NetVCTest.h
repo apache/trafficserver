@@ -36,7 +36,8 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/net/NetVConnection.h"
 #include "tscore/Regression.h"
 
 class VIO;

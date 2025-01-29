@@ -35,7 +35,6 @@
 
 #include "iocore/eventsystem/UnixSocket.h"
 
-#include "tscore/ink_platform.h"
 #include "tscore/ink_rand.h"
 #include "tscore/List.h"
 #include "tscore/Ptr.h"

@@ -25,6 +25,8 @@
 // ugly -- just encapsulate the I/O result so that it can be passed
 // back to the caller via continuation handler.
 
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/IOBuffer.h"
 class UDPIOEvent : public Event
 {
 public:

@@ -22,7 +22,6 @@
  */
 
 #include "iocore/net/quic/QUICApplication.h"
-#include "iocore/net/quic/QUICStream.h"
 
 //
 // QUICApplication

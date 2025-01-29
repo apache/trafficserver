@@ -24,6 +24,8 @@
 #include "iocore/net/TLSALPNSupport.h"
 #include "P_SSLNextProtocolSet.h"
 #include "records/RecHttp.h"
+#include "tscore/Diags.h"
+#include "tsutil/DbgCtl.h"
 
 int ALPNSupport::_ex_data_index = -1;
 

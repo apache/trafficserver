@@ -19,8 +19,6 @@
   limitations under the License.
  */
 
-#include "tscore/ink_config.h"
-#include "P_Net.h"
 #include "P_SSLNetAccept.h"
 
 SSLNetAccept::SSLNetAccept(const NetProcessor::AcceptOptions &opt) : NetAccept(opt) {}

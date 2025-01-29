@@ -22,9 +22,7 @@
  */
 
 #pragma once
-#include "iocore/net/Net.h"
 #include "iocore/net/NetProcessor.h"
-#include "iocore/net/SessionAccept.h"
 #include "P_NetAccept.h"
 
 class UnixNetVConnection;

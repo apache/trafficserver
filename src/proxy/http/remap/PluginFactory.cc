@@ -25,6 +25,7 @@
 #include <unordered_map>
 
 #include "proxy/http/remap/RemapPluginInfo.h"
+#include "records/RecCore.h"
 #include "proxy/http/remap/PluginFactory.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"

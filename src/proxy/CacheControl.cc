@@ -30,17 +30,11 @@
 
 #include <sys/types.h>
 
-#include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
 #include "proxy/CacheControl.h"
 #include "proxy/ControlMatcher.h"
-#include "../iocore/eventsystem/P_EventSystem.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
-#include "proxy/hdrs/HTTP.h"
 #include "proxy/http/HttpConfig.h"
-#include "../iocore/cache/P_Cache.h"
-#include "tsutil/Regex.h"
-
 namespace
 {
 const char modulePrefix[] = "[CacheControl]";
@@ -359,7 +353,7 @@ void
 CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
 {
   bool             match   = false;
-  HttpRequestData *h_rdata = (HttpRequestData *)rdata;
+  HttpRequestData *h_rdata = static_cast<HttpRequestData *>(rdata);
 
   switch (this->directive) {
   case CC_REVALIDATE_AFTER:

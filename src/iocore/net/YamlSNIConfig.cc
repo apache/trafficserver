@@ -22,7 +22,6 @@
 #include "iocore/net/YamlSNIConfig.h"
 
 #include <utility>
-#include <unordered_map>
 #include <set>
 #include <string_view>
 #include <string>
@@ -45,7 +44,6 @@
 
 #include "tsutil/ts_ip.h"
 
-#include "swoc/bwf_fwd.h"
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
 #include "tscore/ink_assert.h"

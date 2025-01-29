@@ -21,9 +21,6 @@
 
 #pragma once
 
-#include "tscore/ink_config.h"
-#include "tscore/Diags.h"
-#include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 
 #include <openssl/ssl.h>

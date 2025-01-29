@@ -30,10 +30,8 @@
  ****************************************************************************/
 #pragma once
 
-#include "iocore/net/UDPNet.h"
-
 #include "iocore/eventsystem/UnixSocket.h"
-
+#include "iocore/net/UDPConnection.h"
 #include "tscore/ink_atomic.h"
 
 class UDPConnectionInternal : public UDPConnection
@@ -106,7 +104,7 @@ UDPConnection::shouldDestroy()
 TS_INLINE void
 UDPConnection::AddRef()
 {
-  ink_atomic_increment(&((UDPConnectionInternal *)this)->refcount, 1);
+  ink_atomic_increment(&(static_cast<UDPConnectionInternal *>(this))->refcount, 1);
 }
 
 TS_INLINE int

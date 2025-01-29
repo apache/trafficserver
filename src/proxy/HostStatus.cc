@@ -20,6 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include "iocore/eventsystem/EventProcessor.h"
 #include "tsutil/ts_bw_format.h"
 #include "proxy/HostStatus.h"
 #include "iocore/eventsystem/Tasks.h"

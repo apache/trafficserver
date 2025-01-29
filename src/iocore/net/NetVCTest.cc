@@ -34,7 +34,10 @@
 
  ****************************************************************************/
 
-#include "P_Net.h"
+#include "iocore/net/Net.h"
+#include "iocore/net/NetVConnection.h"
+#include "P_NetVCTest.h"
+#include "tscore/ink_atomic.h"
 
 // Each test requires two definition entries.  One for the passive
 //   side of the connection and one for the active side

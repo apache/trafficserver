@@ -22,11 +22,13 @@
 
  */
 
-#include "P_Cache.h"
+#include "P_CacheHosting.h"
+#include "P_CacheInternal.h"
 #include "P_CacheTest.h"
 #include "RegressionSM.h"
+#include "StripeSM.h"
+#include "iocore/aio/AIO.h"
 #include "tscore/Random.h"
-#include <vector>
 #include <cmath>
 #include <cstdlib>
 

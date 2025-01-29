@@ -22,17 +22,16 @@
 */
 
 #include "P_Net.h"
-
 #include "P_NetAccept.h"
+#include "P_UnixNet.h"
+#include "P_UnixNetVConnection.h"
 #include "iocore/net/ConnectionTracker.h"
-
+#include "iocore/net/NetHandler.h"
 #include "iocore/eventsystem/UnixSocket.h"
-
-#include "tscore/ink_platform.h"
 #include "tscore/InkErrno.h"
+#include "tscore/ink_atomic.h"
 
 #include <termios.h>
-
 #include <utility>
 
 #define STATE_VIO_OFFSET   ((uintptr_t) & ((NetState *)0)->vio)
@@ -222,7 +221,7 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   read.vio.cont      = c;
   read.vio.nbytes    = nbytes;
   read.vio.ndone     = 0;
-  read.vio.vc_server = (VConnection *)this;
+  read.vio.vc_server = this;
   if (buf) {
     read.vio.set_writer(buf);
     if (!read.enabled) {
@@ -247,7 +246,7 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
   write.vio.cont      = c;
   write.vio.nbytes    = nbytes;
   write.vio.ndone     = 0;
-  write.vio.vc_server = (VConnection *)this;
+  write.vio.vc_server = this;
   if (reader) {
     ink_assert(!owner);
     write.vio.set_reader(reader);
@@ -1222,7 +1221,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
 fail:
   lerrno = -res;
-  action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)static_cast<intptr_t>(res));
+  action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, reinterpret_cast<void *>(res));
   if (con.sock.is_ok()) {
     con.sock = UnixSocket{NO_FD};
   }
@@ -1492,12 +1491,12 @@ UnixNetVConnection::protocol_contains(std::string_view tag) const
 }
 
 int
-UnixNetVConnection::set_tcp_congestion_control([[maybe_unused]] int side)
+UnixNetVConnection::set_tcp_congestion_control([[maybe_unused]] tcp_congestion_control_side side)
 {
 #ifdef TCP_CONGESTION
   std::string_view ccp;
 
-  if (side == CLIENT_SIDE) {
+  if (side == tcp_congestion_control_side::CLIENT_SIDE) {
     ccp = net_ccp_in;
   } else {
     ccp = net_ccp_out;

@@ -24,7 +24,7 @@
 #include "main.h"
 #include "test_doubles.h"
 
-#include "tscore/EventNotify.h"
+#include "../P_CacheInternal.h"
 
 #include <array>
 #include <cstdint>
@@ -119,10 +119,10 @@ static std::FILE *
 init_stripe_for_writing(StripeSM &stripe, StripteHeaderFooter &header, CacheVol &cache_vol)
 {
   stripe.cache_vol                             = &cache_vol;
-  cache_rsb.write_bytes                        = Metrics::Counter::createPtr("unit_test.write.bytes");
-  stripe.cache_vol->vol_rsb.write_bytes        = Metrics::Counter::createPtr("unit_test.write.bytes");
-  cache_rsb.gc_frags_evacuated                 = Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
-  stripe.cache_vol->vol_rsb.gc_frags_evacuated = Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
+  cache_rsb.write_bytes                        = ts::Metrics::Counter::createPtr("unit_test.write.bytes");
+  stripe.cache_vol->vol_rsb.write_bytes        = ts::Metrics::Counter::createPtr("unit_test.write.bytes");
+  cache_rsb.gc_frags_evacuated                 = ts::Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
+  stripe.cache_vol->vol_rsb.gc_frags_evacuated = ts::Metrics::Counter::createPtr("unit_test.gc.frags.evacuated");
 
   stripe.sector_size = 256;
 

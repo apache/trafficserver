@@ -23,15 +23,15 @@
 
 #pragma once
 
+#include "iocore/net/SSLTypes.h"
+#include "tsutil/DbgCtl.h"
+
+#include <openssl/ssl.h>
+#include <swoc/Errata.h>
+
 #include <string>
 #include <set>
 #include <vector>
-
-#include <openssl/ssl.h>
-
-#include "tscore/Diags.h"
-#include "iocore/net/SSLTypes.h"
-#include "tsutil/ts_errata.h"
 
 struct SSLConfigParams;
 struct SSLCertLookup;
@@ -85,7 +85,7 @@ protected:
 private:
   virtual const char   *_debug_tag() const;
   virtual const DbgCtl &_dbg_ctl() const;
-  virtual bool          _store_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams ssl_multi_cert_params);
+  virtual bool          _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &ssl_multi_cert_params);
   bool _prep_ssl_ctx(const shared_SSLMultiCertConfigParams &sslMultCertSettings, SSLMultiCertConfigLoader::CertLoadData &data,
                      std::set<std::string> &common_names, std::unordered_map<int, std::set<std::string>> &unique_names);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);

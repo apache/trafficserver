@@ -22,13 +22,12 @@
  */
 
 #include "SSLStats.h"
-
-#include <openssl/err.h>
-
-#include "iocore/net/SSLMultiCertConfigLoader.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
 #include "../../records/P_RecProcess.h"
+#include "iocore/net/SSLMultiCertConfigLoader.h"
+
+#include <openssl/err.h>
 
 #include <string_view>
 

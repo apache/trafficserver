@@ -21,9 +21,11 @@
   limitations under the License.
  */
 
-#include "P_Net.h"
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/VIO.h"
+#include "iocore/net/NetVConnection.h"
+#include "tscore/ink_assert.h"
 
-Diags *diags;
 struct NetTesterSM : public Continuation {
   VIO            *read_vio;
   IOBufferReader *reader;
@@ -33,7 +35,7 @@ struct NetTesterSM : public Continuation {
   NetTesterSM(ProxyMutex *_mutex, NetVConnection *_vc) : Continuation(_mutex)
   {
     MUTEX_TRY_LOCK(lock, mutex, _vc->thread);
-    ink_release_assert(lock);
+    ink_release_assert(lock.is_locked());
     vc = _vc;
     SET_HANDLER(&NetTesterSM::handle_read);
     buf      = new_MIOBuffer(8);
@@ -42,7 +44,7 @@ struct NetTesterSM : public Continuation {
   }
 
   int
-  handle_read(int event, void *data)
+  handle_read(int event, [[maybe_unused]] void *data)
   {
     int   r;
     char *str = nullptr;

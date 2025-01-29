@@ -21,14 +21,13 @@
 
 #pragma once
 
+#include "tsutil/TsSharedMutex.h"
+
 #if __has_include(<openssl/opensslconf.h>)
 #include <openssl/opensslconf.h>
 #endif
 #include <openssl/ssl.h>
-
-#include <memory>
 #include <mutex>
-#include <tsutil/TsSharedMutex.h>
 
 /** A class for handling TLS secrets logging. */
 class TLSKeyLogger

@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/eventsystem/Processor.h"
 #include "iocore/eventsystem/Event.h"

@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "iocore/eventsystem/EventSystem.h"
 #include "iocore/eventsystem/Event.h"
 
 enum {

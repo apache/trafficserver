@@ -29,30 +29,23 @@
    SSL Configurations
  ****************************************************************************/
 
+#include "P_SSLCertLookup.h"
+#include "P_SSLClientUtils.h"
 #include "P_SSLConfig.h"
-
-#include <cstring>
-#include <cmath>
-
+#include "P_SSLUtils.h"
+#include "P_TLSKeyLogger.h"
+#include "SSLSessionCache.h"
+#include "iocore/net/SSLMultiCertConfigLoader.h"
+#include "iocore/net/SSLDiags.h"
+#include "iocore/net/TLSEarlyDataSupport.h"
+#include "iocore/net/YamlSNIConfig.h"
 #include "tscore/ink_config.h"
-#include <openssl/pem.h>
-
-#include "api/InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
-
-#include "tscore/ink_platform.h"
 #include "tscore/Layout.h"
 #include "records/RecHttp.h"
 
-#include "P_Net.h"
-#include "P_SSLClientUtils.h"
-#include "P_SSLCertLookup.h"
-#include "P_TLSKeyLogger.h"
-#include "iocore/net/SSLMultiCertConfigLoader.h"
-#include "iocore/net/SSLDiags.h"
-#include "SSLSessionCache.h"
-#include "SSLSessionTicket.h"
-#include "iocore/net/TLSEarlyDataSupport.h"
-#include "iocore/net/YamlSNIConfig.h"
+#include <openssl/pem.h>
+#include <cstring>
+#include <cmath>
 
 int                SSLConfig::config_index                           = 0;
 int                SSLConfig::configids[]                            = {0, 0};
@@ -846,7 +839,7 @@ SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
       // As a fail-safe, handle it if secret_for_updateCTX doesn't or no longer points to a null-terminated string.
       //
       char const *s{expected};
-      for (; *s && (std::size_t(s - expected) < cert_secret_name.size()); ++s) {}
+      for (; *s && (static_cast<std::size_t>(s - expected) < cert_secret_name.size()); ++s) {}
       DbgPrint(dbg_ctl_ssl_config_updateCTX, "Update cert, indirect recusive call caused by call for %.*s", int(s - expected),
                expected);
     }

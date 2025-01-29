@@ -22,17 +22,13 @@
  */
 
 #include "iocore/net/quic/QUICGlobals.h"
-
-#include <cstring>
-#include <fstream>
-
-#include "iocore/net/QUICMultiCertConfigLoader.h"
-
 #include "iocore/net/quic/QUICStats.h"
-#include "iocore/net/quic/QUICConfig.h"
-#include "iocore/net/quic/QUICConnection.h"
+#include "tscore/ink_config.h"
+#include "tsutil/DbgCtl.h"
 
 #include <openssl/ssl.h>
+
+#include <cstring>
 
 #define QUICGlobalDebug(fmt, ...) Dbg(dbg_ctl_quic_global, fmt, ##__VA_ARGS__)
 
@@ -51,8 +47,8 @@ void
 QUIC::init()
 {
   QUIC::_register_stats();
-  ssl_quic_qc_index  = SSL_get_ex_new_index(0, (void *)"QUICConnection index", nullptr, nullptr, nullptr);
-  ssl_quic_tls_index = SSL_get_ex_new_index(0, (void *)"QUICTLS index", nullptr, nullptr, nullptr);
+  ssl_quic_qc_index  = SSL_get_ex_new_index(0, const_cast<char *>("QUICConnection index"), nullptr, nullptr, nullptr);
+  ssl_quic_tls_index = SSL_get_ex_new_index(0, const_cast<char *>("QUICTLS index"), nullptr, nullptr, nullptr);
 }
 
 int

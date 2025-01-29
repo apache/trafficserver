@@ -23,14 +23,15 @@
 
 #pragma once
 
+#include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/net/SSLTypes.h"
+#include "records/RecCore.h"
+
 #include <set>
 #include <openssl/ssl.h>
 #include <mutex>
 #include <unordered_map>
 #include <utility>
-
-#include "iocore/eventsystem/ConfigProcessor.h"
-#include "iocore/net/SSLTypes.h"
 
 struct SSLConfigParams;
 struct SSLContextStorage;
@@ -103,13 +104,14 @@ public:
   {
   }
 
-  SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, shared_SSLMultiCertConfigParams u)
-    : ctx_mutex(), ctx(sc), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(nullptr)
+  SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, const shared_SSLMultiCertConfigParams &u)
+    : ctx_mutex(), ctx(std::move(sc)), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(nullptr)
   {
   }
 
-  SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, shared_SSLMultiCertConfigParams u, shared_ssl_ticket_key_block kb)
-    : ctx_mutex(), ctx(sc), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(std::move(kb))
+  SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, const shared_SSLMultiCertConfigParams &u,
+                 shared_ssl_ticket_key_block kb)
+    : ctx_mutex(), ctx(std::move(sc)), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(std::move(kb))
   {
   }
 

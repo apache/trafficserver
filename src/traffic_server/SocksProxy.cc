@@ -27,8 +27,8 @@
 
 
 */
-#include "tscore/ink_platform.h"
-#include "../iocore/net/P_Net.h"
+#include "../iocore/net/P_Socks.h"
+#include "../iocore/eventsystem/P_VConnection.h"
 #include "iocore/utils/OneWayTunnel.h"
 #include "proxy/http/HttpSessionAccept.h"
 

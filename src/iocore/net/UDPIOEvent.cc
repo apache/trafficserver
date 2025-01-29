@@ -21,5 +21,7 @@
   limitations under the License.
  */
 
-#include "P_Net.h"
+#include "tscore/Allocator.h"
+#include "P_UDPIOEvent.h"
+
 ClassAllocator<UDPIOEvent> UDPIOEventAllocator("UDPIOEventAllocator");

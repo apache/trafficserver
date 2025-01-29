@@ -25,6 +25,7 @@
 #include "main.h"
 
 #include "../P_CacheDir.h"
+#include "../P_CacheInternal.h"
 
 #include "tscore/Random.h"
 

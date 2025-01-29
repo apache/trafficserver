@@ -41,6 +41,7 @@
 #include <string_view>
 #include <chrono>
 
+#include "iocore/eventsystem/IOBuffer.h"
 #include "swoc/swoc_ip.h"
 #include "swoc/BufferWriter.h"
 

@@ -22,11 +22,11 @@
   limitations under the License.
  */
 
-#include <openssl/ssl.h>
 #include "iocore/net/TLSEventSupport.h"
 #include "iocore/net/SSLAPIHooks.h"
-#include "tscore/Diags.h"
 #include "SSLStats.h"
+
+#include <openssl/ssl.h>
 
 int TLSEventSupport::_ex_data_index = -1;
 

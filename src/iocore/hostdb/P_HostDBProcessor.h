@@ -27,7 +27,6 @@
 
 #pragma once
 
-#include "swoc/swoc_file.h"
 #include <tsutil/TsSharedMutex.h>
 
 #include "iocore/hostdb/HostDBProcessor.h"
@@ -35,7 +34,6 @@
 #include "tscore/PendingAction.h"
 #include "tsutil/Metrics.h"
 
-#include <unordered_map>
 #include <utility>
 
 using ts::Metrics;

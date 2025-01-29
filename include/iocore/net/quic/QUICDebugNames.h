@@ -24,7 +24,6 @@
 #pragma once
 
 #include "iocore/net/quic/QUICTypes.h"
-#include "iocore/net/quic/QUICEvents.h"
 #include "iocore/net/quic/QUICTransportParameters.h"
 
 class QUICDebugNames

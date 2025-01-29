@@ -33,7 +33,6 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/ink_inet.h"
-#include "tscore/ink_platform.h"
 #include "tscore/ink_resolver.h"
 #include "tscore/Version.h"
 

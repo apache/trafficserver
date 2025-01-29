@@ -30,7 +30,7 @@
 #include "Stripe.h"
 
 // must be included after the others
-#include "iocore/cache/CacheVC.h"
+#include "CacheVC.h"
 
 // hdrs
 #include "proxy/hdrs/HTTP.h"
@@ -38,6 +38,7 @@
 
 // aio
 #include "iocore/aio/AIO.h"
+#include "tscore/InkErrno.h"
 
 // tsapi
 #if DEBUG
@@ -52,9 +53,6 @@
 #include "iocore/eventsystem/IOBuffer.h"
 #include "iocore/eventsystem/Lock.h"
 #include "iocore/eventsystem/VIO.h"
-
-// tscppapi
-#include "tscpp/api/HttpStatus.h"
 
 // tscore
 #include "tscore/ink_assert.h"
@@ -483,8 +481,8 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
 // ToDo: Why are these for debug only ??
 #if DEBUG
-  Metrics::Counter::increment(cache_rsb.pread_count);
-  Metrics::Counter::increment(stripe->cache_vol->vol_rsb.pread_count);
+  ts::Metrics::Counter::increment(cache_rsb.pread_count);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.pread_count);
 #endif
 
   return EVENT_CONT;
@@ -607,8 +605,8 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       return ret;
     }
   Ldone:
-    Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
+    ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Remove)].failure);
     if (od) {
       stripe->close_write(this);
     }

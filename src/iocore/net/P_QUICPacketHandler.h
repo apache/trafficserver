@@ -23,11 +23,9 @@
 
 #pragma once
 
-#include "tscore/ink_config.h"
-
-#include "tscore/ink_platform.h"
-#include "P_Connection.h"
 #include "P_NetAccept.h"
+#include "iocore/net/UDPConnection.h"
+
 #include <quiche.h>
 
 class QUICNetVConnection;
@@ -60,10 +58,10 @@ public:
   ~QUICPacketHandlerIn();
 
   // NetAccept
-  virtual NetProcessor *getNetProcessor() const override;
-  virtual NetAccept    *clone() const override;
-  virtual int           acceptEvent(int event, void *e) override;
-  void                  init_accept(EThread *t) override;
+  NetProcessor *getNetProcessor() const override;
+  NetAccept    *clone() const override;
+  int           acceptEvent(int event, void *e) override;
+  void          init_accept(EThread *t) override;
 
 protected:
   // QUICPacketHandler

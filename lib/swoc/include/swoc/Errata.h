@@ -116,13 +116,8 @@ public:
     bool has_severity() const;
 
     /// Retrieve the local severity.
-    /// @return The local severity.
-    /// @note The behavior is undefined if there is no local severity.
-    Severity severity() const;
-
-    /// Retrieve the local severity.
     /// @return The local severity or @a default_severity if none is set.
-    Severity severity(Severity default_severity) const;
+    Severity severity(Severity default_severity = DEFAULT_SEVERITY) const;
 
     /// Set the @a severity of @a this.
     self_type &assign(Severity severity);
@@ -996,10 +991,6 @@ Errata::Annotation::level() const {
 inline bool
 Errata::Annotation::has_severity() const {
   return _severity.has_value();
-}
-inline auto
-Errata::Annotation::severity() const -> Severity {
-  return *_severity;
 }
 inline auto
 Errata::Annotation::severity(Errata::Severity default_severity) const -> Severity {

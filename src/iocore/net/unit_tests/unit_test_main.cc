@@ -24,7 +24,6 @@
 #include "iocore/eventsystem/EventSystem.h"
 #include "../P_SSLConfig.h"
 #include "records/RecordsConfig.h"
-#include "iocore/net/SSLAPIHooks.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/Diags.h"
 #include "tscore/Layout.h"

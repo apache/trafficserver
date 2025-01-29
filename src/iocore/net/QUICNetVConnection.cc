@@ -24,12 +24,16 @@
 #include "P_SSLUtils.h"
 #include "P_QUICNetVConnection.h"
 #include "P_QUICPacketHandler.h"
+#include "P_UnixNet.h"
 #include "api/APIHook.h"
 #include "iocore/eventsystem/EThread.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
+#include "iocore/net/UDPPacket.h"
+#include "iocore/net/quic/QUICEvents.h"
 #include "iocore/net/quic/QUICStream.h"
 #include "iocore/net/quic/QUICGlobals.h"
 #include "iocore/net/SSLAPIHooks.h"
+#include "tscore/ink_config.h"
 
 #include <netinet/in.h>
 #include <quiche.h>

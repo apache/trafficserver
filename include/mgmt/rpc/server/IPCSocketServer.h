@@ -27,6 +27,7 @@
 #include <string_view>
 #include <memory>
 
+#include "mgmt/rpc/jsonrpc/Context.h"
 #include "swoc/MemSpan.h"
 #include "swoc/BufferWriter.h"
 #include "tsutil/ts_bw_format.h"

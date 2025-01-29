@@ -29,15 +29,16 @@
  ****************************************************************************/
 
 #pragma once
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/Event.h"
+#include "records/RecCore.h"
+#include "tscore/Filenames.h"
+#include "tscore/Layout.h"
+#include "tscore/ink_rwlock.h"
 
 #include <ctime>
 #include <string>
 #include <sstream>
-#include "tscore/Filenames.h"
-#include "tscore/Layout.h"
-#include "tscore/ink_rwlock.h"
-#include "records/RecProcess.h"
-
 #include <unordered_map>
 
 // host_status stats prefix.

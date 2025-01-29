@@ -41,7 +41,6 @@
 #include "tscore/HostLookup.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_assert.h"
-#include "tscore/ink_platform.h"
 
 #include <swoc/TextView.h>
 

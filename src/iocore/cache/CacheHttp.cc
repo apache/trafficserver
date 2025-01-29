@@ -21,9 +21,10 @@
   limitations under the License.
  */
 
-#include "tscore/ink_config.h"
+#include "P_CacheHttp.h"
+#include "P_CacheInternal.h"
+#include "iocore/cache/CacheDefs.h"
 #include <cstring>
-#include "P_Cache.h"
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -191,9 +192,9 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
     count++;
   }
 
-  Metrics::Counter::increment(cache_rsb.hdr_vector_marshal);
-  Metrics::Counter::increment(cache_rsb.hdr_marshal, count);
-  Metrics::Counter::increment(cache_rsb.hdr_marshal_bytes, buf - start);
+  ts::Metrics::Counter::increment(cache_rsb.hdr_vector_marshal);
+  ts::Metrics::Counter::increment(cache_rsb.hdr_marshal, count);
+  ts::Metrics::Counter::increment(cache_rsb.hdr_marshal_bytes, buf - start);
 
   return buf - start;
 }

@@ -30,6 +30,7 @@
 
  ****************************************************************************/
 
+#include "iocore/net/NetVConnection.h"
 #include "tscore/ink_resolver.h"
 #include "proxy/http/Http1ClientSession.h"
 #include "proxy/http/Http1Transaction.h"
@@ -197,7 +198,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   HttpSsnDbg("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
-  _vc->set_tcp_congestion_control(CLIENT_SIDE);
+  _vc->set_tcp_congestion_control(NetVConnection::tcp_congestion_control_side::CLIENT_SIDE);
 
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   _reader     = reader ? reader : read_buffer->alloc_reader();

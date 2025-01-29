@@ -24,7 +24,8 @@
 
 #pragma once
 
-#include "iocore/eventsystem/EventSystem.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/Processor.h"
 
 extern EventType ET_TASK;
 

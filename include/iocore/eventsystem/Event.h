@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
 #include "iocore/eventsystem/Action.h"
 
 //

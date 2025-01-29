@@ -33,7 +33,7 @@
 #include "Stripe.h"
 
 #include "iocore/cache/CacheDefs.h"
-#include "iocore/cache/CacheVC.h"
+#include "CacheVC.h"
 
 #include "iocore/aio/AIO.h"
 
@@ -615,8 +615,8 @@ new_DocEvacuator(int nbytes, StripeSM *stripe)
 {
   CacheEvacuateDocVC *c = new_CacheEvacuateDocVC(stripe);
   c->op_type            = static_cast<int>(CacheOpType::Evacuate);
-  Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
-  Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
   c->buf         = new_IOBufferData(iobuffer_size_to_index(nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   c->stripe      = stripe;
   c->f.evacuator = 1;
@@ -918,8 +918,8 @@ StripeSM::_copy_evacuator_to_aggregation(CacheVC *vc)
   Doc *doc         = reinterpret_cast<Doc *>(vc->buf->data());
   int  approx_size = this->round_to_approx_size(doc->len);
 
-  Metrics::Counter::increment(cache_rsb.gc_frags_evacuated);
-  Metrics::Counter::increment(this->cache_vol->vol_rsb.gc_frags_evacuated);
+  ts::Metrics::Counter::increment(cache_rsb.gc_frags_evacuated);
+  ts::Metrics::Counter::increment(this->cache_vol->vol_rsb.gc_frags_evacuated);
 
   doc->sync_serial  = this->directory.header->sync_serial;
   doc->write_serial = this->directory.header->write_serial;
@@ -982,8 +982,8 @@ StripeSM::_copy_writer_to_aggregation(CacheVC *vc)
   if (vc->write_len) {
     ink_assert(this->mutex.get()->thread_holding == this_ethread());
 
-    Metrics::Counter::increment(cache_rsb.write_bytes);
-    Metrics::Counter::increment(this->cache_vol->vol_rsb.write_bytes);
+    ts::Metrics::Counter::increment(cache_rsb.write_bytes);
+    ts::Metrics::Counter::increment(this->cache_vol->vol_rsb.write_bytes);
 
     if (vc->f.rewrite_resident_alt) {
       doc->set_data(vc->write_len, res_alt_blk, 0);
@@ -1077,8 +1077,8 @@ StripeSM::agg_wrap()
   dir_clean_vol(this);
   {
     StripeSM *stripe = this;
-    Metrics::Counter::increment(cache_rsb.directory_wrap);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_wrap);
+    ts::Metrics::Counter::increment(cache_rsb.directory_wrap);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.directory_wrap);
     Note("Cache volume %d on disk '%s' wraps around", stripe->cache_vol->vol_number, stripe->hash_text.get());
   }
   ink_assert(this->mutex->thread_holding == this_ethread());
@@ -1374,8 +1374,8 @@ StripeSM::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   }
 
   if (agg_error) {
-    Metrics::Counter::increment(cache_rsb.write_backlog_failure);
-    Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
+    ts::Metrics::Counter::increment(cache_rsb.write_backlog_failure);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.write_backlog_failure);
 
     return ECACHE_WRITE_FAIL;
   }

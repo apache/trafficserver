@@ -30,6 +30,7 @@
 
 ****************************************************************************/
 
+#include "iocore/cache/Cache.h"
 #include "proxy/http/HttpConfig.h"
 #include "proxy/http/HttpTunnel.h"
 #include "proxy/http/HttpSM.h"
@@ -37,7 +38,6 @@
 
 // inkcache
 #include "../../iocore/cache/P_CacheInternal.h"
-#include "iocore/cache/CacheVC.h"
 
 #include "tscore/ParseRules.h"
 #include "tscore/ink_memory.h"
@@ -1089,7 +1089,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       producer_handler(HTTP_TUNNEL_EVENT_PRECOMPLETE, p);
     } else {
       if (read_start_pos > 0) {
-        p->read_vio = ((CacheVC *)p->vc)->do_io_pread(this, producer_n, p->read_buffer, read_start_pos);
+        p->read_vio = static_cast<CacheVConnection *>(p->vc)->do_io_pread(this, producer_n, p->read_buffer, read_start_pos);
       } else {
         Dbg(dbg_ctl_http_tunnel, "Start read vio %" PRId64 " bytes", producer_n);
         p->read_vio = p->vc->do_io_read(this, producer_n, p->read_buffer);

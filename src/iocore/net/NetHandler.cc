@@ -21,17 +21,15 @@
   limitations under the License.
  */
 
+#include "P_Net.h"
+#include "P_UnixNet.h"
 #include "iocore/net/NetHandler.h"
-#include <atomic>
-
+#include "iocore/net/PollCont.h"
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IO_URING.h"
 #endif
 
-#include "P_Net.h"
-#include "P_UnixNet.h"
-#include "P_UnixNetProcessor.h"
-#include "iocore/net/PollCont.h"
+#include <atomic>
 
 using namespace std::literals;
 

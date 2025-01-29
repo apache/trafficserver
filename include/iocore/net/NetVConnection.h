@@ -25,21 +25,16 @@
 
 #include "iocore/net/NetVCOptions.h"
 #include "iocore/net/ProxyProtocol.h"
-#include "iocore/net/Net.h"
 
 #include <string_view>
 #include <optional>
 
 #include "tscore/ink_inet.h"
-#include "iocore/eventsystem/Action.h"
 #include "iocore/eventsystem/VConnection.h"
 #include "iocore/eventsystem/Event.h"
-#include "tscore/List.h"
 #include "iocore/eventsystem/IOBuffer.h"
 #include "iocore/net/Socks.h"
 #include "ts/apidefs.h"
-#include "iocore/net/YamlSNIConfig.h"
-#include "swoc/TextView.h"
 
 #define CONNECT_SUCCESS 1
 #define CONNECT_FAILURE 0
@@ -366,8 +361,9 @@ public:
 
   virtual SOCKET get_socket() = 0;
 
+  enum class tcp_congestion_control_side { CLIENT_SIDE, SERVER_SIDE };
   /** Set the TCP congestion control algorithm */
-  virtual int set_tcp_congestion_control(int side) = 0;
+  virtual int set_tcp_congestion_control(tcp_congestion_control_side side) = 0;
 
   /** Set local sock addr struct. */
   virtual void set_local_addr() = 0;
@@ -691,4 +687,83 @@ inline void
 NetVConnection::_set_service(QUICSupport *instance)
 {
   this->_set_service(NetVConnection::Service::QUIC, instance);
+}
+
+inline sockaddr const *
+NetVConnection::get_remote_addr()
+{
+  if (!got_remote_addr) {
+    set_remote_addr();
+    got_remote_addr = true;
+  }
+  return &remote_addr.sa;
+}
+
+inline IpEndpoint const &
+NetVConnection::get_remote_endpoint()
+{
+  get_remote_addr(); // Make sure the value is filled in
+  return remote_addr;
+}
+
+/// @return The remote port in host order.
+inline uint16_t
+NetVConnection::get_remote_port()
+{
+  return ats_ip_port_host_order(this->get_remote_addr());
+}
+
+inline IpEndpoint const &
+NetVConnection::get_local_endpoint()
+{
+  get_local_addr();
+  return local_addr;
+}
+
+inline sockaddr const *
+NetVConnection::get_local_addr()
+{
+  if (!got_local_addr) {
+    set_local_addr();
+    if ((ats_is_ip(&local_addr) && ats_ip_port_cast(&local_addr))                    // IP and has a port.
+        || (ats_is_ip4(&local_addr) && INADDR_ANY != ats_ip4_addr_cast(&local_addr)) // IPv4
+        || (ats_is_ip6(&local_addr) && !IN6_IS_ADDR_UNSPECIFIED(&local_addr.sin6.sin6_addr))) {
+      got_local_addr = true;
+    }
+  }
+  return &local_addr.sa;
+}
+
+/// @return The local port in host order.
+inline uint16_t
+NetVConnection::get_local_port()
+{
+  return ats_ip_port_host_order(this->get_local_addr());
+}
+
+inline sockaddr const *
+NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst) const
+{
+  const IpEndpoint &addr = (src_or_dst == ProxyProtocolData::SRC ? pp_info.src_addr : pp_info.dst_addr);
+
+  if ((addr.isValid() && addr.network_order_port() != 0) || (ats_is_ip4(&addr) && INADDR_ANY != ats_ip4_addr_cast(&addr)) // IPv4
+      || (ats_is_ip6(&addr) && !IN6_IS_ADDR_UNSPECIFIED(&addr.sin6.sin6_addr))) {
+    return &addr.sa;
+  }
+
+  return nullptr;
+}
+
+inline void
+NetVConnection::set_proxy_protocol_info(const ProxyProtocol &src)
+{
+  if (pp_info.version == ProxyProtocolVersion::UNDEFINED) {
+    pp_info = src;
+  }
+}
+
+inline const ProxyProtocol &
+NetVConnection::get_proxy_protocol_info() const
+{
+  return pp_info;
 }

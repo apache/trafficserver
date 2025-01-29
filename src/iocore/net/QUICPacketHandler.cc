@@ -20,20 +20,21 @@
   limitations under the License.
  */
 
-#include "tscore/Layout.h"
-#include "tscore/ink_config.h"
-#include "P_Net.h"
-
 #include "P_QUICNet.h"
 #include "P_QUICPacketHandler.h"
 #include "P_QUICNetProcessor.h"
 #include "P_QUICClosedConCollector.h"
 #include "P_SSLCertLookup.h"
+#include "P_UDPNet.h"
+#include "P_UnixNet.h"
+#include "P_UnixUDPConnection.h"
 #include "iocore/net/quic/QUICConnectionTable.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
-#include <quiche.h>
+#include "tscore/Layout.h"
+#include "tscore/ink_atomic.h"
 
 #include "swoc/BufferWriter.h"
+#include <quiche.h>
 
 namespace
 {
@@ -160,16 +161,16 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
   } else if (event == EVENT_IMMEDIATE) {
     this->setThreadAffinity(this_ethread());
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    udpNet.UDPBind((Continuation *)this, &this->server.accept_addr.sa, -1, 1048576, 1048576);
+    udpNet.UDPBind(static_cast<Continuation *>(this), &this->server.accept_addr.sa, -1, 1048576, 1048576);
     return EVENT_CONT;
   }
 
   /////////////////
   // EVENT_ERROR //
   /////////////////
-  if (((long)data) == -ECONNABORTED) {}
+  if (reinterpret_cast<long>(data) == -ECONNABORTED) {}
 
-  ink_abort("QUIC accept received fatal error: errno = %d", -(static_cast<int>((intptr_t)data)));
+  ink_abort("QUIC accept received fatal error: errno = %d", -static_cast<int>(reinterpret_cast<intptr_t>(data)));
   return EVENT_CONT;
 }
 

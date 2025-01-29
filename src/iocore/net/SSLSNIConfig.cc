@@ -29,24 +29,17 @@
    SNI based Configuration in ATS
  ****************************************************************************/
 
-#include "iocore/net/SSLSNIConfig.h"
-#include "iocore/net/SNIActionItem.h"
-
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
-
+#include "iocore/net/SSLSNIConfig.h"
+#include "iocore/net/SNIActionItem.h"
 #include "tscore/Diags.h"
-#include "tscore/SimpleTokenizer.h"
-#include "tscore/ink_memory.h"
 #include "tscore/Layout.h"
-
+#include "tscore/TSSystemState.h"
 #include "tsutil/ts_ip.h"
 #include "tsutil/Convert.h"
 
-#include "swoc/TextView.h"
-
 #include <netinet/in.h>
-
 #include <sstream>
 #include <utility>
 #include <pcre.h>

@@ -27,19 +27,9 @@
 
 #include "catch.hpp"
 
-#include "tscore/Layout.h"
-#include "tscore/Diags.h"
-#include "tscore/TSSystemState.h"
-
-#include "records/RecordsConfig.h"
-#include "records/RecProcess.h"
-#include "iocore/aio/AIO.h"
-#include "../P_CacheDisk.h"
-#include "../../net/P_Net.h"
+#include "proxy/hdrs/HTTP.h"
+#include "../CacheVC.h"
 #include "CacheTestHandler.h"
-#include "../P_Cache.h"
-
-#include <queue>
 
 // redefine BUILD PREFIX
 #ifdef TS_BUILD_PREFIX
@@ -185,7 +175,7 @@ class CacheWriteTest : public CacheTestBase
 public:
   CacheWriteTest(size_t size, CacheTestHandler *cont, const char *url = "http://www.scw00.com/") : CacheTestBase(cont), _size(size)
   {
-    this->_cursor       = (char *)GLOBAL_DATA;
+    this->_cursor       = GLOBAL_DATA;
     this->_write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
 
     this->info.create();
@@ -211,9 +201,9 @@ public:
   HTTPInfo old_info;
 
 private:
-  size_t     _size         = 0;
-  char      *_cursor       = nullptr;
-  MIOBuffer *_write_buffer = nullptr;
+  size_t      _size         = 0;
+  const char *_cursor       = nullptr;
+  MIOBuffer  *_write_buffer = nullptr;
 };
 
 class MockHttpConfigAccessor : public HttpConfigAccessor
@@ -251,7 +241,7 @@ class CacheReadTest : public CacheTestBase
 public:
   CacheReadTest(size_t size, CacheTestHandler *cont, const char *url = "http://www.scw00.com/") : CacheTestBase(cont), _size(size)
   {
-    this->_cursor      = (char *)GLOBAL_DATA;
+    this->_cursor      = GLOBAL_DATA;
     this->_read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     this->_reader      = this->_read_buffer->alloc_reader();
 
@@ -277,7 +267,7 @@ public:
 
 private:
   size_t                 _size        = 0;
-  char                  *_cursor      = nullptr;
+  const char            *_cursor      = nullptr;
   MIOBuffer             *_read_buffer = nullptr;
   IOBufferReader        *_reader      = nullptr;
   MockHttpConfigAccessor params;

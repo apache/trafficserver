@@ -22,11 +22,12 @@
  */
 
 #include "swoc/swoc_file.h"
+#include "tscore/Regression.h"
 #include "tsutil/ts_bw_format.h"
 
 #include "P_HostDB.h"
-#include "tscore/Layout.h"
-#include "tscore/ink_apidefs.h"
+// Gross
+#include "../dns/P_SplitDNSProcessor.h"
 #include "tscore/MgmtDefs.h" // MgmtInt, MgmtFloat, etc
 #include "iocore/hostdb/HostFile.h"
 
@@ -1803,8 +1804,9 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
     result = this->select_next_rr(now, fail_window);
   } else {
     uint32_t xx = rand->random() % weight;
-    for (i = 0; i < live_n - 1 && xx >= live[i]->data.srv.srv_weight; ++i)
+    for (i = 0; i < live_n - 1 && xx >= live[i]->data.srv.srv_weight; ++i) {
       xx -= live[i]->data.srv.srv_weight;
+    }
 
     result = live[i];
   }
@@ -1886,8 +1888,7 @@ ResolveInfo::select_next_rr()
   if (active) {
     if (auto rr_info{this->record->rr_info()}; rr_info.count() > 1) {
       unsigned limit = active - rr_info.data(), idx = (limit + 1) % rr_info.count();
-      while ((idx = (idx + 1) % rr_info.count()) != limit && !rr_info[idx].is_alive())
-        ;
+      while ((idx = (idx + 1) % rr_info.count()) != limit && !rr_info[idx].is_alive()) {}
       active = &rr_info[idx];
       return idx != limit; // if the active record was actually changed.
     }

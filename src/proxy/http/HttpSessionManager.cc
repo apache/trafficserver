@@ -30,6 +30,7 @@
 
  ****************************************************************************/
 
+#include "../../iocore/net/P_UnixNetVConnection.h"
 #include "proxy/http/HttpSessionManager.h"
 #include "proxy/ProxySession.h"
 #include "proxy/http/HttpSM.h"

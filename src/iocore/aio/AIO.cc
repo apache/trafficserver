@@ -26,9 +26,16 @@
  */
 
 #include "iocore/aio/AIO.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/EventProcessor.h"
+#include "records/RecCore.h"
+#include "records/RecDefs.h"
 #include "tscore/TSSystemState.h"
 #include "tscore/ink_atomic.h"
+#if TS_USE_HWLOC
 #include "tscore/ink_hw.h"
+#endif
 
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IO_URING.h"

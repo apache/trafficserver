@@ -35,6 +35,8 @@
 #include "swoc/swoc_file.h"
 #include "ts/apidefs.h"
 #include "tscore/BaseLogFile.h"
+#include "tsutil/PostScript.h"
+
 #include <memory>
 
 #define CATCH_CONFIG_MAIN /* include main function */
@@ -83,6 +85,7 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
   GIVEN("Named filter definitions with multiple actions")
   {
     BUILD_TABLE_INFO bti{};
+    ts::PostScript   acl_rules_defer([&]() -> void { bti.clear_acl_rules_list(); });
     UrlRewrite       rewrite{};
 
     bti.rewrite = &rewrite;

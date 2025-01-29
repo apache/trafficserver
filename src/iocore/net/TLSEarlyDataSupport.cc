@@ -22,11 +22,13 @@
   limitations under the License.
  */
 
-#include <openssl/ssl.h>
 #include "iocore/net/TLSEarlyDataSupport.h"
+#include "tscore/Diags.h" // IWYU pragma: keep - for Warning()
 #include "tscore/ink_config.h"
 #include "tscore/ink_assert.h"
-#include "tscore/Diags.h"
+#include "tsutil/DbgCtl.h" // IWYU pragma: keep - for DbgCtl
+
+#include <openssl/ssl.h>
 
 int TLSEarlyDataSupport::_ex_data_index = -1;
 

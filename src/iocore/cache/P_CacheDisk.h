@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "iocore/aio/AIO.h"
 #include "iocore/cache/Cache.h"
 
 extern int cache_config_max_disk_errors;

@@ -33,6 +33,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_args.h"
+#include <cstdarg>
 
 static RegressionTest *test           = nullptr;
 static RegressionTest *exclusive_test = nullptr;

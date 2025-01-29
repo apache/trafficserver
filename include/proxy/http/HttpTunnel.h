@@ -32,7 +32,6 @@
 
 #pragma once
 
-#include "tscore/ink_platform.h"
 #include "iocore/eventsystem/EventSystem.h"
 
 // Get rid of any previous definition first... /leif
