@@ -1,0 +1,20 @@
+Changes with Apache Traffic Server 9.2.8
+  #11846 - [9.2.x] Fix setting TLS groups with BoringSSL
+  #11924 - [9.2.x] Make warning if remap ACL has more than one @action (#11911)
+  #11938 - [9.2.x] Backport AuTest fixes for Fedora 40
+  #11942 - Do not allow extra CRs in chunks (#11936)
+  #11959 - Fix memory leak when loading remap config
+  #11962 - Configure autests to use microserver 1.0.8 (#11941) Update proxy-verifier to 2.12.0 via (#11534)
+  #11963 - Add support to retrieve request header block to lua plugin (#11893)
+  #11964 - 9.2.x backport: Handle VC_EVENT_EOS in more places (#11368)
+  #11965 - multiplexer: fix consume of too many bytes (#11499)
+  #11966 - 9.2.x backport autests (#11601) and (#11512)
+  #11969 - 9.2.x backport: tslua.so: handle unrecognized status codes (#11272)
+  #11970 - handle EOS events during server open (#11346)
+  #11971 - Use the specified `length` characters of the key in `Headers::count` (#11405)
+  #11972 - Add nullptr check in PluginVC read and write (#11961)
+  #11973 - [9.2.x] Add http2.incomplete_header_timeout_in (#11354)
+  #11976 - Don't assume LogAccess::m_client_req_unmapped_url_canon_str is null t…
+  #11979 - Add Sphinx documentation for statichit plugin. (#11389)
+  #11983 - Disable h2 prior knowledge on tls (#11881)
+  #11998 - Fix crash by including remap files with named filters (#11997)
