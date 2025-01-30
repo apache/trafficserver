@@ -126,11 +126,8 @@ if(BUILD_TESTING)
     test_net
     PRIVATE catch2::catch2
             tscore
-            ts::configmanager
-            ts::hdrs
+            ts::http_remap
             ts::proxy
-            ts::inkdns
-            ts::inkutils
             ts::inknet
             ts::inkevent
             libswoc::libswoc
