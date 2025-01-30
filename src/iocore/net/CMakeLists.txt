@@ -122,31 +122,22 @@ if(BUILD_TESTING)
     test_net libinknet_stub.cc NetVCTest.cc unit_tests/test_ProxyProtocol.cc unit_tests/test_SSLSNIConfig.cc
              unit_tests/test_YamlSNIConfig.cc unit_tests/unit_test_main.cc
   )
-  target_link_libraries(
-    test_net
-    PRIVATE catch2::catch2
-            ts::tscore
-            ts::overridable_txn_vars
-            ts::tsutil
-            ts::http_remap
-            ts::logging
-            ts::hdrs
-            ts::configmanager
-            ts::diagsconfig
-            ts::inkutils
-            ts::inkdns
-            ts::inkhostdb
-            ts::inkcache
-            ts::aio
-            ts::proxy
-            ts::inknet
-            ts::records
-            ts::inkevent
-            libswoc::libswoc
-            ts::jsonrpc_protocol
-            ts::jsonrpc_server
-            ts::rpcpublichandlers
-  )
+  if(CMAKE_LINK_GROUP_USING_RESCAN_SUPPORTED OR CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
+    # Use link groups to solve circular dependency
+    target_link_libraries(
+      test_net
+      PRIVATE
+        catch2::catch2
+        ts::tscore
+        "$<LINK_GROUP:RESCAN,ts::logging,ts::inknet,ts::inkhostdb,ts::proxy,ts::tsapibackend,ts::inkdns,ts::http2,ts::inkcache,ts::rpcpublichandlers,ts::overridable_txn_vars,ts::http,ts::http_remap>"
+        ts::tsutil
+        ts::inkevent
+        libswoc::libswoc
+    )
+  else()
+    # These linkers already do the equivalent of RESCAN, so there's no support in cmake for it
+    target_link_libraries(test_net PRIVATE catch2::catch2 ts::tscore ts::proxy ts::inknet ts::inkevent libswoc::libswoc)
+  endif()
   if(NOT APPLE)
     target_link_options(test_net PRIVATE -Wl,--allow-multiple-definition)
   endif()
