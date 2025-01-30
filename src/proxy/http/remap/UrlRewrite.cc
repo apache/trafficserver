@@ -465,9 +465,6 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
     } else {
       src_addr = &pp_info.src_addr;
     }
-    if (!ats_is_ip(src_addr)) {
-      return;
-    }
 
     s->client_connection_allowed = true; // Default is that we allow things unless some filter matches
 
@@ -491,42 +488,44 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
       }
 
       bool ip_matches = true;
-      // Is there a @src_ip specified? If so, check it.
-      if (rp->src_ip_valid) {
-        bool src_ip_matches = false;
-        for (int j = 0; j < rp->src_ip_cnt && !src_ip_matches; j++) {
-          bool in_range = rp->src_ip_array[j].contains(*src_addr);
-          if (rp->src_ip_array[j].invert) {
-            if (!in_range) {
-              src_ip_matches = true;
-            }
-          } else {
-            if (in_range) {
-              src_ip_matches = true;
+      if (ats_is_ip(src_addr)) {
+        // Is there a @src_ip specified? If so, check it.
+        if (rp->src_ip_valid) {
+          bool src_ip_matches = false;
+          for (int j = 0; j < rp->src_ip_cnt && !src_ip_matches; j++) {
+            bool in_range = rp->src_ip_array[j].contains(*src_addr);
+            if (rp->src_ip_array[j].invert) {
+              if (!in_range) {
+                src_ip_matches = true;
+              }
+            } else {
+              if (in_range) {
+                src_ip_matches = true;
+              }
             }
           }
+          Dbg(dbg_ctl_url_rewrite, "Checked the specified src_ip, result: %s", src_ip_matches ? "true" : "false");
+          ip_matches &= src_ip_matches;
         }
-        Dbg(dbg_ctl_url_rewrite, "Checked the specified src_ip, result: %s", src_ip_matches ? "true" : "false");
-        ip_matches &= src_ip_matches;
-      }
 
-      // Is there a @src_ip_category specified? If so, check it.
-      if (ip_matches && rp->src_ip_category_valid) {
-        bool category_ip_matches = false;
-        for (int j = 0; j < rp->src_ip_category_cnt && !category_ip_matches; j++) {
-          bool in_category = rp->src_ip_category_array[j].contains(*src_addr);
-          if (rp->src_ip_category_array[j].invert) {
-            if (!in_category) {
-              category_ip_matches = true;
-            }
-          } else {
-            if (in_category) {
-              category_ip_matches = true;
+        // Is there a @src_ip_category specified? If so, check it.
+        if (ip_matches && rp->src_ip_category_valid) {
+          bool category_ip_matches = false;
+          for (int j = 0; j < rp->src_ip_category_cnt && !category_ip_matches; j++) {
+            bool in_category = rp->src_ip_category_array[j].contains(*src_addr);
+            if (rp->src_ip_category_array[j].invert) {
+              if (!in_category) {
+                category_ip_matches = true;
+              }
+            } else {
+              if (in_category) {
+                category_ip_matches = true;
+              }
             }
           }
+          Dbg(dbg_ctl_url_rewrite, "Checked the specified src_ip_category, result: %s", category_ip_matches ? "true" : "false");
+          ip_matches &= category_ip_matches;
         }
-        Dbg(dbg_ctl_url_rewrite, "Checked the specified src_ip_category, result: %s", category_ip_matches ? "true" : "false");
-        ip_matches &= category_ip_matches;
       }
 
       // Is there an @in_ip specified? If so, check it.
