@@ -126,7 +126,6 @@ if(BUILD_TESTING)
     test_net
     PRIVATE catch2::catch2
             tscore
-            ts::tsapi
             ts::configmanager
             ts::hdrs
             ts::proxy
