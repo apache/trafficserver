@@ -234,7 +234,6 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
     CHECK(pp_info.ip_family == AF_UNSPEC);
   }
 
-  // TLVs are not supported yet. Checking TLVs are skipped as expected for now.
   SECTION("TLVs")
   {
     uint8_t raw_data[] = {
@@ -242,12 +241,13 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
       0x55, 0x49, 0x54, 0x0A,                         ///<
       0x21,                                           ///< version & command
       0x11,                                           ///< protocol & family
-      0x00, 0x11,                                     ///< len
+      0x00, 0x17,                                     ///< len
       0xC0, 0x00, 0x02, 0x01,                         ///< src_addr
       0xC6, 0x33, 0x64, 0x01,                         ///< dst_addr
       0xC3, 0x50,                                     ///< src_port
       0x01, 0xBB,                                     ///< dst_port
       0x01, 0x00, 0x02, 0x68, 0x32,                   /// PP2_TYPE_ALPN (h2)
+      0x02, 0x00, 0x03, 0x61, 0x62, 0x63              /// PP2_TYPE_AUTHORITY (abc)
     };
 
     swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
@@ -262,6 +262,9 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
     CHECK(pp_info.ip_family == AF_INET);
     CHECK(pp_info.src_addr == src_addr);
     CHECK(pp_info.dst_addr == dst_addr);
+
+    CHECK(pp_info.tlv[PP2_TYPE_ALPN] == "h2");
+    CHECK(pp_info.tlv[PP2_TYPE_AUTHORITY] == "abc");
   }
 
   SECTION("Malformed Headers")
