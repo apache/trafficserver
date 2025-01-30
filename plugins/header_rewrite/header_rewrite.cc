@@ -19,6 +19,7 @@
 #include <fstream>
 #include <mutex>
 #include <string>
+#include <stack>
 #include <stdexcept>
 #include <getopt.h>
 
@@ -145,10 +146,12 @@ RulesConfig::add_rule(RuleSet *rule)
 bool
 RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url, char *to_url)
 {
-  std::unique_ptr<RuleSet> rule(nullptr);
-  std::string              filename;
-  std::ifstream            f;
-  int                      lineno = 0;
+  std::unique_ptr<RuleSet>     rule(nullptr);
+  std::string                  filename;
+  std::ifstream                f;
+  int                          lineno = 0;
+  std::stack<ConditionGroup *> group_stack;
+  ConditionGroup              *group = nullptr;
 
   if (0 == fname.size()) {
     TSError("[%s] no config filename provided", PLUGIN_NAME);
@@ -208,8 +211,14 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     bool         is_hook = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
 
     if (nullptr == rule) {
+      if (!group_stack.empty()) {
+        TSError("[%s] mismatched %%{GROUP} conditions in file: %s", PLUGIN_NAME, fname.c_str());
+        return false;
+      }
+
       rule = std::make_unique<RuleSet>();
       rule->set_hook(hook);
+      group = rule->get_group(); // This the implicit rule group to begin with
 
       if (is_hook) {
         // Check if the hooks are not available for the remap mode
@@ -233,8 +242,33 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     // Long term, maybe we need to percolate all this up through add_condition() / add_operator() rather than this big ugly try.
     try {
       if (p.is_cond()) {
-        if (!rule->add_condition(p, filename.c_str(), lineno)) {
+        Condition *cond = rule->make_condition(p, filename.c_str(), lineno);
+
+        if (!cond) {
           throw std::runtime_error("add_condition() failed");
+        } else {
+          ConditionGroup *ngrp = dynamic_cast<ConditionGroup *>(cond);
+
+          if (ngrp) {
+            if (ngrp->closes()) {
+              // Closing a group, pop the stack
+              if (group_stack.empty()) {
+                throw std::runtime_error("unmatched %{GROUP}");
+              } else {
+                delete cond; // We don't care about the closing group condition, it's a no-op
+                ngrp  = group;
+                group = group_stack.top();
+                group_stack.pop();
+                group->add_condition(ngrp); // Add the previous group to the current group's conditions
+              }
+            } else {
+              // New group
+              group_stack.push(group);
+              group = ngrp;
+            }
+          } else {
+            group->add_condition(cond);
+          }
         }
       } else {
         if (!rule->add_operator(p, filename.c_str(), lineno)) {
@@ -245,6 +279,11 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
       TSError("[%s] header_rewrite configuration exception: %s in file: %s", PLUGIN_NAME, e.what(), fname.c_str());
       return false;
     }
+  }
+
+  if (!group_stack.empty()) {
+    TSError("[%s] missing final %%{GROUP:END} condition in file: %s", PLUGIN_NAME, fname.c_str());
+    return false;
   }
 
   // Add the last rule (possibly the only rule)
@@ -302,8 +341,8 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 
   bool reenable{true};
   if (hook != TS_HTTP_LAST_HOOK) {
-    const RuleSet *rule = conf->rule(hook);
-    Resources      res(txnp, contp);
+    RuleSet  *rule = conf->rule(hook);
+    Resources res(txnp, contp);
 
     // Get the resources necessary to process this event
     res.gather(conf->resid(hook), hook);

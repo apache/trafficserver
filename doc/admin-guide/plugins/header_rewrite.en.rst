@@ -297,6 +297,36 @@ setting headers. For example::
         set-header ATS-Geo-ASN %{GEO:ASN}
         set-header ATS-Geo-ASN-NAME %{GEO:ASN-NAME}
 
+GROUP
+~~~~~
+;;
+    cond %{GROUP}
+    cond %{GROUP:END}
+
+This condition is a pseudo condition that is used to group conditions together.
+Using these groups, you can construct more complex expressions, that can mix and
+match AND, OR and NOT operators. These groups are the equivalent of parenthesis
+in expressions. The following example illustrates this::
+
+    cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    cond %{GROUP} [OR]
+        cond %{CLIENT-HEADER:X-Bar} /foo/ [AND]
+        cond %{CLIENT-HEADER:User-Agent} /Chrome/
+    cond %{GROUP:END}
+    cond %{GROUP}
+        cond %{CLIENT-HEADER:X-Foo} /something/ [AND]
+        cond %{CLIENT-HEADER:User-Agent} /MSIE/
+    cond %{GROUP:END}
+        set-header X-My-Header "This is a test"
+
+Note that the ``GROUP`` and ``GROUP:END`` conditions do not take any operands per se,
+and you are still limited to operations after the last condition. Also, the ``GROUP:END``
+condition must match exactly with the last ``GROUP`` conditions, but they can be
+nested in one or several levels.
+
+When closing a group with ``GROUP::END``, the modifiers are not used, in fact that entire
+condition is discarded, being used only to close the group. Youy may still decorate it
+with the same modifier as the opening ``GROUP`` condition, but it is not necessary.
 
 HEADER
 ~~~~~~

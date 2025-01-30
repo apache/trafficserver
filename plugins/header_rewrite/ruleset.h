@@ -29,6 +29,7 @@
 #include "factory.h"
 #include "resources.h"
 #include "parser.h"
+#include "conditions.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Class holding one ruleset. A ruleset is one (or more) pre-conditions, and
@@ -42,9 +43,8 @@ public:
   ~RuleSet()
   {
     Dbg(dbg_ctl, "RulesSet DTOR");
-    delete next;
-    delete _cond;
     delete _oper;
+    delete next;
   }
 
   // noncopyable
@@ -53,7 +53,7 @@ public:
 
   // No reason to inline these
   void        append(RuleSet *rule);
-  bool        add_condition(Parser &p, const char *filename, int lineno);
+  Condition  *make_condition(Parser &p, const char *filename, int lineno);
   bool        add_operator(Parser &p, const char *filename, int lineno);
   ResourceIDs get_all_resource_ids() const;
 
@@ -63,16 +63,16 @@ public:
     return nullptr != _oper;
   }
 
-  bool
-  has_condition() const
-  {
-    return nullptr != _cond;
-  }
-
   void
   set_hook(TSHttpHookID hook)
   {
     _hook = hook;
+  }
+
+  ConditionGroup *
+  get_group()
+  {
+    return &_group;
   }
 
   TSHttpHookID
@@ -88,16 +88,6 @@ public:
   }
 
   bool
-  eval(const Resources &res) const
-  {
-    if (nullptr == _cond) {
-      return true;
-    } else {
-      return _cond->do_eval(res);
-    }
-  }
-
-  bool
   last() const
   {
     return _last;
@@ -107,6 +97,7 @@ public:
   exec(const Resources &res) const
   {
     auto no_reenable_count{_oper->do_exec(res)};
+
     ink_assert(no_reenable_count < 2);
     if (no_reenable_count) {
       return static_cast<OperModifiers>(_opermods | OPER_NO_REENABLE);
@@ -114,12 +105,18 @@ public:
     return _opermods;
   }
 
+  bool
+  eval(const Resources &res)
+  {
+    return _group.eval(res);
+  }
+
   RuleSet *next = nullptr; // Linked list
 
 private:
-  Condition   *_cond = nullptr;                        // First pre-condition (linked list)
-  Operator    *_oper = nullptr;                        // First operator (linked list)
-  TSHttpHookID _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
+  ConditionGroup _group;                                 // All conditions are now wrapped in a group
+  Operator      *_oper = nullptr;                        // First operator (linked list)
+  TSHttpHookID   _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
 
   // State values (updated when conds / operators are added)
   ResourceIDs   _ids      = RSRC_NONE;
