@@ -125,12 +125,27 @@ if(BUILD_TESTING)
   target_link_libraries(
     test_net
     PRIVATE catch2::catch2
-            tscore
+            ts::tscore
+            ts::overridable_txn_vars
+            ts::tsutil
             ts::http_remap
+            ts::logging
+            ts::hdrs
+            ts::configmanager
+            ts::diagsconfig
+            ts::inkutils
+            ts::inkdns
+            ts::inkhostdb
+            ts::inkcache
+            ts::aio
             ts::proxy
             ts::inknet
+            ts::records
             ts::inkevent
             libswoc::libswoc
+            ts::jsonrpc_protocol
+            ts::jsonrpc_server
+            ts::rpcpublichandlers
   )
   if(NOT APPLE)
     target_link_options(test_net PRIVATE -Wl,--allow-multiple-definition)
