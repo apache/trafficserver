@@ -458,7 +458,16 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
     int method        = s->hdr_info.client_request.method_get_wksidx();
     int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
 
-    ink_release_assert(ats_is_ip(&s->client_info.src_addr));
+    const IpEndpoint    *src_addr;
+    const ProxyProtocol &pp_info = s->state_machine->get_ua_txn()->get_netvc()->get_proxy_protocol_info();
+    if (pp_info.version == ProxyProtocolVersion::UNDEFINED) {
+      src_addr = &s->client_info.src_addr;
+    } else {
+      src_addr = &pp_info.src_addr;
+    }
+    if (!ats_is_ip(src_addr)) {
+      return;
+    }
 
     s->client_connection_allowed = true; // Default is that we allow things unless some filter matches
 
@@ -486,7 +495,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
       if (rp->src_ip_valid) {
         bool src_ip_matches = false;
         for (int j = 0; j < rp->src_ip_cnt && !src_ip_matches; j++) {
-          bool in_range = rp->src_ip_array[j].contains(s->client_info.src_addr);
+          bool in_range = rp->src_ip_array[j].contains(*src_addr);
           if (rp->src_ip_array[j].invert) {
             if (!in_range) {
               src_ip_matches = true;
@@ -505,7 +514,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
       if (ip_matches && rp->src_ip_category_valid) {
         bool category_ip_matches = false;
         for (int j = 0; j < rp->src_ip_category_cnt && !category_ip_matches; j++) {
-          bool in_category = rp->src_ip_category_array[j].contains(s->client_info.src_addr);
+          bool in_category = rp->src_ip_category_array[j].contains(*src_addr);
           if (rp->src_ip_category_array[j].invert) {
             if (!in_category) {
               category_ip_matches = true;
