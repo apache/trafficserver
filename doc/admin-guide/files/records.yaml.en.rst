@@ -1053,12 +1053,22 @@ allow-plain
    to use the client HTTP version for upstream requests.
 
 .. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
+   :reloadable:
    :overridable:
 
-   If enabled (``1``) anytime a request contains a ``Authorization``,
-   ``Proxy-Authorization``, or ``Www-Authenticate`` header the connection will
-   be closed and not reused. This marks the connection as private. When disabled
-   (``0``) the connection will be available for reuse.
+   Specifies whether |TS| should close the origin connection and not reuse it if the request contains an
+   ``Authorization``, ``Proxy-Authorization``, or ``Www-Authenticate`` header.  Private connections are
+   associated with a single client connection and are not shared with other client connections.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` The origin connection will be available for reuse.
+   ``1`` The origin connection will be closed after the client is done with it and if the request contains an
+         ``Authorization``, ``Proxy-Authorization``, or ``Www-Authenticate`` header.
+   ``2`` The origin connection will be closed after the client is done with it and if the request contains a
+         ``Proxy-Authorization`` or ``Www-Authenticate`` header.
+   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
    :overridable:
