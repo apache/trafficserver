@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
 from ports import get_port
 import sys
 
@@ -100,8 +101,10 @@ class QuickServerTest:
         self._configure_server(tr)
         self._configure_traffic_server(tr)
 
+        tools_dir = self._ts.Variables.AtsTestToolsDir
+        http_utils = os.path.join(tools_dir, 'http_utils.py')
         tr.Setup.CopyAs(self._init_file, Test.RunDirectory)
-        tr.Setup.CopyAs(self._http_utils, Test.RunDirectory)
+        tr.Setup.CopyAs(http_utils, Test.RunDirectory)
         tr.Setup.CopyAs(self._slow_post_client, Test.RunDirectory)
         tr.Setup.CopyAs(self._quick_server, Test.RunDirectory)
 
