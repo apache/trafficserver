@@ -40,39 +40,36 @@ RuleSet::append(RuleSet *rule)
   tmp->next = rule;
 }
 
-bool
-RuleSet::add_condition(Parser &p, const char *filename, int lineno)
+// This stays here, since the condition, albeit owned by a group, is tightly couple to the ruleset.
+Condition *
+RuleSet::make_condition(Parser &p, const char *filename, int lineno)
 {
   Condition *c = condition_factory(p.get_op());
 
-  if (nullptr != c) {
-    Dbg(pi_dbg_ctl, "    Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
-    c->initialize(p);
-    if (!c->set_hook(_hook)) {
-      delete c;
-      TSError("[%s] in %s:%d: can't use this condition in hook=%s: %%{%s} with arg: %s", PLUGIN_NAME, filename, lineno,
-              TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
-      return false;
-    }
-    if (c->get_cond_op() == MATCH_ERROR) {
-      delete c;
-      TSError("[%s] in %s:%d: Invalid operator", PLUGIN_NAME, filename, lineno);
-      return false;
-    }
-    if (nullptr == _cond) {
-      _cond = c;
-    } else {
-      _cond->append(c);
-    }
-
-    // Update some ruleset state based on this new condition
-    _last |= c->last();
-    _ids   = static_cast<ResourceIDs>(_ids | _cond->get_resource_ids());
-
-    return true;
+  if (nullptr == c) {
+    return nullptr; // Complete failure in the factory
   }
 
-  return false;
+  Dbg(pi_dbg_ctl, "    Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+  c->initialize(p);
+  if (!c->set_hook(_hook)) {
+    delete c;
+    TSError("[%s] in %s:%d: can't use this condition in hook=%s: %%{%s} with arg: %s", PLUGIN_NAME, filename, lineno,
+            TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
+    return nullptr;
+  }
+
+  if (c->get_cond_op() == MATCH_ERROR) {
+    delete c;
+    TSError("[%s] in %s:%d: Invalid operator", PLUGIN_NAME, filename, lineno);
+    return nullptr;
+  }
+
+  // Update some ruleset state based on this new condition;
+  _last |= c->last();
+  _ids   = static_cast<ResourceIDs>(_ids | c->get_resource_ids());
+
+  return c;
 }
 
 bool

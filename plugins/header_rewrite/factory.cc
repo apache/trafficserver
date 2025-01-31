@@ -162,8 +162,10 @@ condition_factory(const std::string &cond)
     c = new ConditionCache();
   } else if (c_name == "NEXT-HOP") { // This condition adapts to the hook
     c = new ConditionNextHop();
-  } else if (c_name == "HTTP-CNTL") { // This condition adapts to the hook
+  } else if (c_name == "HTTP-CNTL") {
     c = new ConditionHttpCntl();
+  } else if (c_name == "GROUP") {
+    c = new ConditionGroup();
   } else {
     TSError("[%s] Unknown condition %s", PLUGIN_NAME, c_name.c_str());
     return nullptr;

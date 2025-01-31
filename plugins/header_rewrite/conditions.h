@@ -659,3 +659,68 @@ protected:
 private:
   TSHttpCntlType _http_cntl_qual = TS_HTTP_CNTL_LOGGING_MODE;
 };
+
+class ConditionGroup : public Condition
+{
+public:
+  ConditionGroup() { Dbg(dbg_ctl, "Calling CTOR for ConditionGroup"); }
+
+  ~ConditionGroup() override
+  {
+    Dbg(dbg_ctl, "Calling DTOR for ConditionGroup");
+    delete _cond;
+  }
+
+  void
+  set_qualifier(const std::string &q) override
+  {
+    Condition::set_qualifier(q);
+
+    if (!q.empty()) { // Anything goes here, but prefer END
+      _end = true;
+    }
+  }
+
+  // noncopyable
+  ConditionGroup(const ConditionGroup &) = delete;
+  void operator=(const ConditionGroup &) = delete;
+
+  bool
+  closes() const
+  {
+    return _end;
+  }
+
+  void
+  append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */) override
+  {
+    TSReleaseAssert(!"%{GROUP} should never be used as a condition value!");
+  }
+
+  void
+  add_condition(Condition *cond)
+  {
+    if (_cond) {
+      _cond->append(cond);
+    } else {
+      _cond = cond;
+    }
+  }
+
+  // This can't be protected, because we actually evaluate this condition directly from the Ruleset
+  bool
+  eval(const Resources &res) override
+  {
+    Dbg(pi_dbg_ctl, "Evaluating GROUP()");
+
+    if (_cond) {
+      return _cond->do_eval(res);
+    } else {
+      return true;
+    }
+  }
+
+private:
+  Condition *_cond = nullptr; // First pre-condition (linked list)
+  bool       _end  = false;
+};
