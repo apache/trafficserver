@@ -5393,9 +5393,13 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   // know that the session will be private. This is overridable meaning that if a plugin later decides
   // it shouldn't be private it can still be returned to a shared pool.
   //
-  if (t_state.txn_conf->auth_server_session_private == 1 &&
-      t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION |
-                                               MIME_PRESENCE_WWW_AUTHENTICATE)) {
+  if (t_state.txn_conf->auth_server_session_private == 2 &&
+      t_state.hdr_info.server_request.presence(MIME_PRESENCE_PROXY_AUTHORIZATION | MIME_PRESENCE_WWW_AUTHENTICATE)) {
+    SMDbg(dbg_ctl_http_ss_auth, "Setting server session to private for Proxy-Authorization or WWW-Authenticate header");
+    will_be_private_ss = true;
+  } else if (t_state.txn_conf->auth_server_session_private == 1 &&
+             t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION |
+                                                      MIME_PRESENCE_WWW_AUTHENTICATE)) {
     SMDbg(dbg_ctl_http_ss_auth, "Setting server session to private for authorization header");
     will_be_private_ss = true;
   }
