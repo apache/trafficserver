@@ -22,8 +22,8 @@
 # yapf version is desired.
 # See:
 # https://github.com/google/yapf/tags
-YAPF_VERSION="v0.32.0"
-VERSION="yapf 0.32.0"
+YAPF_VERSION="v0.43.0"
+VERSION="yapf 0.43.0"
 
 function main() {
   # check for python3
