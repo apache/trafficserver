@@ -264,7 +264,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #ifdef TCP_FASTOPEN
-  if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) {
+  if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN && opt.ip_family != AF_UNIX) {
     if (safe_setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_FASTOPEN, &opt.tfo_queue_length, sizeof(int))) {
       // EOPNOTSUPP also checked for general safeguarding of unsupported operations of socket functions
       if (opt.f_mptcp && (errno == ENOPROTOOPT || errno == EOPNOTSUPP)) {
@@ -292,7 +292,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #if defined(TCP_MAXSEG)
-  if (NetProcessor::accept_mss > 0) {
+  if (NetProcessor::accept_mss > 0 && opt.ip_family != AF_UNIX) {
     if (opt.f_mptcp) {
       Warning("[Server::listen] TCP_MAXSEG socket option not valid on MPTCP socket level");
     } else if (safe_setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss),
@@ -305,10 +305,12 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
-  if (opt.defer_accept > 0 && setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
-    // FIXME: should we go to the error
-    // goto error;
-    Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
+  if (opt.defer_accept > 0 && opt.ip_family != AF_UNIX) {
+    if (setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
+      // FIXME: should we go to the error
+      // goto error;
+      Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
+    }
   }
 #endif
 
