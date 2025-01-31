@@ -146,13 +146,13 @@ can access at ::
 
    https://github.com/apache/trafficserver-site
 
-The files of interest are in the ``content`` directory.
+The files of interest are in the ``source/markdown`` directory.
 
 ``index.html``
    This is the front page. The places to edit here are any security
    announcements at the top and the "News" section.
 
-``downloads.html``
+``downloads.mdtext``
    Update the downloads page to adjust the links, version numbers and dates.
 
 Commiting to the `asf-site` branch will deploy to the trafficserver website
