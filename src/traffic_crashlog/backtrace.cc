@@ -37,6 +37,15 @@
 #include <string.h>
 #include <libunwind.h>
 #include <libunwind-ptrace.h>
+#if defined(__FreeBSD__)
+#include <sys/types.h>
+#define __WALL        P_ALL
+#define PTRACE_ATTACH PT_ATTACH
+#define PTRACE_DETACH PT_DETACH
+#define DATA_NULL     0
+#else
+#define DATA_NULL NULL
+#endif
 #include <sys/ptrace.h>
 #include <cxxabi.h>
 #include <vector>
@@ -158,7 +167,7 @@ done:
     _UPT_destroy(ap);
   }
 
-  status = ptrace(PTRACE_DETACH, target, NULL, NULL);
+  status = ptrace(PTRACE_DETACH, target, NULL, DATA_NULL);
   Dbg(dbg_ctl_backtrace, "ptrace(DETACH, %ld) -> %d (errno %d)\n", (long)target, status, errno);
 }
 } // namespace
