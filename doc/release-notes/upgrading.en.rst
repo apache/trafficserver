@@ -197,6 +197,13 @@ The following changes have been made to the :file:`sni.yaml` file:
 Plugins
 -------
 
+Deprecated Plugins
+~~~~~~~~~~~~~~~~~~
+The following plugins have been deprecated.
+
+  * healthchecks - please use the statichit plugin instead
+  * icap
+
 Removed Plugins
 ~~~~~~~~~~~~~~~
 The following plugins have been removed from the ATS source code in this version of ATS:
