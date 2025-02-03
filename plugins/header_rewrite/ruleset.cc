@@ -75,28 +75,32 @@ RuleSet::make_condition(Parser &p, const char *filename, int lineno)
 bool
 RuleSet::add_operator(Parser &p, const char *filename, int lineno)
 {
-  Operator *o = operator_factory(p.get_op());
+  Operator *op = operator_factory(p.get_op());
 
-  if (nullptr != o) {
+  if (nullptr != op) {
     Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
-    o->initialize(p);
-    if (!o->set_hook(_hook)) {
-      delete o;
+    op->initialize(p);
+    if (!op->set_hook(_hook)) {
+      delete op;
       Dbg(pi_dbg_ctl, "in %s:%d: can't use this operator in hook=%s:  %s(%s)", filename, lineno, TSHttpHookNameLookup(_hook),
           p.get_op().c_str(), p.get_arg().c_str());
       TSError("[%s] in %s:%d: can't use this operator in hook=%s:  %s(%s)", PLUGIN_NAME, filename, lineno,
               TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
       return false;
     }
-    if (nullptr == _oper) {
-      _oper = o;
+
+    // Work on the appropriate operator list
+    OperatorPair &ops = _is_else ? _operators[1] : _operators[0];
+
+    if (nullptr == ops.oper) {
+      ops.oper = op;
     } else {
-      _oper->append(o);
+      ops.oper->append(op);
     }
 
     // Update some ruleset state based on this new operator
-    _opermods = static_cast<OperModifiers>(_opermods | _oper->get_oper_modifiers());
-    _ids      = static_cast<ResourceIDs>(_ids | _oper->get_resource_ids());
+    ops.oper_mods = static_cast<OperModifiers>(ops.oper_mods | ops.oper->get_oper_modifiers());
+    _ids          = static_cast<ResourceIDs>(_ids | ops.oper->get_resource_ids());
 
     return true;
   }

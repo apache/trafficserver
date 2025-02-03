@@ -38,12 +38,24 @@
 class RuleSet
 {
 public:
+  // Holding the IF and ELSE operators and mods, in two separate linked lists.
+  struct OperatorPair {
+    OperatorPair() = default;
+
+    OperatorPair(const OperatorPair &)            = delete;
+    OperatorPair &operator=(const OperatorPair &) = delete;
+
+    Operator     *oper      = nullptr;
+    OperModifiers oper_mods = OPER_NONE;
+  };
+
   RuleSet() { Dbg(dbg_ctl, "RuleSet CTOR"); }
 
   ~RuleSet()
   {
     Dbg(dbg_ctl, "RulesSet DTOR");
-    delete _oper;
+    delete _operators[0].oper; // These are pointers
+    delete _operators[1].oper;
     delete next;
   }
 
@@ -60,7 +72,7 @@ public:
   bool
   has_operator() const
   {
-    return nullptr != _oper;
+    return (nullptr != _operators[0].oper) || (nullptr != _operators[1].oper);
   }
 
   void
@@ -93,33 +105,48 @@ public:
     return _last;
   }
 
-  OperModifiers
-  exec(const Resources &res) const
+  void
+  switch_branch()
   {
-    auto no_reenable_count{_oper->do_exec(res)};
+    _is_else = !_is_else;
+  }
+
+  OperModifiers
+  exec(const OperatorPair &ops, const Resources &res) const
+  {
+    if (nullptr == ops.oper) {
+      return ops.oper_mods;
+    }
+
+    auto no_reenable_count{ops.oper->do_exec(res)};
 
     ink_assert(no_reenable_count < 2);
     if (no_reenable_count) {
-      return static_cast<OperModifiers>(_opermods | OPER_NO_REENABLE);
+      return static_cast<OperModifiers>(ops.oper_mods | OPER_NO_REENABLE);
     }
-    return _opermods;
+
+    return ops.oper_mods;
   }
 
-  bool
+  const OperatorPair &
   eval(const Resources &res)
   {
-    return _group.eval(res);
+    if (_group.eval(res)) {
+      return _operators[0]; // IF conditions
+    } else {
+      return _operators[1]; // ELSE conditions
+    }
   }
 
   RuleSet *next = nullptr; // Linked list
 
 private:
-  ConditionGroup _group;                                 // All conditions are now wrapped in a group
-  Operator      *_oper = nullptr;                        // First operator (linked list)
-  TSHttpHookID   _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
+  ConditionGroup _group;        // All conditions are now wrapped in a group
+  OperatorPair   _operators[2]; // Holds both the IF and the ELSE set of operators
 
   // State values (updated when conds / operators are added)
-  ResourceIDs   _ids      = RSRC_NONE;
-  OperModifiers _opermods = OPER_NONE;
-  bool          _last     = false;
+  TSHttpHookID _hook    = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
+  ResourceIDs  _ids     = RSRC_NONE;
+  bool         _last    = false;
+  bool         _is_else = false; // Are we in the else clause of the new rule? For parsing.
 };

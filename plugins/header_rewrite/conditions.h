@@ -694,7 +694,8 @@ public:
   void
   append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */) override
   {
-    TSReleaseAssert(!"%{GROUP} should never be used as a condition value!");
+    TSAssert(!"%{GROUP} should never be used as a condition value!");
+    TSError("[%s] %%{GROUP} should never be used as a condition value!", PLUGIN_NAME);
   }
 
   void

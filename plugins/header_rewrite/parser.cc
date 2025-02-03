@@ -173,6 +173,11 @@ Parser::preprocess(std::vector<std::string> tokens)
   } else if (tokens[0] == "cond") {
     _cond = true;
     tokens.erase(tokens.begin());
+  } else if (tokens[0] == "else") {
+    _cond = false;
+    _else = true;
+
+    return true;
   }
 
   // Is it a condition or operator?

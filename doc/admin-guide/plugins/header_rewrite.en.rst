@@ -122,10 +122,23 @@ like the following::
 
     cond %{STATUS} >399 [AND]
     cond %{STATUS} <500
-    set-status 404
+      set-status 404
 
 Which converts any 4xx HTTP status code from the origin server to a 404. A
 response from the origin with a status of 200 would be unaffected by this rule.
+
+An optional ``else`` clause may be specified, which will be executed if the
+conditions are not met. The ``else`` clause is specified by starting a new line
+with the word ``else``. The following example illustrates this::
+
+    cond %{STATUS} >399 [AND]
+    cond %{STATUS} <500
+      set-status 404
+    else
+      set-status 503
+
+The ``else`` clause is not a condition, and does not take any flags, it is
+of course optional, but when specified must be followed by at least one operator.
 
 Conditions
 ----------
@@ -306,7 +319,27 @@ GROUP
 This condition is a pseudo condition that is used to group conditions together.
 Using these groups, you can construct more complex expressions, that can mix and
 match AND, OR and NOT operators. These groups are the equivalent of parenthesis
-in expressions. The following example illustrates this::
+in expressions.The following pseudo example illustrates this. Lets say you want
+to express::
+
+      (A and B) or (C and (D or E))
+
+Assuming A, B, C, D and E are all valid conditions, you would write this as::
+
+    cond %{GROUP} [OR]
+        cond A [AND]
+        cond B
+    cond %{GROUP:END}
+    cond %{GROUP]
+       cond C [AND]
+       cond %{GROUP}
+             cond D [OR]
+             cond E
+       cond %{GROUP:END}
+    cond %{GROUP:END}
+
+Here's a more realistic example, abeit constructed, showing how to use the
+groups to construct a complex expression with real header value comparisons::
 
     cond %{SEND_REQUEST_HDR_HOOK} [AND]
     cond %{GROUP} [OR]
@@ -314,18 +347,18 @@ in expressions. The following example illustrates this::
         cond %{CLIENT-HEADER:User-Agent} /Chrome/
     cond %{GROUP:END}
     cond %{GROUP}
-        cond %{CLIENT-HEADER:X-Foo} /something/ [AND]
+        cond %{CLIENT-HEADER:X-Bar} /fie/ [AND]
         cond %{CLIENT-HEADER:User-Agent} /MSIE/
     cond %{GROUP:END}
         set-header X-My-Header "This is a test"
 
 Note that the ``GROUP`` and ``GROUP:END`` conditions do not take any operands per se,
 and you are still limited to operations after the last condition. Also, the ``GROUP:END``
-condition must match exactly with the last ``GROUP`` conditions, but they can be
+condition must match exactly with the last ``GROUP`` conditions, and they can be
 nested in one or several levels.
 
 When closing a group with ``GROUP::END``, the modifiers are not used, in fact that entire
-condition is discarded, being used only to close the group. Youy may still decorate it
+condition is discarded, being used only to close the group. You may still decorate it
 with the same modifier as the opening ``GROUP`` condition, but it is not necessary.
 
 HEADER
