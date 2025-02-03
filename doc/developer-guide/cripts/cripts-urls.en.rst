@@ -111,6 +111,7 @@ Method / access     Description
 Index []            Access a specific part of the path or query.
 ``Size()``          Get the number of parts of the path or query.
 ``Erase()``         Clears the component. Also available as ``Clear()``.
+``Keep()``          Keeps only the specified parts of the path or query.
 ``Sort()``          Sorts the query parameters. **Note**: Only for query parameters.
 ``Flush()``         Flushes any changes. This is rarely used, since Cripts will manage flushing.
 =================   ===============================================================================
@@ -125,7 +126,7 @@ For example:
 
   borrow url = cripts::Client::URL::get();
 
-  url.query.erase("key"); // Removes the key from the query
-  url.query.erase({"key1", "key2"}); // Removes both keys from the query
-  url.query.erase({"key1", "key2"}, true); // Removes all keys except key1 and key2
-  url.query.keep({"key1", "key2"}); // Same as previous
+  url.query.Erase("key"); // Removes the key from the query
+  url.query.Erase({"key1", "key2"}); // Removes both keys from the query
+  url.query.Erase({"key1", "key2"}, true); // Removes all keys except key1 and key2
+  url.query.Keep({"key1", "key2"}); // Same as previous, only keep these keys
