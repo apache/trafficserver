@@ -251,44 +251,32 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
   }
   case PPv2_CMD_PROXY: {
     switch (hdr_v2->fam) {
-    case PPv2_PROTO_TCP4: {
+    case PPv2_PROTO_TCP4:
+    case PPv2_PROTO_UDP4:
       if (len < PPv2_ADDR_LEN_INET) {
         return 0;
       }
       tlv_len = len - PPv2_ADDR_LEN_INET;
 
-      IpAddr src_addr(reinterpret_cast<in_addr_t>(hdr_v2->addr.ip4.src_addr));
-      pp_info->src_addr.assign(src_addr, hdr_v2->addr.ip4.src_port);
-
-      IpAddr dst_addr(reinterpret_cast<in_addr_t>(hdr_v2->addr.ip4.dst_addr));
-      pp_info->dst_addr.assign(dst_addr, hdr_v2->addr.ip4.dst_port);
-
-      pp_info->version   = ProxyProtocolVersion::V2;
-      pp_info->ip_family = AF_INET;
+      pp_info->set_ipv4_addrs(reinterpret_cast<in_addr_t>(hdr_v2->addr.ip4.src_addr), hdr_v2->addr.ip4.src_port,
+                              reinterpret_cast<in_addr_t>(hdr_v2->addr.ip4.dst_addr), hdr_v2->addr.ip4.dst_port);
+      pp_info->type    = hdr_v2->fam == PPv2_PROTO_TCP4 ? SOCK_STREAM : SOCK_DGRAM;
+      pp_info->version = ProxyProtocolVersion::V2;
 
       break;
-    }
-    case PPv2_PROTO_TCP6: {
+    case PPv2_PROTO_TCP6:
+    case PPv2_PROTO_UDP6:
       if (len < PPv2_ADDR_LEN_INET6) {
         return 0;
       }
       tlv_len = len - PPv2_ADDR_LEN_INET6;
 
-      IpAddr src_addr(reinterpret_cast<in6_addr const &>(hdr_v2->addr.ip6.src_addr));
-      pp_info->src_addr.assign(src_addr, hdr_v2->addr.ip6.src_port);
-
-      IpAddr dst_addr(reinterpret_cast<in6_addr const &>(hdr_v2->addr.ip6.dst_addr));
-      pp_info->dst_addr.assign(dst_addr, hdr_v2->addr.ip6.dst_port);
-
-      pp_info->version   = ProxyProtocolVersion::V2;
-      pp_info->ip_family = AF_INET6;
+      pp_info->set_ipv6_addrs(reinterpret_cast<in6_addr const &>(hdr_v2->addr.ip6.src_addr), hdr_v2->addr.ip6.src_port,
+                              reinterpret_cast<in6_addr const &>(hdr_v2->addr.ip6.dst_addr), hdr_v2->addr.ip6.dst_port);
+      pp_info->type    = hdr_v2->fam == PPv2_PROTO_TCP6 ? SOCK_STREAM : SOCK_DGRAM;
+      pp_info->version = ProxyProtocolVersion::V2;
 
       break;
-    }
-    case PPv2_PROTO_UDP4:
-      [[fallthrough]];
-    case PPv2_PROTO_UDP6:
-      [[fallthrough]];
     case PPv2_PROTO_UNIX_STREAM:
       [[fallthrough]];
     case PPv2_PROTO_UNIX_DATAGRAM:
@@ -511,6 +499,30 @@ proxy_protocol_version_cast(int i)
   default:
     return ProxyProtocolVersion::UNDEFINED;
   }
+}
+
+void
+ProxyProtocol::set_ipv4_addrs(in_addr_t src_addr, uint16_t src_port, in_addr_t dst_addr, uint16_t dst_port)
+{
+  IpAddr src(src_addr);
+  IpAddr dst(dst_addr);
+
+  this->src_addr.assign(src, src_port);
+  this->dst_addr.assign(dst, dst_port);
+
+  this->ip_family = AF_INET;
+}
+
+void
+ProxyProtocol::set_ipv6_addrs(const in6_addr &src_addr, uint16_t src_port, const in6_addr &dst_addr, uint16_t dst_port)
+{
+  IpAddr src(src_addr);
+  IpAddr dst(dst_addr);
+
+  this->src_addr.assign(src, src_port);
+  this->dst_addr.assign(dst, dst_port);
+
+  this->ip_family = AF_INET6;
 }
 
 int
