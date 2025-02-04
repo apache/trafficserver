@@ -64,10 +64,13 @@ public:
   {
   }
   ~ProxyProtocol() { ats_free(additional_data); }
-  int set_additional_data(std::string_view data);
+  int  set_additional_data(std::string_view data);
+  void set_ipv4_addrs(in_addr_t src_addr, uint16_t src_port, in_addr_t dst_addr, uint16_t dst_port);
+  void set_ipv6_addrs(const in6_addr &src_addr, uint16_t src_port, const in6_addr &dst_addr, uint16_t dst_port);
 
   ProxyProtocolVersion                          version   = ProxyProtocolVersion::UNDEFINED;
   uint16_t                                      ip_family = AF_UNSPEC;
+  int                                           type      = 0;
   IpEndpoint                                    src_addr  = {};
   IpEndpoint                                    dst_addr  = {};
   std::unordered_map<uint8_t, std::string_view> tlv;
