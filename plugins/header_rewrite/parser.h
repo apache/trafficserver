@@ -65,6 +65,12 @@ public:
     return _cond;
   }
 
+  bool
+  is_else() const
+  {
+    return _else;
+  }
+
   const std::string &
   get_op() const
   {
@@ -110,6 +116,7 @@ private:
   bool preprocess(std::vector<std::string> tokens);
 
   bool                     _cond     = false;
+  bool                     _else     = false;
   bool                     _empty    = false;
   char                    *_from_url = nullptr;
   char                    *_to_url   = nullptr;
