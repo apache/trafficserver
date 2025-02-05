@@ -505,3 +505,93 @@ protected:
 private:
   Value _value;
 };
+
+class OperatorSetStateFlag : public Operator
+{
+public:
+  OperatorSetStateFlag()
+  {
+    static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
+    Dbg(dbg_ctl, "Calling CTOR for OperatorSetStateFlag");
+  }
+
+  // noncopyable
+  OperatorSetStateFlag(const OperatorSetStateFlag &) = delete;
+  void operator=(const OperatorSetStateFlag &)       = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+  bool
+  need_txn_slot() const override
+  {
+    return true;
+  }
+
+private:
+  int      _flag_ix = -1;
+  int      _flag    = false;
+  uint64_t _mask    = 0;
+};
+
+class OperatorSetStateInt8 : public Operator
+{
+public:
+  OperatorSetStateInt8()
+  {
+    static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
+    Dbg(dbg_ctl, "Calling CTOR for OperatorSetStateInt8");
+  }
+
+  // noncopyable
+  OperatorSetStateInt8(const OperatorSetStateInt8 &) = delete;
+  void operator=(const OperatorSetStateInt8 &)       = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+  bool
+  need_txn_slot() const override
+  {
+    return true;
+  }
+
+private:
+  int   _byte_ix = -1;
+  Value _value;
+};
+
+class OperatorSetStateInt16 : public Operator
+{
+public:
+  OperatorSetStateInt16()
+  {
+    static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
+    Dbg(dbg_ctl, "Calling CTOR for OperatorSetStateInt16");
+  }
+
+  // noncopyable
+  OperatorSetStateInt16(const OperatorSetStateInt16 &) = delete;
+  void operator=(const OperatorSetStateInt16 &)        = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+  bool
+  need_txn_slot() const override
+  {
+    return true;
+  }
+
+private:
+  Value _value;
+};

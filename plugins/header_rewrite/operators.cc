@@ -1157,7 +1157,7 @@ OperatorSetHttpCntl::initialize(Parser &p)
   Operator::initialize(p);
   _cntl_qual = parse_http_cntl_qualifier(p.get_arg());
 
-  std::string flag = p.copy_value();
+  std::string flag = p.get_value(); // Make a copy of the value
 
   std::transform(flag.begin(), flag.end(), flag.begin(), ::tolower);
 
@@ -1320,4 +1320,200 @@ OperatorSetBodyFrom::exec(const Resources &res) const
     return true;
   }
   return false;
+}
+
+void
+OperatorSetStateFlag::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _flag_ix = strtol(p.get_arg().c_str(), nullptr, 10);
+
+  if (_flag_ix < 0 || _flag_ix >= NUM_STATE_FLAGS) {
+    TSError("[%s] state flag with index %d is out of range", PLUGIN_NAME, _flag_ix);
+    return;
+  }
+
+  std::string flag = p.get_value(); // Make a copy of the value
+
+  std::transform(flag.begin(), flag.end(), flag.begin(), ::tolower);
+
+  if (flag == "1" || flag == "true" || flag == "on" || flag == "enable") {
+    _mask = 1ULL << _flag_ix;
+    _flag = true;
+  } else {
+    _mask = ~(1ULL << _flag_ix);
+    _flag = false;
+  }
+}
+
+// This operator should be allowed everywhere
+void
+OperatorSetStateFlag::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
+}
+
+bool
+OperatorSetStateFlag::exec(const Resources &res) const
+{
+  if (!res.txnp) {
+    TSError("[%s] OperatorSetStateFlag() failed. Transaction is null", PLUGIN_NAME);
+    return false;
+  }
+
+  Dbg(pi_dbg_ctl, "   Setting state flag %d to %d", _flag_ix, _flag);
+
+  auto data = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+
+  TSUserArgSet(res.txnp, _txn_slot, reinterpret_cast<void *>(_flag ? data | _mask : data & _mask));
+
+  return true;
+}
+
+void
+OperatorSetStateInt8::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _byte_ix = strtol(p.get_arg().c_str(), nullptr, 10);
+
+  if (_byte_ix < 0 || _byte_ix >= NUM_STATE_INT8S) {
+    TSError("[%s] state int8 with index %d is out of range", PLUGIN_NAME, _byte_ix);
+    return;
+  }
+
+  _value.set_value(p.get_value());
+  if (!_value.has_conds()) {
+    int v = _value.get_int_value();
+
+    if (v < 0 || v > 255) {
+      TSError("[%s] state int8 value %d is out of range", PLUGIN_NAME, v);
+      return;
+    }
+  }
+}
+
+// This operator should be allowed everywhere
+void
+OperatorSetStateInt8::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
+}
+
+bool
+OperatorSetStateInt8::exec(const Resources &res) const
+{
+  if (!res.txnp) {
+    TSError("[%s] OperatorSetStateInt8() failed. Transaction is null", PLUGIN_NAME);
+    return false;
+  }
+
+  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+  int  val = 0;
+
+  if (_value.has_conds()) { // If there are conditions, we need to evaluate them, which gives us a string
+    std::string v;
+
+    _value.append_value(v, res);
+    val = strtol(v.c_str(), nullptr, 10);
+    if (val < 0 || val > 255) {
+      TSWarning("[%s] state int8 value %d is out of range", PLUGIN_NAME, val);
+      return false;
+    }
+  } else {
+    // These values have already been checked at load time
+    val = _value.get_int_value();
+  }
+
+  Dbg(pi_dbg_ctl, "   Setting state int8 %d to %d", _byte_ix, val);
+  ptr &= ~STATE_INT8_MASKS[_byte_ix]; // Clear any old value
+  ptr |= (static_cast<uint64_t>(val) << (NUM_STATE_FLAGS + _byte_ix * 8));
+  TSUserArgSet(res.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
+
+  return true;
+}
+
+void
+OperatorSetStateInt16::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  int ix = strtol(p.get_arg().c_str(), nullptr, 10);
+
+  if (ix != 0) {
+    TSError("[%s] state int16 with index %d is out of range", PLUGIN_NAME, ix);
+    return;
+  }
+
+  _value.set_value(p.get_value());
+  if (!_value.has_conds()) {
+    int v = _value.get_int_value();
+
+    if (v < 0 || v > 65535) {
+      TSError("[%s] state int16 value %d is out of range", PLUGIN_NAME, v);
+      return;
+    }
+  }
+}
+
+// This operator should be allowed everywhere
+void
+OperatorSetStateInt16::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
+}
+
+bool
+OperatorSetStateInt16::exec(const Resources &res) const
+{
+  if (!res.txnp) {
+    TSError("[%s] OperatorSetStateInt16() failed. Transaction is null", PLUGIN_NAME);
+    return false;
+  }
+
+  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+  int  val = 0;
+
+  if (_value.has_conds()) { // If there are conditions, we need to evaluate them, which gives us a string
+    std::string v;
+
+    _value.append_value(v, res);
+    val = strtol(v.c_str(), nullptr, 10);
+    if (val < 0 || val > 65535) {
+      TSWarning("[%s] state int8 value %d is out of range", PLUGIN_NAME, val);
+      return false;
+    }
+  } else {
+    // These values have already been checked at load time
+    val = _value.get_int_value();
+  }
+
+  Dbg(pi_dbg_ctl, "   Setting state int16 to %d", val);
+  ptr &= ~STATE_INT16_MASK; // Clear any old value
+  ptr |= (static_cast<uint64_t>(val) << 48);
+  TSUserArgSet(res.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
+
+  return true;
 }
