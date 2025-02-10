@@ -161,13 +161,12 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   // :method
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-    int         method_len;
-    const char *method = field->value_get(&method_len);
-    if (method_len == HTTP_LEN_CONNECT && strncmp(HTTP_METHOD_CONNECT, method, HTTP_LEN_CONNECT) == 0) {
+    auto method{field->value_get()};
+    if (method == std::string_view{HTTP_METHOD_CONNECT, static_cast<std::string_view::size_type>(HTTP_LEN_CONNECT)}) {
       is_connect_method = true;
     }
 
-    header.method_set(method, method_len);
+    header.method_set(method.data(), method.length());
     header.field_delete(field);
   } else {
     return PARSE_RESULT_ERROR;
@@ -177,20 +176,19 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     // :scheme
     if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
         field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      int         scheme_len;
-      const char *scheme = field->value_get(&scheme_len);
+      auto        scheme{field->value_get()};
       const char *scheme_wks;
 
-      int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len, &scheme_wks);
+      int scheme_wks_idx = hdrtoken_tokenize(scheme.data(), scheme.length(), &scheme_wks);
 
       if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
         // unknown scheme, validate the scheme
-        if (!validate_scheme({scheme, static_cast<size_t>(scheme_len)})) {
+        if (!validate_scheme(scheme)) {
           return PARSE_RESULT_ERROR;
         }
       }
 
-      header.m_http->u.req.m_url_impl->set_scheme(header.m_heap, scheme, scheme_wks_idx, scheme_len, true);
+      header.m_http->u.req.m_url_impl->set_scheme(header.m_heap, scheme.data(), scheme_wks_idx, scheme.length(), true);
 
       header.field_delete(field);
     } else {
@@ -201,9 +199,8 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   // :authority
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-    int         authority_len;
-    const char *authority = field->value_get(&authority_len);
-    header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority, authority_len, true);
+    auto authority{field->value_get()};
+    header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority.data(), authority.length(), true);
 
     if (!is_connect_method) {
       MIMEField *host = header.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
@@ -219,7 +216,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
         // There already is a Host header field. Simply set the value of the Host
         // field to the current value of :authority and delete the :authority
         // field.
-        host->value_set(header.m_heap, header.m_mime, authority, authority_len);
+        host->value_set(header.m_heap, header.m_mime, authority.data(), authority.length());
         header.field_delete(field);
       }
     }
@@ -229,18 +226,16 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
 
   if (!is_connect_method) {
     // :path
-    if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
+    if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.length());
         field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      int         path_len;
-      const char *path = field->value_get(&path_len);
+      auto path{field->value_get()};
 
       // cut first '/' if there, because `url_print()` add '/' before printing path
-      if (path_len >= 1 && path[0] == '/') {
-        ++path;
-        --path_len;
+      if (path.length() >= 1 && path[0] == '/') {
+        path = path.substr(1);
       }
 
-      header.m_http->u.req.m_url_impl->set_path(header.m_heap, path, path_len, true);
+      header.m_http->u.req.m_url_impl->set_path(header.m_heap, path.data(), path.length(), true);
 
       header.field_delete(field);
     } else {
@@ -286,10 +281,9 @@ VersionConverter::_convert_res_from_2_to_1(HTTPHdr &header) const
 
   // Set status from :status
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()); field != nullptr) {
-    int         status_len;
-    const char *status = field->value_get(&status_len);
+    auto status{field->value_get()};
 
-    header.status_set(http_parse_status(status, status + status_len));
+    header.status_set(http_parse_status(status.data(), status.data() + status.length()));
     header.field_delete(field);
   } else {
     return -1;

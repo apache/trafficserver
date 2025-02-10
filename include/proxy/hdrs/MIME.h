@@ -142,8 +142,8 @@ struct MIMEField {
   }
 
   /// @return The name of @a this field.
-  std::string_view name_get() const;
-  const char      *name_get(int *length) const;
+  std::string_view                                                      name_get() const;
+  [[deprecated("Use name_get() returns std::string_view")]] const char *name_get(int *length) const;
 
   /** Find the index of the value in the multi-value field.
 
@@ -160,8 +160,8 @@ struct MIMEField {
   int value_get_index(const char *value, int length) const;
 
   /// @return The value of @a this field.
-  std::string_view value_get() const;
-  const char      *value_get(int *length) const;
+  std::string_view                                                       value_get() const;
+  [[deprecated("Use value_get() returns std::string_view")]] const char *value_get(int *length) const;
 
   int32_t  value_get_int() const;
   uint32_t value_get_uint() const;
@@ -974,11 +974,9 @@ MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length
 inline bool
 MIMEField::name_is_valid(uint32_t invalid_char_bits) const
 {
-  const char *name;
-  int         length;
-
-  for (name = name_get(&length); length > 0; length--) {
-    if (ParseRules::is_type(name[length - 1], invalid_char_bits)) {
+  auto name{name_get()};
+  for (char c : name) {
+    if (ParseRules::is_type(c, invalid_char_bits)) {
       return false;
     }
   }
@@ -992,7 +990,7 @@ inline const char *
 MIMEField::value_get(int *length) const
 {
   auto value{this->value_get()};
-  *length = int(value.size());
+  *length = static_cast<int>(value.length());
   return value.data();
 }
 
@@ -1083,11 +1081,9 @@ MIMEField::value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int l
 inline bool
 MIMEField::value_is_valid(uint32_t invalid_char_bits) const
 {
-  const char *value;
-  int         length;
-
-  for (value = value_get(&length); length > 0; length--) {
-    if (ParseRules::is_type(value[length - 1], invalid_char_bits)) {
+  auto value{value_get()};
+  for (char c : value) {
+    if (ParseRules::is_type(c, invalid_char_bits)) {
       return false;
     }
   }
@@ -1449,7 +1445,9 @@ MIMEHdr::value_get(const char *name, int name_length, int *value_length_return) 
   const MIMEField *field = field_find(name, name_length);
 
   if (field) {
-    return field->value_get(value_length_return);
+    auto value{field->value_get()};
+    *value_length_return = static_cast<int>(value.length());
+    return value.data();
   }
   return nullptr;
 }
@@ -1581,12 +1579,10 @@ MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char sep
   MIMEField *current = field->m_next_dup;
 
   while (current) {
-    int         value_len = 0;
-    const char *value_str = current->value_get(&value_len);
-
-    if (value_len > 0) {
-      HdrHeap::HeapGuard guard(m_heap, value_str); // reference count the source string so it doesn't get moved
-      field->value_append(m_heap, m_mime, value_str, value_len, prepend_comma, separator);
+    auto value{current->value_get()};
+    if (value.length() > 0) {
+      HdrHeap::HeapGuard guard(m_heap, value.data()); // reference count the source string so it doesn't get moved
+      field->value_append(m_heap, m_mime, value.data(), value.length(), prepend_comma, separator);
     }
     field_delete(current, false); // don't delete duplicates
     current = field->m_next_dup;

@@ -86,13 +86,17 @@ public:
   const char *
   name_get(int *length) const
   {
-    return _field->name_get(length);
+    auto name{_field->name_get()};
+    *length = static_cast<int>(name.length());
+    return name.data();
   }
 
   const char *
   value_get(int *length) const
   {
-    return _field->value_get(length);
+    auto value{_field->value_get()};
+    *length = static_cast<int>(value.length());
+    return value.data();
   }
 
   const MIMEField *
