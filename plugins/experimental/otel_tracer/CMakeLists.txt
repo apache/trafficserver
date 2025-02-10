@@ -16,5 +16,9 @@
 #######################
 
 add_atsplugin(otel_tracer otel_tracer.cc)
-target_link_libraries(otel_tracer PRIVATE opentelemetry::opentelemetry protobuf::libprotobuf CURL::libcurl)
+target_link_libraries(
+  otel_tracer
+  PRIVATE
+    "$<LINK_GROUP:RESCAN,opentelemetry::opentelemetry_common,opentelemetry::opentelemetry_exporter_in_memory,opentelemetry::opentelemetry_exporter_ostream_logs,opentelemetry::opentelemetry_exporter_ostream_metrics,opentelemetry::opentelemetry_exporter_ostream_span,opentelemetry::opentelemetry_exporter_otlp_http,opentelemetry::opentelemetry_exporter_otlp_http_client,opentelemetry::opentelemetry_exporter_otlp_http_log,opentelemetry::opentelemetry_exporter_otlp_http_metric,opentelemetry::opentelemetry_http_client_curl,opentelemetry::opentelemetry_logs,opentelemetry::opentelemetry_metrics,opentelemetry::opentelemetry_otlp_recordable,opentelemetry::opentelemetry_proto,opentelemetry::opentelemetry_resources,opentelemetry::opentelemetry_trace,opentelemetry::opentelemetry_version,protobuf::libprotobuf,CURL::libcurl>"
+)
 verify_global_plugin(otel_tracer)
