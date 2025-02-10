@@ -23,7 +23,7 @@
 #include "tscore/ink_platform.h"
 #include "tsutil/DbgCtl.h"
 
-static DbgCtl dbg_ctl_verbose_threads{"v_threads"};
+static DbgCtl dbg_ctl_threads{"threads"};
 
 #if TS_USE_HWLOC
 
@@ -58,10 +58,10 @@ ink_number_of_processors()
 #if TS_USE_HWLOC
 #if HAVE_HWLOC_OBJ_PU
   number_of_processors = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_PU);
-  Dbg(dbg_ctl_verbose_threads, "processing unit count from hwloc: %d", number_of_processors);
+  Dbg(dbg_ctl_threads, "processing unit count from hwloc: %d", number_of_processors);
 #else
   number_of_processors = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_CORE);
-  Dbg(dbg_ctl_verbose_threads, "core count from hwloc: %d", number_of_processors);
+  Dbg(dbg_ctl_threads, "core count from hwloc: %d", number_of_processors);
 #endif
 #elif defined(freebsd)
   int mib[2];
@@ -69,13 +69,13 @@ ink_number_of_processors()
   mib[1]     = HW_NCPU;
   size_t len = sizeof(number_of_processors);
   if (sysctl(mib, 2, &number_of_processors, &len, nullptr, 0) == -1) {
-    Dbg(dbg_ctl_verbose_threads, "sysctl failed: %s", strerror(errno));
+    Dbg(dbg_ctl_threads, "sysctl failed: %s", strerror(errno));
     return 1;
   }
-  Dbg(dbg_ctl_verbose_threads, "processing unit count from sysctl: %d", number_of_processors);
+  Dbg(dbg_ctl_threads, "processing unit count from sysctl: %d", number_of_processors);
 #else
   number_of_processors = sysconf(_SC_NPROCESSORS_ONLN); // number of processing units (includes Hyper Threading)
-  Dbg(dbg_ctl_verbose_threads, "processing unit count from sysconf: %d", number_of_processors);
+  Dbg(dbg_ctl_threads, "processing unit count from sysconf: %d", number_of_processors);
 #endif
 
   return number_of_processors;
