@@ -94,8 +94,8 @@ SetRecordFromYAMLNode(CfgNode const &field, swoc::Errata &errata)
     // we ignore it.
     auto [dtype, e] = detail::try_deduce_type(field.value_node);
     if (!e.empty()) {
-      errata.note(ERRATA_WARN, "Ignoring field '{}' at Line {}. Not registered and {}", field.node.as<std::string>(),
-                  field.node.Mark().line + 1, e);
+      errata.note(ERRATA_WARN, "Ignoring field '{}' [{}] at Line {}. Not registered and {}", field.node.as<std::string>(),
+                  field.get_record_name(), field.node.Mark().line + 1, e);
       // We can't continue without knowing the type.
       return;
     }
