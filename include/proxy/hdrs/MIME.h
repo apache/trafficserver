@@ -143,7 +143,8 @@ struct MIMEField {
 
   /// @return The name of @a this field.
   std::string_view name_get() const;
-  const char      *name_get(int *length) const;
+  [[deprecated("Use std::string_view name_get() or value_get() instead")]]
+  const char *name_get(int *length) const;
 
   /** Find the index of the value in the multi-value field.
 
@@ -161,7 +162,8 @@ struct MIMEField {
 
   /// @return The value of @a this field.
   std::string_view value_get() const;
-  const char      *value_get(int *length) const;
+  [[deprecated("Use std::string_view name_get() or value_get() instead")]]
+  const char *value_get(int *length) const;
 
   int32_t  value_get_int() const;
   uint32_t value_get_uint() const;
