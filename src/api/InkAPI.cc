@@ -8426,11 +8426,17 @@ TSVConnPPInfoGet(TSVConn vconn, uint32_t key, const char **value, int *length)
   } else {
     switch (key) {
     case TS_PP_INFO_SRC_ADDR:
-      *value  = reinterpret_cast<const char *>(vc->get_proxy_protocol_src_addr());
+      *value = reinterpret_cast<const char *>(vc->get_proxy_protocol_src_addr());
+      if (*value == nullptr) {
+        return TS_ERROR;
+      }
       *length = ats_ip_size(reinterpret_cast<const sockaddr *>(*value));
       break;
     case TS_PP_INFO_DST_ADDR:
-      *value  = reinterpret_cast<const char *>(vc->get_proxy_protocol_dst_addr());
+      *value = reinterpret_cast<const char *>(vc->get_proxy_protocol_dst_addr());
+      if (*value == nullptr) {
+        return TS_ERROR;
+      }
       *length = ats_ip_size(reinterpret_cast<const sockaddr *>(*value));
       break;
     default:
