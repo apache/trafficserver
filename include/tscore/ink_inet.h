@@ -376,7 +376,7 @@ ats_ip_sa_cast(sockaddr_un *a)
 {
   return static_cast<sockaddr *>(static_cast<void *>(a));
 }
-inline sockaddr const *
+inline constexpr sockaddr const *
 ats_ip_sa_cast(sockaddr_un const *a)
 {
   return static_cast<sockaddr const *>(static_cast<void const *>(a));
@@ -1597,11 +1597,11 @@ struct UnAddr {
   explicit constexpr UnAddr(sockaddr const *addr) { this->assign(addr); }
   explicit constexpr UnAddr(sockaddr_un const *addr) { this->assign(ats_ip_sa_cast(addr)); }
   /// Construct from @c IpEndpoint.
-  explicit UnAddr(IpEndpoint const &addr) { this->assign(&addr.sa); }
+  explicit constexpr UnAddr(IpEndpoint const &addr) { this->assign(&addr.sa); }
   /// Construct from @c IpEndpoint.
-  explicit UnAddr(IpEndpoint const *addr) { this->assign(&addr->sa); }
+  explicit constexpr UnAddr(IpEndpoint const *addr) { this->assign(&addr->sa); }
   /// Assign sockaddr storage.
-  self &assign(sockaddr const *addr);
+  constexpr self &assign(sockaddr const *addr);
 
   uint16_t
   family() const
@@ -1625,7 +1625,7 @@ struct UnAddr {
   char _path[TS_UNIX_SIZE];
 };
 
-inline UnAddr &
+inline constexpr UnAddr &
 UnAddr::assign(sockaddr const *addr)
 {
   if (addr) {
