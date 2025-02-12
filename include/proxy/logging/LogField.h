@@ -27,6 +27,7 @@
 #include <string>
 #include <variant>
 
+#include "tscore/ink_inet.h"
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"
 #include "proxy/logging/LogFieldAliasMap.h"
@@ -294,9 +295,14 @@ struct LogFieldIp4 : public LogFieldIp {
 struct LogFieldIp6 : public LogFieldIp {
   in6_addr _addr; ///< IPv6 address.
 };
+/// Unix address as log field.
+struct LogFieldUn : public LogFieldIp {
+  char _path[TS_UNIX_SIZE]; ///< Unix domain path
+};
 /// Something big enough to hold any of the IP field types.
 union LogFieldIpStorage {
   LogFieldIp  _ip;
   LogFieldIp4 _ip4;
   LogFieldIp6 _ip6;
+  LogFieldUn  _un;
 };

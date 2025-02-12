@@ -95,7 +95,11 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   socklen_t namelen;
   int       prot = IPPROTO_TCP;
 
-  if (!ats_is_ip(&accept_addr)) {
+  if (ats_is_unix(&accept_addr)) {
+    prot = 0;
+    ats_ip_copy(&addr, &accept_addr);
+    unlink(accept_addr.sun.sun_path);
+  } else if (!ats_is_ip(&accept_addr)) {
     ats_ip4_set(&addr, INADDR_ANY, 0);
   } else {
     ats_ip_copy(&addr, &accept_addr);
@@ -118,6 +122,10 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 
   if ((res = sock.bind(&addr.sa, ats_ip_size(&addr.sa))) < 0) {
     goto Lerror;
+  }
+
+  if (ats_is_unix(&accept_addr)) {
+    chmod(accept_addr.sun.sun_path, 0777);
   }
 
   if ((res = safe_listen(sock.get_fd(), get_listen_backlog())) < 0) {
@@ -256,7 +264,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #ifdef TCP_FASTOPEN
-  if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) {
+  if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN && opt.ip_family != AF_UNIX) {
     if (safe_setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_FASTOPEN, &opt.tfo_queue_length, sizeof(int))) {
       // EOPNOTSUPP also checked for general safeguarding of unsupported operations of socket functions
       if (opt.f_mptcp && (errno == ENOPROTOOPT || errno == EOPNOTSUPP)) {
@@ -284,7 +292,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #if defined(TCP_MAXSEG)
-  if (NetProcessor::accept_mss > 0) {
+  if (NetProcessor::accept_mss > 0 && opt.ip_family != AF_UNIX) {
     if (opt.f_mptcp) {
       Warning("[Server::listen] TCP_MAXSEG socket option not valid on MPTCP socket level");
     } else if (safe_setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss),
@@ -297,10 +305,12 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
-  if (opt.defer_accept > 0 && setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
-    // FIXME: should we go to the error
-    // goto error;
-    Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
+  if (opt.defer_accept > 0 && opt.ip_family != AF_UNIX) {
+    if (setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
+      // FIXME: should we go to the error
+      // goto error;
+      Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
+    }
   }
 #endif
 

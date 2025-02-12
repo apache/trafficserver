@@ -277,6 +277,8 @@ public:
   bool m_mptcp = false;
   /// Local address for inbound connections (listen address).
   IpAddr m_inbound_ip;
+  /// Path for listening on unix domain socket
+  UnAddr m_unix_path;
   /// Local address for outbound connections (to origin server).
   ts::IPAddrPair m_outbound;
   /// Ordered preference for DNS resolution family ( @c FamilyPrefence )
