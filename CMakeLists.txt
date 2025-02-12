@@ -403,11 +403,15 @@ check_symbol_exists(strlcpy string.h HAVE_STRLCPY)
 check_symbol_exists(strsignal string.h HAVE_STRSIGNAL)
 check_symbol_exists(sysinfo sys/sysinfo.h HAVE_SYSINFO)
 check_symbol_exists(prctl "sys/prctl.h" HAVE_PRCTL)
+
+# Test for Processing Unit support in hwloc
 if(TS_USE_HWLOC)
+  list(APPEND CMAKE_REQUIRED_INCLUDES ${hwloc_INCLUDE_DIRS})
   check_source_compiles(
     C "#include <hwloc.h>
     int main() { return HWLOC_OBJ_PU; }" HAVE_HWLOC_OBJ_PU
   )
+  list(REMOVE_ITEM CMAKE_REQUIRED_INCLUDES ${hwloc_INCLUDE_DIRS})
 endif()
 
 check_symbol_exists(SO_TXTIME "sys/socket.h" SO_TXTIME_FOUND)
