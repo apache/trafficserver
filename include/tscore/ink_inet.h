@@ -1618,7 +1618,9 @@ struct UnAddr {
   self &
   operator=(self const &addr)
   {
-    strncpy(_path, addr._path, TS_UNIX_SIZE);
+    if (this != &addr) {
+      strncpy(_path, addr._path, TS_UNIX_SIZE);
+    }
     return *this;
   }
 
