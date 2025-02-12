@@ -145,7 +145,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
       na->init_accept_per_thread();
     }
 #if !TS_USE_POSIX_CAP
-    if (fd == ts::NO_FD && opt.local_port < 1024 && 0 != geteuid()) {
+    if (fd == ts::NO_FD && opt.local_port < 1024 && 0 != geteuid() && opt.ip_family != AF_UNIX) {
       // TS-2054 - we can fail to bind a privileged port if we waited for cache and we tried
       // to open the socket in do_listen and we're not using libcap (POSIX_CAP) and so have reduced
       // privilege. Mention this to the admin.
