@@ -1591,7 +1591,7 @@ struct UnAddr {
   UnAddr() { _path[0] = 0; }
 
   UnAddr(self const &addr) { strncpy(_path, addr._path, TS_UNIX_SIZE); }
-  explicit constexpr UnAddr(const char *path) { strncpy(_path, path, TS_UNIX_SIZE); }
+  explicit constexpr UnAddr(const char *path) { strncpy(_path, path, TS_UNIX_SIZE - 1); }
   explicit constexpr UnAddr(const std::string &path) { strncpy(_path, path.c_str(), TS_UNIX_SIZE); }
 
   explicit constexpr UnAddr(sockaddr const *addr) { this->assign(addr); }

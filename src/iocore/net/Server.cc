@@ -306,7 +306,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
   if (opt.defer_accept > 0 && opt.ip_family != AF_UNIX) {
-    if (setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
+    if (setsockopt(sock.get_fd(), IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
       // FIXME: should we go to the error
       // goto error;
       Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
