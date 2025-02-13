@@ -18,6 +18,7 @@
 if("$ENV{USER}" STREQUAL root)
   foreach(DIR ${CHOWN_DIRS})
     message(STATUS "Changing $ENV{DESTDIR}${DIR} ownership to ${OWNER_USER}:${OWNER_GROUP}")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "$ENV{DESTDIR}${DIR}")
     execute_process(COMMAND chown ${OWNER_USER}:${OWNER_GROUP} "$ENV{DESTDIR}${DIR}")
   endforeach()
 endif()
