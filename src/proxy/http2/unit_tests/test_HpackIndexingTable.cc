@@ -463,9 +463,8 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
         CHECK(field != nullptr);
 
         if (field) {
-          int         actual_value_len;
-          const char *actual_value = field->value_get(&actual_value_len);
-          CHECK(strncmp(expected_value, actual_value, actual_value_len) == 0);
+          auto actual_value{field->value_get()};
+          CHECK(actual_value == std::string_view{expected_value});
         }
       }
     }

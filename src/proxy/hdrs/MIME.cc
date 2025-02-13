@@ -1870,7 +1870,9 @@ mime_field_value_get_comma_val(const MIMEField *field, int *length, int idx)
   // some fields (like Date) contain commas but should not be ripped apart
   if (!field->supports_commas()) {
     if (idx == 0) {
-      return field->value_get(length);
+      auto value{field->value_get()};
+      *length = static_cast<int>(value.size());
+      return value.data();
     }
     return nullptr;
   } else {
@@ -3874,11 +3876,11 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
       // try pathpaths first -- unlike most other fastpaths, this one
       // is probably more useful for polygraph than for the real world
       if (!field->has_dups()) {
-        s = field->value_get(&len);
-        if (ptr_len_casecmp(s, len, "public", 6) == 0) {
+        auto val{field->value_get()};
+        if (ptr_len_casecmp(val.data(), val.length(), "public", 6) == 0) {
           mask                                   = MIME_COOKED_MASK_CC_PUBLIC;
           m_cooked_stuff.m_cache_control.m_mask |= mask;
-        } else if (ptr_len_casecmp(s, len, "private,no-cache", 16) == 0) {
+        } else if (ptr_len_casecmp(val.data(), val.length(), "private,no-cache", 16) == 0) {
           mask                                   = MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_NO_CACHE;
           m_cooked_stuff.m_cache_control.m_mask |= mask;
         }
@@ -3947,8 +3949,8 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
     field = mime_hdr_field_find(this, MIME_FIELD_PRAGMA, MIME_LEN_PRAGMA);
     if (field) {
       if (!field->has_dups()) { // try fastpath first
-        s = field->value_get(&len);
-        if (ptr_len_casecmp(s, len, "no-cache", 8) == 0) {
+        auto val{field->value_get()};
+        if (ptr_len_casecmp(val.data(), val.length(), "no-cache", 8) == 0) {
           m_cooked_stuff.m_pragma.m_no_cache = true;
           return;
         }
