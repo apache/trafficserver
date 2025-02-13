@@ -122,35 +122,43 @@ if(BUILD_TESTING)
     test_net libinknet_stub.cc NetVCTest.cc unit_tests/test_ProxyProtocol.cc unit_tests/test_SSLSNIConfig.cc
              unit_tests/test_YamlSNIConfig.cc unit_tests/unit_test_main.cc
   )
+  # Use link groups to solve circular dependency
+  set(LINK_GROUP_LIBS
+      ts::logging
+      ts::inknet
+      ts::inkhostdb
+      ts::proxy
+      ts::tsapibackend
+      ts::inkdns
+      ts::http2
+      ts::inkcache
+      ts::rpcpublichandlers
+      ts::overridable_txn_vars
+      ts::http
+      ts::http_remap
+  )
+  if(TS_USE_QUIC)
+    list(APPEND LINK_GROUP_LIBS quic http3)
+  endif()
   if(CMAKE_LINK_GROUP_USING_RESCAN_SUPPORTED OR CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
-    # Use link groups to solve circular dependency
-    set(LINK_GROUP_LIBS
-        ts::logging
-        ts::inknet
-        ts::inkhostdb
-        ts::proxy
-        ts::tsapibackend
-        ts::inkdns
-        ts::http2
-        ts::inkcache
-        ts::rpcpublichandlers
-        ts::overridable_txn_vars
-        ts::http
-        ts::http_remap
-    )
-    if(TS_USE_QUIC)
-      list(APPEND LINK_GROUP_LIBS quic http3)
-    endif()
     string(JOIN "," LINK_GROUP_LIBS_CSV ${LINK_GROUP_LIBS})
     target_link_libraries(
       test_net PRIVATE catch2::catch2 ts::tscore "$<LINK_GROUP:RESCAN,${LINK_GROUP_LIBS_CSV}>" ts::tsutil ts::inkevent
                        libswoc::libswoc
     )
   else()
-    # These linkers already do the equivalent of RESCAN, so there's no support in cmake for it
-    # This case is mainly for macOS
-    # The reason that the list is different here, is because a careful ordering is necessary to prevent duplicate symbols, which are not allowed on macOS
-    target_link_libraries(test_net PRIVATE catch2::catch2 ts::tscore ts::proxy ts::inknet ts::inkevent libswoc::libswoc)
+    # CMake <3.24 does not support LINK_GROUP. Use -Wl,--start-group and -Wl,--end-group manually.
+    target_link_libraries(
+      test_net
+      PRIVATE catch2::catch2
+              ts::tscore
+              -Wl,--start-group
+              ${LINK_GROUP_LIBS}
+              -Wl,--end-group
+              ts::tsutil
+              ts::inkevent
+              libswoc::libswoc
+    )
   endif()
   if(NOT APPLE)
     target_link_options(test_net PRIVATE -Wl,--allow-multiple-definition)
