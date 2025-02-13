@@ -23,7 +23,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
   message(FATAL_ERROR "In source builds are disabled.  Use a preset, -B or run from a different directory")
 endif()
 
-cmake_minimum_required(VERSION 3.20..3.27)
+cmake_minimum_required(VERSION 3.24..3.27)
 project(ats VERSION 10.1.0)
 
 set(TS_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
