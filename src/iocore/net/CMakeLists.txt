@@ -146,6 +146,11 @@ if(BUILD_TESTING)
       test_net PRIVATE catch2::catch2 ts::tscore "$<LINK_GROUP:RESCAN,${LINK_GROUP_LIBS_CSV}>" ts::tsutil ts::inkevent
                        libswoc::libswoc
     )
+  elseif(APPLE)
+    # These linkers already do the equivalent of RESCAN, so there's no support in cmake for it
+    # This case is mainly for macOS
+    # The reason that the list is different here, is because a careful ordering is necessary to prevent duplicate symbols, which are not allowed on macOS
+    target_link_libraries(test_net PRIVATE catch2::catch2 ts::tscore ts::proxy ts::inknet ts::inkevent libswoc::libswoc)
   else()
     # CMake <3.24 does not support LINK_GROUP. Use -Wl,--start-group and -Wl,--end-group manually.
     target_link_libraries(
