@@ -16,9 +16,17 @@
 #######################
 
 add_atsplugin(otel_tracer otel_tracer.cc)
-target_link_libraries(
-  otel_tracer
-  PRIVATE
-    "$<LINK_GROUP:RESCAN,opentelemetry::opentelemetry_common,opentelemetry::opentelemetry_exporter_in_memory,opentelemetry::opentelemetry_exporter_ostream_logs,opentelemetry::opentelemetry_exporter_ostream_metrics,opentelemetry::opentelemetry_exporter_ostream_span,opentelemetry::opentelemetry_exporter_otlp_http,opentelemetry::opentelemetry_exporter_otlp_http_client,opentelemetry::opentelemetry_exporter_otlp_http_log,opentelemetry::opentelemetry_exporter_otlp_http_metric,opentelemetry::opentelemetry_http_client_curl,opentelemetry::opentelemetry_logs,opentelemetry::opentelemetry_metrics,opentelemetry::opentelemetry_otlp_recordable,opentelemetry::opentelemetry_proto,opentelemetry::opentelemetry_resources,opentelemetry::opentelemetry_trace,opentelemetry::opentelemetry_version,protobuf::libprotobuf,CURL::libcurl>"
-)
+if(CMAKE_LINK_GROUP_USING_RESCAN_SUPPORTED OR CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
+  string(JOIN "," opentelemetry_LIBRARIES_CSV ${opentelemetry_LIBRARIES})
+  target_link_libraries(
+    otel_tracer PRIVATE "$<LINK_GROUP:RESCAN,${opentelemetry_LIBRARIES_CSV},protobuf::libprotobuf,CURL::libcurl>"
+  )
+elseif(APPLE)
+  target_link_libraries(otel_tracer PRIVATE ${opentelemetry_LIBRARIES} protobuf::libprotobuf CURL::libcurl)
+else()
+  target_link_libraries(
+    otel_tracer PRIVATE -Wl,--start-group ${opentelemetry_LIBRARIES} protobuf::libprotobuf CURL::libcurl
+                        -Wl,--end-group
+  )
+endif()
 verify_global_plugin(otel_tracer)
