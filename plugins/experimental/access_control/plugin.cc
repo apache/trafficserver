@@ -376,6 +376,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
               /** Currently Access Token implementation requires expiration to be set but the following is still a good
                * consideration. Set the cookie Expires field to the token expiration field set by the origin if the time specified
                * is invalid or not specified then don't set Expires attribute.
+               * The "exp=0" is a special case to make Session Cookie by NOT appending the Expires attribute.
                * @todo TBD may be adding a default / overriding Expires attribute configured by parameter would make sense ? */
               time_t t = token->getExpiration();
               if (0 != t) {
