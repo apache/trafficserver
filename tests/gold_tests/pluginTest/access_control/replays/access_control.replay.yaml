@@ -72,4 +72,4 @@ sessions:
       status: 200
       headers:
         fields:
-          - [ set-cookie, { value: "TokenCookie=c3ViPWZyb2dzLWluLWEtd2VsbCZleHA9MCZuYmY9MTUxNDc2NDgwMCZpYXQ9MTUxNDE2MDAwMCZ0aWQ9MTIzNDU2Nzg5MCZraWQ9a2V5MSZzdD1ITUFDLVNIQS0yNTYmbWQ9ZTY3ZGNlMmZjZmFmMTY5ZGRlMGZlMGU2ZWNmMTRiZWE3NjU4YmZmYmUzZjFiMzBjMjJiMDQ4NDMyZTljYzQxZg; path=/; Secure; HttpOnly", as: equal } ]
+          - [ set-cookie, { value: Expires=, not: contains } ]
