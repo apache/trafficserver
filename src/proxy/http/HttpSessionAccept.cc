@@ -39,11 +39,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   IpAllow::ACL        acl;
   ip_port_text_buffer ipb;
 
-  if (netvc->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
-    client_ip = netvc->get_remote_addr();
-  } else {
-    client_ip = netvc->get_proxy_protocol_src_addr();
-  }
+  client_ip = netvc->get_remote_addr();
 
   if (ats_is_ip(client_ip)) {
     acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
@@ -52,7 +48,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
       return false;
     }
   } else {
-    // If IP address is unprovided (e.g. UDS without PROXY protocol), IP-based ACLs are not relevant
+    // If IP address is not available (e.g. UDS), IP-based ACLs are not relevant
     acl = IpAllow::makeAllowAllACL();
   }
 

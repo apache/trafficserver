@@ -460,11 +460,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
 
     const IpEndpoint    *src_addr;
     const ProxyProtocol &pp_info = s->state_machine->get_ua_txn()->get_netvc()->get_proxy_protocol_info();
-    if (pp_info.version == ProxyProtocolVersion::UNDEFINED) {
-      src_addr = &s->client_info.src_addr;
-    } else {
-      src_addr = &pp_info.src_addr;
-    }
+    src_addr                     = &pp_info.src_addr;
 
     s->client_connection_allowed = true; // Default is that we allow things unless some filter matches
 
