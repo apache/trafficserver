@@ -458,9 +458,8 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
     int method        = s->hdr_info.client_request.method_get_wksidx();
     int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
 
-    const IpEndpoint    *src_addr;
-    const ProxyProtocol &pp_info = s->state_machine->get_ua_txn()->get_netvc()->get_proxy_protocol_info();
-    src_addr                     = &s->client_info.src_addr;
+    const IpEndpoint *src_addr;
+    src_addr = &s->client_info.src_addr;
 
     s->client_connection_allowed = true; // Default is that we allow things unless some filter matches
 
