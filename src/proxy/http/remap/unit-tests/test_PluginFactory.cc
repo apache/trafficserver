@@ -123,7 +123,12 @@ class GlobalPluginInfo
 {
 public:
   GlobalPluginInfo() : _dlh(nullptr){};
-  ~GlobalPluginInfo(){};
+  ~GlobalPluginInfo()
+  {
+    if (_dlh) {
+      dlclose(_dlh);
+    }
+  };
 
   bool
   loadDso(const fs::path &configPath)
