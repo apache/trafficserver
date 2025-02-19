@@ -317,7 +317,7 @@ handle_icap_http_header(TransformData *data)
   /* Create the new header using http header in icap response */
   parser = TSHttpParserCreate();
   TSHttpHdrParseResp(parser, bufp, hdr_loc, &raw_resp, raw_resp + data->http_header.size());
-
+  TSHttpParserDestroy(parser);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
