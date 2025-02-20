@@ -32,6 +32,22 @@
 #include "parser.h"
 #include "lulu.h"
 
+namespace header_rewrite_ns
+{
+constexpr int NUM_STATE_FLAGS = 16;
+constexpr int NUM_STATE_INT8S = 4;
+
+constexpr uint64_t STATE_INT8_MASKS[NUM_STATE_INT8S] = {
+  // These would change if the number of flag bits changes
+  0x0000000000FF0000ULL, // Bits 16-23
+  0x00000000FF000000ULL, // Bits 24-31
+  0x000000FF00000000ULL, // Bits 32-39
+  0x0000FF0000000000ULL, // Bits 40-47
+};
+
+constexpr uint64_t STATE_INT16_MASK = 0xFFFF000000000000ULL; // Bits 48-63
+} // namespace header_rewrite_ns
+
 // URL data (both client and server)
 enum UrlQualifiers {
   URL_QUAL_NONE,
@@ -138,6 +154,8 @@ public:
   {
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
+    acquire_txn_slot();
+
     _initialized = true;
   }
 
@@ -160,11 +178,20 @@ protected:
     _rsrc = static_cast<ResourceIDs>(_rsrc | ids);
   }
 
-  Statement *_next = nullptr; // Linked list
+  virtual bool
+  need_txn_slot() const
+  {
+    return false;
+  }
+
+  Statement *_next     = nullptr; // Linked list
+  int        _txn_slot = -1;
 
 private:
-  ResourceIDs               _rsrc        = RSRC_NONE;
-  bool                      _initialized = false;
-  TSHttpHookID              _hook        = TS_HTTP_READ_RESPONSE_HDR_HOOK;
+  void acquire_txn_slot();
+
+  ResourceIDs               _rsrc = RSRC_NONE;
+  TSHttpHookID              _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;
+  bool                      _initialized = false;
 };
