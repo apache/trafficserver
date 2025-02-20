@@ -5306,7 +5306,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 {
   int  ip_family = t_state.current.server->dst_addr.sa.sa_family;
   auto fam_name  = ats_ip_family_name(ip_family);
-  SMDbg(dbg_ctl_http_track, "entered inside do_http_server_open ][%.*s]", static_cast<int>(fam_name.size()), fam_name.data());
+  SMDbg(dbg_ctl_http_track, "[%.*s]", static_cast<int>(fam_name.size()), fam_name.data());
 
   NetVConnection *vc = _ua.get_txn()->get_netvc();
   ink_release_assert(vc && vc->thread == this_ethread());
