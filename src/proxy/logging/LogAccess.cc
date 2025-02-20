@@ -3029,8 +3029,8 @@ LogAccess::marshal_cache_collapsed_connection_success(char *buf)
     if (m_http_sm) {
       SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
 
-      // We increment open_write_tries beyond the max when we want to jump back to the read state for collapsing
-      if ((m_http_sm->get_cache_sm().get_open_write_tries() > (m_http_sm->t_state.txn_conf->max_cache_open_write_retries)) &&
+      // We attempted an open write, but ended up with some sort of HIT which means we must have gone back to the read state
+      if ((m_http_sm->get_cache_sm().get_open_write_tries() > (0)) &&
           ((code == SQUID_LOG_TCP_HIT) || (code == SQUID_LOG_TCP_MEM_HIT) || (code == SQUID_LOG_TCP_DISK_HIT) ||
            (code == SQUID_LOG_TCP_CF_HIT))) {
         // Attempted collapsed connection and got a hit, success
