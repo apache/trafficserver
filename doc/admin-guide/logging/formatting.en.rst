@@ -519,6 +519,8 @@ pps   Proxy Protocol Source IP received via Proxy Protocol context from the LB t
       Source IP      the |TS|
 ppd   Proxy Protocol Destination IP received via Proxy Protocol context from the LB
       Dest IP        to the |TS|
+ppa   Proxy Protocol The Authority TLV from Proxy Protocol context from the LB
+      Authority      to the |TS|
 
 ===== ============== ==========================================================
 
