@@ -761,7 +761,7 @@ NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst) cons
   return nullptr;
 }
 
-std::optional<std::string_view>
+inline std::optional<std::string_view>
 NetVConnection::get_proxy_protocol_tlv(const uint8_t tlvCode) const
 {
   return pp_info.get_tlv(tlvCode);
