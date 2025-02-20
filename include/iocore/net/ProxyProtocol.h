@@ -29,6 +29,7 @@
 #include <swoc/TextView.h>
 #include <unordered_map>
 #include <cstdlib>
+#include <optional>
 
 enum class ProxyProtocolVersion {
   UNDEFINED,
