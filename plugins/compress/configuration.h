@@ -41,6 +41,12 @@ enum CompressionAlgorithm {
   ALGORITHM_BROTLI  = 4 // For bit manipulations
 };
 
+enum class RangeRequestCtrl : int {
+  IGNORE_RANGE   = 0, ///< Ignore Range Header (default)
+  NO_COMPRESSION = 1, ///< Do NOT compress if it's a range request
+  NONE           = 2, ///< Do nothing
+};
+
 class HostConfiguration : private atscppapi::noncopyable
 {
 public:
@@ -48,7 +54,6 @@ public:
     : host_(host),
       enabled_(true),
       cache_(true),
-      range_request_(false),
       remove_accept_encoding_(false),
       flush_(false),
       compression_algorithms_(ALGORITHM_GZIP),
@@ -66,15 +71,10 @@ public:
   {
     enabled_ = x;
   }
-  bool
-  range_request()
+  RangeRequestCtrl
+  range_request_ctl()
   {
-    return range_request_;
-  }
-  void
-  set_range_request(bool x)
-  {
-    range_request_ = x;
+    return range_request_ctl_;
   }
   bool
   cache()
@@ -137,19 +137,20 @@ public:
   bool is_status_code_compressible(const TSHttpStatus status_code) const;
   void add_compression_algorithms(std::string &algorithms);
   int  compression_algorithms();
+  void set_range_request(const std::string &token);
 
 private:
   std::string  host_;
   bool         enabled_;
   bool         cache_;
-  bool         range_request_;
   bool         remove_accept_encoding_;
   bool         flush_;
   int          compression_algorithms_;
   unsigned int minimum_content_length_;
 
-  StringContainer compressible_content_types_;
-  StringContainer allows_;
+  RangeRequestCtrl range_request_ctl_;
+  StringContainer  compressible_content_types_;
+  StringContainer  allows_;
   // maintain backwards compatibility/usability out of the box
   std::set<TSHttpStatus> compressible_status_codes_ = {TS_HTTP_STATUS_OK, TS_HTTP_STATUS_PARTIAL_CONTENT,
                                                        TS_HTTP_STATUS_NOT_MODIFIED};

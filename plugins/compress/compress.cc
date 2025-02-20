@@ -24,6 +24,7 @@
 #include <cstring>
 #include <zlib.h>
 
+#include "ts/apidefs.h"
 #include "tscore/ink_config.h"
 
 #if HAVE_BROTLI_ENCODE_H
@@ -75,6 +76,57 @@ static TSMutex compress_config_mutex = nullptr;
 // Current global configuration, and the previous one (for cleanup)
 Configuration *cur_config  = nullptr;
 Configuration *prev_config = nullptr;
+
+namespace
+{
+/**
+  If client request has both of Range and Accept-Encoding header, follow range-request config.
+ */
+void
+handle_range_request(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
+{
+  TSMLoc accept_encoding_hdr_field =
+    TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  if (accept_encoding_hdr_field == TS_NULL_MLOC) {
+    return;
+  }
+
+  TSMLoc range_hdr_field = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+  if (range_hdr_field == TS_NULL_MLOC) {
+    return;
+  }
+
+  debug("Both of Accept-Encoding and Range header are found in the request");
+
+  switch (hc->range_request_ctl()) {
+  case RangeRequestCtrl::IGNORE_RANGE: {
+    debug("Remove the Range header by ignore-range config");
+    while (range_hdr_field) {
+      TSMLoc next_dup = TSMimeHdrFieldNextDup(req_buf, req_loc, range_hdr_field);
+      TSMimeHdrFieldDestroy(req_buf, req_loc, range_hdr_field);
+      TSHandleMLocRelease(req_buf, req_loc, range_hdr_field);
+      range_hdr_field = next_dup;
+    }
+    break;
+  }
+  case RangeRequestCtrl::NO_COMPRESSION: {
+    debug("Remove the Accept-Encoding header by no-compression config");
+    while (accept_encoding_hdr_field) {
+      TSMLoc next_dup = TSMimeHdrFieldNextDup(req_buf, req_loc, accept_encoding_hdr_field);
+      TSMimeHdrFieldDestroy(req_buf, req_loc, accept_encoding_hdr_field);
+      TSHandleMLocRelease(req_buf, req_loc, accept_encoding_hdr_field);
+      accept_encoding_hdr_field = next_dup;
+    }
+    break;
+  }
+  case RangeRequestCtrl::NONE:
+    [[fallthrough]];
+  default:
+    debug("Do nothing by none config");
+    break;
+  }
+}
+} // namespace
 
 static Data *
 data_alloc(int compression_type, int compression_algorithms)
@@ -635,7 +687,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
   /* Client request header */
   TSMBuffer cbuf;
   TSMLoc    chdr;
-  TSMLoc    cfield, rfield;
+  TSMLoc    cfield;
 
   const char  *value;
   int          len;
@@ -673,17 +725,6 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
 
   if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &cbuf, &chdr)) {
     info("cound not get client request");
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
-  }
-
-  // check if Range Requests are cacheable
-  bool range_request = host_configuration->range_request();
-  rfield             = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
-  if (rfield != TS_NULL_MLOC && !range_request) {
-    debug("Range header found in the request and range_request is configured as false, not compressible");
-    TSHandleMLocRelease(cbuf, chdr, rfield);
-    TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
@@ -922,7 +963,8 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
  * 2. For global plugin, get host configuration from global config
  *    For remap plugin, get host configuration from configs populated through remap
  * 3. Check for Accept encoding
- * 4. Schedules TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK and TS_HTTP_TXN_CLOSE_HOOK for
+ * 4. Remove Range header
+ * 5. Schedules TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK and TS_HTTP_TXN_CLOSE_HOOK for
  *    further processing
  */
 static void
@@ -957,6 +999,7 @@ handle_request(TSHttpTxn txnp, Configuration *config)
 
       info("Kicking off compress plugin for request");
       normalize_accept_encoding(txnp, req_buf, req_loc);
+      handle_range_request(req_buf, req_loc, hc);
       TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, transform_contp);
       TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, transform_contp); // To release the config
     }

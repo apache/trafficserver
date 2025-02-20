@@ -270,6 +270,19 @@ HostConfiguration::compression_algorithms()
   return compression_algorithms_;
 }
 
+void
+HostConfiguration::set_range_request(const std::string &token)
+{
+  // "true" and "false" are compatibility with old version, will be removed
+  if (token == "false" || token == "ignore-range") {
+    range_request_ctl_ = RangeRequestCtrl::IGNORE_RANGE;
+  } else if (token == "true" || token == "none") {
+    range_request_ctl_ = RangeRequestCtrl::NONE;
+  } else if (token == "no-compression") {
+    range_request_ctl_ = RangeRequestCtrl::NO_COMPRESSION;
+  }
+}
+
 Configuration *
 Configuration::Parse(const char *path)
 {
@@ -383,7 +396,7 @@ Configuration::Parse(const char *path)
         state = kParseStart;
         break;
       case kParseRangeRequest:
-        current_host_configuration->set_range_request(token == "true");
+        current_host_configuration->set_range_request(token);
         state = kParseStart;
         break;
       case kParseFlush:
@@ -406,8 +419,8 @@ Configuration::Parse(const char *path)
   current_host_configuration->update_defaults();
 
   // Check combination of configs
-  if (!current_host_configuration->cache() && current_host_configuration->range_request()) {
-    warning("Combination of 'cache false' and 'range-request true' might deliver corrupted content");
+  if (!current_host_configuration->cache() && current_host_configuration->range_request_ctl() == RangeRequestCtrl::NONE) {
+    warning("Combination of 'cache false' and 'range-request none' might deliver corrupted content");
   }
 
   if (state != kParseStart) {
