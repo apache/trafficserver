@@ -312,7 +312,7 @@ ats_ip_are_compatible(sockaddr const *lhs, ///< Address to test.
   return lhs->sa_family == rhs;
 }
 
-/// @return the path length including the \0
+/// @return the path length not including the \0
 inline int
 ats_unix_path_len(sockaddr_un *s)
 {
@@ -1603,7 +1603,7 @@ struct UnAddr {
   /// Assign sockaddr storage.
   constexpr self &assign(sockaddr const *addr);
 
-  uint16_t
+  constexpr uint16_t
   family() const
   {
     return AF_UNIX;
