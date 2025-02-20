@@ -262,6 +262,7 @@ public:
   int marshal_proxy_protocol_version(char *);                      // STR
   int marshal_proxy_protocol_src_ip(char *);                       // STR
   int marshal_proxy_protocol_dst_ip(char *);                       // STR
+  int marshal_proxy_protocol_authority(char *);                    // STR
 
   // named fields from within a http header
   //

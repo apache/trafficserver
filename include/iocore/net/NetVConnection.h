@@ -458,7 +458,14 @@ public:
     return pp_info.version;
   }
 
-  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData) const;
+  sockaddr const                 *get_proxy_protocol_addr(const ProxyProtocolData) const;
+  std::optional<std::string_view> get_proxy_protocol_tlv(const uint8_t tlvCode) const;
+
+  std::optional<std::string_view>
+  get_proxy_protocol_authority() const
+  {
+    return get_proxy_protocol_tlv(PP2_TYPE_AUTHORITY);
+  }
 
   sockaddr const *
   get_proxy_protocol_src_addr() const
@@ -752,6 +759,12 @@ NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst) cons
   }
 
   return nullptr;
+}
+
+inline std::optional<std::string_view>
+NetVConnection::get_proxy_protocol_tlv(const uint8_t tlvCode) const
+{
+  return pp_info.get_tlv(tlvCode);
 }
 
 inline void

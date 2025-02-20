@@ -28,6 +28,8 @@
 #include "swoc/TextView.h"
 #include "swoc/bwf_base.h"
 #include "tsutil/DbgCtl.h"
+#include <optional>
+#include <string_view>
 
 namespace
 {
@@ -523,6 +525,17 @@ ProxyProtocol::set_ipv6_addrs(const in6_addr &src_addr, uint16_t src_port, const
   this->dst_addr.assign(dst, dst_port);
 
   this->ip_family = AF_INET6;
+}
+
+std::optional<std::string_view>
+ProxyProtocol::get_tlv(const uint8_t tlvCode) const
+{
+  if (version == ProxyProtocolVersion::V2) {
+    if (auto v = tlv.find(tlvCode); v != tlv.end()) {
+      return v->second;
+    }
+  }
+  return std::nullopt;
 }
 
 int
