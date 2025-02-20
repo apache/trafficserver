@@ -261,6 +261,11 @@ NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED
   REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
 
   if (listen_per_thread == 1) {
+    if (ats_is_unix(server.accept_addr)) {
+      auto id = this_ethread()->id;
+      ats_unix_append_id(&server.accept_addr.sun, id);
+    }
+
     if (do_listen()) {
       Fatal("[NetAccept::accept_per_thread]:error listenting on ports");
       return -1;
