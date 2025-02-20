@@ -248,7 +248,7 @@ Query-Param-Style Named Claim format
    * if any claim value contains ``&`` or ``=`` escaping would be necessary (i.e. through Percent-Encoding [6]_)
    * the size of the access token cannot be larger then 4K to limit the amount of data the application_ could fit in the opaque claims, in general the access token is meant to be small since it could end up stored in a cookie and be sent as part of lots and lots of requests.
    * during signing the access token payload should end with ``&md=`` and the calculated `message digest`_ would be appended directly to the payload to form the token (see the example below).
-
+   * the ``exp=0`` is a special case to control this plugin to generate a session cookie (no ``Expires=`` attibute in the ``set-cookie`` header).
 
 Let us say we have a user `Kermit the Frog <https://en.wikipedia.org/wiki/Kermit_the_Frog>`_ and a user `Michigan J. Frog <https://en.wikipedia.org/wiki/Michigan_J._Frog>`_ who are part of a `target audience`_ ``frogs-in-a-well`` and a user `Nemo the Clownfish <https://en.wikipedia.org/wiki/Finding_Nemo>`_ who is part of a `target audience`_ ``fish-in-a-sea``.
 

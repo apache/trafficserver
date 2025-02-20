@@ -155,7 +155,8 @@ AccessToken::validateTiming(time_t time)
   /* Validate and check expiration timestamp */
   if (!_expiration.empty()) {
     if (0 == (t = string2time(_expiration))) {
-      return _state = INVALID_FIELD_VALUE;
+      // Case of setting Session Cookie by absense of Expires attribute
+      return _state = VALID;
     } else {
       if (time > t) {
         return _state = TOO_LATE;
