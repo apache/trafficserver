@@ -120,7 +120,7 @@ echo "Building quiche"
 QUICHE_BASE="${BASE:-/opt}/quiche"
 [ ! -d quiche ] && git clone https://github.com/cloudflare/quiche.git
 cd quiche
-git checkout 0.22.0
+git checkout 0.23.2
 
 PKG_CONFIG_PATH="$OPENSSL_LIB"/pkgconfig LD_LIBRARY_PATH="$OPENSSL_LIB" \
   cargo build -j4 --package quiche --release --features ffi,pkg-config-meta,qlog,openssl
