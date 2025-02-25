@@ -94,7 +94,7 @@ handle_range_request(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
     return;
   }
 
-  TSMLoc range_hdr_field = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+  TSMLoc         range_hdr_field = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
   ts::PostScript range_defer([&]() -> void { TSHandleMLocRelease(req_buf, req_loc, range_hdr_field); });
   if (range_hdr_field == TS_NULL_MLOC) {
     return;
