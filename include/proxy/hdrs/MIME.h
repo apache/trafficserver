@@ -962,7 +962,7 @@ inline bool
 MIMEField::name_is_valid(uint32_t invalid_char_bits) const
 {
   auto name{name_get()};
-  for (char c : name) {
+  for (auto c : name) {
     if (ParseRules::is_type(c, invalid_char_bits)) {
       return false;
     }
@@ -1061,7 +1061,7 @@ inline bool
 MIMEField::value_is_valid(uint32_t invalid_char_bits) const
 {
   auto value{value_get()};
-  for (char c : value) {
+  for (auto c : value) {
     if (ParseRules::is_type(c, invalid_char_bits)) {
       return false;
     }
