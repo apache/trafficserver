@@ -1375,7 +1375,7 @@ HttpTransact::handle_websocket_connection(State *s)
 static bool
 mimefield_value_equal(MIMEField *field, const char *value, const int value_len)
 {
-  auto field_value = field->value_get();
+  auto field_value{field->value_get()};
 
   if (field_value.data() != nullptr && static_cast<int>(field_value.length()) == value_len) {
     return !strncasecmp(field_value.data(), value, value_len);
@@ -3208,11 +3208,11 @@ HttpTransact::handle_cache_write_lock(State *s)
     MIMEField *c_inm = s->hdr_info.client_request.field_find(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
 
     if (c_ims) {
-      auto value = c_ims->value_get();
+      auto value{c_ims->value_get()};
       s->hdr_info.server_request.value_set(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, value.data(), value.length());
     }
     if (c_inm) {
-      auto value = c_inm->value_get();
+      auto value{c_inm->value_get()};
       s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, value.data(), value.length());
     }
   }
@@ -4613,7 +4613,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       }
       // HDR FIX ME - Multiple appends are VERY slow
       while (resp_via) {
-        auto cfield = resp_via->value_get();
+        auto cfield{resp_via->value_get()};
         s->hdr_info.client_response.field_value_append(our_via, cfield.data(), cfield.length(), true);
         resp_via = resp_via->m_next_dup;
       }
@@ -5026,7 +5026,7 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
         // so that they will be added in the next iterations.
         for (auto spot2 = spot; spot2 != limit; ++spot2) {
           MIMEField &field2{*spot2};
-          auto       name2 = field2.name_get();
+          auto       name2{field2.name_get()};
 
           // It is specified above that content type should not
           // be altered here however when a duplicate header
