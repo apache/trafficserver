@@ -142,8 +142,7 @@ struct MIMEField {
   }
 
   /// @return The name of @a this field.
-  std::string_view                                                      name_get() const;
-  [[deprecated("Use name_get() returns std::string_view")]] const char *name_get(int *length) const;
+  std::string_view name_get() const;
 
   /** Find the index of the value in the multi-value field.
 
@@ -160,8 +159,7 @@ struct MIMEField {
   int value_get_index(const char *value, int length) const;
 
   /// @return The value of @a this field.
-  std::string_view                                                       value_get() const;
-  [[deprecated("Use value_get() returns std::string_view")]] const char *value_get(int *length) const;
+  std::string_view value_get() const;
 
   int32_t  value_get_int() const;
   uint32_t value_get_uint() const;
@@ -943,17 +941,6 @@ bool     mime_parse_integer(const char *&buf, const char *end, int *integer);
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-MIMEField::name_get(int *length) const
-{
-  auto name{this->name_get()};
-  *length = int(name.size());
-  return name.data();
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 inline void
 MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length)
 {
@@ -985,14 +972,6 @@ MIMEField::name_is_valid(uint32_t invalid_char_bits) const
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
-inline const char *
-MIMEField::value_get(int *length) const
-{
-  auto value{this->value_get()};
-  *length = static_cast<int>(value.length());
-  return value.data();
-}
 
 inline int32_t
 MIMEField::value_get_int() const
