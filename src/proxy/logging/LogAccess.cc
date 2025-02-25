@@ -95,14 +95,17 @@ LogAccess::init()
     m_proxy_response = &(hdr->client_response);
     MIMEField *field = m_proxy_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     if (field) {
-      m_proxy_resp_content_type_str = const_cast<char *>(field->value_get(&m_proxy_resp_content_type_len));
-
+      auto proxy_resp_content_type  = field->value_get();
+      m_proxy_resp_content_type_str = const_cast<char *>(proxy_resp_content_type.data());
+      m_proxy_resp_content_type_len = proxy_resp_content_type.length();
       LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
     } else {
       // If Content-Type field is missing, check for @Content-Type
       field = m_proxy_response->field_find(HIDDEN_CONTENT_TYPE, HIDDEN_CONTENT_TYPE_LEN);
       if (field) {
-        m_proxy_resp_content_type_str = const_cast<char *>(field->value_get(&m_proxy_resp_content_type_len));
+        auto proxy_resp_content_type  = field->value_get();
+        m_proxy_resp_content_type_str = const_cast<char *>(proxy_resp_content_type.data());
+        m_proxy_resp_content_type_len = proxy_resp_content_type.length();
         LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
       }
     }
@@ -2903,9 +2906,10 @@ LogAccess::marshal_file_size(char *buf)
     HTTPHdr   *hdr = m_server_response ? m_server_response : m_cache_response;
 
     if (hdr && (fld = hdr->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE))) {
-      int   len;
-      char *str = const_cast<char *>(fld->value_get(&len));
-      char *pos = static_cast<char *>(memchr(str, '/', len)); // Find the /
+      auto  value = fld->value_get();
+      int   len   = value.length();
+      char *str   = const_cast<char *>(value.data());
+      char *pos   = static_cast<char *>(memchr(str, '/', len)); // Find the /
 
       // If the size is not /* (which means unknown) use it as the file_size.
       if (pos && !memchr(pos + 1, '*', len - (pos + 1 - str))) {
@@ -3093,7 +3097,9 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
       //
       int running_len = 0;
       while (fld) {
-        str = const_cast<char *>(fld->value_get(&actual_len));
+        auto value = fld->value_get();
+        actual_len = value.length();
+        str        = const_cast<char *>(value.data());
         if (buf) {
           memcpy(buf, str, actual_len);
           buf += actual_len;
@@ -3194,8 +3200,10 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
       //
       int running_len = 0;
       while (fld) {
-        str     = const_cast<char *>(fld->value_get(&actual_len));
-        new_str = Encoding::escapify_url(&m_arena, str, actual_len, &new_len);
+        auto value = fld->value_get();
+        actual_len = value.length();
+        str        = const_cast<char *>(value.data());
+        new_str    = Encoding::escapify_url(&m_arena, str, actual_len, &new_len);
         if (buf) {
           memcpy(buf, new_str, new_len);
           buf += new_len;
