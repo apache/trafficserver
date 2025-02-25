@@ -32,12 +32,12 @@ struct MIMEField {
   std::string_view
   name_get() const
   {
-    return {tag, strlen(tag)};
+    return {tag};
   }
   std::string_view
   value_get() const
   {
-    return {value, strlen(value)};
+    return {value};
   }
 };
 
