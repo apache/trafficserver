@@ -427,7 +427,7 @@ namespace
 void
 marshalStr(swoc::FixedBufferWriter &bw, const MIMEField &mf, std::string_view (MIMEField::*get_func)() const)
 {
-  auto data = (mf.*get_func)();
+  auto data{(mf.*get_func)()};
 
   if (!data.data() or (*data.data() == '\0')) {
     // Empty string.  This is a problem, since it would result in two successive nul characters, which indicates the end of the

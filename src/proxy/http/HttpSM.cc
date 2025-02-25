@@ -4389,7 +4389,7 @@ HttpSM::do_remap_request(bool run_inline)
   if (!t_state.unmapped_url.m_url_impl->m_ptr_host) {
     MIMEField *host_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
     if (host_field) {
-      auto host_name = host_field->value_get();
+      auto host_name{host_field->value_get()};
       if (host_name.data() && host_name.length()) {
         int port = -1;
         // Host header can contain port number, and if it does we need to set host and port separately to unmapped_url.
