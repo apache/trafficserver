@@ -27,6 +27,8 @@
 #include "ts/apidefs.h"
 #include "tscore/ink_config.h"
 
+#include <tsutil/PostScript.h>
+
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>
 #endif
@@ -87,11 +89,13 @@ handle_range_request(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
 {
   TSMLoc accept_encoding_hdr_field =
     TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  ts::PostScript accept_encoding_defer([&]() -> void { TSHandleMLocRelease(req_buf, req_loc, accept_encoding_hdr_field); });
   if (accept_encoding_hdr_field == TS_NULL_MLOC) {
     return;
   }
 
   TSMLoc range_hdr_field = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+  ts::PostScript range_defer([&]() -> void { TSHandleMLocRelease(req_buf, req_loc, range_hdr_field); });
   if (range_hdr_field == TS_NULL_MLOC) {
     return;
   }
