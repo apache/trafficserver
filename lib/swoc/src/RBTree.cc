@@ -293,13 +293,108 @@ RBNode::rebalance_after_remove(Color c,    //!< The color of the removed node
   return root;
 }
 
+RBNode * 
+RBNode::buildTree(RBNode*& head, int n)
+{
+  if (!head || n <= 0)
+  {
+    return head;
+  }
+  RBNode* root = buildTree(head, n, true);
+
+  // The root node is always black.
+  root->_color = Color::BLACK;
+
+  return root;
+}
+
+RBNode *
+RBNode::buildTree(RBNode*& head, int n, bool isBlack)
+{
+    if (n <= 1)
+    {
+      RBNode* currNode = head;
+      currNode->_color = isBlack ? Color::BLACK : Color::RED;
+      head = head->_next;
+      currNode->structure_fixup();
+      return currNode;
+    }
+  
+    // Always handle the even number of nodes first because it is guaranteed to contain an n == 2 case.
+    int left_n = n / 2;
+    int right_n = n - left_n - 1;
+    if (right_n % 2 == 0)
+    {
+        std::swap(left_n, right_n);
+    }
+  
+    // Recursively construct the left subtree.
+    RBNode* leftBranch = buildTree(head, left_n, !isBlack);
+  
+    // Assign the left branch to the current node (head).
+    RBNode* currNode = head;
+    currNode->_left = leftBranch;
+  
+    // This can be nullptr if we are at the end.
+    head = head->_next;
+  
+    // If this is currently processing 2 nodes, then don't make a right branch
+    // because the left branch has already been made.
+    // No need to check for head == nullptr here because n > 2 inside the block.
+    if (n != 2)
+    {
+      // Recursively construct the right subtree.
+      currNode->_right = buildTree(head, right_n, leftBranch->_color == Color::BLACK);
+    }
+    // If you have an n == 2 case, there is only a left child and it must be red.
+    else
+    {
+      currNode->_left->_color = Color::RED;
+      currNode->_color = Color::BLACK;
+    }
+
+    // If either child is red, then the current node must be black.
+    if (currNode->_left->_color == Color::RED || currNode->_right->_color == Color::RED)
+    {
+      currNode->_color = Color::BLACK;
+    }
+
+    // structure_fixup() needs to be called from the leaf nodes upward.
+    currNode->structure_fixup();
+
+    return currNode;
+}
+
+void
+RBNode::printTree(RBNode* root, std::string indent, bool last)
+{
+    if (root == nullptr) {
+        return;
+    }
+    std::cout << indent;
+    if (last) {
+        std::cout << "└─";
+        indent += "  ";
+    } else {
+        std::cout << "├─";
+        indent += "| ";
+    }
+
+    std::string color = (root->_color == Color::RED) ? "R" : "B";
+    std::cout << color << std::endl;
+
+    last = root->_right == nullptr;
+    printTree(root->_left, indent, last);
+    printTree(root->_right, indent, true);
+}
+
 /** Ensure that the local information associated with each node is
     correct globally This should only be called on debug builds as it
     breaks any efficiencies we have gained from our tree structure.
     */
 int
 RBNode::validate() {
-#if 0
+#if BUILD_TESTING
   int black_ht = 0;
   int black_ht1, black_ht2;
 
@@ -329,7 +424,7 @@ RBNode::validate() {
   } else {
     std::cout << "Height mismatch " << black_ht1 << " " << black_ht2 << "\n";
   }
-  if (black_ht > 0 && !this->structureValidate())
+  if (black_ht > 0 && !this->structure_validate())
     black_ht = 0;
 
   return black_ht;

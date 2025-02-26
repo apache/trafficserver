@@ -16,6 +16,7 @@
 #include "swoc/RBTree.h"
 #include "swoc/MemArena.h"
 
+
 namespace swoc { inline namespace SWOC_VERSION_NS {
 namespace detail {
 
@@ -717,7 +718,7 @@ protected:
     using super_type = detail::RBNode; ///< Parent class.
     friend class DiscreteSpace;
 
-    range_type _range;  ///< Range covered by this node.
+    range_type _range;  ///< Range covered by this node (in the IntrusiveDList).
     range_type _hull;   ///< Range covered by subtree rooted at this node.
     PAYLOAD _payload{}; ///< Default constructor, should zero init if @c PAYLOAD is a pointer.
 
@@ -756,16 +757,22 @@ protected:
     }
 
     self_type &
-    assign_min(METRIC const &m) {
+    assign_min(METRIC const &m, bool update_tree = true) {
       _range.assign_min(m);
-      this->ripple_structure_fixup();
+      if (update_tree)
+      {
+        this->ripple_structure_fixup();
+      }
       return *this;
     }
 
     self_type &
-    assign_max(METRIC const &m) {
+    assign_max(METRIC const &m, bool update_tree = true) {
       _range.assign_max(m);
-      this->ripple_structure_fixup();
+      if (update_tree)
+      {
+        this->ripple_structure_fixup();
+      }
       return *this;
     }
 
@@ -828,15 +835,31 @@ public:
 
   ~DiscreteSpace();
 
+  /** Mark ranges in one operation.
+   * 
+   * @param marks Vector of ranges and payloads to mark.
+   * @return @a this
+   */
+  self_type &mark_bulk(std::vector<std::pair<range_type, PAYLOAD>> const &marks);
+
+  /** Mark ranges in one operation.
+   * 
+   * @param start Pointer to the first range/payload pair.
+   * @param n Number of pairs.
+   * @return @a this
+   */
+  self_type &mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n);
+
   /** Set the @a payload for a @a range
    *
    * @param range Range to mark.
    * @param payload Payload to set.
+   * @param update_tree @c true to update the RBTree structure.
    * @return @a this
    *
    * Values in @a range are set to @a payload regardless of the current state.
    */
-  self_type &mark(range_type const &range, PAYLOAD const &payload);
+  self_type &mark(range_type const &range, PAYLOAD const &payload, bool update_tree = true);
 
   /** Erase a @a range.
    *
@@ -972,37 +995,42 @@ protected:
    *
    * @param spot Target node.
    * @param node Node to insert.
+   * @param update_tree @c true to update the RBTree structure.
    */
-  void insert_before(Node *spot, Node *node);
+  void insert_before(Node *spot, Node *node, bool update_tree = true);
 
   /** Insert @a node after @a spot.
    *
    * @param spot Target node.
    * @param node Node to insert.
+   * @param update_tree @c true to update the RBTree structure.
    */
-  void insert_after(Node *spot, Node *node);
+  void insert_after(Node *spot, Node *node, bool update_tree = true);
 
   /** Add @a node to tree as the first element.
    *
    * @param node Node to prepend.
+   * @param update_tree @c true to update the RBTree structure.
    *
    * Invariant - @a node is first in order.
    */
-  void prepend(Node *node);
+  void prepend(Node *node, bool update_tree = true);
 
   /** Add @a node to tree as the last node.
    *
    * @param node Node to append.
+   * @param update_tree @c true to update the RBTree structure.
    *
    * Invariant - @a node is last in order.
    */
-  void append(Node *node);
+  void append(Node *node, bool update_tree = true);
 
   /** Remove node from container and update container.
    *
    * @param node Node to remove.
+   * @param update_tree @c true to update the RBTree structure.
    */
-  void remove(Node *node);
+  void remove(Node *node, bool update_tree = true);
 };
 
 // ---
@@ -1210,65 +1238,88 @@ DiscreteSpace<METRIC, PAYLOAD>::intersection(DiscreteSpace::range_type const &ra
 
 template <typename METRIC, typename PAYLOAD>
 void
-DiscreteSpace<METRIC, PAYLOAD>::prepend(DiscreteSpace::Node *node) {
-  if (!_root) {
-    _root = node;
-  } else {
-    _root = static_cast<Node *>(_list.head()->set_child(node, Direction::LEFT)->rebalance_after_insert());
+DiscreteSpace<METRIC, PAYLOAD>::prepend(DiscreteSpace::Node *node, bool update_tree) {
+
+  if (update_tree) {
+    if (!_root) {
+      _root = node;
+    } else {
+      _root = static_cast<Node *>(_list.head()->set_child(node, Direction::LEFT)->rebalance_after_insert());
+    }
   }
+
   _list.prepend(node);
 }
 
 template <typename METRIC, typename PAYLOAD>
 void
-DiscreteSpace<METRIC, PAYLOAD>::append(DiscreteSpace::Node *node) {
-  if (!_root) {
-    _root = node;
-  } else {
-    // The last node has no right child, or it wouldn't be the last.
-    _root = static_cast<Node *>(_list.tail()->set_child(node, Direction::RIGHT)->rebalance_after_insert());
+DiscreteSpace<METRIC, PAYLOAD>::append(DiscreteSpace::Node *node, bool update_tree) {
+  
+  if (update_tree) {
+    if (!_root) {
+      _root = node;
+    } else {
+      // The last node has no right child, or it wouldn't be the last.
+      _root = static_cast<Node *>(_list.tail()->set_child(node, Direction::RIGHT)->rebalance_after_insert());
+    }
   }
+
   _list.append(node);
 }
 
 template <typename METRIC, typename PAYLOAD>
 void
-DiscreteSpace<METRIC, PAYLOAD>::remove(DiscreteSpace::Node *node) {
-  _root = static_cast<Node *>(node->remove());
+DiscreteSpace<METRIC, PAYLOAD>::remove(DiscreteSpace::Node *node, bool update_tree) {
   _list.erase(node);
   _fa.destroy(node);
+  if (!update_tree) {
+    return;
+  }
+  _root = static_cast<Node *>(node->remove());
 }
 
 template <typename METRIC, typename PAYLOAD>
 void
-DiscreteSpace<METRIC, PAYLOAD>::insert_before(DiscreteSpace::Node *spot, DiscreteSpace::Node *node) {
-  if (left(spot) == nullptr) {
-    spot->set_child(node, Direction::LEFT);
-  } else {
-    // If there's a left child, there's a previous node, therefore spot->_prev is valid.
-    // Further, the previous node must be the rightmost descendant node of the left subtree
-    // and therefore has no current right child.
-    spot->_prev->set_child(node, Direction::RIGHT);
+DiscreteSpace<METRIC, PAYLOAD>::insert_before(DiscreteSpace::Node *spot, DiscreteSpace::Node *node, bool update_tree) {
+
+  if (update_tree) {
+    if (left(spot) == nullptr) {
+      spot->set_child(node, Direction::LEFT);
+    } else {
+      // If there's a left child, there's a previous node, therefore spot->_prev is valid.
+      // Further, the previous node must be the rightmost descendant node of the left subtree
+      // and therefore has no current right child.
+      spot->_prev->set_child(node, Direction::RIGHT);
+    }
   }
 
   _list.insert_before(spot, node);
-  _root = static_cast<Node *>(node->rebalance_after_insert());
+
+  if (update_tree) {
+    _root = static_cast<Node *>(node->rebalance_after_insert());
+  }
 }
 
 template <typename METRIC, typename PAYLOAD>
 void
-DiscreteSpace<METRIC, PAYLOAD>::insert_after(DiscreteSpace::Node *spot, DiscreteSpace::Node *node) {
-  if (right(spot) == nullptr) {
-    spot->set_child(node, Direction::RIGHT);
-  } else {
-    // If there's a right child, there's a successor node, and therefore @a _next is valid.
-    // Further, the successor node must be the left most descendant of the right subtree
-    // therefore it doesn't have a left child.
-    spot->_next->set_child(node, Direction::LEFT);
+DiscreteSpace<METRIC, PAYLOAD>::insert_after(DiscreteSpace::Node *spot, DiscreteSpace::Node *node, bool update_tree) {
+
+  if (update_tree) {
+    if (right(spot) == nullptr) {
+      spot->set_child(node, Direction::RIGHT);
+    } else {
+      // If there's a right child, there's a successor node, and therefore @a _next is valid.
+      // Further, the successor node must be the left most descendant of the right subtree
+      // therefore it doesn't have a left child.
+      spot->_next->set_child(node, Direction::LEFT);
+    }
   }
 
   _list.insert_after(spot, node);
-  _root = static_cast<Node *>(node->rebalance_after_insert());
+
+  if (update_tree) {
+    _root = static_cast<Node *>(node->rebalance_after_insert());
+  }
 }
 
 template <typename METRIC, typename PAYLOAD>
@@ -1304,7 +1355,34 @@ DiscreteSpace<METRIC, PAYLOAD>::erase(DiscreteSpace::range_type const &range) {
 
 template <typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD> &
-DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAYLOAD const &payload) {
+DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::vector<std::pair<DiscreteSpace::range_type, PAYLOAD>> const &ranges) {
+  return this->mark_bulk(ranges.data(), ranges.size());
+}
+
+template <typename METRIC, typename PAYLOAD>
+DiscreteSpace<METRIC, PAYLOAD> &
+DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n)
+{
+  // Timer [i_range]: ~1.2 seconds for n=3355591
+  // Loop takes ~0.357612 microseconds in total.
+  for (size_t i = 0; i < n; ++i)
+  {
+    auto const& [range, payload] = start[i];
+    this->mark(range, payload, false);
+  }
+
+  // Timer [tree]: ~0.06 seconds for n=3355591
+  // buildTree() takes ~0.017881 microseconds.
+  // Rebuild the entire red-black tree.
+  detail::RBNode* temp_head = _list.head();
+  _root = static_cast<Node *>(detail::RBNode::buildTree(temp_head, _list.count()));
+
+  return *this;
+}
+
+template <typename METRIC, typename PAYLOAD>
+DiscreteSpace<METRIC, PAYLOAD> &
+DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAYLOAD const &payload, bool update_tree) {
   Node *n = this->lower_node(range.min()); // current node.
   Node *x = nullptr;                       // New node, gets set if we re-use an existing one.
   Node *y = nullptr;                       // Temporary for removing and advancing.
@@ -1326,7 +1404,7 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAY
       if (p && p->payload() == payload && p->max() == min_minus_1) {
         x = p;
         n = x; // need to back up n because frame of reference moved.
-        x->assign_max(range.max());
+        x->assign_max(range.max(), update_tree);
       } else if (n->max() <= range.max()) {
         // Span will be subsumed by request span so it's available for use.
         x = n;
@@ -1336,8 +1414,8 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAY
       } else {
         // request span is covered by existing span.
         x = _fa.make(range, payload); //
-        n->assign_min(max_plus_1);    // clip existing.
-        this->insert_before(n, x);
+        n->assign_min(max_plus_1, update_tree);    // clip existing.
+        this->insert_before(n, x, update_tree);
         return *this;
       }
     } else if (n->payload() == payload && n->max() >= min_minus_1) {
@@ -1347,18 +1425,22 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAY
       if (x->max() >= range.max()) {
         return *this;
       }
-      x->assign_max(range.max());
+      x->assign_max(range.max(), update_tree);
     } else if (n->max() <= range.max()) {
       // Can only have left skew overlap, otherwise disjoint.
       // Clip if overlap.
       if (n->max() >= range.min()) {
-        n->assign_max(min_minus_1);
+        n->assign_max(min_minus_1, update_tree);
       } else if (nullptr != (y = next(n)) && y->max() <= range.max()) {
         // because @a n was selected as the minimum it must be the case that
         // y->min >= min (or y would have been selected). Therefore in this
         // case the request covers the next node therefore it can be reused.
         x = y;
-        x->assign(range).assign(payload).ripple_structure_fixup();
+        x->assign(range).assign(payload);
+        if (update_tree)
+        {
+            x->ripple_structure_fixup();
+        }
         n = x; // this gets bumped again, which is correct.
       }
     } else {
@@ -1368,18 +1450,18 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAY
       Node *r;
       x = _fa.make(range, payload);
       r = _fa.make(range_type{max_plus_1, n->max()}, n->payload());
-      n->assign_max(min_minus_1);
-      this->insert_after(n, x);
-      this->insert_after(x, r);
+      n->assign_max(min_minus_1, update_tree);
+      this->insert_after(n, x, update_tree);
+      this->insert_after(x, r, update_tree);
       return *this; // done.
     }
     n = next(n); // lower bound span handled, move on.
     if (!x) {
       x = _fa.make(range, payload);
       if (n) {
-        this->insert_before(n, x);
+        this->insert_before(n, x, update_tree);
       } else {
-        this->append(x); // note that since n == 0 we'll just return.
+        this->append(x, update_tree); // note that since n == 0 we'll just return.
       }
     }
   } else if (nullptr != (n = this->head()) &&                    // at least one node in tree.
@@ -1389,13 +1471,13 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAY
     // Same payload with overlap, re-use.
     x = n;
     n = next(n);
-    x->assign_min(range.min());
+    x->assign_min(range.min(), update_tree);
     if (x->max() < range.max()) {
-      x->assign_max(range.max());
+      x->assign_max(range.max(), update_tree);
     }
   } else {
     x = _fa.make(range, payload);
-    this->prepend(x);
+    this->prepend(x, update_tree);
   }
 
   // At this point, @a x has the node for this span and all existing spans of
@@ -1404,16 +1486,16 @@ DiscreteSpace<METRIC, PAYLOAD>::mark(DiscreteSpace::range_type const &range, PAY
     if (n->max() <= range.max()) { // completely covered, drop span, continue
       y = n;
       n = next(n);
-      this->remove(y);
+      this->remove(y, update_tree);
     } else if (max_plus_1 < n->min()) { // no overlap, done.
       break;
     } else if (n->payload() == payload) { // skew overlap or adj., same payload
-      x->assign_max(n->max());
+      x->assign_max(n->max(), update_tree);
       y = n;
       n = next(n);
-      this->remove(y);
+      this->remove(y, update_tree);
     } else if (n->min() <= range.max()) { // skew overlap different payload
-      n->assign_min(max_plus_1);
+      n->assign_min(max_plus_1, update_tree);
       break;
     } else { // n->min() > range.max(), different payloads - done.
       break;
