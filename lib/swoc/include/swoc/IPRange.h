@@ -1138,7 +1138,7 @@ public:
   self_type &mark(IPRange const &range, PAYLOAD const &payload);
 
   /** Mark ranges of IP4Addr in the IPSpace in one operation.
-   * 
+   *
    * @param range_payloads Array of range/payload pairs.
    * @param size Number of elements in @a range_payloads.
    * @return @a this
@@ -1149,7 +1149,7 @@ public:
   self_type &mark_bulk(std::vector<std::pair<DiscreteRange<IP4Addr>, PAYLOAD>>& range_payloads);
 
   /** Mark ranges of IP6Addr in the IPSpace in one operation.
-   * 
+   *
    * @param range_payloads Array of range/payload pairs.
    * @param size Number of elements in @a range_payloads.
    * @return @a this

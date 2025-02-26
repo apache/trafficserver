@@ -179,11 +179,11 @@ struct RBNode {
 
   /**
    * @brief  Recursively build a balanced RB tree from a sorted linked list.
-   * 
+   *
    * Constraints:
    *  - The list is sorted in ascending order.
    *  - A copy (not reference) of the head pointer is passed in.
-   * 
+   *
    * @param head         Copy of the head pointer of the list.
    * @param n            Number of nodes being processed at the current level.
    * @return self_type*  The root node of the tree.
