@@ -1137,6 +1137,28 @@ public:
    */
   self_type &mark(IPRange const &range, PAYLOAD const &payload);
 
+  /** Mark ranges of IP4Addr in the IPSpace in one operation.
+   * 
+   * @param range_payloads Array of range/payload pairs.
+   * @param size Number of elements in @a range_payloads.
+   * @return @a this
+   */
+  self_type &mark_bulk(std::pair<DiscreteRange<IP4Addr>, PAYLOAD>* range_payloads, size_t size);
+
+  //! vector-based interface for the previous function.
+  self_type &mark_bulk(std::vector<std::pair<DiscreteRange<IP4Addr>, PAYLOAD>>& range_payloads);
+
+  /** Mark ranges of IP6Addr in the IPSpace in one operation.
+   * 
+   * @param range_payloads Array of range/payload pairs.
+   * @param size Number of elements in @a range_payloads.
+   * @return @a this
+   */
+  self_type &mark_bulk(std::pair<DiscreteRange<IP6Addr>, PAYLOAD>* range_payloads, size_t size);
+
+  //! vector-based interface for the previous function.
+  self_type &mark_bulk(std::vector<std::pair<DiscreteRange<IP6Addr>, PAYLOAD>>& range_payloads);
+
   /** Fill the @a range with @a payload.
    *
    * @param range Destination range.
@@ -2463,6 +2485,34 @@ IPRange::NetSource::operator!=(self_type const &that) const {
 }
 
 // --- IPSpace
+
+template <typename PAYLOAD>
+auto
+IPSpace<PAYLOAD>::mark_bulk(std::pair<DiscreteRange<IP4Addr>, PAYLOAD>* range_payloads, size_t size) -> self_type & {
+  _ip4.mark_bulk(range_payloads, size);
+  return *this;
+}
+
+template <typename PAYLOAD>
+auto
+IPSpace<PAYLOAD>::mark_bulk(std::pair<DiscreteRange<IP6Addr>, PAYLOAD>* range_payloads, size_t size) -> self_type & {
+  _ip6.mark_bulk(range_payloads, size);
+  return *this;
+}
+
+template <typename PAYLOAD>
+auto
+IPSpace<PAYLOAD>::mark_bulk(std::vector<std::pair<DiscreteRange<IP4Addr>, PAYLOAD>>& range_payloads) -> self_type & {
+  _ip4.mark_bulk(range_payloads);
+  return *this;
+}
+
+template <typename PAYLOAD>
+auto
+IPSpace<PAYLOAD>::mark_bulk(std::vector<std::pair<DiscreteRange<IP6Addr>, PAYLOAD>>& range_payloads) -> self_type & {
+  _ip6.mark_bulk(range_payloads);
+  return *this;
+}
 
 template <typename PAYLOAD>
 auto

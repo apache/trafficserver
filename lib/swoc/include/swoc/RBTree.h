@@ -6,6 +6,9 @@
 */
 
 #pragma once
+
+#include <iostream>
+
 #include "swoc/swoc_version.h"
 #include "swoc/IntrusiveDList.h"
 
@@ -174,6 +177,31 @@ struct RBNode {
    */
   self_type *ripple_structure_fixup();
 
+  /**
+   * @brief  Recursively build a balanced RB tree from a sorted linked list.
+   * 
+   * Constraints:
+   *  - The list is sorted in ascending order.
+   *  - A copy (not reference) of the head pointer is passed in.
+   * 
+   * @param head         Copy of the head pointer of the list.
+   * @param n            Number of nodes being processed at the current level.
+   * @return self_type*  The root node of the tree.
+   */
+  static self_type * buildTree(self_type*& head, int n);
+
+  //! Called by buildTree above.
+  static self_type * buildTree(self_type*& head, int n, bool isBlack);
+
+  /**
+   * @brief Recursively print the tree in a human-readable format.
+   *
+   * @param root   Root node of the tree.
+   * @param indent Indentation string.
+   * @param last   Flag to indicate if the node is the last node.
+   */
+  static void printTree(self_type* root, std::string indent = "", bool last = true);
+
   Color _color{Color::RED};    ///< node color
   self_type *_parent{nullptr}; ///< parent node (needed for rotations)
   self_type *_left{nullptr};   ///< left child
@@ -188,7 +216,7 @@ struct RBNode {
     next_ptr(self_type *t) {
       return swoc::ptr_ref_cast<self_type>(t->_next);
     }
-    /// @return Reference to the internal pointer to the previoius element.
+    /// @return Reference to the internal pointer to the previous element.
     static self_type *&
     prev_ptr(self_type *t) {
       return swoc::ptr_ref_cast<self_type>(t->_prev);
