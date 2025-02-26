@@ -502,8 +502,8 @@ float
 HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MIMEField *content_field)
 {
   float       q = -1.0;
-  const char *c_raw, *a_raw;
-  int         c_raw_len, a_raw_len;
+  const char *a_raw;
+  int         a_raw_len;
   char        c_type[32], c_subtype[32];
   Str        *a_value;
   StrList     c_param_list, a_values_list;
@@ -521,8 +521,8 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
   // encoding matching where we loop over both accept and
   // content-type fields.
 
-  c_raw = content_field->value_get(&c_raw_len);
-  HttpCompat::parse_semicolon_list(&c_param_list, c_raw, c_raw_len);
+  auto c_raw{content_field->value_get()};
+  HttpCompat::parse_semicolon_list(&c_param_list, c_raw.data(), c_raw.length());
   Str *c_param = c_param_list.head;
 
   if (!c_param) {
@@ -696,8 +696,6 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
                                                              MIMEField *cached_accept_field)
 {
   float       q = -1.0;
-  const char *c_raw, *a_raw, *ca_raw;
-  int         c_raw_len, a_raw_len, ca_raw_len;
   StrList     a_values_list;
   Str        *a_value;
   char        c_charset[128];
@@ -709,9 +707,9 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
 
   // prefer exact matches
   if (accept_field && cached_accept_field) {
-    a_raw  = accept_field->value_get(&a_raw_len);
-    ca_raw = cached_accept_field->value_get(&ca_raw_len);
-    if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
+    auto a_raw{accept_field->value_get()};
+    auto ca_raw{cached_accept_field->value_get()};
+    if (a_raw.data() && ca_raw.data() && a_raw == ca_raw) {
       Dbg(dbg_ctl_http_alternate, "Exact match for ACCEPT CHARSET");
       return static_cast<float>(1.001); // slightly higher weight to this guy
     }
@@ -722,8 +720,8 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
     return static_cast<float>(1.0);
   }
   // get the charset of this content-type //
-  c_raw = content_field->value_get(&c_raw_len);
-  if (!HttpCompat::lookup_param_in_semicolon_string(c_raw, c_raw_len, "charset", c_charset, sizeof(c_charset) - 1)) {
+  auto c_raw{content_field->value_get()};
+  if (!HttpCompat::lookup_param_in_semicolon_string(c_raw.data(), c_raw.length(), "charset", c_charset, sizeof(c_charset) - 1)) {
     ink_strlcpy(c_charset, default_charset, sizeof(c_charset));
   }
   // Now loop over Accept-Charset field values.
@@ -732,8 +730,8 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
 
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
     // Get the raw string to the current comma-sep Accept-Charset field value
-    a_raw     = a_value->str;
-    a_raw_len = a_value->len;
+    auto a_raw     = a_value->str;
+    auto a_raw_len = a_value->len;
 
     // Extract the field value before the semicolon
     StrList a_param_list(true); // FIXME: copies & NUL-terminates strings
@@ -908,22 +906,18 @@ float
 HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_field, MIMEField *content_field,
                                                               MIMEField *cached_accept_field)
 {
-  float       q                    = -1.0;
-  bool        is_identity_encoding = false;
-  const char *c_encoding;
-  int         c_encoding_len;
-  bool        wildcard_present = false;
-  float       wildcard_q       = 1.0;
-  StrList     c_values_list;
-  Str        *c_value;
-  const char *a_raw, *ca_raw;
-  int         a_raw_len, ca_raw_len;
+  float   q                    = -1.0;
+  bool    is_identity_encoding = false;
+  bool    wildcard_present     = false;
+  float   wildcard_q           = 1.0;
+  StrList c_values_list;
+  Str    *c_value;
 
   // prefer exact matches
   if (accept_field && cached_accept_field) {
-    a_raw  = accept_field->value_get(&a_raw_len);
-    ca_raw = cached_accept_field->value_get(&ca_raw_len);
-    if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
+    auto a_raw{accept_field->value_get()};
+    auto ca_raw{cached_accept_field->value_get()};
+    if (a_raw.data() && ca_raw.data() && a_raw == ca_raw) {
       Dbg(dbg_ctl_http_alternate, "Exact match for ACCEPT ENCODING");
       return static_cast<float>(1.001); // slightly higher weight to this guy
     }
@@ -942,14 +936,13 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
     // TODO: Should we check the return value (count) here?
     content_field->value_get_comma_list(&c_values_list);
 
-    content_field->value_get(&c_encoding_len);
-    if (c_encoding_len == 0) {
+    if (content_field->value_get().length() == 0) {
       is_identity_encoding = true;
     } else {
       // does this document have the identity encoding? //
       for (c_value = c_values_list.head; c_value; c_value = c_value->next) {
-        c_encoding     = c_value->str;
-        c_encoding_len = c_value->len;
+        auto c_encoding     = c_value->str;
+        auto c_encoding_len = c_value->len;
         if ((c_encoding_len >= 8) && (strncasecmp(c_encoding, "identity", 8) == 0)) {
           is_identity_encoding = true;
           break;
@@ -1134,22 +1127,20 @@ float
 HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField *accept_field, MIMEField *content_field,
                                                               MIMEField *cached_accept_field)
 {
-  float       q = -1.0;
-  int         a_range_length;
-  bool        wildcard_present = false;
-  float       wildcard_q       = 1.0;
-  float       min_q            = 1.0;
-  bool        match_found      = false;
-  StrList     c_values_list;
-  Str        *c_value;
-  const char *c_raw, *a_raw, *ca_raw;
-  int         a_raw_len, ca_raw_len;
+  float   q = -1.0;
+  int     a_range_length;
+  bool    wildcard_present = false;
+  float   wildcard_q       = 1.0;
+  float   min_q            = 1.0;
+  bool    match_found      = false;
+  StrList c_values_list;
+  Str    *c_value;
 
   // Bug 2393700 prefer exact matches
   if (accept_field && cached_accept_field) {
-    a_raw  = accept_field->value_get(&a_raw_len);
-    ca_raw = cached_accept_field->value_get(&ca_raw_len);
-    if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
+    auto a_raw{accept_field->value_get()};
+    auto ca_raw{cached_accept_field->value_get()};
+    if (a_raw.data() && ca_raw.data() && a_raw == ca_raw) {
       Dbg(dbg_ctl_http_alternate, "Exact match for ACCEPT LANGUAGE");
       return static_cast<float>(1.001); // slightly higher weight to this guy
     }
@@ -1175,7 +1166,7 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField *accept_
   // TODO: Should we check the return value (count) here?
   content_field->value_get_comma_list(&c_values_list);
   for (c_value = c_values_list.head; c_value; c_value = c_value->next) {
-    c_raw = c_value->str;
+    auto c_raw = c_value->str;
 
     // get Content-Language value //
     if (match_accept_content_language(c_raw, accept_field, &wildcard_present, &wildcard_q, &q, &a_range_length)) {

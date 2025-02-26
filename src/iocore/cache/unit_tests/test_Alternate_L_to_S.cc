@@ -29,6 +29,8 @@ bool reuse_existing_cache = false;
 
 #include "main.h"
 
+using namespace std::literals;
+
 class CacheAltReadAgain : public CacheTestHandler
 {
 public:
@@ -76,9 +78,8 @@ public:
     REQUIRE(rt);
     MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     REQUIRE(field);
-    int         len;
-    const char *value = field->value_get(&len);
-    REQUIRE(memcmp(value, "text/html;charset=utf-8", len) == 0);
+    auto value{field->value_get()};
+    REQUIRE(value == "text/html;charset=utf-8"sv);
   }
 };
 
@@ -156,9 +157,8 @@ private:
     REQUIRE(rt);
     MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     REQUIRE(field);
-    int         len;
-    const char *value = field->value_get(&len);
-    REQUIRE(memcmp(value, "application/x-javascript", len) == 0);
+    auto value{field->value_get()};
+    REQUIRE(value == "application/x-javascript"sv);
   }
 };
 

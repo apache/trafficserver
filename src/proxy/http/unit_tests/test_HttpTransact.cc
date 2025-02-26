@@ -22,6 +22,7 @@
  */
 
 #include <string_view>
+using namespace std::string_view_literals;
 
 #include "tscore/Diags.h"
 #include "tsutil/PostScript.h"
@@ -46,9 +47,7 @@ TEST_CASE("HttpTransact", "[http]")
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField  *field;
-      const char *str;
-      int         len;
+      MIMEField *field;
 
       struct header {
         std::string_view name;
@@ -86,44 +85,38 @@ TEST_CASE("HttpTransact", "[http]")
 
       field = hdr1.field_find("AAA", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "111", len) == 0);
+      auto str{field->value_get()};
+      CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("BBB", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "222", len) == 0);
+      str = field->value_get();
+      CHECK(str == "222"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("CCC", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "333", len) == 0);
+      str = field->value_get();
+      CHECK(str == "333"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("DDD", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "444", len) == 0);
+      str = field->value_get();
+      CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("EEE", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "555", len) == 0);
+      str = field->value_get();
+      CHECK(str == "555"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("FFF", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "666", len) == 0);
+      str = field->value_get();
+      CHECK(str == "666"sv);
       CHECK(field->has_dups() == false);
     }
 
@@ -134,9 +127,7 @@ TEST_CASE("HttpTransact", "[http]")
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField  *field;
-      const char *str;
-      int         len;
+      MIMEField *field;
 
       struct header {
         std::string_view name;
@@ -174,37 +165,32 @@ TEST_CASE("HttpTransact", "[http]")
 
       field = hdr1.field_find("AAA", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "111", len) == 0);
+      auto str{field->value_get()};
+      CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("BBB", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "555", len) == 0);
+      str = field->value_get();
+      CHECK(str == "555"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("CCC", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "333", len) == 0);
+      str = field->value_get();
+      CHECK(str == "333"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("DDD", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "444", len) == 0);
+      str = field->value_get();
+      CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("FFF", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "666", len) == 0);
+      str = field->value_get();
+      CHECK(str == "666"sv);
       CHECK(field->has_dups() == false);
     }
 
@@ -215,9 +201,7 @@ TEST_CASE("HttpTransact", "[http]")
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField  *field;
-      const char *str;
-      int         len;
+      MIMEField *field;
 
       struct header {
         std::string_view name;
@@ -255,37 +239,32 @@ TEST_CASE("HttpTransact", "[http]")
 
       field = hdr1.field_find("AAA", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "111", len) == 0);
+      auto str{field->value_get()};
+      CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("BBB", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "222", len) == 0);
+      str = field->value_get();
+      CHECK(str == "222"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("CCC", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "333", len) == 0);
+      str = field->value_get();
+      CHECK(str == "333"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("DDD", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "444", len) == 0);
+      str = field->value_get();
+      CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("EEE", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "555", len) == 0);
+      str = field->value_get();
+      CHECK(str == "555"sv);
       CHECK(field->has_dups() == true);
     }
 
@@ -296,9 +275,7 @@ TEST_CASE("HttpTransact", "[http]")
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField  *field;
-      const char *str;
-      int         len;
+      MIMEField *field;
 
       struct header {
         std::string_view name;
@@ -336,37 +313,32 @@ TEST_CASE("HttpTransact", "[http]")
 
       field = hdr1.field_find("AAA", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "111", len) == 0);
+      auto str{field->value_get()};
+      CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("BBB", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "222", len) == 0);
+      str = field->value_get();
+      CHECK(str == "222"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("CCC", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "333", len) == 0);
+      str = field->value_get();
+      CHECK(str == "333"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("DDD", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "444", len) == 0);
+      str = field->value_get();
+      CHECK(str == "444"sv);
       CHECK(field->has_dups() == true);
 
       field = hdr1.field_find("FFF", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "666", len) == 0);
+      str = field->value_get();
+      CHECK(str == "666"sv);
       CHECK(field->has_dups() == false);
     }
 
@@ -377,9 +349,7 @@ TEST_CASE("HttpTransact", "[http]")
       ts::PostScript hdr1_defer([&]() -> void { hdr1.destroy(); });
       ts::PostScript hdr2_defer([&]() -> void { hdr2.destroy(); });
 
-      MIMEField  *field;
-      const char *str;
-      int         len;
+      MIMEField *field;
 
       struct header {
         std::string_view name;
@@ -420,45 +390,39 @@ TEST_CASE("HttpTransact", "[http]")
 
       field = hdr1.field_find("AAA", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "555", len) == 0);
+      auto str{field->value_get()};
+      CHECK(str == "555"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("BBB", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "666", len) == 0);
+      str = field->value_get();
+      CHECK(str == "666"sv);
       CHECK(field->has_dups() == true);
 
       ///////////// Dup //////////////////////////
       field = field->m_next_dup;
-      str   = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "777", len) == 0);
+      str   = field->value_get();
+      CHECK(str == "777"sv);
       CHECK(field->has_dups() == false);
       ///////////////////////////////////////
 
       field = hdr1.field_find("CCC", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "888", len) == 0);
+      str = field->value_get();
+      CHECK(str == "888"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("DDD", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "444", len) == 0);
+      str = field->value_get();
+      CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
       field = hdr1.field_find("EEE", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "999", len) == 0);
+      str = field->value_get();
+      CHECK(str == "999"sv);
       CHECK(field->has_dups() == false);
     }
     SECTION("Response has superset")
@@ -468,9 +432,7 @@ TEST_CASE("HttpTransact", "[http]")
       ts::PostScript cached_headers_defer([&]() -> void { cached_headers.destroy(); });
       ts::PostScript response_headers_defer([&]() -> void { response_headers.destroy(); });
 
-      MIMEField  *field;
-      const char *str;
-      int         len;
+      MIMEField *field;
 
       struct header {
         std::string_view name;
@@ -521,68 +483,59 @@ TEST_CASE("HttpTransact", "[http]")
 
       field = cached_headers.field_find("Foo", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "111", len) == 0);
+      auto str{field->value_get()};
+      CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
       field = cached_headers.field_find("Fizz", 4);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "555", len) == 0);
+      str = field->value_get();
+      CHECK(str == "555"sv);
       CHECK(field->has_dups() == false);
 
       field = cached_headers.field_find("Bop", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "666", len) == 0);
+      str = field->value_get();
+      CHECK(str == "666"sv);
       CHECK(field->has_dups() == false);
 
       field = cached_headers.field_find("X-Foo", 5);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "aaa", len) == 0);
+      str = field->value_get();
+      CHECK(str == "aaa"sv);
       CHECK(field->has_dups() == false);
 
       field = cached_headers.field_find("Eat", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "444", len) == 0);
+      str = field->value_get();
+      CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
       field = cached_headers.field_find("Bar", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "333", len) == 0);
+      str = field->value_get();
+      CHECK(str == "333"sv);
       CHECK(field->has_dups() == true);
 
       ///////////// Dup //////////////////////////
       field = field->m_next_dup;
-      str   = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "222", len) == 0);
+      str   = field->value_get();
+      CHECK(str == "222"sv);
       CHECK(field->has_dups() == false);
       ///////////////////////////////////////
 
       field = cached_headers.field_find("Zip", 3);
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "888", len) == 0);
+      str = field->value_get();
+      CHECK(str == "888"sv);
       CHECK(field->has_dups() == true);
 
       ///////////// Dup //////////////////////////
       REQUIRE(field->m_next_dup != nullptr);
       field = field->m_next_dup;
       REQUIRE(field != nullptr);
-      str = field->value_get(&len);
-      CHECK(len == 3);
-      CHECK(strncmp(str, "999", len) == 0);
+      str = field->value_get();
+      CHECK(str == "999"sv);
       CHECK(field->has_dups() == false);
       ///////////////////////////////////////
     }
