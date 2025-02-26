@@ -28,7 +28,7 @@
 #include "tscore/runroot.h"
 
 #define PROGRAM_NAME       "traffic_logcat"
-#define MAX_LOGBUFFER_SIZE 65536
+#define MAX_LOGBUFFER_SIZE 524288 // 512KB
 
 #include <poll.h>
 
@@ -168,7 +168,7 @@ process_file(int in_fd, int out_fd)
     uint32_t byte_count = header->byte_count;
 
     if (byte_count > sizeof(buffer)) {
-      fprintf(stderr, "Buffer too large!\n");
+      fprintf(stderr, "Buffer too large! byte_count=%d\n", byte_count);
       return 1;
     }
     buffer_bytes = byte_count - header_size;
