@@ -2276,7 +2276,7 @@ TEST_CASE("IPSpace mark_bulk", "[libswoc][ipspace][mark_bulk]") {
     insert4.emplace_back(swoc::DiscreteRange<IP4Addr>{IP4Addr{"1.1.2.10"},
         IP4Addr{"1.1.2.20"}},
                          currPayload++);
-                         
+
     insert6.emplace_back(swoc::DiscreteRange<IP6Addr>{IP6Addr{"::1:10"},
             IP6Addr{"::1:20"}},
     currPayload++);

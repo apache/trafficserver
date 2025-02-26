@@ -293,7 +293,7 @@ RBNode::rebalance_after_remove(Color c,    //!< The color of the removed node
   return root;
 }
 
-RBNode * 
+RBNode *
 RBNode::buildTree(RBNode*& head, int n)
 {
   if (!head || n <= 0)
@@ -319,7 +319,7 @@ RBNode::buildTree(RBNode*& head, int n, bool isBlack)
       currNode->structure_fixup();
       return currNode;
     }
-  
+
     // Always handle the even number of nodes first because it is guaranteed to contain an n == 2 case.
     int left_n = n / 2;
     int right_n = n - left_n - 1;
@@ -327,17 +327,17 @@ RBNode::buildTree(RBNode*& head, int n, bool isBlack)
     {
         std::swap(left_n, right_n);
     }
-  
+
     // Recursively construct the left subtree.
     RBNode* leftBranch = buildTree(head, left_n, !isBlack);
-  
+
     // Assign the left branch to the current node (head).
     RBNode* currNode = head;
     currNode->_left = leftBranch;
-  
+
     // This can be nullptr if we are at the end.
     head = head->_next;
-  
+
     // If this is currently processing 2 nodes, then don't make a right branch
     // because the left branch has already been made.
     // No need to check for head == nullptr here because n > 2 inside the block.

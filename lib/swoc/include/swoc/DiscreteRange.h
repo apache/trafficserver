@@ -836,14 +836,14 @@ public:
   ~DiscreteSpace();
 
   /** Mark ranges in one operation.
-   * 
+   *
    * @param marks Vector of ranges and payloads to mark.
    * @return @a this
    */
   self_type &mark_bulk(std::vector<std::pair<range_type, PAYLOAD>> const &marks);
 
   /** Mark ranges in one operation.
-   * 
+   *
    * @param start Pointer to the first range/payload pair.
    * @param n Number of pairs.
    * @return @a this
@@ -1254,7 +1254,7 @@ DiscreteSpace<METRIC, PAYLOAD>::prepend(DiscreteSpace::Node *node, bool update_t
 template <typename METRIC, typename PAYLOAD>
 void
 DiscreteSpace<METRIC, PAYLOAD>::append(DiscreteSpace::Node *node, bool update_tree) {
-  
+
   if (update_tree) {
     if (!_root) {
       _root = node;
