@@ -91,6 +91,12 @@ public:
     return _value.empty();
   }
 
+  bool
+  has_conds() const
+  {
+    return !_cond_vals.empty();
+  }
+
 private:
   int                      _int_value   = 0;
   double                   _float_value = 0.0;
