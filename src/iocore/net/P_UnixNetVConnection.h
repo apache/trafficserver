@@ -40,7 +40,7 @@
 #include "P_NetAccept.h"
 #include "iocore/net/NetEvent.h"
 
-#if HAVE_STRUCT_MPTCP_INFO_SUBFLOWS
+#if defined(HAVE_STRUCT_MPTCP_INFO_SUBFLOWS)
 #include <linux/mptcp.h>
 #endif
 
@@ -302,7 +302,7 @@ UnixNetVConnection::set_mptcp_state()
   Dbg(_dbg_ctl_socket_mptcp, "MPTCP_INFO and struct mptcp_info defined");
   if (0 == safe_getsockopt(get_fd(), SOL_MPTCP, MPTCP_INFO, &minfo, &minfo_len)) {
     if (minfo_len > 0) {
-      Dbg(_dbg_ctl_socket_mptcp, "MPTCP socket state (remote key received): %d",
+      Dbg(_dbg_ctl_socket_mptcp, "MPTCP socket state (remote key received): %lu",
           (minfo.mptcpi_flags & MPTCP_INFO_FLAG_REMOTE_KEY_RECEIVED));
       mptcp_state = (minfo.mptcpi_flags & MPTCP_INFO_FLAG_REMOTE_KEY_RECEIVED);
       return;
