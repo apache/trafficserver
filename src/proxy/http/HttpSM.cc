@@ -65,6 +65,8 @@
 #include <algorithm>
 #include <atomic>
 
+using namespace std::literals;
+
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K
 #define MIN_CONFIG_BUFFER_SIZE_INDEX       5 // 4K
@@ -4390,16 +4392,16 @@ HttpSM::do_remap_request(bool run_inline)
     MIMEField *host_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
     if (host_field) {
       auto host_name{host_field->value_get()};
-      if (host_name.data() && host_name.length()) {
+      if (!host_name.empty()) {
         int port = -1;
         // Host header can contain port number, and if it does we need to set host and port separately to unmapped_url.
         // If header value starts with '[', the value must contain an IPv6 address, and it may contain a port number as well.
-        if (host_name[0] == '[') {         // IPv6
-          host_name = host_name.substr(1); // Skip '['
+        if (host_name.starts_with("["sv)) { // IPv6
+          host_name.remove_prefix(1);       // Skip '['
           // If header value ends with ']', the value must only contain an IPv6 address (no port number).
-          if (host_name[host_name.length() - 1] == ']') {            // Without port number
-            host_name = host_name.substr(0, host_name.length() - 1); // Exclude ']'
-          } else {                                                   // With port number
+          if (host_name.ends_with("]"sv)) { // Without port number
+            host_name.remove_suffix(1);     // Exclude ']'
+          } else {                          // With port number
             for (int idx = host_name.length() - 1; idx > 0; idx--) {
               if (host_name[idx] == ':') {
                 port      = ink_atoi(host_name.data() + idx + 1, host_name.length() - (idx + 1));

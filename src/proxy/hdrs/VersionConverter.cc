@@ -21,6 +21,10 @@
   limitations under the License.
  */
 
+#include <string_view>
+
+using namespace std::literals;
+
 #include "proxy/hdrs/VersionConverter.h"
 #include "proxy/hdrs/HTTP.h"
 #include "tsutil/LocalBuffer.h"
@@ -231,8 +235,8 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
       auto path{field->value_get()};
 
       // cut first '/' if there, because `url_print()` add '/' before printing path
-      if (path.length() >= 1 && path[0] == '/') {
-        path = path.substr(1);
+      if (path.starts_with("/"sv)) {
+        path.remove_prefix(1);
       }
 
       header.m_http->u.req.m_url_impl->set_path(header.m_heap, path.data(), path.length(), true);
