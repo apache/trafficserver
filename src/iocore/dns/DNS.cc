@@ -235,10 +235,10 @@ DNSProcessor::start(int, size_t stacksize)
   REC_EstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
   REC_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
   REC_EstablishStaticConfigInt32(dns_max_tcp_continuous_failures, "proxy.config.dns.max_tcp_continuous_failures");
-  REC_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
-  REC_ReadConfigStringAlloc(dns_local_ipv4, "proxy.config.dns.local_ipv4");
-  REC_ReadConfigStringAlloc(dns_local_ipv6, "proxy.config.dns.local_ipv6");
-  REC_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
+  RecGetRecordString_Xmalloc("proxy.config.dns.nameservers", &dns_ns_list);
+  RecGetRecordString_Xmalloc("proxy.config.dns.local_ipv4", &dns_local_ipv4);
+  RecGetRecordString_Xmalloc("proxy.config.dns.local_ipv6", &dns_local_ipv6);
+  RecGetRecordString_Xmalloc("proxy.config.dns.resolv_conf", &dns_resolv_conf);
   REC_EstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
   int dns_conn_mode_i = 0;
   REC_EstablishStaticConfigInt32(dns_conn_mode_i, "proxy.config.dns.connection_mode");

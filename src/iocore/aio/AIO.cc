@@ -200,7 +200,7 @@ ink_aio_init(ts::ModuleVersion v, [[maybe_unused]] AIOBackend backend)
   // If the caller specified auto backend, check for config to force a backend
   if (backend == AIOBackend::AIO_BACKEND_AUTO) {
     RecString aio_mode = nullptr;
-    REC_ReadConfigStringAlloc(aio_mode, "proxy.config.aio.mode");
+    RecGetRecordString_Xmalloc("proxy.config.aio.mode", &aio_mode);
     if (aio_mode) {
       if (strcasecmp(aio_mode, "auto") == 0) {
         backend = AIOBackend::AIO_BACKEND_AUTO;

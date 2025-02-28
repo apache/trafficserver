@@ -87,14 +87,14 @@ UrlRewrite::load()
   }
 
   this->ts_name = nullptr;
-  REC_ReadConfigStringAlloc(this->ts_name, "proxy.config.proxy_name");
+  RecGetRecordString_Xmalloc("proxy.config.proxy_name", &this->ts_name);
   if (this->ts_name == nullptr) {
     Warning("%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
     this->ts_name = ats_strdup("");
   }
 
   this->http_default_redirect_url = nullptr;
-  REC_ReadConfigStringAlloc(this->http_default_redirect_url, "proxy.config.http.referer_default_redirect");
+  RecGetRecordString_Xmalloc("proxy.config.http.referer_default_redirect", &this->http_default_redirect_url);
   if (this->http_default_redirect_url == nullptr) {
     Warning("%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);
     this->http_default_redirect_url = ats_strdup("http://www.apache.org");

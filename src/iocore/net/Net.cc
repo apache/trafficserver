@@ -61,14 +61,14 @@ configure_net()
   // we have no good way of dealing with that on such globals I think?
   RecString ccp;
 
-  REC_ReadConfigStringAlloc(ccp, "proxy.config.net.tcp_congestion_control_in");
+  RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_in", &ccp);
   if (ccp && *ccp != '\0') {
     net_ccp_in = ccp;
   } else {
     ats_free(ccp);
   }
 
-  REC_ReadConfigStringAlloc(ccp, "proxy.config.net.tcp_congestion_control_out");
+  RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_out", &ccp);
   if (ccp && *ccp != '\0') {
     net_ccp_out = ccp;
   } else {

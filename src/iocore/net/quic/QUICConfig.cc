@@ -111,21 +111,21 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_quantum_readiness_test_enabled_in,
                                   "proxy.config.quic.server.quantum_readiness_test_enabled");
 
-  REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
-  REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
-  REC_ReadConfigStringAlloc(this->_client_session_file, "proxy.config.quic.client.session_file");
+  RecGetRecordString_Xmalloc("proxy.config.quic.server.supported_groups", &this->_server_supported_groups);
+  RecGetRecordString_Xmalloc("proxy.config.quic.client.supported_groups", &this->_client_supported_groups);
+  RecGetRecordString_Xmalloc("proxy.config.quic.client.session_file", &this->_client_session_file);
 
   // Qlog
-  REC_ReadConfigStringAlloc(this->_qlog_file_base_name, "proxy.config.quic.qlog.file_base");
+  RecGetRecordString_Xmalloc("proxy.config.quic.qlog.file_base", &this->_qlog_file_base_name);
 
   // Transport Parameters
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
-  REC_ReadConfigStringAlloc(this->_preferred_address_ipv4, "proxy.config.quic.preferred_address_ipv4");
+  RecGetRecordString_Xmalloc("proxy.config.quic.preferred_address_ipv4", &this->_preferred_address_ipv4);
   if (this->_preferred_address_ipv4) {
     ats_ip_pton(this->_preferred_address_ipv4, &this->_preferred_endpoint_ipv4);
   }
-  REC_ReadConfigStringAlloc(this->_preferred_address_ipv6, "proxy.config.quic.preferred_address_ipv6");
+  RecGetRecordString_Xmalloc("proxy.config.quic.preferred_address_ipv6", &this->_preferred_address_ipv6);
   if (this->_preferred_address_ipv6) {
     ats_ip_pton(this->_preferred_address_ipv6, &this->_preferred_endpoint_ipv6);
   }

@@ -83,7 +83,7 @@ ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_p
   char *default_val = nullptr;
 
   // Handle default parent
-  REC_ReadConfigStringAlloc(default_val, default_var);
+  RecGetRecordString_Xmalloc(default_var, &default_val);
   DefaultParent = createDefaultParent(default_val);
   ats_free(default_val);
 }
@@ -970,7 +970,7 @@ SocksServerConfig::reconfigure()
   ink_assert(params != nullptr);
 
   // Handle default parent
-  REC_ReadConfigStringAlloc(default_val, "proxy.config.socks.default_servers");
+  RecGetRecordString_Xmalloc("proxy.config.socks.default_servers", &default_val);
   params->DefaultParent = createDefaultParent(default_val);
   ats_free(default_val);
 

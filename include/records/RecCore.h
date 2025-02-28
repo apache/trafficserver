@@ -199,8 +199,6 @@ void RecConfigWarnIfUnregistered();
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-#define REC_ReadConfigStringAlloc(_var, _config_var_name) RecGetRecordString_Xmalloc(_config_var_name, (RecString *)&_var)
-
 #define REC_ReadConfigString(_var, _config_var_name, _len) RecGetRecordString(_config_var_name, _var, _len)
 
 #define REC_RegisterConfigUpdateFunc(_config_var_name, func, flag) RecRegisterConfigUpdateCb(_config_var_name, func, flag)
