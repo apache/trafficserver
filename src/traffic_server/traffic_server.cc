@@ -1931,7 +1931,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   ats_scoped_str user(MAX_LOGIN + 1);
 
   *user        = '\0';
-  admin_user_p = ((REC_ERR_OKAY == REC_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) && (*user != '\0') &&
+  admin_user_p = ((REC_ERR_OKAY == RecGetRecordString("proxy.config.admin.user_id", user, MAX_LOGIN)) && (*user != '\0') &&
                   (0 != strcmp(user, "#-1")));
 
   // Set up crash logging. We need to do this while we are still privileged so that the crash
@@ -1975,7 +1975,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   main_thread->set_specific();
 
   // Re-initialize diagsConfig based on records.yaml configuration
-  REC_ReadConfigString(diags_log_filename, "proxy.config.diags.logfile.filename", sizeof(diags_log_filename));
+  RecGetRecordString("proxy.config.diags.logfile.filename", diags_log_filename, sizeof(diags_log_filename));
   if (strnlen(diags_log_filename, sizeof(diags_log_filename)) == 0) {
     strncpy(diags_log_filename, DEFAULT_DIAGS_LOG_FILENAME, sizeof(diags_log_filename));
   }

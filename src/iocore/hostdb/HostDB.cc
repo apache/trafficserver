@@ -1377,7 +1377,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     bool update_p = false; // do we need to reparse the file and update?
     char path[PATH_NAME_MAX];
 
-    REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
+    RecGetRecordString("proxy.config.hostdb.host_file.path", path, sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path.string(), path)) {
       Dbg(dbg_ctl_hostdb, "%s",
           swoc::bwprint(dbg, R"(Updating hosts file from "{}" to "{}")", hostdb_hostfile_path.view(), swoc::bwf::FirstOf(path, ""))
