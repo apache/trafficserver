@@ -58,7 +58,7 @@ parsePluginDynamicReloadConfig()
 {
   int int_plugin_dynamic_reload_mode;
 
-  REC_ReadConfigInteger(int_plugin_dynamic_reload_mode, "proxy.config.plugin.dynamic_reload_mode");
+  RecGetRecordIntOrZero("proxy.config.plugin.dynamic_reload_mode", &int_plugin_dynamic_reload_mode);
   plugin_dynamic_reload_mode = static_cast<PluginDynamicReloadMode>(int_plugin_dynamic_reload_mode);
 
   if (plugin_dynamic_reload_mode < 0 || plugin_dynamic_reload_mode >= PluginDynamicReloadMode::RELOAD_COUNT) {
@@ -158,7 +158,7 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
   // change the effective user to root
   {
     uint32_t elevate_access = 0;
-    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    RecGetRecordIntOrZero("proxy.config.plugin.load_elevated", &elevate_access);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     void       *handle, *initptr = nullptr;

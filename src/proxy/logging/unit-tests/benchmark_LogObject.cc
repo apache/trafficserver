@@ -106,7 +106,7 @@ TEST_CASE("LogObject", "[proxy/logging]")
   RecProcessInit();
 
   size_t stacksize;
-  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+  RecGetRecordIntOrZero("proxy.config.thread.default.stacksize", &stacksize);
   eventProcessor.start(10, stacksize);
 
   pmgmt = new ProcessManager(false);

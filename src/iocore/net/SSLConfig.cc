@@ -275,7 +275,7 @@ SSLConfigParams::initialize()
   //+++++++++++++++++++++++++ Server part +++++++++++++++++++++++++++++++++
   verify_depth = 7;
 
-  RecGetRecordInteger("proxy.config.ssl.client.certification_level", &clientCertLevel);
+  RecGetRecordIntOrZero("proxy.config.ssl.client.certification_level", &clientCertLevel);
   REC_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
   REC_ReadConfigStringAlloc(client_cipherSuite, "proxy.config.ssl.client.cipher_suite");
   REC_ReadConfigStringAlloc(server_tls13_cipher_suites, "proxy.config.ssl.server.TLSv1_3.cipher_suites");
@@ -285,10 +285,10 @@ SSLConfigParams::initialize()
 
   int option = 0;
 
-  REC_ReadConfigInteger(client_tls_ver_min, "proxy.config.ssl.client.version.min");
-  REC_ReadConfigInteger(client_tls_ver_max, "proxy.config.ssl.client.version.max");
+  RecGetRecordIntOrZero("proxy.config.ssl.client.version.min", &client_tls_ver_min);
+  RecGetRecordIntOrZero("proxy.config.ssl.client.version.max", &client_tls_ver_max);
   if (client_tls_ver_min < 0 || client_tls_ver_max < 0) {
-    REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1");
+    RecGetRecordIntOrZero("proxy.config.ssl.client.TLSv1", &option);
     if (!option) {
       ssl_client_ctx_options |= SSL_OP_NO_TLSv1;
     } else {
@@ -297,7 +297,7 @@ SSLConfigParams::initialize()
               "proxy.config.ssl.client.version.max instead.");
     }
 
-    REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_1");
+    RecGetRecordIntOrZero("proxy.config.ssl.client.TLSv1_1", &option);
     if (!option) {
       ssl_client_ctx_options |= SSL_OP_NO_TLSv1_1;
     } else {
@@ -306,7 +306,7 @@ SSLConfigParams::initialize()
               "proxy.config.ssl.client.version.max instead.");
     }
 
-    REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_2");
+    RecGetRecordIntOrZero("proxy.config.ssl.client.TLSv1_2", &option);
     if (!option) {
       ssl_client_ctx_options |= SSL_OP_NO_TLSv1_2;
       // This is enabled by default. It's used if it's disabled.
@@ -315,7 +315,7 @@ SSLConfigParams::initialize()
     }
 
 #ifdef SSL_OP_NO_TLSv1_3
-    REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_3.enabled");
+    RecGetRecordIntOrZero("proxy.config.ssl.client.TLSv1_3.enabled", &option);
     if (!option) {
       ssl_client_ctx_options |= SSL_OP_NO_TLSv1_3;
       // This is enabled by default. It's used if it's disabled.
@@ -325,10 +325,10 @@ SSLConfigParams::initialize()
 #endif
   }
 
-  REC_ReadConfigInteger(server_tls_ver_min, "proxy.config.ssl.server.version.min");
-  REC_ReadConfigInteger(server_tls_ver_max, "proxy.config.ssl.server.version.max");
+  RecGetRecordIntOrZero("proxy.config.ssl.server.version.min", &server_tls_ver_min);
+  RecGetRecordIntOrZero("proxy.config.ssl.server.version.max", &server_tls_ver_max);
   if (server_tls_ver_min < 0 || server_tls_ver_max < 0) {
-    REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1");
+    RecGetRecordIntOrZero("proxy.config.ssl.TLSv1", &option);
     if (!option) {
       ssl_ctx_options |= SSL_OP_NO_TLSv1;
     } else {
@@ -337,7 +337,7 @@ SSLConfigParams::initialize()
               "proxy.config.ssl.client.version.max instead.");
     }
 
-    REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_1");
+    RecGetRecordIntOrZero("proxy.config.ssl.TLSv1_1", &option);
     if (!option) {
       ssl_ctx_options |= SSL_OP_NO_TLSv1_1;
     } else {
@@ -346,7 +346,7 @@ SSLConfigParams::initialize()
               "proxy.config.ssl.client.version.max instead.");
     }
 
-    REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_2");
+    RecGetRecordIntOrZero("proxy.config.ssl.TLSv1_2", &option);
     if (!option) {
       ssl_ctx_options |= SSL_OP_NO_TLSv1_2;
       // This is enabled by default. It's used if it's disabled.
@@ -355,7 +355,7 @@ SSLConfigParams::initialize()
     }
 
 #ifdef SSL_OP_NO_TLSv1_3
-    REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_3.enabled");
+    RecGetRecordIntOrZero("proxy.config.ssl.TLSv1_3.enabled", &option);
     if (!option) {
       ssl_ctx_options |= SSL_OP_NO_TLSv1_3;
       // This is enabled by default. It's used if it's disabled.
@@ -376,14 +376,14 @@ SSLConfigParams::initialize()
   }
 
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
-  REC_ReadConfigInteger(option, "proxy.config.ssl.server.honor_cipher_order");
+  RecGetRecordIntOrZero("proxy.config.ssl.server.honor_cipher_order", &option);
   if (option) {
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
   }
 #endif
 
 #ifdef SSL_OP_PRIORITIZE_CHACHA
-  REC_ReadConfigInteger(option, "proxy.config.ssl.server.prioritize_chacha");
+  RecGetRecordIntOrZero("proxy.config.ssl.server.prioritize_chacha", &option);
   if (option) {
     ssl_ctx_options |= SSL_OP_PRIORITIZE_CHACHA;
   }
@@ -418,8 +418,8 @@ SSLConfigParams::initialize()
   ssl_client_ctx_options |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
 #endif
 
-  REC_ReadConfigInteger(server_max_early_data, "proxy.config.ssl.server.max_early_data");
-  RecGetRecordInteger("proxy.config.ssl.server.allow_early_data_params", &server_allow_early_data_params);
+  RecGetRecordIntOrZero("proxy.config.ssl.server.max_early_data", &server_max_early_data);
+  RecGetRecordIntOrZero("proxy.config.ssl.server.allow_early_data_params", &server_allow_early_data_params);
 
   // we keep it unless "server_max_early_data" is higher.
   server_recv_max_early_data = std::max(server_max_early_data, TLSEarlyDataSupport::DEFAULT_MAX_EARLY_DATA_SIZE);
@@ -430,7 +430,7 @@ SSLConfigParams::initialize()
   ats_free(serverCertRelativePath);
 
   configFilePath = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
-  REC_ReadConfigInteger(configExitOnLoadError, "proxy.config.ssl.server.multicert.exit_on_load_fail");
+  RecGetRecordIntOrZero("proxy.config.ssl.server.multicert.exit_on_load_fail", &configExitOnLoadError);
 
   REC_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
   set_paths_helper(ssl_server_private_key_path, nullptr, &serverKeyPathOnly, nullptr);
@@ -444,14 +444,14 @@ SSLConfigParams::initialize()
   ats_free(CACertRelativePath);
 
   // SSL session cache configurations
-  REC_ReadConfigInteger(ssl_origin_session_cache, "proxy.config.ssl.origin_session_cache.enabled");
-  REC_ReadConfigInteger(ssl_origin_session_cache_size, "proxy.config.ssl.origin_session_cache.size");
-  REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache.value");
-  REC_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
-  REC_ReadConfigInteger(ssl_session_cache_num_buckets, "proxy.config.ssl.session_cache.num_buckets");
-  REC_ReadConfigInteger(ssl_session_cache_skip_on_contention, "proxy.config.ssl.session_cache.skip_cache_on_bucket_contention");
-  REC_ReadConfigInteger(ssl_session_cache_timeout, "proxy.config.ssl.session_cache.timeout");
-  REC_ReadConfigInteger(ssl_session_cache_auto_clear, "proxy.config.ssl.session_cache.auto_clear");
+  RecGetRecordIntOrZero("proxy.config.ssl.origin_session_cache.enabled", &ssl_origin_session_cache);
+  RecGetRecordIntOrZero("proxy.config.ssl.origin_session_cache.size", &ssl_origin_session_cache_size);
+  RecGetRecordIntOrZero("proxy.config.ssl.session_cache.value", &ssl_session_cache);
+  RecGetRecordIntOrZero("proxy.config.ssl.session_cache.size", &ssl_session_cache_size);
+  RecGetRecordIntOrZero("proxy.config.ssl.session_cache.num_buckets", &ssl_session_cache_num_buckets);
+  RecGetRecordIntOrZero("proxy.config.ssl.session_cache.skip_cache_on_bucket_contention", &ssl_session_cache_skip_on_contention);
+  RecGetRecordIntOrZero("proxy.config.ssl.session_cache.timeout", &ssl_session_cache_timeout);
+  RecGetRecordIntOrZero("proxy.config.ssl.session_cache.auto_clear", &ssl_session_cache_auto_clear);
 
   SSLConfigParams::origin_session_cache      = ssl_origin_session_cache;
   SSLConfigParams::origin_session_cache_size = ssl_origin_session_cache_size;
@@ -472,9 +472,9 @@ SSLConfigParams::initialize()
   REC_EstablishStaticConfigInt32(ssl_maxrecord, "proxy.config.ssl.max_record_size");
 
   // SSL OCSP Stapling configurations
-  RecGetRecordInteger("proxy.config.ssl.ocsp.enabled", &ssl_ocsp_enabled);
+  RecGetRecordIntOrZero("proxy.config.ssl.ocsp.enabled", &ssl_ocsp_enabled);
   REC_EstablishStaticConfigInt32(ssl_ocsp_cache_timeout, "proxy.config.ssl.ocsp.cache_timeout");
-  RecGetRecordInteger("proxy.config.ssl.ocsp.request_mode", &ssl_ocsp_request_mode);
+  RecGetRecordIntOrZero("proxy.config.ssl.ocsp.request_mode", &ssl_ocsp_request_mode);
   REC_EstablishStaticConfigInt32(ssl_ocsp_request_timeout, "proxy.config.ssl.ocsp.request_timeout");
   REC_EstablishStaticConfigInt32(ssl_ocsp_update_period, "proxy.config.ssl.ocsp.update_period");
   REC_ReadConfigStringAlloc(ssl_ocsp_response_path, "proxy.config.ssl.ocsp.response.path");
@@ -482,9 +482,9 @@ SSLConfigParams::initialize()
   ats_free(ssl_ocsp_response_path);
   REC_ReadConfigStringAlloc(ssl_ocsp_user_agent, "proxy.config.http.request_via_str");
 
-  RecGetRecordInteger("proxy.config.ssl.handshake_timeout_in", &ssl_handshake_timeout_in);
+  RecGetRecordIntOrZero("proxy.config.ssl.handshake_timeout_in", &ssl_handshake_timeout_in);
 
-  RecGetRecordInteger("proxy.config.ssl.async.handshake.enabled", &async_handshake_enabled);
+  RecGetRecordIntOrZero("proxy.config.ssl.async.handshake.enabled", &async_handshake_enabled);
   REC_ReadConfigStringAlloc(engine_conf_file, "proxy.config.ssl.engine.conf_file");
 
   REC_ReadConfigStringAlloc(server_groups_list, "proxy.config.ssl.server.groups_list");
@@ -508,7 +508,7 @@ SSLConfigParams::initialize()
   ssl_client_cert_path     = nullptr;
   REC_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   REC_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
-  REC_ReadConfigInteger(clientCertExitOnLoadError, "proxy.config.ssl.client.cert.exit_on_load_fail");
+  RecGetRecordIntOrZero("proxy.config.ssl.client.cert.exit_on_load_fail", &clientCertExitOnLoadError);
   set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, &clientCertPathOnly, &clientCertPath);
   ats_free_null(ssl_client_cert_filename);
   ats_free_null(ssl_client_cert_path);
@@ -534,16 +534,16 @@ SSLConfigParams::initialize()
     TLSKeyLogger::enable_keylogging(keylog_file);
   }
 
-  RecGetRecordInteger("proxy.config.ssl.ktls.enabled", &ssl_ktls_enabled);
+  RecGetRecordIntOrZero("proxy.config.ssl.ktls.enabled", &ssl_ktls_enabled);
 #ifndef SSL_OP_ENABLE_KTLS
   if (ssl_ktls_enabled) {
     Error("kTLS configured but not supported by OpenSSL library");
   }
 #endif
 
-  RecGetRecordInteger("proxy.config.ssl.allow_client_renegotiation", &ssl_allow_client_renegotiation);
+  RecGetRecordIntOrZero("proxy.config.ssl.allow_client_renegotiation", &ssl_allow_client_renegotiation);
 
-  RecGetRecordInteger("proxy.config.ssl.misc.io.max_buffer_index", &ssl_misc_max_iobuffer_size_index);
+  RecGetRecordIntOrZero("proxy.config.ssl.misc.io.max_buffer_index", &ssl_misc_max_iobuffer_size_index);
 
   // Enable client regardless of config file settings as remap file
   // can cause HTTP layer to connect using SSL. But only if SSL
@@ -728,7 +728,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
 
   // elevate/allow file access to root read only files/certs
   uint32_t elevate_setting = 0;
-  REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+  RecGetRecordIntOrZero("proxy.config.ssl.cert.load_elevated", &elevate_setting);
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0); // destructor will demote for us
 
   if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
@@ -934,7 +934,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
     // Upon configuration, elevate file access to be able to read root-only
     // certificates. The destructor will drop privilege.
     uint32_t elevate_setting = 0;
-    REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+    RecGetRecordIntOrZero("proxy.config.ssl.cert.load_elevated", &elevate_setting);
     ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
     // Set public and private keys
     if (!client_cert.empty()) {

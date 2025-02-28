@@ -176,7 +176,7 @@ RecErrT RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 // Convenience to allow us to treat the RecInt as various integer types internally.
 // Note we must do explicit instantiation for each type actually used in RecCore.cc.
 // Also this version sets rec_int to zero if the config is not found.
-template <typename IntegerType> RecErrT RecGetRecordInteger(const char *name, IntegerType *rec_int, bool lock = true);
+template <typename IntegerType> RecErrT RecGetRecordIntOrZero(const char *name, IntegerType *rec_int, bool lock = true);
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
@@ -197,13 +197,6 @@ void RecConfigWarnIfUnregistered();
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-#define REC_ReadConfigInteger(_var, _config_var_name) \
-  do {                                                \
-    RecInt tmp = 0;                                   \
-    RecGetRecordInt(_config_var_name, &tmp);          \
-    _var = tmp;                                       \
-  } while (0)
-
 #define REC_ReadConfigFloat(_var, _config_var_name) \
   do {                                              \
     RecFloat tmp = 0;                               \

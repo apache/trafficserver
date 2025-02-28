@@ -33,8 +33,8 @@ PreWarmConfigParams::PreWarmConfigParams()
   REC_EstablishStaticConfigByte(enabled, "proxy.config.tunnel.prewarm.enabled");
 
   // RECU_DYNAMIC
-  REC_ReadConfigInteger(event_period, "proxy.config.tunnel.prewarm.event_period");
-  REC_ReadConfigInteger(algorithm, "proxy.config.tunnel.prewarm.algorithm");
+  RecGetRecordIntOrZero("proxy.config.tunnel.prewarm.event_period", &event_period);
+  RecGetRecordIntOrZero("proxy.config.tunnel.prewarm.algorithm", &algorithm);
 }
 
 ////

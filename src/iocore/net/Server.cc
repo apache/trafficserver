@@ -160,7 +160,7 @@ get_listen_backlog()
 {
   int listen_backlog;
 
-  REC_ReadConfigInteger(listen_backlog, "proxy.config.net.listen_backlog");
+  RecGetRecordIntOrZero("proxy.config.net.listen_backlog", &listen_backlog);
   return (0 < listen_backlog && listen_backlog <= 65535) ? listen_backlog : ats_tcp_somaxconn();
 }
 
@@ -226,7 +226,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   if (sock.enable_option(SOL_SOCKET, SO_REUSEADDR) < 0) {
     goto Lerror;
   }
-  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+  RecGetRecordIntOrZero("proxy.config.exec_thread.listen", &listen_per_thread);
   if (listen_per_thread == 1) {
     if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT) < 0) {
       goto Lerror;

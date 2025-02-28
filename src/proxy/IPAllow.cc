@@ -202,7 +202,7 @@ IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_conf
   : ip_allow_config_file(ats_scoped_str(RecConfigReadConfigPath(ip_allow_config_var)).get())
 {
   int matching_policy = 0;
-  REC_ReadConfigInteger(matching_policy, "proxy.config.url_remap.acl_behavior_policy");
+  RecGetRecordIntOrZero("proxy.config.url_remap.acl_behavior_policy", &matching_policy);
   if (matching_policy == 0) {
     this->_is_legacy_action_policy = true;
   } else {

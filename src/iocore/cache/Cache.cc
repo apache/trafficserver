@@ -808,7 +808,7 @@ ink_cache_init(ts::ModuleVersion v)
   REC_EstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
   REC_EstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
   REC_EstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
-  RecGetRecordInteger("proxy.config.cache.ram_cache.use_seen_filter", &cache_config_ram_cache_use_seen_filter);
+  RecGetRecordIntOrZero("proxy.config.cache.ram_cache.use_seen_filter", &cache_config_ram_cache_use_seen_filter);
 
   REC_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
@@ -858,7 +858,7 @@ ink_cache_init(ts::ModuleVersion v)
 
   ink_assert(REC_RegisterConfigUpdateFunc("proxy.config.cache.target_fragment_size", FragmentSizeUpdateCb, nullptr) !=
              REC_ERR_FAIL);
-  RecGetRecordInteger("proxy.config.cache.target_fragment_size", &cache_config_target_fragment_size);
+  RecGetRecordIntOrZero("proxy.config.cache.target_fragment_size", &cache_config_target_fragment_size);
 
   if (cache_config_target_fragment_size == 0) {
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
@@ -886,7 +886,7 @@ ink_cache_init(ts::ModuleVersion v)
 
   register_cache_stats(&cache_rsb, "proxy.process.cache");
 
-  REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
+  RecGetRecordIntOrZero("proxy.config.http.wait_for_cache", &cacheProcessor.wait_for_cache);
 
   REC_EstablishStaticConfigInt32(cache_config_persist_bad_disks, "proxy.config.cache.persist_bad_disks");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.persist_bad_disks = %d", cache_config_persist_bad_disks);

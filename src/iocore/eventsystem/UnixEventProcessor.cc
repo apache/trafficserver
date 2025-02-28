@@ -198,7 +198,7 @@ ThreadAffinityInitializer::do_alloc_stack(size_t stacksize)
 {
   size_t pagesize = ats_hugepage_enabled() ? ats_hugepage_size() : ats_pagesize();
   int    stackguard_pages;
-  REC_ReadConfigInteger(stackguard_pages, "proxy.config.thread.default.stackguard_pages");
+  RecGetRecordIntOrZero("proxy.config.thread.default.stackguard_pages", &stackguard_pages);
   ink_release_assert(stackguard_pages >= 0);
 
   size_t size       = INK_ALIGN(stacksize + stackguard_pages * pagesize, pagesize);
@@ -228,7 +228,7 @@ void
 ThreadAffinityInitializer::init()
 {
   int affinity = 1;
-  REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
+  RecGetRecordIntOrZero("proxy.config.exec_thread.affinity", &affinity);
 
   switch (affinity) {
   case 4: // assign threads to logical processing units

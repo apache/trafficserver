@@ -805,7 +805,7 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 }
 
 //-------------------------------------------------------------------------
-// RecGetRecordInteger
+// RecGetRecordIntOrZero
 //
 // Note: We have to define this template function here in a source file
 // and do explicit intantiation below for each types actually used.
@@ -816,21 +816,26 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 //-------------------------------------------------------------------------
 template <typename IntegerType>
 RecErrT
-RecGetRecordInteger(const char *name, IntegerType *rec_int, bool lock)
+RecGetRecordIntOrZero(const char *name, IntegerType *rec_int, bool lock)
 {
   RecErrT err;
   RecData data;
 
   if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
-    *rec_int = data.rec_int;
+    *rec_int = static_cast<IntegerType>(data.rec_int);
+  } else {
+    *rec_int = 0;
   }
   return err;
 }
 
-// explicit instantiation of RecGetRecordInteger
-template RecErrT RecGetRecordInteger<int>(const char *name, int *rec_int, bool lock);
-template RecErrT RecGetRecordInteger<unsigned int>(const char *name, unsigned int *rec_int, bool lock);
-template RecErrT RecGetRecordInteger<bool>(const char *name, bool *rec_int, bool lock);
+// explicit instantiation of RecGetRecordIntOrZero
+template RecErrT RecGetRecordIntOrZero<bool>(const char *name, bool *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<signed char>(const char *name, signed char *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<int>(const char *name, int *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<unsigned int>(const char *name, unsigned int *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<long>(const char *name, long *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<unsigned long>(const char *name, unsigned long *rec_int, bool lock);
 
 //-------------------------------------------------------------------------
 // RecForceInsert
