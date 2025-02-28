@@ -285,7 +285,7 @@ HttpProxyPort::loadConfig(std::vector<self> &entries)
   char *text;
   bool  found_p;
 
-  text = REC_readString(PORTS_CONFIG_NAME, &found_p);
+  found_p = RecLinkGetRecordString_Xmalloc(PORTS_CONFIG_NAME, &text) == REC_ERR_OKAY;
   if (found_p) {
     self::loadValue(entries, text);
   }
@@ -742,7 +742,8 @@ ts_host_res_global_init()
 {
   // Global configuration values.
   host_res_default_preference_order = HOST_RES_DEFAULT_PREFERENCE_ORDER;
-  char *ip_resolve                  = REC_ConfigReadString("proxy.config.hostdb.ip_resolve");
+  char *ip_resolve;
+  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.hostdb.ip_resolve", &ip_resolve);
   if (ip_resolve) {
     parse_host_res_preference(ip_resolve, host_res_default_preference_order);
   }
