@@ -184,6 +184,8 @@ RecErrT RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock
 RecErrT RecLinkGetRecordInt(const char *name, RecInt *rec_int, bool lock = true);
 // Convinience to link and get a config of int32_t type
 RecErrT RecLinkGetRecordInt32(const char *name, int32_t *rec_int, bool lock = true);
+// Convinience to link and get a config of uint32_t type
+RecErrT RecLinkGetRecordUInt32(const char *name, uint32_t *rec_int, bool lock = true);
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
@@ -204,12 +206,6 @@ void RecConfigWarnIfUnregistered();
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-#define REC_EstablishStaticConfigInt32U(_var, _config_var_name) \
-  do {                                                          \
-    RecLinkConfigUInt32(_config_var_name, &_var);               \
-    _var = (int32_t)REC_ConfigReadInteger(_config_var_name);    \
-  } while (0)
-
 /*
  * RecLinkConfigString allocates the RecString and stores the ptr to it (&var).
  * So before changing _var (the RecString) we have to free the original one.

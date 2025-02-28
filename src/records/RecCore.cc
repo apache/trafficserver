@@ -882,6 +882,21 @@ RecLinkGetRecordInt32(const char *name, int32_t *rec_int, bool lock)
 }
 
 //-------------------------------------------------------------------------
+// RecLinkGetRecordUInt32
+//-------------------------------------------------------------------------
+
+RecErrT
+RecLinkGetRecordUInt32(const char *name, uint32_t *rec_int, bool lock)
+{
+  RecErrT err = RecLinkConfigUInt32(name, rec_int);
+  if (err != REC_ERR_OKAY) {
+    return err;
+  }
+  err = RecGetRecordIntOrZero(name, rec_int, lock);
+  return err;
+}
+
+//-------------------------------------------------------------------------
 // RecForceInsert
 //-------------------------------------------------------------------------
 RecRecord *
