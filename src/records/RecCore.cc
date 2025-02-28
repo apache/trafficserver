@@ -1078,22 +1078,6 @@ RecDumpRecordsHt(RecT rec_type)
 }
 
 //-------------------------------------------------------------------------
-// Backwards compatibility. TODO: Should remove these.
-//-------------------------------------------------------------------------
-RecString
-REC_readString(const char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecString _tmp   = nullptr;
-  bool      _found = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
-}
-
-//-------------------------------------------------------------------------
 // RecConfigReadConfigDir
 //-------------------------------------------------------------------------
 std::string
