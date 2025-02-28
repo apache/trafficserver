@@ -1078,17 +1078,6 @@ RecDumpRecordsHt(RecT rec_type)
 }
 
 //-------------------------------------------------------------------------
-// Backwards compatibility ... TODO: Should eliminate these
-//-------------------------------------------------------------------------
-RecFloat
-REC_ConfigReadFloat(const char *name)
-{
-  RecFloat t = 0;
-  RecGetRecordFloat(name, &t);
-  return t;
-}
-
-//-------------------------------------------------------------------------
 // Backwards compatibility. TODO: Should remove these.
 //-------------------------------------------------------------------------
 RecInt
