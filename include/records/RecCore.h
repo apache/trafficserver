@@ -179,6 +179,8 @@ RecErrT RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 template <typename IntegerType> RecErrT RecGetRecordIntOrZero(const char *name, IntegerType *rec_int, bool lock = true);
 // Convenience to allow us to set rec_float to zero if the config is not found
 RecErrT RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock = true);
+// Convenience to allow us to set rec_string to nullptr if the config is not found
+RecErrT RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
 
 // Convinience to link and get a config of RecInt type
 RecErrT RecLinkGetRecordInt(const char *name, RecInt *rec_int, bool lock = true);
@@ -214,7 +216,6 @@ void RecConfigWarnIfUnregistered();
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-char    *REC_ConfigReadString(const char *name);
 RecFloat REC_ConfigReadFloat(const char *name);
 
 // MGMT2 Marco's -- converting lmgmt->record_data->readXXX

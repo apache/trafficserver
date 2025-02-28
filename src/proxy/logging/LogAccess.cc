@@ -183,8 +183,8 @@ int
 LogAccess::marshal_config_str_var(char *config_var, char *buf)
 {
   char *str = nullptr;
-  str       = REC_ConfigReadString(config_var);
-  int len   = LogAccess::strlen(str);
+  RecLinkGetRecordString_Xmalloc(config_var, &str);
+  int len = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
   }

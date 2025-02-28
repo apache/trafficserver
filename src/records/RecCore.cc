@@ -854,6 +854,20 @@ RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock)
 }
 
 //-------------------------------------------------------------------------
+// RecGetRecordStringOrNullptr_Xmalloc
+//-------------------------------------------------------------------------
+
+RecErrT
+RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock)
+{
+  RecErrT err = RecGetRecordString_Xmalloc(name, rec_string, lock);
+  if (err != REC_ERR_OKAY) {
+    *rec_string = nullptr;
+  }
+  return err;
+}
+
+//-------------------------------------------------------------------------
 // RecLinkGetRecordInt
 //-------------------------------------------------------------------------
 
@@ -919,11 +933,7 @@ RecLinkGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool loc
   }
   ats_free(*rec_string);
 
-  err = RecGetRecordString_Xmalloc(name, rec_string, lock);
-  if (err != REC_ERR_OKAY) {
-    *rec_string = nullptr;
-  }
-  return err;
+  return RecGetRecordStringOrNullptr_Xmalloc(name, rec_string, lock);
 }
 
 //-------------------------------------------------------------------------
@@ -1070,14 +1080,6 @@ RecDumpRecordsHt(RecT rec_type)
 //-------------------------------------------------------------------------
 // Backwards compatibility ... TODO: Should eliminate these
 //-------------------------------------------------------------------------
-char *
-REC_ConfigReadString(const char *name)
-{
-  char *t = nullptr;
-  RecGetRecordString_Xmalloc(name, static_cast<RecString *>(&t));
-  return t;
-}
-
 RecFloat
 REC_ConfigReadFloat(const char *name)
 {

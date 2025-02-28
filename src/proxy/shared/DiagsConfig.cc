@@ -307,10 +307,12 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_enabled", &diags_log_roll_enable);
 
   // Grab some perms for the actual files on disk
-  char *diags_perm         = REC_ConfigReadString("proxy.config.diags.logfile_perm");
-  char *output_perm        = REC_ConfigReadString("proxy.config.output.logfile_perm");
-  int   diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
-  int   output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
+  char *diags_perm;
+  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.diags.logfile_perm", &diags_perm);
+  char *output_perm;
+  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.output.logfile_perm", &output_perm);
+  int diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
+  int output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
 
   ats_free(diags_perm);
   ats_free(output_perm);
