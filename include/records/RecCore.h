@@ -217,7 +217,6 @@ void RecConfigWarnIfUnregistered();
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
 // MGMT2 Marco's -- converting lmgmt->record_data->readXXX
-RecInt     REC_readInteger(const char *name, bool *found, bool lock = true);
 RecFloat   REC_readFloat(char *name, bool *found, bool lock = true);
 RecCounter REC_readCounter(char *name, bool *found, bool lock = true);
 RecString  REC_readString(const char *name, bool *found, bool lock = true);
