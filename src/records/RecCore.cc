@@ -1080,19 +1080,6 @@ RecDumpRecordsHt(RecT rec_type)
 //-------------------------------------------------------------------------
 // Backwards compatibility. TODO: Should remove these.
 //-------------------------------------------------------------------------
-RecFloat
-REC_readFloat(char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecFloat _tmp   = 0.0;
-  bool     _found = (RecGetRecordFloat(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
-}
-
 RecCounter
 REC_readCounter(char *name, bool *found, bool lock)
 {
