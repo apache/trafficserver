@@ -868,40 +868,40 @@ RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, boo
 }
 
 //-------------------------------------------------------------------------
-// RecLinkGetRecordInt
+// RecEstablishStaticConfigInteger
 //-------------------------------------------------------------------------
 
 RecErrT
-RecLinkGetRecordInt(const char *name, RecInt *rec_int, bool lock)
+RecEstablishStaticConfigInteger(const char *name, RecInt *rec_int, bool lock)
 {
   RecLinkConfigInt(name, rec_int);
   return RecGetRecordIntOrZero(name, rec_int, lock);
 }
 
 //-------------------------------------------------------------------------
-// RecLinkGetRecordInt32
+// RecEstablishStaticConfigInt32
 //-------------------------------------------------------------------------
 
 RecErrT
-RecLinkGetRecordInt32(const char *name, int32_t *rec_int, bool lock)
+RecEstablishStaticConfigInt32(const char *name, int32_t *rec_int, bool lock)
 {
   RecLinkConfigInt32(name, rec_int);
   return RecGetRecordIntOrZero(name, rec_int, lock);
 }
 
 //-------------------------------------------------------------------------
-// RecLinkGetRecordUInt32
+// RecEstablishStaticConfigInt32U
 //-------------------------------------------------------------------------
 
 RecErrT
-RecLinkGetRecordUInt32(const char *name, uint32_t *rec_int, bool lock)
+RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool lock)
 {
   RecLinkConfigUInt32(name, rec_int);
   return RecGetRecordIntOrZero(name, rec_int, lock);
 }
 
 //-------------------------------------------------------------------------
-// RecLinkGetRecordString_Xmalloc
+// RecEstablishStaticConfigStringAlloc
 //-------------------------------------------------------------------------
 
 /*
@@ -913,7 +913,7 @@ RecLinkGetRecordUInt32(const char *name, uint32_t *rec_int, bool lock)
  */
 
 RecErrT
-RecLinkGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock)
+RecEstablishStaticConfigStringAlloc(const char *name, RecString *rec_string, bool lock)
 {
   if (RecLinkConfigString(name, rec_string) == REC_ERR_OKAY) {
     ats_free(*rec_string);
@@ -922,22 +922,22 @@ RecLinkGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool loc
 }
 
 //-------------------------------------------------------------------------
-// RecLinkGetRecordFloat
+// RecEstablishStaticConfigFloat
 //-------------------------------------------------------------------------
 
 RecErrT
-RecLinkGetRecordFloat(const char *name, RecFloat *rec_float, bool lock)
+RecEstablishStaticConfigFloat(const char *name, RecFloat *rec_float, bool lock)
 {
   RecLinkConfigFloat(name, rec_float);
   return RecGetRecordFloatOrZero(name, rec_float, lock);
 }
 
 //-------------------------------------------------------------------------
-// RecLinkGetRecordByte
+// RecEstablishStaticConfigByte
 //-------------------------------------------------------------------------
 
 RecErrT
-RecLinkGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
+RecEstablishStaticConfigByte(const char *name, RecByte *rec_byte, bool lock)
 {
   RecLinkConfigByte(name, rec_byte);
   return RecGetRecordIntOrZero(name, rec_byte, lock);

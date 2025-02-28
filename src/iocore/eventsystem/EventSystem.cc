@@ -40,9 +40,9 @@ ink_event_system_init(ts::ModuleVersion v)
 
   // For backwards compatibility make sure to allow thread_freelist_size
   // This needs to change in 6.0
-  RecLinkGetRecordInt32("proxy.config.allocator.thread_freelist_size", &thread_freelist_high_watermark);
+  RecEstablishStaticConfigInt32("proxy.config.allocator.thread_freelist_size", &thread_freelist_high_watermark);
 
-  RecLinkGetRecordInt32("proxy.config.allocator.thread_freelist_low_watermark", &thread_freelist_low_watermark);
+  RecEstablishStaticConfigInt32("proxy.config.allocator.thread_freelist_low_watermark", &thread_freelist_low_watermark);
 
   int   chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
   char *chunk_sizes_string;
