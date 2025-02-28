@@ -1080,19 +1080,6 @@ RecDumpRecordsHt(RecT rec_type)
 //-------------------------------------------------------------------------
 // Backwards compatibility. TODO: Should remove these.
 //-------------------------------------------------------------------------
-RecCounter
-REC_readCounter(char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecCounter _tmp   = 0;
-  bool       _found = (RecGetRecordCounter(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
-}
-
 RecString
 REC_readString(const char *name, bool *found, bool lock)
 {
