@@ -180,6 +180,9 @@ template <typename IntegerType> RecErrT RecGetRecordIntOrZero(const char *name, 
 // Convenience to allow us to set rec_float to zero if the config is not found
 RecErrT RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock = true);
 
+// Convinience to link and get a config of RecInt type
+RecErrT RecLinkGetRecordInt(const char *name, RecInt *rec_int, bool lock = true);
+
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
@@ -199,12 +202,6 @@ void RecConfigWarnIfUnregistered();
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-#define REC_EstablishStaticConfigInteger(_var, _config_var_name) \
-  do {                                                           \
-    RecLinkConfigInt(_config_var_name, &_var);                   \
-    _var = (int64_t)REC_ConfigReadInteger(_config_var_name);     \
-  } while (0)
-
 #define REC_EstablishStaticConfigInt32(_var, _config_var_name) \
   do {                                                         \
     RecLinkConfigInt32(_config_var_name, &_var);               \

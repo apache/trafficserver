@@ -852,6 +852,21 @@ RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock)
 }
 
 //-------------------------------------------------------------------------
+// RecLinkGetRecordInt
+//-------------------------------------------------------------------------
+
+RecErrT
+RecLinkGetRecordInt(const char *name, RecInt *rec_int, bool lock)
+{
+  RecErrT err = RecLinkConfigInt(name, rec_int);
+  if (err != REC_ERR_OKAY) {
+    return err;
+  }
+  err = RecGetRecordIntOrZero(name, rec_int, lock);
+  return err;
+}
+
+//-------------------------------------------------------------------------
 // RecForceInsert
 //-------------------------------------------------------------------------
 RecRecord *
