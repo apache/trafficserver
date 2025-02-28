@@ -832,6 +832,8 @@ RecGetRecordIntOrZero(const char *name, IntegerType *rec_int, bool lock)
 // explicit instantiation of RecGetRecordIntOrZero
 template RecErrT RecGetRecordIntOrZero<bool>(const char *name, bool *rec_int, bool lock);
 template RecErrT RecGetRecordIntOrZero<signed char>(const char *name, signed char *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<unsigned char>(const char *name, unsigned char *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<unsigned short>(const char *name, unsigned short *rec_int, bool lock);
 template RecErrT RecGetRecordIntOrZero<int>(const char *name, int *rec_int, bool lock);
 template RecErrT RecGetRecordIntOrZero<unsigned int>(const char *name, unsigned int *rec_int, bool lock);
 template RecErrT RecGetRecordIntOrZero<long>(const char *name, long *rec_int, bool lock);
@@ -1068,14 +1070,6 @@ RecDumpRecordsHt(RecT rec_type)
 //-------------------------------------------------------------------------
 // Backwards compatibility ... TODO: Should eliminate these
 //-------------------------------------------------------------------------
-RecInt
-REC_ConfigReadInteger(const char *name)
-{
-  RecInt t = 0;
-  RecGetRecordInt(name, &t);
-  return t;
-}
-
 char *
 REC_ConfigReadString(const char *name)
 {

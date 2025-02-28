@@ -215,7 +215,8 @@ Log::periodic_tasks(long time_now)
     Dbg(dbg_ctl_log_config, "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
-      int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
+      int val;
+      RecGetRecordIntOrZero("proxy.config.log.logging_enabled", &val);
 
       if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
         logging_mode = LOG_MODE_FULL;
@@ -1063,7 +1064,8 @@ Log::init(int flags)
     config->read_configuration_variables();
     preproc_threads = config->preproc_threads;
 
-    int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
+    int val;
+    RecGetRecordIntOrZero("proxy.config.log.logging_enabled", &val);
     if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
       logging_mode = LOG_MODE_FULL;
       Warning("proxy.config.log.logging_enabled has an invalid "
@@ -1073,7 +1075,8 @@ Log::init(int flags)
       logging_mode = static_cast<LoggingMode>(val);
     }
     // periodic task interval are set on a per instance basis
-    MgmtInt pti = REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
+    MgmtInt pti;
+    RecGetRecordIntOrZero("proxy.config.log.periodic_tasks_interval", &pti);
     if (pti <= 0) {
       Error("proxy.config.log.periodic_tasks_interval = %" PRId64 " is invalid", pti);
       Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);

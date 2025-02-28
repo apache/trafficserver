@@ -456,13 +456,13 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   std::string     config_text;
 
   socks_conf_stuff->accept_enabled = 0; // initialize it INKqa08593
-  socks_conf_stuff->socks_needed   = REC_ConfigReadInteger("proxy.config.socks.socks_needed");
+  RecGetRecordIntOrZero("proxy.config.socks.socks_needed", &socks_conf_stuff->socks_needed);
   if (!socks_conf_stuff->socks_needed) {
     Dbg(dbg_ctl_Socks, "Socks Turned Off");
     return;
   }
 
-  socks_conf_stuff->default_version = REC_ConfigReadInteger("proxy.config.socks.socks_version");
+  RecGetRecordIntOrZero("proxy.config.socks.socks_version", &socks_conf_stuff->default_version);
   Dbg(dbg_ctl_Socks, "Socks Version %d", socks_conf_stuff->default_version);
 
   if (socks_conf_stuff->default_version != 4 && socks_conf_stuff->default_version != 5) {
@@ -470,17 +470,17 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
     goto error;
   }
 
-  socks_conf_stuff->server_connect_timeout = REC_ConfigReadInteger("proxy.config.socks.server_connect_timeout");
-  socks_conf_stuff->socks_timeout          = REC_ConfigReadInteger("proxy.config.socks.socks_timeout");
+  RecGetRecordIntOrZero("proxy.config.socks.server_connect_timeout", &socks_conf_stuff->server_connect_timeout);
+  RecGetRecordIntOrZero("proxy.config.socks.socks_timeout", &socks_conf_stuff->socks_timeout);
   Dbg(dbg_ctl_Socks, "server connect timeout: %d socks response timeout %d", socks_conf_stuff->server_connect_timeout,
       socks_conf_stuff->socks_timeout);
 
-  socks_conf_stuff->per_server_connection_attempts = REC_ConfigReadInteger("proxy.config.socks.per_server_connection_attempts");
-  socks_conf_stuff->connection_attempts            = REC_ConfigReadInteger("proxy.config.socks.connection_attempts");
+  RecGetRecordIntOrZero("proxy.config.socks.per_server_connection_attempts", &socks_conf_stuff->per_server_connection_attempts);
+  RecGetRecordIntOrZero("proxy.config.socks.connection_attempts", &socks_conf_stuff->connection_attempts);
 
-  socks_conf_stuff->accept_enabled = REC_ConfigReadInteger("proxy.config.socks.accept_enabled");
-  socks_conf_stuff->accept_port    = REC_ConfigReadInteger("proxy.config.socks.accept_port");
-  socks_conf_stuff->http_port      = REC_ConfigReadInteger("proxy.config.socks.http_port");
+  RecGetRecordIntOrZero("proxy.config.socks.accept_enabled", &socks_conf_stuff->accept_enabled);
+  RecGetRecordIntOrZero("proxy.config.socks.accept_port", &socks_conf_stuff->accept_port);
+  RecGetRecordIntOrZero("proxy.config.socks.http_port", &socks_conf_stuff->http_port);
   Dbg(dbg_ctl_SocksProxy,
       "Read SocksProxy info: accept_enabled = %d "
       "accept_port = %d http_port = %d",

@@ -214,7 +214,6 @@ void RecConfigWarnIfUnregistered();
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-RecInt   REC_ConfigReadInteger(const char *name);
 char    *REC_ConfigReadString(const char *name);
 RecFloat REC_ConfigReadFloat(const char *name);
 

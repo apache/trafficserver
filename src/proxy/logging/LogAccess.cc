@@ -169,7 +169,8 @@ int
 LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
-    int64_t val = static_cast<int64_t>(REC_ConfigReadInteger(config_var));
+    int64_t val;
+    RecGetRecordIntOrZero(config_var, &val);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
