@@ -213,12 +213,6 @@ RecErrT RecGetRecordSource(const char *name, RecSourceT *source, bool lock = tru
 /// Generate a warning if any configuration name/value is not registered.
 void RecConfigWarnIfUnregistered();
 
-//-------------------------------------------------------------------------
-// Backwards Compatibility Items (REC_ prefix)
-//-------------------------------------------------------------------------
-// MGMT2 Marco's -- converting lmgmt->record_data->readXXX
-RecString REC_readString(const char *name, bool *found, bool lock = true);
-
 //------------------------------------------------------------------------
 // Set RecRecord attributes
 //------------------------------------------------------------------------
