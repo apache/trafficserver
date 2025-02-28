@@ -226,22 +226,22 @@ DNSProcessor::start(int, size_t stacksize)
   //
   // Read configuration
   //
-  RecLinkGetRecordInt32("proxy.config.dns.retries", &dns_retries);
-  RecLinkGetRecordInt32("proxy.config.dns.lookup_timeout", &dns_timeout);
-  RecLinkGetRecordInt32("proxy.config.dns.search_default_domains", &dns_search);
-  RecLinkGetRecordInt32("proxy.config.dns.failover_number", &dns_failover_number);
-  RecLinkGetRecordInt32("proxy.config.dns.failover_period", &dns_failover_period);
-  RecLinkGetRecordInt32("proxy.config.dns.max_dns_in_flight", &dns_max_dns_in_flight);
-  RecLinkGetRecordInt32("proxy.config.dns.validate_query_name", &dns_validate_qname);
-  RecLinkGetRecordInt32("proxy.config.dns.round_robin_nameservers", &dns_ns_rr);
-  RecLinkGetRecordInt32("proxy.config.dns.max_tcp_continuous_failures", &dns_max_tcp_continuous_failures);
+  RecEstablishStaticConfigInt32("proxy.config.dns.retries", &dns_retries);
+  RecEstablishStaticConfigInt32("proxy.config.dns.lookup_timeout", &dns_timeout);
+  RecEstablishStaticConfigInt32("proxy.config.dns.search_default_domains", &dns_search);
+  RecEstablishStaticConfigInt32("proxy.config.dns.failover_number", &dns_failover_number);
+  RecEstablishStaticConfigInt32("proxy.config.dns.failover_period", &dns_failover_period);
+  RecEstablishStaticConfigInt32("proxy.config.dns.max_dns_in_flight", &dns_max_dns_in_flight);
+  RecEstablishStaticConfigInt32("proxy.config.dns.validate_query_name", &dns_validate_qname);
+  RecEstablishStaticConfigInt32("proxy.config.dns.round_robin_nameservers", &dns_ns_rr);
+  RecEstablishStaticConfigInt32("proxy.config.dns.max_tcp_continuous_failures", &dns_max_tcp_continuous_failures);
   RecGetRecordString_Xmalloc("proxy.config.dns.nameservers", &dns_ns_list);
   RecGetRecordString_Xmalloc("proxy.config.dns.local_ipv4", &dns_local_ipv4);
   RecGetRecordString_Xmalloc("proxy.config.dns.local_ipv6", &dns_local_ipv6);
   RecGetRecordString_Xmalloc("proxy.config.dns.resolv_conf", &dns_resolv_conf);
-  RecLinkGetRecordInt32("proxy.config.dns.dedicated_thread", &dns_thread);
+  RecEstablishStaticConfigInt32("proxy.config.dns.dedicated_thread", &dns_thread);
   int dns_conn_mode_i = 0;
-  RecLinkGetRecordInt32("proxy.config.dns.connection_mode", &dns_conn_mode_i);
+  RecEstablishStaticConfigInt32("proxy.config.dns.connection_mode", &dns_conn_mode_i);
   dns_conn_mode = static_cast<DNS_CONN_MODE>(dns_conn_mode_i);
 
   if (dns_thread > 0) {

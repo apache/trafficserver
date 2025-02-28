@@ -183,19 +183,19 @@ RecErrT RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock
 RecErrT RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
 
 // Convinience to link and get a config of RecInt type
-RecErrT RecLinkGetRecordInt(const char *name, RecInt *rec_int, bool lock = true);
+RecErrT RecEstablishStaticConfigInteger(const char *name, RecInt *rec_int, bool lock = true);
 // Convinience to link and get a config of int32_t type
-RecErrT RecLinkGetRecordInt32(const char *name, int32_t *rec_int, bool lock = true);
+RecErrT RecEstablishStaticConfigInt32(const char *name, int32_t *rec_int, bool lock = true);
 // Convinience to link and get a config of uint32_t type
-RecErrT RecLinkGetRecordUInt32(const char *name, uint32_t *rec_int, bool lock = true);
+RecErrT RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool lock = true);
 // Convenience to link and get a config of string type
-RecErrT RecLinkGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
+RecErrT RecEstablishStaticConfigStringAlloc(const char *name, RecString *rec_string, bool lock = true);
 // Convenience to link and get a config of float type
-RecErrT RecLinkGetRecordFloat(const char *name, RecFloat *rec_float, bool lock = true);
+RecErrT RecEstablishStaticConfigFloat(const char *name, RecFloat *rec_float, bool lock = true);
 // Convenience to link and get a config of byte type
 // Allow to treat our "INT" configs as a byte type internally. Note
 // that the byte type is just a wrapper around RECD_INT.
-RecErrT RecLinkGetRecordByte(const char *name, RecByte *rec_byte, bool lock = true);
+RecErrT RecEstablishStaticConfigByte(const char *name, RecByte *rec_byte, bool lock = true);
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
