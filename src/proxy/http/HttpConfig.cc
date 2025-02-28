@@ -47,7 +47,7 @@
   RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigFloat(_ix, _n) \
-  REC_EstablishStaticConfigFloat(_ix, _n);      \
+  RecLinkGetRecordFloat(_n, &(_ix));            \
   RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigByte(_ix, _n) \

@@ -543,7 +543,7 @@ Http2::init()
   RecLinkGetRecordUInt32("proxy.config.http2.incomplete_header_timeout_in", &incomplete_header_timeout_in);
   RecLinkGetRecordUInt32("proxy.config.http2.push_diary_size", &push_diary_size);
   RecLinkGetRecordUInt32("proxy.config.http2.zombie_debug_timeout_in", &zombie_timeout_in);
-  REC_EstablishStaticConfigFloat(stream_error_rate_threshold, "proxy.config.http2.stream_error_rate_threshold");
+  RecLinkGetRecordFloat("proxy.config.http2.stream_error_rate_threshold", &stream_error_rate_threshold);
   RecLinkGetRecordUInt32("proxy.config.http2.stream_error_sampling_threshold", &stream_error_sampling_threshold);
   RecLinkGetRecordInt32("proxy.config.http2.max_settings_per_frame", &max_settings_per_frame);
   RecLinkGetRecordInt32("proxy.config.http2.max_settings_per_minute", &max_settings_per_minute);
@@ -553,12 +553,12 @@ Http2::init()
   RecLinkGetRecordInt32("proxy.config.http2.max_rst_stream_frames_per_minute", &max_rst_stream_frames_per_minute);
   RecLinkGetRecordInt32("proxy.config.http2.max_continuation_frames_per_minute", &max_continuation_frames_per_minute);
   RecLinkGetRecordInt32("proxy.config.http2.max_empty_frames_per_minute", &max_empty_frames_per_minute);
-  REC_EstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
+  RecLinkGetRecordFloat("proxy.config.http2.min_avg_window_update", &min_avg_window_update);
   RecLinkGetRecordUInt32("proxy.config.http2.connection.slow.log.threshold", &con_slow_log_threshold);
   RecLinkGetRecordUInt32("proxy.config.http2.stream.slow.log.threshold", &stream_slow_log_threshold);
   RecLinkGetRecordUInt32("proxy.config.http2.header_table_size_limit", &header_table_size_limit);
   RecLinkGetRecordUInt32("proxy.config.http2.write_buffer_block_size", &write_buffer_block_size);
-  REC_EstablishStaticConfigFloat(write_size_threshold, "proxy.config.http2.write_size_threshold");
+  RecLinkGetRecordFloat("proxy.config.http2.write_size_threshold", &write_size_threshold);
   RecLinkGetRecordUInt32("proxy.config.http2.write_time_threshold", &write_time_threshold);
   RecLinkGetRecordUInt32("proxy.config.http2.default_buffer_water_mark", &buffer_water_mark);
 

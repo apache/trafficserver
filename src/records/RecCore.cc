@@ -925,6 +925,20 @@ RecLinkGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool loc
 }
 
 //-------------------------------------------------------------------------
+// RecLinkGetRecordFloat
+//-------------------------------------------------------------------------
+
+RecErrT
+RecLinkGetRecordFloat(const char *name, RecFloat *rec_float, bool lock)
+{
+  RecErrT err = RecLinkConfigFloat(name, rec_float);
+  if (err != REC_ERR_OKAY) {
+    return err;
+  }
+  return RecGetRecordFloatOrZero(name, rec_float, lock);
+}
+
+//-------------------------------------------------------------------------
 // RecForceInsert
 //-------------------------------------------------------------------------
 RecRecord *
