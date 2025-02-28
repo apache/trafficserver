@@ -173,6 +173,11 @@ RecErrT RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock = true);
 // Convenience to allow us to treat the RecInt as a bool internally
 RecErrT RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 
+// Convenience to allow us to treat the RecInt as various integer types internally.
+// Note we must do explicit instantiation for each type actually used in RecCore.cc.
+// Also this version sets rec_int to zero if the config is not found.
+template <typename IntegerType> RecErrT RecGetRecordInteger(const char *name, IntegerType *rec_int, bool lock = true);
+
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------

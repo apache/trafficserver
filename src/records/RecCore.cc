@@ -805,6 +805,33 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 }
 
 //-------------------------------------------------------------------------
+// RecGetRecordInteger
+//
+// Note: We have to define this template function here in a source file
+// and do explicit intantiation below for each types actually used.
+//
+// Usually a template function is defined in a header file.
+// However we cannot do so since it depends on RecGetRecord_Xmalloc
+// which depends on the global variable g_records_ht.
+//-------------------------------------------------------------------------
+template <typename IntegerType>
+RecErrT
+RecGetRecordInteger(const char *name, IntegerType *rec_int, bool lock)
+{
+  RecErrT err;
+  RecData data;
+
+  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
+    *rec_int = data.rec_int;
+  }
+  return err;
+}
+
+// explicit instantiation of RecGetRecordInteger
+template RecErrT RecGetRecordInteger<int>(const char *name, int *rec_int, bool lock);
+template RecErrT RecGetRecordInteger<bool>(const char *name, bool *rec_int, bool lock);
+
+//-------------------------------------------------------------------------
 // RecForceInsert
 //-------------------------------------------------------------------------
 RecRecord *
