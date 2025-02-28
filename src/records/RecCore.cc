@@ -897,6 +897,34 @@ RecLinkGetRecordUInt32(const char *name, uint32_t *rec_int, bool lock)
 }
 
 //-------------------------------------------------------------------------
+// RecLinkGetRecordString_Xmalloc
+//-------------------------------------------------------------------------
+
+/*
+ * RecLinkConfigString allocates the RecString and stores the ptr to it (&var).
+ * So before changing _var (the RecString) we have to free the original one.
+ * Really, we somehow need to know whether RecLinkConfigString allocated _var.
+ * For now, we're using the return value to indicate this, even though it's
+ * not always the case.  If we're wrong, we'll leak the RecString.
+ */
+
+RecErrT
+RecLinkGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock)
+{
+  RecErrT err = RecLinkConfigString(name, rec_string);
+  if (err != REC_ERR_OKAY) {
+    return err;
+  }
+  ats_free(*rec_string);
+
+  err = RecGetRecordString_Xmalloc(name, rec_string, lock);
+  if (err != REC_ERR_OKAY) {
+    *rec_string = nullptr;
+  }
+  return err;
+}
+
+//-------------------------------------------------------------------------
 // RecForceInsert
 //-------------------------------------------------------------------------
 RecRecord *

@@ -39,7 +39,7 @@
 #include "proxy/http/HttpSessionManager.h"
 
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \
-  REC_EstablishStaticConfigStringAlloc(_ix, _n);      \
+  RecLinkGetRecordString_Xmalloc(_n, &(_ix));         \
   RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigLongLong(_ix, _n) \

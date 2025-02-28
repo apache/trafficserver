@@ -186,6 +186,8 @@ RecErrT RecLinkGetRecordInt(const char *name, RecInt *rec_int, bool lock = true)
 RecErrT RecLinkGetRecordInt32(const char *name, int32_t *rec_int, bool lock = true);
 // Convinience to link and get a config of uint32_t type
 RecErrT RecLinkGetRecordUInt32(const char *name, uint32_t *rec_int, bool lock = true);
+// Convenience to link and get a config of string type
+RecErrT RecLinkGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
@@ -206,20 +208,6 @@ void RecConfigWarnIfUnregistered();
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-/*
- * RecLinkConfigString allocates the RecString and stores the ptr to it (&var).
- * So before changing _var (the RecString) we have to free the original one.
- * Really, we somehow need to know whether RecLinkConfigString allocated _var.
- * For now, we're using the return value to indicate this, even though it's
- * not always the case.  If we're wrong, we'll leak the RecString.
- */
-#define REC_EstablishStaticConfigStringAlloc(_var, _config_var_name)  \
-  do {                                                                \
-    if (RecLinkConfigString(_config_var_name, &_var) == REC_ERR_OKAY) \
-      ats_free(_var);                                                 \
-    _var = (RecString)REC_ConfigReadString(_config_var_name);         \
-  } while (0)
-
 #define REC_EstablishStaticConfigFloat(_var, _config_var_name) \
   do {                                                         \
     RecLinkConfigFloat(_config_var_name, &_var);               \
