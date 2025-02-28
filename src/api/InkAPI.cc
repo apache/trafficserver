@@ -1613,7 +1613,9 @@ TSMimeFieldValueGet(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc field_obj, int idx, 
   if (idx >= 0) {
     return mime_field_value_get_comma_val(handle->field_ptr, value_len_ptr, idx);
   } else {
-    return handle->field_ptr->value_get(value_len_ptr);
+    auto value{handle->field_ptr->value_get()};
+    *value_len_ptr = static_cast<int>(value.length());
+    return value.data();
   }
 }
 
@@ -2030,7 +2032,9 @@ TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length)
   sdk_assert(sdk_sanity_check_null_ptr((void *)length) == TS_SUCCESS);
 
   MIMEFieldSDKHandle *handle = reinterpret_cast<MIMEFieldSDKHandle *>(field);
-  return handle->field_ptr->name_get(length);
+  auto                name{handle->field_ptr->name_get()};
+  *length = static_cast<int>(name.length());
+  return name.data();
 }
 
 TSReturnCode

@@ -366,14 +366,12 @@ QPACK::_encode_prefix(uint16_t largest_reference, uint16_t base_index, IOBufferB
 int
 QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock *compressed_header, uint16_t &referred_index)
 {
-  int         name_len;
-  const char *name         = field.name_get(&name_len);
-  char       *lowered_name = this->_arena.str_store(name, name_len);
-  for (int i = 0; i < name_len; i++) {
+  auto  name{field.name_get()};
+  char *lowered_name = this->_arena.str_store(name.data(), name.length());
+  for (size_t i = 0; i < name.length(); i++) {
     lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
   }
-  int         value_len;
-  const char *value = field.value_get(&value_len);
+  auto value{field.value_get()};
 
   // TODO Set never_index flag on/off according to encoding headers
   bool never_index = false;
@@ -381,9 +379,9 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
   // Find from tables, and insert / duplicate a entry prior to encode it
   XpackLookupResult lookup_result_static;
   XpackLookupResult lookup_result_dynamic;
-  lookup_result_static = StaticTable::lookup(lowered_name, name_len, value, value_len);
+  lookup_result_static = StaticTable::lookup(lowered_name, name.length(), value.data(), value.length());
   if (lookup_result_static.match_type != XpackLookupResult::MatchType::EXACT) {
-    lookup_result_dynamic = this->_dynamic_table.lookup(lowered_name, name_len, value, value_len);
+    lookup_result_dynamic = this->_dynamic_table.lookup(lowered_name, name.length(), value.data(), value.length());
     if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::EXACT) {
       if (this->_dynamic_table.should_duplicate(lookup_result_dynamic.index)) {
         // Duplicate an entry and use the new entry
@@ -400,11 +398,11 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
         // Name in static table is always available. Do nothing.
       } else {
         // Insert both the name and the value
-        lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name_len, value, value_len);
+        lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name.length(), value.data(), value.length());
         if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
-          this->_write_insert_with_name_ref(lookup_result_static.index, false, value, value_len);
+          this->_write_insert_with_name_ref(lookup_result_static.index, false, value.data(), value.length());
           QPACKDebug("Wrote Insert With Name Ref: index=%u, dynamic_table=%d value=%.*s", lookup_result_static.index, false,
-                     value_len, value);
+                     static_cast<int>(value.length()), value.data());
         }
       }
     } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::NAME) {
@@ -432,27 +430,29 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
         } else {
           // Insert both the name and the value
           uint16_t current_index = lookup_result_dynamic.index;
-          lookup_result_dynamic  = this->_dynamic_table.insert_entry(lowered_name, name_len, value, value_len);
+          lookup_result_dynamic  = this->_dynamic_table.insert_entry(lowered_name, name.length(), value.data(), value.length());
           if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
-            this->_write_insert_with_name_ref(current_index, true, value, value_len);
-            QPACKDebug("Wrote Insert With Name Ref: index=%u, dynamic_table=%d, value=%.*s", current_index, true, value_len, value);
+            this->_write_insert_with_name_ref(current_index, true, value.data(), value.length());
+            QPACKDebug("Wrote Insert With Name Ref: index=%u, dynamic_table=%d, value=%.*s", current_index, true,
+                       static_cast<int>(value.length()), value.data());
           }
         }
       }
     } else {
       if (never_index) {
         // Insert only the name
-        lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name_len, "", 0);
+        lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name.length(), "", 0);
         if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
-          this->_write_insert_without_name_ref(lowered_name, name_len, "", 0);
-          QPACKDebug("Wrote Insert Without Name Ref: name=%.*s value=%.*s", name_len, lowered_name, 0, "");
+          this->_write_insert_without_name_ref(lowered_name, name.length(), "", 0);
+          QPACKDebug("Wrote Insert Without Name Ref: name=%.*s value=%.*s", static_cast<int>(name.length()), lowered_name, 0, "");
         }
       } else {
         // Insert both the name and the value
-        lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name_len, value, value_len);
+        lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name.length(), value.data(), value.length());
         if (lookup_result_dynamic.match_type != XpackLookupResult::MatchType::NONE) {
-          this->_write_insert_without_name_ref(lowered_name, name_len, value, value_len);
-          QPACKDebug("Wrote Insert Without Name Ref: name=%.*s value=%.*s", name_len, lowered_name, value_len, value);
+          this->_write_insert_without_name_ref(lowered_name, name.length(), value.data(), value.length());
+          QPACKDebug("Wrote Insert Without Name Ref: name=%.*s value=%.*s", static_cast<int>(name.length()), lowered_name,
+                     static_cast<int>(value.length()), value.data());
         }
       }
     }
@@ -478,31 +478,32 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
     this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
     referred_index = lookup_result_dynamic.index;
   } else if (lookup_result_static.match_type == XpackLookupResult::MatchType::NAME) {
-    this->_encode_literal_header_field_with_name_ref(lookup_result_static.index, false, base_index, value, value_len, never_index,
-                                                     compressed_header);
+    this->_encode_literal_header_field_with_name_ref(lookup_result_static.index, false, base_index, value.data(), value.length(),
+                                                     never_index, compressed_header);
     QPACKDebug(
       "Encoded Literal Header Field With Name Ref: abs_index=%d, base_index=%d, dynamic_table=%d, value=%.*s, never_index=%d",
-      lookup_result_static.index, base_index, false, value_len, value, never_index);
+      lookup_result_static.index, base_index, false, static_cast<int>(value.length()), value.data(), never_index);
     referred_index = 0;
   } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::NAME) {
     if (lookup_result_dynamic.index <= this->_largest_known_received_index) {
-      this->_encode_literal_header_field_with_name_ref(lookup_result_dynamic.index, true, base_index, value, value_len, never_index,
-                                                       compressed_header);
+      this->_encode_literal_header_field_with_name_ref(lookup_result_dynamic.index, true, base_index, value.data(), value.length(),
+                                                       never_index, compressed_header);
       QPACKDebug(
         "Encoded Literal Header Field With Name Ref: abs_index=%d, base_index=%d, dynamic_table=%d, value=%.*s, never_index=%d",
-        lookup_result_dynamic.index, base_index, true, value_len, value, never_index);
+        lookup_result_dynamic.index, base_index, true, static_cast<int>(value.length()), value.data(), never_index);
     } else {
-      this->_encode_literal_header_field_with_postbase_name_ref(lookup_result_dynamic.index, base_index, value, value_len,
-                                                                never_index, compressed_header);
+      this->_encode_literal_header_field_with_postbase_name_ref(lookup_result_dynamic.index, base_index, value.data(),
+                                                                value.length(), never_index, compressed_header);
       QPACKDebug("Encoded Literal Header Field With Postbase Name Ref: abs_index=%d, base_index=%d, value=%.*s, never_index=%d",
-                 lookup_result_dynamic.index, base_index, value_len, value, never_index);
+                 lookup_result_dynamic.index, base_index, static_cast<int>(value.length()), value.data(), never_index);
     }
     this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
     referred_index = lookup_result_dynamic.index;
   } else {
-    this->_encode_literal_header_field_without_name_ref(lowered_name, name_len, value, value_len, never_index, compressed_header);
-    QPACKDebug("Encoded Literal Header Field Without Name Ref: name=%.*s, value=%.*s, never_index=%d", name_len, lowered_name,
-               value_len, value, never_index);
+    this->_encode_literal_header_field_without_name_ref(lowered_name, name.length(), value.data(), value.length(), never_index,
+                                                        compressed_header);
+    QPACKDebug("Encoded Literal Header Field Without Name Ref: name=%.*s, value=%.*s, never_index=%d",
+               static_cast<int>(name.length()), lowered_name, static_cast<int>(value.length()), value.data(), never_index);
   }
 
   this->_arena.str_free(lowered_name);

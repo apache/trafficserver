@@ -1216,9 +1216,8 @@ validate_hdr_host(HTTPHdrImpl *hh)
     if (host_field->has_dups()) {
       ret = PARSE_RESULT_ERROR; // can't have more than 1 host field.
     } else {
-      int              host_len = 0;
-      const char      *host_val = host_field->value_get(&host_len);
-      std::string_view addr, port, rest, host(host_val, host_len);
+      auto             host{host_field->value_get()};
+      std::string_view addr, port, rest;
       if (0 == ats_ip_parse(host, &addr, &port, &rest)) {
         if (!port.empty()) {
           if (port.size() > 5) {
@@ -1893,11 +1892,9 @@ HTTPHdr::check_hdr_implements()
   MIMEField *transfer_encode =
     mime_hdr_field_find(this->m_http->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
   if (transfer_encode) {
-    int         len;
-    const char *val;
     do {
-      val = transfer_encode->value_get(&len);
-      if (len != 7 || 0 != strncasecmp(val, "chunked", len)) {
+      auto val{transfer_encode->value_get()};
+      if (val.length() != 7 || 0 != strncasecmp(val.data(), "chunked", val.length())) {
         retval = false;
       }
       transfer_encode = transfer_encode->m_next_dup;

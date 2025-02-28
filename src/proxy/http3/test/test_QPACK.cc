@@ -222,16 +222,14 @@ output_decoded_headers(FILE *fd, HTTPHdr **headers, uint64_t n)
     fprintf(fd, "# stream %" PRIu64 "\n", i + 1);
     MIMEFieldIter field_iter;
     for (auto const &field : *header_set) {
-      int         name_len  = 0;
-      int         value_len = 0;
-      Arena       arena;
-      const char *name         = field.name_get(&name_len);
-      char       *lowered_name = arena.str_store(name, name_len);
-      for (int i = 0; i < name_len; i++) {
+      Arena arena;
+      auto  name{field.name_get()};
+      char *lowered_name = arena.str_store(name.data(), name.length());
+      for (size_t i = 0; i < name.length(); i++) {
         lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
       }
-      const char *value = field.value_get(&value_len);
-      fprintf(fd, "%.*s\t%.*s\n", name_len, lowered_name, value_len, value);
+      auto value{field.value_get()};
+      fprintf(fd, "%.*s\t%.*s\n", static_cast<int>(name.length()), lowered_name, static_cast<int>(value.length()), value.data());
     }
     fprintf(fd, "\n");
   }
