@@ -30,7 +30,7 @@
 PreWarmConfigParams::PreWarmConfigParams()
 {
   // RECU_RESTART_TS
-  REC_EstablishStaticConfigByte(enabled, "proxy.config.tunnel.prewarm.enabled");
+  RecLinkGetRecordByte("proxy.config.tunnel.prewarm.enabled", &enabled);
 
   // RECU_DYNAMIC
   RecGetRecordIntOrZero("proxy.config.tunnel.prewarm.event_period", &event_period);

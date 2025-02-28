@@ -190,6 +190,10 @@ RecErrT RecLinkGetRecordUInt32(const char *name, uint32_t *rec_int, bool lock = 
 RecErrT RecLinkGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
 // Convenience to link and get a config of float type
 RecErrT RecLinkGetRecordFloat(const char *name, RecFloat *rec_float, bool lock = true);
+// Convenience to link and get a config of byte type
+// Allow to treat our "INT" configs as a byte type internally. Note
+// that the byte type is just a wrapper around RECD_INT.
+RecErrT RecLinkGetRecordByte(const char *name, RecByte *rec_byte, bool lock = true);
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
@@ -210,14 +214,6 @@ void RecConfigWarnIfUnregistered();
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-// Allow to treat our "INT" configs as a byte type internally. Note
-// that the byte type is just a wrapper around RECD_INT.
-#define REC_EstablishStaticConfigByte(_var, _config_var_name) \
-  do {                                                        \
-    RecLinkConfigByte(_config_var_name, &_var);               \
-    _var = (RecByte)REC_ConfigReadInteger(_config_var_name);  \
-  } while (0)
-
 RecInt   REC_ConfigReadInteger(const char *name);
 char    *REC_ConfigReadString(const char *name);
 RecFloat REC_ConfigReadFloat(const char *name);

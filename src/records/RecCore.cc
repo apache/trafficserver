@@ -939,6 +939,20 @@ RecLinkGetRecordFloat(const char *name, RecFloat *rec_float, bool lock)
 }
 
 //-------------------------------------------------------------------------
+// RecLinkGetRecordByte
+//-------------------------------------------------------------------------
+
+RecErrT
+RecLinkGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
+{
+  RecErrT err = RecLinkConfigByte(name, rec_byte);
+  if (err != REC_ERR_OKAY) {
+    return err;
+  }
+  return RecGetRecordIntOrZero(name, rec_byte, lock);
+}
+
+//-------------------------------------------------------------------------
 // RecForceInsert
 //-------------------------------------------------------------------------
 RecRecord *
