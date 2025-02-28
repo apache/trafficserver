@@ -40,19 +40,19 @@
 
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \
   REC_EstablishStaticConfigStringAlloc(_ix, _n);      \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigLongLong(_ix, _n) \
-  REC_EstablishStaticConfigInteger(_ix, _n);       \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecLinkGetRecordInt(_n, &(_ix));                 \
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigFloat(_ix, _n) \
   REC_EstablishStaticConfigFloat(_ix, _n);      \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigByte(_ix, _n) \
   REC_EstablishStaticConfigByte(_ix, _n);      \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 namespace
 {

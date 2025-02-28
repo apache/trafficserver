@@ -199,8 +199,6 @@ void RecConfigWarnIfUnregistered();
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-#define REC_RegisterConfigUpdateFunc(_config_var_name, func, flag) RecRegisterConfigUpdateCb(_config_var_name, func, flag)
-
 #define REC_EstablishStaticConfigInteger(_var, _config_var_name) \
   do {                                                           \
     RecLinkConfigInt(_config_var_name, &_var);                   \

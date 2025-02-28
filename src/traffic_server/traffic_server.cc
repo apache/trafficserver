@@ -1366,7 +1366,7 @@ init_core_size()
     RecData rec_temp;
     rec_temp.rec_int = coreSize;
     set_core_size(nullptr, RECD_INT, rec_temp, nullptr);
-    found = (REC_RegisterConfigUpdateFunc("proxy.config.core_limit", set_core_size, nullptr) == REC_ERR_OKAY);
+    found = (RecRegisterConfigUpdateCb("proxy.config.core_limit", set_core_size, nullptr) == REC_ERR_OKAY);
 
     ink_assert(found);
   }
@@ -2154,7 +2154,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
   eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
-  REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
   char *p = REC_ConfigReadString("proxy.config.diags.debug.client_ip");
@@ -2162,7 +2162,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Translate string to IpAddr
     set_debug_ip(p);
   }
-  REC_RegisterConfigUpdateFunc("proxy.config.diags.debug.client_ip", update_debug_client_ip, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.diags.debug.client_ip", update_debug_client_ip, nullptr);
 
   // log initialization moved down
 

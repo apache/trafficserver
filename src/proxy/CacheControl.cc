@@ -130,7 +130,7 @@ initCacheControl()
   ink_assert(CacheControlTable == nullptr);
   reconfig_mutex    = new_ProxyMutex();
   CacheControlTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
-  REC_RegisterConfigUpdateFunc("proxy.config.cache.control.filename", cacheControlFile_CB, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.cache.control.filename", cacheControlFile_CB, nullptr);
 }
 
 // void reloadCacheControl()

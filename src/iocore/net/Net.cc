@@ -46,7 +46,7 @@ std::string_view net_ccp_out;
 static inline void
 configure_net()
 {
-  REC_RegisterConfigUpdateFunc("proxy.config.net.connections_throttle", change_net_connections_throttle, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.connections_throttle", change_net_connections_throttle, nullptr);
   RecGetRecordIntOrZero("proxy.config.net.connections_throttle", &fds_throttle);
 
   REC_EstablishStaticConfigInt32(net_retry_delay, "proxy.config.net.retry_delay");

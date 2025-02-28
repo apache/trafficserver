@@ -1082,12 +1082,12 @@ Log::init(int flags)
       periodic_tasks_interval = static_cast<uint32_t>(pti);
     }
 
-    REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
+    RecRegisterConfigUpdateCb("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
   }
 
   init_fields();
   if (!(config_flags & LOGCAT)) {
-    REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
+    RecRegisterConfigUpdateCb("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
 
     Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
     config->init();

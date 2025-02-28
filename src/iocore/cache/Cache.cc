@@ -856,8 +856,7 @@ ink_cache_init(ts::ModuleVersion v)
 
   REC_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
 
-  ink_assert(REC_RegisterConfigUpdateFunc("proxy.config.cache.target_fragment_size", FragmentSizeUpdateCb, nullptr) !=
-             REC_ERR_FAIL);
+  ink_assert(RecRegisterConfigUpdateCb("proxy.config.cache.target_fragment_size", FragmentSizeUpdateCb, nullptr) != REC_ERR_FAIL);
   RecGetRecordIntOrZero("proxy.config.cache.target_fragment_size", &cache_config_target_fragment_size);
 
   if (cache_config_target_fragment_size == 0) {
@@ -881,7 +880,7 @@ ink_cache_init(ts::ModuleVersion v)
 
   REC_EstablishStaticConfigInt32(cache_config_read_while_writer, "proxy.config.cache.enable_read_while_writer");
   cache_config_read_while_writer = validate_rww(cache_config_read_while_writer);
-  REC_RegisterConfigUpdateFunc("proxy.config.cache.enable_read_while_writer", update_cache_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.cache.enable_read_while_writer", update_cache_config, nullptr);
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
 
   register_cache_stats(&cache_rsb, "proxy.process.cache");

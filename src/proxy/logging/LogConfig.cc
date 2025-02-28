@@ -463,7 +463,7 @@ LogConfig::register_config_callbacks()
   };
 
   for (unsigned i = 0; i < countof(names); ++i) {
-    REC_RegisterConfigUpdateFunc(names[i], &LogConfig::reconfigure, nullptr);
+    RecRegisterConfigUpdateCb(names[i], &LogConfig::reconfigure, nullptr);
   }
 }
 
