@@ -829,6 +829,7 @@ RecGetRecordInteger(const char *name, IntegerType *rec_int, bool lock)
 
 // explicit instantiation of RecGetRecordInteger
 template RecErrT RecGetRecordInteger<int>(const char *name, int *rec_int, bool lock);
+template RecErrT RecGetRecordInteger<unsigned int>(const char *name, unsigned int *rec_int, bool lock);
 template RecErrT RecGetRecordInteger<bool>(const char *name, bool *rec_int, bool lock);
 
 //-------------------------------------------------------------------------

@@ -175,22 +175,22 @@ void
 NetHandler::init_for_process()
 {
   // read configuration values and setup callbacks for when they change
-  REC_ReadConfigInt32(global_config.max_connections_in, "proxy.config.net.max_connections_in");
-  REC_ReadConfigInt32(global_config.max_requests_in, "proxy.config.net.max_requests_in");
-  REC_ReadConfigInt32(global_config.inactive_threshold_in, "proxy.config.net.inactive_threshold_in");
-  REC_ReadConfigInt32(global_config.transaction_no_activity_timeout_in, "proxy.config.net.transaction_no_activity_timeout_in");
-  REC_ReadConfigInt32(global_config.keep_alive_no_activity_timeout_in, "proxy.config.net.keep_alive_no_activity_timeout_in");
-  REC_ReadConfigInt32(global_config.default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
+  RecGetRecordInteger("proxy.config.net.max_connections_in", &global_config.max_connections_in);
+  RecGetRecordInteger("proxy.config.net.max_requests_in", &global_config.max_requests_in);
+  RecGetRecordInteger("proxy.config.net.inactive_threshold_in", &global_config.inactive_threshold_in);
+  RecGetRecordInteger("proxy.config.net.transaction_no_activity_timeout_in", &global_config.transaction_no_activity_timeout_in);
+  RecGetRecordInteger("proxy.config.net.keep_alive_no_activity_timeout_in", &global_config.keep_alive_no_activity_timeout_in);
+  RecGetRecordInteger("proxy.config.net.default_inactivity_timeout", &global_config.default_inactivity_timeout);
 
   // Atomic configurations.
   {
     int32_t val = 0;
-    REC_ReadConfigInt32(val, "proxy.config.net.additional_accepts");
+    RecGetRecordInteger("proxy.config.net.additional_accepts", &val);
     additional_accepts.store(val, std::memory_order_relaxed);
   }
   {
     uint32_t val = 0;
-    REC_ReadConfigInt32(val, "proxy.config.net.per_client.max_connections_in");
+    RecGetRecordInteger("proxy.config.net.per_client.max_connections_in", &val);
     per_client_max_connections_in.store(val, std::memory_order_relaxed);
   }
 

@@ -300,14 +300,14 @@ HostDBCache::start(int flags)
   // Read configuration
   // Command line overrides manager configuration.
   //
-  REC_ReadConfigInt32(hostdb_enable, "proxy.config.hostdb.enabled");
+  RecGetRecordInteger("proxy.config.hostdb.enabled", &hostdb_enable);
 
   // Max number of items
-  REC_ReadConfigInt32(hostdb_max_count, "proxy.config.hostdb.max_count");
+  RecGetRecordInteger("proxy.config.hostdb.max_count", &hostdb_max_count);
   // max size allowed to use
   REC_ReadConfigInteger(hostdb_max_size, "proxy.config.hostdb.max_size");
   // number of partitions
-  REC_ReadConfigInt32(hostdb_partitions, "proxy.config.hostdb.partitions");
+  RecGetRecordInteger("proxy.config.hostdb.partitions", &hostdb_partitions);
 
   REC_EstablishStaticConfigInt32(hostdb_max_iobuf_index, "proxy.config.hostdb.io.max_buffer_index");
 
