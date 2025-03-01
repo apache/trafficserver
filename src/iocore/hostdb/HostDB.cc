@@ -300,16 +300,16 @@ HostDBCache::start(int flags)
   // Read configuration
   // Command line overrides manager configuration.
   //
-  REC_ReadConfigInt32(hostdb_enable, "proxy.config.hostdb.enabled");
+  RecGetRecordIntOrZero("proxy.config.hostdb.enabled", &hostdb_enable);
 
   // Max number of items
-  REC_ReadConfigInt32(hostdb_max_count, "proxy.config.hostdb.max_count");
+  RecGetRecordIntOrZero("proxy.config.hostdb.max_count", &hostdb_max_count);
   // max size allowed to use
-  REC_ReadConfigInteger(hostdb_max_size, "proxy.config.hostdb.max_size");
+  RecGetRecordIntOrZero("proxy.config.hostdb.max_size", &hostdb_max_size);
   // number of partitions
-  REC_ReadConfigInt32(hostdb_partitions, "proxy.config.hostdb.partitions");
+  RecGetRecordIntOrZero("proxy.config.hostdb.partitions", &hostdb_partitions);
 
-  REC_EstablishStaticConfigInt32(hostdb_max_iobuf_index, "proxy.config.hostdb.io.max_buffer_index");
+  RecEstablishStaticConfigInt32("proxy.config.hostdb.io.max_buffer_index", &hostdb_max_iobuf_index);
 
   if (hostdb_max_size == 0) {
     Fatal("proxy.config.hostdb.max_size must be a non-zero number");
@@ -355,23 +355,23 @@ HostDBProcessor::init()
   //
   // Register configuration callback, and establish configuration links
   //
-  REC_EstablishStaticConfigInt32(hostdb_ttl_mode, "proxy.config.hostdb.ttl_mode");
-  REC_EstablishStaticConfigInt32(hostdb_disable_reverse_lookup, "proxy.config.cache.hostdb.disable_reverse_lookup");
-  REC_EstablishStaticConfigInt32(hostdb_re_dns_on_reload, "proxy.config.hostdb.re_dns_on_reload");
-  REC_EstablishStaticConfigInt32(hostdb_migrate_on_demand, "proxy.config.hostdb.migrate_on_demand");
-  REC_EstablishStaticConfigInt32(hostdb_strict_round_robin, "proxy.config.hostdb.strict_round_robin");
-  REC_EstablishStaticConfigInt32(hostdb_timed_round_robin, "proxy.config.hostdb.timed_round_robin");
-  REC_EstablishStaticConfigInt32(hostdb_lookup_timeout, "proxy.config.hostdb.lookup_timeout");
-  REC_EstablishStaticConfigInt32U(hostdb_ip_timeout_interval, "proxy.config.hostdb.timeout");
-  REC_EstablishStaticConfigInt32U(hostdb_ip_stale_interval, "proxy.config.hostdb.verify_after");
-  REC_EstablishStaticConfigInt32U(hostdb_ip_fail_timeout_interval, "proxy.config.hostdb.fail.timeout");
-  REC_EstablishStaticConfigInt32U(hostdb_serve_stale_but_revalidate, "proxy.config.hostdb.serve_stale_for");
-  REC_EstablishStaticConfigInt32U(hostdb_round_robin_max_count, "proxy.config.hostdb.round_robin_max_count");
+  RecEstablishStaticConfigInt32("proxy.config.hostdb.ttl_mode", &hostdb_ttl_mode);
+  RecEstablishStaticConfigInt32("proxy.config.cache.hostdb.disable_reverse_lookup", &hostdb_disable_reverse_lookup);
+  RecEstablishStaticConfigInt32("proxy.config.hostdb.re_dns_on_reload", &hostdb_re_dns_on_reload);
+  RecEstablishStaticConfigInt32("proxy.config.hostdb.migrate_on_demand", &hostdb_migrate_on_demand);
+  RecEstablishStaticConfigInt32("proxy.config.hostdb.strict_round_robin", &hostdb_strict_round_robin);
+  RecEstablishStaticConfigInt32("proxy.config.hostdb.timed_round_robin", &hostdb_timed_round_robin);
+  RecEstablishStaticConfigInt32("proxy.config.hostdb.lookup_timeout", &hostdb_lookup_timeout);
+  RecEstablishStaticConfigInt32U("proxy.config.hostdb.timeout", &hostdb_ip_timeout_interval);
+  RecEstablishStaticConfigInt32U("proxy.config.hostdb.verify_after", &hostdb_ip_stale_interval);
+  RecEstablishStaticConfigInt32U("proxy.config.hostdb.fail.timeout", &hostdb_ip_fail_timeout_interval);
+  RecEstablishStaticConfigInt32U("proxy.config.hostdb.serve_stale_for", &hostdb_serve_stale_but_revalidate);
+  RecEstablishStaticConfigInt32U("proxy.config.hostdb.round_robin_max_count", &hostdb_round_robin_max_count);
   const char *interval_config = "proxy.config.hostdb.host_file.interval";
   {
     RecInt tmp_interval{};
 
-    REC_ReadConfigInteger(tmp_interval, interval_config);
+    RecGetRecordIntOrZero(interval_config, &tmp_interval);
     hostdb_hostfile_check_interval = std::chrono::seconds(tmp_interval);
   }
   RecRegisterConfigUpdateCb(
@@ -1377,7 +1377,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     bool update_p = false; // do we need to reparse the file and update?
     char path[PATH_NAME_MAX];
 
-    REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
+    RecGetRecordString("proxy.config.hostdb.host_file.path", path, sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path.string(), path)) {
       Dbg(dbg_ctl_hostdb, "%s",
           swoc::bwprint(dbg, R"(Updating hosts file from "{}" to "{}")", hostdb_hostfile_path.view(), swoc::bwf::FirstOf(path, ""))

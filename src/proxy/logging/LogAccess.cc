@@ -169,7 +169,8 @@ int
 LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
-    int64_t val = static_cast<int64_t>(REC_ConfigReadInteger(config_var));
+    int64_t val;
+    RecGetRecordIntOrZero(config_var, &val);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -182,8 +183,8 @@ int
 LogAccess::marshal_config_str_var(char *config_var, char *buf)
 {
   char *str = nullptr;
-  str       = REC_ConfigReadString(config_var);
-  int len   = LogAccess::strlen(str);
+  RecEstablishStaticConfigStringAlloc(config_var, &str);
+  int len = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
   }
@@ -253,7 +254,8 @@ LogAccess::marshal_record(char *record, char *buf)
       //
       ink_assert(max_chars > 21);
 
-      int64_t val = static_cast<int64_t>(LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
+      int64_t val = 0;
+      bool found = (LOG_INTEGER == stype ? RecGetRecordIntOrZero(record, &val) : RecGetRecordCounter(record, &val)) == REC_ERR_OKAY;
 
       if (found) {
         out_buf = int64_to_str(ascii_buf, max_chars, val, &num_chars);
@@ -269,7 +271,8 @@ LogAccess::marshal_record(char *record, char *buf)
       //
       ink_assert(sizeof(double) >= sizeof(RecFloat));
 
-      RecFloat val = REC_readFloat(record, &found);
+      RecFloat val;
+      found = RecGetRecordFloatOrZero(record, &val) == REC_ERR_OKAY;
 
       if (found) {
         // snprintf does not support "%e" in the format

@@ -31,11 +31,11 @@ int ts::Http3Config::_config_id = 0;
 void
 ts::Http3ConfigParams::initialize()
 {
-  REC_EstablishStaticConfigInt32U(this->_header_table_size, "proxy.config.http3.header_table_size");
-  REC_EstablishStaticConfigInt32U(this->_max_field_section_size, "proxy.config.http3.max_field_section_size");
-  REC_EstablishStaticConfigInt32U(this->_qpack_blocked_streams, "proxy.config.http3.qpack_blocked_streams");
-  REC_EstablishStaticConfigInt32U(this->_num_placeholders, "proxy.config.http3.num_placeholders");
-  REC_EstablishStaticConfigInt32U(this->_max_settings, "proxy.config.http3.max_settings");
+  RecEstablishStaticConfigInt32U("proxy.config.http3.header_table_size", &this->_header_table_size);
+  RecEstablishStaticConfigInt32U("proxy.config.http3.max_field_section_size", &this->_max_field_section_size);
+  RecEstablishStaticConfigInt32U("proxy.config.http3.qpack_blocked_streams", &this->_qpack_blocked_streams);
+  RecEstablishStaticConfigInt32U("proxy.config.http3.num_placeholders", &this->_num_placeholders);
+  RecEstablishStaticConfigInt32U("proxy.config.http3.max_settings", &this->_max_settings);
 }
 
 uint32_t
