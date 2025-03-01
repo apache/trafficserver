@@ -27,6 +27,7 @@
 #include <cstring>
 #include <strings.h>
 #include "tscore/ink_inet.h"
+#include "tscore/TextBuffer.h"
 #include "swoc/BufferWriter.h"
 #include <cstring>
 #include <string_view>
