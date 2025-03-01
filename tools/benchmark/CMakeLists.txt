@@ -15,7 +15,7 @@
 #
 #######################
 
-add_executable(benchmark_EventSystem benchmark_Eventsystem.cc)
+add_executable(benchmark_EventSystem benchmark_EventSystem.cc)
 target_link_libraries(benchmark_EventSystem PRIVATE catch2::catch2 ts::inkevent libswoc::libswoc)
 if(TS_USE_HWLOC)
   target_link_libraries(benchmark_EventSystem PRIVATE hwloc::hwloc)
