@@ -1,0 +1,15 @@
+#include <cripts/Preamble.hpp>
+
+do_read_response()
+{
+  borrow resp = cripts::Server::Response::Get();
+  resp["responseHeader"] = "changed";
+}
+
+do_send_response()
+{
+  borrow resp = cripts::Client::Response::Get();
+  resp["criptsResponseHeader"] = "response";
+}
+
+#include <cripts/Epilogue.hpp>
