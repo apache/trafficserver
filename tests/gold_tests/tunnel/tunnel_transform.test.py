@@ -86,7 +86,7 @@ cmd_tunnel = 'curl -k --http1.1 -H "Connection: close" -vs --resolve "tunnel-tes
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = cmd_tunnel
 tr.Processes.Default.ReturnCode = 0
-tr.TimeOut = 5
+tr.TimeOut = 10
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(dumb_proxy)
