@@ -57,7 +57,7 @@ Configuration Files
    Defines custom log file formats, filters, and processing options.
 
 :doc:`parent.config.en`
-   Configures parent proxies in hierarchical caching layouts. Will be replaced with strategies.yaml.
+   Configures parent proxies in hierarchical caching layouts. Deprecated in `TS` 10.1, and replaced with strategies.yaml in 11.
 
 :doc:`plugin.config.en`
    Control runtime loadable plugins available to |TS|, as well as their
