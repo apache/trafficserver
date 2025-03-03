@@ -1,0 +1,16 @@
+``
+> GET / HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+> 
+``
+< HTTP/1.1 200 OK
+< responseHeader: changed
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< Server: ATS/``
+< criptsResponseHeader: response
+< 
+``
