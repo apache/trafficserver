@@ -50,6 +50,7 @@ ink_event_system_init(ts::ModuleVersion v)
     // If we can't parse the string then we can't be sure of the chunk sizes so just exit
     Fatal("Failed to parse proxy.config.allocator.iobuf_chunk_sizes");
   }
+  ats_free(chunk_sizes_string);
 
   bool use_hugepages = ats_hugepage_enabled();
 
