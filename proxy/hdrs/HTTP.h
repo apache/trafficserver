@@ -480,6 +480,7 @@ public:
   mutable int m_port                   = 0;     ///< Target port.
   mutable bool m_target_cached         = false; ///< Whether host name and port are cached.
   mutable bool m_target_in_url         = false; ///< Whether host name and port are in the URL.
+  mutable bool m_100_continue_sent     = false; ///< Whether ATS sent a 100 Continue optimized response.
   mutable bool m_100_continue_required = false; ///< Whether 100_continue is in the Expect header.
   /// Set if the port was effectively specified in the header.
   /// @c true if the target (in the URL or the HOST field) also specified
