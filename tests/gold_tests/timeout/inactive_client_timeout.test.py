@@ -57,6 +57,13 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 # get applied after the request is sent.  In other words, a slow to respond server should not
 # trigger the client inactivity timeout.
 tr = Test.AddTestRun("Verify that server delay does not trigger client activity timeout.")
-tr.AddVerifierClientProcess("client", replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
+client = tr.AddVerifierClientProcess("client", replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server)
+
+client.Streams.All += Testers.ContainsExpression('x-response: 1', 'Verify that the first response is received')
+client.Streams.All += Testers.ContainsExpression('x-response: 2', 'Verify that the second response is received')
+client.Streams.All += Testers.ContainsExpression('x-response: 3', 'Verify that the third response is received')
+client.Streams.All += Testers.ContainsExpression('x-response: 4', 'Verify that the fourth response is received')
+client.Streams.All += Testers.ContainsExpression('x-response: 5', 'Verify that the fifth response is received')
+client.Streams.All += Testers.ContainsExpression('x-response: 6', 'Verify that the sixth response is received')
