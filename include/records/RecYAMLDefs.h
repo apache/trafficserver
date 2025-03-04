@@ -73,7 +73,7 @@ struct CfgNode {
 
   /// @brief Append field name in order to build up the record name.
   void
-  append_field_name() const
+  append_field_name()
   {
     if (!_legacy.record_name.empty()) {
       _legacy.record_name.append(".");

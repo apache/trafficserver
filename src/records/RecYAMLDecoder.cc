@@ -46,7 +46,7 @@ const inline std::string   RECORD_YAML_ROOT_STR{"records"};
 
 namespace detail
 {
-void                             flatten_node(CfgNode const &field, RecYAMLNodeHandler handler, swoc::Errata &errata);
+
 std::pair<RecDataT, std::string> try_deduce_type(YAML::Node const &node);
 
 // Helper class to make the code less verbose when lock is needed.
@@ -65,6 +65,43 @@ struct scoped_cond_lock {
   }
   bool _lock{false};
 };
+
+/// @brief Iterate over a node and build up the field name from it.
+///
+/// This function walks down a YAML node till it find a scalar type while building the record name, so if a node is something like
+/// this:
+///
+///   diags:
+///     debug:
+///       enabled: 0
+///
+/// this function will build up the record name "diags.debug.enabled"  and then it prepend the "proxy.config" to each name, this
+/// will be the record name already known by ATS. Every time  a scalar node is completed then the handler function will be called.
+///
+/// @param field Parent node.
+/// @param handler Scalar node function handler, called every time a scalar type is found.
+/// @param errata Holds the errors detected.
+template <typename T>
+void
+flatten_node(T &&field, RecYAMLNodeHandler handler, swoc::Errata &errata)
+
+{
+  switch (field.value_node.Type()) {
+  case YAML::NodeType::Map: {
+    field.append_field_name();
+    for (auto &&it : field.value_node) {
+      flatten_node(T{it.first, it.second, field.get_record_name()}, handler, errata);
+    }
+  } break;
+  case YAML::NodeType::Sequence:
+  case YAML::NodeType::Scalar:
+  case YAML::NodeType::Null: {
+    field.append_field_name();
+    handler(field, errata);
+  } break;
+  default:; // done
+  }
+}
 } // namespace detail
 
 void
@@ -151,7 +188,7 @@ ParseRecordsFromYAML(YAML::Node root, RecYAMLNodeHandler handler, bool lock /*fa
 
   if (auto ts = root[RECORD_YAML_ROOT_STR]; ts.size()) {
     for (auto &&n : ts) {
-      detail::flatten_node({n.first, n.second, CONFIG_RECORD_PREFIX}, handler, errata);
+      detail::flatten_node(CfgNode{n.first, n.second, CONFIG_RECORD_PREFIX}, handler, errata);
     }
   } else {
     return swoc::Errata(ERRATA_ERROR, "'{}' root key not present or no fields to read. Default values will be used",
@@ -183,41 +220,6 @@ try_deduce_type(YAML::Node const &node)
   }
   std::string text;
   return {RecDataT::RECD_NULL, swoc::bwprint(text, "Unknown tag type '{}'", tag)};
-}
-
-/// @brief Iterate over a node and build up the field name from it.
-///
-/// This function walks down a YAML node till it find a scalar type while building the record name, so if a node is something like
-/// this:
-///
-///   diags:
-///     debug:
-///       enabled: 0
-///
-/// this function will build up the record name "diags.debug.enabled"  and then it prepend the "proxy.config" to each name, this
-/// will be the record name already known by ATS. Every time  a scalar node is completed then the handler function will be called.
-///
-/// @param field Parent node.
-/// @param handler Scalar node function handler, called every time a scalar type is found.
-/// @param errata Holds the errors detected.
-void
-flatten_node(CfgNode const &field, RecYAMLNodeHandler handler, swoc::Errata &errata)
-{
-  switch (field.value_node.Type()) {
-  case YAML::NodeType::Map: {
-    field.append_field_name();
-    for (auto &it : field.value_node) {
-      flatten_node({it.first, it.second, field.get_record_name()}, handler, errata);
-    }
-  } break;
-  case YAML::NodeType::Sequence:
-  case YAML::NodeType::Scalar:
-  case YAML::NodeType::Null: {
-    field.append_field_name();
-    handler(field, errata);
-  } break;
-  default:; // done
-  }
 }
 } // namespace detail
 
