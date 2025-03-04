@@ -48,6 +48,8 @@
 #include <string_view>
 #include <cstdint>
 
+using namespace std::literals;
+
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -423,21 +425,17 @@ namespace
 // Get a string out of a MIMEField using one of its member functions, and put it into a buffer writer, terminated with a nul.
 //
 void
-marshalStr(swoc::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEField::*get_func)(int *length) const)
+marshalStr(swoc::FixedBufferWriter &bw, const MIMEField &mf, std::string_view (MIMEField::*get_func)() const)
 {
-  int         length;
-  const char *data = (mf.*get_func)(&length);
+  auto data{(mf.*get_func)()};
 
-  if (!data or (*data == '\0')) {
+  if (!data.data() or (*data.data() == '\0')) {
     // Empty string.  This is a problem, since it would result in two successive nul characters, which indicates the end of the
     // marshaled hearer.  Change the string to a single blank character.
-
-    static const char Blank[] = " ";
-    data                      = Blank;
-    length                    = 1;
+    data = " "sv;
   }
 
-  bw << std::string_view(data, length) << '\0';
+  bw << data << '\0';
 }
 
 void

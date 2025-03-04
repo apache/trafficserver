@@ -24,21 +24,19 @@
 #include "proxy/hdrs/HeaderValidator.h"
 #include "proxy/hdrs/HTTP.h"
 
+using namespace std::literals;
+
 bool
 HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, bool is_trailing_header)
 {
-  const MIMEField *field     = nullptr;
-  const char      *name      = nullptr;
-  int              name_len  = 0;
-  const char      *value     = nullptr;
-  int              value_len = 0;
+  const MIMEField *field = nullptr;
   MIMEFieldIter    iter;
   auto             method_field       = hdr.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
   bool             has_connect_method = false;
   if (method_field) {
-    int         method_len;
-    const char *method_value = method_field->value_get(&method_len);
-    has_connect_method       = method_len == HTTP_LEN_CONNECT && strncmp(HTTP_METHOD_CONNECT, method_value, HTTP_LEN_CONNECT) == 0;
+    auto method{method_field->value_get()};
+    has_connect_method =
+      method == std::string_view{HTTP_METHOD_CONNECT, static_cast<std::string_view::size_type>(HTTP_LEN_CONNECT)};
   }
   unsigned int expected_pseudo_header_count = is_response ? 1 : has_connect_method ? 2 : 4;
   unsigned int pseudo_header_count          = 0;
@@ -47,14 +45,14 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
     expected_pseudo_header_count = 0;
   }
   for (auto &field : hdr) {
-    name = field.name_get(&name_len);
+    auto name{field.name_get()};
     // Pseudo headers must appear before regular headers
-    if (name_len && name[0] == ':') {
+    if (name.length() && name[0] == ':') {
       ++pseudo_header_count;
       if (pseudo_header_count > expected_pseudo_header_count) {
         return false;
       }
-    } else if (name_len <= 0) {
+    } else if (name.length() == 0) {
       return false;
     } else {
       if (pseudo_header_count != expected_pseudo_header_count) {
@@ -75,8 +73,8 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
   // :path pseudo header MUST NOT empty for http or https URIs
   field = hdr.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
   if (field) {
-    field->value_get(&value_len);
-    if (value_len == 0) {
+    auto value{field->value_get()};
+    if (value.length() == 0) {
       return false;
     }
   }
@@ -85,8 +83,8 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
   // value other than "trailers".
   field = hdr.field_find(MIME_FIELD_TE, MIME_LEN_TE);
   if (field) {
-    value = field->value_get(&value_len);
-    if (!(value_len == 8 && memcmp(value, "trailers", 8) == 0)) {
+    auto value{field->value_get()};
+    if (value != "trailers"sv) {
       return false;
     }
   }
