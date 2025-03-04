@@ -138,8 +138,8 @@ int64_t
 ChunkedHandler::read_size()
 {
   int64_t bytes_consumed = 0;
-  bool done = false;
-  int cr    = 0;
+  bool done              = false;
+  int cr                 = 0;
 
   while (chunked_reader->is_read_avail_more_than(0) && !done) {
     const char *tmp   = chunked_reader->start();
