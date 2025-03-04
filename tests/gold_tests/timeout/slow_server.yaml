@@ -25,7 +25,6 @@ meta:
 
   blocks:
   - delayed_response: &delayed_response
-      server-response:
         delay: 3s
 
         status: 200
@@ -50,7 +49,11 @@ sessions:
         - [ Host, www.no_tls.com ]
         - [ uuid, 1 ]
 
-    <<: *delayed_response
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 1 ]
 
     proxy-response:
       status: 200
@@ -69,7 +72,11 @@ sessions:
         - [ Content-Length, 10 ]
         - [ uuid, 2 ]
 
-    <<: *delayed_response
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 2 ]
 
     proxy-response:
       status: 200
@@ -92,7 +99,11 @@ sessions:
         - [ Host, www.tls.com ]
         - [ uuid, 3 ]
 
-    <<: *delayed_response
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 3 ]
 
     proxy-response:
       status: 200
@@ -115,7 +126,11 @@ sessions:
         - [ Content-Length, 10 ]
         - [ uuid, 4 ]
 
-    <<: *delayed_response
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 4 ]
 
     proxy-response:
       status: 200
@@ -139,7 +154,11 @@ sessions:
         - [ :path, '/path/5' ]
         - [ uuid, 5 ]
 
-    <<: *delayed_response
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 5 ]
 
     proxy-response:
       status: 200
@@ -165,7 +184,11 @@ sessions:
       content:
         size: 10
 
-    <<: *delayed_response
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 6 ]
 
     proxy-response:
       status: 200

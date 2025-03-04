@@ -239,6 +239,12 @@ ProxyTransaction::get_version(HTTPHdr &hdr) const
 }
 
 bool
+ProxyTransaction::is_read_closed() const
+{
+  return false;
+}
+
+bool
 ProxyTransaction::allow_half_open() const
 {
   return false;
