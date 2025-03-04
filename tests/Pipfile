@@ -47,6 +47,7 @@ microserver = ">=1.0.8"
 
 jsonschema = "*"
 python-jose = "*"
+pyyaml ="*"
 
 flask = "==2.1.3"
 

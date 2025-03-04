@@ -25,6 +25,7 @@ fail()
 ./prepare_proxy_verifier.sh || fail "Failed to install Proxy Verifier."
 pushd $(dirname $0) > /dev/null
 export PYTHONPATH=$(pwd):$PYTHONPATH
+export PYTHONPATH=$(pwd)/gold_tests/remap:$PYTHONPATH
 ./test-env-check.sh || fail "Failed Python environment checks."
 # this is for rhel or centos systems
 echo "Environment config finished. Running AuTest..."
