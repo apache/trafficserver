@@ -53,6 +53,24 @@ try:
 except socket.gaierror:
     pass
 
+# If the hostname is set to a loopback address, use the ip command to obtain a non-loopback IP address.
+if any(ip.startswith('127.') for ip in ipv4addrs):
+    import json
+    from subprocess import check_output
+
+    data = json.loads(check_output(['ip', '-json', 'address', 'show']))
+
+    ipv4addrs = set(
+        [
+            addr["local"] for iface in data if iface["link_type"] != "loopback" for addr in iface.get("addr_info", [])
+            if addr["family"] == "inet"
+        ])
+    ipv6addrs = set(
+        [
+            addr["local"] for iface in data if iface["link_type"] != "loopback" for addr in iface.get("addr_info", [])
+            if addr["family"] == "inet6" and addr["scope"] != "link"
+        ])
+
 origin = Test.MakeOriginServer('origin', ip='0.0.0.0')
 ArbitraryTimestamp = '12345678'
 
