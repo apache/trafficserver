@@ -112,9 +112,8 @@ SCENARIO("Parsing ACL named filters", "[proxy][remap]")
       THEN("The rule uses the last action specified")
       {
         REQUIRE(remap_parse_config_bti(cpath.c_str(), &bti) == true);
-        REQUIRE(bti.rules_list != nullptr);
-        REQUIRE(bti.rules_list->next == nullptr);
-        REQUIRE(bti.rules_list->allow_flag == true);
+        REQUIRE((bti.rules_list != nullptr && bti.rules_list->next == nullptr));
+        REQUIRE((bti.rules_list != nullptr && bti.rules_list->allow_flag == true));
       }
     }
   }

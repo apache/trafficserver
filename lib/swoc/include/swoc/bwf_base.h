@@ -108,7 +108,7 @@ protected:
   bool is_sign(char c);
 
   /// Handrolled initialization the character syntactic property data.
-  static const struct Property {
+  struct Property {
     Property(); ///< Default constructor, creates initialized flag set.
     /// Flag storage, indexed by character value.
     uint8_t _data[0x100]{};
@@ -118,7 +118,13 @@ protected:
     static constexpr uint8_t UPPER_TYPE_CHAR   = 0x20; ///< Upper case flag.
     static constexpr uint8_t NUMERIC_TYPE_CHAR = 0x40; ///< Numeric output.
     static constexpr uint8_t SIGN_CHAR         = 0x80; ///< Is sign character.
-  } _prop;                                             ///< Character property map.
+  };
+  static const Property &
+  Get_Prop()
+  {
+    static const Property prop;
+    return prop;
+  } ///< Character property map.
 };
 
 /** Format string support.
@@ -474,37 +480,37 @@ extern ExternalNames& Global_Names();
 
 inline Spec::Align
 Spec::align_of(char c) {
-  return static_cast<Align>(_prop._data[static_cast<unsigned>(c)] & Property::ALIGN_MASK);
+  return static_cast<Align>(Get_Prop()._data[static_cast<unsigned>(c)] & Property::ALIGN_MASK);
 }
 
 inline bool
 Spec::is_sign(char c) {
-  return _prop._data[static_cast<unsigned>(c)] & Property::SIGN_CHAR;
+  return Get_Prop()._data[static_cast<unsigned>(c)] & Property::SIGN_CHAR;
 }
 
 inline bool
 Spec::is_type(char c) {
-  return _prop._data[static_cast<unsigned>(c)] & Property::TYPE_CHAR;
+  return Get_Prop()._data[static_cast<unsigned>(c)] & Property::TYPE_CHAR;
 }
 
 inline bool
 Spec::is_upper_case_type(char c) {
-  return _prop._data[static_cast<unsigned>(c)] & Property::UPPER_TYPE_CHAR;
+  return Get_Prop()._data[static_cast<unsigned>(c)] & Property::UPPER_TYPE_CHAR;
 }
 
 inline bool
 Spec::is_numeric_type(char c) {
-  return _prop._data[static_cast<unsigned>(c)] & Property::NUMERIC_TYPE_CHAR;
+  return Get_Prop()._data[static_cast<unsigned>(c)] & Property::NUMERIC_TYPE_CHAR;
 }
 
 inline bool
 Spec::has_numeric_type() const {
-  return _prop._data[static_cast<unsigned>(_type)] & Property::NUMERIC_TYPE_CHAR;
+  return Get_Prop()._data[static_cast<unsigned>(_type)] & Property::NUMERIC_TYPE_CHAR;
 }
 
 inline bool
 Spec::has_upper_case_type() const {
-  return _prop._data[static_cast<unsigned>(_type)] & Property::UPPER_TYPE_CHAR;
+  return Get_Prop()._data[static_cast<unsigned>(_type)] & Property::UPPER_TYPE_CHAR;
 }
 
 inline bool

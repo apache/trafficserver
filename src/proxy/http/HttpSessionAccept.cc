@@ -35,14 +35,21 @@ DbgCtl dbg_ctl_http_seq{"http_seq"};
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const     *client_ip = netvc->get_remote_addr();
+  sockaddr const     *client_ip;
   IpAllow::ACL        acl;
   ip_port_text_buffer ipb;
 
-  acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
-  if (!acl.isValid()) { // if there's no ACL, it's a hard deny.
-    Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-    return false;
+  client_ip = netvc->get_remote_addr();
+
+  if (ats_is_ip(client_ip)) {
+    acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
+    if (!acl.isValid()) { // if there's no ACL, it's a hard deny.
+      Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+      return false;
+    }
+  } else {
+    // If IP address is not available (e.g. UDS), IP-based ACLs are not relevant
+    acl = IpAllow::makeAllowAllACL();
   }
 
   // Set the transport type if not already set

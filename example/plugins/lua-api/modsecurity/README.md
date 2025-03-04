@@ -1,14 +1,14 @@
 Integrating ATS with ModSecurity V3 using LuaJIT and FFI
 ====
 
-Open source WAF for [Apache Traffic Server](http://trafficserver.apache.org/).
+Open source WAF for ATS
 
 Tested with the following
 ====
- - ModSecurity v3.0.6
- - ATS 9.1.1
+ - ModSecurity v3.0.13
+ - ATS 10.0.2
 
-How to Use
+How to Install the Example
 ====
  - Copy all lua files to `/usr/local/var/lua`
  - Put the example modsecurity rule file (`example.conf`) to `/usr/local/var/modsecurity` , readable by the ATS process
@@ -23,14 +23,14 @@ tslua.so --enable-reload /usr/local/var/lua/ats-luajit-modsecurity.lua /usr/loca
 Contents/Rules inside example.conf
 ====
  - deny any request with query parameter of `testparam=test2` with a 403 status response
- - return any request with query parameter of `testparam=test1` with 301 redirect response to https://www.yahoo.com/
+ - return any request with query parameter of `testparam=test1` with 301 redirect response to https://www.example.com/
  - override any response with header `test` equal to `1` with a 403 status response
- - override any response with header `test` equal to `2` with a 301 redirect response to https://www.yahoo.com/
+ - override any response with header `test` equal to `2` with a 301 redirect response to https://www.example.com/
  - write debug log out to `/tmp/debug.log`
 
 Working with CRS
 ====
- - Go [here](https://github.com/coreruleset/coreruleset) and download release v3.3.2
+ - Go [here](https://github.com/coreruleset/coreruleset) and download release v4.10.0
  - Uncompress the contents and copy `crs-setup.conf.example` to `/usr/local/var/modsecurity` and rename it to `crs-setup.conf`
  - Copy all files in `rules` directory to `/usr/local/var/modsecurity/rules`
  - Copy `owasp.conf` in this repository to `/usr/local/var/modsecurity`
@@ -40,11 +40,7 @@ Working with CRS
 tslua.so --enable-reload /usr/local/var/lua/ats-luajit-modsecurity.lua /usr/local/var/modsecurity/owasp.conf
 ```
 
- - The following example curl command against your server should get a status 403 Forbidden response
-
-```
-curl -v -H "User-Agent: Nikto" 'http://<your server>/'
-```
+ - To test, run a request with "User-Agent: Nikto" header. And it should trigger the default action to log warning message to traffic.out
 
 Extra Notes with CRS
 ====
@@ -56,8 +52,7 @@ SecDebugLog /tmp/debug.log
 SecDebugLogLevel 9
 ```
 
-- Rule ID 910100 in REQUEST-910-IP-REPUTATION.conf in `rules` directory requires GeoIP and have to be commented out if you do not built the modsecurity library with it.
-- We use `SecRuleRemoveById` inside `owasp.conf` to remove rules checking for request and response body. This trick can be used to remove other rules that does not apply well in some situations
+- We can use `SecRuleRemoveById` inside `owasp.conf` to remove rules. E.g those checking for request and response body. This trick can be used to remove other rules that does not apply well in some situations
 
 
 TODOs/Limitations

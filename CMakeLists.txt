@@ -403,11 +403,15 @@ check_symbol_exists(strlcpy string.h HAVE_STRLCPY)
 check_symbol_exists(strsignal string.h HAVE_STRSIGNAL)
 check_symbol_exists(sysinfo sys/sysinfo.h HAVE_SYSINFO)
 check_symbol_exists(prctl "sys/prctl.h" HAVE_PRCTL)
+
+# Test for Processing Unit support in hwloc
 if(TS_USE_HWLOC)
+  list(APPEND CMAKE_REQUIRED_INCLUDES ${hwloc_INCLUDE_DIRS})
   check_source_compiles(
     C "#include <hwloc.h>
     int main() { return HWLOC_OBJ_PU; }" HAVE_HWLOC_OBJ_PU
   )
+  list(REMOVE_ITEM CMAKE_REQUIRED_INCLUDES ${hwloc_INCLUDE_DIRS})
 endif()
 
 check_symbol_exists(SO_TXTIME "sys/socket.h" SO_TXTIME_FOUND)
@@ -541,6 +545,7 @@ check_struct_has_member("struct tcp_info" __tcpi_retrans "netinet/tcp.h" HAVE_ST
 check_struct_has_member("struct sockaddr" sa_len "netinet/in.h" HAVE_STRUCT_SOCKADDR_SA_LEN)
 check_struct_has_member("struct sockaddr_in" sin_len "netinet/in.h" HAVE_STRUCT_SOCKADDR_IN_SIN_LEN)
 check_struct_has_member("struct sockaddr_in6" sin6_len "netinet/in.h" HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN)
+check_struct_has_member("struct sockaddr_un" sun_len "sys/un.h" HAVE_STRUCT_SOCKADDR_UN_SUN_LEN)
 check_struct_has_member("struct stat" st_mtimespec "sys/stat.h" HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC)
 check_struct_has_member("struct stat" st_mtim "sys/stat.h" HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC)
 check_struct_has_member("struct mptcp_info" mptcpi_subflows "linux/mptcp.h" HAVE_STRUCT_MPTCP_INFO_SUBFLOWS)

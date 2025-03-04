@@ -896,11 +896,13 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
     struct msghdr msg;
 
     ink_zero(msg);
-    msg.msg_name    = const_cast<sockaddr *>(this->get_remote_addr());
-    msg.msg_namelen = ats_ip_size(this->get_remote_addr());
-    msg.msg_iov     = &tiovec[0];
-    msg.msg_iovlen  = niov;
-    int flags       = 0;
+    if (!ats_is_unix(this->get_local_addr())) {
+      msg.msg_name    = const_cast<sockaddr *>(this->get_remote_addr());
+      msg.msg_namelen = ats_ip_size(this->get_remote_addr());
+    }
+    msg.msg_iov    = &tiovec[0];
+    msg.msg_iovlen = niov;
+    int flags      = 0;
 
     if (!this->con.is_connected && this->options.f_tcp_fastopen) {
       Metrics::Counter::increment(net_rsb.fastopen_attempts);

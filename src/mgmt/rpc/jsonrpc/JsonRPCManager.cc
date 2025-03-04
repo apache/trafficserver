@@ -292,7 +292,6 @@ JsonRPCManager::Dispatcher::InternalHandler::invoke(specs::RPCRequestInfo const 
                                 g_rpcHandlerProcessingCompleted = false;
                                 // swoc::Rv this will handle both, error and success cases.
                                 ret = std::move(g_rpcHandlerResponseData);
-                                lock.unlock();
                               }},
              this->_func);
   return ret;

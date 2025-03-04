@@ -983,6 +983,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ppdip", field);
 
+  field = new LogField("proxy_protocol_authority", "ppa", LogField::IP, &LogAccess::marshal_proxy_protocol_authority,
+                       &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("ppa", field);
+
   field = new LogField("version_build_number", "vbn", LogField::STRING, &LogAccess::marshal_version_build_number,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);

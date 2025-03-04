@@ -65,6 +65,8 @@
 #include <algorithm>
 #include <atomic>
 
+using namespace std::literals;
+
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K
 #define MIN_CONFIG_BUFFER_SIZE_INDEX       5 // 4K
@@ -4389,40 +4391,38 @@ HttpSM::do_remap_request(bool run_inline)
   if (!t_state.unmapped_url.m_url_impl->m_ptr_host) {
     MIMEField *host_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
     if (host_field) {
-      int         host_len  = 0;
-      const char *host_name = host_field->value_get(&host_len);
-      if (host_name && host_len) {
+      auto host_name{host_field->value_get()};
+      if (!host_name.empty()) {
         int port = -1;
         // Host header can contain port number, and if it does we need to set host and port separately to unmapped_url.
         // If header value starts with '[', the value must contain an IPv6 address, and it may contain a port number as well.
-        if (host_name[0] == '[') {   // IPv6
-          host_name = host_name + 1; // Skip '['
-          host_len--;
+        if (host_name.starts_with("["sv)) { // IPv6
+          host_name.remove_prefix(1);       // Skip '['
           // If header value ends with ']', the value must only contain an IPv6 address (no port number).
-          if (host_name[host_len - 1] == ']') { // Without port number
-            host_len--;                         // Exclude ']'
-          } else {                              // With port number
-            for (int idx = host_len - 1; idx > 0; idx--) {
+          if (host_name.ends_with("]"sv)) { // Without port number
+            host_name.remove_suffix(1);     // Exclude ']'
+          } else {                          // With port number
+            for (int idx = host_name.length() - 1; idx > 0; idx--) {
               if (host_name[idx] == ':') {
-                port     = ink_atoi(host_name + idx + 1, host_len - (idx + 1));
-                host_len = idx;
+                port      = ink_atoi(host_name.data() + idx + 1, host_name.length() - (idx + 1));
+                host_name = host_name.substr(0, idx);
                 break;
               }
             }
           }
         } else { // Anything else (Hostname or IPv4 address)
           // If the value contains ':' where it does not have IPv6 address, there must be port number
-          if (const char *colon = static_cast<const char *>(memchr(host_name, ':', host_len));
+          if (const char *colon = static_cast<const char *>(memchr(host_name.data(), ':', host_name.length()));
               colon == nullptr) { // Without port number
             // Nothing to adjust. Entire value should be used as hostname.
           } else { // With port number
-            port     = ink_atoi(colon + 1, host_len - ((colon + 1) - host_name));
-            host_len = colon - host_name;
+            port      = ink_atoi(colon + 1, host_name.length() - ((colon + 1) - host_name.data()));
+            host_name = host_name.substr(0, colon - host_name.data());
           }
         }
 
         // Set values
-        t_state.unmapped_url.host_set(host_name, host_len);
+        t_state.unmapped_url.host_set(host_name.data(), host_name.length());
         if (port >= 0) {
           t_state.unmapped_url.port_set(port);
         }
@@ -5306,7 +5306,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 {
   int  ip_family = t_state.current.server->dst_addr.sa.sa_family;
   auto fam_name  = ats_ip_family_name(ip_family);
-  SMDbg(dbg_ctl_http_track, "entered inside do_http_server_open ][%.*s]", static_cast<int>(fam_name.size()), fam_name.data());
+  SMDbg(dbg_ctl_http_track, "[%.*s]", static_cast<int>(fam_name.size()), fam_name.data());
 
   NetVConnection *vc = _ua.get_txn()->get_netvc();
   ink_release_assert(vc && vc->thread == this_ethread());
@@ -5392,11 +5392,14 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   // We do this here because it means that we will not waste a connection from the pool if we already
   // know that the session will be private. This is overridable meaning that if a plugin later decides
   // it shouldn't be private it can still be returned to a shared pool.
-  //
   if (t_state.txn_conf->auth_server_session_private == 1 &&
       t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION |
                                                MIME_PRESENCE_WWW_AUTHENTICATE)) {
-    SMDbg(dbg_ctl_http_ss_auth, "Setting server session to private for authorization header");
+    SMDbg(dbg_ctl_http_ss_auth, "Setting server session to private for authorization headers");
+    will_be_private_ss = true;
+  } else if (t_state.txn_conf->auth_server_session_private == 2 &&
+             t_state.hdr_info.server_request.presence(MIME_PRESENCE_PROXY_AUTHORIZATION | MIME_PRESENCE_WWW_AUTHENTICATE)) {
+    SMDbg(dbg_ctl_http_ss_auth, "Setting server session to private for Proxy-Authorization or WWW-Authenticate header");
     will_be_private_ss = true;
   }
 

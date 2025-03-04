@@ -638,23 +638,11 @@ public:
   ConditionHttpCntl(const ConditionHttpCntl &) = delete;
   void operator=(const ConditionHttpCntl &)    = delete;
 
-  void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-
-  void
-  append_value(std::string &s, const Resources &res) override
-  {
-    s += TSHttpTxnCntlGet(res.txnp, _http_cntl_qual) ? "TRUE" : "FALSE";
-    Dbg(pi_dbg_ctl, "Evaluating HTTP-CNTL(%s)", _qualifier.c_str());
-  }
+  void append_value(std::string &s, const Resources &res) override;
 
 protected:
-  bool
-  eval(const Resources &res) override
-  {
-    Dbg(pi_dbg_ctl, "Evaluating HTTP-CNTL()");
-    return TSHttpTxnCntlGet(res.txnp, _http_cntl_qual);
-  }
+  bool eval(const Resources &res) override;
 
 private:
   TSHttpCntlType _http_cntl_qual = TS_HTTP_CNTL_LOGGING_MODE;
@@ -724,4 +712,119 @@ public:
 private:
   Condition *_cond = nullptr; // First pre-condition (linked list)
   bool       _end  = false;
+};
+
+// State Flags
+class ConditionStateFlag : public Condition
+{
+public:
+  explicit ConditionStateFlag()
+  {
+    static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
+    Dbg(dbg_ctl, "Calling CTOR for ConditionStateFlag");
+  }
+
+  // noncopyable
+  ConditionStateFlag(const ConditionStateFlag &) = delete;
+  void operator=(const ConditionStateFlag &)     = delete;
+
+  void set_qualifier(const std::string &q) override;
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+
+  bool
+  need_txn_slot() const override
+  {
+    return true;
+  }
+
+private:
+  int      _flag_ix = -1;
+  uint64_t _mask    = 0;
+};
+
+// INT8 state variables
+class ConditionStateInt8 : public Condition
+{
+  using MatcherType = Matchers<uint8_t>;
+
+public:
+  explicit ConditionStateInt8()
+  {
+    static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
+    Dbg(dbg_ctl, "Calling CTOR for ConditionStateInt8");
+  }
+
+  // noncopyable
+  ConditionStateInt8(const ConditionStateInt8 &) = delete;
+  void operator=(const ConditionStateInt8 &)     = delete;
+
+  void initialize(Parser &p) override;
+  void set_qualifier(const std::string &q) override;
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+
+  bool
+  need_txn_slot() const override
+  {
+    return true;
+  }
+
+private:
+  // Little helper function to extract out the data from the TXN user pointer
+  uint8_t
+  _get_data(const Resources &res) const
+  {
+    TSAssert(_byte_ix >= 0 && _byte_ix < NUM_STATE_INT8S);
+    auto    ptr  = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+    uint8_t data = (ptr & STATE_INT8_MASKS[_byte_ix]) >> (NUM_STATE_FLAGS + _byte_ix * 8);
+
+    return data;
+  }
+
+  int _byte_ix = -1;
+};
+
+// INT16 state variables
+class ConditionStateInt16 : public Condition
+{
+  using MatcherType = Matchers<uint16_t>;
+
+public:
+  explicit ConditionStateInt16()
+  {
+    static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
+    Dbg(dbg_ctl, "Calling CTOR for ConditionStateInt16");
+  }
+
+  // noncopyable
+  ConditionStateInt16(const ConditionStateInt8 &) = delete;
+  void operator=(const ConditionStateInt8 &)      = delete;
+
+  void initialize(Parser &p) override;
+  void set_qualifier(const std::string &q) override;
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+
+  bool
+  need_txn_slot() const override
+  {
+    return true;
+  }
+
+private:
+  // Little helper function to extract out the data from the TXN user pointer
+  uint16_t
+  _get_data(const Resources &res) const
+  {
+    auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+
+    return ((ptr & STATE_INT16_MASK) >> 48);
+  }
 };
