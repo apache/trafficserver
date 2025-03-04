@@ -8415,11 +8415,11 @@ TSVConnReenableEx(TSVConn vconn, TSEvent event)
 }
 
 TSReturnCode
-TSVConnPPInfoGet(TSVConn vconn, uint32_t key, const char **value, int *length)
+TSVConnPPInfoGet(TSVConn vconn, uint16_t key, const char **value, int *length)
 {
   NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconn);
 
-  if (key < 0x10000) {
+  if (key < 0x100) {
     auto &tlv = vc->get_proxy_protocol_info().tlv;
     if (auto ite = tlv.find(key); ite != tlv.end()) {
       *value  = ite->second.data();
@@ -8452,11 +8452,11 @@ TSVConnPPInfoGet(TSVConn vconn, uint32_t key, const char **value, int *length)
 }
 
 TSReturnCode
-TSVConnPPInfoIntGet(TSVConn vconn, uint32_t key, TSMgmtInt *value)
+TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value)
 {
   NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconn);
 
-  if (key < 0x10000) {
+  if (key < 0x100) {
     // Unknown type value cannot be returned as an integer
     return TS_ERROR;
   } else {

@@ -3089,7 +3089,7 @@ TSRalloc(size_t count = 1 /**< Number of instances of T to allocate storage for.
    @return @c TS_SUCCESS if the requested info is supported, TS_ERROR otherwise
 
 */
-TSReturnCode TSVConnPPInfoGet(TSVConn vconn, uint32_t key, const char **value, int *length);
+TSReturnCode TSVConnPPInfoGet(TSVConn vconn, uint16_t key, const char **value, int *length);
 
 /**
    Return the particular PROXY protocol info requested.
@@ -3101,4 +3101,4 @@ TSReturnCode TSVConnPPInfoGet(TSVConn vconn, uint32_t key, const char **value, i
    @return @c TS_SUCCESS if the requested info is supported, TS_ERROR otherwise
 
 */
-TSReturnCode TSVConnPPInfoIntGet(TSVConn vconn, uint32_t key, TSMgmtInt *value);
+TSReturnCode TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value);
