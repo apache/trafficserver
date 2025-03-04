@@ -7766,7 +7766,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     }
   }
 
-  if (s->http_config_param->send_100_continue_response) {
+  if (s->hdr_info.client_request.m_100_continue_sent) {
     HttpTransactHeaders::remove_100_continue_headers(s, outgoing_request);
     TxnDbg(dbg_ctl_http_trans, "request expect 100-continue headers removed");
   }
