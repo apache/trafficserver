@@ -484,7 +484,7 @@ for idx, test in enumerate(all_acl_combination_tests):
         test["POST response"],
     )
     Test_remap_acl(
-        "{0} {1} {2}".format(test["inline"], test["named_acl"], test["ip_allow"]),
+        "allcombo-{0} {1} {2} {3}".format(idx, test["inline"], test["named_acl"], test["ip_allow"]),
         replay_file=replay_file_name,
         ip_allow_content=test["ip_allow"],
         deactivate_ip_allow=False,
@@ -509,7 +509,7 @@ for idx, test in enumerate(all_deactivate_ip_allow_tests):
         test["POST response"],
     )
     Test_remap_acl(
-        "{0} {1} {2}".format(test["inline"], test["named_acl"], test["ip_allow"]),
+        "ipallow-{0} {1} {2} {3}".format(idx, test["inline"], test["named_acl"], test["ip_allow"]),
         replay_file=replay_file_name,
         ip_allow_content=test["ip_allow"],
         deactivate_ip_allow=test["deactivate_ip_allow"],

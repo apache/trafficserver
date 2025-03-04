@@ -557,7 +557,23 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
       Dbg(dbg_ctl_url_rewrite, "%d: ACL filter %s rule matches by ip: %s, by method: %s", rule_index,
           (rp->allow_flag ? "allow" : "deny"), (ip_matches ? "true" : "false"), (method_matches ? "true" : "false"));
 
-      if (ip_matches) {
+      if (_acl_behavior_policy == ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY) {
+        s->skip_ip_allow_yaml = false;
+        Dbg(dbg_ctl_url_rewrite, "Doing legacy filtering ip:%s method:%s", ip_matches ? "matched" : "didn't match",
+            method_matches ? "matched" : "didn't match");
+        bool match = ip_matches && method_matches;
+        if (match && s->client_connection_allowed) { // make sure that a previous filter did not DENY
+          Dbg(dbg_ctl_url_rewrite, "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
+          s->client_connection_allowed = rp->allow_flag ? true : false;
+        } else {
+          if (!s->client_connection_allowed) {
+            Dbg(dbg_ctl_url_rewrite, "Previous ACL filter rule denied request, continuing to deny it");
+          } else {
+            Dbg(dbg_ctl_url_rewrite, "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
+            s->client_connection_allowed = rp->allow_flag ? false : true;
+          }
+        }
+      } else if (ip_matches) {
         // The rule matches. Handle the method according to the rule.
         if (method_matches) {
           // Did they specify allowing the listed methods, or denying them?
