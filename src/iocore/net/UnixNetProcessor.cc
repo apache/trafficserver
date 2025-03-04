@@ -95,9 +95,9 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
 
   // Fill in accept thread from configuration if necessary.
   if (opt.accept_threads < 0) {
-    REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
+    RecGetRecordIntOrZero("proxy.config.accept_threads", &accept_threads);
   }
-  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+  RecGetRecordIntOrZero("proxy.config.exec_thread.listen", &listen_per_thread);
   if (accept_threads > 0 && listen_per_thread > 0) {
     Fatal("Please disable accept_threads or exec_thread.listen");
   }
@@ -264,7 +264,7 @@ UnixNetProcessor::init()
   pollCont_offset   = eventProcessor.allocate(sizeof(PollCont));
 
   if (0 == accept_mss) {
-    REC_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
+    RecGetRecordIntOrZero("proxy.config.net.sock_mss_in", &accept_mss);
   }
 
   // NetHandler - do the global configuration initialization and then
