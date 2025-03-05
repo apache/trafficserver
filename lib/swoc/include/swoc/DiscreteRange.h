@@ -836,19 +836,21 @@ public:
   ~DiscreteSpace();
 
   /** Mark ranges in one operation.
-   *
+   * 
    * @param marks Vector of ranges and payloads to mark.
+   * @param isSorted @c true if input is sorted, @c false if not. Assumes not sorted.
    * @return @a this
    */
-  self_type &mark_bulk(std::vector<std::pair<range_type, PAYLOAD>> const &marks);
+   self_type &mark_bulk(std::vector<std::pair<range_type, PAYLOAD>> &marks, bool isSorted = false);
 
-  /** Mark ranges in one operation.
-   *
-   * @param start Pointer to the first range/payload pair.
-   * @param n Number of pairs.
-   * @return @a this
-   */
-  self_type &mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n);
+   /** Mark ranges in one operation.
+    * 
+    * @param start Pointer to the first range/payload pair.
+    * @param n Number of pairs.
+    * @param isSorted @c true if input is sorted, @c false if not. Assumes not sorted.
+    * @return @a this
+    */
+   self_type &mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n, bool isSorted = false);
 
   /** Set the @a payload for a @a range
    *
@@ -1355,24 +1357,37 @@ DiscreteSpace<METRIC, PAYLOAD>::erase(DiscreteSpace::range_type const &range) {
 
 template <typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD> &
-DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::vector<std::pair<DiscreteSpace::range_type, PAYLOAD>> const &ranges) {
-  return this->mark_bulk(ranges.data(), ranges.size());
+DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::vector<std::pair<DiscreteSpace::range_type, PAYLOAD>> &ranges, bool isSorted) {
+  return this->mark_bulk(ranges.data(), ranges.size(), isSorted);
 }
 
 template <typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD> &
-DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n)
+DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n, bool isSorted)
 {
-  // Timer [i_range]: ~1.2 seconds for n=3355591
-  // Loop takes ~0.357612 microseconds in total.
+  // Sort the input data in-place before processing, if applicable.
+  if (!isSorted)
+  {
+    // Stable sort allows for duplicate elements.
+    std::stable_sort(start, start + n, [](const auto &lhs, const auto &rhs) {
+      if (lhs.first.min() != rhs.first.min()) {
+        return lhs.first.min() < rhs.first.min();
+      }
+      return lhs.first.max() < rhs.first.max();
+    });
+  }
+
+  // Verify that this is purely an append operation.
+  // If it's not, then we need to rebuild the entire tree each iteration (suboptimal case).
+  bool isAppend = !_list.empty() && _list.tail()->max() < start[0].first.min();
+
+  // Mark the ranges in the input data.
   for (size_t i = 0; i < n; ++i)
   {
     auto const& [range, payload] = start[i];
-    this->mark(range, payload, false);
+    this->mark(range, payload, !isAppend);
   }
 
-  // Timer [tree]: ~0.06 seconds for n=3355591
-  // buildTree() takes ~0.017881 microseconds.
   // Rebuild the entire red-black tree.
   detail::RBNode* temp_head = _list.head();
   _root = static_cast<Node *>(detail::RBNode::buildTree(temp_head, _list.count()));
