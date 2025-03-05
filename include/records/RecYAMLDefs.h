@@ -92,5 +92,5 @@ private:
   struct Legacy {
     std::string record_name;
   };
-  mutable Legacy _legacy;
+  Legacy _legacy;
 };
