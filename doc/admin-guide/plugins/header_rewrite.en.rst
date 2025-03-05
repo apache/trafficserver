@@ -323,14 +323,15 @@ setting headers. For example::
 
 GROUP
 ~~~~~
-;;
+::
+
     cond %{GROUP}
     cond %{GROUP:END}
 
 This condition is a pseudo condition that is used to group conditions together.
 Using these groups, you can construct more complex expressions, that can mix and
 match AND, OR and NOT operators. These groups are the equivalent of parenthesis
-in expressions.The following pseudo example illustrates this. Lets say you want
+in expressions. The following pseudo example illustrates this. Lets say you want
 to express::
 
       (A and B) or (C and (D or E))
@@ -589,7 +590,8 @@ STATE-FLAG
 
 This condition allows you to check the state of a flag. The ``<n>`` is the
 number of the flag, from 0 to 15. This condition returns a ``true`` or
-``false`` value, depending on the state of the flag.
+``false`` value, depending on the state of the flag. The default value of
+all flags are ``false``.
 
 STATE-INT8
 ~~~~~~~~~~
@@ -599,17 +601,18 @@ STATE-INT8
 
 This condition allows you to check the state of an 8-bit unsigned integer.
 The ``<n>`` is the number of the integer, from 0 to 3. The current value of
-the state integer is returned, and all 4 integers are initialized to 0.
+the state integer is returned, while all 4 integers are initialized to 0.
 
 STATE-INT16
 ~~~~~~~~~~~
 ::
 
-      cond %{STATE-INT16<:0>}
+      cond %{STATE-INT16:<0>}
 
 This condition allows you to check the state of an 16-bit unsigned integer.
 There's only one such integer, and its value is returned from this condition.
-As such, the index, ``0``, is optional here.
+As such, the index, ``0``, is optional here. The initialized value of this
+state variable is ``0``.
 
 STATUS
 ~~~~~~
