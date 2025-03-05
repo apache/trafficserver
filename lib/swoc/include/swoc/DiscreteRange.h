@@ -836,21 +836,21 @@ public:
   ~DiscreteSpace();
 
   /** Mark ranges in one operation.
-   * 
+   *
    * @param marks Vector of ranges and payloads to mark.
-   * @param isSorted @c true if input is sorted, @c false if not. Assumes not sorted.
+   * @param is_sorted @c true if input is sorted, @c false if not. Assumes not sorted.
    * @return @a this
    */
-   self_type &mark_bulk(std::vector<std::pair<range_type, PAYLOAD>> &marks, bool isSorted = false);
+   self_type &mark_bulk(std::vector<std::pair<range_type, PAYLOAD>> &marks, bool is_sorted = false);
 
    /** Mark ranges in one operation.
-    * 
+    *
     * @param start Pointer to the first range/payload pair.
     * @param n Number of pairs.
-    * @param isSorted @c true if input is sorted, @c false if not. Assumes not sorted.
+    * @param is_sorted @c true if input is sorted, @c false if not. Assumes not sorted.
     * @return @a this
     */
-   self_type &mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n, bool isSorted = false);
+   self_type &mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n, bool is_sorted = false);
 
   /** Set the @a payload for a @a range
    *
@@ -1357,16 +1357,16 @@ DiscreteSpace<METRIC, PAYLOAD>::erase(DiscreteSpace::range_type const &range) {
 
 template <typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD> &
-DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::vector<std::pair<DiscreteSpace::range_type, PAYLOAD>> &ranges, bool isSorted) {
-  return this->mark_bulk(ranges.data(), ranges.size(), isSorted);
+DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::vector<std::pair<DiscreteSpace::range_type, PAYLOAD>> &ranges, bool is_sorted) {
+  return this->mark_bulk(ranges.data(), ranges.size(), is_sorted);
 }
 
 template <typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD> &
-DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n, bool isSorted)
+DiscreteSpace<METRIC, PAYLOAD>::mark_bulk(std::pair<range_type, PAYLOAD>* start, size_t n, bool is_sorted)
 {
   // Sort the input data in-place before processing, if applicable.
-  if (!isSorted)
+  if (!is_sorted)
   {
     // Stable sort allows for duplicate elements.
     std::stable_sort(start, start + n, [](const auto &lhs, const auto &rhs) {

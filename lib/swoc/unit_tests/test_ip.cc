@@ -2276,7 +2276,7 @@ TEST_CASE("IPSpace mark_bulk", "[libswoc][ipspace][mark_bulk]") {
   insert4.emplace_back(swoc::DiscreteRange<IP4Addr>{IP4Addr{"1.1.2.10"},
       IP4Addr{"1.1.2.20"}},
                        currPayload++);
-                       
+
   insert6.emplace_back(swoc::DiscreteRange<IP6Addr>{IP6Addr{"::1:10"},
           IP6Addr{"::1:20"}},
   currPayload++);
@@ -2371,7 +2371,7 @@ TEST_CASE("IPSpace mark_bulk randomized", "[libswoc][ipspace][mark_bulk][randomi
   // Verify that the count is correct
   size_t size1 = (addrs4.size() + addrs6.size()) / 2;
   REQUIRE(space.count() == size1);
-  
+
   // Verify that the payloads are correct
   for (auto const& [range, payload] : addrs4) {
       IP4Addr ip4 = range.min();
@@ -2431,8 +2431,6 @@ TEST_CASE("IPSpace mark_bulk randomized", "[libswoc][ipspace][mark_bulk][randomi
       REQUIRE(r.contains(ip6));
       REQUIRE(p == payload);
   }
-
-  
 
   // Create another ip range before the previous two
   std::vector<std::pair<swoc::DiscreteRange<IP4Addr>, PAYLOAD>> addrs4_3;
