@@ -7,6 +7,8 @@
 
 #include "swoc/RBTree.h"
 
+#include <iostream>
+
 namespace swoc { inline namespace SWOC_VERSION_NS { namespace detail {
 // These equality operators are only used in this file.
 

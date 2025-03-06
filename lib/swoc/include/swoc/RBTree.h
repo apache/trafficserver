@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <iostream>
-
 #include "swoc/swoc_version.h"
 #include "swoc/IntrusiveDList.h"
 
