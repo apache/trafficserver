@@ -837,7 +837,7 @@ HttpTransactHeaders::insert_hsts_header_in_response(HttpTransact::State *s, HTTP
 void
 HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPHdr *header)
 {
-  char new_via_string[1024]; // 512-bytes for hostname+via string, 512-bytes for the debug info
+  char new_via_string[HTTP_OUR_VIA_MAX_LENGTH];
   char *via_string = new_via_string;
   char *via_limit  = via_string + sizeof(new_via_string);
 
