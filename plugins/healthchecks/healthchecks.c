@@ -383,7 +383,7 @@ cleanup(TSCont contp, HCState *my_state)
 {
   if (my_state->resp_reader) {
     TSIOBufferReaderFree(my_state->resp_reader);
-    my_state->resp_reader = nullptr;
+    my_state->resp_reader = NULL;
   }
 
   if (my_state->req_buffer) {
@@ -398,7 +398,7 @@ cleanup(TSCont contp, HCState *my_state)
 
   if (my_state->net_vc) {
     TSVConnClose(my_state->net_vc);
-    my_state->net_vc = nullptr;
+    my_state->net_vc = NULL;
   }
 
   TSfree(my_state);
