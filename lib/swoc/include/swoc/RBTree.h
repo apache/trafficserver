@@ -10,6 +10,8 @@
 #include "swoc/swoc_version.h"
 #include "swoc/IntrusiveDList.h"
 
+#include <string>
+
 namespace swoc { inline namespace SWOC_VERSION_NS { namespace detail {
 /** A node in a red/black tree.
 
