@@ -381,6 +381,11 @@ parse_configs(const char *fname)
 static void
 cleanup(TSCont contp, HCState *my_state)
 {
+  if (my_state->resp_reader) {
+    TSIOBufferReaderFree(my_state->resp_reader);
+    my_state->resp_reader = NULL;
+  }
+
   if (my_state->req_buffer) {
     TSIOBufferDestroy(my_state->req_buffer);
     my_state->req_buffer = NULL;
@@ -391,7 +396,11 @@ cleanup(TSCont contp, HCState *my_state)
     my_state->resp_buffer = NULL;
   }
 
-  TSVConnClose(my_state->net_vc);
+  if (my_state->net_vc) {
+    TSVConnClose(my_state->net_vc);
+    my_state->net_vc = NULL;
+  }
+
   TSfree(my_state);
   TSContDestroy(contp);
 }
@@ -420,11 +429,14 @@ hc_process_read(TSCont contp, TSEvent event, HCState *my_state)
     my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT64_MAX);
   } else if (event == TS_EVENT_ERROR) {
     TSError("[healthchecks] hc_process_read: Received TS_EVENT_ERROR");
+    cleanup(contp, my_state);
   } else if (event == TS_EVENT_VCONN_EOS) {
-    /* client may end the connection, simply return */
+    /* client may end the connection, clean up and return */
+    cleanup(contp, my_state);
     return;
   } else if (event == TS_EVENT_NET_ACCEPT_FAILED) {
     TSError("[healthchecks] hc_process_read: Received TS_EVENT_NET_ACCEPT_FAILED");
+    cleanup(contp, my_state);
   } else {
     TSReleaseAssert(!"Unexpected Event");
   }
@@ -451,6 +463,7 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
     cleanup(contp, my_state);
   } else if (event == TS_EVENT_ERROR) {
     TSError("[healthchecks] hc_process_write: Received TS_EVENT_ERROR");
+    cleanup(contp, my_state);
   } else {
     TSReleaseAssert(!"Unexpected Event");
   }
