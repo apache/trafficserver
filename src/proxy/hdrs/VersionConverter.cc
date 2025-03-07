@@ -99,18 +99,18 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
   // :authority
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()); field != nullptr) {
-    int         value_len;
-    const char *value = header.host_get(&value_len);
+    auto value{header.host_get()};
+    auto value_len{static_cast<int>(value.length())};
 
     if (header.is_port_in_header()) {
       int                   port = header.port_get();
       ts::LocalBuffer<char> buf(value_len + 8);
       char                 *host_and_port = buf.data();
-      value_len                           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
+      value_len                           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value.data(), port);
 
       field->value_set(header.m_heap, header.m_mime, host_and_port, value_len);
     } else {
-      field->value_set(header.m_heap, header.m_mime, value, value_len);
+      field->value_set(header.m_heap, header.m_mime, value.data(), value_len);
     }
     // Remove the host header field, redundant to the authority field
     // For istio/envoy, having both was causing 404 responses

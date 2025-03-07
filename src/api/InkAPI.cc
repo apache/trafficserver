@@ -2833,7 +2833,9 @@ TSHttpHdrHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  return h.host_get(length);
+  auto host{h.host_get()};
+  *length = static_cast<int>(host.length());
+  return host.data();
 }
 
 TSReturnCode

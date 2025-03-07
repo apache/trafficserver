@@ -591,10 +591,9 @@ is_negative_caching_appropriate(HttpTransact::State *s)
 inline static ResolveInfo::UpstreamResolveStyle
 find_server_and_update_current_info(HttpTransact::State *s)
 {
-  int         host_len;
-  const char *host = s->hdr_info.client_request.host_get(&host_len);
+  auto host{s->hdr_info.client_request.host_get()};
 
-  if (is_localhost(host, host_len)) {
+  if (is_localhost(host.data(), static_cast<int>(host.length()))) {
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
@@ -1056,11 +1055,10 @@ HttpTransact::EndRemapRequest(State *s)
 {
   TxnDbg(dbg_ctl_http_trans, "START HttpTransact::EndRemapRequest");
 
-  HTTPHdr    *incoming_request = &s->hdr_info.client_request;
-  int         method           = incoming_request->method_get_wksidx();
-  int         host_len;
-  const char *host = incoming_request->host_get(&host_len);
-  TxnDbg(dbg_ctl_http_trans, "EndRemapRequest host is %.*s", host_len, host);
+  HTTPHdr *incoming_request = &s->hdr_info.client_request;
+  int      method           = incoming_request->method_get_wksidx();
+  auto     host{incoming_request->host_get()};
+  TxnDbg(dbg_ctl_http_trans, "EndRemapRequest host is %.*s", static_cast<int>(host.length()), host.data());
   if (s->state_machine->get_ua_txn()) {
     s->state_machine->get_ua_txn()->set_default_inactivity_timeout(HRTIME_SECONDS(s->txn_conf->default_inactivity_timeout));
   }
@@ -1165,7 +1163,7 @@ HttpTransact::EndRemapRequest(State *s)
         build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect For Explanation", "request#no_host");
         s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, redirect_url, redirect_url_len);
         // socket when there is no host. Need to handle DNS failure elsewhere.
-      } else if (host == nullptr) { /* no host */
+      } else if (host.empty()) { /* no host */
         build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host");
         s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
       } else {
@@ -1396,7 +1394,7 @@ mimefield_value_equal(MIMEField *field, const char *value, const int value_len)
 void
 HttpTransact::ModifyRequest(State *s)
 {
-  int              scheme, hostname_len;
+  int              scheme;
   HTTPHdr         &request      = s->hdr_info.client_request;
   static const int PORT_PADDING = 8;
 
@@ -1432,14 +1430,15 @@ HttpTransact::ModifyRequest(State *s)
   // The solution should be to move the scheme detecting logic in to
   // the header class, rather than doing it in a random bit of
   // external code.
-  const char *buf = request.host_get(&hostname_len);
+  auto buf{request.host_get()};
+  auto hostname_len{static_cast<int>(buf.length())};
   if (!request.is_target_in_url()) {
     s->hdr_info.client_req_is_server_style = true;
   }
   // Copy out buf to a hostname just in case its heap header memory is freed during coalescing
   // due to later HdrHeap operations
   char *hostname = static_cast<char *>(alloca(hostname_len + PORT_PADDING));
-  memcpy(hostname, buf, hostname_len);
+  memcpy(hostname, buf.data(), hostname_len);
 
   // Make clang analyzer happy. hostname is non-null iff request.is_target_in_url().
   ink_assert(hostname || s->hdr_info.client_req_is_server_style);
@@ -5332,15 +5331,15 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     return FAILED_PROXY_AUTHORIZATION;
   }
 
-  URL        *incoming_url = incoming_hdr->url_get();
-  int         hostname_len;
-  const char *hostname = incoming_hdr->host_get(&hostname_len);
+  URL *incoming_url = incoming_hdr->url_get();
+  auto hostname{incoming_hdr->host_get()};
+  auto hostname_len{static_cast<int>(hostname.length())};
 
-  if (hostname == nullptr) {
+  if (hostname.empty()) {
     return MISSING_HOST_FIELD;
   }
 
-  if (hostname_len >= MAXDNAME || hostname_len <= 0 || memchr(hostname, '\0', hostname_len)) {
+  if (hostname_len >= MAXDNAME || hostname_len <= 0 || memchr(hostname.data(), '\0', hostname_len)) {
     return BAD_HTTP_HEADER_SYNTAX;
   }
 
@@ -5624,8 +5623,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   // Temporary, until we're confident that the second argument is redundant.
   ink_assert(incoming_request == obsolete_incoming_request);
 
-  int         host_len;
-  const char *host_name = incoming_request->host_get(&host_len);
+  auto host_name{incoming_request->host_get()};
 
   // check if the request is conditional (IMS or INM)
   if (incoming_request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_NONE_MATCH)) {
@@ -5670,7 +5668,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
 
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
-    s->server_info.name = s->arena.str_store(host_name, host_len);
+    s->server_info.name = s->arena.str_store(host_name.data(), static_cast<int>(host_name.length()));
     s->server_info.name_addr.load(s->server_info.name);
   }
 
@@ -5721,7 +5719,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
   s->request_data.hdr = &s->hdr_info.client_request;
 
-  s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
+  s->request_data.hostname_str = s->arena.str_store(host_name.data(), static_cast<int>(host_name.length()));
   ats_ip_copy(&s->request_data.src_ip, &s->client_info.src_addr);
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
   if (vc) {

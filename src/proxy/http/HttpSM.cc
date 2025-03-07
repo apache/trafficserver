@@ -4340,10 +4340,10 @@ HttpSM::check_sni_host()
 {
   // Check that the SNI and host name fields match, if it matters
   // Issue warning or mark the transaction to be terminated as necessary
-  int         host_len;
-  const char *host_name = t_state.hdr_info.client_request.host_get(&host_len);
+  auto host_name{t_state.hdr_info.client_request.host_get()};
+  auto host_len{static_cast<int>(host_name.length())};
 
-  if (host_name == nullptr || host_len == 0) {
+  if (host_name.empty()) {
     return;
   }
 
@@ -4358,8 +4358,7 @@ HttpSM::check_sni_host()
   }
 
   int host_sni_policy = t_state.http_config_param->http_host_sni_policy;
-  if (snis->would_have_actions_for(std::string{host_name, static_cast<size_t>(host_len)}.c_str(), netvc->get_remote_endpoint(),
-                                   host_sni_policy) &&
+  if (snis->would_have_actions_for(std::string{host_name}.c_str(), netvc->get_remote_endpoint(), host_sni_policy) &&
       host_sni_policy > 0) {
     // In a SNI/Host mismatch where the Host would have triggered SNI policy, mark the transaction
     // to be considered for rejection after the remap phase passes.  Gives the opportunity to conf_remap
@@ -4367,28 +4366,29 @@ HttpSM::check_sni_host()
     const char *sni_value    = snis->get_sni_server_name();
     const char *action_value = host_sni_policy == 2 ? "terminate" : "continue";
     if (!sni_value || sni_value[0] == '\0') { // No SNI
-      Warning("No SNI for TLS request with hostname %.*s action=%s", host_len, host_name, action_value);
-      SMDbg(dbg_ctl_ssl_sni, "No SNI for TLS request with hostname %.*s action=%s", host_len, host_name, action_value);
+      Warning("No SNI for TLS request with hostname %.*s action=%s", host_len, host_name.data(), action_value);
+      SMDbg(dbg_ctl_ssl_sni, "No SNI for TLS request with hostname %.*s action=%s", host_len, host_name.data(), action_value);
       if (host_sni_policy == 2) {
         swoc::bwprint(error_bw_buffer, "No SNI for TLS request: connecting to {} for host='{}', returning a 403",
-                      t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)});
+                      t_state.client_info.dst_addr, host_name.data());
         Log::error("%s", error_bw_buffer.c_str());
         this->t_state.client_connection_allowed = false;
       }
-    } else if (strncasecmp(host_name, sni_value, host_len) != 0) { // Name mismatch
-      Warning("SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
-      SMDbg(dbg_ctl_ssl_sni, "SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name, action_value);
+    } else if (strncasecmp(host_name.data(), sni_value, host_len) != 0) { // Name mismatch
+      Warning("SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name.data(), action_value);
+      SMDbg(dbg_ctl_ssl_sni, "SNI/hostname mismatch sni=%s host=%.*s action=%s", sni_value, host_len, host_name.data(),
+            action_value);
       if (host_sni_policy == 2) {
         swoc::bwprint(error_bw_buffer, "SNI/hostname mismatch: connecting to {} for host='{}' sni='{}', returning a 403",
-                      t_state.client_info.dst_addr, std::string_view{host_name, static_cast<size_t>(host_len)}, sni_value);
+                      t_state.client_info.dst_addr, host_name, sni_value);
         Log::error("%s", error_bw_buffer.c_str());
         this->t_state.client_connection_allowed = false;
       }
     } else {
-      SMDbg(dbg_ctl_ssl_sni, "SNI/hostname successfully match sni=%s host=%.*s", sni_value, host_len, host_name);
+      SMDbg(dbg_ctl_ssl_sni, "SNI/hostname successfully match sni=%s host=%.*s", sni_value, host_len, host_name.data());
     }
   } else {
-    SMDbg(dbg_ctl_ssl_sni, "No SNI/hostname check configured for host=%.*s", host_len, host_name);
+    SMDbg(dbg_ctl_ssl_sni, "No SNI/hostname check configured for host=%.*s", host_len, host_name.data());
   }
 }
 
@@ -5193,9 +5193,8 @@ HttpSM::get_outbound_sni() const
 
   if (policy.empty() || policy == "host"_tv) {
     // By default the host header field value is used for the SNI.
-    int         len;
-    char const *ptr = t_state.hdr_info.server_request.host_get(&len);
-    zret.assign(ptr, len);
+    auto host{t_state.hdr_info.server_request.host_get()};
+    zret.assign(host.data(), static_cast<int>(host.length()));
   } else if (_ua.get_txn() && policy == "server_name"_tv) {
     const char *server_name = snis->get_sni_server_name();
     if (server_name[0] == '\0') {
@@ -5689,13 +5688,12 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     if (sni_name.length() > 0) {
       opt.set_sni_servername(sni_name.data(), sni_name.length());
     }
-    int len = 0;
     if (t_state.txn_conf->ssl_client_sni_policy != nullptr &&
         !strcmp(t_state.txn_conf->ssl_client_sni_policy, "verify_with_name_source")) {
       // also set sni_hostname with host header from server request in this policy
-      const char *host = t_state.hdr_info.server_request.host_get(&len);
-      if (host && len > 0) {
-        opt.set_sni_hostname(host, len);
+      auto host{t_state.hdr_info.server_request.host_get()};
+      if (!host.empty()) {
+        opt.set_sni_hostname(host.data(), static_cast<int>(host.length()));
       }
     }
     if (t_state.server_info.name) {

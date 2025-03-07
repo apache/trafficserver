@@ -580,9 +580,9 @@ public:
   /** Get the target host name.
       The length is returned in @a length if non-NULL.
       @note The results are cached so this is fast after the first call.
-      @return A pointer to the host name.
+      @return A string_view to the host name.
   */
-  const char *host_get(int *length = nullptr) const;
+  std::string_view host_get() const;
 
   /** Get the target port.
       If the target port is not found then it is adjusted to the
@@ -770,21 +770,19 @@ HTTPHdr::_test_and_fill_target_cache() const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-HTTPHdr::host_get(int *length) const
+inline std::string_view
+HTTPHdr::host_get() const
 {
   this->_test_and_fill_target_cache();
   if (m_target_in_url) {
-    return url_get()->host_get(length);
+    int  length;
+    auto host{url_get()->host_get(&length)};
+    return std::string_view{host, static_cast<std::string_view::size_type>(length)};
   } else if (m_host_mime) {
-    if (length)
-      *length = m_host_length;
-    return m_host_mime->m_ptr_value;
+    return std::string_view{m_host_mime->m_ptr_value, static_cast<std::string_view::size_type>(m_host_length)};
   }
 
-  if (length)
-    *length = 0;
-  return nullptr;
+  return std::string_view{};
 }
 
 /*-------------------------------------------------------------------------

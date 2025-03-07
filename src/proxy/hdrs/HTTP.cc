@@ -1740,10 +1740,9 @@ HTTPHdr::set_url_target_from_host_field(URL *url)
       m_target_in_url = true; // it's there now.
     }
   } else {
-    int         host_len = 0;
-    const char *host     = host_get(&host_len);
+    auto host{host_get()};
 
-    url->host_set(host, host_len);
+    url->host_set(host.data(), static_cast<int>(host.length()));
     if (m_port_in_header) {
       url->port_set(m_port);
     }
