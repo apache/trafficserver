@@ -594,12 +594,11 @@ public:
 
   /** Get the URL scheme.
       This is a reference, not allocated.
-      @return A pointer to the scheme or @c NULL if there is no valid URL.
+      @return A string_view to the scheme or an empty string_view if there is no valid URL.
   */
-  const char *scheme_get(int *length ///< Storage for path length.
-  );
-  void        url_set(URL *url);
-  void        url_set(const char *str, int length);
+  std::string_view scheme_get();
+  void             url_set(URL *url);
+  void             url_set(const char *str, int length);
 
   /// Check location of target host.
   /// @return @c true if the host was in the URL, @c false otherwise.
@@ -1236,11 +1235,16 @@ HTTPHdr::fragment_get()
   return std::string_view{};
 }
 
-inline const char *
-HTTPHdr::scheme_get(int *length)
+inline std::string_view
+HTTPHdr::scheme_get()
 {
   URL *url = this->url_get();
-  return url ? url->scheme_get(length) : nullptr;
+  if (url) {
+    int  length;
+    auto scheme{url->scheme_get(&length)};
+    return std::string_view{scheme, static_cast<std::string_view::size_type>(length)};
+  }
+  return std::string_view{};
 }
 
 /*-------------------------------------------------------------------------
