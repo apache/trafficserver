@@ -56,8 +56,8 @@ constexpr std::string_view SLICE_CRR_HEADER   = {"Slice-Crr-Status"};
 constexpr std::string_view SLICE_CRR_VAL      = "1";
 constexpr std::string_view SKIP_CRR_HDR_NAME  = {"X-Skip-Crr"};
 
-std::string_view Etag(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
-std::string_view LastModified(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
+std::string_view const Etag(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
+std::string_view const LastModified(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};

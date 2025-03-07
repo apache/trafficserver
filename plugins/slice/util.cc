@@ -113,6 +113,7 @@ request_block(TSCont contp, Data *const data)
     }
 
     if (0 < idbuf.size()) {
+      DEBUG_LOG("Adding identity '%.*s'", (int)idbuf.size(), idbuf.data());
       header.setKeyVal(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size(), idbuf.data(), idbuf.size());
     }
   }
