@@ -89,6 +89,11 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   )
 endif()
 
+# if BUILD_TESTING, then add a cpp defines for BUILD_TESTING
+if (BUILD_TESTING)
+    target_compile_definitions(libswoc PRIVATE BUILD_TESTING)
+endif()
+
 add_library(libswoc-static STATIC ${CC_FILES})
 set_target_properties(
   libswoc-static PROPERTIES OUTPUT_NAME swoc-static-${LIBSWOC_VERSION} PUBLIC_HEADER "${HEADER_FILES}"
@@ -116,7 +121,7 @@ target_include_directories(
   libswoc PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
 )
 
-# Alledgedly this makes the targets "importable from the build directory" but I see no evidence of that.
+# Allegedly this makes the targets "importable from the build directory" but I see no evidence of that.
 # AFAICT the file isn't created at all even with this enabled.
 #export(TARGETS libswoc FILE libswoc-config.cmake)
 
