@@ -691,22 +691,23 @@ http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-http_hdr_method_get(HTTPHdrImpl *hh, int *length)
+std::string_view
+http_hdr_method_get(HTTPHdrImpl *hh)
 {
   const char *str;
+  int         length;
 
   ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
   if (hh->u.req.m_method_wks_idx >= 0) {
-    str     = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
-    *length = hdrtoken_index_to_length(hh->u.req.m_method_wks_idx);
+    str    = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
+    length = hdrtoken_index_to_length(hh->u.req.m_method_wks_idx);
   } else {
-    str     = hh->u.req.m_ptr_method;
-    *length = hh->u.req.m_len_method;
+    str    = hh->u.req.m_ptr_method;
+    length = hh->u.req.m_len_method;
   }
 
-  return (str);
+  return std::string_view{str, static_cast<std::string_view::size_type>(length)};
 }
 
 /*-------------------------------------------------------------------------

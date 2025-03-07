@@ -434,9 +434,9 @@ void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 
 bool http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver);
 
-const char *http_hdr_method_get(HTTPHdrImpl *hh, int *length);
-void        http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
-                                bool must_copy);
+std::string_view http_hdr_method_get(HTTPHdrImpl *hh);
+void             http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
+                                     bool must_copy);
 
 void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 
@@ -954,7 +954,9 @@ HTTPHdr::method_get(int *length)
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
-  return http_hdr_method_get(m_http, length);
+  auto method{http_hdr_method_get(m_http)};
+  *length = static_cast<int>(method.length());
+  return method.data();
 }
 
 inline int
