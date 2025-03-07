@@ -623,8 +623,8 @@ public:
   HTTPStatus status_get() const;
   void       status_set(HTTPStatus status);
 
-  const char *reason_get(int *length);
-  void        reason_set(const char *value, int length);
+  std::string_view reason_get();
+  void             reason_set(const char *value, int length);
 
   void mark_early_data(bool flag = true) const;
   bool is_early_data() const;
@@ -1093,15 +1093,13 @@ HTTPHdr::status_set(HTTPStatus status)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-HTTPHdr::reason_get(int *length)
+inline std::string_view
+HTTPHdr::reason_get()
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  auto reason{http_hdr_reason_get(m_http)};
-  *length = static_cast<int>(reason.length());
-  return reason.data();
+  return http_hdr_reason_get(m_http);
 }
 
 /*-------------------------------------------------------------------------

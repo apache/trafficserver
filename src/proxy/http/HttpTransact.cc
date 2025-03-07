@@ -7939,10 +7939,8 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // When converting a response, only set a reason phrase if one was not already
   // set via some explicit call above.
-  char const *reason_phrase_for_convert  = nullptr;
-  int         outgoing_reason_phrase_len = 0;
-  char const *outgoing_reason_phrase     = outgoing_response->reason_get(&outgoing_reason_phrase_len);
-  if (outgoing_reason_phrase == nullptr || outgoing_reason_phrase_len == 0) {
+  char const *reason_phrase_for_convert = nullptr;
+  if (outgoing_response->reason_get().empty()) {
     reason_phrase_for_convert = reason_phrase;
   }
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response, reason_phrase_for_convert);

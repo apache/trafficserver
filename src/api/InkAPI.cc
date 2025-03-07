@@ -2925,7 +2925,9 @@ TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  return h.reason_get(length);
+  auto reason{h.reason_get()};
+  *length = static_cast<int>(reason.length());
+  return reason.data();
 }
 
 TSReturnCode

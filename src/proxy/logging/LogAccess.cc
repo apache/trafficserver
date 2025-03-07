@@ -112,7 +112,9 @@ LogAccess::init()
         LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
       }
     }
-    m_proxy_resp_reason_phrase_str = const_cast<char *>(m_proxy_response->reason_get(&m_proxy_resp_reason_phrase_len));
+    auto reason{m_proxy_response->reason_get()};
+    m_proxy_resp_reason_phrase_str = const_cast<char *>(reason.data());
+    m_proxy_resp_reason_phrase_len = static_cast<int>(reason.length());
   }
   if (hdr->server_request.valid()) {
     m_proxy_request = &(hdr->server_request);
