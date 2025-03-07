@@ -74,6 +74,24 @@ res_full = {
 
 server.addResponse("sessionlog.json", req_full, res_full)
 
+req_custom = {
+    "headers": "GET /pathheader HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+
+etag_custom = 'foo'
+
+res_custom = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" +
+        "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag_custom + '\r\n' + '\r\n',
+    "timestamp": "1469733493.993",
+    "body": body
+}
+
+server.addResponse("sessionlog.json", req_custom, res_custom)
+
 # cache range requests plugin remap
 ts.Disk.remap_config.AddLines(
     [
@@ -93,7 +111,7 @@ ts.Disk.records_config.update({
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
 
-# 0 Test - Fetch whole asset into cache
+# 0 Test - Fetch asset into cache
 tr = Test.AddTestRun("0- range cache load")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
@@ -103,8 +121,15 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
 tr.StillRunningAfter = ts
 
-# test inner range
-# 1 Test - Fetch range into cache
+# 1 Test - Fetch asset into cache
+tr = Test.AddTestRun("0- range cache load")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://identheader/pathheader -r 0-'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
+tr.StillRunningAfter = ts
+
+# 2 Test - Ensure range is fetched
 tr = Test.AddTestRun("0- cache hit check")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://ident/path -r 0-'
@@ -112,14 +137,18 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
 tr.StillRunningAfter = ts
 
-# set up the IMS date field (go in the future) RFC 2616
-#futuretime = time.time() + 100  # seconds
-#futurestr = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(futuretime))
+# 3 Test - Ensure range is fetched
+tr = Test.AddTestRun("0- cache hit check")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://identheader/pathheader -r 0-'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
+tr.StillRunningAfter = ts
 
 # These requests should flip from STALE to FRESH
 
-# 2 Test - Ensure X-Crr-Ident Etag header results in hit-stale
-tr = Test.AddTestRun("0- range X-Crr-Ident check")
+# 4 Test - Ensure X-Crr-Ident Etag header results in hit-fresh
+tr = Test.AddTestRun("0- range X-Crr-Ident Etag check")
 tr.DelayStart = 2
 ps = tr.Processes.Default
 ps.Command = curl_and_args + f" http://ident/path -r 0- -H 'X-Crr-Ident: Etag: {etag}'"
@@ -127,15 +156,24 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
 
-# 3 Test - Ensure X-Crr-Ident Last-Modified header results in hit-fresh
-tr = Test.AddTestRun("0- range X-Crr-Ident check")
+# 5 Test - Ensure X-Crr-Ident Etag header results in hit-fresh, custom header
+tr = Test.AddTestRun("0- range CrrIdent Etag check")
+tr.DelayStart = 2
+ps = tr.Processes.Default
+ps.Command = curl_and_args + f" http://identheader/pathheader -r 0- -H 'CrrIdent: Etag: {etag_custom}'"
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
+tr.StillRunningAfter = ts
+
+# 6 Test - Ensure X-Crr-Ident Last-Modified header results in hit-fresh
+tr = Test.AddTestRun("0- range X-Crr-Ident Last-Modified check")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: {last_modified}"'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
 
-# 4 Test - Provide a mismatch Etag force IMS request
+# 7 Test - Provide a mismatch Etag force IMS request
 tr = Test.AddTestRun("0- range X-Crr-Ident check")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: foo"'
@@ -143,9 +181,14 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
 tr.StillRunningAfter = ts
 
+# post checks for traffic.out
+
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     """Checking cached '"772102f4-56f4bc1e6d417"' against request 'Etag: "772102f4-56f4bc1e6d417"'""",
     "Etag is correctly considered")
+
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
+    """Checking cached 'foo' against request 'Etag: foo'""", "Etag custom header is correctly considered")
 
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     """Checking cached 'Fri, 07 Mar 2025 18:06:58 GMT' against request 'Last-Modified: Fri, 07 Mar 2025 18:06:58 GMT'""",
