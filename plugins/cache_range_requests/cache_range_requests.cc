@@ -660,24 +660,30 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
               DEBUG_LOG("Checking identifier against the '%s' header", pc->ident_header.c_str());
 
               int               len = 0;
-              char const *const str = TSMimeHdrFieldValueStringGet(req_buf, req_loc, ident_loc, 0, &len);
+              char const *const str = TSMimeHdrFieldValueStringGet(req_buf, req_loc, ident_loc, -1, &len);
 
               // determine which identifier has been provided
               std::string_view const svreq(str, len);
               std::string_view       tag;
               if (svreq.substr(0, Etag.length()) == Etag) {
+                DEBUG_LOG("Etag identifier provided in '%.*s'", len, str);
                 tag = Etag;
               } else if (svreq.substr(0, LastModified.length()) == LastModified) {
+                DEBUG_LOG("Last-Modified indentifier provided in '%.*s'", len, str);
                 tag = LastModified;
               }
 
               if (!tag.empty()) {
-                TSMLoc const id_loc = TSMimeHdrFieldFind(req_buf, req_loc, tag.data(), tag.size());
+                TSMLoc const id_loc = TSMimeHdrFieldFind(resp_buf, resp_loc, tag.data(), tag.size());
                 if (TS_NULL_MLOC != id_loc) {
                   int                    len = 0;
                   char const *const      str = TSMimeHdrFieldValueStringGet(resp_buf, resp_loc, id_loc, 0, &len);
                   std::string_view const sv(str, len);
+
+                  DEBUG_LOG("Checking cached '%.*s' against request '%.*s'", len, str, (int)svreq.size(), svreq.data());
+
                   if (std::string_view::npos != svreq.rfind(sv)) {
+                    DEBUG_LOG("Flipping cache lookup status from STALE to FRESH");
                     TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_FRESH);
                   }
                   TSHandleMLocRelease(resp_buf, resp_loc, id_loc);

@@ -104,11 +104,11 @@ request_block(TSCont contp, Data *const data)
     swoc::LocalBufferWriter<8192> idbuf;
     if (0 < data->m_etaglen) {
       idbuf.write(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
-      idbuf.write(' ');
+      idbuf.write(": ");
       idbuf.write(data->m_etag, data->m_etaglen);
     } else if (0 < data->m_lastmodifiedlen) {
       idbuf.write(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
-      idbuf.write(' ');
+      idbuf.write(": ");
       idbuf.write(data->m_lastmodified, data->m_lastmodifiedlen);
     }
 
