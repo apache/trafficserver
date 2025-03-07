@@ -161,7 +161,7 @@ restore_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc 
 const char *
 init_hidden_header_name()
 {
-  char        *hidden_header_name;
+  char        *hidden_header_name{nullptr};
   const char  *var_name = "proxy.config.proxy_name";
   TSMgmtString result;
 
