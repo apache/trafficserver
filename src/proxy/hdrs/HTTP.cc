@@ -762,12 +762,11 @@ http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-http_hdr_reason_get(HTTPHdrImpl *hh, int *length)
+std::string_view
+http_hdr_reason_get(HTTPHdrImpl *hh)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  *length = hh->u.resp.m_len_reason;
-  return (hh->u.resp.m_ptr_reason);
+  return std::string_view{hh->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hh->u.resp.m_len_reason)};
 }
 
 /*-------------------------------------------------------------------------

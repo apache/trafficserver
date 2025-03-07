@@ -441,10 +441,10 @@ void             http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char 
 void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 
 // HTTPStatus             http_hdr_status_get (HTTPHdrImpl *hh);
-void        http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
-const char *http_hdr_reason_get(HTTPHdrImpl *hh, int *length);
-void        http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
-const char *http_hdr_reason_lookup(unsigned status);
+void             http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
+std::string_view http_hdr_reason_get(HTTPHdrImpl *hh);
+void             http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
+const char      *http_hdr_reason_lookup(unsigned status);
 
 void        http_parser_init(HTTPParser *parser);
 void        http_parser_clear(HTTPParser *parser);
@@ -1107,7 +1107,9 @@ HTTPHdr::reason_get(int *length)
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  return http_hdr_reason_get(m_http, length);
+  auto reason{http_hdr_reason_get(m_http)};
+  *length = static_cast<int>(reason.length());
+  return reason.data();
 }
 
 /*-------------------------------------------------------------------------
