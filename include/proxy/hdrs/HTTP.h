@@ -573,10 +573,9 @@ public:
 
   /** Get the URL fragment.
       This is a reference, not allocated.
-      @return A pointer to the fragment or @c NULL if there is no valid URL.
+      @return A string_view to the fragment or an empty string_view if there is no valid URL.
   */
-  const char *fragment_get(int *length ///< Storage for fragment length.
-  );
+  std::string_view fragment_get();
 
   /** Get the target host name.
       The length is returned in @a length if non-NULL.
@@ -1225,11 +1224,16 @@ HTTPHdr::query_get()
   return std::string_view{};
 }
 
-inline const char *
-HTTPHdr::fragment_get(int *length)
+inline std::string_view
+HTTPHdr::fragment_get()
 {
   URL *url = this->url_get();
-  return url ? url->fragment_get(length) : nullptr;
+  if (url) {
+    int  length;
+    auto fragment{url->fragment_get(&length)};
+    return std::string_view{fragment, static_cast<std::string_view::size_type>(length)};
+  }
+  return std::string_view{};
 }
 
 inline const char *
