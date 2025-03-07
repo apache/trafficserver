@@ -473,9 +473,8 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
         } else if (!rp->nonstandard_methods.empty()) {
           method_matches = false;
         } else {
-          int         method_str_len;
-          const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
-          method_matches         = rp->nonstandard_methods.count(std::string(method_str, method_str_len));
+          auto method{s->hdr_info.client_request.method_get()};
+          method_matches = rp->nonstandard_methods.count(std::string{method});
         }
       } else {
         // No method specified, therefore all match.

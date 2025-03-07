@@ -1773,25 +1773,24 @@ LogAccess::marshal_client_req_timestamp_ms(char *buf)
 int
 LogAccess::marshal_client_req_http_method(char *buf)
 {
-  char *str  = nullptr;
-  int   alen = 0;
-  int   plen = INK_MIN_ALIGN;
+  std::string_view str;
+  int              plen = INK_MIN_ALIGN;
 
   if (m_client_request) {
-    str = const_cast<char *>(m_client_request->method_get(&alen));
+    str = m_client_request->method_get();
 
     // calculate the padded length only if the actual length
     // is not zero. We don't want the padded length to be zero
     // because marshal_mem should write the DEFAULT_STR to the
     // buffer if str is nil, and we need room for this.
     //
-    if (alen) {
-      plen = round_strlen(alen + 1); // +1 for trailing 0
+    if (!str.empty()) {
+      plen = round_strlen(static_cast<int>(str.length()) + 1); // +1 for trailing 0
     }
   }
 
   if (buf) {
-    marshal_mem(buf, str, alen, plen);
+    marshal_mem(buf, str.data(), static_cast<int>(str.length()), plen);
   }
   return plen;
 }

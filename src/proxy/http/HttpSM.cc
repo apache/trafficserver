@@ -5236,9 +5236,8 @@ HttpSM::ip_allow_is_request_forbidden(const IpAllow::ACL &acl)
       if (this->get_request_method_wksidx() != -1) {
         result = !acl.isMethodAllowed(this->get_request_method_wksidx());
       } else {
-        int  method_str_len{};
-        auto method_str = t_state.hdr_info.server_request.method_get(&method_str_len);
-        result          = !acl.isNonstandardMethodAllowed(std::string_view(method_str, method_str_len));
+        auto method{t_state.hdr_info.server_request.method_get()};
+        result = !acl.isNonstandardMethodAllowed(method);
       }
     }
   }
@@ -5251,13 +5250,12 @@ HttpSM::ip_allow_deny_request(const IpAllow::ACL &acl)
 {
   if (dbg_ctl_ip_allow.on()) {
     ip_text_buffer ipb;
-    const char    *method_str{};
-    int            method_str_len{};
-    method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
+    auto           method{t_state.hdr_info.client_request.method_get()};
 
     const char *ntop_formatted = ats_ip_ntop(this->get_server_remote_addr(), ipb, sizeof(ipb));
     Warning("server '%s' prohibited by ip-allow policy at line %d", ntop_formatted, acl.source_line());
-    SMDbg(dbg_ctl_ip_allow, "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str, ntop_formatted);
+    SMDbg(dbg_ctl_ip_allow, "Line %d denial for '%.*s' from %s", acl.source_line(), static_cast<int>(method.length()),
+          method.data(), ntop_formatted);
   }
 
   t_state.current.retry_attempts.maximize(
@@ -8326,7 +8324,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   }
 
   bool valid_origHost = true;
-  int  origHost_len, origMethod_len;
+  int  origHost_len, origMethod_len{0};
   char origHost[MAXDNAME];
   char origMethod[255];
   int  origPort = 80;
@@ -8344,9 +8342,10 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       valid_origHost = false;
     }
 
-    char *tmpOrigMethod = const_cast<char *>(t_state.hdr_info.server_request.method_get(&origMethod_len));
-    if (tmpOrigMethod) {
-      memcpy(origMethod, tmpOrigMethod, std::min(origMethod_len, static_cast<int>(sizeof(origMethod))));
+    auto tmpOrigMethod{t_state.hdr_info.server_request.method_get()};
+    origMethod_len = tmpOrigMethod.length();
+    if (!tmpOrigMethod.empty()) {
+      memcpy(origMethod, tmpOrigMethod.data(), std::min(origMethod_len, static_cast<int>(sizeof(origMethod))));
     } else {
       valid_origHost = false;
     }

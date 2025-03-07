@@ -516,9 +516,9 @@ public:
   HTTPVersion version_get() const;
   void        version_set(HTTPVersion version);
 
-  const char *method_get(int *length);
-  int         method_get_wksidx() const;
-  void        method_set(const char *value, int length);
+  std::string_view method_get();
+  int              method_get_wksidx() const;
+  void             method_set(const char *value, int length);
 
   URL *url_create(URL *url);
 
@@ -948,15 +948,13 @@ HTTPHdr::version_set(HTTPVersion version)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-HTTPHdr::method_get(int *length)
+inline std::string_view
+HTTPHdr::method_get()
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
-  auto method{http_hdr_method_get(m_http)};
-  *length = static_cast<int>(method.length());
-  return method.data();
+  return http_hdr_method_get(m_http);
 }
 
 inline int

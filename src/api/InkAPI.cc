@@ -2792,7 +2792,9 @@ TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  return h.method_get(length);
+  auto method{h.method_get()};
+  *length = static_cast<int>(method.length());
+  return method.data();
 }
 
 TSReturnCode

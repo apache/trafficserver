@@ -75,10 +75,9 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 {
   // :method
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()); field != nullptr) {
-    int         value_len;
-    const char *value = header.method_get(&value_len);
+    auto value{header.method_get()};
 
-    field->value_set(header.m_heap, header.m_mime, value, value_len);
+    field->value_set(header.m_heap, header.m_mime, value.data(), static_cast<int>(value.length()));
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :method");
     return PARSE_RESULT_ERROR;

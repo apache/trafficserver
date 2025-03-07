@@ -6528,30 +6528,28 @@ HttpTransact::process_quick_http_filter(State *s, int method)
   }
 
   if (s->state_machine->get_ua_txn()) {
-    auto       &acl            = s->state_machine->get_ua_txn()->get_acl();
-    bool        deny_request   = !acl.isValid();
-    int         method_str_len = 0;
-    const char *method_str     = nullptr;
+    auto            &acl          = s->state_machine->get_ua_txn()->get_acl();
+    bool             deny_request = !acl.isValid();
+    std::string_view method_str;
 
     if (acl.isValid() && !acl.isAllowAll()) {
       if (method != -1) {
         deny_request = !acl.isMethodAllowed(method);
       } else {
-        method_str   = s->hdr_info.client_request.method_get(&method_str_len);
-        deny_request = !acl.isNonstandardMethodAllowed(std::string_view(method_str, method_str_len));
+        method_str   = s->hdr_info.client_request.method_get();
+        deny_request = !acl.isNonstandardMethodAllowed(method_str);
       }
     }
     if (deny_request) {
       if (dbg_ctl_ip_allow.on()) {
         ip_text_buffer ipb;
         if (method != -1) {
-          method_str     = hdrtoken_index_to_wks(method);
-          method_str_len = strlen(method_str);
-        } else if (!method_str) {
-          method_str = s->hdr_info.client_request.method_get(&method_str_len);
+          method_str = std::string_view{hdrtoken_index_to_wks(method)};
+        } else if (method_str.empty()) {
+          method_str = s->hdr_info.client_request.method_get();
         }
-        TxnDbg(dbg_ctl_ip_allow, "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
-               ats_ip_ntop(&s->client_info.src_addr.sa, ipb, sizeof(ipb)));
+        TxnDbg(dbg_ctl_ip_allow, "Line %d denial for '%.*s' from %s", acl.source_line(), static_cast<int>(method_str.length()),
+               method_str.data(), ats_ip_ntop(&s->client_info.src_addr.sa, ipb, sizeof(ipb)));
       }
       s->client_connection_allowed = false;
     }
