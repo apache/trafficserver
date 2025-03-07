@@ -561,10 +561,9 @@ public:
 
   /** Get the URL path.
       This is a reference, not allocated.
-      @return A pointer to the path or @c NULL if there is no valid URL.
+      @return A string_view to the path or an empty string_view if there is no valid URL.
   */
-  const char *path_get(int *length ///< Storage for path length.
-  );
+  std::string_view path_get();
 
   /** Get the URL query.
       This is a reference, not allocated.
@@ -1203,11 +1202,16 @@ HTTPHdr::url_string_get_ref(int *length)
   return this->url_string_get(USE_HDR_HEAP_MAGIC, length);
 }
 
-inline const char *
-HTTPHdr::path_get(int *length)
+inline std::string_view
+HTTPHdr::path_get()
 {
   URL *url = this->url_get();
-  return url ? url->path_get(length) : nullptr;
+  if (url) {
+    int  length;
+    auto path{url->path_get(&length)};
+    return std::string_view{path, static_cast<std::string_view::size_type>(length)};
+  }
+  return std::string_view{};
 }
 
 inline const char *

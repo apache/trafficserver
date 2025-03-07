@@ -89,7 +89,9 @@ LogAccess::init()
 
     m_client_req_url_canon_str =
       Encoding::escapify_url(&m_arena, m_client_req_url_str, m_client_req_url_len, &m_client_req_url_canon_len);
-    m_client_req_url_path_str = m_client_request->path_get(&m_client_req_url_path_len);
+    auto path{m_client_request->path_get()};
+    m_client_req_url_path_str = path.data();
+    m_client_req_url_path_len = static_cast<int>(path.length());
   }
 
   if (hdr->client_response.valid()) {
