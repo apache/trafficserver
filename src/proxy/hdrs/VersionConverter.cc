@@ -123,19 +123,18 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
   // :path
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()); field != nullptr) {
-    auto        value{header.path_get()};
-    int         query_len = 0;
-    const char *query     = header.query_get(&query_len);
-    int         path_len  = static_cast<int>(value.length()) + 1;
+    auto value{header.path_get()};
+    auto query{header.query_get()};
+    int  path_len = static_cast<int>(value.length()) + 1;
 
-    ts::LocalBuffer<char> buf(static_cast<int>(value.length()) + 1 + 1 + 1 + query_len);
+    ts::LocalBuffer<char> buf(static_cast<int>(value.length()) + 1 + 1 + 1 + static_cast<int>(query.length()));
     char                 *path = buf.data();
     path[0]                    = '/';
     memcpy(path + 1, value.data(), static_cast<int>(value.length()));
-    if (query_len > 0) {
+    if (static_cast<int>(query.length()) > 0) {
       path[path_len] = '?';
-      memcpy(path + path_len + 1, query, query_len);
-      path_len += 1 + query_len;
+      memcpy(path + path_len + 1, query.data(), static_cast<int>(query.length()));
+      path_len += 1 + static_cast<int>(query.length());
     }
     field->value_set(header.m_heap, header.m_mime, path, path_len);
   } else {

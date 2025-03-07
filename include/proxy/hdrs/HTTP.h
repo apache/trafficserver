@@ -567,10 +567,9 @@ public:
 
   /** Get the URL query.
       This is a reference, not allocated.
-      @return A pointer to the query or @c NULL if there is no valid URL.
+      @return A string_view to the query or an empty string_view if there is no valid URL.
   */
-  const char *query_get(int *length ///< Storage for query length.
-  );
+  std::string_view query_get();
 
   /** Get the URL fragment.
       This is a reference, not allocated.
@@ -1214,11 +1213,16 @@ HTTPHdr::path_get()
   return std::string_view{};
 }
 
-inline const char *
-HTTPHdr::query_get(int *length)
+inline std::string_view
+HTTPHdr::query_get()
 {
   URL *url = this->url_get();
-  return url ? url->query_get(length) : nullptr;
+  if (url) {
+    int  length;
+    auto query{url->query_get(&length)};
+    return std::string_view{query, static_cast<std::string_view::size_type>(length)};
+  }
+  return std::string_view{};
 }
 
 inline const char *
