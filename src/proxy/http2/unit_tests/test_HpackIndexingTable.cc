@@ -93,15 +93,13 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         int len = decode_indexed_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
         REQUIRE(len == i.encoded_field_len);
 
-        int         name_len;
-        const char *name = header.name_get(&name_len);
-        REQUIRE(name_len > 0);
-        REQUIRE(memcmp(name, i.raw_name, name_len) == 0);
+        auto name{header.name_get()};
+        REQUIRE(name.length() > 0);
+        REQUIRE(name == std::string_view{i.raw_name});
 
-        int         actual_value_len;
-        const char *actual_value = header.value_get(&actual_value_len);
-        REQUIRE(actual_value_len > 0);
-        REQUIRE(memcmp(actual_value, i.raw_value, actual_value_len) == 0);
+        auto actual_value{header.value_get()};
+        REQUIRE(actual_value.length() > 0);
+        REQUIRE(actual_value == std::string_view{i.raw_value});
       }
     }
   }
@@ -228,15 +226,13 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
           int len = decode_literal_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
           REQUIRE(len == i.encoded_field_len);
 
-          int         name_len;
-          const char *name = header.name_get(&name_len);
-          REQUIRE(name_len > 0);
-          REQUIRE(memcmp(name, i.raw_name, name_len) == 0);
+          auto name{header.name_get()};
+          REQUIRE(name.length() > 0);
+          REQUIRE(name == std::string_view{i.raw_name});
 
-          int         actual_value_len;
-          const char *actual_value = header.value_get(&actual_value_len);
-          REQUIRE(actual_value_len > 0);
-          REQUIRE(memcmp(actual_value, i.raw_value, actual_value_len) == 0);
+          auto actual_value{header.value_get()};
+          REQUIRE(actual_value.length() > 0);
+          REQUIRE(actual_value == std::string_view{i.raw_value});
         }
       }
     }

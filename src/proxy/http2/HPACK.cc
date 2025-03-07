@@ -553,12 +553,11 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   }
 
   if (dbg_ctl_hpack_decode.on()) {
-    int         decoded_name_len;
-    const char *decoded_name = header.name_get(&decoded_name_len);
-    int         decoded_value_len;
-    const char *decoded_value = header.value_get(&decoded_value_len);
+    auto decoded_name{header.name_get()};
+    auto decoded_value{header.value_get()};
 
-    Dbg(dbg_ctl_hpack_decode, "Decoded field: %.*s: %.*s", decoded_name_len, decoded_name, decoded_value_len, decoded_value);
+    Dbg(dbg_ctl_hpack_decode, "Decoded field: %.*s: %.*s", static_cast<int>(decoded_name.length()), decoded_name.data(),
+        static_cast<int>(decoded_value.length()), decoded_value.data());
   }
 
   return len;
@@ -644,12 +643,11 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
   // Print decoded header field
   if (dbg_ctl_hpack_decode.on()) {
-    int         decoded_name_len;
-    const char *decoded_name = header.name_get(&decoded_name_len);
-    int         decoded_value_len;
-    const char *decoded_value = header.value_get(&decoded_value_len);
+    auto decoded_name{header.name_get()};
+    auto decoded_value{header.value_get()};
 
-    Dbg(dbg_ctl_hpack_decode, "Decoded field: %.*s: %.*s", decoded_name_len, decoded_name, decoded_value_len, decoded_value);
+    Dbg(dbg_ctl_hpack_decode, "Decoded field: %.*s: %.*s", static_cast<int>(decoded_name.length()), decoded_name.data(),
+        static_cast<int>(decoded_value.length()), decoded_value.data());
   }
 
   if (has_http2_violation) {
