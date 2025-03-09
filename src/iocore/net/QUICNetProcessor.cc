@@ -234,7 +234,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   NetAccept *na = createNetAccept(opt);
 
   if (accept_threads < 0) {
-    REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
+    RecGetRecordIntOrZero("proxy.config.accept_threads", &accept_threads);
   }
   Metrics::Gauge::increment(net_rsb.accepts_currently_open);
 
