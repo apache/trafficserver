@@ -44,6 +44,8 @@
 #include "ProxySession.h"
 #include "MgmtDefs.h"
 
+#define HTTP_OUR_VIA_MAX_LENGTH 1024 // 512-bytes for hostname+via string, 512-bytes for the debug info
+
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 
 #define DUMP_HEADER(T, H, I, S)                                 \
