@@ -642,7 +642,6 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
           }
         }
       }
-      // BNO
     } else if (TS_CACHE_LOOKUP_HIT_STALE == cachestat && txn_state->ident_check) {
       TSMBuffer resp_buf = nullptr;
       TSMLoc    resp_loc = TS_NULL_MLOC;
@@ -651,7 +650,7 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
 
       if (TS_SUCCESS == TSHttpTxnCachedRespGet(txnp, &resp_buf, &resp_loc)) {
         if (TS_HTTP_STATUS_OK == TSHttpHdrStatusGet(resp_buf, resp_loc)) {
-          // get the client identifier
+          // get the request identifier
           TSMBuffer req_buf = nullptr;
           TSMLoc    req_loc = TS_NULL_MLOC;
           if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
