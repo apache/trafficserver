@@ -173,6 +173,30 @@ RecErrT RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock = true);
 // Convenience to allow us to treat the RecInt as a bool internally
 RecErrT RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 
+// Convenience to allow us to treat the RecInt as various integer types internally.
+// Note we must do explicit instantiation for each type actually used in RecCore.cc.
+// Also this version sets rec_int to zero if the config is not found.
+template <typename IntegerType> RecErrT RecGetRecordIntOrZero(const char *name, IntegerType *rec_int, bool lock = true);
+// Convenience to allow us to set rec_float to zero if the config is not found
+RecErrT RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock = true);
+// Convenience to allow us to set rec_string to nullptr if the config is not found
+RecErrT RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
+
+// Convinience to link and get a config of RecInt type
+RecErrT RecEstablishStaticConfigInteger(const char *name, RecInt *rec_int, bool lock = true);
+// Convinience to link and get a config of int32_t type
+RecErrT RecEstablishStaticConfigInt32(const char *name, int32_t *rec_int, bool lock = true);
+// Convinience to link and get a config of uint32_t type
+RecErrT RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool lock = true);
+// Convenience to link and get a config of string type
+RecErrT RecEstablishStaticConfigStringAlloc(const char *name, RecString *rec_string, bool lock = true);
+// Convenience to link and get a config of float type
+RecErrT RecEstablishStaticConfigFloat(const char *name, RecFloat *rec_float, bool lock = true);
+// Convenience to link and get a config of byte type
+// Allow to treat our "INT" configs as a byte type internally. Note
+// that the byte type is just a wrapper around RECD_INT.
+RecErrT RecEstablishStaticConfigByte(const char *name, RecByte *rec_byte, bool lock = true);
+
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
@@ -188,92 +212,6 @@ RecErrT RecGetRecordSource(const char *name, RecSourceT *source, bool lock = tru
 
 /// Generate a warning if any configuration name/value is not registered.
 void RecConfigWarnIfUnregistered();
-
-//-------------------------------------------------------------------------
-// Backwards Compatibility Items (REC_ prefix)
-//-------------------------------------------------------------------------
-#define REC_ReadConfigInt32(_var, _config_var_name)    \
-  do {                                                 \
-    RecInt tmp = 0;                                    \
-    RecGetRecordInt(_config_var_name, (RecInt *)&tmp); \
-    _var = (int32_t)tmp;                               \
-  } while (0)
-
-#define REC_ReadConfigInteger(_var, _config_var_name) \
-  do {                                                \
-    RecInt tmp = 0;                                   \
-    RecGetRecordInt(_config_var_name, &tmp);          \
-    _var = tmp;                                       \
-  } while (0)
-
-#define REC_ReadConfigFloat(_var, _config_var_name) \
-  do {                                              \
-    RecFloat tmp = 0;                               \
-    RecGetRecordFloat(_config_var_name, &tmp);      \
-    _var = tmp;                                     \
-  } while (0)
-
-#define REC_ReadConfigStringAlloc(_var, _config_var_name) RecGetRecordString_Xmalloc(_config_var_name, (RecString *)&_var)
-
-#define REC_ReadConfigString(_var, _config_var_name, _len) RecGetRecordString(_config_var_name, _var, _len)
-
-#define REC_RegisterConfigUpdateFunc(_config_var_name, func, flag) RecRegisterConfigUpdateCb(_config_var_name, func, flag)
-
-#define REC_EstablishStaticConfigInteger(_var, _config_var_name) \
-  do {                                                           \
-    RecLinkConfigInt(_config_var_name, &_var);                   \
-    _var = (int64_t)REC_ConfigReadInteger(_config_var_name);     \
-  } while (0)
-
-#define REC_EstablishStaticConfigInt32(_var, _config_var_name) \
-  do {                                                         \
-    RecLinkConfigInt32(_config_var_name, &_var);               \
-    _var = (int32_t)REC_ConfigReadInteger(_config_var_name);   \
-  } while (0)
-
-#define REC_EstablishStaticConfigInt32U(_var, _config_var_name) \
-  do {                                                          \
-    RecLinkConfigUInt32(_config_var_name, &_var);               \
-    _var = (int32_t)REC_ConfigReadInteger(_config_var_name);    \
-  } while (0)
-
-/*
- * RecLinkConfigString allocates the RecString and stores the ptr to it (&var).
- * So before changing _var (the RecString) we have to free the original one.
- * Really, we somehow need to know whether RecLinkConfigString allocated _var.
- * For now, we're using the return value to indicate this, even though it's
- * not always the case.  If we're wrong, we'll leak the RecString.
- */
-#define REC_EstablishStaticConfigStringAlloc(_var, _config_var_name)  \
-  do {                                                                \
-    if (RecLinkConfigString(_config_var_name, &_var) == REC_ERR_OKAY) \
-      ats_free(_var);                                                 \
-    _var = (RecString)REC_ConfigReadString(_config_var_name);         \
-  } while (0)
-
-#define REC_EstablishStaticConfigFloat(_var, _config_var_name) \
-  do {                                                         \
-    RecLinkConfigFloat(_config_var_name, &_var);               \
-    _var = (RecFloat)REC_ConfigReadFloat(_config_var_name);    \
-  } while (0)
-
-// Allow to treat our "INT" configs as a byte type internally. Note
-// that the byte type is just a wrapper around RECD_INT.
-#define REC_EstablishStaticConfigByte(_var, _config_var_name) \
-  do {                                                        \
-    RecLinkConfigByte(_config_var_name, &_var);               \
-    _var = (RecByte)REC_ConfigReadInteger(_config_var_name);  \
-  } while (0)
-
-RecInt   REC_ConfigReadInteger(const char *name);
-char    *REC_ConfigReadString(const char *name);
-RecFloat REC_ConfigReadFloat(const char *name);
-
-// MGMT2 Marco's -- converting lmgmt->record_data->readXXX
-RecInt     REC_readInteger(const char *name, bool *found, bool lock = true);
-RecFloat   REC_readFloat(char *name, bool *found, bool lock = true);
-RecCounter REC_readCounter(char *name, bool *found, bool lock = true);
-RecString  REC_readString(const char *name, bool *found, bool lock = true);
 
 //------------------------------------------------------------------------
 // Set RecRecord attributes

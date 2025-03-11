@@ -411,7 +411,8 @@ public:
   {
     SET_HANDLER(&DiagsLogContinuation::periodic);
 
-    char *configured_traffic_out_name(REC_ConfigReadString("proxy.config.output.logfile.name"));
+    char *configured_traffic_out_name;
+    RecGetRecordStringOrNullptr_Xmalloc("proxy.config.output.logfile.name", &configured_traffic_out_name);
     traffic_out_name = std::string(configured_traffic_out_name);
     ats_free(configured_traffic_out_name);
   }
@@ -422,9 +423,12 @@ public:
     Dbg(dbg_ctl_log, "in DiagsLogContinuation, checking on diags.log");
 
     // First, let us update the rolling config values for diagslog.
-    int diags_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec"));
-    int diags_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb"));
-    int diags_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled"));
+    int diags_log_roll_int;
+    RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_interval_sec", &diags_log_roll_int);
+    int diags_log_roll_size;
+    RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_size_mb", &diags_log_roll_size);
+    int diags_log_roll_enable;
+    RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_enabled", &diags_log_roll_enable);
     diags()->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int,
                                   diags_log_roll_size);
 
@@ -432,9 +436,12 @@ public:
       Note("Rolled %s", diags_log_filename);
     }
 
-    int output_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec"));
-    int output_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb"));
-    int output_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled"));
+    int output_log_roll_int;
+    RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_interval_sec", &output_log_roll_int);
+    int output_log_roll_size;
+    RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_size_mb", &output_log_roll_size);
+    int output_log_roll_enable;
+    RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_enabled", &output_log_roll_enable);
     diags()->config_roll_outputlog(static_cast<RollingEnabledValues>(output_log_roll_enable), output_log_roll_int,
                                    output_log_roll_size);
 
@@ -471,7 +478,7 @@ public:
     }
 
     // "reload" the setting, we don't do this often so not expensive
-    _memory_limit = REC_ConfigReadInteger("proxy.config.memory.max_usage");
+    RecGetRecordIntOrZero("proxy.config.memory.max_usage", &_memory_limit);
     _memory_limit = _memory_limit >> 10; // divide by 1024
 
     if (getrusage(RUSAGE_SELF, &_usage) == 0) {
@@ -575,7 +582,7 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
   if (config_var) {
     dump_mem_info_frequency = data.rec_int;
   } else {
-    dump_mem_info_frequency = REC_ConfigReadInteger("proxy.config.dump_mem_info_frequency");
+    RecGetRecordIntOrZero("proxy.config.dump_mem_info_frequency", &dump_mem_info_frequency);
   }
 
   Dbg(dbg_ctl_tracker, "init_memory_tracker called [%d]", dump_mem_info_frequency);
@@ -768,7 +775,7 @@ cmd_list(char * /* cmd ATS_UNUSED */)
   // show hostdb size
 
   int h_size = 120000;
-  REC_ReadConfigInteger(h_size, "proxy.config.hostdb.size");
+  RecGetRecordIntOrZero("proxy.config.hostdb.size", &h_size);
   printf("Host Database size:\t%d\n", h_size);
 
   // show cache config information....
@@ -1272,7 +1279,7 @@ check_fd_limit()
 {
   int check_throttle = -1;
   int fds_limit      = static_cast<int>(ink_get_fds_limit());
-  REC_ReadConfigInteger(check_throttle, "proxy.config.net.connections_throttle");
+  RecGetRecordIntOrZero("proxy.config.net.connections_throttle", &check_throttle);
   if (check_throttle > fds_limit - THROTTLE_FD_HEADROOM) {
     int new_fds_throttle = fds_limit - THROTTLE_FD_HEADROOM;
     if (new_fds_throttle < 1) {
@@ -1366,7 +1373,7 @@ init_core_size()
     RecData rec_temp;
     rec_temp.rec_int = coreSize;
     set_core_size(nullptr, RECD_INT, rec_temp, nullptr);
-    found = (REC_RegisterConfigUpdateFunc("proxy.config.core_limit", set_core_size, nullptr) == REC_ERR_OKAY);
+    found = (RecRegisterConfigUpdateCb("proxy.config.core_limit", set_core_size, nullptr) == REC_ERR_OKAY);
 
     ink_assert(found);
   }
@@ -1383,7 +1390,7 @@ adjust_sys_settings()
   if (maxfiles != RLIM_INFINITY) {
     float file_max_pct = 0.9;
 
-    REC_ReadConfigFloat(file_max_pct, "proxy.config.system.file_max_pct");
+    RecGetRecordFloatOrZero("proxy.config.system.file_max_pct", &file_max_pct);
     if (file_max_pct > 1.0) {
       file_max_pct = 1.0;
     }
@@ -1396,7 +1403,7 @@ adjust_sys_settings()
     }
   }
 
-  REC_ReadConfigInteger(cfg_fds_throttle, "proxy.config.net.connections_throttle");
+  RecGetRecordIntOrZero("proxy.config.net.connections_throttle", &cfg_fds_throttle);
 
   if (getrlimit(RLIMIT_NOFILE, &lim) == 0) {
     if (cfg_fds_throttle > static_cast<int>(lim.rlim_cur - THROTTLE_FD_HEADROOM)) {
@@ -1538,9 +1545,9 @@ struct ShowStats : public Continuation {
 void
 syslog_log_configure()
 {
-  bool  found        = false;
   char  sys_var[]    = "proxy.config.syslog_facility";
-  char *facility_str = REC_readString(sys_var, &found);
+  char *facility_str = nullptr;
+  bool  found        = RecGetRecordString_Xmalloc(sys_var, &facility_str) == REC_ERR_OKAY;
 
   if (found) {
     int facility = facility_string_to_int(facility_str);
@@ -1638,13 +1645,13 @@ adjust_num_of_net_threads(int nthreads)
   int   nth_auto_config    = 1;
   int   num_of_threads_tmp = 1;
 
-  REC_ReadConfigInteger(nth_auto_config, "proxy.config.exec_thread.autoconfig.enabled");
+  RecGetRecordIntOrZero("proxy.config.exec_thread.autoconfig.enabled", &nth_auto_config);
 
   Dbg(dbg_ctl_threads, "initial number of net threads: %d", nthreads);
   Dbg(dbg_ctl_threads, "net threads auto-configuration: %s", nth_auto_config ? "enabled" : "disabled");
 
   if (!nth_auto_config) {
-    REC_ReadConfigInteger(num_of_threads_tmp, "proxy.config.exec_thread.limit");
+    RecGetRecordIntOrZero("proxy.config.exec_thread.limit", &num_of_threads_tmp);
 
     if (num_of_threads_tmp <= 0) {
       num_of_threads_tmp = 1;
@@ -1655,7 +1662,7 @@ adjust_num_of_net_threads(int nthreads)
     nthreads = num_of_threads_tmp;
   } else { /* autoconfig is enabled */
     num_of_threads_tmp = nthreads;
-    REC_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
+    RecGetRecordFloatOrZero("proxy.config.exec_thread.autoconfig.scale", &autoconfig_scale);
     num_of_threads_tmp = static_cast<int>(static_cast<float>(num_of_threads_tmp) * autoconfig_scale);
 
     if (unlikely(num_of_threads_tmp > MAX_EVENT_THREADS)) {
@@ -1773,11 +1780,11 @@ configure_io_uring()
   RecInt aio_io_uring_wq_bounded    = cfg.wq_bounded;
   RecInt aio_io_uring_wq_unbounded  = cfg.wq_unbounded;
 
-  REC_ReadConfigInteger(aio_io_uring_queue_entries, "proxy.config.io_uring.entries");
-  REC_ReadConfigInteger(aio_io_uring_sq_poll_ms, "proxy.config.io_uring.sq_poll_ms");
-  REC_ReadConfigInteger(aio_io_uring_attach_wq, "proxy.config.io_uring.attach_wq");
-  REC_ReadConfigInteger(aio_io_uring_wq_bounded, "proxy.config.io_uring.wq_workers_bounded");
-  REC_ReadConfigInteger(aio_io_uring_wq_unbounded, "proxy.config.io_uring.wq_workers_unbounded");
+  RecGetRecordInteger("proxy.config.io_uring.entries", &aio_io_uring_queue_entries);
+  RecGetRecordInteger("proxy.config.io_uring.sq_poll_ms", &aio_io_uring_sq_poll_ms);
+  RecGetRecordInteger("proxy.config.io_uring.attach_wq", &aio_io_uring_attach_wq);
+  RecGetRecordInteger("proxy.config.io_uring.wq_workers_bounded", &aio_io_uring_wq_bounded);
+  RecGetRecordInteger("proxy.config.io_uring.wq_workers_unbounded", &aio_io_uring_wq_unbounded);
 
   cfg.queue_entries = aio_io_uring_queue_entries;
   cfg.sq_poll_ms    = aio_io_uring_sq_poll_ms;
@@ -1915,23 +1922,23 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   // init huge pages
   int enabled;
-  REC_ReadConfigInteger(enabled, "proxy.config.allocator.hugepages");
+  RecGetRecordIntOrZero("proxy.config.allocator.hugepages", &enabled);
   ats_hugepage_init(enabled);
   Dbg(dbg_ctl_hugepages, "ats_pagesize reporting %zu", ats_pagesize());
   Dbg(dbg_ctl_hugepages, "ats_hugepage_size reporting %zu", ats_hugepage_size());
 
   if (!num_accept_threads) {
-    REC_ReadConfigInteger(num_accept_threads, "proxy.config.accept_threads");
+    RecGetRecordIntOrZero("proxy.config.accept_threads", &num_accept_threads);
   }
 
   if (!num_task_threads) {
-    REC_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
+    RecGetRecordIntOrZero("proxy.config.task_threads", &num_task_threads);
   }
 
   ats_scoped_str user(MAX_LOGIN + 1);
 
   *user        = '\0';
-  admin_user_p = ((REC_ERR_OKAY == REC_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) && (*user != '\0') &&
+  admin_user_p = ((REC_ERR_OKAY == RecGetRecordString("proxy.config.admin.user_id", user, MAX_LOGIN)) && (*user != '\0') &&
                   (0 != strcmp(user, "#-1")));
 
   // Set up crash logging. We need to do this while we are still privileged so that the crash
@@ -1975,7 +1982,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   main_thread->set_specific();
 
   // Re-initialize diagsConfig based on records.yaml configuration
-  REC_ReadConfigString(diags_log_filename, "proxy.config.diags.logfile.filename", sizeof(diags_log_filename));
+  RecGetRecordString("proxy.config.diags.logfile.filename", diags_log_filename, sizeof(diags_log_filename));
   if (strnlen(diags_log_filename, sizeof(diags_log_filename)) == 0) {
     strncpy(diags_log_filename, DEFAULT_DIAGS_LOG_FILENAME, sizeof(diags_log_filename));
   }
@@ -1998,7 +2005,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 // Check if we should do mlockall()
 #if defined(MCL_FUTURE)
   int mlock_flags = 0;
-  REC_ReadConfigInteger(mlock_flags, "proxy.config.mlock_enabled");
+  RecGetRecordIntOrZero("proxy.config.mlock_enabled", &mlock_flags);
 
   if (mlock_flags == 2) {
     if (0 != mlockall(MCL_CURRENT | MCL_FUTURE)) {
@@ -2011,7 +2018,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   // Pick the system clock to choose, likely only on Linux. See <linux/time.h>.
   extern int gSystemClock; // 0 == CLOCK_REALTIME, the default
-  REC_ReadConfigInteger(gSystemClock, "proxy.config.system_clock");
+  RecGetRecordIntOrZero("proxy.config.system_clock", &gSystemClock);
 
   if (!command_flag) { // No need if we are going into command mode.
     // JSONRPC server and handlers
@@ -2046,7 +2053,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   } else if (HttpConfig::m_master.inbound.has_ip6()) {
     machine_addr.assign(HttpConfig::m_master.inbound.ip6());
   }
-  char *hostname = REC_ConfigReadString("proxy.config.log.hostname");
+  char *hostname;
+  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.log.hostname", &hostname);
   if (hostname != nullptr && std::string_view(hostname) == "localhost") {
     // The default value was used. Let Machine::init derive the hostname.
     ats_free(hostname);
@@ -2058,7 +2066,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->uuid.getString(),
                         RECP_NON_PERSISTENT);
 
-  REC_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
+  RecGetRecordIntOrZero("proxy.config.res_track_memory", &res_track_memory);
 
   init_http_header();
   ts_session_protocol_well_known_name_indices_init();
@@ -2085,14 +2093,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   num_of_net_threads = adjust_num_of_net_threads(num_of_net_threads);
 
   size_t stacksize;
-  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+  RecGetRecordIntOrZero("proxy.config.thread.default.stacksize", &stacksize);
 
   // This has some special semantics, in that providing this configuration on
   // command line has higher priority than what is set in records.yaml.
   if (-1 != poll_timeout) {
     EThread::default_wait_interval_ms = poll_timeout;
   } else {
-    REC_ReadConfigInteger(EThread::default_wait_interval_ms, "proxy.config.net.poll_timeout");
+    RecGetRecordIntOrZero("proxy.config.net.poll_timeout", &EThread::default_wait_interval_ms);
   }
 
   // This shouldn't happen, but lets make sure we run somewhat reasonable.
@@ -2100,7 +2108,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     EThread::default_wait_interval_ms = 10; // Default value for all platform.
   }
 
-  REC_ReadConfigInteger(thread_max_heartbeat_mseconds, "proxy.config.thread.max_heartbeat_mseconds");
+  RecGetRecordIntOrZero("proxy.config.thread.max_heartbeat_mseconds", &thread_max_heartbeat_mseconds);
 
 #if TS_USE_LINUX_IO_URING
   configure_io_uring();
@@ -2154,15 +2162,16 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
   eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
-  REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
-  char *p = REC_ConfigReadString("proxy.config.diags.debug.client_ip");
+  char *p;
+  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.diags.debug.client_ip", &p);
   if (p) {
     // Translate string to IpAddr
     set_debug_ip(p);
   }
-  REC_RegisterConfigUpdateFunc("proxy.config.diags.debug.client_ip", update_debug_client_ip, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.diags.debug.client_ip", update_debug_client_ip, nullptr);
 
   // log initialization moved down
 
@@ -2254,7 +2263,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     // UDP net-threads are turned off by default.
     if (!num_of_udp_threads) {
-      REC_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
+      RecGetRecordIntOrZero("proxy.config.udp.threads", &num_of_udp_threads);
     }
 
     udpNet.register_event_type();
@@ -2279,7 +2288,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     transformProcessor.start();
 
     int http_enabled = 1;
-    REC_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
+    RecGetRecordIntOrZero("proxy.config.http.enabled", &http_enabled);
 
     if (http_enabled) {
       // call the ready hooks before we start accepting connections.
@@ -2290,7 +2299,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       }
 
       int delay_p = 0;
-      REC_ReadConfigInteger(delay_p, "proxy.config.http.wait_for_cache");
+      RecGetRecordIntOrZero("proxy.config.http.wait_for_cache", &delay_p);
 
       // Check the condition variable.
       {

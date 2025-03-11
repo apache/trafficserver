@@ -77,19 +77,19 @@ DiagsConfig::reconfigure_diags()
 
   // enabled if records.yaml set
 
-  e = static_cast<int>(REC_readInteger("proxy.config.diags.debug.enabled", &found));
+  found = RecGetRecordIntOrZero("proxy.config.diags.debug.enabled", &e) == REC_ERR_OKAY;
   if (e && found) {
     c.enabled(DiagsTagType_Debug, e); // implement OR logic
   }
   all_found = all_found && found;
 
-  e = static_cast<int>(REC_readInteger("proxy.config.diags.action.enabled", &found));
+  found = RecGetRecordIntOrZero("proxy.config.diags.action.enabled", &e) == REC_ERR_OKAY;
   if (e && found) {
     c.enabled(DiagsTagType_Action, 1); // implement OR logic
   }
   all_found = all_found && found;
 
-  e                     = static_cast<int>(REC_readInteger("proxy.config.diags.show_location", &found));
+  found                 = RecGetRecordIntOrZero("proxy.config.diags.show_location", &e) == REC_ERR_OKAY;
   _diags->show_location = ((e == 1 && found) ? SHOW_LOCATION_DEBUG : ((e == 2 && found) ? SHOW_LOCATION_ALL : SHOW_LOCATION_NONE));
   all_found             = all_found && found;
 
@@ -102,7 +102,7 @@ DiagsConfig::reconfigure_diags()
       break;
     }
 
-    p         = REC_readString(record_name, &found);
+    found     = RecGetRecordStringOrNullptr_Xmalloc(record_name, &p) == REC_ERR_OKAY;
     all_found = all_found && found;
 
     if (found) {
@@ -113,11 +113,11 @@ DiagsConfig::reconfigure_diags()
     }
   }
 
-  p         = REC_readString("proxy.config.diags.debug.tags", &found);
+  found     = RecGetRecordStringOrNullptr_Xmalloc("proxy.config.diags.debug.tags", &p) == REC_ERR_OKAY;
   dt        = (found ? p : nullptr); // NOTE: needs to be freed
   all_found = all_found && found;
 
-  p         = REC_readString("proxy.config.diags.action.tags", &found);
+  found     = RecGetRecordStringOrNullptr_Xmalloc("proxy.config.diags.action.tags", &p) == REC_ERR_OKAY;
   at        = (found ? p : nullptr); // NOTE: needs to be freed
   all_found = all_found && found;
 
@@ -293,18 +293,26 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
 
   // Grab rolling intervals from configuration
   // TODO error check these values
-  int output_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec"));
-  int output_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb"));
-  int output_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled"));
-  int diags_log_roll_int     = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec"));
-  int diags_log_roll_size    = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb"));
-  int diags_log_roll_enable  = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled"));
+  int output_log_roll_int;
+  RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_interval_sec", &output_log_roll_int);
+  int output_log_roll_size;
+  RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_size_mb", &output_log_roll_size);
+  int output_log_roll_enable;
+  RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_enabled", &output_log_roll_enable);
+  int diags_log_roll_int;
+  RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_interval_sec", &diags_log_roll_int);
+  int diags_log_roll_size;
+  RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_size_mb", &diags_log_roll_size);
+  int diags_log_roll_enable;
+  RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_enabled", &diags_log_roll_enable);
 
   // Grab some perms for the actual files on disk
-  char *diags_perm         = REC_ConfigReadString("proxy.config.diags.logfile_perm");
-  char *output_perm        = REC_ConfigReadString("proxy.config.output.logfile_perm");
-  int   diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
-  int   output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
+  char *diags_perm;
+  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.diags.logfile_perm", &diags_perm);
+  char *output_perm;
+  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.output.logfile_perm", &output_perm);
+  int diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
+  int output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
 
   ats_free(diags_perm);
   ats_free(output_perm);
@@ -353,7 +361,7 @@ DiagsConfig::register_diags_callbacks()
 
   // set triggers to call same callback for any diag config change
   for (i = 0; config_record_names[i] != nullptr; i++) {
-    status = (REC_RegisterConfigUpdateFunc(config_record_names[i], diags_config_callback, o) == REC_ERR_OKAY);
+    status = (RecRegisterConfigUpdateCb(config_record_names[i], diags_config_callback, o) == REC_ERR_OKAY);
     if (!status) {
       Warning("couldn't register variable '%s', is %s up to date?", config_record_names[i], ts::filename::RECORDS);
     }
