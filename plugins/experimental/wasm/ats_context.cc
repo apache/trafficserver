@@ -116,13 +116,13 @@ static void
 print_address(struct sockaddr const *ip, std::string *result)
 {
   if (ip != nullptr) {
-    char    cip[128];
-    int64_t port = 0;
+    char    cip[128] = "";
+    int64_t port     = 0;
     if (ip->sa_family == AF_INET) {
       const auto *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(ip);
       inet_ntop(AF_INET, &s_sockaddr_in->sin_addr, cip, sizeof(cip));
       port = s_sockaddr_in->sin_port;
-    } else {
+    } else if (ip->sa_family == AF_INET6) {
       const auto *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(ip);
       inet_ntop(AF_INET6, &s_sockaddr_in6->sin6_addr, cip, sizeof(cip));
       port = s_sockaddr_in6->sin6_port;

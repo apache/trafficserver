@@ -762,7 +762,7 @@ static int
 ts_lua_client_request_client_addr_get_ip(lua_State *L)
 {
   struct sockaddr const *client_ip;
-  char                   cip[128];
+  char                   cip[128] = "";
   ts_lua_http_ctx       *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -775,7 +775,7 @@ ts_lua_client_request_client_addr_get_ip(lua_State *L)
   } else {
     if (client_ip->sa_family == AF_INET) {
       inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)client_ip)->sin_addr, cip, sizeof(cip));
-    } else {
+    } else if (client_ip->sa_family == AF_INET6) {
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)client_ip)->sin6_addr, cip, sizeof(cip));
     }
 
@@ -844,9 +844,9 @@ ts_lua_client_request_client_addr_get_addr(lua_State *L)
 {
   struct sockaddr const *client_ip;
   ts_lua_http_ctx       *http_ctx;
-  int                    port;
-  int                    family;
-  char                   cip[128];
+  int                    port     = 0;
+  int                    family   = AF_UNSPEC;
+  char                   cip[128] = "";
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -862,7 +862,7 @@ ts_lua_client_request_client_addr_get_addr(lua_State *L)
       port = ntohs(((struct sockaddr_in *)client_ip)->sin_port);
       inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)client_ip)->sin_addr, cip, sizeof(cip));
       family = AF_INET;
-    } else {
+    } else if (client_ip->sa_family == AF_INET6) {
       port = ntohs(((struct sockaddr_in6 *)client_ip)->sin6_port);
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)client_ip)->sin6_addr, cip, sizeof(cip));
       family = AF_INET6;
