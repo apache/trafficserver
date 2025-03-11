@@ -18,6 +18,7 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include "ts_lua_util.h"
 
 #define TS_LUA_CHECK_SERVER_REQUEST_HDR(http_ctx)                                                                                \
@@ -750,7 +751,7 @@ static int
 ts_lua_server_request_server_addr_get_ip(lua_State *L)
 {
   struct sockaddr const *server_ip;
-  char                   sip[128];
+  char                   sip[128] = "";
   ts_lua_http_ctx       *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -763,7 +764,7 @@ ts_lua_server_request_server_addr_get_ip(lua_State *L)
   } else {
     if (server_ip->sa_family == AF_INET) {
       inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)server_ip)->sin_addr, sip, sizeof(sip));
-    } else {
+    } else if (server_ip->sa_family == AF_INET6) {
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)server_ip)->sin6_addr, sip, sizeof(sip));
     }
 
@@ -832,9 +833,9 @@ ts_lua_server_request_server_addr_get_addr(lua_State *L)
 {
   struct sockaddr const *server_ip;
   ts_lua_http_ctx       *http_ctx;
-  int                    port;
-  int                    family;
-  char                   sip[128];
+  int                    port     = 0;
+  int                    family   = AF_UNSPEC;
+  char                   sip[128] = "";
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -850,7 +851,7 @@ ts_lua_server_request_server_addr_get_addr(lua_State *L)
       port = ntohs(((struct sockaddr_in *)server_ip)->sin_port);
       inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)server_ip)->sin_addr, sip, sizeof(sip));
       family = AF_INET;
-    } else {
+    } else if (server_ip->sa_family == AF_INET6) {
       port = ntohs(((struct sockaddr_in6 *)server_ip)->sin6_port);
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)server_ip)->sin6_addr, sip, sizeof(sip));
       family = AF_INET6;
@@ -869,9 +870,9 @@ ts_lua_server_request_server_addr_get_nexthop_addr(lua_State *L)
 {
   struct sockaddr const *server_ip;
   ts_lua_http_ctx       *http_ctx;
-  int                    port;
-  int                    family;
-  char                   sip[128];
+  int                    port     = 0;
+  int                    family   = AF_UNSPEC;
+  char                   sip[128] = "";
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
@@ -887,7 +888,7 @@ ts_lua_server_request_server_addr_get_nexthop_addr(lua_State *L)
       port = ntohs(((struct sockaddr_in *)server_ip)->sin_port);
       inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)server_ip)->sin_addr, sip, sizeof(sip));
       family = AF_INET;
-    } else {
+    } else if (server_ip->sa_family == AF_INET6) {
       port = ntohs(((struct sockaddr_in6 *)server_ip)->sin6_port);
       inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)server_ip)->sin6_addr, sip, sizeof(sip));
       family = AF_INET6;
