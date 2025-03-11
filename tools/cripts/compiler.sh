@@ -24,7 +24,7 @@
 ##############################################################################
 
 # Configurable parts
-: ${ATS_ROOT:="/opt/ats"}
+: ${ATS_ROOT:="/tmp/ats"}
 : ${CXX:="clang++"}
 : ${CXXFLAGS:="-x c++ -std=c++20 -I/opt/homebrew/include -undefined dynamic_lookup"}
 
