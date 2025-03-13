@@ -102,7 +102,7 @@ private:
 
 // This may be weird, but oh well for now.
 #define Get()               _get(context)
-#define Set(_value)         _set(context, _value)
+#define Set(_value, ...)    _set(context, _value __VA_OPT__(, ) __VA_ARGS__)
 #define Update()            _update(context)
 #define RunRemap()          _runRemap(context)
 #define Activate()          _activate(context->p_instance)

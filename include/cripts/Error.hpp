@@ -71,12 +71,12 @@ public:
     Status(const self_type &)         = delete;
     void operator=(const self_type &) = delete;
 
-    static void _set(cripts::Context *context, TSHttpStatus status);
+    static void _set(cripts::Context *context, TSHttpStatus status, const cripts::string_view msg = {});
 
     static void
-    _set(cripts::Context *context, int status)
+    _set(cripts::Context *context, int status, const cripts::string_view msg = {})
     {
-      _set(context, static_cast<TSHttpStatus>(status));
+      _set(context, static_cast<TSHttpStatus>(status), msg);
     }
 
     static TSHttpStatus _get(cripts::Context *context);

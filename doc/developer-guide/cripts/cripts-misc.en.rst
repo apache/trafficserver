@@ -36,8 +36,8 @@ Errors
 ======
 
 Often it's useful to be able to abort a client transaction prematurely, and
-return an error to the client. Cripts provid
-making this easy.
+return an error to the client. Cripts provides a simple way to do this, using
+the ``cripts::Error`` object.
 
 .. note::
     Explicitly forcing an HTTP error overrides any other response status that may have been set.
@@ -67,6 +67,12 @@ Example:
        // Do even more stuff here if we're not in error state
      }
    }
+
+The `Status` and `Reason` can optionally be set in one single call to the status setter:
+
+.. code-block:: cpp
+
+       cripts::Error::Status::Set(403, "Go Away");
 
 .. _cripts-misc-transaction:
 
