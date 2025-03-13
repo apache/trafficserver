@@ -29,6 +29,7 @@ namespace
 {
 constexpr std::string_view DefaultSliceSkipHeader = {"X-Slicer-Info"};
 constexpr std::string_view DefaultCrrImsHeader    = {"X-Crr-Ims"};
+constexpr std::string_view DefaultCrrIdentHeader  = {"X-Crr-Ident"};
 } // namespace
 
 Config::~Config()
@@ -116,6 +117,7 @@ Config::fromArgs(int const argc, char const *const argv[])
     {const_cast<char *>("crr-ims-header"),       required_argument, nullptr, 'c'},
     {const_cast<char *>("disable-errorlog"),     no_argument,       nullptr, 'd'},
     {const_cast<char *>("exclude-regex"),        required_argument, nullptr, 'e'},
+    {const_cast<char *>("crr-ident-header"),     required_argument, nullptr, 'g'},
     {const_cast<char *>("include-regex"),        required_argument, nullptr, 'i'},
     {const_cast<char *>("ref-relative"),         no_argument,       nullptr, 'l'},
     {const_cast<char *>("pace-errorlog"),        required_argument, nullptr, 'p'},
@@ -133,7 +135,7 @@ Config::fromArgs(int const argc, char const *const argv[])
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:dc:e:i:lm:p:r:s:t:x:z:", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:dc:e:g:i:lm:p:r:s:t:x:z:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -174,6 +176,10 @@ Config::fromArgs(int const argc, char const *const argv[])
         m_regex_extra = pcre_study(m_regex, 0, &errptr);
         DEBUG_LOG("Using regex for url exclude: '%s'", m_regexstr.c_str());
       }
+    } break;
+    case 'g': {
+      m_crr_ident_header.assign(optarg);
+      DEBUG_LOG("Using override crr ident header %s", optarg);
     } break;
     case 'i': {
       if (None != m_regex_type) {
@@ -277,6 +283,10 @@ Config::fromArgs(int const argc, char const *const argv[])
   if (m_crr_ims_header.empty()) {
     m_crr_ims_header = DefaultCrrImsHeader;
     DEBUG_LOG("Using default crr ims header %s", m_crr_ims_header.c_str());
+  }
+  if (m_crr_ident_header.empty()) {
+    m_crr_ident_header = DefaultCrrIdentHeader;
+    DEBUG_LOG("Using default crr ident header %s", m_crr_ident_header.c_str());
   }
   if (m_skip_header.empty()) {
     m_skip_header = DefaultSliceSkipHeader;
