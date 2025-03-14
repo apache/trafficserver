@@ -5596,8 +5596,8 @@ TSHttpConnectPlugin(TSHttpConnectOptions *options)
   sdk_assert(options->connect_type == TS_CONNECT_PLUGIN);
   sdk_assert(options->addr);
 
-  sdk_assert(ats_is_ip(options->addr));
-  sdk_assert(ats_ip_port_cast(options->addr));
+  sdk_assert(ats_is_unix(options->addr) || ats_is_ip(options->addr));
+  sdk_assert(ats_is_unix(options->addr) || ats_ip_port_cast(options->addr));
   return reinterpret_cast<TSVConn>(PluginHttpConnectInternal(options));
 }
 

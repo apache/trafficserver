@@ -31,6 +31,7 @@
 #include <netinet/in.h>
 #include <array>
 #include <string_view>
+#include <sys/un.h>
 
 namespace
 {
@@ -111,6 +112,8 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
         memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in));
       } else if (AF_INET6 == ip->sa_family) {
         memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in6));
+      } else if (AF_UNIX == ip->sa_family) {
+        memcpy(&data->m_client_ip, ip, sizeof(sockaddr_un));
       } else {
         return false;
       }
