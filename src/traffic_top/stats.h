@@ -281,7 +281,7 @@ public:
           request.emplace_rec(detail::MetricParam{item.name});
         } catch (std::exception const &e) {
           // Hard break, something happened when trying to set the last metric name into the request.
-          // This is very unlikly but just in case, we stop it.
+          // This is very unlikely but just in case, we stop it.
           fprintf(stderr, "Error configuring the stats request, local error: %s", e.what());
           return false;
         }
