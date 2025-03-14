@@ -276,8 +276,15 @@ public:
       const LookupItem &item = lookup_it->second;
 
       if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
-        // Add records names to the rpc request.
-        request.emplace_rec(detail::MetricParam{item.name});
+        try {
+          // Add records names to the rpc request.
+          request.emplace_rec(detail::MetricParam{item.name});
+        } catch (std::exception const &e) {
+          // Hard break, something happened when trying to set the last metric name into the request.
+          // This is very unlikly but just in case, we stop it.
+          fprintf(stderr, "Error configuring the stats request, local error: %s", e.what());
+          return false;
+        }
       }
     }
     // query the rpc node.
