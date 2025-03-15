@@ -486,9 +486,8 @@ MethodMod::name() const
 bool
 MethodMod::check(HttpRequestData *req) const
 {
-  int         method_len;
-  const char *method = req->hdr->method_get(&method_len);
-  return method_len >= static_cast<int>(text.size()) && 0 == strncasecmp(method, text.data(), text.size());
+  auto method{req->hdr->method_get()};
+  return method.length() >= text.length() && 0 == strncasecmp(method.data(), text.data(), text.length());
 }
 MethodMod *
 MethodMod::make(char *value, const char **)
