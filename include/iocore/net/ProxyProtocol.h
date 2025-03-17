@@ -27,6 +27,9 @@
 
 #include <tscore/ink_inet.h>
 #include <swoc/TextView.h>
+#include <unordered_map>
+#include <cstdlib>
+#include <optional>
 
 enum class ProxyProtocolVersion {
   UNDEFINED,
@@ -40,11 +43,43 @@ enum class ProxyProtocolData {
   DST,
 };
 
-struct ProxyProtocol {
-  ProxyProtocolVersion version   = ProxyProtocolVersion::UNDEFINED;
-  uint16_t             ip_family = AF_UNSPEC;
-  IpEndpoint           src_addr  = {};
-  IpEndpoint           dst_addr  = {};
+constexpr uint8_t PP2_TYPE_ALPN           = 0x01;
+constexpr uint8_t PP2_TYPE_AUTHORITY      = 0x02;
+constexpr uint8_t PP2_TYPE_CRC32C         = 0x03;
+constexpr uint8_t PP2_TYPE_NOOP           = 0x04;
+constexpr uint8_t PP2_TYPE_UNIQUE_ID      = 0x05;
+constexpr uint8_t PP2_TYPE_SSL            = 0x20;
+constexpr uint8_t PP2_SUBTYPE_SSL_VERSION = 0x21;
+constexpr uint8_t PP2_SUBTYPE_SSL_CN      = 0x22;
+constexpr uint8_t PP2_SUBTYPE_SSL_CIPHER  = 0x23;
+constexpr uint8_t PP2_SUBTYPE_SSL_SIG_ALG = 0x24;
+constexpr uint8_t PP2_SUBTYPE_SSL_KEY_ALG = 0x25;
+constexpr uint8_t PP2_TYPE_NETNS          = 0x30;
+
+class ProxyProtocol
+{
+public:
+  ProxyProtocol() {}
+  ProxyProtocol(ProxyProtocolVersion pp_ver, uint16_t family, IpEndpoint src, IpEndpoint dst)
+    : version(pp_ver), ip_family(family), src_addr(src), dst_addr(dst)
+  {
+  }
+  ~ProxyProtocol() { ats_free(additional_data); }
+  int  set_additional_data(std::string_view data);
+  void set_ipv4_addrs(in_addr_t src_addr, uint16_t src_port, in_addr_t dst_addr, uint16_t dst_port);
+  void set_ipv6_addrs(const in6_addr &src_addr, uint16_t src_port, const in6_addr &dst_addr, uint16_t dst_port);
+
+  std::optional<std::string_view> get_tlv(const uint8_t tlvCode) const;
+
+  ProxyProtocolVersion                          version   = ProxyProtocolVersion::UNDEFINED;
+  uint16_t                                      ip_family = AF_UNSPEC;
+  int                                           type      = 0;
+  IpEndpoint                                    src_addr  = {};
+  IpEndpoint                                    dst_addr  = {};
+  std::unordered_map<uint8_t, std::string_view> tlv;
+
+private:
+  char *additional_data = nullptr;
 };
 
 const size_t PPv1_CONNECTION_HEADER_LEN_MAX = 108;

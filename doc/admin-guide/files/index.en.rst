@@ -57,7 +57,7 @@ Configuration Files
    Defines custom log file formats, filters, and processing options.
 
 :doc:`parent.config.en`
-   Configures parent proxies in hierarchical caching layouts.
+   Configures parent proxies in hierarchical caching layouts. Deprecated in `TS` 10.1, and replaced with strategies.yaml in 11.
 
 :doc:`plugin.config.en`
    Control runtime loadable plugins available to |TS|, as well as their
@@ -83,7 +83,7 @@ Configuration Files
    Configures all storage devices and paths to be used for the |TS| cache.
 
 :doc:`strategies.yaml.en`
-   Configures NextHop strategies used with `remap.config`
+   Configures NextHop strategies used with `remap.config` and replaces parent.config.
 
 :doc:`volume.config.en`
     Defines cache space usage by individual protocols.

@@ -122,10 +122,34 @@ like the following::
 
     cond %{STATUS} >399 [AND]
     cond %{STATUS} <500
-    set-status 404
+      set-status 404
 
 Which converts any 4xx HTTP status code from the origin server to a 404. A
 response from the origin with a status of 200 would be unaffected by this rule.
+
+An optional ``else`` clause may be specified, which will be executed if the
+conditions are not met. The ``else`` clause is specified by starting a new line
+with the word ``else``. The following example illustrates this::
+
+    cond %{STATUS} >399 [AND]
+    cond %{STATUS} <500
+      set-status 404
+    else
+      set-status 503
+
+The ``else`` clause is not a condition, and does not take any flags, it is
+of course optional, but when specified must be followed by at least one operator.
+
+State variables
+---------------
+
+A set of state variables are also available for both conditions and operators.
+There are currently 16 flag states, 4 8-bit integers and one 16-bit integer states.
+These states are all transactional, meaning they are usable and persistent across
+all hooks.
+
+The flag states are numbers 0-15, the 8-bit integer states are numbered 0-3, and the
+one 16-bit integer state is number 0.
 
 Conditions
 ----------
@@ -297,6 +321,57 @@ setting headers. For example::
         set-header ATS-Geo-ASN %{GEO:ASN}
         set-header ATS-Geo-ASN-NAME %{GEO:ASN-NAME}
 
+GROUP
+~~~~~
+::
+
+    cond %{GROUP}
+    cond %{GROUP:END}
+
+This condition is a pseudo condition that is used to group conditions together.
+Using these groups, you can construct more complex expressions, that can mix and
+match AND, OR and NOT operators. These groups are the equivalent of parenthesis
+in expressions. The following pseudo example illustrates this. Lets say you want
+to express::
+
+      (A and B) or (C and (D or E))
+
+Assuming A, B, C, D and E are all valid conditions, you would write this as::
+
+    cond %{GROUP} [OR]
+        cond A [AND]
+        cond B
+    cond %{GROUP:END}
+    cond %{GROUP]
+       cond C [AND]
+       cond %{GROUP}
+             cond D [OR]
+             cond E
+       cond %{GROUP:END}
+    cond %{GROUP:END}
+
+Here's a more realistic example, abeit constructed, showing how to use the
+groups to construct a complex expression with real header value comparisons::
+
+    cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    cond %{GROUP} [OR]
+        cond %{CLIENT-HEADER:X-Bar} /foo/ [AND]
+        cond %{CLIENT-HEADER:User-Agent} /Chrome/
+    cond %{GROUP:END}
+    cond %{GROUP}
+        cond %{CLIENT-HEADER:X-Bar} /fie/ [AND]
+        cond %{CLIENT-HEADER:User-Agent} /MSIE/
+    cond %{GROUP:END}
+        set-header X-My-Header "This is a test"
+
+Note that the ``GROUP`` and ``GROUP:END`` conditions do not take any operands per se,
+and you are still limited to operations after the last condition. Also, the ``GROUP:END``
+condition must match exactly with the last ``GROUP`` conditions, and they can be
+nested in one or several levels.
+
+When closing a group with ``GROUP::END``, the modifiers are not used, in fact that entire
+condition is discarded, being used only to close the group. You may still decorate it
+with the same modifier as the opening ``GROUP`` condition, but it is not necessary.
 
 HEADER
 ~~~~~~
@@ -394,9 +469,10 @@ As a special matcher, the inbound IP addresses can be matched against a list of 
 
    cond %{INBOUND:REMOTE-ADDR} {192.168.201.0/24,10.0.0.0/8}
 
-Note that this will not work against the non-IP based conditions, such as the protocol families,
-and the configuration parser will error out. The format here is very specific, in particular no
-white spaces are allowed between the ranges.
+.. note::
+    This will not work against the non-IP based conditions, such as the protocol families,
+    and the configuration parser will error out. The format here is very specific, in particular no
+    white spaces are allowed between the ranges.
 
 IP
 ~~
@@ -505,6 +581,38 @@ RANDOM
     cond %{RANDOM:<n>} <operand>
 
 Generates a random integer from ``0`` up to (but not including) ``<n>``. Mathematically, ``[0,n)`` or ``0 <= r < n``.
+
+STATE-FLAG
+~~~~~~~~~~
+::
+
+      cond %{STATE-FLAG:<n>}
+
+This condition allows you to check the state of a flag. The ``<n>`` is the
+number of the flag, from 0 to 15. This condition returns a ``true`` or
+``false`` value, depending on the state of the flag. The default value of
+all flags are ``false``.
+
+STATE-INT8
+~~~~~~~~~~
+::
+
+      cond %{STATE-INT8:<n>}
+
+This condition allows you to check the state of an 8-bit unsigned integer.
+The ``<n>`` is the number of the integer, from 0 to 3. The current value of
+the state integer is returned, while all 4 integers are initialized to 0.
+
+STATE-INT16
+~~~~~~~~~~~
+::
+
+      cond %{STATE-INT16:<0>}
+
+This condition allows you to check the state of an 16-bit unsigned integer.
+There's only one such integer, and its value is returned from this condition.
+As such, the index, ``0``, is optional here. The initialized value of this
+state variable is ``0``.
 
 STATUS
 ~~~~~~
@@ -856,6 +964,38 @@ location automatically. This operator supports `String concatenations`_ for
 ``<destination>``.  This operator can only execute on the
 ``READ_RESPONSE_HDR_HOOK`` (the default when the plugin is global), the
 ``SEND_RESPONSE_HDR_HOOK``, or the ``REMAP_PSEUDO_HOOK``.
+
+set-state-flag
+~~~~~~~~~~~~~~
+::
+
+  set-state-flag <n> <value>
+
+This operator allows you to set the state of a flag. The ``<n>`` is the
+number of the flag, from 0 to 15. The ``<value>`` is either ``true`` or ``false``,
+turning the flag on or off.
+
+set-state-int8
+~~~~~~~~~~~~~~
+::
+
+   set-state-int8 <n> <value>
+
+This operator allows you to set the state of an 8-bit unsigned integer.
+The ``<n>`` is the number of the integer, from 0 to 3. The ``<value>`` is an
+unsigned 8-bit integer, 0-255. It can also be a condition, in which case the
+value of the condition is used.
+
+set-state-int16
+~~~~~~~~~~~~~~~
+::
+
+   set-state-int16 0 <value>
+
+This operator allows you to set the state of a 16-bit unsigned integer.
+The ``<value>`` is an unsigned 16-bit integer as well, 0-65535. It can also
+be a condition, in which case thevalue of the condition is used. The index,
+0, is always required eventhough there is only one 16-bit integer state variable.
 
 set-status
 ~~~~~~~~~~
@@ -1374,6 +1514,11 @@ could each be tagged with a consistent name to make finding logs easier.::
    set-header @PropertyName "someproperty"
 
 (Then in :file:`logging.yaml`, log ``%<{@PropertyName}cqh>``)
+
+.. note::
+    With the new ``state-flag``, ``state-int8`` and ``state-int16`` operators, you can
+    sometimes avoid setting internal ``@`` headers for passing information between hooks.
+    These internal state variables are much more efficient than setting and reading headers.
 
 Remove Client Query Parameters
 ------------------------------------

@@ -89,7 +89,7 @@ TEST_CASE("Micro benchmark of shared_mutex", "")
 {
   SECTION("std::shared_mutex")
   {
-    BENCHMARK("std::shared_mutex", )
+    BENCHMARK("std::shared_mutex")
     {
       std::shared_mutex mutex;
 

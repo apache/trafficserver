@@ -79,6 +79,12 @@ operator_factory(const std::string &op)
     o = new OperatorRunPlugin();
   } else if (op == "set-body-from") {
     o = new OperatorSetBodyFrom();
+  } else if (op == "set-state-flag") {
+    o = new OperatorSetStateFlag();
+  } else if (op == "set-state-int8") {
+    o = new OperatorSetStateInt8();
+  } else if (op == "set-state-int16") {
+    o = new OperatorSetStateInt16();
   } else {
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
     return nullptr;
@@ -162,8 +168,17 @@ condition_factory(const std::string &cond)
     c = new ConditionCache();
   } else if (c_name == "NEXT-HOP") { // This condition adapts to the hook
     c = new ConditionNextHop();
-  } else if (c_name == "HTTP-CNTL") { // This condition adapts to the hook
+  } else if (c_name == "HTTP-CNTL") {
     c = new ConditionHttpCntl();
+  } else if (c_name == "GROUP") {
+    c = new ConditionGroup();
+  } else if (c_name == "STATE-FLAG") {
+    c = new ConditionStateFlag();
+  } else if (c_name == "STATE-INT8") {
+    c = new ConditionStateInt8();
+  } else if (c_name == "STATE-INT16") {
+    c = new ConditionStateInt16();
+
   } else {
     TSError("[%s] Unknown condition %s", PLUGIN_NAME, c_name.c_str());
     return nullptr;

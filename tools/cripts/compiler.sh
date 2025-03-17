@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -24,24 +24,24 @@
 ##############################################################################
 
 # Configurable parts
-ATS_ROOT=/opt/ats
-CXX=clang++
-CXXFLAGS="-std=c++20 -I/opt/homebrew/include -undefined dynamic_lookup"
+: ${ATS_ROOT:="/tmp/ats"}
+: ${CXX:="clang++"}
+: ${CXXFLAGS:="-x c++ -std=c++20 -I/opt/homebrew/include"}
 
 # Probably don't need to change these ?
 STDFLAGS="-shared -fPIC -Wall -Werror -I${ATS_ROOT}/include -L${ATS_ROOT}/lib -lcripts"
 
 # This is optional, but if set, the script will cache the compiled shared objects for faster restarts/reloads
-CACHE_DIR=/tmp/ats-cache
+: ${CACHE_DIR:="/tmp/ats-cache"}
 
 # Extract the arguments, and do some sanity checks
-SOURCE=$1
-DEST=$2
+SOURCE="$1"
+DEST="$2"
 
-SOURCE_DIR=$(dirname $SOURCE)
-DEST_DIR=$(dirname $DEST)
-SOURCE_FILE=$(basename $SOURCE)
-DEST_FILE=$(basename $DEST)
+SOURCE_DIR=$(dirname "$SOURCE")
+DEST_DIR=$(dirname "$DEST")
+SOURCE_FILE=$(basename "$SOURCE")
+DEST_FILE=$(basename "$DEST")
 
 cd "$SOURCE_DIR"
 if [ $(pwd) != "$SOURCE_DIR" ]; then
@@ -81,10 +81,10 @@ if [ -d "$CACHE_DIR" ]; then
 fi
 
 # Compile the plugin
-${CXX} ${CXXFLAGS} ${STDFLAGS} -o $DEST $SOURCE
+${CXX} ${CXXFLAGS} ${STDFLAGS} -o "$DEST" "$SOURCE"
 exit_code=$?
 
-if [ $exit_code -ne 0 ]; then
+if [ "$exit_code" -ne 0 ]; then
     echo "Compilation failed with exit code $exit_code"
     exit $exit_code
 fi

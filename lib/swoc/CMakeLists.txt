@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(Lib-SWOC CXX)
-set(LIBSWOC_VERSION "1.5.12")
+project(Lib-SWOC LANGUAGES CXX VERSION 1.5.14)
+set(LIBSWOC_VERSION "1.5.14")
 set(CMAKE_CXX_STANDARD 17)
 cmake_policy(SET CMP0087 NEW)
 # override "lib64" to be "lib" unless the user explicitly sets it.
@@ -66,7 +66,15 @@ set(CC_FILES
 )
 
 add_library(libswoc SHARED ${CC_FILES})
-set_target_properties(libswoc PROPERTIES OUTPUT_NAME swoc-${LIBSWOC_VERSION} PUBLIC_HEADER "${HEADER_FILES}")
+set_target_properties(
+  libswoc
+  PROPERTIES
+  VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
+  SOVERSION "${PROJECT_VERSION_MAJOR}"
+  MACHO_COMPATIBILITY_VERSION "${PROJECT_VERSION_MAJOR}.0.0"
+  OUTPUT_NAME swoc
+  PUBLIC_HEADER "${HEADER_FILES}"
+)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
   target_compile_options(
@@ -79,6 +87,11 @@ if(CMAKE_COMPILER_IS_GNUCXX)
             -Wpedantic
             -Wshadow
   )
+endif()
+
+# if BUILD_TESTING, then add a cpp defines for BUILD_TESTING
+if (BUILD_TESTING)
+    target_compile_definitions(libswoc PRIVATE BUILD_TESTING)
 endif()
 
 add_library(libswoc-static STATIC ${CC_FILES})
@@ -108,7 +121,7 @@ target_include_directories(
   libswoc PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
 )
 
-# Alledgedly this makes the targets "importable from the build directory" but I see no evidence of that.
+# Allegedly this makes the targets "importable from the build directory" but I see no evidence of that.
 # AFAICT the file isn't created at all even with this enabled.
 #export(TARGETS libswoc FILE libswoc-config.cmake)
 

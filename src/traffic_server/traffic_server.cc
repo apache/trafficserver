@@ -158,7 +158,7 @@ void        load_ssl_file_callback(const char *ssl_file);
 void        task_threads_started_callback();
 static void check_max_records_argument(const ArgumentDescription *arg, unsigned int nargs, const char *val);
 
-int num_of_net_threads = ink_number_of_processors();
+int num_of_net_threads = 0;
 int num_accept_threads = 0;
 
 int num_of_udp_threads = 0;
@@ -1640,8 +1640,8 @@ adjust_num_of_net_threads(int nthreads)
 
   REC_ReadConfigInteger(nth_auto_config, "proxy.config.exec_thread.autoconfig.enabled");
 
-  Dbg(dbg_ctl_threads, "initial number of net threads is %d", nthreads);
-  Dbg(dbg_ctl_threads, "net threads auto-configuration %s", nth_auto_config ? "enabled" : "disabled");
+  Dbg(dbg_ctl_threads, "initial number of net threads: %d", nthreads);
+  Dbg(dbg_ctl_threads, "net threads auto-configuration: %s", nth_auto_config ? "enabled" : "disabled");
 
   if (!nth_auto_config) {
     REC_ReadConfigInteger(num_of_threads_tmp, "proxy.config.exec_thread.limit");
@@ -1672,7 +1672,7 @@ adjust_num_of_net_threads(int nthreads)
     nthreads = 1;
   }
 
-  Dbg(dbg_ctl_threads, "adjusted number of net threads is %d", nthreads);
+  Dbg(dbg_ctl_threads, "adjusted number of net threads: %d", nthreads);
   return nthreads;
 }
 
@@ -2080,6 +2080,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   SET_INTERVAL(RecProcess, "proxy.config.raw_stat_sync_interval_ms", raw_stat_sync_interval_ms);
   SET_INTERVAL(RecProcess, "proxy.config.remote_sync_interval_ms", remote_sync_interval_ms);
 
+  num_of_net_threads = ink_number_of_processors();
+  Dbg(dbg_ctl_threads, "number of processors: %d", num_of_net_threads);
   num_of_net_threads = adjust_num_of_net_threads(num_of_net_threads);
 
   size_t stacksize;

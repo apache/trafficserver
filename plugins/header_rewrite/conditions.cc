@@ -137,10 +137,7 @@ ConditionRandom::eval(const Resources & /* res ATS_UNUSED */)
 void
 ConditionRandom::append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
 {
-  std::ostringstream oss;
-
-  oss << rand_r(&_seed) % _max;
-  s += oss.str();
+  s += std::to_string(rand_r(&_seed) % _max);
   Dbg(pi_dbg_ctl, "Appending RANDOM(%d) to evaluation value -> %s", _max, s.c_str());
 }
 
@@ -746,10 +743,7 @@ ConditionNow::set_qualifier(const std::string &q)
 void
 ConditionNow::append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
 {
-  std::ostringstream oss;
-
-  oss << get_now_qualified(_now_qual);
-  s += oss.str();
+  s += std::to_string(get_now_qualified(_now_qual));
   Dbg(pi_dbg_ctl, "Appending NOW() to evaluation value -> %s", s.c_str());
 }
 
@@ -822,14 +816,11 @@ ConditionGeo::set_qualifier(const std::string &q)
 void
 ConditionGeo::append_value(std::string &s, const Resources &res)
 {
-  std::ostringstream oss;
-
   if (is_int_type()) {
-    oss << get_geo_int(TSHttpTxnClientAddrGet(res.txnp));
+    s += std::to_string(get_geo_int(TSHttpTxnClientAddrGet(res.txnp)));
   } else {
-    oss << get_geo_string(TSHttpTxnClientAddrGet(res.txnp));
+    s += get_geo_string(TSHttpTxnClientAddrGet(res.txnp));
   }
-  s += oss.str();
   Dbg(pi_dbg_ctl, "Appending GEO() to evaluation value -> %s", s.c_str());
 }
 
@@ -899,10 +890,7 @@ ConditionId::append_value(std::string &s, const Resources &res ATS_UNUSED)
 {
   switch (_id_qual) {
   case ID_QUAL_REQUEST: {
-    std::ostringstream oss;
-
-    oss << TSHttpTxnIdGet(res.txnp);
-    s += oss.str();
+    s += std::to_string(TSHttpTxnIdGet(res.txnp));
   } break;
   case ID_QUAL_PROCESS: {
     TSUuid process = TSProcessUuidGet();
@@ -1428,16 +1416,146 @@ ConditionNextHop::eval(const Resources &res)
 
 // ConditionHttpCntl: request header.
 void
-ConditionHttpCntl::initialize(Parser &p)
-{
-  Condition::initialize(p);
-}
-
-void
 ConditionHttpCntl::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
   Dbg(pi_dbg_ctl, "\tParsing %%{HTTP-CNTL:%s}", q.c_str());
   _http_cntl_qual = parse_http_cntl_qualifier(q);
+}
+
+void
+ConditionHttpCntl::append_value(std::string &s, const Resources &res)
+{
+  s += TSHttpTxnCntlGet(res.txnp, _http_cntl_qual) ? "TRUE" : "FALSE";
+  Dbg(pi_dbg_ctl, "Evaluating HTTP-CNTL(%s)", _qualifier.c_str());
+}
+
+bool
+ConditionHttpCntl::eval(const Resources &res)
+{
+  Dbg(pi_dbg_ctl, "Evaluating HTTP-CNTL()");
+  return TSHttpTxnCntlGet(res.txnp, _http_cntl_qual);
+}
+
+// ConditionStateFlag
+void
+ConditionStateFlag::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+
+  _flag_ix = strtol(q.c_str(), nullptr, 10);
+  if (_flag_ix < 0 || _flag_ix >= NUM_STATE_FLAGS) {
+    TSError("[%s] STATE-FLAG index out of range: %s", PLUGIN_NAME, q.c_str());
+  } else {
+    Dbg(pi_dbg_ctl, "\tParsing %%{STATE-FLAG:%s}", q.c_str());
+    _mask = 1ULL << _flag_ix;
+  }
+}
+
+void
+ConditionStateFlag::append_value(std::string &s, const Resources &res)
+{
+  s += eval(res) ? "TRUE" : "FALSE";
+  Dbg(pi_dbg_ctl, "Evaluating STATE-FLAG(%d)", _flag_ix);
+}
+
+bool
+ConditionStateFlag::eval(const Resources &res)
+{
+  auto data = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+
+  Dbg(pi_dbg_ctl, "Evaluating STATE-FLAG()");
+
+  return (data & _mask) == _mask;
+}
+
+// ConditionStateInt8
+void
+ConditionStateInt8::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  MatcherType *match = new MatcherType(_cond_op);
+
+  match->set(static_cast<uint8_t>(strtol(p.get_arg().c_str(), nullptr, 10)), mods());
+  _matcher = match;
+}
+
+void
+ConditionStateInt8::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+
+  _byte_ix = strtol(q.c_str(), nullptr, 10);
+  if (_byte_ix < 0 || _byte_ix >= NUM_STATE_INT8S) {
+    TSError("[%s] STATE-INT8 index out of range: %s", PLUGIN_NAME, q.c_str());
+  } else {
+    Dbg(pi_dbg_ctl, "\tParsing %%{STATE-INT8:%s}", q.c_str());
+  }
+}
+
+void
+ConditionStateInt8::append_value(std::string &s, const Resources &res)
+{
+  uint8_t data = _get_data(res);
+
+  s += std::to_string(data);
+
+  Dbg(pi_dbg_ctl, "Appending STATE-INT8(%d) to evaluation value -> %s", data, s.c_str());
+}
+
+bool
+ConditionStateInt8::eval(const Resources &res)
+{
+  uint8_t data = _get_data(res);
+
+  Dbg(pi_dbg_ctl, "Evaluating STATE-INT8()");
+
+  return static_cast<const MatcherType *>(_matcher)->test(data);
+}
+
+// ConditionStateInt16
+void
+ConditionStateInt16::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  MatcherType *match = new MatcherType(_cond_op);
+
+  match->set(static_cast<uint16_t>(strtol(p.get_arg().c_str(), nullptr, 10)), mods());
+  _matcher = match;
+}
+
+void
+ConditionStateInt16::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+
+  if (!q.empty()) { // This qualifier is optional, but must be 0 if there
+    long ix = strtol(q.c_str(), nullptr, 10);
+
+    if (ix != 0) {
+      TSError("[%s] STATE-INT16 index out of range: %s", PLUGIN_NAME, q.c_str());
+    } else {
+      Dbg(pi_dbg_ctl, "\tParsing %%{STATE-INT16:%s}", q.c_str());
+    }
+  }
+}
+
+void
+ConditionStateInt16::append_value(std::string &s, const Resources &res)
+{
+  uint16_t data = _get_data(res);
+
+  s += std::to_string(data);
+  Dbg(pi_dbg_ctl, "Appending STATE-INT16(%d) to evaluation value -> %s", data, s.c_str());
+}
+
+bool
+ConditionStateInt16::eval(const Resources &res)
+{
+  uint16_t data = _get_data(res);
+
+  Dbg(pi_dbg_ctl, "Evaluating STATE-INT8()");
+
+  return static_cast<const MatcherType *>(_matcher)->test(data);
 }

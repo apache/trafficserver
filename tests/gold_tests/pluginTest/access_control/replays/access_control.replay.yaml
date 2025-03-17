@@ -1,0 +1,75 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+sessions:
+- protocol: [{ name: tls, sni: test }]
+
+  transactions:
+  # 1: Regular request
+  # ```
+  # payload='sub=frogs-in-a-well&exp=1577836800&nbf=1514764800&iat=1514160000&tid=1234567890&kid=key1&st=HMAC-SHA-256&md='
+  # signature=$(echo -n ${payload} | openssl dgst -sha256 -hmac "PEIFtmunx9")
+  # TokenRespHdr=${payload}${signature}
+  # ```
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /test-1/
+      headers:
+        fields:
+          - [ uuid, 1]
+          - [ Host, example.com ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+          - [ TokenRespHdr, sub=frogs-in-a-well&exp=4073587200&nbf=1514764800&iat=1514160000&tid=1234567890&kid=key1&st=HMAC-SHA-256&md=d128cb2ee353515f3e09afb2010345a9ea1d9ce3bb49d10b2508eaca29c74d78 ]
+          - [ Content-Length, 1024 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ set-cookie, { value: Expires=, as: contains } ]
+
+  # 2: Origin server set "exp=0" and ATS returns Session Cookie
+  # ```
+  # payload='sub=frogs-in-a-well&exp=0&nbf=1514764800&iat=1514160000&tid=1234567890&kid=key1&st=HMAC-SHA-256&md='
+  # signature=$(echo -n ${payload} | openssl dgst -sha256 -hmac "PEIFtmunx9")
+  # TokenRespHdr=${payload}${signature}
+  # ```
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /test-2/
+      headers:
+        fields:
+          - [ uuid, 2]
+          - [ Host, example.com ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+          - [ TokenRespHdr, sub=frogs-in-a-well&exp=0&nbf=1514764800&iat=1514160000&tid=1234567890&kid=key1&st=HMAC-SHA-256&md=e67dce2fcfaf169dde0fe0e6ecf14bea7658bffbe3f1b30c22b048432e9cc41f ]
+          - [ Content-Length, 1024 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ set-cookie, { value: Expires=, not: contains } ]

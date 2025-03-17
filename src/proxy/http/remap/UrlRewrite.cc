@@ -458,7 +458,8 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
     int method        = s->hdr_info.client_request.method_get_wksidx();
     int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
 
-    ink_release_assert(ats_is_ip(&s->client_info.src_addr));
+    const IpEndpoint *src_addr;
+    src_addr = &s->client_info.src_addr;
 
     s->client_connection_allowed = true; // Default is that we allow things unless some filter matches
 
@@ -482,42 +483,44 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
       }
 
       bool ip_matches = true;
-      // Is there a @src_ip specified? If so, check it.
-      if (rp->src_ip_valid) {
-        bool src_ip_matches = false;
-        for (int j = 0; j < rp->src_ip_cnt && !src_ip_matches; j++) {
-          bool in_range = rp->src_ip_array[j].contains(s->client_info.src_addr);
-          if (rp->src_ip_array[j].invert) {
-            if (!in_range) {
-              src_ip_matches = true;
-            }
-          } else {
-            if (in_range) {
-              src_ip_matches = true;
+      if (ats_is_ip(src_addr)) {
+        // Is there a @src_ip specified? If so, check it.
+        if (rp->src_ip_valid) {
+          bool src_ip_matches = false;
+          for (int j = 0; j < rp->src_ip_cnt && !src_ip_matches; j++) {
+            bool in_range = rp->src_ip_array[j].contains(*src_addr);
+            if (rp->src_ip_array[j].invert) {
+              if (!in_range) {
+                src_ip_matches = true;
+              }
+            } else {
+              if (in_range) {
+                src_ip_matches = true;
+              }
             }
           }
+          Dbg(dbg_ctl_url_rewrite, "Checked the specified src_ip, result: %s", src_ip_matches ? "true" : "false");
+          ip_matches &= src_ip_matches;
         }
-        Dbg(dbg_ctl_url_rewrite, "Checked the specified src_ip, result: %s", src_ip_matches ? "true" : "false");
-        ip_matches &= src_ip_matches;
-      }
 
-      // Is there a @src_ip_category specified? If so, check it.
-      if (ip_matches && rp->src_ip_category_valid) {
-        bool category_ip_matches = false;
-        for (int j = 0; j < rp->src_ip_category_cnt && !category_ip_matches; j++) {
-          bool in_category = rp->src_ip_category_array[j].contains(s->client_info.src_addr);
-          if (rp->src_ip_category_array[j].invert) {
-            if (!in_category) {
-              category_ip_matches = true;
-            }
-          } else {
-            if (in_category) {
-              category_ip_matches = true;
+        // Is there a @src_ip_category specified? If so, check it.
+        if (ip_matches && rp->src_ip_category_valid) {
+          bool category_ip_matches = false;
+          for (int j = 0; j < rp->src_ip_category_cnt && !category_ip_matches; j++) {
+            bool in_category = rp->src_ip_category_array[j].contains(*src_addr);
+            if (rp->src_ip_category_array[j].invert) {
+              if (!in_category) {
+                category_ip_matches = true;
+              }
+            } else {
+              if (in_category) {
+                category_ip_matches = true;
+              }
             }
           }
+          Dbg(dbg_ctl_url_rewrite, "Checked the specified src_ip_category, result: %s", category_ip_matches ? "true" : "false");
+          ip_matches &= category_ip_matches;
         }
-        Dbg(dbg_ctl_url_rewrite, "Checked the specified src_ip_category, result: %s", category_ip_matches ? "true" : "false");
-        ip_matches &= category_ip_matches;
       }
 
       // Is there an @in_ip specified? If so, check it.
@@ -556,7 +559,23 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
       Dbg(dbg_ctl_url_rewrite, "%d: ACL filter %s rule matches by ip: %s, by method: %s", rule_index,
           (rp->allow_flag ? "allow" : "deny"), (ip_matches ? "true" : "false"), (method_matches ? "true" : "false"));
 
-      if (ip_matches) {
+      if (_acl_behavior_policy == ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY) {
+        s->skip_ip_allow_yaml = false;
+        Dbg(dbg_ctl_url_rewrite, "Doing legacy filtering ip:%s method:%s", ip_matches ? "matched" : "didn't match",
+            method_matches ? "matched" : "didn't match");
+        bool match = ip_matches && method_matches;
+        if (match && s->client_connection_allowed) { // make sure that a previous filter did not DENY
+          Dbg(dbg_ctl_url_rewrite, "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
+          s->client_connection_allowed = rp->allow_flag ? true : false;
+        } else {
+          if (!s->client_connection_allowed) {
+            Dbg(dbg_ctl_url_rewrite, "Previous ACL filter rule denied request, continuing to deny it");
+          } else {
+            Dbg(dbg_ctl_url_rewrite, "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
+            s->client_connection_allowed = rp->allow_flag ? false : true;
+          }
+        }
+      } else if (ip_matches) {
         // The rule matches. Handle the method according to the rule.
         if (method_matches) {
           // Did they specify allowing the listed methods, or denying them?

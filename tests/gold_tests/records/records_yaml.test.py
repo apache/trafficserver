@@ -66,8 +66,10 @@ ts.Disk.diags_log.Content = Testers.ContainsExpression(f"Unrecognized configurat
 var2 = 'proxy.config.test.not_registered.field2'
 ts.Disk.diags_log.Content += Testers.ContainsExpression(f"Unrecognized configuration value '{var2}", "Field should be ignored")
 
-ts.Disk.traffic_out.Content += Testers.ContainsExpression(f"Ignoring field 'filenamee'", "Field should be ignored")
-ts.Disk.traffic_out.Content += Testers.ContainsExpression(f"Ignoring field 'filenam'", "Field should be ignored")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    f"Ignoring field 'filenamee' \\[proxy.config.ssl.client.cert.filenamee\\]", "Field should be ignored")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    f"Ignoring field 'filenam' \\[proxy.config.ssl.client.cert.filenam\\]", "Field should be ignored")
 
 # 1
 tr = Test.AddTestRun("Query unregistered records.")

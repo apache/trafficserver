@@ -29,6 +29,7 @@
 #include "factory.h"
 #include "resources.h"
 #include "parser.h"
+#include "conditions.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Class holding one ruleset. A ruleset is one (or more) pre-conditions, and
@@ -37,14 +38,25 @@
 class RuleSet
 {
 public:
+  // Holding the IF and ELSE operators and mods, in two separate linked lists.
+  struct OperatorPair {
+    OperatorPair() = default;
+
+    OperatorPair(const OperatorPair &)            = delete;
+    OperatorPair &operator=(const OperatorPair &) = delete;
+
+    Operator     *oper      = nullptr;
+    OperModifiers oper_mods = OPER_NONE;
+  };
+
   RuleSet() { Dbg(dbg_ctl, "RuleSet CTOR"); }
 
   ~RuleSet()
   {
     Dbg(dbg_ctl, "RulesSet DTOR");
+    delete _operators[0].oper; // These are pointers
+    delete _operators[1].oper;
     delete next;
-    delete _cond;
-    delete _oper;
   }
 
   // noncopyable
@@ -53,26 +65,26 @@ public:
 
   // No reason to inline these
   void        append(RuleSet *rule);
-  bool        add_condition(Parser &p, const char *filename, int lineno);
+  Condition  *make_condition(Parser &p, const char *filename, int lineno);
   bool        add_operator(Parser &p, const char *filename, int lineno);
   ResourceIDs get_all_resource_ids() const;
 
   bool
   has_operator() const
   {
-    return nullptr != _oper;
-  }
-
-  bool
-  has_condition() const
-  {
-    return nullptr != _cond;
+    return (nullptr != _operators[0].oper) || (nullptr != _operators[1].oper);
   }
 
   void
   set_hook(TSHttpHookID hook)
   {
     _hook = hook;
+  }
+
+  ConditionGroup *
+  get_group()
+  {
+    return &_group;
   }
 
   TSHttpHookID
@@ -88,41 +100,53 @@ public:
   }
 
   bool
-  eval(const Resources &res) const
-  {
-    if (nullptr == _cond) {
-      return true;
-    } else {
-      return _cond->do_eval(res);
-    }
-  }
-
-  bool
   last() const
   {
     return _last;
   }
 
-  OperModifiers
-  exec(const Resources &res) const
+  void
+  switch_branch()
   {
-    auto no_reenable_count{_oper->do_exec(res)};
+    _is_else = !_is_else;
+  }
+
+  OperModifiers
+  exec(const OperatorPair &ops, const Resources &res) const
+  {
+    if (nullptr == ops.oper) {
+      return ops.oper_mods;
+    }
+
+    auto no_reenable_count{ops.oper->do_exec(res)};
+
     ink_assert(no_reenable_count < 2);
     if (no_reenable_count) {
-      return static_cast<OperModifiers>(_opermods | OPER_NO_REENABLE);
+      return static_cast<OperModifiers>(ops.oper_mods | OPER_NO_REENABLE);
     }
-    return _opermods;
+
+    return ops.oper_mods;
+  }
+
+  const OperatorPair &
+  eval(const Resources &res)
+  {
+    if (_group.eval(res)) {
+      return _operators[0]; // IF conditions
+    } else {
+      return _operators[1]; // ELSE conditions
+    }
   }
 
   RuleSet *next = nullptr; // Linked list
 
 private:
-  Condition   *_cond = nullptr;                        // First pre-condition (linked list)
-  Operator    *_oper = nullptr;                        // First operator (linked list)
-  TSHttpHookID _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
+  ConditionGroup _group;        // All conditions are now wrapped in a group
+  OperatorPair   _operators[2]; // Holds both the IF and the ELSE set of operators
 
   // State values (updated when conds / operators are added)
-  ResourceIDs   _ids      = RSRC_NONE;
-  OperModifiers _opermods = OPER_NONE;
-  bool          _last     = false;
+  TSHttpHookID _hook    = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
+  ResourceIDs  _ids     = RSRC_NONE;
+  bool         _last    = false;
+  bool         _is_else = false; // Are we in the else clause of the new rule? For parsing.
 };

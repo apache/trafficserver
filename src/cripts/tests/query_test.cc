@@ -33,19 +33,19 @@ do_remap()
 
   switch (AsInteger(instance.data[0])) {
   case 0:
-    url.query.erase({"foo", "bar"}, true);
+    url.query.Erase({"foo", "bar"}, true);
     break;
   case 1:
-    url.query.erase({"foo", "bar"});
+    url.query.Erase({"foo", "bar"});
     break;
   case 2:
-    url.query.keep({"foo", "bar"});
+    url.query.Keep({"foo", "bar"});
     break;
   default:
     break;
   }
 
-  url.query.flush();
+  url.query.Flush();
   CDebug("Query: {}", url.query);
 }
 

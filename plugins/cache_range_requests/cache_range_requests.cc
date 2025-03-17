@@ -38,7 +38,7 @@
 #include <string_view>
 
 #define PLUGIN_NAME         "cache_range_requests"
-#define DEBUG_LOG(fmt, ...) Dbg(dbg_ctl, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define DEBUG_LOG(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 #define ERROR_LOG(fmt, ...) TSError("[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
 namespace

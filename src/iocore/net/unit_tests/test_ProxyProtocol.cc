@@ -150,6 +150,7 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
 
     CHECK(pp_info.version == ProxyProtocolVersion::V2);
     CHECK(pp_info.ip_family == AF_INET);
+    CHECK(pp_info.type == SOCK_STREAM);
     CHECK(pp_info.src_addr == src_addr);
     CHECK(pp_info.dst_addr == dst_addr);
   }
@@ -180,6 +181,67 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
 
     CHECK(pp_info.version == ProxyProtocolVersion::V2);
     CHECK(pp_info.ip_family == AF_INET6);
+    CHECK(pp_info.type == SOCK_STREAM);
+    CHECK(pp_info.src_addr == src_addr);
+    CHECK(pp_info.dst_addr == dst_addr);
+  }
+
+  SECTION("UDP over IPv4 without TLVs")
+  {
+    uint8_t raw_data[] = {
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+      0x55, 0x49, 0x54, 0x0A,                         ///<
+      0x21,                                           ///< version & command
+      0x12,                                           ///< protocol & family
+      0x00, 0x0C,                                     ///< len
+      0xC0, 0x00, 0x02, 0x01,                         ///< src_addr
+      0xC6, 0x33, 0x64, 0x01,                         ///< dst_addr
+      0xC3, 0x50,                                     ///< src_port
+      0x01, 0xBB,                                     ///< dst_port
+    };
+
+    swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+    ProxyProtocol pp_info;
+    REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
+
+    REQUIRE(ats_ip_pton("192.0.2.1:50000", src_addr) == 0);
+    REQUIRE(ats_ip_pton("198.51.100.1:443", dst_addr) == 0);
+
+    CHECK(pp_info.version == ProxyProtocolVersion::V2);
+    CHECK(pp_info.ip_family == AF_INET);
+    CHECK(pp_info.type == SOCK_DGRAM);
+    CHECK(pp_info.src_addr == src_addr);
+    CHECK(pp_info.dst_addr == dst_addr);
+  }
+
+  SECTION("UDP over IPv6 without TLVs")
+  {
+    uint8_t raw_data[] = {
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+      0x55, 0x49, 0x54, 0x0A,                         ///<
+      0x21,                                           ///< version & command
+      0x22,                                           ///< protocol & family
+      0x00, 0x24,                                     ///< len
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0xC3, 0x50,                                     ///< src_port
+      0x01, 0xBB,                                     ///< dst_port
+    };
+
+    swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+    ProxyProtocol pp_info;
+    REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
+
+    REQUIRE(ats_ip_pton("[2001:db8:0:1::]:50000", src_addr) == 0);
+    REQUIRE(ats_ip_pton("[2001:db8:0:2::]:443", dst_addr) == 0);
+
+    CHECK(pp_info.version == ProxyProtocolVersion::V2);
+    CHECK(pp_info.ip_family == AF_INET6);
+    CHECK(pp_info.type == SOCK_DGRAM);
     CHECK(pp_info.src_addr == src_addr);
     CHECK(pp_info.dst_addr == dst_addr);
   }
@@ -234,7 +296,6 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
     CHECK(pp_info.ip_family == AF_UNSPEC);
   }
 
-  // TLVs are not supported yet. Checking TLVs are skipped as expected for now.
   SECTION("TLVs")
   {
     uint8_t raw_data[] = {
@@ -242,12 +303,13 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
       0x55, 0x49, 0x54, 0x0A,                         ///<
       0x21,                                           ///< version & command
       0x11,                                           ///< protocol & family
-      0x00, 0x11,                                     ///< len
+      0x00, 0x17,                                     ///< len
       0xC0, 0x00, 0x02, 0x01,                         ///< src_addr
       0xC6, 0x33, 0x64, 0x01,                         ///< dst_addr
       0xC3, 0x50,                                     ///< src_port
       0x01, 0xBB,                                     ///< dst_port
       0x01, 0x00, 0x02, 0x68, 0x32,                   /// PP2_TYPE_ALPN (h2)
+      0x02, 0x00, 0x03, 0x61, 0x62, 0x63              /// PP2_TYPE_AUTHORITY (abc)
     };
 
     swoc::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
@@ -262,6 +324,9 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
     CHECK(pp_info.ip_family == AF_INET);
     CHECK(pp_info.src_addr == src_addr);
     CHECK(pp_info.dst_addr == dst_addr);
+
+    CHECK(pp_info.tlv[PP2_TYPE_ALPN] == "h2");
+    CHECK(pp_info.tlv[PP2_TYPE_AUTHORITY] == "abc");
   }
 
   SECTION("Malformed Headers")

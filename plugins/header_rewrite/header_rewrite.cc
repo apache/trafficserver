@@ -19,6 +19,7 @@
 #include <fstream>
 #include <mutex>
 #include <string>
+#include <stack>
 #include <stdexcept>
 #include <getopt.h>
 
@@ -36,10 +37,11 @@
 #include "conditions_geo.h"
 
 // Debugs
-const char PLUGIN_NAME[]     = "header_rewrite";
-const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
 namespace header_rewrite_ns
 {
+const char PLUGIN_NAME[]     = "header_rewrite";
+const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
+
 DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
 DbgCtl pi_dbg_ctl{PLUGIN_NAME};
 
@@ -103,6 +105,7 @@ public:
   {
     return _resids[hook];
   }
+
   RuleSet *
   rule(int hook) const
   {
@@ -145,10 +148,12 @@ RulesConfig::add_rule(RuleSet *rule)
 bool
 RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url, char *to_url)
 {
-  std::unique_ptr<RuleSet> rule(nullptr);
-  std::string              filename;
-  std::ifstream            f;
-  int                      lineno = 0;
+  std::unique_ptr<RuleSet>     rule(nullptr);
+  std::string                  filename;
+  std::ifstream                f;
+  int                          lineno = 0;
+  std::stack<ConditionGroup *> group_stack;
+  ConditionGroup              *group = nullptr;
 
   if (0 == fname.size()) {
     TSError("[%s] no config filename provided", PLUGIN_NAME);
@@ -168,11 +173,12 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     return false;
   }
 
+  Dbg(dbg_ctl, "Parsing started on file: %s", filename.c_str());
   while (!f.eof()) {
     std::string line;
 
     getline(f, line);
-    ++lineno; // ToDo: we should probably use this for error messages ...
+    ++lineno;
     Dbg(dbg_ctl, "Reading line: %d: %s", lineno, line.c_str());
 
     while (std::isspace(line[0])) {
@@ -191,7 +197,8 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
 
     // Tokenize and parse this line
     if (!p.parse_line(line)) {
-      Dbg(dbg_ctl, "Error parsing line '%s'", line.c_str());
+      TSError("[%s] Error parsing file '%s', line '%s', lineno: %d", PLUGIN_NAME, filename.c_str(), line.c_str(), lineno);
+      Dbg(dbg_ctl, "Error parsing line '%s', lineno: %d", line.c_str(), lineno);
       continue;
     }
 
@@ -208,14 +215,20 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     bool         is_hook = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
 
     if (nullptr == rule) {
+      if (!group_stack.empty()) {
+        TSError("[%s] mismatched %%{GROUP} conditions in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+        return false;
+      }
+
       rule = std::make_unique<RuleSet>();
       rule->set_hook(hook);
+      group = rule->get_group(); // This the implicit rule group to begin with
 
       if (is_hook) {
         // Check if the hooks are not available for the remap mode
         if ((default_hook == TS_REMAP_PSEUDO_HOOK) &&
             ((TS_HTTP_READ_REQUEST_HDR_HOOK == hook) || (TS_HTTP_PRE_REMAP_HOOK == hook))) {
-          TSError("[%s] you can not use cond %%{%s} in a remap rule", PLUGIN_NAME, p.get_op().c_str());
+          TSError("[%s] you can not use cond %%{%s} in a remap rule, lineno: %d", PLUGIN_NAME, p.get_op().c_str(), lineno);
           return false;
         }
         continue;
@@ -233,18 +246,52 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     // Long term, maybe we need to percolate all this up through add_condition() / add_operator() rather than this big ugly try.
     try {
       if (p.is_cond()) {
-        if (!rule->add_condition(p, filename.c_str(), lineno)) {
+        Condition *cond = rule->make_condition(p, filename.c_str(), lineno);
+
+        if (!cond) {
           throw std::runtime_error("add_condition() failed");
+        } else {
+          ConditionGroup *ngrp = dynamic_cast<ConditionGroup *>(cond);
+
+          if (ngrp) {
+            if (ngrp->closes()) {
+              // Closing a group, pop the stack
+              if (group_stack.empty()) {
+                throw std::runtime_error("unmatched %{GROUP}");
+              } else {
+                delete cond; // We don't care about the closing group condition, it's a no-op
+                ngrp  = group;
+                group = group_stack.top();
+                group_stack.pop();
+                group->add_condition(ngrp); // Add the previous group to the current group's conditions
+              }
+            } else {
+              // New group
+              group_stack.push(group);
+              group = ngrp;
+            }
+          } else {
+            group->add_condition(cond);
+          }
         }
-      } else {
+      } else if (p.is_else()) {
+        // Switch to the else portion of operators
+        rule->switch_branch();
+      } else { // Operator
         if (!rule->add_operator(p, filename.c_str(), lineno)) {
           throw std::runtime_error("add_operator() failed");
         }
       }
     } catch (std::runtime_error &e) {
-      TSError("[%s] header_rewrite configuration exception: %s in file: %s", PLUGIN_NAME, e.what(), fname.c_str());
+      TSError("[%s] header_rewrite configuration exception: %s in file: %s, lineno: %d", PLUGIN_NAME, e.what(), fname.c_str(),
+              lineno);
       return false;
     }
+  }
+
+  if (!group_stack.empty()) {
+    TSError("[%s] missing final %%{GROUP:END} condition in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+    return false;
   }
 
   // Add the last rule (possibly the only rule)
@@ -301,25 +348,25 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   }
 
   bool reenable{true};
+
   if (hook != TS_HTTP_LAST_HOOK) {
-    const RuleSet *rule = conf->rule(hook);
-    Resources      res(txnp, contp);
+    RuleSet  *rule = conf->rule(hook);
+    Resources res(txnp, contp);
 
     // Get the resources necessary to process this event
     res.gather(conf->resid(hook), hook);
 
     // Evaluation of all rules. This code is sort of duplicate in DoRemap as well.
     while (rule) {
-      if (rule->eval(res)) {
-        OperModifiers rt = rule->exec(res);
+      const RuleSet::OperatorPair &ops = rule->eval(res);
+      const OperModifiers          rt  = rule->exec(ops, res);
 
-        if (rt & OPER_NO_REENABLE) {
-          reenable = false;
-        }
+      if (rt & OPER_NO_REENABLE) {
+        reenable = false;
+      }
 
-        if (rule->last() || (rt & OPER_LAST)) {
-          break; // Conditional break, force a break with [L]
-        }
+      if (rule->last() || (rt & OPER_LAST)) {
+        break; // Conditional break, force a break with [L]
       }
       rule = rule->next;
     }
@@ -328,6 +375,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   if (reenable) {
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   }
+
   return 0;
 }
 
@@ -528,19 +576,19 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   res.gather(RSRC_CLIENT_REQUEST_HEADERS, TS_REMAP_PSEUDO_HOOK);
   while (rule) {
-    if (rule->eval(res)) {
-      OperModifiers rt = rule->exec(res);
+    const RuleSet::OperatorPair &ops = rule->eval(res);
+    const OperModifiers          rt  = rule->exec(ops, res);
 
-      ink_assert((rt & OPER_NO_REENABLE) == 0);
+    ink_assert((rt & OPER_NO_REENABLE) == 0);
 
-      if (res.changed_url == true) {
-        rval = TSREMAP_DID_REMAP;
-      }
-
-      if (rule->last() || (rt & OPER_LAST)) {
-        break; // Conditional break, force a break with [L]
-      }
+    if (res.changed_url == true) {
+      rval = TSREMAP_DID_REMAP;
     }
+
+    if (rule->last() || (rt & OPER_LAST)) {
+      break; // Conditional break, force a break with [L]
+    }
+
     rule = rule->next;
   }
 

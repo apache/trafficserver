@@ -1206,6 +1206,15 @@ done:
     obj_describe(s->hdr_info.client_request.m_http, true);
   }
 
+  // If the client failed ACLs, send error response
+  // This extra condition was added to separate it from the logic below that might allow
+  // requests that use some types of plugins as that code was allowing requests that didn't
+  // pass ACL checks. ACL mismatches are also not counted as invalid client requests
+  if (!s->client_connection_allowed) {
+    TxnDbg(dbg_ctl_http_trans, "END HttpTransact::EndRemapRequest: connection not allowed");
+    TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+  }
+
   /*
     if s->reverse_proxy == false, we can assume remapping failed in some way
       -however-
@@ -1251,12 +1260,11 @@ HttpTransact::handle_upgrade_request(State *s)
   MIMEField *upgrade_hdr    = s->hdr_info.client_request.field_find(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
   MIMEField *connection_hdr = s->hdr_info.client_request.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
 
-  StrList     connection_hdr_vals;
-  const char *upgrade_hdr_val     = nullptr;
-  int         upgrade_hdr_val_len = 0;
+  StrList          connection_hdr_vals;
+  std::string_view upgrade_hdr_val;
 
   if (!upgrade_hdr || !connection_hdr || connection_hdr->value_get_comma_list(&connection_hdr_vals) == 0 ||
-      (upgrade_hdr_val = upgrade_hdr->value_get(&upgrade_hdr_val_len)) == nullptr) {
+      (upgrade_hdr_val = upgrade_hdr->value_get()).data() == nullptr) {
     TxnDbg(dbg_ctl_http_trans_upgrade, "Transaction wasn't a valid upgrade request, proceeding as a normal HTTP request.");
     return false;
   }
@@ -1297,7 +1305,7 @@ HttpTransact::handle_upgrade_request(State *s)
         |Sec-WebSocket-Version|.  The value of this header field MUST be
         13.
    */
-  if (hdrtoken_tokenize(upgrade_hdr_val, upgrade_hdr_val_len, &s->upgrade_token_wks) >= 0) {
+  if (hdrtoken_tokenize(upgrade_hdr_val.data(), upgrade_hdr_val.length(), &s->upgrade_token_wks) >= 0) {
     if (s->upgrade_token_wks == MIME_VALUE_WEBSOCKET) {
       MIMEField *sec_websocket_key =
         s->hdr_info.client_request.field_find(MIME_FIELD_SEC_WEBSOCKET_KEY, MIME_LEN_SEC_WEBSOCKET_KEY);
@@ -1318,7 +1326,7 @@ HttpTransact::handle_upgrade_request(State *s)
       return false;
     }
   } else {
-    TxnDbg(dbg_ctl_http_trans_upgrade, "Transaction requested upgrade for unknown protocol: %s", upgrade_hdr_val);
+    TxnDbg(dbg_ctl_http_trans_upgrade, "Transaction requested upgrade for unknown protocol: %s", upgrade_hdr_val.data());
   }
 
   build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error");
@@ -1376,11 +1384,10 @@ HttpTransact::handle_websocket_connection(State *s)
 static bool
 mimefield_value_equal(MIMEField *field, const char *value, const int value_len)
 {
-  int         field_value_len = 0;
-  const char *field_value     = field->value_get(&field_value_len);
+  auto field_value{field->value_get()};
 
-  if (field_value != nullptr && field_value_len == value_len) {
-    return !strncasecmp(field_value, value, value_len);
+  if (field_value.data() != nullptr && static_cast<int>(field_value.length()) == value_len) {
+    return !strncasecmp(field_value.data(), value, value_len);
   }
 
   return false;
@@ -1563,10 +1570,8 @@ HttpTransact::HandleRequest(State *s)
       MIMEField *expect = s->hdr_info.client_request.field_find(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
 
       if (expect != nullptr) {
-        const char *expect_hdr_val     = nullptr;
-        int         expect_hdr_val_len = 0;
-        expect_hdr_val                 = expect->value_get(&expect_hdr_val_len);
-        if (ptr_len_casecmp(expect_hdr_val, expect_hdr_val_len, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0) {
+        auto expect_hdr_val{expect->value_get()};
+        if (ptr_len_casecmp(expect_hdr_val.data(), expect_hdr_val.length(), HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0) {
           // Let's error out this request.
           TxnDbg(dbg_ctl_http_trans, "Client sent a post expect: 100-continue, sending 405.");
           Metrics::Counter::increment(http_rsb.disallowed_post_100_continue);
@@ -3212,14 +3217,12 @@ HttpTransact::handle_cache_write_lock(State *s)
     MIMEField *c_inm = s->hdr_info.client_request.field_find(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
 
     if (c_ims) {
-      int         len;
-      const char *value = c_ims->value_get(&len);
-      s->hdr_info.server_request.value_set(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, value, len);
+      auto value{c_ims->value_get()};
+      s->hdr_info.server_request.value_set(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, value.data(), value.length());
     }
     if (c_inm) {
-      int         len;
-      const char *value = c_inm->value_get(&len);
-      s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, value, len);
+      auto value{c_inm->value_get()};
+      s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, value.data(), value.length());
     }
   }
 
@@ -4606,7 +4609,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     //  the order of the fields
     MIMEField *resp_via = s->hdr_info.server_response.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
     if (resp_via) {
-      int                                              saved_via_len = 0;
       swoc::LocalBufferWriter<HTTP_OUR_VIA_MAX_LENGTH> saved_via_w;
       MIMEField                                       *our_via;
       our_via = s->hdr_info.client_response.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
@@ -4614,15 +4616,14 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         our_via = s->hdr_info.client_response.field_create(MIME_FIELD_VIA, MIME_LEN_VIA);
         s->hdr_info.client_response.field_attach(our_via);
       } else {
-        const char *src = our_via->value_get(&saved_via_len);
-        saved_via_w.write(src, saved_via_len);
+        auto src{our_via->value_get()};
+        saved_via_w.write(src.data(), src.length());
         s->hdr_info.client_response.field_value_set(our_via, "", 0, true);
       }
       // HDR FIX ME - Multiple appends are VERY slow
       while (resp_via) {
-        int         clen;
-        const char *cfield = resp_via->value_get(&clen);
-        s->hdr_info.client_response.field_value_append(our_via, cfield, clen, true);
+        auto cfield{resp_via->value_get()};
+        s->hdr_info.client_response.field_value_append(our_via, cfield.data(), cfield.length(), true);
         resp_via = resp_via->m_next_dup;
       }
       if (saved_via_w.size()) {
@@ -4972,31 +4973,29 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
 void
 HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, HTTPHdr *response_header)
 {
-  MIMEField  *new_field;
-  const char *name;
-  bool        dups_seen = false;
+  MIMEField *new_field;
+  bool       dups_seen = false;
 
   for (auto spot = response_header->begin(), limit = response_header->end(); spot != limit; ++spot) {
     MIMEField &field{*spot};
-    int        name_len;
-    name = field.name_get(&name_len);
+    auto       name{field.name_get()};
 
     ///////////////////////////
     // is hop-by-hop header? //
     ///////////////////////////
-    if (HttpTransactHeaders::is_this_a_hop_by_hop_header(name)) {
+    if (HttpTransactHeaders::is_this_a_hop_by_hop_header(name.data())) {
       continue;
     }
     /////////////////////////////////////
     // dont cache content-length field  and transfer encoding //
     /////////////////////////////////////
-    if (name == MIME_FIELD_CONTENT_LENGTH || name == MIME_FIELD_TRANSFER_ENCODING) {
+    if (name.data() == MIME_FIELD_CONTENT_LENGTH || name.data() == MIME_FIELD_TRANSFER_ENCODING) {
       continue;
     }
     /////////////////////////////////////
     // dont cache Set-Cookie headers   //
     /////////////////////////////////////
-    if (name == MIME_FIELD_SET_COOKIE) {
+    if (name.data() == MIME_FIELD_SET_COOKIE) {
       continue;
     }
     /////////////////////////////////////////
@@ -5004,7 +5003,7 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     //   type as this wreaks havoc with    //
     //   transformed content               //
     /////////////////////////////////////////
-    if (name == MIME_FIELD_CONTENT_TYPE) {
+    if (name.data() == MIME_FIELD_CONTENT_TYPE) {
       continue;
     }
     /////////////////////////////////////
@@ -5012,7 +5011,7 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     //  functions merges the two in a  //
     //  complex manner                 //
     /////////////////////////////////////
-    if (name == MIME_FIELD_WARNING) {
+    if (name.data() == MIME_FIELD_WARNING) {
       continue;
     }
     // Copy all remaining headers with replacement
@@ -5031,15 +5030,12 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     //
     if (field.m_next_dup) {
       if (dups_seen == false) {
-        const char *name2;
-        int         name_len2;
-
         // use a second iterator to delete the
         // remaining response headers in the cached response,
         // so that they will be added in the next iterations.
         for (auto spot2 = spot; spot2 != limit; ++spot2) {
           MIMEField &field2{*spot2};
-          name2 = field2.name_get(&name_len2);
+          auto       name2{field2.name_get()};
 
           // It is specified above that content type should not
           // be altered here however when a duplicate header
@@ -5049,24 +5045,23 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
           // content type in the client response.
           // This ensures that it is not altered when duplicate
           // headers are present.
-          if (name2 == MIME_FIELD_CONTENT_TYPE) {
+          if (name2.data() == MIME_FIELD_CONTENT_TYPE) {
             continue;
           }
-          cached_header->field_delete(name2, name_len2);
+          cached_header->field_delete(name2.data(), name2.length());
         }
         dups_seen = true;
       }
     }
 
-    int         value_len;
-    const char *value = field.value_get(&value_len);
+    auto value{field.value_get()};
 
     if (dups_seen == false) {
-      cached_header->value_set(name, name_len, value, value_len);
+      cached_header->value_set(name.data(), name.length(), value.data(), value.length());
     } else {
-      new_field = cached_header->field_create(name, name_len);
+      new_field = cached_header->field_create(name.data(), name.length());
       cached_header->field_attach(new_field);
-      cached_header->field_value_set(new_field, value, value_len);
+      cached_header->field_value_set(new_field, value.data(), value.length());
     }
   }
 
@@ -5133,14 +5128,14 @@ HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_hea
   // Loop over all the dups in the response warning header and append
   //  them one by one on to the cached warning header
   while (r_warn) {
-    move_warn = r_warn->value_get(&move_warn_len);
+    auto move_warn_sv{r_warn->value_get()};
 
     if (new_cwarn) {
-      cached_header->field_value_append(new_cwarn, move_warn, move_warn_len, true);
+      cached_header->field_value_append(new_cwarn, move_warn_sv.data(), move_warn_sv.length(), true);
     } else {
       new_cwarn = cached_header->field_create(MIME_FIELD_WARNING, MIME_LEN_WARNING);
       cached_header->field_attach(new_cwarn);
-      cached_header->field_value_set(new_cwarn, move_warn, move_warn_len);
+      cached_header->field_value_set(new_cwarn, move_warn_sv.data(), move_warn_sv.length());
     }
 
     r_warn = r_warn->m_next_dup;
@@ -6613,14 +6608,14 @@ HttpTransact::will_this_request_self_loop(State *s)
     while (via_field) {
       // No need to waste cycles comma separating the via values since we want to do a match anywhere in the
       // in the string.  We can just loop over the dup hdr fields
-      int         via_len;
-      const char *via_string = via_field->value_get(&via_len);
+      auto via_string{via_field->value_get()};
 
-      if ((count <= max_proxy_cycles) && via_string) {
+      if ((count <= max_proxy_cycles) && via_string.data()) {
         std::string_view            current{via_field->value_get()};
         std::string_view::size_type offset;
-        TxnDbg(dbg_ctl_http_transact, "Incoming via: \"%.*s\" --has-- (%s[%s] (%s))", via_len, via_string,
-               s->http_config_param->proxy_hostname, uuid.data(), s->http_config_param->proxy_request_via_string);
+        TxnDbg(dbg_ctl_http_transact, "Incoming via: \"%.*s\" --has-- (%s[%s] (%s))", static_cast<int>(via_string.length()),
+               via_string.data(), s->http_config_param->proxy_hostname, uuid.data(),
+               s->http_config_param->proxy_request_via_string);
         while ((count <= max_proxy_cycles) && (std::string_view::npos != (offset = current.find(uuid)))) {
           current.remove_prefix(offset + TS_UUID_STRING_LEN);
           count++;
@@ -7785,7 +7780,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     }
   }
 
-  if (s->http_config_param->send_100_continue_response) {
+  if (s->hdr_info.client_request.m_100_continue_sent) {
     HttpTransactHeaders::remove_100_continue_headers(s, outgoing_request);
     TxnDbg(dbg_ctl_http_trans, "request expect 100-continue headers removed");
   }
@@ -7889,19 +7884,17 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
           for (size_t i = 0; i < countof(fields); i++) {
             if (base_response->presence(fields[i].presence)) {
-              MIMEField  *field;
-              int         len;
-              const char *value;
+              MIMEField *field;
 
               field = base_response->field_find(fields[i].name, fields[i].len);
               ink_assert(field != nullptr);
-              value = field->value_get(&len);
-              outgoing_response->value_append(fields[i].name, fields[i].len, value, len, false);
+              auto value{field->value_get()};
+              outgoing_response->value_append(fields[i].name, fields[i].len, value.data(), value.length(), false);
               if (field->has_dups()) {
                 field = field->m_next_dup;
                 while (field) {
-                  value = field->value_get(&len);
-                  outgoing_response->value_append(fields[i].name, fields[i].len, value, len, true);
+                  value = field->value_get();
+                  outgoing_response->value_append(fields[i].name, fields[i].len, value.data(), value.length(), true);
                   field = field->m_next_dup;
                 }
               }

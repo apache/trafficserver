@@ -378,7 +378,10 @@ Thread Variables
 .. ts:cv:: CONFIG proxy.config.exec_thread.listen INT 0
 
    If enabled (``1``) all the exec_threads listen for incoming connections. `proxy.config.accept_threads`
-   should be disabled to enable this variable.
+   should be disabled to enable this variable.  If a unix domain path is
+   configured as a server port and this setting is enabled, each exec thread
+   will create its own domain socket with a ``-<thread id>`` suffix added to the
+   end of the path.
 
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 
@@ -711,31 +714,36 @@ HTTP Engine
 
    Quick reference chart:
 
-   =========== =============== ========================================
-   Name        Note            Definition
-   =========== =============== ========================================
-   *number*    Required        The local port.
-   blind                       Blind (``CONNECT``) port.
-   compress    Not Implemented Compressed.
-   ipv4        Default         Bind to IPv4 address family.
-   ipv6                        Bind to IPv6 address family.
-   ip-in       Value           Local inbound IP address.
-   ip-out      Value           Local outbound IP address.
-   ip-resolve  Value           IP address resolution style.
-   proto       Value           List of supported session protocols.
-   pp                          Enable Proxy Protocol.
-   ssl                         SSL terminated.
-   quic                        QUIC terminated.
-   tr-full                     Fully transparent (inbound and outbound)
-   tr-in                       Inbound transparent.
-   tr-out                      Outbound transparent.
-   tr-pass                     Pass through enabled.
-   mptcp                       Multipath TCP.
-   allow-plain                 Allow failback to non-TLS for TLS ports
-   =========== =============== ========================================
+   ============ =============== ========================================
+   Name         Note            Definition
+   ============ =============== ========================================
+   *port/path*  Required        The local IP port or Unix domain path.
+   blind                        Blind (``CONNECT``) port.
+   compress     Not Implemented Compressed.
+   ipv4         Default         Bind to IPv4 address family.
+   ipv6                         Bind to IPv6 address family.
+   ip-in        Value           Local inbound IP address.
+   ip-out       Value           Local outbound IP address.
+   ip-resolve   Value           IP address resolution style.
+   proto        Value           List of supported session protocols.
+   pp                           Enable Proxy Protocol.
+   ssl                          SSL terminated.
+   quic                         QUIC terminated.
+   tr-full                      Fully transparent (inbound and outbound)
+   tr-in                        Inbound transparent.
+   tr-out                       Outbound transparent.
+   tr-pass                      Pass through enabled.
+   mptcp                        Multipath TCP.
+   allow-plain                  Allow failback to non-TLS for TLS ports
+   ============ =============== ========================================
 
-*number*
-   Local IP port to bind. This is the port to which ATS clients will connect.
+*port*
+   Local IP port number to bind. This is the port to which ATS clients will connect.
+
+*path*
+   Unix Domain Socket path to bind to.  This socket will be available for local
+   clients to connect to. Some port descriptors below are not applicable to
+   domain sockets.
 
 blind
    Accept only the ``CONNECT`` method on this port.
@@ -825,6 +833,13 @@ allow-plain
    Listen on port 80 on any address for IPv4 and IPv6.::
 
       80 80:ipv6
+
+.. topic:: Example
+
+   Listen on unix domain socket at /var/run/trafficserver/proxy.sock and enable
+   Proxy Protocol
+
+      /var/run/trafficserver/proxy.sock:pp
 
 .. topic:: Example
 
@@ -1053,12 +1068,22 @@ allow-plain
    to use the client HTTP version for upstream requests.
 
 .. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
+   :reloadable:
    :overridable:
 
-   If enabled (``1``) anytime a request contains a ``Authorization``,
-   ``Proxy-Authorization``, or ``Www-Authenticate`` header the connection will
-   be closed and not reused. This marks the connection as private. When disabled
-   (``0``) the connection will be available for reuse.
+   Specifies whether |TS| should close the origin connection and not reuse it if the request contains an
+   ``Authorization``, ``Proxy-Authorization``, or ``Www-Authenticate`` header.  Private connections are
+   associated with a single client connection and are not shared with other client connections.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` The origin connection will be available for reuse.
+   ``1`` The origin connection will be closed after the client is done with it and if the request contains an
+         ``Authorization``, ``Proxy-Authorization``, or ``Www-Authenticate`` header.
+   ``2`` The origin connection will be closed after the client is done with it and if the request contains a
+         ``Proxy-Authorization`` or ``Www-Authenticate`` header.
+   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
    :overridable:
