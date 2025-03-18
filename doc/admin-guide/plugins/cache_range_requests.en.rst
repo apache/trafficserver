@@ -151,20 +151,20 @@ X-Crr-Ident header support
 .. option:: --ident-header=[header name] (default: X-Crr-Ident)
 .. option:: -j
 
-This supports the slice plugin which makes multiple adjancent
-range requests.  The slice plugin will record the identifier
-of the first range request (Etag, or Last-Modified in that order)
-and will add the value of that to the this header.
+This supports the slice plugin which makes multiple adjacent range
+requests. The slice plugin will record the identifier of the first range
+request (Etag, or Last-Modified in that order) and will add the value
+to this header.
 
 .. code::
 
     X-Crr-Ident: Etag: "foo"
     X-Crr-Ident: Last-Modified: Tue, 19 Nov 2019 13:26:45 GMT
 
-If during the cache lookup hook a range request is considered stale
+During the cache lookup hook if a range request is considered STALE
 the identifier from this header will be compared to the stale cache
-response and if matches the response will be marked FRESH to bypass
-visiting a parent cache with an IMS request.
+identifier. If the values match the response will be changed to FRESH,
+preventing the transaction from contacting a parent.
 
 When used with the :program:`slice` plugin its `--crr-ident-header`
 option must have the same value (or not be defined) in order to work.
