@@ -1281,7 +1281,7 @@ fail:
 }
 
 bool
-SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
+SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX * /* ctx ATS_UNUSED */)
 {
   return true;
 }
