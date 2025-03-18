@@ -1062,6 +1062,10 @@ LogAccess::unmarshal_ip(char **buf, IpEndpoint *dest)
     LogFieldIp6 *ip6 = static_cast<LogFieldIp6 *>(raw);
     ats_ip6_set(dest, ip6->_addr);
     len = sizeof(*ip6);
+  } else if (AF_UNIX == raw->_family) {
+    LogFieldUn *un = static_cast<LogFieldUn *>(raw);
+    dest->assign(UnAddr(un->_path));
+    len = sizeof(*un);
   } else {
     ats_ip_invalidate(dest);
   }
@@ -1085,7 +1089,7 @@ LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
 
   if (len > 0) {
     unmarshal_ip(buf, &ip);
-    if (!ats_is_ip(&ip)) {
+    if (!ats_is_ip(&ip) && !ats_is_unix(ip)) {
       *dest = '0';
       Dbg(dbg_ctl_log_unmarshal_data, "Invalid IP address");
       return 1;
@@ -1112,7 +1116,7 @@ LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
 
   if (len > 0) {
     unmarshal_ip(buf, &ip);
-    if (!ats_is_ip(&ip)) {
+    if (!ats_is_ip(&ip) && !ats_is_unix(ip)) {
       *dest = '0';
       Dbg(dbg_ctl_log_unmarshal_data, "Invalid IP address");
       return 1;
