@@ -52,7 +52,10 @@ should_skip_this_obj(TSHttpTxn txnp, Config *const config)
   int         len    = 0;
   char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
 
-  if (!config->isKnownLargeObj({urlstr, static_cast<size_t>(len)})) {
+  bool const known_large = config->isKnownLargeObj({urlstr, static_cast<size_t>(len)});
+  TSfree(urlstr);
+
+  if (!known_large) {
     DEBUG_LOG("Not a known large object, not slicing: %.*s", len, urlstr);
     return true;
   }

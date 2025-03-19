@@ -192,7 +192,7 @@ create_pluginconfig(int argc, char *const argv[])
 
   if (pc->consider_ident_header && pc->ident_header.empty()) {
     pc->ident_header = DefaultIdentHeader;
-    DEBUG_LOG("Plugin uses default ims header: %s", pc->ims_header.c_str());
+    DEBUG_LOG("Plugin uses default ident header: %s", pc->ident_header.c_str());
   }
 
   return pc;
@@ -643,10 +643,11 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
         }
       }
     } else if (TS_CACHE_LOOKUP_HIT_STALE == cachestat && txn_state->ident_check) {
+      pluginconfig const *const pc = txn_state->config;
+      DEBUG_LOG("Stale asset ident check");
+
       TSMBuffer resp_buf = nullptr;
       TSMLoc    resp_loc = TS_NULL_MLOC;
-
-      pluginconfig const *const pc = txn_state->config;
 
       if (TS_SUCCESS == TSHttpTxnCachedRespGet(txnp, &resp_buf, &resp_loc)) {
         if (TS_HTTP_STATUS_OK == TSHttpHdrStatusGet(resp_buf, resp_loc)) {

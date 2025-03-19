@@ -46,7 +46,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server", lookup_key="{%uuid}")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", command='traffic_server_valgrind.sh')
 
 # default root
 req_header_chk = {
@@ -68,9 +68,10 @@ ts.Disk.remap_config.AddLines(
     [
         f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/' +
         ' @plugin=slice.so @pparam=--blockbytes-test=3 @pparam=--remap-host=crr',
-        f'map http://crr/ http://127.0.0.1:{server.Variables.Port}/' + '  @plugin=cache_range_requests.so @pparam=--consider-ims',
+        f'map http://crr/ http://127.0.0.1:{server.Variables.Port}/' +
+        '  @plugin=cache_range_requests.so @pparam=--consider-ims @pparam=--consider-ident',
         f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=slice.so @pparam=--blockbytes-test=3' +
-        ' @pparam=--remap-host=crrhdr @pparam=--crr-ims-header=crr-foo',
+        ' @pparam=--remap-host=crrhdr @pparam=--crr-ims-header=crr-foo @pparam=--consider-ident',
         f'map http://crrhdr/ http://127.0.0.1:{server.Variables.Port}/'
         '  @plugin=cache_range_requests.so @pparam=--ims-header=crr-foo',
     ])
@@ -79,7 +80,7 @@ ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 
 ts.Disk.records_config.update(
     {
-        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'cache_range_requests|slice',
     })
 
@@ -340,27 +341,83 @@ ps.Command = curl_and_args + ' http://slice/assetgone'
 ps.Streams.stdout.Content = Testers.ContainsExpression("404 Not Found", "Expected 404")
 tr.StillRunningAfter = ts
 
-# custom headers
+## custom headers
+
+# Test case: 2nd slice out of date (refetch and continue)
+
+req_header_custom_2ndold1 = {
+    "headers":
+        "GET /second-custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagold-custom-1\r\n" + "Range: bytes=3-5\r\n"
+        "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
+
+res_header_custom_2ndold1 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
+        "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagold-custom"\r\n' + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "aa"
+}
+
+server.addResponse("sessionlog.json", req_header_custom_2ndold1, res_header_custom_2ndold1)
+
+req_header_custom_2ndnew0 = {
+    "headers":
+        "GET /second-custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-custom-0\r\n" + "Range: bytes=0-2\r\n"
+        "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
+
+res_header_custom_2ndnew0 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
+        "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etagnew-custom"\r\n' + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "bbb"
+}
+
+server.addResponse("sessionlog.json", req_header_custom_2ndnew0, res_header_custom_2ndnew0)
+
+req_header_custom_2ndnew1 = {
+    "headers":
+        "GET /second-custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-custom-1\r\n" + "Range: bytes=3-5\r\n"
+        "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "",
+}
+
+res_header_custom_2ndnew1 = {
+    "headers":
+        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
+        "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagnew-custom"\r\n' + "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "bb"
+}
+
+server.addResponse("sessionlog.json", req_header_custom_2ndnew1, res_header_custom_2ndnew1)
 
 edt = datetime.datetime.fromtimestamp(time.time() + 100)
 edate = to_httpdate(edt)
 
 # 12 Test - Preload reference etagold-1
-tr = Test.AddTestRun("Preload slice etagold-1")
+tr = Test.AddTestRun("Preload slice etagold-custom-1")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + f' http://crrhdr/second -r 3-5 -H "uuid: etagold-1" -H "crr-foo: {edate}"'
+ps.Command = curl_and_args + f' http://crrhdr/second-custom -r 3-5 -H "uuid: etagold-custom-1" -H "crr-foo: {edate}"'
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/aa.gold"
-ps.Streams.stdout.Content = Testers.ContainsExpression("etagold", "expected etagold")
+ps.Streams.stdout.Content = Testers.ContainsExpression("etagold-custom", "expected etagold-custom")
 tr.StillRunningAfter = ts
 
 # 13 Test - Request second slice via slice plugin, with instructions to fetch new 2nd slice
 tr = Test.AddTestRun("Request 2nd slice (expect refetch)")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slicehdr/second -r 3- -H "uuid: etagnew-1"'
+ps.Command = curl_and_args + ' http://slicehdr/second-custom -r 3- -H "uuid: etagnew-custom-1"'
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/bb.gold"
-ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
+ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew-custom", "expected etagnew-custom")
 tr.StillRunningAfter = ts
 
 # Over riding the built in ERROR check since we expect to see logSliceErrors

@@ -89,7 +89,7 @@ server.addResponse("sessionlog.json", request_lm, response_lm)
 # use this second ats instance to serve up the slices
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", command='traffic_server_valgrind.sh')
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'slice',
