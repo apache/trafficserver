@@ -1106,7 +1106,9 @@ ats_unix_set(IpEndpoint *dst, const char *path, int len)
   dst->sun.sun_family = AF_UNIX;
   len                 = std::min(len, static_cast<int>(TS_UNIX_SIZE));
   memcpy(dst->sun.sun_path, path, len);
+#if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
   dst->sun.sun_len = len;
+#endif
   return ats_ip_sa_cast(&dst->sun);
 }
 
