@@ -1064,7 +1064,7 @@ LogAccess::unmarshal_ip(char **buf, IpEndpoint *dest)
     len = sizeof(*ip6);
   } else if (AF_UNIX == raw->_family) {
     LogFieldUn *un = static_cast<LogFieldUn *>(raw);
-    dest->assign(UnAddr(un->_path));
+    ats_unix_set(dest, un->_path, TS_UNIX_SIZE);
     len = sizeof(*un);
   } else {
     ats_ip_invalidate(dest);
