@@ -5944,6 +5944,10 @@ HttpTransact::is_cache_response_returnable(State *s)
 bool
 HttpTransact::is_stale_cache_response_returnable(State *s)
 {
+  if (s->cache_info.object_read == nullptr) {
+    return false;
+  }
+
   HTTPHdr *cached_response = s->cache_info.object_read->response_get();
 
   // First check if client allows cached response
