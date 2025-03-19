@@ -560,7 +560,7 @@ NOW
     cond %{NOW:<part>} <operand>
 
 This is the current time, in the local timezone as set on the machine,
-typically GMC. Without any further qualifiers, this is the time in seconds
+typically GMT. Without any further qualifiers, this is the time in seconds
 since EPOCH aka Unix time. Qualifiers can be used to give various other
 values, such as year, month etc.
 ::
