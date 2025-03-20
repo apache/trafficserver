@@ -3077,3 +3077,28 @@ TSRalloc(size_t count = 1 /**< Number of instances of T to allocate storage for.
 {
   return static_cast<std::remove_cv_t<T> *>(TSmalloc(count * sizeof(T)));
 }
+
+/**
+   Return the particular PROXY protocol info requested.
+
+   @param vconn the vconection pointer
+   @param key the requested PROXY protocol info. One of TSVConnPPInfoKey or TLV type ID
+   @param value a pointer to a const char pointer where the return value is stored
+   @param length a pointer to a integer where the length of return value is stored
+
+   @return @c TS_SUCCESS if the requested info is supported, TS_ERROR otherwise
+
+*/
+TSReturnCode TSVConnPPInfoGet(TSVConn vconn, uint16_t key, const char **value, int *length);
+
+/**
+   Return the particular PROXY protocol info requested.
+
+   @param vconn the vconection pointer
+   @param key the requested PROXY protocol info. One of TSVConnPPInfoKey or TLV type ID
+   @param value a pointer to a integer where the return value is stored
+
+   @return @c TS_SUCCESS if the requested info is supported, TS_ERROR otherwise
+
+*/
+TSReturnCode TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value);
