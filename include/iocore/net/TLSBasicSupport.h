@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <openssl/ssl.h>
 
 #include "tscore/ink_hrtime.h"
@@ -59,6 +61,8 @@ public:
   void set_valid_tls_version_min(int min);
   void set_valid_tls_version_max(int max);
   void set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask);
+  void set_legacy_cipher_suite(std::string const &cipher_suite);
+  void set_cipher_suite(std::string const &cipher_suite);
 
   /**
    * Give the plugin access to the data structure passed in during the underlying

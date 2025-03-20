@@ -462,3 +462,34 @@ ServerMaxEarlyData::SNIAction([[maybe_unused]] SSL &ssl, const Context & /* ctx 
 #endif
   return SSL_TLSEXT_ERR_OK;
 }
+
+int
+ServerCipherSuite::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+  if (server_cipher_suite.empty()) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  auto tbs = TLSBasicSupport::getInstance(&ssl);
+  if (tbs == nullptr) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  Dbg(dbg_ctl_ssl_sni, "Setting pre TLSv1.3 cipher suite from server_cipher_suite to %s", server_cipher_suite.c_str());
+  tbs->set_legacy_cipher_suite(server_cipher_suite);
+  return SSL_TLSEXT_ERR_OK;
+}
+
+int
+ServerTLSv1_3CipherSuites::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+  if (server_TLSV1_3_cipher_suites.empty()) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  auto tbs = TLSBasicSupport::getInstance(&ssl);
+  if (tbs == nullptr) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  Dbg(dbg_ctl_ssl_sni, "Setting TLSv1.3 or later cipher suites from server_TLSv1_3_cipher_suites to %s",
+      server_TLSV1_3_cipher_suites.c_str());
+  tbs->set_cipher_suite(server_TLSV1_3_cipher_suites);
+  return SSL_TLSEXT_ERR_OK;
+}
