@@ -1,0 +1,24 @@
+records:
+  config:
+    http:
+      server_ports: 8080
+    reverse_proxy:
+      enabled: 0
+    url_remap:
+      remap_required: 0
+    cache:
+      enabled: 1
+      max_doc_size: 104857600
+      ram_cache:
+        size: 1073741824
+        algorithm: 1
+      http:
+        when_to_revalidate: 0
+        required_headers: 0
+        ignore_client_no_cache: 1
+        ignore_server_no_cache: 0
+        max_stale_age: 604800
+    diags:
+      debug:
+        enabled: 1
+        tags: http.*|dns.*
