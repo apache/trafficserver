@@ -155,6 +155,18 @@ verify_client_ca_certs                   Both      Specifies an alternate set of
                                                    ``verify_client_ca_certs`` can only be used with capabilities provided by
                                                    OpenSSL 1.0.2 or later.
 
+server_cipher_suite                      Inbound   Specifies an override to the global :ts:cv:`proxy.config.ssl.server.cipher_suite`
+                                                   :file:`records.yaml` configuration. See the
+                                                   `OpenSSL SSL_CTX_set_cipher_list <https://docs.openssl.org/3.1/man3/SSL_CTX_set_cipher_list/>`_
+                                                   documentation. Note that this configures the cipher suite used for inbound TLS
+                                                   (version 1.2 and below) connections.
+
+server_TLSv1_3_cipher_suites             Inbound   Specifies an override to the global :ts:cv:`proxy.config.ssl.server.TLSv1_3.cipher_suites`
+                                                   :file:`records.yaml` configuration. See the
+                                                   `OpenSSL SSL_set_ciphersuites <https://docs.openssl.org/3.1/man3/SSL_set_ciphersuites/>`_
+                                                   documentation. Note that this configures the cipher suite used for inbound TLSv1.3 and
+                                                   above connections.
+
 host_sni_policy                          Inbound   One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
                                                    If not specified, the value of :ts:cv:`proxy.config.http.host_sni_policy` is used.
