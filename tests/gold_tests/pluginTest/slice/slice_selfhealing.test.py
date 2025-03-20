@@ -46,7 +46,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server", lookup_key="{%uuid}")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command='traffic_server_valgrind.sh')
+ts = Test.MakeATSProcess("ts")
 
 # default root
 req_header_chk = {

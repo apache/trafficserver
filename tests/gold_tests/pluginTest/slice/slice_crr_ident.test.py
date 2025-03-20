@@ -53,7 +53,7 @@ res_header_chk = {
 server.addResponse("sessionlog.json", req_header_chk, res_header_chk)
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts")  #, command='traffic_server_valgrind.sh')
+ts = Test.MakeATSProcess("ts")
 
 # set up slice plugin with remap host into cache_range_requests
 ts.Disk.remap_config.AddLines(
