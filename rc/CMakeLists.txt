@@ -16,7 +16,9 @@
 #######################
 
 set(PACKAGE_NAME "Apache Traffic Server")
-set(PACKAGE_VERSION ${TS_VERSION_STRING})
+if(NOT DEFINED PACKAGE_VERSION)
+  set(PACKAGE_VERSION ${TS_VERSION_STRING})
+endif()
 set(PACKAGE_BUGREPORT "dev@trafficserver.apache.org")
 
 # TODO: Use layouts
