@@ -1,0 +1,17 @@
+<HTML>
+<HEAD>
+<TITLE>No Valid Host</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>No Valid Host</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Unable to find a valid target host.
+
+The server was found but all of the addresses are marked down and so there is
+no valid target address to which to connect. Please try again after a few minutes.
+</B></FONT>
+<HR>
+</BODY>
