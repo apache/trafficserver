@@ -71,7 +71,7 @@ ts.Disk.remap_config.AddLines(
         f'map http://crr/ http://127.0.0.1:{server.Variables.Port}/' +
         '  @plugin=cache_range_requests.so @pparam=--consider-ims @pparam=--consider-ident',
         f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=slice.so @pparam=--blockbytes-test=3' +
-        ' @pparam=--remap-host=crrhdr @pparam=--crr-ims-header=crr-foo @pparam=--consider-ident',
+        ' @pparam=--remap-host=crrhdr @pparam=--crr-ims-header=crr-foo',
         f'map http://crrhdr/ http://127.0.0.1:{server.Variables.Port}/'
         '  @plugin=cache_range_requests.so @pparam=--ims-header=crr-foo',
     ])
