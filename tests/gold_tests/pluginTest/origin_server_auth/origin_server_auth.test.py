@@ -79,7 +79,6 @@ class OriginServerAuthTest:
             })
 
         self.ts.Setup.CopyAs('rules/v4-parse-test.test_input', Test.RunDirectory)
-        self.ts.Setup.CopyAs('rules/gcp-parse-test.test_input', Test.RunDirectory)
 
         self.ts.Disk.remap_config.AddLine(
             f'map http://www.example.com/s3-bucket http://127.0.0.1:{self.server.Variables.Port}/s3-bucket \
