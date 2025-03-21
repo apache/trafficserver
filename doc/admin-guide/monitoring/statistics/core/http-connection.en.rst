@@ -127,6 +127,9 @@ HTTP Connection
 .. ts:stat:: global proxy.process.http.total_client_connections_ipv6 integer
    :type: counter
 
+.. ts:stat:: global proxy.process.http.total_client_connections_uds integer
+   :type: counter
+
 .. ts:stat:: global proxy.process.http.total_incoming_connections integer
    :type: counter
 

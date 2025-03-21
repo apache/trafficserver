@@ -258,6 +258,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_client_connections;
   Metrics::Counter::AtomicType *total_client_connections_ipv4;
   Metrics::Counter::AtomicType *total_client_connections_ipv6;
+  Metrics::Counter::AtomicType *total_client_connections_uds;
   Metrics::Counter::AtomicType *total_incoming_connections;
   Metrics::Counter::AtomicType *total_parent_marked_down_count;
   Metrics::Counter::AtomicType *total_parent_proxy_connections;
