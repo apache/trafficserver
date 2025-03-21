@@ -1,0 +1,13 @@
+cpuup=/plain sssc=200 pssc=206 phr=DIRECT range=::bytes=0-2:: x-crr-ident=::-:: uid=::plain 0:: crc=TCP_MISS
+cpuup=/plain sssc=200 pssc=206 phr=DIRECT range=::bytes=3-5:: x-crr-ident=::Etag: "plain":: uid=::plain 1:: crc=TCP_MISS
+cpuup=/plain sssc=200 pssc=200 phr=DIRECT range=::-:: x-crr-ident=::-:: uid=::plain:: crc=TCP_MISS
+cpuup=/plain sssc=200 pssc=206 phr=DIRECT range=::bytes=0-2:: x-crr-ident=::-:: uid=::plain 0:: crc=TCP_REFRESH_MISS
+cpuup=/plain sssc=000 pssc=206 phr=NONE range=::bytes=3-5:: x-crr-ident=::Etag: "plain":: uid=::-:: crc=TCP_HIT
+cpuup=/plain sssc=200 pssc=200 phr=DIRECT range=::-:: x-crr-ident=::-:: uid=::plain:: crc=TCP_MISS
+cpuup=/plain sssc=200 pssc=206 phr=DIRECT range=::bytes=0-2:: x-crr-ident=::-:: uid=::chg 0:: crc=TCP_REFRESH_MISS
+cpuup=/plain sssc=200 pssc=206 phr=DIRECT range=::bytes=3-5:: x-crr-ident=::Etag: "chg":: uid=::chg 1:: crc=TCP_REFRESH_MISS
+cpuup=/plain sssc=200 pssc=200 phr=DIRECT range=::-:: x-crr-ident=::-:: uid=::chg:: crc=TCP_MISS
+cpuup=/plain sssc=000 pssc=206 phr=NONE range=::bytes=0-2:: x-crr-ident=::-:: uid=::-:: crc=TCP_HIT
+cpuup=/plain sssc=000 pssc=206 phr=NONE range=::bytes=3-5:: x-crr-ident=::Etag: "chg":: uid=::-:: crc=TCP_HIT
+cpuup=/plain sssc=200 pssc=200 phr=DIRECT range=::-:: x-crr-ident=::-:: uid=::chg:: crc=TCP_MISS
+cpuup=/404.txt sssc=404 pssc=404 phr=DIRECT range=::-:: x-crr-ident=::-:: uid=::-:: crc=TCP_MISS

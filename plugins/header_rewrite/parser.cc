@@ -196,6 +196,7 @@ Parser::preprocess(std::vector<std::string> tokens)
       }
     } else {
       TSError("[%s] conditions must be embraced in %%{}", PLUGIN_NAME);
+      TSError("[%s] token: '%s'", PLUGIN_NAME, tokens[0].c_str());
       return false;
     }
   } else {
