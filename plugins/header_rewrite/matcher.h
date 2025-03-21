@@ -29,6 +29,7 @@
 
 #include "ts/ts.h"
 
+#include "resources.h"
 #include "regex_helper.h"
 #include "lulu.h"
 
@@ -99,7 +100,7 @@ public:
 
   // Evaluate this matcher
   bool
-  test(const T &t) const
+  test(const T &t, const Resources &res) const
   {
     switch (_op) {
     case MATCH_EQUAL:
@@ -112,7 +113,7 @@ public:
       return test_gt(t);
       break;
     case MATCH_REGULAR_EXPRESSION:
-      return test_reg(t);
+      return test_reg(t, res); // Only the regex matcher needs the resource
       break;
     case MATCH_IP_RANGES:
       // This is an error, the Matcher doesn't make sense to match on IP ranges
@@ -174,27 +175,30 @@ private:
   }
 
   bool
-  test_reg(const unsigned int /* t ATS_UNUSED */) const
+  test_reg(const unsigned int /* t ATS_UNUSED */, const Resources & /* Not used */) const
   {
     // Not supported
     return false;
   }
 
   bool
-  test_reg(const TSHttpStatus /* t ATS_UNUSED */) const
+  test_reg(const TSHttpStatus /* t ATS_UNUSED */, const Resources & /* Not used */) const
   {
     // Not supported
     return false;
   }
 
   bool
-  test_reg(const std::string &t) const
+  test_reg(const std::string &t, const Resources &res) const
   {
-    int ovector[OVECCOUNT];
-
     Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", _data.c_str(), t.c_str(), static_cast<int>(_nocase));
-    if (_reHelper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
+    int count = _reHelper.regexMatch(t.c_str(), t.length(), const_cast<Resources &>(res).ovector);
+
+    if (count > 0) {
       Dbg(pi_dbg_ctl, "Successfully found regular expression match");
+      const_cast<Resources &>(res).ovector_ptr   = t.c_str();
+      const_cast<Resources &>(res).ovector_count = count;
+
       return true;
     }
 
@@ -229,7 +233,7 @@ public:
   }
 
   bool
-  test(const sockaddr *addr) const
+  test(const sockaddr *addr, const Resources & /* Not used */) const
   {
     if (_ipHelper.contains(swoc::IPAddr(addr))) {
       if (pi_dbg_ctl.on()) {

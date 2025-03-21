@@ -30,6 +30,10 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
 {
   Dbg(pi_dbg_ctl, "Building resources, hook=%s", TSHttpHookNameLookup(hook));
 
+  // Clear the capture groups just in case
+  ovector_count = 0;
+  ovector_ptr   = nullptr;
+
   // If we need the client request headers, make sure it's also available in the client vars.
   if (ids & RSRC_CLIENT_REQUEST_HEADERS) {
     Dbg(pi_dbg_ctl, "\tAdding TXN client request header buffers");
