@@ -5193,8 +5193,7 @@ HttpSM::get_outbound_sni() const
 
   if (policy.empty() || policy == "host"_tv) {
     // By default the host header field value is used for the SNI.
-    auto host{t_state.hdr_info.server_request.host_get()};
-    zret.assign(host.data(), static_cast<int>(host.length()));
+    zret = t_state.hdr_info.server_request.host_get();
   } else if (_ua.get_txn() && policy == "server_name"_tv) {
     const char *server_name = snis->get_sni_server_name();
     if (server_name[0] == '\0') {
