@@ -2161,6 +2161,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (p) {
     // Translate string to IpAddr
     set_debug_ip(p);
+    ats_free(p);
   }
   REC_RegisterConfigUpdateFunc("proxy.config.diags.debug.client_ip", update_debug_client_ip, nullptr);
 
