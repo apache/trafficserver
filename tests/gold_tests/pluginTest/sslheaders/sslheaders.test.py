@@ -64,7 +64,7 @@ ts.Disk.plugin_config.AddLine('sslheaders.so SSL-Client-ID=client.subject')
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = (
-    'curl -H "SSL-Client-ID: My Fake Client ID" --verbose --ipv4 --insecure --header "Host: bar.com"' +
+tr.CurlCommand(
+    '-H "SSL-Client-ID: My Fake Client ID" --verbose --ipv4 --insecure --header "Host: bar.com"' +
     ' https://localhost:{}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0

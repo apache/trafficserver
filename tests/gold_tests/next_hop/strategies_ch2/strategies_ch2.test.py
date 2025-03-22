@@ -132,7 +132,7 @@ tr.Processes.Default.ReturnCode = 0
 
 for i in range(num_objects):
     tr = Test.AddTestRun()
-    tr.Processes.Default.Command = (f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj{i}')
+    tr.CurlCommand(f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj{i}')
     tr.Processes.Default.Streams.stdout = "body.gold"
     tr.Processes.Default.ReturnCode = 0
 
@@ -144,7 +144,7 @@ tr.Processes.Default.ReturnCode = 0
 
 for i in range(num_objects):
     tr = Test.AddTestRun()
-    tr.Processes.Default.Command = (f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj{i}')
+    tr.CurlCommand(f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj{i}')
     tr.Processes.Default.Streams.stdout = "body.gold"
     tr.Processes.Default.ReturnCode = 0
 

@@ -53,8 +53,8 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = (
-    'curl -s -D - --verbose --ipv4 --http1.1 --insecure --header "Host: {0}" https://localhost:{1}'.format(
+tr.CurlCommand(
+    '-s -D - --verbose --ipv4 --http1.1 --insecure --header "Host: {0}" https://localhost:{1}'.format(
         'www.example.com', ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "hsts.200.gold"
@@ -62,8 +62,8 @@ tr.StillRunningAfter = ts
 
 # Test 2 - 404 Not Found on Accelerator
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl -s -D - --verbose --ipv4 --http1.1 --insecure --header "Host: {0}" https://localhost:{1}'.format(
+tr.CurlCommand(
+    '-s -D - --verbose --ipv4 --http1.1 --insecure --header "Host: {0}" https://localhost:{1}'.format(
         'bad_host', ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "hsts.404.gold"

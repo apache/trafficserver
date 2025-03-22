@@ -74,17 +74,17 @@ ts.Disk.sni_yaml.AddLines([
 ])
 
 # Add connection close to ensure that the client connection closes promptly after completing the transaction
-cmd_http = 'curl -k --http1.1 -H "Connection: close" -vs --resolve "http-test:{0}:127.0.0.1" https://http-test:{0}/'.format(
+cmd_http = '-k --http1.1 -H "Connection: close" -vs --resolve "http-test:{0}:127.0.0.1" https://http-test:{0}/'.format(
     ts.Variables.ssl_port)
-cmd_tunnel = 'curl -k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}:127.0.0.1"  https://tunnel-test:{0}/'.format(
+cmd_tunnel = '-k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}:127.0.0.1"  https://tunnel-test:{0}/'.format(
     ts.Variables.ssl_port)
-cmd_connect = 'curl -k --http1.1 -H "Connection: close" -vs --resolve "connect-proxy:{0}:127.0.0.1" -x http://connect-proxy:{0} --resolve "http-test:{1}:127.0.0.1"  https://http-test:{1}/'.format(
+cmd_connect = '-k --http1.1 -H "Connection: close" -vs --resolve "connect-proxy:{0}:127.0.0.1" -x http://connect-proxy:{0} --resolve "http-test:{1}:127.0.0.1"  https://http-test:{1}/'.format(
     ts.Variables.port, ts.Variables.ssl_port)
 
 # Send the http request
 tr = Test.AddTestRun("send http request")
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = cmd_http
+tr.CurlCommand(cmd_http)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -94,7 +94,7 @@ tr.StillRunningAfter = server
 # Send the tunnel request
 tr = Test.AddTestRun("send tunnel request")
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = cmd_tunnel
+tr.CurlCommand(cmd_tunnel)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -105,7 +105,7 @@ tr.StillRunningAfter = server
 # method to determine whether a connect tunnel will be set up
 tr = Test.AddTestRun("send connect request")
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = cmd_connect
+tr.CurlCommand(cmd_connect)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

@@ -78,7 +78,7 @@ for block_bytes in [block_bytes_1, block_bytes_2]:
         }
         server.addResponse("sessionlog.json", req_header, resp_header)
 
-curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
+curl_and_args = '{{curl}} -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
 
 ts.Disk.remap_config.AddLines(
     [
@@ -114,7 +114,7 @@ tr = Test.AddTestRun("Full object slice: first block is miss, only block 14-20 p
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://sliceprefetchbytes1/path'
+tr.CurlCommandMulti(curl_and_args + ' http://sliceprefetchbytes1/path')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_200.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
@@ -124,7 +124,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Full object slice (hit-fresh) with no prefetched blocks, block bytes= 7
 tr = Test.AddTestRun("Full object slice: first block is hit-fresh, no blocks prefetched")
 ps = tr.Processes.Default
-ps.Command = 'sleep 1; ' + curl_and_args + ' http://sliceprefetchbytes1/path'
+tr.CurlCommandMulti('sleep 1; ' + curl_and_args + ' http://sliceprefetchbytes1/path')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_200.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
@@ -134,7 +134,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Full object slice with only next block prefetched in background, block bytes= 7
 tr = Test.AddTestRun("Full object slice: first block is hit-stale, only block 14-20 prefetched")
 ps = tr.Processes.Default
-ps.Command = 'sleep 5; ' + curl_and_args + ' http://sliceprefetchbytes1/path'
+tr.CurlCommandMulti('sleep 5; ' + curl_and_args + ' http://sliceprefetchbytes1/path')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_200.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
@@ -144,7 +144,7 @@ tr.StillRunningAfter = ts
 # 3 Test - Full object slice (hit-fresh) with no prefetched blocks, block bytes= 7
 tr = Test.AddTestRun("Full object slice: first block is hit-fresh with range 0-, no blocks prefetched")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://sliceprefetchbytes1/path' + ' -r 0-'
+tr.CurlCommandMulti(curl_and_args + ' http://sliceprefetchbytes1/path' + ' -r 0-')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_200.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
@@ -155,7 +155,7 @@ tr.StillRunningAfter = ts
 # 4 Test - Client range request (hit-stale/miss) enables prefetching
 tr = Test.AddTestRun("Client range request")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://sliceprefetchbytes2/path' + ' -r 5-16'
+tr.CurlCommandMulti(curl_and_args + ' http://sliceprefetchbytes2/path' + ' -r 5-16')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_mid.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
@@ -168,7 +168,7 @@ tr = Test.AddTestRun("Invalid end range request, 416")
 beg = len(body) + 1
 end = beg + block_bytes
 ps = tr.Processes.Default
-ps.Command = curl_and_args + f' http://sliceprefetchbytes1/path -r {beg}-{end}'
+tr.CurlCommandMulti(curl_and_args + f' http://sliceprefetchbytes1/path -r {beg}-{end}')
 ps.Streams.stdout.Content = Testers.ContainsExpression("416 Requested Range Not Satisfiable", "expected 416 response")
 tr.StillRunningAfter = ts
 

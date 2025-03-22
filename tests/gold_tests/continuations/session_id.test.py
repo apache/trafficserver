@@ -59,7 +59,7 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 # Run some HTTP/1 traffic.
 #
 tr = Test.AddTestRun("Perform HTTP/1 transactions")
-cmd = 'curl -v -H "host:example.com" http://127.0.0.1:{0}'.format(ts.Variables.port)
+cmd = '-v -H "host:example.com" http://127.0.0.1:{0}'.format(ts.Variables.port)
 numberOfRequests = 100
 # Create a bunch of curl commands to be executed in parallel. Default.Process
 # is set in SpawnCommands.  On Fedora 28/29, it seems that curl will
@@ -80,7 +80,7 @@ tr.StillRunningAfter = server
 # Run some HTTP/2 traffic.
 #
 tr = Test.AddTestRun("Perform HTTP/2 transactions")
-cmd = 'curl -v -k --http2 -H "host:example.com" https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
+cmd = '-v -k --http2 -H "host:example.com" https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
 ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)

@@ -114,7 +114,7 @@ tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
 tr.Setup.Copy("ssl/signed-wild.pem")
 tr.Setup.Copy("ssl/signed-wild.key")
-tr.Processes.Default.Command = "curl -v -k -H \"host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.CurlCommand("-v -k -H \")host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
@@ -126,28 +126,28 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("Override-enforcing-Test")
-tr2.Processes.Default.Command = "curl -v -k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr2.CurlCommand("-v -k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr3 = Test.AddTestRun("Override-enforcing-Test-fail-name-check")
-tr3.Processes.Default.Command = "curl -v -k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr3.CurlCommand("-v -k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
 
 tr4 = Test.AddTestRun("Exercise-wildcard-cert-name-check")
-tr4.Processes.Default.Command = "curl -v -k -H \"host: foo.wild.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr4.CurlCommand("-v -k -H \"host: foo.wild.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr4.ReturnCode = 0
 tr4.StillRunningAfter = server
 tr4.StillRunningAfter = ts
 
 tr5 = Test.AddTestRun("Exercise-wildcard-cert-underscore-name-check")
-tr5.Processes.Default.Command = "curl -v -k -H \"host: foo_bar.wild.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr5.CurlCommand("-v -k -H \"host: foo_bar.wild.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr5.ReturnCode = 0
 tr5.StillRunningAfter = server

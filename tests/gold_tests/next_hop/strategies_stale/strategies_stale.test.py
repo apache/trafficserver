@@ -120,7 +120,7 @@ tr.Processes.Default.Command = 'echo start TS, HTTP server, DNS server and next 
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj0')
+tr.CurlCommand(f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj0')
 tr.Processes.Default.Streams.stdout = "body.gold"
 tr.Processes.Default.ReturnCode = 0
 
@@ -131,7 +131,7 @@ tr.StillRunningAfter = ts
 
 # Request should come back as 200
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj0')
+tr.CurlCommand(f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj0')
 tr.Processes.Default.Streams.stdout = "body.gold"
 tr.Processes.Default.ReturnCode = 0
 

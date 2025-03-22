@@ -63,13 +63,13 @@ ts.Disk.remap_config.AddLine(
     'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/collapseconfig.txt')
 
 tr = Test.AddTestRun("collapse consecutive forward slashes")
-tr.Processes.Default.Command = '''
-curl \
+tr.CurlCommand(
+    '''
 --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port)
+'''.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)

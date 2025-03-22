@@ -52,8 +52,8 @@ ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.f
 expected_output = "gold/header_rewrite_cond_method.gold"
 expected_log = "gold/header_rewrite-tag.gold"
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: keep-alive" --verbose'.format(
-    ts.Variables.port)
+tr.CurlCommand(
+    '--proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -63,8 +63,9 @@ ts.Disk.traffic_out.Content = expected_log
 
 # Test method in SEND_REQUEST_HDR_HOOK.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --request DELETE --proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: keep-alive" --verbose'.format(
-    ts.Variables.port)
+tr.CurlCommand(
+    '--request DELETE --proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: keep-alive" --verbose'.format(
+        ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = expected_output
 tr.StillRunningAfter = server

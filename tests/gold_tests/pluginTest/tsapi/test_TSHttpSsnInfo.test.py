@@ -85,7 +85,7 @@ tr.StillRunningAfter = ts
 if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
     tr = Test.AddTestRun()
     tr.TimeOut = 10
-    tr.Processes.Default.Command = f"curl -k --http3 'https://localhost:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body'"
+    tr.CurlCommand(f"-k --http3 'https://localhost:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body'")
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.stdout = "test_TSHttpSsnInfo_curl0.gold"
     tr.StillRunningAfter = httpbin

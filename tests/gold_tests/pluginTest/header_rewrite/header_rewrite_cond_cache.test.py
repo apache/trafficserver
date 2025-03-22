@@ -52,14 +52,14 @@ ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variable
 # 3. hit-stale (waited 15s, after 10s cache)
 # 2. hit-fresh (content served within 10s cache)
 curlRequest = (
-    'curl -s -v -H "Host: www.example.com" http://127.0.0.1:{0};'
-    'curl -v -H "Host: www.example.com" http://127.0.0.1:{0};'
-    'sleep 15; curl -s -v -H "Host: www.example.com" http://127.0.0.1:{0};'
-    'curl -s -v -H "Host: www.example.com" http://127.0.0.1:{0}')
+    '{{curl}} -s -v -H "Host: www.example.com" http://127.0.0.1:{0};'
+    '{{curl}} -v -H "Host: www.example.com" http://127.0.0.1:{0};'
+    'sleep 15; {{curl}} -s -v -H "Host: www.example.com" http://127.0.0.1:{0};'
+    '{{curl}} -s -v -H "Host: www.example.com" http://127.0.0.1:{0}')
 
 # Test Case
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = curlRequest.format(ts.Variables.port)
+tr.CurlCommandMulti(curlRequest.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

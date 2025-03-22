@@ -66,7 +66,7 @@ response_header = {
 
 server.addResponse("sessionlog.json", request_header, response_header)
 
-curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port)
+curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port)
 
 # set up whole asset fetch into cache
 ts.Disk.remap_config.AddLines(
@@ -89,7 +89,7 @@ tr = Test.AddTestRun("Fetch first slice range")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://preload/path'
+tr.CurlCommand(curl_and_args + ' http://preload/path')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_200.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
@@ -98,7 +98,7 @@ tr.StillRunningAfter = ts
 # 1 Test - First complete slice
 tr = Test.AddTestRun("Fetch first slice range")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/path' + ' -r 0-6'
+tr.CurlCommand(curl_and_args + ' http://slice/path' + ' -r 0-6')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_first.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
@@ -108,7 +108,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Last slice auto
 tr = Test.AddTestRun("Last slice -- 14-")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/path' + ' -r 14-'
+tr.CurlCommand(curl_and_args + ' http://slice/path' + ' -r 14-')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
@@ -118,7 +118,7 @@ tr.StillRunningAfter = ts
 # 3 Test - Last slice exact
 tr = Test.AddTestRun("Last slice 14-17")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/path' + ' -r 14-17'
+tr.CurlCommand(curl_and_args + ' http://slice/path' + ' -r 14-17')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
@@ -128,7 +128,7 @@ tr.StillRunningAfter = ts
 # 4 Test - Last slice truncated
 tr = Test.AddTestRun("Last truncated slice 14-20")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/path' + ' -r 14-20'
+tr.CurlCommand(curl_and_args + ' http://slice/path' + ' -r 14-20')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
@@ -138,7 +138,7 @@ tr.StillRunningAfter = ts
 # 5 Test - Whole asset via slices
 tr = Test.AddTestRun("Whole asset via slices")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/path'
+tr.CurlCommand(curl_and_args + ' http://slice/path')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_200.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
@@ -147,7 +147,7 @@ tr.StillRunningAfter = ts
 # 6 Test - Whole asset via range
 tr = Test.AddTestRun("Whole asset via range")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/path' + ' -r 0-'
+tr.CurlCommand(curl_and_args + ' http://slice/path' + ' -r 0-')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_206.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
@@ -157,7 +157,7 @@ tr.StillRunningAfter = ts
 # 7 Test - Non aligned slice request
 tr = Test.AddTestRun("Non aligned slice request")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/path' + ' -r 5-16'
+tr.CurlCommand(curl_and_args + ' http://slice/path' + ' -r 5-16')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_mid.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
@@ -169,7 +169,7 @@ tr = Test.AddTestRun("Invalid end range request, 416")
 beg = len(body) + 1
 end = beg + block_bytes
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/path' + ' -r {}-{}'.format(beg, end)
+tr.CurlCommand(curl_and_args + ' http://slice/path' + ' -r {}-{}'.format(beg, end))
 ps.Streams.stdout.Content = Testers.ContainsExpression("416 Requested Range Not Satisfiable", "expected 416 response")
 tr.StillRunningAfter = ts
 
@@ -177,7 +177,7 @@ tr.StillRunningAfter = ts
 # if this fails it will infinite loop
 tr = Test.AddTestRun("Fetch first slice range")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slicehdr/path' + ' -r 0-6'
+tr.CurlCommand(curl_and_args + ' http://slicehdr/path' + ' -r 0-6')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/slice_first.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")

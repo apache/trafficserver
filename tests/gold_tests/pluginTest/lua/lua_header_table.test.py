@@ -34,7 +34,7 @@ ts.Setup.Copy("header_table.lua", ts.Variables.CONFIGDIR)
 tr = Test.AddTestRun("Lua Header Table")
 ps = tr.Processes.Default  # alias
 ps.StartBefore(Test.Processes.ts)
-ps.Command = f"curl -s -D /dev/stderr -H 'X-Test: test1' -H 'X-Test: test2' http://127.0.0.1:{ts.Variables.port}"
+tr.CurlCommand(f"-s -D /dev/stderr -H 'X-Test: test1' -H 'X-Test: test2' http://127.0.0.1:{ts.Variables.port}")
 ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("test1test2", "expected header table results")

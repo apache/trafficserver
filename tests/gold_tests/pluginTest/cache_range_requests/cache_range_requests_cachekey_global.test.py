@@ -131,14 +131,14 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'cachekey|cache_range_requests',
     })
 
-curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache-key"'.format(ts.Variables.port)
+curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache-key"'.format(ts.Variables.port)
 
 # 0 Test - Fetch full asset via range
 tr = Test.AddTestRun("asset fetch via range")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://www.example.com/path -r0- -H "uuid: full"'
+tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r0- -H "uuid: full"')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression(
     "X-Cache-Key: /foo/Range:bytes=0-/path", "expected cachekey style range request in cachekey")

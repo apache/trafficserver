@@ -90,34 +90,34 @@ def allAEHdrs(shouldWaitForUServer, shouldWaitForTs, ts, host):
         # delay on readiness of port
         tr.Processes.Default.StartBefore(ts)
 
-    baseCurl = 'curl --verbose --ipv4 --http1.1 --proxy localhost:{} '.format(ts.Variables.port)
+    baseCurl = '--verbose --ipv4 --http1.1 --proxy localhost:{} '.format(ts.Variables.port)
 
     # No Accept-Encoding header.
     #
-    tr.Processes.Default.Command = baseCurl + '--header "X-Au-Test: {0}" http://{0}'.format(host)
+    tr.CurlCommand(baseCurl + '--header "X-Au-Test: {0}" http://{0}'.format(host))
     tr.Processes.Default.ReturnCode = 0
 
     def curlTail(hdrValue):
         return '--header "Accept-Encoding: {}" http://'.format(hdrValue) + host
 
     tr = test.AddTestRun()
-    tr.Processes.Default.Command = baseCurl + curlTail('gzip')
+    tr.CurlCommand(baseCurl + curlTail('gzip'))
     tr.Processes.Default.ReturnCode = 0
 
     tr = test.AddTestRun()
-    tr.Processes.Default.Command = baseCurl + curlTail('x-gzip')
+    tr.CurlCommand(baseCurl + curlTail('x-gzip'))
     tr.Processes.Default.ReturnCode = 0
 
     tr = test.AddTestRun()
-    tr.Processes.Default.Command = baseCurl + curlTail('br')
+    tr.CurlCommand(baseCurl + curlTail('br'))
     tr.Processes.Default.ReturnCode = 0
 
     tr = test.AddTestRun()
-    tr.Processes.Default.Command = baseCurl + curlTail('gzip, br')
+    tr.CurlCommand(baseCurl + curlTail('gzip, br'))
     tr.Processes.Default.ReturnCode = 0
 
     tr = test.AddTestRun()
-    tr.Processes.Default.Command = baseCurl + curlTail('gzip;q=0.3, whatever;q=0.666, br;q=0.7')
+    tr.CurlCommand(baseCurl + curlTail('gzip;q=0.3, whatever;q=0.666, br;q=0.7'))
     tr.Processes.Default.ReturnCode = 0
 
 

@@ -72,7 +72,7 @@ if test "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -
     '''
 
 # curl with http2
-cmd = 'curl --http2 -k -vs https://127.0.0.1:{0}/'.format(ts.Variables.ssl_port)
+cmd = '--http2 -k -vs https://127.0.0.1:{0}/'.format(ts.Variables.ssl_port)
 numberOfRequests = 25
 
 tr = Test.AddTestRun()

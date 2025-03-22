@@ -39,13 +39,13 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'foo|ts_lua',
 })
 
-curl_and_args = f'curl -s -D /dev/stderr -o /dev/stdout -x localhost:{ts.Variables.port} http://test/test.html'
+curl_and_args = f'{{curl}} -s -D /dev/stderr -o /dev/stdout -x localhost:{ts.Variables.port} http://test/test.html'
 
 # 0 Ensure no debug tag set
 tr = Test.AddTestRun("check tags")
 ps = tr.Processes.Default
 tr.StillRunningAfter = ts
 ps.StartBefore(Test.Processes.ts)
-ps.Command = f"bash ./tags.sh {curl_and_args}"
+tr.CurlCommandMulti(f"bash ./tags.sh {curl_and_args}")
 ps.Env = ts.Env
 ps.ReturnCode = 0

@@ -116,7 +116,7 @@ tr.Processes.Default.StartBefore(server2)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.StillRunningAfter = server2
-tr.Processes.Default.Command = "curl -H host:example.com  http://127.0.0.1:{0}/case1".format(ts.Variables.port)
+tr.CurlCommand("-H host:example.com  http://127.0.0.1:{0}/case1".format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
@@ -125,7 +125,7 @@ trfail = Test.AddTestRun("Connect with first client cert to second server")
 trfail.StillRunningAfter = ts
 trfail.StillRunningAfter = server
 trfail.StillRunningAfter = server2
-trfail.Processes.Default.Command = 'curl -H host:example.com  http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
+trfail.CurlCommand('-H host:example.com  http://127.0.0.1:{0}/case2'.format(ts.Variables.port))
 trfail.Processes.Default.ReturnCode = 0
 trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
@@ -134,7 +134,7 @@ trbar = Test.AddTestRun("Connect with signed2 bar to second server")
 trbar.StillRunningAfter = ts
 trbar.StillRunningAfter = server
 trbar.StillRunningAfter = server2
-trbar.Processes.Default.Command = "curl -H host:bar.com  http://127.0.0.1:{0}/case2".format(ts.Variables.port)
+trbar.CurlCommand("-H host:bar.com  http://127.0.0.1:{0}/case2".format(ts.Variables.port))
 trbar.Processes.Default.ReturnCode = 0
 trbar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
@@ -143,7 +143,7 @@ trbarfail = Test.AddTestRun("Connect with signed2 bar cert to first server")
 trbarfail.StillRunningAfter = ts
 trbarfail.StillRunningAfter = server
 trbarfail.StillRunningAfter = server2
-trbarfail.Processes.Default.Command = 'curl -H host:bar.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
+trbarfail.CurlCommand('-H host:bar.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port))
 trbarfail.Processes.Default.ReturnCode = 0
 trbarfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
@@ -195,7 +195,7 @@ tr3bar.Processes.Default.StartBefore(server3, ready=When.FileContains(ts.Disk.di
 tr3bar.StillRunningAfter = ts
 tr3bar.StillRunningAfter = server
 tr3bar.StillRunningAfter = server2
-tr3bar.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
+tr3bar.CurlCommand(' -H host:bar.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port))
 tr3bar.Processes.Default.ReturnCode = 0
 tr3bar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
@@ -204,7 +204,7 @@ tr3barfail = Test.AddTestRun("Make request with other bar cert to second server"
 tr3barfail.StillRunningAfter = ts
 tr3barfail.StillRunningAfter = server
 tr3barfail.StillRunningAfter = server2
-tr3barfail.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
+tr3barfail.CurlCommand(' -H host:bar.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port))
 tr3barfail.Processes.Default.ReturnCode = 0
 tr3barfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
@@ -214,7 +214,7 @@ tr3 = Test.AddTestRun("Make request with other cert to second server")
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = server2
-tr3.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
+tr3.CurlCommand(' -H host:example.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port))
 tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
@@ -223,7 +223,7 @@ tr3fail = Test.AddTestRun("Make request with other cert to first server")
 tr3fail.StillRunningAfter = ts
 tr3fail.StillRunningAfter = server
 tr3fail.StillRunningAfter = server2
-tr3fail.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
+tr3fail.CurlCommand(' -H host:example.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port))
 tr3fail.Processes.Default.ReturnCode = 0
 tr3fail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
@@ -257,7 +257,7 @@ tr4bar.DelayStart = 10
 tr4bar.StillRunningAfter = ts
 tr4bar.StillRunningAfter = server
 tr4bar.StillRunningAfter = server2
-tr4bar.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
+tr4bar.CurlCommand(' -H host:bar.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port))
 tr4bar.Processes.Default.ReturnCode = 0
 tr4bar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
@@ -266,7 +266,7 @@ tr4barfail = Test.AddTestRun("Make request with renamed bar cert to first server
 tr4barfail.StillRunningAfter = ts
 tr4barfail.StillRunningAfter = server
 tr4barfail.StillRunningAfter = server2
-tr4barfail.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
+tr4barfail.CurlCommand(' -H host:bar.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port))
 tr4barfail.Processes.Default.ReturnCode = 0
 tr4barfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
@@ -275,7 +275,7 @@ tr4 = Test.AddTestRun("Make request with renamed foo cert to first server")
 tr4.StillRunningAfter = ts
 tr4.StillRunningAfter = server
 tr4.StillRunningAfter = server2
-tr4.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
+tr4.CurlCommand(' -H host:example.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port))
 tr4.Processes.Default.ReturnCode = 0
 tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
@@ -284,6 +284,6 @@ tr4fail = Test.AddTestRun("Make request with renamed foo cert to second server")
 tr4fail.StillRunningAfter = ts
 tr4fail.StillRunningAfter = server
 tr4fail.StillRunningAfter = server2
-tr4fail.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
+tr4fail.CurlCommand(' -H host:example.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port))
 tr4fail.Processes.Default.ReturnCode = 0
 tr4fail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")

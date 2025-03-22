@@ -60,7 +60,7 @@ if test "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -
     traffic_ctl metric match continuations_verify
     '''
 
-cmd = 'curl -vs http://127.0.0.1:{0}/'.format(ts.Variables.port)
+cmd = '-vs http://127.0.0.1:{0}/'.format(ts.Variables.port)
 numberOfRequests = 55
 
 tr = Test.AddTestRun()

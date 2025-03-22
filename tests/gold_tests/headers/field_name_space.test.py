@@ -42,8 +42,7 @@ ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.f
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.CurlCommand('-s -D - -v --ipv4 --http1.1 -H "Host: www.example.com" http://localhost:{0}/'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/field_name_space.gold"
 tr.StillRunningAfter = ts

@@ -64,7 +64,7 @@ t = Test.AddTestRun("Test traffic server started properly")
 t.StillRunningAfter = Test.Processes.ts
 
 p = t.Processes.Default
-p.Command = "curl http://127.0.0.1:{0}".format(ts.Variables.port)
+t.CurlCommand("http://127.0.0.1:{0}".format(ts.Variables.port))
 p.ReturnCode = 0
 p.StartBefore(Test.Processes.ts)
 

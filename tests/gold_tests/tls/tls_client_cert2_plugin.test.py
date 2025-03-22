@@ -124,7 +124,7 @@ tr.Processes.Default.StartBefore(server2)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.StillRunningAfter = server2
-tr.Processes.Default.Command = "curl -H host:bob.bar.com  http://127.0.0.1:{0}/case1".format(ts.Variables.port)
+tr.CurlCommand("-H host:bob.bar.com  http://127.0.0.1:{0}/case1".format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
@@ -133,7 +133,7 @@ trfail = Test.AddTestRun("bob.bar.com to server 2")
 trfail.StillRunningAfter = ts
 trfail.StillRunningAfter = server
 trfail.StillRunningAfter = server2
-trfail.Processes.Default.Command = 'curl -H host:bob.bar.com  http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
+trfail.CurlCommand('-H host:bob.bar.com  http://127.0.0.1:{0}/case2'.format(ts.Variables.port))
 trfail.Processes.Default.ReturnCode = 0
 trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
@@ -142,7 +142,7 @@ tr = Test.AddTestRun("bob.foo.com to server 1")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.StillRunningAfter = server2
-tr.Processes.Default.Command = "curl -H host:bob.foo.com  http://127.0.0.1:{0}/case1".format(ts.Variables.port)
+tr.CurlCommand("-H host:bob.foo.com  http://127.0.0.1:{0}/case1".format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
@@ -151,7 +151,7 @@ trfail = Test.AddTestRun("bob.foo.com to server 2")
 trfail.StillRunningAfter = ts
 trfail.StillRunningAfter = server
 trfail.StillRunningAfter = server2
-trfail.Processes.Default.Command = 'curl -H host:bob.foo.com  http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
+trfail.CurlCommand('-H host:bob.foo.com  http://127.0.0.1:{0}/case2'.format(ts.Variables.port))
 trfail.Processes.Default.ReturnCode = 0
 trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
@@ -160,7 +160,7 @@ tr = Test.AddTestRun("random.bar.com to server 2")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.StillRunningAfter = server2
-tr.Processes.Default.Command = "curl -H host:random.bar.com  http://127.0.0.1:{0}/case2".format(ts.Variables.port)
+tr.CurlCommand("-H host:random.bar.com  http://127.0.0.1:{0}/case2".format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
@@ -169,7 +169,7 @@ trfail = Test.AddTestRun("random.bar.com to server 1")
 trfail.StillRunningAfter = ts
 trfail.StillRunningAfter = server
 trfail.StillRunningAfter = server2
-trfail.Processes.Default.Command = 'curl -H host:random.bar.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
+trfail.CurlCommand('-H host:random.bar.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port))
 trfail.Processes.Default.ReturnCode = 0
 trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
@@ -178,7 +178,7 @@ tr = Test.AddTestRun("random.foo.com to server 2")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.StillRunningAfter = server2
-tr.Processes.Default.Command = "curl -H host:random.foo.com  http://127.0.0.1:{0}/case2".format(ts.Variables.port)
+tr.CurlCommand("-H host:random.foo.com  http://127.0.0.1:{0}/case2".format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
@@ -187,6 +187,6 @@ trfail = Test.AddTestRun("random.foo.com to server 1")
 trfail.StillRunningAfter = ts
 trfail.StillRunningAfter = server
 trfail.StillRunningAfter = server2
-trfail.Processes.Default.Command = 'curl -H host:random.foo.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
+trfail.CurlCommand('-H host:random.foo.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port))
 trfail.Processes.Default.ReturnCode = 0
 trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")

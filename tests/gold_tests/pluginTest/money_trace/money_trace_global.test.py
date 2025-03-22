@@ -68,7 +68,7 @@ logging:
 
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'global.log'), exists=True, content='gold/global-log.gold')
 
-curl_and_args = f"curl -s -D /dev/stdout -o /dev/stderr -x 127.0.0.1:{ts.Variables.port}"  # -H 'X-Debug: Probe' "
+curl_and_args = f"-s -D /dev/stdout -o /dev/stderr -x 127.0.0.1:{ts.Variables.port}"  # -H 'X-Debug: Probe' "
 
 clientvalue = "trace-id=foo;parent-id=bar;span-id=baz"
 
@@ -77,7 +77,7 @@ tr = Test.AddTestRun("normal header test")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://ats/path -H "MoneyTrace: ' + clientvalue + '"'
+tr.CurlCommand(curl_and_args + ' http://ats/path -H "MoneyTrace: ' + clientvalue + '"')
 ps.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -85,7 +85,7 @@ tr.StillRunningAfter = server
 # 1 Test
 tr = Test.AddTestRun("skip plugin test - pregen will still be set")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://ats/path -H "Skip-Global-MoneyTrace: true"'
+tr.CurlCommand(curl_and_args + ' http://ats/path -H "Skip-Global-MoneyTrace: true"')
 ps.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -93,7 +93,7 @@ tr.StillRunningAfter = server
 # 2 Test
 tr = Test.AddTestRun("create header test")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://ats/path'
+tr.CurlCommand(curl_and_args + ' http://ats/path')
 ps.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

@@ -65,22 +65,21 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = "curl --resolve \"foo.com:{0}:127.0.0.1\" -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.CurlCommand("--resolve \"foo.com:{0}:127.0.0.1\" -k  https://foo.com:{0}".format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have failed")
 
 tr2 = Test.AddTestRun("request bad name")
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
-tr2.Processes.Default.Command = "curl --resolve \"random.com:{0}:127.0.0.1\" -k  https://random.com:{0}".format(
-    ts.Variables.ssl_port)
+tr2.CurlCommand("--resolve \"random.com:{0}:127.0.0.1\" -k  https://random.com:{0}".format(ts.Variables.ssl_port))
 tr2.Processes.Default.ReturnCode = 0
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
 
 tr3 = Test.AddTestRun("request bad name permissive")
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
-tr3.Processes.Default.Command = "curl --resolve \"bar.com:{0}:127.0.0.1\" -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr3.CurlCommand("--resolve \"bar.com:{0}:127.0.0.1\" -k  https://bar.com:{0}".format(ts.Variables.ssl_port))
 tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have failed")
 

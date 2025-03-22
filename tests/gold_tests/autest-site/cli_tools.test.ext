@@ -39,10 +39,28 @@ def spawn_commands(self, cmdstr, count, retcode=0, use_default=True):
     for cnt in range(0, count):
         ret.append(self.Processes.Process(name="cmdline-{num}".format(num=cnt), cmdstr=cmdstr, returncode=retcode))
     if use_default:
-        self.Processes.Default.Command = cmdstr
+        self.CurlCommand(cmdstr)
         self.Processes.Default.ReturnCode = retcode
         self.Processes.Default.StartBefore(*ret)
     return ret
 
 
+def curl_command(self, cmd):
+    if self.Variables.get("CurlUds", False):
+        self.Processes.Default.Command = 'curl --unix-socket /tmp/socket ' + cmd
+    else:
+        self.Processes.Default.Command = 'curl ' + cmd
+
+
+def curl_multiple_commands(self, cmd):
+    if self.Variables.get("CurlUds", False):
+        self.Processes.Default.Command = cmd.format(curl='curl --unix-socket /tmp/socket')
+    else:
+        self.Processes.Default.Command = cmd.format(curl='curl')
+
+
 ExtendTestRun(spawn_commands, name="SpawnCommands")
+ExtendTestRun(curl_command, name="CurlCommand")
+ExtendTest(curl_command, name="CurlCommand")
+ExtendTestRun(curl_multiple_commands, name="CurlCommandMulti")
+ExtendTest(curl_multiple_commands, name="CurlCommandMulti")

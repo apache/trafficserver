@@ -50,6 +50,11 @@ set(RUNPIPENV PIPENV_VENV_IN_PROJECT=True ${PipEnv})
 configure_file(Pipfile Pipfile COPYONLY)
 configure_file(autest.sh.in autest.sh)
 
+set(CURL_UDS_FLAG "")
+if(ENABLE_AUTEST_UDS)
+  set(CURL_UDS_FLAG "--curl-uds")
+endif()
+
 add_custom_target(
   autest
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
@@ -58,7 +63,7 @@ add_custom_target(
     ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run
     env autest --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
     --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX}
-    ${AUTEST_OPTIONS}
+    ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
@@ -70,7 +75,7 @@ add_custom_target(
     ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:$ENV{PYTHONPATH} ${RUNPIPENV} run
     env autest --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
     --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX}
-    ${AUTEST_OPTIONS}
+    ${CURL_UDS_FLAG} ${AUTEST_OPTIONS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )

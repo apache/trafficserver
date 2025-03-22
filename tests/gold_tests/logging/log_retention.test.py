@@ -65,7 +65,7 @@ class TestLogRetention:
         the caller doesn't have to.
         """
         tr = Test.AddTestRun("Initialize processes for ts{}".format(TestLogRetention.__ts_counter - 1))
-        tr.Processes.Default.Command = self.get_curl_command()
+        tr.CurlCommand(self.get_curl_command())
         tr.Processes.Default.ReturnCode = 0
         if not TestLogRetention.__server_is_started:
             self.server.StartBefore(self.ts)
@@ -130,19 +130,19 @@ class TestLogRetention:
         """
         Generate the appropriate single curl command.
         """
-        return 'curl "http://127.0.0.1:{0}" --verbose'.format(self.ts.Variables.port)
+        return '"http://127.0.0.1:{0}" --verbose'.format(self.ts.Variables.port)
 
     def get_command_to_rotate_once(self):
         """
         Generate the set of curl commands to trigger a log rotate.
         """
-        return 'for i in {{1..2500}}; do curl "http://127.0.0.1:{0}" --verbose; done'.format(self.ts.Variables.port)
+        return 'for i in {{1..2500}}; do {{curl}} "http://127.0.0.1:{0}" --verbose; done'.format(self.ts.Variables.port)
 
     def get_command_to_rotate_thrice(self):
         """
         Generate the set of curl commands to trigger a log rotate.
         """
-        return 'for i in {{1..7500}}; do curl "http://127.0.0.1:{0}" --verbose; done'.format(self.ts.Variables.port)
+        return 'for i in {{1..7500}}; do {{curl}} "http://127.0.0.1:{0}" --verbose; done'.format(self.ts.Variables.port)
 
 
 #
@@ -189,7 +189,7 @@ test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"The rolled logfile.*test_deletion.log_{specified_hostname}.*was auto-deleted.*bytes were reclaimed",
     "Verify that space was reclaimed")
 
-test.tr.Processes.Default.Command = test.get_command_to_rotate_once()
+test.tr.CurlCommandMulti(test.get_command_to_rotate_once())
 test.tr.Processes.Default.ReturnCode = 0
 
 test.tr.StillRunningAfter = test.ts
@@ -231,7 +231,7 @@ test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"The rolled logfile.*test_deletion.log_{specified_hostname}.*was auto-deleted.*bytes were reclaimed",
     "Verify that space was reclaimed")
 
-test.tr.Processes.Default.Command = test.get_command_to_rotate_once()
+test.tr.CurlCommandMulti(test.get_command_to_rotate_once())
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -258,7 +258,7 @@ test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "The rolled logfile.*test_log_interface.log_.*was auto-deleted.*bytes were reclaimed", "Verify that space was reclaimed")
 
-test.tr.Processes.Default.Command = test.get_command_to_rotate_once()
+test.tr.CurlCommandMulti(test.get_command_to_rotate_once())
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -319,7 +319,7 @@ test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"The rolled logfile.*test_high_priority_deletion.log_{hostname}.*was auto-deleted.*bytes were reclaimed",
     "Verify that space was reclaimed from test_high_priority_deletion")
 
-test.tr.Processes.Default.Command = test.get_command_to_rotate_once()
+test.tr.CurlCommandMulti(test.get_command_to_rotate_once())
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -351,7 +351,7 @@ test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
 
 # This test doesn't require a log rotation. We just verify that the logs communicate
 # the appropriate min_count values above.
-test.tr.Processes.Default.Command = test.get_curl_command()
+test.tr.CurlCommand(test.get_curl_command())
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -398,7 +398,7 @@ test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
 test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
     "The rolled logfile.*test_deletion.log_.*was auto-deleted.*bytes were reclaimed", "Verify that space was reclaimed")
 
-test.tr.Processes.Default.Command = test.get_command_to_rotate_once()
+test.tr.CurlCommandMulti(test.get_command_to_rotate_once())
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -435,7 +435,7 @@ logging:
 test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "rolled logfile.*test_deletion.log.*old.* was auto-deleted", "Verify test_deletion.log was trimmed")
 
-test.tr.Processes.Default.Command = test.get_command_to_rotate_thrice()
+test.tr.CurlCommandMulti(test.get_command_to_rotate_thrice())
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -488,7 +488,7 @@ tr.StillRunningAfter = test.ts
 tr.StillRunningAfter = test.server
 
 tr = Test.AddTestRun("Get the log to rotate.")
-tr.Processes.Default.Command = test.get_command_to_rotate_once()
+test.tr.CurlCommandMulti(test.get_command_to_rotate_once())
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = test.ts
 tr.StillRunningAfter = test.server

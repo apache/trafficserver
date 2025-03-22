@@ -81,8 +81,7 @@ json_printer = f'''
 
 # Test Case 0: Basic request and response
 test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = "curl -vs -k --http2 https://127.0.0.1:{0}/get | {1}".format(
-    ts.Variables.ssl_port, json_printer)
+test_run.CurlCommand("-vs -k --http2 https://127.0.0.1:{0}/get | {1}".format(ts.Variables.ssl_port, json_printer))
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 test_run.Processes.Default.StartBefore(Test.Processes.ts)
@@ -94,7 +93,7 @@ test_run.StillRunningAfter = httpbin
 # Test Case 1: Attempt an empty response body.
 # This test case requires go-httpbin@v2.6.0 or later.
 test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/bytes/0'.format(ts.Variables.ssl_port)
+test_run.CurlCommand('-vs -k --http2 https://127.0.0.1:{0}/bytes/0'.format(ts.Variables.ssl_port))
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_1_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.
@@ -103,8 +102,7 @@ test_run.StillRunningAfter = httpbin
 
 # Test Case 2: Chunked
 test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/stream-bytes/102400?seed=0 | cksum'.format(
-    ts.Variables.ssl_port)
+test_run.CurlCommand('-vs -k --http2 https://127.0.0.1:{0}/stream-bytes/102400?seed=0 | cksum'.format(ts.Variables.ssl_port))
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_2_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.
@@ -113,8 +111,9 @@ test_run.StillRunningAfter = httpbin
 
 # Test Case 3: Expect 100-Continue
 test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = "curl -vs -k --http2 https://127.0.0.1:{0}/post --data 'key=value' -H 'Expect: 100-continue' --max-time 5 | {1}".format(
-    ts.Variables.ssl_port, json_printer)
+test_run.CurlCommand(
+    "-vs -k --http2 https://127.0.0.1:{0}/post --data 'key=value' -H 'Expect: 100-continue' --max-time 5 | {1}".format(
+        ts.Variables.ssl_port, json_printer))
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_3_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.
