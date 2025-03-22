@@ -79,12 +79,12 @@ dumb_proxy.ReturnCode = 0
 proxy_output = dumb_proxy.Streams.stdout.AbsPath
 
 # Add connection close to ensure that the client connection closes promptly after completing the transaction
-cmd_tunnel = 'curl -k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}:127.0.0.1"  https://tunnel-test:{0}/'.format(
+cmd_tunnel = '-k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}:127.0.0.1"  https://tunnel-test:{0}/'.format(
     proxy_port)
 
 # Send the tunnel request
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = cmd_tunnel
+tr.CurlCommand(cmd_tunnel)
 tr.Processes.Default.ReturnCode = 0
 tr.TimeOut = 10
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))

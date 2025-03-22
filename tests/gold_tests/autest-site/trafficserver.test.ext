@@ -52,6 +52,7 @@ def MakeATSProcess(
         enable_tls=False,
         enable_cache=True,
         enable_quic=False,
+        enable_uds=True,
         block_for_debug=False,
         log_data=default_log_data,
         use_traffic_out=True,
@@ -403,6 +404,7 @@ def MakeATSProcess(
     p.Ready = When.FileContains(p.Disk.diags_log.AbsPath, "NOTE: Traffic Server is fully initialized")
 
     if select_ports:
+        uds_path = "/tmp/socket"
         # default config
         port_str = "{port} {v6_port}:ipv6".format(port=p.Variables.port, v6_port=p.Variables.portv6)
         if enable_tls:
@@ -415,6 +417,10 @@ def MakeATSProcess(
             port_str += f" {p.Variables.proxy_protocol_port}:pp {p.Variables.proxy_protocol_portv6}:pp:ipv6"
             if enable_tls:
                 port_str += f" {p.Variables.proxy_protocol_ssl_port}:pp:ssl {p.Variables.proxy_protocol_ssl_portv6}:pp:ssl:ipv6"
+            if enable_uds:
+                port_str += f" {uds_path}:pp"
+        elif enable_uds:
+            port_str += f" {uds_path}"
         #p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
         p.Disk.records_config.update({
             'proxy.config.http.server_ports': port_str,

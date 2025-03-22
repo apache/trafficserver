@@ -75,8 +75,9 @@ ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variable
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H "x-debug: x-cache,via" -H "Host: www.example.com" http://localhost:{port}/max_age_10sec'.format(
-    port=ts.Variables.port)
+tr.CurlCommand(
+    '-s -D - -v --ipv4 --http1.1 -H "x-debug: x-cache,via" -H "Host: www.example.com" http://localhost:{port}/max_age_10sec'.format(
+        port=ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/cache_and_req_body-miss.gold"
 tr.StillRunningAfter = ts

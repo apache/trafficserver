@@ -70,25 +70,24 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 #
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port)
+tr.CurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port)
+tr.CurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" "http://127.0.0.1:{0}" --http1.1 --verbose'.format(ts.Variables.port)
+tr.CurlCommand('"http://127.0.0.1:{0}" "http://127.0.0.1:{0}" --http1.1 --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl "https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(ts.Variables.ssl_port))
+tr.CurlCommand('"https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl "https://reallyreallyreallyreallylong.com:{0}" --http2 --insecure --verbose' +
+tr.CurlCommand(
+    '"https://reallyreallyreallyreallylong.com:{0}" --http2 --insecure --verbose' +
     ' --resolve reallyreallyreallyreallylong.com:{0}:127.0.0.1').format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 

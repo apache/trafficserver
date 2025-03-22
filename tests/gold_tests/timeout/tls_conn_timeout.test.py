@@ -67,8 +67,7 @@ tr = Test.AddTestRun("tr-blocking-post")
 tr.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, "ssl", "server.pem"))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(delay_post_connect, ready=When.PortOpen(Test.Variables.block_connect_port))
-tr.Processes.Default.Command = 'curl -H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/connect_blocked --tlsv1.2'.format(
-    ts.Variables.port)
+tr.CurlCommand('-H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/connect_blocked --tlsv1.2'.format(ts.Variables.port))
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 502 Connection timed out", "Connect failed")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_post_connect
@@ -78,8 +77,7 @@ tr.StillRunningAfter = Test.Processes.ts
 #  Should not retry the connection
 tr = Test.AddTestRun("tr-delayed-post")
 tr.Processes.Default.StartBefore(delay_post_ttfb, ready=When.PortOpen(Test.Variables.block_ttfb_port))
-tr.Processes.Default.Command = 'curl -H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/ttfb_blocked --tlsv1.2'.format(
-    ts.Variables.port)
+tr.CurlCommand('-H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/ttfb_blocked --tlsv1.2'.format(ts.Variables.port))
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("504 Connection Timed Out", "Connect timeout")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_post_ttfb
@@ -90,8 +88,7 @@ tr.StillRunningAfter = delay_post_ttfb
 # Should retry once
 tr = Test.AddTestRun("tr-blocking-get")
 tr.Processes.Default.StartBefore(delay_get_connect, ready=When.PortOpen(Test.Variables.get_block_connect_port))
-tr.Processes.Default.Command = 'curl -H"Connection:close" -i http://127.0.0.1:{0}/get_connect_blocked --tlsv1.2'.format(
-    ts.Variables.port)
+tr.CurlCommand('-H"Connection:close" -i http://127.0.0.1:{0}/get_connect_blocked --tlsv1.2'.format(ts.Variables.port))
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 502 Connection timed out", "Connect failed")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_get_connect
@@ -100,8 +97,7 @@ tr.StillRunningAfter = delay_get_connect
 #  Since get is idempotent, It will try to connect again even though the GET request had been sent
 tr = Test.AddTestRun("tr-delayed-get")
 tr.Processes.Default.StartBefore(delay_get_ttfb, ready=When.PortOpen(Test.Variables.get_block_ttfb_port))
-tr.Processes.Default.Command = 'curl -H"Connection:close" -i http://127.0.0.1:{0}/get_ttfb_blocked --tlsv1.2'.format(
-    ts.Variables.port)
+tr.CurlCommand('-H"Connection:close" -i http://127.0.0.1:{0}/get_ttfb_blocked --tlsv1.2'.format(ts.Variables.port))
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("504 Connection Timed Out", "Connect timeout")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_get_ttfb

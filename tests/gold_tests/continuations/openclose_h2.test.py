@@ -60,7 +60,7 @@ ts.Disk.records_config.update(
 ts.Disk.remap_config.AddLine('map https://oc.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
 ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-cmd = 'curl -k --resolve oc.test:{0}:127.0.0.1 --http2 https://oc.test:{0}'.format(ts.Variables.ssl_port)
+cmd = '-k --resolve oc.test:{0}:127.0.0.1 --http2 https://oc.test:{0}'.format(ts.Variables.ssl_port)
 numberOfRequests = 100
 
 tr = Test.AddTestRun()

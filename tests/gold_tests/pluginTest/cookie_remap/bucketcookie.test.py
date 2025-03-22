@@ -77,14 +77,14 @@ ts.Disk.remap_config.AddLine(
 
 # Cookie value in bucket
 tr = Test.AddTestRun("cookie value in bucket")
-tr.Processes.Default.Command = '''
-curl \
+tr.CurlCommand(
+    '''
 --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=333" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port)
+'''.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -94,14 +94,14 @@ server.Streams.All = "gold/matchcookie.gold"
 
 # cookie value not in bucket
 tr = Test.AddTestRun("cooke value not in bucket")
-tr.Processes.Default.Command = '''
-curl \
+tr.CurlCommand(
+    '''
 --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=etc" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port)
+'''.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server2, ready=When.PortOpen(server2.Variables.Port))
 tr.StillRunningAfter = ts

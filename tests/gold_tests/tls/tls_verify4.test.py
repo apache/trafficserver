@@ -91,7 +91,7 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
-tr.Processes.Default.Command = "curl -k -H \"host: random2.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.CurlCommand("-k -H \"host: random2.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
@@ -139,7 +139,7 @@ trreload.Processes.Default.Env = ts.Env
 trreload.Processes.Default.ReturnCode = 0
 
 tragain = Test.AddTestRun("permissive-after-update")
-tragain.Processes.Default.Command = "curl -k -H \"host: random3.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tragain.CurlCommand("-k -H \"host: random3.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tragain.ReturnCode = 0
 tragain.StillRunningAfter = server
 tragain.StillRunningAfter = ts
@@ -182,7 +182,7 @@ trreload.Processes.Default.Env = ts.Env
 trreload.Processes.Default.ReturnCode = 0
 
 tragain = Test.AddTestRun("enforced-after-update")
-tragain.Processes.Default.Command = "curl -k -H \"host: random4.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tragain.CurlCommand("-k -H \"host: random4.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tragain.ReturnCode = 0
 tragain.StillRunningAfter = server
 tragain.StillRunningAfter = ts

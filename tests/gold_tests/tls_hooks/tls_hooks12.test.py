@@ -53,7 +53,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
+tr.CurlCommand('-k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 
 ts.Disk.traffic_out.Content = "gold/ts-preaccept-delayed-1-immdate-2.gold"

@@ -83,17 +83,17 @@ ts.Disk.remap_config.AddLine(
         server.Variables.Port, Test.RunDirectory))
 
 curlRequest = (
-    'curl -v -H\'Host: www.example.com\' -H\'Connection: keep-alive\' http://127.0.0.1:{0}/hello &&'
-    'curl -v -H\'Host: www.example.com\' -H\'Connection: keep-alive\' http://127.0.0.1:{0}/hello &&'
-    'curl -v -H\'Host: www.example.com\' -H\'Connection: keep-alive\' http://127.0.0.1:{0}/hello &&'
-    'curl -v -H\'Host: www.example.com\' -H\'Connection: keep-alive\' http://127.0.0.1:{0}/hello &&'
+    '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: keep-alive\' http://127.0.0.1:{0}/hello &&'
+    '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: keep-alive\' http://127.0.0.1:{0}/hello &&'
+    '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: keep-alive\' http://127.0.0.1:{0}/hello &&'
+    '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: keep-alive\' http://127.0.0.1:{0}/hello &&'
     # I have to force last one with close connection header, this is also reflected in the response ^.
     # if I do not do this, then the microserver will fail to close and when shutting down the process will
     # fail with -9.
-    'curl -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{0}/world')
+    '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{0}/world')
 
 tr = Test.AddTestRun("Add connection close header when ssn-txn-count > 2")
-tr.Processes.Default.Command = curlRequest.format(ts.Variables.port)
+tr.CurlCommandMulti(curlRequest.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

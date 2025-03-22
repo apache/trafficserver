@@ -61,7 +61,7 @@ class PostAndMaxRequestsInTest:
         tr = Test.AddTestRun()
         tr.Processes.Default.StartBefore(self.origin_server)
         tr.Processes.Default.StartBefore(self.ts)
-        tr.Processes.Default.Command = f"curl -X POST --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/ --data key=value"
+        tr.CurlCommand(f"-X POST --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/ --data key=value")
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/post_slow_server_max_requests_in_0_stdout.gold"
         tr.Processes.Default.Streams.stderr = "gold/post_slow_server_max_requests_in_0_stderr.gold"

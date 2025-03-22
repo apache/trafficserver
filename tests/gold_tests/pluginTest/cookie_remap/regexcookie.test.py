@@ -77,14 +77,14 @@ ts.Disk.remap_config.AddLine(
 
 # Positive test case that remaps because cookie regex matches
 tr = Test.AddTestRun("cookie regex matches")
-tr.Processes.Default.Command = '''
-curl \
+tr.CurlCommand(
+    '''
 --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=ilove-oreos-chipsahoy-icecream" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port)
+'''.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -94,14 +94,14 @@ server.Streams.All = "gold/regexmatches.gold"
 
 # Negative test case that doesn't remap because cookie regex doesn't match
 tr = Test.AddTestRun("cookie regex doesn't match")
-tr.Processes.Default.Command = '''
-curl \
+tr.CurlCommand(
+    '''
 --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=etc" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port)
+'''.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server2, ready=When.PortOpen(server2.Variables.Port))
 tr.StillRunningAfter = ts

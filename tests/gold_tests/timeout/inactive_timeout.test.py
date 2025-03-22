@@ -46,16 +46,16 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 tr = Test.AddTestRun("tr")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.Processes.Default.Command = 'curl -i  http://127.0.0.1:{0}/file'.format(ts.Variables.port)
+tr.CurlCommand('-i  http://127.0.0.1:{0}/file'.format(ts.Variables.port))
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     "Inactivity Timeout", "Request should fail with inactivity timeout")
 
 tr2 = Test.AddTestRun("tr")
-tr2.Processes.Default.Command = 'curl -k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port)
+tr2.CurlCommand('-k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     "Inactivity Timeout", "Request should fail with inactivity timeout")
 
 tr3 = Test.AddTestRun("tr")
-tr3.Processes.Default.Command = 'curl -k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port)
+tr3.CurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
 tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     "Inactivity Timeout", "Request should fail with inactivity timeout")

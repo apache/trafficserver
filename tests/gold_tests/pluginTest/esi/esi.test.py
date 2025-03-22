@@ -200,8 +200,7 @@ echo date('l jS \of F Y h:i:s A');
     def run_cases_expecting_gzip(self):
         # Test 1: Verify basic ESI functionality.
         tr = Test.AddTestRun(f"First request for esi.php: not cached: {self._plugin_config}")
-        tr.Processes.Default.Command = \
-            (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
+        tr.CurlCommand(f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
              '-H"Accept: */*" --verbose')
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
@@ -210,8 +209,7 @@ echo date('l jS \of F Y h:i:s A');
 
         # Test 2: Repeat the above, should now be cached.
         tr = Test.AddTestRun(f"Second request for esi.php: will be cached: {self._plugin_config}")
-        tr.Processes.Default.Command = \
-            (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
+        tr.CurlCommand(f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
              '-H"Accept: */*" --verbose')
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
@@ -223,8 +221,7 @@ echo date('l jS \of F Y h:i:s A');
         EsiTest._output_counter += 1
         unzipped_body_file = os.path.join(tr.RunDirectory, f"non_empty_curl_output_{EsiTest._output_counter}")
         gzipped_body_file = unzipped_body_file + ".gz"
-        tr.Processes.Default.Command = \
-            (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
+        tr.CurlCommand(f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
              f'-H "Accept-Encoding: gzip" -H"Accept: */*" --verbose --output {gzipped_body_file}')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Ready = When.FileExists(gzipped_body_file)
@@ -247,8 +244,7 @@ echo date('l jS \of F Y h:i:s A');
         EsiTest._output_counter += 1
         empty_body_file = os.path.join(tr.RunDirectory, f"empty_curl_output_{EsiTest._output_counter}")
         gzipped_empty_body = empty_body_file + ".gz"
-        tr.Processes.Default.Command = \
-             (f'curl http://127.0.0.1:{self._ts.Variables.port}/expect_empty_body '
+        tr.CurlCommand(f'http://127.0.0.1:{self._ts.Variables.port}/expect_empty_body '
               '-H"Host: www.example.com" -H"Accept-Encoding: gzip" -H"Accept: */*" '
               f'--verbose --output {gzipped_empty_body}')
         tr.Processes.Default.ReturnCode = 0
@@ -271,8 +267,7 @@ echo date('l jS \of F Y h:i:s A');
 
     def run_case_max_doc_size_too_small(self):
         tr = Test.AddTestRun(f"Max doc size too small: {self._plugin_config}")
-        tr.Processes.Default.Command = \
-            (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php '
+        tr.CurlCommand(f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
                 '-H"Host: www.example.com" -H"Accept: */*" --verbose')
         tr.Processes.Default.ReturnCode = 0
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
@@ -284,8 +279,7 @@ echo date('l jS \of F Y h:i:s A');
     def run_cases_expecting_no_gzip(self):
         # Test 1: Run an ESI test where the client does not accept gzip.
         tr = Test.AddTestRun(f"First request for esi.php: gzip not accepted: {self._plugin_config}")
-        tr.Processes.Default.Command = \
-            (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php '
+        tr.CurlCommand(f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
              '-H"Host: www.example.com" -H"Accept: */*" --verbose')
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
@@ -295,8 +289,7 @@ echo date('l jS \of F Y h:i:s A');
         # Test 2: Verify the ESI plugin does not gzip the response even if the
         # client accepts the gzip encoding.
         tr = Test.AddTestRun(f"Verify the ESI plugin refuses to gzip responses with: {self._plugin_config}")
-        tr.Processes.Default.Command = \
-            (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php '
+        tr.CurlCommand(f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
              '-H"Host: www.example.com" -H "Accept-Encoding: gzip" -H"Accept: */*" --verbose')
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)

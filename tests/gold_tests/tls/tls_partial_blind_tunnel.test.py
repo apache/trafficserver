@@ -61,8 +61,7 @@ ts.Disk.sni_yaml.AddLines(
     ])
 
 tr = Test.AddTestRun("Partial Blind Route")
-tr.Processes.Default.Command = "curl --http1.1 -v --resolve 'foo.com:{0}:127.0.0.1' -k https://foo.com:{0}".format(
-    ts.Variables.ssl_port)
+tr.CurlCommand("--http1.1 -v --resolve 'foo.com:{0}:127.0.0.1' -k https://foo.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_bar)
 tr.Processes.Default.StartBefore(nameserver)

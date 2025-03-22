@@ -56,9 +56,9 @@ ts.Disk.remap_config.AddLine("map http://myhost.test http://127.0.0.1:{0}".forma
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.Processes.Default.Command = (
+tr.CurlCommandMulti(
     f'touch {InProgressFilePathspec} ; ' +
-    f'curl --verbose --ipv4 --header "Host:myhost.test" http://localhost:{ts.Variables.port}/')
+    f'{{curl}} --verbose --ipv4 --header "Host:myhost.test" http://localhost:{ts.Variables.port}/')
 tr.Processes.Default.ReturnCode = 0
 
 # Give tests up to 10 seconds to complete.
