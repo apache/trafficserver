@@ -175,7 +175,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     RecString name;
     int       facility = -1;
 
-    if (REC_ReadConfigStringAlloc(name, "proxy.config.syslog_facility") == REC_ERR_OKAY) {
+    if (RecGetRecordString_Xmalloc("proxy.config.syslog_facility", &name) == REC_ERR_OKAY) {
       facility = facility_string_to_int(name);
       ats_free(name);
     }

@@ -805,6 +805,145 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 }
 
 //-------------------------------------------------------------------------
+// RecGetRecordIntOrZero
+//
+// Note: We have to define this template function here in a source file
+// and do explicit intantiation below for each types actually used.
+//
+// Usually a template function is defined in a header file.
+// However we cannot do so since it depends on RecGetRecord_Xmalloc
+// which depends on the global variable g_records_ht.
+//-------------------------------------------------------------------------
+template <typename IntegerType>
+RecErrT
+RecGetRecordIntOrZero(const char *name, IntegerType *rec_int, bool lock)
+{
+  RecErrT err;
+  RecData data;
+
+  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
+    *rec_int = static_cast<IntegerType>(data.rec_int);
+  } else {
+    *rec_int = 0;
+  }
+  return err;
+}
+
+// explicit instantiation of RecGetRecordIntOrZero
+template RecErrT RecGetRecordIntOrZero<bool>(const char *name, bool *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<signed char>(const char *name, signed char *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<unsigned char>(const char *name, unsigned char *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<unsigned short>(const char *name, unsigned short *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<int>(const char *name, int *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<unsigned int>(const char *name, unsigned int *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<long>(const char *name, long *rec_int, bool lock);
+template RecErrT RecGetRecordIntOrZero<unsigned long>(const char *name, unsigned long *rec_int, bool lock);
+
+//-------------------------------------------------------------------------
+// RecGetRecordFloatOrZero
+//-------------------------------------------------------------------------
+
+RecErrT
+RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock)
+{
+  RecErrT err = RecGetRecordFloat(name, rec_float, lock);
+  if (err != REC_ERR_OKAY) {
+    *rec_float = 0;
+  }
+  return err;
+}
+
+//-------------------------------------------------------------------------
+// RecGetRecordStringOrNullptr_Xmalloc
+//-------------------------------------------------------------------------
+
+RecErrT
+RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock)
+{
+  RecErrT err = RecGetRecordString_Xmalloc(name, rec_string, lock);
+  if (err != REC_ERR_OKAY) {
+    *rec_string = nullptr;
+  }
+  return err;
+}
+
+//-------------------------------------------------------------------------
+// RecEstablishStaticConfigInteger
+//-------------------------------------------------------------------------
+
+RecErrT
+RecEstablishStaticConfigInteger(const char *name, RecInt *rec_int, bool lock)
+{
+  RecLinkConfigInt(name, rec_int);
+  return RecGetRecordIntOrZero(name, rec_int, lock);
+}
+
+//-------------------------------------------------------------------------
+// RecEstablishStaticConfigInt32
+//-------------------------------------------------------------------------
+
+RecErrT
+RecEstablishStaticConfigInt32(const char *name, int32_t *rec_int, bool lock)
+{
+  RecLinkConfigInt32(name, rec_int);
+  return RecGetRecordIntOrZero(name, rec_int, lock);
+}
+
+//-------------------------------------------------------------------------
+// RecEstablishStaticConfigInt32U
+//-------------------------------------------------------------------------
+
+RecErrT
+RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool lock)
+{
+  RecLinkConfigUInt32(name, rec_int);
+  return RecGetRecordIntOrZero(name, rec_int, lock);
+}
+
+//-------------------------------------------------------------------------
+// RecEstablishStaticConfigStringAlloc
+//-------------------------------------------------------------------------
+
+/*
+ * RecLinkConfigString allocates the RecString and stores the ptr to it (&var).
+ * So before changing _var (the RecString) we have to free the original one.
+ * Really, we somehow need to know whether RecLinkConfigString allocated _var.
+ * For now, we're using the return value to indicate this, even though it's
+ * not always the case.  If we're wrong, we'll leak the RecString.
+ */
+
+RecErrT
+RecEstablishStaticConfigStringAlloc(const char *name, RecString *rec_string, bool lock)
+{
+  if (RecLinkConfigString(name, rec_string) == REC_ERR_OKAY) {
+    ats_free(*rec_string);
+  }
+  return RecGetRecordStringOrNullptr_Xmalloc(name, rec_string, lock);
+}
+
+//-------------------------------------------------------------------------
+// RecEstablishStaticConfigFloat
+//-------------------------------------------------------------------------
+
+RecErrT
+RecEstablishStaticConfigFloat(const char *name, RecFloat *rec_float, bool lock)
+{
+  RecLinkConfigFloat(name, rec_float);
+  return RecGetRecordFloatOrZero(name, rec_float, lock);
+}
+
+//-------------------------------------------------------------------------
+// RecEstablishStaticConfigByte
+//-------------------------------------------------------------------------
+
+RecErrT
+RecEstablishStaticConfigByte(const char *name, RecByte *rec_byte, bool lock)
+{
+  RecLinkConfigByte(name, rec_byte);
+  return RecGetRecordIntOrZero(name, rec_byte, lock);
+}
+
+//-------------------------------------------------------------------------
 // RecForceInsert
 //-------------------------------------------------------------------------
 RecRecord *
@@ -915,88 +1054,6 @@ RecDumpRecordsHt(RecT rec_type)
 {
   RecDebug(DL_Note, "Dumping Records:");
   RecDumpRecords(rec_type, debug_record_callback, nullptr);
-}
-
-//-------------------------------------------------------------------------
-// Backwards compatibility ... TODO: Should eliminate these
-//-------------------------------------------------------------------------
-RecInt
-REC_ConfigReadInteger(const char *name)
-{
-  RecInt t = 0;
-  RecGetRecordInt(name, &t);
-  return t;
-}
-
-char *
-REC_ConfigReadString(const char *name)
-{
-  char *t = nullptr;
-  RecGetRecordString_Xmalloc(name, static_cast<RecString *>(&t));
-  return t;
-}
-
-RecFloat
-REC_ConfigReadFloat(const char *name)
-{
-  RecFloat t = 0;
-  RecGetRecordFloat(name, &t);
-  return t;
-}
-
-//-------------------------------------------------------------------------
-// Backwards compatibility. TODO: Should remove these.
-//-------------------------------------------------------------------------
-RecInt
-REC_readInteger(const char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecInt _tmp   = 0;
-  bool   _found = (RecGetRecordInt(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
-}
-
-RecFloat
-REC_readFloat(char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecFloat _tmp   = 0.0;
-  bool     _found = (RecGetRecordFloat(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
-}
-
-RecCounter
-REC_readCounter(char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecCounter _tmp   = 0;
-  bool       _found = (RecGetRecordCounter(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
-}
-
-RecString
-REC_readString(const char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecString _tmp   = nullptr;
-  bool      _found = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
 }
 
 //-------------------------------------------------------------------------

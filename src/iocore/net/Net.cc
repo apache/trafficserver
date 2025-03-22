@@ -46,29 +46,29 @@ std::string_view net_ccp_out;
 static inline void
 configure_net()
 {
-  REC_RegisterConfigUpdateFunc("proxy.config.net.connections_throttle", change_net_connections_throttle, nullptr);
-  REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
+  RecRegisterConfigUpdateCb("proxy.config.net.connections_throttle", change_net_connections_throttle, nullptr);
+  RecGetRecordIntOrZero("proxy.config.net.connections_throttle", &fds_throttle);
 
-  REC_EstablishStaticConfigInt32(net_retry_delay, "proxy.config.net.retry_delay");
-  REC_EstablishStaticConfigInt32(net_throttle_delay, "proxy.config.net.throttle_delay");
+  RecEstablishStaticConfigInt32("proxy.config.net.retry_delay", &net_retry_delay);
+  RecEstablishStaticConfigInt32("proxy.config.net.throttle_delay", &net_throttle_delay);
 
   // These are not reloadable
-  REC_ReadConfigInteger(net_event_period, "proxy.config.net.event_period");
-  REC_ReadConfigInteger(net_accept_period, "proxy.config.net.accept_period");
+  RecGetRecordIntOrZero("proxy.config.net.event_period", &net_event_period);
+  RecGetRecordIntOrZero("proxy.config.net.accept_period", &net_accept_period);
 
   // This is kinda fugly, but better than it was before (on every connection in and out)
   // Note that these would need to be ats_free()'d if we ever want to clean that up, but
   // we have no good way of dealing with that on such globals I think?
   RecString ccp;
 
-  REC_ReadConfigStringAlloc(ccp, "proxy.config.net.tcp_congestion_control_in");
+  RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_in", &ccp);
   if (ccp && *ccp != '\0') {
     net_ccp_in = ccp;
   } else {
     ats_free(ccp);
   }
 
-  REC_ReadConfigStringAlloc(ccp, "proxy.config.net.tcp_congestion_control_out");
+  RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_out", &ccp);
   if (ccp && *ccp != '\0') {
     net_ccp_out = ccp;
   } else {
