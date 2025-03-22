@@ -4370,7 +4370,7 @@ HttpSM::check_sni_host()
       SMDbg(dbg_ctl_ssl_sni, "No SNI for TLS request with hostname %.*s action=%s", host_len, host_name.data(), action_value);
       if (host_sni_policy == 2) {
         swoc::bwprint(error_bw_buffer, "No SNI for TLS request: connecting to {} for host='{}', returning a 403",
-                      t_state.client_info.dst_addr, host_name.data());
+                      t_state.client_info.dst_addr, host_name);
         Log::error("%s", error_bw_buffer.c_str());
         this->t_state.client_connection_allowed = false;
       }
