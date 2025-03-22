@@ -30,6 +30,8 @@
 #include <strings.h>
 #include <cmath>
 
+using namespace std::literals;
+
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/HttpTransactHeaders.h"
 #include "proxy/http/HttpSM.h"
@@ -323,10 +325,9 @@ nextParent(HttpTransact::State *s)
 }
 
 inline static bool
-is_localhost(const char *name, int len)
+is_localhost(std::string_view name)
 {
-  static const char local[] = "127.0.0.1";
-  return (len == (sizeof(local) - 1)) && (memcmp(name, local, len) == 0);
+  return name == "127.0.0.1"sv;
 }
 
 bool
@@ -593,7 +594,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
 {
   auto host{s->hdr_info.client_request.host_get()};
 
-  if (is_localhost(host.data(), static_cast<int>(host.length()))) {
+  if (is_localhost(host)) {
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
