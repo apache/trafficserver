@@ -191,7 +191,7 @@ RecErrT RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool
 // Convenience to link and get a config of string type
 RecErrT RecEstablishStaticConfigStringAlloc(const char *name, RecString *rec_string, bool lock = true);
 // Convenience to link and get a config of float type
-RecErrT RecEstablishStaticConfigFloat(const char *name, RecFloat *rec_float, bool lock = true);
+RecErrT RecEstablishStaticConfigFloat(RecFloat &rec_float, const char *name, bool lock = true);
 // Convenience to link and get a config of byte type
 // Allow to treat our "INT" configs as a byte type internally. Note
 // that the byte type is just a wrapper around RECD_INT.

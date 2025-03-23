@@ -926,10 +926,10 @@ RecEstablishStaticConfigStringAlloc(const char *name, RecString *rec_string, boo
 //-------------------------------------------------------------------------
 
 RecErrT
-RecEstablishStaticConfigFloat(const char *name, RecFloat *rec_float, bool lock)
+RecEstablishStaticConfigFloat(RecFloat &rec_float, const char *name, bool lock)
 {
-  RecLinkConfigFloat(name, rec_float);
-  return RecGetRecordFloatOrZero(name, rec_float, lock);
+  RecLinkConfigFloat(name, &rec_float);
+  return RecGetRecordFloatOrZero(name, &rec_float, lock);
 }
 
 //-------------------------------------------------------------------------
