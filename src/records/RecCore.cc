@@ -788,41 +788,6 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 }
 
 //-------------------------------------------------------------------------
-// RecGetRecordIntOrZero
-//
-// Note: We have to define this template function here in a source file
-// and do explicit intantiation below for each types actually used.
-//
-// Usually a template function is defined in a header file.
-// However we cannot do so since it depends on RecGetRecord_Xmalloc
-// which depends on the global variable g_records_ht.
-//-------------------------------------------------------------------------
-template <typename IntegerType>
-RecErrT
-RecGetRecordIntOrZero(const char *name, IntegerType *rec_int, bool lock)
-{
-  RecErrT err;
-  RecData data;
-
-  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
-    *rec_int = static_cast<IntegerType>(data.rec_int);
-  } else {
-    *rec_int = 0;
-  }
-  return err;
-}
-
-// explicit instantiation of RecGetRecordIntOrZero
-template RecErrT RecGetRecordIntOrZero<bool>(const char *name, bool *rec_int, bool lock);
-template RecErrT RecGetRecordIntOrZero<signed char>(const char *name, signed char *rec_int, bool lock);
-template RecErrT RecGetRecordIntOrZero<unsigned char>(const char *name, unsigned char *rec_int, bool lock);
-template RecErrT RecGetRecordIntOrZero<unsigned short>(const char *name, unsigned short *rec_int, bool lock);
-template RecErrT RecGetRecordIntOrZero<int>(const char *name, int *rec_int, bool lock);
-template RecErrT RecGetRecordIntOrZero<unsigned int>(const char *name, unsigned int *rec_int, bool lock);
-template RecErrT RecGetRecordIntOrZero<long>(const char *name, long *rec_int, bool lock);
-template RecErrT RecGetRecordIntOrZero<unsigned long>(const char *name, unsigned long *rec_int, bool lock);
-
-//-------------------------------------------------------------------------
 // RecGetRecordFloatOrZero
 //-------------------------------------------------------------------------
 
@@ -858,7 +823,9 @@ RecErrT
 RecEstablishStaticConfigInt(RecInt &rec_int, const char *name, bool lock)
 {
   RecLinkConfigInt(name, &rec_int);
-  return RecGetRecordIntOrZero(name, &rec_int, lock);
+  auto [tmp, err]{RecGetRecordInt(name, lock)};
+  rec_int = static_cast<RecInt>(tmp);
+  return err;
 }
 
 //-------------------------------------------------------------------------
@@ -869,7 +836,9 @@ RecErrT
 RecEstablishStaticConfigInt32(int32_t &rec_int, const char *name, bool lock)
 {
   RecLinkConfigInt32(name, &rec_int);
-  return RecGetRecordIntOrZero(name, &rec_int, lock);
+  auto [tmp, err]{RecGetRecordInt(name, lock)};
+  rec_int = static_cast<int32_t>(tmp);
+  return err;
 }
 
 //-------------------------------------------------------------------------
@@ -880,7 +849,9 @@ RecErrT
 RecEstablishStaticConfigUInt32(uint32_t &rec_int, const char *name, bool lock)
 {
   RecLinkConfigUInt32(name, &rec_int);
-  return RecGetRecordIntOrZero(name, &rec_int, lock);
+  auto [tmp, err]{RecGetRecordInt(name, lock)};
+  rec_int = static_cast<uint32_t>(tmp);
+  return err;
 }
 
 //-------------------------------------------------------------------------
@@ -923,7 +894,9 @@ RecErrT
 RecEstablishStaticConfigByte(RecByte &rec_byte, const char *name, bool lock)
 {
   RecLinkConfigByte(name, &rec_byte);
-  return RecGetRecordIntOrZero(name, &rec_byte, lock);
+  auto [tmp, err]{RecGetRecordInt(name, lock)};
+  rec_byte = static_cast<RecByte>(tmp);
+  return err;
 }
 
 //-------------------------------------------------------------------------

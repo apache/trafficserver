@@ -96,32 +96,32 @@ LogConfig::read_configuration_variables()
   int   val;
   char *ptr;
 
-  RecGetRecordIntOrZero("proxy.config.log.log_buffer_size", &val);
+  val = RecGetRecordInt("proxy.config.log.log_buffer_size").first;
   if (val > 0) {
     log_buffer_size = val;
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.log_fast_buffer", &val);
+  val = RecGetRecordInt("proxy.config.log.log_fast_buffer").first;
   if (val > 0) {
     log_fast_buffer = true;
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.max_secs_per_buffer", &val);
+  val = RecGetRecordInt("proxy.config.log.max_secs_per_buffer").first;
   if (val > 0) {
     max_secs_per_buffer = val;
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.max_space_mb_for_logs", &val);
+  val = RecGetRecordInt("proxy.config.log.max_space_mb_for_logs").first;
   if (val > 0) {
     max_space_mb_for_logs = val;
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.max_space_mb_headroom", &val);
+  val = RecGetRecordInt("proxy.config.log.max_space_mb_headroom").first;
   if (val > 0) {
     max_space_mb_headroom = val;
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.io.max_buffer_index", &val);
+  val = RecGetRecordInt("proxy.config.log.io.max_buffer_index").first;
   if (val > 0) {
     logbuffer_max_iobuf_index = val;
   }
@@ -159,7 +159,7 @@ LogConfig::read_configuration_variables()
     ::exit(1);
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.preproc_threads", &val);
+  val = RecGetRecordInt("proxy.config.log.preproc_threads").first;
   if (val > 0 && val <= 128) {
     preproc_threads = val;
   }
@@ -169,11 +169,11 @@ LogConfig::read_configuration_variables()
   // we don't check for valid values of rolling_enabled, rolling_interval_sec,
   // rolling_offset_hr, or rolling_size_mb because the LogObject takes care of this
   //
-  RecGetRecordIntOrZero("proxy.config.log.rolling_interval_sec", &rolling_interval_sec);
-  RecGetRecordIntOrZero("proxy.config.log.rolling_offset_hr", &rolling_offset_hr);
-  RecGetRecordIntOrZero("proxy.config.log.rolling_size_mb", &rolling_size_mb);
-  RecGetRecordIntOrZero("proxy.config.log.rolling_min_count", &rolling_min_count);
-  RecGetRecordIntOrZero("proxy.config.log.rolling_enabled", &val);
+  rolling_interval_sec = RecGetRecordInt("proxy.config.log.rolling_interval_sec").first;
+  rolling_offset_hr    = RecGetRecordInt("proxy.config.log.rolling_offset_hr").first;
+  rolling_size_mb      = RecGetRecordInt("proxy.config.log.rolling_size_mb").first;
+  rolling_min_count    = RecGetRecordInt("proxy.config.log.rolling_min_count").first;
+  val                  = RecGetRecordInt("proxy.config.log.rolling_enabled").first;
   if (LogRollingEnabledIsValid(val)) {
     rolling_enabled = static_cast<Log::RollingEnabledValues>(val);
   } else {
@@ -181,20 +181,20 @@ LogConfig::read_configuration_variables()
     rolling_enabled = Log::NO_ROLLING;
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.auto_delete_rolled_files", &val);
+  val                      = RecGetRecordInt("proxy.config.log.auto_delete_rolled_files").first;
   auto_delete_rolled_files = (val > 0);
 
-  RecGetRecordIntOrZero("proxy.config.log.rolling_allow_empty", &val);
+  val                 = RecGetRecordInt("proxy.config.log.rolling_allow_empty").first;
   rolling_allow_empty = (val > 0);
 
   // THROTTLING
-  RecGetRecordIntOrZero("proxy.config.log.throttling_interval_msec", &val);
+  val = RecGetRecordInt("proxy.config.log.throttling_interval_msec").first;
   if (LogThrottlingIsValid(val)) {
     LogMessage::set_default_log_throttling_interval(std::chrono::milliseconds{val});
   } else {
     Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.throttling_interval_msec");
   }
-  RecGetRecordIntOrZero("proxy.config.diags.debug.throttling_interval_msec", &val);
+  val = RecGetRecordInt("proxy.config.diags.debug.throttling_interval_msec").first;
   if (LogThrottlingIsValid(val)) {
     LogMessage::set_default_debug_throttling_interval(std::chrono::milliseconds{val});
   } else {
@@ -208,7 +208,7 @@ LogConfig::read_configuration_variables()
     // The following register these other core logs for log rotation deletion.
 
     // For diagnostic logs
-    RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_min_count", &val);
+    val = RecGetRecordInt("proxy.config.diags.logfile.rolling_min_count").first;
     register_rolled_log_auto_delete(DIAGS_LOG_FILENAME, val);
     register_rolled_log_auto_delete(MANAGER_LOG_FILENAME, val);
 
@@ -216,36 +216,36 @@ LogConfig::read_configuration_variables()
     char *configured_name;
     RecGetRecordStringOrNullptr_Xmalloc("proxy.config.output.logfile.name", &configured_name);
     const char *traffic_logname = configured_name ? configured_name : "traffic.out";
-    RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_min_count", &val);
+    val                         = RecGetRecordInt("proxy.config.output.logfile.rolling_min_count").first;
     register_rolled_log_auto_delete(traffic_logname, val);
 
-    RecGetRecordIntOrZero("proxy.config.log.rolling_max_count", &rolling_max_count);
+    rolling_max_count = RecGetRecordInt("proxy.config.log.rolling_max_count").first;
 
     ats_free(configured_name);
   }
   // PERFORMANCE
-  RecGetRecordIntOrZero("proxy.config.log.sampling_frequency", &val);
+  val = RecGetRecordInt("proxy.config.log.sampling_frequency").first;
   if (val > 0) {
     sampling_frequency = val;
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.file_stat_frequency", &val);
+  val = RecGetRecordInt("proxy.config.log.file_stat_frequency").first;
   if (val > 0) {
     file_stat_frequency = val;
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.space_used_frequency", &val);
+  val = RecGetRecordInt("proxy.config.log.space_used_frequency").first;
   if (val > 0) {
     space_used_frequency = val;
   }
 
   // ASCII BUFFER
-  RecGetRecordIntOrZero("proxy.config.log.ascii_buffer_size", &val);
+  val = RecGetRecordInt("proxy.config.log.ascii_buffer_size").first;
   if (val > 0) {
     ascii_buffer_size = val;
   }
 
-  RecGetRecordIntOrZero("proxy.config.log.max_line_size", &val);
+  val = RecGetRecordInt("proxy.config.log.max_line_size").first;
   if (val > 0) {
     max_line_size = val;
   }

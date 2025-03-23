@@ -175,22 +175,22 @@ void
 NetHandler::init_for_process()
 {
   // read configuration values and setup callbacks for when they change
-  RecGetRecordIntOrZero("proxy.config.net.max_connections_in", &global_config.max_connections_in);
-  RecGetRecordIntOrZero("proxy.config.net.max_requests_in", &global_config.max_requests_in);
-  RecGetRecordIntOrZero("proxy.config.net.inactive_threshold_in", &global_config.inactive_threshold_in);
-  RecGetRecordIntOrZero("proxy.config.net.transaction_no_activity_timeout_in", &global_config.transaction_no_activity_timeout_in);
-  RecGetRecordIntOrZero("proxy.config.net.keep_alive_no_activity_timeout_in", &global_config.keep_alive_no_activity_timeout_in);
-  RecGetRecordIntOrZero("proxy.config.net.default_inactivity_timeout", &global_config.default_inactivity_timeout);
+  global_config.max_connections_in                 = RecGetRecordInt("proxy.config.net.max_connections_in").first;
+  global_config.max_requests_in                    = RecGetRecordInt("proxy.config.net.max_requests_in").first;
+  global_config.inactive_threshold_in              = RecGetRecordInt("proxy.config.net.inactive_threshold_in").first;
+  global_config.transaction_no_activity_timeout_in = RecGetRecordInt("proxy.config.net.transaction_no_activity_timeout_in").first;
+  global_config.keep_alive_no_activity_timeout_in  = RecGetRecordInt("proxy.config.net.keep_alive_no_activity_timeout_in").first;
+  global_config.default_inactivity_timeout         = RecGetRecordInt("proxy.config.net.default_inactivity_timeout").first;
 
   // Atomic configurations.
   {
     int32_t val = 0;
-    RecGetRecordIntOrZero("proxy.config.net.additional_accepts", &val);
+    val         = RecGetRecordInt("proxy.config.net.additional_accepts").first;
     additional_accepts.store(val, std::memory_order_relaxed);
   }
   {
     uint32_t val = 0;
-    RecGetRecordIntOrZero("proxy.config.net.per_client.max_connections_in", &val);
+    val          = RecGetRecordInt("proxy.config.net.per_client.max_connections_in").first;
     per_client_max_connections_in.store(val, std::memory_order_relaxed);
   }
 

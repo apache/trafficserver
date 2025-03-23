@@ -236,8 +236,8 @@ void
 initialize_thread_for_udp_net(EThread *thread)
 {
   int enable_gso, enable_gro;
-  RecGetRecordIntOrZero("proxy.config.udp.enable_gso", &enable_gso);
-  RecGetRecordIntOrZero("proxy.config.udp.enable_gro", &enable_gro);
+  enable_gso = RecGetRecordInt("proxy.config.udp.enable_gso").first;
+  enable_gro = RecGetRecordInt("proxy.config.udp.enable_gro").first;
 
   UDPNetHandler *nh = get_UDPNetHandler(thread);
 
@@ -261,21 +261,21 @@ initialize_thread_for_udp_net(EThread *thread)
   PollCont       *upc = get_UDPPollCont(thread);
   PollDescriptor *upd = upc->pollDescriptor;
 
-  RecGetRecordIntOrZero("proxy.config.udp.poll_timeout", &g_udp_pollTimeout);
+  g_udp_pollTimeout = RecGetRecordInt("proxy.config.udp.poll_timeout").first;
   upc->poll_timeout = g_udp_pollTimeout;
 
   // This variable controls how often we cleanup the cancelled packets.
   // If it is set to 0, then cleanup never occurs.
-  RecGetRecordIntOrZero("proxy.config.udp.free_cancelled_pkts_sec", &g_udp_periodicFreeCancelledPkts);
+  g_udp_periodicFreeCancelledPkts = RecGetRecordInt("proxy.config.udp.free_cancelled_pkts_sec").first;
 
   // This variable controls how many "slots" of the udp calendar queue we cleanup.
   // If it is set to 0, then cleanup never occurs.  This value makes sense
   // only if the above variable is set.
-  RecGetRecordIntOrZero("proxy.config.udp.periodic_cleanup", &g_udp_periodicCleanupSlots);
+  g_udp_periodicCleanupSlots = RecGetRecordInt("proxy.config.udp.periodic_cleanup").first;
 
   // UDP sends can fail with errno=EAGAIN.  This variable determines the # of
   // times the UDP thread retries before giving up.  Set to 0 to keep trying forever.
-  RecGetRecordIntOrZero("proxy.config.udp.send_retries", &g_udp_numSendRetries);
+  g_udp_numSendRetries = RecGetRecordInt("proxy.config.udp.send_retries").first;
   g_udp_numSendRetries = g_udp_numSendRetries < 0 ? 0 : g_udp_numSendRetries;
 
   thread->set_tail_handler(nh);

@@ -277,8 +277,8 @@ FileManager::rereadConfig()
   }
   // INKqa11910
   // need to first check that enable_customizations is enabled
-  int  enabled;
-  bool found = RecGetRecordIntOrZero("proxy.config.body_factory.enable_customizations", &enabled) == REC_ERR_OKAY;
+  auto [enabled, err]{RecGetRecordInt("proxy.config.body_factory.enable_customizations")};
+  auto found{err == REC_ERR_OKAY};
 
   if (found && enabled) {
     if (auto const &r = fileChanged("proxy.config.body_factory.template_sets_dir", "proxy.config.body_factory.template_sets_dir");

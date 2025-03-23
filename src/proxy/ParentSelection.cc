@@ -70,12 +70,12 @@ ParentSelectionPolicy::ParentSelectionPolicy()
   int32_t fail_threshold = 0;
 
   // Handle parent timeout
-  RecGetRecordIntOrZero(retry_var, &retry_time);
+  retry_time      = RecGetRecordInt(retry_var).first;
   ParentRetryTime = retry_time;
 
   // Handle the fail threshold
-  RecGetRecordIntOrZero(threshold_var, &fail_threshold);
-  FailThreshold = fail_threshold;
+  fail_threshold = RecGetRecordInt(threshold_var).first;
+  FailThreshold  = fail_threshold;
 }
 
 ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_parent_table), DefaultParent(nullptr), policy()
@@ -981,11 +981,11 @@ SocksServerConfig::reconfigure()
   }
 
   // Handle parent timeout
-  RecGetRecordIntOrZero("proxy.config.socks.server_retry_time", &retry_time);
+  retry_time                     = RecGetRecordInt("proxy.config.socks.server_retry_time").first;
   params->policy.ParentRetryTime = retry_time;
 
   // Handle the fail threshold
-  RecGetRecordIntOrZero("proxy.config.socks.server_fail_threshold", &fail_threshold);
+  fail_threshold               = RecGetRecordInt("proxy.config.socks.server_fail_threshold").first;
   params->policy.FailThreshold = fail_threshold;
 
   m_id = configProcessor.set(m_id, params);

@@ -170,7 +170,7 @@ LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
     int64_t val;
-    RecGetRecordIntOrZero(config_var, &val);
+    val = RecGetRecordInt(config_var).first;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -255,7 +255,14 @@ LogAccess::marshal_record(char *record, char *buf)
       ink_assert(max_chars > 21);
 
       int64_t val = 0;
-      bool found = (LOG_INTEGER == stype ? RecGetRecordIntOrZero(record, &val) : RecGetRecordCounter(record, &val)) == REC_ERR_OKAY;
+      bool    found;
+      if (LOG_INTEGER == stype) {
+        RecErrT err;
+        std::tie(val, err) = RecGetRecordInt(record);
+        found              = err == REC_ERR_OKAY;
+      } else {
+        found = RecGetRecordCounter(record, &val) == REC_ERR_OKAY;
+      }
 
       if (found) {
         out_buf = int64_to_str(ascii_buf, max_chars, val, &num_chars);

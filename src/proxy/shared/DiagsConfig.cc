@@ -77,19 +77,23 @@ DiagsConfig::reconfigure_diags()
 
   // enabled if records.yaml set
 
-  found = RecGetRecordIntOrZero("proxy.config.diags.debug.enabled", &e) == REC_ERR_OKAY;
+  RecErrT err;
+  std::tie(e, err) = RecGetRecordInt("proxy.config.diags.debug.enabled");
+  found            = err == REC_ERR_OKAY;
   if (e && found) {
     c.enabled(DiagsTagType_Debug, e); // implement OR logic
   }
   all_found = all_found && found;
 
-  found = RecGetRecordIntOrZero("proxy.config.diags.action.enabled", &e) == REC_ERR_OKAY;
+  std::tie(e, err) = RecGetRecordInt("proxy.config.diags.action.enabled");
+  found            = err == REC_ERR_OKAY;
   if (e && found) {
     c.enabled(DiagsTagType_Action, 1); // implement OR logic
   }
   all_found = all_found && found;
 
-  found                 = RecGetRecordIntOrZero("proxy.config.diags.show_location", &e) == REC_ERR_OKAY;
+  std::tie(e, err)      = RecGetRecordInt("proxy.config.diags.show_location");
+  found                 = err == REC_ERR_OKAY;
   _diags->show_location = ((e == 1 && found) ? SHOW_LOCATION_DEBUG : ((e == 2 && found) ? SHOW_LOCATION_ALL : SHOW_LOCATION_NONE));
   all_found             = all_found && found;
 
@@ -294,17 +298,17 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   // Grab rolling intervals from configuration
   // TODO error check these values
   int output_log_roll_int;
-  RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_interval_sec", &output_log_roll_int);
+  output_log_roll_int = RecGetRecordInt("proxy.config.output.logfile.rolling_interval_sec").first;
   int output_log_roll_size;
-  RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_size_mb", &output_log_roll_size);
+  output_log_roll_size = RecGetRecordInt("proxy.config.output.logfile.rolling_size_mb").first;
   int output_log_roll_enable;
-  RecGetRecordIntOrZero("proxy.config.output.logfile.rolling_enabled", &output_log_roll_enable);
+  output_log_roll_enable = RecGetRecordInt("proxy.config.output.logfile.rolling_enabled").first;
   int diags_log_roll_int;
-  RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_interval_sec", &diags_log_roll_int);
+  diags_log_roll_int = RecGetRecordInt("proxy.config.diags.logfile.rolling_interval_sec").first;
   int diags_log_roll_size;
-  RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_size_mb", &diags_log_roll_size);
+  diags_log_roll_size = RecGetRecordInt("proxy.config.diags.logfile.rolling_size_mb").first;
   int diags_log_roll_enable;
-  RecGetRecordIntOrZero("proxy.config.diags.logfile.rolling_enabled", &diags_log_roll_enable);
+  diags_log_roll_enable = RecGetRecordInt("proxy.config.diags.logfile.rolling_enabled").first;
 
   // Grab some perms for the actual files on disk
   char *diags_perm;

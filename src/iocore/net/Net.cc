@@ -47,14 +47,14 @@ static inline void
 configure_net()
 {
   RecRegisterConfigUpdateCb("proxy.config.net.connections_throttle", change_net_connections_throttle, nullptr);
-  RecGetRecordIntOrZero("proxy.config.net.connections_throttle", &fds_throttle);
+  fds_throttle = RecGetRecordInt("proxy.config.net.connections_throttle").first;
 
   RecEstablishStaticConfigInt32(net_retry_delay, "proxy.config.net.retry_delay");
   RecEstablishStaticConfigInt32(net_throttle_delay, "proxy.config.net.throttle_delay");
 
   // These are not reloadable
-  RecGetRecordIntOrZero("proxy.config.net.event_period", &net_event_period);
-  RecGetRecordIntOrZero("proxy.config.net.accept_period", &net_accept_period);
+  net_event_period  = RecGetRecordInt("proxy.config.net.event_period").first;
+  net_accept_period = RecGetRecordInt("proxy.config.net.accept_period").first;
 
   // This is kinda fugly, but better than it was before (on every connection in and out)
   // Note that these would need to be ats_free()'d if we ever want to clean that up, but
