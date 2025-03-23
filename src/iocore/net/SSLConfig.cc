@@ -47,8 +47,6 @@
 #include <cstring>
 #include <cmath>
 
-using namespace std::literals;
-
 int                SSLConfig::config_index                                = 0;
 int                SSLConfig::configids[]                                 = {0, 0};
 int                SSLCertificateConfig::configid                         = 0;
@@ -177,20 +175,20 @@ SSLConfigParams::cleanup()
  XXX: Add handling for Windows?
  */
 static void
-set_paths_helper(std::string_view path, std::string_view filename, char **final_path, char **final_filename)
+set_paths_helper(const char *path, const char *filename, char **final_path, char **final_filename)
 {
   if (final_path) {
-    if (!path.empty() && path[0] != '/') {
+    if (path && path[0] != '/') {
       *final_path = ats_stringdup(Layout::get()->relative_to(Layout::get()->prefix, path));
-    } else if (path.empty()) {
+    } else if (!path || path[0] == '\0') {
       *final_path = ats_stringdup(RecConfigReadConfigDir());
     } else {
-      *final_path = ats_stringdup(path);
+      *final_path = ats_strdup(path);
     }
   }
 
-  if (final_filename && !path.empty()) {
-    *final_filename = filename.empty() ? nullptr : ats_stringdup(Layout::get()->relative_to(path, filename));
+  if (final_filename && path) {
+    *final_filename = filename ? ats_stringdup(Layout::get()->relative_to(path, filename)) : nullptr;
   }
 }
 
@@ -429,21 +427,25 @@ SSLConfigParams::initialize()
   }
 
   {
-    auto serverCertRelativePath{RecGetRecordStringAlloc("proxy.config.ssl.server.cert.path").first};
-    set_paths_helper(serverCertRelativePath, ""sv, &serverCertPathOnly, nullptr);
+    auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.server.cert.path")};
+    auto serverCertRelativePath{err == REC_ERR_OKAY ? rec_str.c_str() : nullptr};
+    set_paths_helper(serverCertRelativePath, nullptr, &serverCertPathOnly, nullptr);
   }
 
   configFilePath        = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
   configExitOnLoadError = RecGetRecordInt("proxy.config.ssl.server.multicert.exit_on_load_fail").first;
 
   {
-    auto ssl_server_private_key_path{RecGetRecordStringAlloc("proxy.config.ssl.server.private_key.path").first};
-    set_paths_helper(ssl_server_private_key_path, ""sv, &serverKeyPathOnly, nullptr);
+    auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.server.private_key.path")};
+    auto ssl_server_private_key_path{err == REC_ERR_OKAY ? rec_str.c_str() : nullptr};
+    set_paths_helper(ssl_server_private_key_path, nullptr, &serverKeyPathOnly, nullptr);
   }
 
   {
-    auto ssl_server_ca_cert_filename{RecGetRecordStringAlloc("proxy.config.ssl.CA.cert.filename").first};
-    auto CACertRelativePath{RecGetRecordStringAlloc("proxy.config.ssl.CA.cert.path").first};
+    auto [pash_str, path_err]{RecGetRecordStringAlloc("proxy.config.ssl.CA.cert.filename")};
+    auto ssl_server_ca_cert_filename{path_err == REC_ERR_OKAY ? pash_str.c_str() : nullptr};
+    auto [filename_str, filename_err]{RecGetRecordStringAlloc("proxy.config.ssl.CA.cert.path")};
+    auto CACertRelativePath{filename_err == REC_ERR_OKAY ? filename_str.c_str() : nullptr};
     set_paths_helper(CACertRelativePath, ssl_server_ca_cert_filename, &serverCACertPath, &serverCACertFilename);
   }
 
@@ -482,8 +484,9 @@ SSLConfigParams::initialize()
   RecEstablishStaticConfigInt32(ssl_ocsp_request_timeout, "proxy.config.ssl.ocsp.request_timeout");
   RecEstablishStaticConfigInt32(ssl_ocsp_update_period, "proxy.config.ssl.ocsp.update_period");
   {
-    auto ssl_ocsp_response_path{RecGetRecordStringAlloc("proxy.config.ssl.ocsp.response.path").first};
-    set_paths_helper(ssl_ocsp_response_path, ""sv, &ssl_ocsp_response_path_only, nullptr);
+    auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.ocsp.response.path")};
+    auto ssl_ocsp_response_path{err == REC_ERR_OKAY ? rec_str.c_str() : nullptr};
+    set_paths_helper(ssl_ocsp_response_path, nullptr, &ssl_ocsp_response_path_only, nullptr);
   }
   if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.http.request_via_str")}; err == REC_ERR_OKAY) {
     ssl_ocsp_user_agent = ats_stringdup(rec_str);
@@ -519,21 +522,27 @@ SSLConfigParams::initialize()
   RecRegisterConfigUpdateCb("proxy.config.ssl.client.verify.server.properties", UpdateServerPolicyProperties, nullptr);
 
   {
-    auto ssl_client_cert_filename{RecGetRecordStringAlloc("proxy.config.ssl.client.cert.filename").first};
-    auto ssl_client_cert_path{RecGetRecordStringAlloc("proxy.config.ssl.client.cert.path").first};
+    auto [filename_str, filename_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.cert.filename")};
+    auto ssl_client_cert_filename{filename_err == REC_ERR_OKAY ? filename_str.c_str() : nullptr};
+    auto [path_str, path_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.cert.path")};
+    auto ssl_client_cert_path{path_err == REC_ERR_OKAY ? path_str.c_str() : nullptr};
     clientCertExitOnLoadError = RecGetRecordInt("proxy.config.ssl.client.cert.exit_on_load_fail").first;
     set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, &clientCertPathOnly, &clientCertPath);
   }
 
   {
-    auto ssl_client_private_key_filename{RecGetRecordStringAlloc("proxy.config.ssl.client.private_key.filename").first};
-    auto ssl_client_private_key_path{RecGetRecordStringAlloc("proxy.config.ssl.client.private_key.path").first};
+    auto [filename_str, filename_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.private_key.filename")};
+    auto ssl_client_private_key_filename{filename_err == REC_ERR_OKAY ? filename_str.c_str() : nullptr};
+    auto [path_str, path_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.private_key.path")};
+    auto ssl_client_private_key_path{path_err == REC_ERR_OKAY ? path_str.c_str() : nullptr};
     set_paths_helper(ssl_client_private_key_path, ssl_client_private_key_filename, &clientKeyPathOnly, &clientKeyPath);
   }
 
   {
-    auto ssl_client_ca_cert_filename{RecGetRecordStringAlloc("proxy.config.ssl.client.CA.cert.filename").first};
-    auto clientCACertRelativePath{RecGetRecordStringAlloc("proxy.config.ssl.client.CA.cert.path").first};
+    auto [filename_str, filename_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.CA.cert.filename")};
+    auto ssl_client_ca_cert_filename{filename_err == REC_ERR_OKAY ? filename_str.c_str() : nullptr};
+    auto [path_str, path_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.CA.cert.path")};
+    auto clientCACertRelativePath{path_err == REC_ERR_OKAY ? path_str.c_str() : nullptr};
     set_paths_helper(clientCACertRelativePath, ssl_client_ca_cert_filename, &clientCACertPath, &clientCACertFilename);
   }
 
