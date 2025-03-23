@@ -883,10 +883,10 @@ RecEstablishStaticConfigInteger(const char *name, RecInt *rec_int, bool lock)
 //-------------------------------------------------------------------------
 
 RecErrT
-RecEstablishStaticConfigInt32(const char *name, int32_t *rec_int, bool lock)
+RecEstablishStaticConfigInt32(int32_t &rec_int, const char *name, bool lock)
 {
-  RecLinkConfigInt32(name, rec_int);
-  return RecGetRecordIntOrZero(name, rec_int, lock);
+  RecLinkConfigInt32(name, &rec_int);
+  return RecGetRecordIntOrZero(name, &rec_int, lock);
 }
 
 //-------------------------------------------------------------------------

@@ -102,7 +102,7 @@ void
 QUICConfigParams::initialize()
 {
   RecEstablishStaticConfigUInt32(this->_instance_id, "proxy.config.quic.instance_id");
-  RecEstablishStaticConfigInt32("proxy.config.quic.connection_table.size", &this->_connection_table_size);
+  RecEstablishStaticConfigInt32(this->_connection_table_size, "proxy.config.quic.connection_table.size");
   RecEstablishStaticConfigUInt32(this->_stateless_retry, "proxy.config.quic.server.stateless_retry_enabled");
   RecEstablishStaticConfigUInt32(this->_vn_exercise_enabled, "proxy.config.quic.client.vn_exercise_enabled");
   RecEstablishStaticConfigUInt32(this->_cm_exercise_enabled, "proxy.config.quic.client.cm_exercise_enabled");
