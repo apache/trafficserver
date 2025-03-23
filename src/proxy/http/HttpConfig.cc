@@ -51,7 +51,7 @@
   RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigByte(_ix, _n) \
-  RecEstablishStaticConfigByte(_n, &(_ix));    \
+  RecEstablishStaticConfigByte(_ix, _n);       \
   RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 namespace

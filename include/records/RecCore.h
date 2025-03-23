@@ -195,7 +195,7 @@ RecErrT RecEstablishStaticConfigFloat(const char *name, RecFloat *rec_float, boo
 // Convenience to link and get a config of byte type
 // Allow to treat our "INT" configs as a byte type internally. Note
 // that the byte type is just a wrapper around RECD_INT.
-RecErrT RecEstablishStaticConfigByte(const char *name, RecByte *rec_byte, bool lock = true);
+RecErrT RecEstablishStaticConfigByte(RecByte &rec_byte, const char *name, bool lock = true);
 
 //------------------------------------------------------------------------
 // Record Attributes Reading

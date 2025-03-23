@@ -937,10 +937,10 @@ RecEstablishStaticConfigFloat(const char *name, RecFloat *rec_float, bool lock)
 //-------------------------------------------------------------------------
 
 RecErrT
-RecEstablishStaticConfigByte(const char *name, RecByte *rec_byte, bool lock)
+RecEstablishStaticConfigByte(RecByte &rec_byte, const char *name, bool lock)
 {
-  RecLinkConfigByte(name, rec_byte);
-  return RecGetRecordIntOrZero(name, rec_byte, lock);
+  RecLinkConfigByte(name, &rec_byte);
+  return RecGetRecordIntOrZero(name, &rec_byte, lock);
 }
 
 //-------------------------------------------------------------------------
