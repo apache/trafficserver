@@ -27,6 +27,8 @@
 
 #include <memory>
 
+using namespace std::literals;
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 
@@ -93,8 +95,7 @@ LogConfig::register_rolled_log_auto_delete(std::string_view logname, int rolling
 void
 LogConfig::read_configuration_variables()
 {
-  int   val;
-  char *ptr;
+  int val;
 
   val = RecGetRecordInt("proxy.config.log.log_buffer_size").first;
   if (val > 0) {
@@ -126,27 +127,21 @@ LogConfig::read_configuration_variables()
     logbuffer_max_iobuf_index = val;
   }
 
-  ptr                     = const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.log.logfile_perm").first.data());
-  int logfile_perm_parsed = ink_fileperm_parse(ptr);
-  if (logfile_perm_parsed != -1) {
-    logfile_perm = logfile_perm_parsed;
-  }
-  ats_free(ptr);
-
-  ptr = const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.log.hostname").first.data());
-  if (ptr != nullptr) {
-    if (std::string_view(ptr) != "localhost") {
-      ats_free(hostname);
-      hostname = ptr;
-    } else {
-      ats_free(ptr);
+  {
+    auto str{RecGetRecordStringAlloc("proxy.config.log.logfile_perm").first};
+    if (auto logfile_perm_parsed{ink_fileperm_parse(str.c_str())}; logfile_perm_parsed != -1) {
+      logfile_perm = logfile_perm_parsed;
     }
   }
 
-  ptr = const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.error.logfile.filename").first.data());
-  if (ptr != nullptr) {
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.log.hostname").first}; !rec_str.empty() && rec_str != "localhost"sv) {
+    ats_free(hostname);
+    hostname = ats_stringdup(rec_str);
+  }
+
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.error.logfile.filename").first}; !rec_str.empty()) {
     ats_free(error_log_filename);
-    error_log_filename = ptr;
+    error_log_filename = ats_stringdup(rec_str);
   }
 
   ats_free(logfile_dir);
@@ -213,14 +208,12 @@ LogConfig::read_configuration_variables()
     register_rolled_log_auto_delete(MANAGER_LOG_FILENAME, val);
 
     // For traffic.out
-    auto        configured_name{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.output.logfile.name").first.data())};
-    const char *traffic_logname = configured_name ? configured_name : "traffic.out";
-    val                         = RecGetRecordInt("proxy.config.output.logfile.rolling_min_count").first;
+    auto configured_name{RecGetRecordStringAlloc("proxy.config.output.logfile.name").first};
+    auto traffic_logname{configured_name.empty() ? "traffic.out"sv : configured_name};
+    val = static_cast<int>(RecGetRecordInt("proxy.config.output.logfile.rolling_min_count").first);
     register_rolled_log_auto_delete(traffic_logname, val);
 
     rolling_max_count = RecGetRecordInt("proxy.config.log.rolling_max_count").first;
-
-    ats_free(configured_name);
   }
   // PERFORMANCE
   val = RecGetRecordInt("proxy.config.log.sampling_frequency").first;

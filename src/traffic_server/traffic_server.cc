@@ -55,6 +55,8 @@
 #include <list>
 #include <string>
 
+using namespace std::literals;
+
 #if !defined(__linux__)
 #include <sys/lock.h>
 #endif
@@ -411,10 +413,7 @@ public:
   {
     SET_HANDLER(&DiagsLogContinuation::periodic);
 
-    auto configured_traffic_out_name{
-      const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.output.logfile.name").first.data())};
-    traffic_out_name = std::string(configured_traffic_out_name);
-    ats_free(configured_traffic_out_name);
+    traffic_out_name = RecGetRecordStringAlloc("proxy.config.output.logfile.name").first;
   }
 
   int
@@ -1547,14 +1546,8 @@ void
 syslog_log_configure()
 {
   char sys_var[] = "proxy.config.syslog_facility";
-  auto [rec_str, err]{RecGetRecordString_Xmalloc(sys_var)};
-  auto facility_str{const_cast<char *>(rec_str.data())};
-  auto found{err == REC_ERR_OKAY};
-
-  if (found) {
-    int facility = facility_string_to_int(facility_str);
-
-    ats_free(facility_str);
+  if (auto [facility_str, err]{RecGetRecordStringAlloc(sys_var)}; err == REC_ERR_OKAY) {
+    int facility = facility_string_to_int(facility_str.c_str());
     if (facility < 0) {
       syslog(LOG_WARNING, "Bad syslog facility in %s. Keeping syslog at LOG_DAEMON", ts::filename::RECORDS);
     } else {
@@ -2055,14 +2048,16 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   } else if (HttpConfig::m_master.inbound.has_ip6()) {
     machine_addr.assign(HttpConfig::m_master.inbound.ip6());
   }
-  auto hostname{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.log.hostname").first.data())};
-  if (hostname != nullptr && std::string_view(hostname) == "localhost") {
-    // The default value was used. Let Machine::init derive the hostname.
-    ats_free(hostname);
-    hostname = nullptr;
+
+  {
+    auto rec_str{RecGetRecordStringAlloc("proxy.config.log.hostname").first};
+    auto hostname{rec_str.c_str()};
+    if (rec_str.empty() || rec_str == "localhost"sv) {
+      // The default value was used. Let Machine::init derive the hostname.
+      hostname = nullptr;
+    }
+    Machine::init(hostname, &machine_addr.sa);
   }
-  Machine::init(hostname, &machine_addr.sa);
-  ats_free(hostname);
 
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->uuid.getString(),
                         RECP_NON_PERSISTENT);
@@ -2165,10 +2160,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
-  auto p{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.diags.debug.client_ip").first.data())};
-  if (p) {
+  if (auto s{RecGetRecordStringAlloc("proxy.config.diags.debug.client_ip").first}; !s.empty()) {
     // Translate string to IpAddr
-    set_debug_ip(p);
+    set_debug_ip(s.c_str());
   }
   RecRegisterConfigUpdateCb("proxy.config.diags.debug.client_ip", update_debug_client_ip, nullptr);
 

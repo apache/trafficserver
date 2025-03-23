@@ -282,13 +282,10 @@ HttpProxyPort::checkPrefix(const char *src, char const *prefix, size_t prefix_le
 bool
 HttpProxyPort::loadConfig(std::vector<self> &entries)
 {
-  auto [tmp, err]{RecGetRecordString_Xmalloc(PORTS_CONFIG_NAME)};
-  auto found_p{err == REC_ERR_OKAY};
-  auto text{const_cast<char *>(tmp.data())};
-  if (found_p) {
-    self::loadValue(entries, text);
+  auto [text, err]{RecGetRecordStringAlloc(PORTS_CONFIG_NAME)};
+  if (err == REC_ERR_OKAY) {
+    self::loadValue(entries, text.c_str());
   }
-  ats_free(text);
 
   return 0 < entries.size();
 }
@@ -741,11 +738,10 @@ ts_host_res_global_init()
 {
   // Global configuration values.
   host_res_default_preference_order = HOST_RES_DEFAULT_PREFERENCE_ORDER;
-  auto ip_resolve{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.hostdb.ip_resolve").first.data())};
-  if (ip_resolve) {
-    parse_host_res_preference(ip_resolve, host_res_default_preference_order);
+  auto ip_resolve{RecGetRecordStringAlloc("proxy.config.hostdb.ip_resolve").first};
+  if (!ip_resolve.empty()) {
+    parse_host_res_preference(ip_resolve.c_str(), host_res_default_preference_order);
   }
-  ats_free(ip_resolve);
 }
 
 // Whatever executable uses librecords must call this.

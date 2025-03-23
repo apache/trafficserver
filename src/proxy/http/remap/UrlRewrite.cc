@@ -87,8 +87,8 @@ UrlRewrite::load()
   }
 
   this->ts_name = nullptr;
-  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.proxy_name")}; err == REC_ERR_OKAY) {
-    this->ts_name = const_cast<char *>(rec_str.data());
+  if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.proxy_name")}; err == REC_ERR_OKAY) {
+    this->ts_name = ats_stringdup(rec_str);
   }
   if (this->ts_name == nullptr) {
     Warning("%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
@@ -96,8 +96,8 @@ UrlRewrite::load()
   }
 
   this->http_default_redirect_url = nullptr;
-  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.http.referer_default_redirect")}; err == REC_ERR_OKAY) {
-    this->http_default_redirect_url = const_cast<char *>(rec_str.data());
+  if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.http.referer_default_redirect")}; err == REC_ERR_OKAY) {
+    this->http_default_redirect_url = ats_stringdup(rec_str);
   }
   if (this->http_default_redirect_url == nullptr) {
     Warning("%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);

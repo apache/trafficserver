@@ -50,11 +50,11 @@ create_logger_path()
   std::string    bindir;
   ats_scoped_str fullpath;
 
-  auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.crash_log_helper")};
+  auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.crash_log_helper")};
   if (err != REC_ERR_OKAY) {
     return nullptr;
   }
-  RecString name{const_cast<char *>(rec_str.data())};
+  RecString name{ats_stringdup(rec_str)};
 
   // Take an absolute path as it is ...
   if (name == nullptr || *name == '/') {

@@ -163,11 +163,11 @@ RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT sourc
 RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true);
 
-std::pair<RecInt, RecErrT>           RecGetRecordInt(const char *name, bool lock = true);
-std::pair<RecFloat, RecErrT>         RecGetRecordFloat(const char *name, bool lock = true);
-RecErrT                              RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
-std::pair<std::string_view, RecErrT> RecGetRecordString_Xmalloc(const char *name, bool lock = true);
-std::pair<RecCounter, RecErrT>       RecGetRecordCounter(const char *name, bool lock = true);
+std::pair<RecInt, RecErrT>      RecGetRecordInt(const char *name, bool lock = true);
+std::pair<RecFloat, RecErrT>    RecGetRecordFloat(const char *name, bool lock = true);
+RecErrT                         RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
+std::pair<std::string, RecErrT> RecGetRecordStringAlloc(const char *name, bool lock = true);
+std::pair<RecCounter, RecErrT>  RecGetRecordCounter(const char *name, bool lock = true);
 
 // Convinience to link and get a config of RecInt type
 inline RecErrT
@@ -206,8 +206,8 @@ RecEstablishStaticConfigString(RecString &rec_string, const char *name, bool loc
   if (RecLinkConfigString(name, &rec_string) == REC_ERR_OKAY) {
     ats_free(rec_string);
   }
-  auto [tmp, err]{RecGetRecordString_Xmalloc(name, lock)};
-  rec_string = const_cast<RecString>(tmp.data());
+  auto [tmp, err]{RecGetRecordStringAlloc(name, lock)};
+  rec_string = ats_stringdup(tmp);
   return err;
 }
 

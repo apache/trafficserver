@@ -3296,10 +3296,10 @@ TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
 TSReturnCode
 TSMgmtStringGet(const char *var_name, TSMgmtString *result)
 {
-  RecString tmp{const_cast<char *>(RecGetRecordString_Xmalloc(const_cast<char *>(var_name)).first.data())};
+  auto tmp{RecGetRecordStringAlloc(const_cast<char *>(var_name)).first};
 
-  if (tmp) {
-    *result = tmp;
+  if (!tmp.empty()) {
+    *result = ats_stringdup(tmp);
     return TS_SUCCESS;
   }
 

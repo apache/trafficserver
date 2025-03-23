@@ -308,11 +308,13 @@ RecLinkConfigCounter(const char *name, RecCounter *rec_counter)
 RecErrT
 RecLinkConfigString(const char *name, RecString *rec_string)
 {
-  auto [tmp, err]{RecGetRecordString_Xmalloc(name)};
-  if (err == REC_ERR_FAIL) {
-    return REC_ERR_FAIL;
+  {
+    auto [tmp, err]{RecGetRecordStringAlloc(name)};
+    if (err == REC_ERR_FAIL) {
+      return REC_ERR_FAIL;
+    }
+    *rec_string = ats_stringdup(tmp);
   }
-  *rec_string = const_cast<char *>(tmp.data());
   return RecRegisterConfigUpdateCb(name, link_string_alloc, (void *)rec_string);
 }
 
@@ -475,17 +477,28 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
   return err;
 }
 
-std::pair<std::string_view, RecErrT>
-RecGetRecordString_Xmalloc(const char *name, bool lock)
+std::pair<std::string, RecErrT>
+RecGetRecordStringAlloc(const char *name, bool lock)
 {
-  RecErrT          err;
-  RecData          data;
-  std::string_view rec_string{nullptr, 0};
+  // Must use this indirection because the API requires a pure function, therefore no values can
+  // be bound in the lambda.
+  using Context = std::pair<std::string, RecErrT>;
+  Context ret{{}, REC_ERR_FAIL};
 
-  if ((err = RecGetRecord_Xmalloc(name, RECD_STRING, &data, lock)) == REC_ERR_OKAY && data.rec_string != nullptr) {
-    rec_string = std::string_view{data.rec_string};
-  }
-  return std::make_pair(rec_string, err);
+  RecLookupRecord(
+    name,
+    [](RecRecord const *r, void *ctx) -> void {
+      auto &&[str, err] = *static_cast<Context *>(ctx);
+      if (r->registered && r->data_type == RECD_STRING) {
+        err = REC_ERR_OKAY;
+        if (r->data.rec_string) {
+          str = r->data.rec_string;
+        }
+      }
+    },
+    &ret, lock);
+
+  return ret;
 }
 
 std::pair<RecCounter, RecErrT>

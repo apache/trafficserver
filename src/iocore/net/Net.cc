@@ -40,8 +40,8 @@ int net_retry_delay    = 10;
 int net_throttle_delay = 50; /* milliseconds */
 
 // For the in/out congestion control: ToDo: this probably would be better as ports: specifications
-std::string_view net_ccp_in;
-std::string_view net_ccp_out;
+std::string net_ccp_in;
+std::string net_ccp_out;
 
 static inline void
 configure_net()
@@ -56,27 +56,12 @@ configure_net()
   net_event_period  = RecGetRecordInt("proxy.config.net.event_period").first;
   net_accept_period = RecGetRecordInt("proxy.config.net.accept_period").first;
 
-  // This is kinda fugly, but better than it was before (on every connection in and out)
-  // Note that these would need to be ats_free()'d if we ever want to clean that up, but
-  // we have no good way of dealing with that on such globals I think?
-  RecString ccp{nullptr};
-
-  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_in")}; err == REC_ERR_OKAY) {
-    ccp = const_cast<char *>(rec_str.data());
-  }
-  if (ccp && *ccp != '\0') {
-    net_ccp_in = ccp;
-  } else {
-    ats_free(ccp);
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.net.tcp_congestion_control_in").first}; !rec_str.empty()) {
+    net_ccp_in = std::move(rec_str);
   }
 
-  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_out")}; err == REC_ERR_OKAY) {
-    ccp = const_cast<char *>(rec_str.data());
-  }
-  if (ccp && *ccp != '\0') {
-    net_ccp_out = ccp;
-  } else {
-    ats_free(ccp);
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.net.tcp_congestion_control_out").first}; !rec_str.empty()) {
+    net_ccp_out = std::move(rec_str);
   }
 }
 

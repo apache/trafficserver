@@ -81,9 +81,11 @@ ParentSelectionPolicy::ParentSelectionPolicy()
 ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_parent_table), DefaultParent(nullptr), policy()
 {
   // Handle default parent
-  auto default_val{const_cast<char *>(RecGetRecordString_Xmalloc(default_var).first.data())};
+  auto           rec_str{RecGetRecordStringAlloc(default_var).first};
+  ats_scoped_str default_val{ats_stringdup(rec_str)};
+  // Maybe we can change createDefaultParent and dependent functions to take const char * instead of char *
+  // to avoid a reduncant memory allocation, or we could just use const_cast<char *>(rec_str.c_str()).
   DefaultParent = createDefaultParent(default_val);
-  ats_free(default_val);
 }
 
 ParentConfigParams::~ParentConfigParams()
@@ -966,9 +968,13 @@ SocksServerConfig::reconfigure()
   ink_assert(params != nullptr);
 
   // Handle default parent
-  auto default_val{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.socks.default_servers").first.data())};
-  params->DefaultParent = createDefaultParent(default_val);
-  ats_free(default_val);
+  {
+    auto           rec_str{RecGetRecordStringAlloc("proxy.config.socks.default_servers").first};
+    ats_scoped_str default_val{ats_stringdup(rec_str)};
+    // Maybe we can change createDefaultParent and dependent functions to take const char * instead of char *
+    // to avoid a reduncant memory allocation, or we could just use const_cast<char *>(rec_str.c_str()).
+    params->DefaultParent = createDefaultParent(default_val);
+  }
 
   if (params->DefaultParent) {
     setup_socks_servers(params->DefaultParent, 1);

@@ -281,25 +281,24 @@ HttpBodyFactory::reconfigure()
 
   ats_scoped_str directory_of_template_sets;
 
-  std::string_view rec_str;
-  std::tie(rec_str, rec_err) = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir");
-  RecString s                = const_cast<char *>(rec_str.data());
-  all_found                  = all_found && (rec_err == REC_ERR_OKAY);
-  if (rec_err == REC_ERR_OKAY) {
-    directory_of_template_sets = Layout::get()->relative(s);
-    if (access(directory_of_template_sets, R_OK) < 0) {
-      Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));
-      if (TSSystemState::is_initializing()) {
-        Emergency(" Please set 'proxy.config.body_factory.template_sets_dir' ");
-      } else {
-        Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+  {
+    std::string rec_str;
+    std::tie(rec_str, rec_err) = RecGetRecordStringAlloc("proxy.config.body_factory.template_sets_dir");
+    all_found                  = all_found && (rec_err == REC_ERR_OKAY);
+    if (rec_err == REC_ERR_OKAY) {
+      directory_of_template_sets = Layout::get()->relative(rec_str);
+      if (access(directory_of_template_sets, R_OK) < 0) {
+        Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));
+        if (TSSystemState::is_initializing()) {
+          Emergency(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+        } else {
+          Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+        }
       }
     }
   }
 
   Dbg(dbg_ctl_body_factory, "directory_of_template_sets = '%s' ", (const char *)directory_of_template_sets);
-
-  ats_free(s);
 
   if (!all_found) {
     Warning("config changed, but can't fetch all proxy.config.body_factory values");
