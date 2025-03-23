@@ -801,22 +801,6 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 }
 
 //-------------------------------------------------------------------------
-// RecGetRecordStringOrNullptr_Xmalloc
-//-------------------------------------------------------------------------
-
-RecErrT
-RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock)
-{
-  auto [tmp, err]{RecGetRecordString_Xmalloc(name, lock)};
-  if (err == REC_ERR_OKAY) {
-    *rec_string = const_cast<RecString>(tmp.data());
-  } else {
-    *rec_string = nullptr;
-  }
-  return err;
-}
-
-//-------------------------------------------------------------------------
 // RecEstablishStaticConfigInt
 //-------------------------------------------------------------------------
 
@@ -873,7 +857,9 @@ RecEstablishStaticConfigString(RecString &rec_string, const char *name, bool loc
   if (RecLinkConfigString(name, &rec_string) == REC_ERR_OKAY) {
     ats_free(rec_string);
   }
-  return RecGetRecordStringOrNullptr_Xmalloc(name, &rec_string, lock);
+  auto [tmp, err]{RecGetRecordString_Xmalloc(name, lock)};
+  rec_string = const_cast<RecString>(tmp.data());
+  return err;
 }
 
 //-------------------------------------------------------------------------

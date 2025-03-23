@@ -126,14 +126,14 @@ LogConfig::read_configuration_variables()
     logbuffer_max_iobuf_index = val;
   }
 
-  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.log.logfile_perm", &ptr);
+  ptr                     = const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.log.logfile_perm").first.data());
   int logfile_perm_parsed = ink_fileperm_parse(ptr);
   if (logfile_perm_parsed != -1) {
     logfile_perm = logfile_perm_parsed;
   }
   ats_free(ptr);
 
-  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.log.hostname", &ptr);
+  ptr = const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.log.hostname").first.data());
   if (ptr != nullptr) {
     if (std::string_view(ptr) != "localhost") {
       ats_free(hostname);
@@ -143,7 +143,7 @@ LogConfig::read_configuration_variables()
     }
   }
 
-  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.error.logfile.filename", &ptr);
+  ptr = const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.error.logfile.filename").first.data());
   if (ptr != nullptr) {
     ats_free(error_log_filename);
     error_log_filename = ptr;
@@ -213,8 +213,7 @@ LogConfig::read_configuration_variables()
     register_rolled_log_auto_delete(MANAGER_LOG_FILENAME, val);
 
     // For traffic.out
-    char *configured_name;
-    RecGetRecordStringOrNullptr_Xmalloc("proxy.config.output.logfile.name", &configured_name);
+    auto        configured_name{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.output.logfile.name").first.data())};
     const char *traffic_logname = configured_name ? configured_name : "traffic.out";
     val                         = RecGetRecordInt("proxy.config.output.logfile.rolling_min_count").first;
     register_rolled_log_auto_delete(traffic_logname, val);

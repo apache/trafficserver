@@ -741,8 +741,7 @@ ts_host_res_global_init()
 {
   // Global configuration values.
   host_res_default_preference_order = HOST_RES_DEFAULT_PREFERENCE_ORDER;
-  char *ip_resolve;
-  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.hostdb.ip_resolve", &ip_resolve);
+  auto ip_resolve{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.hostdb.ip_resolve").first.data())};
   if (ip_resolve) {
     parse_host_res_preference(ip_resolve, host_res_default_preference_order);
   }

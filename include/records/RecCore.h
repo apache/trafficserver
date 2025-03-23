@@ -169,9 +169,6 @@ RecErrT                              RecGetRecordString(const char *name, char *
 std::pair<std::string_view, RecErrT> RecGetRecordString_Xmalloc(const char *name, bool lock = true);
 std::pair<RecCounter, RecErrT>       RecGetRecordCounter(const char *name, bool lock = true);
 
-// Convenience to allow us to set rec_string to nullptr if the config is not found
-RecErrT RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
-
 // Convinience to link and get a config of RecInt type
 RecErrT RecEstablishStaticConfigInt(RecInt &rec_int, const char *name, bool lock = true);
 // Convinience to link and get a config of int32_t type

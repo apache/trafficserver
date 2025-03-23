@@ -44,9 +44,8 @@ ink_event_system_init(ts::ModuleVersion v)
 
   RecEstablishStaticConfigInt32(thread_freelist_low_watermark, "proxy.config.allocator.thread_freelist_low_watermark");
 
-  int   chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
-  char *chunk_sizes_string;
-  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.allocator.iobuf_chunk_sizes", &chunk_sizes_string);
+  int  chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
+  auto chunk_sizes_string{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.allocator.iobuf_chunk_sizes").first.data())};
   if (chunk_sizes_string && !parse_buffer_chunk_sizes(chunk_sizes_string, chunk_sizes)) {
     // If we can't parse the string then we can't be sure of the chunk sizes so just exit
     Fatal("Failed to parse proxy.config.allocator.iobuf_chunk_sizes");

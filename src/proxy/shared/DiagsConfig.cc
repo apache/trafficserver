@@ -45,6 +45,7 @@ DiagsConfig::reconfigure_diags()
   char            *p, *dt, *at;
   DiagsConfigState c;
   bool             found, all_found;
+  std::string_view rec_str;
 
   static struct {
     const char *config_name;
@@ -106,8 +107,10 @@ DiagsConfig::reconfigure_diags()
       break;
     }
 
-    found     = RecGetRecordStringOrNullptr_Xmalloc(record_name, &p) == REC_ERR_OKAY;
-    all_found = all_found && found;
+    std::tie(rec_str, err) = RecGetRecordString_Xmalloc(record_name);
+    p                      = const_cast<char *>(rec_str.data());
+    found                  = err == REC_ERR_OKAY;
+    all_found              = all_found && found;
 
     if (found) {
       parse_output_string(p, &(c.outputs[l]));
@@ -117,13 +120,17 @@ DiagsConfig::reconfigure_diags()
     }
   }
 
-  found     = RecGetRecordStringOrNullptr_Xmalloc("proxy.config.diags.debug.tags", &p) == REC_ERR_OKAY;
-  dt        = (found ? p : nullptr); // NOTE: needs to be freed
-  all_found = all_found && found;
+  std::tie(rec_str, err) = RecGetRecordString_Xmalloc("proxy.config.diags.debug.tags");
+  p                      = const_cast<char *>(rec_str.data());
+  found                  = err == REC_ERR_OKAY;
+  dt                     = (found ? p : nullptr); // NOTE: needs to be freed
+  all_found              = all_found && found;
 
-  found     = RecGetRecordStringOrNullptr_Xmalloc("proxy.config.diags.action.tags", &p) == REC_ERR_OKAY;
-  at        = (found ? p : nullptr); // NOTE: needs to be freed
-  all_found = all_found && found;
+  std::tie(rec_str, err) = RecGetRecordString_Xmalloc("proxy.config.diags.action.tags");
+  p                      = const_cast<char *>(rec_str.data());
+  found                  = err == REC_ERR_OKAY;
+  at                     = (found ? p : nullptr); // NOTE: needs to be freed
+  all_found              = all_found && found;
 
   ///////////////////////////////////////////////////////////////////
   // if couldn't read all values, return without changing config,  //
@@ -311,12 +318,10 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   diags_log_roll_enable = RecGetRecordInt("proxy.config.diags.logfile.rolling_enabled").first;
 
   // Grab some perms for the actual files on disk
-  char *diags_perm;
-  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.diags.logfile_perm", &diags_perm);
-  char *output_perm;
-  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.output.logfile_perm", &output_perm);
-  int diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
-  int output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
+  auto diags_perm{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.diags.logfile_perm").first.data())};
+  auto output_perm{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.output.logfile_perm").first.data())};
+  int  diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
+  int  output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
 
   ats_free(diags_perm);
   ats_free(output_perm);

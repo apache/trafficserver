@@ -411,8 +411,8 @@ public:
   {
     SET_HANDLER(&DiagsLogContinuation::periodic);
 
-    char *configured_traffic_out_name;
-    RecGetRecordStringOrNullptr_Xmalloc("proxy.config.output.logfile.name", &configured_traffic_out_name);
+    auto configured_traffic_out_name{
+      const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.output.logfile.name").first.data())};
     traffic_out_name = std::string(configured_traffic_out_name);
     ats_free(configured_traffic_out_name);
   }
@@ -2055,8 +2055,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   } else if (HttpConfig::m_master.inbound.has_ip6()) {
     machine_addr.assign(HttpConfig::m_master.inbound.ip6());
   }
-  char *hostname;
-  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.log.hostname", &hostname);
+  auto hostname{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.log.hostname").first.data())};
   if (hostname != nullptr && std::string_view(hostname) == "localhost") {
     // The default value was used. Let Machine::init derive the hostname.
     ats_free(hostname);
@@ -2166,8 +2165,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
-  char *p;
-  RecGetRecordStringOrNullptr_Xmalloc("proxy.config.diags.debug.client_ip", &p);
+  auto p{const_cast<char *>(RecGetRecordString_Xmalloc("proxy.config.diags.debug.client_ip").first.data())};
   if (p) {
     // Translate string to IpAddr
     set_debug_ip(p);
