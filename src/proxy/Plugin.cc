@@ -224,11 +224,11 @@ plugin_expand(char *arg)
 
   switch (data_type) {
   case RECD_STRING: {
-    RecString str_val;
-    if (RecGetRecordString_Xmalloc(arg, &str_val) != REC_ERR_OKAY) {
+    auto [rec_str, err]{RecGetRecordString_Xmalloc(arg)};
+    if (err != REC_ERR_OKAY) {
       goto not_found;
     }
-    return static_cast<char *>(str_val);
+    return const_cast<char *>(rec_str.data());
     break;
   }
   case RECD_FLOAT: {

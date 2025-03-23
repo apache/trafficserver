@@ -250,8 +250,7 @@ config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UN
 void
 HttpBodyFactory::reconfigure()
 {
-  RecString s = nullptr;
-  bool      all_found;
+  bool all_found;
 
   lock();
   sanity_check();
@@ -282,8 +281,10 @@ HttpBodyFactory::reconfigure()
 
   ats_scoped_str directory_of_template_sets;
 
-  rec_err   = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
-  all_found = all_found && (rec_err == REC_ERR_OKAY);
+  std::string_view rec_str;
+  std::tie(rec_str, rec_err) = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir");
+  RecString s                = const_cast<char *>(rec_str.data());
+  all_found                  = all_found && (rec_err == REC_ERR_OKAY);
   if (rec_err == REC_ERR_OKAY) {
     directory_of_template_sets = Layout::get()->relative(s);
     if (access(directory_of_template_sets, R_OK) < 0) {

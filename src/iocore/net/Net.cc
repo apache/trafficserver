@@ -59,16 +59,20 @@ configure_net()
   // This is kinda fugly, but better than it was before (on every connection in and out)
   // Note that these would need to be ats_free()'d if we ever want to clean that up, but
   // we have no good way of dealing with that on such globals I think?
-  RecString ccp;
+  RecString ccp{nullptr};
 
-  RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_in", &ccp);
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_in")}; err == REC_ERR_OKAY) {
+    ccp = const_cast<char *>(rec_str.data());
+  }
   if (ccp && *ccp != '\0') {
     net_ccp_in = ccp;
   } else {
     ats_free(ccp);
   }
 
-  RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_out", &ccp);
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.net.tcp_congestion_control_out")}; err == REC_ERR_OKAY) {
+    ccp = const_cast<char *>(rec_str.data());
+  }
   if (ccp && *ccp != '\0') {
     net_ccp_out = ccp;
   } else {

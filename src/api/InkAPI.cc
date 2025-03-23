@@ -3296,8 +3296,7 @@ TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
 TSReturnCode
 TSMgmtStringGet(const char *var_name, TSMgmtString *result)
 {
-  RecString tmp = nullptr;
-  (void)RecGetRecordString_Xmalloc(const_cast<char *>(var_name), &tmp);
+  RecString tmp{const_cast<char *>(RecGetRecordString_Xmalloc(const_cast<char *>(var_name)).first.data())};
 
   if (tmp) {
     *result = tmp;

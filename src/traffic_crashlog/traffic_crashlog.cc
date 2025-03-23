@@ -172,10 +172,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   LibRecordsConfigInit();
 
   if (syslog_mode) {
-    RecString name;
-    int       facility = -1;
+    int facility = -1;
 
-    if (RecGetRecordString_Xmalloc("proxy.config.syslog_facility", &name) == REC_ERR_OKAY) {
+    if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.syslog_facility")}; err == REC_ERR_OKAY) {
+      auto name{const_cast<RecString>(rec_str.data())};
       facility = facility_string_to_int(name);
       ats_free(name);
     }

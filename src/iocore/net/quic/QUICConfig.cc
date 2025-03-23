@@ -111,21 +111,33 @@ QUICConfigParams::initialize()
   RecEstablishStaticConfigUInt32(this->_quantum_readiness_test_enabled_in,
                                  "proxy.config.quic.server.quantum_readiness_test_enabled");
 
-  RecGetRecordString_Xmalloc("proxy.config.quic.server.supported_groups", &this->_server_supported_groups);
-  RecGetRecordString_Xmalloc("proxy.config.quic.client.supported_groups", &this->_client_supported_groups);
-  RecGetRecordString_Xmalloc("proxy.config.quic.client.session_file", &this->_client_session_file);
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.quic.server.supported_groups")}; err == REC_ERR_OKAY) {
+    this->_server_supported_groups = const_cast<char *>(rec_str.data());
+  }
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.quic.client.supported_groups")}; err == REC_ERR_OKAY) {
+    this->_client_supported_groups = const_cast<char *>(rec_str.data());
+  }
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.quic.client.session_file")}; err == REC_ERR_OKAY) {
+    this->_client_session_file = const_cast<char *>(rec_str.data());
+  }
 
   // Qlog
-  RecGetRecordString_Xmalloc("proxy.config.quic.qlog.file_base", &this->_qlog_file_base_name);
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.quic.qlog.file_base")}; err == REC_ERR_OKAY) {
+    this->_qlog_file_base_name = const_cast<char *>(rec_str.data());
+  }
 
   // Transport Parameters
   RecEstablishStaticConfigUInt32(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
   RecEstablishStaticConfigUInt32(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
-  RecGetRecordString_Xmalloc("proxy.config.quic.preferred_address_ipv4", const_cast<char **>(&this->_preferred_address_ipv4));
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.quic.preferred_address_ipv4")}; err == REC_ERR_OKAY) {
+    this->_preferred_address_ipv4 = const_cast<char *>(rec_str.data());
+  }
   if (this->_preferred_address_ipv4) {
     ats_ip_pton(this->_preferred_address_ipv4, &this->_preferred_endpoint_ipv4);
   }
-  RecGetRecordString_Xmalloc("proxy.config.quic.preferred_address_ipv6", const_cast<char **>(&this->_preferred_address_ipv6));
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.quic.preferred_address_ipv6")}; err == REC_ERR_OKAY) {
+    this->_preferred_address_ipv6 = const_cast<char *>(rec_str.data());
+  }
   if (this->_preferred_address_ipv6) {
     ats_ip_pton(this->_preferred_address_ipv6, &this->_preferred_endpoint_ipv6);
   }

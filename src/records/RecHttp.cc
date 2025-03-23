@@ -282,10 +282,9 @@ HttpProxyPort::checkPrefix(const char *src, char const *prefix, size_t prefix_le
 bool
 HttpProxyPort::loadConfig(std::vector<self> &entries)
 {
-  char *text;
-  bool  found_p;
-
-  found_p = RecGetRecordString_Xmalloc(PORTS_CONFIG_NAME, &text) == REC_ERR_OKAY;
+  auto [tmp, err]{RecGetRecordString_Xmalloc(PORTS_CONFIG_NAME)};
+  auto found_p{err == REC_ERR_OKAY};
+  auto text{const_cast<char *>(tmp.data())};
   if (found_p) {
     self::loadValue(entries, text);
   }

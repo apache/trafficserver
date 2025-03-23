@@ -235,10 +235,18 @@ DNSProcessor::start(int, size_t stacksize)
   RecEstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
   RecEstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
   RecEstablishStaticConfigInt32(dns_max_tcp_continuous_failures, "proxy.config.dns.max_tcp_continuous_failures");
-  RecGetRecordString_Xmalloc("proxy.config.dns.nameservers", &dns_ns_list);
-  RecGetRecordString_Xmalloc("proxy.config.dns.local_ipv4", &dns_local_ipv4);
-  RecGetRecordString_Xmalloc("proxy.config.dns.local_ipv6", &dns_local_ipv6);
-  RecGetRecordString_Xmalloc("proxy.config.dns.resolv_conf", &dns_resolv_conf);
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.dns.nameservers")}; err == REC_ERR_OKAY) {
+    dns_ns_list = const_cast<char *>(rec_str.data());
+  }
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.dns.local_ipv4")}; err == REC_ERR_OKAY) {
+    dns_local_ipv4 = const_cast<char *>(rec_str.data());
+  }
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.dns.local_ipv6")}; err == REC_ERR_OKAY) {
+    dns_local_ipv6 = const_cast<char *>(rec_str.data());
+  }
+  if (auto [rec_str, err]{RecGetRecordString_Xmalloc("proxy.config.dns.resolv_conf")}; err == REC_ERR_OKAY) {
+    dns_resolv_conf = const_cast<char *>(rec_str.data());
+  }
   RecEstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
   int dns_conn_mode_i = 0;
   RecEstablishStaticConfigInt32(dns_conn_mode_i, "proxy.config.dns.connection_mode");

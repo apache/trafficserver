@@ -1546,9 +1546,10 @@ struct ShowStats : public Continuation {
 void
 syslog_log_configure()
 {
-  char  sys_var[]    = "proxy.config.syslog_facility";
-  char *facility_str = nullptr;
-  bool  found        = RecGetRecordString_Xmalloc(sys_var, &facility_str) == REC_ERR_OKAY;
+  char sys_var[] = "proxy.config.syslog_facility";
+  auto [rec_str, err]{RecGetRecordString_Xmalloc(sys_var)};
+  auto facility_str{const_cast<char *>(rec_str.data())};
+  auto found{err == REC_ERR_OKAY};
 
   if (found) {
     int facility = facility_string_to_int(facility_str);

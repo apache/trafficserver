@@ -163,11 +163,11 @@ RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT sourc
 RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true);
 
-std::pair<RecInt, RecErrT>     RecGetRecordInt(const char *name, bool lock = true);
-std::pair<RecFloat, RecErrT>   RecGetRecordFloat(const char *name, bool lock = true);
-RecErrT                        RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
-RecErrT                        RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
-std::pair<RecCounter, RecErrT> RecGetRecordCounter(const char *name, bool lock = true);
+std::pair<RecInt, RecErrT>           RecGetRecordInt(const char *name, bool lock = true);
+std::pair<RecFloat, RecErrT>         RecGetRecordFloat(const char *name, bool lock = true);
+RecErrT                              RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
+std::pair<std::string_view, RecErrT> RecGetRecordString_Xmalloc(const char *name, bool lock = true);
+std::pair<RecCounter, RecErrT>       RecGetRecordCounter(const char *name, bool lock = true);
 
 // Convenience to allow us to set rec_string to nullptr if the config is not found
 RecErrT RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
