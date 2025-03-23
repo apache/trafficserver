@@ -168,8 +168,6 @@ RecErrT                    RecGetRecordFloat(const char *name, RecFloat *rec_flo
 RecErrT                    RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
 RecErrT                    RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
 RecErrT                    RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock = true);
-// Convenience to allow us to treat the RecInt as a bool internally
-RecErrT RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 
 // Convenience to allow us to treat the RecInt as various integer types internally.
 // Note we must do explicit instantiation for each type actually used in RecCore.cc.
