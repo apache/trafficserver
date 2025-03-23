@@ -232,8 +232,8 @@ plugin_expand(char *arg)
     break;
   }
   case RECD_FLOAT: {
-    RecFloat float_val;
-    if (RecGetRecordFloat(arg, &float_val) != REC_ERR_OKAY) {
+    auto [float_val, err]{RecGetRecordFloat(arg)};
+    if (err != REC_ERR_OKAY) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));

@@ -286,9 +286,11 @@ RecLinkConfigUInt32(const char *name, uint32_t *p_uint32)
 RecErrT
 RecLinkConfigFloat(const char *name, RecFloat *rec_float)
 {
-  if (RecGetRecordFloat(name, rec_float) == REC_ERR_FAIL) {
+  auto [tmp, err]{RecGetRecordFloat(name)};
+  if (err == REC_ERR_FAIL) {
     return REC_ERR_FAIL;
   }
+  *rec_float = tmp;
   return RecRegisterConfigUpdateCb(name, link_float, (void *)rec_float);
 }
 
@@ -423,16 +425,19 @@ RecGetRecordInt(const char *name, bool lock)
   return std::make_pair(rec_int, err);
 }
 
-RecErrT
-RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock)
+std::pair<RecFloat, RecErrT>
+RecGetRecordFloat(const char *name, bool lock)
 {
-  RecErrT err;
-  RecData data;
+  RecErrT  err;
+  RecData  data;
+  RecFloat rec_float;
 
   if ((err = RecGetRecord_Xmalloc(name, RECD_FLOAT, &data, lock)) == REC_ERR_OKAY) {
-    *rec_float = data.rec_float;
+    rec_float = data.rec_float;
+  } else {
+    rec_float = 0;
   }
-  return err;
+  return std::make_pair(rec_float, err);
 }
 
 RecErrT

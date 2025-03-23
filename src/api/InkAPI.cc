@@ -3283,7 +3283,12 @@ TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 TSReturnCode
 TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
 {
-  return RecGetRecordFloat(const_cast<char *>(var_name), static_cast<RecFloat *>(result)) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
+  auto [tmp, err]{RecGetRecordFloat(const_cast<char *>(var_name))};
+  if (err == REC_ERR_OKAY) {
+    *result = tmp;
+    return TS_SUCCESS;
+  }
+  return TS_ERROR;
 }
 
 TSReturnCode
