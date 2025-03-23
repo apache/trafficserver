@@ -793,20 +793,6 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 }
 
 //-------------------------------------------------------------------------
-// RecGetRecordFloatOrZero
-//-------------------------------------------------------------------------
-
-RecErrT
-RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock)
-{
-  RecErrT err = RecGetRecordFloat(name, rec_float, lock);
-  if (err != REC_ERR_OKAY) {
-    *rec_float = 0;
-  }
-  return err;
-}
-
-//-------------------------------------------------------------------------
 // RecGetRecordStringOrNullptr_Xmalloc
 //-------------------------------------------------------------------------
 
@@ -888,7 +874,9 @@ RecErrT
 RecEstablishStaticConfigFloat(RecFloat &rec_float, const char *name, bool lock)
 {
   RecLinkConfigFloat(name, &rec_float);
-  return RecGetRecordFloatOrZero(name, &rec_float, lock);
+  auto [tmp, err]{RecGetRecordFloat(name, lock)};
+  rec_float = tmp;
+  return err;
 }
 
 //-------------------------------------------------------------------------

@@ -169,8 +169,6 @@ RecErrT                      RecGetRecordString(const char *name, char *buf, int
 RecErrT                      RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
 RecErrT                      RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock = true);
 
-// Convenience to allow us to set rec_float to zero if the config is not found
-RecErrT RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock = true);
 // Convenience to allow us to set rec_string to nullptr if the config is not found
 RecErrT RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
 
