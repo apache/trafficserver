@@ -313,9 +313,11 @@ RecLinkConfigString(const char *name, RecString *rec_string)
 RecErrT
 RecLinkConfigByte(const char *name, RecByte *rec_byte)
 {
-  if (RecGetRecordByte(name, rec_byte) == REC_ERR_FAIL) {
+  auto [tmp, err]{RecGetRecordInt(name)};
+  if (err == REC_ERR_FAIL) {
     return REC_ERR_FAIL;
   }
+  *rec_byte = tmp;
   return RecRegisterConfigUpdateCb(name, link_byte, (void *)rec_byte);
 }
 
@@ -484,18 +486,6 @@ RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock)
 
   if ((err = RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock)) == REC_ERR_OKAY) {
     *rec_counter = data.rec_counter;
-  }
-  return err;
-}
-
-RecErrT
-RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
-{
-  RecErrT err;
-  RecData data;
-
-  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
-    *rec_byte = data.rec_int;
   }
   return err;
 }
