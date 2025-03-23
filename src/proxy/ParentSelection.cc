@@ -648,12 +648,11 @@ ParentRecord::Init(matcher_line *line_info)
   bool        used              = false;
   ParentRR_t  round_robin       = P_NO_ROUND_ROBIN;
   char        buf[128];
-  RecInt      rec_self_detect = 2;
 
   this->line_num = line_info->line_num;
   this->scheme   = nullptr;
 
-  if (RecGetRecordInt("proxy.config.http.parent_proxy.self_detect", &rec_self_detect) == REC_ERR_OKAY) {
+  if (auto [rec_self_detect, err]{RecGetRecordInt("proxy.config.http.parent_proxy.self_detect")}; err == REC_ERR_OKAY) {
     self_detect = static_cast<int>(rec_self_detect);
   }
 

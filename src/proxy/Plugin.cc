@@ -242,8 +242,8 @@ plugin_expand(char *arg)
     break;
   }
   case RECD_INT: {
-    RecInt int_val;
-    if (RecGetRecordInt(arg, &int_val) != REC_ERR_OKAY) {
+    auto [int_val, err]{RecGetRecordInt(arg)};
+    if (err != REC_ERR_OKAY) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));

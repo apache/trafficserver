@@ -3242,7 +3242,7 @@ TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *plugin_f
 TSReturnCode
 TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 {
-  auto res = RecGetRecordInt(const_cast<char *>(var_name), static_cast<RecInt *>(result));
+  auto [tmp, res]{RecGetRecordInt(const_cast<char *>(var_name))};
 
   // Try the old librecords first
   if (res == REC_ERR_FAIL) {
@@ -3253,6 +3253,8 @@ TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
     } else {
       *result = global_api_metrics[id].load();
     }
+  } else {
+    *result = tmp;
   }
 
   return TS_SUCCESS;

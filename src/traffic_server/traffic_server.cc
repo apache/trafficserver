@@ -333,13 +333,13 @@ public:
       signal_received[SIGTERM] = false;
       signal_received[SIGINT]  = false;
 
-      RecInt timeout = 0;
-      if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
+      auto [timeout, err]{RecGetRecordInt("proxy.config.stop.shutdown_timeout")};
+      if (err == REC_ERR_OKAY && timeout) {
         metrics[drain_id].store(1);
         TSSystemState::drain(true);
         // Close listening sockets here only if TS is running standalone
-        RecInt close_sockets = 0;
-        if (RecGetRecordInt("proxy.config.restart.stop_listening", &close_sockets) == REC_ERR_OKAY && close_sockets) {
+        if (auto [close_sockets, err]{RecGetRecordInt("proxy.config.restart.stop_listening")};
+            err == REC_ERR_OKAY && close_sockets) {
           stop_HttpProxyServer();
         }
       }
@@ -1363,11 +1363,10 @@ set_core_size(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUS
 void
 init_core_size()
 {
-  bool   found;
-  RecInt coreSize;
-  found = (RecGetRecordInt("proxy.config.core_limit", &coreSize) == REC_ERR_OKAY);
+  auto [coreSize, err]{RecGetRecordInt("proxy.config.core_limit")};
+  auto found{err == REC_ERR_OKAY};
 
-  if (found == false) {
+  if (!found) {
     Warning("Unable to determine core limit");
   } else {
     RecData rec_temp;
@@ -1691,13 +1690,11 @@ void
 change_uid_gid(const char *user)
 {
 #if !TS_USE_POSIX_CAP
-  RecInt enabled;
-
-  if (RecGetRecordInt("proxy.config.ssl.cert.load_elevated", &enabled) == REC_ERR_OKAY && enabled) {
+  if (auto [enabled, err]{RecGetRecordInt("proxy.config.ssl.cert.load_elevated")}; err == REC_ERR_OKAY && enabled) {
     Warning("ignoring proxy.config.ssl.cert.load_elevated because Traffic Server was built without POSIX capabilities support");
   }
 
-  if (RecGetRecordInt("proxy.config.plugin.load_elevated", &enabled) == REC_ERR_OKAY && enabled) {
+  if (auto [enabled, err]{RecGetRecordInt("proxy.config.plugin.load_elevated")}; err == REC_ERR_OKAY && enabled) {
     Warning("ignoring proxy.config.plugin.load_elevated because Traffic Server was built without POSIX capabilities support");
   }
 #endif /* TS_USE_POSIX_CAP */
@@ -2075,14 +2072,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   check_fd_limit();
 
 // Alter the frequencies at which the update threads will trigger
-#define SET_INTERVAL(scope, name, var)                    \
-  do {                                                    \
-    RecInt tmpint;                                        \
-    Dbg(dbg_ctl_statsproc, "Looking for %s", name);       \
-    if (RecGetRecordInt(name, &tmpint) == REC_ERR_OKAY) { \
-      Dbg(dbg_ctl_statsproc, "Found %s", name);           \
-      scope##_set_##var(tmpint);                          \
-    }                                                     \
+#define SET_INTERVAL(scope, name, var)                                    \
+  do {                                                                    \
+    Dbg(dbg_ctl_statsproc, "Looking for %s", name);                       \
+    if (auto [tmpint, err]{RecGetRecordInt(name)}; err == REC_ERR_OKAY) { \
+      Dbg(dbg_ctl_statsproc, "Found %s", name);                           \
+      scope##_set_##var(tmpint);                                          \
+    }                                                                     \
   } while (0)
   SET_INTERVAL(RecProcess, "proxy.config.config_update_interval_ms", config_update_interval_ms);
   SET_INTERVAL(RecProcess, "proxy.config.raw_stat_sync_interval_ms", raw_stat_sync_interval_ms);
