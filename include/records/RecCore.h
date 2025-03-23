@@ -189,7 +189,7 @@ RecErrT RecEstablishStaticConfigInt32(const char *name, int32_t *rec_int, bool l
 // Convinience to link and get a config of uint32_t type
 RecErrT RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool lock = true);
 // Convenience to link and get a config of string type
-RecErrT RecEstablishStaticConfigStringAlloc(const char *name, RecString *rec_string, bool lock = true);
+RecErrT RecEstablishStaticConfigStringAlloc(RecString &rec_string, const char *name, bool lock = true);
 // Convenience to link and get a config of float type
 RecErrT RecEstablishStaticConfigFloat(RecFloat &rec_float, const char *name, bool lock = true);
 // Convenience to link and get a config of byte type

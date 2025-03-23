@@ -913,12 +913,12 @@ RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool lock)
  */
 
 RecErrT
-RecEstablishStaticConfigStringAlloc(const char *name, RecString *rec_string, bool lock)
+RecEstablishStaticConfigStringAlloc(RecString &rec_string, const char *name, bool lock)
 {
-  if (RecLinkConfigString(name, rec_string) == REC_ERR_OKAY) {
-    ats_free(*rec_string);
+  if (RecLinkConfigString(name, &rec_string) == REC_ERR_OKAY) {
+    ats_free(rec_string);
   }
-  return RecGetRecordStringOrNullptr_Xmalloc(name, rec_string, lock);
+  return RecGetRecordStringOrNullptr_Xmalloc(name, &rec_string, lock);
 }
 
 //-------------------------------------------------------------------------
