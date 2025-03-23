@@ -901,7 +901,7 @@ RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool lock)
 }
 
 //-------------------------------------------------------------------------
-// RecEstablishStaticConfigStringAlloc
+// RecEstablishStaticConfigString
 //-------------------------------------------------------------------------
 
 /*
@@ -913,7 +913,7 @@ RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool lock)
  */
 
 RecErrT
-RecEstablishStaticConfigStringAlloc(RecString &rec_string, const char *name, bool lock)
+RecEstablishStaticConfigString(RecString &rec_string, const char *name, bool lock)
 {
   if (RecLinkConfigString(name, &rec_string) == REC_ERR_OKAY) {
     ats_free(rec_string);
