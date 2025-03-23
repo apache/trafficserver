@@ -183,7 +183,7 @@ RecErrT RecGetRecordFloatOrZero(const char *name, RecFloat *rec_float, bool lock
 RecErrT RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
 
 // Convinience to link and get a config of RecInt type
-RecErrT RecEstablishStaticConfigInteger(RecInt &rec_int, const char *name, bool lock = true);
+RecErrT RecEstablishStaticConfigInt(RecInt &rec_int, const char *name, bool lock = true);
 // Convinience to link and get a config of int32_t type
 RecErrT RecEstablishStaticConfigInt32(int32_t &rec_int, const char *name, bool lock = true);
 // Convinience to link and get a config of uint32_t type

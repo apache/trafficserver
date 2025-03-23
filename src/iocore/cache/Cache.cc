@@ -801,7 +801,7 @@ ink_cache_init(ts::ModuleVersion v)
 {
   ink_release_assert(v.check(CACHE_MODULE_VERSION));
 
-  RecEstablishStaticConfigInteger(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
+  RecEstablishStaticConfigInt(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.ram_cache.size = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_size,
       cache_config_ram_cache_size / (1024 * 1024));
 
@@ -816,7 +816,7 @@ ink_cache_init(ts::ModuleVersion v)
   RecEstablishStaticConfigInt32(cache_config_log_alternate_eviction, "proxy.config.cache.log.alternate.eviction");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.log.alternate.eviction = %d", cache_config_log_alternate_eviction);
 
-  RecEstablishStaticConfigInteger(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
+  RecEstablishStaticConfigInt(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
   Dbg(dbg_ctl_cache_init, "cache_config_ram_cache_cutoff = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_cutoff,
       cache_config_ram_cache_cutoff / (1024 * 1024));
 
