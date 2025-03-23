@@ -252,8 +252,8 @@ plugin_expand(char *arg)
     break;
   }
   case RECD_COUNTER: {
-    RecCounter count_val;
-    if (RecGetRecordCounter(arg, &count_val) != REC_ERR_OKAY) {
+    auto [count_val, err]{RecGetRecordCounter(arg)};
+    if (err != REC_ERR_OKAY) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));

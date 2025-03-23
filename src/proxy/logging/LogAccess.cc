@@ -254,15 +254,8 @@ LogAccess::marshal_record(char *record, char *buf)
       //
       ink_assert(max_chars > 21);
 
-      int64_t val = 0;
-      bool    found;
-      if (LOG_INTEGER == stype) {
-        RecErrT err;
-        std::tie(val, err) = RecGetRecordInt(record);
-        found              = err == REC_ERR_OKAY;
-      } else {
-        found = RecGetRecordCounter(record, &val) == REC_ERR_OKAY;
-      }
+      auto [val, err]{LOG_INTEGER == stype ? RecGetRecordInt(record) : RecGetRecordCounter(record)};
+      auto found{err == REC_ERR_OKAY};
 
       if (found) {
         out_buf = int64_to_str(ascii_buf, max_chars, val, &num_chars);

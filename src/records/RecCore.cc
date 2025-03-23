@@ -297,9 +297,11 @@ RecLinkConfigFloat(const char *name, RecFloat *rec_float)
 RecErrT
 RecLinkConfigCounter(const char *name, RecCounter *rec_counter)
 {
-  if (RecGetRecordCounter(name, rec_counter) == REC_ERR_FAIL) {
+  auto [tmp, err]{RecGetRecordCounter(name)};
+  if (err == REC_ERR_FAIL) {
     return REC_ERR_FAIL;
   }
+  *rec_counter = tmp;
   return RecRegisterConfigUpdateCb(name, link_counter, (void *)rec_counter);
 }
 
@@ -483,16 +485,19 @@ RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock)
   return err;
 }
 
-RecErrT
-RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock)
+std::pair<RecCounter, RecErrT>
+RecGetRecordCounter(const char *name, bool lock)
 {
-  RecErrT err;
-  RecData data;
+  RecErrT    err;
+  RecData    data;
+  RecCounter rec_counter;
 
   if ((err = RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock)) == REC_ERR_OKAY) {
-    *rec_counter = data.rec_counter;
+    rec_counter = data.rec_counter;
+  } else {
+    rec_counter = 0;
   }
-  return err;
+  return std::make_pair(rec_counter, err);
 }
 
 //-------------------------------------------------------------------------
