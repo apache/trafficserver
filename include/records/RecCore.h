@@ -170,19 +170,68 @@ std::pair<std::string_view, RecErrT> RecGetRecordString_Xmalloc(const char *name
 std::pair<RecCounter, RecErrT>       RecGetRecordCounter(const char *name, bool lock = true);
 
 // Convinience to link and get a config of RecInt type
-RecErrT RecEstablishStaticConfigInt(RecInt &rec_int, const char *name, bool lock = true);
+inline RecErrT
+RecEstablishStaticConfigInt(RecInt &rec_int, const char *name, bool lock = true)
+{
+  RecLinkConfigInt(name, &rec_int);
+  auto [tmp, err]{RecGetRecordInt(name, lock)};
+  rec_int = static_cast<RecInt>(tmp);
+  return err;
+}
+
 // Convinience to link and get a config of int32_t type
-RecErrT RecEstablishStaticConfigInt32(int32_t &rec_int, const char *name, bool lock = true);
+inline RecErrT
+RecEstablishStaticConfigInt32(int32_t &rec_int, const char *name, bool lock = true)
+{
+  RecLinkConfigInt32(name, &rec_int);
+  auto [tmp, err]{RecGetRecordInt(name, lock)};
+  rec_int = static_cast<int32_t>(tmp);
+  return err;
+}
+
 // Convinience to link and get a config of uint32_t type
-RecErrT RecEstablishStaticConfigUInt32(uint32_t &rec_int, const char *name, bool lock = true);
+inline RecErrT
+RecEstablishStaticConfigUInt32(uint32_t &rec_int, const char *name, bool lock = true)
+{
+  RecLinkConfigUInt32(name, &rec_int);
+  auto [tmp, err]{RecGetRecordInt(name, lock)};
+  rec_int = static_cast<uint32_t>(tmp);
+  return err;
+}
+
 // Convenience to link and get a config of string type
-RecErrT RecEstablishStaticConfigString(RecString &rec_string, const char *name, bool lock = true);
+inline RecErrT
+RecEstablishStaticConfigString(RecString &rec_string, const char *name, bool lock = true)
+{
+  if (RecLinkConfigString(name, &rec_string) == REC_ERR_OKAY) {
+    ats_free(rec_string);
+  }
+  auto [tmp, err]{RecGetRecordString_Xmalloc(name, lock)};
+  rec_string = const_cast<RecString>(tmp.data());
+  return err;
+}
+
 // Convenience to link and get a config of float type
-RecErrT RecEstablishStaticConfigFloat(RecFloat &rec_float, const char *name, bool lock = true);
+inline RecErrT
+RecEstablishStaticConfigFloat(RecFloat &rec_float, const char *name, bool lock = true)
+{
+  RecLinkConfigFloat(name, &rec_float);
+  auto [tmp, err]{RecGetRecordFloat(name, lock)};
+  rec_float = tmp;
+  return err;
+}
+
 // Convenience to link and get a config of byte type
 // Allow to treat our "INT" configs as a byte type internally. Note
 // that the byte type is just a wrapper around RECD_INT.
-RecErrT RecEstablishStaticConfigByte(RecByte &rec_byte, const char *name, bool lock = true);
+inline RecErrT
+RecEstablishStaticConfigByte(RecByte &rec_byte, const char *name, bool lock = true)
+{
+  RecLinkConfigByte(name, &rec_byte);
+  auto [tmp, err]{RecGetRecordInt(name, lock)};
+  rec_byte = static_cast<RecByte>(tmp);
+  return err;
+}
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
