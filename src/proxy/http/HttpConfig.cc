@@ -43,7 +43,7 @@
   RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigLongLong(_ix, _n) \
-  RecEstablishStaticConfigInteger(_n, &(_ix));     \
+  RecEstablishStaticConfigInteger(_ix, _n);        \
   RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigFloat(_ix, _n) \

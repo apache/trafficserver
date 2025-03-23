@@ -872,10 +872,10 @@ RecGetRecordStringOrNullptr_Xmalloc(const char *name, RecString *rec_string, boo
 //-------------------------------------------------------------------------
 
 RecErrT
-RecEstablishStaticConfigInteger(const char *name, RecInt *rec_int, bool lock)
+RecEstablishStaticConfigInteger(RecInt &rec_int, const char *name, bool lock)
 {
-  RecLinkConfigInt(name, rec_int);
-  return RecGetRecordIntOrZero(name, rec_int, lock);
+  RecLinkConfigInt(name, &rec_int);
+  return RecGetRecordIntOrZero(name, &rec_int, lock);
 }
 
 //-------------------------------------------------------------------------
