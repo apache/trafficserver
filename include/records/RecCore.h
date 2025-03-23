@@ -187,7 +187,7 @@ RecErrT RecEstablishStaticConfigInteger(const char *name, RecInt *rec_int, bool 
 // Convinience to link and get a config of int32_t type
 RecErrT RecEstablishStaticConfigInt32(const char *name, int32_t *rec_int, bool lock = true);
 // Convinience to link and get a config of uint32_t type
-RecErrT RecEstablishStaticConfigInt32U(const char *name, uint32_t *rec_int, bool lock = true);
+RecErrT RecEstablishStaticConfigInt32U(uint32_t &rec_int, const char *name, bool lock = true);
 // Convenience to link and get a config of string type
 RecErrT RecEstablishStaticConfigString(RecString &rec_string, const char *name, bool lock = true);
 // Convenience to link and get a config of float type
