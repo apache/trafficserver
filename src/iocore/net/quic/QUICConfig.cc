@@ -101,14 +101,14 @@ QUICConfigParams::~QUICConfigParams()
 void
 QUICConfigParams::initialize()
 {
-  RecEstablishStaticConfigInt32U(this->_instance_id, "proxy.config.quic.instance_id");
+  RecEstablishStaticConfigUInt32(this->_instance_id, "proxy.config.quic.instance_id");
   RecEstablishStaticConfigInt32("proxy.config.quic.connection_table.size", &this->_connection_table_size);
-  RecEstablishStaticConfigInt32U(this->_stateless_retry, "proxy.config.quic.server.stateless_retry_enabled");
-  RecEstablishStaticConfigInt32U(this->_vn_exercise_enabled, "proxy.config.quic.client.vn_exercise_enabled");
-  RecEstablishStaticConfigInt32U(this->_cm_exercise_enabled, "proxy.config.quic.client.cm_exercise_enabled");
-  RecEstablishStaticConfigInt32U(this->_quantum_readiness_test_enabled_out,
+  RecEstablishStaticConfigUInt32(this->_stateless_retry, "proxy.config.quic.server.stateless_retry_enabled");
+  RecEstablishStaticConfigUInt32(this->_vn_exercise_enabled, "proxy.config.quic.client.vn_exercise_enabled");
+  RecEstablishStaticConfigUInt32(this->_cm_exercise_enabled, "proxy.config.quic.client.cm_exercise_enabled");
+  RecEstablishStaticConfigUInt32(this->_quantum_readiness_test_enabled_out,
                                  "proxy.config.quic.client.quantum_readiness_test_enabled");
-  RecEstablishStaticConfigInt32U(this->_quantum_readiness_test_enabled_in,
+  RecEstablishStaticConfigUInt32(this->_quantum_readiness_test_enabled_in,
                                  "proxy.config.quic.server.quantum_readiness_test_enabled");
 
   RecGetRecordString_Xmalloc("proxy.config.quic.server.supported_groups", &this->_server_supported_groups);
@@ -119,8 +119,8 @@ QUICConfigParams::initialize()
   RecGetRecordString_Xmalloc("proxy.config.quic.qlog.file_base", &this->_qlog_file_base_name);
 
   // Transport Parameters
-  RecEstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
-  RecEstablishStaticConfigInt32U(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
+  RecEstablishStaticConfigUInt32(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
+  RecEstablishStaticConfigUInt32(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
   RecGetRecordString_Xmalloc("proxy.config.quic.preferred_address_ipv4", const_cast<char **>(&this->_preferred_address_ipv4));
   if (this->_preferred_address_ipv4) {
     ats_ip_pton(this->_preferred_address_ipv4, &this->_preferred_endpoint_ipv4);
@@ -129,35 +129,35 @@ QUICConfigParams::initialize()
   if (this->_preferred_address_ipv6) {
     ats_ip_pton(this->_preferred_address_ipv6, &this->_preferred_endpoint_ipv6);
   }
-  RecEstablishStaticConfigInt32U(this->_initial_max_data_in, "proxy.config.quic.initial_max_data_in");
-  RecEstablishStaticConfigInt32U(this->_initial_max_data_out, "proxy.config.quic.initial_max_data_out");
-  RecEstablishStaticConfigInt32U(this->_initial_max_stream_data_bidi_local_in,
+  RecEstablishStaticConfigUInt32(this->_initial_max_data_in, "proxy.config.quic.initial_max_data_in");
+  RecEstablishStaticConfigUInt32(this->_initial_max_data_out, "proxy.config.quic.initial_max_data_out");
+  RecEstablishStaticConfigUInt32(this->_initial_max_stream_data_bidi_local_in,
                                  "proxy.config.quic.initial_max_stream_data_bidi_local_in");
-  RecEstablishStaticConfigInt32U(this->_initial_max_stream_data_bidi_local_out,
+  RecEstablishStaticConfigUInt32(this->_initial_max_stream_data_bidi_local_out,
                                  "proxy.config.quic.initial_max_stream_data_bidi_local_out");
-  RecEstablishStaticConfigInt32U(this->_initial_max_stream_data_bidi_remote_in,
+  RecEstablishStaticConfigUInt32(this->_initial_max_stream_data_bidi_remote_in,
                                  "proxy.config.quic.initial_max_stream_data_bidi_remote_in");
-  RecEstablishStaticConfigInt32U(this->_initial_max_stream_data_bidi_remote_out,
+  RecEstablishStaticConfigUInt32(this->_initial_max_stream_data_bidi_remote_out,
                                  "proxy.config.quic.initial_max_stream_data_bidi_remote_out");
-  RecEstablishStaticConfigInt32U(this->_initial_max_stream_data_uni_in, "proxy.config.quic.initial_max_stream_data_uni_in");
-  RecEstablishStaticConfigInt32U(this->_initial_max_stream_data_uni_out, "proxy.config.quic.initial_max_stream_data_uni_out");
-  RecEstablishStaticConfigInt32U(this->_initial_max_streams_bidi_in, "proxy.config.quic.initial_max_streams_bidi_in");
-  RecEstablishStaticConfigInt32U(this->_initial_max_streams_bidi_out, "proxy.config.quic.initial_max_streams_bidi_out");
-  RecEstablishStaticConfigInt32U(this->_initial_max_streams_uni_in, "proxy.config.quic.initial_max_streams_uni_in");
-  RecEstablishStaticConfigInt32U(this->_initial_max_streams_uni_out, "proxy.config.quic.initial_max_streams_uni_out");
-  RecEstablishStaticConfigInt32U(this->_ack_delay_exponent_in, "proxy.config.quic.ack_delay_exponent_in");
-  RecEstablishStaticConfigInt32U(this->_ack_delay_exponent_out, "proxy.config.quic.ack_delay_exponent_out");
-  RecEstablishStaticConfigInt32U(this->_max_ack_delay_in, "proxy.config.quic.max_ack_delay_in");
-  RecEstablishStaticConfigInt32U(this->_max_ack_delay_out, "proxy.config.quic.max_ack_delay_out");
-  RecEstablishStaticConfigInt32U(this->_active_cid_limit_in, "proxy.config.quic.active_cid_limit_in");
-  RecEstablishStaticConfigInt32U(this->_active_cid_limit_out, "proxy.config.quic.active_cid_limit_out");
-  RecEstablishStaticConfigInt32U(this->_disable_active_migration, "proxy.config.quic.disable_active_migration");
-  RecEstablishStaticConfigInt32U(this->_max_recv_udp_payload_size_in, "proxy.config.quic.max_recv_udp_payload_size_in");
-  RecEstablishStaticConfigInt32U(this->_max_recv_udp_payload_size_out, "proxy.config.quic.max_recv_udp_payload_size_out");
-  RecEstablishStaticConfigInt32U(this->_max_send_udp_payload_size_in, "proxy.config.quic.max_send_udp_payload_size_in");
-  RecEstablishStaticConfigInt32U(this->_max_send_udp_payload_size_out, "proxy.config.quic.max_send_udp_payload_size_out");
-  RecEstablishStaticConfigInt32U(this->_disable_http_0_9, "proxy.config.quic.disable_http_0_9");
-  RecEstablishStaticConfigInt32U(this->_cc_algorithm, "proxy.config.quic.cc_algorithm");
+  RecEstablishStaticConfigUInt32(this->_initial_max_stream_data_uni_in, "proxy.config.quic.initial_max_stream_data_uni_in");
+  RecEstablishStaticConfigUInt32(this->_initial_max_stream_data_uni_out, "proxy.config.quic.initial_max_stream_data_uni_out");
+  RecEstablishStaticConfigUInt32(this->_initial_max_streams_bidi_in, "proxy.config.quic.initial_max_streams_bidi_in");
+  RecEstablishStaticConfigUInt32(this->_initial_max_streams_bidi_out, "proxy.config.quic.initial_max_streams_bidi_out");
+  RecEstablishStaticConfigUInt32(this->_initial_max_streams_uni_in, "proxy.config.quic.initial_max_streams_uni_in");
+  RecEstablishStaticConfigUInt32(this->_initial_max_streams_uni_out, "proxy.config.quic.initial_max_streams_uni_out");
+  RecEstablishStaticConfigUInt32(this->_ack_delay_exponent_in, "proxy.config.quic.ack_delay_exponent_in");
+  RecEstablishStaticConfigUInt32(this->_ack_delay_exponent_out, "proxy.config.quic.ack_delay_exponent_out");
+  RecEstablishStaticConfigUInt32(this->_max_ack_delay_in, "proxy.config.quic.max_ack_delay_in");
+  RecEstablishStaticConfigUInt32(this->_max_ack_delay_out, "proxy.config.quic.max_ack_delay_out");
+  RecEstablishStaticConfigUInt32(this->_active_cid_limit_in, "proxy.config.quic.active_cid_limit_in");
+  RecEstablishStaticConfigUInt32(this->_active_cid_limit_out, "proxy.config.quic.active_cid_limit_out");
+  RecEstablishStaticConfigUInt32(this->_disable_active_migration, "proxy.config.quic.disable_active_migration");
+  RecEstablishStaticConfigUInt32(this->_max_recv_udp_payload_size_in, "proxy.config.quic.max_recv_udp_payload_size_in");
+  RecEstablishStaticConfigUInt32(this->_max_recv_udp_payload_size_out, "proxy.config.quic.max_recv_udp_payload_size_out");
+  RecEstablishStaticConfigUInt32(this->_max_send_udp_payload_size_in, "proxy.config.quic.max_send_udp_payload_size_in");
+  RecEstablishStaticConfigUInt32(this->_max_send_udp_payload_size_out, "proxy.config.quic.max_send_udp_payload_size_out");
+  RecEstablishStaticConfigUInt32(this->_disable_http_0_9, "proxy.config.quic.disable_http_0_9");
+  RecEstablishStaticConfigUInt32(this->_cc_algorithm, "proxy.config.quic.cc_algorithm");
 
   this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);
 }

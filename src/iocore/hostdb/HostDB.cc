@@ -362,11 +362,11 @@ HostDBProcessor::init()
   RecEstablishStaticConfigInt32("proxy.config.hostdb.strict_round_robin", &hostdb_strict_round_robin);
   RecEstablishStaticConfigInt32("proxy.config.hostdb.timed_round_robin", &hostdb_timed_round_robin);
   RecEstablishStaticConfigInt32("proxy.config.hostdb.lookup_timeout", &hostdb_lookup_timeout);
-  RecEstablishStaticConfigInt32U(hostdb_ip_timeout_interval, "proxy.config.hostdb.timeout");
-  RecEstablishStaticConfigInt32U(hostdb_ip_stale_interval, "proxy.config.hostdb.verify_after");
-  RecEstablishStaticConfigInt32U(hostdb_ip_fail_timeout_interval, "proxy.config.hostdb.fail.timeout");
-  RecEstablishStaticConfigInt32U(hostdb_serve_stale_but_revalidate, "proxy.config.hostdb.serve_stale_for");
-  RecEstablishStaticConfigInt32U(hostdb_round_robin_max_count, "proxy.config.hostdb.round_robin_max_count");
+  RecEstablishStaticConfigUInt32(hostdb_ip_timeout_interval, "proxy.config.hostdb.timeout");
+  RecEstablishStaticConfigUInt32(hostdb_ip_stale_interval, "proxy.config.hostdb.verify_after");
+  RecEstablishStaticConfigUInt32(hostdb_ip_fail_timeout_interval, "proxy.config.hostdb.fail.timeout");
+  RecEstablishStaticConfigUInt32(hostdb_serve_stale_but_revalidate, "proxy.config.hostdb.serve_stale_for");
+  RecEstablishStaticConfigUInt32(hostdb_round_robin_max_count, "proxy.config.hostdb.round_robin_max_count");
   const char *interval_config = "proxy.config.hostdb.host_file.interval";
   {
     RecInt tmp_interval{};
