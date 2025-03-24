@@ -486,6 +486,7 @@ register_stat_callbacks()
   http_rsb.total_client_connections          = Metrics::Counter::createPtr("proxy.process.http.total_client_connections");
   http_rsb.total_client_connections_ipv4     = Metrics::Counter::createPtr("proxy.process.http.total_client_connections_ipv4");
   http_rsb.total_client_connections_ipv6     = Metrics::Counter::createPtr("proxy.process.http.total_client_connections_ipv6");
+  http_rsb.total_client_connections_uds      = Metrics::Counter::createPtr("proxy.process.http.total_client_connections_uds");
   http_rsb.total_incoming_connections        = Metrics::Counter::createPtr("proxy.process.http.total_incoming_connections");
   http_rsb.total_parent_marked_down_count    = Metrics::Counter::createPtr("proxy.process.http.total_parent_marked_down_count");
   http_rsb.total_parent_proxy_connections    = Metrics::Counter::createPtr("proxy.process.http.total_parent_proxy_connections");
