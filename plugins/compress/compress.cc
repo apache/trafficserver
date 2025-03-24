@@ -741,20 +741,27 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
   if (host_configuration->range_request_ctl() == RangeRequestCtrl::NO_COMPRESSION) {
     // check Range header in client request
     // CAVETE: some plugin (- e.g. cache_range_request) tweaks client headers
-    TSMLoc         range_hdr_field = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
-    ts::PostScript range_defer([&]() -> void { TSHandleMLocRelease(cbuf, chdr, range_hdr_field); });
+    TSMLoc range_hdr_field = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
     if (range_hdr_field != TS_NULL_MLOC) {
       debug("Range header found in the request and range_request is configured as no_compression");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      TSHandleMLocRelease(cbuf, chdr, range_hdr_field);
+      TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
       return 0;
     }
 
     // check Content-Range header in (cached) server response
     TSMLoc content_range_hdr_field = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE);
-    ts::PostScript content_range_defer([&]() -> void { TSHandleMLocRelease(bufp, hdr_loc, content_range_hdr_field); });
     if (content_range_hdr_field != TS_NULL_MLOC) {
       debug("Content-Range header found in the response and range_request is configured as no_compression");
+      TSHandleMLocRelease(bufp, hdr_loc, content_range_hdr_field);
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
       return 0;
     }
+
+    TSHandleMLocRelease(bufp, hdr_loc, content_range_hdr_field);
+    TSHandleMLocRelease(cbuf, chdr, range_hdr_field);
   }
 
   // the only compressible method is currently GET.
