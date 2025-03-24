@@ -42,9 +42,9 @@ enum CompressionAlgorithm {
 };
 
 enum class RangeRequestCtrl : int {
-  NONE           = 0, ///< Do nothing
-  NO_COMPRESSION = 1, ///< Do NOT compress if client request has Range header or server response has Content-Range header (default)
-  REMOVE_RANGE   = 2, ///< Remove Range Header
+  NONE                   = 0, ///< Do nothing
+  NO_COMPRESSION         = 1, ///< Do NOT compress Partial Content (default)
+  REMOVE_RANGE           = 2, ///< Remove Range Header
   REMOVE_ACCEPT_ENCODING = 3, ///< Remove Accept-Encoding Header
 };
 
