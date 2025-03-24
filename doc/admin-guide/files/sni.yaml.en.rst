@@ -136,7 +136,7 @@ verify_server_properties                 Outbound  One of the values :code:`NONE
                                                    By default this is :ts:cv:`proxy.config.ssl.client.verify.server.properties`.
                                                    This controls what |TS| checks when evaluating the origin certificate.
 
-verify_client                            Outbound  One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
+verify_client                            Inbound   One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
                                                    If ``NONE`` is specified, |TS| requests no certificate.  If ``MODERATE`` is specified
                                                    |TS| will verify a certificate that is presented by the client, but it will not
                                                    fail the TLS handshake if no certificate is presented.  If ``STRICT`` is specified
@@ -144,7 +144,7 @@ verify_client                            Outbound  One of the values :code:`NONE
 
                                                    By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
 
-verify_client_ca_certs                   Both      Specifies an alternate set of certificate authority certs to use to verify the
+verify_client_ca_certs                   Inbound   Specifies an alternate set of certificate authority certs to use to verify the
                                                    client cert.  The value must be either a file path, or a nested set of key /
                                                    value pairs.  If the value is a file path, it must specify a file containing the
                                                    CA certs.  Otherwise, there should be up to two nested pairs.  The possible keys
