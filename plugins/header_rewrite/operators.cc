@@ -1238,7 +1238,7 @@ OperatorSetPluginCntl::exec(const Resources &res) const
     break;
   }
 
-  Dbg(pi_dbg_ctl, "   Setting plugin control %d to %d", _name, _value);
+  Dbg(pi_dbg_ctl, "   Setting plugin control %d to %d", static_cast<int>(_name), _value);
   TSUserArgSet(res.txnp, _txn_private_slot, reinterpret_cast<void *>(private_data.raw));
 
   return true;
