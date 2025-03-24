@@ -42,9 +42,10 @@ enum CompressionAlgorithm {
 };
 
 enum class RangeRequestCtrl : int {
-  IGNORE_RANGE   = 0, ///< Ignore Range Header (default)
-  NO_COMPRESSION = 1, ///< Do NOT compress if it's a range request
-  NONE           = 2, ///< Do nothing
+  NONE                   = 0, ///< Do nothing
+  NO_COMPRESSION         = 1, ///< Do NOT compress Partial Content (default)
+  REMOVE_RANGE           = 2, ///< Remove Range Header
+  REMOVE_ACCEPT_ENCODING = 3, ///< Remove Accept-Encoding Header
 };
 
 class HostConfiguration : private atscppapi::noncopyable
@@ -148,7 +149,7 @@ private:
   int          compression_algorithms_;
   unsigned int minimum_content_length_;
 
-  RangeRequestCtrl range_request_ctl_{RangeRequestCtrl::IGNORE_RANGE};
+  RangeRequestCtrl range_request_ctl_ = RangeRequestCtrl::NO_COMPRESSION;
   StringContainer  compressible_content_types_;
   StringContainer  allows_;
   // maintain backwards compatibility/usability out of the box
