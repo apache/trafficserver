@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ts/ts.h"
 #include "tscore/ink_defs.h"
 
 #include <cstdio>
@@ -28,6 +29,7 @@
 #include <climits>
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <list>
 #include <new>
 #include <limits>
@@ -52,12 +54,44 @@ using std::string;
 using namespace EsiLib;
 using namespace Stats;
 
+/** The options for how to handle Cache-Control directives. */
+enum class cc_policy_t {
+  REMOVE_CC = 0, // The default configuration.
+  MAKE_PRIVATE,
+  PRESERVE_CC,
+
+  // Keep at the end and update accordingly as new options are added.
+  LAST_ENTRY = PRESERVE_CC,
+};
+
 struct OptionInfo {
-  bool     packed_node_support{false};
-  bool     private_response{false};
-  bool     disable_gzip_output{false};
-  bool     first_byte_flush{false};
-  unsigned max_doc_size{1024 * 1024};
+public:
+  /** Whether the user configured making the responses private. */
+  bool
+  make_private() const
+  {
+    return private_response || (cache_control_policy == cc_policy_t::MAKE_PRIVATE);
+  }
+  /** Whether the user configuration results in the Cache-Control header being removed. */
+  bool
+  remove_cc() const
+  {
+    return private_response || cache_control_policy == cc_policy_t::REMOVE_CC;
+  }
+  /** Whether the user configured the plugin to preserve the origin's Cache-Control header. */
+  bool
+  preserve_cc() const
+  {
+    return cache_control_policy == cc_policy_t::PRESERVE_CC;
+  }
+
+public:
+  bool        packed_node_support{false};
+  bool        private_response{false};
+  cc_policy_t cache_control_policy{cc_policy_t::REMOVE_CC};
+  bool        disable_gzip_output{false};
+  bool        first_byte_flush{false};
+  unsigned    max_doc_size{1024 * 1024};
 };
 
 static HandlerManager        *gHandlerManager = nullptr;
@@ -1066,7 +1100,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
           destroy_header = true;
         } else if ((name_len > HEADER_MASK_PREFIX_SIZE) && (strncmp(name, HEADER_MASK_PREFIX, HEADER_MASK_PREFIX_SIZE) == 0)) {
           destroy_header = true;
-        } else if (mod_data->option_info->private_response &&
+        } else if (mod_data->option_info->make_private() &&
                    (Utils::areEqual(name, name_len, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL) ||
                     Utils::areEqual(name, name_len, TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES))) {
           destroy_header = true;
@@ -1083,9 +1117,9 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
               Dbg(dbg_ctl_local, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
             } else {
               if (!mod_data->option_info->packed_node_support || mod_data->cache_txn) {
-                bool response_cacheable, is_cache_header;
-                is_cache_header = checkForCacheHeader(name, name_len, value, value_len, response_cacheable);
-                if (is_cache_header && response_cacheable) {
+                bool       response_cacheable = false;
+                bool const is_cache_header    = checkForCacheHeader(name, name_len, value, value_len, response_cacheable);
+                if (!mod_data->option_info->preserve_cc() && is_cache_header && response_cacheable) {
                   destroy_header = true;
                 }
               }
@@ -1112,7 +1146,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
                          TS_MIME_LEN_ACCEPT_ENCODING);
     }
 
-    if (mod_data->option_info->private_response) {
+    if (mod_data->option_info->make_private()) {
       addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES, HTTP_VALUE_PRIVATE_EXPIRES,
                          sizeof(HTTP_VALUE_PRIVATE_EXPIRES) - 1);
       addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, HTTP_VALUE_PRIVATE_CC,
@@ -1566,26 +1600,57 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
 
   new (pOptionInfo) OptionInfo;
 
+  bool cc_policy_was_set = false;
   if (argc > 1) {
     int                        c;
     static const struct option longopts[] = {
-      {const_cast<char *>("packed-node-support"), no_argument,       nullptr, 'n'},
-      {const_cast<char *>("private-response"),    no_argument,       nullptr, 'p'},
-      {const_cast<char *>("disable-gzip-output"), no_argument,       nullptr, 'z'},
-      {const_cast<char *>("first-byte-flush"),    no_argument,       nullptr, 'b'},
-      {const_cast<char *>("handler-filename"),    required_argument, nullptr, 'f'},
-      {const_cast<char *>("max-doc-size"),        required_argument, nullptr, 'd'},
-      {nullptr,                                   0,                 nullptr, 0  },
+      {const_cast<char *>("packed-node-support"),  no_argument,       nullptr, 'n'},
+      {const_cast<char *>("private-response"),     no_argument,       nullptr, 'p'},
+      {const_cast<char *>("cache-control-policy"), required_argument, nullptr, 'c'},
+      {const_cast<char *>("disable-gzip-output"),  no_argument,       nullptr, 'z'},
+      {const_cast<char *>("first-byte-flush"),     no_argument,       nullptr, 'b'},
+      {const_cast<char *>("handler-filename"),     required_argument, nullptr, 'f'},
+      {const_cast<char *>("max-doc-size"),         required_argument, nullptr, 'd'},
+      {nullptr,                                    0,                 nullptr, 0  },
     };
 
     int longindex = 0;
-    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:d:", longopts, &longindex)) != -1) {
+    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbc:f:d:", longopts, &longindex)) != -1) {
       switch (c) {
       case 'n':
         pOptionInfo->packed_node_support = true;
         break;
       case 'p':
         pOptionInfo->private_response = true;
+        break;
+      case 'c':
+        cc_policy_was_set = true;
+        if (optarg) {
+          int const cc_argument      = atoi(optarg);
+          int const last_entry_value = static_cast<int>(cc_policy_t::LAST_ENTRY);
+          if (cc_argument < 0 || cc_argument > last_entry_value) {
+            TSEmergency("[esi][%s] Invalid value for cache-control-policy: %s, should be [0-%d]", __FUNCTION__, optarg,
+                        last_entry_value);
+            return -1;
+          }
+          switch (cc_argument) {
+          case 0:
+            pOptionInfo->cache_control_policy = cc_policy_t::REMOVE_CC;
+            break;
+          case 1:
+            pOptionInfo->cache_control_policy = cc_policy_t::MAKE_PRIVATE;
+            break;
+          case 2:
+            pOptionInfo->cache_control_policy = cc_policy_t::PRESERVE_CC;
+            break;
+          default:
+            // Should not be reachable.
+            TSReleaseAssert(false);
+          };
+        } else {
+          TSEmergency("[esi][%s] Missing argument for cache-control-policy", __FUNCTION__);
+          return -1;
+        }
         break;
       case 'z':
         pOptionInfo->disable_gzip_output = true;
@@ -1628,11 +1693,18 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
     }
   }
 
+  // Check for mutually exclusive options.
+  if (pOptionInfo->private_response && cc_policy_was_set) {
+    TSEmergency("[esi][%s] private-response and cache-control-policy are mutually exclusive options", __FUNCTION__);
+    return -1;
+  }
+
   Dbg(dbg_ctl_local,
-      "[%s] Plugin started, "
-      "packed-node-support: %d, private-response: %d, disable-gzip-output: %d, first-byte-flush: %d, max-doc-size %u ",
-      __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
-      pOptionInfo->first_byte_flush, pOptionInfo->max_doc_size);
+      "[%s] Plugin started, packed-node-support: %d, private-response: %d, cache-control-policy: %d, disable-gzip-output: %d, "
+      "first-byte-flush: %d, max-doc-size %u ",
+      __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response,
+      static_cast<int>(pOptionInfo->cache_control_policy), pOptionInfo->disable_gzip_output, pOptionInfo->first_byte_flush,
+      pOptionInfo->max_doc_size);
 
   return 0;
 }
