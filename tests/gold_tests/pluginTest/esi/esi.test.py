@@ -18,12 +18,20 @@ Test the ESI plugin.
 #  limitations under the License.
 
 import os
+import re
 
 Test.Summary = '''
 Test the ESI plugin.
 '''
 
 Test.SkipUnless(Condition.PluginExists('esi.so'),)
+
+
+# An enum of expected plugin behaviors for Cache-Control headers.
+class CcBehaviorT():
+    REMOVE_CC = 0
+    MAKE_PRIVATE = 1
+    PRESERVE_CC = 2
 
 
 class EsiTest():
@@ -40,15 +48,19 @@ class EsiTest():
     """ The ATS process for this set of test cases. """
     _ts = None
 
-    def __init__(self, plugin_config):
+    def __init__(self, plugin_config, cc_behavior=CcBehaviorT.REMOVE_CC):
         """
         Args:
-            plugin_config (str): The config line to place in plugin.config for
+            plugin_config (str): The base config line to place in plugin.config for
                 the ATS process.
+            cc_behavior (CcBehaviorT): The expected behavior of the ESI plugin
+                with respect to the Cache-Control header.
         """
         if EsiTest._server is None:
             EsiTest._server = EsiTest._create_server()
 
+        self._plugin_config = plugin_config
+        self._cc_behavior = cc_behavior
         self._ts = EsiTest._create_ats(self, plugin_config)
 
     @staticmethod
@@ -170,31 +182,48 @@ echo date('l jS \of F Y h:i:s A');
         tr.StillRunningAfter = ts
         return ts
 
+    def _configure_client_output_expectations(self, client_process):
+        client_process.Streams.stderr = "gold/esi_headers.gold"
+        client_process.Streams.stdout = "gold/esi_body.gold"
+        if self._cc_behavior == CcBehaviorT.REMOVE_CC:
+            client_process.Streams.stderr += Testers.ExcludesExpression(
+                'cache-control:', 'The Cache-Control field not be present in the response', reflags=re.IGNORECASE)
+            client_process.Streams.stderr += Testers.ExcludesExpression(
+                'expires:', 'The Expires field not be present in the response', reflags=re.IGNORECASE)
+        if self._cc_behavior == CcBehaviorT.MAKE_PRIVATE:
+            client_process.Streams.stderr += Testers.ContainsExpression(
+                'cache-control:.*max-age=0, private',
+                'The private response directive should be present in the response',
+                reflags=re.IGNORECASE)
+            client_process.Streams.stderr += Testers.ContainsExpression(
+                'expires: -1', 'The Expires field should be set to -1', reflags=re.IGNORECASE)
+        if self._cc_behavior == CcBehaviorT.PRESERVE_CC:
+            client_process.Streams.stderr += Testers.ContainsExpression(
+                'cache-control:.*max-age=300', 'The max-age directive should be present in the response', reflags=re.IGNORECASE)
+
     def run_cases_expecting_gzip(self):
         # Test 1: Verify basic ESI functionality.
-        tr = Test.AddTestRun("First request for esi.php: not cached")
+        tr = Test.AddTestRun(f"First request for esi.php: not cached: {self._plugin_config}")
         tr.Processes.Default.Command = \
             (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
              '-H"Accept: */*" --verbose')
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stderr = "gold/esi_headers.gold"
-        tr.Processes.Default.Streams.stdout = "gold/esi_body.gold"
+        self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
         # Test 2: Repeat the above, should now be cached.
-        tr = Test.AddTestRun("Second request for esi.php: will be cached")
+        tr = Test.AddTestRun(f"Second request for esi.php: will be cached: {self._plugin_config}")
         tr.Processes.Default.Command = \
             (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
              '-H"Accept: */*" --verbose')
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stderr = "gold/esi_headers.gold"
-        tr.Processes.Default.Streams.stdout = "gold/esi_body.gold"
+        self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
         # Test 3: Verify the ESI plugin can gzip a response when the client accepts it.
-        tr = Test.AddTestRun("Verify the ESI plugin can gzip a response")
+        tr = Test.AddTestRun(f"Verify the ESI plugin can gzip a response: {self._plugin_config}")
         EsiTest._output_counter += 1
         unzipped_body_file = os.path.join(tr.RunDirectory, f"non_empty_curl_output_{EsiTest._output_counter}")
         gzipped_body_file = unzipped_body_file + ".gz"
@@ -210,7 +239,7 @@ echo date('l jS \of F Y h:i:s A');
         zipped_body_disk_file.Exists = True
 
         # Now, unzip the file and make sure its size is the expected body.
-        tr = Test.AddTestRun("Verify the file unzips to the expected body.")
+        tr = Test.AddTestRun(f"Verify the file unzips to the expected body: {self._plugin_config}")
         tr.Processes.Default.Command = f"gunzip {gzipped_body_file}"
         tr.Processes.Default.Ready = When.FileExists(unzipped_body_file)
         tr.Processes.Default.ReturnCode = 0
@@ -218,7 +247,7 @@ echo date('l jS \of F Y h:i:s A');
         unzipped_body_disk_file.Content = "gold/esi_body.gold"
 
         # Test 4: Verify correct handling of a gzipped empty response body.
-        tr = Test.AddTestRun("Verify we can handle an empty response.")
+        tr = Test.AddTestRun(f"Verify we can handle an empty response: {self._plugin_config}")
         EsiTest._output_counter += 1
         empty_body_file = os.path.join(tr.RunDirectory, f"empty_curl_output_{EsiTest._output_counter}")
         gzipped_empty_body = empty_body_file + ".gz"
@@ -237,7 +266,7 @@ echo date('l jS \of F Y h:i:s A');
         gz_disk_file.Size = Testers.GreaterThan(0)
 
         # Now, unzip the file and make sure its size is the original 0 size body.
-        tr = Test.AddTestRun("Verify the file unzips to a zero sized file.")
+        tr = Test.AddTestRun(f"Verify the file unzips to a zero sized file: {self._plugin_config}")
         tr.Processes.Default.Command = f"gunzip {gzipped_empty_body}"
         tr.Processes.Default.Ready = When.FileExists(empty_body_file)
         tr.Processes.Default.ReturnCode = 0
@@ -245,7 +274,7 @@ echo date('l jS \of F Y h:i:s A');
         unzipped_disk_file.Size = 0
 
     def run_case_max_doc_size_too_small(self):
-        tr = Test.AddTestRun("Max doc size too smal")
+        tr = Test.AddTestRun(f"Max doc size too small: {self._plugin_config}")
         tr.Processes.Default.Command = \
             (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php '
                 '-H"Host: www.example.com" -H"Accept: */*" --verbose')
@@ -258,25 +287,23 @@ echo date('l jS \of F Y h:i:s A');
 
     def run_cases_expecting_no_gzip(self):
         # Test 1: Run an ESI test where the client does not accept gzip.
-        tr = Test.AddTestRun("First request for esi.php: gzip not accepted.")
+        tr = Test.AddTestRun(f"First request for esi.php: gzip not accepted: {self._plugin_config}")
         tr.Processes.Default.Command = \
             (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php '
              '-H"Host: www.example.com" -H"Accept: */*" --verbose')
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stderr = "gold/esi_headers.gold"
-        tr.Processes.Default.Streams.stdout = "gold/esi_body.gold"
+        self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
         # Test 2: Verify the ESI plugin does not gzip the response even if the
         # client accepts the gzip encoding.
-        tr = Test.AddTestRun("Verify the ESI plugin refuses to gzip responses with -–disable-gzip-output")
+        tr = Test.AddTestRun(f"Verify the ESI plugin refuses to gzip responses with: {self._plugin_config}")
         tr.Processes.Default.Command = \
             (f'curl http://127.0.0.1:{self._ts.Variables.port}/esi.php '
              '-H"Host: www.example.com" -H "Accept-Encoding: gzip" -H"Accept: */*" --verbose')
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stderr = "gold/esi_headers.gold"
-        tr.Processes.Default.Streams.stdout = "gold/esi_body.gold"
+        self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
@@ -286,8 +313,20 @@ echo date('l jS \of F Y h:i:s A');
 #
 
 # Run the tests with ESI configured with no parameters.
-vanilla_test = EsiTest(plugin_config='esi.so')
+vanilla_test = EsiTest(plugin_config='esi.so', cc_behavior=CcBehaviorT.REMOVE_CC)
 vanilla_test.run_cases_expecting_gzip()
+
+private_response_test = EsiTest(plugin_config='esi.so --private-response', cc_behavior=CcBehaviorT.MAKE_PRIVATE)
+private_response_test.run_cases_expecting_gzip()
+
+preserve_cc_test = EsiTest(plugin_config='esi.so --cache-control-policy 0', cc_behavior=CcBehaviorT.REMOVE_CC)
+preserve_cc_test.run_cases_expecting_gzip()
+
+preserve_cc_test = EsiTest(plugin_config='esi.so --cache-control-policy 1', cc_behavior=CcBehaviorT.MAKE_PRIVATE)
+preserve_cc_test.run_cases_expecting_gzip()
+
+preserve_cc_test = EsiTest(plugin_config='esi.so --cache-control-policy 2', cc_behavior=CcBehaviorT.PRESERVE_CC)
+preserve_cc_test.run_cases_expecting_gzip()
 
 # For these test cases, the behavior should remain the same with
 # --first-byte-flush set.
