@@ -79,11 +79,14 @@ Enabling ESI
 2. There are four optional arguments that can be passed to the above ``esi.so`` entry:
 
 - ``--private-response`` will add private cache control and expires headers to the processed ESI document.
-- ``--preserve-cc`` by default, the plugin removes the Cache-Control header fields of the original response when
-  generating ESI fragmants. This option preserves the original response's Cache-Control field and its values.
-  If used in conjunction with ``--private-response``, ``--preserve-cc`` will preserve the original response's
-  Cache-Control field and its values, but will also add private cache control and expires headers to the processed
-  ESI document.
+- ``--cache-control-policy`` by default, the plugin removes the Cache-Control header fields of the original response when
+  generating ESI fragmants. This option allows you to specify the plugin's behavior with respect to the Cache-Control header:
+
+  - ``0``: Remove the Cache-Control header fields of the original response. This is the default behavior.
+  - ``1``: Specify Cache-Control directives that make the response private. This is the same as using the
+    ``--private-response`` option.
+  - ``2``: Preserve the Cache-Control header field values of the original response.
+
 - ``--packed-node-support`` will enable the support for using the packed node feature, which will improve the
   performance of parsing cached ESI document. As mentioned below, this option is not extensively tested and is therefore
   not recommended for production environments
