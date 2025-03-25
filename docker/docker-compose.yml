@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  trafficserver:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./proxy/etc/trafficserver:/opt/ts/etc/trafficserver
+      - ./proxy/var/cache:/opt/ts/var/cache/trafficserver
+      - ./proxy/var/log:/opt/ts/var/log/trafficserver
+    networks:
+      - ts_network
+
+  test_client:
+    image: curlimages/curl:latest
+    networks:
+      - ts_network
+    command: ["sleep", "infinity"]
+    depends_on:
+      - trafficserver
+
+networks:
+  ts_network:
+    driver: bridge
