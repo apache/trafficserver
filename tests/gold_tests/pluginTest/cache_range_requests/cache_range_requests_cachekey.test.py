@@ -136,7 +136,7 @@ tr = Test.AddTestRun("full asset fetch")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -H "uuid: full"')
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -H "uuid: full"')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
 tr.StillRunningAfter = ts
@@ -144,7 +144,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Fetch whole asset into cache via range request (ensure cold)
 tr = Test.AddTestRun("0- asset fetch")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r 0- -H "uuid: range_full"')
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r 0- -H "uuid: range_full"')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
 tr.StillRunningAfter = ts
@@ -152,7 +152,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Ensure assert happens instead of possible cache poisoning.
 tr = Test.AddTestRun("Attempt poisoning")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.fail.com/path -r 0- -H "uuid: range_fail"')
+tr.MakeCurlCommand(curl_and_args + ' http://www.fail.com/path -r 0- -H "uuid: range_fail"')
 ps.ReturnCode = 0
 tr.StillRunningAfter = ts
 

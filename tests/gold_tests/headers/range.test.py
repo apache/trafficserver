@@ -135,7 +135,7 @@ ts.Disk.records_config.update(
 
 # ATS should ignore the Range header when given an If-Range header with the incorrect etag
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_range(ts, ifrange='"should-not-match"'))
+tr.MakeCurlCommand(curl_range(ts, ifrange='"should-not-match"'))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(microserver, ready=When.PortOpen(microserver.Variables.Port))
 tr.Processes.Default.StartBefore(origin, ready=When.PortOpen(origin.Variables.port))
@@ -147,66 +147,66 @@ tr.Processes.Default.Streams.stdout = "gold/range-200.gold"
 
 # ATS should respond to Range requests with partial content
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_range(ts))
+tr.MakeCurlCommand(curl_range(ts))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-206.gold"
 
 # ATS should respond to Range requests with partial content when given an If-Range header with
 # the correct etag
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_range(ts, ifrange='"range"'))
+tr.MakeCurlCommand(curl_range(ts, ifrange='"range"'))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-206.gold"
 
 # ATS should respond to Range requests with partial content when given an If-Range header
 # that matches the Last-Modified header of the cached response
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_range(ts, ifrange="Thu, 10 Feb 2022 00:00:00 GMT"))
+tr.MakeCurlCommand(curl_range(ts, ifrange="Thu, 10 Feb 2022 00:00:00 GMT"))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-206.gold"
 
 # ATS should respond to Range requests with the full content when given an If-Range header
 # that doesn't match the Last-Modified header of the cached response
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_range(ts, ifrange="Thu, 10 Feb 2022 01:00:00 GMT"))
+tr.MakeCurlCommand(curl_range(ts, ifrange="Thu, 10 Feb 2022 01:00:00 GMT"))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-200.gold"
 
 # ATS should respond to Range requests with a 416 error code when the given Range is invalid
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_range(ts, start=100, end=105))
+tr.MakeCurlCommand(curl_range(ts, start=100, end=105))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-416.gold"
 
 # ATS should ignore the Range header when given an If-Range header with the incorrect etag
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_range(ts, ifrange='"should-not-match"'))
+tr.MakeCurlCommand(curl_range(ts, ifrange='"should-not-match"'))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-200.gold"
 
 # ATS should ignore the Range header when given an If-Range header with weak etags
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_range(ts, ifrange='W/"range"'))
+tr.MakeCurlCommand(curl_range(ts, ifrange='W/"range"'))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-200.gold"
 
 # ATS should ignore the Range header when given an If-Range header with a date older than the
 # Last-Modified header of the cached response
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_range(ts, ifrange="Wed, 09 Feb 2022 23:00:00 GMT"))
+tr.MakeCurlCommand(curl_range(ts, ifrange="Wed, 09 Feb 2022 23:00:00 GMT"))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-200.gold"
 
 # Write to the cache by requesting the entire content
 tr = Test.AddTestRun()
-tr.CurlCommand(curl_whole(ts, path="short"))
+tr.MakeCurlCommand(curl_whole(ts, path="short"))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-200.gold"
 
 # ATS should respond to range requests with partial content for stale caches in response to
 # valid If-Range requests if the origin responds with 304 Not Modified.
 tr = Test.AddTestRun()
-tr.CurlCommand(f"sleep {2 * CACHE_SHORT_MAXAGE}; " + curl_range(ts, path="short", ifrange='"range"'))
+tr.MakeCurlCommandMulti(f"sleep {2 * CACHE_SHORT_MAXAGE}; {{curl}} " + curl_range(ts, path="short", ifrange='"range"'))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/range-206-revalidated.gold"
 

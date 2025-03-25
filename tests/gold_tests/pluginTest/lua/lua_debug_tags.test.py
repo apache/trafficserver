@@ -46,6 +46,6 @@ tr = Test.AddTestRun("check tags")
 ps = tr.Processes.Default
 tr.StillRunningAfter = ts
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommandMulti(f"bash ./tags.sh {curl_and_args}")
+tr.MakeCurlCommandMulti(f"bash ./tags.sh {curl_and_args}")
 ps.Env = ts.Env
 ps.ReturnCode = 0

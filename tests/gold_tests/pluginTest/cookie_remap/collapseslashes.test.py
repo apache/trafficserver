@@ -63,9 +63,8 @@ ts.Disk.remap_config.AddLine(
     'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/collapseconfig.txt')
 
 tr = Test.AddTestRun("collapse consecutive forward slashes")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \

@@ -78,7 +78,7 @@ Test.PrepareInstalledPlugin('cert_update.so', ts)
 tr = Test.AddTestRun("Server-Cert-Pre")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.CurlCommand('--verbose --insecure --ipv4 --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}'.format(ts.Variables.ssl_port))
+tr.MakeCurlCommand('--verbose --insecure --ipv4 --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stderr = "gold/server-cert-pre.gold"
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
@@ -95,7 +95,7 @@ ts.StillRunningAfter = server
 # after use traffic_ctl to update server cert, curl should see bar.com cert from bob
 tr = Test.AddTestRun("Server-Cert-After")
 tr.Processes.Default.Env = ts.Env
-tr.CurlCommand('--verbose --insecure --ipv4 --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}'.format(ts.Variables.ssl_port))
+tr.MakeCurlCommand('--verbose --insecure --ipv4 --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stderr = "gold/server-cert-after.gold"
 tr.Processes.Default.ReturnCode = 0
 ts.StillRunningAfter = server
@@ -107,7 +107,7 @@ s_server = tr.Processes.Process(
     "s_server", "openssl s_server -www -key {0}/server1.pem -cert {0}/server1.pem -accept {1} -Verify 1 -msg".format(
         ts.Variables.SSLDir, ts.Variables.s_server_port))
 s_server.Ready = When.PortReady(ts.Variables.s_server_port)
-tr.CurlCommand('--verbose --insecure --ipv4 --header "Host: foo.com" https://localhost:{}'.format(ts.Variables.ssl_port))
+tr.MakeCurlCommand('--verbose --insecure --ipv4 --header "Host: foo.com" https://localhost:{}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.StartBefore(s_server)
 s_server.Streams.all = "gold/client-cert-pre.gold"
 tr.Processes.Default.ReturnCode = 0
@@ -131,7 +131,7 @@ s_server = tr.Processes.Process(
 s_server.Ready = When.PortReady(ts.Variables.s_server_port)
 tr.Processes.Default.Env = ts.Env
 # Move client2.pem to replace client1.pem since cert path matters in client context mapping
-tr.CurlCommand('--verbose --insecure --ipv4 --header "Host: foo.com" https://localhost:{0}'.format(ts.Variables.ssl_port))
+tr.MakeCurlCommand('--verbose --insecure --ipv4 --header "Host: foo.com" https://localhost:{0}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.StartBefore(s_server)
 s_server.Streams.all = "gold/client-cert-after.gold"
 tr.Processes.Default.ReturnCode = 0

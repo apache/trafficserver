@@ -62,7 +62,7 @@ ts.Disk.records_config.update(
 tr = Test.AddTestRun("bar.com cert signer1")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Setup.Copy("ssl/signer2.pem")
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
@@ -75,7 +75,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Ce
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
 
 tr = Test.AddTestRun("bar.com cert signer2")
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port))
 tr.ReturnCode = 60
 tr.StillRunningAfter = server
@@ -110,14 +110,14 @@ tr.Processes.Default.StartBefore(
     server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'ssl_multicert.config finished loading', 2))
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port))
 tr.ReturnCode = 60
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "unable to get local issuer certificate", "Server certificate not issued by expected signer")
 
 tr = Test.AddTestRun("Try with signer 2 again")
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = server

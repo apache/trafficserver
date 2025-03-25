@@ -49,7 +49,7 @@ ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variable
 # HTTP1.1 POST: www.example.com/case1 with gzip transfer-encoding
 tr = Test.AddTestRun()
 tr.TimeOut = 5
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '-H "host: example.com" -H "transfer-encoding: gzip" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'.format(
         ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
@@ -63,7 +63,7 @@ tr.StillRunningAfter = ts
 # HTTP1.1 POST: www.example.com/case1 with gzip and chunked transfer-encoding
 tr = Test.AddTestRun()
 tr.TimeOut = 5
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '-H "host: example.com" -H "transfer-encoding: gzip" -H "transfer-encoding: chunked" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'
     .format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0

@@ -50,7 +50,7 @@ class SplitDNSTest:
 
     def addTestCase0(self):
         tr = Test.AddTestRun()
-        tr.CurlCommand(f"-v http://localhost:{self.ts.Variables.port}/foo/")
+        tr.MakeCurlCommand(f"-v http://localhost:{self.ts.Variables.port}/foo/")
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/test_case_0_stderr.gold"
         tr.Processes.Default.StartBefore(self.dns)
@@ -62,7 +62,7 @@ class SplitDNSTest:
 
     def addTestCase1(self):
         tr = Test.AddTestRun()
-        tr.CurlCommand(f"-v http://localhost:{self.ts.Variables.port}/bar/")
+        tr.MakeCurlCommand(f"-v http://localhost:{self.ts.Variables.port}/bar/")
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/test_case_1_stderr.gold"
         tr.StillRunningAfter = self.dns

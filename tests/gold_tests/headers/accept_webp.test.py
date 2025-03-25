@@ -58,7 +58,7 @@ ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.f
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '-s -D - -v --ipv4 --http1.1 -H "Accept: image/webp,image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5" -H "Host: www.example.com" http://localhost:{0}/'
     .format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
@@ -67,7 +67,7 @@ tr.StillRunningAfter = ts
 
 # Test 2 - Request with image/webp support from cache
 tr = Test.AddTestRun()
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '-s -D - -v --ipv4 --http1.1 -H "Accept: image/webp,image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5" -H "Host: www.example.com" http://localhost:{0}/'
     .format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
@@ -76,7 +76,7 @@ tr.StillRunningAfter = ts
 
 # Test 3 - Request without image/webp support going to the origin - NOTE: the origin can't change the content-type :(
 tr = Test.AddTestRun()
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '-s -D - -v --ipv4 --http1.1 -H "Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5" -H "Host: www.example.com" http://localhost:{0}/'
     .format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0

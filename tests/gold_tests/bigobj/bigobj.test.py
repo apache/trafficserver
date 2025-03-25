@@ -67,33 +67,33 @@ tr = Test.AddTestRun("PUSH an object to the cache")
 # Delay on readiness of TS IPv4 ssl port
 tr.Processes.Default.StartBefore(ts, ready=lambda: create_pushfile())
 # Put object with URL http://localhost/bigobj in cache using PUSH request.
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v -H 'Content-Type: application/octet-stream' --data-binary @{}/objfile -X PUSH http://localhost:{}/bigobj -H 'Content-Length:{}'"
-).format(Test.RunDirectory, ts.Variables.port,
-         len(header) + obj_bytes)
+    .format(Test.RunDirectory, ts.Variables.port,
+            len(header) + obj_bytes))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 201 Created", "The PUSH request should have succeeded")
 
 tr = Test.AddTestRun("GET bigobj: cleartext, HTTP/1.1, IPv4")
-tr.CurlCommand(f'--verbose --ipv4 --http1.1 http://localhost:{ts.Variables.port}/bigobj')
+tr.MakeCurlCommand(f'--verbose --ipv4 --http1.1 http://localhost:{ts.Variables.port}/bigobj')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 200 OK", "Should fetch pushed object")
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Content-length: 102400", "Content size should be accurate")
 
 tr = Test.AddTestRun("GET bigobj: TLS, HTTP/1.1, IPv4")
-tr.CurlCommand(f'--verbose --ipv4 --http1.1 --insecure https://localhost:{ts.Variables.ssl_port}/bigobj')
+tr.MakeCurlCommand(f'--verbose --ipv4 --http1.1 --insecure https://localhost:{ts.Variables.ssl_port}/bigobj')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 200 OK", "Should fetch pushed object")
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Content-length: 102400", "Content size should be accurate")
 
 tr = Test.AddTestRun("GET bigobj: TLS, HTTP/2, IPv4")
-tr.CurlCommand(f'--verbose --ipv4 --http2 --insecure https://localhost:{ts.Variables.ssl_port}/bigobj')
+tr.MakeCurlCommand(f'--verbose --ipv4 --http2 --insecure https://localhost:{ts.Variables.ssl_port}/bigobj')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Should fetch pushed object")
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("content-length: 102400", "Content size should be accurate")
 
 tr = Test.AddTestRun("GET bigobj: TLS, HTTP/2, IPv6")
-tr.CurlCommand(f'--verbose --ipv6 --http2 --insecure https://localhost:{ts.Variables.ssl_portv6}/bigobj')
+tr.MakeCurlCommand(f'--verbose --ipv6 --http2 --insecure https://localhost:{ts.Variables.ssl_portv6}/bigobj')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Should fetch pushed object")
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("content-length: 102400", "Content size should be accurate")
@@ -121,10 +121,10 @@ ts.Disk.remap_config.AddLine(f'map https://localhost:{ts.Variables.ssl_portv6} h
 
 tr = Test.AddTestRun("PUSH request is rejected when push_method_enabled is 0")
 tr.Processes.Default.StartBefore(ts)
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v -H 'Content-Type: application/octet-stream' --data-binary @{}/objfile -X PUSH http://localhost:{}/bigobj -H 'Content-Length:{}'"
-).format(Test.RunDirectory, ts.Variables.port,
-         len(header) + obj_bytes)
+    .format(Test.RunDirectory, ts.Variables.port,
+            len(header) + obj_bytes))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "403 Access Denied", "The PUSH request should have received a 403 response.")

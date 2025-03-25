@@ -65,7 +65,7 @@ class StatsOverHttpPluginTest:
     def __testCase0(self):
         tr = Test.AddTestRun()
         self.__checkProcessBefore(tr)
-        tr.CurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/stats_over_http_0_stdout.gold"
         tr.Processes.Default.Streams.stderr = "gold/stats_over_http_0_stderr.gold"

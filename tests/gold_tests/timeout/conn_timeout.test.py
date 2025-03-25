@@ -67,13 +67,13 @@ tr.Processes.Default.Command = 'echo start; sudo sh -x ./setupnetns.sh {0} {1}'.
 # and the connect timeout should trigger with a 50x return.  If the SYN handshake occurs, the
 # no activity timeout would trigger, but not before the test timeout expires
 tr = Test.AddTestRun("tr-blocking")
-tr.CurlCommand('-i http://127.0.0.1:{0}/blocked {0}'.format(ts.Variables.port))
+tr.MakeCurlCommand('-i http://127.0.0.1:{0}/blocked {0}'.format(ts.Variables.port))
 tr.Processes.Default.TimeOut = 4
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")
 
 tr = Test.AddTestRun("tr-blocking-post")
-tr.CurlCommand('-d "stuff" -i http://127.0.0.1:{0}/blocked {0}'.format(ts.Variables.port))
+tr.MakeCurlCommand('-d "stuff" -i http://127.0.0.1:{0}/blocked {0}'.format(ts.Variables.port))
 tr.Processes.Default.TimeOut = 4
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")

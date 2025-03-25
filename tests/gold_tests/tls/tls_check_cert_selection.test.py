@@ -68,7 +68,7 @@ dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
 tr = Test.AddTestRun("bar.com cert")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Setup.Copy("ssl/signer2.pem")
-tr.CurlCommand("-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port))
+tr.MakeCurlCommand("-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
@@ -82,7 +82,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 
 # Should receive a foo.com cert
 tr2 = Test.AddTestRun("foo.com cert")
-tr2.CurlCommand("-v --cacert ./signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port))
+tr2.MakeCurlCommand("-v --cacert ./signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -93,7 +93,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 
 # Should receive random.server.com
 tr2 = Test.AddTestRun("random.server.com cert")
-tr2.CurlCommand("-v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port))
+tr2.MakeCurlCommand("-v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -106,7 +106,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 # No SNI match should match specific IP address, foo.com
 # SNI name and returned cert name will not match, so must use -k to avoid cert verification
 tr2 = Test.AddTestRun("Bad SNI")
-tr2.CurlCommand(
+tr2.MakeCurlCommand(
     "-v -k --cacert ./signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server

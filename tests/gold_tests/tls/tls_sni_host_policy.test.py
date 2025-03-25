@@ -78,7 +78,7 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1".format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 35
 
@@ -90,7 +90,7 @@ tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-foo.key")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1"
     .format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -101,7 +101,7 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun("Connect to dave without cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k -H 'host:Bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
@@ -112,7 +112,7 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "
 tr = Test.AddTestRun("Connect to dave with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1"
     .format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -123,7 +123,7 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "
 tr = Test.AddTestRun("Connect to bob with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "--tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:boB' --resolve 'Bob:{0}:127.0.0.1' https://bob:{0}/case1"
     .format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -135,7 +135,7 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "
 tr = Test.AddTestRun("Connect to ellen without cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k -H 'host:Boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
         ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -147,7 +147,7 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "
 tr = Test.AddTestRun("Connect to ellen with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:Boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly"
     .format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -158,7 +158,7 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "
 tr = Test.AddTestRun("Connect to ellen without cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
@@ -168,7 +168,7 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "
 tr = Test.AddTestRun("Connect to ellen with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly"
     .format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0

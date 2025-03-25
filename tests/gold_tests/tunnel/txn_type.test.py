@@ -84,7 +84,7 @@ cmd_connect = '-k --http1.1 -H "Connection: close" -vs --resolve "connect-proxy:
 # Send the http request
 tr = Test.AddTestRun("send http request")
 tr.Processes.Default.Env = ts.Env
-tr.CurlCommand(cmd_http)
+tr.MakeCurlCommand(cmd_http)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -94,7 +94,7 @@ tr.StillRunningAfter = server
 # Send the tunnel request
 tr = Test.AddTestRun("send tunnel request")
 tr.Processes.Default.Env = ts.Env
-tr.CurlCommand(cmd_tunnel)
+tr.MakeCurlCommand(cmd_tunnel)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -105,7 +105,7 @@ tr.StillRunningAfter = server
 # method to determine whether a connect tunnel will be set up
 tr = Test.AddTestRun("send connect request")
 tr.Processes.Default.Env = ts.Env
-tr.CurlCommand(cmd_connect)
+tr.MakeCurlCommand(cmd_connect)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

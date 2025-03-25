@@ -68,7 +68,7 @@ tr.Processes.Default.Streams.All += Testers.IncludesExpression("No ALPN negotiat
 tr.Processes.Default.Streams.All += Testers.IncludesExpression("HTTP/1.1 400 Host Header Required", "Processed the request")
 
 tr = Test.AddTestRun("alpn h2")
-tr.CurlCommand("-k --http2 -v -o /dev/null https://127.0.0.1:{}".format(ts.Variables.ssl_port))
+tr.MakeCurlCommand("-k --http2 -v -o /dev/null https://127.0.0.1:{}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.IncludesExpression("ALPN. server accepted.*h2", "negotiated h2")

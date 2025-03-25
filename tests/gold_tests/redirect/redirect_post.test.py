@@ -78,7 +78,7 @@ ts.Disk.remap_config.AddLine(
     'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, redirect_serv1.Variables.Port))
 
 tr = Test.AddTestRun()
-tr.CurlCommandMulti(
+tr.MakeCurlCommandMulti(
     'touch largefile.txt && truncate largefile.txt -s 50M && {{curl}} -H "Expect: " -i http://127.0.0.1:{0}/redirect1 -F "filename=@./largefile.txt" && rm -f largefile.txt'
     .format(ts.Variables.port))
 tr.TimeOut = 10

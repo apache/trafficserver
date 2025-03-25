@@ -77,9 +77,8 @@ ts.Disk.remap_config.AddLine(
 
 # Cookie value in bucket
 tr = Test.AddTestRun("cookie value in bucket")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=333" \
 -H "Proxy-Connection: keep-alive" \
@@ -94,9 +93,8 @@ server.Streams.All = "gold/matchcookie.gold"
 
 # cookie value not in bucket
 tr = Test.AddTestRun("cooke value not in bucket")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=etc" \
 -H "Proxy-Connection: keep-alive" \

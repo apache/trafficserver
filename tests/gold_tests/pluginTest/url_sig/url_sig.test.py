@@ -101,7 +101,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.2&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee)
 
@@ -109,7 +109,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=1&A=2&K=13&P=010&S=f237aad1fa010234d7bf8108a0e36387'" + LogTee)
 
@@ -117,7 +117,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee)
 
@@ -125,7 +125,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=3&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee)
 
@@ -133,7 +133,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee)
 
@@ -141,7 +141,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=10&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee)
 
@@ -149,7 +149,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101'" + LogTee)
 
@@ -157,7 +157,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=d1f452d4f1d931ad2f441013402d93f8'" + LogTee)
 
@@ -165,7 +165,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8#'" + LogTee)
 
@@ -175,7 +175,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://four.five.six/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046618556&A=1&K=15&P=1&S=f4103561a23adab7723a89b9831d77e0afb61d92'" + LogTee)
 
@@ -183,7 +183,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?E=33046618586&A=2&K=0&P=1&S=0364efa28afe345544596705b92d20ac'" + LogTee)
 
@@ -191,7 +191,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046619717&A=2&K=13&P=010&S=f237aad1fa010234d7bf8108a0e36387'" + LogTee)
 
@@ -199,7 +199,7 @@ tr.CurlCommand(
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee)
 
@@ -219,13 +219,13 @@ url = "http://one.two.three/" + path + sign(to_sign, "dqsgopTSM_doT6iAysasQVUKaP
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} '{url}'" + LogTee)
+tr.MakeCurlCommand(f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} '{url}'" + LogTee)
 
 # With client / MD5 / P=101 / URL pristine / URL altered.
 # uses url_type pristine in config
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/" +
     "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=586ef8e808caeeea025c525c89ff2638'" + LogTee)
 
@@ -234,7 +234,7 @@ tr.CurlCommand(
 # uses url_type pristine in config
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/" +
     "foo/abcde/qrstuvwxyz;badparam=true?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=586ef8e808caeeea025c525c89ff2638'" + LogTee)
 
@@ -242,7 +242,7 @@ tr.CurlCommand(
 # With client / SHA1 / P=1 / URL pristine / URL altered. Base64 Encoded Path Param
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/" +
     "foo/abcde;urlsig=Qz0xMjcuMC4wLjE7RT0zMzA0NjYyMDAwODtBPTI7Sz0xMztQPTEwMTtTPTA1MDllZjljY2VlNjUxZWQ1OTQxM2MyZjE3YmVhODZh/qrstuvwxyz'"
     + LogTee)
@@ -257,7 +257,7 @@ url = f"https://127.0.0.1:{ts.Variables.ssl_port}/{path}" + sign(to_sign, "dqsgo
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"--verbose --http1.1 --insecure --header 'Host: one.two.three' '{url}'" + LogTee +
     " ; grep -F -e '< HTTP' -e Authorization {0}/url_sig_long.log > {0}/url_sig_short.log ".format(ts.RunDirectory))
 

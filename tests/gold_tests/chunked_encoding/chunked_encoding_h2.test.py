@@ -81,7 +81,7 @@ tr.StillRunningAfter = ts
 server2_out = Test.Disk.File("outserver2")
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server2)
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '--http2 -k https://127.0.0.1:{}/post-full --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
         ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -96,7 +96,7 @@ server2_out = Testers.ContainsExpression("Transfer-Encoding: chunked", "Request 
 server3_out = Test.Disk.File("outserver3")
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server3)
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '--http2 -k https://127.0.0.1:{}/post-chunked --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
         ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0

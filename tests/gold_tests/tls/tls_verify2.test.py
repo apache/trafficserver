@@ -96,7 +96,7 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
-tr.CurlCommand("-k -H \"host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
+tr.MakeCurlCommand("-k -H \"host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
@@ -107,35 +107,35 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("override-disabled")
-tr2.CurlCommand("-k -H \"host: random.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
+tr2.MakeCurlCommand("-k -H \"host: random.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr3 = Test.AddTestRun("override-permissive")
-tr3.CurlCommand("-k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
+tr3.MakeCurlCommand("-k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr4 = Test.AddTestRun("override-permissive-bad-name")
-tr4.CurlCommand("-k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
+tr4.MakeCurlCommand("-k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr4.ReturnCode = 0
 tr4.StillRunningAfter = server
 tr4.StillRunningAfter = ts
 tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr5 = Test.AddTestRun("default-enforce-bad-sig")
-tr5.CurlCommand("-k -H \"host: random2.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
+tr5.MakeCurlCommand("-k -H \"host: random2.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr5.ReturnCode = 0
 tr5.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
 tr5.StillRunningAfter = server
 tr5.StillRunningAfter = ts
 
 tr6 = Test.AddTestRun("default-enforce-fail")
-tr6.CurlCommand("-k -H \"host: bad_foo.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
+tr6.MakeCurlCommand("-k -H \"host: bad_foo.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr6.ReturnCode = 0
 tr6.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
 tr6.StillRunningAfter = server

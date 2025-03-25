@@ -50,7 +50,7 @@ ts.Disk.remap_config.AddLine('map http://www.example.com:8080 http://127.0.0.1:{
 
 # [L] test
 tr = Test.AddTestRun("Header Rewrite End [L]")
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '--proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))

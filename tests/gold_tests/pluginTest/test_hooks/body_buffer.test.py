@@ -121,7 +121,7 @@ class BodyBufferTest:
     def run(self):
         tr = Test.AddTestRun()
         # Send both a Content-Length request and a chunked-encoded request.
-        tr.CurlCommand(
+        tr.MakeCurlCommand(
             f'-v http://127.0.0.1:{self._ts.Variables.port}/contentlength -d "{self.content_length_request_body}" --next '
             f'-v http://127.0.0.1:{self._ts.Variables.port}/chunked -H "Transfer-Encoding: chunked" -d "{self.chunked_request_body}"'
         )

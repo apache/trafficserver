@@ -77,9 +77,8 @@ ts.Disk.remap_config.AddLine(
     'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/substituteconfig.txt')
 
 tr = Test.AddTestRun("Substitute $path in the dest query")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=abcd" \
 -H "Proxy-Connection: keep-alive" \
@@ -92,9 +91,8 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun("Substitute $unmatched_path in the dest query")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic/theunmatchedpath" \
 -H"Cookie: oxalpha=3333" \
 -H "Proxy-Connection: keep-alive" \
@@ -105,9 +103,8 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun("Substitute $cr_req_url using $cr_urlencode")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: acgamma=dfndfdfd" \
 -H "Proxy-Connection: keep-alive" \
@@ -118,9 +115,8 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun("Substitute $path as is in outgoing path")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic/foobar" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \

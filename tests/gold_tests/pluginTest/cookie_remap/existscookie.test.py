@@ -77,9 +77,8 @@ ts.Disk.remap_config.AddLine(
 
 # Positive test case that remaps because cookie exists
 tr = Test.AddTestRun("cookie fpbeta exists")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=fdkfkdfkdfkdkdfkdfk" \
 -H "Proxy-Connection: keep-alive" \
@@ -94,9 +93,8 @@ server.Streams.All = "gold/existscookie.gold"
 
 # Negative test case that doesn't remap because cookie doesn't exist
 tr = Test.AddTestRun("cooke fpbeta doesnt exist")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: breadcrumb=etc" \
 -H "Proxy-Connection: keep-alive" \

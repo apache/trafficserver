@@ -86,7 +86,7 @@ class SessionMatchTest:
             })
 
     def _runTraffic(self):
-        self._tr.CurlCommandMulti(
+        self._tr.MakeCurlCommandMulti(
             '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/one &&'
             '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/two &&'
             '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/three'.format(

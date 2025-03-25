@@ -50,36 +50,36 @@ Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'test_log_field.log'), exists=T
 
 # first test is a miss for default
 tr = Test.AddTestRun()
-tr.CurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
 tr = Test.AddTestRun()
-tr.CurlCommand('"http://127.1.1.1:{0}" --verbose'.format(ts.Variables.port))
+tr.MakeCurlCommand('"http://127.1.1.1:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.CurlCommand('"http://127.2.2.2:{0}" --verbose'.format(ts.Variables.port))
+tr.MakeCurlCommand('"http://127.2.2.2:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.CurlCommand('"http://127.3.3.3:{0}" --verbose'.format(ts.Variables.port))
+tr.MakeCurlCommand('"http://127.3.3.3:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.CurlCommand('"http://127.3.0.1:{0}" --verbose'.format(ts.Variables.port))
+tr.MakeCurlCommand('"http://127.3.0.1:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.CurlCommand('"http://127.43.2.1:{0}" --verbose'.format(ts.Variables.port))
+tr.MakeCurlCommand('"http://127.43.2.1:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.CurlCommand('"http://127.213.213.132:{0}" --verbose'.format(ts.Variables.port))
+tr.MakeCurlCommand('"http://127.213.213.132:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.CurlCommand('"http://127.123.32.243:{0}" --verbose'.format(ts.Variables.port))
+tr.MakeCurlCommand('"http://127.123.32.243:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.

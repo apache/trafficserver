@@ -47,9 +47,8 @@ ts.Disk.remap_config.AddLine(
 
 # Plugin sets the HTTP status because first rule matches
 tr = Test.AddTestRun("Sets the status to 205")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=magic" \
 -H "Proxy-Connection: keep-alive" \
@@ -63,9 +62,8 @@ tr.Streams.All = "gold/matchstatus.gold"
 
 # Plugin sets the HTTP status because the else rule matches (i.e. no match)
 tr = Test.AddTestRun("Sets the else status to 400")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H "Proxy-Connection: keep-alive" \
 -H "Proxy-Connection: keep-alive" \

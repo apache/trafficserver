@@ -101,7 +101,7 @@ tr = Test.AddTestRun("Cache miss path1")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommand(curl_and_args + ' http://ats/path1')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path1')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
@@ -109,7 +109,7 @@ tr.StillRunningAfter = ts
 # 1 Request, cache hit expected
 tr = Test.AddTestRun("Cache hit fresh path1")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://ats/path1')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path1')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
 tr.StillRunningAfter = ts
@@ -133,7 +133,7 @@ tr.DelayStart = 1
 tr = Test.AddTestRun("Revalidate MISS path1")
 ps = tr.Processes.Default
 tr.DelayStart = 7
-tr.CurlCommand(curl_and_args + ' http://ats/path1')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path1')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
@@ -141,7 +141,7 @@ tr.StillRunningAfter = ts
 # 4 Request, cache hit (path1)
 tr = Test.AddTestRun("Cache hit fresh path1")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://ats/path1')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path1')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
 tr.StillRunningAfter = ts
@@ -164,7 +164,7 @@ tr.DelayStart = 1
 tr = Test.AddTestRun("Cache stale path1")
 ps = tr.Processes.Default
 tr.DelayStart = 7
-tr.CurlCommand(curl_and_args + ' http://ats/path1')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path1')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
 tr.StillRunningAfter = ts
@@ -187,7 +187,7 @@ tr.DelayStart = 1
 tr = Test.AddTestRun("Cache mis path1")
 ps = tr.Processes.Default
 tr.DelayStart = 7
-tr.CurlCommand(curl_and_args + ' http://ats/path1')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path1')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
@@ -196,7 +196,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Cache hit path1")
 ps = tr.Processes.Default
 tr.DelayStart = 5
-tr.CurlCommand(curl_and_args + ' http://ats/path1')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path1')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
 tr.StillRunningAfter = ts
@@ -217,7 +217,7 @@ tr.DelayStart = 1
 tr = Test.AddTestRun("Cache hit path1")
 ps = tr.Processes.Default
 tr.DelayStart = 7
-tr.CurlCommand(curl_and_args + ' http://ats/path1')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path1')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
 tr.StillRunningAfter = ts
@@ -237,7 +237,7 @@ tr.TimeOut = 5
 tr = Test.AddTestRun("Cache hit path1")
 ps = tr.Processes.Default
 tr.DelayStart = 5
-tr.CurlCommand(curl_and_args + ' http://ats/path1')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path1')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
 tr.StillRunningAfter = ts

@@ -66,7 +66,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Get response from generator")
-tr.CurlCommand(f'--proxy 127.0.0.1:{ts.Variables.port} http://example.four/nocache/5')
+tr.MakeCurlCommand(f'--proxy 127.0.0.1:{ts.Variables.port} http://example.four/nocache/5')
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("xxxxx", "Contains generated text")
