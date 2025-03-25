@@ -138,7 +138,7 @@ tr = Test.AddTestRun("asset fetch via range")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r0- -H "uuid: full"')
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r0- -H "uuid: full"')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression(
     "X-Cache-Key: /foo/Range:bytes=0-/path", "expected cachekey style range request in cachekey")

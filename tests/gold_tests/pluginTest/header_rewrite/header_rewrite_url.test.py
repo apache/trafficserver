@@ -58,7 +58,7 @@ ts.Disk.remap_config.AddLine(
 
 # Test CLIENT-URL.
 tr = Test.AddTestRun()
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '--proxy 127.0.0.1:{0} "http://www.example.com/from_path/hello?=foo=bar" '
     '-H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
@@ -70,7 +70,7 @@ ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
 
 # Test TO-URL in a set-redirect operator.
 tr = Test.AddTestRun()
-tr.CurlCommand('--head 127.0.0.1:{0} -H "Host: no_path.com" --verbose'.format(ts.Variables.port))
+tr.MakeCurlCommand('--head 127.0.0.1:{0} -H "Host: no_path.com" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/set-redirect.gold"
 tr.StillRunningAfter = server

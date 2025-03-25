@@ -119,7 +119,7 @@ curl_and_args = f"-s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{ts0.Vari
 # Request asset that goes through the layers
 tr = Test.AddTestRun("request")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://foo.bar/foo.txt')
+tr.MakeCurlCommand(curl_and_args + ' http://foo.bar/foo.txt')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("Via:.* ts1 .* ts0 ", "expected via header")
 tr.StillRunningAfter = ts0

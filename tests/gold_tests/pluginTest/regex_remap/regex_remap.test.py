@@ -93,14 +93,14 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 creq = replay_txns[0]['client-request']
-tr.CurlCommand(curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + creq["url"])
+tr.MakeCurlCommand(curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + creq["url"])
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
 tr.StillRunningAfter = ts
 
 # 1 Test - Match and redirect
 tr = Test.AddTestRun("pristine test")
-tr.CurlCommand(
+tr.MakeCurlCommand(
     curl_and_args + "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
     f" | grep -e '^HTTP/' -e '^Location' | sed 's/{server.Variables.Port}/SERVER_PORT/'")
 tr.Processes.Default.ReturnCode = 0
@@ -109,7 +109,7 @@ tr.StillRunningAfter = ts
 
 # 2 Test - Match and remap
 tr = Test.AddTestRun("2nd pristine test")
-tr.CurlCommand(
+tr.MakeCurlCommand(
     curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) +
     " 'http://example.three/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
     " | grep -e '^HTTP/' -e '^Content-Length'")
@@ -120,7 +120,7 @@ tr.StillRunningAfter = ts
 # 3 Test - Crash test.
 tr = Test.AddTestRun("crash test")
 creq = replay_txns[1]['client-request']
-tr.CurlCommand(curl_and_args + \
+tr.MakeCurlCommand(curl_and_args + \
     '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"

@@ -106,7 +106,7 @@ class BackgroundFillTest:
         """
         tr = Test.AddTestRun()
         self.__checkProcessBefore(tr)
-        tr.CurlCommandMulti(
+        tr.MakeCurlCommandMulti(
             f"""
 {{curl}} -X PURGE --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4;
 timeout 2 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4;
@@ -124,7 +124,7 @@ sleep 4;
         """
         tr = Test.AddTestRun()
         self.__checkProcessBefore(tr)
-        tr.CurlCommandMulti(
+        tr.MakeCurlCommandMulti(
             f"""
 {{curl}} -X PURGE --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
 timeout 3 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
@@ -142,7 +142,7 @@ sleep 5;
         """
         tr = Test.AddTestRun()
         self.__checkProcessBefore(tr)
-        tr.CurlCommandMulti(
+        tr.MakeCurlCommandMulti(
             f"""
 {{curl}} -X PURGE --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
 timeout 3 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;

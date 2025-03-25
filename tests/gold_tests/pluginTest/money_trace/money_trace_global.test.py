@@ -77,7 +77,7 @@ tr = Test.AddTestRun("normal header test")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommand(curl_and_args + ' http://ats/path -H "MoneyTrace: ' + clientvalue + '"')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path -H "MoneyTrace: ' + clientvalue + '"')
 ps.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -85,7 +85,7 @@ tr.StillRunningAfter = server
 # 1 Test
 tr = Test.AddTestRun("skip plugin test - pregen will still be set")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://ats/path -H "Skip-Global-MoneyTrace: true"')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path -H "Skip-Global-MoneyTrace: true"')
 ps.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -93,7 +93,7 @@ tr.StillRunningAfter = server
 # 2 Test
 tr = Test.AddTestRun("create header test")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://ats/path')
+tr.MakeCurlCommand(curl_and_args + ' http://ats/path')
 ps.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

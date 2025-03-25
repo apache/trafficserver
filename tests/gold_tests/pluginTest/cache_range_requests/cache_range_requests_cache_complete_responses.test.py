@@ -207,7 +207,7 @@ tr = Test.AddTestRun("cache miss on /obj")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommand(curl_and_args + ' -H "UID: SMALL" http://example.com/obj -r 0-5000')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: SMALL" http://example.com/obj -r 0-5000')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -219,7 +219,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Fetch /obj with a different range but less than 4MB
 tr = Test.AddTestRun("cache hit-fresh on /obj")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: SMALL" http://example.com/obj -r 5001-5999')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: SMALL" http://example.com/obj -r 5001-5999')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -232,7 +232,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("cache hit-stale on /obj")
 tr.DelayStart = 2
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: SMALL-INM" http://example.com/obj -r 0-403')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: SMALL-INM" http://example.com/obj -r 0-403')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -244,7 +244,7 @@ tr.StillRunningAfter = ts
 # 3 Test - Fetch /obj with a different range but less than 4MB
 tr = Test.AddTestRun("cache hit on /obj post revalidation")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: SMALL" http://example.com/obj -r 0-3999')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: SMALL" http://example.com/obj -r 0-3999')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -259,7 +259,7 @@ tr.StillRunningAfter = ts
 # 4 Test - Fetch /slice with a Range header but less than 4MB
 tr = Test.AddTestRun("cache miss on /slice")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 0-5000')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 0-5000')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
@@ -272,7 +272,7 @@ tr.StillRunningAfter = ts
 # 5 Test - Fetch /slice with a different range but less than 4MB
 tr = Test.AddTestRun("cache hit-fresh on /slice")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 5001-5999')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 5001-5999')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
@@ -286,7 +286,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("cache hit-stale on /slice")
 tr.DelayStart = 2
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: SLICE-INM" http://example.com/slice -r 0-403')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: SLICE-INM" http://example.com/slice -r 0-403')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
@@ -299,7 +299,7 @@ tr.StillRunningAfter = ts
 # 7 Test - Fetch /slice with a different range but less than 4MB
 tr = Test.AddTestRun("cache hit on /slice post revalidation")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 0-3999')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 0-3999')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
 ps.Streams.stdout.Content = Testers.ContainsExpression(
@@ -317,7 +317,7 @@ tr.StillRunningAfter = ts
 # 8 Test - Fetch /naieve/obj with a Range header
 tr = Test.AddTestRun("cache miss on /naieve/obj")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -329,7 +329,7 @@ tr.StillRunningAfter = ts
 # 9 Test - Fetch /naieve/obj with the same Range header
 tr = Test.AddTestRun("cache hit-fresh on /naieve/obj")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -342,7 +342,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("cache hit-stale on /naieve/obj")
 tr.DelayStart = 2
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: NAIEVE-INM" http://example.com/naieve/obj -r 0-5000')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE-INM" http://example.com/naieve/obj -r 0-5000')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -354,7 +354,7 @@ tr.StillRunningAfter = ts
 # 11 Test - Fetch /naieve/obj with the same Range header
 tr = Test.AddTestRun("cache hit on /naieve/obj post revalidation")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -366,7 +366,7 @@ tr.StillRunningAfter = ts
 # 12 Test - Fetch /naieve/obj with a *different* Range header; note the cache key changes and is a miss for the same object
 tr = Test.AddTestRun("cache miss on /naieve/obj")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -379,7 +379,7 @@ tr.StillRunningAfter = ts
 # this is why a Range normalization strategy should _always_ be employed when using `--cache-complete-responses`
 tr = Test.AddTestRun("cache hit on /naieve/obj")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
@@ -391,7 +391,7 @@ tr.StillRunningAfter = ts
 # 14 Test - Fetch /naieve/obj with the original Range header (0-5000); still a cache hit
 tr = Test.AddTestRun("cache hit on /naieve/obj after requesting with a different Range")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000')
+tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
 ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")

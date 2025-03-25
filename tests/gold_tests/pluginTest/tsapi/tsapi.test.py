@@ -76,15 +76,15 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 #
-tr.CurlCommand('--verbose --ipv4 --header "Host: mYhOsT.teSt" hTtP://loCalhOst:{}/'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --header "Host: mYhOsT.teSt" hTtP://loCalhOst:{}/'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.CurlCommand('--verbose --ipv4 --proxy localhost:{} http://mYhOsT.teSt/xYz'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --proxy localhost:{} http://mYhOsT.teSt/xYz'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '--verbose --ipv4 --http2 --insecure --header ' + '"Host: myhost.test:123" HttPs://LocalHost:{}/'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 

@@ -144,7 +144,7 @@ tr = Test.AddTestRun("Preload reference etagnew-0")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommand(curl_and_args + ' http://crr/second -r 0-2 -H "uuid: etagnew-0"')
+tr.MakeCurlCommand(curl_and_args + ' http://crr/second -r 0-2 -H "uuid: etagnew-0"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/bbb.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
@@ -153,7 +153,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Preload slice etagold-1
 tr = Test.AddTestRun("Preload slice etagold-1")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://crr/second -r 3-5 -H "uuid: etagold-1"')
+tr.MakeCurlCommand(curl_and_args + ' http://crr/second -r 3-5 -H "uuid: etagold-1"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/aa.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagold", "expected etagold")
@@ -162,7 +162,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Request second slice via slice plugin, with instructions to fetch new 2nd slice
 tr = Test.AddTestRun("Request 2nd slice (expect refetch)")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/second -r 3- -H "uuid: etagnew-1"')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/second -r 3- -H "uuid: etagnew-1"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/bb.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
@@ -171,7 +171,7 @@ tr.StillRunningAfter = ts
 # 3 Test - Request fully healed asset via slice plugin
 tr = Test.AddTestRun("Request full healed slice")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/second')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/second')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression("bbbbb", "expected bbbbb content")
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
@@ -233,7 +233,7 @@ server.addResponse("sessionlog.json", req_header_refnew1, res_header_refnew1)
 # 4 Test - Preload reference etagold-0
 tr = Test.AddTestRun("Preload reference etagold-0")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://crr/reference -r 0-2 -H "uuid: etagold-0"')
+tr.MakeCurlCommand(curl_and_args + ' http://crr/reference -r 0-2 -H "uuid: etagold-0"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/aaa.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagold", "expected etagold")
@@ -242,7 +242,7 @@ tr.StillRunningAfter = ts
 # 5 Test - Preload reference etagnew-1
 tr = Test.AddTestRun("Preload slice etagnew-1")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://crr/reference -r 3-5 -H "uuid: etagnew-1"')
+tr.MakeCurlCommand(curl_and_args + ' http://crr/reference -r 3-5 -H "uuid: etagnew-1"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/bb.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
@@ -253,7 +253,7 @@ tr.StillRunningAfter = ts
 # refetch it
 tr = Test.AddTestRun("Request 2nd slice (expect abort)")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/reference -r 3- -H "uuid: etagnew-0" -w "SENT: \'%{size_download}\'"')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/reference -r 3- -H "uuid: etagnew-0" -w "SENT: \'%{size_download}\'"')
 # ps.ReturnCode = 0 # curl will fail here
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagold", "expected etagold")
 ps.Streams.stdout.Content += Testers.ContainsExpression("SENT: '0'", "expected empty payload")
@@ -262,7 +262,7 @@ tr.StillRunningAfter = ts
 # 7 Test - Request full healed asset via slice plugin
 tr = Test.AddTestRun("Request full healed slice")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/reference')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/reference')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression("bbbbb", "expected bbbbb content")
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
@@ -288,7 +288,7 @@ server.addResponse("sessionlog.json", req_header_200, res_header_200)
 # 8 test - Request through slice but get a 200 back
 tr = Test.AddTestRun("Request gets a 200")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/code200 -r 3-5 -H "uuid: code200"')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/code200 -r 3-5 -H "uuid: code200"')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression("ccccc", "expected full ccccc content")
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200")
@@ -317,7 +317,7 @@ server.addResponse("sessionlog.json", req_header_assetgone0, res_header_assetgon
 # 9 test - Preload reference slice
 tr = Test.AddTestRun("Preload reference assetgone-0")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/assetgone -r 0-2 -H "uuid: assetgone-0"')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/assetgone -r 0-2 -H "uuid: assetgone-0"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/aaa.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etag", "expected etag")
@@ -326,7 +326,7 @@ tr.StillRunningAfter = ts
 # 10 test - Fetch full asset, 2nd slice should trigger 404 response
 tr = Test.AddTestRun("Fetch full asset")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/assetgone')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/assetgone')
 # ps.ReturnCode = 0 # curl will return non zero
 ps.Streams.stderr = "gold/aaa.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etag", "expected etag")
@@ -336,7 +336,7 @@ tr.StillRunningAfter = ts
 # 11 test - Fetch full asset again, full blown 404
 tr = Test.AddTestRun("Fetch full asset, 404")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/assetgone')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/assetgone')
 # ps.ReturnCode = 0 # curl will return non zero
 ps.Streams.stdout.Content = Testers.ContainsExpression("404 Not Found", "Expected 404")
 tr.StillRunningAfter = ts
@@ -405,7 +405,7 @@ edate = to_httpdate(edt)
 # 12 Test - Preload reference etagold-1
 tr = Test.AddTestRun("Preload slice etagold-custom-1")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + f' http://crrhdr/second-custom -r 3-5 -H "uuid: etagold-custom-1" -H "crr-foo: {edate}"')
+tr.MakeCurlCommand(curl_and_args + f' http://crrhdr/second-custom -r 3-5 -H "uuid: etagold-custom-1" -H "crr-foo: {edate}"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/aa.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagold-custom", "expected etagold-custom")
@@ -414,7 +414,7 @@ tr.StillRunningAfter = ts
 # 13 Test - Request second slice via slice plugin, with instructions to fetch new 2nd slice
 tr = Test.AddTestRun("Request 2nd slice (expect refetch)")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slicehdr/second-custom -r 3- -H "uuid: etagnew-custom-1"')
+tr.MakeCurlCommand(curl_and_args + ' http://slicehdr/second-custom -r 3- -H "uuid: etagnew-custom-1"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/bb.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew-custom", "expected etagnew-custom")

@@ -50,11 +50,11 @@ ts.Disk.remap_config.AddLine("map http://myhost.test http://127.0.0.1:{0}".forma
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.CurlCommand('--verbose --ipv4 --header "Host:myhost.test" http://localhost:{}/ 2>curl.txt'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --header "Host:myhost.test" http://localhost:{}/ 2>curl.txt'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.CurlCommand('--verbose --ipv4 --header "Host:myhost.test" http://localhost:{}/ 2>curl.txt'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --header "Host:myhost.test" http://localhost:{}/ 2>curl.txt'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()

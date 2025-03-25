@@ -74,7 +74,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Exercise lua script
 tr = Test.AddTestRun("Lua hello")
 ps = tr.Processes.Default  # alias
-tr.CurlCommand(curl_and_args + ' http://hello/hello')
+tr.MakeCurlCommand(curl_and_args + ' http://hello/hello')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression("Hello, World", "hello world content")
 tr.StillRunningAfter = ts

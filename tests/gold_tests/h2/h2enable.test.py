@@ -58,7 +58,7 @@ ts.Disk.sni_yaml.AddLines([
 ])
 
 tr = Test.AddTestRun("Do-not-Negotiate-h2")
-tr.CurlCommand("-v -k --ipv4 --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port))
+tr.MakeCurlCommand("-v -k --ipv4 --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -70,7 +70,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("[Uu]sing HTTP/?2
 tr.TimeOut = 10
 
 tr2 = Test.AddTestRun("Do negotiate h2")
-tr2.CurlCommand("-v -k --ipv4 --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port))
+tr2.MakeCurlCommand("-v -k --ipv4 --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 10
@@ -80,7 +80,7 @@ tr2.Processes.Default.Streams.All += Testers.ContainsExpression("[Uu]sing HTTP/?
 tr2.TimeOut = 10
 
 tr2 = Test.AddTestRun("Do negotiate h2")
-tr2.CurlCommand("-v -k --ipv4 --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(ts.Variables.ssl_port))
+tr2.MakeCurlCommand("-v -k --ipv4 --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(ts.Variables.ssl_port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 10

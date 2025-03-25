@@ -132,7 +132,7 @@ ts4.Disk.records_config.update(
     })
 
 tr = Test.AddTestRun('new session then reuse')
-tr.CurlCommandMulti(
+tr.MakeCurlCommandMulti(
     '{{curl}} https://127.0.0.1:{0}/reuse_session -k && {{curl}} https://127.0.0.1:{0}/reuse_session -k'.format(
         ts2.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -147,7 +147,7 @@ tr.StillRunningAfter += ts1
 tr.StillRunningAfter += ts2
 
 tr = Test.AddTestRun('remove oldest session, new session then reuse')
-tr.CurlCommandMulti(
+tr.MakeCurlCommandMulti(
     '{{curl}} https://127.0.0.1:{0}/remove_oldest -k && {{curl}} https://127.0.0.1:{0}/remove_oldest -k'.format(
         ts2.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -158,7 +158,7 @@ ts2.Disk.traffic_out.Content += Testers.ContainsExpression('reused session to or
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun('disable origin session reuse, reuse should fail')
-tr.CurlCommandMulti('{{curl}} https://127.0.0.1:{0} -k && {{curl}} https://127.0.0.1:{0} -k'.format(ts4.Variables.ssl_port))
+tr.MakeCurlCommandMulti('{{curl}} https://127.0.0.1:{0} -k && {{curl}} https://127.0.0.1:{0} -k'.format(ts4.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts3)
 tr.Processes.Default.StartBefore(ts4)

@@ -84,7 +84,7 @@ cmd_tunnel = '-k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}
 
 # Send the tunnel request
 tr.Processes.Default.Env = ts.Env
-tr.CurlCommand(cmd_tunnel)
+tr.MakeCurlCommand(cmd_tunnel)
 tr.Processes.Default.ReturnCode = 0
 tr.TimeOut = 10
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))

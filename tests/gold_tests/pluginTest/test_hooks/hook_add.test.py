@@ -47,7 +47,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
-tr.CurlCommand('--verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 # Look at the debug output from the plugin

@@ -123,7 +123,7 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
-tr.CurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/defaultbar'.format(ts.Variables.port))
+tr.MakeCurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/defaultbar'.format(ts.Variables.port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(server_foo)
@@ -134,14 +134,14 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Conn
 
 # should fail.  Exercise the override
 tr2 = Test.AddTestRun("policy-override-fail")
-tr2.CurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/overridepolicy".format(ts.Variables.port))
+tr2.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/overridepolicy".format(ts.Variables.port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should fail")
 
 # should succeed with an error message
 tr2 = Test.AddTestRun("properties-override-permissive")
-tr2.CurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/overrideproperties".format(ts.Variables.port))
+tr2.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/overrideproperties".format(ts.Variables.port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")

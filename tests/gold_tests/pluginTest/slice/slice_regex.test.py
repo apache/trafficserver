@@ -115,7 +115,7 @@ tr = Test.AddTestRun("Exclude - asset passed through")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommand(curl_and_args + ' http://exclude/slice.txt')
+tr.MakeCurlCommand(curl_and_args + ' http://exclude/slice.txt')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Info: notsliced", "expected not sliced header")
 tr.StillRunningAfter = ts
@@ -123,7 +123,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Exclude mp4 gets sliced
 tr = Test.AddTestRun("Exclude - asset is sliced")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://exclude/slice.mp4')
+tr.MakeCurlCommand(curl_and_args + ' http://exclude/slice.mp4')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Info: sliced", "expected sliced header")
 tr.StillRunningAfter = ts
@@ -132,7 +132,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Exclude: ensure txt passes through
 tr = Test.AddTestRun("Include - asset passed through")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://include/slice.txt')
+tr.MakeCurlCommand(curl_and_args + ' http://include/slice.txt')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Info: notsliced", "expected not sliced header")
 tr.StillRunningAfter = ts
@@ -140,7 +140,7 @@ tr.StillRunningAfter = ts
 # 3 Test - Exclude mp4 gets sliced
 tr = Test.AddTestRun("Include - asset is sliced")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://include/slice.mp4')
+tr.MakeCurlCommand(curl_and_args + ' http://include/slice.mp4')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Info: sliced", "expected sliced header")
 tr.StillRunningAfter = ts

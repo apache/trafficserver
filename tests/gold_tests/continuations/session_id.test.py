@@ -62,10 +62,10 @@ tr = Test.AddTestRun("Perform HTTP/1 transactions")
 cmd = '-v -H "host:example.com" http://127.0.0.1:{0}'.format(ts.Variables.port)
 numberOfRequests = 100
 # Create a bunch of curl commands to be executed in parallel. Default.Process
-# is set in SpawnCommands.  On Fedora 28/29, it seems that curl will
+# is set in SpawnCurlCommands.  On Fedora 28/29, it seems that curl will
 # occasionally timeout after a couple seconds and return exitcode 2
 # Examining the packet capture shows that Traffic Server dutifully sends the response
-ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
+ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
@@ -81,7 +81,7 @@ tr.StillRunningAfter = server
 #
 tr = Test.AddTestRun("Perform HTTP/2 transactions")
 cmd = '-v -k --http2 -H "host:example.com" https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
-ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
+ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 

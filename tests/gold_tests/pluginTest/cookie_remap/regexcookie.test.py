@@ -77,9 +77,8 @@ ts.Disk.remap_config.AddLine(
 
 # Positive test case that remaps because cookie regex matches
 tr = Test.AddTestRun("cookie regex matches")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=ilove-oreos-chipsahoy-icecream" \
 -H "Proxy-Connection: keep-alive" \
@@ -94,9 +93,8 @@ server.Streams.All = "gold/regexmatches.gold"
 
 # Negative test case that doesn't remap because cookie regex doesn't match
 tr = Test.AddTestRun("cookie regex doesn't match")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=etc" \
 -H "Proxy-Connection: keep-alive" \

@@ -79,13 +79,13 @@ def reallyLong():
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.CurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong())
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong())
 tr.Processes.Default.ReturnCode = 0
 
 # Repeat same curl, will be answered from the ATS cache.
 #
 tr = Test.AddTestRun()
-tr.CurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong())
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong())
 tr.Processes.Default.ReturnCode = 0
 
 # Delay to allow TS to flush report to disk, then "sanitize" generated log.

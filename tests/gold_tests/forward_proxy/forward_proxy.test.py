@@ -81,7 +81,7 @@ class ForwardProxyTest:
         tr = Test.AddTestRun()
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
-        tr.CurlCommand(
+        tr.MakeCurlCommand(
             f'--proxy-insecure -v -H "uuid: 1" '
             f'--proxy "https://127.0.0.1:{self.ts.Variables.ssl_port}/" '
             f'http://example.com/')

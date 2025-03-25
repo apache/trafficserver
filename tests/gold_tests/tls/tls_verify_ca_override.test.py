@@ -90,7 +90,7 @@ ts.Disk.records_config.update(
 
 # Should succeed
 tr = Test.AddTestRun("Use correct ca bundle for server 1")
-tr.CurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/case1'.format(ts.Variables.port))
+tr.MakeCurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/case1'.format(ts.Variables.port))
 tr.ReturnCode = 0
 tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
@@ -104,7 +104,7 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("Use incorrect ca  bundle for server 1")
-tr2.CurlCommand("-k -H \"host: bar.com\"  http://127.0.0.1:{0}/badcase1".format(ts.Variables.port))
+tr2.MakeCurlCommand("-k -H \"host: bar.com\"  http://127.0.0.1:{0}/badcase1".format(ts.Variables.port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server1
 tr2.StillRunningAfter = ts
@@ -112,7 +112,7 @@ tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("Use correct ca bundle for server 2")
-tr2.CurlCommand("-k -H \"host: random.com\"  http://127.0.0.1:{0}/case2".format(ts.Variables.port))
+tr2.MakeCurlCommand("-k -H \"host: random.com\"  http://127.0.0.1:{0}/case2".format(ts.Variables.port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server2
 tr2.StillRunningAfter = ts
@@ -120,7 +120,7 @@ tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr3 = Test.AddTestRun("User incorrect ca bundle for server 2")
-tr3.CurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/badcase2".format(ts.Variables.port))
+tr3.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/badcase2".format(ts.Variables.port))
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server2
 tr3.StillRunningAfter = ts

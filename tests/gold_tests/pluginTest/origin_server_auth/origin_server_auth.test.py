@@ -97,7 +97,7 @@ class OriginServerAuthTest:
         Test s3 v4 origin server
         '''
         tr = Test.AddTestRun()
-        tr.CurlCommand(f'-s -v -H "Host: www.example.com" http://127.0.0.1:{self.ts.Variables.port}/s3-bucket;')
+        tr.MakeCurlCommand(f'-s -v -H "Host: www.example.com" http://127.0.0.1:{self.ts.Variables.port}/s3-bucket;')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
@@ -110,7 +110,7 @@ class OriginServerAuthTest:
         Test GCP origin server
         '''
         tr = Test.AddTestRun()
-        tr.CurlCommand(f'-s -v -H "Host: www.example.com" http://127.0.0.1:{self.ts.Variables.port}/gcp;')
+        tr.MakeCurlCommand(f'-s -v -H "Host: www.example.com" http://127.0.0.1:{self.ts.Variables.port}/gcp;')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("200 OK", "expected 200 response")
         tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression("Content-Length: 8", "expected content-length 8")

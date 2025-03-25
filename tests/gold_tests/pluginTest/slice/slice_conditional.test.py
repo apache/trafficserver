@@ -104,7 +104,7 @@ tr = Test.AddTestRun("Small request 1")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommand(curl_and_args + ' http://slice/small')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/small')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression('smol', 'expected smol')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: miss', 'expected cache miss')
@@ -113,7 +113,7 @@ tr.StillRunningAfter = ts
 # Test case: second request of small object - expect cache hit
 tr = Test.AddTestRun("Small request 2")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/small')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/small')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression('smol', 'expected smol')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')
@@ -122,7 +122,7 @@ tr.StillRunningAfter = ts
 # Test case: range request of small object - expect cache hit (proxy.config.http.cache.range.lookup = 1)
 tr = Test.AddTestRun("Small request - ranged")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' -r 1-2 http://slice/small')
+tr.MakeCurlCommand(curl_and_args + ' -r 1-2 http://slice/small')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression('mo', 'expected mo')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')
@@ -131,7 +131,7 @@ tr.StillRunningAfter = ts
 # Test case: first request of large object - expect unsliced, cache write disabled
 tr = Test.AddTestRun("Large request 1")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/large')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/large')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression('unsliced large object!', 'expected large object')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: miss', 'expected cache miss')
@@ -140,7 +140,7 @@ tr.StillRunningAfter = ts
 # Test case: first request of large object - expect sliced, cache miss
 tr = Test.AddTestRun("Large request 2")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/large')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/large')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression('large object sliced!', 'expected large object')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: miss', 'expected cache miss')
@@ -149,7 +149,7 @@ tr.StillRunningAfter = ts
 ## Test case: first request of large object - expect cache hit
 tr = Test.AddTestRun("Large request 3")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://slice/large')
+tr.MakeCurlCommand(curl_and_args + ' http://slice/large')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression('large object sliced!', 'expected large object')
 ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')

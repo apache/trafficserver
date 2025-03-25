@@ -81,7 +81,7 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
-tr.CurlCommand("-v --resolve 'bar.com:{0}:127.0.0.1' -k https://bar.com:{0}".format(ts.Variables.ssl_port))
+tr.MakeCurlCommand("-v --resolve 'bar.com:{0}:127.0.0.1' -k https://bar.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(dns)
@@ -92,7 +92,7 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Conn
 
 # foo.com in.  bar.com out.  Should not verify
 tr2 = Test.AddTestRun("Enforced-bad-test")
-tr2.CurlCommand("-v -k --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port))
+tr2.MakeCurlCommand("-v -k --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts

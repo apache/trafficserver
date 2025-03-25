@@ -93,7 +93,7 @@ curlRequest = (
     '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{0}/world')
 
 tr = Test.AddTestRun("Add connection close header when ssn-txn-count > 2")
-tr.CurlCommandMulti(curlRequest.format(ts.Variables.port))
+tr.MakeCurlCommandMulti(curlRequest.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

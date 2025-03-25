@@ -50,7 +50,7 @@ ts.Disk.remap_config.AddLine('map https://localhost http://localhost:{}'.format(
 server = Test.Processes.Process("server", "bash -c '" + Test.TestDirectory + "/server.sh {}'".format(Test.Variables.server_port))
 
 tr = Test.AddTestRun()
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '--request POST --verbose --ipv4 --http2 --insecure --header "Content-Length: 0"' +
     " --header 'Host: localhost' https://localhost:{}/xyz >curl.log 2>curl.err".format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0

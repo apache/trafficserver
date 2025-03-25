@@ -121,7 +121,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
 
 tr = Test.AddTestRun("Trace request with a chunked body via curl")
-tr.CurlCommand(
+tr.MakeCurlCommand(
     '-v --http1.1 --header "Transfer-Encoding: chunked" -d aaa -X TRACE -o trace_curl.txt -k http://127.0.0.1:{}/foo'.format(
         ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
@@ -130,7 +130,7 @@ trace_out.Content = Testers.ContainsExpression("<TITLE>Bad Request</TITLE>", "AT
 trace_out.Content += Testers.ContainsExpression("Description: Could not process this request.", "ATS error msg")
 
 tr = Test.AddTestRun("Trace request via curl")
-tr.CurlCommand('-v --http1.1 -X TRACE -k http://127.0.0.1:{}/bar'.format(ts.Variables.port))
+tr.MakeCurlCommand('-v --http1.1 -X TRACE -k http://127.0.0.1:{}/bar'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     r"HTTP/1.1 501 Unsupported method \('TRACE'\)", "microserver does not support TRACE")

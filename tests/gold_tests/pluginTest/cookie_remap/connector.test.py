@@ -77,9 +77,8 @@ ts.Disk.remap_config.AddLine(
 
 # Positive test case that remaps because all connected operations pass
 tr = Test.AddTestRun("cookie value matches")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=abcd icecream=donteat" \
 -H "Proxy-Connection: keep-alive" \
@@ -94,9 +93,8 @@ server.Streams.All = "gold/matchcookie.gold"
 
 # Negative test case that doesn't remap because not all subops pass
 tr = Test.AddTestRun("cookie value doesn't match")
-tr.CurlCommand(
-    '''
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=somethingelse" \
 -H "Proxy-Connection: keep-alive" \

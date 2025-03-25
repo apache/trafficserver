@@ -66,7 +66,7 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     f"-q --tls-max 1.2 -s -v -k  --cert ./signed-foo.pem --key ./signed-foo.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}"
 )
 tr.Processes.Default.ReturnCode = 0
@@ -112,7 +112,7 @@ tr3.Setup.Copy("ssl/signed-bar.key")
 tr3.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags_log.Name, "signed-notexist.pem", 1))
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
-tr3.CurlCommand(
+tr3.MakeCurlCommand(
     f"-q --tls-max 1.2 -s -v -k  --cert ./signed-bar.pem --key ./signed-bar.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}"
 )
 tr3.Processes.Default.ReturnCode = 0

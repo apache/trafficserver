@@ -76,7 +76,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.CurlCommand(
+tr.MakeCurlCommand(
     "--tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1"
     .format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -85,7 +85,7 @@ tr.Processes.Default.Streams.all = Testers.ExcludesExpression("Could Not Connect
 tr2 = Test.AddTestRun("request bad name")
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
-tr2.CurlCommand(
+tr2.MakeCurlCommand(
     "--tls-max 1.2 -k --cert ./signed-bar.pem --key ./signed-bar.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1"
     .format(ts.Variables.ssl_port))
 tr2.Processes.Default.ReturnCode = 35
@@ -96,7 +96,7 @@ tr3.Setup.Copy("ssl/server.pem")
 tr3.Setup.Copy("ssl/server.key")
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
-tr3.CurlCommand(
+tr3.MakeCurlCommand(
     "--tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1".format(
         ts.Variables.ssl_port))
 tr3.Processes.Default.ReturnCode = 35

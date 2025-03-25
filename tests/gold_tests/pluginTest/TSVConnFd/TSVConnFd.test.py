@@ -56,7 +56,7 @@ ts.Disk.remap_config.AddLine("map http://myhost.test http://127.0.0.1:{0}".forma
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.CurlCommandMulti(
+tr.MakeCurlCommandMulti(
     f'touch {InProgressFilePathspec} ; ' +
     f'{{curl}} --verbose --ipv4 --header "Host:myhost.test" http://localhost:{ts.Variables.port}/')
 tr.Processes.Default.ReturnCode = 0

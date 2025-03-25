@@ -192,7 +192,7 @@ tr = Test.AddTestRun("full asset cache miss bypass")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -H "uuid: full"')
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -H "uuid: full"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/full.stderr.gold"
 tr.StillRunningAfter = ts
@@ -201,7 +201,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Fetch range into cache
 tr = Test.AddTestRun("inner range cache miss")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str))
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str))
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/inner.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
@@ -212,7 +212,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Fetch from cache
 tr = Test.AddTestRun("inner range cache hit")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r {}'.format(inner_str))
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {}'.format(inner_str))
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/inner.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
@@ -225,7 +225,7 @@ tr.StillRunningAfter = ts
 # 3 Test - 0- request
 tr = Test.AddTestRun("0- request miss")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: frange"'.format(frange_str))
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: frange"'.format(frange_str))
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/full.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
@@ -236,7 +236,7 @@ tr.StillRunningAfter = ts
 # 4 Test - 0- request
 tr = Test.AddTestRun("0- request hit")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r {}'.format(frange_str))
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {}'.format(frange_str))
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/full.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
@@ -249,7 +249,7 @@ tr.StillRunningAfter = ts
 # 5 Test - -5 request miss
 tr = Test.AddTestRun("-5 request miss")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: last"'.format(last_str))
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: last"'.format(last_str))
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
@@ -260,7 +260,7 @@ tr.StillRunningAfter = ts
 # 6 Test - -5 request hit
 tr = Test.AddTestRun("-5 request hit")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r {}'.format(last_str))
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {}'.format(last_str))
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
@@ -273,7 +273,7 @@ tr.StillRunningAfter = ts
 # 7 Test - 404
 tr = Test.AddTestRun("404 request 1st")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/404 -r 0-')
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/404 -r 0-')
 ps.Streams.stdout = "gold/404.stdout.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 tr.StillRunningAfter = ts
@@ -281,7 +281,7 @@ tr.StillRunningAfter = ts
 # 8 Test - 404
 tr = Test.AddTestRun("404 request 2nd")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/404 -r 0-')
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/404 -r 0-')
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 ps.Streams.stdout.Content += Testers.ContainsExpression("404 Not Found", "expected 404 response")
 tr.StillRunningAfter = ts
@@ -289,7 +289,7 @@ tr.StillRunningAfter = ts
 # 9 Test - origin returns 200 response to range request
 tr = Test.AddTestRun("origin returns 200")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: full"')
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: full"')
 ps.ReturnCode = 3  # <--- note the return code
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 ps.Streams.stdout.Content += Testers.ContainsExpression("200 OK", "expected full 200 response")
@@ -301,7 +301,7 @@ curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x
 # 10 Test - cache_key_url request
 tr = Test.AddTestRun("cache_key_url request")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://parentselect/path -r {} -H "uuid: pselect"'.format(pselect_str))
+tr.MakeCurlCommand(curl_and_args + ' http://parentselect/path -r {} -H "uuid: pselect"'.format(pselect_str))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression(
     "X-ParentSelection-Key: .*-bytes=",
@@ -313,7 +313,7 @@ tr.StillRunningAfter = server
 # 11 Test - non cache_key_url request ... no X-ParentSelection-Key
 tr = Test.AddTestRun("non cache_key_url request")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str))
+tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ExcludesExpression("X-ParentSelection-Key", "parent select key shouldn't show up")
 tr.StillRunningAfter = ts
@@ -322,7 +322,7 @@ tr.StillRunningAfter = server
 # 12 Test - cache_key_url request -- deprecated
 tr = Test.AddTestRun("cache_key_url request - deprecated")
 ps = tr.Processes.Default
-tr.CurlCommand(curl_and_args + ' http://psd/path -r {} -H "uuid: pselect"'.format(pselect_str))
+tr.MakeCurlCommand(curl_and_args + ' http://psd/path -r {} -H "uuid: pselect"'.format(pselect_str))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression(
     "X-ParentSelection-Key: .*-bytes=",
