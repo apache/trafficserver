@@ -45,7 +45,7 @@ DbgCtl dbg_ctl_cache_evac{"cache_evac"};
 
 } // namespace
 
-PreservationTable::PreservationTable(int size) : evacuate_size{(size / EVACUATION_BUCKET_SIZE) + 2}
+PreservationTable::PreservationTable(off_t size) : evacuate_size{static_cast<int>(size / EVACUATION_BUCKET_SIZE) + 2}
 {
   ink_assert(size > 0);
   int evac_len   = this->evacuate_size * sizeof(DLL<EvacuationBlock>);
