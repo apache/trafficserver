@@ -390,7 +390,7 @@ if needed to store the object.
    ``Doc`` layout 3.2.0
 
 This had the problem that with only one fragment table it could not be reliable
-for objects with more than one alternate[#multiple-alternates]_. Therefore, the
+for objects with more than one alternate [#multiple-alternates]_. Therefore, the
 fragment data was moved from being a separate variable length section of the
 metadata to being directly incorporated in to the :cpp:class:`CacheHTTPInfoVector`,
 yielding a layout of the following form.
@@ -720,7 +720,7 @@ The set of things which can affect cacheability are:
 * Plugin operations.
 
 The initial internal checks, along with their :file:`records.yaml`
-overrides[#cacheability-overrides]_, are done in ``HttpTransact::is_request_cache_lookupable``.
+overrides [#cacheability-overrides]_, are done in ``HttpTransact::is_request_cache_lookupable``.
 
 The checks that are done are:
 
