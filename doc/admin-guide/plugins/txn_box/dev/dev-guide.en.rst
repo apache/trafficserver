@@ -33,11 +33,3 @@ This section is for C++ developers working on or with |TxB|.
    memory-management.en
    dev-extractor.en
    dev-directive.en
-
-Reference
-*********
-
-.. toctree::
-   :maxdepth: 1
-
-   class-reference.en
