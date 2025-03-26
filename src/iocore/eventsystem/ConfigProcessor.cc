@@ -88,8 +88,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
   idx      = id - 1;
   old_info = infos[idx].exchange(info);
 
-  Dbg(dbg_ctl_config, "Set for slot %d 0x%" PRId64 " was 0x%" PRId64 " with ref count %d", id, (int64_t)info, (int64_t)old_info,
-      (old_info) ? old_info->refcount() : 0);
+  Dbg(dbg_ctl_config, "Set for slot %d %p was %p with ref count %d", id, info, old_info, old_info ? old_info->refcount() : 0);
 
   if (old_info) {
     // The ConfigInfoReleaser now takes our refcount, but
