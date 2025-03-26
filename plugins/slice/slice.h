@@ -36,7 +36,7 @@ extern DbgCtl dbg_ctl;
 using namespace slice_ns;
 
 #define __FILENAME__        (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#define DEBUG_LOG(fmt, ...) Dbg(dbg_ctl, "[%s:% 4d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__)
+#define DEBUG_LOG(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__)
 
 #define ERROR_LOG(fmt, ...)                                                                         \
   TSError("[%s/%s:% 4d] %s(): " fmt, PLUGIN_NAME, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__); \
