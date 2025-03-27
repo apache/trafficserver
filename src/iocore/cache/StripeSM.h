@@ -41,10 +41,7 @@
 #define STRIPE_MAGIC                 0xF1D0F00D
 #define START_BLOCKS                 16 // 8k, STORE_BLOCK_SIZE
 #define START_POS                    ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
-#define STRIPE_BLOCK_SIZE            (1024 * 1024 * 128) // 128MB
-#define MIN_STRIPE_SIZE              STRIPE_BLOCK_SIZE
-#define MAX_STRIPE_SIZE              ((off_t)512 * 1024 * 1024 * 1024 * 1024) // 512TB
-#define MAX_FRAG_SIZE                (AGG_SIZE - sizeof(Doc))                 // true max
+#define MAX_FRAG_SIZE                (AGG_SIZE - sizeof(Doc)) // true max
 #define LEAVE_FREE                   DEFAULT_MAX_BUFFER_SIZE
 #define STRIPE_HASH_TABLE_SIZE       32707
 #define STRIPE_HASH_EMPTY            0xFFFF

@@ -43,6 +43,10 @@
 #define ROUND_TO_SECTOR(_p, _x)  INK_ALIGN((_x), _p->sector_size)
 #define ROUND_TO(_x, _y)         INK_ALIGN((_x), (_y))
 
+#define STRIPE_BLOCK_SIZE (1024 * 1024 * 128) // 128MB
+#define MIN_STRIPE_SIZE   STRIPE_BLOCK_SIZE
+#define MAX_STRIPE_SIZE   ((off_t)512 * 1024 * 1024 * 1024 * 1024) // 512TB
+
 // This is defined here so CacheVC can avoid including StripeSM.h.
 #define RECOVERY_SIZE EVACUATION_SIZE // 8MB
 
