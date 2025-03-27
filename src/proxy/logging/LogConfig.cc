@@ -129,19 +129,20 @@ LogConfig::read_configuration_variables()
 
   {
     auto str{RecGetRecordStringAlloc("proxy.config.log.logfile_perm").first};
-    if (auto logfile_perm_parsed{ink_fileperm_parse(str.c_str())}; logfile_perm_parsed != -1) {
+    if (auto logfile_perm_parsed{ink_fileperm_parse(ats_as_c_str(str))}; logfile_perm_parsed != -1) {
       logfile_perm = logfile_perm_parsed;
     }
   }
 
-  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.log.hostname").first}; !rec_str.empty() && rec_str != "localhost"sv) {
+  if (auto str{RecGetRecordStringAlloc("proxy.config.log.hostname").first};
+      str && !str.value().empty() && str.value() != "localhost"sv) {
     ats_free(hostname);
-    hostname = ats_stringdup(rec_str);
+    hostname = ats_stringdup(str);
   }
 
-  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.error.logfile.filename").first}; !rec_str.empty()) {
+  if (auto str{RecGetRecordStringAlloc("proxy.config.error.logfile.filename").first}; str && !str.value().empty()) {
     ats_free(error_log_filename);
-    error_log_filename = ats_stringdup(rec_str);
+    error_log_filename = ats_stringdup(str);
   }
 
   ats_free(logfile_dir);
@@ -209,7 +210,7 @@ LogConfig::read_configuration_variables()
 
     // For traffic.out
     auto configured_name{RecGetRecordStringAlloc("proxy.config.output.logfile.name").first};
-    auto traffic_logname{configured_name.empty() ? "traffic.out"sv : configured_name};
+    auto traffic_logname{configured_name && !configured_name.value().empty() ? configured_name.value() : "traffic.out"sv};
     val = static_cast<int>(RecGetRecordInt("proxy.config.output.logfile.rolling_min_count").first);
     register_rolled_log_auto_delete(traffic_logname, val);
 

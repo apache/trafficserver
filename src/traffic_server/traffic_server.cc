@@ -413,7 +413,8 @@ public:
   {
     SET_HANDLER(&DiagsLogContinuation::periodic);
 
-    traffic_out_name = RecGetRecordStringAlloc("proxy.config.output.logfile.name").first;
+    auto str{RecGetRecordStringAlloc("proxy.config.output.logfile.name").first};
+    traffic_out_name = str ? std::move(str.value()) : std::string{};
   }
 
   int
@@ -1547,7 +1548,7 @@ syslog_log_configure()
 {
   char sys_var[] = "proxy.config.syslog_facility";
   if (auto [facility_str, err]{RecGetRecordStringAlloc(sys_var)}; err == REC_ERR_OKAY) {
-    int facility = facility_string_to_int(facility_str.c_str());
+    int facility = facility_string_to_int(ats_as_c_str(facility_str));
     if (facility < 0) {
       syslog(LOG_WARNING, "Bad syslog facility in %s. Keeping syslog at LOG_DAEMON", ts::filename::RECORDS);
     } else {
@@ -2051,8 +2052,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   {
     auto rec_str{RecGetRecordStringAlloc("proxy.config.log.hostname").first};
-    auto hostname{rec_str.c_str()};
-    if (rec_str.empty() || rec_str == "localhost"sv) {
+    auto hostname{ats_as_c_str(rec_str)};
+    if (hostname != nullptr || std::string_view(hostname) == "localhost"sv) {
       // The default value was used. Let Machine::init derive the hostname.
       hostname = nullptr;
     }
@@ -2160,9 +2161,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
-  if (auto s{RecGetRecordStringAlloc("proxy.config.diags.debug.client_ip").first}; !s.empty()) {
-    // Translate string to IpAddr
-    set_debug_ip(s.c_str());
+  {
+    auto s{RecGetRecordStringAlloc("proxy.config.diags.debug.client_ip").first};
+    if (auto p{ats_as_c_str(s)}; p) {
+      // Translate string to IpAddr
+      set_debug_ip(p);
+    }
   }
   RecRegisterConfigUpdateCb("proxy.config.diags.debug.client_ip", update_debug_client_ip, nullptr);
 

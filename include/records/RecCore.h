@@ -24,6 +24,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 
 #include "tscore/Diags.h"
 
@@ -163,11 +164,11 @@ RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT sourc
 RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true);
 
-std::pair<RecInt, RecErrT>      RecGetRecordInt(const char *name, bool lock = true);
-std::pair<RecFloat, RecErrT>    RecGetRecordFloat(const char *name, bool lock = true);
-RecErrT                         RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
-std::pair<std::string, RecErrT> RecGetRecordStringAlloc(const char *name, bool lock = true);
-std::pair<RecCounter, RecErrT>  RecGetRecordCounter(const char *name, bool lock = true);
+std::pair<RecInt, RecErrT>                     RecGetRecordInt(const char *name, bool lock = true);
+std::pair<RecFloat, RecErrT>                   RecGetRecordFloat(const char *name, bool lock = true);
+RecErrT                                        RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
+std::pair<std::optional<std::string>, RecErrT> RecGetRecordStringAlloc(const char *name, bool lock = true);
+std::pair<RecCounter, RecErrT>                 RecGetRecordCounter(const char *name, bool lock = true);
 
 // Convinience to link and get a config of RecInt type
 inline RecErrT

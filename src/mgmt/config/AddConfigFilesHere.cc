@@ -39,7 +39,7 @@ void
 registerFile(const char *configName, const char *defaultName, bool isRequired)
 {
   auto [fname, err]{RecGetRecordStringAlloc(configName)};
-  FileManager::instance().addFile(err == REC_ERR_OKAY ? fname.c_str() : defaultName, configName, false, isRequired);
+  FileManager::instance().addFile(err == REC_ERR_OKAY ? ats_as_c_str(fname) : defaultName, configName, false, isRequired);
 }
 
 //

@@ -105,24 +105,24 @@ DiagsConfig::reconfigure_diags()
       break;
     }
 
-    std::string rec_str;
+    std::optional<std::string> rec_str;
     std::tie(rec_str, err) = RecGetRecordStringAlloc(record_name);
     found                  = err == REC_ERR_OKAY;
     all_found              = all_found && found;
 
     if (found) {
-      parse_output_string(rec_str.c_str(), &(c.outputs[l]));
+      parse_output_string(ats_as_c_str(rec_str), &(c.outputs[l]));
     } else {
       Error("can't find config variable '%s'", record_name);
     }
   }
 
-  std::string dt;
+  std::optional<std::string> dt;
   std::tie(dt, err) = RecGetRecordStringAlloc("proxy.config.diags.debug.tags");
   found             = err == REC_ERR_OKAY;
   all_found         = all_found && found;
 
-  std::string at;
+  std::optional<std::string> at;
   std::tie(at, err) = RecGetRecordStringAlloc("proxy.config.diags.action.tags");
   found             = err == REC_ERR_OKAY;
   all_found         = all_found && found;
@@ -146,8 +146,8 @@ DiagsConfig::reconfigure_diags()
     // add new tag tables from records.yaml or command line overrides //
     //////////////////////////////////////////////////////////////////////
 
-    _diags->activate_taglist((_diags->base_debug_tags ? _diags->base_debug_tags : dt.c_str()), DiagsTagType_Debug);
-    _diags->activate_taglist((_diags->base_action_tags ? _diags->base_action_tags : at.c_str()), DiagsTagType_Action);
+    _diags->activate_taglist((_diags->base_debug_tags ? _diags->base_debug_tags : ats_as_c_str(dt)), DiagsTagType_Debug);
+    _diags->activate_taglist((_diags->base_action_tags ? _diags->base_action_tags : ats_as_c_str(at)), DiagsTagType_Action);
 
     ////////////////////////////////////
     // change the diags config values //
@@ -310,8 +310,10 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   {
     auto diags_perm{RecGetRecordStringAlloc("proxy.config.diags.logfile_perm").first};
     auto output_perm{RecGetRecordStringAlloc("proxy.config.output.logfile_perm").first};
-    int  diags_perm_parsed  = diags_perm.empty() ? -1 : ink_fileperm_parse(diags_perm.c_str());
-    int  output_perm_parsed = diags_perm.empty() ? -1 : ink_fileperm_parse(output_perm.c_str());
+    auto diags_perm_c_str{ats_as_c_str(diags_perm)};
+    auto output_perm_c_str{ats_as_c_str(output_perm)};
+    int  diags_perm_parsed  = diags_perm_c_str ? ink_fileperm_parse(diags_perm_c_str) : -1;
+    int  output_perm_parsed = output_perm_c_str ? ink_fileperm_parse(output_perm_c_str) : -1;
 
     // Set up diags, FILE streams are opened in Diags constructor
     diags_log = new BaseLogFile(diags_logpath.c_str());

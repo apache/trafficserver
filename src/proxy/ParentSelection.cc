@@ -83,8 +83,6 @@ ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_p
   // Handle default parent
   auto           rec_str{RecGetRecordStringAlloc(default_var).first};
   ats_scoped_str default_val{ats_stringdup(rec_str)};
-  // Maybe we can change createDefaultParent and dependent functions to take const char * instead of char *
-  // to avoid a reduncant memory allocation, or we could just use const_cast<char *>(rec_str.c_str()).
   DefaultParent = createDefaultParent(default_val);
 }
 
@@ -971,8 +969,6 @@ SocksServerConfig::reconfigure()
   {
     auto           rec_str{RecGetRecordStringAlloc("proxy.config.socks.default_servers").first};
     ats_scoped_str default_val{ats_stringdup(rec_str)};
-    // Maybe we can change createDefaultParent and dependent functions to take const char * instead of char *
-    // to avoid a reduncant memory allocation, or we could just use const_cast<char *>(rec_str.c_str()).
     params->DefaultParent = createDefaultParent(default_val);
   }
 

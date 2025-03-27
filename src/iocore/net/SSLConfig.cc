@@ -428,7 +428,7 @@ SSLConfigParams::initialize()
 
   {
     auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.server.cert.path")};
-    auto serverCertRelativePath{err == REC_ERR_OKAY ? rec_str.c_str() : nullptr};
+    auto serverCertRelativePath{err == REC_ERR_OKAY ? ats_as_c_str(rec_str) : nullptr};
     set_paths_helper(serverCertRelativePath, nullptr, &serverCertPathOnly, nullptr);
   }
 
@@ -437,15 +437,15 @@ SSLConfigParams::initialize()
 
   {
     auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.server.private_key.path")};
-    auto ssl_server_private_key_path{err == REC_ERR_OKAY ? rec_str.c_str() : nullptr};
+    auto ssl_server_private_key_path{err == REC_ERR_OKAY ? ats_as_c_str(rec_str) : nullptr};
     set_paths_helper(ssl_server_private_key_path, nullptr, &serverKeyPathOnly, nullptr);
   }
 
   {
     auto [pash_str, path_err]{RecGetRecordStringAlloc("proxy.config.ssl.CA.cert.filename")};
-    auto ssl_server_ca_cert_filename{path_err == REC_ERR_OKAY ? pash_str.c_str() : nullptr};
+    auto ssl_server_ca_cert_filename{path_err == REC_ERR_OKAY ? ats_as_c_str(pash_str) : nullptr};
     auto [filename_str, filename_err]{RecGetRecordStringAlloc("proxy.config.ssl.CA.cert.path")};
-    auto CACertRelativePath{filename_err == REC_ERR_OKAY ? filename_str.c_str() : nullptr};
+    auto CACertRelativePath{filename_err == REC_ERR_OKAY ? ats_as_c_str(filename_str) : nullptr};
     set_paths_helper(CACertRelativePath, ssl_server_ca_cert_filename, &serverCACertPath, &serverCACertFilename);
   }
 
@@ -485,7 +485,7 @@ SSLConfigParams::initialize()
   RecEstablishStaticConfigInt32(ssl_ocsp_update_period, "proxy.config.ssl.ocsp.update_period");
   {
     auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.ocsp.response.path")};
-    auto ssl_ocsp_response_path{err == REC_ERR_OKAY ? rec_str.c_str() : nullptr};
+    auto ssl_ocsp_response_path{err == REC_ERR_OKAY ? ats_as_c_str(rec_str) : nullptr};
     set_paths_helper(ssl_ocsp_response_path, nullptr, &ssl_ocsp_response_path_only, nullptr);
   }
   if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.http.request_via_str")}; err == REC_ERR_OKAY) {
@@ -508,14 +508,14 @@ SSLConfigParams::initialize()
 
   {
     auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.client.verify.server.policy")};
-    auto verify_server_policy{err == REC_ERR_OKAY ? rec_str.c_str() : nullptr};
+    auto verify_server_policy{err == REC_ERR_OKAY ? ats_as_c_str(rec_str) : nullptr};
     this->SetServerPolicy(verify_server_policy);
   }
   RecRegisterConfigUpdateCb("proxy.config.ssl.client.verify.server.policy", UpdateServerPolicy, nullptr);
 
   {
     auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.client.verify.server.properties")};
-    auto verify_server_properties{err == REC_ERR_OKAY ? rec_str.c_str() : nullptr};
+    auto verify_server_properties{err == REC_ERR_OKAY ? ats_as_c_str(rec_str) : nullptr};
     this->SetServerPolicyProperties(verify_server_properties);
   }
 
@@ -523,26 +523,26 @@ SSLConfigParams::initialize()
 
   {
     auto [filename_str, filename_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.cert.filename")};
-    auto ssl_client_cert_filename{filename_err == REC_ERR_OKAY ? filename_str.c_str() : nullptr};
+    auto ssl_client_cert_filename{filename_err == REC_ERR_OKAY ? ats_as_c_str(filename_str) : nullptr};
     auto [path_str, path_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.cert.path")};
-    auto ssl_client_cert_path{path_err == REC_ERR_OKAY ? path_str.c_str() : nullptr};
+    auto ssl_client_cert_path{path_err == REC_ERR_OKAY ? ats_as_c_str(path_str) : nullptr};
     clientCertExitOnLoadError = RecGetRecordInt("proxy.config.ssl.client.cert.exit_on_load_fail").first;
     set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, &clientCertPathOnly, &clientCertPath);
   }
 
   {
     auto [filename_str, filename_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.private_key.filename")};
-    auto ssl_client_private_key_filename{filename_err == REC_ERR_OKAY ? filename_str.c_str() : nullptr};
+    auto ssl_client_private_key_filename{filename_err == REC_ERR_OKAY ? ats_as_c_str(filename_str) : nullptr};
     auto [path_str, path_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.private_key.path")};
-    auto ssl_client_private_key_path{path_err == REC_ERR_OKAY ? path_str.c_str() : nullptr};
+    auto ssl_client_private_key_path{path_err == REC_ERR_OKAY ? ats_as_c_str(path_str) : nullptr};
     set_paths_helper(ssl_client_private_key_path, ssl_client_private_key_filename, &clientKeyPathOnly, &clientKeyPath);
   }
 
   {
     auto [filename_str, filename_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.CA.cert.filename")};
-    auto ssl_client_ca_cert_filename{filename_err == REC_ERR_OKAY ? filename_str.c_str() : nullptr};
+    auto ssl_client_ca_cert_filename{filename_err == REC_ERR_OKAY ? ats_as_c_str(filename_str) : nullptr};
     auto [path_str, path_err]{RecGetRecordStringAlloc("proxy.config.ssl.client.CA.cert.path")};
-    auto clientCACertRelativePath{path_err == REC_ERR_OKAY ? path_str.c_str() : nullptr};
+    auto clientCACertRelativePath{path_err == REC_ERR_OKAY ? ats_as_c_str(path_str) : nullptr};
     set_paths_helper(clientCACertRelativePath, ssl_client_ca_cert_filename, &clientCACertPath, &clientCACertFilename);
   }
 
@@ -756,8 +756,8 @@ SSLTicketParams::LoadTicket(bool &nochange)
   elevate_setting          = RecGetRecordInt("proxy.config.ssl.cert.load_elevated").first;
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0); // destructor will demote for us
 
-  auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.server.ticket_key.filename")};
-  if (err == REC_ERR_OKAY && !rec_str.empty() && (ticket_key_filename = ats_stringdup(rec_str)) != nullptr) {
+  if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.ssl.server.ticket_key.filename")};
+      err == REC_ERR_OKAY && (ticket_key_filename = ats_stringdup(rec_str)) != nullptr) {
     ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
     // See if the file changed since we last loaded
     struct stat sdata;
