@@ -138,7 +138,7 @@ ConfigProcessor::release(unsigned int id, ConfigInfo *info)
 
   if (info && info->refcount_dec() == 0) {
     // When we release, we should already have replaced this object in the index.
-    Dbg(dbg_ctl_config, "Release config %d 0x%" PRId64, id, (int64_t)info);
+    Dbg(dbg_ctl_config, "Release config %d %p", id, info);
     ink_release_assert(info != this->infos[idx]);
     delete info;
   }
