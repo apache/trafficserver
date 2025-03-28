@@ -28,6 +28,18 @@ class Context;
 #include "cripts/Lulu.hpp"
 #include "cripts/Matcher.hpp"
 
+// This is figured out in this way because
+// this header has to be available to include
+// from cripts scripts that won't have access
+// to ink_platform.h.
+#if __has_include("linux/tcp.h")
+#include "linux/tcp.h"
+#define HAS_TCP_INFO 1
+#elif __has_include("netinet/tcp.h") && !defined(__APPLE__)
+#include "netinet/tcp.h"
+#define HAS_TCP_INFO 1
+#endif
+
 namespace cripts
 {
 namespace Net
@@ -220,7 +232,7 @@ class ConnBase
     }
 
 // ToDo: Add more member accesses? Tthe underlying info makes it hard to make it cross platform
-#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
+#if HAS_TCP_INFO
     integer
     rtt()
     {

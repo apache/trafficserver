@@ -1275,7 +1275,7 @@ ConditionTcpInfo::eval(const Resources &res)
 }
 
 void
-ConditionTcpInfo::append_value(std::string &s, Resources const & /* res ATS_UNUSED */)
+ConditionTcpInfo::append_value(std::string &s, [[maybe_unused]] Resources const &res)
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
   if (TSHttpTxnIsInternal(res.txnp)) {
