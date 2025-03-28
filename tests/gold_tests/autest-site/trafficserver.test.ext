@@ -367,6 +367,10 @@ def MakeATSProcess(
             p.Variables.ssl_port = 4443
             p.Variables.ssl_portv6 = 4444
 
+    # unix domain socket path
+    uds_path = os.path.join(obj.RunDirectory, 'uds.socket')
+    p.Variables.uds_path = uds_path
+
     get_port(p, "manager_port")
     get_port(p, "admin_port")
 
@@ -404,7 +408,6 @@ def MakeATSProcess(
     p.Ready = When.FileContains(p.Disk.diags_log.AbsPath, "NOTE: Traffic Server is fully initialized")
 
     if select_ports:
-        uds_path = "/tmp/socket"
         # default config
         port_str = "{port} {v6_port}:ipv6".format(port=p.Variables.port, v6_port=p.Variables.portv6)
         if enable_tls:
