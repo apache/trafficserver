@@ -17,23 +17,26 @@ Tools to help with TestRun commands
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# allows the same command to be repeatedly run in parallel.
+# Adds "curl" prefix to command argument, with possible curl flags
 #
 # example usage:
-# curlcmd = 'curl -vs -k https:127.0.0.1:{port}'.format(port = ts.Variables.port)
+# cmd = '-vs -k https:127.0.0.1:{port}'.format(port = ts.Variables.port)
 #
 # tr = Test.AddTestRun()
-# ps = tr.SpawnCommands(cmdstr=cmdstr, count=25)
+# ps = tr.MakeCurlCommand(cmd)
 # tr.Processes.Default.StartBefore(ts)
 # ts.StartAfter(*ps)
 # tr.StillRunningAfter = ts
 #
-# Note that by default, the Default Process is created in this function.
 
 
-def spawn_commands(self, cmdstr, count, retcode=0, use_default=True):
+def spawn_curl_commands(self, cmdstr, count, retcode=0, use_default=True):
     ret = []
 
+    if self.Variables.get("CurlUds", False):
+        cmdstr = 'curl --unix-socket /tmp/socket ' + cmdstr
+    else:
+        cmdstr = 'curl ' + cmdstr
     if use_default:
         count = int(count) - 1
     for cnt in range(0, count):
@@ -45,4 +48,29 @@ def spawn_commands(self, cmdstr, count, retcode=0, use_default=True):
     return ret
 
 
-ExtendTestRun(spawn_commands, name="SpawnCommands")
+def curl_command(self, cmd, p=None):
+    if p == None:
+        p = self.Processes.Default
+    if self.Variables.get("CurlUds", False):
+        uds_path = os.path.join(p.RunDirectory, 'uds.socket')
+        p.Command = f'curl --unix-socket {uds_path} ' + cmd
+    else:
+        p.Command = 'curl ' + cmd
+    return p
+
+
+def curl_multiple_commands(self, cmd):
+    p = self.Processes.Default
+    if self.Variables.get("CurlUds", False):
+        uds_path = os.path.join(p.RunDirectory, 'uds.socket')
+        p.Command = cmd.format(curl=f'curl --unix-socket {uds_path}')
+    else:
+        p.Command = cmd.format(curl='curl')
+    return p
+
+
+ExtendTestRun(spawn_curl_commands, name="SpawnCurlCommands")
+ExtendTestRun(curl_command, name="MakeCurlCommand")
+ExtendTest(curl_command, name="MakeCurlCommand")
+ExtendTestRun(curl_multiple_commands, name="MakeCurlCommandMulti")
+ExtendTest(curl_multiple_commands, name="MakeCurlCommandMulti")
