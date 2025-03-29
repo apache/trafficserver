@@ -300,14 +300,14 @@ HostDBCache::start(int flags)
   // Read configuration
   // Command line overrides manager configuration.
   //
-  hostdb_enable = RecGetRecordInt("proxy.config.hostdb.enabled").first;
+  hostdb_enable = RecGetRecordInt("proxy.config.hostdb.enabled").value_or(0);
 
   // Max number of items
-  hostdb_max_count = RecGetRecordInt("proxy.config.hostdb.max_count").first;
+  hostdb_max_count = RecGetRecordInt("proxy.config.hostdb.max_count").value_or(0);
   // max size allowed to use
-  hostdb_max_size = RecGetRecordInt("proxy.config.hostdb.max_size").first;
+  hostdb_max_size = RecGetRecordInt("proxy.config.hostdb.max_size").value_or(0);
   // number of partitions
-  hostdb_partitions = RecGetRecordInt("proxy.config.hostdb.partitions").first;
+  hostdb_partitions = RecGetRecordInt("proxy.config.hostdb.partitions").value_or(0);
 
   RecEstablishStaticConfigInt32(hostdb_max_iobuf_index, "proxy.config.hostdb.io.max_buffer_index");
 
@@ -371,7 +371,7 @@ HostDBProcessor::init()
   {
     RecInt tmp_interval{};
 
-    tmp_interval                   = RecGetRecordInt(interval_config).first;
+    tmp_interval                   = RecGetRecordInt(interval_config).value_or(0);
     hostdb_hostfile_check_interval = std::chrono::seconds(tmp_interval);
   }
   RecRegisterConfigUpdateCb(

@@ -264,11 +264,11 @@ RecCoreInit(Diags *_diags)
 RecErrT
 RecLinkConfigInt(const char *name, RecInt *rec_int)
 {
-  auto [tmp, err]{RecGetRecordInt(name)};
-  if (err == REC_ERR_FAIL) {
+  auto tmp{RecGetRecordInt(name)};
+  if (!tmp) {
     return REC_ERR_FAIL;
   }
-  *rec_int = tmp;
+  *rec_int = tmp.value();
   return RecRegisterConfigUpdateCb(name, link_int, (void *)rec_int);
 }
 
@@ -322,11 +322,11 @@ RecLinkConfigString(const char *name, RecString *rec_string)
 RecErrT
 RecLinkConfigByte(const char *name, RecByte *rec_byte)
 {
-  auto [tmp, err]{RecGetRecordInt(name)};
-  if (err == REC_ERR_FAIL) {
+  auto tmp{RecGetRecordInt(name)};
+  if (!tmp) {
     return REC_ERR_FAIL;
   }
-  *rec_byte = tmp;
+  *rec_byte = tmp.value();
   return RecRegisterConfigUpdateCb(name, link_byte, (void *)rec_byte);
 }
 
@@ -417,19 +417,17 @@ Enable_Config_Var(std::string_view const &name, RecContextCb record_cb, RecConfi
 //-------------------------------------------------------------------------
 // RecGetRecordXXX
 //-------------------------------------------------------------------------
-std::pair<RecInt, RecErrT>
+std::optional<RecInt>
 RecGetRecordInt(const char *name, bool lock)
 {
-  RecErrT err;
-  RecData data;
-  RecInt  rec_int;
+  RecErrT               err;
+  RecData               data;
+  std::optional<RecInt> rec_int;
 
   if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
     rec_int = data.rec_int;
-  } else {
-    rec_int = 0;
   }
-  return std::make_pair(rec_int, err);
+  return rec_int;
 }
 
 std::pair<RecFloat, RecErrT>

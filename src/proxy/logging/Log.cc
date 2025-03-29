@@ -216,7 +216,7 @@ Log::periodic_tasks(long time_now)
 
     if (logging_mode_changed) {
       int val;
-      val = RecGetRecordInt("proxy.config.log.logging_enabled").first;
+      val = RecGetRecordInt("proxy.config.log.logging_enabled").value_or(0);
 
       if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
         logging_mode = LOG_MODE_FULL;
@@ -1065,7 +1065,7 @@ Log::init(int flags)
     preproc_threads = config->preproc_threads;
 
     int val;
-    val = RecGetRecordInt("proxy.config.log.logging_enabled").first;
+    val = RecGetRecordInt("proxy.config.log.logging_enabled").value_or(0);
     if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
       logging_mode = LOG_MODE_FULL;
       Warning("proxy.config.log.logging_enabled has an invalid "
@@ -1076,7 +1076,7 @@ Log::init(int flags)
     }
     // periodic task interval are set on a per instance basis
     MgmtInt pti;
-    pti = RecGetRecordInt("proxy.config.log.periodic_tasks_interval").first;
+    pti = RecGetRecordInt("proxy.config.log.periodic_tasks_interval").value_or(0);
     if (pti <= 0) {
       Error("proxy.config.log.periodic_tasks_interval = %" PRId64 " is invalid", pti);
       Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);
@@ -1127,7 +1127,7 @@ Log::create_threads()
   preproc_notify = new EventNotify[preproc_threads];
 
   size_t stacksize;
-  stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").first;
+  stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
 
   // start the preproc threads
   //

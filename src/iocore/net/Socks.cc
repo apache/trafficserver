@@ -456,13 +456,13 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   std::string     config_text;
 
   socks_conf_stuff->accept_enabled = 0; // initialize it INKqa08593
-  socks_conf_stuff->socks_needed   = RecGetRecordInt("proxy.config.socks.socks_needed").first;
+  socks_conf_stuff->socks_needed   = RecGetRecordInt("proxy.config.socks.socks_needed").value_or(0);
   if (!socks_conf_stuff->socks_needed) {
     Dbg(dbg_ctl_Socks, "Socks Turned Off");
     return;
   }
 
-  socks_conf_stuff->default_version = RecGetRecordInt("proxy.config.socks.socks_version").first;
+  socks_conf_stuff->default_version = RecGetRecordInt("proxy.config.socks.socks_version").value_or(0);
   Dbg(dbg_ctl_Socks, "Socks Version %d", socks_conf_stuff->default_version);
 
   if (socks_conf_stuff->default_version != 4 && socks_conf_stuff->default_version != 5) {
@@ -470,17 +470,18 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
     goto error;
   }
 
-  socks_conf_stuff->server_connect_timeout = RecGetRecordInt("proxy.config.socks.server_connect_timeout").first;
-  socks_conf_stuff->socks_timeout          = RecGetRecordInt("proxy.config.socks.socks_timeout").first;
+  socks_conf_stuff->server_connect_timeout = RecGetRecordInt("proxy.config.socks.server_connect_timeout").value_or(0);
+  socks_conf_stuff->socks_timeout          = RecGetRecordInt("proxy.config.socks.socks_timeout").value_or(0);
   Dbg(dbg_ctl_Socks, "server connect timeout: %d socks response timeout %d", socks_conf_stuff->server_connect_timeout,
       socks_conf_stuff->socks_timeout);
 
-  socks_conf_stuff->per_server_connection_attempts = RecGetRecordInt("proxy.config.socks.per_server_connection_attempts").first;
-  socks_conf_stuff->connection_attempts            = RecGetRecordInt("proxy.config.socks.connection_attempts").first;
+  socks_conf_stuff->per_server_connection_attempts =
+    RecGetRecordInt("proxy.config.socks.per_server_connection_attempts").value_or(0);
+  socks_conf_stuff->connection_attempts = RecGetRecordInt("proxy.config.socks.connection_attempts").value_or(0);
 
-  socks_conf_stuff->accept_enabled = RecGetRecordInt("proxy.config.socks.accept_enabled").first;
-  socks_conf_stuff->accept_port    = RecGetRecordInt("proxy.config.socks.accept_port").first;
-  socks_conf_stuff->http_port      = RecGetRecordInt("proxy.config.socks.http_port").first;
+  socks_conf_stuff->accept_enabled = RecGetRecordInt("proxy.config.socks.accept_enabled").value_or(0);
+  socks_conf_stuff->accept_port    = RecGetRecordInt("proxy.config.socks.accept_port").value_or(0);
+  socks_conf_stuff->http_port      = RecGetRecordInt("proxy.config.socks.http_port").value_or(0);
   Dbg(dbg_ctl_SocksProxy,
       "Read SocksProxy info: accept_enabled = %d "
       "accept_port = %d http_port = %d",

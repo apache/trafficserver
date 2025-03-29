@@ -194,7 +194,7 @@ ink_aio_init(ts::ModuleVersion v, [[maybe_unused]] AIOBackend backend)
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
 
-  cache_config_threads_per_disk = RecGetRecordInt("proxy.config.cache.threads_per_disk").first;
+  cache_config_threads_per_disk = RecGetRecordInt("proxy.config.cache.threads_per_disk").value_or(0);
 
 #if TS_USE_LINUX_IO_URING
   // If the caller specified auto backend, check for config to force a backend
@@ -314,7 +314,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
   AIOThreadInfo *thr_info;
   size_t         stacksize;
 
-  stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").first;
+  stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
   for (i = 0; i < thread_num; i++) {
     if (i == (thread_num - 1)) {
       thr_info = new AIOThreadInfo(request, 1);

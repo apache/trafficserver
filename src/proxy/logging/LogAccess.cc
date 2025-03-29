@@ -170,7 +170,7 @@ LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
     int64_t val;
-    val = RecGetRecordInt(config_var).first;
+    val = RecGetRecordInt(config_var).value_or(0);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -253,7 +253,20 @@ LogAccess::marshal_record(char *record, char *buf)
       //
       ink_assert(max_chars > 21);
 
-      auto [val, err]{LOG_INTEGER == stype ? RecGetRecordInt(record) : RecGetRecordCounter(record)};
+      RecInt  val;
+      RecErrT err;
+      if (LOG_INTEGER == stype) {
+        auto tmp{RecGetRecordInt(record)};
+        if (tmp) {
+          val = tmp.value();
+          err = REC_ERR_OKAY;
+        } else {
+          val = 0;
+          err = REC_ERR_FAIL;
+        }
+      } else {
+        std::tie(val, err) = RecGetRecordCounter(record);
+      }
       auto found{err == REC_ERR_OKAY};
 
       if (found) {

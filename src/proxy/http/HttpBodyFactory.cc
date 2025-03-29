@@ -269,15 +269,15 @@ HttpBodyFactory::reconfigure()
   all_found = true;
 
   // enable_customizations if records.yaml set
-  auto [e, rec_err]{RecGetRecordInt("proxy.config.body_factory.enable_customizations")};
-  enable_customizations = ((rec_err == REC_ERR_OKAY) ? e : 0);
-  all_found             = all_found && (rec_err == REC_ERR_OKAY);
-  Dbg(dbg_ctl_body_factory, "enable_customizations = %d (found = %" PRId64 ")", enable_customizations, e);
+  auto e{RecGetRecordInt("proxy.config.body_factory.enable_customizations")};
+  enable_customizations = (e.has_value() ? e.value() : 0);
+  all_found             = all_found && e.has_value();
+  Dbg(dbg_ctl_body_factory, "enable_customizations = %d (found = %d)", enable_customizations, e.has_value());
 
-  std::tie(e, rec_err) = RecGetRecordInt("proxy.config.body_factory.enable_logging");
-  enable_logging       = ((rec_err == REC_ERR_OKAY) ? (e ? true : false) : false);
-  all_found            = all_found && (rec_err == REC_ERR_OKAY);
-  Dbg(dbg_ctl_body_factory, "enable_logging = %d (found = %" PRId64 ")", enable_logging, e);
+  e              = RecGetRecordInt("proxy.config.body_factory.enable_logging");
+  enable_logging = (e.has_value() ? (e.value() ? true : false) : false);
+  all_found      = all_found && e.has_value();
+  Dbg(dbg_ctl_body_factory, "enable_logging = %d (found = %d)", enable_logging, e.has_value());
 
   ats_scoped_str directory_of_template_sets;
 

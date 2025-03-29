@@ -41,7 +41,7 @@
 void
 DiagsConfig::reconfigure_diags()
 {
-  int              i, e;
+  int              i;
   DiagsConfigState c;
   bool             found, all_found;
 
@@ -76,25 +76,25 @@ DiagsConfig::reconfigure_diags()
 
   // enabled if records.yaml set
 
-  RecErrT err;
-  std::tie(e, err) = RecGetRecordInt("proxy.config.diags.debug.enabled");
-  found            = err == REC_ERR_OKAY;
-  if (e && found) {
-    c.enabled(DiagsTagType_Debug, e); // implement OR logic
+  auto e{RecGetRecordInt("proxy.config.diags.debug.enabled")};
+  found = e.has_value();
+  if (found && e.value()) {
+    c.enabled(DiagsTagType_Debug, e.value()); // implement OR logic
   }
   all_found = all_found && found;
 
-  std::tie(e, err) = RecGetRecordInt("proxy.config.diags.action.enabled");
-  found            = err == REC_ERR_OKAY;
-  if (e && found) {
+  e     = RecGetRecordInt("proxy.config.diags.action.enabled");
+  found = e.has_value();
+  if (found && e.value()) {
     c.enabled(DiagsTagType_Action, 1); // implement OR logic
   }
   all_found = all_found && found;
 
-  std::tie(e, err)      = RecGetRecordInt("proxy.config.diags.show_location");
-  found                 = err == REC_ERR_OKAY;
-  _diags->show_location = ((e == 1 && found) ? SHOW_LOCATION_DEBUG : ((e == 2 && found) ? SHOW_LOCATION_ALL : SHOW_LOCATION_NONE));
-  all_found             = all_found && found;
+  e     = RecGetRecordInt("proxy.config.diags.show_location");
+  found = e.has_value();
+  _diags->show_location =
+    ((found && e.value() == 1) ? SHOW_LOCATION_DEBUG : ((found && e.value() == 2) ? SHOW_LOCATION_ALL : SHOW_LOCATION_NONE));
+  all_found = all_found && found;
 
   // read output routing values
   for (i = 0;; i++) {
@@ -291,17 +291,17 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   // Grab rolling intervals from configuration
   // TODO error check these values
   int output_log_roll_int;
-  output_log_roll_int = RecGetRecordInt("proxy.config.output.logfile.rolling_interval_sec").first;
+  output_log_roll_int = RecGetRecordInt("proxy.config.output.logfile.rolling_interval_sec").value_or(0);
   int output_log_roll_size;
-  output_log_roll_size = RecGetRecordInt("proxy.config.output.logfile.rolling_size_mb").first;
+  output_log_roll_size = RecGetRecordInt("proxy.config.output.logfile.rolling_size_mb").value_or(0);
   int output_log_roll_enable;
-  output_log_roll_enable = RecGetRecordInt("proxy.config.output.logfile.rolling_enabled").first;
+  output_log_roll_enable = RecGetRecordInt("proxy.config.output.logfile.rolling_enabled").value_or(0);
   int diags_log_roll_int;
-  diags_log_roll_int = RecGetRecordInt("proxy.config.diags.logfile.rolling_interval_sec").first;
+  diags_log_roll_int = RecGetRecordInt("proxy.config.diags.logfile.rolling_interval_sec").value_or(0);
   int diags_log_roll_size;
-  diags_log_roll_size = RecGetRecordInt("proxy.config.diags.logfile.rolling_size_mb").first;
+  diags_log_roll_size = RecGetRecordInt("proxy.config.diags.logfile.rolling_size_mb").value_or(0);
   int diags_log_roll_enable;
-  diags_log_roll_enable = RecGetRecordInt("proxy.config.diags.logfile.rolling_enabled").first;
+  diags_log_roll_enable = RecGetRecordInt("proxy.config.diags.logfile.rolling_enabled").value_or(0);
 
   // Grab some perms for the actual files on disk
   {

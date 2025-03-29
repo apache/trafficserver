@@ -47,14 +47,14 @@ static inline void
 configure_net()
 {
   RecRegisterConfigUpdateCb("proxy.config.net.connections_throttle", change_net_connections_throttle, nullptr);
-  fds_throttle = RecGetRecordInt("proxy.config.net.connections_throttle").first;
+  fds_throttle = RecGetRecordInt("proxy.config.net.connections_throttle").value_or(0);
 
   RecEstablishStaticConfigInt32(net_retry_delay, "proxy.config.net.retry_delay");
   RecEstablishStaticConfigInt32(net_throttle_delay, "proxy.config.net.throttle_delay");
 
   // These are not reloadable
-  net_event_period  = RecGetRecordInt("proxy.config.net.event_period").first;
-  net_accept_period = RecGetRecordInt("proxy.config.net.accept_period").first;
+  net_event_period  = RecGetRecordInt("proxy.config.net.event_period").value_or(0);
+  net_accept_period = RecGetRecordInt("proxy.config.net.accept_period").value_or(0);
 
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.net.tcp_congestion_control_in")}; rec_str && !rec_str.value().empty()) {
     net_ccp_in = std::move(rec_str.value());

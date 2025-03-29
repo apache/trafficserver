@@ -164,7 +164,7 @@ RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT sourc
 RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true);
 
-std::pair<RecInt, RecErrT>     RecGetRecordInt(const char *name, bool lock = true);
+std::optional<RecInt>          RecGetRecordInt(const char *name, bool lock = true);
 std::pair<RecFloat, RecErrT>   RecGetRecordFloat(const char *name, bool lock = true);
 RecErrT                        RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
 std::optional<std::string>     RecGetRecordStringAlloc(const char *name, bool lock = true);
@@ -175,9 +175,9 @@ inline RecErrT
 RecEstablishStaticConfigInt(RecInt &rec_int, const char *name, bool lock = true)
 {
   RecLinkConfigInt(name, &rec_int);
-  auto [tmp, err]{RecGetRecordInt(name, lock)};
-  rec_int = static_cast<RecInt>(tmp);
-  return err;
+  auto tmp{RecGetRecordInt(name, lock)};
+  rec_int = tmp.value_or(0);
+  return tmp ? REC_ERR_OKAY : REC_ERR_FAIL;
 }
 
 // Convinience to link and get a config of int32_t type
@@ -185,9 +185,9 @@ inline RecErrT
 RecEstablishStaticConfigInt32(int32_t &rec_int, const char *name, bool lock = true)
 {
   RecLinkConfigInt32(name, &rec_int);
-  auto [tmp, err]{RecGetRecordInt(name, lock)};
-  rec_int = static_cast<int32_t>(tmp);
-  return err;
+  auto tmp{RecGetRecordInt(name, lock)};
+  rec_int = static_cast<int32_t>(tmp.value_or(0));
+  return tmp ? REC_ERR_OKAY : REC_ERR_FAIL;
 }
 
 // Convinience to link and get a config of uint32_t type
@@ -195,9 +195,9 @@ inline RecErrT
 RecEstablishStaticConfigUInt32(uint32_t &rec_int, const char *name, bool lock = true)
 {
   RecLinkConfigUInt32(name, &rec_int);
-  auto [tmp, err]{RecGetRecordInt(name, lock)};
-  rec_int = static_cast<uint32_t>(tmp);
-  return err;
+  auto tmp{RecGetRecordInt(name, lock)};
+  rec_int = static_cast<uint32_t>(tmp.value_or(0));
+  return tmp ? REC_ERR_OKAY : REC_ERR_FAIL;
 }
 
 // Convenience to link and get a config of string type
@@ -229,9 +229,9 @@ inline RecErrT
 RecEstablishStaticConfigByte(RecByte &rec_byte, const char *name, bool lock = true)
 {
   RecLinkConfigByte(name, &rec_byte);
-  auto [tmp, err]{RecGetRecordInt(name, lock)};
-  rec_byte = static_cast<RecByte>(tmp);
-  return err;
+  auto tmp{RecGetRecordInt(name, lock)};
+  rec_byte = static_cast<RecByte>(tmp.value_or(0));
+  return tmp ? REC_ERR_OKAY : REC_ERR_FAIL;
 }
 
 //------------------------------------------------------------------------

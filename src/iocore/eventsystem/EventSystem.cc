@@ -58,8 +58,8 @@ ink_event_system_init(ts::ModuleVersion v)
 
 #ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
   RecBool dont_dump_enabled = true;
-  if (auto [tmp, err]{RecGetRecordInt("proxy.config.allocator.dontdump_iobuffers", false)}; err == REC_ERR_OKAY) {
-    dont_dump_enabled = tmp;
+  if (auto tmp{RecGetRecordInt("proxy.config.allocator.dontdump_iobuffers", false)}; tmp) {
+    dont_dump_enabled = tmp.value();
   }
 
   if (dont_dump_enabled) {

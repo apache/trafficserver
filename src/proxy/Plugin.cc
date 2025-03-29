@@ -58,7 +58,7 @@ parsePluginDynamicReloadConfig()
 {
   int int_plugin_dynamic_reload_mode;
 
-  int_plugin_dynamic_reload_mode = RecGetRecordInt("proxy.config.plugin.dynamic_reload_mode").first;
+  int_plugin_dynamic_reload_mode = RecGetRecordInt("proxy.config.plugin.dynamic_reload_mode").value_or(0);
   plugin_dynamic_reload_mode     = static_cast<PluginDynamicReloadMode>(int_plugin_dynamic_reload_mode);
 
   if (plugin_dynamic_reload_mode < 0 || plugin_dynamic_reload_mode >= PluginDynamicReloadMode::RELOAD_COUNT) {
@@ -158,7 +158,7 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
   // change the effective user to root
   {
     uint32_t elevate_access = 0;
-    elevate_access          = RecGetRecordInt("proxy.config.plugin.load_elevated").first;
+    elevate_access          = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     void       *handle, *initptr = nullptr;
@@ -242,12 +242,12 @@ plugin_expand(char *arg)
     break;
   }
   case RECD_INT: {
-    auto [int_val, err]{RecGetRecordInt(arg)};
-    if (err != REC_ERR_OKAY) {
+    auto int_val{RecGetRecordInt(arg)};
+    if (!int_val) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));
-    snprintf(str, 128, "%ld", static_cast<long int>(int_val));
+    snprintf(str, 128, "%ld", static_cast<long int>(int_val.value()));
     return str;
     break;
   }

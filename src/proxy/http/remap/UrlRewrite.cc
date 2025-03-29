@@ -60,7 +60,7 @@ bool
 UrlRewrite::get_acl_behavior_policy(ACLBehaviorPolicy &policy)
 {
   int behavior_policy = 0;
-  behavior_policy     = RecGetRecordInt("proxy.config.url_remap.acl_behavior_policy").first;
+  behavior_policy     = RecGetRecordInt("proxy.config.url_remap.acl_behavior_policy").value_or(0);
   switch (behavior_policy) {
   case 0:
     policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
@@ -104,7 +104,7 @@ UrlRewrite::load()
     this->http_default_redirect_url = ats_strdup("http://www.apache.org");
   }
 
-  reverse_proxy = RecGetRecordInt("proxy.config.reverse_proxy.enabled").first;
+  reverse_proxy = RecGetRecordInt("proxy.config.reverse_proxy.enabled").value_or(0);
 
   /* Initialize the plugin factory */
   pluginFactory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
@@ -136,7 +136,7 @@ UrlRewrite::load()
   if (TS_SUCCESS == this->BuildTable(config_file_path)) {
     int n_rules = this->rule_count(); // Minimum # of rules to be considered a valid configuration.
     int required_rules;
-    required_rules = RecGetRecordInt("proxy.config.url_remap.min_rules_required").first;
+    required_rules = RecGetRecordInt("proxy.config.url_remap.min_rules_required").value_or(0);
     if (n_rules >= required_rules) {
       _valid = true;
       if (dbg_ctl_url_rewrite.on()) {

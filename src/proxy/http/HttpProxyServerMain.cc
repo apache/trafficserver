@@ -127,19 +127,19 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
 
   net.accept_threads = nthreads;
 
-  net.packet_mark   = RecGetRecordInt("proxy.config.net.sock_packet_mark_in").first;
-  net.packet_tos    = RecGetRecordInt("proxy.config.net.sock_packet_tos_in").first;
-  net.recv_bufsize  = RecGetRecordInt("proxy.config.net.sock_recv_buffer_size_in").first;
-  net.send_bufsize  = RecGetRecordInt("proxy.config.net.sock_send_buffer_size_in").first;
-  net.sockopt_flags = RecGetRecordInt("proxy.config.net.sock_option_flag_in").first;
-  net.defer_accept  = RecGetRecordInt("proxy.config.net.defer_accept").first;
+  net.packet_mark   = RecGetRecordInt("proxy.config.net.sock_packet_mark_in").value_or(0);
+  net.packet_tos    = RecGetRecordInt("proxy.config.net.sock_packet_tos_in").value_or(0);
+  net.recv_bufsize  = RecGetRecordInt("proxy.config.net.sock_recv_buffer_size_in").value_or(0);
+  net.send_bufsize  = RecGetRecordInt("proxy.config.net.sock_send_buffer_size_in").value_or(0);
+  net.sockopt_flags = RecGetRecordInt("proxy.config.net.sock_option_flag_in").value_or(0);
+  net.defer_accept  = RecGetRecordInt("proxy.config.net.defer_accept").value_or(0);
 
 #if TCP_NOTSENT_LOWAT
-  net.packet_notsent_lowat = RecGetRecordInt("proxy.config.net.sock_notsent_lowat").first;
+  net.packet_notsent_lowat = RecGetRecordInt("proxy.config.net.sock_notsent_lowat").value_or(0);
 #endif
 
 #ifdef TCP_FASTOPEN
-  net.tfo_queue_length = RecGetRecordInt("proxy.config.net.sock_option_tfo_queue_size_in").first;
+  net.tfo_queue_length = RecGetRecordInt("proxy.config.net.sock_option_tfo_queue_size_in").value_or(0);
 #endif
 
   if (port) {

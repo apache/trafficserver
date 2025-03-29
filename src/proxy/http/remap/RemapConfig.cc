@@ -942,7 +942,7 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
   std::string      error;
   {
     uint32_t elevate_access = 0;
-    elevate_access          = RecGetRecordInt("proxy.config.plugin.load_elevated").first;
+    elevate_access          = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     pi = rewrite->pluginFactory.getRemapPlugin(swoc::file::path(const_cast<const char *>(c)), parc, pargv, error,
