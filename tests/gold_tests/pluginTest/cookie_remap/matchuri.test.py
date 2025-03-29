@@ -77,13 +77,12 @@ ts.Disk.remap_config.AddLine(
 
 # Positive test case, URI matches rule
 tr = Test.AddTestRun("URI value matches")
-tr.Processes.Default.Command = '''
-curl \
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic/thisispartofthepath" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port)
+'''.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -93,14 +92,13 @@ server.Streams.All = "gold/matchcookie.gold"
 
 # Negative test case that doesn't remap because URI doesn't match
 tr = Test.AddTestRun("URI value doesn't match")
-tr.Processes.Default.Command = '''
-curl \
---proxy 127.0.0.1:{0} \
+tr.MakeCurlCommand(
+    ''' --proxy 127.0.0.1:{0} \
 "http://www.example.com/magic" \
 -H"Cookie: fpbeta=etc" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port)
+'''.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server2, ready=When.PortOpen(server2.Variables.Port))
 tr.StillRunningAfter = ts

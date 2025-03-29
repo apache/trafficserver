@@ -108,7 +108,7 @@ class ConnectMethodTest:
         """Configure a client to perform a CONNECT request with a slow response from the server."""
         p = tr.Processes.Process(f'slow_client_{self._client_counter}')
         self._client_counter += 1
-        p.Command = f"curl -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'"
+        tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'", p=p)
         return p
 
     def run(self) -> None:
@@ -129,8 +129,8 @@ class ConnectMethodTest:
         # With those three slow transactions going on in the background, do a
         # couple quick transactions and make sure they both reply with a 503
         # response.
-        tr.Processes.Default.Command = (
-            f"sleep 1; curl -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'"
+        tr.MakeCurlCommandMulti(
+            f"sleep 1; {{curl}} -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'"
             f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'")
         # Curl will have a 22 exit code if it receives a 5XX response (and we
         # expect a 503).

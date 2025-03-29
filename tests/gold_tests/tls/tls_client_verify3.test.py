@@ -78,27 +78,27 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = (
-    "curl -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'aaa.com:{0}:127.0.0.1'" + " https://aaa.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/aaa-signed")
+tr.MakeCurlCommand(
+    ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'aaa.com:{0}:127.0.0.1'" + " https://aaa.com:{0}/xyz").format(
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/aaa-signed"))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
 
 tr = Test.AddTestRun()
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = (
-    "curl -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb-signed:{0}:127.0.0.1'" +
-    " https://bbb-signed:{0}/xyz").format(ts.Variables.ssl_port, Test.TestDirectory + "/ssl/bbb-signed")
+tr.MakeCurlCommand(
+    ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb-signed:{0}:127.0.0.1'" +
+     " https://bbb-signed:{0}/xyz").format(ts.Variables.ssl_port, Test.TestDirectory + "/ssl/bbb-signed"))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
 
 tr = Test.AddTestRun()
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = (
-    "curl -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'ccc.com:{0}:127.0.0.1'" + " https://ccc.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/ccc-signed")
+tr.MakeCurlCommand(
+    ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'ccc.com:{0}:127.0.0.1'" + " https://ccc.com:{0}/xyz").format(
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/ccc-signed"))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
 
@@ -107,23 +107,23 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check re
 tr = Test.AddTestRun()
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = (
-    "curl -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'aaa.com:{0}:127.0.0.1'" + " https://aaa.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/bbb-signed")
+tr.MakeCurlCommand(
+    ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'aaa.com:{0}:127.0.0.1'" + " https://aaa.com:{0}/xyz").format(
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/bbb-signed"))
 tr.Processes.Default.ReturnCode = 35
 
 tr = Test.AddTestRun()
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = (
-    "curl -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb.com:{0}:127.0.0.1'" + " https://bbb.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/ccc-signed")
+tr.MakeCurlCommand(
+    ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb.com:{0}:127.0.0.1'" + " https://bbb.com:{0}/xyz").format(
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/ccc-signed"))
 tr.Processes.Default.ReturnCode = 35
 
 tr = Test.AddTestRun()
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = (
-    "curl -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'ccc.com:{0}:127.0.0.1'" + " https://ccc.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/aaa-signed")
+tr.MakeCurlCommand(
+    (" -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'ccc.com:{0}:127.0.0.1'" + " https://ccc.com:{0}/xyz").format(
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/aaa-signed"))
 tr.Processes.Default.ReturnCode = 35

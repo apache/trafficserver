@@ -52,14 +52,14 @@ ts.Disk.records_config.update(
 ts.Disk.remap_config.AddLine('map http://oc.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port))
 
 # Add connection close to ensure that the client connection closes promptly after completing the transaction
-cmd = 'curl -H "Connection: close" -vs -H "host:oc.test" http://127.0.0.1:{0}'.format(ts.Variables.port)
+cmd = '-H "Connection: close" -vs -H "host:oc.test" http://127.0.0.1:{0}'.format(ts.Variables.port)
 numberOfRequests = 100
 
 tr = Test.AddTestRun()
-# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
+# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCurlCommands.
 # On Fedora 28/29, it seems that curl will occasionally timeout after a couple seconds and return exitcode 2
 # Examining the packet capture shows that Traffic Server dutifully sends the response
-ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
+ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 

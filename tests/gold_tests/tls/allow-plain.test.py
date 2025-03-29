@@ -67,8 +67,9 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.ht
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
-tr.Processes.Default.Command = 'curl -o /dev/null -k --verbose -H "uuid: get" --ipv4 --http1.1 --resolve www.example.com:{}:127.0.0.1 https://www.example.com:{}/'.format(
-    ts.Variables.ssl_port, ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    '-o /dev/null -k --verbose -H "uuid: get" --ipv4 --http1.1 --resolve www.example.com:{}:127.0.0.1 https://www.example.com:{}/'
+    .format(ts.Variables.ssl_port, ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -76,8 +77,9 @@ tr.Processes.Default.Streams.all = Testers.ContainsExpression("TLS", "Should neg
 
 # non-TLS curl should also work to the same port
 tr2 = Test.AddTestRun()
-tr2.Processes.Default.Command = 'curl --verbose --ipv4 --http1.1 -H "uuid: get" --resolve www.example.com:{}:127.0.0.1 http://www.example.com:{}'.format(
-    ts.Variables.ssl_port, ts.Variables.ssl_port)
+tr2.MakeCurlCommand(
+    '--verbose --ipv4 --http1.1 -H "uuid: get" --resolve www.example.com:{}:127.0.0.1 http://www.example.com:{}'.format(
+        ts.Variables.ssl_port, ts.Variables.ssl_port))
 tr2.Processes.Default.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -86,8 +88,9 @@ tr2.Processes.Default.Streams.all = Testers.ExcludesExpression("TLS", "Should no
 # Make sure a post > 32K works.  Early version forgot to free a reader which caused a stall once the initial buffer filled
 # Seems like we needed to make a second resquest to trigger the issue
 tr3 = Test.AddTestRun()
-tr3.Processes.Default.Command = 'curl --verbose -d @big_post_body -H "uuid: post" --ipv4 --http1.1 --resolve www.example.com:{}:127.0.0.1 http://www.example.com:{}/post http://www.example.com:{}/post'.format(
-    ts.Variables.ssl_port, ts.Variables.ssl_port, ts.Variables.ssl_port)
+tr3.MakeCurlCommand(
+    '--verbose -d @big_post_body -H "uuid: post" --ipv4 --http1.1 --resolve www.example.com:{}:127.0.0.1 http://www.example.com:{}/post http://www.example.com:{}/post'
+    .format(ts.Variables.ssl_port, ts.Variables.ssl_port, ts.Variables.ssl_port))
 tr3.Processes.Default.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts

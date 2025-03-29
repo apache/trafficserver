@@ -150,10 +150,9 @@ No Date
     def run_cases(self):
         # Test 1: Verify basic ESI functionality.
         tr = Test.AddTestRun("First request for esi_etag.php: not cached")
-        tr.Processes.Default.Command = \
-            ('curl http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
-             '-H"Accept: */*" -H"uuid: first" --verbose -o /dev/stderr'.format(
-                 self._ts.Variables.port))
+        tr.MakeCurlCommand(
+            'http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
+            '-H"Accept: */*" -H"uuid: first" --verbose -o /dev/stderr'.format(self._ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/esi_private_headers.gold"
         tr.StillRunningAfter = self._server
@@ -161,10 +160,9 @@ No Date
 
         # Test 2: Repeat the above, origin should now be returning 304 response.
         tr = Test.AddTestRun("Second request for esi_etag.php: will be cached")
-        tr.Processes.Default.Command = \
-            ('curl http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
-             '-H"Accept: */*" -H"uuid: second" --verbose -o /dev/stderr'.format(
-                 self._ts.Variables.port))
+        tr.MakeCurlCommand(
+            'http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
+            '-H"Accept: */*" -H"uuid: second" --verbose -o /dev/stderr'.format(self._ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/esi_private_headers.gold"
         tr.StillRunningAfter = self._server

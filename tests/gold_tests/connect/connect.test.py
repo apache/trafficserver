@@ -84,7 +84,7 @@ logging:
     def __testCase0(self):
         tr = Test.AddTestRun()
         self.__checkProcessBefore(tr)
-        tr.Processes.Default.Command = f"curl -v --fail -s -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'"
+        tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'")
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/connect_0_stderr.gold"
         tr.Processes.Default.TimeOut = 3

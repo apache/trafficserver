@@ -52,6 +52,7 @@ def MakeATSProcess(
         enable_tls=False,
         enable_cache=True,
         enable_quic=False,
+        enable_uds=True,
         block_for_debug=False,
         log_data=default_log_data,
         use_traffic_out=True,
@@ -366,6 +367,10 @@ def MakeATSProcess(
             p.Variables.ssl_port = 4443
             p.Variables.ssl_portv6 = 4444
 
+    # unix domain socket path
+    uds_path = os.path.join(obj.RunDirectory, 'uds.socket')
+    p.Variables.uds_path = uds_path
+
     get_port(p, "manager_port")
     get_port(p, "admin_port")
 
@@ -415,6 +420,10 @@ def MakeATSProcess(
             port_str += f" {p.Variables.proxy_protocol_port}:pp {p.Variables.proxy_protocol_portv6}:pp:ipv6"
             if enable_tls:
                 port_str += f" {p.Variables.proxy_protocol_ssl_port}:pp:ssl {p.Variables.proxy_protocol_ssl_portv6}:pp:ssl:ipv6"
+            if enable_uds:
+                port_str += f" {uds_path}:pp"
+        elif enable_uds:
+            port_str += f" {uds_path}"
         #p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
         p.Disk.records_config.update({
             'proxy.config.http.server_ports': port_str,

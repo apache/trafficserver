@@ -132,7 +132,7 @@ ts=Test.MakeATSProcess("ts")
 #first test is a miss for default
 tr=Test.AddTestRun()
 # get port for command from Variables
-tr.Processes.Default.Command='curl "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port)
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
 
 ```
 
