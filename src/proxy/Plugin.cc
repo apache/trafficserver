@@ -252,12 +252,12 @@ plugin_expand(char *arg)
     break;
   }
   case RECD_COUNTER: {
-    auto [count_val, err]{RecGetRecordCounter(arg)};
-    if (err != REC_ERR_OKAY) {
+    auto count_val{RecGetRecordCounter(arg)};
+    if (count_val) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));
-    snprintf(str, 128, "%ld", static_cast<long int>(count_val));
+    snprintf(str, 128, "%ld", static_cast<long int>(count_val.value()));
     return str;
     break;
   }

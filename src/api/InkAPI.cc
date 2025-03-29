@@ -3263,10 +3263,10 @@ TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 TSReturnCode
 TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 {
-  auto [tmp, res]{RecGetRecordCounter(var_name)};
+  auto tmp{RecGetRecordCounter(var_name)};
 
   // Try the old librecords first
-  if (res == REC_ERR_FAIL) {
+  if (!tmp) {
     int id = global_api_metrics.lookup(var_name);
 
     if (id == ts::Metrics::NOT_FOUND) {
@@ -3275,7 +3275,7 @@ TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
       *result = global_api_metrics[id].load();
     }
   } else {
-    *result = tmp;
+    *result = tmp.value();
   }
 
   return TS_SUCCESS;
