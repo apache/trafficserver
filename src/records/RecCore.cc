@@ -310,8 +310,8 @@ RecErrT
 RecLinkConfigString(const char *name, RecString *rec_string)
 {
   {
-    auto [tmp, err]{RecGetRecordStringAlloc(name)};
-    if (err == REC_ERR_FAIL) {
+    auto tmp{RecGetRecordStringAlloc(name)};
+    if (!tmp) {
       return REC_ERR_FAIL;
     }
     *rec_string = ats_stringdup(tmp);
@@ -478,20 +478,19 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
   return err;
 }
 
-std::pair<std::optional<std::string>, RecErrT>
+std::optional<std::string>
 RecGetRecordStringAlloc(const char *name, bool lock)
 {
   // Must use this indirection because the API requires a pure function, therefore no values can
   // be bound in the lambda.
-  using Context = std::pair<std::optional<std::string>, RecErrT>;
-  Context ret{std::nullopt, REC_ERR_FAIL};
+  using Context = std::optional<std::string>;
+  Context ret{};
 
   RecLookupRecord(
     name,
     [](RecRecord const *r, void *ctx) -> void {
-      auto &&[str, err] = *static_cast<Context *>(ctx);
+      auto &&str = *static_cast<Context *>(ctx);
       if (r->registered && r->data_type == RECD_STRING) {
-        err = REC_ERR_OKAY;
         if (auto rec_str{r->data.rec_string}; rec_str) {
           auto len{strlen(rec_str)};
           if (len) {

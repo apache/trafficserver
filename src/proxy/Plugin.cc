@@ -224,8 +224,8 @@ plugin_expand(char *arg)
 
   switch (data_type) {
   case RECD_STRING: {
-    auto [rec_str, err]{RecGetRecordStringAlloc(arg)};
-    if (err != REC_ERR_OKAY) {
+    auto rec_str{RecGetRecordStringAlloc(arg)};
+    if (!rec_str) {
       goto not_found;
     }
     return ats_stringdup(rec_str);

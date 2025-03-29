@@ -105,10 +105,9 @@ DiagsConfig::reconfigure_diags()
       break;
     }
 
-    std::optional<std::string> rec_str;
-    std::tie(rec_str, err) = RecGetRecordStringAlloc(record_name);
-    found                  = err == REC_ERR_OKAY;
-    all_found              = all_found && found;
+    auto rec_str{RecGetRecordStringAlloc(record_name)};
+    found     = rec_str.has_value();
+    all_found = all_found && found;
 
     if (found) {
       parse_output_string(ats_as_c_str(rec_str), &(c.outputs[l]));
@@ -117,15 +116,13 @@ DiagsConfig::reconfigure_diags()
     }
   }
 
-  std::optional<std::string> dt;
-  std::tie(dt, err) = RecGetRecordStringAlloc("proxy.config.diags.debug.tags");
-  found             = err == REC_ERR_OKAY;
-  all_found         = all_found && found;
+  auto dt{RecGetRecordStringAlloc("proxy.config.diags.debug.tags")};
+  found     = dt.has_value();
+  all_found = all_found && found;
 
-  std::optional<std::string> at;
-  std::tie(at, err) = RecGetRecordStringAlloc("proxy.config.diags.action.tags");
-  found             = err == REC_ERR_OKAY;
-  all_found         = all_found && found;
+  auto at{RecGetRecordStringAlloc("proxy.config.diags.action.tags")};
+  found     = at.has_value();
+  all_found = all_found && found;
 
   ///////////////////////////////////////////////////////////////////
   // if couldn't read all values, return without changing config,  //
@@ -308,8 +305,8 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
 
   // Grab some perms for the actual files on disk
   {
-    auto diags_perm{RecGetRecordStringAlloc("proxy.config.diags.logfile_perm").first};
-    auto output_perm{RecGetRecordStringAlloc("proxy.config.output.logfile_perm").first};
+    auto diags_perm{RecGetRecordStringAlloc("proxy.config.diags.logfile_perm")};
+    auto output_perm{RecGetRecordStringAlloc("proxy.config.output.logfile_perm")};
     auto diags_perm_c_str{ats_as_c_str(diags_perm)};
     auto output_perm_c_str{ats_as_c_str(output_perm)};
     int  diags_perm_parsed  = diags_perm_c_str ? ink_fileperm_parse(diags_perm_c_str) : -1;

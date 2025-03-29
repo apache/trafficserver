@@ -3296,7 +3296,7 @@ TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
 TSReturnCode
 TSMgmtStringGet(const char *var_name, TSMgmtString *result)
 {
-  auto tmp_str{RecGetRecordStringAlloc(const_cast<char *>(var_name)).first};
+  auto tmp_str{RecGetRecordStringAlloc(const_cast<char *>(var_name))};
   auto tmp{ats_as_c_str(tmp_str)};
 
   if (tmp) {

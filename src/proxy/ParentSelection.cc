@@ -81,7 +81,7 @@ ParentSelectionPolicy::ParentSelectionPolicy()
 ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_parent_table), DefaultParent(nullptr), policy()
 {
   // Handle default parent
-  auto           rec_str{RecGetRecordStringAlloc(default_var).first};
+  auto           rec_str{RecGetRecordStringAlloc(default_var)};
   ats_scoped_str default_val{ats_stringdup(rec_str)};
   DefaultParent = createDefaultParent(default_val);
 }
@@ -967,7 +967,7 @@ SocksServerConfig::reconfigure()
 
   // Handle default parent
   {
-    auto           rec_str{RecGetRecordStringAlloc("proxy.config.socks.default_servers").first};
+    auto           rec_str{RecGetRecordStringAlloc("proxy.config.socks.default_servers")};
     ats_scoped_str default_val{ats_stringdup(rec_str)};
     params->DefaultParent = createDefaultParent(default_val);
   }

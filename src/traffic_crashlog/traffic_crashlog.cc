@@ -173,7 +173,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   if (syslog_mode) {
     int facility = -1;
-    if (auto [name, err]{RecGetRecordStringAlloc("proxy.config.syslog_facility")}; err == REC_ERR_OKAY) {
+    if (auto name{RecGetRecordStringAlloc("proxy.config.syslog_facility")}; name) {
       facility = facility_string_to_int(ats_as_c_str(name));
     }
 

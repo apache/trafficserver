@@ -235,16 +235,16 @@ DNSProcessor::start(int, size_t stacksize)
   RecEstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
   RecEstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
   RecEstablishStaticConfigInt32(dns_max_tcp_continuous_failures, "proxy.config.dns.max_tcp_continuous_failures");
-  if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.dns.nameservers")}; err == REC_ERR_OKAY) {
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.dns.nameservers")}; rec_str) {
     dns_ns_list = ats_stringdup(rec_str);
   }
-  if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.dns.local_ipv4")}; err == REC_ERR_OKAY) {
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.dns.local_ipv4")}; rec_str) {
     dns_local_ipv4 = ats_stringdup(rec_str);
   }
-  if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.dns.local_ipv6")}; err == REC_ERR_OKAY) {
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.dns.local_ipv6")}; rec_str) {
     dns_local_ipv6 = ats_stringdup(rec_str);
   }
-  if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.dns.resolv_conf")}; err == REC_ERR_OKAY) {
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.dns.resolv_conf")}; rec_str) {
     dns_resolv_conf = ats_stringdup(rec_str);
   }
   RecEstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");

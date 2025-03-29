@@ -87,7 +87,7 @@ UrlRewrite::load()
   }
 
   this->ts_name = nullptr;
-  if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.proxy_name")}; err == REC_ERR_OKAY) {
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.proxy_name")}; rec_str) {
     this->ts_name = ats_stringdup(rec_str);
   }
   if (this->ts_name == nullptr) {
@@ -96,7 +96,7 @@ UrlRewrite::load()
   }
 
   this->http_default_redirect_url = nullptr;
-  if (auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.http.referer_default_redirect")}; err == REC_ERR_OKAY) {
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.http.referer_default_redirect")}; rec_str) {
     this->http_default_redirect_url = ats_stringdup(rec_str);
   }
   if (this->http_default_redirect_url == nullptr) {

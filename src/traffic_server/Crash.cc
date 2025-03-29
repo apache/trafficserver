@@ -50,8 +50,8 @@ create_logger_path()
   std::string    bindir;
   ats_scoped_str fullpath;
 
-  auto [rec_str, err]{RecGetRecordStringAlloc("proxy.config.crash_log_helper")};
-  if (err != REC_ERR_OKAY) {
+  auto rec_str{RecGetRecordStringAlloc("proxy.config.crash_log_helper")};
+  if (!rec_str) {
     return nullptr;
   }
   RecString name{ats_stringdup(rec_str)};

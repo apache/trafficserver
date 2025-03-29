@@ -56,13 +56,11 @@ configure_net()
   net_event_period  = RecGetRecordInt("proxy.config.net.event_period").first;
   net_accept_period = RecGetRecordInt("proxy.config.net.accept_period").first;
 
-  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.net.tcp_congestion_control_in").first};
-      rec_str && !rec_str.value().empty()) {
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.net.tcp_congestion_control_in")}; rec_str && !rec_str.value().empty()) {
     net_ccp_in = std::move(rec_str.value());
   }
 
-  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.net.tcp_congestion_control_out").first};
-      rec_str && !rec_str.value().empty()) {
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.net.tcp_congestion_control_out")}; rec_str && !rec_str.value().empty()) {
     net_ccp_out = std::move(rec_str.value());
   }
 }

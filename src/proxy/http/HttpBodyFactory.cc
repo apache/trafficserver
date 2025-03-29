@@ -282,10 +282,9 @@ HttpBodyFactory::reconfigure()
   ats_scoped_str directory_of_template_sets;
 
   {
-    std::optional<std::string> rec_str;
-    std::tie(rec_str, rec_err) = RecGetRecordStringAlloc("proxy.config.body_factory.template_sets_dir");
-    all_found                  = all_found && (rec_err == REC_ERR_OKAY);
-    if (rec_err == REC_ERR_OKAY) {
+    auto rec_str{RecGetRecordStringAlloc("proxy.config.body_factory.template_sets_dir")};
+    all_found = all_found && rec_str;
+    if (rec_str) {
       directory_of_template_sets = Layout::get()->relative(rec_str ? rec_str.value() : std::string_view{nullptr, 0});
       if (access(directory_of_template_sets, R_OK) < 0) {
         Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));

@@ -199,7 +199,7 @@ ink_aio_init(ts::ModuleVersion v, [[maybe_unused]] AIOBackend backend)
 #if TS_USE_LINUX_IO_URING
   // If the caller specified auto backend, check for config to force a backend
   if (backend == AIOBackend::AIO_BACKEND_AUTO) {
-    auto aio_mode{RecGetRecordStringAlloc("proxy.config.aio.mode").first};
+    auto aio_mode{RecGetRecordStringAlloc("proxy.config.aio.mode")};
     if (aio_mode && !aio_mode.empty()) {
       if (strcasecmp(aio_mode, "auto") == 0) {
         backend = AIOBackend::AIO_BACKEND_AUTO;

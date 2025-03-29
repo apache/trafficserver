@@ -182,7 +182,7 @@ LogAccess::marshal_config_int_var(char *config_var, char *buf)
 int
 LogAccess::marshal_config_str_var(char *config_var, char *buf)
 {
-  auto str{RecGetRecordStringAlloc(config_var).first};
+  auto str{RecGetRecordStringAlloc(config_var)};
   auto c_str{ats_as_c_str(str)};
   int  len = LogAccess::strlen(c_str);
   if (buf) {
