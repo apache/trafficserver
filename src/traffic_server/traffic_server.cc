@@ -1388,8 +1388,8 @@ adjust_sys_settings()
   if (maxfiles != RLIM_INFINITY) {
     float file_max_pct = 0.9;
 
-    if (auto [tmp, err] = RecGetRecordFloat("proxy.config.system.file_max_pct"); err == REC_ERR_OKAY) {
-      file_max_pct = tmp;
+    if (auto tmp{RecGetRecordFloat("proxy.config.system.file_max_pct")}; tmp) {
+      file_max_pct = tmp.value();
     }
     if (file_max_pct > 1.0) {
       file_max_pct = 1.0;
@@ -1657,8 +1657,8 @@ adjust_num_of_net_threads(int nthreads)
     nthreads = num_of_threads_tmp;
   } else { /* autoconfig is enabled */
     num_of_threads_tmp = nthreads;
-    if (auto [tmp, err] = RecGetRecordFloat("proxy.config.exec_thread.autoconfig.scale"); err == REC_ERR_OKAY) {
-      autoconfig_scale = tmp;
+    if (auto tmp{RecGetRecordFloat("proxy.config.exec_thread.autoconfig.scale")}; tmp) {
+      autoconfig_scale = tmp.value();
     }
     num_of_threads_tmp = static_cast<int>(static_cast<float>(num_of_threads_tmp) * autoconfig_scale);
 

@@ -270,15 +270,15 @@ LogAccess::marshal_record(char *record, char *buf)
       //
       ink_assert(sizeof(double) >= sizeof(RecFloat));
 
-      auto [val, err]{RecGetRecordFloat(record)};
-      found = err == REC_ERR_OKAY;
+      auto val{RecGetRecordFloat(record)};
+      found = val.has_value();
 
       if (found) {
         // snprintf does not support "%e" in the format
         // and we want to use "%e" because it is the most concise
         // notation
 
-        num_chars = snprintf(ascii_buf, sizeof(ascii_buf), "%e", val) + 1; // include eos
+        num_chars = snprintf(ascii_buf, sizeof(ascii_buf), "%e", val.value()) + 1; // include eos
 
         // the "%e" field above should take 13 characters at most
         //

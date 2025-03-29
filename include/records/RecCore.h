@@ -164,11 +164,11 @@ RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT sourc
 RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
 RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true);
 
-std::optional<RecInt>        RecGetRecordInt(const char *name, bool lock = true);
-std::pair<RecFloat, RecErrT> RecGetRecordFloat(const char *name, bool lock = true);
-RecErrT                      RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
-std::optional<std::string>   RecGetRecordStringAlloc(const char *name, bool lock = true);
-std::optional<RecCounter>    RecGetRecordCounter(const char *name, bool lock = true);
+std::optional<RecInt>      RecGetRecordInt(const char *name, bool lock = true);
+std::optional<RecFloat>    RecGetRecordFloat(const char *name, bool lock = true);
+RecErrT                    RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
+std::optional<std::string> RecGetRecordStringAlloc(const char *name, bool lock = true);
+std::optional<RecCounter>  RecGetRecordCounter(const char *name, bool lock = true);
 
 // Convinience to link and get a config of RecInt type
 inline RecErrT
@@ -217,9 +217,9 @@ inline RecErrT
 RecEstablishStaticConfigFloat(RecFloat &rec_float, const char *name, bool lock = true)
 {
   RecLinkConfigFloat(name, &rec_float);
-  auto [tmp, err]{RecGetRecordFloat(name, lock)};
-  rec_float = tmp;
-  return err;
+  auto tmp{RecGetRecordFloat(name, lock)};
+  rec_float = tmp.value_or(0);
+  return tmp ? REC_ERR_OKAY : REC_ERR_FAIL;
 }
 
 // Convenience to link and get a config of byte type

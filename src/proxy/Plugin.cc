@@ -232,12 +232,12 @@ plugin_expand(char *arg)
     break;
   }
   case RECD_FLOAT: {
-    auto [float_val, err]{RecGetRecordFloat(arg)};
-    if (err != REC_ERR_OKAY) {
+    auto float_val{RecGetRecordFloat(arg)};
+    if (!float_val) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));
-    snprintf(str, 128, "%f", static_cast<float>(float_val));
+    snprintf(str, 128, "%f", static_cast<float>(float_val.value()));
     return str;
     break;
   }

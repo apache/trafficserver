@@ -128,7 +128,7 @@ static int
 validate_rww(int new_value)
 {
   if (new_value) {
-    auto http_bg_fill{RecGetRecordFloat("proxy.config.http.background_fill_completed_threshold").first};
+    auto http_bg_fill{RecGetRecordFloat("proxy.config.http.background_fill_completed_threshold").value_or(0)};
     if (http_bg_fill > 0.0) {
       Note("to enable reading while writing a document, %s should be 0.0: read while writing disabled",
            "proxy.config.http.background_fill_completed_threshold");
