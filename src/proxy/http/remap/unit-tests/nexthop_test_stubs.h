@@ -40,7 +40,6 @@
 #define NH_Error(fmt, ...)    PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define NH_Note(fmt, ...)     PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define NH_Warn(fmt, ...)     PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define NH_GetConfig(v, n)    GetConfigInteger(&v, n)
 
 class HttpRequestData;
 

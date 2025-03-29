@@ -39,20 +39,20 @@
 #include "proxy/http/HttpSessionManager.h"
 
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \
-  REC_EstablishStaticConfigStringAlloc(_ix, _n);      \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecEstablishStaticConfigStringAlloc(_n, &(_ix));    \
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigLongLong(_ix, _n) \
-  REC_EstablishStaticConfigInteger(_ix, _n);       \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecEstablishStaticConfigInteger(_n, &(_ix));     \
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigFloat(_ix, _n) \
-  REC_EstablishStaticConfigFloat(_ix, _n);      \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecEstablishStaticConfigFloat(_n, &(_ix));    \
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigByte(_ix, _n) \
-  REC_EstablishStaticConfigByte(_ix, _n);      \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecEstablishStaticConfigByte(_n, &(_ix));    \
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 namespace
 {
