@@ -291,7 +291,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
     }
 
     if (tlv_len > 0) {
-      if (pp_info->set_additional_data(msg.substr(msg.length() - tlv_len)) < 0) {
+      if (pp_info->set_additional_data(msg.substr(total_len - tlv_len, tlv_len)) < 0) {
         return 0;
       }
     }
