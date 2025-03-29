@@ -98,6 +98,26 @@ request_block(TSCont contp, Data *const data)
     header.setKeyVal(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size(), SLICE_CRR_VAL.data(), SLICE_CRR_VAL.size());
   }
 
+  // Attach the identifier header
+  Config const *const cfg = data->m_config;
+  if (!cfg->m_crr_ident_header.empty() && !header.hasKey(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size())) {
+    swoc::LocalBufferWriter<8192> idbuf;
+    if (0 < data->m_etaglen) {
+      idbuf.write(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
+      idbuf.write(": ");
+      idbuf.write(data->m_etag, data->m_etaglen);
+    } else if (0 < data->m_lastmodifiedlen) {
+      idbuf.write(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
+      idbuf.write(": ");
+      idbuf.write(data->m_lastmodified, data->m_lastmodifiedlen);
+    }
+
+    if (0 < idbuf.size()) {
+      DEBUG_LOG("Adding identity '%.*s'", (int)idbuf.size(), idbuf.data());
+      header.setKeyVal(cfg->m_crr_ident_header.data(), cfg->m_crr_ident_header.size(), idbuf.data(), idbuf.size());
+    }
+  }
+
   // create virtual connection back into ATS
   TSHttpConnectOptions options = TSHttpConnectOptionsGet(TS_CONNECT_PLUGIN);
   options.addr                 = reinterpret_cast<sockaddr *>(&data->m_client_ip);

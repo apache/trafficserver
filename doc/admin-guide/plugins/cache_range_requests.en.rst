@@ -112,7 +112,6 @@ which includes information about the partial content range.  In this mode,
 all requests (include partial content) will use consistent hashing method
 for parent selection.
 
-
 X-Crr-Ims header support
 ------------------------
 
@@ -143,6 +142,35 @@ When used with the :program:`slice` plugin its `--crr-ims-header`
 option must have the same value (or not be defined) in order to work.
 
 Presence of the `--ims-header` automatically sets the `--consider-ims` option.
+
+X-Crr-Ident header support
+--------------------------
+
+.. option:: --consider-ident
+.. option:: -d
+.. option:: --ident-header=[header name] (default: X-Crr-Ident)
+.. option:: -j
+
+This supports the slice plugin which makes multiple adjacent range
+requests. The slice plugin will record the identifier of the first range
+request (Etag, or Last-Modified in that order) and will add the value
+to this header.
+
+.. code::
+
+    X-Crr-Ident: Etag: "foo"
+    X-Crr-Ident: Last-Modified: Tue, 19 Nov 2019 13:26:45 GMT
+
+During the cache lookup hook if a range request is considered STALE
+the identifier from this header will be compared to the stale cache
+identifier. If the values match the response will be changed to FRESH,
+preventing the transaction from contacting a parent.
+
+When used with the :program:`slice` plugin its `--crr-ident-header`
+option must have the same value (or not be defined) in order to work.
+
+Presence of the `--ident-header` automatically sets the `--consider-ident`
+option.
 
 Don't modify the Cache Key
 --------------------------
