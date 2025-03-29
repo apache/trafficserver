@@ -74,7 +74,10 @@ public:
   TSMBuffer           client_bufp    = nullptr;
   TSMLoc              client_hdr_loc = nullptr;
   TSHttpStatus        resp_status    = TS_HTTP_STATUS_NONE;
-  bool                changed_url    = false;
+  const char         *ovector_ptr    = nullptr;
+  int                 ovector[OVECCOUNT];
+  int                 ovector_count = 0;
+  bool                changed_url   = false;
 
 private:
   void destroy();

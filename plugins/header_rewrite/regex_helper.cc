@@ -16,6 +16,7 @@
   limitations under the License.
 */
 #include "regex_helper.h"
+#include "lulu.h"
 
 bool
 regexHelper::setRegexMatch(const std::string &s, bool nocase)

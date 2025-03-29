@@ -828,3 +828,25 @@ private:
     return ((ptr & STATE_INT16_MASK) >> 48);
   }
 };
+
+// Last regex capture
+class ConditionLastCapture : public Condition
+{
+  using MatcherType = Matchers<std::string>;
+
+public:
+  explicit ConditionLastCapture() { Dbg(dbg_ctl, "Calling CTOR for ConditionLastCapture"); }
+
+  // noncopyable
+  ConditionLastCapture(const ConditionLastCapture &) = delete;
+  void operator=(const ConditionLastCapture &)       = delete;
+
+  void set_qualifier(const std::string &q) override;
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+
+private:
+  int _ix = -1;
+};
