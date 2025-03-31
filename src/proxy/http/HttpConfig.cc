@@ -1080,6 +1080,7 @@ HttpConfig::reconfigure()
 
   params->outbound = m_master.outbound;
 
+  ats_free(params->proxy_hostname);
   params->proxy_hostname                           = ats_strdup(m_master.proxy_hostname);
   params->proxy_hostname_len                       = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
   params->oride.no_dns_forward_to_parent           = INT_TO_BOOL(m_master.oride.no_dns_forward_to_parent);
@@ -1112,10 +1113,12 @@ HttpConfig::reconfigure()
     params->oride.connection_tracker_config.server_min = params->oride.connection_tracker_config.server_max;
   }
 
-  params->oride.insert_request_via_string   = m_master.oride.insert_request_via_string;
-  params->oride.insert_response_via_string  = m_master.oride.insert_response_via_string;
-  params->proxy_request_via_string          = ats_strdup(m_master.proxy_request_via_string);
-  params->proxy_request_via_string_len      = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
+  params->oride.insert_request_via_string  = m_master.oride.insert_request_via_string;
+  params->oride.insert_response_via_string = m_master.oride.insert_response_via_string;
+  ats_free(params->proxy_request_via_string);
+  params->proxy_request_via_string     = ats_strdup(m_master.proxy_request_via_string);
+  params->proxy_request_via_string_len = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
+  ats_free(params->proxy_response_via_string);
   params->proxy_response_via_string         = ats_strdup(m_master.proxy_response_via_string);
   params->proxy_response_via_string_len     = (params->proxy_response_via_string) ? strlen(params->proxy_response_via_string) : 0;
   params->oride.proxy_response_hsts_max_age = m_master.oride.proxy_response_hsts_max_age;
@@ -1151,7 +1154,8 @@ HttpConfig::reconfigure()
     params->oride.flow_high_water_mark = params->oride.flow_low_water_mark = 0;
   }
 
-  params->oride.server_session_sharing_match     = m_master.oride.server_session_sharing_match;
+  params->oride.server_session_sharing_match = m_master.oride.server_session_sharing_match;
+  ats_free(params->oride.server_session_sharing_match_str);
   params->oride.server_session_sharing_match_str = ats_strdup(m_master.oride.server_session_sharing_match_str);
   params->oride.server_min_keep_alive_conns      = m_master.oride.server_min_keep_alive_conns;
   params->server_session_sharing_pool            = m_master.server_session_sharing_pool;
@@ -1210,12 +1214,15 @@ HttpConfig::reconfigure()
   params->oride.anonymize_remove_cookie     = INT_TO_BOOL(m_master.oride.anonymize_remove_cookie);
   params->oride.anonymize_remove_client_ip  = INT_TO_BOOL(m_master.oride.anonymize_remove_client_ip);
   params->oride.anonymize_insert_client_ip  = m_master.oride.anonymize_insert_client_ip;
-  params->anonymize_other_header_list       = ats_strdup(m_master.anonymize_other_header_list);
+  ats_free(params->anonymize_other_header_list);
+  params->anonymize_other_header_list = ats_strdup(m_master.anonymize_other_header_list);
 
+  ats_free(params->oride.global_user_agent_header);
   params->oride.global_user_agent_header = ats_strdup(m_master.oride.global_user_agent_header);
   params->oride.global_user_agent_header_size =
     params->oride.global_user_agent_header ? strlen(params->oride.global_user_agent_header) : 0;
 
+  ats_free(params->oride.proxy_response_server_string);
   params->oride.proxy_response_server_string = ats_strdup(m_master.oride.proxy_response_server_string);
   params->oride.proxy_response_server_string_len =
     params->oride.proxy_response_server_string ? strlen(params->oride.proxy_response_server_string) : 0;
@@ -1289,6 +1296,7 @@ HttpConfig::reconfigure()
   params->oride.cache_range_write      = INT_TO_BOOL(m_master.oride.cache_range_write);
   params->oride.allow_multi_range      = m_master.oride.allow_multi_range;
 
+  ats_free(params->connect_ports_string);
   params->connect_ports_string = ats_strdup(m_master.connect_ports_string);
   params->connect_ports        = parse_ports_list(params->connect_ports_string);
 
@@ -1297,18 +1305,20 @@ HttpConfig::reconfigure()
 
   params->push_method_enabled = INT_TO_BOOL(m_master.push_method_enabled);
 
-  params->reverse_proxy_enabled            = INT_TO_BOOL(m_master.reverse_proxy_enabled);
-  params->url_remap_required               = INT_TO_BOOL(m_master.url_remap_required);
-  params->errors_log_error_pages           = INT_TO_BOOL(m_master.errors_log_error_pages);
-  params->oride.slow_log_threshold         = m_master.oride.slow_log_threshold;
-  params->oride.send_http11_requests       = m_master.oride.send_http11_requests;
-  params->oride.doc_in_cache_skip_dns      = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
-  params->oride.default_buffer_size_index  = m_master.oride.default_buffer_size_index;
-  params->oride.default_buffer_water_mark  = m_master.oride.default_buffer_water_mark;
+  params->reverse_proxy_enabled           = INT_TO_BOOL(m_master.reverse_proxy_enabled);
+  params->url_remap_required              = INT_TO_BOOL(m_master.url_remap_required);
+  params->errors_log_error_pages          = INT_TO_BOOL(m_master.errors_log_error_pages);
+  params->oride.slow_log_threshold        = m_master.oride.slow_log_threshold;
+  params->oride.send_http11_requests      = m_master.oride.send_http11_requests;
+  params->oride.doc_in_cache_skip_dns     = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
+  params->oride.default_buffer_size_index = m_master.oride.default_buffer_size_index;
+  params->oride.default_buffer_water_mark = m_master.oride.default_buffer_water_mark;
+  ats_free(params->oride.body_factory_template_base);
   params->oride.body_factory_template_base = ats_strdup(m_master.oride.body_factory_template_base);
   params->oride.body_factory_template_base_len =
     params->oride.body_factory_template_base ? strlen(params->oride.body_factory_template_base) : 0;
   params->body_factory_response_max_size = m_master.body_factory_response_max_size;
+  ats_free(params->reverse_proxy_no_host_redirect);
   params->reverse_proxy_no_host_redirect = ats_strdup(m_master.reverse_proxy_no_host_redirect);
   params->reverse_proxy_no_host_redirect_len =
     params->reverse_proxy_no_host_redirect ? strlen(params->reverse_proxy_no_host_redirect) : 0;
@@ -1329,17 +1339,21 @@ HttpConfig::reconfigure()
   params->redirection_host_no_port          = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->oride.number_of_redirections      = m_master.oride.number_of_redirections;
   params->post_copy_size                    = m_master.post_copy_size;
-  params->redirect_actions_string           = ats_strdup(m_master.redirect_actions_string);
-  params->redirect_actions_map = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
-  params->http_host_sni_policy = m_master.http_host_sni_policy;
+  ats_free(params->redirect_actions_string);
+  params->redirect_actions_string = ats_strdup(m_master.redirect_actions_string);
+  params->redirect_actions_map    = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
+  params->http_host_sni_policy    = m_master.http_host_sni_policy;
   params->scheme_proto_mismatch_policy = m_master.scheme_proto_mismatch_policy;
 
-  params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
+  ats_free(params->oride.ssl_client_sni_policy);
+  params->oride.ssl_client_sni_policy = ats_strdup(m_master.oride.ssl_client_sni_policy);
+  ats_free(params->oride.ssl_client_alpn_protocols);
   params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
 
   params->negative_caching_list = m_master.negative_caching_list;
 
-  params->oride.host_res_data            = m_master.oride.host_res_data;
+  params->oride.host_res_data = m_master.oride.host_res_data;
+  ats_free(params->oride.host_res_data.conf_value);
   params->oride.host_res_data.conf_value = ats_strdup(m_master.oride.host_res_data.conf_value);
 
   params->oride.plugin_vc_default_buffer_index      = m_master.oride.plugin_vc_default_buffer_index;
