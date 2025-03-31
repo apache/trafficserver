@@ -1931,10 +1931,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 
   ats_scoped_str user(MAX_LOGIN + 1);
+  *user = '\0';
+  auto user_view{RecGetRecordString("proxy.config.admin.user_id", user, MAX_LOGIN)};
 
-  *user        = '\0';
-  admin_user_p = ((REC_ERR_OKAY == RecGetRecordString("proxy.config.admin.user_id", user, MAX_LOGIN)) && (*user != '\0') &&
-                  (0 != strcmp(user, "#-1")));
+  admin_user_p = (user_view && !user_view.value().empty() && user_view.value() != "#-1"sv);
 
   // Set up crash logging. We need to do this while we are still privileged so that the crash
   // logging helper runs as root. Don't bother setting up a crash logger if we are going into

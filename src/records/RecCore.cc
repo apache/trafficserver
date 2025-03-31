@@ -443,10 +443,10 @@ RecGetRecordFloat(const char *name, bool lock)
   return rec_float;
 }
 
-RecErrT
+std::optional<std::string_view>
 RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
 {
-  RecErrT err = REC_ERR_OKAY;
+  std::optional<std::string_view> ret;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -455,23 +455,20 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
     RecRecord *r = it->second;
 
     rec_mutex_acquire(&(r->lock));
-    if (!r->registered || (r->data_type != RECD_STRING)) {
-      err = REC_ERR_FAIL;
-    } else {
+    if (r->registered && r->data_type == RECD_STRING) {
       if (r->data.rec_string == nullptr) {
         buf[0] = '\0';
       } else {
         ink_strlcpy(buf, r->data.rec_string, buf_len);
       }
+      ret = std::string_view{buf};
     }
     rec_mutex_release(&(r->lock));
-  } else {
-    err = REC_ERR_FAIL;
   }
   if (lock) {
     ink_rwlock_unlock(&g_records_rwlock);
   }
-  return err;
+  return ret;
 }
 
 std::optional<std::string>

@@ -668,7 +668,8 @@ LayoutEngine::verify_runroot()
   } else {
     RecProcessInit(nullptr /* diags */);
     LibRecordsConfigInit();
-    if (RecGetRecordString("proxy.config.admin.user_id", user_buf, sizeof(user_buf)) != 0 || strlen(user_buf) == 0) {
+    if (auto buf_view{RecGetRecordString("proxy.config.admin.user_id", user_buf, sizeof(user_buf))};
+        !buf_view || buf_view.value().empty()) {
       user = user_buf;
     } else {
       user = TS_PKGSYSUSER;

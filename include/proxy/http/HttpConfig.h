@@ -837,7 +837,7 @@ public:
   static HttpConfigParams *acquire();
   static void              release(HttpConfigParams *params);
 
-  static bool load_server_session_sharing_match(const char *key, MgmtByte &mask);
+  static bool load_server_session_sharing_match(std::string_view key, MgmtByte &mask);
 
   // parse ssl ports configuration string
   static HttpConfigPortRange *parse_ports_list(char *ports_str);

@@ -100,9 +100,9 @@ template <typename T, unsigned N>
 static bool
 http_config_enum_read(const char *name, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
-  char key[512]; // it's just one key - painful UI if keys are longer than this
-  if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
-    return http_config_enum_search(key, list, value);
+  char key_buf[512]; // it's just one key - painful UI if keys are longer than this
+  if (auto key{RecGetRecordString(name, key_buf, sizeof(key_buf))}; key) {
+    return http_config_enum_search(key.value(), list, value);
   }
   return false;
 }
@@ -125,24 +125,23 @@ static const ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatch
 };
 
 bool
-HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
+HttpConfig::load_server_session_sharing_match(std::string_view key, MgmtByte &mask)
 {
   MgmtByte value;
   mask = 0;
   // Parse through and build up mask
-  std::string_view key_list(key);
-  size_t           start  = 0;
-  size_t           offset = 0;
-  Dbg(dbg_ctl_http_config, "enum mask value %s", key);
+  size_t start  = 0;
+  size_t offset = 0;
+  Dbg(dbg_ctl_http_config, "enum mask value %.*s", static_cast<int>(key.length()), key.data());
   do {
-    offset = key_list.find(',', start);
+    offset = key.find(',', start);
     if (offset == std::string_view::npos) {
-      std::string_view one_key = key_list.substr(start);
+      std::string_view one_key = key.substr(start);
       if (!http_config_enum_search(one_key, SessionSharingMatchStrings, value)) {
         return false;
       }
     } else {
-      std::string_view one_key = key_list.substr(start, offset - start);
+      std::string_view one_key = key.substr(start, offset - start);
       if (!http_config_enum_search(one_key, SessionSharingMatchStrings, value)) {
         return false;
       }
@@ -163,9 +162,9 @@ HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
 static bool
 http_config_enum_mask_read(const char *name, MgmtByte &value)
 {
-  char key[512]; // it's just one key - painful UI if keys are longer than this
-  if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
-    return HttpConfig::load_server_session_sharing_match(key, value);
+  char key_buf[512]; // it's just one key - painful UI if keys are longer than this
+  if (auto key{RecGetRecordString(name, key_buf, sizeof(key_buf))}; key) {
+    return HttpConfig::load_server_session_sharing_match(key.value(), value);
   }
   return false;
 }
@@ -847,9 +846,9 @@ HttpConfig::startup()
   {
     char str[512];
 
-    if (REC_ERR_OKAY == RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))) {
+    if (auto sv{RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))}; sv) {
       swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(std::string_view(str), error);
+      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(sv.value(), error);
       if (!error.size()) {
         c.oride.insert_forwarded = bs;
       } else {
