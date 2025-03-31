@@ -125,7 +125,9 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   }
 
   if (ats_is_unix(&accept_addr)) {
-    chmod(accept_addr.sun.sun_path, 0777);
+    if (chmod(accept_addr.sun.sun_path, 0777) < 0) {
+      goto Lerror;
+    }
   }
 
   if ((res = safe_listen(sock.get_fd(), get_listen_backlog())) < 0) {
