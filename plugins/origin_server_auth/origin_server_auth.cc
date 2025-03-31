@@ -48,6 +48,7 @@
 #include <ts/remap.h>
 #include <ts/remap_version.h>
 #include <tsutil/TsSharedMutex.h>
+#include "ts/apidefs.h"
 #include "tscore/ink_config.h"
 #include "swoc/TextView.h"
 
@@ -552,6 +553,12 @@ public:
     if (_conf_rld_act == ((TSAction)((uintptr_t)edata | 0x1))) {
       _conf_rld_act = nullptr;
     }
+  }
+
+  TSMutex
+  config_reloader_mutex()
+  {
+    return TSContMutexGet(_conf_rld);
   }
 
   ts::shared_mutex reload_mutex;
@@ -1263,7 +1270,10 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   S3Config *s3 = static_cast<S3Config *>(ih);
+  TSMutex   s3_mutex_ptr = s3->config_reloader_mutex();
+  TSMutexLock(s3_mutex_ptr);
   delete s3;
+  TSMutexUnlock(s3_mutex_ptr);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
