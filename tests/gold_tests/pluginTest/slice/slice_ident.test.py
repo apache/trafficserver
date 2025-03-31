@@ -116,14 +116,14 @@ logging:
 '''.split("\n"))
 
 # helpers for curl
-curl_and_args = f'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{ts.Variables.port}'
+curl_and_args = f'-s -D /dev/stdout -o /dev/stderr -x localhost:{ts.Variables.port}'
 
 # 0 Test - Preload etag asset
 tr = Test.AddTestRun("Preload etag asset")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://preload/etag'
+tr.MakeCurlCommand(curl_and_args + ' http://preload/etag')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
 tr.StillRunningAfter = ts
@@ -131,7 +131,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Preload last-modified asset
 tr = Test.AddTestRun("Preload last-modified asset")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://preload/lm'
+tr.MakeCurlCommand(curl_and_args + ' http://preload/lm')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
 tr.StillRunningAfter = ts
@@ -139,7 +139,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Fetch etag asset
 tr = Test.AddTestRun("Fetch etag asset")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/etag'
+tr.MakeCurlCommand(curl_and_args + ' http://slice/etag')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
 tr.StillRunningAfter = ts
@@ -147,7 +147,7 @@ tr.StillRunningAfter = ts
 # 3 Test - Fetch etag asset
 tr = Test.AddTestRun("Fetch etag asset, custom")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slicecustom/etag'
+tr.MakeCurlCommand(curl_and_args + ' http://slicecustom/etag')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
 tr.StillRunningAfter = ts
@@ -155,7 +155,7 @@ tr.StillRunningAfter = ts
 # 4 Test - Fetch last-modified asset
 tr = Test.AddTestRun("Fetch last-modified asset, custom")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/lm'
+tr.MakeCurlCommand(curl_and_args + ' http://slice/lm')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
 tr.StillRunningAfter = ts
@@ -163,7 +163,7 @@ tr.StillRunningAfter = ts
 # 5 Test - Fetch last-modified asset, custom
 tr = Test.AddTestRun("Fetch last-modified asset")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slicecustom/lm'
+tr.MakeCurlCommand(curl_and_args + ' http://slicecustom/lm')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
 tr.StillRunningAfter = ts
@@ -171,7 +171,7 @@ tr.StillRunningAfter = ts
 # 6 Test - add token to transaction log
 tr = Test.AddTestRun("Fetch last-modified asset")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://prefetch/404.txt'
+tr.MakeCurlCommand(curl_and_args + ' http://prefetch/404.txt')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("404", "expected 404 Not Found response")
 tr.StillRunningAfter = ts

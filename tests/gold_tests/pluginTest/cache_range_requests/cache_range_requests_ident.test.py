@@ -109,14 +109,14 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'cache_range_requests',
 })
 
-curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
+curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
 
 # 0 Test - Fetch asset into cache
 tr = Test.AddTestRun("0- range cache load")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://ident/path -r 0-'
+tr.MakeCurlCommand(curl_and_args + ' http://ident/path -r 0-')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
 tr.StillRunningAfter = ts
@@ -124,7 +124,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Fetch asset into cache
 tr = Test.AddTestRun("0- range cache load")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://identheader/pathheader -r 0-'
+tr.MakeCurlCommand(curl_and_args + ' http://identheader/pathheader -r 0-')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
 tr.StillRunningAfter = ts
@@ -132,7 +132,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Ensure range is fetched
 tr = Test.AddTestRun("0- cache hit check")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://ident/path -r 0-'
+tr.MakeCurlCommand(curl_and_args + ' http://ident/path -r 0-')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
 tr.StillRunningAfter = ts
@@ -140,7 +140,7 @@ tr.StillRunningAfter = ts
 # 3 Test - Ensure range is fetched
 tr = Test.AddTestRun("0- cache hit check")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://identheader/pathheader -r 0-'
+tr.MakeCurlCommand(curl_and_args + ' http://identheader/pathheader -r 0-')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
 tr.StillRunningAfter = ts
@@ -151,7 +151,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("0- range X-Crr-Ident Etag check")
 tr.DelayStart = 2
 ps = tr.Processes.Default
-ps.Command = curl_and_args + f" http://ident/path -r 0- -H 'X-Crr-Ident: Etag: {etag}'"
+tr.MakeCurlCommand(curl_and_args + f" http://ident/path -r 0- -H 'X-Crr-Ident: Etag: {etag}'")
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
@@ -160,7 +160,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("0- range CrrIdent Etag check")
 tr.DelayStart = 2
 ps = tr.Processes.Default
-ps.Command = curl_and_args + f" http://identheader/pathheader -r 0- -H 'CrrIdent: Etag: {etag_custom}'"
+tr.MakeCurlCommand(curl_and_args + f" http://identheader/pathheader -r 0- -H 'CrrIdent: Etag: {etag_custom}'")
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
@@ -168,7 +168,7 @@ tr.StillRunningAfter = ts
 # 6 Test - Ensure X-Crr-Ident Last-Modified header results in hit-fresh
 tr = Test.AddTestRun("0- range X-Crr-Ident Last-Modified check")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: {last_modified}"'
+tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: {last_modified}"')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
 tr.StillRunningAfter = ts
@@ -176,7 +176,7 @@ tr.StillRunningAfter = ts
 # 7 Test - Provide a mismatch Etag force IMS request
 tr = Test.AddTestRun("0- range X-Crr-Ident check")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: foo"'
+tr.MakeCurlCommand(curl_and_args + f' http://ident/path -r 0- -H "X-Crr-Ident: Last-Modified: foo"')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
 tr.StillRunningAfter = ts

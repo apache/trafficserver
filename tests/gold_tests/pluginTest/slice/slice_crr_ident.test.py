@@ -125,14 +125,14 @@ res_header_plain_1 = {
 server.addResponse("sessionlog.json", req_header_plain_1, res_header_plain_1)
 
 # curl helper
-curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
+curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
 
 # 0 Test - Preload plain asset
 tr = Test.AddTestRun("Preload plain")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://slice/plain -H "UID: plain"'
+tr.MakeCurlCommand(curl_and_args + ' http://slice/plain -H "UID: plain"')
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression("aaaBB", "expected aaaBB")
 ps.Streams.stdout.Content = Testers.ContainsExpression('Etag: "plain"', "expected etag plain")
@@ -142,7 +142,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Request 2nd slice (expect slice1 to be fresh)")
 tr.DelayStart = 2  # ensure its really stale
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/plain -H "UID: plain"'
+tr.MakeCurlCommand(curl_and_args + ' http://slice/plain -H "UID: plain"')
 ps.ReturnCode = 0
 ps.Streams.stderr = Testers.ContainsExpression("aaaBB", "expected aaaBB")
 ps.Streams.stdout.Content = Testers.ContainsExpression('Etag: "plain"', "expected etag plain")
@@ -186,7 +186,7 @@ server.addResponse("sessionlog.json", req_header_chg_1, res_header_chg_1)
 tr = Test.AddTestRun("Request again, asset replaced")
 tr.DelayStart = 2  # ensure its really stale
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/plain -H "UID: chg"'
+tr.MakeCurlCommand(curl_and_args + ' http://slice/plain -H "UID: chg"')
 ps.ReturnCode = 0
 ps.Streams.stderr = Testers.ContainsExpression("AAAbb", "expected AAAbb")
 ps.Streams.stdout.Content = Testers.ContainsExpression('Etag: "chg"', "expected etag chg")
@@ -196,7 +196,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Request again, asset replaced but hit")
 tr.DelayStart = 2  # ensure its really stale
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://slice/plain -H "UID: chg"'
+tr.MakeCurlCommand(curl_and_args + ' http://slice/plain -H "UID: chg"')
 ps.ReturnCode = 0
 ps.Streams.stderr = Testers.ContainsExpression("AAAbb", "expected AAAbb")
 ps.Streams.stdout.Content = Testers.ContainsExpression('Etag: "chg"', "expected etag chg")
@@ -205,7 +205,7 @@ tr.StillRunningAfter = ts
 # 5 Test - add token to transaction log
 tr = Test.AddTestRun("Fetch 404.txt asset")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://crr/404.txt'
+tr.MakeCurlCommand(curl_and_args + ' http://crr/404.txt')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("404", "expected 404 Not Found response")
 tr.StillRunningAfter = ts
