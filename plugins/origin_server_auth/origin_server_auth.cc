@@ -1269,7 +1269,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 void
 TSRemapDeleteInstance(void *ih)
 {
-  S3Config *s3 = static_cast<S3Config *>(ih);
+  S3Config *s3           = static_cast<S3Config *>(ih);
   TSMutex   s3_mutex_ptr = s3->config_reloader_mutex();
   TSMutexLock(s3_mutex_ptr);
   delete s3;
