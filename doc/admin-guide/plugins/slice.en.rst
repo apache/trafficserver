@@ -140,6 +140,14 @@ The slice plugin supports the following options::
         `cache_range_requests` plugin.
         -i for short
 
+    --crr-ident-header=<header name> (default: X-Crr-Ident)
+        Header name used by the slice plugin to tell the
+        `cache_range_requests` plugin the identifier of the
+        first/reference slice fetched.  First Etag is preferred
+        followed by Last-Modified. The `cache_range_requests`
+        can use this identifier to flip a STALE asset back to
+        FRESH in order to limit unnecessary IMS requests.
+
     --prefetch-count=<int> (optional)
         Default is 0
         Prefetches successive 'n' slice block requests in the background
