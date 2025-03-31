@@ -45,6 +45,7 @@ namespace Method
 Header::Status &
 Header::Status::operator=(int status)
 {
+  _ensure_initialized(_owner);
   _status = static_cast<TSHttpStatus>(status);
 
   switch (_owner->_state->hook) {
@@ -66,6 +67,7 @@ Header::Status::operator=(int status)
 Header::Status::operator integer()
 {
   if (_status == TS_HTTP_STATUS_NONE) {
+    _ensure_initialized(_owner);
     _status = TSHttpHdrStatusGet(_owner->_bufp, _owner->_hdr_loc);
   }
   return _status;
@@ -74,6 +76,7 @@ Header::Status::operator integer()
 Header::Reason &
 Header::Reason::operator=(cripts::string_view reason)
 {
+  _ensure_initialized(_owner);
   TSHttpHdrReasonSet(_owner->_bufp, _owner->_hdr_loc, reason.data(), reason.size());
   _owner->_state->context->p_instance.debug("Setting reason = {}", reason);
 
@@ -85,6 +88,7 @@ Header::Body::operator=(cripts::string_view body)
 {
   auto b = static_cast<char *>(TSmalloc(body.size() + 1));
 
+  _ensure_initialized(_owner);
   memcpy(b, body.data(), body.size());
   b[body.size()] = '\0';
   TSHttpTxnErrorBodySet(_owner->_state->txnp, b, body.size(), nullptr);
@@ -96,6 +100,7 @@ cripts::string_view
 Header::Method::GetSV()
 {
   if (_method.size() == 0) {
+    _ensure_initialized(_owner);
     int         len;
     const char *value = TSHttpHdrMethodGet(_owner->_bufp, _owner->_hdr_loc, &len);
 
@@ -116,6 +121,7 @@ Header::CacheStatus::GetSV()
   };
   int status;
 
+  _ensure_initialized(_owner);
   if (_cache.size() == 0) {
     TSAssert(_owner->_state->txnp);
     if (TSHttpTxnCacheLookupStatusGet(_owner->_state->txnp, &status) == TS_ERROR || status < 0 || status >= 4) {
@@ -131,6 +137,7 @@ Header::CacheStatus::GetSV()
 Header::String &
 Header::String::operator=(const cripts::string_view str)
 {
+  _ensure_initialized(_owner);
   if (_field_loc) {
     if (str.empty()) {
       TSMLoc tmp;
@@ -183,6 +190,7 @@ Header::String::operator=(const cripts::string_view str)
 Header::String &
 Header::String::operator=(integer val)
 {
+  _ensure_initialized(_owner);
   if (_field_loc) {
     TSMLoc tmp   = nullptr;
     bool   first = true;
@@ -218,6 +226,7 @@ Header::String::operator=(integer val)
 Header::String &
 Header::String::operator+=(const cripts::string_view str)
 {
+  _ensure_initialized(_owner);
   if (_field_loc) {
     if (!str.empty()) {
       // Drop the old field loc for now ... ToDo: Oh well, we need to figure out how to handle multi-value headers better
@@ -242,6 +251,7 @@ Header::String::operator+=(const cripts::string_view str)
 Header::String
 Header::operator[](const cripts::string_view str)
 {
+  _ensure_initialized(this);
   TSAssert(_bufp && _hdr_loc);
 
   TSMLoc         field_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, str.data(), str.size());
@@ -262,23 +272,27 @@ Header::operator[](const cripts::string_view str)
 Client::Request &
 Client::Request::_get(cripts::Context *context)
 {
-  Client::Request *request = &context->_client_req_header;
+  _ensure_initialized(&context->_client.request);
+  return context->_client.request;
+}
 
-  if (!request->Initialized()) {
-    TSAssert(context->state.txnp);
-    if (TSHttpTxnClientReqGet(context->state.txnp, &request->_bufp, &request->_hdr_loc) != TS_SUCCESS) {
-      context->state.error.Fail();
-    } else {
-      request->_initialize(&context->state); // Don't initialize unless properly setup
-    }
+void
+Client::Request::_initialize(cripts::Transaction *state)
+{
+  TSAssert(state->txnp);
+  TSAssert(!Initialized());
+
+  if (TSHttpTxnClientReqGet(state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
+    state->error.Fail();
+  } else {
+    super_type::_initialize(state); // Don't initialize unless properly setup
   }
-
-  return context->_client_req_header;
 }
 
 Header::Iterator
 Header::begin()
 {
+  _ensure_initialized(this);
   // Cleanup any lingering iterator state
   if (_iterator_loc) {
     TSHandleMLocRelease(_bufp, _hdr_loc, _iterator_loc);
@@ -304,6 +318,7 @@ Header::begin()
 cripts::string_view
 Header::iterate()
 {
+  _ensure_initialized(this);
   TSMLoc next_loc = TSMimeHdrFieldNext(_bufp, _hdr_loc, _iterator_loc);
 
   TSHandleMLocRelease(_bufp, _hdr_loc, _iterator_loc);
@@ -319,69 +334,78 @@ Header::iterate()
   }
 }
 
-cripts::Client::Response &
+Client::Response &
 Client::Response::_get(cripts::Context *context)
 {
-  CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
-  CAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
-  CAssert(context->state.hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  _ensure_initialized(&context->_client.response);
+  return context->_client.response;
+}
 
-  Client::Response *response = &context->_client_resp_header;
+void
+Client::Response::_initialize(cripts::Transaction *state)
+{
+  CAssert(state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(state->hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(state->hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
 
-  if (!response->Initialized()) {
-    TSAssert(context->state.txnp);
-    if (TSHttpTxnClientRespGet(context->state.txnp, &response->_bufp, &response->_hdr_loc) != TS_SUCCESS) {
-      context->state.error.Fail();
-    } else {
-      response->_initialize(&context->state); // Don't initialize unless properly setup
-    }
+  TSAssert(state->txnp);
+  TSAssert(!Initialized());
+
+  if (TSHttpTxnClientRespGet(state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
+    state->error.Fail();
+  } else {
+    super_type::_initialize(state); // Don't initialize unless properly setup
   }
-
-  return context->_client_resp_header;
 }
 
 Server::Request &
 Server::Request::_get(cripts::Context *context)
 {
-  CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
-  CAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
-  CAssert(context->state.hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
-  CAssert(context->state.hook != TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  _ensure_initialized(&context->_server.request);
+  return context->_server.request;
+}
 
-  Server::Request *request = &context->_server_req_header;
+void
+Server::Request::_initialize(cripts::Transaction *state)
+{
+  CAssert(state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(state->hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(state->hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
+  CAssert(state->hook != TS_HTTP_READ_RESPONSE_HDR_HOOK);
 
-  if (!request->Initialized()) {
-    TSAssert(context->state.txnp);
-    if (TSHttpTxnServerReqGet(context->state.txnp, &request->_bufp, &request->_hdr_loc) != TS_SUCCESS) {
-      context->state.error.Fail();
+  if (!Initialized()) {
+    TSAssert(state->txnp);
+    if (TSHttpTxnServerReqGet(state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
+      state->error.Fail();
     } else {
-      request->_initialize(&context->state); // Don't initialize unless properly setup
+      super_type::_initialize(state); // Don't initialize unless properly setup
     }
   }
-
-  return context->_server_req_header;
 }
 
 Server::Response &
 Server::Response::_get(cripts::Context *context)
 {
-  CAssert(context->state.hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
-  CAssert(context->state.hook != TS_HTTP_POST_REMAP_HOOK);
-  CAssert(context->state.hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
-  CAssert(context->state.hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  _ensure_initialized(&context->_server.response);
+  return context->_server.response;
+}
 
-  Server::Response *response = &context->_server_resp_header;
+void
+Server::Response::_initialize(cripts::Transaction *state)
+{
+  CAssert(state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(state->hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(state->hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
+  CAssert(state->hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
 
-  if (!response->Initialized()) {
-    TSAssert(context->state.txnp);
-    if (TSHttpTxnServerRespGet(context->state.txnp, &response->_bufp, &response->_hdr_loc) != TS_SUCCESS) {
-      context->state.error.Fail();
-    } else {
-      response->_initialize(&context->state); // Don't initialize unless properly setup
-    }
+  TSAssert(state->txnp);
+  TSAssert(!Initialized());
+
+  if (TSHttpTxnServerRespGet(state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
+    state->error.Fail();
+  } else {
+    super_type::_initialize(state); // Don't initialize unless properly setup
   }
-
-  return context->_server_resp_header;
 }
 
 } // namespace cripts

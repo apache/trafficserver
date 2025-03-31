@@ -426,8 +426,8 @@ Url::String() const
 Pristine::URL &
 Pristine::URL::_get(cripts::Context *context)
 {
-  if (!context->_pristine_url.Initialized()) {
-    Pristine::URL *url = &context->_pristine_url;
+  if (!context->_urls.pristine.Initialized()) {
+    Pristine::URL *url = &context->_urls.pristine;
 
     TSAssert(context->state.txnp);
     if (TSHttpTxnPristineUrlGet(context->state.txnp, &url->_bufp, &url->_urlp) != TS_SUCCESS) {
@@ -437,7 +437,7 @@ Pristine::URL::_get(cripts::Context *context)
     }
   }
 
-  return context->_pristine_url;
+  return context->_urls.pristine;
 }
 
 void
@@ -464,11 +464,11 @@ Client::URL::_initialize(cripts::Context *context)
 Client::URL &
 Client::URL::_get(cripts::Context *context)
 {
-  if (!context->_client_url.Initialized()) {
-    context->_client_url._initialize(context);
+  if (!context->_urls.client.Initialized()) {
+    context->_urls.client._initialize(context);
   }
 
-  return context->_client_url;
+  return context->_urls.client;
 }
 
 bool
@@ -493,11 +493,11 @@ Remap::From::URL::_initialize(cripts::Context *context)
 Remap::From::URL &
 Remap::From::URL::_get(cripts::Context *context)
 {
-  if (!context->_remap_from_url.Initialized()) {
-    context->_remap_from_url._initialize(context);
+  if (!context->_urls.remap.from.Initialized()) {
+    context->_urls.remap.from._initialize(context);
   }
 
-  return context->_remap_from_url;
+  return context->_urls.remap.from;
 }
 
 void
@@ -513,18 +513,17 @@ Remap::To::URL::_initialize(cripts::Context *context)
 Remap::To::URL &
 Remap::To::URL::_get(cripts::Context *context)
 {
-  if (!context->_remap_to_url.Initialized()) {
-    context->_remap_to_url._initialize(context);
+  if (!context->_urls.remap.to.Initialized()) {
+    context->_urls.remap.to._initialize(context);
   }
-
-  return context->_remap_to_url;
+  return context->_urls.remap.to;
 }
 
 Cache::URL &
 Cache::URL::_get(cripts::Context *context)
 {
-  if (!context->_cache_url.Initialized()) {
-    Cache::URL      *url = &context->_cache_url;
+  if (!context->_urls.cache.Initialized()) {
+    Cache::URL      *url = &context->_urls.cache;
     Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
 
     switch (context->state.hook) {
@@ -554,7 +553,7 @@ Cache::URL::_get(cripts::Context *context)
     }
   }
 
-  return context->_cache_url;
+  return context->_urls.cache;
 }
 
 // This has to be implemented here, since the cripts::Context is not complete yet
@@ -589,8 +588,8 @@ Cache::URL::_update(cripts::Context *context)
 Parent::URL &
 Parent::URL::_get(cripts::Context *context)
 {
-  if (!context->_cache_url.Initialized()) {
-    Parent::URL     *url = &context->_parent_url;
+  if (!context->_urls.cache.Initialized()) {
+    Parent::URL     *url = &context->_urls.parent;
     Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
 
     if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
@@ -603,7 +602,7 @@ Parent::URL::_get(cripts::Context *context)
     }
   }
 
-  return context->_parent_url;
+  return context->_urls.parent;
 }
 
 } // namespace cripts

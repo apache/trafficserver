@@ -725,7 +725,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   // ToDo: This InstanceContext should also be usabled / used by other non-HTTP hooks.
-  cripts::InstanceContext *context = new cripts::InstanceContext(*inst);
+  auto *context = new cripts::InstanceContext(*inst);
 
   pthread_once(&init_once_control, global_initialization);
   bool needs_glb_init = wrap_glb_init(context, false, CaseArg);
@@ -866,11 +866,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     (wrap_txn_close(static_cast<cripts::Context *>(nullptr), false, CaseArg) ? cripts::Callbacks::DO_TXN_CLOSE :
                                                                                cripts::Callbacks::NONE);
 
-  TSHttpSsn ssnp         = TSHttpTxnSsnGet(txnp);
-  auto     *inst         = static_cast<cripts::Instance *>(ih);
-  auto      bundle_cbs   = inst->Callbacks();
-  auto     *context      = cripts::Context::Factory(txnp, ssnp, rri, *inst);
-  bool      keep_context = false;
+  auto  ssnp         = TSHttpTxnSsnGet(txnp);
+  auto *inst         = static_cast<cripts::Instance *>(ih);
+  auto  bundle_cbs   = inst->Callbacks();
+  auto *context      = cripts::Context::Factory(txnp, ssnp, rri, *inst);
+  bool  keep_context = false;
 
   context->state.hook          = TS_HTTP_READ_REQUEST_HDR_HOOK; // Not quite true
   context->state.enabled_hooks = (enabled_hooks | bundle_cbs);
