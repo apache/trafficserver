@@ -1,0 +1,3 @@
+Via: http/1.1 = http/1.1 tcp
+Via: http/1.0 = http/1.0 tcp
+Via: http/1.1 = http/1.1 tcp

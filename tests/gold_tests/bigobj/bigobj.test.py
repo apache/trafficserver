@@ -19,6 +19,7 @@ import os
 Test.Summary = '''
 Test PUSHing an object into the cache and the GETting it with a few variations on the client connection protocol.
 '''
+Test.SkipIf(Condition.CurlUds())
 
 # NOTE: You can also use this to test client-side communication when GET-ing very large (multi-GB) objects
 # by increasing the value of the obj_kilobytes variable below.  (But do not increase it on any shared branch

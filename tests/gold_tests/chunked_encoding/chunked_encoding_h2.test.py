@@ -19,6 +19,7 @@
 Test.Summary = '''
 Test interaction of H2 and chunked encoding
 '''
+Test.SkipIf(Condition.CurlUds())
 
 Test.SkipUnless(
     Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
