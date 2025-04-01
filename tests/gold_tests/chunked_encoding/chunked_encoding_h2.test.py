@@ -81,8 +81,9 @@ tr.StillRunningAfter = ts
 server2_out = Test.Disk.File("outserver2")
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server2)
-tr.Processes.Default.Command = 'curl --http2 -k https://127.0.0.1:{}/post-full --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    '--http2 -k https://127.0.0.1:{}/post-full --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
+        ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("content-length:", "Response should include content length")
@@ -95,8 +96,9 @@ server2_out = Testers.ContainsExpression("Transfer-Encoding: chunked", "Request 
 server3_out = Test.Disk.File("outserver3")
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server3)
-tr.Processes.Default.Command = 'curl --http2 -k https://127.0.0.1:{}/post-chunked --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    '--http2 -k https://127.0.0.1:{}/post-chunked --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
+        ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("content-length:", "Response should not include content length")

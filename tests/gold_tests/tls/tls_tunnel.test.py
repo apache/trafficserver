@@ -116,7 +116,7 @@ ts.Disk.sni_yaml.AddLines(
     ])
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
-tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.MakeCurlCommand("-v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
@@ -135,8 +135,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not te
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("bob.bar.com Tunnel-test")
-tr.Processes.Default.Command = "curl -v --resolve 'bob.bar.com:{0}:127.0.0.1' -k  https://bob.bar.com:{0}".format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand("-v --resolve 'bob.bar.com:{0}:127.0.0.1' -k  https://bob.bar.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
@@ -148,7 +147,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not te
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("bar.com no Tunnel-test")
-tr.Processes.Default.Command = "curl -v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.MakeCurlCommand("-v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
@@ -156,7 +155,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Acc
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
 
 tr = Test.AddTestRun("no SNI Tunnel-test")
-tr.Processes.Default.Command = "curl -v -k  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.MakeCurlCommand("-v -k  https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
@@ -167,8 +166,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not te
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("one.match.com Tunnel-test")
-tr.Processes.Default.Command = "curl -vvv --resolve 'one.match.com:{0}:127.0.0.1' -k  https://one.match.com:{0}".format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand("-vvv --resolve 'one.match.com:{0}:127.0.0.1' -k  https://one.match.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
@@ -180,8 +178,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not te
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
 
 tr = Test.AddTestRun("one.ok.two.com Tunnel-test")
-tr.Processes.Default.Command = "curl -vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https://one.ok.two.com:{0}".format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand("-vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https://one.ok.two.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
@@ -193,8 +190,8 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not te
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
 
 tr = Test.AddTestRun("test {inbound_local_port}")
-tr.Processes.Default.Command = "curl -vvv --resolve 'incoming.port.com:{0}:127.0.0.1' -k  https://incoming.port.com:{0}".format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    "-vvv --resolve 'incoming.port.com:{0}:127.0.0.1' -k  https://incoming.port.com:{0}".format(ts.Variables.ssl_port))
 # The tunnel connecting to the outgoing port which is the same as the incoming
 # port (per the `inbound_local_port` configuration) will result in ATS
 # connecting back to itself. This will result in a connection close and a
@@ -239,8 +236,9 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"Rejected a tunnel to port {rejected_port} not in connect_ports", "Verify the tunnel was rejected")
 
 tr = Test.AddTestRun("test wildcard with inbound_local_port")
-tr.Processes.Default.Command = "curl -vvv --resolve 'wildcard.with.incoming.port.com:{0}:127.0.0.1' -k  https://wildcard.with.incoming.port.com:{0}".format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    "-vvv --resolve 'wildcard.with.incoming.port.com:{0}:127.0.0.1' -k  https://wildcard.with.incoming.port.com:{0}".format(
+        ts.Variables.ssl_port))
 
 # See the inbound_local_port test above for the explanation of the return code.
 tr.ReturnCode = 35
@@ -300,7 +298,7 @@ tr = Test.AddTestRun("foo.com no Tunnel-test")
 tr.StillRunningAfter = ts
 # Wait for the reload to complete by running the sni_reload_done test
 tr.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags_log.Name, 'sni.yaml finished loading', 2))
-tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.MakeCurlCommand("-v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
@@ -308,7 +306,7 @@ tr.TimeOut = 30
 
 # Should tunnel to server_bar
 tr = Test.AddTestRun("bar.com  Tunnel-test")
-tr.Processes.Default.Command = "curl -v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.MakeCurlCommand("-v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")

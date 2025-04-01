@@ -50,7 +50,7 @@ ts.Disk.traffic_out.Content = Testers.ContainsExpression(r"AAAA", "Response is p
 
 # Test if watermark upstream is set
 tr = Test.AddTestRun("Lua Response Client Hook")
-tr.Processes.Default.Command = "curl -v http://127.0.0.1:{0}".format(ts.Variables.port)
+tr.MakeCurlCommand("-v http://127.0.0.1:{0}".format(ts.Variables.port))
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 
 tr.Processes.Default.StartBefore(ts)

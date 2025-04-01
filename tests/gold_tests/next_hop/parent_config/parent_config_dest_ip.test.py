@@ -114,12 +114,12 @@ tr.Processes.Default.StartBefore(ts1)
 tr.Processes.Default.Command = 'echo start TS, TSH_N, HTTP origin and DNS.'
 tr.Processes.Default.ReturnCode = 0
 
-curl_and_args = f"curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{ts0.Variables.port}"
+curl_and_args = f"-s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{ts0.Variables.port}"
 
 # Request asset that goes through the layers
 tr = Test.AddTestRun("request")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://foo.bar/foo.txt'
+tr.MakeCurlCommand(curl_and_args + ' http://foo.bar/foo.txt')
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("Via:.* ts1 .* ts0 ", "expected via header")
 tr.StillRunningAfter = ts0

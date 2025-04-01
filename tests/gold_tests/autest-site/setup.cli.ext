@@ -117,6 +117,7 @@ Variables.BuildRoot = ENV['BUILD_ROOT']
 Variables.RepoDir = repo_root
 Variables.AtsTestPluginsDir = os.path.join(Variables.BuildRoot, 'tests', 'tools', 'plugins', '.libs')
 Variables.AtsBuildGoldTestsDir = os.path.join(Variables.BuildRoot, 'tests', 'gold_tests')
+Variables.CurlUds = Arguments.curl_uds
 
 # modify delay times as we always have to kill Trafficserver
 # no need to wait

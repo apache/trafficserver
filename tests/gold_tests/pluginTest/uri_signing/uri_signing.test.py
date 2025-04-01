@@ -95,14 +95,14 @@ ts.Setup.CopyAs('run_sign.sh', Test.RunDirectory)
 ts.Setup.CopyAs('signer.json', Test.RunDirectory)
 #ts.Setup.CopyAs('traffic_server_valgrind.sh', Test.RunDirectory)
 
-curl_and_args = 'curl -q -v -x localhost:{} '.format(ts.Variables.port)
+curl_and_args = '-q -v -x localhost:{} '.format(ts.Variables.port)
 
 # 0 - reject unsigned request
 tr = Test.AddTestRun("unsigned request")
 ps = tr.Processes.Default
 ps.StartBefore(ts)
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-ps.Command = curl_and_args + 'http://somehost/someasset.ts'
+tr.MakeCurlCommand(curl_and_args + 'http://somehost/someasset.ts')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -111,7 +111,7 @@ tr.StillRunningAfter = ts
 # 1 - accept a passthru request
 tr = Test.AddTestRun("passthru request")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + 'http://somehost/crossdomain.xml'
+tr.MakeCurlCommand(curl_and_args + 'http://somehost/crossdomain.xml')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -120,7 +120,10 @@ tr.StillRunningAfter = ts
 # 2 - good token, signed "forever" (run_sign.sh 0)
 tr = Test.AddTestRun("good signed")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/someasset.ts?URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/someasset.ts?URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -129,7 +132,10 @@ tr.StillRunningAfter = ts
 # 3 - expired token (run_sign.sh 1)
 tr = Test.AddTestRun("expired signed")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/someasset.ts?URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/someasset.ts?URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -138,7 +144,10 @@ tr.StillRunningAfter = ts
 # 4 - good token, different key (run_sign.sh 2)
 tr = Test.AddTestRun("good token, second key")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/someasset.ts?URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.ozH4sNwgcOlTZT0l4RQlVCH_osxz9yI1HCBesEv-jYg"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/someasset.ts?URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.ozH4sNwgcOlTZT0l4RQlVCH_osxz9yI1HCBesEv-jYg"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -147,7 +156,10 @@ tr.StillRunningAfter = ts
 # 5 - good token, inline
 tr = Test.AddTestRun("good signed")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY/someasset.ts"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY/someasset.ts"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -156,7 +168,10 @@ tr.StillRunningAfter = ts
 # 6 - expired token, inline
 tr = Test.AddTestRun("expired signed")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8/someasset.ts"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8/someasset.ts"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -165,7 +180,10 @@ tr.StillRunningAfter = ts
 # 7 - good token, param
 tr = Test.AddTestRun("good signed, param")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/someasset.ts;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/someasset.ts;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -174,7 +192,10 @@ tr.StillRunningAfter = ts
 # 8 - expired token, param
 tr = Test.AddTestRun("expired signed, param")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/someasset.ts;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/someasset.ts;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -183,7 +204,10 @@ tr.StillRunningAfter = ts
 # 9 - let's cookie this
 tr = Test.AddTestRun("good signed cookie")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -192,7 +216,10 @@ tr.StillRunningAfter = ts
 # 10 - expired cookie token
 tr = Test.AddTestRun("expired signed cooked")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -201,7 +228,10 @@ tr.StillRunningAfter = ts
 # 11 - multiple cookies
 tr = Test.AddTestRun("multiple cookies, expired then good")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -210,7 +240,10 @@ tr.StillRunningAfter = ts
 # 12 - Check missing iss from the payload
 tr = Test.AddTestRun("Missing iss field in the payload")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + '"http://somehost/someasset.ts?URISigningPackage=ewogICJ0eXAiOiAiSldUIiwKICAiYWxnIjogIkhTMjU2Igp9.ewogICJleHAiOiAxOTIzMDU2MDg0Cn0.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+tr.MakeCurlCommand(
+    curl_and_args +
+    '"http://somehost/someasset.ts?URISigningPackage=ewogICJ0eXAiOiAiSldUIiwKICAiYWxnIjogIkhTMjU2Igp9.ewogICJleHAiOiAxOTIzMDU2MDg0Cn0.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"'
+)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(

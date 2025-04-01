@@ -108,7 +108,7 @@ ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.plugin_config.AddLine('regex_revalidate.so -d -c regex_revalidate.conf')
 
 regex_revalidate_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_revalidate.conf')
-curl_and_args = 'curl -s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com"'
+curl_and_args = '-s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com"'
 
 path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
 
@@ -136,7 +136,7 @@ ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
+tr.MakeCurlCommand(curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
@@ -144,7 +144,7 @@ tr.StillRunningAfter = ts
 # 1 Test - Load cache (miss) for later test (path1a)
 tr = Test.AddTestRun("Cache miss path1a")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://127.0.0.1:{}/path1a'.format(ts.Variables.port)
+tr.MakeCurlCommand(curl_and_args + ' http://127.0.0.1:{}/path1a'.format(ts.Variables.port))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
@@ -152,7 +152,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Load cache (miss) for later test (path2a)
 tr = Test.AddTestRun("Cache miss path2a")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://127.0.0.1:{}/path2a'.format(ts.Variables.port)
+tr.MakeCurlCommand(curl_and_args + ' http://127.0.0.1:{}/path2a'.format(ts.Variables.port))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
@@ -160,7 +160,7 @@ tr.StillRunningAfter = ts
 # 3 Test - Cache hit path1
 tr = Test.AddTestRun("Cache hit fresh path1")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
+tr.MakeCurlCommand(curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
 tr.StillRunningAfter = ts
@@ -186,7 +186,7 @@ tr.TimeOut = 5
 tr = Test.AddTestRun("Revalidate stale path1")
 ps = tr.Processes.Default
 tr.DelayStart = 5
-ps.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
+tr.MakeCurlCommand(curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
 tr.StillRunningAfter = ts
@@ -194,7 +194,7 @@ tr.StillRunningAfter = ts
 # 6 Test - Cache hit (path1)
 tr = Test.AddTestRun("Cache hit fresh path1")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
+tr.MakeCurlCommand(curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
 tr.StillRunningAfter = ts
@@ -221,7 +221,7 @@ tr.TimeOut = 5
 tr = Test.AddTestRun("Cache hit fresh path1")
 tr.DelayStart = 5
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
+tr.MakeCurlCommand(curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
 tr.StillRunningAfter = ts
@@ -229,7 +229,7 @@ tr.StillRunningAfter = ts
 # 9 Test - Cache stale (check rule is still loaded) (path1a)
 tr = Test.AddTestRun("Revalidate stale path1a")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://127.0.0.1:{}/path1a'.format(ts.Variables.port)
+tr.MakeCurlCommand(curl_and_args + ' http://127.0.0.1:{}/path1a'.format(ts.Variables.port))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
 tr.StillRunningAfter = ts
@@ -259,7 +259,7 @@ tr.TimeOut = 5
 tr = Test.AddTestRun("Cache hit stale path2a")
 tr.DelayStart = 5
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://127.0.0.1:{}/path2a'.format(ts.Variables.port)
+tr.MakeCurlCommand(curl_and_args + ' http://127.0.0.1:{}/path2a'.format(ts.Variables.port))
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
 tr.StillRunningAfter = ts
