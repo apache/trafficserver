@@ -672,16 +672,11 @@ persist_bad_disks()
 }
 
 CacheDisk *
-CacheProcessor::find_by_path(const char *path, int len)
+CacheProcessor::find_by_path(std::string_view path)
 {
   if (CACHE_INITIALIZED == initialized) {
-    // If no length is passed in, assume it's null terminated.
-    if (0 >= len && 0 != *path) {
-      len = strlen(path);
-    }
-
     for (int i = 0; i < gndisks; ++i) {
-      if (0 == strncmp(path, gdisks[i]->path, len)) {
+      if (0 == strncmp(path.data(), gdisks[i]->path, path.length())) {
         return gdisks[i];
       }
     }
