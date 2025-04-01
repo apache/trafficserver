@@ -88,9 +88,6 @@ struct CacheProcessor : public Processor {
                      time_t pin_in_cache = 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
 
-  Action *deref(Continuation *cont, CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, char *hostname = nullptr,
-                int host_len = 0);
-
   /** Mark physical disk/device/file as offline.
       All stripes for this device are disabled.
 
