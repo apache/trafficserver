@@ -20,7 +20,7 @@ Verify ATS parent.config dest_ip dns bug fix.
 Test.Summary = '''
 Verify ATS parent_config with dest_ip=...
 '''
-
+Test.SkipIf(Condition.CurlUds())
 # Create origin
 origin = Test.MakeOriginServer("origin")
 

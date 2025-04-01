@@ -25,6 +25,7 @@ Test.Summary = '''
 Test the Expect header in post
 '''
 # Require HTTP/2 enabled Curl
+Test.SkipIf(Condition.CurlUds())
 Test.SkipUnless(Condition.HasCurlFeature('http2'),)
 Test.ContinueOnFail = True
 

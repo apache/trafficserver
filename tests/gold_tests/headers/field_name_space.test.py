@@ -20,7 +20,7 @@ Test on handling spaces after the field name and before the colon
 Test.Summary = '''
 Checking  on handling spaces after the field name and before the colon
 '''
-
+Test.SkipIf(Condition.CurlUds())
 Test.ContinueOnFail = True
 
 # Define default ATS

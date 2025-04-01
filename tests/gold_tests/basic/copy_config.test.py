@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 Test.Summary = "Test start up of Traffic server with configuration modification of starting port of different servers at the same time"
+Test.SkipIf(Condition.CurlUds())
 
 # set up some ATS processes
 ts1 = Test.MakeATSProcess("ts1", select_ports=False)
