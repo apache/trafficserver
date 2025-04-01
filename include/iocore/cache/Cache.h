@@ -80,7 +80,7 @@ struct CacheProcessor : public Processor {
                      std::string_view hostname = std::string_view{});
   Action *remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
                  std::string_view hostname = std::string_view{});
-  Action *scan(Continuation *cont, char *hostname = nullptr, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
+  Action *scan(Continuation *cont, std::string_view hostname = std::string_view{}, int KB_per_second = SCAN_KB_PER_SECOND);
   Action *lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
                     time_t pin_in_cache = 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);

@@ -462,7 +462,7 @@ struct Cache {
                      std::string_view hostname = std::string_view{}) const;
   Action *remove(Continuation *cont, const CacheKey *key, CacheFragType type = CACHE_FRAG_TYPE_HTTP,
                  std::string_view hostname = std::string_view{}) const;
-  Action *scan(Continuation *cont, const char *hostname = nullptr, int host_len = 0, int KB_per_second = 2500) const;
+  Action *scan(Continuation *cont, std::string_view hostname = std::string_view{}, int KB_per_second = 2500) const;
 
   Action     *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
                         CacheFragType type, std::string_view hostname = std::string_view{}) const;

@@ -6229,9 +6229,10 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 
   if (key) {
     CacheInfo *info = reinterpret_cast<CacheInfo *>(key);
-    return reinterpret_cast<TSAction>(cacheProcessor.scan(i, info->hostname, info->len, KB_per_second));
+    return reinterpret_cast<TSAction>(
+      cacheProcessor.scan(i, std::string_view{info->hostname, static_cast<std::string_view::size_type>(info->len)}, KB_per_second));
   }
-  return reinterpret_cast<TSAction>(cacheProcessor.scan(i, nullptr, 0, KB_per_second));
+  return reinterpret_cast<TSAction>(cacheProcessor.scan(i, std::string_view{}, KB_per_second));
 }
 
 /************************   REC Stats API    **************************/

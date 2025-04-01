@@ -394,9 +394,9 @@ CacheProcessor::remove(Continuation *cont, const CacheKey *key, CacheFragType fr
 }
 
 Action *
-CacheProcessor::scan(Continuation *cont, char *hostname, int host_len, int KB_per_second)
+CacheProcessor::scan(Continuation *cont, std::string_view hostname, int KB_per_second)
 {
-  return caches[CACHE_FRAG_TYPE_HTTP]->scan(cont, hostname, host_len, KB_per_second);
+  return caches[CACHE_FRAG_TYPE_HTTP]->scan(cont, hostname, KB_per_second);
 }
 
 Action *

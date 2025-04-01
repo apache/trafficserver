@@ -507,7 +507,7 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, std::
 }
 
 Action *
-Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_second) const
+Cache::scan(Continuation *cont, std::string_view hostname, int KB_per_second) const
 {
   Dbg(dbg_ctl_cache_scan_truss, "inside scan");
   if (!CacheProcessor::IsCacheReady(CACHE_FRAG_TYPE_HTTP)) {
@@ -518,8 +518,7 @@ Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_s
   CacheVC *c = new_CacheVC(cont);
   c->stripe  = nullptr;
   /* do we need to make a copy */
-  c->hostname        = const_cast<char *>(hostname);
-  c->host_len        = host_len;
+  c->hostname        = hostname;
   c->op_type         = static_cast<int>(CacheOpType::Scan);
   c->buf             = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(SCAN_BUF_SIZE), MEMALIGNED);
   c->scan_msec_delay = (SCAN_BUF_SIZE / KB_per_second);

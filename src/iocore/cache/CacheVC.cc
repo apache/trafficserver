@@ -631,9 +631,9 @@ CacheVC::scanStripe(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&theCache->hosttable);
 
   const CacheHostRecord *rec = &hosttable->gen_host_rec;
-  if (host_len) {
+  if (!hostname.empty()) {
     CacheHostResult res;
-    hosttable->Match(std::string_view{hostname, static_cast<std::string_view::size_type>(host_len)}, &res);
+    hosttable->Match(hostname, &res);
     if (res.record) {
       rec = res.record;
     }
