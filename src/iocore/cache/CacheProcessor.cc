@@ -387,10 +387,10 @@ CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag
 }
 
 Action *
-CacheProcessor::remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
+CacheProcessor::remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type, std::string_view hostname)
 {
   Dbg(dbg_ctl_cache_remove, "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));
-  return caches[frag_type]->remove(cont, key, frag_type, hostname, host_len);
+  return caches[frag_type]->remove(cont, key, frag_type, hostname);
 }
 
 Action *
@@ -428,7 +428,8 @@ CacheProcessor::open_write(Continuation *cont, int /* expected_size ATS_UNUSED *
 Action *
 CacheProcessor::remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type)
 {
-  return caches[frag_type]->remove(cont, &key->hash, frag_type, key->hostname, key->hostlen);
+  return caches[frag_type]->remove(cont, &key->hash, frag_type,
+                                   std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
 /** Set the state of a disk programmatically.
