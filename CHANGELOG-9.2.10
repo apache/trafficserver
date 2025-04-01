@@ -1,0 +1,5 @@
+Changes with Apache Traffic Server 9.2.10
+  #12087 - [9.2.x] Backport: Fix ordering Via response header values (#9239)
+  #12088 - [9.2.x] Backport: Fix memory leaks in the Healthchecks plugin (#12025)
+  #12093 - Fix up logging for write-fail-5/collapsed-forwarding (#12050)
+  #12150 - Require the use of CRLF in chunked message body
