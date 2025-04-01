@@ -24,9 +24,9 @@
 ##############################################################################
 
 # Configurable parts
-: ${ATS_ROOT:="/opt/ats"}
+: ${ATS_ROOT:="/tmp/ats"}
 : ${CXX:="clang++"}
-: ${CXXFLAGS:="-std=c++20 -I/opt/homebrew/include -undefined dynamic_lookup"}
+: ${CXXFLAGS:="-x c++ -std=c++20 -I/opt/homebrew/include"}
 
 # Probably don't need to change these ?
 STDFLAGS="-shared -fPIC -Wall -Werror -I${ATS_ROOT}/include -L${ATS_ROOT}/lib -lcripts"

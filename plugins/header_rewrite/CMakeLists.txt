@@ -38,7 +38,7 @@ target_link_libraries(header_rewrite_parser PUBLIC libswoc::libswoc)
 
 target_link_libraries(
   header_rewrite
-  PRIVATE PCRE::PCRE
+  PRIVATE OpenSSL::Crypto PCRE::PCRE
   PUBLIC libswoc::libswoc
 )
 

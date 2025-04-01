@@ -37,10 +37,11 @@
 #include "conditions_geo.h"
 
 // Debugs
-const char PLUGIN_NAME[]     = "header_rewrite";
-const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
 namespace header_rewrite_ns
 {
+const char PLUGIN_NAME[]     = "header_rewrite";
+const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
+
 DbgCtl dbg_ctl{PLUGIN_NAME_DBG};
 DbgCtl pi_dbg_ctl{PLUGIN_NAME};
 
@@ -104,6 +105,7 @@ public:
   {
     return _resids[hook];
   }
+
   RuleSet *
   rule(int hook) const
   {
@@ -505,9 +507,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
 
     Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
+    std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
   }
-
-  std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
 
   RulesConfig *conf = new RulesConfig;
 

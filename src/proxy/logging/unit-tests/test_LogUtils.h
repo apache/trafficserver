@@ -29,17 +29,15 @@
 struct MIMEField {
   const char *tag, *value;
 
-  const char *
-  name_get(int *length) const
+  std::string_view
+  name_get() const
   {
-    *length = strlen(tag);
-    return tag;
+    return {tag};
   }
-  const char *
-  value_get(int *length) const
+  std::string_view
+  value_get() const
   {
-    *length = strlen(value);
-    return value;
+    return {value};
   }
 };
 

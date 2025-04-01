@@ -235,6 +235,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
   uint16_t       tlv_len   = 0;
 
   if (msg.size() < total_len) {
+    Dbg(dbg_ctl_proxyprotocol_v2, "The amount of available data is smaller than the expected size");
     return 0;
   }
 
@@ -243,6 +244,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
   case PPv2_CMD_LOCAL: {
     // protocol byte should be UNSPEC (\x00) with LOCAL command
     if (hdr_v2->fam != PPv2_PROTO_UNSPEC) {
+      Dbg(dbg_ctl_proxyprotocol_v2, "UNSPEC is unexpected");
       return 0;
     }
 
@@ -256,6 +258,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
     case PPv2_PROTO_TCP4:
     case PPv2_PROTO_UDP4:
       if (len < PPv2_ADDR_LEN_INET) {
+        Dbg(dbg_ctl_proxyprotocol_v2, "There is not enough data left for IPv4 info");
         return 0;
       }
       tlv_len = len - PPv2_ADDR_LEN_INET;
@@ -269,6 +272,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
     case PPv2_PROTO_TCP6:
     case PPv2_PROTO_UDP6:
       if (len < PPv2_ADDR_LEN_INET6) {
+        Dbg(dbg_ctl_proxyprotocol_v2, "There is not enough data left for IPv6 info");
         return 0;
       }
       tlv_len = len - PPv2_ADDR_LEN_INET6;
@@ -287,11 +291,13 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
       [[fallthrough]];
     default:
       // unsupported
+      Dbg(dbg_ctl_proxyprotocol_v2, "Unsupported protocol family (%d)", hdr_v2->fam);
       return 0;
     }
 
     if (tlv_len > 0) {
-      if (pp_info->set_additional_data(msg.substr(msg.length() - tlv_len)) < 0) {
+      if (pp_info->set_additional_data(msg.substr(total_len - tlv_len, tlv_len)) < 0) {
+        Dbg(dbg_ctl_proxyprotocol_v2, "Failed to parse additional fields");
         return 0;
       }
     }
@@ -299,6 +305,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
     return total_len;
   }
   default:
+    Dbg(dbg_ctl_proxyprotocol_v2, "Unsupported command (%d)", hdr_v2->ver_cmd);
     break;
   }
 
@@ -541,9 +548,11 @@ ProxyProtocol::get_tlv(const uint8_t tlvCode) const
 int
 ProxyProtocol::set_additional_data(std::string_view data)
 {
-  uint16_t len    = data.length();
+  uint16_t len = data.length();
+  Dbg(dbg_ctl_proxyprotocol_v2, "Parsing %d byte additional data", len);
   additional_data = static_cast<char *>(ats_malloc(len));
   if (additional_data == nullptr) {
+    Dbg(dbg_ctl_proxyprotocol_v2, "Memory allocation failed");
     return -1;
   }
   data.copy(additional_data, len);
@@ -553,6 +562,7 @@ ProxyProtocol::set_additional_data(std::string_view data)
   while (p != end) {
     if (end - p < 3) {
       // The size of a TLV entry must be 3 bytes or more
+      Dbg(dbg_ctl_proxyprotocol_v2, "Remaining data (%ld bytes) is not enough for a TLV field", end - p);
       return -2;
     }
 
@@ -567,6 +577,8 @@ ProxyProtocol::set_additional_data(std::string_view data)
     // Value
     if (end - p < length) {
       // Does not have enough data
+      Dbg(dbg_ctl_proxyprotocol_v2, "Remaining data (%ld bytes) is not enough for a TLV field (ID:%u LEN:%hu)", end - p, type,
+          length);
       return -3;
     }
     Dbg(dbg_ctl_proxyprotocol, "TLV: ID=%u LEN=%hu", type, length);

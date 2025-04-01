@@ -37,8 +37,6 @@ ExternalNames& Global_Names() {
 
 const Spec Spec::DEFAULT;
 
-const Spec::Property Spec::_prop;
-
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
 
 Spec::Property::Property() {

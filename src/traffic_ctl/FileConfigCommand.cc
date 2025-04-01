@@ -234,8 +234,7 @@ FileConfigCommand::config_get()
     FlatYAMLAccessor::load(YAML::LoadAllFromFile(filename));
 
     for (auto const &var : data) { // we support multiple get's
-      std::string variable = amend_variable_name(var);
-      auto [found, search] = find_node(variable);
+      auto [found, search] = find_node(amend_variable_name(var));
 
       if (found) {
         _printer->write_output(swoc::bwprint(text, "{}: {}", var, search.as<std::string>()));

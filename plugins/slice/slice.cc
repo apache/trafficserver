@@ -31,6 +31,7 @@
 #include <netinet/in.h>
 #include <array>
 #include <string_view>
+#include <sys/un.h>
 
 namespace
 {
@@ -52,7 +53,10 @@ should_skip_this_obj(TSHttpTxn txnp, Config *const config)
   int         len    = 0;
   char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
 
-  if (!config->isKnownLargeObj({urlstr, static_cast<size_t>(len)})) {
+  bool const known_large = config->isKnownLargeObj({urlstr, static_cast<size_t>(len)});
+  TSfree(urlstr);
+
+  if (!known_large) {
     DEBUG_LOG("Not a known large object, not slicing: %.*s", len, urlstr);
     return true;
   }
@@ -111,6 +115,8 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
         memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in));
       } else if (AF_INET6 == ip->sa_family) {
         memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in6));
+      } else if (AF_UNIX == ip->sa_family) {
+        memcpy(&data->m_client_ip, ip, sizeof(sockaddr_un));
       } else {
         return false;
       }

@@ -110,7 +110,7 @@ public:
    * @param size The total number of directory entries the table must
    * be able to store. The size must be a positive number.
    */
-  PreservationTable(int size);
+  PreservationTable(off_t size);
 
   ~PreservationTable();
 

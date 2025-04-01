@@ -83,16 +83,16 @@ public:
     _field->value_set(_heap, _mh, value, value_len);
   }
 
-  const char *
-  name_get(int *length) const
+  std::string_view
+  name_get() const
   {
-    return _field->name_get(length);
+    return _field->name_get();
   }
 
-  const char *
-  value_get(int *length) const
+  std::string_view
+  value_get() const
   {
-    return _field->value_get(length);
+    return _field->value_get();
   }
 
   const MIMEField *

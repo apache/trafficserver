@@ -299,7 +299,7 @@ Cache::close()
 }
 
 Action *
-Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
+Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LOOKUP_FAILED, nullptr);
@@ -327,7 +327,7 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
 }
 
 Action *
-Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
+Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -396,7 +396,7 @@ Lcallreturn:
 // main entry point for writing of non-http documents
 Action *
 Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options, time_t apin_in_cache,
-                  const char *hostname, int host_len)
+                  const char *hostname, int host_len) const
 {
   if (!CacheProcessor::IsCacheReady(frag_type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -462,7 +462,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
 }
 
 Action *
-Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
+Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     if (cont) {
@@ -505,7 +505,7 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
 }
 
 Action *
-Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_second)
+Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_second) const
 {
   Dbg(dbg_ctl_cache_scan_truss, "inside scan");
   if (!CacheProcessor::IsCacheReady(CACHE_FRAG_TYPE_HTTP)) {
@@ -530,7 +530,7 @@ Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_s
 
 Action *
 Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                 CacheFragType type, const char *hostname, int host_len)
+                 CacheFragType type, const char *hostname, int host_len) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -605,7 +605,7 @@ Lcallreturn:
 // main entry point for writing of http documents
 Action *
 Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
-                  const CacheKey * /* key1 ATS_UNUSED */, CacheFragType type, const char *hostname, int host_len)
+                  const CacheKey * /* key1 ATS_UNUSED */, CacheFragType type, const char *hostname, int host_len) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -746,7 +746,7 @@ CacheVConnection::CacheVConnection() : VConnection(nullptr) {}
 
 // if generic_host_rec.stripes == nullptr, what do we do???
 StripeSM *
-Cache::key_to_stripe(const CacheKey *key, const char *hostname, int host_len)
+Cache::key_to_stripe(const CacheKey *key, const char *hostname, int host_len) const
 {
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);
 

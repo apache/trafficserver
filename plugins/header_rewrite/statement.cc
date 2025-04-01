@@ -73,6 +73,28 @@ Statement::initialize_hooks()
   add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
 }
 
+void
+Statement::acquire_txn_slot()
+{
+  // Don't do anything if we don't need it
+  if (!need_txn_slot() || _txn_slot >= 0) {
+    return;
+  }
+
+  // Only call the index reservation once per plugin load
+  static int txn_slot_index = []() -> int {
+    int index = -1;
+
+    if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "HRW txn variables", &index)) {
+      TSError("[%s] failed to reserve user arg index", PLUGIN_NAME);
+      return -1; // Fallback value
+    }
+    return index;
+  }();
+
+  _txn_slot = txn_slot_index;
+}
+
 // Parse NextHop qualifiers
 NextHopQualifiers
 Statement::parse_next_hop_qualifier(const std::string &q) const

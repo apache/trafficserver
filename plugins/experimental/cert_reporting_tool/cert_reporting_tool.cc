@@ -109,7 +109,7 @@ dump_context(const char *ca_path, const char *ck_path)
               san_s.push_back(',');
             }
           }
-          if (san_s.back() == ',') {
+          if (!san_s.empty() && san_s.back() == ',') {
             san_s.pop_back();
           }
         }

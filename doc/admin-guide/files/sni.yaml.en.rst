@@ -136,7 +136,7 @@ verify_server_properties                 Outbound  One of the values :code:`NONE
                                                    By default this is :ts:cv:`proxy.config.ssl.client.verify.server.properties`.
                                                    This controls what |TS| checks when evaluating the origin certificate.
 
-verify_client                            Outbound  One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
+verify_client                            Inbound   One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
                                                    If ``NONE`` is specified, |TS| requests no certificate.  If ``MODERATE`` is specified
                                                    |TS| will verify a certificate that is presented by the client, but it will not
                                                    fail the TLS handshake if no certificate is presented.  If ``STRICT`` is specified
@@ -144,7 +144,7 @@ verify_client                            Outbound  One of the values :code:`NONE
 
                                                    By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
 
-verify_client_ca_certs                   Both      Specifies an alternate set of certificate authority certs to use to verify the
+verify_client_ca_certs                   Inbound   Specifies an alternate set of certificate authority certs to use to verify the
                                                    client cert.  The value must be either a file path, or a nested set of key /
                                                    value pairs.  If the value is a file path, it must specify a file containing the
                                                    CA certs.  Otherwise, there should be up to two nested pairs.  The possible keys
@@ -154,6 +154,18 @@ verify_client_ca_certs                   Both      Specifies an alternate set of
                                                    with ``/`` , it must be relative to the |TS| configuration directory.
                                                    ``verify_client_ca_certs`` can only be used with capabilities provided by
                                                    OpenSSL 1.0.2 or later.
+
+server_cipher_suite                      Inbound   Specifies an override to the global :ts:cv:`proxy.config.ssl.server.cipher_suite`
+                                                   :file:`records.yaml` configuration. See the
+                                                   `OpenSSL SSL_CTX_set_cipher_list <https://docs.openssl.org/3.1/man3/SSL_CTX_set_cipher_list/>`_
+                                                   documentation. Note that this configures the cipher suite used for inbound TLS
+                                                   (version 1.2 and below) connections.
+
+server_TLSv1_3_cipher_suites             Inbound   Specifies an override to the global :ts:cv:`proxy.config.ssl.server.TLSv1_3.cipher_suites`
+                                                   :file:`records.yaml` configuration. See the
+                                                   `OpenSSL SSL_set_ciphersuites <https://docs.openssl.org/3.1/man3/SSL_set_ciphersuites/>`_
+                                                   documentation. Note that this configures the cipher suite used for inbound TLSv1.3 and
+                                                   above connections.
 
 host_sni_policy                          Inbound   One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 

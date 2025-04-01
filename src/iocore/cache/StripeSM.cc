@@ -117,7 +117,7 @@ StripeSM::StripeSM(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_si
     Stripe{disk, blocks, dir_skip, avg_obj_size, fragment_size},
     fd{disk->fd},
     disk{disk},
-    _preserved_dirs{static_cast<int>(len)}
+    _preserved_dirs{len}
 {
   open_dir.mutex = this->mutex;
   SET_HANDLER(&StripeSM::aggWrite);

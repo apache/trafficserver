@@ -65,6 +65,8 @@
 #include <algorithm>
 #include <atomic>
 
+using namespace std::literals;
+
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX  6 // 8K
 #define MIN_CONFIG_BUFFER_SIZE_INDEX       5 // 4K
@@ -749,6 +751,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
           SMDbg(dbg_ctl_http_seq, "send 100 Continue response to client");
           int64_t nbytes             = _ua.get_entry()->write_buffer->write(str_100_continue_response, len_100_continue_response);
           _ua.get_entry()->write_vio = _ua.get_txn()->do_io_write(this, nbytes, buf_start);
+          t_state.hdr_info.client_request.m_100_continue_sent = true;
         } else {
           t_state.hdr_info.client_request.m_100_continue_required = true;
         }
@@ -821,10 +824,8 @@ HttpSM::wait_for_full_body()
   // Next order of business if copy the remaining data from the
   //  header buffer into new buffer
   int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
-  client_request_body_bytes =
-    post_buffer->write(_ua.get_txn()->get_remote_reader(), chunked ? _ua.get_txn()->get_remote_reader()->read_avail() : post_bytes);
+  post_buffer->write(_ua.get_txn()->get_remote_reader(), chunked ? _ua.get_txn()->get_remote_reader()->read_avail() : post_bytes);
 
-  _ua.get_txn()->get_remote_reader()->consume(client_request_body_bytes);
   p = tunnel.add_producer(_ua.get_entry()->vc, post_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_BUFFER_READ,
                           "ua post buffer");
   if (chunked) {
@@ -3765,7 +3766,25 @@ int
 HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post_ua, event);
-  client_request_body_bytes = p->init_bytes_done + p->bytes_read;
+
+  // Now that the tunnel is done, it can tell us how many bytes were in the
+  // body.
+  if (client_request_body_bytes == 0) {
+    // This is invoked multiple times for a transaction when buffering request
+    // body data, so we only call this the first time when
+    // client_request_body_bytes is 0.
+    client_request_body_bytes     = p->bytes_consumed;
+    IOBufferReader *client_reader = _ua.get_txn()->get_remote_reader();
+    // p->bytes_consumed represents the number of body bytes the tunnel parsed
+    // and consumed from the client. However, not all those bytes may have been
+    // written to our _ua client transaction reader. We must not consume past
+    // the number of bytes available.
+    int64_t const bytes_to_consume = std::min(p->bytes_consumed, client_reader->read_avail());
+    SMDbg(dbg_ctl_http_tunnel,
+          "Consuming %" PRId64 " bytes from client reader with p->bytes_consumed: %" PRId64 " available: %" PRId64,
+          bytes_to_consume, p->bytes_consumed, client_reader->read_avail());
+    client_reader->consume(bytes_to_consume);
+  }
 
   switch (event) {
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -4389,40 +4408,38 @@ HttpSM::do_remap_request(bool run_inline)
   if (!t_state.unmapped_url.m_url_impl->m_ptr_host) {
     MIMEField *host_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
     if (host_field) {
-      int         host_len  = 0;
-      const char *host_name = host_field->value_get(&host_len);
-      if (host_name && host_len) {
+      auto host_name{host_field->value_get()};
+      if (!host_name.empty()) {
         int port = -1;
         // Host header can contain port number, and if it does we need to set host and port separately to unmapped_url.
         // If header value starts with '[', the value must contain an IPv6 address, and it may contain a port number as well.
-        if (host_name[0] == '[') {   // IPv6
-          host_name = host_name + 1; // Skip '['
-          host_len--;
+        if (host_name.starts_with("["sv)) { // IPv6
+          host_name.remove_prefix(1);       // Skip '['
           // If header value ends with ']', the value must only contain an IPv6 address (no port number).
-          if (host_name[host_len - 1] == ']') { // Without port number
-            host_len--;                         // Exclude ']'
-          } else {                              // With port number
-            for (int idx = host_len - 1; idx > 0; idx--) {
+          if (host_name.ends_with("]"sv)) { // Without port number
+            host_name.remove_suffix(1);     // Exclude ']'
+          } else {                          // With port number
+            for (int idx = host_name.length() - 1; idx > 0; idx--) {
               if (host_name[idx] == ':') {
-                port     = ink_atoi(host_name + idx + 1, host_len - (idx + 1));
-                host_len = idx;
+                port      = ink_atoi(host_name.data() + idx + 1, host_name.length() - (idx + 1));
+                host_name = host_name.substr(0, idx);
                 break;
               }
             }
           }
         } else { // Anything else (Hostname or IPv4 address)
           // If the value contains ':' where it does not have IPv6 address, there must be port number
-          if (const char *colon = static_cast<const char *>(memchr(host_name, ':', host_len));
+          if (const char *colon = static_cast<const char *>(memchr(host_name.data(), ':', host_name.length()));
               colon == nullptr) { // Without port number
             // Nothing to adjust. Entire value should be used as hostname.
           } else { // With port number
-            port     = ink_atoi(colon + 1, host_len - ((colon + 1) - host_name));
-            host_len = colon - host_name;
+            port      = ink_atoi(colon + 1, host_name.length() - ((colon + 1) - host_name.data()));
+            host_name = host_name.substr(0, colon - host_name.data());
           }
         }
 
         // Set values
-        t_state.unmapped_url.host_set(host_name, host_len);
+        t_state.unmapped_url.host_set(host_name.data(), host_name.length());
         if (port >= 0) {
           t_state.unmapped_url.port_set(port);
         }
@@ -6255,8 +6272,8 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
     IOBufferReader *postdata_producer_reader = postdata_producer_buffer->alloc_reader();
 
     postdata_producer_buffer->write(this->_postbuf.postdata_copy_buffer_start);
-    int64_t post_bytes = postdata_producer_reader->read_avail();
-    transfered_bytes   = post_bytes;
+    int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
+    transferred_bytes  = post_bytes;
     p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, postdata_producer_reader, (HttpProducerHandler) nullptr,
                             HT_STATIC, "redirect static agent post");
   } else {
@@ -6285,22 +6302,26 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
 
     // Next order of business if copy the remaining data from the
     //  header buffer into new buffer
-    int64_t num_body_bytes = post_buffer->write(_ua.get_txn()->get_remote_reader(),
-                                                chunked ? _ua.get_txn()->get_remote_reader()->read_avail() : post_bytes);
 
+    int64_t num_body_bytes = 0;
     // If is_using_post_buffer has been used, then client_request_body_bytes
     // will have already been sent in wait_for_full_body and there will be
     // zero bytes in this user agent buffer. We don't want to clobber
     // client_request_body_bytes with a zero value here in those cases.
-    if (client_request_body_bytes == 0) {
-      client_request_body_bytes = num_body_bytes;
+    if (client_request_body_bytes > 0) {
+      num_body_bytes = client_request_body_bytes;
+    } else {
+      num_body_bytes = post_buffer->write(_ua.get_txn()->get_remote_reader(),
+                                          chunked ? _ua.get_txn()->get_remote_reader()->read_avail() : post_bytes);
     }
-    _ua.get_txn()->get_remote_reader()->consume(num_body_bytes);
+    // Don't consume post_bytes here from _ua.get_txn()->get_remote_reader() since
+    // we are not sure how many bytes the tunnel will use yet. Wait until
+    // HttpSM::tunnel_handler_post_ua to consume the bytes.
     // The user agent has already sent all it has
     if (_ua.get_txn()->is_read_closed()) {
       post_bytes = num_body_bytes;
     }
-    p = tunnel.add_producer(_ua.get_entry()->vc, post_bytes - transfered_bytes, buf_start, &HttpSM::tunnel_handler_post_ua,
+    p = tunnel.add_producer(_ua.get_entry()->vc, post_bytes - transferred_bytes, buf_start, &HttpSM::tunnel_handler_post_ua,
                             HT_HTTP_CLIENT, "user agent post");
   }
   _ua.get_entry()->in_tunnel = true;
@@ -7027,6 +7048,8 @@ HttpSM::server_transfer_init(MIOBuffer *buf, int hdr_size)
     //  we'll get is already in the buffer
     nbytes = server_txn->get_remote_reader()->read_avail() + hdr_size;
   } else if (t_state.hdr_info.response_content_length == HTTP_UNDEFINED_CL) {
+    // Chunked or otherwise, no length is defined. Pass -1 to tell the
+    // tunnel that the size is unknown.
     nbytes = -1;
   } else {
     //  Set to copy to the number of bytes we want to write as
@@ -8706,16 +8729,19 @@ HttpSM::rewind_state_machine()
 
 // YTS Team, yamsat Plugin
 // Function to copy the partial Post data while tunnelling
-void
-PostDataBuffers::copy_partial_post_data()
+int64_t
+PostDataBuffers::copy_partial_post_data(int64_t consumed_bytes)
 {
   if (post_data_buffer_done) {
-    return;
+    return 0;
   }
-  Dbg(dbg_ctl_http_redirect, "[PostDataBuffers::copy_partial_post_data] wrote %" PRId64 " bytes to buffers %" PRId64 "",
-      this->ua_buffer_reader->read_avail(), this->postdata_copy_buffer_start->read_avail());
-  this->postdata_copy_buffer->write(this->ua_buffer_reader);
-  this->ua_buffer_reader->consume(this->ua_buffer_reader->read_avail());
+  int64_t const bytes_to_copy = std::min(consumed_bytes, this->ua_buffer_reader->read_avail());
+  Dbg(dbg_ctl_http_redirect,
+      "given %" PRId64 " bytes consumed, copying %" PRId64 " bytes to buffers with %" PRId64 " available bytes", consumed_bytes,
+      bytes_to_copy, this->ua_buffer_reader->read_avail());
+  this->postdata_copy_buffer->write(this->ua_buffer_reader, bytes_to_copy);
+  this->ua_buffer_reader->consume(bytes_to_copy);
+  return bytes_to_copy;
 }
 
 IOBufferReader *

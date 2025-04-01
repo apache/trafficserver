@@ -183,8 +183,11 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   case AF_INET6:
     Metrics::Counter::increment(http_rsb.total_client_connections_ipv6);
     break;
+  case AF_UNIX:
+    Metrics::Counter::increment(http_rsb.total_client_connections_uds);
+    break;
   default:
-    // don't do anything if the address family is not ipv4 or ipv6
+    // don't do anything if the address family is not ipv4, ipv6, or unix domain socket
     // (there are many other address families in <sys/socket.h>
     // but we don't have a need to report on all the others today)
     break;

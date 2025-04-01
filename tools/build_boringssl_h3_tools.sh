@@ -112,10 +112,10 @@ else
     OS="linux"
 fi
 
-wget https://go.dev/dl/go1.21.6.${OS}-${ARCH}.tar.gz
-sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.21.6.${OS}-${ARCH}.tar.gz
-rm go1.21.6.${OS}-${ARCH}.tar.gz
-sudo chmod -R a+rX ${BASE}
+go_version=1.24.1
+wget https://go.dev/dl/go${go_version}.${OS}-${ARCH}.tar.gz
+rm -rf ${BASE}/go && tar -C ${BASE} -xf go${go_version}.${OS}-${ARCH}.tar.gz
+rm go${go_version}.${OS}-${ARCH}.tar.gz
 
 GO_BINARY_PATH=${BASE}/go/bin/go
 if [ ! -d boringssl ]; then
@@ -148,6 +148,7 @@ cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
   -DCMAKE_C_FLAGS=${BSSL_C_FLAGS} \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DBUILD_SHARED_LIBS=1
 cmake \
   -B build-static \
@@ -156,6 +157,7 @@ cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
   -DCMAKE_C_FLAGS="${BSSL_C_FLAGS}" \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DBUILD_SHARED_LIBS=0
 cmake --build build-shared -j ${num_threads}
 cmake --build build-static -j ${num_threads}

@@ -2539,13 +2539,11 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   hdr.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
 
   if (accept_encoding != nullptr) {
-    int         name_len;
-    const char *name = accept_encoding->name_get(&name_len);
-    MIMEField  *f    = hdr.field_create(name, name_len);
+    auto       name{accept_encoding->name_get()};
+    MIMEField *f = hdr.field_create(name.data(), name.length());
 
-    int         value_len;
-    const char *value = accept_encoding->value_get(&value_len);
-    f->value_set(hdr.m_heap, hdr.m_mime, value, value_len);
+    auto value{accept_encoding->value_get()};
+    f->value_set(hdr.m_heap, hdr.m_mime, value.data(), value.length());
 
     hdr.field_attach(f);
   }
