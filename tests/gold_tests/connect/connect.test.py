@@ -22,6 +22,7 @@ import re
 
 Test.Summary = 'Exercise HTTP CONNECT Method'
 Test.ContinueOnFail = True
+Test.SkipIf(Condition.CurlUds())
 
 
 class ConnectTest:

@@ -9,7 +9,7 @@ export PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/gold_tests/remap:$PYTHONPATH
 
 ${RUNPIPENV} run env autest \
   --sandbox ${AUTEST_SANDBOX} \
-  --directory ${CMAKE_CURRENT_SOURCE_DIR}/gold_tests \
+  --directory ${CMAKE_GOLD_DIR} \
   --ats-bin=${CMAKE_INSTALL_PREFIX}/bin \
   --proxy-verifier-bin ${PROXY_VERIFIER_PATH} \
   --build-root ${CMAKE_BINARY_DIR} \

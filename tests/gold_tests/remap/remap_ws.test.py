@@ -20,6 +20,7 @@ Test.Summary = '''
 Test a basic remap of a websocket connections
 '''
 
+Test.SkipIf(Condition.CurlUds())
 Test.ContinueOnFail = True
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)

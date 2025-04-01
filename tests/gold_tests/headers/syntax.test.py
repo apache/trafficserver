@@ -21,6 +21,7 @@ Test.Summary = '''
 Test whitespace between field name and colon in the header
 '''
 
+Test.SkipIf(Condition.CurlUds())
 Test.ContinueOnFail = True
 
 # Define default ATS

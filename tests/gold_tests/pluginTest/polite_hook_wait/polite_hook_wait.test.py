@@ -20,6 +20,7 @@ Test.Summary = '''
 Test spawning a thread in a transaction hook continuation, and getting a result from it, without blocking event task.
 '''
 
+Test.SkipIf(Condition.CurlUds())
 plugin_name = "polite_hook_wait"
 
 server = Test.MakeOriginServer("server")

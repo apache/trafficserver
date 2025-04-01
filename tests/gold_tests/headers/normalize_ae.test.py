@@ -23,6 +23,7 @@ Test.Summary = '''
 Test normalizations of the Accept-Encoding header field.
 '''
 
+Test.SkipIf(Condition.CurlUds())
 Test.SkipUnless(Condition.HasATSFeature('TS_HAS_BROTLI'))
 
 Test.ContinueOnFail = True

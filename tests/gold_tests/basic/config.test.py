@@ -15,13 +15,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import os
 
 Test.Summary = "Test start up of Traffic server with configuration modification of starting port"
 
 ts = Test.MakeATSProcess("ts", select_ports=False)
 ts.Variables.port = 8090
+uds_path = os.path.join(Test.RunDirectory, 'uds.socket')
 ts.Disk.records_config.update({
-    'proxy.config.http.server_ports': str(ts.Variables.port),
+    'proxy.config.http.server_ports': str(ts.Variables.port) + f" {uds_path}",
 })
 ts.Ready = When.PortOpen(ts.Variables.port)
 t = Test.AddTestRun("Test traffic server started properly")

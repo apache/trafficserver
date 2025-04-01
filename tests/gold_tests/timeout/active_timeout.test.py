@@ -18,6 +18,7 @@
 
 Test.Summary = 'Testing ATS active timeout'
 
+Test.SkipIf(Condition.CurlUds())
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):

@@ -20,6 +20,7 @@ Test.Summary = '''
 Test conf_remap using a yaml file.
 '''
 
+Test.SkipIf(Condition.CurlUds())
 Test.ContinueOnFail = True
 
 

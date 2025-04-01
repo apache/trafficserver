@@ -23,6 +23,7 @@ import ports
 Test.Summary = '''
 Verify log file naming behavior.
 '''
+Test.SkipIf(Condition.CurlUds())
 
 
 class LogFilenamesTest:

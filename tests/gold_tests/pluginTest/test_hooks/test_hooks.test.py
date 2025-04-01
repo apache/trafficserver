@@ -20,6 +20,7 @@ Test.Summary = '''
 Test TS API Hooks.
 '''
 
+Test.SkipIf(Condition.CurlUds())
 Test.SkipUnless(Condition.HasCurlFeature('http2'),)
 Test.ContinueOnFail = True
 

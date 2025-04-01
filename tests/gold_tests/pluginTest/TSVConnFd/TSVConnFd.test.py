@@ -19,6 +19,7 @@ import os
 Test.Summary = '''
 Test TSVConnFdCreate() TS API call.
 '''
+Test.SkipIf(Condition.CurlUds())
 
 plugin_name = "TSVConnFd"
 

@@ -23,6 +23,7 @@ Test.Summary = '''
 Test new log fields
 '''
 
+Test.SkipIf(Condition.CurlUds())
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 # ----
