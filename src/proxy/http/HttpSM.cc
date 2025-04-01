@@ -830,7 +830,8 @@ HttpSM::wait_for_full_body()
                           "ua post buffer");
   if (chunked) {
     bool const drop_chunked_trailers = t_state.http_config_param->oride.http_drop_chunked_trailers == 1;
-    tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT, drop_chunked_trailers);
+    bool const parse_chunk_strictly  = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
+    tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT, drop_chunked_trailers, parse_chunk_strictly);
   }
   _ua.get_entry()->in_tunnel = true;
   _ua.get_txn()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
@@ -2913,7 +2914,8 @@ HttpSM::tunnel_handler_cache_fill(int event, void *data)
     tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_server, HT_HTTP_SERVER, "http server");
 
   bool const drop_chunked_trailers = t_state.http_config_param->oride.http_drop_chunked_trailers == 1;
-  tunnel.set_producer_chunking_action(p, 0, action, drop_chunked_trailers);
+  bool const parse_chunk_strictly  = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
+  tunnel.set_producer_chunking_action(p, 0, action, drop_chunked_trailers, parse_chunk_strictly);
   tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
 
   setup_cache_write_transfer(&cache_sm, server_entry->vc, &t_state.cache_info.object_store, 0, "cache write");
@@ -6361,19 +6363,20 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
   // The user agent and origin  may support chunked (HTTP/1.1) or not (HTTP/2)
   if (chunked) {
     bool const drop_chunked_trailers = t_state.http_config_param->oride.http_drop_chunked_trailers == 1;
+    bool const parse_chunk_strictly  = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
     if (_ua.get_txn()->is_chunked_encoding_supported()) {
       if (server_txn->is_chunked_encoding_supported()) {
-        tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT, drop_chunked_trailers);
+        tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT, drop_chunked_trailers, parse_chunk_strictly);
       } else {
-        tunnel.set_producer_chunking_action(p, 0, TCA_DECHUNK_CONTENT, drop_chunked_trailers);
+        tunnel.set_producer_chunking_action(p, 0, TCA_DECHUNK_CONTENT, drop_chunked_trailers, parse_chunk_strictly);
         tunnel.set_producer_chunking_size(p, 0);
       }
     } else {
       if (server_txn->is_chunked_encoding_supported()) {
-        tunnel.set_producer_chunking_action(p, 0, TCA_CHUNK_CONTENT, drop_chunked_trailers);
+        tunnel.set_producer_chunking_action(p, 0, TCA_CHUNK_CONTENT, drop_chunked_trailers, parse_chunk_strictly);
         tunnel.set_producer_chunking_size(p, 0);
       } else {
-        tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_DECHUNKED_CONTENT, drop_chunked_trailers);
+        tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_DECHUNKED_CONTENT, drop_chunked_trailers, parse_chunk_strictly);
       }
     }
   }
@@ -6780,7 +6783,9 @@ HttpSM::setup_cache_read_transfer()
   // w/o providing a Content-Length header
   if (t_state.client_info.receive_chunked_response) {
     bool const drop_chunked_trailers = t_state.http_config_param->oride.http_drop_chunked_trailers == 1;
-    tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT, drop_chunked_trailers);
+    bool const parse_chunk_strictly  = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
+    tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT, drop_chunked_trailers,
+                                        parse_chunk_strictly);
     tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
   }
   _ua.get_entry()->in_tunnel = true;
@@ -7098,8 +7103,10 @@ HttpSM::setup_server_transfer_to_transform()
   transform_info.entry->in_tunnel = true;
 
   if (t_state.current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
-    client_response_hdr_bytes = 0; // fixed by YTS Team, yamsat
-    tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_DECHUNK_CONTENT, HttpTunnel::DROP_CHUNKED_TRAILERS);
+    client_response_hdr_bytes       = 0; // fixed by YTS Team, yamsat
+    bool const parse_chunk_strictly = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
+    tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_DECHUNK_CONTENT, HttpTunnel::DROP_CHUNKED_TRAILERS,
+                                        parse_chunk_strictly);
   }
 
   return p;
@@ -7139,7 +7146,9 @@ HttpSM::setup_transfer_from_transform()
 
   if (t_state.client_info.receive_chunked_response) {
     bool const drop_chunked_trailers = t_state.http_config_param->oride.http_drop_chunked_trailers == 1;
-    tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT, drop_chunked_trailers);
+    bool const parse_chunk_strictly  = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
+    tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT, drop_chunked_trailers,
+                                        parse_chunk_strictly);
     tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
   }
 
@@ -7205,7 +7214,8 @@ HttpSM::setup_server_transfer()
   this->setup_client_response_plugin_agents(p, client_response_hdr_bytes);
 
   bool const drop_chunked_trailers = t_state.http_config_param->oride.http_drop_chunked_trailers == 1;
-  tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, action, drop_chunked_trailers);
+  bool const parse_chunk_strictly  = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
+  tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, action, drop_chunked_trailers, parse_chunk_strictly);
   tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
   return p;
 }

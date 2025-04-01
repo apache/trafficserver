@@ -7234,6 +7234,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_DROP_CHUNKED_TRAILERS:
     ret = _memberp_to_generic(&overridableHttpConfig->http_drop_chunked_trailers, conv);
     break;
+  case TS_CONFIG_HTTP_STRICT_CHUNK_PARSING:
+    ret = _memberp_to_generic(&overridableHttpConfig->http_strict_chunk_parsing, conv);
+    break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->flow_control_enabled, conv);
     break;
