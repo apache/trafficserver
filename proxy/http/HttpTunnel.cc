@@ -51,27 +51,28 @@ static int const CHUNK_IOBUFFER_SIZE_INDEX = MIN_IOBUFFER_SIZE;
 ChunkedHandler::ChunkedHandler() : max_chunk_size(DEFAULT_MAX_CHUNK_SIZE) {}
 
 void
-ChunkedHandler::init(IOBufferReader *buffer_in, HttpTunnelProducer *p, bool drop_chunked_trailers)
+ChunkedHandler::init(IOBufferReader *buffer_in, HttpTunnelProducer *p, bool drop_chunked_trailers, bool parse_chunk_strictly)
 {
   if (p->do_chunking) {
-    init_by_action(buffer_in, ACTION_DOCHUNK, drop_chunked_trailers);
+    init_by_action(buffer_in, ACTION_DOCHUNK, drop_chunked_trailers, parse_chunk_strictly);
   } else if (p->do_dechunking) {
-    init_by_action(buffer_in, ACTION_DECHUNK, drop_chunked_trailers);
+    init_by_action(buffer_in, ACTION_DECHUNK, drop_chunked_trailers, parse_chunk_strictly);
   } else {
-    init_by_action(buffer_in, ACTION_PASSTHRU, drop_chunked_trailers);
+    init_by_action(buffer_in, ACTION_PASSTHRU, drop_chunked_trailers, parse_chunk_strictly);
   }
   return;
 }
 
 void
-ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action, bool drop_chunked_trailers)
+ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action, bool drop_chunked_trailers, bool parse_chunk_strictly)
 {
-  running_sum          = 0;
-  num_digits           = 0;
-  cur_chunk_size       = 0;
-  cur_chunk_bytes_left = 0;
-  truncation           = false;
-  this->action         = action;
+  running_sum                = 0;
+  num_digits                 = 0;
+  cur_chunk_size             = 0;
+  cur_chunk_bytes_left       = 0;
+  truncation                 = false;
+  this->action               = action;
+  this->strict_chunk_parsing = parse_chunk_strictly;
 
   switch (action) {
   case ACTION_DOCHUNK:
@@ -139,7 +140,6 @@ ChunkedHandler::read_size()
 {
   int64_t bytes_consumed = 0;
   bool done              = false;
-  int cr                 = 0;
 
   while (chunked_reader->is_read_avail_more_than(0) && !done) {
     const char *tmp   = chunked_reader->start();
@@ -178,36 +178,59 @@ ChunkedHandler::read_size()
             done  = true;
             break;
           } else {
-            if (ParseRules::is_cr(*tmp)) {
-              ++cr;
+            if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
+              ++num_cr;
             }
             state = CHUNK_READ_SIZE_CRLF; // now look for CRLF
           }
         }
       } else if (state == CHUNK_READ_SIZE_CRLF) { // Scan for a linefeed
         if (ParseRules::is_lf(*tmp)) {
+          if (!prev_is_cr) {
+            Debug("http_chunk", "Found an LF without a preceding CR (protocol violation)");
+            if (strict_chunk_parsing) {
+              state = CHUNK_READ_ERROR;
+              done  = true;
+              break;
+            }
+          }
           Debug("http_chunk", "read chunk size of %d bytes", running_sum);
           cur_chunk_bytes_left = (cur_chunk_size = running_sum);
           state                = (running_sum == 0) ? CHUNK_READ_TRAILER_BLANK : CHUNK_READ_CHUNK;
           done                 = true;
-          cr                   = 0;
+          num_cr               = 0;
           break;
-        } else if (ParseRules::is_cr(*tmp)) {
-          if (cr != 0) {
+        } else if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
+          if (num_cr != 0) {
             state = CHUNK_READ_ERROR;
             done  = true;
             break;
           }
-          ++cr;
+          ++num_cr;
         }
       } else if (state == CHUNK_READ_SIZE_START) {
-        if (ParseRules::is_cr(*tmp)) {
-          // Skip it
-        } else if (ParseRules::is_lf(*tmp) &&
-                   bytes_used <= 2) { // bytes_used should be 2 if it's CRLF, but permit a single LF as well
+        Debug("http_chunk", "CHUNK_READ_SIZE_START 0x%02x", *tmp);
+        if (ParseRules::is_lf(*tmp)) {
+          if (!prev_is_cr) {
+            Debug("http_chunk", "Found an LF without a preceding CR (protocol violation) before chunk size");
+            if (strict_chunk_parsing) {
+              state = CHUNK_READ_ERROR;
+              done  = true;
+              break;
+            }
+          }
           running_sum = 0;
           num_digits  = 0;
+          num_cr      = 0;
           state       = CHUNK_READ_SIZE;
+        } else if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
+          if (num_cr != 0) {
+            Debug("http_chunk", "Found multiple CRs before chunk size");
+            state = CHUNK_READ_ERROR;
+            done  = true;
+            break;
+          }
+          ++num_cr;
         } else { // Unexpected character
           state = CHUNK_READ_ERROR;
           done  = true;
@@ -651,9 +674,10 @@ HttpTunnel::deallocate_buffers()
 
 void
 HttpTunnel::set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_bytes, TunnelChunkingAction_t action,
-                                         bool drop_chunked_trailers)
+                                         bool drop_chunked_trailers, bool parse_chunk_strictly)
 {
   this->http_drop_chunked_trailers = drop_chunked_trailers;
+  this->http_strict_chunk_parsing  = parse_chunk_strictly;
   p->chunked_handler.skip_bytes    = skip_bytes;
   p->chunking_action               = action;
 
@@ -878,7 +902,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     // For all the chunking cases, we must only copy bytes as we process them.
     body_bytes_to_copy = 0;
 
-    p->chunked_handler.init(p->buffer_start, p, this->http_drop_chunked_trailers);
+    p->chunked_handler.init(p->buffer_start, p, this->http_drop_chunked_trailers, this->http_strict_chunk_parsing);
 
     // Copy the header into the chunked/dechunked buffers.
     if (p->do_chunking) {
