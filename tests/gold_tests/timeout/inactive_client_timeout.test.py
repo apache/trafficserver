@@ -18,6 +18,7 @@
 
 Test.Summary = 'Testing ATS client inactivity timeout'
 
+Test.SkipIf(Condition.CurlUds())
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 replay_file = "slow_server.yaml"
 server = Test.MakeVerifierServerProcess("server", replay_file)

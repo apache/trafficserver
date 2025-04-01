@@ -23,6 +23,7 @@ Test chunked encoding processing
 '''
 
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
+Test.SkipIf(Condition.CurlUds())
 Test.ContinueOnFail = True
 
 Test.GetTcpPort("upstream_port")

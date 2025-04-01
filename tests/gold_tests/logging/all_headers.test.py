@@ -22,7 +22,7 @@ import sys
 Test.Summary = '''
 Test new "all headers" log fields
 '''
-
+Test.SkipIf(Condition.CurlUds())
 # Define ATS.
 #
 ts = Test.MakeATSProcess("ts")

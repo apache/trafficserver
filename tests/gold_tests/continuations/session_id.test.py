@@ -23,6 +23,7 @@ Verify session ID properties.
 '''
 
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
+Test.SkipIf(Condition.CurlUds())
 
 # Configure the server.
 server = Test.MakeOriginServer("server")

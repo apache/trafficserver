@@ -23,7 +23,7 @@ import os
 Test.Summary = '''
 Check VIA header for protocol stack data.
 '''
-
+Test.SkipIf(Condition.CurlUds())
 Test.SkipUnless(Condition.HasCurlFeature('http2'), Condition.HasCurlFeature('IPv6'))
 Test.ContinueOnFail = True
 

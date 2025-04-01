@@ -21,6 +21,7 @@ Test.Summary = '''
 Test revalidating cached objects
 '''
 
+Test.SkipIf(Condition.CurlUds())
 testName = "RevalidateCacheObject"
 Test.ContinueOnFail = True
 

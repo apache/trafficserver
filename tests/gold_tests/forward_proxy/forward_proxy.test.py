@@ -20,6 +20,7 @@ from typing import Union
 
 Test.Summary = 'Verify ATS can function as a forward proxy'
 Test.ContinueOnFail = True
+Test.SkipIf(Condition.CurlUds())
 
 
 class ForwardProxyTest:

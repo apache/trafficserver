@@ -105,10 +105,12 @@ class BodyBufferTest:
         self._ts = Test.MakeATSProcess("ts", select_ports=False)
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
         Test.PrepareInstalledPlugin('request_buffer.so', self._ts)
+        uds_path = os.path.join(Test.RunDirectory, 'uds.socket')
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'request_buffer',
+                'proxy.config.http.server_ports': str(self._ts.Variables.port) + f" {uds_path}",
             })
 
         self._ts.Disk.traffic_out.Content = Testers.ContainsExpression(

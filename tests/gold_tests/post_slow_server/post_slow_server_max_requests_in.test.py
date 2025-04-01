@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 from enum import Enum
+import os
 
 Test.Summary = 'Exercise POST request with max_requests_in'
 Test.ContinueOnFail = True
@@ -39,9 +40,10 @@ class PostAndMaxRequestsInTest:
     def __setupTS(self):
         self.ts = Test.MakeATSProcess("ts")
 
+        uds_path = os.path.join(Test.RunDirectory, 'uds.socket')
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.http.server_ports": f"{self.ts.Variables.port}",
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port} {uds_path}",
                 "proxy.config.net.max_requests_in": 1000,
                 'proxy.config.http.connect_attempts_timeout': 1,
                 "proxy.config.diags.debug.enabled": 1,

@@ -165,7 +165,7 @@ origin.addResponse("sessionlog.json", request_header, response_header)
 dns = Test.MakeDNServer("dns")
 
 # next hop trafficserver instance
-ts1 = Test.MakeATSProcess("ts1")
+ts1 = Test.MakeATSProcess("ts1", enable_uds=False)
 ts1.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,

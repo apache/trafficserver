@@ -18,6 +18,7 @@
 
 Test.Summary = 'Testing ATS inactivity timeout'
 
+Test.SkipIf(Condition.CurlUds())
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)

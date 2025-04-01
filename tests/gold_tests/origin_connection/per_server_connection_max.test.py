@@ -18,6 +18,7 @@ Verify the behavior of proxy.config.http.per_server.connection.max.
 #  limitations under the License.
 
 Test.Summary = __doc__
+import os
 
 
 class PerServerConnectionMaxTest:
@@ -108,13 +109,14 @@ class ConnectMethodTest:
     def _configure_trafficserver(self, max_conn) -> None:
         self._ts = Test.MakeATSProcess("ts2_" + str(max_conn))
 
+        uds_path = os.path.join(Test.RunDirectory, 'uds.socket')
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb|conn_track',
-                'proxy.config.http.server_ports': f"{self._ts.Variables.port}",
+                'proxy.config.http.server_ports': f"{self._ts.Variables.port} {uds_path}",
                 'proxy.config.http.connect_ports': f"{self._server.Variables.Port}",
                 'proxy.config.http.per_server.connection.metric_enabled': 1,
                 'proxy.config.http.per_server.connection.max': max_conn,

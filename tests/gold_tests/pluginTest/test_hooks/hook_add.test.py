@@ -20,6 +20,7 @@ Test.Summary = '''
 Test adding hooks
 '''
 
+Test.SkipIf(Condition.CurlUds())
 Test.ContinueOnFail = True
 
 server = Test.MakeOriginServer("server")
