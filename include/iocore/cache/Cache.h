@@ -74,7 +74,7 @@ struct CacheProcessor : public Processor {
   Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
                  const char *hostname = nullptr, int host_len = 0);
   Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                    const char *hostname = nullptr, int host_len = 0);
+                    std::string_view hostname = std::string_view{});
   Action *open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
                      int expected_size = CACHE_EXPECTED_SIZE, int options = 0, time_t pin_in_cache = 0,
                      std::string_view hostname = std::string_view{});

@@ -374,9 +374,9 @@ CacheProcessor::lookup(Continuation *cont, const CacheKey *key, CacheFragType fr
 }
 
 Action *
-CacheProcessor::open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int hostlen)
+CacheProcessor::open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type, std::string_view hostname)
 {
-  return caches[frag_type]->open_read(cont, key, frag_type, hostname, hostlen);
+  return caches[frag_type]->open_read(cont, key, frag_type, hostname);
 }
 
 Action *
@@ -410,7 +410,8 @@ Action *
 CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
                           time_t /* pin_in_cache ATS_UNUSED */, CacheFragType type)
 {
-  return caches[type]->open_read(cont, &key->hash, request, params, type, key->hostname, key->hostlen);
+  return caches[type]->open_read(cont, &key->hash, request, params, type,
+                                 std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
 //----------------------------------------------------------------------------

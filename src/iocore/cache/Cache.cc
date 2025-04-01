@@ -329,7 +329,7 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const
 }
 
 Action *
-Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len) const
+Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, std::string_view hostname) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -337,7 +337,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
   }
   ink_assert(caches[type] == this);
 
-  StripeSM     *stripe = key_to_stripe(key, std::string_view{hostname, static_cast<std::string_view::size_type>(host_len)});
+  StripeSM     *stripe = key_to_stripe(key, hostname);
   Dir           result, *last_collision = nullptr;
   ProxyMutex   *mutex = cont->mutex.get();
   OpenDirEntry *od    = nullptr;
@@ -532,7 +532,7 @@ Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_s
 
 Action *
 Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                 CacheFragType type, const char *hostname, int host_len) const
+                 CacheFragType type, std::string_view hostname) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -540,7 +540,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
   }
   ink_assert(caches[type] == this);
 
-  StripeSM     *stripe = key_to_stripe(key, std::string_view{hostname, static_cast<std::string_view::size_type>(host_len)});
+  StripeSM     *stripe = key_to_stripe(key, hostname);
   Dir           result, *last_collision = nullptr;
   ProxyMutex   *mutex = cont->mutex.get();
   OpenDirEntry *od    = nullptr;

@@ -6182,7 +6182,8 @@ TSCacheRead(TSCont contp, TSCacheKey key)
   CacheInfo    *info = reinterpret_cast<CacheInfo *>(key);
   Continuation *i    = reinterpret_cast<INKContInternal *>(contp);
 
-  return reinterpret_cast<TSAction>(cacheProcessor.open_read(i, &info->cache_key, info->frag_type, info->hostname, info->len));
+  return reinterpret_cast<TSAction>(cacheProcessor.open_read(
+    i, &info->cache_key, info->frag_type, std::string_view{info->hostname, static_cast<std::string_view::size_type>(info->len)}));
 }
 
 TSAction
