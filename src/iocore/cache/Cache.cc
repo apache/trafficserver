@@ -301,14 +301,14 @@ Cache::close()
 }
 
 Action *
-Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len) const
+Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, std::string_view hostname) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LOOKUP_FAILED, nullptr);
     return ACTION_RESULT_DONE;
   }
 
-  StripeSM *stripe = key_to_stripe(key, std::string_view{hostname, static_cast<std::string_view::size_type>(host_len)});
+  StripeSM *stripe = key_to_stripe(key, hostname);
   CacheVC  *c      = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op  = VIO::READ;

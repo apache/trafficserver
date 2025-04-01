@@ -455,7 +455,7 @@ struct Cache {
   int open(bool reconfigure, bool fix);
   int close();
 
-  Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len) const;
+  Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType type, std::string_view hostname) const;
   Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType type,
                     std::string_view hostname = std::string_view{}) const;
   Action *open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options = 0, time_t pin_in_cache = 0,
