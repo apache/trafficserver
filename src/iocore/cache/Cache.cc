@@ -398,7 +398,7 @@ Lcallreturn:
 // main entry point for writing of non-http documents
 Action *
 Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options, time_t apin_in_cache,
-                  const char *hostname, int host_len) const
+                  std::string_view hostname) const
 {
   if (!CacheProcessor::IsCacheReady(frag_type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -412,7 +412,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
   c->vio.op        = VIO::WRITE;
   c->op_type       = static_cast<int>(CacheOpType::Write);
-  c->stripe        = key_to_stripe(key, std::string_view{hostname, static_cast<std::string_view::size_type>(host_len)});
+  c->stripe        = key_to_stripe(key, hostname);
   StripeSM *stripe = c->stripe;
   ts::Metrics::Gauge::increment(cache_rsb.status[c->op_type].active);
   ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.status[c->op_type].active);
@@ -607,7 +607,7 @@ Lcallreturn:
 // main entry point for writing of http documents
 Action *
 Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
-                  const CacheKey * /* key1 ATS_UNUSED */, CacheFragType type, const char *hostname, int host_len) const
+                  const CacheKey * /* key1 ATS_UNUSED */, CacheFragType type, std::string_view hostname) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
@@ -632,7 +632,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   } while (DIR_MASK_TAG(c->key.slice32(2)) == DIR_MASK_TAG(c->first_key.slice32(2)));
   c->earliest_key  = c->key;
   c->frag_type     = CACHE_FRAG_TYPE_HTTP;
-  c->stripe        = key_to_stripe(key, std::string_view{hostname, static_cast<std::string_view::size_type>(host_len)});
+  c->stripe        = key_to_stripe(key, hostname);
   StripeSM *stripe = c->stripe;
   c->info          = info;
   if (c->info && reinterpret_cast<uintptr_t>(info) != CACHE_ALLOW_MULTIPLE_WRITES) {

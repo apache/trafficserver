@@ -6197,7 +6197,8 @@ TSCacheWrite(TSCont contp, TSCacheKey key)
   Continuation *i    = reinterpret_cast<INKContInternal *>(contp);
 
   return reinterpret_cast<TSAction>(
-    cacheProcessor.open_write(i, &info->cache_key, info->frag_type, 0, false, info->pin_in_cache, info->hostname, info->len));
+    cacheProcessor.open_write(i, &info->cache_key, info->frag_type, 0, false, info->pin_in_cache,
+                              std::string_view{info->hostname, static_cast<std::string_view::size_type>(info->len)}));
 }
 
 TSAction

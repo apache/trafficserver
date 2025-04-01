@@ -381,9 +381,9 @@ CacheProcessor::open_read(Continuation *cont, const CacheKey *key, CacheFragType
 
 Action *
 CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type, int expected_size ATS_UNUSED, int options,
-                           time_t pin_in_cache, char *hostname, int host_len)
+                           time_t pin_in_cache, std::string_view hostname)
 {
-  return caches[frag_type]->open_write(cont, key, frag_type, options, pin_in_cache, hostname, host_len);
+  return caches[frag_type]->open_write(cont, key, frag_type, options, pin_in_cache, hostname);
 }
 
 Action *
@@ -419,7 +419,8 @@ CacheProcessor::open_write(Continuation *cont, int /* expected_size ATS_UNUSED *
                            CacheHTTPHdr * /* request ATS_UNUSED */, CacheHTTPInfo *old_info, time_t pin_in_cache,
                            CacheFragType type)
 {
-  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, nullptr /* key1 */, type, key->hostname, key->hostlen);
+  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, nullptr /* key1 */, type,
+                                  std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
 //----------------------------------------------------------------------------
