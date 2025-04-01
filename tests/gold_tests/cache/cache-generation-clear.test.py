@@ -48,16 +48,18 @@ ts.Disk.remap_config.AddLines(
 objectid = uuid.uuid4()
 # first test is a miss for default
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
-    ts.Variables.port, objectid)
+tr.MakeCurlCommand(
+    '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+        ts.Variables.port, objectid))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.All = "gold/miss_default-1.gold"
 
 # Second touch is a HIT for default.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
-    ts.Variables.port, objectid)
+tr.MakeCurlCommand(
+    '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+        ts.Variables.port, objectid))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_default-1.gold"
 
@@ -72,21 +74,24 @@ tr.Processes.Default.Env = ts.Env  # set the environment for traffic_control to 
 tr = Test.AddTestRun()
 tr.DelayStart = 15  # delay start of test run to allow previous command to take effect
 # create a new traffic_ctrl call and the environment
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
-    ts.Variables.port, objectid)
+tr.MakeCurlCommand(
+    '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+        ts.Variables.port, objectid))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/miss_default77.gold"
 
 # new generation should should now hit.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
-    ts.Variables.port, objectid)
+tr.MakeCurlCommand(
+    '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+        ts.Variables.port, objectid))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_default77.gold"
 
 # should still hit.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
-    ts.Variables.port, objectid)
+tr.MakeCurlCommand(
+    '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+        ts.Variables.port, objectid))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_default77.gold"
