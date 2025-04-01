@@ -547,10 +547,9 @@ public:
   ConditionInbound(SelfType &)    = delete;
   SelfType &operator=(SelfType &) = delete;
 
-  void        initialize(Parser &p) override;
-  void        set_qualifier(const std::string &q) override;
-  void        append_value(std::string &s, const Resources &res) override;
-  static void append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
+  void initialize(Parser &p) override;
+  void set_qualifier(const std::string &q) override;
+  void append_value(std::string &s, const Resources &res) override;
 
   static constexpr const char *TAG = "INBOUND";
 
@@ -559,6 +558,7 @@ protected:
 
 private:
   NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
+  void                     append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
 };
 
 class ConditionStringLiteral : public Condition

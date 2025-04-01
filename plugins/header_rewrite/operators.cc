@@ -1211,6 +1211,15 @@ OperatorSetPluginCntl::initialize(Parser &p)
     } else {
       TSError("[%s] Unknown value for TIMZEONE control: %s", PLUGIN_NAME, value.c_str());
     }
+  } else if (name == "INBOUND_IP_SOURCE") {
+    _name = PluginCtrl::INBOUND_IP_SOURCE;
+    if (value == "PEER") {
+      _value = IP_SRC_PEER;
+    } else if (value == "PROXY") {
+      _value = IP_SRC_PROXY;
+    } else {
+      TSError("[%s] Unknown value for INBOUND_IP_SOURCE control: %s", PLUGIN_NAME, value.c_str());
+    }
   }
 }
 
@@ -1237,6 +1246,9 @@ OperatorSetPluginCntl::exec(const Resources &res) const
   switch (_name) {
   case PluginCtrl::TIMEZONE:
     private_data.timezone = _value;
+    break;
+  case PluginCtrl::INBOUND_IP_SOURCE:
+    private_data.ip_source = _value;
     break;
   }
 
