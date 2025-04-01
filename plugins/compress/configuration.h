@@ -148,7 +148,7 @@ private:
   int          compression_algorithms_;
   unsigned int minimum_content_length_;
 
-  RangeRequestCtrl range_request_ctl_;
+  RangeRequestCtrl range_request_ctl_{RangeRequestCtrl::IGNORE_RANGE};
   StringContainer  compressible_content_types_;
   StringContainer  allows_;
   // maintain backwards compatibility/usability out of the box
