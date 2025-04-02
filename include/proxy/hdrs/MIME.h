@@ -180,8 +180,7 @@ struct MIMEField {
   void value_clear(HdrHeap *heap, MIMEHdrImpl *mh);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
-  void value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length, bool prepend_comma = false,
-                    const char separator = ',');
+  void value_append(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value, bool prepend_comma = false, const char separator = ',');
   bool value_is_valid(uint32_t invalid_char_bits = is_control_BIT) const;
   int  has_dups() const;
 };
@@ -1052,9 +1051,9 @@ MIMEField::value_clear(HdrHeap *heap, MIMEHdrImpl *mh)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEField::value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length, bool prepend_comma, const char separator)
+MIMEField::value_append(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value, bool prepend_comma, const char separator)
 {
-  mime_field_value_append(heap, mh, this, value, length, prepend_comma, separator);
+  mime_field_value_append(heap, mh, this, value.data(), static_cast<int>(value.length()), prepend_comma, separator);
 }
 
 /*-------------------------------------------------------------------------
@@ -1552,7 +1551,8 @@ MIMEHdr::field_value_set_date(MIMEField *field, time_t value)
 inline void
 MIMEHdr::field_value_append(MIMEField *field, const char *value_str, int value_len, bool prepend_comma, const char separator)
 {
-  field->value_append(m_heap, m_mime, value_str, value_len, prepend_comma, separator);
+  field->value_append(m_heap, m_mime, std::string_view{value_str, static_cast<std::string_view::size_type>(value_len)},
+                      prepend_comma, separator);
 }
 
 inline void
@@ -1564,7 +1564,7 @@ MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char sep
     auto value{current->value_get()};
     if (value.length() > 0) {
       HdrHeap::HeapGuard guard(m_heap, value.data()); // reference count the source string so it doesn't get moved
-      field->value_append(m_heap, m_mime, value.data(), value.length(), prepend_comma, separator);
+      field->value_append(m_heap, m_mime, value, prepend_comma, separator);
     }
     field_delete(current, false); // don't delete duplicates
     current = field->m_next_dup;
@@ -1642,7 +1642,8 @@ MIMEHdr::value_append(const char *name, int name_length, const char *value, int 
   if (field) {
     while (field->m_next_dup)
       field = field->m_next_dup;
-    field->value_append(m_heap, m_mime, value, value_length, prepend_comma, separator);
+    field->value_append(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)},
+                        prepend_comma, separator);
   } else {
     field = field_create(name, name_length);
     field_attach(field);
