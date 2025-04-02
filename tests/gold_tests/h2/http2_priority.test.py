@@ -69,7 +69,7 @@ ts.Disk.records_config.update(
 
 # Test Case 0:
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/bigfile | cksum'.format(ts.Variables.ssl_port)
+tr.MakeCurlCommand('-vs -k --http2 https://127.0.0.1:{0}/bigfile | cksum'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))

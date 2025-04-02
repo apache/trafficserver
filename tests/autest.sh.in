@@ -13,5 +13,5 @@ ${RUNPIPENV} run env autest \
   --ats-bin=${CMAKE_INSTALL_PREFIX}/bin \
   --proxy-verifier-bin ${PROXY_VERIFIER_PATH} \
   --build-root ${CMAKE_BINARY_DIR} \
-  ${AUTEST_OPTIONS} \
+  ${CURL_UDS_FLAG} ${AUTEST_OPTIONS} \
   "$@"

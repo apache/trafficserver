@@ -67,8 +67,7 @@ tr.Processes.Default.Command = 'echo start TS, HTTP server and DNS.'
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://domain.in/texts/demo-3842948374928374982374982374.txt')
+tr.MakeCurlCommand(f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://domain.in/texts/demo-3842948374928374982374982374.txt')
 tr.Processes.Default.ReturnCode = 0
 
 Test.AddAwaitFileContainsTestRun('Await transactions to finish logging.', ts.Disk.traffic_out.Name, '3842948374928374982374982377')

@@ -91,15 +91,15 @@ tr.Processes.Default.StartBefore(nameserver)
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
-tr.Processes.Default.Command = 'curl --verbose --header "Host: test-1" http://localhost:{0}/test-1'.format(ts.Variables.port)
+tr.MakeCurlCommand('--verbose --header "Host: test-1" http://localhost:{0}/test-1'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --verbose --header "Host: test-2" http://localhost:{0}/test-2'.format(ts.Variables.port)
+tr.MakeCurlCommand('--verbose --header "Host: test-2" http://localhost:{0}/test-2'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --verbose --header "Host: test-3" http://localhost:{0}/test-3'.format(ts.Variables.port)
+tr.MakeCurlCommand('--verbose --header "Host: test-3" http://localhost:{0}/test-3'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.

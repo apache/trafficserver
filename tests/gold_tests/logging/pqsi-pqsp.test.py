@@ -68,12 +68,12 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(nameserver)
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = f'curl --verbose http://localhost:{ts.Variables.port}/test'
+tr.MakeCurlCommand(f'--verbose http://localhost:{ts.Variables.port}/test')
 tr.Processes.Default.ReturnCode = 0
 
 # Response for this duplicate request should come from cache.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = f'curl --verbose http://localhost:{ts.Variables.port}/test'
+tr.MakeCurlCommand(f'--verbose http://localhost:{ts.Variables.port}/test')
 tr.Processes.Default.ReturnCode = 0
 
 log_filespec = os.path.join(ts.Variables.LOGDIR, 'field-test.log')

@@ -27,7 +27,7 @@ t = Test.AddTestRun("Talk to ts1")
 t.StillRunningAfter = ts1
 t.StillRunningAfter += ts2
 p = t.Processes.Default
-p.Command = "curl 127.0.0.1:{0}".format(ts1.Variables.port)
+t.MakeCurlCommand("127.0.0.1:{0}".format(ts1.Variables.port))
 p.ReturnCode = 0
 p.StartBefore(Test.Processes.ts1)
 p.StartBefore(Test.Processes.ts2)
@@ -39,5 +39,5 @@ t.StillRunningBefore += ts2
 t.StillRunningAfter = ts1
 t.StillRunningAfter += ts2
 p = t.Processes.Default
-p.Command = "curl 127.0.0.1:{0}".format(ts2.Variables.port)
+t.MakeCurlCommand("127.0.0.1:{0}".format(ts2.Variables.port))
 p.ReturnCode = 0

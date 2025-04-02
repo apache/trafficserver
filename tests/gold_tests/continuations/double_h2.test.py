@@ -72,15 +72,15 @@ if test "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -
     '''
 
 # curl with http2
-cmd = 'curl --http2 -k -vs https://127.0.0.1:{0}/'.format(ts.Variables.ssl_port)
+cmd = '--http2 -k -vs https://127.0.0.1:{0}/'.format(ts.Variables.ssl_port)
 numberOfRequests = 25
 
 tr = Test.AddTestRun()
 
-# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
+# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCurlCommands.
 # On Fedora 28/29, it seems that curl will occasionally timeout after a couple seconds and return exitcode 2
 # Examining the packet capture shows that Traffic Server dutifully sends the response
-ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
+ps = tr.SpawnCurlCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 

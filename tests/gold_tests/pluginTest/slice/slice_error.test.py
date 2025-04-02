@@ -232,7 +232,7 @@ response_header_internal404_0 = {
 
 server.addResponse("sessionlog.json", request_header_internal404_0, response_header_internal404_0)
 
-curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port)
+curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port)
 
 # set up whole asset fetch into cache
 ts.Disk.remap_config.AddLine(
@@ -257,7 +257,7 @@ tr = Test.AddTestRun("Etag test")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts)
-ps.Command = curl_and_args + ' http://ats/etag'
+tr.MakeCurlCommand(curl_and_args + ' http://ats/etag')
 # ps.ReturnCode = 0 # curl will return fail status
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
 ps.Streams.stderr = "gold_error/contents.stderr.gold"
@@ -273,7 +273,7 @@ tr.StillRunningAfter = ts
 # 2 Test - Last Modified mismatch test
 tr = Test.AddTestRun("Last-Modified test")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://ats/lastmodified'
+tr.MakeCurlCommand(curl_and_args + ' http://ats/lastmodified')
 # ps.ReturnCode = 0 # curl will return fail status
 ps.Streams.stderr = "gold_error/contents.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
@@ -289,7 +289,7 @@ tr.StillRunningAfter = ts
 # 4 Test - Block content-range
 tr = Test.AddTestRun("Content-Range test")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://ats/crr'
+tr.MakeCurlCommand(curl_and_args + ' http://ats/crr')
 # ps.ReturnCode = 0 # curl will return fail status
 ps.Streams.stderr = "gold_error/contents.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
@@ -305,7 +305,7 @@ tr.StillRunningAfter = ts
 # 6 Test - 404 internal test
 tr = Test.AddTestRun("Internal 404 test")
 ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://ats/internal404'
+tr.MakeCurlCommand(curl_and_args + ' http://ats/internal404')
 # ps.ReturnCode = 0 # curl will return fail status
 ps.Streams.stderr = "gold_error/contents.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")

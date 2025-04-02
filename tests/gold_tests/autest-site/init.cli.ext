@@ -43,3 +43,5 @@ Settings.path_argument(["--ats-bin"], required=True, help="A user provided direc
 Settings.path_argument(["--build-root"], required=False, help="The location of the build root for out of source builds")
 
 Settings.path_argument(["--proxy-verifier-bin"], required=False, help="A location for system proxy-verifier binaries to test with.")
+
+Settings.add_argument(["--curl-uds"], action="store_true", required=False, help="Run all curl commands with --unix-socket flag")

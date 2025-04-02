@@ -65,6 +65,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.Command = "curl -v --cacert {0} --cert-status -H \"host:example.com\" https://127.0.0.1:{1}".format(
-    os.path.join(ts.Variables.SSLDir, "ca.ocsp.pem"), ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    "-v --cacert {0} --cert-status -H \")host:example.com\" https://127.0.0.1:{1}".format(
+        os.path.join(ts.Variables.SSLDir, "ca.ocsp.pem"), ts.Variables.ssl_port))
 tr.ReturnCode = 0

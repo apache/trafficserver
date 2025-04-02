@@ -60,18 +60,18 @@ stale_10 = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-L
 # Testing scenarios
 child_curl_request = (
     # Test child serving stale with failed DNS OS lookup
-    f'curl -X PUSH -d "{stale_5}" "http://localhost:{ts_child.Variables.port}";'
-    f'curl -X PUSH -d "{stale_10}" "http://localhost:{ts_parent.Variables.port}";'
-    f'sleep 7; curl -s -v http://localhost:{ts_child.Variables.port};'
-    f'sleep 15; curl -s -v http://localhost:{ts_child.Variables.port};'
+    f'{{curl}} -X PUSH -d "{stale_5}" "http://localhost:{ts_child.Variables.port}";'
+    f'{{curl}} -X PUSH -d "{stale_10}" "http://localhost:{ts_parent.Variables.port}";'
+    f'sleep 7; {{curl}} -s -v http://localhost:{ts_child.Variables.port};'
+    f'sleep 15; {{curl}} -s -v http://localhost:{ts_child.Variables.port};'
     # Test parent serving stale with failed DNS OS lookup
-    f'curl -X PUSH -d "{stale_5}" "http://localhost:{ts_parent.Variables.port}";'
-    f'sleep 7; curl -s -v http://localhost:{ts_parent.Variables.port};'
-    f'sleep 15; curl -s -v http://localhost:{ts_parent.Variables.port};')
+    f'{{curl}} -X PUSH -d "{stale_5}" "http://localhost:{ts_parent.Variables.port}";'
+    f'sleep 7; {{curl}} -s -v http://localhost:{ts_parent.Variables.port};'
+    f'sleep 15; {{curl}} -s -v http://localhost:{ts_parent.Variables.port};')
 
 # Test case for when parent server is down but child proxy can serve cache object
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = child_curl_request
+tr.MakeCurlCommandMulti(child_curl_request)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts_child)
 tr.Processes.Default.StartBefore(ts_parent)
