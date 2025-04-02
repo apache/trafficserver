@@ -110,7 +110,7 @@ extern cripts::Versions version; // Access to the ATS version information
 
 // These are not enabled by default, since they adds additional overhead
 // and pollution of the top level namespace.
-#if CRIPT_CONVENIENCE_APIS
+#if CRIPTS_CONVENIENCE_APIS
 #define client                      context->_client
 #define server                      context->_server
 #define urls                        context->_urls

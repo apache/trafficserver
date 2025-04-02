@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-#define CRIPT_CONVENIENCE_APIS 1
+#define CRIPTS_CONVENIENCE_APIS 1
 
 // The primary include file, this has to always be included
 #include <cripts/Preamble.hpp>
@@ -57,10 +57,8 @@ do_txn_close()
 
 do_cache_lookup()
 {
-  borrow url2 = cripts::Cache::URL::Get();
-
-  CDebug("Cache URL: {}", url2.String());
-  CDebug("Cache Host: {}", url2.host);
+  CDebug("Cache URL: {}", urls.cache);
+  CDebug("Cache Host: {}", urls.cache.host);
 }
 
 do_send_request()
@@ -122,7 +120,7 @@ do_remap()
   auto ip  = client.connection.IP();
   auto now = TimeNow();
 
-  if (CRIPT_ALLOW.contains(ip)) {
+  if (CRIPT_ALLOW.Match(ip)) {
     CDebug("Client IP allowed: {}", ip.string(24, 64));
   }
 
@@ -146,32 +144,31 @@ do_remap()
   CDebug("X-Miles = {}", client.request["X-Miles"]);
   CDebug("random(1000) = {}", cripts::Random(1000));
 
-  borrow url      = cripts::Client::URL::Get();
-  auto   old_port = url.port;
+  auto old_port = urls.request.port;
 
   CDebug("Method is {}", client.request.method);
-  CDebug("Scheme is {}", url.scheme);
-  CDebug("Host is {}", url.host);
-  CDebug("Port is {}", url.port);
-  CDebug("Path is {}", url.path);
-  CDebug("Path[1] is {}", url.path[1]);
-  CDebug("Query is {}", url.query);
+  CDebug("Scheme is {}", urls.request.scheme);
+  CDebug("Host is {}", urls.request.host);
+  CDebug("Port is {}", urls.request.port);
+  CDebug("Path is {}", urls.request.path);
+  CDebug("Path[1] is {}", urls.request.path[1]);
+  CDebug("Query is {}", urls.request.query);
 
-  auto testing_trim = url.path.trim();
+  auto testing_trim = urls.request.path.trim();
 
   CDebug("Trimmed path is {}", testing_trim);
 
-  if (url.query["foo"] > 100) {
+  if (urls.request.query["foo"] > 100) {
     CDebug("Query[foo] is > 100");
   }
 
-  if (url.path == "some/url" || url.path[0] == "other") {
+  if (urls.request.path == "some/url" || urls.request.path[0] == "other") {
     CDebug("The path comparison triggered");
   }
 
-  url.host = "foobar.com";
-  url.port = "81";
-  url.port = old_port;
+  urls.request.host = "foobar.com";
+  urls.request.port = "81";
+  urls.request.port = old_port;
 
   // TXN data slots
   txn_data[0] = true;

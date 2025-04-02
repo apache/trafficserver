@@ -280,7 +280,6 @@ void
 Client::Request::_initialize()
 {
   TSAssert(_state->txnp);
-  TSAssert(!Initialized());
 
   if (TSHttpTxnClientReqGet(_state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
     _state->error.Fail();
@@ -349,7 +348,6 @@ Client::Response::_initialize()
   CAssert(_state->hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
 
   TSAssert(_state->txnp);
-  TSAssert(!Initialized());
 
   if (TSHttpTxnClientRespGet(_state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
     _state->error.Fail();
@@ -399,7 +397,6 @@ Server::Response::_initialize()
   CAssert(_state->hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
 
   TSAssert(_state->txnp);
-  TSAssert(!Initialized());
 
   if (TSHttpTxnServerRespGet(_state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
     _state->error.Fail();

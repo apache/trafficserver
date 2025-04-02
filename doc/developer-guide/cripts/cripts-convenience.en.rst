@@ -38,13 +38,13 @@ in the top level namespace. Here's a simple example of how to enable these APIs:
 
 .. code-block:: cpp
 
-   #define CRIPT_CONVENIENCE_APIS 1
+   #define CRIPTS_CONVENIENCE_APIS 1
 
    #include <cripts/Preamble.hpp>
 
    do_remap()
    {
-     url.query.keep({"foo", "bar"});
+     urls.request.query.Keep({"foo", "bar"});
    }
 
    #include <cripts/Epilogue.hpp>
