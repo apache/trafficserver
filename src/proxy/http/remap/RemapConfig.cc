@@ -328,7 +328,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
   nbti.rules_list = bti->rules_list;
   nbti.rewrite    = bti->rewrite;
 
-  Dbg(dbg_ctl_url_rewrite, "[%s] including remap configuration from %s", __func__, (const char *)path);
+  Dbg(dbg_ctl_url_rewrite, "[%s] including remap configuration from %s", __func__, path);
   success = remap_parse_config_bti(path, &nbti);
 
   // The sub-parse might have updated the rules list, so push it up to the parent parse.
