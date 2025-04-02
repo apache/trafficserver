@@ -23,6 +23,10 @@
 
 #include <cstdio>
 
+#include <string_view>
+
+using namespace std::literals;
+
 #include "catch.hpp"
 #include "tscore/ink_platform.h"
 #include "proxy/hdrs/MIME.h"
@@ -33,11 +37,11 @@ TEST_CASE("Mime", "[proxy][mime]")
   MIMEHdr    hdr;
   hdr.create(NULL);
 
-  hdr.field_create("Test1", 5);
-  hdr.field_create("Test2", 5);
-  hdr.field_create("Test3", 5);
-  hdr.field_create("Test4", 5);
-  field = hdr.field_create("Test5", 5);
+  hdr.field_create("Test1"sv);
+  hdr.field_create("Test2"sv);
+  hdr.field_create("Test3"sv);
+  hdr.field_create("Test4"sv);
+  field = hdr.field_create("Test5"sv);
 
   if (!hdr.m_mime->m_first_fblock.contains(field)) {
     std::printf("The field block doesn't contain the field but it should\n");

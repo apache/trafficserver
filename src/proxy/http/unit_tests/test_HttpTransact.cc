@@ -21,7 +21,9 @@
   limitations under the License.
  */
 
+#include <optional>
 #include <string_view>
+
 using namespace std::string_view_literals;
 
 #include "tscore/Diags.h"
@@ -67,14 +69,14 @@ TEST_CASE("HttpTransact", "[http]")
 
       hdr1.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
       hdr2.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -147,14 +149,14 @@ TEST_CASE("HttpTransact", "[http]")
 
       hdr1.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
       hdr2.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -221,14 +223,14 @@ TEST_CASE("HttpTransact", "[http]")
 
       hdr1.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
       hdr2.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -295,14 +297,14 @@ TEST_CASE("HttpTransact", "[http]")
 
       hdr1.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
       hdr2.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -372,14 +374,14 @@ TEST_CASE("HttpTransact", "[http]")
 
       hdr1.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
       hdr2.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -464,14 +466,14 @@ TEST_CASE("HttpTransact", "[http]")
 
       cached_headers.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : cached) {
-        field = cached_headers.field_create(entry.name.data(), entry.name.length());
+        field = cached_headers.field_create(entry.name);
         cached_headers.field_attach(field);
         cached_headers.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
       response_headers.create(HTTP_TYPE_RESPONSE);
       for (auto &&entry : response) {
-        field = response_headers.field_create(entry.name.data(), entry.name.length());
+        field = response_headers.field_create(entry.name);
         response_headers.field_attach(field);
         response_headers.field_value_set(field, entry.value.data(), entry.value.length());
       }

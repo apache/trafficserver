@@ -201,7 +201,7 @@ test_decoding(const string &filename)
     case 10:
       // This line should be a header field
       parse_line(line, 10, name, value);
-      field = original.field_create(name.c_str(), name.length());
+      field = original.field_create(name);
       field->value_set(original.m_heap, original.m_mime, value);
       original.field_attach(field);
       break;
@@ -279,7 +279,7 @@ test_encoding(const string &filename_in, const string &filename_out)
         ofs << "        }," << endl;
       }
       parse_line(line, 10, name, value);
-      field = original.field_create(name.c_str(), name.length());
+      field = original.field_create(name);
       field->value_set(original.m_heap, original.m_mime, value);
       original.field_attach(field);
       ofs << "        {" << endl;

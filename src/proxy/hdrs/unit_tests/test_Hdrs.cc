@@ -1058,7 +1058,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     const char *field_name = "Test_heap_reuse";
 
-    MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+    MIMEField *f = hdr.field_create(field_name);
     REQUIRE(f->m_ptr_value == nullptr);
 
     hdr.field_attach(f);
@@ -1671,7 +1671,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     /***** (4) add in secondary fields for all multiples of 3 ***/
     for (i = 3; i <= 100; i += 3) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
-      MIMEField *f = resp_hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+      MIMEField *f = resp_hdr.field_create(field_name);
       resp_hdr.field_attach(f);
       snprintf(field_value, sizeof(field_value), "d %d %d %d %d %d", i, i, i, i, i);
       f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, std::string_view{field_value});
@@ -1891,7 +1891,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     for (i = 0; i < ntests; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-      MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+      MIMEField *f = hdr.field_create(field_name);
       REQUIRE(f->m_ptr_value == nullptr);
 
       hdr.field_attach(f);
@@ -1983,7 +1983,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     for (i = 0; i < ntests; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-      MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+      MIMEField *f = hdr.field_create(field_name);
       hdr.field_value_set(f, tests[i].old_raw, strlen(tests[i].old_raw));
       mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, tests[i].slice, strlen(tests[i].slice));
       REQUIRE(f->m_ptr_value != nullptr);

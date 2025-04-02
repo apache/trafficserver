@@ -36,7 +36,7 @@ constexpr bool IS_VALID_HEADER = true;
 void
 add_field_value_to_hdr(HTTPHdr &hdr, std::string_view field_name, std::string_view field_value)
 {
-  MIMEField *new_field = hdr.field_create(field_name.data(), field_name.size());
+  MIMEField *new_field = hdr.field_create(field_name);
   new_field->value_set(hdr.m_heap, hdr.m_mime, field_value);
   hdr.field_attach(new_field);
 }

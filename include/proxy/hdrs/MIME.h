@@ -24,6 +24,7 @@
 #pragma once
 
 #include <sys/time.h>
+#include <optional>
 #include <string_view>
 #include <string>
 
@@ -1117,7 +1118,7 @@ public:
   void fields_clear();
   int  fields_count() const;
 
-  MIMEField       *field_create(const char *name = nullptr, int length = -1);
+  MIMEField       *field_create(std::optional<std::string_view> name = std::nullopt);
   MIMEField       *field_find(const char *name, int length);
   const MIMEField *field_find(const char *name, int length) const;
   void             field_attach(MIMEField *field);
@@ -1293,13 +1294,14 @@ MIMEHdr::fields_count() const
   -------------------------------------------------------------------------*/
 
 inline MIMEField *
-MIMEHdr::field_create(const char *name, int length)
+MIMEHdr::field_create(std::optional<std::string_view> name)
 {
   MIMEField *field = mime_field_create(m_heap, m_mime);
 
   if (name) {
-    int field_name_wks_idx = hdrtoken_tokenize(name, length);
-    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name, length, true);
+    auto length{static_cast<int>(name.value().length())};
+    int  field_name_wks_idx = hdrtoken_tokenize(name.value().data(), length);
+    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name.value().data(), length, true);
   }
 
   return field;
@@ -1645,7 +1647,11 @@ MIMEHdr::value_append(const char *name, int name_length, const char *value, int 
     field->value_append(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)},
                         prepend_comma, separator);
   } else {
-    field = field_create(name, name_length);
+    field = field_create(name ?
+                           std::optional<std::string_view>{
+                             std::string_view{name, static_cast<std::string_view::size_type>(name_length)}
+    } :
+                           std::nullopt);
     field_attach(field);
     field->value_set(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
   }

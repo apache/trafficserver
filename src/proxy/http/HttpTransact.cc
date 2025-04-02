@@ -1464,7 +1464,9 @@ HttpTransact::ModifyRequest(State *s)
 
     // No host_field means not equal to host and will need to be set, so create it now.
     if (!host_field) {
-      host_field = request.field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
+      host_field = request.field_create(std::optional<std::string_view>{
+        std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)}
+      });
       request.field_attach(host_field);
     }
 
@@ -3159,7 +3161,10 @@ HttpTransact::handle_cache_write_lock(State *s)
       HTTPHdr   *header;
       header = &(s->hdr_info.client_response);
       if ((ats_field = header->field_find(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) == nullptr) {
-        if (likely((ats_field = header->field_create(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) != nullptr)) {
+        if (likely((ats_field = header->field_create(std::optional<std::string_view>{
+                      std::string_view{MIME_FIELD_ATS_INTERNAL,
+                                       static_cast<std::string_view::size_type>(MIME_LEN_ATS_INTERNAL)}
+        })) != nullptr)) {
           header->field_attach(ats_field);
         }
       }
@@ -4613,7 +4618,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       MIMEField                                       *our_via;
       our_via = s->hdr_info.client_response.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
       if (our_via == nullptr) {
-        our_via = s->hdr_info.client_response.field_create(MIME_FIELD_VIA, MIME_LEN_VIA);
+        our_via = s->hdr_info.client_response.field_create(std::optional<std::string_view>{
+          std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)}
+        });
         s->hdr_info.client_response.field_attach(our_via);
       } else {
         auto src{our_via->value_get()};
@@ -5059,7 +5066,7 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     if (dups_seen == false) {
       cached_header->value_set(name.data(), name.length(), value.data(), value.length());
     } else {
-      new_field = cached_header->field_create(name.data(), name.length());
+      new_field = cached_header->field_create(name);
       cached_header->field_attach(new_field);
       cached_header->field_value_set(new_field, value.data(), value.length());
     }
@@ -5134,7 +5141,9 @@ HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_hea
     if (new_cwarn) {
       cached_header->field_value_append(new_cwarn, move_warn_sv.data(), move_warn_sv.length(), true);
     } else {
-      new_cwarn = cached_header->field_create(MIME_FIELD_WARNING, MIME_LEN_WARNING);
+      new_cwarn = cached_header->field_create(std::optional<std::string_view>{
+        std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)}
+      });
       cached_header->field_attach(new_cwarn);
       cached_header->field_value_set(new_cwarn, move_warn_sv.data(), move_warn_sv.length());
     }
@@ -8916,7 +8925,9 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
       header->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     }
 
-    field = header->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    field = header->field_create(std::optional<std::string_view>{
+      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)}
+    });
     field->value_append(header->m_heap, header->m_mime, range_type, sizeof(range_type) - 1);
 
     header->field_attach(field);
@@ -8931,7 +8942,9 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
       // TODO: Also, it's unclear as to why object_read->valid() is not always true here.
       char numbers[RANGE_NUMBERS_LENGTH];
       header->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-      field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+      field = header->field_create(std::optional<std::string_view>{
+        std::string_view{MIME_FIELD_CONTENT_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_RANGE)}
+      });
       snprintf(numbers, sizeof(numbers), "bytes %" PRId64 "-%" PRId64 "/%" PRId64, s->ranges[0]._start, s->ranges[0]._end,
                s->cache_info.object_read->object_size_get());
       field->value_set(header->m_heap, header->m_mime, std::string_view{numbers});
