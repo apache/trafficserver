@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-#define CONVENIENT_APIS 1
+#define CRIPT_CONVENIENCE_APIS 1
 
 // The primary include file, this has to always be included
 #include <cripts/Preamble.hpp>
@@ -80,7 +80,7 @@ do_send_response()
   client.response["Server"]         = "";        // Deletes the Server header
   client.response["X-AMC"]          = msg;       // New header
   client.response["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
-  client.response["X-UUID"]         = UniqueUUID;
+  client.response["X-UUID"]         = UniqueUUID();
   client.response["X-tcpinfo"]      = client.connection.tcpinfo.Log();
   client.response["X-Cache-Status"] = client.response.cache;
   client.response["X-Integer"]      = 666;

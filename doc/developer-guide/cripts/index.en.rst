@@ -35,4 +35,5 @@ Cripts
    cripts-crypto.en
    cripts-misc.en
    cripts-bundles.en
+   cripts-convenience.en
    cripts-examples.en

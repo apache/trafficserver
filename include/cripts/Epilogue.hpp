@@ -441,7 +441,9 @@ http_txn_cont(TSCont contp, TSEvent event, void *edata)
       }
       CDebug("Entering glb_read_request()");
       wrap_glb_read_request(context, true, CaseArg);
-      cripts::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+      if (context->_urls.request.Modified()) {
+        context->_urls.request._update(); // Make sure any changes to the request URL is updated
+      }
     }
     break;
 
@@ -464,7 +466,9 @@ http_txn_cont(TSCont contp, TSEvent event, void *edata)
         CDebug("Entering glb_send_request()");
         wrap_glb_send_request(context, true, CaseArg);
       }
-      cripts::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+      if (context->_urls.request.Modified()) {
+        context->_urls.request._update(); // Make sure any changes to the request URL is updated
+      }
     }
     break;
 
@@ -577,8 +581,12 @@ http_txn_cont(TSCont contp, TSEvent event, void *edata)
     }
 
     if (!context->state.error.Failed()) {
-      cripts::Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
-      cripts::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+      if (context->_urls.cache.Modified()) {
+        context->_urls.cache._update(); // Make sure the cache-key gets updated, if modified
+      }
+      if (context->_urls.request.Modified()) {
+        context->_urls.request._update(); // Make sure any changes to the request URL is updated
+      }
     }
     break;
 
@@ -604,8 +612,12 @@ http_txn_cont(TSCont contp, TSEvent event, void *edata)
     }
 
     if (!context->state.error.Failed()) {
-      cripts::Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
-      cripts::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+      if (context->_urls.cache.Modified()) {
+        context->_urls.cache._update(); // Make sure the cache-key gets updated, if modified
+      }
+      if (context->_urls.request.Modified()) {
+        context->_urls.request._update(); // Make sure any changes to the request URL is updated
+      }
     }
     break;
 
@@ -887,8 +899,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   // Don't do the callbacks when we are in a failure state.
   if (!context->state.error.Failed()) {
-    cripts::Cache::URL::_get(context).Update();  // Make sure the cache-key gets updated, if modified
-    cripts::Client::URL::_get(context).Update(); // Make sure any changes to the request URL is updated
+    if (context->_urls.cache.Modified()) {
+      context->_urls.cache._update(); // Make sure the cache-key gets updated, if modified
+    }
+    if (context->_urls.request.Modified()) {
+      context->_urls.request._update(); // Make sure any changes to the request URL is updated
+    }
 
     if (context->state.enabled_hooks >= cripts::Callbacks::DO_POST_REMAP) {
       context->contp = TSContCreate(http_txn_cont, nullptr);
@@ -935,7 +951,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   // See if the Client URL was modified, which dicates the return code here.
-  if (cripts::Client::URL::_get(context).Modified()) {
+  if (context->_urls.request.Modified()) {
     context->p_instance.debug("Client::URL was modified, returning TSREMAP_DID_REMAP");
     return TSREMAP_DID_REMAP;
   } else {

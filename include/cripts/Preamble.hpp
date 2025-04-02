@@ -110,14 +110,15 @@ extern cripts::Versions version; // Access to the ATS version information
 
 // These are not enabled by default, since they adds additional overhead
 // and pollution of the top level namespace.
-#if CONVENIENT_APIS
+#if CRIPT_CONVENIENCE_APIS
 #define client                      context->_client
 #define server                      context->_server
+#define urls                        context->_urls
 #define Regex(_name_, ...)          static cripts::Matcher::PCRE _name_(__VA_ARGS__);
 #define ACL(_name_, ...)            static cripts::Matcher::Range::IP _name_(__VA_ARGS__);
 #define CreateCounter(_id_, _name_) instance.metrics[_id_] = cripts::Metrics::Counter::Create(_name_);
 #define CreateGauge(_id_, _name_)   instance.metrics[_id_] = cripts::Metrics::Gauge::Create(_name_);
 #define FilePath(_name_, _path_)    static const cripts::File::Path _name_(_path_);
-#define UniqueUUID                  cripts::UUID::Unique::Get();
+#define UniqueUUID()                cripts::UUID::Unique::Get();
 #define TimeNow()                   cripts::Time::Local::Now();
 #endif

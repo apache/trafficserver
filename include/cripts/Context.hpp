@@ -44,7 +44,7 @@ public:
 
   // This will, and should, only be called via the ProxyAllocator as used in the factory.
   Context(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, cripts::Instance &inst)
-    : rri(rri_ptr), p_instance(inst), _client(this), _server(this)
+    : rri(rri_ptr), p_instance(inst), _client(this), _server(this), _urls(this)
   {
     state.txnp    = txn_ptr;
     state.ssnp    = ssn_ptr;
@@ -110,8 +110,8 @@ public:
 
   } _server;
 
-  struct {
-    cripts::Client::URL   client;
+  struct _UrlBlock {
+    cripts::Client::URL   request;
     cripts::Pristine::URL pristine;
     cripts::Cache::URL    cache;
     cripts::Parent::URL   parent;
@@ -120,6 +120,16 @@ public:
       cripts::Remap::From::URL from;
       cripts::Remap::To::URL   to;
     } remap;
+
+    _UrlBlock(Context *ctx)
+    {
+      request.set_context(ctx);
+      pristine.set_context(ctx);
+      cache.set_context(ctx);
+      parent.set_context(ctx);
+      remap.from.set_context(ctx);
+      remap.to.set_context(ctx);
+    }
 
   } _urls;
 }; // End class Context

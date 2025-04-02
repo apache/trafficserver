@@ -36,6 +36,7 @@ Url::Scheme::GetSV()
     const char *value = nullptr;
     int         len   = 0;
 
+    _ensure_initialized(_owner);
     value = TSUrlSchemeGet(_owner->_bufp, _owner->_urlp, &len);
     _data = cripts::string_view(value, len);
   }
@@ -47,6 +48,7 @@ Url::Scheme
 Url::Scheme::operator=(cripts::string_view scheme)
 {
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
+  _ensure_initialized(_owner);
   TSUrlSchemeSet(_owner->_bufp, _owner->_urlp, scheme.data(), scheme.size());
   _owner->_modified = true;
   Reset();
@@ -62,6 +64,7 @@ Url::Host::GetSV()
     const char *value = nullptr;
     int         len   = 0;
 
+    _ensure_initialized(_owner);
     value   = TSUrlHostGet(_owner->_bufp, _owner->_urlp, &len);
     _data   = cripts::string_view(value, len);
     _loaded = true;
@@ -73,6 +76,7 @@ Url::Host::GetSV()
 Url::Host
 Url::Host::operator=(cripts::string_view host)
 {
+  _ensure_initialized(_owner);
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHostSet(_owner->_bufp, _owner->_urlp, host.data(), host.size());
   _owner->_modified = true;
@@ -84,6 +88,7 @@ Url::Host::operator=(cripts::string_view host)
 
 Url::Port::operator integer() // This should not be explicit
 {
+  _ensure_initialized(_owner);
   if (_owner && _port < 0) {
     _port = TSUrlPortGet(_owner->_bufp, _owner->_urlp);
   }
@@ -94,6 +99,7 @@ Url::Port::operator integer() // This should not be explicit
 Url::Port
 Url::Port::operator=(int port)
 {
+  _ensure_initialized(_owner);
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlPortSet(_owner->_bufp, _owner->_urlp, port);
   _owner->_modified = true;
@@ -120,6 +126,7 @@ Url::Path::GetSV()
     const char *value = nullptr;
     int         len   = 0;
 
+    _ensure_initialized(_owner);
     value   = TSUrlPathGet(_owner->_bufp, _owner->_urlp, &len);
     _data   = cripts::string_view(value, len);
     _size   = len;
@@ -134,6 +141,7 @@ Url::Path::operator[](Segments::size_type ix)
 {
   Url::Path::String ret;
 
+  _ensure_initialized(_owner);
   _parser(); // Make sure the segments are loaded
   if (ix < _segments.size()) {
     ret._initialize(_segments[ix], this, ix);
@@ -145,6 +153,7 @@ Url::Path::operator[](Segments::size_type ix)
 Url::Path
 Url::Path::operator=(cripts::string_view path)
 {
+  _ensure_initialized(_owner);
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlPathSet(_owner->_bufp, _owner->_urlp, path.data(), path.size());
   _owner->_modified = true;
@@ -171,6 +180,7 @@ Url::Path::operator+=(cripts::string_view add)
 Url::Path::String &
 Url::Path::String::operator=(const cripts::string_view str)
 {
+  _ensure_initialized(_owner->_owner);
   CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
   _owner->_size          -= _owner->_segments[_ix].size();
   _owner->_segments[_ix]  = str;
@@ -218,6 +228,7 @@ Url::Path::_parser()
 Url::Query::Parameter &
 Url::Query::Parameter::operator=(const cripts::string_view str)
 {
+  _ensure_initialized(_owner->_owner);
   CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
   auto iter = _owner->_hashed.find(_name);
 
@@ -235,6 +246,7 @@ Url::Query::Parameter::operator=(const cripts::string_view str)
 cripts::string_view
 Url::Query::GetSV()
 {
+  _ensure_initialized(_owner);
   if (_ordered.size() > 0) {
     _storage.clear();
     _storage.reserve(_size);
@@ -278,6 +290,7 @@ Url::Query::GetSV()
 Url::Query
 Url::Query::operator=(cripts::string_view query)
 {
+  _ensure_initialized(_owner);
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
   _owner->_modified = true;
@@ -305,6 +318,7 @@ Url::Query::Parameter
 Url::Query::operator[](cripts::string_view param)
 {
   // Make sure the hash and vector are populated
+  _ensure_initialized(_owner);
   _parser();
 
   Parameter ret;
@@ -406,18 +420,18 @@ Url::Query::_parser()
 }
 
 cripts::string
-Url::String() const
+Url::String()
 {
   cripts::string ret;
 
-  if (_state) {
-    int   full_len = 0;
-    char *full_str = TSUrlStringGet(_bufp, _urlp, &full_len);
+  CAssert(_context);
+  _ensure_initialized(this);
+  int   full_len = 0;
+  char *full_str = TSUrlStringGet(_bufp, _urlp, &full_len);
 
-    if (full_str) {
-      ret.assign(full_str, full_len);
-      TSfree(static_cast<void *>(full_str));
-    }
+  if (full_str) {
+    ret.assign(full_str, full_len);
+    TSfree(static_cast<void *>(full_str));
   }
 
   return ret;
@@ -426,29 +440,31 @@ Url::String() const
 Pristine::URL &
 Pristine::URL::_get(cripts::Context *context)
 {
-  if (!context->_urls.pristine.Initialized()) {
-    Pristine::URL *url = &context->_urls.pristine;
-
-    TSAssert(context->state.txnp);
-    if (TSHttpTxnPristineUrlGet(context->state.txnp, &url->_bufp, &url->_urlp) != TS_SUCCESS) {
-      context->state.error.Fail();
-    } else {
-      url->_initialize(&context->state);
-    }
-  }
-
+  _ensure_initialized(&context->_urls.pristine);
   return context->_urls.pristine;
+}
+
+void
+Pristine::URL::_initialize(cripts::Context *context)
+{
+  Pristine::URL *url = &context->_urls.pristine;
+
+  TSAssert(context->state.txnp);
+  if (TSHttpTxnPristineUrlGet(context->state.txnp, &url->_bufp, &url->_urlp) != TS_SUCCESS) {
+    context->state.error.Fail();
+  } else {
+    super_type::_initialize(context); // Only if successful
+  }
 }
 
 void
 Client::URL::_initialize(cripts::Context *context)
 {
-  Url::_initialize(&context->state);
-
   if (context->rri) {
     _bufp    = context->rri->requestBufp;
     _hdr_loc = context->rri->requestHdrp;
     _urlp    = context->rri->requestUrl;
+    super_type::_initialize(context);
   } else {
     Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
 
@@ -457,6 +473,8 @@ Client::URL::_initialize(cripts::Context *context)
 
     if (TSHttpHdrUrlGet(_bufp, _hdr_loc, &_urlp) != TS_SUCCESS) {
       context->state.error.Fail();
+    } else {
+      super_type::_initialize(context);
     }
   }
 }
@@ -464,16 +482,14 @@ Client::URL::_initialize(cripts::Context *context)
 Client::URL &
 Client::URL::_get(cripts::Context *context)
 {
-  if (!context->_urls.client.Initialized()) {
-    context->_urls.client._initialize(context);
-  }
-
-  return context->_urls.client;
+  _ensure_initialized(&context->_urls.request);
+  return context->_urls.request;
 }
 
 bool
-Client::URL::_update(cripts::Context * /* context ATS_UNUSED */)
+Client::URL::_update()
 {
+  _ensure_initialized(this);
   path.Flush();
   query.Flush();
 
@@ -483,8 +499,7 @@ Client::URL::_update(cripts::Context * /* context ATS_UNUSED */)
 void
 Remap::From::URL::_initialize(cripts::Context *context)
 {
-  Url::_initialize(&context->state);
-
+  super_type::_initialize(context);
   _bufp    = context->rri->requestBufp;
   _hdr_loc = context->rri->requestHdrp;
   _urlp    = context->rri->mapFromUrl;
@@ -493,17 +508,14 @@ Remap::From::URL::_initialize(cripts::Context *context)
 Remap::From::URL &
 Remap::From::URL::_get(cripts::Context *context)
 {
-  if (!context->_urls.remap.from.Initialized()) {
-    context->_urls.remap.from._initialize(context);
-  }
-
+  _ensure_initialized(&context->_urls.remap.from);
   return context->_urls.remap.from;
 }
 
 void
 Remap::To::URL::_initialize(cripts::Context *context)
 {
-  Url::_initialize(&context->state);
+  super_type::_initialize(context);
 
   _bufp    = context->rri->requestBufp;
   _hdr_loc = context->rri->requestHdrp;
@@ -513,70 +525,78 @@ Remap::To::URL::_initialize(cripts::Context *context)
 Remap::To::URL &
 Remap::To::URL::_get(cripts::Context *context)
 {
-  if (!context->_urls.remap.to.Initialized()) {
-    context->_urls.remap.to._initialize(context);
-  }
+  _ensure_initialized(&context->_urls.remap.to);
   return context->_urls.remap.to;
 }
 
 Cache::URL &
 Cache::URL::_get(cripts::Context *context)
 {
-  if (!context->_urls.cache.Initialized()) {
-    Cache::URL      *url = &context->_urls.cache;
-    Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
+  _ensure_initialized(&context->_urls.cache);
+  return context->_urls.cache;
+}
 
-    switch (context->state.hook) {
-    // In these hooks, the internal cache-url has been properly set
-    case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
-    case TS_HTTP_READ_RESPONSE_HDR_HOOK:
-    case TS_HTTP_SEND_REQUEST_HDR_HOOK:
-    case TS_HTTP_TXN_CLOSE_HOOK:
-      if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
-        TSAssert(context->state.txnp);
-        if (TSHttpTxnCacheLookupUrlGet(context->state.txnp, req.BufP(), url->_urlp) == TS_SUCCESS) {
-          url->_initialize(&context->state, &req);
-        }
-      } else {
-        context->state.error.Fail();
-      }
-      break;
-    default: { // This means we have to clone. ToDo: For now, this is implicitly using Client::URL
-      Client::URL &src = Client::URL::_get(context);
+void
+Cache::URL::_initialize(cripts::Context *context)
+{
+  Cache::URL      *url = &context->_urls.cache;
+  Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
 
-      if (TSUrlClone(req.BufP(), req.BufP(), src.UrlP(), &url->_urlp) == TS_SUCCESS) {
-        url->_initialize(&context->state, &req);
-      } else {
+  switch (context->state.hook) {
+  // In these hooks, the internal cache-url has been properly set
+  case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
+  case TS_HTTP_READ_RESPONSE_HDR_HOOK:
+  case TS_HTTP_SEND_REQUEST_HDR_HOOK:
+  case TS_HTTP_TXN_CLOSE_HOOK:
+    if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
+      TSAssert(context->state.txnp);
+      if (TSHttpTxnCacheLookupUrlGet(context->state.txnp, req.BufP(), url->_urlp) != TS_SUCCESS) {
         context->state.error.Fail();
+        return;
       }
-    } break;
+    } else {
+      context->state.error.Fail();
+      return;
     }
+    break;
+  default: { // This means we have to clone. ToDo: For now, this is implicitly using Client::URL
+    Client::URL &src = Client::URL::_get(context);
+
+    if (TSUrlClone(req.BufP(), req.BufP(), src.UrlP(), &url->_urlp) != TS_SUCCESS) {
+      context->state.error.Fail();
+      return;
+    }
+  } break;
   }
 
-  return context->_urls.cache;
+  // Only if we succeeded above
+  super_type::_initialize(context);
+  _bufp    = req.BufP();
+  _hdr_loc = req.MLoc();
 }
 
 // This has to be implemented here, since the cripts::Context is not complete yet
 bool
-Cache::URL::_update(cripts::Context *context)
+Cache::URL::_update()
 {
   // For correctness, we will also make sure the Path and Query objects are flushed
   path.Flush();
   query.Flush();
 
   if (_modified) {
-    TSAssert(context->state.txnp);
+    _ensure_initialized(&_context->_urls.cache);
+    TSAssert(_context->state.txnp);
     _modified = false;
-    if (TS_SUCCESS == TSHttpTxnCacheLookupUrlSet(context->state.txnp, _bufp, _urlp)) {
-      if (context->p_instance.DebugOn()) {
-        context->p_instance.debug("Successfully setting cache-key to {}", String());
+    if (TS_SUCCESS == TSHttpTxnCacheLookupUrlSet(_context->state.txnp, _bufp, _urlp)) {
+      if (_context->p_instance.DebugOn()) {
+        _context->p_instance.debug("Successfully setting cache-key to {}", String());
       }
       return true;
     } else {
-      if (context->p_instance.DebugOn()) {
-        context->p_instance.debug("Could not set the cache key to {}", String());
+      if (_context->p_instance.DebugOn()) {
+        _context->p_instance.debug("Could not set the cache key to {}", String());
       }
-      context->state.error.Fail();
+      _context->state.error.Fail();
       return false;
     }
   }
@@ -588,21 +608,31 @@ Cache::URL::_update(cripts::Context *context)
 Parent::URL &
 Parent::URL::_get(cripts::Context *context)
 {
-  if (!context->_urls.cache.Initialized()) {
-    Parent::URL     *url = &context->_urls.parent;
-    Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
+  _ensure_initialized(&context->_urls.parent);
+  return context->_urls.parent;
+}
 
-    if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
-      TSAssert(context->state.txnp);
-      if (TSHttpTxnParentSelectionUrlGet(context->state.txnp, req.BufP(), url->_urlp) == TS_SUCCESS) {
-        url->_initialize(&context->state, &req);
-      }
-    } else {
+void
+Parent::URL::_initialize(cripts::Context *context)
+{
+  Parent::URL     *url = &context->_urls.parent;
+  Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
+
+  if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
+    TSAssert(context->state.txnp);
+    if (TSHttpTxnParentSelectionUrlGet(context->state.txnp, req.BufP(), url->_urlp) != TS_SUCCESS) {
       context->state.error.Fail();
+      return;
     }
+  } else {
+    context->state.error.Fail();
+    return;
   }
 
-  return context->_urls.parent;
+  // Only if successful above
+  super_type::_initialize(context);
+  _bufp    = req.BufP();
+  _hdr_loc = req.MLoc();
 }
 
 } // namespace cripts

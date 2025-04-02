@@ -33,6 +33,8 @@ class Context;
 
 class Url
 {
+  using self_type = Url;
+
   class Component
   {
     using self_type = Component;
@@ -537,13 +539,14 @@ public:
       query.Reset();
       path.Reset();
     }
-    _state = nullptr;
+    _initialized = false;
+    _modified    = false;
   }
 
   [[nodiscard]] bool
   Initialized() const
   {
-    return (_state != nullptr);
+    return _initialized;
   }
 
   [[nodiscard]] bool
@@ -564,8 +567,15 @@ public:
     return false;
   }
 
+  // Some of these URL objects needs the full Context, making life miserable.
+  void
+  set_context(cripts::Context *context)
+  {
+    _context = context;
+  }
+
   // This is the full string for a URL, which needs allocations.
-  [[nodiscard]] cripts::string String() const;
+  [[nodiscard]] cripts::string String();
 
   Scheme scheme;
   Host   host;
@@ -574,17 +584,29 @@ public:
   Query  query;
 
 protected:
-  void
-  _initialize(cripts::Transaction *state)
+  static void
+  _ensure_initialized(self_type *ptr)
   {
-    _state = state;
+    if (!ptr->Initialized()) [[unlikely]] {
+      ptr->_initialize(ptr->_context);
+    }
   }
 
-  TSMBuffer            _bufp     = nullptr; // These two gets setup via initializing, to appropriate headers
-  TSMLoc               _hdr_loc  = nullptr; // Do not release any of this within the URL classes!
-  TSMLoc               _urlp     = nullptr; // This is owned by us.
-  cripts::Transaction *_state    = nullptr; // Pointer into the owning Context's State
-  bool                 _modified = false;   // We have pending changes on the path/query components
+  virtual void
+  _initialize(cripts::Context *context)
+  {
+    CAssert(context == _context); // This is initialized in the Context
+    _initialized = true;
+    _modified    = false;
+  }
+
+  TSMBuffer            _bufp        = nullptr; // These two gets setup via initializing, to appropriate headers
+  TSMLoc               _hdr_loc     = nullptr; // Do not release any of this within the URL classes!
+  TSMLoc               _urlp        = nullptr; // This is owned by us.
+  cripts::Transaction *_state       = nullptr; // Pointer into the owning Context's State
+  cripts::Context     *_context     = nullptr; // Pointer to the owning Context
+  bool                 _modified    = false;   // We have pending changes on the path/query components
+  bool                 _initialized = false;   // Have we been initialized ?
 
 }; // End class Url
 
@@ -609,6 +631,9 @@ namespace Pristine
       return true;
     }
 
+  protected:
+    void _initialize(cripts::Context *context) override;
+
   }; // End class Pristine::URL
 
 } // namespace Pristine
@@ -632,10 +657,10 @@ namespace Client
     }
 
     static self_type &_get(cripts::Context *context);
-    bool              _update(cripts::Context *context);
+    bool              _update();
 
-  private:
-    void _initialize(cripts::Context *context);
+  protected:
+    void _initialize(cripts::Context *context) override;
 
   }; // End class Client::URL
 
@@ -668,10 +693,10 @@ namespace Remap
       }
 
       static self_type &_get(cripts::Context *context);
-      bool              _update(cripts::Context *context);
+      bool              Update();
 
     private:
-      void _initialize(cripts::Context *context);
+      void _initialize(cripts::Context *context) override;
 
     }; // End class Client::URL
 
@@ -702,10 +727,10 @@ namespace Remap
       }
 
       static self_type &_get(cripts::Context *context);
-      bool              _update(cripts::Context *context);
+      bool              Update();
 
     private:
-      void _initialize(cripts::Context *context);
+      void _initialize(cripts::Context *context) override;
 
     }; // End class Client::URL
 
@@ -726,17 +751,10 @@ namespace Cache
     void operator=(const self_type &) = delete;
 
     static self_type &_get(cripts::Context *context);
-    bool              _update(cripts::Context *context);
+    bool              _update();
 
-  private:
-    void
-    _initialize(cripts::Transaction *state, Client::Request *req)
-    {
-      Url::_initialize(state);
-
-      _bufp    = req->BufP();
-      _hdr_loc = req->MLoc();
-    }
+  protected:
+    void _initialize(cripts::Context *context) override;
 
   }; // End class Cache::URL
 
@@ -755,17 +773,10 @@ namespace Parent
     void operator=(const self_type &) = delete;
 
     static self_type &_get(cripts::Context *context);
-    bool              _update(cripts::Context *context);
+    bool              Update();
 
-  private:
-    void
-    _initialize(cripts::Transaction *state, Client::Request *req)
-    {
-      Url::_initialize(state);
-
-      _bufp    = req->BufP();
-      _hdr_loc = req->MLoc();
-    }
+  protected:
+    void _initialize(cripts::Context *context) override;
 
   }; // End class Cache::URL
 
@@ -776,6 +787,21 @@ namespace Parent
 // Formatters for {fmt}
 namespace fmt
 {
+template <std::derived_from<cripts::Url> T> struct formatter<T> {
+  constexpr auto
+  parse(format_parse_context &ctx) -> decltype(ctx.begin())
+  {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto
+  format(T &url, FormatContext &ctx) const -> decltype(ctx.out())
+  {
+    return fmt::format_to(ctx.out(), "{}", url.String());
+  }
+};
+
 template <> struct formatter<cripts::Url::Scheme> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
