@@ -445,36 +445,36 @@ Pristine::URL::_get(cripts::Context *context)
 }
 
 void
-Pristine::URL::_initialize(cripts::Context *context)
+Pristine::URL::_initialize()
 {
-  Pristine::URL *url = &context->_urls.pristine;
+  Pristine::URL *url = &_context->_urls.pristine;
 
-  TSAssert(context->state.txnp);
-  if (TSHttpTxnPristineUrlGet(context->state.txnp, &url->_bufp, &url->_urlp) != TS_SUCCESS) {
-    context->state.error.Fail();
+  TSAssert(_context->state.txnp);
+  if (TSHttpTxnPristineUrlGet(_context->state.txnp, &url->_bufp, &url->_urlp) != TS_SUCCESS) {
+    _context->state.error.Fail();
   } else {
-    super_type::_initialize(context); // Only if successful
+    super_type::_initialize(); // Only if successful
   }
 }
 
 void
-Client::URL::_initialize(cripts::Context *context)
+Client::URL::_initialize()
 {
-  if (context->rri) {
-    _bufp    = context->rri->requestBufp;
-    _hdr_loc = context->rri->requestHdrp;
-    _urlp    = context->rri->requestUrl;
-    super_type::_initialize(context);
+  if (_context->rri) {
+    _bufp    = _context->rri->requestBufp;
+    _hdr_loc = _context->rri->requestHdrp;
+    _urlp    = _context->rri->requestUrl;
+    super_type::_initialize();
   } else {
-    Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
+    Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
     _bufp    = req.BufP();
     _hdr_loc = req.MLoc();
 
     if (TSHttpHdrUrlGet(_bufp, _hdr_loc, &_urlp) != TS_SUCCESS) {
-      context->state.error.Fail();
+      _context->state.error.Fail();
     } else {
-      super_type::_initialize(context);
+      super_type::_initialize();
     }
   }
 }
@@ -497,12 +497,12 @@ Client::URL::_update()
 }
 
 void
-Remap::From::URL::_initialize(cripts::Context *context)
+Remap::From::URL::_initialize()
 {
-  super_type::_initialize(context);
-  _bufp    = context->rri->requestBufp;
-  _hdr_loc = context->rri->requestHdrp;
-  _urlp    = context->rri->mapFromUrl;
+  super_type::_initialize();
+  _bufp    = _context->rri->requestBufp;
+  _hdr_loc = _context->rri->requestHdrp;
+  _urlp    = _context->rri->mapFromUrl;
 }
 
 Remap::From::URL &
@@ -513,13 +513,13 @@ Remap::From::URL::_get(cripts::Context *context)
 }
 
 void
-Remap::To::URL::_initialize(cripts::Context *context)
+Remap::To::URL::_initialize()
 {
-  super_type::_initialize(context);
+  super_type::_initialize();
 
-  _bufp    = context->rri->requestBufp;
-  _hdr_loc = context->rri->requestHdrp;
-  _urlp    = context->rri->mapToUrl;
+  _bufp    = _context->rri->requestBufp;
+  _hdr_loc = _context->rri->requestHdrp;
+  _urlp    = _context->rri->mapToUrl;
 }
 
 Remap::To::URL &
@@ -537,40 +537,40 @@ Cache::URL::_get(cripts::Context *context)
 }
 
 void
-Cache::URL::_initialize(cripts::Context *context)
+Cache::URL::_initialize()
 {
-  Cache::URL      *url = &context->_urls.cache;
-  Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
+  Cache::URL      *url = &_context->_urls.cache;
+  Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
-  switch (context->state.hook) {
+  switch (_context->state.hook) {
   // In these hooks, the internal cache-url has been properly set
   case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
   case TS_HTTP_READ_RESPONSE_HDR_HOOK:
   case TS_HTTP_SEND_REQUEST_HDR_HOOK:
   case TS_HTTP_TXN_CLOSE_HOOK:
     if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
-      TSAssert(context->state.txnp);
-      if (TSHttpTxnCacheLookupUrlGet(context->state.txnp, req.BufP(), url->_urlp) != TS_SUCCESS) {
-        context->state.error.Fail();
+      TSAssert(_context->state.txnp);
+      if (TSHttpTxnCacheLookupUrlGet(_context->state.txnp, req.BufP(), url->_urlp) != TS_SUCCESS) {
+        _context->state.error.Fail();
         return;
       }
     } else {
-      context->state.error.Fail();
+      _context->state.error.Fail();
       return;
     }
     break;
   default: { // This means we have to clone. ToDo: For now, this is implicitly using Client::URL
-    Client::URL &src = Client::URL::_get(context);
+    Client::URL &src = Client::URL::_get(_context);
 
     if (TSUrlClone(req.BufP(), req.BufP(), src.UrlP(), &url->_urlp) != TS_SUCCESS) {
-      context->state.error.Fail();
+      _context->state.error.Fail();
       return;
     }
   } break;
   }
 
   // Only if we succeeded above
-  super_type::_initialize(context);
+  super_type::_initialize();
   _bufp    = req.BufP();
   _hdr_loc = req.MLoc();
 }
@@ -613,24 +613,24 @@ Parent::URL::_get(cripts::Context *context)
 }
 
 void
-Parent::URL::_initialize(cripts::Context *context)
+Parent::URL::_initialize()
 {
-  Parent::URL     *url = &context->_urls.parent;
-  Client::Request &req = Client::Request::_get(context); // Repurpose / create the shared request object
+  Parent::URL     *url = &_context->_urls.parent;
+  Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
   if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
-    TSAssert(context->state.txnp);
-    if (TSHttpTxnParentSelectionUrlGet(context->state.txnp, req.BufP(), url->_urlp) != TS_SUCCESS) {
-      context->state.error.Fail();
+    TSAssert(_context->state.txnp);
+    if (TSHttpTxnParentSelectionUrlGet(_context->state.txnp, req.BufP(), url->_urlp) != TS_SUCCESS) {
+      _context->state.error.Fail();
       return;
     }
   } else {
-    context->state.error.Fail();
+    _context->state.error.Fail();
     return;
   }
 
   // Only if successful above
-  super_type::_initialize(context);
+  super_type::_initialize();
   _bufp    = req.BufP();
   _hdr_loc = req.MLoc();
 }

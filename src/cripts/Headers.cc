@@ -277,15 +277,15 @@ Client::Request::_get(cripts::Context *context)
 }
 
 void
-Client::Request::_initialize(cripts::Transaction *state)
+Client::Request::_initialize()
 {
-  TSAssert(state->txnp);
+  TSAssert(_state->txnp);
   TSAssert(!Initialized());
 
-  if (TSHttpTxnClientReqGet(state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
-    state->error.Fail();
+  if (TSHttpTxnClientReqGet(_state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
+    _state->error.Fail();
   } else {
-    super_type::_initialize(state); // Don't initialize unless properly setup
+    super_type::_initialize(); // Don't initialize unless properly setup
   }
 }
 
@@ -342,19 +342,19 @@ Client::Response::_get(cripts::Context *context)
 }
 
 void
-Client::Response::_initialize(cripts::Transaction *state)
+Client::Response::_initialize()
 {
-  CAssert(state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
-  CAssert(state->hook != TS_HTTP_POST_REMAP_HOOK);
-  CAssert(state->hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  CAssert(_state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(_state->hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(_state->hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
 
-  TSAssert(state->txnp);
+  TSAssert(_state->txnp);
   TSAssert(!Initialized());
 
-  if (TSHttpTxnClientRespGet(state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
-    state->error.Fail();
+  if (TSHttpTxnClientRespGet(_state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
+    _state->error.Fail();
   } else {
-    super_type::_initialize(state); // Don't initialize unless properly setup
+    super_type::_initialize(); // Don't initialize unless properly setup
   }
 }
 
@@ -366,19 +366,19 @@ Server::Request::_get(cripts::Context *context)
 }
 
 void
-Server::Request::_initialize(cripts::Transaction *state)
+Server::Request::_initialize()
 {
-  CAssert(state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
-  CAssert(state->hook != TS_HTTP_POST_REMAP_HOOK);
-  CAssert(state->hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
-  CAssert(state->hook != TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  CAssert(_state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(_state->hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(_state->hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
+  CAssert(_state->hook != TS_HTTP_READ_RESPONSE_HDR_HOOK);
 
   if (!Initialized()) {
-    TSAssert(state->txnp);
-    if (TSHttpTxnServerReqGet(state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
-      state->error.Fail();
+    TSAssert(_state->txnp);
+    if (TSHttpTxnServerReqGet(_state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
+      _state->error.Fail();
     } else {
-      super_type::_initialize(state); // Don't initialize unless properly setup
+      super_type::_initialize(); // Don't initialize unless properly setup
     }
   }
 }
@@ -391,20 +391,20 @@ Server::Response::_get(cripts::Context *context)
 }
 
 void
-Server::Response::_initialize(cripts::Transaction *state)
+Server::Response::_initialize()
 {
-  CAssert(state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
-  CAssert(state->hook != TS_HTTP_POST_REMAP_HOOK);
-  CAssert(state->hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
-  CAssert(state->hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  CAssert(_state->hook != TS_HTTP_READ_REQUEST_HDR_HOOK);
+  CAssert(_state->hook != TS_HTTP_POST_REMAP_HOOK);
+  CAssert(_state->hook != TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
+  CAssert(_state->hook != TS_HTTP_SEND_REQUEST_HDR_HOOK);
 
-  TSAssert(state->txnp);
+  TSAssert(_state->txnp);
   TSAssert(!Initialized());
 
-  if (TSHttpTxnServerRespGet(state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
-    state->error.Fail();
+  if (TSHttpTxnServerRespGet(_state->txnp, &_bufp, &_hdr_loc) != TS_SUCCESS) {
+    _state->error.Fail();
   } else {
-    super_type::_initialize(state); // Don't initialize unless properly setup
+    super_type::_initialize(); // Don't initialize unless properly setup
   }
 }
 

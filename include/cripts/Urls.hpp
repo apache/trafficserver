@@ -588,14 +588,13 @@ protected:
   _ensure_initialized(self_type *ptr)
   {
     if (!ptr->Initialized()) [[unlikely]] {
-      ptr->_initialize(ptr->_context);
+      ptr->_initialize();
     }
   }
 
   virtual void
-  _initialize(cripts::Context *context)
+  _initialize()
   {
-    CAssert(context == _context); // This is initialized in the Context
     _initialized = true;
     _modified    = false;
   }
@@ -632,7 +631,7 @@ namespace Pristine
     }
 
   protected:
-    void _initialize(cripts::Context *context) override;
+    void _initialize() override;
 
   }; // End class Pristine::URL
 
@@ -660,7 +659,7 @@ namespace Client
     bool              _update();
 
   protected:
-    void _initialize(cripts::Context *context) override;
+    void _initialize() override;
 
   }; // End class Client::URL
 
@@ -696,7 +695,7 @@ namespace Remap
       bool              Update();
 
     private:
-      void _initialize(cripts::Context *context) override;
+      void _initialize() override;
 
     }; // End class Client::URL
 
@@ -730,7 +729,7 @@ namespace Remap
       bool              Update();
 
     private:
-      void _initialize(cripts::Context *context) override;
+      void _initialize() override;
 
     }; // End class Client::URL
 
@@ -754,7 +753,7 @@ namespace Cache
     bool              _update();
 
   protected:
-    void _initialize(cripts::Context *context) override;
+    void _initialize() override;
 
   }; // End class Cache::URL
 
@@ -776,7 +775,7 @@ namespace Parent
     bool              Update();
 
   protected:
-    void _initialize(cripts::Context *context) override;
+    void _initialize() override;
 
   }; // End class Cache::URL
 

@@ -403,15 +403,11 @@ protected:
   _ensure_initialized(self_type *ptr)
   {
     if (!ptr->Initialized()) [[unlikely]] {
-      ptr->_initialize(ptr->_state);
+      ptr->_initialize();
     }
   }
 
-  void virtual _initialize(cripts::Transaction *state)
-  {
-    CAssert(state == _state);
-    _initialized = true;
-  }
+  void virtual _initialize() { _initialized = true; }
 
   TSMBuffer            _bufp         = nullptr;
   TSMLoc               _hdr_loc      = nullptr;
@@ -459,7 +455,7 @@ namespace Client
 
     // Implemented later, because needs the context.
     static self_type &_get(cripts::Context *context);
-    void              _initialize(cripts::Transaction *state) override;
+    void              _initialize() override;
 
   }; // End class Client::Request
 
@@ -475,7 +471,7 @@ namespace Client
 
     // Implemented later, because needs the context.
     static self_type &_get(cripts::Context *context);
-    void              _initialize(cripts::Transaction *state) override;
+    void              _initialize() override;
 
   }; // End class Client::Response
 
@@ -495,7 +491,7 @@ namespace Server
 
     // Implemented later, because needs the context.
     static self_type &_get(cripts::Context *context);
-    void              _initialize(cripts::Transaction *state) override;
+    void              _initialize() override;
 
   }; // End class Server::Request
 
@@ -511,7 +507,7 @@ namespace Server
 
     // Implemented later, because needs the context.
     static self_type &_get(cripts::Context *context);
-    void              _initialize(cripts::Transaction *state) override;
+    void              _initialize() override;
 
   }; // End class Server::Response
 

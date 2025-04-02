@@ -212,14 +212,14 @@ Client::Connection::_get(cripts::Context *context)
 }
 
 void
-Client::Connection::_initialize(cripts::Transaction *state)
+Client::Connection::_initialize()
 {
-  TSAssert(state->ssnp);
-  TSAssert(state->txnp);
+  TSAssert(_state->ssnp);
+  TSAssert(_state->txnp);
 
-  _vc     = TSHttpSsnClientVConnGet(state->ssnp);
-  _socket = TSHttpTxnClientAddrGet(state->txnp);
-  super_type::_initialize(state);
+  _vc     = TSHttpSsnClientVConnGet(_state->ssnp);
+  _socket = TSHttpTxnClientAddrGet(_state->txnp);
+  super_type::_initialize();
 }
 
 int
@@ -248,13 +248,13 @@ Server::Connection::_get(cripts::Context *context)
 }
 
 void
-Server::Connection::_initialize(cripts::Transaction *state)
+Server::Connection::_initialize()
 {
-  TSAssert(state->ssnp);
+  TSAssert(_state->ssnp);
 
-  _vc     = TSHttpSsnServerVConnGet(state->ssnp);
-  _socket = TSHttpTxnServerAddrGet(state->txnp);
-  super_type::_initialize(state);
+  _vc     = TSHttpSsnServerVConnGet(_state->ssnp);
+  _socket = TSHttpTxnServerAddrGet(_state->txnp);
+  super_type::_initialize();
 }
 
 int

@@ -361,15 +361,11 @@ protected:
   _ensure_initialized(self_type *ptr)
   {
     if (!ptr->Initialized()) [[unlikely]] {
-      ptr->_initialize(ptr->_state);
+      ptr->_initialize();
     }
   }
 
-  void virtual _initialize(cripts::Transaction *state)
-  {
-    CAssert(state == _state);
-    _initialized = true;
-  }
+  void virtual _initialize() { _initialized = true; }
 
   cripts::Transaction   *_state  = nullptr;
   struct sockaddr const *_socket = nullptr;
@@ -399,7 +395,7 @@ namespace Client
     [[nodiscard]] int  FD() const override;
     [[nodiscard]] int  Count() const override;
     static Connection &_get(cripts::Context *context);
-    void               _initialize(cripts::Transaction *state) override;
+    void               _initialize() override;
 
     void
     SetDscp(int val) const override
@@ -438,7 +434,7 @@ namespace Server
     [[nodiscard]] int  FD() const override;
     [[nodiscard]] int  Count() const override;
     static Connection &_get(cripts::Context *context);
-    void               _initialize(cripts::Transaction *state) override;
+    void               _initialize() override;
 
     void
     SetDscp(int val) const override
