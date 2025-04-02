@@ -24,6 +24,10 @@
 #pragma once
 
 #include <cassert>
+#include <string_view>
+
+using namespace std::literals;
+
 #include "tscore/Arena.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/HTTPVersion.h"
@@ -875,9 +879,9 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
   //    *unknown_tokens = false;
 
   if (con_hdr) {
-    if (con_hdr->value_get_index("keep-alive", 10) >= 0)
+    if (con_hdr->value_get_index("keep-alive"sv) >= 0)
       con_token = CON_TOKEN_KEEP_ALIVE;
-    else if (con_hdr->value_get_index("close", 5) >= 0)
+    else if (con_hdr->value_get_index("close"sv) >= 0)
       con_token = CON_TOKEN_CLOSE;
   }
 

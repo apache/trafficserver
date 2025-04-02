@@ -30,6 +30,8 @@
 #include <cstdio>
 #include <memory>
 
+using namespace std::literals;
+
 #include "tsutil/Regex.h"
 #include "tscore/ink_time.h"
 #include "tscore/Random.h"
@@ -1026,11 +1028,11 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     // TODO: Do we need to check the "count" returned?
     cc_field->value_get_comma_list(&slist); // FIX: correct usage?
 
-    if (cc_field->value_get_index("Private", 7) < 0) {
+    if (cc_field->value_get_index("Private"sv) < 0) {
       std::printf("Failed: value_get_index of Cache-Control did not find private");
       REQUIRE(false);
     }
-    if (cc_field->value_get_index("Bogus", 5) >= 0) {
+    if (cc_field->value_get_index("Bogus"sv) >= 0) {
       std::printf("Failed: value_get_index of Cache-Control incorrectly found bogus");
       REQUIRE(false);
     }

@@ -158,7 +158,7 @@ struct MIMEField {
 
      @return The index of @a value.
   */
-  int value_get_index(const char *value, int length) const;
+  int value_get_index(std::string_view value) const;
 
   /// @return The value of @a this field.
   std::string_view value_get() const;
@@ -1412,7 +1412,7 @@ MIMEHdr::value_get_index(const char *name, int name_length, const char *value, i
   const MIMEField *field = field_find(name, name_length);
 
   if (field) {
-    return field->value_get_index(value, value_length);
+    return field->value_get_index(std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
   }
   return -1;
 }
