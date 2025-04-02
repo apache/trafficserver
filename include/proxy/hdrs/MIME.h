@@ -167,7 +167,7 @@ struct MIMEField {
   time_t   value_get_date() const;
   int      value_get_comma_list(StrList *list) const;
 
-  void name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length);
+  void name_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name);
   bool name_is_valid(uint32_t invalid_char_bits = is_control_BIT) const;
 
   void value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length);
@@ -942,16 +942,17 @@ bool     mime_parse_integer(const char *&buf, const char *end, int *integer);
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length)
+MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name)
 {
   const char *name_wks;
 
-  if (hdrtoken_is_wks(name)) {
-    int16_t name_wks_idx = hdrtoken_wks_to_index(name);
-    mime_field_name_set(heap, mh, this, name_wks_idx, name, length, true);
+  if (hdrtoken_is_wks(name.data())) {
+    int16_t name_wks_idx = hdrtoken_wks_to_index(name.data());
+    mime_field_name_set(heap, mh, this, name_wks_idx, name.data(), static_cast<int>(name.length()), true);
   } else {
-    int field_name_wks_idx = hdrtoken_tokenize(name, length, &name_wks);
-    mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name : name_wks), length, true);
+    int field_name_wks_idx = hdrtoken_tokenize(name.data(), static_cast<int>(name.length()), &name_wks);
+    mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name.data() : name_wks),
+                        static_cast<int>(name.length()), true);
   }
 }
 

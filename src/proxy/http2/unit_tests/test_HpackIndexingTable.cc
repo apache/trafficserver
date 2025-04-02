@@ -25,6 +25,7 @@
  */
 
 #include <memory>
+#include <string_view>
 
 #include "catch.hpp"
 
@@ -349,7 +350,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
         }
 
         MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
-        field->name_set(headers->m_heap, headers->m_http->m_fields_impl, expected_name, strlen(expected_name));
+        field->name_set(headers->m_heap, headers->m_http->m_fields_impl, std::string_view{expected_name});
         field->value_set(headers->m_heap, headers->m_http->m_fields_impl, expected_value, strlen(expected_value));
         mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, nullptr);
       }

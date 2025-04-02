@@ -74,7 +74,7 @@ public:
   void
   name_set(const char *name, int name_len)
   {
-    _field->name_set(_heap, _mh, name, name_len);
+    _field->name_set(_heap, _mh, std::string_view{name, static_cast<std::string_view::size_type>(name_len)});
   }
 
   void

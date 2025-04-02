@@ -214,7 +214,8 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
         // of a request. We accomplish that by simply renaming the :authority
         // header as Host.
         header.field_detach(field);
-        field->name_set(header.m_heap, header.m_mime, MIME_FIELD_HOST, MIME_LEN_HOST);
+        field->name_set(header.m_heap, header.m_mime,
+                        std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
         header.field_attach(field);
       } else {
         // There already is a Host header field. Simply set the value of the Host
