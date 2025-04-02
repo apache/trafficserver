@@ -20,6 +20,7 @@
  */
 
 #include <string>
+#include <string_view>
 #include <cstring>
 #include <cctype>
 #include <bitset>
@@ -1671,7 +1672,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       MIMEField *f = resp_hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
       resp_hdr.field_attach(f);
       snprintf(field_value, sizeof(field_value), "d %d %d %d %d %d", i, i, i, i, i);
-      f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, field_value, static_cast<int>(strlen(field_value)));
+      f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, std::string_view{field_value});
     }
 
     /***** (5) append all fields with multiples of 5 ***/

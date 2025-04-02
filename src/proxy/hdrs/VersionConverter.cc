@@ -78,7 +78,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     int         value_len;
     const char *value = header.method_get(&value_len);
 
-    field->value_set(header.m_heap, header.m_mime, value, value_len);
+    field->value_set(header.m_heap, header.m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_len)});
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :method");
     return PARSE_RESULT_ERROR;
@@ -90,9 +90,10 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     const char *value = header.scheme_get(&value_len);
 
     if (value != nullptr) {
-      field->value_set(header.m_heap, header.m_mime, value, value_len);
+      field->value_set(header.m_heap, header.m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_len)});
     } else {
-      field->value_set(header.m_heap, header.m_mime, URL_SCHEME_HTTPS, URL_LEN_HTTPS);
+      field->value_set(header.m_heap, header.m_mime,
+                       std::string_view{URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)});
     }
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :scheme");
@@ -110,9 +111,10 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
       char                 *host_and_port = buf.data();
       value_len                           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
 
-      field->value_set(header.m_heap, header.m_mime, host_and_port, value_len);
+      field->value_set(header.m_heap, header.m_mime,
+                       std::string_view{host_and_port, static_cast<std::string_view::size_type>(value_len)});
     } else {
-      field->value_set(header.m_heap, header.m_mime, value, value_len);
+      field->value_set(header.m_heap, header.m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_len)});
     }
     // Remove the host header field, redundant to the authority field
     // For istio/envoy, having both was causing 404 responses
@@ -139,7 +141,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
       memcpy(path + path_len + 1, query, query_len);
       path_len += 1 + query_len;
     }
-    field->value_set(header.m_heap, header.m_mime, path, path_len);
+    field->value_set(header.m_heap, header.m_mime, std::string_view{path, static_cast<std::string_view::size_type>(path_len)});
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :path");
     return PARSE_RESULT_ERROR;
@@ -221,7 +223,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
         // There already is a Host header field. Simply set the value of the Host
         // field to the current value of :authority and delete the :authority
         // field.
-        host->value_set(header.m_heap, header.m_mime, authority.data(), authority.length());
+        host->value_set(header.m_heap, header.m_mime, authority);
         header.field_delete(field);
       }
     }
@@ -267,7 +269,8 @@ VersionConverter::_convert_res_from_1_to_2(HTTPHdr &header) const
     char status_str[STATUS_VALUE_LEN + 3];
     mime_format_int(status_str, header.status_get(), sizeof(status_str));
 
-    field->value_set(header.m_heap, header.m_mime, status_str, STATUS_VALUE_LEN);
+    field->value_set(header.m_heap, header.m_mime,
+                     std::string_view{status_str, static_cast<std::string_view::size_type>(STATUS_VALUE_LEN)});
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :status");
     return PARSE_RESULT_ERROR;

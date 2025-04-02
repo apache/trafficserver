@@ -27,6 +27,8 @@
 #include <string_view>
 #include <string>
 
+using namespace std::literals;
+
 #include "tscore/ink_assert.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_string++.h"
@@ -170,7 +172,7 @@ struct MIMEField {
   void name_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name);
   bool name_is_valid(uint32_t invalid_char_bits = is_control_BIT) const;
 
-  void value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length);
+  void value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value);
   void value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, int32_t value);
   void value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, uint32_t value);
   void value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, int64_t value);
@@ -1008,9 +1010,9 @@ MIMEField::value_get_comma_list(StrList *list) const
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length)
+MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value)
 {
-  mime_field_value_set(heap, mh, this, value, length, true);
+  mime_field_value_set(heap, mh, this, value.data(), static_cast<int>(value.length()), true);
 }
 
 inline void
@@ -1043,7 +1045,7 @@ MIMEField::value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, time_t value)
 inline void
 MIMEField::value_clear(HdrHeap *heap, MIMEHdrImpl *mh)
 {
-  value_set(heap, mh, "", 0);
+  value_set(heap, mh, ""sv);
 }
 
 /*-------------------------------------------------------------------------
@@ -1516,7 +1518,7 @@ inline void
 MIMEHdr::field_value_set(MIMEField *field, const char *value, int value_length, bool reuse_heaps)
 {
   if (!reuse_heaps || !field_value_replace(field, value, value_length)) {
-    field->value_set(m_heap, m_mime, value, value_length);
+    field->value_set(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
   }
 }
 
@@ -1592,7 +1594,7 @@ MIMEHdr::value_set(const char *name, int name_length, const char *value, int val
 {
   MIMEField *field;
   field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
-  field->value_set(m_heap, m_mime, value, value_length);
+  field->value_set(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
 }
 
 inline void
@@ -1644,7 +1646,7 @@ MIMEHdr::value_append(const char *name, int name_length, const char *value, int 
   } else {
     field = field_create(name, name_length);
     field_attach(field);
-    field->value_set(m_heap, m_mime, value, value_length);
+    field->value_set(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
   }
 }
 

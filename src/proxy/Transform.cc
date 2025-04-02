@@ -1098,7 +1098,7 @@ RangeTransform::change_response_header()
     m_transform_resp->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
     field = m_transform_resp->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
     snprintf(numbers, sizeof(numbers), "bytes %" PRId64 "-%" PRId64 "/%" PRId64, m_ranges[0]._start, m_ranges[0]._end, m_output_cl);
-    field->value_set(m_transform_resp->m_heap, m_transform_resp->m_mime, numbers, strlen(numbers));
+    field->value_set(m_transform_resp->m_heap, m_transform_resp->m_mime, std::string_view{numbers});
     m_transform_resp->field_attach(field);
   }
 }

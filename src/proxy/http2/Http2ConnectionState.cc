@@ -2543,7 +2543,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     MIMEField *f = hdr.field_create(name.data(), name.length());
 
     auto value{accept_encoding->value_get()};
-    f->value_set(hdr.m_heap, hdr.m_mime, value.data(), value.length());
+    f->value_set(hdr.m_heap, hdr.m_mime, value);
 
     hdr.field_attach(f);
   }

@@ -121,7 +121,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     MIMEField *host = hdr_2_with_host.field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
     hdr_2_with_host.field_attach(host);
     std::string_view host_value = "bogus.host.com";
-    host->value_set(hdr_2_with_host.m_heap, hdr_2_with_host.m_mime, host_value.data(), host_value.size());
+    host->value_set(hdr_2_with_host.m_heap, hdr_2_with_host.m_mime, host_value);
 
     http2_convert_header_from_2_to_1_1(&hdr_2_with_host);
 

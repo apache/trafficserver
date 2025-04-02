@@ -80,7 +80,7 @@ public:
   void
   value_set(const char *value, int value_len)
   {
-    _field->value_set(_heap, _mh, value, value_len);
+    _field->value_set(_heap, _mh, std::string_view{value, static_cast<std::string_view::size_type>(value_len)});
   }
 
   std::string_view

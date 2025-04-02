@@ -8934,7 +8934,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
       field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
       snprintf(numbers, sizeof(numbers), "bytes %" PRId64 "-%" PRId64 "/%" PRId64, s->ranges[0]._start, s->ranges[0]._end,
                s->cache_info.object_read->object_size_get());
-      field->value_set(header->m_heap, header->m_mime, numbers, strlen(numbers));
+      field->value_set(header->m_heap, header->m_mime, std::string_view{numbers});
       header->field_attach(field);
     }
     // Always update the Content-Length: header.
