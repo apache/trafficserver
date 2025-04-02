@@ -864,8 +864,8 @@ SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
       //
       char const *s{expected};
       for (; *s && (static_cast<std::size_t>(s - expected) < cert_secret_name.size()); ++s) {}
-      DbgPrint(dbg_ctl_ssl_config_updateCTX, "Update cert, indirect recusive call caused by call for %.*s", int(s - expected),
-               expected);
+      DbgPrint(dbg_ctl_ssl_config_updateCTX, "Update cert, indirect recusive call caused by call for %.*s",
+               static_cast<int>(s - expected), expected);
     }
     return;
   }

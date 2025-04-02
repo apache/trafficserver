@@ -1562,7 +1562,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   // Do we have an entry for this id?
   //
   if (!e || !e->written_flag) {
-    Dbg(dbg_ctl_dns, "unknown DNS id = %u", (uint16_t)ntohs(h->id));
+    Dbg(dbg_ctl_dns, "unknown DNS id = %u", static_cast<uint16_t>(ntohs(h->id)));
     return false; // cannot count this as a success
   }
   //

@@ -170,7 +170,7 @@ debug_certificate_name(const char *msg, X509_NAME *name)
     long  len;
     char *ptr;
     len = BIO_get_mem_data(bio, &ptr);
-    Dbg(dbg_ctl_ssl, "%s %.*s", msg, (int)len, ptr);
+    Dbg(dbg_ctl_ssl, "%s %.*s", msg, static_cast<int>(len), ptr);
   }
 
   BIO_free(bio);
