@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include <optional>
 #include <string_view>
 
 using namespace std::string_view_literals;

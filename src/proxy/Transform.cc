@@ -1089,18 +1089,16 @@ RangeTransform::change_response_header()
       m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     }
 
-    field = m_transform_resp->field_create(std::optional<std::string_view>{
-      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)}
-    });
+    field = m_transform_resp->field_create(
+      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
     field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, range_type, sizeof(range_type) - 1);
 
     m_transform_resp->field_attach(field);
   } else {
     char numbers[RANGE_NUMBERS_LENGTH];
     m_transform_resp->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    field = m_transform_resp->field_create(std::optional<std::string_view>{
-      std::string_view{MIME_FIELD_CONTENT_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_RANGE)}
-    });
+    field = m_transform_resp->field_create(
+      std::string_view{MIME_FIELD_CONTENT_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_RANGE)});
     snprintf(numbers, sizeof(numbers), "bytes %" PRId64 "-%" PRId64 "/%" PRId64, m_ranges[0]._start, m_ranges[0]._end, m_output_cl);
     field->value_set(m_transform_resp->m_heap, m_transform_resp->m_mime, std::string_view{numbers});
     m_transform_resp->field_attach(field);

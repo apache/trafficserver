@@ -155,9 +155,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
   // step 2: create Allow field if not present
   field = response->field_find(MIME_FIELD_ALLOW, MIME_LEN_ALLOW);
   if (!field) {
-    field = response->field_create(std::optional<std::string_view>{
-      std::string_view{MIME_FIELD_ALLOW, static_cast<std::string_view::size_type>(MIME_LEN_ALLOW)}
-    });
+    field = response->field_create(std::string_view{MIME_FIELD_ALLOW, static_cast<std::string_view::size_type>(MIME_LEN_ALLOW)});
     response->field_attach(field);
   }
   // step 3: get a big enough buffer
@@ -911,10 +909,8 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(const OverridableHt
     Dbg(dbg_ctl_http_trans, "Adding User-Agent: %.*s", static_cast<int>(http_txn_conf->global_user_agent_header_size),
         http_txn_conf->global_user_agent_header);
     if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == nullptr) {
-      if (likely((ua_field = header->field_create(std::optional<std::string_view>{
-                    std::string_view{MIME_FIELD_USER_AGENT, static_cast<std::string_view::size_type>(MIME_LEN_USER_AGENT)}
-      })) !=
-                 nullptr)) {
+      if (likely((ua_field = header->field_create(std::string_view{
+                    MIME_FIELD_USER_AGENT, static_cast<std::string_view::size_type>(MIME_LEN_USER_AGENT)})) != nullptr)) {
         header->field_attach(ua_field);
       }
     }
@@ -1121,9 +1117,8 @@ HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigPa
     bool       do_add = true;
 
     if ((ua_field = header->field_find(MIME_FIELD_SERVER, MIME_LEN_SERVER)) == nullptr) {
-      if (likely((ua_field = header->field_create(std::optional<std::string_view>{
-                    std::string_view{MIME_FIELD_SERVER, static_cast<std::string_view::size_type>(MIME_LEN_SERVER)}
-      })) != nullptr)) {
+      if (likely((ua_field = header->field_create(
+                    std::string_view{MIME_FIELD_SERVER, static_cast<std::string_view::size_type>(MIME_LEN_SERVER)})) != nullptr)) {
         header->field_attach(ua_field);
       }
     } else {
@@ -1257,9 +1252,8 @@ HttpTransactHeaders::add_connection_close(HTTPHdr *header)
 {
   MIMEField *field = header->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
   if (!field) {
-    field = header->field_create(std::optional<std::string_view>{
-      std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)}
-    });
+    field =
+      header->field_create(std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
     header->field_attach(field);
   }
   header->field_value_set(field, HTTP_VALUE_CLOSE, HTTP_LEN_CLOSE);

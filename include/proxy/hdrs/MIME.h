@@ -24,7 +24,6 @@
 #pragma once
 
 #include <sys/time.h>
-#include <optional>
 #include <string_view>
 #include <string>
 
@@ -1118,7 +1117,7 @@ public:
   void fields_clear();
   int  fields_count() const;
 
-  MIMEField       *field_create(std::optional<std::string_view> name = std::nullopt);
+  MIMEField       *field_create(std::string_view name = ""sv);
   MIMEField       *field_find(const char *name, int length);
   const MIMEField *field_find(const char *name, int length) const;
   void             field_attach(MIMEField *field);
@@ -1294,14 +1293,14 @@ MIMEHdr::fields_count() const
   -------------------------------------------------------------------------*/
 
 inline MIMEField *
-MIMEHdr::field_create(std::optional<std::string_view> name)
+MIMEHdr::field_create(std::string_view name)
 {
   MIMEField *field = mime_field_create(m_heap, m_mime);
 
-  if (name) {
-    auto length{static_cast<int>(name.value().length())};
-    int  field_name_wks_idx = hdrtoken_tokenize(name.value().data(), length);
-    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name.value().data(), length, true);
+  if (!name.empty()) {
+    auto length{static_cast<int>(name.length())};
+    int  field_name_wks_idx = hdrtoken_tokenize(name.data(), length);
+    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name.data(), length, true);
   }
 
   return field;
@@ -1648,10 +1647,9 @@ MIMEHdr::value_append(const char *name, int name_length, const char *value, int 
                         prepend_comma, separator);
   } else {
     field = field_create(name ?
-                           std::optional<std::string_view>{
-                             std::string_view{name, static_cast<std::string_view::size_type>(name_length)}
-    } :
-                           std::nullopt);
+
+                           std::string_view{name, static_cast<std::string_view::size_type>(name_length)} :
+                           ""sv);
     field_attach(field);
     field->value_set(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
   }
