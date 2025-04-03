@@ -869,7 +869,7 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
   memset(pargv, 0, sizeof(pargv));
   memset(new_argv, 0, sizeof(new_argv));
 
-  ink_assert((unsigned)argc < countof(new_argv));
+  ink_assert(static_cast<unsigned>(argc) < countof(new_argv));
 
   if (jump_to_argc != 0) {
     argc  -= jump_to_argc;
@@ -1341,7 +1341,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // the rest of the system assumes that trailing slashes have
     // been removed.
 
-    if (unlikely(fromHostLen >= (int)sizeof(fromHost_lower_buf))) {
+    if (unlikely(fromHostLen >= static_cast<int>(sizeof(fromHost_lower_buf)))) {
       fromHost_lower = (fromHost_lower_ptr = static_cast<char *>(ats_malloc(fromHostLen + 1)));
     } else {
       fromHost_lower = &fromHost_lower_buf[0];

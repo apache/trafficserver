@@ -641,7 +641,8 @@ dir_overwrite(const CacheKey *key, StripeSM *stripe, Dir *dir, Dir *overwrite, b
 #endif
   CHECK_DIR(d);
 
-  ink_assert((unsigned int)dir_approx_size(dir) <= (unsigned int)(MAX_FRAG_SIZE + sizeof(Doc))); // XXX - size should be unsigned
+  ink_assert(static_cast<unsigned int>(dir_approx_size(dir)) <=
+             static_cast<unsigned int>((MAX_FRAG_SIZE + sizeof(Doc)))); // XXX - size should be unsigned
 Lagain:
   // find entry to overwrite
   e = b;
