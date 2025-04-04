@@ -64,6 +64,7 @@ Object                        Traditional API equivalent
 ``client.request``            ``borrow cripts::Client::Request::Get()``
 ``client.response``           ``borrow cripts::Client::Response::Get()``
 ``client.connection``         ``borrow cripts::Client::Connection::Get()``
+``client.url``                ``borrow cripts::Client::URL::Get()``
 ``server.request``            ``borrow cripts::Server::Request::Get()``
 ``server.response``           ``borrow cripts::Server::Response::Get()``
 ``server.connection``         ``borrow cripts::Server::Connection::Get()``
@@ -99,8 +100,9 @@ example:
    }
 
 .. note::
-   The name for the classic client URL will change to ``cripts::Request::URL`` in
-   a future version of ATS, to be inline with these new convenience APIs.
+   Both ``client.url`` and `` urls.request`` refer to the same underlying object, which is
+   ``cripts::Client::URL``. This means that any changes made to ``urls.request``
+   will also be reflected in ``client.url`` and vice versa.
 
 .. _cripts-convenience-macros:
 
