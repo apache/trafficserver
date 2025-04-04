@@ -9,6 +9,8 @@
 
 #include <mutex>
 #include <memory>
+#include <stdexcept>
+#include <type_traits>
 #include <utility>
 #include <new>
 #if __has_include(<memory_resource>)
@@ -123,6 +125,24 @@ public:
 
   protected:
     friend MemArena; ///< Container.
+
+    /** A custom @c operator @c new.
+     *
+     * Compilers complain about mismatched std operator new and the custom
+     * operator delete unless this custom operator new is provided.
+     *
+     * @param block_size The implicit compiler-provided sizeof(Block), the object size.
+     * @param n The number of bytes the user is requesting for the backend storage of Block.
+     * @return Pointer to the allocated memory.
+     */
+    static void* operator new(size_t block_size, size_t n);
+
+    /** Override placement (non-allocated) @c new.
+     * @param block_size The implicit compiler-provided sizeof(Block), the object size. Not used.
+     * @param place Value passed to @c new.
+     * @return Pointer to the memory.
+     */
+    static void* operator new([[maybe_unused]] size_t block_size, void* place) noexcept;
 
     /** Override @c operator @c delete.
      *
@@ -639,6 +659,26 @@ inline MemArena::Block &
 MemArena::Block::discard() {
   allocated = 0;
   return *this;
+}
+
+inline void*
+MemArena::Block::operator new(size_t block_size, size_t n)
+{
+  if (n < block_size) {
+    throw std::invalid_argument("MemArena::Block::operator new size is less than object size.");
+  }
+  // In theory we could use ::operator new(n) but this causes a size mismatch during ::operator delete.
+  // Easier to use malloc here and also override @c delete.
+  auto b = static_cast<Block *>(::malloc(n));
+  if (b == nullptr) {
+    throw std::bad_alloc();
+  }
+  return b;
+}
+
+inline void*
+MemArena::Block::operator new([[maybe_unused]] size_t block_size, void* place) noexcept {
+  return place;
 }
 
 inline void
