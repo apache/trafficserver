@@ -245,7 +245,7 @@ public:
   void
   register_config_callback(ReplaceablePtr<CacheHostTable> *p)
   {
-    REC_RegisterConfigUpdateFunc("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
+    RecRegisterConfigUpdateCb("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
   }
 
   CacheType       type         = CACHE_HTTP_TYPE;

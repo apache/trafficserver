@@ -31,11 +31,10 @@
 #include "proxy/http/HttpTransact.h"
 
 #ifndef _NH_UNIT_TESTS_
-#define NH_Dbg(ctl, ...)   Dbg(ctl, __VA_ARGS__)
-#define NH_Error(...)      DiagsError(DL_Error, __VA_ARGS__)
-#define NH_Note(...)       DiagsError(DL_Note, __VA_ARGS__)
-#define NH_Warn(...)       DiagsError(DL_Warning, __VA_ARGS__)
-#define NH_GetConfig(v, n) REC_ReadConfigInteger(v, n)
+#define NH_Dbg(ctl, ...) Dbg(ctl, __VA_ARGS__)
+#define NH_Error(...)    DiagsError(DL_Error, __VA_ARGS__)
+#define NH_Note(...)     DiagsError(DL_Note, __VA_ARGS__)
+#define NH_Warn(...)     DiagsError(DL_Warning, __VA_ARGS__)
 #else
 #include "../../../../src/proxy/http/remap/unit-tests/nexthop_test_stubs.h"
 #endif /* _NH_UNIT_TESTS_ */
