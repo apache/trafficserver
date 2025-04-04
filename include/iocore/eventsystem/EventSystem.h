@@ -30,6 +30,7 @@
 #include "ts/apidefs.h"
 
 #include "iocore/eventsystem/IOBuffer.h"
+#include "iocore/eventsystem/PipeIOBuffer.h"
 #include "iocore/eventsystem/Action.h"
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/eventsystem/EThread.h"

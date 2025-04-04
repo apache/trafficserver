@@ -43,12 +43,15 @@
 #include "tscore/Ptr.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_resource.h"
+#include "Thread.h"
 
 struct MIOBufferAccessor;
 
 class MIOBuffer;
 class IOBufferReader;
 class VIO;
+
+extern ClassAllocator<MIOBuffer> ioAllocator;
 
 enum AllocType {
   NO_ALLOC,
@@ -627,7 +630,7 @@ public:
     @return pointer to the start of the unconsumed data.
 
   */
-  char *start();
+  virtual char *start();
 
   /**
     End of inuse area of the first block with unconsumed data. Returns a
@@ -638,7 +641,7 @@ public:
     @return pointer to the end of the first block with unconsumed data.
 
   */
-  char *end();
+  virtual char *end();
 
   /**
     Amount of data available across all of the IOBufferBlocks. Returns the
@@ -649,12 +652,12 @@ public:
     @return bytes of data available across all the buffers.
 
   */
-  int64_t read_avail();
+  virtual int64_t read_avail();
 
   /** Check if there is more than @a size bytes available to read.
       @return @c true if more than @a size byte are available.
   */
-  bool is_read_avail_more_than(int64_t size);
+  virtual bool is_read_avail_more_than(int64_t size);
 
   /**
     Number of IOBufferBlocks with data in the block list. Returns the
@@ -664,7 +667,7 @@ public:
     @return number of blocks with data for this reader.
 
   */
-  int block_count();
+  virtual int block_count();
 
   /**
     Amount of data available in the first buffer with data for this
@@ -675,15 +678,15 @@ public:
       buffer.
 
   */
-  int64_t block_read_avail();
+  virtual int64_t block_read_avail();
 
   /** Get a view of the data available to read.
    *
    * @return A view encompassing currently available readable data.
    */
-  std::string_view block_read_view();
+  virtual std::string_view block_read_view();
 
-  void skip_empty_blocks();
+  virtual void skip_empty_blocks();
 
   /**
     Clears all fields in this IOBuffeReader, rendering it unusable. Drops
@@ -692,7 +695,7 @@ public:
     to use this object again.
 
   */
-  void clear();
+  virtual void clear();
 
   /**
     Instruct the reader to reset the IOBufferBlock list. Resets the
@@ -701,7 +704,7 @@ public:
     and the list of IOBufferBlocks is set using the associated MIOBuffer.
 
   */
-  void reset();
+  virtual void reset();
 
   /**
     Consume a number of bytes from this reader's IOBufferBlock
@@ -712,7 +715,7 @@ public:
       to read_avail().
 
   */
-  void consume(int64_t n);
+  virtual void consume(int64_t n);
 
   /**
     Create another reader with access to the same data as this
@@ -723,7 +726,7 @@ public:
     @return new reader with the same state as this.
 
   */
-  IOBufferReader *clone();
+  virtual IOBufferReader *clone();
 
   /**
     Deallocate this reader. Removes and deallocates this reader from
@@ -731,7 +734,7 @@ public:
     used after this call.
 
   */
-  void dealloc();
+  virtual void dealloc();
 
   /**
     Get a pointer to the first block with data. Returns a pointer to
@@ -742,7 +745,7 @@ public:
       available for this reader.
 
   */
-  IOBufferBlock *get_current_block();
+  virtual IOBufferBlock *get_current_block();
 
   /**
     Consult this reader's MIOBuffer writable space. Queries the MIOBuffer
@@ -754,7 +757,7 @@ public:
       returns true in MIOBuffer::current_low_water().
 
   */
-  bool current_low_water();
+  virtual bool current_low_water();
 
   /**
     Queries the underlying MIOBuffer about. Returns true if the amount
@@ -766,7 +769,7 @@ public:
       this reader.
 
   */
-  bool low_water();
+  virtual bool low_water();
 
   /**
     To see if the amount of data available to the reader is greater than
@@ -777,7 +780,7 @@ public:
     @return true if the amount of data exceeds the MIOBuffer's water mark.
 
   */
-  bool high_water();
+  virtual bool high_water();
 
   /**
     Perform a memchr() across the list of IOBufferBlocks. Returns the
@@ -795,7 +798,7 @@ public:
       occurrence.
 
   */
-  int64_t memchr(char c, int64_t len = INT64_MAX, int64_t offset = 0);
+  virtual int64_t memchr(char c, int64_t len = INT64_MAX, int64_t offset = 0);
 
   /**
     Copies and consumes data. Copies len bytes of data from the buffer
@@ -811,7 +814,7 @@ public:
     @return number of bytes copied and consumed.
 
   */
-  int64_t read(void *buf, int64_t len);
+  virtual int64_t read(void *buf, int64_t len);
 
   /**
     Copy data but do not consume it. Copies 'len' bytes of data from
@@ -830,7 +833,7 @@ public:
       parameter buf is set to this value also.
 
   */
-  char *memcpy(void *buf, int64_t len = INT64_MAX, int64_t offset = 0);
+  virtual char *memcpy(void *buf, int64_t len = INT64_MAX, int64_t offset = 0);
 
   /**
     Subscript operator. Returns a reference to the character at the
@@ -843,7 +846,7 @@ public:
     @return reference to the character in that position.
 
   */
-  char &operator[](int64_t i);
+  virtual char &operator[](int64_t i);
 
   MIOBuffer *
   writer() const
@@ -905,7 +908,7 @@ public:
     @param len number of bytes to add to the inuse area of the block.
 
   */
-  void fill(int64_t len);
+  virtual void fill(int64_t len);
 
   /**
     Adds a block to the end of the block list. The block added to list
@@ -913,7 +916,7 @@ public:
     other buffer.
 
   */
-  void append_block(IOBufferBlock *b);
+  virtual void append_block(IOBufferBlock *b);
 
   /**
     Adds a new block to the end of the block list. The size is determined
@@ -921,13 +924,13 @@ public:
     buffer block sizes.
 
   */
-  void append_block(int64_t asize_index);
+  virtual void append_block(int64_t asize_index);
 
   /**
     Adds a new block to the end of the block list. Note that this does nothing when the next block of the current writer exists.
     The block size is the same as specified size when the buffer was allocated.
   */
-  void add_block();
+  virtual void add_block();
 
   /**
     Deprecated
@@ -940,7 +943,7 @@ public:
     by the buffer once all readers on the buffer have consumed it.
 
   */
-  void append_xmalloced(void *b, int64_t len);
+  virtual void append_xmalloced(void *b, int64_t len);
 
   /**
     Adds by reference len bytes of data pointed to by b to the end of the
@@ -950,7 +953,7 @@ public:
     have consumed it.
 
   */
-  void append_fast_allocated(void *b, int64_t len, int64_t fast_size_index);
+  virtual void append_fast_allocated(void *b, int64_t len, int64_t fast_size_index);
 
   /**
     Adds the nbytes worth of data pointed by rbuf to the buffer. The
@@ -959,7 +962,7 @@ public:
     control. Returns the number of bytes added.
 
   */
-  int64_t write(const void *rbuf, int64_t nbytes);
+  virtual int64_t write(const void *rbuf, int64_t nbytes);
 
   /**
     Add by data from IOBufferReader r to the this buffer by reference. If
@@ -986,7 +989,7 @@ public:
     rather than sharing blocks to prevent a build of blocks on the buffer.
 
   */
-  int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
+  virtual int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
 
   /** Copy data from the @a chain to this buffer.
       New IOBufferBlocks are allocated so this gets a copy of the data that is independent of the source.
@@ -997,14 +1000,14 @@ public:
 
       @internal I do not like counting @a offset against @a bytes but that's how @c write works...
   */
-  int64_t write(IOBufferChain const *chain, int64_t len = INT64_MAX, int64_t offset = 0);
+  virtual int64_t write(IOBufferChain const *chain, int64_t len = INT64_MAX, int64_t offset = 0);
 
   /**
     Returns a pointer to the first writable block on the block chain.
     Returns nullptr if there are not currently any writable blocks on the
     block list.
   */
-  IOBufferBlock *
+  virtual IOBufferBlock *
   first_write_block()
   {
     if (_writer) {
@@ -1018,26 +1021,26 @@ public:
     return nullptr;
   }
 
-  char *
+  virtual char *
   buf()
   {
     IOBufferBlock *b = first_write_block();
     return b ? b->buf() : nullptr;
   }
 
-  char *
+  virtual char *
   buf_end()
   {
     return first_write_block()->buf_end();
   }
 
-  char *
+  virtual char *
   start()
   {
     return first_write_block()->start();
   }
 
-  char *
+  virtual char *
   end()
   {
     return first_write_block()->end();
@@ -1049,7 +1052,7 @@ public:
     by first_write_block()).
 
   */
-  int64_t block_write_avail();
+  virtual int64_t block_write_avail();
 
   /**
     Returns the amount of space of available for writing on all writable
@@ -1057,7 +1060,7 @@ public:
     block chain.
 
   */
-  int64_t current_write_avail();
+  virtual int64_t current_write_avail();
 
   /**
     Adds blocks for writing if the watermark criteria are met. Returns
@@ -1065,20 +1068,20 @@ public:
     on the block chain after a block due to the watermark criteria.
 
   */
-  int64_t write_avail();
+  virtual int64_t write_avail();
 
   /**
     Returns the default data block size for this buffer.
 
   */
-  int64_t block_size();
+  virtual int64_t block_size();
 
   /**
     Returns true if amount of the data outstanding on the buffer exceeds
     the watermark.
 
   */
-  bool
+  virtual bool
   high_water()
   {
     return is_max_read_avail_more_than(this->water_mark);
@@ -1090,7 +1093,7 @@ public:
     on write_avail() it may add blocks.
 
   */
-  bool
+  virtual bool
   low_water()
   {
     return write_avail() <= water_mark;
@@ -1101,7 +1104,7 @@ public:
     blocks on the buffer is less than the water mark.
 
   */
-  bool
+  virtual bool
   current_low_water()
   {
     return current_write_avail() <= water_mark;
@@ -1112,7 +1115,7 @@ public:
     to point to 'anAccessor'.
 
   */
-  IOBufferReader *alloc_accessor(MIOBufferAccessor *anAccessor);
+  virtual IOBufferReader *alloc_accessor(MIOBufferAccessor *anAccessor);
 
   /**
     Allocates an IOBufferReader for this buffer. IOBufferReaders hold
@@ -1123,7 +1126,7 @@ public:
     place on the buffer.
 
   */
-  IOBufferReader *alloc_reader();
+  virtual IOBufferReader *alloc_reader();
 
   /**
     Allocates a new reader on this buffer and places it's starting
@@ -1131,7 +1134,7 @@ public:
     previous allocated from this buffer.
 
   */
-  IOBufferReader *clone_reader(IOBufferReader *r);
+  virtual IOBufferReader *clone_reader(IOBufferReader *r);
 
   /**
     Deallocates reader e from this buffer. e MUST be a pointer to a reader
@@ -1141,7 +1144,7 @@ public:
     being freed as all outstanding readers are automatically deallocated.
 
   */
-  void dealloc_reader(IOBufferReader *e);
+  virtual void dealloc_reader(IOBufferReader *e);
 
   /**
     Deallocates all outstanding readers on the buffer.
@@ -1149,10 +1152,10 @@ public:
   */
   void dealloc_all_readers();
 
-  void    set(void *b, int64_t len);
-  void    alloc(int64_t i);
-  void    append_block_internal(IOBufferBlock *b);
-  int64_t write(IOBufferBlock const *b, int64_t len, int64_t offset);
+  virtual void    set(void *b, int64_t len);
+  virtual void    alloc(int64_t i);
+  virtual void    append_block_internal(IOBufferBlock *b);
+  virtual int64_t write(IOBufferBlock const *b, int64_t len, int64_t offset);
 
   // internal interface
 
@@ -1165,21 +1168,21 @@ public:
 
     @return maximum amount of available data
    */
-  int64_t max_read_avail();
+  virtual int64_t max_read_avail();
 
   /**
     Check if there is more than @a size bytes available to read.
 
     @return @c true if more than @a size byte are available.
   */
-  bool is_max_read_avail_more_than(int64_t size);
+  virtual bool is_max_read_avail_more_than(int64_t size);
 
-  int  max_block_count();
-  void check_add_block();
+  virtual int  max_block_count();
+  virtual void check_add_block();
 
-  IOBufferBlock *get_current_block();
+  virtual IOBufferBlock *get_current_block();
 
-  void
+  virtual void
   reset()
   {
     if (_writer) {
@@ -1192,7 +1195,7 @@ public:
     }
   }
 
-  void
+  virtual void
   init_readers()
   {
     for (auto &reader : readers) {
@@ -1202,11 +1205,19 @@ public:
     }
   }
 
-  void
+  virtual void
   dealloc()
   {
     _writer = nullptr;
     dealloc_all_readers();
+  }
+
+  virtual void
+  free()
+  {
+    _writer = nullptr;
+    dealloc_all_readers();
+    THREAD_FREE(this, ioAllocator, this_thread());
   }
 
   void
@@ -1236,7 +1247,7 @@ public:
 
   explicit MIOBuffer(int64_t default_size_index);
   MIOBuffer();
-  ~MIOBuffer();
+  virtual ~MIOBuffer();
 };
 
 /**
