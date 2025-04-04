@@ -98,10 +98,10 @@ ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
       if (session_sni && session_sni[0] != '\0') {
         // TS-4468: If the connection matches, make sure the SNI server
         // name (if present) matches the request hostname
-        int         len      = 0;
-        const char *req_host = sm->t_state.hdr_info.server_request.host_get(&len);
-        retval               = strncasecmp(session_sni, req_host, len) == 0;
-        Dbg(dbg_ctl_http_ss, "validate_host_sni host=%*.s, sni=%s", len, req_host, session_sni);
+        auto req_host{sm->t_state.hdr_info.server_request.host_get()};
+        retval = strncasecmp(session_sni, req_host.data(), req_host.length()) == 0;
+        Dbg(dbg_ctl_http_ss, "validate_host_sni host=%*.s, sni=%s", static_cast<int>(req_host.length()), req_host.data(),
+            session_sni);
       }
     } else {
       retval = false;
