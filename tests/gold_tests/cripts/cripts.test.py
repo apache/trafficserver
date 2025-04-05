@@ -17,6 +17,8 @@ Test basic cripts functionality
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.testName = "cripts: basic functions"
 Test.Summary = '''
 Simple cripts test that sets a response header back to the client
@@ -27,6 +29,7 @@ Test.ContinueOnFail = True
 class CriptsBasicTest:
 
     def __init__(self):
+        self._compiler_location = os.path.join(Test.RunDirectory, "compiler.sh")
         self.setUpOriginServer()
         self.setUpTS()
 
@@ -44,22 +47,31 @@ class CriptsBasicTest:
     def setUpTS(self):
         self.ts = Test.MakeATSProcess("ts")
 
-        self.ts.Setup.CopyAs('files/basic.cript', self.ts.Variables.CONFIGDIR)
-        self.ts.Setup.CopyAs('../../../tools/cripts/compiler.sh', "{0}/bin".format(Test.RunDirectory))
+        self.ts.Setup.Copy('files/basic.cript', self.ts.Variables.CONFIGDIR)
 
         self.ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.plugin.dynamic_reload_mode': 1,
-                'proxy.config.plugin.compiler_path': "{0}/bin/compiler.sh".format(Test.RunDirectory),
+                'proxy.config.plugin.compiler_path': self._compiler_location,
             })
 
         self.ts.Disk.remap_config.AddLine(
-            'map http://www.example.com http://127.0.0.1:{0} @plugin=basic.cript'.format(self.server.Variables.Port))
+            f'map http://www.example.com http://127.0.0.1:{self.server.Variables.Port} @plugin=basic.cript')
+
+    def updateCompilerForTest(self):
+        '''Update the compiler script for the install location of the ATS process.'''
+        tr = Test.AddTestRun("Update the compiler script for the install location of the ATS process.")
+        p = tr.Processes.Default
+        compiler_source = os.path.join(p.Variables.RepoDir, 'tools', 'cripts', 'compiler.sh')
+        p.Setup.Copy(compiler_source, self._compiler_location)
+        install_dir = os.path.split(p.Variables.BINDIR)[0]
+        p.Command = f'sed -i "s|\"/tmp/ats\"|{install_dir}|g" {self._compiler_location}'
+        p.ReturnCode = 0
 
     def runHeaderTest(self):
-        tr = Test.AddTestRun()
-        tr.MakeCurlCommand('-v -H "Host: www.example.com" http://127.0.0.1:{0}'.format(self.ts.Variables.port))
+        tr = Test.AddTestRun('Exercise traffic through cripts.')
+        tr.MakeCurlCommand(f'-v -H "Host: www.example.com" http://127.0.0.1:{self.ts.Variables.port}')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server, ready=When.PortOpen(self.server.Variables.Port))
         tr.Processes.Default.StartBefore(self.ts)
@@ -67,6 +79,7 @@ class CriptsBasicTest:
         tr.StillRunningAfter = self.server
 
     def run(self):
+        self.updateCompilerForTest()
         self.runHeaderTest()
 
 

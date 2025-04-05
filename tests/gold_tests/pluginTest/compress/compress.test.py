@@ -261,8 +261,8 @@ tr.Processes.Default.Command = get_verify_command(out_path, "gunzip -k")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
-    r"tr -d '\r' < compress_long.log | sed 's/\(..*\)\([<>]\)/\1\n\2/' | {0}/greplog.sh > compress_short.log").format(
-        Test.TestDirectory)
+    r"tr -d '\r' < compress_long.log | sed 's/\(..*\)\([<>]\)/\1\n\2/' | {0}/greplog.sh > compress_short.log".format(
+        Test.TestDirectory))
 f = tr.Disk.File("compress_short.log")
 f.Content = "compress.gold"
 
