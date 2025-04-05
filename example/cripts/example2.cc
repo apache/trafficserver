@@ -16,6 +16,8 @@
   limitations under the License.
 */
 
+#define CRIPTS_CONVENIENCE_APIS 1
+
 // The primary include file, this has to always be included
 #include <cripts/Preamble.hpp>
 
@@ -23,7 +25,7 @@
 #include <cripts/Bundles/Caching.hpp>
 
 // Globals for this Cript
-static cripts::Matcher::Range::IP CRIPT_ALLOW({"192.168.201.0/24", "10.0.0.0/8"});
+ACL(CRIPT_ALLOW, {"192.168.201.0/24", "10.0.0.0/8"});
 
 // This is called only when the plugin is initialized
 do_init()
@@ -33,15 +35,15 @@ do_init()
 
 do_create_instance()
 {
-  instance.metrics[0] = cripts::Metrics::Counter::Create("cript.example1.c0");
-  instance.metrics[1] = cripts::Metrics::Counter::Create("cript.example1.c1");
-  instance.metrics[2] = cripts::Metrics::Counter::Create("cript.example1.c2");
-  instance.metrics[3] = cripts::Metrics::Counter::Create("cript.example1.c3");
-  instance.metrics[4] = cripts::Metrics::Counter::Create("cript.example1.c4");
-  instance.metrics[5] = cripts::Metrics::Counter::Create("cript.example1.c5");
-  instance.metrics[6] = cripts::Metrics::Counter::Create("cript.example1.c6");
-  instance.metrics[7] = cripts::Metrics::Counter::Create("cript.example1.c7");
-  instance.metrics[8] = cripts::Metrics::Counter::Create("cript.example1.c8"); // This one should resize() the storage
+  CreateCounter(0, "cript.example1.c0");
+  CreateCounter(1, "cript.example1.c1");
+  CreateCounter(2, "cript.example1.c2");
+  CreateCounter(3, "cript.example1.c3");
+  CreateCounter(4, "cript.example1.c4");
+  CreateCounter(5, "cript.example1.c5");
+  CreateCounter(6, "cript.example1.c6");
+  CreateCounter(7, "cript.example1.c7");
+  CreateCounter(8, "cript.example1.c8"); // This one should resize the storage
 
   cripts::Bundle::Common::Activate().dscp(10);
   cripts::Bundle::Caching::Activate().cache_control("max-age=259200");
@@ -49,88 +51,76 @@ do_create_instance()
 
 do_txn_close()
 {
-  borrow conn = cripts::Client::Connection::Get();
-
-  conn.pacing = cripts::Pacing::Off;
+  client.connection.pacing = cripts::Pacing::Off;
   CDebug("Cool, TXN close also works");
 }
 
 do_cache_lookup()
 {
-  borrow url2 = cripts::Cache::URL::Get();
-
-  CDebug("Cache URL: {}", url2);
-  CDebug("Cache Host: {}", url2.host);
+  CDebug("Cache URL: {}", urls.cache);
+  CDebug("Cache Host: {}", urls.cache.host);
 }
 
 do_send_request()
 {
-  borrow req = cripts::Server::Request::Get();
-
-  req["X-Leif"] = "Meh";
+  server.request["X-Leif"] = "Meh";
 }
 
 do_read_response()
 {
-  borrow resp = cripts::Server::Response::Get();
-
-  resp["X-DBJ"] = "Vrooom!";
+  server.response["X-DBJ"] = "Vrooom!";
 }
 
 do_send_response()
 {
-  borrow resp = cripts::Client::Response::Get();
-  borrow conn = cripts::Client::Connection::Get();
-  string msg  = "Eliminate TSCPP";
+  string msg = "Eliminate TSCPP";
 
-  resp["Server"]         = "";        // Deletes the Server header
-  resp["X-AMC"]          = msg;       // New header
-  resp["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
-  resp["X-UUID"]         = cripts::UUID::Unique::Get();
-  resp["X-tcpinfo"]      = conn.tcpinfo.Log();
-  resp["X-Cache-Status"] = resp.cache;
-  resp["X-Integer"]      = 666;
-  resp["X-Data"]         = AsString(txn_data[2]);
+  client.response["Server"]         = "";        // Deletes the Server header
+  client.response["X-AMC"]          = msg;       // New header
+  client.response["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
+  client.response["X-UUID"]         = UniqueUUID();
+  client.response["X-tcpinfo"]      = client.connection.tcpinfo.Log();
+  client.response["X-Cache-Status"] = client.response.cache;
+  client.response["X-Integer"]      = 666;
+  client.response["X-Data"]         = AsString(txn_data[2]);
 
-  resp["X-ASN"]         = conn.geo.ASN();
-  resp["X-ASN-Name"]    = conn.geo.ASNName();
-  resp["X-Country"]     = conn.geo.Country();
-  resp["X-ISO-Country"] = conn.geo.CountryCode();
+  client.response["X-ASN"]         = client.connection.geo.ASN();
+  client.response["X-ASN-Name"]    = client.connection.geo.ASNName();
+  client.response["X-Country"]     = client.connection.geo.Country();
+  client.response["X-ISO-Country"] = client.connection.geo.CountryCode();
 
   // Setup some connection parameters
-  conn.congestion = "bbr";
-  conn.dscp       = 8;
-  conn.pacing     = 100000;
-  conn.mark       = 17;
+  client.connection.congestion = "bbr";
+  client.connection.dscp       = 8;
+  client.connection.pacing     = 100000;
+  client.connection.mark       = 17;
 
   // Some file operations (note that the paths aren't required here, can just be strings, but it's a good practice)
-  static const cripts::File::Path p1("/tmp/foo");
-  static const cripts::File::Path p2("/tmp/secret.txt");
+  FilePath(p1, "/tmp/foo");
+  FilePath(p2, "/tmp/secret.txt");
 
   if (cripts::File::Status(p1).type() == cripts::File::Type::regular) {
-    resp["X-Foo-Exists"] = "yes";
+    client.response["X-Foo-Exists"] = "yes";
   } else {
-    resp["X-Foo-Exists"] = "no";
+    client.response["X-Foo-Exists"] = "no";
   }
 
   string secret = cripts::File::Line::Reader(p2);
   CDebug("Read secret = {}", secret);
 
-  if (resp.status == 200) {
-    resp.status = 222;
+  if (client.response.status == 200) {
+    client.response.status = 222;
   }
 
-  CDebug("Txn count: {}", conn.Count());
+  CDebug("Txn count: {}", client.connection.Count());
 }
 
 do_remap()
 {
-  auto   now  = cripts::Time::Local::Now();
-  borrow req  = cripts::Client::Request::Get();
-  borrow conn = cripts::Client::Connection::Get();
-  auto   ip   = conn.IP();
+  auto ip  = client.connection.IP();
+  auto now = TimeNow();
 
-  if (CRIPT_ALLOW.contains(ip)) {
+  if (CRIPT_ALLOW.Match(ip)) {
     CDebug("Client IP allowed: {}", ip.string(24, 64));
   }
 
@@ -151,35 +141,34 @@ do_remap()
   CDebug("Int config cache.http = {}", proxy.config.http.cache.http.Get());
   CDebug("Float config cache.heuristic_lm_factor = {}", proxy.config.http.cache.heuristic_lm_factor.Get());
   CDebug("String config http.response_server_str = {}", proxy.config.http.response_server_str.GetSV(context));
-  CDebug("X-Miles = {}", req["X-Miles"]);
+  CDebug("X-Miles = {}", client.request["X-Miles"]);
   CDebug("random(1000) = {}", cripts::Random(1000));
 
-  borrow url      = cripts::Client::URL::Get();
-  auto   old_port = url.port;
+  auto old_port = urls.request.port;
 
-  CDebug("Method is {}", req.method);
-  CDebug("Scheme is {}", url.scheme);
-  CDebug("Host is {}", url.host);
-  CDebug("Port is {}", url.port);
-  CDebug("Path is {}", url.path);
-  CDebug("Path[1] is {}", url.path[1]);
-  CDebug("Query is {}", url.query);
+  CDebug("Method is {}", client.request.method);
+  CDebug("Scheme is {}", urls.request.scheme);
+  CDebug("Host is {}", urls.request.host);
+  CDebug("Port is {}", urls.request.port);
+  CDebug("Path is {}", urls.request.path);
+  CDebug("Path[1] is {}", urls.request.path[1]);
+  CDebug("Query is {}", urls.request.query);
 
-  auto testing_trim = url.path.trim();
+  auto testing_trim = urls.request.path.trim();
 
   CDebug("Trimmed path is {}", testing_trim);
 
-  if (url.query["foo"] > 100) {
+  if (urls.request.query["foo"] > 100) {
     CDebug("Query[foo] is > 100");
   }
 
-  if (url.path == "some/url" || url.path[0] == "other") {
+  if (urls.request.path == "some/url" || urls.request.path[0] == "other") {
     CDebug("The path comparison triggered");
   }
 
-  url.host = "foobar.com";
-  url.port = "81";
-  url.port = old_port;
+  urls.request.host = "foobar.com";
+  urls.request.port = "81";
+  urls.request.port = old_port;
 
   // TXN data slots
   txn_data[0] = true;
@@ -187,7 +176,7 @@ do_remap()
   txn_data[2] = "DBJ";
 
   // Regular expressions
-  static cripts::Matcher::PCRE pcre("^/([^/]+)/(.*)$");
+  Regex(pcre, "^/([^/]+)/(.*)$");
 
   auto res = pcre.Match("/foo/bench/bar"); // Can also call contains(), same thing
 
@@ -233,10 +222,10 @@ do_remap()
   CDebug("SHA256 = {}", hex);
 
   // Testing iterators
-  for (auto hdr : req) {
-    CDebug("Header: {} = {}", hdr, req[hdr]);
+  for (auto hdr : client.request) {
+    CDebug("Header: {} = {}", hdr, client.request[hdr]);
     if (hdr.starts_with("AWS-")) {
-      req[hdr].clear();
+      client.request[hdr].clear();
     }
   }
 

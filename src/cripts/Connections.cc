@@ -30,7 +30,7 @@ const cripts::Matcher::Range::IP cripts::Net::RFC1918({"10.0.0.0/8", "172.16.0.0
 void
 detail::ConnBase::Pacing::operator=(uint32_t val)
 {
-  TSAssert(_owner);
+  _ensure_initialized(_owner);
   if (val == 0) {
     val = Off;
   }
@@ -51,6 +51,7 @@ void
 detail::ConnBase::TcpInfo::initialize()
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
+  _ensure_initialized(_owner);
   if (!_ready) {
     int connfd = _owner->FD();
 
@@ -70,6 +71,7 @@ detail::ConnBase::TcpInfo::initialize()
 cripts::string_view
 detail::ConnBase::TcpInfo::Log()
 {
+  _ensure_initialized(_owner);
   initialize();
   // We intentionally do not use the old tcpinfo that may be stored, since we may
   // request this numerous times (measurements). Also make sure there's always a value.
@@ -205,18 +207,19 @@ IP::Sample(double rate, uint32_t seed, unsigned ipv4_cidr, unsigned ipv6_cidr)
 Client::Connection &
 Client::Connection::_get(cripts::Context *context)
 {
-  Client::Connection *conn = &context->_client_conn;
+  _ensure_initialized(&context->_client.connection);
+  return context->_client.connection;
+}
 
-  if (!conn->Initialized()) {
-    TSAssert(context->state.ssnp);
-    TSAssert(context->state.txnp);
+void
+Client::Connection::_initialize()
+{
+  TSAssert(_state->ssnp);
+  TSAssert(_state->txnp);
 
-    conn->_state  = &context->state;
-    conn->_vc     = TSHttpSsnClientVConnGet(context->state.ssnp);
-    conn->_socket = TSHttpTxnClientAddrGet(context->state.txnp);
-  }
-
-  return context->_client_conn;
+  _vc     = TSHttpSsnClientVConnGet(_state->ssnp);
+  _socket = TSHttpTxnClientAddrGet(_state->txnp);
+  super_type::_initialize();
 }
 
 int
@@ -233,27 +236,25 @@ Client::Connection::FD() const
 int
 Client::Connection::Count() const
 {
-  TSHttpSsn ssn = TSHttpTxnSsnGet(_state->txnp);
-
-  TSAssert(_state->txnp);
-
-  return ssn ? TSHttpSsnTransactionCount(ssn) : -1;
+  TSAssert(_state->ssnp);
+  return TSHttpSsnTransactionCount(_state->ssnp);
 }
 
 Server::Connection &
 Server::Connection::_get(cripts::Context *context)
 {
-  cripts::Server::Connection *conn = &context->_server_conn;
+  _ensure_initialized(&context->_server.connection);
+  return context->_server.connection;
+}
 
-  if (!conn->Initialized()) {
-    TSAssert(context->state.ssnp);
+void
+Server::Connection::_initialize()
+{
+  TSAssert(_state->ssnp);
 
-    conn->_state  = &context->state;
-    conn->_vc     = TSHttpSsnServerVConnGet(context->state.ssnp);
-    conn->_socket = TSHttpTxnServerAddrGet(context->state.txnp);
-  }
-
-  return context->_server_conn;
+  _vc     = TSHttpSsnServerVConnGet(_state->ssnp);
+  _socket = TSHttpTxnServerAddrGet(_state->txnp);
+  super_type::_initialize();
 }
 
 int
@@ -270,6 +271,7 @@ Server::Connection::FD() const
 int
 Server::Connection::Count() const
 {
+  TSAssert(_state->txnp);
   return TSHttpTxnServerSsnTransactionCount(_state->txnp);
 }
 

@@ -50,9 +50,9 @@ depending on your preference. The file must be readable by the ATS process. Exam
 
    glb_read_request()
    {
-     borrow url = cripts::Client::URL::get();
+     borrow url = cripts::Client::URL::Get();
 
-     url.query.keep({"foo", "bar"});
+     url.query.Keep({"foo", "bar"});
    }
 
    #include <cripts/Epilogue.hpp>
