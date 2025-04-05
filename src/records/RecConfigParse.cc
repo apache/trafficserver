@@ -119,7 +119,7 @@ RecConfigOverrideFromEnvironment(const char *name, const char *value)
     }
   }
 
-  envval = getenv((const char *)envname);
+  envval = getenv(envname.get());
   if (envval) {
     return envval;
   } else if (RecConfigOverrideFromRunroot(name)) {

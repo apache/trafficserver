@@ -489,7 +489,7 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   SocksServerConfig::startup();
 
   config_pathname = RecConfigReadConfigPath("proxy.config.socks.socks_config_file");
-  Dbg(dbg_ctl_Socks, "Socks Config File: %s", (const char *)config_pathname);
+  Dbg(dbg_ctl_Socks, "Socks Config File: %s", config_pathname.get());
 
   if (!config_pathname) {
     Error("SOCKS Config: could not read config file name. SOCKS Turned off");

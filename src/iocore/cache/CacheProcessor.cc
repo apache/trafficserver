@@ -928,11 +928,11 @@ cplist_reconfigure()
       }
       if (config_vol->size < 128) {
         Warning("the size of volume %d (%" PRId64 ") is less than the minimum required volume size %d", config_vol->number,
-                (int64_t)config_vol->size, 128);
+                static_cast<int64_t>(config_vol->size), 128);
         Warning("volume %d is not created", config_vol->number);
       }
-      Dbg(dbg_ctl_cache_hosting, "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number, (int64_t)config_vol->size,
-          config_vol->ramcache_enabled);
+      Dbg(dbg_ctl_cache_hosting, "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number,
+          static_cast<int64_t>(config_vol->size), config_vol->ramcache_enabled);
     }
     cplist_update();
 
