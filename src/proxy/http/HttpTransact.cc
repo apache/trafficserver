@@ -4080,7 +4080,8 @@ HttpTransact::handle_100_continue_response(State *s)
   if (ver == HTTP_1_1) {
     forward_100 = true;
   } else if (ver == HTTP_1_0) {
-    if (s->hdr_info.client_request.value_get_int(MIME_FIELD_EXPECT, MIME_LEN_EXPECT) == 100) {
+    if (s->hdr_info.client_request.value_get_int(
+          std::string_view{MIME_FIELD_EXPECT, static_cast<std::string_view::size_type>(MIME_LEN_EXPECT)}) == 100) {
       forward_100 = true;
     }
   }
