@@ -1208,7 +1208,7 @@ public:
   void set_last_modified(time_t value);
   void set_max_forwards(int32_t value);
   void set_warning(int32_t value);
-  void set_server(const char *server_id_tag, int server_id_tag_size);
+  void set_server(std::string_view server_id_tag);
 
   // No gratuitous copies & refcounts!
   MIMEHdr(const MIMEHdr &m)            = delete;
@@ -1910,8 +1910,7 @@ MIMEHdr::set_warning(int32_t value)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::set_server(const char *server_id_tag, int server_id_tag_size)
+MIMEHdr::set_server(std::string_view server_id_tag)
 {
-  value_set(std::string_view{MIME_FIELD_SERVER, static_cast<std::string_view::size_type>(MIME_LEN_SERVER)},
-            std::string_view{server_id_tag, static_cast<std::string_view::size_type>(server_id_tag_size)});
+  value_set(std::string_view{MIME_FIELD_SERVER, static_cast<std::string_view::size_type>(MIME_LEN_SERVER)}, server_id_tag);
 }
