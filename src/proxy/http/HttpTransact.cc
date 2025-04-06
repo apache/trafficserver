@@ -1257,8 +1257,10 @@ HttpTransact::handle_upgrade_request(State *s)
     return false;
   }
 
-  MIMEField *upgrade_hdr    = s->hdr_info.client_request.field_find(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
-  MIMEField *connection_hdr = s->hdr_info.client_request.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+  MIMEField *upgrade_hdr = s->hdr_info.client_request.field_find(
+    std::string_view{MIME_FIELD_UPGRADE, static_cast<std::string_view::size_type>(MIME_LEN_UPGRADE)});
+  MIMEField *connection_hdr = s->hdr_info.client_request.field_find(
+    std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
 
   StrList          connection_hdr_vals;
   std::string_view upgrade_hdr_val;
@@ -1307,10 +1309,10 @@ HttpTransact::handle_upgrade_request(State *s)
    */
   if (hdrtoken_tokenize(upgrade_hdr_val.data(), upgrade_hdr_val.length(), &s->upgrade_token_wks) >= 0) {
     if (s->upgrade_token_wks == MIME_VALUE_WEBSOCKET) {
-      MIMEField *sec_websocket_key =
-        s->hdr_info.client_request.field_find(MIME_FIELD_SEC_WEBSOCKET_KEY, MIME_LEN_SEC_WEBSOCKET_KEY);
-      MIMEField *sec_websocket_ver =
-        s->hdr_info.client_request.field_find(MIME_FIELD_SEC_WEBSOCKET_VERSION, MIME_LEN_SEC_WEBSOCKET_VERSION);
+      MIMEField *sec_websocket_key = s->hdr_info.client_request.field_find(
+        std::string_view{MIME_FIELD_SEC_WEBSOCKET_KEY, static_cast<std::string_view::size_type>(MIME_LEN_SEC_WEBSOCKET_KEY)});
+      MIMEField *sec_websocket_ver = s->hdr_info.client_request.field_find(std::string_view{
+        MIME_FIELD_SEC_WEBSOCKET_VERSION, static_cast<std::string_view::size_type>(MIME_LEN_SEC_WEBSOCKET_VERSION)});
 
       if (sec_websocket_key && sec_websocket_ver && sec_websocket_ver->value_get_int() == 13) {
         TxnDbg(dbg_ctl_http_trans_upgrade, "Transaction wants upgrade to websockets");
@@ -1453,8 +1455,9 @@ HttpTransact::ModifyRequest(State *s)
   }
 
   if ((max_forwards != 0) && !s->hdr_info.client_req_is_server_style && s->method != HTTP_WKSIDX_CONNECT) {
-    MIMEField *host_field = request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
-    in_port_t  port       = url->port_get_raw();
+    MIMEField *host_field =
+      request.field_find(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
+    in_port_t port = url->port_get_raw();
 
     // Form the host:port string if not a default port (e.g. 80)
     // We allocated extra space for the port above
@@ -1567,7 +1570,8 @@ HttpTransact::HandleRequest(State *s)
 
     // The following chunk of code allows you to disallow post w/ expect 100-continue (TS-3459)
     if (s->hdr_info.request_content_length && s->http_config_param->disallow_post_100_continue) {
-      MIMEField *expect = s->hdr_info.client_request.field_find(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
+      MIMEField *expect = s->hdr_info.client_request.field_find(
+        std::string_view{MIME_FIELD_EXPECT, static_cast<std::string_view::size_type>(MIME_LEN_EXPECT)});
 
       if (expect != nullptr) {
         auto expect_hdr_val{expect->value_get()};
@@ -3158,7 +3162,8 @@ HttpTransact::handle_cache_write_lock(State *s)
       MIMEField *ats_field;
       HTTPHdr   *header;
       header = &(s->hdr_info.client_response);
-      if ((ats_field = header->field_find(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) == nullptr) {
+      if ((ats_field = header->field_find(std::string_view{
+             MIME_FIELD_ATS_INTERNAL, static_cast<std::string_view::size_type>(MIME_LEN_ATS_INTERNAL)})) == nullptr) {
         if (likely((ats_field = header->field_create(std::string_view{
                       MIME_FIELD_ATS_INTERNAL, static_cast<std::string_view::size_type>(MIME_LEN_ATS_INTERNAL)})) != nullptr)) {
           header->field_attach(ats_field);
@@ -3214,8 +3219,10 @@ HttpTransact::handle_cache_write_lock(State *s)
   if (remove_ims) {
     s->hdr_info.server_request.field_delete(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
     s->hdr_info.server_request.field_delete(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
-    MIMEField *c_ims = s->hdr_info.client_request.field_find(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
-    MIMEField *c_inm = s->hdr_info.client_request.field_find(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
+    MIMEField *c_ims = s->hdr_info.client_request.field_find(
+      std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)});
+    MIMEField *c_inm = s->hdr_info.client_request.field_find(
+      std::string_view{MIME_FIELD_IF_NONE_MATCH, static_cast<std::string_view::size_type>(MIME_LEN_IF_NONE_MATCH)});
 
     if (c_ims) {
       auto value{c_ims->value_get()};
@@ -4608,11 +4615,13 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
 
     // Copy over the response via field (if any) preserving
     //  the order of the fields
-    MIMEField *resp_via = s->hdr_info.server_response.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
+    MIMEField *resp_via = s->hdr_info.server_response.field_find(
+      std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)});
     if (resp_via) {
       swoc::LocalBufferWriter<HTTP_OUR_VIA_MAX_LENGTH> saved_via_w;
       MIMEField                                       *our_via;
-      our_via = s->hdr_info.client_response.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
+      our_via = s->hdr_info.client_response.field_find(
+        std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)});
       if (our_via == nullptr) {
         our_via = s->hdr_info.client_response.field_create(
           std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)});
@@ -5090,8 +5099,10 @@ HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_hea
   //         the response header, append if to
   //         the cached header
   //
-  MIMEField  *c_warn    = cached_header->field_find(MIME_FIELD_WARNING, MIME_LEN_WARNING);
-  MIMEField  *r_warn    = response_header->field_find(MIME_FIELD_WARNING, MIME_LEN_WARNING);
+  MIMEField *c_warn =
+    cached_header->field_find(std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)});
+  MIMEField *r_warn =
+    response_header->field_find(std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)});
   MIMEField  *new_cwarn = nullptr;
   int         move_warn_len;
   const char *move_warn;
@@ -5416,7 +5427,8 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
   // Transfer Encoding.
 
   if (incoming_hdr->presence(MIME_PRESENCE_TE)) {
-    MIMEField *te_field = incoming_hdr->field_find(MIME_FIELD_TE, MIME_LEN_TE);
+    MIMEField *te_field =
+      incoming_hdr->field_find(std::string_view{MIME_FIELD_TE, static_cast<std::string_view::size_type>(MIME_LEN_TE)});
     HTTPValTE *te_val;
 
     if (te_field) {
@@ -5450,7 +5462,8 @@ HttpTransact::set_client_request_state(State *s, HTTPHdr *incoming_hdr)
 
   // Set transfer_encoding value
   if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
-    MIMEField *field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    MIMEField *field = incoming_hdr->field_find(
+      std::string_view{MIME_FIELD_TRANSFER_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_TRANSFER_ENCODING)});
     if (field) {
       HdrCsvIter  enc_val_iter;
       int         enc_val_len;
@@ -5649,7 +5662,8 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   //  to the origin server and confusing it.  In cases of transparent
   //  deployments we use the Proxy-Connect hdr (to be as transparent
   //  as possible).
-  MIMEField *pc = incoming_request->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+  MIMEField *pc = incoming_request->field_find(
+    std::string_view{MIME_FIELD_PROXY_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_PROXY_CONNECTION)});
 
   // If we need to send a close header later check to see if it should be "Proxy-Connection"
   if (pc != nullptr) {
@@ -5828,7 +5842,8 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
   }
 
   if (incoming_response->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
-    MIMEField *field = incoming_response->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    MIMEField *field = incoming_response->field_find(
+      std::string_view{MIME_FIELD_TRANSFER_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_TRANSFER_ENCODING)});
     ink_assert(field != nullptr);
 
     HdrCsvIter  enc_val_iter;
@@ -6095,7 +6110,8 @@ HttpTransact::is_request_cache_lookupable(State *s)
     // origin server if the value of the Max-Forwards header is zero.
     int max_forwards = -1;
     if (s->hdr_info.client_request.presence(MIME_PRESENCE_MAX_FORWARDS)) {
-      MIMEField *max_forwards_f = s->hdr_info.client_request.field_find(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS);
+      MIMEField *max_forwards_f = s->hdr_info.client_request.field_find(
+        std::string_view{MIME_FIELD_MAX_FORWARDS, static_cast<std::string_view::size_type>(MIME_LEN_MAX_FORWARDS)});
 
       if (max_forwards_f) {
         max_forwards = max_forwards_f->value_get_int();
@@ -6610,8 +6626,9 @@ HttpTransact::will_this_request_self_loop(State *s)
     }
 
     // Now check for a loop using the Via string.
-    int              count     = 0;
-    MIMEField       *via_field = s->hdr_info.client_request.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
+    int        count     = 0;
+    MIMEField *via_field = s->hdr_info.client_request.field_find(
+      std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)});
     std::string_view uuid{Machine::instance()->uuid.getString()};
 
     while (via_field) {
@@ -7040,7 +7057,8 @@ HttpTransact::delete_all_document_alternates_and_return(State *s, bool cache_hit
   if ((s->method != HTTP_WKSIDX_GET) && (s->method == HTTP_WKSIDX_DELETE || s->method == HTTP_WKSIDX_PURGE)) {
     bool       valid_max_forwards;
     int        max_forwards   = -1;
-    MIMEField *max_forwards_f = s->hdr_info.client_request.field_find(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS);
+    MIMEField *max_forwards_f = s->hdr_info.client_request.field_find(
+      std::string_view{MIME_FIELD_MAX_FORWARDS, static_cast<std::string_view::size_type>(MIME_LEN_MAX_FORWARDS)});
 
     // Check the max forwards value for DELETE
     if (max_forwards_f) {
@@ -7500,14 +7518,14 @@ HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr
     } else if (obj_response->is_cache_control_set(HTTP_VALUE_PUBLIC)) {
       return AUTHENTICATION_SUCCESS;
     } else {
-      if (obj_response->field_find("@WWW-Auth", 9) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
+      if (obj_response->field_find("@WWW-Auth"sv) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
         return AUTHENTICATION_CACHE_AUTH;
       }
       return AUTHENTICATION_MUST_PROXY;
     }
   }
 
-  if (obj_response->field_find("@WWW-Auth", 9) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
+  if (obj_response->field_find("@WWW-Auth"sv) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
     return AUTHENTICATION_CACHE_AUTH;
   }
 
@@ -7895,7 +7913,8 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
             if (base_response->presence(fields[i].presence)) {
               MIMEField *field;
 
-              field = base_response->field_find(fields[i].name, fields[i].len);
+              field = base_response->field_find(
+                std::string_view{fields[i].name, static_cast<std::string_view::size_type>(fields[i].len)});
               ink_assert(field != nullptr);
               auto value{field->value_get()};
               outgoing_response->value_append(fields[i].name, fields[i].len, value.data(), value.length(), false);
@@ -8856,7 +8875,8 @@ void
 HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code)
 {
   int        w_code = static_cast<int>(warning_code);
-  MIMEField *field  = to_warn->field_find(MIME_FIELD_WARNING, MIME_LEN_WARNING);
+  MIMEField *field =
+    to_warn->field_find(std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)});
 
   // Loop over the values to see if we need to do anything
   if (field) {
@@ -8913,7 +8933,8 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
 
   // set the right Content-Type for multiple entry Range
   if (s->num_range_fields > 1) {
-    field = header->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    field = header->field_find(
+      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
 
     if (field != nullptr) {
       header->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);

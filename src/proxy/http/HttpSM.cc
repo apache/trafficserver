@@ -1996,7 +1996,8 @@ HttpSM::state_read_server_response_header(int event, void *data)
     bool allow_error = false;
     if (t_state.hdr_info.server_response.type_get() == HTTP_TYPE_RESPONSE &&
         t_state.hdr_info.server_response.status_get() == HTTP_STATUS_MOVED_TEMPORARILY) {
-      if (t_state.hdr_info.server_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
+      if (t_state.hdr_info.server_response.field_find(
+            std::string_view{MIME_FIELD_LOCATION, static_cast<std::string_view::size_type>(MIME_LEN_LOCATION)})) {
         allow_error = true;
       }
     }
@@ -4408,7 +4409,8 @@ HttpSM::do_remap_request(bool run_inline)
   // is not already there, promote it only in the unmapped_url. This avoids breaking any logic that
   // depends on the lack of promotion in the client request URL.
   if (!t_state.unmapped_url.m_url_impl->m_ptr_host) {
-    MIMEField *host_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+    MIMEField *host_field = t_state.hdr_info.client_request.field_find(
+      std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
     if (host_field) {
       auto host_name{host_field->value_get()};
       if (!host_name.empty()) {
@@ -4882,7 +4884,8 @@ HttpSM::do_range_setup_if_necessary()
 {
   MIMEField *field;
 
-  field = t_state.hdr_info.client_request.field_find(MIME_FIELD_RANGE, MIME_LEN_RANGE);
+  field = t_state.hdr_info.client_request.field_find(
+    std::string_view{MIME_FIELD_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_RANGE)});
   ink_assert(field != nullptr);
 
   t_state.range_setup = HttpTransact::RANGE_NONE;
@@ -8274,7 +8277,8 @@ HttpSM::do_redirect()
 
   // if redirect_url is set by an user's plugin, yts will redirect to this url anyway.
   if (is_redirect_required()) {
-    if (redirect_url != nullptr || t_state.hdr_info.client_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
+    if (redirect_url != nullptr || t_state.hdr_info.client_response.field_find(std::string_view{
+                                     MIME_FIELD_LOCATION, static_cast<std::string_view::size_type>(MIME_LEN_LOCATION)})) {
       if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
         LogAccess accessor(this);
         if (redirect_url == nullptr) {

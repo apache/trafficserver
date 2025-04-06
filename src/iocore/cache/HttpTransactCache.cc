@@ -326,14 +326,16 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
   q[1] = (q[2] = (q[3] = -2.0));
 
   // This content_field is used for a couple of headers, so get it first
-  content_field = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+  content_field = obj_origin_server_response->field_find(
+    std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
 
   // Accept: header
   if (http_config_param->get_ignore_accept_mismatch() & vary_skip_mask) {
     // Ignore it
     q[0] = 1.0;
   } else {
-    accept_field = client_request->field_find(MIME_FIELD_ACCEPT, MIME_LEN_ACCEPT);
+    accept_field =
+      client_request->field_find(std::string_view{MIME_FIELD_ACCEPT, static_cast<std::string_view::size_type>(MIME_LEN_ACCEPT)});
 
     // A NULL Accept or a NULL Content-Type field are perfect matches.
     if (content_field == nullptr || accept_field == nullptr) {
@@ -349,8 +351,10 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
       // Ignore it
       q[1] = 1.0;
     } else {
-      accept_field        = client_request->field_find(MIME_FIELD_ACCEPT_CHARSET, MIME_LEN_ACCEPT_CHARSET);
-      cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_CHARSET, MIME_LEN_ACCEPT_CHARSET);
+      accept_field = client_request->field_find(
+        std::string_view{MIME_FIELD_ACCEPT_CHARSET, static_cast<std::string_view::size_type>(MIME_LEN_ACCEPT_CHARSET)});
+      cached_accept_field = obj_client_request->field_find(
+        std::string_view{MIME_FIELD_ACCEPT_CHARSET, static_cast<std::string_view::size_type>(MIME_LEN_ACCEPT_CHARSET)});
 
       // absence in both requests counts as exact match
       if (accept_field == nullptr && cached_accept_field == nullptr) {
@@ -367,9 +371,12 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
         // Ignore it
         q[2] = 1.0;
       } else {
-        accept_field        = client_request->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
-        content_field       = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_ENCODING, MIME_LEN_CONTENT_ENCODING);
-        cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+        accept_field = client_request->field_find(
+          std::string_view{MIME_FIELD_ACCEPT_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_ACCEPT_ENCODING)});
+        content_field = obj_origin_server_response->field_find(
+          std::string_view{MIME_FIELD_CONTENT_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_ENCODING)});
+        cached_accept_field = obj_client_request->field_find(
+          std::string_view{MIME_FIELD_ACCEPT_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_ACCEPT_ENCODING)});
 
         // absence in both requests counts as exact match
         if (accept_field == nullptr && cached_accept_field == nullptr) {
@@ -386,9 +393,12 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
           // Ignore it
           q[3] = 1.0;
         } else {
-          accept_field        = client_request->field_find(MIME_FIELD_ACCEPT_LANGUAGE, MIME_LEN_ACCEPT_LANGUAGE);
-          content_field       = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE);
-          cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_LANGUAGE, MIME_LEN_ACCEPT_LANGUAGE);
+          accept_field = client_request->field_find(
+            std::string_view{MIME_FIELD_ACCEPT_LANGUAGE, static_cast<std::string_view::size_type>(MIME_LEN_ACCEPT_LANGUAGE)});
+          content_field = obj_origin_server_response->field_find(
+            std::string_view{MIME_FIELD_CONTENT_LANGUAGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LANGUAGE)});
+          cached_accept_field = obj_client_request->field_find(
+            std::string_view{MIME_FIELD_ACCEPT_LANGUAGE, static_cast<std::string_view::size_type>(MIME_LEN_ACCEPT_LANGUAGE)});
 
           // absence in both requests counts as exact match
           if (accept_field == nullptr && cached_accept_field == nullptr) {
@@ -1271,8 +1281,10 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
           field_name_str = const_cast<char *>(field->str);
         }
 
-        MIMEField *cached_hdr_field  = obj_client_request->field_find(field_name_str, field->len);
-        MIMEField *current_hdr_field = client_request->field_find(field_name_str, field->len);
+        MIMEField *cached_hdr_field =
+          obj_client_request->field_find(std::string_view{field_name_str, static_cast<std::string_view::size_type>(field->len)});
+        MIMEField *current_hdr_field =
+          client_request->field_find(std::string_view{field_name_str, static_cast<std::string_view::size_type>(field->len)});
 
         // Header values match? //
         if (!HttpCompat::do_vary_header_values_match(cached_hdr_field, current_hdr_field)) {

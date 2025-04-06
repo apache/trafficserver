@@ -60,7 +60,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // check pseudo headers
     // :method
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_METHOD);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "GET");
@@ -68,7 +68,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // :scheme
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_SCHEME);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "https");
@@ -76,7 +76,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // :authority
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_AUTHORITY);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "trafficserver.apache.org");
@@ -84,7 +84,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // :path
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_PATH);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "/index.html");
@@ -163,7 +163,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // check pseudo headers
     // :status
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_STATUS);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "200");
@@ -171,7 +171,8 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // no connection header
     {
-      MIMEField *f = hdr_1.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+      MIMEField *f =
+        hdr_1.field_find(std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
       CHECK(f == nullptr);
     }
 

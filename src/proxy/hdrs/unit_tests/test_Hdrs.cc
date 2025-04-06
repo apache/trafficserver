@@ -1018,7 +1018,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     MIMEField *cc_field;
     StrList    slist;
 
-    cc_field = hdr.field_find("Cache-Control", 13);
+    cc_field = hdr.field_find("Cache-Control"sv);
 
     if (cc_field == nullptr) {
       std::printf("FAILED: missing Cache-Control header\n\n");

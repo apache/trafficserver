@@ -1118,8 +1118,8 @@ public:
   int  fields_count() const;
 
   MIMEField       *field_create(std::string_view name = ""sv);
-  MIMEField       *field_find(const char *name, int length);
-  const MIMEField *field_find(const char *name, int length) const;
+  MIMEField       *field_find(std::string_view name);
+  const MIMEField *field_find(std::string_view name) const;
   void             field_attach(MIMEField *field);
   void             field_detach(MIMEField *field, bool detach_all_dups = true);
   void             field_delete(MIMEField *field, bool delete_all_dups = true);
@@ -1310,17 +1310,17 @@ MIMEHdr::field_create(std::string_view name)
   -------------------------------------------------------------------------*/
 
 inline MIMEField *
-MIMEHdr::field_find(const char *name, int length) // NOLINT(readability-make-member-function-const)
+MIMEHdr::field_find(std::string_view name) // NOLINT(readability-make-member-function-const)
 {
   //    ink_assert(valid());
-  return mime_hdr_field_find(m_mime, name, length);
+  return mime_hdr_field_find(m_mime, name.data(), static_cast<int>(name.length()));
 }
 
 inline const MIMEField *
-MIMEHdr::field_find(const char *name, int length) const
+MIMEHdr::field_find(std::string_view name) const
 {
   //    ink_assert(valid());
-  MIMEField *retval = mime_hdr_field_find(const_cast<MIMEHdr *>(this)->m_mime, name, length);
+  MIMEField *retval = mime_hdr_field_find(const_cast<MIMEHdr *>(this)->m_mime, name.data(), static_cast<int>(name.length()));
   return retval;
 }
 
@@ -1366,7 +1366,7 @@ MIMEHdr::end() const -> iterator
 inline void
 MIMEHdr::field_delete(const char *name, int name_length)
 {
-  MIMEField *field = field_find(name, name_length);
+  MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
   if (field)
     field_delete(field);
 }
@@ -1410,7 +1410,7 @@ MIMEHdr::parse(MIMEParser *parser, const char **start, const char *end, bool mus
 inline int
 MIMEHdr::value_get_index(const char *name, int name_length, const char *value, int value_length) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
 
   if (field) {
     return field->value_get_index(std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
@@ -1424,7 +1424,7 @@ MIMEHdr::value_get_index(const char *name, int name_length, const char *value, i
 inline const char *
 MIMEHdr::value_get(const char *name, int name_length, int *value_length_return) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
 
   if (field) {
     auto value{field->value_get()};
@@ -1437,7 +1437,7 @@ MIMEHdr::value_get(const char *name, int name_length, int *value_length_return) 
 inline std::string_view
 MIMEHdr::value_get(std::string_view const &name) const
 {
-  MIMEField const *field = field_find(name.data(), name.size());
+  MIMEField const *field = field_find(name);
 
   if (field) {
     return field->value_get();
@@ -1448,7 +1448,7 @@ MIMEHdr::value_get(std::string_view const &name) const
 inline int32_t
 MIMEHdr::value_get_int(const char *name, int name_length) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
 
   if (field) {
     return mime_field_value_get_int(field);
@@ -1459,7 +1459,7 @@ MIMEHdr::value_get_int(const char *name, int name_length) const
 inline uint32_t
 MIMEHdr::value_get_uint(const char *name, int name_length) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
 
   if (field) {
     return mime_field_value_get_uint(field);
@@ -1470,7 +1470,7 @@ MIMEHdr::value_get_uint(const char *name, int name_length) const
 inline int64_t
 MIMEHdr::value_get_int64(const char *name, int name_length) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
 
   if (field) {
     return mime_field_value_get_int64(field);
@@ -1481,7 +1481,7 @@ MIMEHdr::value_get_int64(const char *name, int name_length) const
 inline time_t
 MIMEHdr::value_get_date(const char *name, int name_length) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
 
   if (field) {
     return mime_field_value_get_date(field);
@@ -1492,7 +1492,7 @@ MIMEHdr::value_get_date(const char *name, int name_length) const
 inline int
 MIMEHdr::value_get_comma_list(const char *name, int name_length, StrList *list) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
 
   if (field) {
     return field->value_get_comma_list(list);
@@ -1577,7 +1577,7 @@ MIMEHdr::value_append_or_set(const char *name, const int name_length, char *valu
 {
   MIMEField *field = nullptr;
 
-  if ((field = field_find(name, name_length)) != nullptr) {
+  if ((field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)})) != nullptr) {
     while (field->m_next_dup) {
       field = field->m_next_dup;
     }
@@ -1639,7 +1639,7 @@ MIMEHdr::value_append(const char *name, int name_length, const char *value, int 
 {
   MIMEField *field;
 
-  field = field_find(name, name_length);
+  field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
   if (field) {
     while (field->m_next_dup)
       field = field->m_next_dup;

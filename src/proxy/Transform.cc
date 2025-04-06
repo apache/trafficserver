@@ -1083,7 +1083,8 @@ RangeTransform::change_response_header()
 
   if (m_num_range_fields > 1) {
     // set the right Content-Type for multiple entry Range
-    field = m_transform_resp->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    field = m_transform_resp->field_find(
+      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
 
     if (field != nullptr) {
       m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);

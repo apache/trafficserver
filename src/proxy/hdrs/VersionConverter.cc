@@ -74,7 +74,7 @@ int
 VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 {
   // :method
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()); field != nullptr) {
+  if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD); field != nullptr) {
     int         value_len;
     const char *value = header.method_get(&value_len);
 
@@ -85,7 +85,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
   }
 
   // :scheme
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()); field != nullptr) {
+  if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME); field != nullptr) {
     int         value_len;
     const char *value = header.scheme_get(&value_len);
 
@@ -101,7 +101,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
   }
 
   // :authority
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()); field != nullptr) {
+  if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY); field != nullptr) {
     int         value_len;
     const char *value = header.host_get(&value_len);
 
@@ -125,7 +125,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
   }
 
   // :path
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()); field != nullptr) {
+  if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH); field != nullptr) {
     int         value_len = 0;
     const char *value     = header.path_get(&value_len);
     int         query_len = 0;
@@ -165,7 +165,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   header.version_set(HTTPVersion(1, 1));
 
   // :method
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+  if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD);
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
     auto method{field->value_get()};
     if (method == std::string_view{HTTP_METHOD_CONNECT, static_cast<std::string_view::size_type>(HTTP_LEN_CONNECT)}) {
@@ -180,7 +180,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
 
   if (!is_connect_method) {
     // :scheme
-    if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
+    if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME);
         field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       auto        scheme{field->value_get()};
       const char *scheme_wks;
@@ -203,13 +203,14 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   }
 
   // :authority
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
+  if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY);
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
     auto authority{field->value_get()};
     header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority.data(), authority.length(), true);
 
     if (!is_connect_method) {
-      MIMEField *host = header.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+      MIMEField *host =
+        header.field_find(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
       if (host == nullptr) {
         // Add a Host header field. [RFC 7230] 5.4 says that if a client sends a
         // Host header field, it SHOULD be the first header in the header section
@@ -233,7 +234,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
 
   if (!is_connect_method) {
     // :path
-    if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.length());
+    if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH);
         field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
       auto path{field->value_get()};
 
@@ -250,7 +251,9 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     }
 
     // Combine Cookie header.([RFC 7540] 8.1.2.5.)
-    if (MIMEField *field = header.field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE); field != nullptr) {
+    if (MIMEField *field =
+          header.field_find(std::string_view{MIME_FIELD_COOKIE, static_cast<std::string_view::size_type>(MIME_LEN_COOKIE)});
+        field != nullptr) {
       header.field_combine_dups(field, true, ';');
     }
   }
@@ -264,7 +267,7 @@ VersionConverter::_convert_res_from_1_to_2(HTTPHdr &header) const
   constexpr int STATUS_VALUE_LEN = 3;
 
   // :status
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()); field != nullptr) {
+  if (MIMEField *field = header.field_find(PSEUDO_HEADER_STATUS); field != nullptr) {
     // ink_small_itoa() requires 5+ buffer length
     char status_str[STATUS_VALUE_LEN + 3];
     mime_format_int(status_str, header.status_get(), sizeof(status_str));
@@ -288,7 +291,7 @@ VersionConverter::_convert_res_from_2_to_1(HTTPHdr &header) const
   header.version_set(HTTPVersion(1, 1));
 
   // Set status from :status
-  if (MIMEField *field = header.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()); field != nullptr) {
+  if (MIMEField *field = header.field_find(PSEUDO_HEADER_STATUS); field != nullptr) {
     auto status{field->value_get()};
 
     header.status_set(http_parse_status(status.data(), status.data() + status.length()));
@@ -305,7 +308,7 @@ VersionConverter::_remove_connection_specific_header_fields(HTTPHdr &header) con
 {
   // Intermediaries SHOULD remove connection-specific header fields.
   for (auto &&h : connection_specific_header_fields) {
-    if (MIMEField *field = header.field_find(h.data(), h.size()); field != nullptr) {
+    if (MIMEField *field = header.field_find(h); field != nullptr) {
       header.field_delete(field);
     }
   }

@@ -456,7 +456,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
           break;
         }
 
-        MIMEField *field = headers->field_find(expected_name, strlen(expected_name));
+        MIMEField *field = headers->field_find(std::string_view{expected_name});
         CHECK(field != nullptr);
 
         if (field) {

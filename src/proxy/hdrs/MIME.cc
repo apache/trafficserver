@@ -2287,7 +2287,7 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
                               const char **port_ptr, ///< Pointer to port.
                               int         *port_len)
 {
-  MIMEField *field = this->field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+  MIMEField *field = this->field_find(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
   if (host_ptr) {
     *host_ptr = nullptr;
   }
