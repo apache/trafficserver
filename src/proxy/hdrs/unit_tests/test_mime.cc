@@ -73,128 +73,108 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
   hdr.create(NULL);
 
   const char *header_value;
-  const char *host;
-  int         host_len;
-  const char *port;
-  int         port_len;
 
   header_value = "host";
   hdr.value_set("Host"sv, header_value);
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 4) {
+  auto [field, host, port]{hdr.get_host_port_values()};
+  if (host.length() != 4) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "host", host_len) != 0) {
+  if (host != "host"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 0) {
+  if (!port.empty()) {
     std::printf("port length doesn't match\n");
-    CHECK(false);
-  }
-  if (port != nullptr) {
-    std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "host:";
   hdr.value_set("Host"sv, header_value);
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 4) {
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 4) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "host", host_len) != 0) {
+  if (host != "host"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 0) {
+  if (!port.empty()) {
     std::printf("port length doesn't match\n");
-    CHECK(false);
-  }
-  if (port != nullptr) {
-    std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "[host]";
   hdr.value_set("Host"sv, header_value);
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 6) {
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 6) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "[host]", host_len) != 0) {
+  if (host != "[host]"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 0) {
+  if (!port.empty()) {
     std::printf("port length doesn't match\n");
-    CHECK(false);
-  }
-  if (port != nullptr) {
-    std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "host:port";
   hdr.value_set("Host"sv, header_value);
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 4) {
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 4) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "host", host_len) != 0) {
+  if (host != "host"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 4) {
+  if (port.length() != 4) {
     std::printf("port length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(port, "port", port_len) != 0) {
+  if (port != "port"sv) {
     std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "[host]:port";
   hdr.value_set("Host"sv, header_value);
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 6) {
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 6) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "[host]", host_len) != 0) {
+  if (host != "[host]"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 4) {
+  if (port.length() != 4) {
     std::printf("port length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(port, "port", port_len) != 0) {
+  if (port != "port"sv) {
     std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "[host]:";
   hdr.value_set("Host"sv, header_value);
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 6) {
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 6) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "[host]", host_len) != 0) {
+  if (host != "[host]"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 0) {
+  if (!port.empty()) {
     std::printf("port length doesn't match\n");
-    CHECK(false);
-  }
-  if (port != nullptr) {
-    std::printf("port string doesn't match\n");
     CHECK(false);
   }
 

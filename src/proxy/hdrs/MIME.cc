@@ -2281,29 +2281,14 @@ mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const 
   }
 }
 
-MIMEField *
-MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
-                              int         *host_len, ///< Length of host.
-                              const char **port_ptr, ///< Pointer to port.
-                              int         *port_len)
+std::tuple<MIMEField *, std::string_view, std::string_view>
+MIMEHdr::get_host_port_values()
 {
   MIMEField *field = this->field_find(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
-  if (host_ptr) {
-    *host_ptr = nullptr;
-  }
-  if (host_len) {
-    *host_len = 0;
-  }
-  if (port_ptr) {
-    *port_ptr = nullptr;
-  }
-  if (port_len) {
-    *port_len = 0;
-  }
+  std::string_view host, port;
 
   if (field) {
     swoc::TextView b{field->m_ptr_value, static_cast<size_t>(field->m_len_value)};
-    swoc::TextView host, port;
 
     if (b) {
       if ('[' == *b) {
@@ -2318,28 +2303,11 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
         host = b.take_prefix_at(':');
         port = b;
       }
-
-      if (host) {
-        if (host_ptr) {
-          *host_ptr = host.data();
-        }
-        if (host_len) {
-          *host_len = static_cast<int>(host.size());
-        }
-      }
-      if (port) {
-        if (port_ptr) {
-          *port_ptr = port.data();
-        }
-        if (port_len) {
-          *port_len = static_cast<int>(port.size());
-        }
-      }
     } else {
       field = nullptr; // no value in field, signal fail.
     }
   }
-  return field;
+  return std::make_tuple(field, host, port);
 }
 
 /***********************************************************************

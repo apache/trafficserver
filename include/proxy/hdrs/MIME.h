@@ -1188,13 +1188,10 @@ public:
 
   /** Get the value of the host field.
       This parses the host field for brackets and port value.
-      @return The mime HOST field if it has a value, @c NULL otherwise.
+      @return The tuple of mime HOST field, host, and port if it has a value,
+              or the tuple of @c NULL and two empty string views. otherwise.
   */
-  MIMEField *get_host_port_values(const char **host_ptr, ///< [out] Pointer to host.
-                                  int         *host_len, ///< [out] Length of host.
-                                  const char **port_ptr, ///< [out] Pointer to port.
-                                  int         *port_len  ///< [out] Length of port.
-  );
+  std::tuple<MIMEField *, std::string_view, std::string_view> get_host_port_values();
 
   void set_cooked_cc_need_revalidate_once();
   void unset_cooked_cc_need_revalidate_once();
