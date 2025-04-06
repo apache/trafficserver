@@ -1658,7 +1658,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     for (i = 1; i <= 100; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
       snprintf(field_value, sizeof(field_value), "%d %d %d %d %d", i, i, i, i, i);
-      resp_hdr.value_set(field_name, static_cast<int>(strlen(field_name)), field_value, static_cast<int>(strlen(field_value)));
+      resp_hdr.value_set(std::string_view{field_name}, std::string_view{field_value});
     }
 
     /**** (3) delete all the even numbered fields *****/

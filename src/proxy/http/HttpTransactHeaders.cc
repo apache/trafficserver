@@ -601,7 +601,8 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
 
   len =
     snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
-  header->value_set(MIME_FIELD_WARNING, MIME_LEN_WARNING, warning_text, len);
+  header->value_set(std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)},
+                    std::string_view{warning_text, static_cast<std::string_view::size_type>(len)});
 }
 
 void
@@ -800,7 +801,9 @@ HttpTransactHeaders::insert_hsts_header_in_response(HttpTransact::State *s, HTTP
     length += sizeof(include_subdomains) - 1;
   }
 
-  header->value_set(MIME_FIELD_STRICT_TRANSPORT_SECURITY, MIME_LEN_STRICT_TRANSPORT_SECURITY, new_hsts_string, length);
+  header->value_set(std::string_view{MIME_FIELD_STRICT_TRANSPORT_SECURITY,
+                                     static_cast<std::string_view::size_type>(MIME_LEN_STRICT_TRANSPORT_SECURITY)},
+                    std::string_view{new_hsts_string, static_cast<std::string_view::size_type>(length)});
 }
 
 void

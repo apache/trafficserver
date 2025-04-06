@@ -1149,7 +1149,7 @@ public:
   time_t           value_get_date(std::string_view name) const;
   int              value_get_comma_list(std::string_view name, StrList *list) const;
 
-  void value_set(const char *name, int name_length, const char *value, int value_length);
+  void value_set(std::string_view name, std::string_view value);
   void value_set_int(const char *name, int name_length, int32_t value);
   void value_set_uint(const char *name, int name_length, uint32_t value);
   void value_set_int64(const char *name, int name_length, int64_t value);
@@ -1569,7 +1569,8 @@ MIMEHdr::value_append_or_set(const char *name, const int name_length, char *valu
     }
     field_value_append(field, value, value_length, true);
   } else {
-    value_set(name, name_length, value, value_length);
+    value_set(std::string_view{name, static_cast<std::string_view::size_type>(name_length)},
+              std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
   }
 }
 
@@ -1577,11 +1578,11 @@ MIMEHdr::value_append_or_set(const char *name, const int name_length, char *valu
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::value_set(const char *name, int name_length, const char *value, int value_length)
+MIMEHdr::value_set(std::string_view name, std::string_view value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
-  field->value_set(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
+  field->value_set(m_heap, m_mime, value);
 }
 
 inline void
@@ -1914,5 +1915,6 @@ MIMEHdr::set_warning(int32_t value)
 inline void
 MIMEHdr::set_server(const char *server_id_tag, int server_id_tag_size)
 {
-  value_set(MIME_FIELD_SERVER, MIME_LEN_SERVER, server_id_tag, server_id_tag_size);
+  value_set(std::string_view{MIME_FIELD_SERVER, static_cast<std::string_view::size_type>(MIME_LEN_SERVER)},
+            std::string_view{server_id_tag, static_cast<std::string_view::size_type>(server_id_tag_size)});
 }

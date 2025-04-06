@@ -435,7 +435,9 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
       }
       url_rewrite_remap_request(reverse_mapping, &location_url);
       new_loc_hdr = location_url.string_get_ref(&new_loc_length);
-      response_header->value_set(url_headers[i].field, url_headers[i].len, new_loc_hdr, new_loc_length);
+      response_header->value_set(
+        std::string_view{url_headers[i].field, static_cast<std::string_view::size_type>(url_headers[i].len)},
+        std::string_view{new_loc_hdr, static_cast<std::string_view::size_type>(new_loc_length)});
     }
 
     location_url.destroy();

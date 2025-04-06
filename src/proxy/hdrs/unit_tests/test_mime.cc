@@ -79,7 +79,7 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
   int         port_len;
 
   header_value = "host";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.value_set("Host"sv, header_value);
   hdr.get_host_port_values(&host, &host_len, &port, &port_len);
   if (host_len != 4) {
     std::printf("host length doesn't match\n");
@@ -99,7 +99,7 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
   }
 
   header_value = "host:";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.value_set("Host"sv, header_value);
   hdr.get_host_port_values(&host, &host_len, &port, &port_len);
   if (host_len != 4) {
     std::printf("host length doesn't match\n");
@@ -119,7 +119,7 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
   }
 
   header_value = "[host]";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.value_set("Host"sv, header_value);
   hdr.get_host_port_values(&host, &host_len, &port, &port_len);
   if (host_len != 6) {
     std::printf("host length doesn't match\n");
@@ -139,7 +139,7 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
   }
 
   header_value = "host:port";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.value_set("Host"sv, header_value);
   hdr.get_host_port_values(&host, &host_len, &port, &port_len);
   if (host_len != 4) {
     std::printf("host length doesn't match\n");
@@ -159,7 +159,7 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
   }
 
   header_value = "[host]:port";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.value_set("Host"sv, header_value);
   hdr.get_host_port_values(&host, &host_len, &port, &port_len);
   if (host_len != 6) {
     std::printf("host length doesn't match\n");
@@ -179,7 +179,7 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
   }
 
   header_value = "[host]:";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.value_set("Host"sv, header_value);
   hdr.get_host_port_values(&host, &host_len, &port, &port_len);
   if (host_len != 6) {
     std::printf("host length doesn't match\n");

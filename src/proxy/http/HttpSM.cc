@@ -6938,13 +6938,15 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
       int len = strlen(t_state.internal_msg_buffer_type);
 
       if (len > 0) {
-        t_state.hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, t_state.internal_msg_buffer_type,
-                                                   len);
+        t_state.hdr_info.client_response.value_set(
+          std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)},
+          std::string_view{t_state.internal_msg_buffer_type, static_cast<std::string_view::size_type>(len)});
       }
       ats_free(t_state.internal_msg_buffer_type);
       t_state.internal_msg_buffer_type = nullptr;
     } else {
-      t_state.hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);
+      t_state.hdr_info.client_response.value_set(
+        std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)}, "text/html"sv);
     }
   } else {
     is_msg_buf_present = false;
@@ -8486,9 +8488,13 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
         char buf[host_len + 7]; // 5 + 1 + 1 ("12345" + ':' + '\0')
 
         host_len = snprintf(buf, host_len + 7, "%.*s:%d", host_len, host, port);
-        t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
+        t_state.hdr_info.client_request.value_set(
+          std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)},
+          std::string_view{buf, static_cast<std::string_view::size_type>(host_len)});
       } else {
-        t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host, host_len);
+        t_state.hdr_info.client_request.value_set(
+          std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)},
+          std::string_view{host, static_cast<std::string_view::size_type>(host_len)});
       }
       t_state.hdr_info.client_request.m_target_cached = false;
       t_state.hdr_info.server_request.m_target_cached = false;
@@ -8520,9 +8526,13 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
           char buf[host_len + 7]; // 5 + 1 + 1 ("12345" + ':' + '\0')
 
           host_len = snprintf(buf, host_len + 7, "%s:%d", origHostNoPort, origPort);
-          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
+          t_state.hdr_info.client_request.value_set(
+            std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)},
+            std::string_view{buf, static_cast<std::string_view::size_type>(host_len)});
         } else {
-          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, origHostNoPort, host_len);
+          t_state.hdr_info.client_request.value_set(
+            std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)},
+            std::string_view{origHostNoPort, static_cast<std::string_view::size_type>(host_len)});
         }
 
         // Cleanup of state etc.

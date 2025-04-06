@@ -273,7 +273,8 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
       Dbg(dbg_ctl_url_rewrite, "Host: Header too long after rewrite");
     } else {
       Dbg(dbg_ctl_url_rewrite, "Host: Header after rewrite %.*s", tmp, host_hdr_buf);
-      request_header->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host_hdr_buf, tmp);
+      request_header->value_set(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)},
+                                std::string_view{host_hdr_buf, static_cast<std::string_view::size_type>(tmp)});
     }
   }
 
