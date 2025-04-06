@@ -1219,7 +1219,7 @@ private:
   // Interface to replace (overwrite) field value without
   // changing the heap as long as the new value is not longer
   // than the current value
-  bool field_value_replace(MIMEField *field, const char *value, int value_length);
+  bool field_value_replace(MIMEField *field, std::string_view value);
 };
 
 /*-------------------------------------------------------------------------
@@ -1489,10 +1489,11 @@ MIMEHdr::value_get_comma_list(std::string_view name, StrList *list) const
   -------------------------------------------------------------------------*/
 
 inline bool
-MIMEHdr::field_value_replace(MIMEField *field, const char *value, int value_length)
+MIMEHdr::field_value_replace(MIMEField *field, std::string_view value)
 {
+  auto value_length{static_cast<uint32_t>(value.length())};
   if (field->m_len_value >= value_length) {
-    memcpy((char *)field->m_ptr_value, value, value_length);
+    memcpy((char *)field->m_ptr_value, value.data(), value_length);
     field->m_len_value = value_length;
     return true;
   }
@@ -1502,7 +1503,8 @@ MIMEHdr::field_value_replace(MIMEField *field, const char *value, int value_leng
 inline void
 MIMEHdr::field_value_set(MIMEField *field, const char *value, int value_length, bool reuse_heaps)
 {
-  if (!reuse_heaps || !field_value_replace(field, value, value_length)) {
+  if (!reuse_heaps ||
+      !field_value_replace(field, std::string_view{value, static_cast<std::string_view::size_type>(value_length)})) {
     field->value_set(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
   }
 }
