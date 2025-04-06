@@ -1153,7 +1153,7 @@ public:
   void value_set_int(std::string_view name, int32_t value);
   void value_set_uint(std::string_view name, uint32_t value);
   void value_set_int64(std::string_view name, int64_t value);
-  void value_set_date(const char *name, int name_length, time_t value);
+  void value_set_date(std::string_view name, time_t value);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void value_append(const char *name, int name_length, const char *value, int value_length, bool prepend_comma = false,
@@ -1610,10 +1610,10 @@ MIMEHdr::value_set_int64(std::string_view name, int64_t value)
 }
 
 inline void
-MIMEHdr::value_set_date(const char *name, int name_length, time_t value)
+MIMEHdr::value_set_date(std::string_view name, time_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
   field->value_set_date(m_heap, m_mime, value);
 }
 
@@ -1853,7 +1853,7 @@ MIMEHdr::set_content_length(int64_t value)
 inline void
 MIMEHdr::set_date(time_t value)
 {
-  value_set_date(MIME_FIELD_DATE, MIME_LEN_DATE, value);
+  value_set_date(std::string_view{MIME_FIELD_DATE, static_cast<std::string_view::size_type>(MIME_LEN_DATE)}, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1862,7 +1862,7 @@ MIMEHdr::set_date(time_t value)
 inline void
 MIMEHdr::set_expires(time_t value)
 {
-  value_set_date(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES, value);
+  value_set_date(std::string_view{MIME_FIELD_EXPIRES, static_cast<std::string_view::size_type>(MIME_LEN_EXPIRES)}, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1871,7 +1871,8 @@ MIMEHdr::set_expires(time_t value)
 inline void
 MIMEHdr::set_if_modified_since(time_t value)
 {
-  value_set_date(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, value);
+  value_set_date(
+    std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)}, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1880,7 +1881,9 @@ MIMEHdr::set_if_modified_since(time_t value)
 inline void
 MIMEHdr::set_if_unmodified_since(time_t value)
 {
-  value_set_date(MIME_FIELD_IF_UNMODIFIED_SINCE, MIME_LEN_IF_UNMODIFIED_SINCE, value);
+  value_set_date(
+    std::string_view{MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_UNMODIFIED_SINCE)},
+    value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1889,7 +1892,8 @@ MIMEHdr::set_if_unmodified_since(time_t value)
 inline void
 MIMEHdr::set_last_modified(time_t value)
 {
-  value_set_date(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED, value);
+  value_set_date(std::string_view{MIME_FIELD_LAST_MODIFIED, static_cast<std::string_view::size_type>(MIME_LEN_LAST_MODIFIED)},
+                 value);
 }
 
 /*-------------------------------------------------------------------------
