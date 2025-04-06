@@ -1147,7 +1147,7 @@ public:
   uint32_t         value_get_uint(std::string_view name) const;
   int64_t          value_get_int64(std::string_view name) const;
   time_t           value_get_date(std::string_view name) const;
-  int              value_get_comma_list(const char *name, int name_length, StrList *list) const;
+  int              value_get_comma_list(std::string_view name, StrList *list) const;
 
   void value_set(const char *name, int name_length, const char *value, int value_length);
   void value_set_int(const char *name, int name_length, int32_t value);
@@ -1476,9 +1476,9 @@ MIMEHdr::value_get_date(std::string_view name) const
 }
 
 inline int
-MIMEHdr::value_get_comma_list(const char *name, int name_length, StrList *list) const
+MIMEHdr::value_get_comma_list(std::string_view name, StrList *list) const
 {
-  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
+  const MIMEField *field = field_find(name);
 
   if (field) {
     return field->value_get_comma_list(list);

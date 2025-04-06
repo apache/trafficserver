@@ -1220,7 +1220,8 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
   if (obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
     StrList vary_list;
 
-    if (obj_origin_server_response->value_get_comma_list(MIME_FIELD_VARY, MIME_LEN_VARY, &vary_list) > 0) {
+    if (obj_origin_server_response->value_get_comma_list(
+          std::string_view{MIME_FIELD_VARY, static_cast<std::string_view::size_type>(MIME_LEN_VARY)}, &vary_list) > 0) {
       if (dbg_ctl_http_match.on() && vary_list.head) {
         DbgPrint(dbg_ctl_http_match, "Vary list of %d elements", vary_list.count);
         vary_list.dump(stderr);

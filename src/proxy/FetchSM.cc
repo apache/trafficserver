@@ -200,7 +200,7 @@ FetchSM::check_for_field_value(const char *name, size_t name_len, char const *va
   bool     zret = false; // not found.
   StrList  slist;
   HTTPHdr *hdr = &client_response_hdr;
-  int      ret = hdr->value_get_comma_list(name, name_len, &slist);
+  int      ret = hdr->value_get_comma_list(std::string_view{name, name_len}, &slist);
 
   ink_release_assert(header_done);
 

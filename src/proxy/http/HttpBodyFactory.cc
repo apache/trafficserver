@@ -127,9 +127,12 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   StrList acpt_charset_list(false);
 
   if (enable_customizations == 2) {
-    context->hdr_info.client_request.value_get_comma_list(MIME_FIELD_ACCEPT_LANGUAGE, MIME_LEN_ACCEPT_LANGUAGE,
-                                                          &acpt_language_list);
-    context->hdr_info.client_request.value_get_comma_list(MIME_FIELD_ACCEPT_CHARSET, MIME_LEN_ACCEPT_CHARSET, &acpt_charset_list);
+    context->hdr_info.client_request.value_get_comma_list(
+      std::string_view{MIME_FIELD_ACCEPT_LANGUAGE, static_cast<std::string_view::size_type>(MIME_LEN_ACCEPT_LANGUAGE)},
+      &acpt_language_list);
+    context->hdr_info.client_request.value_get_comma_list(
+      std::string_view{MIME_FIELD_ACCEPT_CHARSET, static_cast<std::string_view::size_type>(MIME_LEN_ACCEPT_CHARSET)},
+      &acpt_charset_list);
   }
   ///////////////////////////////////////////
   // check if we don't need to format body //
