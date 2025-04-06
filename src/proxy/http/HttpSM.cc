@@ -1147,7 +1147,8 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
       // We got a content length so update our internal
       //   data as well as fix up the request header
       t_state.hdr_info.transform_request_cl = size;
-      t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
+      t_state.hdr_info.server_request.value_set_int64(
+        std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)}, size);
       setup_server_send_request_api();
       break;
     } else {
@@ -1185,7 +1186,8 @@ HttpSM::state_response_wait_for_transform_read(int event, void *data)
     if (size != INT64_MAX && size >= 0) {
       // We got a content length so update our internal state
       t_state.hdr_info.transform_response_cl = size;
-      t_state.hdr_info.transform_response.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
+      t_state.hdr_info.transform_response.value_set_int64(
+        std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)}, size);
     } else {
       t_state.hdr_info.transform_response_cl = HTTP_UNDEFINED_CL;
     }
@@ -6678,7 +6680,8 @@ HttpSM::setup_server_send_request()
 
   if (t_state.api_server_request_body_set) {
     msg_len = t_state.internal_msg_buffer_size;
-    t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
+    t_state.hdr_info.server_request.value_set_int64(
+      std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)}, msg_len);
   }
 
   dump_header(dbg_ctl_http_hdrs, &(t_state.hdr_info.server_request), sm_id, "Proxy's Request after hooks");
