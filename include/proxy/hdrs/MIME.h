@@ -1150,7 +1150,7 @@ public:
   int              value_get_comma_list(std::string_view name, StrList *list) const;
 
   void value_set(std::string_view name, std::string_view value);
-  void value_set_int(const char *name, int name_length, int32_t value);
+  void value_set_int(std::string_view name, int32_t value);
   void value_set_uint(const char *name, int name_length, uint32_t value);
   void value_set_int64(const char *name, int name_length, int64_t value);
   void value_set_date(const char *name, int name_length, time_t value);
@@ -1586,10 +1586,10 @@ MIMEHdr::value_set(std::string_view name, std::string_view value)
 }
 
 inline void
-MIMEHdr::value_set_int(const char *name, int name_length, int32_t value)
+MIMEHdr::value_set_int(std::string_view name, int32_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
   field->value_set_int(m_heap, m_mime, value);
 }
 
@@ -1897,7 +1897,7 @@ MIMEHdr::set_last_modified(time_t value)
 inline void
 MIMEHdr::set_max_forwards(int32_t value)
 {
-  value_set_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS, value);
+  value_set_int(std::string_view{MIME_FIELD_MAX_FORWARDS, static_cast<std::string_view::size_type>(MIME_LEN_MAX_FORWARDS)}, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1906,7 +1906,7 @@ MIMEHdr::set_max_forwards(int32_t value)
 inline void
 MIMEHdr::set_warning(int32_t value)
 {
-  value_set_int(MIME_FIELD_WARNING, MIME_LEN_WARNING, value);
+  value_set_int(std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)}, value);
 }
 
 /*-------------------------------------------------------------------------

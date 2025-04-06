@@ -7119,7 +7119,8 @@ HttpTransact::delete_all_document_alternates_and_return(State *s, bool cache_hit
       if (valid_max_forwards) {
         --max_forwards;
         TxnDbg(dbg_ctl_http_trans, "Decrementing max_forwards to %d", max_forwards);
-        s->hdr_info.client_request.value_set_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS, max_forwards);
+        s->hdr_info.client_request.value_set_int(
+          std::string_view{MIME_FIELD_MAX_FORWARDS, static_cast<std::string_view::size_type>(MIME_LEN_MAX_FORWARDS)}, max_forwards);
       }
     }
   }
@@ -7848,7 +7849,8 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   }
 
   if (base_request->is_early_data()) {
-    outgoing_request->value_set_int(MIME_FIELD_EARLY_DATA, MIME_LEN_EARLY_DATA, 1);
+    outgoing_request->value_set_int(
+      std::string_view{MIME_FIELD_EARLY_DATA, static_cast<std::string_view::size_type>(MIME_LEN_EARLY_DATA)}, 1);
   }
 
   s->request_sent_time = ink_local_time();
