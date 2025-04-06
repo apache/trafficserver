@@ -987,7 +987,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     std::printf("hdr.fields_count() = %d\n", count);
 
     int i_max_forwards = hdr.value_get_int("Max-Forwards"sv);
-    int u_max_forwards = hdr.value_get_uint("Max-Forwards", 12);
+    int u_max_forwards = hdr.value_get_uint("Max-Forwards"sv);
     std::printf("i_max_forwards = %d   u_max_forwards = %d\n", i_max_forwards, u_max_forwards);
 
     hdr.set_age(9999);
