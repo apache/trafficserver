@@ -1151,7 +1151,7 @@ public:
 
   void value_set(std::string_view name, std::string_view value);
   void value_set_int(std::string_view name, int32_t value);
-  void value_set_uint(const char *name, int name_length, uint32_t value);
+  void value_set_uint(std::string_view name, uint32_t value);
   void value_set_int64(const char *name, int name_length, int64_t value);
   void value_set_date(const char *name, int name_length, time_t value);
   // MIME standard separator ',' is used as the default value
@@ -1594,10 +1594,10 @@ MIMEHdr::value_set_int(std::string_view name, int32_t value)
 }
 
 inline void
-MIMEHdr::value_set_uint(const char *name, int name_length, uint32_t value)
+MIMEHdr::value_set_uint(std::string_view name, uint32_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
   field->value_set_uint(m_heap, m_mime, value);
 }
 
@@ -1825,14 +1825,14 @@ inline void
 MIMEHdr::set_age(time_t value)
 {
   if (value < 0)
-    value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, (uint32_t)INT_MAX + 1);
+    value_set_uint(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)}, (uint32_t)INT_MAX + 1);
   else {
     if (sizeof(time_t) > 4) {
       value_set_int64(MIME_FIELD_AGE, MIME_LEN_AGE, value);
     } else {
       // Only on systems where time_t is 32 bits
       // coverity[Y2K38_SAFETY]
-      value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
+      value_set_uint(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)}, value);
     }
   }
 }
