@@ -4904,8 +4904,9 @@ HttpSM::do_range_setup_if_necessary()
 
       if (t_state.num_range_fields > 1) {
         if (0 == t_state.txn_conf->allow_multi_range) {
-          t_state.range_setup = HttpTransact::RANGE_NONE;                                 // No Range required (not allowed)
-          t_state.hdr_info.client_request.field_delete(MIME_FIELD_RANGE, MIME_LEN_RANGE); // ... and nuke the Range header too
+          t_state.range_setup = HttpTransact::RANGE_NONE; // No Range required (not allowed)
+          t_state.hdr_info.client_request.field_delete(std::string_view{
+            MIME_FIELD_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_RANGE)}); // ... and nuke the Range header too
           t_state.num_range_fields = 0;
         } else if (1 == t_state.txn_conf->allow_multi_range) {
           do_transform = true;
@@ -6927,7 +6928,8 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     // Set the content length here since a plugin
     //   may have changed the error body
     t_state.hdr_info.client_response.set_content_length(t_state.internal_msg_buffer_size);
-    t_state.hdr_info.client_response.field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    t_state.hdr_info.client_response.field_delete(
+      std::string_view{MIME_FIELD_TRANSFER_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_TRANSFER_ENCODING)});
 
     // set internal_msg_buffer_type if available
     if (t_state.internal_msg_buffer_type) {
@@ -6950,7 +6952,8 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     //   Needed for keep-alive on PURGE requests
     if (!is_response_body_precluded(t_state.hdr_info.client_response.status_get(), t_state.method)) {
       t_state.hdr_info.client_response.set_content_length(0);
-      t_state.hdr_info.client_response.field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+      t_state.hdr_info.client_response.field_delete(
+        std::string_view{MIME_FIELD_TRANSFER_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_TRANSFER_ENCODING)});
     }
   }
 
@@ -7196,7 +7199,8 @@ HttpSM::setup_server_transfer()
     }
   }
   if (action == TCA_CHUNK_CONTENT || action == TCA_PASSTHRU_CHUNKED_CONTENT) { // remove Content-Length
-    t_state.hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+    t_state.hdr_info.client_response.field_delete(
+      std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
   }
   // Now dump the header into the buffer
   ink_assert(t_state.hdr_info.client_response.status_get() != HTTP_STATUS_NOT_MODIFIED);
@@ -8538,7 +8542,8 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       } else {
       LhostError:
         // the server request didn't have a host, so remove it from the headers
-        t_state.hdr_info.client_request.field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
+        t_state.hdr_info.client_request.field_delete(
+          std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
       }
     }
   }

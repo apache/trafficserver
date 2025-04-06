@@ -270,7 +270,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     //   won't be able to resolve it and the request will not go
     //   through
     if (tmp >= TS_MAX_HOST_NAME_LEN) {
-      request_header->field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
+      request_header->field_delete(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
       Dbg(dbg_ctl_url_rewrite, "Host: Header too long after rewrite");
     } else {
       Dbg(dbg_ctl_url_rewrite, "Host: Header after rewrite %.*s", tmp, host_hdr_buf);

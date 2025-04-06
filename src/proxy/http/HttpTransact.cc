@@ -1719,7 +1719,8 @@ HttpTransact::setup_plugin_request_intercept(State *s)
 
   // We don't do keep alive over these impersonated
   //  NetVCs so nuke the connection header
-  s->hdr_info.server_request.field_delete(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+  s->hdr_info.server_request.field_delete(
+    std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
 
   TRANSACT_RETURN(SM_ACTION_ORIGIN_SERVER_OPEN, nullptr);
 }
@@ -3217,8 +3218,10 @@ HttpTransact::handle_cache_write_lock(State *s)
   //  ignoring the cache.  If their is a client ims field, copy that since
   //  we're tunneling response anyway
   if (remove_ims) {
-    s->hdr_info.server_request.field_delete(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
-    s->hdr_info.server_request.field_delete(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
+    s->hdr_info.server_request.field_delete(
+      std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)});
+    s->hdr_info.server_request.field_delete(
+      std::string_view{MIME_FIELD_IF_NONE_MATCH, static_cast<std::string_view::size_type>(MIME_LEN_IF_NONE_MATCH)});
     MIMEField *c_ims = s->hdr_info.client_request.field_find(
       std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)});
     MIMEField *c_inm = s->hdr_info.client_request.field_find(
@@ -4313,7 +4316,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     } else {
       if (!keep_alive) {
         /* START Hack */
-        (s->hdr_info.server_request).field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+        (s->hdr_info.server_request)
+          .field_delete(
+            std::string_view{MIME_FIELD_PROXY_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_PROXY_CONNECTION)});
         /* END   Hack */
       }
       s->already_downgraded = true;
@@ -4802,9 +4807,9 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
   // 10.3.5), but RFC 7232) is clear that the 304 and 200 responses
   // must be identical (see section 4.1). This code attempts to strike
   // a balance between the two.
-  cached_hdr->field_delete(MIME_FIELD_AGE, MIME_LEN_AGE);
-  cached_hdr->field_delete(MIME_FIELD_ETAG, MIME_LEN_ETAG);
-  cached_hdr->field_delete(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES);
+  cached_hdr->field_delete(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)});
+  cached_hdr->field_delete(std::string_view{MIME_FIELD_ETAG, static_cast<std::string_view::size_type>(MIME_LEN_ETAG)});
+  cached_hdr->field_delete(std::string_view{MIME_FIELD_EXPIRES, static_cast<std::string_view::size_type>(MIME_LEN_EXPIRES)});
 
   merge_response_header_with_cached_header(cached_hdr, &s->hdr_info.server_response);
 
@@ -4837,7 +4842,8 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
     delete_warning_value(cached_hdr, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   }
 
-  s->cache_info.object_store.request_get()->field_delete(MIME_FIELD_VIA, MIME_LEN_VIA);
+  s->cache_info.object_store.request_get()->field_delete(
+    std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)});
 }
 
 void
@@ -4916,7 +4922,8 @@ HttpTransact::set_header_for_transform(State *s, HTTPHdr *base_header)
   // Nuke the content length since 1) the transform will probably
   //   change it.  2) it would only be valid for the first transform
   //   in the chain
-  s->hdr_info.transform_response.field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  s->hdr_info.transform_response.field_delete(
+    std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
 
   dump_header(dbg_ctl_http_hdrs, &s->hdr_info.transform_response, s->state_machine_id(), "Header To Transform");
 }
@@ -4968,14 +4975,17 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
 
   // Set-Cookie should not be put in the cache to prevent
   //  sending person A's cookie to person B
-  cache_info->response_get()->field_delete(MIME_FIELD_SET_COOKIE, MIME_LEN_SET_COOKIE);
-  cache_info->request_get()->field_delete(MIME_FIELD_VIA, MIME_LEN_VIA);
+  cache_info->response_get()->field_delete(
+    std::string_view{MIME_FIELD_SET_COOKIE, static_cast<std::string_view::size_type>(MIME_LEN_SET_COOKIE)});
+  cache_info->request_get()->field_delete(std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)});
   // server 200 Ok for Range request
-  cache_info->request_get()->field_delete(MIME_FIELD_RANGE, MIME_LEN_RANGE);
+  cache_info->request_get()->field_delete(
+    std::string_view{MIME_FIELD_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_RANGE)});
 
   // If we're ignoring auth, then we don't want to cache WWW-Auth headers
   if (s->txn_conf->cache_ignore_auth) {
-    cache_info->response_get()->field_delete(MIME_FIELD_WWW_AUTHENTICATE, MIME_LEN_WWW_AUTHENTICATE);
+    cache_info->response_get()->field_delete(
+      std::string_view{MIME_FIELD_WWW_AUTHENTICATE, static_cast<std::string_view::size_type>(MIME_LEN_WWW_AUTHENTICATE)});
   }
 
   dump_header(dbg_ctl_http_hdrs, cache_info->request_get(), s->state_machine_id(), "Cached Request Hdr");
@@ -5059,7 +5069,7 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
           if (name2.data() == MIME_FIELD_CONTENT_TYPE) {
             continue;
           }
-          cached_header->field_delete(name2.data(), name2.length());
+          cached_header->field_delete(name2);
         }
         dups_seen = true;
       }
@@ -5130,7 +5140,7 @@ HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_hea
     }
 
     // At this point we can nuke the old warning headers
-    cached_header->field_delete(MIME_FIELD_WARNING, MIME_LEN_WARNING);
+    cached_header->field_delete(std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)});
 
     // Add in the new header if it has anything in it
     if (new_cwarn) {
@@ -6727,7 +6737,8 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         break;
       }
     } else {
-      header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+      header->field_delete(
+        std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
       s->hdr_info.trust_response_cl = false;
     }
     TxnDbg(dbg_ctl_http_trans, "RESPONSE cont len in hdr is %" PRId64, header->get_content_length());
@@ -6747,7 +6758,8 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
       //   written into a cache completely.
       cl = s->cache_info.object_read->object_size_get();
       if (cl == INT64_MAX) { // INT64_MAX cl in cache indicates rww in progress
-        header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+        header->field_delete(
+          std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
         s->hdr_info.trust_response_cl      = false;
         s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
         ink_assert(s->range_setup == RANGE_NONE);
@@ -6776,7 +6788,8 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
       } else {
         s->hdr_info.trust_response_cl = false;
       }
-      header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+      header->field_delete(
+        std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
       ink_assert(s->range_setup != RANGE_NOT_TRANSFORM_REQUESTED);
     }
   }
@@ -6836,8 +6849,9 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
 
   // Since connection headers are hop-to-hop, strip the
   //  the ones we received from the user-agent
-  heads->field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
-  heads->field_delete(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+  heads->field_delete(
+    std::string_view{MIME_FIELD_PROXY_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_PROXY_CONNECTION)});
+  heads->field_delete(std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
 
   if (!s->is_upgrade_request) {
     // Insert K-A headers as necessary
@@ -6914,8 +6928,9 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
 
   // Since connection headers are hop-to-hop, strip the
   //  the ones we received from upstream
-  heads->field_delete(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-  heads->field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+  heads->field_delete(std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
+  heads->field_delete(
+    std::string_view{MIME_FIELD_PROXY_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_PROXY_CONNECTION)});
 
   // Handle the upgrade cases
   if (s->is_upgrade_request && heads->status_get() == HTTP_STATUS_SWITCHING_PROTOCOL && s->source == SOURCE_HTTP_ORIGIN_SERVER) {
@@ -6991,7 +7006,8 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
       s->hdr_info.trust_response_cl = false;
 
       // And delete the header if it's already been added...
-      heads->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+      heads->field_delete(
+        std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
     }
 
     // Close the connection if client_info is not keep-alive.
@@ -8146,8 +8162,10 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   // page.
   s->hdr_info.client_response.value_set(MIME_FIELD_CACHE_CONTROL, MIME_LEN_CACHE_CONTROL, "no-store", 8);
   // Make sure there are no Expires and Last-Modified headers.
-  s->hdr_info.client_response.field_delete(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES);
-  s->hdr_info.client_response.field_delete(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED);
+  s->hdr_info.client_response.field_delete(
+    std::string_view{MIME_FIELD_EXPIRES, static_cast<std::string_view::size_type>(MIME_LEN_EXPIRES)});
+  s->hdr_info.client_response.field_delete(
+    std::string_view{MIME_FIELD_LAST_MODIFIED, static_cast<std::string_view::size_type>(MIME_LEN_LAST_MODIFIED)});
 
   if ((status_code == HTTP_STATUS_PERMANENT_REDIRECT || status_code == HTTP_STATUS_TEMPORARY_REDIRECT ||
        status_code == HTTP_STATUS_MOVED_TEMPORARILY || status_code == HTTP_STATUS_MOVED_PERMANENTLY) &&
@@ -8185,8 +8203,10 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE, body_language,
                                           strlen(body_language));
   } else {
-    s->hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
-    s->hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE);
+    s->hdr_info.client_response.field_delete(
+      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
+    s->hdr_info.client_response.field_delete(
+      std::string_view{MIME_FIELD_CONTENT_LANGUAGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LANGUAGE)});
   }
 
   s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
@@ -8905,7 +8925,7 @@ HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_cod
           valid_p = iter.get_next_int(val_code);
         }
 
-        to_warn->field_delete(MIME_FIELD_WARNING, MIME_LEN_WARNING);
+        to_warn->field_delete(std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)});
         if (new_field) {
           new_field->name_set(to_warn->m_heap, to_warn->m_mime,
                               std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)});
@@ -8937,7 +8957,8 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
       std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
 
     if (field != nullptr) {
-      header->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+      header->field_delete(
+        std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
     }
 
     field = header->field_create(
@@ -8955,7 +8976,8 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
       // when we have the information for it available.
       // TODO: Also, it's unclear as to why object_read->valid() is not always true here.
       char numbers[RANGE_NUMBERS_LENGTH];
-      header->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+      header->field_delete(
+        std::string_view{MIME_FIELD_CONTENT_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_RANGE)});
       field = header->field_create(
         std::string_view{MIME_FIELD_CONTENT_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_RANGE)});
       snprintf(numbers, sizeof(numbers), "bytes %" PRId64 "-%" PRId64 "/%" PRId64, s->ranges[0]._start, s->ranges[0]._end,

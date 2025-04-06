@@ -118,7 +118,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     }
     // Remove the host header field, redundant to the authority field
     // For istio/envoy, having both was causing 404 responses
-    header.field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
+    header.field_delete(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :authority");
     return PARSE_RESULT_ERROR;

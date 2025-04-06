@@ -1087,7 +1087,8 @@ RangeTransform::change_response_header()
       std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
 
     if (field != nullptr) {
-      m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+      m_transform_resp->field_delete(
+        std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
     }
 
     field = m_transform_resp->field_create(
@@ -1097,7 +1098,8 @@ RangeTransform::change_response_header()
     m_transform_resp->field_attach(field);
   } else {
     char numbers[RANGE_NUMBERS_LENGTH];
-    m_transform_resp->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+    m_transform_resp->field_delete(
+      std::string_view{MIME_FIELD_CONTENT_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_RANGE)});
     field = m_transform_resp->field_create(
       std::string_view{MIME_FIELD_CONTENT_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_RANGE)});
     snprintf(numbers, sizeof(numbers), "bytes %" PRId64 "-%" PRId64 "/%" PRId64, m_ranges[0]._start, m_ranges[0]._end, m_output_cl);

@@ -872,10 +872,13 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 {
   if (outgoing->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MATCH |
                          MIME_PRESENCE_IF_NONE_MATCH)) {
-    outgoing->field_delete(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
-    outgoing->field_delete(MIME_FIELD_IF_UNMODIFIED_SINCE, MIME_LEN_IF_UNMODIFIED_SINCE);
-    outgoing->field_delete(MIME_FIELD_IF_MATCH, MIME_LEN_IF_MATCH);
-    outgoing->field_delete(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
+    outgoing->field_delete(
+      std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)});
+    outgoing->field_delete(
+      std::string_view{MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_UNMODIFIED_SINCE)});
+    outgoing->field_delete(std::string_view{MIME_FIELD_IF_MATCH, static_cast<std::string_view::size_type>(MIME_LEN_IF_MATCH)});
+    outgoing->field_delete(
+      std::string_view{MIME_FIELD_IF_NONE_MATCH, static_cast<std::string_view::size_type>(MIME_LEN_IF_NONE_MATCH)});
   }
   // TODO: how about RANGE and IF_RANGE?
 }
@@ -887,7 +890,7 @@ HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr
   const char *expect = s->hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
 
   if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
-    outgoing->field_delete(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
+    outgoing->field_delete(std::string_view{MIME_FIELD_EXPECT, static_cast<std::string_view::size_type>(MIME_LEN_EXPECT)});
   }
 }
 
@@ -1149,27 +1152,27 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams       
   // From
   if (http_txn_conf->anonymize_remove_from) {
     Dbg(dbg_ctl_anon, "removing 'From' headers");
-    header->field_delete(MIME_FIELD_FROM, MIME_LEN_FROM);
+    header->field_delete(std::string_view{MIME_FIELD_FROM, static_cast<std::string_view::size_type>(MIME_LEN_FROM)});
   }
   // Referer
   if (http_txn_conf->anonymize_remove_referer) {
     Dbg(dbg_ctl_anon, "removing 'Referer' headers");
-    header->field_delete(MIME_FIELD_REFERER, MIME_LEN_REFERER);
+    header->field_delete(std::string_view{MIME_FIELD_REFERER, static_cast<std::string_view::size_type>(MIME_LEN_REFERER)});
   }
   // User-Agent
   if (http_txn_conf->anonymize_remove_user_agent) {
     Dbg(dbg_ctl_anon, "removing 'User-agent' headers");
-    header->field_delete(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT);
+    header->field_delete(std::string_view{MIME_FIELD_USER_AGENT, static_cast<std::string_view::size_type>(MIME_LEN_USER_AGENT)});
   }
   // Cookie
   if (http_txn_conf->anonymize_remove_cookie) {
     Dbg(dbg_ctl_anon, "removing 'Cookie' headers");
-    header->field_delete(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
+    header->field_delete(std::string_view{MIME_FIELD_COOKIE, static_cast<std::string_view::size_type>(MIME_LEN_COOKIE)});
   }
   // Client-ip
   if (http_txn_conf->anonymize_remove_client_ip) {
     Dbg(dbg_ctl_anon, "removing 'Client-ip' headers");
-    header->field_delete(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP);
+    header->field_delete(std::string_view{MIME_FIELD_CLIENT_IP, static_cast<std::string_view::size_type>(MIME_LEN_CLIENT_IP)});
   }
   /////////////////////////////////////////////
   // remove any other user specified headers //
@@ -1187,7 +1190,7 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams       
     HttpCompat::parse_comma_list(&anon_list, anon_string);
     for (field = anon_list.head; field != nullptr; field = field->next) {
       Dbg(dbg_ctl_anon, "removing '%s' headers", field->str);
-      header->field_delete(field->str, field->len);
+      header->field_delete(std::string_view{field->str, field->len});
     }
   }
 }

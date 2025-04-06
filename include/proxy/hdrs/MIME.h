@@ -1123,7 +1123,7 @@ public:
   void             field_attach(MIMEField *field);
   void             field_detach(MIMEField *field, bool detach_all_dups = true);
   void             field_delete(MIMEField *field, bool delete_all_dups = true);
-  void             field_delete(const char *name, int name_length);
+  void             field_delete(std::string_view name);
 
   iterator begin() const;
   iterator end() const;
@@ -1364,9 +1364,9 @@ MIMEHdr::end() const -> iterator
 }
 
 inline void
-MIMEHdr::field_delete(const char *name, int name_length)
+MIMEHdr::field_delete(std::string_view name)
 {
-  MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
+  MIMEField *field = field_find(name);
   if (field)
     field_delete(field);
 }

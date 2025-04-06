@@ -977,12 +977,12 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       REQUIRE(false);
     }
 
-    hdr.field_delete("not_there", 9);
-    hdr.field_delete("accept", 6);
-    hdr.field_delete("scooby", 6);
-    hdr.field_delete("scooby", 6);
-    hdr.field_delete("bar", 3);
-    hdr.field_delete("continuation", 12);
+    hdr.field_delete("not_there"sv);
+    hdr.field_delete("accept"sv);
+    hdr.field_delete("scooby"sv);
+    hdr.field_delete("scooby"sv);
+    hdr.field_delete("bar"sv);
+    hdr.field_delete("continuation"sv);
 
     int count = hdr.fields_count();
     std::printf("hdr.fields_count() = %d\n", count);
@@ -1665,7 +1665,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     /**** (3) delete all the even numbered fields *****/
     for (i = 2; i <= 100; i += 2) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
-      resp_hdr.field_delete(field_name, static_cast<int>(strlen(field_name)));
+      resp_hdr.field_delete(std::string_view{field_name});
     }
 
     /***** (4) add in secondary fields for all multiples of 3 ***/
@@ -1689,7 +1689,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     /**** (6) delete all multiples of nine *****/
     for (i = 9; i <= 100; i += 9) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
-      resp_hdr.field_delete(field_name, static_cast<int>(strlen(field_name)));
+      resp_hdr.field_delete(std::string_view{field_name});
     }
 
     std::printf("\n======== mutated response ==========\n\n");
