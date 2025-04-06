@@ -1146,7 +1146,7 @@ public:
   int32_t          value_get_int(std::string_view name) const;
   uint32_t         value_get_uint(std::string_view name) const;
   int64_t          value_get_int64(std::string_view name) const;
-  time_t           value_get_date(const char *name, int name_length) const;
+  time_t           value_get_date(std::string_view name) const;
   int              value_get_comma_list(const char *name, int name_length, StrList *list) const;
 
   void value_set(const char *name, int name_length, const char *value, int value_length);
@@ -1465,9 +1465,9 @@ MIMEHdr::value_get_int64(std::string_view name) const
 }
 
 inline time_t
-MIMEHdr::value_get_date(const char *name, int name_length) const
+MIMEHdr::value_get_date(std::string_view name) const
 {
-  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
+  const MIMEField *field = field_find(name);
 
   if (field) {
     return mime_field_value_get_date(field);
@@ -1673,7 +1673,7 @@ MIMEHdr::get_content_length() const
 inline time_t
 MIMEHdr::get_date() const
 {
-  return value_get_date(MIME_FIELD_DATE, MIME_LEN_DATE);
+  return value_get_date(std::string_view{MIME_FIELD_DATE, static_cast<std::string_view::size_type>(MIME_LEN_DATE)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1682,7 +1682,7 @@ MIMEHdr::get_date() const
 inline time_t
 MIMEHdr::get_expires() const
 {
-  return value_get_date(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES);
+  return value_get_date(std::string_view{MIME_FIELD_EXPIRES, static_cast<std::string_view::size_type>(MIME_LEN_EXPIRES)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1691,7 +1691,8 @@ MIMEHdr::get_expires() const
 inline time_t
 MIMEHdr::get_if_modified_since() const
 {
-  return value_get_date(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
+  return value_get_date(
+    std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1700,7 +1701,8 @@ MIMEHdr::get_if_modified_since() const
 inline time_t
 MIMEHdr::get_if_unmodified_since() const
 {
-  return value_get_date(MIME_FIELD_IF_UNMODIFIED_SINCE, MIME_LEN_IF_UNMODIFIED_SINCE);
+  return value_get_date(
+    std::string_view{MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_UNMODIFIED_SINCE)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1709,7 +1711,8 @@ MIMEHdr::get_if_unmodified_since() const
 inline time_t
 MIMEHdr::get_last_modified() const
 {
-  return value_get_date(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED);
+  return value_get_date(
+    std::string_view{MIME_FIELD_LAST_MODIFIED, static_cast<std::string_view::size_type>(MIME_LEN_LAST_MODIFIED)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1718,7 +1721,7 @@ MIMEHdr::get_last_modified() const
 inline time_t
 MIMEHdr::get_if_range_date() const
 {
-  return value_get_date(MIME_FIELD_IF_RANGE, MIME_LEN_IF_RANGE);
+  return value_get_date(std::string_view{MIME_FIELD_IF_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_IF_RANGE)});
 }
 
 /*-------------------------------------------------------------------------
