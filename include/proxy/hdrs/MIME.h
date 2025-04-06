@@ -1165,8 +1165,7 @@ public:
   void field_value_set_date(MIMEField *field, time_t value);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
-  void    field_value_append(MIMEField *field, const char *value, int value_length, bool prepend_comma = false,
-                             const char separator = ',');
+  void    field_value_append(MIMEField *field, std::string_view value, bool prepend_comma = false, const char separator = ',');
   void    value_append_or_set(const char *name, const int name_length, char *value, int value_length);
   void    field_combine_dups(MIMEField *field, bool prepend_comma = false, const char separator = ',');
   time_t  get_age() const;
@@ -1536,10 +1535,9 @@ MIMEHdr::field_value_set_date(MIMEField *field, time_t value)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::field_value_append(MIMEField *field, const char *value_str, int value_len, bool prepend_comma, const char separator)
+MIMEHdr::field_value_append(MIMEField *field, std::string_view value, bool prepend_comma, const char separator)
 {
-  field->value_append(m_heap, m_mime, std::string_view{value_str, static_cast<std::string_view::size_type>(value_len)},
-                      prepend_comma, separator);
+  field->value_append(m_heap, m_mime, value, prepend_comma, separator);
 }
 
 inline void
@@ -1567,7 +1565,7 @@ MIMEHdr::value_append_or_set(const char *name, const int name_length, char *valu
     while (field->m_next_dup) {
       field = field->m_next_dup;
     }
-    field_value_append(field, value, value_length, true);
+    field_value_append(field, std::string_view{value, static_cast<std::string_view::size_type>(value_length)}, true);
   } else {
     value_set(std::string_view{name, static_cast<std::string_view::size_type>(name_length)},
               std::string_view{value, static_cast<std::string_view::size_type>(value_length)});

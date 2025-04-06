@@ -4646,11 +4646,11 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       // HDR FIX ME - Multiple appends are VERY slow
       while (resp_via) {
         auto cfield{resp_via->value_get()};
-        s->hdr_info.client_response.field_value_append(our_via, cfield.data(), cfield.length(), true);
+        s->hdr_info.client_response.field_value_append(our_via, cfield, true);
         resp_via = resp_via->m_next_dup;
       }
       if (saved_via_w.size()) {
-        s->hdr_info.client_response.field_value_append(our_via, saved_via_w.data(), saved_via_w.size(), true);
+        s->hdr_info.client_response.field_value_append(our_via, saved_via_w, true);
       }
     }
     // a warning text is added only in the case of a NOT MODIFIED response
@@ -5140,7 +5140,8 @@ HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_hea
         } else {
           first_move = false;
         }
-        cached_header->field_value_append(new_cwarn, move_warn, move_warn_len, !first_move);
+        cached_header->field_value_append(
+          new_cwarn, std::string_view{move_warn, static_cast<std::string_view::size_type>(move_warn_len)}, !first_move);
       }
 
       move_warn = csv.get_next(&move_warn_len);
@@ -5162,7 +5163,7 @@ HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_hea
     auto move_warn_sv{r_warn->value_get()};
 
     if (new_cwarn) {
-      cached_header->field_value_append(new_cwarn, move_warn_sv.data(), move_warn_sv.length(), true);
+      cached_header->field_value_append(new_cwarn, move_warn_sv, true);
     } else {
       new_cwarn = cached_header->field_create(
         std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)});
