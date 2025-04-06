@@ -124,7 +124,7 @@ For example:
 
 .. code-block:: cpp
 
-  borrow url = cripts::Client::URL::get();
+  borrow url = cripts::Client::URL::Get();
 
   url.query.Erase("key"); // Removes the key from the query
   url.query.Erase({"key1", "key2"}); // Removes both keys from the query

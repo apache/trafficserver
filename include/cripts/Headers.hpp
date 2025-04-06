@@ -345,18 +345,20 @@ public:
       _hdr_loc = nullptr;
       _bufp    = nullptr;
     }
-    _state = nullptr;
+    _initialized = false;
   }
 
   [[nodiscard]] TSMBuffer
-  BufP() const
+  BufP()
   {
+    _ensure_initialized(this);
     return _bufp;
   }
 
   [[nodiscard]] TSMLoc
-  MLoc() const
+  MLoc()
   {
+    _ensure_initialized(this);
     return _hdr_loc;
   }
 
@@ -365,12 +367,13 @@ public:
   [[nodiscard]] bool
   Initialized() const
   {
-    return (_state != nullptr);
+    return _initialized;
   }
 
   void
   Erase(const cripts::string_view header)
   {
+    _ensure_initialized(this);
     operator[](header) = "";
   }
 
@@ -383,23 +386,35 @@ public:
     return Iterator::end(); // Static end iterator. ToDo: Does this have any value over making a new one always?
   }
 
+  // This should only be called from the Context initializers!
+  void
+  set_state(cripts::Transaction *state)
+  {
+    _state = state;
+  }
+
   Status      status;
   Reason      reason;
   Body        body;
   CacheStatus cache;
 
 protected:
-  void
-  _initialize(cripts::Transaction *state)
+  static void
+  _ensure_initialized(self_type *ptr)
   {
-    _state = state;
+    if (!ptr->Initialized()) [[unlikely]] {
+      ptr->_initialize();
+    }
   }
+
+  void virtual _initialize() { _initialized = true; }
 
   TSMBuffer            _bufp         = nullptr;
   TSMLoc               _hdr_loc      = nullptr;
   cripts::Transaction *_state        = nullptr; // Pointer into the owning Context's State
   TSMLoc               _iterator_loc = nullptr;
   uint32_t             _iterator_tag = 0; // This is used to assure that we don't have more than one active iterator on a header
+  bool                 _initialized  = false;
 
 }; // End class Header
 
@@ -440,6 +455,7 @@ namespace Client
 
     // Implemented later, because needs the context.
     static self_type &_get(cripts::Context *context);
+    void              _initialize() override;
 
   }; // End class Client::Request
 
@@ -455,6 +471,7 @@ namespace Client
 
     // Implemented later, because needs the context.
     static self_type &_get(cripts::Context *context);
+    void              _initialize() override;
 
   }; // End class Client::Response
 
@@ -473,7 +490,9 @@ namespace Server
     void operator=(const self_type &) = delete;
 
     // Implemented later, because needs the context.
-    static Request &_get(cripts::Context *context);
+    static self_type &_get(cripts::Context *context);
+    void              _initialize() override;
+
   }; // End class Server::Request
 
   class Response : public ResponseHeader
@@ -488,6 +507,7 @@ namespace Server
 
     // Implemented later, because needs the context.
     static self_type &_get(cripts::Context *context);
+    void              _initialize() override;
 
   }; // End class Server::Response
 

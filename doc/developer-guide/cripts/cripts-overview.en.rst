@@ -94,9 +94,9 @@ depending on your preference. The file must be readable by the ATS process. Exam
 
    do_remap()
    {
-     borrow url = cripts::Client::URL::get();
+     borrow url = cripts::Client::URL::Get();
 
-     url.query.keep({"foo", "bar"});
+     url.query.Keep({"foo", "bar"});
    }
 
    #include <cripts/Epilogue.hpp>
