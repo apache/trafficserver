@@ -1141,7 +1141,7 @@ public:
   int parse(MIMEParser *parser, const char **start, const char *end, bool must_copy_strs, bool eof, bool remove_ws_from_field_name,
             size_t max_hdr_field_size = UINT16_MAX);
 
-  int              value_get_index(const char *name, int name_length, const char *value, int value_length) const;
+  int              value_get_index(std::string_view name, std::string_view value) const;
   const char      *value_get(const char *name, int name_length, int *value_length) const;
   std::string_view value_get(std::string_view const &name) const; // Convenience overload.
   int32_t          value_get_int(const char *name, int name_length) const;
@@ -1408,12 +1408,12 @@ MIMEHdr::parse(MIMEParser *parser, const char **start, const char *end, bool mus
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 inline int
-MIMEHdr::value_get_index(const char *name, int name_length, const char *value, int value_length) const
+MIMEHdr::value_get_index(std::string_view name, std::string_view value) const
 {
-  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
+  const MIMEField *field = field_find(name);
 
   if (field) {
-    return field->value_get_index(std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
+    return field->value_get_index(value);
   }
   return -1;
 }

@@ -1036,15 +1036,15 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       std::printf("Failed: value_get_index of Cache-Control incorrectly found bogus");
       REQUIRE(false);
     }
-    if (hdr.value_get_index("foo", 3, "three", 5) < 0) {
+    if (hdr.value_get_index("foo"sv, "three"sv) < 0) {
       std::printf("Failed: value_get_index of foo did not find three");
       REQUIRE(false);
     }
-    if (hdr.value_get_index("foo", 3, "bar", 3) < 0) {
+    if (hdr.value_get_index("foo"sv, "bar"sv) < 0) {
       std::printf("Failed: value_get_index of foo did not find bar");
       REQUIRE(false);
     }
-    if (hdr.value_get_index("foo", 3, "Bogus", 5) >= 0) {
+    if (hdr.value_get_index("foo"sv, "Bogus"sv) >= 0) {
       std::printf("Failed: value_get_index of foo incorrectly found bogus");
       REQUIRE(false);
     }
