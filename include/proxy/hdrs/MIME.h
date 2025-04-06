@@ -1166,7 +1166,7 @@ public:
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void    field_value_append(MIMEField *field, std::string_view value, bool prepend_comma = false, const char separator = ',');
-  void    value_append_or_set(const char *name, const int name_length, char *value, int value_length);
+  void    value_append_or_set(std::string_view name, std::string_view value);
   void    field_combine_dups(MIMEField *field, bool prepend_comma = false, const char separator = ',');
   time_t  get_age() const;
   int64_t get_content_length() const;
@@ -1557,18 +1557,17 @@ MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char sep
 }
 
 inline void
-MIMEHdr::value_append_or_set(const char *name, const int name_length, char *value, int value_length)
+MIMEHdr::value_append_or_set(std::string_view name, std::string_view value)
 {
   MIMEField *field = nullptr;
 
-  if ((field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)})) != nullptr) {
+  if ((field = field_find(name)) != nullptr) {
     while (field->m_next_dup) {
       field = field->m_next_dup;
     }
-    field_value_append(field, std::string_view{value, static_cast<std::string_view::size_type>(value_length)}, true);
+    field_value_append(field, value, true);
   } else {
-    value_set(std::string_view{name, static_cast<std::string_view::size_type>(name_length)},
-              std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
+    value_set(name, value);
   }
 }
 

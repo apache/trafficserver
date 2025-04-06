@@ -5336,7 +5336,9 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
 
   // Add or append to the X-Forwarded-For header
   if (s->txn_conf->insert_squid_x_forwarded_for) {
-    request->value_append_or_set(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR, ip_string, ip_string_size);
+    request->value_append_or_set(
+      std::string_view{MIME_FIELD_X_FORWARDED_FOR, static_cast<std::string_view::size_type>(MIME_LEN_X_FORWARDED_FOR)},
+      std::string_view{ip_string, ip_string_size});
     TxnDbg(dbg_ctl_http_trans, "Appended connecting client's (%s) to the X-Forwards header", ip_string);
   }
 }
