@@ -1474,7 +1474,7 @@ HttpTransact::ModifyRequest(State *s)
     }
 
     if (mimefield_value_equal(host_field, hostname, hostname_len) == false) {
-      request.field_value_set(host_field, hostname, hostname_len);
+      request.field_value_set(host_field, std::string_view{hostname, static_cast<std::string_view::size_type>(hostname_len)});
       request.mark_target_dirty();
     }
   }
@@ -4641,7 +4641,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       } else {
         auto src{our_via->value_get()};
         saved_via_w.write(src.data(), src.length());
-        s->hdr_info.client_response.field_value_set(our_via, "", 0, true);
+        s->hdr_info.client_response.field_value_set(our_via, ""sv, true);
       }
       // HDR FIX ME - Multiple appends are VERY slow
       while (resp_via) {
@@ -5089,7 +5089,7 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     } else {
       new_field = cached_header->field_create(name);
       cached_header->field_attach(new_field);
-      cached_header->field_value_set(new_field, value.data(), value.length());
+      cached_header->field_value_set(new_field, value);
     }
   }
 
@@ -5167,7 +5167,7 @@ HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_hea
       new_cwarn = cached_header->field_create(
         std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)});
       cached_header->field_attach(new_cwarn);
-      cached_header->field_value_set(new_cwarn, move_warn_sv.data(), move_warn_sv.length());
+      cached_header->field_value_set(new_cwarn, move_warn_sv);
     }
 
     r_warn = r_warn->m_next_dup;
@@ -5896,7 +5896,8 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
               new_enc_field->value_append(incoming_response->m_heap, incoming_response->m_mime, new_enc_val, new_enc_len, true);
             } else {
               new_enc_field = incoming_response->field_create();
-              incoming_response->field_value_set(new_enc_field, new_enc_val, new_enc_len);
+              incoming_response->field_value_set(
+                new_enc_field, std::string_view{new_enc_val, static_cast<std::string_view::size_type>(new_enc_len)});
             }
           }
 
@@ -8953,7 +8954,7 @@ HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_cod
               new_field->value_append(to_warn->m_heap, to_warn->m_mime, value.data(), value.size(), true);
             } else {
               new_field = to_warn->field_create();
-              to_warn->field_value_set(new_field, value.data(), value.size());
+              to_warn->field_value_set(new_field, value);
             }
           }
           valid_p = iter.get_next_int(val_code);

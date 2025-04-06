@@ -1066,9 +1066,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     const char *test_value = "mytest";
 
     std::printf("Testing Heap Reuse..\n");
-    hdr.field_value_set(f, "orig_value", strlen("orig_value"));
+    hdr.field_value_set(f, "orig_value");
     const char *m_ptr_value_orig = f->m_ptr_value;
-    hdr.field_value_set(f, test_value, strlen(test_value), true);
+    hdr.field_value_set(f, test_value, true);
     REQUIRE(f->m_ptr_value != test_value);       // should be copied
     REQUIRE(f->m_ptr_value == m_ptr_value_orig); // heap doesn't change
     REQUIRE(f->m_len_value == strlen(test_value));
@@ -1076,7 +1076,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     m_ptr_value_orig           = f->m_ptr_value;
     const char *new_test_value = "myTest";
-    hdr.field_value_set(f, new_test_value, strlen(new_test_value), false);
+    hdr.field_value_set(f, new_test_value, false);
     REQUIRE(f->m_ptr_value != new_test_value);   // should be copied
     REQUIRE(f->m_ptr_value != m_ptr_value_orig); // new heap
     REQUIRE(f->m_len_value == strlen(new_test_value));
@@ -1895,7 +1895,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       hdr.field_attach(f);
       REQUIRE(f->m_ptr_value == nullptr);
 
-      hdr.field_value_set(f, tests[i].value, strlen(tests[i].value));
+      hdr.field_value_set(f, tests[i].value);
       REQUIRE(f->m_ptr_value != tests[i].value); // should be copied
       REQUIRE(f->m_len_value == strlen(tests[i].value));
       REQUIRE(memcmp(f->m_ptr_value, tests[i].value, f->m_len_value) == 0);
@@ -1982,7 +1982,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       snprintf(field_name, sizeof(field_name), "Test%d", i);
 
       MIMEField *f = hdr.field_create(field_name);
-      hdr.field_value_set(f, tests[i].old_raw, strlen(tests[i].old_raw));
+      hdr.field_value_set(f, tests[i].old_raw);
       mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, tests[i].slice, strlen(tests[i].slice));
       REQUIRE(f->m_ptr_value != nullptr);
 

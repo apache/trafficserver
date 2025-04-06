@@ -3372,7 +3372,7 @@ LogAccess::set_http_header_field(LogField::Container container, char *field, cha
         // make sure to reuse header heaps as otherwise
         // coalesce logic in header heap may free up
         // memory pointed to by cquuc or other log fields
-        header->field_value_set(fld, buf, len, true);
+        header->field_value_set(fld, std::string_view{buf, static_cast<std::string_view::size_type>(len)}, true);
         fld = fld->m_next_dup;
       }
     }

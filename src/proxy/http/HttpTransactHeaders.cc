@@ -933,7 +933,8 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(const OverridableHt
     }
     // This will remove any old string (free it), and set our User-Agent.
     if (likely(ua_field)) {
-      header->field_value_set(ua_field, http_txn_conf->global_user_agent_header, http_txn_conf->global_user_agent_header_size);
+      header->field_value_set(
+        ua_field, std::string_view{http_txn_conf->global_user_agent_header, http_txn_conf->global_user_agent_header_size});
     }
   }
 }
@@ -1149,8 +1150,8 @@ HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigPa
     // This will remove any old string (free it), and set our Server header.
     if (do_add && likely(ua_field)) {
       Dbg(dbg_ctl_http_trans, "Adding Server: %s", http_txn_conf->proxy_response_server_string);
-      header->field_value_set(ua_field, http_txn_conf->proxy_response_server_string,
-                              http_txn_conf->proxy_response_server_string_len);
+      header->field_value_set(
+        ua_field, std::string_view{http_txn_conf->proxy_response_server_string, http_txn_conf->proxy_response_server_string_len});
     }
   }
 }
@@ -1222,7 +1223,7 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
       if (normalize_ae == 1) {
         // Force Accept-Encoding header to gzip or no header.
         if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
-          header->field_value_set(ae_field, "gzip", 4);
+          header->field_value_set(ae_field, "gzip"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
@@ -1231,10 +1232,10 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
       } else if (normalize_ae == 2) {
         // Force Accept-Encoding header to br (Brotli) or no header.
         if (HttpTransactCache::match_content_encoding(ae_field, "br")) {
-          header->field_value_set(ae_field, "br", 2);
+          header->field_value_set(ae_field, "br"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
         } else if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
-          header->field_value_set(ae_field, "gzip", 4);
+          header->field_value_set(ae_field, "gzip"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
@@ -1244,13 +1245,13 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
         // Force Accept-Encoding header to br,gzip, or br, or gzip, or no header.
         if (HttpTransactCache::match_content_encoding(ae_field, "br") &&
             HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
-          header->field_value_set(ae_field, "br, gzip", 8);
+          header->field_value_set(ae_field, "br, gzip"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br, gzip");
         } else if (HttpTransactCache::match_content_encoding(ae_field, "br")) {
-          header->field_value_set(ae_field, "br", 2);
+          header->field_value_set(ae_field, "br"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
         } else if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
-          header->field_value_set(ae_field, "gzip", 4);
+          header->field_value_set(ae_field, "gzip"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
@@ -1278,5 +1279,5 @@ HttpTransactHeaders::add_connection_close(HTTPHdr *header)
       header->field_create(std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
     header->field_attach(field);
   }
-  header->field_value_set(field, HTTP_VALUE_CLOSE, HTTP_LEN_CLOSE);
+  header->field_value_set(field, std::string_view{HTTP_VALUE_CLOSE, static_cast<std::string_view::size_type>(HTTP_LEN_CLOSE)});
 }

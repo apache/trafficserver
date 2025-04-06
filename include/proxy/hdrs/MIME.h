@@ -1158,7 +1158,7 @@ public:
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void value_append(std::string_view name, std::string_view value, bool prepend_comma = false, const char separator = ',');
 
-  void field_value_set(MIMEField *field, const char *value, int value_length, bool reuse_heaps = false);
+  void field_value_set(MIMEField *field, std::string_view value, bool reuse_heaps = false);
   void field_value_set_int(MIMEField *field, int32_t value);
   void field_value_set_uint(MIMEField *field, uint32_t value);
   void field_value_set_int64(MIMEField *field, int64_t value);
@@ -1501,11 +1501,10 @@ MIMEHdr::field_value_replace(MIMEField *field, std::string_view value)
 }
 
 inline void
-MIMEHdr::field_value_set(MIMEField *field, const char *value, int value_length, bool reuse_heaps)
+MIMEHdr::field_value_set(MIMEField *field, std::string_view value, bool reuse_heaps)
 {
-  if (!reuse_heaps ||
-      !field_value_replace(field, std::string_view{value, static_cast<std::string_view::size_type>(value_length)})) {
-    field->value_set(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
+  if (!reuse_heaps || !field_value_replace(field, value)) {
+    field->value_set(m_heap, m_mime, value);
   }
 }
 
