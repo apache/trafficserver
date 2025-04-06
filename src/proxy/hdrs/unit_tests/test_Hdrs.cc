@@ -1012,7 +1012,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       REQUIRE(false);
     }
 
-    hdr.value_append("Cache-Control", 13, "no-cache", 8, true);
+    hdr.value_append("Cache-Control"sv, "no-cache"sv, true);
 
     MIMEField *cc_field;
     StrList    slist;
@@ -1681,8 +1681,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       snprintf(field_name, sizeof(field_name), "Test%d", i);
       snprintf(field_value, sizeof(field_value), "a %d", i);
 
-      resp_hdr.value_append(field_name, static_cast<int>(strlen(field_name)), field_value, static_cast<int>(strlen(field_value)),
-                            true);
+      resp_hdr.value_append(field_name, field_value, true);
     }
 
     /**** (6) delete all multiples of nine *****/

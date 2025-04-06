@@ -315,7 +315,8 @@ HttpTransactHeaders::convert_to_1_0_request_header(HTTPHdr *outgoing_request)
   //             Now, any Cache-Control hdr becomes Pragma: no-cache
 
   if (outgoing_request->presence(MIME_PRESENCE_CACHE_CONTROL) && !outgoing_request->is_pragma_no_cache_set()) {
-    outgoing_request->value_append(MIME_FIELD_PRAGMA, MIME_LEN_PRAGMA, "no-cache", 8, true);
+    outgoing_request->value_append(std::string_view{MIME_FIELD_PRAGMA, static_cast<std::string_view::size_type>(MIME_LEN_PRAGMA)},
+                                   "no-cache"sv, true);
   }
   // We do not currently support chunked transfer encoding,
   // so specify that response should use identity transfer coding.
@@ -333,7 +334,9 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr *outgoing_request)
   ink_assert(outgoing_request->version_get() == HTTPVersion(1, 1));
 
   if (outgoing_request->get_cooked_pragma_no_cache() && !(outgoing_request->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE)) {
-    outgoing_request->value_append(MIME_FIELD_CACHE_CONTROL, MIME_LEN_CACHE_CONTROL, "no-cache", 8, true);
+    outgoing_request->value_append(
+      std::string_view{MIME_FIELD_CACHE_CONTROL, static_cast<std::string_view::size_type>(MIME_LEN_CACHE_CONTROL)}, "no-cache"sv,
+      true);
   }
   // We do not currently support chunked transfer encoding,
   // so specify that response should use identity transfer coding.
@@ -730,7 +733,8 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   char *via_limit  = via_string + sizeof(new_via_string);
 
   if ((s->http_config_param->proxy_hostname_len + s->http_config_param->proxy_request_via_string_len) > 512) {
-    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 13, true);
+    header->value_append(std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)},
+                         "TrafficServer"sv, true);
     return;
   }
 
@@ -781,7 +785,9 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   *via_string   = 0;
 
   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
-  header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
+  header->value_append(std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)},
+                       std::string_view{new_via_string, static_cast<std::string_view::size_type>(via_string - new_via_string)},
+                       true);
 }
 
 void
@@ -814,7 +820,8 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   char *via_limit  = via_string + sizeof(new_via_string);
 
   if ((s->http_config_param->proxy_hostname_len + s->http_config_param->proxy_response_via_string_len) > 512) {
-    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 13, true);
+    header->value_append(std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)},
+                         "TrafficServer"sv, true);
     return;
   }
 
@@ -867,7 +874,9 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   *via_string   = 0;
 
   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
-  header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
+  header->value_append(std::string_view{MIME_FIELD_VIA, static_cast<std::string_view::size_type>(MIME_LEN_VIA)},
+                       std::string_view{new_via_string, static_cast<std::string_view::size_type>(via_string - new_via_string)},
+                       true);
 }
 
 void
@@ -1108,8 +1117,9 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
     if (hdr.size() and !hdr.error() and (hdr.size() < hdr.capacity())) {
       std::string_view sV = hdr.view();
 
-      request->value_append(MIME_FIELD_FORWARDED, MIME_LEN_FORWARDED, sV.data(), sV.size(), true, ','); // true => separator must
-                                                                                                        // be inserted
+      request->value_append(std::string_view{MIME_FIELD_FORWARDED, static_cast<std::string_view::size_type>(MIME_LEN_FORWARDED)},
+                            sV, true, ','); // true => separator must
+                                            // be inserted
 
       Dbg(dbg_ctl_http_trans, "[add_forwarded_field_to_outgoing_request] Forwarded header (%.*s) added",
           static_cast<int>(hdr.size()), hdr.data());

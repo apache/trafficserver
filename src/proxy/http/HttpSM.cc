@@ -6644,8 +6644,9 @@ HttpSM::attach_server_session()
           !t_state.hdr_info.server_request.presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
         // Stuff in a TE setting so we treat this as chunked, sort of.
         t_state.server_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
-        t_state.hdr_info.server_request.value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED,
-                                                     HTTP_LEN_CHUNKED, true);
+        t_state.hdr_info.server_request.value_append(
+          std::string_view{MIME_FIELD_TRANSFER_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_TRANSFER_ENCODING)},
+          std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
       }
     }
   }

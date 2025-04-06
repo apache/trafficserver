@@ -1156,8 +1156,7 @@ public:
   void value_set_date(std::string_view name, time_t value);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
-  void value_append(const char *name, int name_length, const char *value, int value_length, bool prepend_comma = false,
-                    const char separator = ',');
+  void value_append(std::string_view name, std::string_view value, bool prepend_comma = false, const char separator = ',');
 
   void field_value_set(MIMEField *field, const char *value, int value_length, bool reuse_heaps = false);
   void field_value_set_int(MIMEField *field, int32_t value);
@@ -1621,24 +1620,19 @@ MIMEHdr::value_set_date(std::string_view name, time_t value)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::value_append(const char *name, int name_length, const char *value, int value_length, bool prepend_comma,
-                      const char separator)
+MIMEHdr::value_append(std::string_view name, std::string_view value, bool prepend_comma, const char separator)
 {
   MIMEField *field;
 
-  field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
+  field = field_find(name);
   if (field) {
     while (field->m_next_dup)
       field = field->m_next_dup;
-    field->value_append(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)},
-                        prepend_comma, separator);
+    field->value_append(m_heap, m_mime, value, prepend_comma, separator);
   } else {
-    field = field_create(name ?
-
-                           std::string_view{name, static_cast<std::string_view::size_type>(name_length)} :
-                           ""sv);
+    field = field_create(name.empty() ? ""sv : name);
     field_attach(field);
-    field->value_set(m_heap, m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_length)});
+    field->value_set(m_heap, m_mime, value);
   }
 }
 

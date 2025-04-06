@@ -5424,8 +5424,9 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
           } else {
             // Stuff in a TE setting so we treat this as chunked, sort of.
             s->client_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
-            incoming_hdr->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED,
-                                       HTTP_LEN_CHUNKED, true);
+            incoming_hdr->value_append(
+              std::string_view{MIME_FIELD_TRANSFER_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_TRANSFER_ENCODING)},
+              std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
           }
         }
         if (HTTP_UNDEFINED_CL == s->hdr_info.request_content_length) {
@@ -7013,7 +7014,9 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
          // any transform will potentially alter the content length. try chunking if possible
          (s->source == SOURCE_TRANSFORM && s->hdr_info.trust_response_cl == false))) {
       s->client_info.receive_chunked_response = true;
-      heads->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED, HTTP_LEN_CHUNKED, true);
+      heads->value_append(
+        std::string_view{MIME_FIELD_TRANSFER_ENCODING, static_cast<std::string_view::size_type>(MIME_LEN_TRANSFER_ENCODING)},
+        std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
     } else {
       s->client_info.receive_chunked_response = false;
     }
@@ -7954,12 +7957,14 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
                 std::string_view{fields[i].name, static_cast<std::string_view::size_type>(fields[i].len)});
               ink_assert(field != nullptr);
               auto value{field->value_get()};
-              outgoing_response->value_append(fields[i].name, fields[i].len, value.data(), value.length(), false);
+              outgoing_response->value_append(
+                std::string_view{fields[i].name, static_cast<std::string_view::size_type>(fields[i].len)}, value, false);
               if (field->has_dups()) {
                 field = field->m_next_dup;
                 while (field) {
                   value = field->value_get();
-                  outgoing_response->value_append(fields[i].name, fields[i].len, value.data(), value.length(), true);
+                  outgoing_response->value_append(
+                    std::string_view{fields[i].name, static_cast<std::string_view::size_type>(fields[i].len)}, value, true);
                   field = field->m_next_dup;
                 }
               }
@@ -8274,10 +8279,11 @@ HttpTransact::build_redirect_response(State *s)
   //////////////////////////
   HTTPHdr *h = &s->hdr_info.client_response;
   if (s->txn_conf->insert_response_via_string) {
-    const char pa[] = "Proxy-agent";
+    constexpr auto pa{"Proxy-agent"sv};
 
-    h->value_append(pa, sizeof(pa) - 1, s->http_config_param->proxy_response_via_string,
-                    s->http_config_param->proxy_response_via_string_len);
+    h->value_append(
+      pa, std::string_view{s->http_config_param->proxy_response_via_string,
+                           static_cast<std::string_view::size_type>(s->http_config_param->proxy_response_via_string_len)});
   }
   h->value_set(std::string_view{MIME_FIELD_LOCATION, static_cast<std::string_view::size_type>(MIME_LEN_LOCATION)},
                std::string_view{new_url, static_cast<std::string_view::size_type>(new_url_len)});
