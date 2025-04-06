@@ -30,6 +30,8 @@
 #include <strings.h>
 #include <cmath>
 
+using namespace std::literals;
+
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/HttpTransactHeaders.h"
 #include "proxy/http/HttpSM.h"
@@ -710,9 +712,6 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
                                         // without "Set-Cookie" or with "Cache-Control: public"
   };
 
-  const char *content_type = nullptr;
-  int         str_len;
-
 #ifdef DEBUG
   ink_assert(request->type_get() == HTTP_TYPE_REQUEST);
   ink_assert(response->type_get() == HTTP_TYPE_RESPONSE);
@@ -749,10 +748,11 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
     return true;
   }
   // All other options depend on the Content-Type
-  content_type = response->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &str_len);
+  auto content_type{response->value_get(
+    std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)})};
 
   if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_IMAGES) {
-    if (content_type && str_len >= 5 && memcmp(content_type, "image", 5) == 0) {
+    if (content_type.starts_with("image"sv)) {
       // Images can be cached
       return false;
     }
@@ -762,7 +762,7 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
   // Note: if the configuration is bad, we consider
   // COOKIES_CACHE_ALL_BUT_TEXT to be the default
 
-  if (content_type && str_len >= 4 && memcmp(content_type, "text", 4) == 0) { // content type  - "text"
+  if (content_type.starts_with("text"sv)) { // content type  - "text"
     // Text objects cannot be cached unless the option is
     // COOKIES_CACHE_ALL_BUT_TEXT_EXT.
     // Furthermore, if there is a Set-Cookie header, then
@@ -2521,24 +2521,24 @@ HttpTransact::issue_revalidate(State *s)
          s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD) &&
         s->range_setup == RANGE_NONE) {
       // make this a conditional request
-      int         length;
-      const char *str = c_resp->value_get(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED, &length);
-      if (str) {
-        s->hdr_info.server_request.value_set(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, str, length);
+      if (auto str{c_resp->value_get(
+            std::string_view{MIME_FIELD_LAST_MODIFIED, static_cast<std::string_view::size_type>(MIME_LEN_LAST_MODIFIED)})};
+          !str.empty()) {
+        s->hdr_info.server_request.value_set(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, str.data(),
+                                             static_cast<int>(str.length()));
       }
       dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Proxy's Request (Conditionalized)");
     }
     // if Etag exists, also add if-non-match header
     if (c_resp->presence(MIME_PRESENCE_ETAG) && (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
                                                  s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD)) {
-      int         length = 0;
-      const char *etag   = c_resp->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &length);
-      if (nullptr != etag) {
-        if ((length >= 2) && (etag[0] == 'W') && (etag[1] == '/')) {
-          etag   += 2;
-          length -= 2;
+      auto etag{c_resp->value_get(std::string_view{MIME_FIELD_ETAG, static_cast<std::string_view::size_type>(MIME_LEN_ETAG)})};
+      if (!etag.empty()) {
+        if (etag.starts_with("W/"sv)) {
+          etag.remove_prefix(2);
         }
-        s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, etag, length);
+        s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, etag.data(),
+                                             static_cast<int>(etag.length()));
       }
       dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Proxy's Request (Conditionalized)");
     }
@@ -8145,11 +8145,12 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
 
   if (status_code == HTTP_STATUS_SERVICE_UNAVAILABLE) {
-    int ret_tmp;
     int retry_after = 0;
 
-    if (s->hdr_info.client_response.value_get(MIME_FIELD_RETRY_AFTER, MIME_LEN_RETRY_AFTER, &ret_tmp) != nullptr) {
-      retry_after = ret_tmp;
+    if (auto ret_tmp{s->hdr_info.client_response.value_get(
+          std::string_view{MIME_FIELD_RETRY_AFTER, static_cast<std::string_view::size_type>(MIME_LEN_RETRY_AFTER)})};
+        !ret_tmp.empty()) {
+      retry_after = static_cast<int>(ret_tmp.length());
     }
     s->congestion_control_crat = retry_after;
   } else if (status_code == HTTP_STATUS_BAD_REQUEST) {

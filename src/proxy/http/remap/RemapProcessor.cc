@@ -159,24 +159,23 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 
   // Check referer filtering rules
   if ((s->filter_mask & URL_REMAP_FILTER_REFERER) != 0 && (ri = map->referer_list) != nullptr) {
-    const char *referer_hdr  = nullptr;
-    int         referer_len  = 0;
-    bool        enabled_flag = map->optional_referer ? true : false;
+    std::string_view referer_hdr{};
+    bool             enabled_flag = map->optional_referer ? true : false;
 
     if (request_header->presence(MIME_PRESENCE_REFERER) &&
-        (referer_hdr = request_header->value_get(MIME_FIELD_REFERER, MIME_LEN_REFERER, &referer_len)) != nullptr) {
-      if (referer_len >= static_cast<int>(sizeof(tmp_referer_buf))) {
-        referer_len = static_cast<int>(sizeof(tmp_referer_buf) - 1);
-      }
-      memcpy(tmp_referer_buf, referer_hdr, referer_len);
-      tmp_referer_buf[referer_len] = 0;
+        !(referer_hdr = request_header->value_get(
+            std::string_view{MIME_FIELD_REFERER, static_cast<std::string_view::size_type>(MIME_LEN_REFERER)}))
+           .empty()) {
+      referer_hdr = referer_hdr.substr(0, std::min(referer_hdr.length(), sizeof(tmp_referer_buf) - 1));
+      memcpy(tmp_referer_buf, referer_hdr.data(), referer_hdr.length());
+      tmp_referer_buf[referer_hdr.length()] = 0;
       for (enabled_flag = false; ri; ri = ri->next) {
         if (ri->any) {
           enabled_flag = true;
           if (!map->negative_referer) {
             break;
           }
-        } else if (ri->regex_valid && ri->regex.exec(std::string_view(tmp_referer_buf, referer_len))) {
+        } else if (ri->regex_valid && ri->regex.exec(std::string_view(tmp_referer_buf, referer_hdr.length()))) {
           enabled_flag = ri->negative ? false : true;
           break;
         }
@@ -196,7 +195,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
               c = rc->chunk_str;
               break;
             case 'r':
-              c = (referer_len && referer_hdr) ? &tmp_referer_buf[0] : nullptr;
+              c = (referer_hdr.empty() ? nullptr : &tmp_referer_buf[0]);
               break;
             case 'f':
             case 't':
@@ -235,15 +234,15 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 
   // We also need to rewrite the "Host:" header if it exists and
   //   pristine host hdr is not enabled
-  int         host_len;
-  const char *host_hdr = request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
 
-  if (request_url && host_hdr != nullptr && s->txn_conf->maintain_pristine_host_hdr == 0) {
+  if (auto host_hdr{
+        request_header->value_get(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)})};
+      request_url && !host_hdr.empty() && s->txn_conf->maintain_pristine_host_hdr == 0) {
     if (dbg_ctl_url_rewrite.on()) {
-      int   old_host_hdr_len;
-      char *old_host_hdr = const_cast<char *>(request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &old_host_hdr_len));
-      if (old_host_hdr) {
-        Dbg(dbg_ctl_url_rewrite, "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
+      auto old_host_hdr{
+        request_header->value_get(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)})};
+      if (!old_host_hdr.empty()) {
+        Dbg(dbg_ctl_url_rewrite, "Host: Header before rewrite %.*s", static_cast<int>(old_host_hdr.length()), old_host_hdr.data());
       }
     }
     //

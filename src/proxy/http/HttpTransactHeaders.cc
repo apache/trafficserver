@@ -886,10 +886,11 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 void
 HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing)
 {
-  int         len    = 0;
-  const char *expect = s->hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
+  auto expect{s->hdr_info.client_request.value_get(
+    std::string_view{MIME_FIELD_EXPECT, static_cast<std::string_view::size_type>(MIME_LEN_EXPECT)})};
 
-  if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
+  if (strcasecmp(expect,
+                 std::string_view{HTTP_VALUE_100_CONTINUE, static_cast<std::string_view::size_type>(HTTP_LEN_100_CONTINUE)}) == 0) {
     outgoing->field_delete(std::string_view{MIME_FIELD_EXPECT, static_cast<std::string_view::size_type>(MIME_LEN_EXPECT)});
   }
 }

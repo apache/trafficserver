@@ -959,20 +959,19 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     // Test the (new) continuation line folding to be correct. This should replace the
     // \r\n with two spaces (so a total of three between "part1" and "part2").
-    int         length       = 0;
-    const char *continuation = hdr.value_get("continuation", 12, &length);
+    auto continuation{hdr.value_get("continuation"sv)};
 
-    if ((13 != length)) {
+    if ((13 != continuation.length())) {
       std::printf("FAILED: continue header folded line was too short\n");
       REQUIRE(false);
     }
 
-    if (strncmp(continuation + 5, "   ", 3)) {
+    if (!continuation.substr(5).starts_with("   "sv)) {
       std::printf("FAILED: continue header unfolding did not produce correct WS's\n");
       REQUIRE(false);
     }
 
-    if (strncmp(continuation, "part1   part2", 13)) {
+    if (continuation != "part1   part2"sv) {
       std::printf("FAILED: continue header unfolding was not correct\n");
       REQUIRE(false);
     }
@@ -993,7 +992,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     hdr.set_age(9999);
 
-    length = hdr.length_get();
+    auto length{hdr.length_get()};
     std::printf("hdr.length_get() = %d\n", length);
 
     time_t t0, t1, t2;
