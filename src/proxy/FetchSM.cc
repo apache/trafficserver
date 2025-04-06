@@ -164,7 +164,8 @@ FetchSM::has_body()
     return true;
   }
 
-  resp_content_length = hdr->value_get_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  resp_content_length = hdr->value_get_int64(
+    std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
   if (!resp_content_length) {
     if (check_connection_close()) {
       return true;

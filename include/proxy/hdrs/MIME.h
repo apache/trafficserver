@@ -1145,7 +1145,7 @@ public:
   std::string_view value_get(std::string_view name) const;
   int32_t          value_get_int(std::string_view name) const;
   uint32_t         value_get_uint(std::string_view name) const;
-  int64_t          value_get_int64(const char *name, int name_length) const;
+  int64_t          value_get_int64(std::string_view name) const;
   time_t           value_get_date(const char *name, int name_length) const;
   int              value_get_comma_list(const char *name, int name_length, StrList *list) const;
 
@@ -1454,9 +1454,9 @@ MIMEHdr::value_get_uint(std::string_view name) const
 }
 
 inline int64_t
-MIMEHdr::value_get_int64(const char *name, int name_length) const
+MIMEHdr::value_get_int64(std::string_view name) const
 {
-  const MIMEField *field = field_find(std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
+  const MIMEField *field = field_find(name);
 
   if (field) {
     return mime_field_value_get_int64(field);
@@ -1646,7 +1646,7 @@ MIMEHdr::value_append(const char *name, int name_length, const char *value, int 
 inline time_t
 MIMEHdr::get_age() const
 {
-  int64_t age = value_get_int64(MIME_FIELD_AGE, MIME_LEN_AGE);
+  int64_t age = value_get_int64(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)});
 
   if (age < 0) // We should ignore negative Age: values
     return 0;
@@ -1663,7 +1663,8 @@ MIMEHdr::get_age() const
 inline int64_t
 MIMEHdr::get_content_length() const
 {
-  return value_get_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  return value_get_int64(
+    std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
 }
 
 /*-------------------------------------------------------------------------
