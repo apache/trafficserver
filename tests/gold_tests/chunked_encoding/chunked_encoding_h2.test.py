@@ -62,7 +62,7 @@ tr.Processes.Default.Command = 'sh ./case1.sh {0} {1}'.format(ts.Variables.ssl_p
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("RST_STREAM", "Delayed chunk close should not cause reset")
-tr.Processes.Default.Streams.All += Testers.ExcludesExpression("content-length", "Should return chunked")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("< content-length", "Should return chunked")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(":status: 200", "Should get successful response")
 tr.StillRunningAfter = ts
 # No resets in the output
@@ -76,7 +76,7 @@ tr.Setup.Copy('case2.sh')
 tr.Processes.Default.Command = 'sh ./case2.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("content-length:", "Response should include content length")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("< content-length:", "Response should include content length")
 server2_out = Testers.ContainsExpression("Transfer-Encoding: chunked", "Request should be chunked encoded")
 # No content-length in header
 # Transfer encoding to origin, but no content-length
@@ -90,7 +90,7 @@ tr.Setup.Copy('case3.sh')
 tr.Processes.Default.Command = 'sh ./case3.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
-tr.Processes.Default.Streams.All += Testers.ExcludesExpression("content-length:", "Response should not include content length")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("< content-length:", "Response should not include content length")
 server3_out = Testers.ContainsExpression("Transfer-Encoding: chunked", "Request should be chunked encoded")
 # No content length in header
 # Transfer encoding to origin, but no content-length
