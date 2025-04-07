@@ -31,7 +31,8 @@ TLS connections.
 
 .. note::
 
-    The current implementation doesn't support TLV fields of Version 2.
+    While |TS| supports receiving and processing TLV Version 2 formatted payloads,
+    it does not support sending them.
 
 The Proxy Protocol must be enabled on each port for which connections with the
 Proxy Protocol header are expected.  See
