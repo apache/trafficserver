@@ -15,7 +15,9 @@
 #  limitations under the License.
 
 grep --text \
- -e 'HTTP/' \
+ -e '< HTTP/' \
+ -e '> GET' \
+ -e '> POST' \
  -e '^> X-Ats-Compress-Test:' \
  -e '^> Accept-Encoding:' \
  -e '^< Content-' \
