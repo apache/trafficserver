@@ -58,6 +58,8 @@ tr.MakeCurlCommand('--verbose --ipv4 --header "Host:myhost.test" http://localhos
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = "grep -F HTTP/ curl.txt"
+# Later versions of curl add a "using HTTP" line to the output, so we filter it
+# out to keep this test compatible with old and new versions.
+tr.Processes.Default.Command = "grep -F HTTP/ curl.txt | grep -v 'using HTTP'"
 tr.Processes.Default.Streams.stdout = "curl.gold"
 tr.Processes.Default.ReturnCode = 0
