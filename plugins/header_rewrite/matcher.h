@@ -24,6 +24,9 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <concepts>
+#include <variant>
+#include <set>
 
 #include "swoc/swoc_ip.h"
 
@@ -40,6 +43,7 @@ enum MatcherOps {
   MATCH_GREATER_THEN,
   MATCH_REGULAR_EXPRESSION,
   MATCH_IP_RANGES,
+  MATCH_SET,
   MATCH_ERROR,
 };
 
@@ -82,19 +86,69 @@ template <class T> class Matchers : public Matcher
 {
 public:
   explicit Matchers(const MatcherOps op) : Matcher(op), _data() {}
-  // Getters / setters
+
+  // Getters / setters. ToDo: What about sets ?
   const T &
   get() const
   {
-    return _data;
+    TSAssert(std::holds_alternative<T>(_data));
+    return std::get<T>(_data);
   }
 
   void
   set(const T &d, CondModifiers mods)
   {
-    _data = d;
+    TSAssert(std::holds_alternative<T>(_data));
+    std::get<T>(_data) = d;
     if (mods & COND_NOCASE) {
       _nocase = true;
+    }
+  }
+
+  void
+  set(const std::string &s, CondModifiers mods)
+    requires std::is_same_v<T, std::string>
+  {
+    set(s, mods, [](const std::string &in) { return in; });
+  }
+
+  void
+  set(const std::string &s, CondModifiers mods, auto convert)
+  {
+    static_assert(std::is_same_v<decltype(convert(s)), T>, "Converter must return a value of type T");
+
+    if (mods & COND_NOCASE) {
+      _nocase = true;
+    }
+
+    if (_op == MATCH_REGULAR_EXPRESSION) {
+      if (!_reHelper.setRegexMatch(s, _nocase)) {
+        std::stringstream ss;
+
+        ss << s;
+        TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, ss.str().c_str());
+        Dbg(pi_dbg_ctl, "Invalid regex: failed to precompile: %s", ss.str().c_str());
+        throw std::runtime_error("Malformed regex");
+      } else {
+        Dbg(pi_dbg_ctl, "Regex precompiled successfully");
+      }
+    } else if (_op == MATCH_SET) {
+      std::set<T>        values;
+      std::istringstream stream(s);
+      std::string        part;
+
+      while (std::getline(stream, part, ',')) {
+        values.insert(convert(part));
+      }
+
+      if (values.size() > 0) {
+        Dbg(pi_dbg_ctl, "    Added %zu set values while parsing", values.size());
+        _data = std::move(values);
+      } else {
+        Dbg(pi_dbg_ctl, "    No set values added, possibly bad input");
+      }
+    } else {
+      std::get<T>(_data) = convert(s);
     }
   }
 
@@ -115,6 +169,9 @@ public:
     case MATCH_REGULAR_EXPRESSION:
       return test_reg(t, res); // Only the regex matcher needs the resource
       break;
+    case MATCH_SET:
+      return test_set(t);
+      break;
     case MATCH_IP_RANGES:
       // This is an error, the Matcher doesn't make sense to match on IP ranges
       TSError("[%s] Invalid matcher: MATCH_IP_RANGES", PLUGIN_NAME);
@@ -133,7 +190,7 @@ private:
   {
     std::stringstream ss;
 
-    ss << '"' << t << '"' << op << '"' << _data << '"' << " -> " << r;
+    ss << '"' << t << '"' << op << '"' << std::get<T>(_data) << '"' << " -> " << r;
     Dbg(pi_dbg_ctl, "\ttesting: %s", ss.str().c_str());
   }
 
@@ -141,7 +198,8 @@ private:
   bool
   test_eq(const T &t) const
   {
-    bool r = (t == _data);
+    TSAssert(std::holds_alternative<T>(_data));
+    bool r = (t == std::get<T>(_data));
 
     if (pi_dbg_ctl.on()) {
       debug_helper(t, " == ", r);
@@ -153,7 +211,8 @@ private:
   bool
   test_lt(const T &t) const
   {
-    bool r = (t < _data);
+    TSAssert(std::holds_alternative<T>(_data));
+    bool r = (t < std::get<T>(_data));
 
     if (pi_dbg_ctl.on()) {
       debug_helper(t, " < ", r);
@@ -165,13 +224,21 @@ private:
   bool
   test_gt(const T &t) const
   {
-    bool r = t > _data;
+    TSAssert(std::holds_alternative<T>(_data));
+    bool r = (t > std::get<T>(_data));
 
     if (pi_dbg_ctl.on()) {
       debug_helper(t, " > ", r);
     }
 
     return r;
+  }
+
+  bool
+  test_set(const T &c) const
+  {
+    TSAssert(std::holds_alternative<std::set<T>>(_data));
+    return std::get<std::set<T>>(_data).contains(c);
   }
 
   bool
@@ -182,16 +249,10 @@ private:
   }
 
   bool
-  test_reg(const TSHttpStatus /* t ATS_UNUSED */, const Resources & /* Not used */) const
-  {
-    // Not supported
-    return false;
-  }
-
-  bool
   test_reg(const std::string &t, const Resources &res) const
   {
-    Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", _data.c_str(), t.c_str(), static_cast<int>(_nocase));
+    Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", std::get<T>(_data).c_str(), t.c_str(),
+        static_cast<int>(_nocase));
     int count = _reHelper.regexMatch(t.c_str(), t.length(), const_cast<Resources &>(res).ovector);
 
     if (count > 0) {
@@ -205,13 +266,12 @@ private:
     return false;
   }
 
-  T           _data;
-  regexHelper _reHelper;
-  bool        _nocase = false;
+  std::variant<T, std::set<T>> _data;
+  regexHelper                  _reHelper;
+  bool                         _nocase = false;
 };
 
 // Specializations for the strings, since they can be both strings and regexes
-template <> void Matchers<std::string>::set(const std::string &d, CondModifiers mods);
 template <> bool Matchers<std::string>::test_eq(const std::string &t) const;
 
 // Specialized case matcher for the IP addresses matches.
@@ -220,51 +280,10 @@ template <> class Matchers<const sockaddr *> : public Matcher
 public:
   explicit Matchers(const MatcherOps op) : Matcher(op) {}
 
-  void
-  set(const std::string &data)
-  {
-    if (!extract_ranges(data)) {
-      TSError("[%s] Invalid IP-range: failed to parse: %s", PLUGIN_NAME, data.c_str());
-      Dbg(pi_dbg_ctl, "Invalid IP-range: failed to parse: %s", data.c_str());
-      throw std::runtime_error("Malformed IP-range");
-    } else {
-      Dbg(pi_dbg_ctl, "IP-range precompiled successfully");
-    }
-  }
-
-  bool
-  test(const sockaddr *addr, const Resources & /* Not used */) const
-  {
-    if (_ipHelper.contains(swoc::IPAddr(addr))) {
-      if (pi_dbg_ctl.on()) {
-        char text[INET6_ADDRSTRLEN];
-
-        Dbg(pi_dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
-      }
-      return true;
-    }
-
-    return false;
-  }
+  void set(const std::string &data);
+  bool test(const sockaddr *addr, const Resources &) const;
 
 private:
-  bool
-  extract_ranges(swoc::TextView text)
-  {
-    while (text) {
-      if (swoc::IPRange r; r.load(text.take_prefix_at(','))) {
-        _ipHelper.mark(r);
-      }
-    }
-
-    if (_ipHelper.count() > 0) {
-      Dbg(pi_dbg_ctl, "    Added %zu IP ranges while parsing", _ipHelper.count());
-      return true;
-    } else {
-      Dbg(pi_dbg_ctl, "    No IP ranges added, possibly bad input");
-      return false;
-    }
-  }
-
+  bool             extract_ranges(swoc::TextView text);
   swoc::IPRangeSet _ipHelper;
 };

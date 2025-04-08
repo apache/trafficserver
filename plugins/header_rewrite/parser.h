@@ -24,6 +24,10 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
+#include <charconv>
+#include <optional>
+#include <limits>
 
 #include "ts/ts.h"
 #include "lulu.h"
@@ -104,6 +108,49 @@ public:
   }
 
   bool parse_line(const std::string &original_line);
+
+  template <typename NumericT>
+  static NumericT
+  parseNumeric(const std::string &s)
+  {
+    try {
+      if constexpr (std::is_same_v<NumericT, int>) {
+        return std::stoi(s);
+      } else if constexpr (std::is_same_v<NumericT, long>) {
+        return std::stol(s);
+      } else if constexpr (std::is_same_v<NumericT, long long>) {
+        return std::stoll(s);
+      } else if constexpr (std::is_same_v<NumericT, int8_t> || std::is_same_v<NumericT, int16_t> ||
+                           std::is_same_v<NumericT, int32_t> || std::is_same_v<NumericT, int64_t>) {
+        long long val = std::stoll(s);
+        if (val < std::numeric_limits<NumericT>::min() || val > std::numeric_limits<NumericT>::max()) {
+          throw std::out_of_range("Value out of range for signed type");
+        }
+        return static_cast<NumericT>(val);
+      } else if constexpr (std::is_same_v<NumericT, unsigned long>) {
+        return std::stoul(s);
+      } else if constexpr (std::is_same_v<NumericT, unsigned long long>) {
+        return std::stoull(s);
+      } else if constexpr (std::is_same_v<NumericT, uint8_t> || std::is_same_v<NumericT, uint16_t> ||
+                           std::is_same_v<NumericT, uint32_t> || std::is_same_v<NumericT, uint64_t>) {
+        unsigned long long val = std::stoull(s);
+        if (val > std::numeric_limits<NumericT>::max()) {
+          throw std::out_of_range("Value out of range for unsigned type");
+        }
+        return static_cast<NumericT>(val);
+      } else if constexpr (std::is_same_v<NumericT, float>) {
+        return std::stof(s);
+      } else if constexpr (std::is_same_v<NumericT, double>) {
+        return std::stod(s);
+      } else if constexpr (std::is_same_v<NumericT, long double>) {
+        return std::stold(s);
+      } else {
+        static_assert(ALWAYS_FALSE_V<NumericT>, "Unsupported numeric type");
+      }
+    } catch (const std::exception &e) {
+      throw std::runtime_error("Failed to parse numeric value: \"" + s + "\"");
+    }
+  }
 
 private:
   bool preprocess(std::vector<std::string> tokens);

@@ -189,6 +189,7 @@ Parser::preprocess(std::vector<std::string> tokens)
         _arg = tokens[1] + tokens[2];
       } else if (tokens.size() > 1) {
         // This is for the regular expression, which for some reason has its own handling?? ToDo: Why ?
+        printf("tokens[1]: %s\n", tokens[1].c_str());
         _arg = tokens[1];
       } else {
         // This would be for hook conditions, which has no argument.

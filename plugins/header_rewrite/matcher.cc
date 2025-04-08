@@ -26,46 +26,23 @@
 
 #include "matcher.h"
 
-// Special case for strings, to make the distinction between regexes and string matching
-template <>
-void
-Matchers<std::string>::set(const std::string &d, CondModifiers mods)
-{
-  _data = d;
-  if (mods & COND_NOCASE) {
-    _nocase = true;
-  }
-
-  if (_op == MATCH_REGULAR_EXPRESSION) {
-    if (!_reHelper.setRegexMatch(_data, _nocase)) {
-      std::stringstream ss;
-
-      ss << _data;
-      TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, ss.str().c_str());
-      Dbg(pi_dbg_ctl, "Invalid regex: failed to precompile: %s", ss.str().c_str());
-      throw std::runtime_error("Malformed regex");
-    } else {
-      Dbg(pi_dbg_ctl, "Regex precompiled successfully");
-    }
-  }
-}
-
 // Special case for strings, to allow for insensitive case comparisons for std::string matchers.
 template <>
 bool
 Matchers<std::string>::test_eq(const std::string &t) const
 {
   bool r = false;
+  auto d = std::get<std::string>(_data);
 
-  if (_data.length() == t.length()) {
+  if (d.length() == t.length()) {
     if (_nocase) {
       // ToDo: in C++20, this would be nicer with std::range, e.g.
-      // r = std::ranges::equal(_data, t, [](char c1, char c2) { return std::tolower(c1) == std::tolower(c2); });
-      r = std::equal(_data.begin(), _data.end(), t.begin(), [](char c1, char c2) {
+      // r = std::ranges::equal(d, t, [](char c1, char c2) { return std::tolower(c1) == std::tolower(c2); });
+      r = std::equal(d.begin(), d.end(), t.begin(), [](char c1, char c2) {
         return std::tolower(static_cast<unsigned char>(c1)) == std::tolower(static_cast<unsigned char>(c2));
       });
     } else {
-      r = (t == _data);
+      r = (t == d);
     }
   }
 
@@ -74,4 +51,49 @@ Matchers<std::string>::test_eq(const std::string &t) const
   }
 
   return r;
+}
+
+void
+Matchers<const sockaddr *>::set(const std::string &data)
+{
+  if (!extract_ranges(data)) {
+    TSError("[%s] Invalid IP-range: failed to parse: %s", PLUGIN_NAME, data.c_str());
+    Dbg(pi_dbg_ctl, "Invalid IP-range: failed to parse: %s", data.c_str());
+    throw std::runtime_error("Malformed IP-range");
+  } else {
+    Dbg(pi_dbg_ctl, "IP-range precompiled successfully");
+  }
+}
+
+bool
+Matchers<const sockaddr *>::test(const sockaddr *addr, const Resources & /* Not used */) const
+{
+  if (_ipHelper.contains(swoc::IPAddr(addr))) {
+    if (pi_dbg_ctl.on()) {
+      char text[INET6_ADDRSTRLEN];
+
+      Dbg(pi_dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
+    }
+    return true;
+  }
+
+  return false;
+}
+
+bool
+Matchers<const sockaddr *>::extract_ranges(swoc::TextView text)
+{
+  while (text) {
+    if (swoc::IPRange r; r.load(text.take_prefix_at(','))) {
+      _ipHelper.mark(r);
+    }
+  }
+
+  if (_ipHelper.count() > 0) {
+    Dbg(pi_dbg_ctl, "    Added %zu IP ranges while parsing", _ipHelper.count());
+    return true;
+  } else {
+    Dbg(pi_dbg_ctl, "    No IP ranges added, possibly bad input");
+    return false;
+  }
 }
