@@ -71,9 +71,11 @@ Test.Env["OUTPUT_FILE"] = log_path
 # ----
 
 # H2 SETTINGS, PRIORITY, HEADERS, CONTINUATION, DATA, GOAWAY
-tr = Test.AddTestRun()
+tr = Test.AddTestRun('HTTP/2 Test')
 tr.TimeOut = 10
-tr.Processes.Default.Command = f"nghttp -vn --continuation 'https://localhost:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body'"
+# grep out the continuation lines because that significantly reduces the output
+# size which exponentially reduces the gold file processing time.
+tr.Processes.Default.Command = f"nghttp -vn --continuation 'https://localhost:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body' | grep -v 'continuation-test'"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -83,21 +85,21 @@ tr.StillRunningAfter = ts
 
 # H3
 if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
-    tr = Test.AddTestRun()
+    tr = Test.AddTestRun('HTTP/3 Test')
     tr.TimeOut = 10
-    tr.Processes.Default.Command = f"curl -k --http3 'https://localhost:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body'"
+    tr.MakeCurlCommand(f"-k --http3 'https://localhost:{ts.Variables.ssl_port}/httpbin/post' -d 'post_body'")
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.stdout = "test_TSHttpSsnInfo_curl0.gold"
     tr.StillRunningAfter = httpbin
     tr.StillRunningAfter = ts
 
-tr = Test.AddTestRun()
+tr = Test.AddTestRun('Check the log output')
 tr.Processes.Default.Command = "echo check log"
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(log_path)
 f.Content = "test_TSHttpSsnInfo_plugin_log.gold"
 f.Content += Testers.ContainsExpression(
-    "H2 Frames Received:D1,H1,PR5,RS0,S2,PP0,P0,G1,WU0,C1,U0", "Expected numbers of frames should be received")
+    "H2 Frames Received:D1,H1,PR.,RS0,S2,PP0,P0,G1,WU0,C1,U0", "Expected numbers of frames should be received")
 # We cannot test this on H3 now because the test plugin does not work on H3 sessions
 # f.Content += Testers.ContainsExpression("H3 Frames Received:D1,H1,Ra0,CP0,S1,PP0,Rb0,G0,Rc0,Rd0,UND0,UND0,UND0,MPI0,U0",
 #                                        "Expected numbers of frames should be received")

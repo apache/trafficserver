@@ -142,8 +142,8 @@ tr.Processes.Default.ReturnCode = 0
 
 for i in range(num_object):
     tr = Test.AddTestRun()
-    tr.Processes.Default.Command = (
-        f'curl --verbose --proxy 127.0.0.1:{ts_peer[i % num_peer].Variables.port} http://ts_upstream0:{ts_upstream[0].Variables.port}/obj{i}'
+    tr.MakeCurlCommand(
+        f'--verbose --proxy 127.0.0.1:{ts_peer[i % num_peer].Variables.port} http://ts_upstream0:{ts_upstream[0].Variables.port}/obj{i}'
     )
     tr.Processes.Default.Streams.stdout = "body.gold"
     tr.Processes.Default.ReturnCode = 0
@@ -151,8 +151,8 @@ for i in range(num_object):
 for i in range(num_object):
     tr = Test.AddTestRun()
     # num_peer must not be a multiple of 3
-    tr.Processes.Default.Command = (
-        f'curl --verbose --proxy 127.0.0.1:{ts_peer[(i * 3) % num_peer].Variables.port} http://ts_upstream0:{ts_upstream[0].Variables.port}/obj{i}'
+    tr.MakeCurlCommand(
+        f'--verbose --proxy 127.0.0.1:{ts_peer[(i * 3) % num_peer].Variables.port} http://ts_upstream0:{ts_upstream[0].Variables.port}/obj{i}'
     )
     tr.Processes.Default.Streams.stdout = "body.gold"
     tr.Processes.Default.ReturnCode = 0

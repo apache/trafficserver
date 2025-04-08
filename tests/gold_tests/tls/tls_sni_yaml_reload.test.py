@@ -66,8 +66,9 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = f"curl -q --tls-max 1.2 -s -v -k  --cert ./signed-foo.pem --key ./signed-foo.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}"
-
+tr.MakeCurlCommand(
+    f"-q --tls-max 1.2 -s -v -k  --cert ./signed-foo.pem --key ./signed-foo.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}"
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Verify curl could successfully connect")
 tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", f"Verify curl used the {sni_domain} SNI")
@@ -111,8 +112,9 @@ tr3.Setup.Copy("ssl/signed-bar.key")
 tr3.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags_log.Name, "signed-notexist.pem", 1))
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
-tr3.Processes.Default.Command = f"curl -q --tls-max 1.2 -s -v -k  --cert ./signed-bar.pem --key ./signed-bar.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}"
-
+tr3.MakeCurlCommand(
+    f"-q --tls-max 1.2 -s -v -k  --cert ./signed-bar.pem --key ./signed-bar.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}"
+)
 tr3.Processes.Default.ReturnCode = 0
 # since the 2nd config with http2 turned on should have failed and used the prior config, verify http2 was not used
 tr3.Processes.Default.Streams.stderr = Testers.ExcludesExpression("GET / HTTP/2", "Confirm that HTTP2 is still not used")

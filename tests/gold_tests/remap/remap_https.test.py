@@ -60,7 +60,7 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 
 # call localhost straight
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} --verbose'.format(ts.Variables.ssl_port)
+tr.MakeCurlCommand('--http1.1 -k https://127.0.0.1:{0} --verbose'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 
 tr.Processes.Default.StartBefore(server)
@@ -72,50 +72,43 @@ tr.StillRunningAfter = ts
 
 # www.example.com host
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com" --verbose'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand('--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com" --verbose'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 
 # www.example.com:80 host
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:443" --verbose'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand('--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:443" --verbose'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 
 # www.example.com:8080 host
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:{0}" --verbose'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand('--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:{0}" --verbose'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 
 # www.example3.com (match on receive port)
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example3.com" --verbose'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand('--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example3.com" --verbose'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200_3.gold"
 
 # no rule for this
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.test.com" --verbose'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand('--http1.1 -k https://127.0.0.1:{0} -H "Host: www.test.com" --verbose'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-hitATS-404.gold"
 
 # bad port
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:1234" --verbose'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand('--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:1234" --verbose'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-hitATS-404.gold"
 
 # map www.anotherexample.com to https://<IP of microserver>.com
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.anotherexample.com" --verbose'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand('--http1.1 -k https://127.0.0.1:{0} -H "Host: www.anotherexample.com" --verbose'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200_2.gold"
 tr.StillRunningAfter = server2

@@ -131,8 +131,8 @@ class TestEarlyHints:
             protocol_arg = '-k --http2'
             scheme = 'https'
             ts_port = self._ts.Variables.ssl_port
-        client.Command = (
-            f'curl -v {protocol_arg} '
+        tr.MakeCurlCommand(
+            f'-v {protocol_arg} '
             f'--resolve "server.com:{ts_port}:127.0.0.1" '
             f'-H "Host: server.com" '
             f'{scheme}://server.com:{ts_port}/{self._protocol_str}')

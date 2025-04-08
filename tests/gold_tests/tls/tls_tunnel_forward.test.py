@@ -87,7 +87,7 @@ ts.Disk.sni_yaml.AddLines(
     ])
 
 tr = Test.AddTestRun("Tunnel-test")
-tr.Processes.Default.Command = "curl -v  --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.MakeCurlCommand("-v  --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
@@ -103,8 +103,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK"
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ok foo", "Body is expected")
 
 tr2 = Test.AddTestRun("Forward-test")
-tr2.Processes.Default.Command = "curl -v --http1.1  -H 'host:bar.com' --resolve 'bar.com:{0}:127.0.0.1' -k https://bar.com:{0}".format(
-    ts.Variables.ssl_port)
+tr2.MakeCurlCommand(
+    "-v --http1.1  -H 'host:bar.com' --resolve 'bar.com:{0}:127.0.0.1' -k https://bar.com:{0}".format(ts.Variables.ssl_port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server_bar
 tr2.StillRunningAfter = ts
@@ -116,7 +116,7 @@ tr2.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("ok bar", "Body is expected")
 
 tr3 = Test.AddTestRun("no-sni-forward-test")
-tr3.Processes.Default.Command = "curl --http1.1 -v -k -H 'host:random.com' https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr3.MakeCurlCommand("--http1.1 -v -k -H 'host:random.com' https://127.0.0.1:{0}".format(ts.Variables.ssl_port))
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server_random
 tr3.StillRunningAfter = ts
