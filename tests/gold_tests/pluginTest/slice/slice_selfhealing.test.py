@@ -348,7 +348,7 @@ edate = to_httpdate(edt)
 # 12 Test - Preload reference etagold-1
 tr = Test.AddTestRun("Preload slice etagold-1")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + f' http://crrhdr/second -r 3-5 -H "uuid: etagold-custom-1" -H "crr-foo: {edate}"')
+tr.MakeCurlCommand(curl_and_args + f' http://crrhdr/second -r 3-5 -H "uuid: etagold-1" -H "crr-foo: {edate}"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/aa.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagold", "expected etagold")
@@ -357,7 +357,7 @@ tr.StillRunningAfter = ts
 # 13 Test - Request second slice via slice plugin, with instructions to fetch new 2nd slice
 tr = Test.AddTestRun("Request 2nd slice (expect refetch)")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + ' http://slicehdr/second -r 3- -H "uuid: etagnew-custom-1"')
+tr.MakeCurlCommand(curl_and_args + ' http://slicehdr/second -r 3- -H "uuid: etagnew-1"')
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/bb.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
