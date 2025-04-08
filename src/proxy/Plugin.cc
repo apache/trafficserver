@@ -213,7 +213,7 @@ plugin_expand(char *arg)
   char    *str = nullptr;
 
   if (*arg != '$') {
-    return (char *)nullptr;
+    return nullptr;
   }
   // skip the $ character
   arg += 1;
