@@ -1,6 +1,4 @@
 ``
-* Connected to 127.0.0.1 (127.0.0.1) port ``
-``
 * Establish HTTP proxy tunnel to foo.com:80
 > CONNECT foo.com:80 HTTP/1.1
 > Host: foo.com:80
