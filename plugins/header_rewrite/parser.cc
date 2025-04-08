@@ -29,17 +29,36 @@
 #include "parser.h"
 
 enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX, PARSER_IN_EXPANSION, PARSER_IN_BRACE };
+enum LineType { LINE_TYPE_IS_DEFAULT, LINE_TYPE_IS_CONDITION, LINE_TYPE_IS_OPERATOR };
 
 bool
 Parser::parse_line(const std::string &original_line)
 {
   std::string line             = original_line;
   ParserState state            = PARSER_DEFAULT;
+  LineType    line_type        = LINE_TYPE_IS_DEFAULT;
   bool        extracting_token = false;
   off_t       cur_token_start  = 0;
   size_t      cur_token_length = 0;
 
   for (size_t i = 0; i < line.size(); ++i) {
+    if ((_tokens.size() == 1) && (line_type == LINE_TYPE_IS_DEFAULT)) {
+      if (_tokens[0] == "cond") {
+        line_type = LINE_TYPE_IS_CONDITION;
+      } else {
+        line_type = LINE_TYPE_IS_OPERATOR;
+      }
+    }
+
+    // Check for unquoted >, <, =, / in non-conditions. This is a mistake on the
+    // user's part, so issue a warning accordingly.
+    if (!extracting_token && (state == PARSER_DEFAULT) && (line_type == LINE_TYPE_IS_OPERATOR)) {
+      if ((line[i] == '>') || (line[i] == '<') || (line[i] == '=') || (line[i] == '/') || (line[i] == '{') || (line[i] == '%')) {
+        TSError("[%s] Configuration contains an unquoted string starting with special character %c: \"%s\"", PLUGIN_NAME, line[i],
+                line.c_str());
+      }
+    }
+
     if ((state == PARSER_DEFAULT) && (std::isspace(line[i]) || ((line[i] == '=')))) {
       if (extracting_token) {
         cur_token_length = i - cur_token_start;

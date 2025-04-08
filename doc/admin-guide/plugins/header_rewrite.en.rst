@@ -734,6 +734,12 @@ The absence of an operand for conditions which accept them simply requires that
 a value exists (e.g. the content of the header is not an empty string) for the
 condition to be considered true.
 
+Note that any operator parameters containing these operands should be enclosed
+in double quotes to avoid parsing issues. For example, when setting a path
+via the `set-destination`_ operator, enclose the ``PATH`` component in quotes::
+
+  set-destination PATH "new/path/"
+
 Condition Flags
 ---------------
 
@@ -889,7 +895,7 @@ on any error status code, that original status code will be sent to the client.
 An example config would look like
 
    cond %{READ_RESPONSE_HDR_HOOK}
-   set-body-from http://www.example.com/second
+   set-body-from "http://www.example.com/second"
 
 Where ``http://www.example.com/second`` is the destination to retrieve the custom response from.
 This can be enabled per-mapping or globally.
@@ -959,6 +965,15 @@ component that is being modified (see `URL Parts`_), and ``<value>`` will be
 used as its replacement. You must supply a non-zero length value, otherwise
 this operator will be an effective no-op (though a warning will be emitted to
 the logs if debugging is enabled).
+
+Wrap the ``<value>`` in double quotes to avoid parsing issues.
+
+Also, to reiterate the comment from the `URL Parts`_ section, note that for
+``PATH`` ``<part>`` values, a leading ``/`` is not included. That is, you will
+generally not want to start your ``PATH`` value with a leading ``/``.
+
+See the `Prepend a Path to the URL`_ example in the `Examples`_ section below
+for a demonstration of a ``PATH`` ``set-destination`` value.
 
 set-header
 ~~~~~~~~~~
@@ -1101,7 +1116,7 @@ Operator flags are optional, are separated by commas when using more than one
 for a single operator, and must not contain whitespace inside the brackets. For
 example, an operator with the ``L`` flag would be written in this manner::
 
-    set-destination HOST foo.bar.com [L]
+    set-destination HOST "foo.bar.com" [L]
 
 The flags currently supported are:
 
@@ -1134,7 +1149,7 @@ Old expansion variable   Condition variable to use with concatenations
 %<chi>                   %{IP:CLIENT}, %{INBOUND:REMOTE-ADDR} or e.g. %{CIDR:24,48}
 %<cqhl>                  %{CLIENT-HEADER:Content-Length}
 %<cqhm>                  %{METHOD}
-%<cque>                  %[CLIENT-URL}
+%<cque>                  %{CLIENT-URL}
 %<cquup>                 %{CLIENT-URL:PATH}
 ======================== ==========================================================================
 
@@ -1175,7 +1190,7 @@ As another example, a remap rule might use the `set-destination`_ operator to
 change just the hostname via::
 
   cond %{HEADER:X-Mobile} = "foo"
-  set-destination HOST foo.mobile.bar.com [L]
+  set-destination HOST "foo.mobile.bar.com" [L]
 
 Requests vs. Responses
 ======================
@@ -1481,7 +1496,7 @@ Query string when the Origin server times out or the connection is refused::
    cond %{SEND_RESPONSE_HDR_HOOK}
    cond %{STATUS} =502 [OR]
    cond %{STATUS} =504
-   set-redirect 302 http://different_origin.example.com/%{CLIENT-URL:PATH} [QSA]
+   set-redirect 302 "http://different_origin.example.com/%{CLIENT-URL:PATH}" [QSA]
 
 Check for existence of a header
 -------------------------------
@@ -1541,8 +1556,21 @@ could each be tagged with a consistent name to make finding logs easier.::
     sometimes avoid setting internal ``@`` headers for passing information between hooks.
     These internal state variables are much more efficient than setting and reading headers.
 
+Prepend a Path to the URL
+-------------------------
+
+The following prepends ``/foo/bar/`` to the URL path. For example, if a request
+comes in for ``example.com/baz/``, then the application of this
+``set-destination`` operator will change the URL to
+``example.com/foo/bar/baz/``.  Note that since ``PATH`` for the plugin does not
+include the initial ``/``, the provided parameter intentionally does not start
+with a ``/`` before the ``foo/bar/%{CLIENT-URL:PATH}``::
+
+   cond %{REMAP_PSEUDO_HOOK}
+   set-destination PATH "foo/bar/%{CLIENT-URL:PATH}"
+
 Remove Client Query Parameters
-------------------------------------
+------------------------------
 
 The following ruleset removes any query parameters set by the client.::
 
