@@ -8270,6 +8270,9 @@ HttpTransact::build_redirect_response(State *s)
   old_host = u->host_get(&old_host_len);
   u->host_set(s->dns_info.lookup_name, strlen(s->dns_info.lookup_name));
   new_url = to_free = u->string_get(&s->arena, &new_url_len);
+  assert(to_free != nullptr); // needed to avoid false positive nullptr deref from clang-analyzer.
+  // The following code may not be needed if string_get above always returns non nullptr,
+  // or we must guard str_free at the end with if (to_free) otherwise.
   if (new_url == nullptr) {
     new_url = "";
   }
