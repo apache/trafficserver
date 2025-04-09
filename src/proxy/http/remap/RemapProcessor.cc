@@ -23,6 +23,8 @@
 
 #include "proxy/http/remap/RemapProcessor.h"
 
+using namespace std::literals;
+
 RemapProcessor remapProcessor;
 
 namespace
@@ -41,14 +43,12 @@ bool
 RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
 {
   Dbg(dbg_ctl_url_rewrite, "setting up for remap: %p", s);
-  URL        *request_url    = nullptr;
-  bool        mapping_found  = false;
-  HTTPHdr    *request_header = &s->hdr_info.client_request;
-  char      **redirect_url   = &s->remap_redirect;
-  const char *request_host;
-  int         request_host_len;
-  int         request_port;
-  bool        proxy_request = false;
+  URL     *request_url    = nullptr;
+  bool     mapping_found  = false;
+  HTTPHdr *request_header = &s->hdr_info.client_request;
+  char   **redirect_url   = &s->remap_redirect;
+  int      request_port;
+  bool     proxy_request = false;
 
   s->reverse_proxy = table->reverse_proxy;
   s->url_map.set(s->hdr_info.client_request.m_heap);
@@ -69,13 +69,12 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
     return false;
   }
 
-  request_host  = request_header->host_get(&request_host_len);
+  auto request_host{request_header->host_get()};
   request_port  = request_header->port_get();
   proxy_request = request_header->is_target_in_url() || !s->reverse_proxy;
   // Default to empty host.
-  if (!request_host) {
-    request_host     = "";
-    request_host_len = 0;
+  if (request_host.empty()) {
+    request_host = ""sv;
   }
 
   Dbg(dbg_ctl_url_rewrite, "[lookup] attempting %s lookup", proxy_request ? "proxy" : "normal");
@@ -83,8 +82,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
   if (table->num_rules_forward_with_recv_port) {
     Dbg(dbg_ctl_url_rewrite, "[lookup] forward mappings with recv port found; Using recv port %d",
         s->client_info.dst_addr.host_order_port());
-    if (table->forwardMappingWithRecvPortLookup(request_url, s->client_info.dst_addr.host_order_port(), request_host,
-                                                request_host_len, s->url_map)) {
+    if (table->forwardMappingWithRecvPortLookup(request_url, s->client_info.dst_addr.host_order_port(), request_host.data(),
+                                                static_cast<int>(request_host.length()), s->url_map)) {
       Dbg(dbg_ctl_url_rewrite, "Found forward mapping with recv port");
       mapping_found = true;
     } else if (table->num_rules_forward == 0) {
@@ -95,13 +94,14 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
   }
 
   if (!mapping_found) {
-    mapping_found = table->forwardMappingLookup(request_url, request_port, request_host, request_host_len, s->url_map);
+    mapping_found = table->forwardMappingLookup(request_url, request_port, request_host.data(),
+                                                static_cast<int>(request_host.length()), s->url_map);
   }
 
   // If no rules match and we have a host, check empty host rules since
   // they function as default rules for server requests.
   // If there's no host, we've already done this.
-  if (!mapping_found && table->nohost_rules && request_host_len) {
+  if (!mapping_found && table->nohost_rules && !request_host.empty()) {
     Dbg(dbg_ctl_url_rewrite, "[lookup] nothing matched");
     mapping_found = table->forwardMappingLookup(request_url, 0, "", 0, s->url_map);
   }
@@ -110,8 +110,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
 
     // Save this information for later
     // @amc: why is this done only for requests without a host in the URL?
-    s->hh_info.host_len     = request_host_len;
-    s->hh_info.request_host = request_host;
+    s->hh_info.host_len     = static_cast<int>(request_host.length());
+    s->hh_info.request_host = request_host.data();
     s->hh_info.request_port = request_port;
 
     if (mapping_found) {
