@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <iostream>
 
 namespace rpc::admin
 {
