@@ -70,7 +70,7 @@ set_storage_offline(std::string_view const & /* id ATS_UNUSED */, YAML::Node con
 
   for (auto &&it : params) {
     std::string device = it.as<std::string>();
-    CacheDisk  *d      = cacheProcessor.find_by_path(device.c_str(), (device.size()));
+    CacheDisk  *d      = cacheProcessor.find_by_path(device);
 
     if (d) {
       Dbg(dbg_ctl_rpc_server, "Marking %s offline", device.c_str());
@@ -96,7 +96,7 @@ get_storage_status(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
 
   for (auto &&it : params) {
     std::string device = it.as<std::string>();
-    CacheDisk  *d      = cacheProcessor.find_by_path(device.c_str(), static_cast<int>(device.size()));
+    CacheDisk  *d      = cacheProcessor.find_by_path(device);
 
     if (d) {
       resp.result().push_back(*d);
