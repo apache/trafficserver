@@ -20,7 +20,6 @@
 
 #pragma once
 
-
 namespace rpc::admin
 {
 /// Initialize and register all public handler that will be exposed to the JSON RPC server.
