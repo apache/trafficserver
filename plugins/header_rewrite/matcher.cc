@@ -56,12 +56,23 @@ Matchers<std::string>::test_eq(const std::string &t) const
 void
 Matchers<const sockaddr *>::set(const std::string &data)
 {
-  if (!extract_ranges(data)) {
+  std::istringstream stream(data);
+  std::string        part;
+  size_t             count = 0;
+
+  while (std::getline(stream, part, ',')) {
+    if (swoc::IPRange r; r.load(part)) {
+      _ipHelper.mark(r);
+      ++count;
+    }
+  }
+
+  if (count > 0) {
+    Dbg(pi_dbg_ctl, "IP-range precompiled successfully with %zu entries", count);
+  } else {
     TSError("[%s] Invalid IP-range: failed to parse: %s", PLUGIN_NAME, data.c_str());
     Dbg(pi_dbg_ctl, "Invalid IP-range: failed to parse: %s", data.c_str());
     throw std::runtime_error("Malformed IP-range");
-  } else {
-    Dbg(pi_dbg_ctl, "IP-range precompiled successfully");
   }
 }
 
@@ -78,22 +89,4 @@ Matchers<const sockaddr *>::test(const sockaddr *addr, const Resources & /* Not 
   }
 
   return false;
-}
-
-bool
-Matchers<const sockaddr *>::extract_ranges(swoc::TextView text)
-{
-  while (text) {
-    if (swoc::IPRange r; r.load(text.take_prefix_at(','))) {
-      _ipHelper.mark(r);
-    }
-  }
-
-  if (_ipHelper.count() > 0) {
-    Dbg(pi_dbg_ctl, "    Added %zu IP ranges while parsing", _ipHelper.count());
-    return true;
-  } else {
-    Dbg(pi_dbg_ctl, "    No IP ranges added, possibly bad input");
-    return false;
-  }
 }

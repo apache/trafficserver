@@ -43,7 +43,7 @@ ConditionStatus::initialize(Parser &p)
 
   match->set(p.get_arg(), mods(), [](const std::string &s) -> DataType {
     auto status = Parser::parseNumeric<DataType>(s);
-    if (status < 0 || status > 999) {
+    if (status > 999) {
       throw std::runtime_error("Invalid status code: " + s);
     }
     return status;

@@ -113,6 +113,10 @@ public:
   static NumericT
   parseNumeric(const std::string &s)
   {
+    if (s.size() == 0) {
+      return 0; // For the case where we have conditions that are "values".
+    }
+
     try {
       if constexpr (std::is_same_v<NumericT, int>) {
         return std::stoi(s);

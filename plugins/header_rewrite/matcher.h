@@ -24,7 +24,6 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include <concepts>
 #include <variant>
 #include <set>
 
@@ -87,29 +86,17 @@ template <class T> class Matchers : public Matcher
 public:
   explicit Matchers(const MatcherOps op) : Matcher(op), _data() {}
 
-  // Getters / setters. ToDo: What about sets ?
-  const T &
-  get() const
-  {
-    TSAssert(std::holds_alternative<T>(_data));
-    return std::get<T>(_data);
-  }
-
   void
   set(const T &d, CondModifiers mods)
   {
-    TSAssert(std::holds_alternative<T>(_data));
-    std::get<T>(_data) = d;
-    if (mods & COND_NOCASE) {
-      _nocase = true;
+    if constexpr (std::is_same_v<T, std::string>) {
+      set(d, mods, [](const std::string &in) { return in; });
+    } else {
+      std::get<T>(_data) = d;
+      if (mods & COND_NOCASE) {
+        _nocase = true;
+      }
     }
-  }
-
-  void
-  set(const std::string &s, CondModifiers mods)
-    requires std::is_same_v<T, std::string>
-  {
-    set(s, mods, [](const std::string &in) { return in; });
   }
 
   void
@@ -284,6 +271,5 @@ public:
   bool test(const sockaddr *addr, const Resources &) const;
 
 private:
-  bool             extract_ranges(swoc::TextView text);
   swoc::IPRangeSet _ipHelper;
 };
