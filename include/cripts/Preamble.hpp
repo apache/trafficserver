@@ -116,6 +116,7 @@ extern cripts::Versions version; // Access to the ATS version information
 #define urls                        context->_urls
 #define Regex(_name_, ...)          static cripts::Matcher::PCRE _name_(__VA_ARGS__);
 #define ACL(_name_, ...)            static cripts::Matcher::Range::IP _name_(__VA_ARGS__);
+#define StatusCode(_name_, ...)     cripts::Error::Status::Set(_name_, __VA_ARGS__);
 #define CreateCounter(_id_, _name_) instance.metrics[_id_] = cripts::Metrics::Counter::Create(_name_);
 #define CreateGauge(_id_, _name_)   instance.metrics[_id_] = cripts::Metrics::Gauge::Create(_name_);
 #define FilePath(_name_, _path_)    static const cripts::File::Path _name_(_path_);
