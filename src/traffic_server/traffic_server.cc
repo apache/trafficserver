@@ -595,7 +595,7 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
 void
 proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
 {
-  if ((unsigned)signo < countof(signal_received)) {
+  if (static_cast<unsigned>(signo) < countof(signal_received)) {
     signal_received[signo] = true;
   }
 
