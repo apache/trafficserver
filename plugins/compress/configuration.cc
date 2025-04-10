@@ -248,6 +248,8 @@ HostConfiguration::add_compression_algorithms(string &line)
 void
 HostConfiguration::add_compressible_status_codes(string &line)
 {
+  compressible_status_codes_.clear();
+
   for (;;) {
     string token = extractFirstToken(line, isCommaOrSpace);
     if (token.empty()) {
