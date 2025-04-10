@@ -1291,7 +1291,7 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
       full_disks += 1;
       if (full_disks == gndisks) {
         char config_file[PATH_NAME_MAX];
-        REC_ReadConfigString(config_file, "proxy.config.cache.volume_filename", PATH_NAME_MAX);
+        RecGetRecordString("proxy.config.cache.volume_filename", config_file, PATH_NAME_MAX);
         if (cp->size) {
           Warning("not enough space to increase volume: [%d] to size: [%" PRId64 "]", volume_number,
                   (int64_t)((to_create + cp->size) >> (20 - STORE_BLOCK_SHIFT)));
