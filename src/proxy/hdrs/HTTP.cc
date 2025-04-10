@@ -1696,9 +1696,7 @@ http_parse_te(const char *buf, int len, Arena *arena)
 void
 HTTPHdr::_fill_target_cache() const
 {
-  URL        *url = this->url_get();
-  const char *port_ptr;
-  int         port_len;
+  URL *url = this->url_get();
 
   m_target_in_url  = false;
   m_port_in_header = false;
@@ -1709,16 +1707,23 @@ HTTPHdr::_fill_target_cache() const
     m_port           = url->port_get();
     m_port_in_header = 0 != url->port_get_raw();
     m_host_mime      = nullptr;
-  } else if (nullptr !=
-             (m_host_mime = const_cast<HTTPHdr *>(this)->get_host_port_values(nullptr, &m_host_length, &port_ptr, &port_len))) {
-    m_port = 0;
-    if (port_ptr) {
-      for (; port_len > 0 && isdigit(*port_ptr); ++port_ptr, --port_len) {
-        m_port = m_port * 10 + *port_ptr - '0';
+  } else {
+    std::string_view host, port;
+    std::tie(m_host_mime, host, port) = const_cast<HTTPHdr *>(this)->get_host_port_values();
+    m_host_length                     = static_cast<int>(host.length());
+
+    if (m_host_mime != nullptr) {
+      m_port = 0;
+      if (!port.empty()) {
+        for (auto c : port) {
+          if (isdigit(c)) {
+            m_port = m_port * 10 + c - '0';
+          }
+        }
       }
+      m_port_in_header = (0 != m_port);
+      m_port           = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
     }
-    m_port_in_header = (0 != m_port);
-    m_port           = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
   }
 
   m_target_cached = true;

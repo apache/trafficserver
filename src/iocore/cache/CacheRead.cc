@@ -1076,7 +1076,8 @@ CacheVC::openReadStartHead(int event, Event *e)
       }
 
       // Now that we have selected an alternate, validate that the content length and object size match
-      MIMEField *field = alternate.response_get()->field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+      MIMEField *field = alternate.response_get()->field_find(
+        std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
       if (field) {
         uint64_t cl = static_cast<uint64_t>(field->value_get_int64());
         if (cl != doc_len) {

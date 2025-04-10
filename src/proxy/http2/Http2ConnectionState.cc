@@ -2540,10 +2540,10 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   if (accept_encoding != nullptr) {
     auto       name{accept_encoding->name_get()};
-    MIMEField *f = hdr.field_create(name.data(), name.length());
+    MIMEField *f = hdr.field_create(name);
 
     auto value{accept_encoding->value_get()};
-    f->value_set(hdr.m_heap, hdr.m_mime, value.data(), value.length());
+    f->value_set(hdr.m_heap, hdr.m_mime, value);
 
     hdr.field_attach(f);
   }

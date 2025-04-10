@@ -164,7 +164,8 @@ FetchSM::has_body()
     return true;
   }
 
-  resp_content_length = hdr->value_get_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  resp_content_length = hdr->value_get_int64(
+    std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
   if (!resp_content_length) {
     if (check_connection_close()) {
       return true;
@@ -199,7 +200,7 @@ FetchSM::check_for_field_value(const char *name, size_t name_len, char const *va
   bool     zret = false; // not found.
   StrList  slist;
   HTTPHdr *hdr = &client_response_hdr;
-  int      ret = hdr->value_get_comma_list(name, name_len, &slist);
+  int      ret = hdr->value_get_comma_list(std::string_view{name, name_len}, &slist);
 
   ink_release_assert(header_done);
 

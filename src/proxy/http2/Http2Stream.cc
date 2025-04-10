@@ -840,7 +840,8 @@ Http2Stream::update_write_request(bool call_update)
       Http2StreamDebug("update_write_request parsing done, read %d bytes", bytes_used);
 
       // Schedule session shutdown if response header has "Connection: close"
-      MIMEField *field = this->_send_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+      MIMEField *field = this->_send_header.field_find(
+        std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
       if (field) {
         auto value{field->value_get()};
         if (value == std::string_view{HTTP_VALUE_CLOSE, static_cast<std::string_view::size_type>(HTTP_LEN_CLOSE)}) {

@@ -61,13 +61,13 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
 
   HdrCsvIter iter;
 
-  MIMEField *field{mime.field_find(ONE_TAG.data(), int(ONE_TAG.size()))};
+  MIMEField *field{mime.field_find(ONE_TAG)};
   REQUIRE(field != nullptr);
 
   auto value = iter.get_first(field);
   REQUIRE(value == "alpha");
 
-  field = mime.field_find(TWO_TAG.data(), int(TWO_TAG.size()));
+  field = mime.field_find(TWO_TAG);
   value = iter.get_first(field);
   REQUIRE(value == "alpha");
   value = iter.get_next();
@@ -75,7 +75,7 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
   value = iter.get_next();
   REQUIRE(value.empty());
 
-  field = mime.field_find(THREE_TAG.data(), int(THREE_TAG.size()));
+  field = mime.field_find(THREE_TAG);
   value = iter.get_first(field);
   REQUIRE(value == "zwoop");
   value = iter.get_next();
@@ -87,7 +87,7 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
   value = iter.get_next();
   REQUIRE(value.empty());
 
-  field = mime.field_find(FOUR_TAG.data(), int(FOUR_TAG.size()));
+  field = mime.field_find(FOUR_TAG);
   value = iter.get_first(field);
   REQUIRE(value == "itchi");
   value = iter.get_next();
@@ -96,7 +96,7 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
   REQUIRE(value.empty());
 
   // Check that duplicates are handled correctly.
-  field = mime.field_find(FIVE_TAG.data(), int(FIVE_TAG.size()));
+  field = mime.field_find(FIVE_TAG);
   value = iter.get_first(field);
   REQUIRE(value == "alpha");
   value = iter.get_next();
@@ -110,7 +110,7 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
   value = iter.get_next();
   REQUIRE(value.empty());
 
-  field = mime.field_find(FIVE_TAG.data(), int(FIVE_TAG.size()));
+  field = mime.field_find(FIVE_TAG);
   value = iter.get_first(field, false);
   REQUIRE(value == "alpha");
   value = iter.get_next();
@@ -147,13 +147,13 @@ TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
   auto result = mime_parser_parse(&parser, heap, mime.m_mime, &real_s, real_e, false, true, false);
   REQUIRE(PARSE_RESULT_DONE == result);
 
-  MIMEField *field{mime.field_find(connection_tag.data(), int(connection_tag.size()))};
+  MIMEField *field{mime.field_find(connection_tag)};
   REQUIRE(mime_hdr_fields_count(mime.m_mime) == 4);
   REQUIRE(field != nullptr);
-  field = mime.field_find(vary_tag.data(), static_cast<int>(vary_tag.size()));
+  field = mime.field_find(vary_tag);
   REQUIRE(field != nullptr);
   REQUIRE(field->m_len_value == 0);
-  field = mime.field_find(after_tag.data(), static_cast<int>(after_tag.size()));
+  field = mime.field_find(after_tag);
   REQUIRE(field != nullptr);
 
   int  idx   = 0;
@@ -190,13 +190,13 @@ TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
   auto result = mime_parser_parse(&parser, heap, mime.m_mime, &real_s, real_e, false, true, false);
   REQUIRE(PARSE_RESULT_DONE == result);
 
-  MIMEField *field{mime.field_find(connection_tag.data(), int(connection_tag.size()))};
+  MIMEField *field{mime.field_find(connection_tag)};
   REQUIRE(mime_hdr_fields_count(mime.m_mime) == 4);
   REQUIRE(field != nullptr);
-  field = mime.field_find(vary_tag.data(), static_cast<int>(vary_tag.size()));
+  field = mime.field_find(vary_tag);
   REQUIRE(field != nullptr);
   REQUIRE(field->m_len_value == 0);
-  field = mime.field_find(before_tag.data(), static_cast<int>(before_tag.size()));
+  field = mime.field_find(before_tag);
   REQUIRE(field != nullptr);
 
   int  idx   = 0;

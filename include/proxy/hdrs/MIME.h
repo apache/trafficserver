@@ -27,6 +27,8 @@
 #include <string_view>
 #include <string>
 
+using namespace std::literals;
+
 #include "tscore/ink_assert.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_string++.h"
@@ -156,7 +158,7 @@ struct MIMEField {
 
      @return The index of @a value.
   */
-  int value_get_index(const char *value, int length) const;
+  int value_get_index(std::string_view value) const;
 
   /// @return The value of @a this field.
   std::string_view value_get() const;
@@ -167,10 +169,10 @@ struct MIMEField {
   time_t   value_get_date() const;
   int      value_get_comma_list(StrList *list) const;
 
-  void name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length);
+  void name_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name);
   bool name_is_valid(uint32_t invalid_char_bits = is_control_BIT) const;
 
-  void value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length);
+  void value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value);
   void value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, int32_t value);
   void value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, uint32_t value);
   void value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, int64_t value);
@@ -178,8 +180,7 @@ struct MIMEField {
   void value_clear(HdrHeap *heap, MIMEHdrImpl *mh);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
-  void value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length, bool prepend_comma = false,
-                    const char separator = ',');
+  void value_append(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value, bool prepend_comma = false, const char separator = ',');
   bool value_is_valid(uint32_t invalid_char_bits = is_control_BIT) const;
   int  has_dups() const;
 };
@@ -942,16 +943,17 @@ bool     mime_parse_integer(const char *&buf, const char *end, int *integer);
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length)
+MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name)
 {
   const char *name_wks;
 
-  if (hdrtoken_is_wks(name)) {
-    int16_t name_wks_idx = hdrtoken_wks_to_index(name);
-    mime_field_name_set(heap, mh, this, name_wks_idx, name, length, true);
+  if (hdrtoken_is_wks(name.data())) {
+    int16_t name_wks_idx = hdrtoken_wks_to_index(name.data());
+    mime_field_name_set(heap, mh, this, name_wks_idx, name.data(), static_cast<int>(name.length()), true);
   } else {
-    int field_name_wks_idx = hdrtoken_tokenize(name, length, &name_wks);
-    mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name : name_wks), length, true);
+    int field_name_wks_idx = hdrtoken_tokenize(name.data(), static_cast<int>(name.length()), &name_wks);
+    mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name.data() : name_wks),
+                        static_cast<int>(name.length()), true);
   }
 }
 
@@ -1007,9 +1009,9 @@ MIMEField::value_get_comma_list(StrList *list) const
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length)
+MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value)
 {
-  mime_field_value_set(heap, mh, this, value, length, true);
+  mime_field_value_set(heap, mh, this, value.data(), static_cast<int>(value.length()), true);
 }
 
 inline void
@@ -1042,16 +1044,16 @@ MIMEField::value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, time_t value)
 inline void
 MIMEField::value_clear(HdrHeap *heap, MIMEHdrImpl *mh)
 {
-  value_set(heap, mh, "", 0);
+  value_set(heap, mh, ""sv);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEField::value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length, bool prepend_comma, const char separator)
+MIMEField::value_append(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value, bool prepend_comma, const char separator)
 {
-  mime_field_value_append(heap, mh, this, value, length, prepend_comma, separator);
+  mime_field_value_append(heap, mh, this, value.data(), static_cast<int>(value.length()), prepend_comma, separator);
 }
 
 /*-------------------------------------------------------------------------
@@ -1115,13 +1117,13 @@ public:
   void fields_clear();
   int  fields_count() const;
 
-  MIMEField       *field_create(const char *name = nullptr, int length = -1);
-  MIMEField       *field_find(const char *name, int length);
-  const MIMEField *field_find(const char *name, int length) const;
+  MIMEField       *field_create(std::string_view name = ""sv);
+  MIMEField       *field_find(std::string_view name);
+  const MIMEField *field_find(std::string_view name) const;
   void             field_attach(MIMEField *field);
   void             field_detach(MIMEField *field, bool detach_all_dups = true);
   void             field_delete(MIMEField *field, bool delete_all_dups = true);
-  void             field_delete(const char *name, int name_length);
+  void             field_delete(std::string_view name);
 
   iterator begin() const;
   iterator end() const;
@@ -1139,35 +1141,32 @@ public:
   int parse(MIMEParser *parser, const char **start, const char *end, bool must_copy_strs, bool eof, bool remove_ws_from_field_name,
             size_t max_hdr_field_size = UINT16_MAX);
 
-  int              value_get_index(const char *name, int name_length, const char *value, int value_length) const;
-  const char      *value_get(const char *name, int name_length, int *value_length) const;
-  std::string_view value_get(std::string_view const &name) const; // Convenience overload.
-  int32_t          value_get_int(const char *name, int name_length) const;
-  uint32_t         value_get_uint(const char *name, int name_length) const;
-  int64_t          value_get_int64(const char *name, int name_length) const;
-  time_t           value_get_date(const char *name, int name_length) const;
-  int              value_get_comma_list(const char *name, int name_length, StrList *list) const;
+  int              value_get_index(std::string_view name, std::string_view value) const;
+  std::string_view value_get(std::string_view name) const;
+  int32_t          value_get_int(std::string_view name) const;
+  uint32_t         value_get_uint(std::string_view name) const;
+  int64_t          value_get_int64(std::string_view name) const;
+  time_t           value_get_date(std::string_view name) const;
+  int              value_get_comma_list(std::string_view name, StrList *list) const;
 
-  void value_set(const char *name, int name_length, const char *value, int value_length);
-  void value_set_int(const char *name, int name_length, int32_t value);
-  void value_set_uint(const char *name, int name_length, uint32_t value);
-  void value_set_int64(const char *name, int name_length, int64_t value);
-  void value_set_date(const char *name, int name_length, time_t value);
+  void value_set(std::string_view name, std::string_view value);
+  void value_set_int(std::string_view name, int32_t value);
+  void value_set_uint(std::string_view name, uint32_t value);
+  void value_set_int64(std::string_view name, int64_t value);
+  void value_set_date(std::string_view name, time_t value);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
-  void value_append(const char *name, int name_length, const char *value, int value_length, bool prepend_comma = false,
-                    const char separator = ',');
+  void value_append(std::string_view name, std::string_view value, bool prepend_comma = false, const char separator = ',');
 
-  void field_value_set(MIMEField *field, const char *value, int value_length, bool reuse_heaps = false);
+  void field_value_set(MIMEField *field, std::string_view value, bool reuse_heaps = false);
   void field_value_set_int(MIMEField *field, int32_t value);
   void field_value_set_uint(MIMEField *field, uint32_t value);
   void field_value_set_int64(MIMEField *field, int64_t value);
   void field_value_set_date(MIMEField *field, time_t value);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
-  void    field_value_append(MIMEField *field, const char *value, int value_length, bool prepend_comma = false,
-                             const char separator = ',');
-  void    value_append_or_set(const char *name, const int name_length, char *value, int value_length);
+  void    field_value_append(MIMEField *field, std::string_view value, bool prepend_comma = false, const char separator = ',');
+  void    value_append_or_set(std::string_view name, std::string_view value);
   void    field_combine_dups(MIMEField *field, bool prepend_comma = false, const char separator = ',');
   time_t  get_age() const;
   int64_t get_content_length() const;
@@ -1189,13 +1188,10 @@ public:
 
   /** Get the value of the host field.
       This parses the host field for brackets and port value.
-      @return The mime HOST field if it has a value, @c NULL otherwise.
+      @return The tuple of mime HOST field, host, and port if it has a value,
+              or the tuple of @c NULL and two empty string views. otherwise.
   */
-  MIMEField *get_host_port_values(const char **host_ptr, ///< [out] Pointer to host.
-                                  int         *host_len, ///< [out] Length of host.
-                                  const char **port_ptr, ///< [out] Pointer to port.
-                                  int         *port_len  ///< [out] Length of port.
-  );
+  std::tuple<MIMEField *, std::string_view, std::string_view> get_host_port_values();
 
   void set_cooked_cc_need_revalidate_once();
   void unset_cooked_cc_need_revalidate_once();
@@ -1209,7 +1205,7 @@ public:
   void set_last_modified(time_t value);
   void set_max_forwards(int32_t value);
   void set_warning(int32_t value);
-  void set_server(const char *server_id_tag, int server_id_tag_size);
+  void set_server(std::string_view server_id_tag);
 
   // No gratuitous copies & refcounts!
   MIMEHdr(const MIMEHdr &m)            = delete;
@@ -1219,7 +1215,7 @@ private:
   // Interface to replace (overwrite) field value without
   // changing the heap as long as the new value is not longer
   // than the current value
-  bool field_value_replace(MIMEField *field, const char *value, int value_length);
+  bool field_value_replace(MIMEField *field, std::string_view value);
 };
 
 /*-------------------------------------------------------------------------
@@ -1291,13 +1287,14 @@ MIMEHdr::fields_count() const
   -------------------------------------------------------------------------*/
 
 inline MIMEField *
-MIMEHdr::field_create(const char *name, int length)
+MIMEHdr::field_create(std::string_view name)
 {
   MIMEField *field = mime_field_create(m_heap, m_mime);
 
-  if (name) {
-    int field_name_wks_idx = hdrtoken_tokenize(name, length);
-    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name, length, true);
+  if (!name.empty()) {
+    auto length{static_cast<int>(name.length())};
+    int  field_name_wks_idx = hdrtoken_tokenize(name.data(), length);
+    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name.data(), length, true);
   }
 
   return field;
@@ -1307,17 +1304,17 @@ MIMEHdr::field_create(const char *name, int length)
   -------------------------------------------------------------------------*/
 
 inline MIMEField *
-MIMEHdr::field_find(const char *name, int length) // NOLINT(readability-make-member-function-const)
+MIMEHdr::field_find(std::string_view name) // NOLINT(readability-make-member-function-const)
 {
   //    ink_assert(valid());
-  return mime_hdr_field_find(m_mime, name, length);
+  return mime_hdr_field_find(m_mime, name.data(), static_cast<int>(name.length()));
 }
 
 inline const MIMEField *
-MIMEHdr::field_find(const char *name, int length) const
+MIMEHdr::field_find(std::string_view name) const
 {
   //    ink_assert(valid());
-  MIMEField *retval = mime_hdr_field_find(const_cast<MIMEHdr *>(this)->m_mime, name, length);
+  MIMEField *retval = mime_hdr_field_find(const_cast<MIMEHdr *>(this)->m_mime, name.data(), static_cast<int>(name.length()));
   return retval;
 }
 
@@ -1361,9 +1358,9 @@ MIMEHdr::end() const -> iterator
 }
 
 inline void
-MIMEHdr::field_delete(const char *name, int name_length)
+MIMEHdr::field_delete(std::string_view name)
 {
-  MIMEField *field = field_find(name, name_length);
+  MIMEField *field = field_find(name);
   if (field)
     field_delete(field);
 }
@@ -1405,12 +1402,12 @@ MIMEHdr::parse(MIMEParser *parser, const char **start, const char *end, bool mus
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 inline int
-MIMEHdr::value_get_index(const char *name, int name_length, const char *value, int value_length) const
+MIMEHdr::value_get_index(std::string_view name, std::string_view value) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name);
 
   if (field) {
-    return field->value_get_index(value, value_length);
+    return field->value_get_index(value);
   }
   return -1;
 }
@@ -1418,23 +1415,10 @@ MIMEHdr::value_get_index(const char *name, int name_length, const char *value, i
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-MIMEHdr::value_get(const char *name, int name_length, int *value_length_return) const
-{
-  const MIMEField *field = field_find(name, name_length);
-
-  if (field) {
-    auto value{field->value_get()};
-    *value_length_return = static_cast<int>(value.length());
-    return value.data();
-  }
-  return nullptr;
-}
-
 inline std::string_view
-MIMEHdr::value_get(std::string_view const &name) const
+MIMEHdr::value_get(std::string_view name) const
 {
-  MIMEField const *field = field_find(name.data(), name.size());
+  MIMEField const *field = field_find(name);
 
   if (field) {
     return field->value_get();
@@ -1443,9 +1427,9 @@ MIMEHdr::value_get(std::string_view const &name) const
 }
 
 inline int32_t
-MIMEHdr::value_get_int(const char *name, int name_length) const
+MIMEHdr::value_get_int(std::string_view name) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name);
 
   if (field) {
     return mime_field_value_get_int(field);
@@ -1454,9 +1438,9 @@ MIMEHdr::value_get_int(const char *name, int name_length) const
 }
 
 inline uint32_t
-MIMEHdr::value_get_uint(const char *name, int name_length) const
+MIMEHdr::value_get_uint(std::string_view name) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name);
 
   if (field) {
     return mime_field_value_get_uint(field);
@@ -1465,9 +1449,9 @@ MIMEHdr::value_get_uint(const char *name, int name_length) const
 }
 
 inline int64_t
-MIMEHdr::value_get_int64(const char *name, int name_length) const
+MIMEHdr::value_get_int64(std::string_view name) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name);
 
   if (field) {
     return mime_field_value_get_int64(field);
@@ -1476,9 +1460,9 @@ MIMEHdr::value_get_int64(const char *name, int name_length) const
 }
 
 inline time_t
-MIMEHdr::value_get_date(const char *name, int name_length) const
+MIMEHdr::value_get_date(std::string_view name) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name);
 
   if (field) {
     return mime_field_value_get_date(field);
@@ -1487,9 +1471,9 @@ MIMEHdr::value_get_date(const char *name, int name_length) const
 }
 
 inline int
-MIMEHdr::value_get_comma_list(const char *name, int name_length, StrList *list) const
+MIMEHdr::value_get_comma_list(std::string_view name, StrList *list) const
 {
-  const MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name);
 
   if (field) {
     return field->value_get_comma_list(list);
@@ -1501,10 +1485,11 @@ MIMEHdr::value_get_comma_list(const char *name, int name_length, StrList *list) 
   -------------------------------------------------------------------------*/
 
 inline bool
-MIMEHdr::field_value_replace(MIMEField *field, const char *value, int value_length)
+MIMEHdr::field_value_replace(MIMEField *field, std::string_view value)
 {
+  auto value_length{static_cast<uint32_t>(value.length())};
   if (field->m_len_value >= value_length) {
-    memcpy((char *)field->m_ptr_value, value, value_length);
+    memcpy((char *)field->m_ptr_value, value.data(), value_length);
     field->m_len_value = value_length;
     return true;
   }
@@ -1512,10 +1497,10 @@ MIMEHdr::field_value_replace(MIMEField *field, const char *value, int value_leng
 }
 
 inline void
-MIMEHdr::field_value_set(MIMEField *field, const char *value, int value_length, bool reuse_heaps)
+MIMEHdr::field_value_set(MIMEField *field, std::string_view value, bool reuse_heaps)
 {
-  if (!reuse_heaps || !field_value_replace(field, value, value_length)) {
-    field->value_set(m_heap, m_mime, value, value_length);
+  if (!reuse_heaps || !field_value_replace(field, value)) {
+    field->value_set(m_heap, m_mime, value);
   }
 }
 
@@ -1547,9 +1532,9 @@ MIMEHdr::field_value_set_date(MIMEField *field, time_t value)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::field_value_append(MIMEField *field, const char *value_str, int value_len, bool prepend_comma, const char separator)
+MIMEHdr::field_value_append(MIMEField *field, std::string_view value, bool prepend_comma, const char separator)
 {
-  field->value_append(m_heap, m_mime, value_str, value_len, prepend_comma, separator);
+  field->value_append(m_heap, m_mime, value, prepend_comma, separator);
 }
 
 inline void
@@ -1561,7 +1546,7 @@ MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char sep
     auto value{current->value_get()};
     if (value.length() > 0) {
       HdrHeap::HeapGuard guard(m_heap, value.data()); // reference count the source string so it doesn't get moved
-      field->value_append(m_heap, m_mime, value.data(), value.length(), prepend_comma, separator);
+      field->value_append(m_heap, m_mime, value, prepend_comma, separator);
     }
     field_delete(current, false); // don't delete duplicates
     current = field->m_next_dup;
@@ -1569,17 +1554,17 @@ MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char sep
 }
 
 inline void
-MIMEHdr::value_append_or_set(const char *name, const int name_length, char *value, int value_length)
+MIMEHdr::value_append_or_set(std::string_view name, std::string_view value)
 {
   MIMEField *field = nullptr;
 
-  if ((field = field_find(name, name_length)) != nullptr) {
+  if ((field = field_find(name)) != nullptr) {
     while (field->m_next_dup) {
       field = field->m_next_dup;
     }
-    field_value_append(field, value, value_length, true);
+    field_value_append(field, value, true);
   } else {
-    value_set(name, name_length, value, value_length);
+    value_set(name, value);
   }
 }
 
@@ -1587,42 +1572,42 @@ MIMEHdr::value_append_or_set(const char *name, const int name_length, char *valu
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::value_set(const char *name, int name_length, const char *value, int value_length)
+MIMEHdr::value_set(std::string_view name, std::string_view value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
-  field->value_set(m_heap, m_mime, value, value_length);
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
+  field->value_set(m_heap, m_mime, value);
 }
 
 inline void
-MIMEHdr::value_set_int(const char *name, int name_length, int32_t value)
+MIMEHdr::value_set_int(std::string_view name, int32_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
   field->value_set_int(m_heap, m_mime, value);
 }
 
 inline void
-MIMEHdr::value_set_uint(const char *name, int name_length, uint32_t value)
+MIMEHdr::value_set_uint(std::string_view name, uint32_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
   field->value_set_uint(m_heap, m_mime, value);
 }
 
 inline void
-MIMEHdr::value_set_int64(const char *name, int name_length, int64_t value)
+MIMEHdr::value_set_int64(std::string_view name, int64_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
   field->value_set_int64(m_heap, m_mime, value);
 }
 
 inline void
-MIMEHdr::value_set_date(const char *name, int name_length, time_t value)
+MIMEHdr::value_set_date(std::string_view name, time_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
   field->value_set_date(m_heap, m_mime, value);
 }
 
@@ -1630,20 +1615,19 @@ MIMEHdr::value_set_date(const char *name, int name_length, time_t value)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::value_append(const char *name, int name_length, const char *value, int value_length, bool prepend_comma,
-                      const char separator)
+MIMEHdr::value_append(std::string_view name, std::string_view value, bool prepend_comma, const char separator)
 {
   MIMEField *field;
 
-  field = field_find(name, name_length);
+  field = field_find(name);
   if (field) {
     while (field->m_next_dup)
       field = field->m_next_dup;
-    field->value_append(m_heap, m_mime, value, value_length, prepend_comma, separator);
+    field->value_append(m_heap, m_mime, value, prepend_comma, separator);
   } else {
-    field = field_create(name, name_length);
+    field = field_create(name.empty() ? ""sv : name);
     field_attach(field);
-    field->value_set(m_heap, m_mime, value, value_length);
+    field->value_set(m_heap, m_mime, value);
   }
 }
 
@@ -1652,7 +1636,7 @@ MIMEHdr::value_append(const char *name, int name_length, const char *value, int 
 inline time_t
 MIMEHdr::get_age() const
 {
-  int64_t age = value_get_int64(MIME_FIELD_AGE, MIME_LEN_AGE);
+  int64_t age = value_get_int64(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)});
 
   if (age < 0) // We should ignore negative Age: values
     return 0;
@@ -1669,7 +1653,8 @@ MIMEHdr::get_age() const
 inline int64_t
 MIMEHdr::get_content_length() const
 {
-  return value_get_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  return value_get_int64(
+    std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1678,7 +1663,7 @@ MIMEHdr::get_content_length() const
 inline time_t
 MIMEHdr::get_date() const
 {
-  return value_get_date(MIME_FIELD_DATE, MIME_LEN_DATE);
+  return value_get_date(std::string_view{MIME_FIELD_DATE, static_cast<std::string_view::size_type>(MIME_LEN_DATE)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1687,7 +1672,7 @@ MIMEHdr::get_date() const
 inline time_t
 MIMEHdr::get_expires() const
 {
-  return value_get_date(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES);
+  return value_get_date(std::string_view{MIME_FIELD_EXPIRES, static_cast<std::string_view::size_type>(MIME_LEN_EXPIRES)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1696,7 +1681,8 @@ MIMEHdr::get_expires() const
 inline time_t
 MIMEHdr::get_if_modified_since() const
 {
-  return value_get_date(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
+  return value_get_date(
+    std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1705,7 +1691,8 @@ MIMEHdr::get_if_modified_since() const
 inline time_t
 MIMEHdr::get_if_unmodified_since() const
 {
-  return value_get_date(MIME_FIELD_IF_UNMODIFIED_SINCE, MIME_LEN_IF_UNMODIFIED_SINCE);
+  return value_get_date(
+    std::string_view{MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_UNMODIFIED_SINCE)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1714,7 +1701,8 @@ MIMEHdr::get_if_unmodified_since() const
 inline time_t
 MIMEHdr::get_last_modified() const
 {
-  return value_get_date(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED);
+  return value_get_date(
+    std::string_view{MIME_FIELD_LAST_MODIFIED, static_cast<std::string_view::size_type>(MIME_LEN_LAST_MODIFIED)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1723,7 +1711,7 @@ MIMEHdr::get_last_modified() const
 inline time_t
 MIMEHdr::get_if_range_date() const
 {
-  return value_get_date(MIME_FIELD_IF_RANGE, MIME_LEN_IF_RANGE);
+  return value_get_date(std::string_view{MIME_FIELD_IF_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_IF_RANGE)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1732,7 +1720,7 @@ MIMEHdr::get_if_range_date() const
 inline int32_t
 MIMEHdr::get_max_forwards() const
 {
-  return value_get_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS);
+  return value_get_int(std::string_view{MIME_FIELD_MAX_FORWARDS, static_cast<std::string::size_type>(MIME_LEN_MAX_FORWARDS)});
 }
 
 /*-------------------------------------------------------------------------
@@ -1826,14 +1814,14 @@ inline void
 MIMEHdr::set_age(time_t value)
 {
   if (value < 0)
-    value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, (uint32_t)INT_MAX + 1);
+    value_set_uint(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)}, (uint32_t)INT_MAX + 1);
   else {
     if (sizeof(time_t) > 4) {
-      value_set_int64(MIME_FIELD_AGE, MIME_LEN_AGE, value);
+      value_set_int64(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)}, value);
     } else {
       // Only on systems where time_t is 32 bits
       // coverity[Y2K38_SAFETY]
-      value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
+      value_set_uint(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)}, value);
     }
   }
 }
@@ -1844,7 +1832,8 @@ MIMEHdr::set_age(time_t value)
 inline void
 MIMEHdr::set_content_length(int64_t value)
 {
-  value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, value);
+  value_set_int64(std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)},
+                  value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1853,7 +1842,7 @@ MIMEHdr::set_content_length(int64_t value)
 inline void
 MIMEHdr::set_date(time_t value)
 {
-  value_set_date(MIME_FIELD_DATE, MIME_LEN_DATE, value);
+  value_set_date(std::string_view{MIME_FIELD_DATE, static_cast<std::string_view::size_type>(MIME_LEN_DATE)}, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1862,7 +1851,7 @@ MIMEHdr::set_date(time_t value)
 inline void
 MIMEHdr::set_expires(time_t value)
 {
-  value_set_date(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES, value);
+  value_set_date(std::string_view{MIME_FIELD_EXPIRES, static_cast<std::string_view::size_type>(MIME_LEN_EXPIRES)}, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1871,7 +1860,8 @@ MIMEHdr::set_expires(time_t value)
 inline void
 MIMEHdr::set_if_modified_since(time_t value)
 {
-  value_set_date(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, value);
+  value_set_date(
+    std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)}, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1880,7 +1870,9 @@ MIMEHdr::set_if_modified_since(time_t value)
 inline void
 MIMEHdr::set_if_unmodified_since(time_t value)
 {
-  value_set_date(MIME_FIELD_IF_UNMODIFIED_SINCE, MIME_LEN_IF_UNMODIFIED_SINCE, value);
+  value_set_date(
+    std::string_view{MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_UNMODIFIED_SINCE)},
+    value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1889,7 +1881,8 @@ MIMEHdr::set_if_unmodified_since(time_t value)
 inline void
 MIMEHdr::set_last_modified(time_t value)
 {
-  value_set_date(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED, value);
+  value_set_date(std::string_view{MIME_FIELD_LAST_MODIFIED, static_cast<std::string_view::size_type>(MIME_LEN_LAST_MODIFIED)},
+                 value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1898,7 +1891,7 @@ MIMEHdr::set_last_modified(time_t value)
 inline void
 MIMEHdr::set_max_forwards(int32_t value)
 {
-  value_set_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS, value);
+  value_set_int(std::string_view{MIME_FIELD_MAX_FORWARDS, static_cast<std::string_view::size_type>(MIME_LEN_MAX_FORWARDS)}, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1907,14 +1900,14 @@ MIMEHdr::set_max_forwards(int32_t value)
 inline void
 MIMEHdr::set_warning(int32_t value)
 {
-  value_set_int(MIME_FIELD_WARNING, MIME_LEN_WARNING, value);
+  value_set_int(std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)}, value);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::set_server(const char *server_id_tag, int server_id_tag_size)
+MIMEHdr::set_server(std::string_view server_id_tag)
 {
-  value_set(MIME_FIELD_SERVER, MIME_LEN_SERVER, server_id_tag, server_id_tag_size);
+  value_set(std::string_view{MIME_FIELD_SERVER, static_cast<std::string_view::size_type>(MIME_LEN_SERVER)}, server_id_tag);
 }

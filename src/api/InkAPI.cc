@@ -2066,7 +2066,7 @@ TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name
     mime_hdr_field_detach(handle->mh, handle->field_ptr, false);
   }
 
-  handle->field_ptr->name_set(heap, handle->mh, name, length);
+  handle->field_ptr->name_set(heap, handle->mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
 
   if (attached) {
     mime_hdr_field_attach(handle->mh, handle->field_ptr, 1, nullptr);
