@@ -519,10 +519,10 @@ ConditionIp::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  if (_cond_op == MATCH_IP_RANGES) { // Special hack for IP ranges for now ...
+  if (_cond_op == MATCH_IP_RANGES) { // Special hack for IP ranges
     MatcherTypeIp *match = new MatcherTypeIp(_cond_op);
 
-    match->set(p.get_arg());
+    match->set(p.get_arg(), mods(), [](const std::string & /*s*/) { return static_cast<const sockaddr *>(nullptr); });
     _matcher = match;
   } else {
     auto *match = new MatcherType(_cond_op);
@@ -1046,7 +1046,7 @@ ConditionInbound::initialize(Parser &p)
   if (_cond_op == MATCH_IP_RANGES) { // Special hack for IP ranges for now ...
     MatcherTypeIp *match = new MatcherTypeIp(_cond_op);
 
-    match->set(p.get_arg());
+    match->set(p.get_arg(), mods(), [](const std::string & /* s */) { return static_cast<const sockaddr *>(nullptr); });
     _matcher = match;
   } else {
     auto *match = new MatcherType(_cond_op);

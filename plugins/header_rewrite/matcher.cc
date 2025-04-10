@@ -53,36 +53,16 @@ Matchers<std::string>::test_eq(const std::string &t) const
   return r;
 }
 
-void
-Matchers<const sockaddr *>::set(const std::string &data)
-{
-  std::istringstream stream(data);
-  std::string        part;
-  size_t             count = 0;
-
-  while (std::getline(stream, part, ',')) {
-    if (swoc::IPRange r; r.load(part)) {
-      _ipHelper.mark(r);
-      ++count;
-    }
-  }
-
-  if (count > 0) {
-    Dbg(pi_dbg_ctl, "IP-range precompiled successfully with %zu entries", count);
-  } else {
-    TSError("[%s] Invalid IP-range: failed to parse: %s", PLUGIN_NAME, data.c_str());
-    Dbg(pi_dbg_ctl, "Invalid IP-range: failed to parse: %s", data.c_str());
-    throw std::runtime_error("Malformed IP-range");
-  }
-}
-
+template <>
 bool
-Matchers<const sockaddr *>::test(const sockaddr *addr, const Resources & /* Not used */) const
+Matchers<const sockaddr *>::test(const sockaddr *const &addr, const Resources & /* Not used */) const
 {
-  if (_ipHelper.contains(swoc::IPAddr(addr))) {
+  TSAssert(std::holds_alternative<swoc::IPRangeSet>(_data));
+  const auto &ranges = std::get<swoc::IPRangeSet>(_data);
+
+  if (ranges.contains(swoc::IPAddr(addr))) {
     if (pi_dbg_ctl.on()) {
       char text[INET6_ADDRSTRLEN];
-
       Dbg(pi_dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
     }
     return true;

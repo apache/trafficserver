@@ -99,8 +99,9 @@ public:
     }
   }
 
+  template <typename FN>
   void
-  set(const std::string &s, CondModifiers mods, auto convert)
+  set(const std::string &s, CondModifiers mods, FN convert)
   {
     static_assert(std::is_same_v<decltype(convert(s)), T>, "Converter must return a value of type T");
 
@@ -108,19 +109,61 @@ public:
       _nocase = true;
     }
 
-    if (_op == MATCH_REGULAR_EXPRESSION) {
-      if (!_reHelper.setRegexMatch(s, _nocase)) {
-        std::stringstream ss;
+    // MATCH_REGULAR_EXPRESSION (only valid for std::string)
+    if constexpr (std::is_same_v<T, std::string>) {
+      if (_op == MATCH_REGULAR_EXPRESSION) {
+        _data.template emplace<regexHelper>();
 
-        ss << s;
-        TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, ss.str().c_str());
-        Dbg(pi_dbg_ctl, "Invalid regex: failed to precompile: %s", ss.str().c_str());
-        throw std::runtime_error("Malformed regex");
-      } else {
+        auto &re = std::get<regexHelper>(_data);
+
+        if (!re.setRegexMatch(s, _nocase)) {
+          TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, s.c_str());
+          Dbg(pi_dbg_ctl, "Invalid regex: failed to precompile: %s", s.c_str());
+          throw std::runtime_error("Malformed regex");
+        }
+
         Dbg(pi_dbg_ctl, "Regex precompiled successfully");
+        return;
       }
-    } else if (_op == MATCH_SET) {
-      std::set<T>        values;
+    }
+
+    // MATCH_IP_RANGES (only valid for const sockaddr *)
+    if constexpr (std::is_same_v<T, const sockaddr *>) {
+      if (_op == MATCH_IP_RANGES) {
+        _data.template emplace<swoc::IPRangeSet>();
+
+        auto              &ranges = std::get<swoc::IPRangeSet>(_data);
+        std::istringstream stream(s);
+        std::string        part;
+        size_t             count = 0;
+
+        while (std::getline(stream, part, ',')) {
+          swoc::IPRange r;
+
+          if (r.load(part)) {
+            ranges.mark(r);
+            ++count;
+          }
+        }
+
+        if (count > 0) {
+          Dbg(pi_dbg_ctl, "IP-range precompiled successfully with %zu entries", count);
+        } else {
+          TSError("[%s] Invalid IP-range: failed to parse: %s", PLUGIN_NAME, s.c_str());
+          Dbg(pi_dbg_ctl, "Invalid IP-range: failed to parse: %s", s.c_str());
+          throw std::runtime_error("Malformed IP-range");
+        }
+        return;
+      } else {
+        TSReleaseAssert(false); // This should never happen
+      }
+    }
+
+    // MATCH_SET (allowed for any T)
+    if (_op == MATCH_SET) {
+      _data.template emplace<std::set<T>>();
+
+      auto              &values = std::get<std::set<T>>(_data);
       std::istringstream stream(s);
       std::string        part;
 
@@ -128,14 +171,15 @@ public:
         values.insert(convert(part));
       }
 
-      if (values.size() > 0) {
+      if (!values.empty()) {
         Dbg(pi_dbg_ctl, "    Added %zu set values while parsing", values.size());
-        _data = std::move(values);
       } else {
         Dbg(pi_dbg_ctl, "    No set values added, possibly bad input");
+        throw std::runtime_error("Empty sets not allowed");
       }
     } else {
-      std::get<T>(_data) = convert(s);
+      // Default: single value
+      _data.template emplace<T>(convert(s));
     }
   }
 
@@ -236,11 +280,20 @@ private:
   }
 
   bool
+  test_reg(const sockaddr * /* t ATS_UNUSED */, const Resources & /* Not used */) const
+  {
+    // Not supported
+    return false;
+  }
+
+  bool
   test_reg(const std::string &t, const Resources &res) const
   {
-    Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", std::get<T>(_data).c_str(), t.c_str(),
-        static_cast<int>(_nocase));
-    int count = _reHelper.regexMatch(t.c_str(), t.length(), const_cast<Resources &>(res).ovector);
+    TSAssert(std::holds_alternative<regexHelper>(_data));
+    Dbg(pi_dbg_ctl, "Test regular expression against: %s (NOCASE = %d)", t.c_str(), static_cast<int>(_nocase));
+
+    const auto &re    = std::get<regexHelper>(_data);
+    int         count = re.regexMatch(t.c_str(), t.length(), const_cast<Resources &>(res).ovector);
 
     if (count > 0) {
       Dbg(pi_dbg_ctl, "Successfully found regular expression match");
@@ -253,23 +306,6 @@ private:
     return false;
   }
 
-  std::variant<T, std::set<T>> _data;
-  regexHelper                  _reHelper;
-  bool                         _nocase = false;
-};
-
-// Specializations for the strings, since they can be both strings and regexes
-template <> bool Matchers<std::string>::test_eq(const std::string &t) const;
-
-// Specialized case matcher for the IP addresses matches.
-template <> class Matchers<const sockaddr *> : public Matcher
-{
-public:
-  explicit Matchers(const MatcherOps op) : Matcher(op) {}
-
-  void set(const std::string &data);
-  bool test(const sockaddr *addr, const Resources &) const;
-
-private:
-  swoc::IPRangeSet _ipHelper;
+  std::variant<T, std::set<T>, swoc::IPRangeSet, regexHelper> _data;
+  bool                                                        _nocase = false;
 };
