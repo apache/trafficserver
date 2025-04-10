@@ -20,7 +20,7 @@ Test cached responses and requests with bodies
 Test.Summary = '''
 Test cached responses and requests with bodies
 '''
-
+Test.SkipIf(Condition.CurlUds())
 Test.ContinueOnFail = True
 
 # Define default ATS

@@ -20,6 +20,7 @@ Test.Summary = '''
 Test adding hooks, and rescheduling the ssn start hook from a non-net thread
 '''
 
+Test.SkipIf(Condition.CurlUds())
 Test.ContinueOnFail = True
 
 server = Test.MakeOriginServer("server")

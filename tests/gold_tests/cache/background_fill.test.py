@@ -20,6 +20,7 @@ from enum import Enum
 
 Test.Summary = 'Exercise Background Fill'
 Test.SkipUnless(Condition.HasCurlFeature('http2'), Condition.HasProxyVerifierVersion('2.8.0'))
+Test.SkipIf(Condition.CurlUds())
 Test.ContinueOnFail = True
 
 
