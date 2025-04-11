@@ -46,7 +46,7 @@ of subcommands that control different aspects of Traffic Server:
 :program:`traffic_ctl metric`
    Manipulate performance and status metrics
 :program:`traffic_ctl server`
-   Stop, restart and examine the server
+   Examine the server
 :program:`traffic_ctl storage`
    Manipulate cache storage
 :program:`traffic_ctl plugin`
@@ -385,10 +385,25 @@ traffic_ctl server
 
    Drop the number of active client connections.
 
+
+.. _traffic-control-command-server-status:
+
 .. program:: traffic_ctl server
 .. option:: status
 
-   Option not yet available
+   Display basic |TS| internal running information.
+
+   Example:
+
+   .. code-block:: bash
+
+      $ traffic_ctl server status | jq
+      {
+         "initialized_done": "true",
+         "is_ssl_handshaking_stopped": "false",
+         "is_draining": "false",
+         "is_event_system_shut_down": "false"
+      }
 
 .. _traffic-control-command-server-debug:
 
