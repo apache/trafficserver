@@ -1284,12 +1284,18 @@ done:
   return rv;
 }
 
-void
+OCSPStatus
 ocsp_update()
 {
+  if (!FetchSM::is_initialized()) {
+    Dbg(dbg_ctl_ssl_ocsp, "FetchSM is not yet initialized. Skipping OCSP update.");
+    return OCSPStatus::OCSP_FETCHSM_NOT_INITIALIZED;
+  }
   shared_SSL_CTX    ctx;
   TS_OCSP_RESPONSE *resp = nullptr;
   time_t            current_time;
+
+  Note("OCSP refresh started");
 
   SSLCertificateConfig::scoped_config certLookup;
 
@@ -1332,6 +1338,8 @@ ocsp_update()
       }
     }
   }
+  Note("OCSP refresh finished");
+  return OCSPStatus::OCSP_OK;
 }
 
 // RFC 6066 Section-8: Certificate Status Request
