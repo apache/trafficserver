@@ -103,8 +103,8 @@ handle_range_request(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
   debug("Both of Accept-Encoding and Range header are found in the request");
 
   switch (hc->range_request_ctl()) {
-  case RangeRequestCtrl::IGNORE_RANGE: {
-    debug("Remove the Range header by ignore-range config");
+  case RangeRequestCtrl::REMOVE_RANGE: {
+    debug("Remove the Range header by remove-range config");
     while (range_hdr_field) {
       TSMLoc next_dup = TSMimeHdrFieldNextDup(req_buf, req_loc, range_hdr_field);
       TSMimeHdrFieldDestroy(req_buf, req_loc, range_hdr_field);
@@ -113,8 +113,8 @@ handle_range_request(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
     }
     break;
   }
-  case RangeRequestCtrl::NO_COMPRESSION: {
-    debug("Remove the Accept-Encoding header by no-compression config");
+  case RangeRequestCtrl::REMOVE_ACCEPT_ENCODING: {
+    debug("Remove the Accept-Encoding header by remove-accept-encoding config");
     while (accept_encoding_hdr_field) {
       TSMLoc next_dup = TSMimeHdrFieldNextDup(req_buf, req_loc, accept_encoding_hdr_field);
       TSMimeHdrFieldDestroy(req_buf, req_loc, accept_encoding_hdr_field);
@@ -123,6 +123,10 @@ handle_range_request(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
     }
     break;
   }
+  case RangeRequestCtrl::NO_COMPRESSION:
+    // Do NOT touch header - this config is referred by `transformable()` function
+    debug("no header modification by no-compression config");
+    break;
   case RangeRequestCtrl::NONE:
     [[fallthrough]];
   default:
@@ -733,6 +737,33 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
     return 0;
   }
 
+  // check Partial Object is transformable
+  if (host_configuration->range_request_ctl() == RangeRequestCtrl::NO_COMPRESSION) {
+    // check Range header in client request
+    // CAVETE: some plugin (- e.g. cache_range_request) tweaks client headers
+    TSMLoc range_hdr_field = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+    if (range_hdr_field != TS_NULL_MLOC) {
+      debug("Range header found in the request and range_request is configured as no_compression");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      TSHandleMLocRelease(cbuf, chdr, range_hdr_field);
+      TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+      return 0;
+    }
+
+    // check Content-Range header in (cached) server response
+    TSMLoc content_range_hdr_field = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE);
+    if (content_range_hdr_field != TS_NULL_MLOC) {
+      debug("Content-Range header found in the response and range_request is configured as no_compression");
+      TSHandleMLocRelease(bufp, hdr_loc, content_range_hdr_field);
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+      return 0;
+    }
+
+    TSHandleMLocRelease(bufp, hdr_loc, content_range_hdr_field);
+    TSHandleMLocRelease(cbuf, chdr, range_hdr_field);
+  }
+
   // the only compressible method is currently GET.
   int         method_length;
   const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
@@ -966,8 +997,8 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
  * 1. Reads the client request header
  * 2. For global plugin, get host configuration from global config
  *    For remap plugin, get host configuration from configs populated through remap
- * 3. Check for Accept encoding
- * 4. Remove Range header
+ * 3. Check for Accept-Encoding header
+ * 4. Check for Range header
  * 5. Schedules TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK and TS_HTTP_TXN_CLOSE_HOOK for
  *    further processing
  */
