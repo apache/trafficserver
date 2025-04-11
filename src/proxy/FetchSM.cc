@@ -40,6 +40,12 @@ DbgCtl dbg_ctl{DEBUG_TAG};
 
 } // end anonymous namespace
 
+bool
+FetchSM::is_initialized()
+{
+  return PluginHttpConnectIsInitialized();
+}
+
 void
 FetchSM::cleanUp()
 {
