@@ -34,6 +34,8 @@
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
 
+#include "iocore/cache/Cache.h"
+
 #define SM_REMEMBER(sm, e, r)                          \
   {                                                    \
     sm->history.push_back(MakeSourceLocation(), e, r); \
@@ -303,7 +305,7 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   ink_assert(open_read_cb == false);
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params, this->read_pin_in_cache);
+  Action *action_handle           = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params);
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;
@@ -397,10 +399,9 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
     return ACTION_RESULT_DONE;
   }
 
-  Action *action_handle =
-    cacheProcessor.open_write(this, 0, key, request,
-                              // INKqa11166
-                              allow_multiple ? (CacheHTTPInfo *)CACHE_ALLOW_MULTIPLE_WRITES : old_info, pin_in_cache);
+  // INKqa11166
+  CacheHTTPInfo *info          = allow_multiple ? reinterpret_cast<CacheHTTPInfo *>(CACHE_ALLOW_MULTIPLE_WRITES) : old_info;
+  Action        *action_handle = cacheProcessor.open_write(this, key, info, pin_in_cache);
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;

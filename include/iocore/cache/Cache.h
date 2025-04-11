@@ -83,9 +83,9 @@ struct CacheProcessor : public Processor {
   Action *scan(Continuation *cont, char *hostname = nullptr, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
   Action *lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                    time_t pin_in_cache = 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, CacheHTTPHdr *request, CacheHTTPInfo *old_info,
-                     time_t pin_in_cache = 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+                    CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+  Action *open_write(Continuation *cont, const HttpCacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = 0,
+                     CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *link(Continuation *cont, CacheKey *from, CacheKey *to, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP,
                char *hostname = nullptr, int host_len = 0);
