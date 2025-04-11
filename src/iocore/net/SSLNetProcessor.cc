@@ -38,9 +38,11 @@ struct OCSPContinuation : public Continuation {
   int
   mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    Note("OCSP refresh started");
-    ocsp_update();
-    Note("OCSP refresh finished");
+    if (ocsp_update() == OCSPStatus::OCSP_FETCHSM_NOT_INITIALIZED) {
+      Note("Delaying OCSP fetching until FetchSM is initialized.");
+      this_ethread()->schedule_in(this, HRTIME_SECONDS(1));
+      return EVENT_CONT;
+    }
     return EVENT_CONT;
   }
 

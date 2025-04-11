@@ -57,6 +57,11 @@ TSIOBufferReaderConsume(TSIOBufferReader /* readerp ATS_UNUSED */, int64_t /* nb
 
 #include "proxy/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
+bool
+FetchSM::is_initialized()
+{
+  return true;
+}
 void
 FetchSM::ext_launch()
 {
