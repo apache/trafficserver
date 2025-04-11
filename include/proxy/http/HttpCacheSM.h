@@ -49,6 +49,12 @@ struct HttpCacheAction : public Action {
   {
     sm = sm_arg;
   };
+  void
+  reset()
+  {
+    cancelled = false;
+  }
+
   HttpCacheSM *sm = nullptr;
 };
 
@@ -64,6 +70,7 @@ public:
     mutex     = amutex;
     captive_action.init(this);
   }
+  void reset();
 
   Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, const OverridableHttpConfigParams *params,
                     time_t pin_in_cache);
