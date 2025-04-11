@@ -39,7 +39,7 @@ traffic_ctl.server().status().validate_with_text(
 # Drain ats so we can check the output.
 traffic_ctl.server().drain().exec()
 
-# After the drain, we should see that the status should reflect this change.
+# After the drain, server status should reflect this change.
 traffic_ctl.server().status().validate_with_text(
     '{"initialized_done": "true", "is_ssl_handshaking_stopped": "false", "is_draining": "true", "is_event_system_shut_down": "false"}'
 )
