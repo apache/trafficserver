@@ -30,11 +30,10 @@ Tools to help with TestRun commands
 #
 
 
-def spawn_curl_commands(self, cmdstr, count, retcode=0, use_default=True):
+def spawn_curl_commands(self, cmdstr, count, retcode=0, use_default=True, uds_path=""):
     ret = []
 
     if self.Variables.get("CurlUds", False):
-        uds_path = os.path.join(self.Processes.Default.RunDirectory, 'uds.socket')
         cmdstr = f'curl --unix-socket {uds_path} ' + cmdstr
     else:
         cmdstr = 'curl ' + cmdstr
@@ -49,22 +48,19 @@ def spawn_curl_commands(self, cmdstr, count, retcode=0, use_default=True):
     return ret
 
 
-def curl_command(self, cmd, uds_suffix="", p=None):
+def curl_command(self, cmd, uds_path="", p=None):
     if p == None:
         p = self.Processes.Default
     if self.Variables.get("CurlUds", False):
-        uds_path = os.path.join(p.RunDirectory, 'uds.socket')
-        uds_path += uds_suffix
         p.Command = f'curl --unix-socket {uds_path} ' + cmd
     else:
         p.Command = 'curl ' + cmd
     return p
 
 
-def curl_multiple_commands(self, cmd):
+def curl_multiple_commands(self, cmd, uds_path=""):
     p = self.Processes.Default
     if self.Variables.get("CurlUds", False):
-        uds_path = os.path.join(p.RunDirectory, 'uds.socket')
         p.Command = cmd.format(curl=f'curl --unix-socket {uds_path}', curl_base='curl')
     else:
         p.Command = cmd.format(curl='curl', curl_base='curl')
