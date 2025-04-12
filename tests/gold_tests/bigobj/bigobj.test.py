@@ -74,12 +74,13 @@ tr.Processes.Default.StartBefore(ts, ready=lambda: create_pushfile())
 tr.MakeCurlCommand(
     "-v -H 'Content-Type: application/octet-stream' --data-binary @{}/objfile -X PUSH http://localhost:{}/bigobj -H 'Content-Length:{}'"
     .format(Test.RunDirectory, ts.Variables.port,
-            len(header) + obj_bytes))
+            len(header) + obj_bytes),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 201 Created", "The PUSH request should have succeeded")
 
 tr = Test.AddTestRun("GET bigobj: cleartext, HTTP/1.1, IPv4")
-tr.MakeCurlCommand(f'--verbose {ipv4flag} --http1.1 http://localhost:{ts.Variables.port}/bigobj')
+tr.MakeCurlCommand(f'--verbose {ipv4flag} --http1.1 http://localhost:{ts.Variables.port}/bigobj', uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 200 OK", "Should fetch pushed object")
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Content-length: 102400", "Content size should be accurate")
@@ -129,7 +130,8 @@ tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommand(
     "-v -H 'Content-Type: application/octet-stream' --data-binary @{}/objfile -X PUSH http://localhost:{}/bigobj -H 'Content-Length:{}'"
     .format(Test.RunDirectory, ts.Variables.port,
-            len(header) + obj_bytes))
+            len(header) + obj_bytes),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "403 Access Denied", "The PUSH request should have received a 403 response.")
