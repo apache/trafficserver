@@ -405,21 +405,18 @@ CacheProcessor::lookup(Continuation *cont, const HttpCacheKey *key, CacheFragTyp
   return lookup(cont, &key->hash, frag_type, key->hostname, key->hostlen);
 }
 
-//----------------------------------------------------------------------------
 Action *
 CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                          time_t /* pin_in_cache ATS_UNUSED */, CacheFragType type)
+                          CacheFragType type)
 {
   return caches[type]->open_read(cont, &key->hash, request, params, type, key->hostname, key->hostlen);
 }
 
-//----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_write(Continuation *cont, int /* expected_size ATS_UNUSED */, const HttpCacheKey *key,
-                           CacheHTTPHdr * /* request ATS_UNUSED */, CacheHTTPInfo *old_info, time_t pin_in_cache,
+CacheProcessor::open_write(Continuation *cont, const HttpCacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache,
                            CacheFragType type)
 {
-  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, nullptr /* key1 */, type, key->hostname, key->hostlen);
+  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, type, key->hostname, key->hostlen);
 }
 
 //----------------------------------------------------------------------------
