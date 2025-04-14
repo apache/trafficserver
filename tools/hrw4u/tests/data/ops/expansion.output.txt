@@ -1,0 +1,7 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-state-int8 0 17
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Foo "Foo is %{STATE-INT8:0}"
+    set-header X-Random "Random is %{RANDOM:100}"
+    set-header X-Hdr "Header is %{CLIENT-HEADER:X-Hdr}"

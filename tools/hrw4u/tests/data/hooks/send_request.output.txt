@@ -1,0 +1,3 @@
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{HEADER:X-Send-Request} ="yes"
+    rm-header X-Send-Request

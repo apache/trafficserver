@@ -1,0 +1,4 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{HEADER:ATS-SRVR-UUID} ="" [OR]
+cond %{CACHE} ="hit-fresh"
+    set-header ATS-SRVR-UUID "%{ID:UNIQUE}"

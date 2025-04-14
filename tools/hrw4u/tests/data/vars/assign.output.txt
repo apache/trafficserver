@@ -1,0 +1,2 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-state-flag 1 %{STATE-FLAG:0}
