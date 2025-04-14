@@ -44,6 +44,7 @@
 #include <tscore/MgmtDefs.h>
 #include "iocore/net/SessionSharingAPIEnums.h"
 #include "tsutil/Metrics.h"
+#include "tsutil/Bravo.h"
 
 /**
  * Singleton class to keep track of the number of inbound and outbound connections.
@@ -82,16 +83,23 @@ public:
 
   /** Static configuration values. */
   struct GlobalConfig {
-    std::chrono::seconds client_alert_delay{60}; ///< Alert delay in seconds.
-    std::chrono::seconds server_alert_delay{60}; ///< Alert delay in seconds.
-    bool                 metric_enabled{false};  ///< Enabling per server metrics.
-    std::string          metric_prefix;          ///< Per server metric prefix.
+    GlobalConfig() = default;
+    GlobalConfig(GlobalConfig const &);
+    GlobalConfig &operator=(GlobalConfig const &);
+
+    std::chrono::seconds            client_alert_delay{60}; ///< Alert delay in seconds.
+    std::chrono::seconds            server_alert_delay{60}; ///< Alert delay in seconds.
+    bool                            metric_enabled{false};  ///< Enabling per server metrics.
+    std::string                     metric_prefix;          ///< Per server metric prefix.
+    swoc::IPRangeSet                client_exempt_list; ///< The set of IP addresses to not block due client connection counting.
+    mutable ts::bravo::shared_mutex client_exempt_list_mutex; ///< Protects client_exempt_list from concurrent access.
   };
 
   // The names of the configuration values.
   // Unfortunately these are not used in RecordsConfig.cc so that must be made consistent by hand.
   // Note: These need to be @c constexpr or there are static initialization ordering risks.
   static constexpr std::string_view CONFIG_CLIENT_VAR_ALERT_DELAY{"proxy.config.http.per_client.connection.alert_delay"};
+  static constexpr std::string_view CONFIG_CLIENT_VAR_EXEMPT_LIST{"proxy.config.http.per_client.connection.exempt_list"};
   static constexpr std::string_view CONFIG_SERVER_VAR_MAX{"proxy.config.http.per_server.connection.max"};
   static constexpr std::string_view CONFIG_SERVER_VAR_MIN{"proxy.config.http.per_server.connection.min"};
   static constexpr std::string_view CONFIG_SERVER_VAR_MATCH{"proxy.config.http.per_server.connection.match"};
@@ -172,11 +180,18 @@ public:
     std::shared_ptr<Group> _g;                 ///< Active group for this transaction.
     bool                   _reserved_p{false}; ///< Set if a connection slot has been reserved.
     bool                   _queued_p{false};   ///< Set if the connection is delayed / queued.
+    bool                   _exempt_p{false};   ///< Set if the peer is in the connection exempt list.
 
     /// Check if tracking is active.
-    bool is_active();
+    bool is_active() const;
+
+    /// Whether this group is in the connection max exempt list.
+    /// @return @c true if this group should not be blocked due to
+    /// proxy.config.net.per_client.max_connections_in.
+    bool is_exempt() const;
 
     /// Reserve a connection.
+    /// @return the number of tracked connections.
     int reserve();
     /// Release a connection reservation.
     void release();
@@ -271,6 +286,42 @@ public:
    * @param config_cb The callback to invoke when a configuration is updated.
    */
   static void config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUpdateCb const &config_cb);
+
+  /** Set the client connection exempt list programmatically.
+   *
+   * This allows plugins to override the per-client connection exempt list with their own
+   * IPRangeSet. This will replace the existing exempt list entirely.
+   *
+   * @param ip_ranges The IPRangeSet containing the addresses that should be exempt from per-client connection limits.
+   * @return true if the exempt list was successfully updated, false otherwise.
+   */
+  static bool set_client_exempt_list(swoc::IPRangeSet const &ip_ranges);
+
+  /** Add an IP range to the client connection exempt list.
+   *
+   * This allows plugins to add an additional IP range to the existing per-client connection exempt list.
+   * The new range will be added to any existing ranges in the list.
+   *
+   * @param ip_range The IPRange containing the addresses to add to the exempt list.
+   * @return true if the range was successfully added, false otherwise.
+   */
+  static bool add_client_exempt_range(swoc::IPRange const &ip_range);
+
+  /** Remove an IP range from the client connection exempt list.
+   *
+   * This allows plugins to remove an IP range from the existing per-client connection exempt list.
+   * If the range is not present in the list, the operation succeeds without error.
+   *
+   * @param ip_range The IPRange containing the addresses to remove from the exempt list.
+   * @return true if the operation completed successfully, false otherwise.
+   */
+  static bool remove_client_exempt_range(swoc::IPRange const &ip_range);
+
+  /** Clear all IP ranges from the client connection exempt list.
+   *
+   * This allows plugins to remove all entries from the per-client connection exempt list.
+   */
+  static void clear_client_exempt_list();
 
   /// Debug control used for debugging output.
   static inline DbgCtl dbg_ctl{"conn_track"};
@@ -382,9 +433,15 @@ ConnectionTracker::Group::metric_name(const Key &key, std::string_view fqdn, std
 }
 
 inline bool
-ConnectionTracker::TxnState::is_active()
+ConnectionTracker::TxnState::is_active() const
 {
   return nullptr != _g;
+}
+
+inline bool
+ConnectionTracker::TxnState::is_exempt() const
+{
+  return _exempt_p;
 }
 
 inline int
