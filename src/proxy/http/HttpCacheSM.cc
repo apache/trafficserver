@@ -73,6 +73,25 @@ HttpCacheSM::HttpCacheSM()
 {
 }
 
+/**
+  Reset captive_action and counters for another cache operations.
+  - e.g. following redirect starts over from cache lookup
+ */
+void
+HttpCacheSM::reset()
+{
+  captive_action.reset();
+
+  open_read_tries  = 0;
+  open_write_tries = 0;
+  open_write_start = 0;
+
+  lookup_max_recursive = 0;
+  current_lookup_level = 0;
+
+  err_code = 0;
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpCacheSM::state_cache_open_read()

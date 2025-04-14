@@ -8540,6 +8540,9 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   }
 
   dump_header(dbg_ctl_http_hdrs, &t_state.hdr_info.client_request, sm_id, "Framed Client Request..checking");
+
+  // Reset HttpCacheSM for new cache operations
+  cache_sm.reset();
 }
 
 void
