@@ -50,16 +50,6 @@ class ProxyMutex;
     </tr>
     <tr><td>READ</td><td>The VIO represents a read operation</td></tr>
     <tr><td>WRITE</td><td>The VIO represents a write operation</td></tr>
-    <tr><td>CLOSE</td><td>The VIO represents the request to close the
-                          VConnection</td></tr>
-    <tr><td>ABORT</td><td></td></tr>
-    <tr><td>SHUTDOWN_READ</td><td></td></tr>
-    <tr><td>SHUTDOWN_WRITE</td><td></td></tr>
-    <tr><td>SHUTDOWN_READWRITE</td><td></td></tr>
-    <tr><td>SEEK</td><td></td></tr>
-    <tr><td>PREAD</td><td></td></tr>
-    <tr><td>PWRITE</td><td></td></tr>
-    <tr><td>STAT</td><td></td></tr>
   </table>
 
 */
@@ -142,15 +132,6 @@ public:
     NONE = 0,
     READ,
     WRITE,
-    CLOSE,
-    ABORT,
-    SHUTDOWN_READ,
-    SHUTDOWN_WRITE,
-    SHUTDOWN_READWRITE,
-    SEEK,
-    PREAD,
-    PWRITE,
-    STAT,
   };
 
   /**
