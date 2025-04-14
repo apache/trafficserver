@@ -1,0 +1,4 @@
+SEND_RESPONSE:
+if outbound.status == 418 {
+    counter("plugin.header_rewrite.teapots");
+}

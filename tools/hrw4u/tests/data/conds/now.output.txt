@@ -1,0 +1,10 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{IP:CLIENT} {192.168.0.0/16,10.0.0.0/8}
+    set-header X-Now "%{NOW}"
+    set-header X-Year "%{NOW:YEAR}"
+    set-header X-Month "%{NOW:MONTH}"
+    set-header X-Day "%{NOW:DAY}"
+    set-header X-Hour "%{NOW:HOUR}"
+    set-header X-Minute "%{NOW:MINUTE}"
+    set-header X-Weekday "%{NOW:WEEKDAY}"
+    set-header X-Yearday "%{NOW:YEARDAY}"

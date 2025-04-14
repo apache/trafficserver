@@ -1,0 +1,1 @@
+(program (section REMAP : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (comparison (comparable (functionCall cidr ( (argumentList (value 8) , (value 64)) ))) in (set [ (value "8.0.0.0/8") , (value "6860:d4ff:fe8b:b5c7/64") ])))))) (block { (statement inbound.req.X-CIDR = (value "allowed") ;) })))) <EOF>)

@@ -1,0 +1,7 @@
+VAR:
+   Num: int16;
+
+REMAP:
+ if Num > 12345 {
+   inbound.req.X-foo = "bar";
+}

@@ -1,0 +1,10 @@
+VAR:
+   Flag: bool;
+   One: int8;
+   Two: int8;
+   Three: int8;
+   Four: int8;
+   Five: int8;
+
+REMAP:
+   inbound.req.X-foo = "bar";

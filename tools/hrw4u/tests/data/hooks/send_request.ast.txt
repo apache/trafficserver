@@ -1,0 +1,1 @@
+(program (section SEND_REQUEST : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (comparison (comparable outbound.req.X-Send-Request) == (value "yes")))))) (block { (statement outbound.req.X-Send-Request = (value "") ;) })))) <EOF>)

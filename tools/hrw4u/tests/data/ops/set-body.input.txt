@@ -1,0 +1,14 @@
+VAR:
+  myFlag: bool;
+
+REMAP:
+if inbound.req.X-Foo == "bar" {
+    inbound.resp.body = "This is a response body";
+} else {
+    myFlag = true;
+}
+
+READ_RESPONSE:
+if myFlag {
+    set-body-from("https://example.com/body.txt");
+}

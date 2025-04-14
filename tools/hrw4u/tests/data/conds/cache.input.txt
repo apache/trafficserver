@@ -1,0 +1,9 @@
+REMAP:
+if cache() in ["hit-stale", "hit-fresh"] {
+  inbound.req.X-Cache = "hit";
+}
+
+REMAP:
+if cache() == "hit-stale" {
+  inbound.req.X-Cache-Specific = "hit-stale";
+}

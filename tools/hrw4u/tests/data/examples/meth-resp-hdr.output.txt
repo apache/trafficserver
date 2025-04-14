@@ -1,0 +1,2 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Original-Method "%{METHOD}"

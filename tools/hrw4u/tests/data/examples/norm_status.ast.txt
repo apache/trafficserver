@@ -1,0 +1,1 @@
+(program (section SEND_RESPONSE : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalTerm (logicalFactor (comparison (comparable inbound.status) > (value 399)))) && (logicalFactor (comparison (comparable inbound.status) < (value 500)))))) (block { (statement inbound.status = (value 404) ;) })))) <EOF>)

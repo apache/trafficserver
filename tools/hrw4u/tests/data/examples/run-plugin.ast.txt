@@ -1,0 +1,1 @@
+(program (section REMAP : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (comparison (comparable inbound.req.Some-Special-Header) == (value "yes")))))) (block { (statement (functionCall run-plugin ( (argumentList (value "/opt/ats/libexec/trafficserver/rate_limit.so") , (value "--limit=300") , (value "--error=429")) )) ;) })))) <EOF>)

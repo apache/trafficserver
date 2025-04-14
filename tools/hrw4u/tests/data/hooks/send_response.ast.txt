@@ -1,0 +1,1 @@
+(program (section SEND_RESPONSE : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (comparison (comparable inbound.resp.X-Send-Response) == (value "yes")))))) (block { (statement outbound.resp.X-Send-Response = (value "") ;) })))) <EOF>)

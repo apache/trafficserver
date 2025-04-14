@@ -1,0 +1,4 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{STATUS} >399 [AND]
+cond %{STATUS} <500
+    set-status 404

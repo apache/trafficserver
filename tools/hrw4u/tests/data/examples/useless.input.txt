@@ -1,0 +1,6 @@
+READ_RESPONSE:
+if inbound.url.port == 8090 && inbound.method == "HEAD" &&
+       inbound.req.Accept-Language !~ /es-py/ && outbound.status == 304 ||
+       random(500) > 200 {
+    outbound.status = 403;
+}

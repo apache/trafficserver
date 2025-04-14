@@ -1,0 +1,7 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CACHE} (hit-stale,hit-fresh)
+    set-header X-Cache "hit"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CACHE} ="hit-stale"
+    set-header X-Cache-Specific "hit-stale"

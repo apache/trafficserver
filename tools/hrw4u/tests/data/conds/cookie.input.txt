@@ -1,0 +1,4 @@
+REMAP:
+if cookie.foobar ~ /foo/ {
+  inbound.req.X-Cookie = "there";
+}

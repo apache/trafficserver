@@ -1,0 +1,4 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{HTTP-CNTL:LOGGING}
+    set-header X-Foo "Logging on"
+    set-http-cntl LOGGING false

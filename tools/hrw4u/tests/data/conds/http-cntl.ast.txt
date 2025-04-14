@@ -1,0 +1,1 @@
+(program (section SEND_RESPONSE : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor http.cntl.LOGGING)))) (block { (statement inbound.resp.X-Foo = (value "Logging on") ;) (statement http.cntl.LOGGING = (value false) ;) })))) <EOF>)

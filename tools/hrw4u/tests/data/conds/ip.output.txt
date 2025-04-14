@@ -1,0 +1,6 @@
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{IP:CLIENT} {192.168.0.0/16,10.0.0.0/8}
+    set-header Client-IP "%{IP:CLIENT}"
+    set-header ATS-Inbound-IP "%{IP:INBOUND}"
+    set-header Server-IP "%{IP:SERVER}"
+    set-header ATS-Outbound-IP "%{IP:OUTBOUND}"

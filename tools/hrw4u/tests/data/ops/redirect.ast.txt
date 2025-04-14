@@ -1,0 +1,1 @@
+(program (section REMAP : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (comparison (comparable inbound.req.X-Auth-Me) !~ (regex /foo/)))))) (block { (statement (functionCall set-redirect ( (argumentList (value 302) , (value "https://example.com/foo")) )) ;) })))) <EOF>)

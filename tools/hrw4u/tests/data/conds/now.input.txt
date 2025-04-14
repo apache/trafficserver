@@ -1,0 +1,11 @@
+SEND_RESPONSE:
+if inbound.ip in {192.168.0.0/16,10.0.0.0/8} {
+   inbound.resp.X-Now = "{now}";
+   inbound.resp.X-Year = "{now.year}";
+   inbound.resp.X-Month = "{now.month}";
+   inbound.resp.X-Day = "{now.day}";
+   inbound.resp.X-Hour = "{now.hour}";
+   inbound.resp.X-Minute = "{now.minute}";
+   inbound.resp.X-Weekday = "{now.weekday}";
+   inbound.resp.X-Yearday = "{now.yearday}";
+}

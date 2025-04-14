@@ -1,0 +1,4 @@
+REMAP:
+if inbound.req.X-Auth-Me !~ /foo/ {
+    set-redirect(302, "https://example.com/foo");
+}

@@ -1,0 +1,4 @@
+REMAP:
+if internal() {
+  inbound.req.X-Foo = "Is Internal";
+}

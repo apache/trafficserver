@@ -1,0 +1,5 @@
+SEND_RESPONSE:
+if http.cntl.LOGGING {
+    inbound.resp.X-Foo = "Logging on";
+    http.cntl.LOGGING = false;
+}

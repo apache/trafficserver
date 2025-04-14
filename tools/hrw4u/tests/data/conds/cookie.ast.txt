@@ -1,0 +1,1 @@
+(program (section REMAP : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (comparison (comparable cookie.foobar) ~ (regex /foo/)))))) (block { (statement inbound.req.X-Cookie = (value "there") ;) })))) <EOF>)

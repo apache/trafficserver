@@ -1,0 +1,4 @@
+READ_RESPONSE:
+if outbound.resp.Cache-Control == "" && outbound.status > 199 && outbound.status < 300 {
+    outbound.resp.Cache-Control = "max-age=600, public";
+}

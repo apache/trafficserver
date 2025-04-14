@@ -1,0 +1,4 @@
+SEND_RESPONSE:
+if inbound.status > 399 && inbound.status < 500 {
+    inbound.status = 404;
+}

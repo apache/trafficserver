@@ -1,0 +1,4 @@
+REMAP:
+if inbound.url.path ~ /some_path_(.+)_/ && capture.1 in ["foo", "bar"] {
+  inbound.req.X-Path-Capture = "{capture.1}";
+}

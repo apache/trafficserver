@@ -33,3 +33,4 @@ Proxy Cache Configuration
    transparent-forward-proxying.en
    hierarchical-caching.en
    proxy-protocol.en
+   hrw4u.en

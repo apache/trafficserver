@@ -1,0 +1,1 @@
+(program (section REMAP : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (functionCall internal ( )))))) (block { (statement inbound.req.X-Foo = (value "Is Internal") ;) })))) <EOF>)

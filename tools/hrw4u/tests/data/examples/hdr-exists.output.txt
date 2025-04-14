@@ -1,0 +1,5 @@
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+cond %{HEADER:Cache-Control} ="" [AND]
+cond %{STATUS} >199 [AND]
+cond %{STATUS} <300
+    set-header Cache-Control "max-age=600, public"

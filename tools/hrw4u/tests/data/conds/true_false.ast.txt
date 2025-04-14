@@ -1,0 +1,1 @@
+(program (section SEND_RESPONSE : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalExpression (logicalTerm (logicalFactor true))) || (logicalTerm (logicalFactor false)))) (block { (statement inbound.resp.X-foo = (value "bar") ;) })))) <EOF>)

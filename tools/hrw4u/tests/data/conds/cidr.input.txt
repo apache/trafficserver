@@ -1,0 +1,4 @@
+REMAP:
+if cidr(8,64) in ["8.0.0.0/8", "6860:d4ff:fe8b:b5c7/64"] {
+  inbound.req.X-CIDR = "allowed";
+}

@@ -1,0 +1,13 @@
+VAR:
+    goAway: bool;
+
+REMAP:
+if inbound.req.X-Allow == "yes" {
+    http.status = 403;
+    goAway = true;
+}
+
+SEND_RESPONSE:
+if goAway {
+    http.status.reason = "Go Away";
+}

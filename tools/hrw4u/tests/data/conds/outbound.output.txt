@@ -1,0 +1,3 @@
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+cond %{NEXT-HOP:HOST} /foo|bar/
+    set-header X-Valid "%{NEXT-HOP:PORT}"

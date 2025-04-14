@@ -1,0 +1,4 @@
+FOOBAR:
+if inbound.header.Foo == "bar" {
+    inbound.header.X = "nope";
+}

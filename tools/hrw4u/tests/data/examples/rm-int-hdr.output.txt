@@ -1,0 +1,4 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Debug} ="keep" [NOT]
+    rm-header X-Debug-Foo
+    rm-header X-Debug-Bar

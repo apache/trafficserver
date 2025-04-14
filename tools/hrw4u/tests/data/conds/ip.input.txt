@@ -1,0 +1,7 @@
+SEND_REQUEST:
+if inbound.ip in {192.168.0.0/16,10.0.0.0/8} {
+  outbound.req.Client-IP = "{inbound.ip}";
+  outbound.req.ATS-Inbound-IP = "{inbound.server}";
+  outbound.req.Server-IP = "{outbound.ip}";
+  outbound.req.ATS-Outbound-IP = "{outbound.server}";
+}

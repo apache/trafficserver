@@ -1,0 +1,4 @@
+SEND_RESPONSE:
+if true || false {
+   inbound.resp.X-foo = "bar";
+}

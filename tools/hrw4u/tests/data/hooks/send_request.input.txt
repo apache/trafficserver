@@ -1,0 +1,4 @@
+SEND_REQUEST:
+if outbound.req.X-Send-Request == "yes" {
+  outbound.req.X-Send-Request = "";
+}
