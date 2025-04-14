@@ -1,0 +1,3 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{ACCESS:/path/to/the/healthcheck/file.txt}} [NOT]
+    set-header Connection "close"

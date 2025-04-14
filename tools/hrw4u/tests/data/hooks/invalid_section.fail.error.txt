@@ -1,0 +1,3 @@
+tests/data/hooks/invalid_section.fail.input.txt:1:0: error: Invalid section name: 'FOOBAR'
+   1 | FOOBAR:
+     | ^

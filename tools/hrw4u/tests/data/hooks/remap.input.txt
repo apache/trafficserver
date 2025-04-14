@@ -1,0 +1,6 @@
+REMAP:
+if inbound.req.X-Remap == "yes" {
+  inbound.req.X-Remap = "";
+} else {
+  inbound.req.X-Remap = "It was not yes";
+}

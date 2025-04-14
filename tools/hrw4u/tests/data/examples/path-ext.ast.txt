@@ -1,0 +1,1 @@
+(program (section REMAP : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (comparison (comparable inbound.url.path) == (value "php") (modifier with (modifierList EXT , NOCASE))))))) (block { (statement inbound.status = (value 403) ;) })))) <EOF>)

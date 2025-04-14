@@ -1,0 +1,16 @@
+SEND_RESPONSE:
+if inbound.resp.All-Cache != "" {
+    inbound.resp.All-Cache = "{inbound.resp.All-Cache} {cache()}";
+}
+
+SEND_RESPONSE:
+if inbound.resp.All-Cache == "" {
+    inbound.resp.All-Cache = "{cache()}";
+}
+
+SEND_RESPONSE:
+if inbound.resp.All-Cache == "" {
+    inbound.resp.All-Cache = "{cache()}";
+} else {
+    inbound.resp.All-Cache = "{inbound.resp.All-Cache} {cache()}";
+}

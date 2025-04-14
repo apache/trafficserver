@@ -1,0 +1,1 @@
+(program (section REMAP : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (comparison (comparable from.url.path) ~ (regex /foo/)))))) (block { (statement inbound.req.From-URL = (value "allowed") ;) })))) <EOF>)

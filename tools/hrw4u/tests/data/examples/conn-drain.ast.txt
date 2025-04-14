@@ -1,0 +1,1 @@
+(program (section SEND_RESPONSE : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor ! (logicalFactor (functionCall access ( (argumentList (value "/path/to/the/healthcheck/file.txt}")) ))))))) (block { (statement inbound.resp.Connection = (value "close") ;) })))) <EOF>)

@@ -1,0 +1,8 @@
+REMAP:
+inbound.url.query = "";
+
+REMAP:
+remove_query("foo,bar");
+
+REMAP:
+keep_query("foo,bar");

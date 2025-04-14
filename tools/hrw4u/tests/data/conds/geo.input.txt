@@ -1,0 +1,7 @@
+SEND_RESPONSE:
+if geo.COUNTRY == "US" {
+    inbound.resp.ATS-Geo-Country  = "{geo.COUNTRY}";
+    inbound.resp.ATS-Geo-Country-ISO = "{geo.COUNTRY-ISO}";
+    inbound.resp.ATS-Geo-ASN = "{geo.ASN}";
+    inbound.resp.ATS-Geo-ASN-NAME = "{geo.ASN-NAME}";
+}

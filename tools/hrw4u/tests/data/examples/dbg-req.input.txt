@@ -1,0 +1,4 @@
+REMAP:
+if inbound.req.X-Debug == "supersekret" {
+   set-debug();
+}

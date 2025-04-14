@@ -1,0 +1,13 @@
+SEND_RESPONSE:
+if inbound.conn.TLS != "" {
+    inbound.resp.X-LOCAL-ADDR = "{inbound.conn.LOCAL-ADDR}";
+    inbound.resp.X-LOCAL-PORT = "{inbound.conn.LOCAL-PORT}";
+    inbound.resp.X-REMOTE-ADDR = "{inbound.conn.REMOTE-ADDR}";
+    inbound.resp.X-REMOTE-PORT = "{inbound.conn.REMOTE-PORT}";
+    inbound.resp.X-TLS = "{inbound.conn.TLS}";
+    inbound.resp.X-H2 = "{inbound.conn.H2}";
+    inbound.resp.X-IPV4 = "{inbound.conn.IPV4}";
+    inbound.resp.X-IPV6 = "{inbound.conn.IPV6}";
+    inbound.resp.X-IP-FAMILY = "{inbound.conn.IP-FAMILY}";
+    inbound.resp.X-STACK = "{inbound.conn.STACK}";
+}

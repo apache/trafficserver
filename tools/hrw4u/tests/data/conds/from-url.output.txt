@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{FROM-URL:PATH} /foo/
+    set-header From-URL "allowed"

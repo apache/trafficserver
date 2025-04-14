@@ -1,0 +1,4 @@
+READ_RESPONSE:
+if outbound.resp.X-Read-Response == "yes" {
+  outbound.resp.X-Read-Response = "";
+}

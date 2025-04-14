@@ -1,0 +1,1 @@
+(program (section REMAP : (statementList (statement inbound.url.query = (value "") ;))) (section REMAP : (statementList (statement (functionCall remove_query ( (argumentList (value "foo,bar")) )) ;))) (section REMAP : (statementList (statement (functionCall keep_query ( (argumentList (value "foo,bar")) )) ;))) <EOF>)

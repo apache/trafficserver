@@ -1,0 +1,11 @@
+READ_RESPONSE:
+if inbound.url.path ~ /examplepath1/ {
+   outbound.resp.Cache-Control = "max-age=3600";
+   break;
+}
+
+READ_RESPONSE:
+if inbound.url.path ~ /examplepath2\/examplepath3\/.*/ {
+   outbound.resp.Cache-Control = "no-cache";
+   break;
+}

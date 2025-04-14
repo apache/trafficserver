@@ -1,0 +1,9 @@
+REMAP:
+if from.url.path ~ /foo/ && txn-count() > 10 {
+  inbound.req.@Client-Txn-Count = "{txn-count()}";
+}
+
+SEND_RESPONSE:
+if from.url.path ~ /foo/ && ssn-txn-count() > 5 {
+  inbound.req.@Server-Txn-Count = "{ssn-txn-count()}";
+}
