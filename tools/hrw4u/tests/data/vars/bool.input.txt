@@ -1,0 +1,9 @@
+VARS {
+   Flag: bool;
+}
+
+REMAP {
+    if Flag {
+        inbound.req.X-foo = "bar";
+    }
+}

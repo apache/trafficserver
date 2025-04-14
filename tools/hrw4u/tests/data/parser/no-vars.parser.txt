@@ -1,0 +1,6 @@
+VARS {
+}
+
+REMAP {
+    no-op();
+}

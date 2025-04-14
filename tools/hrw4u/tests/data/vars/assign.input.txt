@@ -1,0 +1,8 @@
+VARS {
+   foo: bool;
+   bar: bool;
+}
+
+REMAP {
+    bar = foo;
+}

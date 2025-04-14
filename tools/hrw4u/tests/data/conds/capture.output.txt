@@ -1,0 +1,4 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:PATH} /some_path_(.+)_/ [AND]
+cond %{LAST-CAPTURE:1} (foo,bar)
+    set-header X-Path-Capture "%{LAST-CAPTURE:1}"

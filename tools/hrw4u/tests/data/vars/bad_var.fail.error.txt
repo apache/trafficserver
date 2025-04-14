@@ -1,0 +1,3 @@
+tests/data/vars/bad_var.fail.input.txt:3:3: error: Invalid type 'int32'
+   3 |    Num: int32;
+     |    ^

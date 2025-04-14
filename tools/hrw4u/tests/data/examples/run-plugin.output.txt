@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:Some-Special-Header} ="yes"
+    run-plugin "/opt/ats/libexec/trafficserver/rate_limit.so" "--limit=300" "--error=429"

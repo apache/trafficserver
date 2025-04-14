@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:PATH} ="php" [NOCASE,EXT]
+    set-status 403

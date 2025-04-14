@@ -1,0 +1,3 @@
+SEND_RESPONSE {
+    inbound.resp.X-Original-Method = "{inbound.method}";
+}

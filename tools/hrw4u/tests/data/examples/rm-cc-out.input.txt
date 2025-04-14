@@ -1,0 +1,4 @@
+SEND_REQUEST {
+    outbound.req.Cache-Control = "";
+    outbound.req.Pragma = "";
+}
