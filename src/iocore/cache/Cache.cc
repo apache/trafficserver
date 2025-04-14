@@ -606,8 +606,8 @@ Lcallreturn:
 
 // main entry point for writing of http documents
 Action *
-Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
-                  const CacheKey * /* key1 ATS_UNUSED */, CacheFragType type, const char *hostname, int host_len) const
+Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache, CacheFragType type,
+                  const char *hostname, int host_len) const
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-ECACHE_NOT_READY));
