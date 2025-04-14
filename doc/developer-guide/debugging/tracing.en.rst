@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../common.defs
+.. default-domain:: cpp
 
 .. _developer-tracing:
 
