@@ -1927,8 +1927,7 @@ mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 }
 
 void
-mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
-                                  int new_piece_len)
+mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece)
 {
   Str    *cell;
   StrList list(false);
@@ -1958,6 +1957,7 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   }
 
   // (5) compute length of extended token
+  auto new_piece_len{static_cast<int>(new_piece.length())};
   extended_len = cell->len + new_piece_len + (trimmed ? 2 : 0);
 
   // (6) allocate temporary space to construct new value
@@ -1974,7 +1974,7 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   }
   memcpy(dest, cell->str, cell->len);
   dest += cell->len;
-  memcpy(dest, new_piece_str, new_piece_len);
+  memcpy(dest, new_piece.data(), new_piece_len);
   dest += new_piece_len;
   if (trimmed) {
     *dest++ = '\"';

@@ -2354,7 +2354,8 @@ TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, con
   if (length == -1) {
     length = strlen(value);
   }
-  mime_field_value_extend_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+  mime_field_value_extend_comma_val(heap, handle->mh, handle->field_ptr, idx,
+                                    std::string_view{value, static_cast<std::string_view::size_type>(length)});
   return TS_SUCCESS;
 }
 
