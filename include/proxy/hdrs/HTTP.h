@@ -905,14 +905,12 @@ inline HTTPKeepAlive
 HTTPHdr::keep_alive_get() const
 {
   HTTPKeepAlive    retval = HTTP_NO_KEEPALIVE;
-  const MIMEField *pc     = this->field_find(
-    std::string_view{MIME_FIELD_PROXY_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_PROXY_CONNECTION)});
+  const MIMEField *pc     = this->field_find(MIME_FIELD_PROXY_CONNECTION_sv);
   if (pc != nullptr) {
     retval = is_header_keep_alive(this->version_get(), pc);
   } else {
-    const MIMEField *c =
-      this->field_find(std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
-    retval = is_header_keep_alive(this->version_get(), c);
+    const MIMEField *c = this->field_find(MIME_FIELD_CONNECTION_sv);
+    retval             = is_header_keep_alive(this->version_get(), c);
   }
   return retval;
 }

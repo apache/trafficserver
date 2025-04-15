@@ -621,215 +621,6 @@ extern std::string_view MIME_VALUE_NEED_REVALIDATE_ONCE_sv;
 extern std::string_view MIME_VALUE_WEBSOCKET_sv;
 extern std::string_view MIME_VALUE_H2C_sv;
 
-extern const char *MIME_FIELD_ACCEPT;
-extern const char *MIME_FIELD_ACCEPT_CHARSET;
-extern const char *MIME_FIELD_ACCEPT_ENCODING;
-extern const char *MIME_FIELD_ACCEPT_LANGUAGE;
-extern const char *MIME_FIELD_ACCEPT_RANGES;
-extern const char *MIME_FIELD_AGE;
-extern const char *MIME_FIELD_ALLOW;
-extern const char *MIME_FIELD_APPROVED;
-extern const char *MIME_FIELD_AUTHORIZATION;
-extern const char *MIME_FIELD_BYTES;
-extern const char *MIME_FIELD_CACHE_CONTROL;
-extern const char *MIME_FIELD_CLIENT_IP;
-extern const char *MIME_FIELD_CONNECTION;
-extern const char *MIME_FIELD_CONTENT_BASE;
-extern const char *MIME_FIELD_CONTENT_ENCODING;
-extern const char *MIME_FIELD_CONTENT_LANGUAGE;
-extern const char *MIME_FIELD_CONTENT_LENGTH;
-extern const char *MIME_FIELD_CONTENT_LOCATION;
-extern const char *MIME_FIELD_CONTENT_MD5;
-extern const char *MIME_FIELD_CONTENT_RANGE;
-extern const char *MIME_FIELD_CONTENT_TYPE;
-extern const char *MIME_FIELD_CONTROL;
-extern const char *MIME_FIELD_COOKIE;
-extern const char *MIME_FIELD_DATE;
-extern const char *MIME_FIELD_DISTRIBUTION;
-extern const char *MIME_FIELD_ETAG;
-extern const char *MIME_FIELD_EXPECT;
-extern const char *MIME_FIELD_EXPIRES;
-extern const char *MIME_FIELD_FOLLOWUP_TO;
-extern const char *MIME_FIELD_FROM;
-extern const char *MIME_FIELD_HOST;
-extern const char *MIME_FIELD_IF_MATCH;
-extern const char *MIME_FIELD_IF_MODIFIED_SINCE;
-extern const char *MIME_FIELD_IF_NONE_MATCH;
-extern const char *MIME_FIELD_IF_RANGE;
-extern const char *MIME_FIELD_IF_UNMODIFIED_SINCE;
-extern const char *MIME_FIELD_KEEP_ALIVE;
-extern const char *MIME_FIELD_KEYWORDS;
-extern const char *MIME_FIELD_LAST_MODIFIED;
-extern const char *MIME_FIELD_LINES;
-extern const char *MIME_FIELD_LOCATION;
-extern const char *MIME_FIELD_MAX_FORWARDS;
-extern const char *MIME_FIELD_MESSAGE_ID;
-extern const char *MIME_FIELD_NEWSGROUPS;
-extern const char *MIME_FIELD_ORGANIZATION;
-extern const char *MIME_FIELD_PATH;
-extern const char *MIME_FIELD_PRAGMA;
-extern const char *MIME_FIELD_PROXY_AUTHENTICATE;
-extern const char *MIME_FIELD_PROXY_AUTHORIZATION;
-extern const char *MIME_FIELD_PROXY_CONNECTION;
-extern const char *MIME_FIELD_PUBLIC;
-extern const char *MIME_FIELD_RANGE;
-extern const char *MIME_FIELD_REFERENCES;
-extern const char *MIME_FIELD_REFERER;
-extern const char *MIME_FIELD_REPLY_TO;
-extern const char *MIME_FIELD_RETRY_AFTER;
-extern const char *MIME_FIELD_SENDER;
-extern const char *MIME_FIELD_SERVER;
-extern const char *MIME_FIELD_SET_COOKIE;
-extern const char *MIME_FIELD_STRICT_TRANSPORT_SECURITY;
-extern const char *MIME_FIELD_SUBJECT;
-extern const char *MIME_FIELD_SUMMARY;
-extern const char *MIME_FIELD_TE;
-extern const char *MIME_FIELD_TRANSFER_ENCODING;
-extern const char *MIME_FIELD_UPGRADE;
-extern const char *MIME_FIELD_USER_AGENT;
-extern const char *MIME_FIELD_VARY;
-extern const char *MIME_FIELD_VIA;
-extern const char *MIME_FIELD_WARNING;
-extern const char *MIME_FIELD_WWW_AUTHENTICATE;
-extern const char *MIME_FIELD_XREF;
-extern const char *MIME_FIELD_ATS_INTERNAL;
-extern const char *MIME_FIELD_X_ID;
-extern const char *MIME_FIELD_X_FORWARDED_FOR;
-extern const char *MIME_FIELD_FORWARDED;
-extern const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
-extern const char *MIME_FIELD_SEC_WEBSOCKET_VERSION;
-extern const char *MIME_FIELD_HTTP2_SETTINGS;
-extern const char *MIME_FIELD_EARLY_DATA;
-
-extern const char *MIME_VALUE_BYTES;
-extern const char *MIME_VALUE_CHUNKED;
-extern const char *MIME_VALUE_CLOSE;
-extern const char *MIME_VALUE_COMPRESS;
-extern const char *MIME_VALUE_DEFLATE;
-extern const char *MIME_VALUE_GZIP;
-extern const char *MIME_VALUE_BROTLI;
-extern const char *MIME_VALUE_IDENTITY;
-extern const char *MIME_VALUE_KEEP_ALIVE;
-extern const char *MIME_VALUE_MAX_AGE;
-extern const char *MIME_VALUE_MAX_STALE;
-extern const char *MIME_VALUE_MIN_FRESH;
-extern const char *MIME_VALUE_MUST_REVALIDATE;
-extern const char *MIME_VALUE_NONE;
-extern const char *MIME_VALUE_NO_CACHE;
-extern const char *MIME_VALUE_NO_STORE;
-extern const char *MIME_VALUE_NO_TRANSFORM;
-extern const char *MIME_VALUE_ONLY_IF_CACHED;
-extern const char *MIME_VALUE_PRIVATE;
-extern const char *MIME_VALUE_PROXY_REVALIDATE;
-extern const char *MIME_VALUE_PUBLIC;
-extern const char *MIME_VALUE_S_MAXAGE;
-extern const char *MIME_VALUE_NEED_REVALIDATE_ONCE;
-extern const char *MIME_VALUE_WEBSOCKET;
-extern const char *MIME_VALUE_H2C;
-
-extern int MIME_LEN_ACCEPT;
-extern int MIME_LEN_ACCEPT_CHARSET;
-extern int MIME_LEN_ACCEPT_ENCODING;
-extern int MIME_LEN_ACCEPT_LANGUAGE;
-extern int MIME_LEN_ACCEPT_RANGES;
-extern int MIME_LEN_AGE;
-extern int MIME_LEN_ALLOW;
-extern int MIME_LEN_APPROVED;
-extern int MIME_LEN_AUTHORIZATION;
-extern int MIME_LEN_BYTES;
-extern int MIME_LEN_CACHE_CONTROL;
-extern int MIME_LEN_CLIENT_IP;
-extern int MIME_LEN_CONNECTION;
-extern int MIME_LEN_CONTENT_BASE;
-extern int MIME_LEN_CONTENT_ENCODING;
-extern int MIME_LEN_CONTENT_LANGUAGE;
-extern int MIME_LEN_CONTENT_LENGTH;
-extern int MIME_LEN_CONTENT_LOCATION;
-extern int MIME_LEN_CONTENT_MD5;
-extern int MIME_LEN_CONTENT_RANGE;
-extern int MIME_LEN_CONTENT_TYPE;
-extern int MIME_LEN_CONTROL;
-extern int MIME_LEN_COOKIE;
-extern int MIME_LEN_DATE;
-extern int MIME_LEN_DISTRIBUTION;
-extern int MIME_LEN_ETAG;
-extern int MIME_LEN_EXPECT;
-extern int MIME_LEN_EXPIRES;
-extern int MIME_LEN_FOLLOWUP_TO;
-extern int MIME_LEN_FROM;
-extern int MIME_LEN_HOST;
-extern int MIME_LEN_IF_MATCH;
-extern int MIME_LEN_IF_MODIFIED_SINCE;
-extern int MIME_LEN_IF_NONE_MATCH;
-extern int MIME_LEN_IF_RANGE;
-extern int MIME_LEN_IF_UNMODIFIED_SINCE;
-extern int MIME_LEN_KEEP_ALIVE;
-extern int MIME_LEN_KEYWORDS;
-extern int MIME_LEN_LAST_MODIFIED;
-extern int MIME_LEN_LINES;
-extern int MIME_LEN_LOCATION;
-extern int MIME_LEN_MAX_FORWARDS;
-extern int MIME_LEN_MESSAGE_ID;
-extern int MIME_LEN_NEWSGROUPS;
-extern int MIME_LEN_ORGANIZATION;
-extern int MIME_LEN_PATH;
-extern int MIME_LEN_PRAGMA;
-extern int MIME_LEN_PROXY_AUTHENTICATE;
-extern int MIME_LEN_PROXY_AUTHORIZATION;
-extern int MIME_LEN_PROXY_CONNECTION;
-extern int MIME_LEN_PUBLIC;
-extern int MIME_LEN_RANGE;
-extern int MIME_LEN_REFERENCES;
-extern int MIME_LEN_REFERER;
-extern int MIME_LEN_REPLY_TO;
-extern int MIME_LEN_RETRY_AFTER;
-extern int MIME_LEN_SENDER;
-extern int MIME_LEN_SERVER;
-extern int MIME_LEN_SET_COOKIE;
-extern int MIME_LEN_STRICT_TRANSPORT_SECURITY;
-extern int MIME_LEN_SUBJECT;
-extern int MIME_LEN_SUMMARY;
-extern int MIME_LEN_TE;
-extern int MIME_LEN_TRANSFER_ENCODING;
-extern int MIME_LEN_UPGRADE;
-extern int MIME_LEN_USER_AGENT;
-extern int MIME_LEN_VARY;
-extern int MIME_LEN_VIA;
-extern int MIME_LEN_WARNING;
-extern int MIME_LEN_WWW_AUTHENTICATE;
-extern int MIME_LEN_XREF;
-extern int MIME_LEN_ATS_INTERNAL;
-extern int MIME_LEN_X_ID;
-extern int MIME_LEN_X_FORWARDED_FOR;
-extern int MIME_LEN_FORWARDED;
-extern int MIME_LEN_BYTES;
-extern int MIME_LEN_CHUNKED;
-extern int MIME_LEN_CLOSE;
-extern int MIME_LEN_COMPRESS;
-extern int MIME_LEN_DEFLATE;
-extern int MIME_LEN_GZIP;
-extern int MIME_LEN_BLOTLI;
-extern int MIME_LEN_IDENTITY;
-extern int MIME_LEN_KEEP_ALIVE;
-extern int MIME_LEN_MAX_AGE;
-extern int MIME_LEN_MAX_STALE;
-extern int MIME_LEN_MIN_FRESH;
-extern int MIME_LEN_MUST_REVALIDATE;
-extern int MIME_LEN_NONE;
-extern int MIME_LEN_NO_CACHE;
-extern int MIME_LEN_NO_STORE;
-extern int MIME_LEN_NO_TRANSFORM;
-extern int MIME_LEN_ONLY_IF_CACHED;
-extern int MIME_LEN_PRIVATE;
-extern int MIME_LEN_PROXY_REVALIDATE;
-extern int MIME_LEN_PUBLIC;
-extern int MIME_LEN_S_MAXAGE;
-extern int MIME_LEN_NEED_REVALIDATE_ONCE;
-extern int MIME_LEN_SEC_WEBSOCKET_KEY;
-extern int MIME_LEN_SEC_WEBSOCKET_VERSION;
-extern int MIME_LEN_HTTP2_SETTINGS;
-extern int MIME_LEN_EARLY_DATA;
-
 extern int MIME_WKSIDX_ACCEPT;
 extern int MIME_WKSIDX_ACCEPT_CHARSET;
 extern int MIME_WKSIDX_ACCEPT_ENCODING;
@@ -1742,7 +1533,7 @@ MIMEHdr::value_append(std::string_view name, std::string_view value, bool prepen
 inline time_t
 MIMEHdr::get_age() const
 {
-  int64_t age = value_get_int64(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)});
+  int64_t age = value_get_int64(MIME_FIELD_AGE_sv);
 
   if (age < 0) // We should ignore negative Age: values
     return 0;
@@ -1759,8 +1550,7 @@ MIMEHdr::get_age() const
 inline int64_t
 MIMEHdr::get_content_length() const
 {
-  return value_get_int64(
-    std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
+  return value_get_int64(MIME_FIELD_CONTENT_LENGTH_sv);
 }
 
 /*-------------------------------------------------------------------------
@@ -1769,7 +1559,7 @@ MIMEHdr::get_content_length() const
 inline time_t
 MIMEHdr::get_date() const
 {
-  return value_get_date(std::string_view{MIME_FIELD_DATE, static_cast<std::string_view::size_type>(MIME_LEN_DATE)});
+  return value_get_date(MIME_FIELD_DATE_sv);
 }
 
 /*-------------------------------------------------------------------------
@@ -1778,7 +1568,7 @@ MIMEHdr::get_date() const
 inline time_t
 MIMEHdr::get_expires() const
 {
-  return value_get_date(std::string_view{MIME_FIELD_EXPIRES, static_cast<std::string_view::size_type>(MIME_LEN_EXPIRES)});
+  return value_get_date(MIME_FIELD_EXPIRES_sv);
 }
 
 /*-------------------------------------------------------------------------
@@ -1787,8 +1577,7 @@ MIMEHdr::get_expires() const
 inline time_t
 MIMEHdr::get_if_modified_since() const
 {
-  return value_get_date(
-    std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)});
+  return value_get_date(MIME_FIELD_IF_MODIFIED_SINCE_sv);
 }
 
 /*-------------------------------------------------------------------------
@@ -1797,8 +1586,7 @@ MIMEHdr::get_if_modified_since() const
 inline time_t
 MIMEHdr::get_if_unmodified_since() const
 {
-  return value_get_date(
-    std::string_view{MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_UNMODIFIED_SINCE)});
+  return value_get_date(MIME_FIELD_IF_UNMODIFIED_SINCE_sv);
 }
 
 /*-------------------------------------------------------------------------
@@ -1807,8 +1595,7 @@ MIMEHdr::get_if_unmodified_since() const
 inline time_t
 MIMEHdr::get_last_modified() const
 {
-  return value_get_date(
-    std::string_view{MIME_FIELD_LAST_MODIFIED, static_cast<std::string_view::size_type>(MIME_LEN_LAST_MODIFIED)});
+  return value_get_date(MIME_FIELD_LAST_MODIFIED_sv);
 }
 
 /*-------------------------------------------------------------------------
@@ -1817,7 +1604,7 @@ MIMEHdr::get_last_modified() const
 inline time_t
 MIMEHdr::get_if_range_date() const
 {
-  return value_get_date(std::string_view{MIME_FIELD_IF_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_IF_RANGE)});
+  return value_get_date(MIME_FIELD_IF_RANGE_sv);
 }
 
 /*-------------------------------------------------------------------------
@@ -1826,7 +1613,7 @@ MIMEHdr::get_if_range_date() const
 inline int32_t
 MIMEHdr::get_max_forwards() const
 {
-  return value_get_int(std::string_view{MIME_FIELD_MAX_FORWARDS, static_cast<std::string::size_type>(MIME_LEN_MAX_FORWARDS)});
+  return value_get_int(MIME_FIELD_MAX_FORWARDS_sv);
 }
 
 /*-------------------------------------------------------------------------
@@ -1920,14 +1707,14 @@ inline void
 MIMEHdr::set_age(time_t value)
 {
   if (value < 0)
-    value_set_uint(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)}, (uint32_t)INT_MAX + 1);
+    value_set_uint(MIME_FIELD_AGE_sv, (uint32_t)INT_MAX + 1);
   else {
     if (sizeof(time_t) > 4) {
-      value_set_int64(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)}, value);
+      value_set_int64(MIME_FIELD_AGE_sv, value);
     } else {
       // Only on systems where time_t is 32 bits
       // coverity[Y2K38_SAFETY]
-      value_set_uint(std::string_view{MIME_FIELD_AGE, static_cast<std::string_view::size_type>(MIME_LEN_AGE)}, value);
+      value_set_uint(MIME_FIELD_AGE_sv, value);
     }
   }
 }
@@ -1938,8 +1725,7 @@ MIMEHdr::set_age(time_t value)
 inline void
 MIMEHdr::set_content_length(int64_t value)
 {
-  value_set_int64(std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)},
-                  value);
+  value_set_int64(MIME_FIELD_CONTENT_LENGTH_sv, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1948,7 +1734,7 @@ MIMEHdr::set_content_length(int64_t value)
 inline void
 MIMEHdr::set_date(time_t value)
 {
-  value_set_date(std::string_view{MIME_FIELD_DATE, static_cast<std::string_view::size_type>(MIME_LEN_DATE)}, value);
+  value_set_date(MIME_FIELD_DATE_sv, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1957,7 +1743,7 @@ MIMEHdr::set_date(time_t value)
 inline void
 MIMEHdr::set_expires(time_t value)
 {
-  value_set_date(std::string_view{MIME_FIELD_EXPIRES, static_cast<std::string_view::size_type>(MIME_LEN_EXPIRES)}, value);
+  value_set_date(MIME_FIELD_EXPIRES_sv, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1966,8 +1752,7 @@ MIMEHdr::set_expires(time_t value)
 inline void
 MIMEHdr::set_if_modified_since(time_t value)
 {
-  value_set_date(
-    std::string_view{MIME_FIELD_IF_MODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_MODIFIED_SINCE)}, value);
+  value_set_date(MIME_FIELD_IF_MODIFIED_SINCE_sv, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1976,9 +1761,7 @@ MIMEHdr::set_if_modified_since(time_t value)
 inline void
 MIMEHdr::set_if_unmodified_since(time_t value)
 {
-  value_set_date(
-    std::string_view{MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<std::string_view::size_type>(MIME_LEN_IF_UNMODIFIED_SINCE)},
-    value);
+  value_set_date(MIME_FIELD_IF_UNMODIFIED_SINCE_sv, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1987,8 +1770,7 @@ MIMEHdr::set_if_unmodified_since(time_t value)
 inline void
 MIMEHdr::set_last_modified(time_t value)
 {
-  value_set_date(std::string_view{MIME_FIELD_LAST_MODIFIED, static_cast<std::string_view::size_type>(MIME_LEN_LAST_MODIFIED)},
-                 value);
+  value_set_date(MIME_FIELD_LAST_MODIFIED_sv, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1997,7 +1779,7 @@ MIMEHdr::set_last_modified(time_t value)
 inline void
 MIMEHdr::set_max_forwards(int32_t value)
 {
-  value_set_int(std::string_view{MIME_FIELD_MAX_FORWARDS, static_cast<std::string_view::size_type>(MIME_LEN_MAX_FORWARDS)}, value);
+  value_set_int(MIME_FIELD_MAX_FORWARDS_sv, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -2006,7 +1788,7 @@ MIMEHdr::set_max_forwards(int32_t value)
 inline void
 MIMEHdr::set_warning(int32_t value)
 {
-  value_set_int(std::string_view{MIME_FIELD_WARNING, static_cast<std::string_view::size_type>(MIME_LEN_WARNING)}, value);
+  value_set_int(MIME_FIELD_WARNING_sv, value);
 }
 
 /*-------------------------------------------------------------------------
@@ -2015,5 +1797,5 @@ MIMEHdr::set_warning(int32_t value)
 inline void
 MIMEHdr::set_server(std::string_view server_id_tag)
 {
-  value_set(std::string_view{MIME_FIELD_SERVER, static_cast<std::string_view::size_type>(MIME_LEN_SERVER)}, server_id_tag);
+  value_set(MIME_FIELD_SERVER_sv, server_id_tag);
 }

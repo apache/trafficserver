@@ -163,9 +163,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     bool             enabled_flag = map->optional_referer ? true : false;
 
     if (request_header->presence(MIME_PRESENCE_REFERER) &&
-        !(referer_hdr = request_header->value_get(
-            std::string_view{MIME_FIELD_REFERER, static_cast<std::string_view::size_type>(MIME_LEN_REFERER)}))
-           .empty()) {
+        !(referer_hdr = request_header->value_get(MIME_FIELD_REFERER_sv)).empty()) {
       referer_hdr = referer_hdr.substr(0, std::min(referer_hdr.length(), sizeof(tmp_referer_buf) - 1));
       memcpy(tmp_referer_buf, referer_hdr.data(), referer_hdr.length());
       tmp_referer_buf[referer_hdr.length()] = 0;
@@ -235,12 +233,10 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   // We also need to rewrite the "Host:" header if it exists and
   //   pristine host hdr is not enabled
 
-  if (auto host_hdr{
-        request_header->value_get(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)})};
+  if (auto host_hdr{request_header->value_get(MIME_FIELD_HOST_sv)};
       request_url && !host_hdr.empty() && s->txn_conf->maintain_pristine_host_hdr == 0) {
     if (dbg_ctl_url_rewrite.on()) {
-      auto old_host_hdr{
-        request_header->value_get(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)})};
+      auto old_host_hdr{request_header->value_get(MIME_FIELD_HOST_sv)};
       if (!old_host_hdr.empty()) {
         Dbg(dbg_ctl_url_rewrite, "Host: Header before rewrite %.*s", static_cast<int>(old_host_hdr.length()), old_host_hdr.data());
       }
@@ -269,12 +265,11 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     //   won't be able to resolve it and the request will not go
     //   through
     if (tmp >= TS_MAX_HOST_NAME_LEN) {
-      request_header->field_delete(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
+      request_header->field_delete(MIME_FIELD_HOST_sv);
       Dbg(dbg_ctl_url_rewrite, "Host: Header too long after rewrite");
     } else {
       Dbg(dbg_ctl_url_rewrite, "Host: Header after rewrite %.*s", tmp, host_hdr_buf);
-      request_header->value_set(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)},
-                                std::string_view{host_hdr_buf, static_cast<std::string_view::size_type>(tmp)});
+      request_header->value_set(MIME_FIELD_HOST_sv, std::string_view{host_hdr_buf, static_cast<std::string_view::size_type>(tmp)});
     }
   }
 

@@ -2456,7 +2456,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
       bool    explicit_zero_length = has_content_header && send_hdr->get_content_length() == 0;
       int64_t content_length       = has_content_header ? send_hdr->get_content_length() : 0L;
       bool    is_chunked =
-        is_transfer_encoded && send_hdr->value_get(MIME_FIELD_TRANSFER_ENCODING) == std::string_view(HTTP_VALUE_CHUNKED);
+        is_transfer_encoded && send_hdr->value_get(MIME_FIELD_TRANSFER_ENCODING_sv) == std::string_view(HTTP_VALUE_CHUNKED);
 
       bool expect_content_stream =
         is_transfer_encoded ||                                                        // transfer encoded content length is unknown

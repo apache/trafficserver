@@ -94,8 +94,7 @@ LogAccess::init()
 
   if (hdr->client_response.valid()) {
     m_proxy_response = &(hdr->client_response);
-    MIMEField *field = m_proxy_response->field_find(
-      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
+    MIMEField *field = m_proxy_response->field_find(MIME_FIELD_CONTENT_TYPE_sv);
     if (field) {
       auto proxy_resp_content_type{field->value_get()};
       m_proxy_resp_content_type_str = const_cast<char *>(proxy_resp_content_type.data());
@@ -2931,8 +2930,7 @@ LogAccess::marshal_file_size(char *buf)
     MIMEField *fld;
     HTTPHdr   *hdr = m_server_response ? m_server_response : m_cache_response;
 
-    if (hdr && (fld = hdr->field_find(
-                  std::string_view{MIME_FIELD_CONTENT_RANGE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_RANGE)}))) {
+    if (hdr && (fld = hdr->field_find(MIME_FIELD_CONTENT_RANGE_sv))) {
       auto  value{fld->value_get()};
       int   len = value.length();
       char *str = const_cast<char *>(value.data());

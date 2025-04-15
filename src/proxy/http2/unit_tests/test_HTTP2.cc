@@ -118,8 +118,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     hdr_2_with_host.create(HTTP_TYPE_REQUEST);
     hdr_2_with_host.copy(&hdr_1);
 
-    MIMEField *host =
-      hdr_2_with_host.field_create(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
+    MIMEField *host = hdr_2_with_host.field_create(MIME_FIELD_HOST_sv);
     hdr_2_with_host.field_attach(host);
     std::string_view host_value = "bogus.host.com";
     host->value_set(hdr_2_with_host.m_heap, hdr_2_with_host.m_mime, host_value);
@@ -171,8 +170,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // no connection header
     {
-      MIMEField *f =
-        hdr_1.field_find(std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)});
+      MIMEField *f = hdr_1.field_find(MIME_FIELD_CONNECTION_sv);
       CHECK(f == nullptr);
     }
 

@@ -164,8 +164,7 @@ FetchSM::has_body()
     return true;
   }
 
-  resp_content_length = hdr->value_get_int64(
-    std::string_view{MIME_FIELD_CONTENT_LENGTH, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_LENGTH)});
+  resp_content_length = hdr->value_get_int64(MIME_FIELD_CONTENT_LENGTH_sv);
   if (!resp_content_length) {
     if (check_connection_close()) {
       return true;
@@ -224,8 +223,9 @@ FetchSM::check_chunked()
   static size_t const CHUNKED_LEN    = sizeof(CHUNKED_TEXT) - 1;
 
   if (resp_is_chunked < 0) {
-    resp_is_chunked = static_cast<int>(
-      this->check_for_field_value(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, CHUNKED_TEXT, CHUNKED_LEN));
+    resp_is_chunked = static_cast<int>(this->check_for_field_value(MIME_FIELD_TRANSFER_ENCODING_sv.data(),
+                                                                   static_cast<int>(MIME_FIELD_TRANSFER_ENCODING_sv.length()),
+                                                                   CHUNKED_TEXT, CHUNKED_LEN));
 
     if (resp_is_chunked && (fetch_flags & TS_FETCH_FLAGS_DECHUNK)) {
       ChunkedHandler *ch = &chunked_handler;
@@ -246,8 +246,8 @@ FetchSM::check_connection_close()
   static size_t const CLOSE_LEN    = sizeof(CLOSE_TEXT) - 1;
 
   if (resp_received_close < 0) {
-    resp_received_close =
-      static_cast<int>(this->check_for_field_value(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, CLOSE_TEXT, CLOSE_LEN));
+    resp_received_close = static_cast<int>(this->check_for_field_value(
+      MIME_FIELD_CONNECTION_sv.data(), static_cast<int>(MIME_FIELD_CONNECTION_sv.length()), CLOSE_TEXT, CLOSE_LEN));
   }
   return resp_received_close > 0;
 }
@@ -662,7 +662,8 @@ FetchSM::ext_init(Continuation *cont, const char *method, const char *url, const
 void
 FetchSM::ext_add_header(const char *name, int name_len, const char *value, int value_len)
 {
-  if (MIME_LEN_CONTENT_LENGTH == name_len && !strncasecmp(MIME_FIELD_CONTENT_LENGTH, name, name_len)) {
+  if (static_cast<int>(MIME_FIELD_CONTENT_LENGTH_sv.length()) == name_len &&
+      !strncasecmp(MIME_FIELD_CONTENT_LENGTH_sv.data(), name, name_len)) {
     req_content_length = atoll(value);
   }
 

@@ -81,8 +81,7 @@ public:
   {
     auto rt = dynamic_cast<CacheReadTest *>(base);
     REQUIRE(rt);
-    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(
-      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
+    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE_sv);
     REQUIRE(field);
     auto value{field->value_get()};
     REQUIRE(value == "text/html;charset=utf-8"sv);
@@ -136,8 +135,7 @@ public:
   {
     auto rt = dynamic_cast<CacheReadTest *>(base);
     REQUIRE(rt);
-    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(
-      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
+    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE_sv);
     REQUIRE(field);
     auto value{field->value_get()};
     REQUIRE(value == "text/html;charset=utf-8"sv);
@@ -218,8 +216,7 @@ public:
   {
     auto rt = dynamic_cast<CacheReadTest *>(base);
     REQUIRE(rt);
-    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(
-      std::string_view{MIME_FIELD_CONTENT_TYPE, static_cast<std::string_view::size_type>(MIME_LEN_CONTENT_TYPE)});
+    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE_sv);
     REQUIRE(field);
     auto value{field->value_get()};
     REQUIRE(value == "application/x-javascript"sv);

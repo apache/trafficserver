@@ -118,7 +118,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     }
     // Remove the host header field, redundant to the authority field
     // For istio/envoy, having both was causing 404 responses
-    header.field_delete(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
+    header.field_delete(MIME_FIELD_HOST_sv);
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :authority");
     return PARSE_RESULT_ERROR;
@@ -209,16 +209,14 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority.data(), authority.length(), true);
 
     if (!is_connect_method) {
-      MIMEField *host =
-        header.field_find(std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
+      MIMEField *host = header.field_find(MIME_FIELD_HOST_sv);
       if (host == nullptr) {
         // Add a Host header field. [RFC 7230] 5.4 says that if a client sends a
         // Host header field, it SHOULD be the first header in the header section
         // of a request. We accomplish that by simply renaming the :authority
         // header as Host.
         header.field_detach(field);
-        field->name_set(header.m_heap, header.m_mime,
-                        std::string_view{MIME_FIELD_HOST, static_cast<std::string_view::size_type>(MIME_LEN_HOST)});
+        field->name_set(header.m_heap, header.m_mime, MIME_FIELD_HOST_sv);
         header.field_attach(field);
       } else {
         // There already is a Host header field. Simply set the value of the Host
@@ -251,9 +249,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     }
 
     // Combine Cookie header.([RFC 7540] 8.1.2.5.)
-    if (MIMEField *field =
-          header.field_find(std::string_view{MIME_FIELD_COOKIE, static_cast<std::string_view::size_type>(MIME_LEN_COOKIE)});
-        field != nullptr) {
+    if (MIMEField *field = header.field_find(MIME_FIELD_COOKIE_sv); field != nullptr) {
       header.field_combine_dups(field, true, ';');
     }
   }

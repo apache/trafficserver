@@ -63,13 +63,8 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
 
   // rfc7540,sec8.1.2.2 and rfc9114,sec4.2: Any message containing
   // connection-specific header fields MUST be treated as malformed.
-  if (hdr.field_find(std::string_view{MIME_FIELD_CONNECTION, static_cast<std::string_view::size_type>(MIME_LEN_CONNECTION)}) !=
-        nullptr ||
-      hdr.field_find(std::string_view{MIME_FIELD_KEEP_ALIVE, static_cast<std::string_view::size_type>(MIME_LEN_KEEP_ALIVE)}) !=
-        nullptr ||
-      hdr.field_find(std::string_view{MIME_FIELD_PROXY_CONNECTION,
-                                      static_cast<std::string_view::size_type>(MIME_LEN_PROXY_CONNECTION)}) != nullptr ||
-      hdr.field_find(std::string_view{MIME_FIELD_UPGRADE, static_cast<std::string_view::size_type>(MIME_LEN_UPGRADE)}) != nullptr) {
+  if (hdr.field_find(MIME_FIELD_CONNECTION_sv) != nullptr || hdr.field_find(MIME_FIELD_KEEP_ALIVE_sv) != nullptr ||
+      hdr.field_find(MIME_FIELD_PROXY_CONNECTION_sv) != nullptr || hdr.field_find(MIME_FIELD_UPGRADE_sv) != nullptr) {
     return false;
   }
 
@@ -84,7 +79,7 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
 
   // when The TE header field is received, it MUST NOT contain any
   // value other than "trailers".
-  field = hdr.field_find(std::string_view{MIME_FIELD_TE, static_cast<std::string_view::size_type>(MIME_LEN_TE)});
+  field = hdr.field_find(MIME_FIELD_TE_sv);
   if (field) {
     auto value{field->value_get()};
     if (value != "trailers"sv) {
