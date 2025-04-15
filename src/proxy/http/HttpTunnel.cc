@@ -183,9 +183,10 @@ ChunkedHandler::read_size()
           }
         } else {
           // We are done parsing size
-          if ((num_digits == 0 || running_sum < 0) ||       /* Bogus chunk size */
-              (!ParseRules::is_wslfcr(*tmp) && *tmp != ';') /* Unexpected character */
-          ) {
+          const auto is_bogus_chunk_size   = (num_digits == 0 || running_sum < 0);
+          const auto is_rfc_compliant_char = (ParseRules::is_ws(*tmp) || ParseRules::is_cr(*tmp) || *tmp == ';');
+          const auto is_acceptable_lf      = (ParseRules::is_lf(*tmp) && !strict_chunk_parsing);
+          if (is_bogus_chunk_size || (!is_rfc_compliant_char && !is_acceptable_lf)) {
             state = CHUNK_READ_ERROR;
             done  = true;
             break;
