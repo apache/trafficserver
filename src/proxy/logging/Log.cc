@@ -215,7 +215,8 @@ Log::periodic_tasks(long time_now)
     Dbg(dbg_ctl_log_config, "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
-      int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
+      int val;
+      val = RecGetRecordInt("proxy.config.log.logging_enabled").value_or(0);
 
       if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
         logging_mode = LOG_MODE_FULL;
@@ -1063,7 +1064,8 @@ Log::init(int flags)
     config->read_configuration_variables();
     preproc_threads = config->preproc_threads;
 
-    int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
+    int val;
+    val = RecGetRecordInt("proxy.config.log.logging_enabled").value_or(0);
     if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
       logging_mode = LOG_MODE_FULL;
       Warning("proxy.config.log.logging_enabled has an invalid "
@@ -1073,7 +1075,8 @@ Log::init(int flags)
       logging_mode = static_cast<LoggingMode>(val);
     }
     // periodic task interval are set on a per instance basis
-    MgmtInt pti = REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
+    MgmtInt pti;
+    pti = RecGetRecordInt("proxy.config.log.periodic_tasks_interval").value_or(0);
     if (pti <= 0) {
       Error("proxy.config.log.periodic_tasks_interval = %" PRId64 " is invalid", pti);
       Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);
@@ -1082,12 +1085,12 @@ Log::init(int flags)
       periodic_tasks_interval = static_cast<uint32_t>(pti);
     }
 
-    REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
+    RecRegisterConfigUpdateCb("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
   }
 
   init_fields();
   if (!(config_flags & LOGCAT)) {
-    REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
+    RecRegisterConfigUpdateCb("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
 
     Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
     config->init();
@@ -1124,7 +1127,7 @@ Log::create_threads()
   preproc_notify = new EventNotify[preproc_threads];
 
   size_t stacksize;
-  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+  stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
 
   // start the preproc threads
   //
