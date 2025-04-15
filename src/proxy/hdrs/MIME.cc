@@ -1808,8 +1808,7 @@ mime_field_value_str_from_strlist(HdrHeap *heap, int *new_str_len_return, StrLis
 }
 
 void
-mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
-                               int new_piece_len)
+mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece)
 {
   int     len;
   Str    *cell;
@@ -1826,8 +1825,8 @@ mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field,
   // (3) mutate cell idx
   cell = list.get_idx(idx);
   ink_assert(cell != nullptr);
-  cell->str = new_piece_str;
-  cell->len = new_piece_len;
+  cell->str = new_piece.data();
+  cell->len = new_piece.length();
 
   // (4) reassemble the new string
   field->m_ptr_value = mime_field_value_str_from_strlist(heap, &len, &list);

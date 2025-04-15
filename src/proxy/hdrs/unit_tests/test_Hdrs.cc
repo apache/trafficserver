@@ -1983,7 +1983,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       MIMEField *f = hdr.field_create(field_name);
       hdr.field_value_set(f, tests[i].old_raw);
-      mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, tests[i].slice, strlen(tests[i].slice));
+      mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, std::string_view{tests[i].slice});
       REQUIRE(f->m_ptr_value != nullptr);
 
       if ((f->m_len_value != strlen(tests[i].new_raw)) || (memcmp(f->m_ptr_value, tests[i].new_raw, f->m_len_value) != 0)) {

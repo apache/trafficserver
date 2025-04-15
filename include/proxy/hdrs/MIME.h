@@ -771,8 +771,7 @@ const char *mime_field_value_get_comma_val(const MIMEField *field, int *length, 
 int         mime_field_value_get_comma_val_count(const MIMEField *field);
 int         mime_field_value_get_comma_list(const MIMEField *field, StrList *list);
 
-void mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
-                                    int new_piece_len);
+void mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece);
 void mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx);
 void mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
                                        int new_piece_len);
