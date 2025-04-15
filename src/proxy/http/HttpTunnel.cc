@@ -1240,10 +1240,7 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
   if (p->chunked_handler.state == ChunkedHandler::CHUNK_READ_ERROR) {
     Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] producer_handler_chunked [%s chunk decoding error]", sm->sm_id, p->name);
     p->chunked_handler.truncation = true;
-    // FIX ME: we return EOS here since it will cause the
-    //  the client to be reenabled.  ERROR makes more
-    //  sense but no reenables follow
-    return VC_EVENT_EOS;
+    return HTTP_TUNNEL_EVENT_PARSE_ERROR;
   }
 
   switch (event) {
@@ -1393,6 +1390,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
+  case HTTP_TUNNEL_EVENT_PARSE_ERROR:
     if (p->alive) {
       p->alive = false;
       if (p->read_vio) {
