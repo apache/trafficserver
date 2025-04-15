@@ -756,7 +756,7 @@ void mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, boo
  * Returned slotnum is not a persistent value. A slotnum may refer a different field after making changes to a mime header.
  */
 int        mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field);
-MIMEField *mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int name_length);
+MIMEField *mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name);
 
 void mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field);
 
@@ -1472,7 +1472,7 @@ inline void
 MIMEHdr::value_set(std::string_view name, std::string_view value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name);
   field->value_set(m_heap, m_mime, value);
 }
 
@@ -1480,7 +1480,7 @@ inline void
 MIMEHdr::value_set_int(std::string_view name, int32_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name);
   field->value_set_int(m_heap, m_mime, value);
 }
 
@@ -1488,7 +1488,7 @@ inline void
 MIMEHdr::value_set_uint(std::string_view name, uint32_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name);
   field->value_set_uint(m_heap, m_mime, value);
 }
 
@@ -1496,7 +1496,7 @@ inline void
 MIMEHdr::value_set_int64(std::string_view name, int64_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name);
   field->value_set_int64(m_heap, m_mime, value);
 }
 
@@ -1504,7 +1504,7 @@ inline void
 MIMEHdr::value_set_date(std::string_view name, time_t value)
 {
   MIMEField *field;
-  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name.data(), static_cast<int>(name.length()));
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name);
   field->value_set_date(m_heap, m_mime, value);
 }
 

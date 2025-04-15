@@ -1574,12 +1574,12 @@ mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field)
 }
 
 MIMEField *
-mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int name_length)
+mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name)
 {
   int        wks_idx;
   MIMEField *field;
 
-  field = mime_hdr_field_find(mh, std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
+  field = mime_hdr_field_find(mh, name);
 
   //////////////////////////////////////////////////////////////////////
   // this function returns with exactly one attached field created,   //
@@ -1593,9 +1593,9 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name,
 
   if (field == nullptr) // no fields of this name
   {
-    wks_idx = hdrtoken_tokenize(name, name_length);
+    wks_idx = hdrtoken_tokenize(name.data(), static_cast<int>(name.length()));
     field   = mime_field_create(heap, mh);
-    mime_field_name_set(heap, mh, field, wks_idx, name, name_length, true);
+    mime_field_name_set(heap, mh, field, wks_idx, name.data(), static_cast<int>(name.length()), true);
     mime_hdr_field_attach(mh, field, 0, nullptr);
 
   } else if (field->m_next_dup) // list of more than 1 field
@@ -1603,7 +1603,7 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name,
     wks_idx = field->m_wks_idx;
     mime_hdr_field_delete(heap, mh, field, true);
     field = mime_field_create(heap, mh);
-    mime_field_name_set(heap, mh, field, wks_idx, name, name_length, true);
+    mime_field_name_set(heap, mh, field, wks_idx, name.data(), static_cast<int>(name.length()), true);
     mime_hdr_field_attach(mh, field, 0, nullptr);
   }
   return field;
