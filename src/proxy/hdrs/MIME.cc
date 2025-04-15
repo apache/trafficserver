@@ -2053,22 +2053,22 @@ mime_field_value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, time
 }
 
 void
-mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, const char *name,
-                          int name_length, const char *value, int value_length, int n_v_raw_printable, int n_v_raw_length,
-                          bool must_copy_strings)
+mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, std::string_view name,
+                          std::string_view value, int n_v_raw_printable, int n_v_raw_length, bool must_copy_strings)
 {
+  auto         name_length{static_cast<int>(name.length())};
+  auto         value_length{static_cast<int>(value.length())};
   unsigned int n_v_raw_pad = n_v_raw_length - (name_length + value_length);
 
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
   if (must_copy_strings) {
-    mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1,
-                        std::string_view{name, static_cast<std::string_view::size_type>(name_length)}, true);
-    mime_field_value_set(heap, mh, field, std::string_view{value, static_cast<std::string_view::size_type>(value_length)}, true);
+    mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1, name, true);
+    mime_field_value_set(heap, mh, field, value, true);
   } else {
     field->m_wks_idx   = name_wks_idx_or_neg1;
-    field->m_ptr_name  = name;
-    field->m_ptr_value = value;
+    field->m_ptr_name  = name.data();
+    field->m_ptr_value = value.data();
     field->m_len_name  = name_length;
     field->m_len_value = value_length;
     if (n_v_raw_printable && (n_v_raw_pad <= 7)) {
@@ -2464,8 +2464,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     ///////////////////////////////////////////
 
     MIMEField *field = mime_field_create(heap, mh);
-    mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name.data(), field_name.size(), field_value.data(),
-                              field_value.size(), raw_print_field, parsed.size(), false);
+    mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name, field_value, raw_print_field, parsed.size(), false);
     mime_hdr_field_attach(mh, field, 1, nullptr);
   }
 }

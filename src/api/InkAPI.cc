@@ -1906,9 +1906,11 @@ TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMB
     mime_hdr_field_detach(d_handle->mh, d_handle->field_ptr, false);
   }
 
-  mime_field_name_value_set(d_heap, d_handle->mh, d_handle->field_ptr, s_handle->field_ptr->m_wks_idx,
-                            s_handle->field_ptr->m_ptr_name, s_handle->field_ptr->m_len_name, s_handle->field_ptr->m_ptr_value,
-                            s_handle->field_ptr->m_len_value, 0, 0, true);
+  mime_field_name_value_set(
+    d_heap, d_handle->mh, d_handle->field_ptr, s_handle->field_ptr->m_wks_idx,
+    std::string_view{s_handle->field_ptr->m_ptr_name, static_cast<std::string_view::size_type>(s_handle->field_ptr->m_len_name)},
+    std::string_view{s_handle->field_ptr->m_ptr_value, static_cast<std::string_view::size_type>(s_handle->field_ptr->m_len_value)},
+    0, 0, true);
 
   if (dest_attached) {
     mime_hdr_field_attach(d_handle->mh, d_handle->field_ptr, 1, nullptr);

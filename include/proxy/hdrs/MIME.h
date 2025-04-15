@@ -781,8 +781,8 @@ void mime_field_value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, 
 void mime_field_value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, uint32_t value);
 void mime_field_value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int64_t value);
 void mime_field_value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, time_t value);
-void mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, const char *name,
-                               int name_length, const char *value, int value_length, int n_v_raw_printable, int n_v_raw_length,
+void mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1,
+                               std::string_view name, std::string_view value, int n_v_raw_printable, int n_v_raw_length,
                                bool must_copy_strings);
 
 void mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool prepend_comma,
