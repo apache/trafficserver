@@ -3105,6 +3105,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     /* fallthru */
 
   case VC_EVENT_EOS:
+  case HTTP_TUNNEL_EVENT_PARSE_ERROR:
 
     switch (event) {
     case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -3118,6 +3119,9 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       break;
     case VC_EVENT_EOS:
       t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
+      break;
+    case HTTP_TUNNEL_EVENT_PARSE_ERROR:
+      t_state.current.server->state = HttpTransact::PARSE_ERROR;
       break;
     }
     Metrics::Counter::increment(http_rsb.origin_shutdown_tunnel_server);
