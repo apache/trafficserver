@@ -1194,6 +1194,57 @@ OperatorSetHttpCntl::exec(const Resources &res) const
 }
 
 void
+OperatorSetPluginCntl::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  const std::string &name  = p.get_arg();
+  const std::string &value = p.get_value();
+
+  if (name == "TIMEZONE") {
+    _name = PluginCtrl::TIMEZONE;
+    if (value == "LOCAL") {
+      _value = TIMEZONE_LOCAL;
+    } else if (value == "GMT") {
+      _value = TIMEZONE_GMT;
+    } else {
+      TSError("[%s] Unknown value for TIMZEONE control: %s", PLUGIN_NAME, value.c_str());
+    }
+  }
+}
+
+// This operator should be allowed everywhere
+void
+OperatorSetPluginCntl::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
+}
+
+bool
+OperatorSetPluginCntl::exec(const Resources &res) const
+{
+  PrivateSlotData private_data;
+  private_data.raw = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_private_slot));
+
+  switch (_name) {
+  case PluginCtrl::TIMEZONE:
+    private_data.timezone = _value;
+    break;
+  }
+
+  Dbg(pi_dbg_ctl, "   Setting plugin control %d to %d", static_cast<int>(_name), _value);
+  TSUserArgSet(res.txnp, _txn_private_slot, reinterpret_cast<void *>(private_data.raw));
+
+  return true;
+}
+
+void
 OperatorRunPlugin::initialize(Parser &p)
 {
   Operator::initialize(p);
