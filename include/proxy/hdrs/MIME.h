@@ -776,7 +776,7 @@ void mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField
 void mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece);
 void mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece);
 
-void mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool must_copy_string);
+void mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, std::string_view value, bool must_copy_string);
 void mime_field_value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int32_t value);
 void mime_field_value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, uint32_t value);
 void mime_field_value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int64_t value);
@@ -905,7 +905,7 @@ MIMEField::value_get_comma_list(StrList *list) const
 inline void
 MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value)
 {
-  mime_field_value_set(heap, mh, this, value.data(), static_cast<int>(value.length()), true);
+  mime_field_value_set(heap, mh, this, value, true);
 }
 
 inline void

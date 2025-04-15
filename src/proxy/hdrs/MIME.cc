@@ -2001,17 +2001,17 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 }
 
 void
-mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool must_copy_string)
+mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, std::string_view value, bool must_copy_string)
 {
   heap->free_string(field->m_ptr_value, field->m_len_value);
 
-  if (must_copy_string && value) {
-    field->m_ptr_value = heap->duplicate_str(value, length);
+  if (must_copy_string && value.data()) {
+    field->m_ptr_value = heap->duplicate_str(value.data(), static_cast<int>(value.length()));
   } else {
-    field->m_ptr_value = value;
+    field->m_ptr_value = nullptr;
   }
 
-  field->m_len_value         = length;
+  field->m_len_value         = static_cast<int>(value.length());
   field->m_n_v_raw_printable = 0;
 
   // Now keep the cooked cache consistent
@@ -2025,7 +2025,7 @@ mime_field_value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int32
 {
   char buf[16];
   int  len = mime_format_int(buf, value, sizeof(buf));
-  mime_field_value_set(heap, mh, field, buf, len, true);
+  mime_field_value_set(heap, mh, field, std::string_view{buf, static_cast<std::string_view::size_type>(len)}, true);
 }
 
 void
@@ -2033,7 +2033,7 @@ mime_field_value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, uint
 {
   char buf[16];
   int  len = mime_format_uint(buf, value, sizeof(buf));
-  mime_field_value_set(heap, mh, field, buf, len, true);
+  mime_field_value_set(heap, mh, field, std::string_view{buf, static_cast<std::string_view::size_type>(len)}, true);
 }
 
 void
@@ -2041,7 +2041,7 @@ mime_field_value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int
 {
   char buf[21];
   int  len = mime_format_int64(buf, value, sizeof(buf));
-  mime_field_value_set(heap, mh, field, buf, len, true);
+  mime_field_value_set(heap, mh, field, std::string_view{buf, static_cast<std::string_view::size_type>(len)}, true);
 }
 
 void
@@ -2049,7 +2049,7 @@ mime_field_value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, time
 {
   char buf[33];
   int  len = mime_format_date(buf, value);
-  mime_field_value_set(heap, mh, field, buf, len, true);
+  mime_field_value_set(heap, mh, field, std::string_view{buf, static_cast<std::string_view::size_type>(len)}, true);
 }
 
 void
@@ -2064,7 +2064,7 @@ mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int1
   if (must_copy_strings) {
     mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1,
                         std::string_view{name, static_cast<std::string_view::size_type>(name_length)}, true);
-    mime_field_value_set(heap, mh, field, value, value_length, true);
+    mime_field_value_set(heap, mh, field, std::string_view{value, static_cast<std::string_view::size_type>(value_length)}, true);
   } else {
     field->m_wks_idx   = name_wks_idx_or_neg1;
     field->m_ptr_name  = name;

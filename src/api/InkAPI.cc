@@ -1633,7 +1633,8 @@ TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value
     mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx,
                                    std::string_view{value, static_cast<std::string_view::size_type>(length)});
   } else {
-    mime_field_value_set(heap, handle->mh, handle->field_ptr, value, length, true);
+    mime_field_value_set(heap, handle->mh, handle->field_ptr,
+                         std::string_view{value, static_cast<std::string_view::size_type>(length)}, true);
   }
 }
 
@@ -1971,7 +1972,9 @@ TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field
 
   s_field = s_handle->field_ptr;
   d_field = d_handle->field_ptr;
-  mime_field_value_set(d_heap, d_handle->mh, d_field, s_field->m_ptr_value, s_field->m_len_value, true);
+  mime_field_value_set(d_heap, d_handle->mh, d_field,
+                       std::string_view{s_field->m_ptr_value, static_cast<std::string_view::size_type>(s_field->m_len_value)},
+                       true);
   return TS_SUCCESS;
 }
 
@@ -2099,7 +2102,7 @@ TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
    * An empty string is also considered to be a token. The correct value of
    * the field after this function should be null.
    */
-  mime_field_value_set(heap, handle->mh, handle->field_ptr, nullptr, 0, true);
+  mime_field_value_set(heap, handle->mh, handle->field_ptr, std::string_view{nullptr, 0}, true);
   return TS_SUCCESS;
 }
 
