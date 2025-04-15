@@ -236,3 +236,49 @@ sessions:
         encoding: uri
         # Chunk header must end with a sequence of CRLF.
         data: 3;x%0Adef%0D%0A0%0D%0A%0D%0A
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /response/malformed/chunk/size2
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 106 ]
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Chunk header must end with a sequence of CRLF.
+        data: 3%0Ddef%0D%0A0%0D%0A%0D%0A
+
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /response/malformed/chunk/size2
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 107 ]
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Chunk header must end with a sequence of CRLF.
+        data: 3%0Adef%0D%0A0%0D%0A%0D%0A
