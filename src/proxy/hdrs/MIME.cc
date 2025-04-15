@@ -1106,7 +1106,7 @@ _mime_hdr_field_list_search_by_wks(MIMEHdrImpl *mh, int wks_idx)
 }
 
 MIMEField *
-_mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len)
+_mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, std::string_view field_name)
 {
   MIMEFieldBlockImpl *fblock;
   MIMEField          *field, *too_far_field;
@@ -1117,8 +1117,9 @@ _mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, const char *field_name_st
 
     too_far_field = &(fblock->m_field_slots[fblock->m_freetop]);
     while (field < too_far_field) {
-      if (field->is_live() && (field_name_len == field->m_len_name) &&
-          (strncasecmp(field->m_ptr_name, field_name_str, field_name_len) == 0)) {
+      if (field->is_live() &&
+          strcasecmp(std::string_view{field->m_ptr_name, static_cast<std::string_view::size_type>(field->m_len_name)},
+                     field_name) == 0) {
         return field;
       }
       ++field;
@@ -1218,7 +1219,7 @@ mime_hdr_field_find(MIMEHdrImpl *mh, std::string_view field_name)
 #endif
     return f;
   } else {
-    MIMEField *f = _mime_hdr_field_list_search_by_string(mh, field_name.data(), static_cast<int>(field_name.length()));
+    MIMEField *f = _mime_hdr_field_list_search_by_string(mh, field_name);
 
     ink_assert((f == nullptr) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS

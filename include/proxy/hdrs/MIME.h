@@ -736,7 +736,7 @@ int          mime_hdr_length_get(MIMEHdrImpl *mh);
 void mime_hdr_fields_clear(HdrHeap *heap, MIMEHdrImpl *mh);
 
 MIMEField *_mime_hdr_field_list_search_by_wks(MIMEHdrImpl *mh, int wks_idx);
-MIMEField *_mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len);
+MIMEField *_mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, std::string_view field_name);
 MIMEField *_mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum);
 MIMEField *mime_hdr_field_find(MIMEHdrImpl *mh, std::string_view field_name);
 
