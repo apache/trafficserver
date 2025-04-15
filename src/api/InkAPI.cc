@@ -1690,7 +1690,7 @@ TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
   }
 
   MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(hdr_obj);
-  MIMEField   *f  = mime_hdr_field_find(mh, name, length);
+  MIMEField   *f  = mime_hdr_field_find(mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
 
   if (f == nullptr) {
     return TS_NULL_MLOC;
@@ -6828,7 +6828,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   TSMLoc   obj  = reinterpret_cast<TSMLoc>(hptr->m_http);
 
   MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
-  MIMEField *f = mime_hdr_field_find(mh, MIME_FIELD_ACCEPT_ENCODING.c_str(), static_cast<int>(MIME_FIELD_ACCEPT_ENCODING.length()));
+  MIMEField   *f  = mime_hdr_field_find(mh, static_cast<std::string_view>(MIME_FIELD_ACCEPT_ENCODING));
   if (!stream->push_promise(url_obj, f)) {
     url_obj.destroy();
     return TS_ERROR;

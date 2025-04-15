@@ -1210,9 +1210,8 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 ParseResult
 validate_hdr_host(HTTPHdrImpl *hh)
 {
-  ParseResult ret = PARSE_RESULT_DONE;
-  MIMEField  *host_field =
-    mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_HOST.c_str(), static_cast<int>(MIME_FIELD_HOST.length()));
+  ParseResult ret        = PARSE_RESULT_DONE;
+  MIMEField  *host_field = mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_HOST));
   if (host_field) {
     if (host_field->has_dups()) {
       ret = PARSE_RESULT_ERROR; // can't have more than 1 host field.
@@ -1247,15 +1246,14 @@ ParseResult
 validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
 {
   MIMEField *content_length_field =
-    mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_CONTENT_LENGTH.c_str(), static_cast<int>(MIME_FIELD_CONTENT_LENGTH.length()));
+    mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
 
   if (content_length_field) {
     // RFC 7230 section 3.3.3:
     // If a message is received with both a Transfer-Encoding and a
     // Content-Length header field, the Transfer-Encoding overrides
     // the Content-Length
-    if (mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING.c_str(),
-                            static_cast<int>(MIME_FIELD_TRANSFER_ENCODING.length())) != nullptr) {
+    if (mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) != nullptr) {
       // Delete all Content-Length headers
       Dbg(dbg_ctl_http, "Transfer-Encoding header and Content-Length headers the request, removing all Content-Length headers");
       mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field, true);
@@ -1896,9 +1894,9 @@ HTTPHdr::url_printed_length(unsigned normalization_flags)
 bool
 HTTPHdr::check_hdr_implements()
 {
-  bool       retval          = true;
-  MIMEField *transfer_encode = mime_hdr_field_find(this->m_http->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING.c_str(),
-                                                   static_cast<int>(MIME_FIELD_TRANSFER_ENCODING.length()));
+  bool       retval = true;
+  MIMEField *transfer_encode =
+    mime_hdr_field_find(this->m_http->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING));
   if (transfer_encode) {
     do {
       auto val{transfer_encode->value_get()};

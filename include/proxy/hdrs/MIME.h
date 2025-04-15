@@ -738,7 +738,7 @@ void mime_hdr_fields_clear(HdrHeap *heap, MIMEHdrImpl *mh);
 MIMEField *_mime_hdr_field_list_search_by_wks(MIMEHdrImpl *mh, int wks_idx);
 MIMEField *_mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len);
 MIMEField *_mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum);
-MIMEField *mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len);
+MIMEField *mime_hdr_field_find(MIMEHdrImpl *mh, std::string_view field_name);
 
 MIMEField *mime_hdr_field_get(MIMEHdrImpl *mh, int idx);
 MIMEField *mime_hdr_field_get_slotnum(MIMEHdrImpl *mh, int slotnum);
@@ -1204,14 +1204,14 @@ inline MIMEField *
 MIMEHdr::field_find(std::string_view name) // NOLINT(readability-make-member-function-const)
 {
   //    ink_assert(valid());
-  return mime_hdr_field_find(m_mime, name.data(), static_cast<int>(name.length()));
+  return mime_hdr_field_find(m_mime, name);
 }
 
 inline const MIMEField *
 MIMEHdr::field_find(std::string_view name) const
 {
   //    ink_assert(valid());
-  MIMEField *retval = mime_hdr_field_find(const_cast<MIMEHdr *>(this)->m_mime, name.data(), static_cast<int>(name.length()));
+  MIMEField *retval = mime_hdr_field_find(const_cast<MIMEHdr *>(this)->m_mime, name);
   return retval;
 }
 

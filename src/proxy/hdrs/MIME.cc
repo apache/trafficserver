@@ -1159,23 +1159,24 @@ _mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum)
 }
 
 MIMEField *
-mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len)
+mime_hdr_field_find(MIMEHdrImpl *mh, std::string_view field_name)
 {
   HdrTokenHeapPrefix *token_info;
-  const bool          is_wks = hdrtoken_is_wks(field_name_str);
+  const bool          is_wks = hdrtoken_is_wks(field_name.data());
 
-  ink_assert(field_name_len >= 0);
+  ink_assert(!field_name.empty());
 
   ////////////////////////////////////////////
   // do presence check and slot accelerator //
   ////////////////////////////////////////////
 
 #if TRACK_FIELD_FIND_CALLS
-  Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): is_wks = %d", mh, field_name_len, field_name_str, is_wks);
+  Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): is_wks = %d", mh, static_cast<int>(field_name.length()),
+      field_name.data(), is_wks);
 #endif
 
   if (is_wks) {
-    token_info = hdrtoken_wks_to_prefix(field_name_str);
+    token_info = hdrtoken_wks_to_prefix(field_name.data());
     if ((token_info->wks_info.mask) && ((mh->m_presence_bits & token_info->wks_info.mask) == 0)) {
 #if TRACK_FIELD_FIND_CALLS
       Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): MISS (due to presence bits)", mh, field_name_len,
@@ -1193,13 +1194,14 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
         MIMEField *f = _mime_hdr_field_list_search_by_slotnum(mh, slotnum);
         ink_assert((f == nullptr) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
-        Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to slot accelerators)", mh, field_name_len,
-            field_name_str, (f ? "HIT" : "MISS"));
+        Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to slot accelerators)", mh,
+            static_cast<int>(field_name.length()), field_name.data(), (f ? "HIT" : "MISS"));
 #endif
         return f;
       } else {
 #if TRACK_FIELD_FIND_CALLS
-        Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): UNKNOWN (slot too big)", mh, field_name_len, field_name_str);
+        Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): UNKNOWN (slot too big)", mh,
+            static_cast<int>(field_name.length()), field_name.data());
 #endif
       }
     }
@@ -1211,17 +1213,17 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
     MIMEField *f = _mime_hdr_field_list_search_by_wks(mh, token_info->wks_idx);
     ink_assert((f == nullptr) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
-    Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to WKS list walk)", mh, field_name_len, field_name_str,
-        (f ? "HIT" : "MISS"));
+    Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to WKS list walk)", mh,
+        static_cast<int>(field_name.length()), field_name.data(), (f ? "HIT" : "MISS"));
 #endif
     return f;
   } else {
-    MIMEField *f = _mime_hdr_field_list_search_by_string(mh, field_name_str, field_name_len);
+    MIMEField *f = _mime_hdr_field_list_search_by_string(mh, field_name.data(), static_cast<int>(field_name.length()));
 
     ink_assert((f == nullptr) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
-    Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to strcmp list walk)", mh, field_name_len, field_name_str,
-        (f ? "HIT" : "MISS"));
+    Dbg(dbg_ctl_http, "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to strcmp list walk)", mh,
+        static_cast<int>(field_name.length()), field_name.data(), (f ? "HIT" : "MISS"));
 #endif
     return f;
   }
@@ -1338,7 +1340,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
 
   if (check_for_dups || (prev_dup && (!prev_dup->is_dup_head()))) {
     std::string_view name{field->name_get()};
-    prev_dup = mime_hdr_field_find(mh, name.data(), static_cast<int>(name.size()));
+    prev_dup = mime_hdr_field_find(mh, name);
     ink_assert((prev_dup == nullptr) || (prev_dup->is_dup_head()));
   }
 
@@ -1457,7 +1459,7 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
   } else // need to walk list to find and patch out from predecessor
   {
     std::string_view name{field->name_get()};
-    MIMEField       *prev = mime_hdr_field_find(mh, name.data(), static_cast<int>(name.size()));
+    MIMEField       *prev = mime_hdr_field_find(mh, name);
 
     while (prev && (prev->m_next_dup != field)) {
       prev = prev->m_next_dup;
@@ -1576,7 +1578,7 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name,
   int        wks_idx;
   MIMEField *field;
 
-  field = mime_hdr_field_find(mh, name, name_length);
+  field = mime_hdr_field_find(mh, std::string_view{name, static_cast<std::string_view::size_type>(name_length)});
 
   //////////////////////////////////////////////////////////////////////
   // this function returns with exactly one attached field created,   //
@@ -3679,7 +3681,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 
   // to be safe, recompute unless you know this call is for other cooked field
   if ((changing_field_or_null == nullptr) || (changing_field_or_null->m_wks_idx != MIME_WKSIDX_PRAGMA)) {
-    field = mime_hdr_field_find(this, MIME_FIELD_CACHE_CONTROL.c_str(), static_cast<int>(MIME_FIELD_CACHE_CONTROL.length()));
+    field = mime_hdr_field_find(this, static_cast<std::string_view>(MIME_FIELD_CACHE_CONTROL));
 
     if (field) {
       // try pathpaths first -- unlike most other fastpaths, this one
@@ -3755,7 +3757,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
   ///////////////////////////////////////////
 
   if ((changing_field_or_null == nullptr) || (changing_field_or_null->m_wks_idx != MIME_WKSIDX_CACHE_CONTROL)) {
-    field = mime_hdr_field_find(this, MIME_FIELD_PRAGMA.c_str(), static_cast<int>(MIME_FIELD_PRAGMA.length()));
+    field = mime_hdr_field_find(this, static_cast<std::string_view>(MIME_FIELD_PRAGMA));
     if (field) {
       if (!field->has_dups()) { // try fastpath first
         auto val{field->value_get()};
