@@ -1319,7 +1319,7 @@ mime_field_create_named(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name)
 {
   MIMEField *field              = mime_field_create(heap, mh);
   int        field_name_wks_idx = hdrtoken_tokenize(name.data(), static_cast<int>(name.length()));
-  mime_field_name_set(heap, mh, field, field_name_wks_idx, name.data(), static_cast<int>(name.length()), true);
+  mime_field_name_set(heap, mh, field, field_name_wks_idx, name, true);
   return field;
 }
 
@@ -1595,7 +1595,7 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view 
   {
     wks_idx = hdrtoken_tokenize(name.data(), static_cast<int>(name.length()));
     field   = mime_field_create(heap, mh);
-    mime_field_name_set(heap, mh, field, wks_idx, name.data(), static_cast<int>(name.length()), true);
+    mime_field_name_set(heap, mh, field, wks_idx, name, true);
     mime_hdr_field_attach(mh, field, 0, nullptr);
 
   } else if (field->m_next_dup) // list of more than 1 field
@@ -1603,7 +1603,7 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view 
     wks_idx = field->m_wks_idx;
     mime_hdr_field_delete(heap, mh, field, true);
     field = mime_field_create(heap, mh);
-    mime_field_name_set(heap, mh, field, wks_idx, name.data(), static_cast<int>(name.length()), true);
+    mime_field_name_set(heap, mh, field, wks_idx, name, true);
     mime_hdr_field_attach(mh, field, 0, nullptr);
   }
   return field;
@@ -1627,12 +1627,13 @@ MIMEField::name_get() const
 
 void
 mime_field_name_set(HdrHeap *heap, MIMEHdrImpl * /* mh ATS_UNUSED */, MIMEField *field, int16_t name_wks_idx_or_neg1,
-                    const char *name, int length, bool must_copy_string)
+                    std::string_view name, bool must_copy_string)
 {
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
   field->m_wks_idx = name_wks_idx_or_neg1;
-  mime_str_u16_set(heap, name, length, &(field->m_ptr_name), &(field->m_len_name), must_copy_string);
+  mime_str_u16_set(heap, name.data(), static_cast<int>(name.length()), &(field->m_ptr_name), &(field->m_len_name),
+                   must_copy_string);
 
   if ((name_wks_idx_or_neg1 == MIME_WKSIDX_CACHE_CONTROL) || (name_wks_idx_or_neg1 == MIME_WKSIDX_PRAGMA)) {
     field->m_flags |= MIME_FIELD_SLOT_FLAGS_COOKED;
@@ -2063,7 +2064,8 @@ mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int1
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
   if (must_copy_strings) {
-    mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1, name, name_length, true);
+    mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1,
+                        std::string_view{name, static_cast<std::string_view::size_type>(name_length)}, true);
     mime_field_value_set(heap, mh, field, value, value_length, true);
   } else {
     field->m_wks_idx   = name_wks_idx_or_neg1;

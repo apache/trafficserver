@@ -760,8 +760,8 @@ MIMEField *mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::s
 
 void mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field);
 
-void mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, const char *name,
-                         int length, bool must_copy_string);
+void mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, std::string_view name,
+                         bool must_copy_string);
 
 int32_t     mime_field_value_get_int(const MIMEField *field);
 uint32_t    mime_field_value_get_uint(const MIMEField *field);
@@ -846,11 +846,11 @@ MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name)
 
   if (hdrtoken_is_wks(name.data())) {
     int16_t name_wks_idx = hdrtoken_wks_to_index(name.data());
-    mime_field_name_set(heap, mh, this, name_wks_idx, name.data(), static_cast<int>(name.length()), true);
+    mime_field_name_set(heap, mh, this, name_wks_idx, name, true);
   } else {
     int field_name_wks_idx = hdrtoken_tokenize(name.data(), static_cast<int>(name.length()), &name_wks);
-    mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name.data() : name_wks),
-                        static_cast<int>(name.length()), true);
+    mime_field_name_set(heap, mh, this, field_name_wks_idx,
+                        field_name_wks_idx == -1 ? name : std::string_view{name_wks, name.length()}, true);
   }
 }
 
@@ -1191,7 +1191,7 @@ MIMEHdr::field_create(std::string_view name)
   if (!name.empty()) {
     auto length{static_cast<int>(name.length())};
     int  field_name_wks_idx = hdrtoken_tokenize(name.data(), length);
-    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name.data(), length, true);
+    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name, true);
   }
 
   return field;
