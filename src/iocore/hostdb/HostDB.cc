@@ -323,17 +323,6 @@ HostDBCache::start(int flags)
   return 0;
 }
 
-int
-HostDBProcessor::clear_and_start(int, size_t)
-{
-  if (hostDB.start(0) < 0) {
-    return -1;
-  }
-
-  hostDB.refcountcache->clear();
-  return init();
-}
-
 // Start up the Host Database processor.
 // Load configuration, register configuration and statistics and
 // open the cache. This doesn't create any threads, so those
