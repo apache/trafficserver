@@ -1861,8 +1861,8 @@ TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int 
   MIMEHdrImpl        *mh   = _hdr_mloc_to_mime_hdr_impl(mh_mloc);
   HdrHeap            *heap = ((reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap);
   MIMEFieldSDKHandle *h    = sdk_alloc_field_handle(bufp, mh);
-  h->field_ptr             = mime_field_create_named(heap, mh, name, name_len);
-  *locp                    = reinterpret_cast<TSMLoc>(h);
+  h->field_ptr = mime_field_create_named(heap, mh, std::string_view{name, static_cast<std::string_view::size_type>(name_len)});
+  *locp        = reinterpret_cast<TSMLoc>(h);
   return TS_SUCCESS;
 }
 

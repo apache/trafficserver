@@ -305,20 +305,20 @@ http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HTTPVersion ver
     MIMEField *field;
     switch (polarity) {
     case HTTP_TYPE_REQUEST:
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_METHOD);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
 
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_SCHEME);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
 
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_AUTHORITY);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
 
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_PATH);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
       break;
     case HTTP_TYPE_RESPONSE:
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_STATUS);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
       break;
     default:

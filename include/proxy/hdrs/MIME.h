@@ -746,7 +746,7 @@ int        mime_hdr_fields_count(MIMEHdrImpl *mh);
 
 void       mime_field_init(MIMEField *field);
 MIMEField *mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh);
-MIMEField *mime_field_create_named(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length);
+MIMEField *mime_field_create_named(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name);
 
 void mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIMEField *prev_dup);
 void mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups = false);
