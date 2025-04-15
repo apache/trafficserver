@@ -1647,7 +1647,8 @@ TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int 
     length = strlen(value);
   }
 
-  mime_field_value_insert_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+  mime_field_value_insert_comma_val(heap, handle->mh, handle->field_ptr, idx,
+                                    std::string_view{value, static_cast<std::string_view::size_type>(length)});
 }
 
 /****************/

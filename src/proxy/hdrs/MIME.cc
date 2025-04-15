@@ -1886,8 +1886,7 @@ mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 }
 
 void
-mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
-                                  int new_piece_len)
+mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece)
 {
   int     len;
   Str    *cell, *prev;
@@ -1905,7 +1904,7 @@ mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   }
 
   // (3) create a new cell
-  cell = list.new_cell(new_piece_str, new_piece_len);
+  cell = list.new_cell(new_piece.data(), static_cast<int>(new_piece.length()));
 
   // (4) patch new cell into list at the right place
   if (idx == 0) {
