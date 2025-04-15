@@ -21,15 +21,6 @@
   limitations under the License.
  */
 
-/****************************************************************************
-
-   HttpCacheSM.cc
-
-   Description:
-
-
- ****************************************************************************/
-
 #include "proxy/http/HttpCacheSM.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
@@ -50,31 +41,26 @@
 namespace
 {
 DbgCtl dbg_ctl_http_cache{"http_cache"};
-
 } // end anonymous namespace
 
-HttpCacheAction::HttpCacheAction() {}
-
+////
+// HttpCacheAction
+//
 void
 HttpCacheAction::cancel(Continuation *c)
 {
-  ink_assert(c == nullptr || c == sm->master_sm);
-  ink_assert(this->cancelled == 0);
+  ink_assert(c == nullptr || c == _cache_sm->master_sm);
+  ink_assert(this->cancelled == false);
 
-  this->cancelled = 1;
-  if (sm->pending_action) {
-    sm->pending_action->cancel();
+  this->cancelled = true;
+  if (_cache_sm->pending_action) {
+    _cache_sm->pending_action->cancel();
   }
 }
 
-HttpCacheSM::HttpCacheSM()
-  : Continuation(nullptr),
-
-    captive_action()
-
-{
-}
-
+////
+// HttpCacheSM
+//
 /**
   Reset captive_action and counters for another cache operations.
   - e.g. following redirect starts over from cache lookup
