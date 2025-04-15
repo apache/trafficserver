@@ -54,7 +54,7 @@ HttpVCTable::HttpVCTable(HttpSM *smp)
 {
   sm = smp;
 }
-HttpCacheAction::HttpCacheAction() {}
+
 void
 HttpCacheAction::cancel(Continuation * /* c ATS_UNUSED */)
 {
@@ -62,7 +62,6 @@ HttpCacheAction::cancel(Continuation * /* c ATS_UNUSED */)
 PostDataBuffers::~PostDataBuffers() {}
 
 HttpTunnel::HttpTunnel() {}
-HttpCacheSM::HttpCacheSM() {}
 HttpTunnelConsumer::HttpTunnelConsumer() {}
 HttpTunnelProducer::HttpTunnelProducer() {}
 ChunkedHandler::ChunkedHandler() {}
