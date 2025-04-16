@@ -27,7 +27,6 @@
 #include <strings.h>
 #include <cinttypes>
 #include <limits>
-#include <optional>
 #include <string>
 #include <string_view>
 
@@ -626,33 +625,38 @@ public:
   using size_type = std::string_view::size_type;
 
   c_str_view() : c_str_view(nullptr, 0) {}
-  c_str_view(const char *c_str, size_type length) : c_str_{c_str}, length_{length}
-  {
-    ink_assert(c_str == nullptr ? length == 0 : c_str[length] == '\0');
+  explicit c_str_view(const char *data, size_type length)
+    : c_str_view{
+        std::string_view{data, length}
   }
-  c_str_view(std::string_view sv) : c_str_view{sv.data(), sv.length()} {}
-  c_str_view(const c_str_view &other)            = default;
-  c_str_view(c_str_view &&other)                 = default;
-  c_str_view &operator=(const c_str_view &other) = default;
-  c_str_view &operator=(c_str_view &&other)      = default;
+  {
+  }
+  explicit c_str_view(std::string_view sv) : sv_{sv}
+  {
+    ink_assert(sv_.data() == nullptr ? sv_.length() == 0 : sv_.data()[sv_.length()] == '\0');
+  }
+  explicit c_str_view(const c_str_view &)   = default;
+  explicit c_str_view(c_str_view &&)        = default;
+  ~c_str_view()                             = default;
+  c_str_view &operator=(const c_str_view &) = default;
+  c_str_view &operator=(c_str_view &&)      = default;
 
   const char *
   c_str() const noexcept
   {
-    return c_str_;
+    return sv_.data();
   }
   size_type
   length() const noexcept
   {
-    return length_;
+    return sv_.length();
   }
   explicit
   operator std::string_view() const noexcept
   {
-    return std::string_view{c_str_, length_};
+    return sv_;
   }
 
 private:
-  const char *c_str_;
-  size_type   length_;
+  std::string_view sv_;
 };
