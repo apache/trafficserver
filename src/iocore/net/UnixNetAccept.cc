@@ -272,11 +272,7 @@ NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED
     }
   }
 
-  if (accept_fn == net_accept) {
-    SET_HANDLER(&NetAccept::acceptFastEvent);
-  } else {
-    SET_HANDLER(&NetAccept::acceptEvent);
-  }
+  SET_HANDLER(&NetAccept::acceptFastEvent);
   PollDescriptor *pd = get_PollDescriptor(this_ethread());
   if (this->ep.start(pd, this, EVENTIO_READ) < 0) {
     Fatal("[NetAccept::accept_per_thread]:error starting EventIO");
@@ -483,7 +479,7 @@ NetAccept::acceptEvent(int event, void *ep)
     }
 
     int res;
-    if ((res = accept_fn(this, e, false)) < 0) {
+    if ((res = net_accept(this, e, false)) < 0) {
       Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
       /* INKqa11179 */
       Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);
