@@ -430,7 +430,8 @@ URLImpl::set_scheme(HdrHeap *heap, const char *scheme_str, int scheme_wks_idx, i
     scheme_str = nullptr;
   }
 
-  mime_str_u16_set(heap, scheme_str, length, &(this->m_ptr_scheme), &(this->m_len_scheme), copy_string);
+  mime_str_u16_set(heap, std::string_view{scheme_str, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_scheme),
+                   &(this->m_len_scheme), copy_string);
 
   this->m_scheme_wks_idx = scheme_wks_idx;
   if (scheme_wks_idx >= 0) {
@@ -460,7 +461,8 @@ URLImpl::set_user(HdrHeap *heap, const char *value, int length, bool copy_string
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_user), &(this->m_len_user), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_user),
+                   &(this->m_len_user), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -473,7 +475,8 @@ URLImpl::set_password(HdrHeap *heap, const char *value, int length, bool copy_st
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_password), &(this->m_len_password), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_password),
+                   &(this->m_len_password), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -486,7 +489,8 @@ URLImpl::set_host(HdrHeap *heap, const char *value, int length, bool copy_string
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_host), &(this->m_len_host), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_host),
+                   &(this->m_len_host), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -499,7 +503,8 @@ URLImpl::set_port(HdrHeap *heap, const char *value, int length, bool copy_string
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_port), &(this->m_len_port), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_port),
+                   &(this->m_len_port), copy_string);
 
   this->m_port = 0;
   for (int i = 0; i < length; i++) {
@@ -522,9 +527,10 @@ URLImpl::set_port(HdrHeap *heap, unsigned int port)
     int  length;
 
     length = ink_fast_itoa(port, value, sizeof(value));
-    mime_str_u16_set(heap, value, length, &(this->m_ptr_port), &(this->m_len_port), true);
+    mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_port),
+                     &(this->m_len_port), true);
   } else {
-    mime_str_u16_set(heap, nullptr, 0, &(this->m_ptr_port), &(this->m_len_port), true);
+    mime_str_u16_set(heap, std::string_view{nullptr, 0}, &(this->m_ptr_port), &(this->m_len_port), true);
   }
   this->m_port = port;
 }
@@ -539,7 +545,8 @@ URLImpl::set_path(HdrHeap *heap, const char *value, int length, bool copy_string
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_path), &(this->m_len_path), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_path),
+                   &(this->m_len_path), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -552,7 +559,8 @@ void
 URLImpl::set_query(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
   url_called_set(this);
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_query), &(this->m_len_query), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_query),
+                   &(this->m_len_query), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -562,7 +570,8 @@ void
 URLImpl::set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
   url_called_set(this);
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_fragment), &(this->m_len_fragment), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_fragment),
+                   &(this->m_len_fragment), copy_string);
 }
 
 /*-------------------------------------------------------------------------

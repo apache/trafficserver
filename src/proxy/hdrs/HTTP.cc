@@ -725,7 +725,8 @@ http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t 
   ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
   hh->u.req.m_method_wks_idx = method_wks_idx;
-  mime_str_u16_set(heap, method, method_length, &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
+  mime_str_u16_set(heap, std::string_view{method, static_cast<std::string_view::size_type>(method_length)},
+                   &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
 }
 
 /*-------------------------------------------------------------------------
@@ -783,7 +784,8 @@ void
 http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  mime_str_u16_set(heap, value, length, &(hh->u.resp.m_ptr_reason), &(hh->u.resp.m_len_reason), must_copy);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(hh->u.resp.m_ptr_reason),
+                   &(hh->u.resp.m_len_reason), must_copy);
 }
 
 /*-------------------------------------------------------------------------

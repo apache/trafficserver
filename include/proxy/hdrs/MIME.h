@@ -801,7 +801,7 @@ int mime_mem_print(std::string_view src, char *buf_start, int buf_length, int *b
 int mime_mem_print_lc(std::string_view src, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout);
 int mime_field_print(MIMEField const *field, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout);
 
-const char *mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str, uint16_t *d_len, bool must_copy);
+const char *mime_str_u16_set(HdrHeap *heap, std::string_view src, const char **d_str, uint16_t *d_len, bool must_copy);
 
 int mime_field_length_get(MIMEField *field);
 int mime_format_int(char *buf, int32_t val, size_t buf_len);

@@ -1632,8 +1632,7 @@ mime_field_name_set(HdrHeap *heap, MIMEHdrImpl * /* mh ATS_UNUSED */, MIMEField 
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
   field->m_wks_idx = name_wks_idx_or_neg1;
-  mime_str_u16_set(heap, name.data(), static_cast<int>(name.length()), &(field->m_ptr_name), &(field->m_len_name),
-                   must_copy_string);
+  mime_str_u16_set(heap, name, &(field->m_ptr_name), &(field->m_len_name), must_copy_string);
 
   if ((name_wks_idx_or_neg1 == MIME_WKSIDX_CACHE_CONTROL) || (name_wks_idx_or_neg1 == MIME_WKSIDX_PRAGMA)) {
     field->m_flags |= MIME_FIELD_SLOT_FLAGS_COOKED;
@@ -2706,8 +2705,9 @@ mime_field_print(MIMEField const *field, char *buf_start, int buf_length, int *b
 }
 
 const char *
-mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str, uint16_t *d_len, bool must_copy)
+mime_str_u16_set(HdrHeap *heap, std::string_view src, const char **d_str, uint16_t *d_len, bool must_copy)
 {
+  auto s_len{static_cast<int>(src.length())};
   ink_assert(s_len >= 0 && s_len < UINT16_MAX);
   // INKqa08287 - keep track of free string space.
   //  INVARIANT: passed in result pointers must be to
@@ -2715,6 +2715,7 @@ mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str
   //    the string heaps
   heap->free_string(*d_str, *d_len);
 
+  auto s_str{src.data()};
   if (must_copy && s_str) {
     s_str = heap->duplicate_str(s_str, s_len);
   }
