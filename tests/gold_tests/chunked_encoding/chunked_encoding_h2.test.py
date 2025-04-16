@@ -71,7 +71,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(delay_server)
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("RST_STREAM", "Delayed chunk close should not cause reset")
-tr.Processes.Default.Streams.All += Testers.ExcludesExpression("content-length", "Should return chunked")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("< content-length", "Should return chunked")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(":status: 200", "Should get successful response")
 tr.StillRunningAfter = ts
 # No resets in the output
@@ -81,11 +81,12 @@ tr.StillRunningAfter = ts
 server2_out = Test.Disk.File("outserver2")
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server2)
-tr.Processes.Default.Command = 'curl --http2 -k https://127.0.0.1:{}/post-full --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    '--http2 -k https://127.0.0.1:{}/post-full --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
+        ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("content-length:", "Response should include content length")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("< content-length:", "Response should include content length")
 server2_out = Testers.ContainsExpression("Transfer-Encoding: chunked", "Request should be chunked encoded")
 # No content-length in header
 # Transfer encoding to origin, but no content-length
@@ -95,11 +96,12 @@ server2_out = Testers.ContainsExpression("Transfer-Encoding: chunked", "Request 
 server3_out = Test.Disk.File("outserver3")
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server3)
-tr.Processes.Default.Command = 'curl --http2 -k https://127.0.0.1:{}/post-chunked --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    '--http2 -k https://127.0.0.1:{}/post-chunked --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
+        ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
-tr.Processes.Default.Streams.All += Testers.ExcludesExpression("content-length:", "Response should not include content length")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("< content-length:", "Response should not include content length")
 server3_out = Testers.ContainsExpression("Transfer-Encoding: chunked", "Request should be chunked encoded")
 # No content length in header
 # Transfer encoding to origin, but no content-length

@@ -50,7 +50,7 @@ ts.Disk.remap_config.AddLine(
     r'https://www.example.com:{}/one/two/three/blah12345.html'.format(server.Variables.Port))
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -H"Host: zero.one.two.three.com" http://127.0.0.1:{0}/ --verbose'.format(ts.Variables.port)
+tr.MakeCurlCommand('-H"Host: zero.one.two.three.com" http://127.0.0.1:{0}/ --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)

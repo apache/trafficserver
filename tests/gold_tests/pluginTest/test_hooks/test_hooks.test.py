@@ -61,17 +61,17 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
-tr.Processes.Default.Command = ('curl --verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port))
+tr.MakeCurlCommand('--verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl --verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port))
+tr.MakeCurlCommand(
+    '--verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl --verbose --ipv4 --http1.1 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port))
+tr.MakeCurlCommand(
+    '--verbose --ipv4 --http1.1 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 
 # The probing of the ATS port to detect when ATS is ready may be seen by ATS as a VCONN start/close, so filter out these

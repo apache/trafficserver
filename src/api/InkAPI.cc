@@ -7238,6 +7238,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_DROP_CHUNKED_TRAILERS:
     ret = _memberp_to_generic(&overridableHttpConfig->http_drop_chunked_trailers, conv);
     break;
+  case TS_CONFIG_HTTP_STRICT_CHUNK_PARSING:
+    ret = _memberp_to_generic(&overridableHttpConfig->http_strict_chunk_parsing, conv);
+    break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->flow_control_enabled, conv);
     break;
@@ -8181,7 +8184,7 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_f
     if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
       if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
         if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname, rsp_file)) {
-          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", certname);
         }
       }
     }

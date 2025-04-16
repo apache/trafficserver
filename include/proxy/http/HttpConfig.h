@@ -660,6 +660,7 @@ struct OverridableHttpConfigParams {
 
   MgmtInt  http_chunking_size         = 4096; ///< Maximum chunk size for chunked output.
   MgmtByte http_drop_chunked_trailers = 1;    ///< Whether to drop chunked trailers.
+  MgmtByte http_strict_chunk_parsing  = 1;    ///< Whether to parse chunked body strictly.
   MgmtInt  flow_high_water_mark       = 0;    ///< Flow control high water mark.
   MgmtInt  flow_low_water_mark        = 0;    ///< Flow control low water mark.
 

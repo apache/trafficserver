@@ -371,7 +371,7 @@ CacheVC::openWriteCloseHead(int event, Event *e)
   cancel_trigger();
   f.use_first_key = 1;
   if (io.ok()) {
-    ink_assert(fragment || (length == (int64_t)total_len));
+    ink_assert(fragment || (length == static_cast<int64_t>(total_len)));
   } else {
     return openWriteCloseDir(event, e);
   }

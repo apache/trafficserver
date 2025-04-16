@@ -91,12 +91,10 @@ MemArena::make_block(size_t n) {
     n = QuarterPage{round_up(n)};
   }
 
-  // Allocate space for the Block instance and the request memory and construct a Block at the front.
-  // In theory this could use ::operator new(n) but this causes a size mismatch during ::operator delete.
-  // Easier to use malloc and override @c delete.
+  // Allocate space for the Block instance and the requested memory and construct a Block at the front.
   auto free_space   = n - sizeof(Block);
   _active_reserved += free_space;
-  return new (::malloc(n)) Block(free_space);
+  return new (n) Block(free_space);
 }
 
 MemSpan<void>

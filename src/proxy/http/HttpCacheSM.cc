@@ -21,18 +21,11 @@
   limitations under the License.
  */
 
-/****************************************************************************
-
-   HttpCacheSM.cc
-
-   Description:
-
-
- ****************************************************************************/
-
 #include "proxy/http/HttpCacheSM.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
+
+#include "iocore/cache/Cache.h"
 
 #define SM_REMEMBER(sm, e, r)                          \
   {                                                    \
@@ -48,29 +41,43 @@
 namespace
 {
 DbgCtl dbg_ctl_http_cache{"http_cache"};
-
 } // end anonymous namespace
 
-HttpCacheAction::HttpCacheAction() {}
-
+////
+// HttpCacheAction
+//
 void
 HttpCacheAction::cancel(Continuation *c)
 {
-  ink_assert(c == nullptr || c == sm->master_sm);
-  ink_assert(this->cancelled == 0);
+  ink_assert(c == nullptr || c == _cache_sm->master_sm);
+  ink_assert(this->cancelled == false);
 
-  this->cancelled = 1;
-  if (sm->pending_action) {
-    sm->pending_action->cancel();
+  this->cancelled = true;
+  if (_cache_sm->pending_action) {
+    _cache_sm->pending_action->cancel();
   }
 }
 
-HttpCacheSM::HttpCacheSM()
-  : Continuation(nullptr),
-
-    captive_action()
-
+////
+// HttpCacheSM
+//
+/**
+  Reset captive_action and counters for another cache operations.
+  - e.g. following redirect starts over from cache lookup
+ */
+void
+HttpCacheSM::reset()
 {
+  captive_action.reset();
+
+  open_read_tries  = 0;
+  open_write_tries = 0;
+  open_write_start = 0;
+
+  lookup_max_recursive = 0;
+  current_lookup_level = 0;
+
+  err_code = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -303,7 +310,7 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   ink_assert(open_read_cb == false);
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params, this->read_pin_in_cache);
+  Action *action_handle           = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params);
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;
@@ -397,10 +404,9 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
     return ACTION_RESULT_DONE;
   }
 
-  Action *action_handle =
-    cacheProcessor.open_write(this, 0, key, request,
-                              // INKqa11166
-                              allow_multiple ? (CacheHTTPInfo *)CACHE_ALLOW_MULTIPLE_WRITES : old_info, pin_in_cache);
+  // INKqa11166
+  CacheHTTPInfo *info          = allow_multiple ? reinterpret_cast<CacheHTTPInfo *>(CACHE_ALLOW_MULTIPLE_WRITES) : old_info;
+  Action        *action_handle = cacheProcessor.open_write(this, key, info, pin_in_cache);
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;

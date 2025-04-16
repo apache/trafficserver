@@ -25,4 +25,5 @@
 
 #include "proxy/PluginVC.h"
 
+bool      PluginHttpConnectIsInitialized();
 PluginVC *PluginHttpConnectInternal(TSHttpConnectOptions *options);

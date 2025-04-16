@@ -467,8 +467,7 @@ struct Cache {
   Action     *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
                         CacheFragType type, std::string_view hostname = std::string_view{}) const;
   Action     *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = 0,
-                         const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP,
-                         std::string_view hostname = std::string_view{}) const;
+                         CacheFragType type = CACHE_FRAG_TYPE_HTTP, std::string_view hostname = std::string_view{}) const;
   static void generate_key(CryptoHash *hash, CacheURL *url);
   static void generate_key(HttpCacheKey *hash, CacheURL *url, bool ignore_query = false, cache_generation_t generation = -1);
 

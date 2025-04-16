@@ -178,7 +178,8 @@ condition_factory(const std::string &cond)
     c = new ConditionStateInt8();
   } else if (c_name == "STATE-INT16") {
     c = new ConditionStateInt16();
-
+  } else if (c_name == "LAST-CAPTURE") {
+    c = new ConditionLastCapture();
   } else {
     TSError("[%s] Unknown condition %s", PLUGIN_NAME, c_name.c_str());
     return nullptr;

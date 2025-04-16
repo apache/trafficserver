@@ -406,22 +406,19 @@ CacheProcessor::lookup(Continuation *cont, const HttpCacheKey *key, CacheFragTyp
                 std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
-//----------------------------------------------------------------------------
 Action *
 CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                          time_t /* pin_in_cache ATS_UNUSED */, CacheFragType type)
+                          CacheFragType type)
 {
   return caches[type]->open_read(cont, &key->hash, request, params, type,
                                  std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
-//----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_write(Continuation *cont, int /* expected_size ATS_UNUSED */, const HttpCacheKey *key,
-                           CacheHTTPHdr * /* request ATS_UNUSED */, CacheHTTPInfo *old_info, time_t pin_in_cache,
+CacheProcessor::open_write(Continuation *cont, const HttpCacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache,
                            CacheFragType type)
 {
-  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, nullptr /* key1 */, type,
+  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, type,
                                   std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
@@ -927,11 +924,11 @@ cplist_reconfigure()
       }
       if (config_vol->size < 128) {
         Warning("the size of volume %d (%" PRId64 ") is less than the minimum required volume size %d", config_vol->number,
-                (int64_t)config_vol->size, 128);
+                static_cast<int64_t>(config_vol->size), 128);
         Warning("volume %d is not created", config_vol->number);
       }
-      Dbg(dbg_ctl_cache_hosting, "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number, (int64_t)config_vol->size,
-          config_vol->ramcache_enabled);
+      Dbg(dbg_ctl_cache_hosting, "Volume: %d Size: %" PRId64 " Ramcache: %d", config_vol->number,
+          static_cast<int64_t>(config_vol->size), config_vol->ramcache_enabled);
     }
     cplist_update();
 

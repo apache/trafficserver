@@ -1,0 +1,15 @@
+/etag 200 200 range=::-:: x-crr-ident=::-:: crrident=::-::
+/lm 200 200 range=::-:: x-crr-ident=::-:: crrident=::-::
+/etag 000 206 range=::bytes=0-10:: x-crr-ident=::-:: crrident=::-::
+/etag 000 206 range=::bytes=11-21:: x-crr-ident=::Etag: "foo":: crrident=::-::
+/etag 200 200 range=::-:: x-crr-ident=::-:: crrident=::-::
+/etag 000 206 range=::bytes=0-10:: x-crr-ident=::-:: crrident=::-::
+/etag 000 206 range=::bytes=11-21:: x-crr-ident=::-:: crrident=::Etag: "foo"::
+/etag 200 200 range=::-:: x-crr-ident=::-:: crrident=::-::
+/lm 000 206 range=::bytes=0-10:: x-crr-ident=::-:: crrident=::-::
+/lm 000 206 range=::bytes=11-21:: x-crr-ident=::Last-Modified: Fri, 07 Mar 2025 18:06:58 GMT:: crrident=::-::
+/lm 200 200 range=::-:: x-crr-ident=::-:: crrident=::-::
+/lm 000 206 range=::bytes=0-10:: x-crr-ident=::-:: crrident=::-::
+/lm 000 206 range=::bytes=11-21:: x-crr-ident=::-:: crrident=::Last-Modified: Fri, 07 Mar 2025 18:06:58 GMT::
+/lm 200 200 range=::-:: x-crr-ident=::-:: crrident=::-::
+/404.txt 000 404 range=::-:: x-crr-ident=::-:: crrident=::-::

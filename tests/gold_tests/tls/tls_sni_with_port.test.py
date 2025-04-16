@@ -153,11 +153,14 @@ def test0(params: TestParams) -> None:
     params["ts"].Disk.traffic_out.Content += Testers.IncludesExpression(
         "not available in the map", "the request should not match an SNI")
     params["server_one"].Streams.All.Content += Testers.ExcludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_remapped", "the request should not go to server one")
+        r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_remapped",
+        "the request should not go to server one")
     params["server_two"].Streams.All.Content += Testers.ExcludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_remapped", "the request should not go to server two")
+        r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_remapped",
+        "the request should not go to server two")
     params["server_three"].Streams.All.Content += Testers.IncludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_remapped", "request was remaped to server three")
+        r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_remapped",
+        "request was remaped to server three")
 
 
 @TestSNIWithPort.runner("Test that a request to a port one goes to server one.")
@@ -167,9 +170,11 @@ def test1(params: TestParams) -> None:
 
     params["tr"].Processes.Default.ReturnCode = 0
     params["server_one"].Streams.All.Content += Testers.IncludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should go to server one")
+        r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
+        "the request should go to server one")
     params["server_two"].Streams.All.Content += Testers.ExcludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should not go to server two")
+        r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
+        "the request should not go to server two")
 
 
 @TestSNIWithPort.runner("Test that a request to port two goes to server two.")
@@ -179,9 +184,11 @@ def test2(params: TestParams) -> None:
 
     params["tr"].Processes.Default.ReturnCode = 0
     params["server_two"].Streams.All.Content += Testers.IncludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should go to server two")
+        r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
+        "the request should go to server two")
     params["server_one"].Streams.All.Content += Testers.ExcludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should not go to server one")
+        r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
+        "the request should not go to server one")
 
 
 @TestSNIWithPort.runner("Test that a request to port three goes to server two.")
@@ -191,6 +198,8 @@ def test3(params: TestParams) -> None:
 
     params["tr"].Processes.Default.ReturnCode = 0
     params["server_two"].Streams.All.Content += Testers.IncludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should go to server two")
+        r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
+        "the request should go to server two")
     params["server_one"].Streams.All.Content += Testers.ExcludesExpression(
-        "Received an HTTP/1 Content-Length body of 16 bytes for key conn_accepted", "the request should not go to server one")
+        r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
+        "the request should not go to server one")

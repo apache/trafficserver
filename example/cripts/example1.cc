@@ -59,7 +59,7 @@ do_cache_lookup()
 {
   borrow url2 = cripts::Cache::URL::Get();
 
-  CDebug("Cache URL: {}", url2.String());
+  CDebug("Cache URL: {}", url2);
   CDebug("Cache Host: {}", url2.host);
 }
 

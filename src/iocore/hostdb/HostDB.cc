@@ -323,17 +323,6 @@ HostDBCache::start(int flags)
   return 0;
 }
 
-int
-HostDBProcessor::clear_and_start(int, size_t)
-{
-  if (hostDB.start(0) < 0) {
-    return -1;
-  }
-
-  hostDB.refcountcache->clear();
-  return init();
-}
-
 // Start up the Host Database processor.
 // Load configuration, register configuration and statistics and
 // open the cache. This doesn't create any threads, so those
@@ -1039,7 +1028,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       if (hash.is_srv()) {
         char *pos = rr_info.rebind<char>().end();
         SRV  *q[valid_records];
-        ink_assert(valid_records <= (int)hostdb_round_robin_max_count);
+        ink_assert(valid_records <= static_cast<int>(hostdb_round_robin_max_count));
         for (int i = 0; i < valid_records; ++i) {
           q[i] = &e->srv_hosts.hosts[i];
         }

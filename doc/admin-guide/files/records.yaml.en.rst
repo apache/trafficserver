@@ -1043,6 +1043,15 @@ allow-plain
    for details about chunked trailers. By default, this option is enabled
    and therefore |TS| will drop chunked trailers.
 
+.. ts:cv:: CONFIG proxy.config.http.strict_chunk_parsing INT 1
+   :reloadable:
+   :overridable:
+
+   Specifies whether |TS| strictly checks errors in chunked message body.
+   If enabled (``1``), |TS| returns 400 Bad Request if chunked message body is
+   not compliant with RFC 9112. If disabled (``0``),  |TS| allows using LF as
+   a line terminator.
+
 .. ts:cv:: CONFIG proxy.config.http.send_http11_requests INT 1
    :reloadable:
    :overridable:

@@ -606,10 +606,10 @@ ConfigVolumes::read_config_file()
   if (ec) {
     switch (ec.value()) {
     case ENOENT:
-      Warning("Cannot open the config file: %s - %s", (const char *)config_path, strerror(ec.value()));
+      Warning("Cannot open the config file: %s - %s", config_path.get(), strerror(ec.value()));
       break;
     default:
-      Error("%s failed to load: %s", (const char *)config_path, strerror(ec.value()));
+      Error("%s failed to load: %s", config_path.get(), strerror(ec.value()));
       return;
     }
   }
