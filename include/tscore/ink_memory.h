@@ -27,9 +27,11 @@
 #include <strings.h>
 #include <cinttypes>
 #include <limits>
+#include <optional>
 #include <string>
 #include <string_view>
 
+#include "tscore/ink_assert.h"
 #include "tscore/ink_config.h"
 
 #include <unistd.h>
@@ -617,3 +619,40 @@ struct ats_unique_buf_deleter {
 };
 using ats_unique_buf = std::unique_ptr<uint8_t[], ats_unique_buf_deleter>;
 ats_unique_buf ats_unique_malloc(size_t size);
+
+class c_str_view
+{
+public:
+  using size_type = std::string_view::size_type;
+
+  c_str_view() : c_str_view(nullptr, 0) {}
+  c_str_view(const char *c_str, size_type length) : c_str_{c_str}, length_{length}
+  {
+    ink_assert(c_str == nullptr ? length == 0 : c_str[length] == '\0');
+  }
+  c_str_view(std::string_view sv) : c_str_view{sv.data(), sv.length()} {}
+  c_str_view(const c_str_view &other)            = default;
+  c_str_view(c_str_view &&other)                 = delete;
+  c_str_view &operator=(const c_str_view &other) = default;
+  c_str_view &operator=(c_str_view &&other)      = delete;
+
+  const char *
+  c_str() const noexcept
+  {
+    return c_str_;
+  }
+  size_type
+  length() const noexcept
+  {
+    return length_;
+  }
+  explicit
+  operator std::string_view() const noexcept
+  {
+    return std::string_view{c_str_, length_};
+  }
+
+private:
+  const char *c_str_;
+  size_type   length_;
+};
