@@ -60,6 +60,15 @@ parse_matcher_op(std::string &arg)
     } else {
       return MATCH_ERROR;
     }
+  case '(':
+    arg.erase(0, 1);
+    // There should be a right paren at the end
+    if (arg.length() >= 1 && arg[arg.length() - 1] == ')') {
+      arg.erase(arg.length() - 1, arg.length());
+      return MATCH_SET;
+    } else {
+      return MATCH_ERROR;
+    }
   default:
     return MATCH_EQUAL;
     break;

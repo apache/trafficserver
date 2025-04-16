@@ -90,14 +90,16 @@ protected:
 // Check the HTTP return status
 class ConditionStatus : public Condition
 {
-  using MatcherType = Matchers<TSHttpStatus>;
+  using DataType    = std::underlying_type_t<TSHttpStatus>;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionStatus;
 
 public:
   ConditionStatus() { Dbg(dbg_ctl, "Calling CTOR for ConditionStatus"); }
 
   // noncopyable
-  ConditionStatus(const ConditionStatus &) = delete;
-  void operator=(const ConditionStatus &)  = delete;
+  ConditionStatus(const SelfType &) = delete;
+  void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -110,14 +112,16 @@ protected:
 // Check the HTTP method
 class ConditionMethod : public Condition
 {
-  using MatcherType = Matchers<std::string>;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionMethod;
 
 public:
   ConditionMethod() { Dbg(dbg_ctl, "Calling CTOR for ConditionMethod"); }
 
   // noncopyable
-  ConditionMethod(const ConditionMethod &) = delete;
-  void operator=(const ConditionMethod &)  = delete;
+  ConditionMethod(const SelfType &) = delete;
+  void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -129,14 +133,16 @@ protected:
 // Random 0 to (N-1)
 class ConditionRandom : public Condition
 {
-  using MatcherType = Matchers<unsigned int>;
+  using DataType    = unsigned int;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionRandom;
 
 public:
   ConditionRandom() { Dbg(dbg_ctl, "Calling CTOR for ConditionRandom"); }
 
   // noncopyable
-  ConditionRandom(const ConditionRandom &) = delete;
-  void operator=(const ConditionRandom &)  = delete;
+  ConditionRandom(const SelfType &) = delete;
+  void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -173,14 +179,16 @@ private:
 // cookie(name)
 class ConditionCookie : public Condition
 {
-  using MatcherType = Matchers<std::string>;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionCookie;
 
 public:
   ConditionCookie() { Dbg(dbg_ctl, "Calling CTOR for ConditionCookie"); }
 
   // noncopyable
-  ConditionCookie(const ConditionCookie &) = delete;
-  void operator=(const ConditionCookie &)  = delete;
+  ConditionCookie(const SelfType &) = delete;
+  void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -242,7 +250,9 @@ private:
 // header
 class ConditionHeader : public Condition
 {
-  using MatcherType = Matchers<std::string>;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionHeader;
 
 public:
   explicit ConditionHeader(bool client = false) : _client(client)
@@ -251,8 +261,8 @@ public:
   }
 
   // noncopyable
-  ConditionHeader(const ConditionHeader &) = delete;
-  void operator=(const ConditionHeader &)  = delete;
+  ConditionHeader(const SelfType &) = delete;
+  void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -267,7 +277,9 @@ private:
 // url
 class ConditionUrl : public Condition
 {
-  using MatcherType = Matchers<std::string>;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionUrl;
 
 public:
   enum UrlType { CLIENT, URL, FROM, TO };
@@ -275,8 +287,8 @@ public:
   explicit ConditionUrl(const UrlType type) : _type(type) { Dbg(dbg_ctl, "Calling CTOR for ConditionUrl"); }
 
   // noncopyable
-  ConditionUrl(const ConditionUrl &)   = delete;
-  void operator=(const ConditionUrl &) = delete;
+  ConditionUrl(const SelfType &)   = delete;
+  void operator=(const SelfType &) = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -293,7 +305,9 @@ private:
 // DBM lookups
 class ConditionDBM : public Condition
 {
-  using MatcherType = Matchers<std::string>;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionDBM;
 
 public:
   ConditionDBM()
@@ -313,8 +327,8 @@ public:
   }
 
   // noncopyable
-  ConditionDBM(const ConditionDBM &)   = delete;
-  void operator=(const ConditionDBM &) = delete;
+  ConditionDBM(const SelfType &)   = delete;
+  void operator=(const SelfType &) = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -331,7 +345,9 @@ private:
 
 class ConditionInternalTxn : public Condition
 {
-  using MatcherType = Matchers<std::string>;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionInternalTxn;
 
 public:
   void
@@ -345,15 +361,17 @@ protected:
 
 class ConditionIp : public Condition
 {
-  using MatcherType   = Matchers<std::string>;
+  using DataType      = std::string;
+  using MatcherType   = Matchers<DataType>;
   using MatcherTypeIp = Matchers<const sockaddr *>;
+  using SelfType      = ConditionIp;
 
 public:
   explicit ConditionIp() { Dbg(dbg_ctl, "Calling CTOR for ConditionIp"); };
 
   // noncopyable
-  ConditionIp(const ConditionIp &)    = delete;
-  void operator=(const ConditionIp &) = delete;
+  ConditionIp(const SelfType &)    = delete;
+  void operator=(const SelfType &) = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -369,14 +387,16 @@ private:
 // Transact Count
 class ConditionTransactCount : public Condition
 {
-  using MatcherType = Matchers<int>;
+  using DataType    = int;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionTransactCount;
 
 public:
   ConditionTransactCount() { Dbg(dbg_ctl, "Calling CTOR for ConditionTransactCount"); }
 
   // noncopyable
-  ConditionTransactCount(const ConditionTransactCount &) = delete;
-  void operator=(const ConditionTransactCount &)         = delete;
+  ConditionTransactCount(const SelfType &) = delete;
+  void operator=(const SelfType &)         = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -388,14 +408,16 @@ protected:
 // now: Keeping track of current time / day / hour etc.
 class ConditionNow : public Condition
 {
-  using MatcherType = Matchers<int64_t>;
+  using DataType    = int64_t;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionNow;
 
 public:
   explicit ConditionNow() { Dbg(dbg_ctl, "Calling CTOR for ConditionNow"); }
 
   // noncopyable
-  ConditionNow(const ConditionNow &)   = delete;
-  void operator=(const ConditionNow &) = delete;
+  ConditionNow(const SelfType &)   = delete;
+  void operator=(const SelfType &) = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -412,12 +434,15 @@ private:
 // GeoIP class for the "integer" based Geo information pieces
 class ConditionGeo : public Condition
 {
+  using SelfType = ConditionGeo;
+  // This has multiple "data types" ...
+
 public:
   explicit ConditionGeo() { Dbg(dbg_ctl, "Calling CTOR for ConditionGeo"); }
 
   // noncopyable
-  ConditionGeo(const ConditionGeo &)   = delete;
-  void operator=(const ConditionGeo &) = delete;
+  ConditionGeo(const SelfType &)   = delete;
+  void operator=(const SelfType &) = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -449,12 +474,15 @@ protected:
 // id: Various identifiers for the requests, server process etc.
 class ConditionId : public Condition
 {
+  using SelfType = ConditionId;
+  // This has multiple "data types" for matching
+
 public:
   explicit ConditionId() { Dbg(dbg_ctl, "Calling CTOR for ConditionId"); };
 
   // noncopyable
-  ConditionId(const ConditionId &)    = delete;
-  void operator=(const ConditionId &) = delete;
+  ConditionId(const SelfType &)    = delete;
+  void operator=(const SelfType &) = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -470,8 +498,9 @@ private:
 // cidr: A CIDR masked string representation of the Client's IP.
 class ConditionCidr : public Condition
 {
-  using MatcherType = Matchers<std::string>;
-  using self        = ConditionCidr;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionCidr;
 
 public:
   explicit ConditionCidr()
@@ -480,8 +509,8 @@ public:
     Dbg(dbg_ctl, "Calling CTOR for ConditionCidr");
   };
 
-  ConditionCidr(self &)   = delete;
-  self &operator=(self &) = delete;
+  ConditionCidr(SelfType &)       = delete;
+  SelfType &operator=(SelfType &) = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -502,14 +531,15 @@ private:
 /// Information about the inbound (client) session.
 class ConditionInbound : public Condition
 {
+  using DataType      = const sockaddr *;
   using MatcherType   = Matchers<std::string>;
-  using MatcherTypeIp = Matchers<const sockaddr *>;
-  using self          = ConditionInbound;
+  using MatcherTypeIp = Matchers<DataType>;
+  using SelfType      = ConditionInbound;
 
 public:
   explicit ConditionInbound() { Dbg(dbg_ctl, "Calling CTOR for ConditionInbound"); };
-  ConditionInbound(self &) = delete;
-  self &operator=(self &)  = delete;
+  ConditionInbound(SelfType &)    = delete;
+  SelfType &operator=(SelfType &) = delete;
 
   void        initialize(Parser &p) override;
   void        set_qualifier(const std::string &q) override;
@@ -527,14 +557,16 @@ private:
 
 class ConditionStringLiteral : public Condition
 {
-  using MatcherType = Matchers<std::string>;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionStringLiteral;
 
 public:
   explicit ConditionStringLiteral(const std::string &v);
 
   // noncopyable
-  ConditionStringLiteral(const ConditionStringLiteral &) = delete;
-  void operator=(const ConditionStringLiteral &)         = delete;
+  ConditionStringLiteral(const SelfType &) = delete;
+  void operator=(const SelfType &)         = delete;
 
   void append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override;
 
@@ -548,14 +580,16 @@ private:
 // Single Session Transaction Count
 class ConditionSessionTransactCount : public Condition
 {
-  using MatcherType = Matchers<int>;
+  using DataType    = int;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionSessionTransactCount;
 
 public:
   ConditionSessionTransactCount() { Dbg(dbg_ctl, "ConditionSessionTransactCount()"); }
 
   // noncopyable
-  ConditionSessionTransactCount(const ConditionSessionTransactCount &) = delete;
-  void operator=(const ConditionSessionTransactCount &)                = delete;
+  ConditionSessionTransactCount(const SelfType &) = delete;
+  void operator=(const SelfType &)                = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -567,14 +601,16 @@ protected:
 // Tcp Info
 class ConditionTcpInfo : public Condition
 {
-  using MatcherType = Matchers<int>;
+  using DataType    = int;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionTcpInfo;
 
 public:
   ConditionTcpInfo() { Dbg(dbg_ctl, "Calling CTOR for ConditionTcpInfo"); }
 
   // noncopyable
-  ConditionTcpInfo(const ConditionTcpInfo &) = delete;
-  void operator=(const ConditionTcpInfo &)   = delete;
+  ConditionTcpInfo(const SelfType &) = delete;
+  void operator=(const SelfType &)   = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -587,14 +623,16 @@ protected:
 // Cache Lookup Results
 class ConditionCache : public Condition
 {
+  using DataType    = std::string;
   using MatcherType = Matchers<std::string>;
+  using SelfType    = ConditionCache;
 
 public:
   ConditionCache() { Dbg(dbg_ctl, "Calling CTOR for ConditionCache"); }
 
   // noncopyable
-  ConditionCache(const ConditionCache &) = delete;
-  void operator=(const ConditionCache &) = delete;
+  ConditionCache(const SelfType &) = delete;
+  void operator=(const SelfType &) = delete;
 
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -606,7 +644,9 @@ protected:
 // Next Hop
 class ConditionNextHop : public Condition
 {
-  using MatcherType = Matchers<std::string>;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionNextHop;
 
 public:
   enum HostType { NAME, PORT };
@@ -614,8 +654,8 @@ public:
   explicit ConditionNextHop() { Dbg(dbg_ctl, "Calling CTOR for ConditionNextHop"); }
 
   // noncopyable
-  ConditionNextHop(const ConditionNextHop &) = delete;
-  void operator=(const ConditionNextHop &)   = delete;
+  ConditionNextHop(const SelfType &) = delete;
+  void operator=(const SelfType &)   = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -631,12 +671,14 @@ private:
 // HTTP CNTL
 class ConditionHttpCntl : public Condition
 {
+  using SelfType = ConditionHttpCntl;
+
 public:
   explicit ConditionHttpCntl() { Dbg(dbg_ctl, "Calling CTOR for ConditionHttpCntl"); }
 
   // noncopyable
-  ConditionHttpCntl(const ConditionHttpCntl &) = delete;
-  void operator=(const ConditionHttpCntl &)    = delete;
+  ConditionHttpCntl(const SelfType &) = delete;
+  void operator=(const SelfType &)    = delete;
 
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -650,6 +692,8 @@ private:
 
 class ConditionGroup : public Condition
 {
+  using SelfType = ConditionGroup;
+
 public:
   ConditionGroup() { Dbg(dbg_ctl, "Calling CTOR for ConditionGroup"); }
 
@@ -670,8 +714,8 @@ public:
   }
 
   // noncopyable
-  ConditionGroup(const ConditionGroup &) = delete;
-  void operator=(const ConditionGroup &) = delete;
+  ConditionGroup(const SelfType &) = delete;
+  void operator=(const SelfType &) = delete;
 
   bool
   closes() const
@@ -717,6 +761,9 @@ private:
 // State Flags
 class ConditionStateFlag : public Condition
 {
+  using SelfType = ConditionStateFlag;
+  // No matcher for this, it's all easy peasy
+
 public:
   explicit ConditionStateFlag()
   {
@@ -725,8 +772,8 @@ public:
   }
 
   // noncopyable
-  ConditionStateFlag(const ConditionStateFlag &) = delete;
-  void operator=(const ConditionStateFlag &)     = delete;
+  ConditionStateFlag(const SelfType &) = delete;
+  void operator=(const SelfType &)     = delete;
 
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -748,7 +795,9 @@ private:
 // INT8 state variables
 class ConditionStateInt8 : public Condition
 {
-  using MatcherType = Matchers<uint8_t>;
+  using DataType    = uint8_t;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionStateInt8;
 
 public:
   explicit ConditionStateInt8()
@@ -758,8 +807,8 @@ public:
   }
 
   // noncopyable
-  ConditionStateInt8(const ConditionStateInt8 &) = delete;
-  void operator=(const ConditionStateInt8 &)     = delete;
+  ConditionStateInt8(const SelfType &) = delete;
+  void operator=(const SelfType &)     = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -792,7 +841,9 @@ private:
 // INT16 state variables
 class ConditionStateInt16 : public Condition
 {
-  using MatcherType = Matchers<uint16_t>;
+  using DataType    = uint16_t;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionStateInt16;
 
 public:
   explicit ConditionStateInt16()
@@ -802,8 +853,8 @@ public:
   }
 
   // noncopyable
-  ConditionStateInt16(const ConditionStateInt8 &) = delete;
-  void operator=(const ConditionStateInt8 &)      = delete;
+  ConditionStateInt16(const SelfType &) = delete;
+  void operator=(const SelfType &)      = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -832,14 +883,16 @@ private:
 // Last regex capture
 class ConditionLastCapture : public Condition
 {
-  using MatcherType = Matchers<std::string>;
+  using DataType    = std::string;
+  using MatcherType = Matchers<DataType>;
+  using SelfType    = ConditionLastCapture;
 
 public:
   explicit ConditionLastCapture() { Dbg(dbg_ctl, "Calling CTOR for ConditionLastCapture"); }
 
   // noncopyable
-  ConditionLastCapture(const ConditionLastCapture &) = delete;
-  void operator=(const ConditionLastCapture &)       = delete;
+  ConditionLastCapture(const SelfType &) = delete;
+  void operator=(const SelfType &)       = delete;
 
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
