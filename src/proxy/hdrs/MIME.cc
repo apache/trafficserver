@@ -2089,10 +2089,11 @@ mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int1
 }
 
 void
-mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool prepend_comma,
+mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, std::string_view value, bool prepend_comma,
                         const char separator)
 {
-  int new_length = field->m_len_value + length;
+  auto length{static_cast<int>(value.length())};
+  int  new_length = field->m_len_value + length;
   if (prepend_comma && field->m_len_value) {
     new_length += 2;
   }
@@ -2112,7 +2113,7 @@ mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const 
     *ptr++ = ' ';
   }
 
-  memcpy(ptr, value, length);
+  memcpy(ptr, value.data(), length);
 
   field->m_ptr_value         = new_str;
   field->m_len_value         = new_length;

@@ -785,7 +785,7 @@ void mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field,
                                std::string_view name, std::string_view value, int n_v_raw_printable, int n_v_raw_length,
                                bool must_copy_strings);
 
-void mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool prepend_comma,
+void mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, std::string_view value, bool prepend_comma,
                              const char separator);
 
 void        mime_parser_init(MIMEParser *parser);
@@ -947,7 +947,7 @@ MIMEField::value_clear(HdrHeap *heap, MIMEHdrImpl *mh)
 inline void
 MIMEField::value_append(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view value, bool prepend_comma, const char separator)
 {
-  mime_field_value_append(heap, mh, this, value.data(), static_cast<int>(value.length()), prepend_comma, separator);
+  mime_field_value_append(heap, mh, this, value, prepend_comma, separator);
 }
 
 /*-------------------------------------------------------------------------
