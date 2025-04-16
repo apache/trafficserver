@@ -71,6 +71,14 @@ HttpCacheSM::reset()
   captive_action.reset();
 }
 
+void
+HttpCacheSM::destroy()
+{
+  if (_read_retry_event != nullptr) {
+    _read_retry_event->cancel();
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpCacheSM::state_cache_open_read()
@@ -133,7 +141,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
       if (open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries) {
         // Retry to read; maybe the update finishes in time
         open_read_cb = false;
-        do_schedule_in();
+        _schedule_read_retry();
       } else {
         // Give up; the update didn't finish in time
         // HttpSM will inform HttpTransact to 'proxy-only'
@@ -148,6 +156,10 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     break;
 
   case EVENT_INTERVAL:
+    if (_read_retry_event == static_cast<Event *>(data)) {
+      _read_retry_event = nullptr;
+    }
+
     // Retry the cache open read if the number retries is less
     // than or equal to the max number of open read retries,
     // else treat as a cache miss.
@@ -232,9 +244,9 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     }
 
     if (read_retry_on_write_fail || !write_retry_done()) {
-      // Retry open write;
+      // Retry open read;
       open_write_cb = false;
-      do_schedule_in();
+      _schedule_read_retry();
     } else {
       // The cache is hosed or full or something.
       // Forward the failure to the main sm
@@ -249,6 +261,10 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
   } break;
 
   case EVENT_INTERVAL:
+    if (_read_retry_event == static_cast<Event *>(data)) {
+      _read_retry_event = nullptr;
+    }
+
     if (master_sm->t_state.txn_conf->cache_open_write_fail_action ==
         static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY)) {
       Dbg(dbg_ctl_http_cache,
@@ -281,16 +297,19 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
   return VC_EVENT_CONT;
 }
 
+/**
+  Schedule a read retry event to this HttpCacheSM continuation with cache_open_read_retry_time delay.
+  The scheduled event is tracked by `_read_retry_event`.
+ */
 void
-HttpCacheSM::do_schedule_in()
+HttpCacheSM::_schedule_read_retry()
 {
-  ink_assert(pending_action == nullptr);
-  Action *action_handle =
-    mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(master_sm->t_state.txn_conf->cache_open_read_retry_time));
-
-  if (action_handle != ACTION_RESULT_DONE) {
-    pending_action = action_handle;
+  if (_read_retry_event != nullptr && _read_retry_event->cancelled == false) {
+    _read_retry_event->cancel();
   }
+
+  _read_retry_event =
+    mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(master_sm->t_state.txn_conf->cache_open_read_retry_time));
 
   return;
 }

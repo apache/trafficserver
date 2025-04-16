@@ -75,6 +75,7 @@ public:
     captive_action.init(this);
   }
   void reset();
+  void destroy();
 
   Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, const OverridableHttpConfigParams *params,
                     time_t pin_in_cache);
@@ -260,7 +261,9 @@ private:
     const OverridableHttpConfigParams *_params = nullptr;
   };
 
-  void    do_schedule_in();
+  void   _schedule_read_retry();
+  Event *_read_retry_event = nullptr;
+
   Action *do_cache_open_read(const HttpCacheKey &);
 
   bool write_retry_done() const;
