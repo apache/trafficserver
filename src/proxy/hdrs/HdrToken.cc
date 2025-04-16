@@ -568,21 +568,22 @@ hdrtoken_string_to_wks(const char *string, int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-std::string_view
+c_str_view
 hdrtoken_string_to_wks_sv(const char *string)
 {
   const char *wks = nullptr;
-  hdrtoken_tokenize(string, static_cast<int>(strlen(string)), &wks);
-  return std::string_view{wks};
+  auto        length{strlen(string)};
+  hdrtoken_tokenize(string, static_cast<int>(length), &wks);
+  return {wks, length};
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-std::string_view
+c_str_view
 hdrtoken_string_to_wks_sv(const char *string, int length)
 {
   const char *wks = nullptr;
   hdrtoken_tokenize(string, length, &wks);
-  return std::string_view{wks};
+  return {wks, static_cast<c_str_view::size_type>(length)};
 }

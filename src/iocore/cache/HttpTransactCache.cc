@@ -326,14 +326,14 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
   q[1] = (q[2] = (q[3] = -2.0));
 
   // This content_field is used for a couple of headers, so get it first
-  content_field = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_TYPE_sv);
+  content_field = obj_origin_server_response->field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
 
   // Accept: header
   if (http_config_param->get_ignore_accept_mismatch() & vary_skip_mask) {
     // Ignore it
     q[0] = 1.0;
   } else {
-    accept_field = client_request->field_find(MIME_FIELD_ACCEPT_sv);
+    accept_field = client_request->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT));
 
     // A NULL Accept or a NULL Content-Type field are perfect matches.
     if (content_field == nullptr || accept_field == nullptr) {
@@ -349,8 +349,8 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
       // Ignore it
       q[1] = 1.0;
     } else {
-      accept_field        = client_request->field_find(MIME_FIELD_ACCEPT_CHARSET_sv);
-      cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_CHARSET_sv);
+      accept_field        = client_request->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT_CHARSET));
+      cached_accept_field = obj_client_request->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT_CHARSET));
 
       // absence in both requests counts as exact match
       if (accept_field == nullptr && cached_accept_field == nullptr) {
@@ -367,9 +367,9 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
         // Ignore it
         q[2] = 1.0;
       } else {
-        accept_field        = client_request->field_find(MIME_FIELD_ACCEPT_ENCODING_sv);
-        content_field       = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_ENCODING_sv);
-        cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_ENCODING_sv);
+        accept_field        = client_request->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT_ENCODING));
+        content_field       = obj_origin_server_response->field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_ENCODING));
+        cached_accept_field = obj_client_request->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT_ENCODING));
 
         // absence in both requests counts as exact match
         if (accept_field == nullptr && cached_accept_field == nullptr) {
@@ -386,9 +386,9 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
           // Ignore it
           q[3] = 1.0;
         } else {
-          accept_field        = client_request->field_find(MIME_FIELD_ACCEPT_LANGUAGE_sv);
-          content_field       = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_LANGUAGE_sv);
-          cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_LANGUAGE_sv);
+          accept_field        = client_request->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT_LANGUAGE));
+          content_field       = obj_origin_server_response->field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_LANGUAGE));
+          cached_accept_field = obj_client_request->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT_LANGUAGE));
 
           // absence in both requests counts as exact match
           if (accept_field == nullptr && cached_accept_field == nullptr) {
@@ -1210,7 +1210,7 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
   if (obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
     StrList vary_list;
 
-    if (obj_origin_server_response->value_get_comma_list(MIME_FIELD_VARY_sv, &vary_list) > 0) {
+    if (obj_origin_server_response->value_get_comma_list(static_cast<std::string_view>(MIME_FIELD_VARY), &vary_list) > 0) {
       if (dbg_ctl_http_match.on() && vary_list.head) {
         DbgPrint(dbg_ctl_http_match, "Vary list of %d elements", vary_list.count);
         vary_list.dump(stderr);
@@ -1326,8 +1326,8 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-None-Match: may match weakly //
   if (request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
-    if (auto raw_etags{response->value_get(MIME_FIELD_ETAG_sv)}; !raw_etags.empty()) {
-      auto comma_sep_tag_list{request->value_get(MIME_FIELD_IF_NONE_MATCH_sv)};
+    if (auto raw_etags{response->value_get(static_cast<std::string_view>(MIME_FIELD_ETAG))}; !raw_etags.empty()) {
+      auto comma_sep_tag_list{request->value_get(static_cast<std::string_view>(MIME_FIELD_IF_NONE_MATCH))};
 
       ////////////////////////////////////////////////////////////////////////
       // If we have an etag and a if-none-match, we are talking to someone  //
@@ -1381,11 +1381,11 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-Match: must match strongly //
   if (request->presence(MIME_PRESENCE_IF_MATCH)) {
-    auto             raw_etags{response->value_get(MIME_FIELD_ETAG_sv)};
+    auto             raw_etags{response->value_get(static_cast<std::string_view>(MIME_FIELD_ETAG))};
     std::string_view comma_sep_tag_list{};
 
     if (!raw_etags.empty()) {
-      comma_sep_tag_list = request->value_get(MIME_FIELD_IF_MATCH_sv);
+      comma_sep_tag_list = request->value_get(static_cast<std::string_view>(MIME_FIELD_IF_MATCH));
     }
 
     if (do_strings_match_strongly(raw_etags.data(), static_cast<int>(raw_etags.length()), comma_sep_tag_list.data(),
@@ -1434,9 +1434,9 @@ HttpTransactCache::validate_ifrange_header_if_any(HTTPHdr *request, HTTPHdr *res
   }
 
   // this is an ETag, similar to If-Match
-  if (auto if_value{request->value_get(MIME_FIELD_IF_RANGE_sv)};
+  if (auto if_value{request->value_get(static_cast<std::string_view>(MIME_FIELD_IF_RANGE))};
       if_value.empty() || if_value[0] == '"' || (if_value.length() > 1 && if_value[1] == '/')) {
-    auto raw_etags{response->value_get(MIME_FIELD_ETAG_sv)};
+    auto raw_etags{response->value_get(static_cast<std::string_view>(MIME_FIELD_ETAG))};
 
     return do_strings_match_strongly(raw_etags.data(), static_cast<int>(raw_etags.length()), if_value.data(),
                                      static_cast<int>(if_value.length()));

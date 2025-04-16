@@ -80,5 +80,5 @@ Http1Transaction::set_reader(IOBufferReader *reader)
 inline void
 Http1Transaction::set_close_connection(HTTPHdr &hdr) const
 {
-  hdr.value_set(MIME_FIELD_CONNECTION_sv, "close"sv);
+  hdr.value_set(static_cast<std::string_view>(MIME_FIELD_CONNECTION), "close"sv);
 }

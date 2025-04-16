@@ -71,7 +71,7 @@ HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
   if (!hdrtoken_is_wks(field_name)) {
     return (false);
   }
-  if ((hdrtoken_wks_to_flags(field_name) & HTIF_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE_sv.data())) {
+  if ((hdrtoken_wks_to_flags(field_name) & HTIF_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE.c_str())) {
     return (true);
   } else {
     return (false);
@@ -153,9 +153,9 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
   }
 
   // step 2: create Allow field if not present
-  field = response->field_find(MIME_FIELD_ALLOW_sv);
+  field = response->field_find(static_cast<std::string_view>(MIME_FIELD_ALLOW));
   if (!field) {
-    field = response->field_create(MIME_FIELD_ALLOW_sv);
+    field = response->field_create(static_cast<std::string_view>(MIME_FIELD_ALLOW));
     response->field_attach(field);
   }
   // step 3: get a big enough buffer
@@ -248,7 +248,7 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
     if (field_flags & HTIF_HOPBYHOP) {
       std::string_view name(field.name_get());
       std::string_view value(field.value_get());
-      bool const       is_te_trailers = name == MIME_FIELD_TE_sv.data() && value == "trailers";
+      bool const       is_te_trailers = name == MIME_FIELD_TE.c_str() && value == "trailers";
       if (is_te_trailers) {
         // te: trailers is used by gRPC, do not delete it.
         continue;
@@ -315,7 +315,7 @@ HttpTransactHeaders::convert_to_1_0_request_header(HTTPHdr *outgoing_request)
   //             Now, any Cache-Control hdr becomes Pragma: no-cache
 
   if (outgoing_request->presence(MIME_PRESENCE_CACHE_CONTROL) && !outgoing_request->is_pragma_no_cache_set()) {
-    outgoing_request->value_append(MIME_FIELD_PRAGMA_sv, "no-cache"sv, true);
+    outgoing_request->value_append(static_cast<std::string_view>(MIME_FIELD_PRAGMA), "no-cache"sv, true);
   }
   // We do not currently support chunked transfer encoding,
   // so specify that response should use identity transfer coding.
@@ -333,7 +333,7 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr *outgoing_request)
   ink_assert(outgoing_request->version_get() == HTTPVersion(1, 1));
 
   if (outgoing_request->get_cooked_pragma_no_cache() && !(outgoing_request->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE)) {
-    outgoing_request->value_append(MIME_FIELD_CACHE_CONTROL_sv, "no-cache"sv, true);
+    outgoing_request->value_append(static_cast<std::string_view>(MIME_FIELD_CACHE_CONTROL), "no-cache"sv, true);
   }
   // We do not currently support chunked transfer encoding,
   // so specify that response should use identity transfer coding.
@@ -601,7 +601,8 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
 
   len =
     snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
-  header->value_set(MIME_FIELD_WARNING_sv, std::string_view{warning_text, static_cast<std::string_view::size_type>(len)});
+  header->value_set(static_cast<std::string_view>(MIME_FIELD_WARNING),
+                    std::string_view{warning_text, static_cast<std::string_view::size_type>(len)});
 }
 
 void
@@ -729,7 +730,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   char *via_limit  = via_string + sizeof(new_via_string);
 
   if ((s->http_config_param->proxy_hostname_len + s->http_config_param->proxy_request_via_string_len) > 512) {
-    header->value_append(MIME_FIELD_VIA_sv, "TrafficServer"sv, true);
+    header->value_append(static_cast<std::string_view>(MIME_FIELD_VIA), "TrafficServer"sv, true);
     return;
   }
 
@@ -780,7 +781,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   *via_string   = 0;
 
   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
-  header->value_append(MIME_FIELD_VIA_sv,
+  header->value_append(static_cast<std::string_view>(MIME_FIELD_VIA),
                        std::string_view{new_via_string, static_cast<std::string_view::size_type>(via_string - new_via_string)},
                        true);
 }
@@ -802,7 +803,7 @@ HttpTransactHeaders::insert_hsts_header_in_response(HttpTransact::State *s, HTTP
     length += sizeof(include_subdomains) - 1;
   }
 
-  header->value_set(MIME_FIELD_STRICT_TRANSPORT_SECURITY_sv,
+  header->value_set(static_cast<std::string_view>(MIME_FIELD_STRICT_TRANSPORT_SECURITY),
                     std::string_view{new_hsts_string, static_cast<std::string_view::size_type>(length)});
 }
 
@@ -814,7 +815,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   char *via_limit  = via_string + sizeof(new_via_string);
 
   if ((s->http_config_param->proxy_hostname_len + s->http_config_param->proxy_response_via_string_len) > 512) {
-    header->value_append(MIME_FIELD_VIA_sv, "TrafficServer"sv, true);
+    header->value_append(static_cast<std::string_view>(MIME_FIELD_VIA), "TrafficServer"sv, true);
     return;
   }
 
@@ -867,7 +868,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   *via_string   = 0;
 
   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
-  header->value_append(MIME_FIELD_VIA_sv,
+  header->value_append(static_cast<std::string_view>(MIME_FIELD_VIA),
                        std::string_view{new_via_string, static_cast<std::string_view::size_type>(via_string - new_via_string)},
                        true);
 }
@@ -877,10 +878,10 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 {
   if (outgoing->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MATCH |
                          MIME_PRESENCE_IF_NONE_MATCH)) {
-    outgoing->field_delete(MIME_FIELD_IF_MODIFIED_SINCE_sv);
-    outgoing->field_delete(MIME_FIELD_IF_UNMODIFIED_SINCE_sv);
-    outgoing->field_delete(MIME_FIELD_IF_MATCH_sv);
-    outgoing->field_delete(MIME_FIELD_IF_NONE_MATCH_sv);
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_IF_MODIFIED_SINCE));
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_IF_UNMODIFIED_SINCE));
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_IF_MATCH));
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_IF_NONE_MATCH));
   }
   // TODO: how about RANGE and IF_RANGE?
 }
@@ -888,11 +889,11 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 void
 HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing)
 {
-  auto expect{s->hdr_info.client_request.value_get(MIME_FIELD_EXPECT_sv)};
+  auto expect{s->hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
 
   if (strcasecmp(expect,
                  std::string_view{HTTP_VALUE_100_CONTINUE, static_cast<std::string_view::size_type>(HTTP_LEN_100_CONTINUE)}) == 0) {
-    outgoing->field_delete(MIME_FIELD_EXPECT_sv);
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPECT));
   }
 }
 
@@ -913,8 +914,8 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(const OverridableHt
 
     Dbg(dbg_ctl_http_trans, "Adding User-Agent: %.*s", static_cast<int>(http_txn_conf->global_user_agent_header_size),
         http_txn_conf->global_user_agent_header);
-    if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT_sv)) == nullptr) {
-      if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT_sv)) != nullptr)) {
+    if ((ua_field = header->field_find(static_cast<std::string_view>(MIME_FIELD_USER_AGENT))) == nullptr) {
+      if (likely((ua_field = header->field_create(static_cast<std::string_view>(MIME_FIELD_USER_AGENT))) != nullptr)) {
         header->field_attach(ua_field);
       }
     }
@@ -1052,7 +1053,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
     }
 
     if (optSet[HttpForwarded::HOST]) {
-      const MIMEField *hostField = s->hdr_info.client_request.field_find(MIME_FIELD_HOST_sv);
+      const MIMEField *hostField = s->hdr_info.client_request.field_find(static_cast<std::string_view>(MIME_FIELD_HOST));
 
       if (hostField and hostField->m_len_value) {
         std::string_view hSV{hostField->m_ptr_value, hostField->m_len_value};
@@ -1104,8 +1105,8 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
     if (hdr.size() and !hdr.error() and (hdr.size() < hdr.capacity())) {
       std::string_view sV = hdr.view();
 
-      request->value_append(MIME_FIELD_FORWARDED_sv, sV, true, ','); // true => separator must
-                                                                     // be inserted
+      request->value_append(static_cast<std::string_view>(MIME_FIELD_FORWARDED), sV, true, ','); // true => separator must
+                                                                                                 // be inserted
 
       Dbg(dbg_ctl_http_trans, "[add_forwarded_field_to_outgoing_request] Forwarded header (%.*s) added",
           static_cast<int>(hdr.size()), hdr.data());
@@ -1121,8 +1122,8 @@ HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigPa
     MIMEField *ua_field;
     bool       do_add = true;
 
-    if ((ua_field = header->field_find(MIME_FIELD_SERVER_sv)) == nullptr) {
-      if (likely((ua_field = header->field_create(MIME_FIELD_SERVER_sv)) != nullptr)) {
+    if ((ua_field = header->field_find(static_cast<std::string_view>(MIME_FIELD_SERVER))) == nullptr) {
+      if (likely((ua_field = header->field_create(static_cast<std::string_view>(MIME_FIELD_SERVER))) != nullptr)) {
         header->field_attach(ua_field);
       }
     } else {
@@ -1150,27 +1151,27 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams       
   // From
   if (http_txn_conf->anonymize_remove_from) {
     Dbg(dbg_ctl_anon, "removing 'From' headers");
-    header->field_delete(MIME_FIELD_FROM_sv);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_FROM));
   }
   // Referer
   if (http_txn_conf->anonymize_remove_referer) {
     Dbg(dbg_ctl_anon, "removing 'Referer' headers");
-    header->field_delete(MIME_FIELD_REFERER_sv);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_REFERER));
   }
   // User-Agent
   if (http_txn_conf->anonymize_remove_user_agent) {
     Dbg(dbg_ctl_anon, "removing 'User-agent' headers");
-    header->field_delete(MIME_FIELD_USER_AGENT_sv);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_USER_AGENT));
   }
   // Cookie
   if (http_txn_conf->anonymize_remove_cookie) {
     Dbg(dbg_ctl_anon, "removing 'Cookie' headers");
-    header->field_delete(MIME_FIELD_COOKIE_sv);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_COOKIE));
   }
   // Client-ip
   if (http_txn_conf->anonymize_remove_client_ip) {
     Dbg(dbg_ctl_anon, "removing 'Client-ip' headers");
-    header->field_delete(MIME_FIELD_CLIENT_IP_sv);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_CLIENT_IP));
   }
   /////////////////////////////////////////////
   // remove any other user specified headers //
@@ -1199,7 +1200,7 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
   int normalize_ae = ohcp->normalize_ae;
 
   if (normalize_ae) {
-    MIMEField *ae_field = header->field_find(MIME_FIELD_ACCEPT_ENCODING_sv);
+    MIMEField *ae_field = header->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT_ENCODING));
 
     if (ae_field) {
       if (normalize_ae == 1) {
@@ -1254,9 +1255,9 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
 void
 HttpTransactHeaders::add_connection_close(HTTPHdr *header)
 {
-  MIMEField *field = header->field_find(MIME_FIELD_CONNECTION_sv);
+  MIMEField *field = header->field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
   if (!field) {
-    field = header->field_create(MIME_FIELD_CONNECTION_sv);
+    field = header->field_create(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
     header->field_attach(field);
   }
   header->field_value_set(field, std::string_view{HTTP_VALUE_CLOSE, static_cast<std::string_view::size_type>(HTTP_LEN_CLOSE)});

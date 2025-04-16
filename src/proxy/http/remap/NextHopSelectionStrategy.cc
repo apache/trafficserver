@@ -270,7 +270,7 @@ NextHopSelectionStrategy::setHostHeader(TSHttpTxn txnp, const char *hostname)
 {
   if (host_override && nullptr != hostname) {
     HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-    sm->t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST_sv, hostname);
+    sm->t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST), hostname);
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] overriding host header with parent %s", sm->sm_id, hostname);
   }
 }

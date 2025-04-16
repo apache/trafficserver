@@ -515,111 +515,111 @@ struct MIMEFieldSDKHandle : public HdrHeapObjImpl {
  *                                                                     *
  ***********************************************************************/
 
-extern std::string_view MIME_FIELD_ACCEPT_sv;
-extern std::string_view MIME_FIELD_ACCEPT_CHARSET_sv;
-extern std::string_view MIME_FIELD_ACCEPT_ENCODING_sv;
-extern std::string_view MIME_FIELD_ACCEPT_LANGUAGE_sv;
-extern std::string_view MIME_FIELD_ACCEPT_RANGES_sv;
-extern std::string_view MIME_FIELD_AGE_sv;
-extern std::string_view MIME_FIELD_ALLOW_sv;
-extern std::string_view MIME_FIELD_APPROVED_sv;
-extern std::string_view MIME_FIELD_AUTHORIZATION_sv;
-extern std::string_view MIME_FIELD_BYTES_sv;
-extern std::string_view MIME_FIELD_CACHE_CONTROL_sv;
-extern std::string_view MIME_FIELD_CLIENT_IP_sv;
-extern std::string_view MIME_FIELD_CONNECTION_sv;
-extern std::string_view MIME_FIELD_CONTENT_BASE_sv;
-extern std::string_view MIME_FIELD_CONTENT_ENCODING_sv;
-extern std::string_view MIME_FIELD_CONTENT_LANGUAGE_sv;
-extern std::string_view MIME_FIELD_CONTENT_LENGTH_sv;
-extern std::string_view MIME_FIELD_CONTENT_LOCATION_sv;
-extern std::string_view MIME_FIELD_CONTENT_MD5_sv;
-extern std::string_view MIME_FIELD_CONTENT_RANGE_sv;
-extern std::string_view MIME_FIELD_CONTENT_TYPE_sv;
-extern std::string_view MIME_FIELD_CONTROL_sv;
-extern std::string_view MIME_FIELD_COOKIE_sv;
-extern std::string_view MIME_FIELD_DATE_sv;
-extern std::string_view MIME_FIELD_DISTRIBUTION_sv;
-extern std::string_view MIME_FIELD_ETAG_sv;
-extern std::string_view MIME_FIELD_EXPECT_sv;
-extern std::string_view MIME_FIELD_EXPIRES_sv;
-extern std::string_view MIME_FIELD_FOLLOWUP_TO_sv;
-extern std::string_view MIME_FIELD_FROM_sv;
-extern std::string_view MIME_FIELD_HOST_sv;
-extern std::string_view MIME_FIELD_IF_MATCH_sv;
-extern std::string_view MIME_FIELD_IF_MODIFIED_SINCE_sv;
-extern std::string_view MIME_FIELD_IF_NONE_MATCH_sv;
-extern std::string_view MIME_FIELD_IF_RANGE_sv;
-extern std::string_view MIME_FIELD_IF_UNMODIFIED_SINCE_sv;
-extern std::string_view MIME_FIELD_KEEP_ALIVE_sv;
-extern std::string_view MIME_FIELD_KEYWORDS_sv;
-extern std::string_view MIME_FIELD_LAST_MODIFIED_sv;
-extern std::string_view MIME_FIELD_LINES_sv;
-extern std::string_view MIME_FIELD_LOCATION_sv;
-extern std::string_view MIME_FIELD_MAX_FORWARDS_sv;
-extern std::string_view MIME_FIELD_MESSAGE_ID_sv;
-extern std::string_view MIME_FIELD_NEWSGROUPS_sv;
-extern std::string_view MIME_FIELD_ORGANIZATION_sv;
-extern std::string_view MIME_FIELD_PATH_sv;
-extern std::string_view MIME_FIELD_PRAGMA_sv;
-extern std::string_view MIME_FIELD_PROXY_AUTHENTICATE_sv;
-extern std::string_view MIME_FIELD_PROXY_AUTHORIZATION_sv;
-extern std::string_view MIME_FIELD_PROXY_CONNECTION_sv;
-extern std::string_view MIME_FIELD_PUBLIC_sv;
-extern std::string_view MIME_FIELD_RANGE_sv;
-extern std::string_view MIME_FIELD_REFERENCES_sv;
-extern std::string_view MIME_FIELD_REFERER_sv;
-extern std::string_view MIME_FIELD_REPLY_TO_sv;
-extern std::string_view MIME_FIELD_RETRY_AFTER_sv;
-extern std::string_view MIME_FIELD_SENDER_sv;
-extern std::string_view MIME_FIELD_SERVER_sv;
-extern std::string_view MIME_FIELD_SET_COOKIE_sv;
-extern std::string_view MIME_FIELD_STRICT_TRANSPORT_SECURITY_sv;
-extern std::string_view MIME_FIELD_SUBJECT_sv;
-extern std::string_view MIME_FIELD_SUMMARY_sv;
-extern std::string_view MIME_FIELD_TE_sv;
-extern std::string_view MIME_FIELD_TRANSFER_ENCODING_sv;
-extern std::string_view MIME_FIELD_UPGRADE_sv;
-extern std::string_view MIME_FIELD_USER_AGENT_sv;
-extern std::string_view MIME_FIELD_VARY_sv;
-extern std::string_view MIME_FIELD_VIA_sv;
-extern std::string_view MIME_FIELD_WARNING_sv;
-extern std::string_view MIME_FIELD_WWW_AUTHENTICATE_sv;
-extern std::string_view MIME_FIELD_XREF_sv;
-extern std::string_view MIME_FIELD_ATS_INTERNAL_sv;
-extern std::string_view MIME_FIELD_X_ID_sv;
-extern std::string_view MIME_FIELD_X_FORWARDED_FOR_sv;
-extern std::string_view MIME_FIELD_FORWARDED_sv;
-extern std::string_view MIME_FIELD_SEC_WEBSOCKET_KEY_sv;
-extern std::string_view MIME_FIELD_SEC_WEBSOCKET_VERSION_sv;
-extern std::string_view MIME_FIELD_HTTP2_SETTINGS_sv;
-extern std::string_view MIME_FIELD_EARLY_DATA_sv;
+extern c_str_view MIME_FIELD_ACCEPT;
+extern c_str_view MIME_FIELD_ACCEPT_CHARSET;
+extern c_str_view MIME_FIELD_ACCEPT_ENCODING;
+extern c_str_view MIME_FIELD_ACCEPT_LANGUAGE;
+extern c_str_view MIME_FIELD_ACCEPT_RANGES;
+extern c_str_view MIME_FIELD_AGE;
+extern c_str_view MIME_FIELD_ALLOW;
+extern c_str_view MIME_FIELD_APPROVED;
+extern c_str_view MIME_FIELD_AUTHORIZATION;
+extern c_str_view MIME_FIELD_BYTES;
+extern c_str_view MIME_FIELD_CACHE_CONTROL;
+extern c_str_view MIME_FIELD_CLIENT_IP;
+extern c_str_view MIME_FIELD_CONNECTION;
+extern c_str_view MIME_FIELD_CONTENT_BASE;
+extern c_str_view MIME_FIELD_CONTENT_ENCODING;
+extern c_str_view MIME_FIELD_CONTENT_LANGUAGE;
+extern c_str_view MIME_FIELD_CONTENT_LENGTH;
+extern c_str_view MIME_FIELD_CONTENT_LOCATION;
+extern c_str_view MIME_FIELD_CONTENT_MD5;
+extern c_str_view MIME_FIELD_CONTENT_RANGE;
+extern c_str_view MIME_FIELD_CONTENT_TYPE;
+extern c_str_view MIME_FIELD_CONTROL;
+extern c_str_view MIME_FIELD_COOKIE;
+extern c_str_view MIME_FIELD_DATE;
+extern c_str_view MIME_FIELD_DISTRIBUTION;
+extern c_str_view MIME_FIELD_ETAG;
+extern c_str_view MIME_FIELD_EXPECT;
+extern c_str_view MIME_FIELD_EXPIRES;
+extern c_str_view MIME_FIELD_FOLLOWUP_TO;
+extern c_str_view MIME_FIELD_FROM;
+extern c_str_view MIME_FIELD_HOST;
+extern c_str_view MIME_FIELD_IF_MATCH;
+extern c_str_view MIME_FIELD_IF_MODIFIED_SINCE;
+extern c_str_view MIME_FIELD_IF_NONE_MATCH;
+extern c_str_view MIME_FIELD_IF_RANGE;
+extern c_str_view MIME_FIELD_IF_UNMODIFIED_SINCE;
+extern c_str_view MIME_FIELD_KEEP_ALIVE;
+extern c_str_view MIME_FIELD_KEYWORDS;
+extern c_str_view MIME_FIELD_LAST_MODIFIED;
+extern c_str_view MIME_FIELD_LINES;
+extern c_str_view MIME_FIELD_LOCATION;
+extern c_str_view MIME_FIELD_MAX_FORWARDS;
+extern c_str_view MIME_FIELD_MESSAGE_ID;
+extern c_str_view MIME_FIELD_NEWSGROUPS;
+extern c_str_view MIME_FIELD_ORGANIZATION;
+extern c_str_view MIME_FIELD_PATH;
+extern c_str_view MIME_FIELD_PRAGMA;
+extern c_str_view MIME_FIELD_PROXY_AUTHENTICATE;
+extern c_str_view MIME_FIELD_PROXY_AUTHORIZATION;
+extern c_str_view MIME_FIELD_PROXY_CONNECTION;
+extern c_str_view MIME_FIELD_PUBLIC;
+extern c_str_view MIME_FIELD_RANGE;
+extern c_str_view MIME_FIELD_REFERENCES;
+extern c_str_view MIME_FIELD_REFERER;
+extern c_str_view MIME_FIELD_REPLY_TO;
+extern c_str_view MIME_FIELD_RETRY_AFTER;
+extern c_str_view MIME_FIELD_SENDER;
+extern c_str_view MIME_FIELD_SERVER;
+extern c_str_view MIME_FIELD_SET_COOKIE;
+extern c_str_view MIME_FIELD_STRICT_TRANSPORT_SECURITY;
+extern c_str_view MIME_FIELD_SUBJECT;
+extern c_str_view MIME_FIELD_SUMMARY;
+extern c_str_view MIME_FIELD_TE;
+extern c_str_view MIME_FIELD_TRANSFER_ENCODING;
+extern c_str_view MIME_FIELD_UPGRADE;
+extern c_str_view MIME_FIELD_USER_AGENT;
+extern c_str_view MIME_FIELD_VARY;
+extern c_str_view MIME_FIELD_VIA;
+extern c_str_view MIME_FIELD_WARNING;
+extern c_str_view MIME_FIELD_WWW_AUTHENTICATE;
+extern c_str_view MIME_FIELD_XREF;
+extern c_str_view MIME_FIELD_ATS_INTERNAL;
+extern c_str_view MIME_FIELD_X_ID;
+extern c_str_view MIME_FIELD_X_FORWARDED_FOR;
+extern c_str_view MIME_FIELD_FORWARDED;
+extern c_str_view MIME_FIELD_SEC_WEBSOCKET_KEY;
+extern c_str_view MIME_FIELD_SEC_WEBSOCKET_VERSION;
+extern c_str_view MIME_FIELD_HTTP2_SETTINGS;
+extern c_str_view MIME_FIELD_EARLY_DATA;
 
-extern std::string_view MIME_VALUE_BYTES_sv;
-extern std::string_view MIME_VALUE_CHUNKED_sv;
-extern std::string_view MIME_VALUE_CLOSE_sv;
-extern std::string_view MIME_VALUE_COMPRESS_sv;
-extern std::string_view MIME_VALUE_DEFLATE_sv;
-extern std::string_view MIME_VALUE_GZIP_sv;
-extern std::string_view MIME_VALUE_BROTLI_sv;
-extern std::string_view MIME_VALUE_IDENTITY_sv;
-extern std::string_view MIME_VALUE_KEEP_ALIVE_sv;
-extern std::string_view MIME_VALUE_MAX_AGE_sv;
-extern std::string_view MIME_VALUE_MAX_STALE_sv;
-extern std::string_view MIME_VALUE_MIN_FRESH_sv;
-extern std::string_view MIME_VALUE_MUST_REVALIDATE_sv;
-extern std::string_view MIME_VALUE_NONE_sv;
-extern std::string_view MIME_VALUE_NO_CACHE_sv;
-extern std::string_view MIME_VALUE_NO_STORE_sv;
-extern std::string_view MIME_VALUE_NO_TRANSFORM_sv;
-extern std::string_view MIME_VALUE_ONLY_IF_CACHED_sv;
-extern std::string_view MIME_VALUE_PRIVATE_sv;
-extern std::string_view MIME_VALUE_PROXY_REVALIDATE_sv;
-extern std::string_view MIME_VALUE_PUBLIC_sv;
-extern std::string_view MIME_VALUE_S_MAXAGE_sv;
-extern std::string_view MIME_VALUE_NEED_REVALIDATE_ONCE_sv;
-extern std::string_view MIME_VALUE_WEBSOCKET_sv;
-extern std::string_view MIME_VALUE_H2C_sv;
+extern c_str_view MIME_VALUE_BYTES;
+extern c_str_view MIME_VALUE_CHUNKED;
+extern c_str_view MIME_VALUE_CLOSE;
+extern c_str_view MIME_VALUE_COMPRESS;
+extern c_str_view MIME_VALUE_DEFLATE;
+extern c_str_view MIME_VALUE_GZIP;
+extern c_str_view MIME_VALUE_BROTLI;
+extern c_str_view MIME_VALUE_IDENTITY;
+extern c_str_view MIME_VALUE_KEEP_ALIVE;
+extern c_str_view MIME_VALUE_MAX_AGE;
+extern c_str_view MIME_VALUE_MAX_STALE;
+extern c_str_view MIME_VALUE_MIN_FRESH;
+extern c_str_view MIME_VALUE_MUST_REVALIDATE;
+extern c_str_view MIME_VALUE_NONE;
+extern c_str_view MIME_VALUE_NO_CACHE;
+extern c_str_view MIME_VALUE_NO_STORE;
+extern c_str_view MIME_VALUE_NO_TRANSFORM;
+extern c_str_view MIME_VALUE_ONLY_IF_CACHED;
+extern c_str_view MIME_VALUE_PRIVATE;
+extern c_str_view MIME_VALUE_PROXY_REVALIDATE;
+extern c_str_view MIME_VALUE_PUBLIC;
+extern c_str_view MIME_VALUE_S_MAXAGE;
+extern c_str_view MIME_VALUE_NEED_REVALIDATE_ONCE;
+extern c_str_view MIME_VALUE_WEBSOCKET;
+extern c_str_view MIME_VALUE_H2C;
 
 extern int MIME_WKSIDX_ACCEPT;
 extern int MIME_WKSIDX_ACCEPT_CHARSET;
@@ -1533,7 +1533,7 @@ MIMEHdr::value_append(std::string_view name, std::string_view value, bool prepen
 inline time_t
 MIMEHdr::get_age() const
 {
-  int64_t age = value_get_int64(MIME_FIELD_AGE_sv);
+  int64_t age = value_get_int64(static_cast<std::string_view>(MIME_FIELD_AGE));
 
   if (age < 0) // We should ignore negative Age: values
     return 0;
@@ -1550,7 +1550,7 @@ MIMEHdr::get_age() const
 inline int64_t
 MIMEHdr::get_content_length() const
 {
-  return value_get_int64(MIME_FIELD_CONTENT_LENGTH_sv);
+  return value_get_int64(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
 }
 
 /*-------------------------------------------------------------------------
@@ -1559,7 +1559,7 @@ MIMEHdr::get_content_length() const
 inline time_t
 MIMEHdr::get_date() const
 {
-  return value_get_date(MIME_FIELD_DATE_sv);
+  return value_get_date(static_cast<std::string_view>(MIME_FIELD_DATE));
 }
 
 /*-------------------------------------------------------------------------
@@ -1568,7 +1568,7 @@ MIMEHdr::get_date() const
 inline time_t
 MIMEHdr::get_expires() const
 {
-  return value_get_date(MIME_FIELD_EXPIRES_sv);
+  return value_get_date(static_cast<std::string_view>(MIME_FIELD_EXPIRES));
 }
 
 /*-------------------------------------------------------------------------
@@ -1577,7 +1577,7 @@ MIMEHdr::get_expires() const
 inline time_t
 MIMEHdr::get_if_modified_since() const
 {
-  return value_get_date(MIME_FIELD_IF_MODIFIED_SINCE_sv);
+  return value_get_date(static_cast<std::string_view>(MIME_FIELD_IF_MODIFIED_SINCE));
 }
 
 /*-------------------------------------------------------------------------
@@ -1586,7 +1586,7 @@ MIMEHdr::get_if_modified_since() const
 inline time_t
 MIMEHdr::get_if_unmodified_since() const
 {
-  return value_get_date(MIME_FIELD_IF_UNMODIFIED_SINCE_sv);
+  return value_get_date(static_cast<std::string_view>(MIME_FIELD_IF_UNMODIFIED_SINCE));
 }
 
 /*-------------------------------------------------------------------------
@@ -1595,7 +1595,7 @@ MIMEHdr::get_if_unmodified_since() const
 inline time_t
 MIMEHdr::get_last_modified() const
 {
-  return value_get_date(MIME_FIELD_LAST_MODIFIED_sv);
+  return value_get_date(static_cast<std::string_view>(MIME_FIELD_LAST_MODIFIED));
 }
 
 /*-------------------------------------------------------------------------
@@ -1604,7 +1604,7 @@ MIMEHdr::get_last_modified() const
 inline time_t
 MIMEHdr::get_if_range_date() const
 {
-  return value_get_date(MIME_FIELD_IF_RANGE_sv);
+  return value_get_date(static_cast<std::string_view>(MIME_FIELD_IF_RANGE));
 }
 
 /*-------------------------------------------------------------------------
@@ -1613,7 +1613,7 @@ MIMEHdr::get_if_range_date() const
 inline int32_t
 MIMEHdr::get_max_forwards() const
 {
-  return value_get_int(MIME_FIELD_MAX_FORWARDS_sv);
+  return value_get_int(static_cast<std::string_view>(MIME_FIELD_MAX_FORWARDS));
 }
 
 /*-------------------------------------------------------------------------
@@ -1707,14 +1707,14 @@ inline void
 MIMEHdr::set_age(time_t value)
 {
   if (value < 0)
-    value_set_uint(MIME_FIELD_AGE_sv, (uint32_t)INT_MAX + 1);
+    value_set_uint(static_cast<std::string_view>(MIME_FIELD_AGE), (uint32_t)INT_MAX + 1);
   else {
     if (sizeof(time_t) > 4) {
-      value_set_int64(MIME_FIELD_AGE_sv, value);
+      value_set_int64(static_cast<std::string_view>(MIME_FIELD_AGE), value);
     } else {
       // Only on systems where time_t is 32 bits
       // coverity[Y2K38_SAFETY]
-      value_set_uint(MIME_FIELD_AGE_sv, value);
+      value_set_uint(static_cast<std::string_view>(MIME_FIELD_AGE), value);
     }
   }
 }
@@ -1725,7 +1725,7 @@ MIMEHdr::set_age(time_t value)
 inline void
 MIMEHdr::set_content_length(int64_t value)
 {
-  value_set_int64(MIME_FIELD_CONTENT_LENGTH_sv, value);
+  value_set_int64(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH), value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1734,7 +1734,7 @@ MIMEHdr::set_content_length(int64_t value)
 inline void
 MIMEHdr::set_date(time_t value)
 {
-  value_set_date(MIME_FIELD_DATE_sv, value);
+  value_set_date(static_cast<std::string_view>(MIME_FIELD_DATE), value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1743,7 +1743,7 @@ MIMEHdr::set_date(time_t value)
 inline void
 MIMEHdr::set_expires(time_t value)
 {
-  value_set_date(MIME_FIELD_EXPIRES_sv, value);
+  value_set_date(static_cast<std::string_view>(MIME_FIELD_EXPIRES), value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1752,7 +1752,7 @@ MIMEHdr::set_expires(time_t value)
 inline void
 MIMEHdr::set_if_modified_since(time_t value)
 {
-  value_set_date(MIME_FIELD_IF_MODIFIED_SINCE_sv, value);
+  value_set_date(static_cast<std::string_view>(MIME_FIELD_IF_MODIFIED_SINCE), value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1761,7 +1761,7 @@ MIMEHdr::set_if_modified_since(time_t value)
 inline void
 MIMEHdr::set_if_unmodified_since(time_t value)
 {
-  value_set_date(MIME_FIELD_IF_UNMODIFIED_SINCE_sv, value);
+  value_set_date(static_cast<std::string_view>(MIME_FIELD_IF_UNMODIFIED_SINCE), value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1770,7 +1770,7 @@ MIMEHdr::set_if_unmodified_since(time_t value)
 inline void
 MIMEHdr::set_last_modified(time_t value)
 {
-  value_set_date(MIME_FIELD_LAST_MODIFIED_sv, value);
+  value_set_date(static_cast<std::string_view>(MIME_FIELD_LAST_MODIFIED), value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1779,7 +1779,7 @@ MIMEHdr::set_last_modified(time_t value)
 inline void
 MIMEHdr::set_max_forwards(int32_t value)
 {
-  value_set_int(MIME_FIELD_MAX_FORWARDS_sv, value);
+  value_set_int(static_cast<std::string_view>(MIME_FIELD_MAX_FORWARDS), value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1788,7 +1788,7 @@ MIMEHdr::set_max_forwards(int32_t value)
 inline void
 MIMEHdr::set_warning(int32_t value)
 {
-  value_set_int(MIME_FIELD_WARNING_sv, value);
+  value_set_int(static_cast<std::string_view>(MIME_FIELD_WARNING), value);
 }
 
 /*-------------------------------------------------------------------------
@@ -1797,5 +1797,5 @@ MIMEHdr::set_warning(int32_t value)
 inline void
 MIMEHdr::set_server(std::string_view server_id_tag)
 {
-  value_set(MIME_FIELD_SERVER_sv, server_id_tag);
+  value_set(static_cast<std::string_view>(MIME_FIELD_SERVER), server_id_tag);
 }

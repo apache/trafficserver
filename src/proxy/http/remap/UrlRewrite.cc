@@ -400,8 +400,8 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
   int                    new_loc_length;
   int                    i;
   const std::string_view url_headers[N_URL_HEADERS] = {
-    MIME_FIELD_LOCATION_sv,
-    MIME_FIELD_CONTENT_LOCATION_sv,
+    static_cast<std::string_view>(MIME_FIELD_LOCATION),
+    static_cast<std::string_view>(MIME_FIELD_CONTENT_LOCATION),
     "URI"sv,
     "Destination"sv,
   };
@@ -645,7 +645,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 
   if (host_len == 0 && reverse_proxy != 0) { // Server request.  Use the host header to figure out where
                                              // it goes.  Host header parsing is same as in ::Remap
-    auto host_hdr{request_header->value_get(MIME_FIELD_HOST_sv)};
+    auto host_hdr{request_header->value_get(static_cast<std::string_view>(MIME_FIELD_HOST))};
 
     const char *tmp = static_cast<const char *>(memchr(host_hdr.data(), ':', host_hdr.length()));
 

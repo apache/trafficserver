@@ -632,9 +632,9 @@ public:
   }
   c_str_view(std::string_view sv) : c_str_view{sv.data(), sv.length()} {}
   c_str_view(const c_str_view &other)            = default;
-  c_str_view(c_str_view &&other)                 = delete;
+  c_str_view(c_str_view &&other)                 = default;
   c_str_view &operator=(const c_str_view &other) = default;
-  c_str_view &operator=(c_str_view &&other)      = delete;
+  c_str_view &operator=(c_str_view &&other)      = default;
 
   const char *
   c_str() const noexcept
