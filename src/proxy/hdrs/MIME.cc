@@ -2585,34 +2585,35 @@ mime_hdr_print(MIMEHdrImpl const *mh, char *buf_start, int buf_length, int *buf_
 namespace
 {
 int
-mime_mem_print_(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout,
+mime_mem_print_(std::string_view src, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout,
                 int (*char_transform)(int char_in))
 {
   if (buf_start == nullptr) { // this case should only be used by test_header
     ink_release_assert(buf_index_inout == nullptr);
     ink_release_assert(buf_chars_to_skip_inout == nullptr);
-    while (src_l--) {
-      putchar(*src_d++);
+    for (auto c : src) {
+      putchar(c);
     }
     return 1;
   }
 
-  ink_assert(src_d != nullptr);
+  ink_assert(src.data() != nullptr);
 
   if (*buf_chars_to_skip_inout > 0) {
-    if (*buf_chars_to_skip_inout >= src_l) {
-      *buf_chars_to_skip_inout -= src_l;
+    if (*buf_chars_to_skip_inout >= static_cast<int>(src.length())) {
+      *buf_chars_to_skip_inout -= static_cast<int>(src.length());
       return 1;
     } else {
-      src_l                    -= *buf_chars_to_skip_inout;
-      src_d                    += *buf_chars_to_skip_inout;
-      *buf_chars_to_skip_inout  = 0;
+      src.remove_prefix(*buf_chars_to_skip_inout);
+      *buf_chars_to_skip_inout = 0;
     }
   }
 
-  int copy_l = std::min(buf_length - *buf_index_inout, src_l);
+  auto src_l{static_cast<int>(src.length())};
+  int  copy_l = std::min(buf_length - *buf_index_inout, src_l);
   if (copy_l > 0) {
     buf_start += *buf_index_inout;
+    auto src_d{src.data()};
     std::transform(src_d, src_d + copy_l, buf_start, char_transform);
     *buf_index_inout += copy_l;
   }
@@ -2630,15 +2631,13 @@ to_same_char(int ch)
 int
 mime_mem_print(std::string_view src, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
-  return mime_mem_print_(src.data(), static_cast<int>(src.length()), buf_start, buf_length, buf_index_inout,
-                         buf_chars_to_skip_inout, to_same_char);
+  return mime_mem_print_(src, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, to_same_char);
 }
 
 int
 mime_mem_print_lc(std::string_view src, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
-  return mime_mem_print_(src.data(), static_cast<int>(src.length()), buf_start, buf_length, buf_index_inout,
-                         buf_chars_to_skip_inout, std::tolower);
+  return mime_mem_print_(src, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, std::tolower);
 }
 
 int
