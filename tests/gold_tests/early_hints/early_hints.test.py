@@ -154,5 +154,6 @@ class TestEarlyHints:
 
 
 TestEarlyHints(Protocol.HTTP)
-TestEarlyHints(Protocol.HTTPS)
-TestEarlyHints(Protocol.HTTP2)
+if not Condition.CurlUds():
+    TestEarlyHints(Protocol.HTTPS)
+    TestEarlyHints(Protocol.HTTP2)

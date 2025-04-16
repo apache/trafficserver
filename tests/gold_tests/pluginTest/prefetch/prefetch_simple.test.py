@@ -70,6 +70,6 @@ tr.Processes.Default.ReturnCode = 0
 Test.AddAwaitFileContainsTestRun('Await transactions to finish logging.', ts.Disk.traffic_out.Name, 'demo-4.txt')
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (f"grep 'GET http://domain.in' {ts.Disk.traffic_out.Name}")
+tr.Processes.Default.Command = (f"grep 'GET http://' {ts.Disk.traffic_out.Name} | grep -v '127.0.0.1'")
 tr.Streams.stdout = "prefetch_simple.gold"
 tr.Processes.Default.ReturnCode = 0

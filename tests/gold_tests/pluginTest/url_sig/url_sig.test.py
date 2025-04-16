@@ -25,6 +25,7 @@ Test url_sig plugin
 
 Test.ContinueOnFail = True
 
+Test.SkipIf(Condition.CurlUds())
 # Skip if plugins not present.
 Test.SkipUnless(Condition.PluginExists('url_sig.so'))
 

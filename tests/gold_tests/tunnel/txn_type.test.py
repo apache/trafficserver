@@ -23,6 +23,7 @@ Test.Summary = '''
 Test the reported type of HTTP transactions and tunnels
 '''
 
+Test.SkipIf(Condition.CurlUds())
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", enable_cache=False, enable_tls=True)
 ts.addSSLfile("../tls/ssl/server.pem")
