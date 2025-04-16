@@ -2558,7 +2558,8 @@ mime_hdr_print(MIMEHdrImpl const *mh, char *buf_start, int buf_length, int *buf_
           contig_length += this_length;
         } else {
           if (contig_length > 0) {
-            if (!mime_mem_print(contig_start, contig_length, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout))
+            if (!mime_mem_print(std::string_view{contig_start, static_cast<std::string_view::size_type>(contig_length)}, buf_start,
+                                buf_length, buf_index_inout, buf_chars_to_skip_inout))
               return 0;
           }
           contig_start  = field->m_ptr_name;
@@ -2568,13 +2569,14 @@ mime_hdr_print(MIMEHdrImpl const *mh, char *buf_start, int buf_length, int *buf_
     }
 
     if (contig_length > 0) {
-      if (!mime_mem_print(contig_start, contig_length, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout))
+      if (!mime_mem_print(std::string_view{ontig_start, static_cast<std::string_view::size_type>(contig_length)}, buf_start,
+                          buf_length, buf_index_inout, buf_chars_to_skip_inout))
         return 0;
     }
   }
 #endif
 
-  if (!mime_mem_print("\r\n", 2, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout)) {
+  if (!mime_mem_print("\r\n"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout)) {
     return 0;
   }
 
@@ -2627,15 +2629,17 @@ to_same_char(int ch)
 } // end anonymous namespace
 
 int
-mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+mime_mem_print(std::string_view src, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
-  return mime_mem_print_(src_d, src_l, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, to_same_char);
+  return mime_mem_print_(src.data(), static_cast<int>(src.length()), buf_start, buf_length, buf_index_inout,
+                         buf_chars_to_skip_inout, to_same_char);
 }
 
 int
-mime_mem_print_lc(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+mime_mem_print_lc(std::string_view src, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
-  return mime_mem_print_(src_d, src_l, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, std::tolower);
+  return mime_mem_print_(src.data(), static_cast<int>(src.length()), buf_start, buf_length, buf_index_inout,
+                         buf_chars_to_skip_inout, std::tolower);
 }
 
 int
@@ -2661,7 +2665,8 @@ mime_field_print(MIMEField const *field, char *buf_start, int buf_length, int *b
       *buf_index_inout += total_len;
 
     } else {
-      TRY(mime_mem_print(field->m_ptr_name, total_len, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{field->m_ptr_name, static_cast<std::string_view::size_type>(total_len)}, buf_start,
+                         buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
   } else {
     total_len = field->m_len_name + field->m_len_value + 2 + 2;
@@ -2686,10 +2691,12 @@ mime_field_print(MIMEField const *field, char *buf_start, int buf_length, int *b
 
       *buf_index_inout += total_len;
     } else {
-      TRY(mime_mem_print(field->m_ptr_name, field->m_len_name, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print(": ", 2, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print(field->m_ptr_value, field->m_len_value, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print("\r\n", 2, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{field->m_ptr_name, static_cast<std::string_view::size_type>(field->m_len_name)},
+                         buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(": "sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{field->m_ptr_value, static_cast<std::string_view::size_type>(field->m_len_value)},
+                         buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print("\r\n"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
   }
 

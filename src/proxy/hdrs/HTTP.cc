@@ -419,7 +419,7 @@ http_version_print(const HTTPVersion &version, char *buf, int bufsize, int *bufi
 
   char tmpbuf[16];
   http_hdr_version_to_string(version, tmpbuf);
-  TRY(mime_mem_print(tmpbuf, 8, buf, bufsize, bufindex, dumpoffset));
+  TRY(mime_mem_print(std::string_view{tmpbuf, 8}, buf, bufsize, bufindex, dumpoffset));
   return 1;
 
 #undef TRY
@@ -481,24 +481,26 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
         *p++       = '\n';
         *bufindex += 2;
       } else {
-        TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
       }
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
 
     } else {
-      TRY(mime_mem_print(hdr->u.req.m_ptr_method, hdr->u.req.m_len_method, buf, bufsize, bufindex, dumpoffset));
+      TRY(
+        mime_mem_print(std::string_view{hdr->u.req.m_ptr_method, static_cast<std::string_view::size_type>(hdr->u.req.m_len_method)},
+                       buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
       if (hdr->u.req.m_url_impl) {
         TRY(url_print(hdr->u.req.m_url_impl, buf, bufsize, bufindex, dumpoffset));
-        TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
       }
 
       TRY(http_version_print(hdr->m_version, buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
     }
@@ -528,7 +530,9 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
       *bufindex += tmplen + 1;
 
       if (hdr->u.resp.m_ptr_reason) {
-        TRY(mime_mem_print(hdr->u.resp.m_ptr_reason, hdr->u.resp.m_len_reason, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print(
+          std::string_view{hdr->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hdr->u.resp.m_len_reason)}, buf,
+          bufsize, bufindex, dumpoffset));
       }
 
       if (bufsize - *bufindex >= 2) {
@@ -537,7 +541,7 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
         *p++       = '\n';
         *bufindex += 2;
       } else {
-        TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
       }
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
@@ -545,19 +549,22 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
     } else {
       TRY(http_version_print(hdr->m_version, buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
       tmplen = mime_format_int(tmpbuf, http_hdr_status_get(hdr), sizeof(tmpbuf));
 
-      TRY(mime_mem_print(tmpbuf, tmplen, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(std::string_view{tmpbuf, static_cast<std::string_view::size_type>(tmplen)}, buf, bufsize, bufindex,
+                         dumpoffset));
 
-      TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
       if (hdr->u.resp.m_ptr_reason) {
-        TRY(mime_mem_print(hdr->u.resp.m_ptr_reason, hdr->u.resp.m_len_reason, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print(
+          std::string_view{hdr->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hdr->u.resp.m_len_reason)}, buf,
+          bufsize, bufindex, dumpoffset));
       }
 
-      TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
     }

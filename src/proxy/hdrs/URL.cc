@@ -1605,31 +1605,35 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
   bool scheme_added = false;
   if (url->m_ptr_scheme) {
     TRY(((normalization_flags & URLNormalize::LC_SCHEME_HOST) ? mime_mem_print_lc : mime_mem_print)(
-      url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      std::string_view{url->m_ptr_scheme, static_cast<std::string_view::size_type>(url->m_len_scheme)}, buf_start, buf_length,
+      buf_index_inout, buf_chars_to_skip_inout));
     scheme_added = true;
 
   } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
     if (URL_TYPE_HTTP == url->m_url_type) {
-      TRY(mime_mem_print(URL_SCHEME_HTTP, URL_LEN_HTTP, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTP, static_cast<std::string_view::size_type>(URL_LEN_HTTP)}, buf_start,
+                         buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
 
     } else if (URL_TYPE_HTTPS == url->m_url_type) {
-      TRY(mime_mem_print(URL_SCHEME_HTTPS, URL_LEN_HTTPS, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)}, buf_start,
+                         buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
     }
   }
   if (scheme_added) {
-    TRY(mime_mem_print("://", 3, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("://"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   if (url->m_ptr_user) {
-    TRY(mime_mem_print(url->m_ptr_user, url->m_len_user, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(std::string_view{url->m_ptr_user, static_cast<std::string_view::size_type>(url->m_len_user)}, buf_start,
+                       buf_length, buf_index_inout, buf_chars_to_skip_inout));
     if (url->m_ptr_password) {
-      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(
-        mime_mem_print(url->m_ptr_password, url->m_len_password, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(":"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{url->m_ptr_password, static_cast<std::string_view::size_type>(url->m_len_password)},
+                         buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
-    TRY(mime_mem_print("@", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("@"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   if (url->m_ptr_host) {
@@ -1638,34 +1642,39 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     int  n         = url->m_len_host;
     bool bracket_p = '[' != *url->m_ptr_host && (nullptr != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
     if (bracket_p) {
-      TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print("["sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
     TRY(((normalization_flags & URLNormalize::LC_SCHEME_HOST) ? mime_mem_print_lc : mime_mem_print)(
-      url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      std::string_view{url->m_ptr_host, static_cast<std::string_view::size_type>(url->m_len_host)}, buf_start, buf_length,
+      buf_index_inout, buf_chars_to_skip_inout));
     if (bracket_p) {
-      TRY(mime_mem_print("]", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print("]"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
     if (url->m_ptr_port && url->m_port) {
-      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print(url->m_ptr_port, url->m_len_port, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(":"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{url->m_ptr_port, static_cast<std::string_view::size_type>(url->m_len_port)}, buf_start,
+                         buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
   }
 
   if (!url->m_path_is_empty) {
-    TRY(mime_mem_print("/", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("/"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
   if (url->m_ptr_path) {
-    TRY(mime_mem_print(url->m_ptr_path, url->m_len_path, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(std::string_view{url->m_ptr_path, static_cast<std::string_view::size_type>(url->m_len_path)}, buf_start,
+                       buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   if (url->m_ptr_query && url->m_len_query > 0) {
-    TRY(mime_mem_print("?", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    TRY(mime_mem_print(url->m_ptr_query, url->m_len_query, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("?"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(std::string_view{url->m_ptr_query, static_cast<std::string_view::size_type>(url->m_len_query)}, buf_start,
+                       buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   if (url->m_ptr_fragment && url->m_len_fragment > 0) {
-    TRY(mime_mem_print("#", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    TRY(mime_mem_print(url->m_ptr_fragment, url->m_len_fragment, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("#"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(std::string_view{url->m_ptr_fragment, static_cast<std::string_view::size_type>(url->m_len_fragment)},
+                       buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   return 1;
