@@ -23,6 +23,10 @@
 
 #include <cstdio>
 
+#include <string_view>
+
+using namespace std::literals;
+
 #include "catch.hpp"
 #include "tscore/ink_platform.h"
 #include "proxy/hdrs/MIME.h"
@@ -33,11 +37,11 @@ TEST_CASE("Mime", "[proxy][mime]")
   MIMEHdr    hdr;
   hdr.create(NULL);
 
-  hdr.field_create("Test1", 5);
-  hdr.field_create("Test2", 5);
-  hdr.field_create("Test3", 5);
-  hdr.field_create("Test4", 5);
-  field = hdr.field_create("Test5", 5);
+  hdr.field_create("Test1"sv);
+  hdr.field_create("Test2"sv);
+  hdr.field_create("Test3"sv);
+  hdr.field_create("Test4"sv);
+  field = hdr.field_create("Test5"sv);
 
   if (!hdr.m_mime->m_first_fblock.contains(field)) {
     std::printf("The field block doesn't contain the field but it should\n");
@@ -69,128 +73,108 @@ TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
   hdr.create(NULL);
 
   const char *header_value;
-  const char *host;
-  int         host_len;
-  const char *port;
-  int         port_len;
 
   header_value = "host";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 4) {
+  hdr.value_set("Host"sv, header_value);
+  auto [field, host, port]{hdr.get_host_port_values()};
+  if (host.length() != 4) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "host", host_len) != 0) {
+  if (host != "host"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 0) {
+  if (!port.empty()) {
     std::printf("port length doesn't match\n");
-    CHECK(false);
-  }
-  if (port != nullptr) {
-    std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "host:";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 4) {
+  hdr.value_set("Host"sv, header_value);
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 4) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "host", host_len) != 0) {
+  if (host != "host"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 0) {
+  if (!port.empty()) {
     std::printf("port length doesn't match\n");
-    CHECK(false);
-  }
-  if (port != nullptr) {
-    std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "[host]";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 6) {
+  hdr.value_set("Host"sv, header_value);
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 6) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "[host]", host_len) != 0) {
+  if (host != "[host]"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 0) {
+  if (!port.empty()) {
     std::printf("port length doesn't match\n");
-    CHECK(false);
-  }
-  if (port != nullptr) {
-    std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "host:port";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 4) {
+  hdr.value_set("Host"sv, header_value);
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 4) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "host", host_len) != 0) {
+  if (host != "host"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 4) {
+  if (port.length() != 4) {
     std::printf("port length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(port, "port", port_len) != 0) {
+  if (port != "port"sv) {
     std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "[host]:port";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 6) {
+  hdr.value_set("Host"sv, header_value);
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 6) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "[host]", host_len) != 0) {
+  if (host != "[host]"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 4) {
+  if (port.length() != 4) {
     std::printf("port length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(port, "port", port_len) != 0) {
+  if (port != "port"sv) {
     std::printf("port string doesn't match\n");
     CHECK(false);
   }
 
   header_value = "[host]:";
-  hdr.value_set("Host", 4, header_value, strlen(header_value));
-  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
-  if (host_len != 6) {
+  hdr.value_set("Host"sv, header_value);
+  std::tie(field, host, port) = hdr.get_host_port_values();
+  if (host.length() != 6) {
     std::printf("host length doesn't match\n");
     CHECK(false);
   }
-  if (strncmp(host, "[host]", host_len) != 0) {
+  if (host != "[host]"sv) {
     std::printf("host string doesn't match\n");
     CHECK(false);
   }
-  if (port_len != 0) {
+  if (!port.empty()) {
     std::printf("port length doesn't match\n");
-    CHECK(false);
-  }
-  if (port != nullptr) {
-    std::printf("port string doesn't match\n");
     CHECK(false);
   }
 

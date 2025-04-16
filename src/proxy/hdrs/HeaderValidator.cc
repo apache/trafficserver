@@ -31,7 +31,7 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
 {
   const MIMEField *field = nullptr;
   MIMEFieldIter    iter;
-  auto             method_field       = hdr.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+  auto             method_field       = hdr.field_find(PSEUDO_HEADER_METHOD);
   bool             has_connect_method = false;
   if (method_field) {
     auto method{method_field->value_get()};
@@ -63,15 +63,15 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
 
   // rfc7540,sec8.1.2.2 and rfc9114,sec4.2: Any message containing
   // connection-specific header fields MUST be treated as malformed.
-  if (hdr.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != nullptr ||
-      hdr.field_find(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE) != nullptr ||
-      hdr.field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION) != nullptr ||
-      hdr.field_find(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE) != nullptr) {
+  if (hdr.field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION)) != nullptr ||
+      hdr.field_find(static_cast<std::string_view>(MIME_FIELD_KEEP_ALIVE)) != nullptr ||
+      hdr.field_find(static_cast<std::string_view>(MIME_FIELD_PROXY_CONNECTION)) != nullptr ||
+      hdr.field_find(static_cast<std::string_view>(MIME_FIELD_UPGRADE)) != nullptr) {
     return false;
   }
 
   // :path pseudo header MUST NOT empty for http or https URIs
-  field = hdr.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
+  field = hdr.field_find(PSEUDO_HEADER_PATH);
   if (field) {
     auto value{field->value_get()};
     if (value.length() == 0) {
@@ -81,7 +81,7 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
 
   // when The TE header field is received, it MUST NOT contain any
   // value other than "trailers".
-  field = hdr.field_find(MIME_FIELD_TE, MIME_LEN_TE);
+  field = hdr.field_find(static_cast<std::string_view>(MIME_FIELD_TE));
   if (field) {
     auto value{field->value_get()};
     if (value != "trailers"sv) {
@@ -96,7 +96,7 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
   // Check pseudo headers
   if (is_response) {
     if (hdr.fields_count() >= 1) {
-      if (hdr.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) == nullptr) {
+      if (hdr.field_find(PSEUDO_HEADER_STATUS) == nullptr) {
         return false;
       }
     } else {
@@ -106,20 +106,16 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
   } else {
     // This is a request.
     if (!has_connect_method && hdr.fields_count() >= 4) {
-      if (hdr.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()) == nullptr ||
-          hdr.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()) == nullptr ||
-          hdr.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()) == nullptr ||
-          hdr.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()) == nullptr ||
-          hdr.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) != nullptr) {
+      if (hdr.field_find(PSEUDO_HEADER_SCHEME) == nullptr || hdr.field_find(PSEUDO_HEADER_METHOD) == nullptr ||
+          hdr.field_find(PSEUDO_HEADER_PATH) == nullptr || hdr.field_find(PSEUDO_HEADER_AUTHORITY) == nullptr ||
+          hdr.field_find(PSEUDO_HEADER_STATUS) != nullptr) {
         // Decoded header field is invalid
         return false;
       }
     } else if (has_connect_method && hdr.fields_count() >= 2) {
-      if (hdr.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size()) != nullptr ||
-          hdr.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size()) == nullptr ||
-          hdr.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size()) != nullptr ||
-          hdr.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size()) == nullptr ||
-          hdr.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size()) != nullptr) {
+      if (hdr.field_find(PSEUDO_HEADER_SCHEME) != nullptr || hdr.field_find(PSEUDO_HEADER_METHOD) == nullptr ||
+          hdr.field_find(PSEUDO_HEADER_PATH) != nullptr || hdr.field_find(PSEUDO_HEADER_AUTHORITY) == nullptr ||
+          hdr.field_find(PSEUDO_HEADER_STATUS) != nullptr) {
         // Decoded header field is invalid
         return false;
       }
