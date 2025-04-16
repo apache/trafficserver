@@ -282,7 +282,6 @@ HttpSM::destroy()
 void
 HttpSM::init(bool from_early_data)
 {
-  ATS_PROBE1(milestone_sm_start, sm_id);
   milestones[TS_MILESTONE_SM_START] = ink_get_hrtime();
 
   _from_early_data = from_early_data;
@@ -292,7 +291,8 @@ HttpSM::init(bool from_early_data)
   server_txn = nullptr;
 
   // Unique state machine identifier
-  sm_id                 = next_sm_id++;
+  sm_id = next_sm_id++;
+  ATS_PROBE1(milestone_sm_start, sm_id);
   t_state.state_machine = this;
 
   t_state.http_config_param = HttpConfig::acquire();
