@@ -524,6 +524,39 @@ Network
    below this limit. A value of 0 disables the per client concurrent connection
    limit.
 
+   See :ts:cv:`proxy.config.http.per_client.connection.exempt_list.filename` for a way to
+   allow (not count) certain client IP addresses when applying this limit.
+
+.. ts:cv:: CONFIG proxy.config.http.per_client.connection.exempt_list.filename STRING NULL
+
+   A path to a YAML formatted file containing a sequence of IP addresses to
+   exempt when counting incoming client connections for per client connection
+   throttling. Incoming addresses in this specified set will not count against
+   :ts:cv:`proxy.config.net.per_client.max_connections_in` and thus will not be
+   blocked by that configuration. This may be useful, for example, to allow
+   any number of incoming connections from within an organization's network
+   without blocking them due to the per client connection max feature.
+
+   This configuration takes a YAML sequence of IP addresses, CIDR networks, or
+   ranges separated by a dash.
+
+   ======================= ===========================================================
+   Example                 Effect
+   ======================= ===========================================================
+   ``10.0.2.123``          Exempt a single IP Address.
+   ``10.0.3.1-10.0.3.254`` Exempt a range of IP address.
+   ``10.0.4.0/24``         Exempt a range of IP address specified by CIDR notation.
+   ======================= ===========================================================
+
+   The root node should be ``exempt_list``. Here is an example of the contents
+   of such a file::
+
+      exempt_list:
+        - 10.0.2.123
+        - 172.16.0.0/20
+        - 192.168.1.0/24
+
+
 .. ts:cv:: CONFIG proxy.config.http.per_client.connection.alert_delay INT 60
    :reloadable:
    :units: seconds
@@ -2023,7 +2056,7 @@ Proxy User Variables
    by a dash or by using CIDR notation.
 
    ======================= ===========================================================
-   Example  Effect
+   Example                 Effect
    ======================= ===========================================================
    ``10.0.2.123``          A single IP Address.
    ``10.0.3.1-10.0.3.254`` A range of IP address.

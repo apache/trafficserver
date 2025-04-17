@@ -54,8 +54,14 @@ handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<Connection
 {
   int const client_max = NetHandler::get_per_client_max_connections_in();
   if (client_max > 0) {
-    auto       inbound_tracker = ConnectionTracker::obtain_inbound(addr);
-    auto const tracked_count   = inbound_tracker.reserve();
+    auto inbound_tracker = ConnectionTracker::obtain_inbound(addr);
+    if (inbound_tracker.is_exempt()) {
+      // The user configured connections like this to not be tracked. Simply exempt it.
+      Metrics::Counter::increment(net_rsb.per_client_connections_exempt_in);
+      Dbg(dbg_ctl_iocore_net_accepts, "Ignoring client connection counting for an incoming address in the exempt list.");
+      return true;
+    }
+    auto const tracked_count = inbound_tracker.reserve();
     if (tracked_count > client_max) {
       // close the connection as we are in per client connection throttle state
       inbound_tracker.release();
@@ -63,6 +69,7 @@ handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<Connection
       inbound_tracker.Warn_Blocked(client_max, 0, tracked_count - 1, addr,
                                    dbg_ctl_iocore_net_accept.on() ? &dbg_ctl_iocore_net_accept : nullptr);
       Metrics::Counter::increment(net_rsb.per_client_connections_throttled_in);
+      Dbg(dbg_ctl_iocore_net_accepts, "Blocking a client connection due to per client connection limit.");
       return false;
     }
     conn_track_group = inbound_tracker.drop();
