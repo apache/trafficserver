@@ -644,7 +644,11 @@ HttpSM::state_read_client_request_header(int event, void *data)
     _ua.get_entry()->vc_read_handler  = &HttpSM::state_watch_for_client_abort;
     _ua.get_entry()->vc_write_handler = &HttpSM::state_watch_for_client_abort;
     _ua.get_txn()->cancel_inactivity_timeout();
-    ATS_PROBE1(milestone_ua_read_header_done, sm_id);
+#ifdef ENABLE_SYSTEMTAP_PROBES
+    int   url_len = 0;
+    char *url_str = t_state.hdr_info.client_request.url_string_get_ref(&url_len);
+#endif
+    ATS_PROBE3(milestone_ua_read_header_done, sm_id, url_str, url_len);
     milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = ink_get_hrtime();
   }
 
