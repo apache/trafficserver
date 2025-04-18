@@ -229,6 +229,12 @@ HostConfiguration::add_compression_algorithms(string &line)
     string token = extractFirstToken(line, isCommaOrSpace);
     if (token.empty()) {
       break;
+    } else if (token == "zstd") {
+#ifdef HAVE_ZSTD_H
+      compression_algorithms_ |= ALGORITHM_ZSTD;
+#else
+      error("supported-algorithms: zstd support not compiled in.");
+#endif
     } else if (token == "br") {
 #ifdef HAVE_BROTLI_ENCODE_H
       compression_algorithms_ |= ALGORITHM_BROTLI;
@@ -332,6 +338,10 @@ Configuration::Parse(const char *path)
     trim_if(line, isspace);
     if (line.empty()) {
       continue;
+    }
+
+    if (strstr(line.c_str(), "zstd")) {
+      current_host_configuration->add_compression_algorithms(line);
     }
 
     for (;;) {
