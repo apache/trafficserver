@@ -450,6 +450,9 @@ struct OverridableHttpConfigParams {
   MgmtByte negative_caching_enabled      = 0;
   MgmtByte negative_revalidating_enabled = 0;
 
+  // bitset to hold the status codes that will BE cached with negative caching enabled
+  HttpStatusBitset negative_caching_list;
+
   MgmtByte cache_when_to_revalidate = 0;
 
   MgmtByte keep_alive_enabled_in  = 1;
@@ -799,9 +802,6 @@ public:
 
   ConnectionTracker::GlobalConfig global_connection_tracker_config;
 
-  // bitset to hold the status codes that will BE cached with negative caching enabled
-  HttpStatusBitset negative_caching_list;
-
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
@@ -846,6 +846,9 @@ public:
 
   // parse redirect configuration string
   static RedirectEnabled::ActionMap *parse_redirect_actions(char *redirect_actions_string, RedirectEnabled::Action &self_action);
+
+  // parse status code list configuration string
+  static HttpStatusBitset parse_http_status_code_list(swoc::TextView status_list);
 
 public:
   static int              m_id;

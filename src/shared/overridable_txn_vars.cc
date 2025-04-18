@@ -78,6 +78,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.http.insert_response_via_str",                      {TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, TS_RECORDDATATYPE_INT}          },
     {"proxy.config.http.flow_control.high_water",                      {TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK, TS_RECORDDATATYPE_INT}     },
     {"proxy.config.http.negative_caching_enabled",                     {TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED, TS_RECORDDATATYPE_INT}         },
+    {"proxy.config.http.negative_caching_list",                        {TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST, TS_RECORDDATATYPE_STRING}         },
     {"proxy.config.http.cache.when_to_revalidate",                     {TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.http.response_header_max_size",                     {TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.http.anonymize_remove_referer",                     {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER, TS_RECORDDATATYPE_INT}         },

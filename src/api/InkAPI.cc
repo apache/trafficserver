@@ -7062,6 +7062,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME:
     ret = _memberp_to_generic(&overridableHttpConfig->negative_caching_lifetime, conv);
     break;
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
+    ret = _memberp_to_generic(&overridableHttpConfig->negative_caching_list, conv);
+    break;
   case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_when_to_revalidate, conv);
     break;
@@ -7626,6 +7629,11 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_SSL_CERT_FILEPATH:
     /* noop */
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
+    if (value && length > 0) {
+      s->t_state.my_txn_conf().negative_caching_list = HttpConfig::parse_http_status_code_list({value, length});
+    }
     break;
   case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
     if (value && length > 0) {
