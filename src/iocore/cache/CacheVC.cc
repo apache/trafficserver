@@ -775,7 +775,9 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         goto Lskip;
       }
       if (!hostinfo_copied) {
-        memccpy(hname, vector.get(i)->request_get()->host_get(&hlen), 0, 500);
+        auto host{vector.get(i)->request_get()->host_get()};
+        hlen = static_cast<int>(host.length());
+        memccpy(hname, host.data(), 0, 500);
         hname[hlen] = 0;
         Dbg(dbg_ctl_cache_scan, "hostname = '%s', hostlen = %d", hname, hlen);
         hostinfo_copied = true;
