@@ -44,7 +44,8 @@ enum CompressionType {
   COMPRESSION_TYPE_DEFAULT = 0,
   COMPRESSION_TYPE_DEFLATE = 1,
   COMPRESSION_TYPE_GZIP    = 2,
-  COMPRESSION_TYPE_BROTLI  = 4
+  COMPRESSION_TYPE_BROTLI  = 4,
+  COMPRESSION_TYPE_ZSTD    = 8,
 };
 
 // this one is used to rename the accept encoding header
@@ -84,13 +85,21 @@ using Data = struct {
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
 #endif
+#if HAVE_ZSTD_H
+  ZSTD_CCtx *zstd_cctx;
+#endif
 };
 
-voidpf      gzip_alloc(voidpf opaque, uInt items, uInt size);
-void        gzip_free(voidpf opaque, voidpf address);
-void        normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);
-void        hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
-void        restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
+voidpf gzip_alloc(voidpf opaque, uInt items, uInt size);
+void   gzip_free(voidpf opaque, voidpf address);
+void   normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);
+void   hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
+void   restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
+#if HAVE_ZSTD_H
+void zstd_compress_init(Data *data);
+void zstd_compress_finish(Data *data);
+void zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
+#endif
 const char *init_hidden_header_name();
 int         register_plugin();
 void        log_compression_ratio(int64_t in, int64_t out);

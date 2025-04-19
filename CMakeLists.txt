@@ -338,6 +338,11 @@ set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
+find_package(zstd)
+if(zstd_FOUND)
+  set(HAVE_ZSTD_H TRUE)
+endif()
+
 # ncurses is used in traffic_top
 find_package(Curses)
 set(HAVE_CURSES_H ${CURSES_HAVE_CURSES_H})
