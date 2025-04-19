@@ -521,7 +521,7 @@ zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_leng
 {
   char   output_buffer[ZSTD_CStreamOutSize()];
   size_t compressed_size = ZSTD_compressCCtx(data->zstd_cctx, output_buffer, sizeof(output_buffer), upstream_buffer,
-                                                                                                            upstream_length, ZSTD_COMPRESSION_LEVEL);
+                                             upstream_length, ZSTD_COMPRESSION_LEVEL);
   if (ZSTD_isError(compressed_size)) {
     error("Zstd compression failed: %s", ZSTD_getErrorName(compressed_size));
     return;
