@@ -519,8 +519,9 @@ zstd_compress_finish(Data *data)
 static void
 zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
 {
-  char output_buffer[ZSTD_CStreamOutSize()];
-  size_t compressed_size = ZSTD_compressCCtx(data->zstd_cctx, output_buffer, sizeof(output_buffer), upstream_buffer, upstream_length, ZSTD_COMPRESSION_LEVEL);
+  char   output_buffer[ZSTD_CStreamOutSize()];
+  size_t compressed_size = ZSTD_compressCCtx(data->zstd_cctx, output_buffer, sizeof(output_buffer), upstream_buffer,
+                                                                                                            upstream_length, ZSTD_COMPRESSION_LEVEL);
   if (ZSTD_isError(compressed_size)) {
     error("Zstd compression failed: %s", ZSTD_getErrorName(compressed_size));
     return;
@@ -558,7 +559,7 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
     } else
 #endif
 #if HAVE_ZSTD_H
-    if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
+      if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
       zstd_compress_one(data, upstream_buffer, upstream_length);
     } else
 #endif
@@ -651,7 +652,7 @@ compress_transform_finish(Data *data)
   } else
 #endif
 #if HAVE_ZSTD_H
-  if (data->compression_type & COMPRESSION_TYPE_ZSTD && data->compression_algorithms & ALGORITHM_ZSTD) {
+    if (data->compression_type & COMPRESSION_TYPE_ZSTD && data->compression_algorithms & ALGORITHM_ZSTD) {
     zstd_compress_finish(data);
     debug("compress_transform_finish: zstd compression finish");
   } else

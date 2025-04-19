@@ -90,15 +90,15 @@ using Data = struct {
 #endif
 };
 
-voidpf      gzip_alloc(voidpf opaque, uInt items, uInt size);
-void        gzip_free(voidpf opaque, voidpf address);
-void        normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);
-void        hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
-void        restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
+voidpf gzip_alloc(voidpf opaque, uInt items, uInt size);
+void   gzip_free(voidpf opaque, voidpf address);
+void   normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);
+void   hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
+void   restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
 #if HAVE_ZSTD_H
-void        zstd_compress_init(Data *data);
-void        zstd_compress_finish(Data *data);
-void        zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
+void   zstd_compress_init(Data *data);
+void   zstd_compress_finish(Data *data);
+void   zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
 #endif
 const char *init_hidden_header_name();
 int         register_plugin();
