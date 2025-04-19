@@ -52,7 +52,7 @@ RUN yum -y update; \
     # Devel packages that ATS needs
     yum -y install openssl-devel expat-devel pcre-devel libcap-devel hwloc-devel libunwind-devel \
     xz-devel libcurl-devel ncurses-devel jemalloc-devel GeoIP-devel luajit-devel brotli-devel \
-    ImageMagick-devel ImageMagick-c++-devel hiredis-devel zlib-devel \
+    ImageMagick-devel ImageMagick-c++-devel hiredis-devel zlib-devel zstd-devel \
     perl-ExtUtils-MakeMaker perl-Digest-SHA perl-URI; \
     # This is for autest stuff
     yum -y install python3 httpd-tools procps-ng nmap-ncat pipenv \
