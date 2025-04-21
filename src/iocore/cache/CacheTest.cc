@@ -32,6 +32,8 @@
 #include <cmath>
 #include <cstdlib>
 
+using namespace std::literals;
+
 CacheTestSM::CacheTestSM(RegressionTest *t, const char *name) : RegressionSM(t), cache_test_name(name)
 {
   SET_HANDLER(&CacheTestSM::event_handler);
@@ -555,7 +557,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
 {
   bool                           pass = true;
   CacheKey                       key;
-  StripeSM                      *stripe = theCache->key_to_stripe(&key, "example.com", sizeof("example.com") - 1);
+  StripeSM                      *stripe = theCache->key_to_stripe(&key, "example.com"sv);
   std::vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, stripe);

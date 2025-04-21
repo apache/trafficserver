@@ -368,55 +368,58 @@ CacheProcessor::dir_check(bool /* afix ATS_UNUSED */)
 }
 
 Action *
-CacheProcessor::lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
+CacheProcessor::lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type, std::string_view hostname)
 {
-  return caches[frag_type]->lookup(cont, key, frag_type, hostname, host_len);
+  return caches[frag_type]->lookup(cont, key, frag_type, hostname);
 }
 
 Action *
-CacheProcessor::open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int hostlen)
+CacheProcessor::open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type, std::string_view hostname)
 {
-  return caches[frag_type]->open_read(cont, key, frag_type, hostname, hostlen);
+  return caches[frag_type]->open_read(cont, key, frag_type, hostname);
 }
 
 Action *
 CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type, int expected_size ATS_UNUSED, int options,
-                           time_t pin_in_cache, char *hostname, int host_len)
+                           time_t pin_in_cache, std::string_view hostname)
 {
-  return caches[frag_type]->open_write(cont, key, frag_type, options, pin_in_cache, hostname, host_len);
+  return caches[frag_type]->open_write(cont, key, frag_type, options, pin_in_cache, hostname);
 }
 
 Action *
-CacheProcessor::remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
+CacheProcessor::remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type, std::string_view hostname)
 {
   Dbg(dbg_ctl_cache_remove, "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));
-  return caches[frag_type]->remove(cont, key, frag_type, hostname, host_len);
+  return caches[frag_type]->remove(cont, key, frag_type, hostname);
 }
 
 Action *
-CacheProcessor::scan(Continuation *cont, char *hostname, int host_len, int KB_per_second)
+CacheProcessor::scan(Continuation *cont, std::string_view hostname, int KB_per_second)
 {
-  return caches[CACHE_FRAG_TYPE_HTTP]->scan(cont, hostname, host_len, KB_per_second);
+  return caches[CACHE_FRAG_TYPE_HTTP]->scan(cont, hostname, KB_per_second);
 }
 
 Action *
 CacheProcessor::lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type)
 {
-  return lookup(cont, &key->hash, frag_type, key->hostname, key->hostlen);
+  return lookup(cont, &key->hash, frag_type,
+                std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
 Action *
 CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
                           CacheFragType type)
 {
-  return caches[type]->open_read(cont, &key->hash, request, params, type, key->hostname, key->hostlen);
+  return caches[type]->open_read(cont, &key->hash, request, params, type,
+                                 std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
 Action *
 CacheProcessor::open_write(Continuation *cont, const HttpCacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache,
                            CacheFragType type)
 {
-  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, type, key->hostname, key->hostlen);
+  return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, type,
+                                  std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
 //----------------------------------------------------------------------------
@@ -425,7 +428,8 @@ CacheProcessor::open_write(Continuation *cont, const HttpCacheKey *key, CacheHTT
 Action *
 CacheProcessor::remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type)
 {
-  return caches[frag_type]->remove(cont, &key->hash, frag_type, key->hostname, key->hostlen);
+  return caches[frag_type]->remove(cont, &key->hash, frag_type,
+                                   std::string_view{key->hostname, static_cast<std::string_view::size_type>(key->hostlen)});
 }
 
 /** Set the state of a disk programmatically.
@@ -665,16 +669,11 @@ persist_bad_disks()
 }
 
 CacheDisk *
-CacheProcessor::find_by_path(const char *path, int len)
+CacheProcessor::find_by_path(std::string_view path)
 {
   if (CACHE_INITIALIZED == initialized) {
-    // If no length is passed in, assume it's null terminated.
-    if (0 >= len && 0 != *path) {
-      len = strlen(path);
-    }
-
     for (int i = 0; i < gndisks; ++i) {
-      if (0 == strncmp(path, gdisks[i]->path, len)) {
+      if (0 == strncmp(path.data(), gdisks[i]->path, path.length())) {
         return gdisks[i];
       }
     }
