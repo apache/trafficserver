@@ -214,7 +214,7 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       host_stat = it->second;
     } else {
       host_stat = static_cast<HostStatRec *>(ats_malloc(sizeof(HostStatRec)));
-      bzero(host_stat, sizeof(HostStatRec));
+      bzero(static_cast<void *>(host_stat), sizeof(HostStatRec));
       hosts_statuses.emplace(name, host_stat);
     }
     if (reason & Reason::ACTIVE) {
