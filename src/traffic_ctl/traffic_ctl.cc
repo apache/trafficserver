@@ -169,18 +169,8 @@ main([[maybe_unused]] int argc, const char **argv)
   // server commands
   server_command.add_command("backtrace", "Show a full stack trace of the traffic_server process",
                              [&]() { CtrlUnimplementedCommand("backtrace"); });
-  server_command.add_command("restart", "Restart Traffic Server", [&]() { CtrlUnimplementedCommand("restart"); })
-    .add_example_usage("traffic_ctl server restart [OPTIONS]")
-    .add_option("--drain", "", "Wait for client connections to drain before restarting");
-  server_command.add_command("start", "Start the proxy", [&]() { CtrlUnimplementedCommand("start"); })
-    .add_example_usage("traffic_ctl server start [OPTIONS]")
-    .add_option("--clear-cache", "", "Clear the disk cache on startup")
-    .add_option("--clear-hostdb", "", "Clear the DNS cache on startup");
-  server_command.add_command("status", "Show the proxy status", [&]() { CtrlUnimplementedCommand("status"); })
+  server_command.add_command("status", "Show the proxy status", [&]() { command->execute(); })
     .add_example_usage("traffic_ctl server status");
-  server_command.add_command("stop", "Stop the proxy", [&]() { CtrlUnimplementedCommand("stop"); })
-    .add_example_usage("traffic_ctl server stop [OPTIONS]")
-    .add_option("--drain", "", "Wait for client connections to drain before stopping");
   server_command.add_command("drain", "Drain the requests", [&]() { command->execute(); })
     .add_example_usage("traffic_ctl server drain [OPTIONS]")
     .add_option("--no-new-connection", "-N", "Wait for new connections down to threshold before starting draining")

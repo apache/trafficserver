@@ -562,6 +562,9 @@ ServerCommand::ServerCommand(ts::Arguments *args) : CtrlCommand(args)
   } else if (get_parsed_arguments()->get(DEBUG_STR)) {
     _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { server_debug(); };
+  } else if (get_parsed_arguments()->get(STATUS_STR)) {
+    _printer      = std::make_unique<ServerStatusPrinter>(printOpts);
+    _invoked_func = [&]() { server_status(); };
   }
 }
 
@@ -607,6 +610,13 @@ ServerCommand::server_debug()
   } else {
     _printer->write_output(bw.view());
   }
+}
+
+void
+ServerCommand::server_status()
+{
+  shared::rpc::JSONRPCResponse response = invoke_rpc(GetServerStatusRequest{});
+  _printer->write_output(response);
 }
 
 // //------------------------------------------------------------------------------------------------------------------------------------

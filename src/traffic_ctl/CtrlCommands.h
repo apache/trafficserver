@@ -220,8 +220,11 @@ private:
   static inline const std::string TAGS_STR{"tags"};
   static inline const std::string CLIENT_IP_STR{"client_ip"};
 
+  static inline const std::string STATUS_STR{"status"};
+
   void server_drain();
   void server_debug();
+  void server_status();
 };
 //
 // -----------------------------------------------------------------------------------------------------------------------------------

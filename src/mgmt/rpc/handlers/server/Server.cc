@@ -127,4 +127,27 @@ server_shutdown(YAML::Node const &)
 {
   sync_cache_dir_on_shutdown();
 }
+
+swoc::Rv<YAML::Node>
+get_server_status(std::string_view const & /* params ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  swoc::Rv<YAML::Node> resp;
+  try {
+    auto bts = [](bool val) -> std::string { return val ? "true" : "false"; };
+
+    YAML::Node data;
+    data["initialized_done"]           = bts(!TSSystemState::is_initializing());
+    data["is_ssl_handshaking_stopped"] = bts(TSSystemState::is_ssl_handshaking_stopped());
+    data["is_draining"]                = bts(TSSystemState::is_draining());
+    data["is_event_system_shut_down"]  = bts(TSSystemState::is_event_system_shut_down());
+
+    resp.result()["data"] = data;
+
+  } catch (std::exception const &ex) {
+    resp.errata()
+      .assign(std::error_code{errors::Codes::SERVER})
+      .note("Error found when calling get_server_status API: {}", ex.what());
+  }
+  return resp;
+}
 } // namespace rpc::handlers::server
