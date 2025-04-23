@@ -24,6 +24,7 @@ Test normalizations of the Accept-Encoding header field.
 '''
 
 Test.SkipUnless(Condition.HasATSFeature('TS_HAS_BROTLI'))
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_ZSTD'))
 
 Test.ContinueOnFail = True
 
@@ -118,6 +119,10 @@ def allAEHdrs(shouldWaitForUServer, shouldWaitForTs, ts, host):
 
     tr = test.AddTestRun()
     tr.Processes.Default.Command = baseCurl + curlTail('gzip;q=0.3, whatever;q=0.666, br;q=0.7')
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = test.AddTestRun()
+    tr.Processes.Default.Command = baseCurl + curlTail('zstd;q=0.99, gzip;q=0.3, whatever;q=0.666, br;q=0.7')
     tr.Processes.Default.ReturnCode = 0
 
 
