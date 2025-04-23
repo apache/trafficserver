@@ -373,22 +373,17 @@ Enable_Config_Var(std::string_view const &name, RecContextCb record_cb, RecConfi
   // the actual callback.
   using Context = std::tuple<decltype(record_cb), void *>;
 
-  // To deal with process termination cleanup, store the context instances in a deque where
-  // tail insertion doesn't invalidate pointers. These persist until process shutdown.
-  static std::deque<Context> storage;
-
-  Context &ctx = storage.emplace_back(record_cb, cookie);
+  Context ctx(record_cb, cookie);
   // Register the call back - this handles external updates.
   RecRegisterConfigUpdateCb(
     name.data(),
-    [&config_cb](const char *name, RecDataT dtype, RecData data, void *ctx) -> int {
-      auto &&[context_cb, cookie] = *static_cast<Context *>(ctx);
-      if ((*context_cb)(name, dtype, data, cookie)) {
+    [config_cb, record_cb](const char *name, RecDataT dtype, RecData data, void *cookie) -> int {
+      if (record_cb(name, dtype, data, cookie)) {
         config_cb(name, dtype, data, cookie); // Let the caller handle the runtime config update.
       }
       return REC_ERR_OKAY;
     },
-    &ctx);
+    cookie);
 
   // Use the record to do the initial data load.
   // Look it up and call the updater @a cb on that data.
