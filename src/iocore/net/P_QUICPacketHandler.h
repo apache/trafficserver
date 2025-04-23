@@ -60,8 +60,8 @@ public:
   // NetAccept
   NetProcessor *getNetProcessor() const override;
   NetAccept    *clone() const override;
-  int           acceptEvent(int event, void *e) override;
-  void          init_accept(EThread *t) override;
+  int           acceptEventQUIC(int event, void *e);
+  void          init_accept_quic();
 
 protected:
   // QUICPacketHandler
