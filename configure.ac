@@ -1428,6 +1428,10 @@ fi
 # Check for lzma presence and usability
 TS_CHECK_LZMA
 
+#
+# Check for Zstandard presence and usability
+TS_CHECK_ZSTD
+
 AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_fadvise posix_madvise posix_fallocate inotify_init])
 AC_CHECK_FUNCS([port_create strlcpy strlcat sysconf sysctlbyname getpagesize])
 AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid getpeereid getpeerucred])

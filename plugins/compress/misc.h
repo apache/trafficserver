@@ -32,6 +32,10 @@
 #include <brotli/encode.h>
 #endif
 
+#if HAVE_ZSTD_H
+#include <zstd.h>
+#endif
+
 #include "configuration.h"
 
 using namespace Gzip;
@@ -46,7 +50,8 @@ enum CompressionType {
   COMPRESSION_TYPE_DEFAULT = 0,
   COMPRESSION_TYPE_DEFLATE = 1,
   COMPRESSION_TYPE_GZIP    = 2,
-  COMPRESSION_TYPE_BROTLI  = 4
+  COMPRESSION_TYPE_BROTLI  = 4,
+  COMPRESSION_TYPE_ZSTD    = 8,
 };
 
 // this one is used to rename the accept encoding header
@@ -85,6 +90,9 @@ typedef struct {
   int compression_algorithms;
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
+#endif
+#if HAVE_ZSTD_H
+  ZSTD_CCtx *zstd_cctx;
 #endif
 } Data;
 
