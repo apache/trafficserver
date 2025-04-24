@@ -75,14 +75,14 @@ Condition::initialize(Parser &p)
     if (p.mod_exist("AND")) {
       TSError("[%s] Can't have both AND and OR in mods", PLUGIN_NAME);
     } else {
-      _mods = static_cast<CondModifiers>(_mods | CondModifiers::OR);
+      _mods |= CondModifiers::OR;
     }
   } else if (p.mod_exist("AND")) {
-    _mods = static_cast<CondModifiers>(_mods | CondModifiers::AND);
+    _mods |= CondModifiers::AND;
   }
 
   if (p.mod_exist("NOT")) {
-    _mods = static_cast<CondModifiers>(_mods | CondModifiers::NOT);
+    _mods |= CondModifiers::NOT;
   }
 
   // The NOCASE / CASE modifier is a bit special, since it ripples down into the Matchers for

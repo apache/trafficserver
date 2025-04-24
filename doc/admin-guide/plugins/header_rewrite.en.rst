@@ -756,7 +756,7 @@ PRE    Make a prefix match on a string comparison.
 SUF    Make a suffix match on a string comparison.
 MID    Make a substring match on a string comparison.
 EXT    The substring match only applies to the file extension following a dot.
-       This is likely mostly useful for e.g. the ``URL:PATH`` part.
+       This is generally mostly useful for the ``URL:PATH`` part.
 ====== ========================================================================
 
 **Note**: At most, one of ``[PRE]``, ``[SUF]``, ``[MID]``, or ``[EXT]`` may be

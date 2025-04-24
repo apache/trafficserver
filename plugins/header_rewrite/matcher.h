@@ -226,8 +226,8 @@ private:
   bool
   test_reg(const std::string &t, const Resources &res) const
   {
-    Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", _data.c_str(), t.c_str(),
-        static_cast<int>(_mods & CondModifiers::MOD_NOCASE));
+    Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %s)", _data.c_str(), t.c_str(),
+        has_modifier(_mods, CondModifiers::MOD_NOCASE) ? "true" : "false");
     int count = _reHelper.regexMatch(t.c_str(), t.length(), const_cast<Resources &>(res).ovector);
 
     if (count > 0) {
