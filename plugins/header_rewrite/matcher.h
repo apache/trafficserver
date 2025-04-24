@@ -24,6 +24,7 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <type_traits>
 
 #include "swoc/swoc_ip.h"
 
@@ -44,15 +45,51 @@ enum MatcherOps {
 };
 
 // Condition modifiers
-enum CondModifiers {
-  COND_NONE   = 0,
-  COND_OR     = 1,
-  COND_AND    = 2,
-  COND_NOT    = 4,
-  COND_NOCASE = 8,
-  COND_LAST   = 16,
-  COND_CHAIN  = 32 // Not implemented
+enum class CondModifiers : int {
+  NONE       = 0,
+  OR         = 1 << 0,
+  AND        = 1 << 1,
+  NOT        = 1 << 2,
+  MOD_NOCASE = 1 << 3,
+  MOD_L      = 1 << 4,
+  MOD_EXT    = 1 << 5,
+  MOD_PRE    = 1 << 6,
+  MOD_SUF    = 1 << 7,
+  MOD_MID    = 1 << 8, // Essentially a substring
 };
+
+inline CondModifiers
+operator|(CondModifiers a, const CondModifiers b)
+{
+  using U = std::underlying_type_t<CondModifiers>;
+  return static_cast<CondModifiers>(static_cast<U>(a) | static_cast<U>(b));
+}
+
+inline CondModifiers
+operator&(CondModifiers a, const CondModifiers b)
+{
+  using U = std::underlying_type_t<CondModifiers>;
+  return static_cast<CondModifiers>(static_cast<U>(a) & static_cast<U>(b));
+}
+
+inline CondModifiers &
+operator|=(CondModifiers &a, const CondModifiers b)
+{
+  return a = a | b;
+}
+
+inline CondModifiers &
+operator&=(CondModifiers &a, const CondModifiers b)
+{
+  return a = a & b;
+}
+
+inline bool
+has_modifier(const CondModifiers flags, const CondModifiers bit)
+{
+  using U = std::underlying_type_t<CondModifiers>;
+  return static_cast<U>(flags) & static_cast<U>(bit);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Matchers (this is also the interface)
@@ -93,9 +130,7 @@ public:
   set(const T &d, CondModifiers mods)
   {
     _data = d;
-    if (mods & COND_NOCASE) {
-      _nocase = true;
-    }
+    _mods = mods;
   }
 
   // Evaluate this matcher
@@ -191,7 +226,8 @@ private:
   bool
   test_reg(const std::string &t, const Resources &res) const
   {
-    Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", _data.c_str(), t.c_str(), static_cast<int>(_nocase));
+    Dbg(pi_dbg_ctl, "Test regular expression %s : %s (NOCASE = %d)", _data.c_str(), t.c_str(),
+        static_cast<int>(_mods & CondModifiers::MOD_NOCASE));
     int count = _reHelper.regexMatch(t.c_str(), t.length(), const_cast<Resources &>(res).ovector);
 
     if (count > 0) {
@@ -205,9 +241,9 @@ private:
     return false;
   }
 
-  T           _data;
-  regexHelper _reHelper;
-  bool        _nocase = false;
+  T             _data;
+  regexHelper   _reHelper;
+  CondModifiers _mods = CondModifiers::NONE;
 };
 
 // Specializations for the strings, since they can be both strings and regexes
