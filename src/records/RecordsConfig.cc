@@ -488,6 +488,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.negative_caching_list", RECD_STRING, "204 305 403 404 414 500 501 502 503 504", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.http.negative_revalidating_list", RECD_STRING, "500 502 503 504", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
 
   //        #########################
   //        # proxy users variables #

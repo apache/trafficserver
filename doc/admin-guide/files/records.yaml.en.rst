@@ -1928,6 +1928,12 @@ Negative Response Caching
 
    This configuration defaults to 1,800 seconds (30 minutes).
 
+.. ts:cv:: CONFIG proxy.config.http.negative_revalidating_list STRING 500 502 503 504
+   :reloadable:
+
+   The HTTP status code for negative revalidating. Default values are mentioned above. The unwanted status codes can be
+   taken out from the list. Other status codes can be added. The variable is a list but parsed as STRING.
+
 Proxy User Variables
 ====================
 
