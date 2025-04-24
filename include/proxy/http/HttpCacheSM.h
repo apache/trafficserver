@@ -62,6 +62,17 @@ private:
   HttpCacheSM *_cache_sm = nullptr;
 };
 
+/**
+  @class HttpCacheSM
+  @brief A state machine to handle cache from http
+
+  @startuml
+  hide empty description
+  [*]                   --> state_cache_open_read  : open_read()
+  [*]                   --> state_cache_open_write : open_write()
+  state_cache_open_read --> state_cache_open_write : open_write()
+  @enduml
+ */
 class HttpCacheSM : public Continuation
 {
 public:
@@ -272,8 +283,6 @@ private:
   int state_cache_open_write(int event, void *data);
 
   HttpCacheAction captive_action;
-  bool            open_read_cb  = false;
-  bool            open_write_cb = false;
 
   // Open read parameters
   int                    open_read_tries  = 0;
