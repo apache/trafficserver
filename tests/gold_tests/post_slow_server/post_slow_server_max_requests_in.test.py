@@ -17,7 +17,6 @@
 #  limitations under the License.
 
 from enum import Enum
-import os
 
 Test.Summary = 'Exercise POST request with max_requests_in'
 Test.ContinueOnFail = True
@@ -40,10 +39,9 @@ class PostAndMaxRequestsInTest:
     def __setupTS(self):
         self.ts = Test.MakeATSProcess("ts")
 
-        uds_path = os.path.join(Test.RunDirectory, 'uds.socket')
         self.ts.Disk.records_config.update(
             {
-                "proxy.config.http.server_ports": f"{self.ts.Variables.port} {uds_path}",
+                "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
                 "proxy.config.net.max_requests_in": 1000,
                 'proxy.config.http.connect_attempts_timeout': 1,
                 "proxy.config.diags.debug.enabled": 1,
@@ -63,7 +61,9 @@ class PostAndMaxRequestsInTest:
         tr = Test.AddTestRun()
         tr.Processes.Default.StartBefore(self.origin_server)
         tr.Processes.Default.StartBefore(self.ts)
-        tr.MakeCurlCommand(f"-X POST --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/ --data key=value")
+        tr.MakeCurlCommand(
+            f"-X POST --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/ --data key=value",
+            uds_path=self.ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/post_slow_server_max_requests_in_0_stdout.gold"
         tr.Processes.Default.Streams.stderr = "gold/post_slow_server_max_requests_in_0_stderr.gold"

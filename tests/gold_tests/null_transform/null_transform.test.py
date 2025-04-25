@@ -53,7 +53,8 @@ Test.PrepareInstalledPlugin('null_transform.so', ts)
 # www.example.com Host
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--proxy 127.0.0.1:{0} "http://www.example.com" --verbose -H "Proxy-Connection: keep-alive"'.format(ts.Variables.port))
+    '--proxy 127.0.0.1:{0} "http://www.example.com" --verbose -H "Proxy-Connection: keep-alive"'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)

@@ -20,7 +20,7 @@ Test how we handle image/webp
 Test.Summary = '''
 Checking that we don't serve image/webp to clients that do not support it
 '''
-Test.SkipIf(Condition.CurlUds())
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 Test.ContinueOnFail = True
 

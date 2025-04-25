@@ -21,13 +21,12 @@ Test.Summary = "Test start up of Traffic server with configuration modification 
 
 ts = Test.MakeATSProcess("ts", select_ports=False)
 ts.Variables.port = 8090
-uds_path = os.path.join(Test.RunDirectory, 'uds.socket')
 ts.Disk.records_config.update({
-    'proxy.config.http.server_ports': str(ts.Variables.port) + f" {uds_path}",
+    'proxy.config.http.server_ports': str(ts.Variables.port) + f" {ts.Variables.uds_path}",
 })
 ts.Ready = When.PortOpen(ts.Variables.port)
 t = Test.AddTestRun("Test traffic server started properly")
 t.Processes.Default.StartBefore(ts)
-t.MakeCurlCommand("127.0.0.1:{port}".format(port=ts.Variables.port))
+t.MakeCurlCommand("127.0.0.1:{port}".format(port=ts.Variables.port), uds_path=ts.Variables.uds_path)
 t.ReturnCode = 0
 t.StillRunningAfter = ts

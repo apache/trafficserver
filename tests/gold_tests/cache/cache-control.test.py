@@ -20,7 +20,7 @@ Test cached responses and requests with bodies
 Test.Summary = '''
 Test cached responses and requests with bodies
 '''
-Test.SkipIf(Condition.CurlUds())
+
 Test.ContinueOnFail = True
 
 # Define default ATS
@@ -71,13 +71,18 @@ ts.Disk.records_config.update(
 
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 # Test 1 - 200 response and cache fill
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
-    '-s -D - -v --ipv4 --http1.1 -H "x-debug: x-cache,via" -H "Host: www.example.com" http://localhost:{port}/max_age_10sec'.format(
-        port=ts.Variables.port))
+    '-s -D - -v {ipv4} --http1.1 -H "x-debug: x-cache,via" -H "Host: www.example.com" http://localhost:{port}/max_age_10sec'.format(
+        port=ts.Variables.port, ipv4=ipv4flag),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/cache_and_req_body-miss.gold"
 tr.StillRunningAfter = ts

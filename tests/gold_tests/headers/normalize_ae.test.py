@@ -23,7 +23,6 @@ Test.Summary = '''
 Test normalizations of the Accept-Encoding header field.
 '''
 
-Test.SkipIf(Condition.CurlUds())
 Test.SkipUnless(Condition.HasATSFeature('TS_HAS_BROTLI'))
 
 Test.ContinueOnFail = True
@@ -77,6 +76,10 @@ normalize_ae_log_id.Content = "normalize_ae.gold"
 
 # Try various Accept-Encoding header fields for a particular traffic server and host.
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 
 def allAEHdrs(shouldWaitForUServer, shouldWaitForTs, ts, host):
 
@@ -91,34 +94,34 @@ def allAEHdrs(shouldWaitForUServer, shouldWaitForTs, ts, host):
         # delay on readiness of port
         tr.Processes.Default.StartBefore(ts)
 
-    baseCurl = '--verbose --ipv4 --http1.1 --proxy localhost:{} '.format(ts.Variables.port)
+    baseCurl = '--verbose {0} --http1.1 --proxy localhost:{1} '.format(ipv4flag, ts.Variables.port)
 
     # No Accept-Encoding header.
     #
-    tr.MakeCurlCommand(baseCurl + '--header "X-Au-Test: {0}" http://{0}'.format(host))
+    tr.MakeCurlCommand(baseCurl + '--header "X-Au-Test: {0}" http://{0}'.format(host), uds_path=ts.Variables.uds_path)
     tr.Processes.Default.ReturnCode = 0
 
     def curlTail(hdrValue):
         return '--header "Accept-Encoding: {}" http://'.format(hdrValue) + host
 
     tr = test.AddTestRun()
-    tr.MakeCurlCommand(baseCurl + curlTail('gzip'))
+    tr.MakeCurlCommand(baseCurl + curlTail('gzip'), uds_path=ts.Variables.uds_path)
     tr.Processes.Default.ReturnCode = 0
 
     tr = test.AddTestRun()
-    tr.MakeCurlCommand(baseCurl + curlTail('x-gzip'))
+    tr.MakeCurlCommand(baseCurl + curlTail('x-gzip'), uds_path=ts.Variables.uds_path)
     tr.Processes.Default.ReturnCode = 0
 
     tr = test.AddTestRun()
-    tr.MakeCurlCommand(baseCurl + curlTail('br'))
+    tr.MakeCurlCommand(baseCurl + curlTail('br'), uds_path=ts.Variables.uds_path)
     tr.Processes.Default.ReturnCode = 0
 
     tr = test.AddTestRun()
-    tr.MakeCurlCommand(baseCurl + curlTail('gzip, br'))
+    tr.MakeCurlCommand(baseCurl + curlTail('gzip, br'), uds_path=ts.Variables.uds_path)
     tr.Processes.Default.ReturnCode = 0
 
     tr = test.AddTestRun()
-    tr.MakeCurlCommand(baseCurl + curlTail('gzip;q=0.3, whatever;q=0.666, br;q=0.7'))
+    tr.MakeCurlCommand(baseCurl + curlTail('gzip;q=0.3, whatever;q=0.666, br;q=0.7'), uds_path=ts.Variables.uds_path)
     tr.Processes.Default.ReturnCode = 0
 
 

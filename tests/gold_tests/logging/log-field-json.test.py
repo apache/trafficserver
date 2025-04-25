@@ -93,22 +93,26 @@ tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
 tr.MakeCurlCommand(
-    '--verbose --header "Host: test-1" --header "Foo: ab\td/ef" http://localhost:{0}/test-1'.format(ts.Variables.port))
+    '--verbose --header "Host: test-1" --header "Foo: ab\td/ef" http://localhost:{0}/test-1'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose --header "Host: test-2" --header "Foo: ab\x1fd/ef" http://localhost:{0}/test-2'.format(ts.Variables.port))
+    '--verbose --header "Host: test-2" --header "Foo: ab\x1fd/ef" http://localhost:{0}/test-2'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose --header "Host: test-3" --header "Foo: abc\x7fde" http://localhost:{0}/test-3'.format(ts.Variables.port))
+    '--verbose --header "Host: test-3" --header "Foo: abc\x7fde" http://localhost:{0}/test-3'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose --header "Host: test-2" --header "Foo: ab\x80d/ef" http://localhost:{0}/test-4'.format(ts.Variables.port))
+    '--verbose --header "Host: test-2" --header "Foo: ab\x80d/ef" http://localhost:{0}/test-4'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.

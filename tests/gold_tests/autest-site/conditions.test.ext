@@ -110,7 +110,7 @@ def PluginExists(self, pluginname):
     return self.Condition(lambda: os.path.isfile(path), path + " not found.")
 
 
-def CurlUds(self):
+def CurlUsingUnixDomainSocket(self):
     return self.Condition(lambda: self.Variables.get("CurlUds", False), "Curl using UDS. Not relevant for test")
 
 
@@ -123,4 +123,4 @@ ExtendCondition(HasCurlVersion)
 ExtendCondition(HasCurlFeature)
 ExtendCondition(HasCurlOption)
 ExtendCondition(PluginExists)
-ExtendCondition(CurlUds)
+ExtendCondition(CurlUsingUnixDomainSocket)

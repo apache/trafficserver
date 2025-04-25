@@ -53,7 +53,8 @@ expected_output = "gold/header_rewrite_cond_method.gold"
 expected_log = "gold/header_rewrite-tag.gold"
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port))
+    '--proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -65,7 +66,8 @@ ts.Disk.traffic_out.Content = expected_log
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '--request DELETE --proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: keep-alive" --verbose'.format(
-        ts.Variables.port))
+        ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = expected_output
 tr.StillRunningAfter = server

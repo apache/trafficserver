@@ -24,7 +24,7 @@ Test transactions and sessions over http2, making sure they open and close in th
 '''
 
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
-Test.SkipIf(Condition.CurlUds())
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
