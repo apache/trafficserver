@@ -577,9 +577,8 @@ is_negative_caching_appropriate(HttpTransact::State *s)
     return false;
   }
 
-  int  status = s->hdr_info.server_response.status_get();
-  auto params = s->http_config_param;
-  if (params->negative_caching_list[status]) {
+  int status = s->hdr_info.server_response.status_get();
+  if (s->txn_conf->negative_caching_list[status]) {
     TxnDbg(dbg_ctl_http_trans, "%d is eligible for negative caching", status);
     return true;
   } else {

@@ -24,6 +24,7 @@
 
 #include <deque>
 
+#include "swoc/TextView.h"
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
 #include "tscore/Tokenizer.h"
@@ -636,32 +637,23 @@ register_stat_callbacks()
 }
 
 static bool
-set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
+set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpStatusBitset &negative_caching_list, bool update)
 {
   bool             ret = false;
   HttpStatusBitset set;
+
   // values from proxy.config.http.negative_caching_list
   if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
     // parse the list of status codes
-    swoc::TextView status_list(data.rec_string, strlen(data.rec_string));
-    auto           is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
-    while (!status_list.ltrim_if(is_sep).empty()) {
-      swoc::TextView span, token{status_list.take_prefix_if(is_sep)};
-      auto           n = swoc::svtoi(token, &span);
-      if (span.size() != token.size()) {
-        Error("Invalid status code '%.*s' for negative caching: not a number", static_cast<int>(token.size()), token.data());
-      } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {
-        Error("Invalid status code '%.*s' for negative caching: out of range", static_cast<int>(token.size()), token.data());
-      } else {
-        set[n] = true;
-      }
-    }
+    set = HttpConfig::parse_http_status_code_list({data.rec_string, strlen(data.rec_string)});
   }
+
   // set the return value
-  if (set != c->negative_caching_list) {
-    c->negative_caching_list = set;
+  if (set != negative_caching_list) {
+    negative_caching_list    = set;
     ret                      = ret || update;
   }
+
   return ret;
 }
 
@@ -669,9 +661,9 @@ set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpCo
 static int
 negative_caching_list_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+  HttpStatusBitset *negative_caching_list = static_cast<HttpStatusBitset *>(cookie);
   // Signal an update if valid value arrived.
-  if (set_negative_caching_list(name, dtype, data, c, true)) {
+  if (set_negative_caching_list(name, dtype, data, *negative_caching_list, true)) {
     http_config_cb(name, dtype, data, cookie);
   }
   return REC_ERR_OKAY;
@@ -681,8 +673,8 @@ negative_caching_list_cb(const char *name, RecDataT dtype, RecData data, void *c
 void
 load_negative_caching_var(RecRecord const *r, void *cookie)
 {
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  set_negative_caching_list(r->name, r->data_type, r->data, c, false);
+  HttpStatusBitset *negative_caching_list = static_cast<HttpStatusBitset *>(cookie);
+  set_negative_caching_list(r->name, r->data_type, r->data, *negative_caching_list, false);
 }
 
 /** Template for creating conversions and initialization for @c std::chrono based configuration variables.
@@ -1018,8 +1010,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
   HttpEstablishStaticConfigByte(c.oride.negative_revalidating_enabled, "proxy.config.http.negative_revalidating_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_revalidating_lifetime, "proxy.config.http.negative_revalidating_lifetime");
-  RecRegisterConfigUpdateCb("proxy.config.http.negative_caching_list", &negative_caching_list_cb, &c);
-  RecLookupRecord("proxy.config.http.negative_caching_list", &load_negative_caching_var, &c, true);
+  RecRegisterConfigUpdateCb("proxy.config.http.negative_caching_list", &negative_caching_list_cb, &c.oride.negative_caching_list);
+  RecLookupRecord("proxy.config.http.negative_caching_list", &load_negative_caching_var, &c.oride.negative_caching_list, true);
 
   // Buffer size and watermark
   HttpEstablishStaticConfigLongLong(c.oride.default_buffer_size_index, "proxy.config.http.default_buffer_size");
@@ -1339,7 +1331,7 @@ HttpConfig::reconfigure()
   params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
   params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
 
-  params->negative_caching_list = m_master.negative_caching_list;
+  params->oride.negative_caching_list = m_master.oride.negative_caching_list;
 
   params->oride.host_res_data            = m_master.oride.host_res_data;
   params->oride.host_res_data.conf_value = ats_strdup(m_master.oride.host_res_data.conf_value);
@@ -1555,4 +1547,29 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
   ret->fill(swoc::IP6Range("::/0"), action);
 
   return ret;
+}
+
+/**
+  Parse list of HTTP Status Code List in string and return HttpStatusBitset
+  - e.g. "204 305 403 404 414 500 501 502 503 504"
+ */
+HttpStatusBitset
+HttpConfig::parse_http_status_code_list(swoc::TextView status_list)
+{
+  HttpStatusBitset set = {false};
+  auto             is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
+
+  while (!status_list.ltrim_if(is_sep).empty()) {
+    swoc::TextView span, token{status_list.take_prefix_if(is_sep)};
+    auto           n = swoc::svtoi(token, &span);
+    if (span.size() != token.size()) {
+      Error("Invalid status code '%.*s': not a number", static_cast<int>(token.size()), token.data());
+    } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {
+      Error("Invalid status code '%.*s': out of range", static_cast<int>(token.size()), token.data());
+    } else {
+      set[n] = true;
+    }
+  }
+
+  return set;
 }
