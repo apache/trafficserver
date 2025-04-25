@@ -20,7 +20,6 @@ Test.Summary = '''
 Test spawning a thread in a transaction hook continuation, and getting a result from it, without blocking event task.
 '''
 
-Test.SkipIf(Condition.CurlUds())
 plugin_name = "polite_hook_wait"
 
 server = Test.MakeOriginServer("server")
@@ -48,14 +47,22 @@ ts.Disk.plugin_config.AddLine(f"{plugin_name}.so")
 
 ts.Disk.remap_config.AddLine("map http://myhost.test http://127.0.0.1:{0}".format(server.Variables.Port))
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.MakeCurlCommand('--verbose --ipv4 --header "Host:myhost.test" http://localhost:{}/ 2>curl.txt'.format(ts.Variables.port))
+tr.MakeCurlCommand(
+    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('--verbose --ipv4 --header "Host:myhost.test" http://localhost:{}/ 2>curl.txt'.format(ts.Variables.port))
+tr.MakeCurlCommand(
+    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()

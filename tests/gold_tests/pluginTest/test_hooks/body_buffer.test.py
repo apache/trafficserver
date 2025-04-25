@@ -17,8 +17,6 @@ Verify HTTP body buffering.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
 Test.SkipUnless(Condition.PluginExists('request_buffer.so'))
 
 
@@ -105,12 +103,11 @@ class BodyBufferTest:
         self._ts = Test.MakeATSProcess("ts", select_ports=False)
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
         Test.PrepareInstalledPlugin('request_buffer.so', self._ts)
-        uds_path = os.path.join(Test.RunDirectory, 'uds.socket')
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'request_buffer',
-                'proxy.config.http.server_ports': str(self._ts.Variables.port) + f" {uds_path}",
+                'proxy.config.http.server_ports': str(self._ts.Variables.port) + f" {self._ts.Variables.uds_path}",
             })
 
         self._ts.Disk.traffic_out.Content = Testers.ContainsExpression(
@@ -125,8 +122,8 @@ class BodyBufferTest:
         # Send both a Content-Length request and a chunked-encoded request.
         tr.MakeCurlCommand(
             f'-v http://127.0.0.1:{self._ts.Variables.port}/contentlength -d "{self.content_length_request_body}" --next '
-            f'-v http://127.0.0.1:{self._ts.Variables.port}/chunked -H "Transfer-Encoding: chunked" -d "{self.chunked_request_body}"'
-        )
+            f'-v http://127.0.0.1:{self._ts.Variables.port}/chunked -H "Transfer-Encoding: chunked" -d "{self.chunked_request_body}"',
+            uds_path=self._ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(Test.Processes.ts)

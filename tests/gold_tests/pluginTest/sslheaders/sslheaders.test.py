@@ -21,7 +21,7 @@ Test.Summary = '''
 Test sslheaders plugin.
 '''
 
-Test.SkipIf(Condition.CurlUds())
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.SkipUnless(
     Condition.PluginExists('sslheaders.so'),
     Condition.HasCurlFeature('http2'),

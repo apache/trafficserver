@@ -64,7 +64,7 @@ def create_pushfile():
 
 
 ipv4flag = ""
-if not Condition.CurlUds():
+if not Condition.CurlUsingUnixDomainSocket():
     ipv4flag = "--ipv4"
 
 tr = Test.AddTestRun("PUSH an object to the cache")
@@ -85,7 +85,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 200 OK", "Should fetch pushed object")
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Content-length: 102400", "Content size should be accurate")
 
-if not Condition.CurlUds():
+if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun("GET bigobj: TLS, HTTP/1.1, IPv4")
     tr.MakeCurlCommand(f'--verbose --ipv4 --http1.1 --insecure https://localhost:{ts.Variables.ssl_port}/bigobj')
     tr.Processes.Default.ReturnCode = 0

@@ -51,6 +51,7 @@ if(ENABLE_AUTEST_UDS)
     PATTERN "*"
     PATTERN "h2" EXCLUDE
     PATTERN "tls*" EXCLUDE
+    PATTERN "tls/ssl/**"
   )
 else()
   # Copy everything except autest_uds tests that are only for curl uds option
@@ -59,7 +60,6 @@ else()
     DESTINATION ${CMAKE_GOLD_DIR}
     FILES_MATCHING
     PATTERN "*"
-    PATTERN "*_uds.test.py" EXCLUDE
   )
   add_subdirectory(gold_tests_filtered/tls)
 endif()

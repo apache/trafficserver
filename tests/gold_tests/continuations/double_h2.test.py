@@ -23,7 +23,7 @@ Test.Summary = '''
 Test transactions and sessions for http2, making sure the two continuations catch the same number of hooks.
 '''
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
-Test.SkipIf(Condition.CurlUds())
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)

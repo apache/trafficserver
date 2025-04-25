@@ -20,7 +20,7 @@ import re
 Test.Summary = '''
 AuTest with bad configuration of microserver to simulate server aborting the connection unexpectedly
 '''
-Test.SkipIf(Condition.CurlUds())
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 # note the microserver by default is not configured to use ssl
 server = Test.MakeOriginServer("server")

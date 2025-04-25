@@ -23,7 +23,6 @@ import ports
 Test.Summary = '''
 Verify log file naming behavior.
 '''
-Test.SkipIf(Condition.CurlUds())
 
 
 class LogFilenamesTest:
@@ -121,7 +120,8 @@ class LogFilenamesTest:
         tr = Test.AddTestRun(f'Run traffic for: {description}')
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self.ts.Variables.port}/some/path --verbose --next '
-            f'http://127.0.0.1:{self.ts.Variables.port}/server/down --verbose')
+            f'http://127.0.0.1:{self.ts.Variables.port}/server/down --verbose',
+            uds_path=self.ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.ts)
 

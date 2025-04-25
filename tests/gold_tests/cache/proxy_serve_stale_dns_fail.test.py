@@ -71,7 +71,7 @@ child_curl_request = (
 
 # Test case for when parent server is down but child proxy can serve cache object
 tr = Test.AddTestRun()
-tr.MakeCurlCommandMulti(child_curl_request)
+tr.MakeCurlCommandMulti(child_curl_request, uds_path=ts_child.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts_child)
 tr.Processes.Default.StartBefore(ts_parent)
