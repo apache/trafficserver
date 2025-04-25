@@ -80,7 +80,8 @@ ts.Disk.remap_config.AddLine(
 tr = Test.AddTestRun()
 tr.MakeCurlCommandMulti(
     'touch largefile.txt && truncate -s 50M largefile.txt && {{curl}} -H "Expect: " -i http://127.0.0.1:{0}/redirect1 -F "filename=@./largefile.txt" && rm -f largefile.txt'
-    .format(ts.Variables.port))
+    .format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.TimeOut = 10
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(redirect_serv1)

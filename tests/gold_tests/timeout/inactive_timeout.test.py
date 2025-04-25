@@ -18,7 +18,6 @@
 
 Test.Summary = 'Testing ATS inactivity timeout'
 
-Test.SkipIf(Condition.CurlUds())
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
@@ -29,8 +28,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 
 server.addResponse("sessionfile.log", request_header, response_header)
 
-ts.addSSLfile("../tls/ssl/server.pem")
-ts.addSSLfile("../tls/ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update(
     {
@@ -47,16 +45,17 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 tr = Test.AddTestRun("tr")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.MakeCurlCommand('-i  http://127.0.0.1:{0}/file'.format(ts.Variables.port))
+tr.MakeCurlCommand('-i  http://127.0.0.1:{0}/file'.format(ts.Variables.port), uds_path=ts.Variables.uds_path)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     "Inactivity Timeout", "Request should fail with inactivity timeout")
 
-tr2 = Test.AddTestRun("tr")
-tr2.MakeCurlCommand('-k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
-tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "Inactivity Timeout", "Request should fail with inactivity timeout")
+if not Condition.CurlUsingUnixDomainSocket():
+    tr2 = Test.AddTestRun("tr")
+    tr2.MakeCurlCommand('-k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
+    tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+        "Inactivity Timeout", "Request should fail with inactivity timeout")
 
-tr3 = Test.AddTestRun("tr")
-tr3.MakeCurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
-tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "Inactivity Timeout", "Request should fail with inactivity timeout")
+    tr3 = Test.AddTestRun("tr")
+    tr3.MakeCurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
+    tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+        "Inactivity Timeout", "Request should fail with inactivity timeout")

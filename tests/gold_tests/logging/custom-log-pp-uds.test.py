@@ -23,7 +23,7 @@ Test custom log file format
 '''
 
 # this test depends on Linux specific behavior regarding loopback addresses
-Test.SkipUnless(Condition.IsPlatform("linux"))
+Test.SkipUnless(Condition.IsPlatform("linux"), Condition.CurlUsingUnixDomainSocket())
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_proxy_protocol=True)
@@ -50,38 +50,52 @@ Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'test_log_field.log'), exists=T
 
 # first test is a miss for default
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.0.0.1'.format(ts.Variables.port))
+tr.MakeCurlCommand(
+    '"http://127.0.0.1:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.0.0.1'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('"http://127.1.1.1:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.1.1.1'.format(ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-
-tr = Test.AddTestRun()
-tr.MakeCurlCommand('"http://127.2.2.2:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.2.2.2'.format(ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-
-tr = Test.AddTestRun()
-tr.MakeCurlCommand('"http://127.3.3.3:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.3.3.3'.format(ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-
-tr = Test.AddTestRun()
-tr.MakeCurlCommand('"http://127.3.0.1:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.3.0.1'.format(ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-
-tr = Test.AddTestRun()
-tr.MakeCurlCommand('"http://127.43.2.1:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.43.2.1'.format(ts.Variables.port))
+tr.MakeCurlCommand(
+    '"http://127.1.1.1:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.1.1.1'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '"http://127.213.213.132:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.213.213.132'.format(ts.Variables.port))
+    '"http://127.2.2.2:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.2.2.2'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '"http://127.123.32.243:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.123.32.243'.format(ts.Variables.port))
+    '"http://127.3.3.3:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.3.3.3'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
+tr.Processes.Default.ReturnCode = 0
+
+tr = Test.AddTestRun()
+tr.MakeCurlCommand(
+    '"http://127.3.0.1:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.3.0.1'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
+tr.Processes.Default.ReturnCode = 0
+
+tr = Test.AddTestRun()
+tr.MakeCurlCommand(
+    '"http://127.43.2.1:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.43.2.1'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
+tr.Processes.Default.ReturnCode = 0
+
+tr = Test.AddTestRun()
+tr.MakeCurlCommand(
+    '"http://127.213.213.132:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.213.213.132'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
+tr.Processes.Default.ReturnCode = 0
+
+tr = Test.AddTestRun()
+tr.MakeCurlCommand(
+    '"http://127.123.32.243:{0}" --verbose --haproxy-protocol 1 --haproxy-clientip 127.123.32.243'.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.

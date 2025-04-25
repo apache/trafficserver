@@ -22,7 +22,7 @@ import os
 Test.Summary = '''
 Verify ip_allow filtering behavior.
 '''
-Test.SkipIf(Condition.CurlUds())
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 
 # Define default ATS

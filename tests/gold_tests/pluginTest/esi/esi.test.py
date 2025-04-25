@@ -202,7 +202,8 @@ echo date('l jS \of F Y h:i:s A');
         tr = Test.AddTestRun(f"First request for esi.php: not cached: {self._plugin_config}")
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
-            '-H"Accept: */*" --verbose')
+            '-H"Accept: */*" --verbose',
+            uds_path=self._ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -212,7 +213,8 @@ echo date('l jS \of F Y h:i:s A');
         tr = Test.AddTestRun(f"Second request for esi.php: will be cached: {self._plugin_config}")
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
-            '-H"Accept: */*" --verbose')
+            '-H"Accept: */*" --verbose',
+            uds_path=self._ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -225,7 +227,8 @@ echo date('l jS \of F Y h:i:s A');
         gzipped_body_file = unzipped_body_file + ".gz"
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
-            f'-H "Accept-Encoding: gzip" -H"Accept: */*" --verbose --output {gzipped_body_file}')
+            f'-H "Accept-Encoding: gzip" -H"Accept: */*" --verbose --output {gzipped_body_file}',
+            uds_path=self._ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Ready = When.FileExists(gzipped_body_file)
         tr.Processes.Default.Streams.stderr = "gold/esi_gzipped.gold"
@@ -250,7 +253,8 @@ echo date('l jS \of F Y h:i:s A');
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/expect_empty_body '
             '-H"Host: www.example.com" -H"Accept-Encoding: gzip" -H"Accept: */*" '
-            f'--verbose --output {gzipped_empty_body}')
+            f'--verbose --output {gzipped_empty_body}',
+            uds_path=self._ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Ready = When.FileExists(gzipped_empty_body)
         tr.Processes.Default.Streams.stderr = "gold/empty_response_body.gold"
@@ -273,7 +277,8 @@ echo date('l jS \of F Y h:i:s A');
         tr = Test.AddTestRun(f"Max doc size too small: {self._plugin_config}")
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-            '-H"Host: www.example.com" -H"Accept: */*" --verbose')
+            '-H"Host: www.example.com" -H"Accept: */*" --verbose',
+            uds_path=self._ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100",
@@ -286,7 +291,8 @@ echo date('l jS \of F Y h:i:s A');
         tr = Test.AddTestRun(f"First request for esi.php: gzip not accepted: {self._plugin_config}")
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-            '-H"Host: www.example.com" -H"Accept: */*" --verbose')
+            '-H"Host: www.example.com" -H"Accept: */*" --verbose',
+            uds_path=self._ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -297,7 +303,8 @@ echo date('l jS \of F Y h:i:s A');
         tr = Test.AddTestRun(f"Verify the ESI plugin refuses to gzip responses with: {self._plugin_config}")
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-            '-H"Host: www.example.com" -H "Accept-Encoding: gzip" -H"Accept: */*" --verbose')
+            '-H"Host: www.example.com" -H "Accept-Encoding: gzip" -H"Accept: */*" --verbose',
+            uds_path=self._ts.Variables.uds_path)
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server

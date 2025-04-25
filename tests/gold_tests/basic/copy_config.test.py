@@ -22,9 +22,8 @@ Test.Summary = "Test start up of Traffic server with configuration modification 
 # set up some ATS processes
 ts1 = Test.MakeATSProcess("ts1", select_ports=False)
 ts1.Variables.port = 8090
-uds_path = os.path.join(Test.RunDirectory, 'uds.socket')
 ts1.Disk.records_config.update({
-    'proxy.config.http.server_ports': str(ts1.Variables.port) + f" {uds_path}",
+    'proxy.config.http.server_ports': str(ts1.Variables.port) + f" {ts1.Variables.uds_path}",
 })
 ts1.Ready = When.PortOpen(ts1.Variables.port)
 
@@ -39,7 +38,7 @@ ts2.Ready = When.PortOpen(ts2.Variables.port)
 t = Test.AddTestRun("Talk to ts1")
 t.Processes.Default.StartBefore(ts1)
 t.Processes.Default.StartBefore(ts2)
-t.MakeCurlCommand("127.0.0.1:{port}".format(port=ts1.Variables.port))
+t.MakeCurlCommand("127.0.0.1:{port}".format(port=ts1.Variables.port), uds_path=ts1.Variables.uds_path)
 t.ReturnCode = 0
 t.StillRunningAfter = ts1
 t.StillRunningAfter += ts2

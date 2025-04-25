@@ -135,7 +135,8 @@ class TestEarlyHints:
             f'-v {protocol_arg} '
             f'--resolve "server.com:{ts_port}:127.0.0.1" '
             f'-H "Host: server.com" '
-            f'{scheme}://server.com:{ts_port}/{self._protocol_str}')
+            f'{scheme}://server.com:{ts_port}/{self._protocol_str}',
+            uds_path=self._ts.Variables.uds_path)
 
         client.ReturnCode = 0
         self._ts.StartBefore(self._dns)
@@ -154,6 +155,6 @@ class TestEarlyHints:
 
 
 TestEarlyHints(Protocol.HTTP)
-if not Condition.CurlUds():
+if not Condition.CurlUsingUnixDomainSocket():
     TestEarlyHints(Protocol.HTTPS)
     TestEarlyHints(Protocol.HTTP2)

@@ -24,7 +24,7 @@ import os
 Test.Summary = '''
 Test a case when the origin returns before the post is completed
 '''
-Test.SkipIf(Condition.CurlUds())
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 
 Test.GetTcpPort("upstream_port1")
