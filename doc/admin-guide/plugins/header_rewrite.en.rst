@@ -114,7 +114,7 @@ Rewriting Rules
 
 Header rewriting rules consist of zero or more `Conditions`_ followed by one or
 more `Operators`_. Conditions are used to limit the requests which will be
-affected by the operator(s), and define when the ruleset is run during the 
+affected by the operator(s), and define when the ruleset is run during the
 transaction (through the `Hook Conditions`_). Additionally, both conditions
 and operators may have flags which modify their behavior.
 
