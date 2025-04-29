@@ -1931,8 +1931,8 @@ Negative Response Caching
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_list STRING 500 502 503 504
    :reloadable:
 
-   The HTTP status code for negative revalidating. Default values are mentioned above. The unwanted status codes can be
-   taken out from the list. Other status codes can be added. The variable is a list but parsed as STRING.
+   The HTTP status codes for which the negative revalidating feature applies. Note that this is a
+   `STRING` configuration containing a space separated list of the desired HTTP status codes.
 
 Proxy User Variables
 ====================

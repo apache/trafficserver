@@ -4319,7 +4319,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
     SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
 
-    /* In default, if we receive a 500, 502, 503 or 504 while revalidating
+    /* By default, if we receive a 500, 502, 503 or 504 while revalidating
        a document, treat the response as a 304 and in effect revalidate the document for
        negative_revalidating_lifetime. (negative revalidating)
      */
