@@ -100,11 +100,11 @@ Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'chunked_encod
 tr = Test.AddTestRun()
 tr.TimeOut = 5
 if Condition.CurlUsingUnixDomainSocket():
+    tr.MakeCurlCommand('--http1.1 -H "Host: www.example.com" "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
+else:
     tr.MakeCurlCommand(
         '--http1.1 --proxy 127.0.0.1:{0} http://www.example.com --verbose'.format(ts.Variables.port),
         uds_path=ts.Variables.uds_path)
-else:
-    tr.MakeCurlCommand('--http1.1 -H "Host: www.example.com" "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
