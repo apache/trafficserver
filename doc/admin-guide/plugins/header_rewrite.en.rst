@@ -114,12 +114,14 @@ Rewriting Rules
 
 Header rewriting rules consist of zero or more `Conditions`_ followed by one or
 more `Operators`_. Conditions are used to limit the requests which will be
-affected by the operator(s). Additionally, both conditions and operators may
-have flags which modify their behavior.
+affected by the operator(s), and define when the ruleset is run during the 
+transaction (through the `Hook Conditions`_). Additionally, both conditions
+and operators may have flags which modify their behavior.
 
 A complete rule, consisting of two conditions and a single operator might look
 like the following::
 
+    cond %{READ_RESPONSE_HDR_HOOK} [AND]
     cond %{STATUS} >399 [AND]
     cond %{STATUS} <500
       set-status 404
@@ -400,7 +402,7 @@ HTTP-CNTL
     cond %{HTTP-CNTL:<controller>}
 
 This condition allows you to check the state of various HTTP controls. The controls
-are of the same name as for `set-http-cntl`. This condition returns a ``true`` or
+are of the same name as for `set-http-cntl`_. This condition returns a ``true`` or
 ``false`` value, depending on the state of the control. For example::
 
     cond %{HTTP-CNTL:LOGGING} [NOT]
@@ -489,7 +491,7 @@ possible parts being
     %{IP:SERVER}     Upstream (next-hop) server IP address (typically origin, or parent)
     %{IP:OUTBOUND}   ATS's outbound IP address, that was used to connect upstream (next-hop)
 
-Note that both `%{IP:SERVER}` and `%{IP:OUTBOUND}` can be unset, in which case the
+Note that both ``%{IP:SERVER}`` and ``%{IP:OUTBOUND}`` can be unset, in which case the
 empty string is returned. The common use for this condition is
 actually as a value to an operator, e.g. ::
 
@@ -537,7 +539,7 @@ within a rule, and not across rules.
 This condition may be most useful as a value to an operand, such as::
 
     cond %{HEADER:X-Foo} /foo-(.*)/
-      set-header X-Foo %{LAST-CAPTURE:1}"
+      set-header X-Foo %{LAST-CAPTURE:1}
 
 METHOD
 ~~~~~~~
@@ -760,7 +762,7 @@ EXT    The substring match only applies to the file extension following a dot.
 ====== ========================================================================
 
 **Note**: At most, one of ``[PRE]``, ``[SUF]``, ``[MID]``, or ``[EXT]`` may be
-used at any time. They can however be used together with ``[NOCASE]]`` and the
+used at any time. They can however be used together with ``[NOCASE]`` and the
 other flags.
 
 Operators
@@ -895,15 +897,15 @@ send a 500 status code to the client with the desired response. If this is trigg
 on any error status code, that original status code will be sent to the client.
 **Note**: This config should only be set using READ_RESPONSE_HDR_HOOK
 
-An example config would look like
+An example config would look like::
 
    cond %{READ_RESPONSE_HDR_HOOK}
-   set-body-from http://www.example.com/second
+      set-body-from http://www.example.com/second
 
 Where ``http://www.example.com/second`` is the destination to retrieve the custom response from.
 This can be enabled per-mapping or globally.
 Ensure there is a remap rule for the second endpoint as well!
-An example remap config would look like
+An example remap config would look like::
 
    map /first http://www.example.com/first @plugin=header_rewrite.so @pparam=cond1.conf
    map /second http://www.example.com/second
@@ -953,7 +955,7 @@ the appropriate logs even when the debug tag has not been enabled. For
 additional information on |TS| debugging statements, refer to
 :ref:`developer-debug-tags` in the developer's documentation.
 
-**Note**: This operator is deprecated, use the `set-http-cntl` operator instead,
+**Note**: This operator is deprecated, use the `set-http-cntl`_ operator instead,
 with the ``TXN_DEBUG`` control.
 
 set-destination
@@ -1069,7 +1071,7 @@ When invoked, and when ``<value>`` is any of ``1``, ``true``, or ``TRUE``, this
 operator causes |TS| to abort further request remapping. Any other value and
 the operator will effectively be a no-op.
 
-**Note**: This operator is deprecated, use the `set-http-cntl` operator instead,
+**Note**: This operator is deprecated, use the `set-http-cntl`_ operator instead,
 with the ``SKIP_REMAP`` control.
 
 set-cookie
@@ -1184,7 +1186,7 @@ As another example, a remap rule might use the `set-destination`_ operator to
 change just the hostname via::
 
   cond %{HEADER:X-Mobile} = "foo"
-  set-destination HOST foo.mobile.bar.com [L]
+     set-destination HOST foo.mobile.bar.com
 
 Requests vs. Responses
 ======================
@@ -1390,8 +1392,8 @@ by setting the hook context and then removing the cookie and basic
 authentication headers.::
 
    cond %{READ_RESPONSE_HDR_HOOK}
-   rm-header Set-Cookie
-   rm-header WWW-Authenticate
+     rm-header Set-Cookie
+     rm-header WWW-Authenticate
 
 Count Teapots
 -------------
@@ -1399,8 +1401,9 @@ Count Teapots
 Maintains a counter statistic, which is incremented every time an origin server
 has decided to be funny by returning HTTP 418::
 
+   cond %{READ_RESPONSE_HDR_HOOK}
    cond %{STATUS} =418
-   counter plugin.header_rewrite.teapots
+     counter plugin.header_rewrite.teapots
 
 Normalize Statuses
 ------------------
@@ -1413,7 +1416,7 @@ the origin server with ``404``::
    cond %{SEND_RESPONSE_HDR_HOOK}
    cond %{STATUS} >399
    cond %{STATUS} <500
-   set-status 404
+     set-status 404
 
 Remove Cache Control to Origins
 -------------------------------
@@ -1422,8 +1425,8 @@ Removes cache control related headers from requests before sending them to an
 origin server::
 
    cond %{SEND_REQUEST_HDR_HOOK}
-   rm-header Cache-Control
-   rm-header Pragma
+     rm-header Cache-Control
+     rm-header Pragma
 
 Enable Debugging Per-Request
 ----------------------------
@@ -1433,7 +1436,7 @@ header is present in the client request::
 
    cond %{READ_REQUEST_HDR_HOOK}
    cond %{CLIENT-HEADER:X-Debug} =supersekret
-   set-debug
+      set-http-cntl TXN_DEBUG on
 
 Remove Internal Headers
 -----------------------
@@ -1442,8 +1445,8 @@ Removes special internal/development headers from origin responses, unless the
 client request included a special debug header::
 
    cond %{CLIENT-HEADER:X-Debug} =keep [NOT]
-   rm-header X-Debug-Foo
-   rm-header X-Debug-Bar
+      rm-header X-Debug-Foo
+      rm-header X-Debug-Bar
 
 Return Original Method in Response Header
 -----------------------------------------
@@ -1452,7 +1455,7 @@ This rule copies the original HTTP method that was used by the client into a
 custom response header::
 
    cond %{SEND_RESPONSE_HDR_HOOK}
-   set-header X-Original-Method %{METHOD}
+      set-header X-Original-Method %{METHOD}
 
 Useless Example From Purpose
 ----------------------------
@@ -1460,26 +1463,27 @@ Useless Example From Purpose
 Even that useless example from `Purpose`_ in the beginning of this document is
 possible to accomplish::
 
+   cond %{READ_RESPONSE_HDR_HOOK}
    cond %{INBOUND:LOCAL-PORT} =8090
    cond %{METHOD} =HEAD
    cond %{CLIENT-HEADER:Accept-Language} /es-py/ [NOT]
    cond %{STATUS} =304 [OR]
    cond %{RANDOM:500} >290
-   set-status 403
+      set-status 403
 
-Add Cache Control Headers Based on Origin Path
-----------------------------------------------
+Add Cache Control Headers Based on URL Path
+-------------------------------------------
 
-This rule adds cache control headers to CDN responses based matching the origin
+This rule adds cache control headers to CDN responses based matching the
 path.  One provides a max age and the other provides a "no-cache" statement to
 two different file paths. ::
 
    cond %{SEND_RESPONSE_HDR_HOOK}
    cond %{CLIENT-URL:PATH} /examplepath1/
-   add-header Cache-Control "max-age=3600" [L]
+      add-header Cache-Control "max-age=3600"
    cond %{SEND_RESPONSE_HDR_HOOK}
    cond %{CLIENT-URL:PATH} /examplepath2\/examplepath3\/.*/
-   add-header Cache-Control "no-cache" [L]
+      add-header Cache-Control "no-cache"
 
 Redirect when the Origin Server Times Out
 -----------------------------------------
@@ -1490,7 +1494,7 @@ Query string when the Origin server times out or the connection is refused::
    cond %{SEND_RESPONSE_HDR_HOOK}
    cond %{STATUS} =502 [OR]
    cond %{STATUS} =504
-   set-redirect 302 http://different_origin.example.com/%{CLIENT-URL:PATH} [QSA]
+      set-redirect 302 http://different_origin.example.com/%{CLIENT-URL:PATH} [QSA]
 
 Check for existence of a header
 -------------------------------
@@ -1502,7 +1506,7 @@ already set to some value, and the status code is a 2xx::
    cond %{HEADER:Cache-Control} ="" [AND]
    cond %{STATUS} >199 [AND]
    cond %{STATUS} <300
-   set-header Cache-Control "max-age=600, public"
+      set-header Cache-Control "max-age=600, public"
 
 Add HSTS
 --------
@@ -1511,8 +1515,8 @@ Add the HTTP Strict Transport Security (HSTS) header if it does not exist and th
 
    cond %{READ_RESPONSE_HDR_HOOK} [AND]
    cond %{HEADER:Strict-Transport-Security} ="" [AND]
-   cond %{INBOUND:TLS} /./
-   set-header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+   cond %{INBOUND:TLS} ="" [NOT]
+      set-header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 
 This is mostly used by being attached to a remap rule that maps to a host known to support TLS. If
 the parallel `OUTBOUND` supported is added then this could be done by checking for inbound TLS both
@@ -1531,7 +1535,7 @@ configuration.::
 
    cond %{SEND_RESPONSE_HDR_HOOK}
    cond %{ACCESS:/path/to/the/healthcheck/file.txt}    [NOT,OR]
-   set-header Connection "close"
+      set-header Connection "close"
 
 Use Internal header to pass data
 --------------------------------
@@ -1541,7 +1545,7 @@ this to pass data to different |TS| systems. For instance, a series of remap rul
 could each be tagged with a consistent name to make finding logs easier.::
 
    cond %{REMAP_PSEUDO_HOOK}
-   set-header @PropertyName "someproperty"
+      set-header @PropertyName "someproperty"
 
 (Then in :file:`logging.yaml`, log ``%<{@PropertyName}cqh>``)
 
@@ -1556,17 +1560,17 @@ Remove Client Query Parameters
 The following ruleset removes any query parameters set by the client.::
 
    cond %{REMAP_PSEUDO_HOOK}
-   rm-destination QUERY
+      rm-destination QUERY
 
 Remove only a few select query parameters::
 
    cond %{REMAP_PSEUDO_HOOK}
-   rm-destination QUERY foo,bar
+      rm-destination QUERY foo,bar
 
 Keep only a few select query parameters -- removing the rest::
 
    cond %{REMAP_PSEUDO_HOOK}
-   rm-destination QUERY foo,bar [I]
+      rm-destination QUERY foo,bar [I]
 
 Mimic X-Debug Plugin's X-Cache Header
 -------------------------------------
@@ -1576,11 +1580,11 @@ the ``CACHE`` condition results to a header.::
 
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{HEADER:All-Cache} ="" [NOT]
-   set-header All-Cache "%{HEADER:All-Cache}, %{CACHE}"
+      set-header All-Cache "%{HEADER:All-Cache}, %{CACHE}"
 
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{HEADER:All-Cache} =""
-   set-header All-Cache %{CACHE}
+      set-header All-Cache %{CACHE}
 
 Add Identifier from Server with Data
 ------------------------------------
@@ -1592,7 +1596,7 @@ the client where the requested data was served from.::
    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
    cond %{HEADER:ATS-SRVR-UUID} ="" [OR]
    cond %{CACHE} ="hit-fresh"
-   set-header ATS-SRVR-UUID %{ID:UNIQUE}
+      set-header ATS-SRVR-UUID %{ID:UNIQUE}
 
 Apply rate limiting for some select requests
 --------------------------------------------
@@ -1602,7 +1606,7 @@ limiting to the request.::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
    cond %{CLIENT-HEADER:Some-Special-Header} ="yes"
-   run-plugin rate_limit.so "--limit=300 --error=429"
+      run-plugin rate_limit.so "--limit=300 --error=429"
 
 Check the ``PATH`` file extension
 ---------------------------------
@@ -1611,4 +1615,4 @@ This rule will deny all requests for URIs with the ``.php`` file extension::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
    cond %{CLIENT-URL:PATH} ="php" [EXT,NOCASE]
-   set-status 403
+      set-status 403
