@@ -131,7 +131,7 @@ if not Condition.CurlUsingUnixDomainSocket():
 # IPv6
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv6flag, ts.Variables.port),
+    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv6flag, ts.Variables.portv6),
     uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
