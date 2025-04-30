@@ -802,6 +802,9 @@ public:
   // bitset to hold the status codes that will BE cached with negative caching enabled
   HttpStatusBitset negative_caching_list;
 
+  // bitset to hold the status codes that will used by nagative revalidating enabled
+  HttpStatusBitset negative_revalidating_list;
+
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
