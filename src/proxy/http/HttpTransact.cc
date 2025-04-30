@@ -4319,15 +4319,12 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
     SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
 
-    /* if we receive a 500, 502, 503 or 504 while revalidating
+    /* By default, if we receive a 500, 502, 503 or 504 while revalidating
        a document, treat the response as a 304 and in effect revalidate the document for
        negative_revalidating_lifetime. (negative revalidating)
      */
-
-    if ((server_response_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || server_response_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
-         server_response_code == HTTP_STATUS_BAD_GATEWAY || server_response_code == HTTP_STATUS_SERVICE_UNAVAILABLE) &&
-        s->cache_info.action == CACHE_DO_UPDATE && s->txn_conf->negative_revalidating_enabled &&
-        is_stale_cache_response_returnable(s)) {
+    if (s->txn_conf->negative_revalidating_enabled && s->http_config_param->negative_revalidating_list[server_response_code] &&
+        s->cache_info.action == CACHE_DO_UPDATE && is_stale_cache_response_returnable(s)) {
       HTTPStatus cached_response_code = s->cache_info.object_read->response_get()->status_get();
       if (!(cached_response_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || cached_response_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
             cached_response_code == HTTP_STATUS_BAD_GATEWAY || cached_response_code == HTTP_STATUS_SERVICE_UNAVAILABLE)) {
