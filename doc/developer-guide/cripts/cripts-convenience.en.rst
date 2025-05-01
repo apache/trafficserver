@@ -118,6 +118,7 @@ Macro                         Traditional API equivalent
 ===========================   ====================================================================
 ``Regex(name, ...)``          ``static cripts::Matcher::PCRE name(...)``
 ``ACL(name, ...)``            ``static cripts::Matcher::Range::IP name(...)``
+``StatusCode(code, ...)``     ``cripts::Error::Status::Set(code, ...)``
 ``CreateCounter(id, name)``   ``instance.metrics[id] = cripts::Metrics::Counter::Create(name)``
 ``CreateGauge(id, name)``     ``instance.metrics[id] = cripts::Metrics::Gauge::Create(name)``
 ``FilePath(name, path)``      ``static const cripts::File::Path name(path)``
@@ -138,3 +139,7 @@ An example of using ACLs and regular expressions:
        // do something
      }
    }
+.. note::
+   The ``StatusCode`` macro currently only works with the status code, the reason
+   message can not be set or overridden. Fixing this will require a future change
+   in the Traffic Server code base.
