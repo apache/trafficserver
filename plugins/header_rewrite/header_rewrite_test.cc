@@ -49,14 +49,31 @@ class ParserTest : public Parser
 public:
   ParserTest(const std::string &line) : res(true)
   {
-    Parser::parse_line(line);
-    std::cout << "Finished parser test: " << line << std::endl;
+    m_parse_line_result            = Parser::parse_line(line);
+    std::string const parse_status = m_parse_line_result ? "succeeded" : "failed";
+    std::cout << "Finished parser test (" << parse_status << "): " << line << std::endl;
   }
 
   std::vector<std::string>
   getTokens() const
   {
     return _tokens;
+  }
+
+  bool
+  parse_line_result() const
+  {
+    return m_parse_line_result;
+  }
+
+  void
+  do_result_check(bool expected, int line = 0)
+  {
+    if (m_parse_line_result != expected) {
+      std::cerr << "CHECK RESULT FAILED on line " << line << ": |" << m_parse_line_result << "| != |" << expected << "|"
+                << std::endl;
+      res = false;
+    }
   }
 
   template <typename T, typename U>
@@ -70,6 +87,9 @@ public:
   }
 
   bool res;
+
+private:
+  bool m_parse_line_result = false;
 };
 
 class SimpleTokenizerTest : public HRWSimpleTokenizer
@@ -78,6 +98,16 @@ public:
   SimpleTokenizerTest(const std::string &line) : HRWSimpleTokenizer(line), res(true)
   {
     std::cout << "Finished tokenizer test: " << line << std::endl;
+  }
+
+  void
+  do_result_check(bool expected, int line = 0)
+  {
+    if (m_parse_line_result != expected) {
+      std::cerr << "CHECK RESULT FAILED on line " << line << ": |" << m_parse_line_result << "| != |" << expected << "|"
+                << std::endl;
+      res = false;
+    }
   }
 
   template <typename T, typename U>
@@ -90,12 +120,21 @@ public:
     }
   }
 
-  bool res;
+  bool res = false;
+
+private:
+  // HWSimpleTokenizerTest never fails to parse.
+  bool m_parse_line_result = true;
 };
 
 #define CHECK_EQ(x, y)                     \
   do {                                     \
     p.do_parser_check((x), (y), __LINE__); \
+  } while (false)
+
+#define CHECK_RESULT(x)               \
+  do {                                \
+    p.do_result_check((x), __LINE__); \
   } while (false)
 
 #define END_TEST(s) \
@@ -113,6 +152,7 @@ test_parsing()
   {
     ParserTest p("cond      %{READ_REQUEST_HDR_HOOK}");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 2U);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{READ_REQUEST_HDR_HOOK}");
@@ -123,6 +163,7 @@ test_parsing()
   {
     ParserTest p("cond %{CLIENT-HEADER:Host}    =a");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 4UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{CLIENT-HEADER:Host}");
@@ -135,6 +176,7 @@ test_parsing()
   {
     ParserTest p(" # COMMENT!");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 0UL);
     CHECK_EQ(p.empty(), true);
 
@@ -144,6 +186,7 @@ test_parsing()
   {
     ParserTest p("# COMMENT");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 0UL);
     CHECK_EQ(p.empty(), true);
 
@@ -153,6 +196,7 @@ test_parsing()
   {
     ParserTest p("cond %{Client-HEADER:Foo} =b");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 4UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{Client-HEADER:Foo}");
@@ -165,6 +209,7 @@ test_parsing()
   {
     ParserTest p("cond %{Client-HEADER:Blah}       =        x");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 4UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{Client-HEADER:Blah}");
@@ -177,6 +222,7 @@ test_parsing()
   {
     ParserTest p(R"(cond %{CLIENT-HEADER:non_existent_header} =  "shouldnt_   exist    _anyway"          [AND])");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 5UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{CLIENT-HEADER:non_existent_header}");
@@ -190,6 +236,7 @@ test_parsing()
   {
     ParserTest p(R"(cond %{CLIENT-HEADER:non_existent_header} =  "shouldnt_   =    _anyway"          [AND])");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 5UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{CLIENT-HEADER:non_existent_header}");
@@ -203,6 +250,7 @@ test_parsing()
   {
     ParserTest p(R"(cond %{CLIENT-HEADER:non_existent_header} ="="          [AND])");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 5UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{CLIENT-HEADER:non_existent_header}");
@@ -216,6 +264,7 @@ test_parsing()
   {
     ParserTest p(R"(cond %{CLIENT-HEADER:non_existent_header} =""          [AND])");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 5UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{CLIENT-HEADER:non_existent_header}");
@@ -229,6 +278,7 @@ test_parsing()
   {
     ParserTest p(R"(cond %{CLIENT-URL:PATH} /\/foo\/bar/ [OR])");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 4UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{CLIENT-URL:PATH}");
@@ -238,9 +288,23 @@ test_parsing()
     END_TEST();
   }
 
+  // Use of a regex in a condition.
+  {
+    ParserTest p(R"(cond %{CLIENT-URL:PATH} /examplepath1/)");
+
+    CHECK_RESULT(true);
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "cond");
+    CHECK_EQ(p.getTokens()[1], "%{CLIENT-URL:PATH}");
+    CHECK_EQ(p.getTokens()[2], R"(/examplepath1/)");
+
+    END_TEST();
+  }
+
   {
     ParserTest p(R"(cond %{INBOUND:REMOTE-ADDR} {192.168.201.0/24,10.0.0.0/8})");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{INBOUND:REMOTE-ADDR}");
@@ -252,6 +316,7 @@ test_parsing()
   {
     ParserTest p(R"(cond %{INBOUND:REMOTE-ADDR} { 192.168.201.0/24,10.0.0.0/8 })");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "cond");
     CHECK_EQ(p.getTokens()[1], "%{INBOUND:REMOTE-ADDR}");
@@ -263,6 +328,7 @@ test_parsing()
   {
     ParserTest p("add-header X-HeaderRewriteApplied true");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "X-HeaderRewriteApplied");
@@ -275,6 +341,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header foo \ \=\<\>\"\#\\)");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "foo");
@@ -286,6 +353,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header foo \<bar\>)");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "foo");
@@ -297,6 +365,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header foo \bar\)");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "foo");
@@ -308,6 +377,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header foo "bar")");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "foo");
@@ -319,6 +389,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header foo "\"bar\"")");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "foo");
@@ -330,6 +401,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header foo "\"\\\"bar\\\"\"")");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "foo");
@@ -341,6 +413,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header Public-Key-Pins "max-age=3000; pin-sha256=\"d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM=\"")");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "Public-Key-Pins");
@@ -352,6 +425,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header Public-Key-Pins max-age\=3000;\ pin-sha256\=\"d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM\=\")");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "Public-Key-Pins");
@@ -363,6 +437,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header X-Url "http://trafficserver.apache.org/")");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "X-Url");
@@ -374,6 +449,7 @@ test_parsing()
   {
     ParserTest p(R"(add-header X-Url http://trafficserver.apache.org/)");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 3UL);
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "X-Url");
@@ -385,11 +461,53 @@ test_parsing()
   {
     ParserTest p(R"(set-header Alt-Svc "quic=\":443\"; v=\"35\"" [L])");
 
+    CHECK_RESULT(true);
     CHECK_EQ(p.getTokens().size(), 4UL);
     CHECK_EQ(p.getTokens()[0], "set-header");
     CHECK_EQ(p.getTokens()[1], "Alt-Svc");
     CHECK_EQ(p.getTokens()[2], R"(quic=":443"; v="35")");
     CHECK_EQ(p.get_value(), R"(quic=":443"; v="35")");
+
+    END_TEST();
+  }
+  {
+    ParserTest p(R"(set-destination PATH "path/%{CLIENT-URL:PATH}")");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "set-destination");
+    CHECK_EQ(p.getTokens()[1], "PATH");
+    CHECK_EQ(p.getTokens()[2], R"(path/%{CLIENT-URL:PATH})");
+
+    END_TEST();
+  }
+  {
+    ParserTest p(R"(set-destination PATH "foo/bar/%{CLIENT-URL:PATH}")");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "set-destination");
+    CHECK_EQ(p.getTokens()[1], "PATH");
+    CHECK_EQ(p.getTokens()[2], R"(foo/bar/%{CLIENT-URL:PATH})");
+
+    END_TEST();
+  }
+  // Paths shouldn't start with a `/`, but make sure we at least parse it as expected.
+  {
+    ParserTest p(R"(set-destination PATH "/path/%{CLIENT-URL:PATH}")");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "set-destination");
+    CHECK_EQ(p.getTokens()[1], "PATH");
+    CHECK_EQ(p.getTokens()[2], R"(/path/%{CLIENT-URL:PATH})");
+
+    END_TEST();
+  }
+  {
+    ParserTest p(R"(set-destination PATH "/foo/bar/%{CLIENT-URL:PATH}")");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "set-destination");
+    CHECK_EQ(p.getTokens()[1], "PATH");
+    CHECK_EQ(p.getTokens()[2], R"(/foo/bar/%{CLIENT-URL:PATH})");
 
     END_TEST();
   }
@@ -401,6 +519,7 @@ test_parsing()
   { /* unterminated quote */
     ParserTest p(R"(cond %{CLIENT-HEADER:non_existent_header} =" [AND])");
 
+    CHECK_RESULT(false);
     CHECK_EQ(p.getTokens().size(), 0UL);
 
     END_TEST();
@@ -409,6 +528,7 @@ test_parsing()
   { /* quote in a token */
     ParserTest p(R"(cond %{CLIENT-HEADER:non_existent_header} =a"b [AND])");
 
+    CHECK_RESULT(false);
     CHECK_EQ(p.getTokens().size(), 0UL);
 
     END_TEST();
