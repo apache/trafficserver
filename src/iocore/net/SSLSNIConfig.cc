@@ -48,8 +48,6 @@
 
 namespace
 {
-constexpr int OVECSIZE{30};
-
 DbgCtl dbg_ctl_ssl{"ssl"};
 DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 DbgCtl dbg_ctl_sni{"sni"};
@@ -248,7 +246,7 @@ SNIConfigParams::get(std::string_view servername, in_port_t dest_incoming_port) 
 
       ActionItem::Context::CapturedGroupViewVec groups;
       groups.reserve(matches.size());
-      for (int count = 0; count < matches.size(); count++) {
+      for (int count = 1; count < matches.size(); count++) {
         groups.emplace_back(matches[count]);
       }
       return {&retval.actions, {std::move(groups)}};
