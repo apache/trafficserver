@@ -42,7 +42,6 @@
 #include <netinet/in.h>
 #include <sstream>
 #include <utility>
-#include <pcre.h>
 #include <algorithm>
 #include <functional>
 #include <utility>
@@ -100,10 +99,8 @@ NamedElement::set_glob_name(std::string name)
 void
 NamedElement::set_regex_name(const std::string &regex_name)
 {
-  const char *err_ptr;
-  int         err_offset = 0;
   if (!regex_name.empty()) {
-    match.reset(pcre_compile(regex_name.c_str(), PCRE_ANCHORED | PCRE_CASELESS, &err_ptr, &err_offset, nullptr));
+    match.compile(regex_name, REFlags::RE_ANCHORED | REFlags::RE_CASE_INSENSITIVE);
   }
 }
 
@@ -115,7 +112,7 @@ SNIConfigParams::get_property_config(const std::string &servername) const
 {
   const NextHopProperty *nps = nullptr;
   for (auto &&item : next_hop_list) {
-    if (pcre_exec(item.match.get(), nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
+    if (item.match.exec(servername)) {
       // Found a match
       nps = &item.prop;
       break;
@@ -231,23 +228,24 @@ SNIConfigParams::get(std::string_view servername, in_port_t dest_incoming_port) 
   }
 
   // Check for wildcard matches
-  int ovector[OVECSIZE];
+  RegexMatches matches;
+  size_t      *ovector = nullptr;
 
   for (auto const &retval : sni_action_list) {
     if (element != nullptr && element->rank < retval.rank) {
       break;
     }
 
-    int length = servername.length();
-    if (retval.match == nullptr && length == 0) {
+    size_t length = servername.length();
+    if (retval.match.empty() == true && length == 0) {
       return {&retval.actions, {}};
-    } else if (auto offset = pcre_exec(retval.match.get(), nullptr, servername.data(), length, 0, 0, ovector, OVECSIZE);
-               offset >= 0) {
+    } else if (auto offset = retval.match.exec(servername, matches); offset > 0) {
       if (!is_port_in_the_ranges(retval.inbound_port_ranges, dest_incoming_port)) {
         continue;
       }
       if (offset == 1) {
         // first pair identify the portion of the subject string matched by the entire pattern
+        ovector = matches.get_ovector_pointer();
         if (ovector[0] == 0 && ovector[1] == length) {
           // full match
           return {&retval.actions, {}};

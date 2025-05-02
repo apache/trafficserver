@@ -214,6 +214,21 @@ Regex::Regex(Regex &&that) noexcept
 }
 
 //----------------------------------------------------------------------------
+Regex &
+Regex::operator=(Regex &&other)
+{
+  if (this != &other) {
+    auto ptr = _Code::get(_code);
+    if (ptr != nullptr) {
+      pcre2_code_free(ptr);
+    }
+    _code = other._code;
+    _Code::set(other._code, nullptr);
+  }
+  return *this;
+}
+
+//----------------------------------------------------------------------------
 Regex::~Regex()
 {
   auto ptr = _Code::get(_code);
@@ -317,6 +332,13 @@ Regex::get_capture_count()
     return -1;
   }
   return captures;
+}
+
+//----------------------------------------------------------------------------
+bool
+Regex::empty() const
+{
+  return _Code::get(_code) == nullptr;
 }
 
 //----------------------------------------------------------------------------
