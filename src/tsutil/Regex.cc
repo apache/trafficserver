@@ -312,12 +312,14 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
 
   matches._size = count;
 
-  if (count < 0) {
-    return count;
-  }
-
-  if (count > 0) {
+  // match was successful
+  if (count >= 0) {
     matches._subject = subject;
+
+    // match but the output vector was too small, adjust the size of the matches
+    if (count == 0) {
+      matches._size = pcre2_get_ovector_count(RegexMatches::_MatchData::get(matches._match_data));
+    }
   }
 
   return count;

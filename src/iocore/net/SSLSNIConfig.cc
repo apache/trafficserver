@@ -229,43 +229,27 @@ SNIConfigParams::get(std::string_view servername, in_port_t dest_incoming_port) 
 
   // Check for wildcard matches
   RegexMatches matches;
-  size_t      *ovector = nullptr;
 
   for (auto const &retval : sni_action_list) {
     if (element != nullptr && element->rank < retval.rank) {
       break;
     }
 
-    size_t length = servername.length();
-    if (retval.match.empty() == true && length == 0) {
+    if (retval.match.empty() && servername.length() == 0) {
       return {&retval.actions, {}};
-    } else if (auto offset = retval.match.exec(servername, matches); offset > 0) {
+    } else if (retval.match.exec(servername, matches) >= 0) {
       if (!is_port_in_the_ranges(retval.inbound_port_ranges, dest_incoming_port)) {
         continue;
       }
-      if (offset == 1) {
-        // first pair identify the portion of the subject string matched by the entire pattern
-        ovector = matches.get_ovector_pointer();
-        if (ovector[0] == 0 && ovector[1] == length) {
-          // full match
-          return {&retval.actions, {}};
-        } else {
-          continue;
-        }
-      }
-      // If contains groups
-      if (offset == 0) {
-        // reset to max if too many.
-        offset = OVECSIZE / 3;
+      if (matches.size() == 1) {
+        // full match
+        return {&retval.actions, {}};
       }
 
       ActionItem::Context::CapturedGroupViewVec groups;
-      groups.reserve(offset);
-      for (int strnum = 1; strnum < offset; strnum++) {
-        const std::size_t start  = ovector[2 * strnum];
-        const std::size_t length = ovector[2 * strnum + 1] - start;
-
-        groups.emplace_back(servername.data() + start, length);
+      groups.reserve(matches.size());
+      for (int count = 0; count < matches.size(); count++) {
+        groups.emplace_back(matches[count]);
       }
       return {&retval.actions, {std::move(groups)}};
     }
