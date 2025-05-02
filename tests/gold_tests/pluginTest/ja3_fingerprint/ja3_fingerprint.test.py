@@ -53,7 +53,7 @@ class JA3FingerprintTest:
 
         self._modify_incoming = modify_incoming
 
-        tr = Test.AddTestRun('Testing ja3_fingerprint plugin.')
+        tr = Test.AddTestRun(f'test_remap: {test_remap}, modify_incoming: {modify_incoming}')
         self._configure_dns(tr)
         self._configure_server(tr)
         self._configure_trafficserver()
@@ -87,6 +87,7 @@ class JA3FingerprintTest:
                 "x-ja3-raw: first-signature", "Verify the already-existing raw header was preserved.")
             self._server.Streams.All += Testers.ExcludesExpression(
                 "x-ja3-raw: first-signature;", "Verify no extra values were added due to preserve.")
+            self._server.Streams.All += Testers.ContainsExpression("x-ja3-via: test.proxy.com", "The x-ja3-via string was added.")
 
     def _configure_trafficserver(self) -> None:
         """Configure Traffic Server to be used in the test."""
@@ -117,6 +118,7 @@ class JA3FingerprintTest:
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.proxy_name': 'test.proxy.com',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|ja3_fingerprint',
             })
