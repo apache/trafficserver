@@ -253,7 +253,20 @@ private:
   {
     std::stringstream ss;
 
-    ss << '"' << t << '"' << op << '"' << std::get<T>(_data) << '"' << " -> " << r;
+    std::visit(
+      [&](const auto &val) {
+        using V = std::decay_t<decltype(val)>;
+        if constexpr (std::is_same_v<V, T>) {
+          ss << '"' << t << '"' << op << '"' << val << '"';
+        } else if constexpr (std::is_same_v<V, std::set<T>>) {
+          ss << '"' << t << '"' << op << " set[" << val.size() << " entries]";
+        } else {
+          ss << '"' << t << '"' << op << " type<" << typeid(V).name() << ">";
+        }
+      },
+      _data);
+
+    ss << " -> " << r;
     Dbg(pi_dbg_ctl, "\ttesting: %s", ss.str().c_str());
   }
 
