@@ -722,6 +722,9 @@ Operand     Description
 /regex/     Matches the condition's provided value against the regular
             expression. Start the regex with (?i) to flag it for a case
             insensitive match, e.g. /(?i)regex/ will match ReGeX.
+(x,y,z)     Matches the condition's provided value against the list of
+            comma-separated values. The list may be a list of strings, like
+            ``(mp3,m3u,m3u8)``, or a list of integers, like ``(301,302,307,308)``.
 <string     Matches if the value from the condition is lexically less than
             *string*.
 >string     Matches if the value from the condition is lexically greater than
@@ -1503,6 +1506,13 @@ already set to some value, and the status code is a 2xx::
    cond %{STATUS} >199 [AND]
    cond %{STATUS} <300
    set-header Cache-Control "max-age=600, public"
+
+Add a response header for certain status codes
+----------------------------------------------
+
+   cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+   cond %{STATUS} (301,302,307,308)
+   set-header X-Redirect-Status %{STATUS}
 
 Add HSTS
 --------
