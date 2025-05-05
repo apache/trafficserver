@@ -420,11 +420,10 @@ Enable_Config_Var(std::string_view const &name, RecContextCb record_cb, RecConfi
 std::optional<RecInt>
 RecGetRecordInt(const char *name, bool lock)
 {
-  RecErrT               err;
   RecData               data;
   std::optional<RecInt> rec_int;
 
-  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
+  if (RecGetRecord_Xmalloc(name, RECD_INT, &data, lock) == REC_ERR_OKAY) {
     rec_int = data.rec_int;
   }
   return rec_int;
@@ -433,11 +432,10 @@ RecGetRecordInt(const char *name, bool lock)
 std::optional<RecFloat>
 RecGetRecordFloat(const char *name, bool lock)
 {
-  RecErrT                 err;
   RecData                 data;
   std::optional<RecFloat> rec_float;
 
-  if ((err = RecGetRecord_Xmalloc(name, RECD_FLOAT, &data, lock)) == REC_ERR_OKAY) {
+  if (RecGetRecord_Xmalloc(name, RECD_FLOAT, &data, lock) == REC_ERR_OKAY) {
     rec_float = data.rec_float;
   }
   return rec_float;
@@ -505,11 +503,10 @@ RecGetRecordStringAlloc(const char *name, bool lock)
 std::optional<RecCounter>
 RecGetRecordCounter(const char *name, bool lock)
 {
-  RecErrT                   err;
   RecData                   data;
   std::optional<RecCounter> rec_counter;
 
-  if ((err = RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock)) == REC_ERR_OKAY) {
+  if (RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock) == REC_ERR_OKAY) {
     rec_counter = data.rec_counter;
   }
   return rec_counter;
