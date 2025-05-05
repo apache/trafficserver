@@ -89,7 +89,9 @@ LogAccess::init()
 
     m_client_req_url_canon_str =
       Encoding::escapify_url(&m_arena, m_client_req_url_str, m_client_req_url_len, &m_client_req_url_canon_len);
-    m_client_req_url_path_str = m_client_request->path_get(&m_client_req_url_path_len);
+    auto path{m_client_request->path_get()};
+    m_client_req_url_path_str = path.data();
+    m_client_req_url_path_len = static_cast<int>(path.length());
   }
 
   if (hdr->client_response.valid()) {
@@ -110,7 +112,9 @@ LogAccess::init()
         LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
       }
     }
-    m_proxy_resp_reason_phrase_str = const_cast<char *>(m_proxy_response->reason_get(&m_proxy_resp_reason_phrase_len));
+    auto reason{m_proxy_response->reason_get()};
+    m_proxy_resp_reason_phrase_str = const_cast<char *>(reason.data());
+    m_proxy_resp_reason_phrase_len = static_cast<int>(reason.length());
   }
   if (hdr->server_request.valid()) {
     m_proxy_request = &(hdr->server_request);
@@ -1777,25 +1781,24 @@ LogAccess::marshal_client_req_timestamp_ms(char *buf)
 int
 LogAccess::marshal_client_req_http_method(char *buf)
 {
-  char *str  = nullptr;
-  int   alen = 0;
-  int   plen = INK_MIN_ALIGN;
+  std::string_view str;
+  int              plen = INK_MIN_ALIGN;
 
   if (m_client_request) {
-    str = const_cast<char *>(m_client_request->method_get(&alen));
+    str = m_client_request->method_get();
 
     // calculate the padded length only if the actual length
     // is not zero. We don't want the padded length to be zero
     // because marshal_mem should write the DEFAULT_STR to the
     // buffer if str is nil, and we need room for this.
     //
-    if (alen) {
-      plen = round_strlen(alen + 1); // +1 for trailing 0
+    if (!str.empty()) {
+      plen = round_strlen(static_cast<int>(str.length()) + 1); // +1 for trailing 0
     }
   }
 
   if (buf) {
-    marshal_mem(buf, str, alen, plen);
+    marshal_mem(buf, str.data(), static_cast<int>(str.length()), plen);
   }
   return plen;
 }

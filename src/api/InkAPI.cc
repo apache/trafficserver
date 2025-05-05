@@ -2792,7 +2792,9 @@ TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  return h.method_get(length);
+  auto method{h.method_get()};
+  *length = static_cast<int>(method.length());
+  return method.data();
 }
 
 TSReturnCode
@@ -2831,7 +2833,9 @@ TSHttpHdrHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  return h.host_get(length);
+  auto host{h.host_get()};
+  *length = static_cast<int>(host.length());
+  return host.data();
 }
 
 TSReturnCode
@@ -2921,7 +2925,9 @@ TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  return h.reason_get(length);
+  auto reason{h.reason_get()};
+  *length = static_cast<int>(reason.length());
+  return reason.data();
 }
 
 TSReturnCode
