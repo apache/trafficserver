@@ -44,6 +44,7 @@ sessions:
       headers:
         fields:
         - [ X-Request, { value: 'https-request', as: equal } ]
+        - [ x-ja3-via, { as: absent } ]
         - [ X-JA3-Sig, { as: absent } ]
         - [ X-JA3-Raw, { as: absent } ]
 
@@ -82,6 +83,8 @@ sessions:
         - [ content-type, image/jpeg ]
         - [ uuid, http2-request ]
         - [ x-request, http2-request ]
+        - [ x-ja3-sig, first-signature ]
+        - [ x-ja3-via, first-via ]
       content:
         size: 399
 
@@ -91,6 +94,7 @@ sessions:
       headers:
         fields:
         - [ x-request, { value: 'http2-request', as: equal } ]
+        - [ x-ja3-via, { value: 'first-via, test.proxy.com', as: equal } ]
         - [ X-JA3-Sig, { as: present } ]
         - [ X-JA3-Raw, { as: absent } ]
 

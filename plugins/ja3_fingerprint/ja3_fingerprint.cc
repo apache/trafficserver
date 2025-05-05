@@ -27,6 +27,7 @@
 #include <getopt.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <string_view>
 
 #include "ts/apidefs.h"
 #include "ts/ts.h"
@@ -49,8 +50,8 @@
 
 namespace
 {
-//
-constexpr int ja3_hash_included_byte_count{16};
+constexpr std::string_view JA3_VIA_HEADER{"x-ja3-via"};
+constexpr int              ja3_hash_included_byte_count{16};
 static_assert(ja3_hash_included_byte_count <= MD5_DIGEST_LENGTH);
 
 constexpr int ja3_hash_hex_string_with_null_terminator_length{2 * ja3_hash_included_byte_count + 1};
@@ -254,6 +255,16 @@ modify_ja3_headers(TSCont contp, TSHttpTxn txnp, ja3_data const *ja3_vconn_data)
   } else {
     TSAssert(TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc));
   }
+
+  TSMgmtString proxy_name = nullptr;
+  if (TS_SUCCESS != TSMgmtStringGet("proxy.config.proxy_name", &proxy_name)) {
+    TSError("[%s] Failed to get proxy name for %s, set 'proxy.config.proxy_name' in records.config", PLUGIN_NAME,
+            JA3_VIA_HEADER.data());
+    proxy_name = TSstrdup("unknown");
+  }
+  append_to_field(bufp, hdr_loc, JA3_VIA_HEADER.data(), static_cast<int>(JA3_VIA_HEADER.length()), proxy_name,
+                  static_cast<int>(std::strlen(proxy_name)), preserve_flag);
+  TSfree(proxy_name);
 
   // Add JA3 md5 fingerprints
   append_to_field(bufp, hdr_loc, "x-ja3-sig", 9, ja3_vconn_data->md5_string, 32, preserve_flag);
