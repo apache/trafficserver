@@ -18,5 +18,30 @@
 add_subdirectory(lib)
 
 add_atsplugin(wasm ats_context.cc ats_wasm.cc wasm_main.cc)
-target_link_libraries(wasm PRIVATE wasmlib wamr::wamr)
+
+set(WASM_RUNTIME
+    wasmlib
+)
+if(wamr_FOUND)
+  list(APPEND WASM_RUNTIME wamr::wamr)
+endif()
+if(wasmtime_FOUND)
+  list(APPEND WASM_RUNTIME wasmtime::wasmtime)
+endif()
+if(wasmedge_FOUND)
+  list(APPEND WASM_RUNTIME wasmedge::wasmedge)
+endif()
+
+target_link_libraries(wasm PRIVATE ${WASM_RUNTIME})
+
+if(wamr_FOUND)
+  target_compile_options(wasm PRIVATE -DWAMR)
+endif()
+if(wasmtime_FOUND)
+  target_compile_options(wasm PRIVATE -DWASMTIME)
+endif()
+if(wasmedge_FOUND)
+  target_compile_options(wasm PRIVATE -DWASMEDGE)
+endif()
+
 verify_global_plugin(wasm)

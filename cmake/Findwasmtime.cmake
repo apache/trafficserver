@@ -15,33 +15,33 @@
 #
 #######################
 
-# Findwamr.cmake
+# Findwasmtime.cmake
 #
 # This will define the following variables
 #
-#     wamr_FOUND
-#     wamr_LIBRARY
-#     wamr_INCLUDE_DIR
+#     wasmtime_FOUND
+#     wasmtime_LIBRARY
+#     wasmtime_INCLUDE_DIR
 #
 # and the following imported targets
 #
-#     wamr::wamr
+#     wasmtime::wasmtime
 #
 
-find_library(iwasm_LIBRARY NAMES iwasm)
-find_path(wamr_INCLUDE_DIR NAMES wasm_c_api.h)
+find_library(lwasmtime_LIBRARY NAMES wasmtime)
+find_path(wasmtime_INCLUDE_DIR NAMES crates/c-api/include/wasm.h)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(wamr REQUIRED_VARS iwasm_LIBRARY wamr_INCLUDE_DIR)
+find_package_handle_standard_args(wasmtime REQUIRED_VARS lwasmtime_LIBRARY wasmtime_INCLUDE_DIR)
 
-if(wamr_FOUND)
-  mark_as_advanced(wamr_FOUND wamr_LIBRARY)
-  set(wamr_INCLUDE_DIRS ${wamr_INCLUDE_DIR})
-  set(wamr_LIBRARY ${iwasm_LIBRARY})
+if(wasmtime_FOUND)
+  mark_as_advanced(wasmtime_FOUND wasmtime_LIBRARY)
+  set(wasmtime_INCLUDE_DIRS ${wasmtime_INCLUDE_DIR})
+  set(wasmtime_LIBRARY ${lwasmtime_LIBRARY})
 endif()
 
-if(wamr_FOUND AND NOT TARGET wamr::wamr)
-  add_library(wamr::wamr INTERFACE IMPORTED)
-  target_include_directories(wamr::wamr INTERFACE ${wamr_INCLUDE_DIRS})
-  target_link_libraries(wamr::wamr INTERFACE ${wamr_LIBRARY})
+if(wasmtime_FOUND AND NOT TARGET wasmtime::wasmtime)
+  add_library(wasmtime::wasmtime INTERFACE IMPORTED)
+  target_include_directories(wasmtime::wasmtime INTERFACE ${wasmtime_INCLUDE_DIRS})
+  target_link_libraries(wasmtime::wasmtime INTERFACE ${wasmtime_LIBRARY})
 endif()
