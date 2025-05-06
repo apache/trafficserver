@@ -83,6 +83,7 @@ protected:
 
   void _record_tls_handshake_begin_time();
   void _record_tls_handshake_end_time();
+  void _update_end_of_handshake_stats();
 
   /**
    * Implementation should schedule either TS_EVENT_SSL_VERIFY_SERVER or TS_EVENT_SSL_VERIFY_CLIENT accordingly.
