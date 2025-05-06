@@ -26,9 +26,9 @@ Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"))
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server", ssl=True)
 
-request_foo_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_foo_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "foo ok"}
-server.addResponse("sessionlog.json", request_foo_header, response_foo_header)
+request_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "foo ok"}
+server.addResponse("sessionlog.json", request_header, response_header)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
@@ -71,7 +71,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Setting groups list from server_groups_list to x25519", "Should log setting the server groups")
-tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(
+tr.Processes.Default.Streams.all = Testers.IncludesExpression(
     f"SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / x25519", "Curl should log using x25519 in the SSL connection")
 
 # Hybrid ECDH PQ key exchange TLS groups were added in OpenSSL 3.5
@@ -84,6 +84,6 @@ if Condition.HasOpenSSLVersion("3.5.0"):
     tr.StillRunningAfter = ts
     ts.Disk.traffic_out.Content += Testers.ContainsExpression(
         "Setting groups list from server_groups_list to X25519MLKEM768", "Should log setting the server groups")
-    tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(
+    tr.Processes.Default.Streams.all = Testers.IncludesExpression(
         f"SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768",
         f"Curl should log using X25519MLKEM768 in the SSL connection")
