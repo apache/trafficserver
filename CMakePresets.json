@@ -164,6 +164,7 @@
         "OPENSSL_ROOT_DIR": "/opt/openssl-quic",
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
+        "wamr_ROOT": "/usr/local",
         "ENABLE_CRIPTS": "ON"
       }
     },
@@ -175,6 +176,7 @@
       "cacheVariables": {
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
+        "wamr_ROOT": "/usr/local",
         "CMAKE_CXX_STANDARD": "20",
         "ENABLE_CRIPTS": "ON"
       }
@@ -189,6 +191,7 @@
         "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
         "opentelemetry_ROOT": "/opt",
         "CURL_ROOT": "/opt",
+        "wamr_ROOT": "/usr/local",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
         "ENABLE_QUICHE": "ON"
       }
