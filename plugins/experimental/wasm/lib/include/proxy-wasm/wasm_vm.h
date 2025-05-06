@@ -24,6 +24,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "include/proxy-wasm/sdk.h"
 #include "include/proxy-wasm/word.h"
 
 namespace proxy_wasm {
