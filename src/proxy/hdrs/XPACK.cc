@@ -485,8 +485,11 @@ void
 XpackDynamicTable::_expand_storage_size(uint32_t new_storage_size)
 {
   ExpandCapacityContext context{this->_storage, new_storage_size};
-  uint32_t              i   = this->_calc_index(this->_entries_tail, 1);
-  uint32_t              end = this->_calc_index(this->_entries_head, 1);
+  if (!context.ok_to_expand()) {
+    return;
+  }
+  uint32_t i   = this->_calc_index(this->_entries_tail, 1);
+  uint32_t end = this->_calc_index(this->_entries_head, 1);
   for (; i != end; i = this->_calc_index(i, 1)) {
     auto &entry  = this->_entries[i];
     entry.offset = context.copy_field(entry.offset, entry.name_len + entry.value_len);
