@@ -394,7 +394,7 @@ void WasmBase::startVm(ContextBase *root_context) {
              // time
              "wasi_unstable.clock_time_get", "wasi_snapshot_preview1.clock_time_get",
              // random
-             "wasi_unstable.random_get", "wasi_snapshot_preview1.random_get"});
+             "wasi_unstable.random_get", "wasi_snapshot_preview1.random_get",
              // Go runtime initialization
              "wasi_unstable.fd_fdstat_get", "wasi_snapshot_preview1.fd_fdstat_get",
              "wasi_unstable.fd_fdstat_set_flags", "wasi_snapshot_preview1.fd_fdstat_set_flags"});
