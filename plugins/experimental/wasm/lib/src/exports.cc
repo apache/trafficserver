@@ -648,7 +648,7 @@ Word grpc_send(Word token, Word message_ptr, Word message_size, Word end_stream)
 
 // WASIp1 typings in comments sourced from
 // https://github.com/WebAssembly/wasi-libc/blob/446cb3f1aa21f9b1a1eab372f82d65d19003e924/libc-bottom-half/headers/public/wasi/api.h
- 
+
 // __wasi_errno_t path_open(__wasi_fd_t fd, __wasi_lookupflags_t dirflags, const char *path,
 // size_t path_len, __wasi_oflags_t oflags, __wasi_rights_t fs_rights_base, __wasi_rights_t
 // fs_rights_inheriting, __wasi_fdflags_t fdflags, __wasi_fd_t *retptr0)
