@@ -890,7 +890,7 @@ Word wasi_unstable_random_get(Word result_buf_ptr, Word buf_len) {
 }
 
 // __wasi_errno_t __wasi_sched_yield()
-Word wasi_unstable_sched_yield() { 
+Word wasi_unstable_sched_yield() {
   // Per POSIX man pages, it is valid to return success if the calling thread is the only thread in
   // the highest priority list. This is vacuously true for wasm without threads. There are no valid
   // error cases defined.
