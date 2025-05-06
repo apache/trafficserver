@@ -493,3 +493,19 @@ ServerTLSv1_3CipherSuites::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED
   tbs->set_cipher_suite(server_TLSV1_3_cipher_suites);
   return SSL_TLSEXT_ERR_OK;
 }
+
+int
+ServerGroupsList::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+  if (server_groups_list.empty()) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  auto tbs = TLSBasicSupport::getInstance(&ssl);
+  if (tbs == nullptr) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  Dbg(dbg_ctl_ssl_sni, "Setting groups list from server_groups_list to %s", server_groups_list.c_str());
+
+  tbs->set_groups_list(server_groups_list);
+  return SSL_TLSEXT_ERR_OK;
+}
