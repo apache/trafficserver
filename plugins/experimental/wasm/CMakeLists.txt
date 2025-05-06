@@ -19,9 +19,7 @@ add_subdirectory(lib)
 
 add_atsplugin(wasm ats_context.cc ats_wasm.cc wasm_main.cc)
 
-set(WASM_RUNTIME
-    wasmlib
-)
+set(WASM_RUNTIME wasmlib)
 if(wamr_FOUND)
   list(APPEND WASM_RUNTIME wamr::wamr)
 endif()
