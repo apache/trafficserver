@@ -36,6 +36,8 @@ std::string getIP(sockaddr const *s_sockaddr);
 char       *getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN]);
 uint16_t    getPort(sockaddr const *s_sockaddr);
 
+template <typename T> constexpr bool ALWAYS_FALSE_V = false;
+
 namespace header_rewrite_ns
 {
 extern const char PLUGIN_NAME[];

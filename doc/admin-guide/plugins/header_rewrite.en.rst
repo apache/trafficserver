@@ -722,6 +722,9 @@ Operand     Description
 /regex/     Matches the condition's provided value against the regular
             expression. Start the regex with (?i) to flag it for a case
             insensitive match, e.g. /(?i)regex/ will match ReGeX.
+(x,y,z)     Matches the condition's provided value against the list of
+            comma-separated values. The list may be a list of strings, like
+            ``(mp3,m3u,m3u8)``, or a list of integers, like ``(301,302,307,308)``.
 <string     Matches if the value from the condition is lexically less than
             *string*.
 >string     Matches if the value from the condition is lexically greater than
@@ -752,7 +755,16 @@ OR     Indicates that either the current condition or the next one must be
        true, as contrasted with the default behavior from ``[AND]``.
 NOCASE Indicates that the string comparison, or regular expression, should be
        case-insensitive. The default is to be case-sensitive.
+PRE    Make a prefix match on a string comparison.
+SUF    Make a suffix match on a string comparison.
+MID    Make a substring match on a string comparison.
+EXT    The substring match only applies to the file extension following a dot.
+       This is generally mostly useful for the ``URL:PATH`` part.
 ====== ========================================================================
+
+**Note**: At most, one of ``[PRE]``, ``[SUF]``, ``[MID]``, or ``[EXT]`` may be
+used at any time. They can however be used together with ``[NOCASE]]`` and the
+other flags.
 
 Operators
 ---------
@@ -1495,6 +1507,13 @@ already set to some value, and the status code is a 2xx::
    cond %{STATUS} <300
    set-header Cache-Control "max-age=600, public"
 
+Add a response header for certain status codes
+----------------------------------------------
+
+   cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+   cond %{STATUS} (301,302,307,308)
+   set-header X-Redirect-Status %{STATUS}
+
 Add HSTS
 --------
 
@@ -1594,3 +1613,12 @@ limiting to the request.::
    cond %{REMAP_PSEUDO_HOOK} [AND]
    cond %{CLIENT-HEADER:Some-Special-Header} ="yes"
    run-plugin rate_limit.so "--limit=300 --error=429"
+
+Check the ``PATH`` file extension
+---------------------------------
+
+This rule will deny all requests for URIs with the ``.php`` file extension::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+   cond %{CLIENT-URL:PATH} ="php" [EXT,NOCASE]
+   set-status 403

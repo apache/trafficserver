@@ -439,10 +439,9 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
       hit_miss_code = SQUID_HIT_RESERVED;
     }
   } else {
-    int         reason_len;
-    const char *reason = header->reason_get(&reason_len);
+    auto reason{header->reason_get()};
 
-    if (reason != nullptr && reason_len >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED) {
+    if (!reason.empty() && reason.length() >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED) {
       hit_miss_code = SQUID_HIT_RESERVED;
       // its a miss in the cache. find out why.
     } else if (via_string[VIA_DETAIL_CACHE_LOOKUP] == VIA_DETAIL_MISS_EXPIRED) {

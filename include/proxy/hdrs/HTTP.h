@@ -438,17 +438,17 @@ void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 
 bool http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver);
 
-const char *http_hdr_method_get(HTTPHdrImpl *hh, int *length);
-void        http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
-                                bool must_copy);
+std::string_view http_hdr_method_get(HTTPHdrImpl *hh);
+void             http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
+                                     bool must_copy);
 
 void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 
 // HTTPStatus             http_hdr_status_get (HTTPHdrImpl *hh);
-void        http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
-const char *http_hdr_reason_get(HTTPHdrImpl *hh, int *length);
-void        http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
-const char *http_hdr_reason_lookup(unsigned status);
+void             http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
+std::string_view http_hdr_reason_get(HTTPHdrImpl *hh);
+void             http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
+const char      *http_hdr_reason_lookup(unsigned status);
 
 void        http_parser_init(HTTPParser *parser);
 void        http_parser_clear(HTTPParser *parser);
@@ -520,9 +520,9 @@ public:
   HTTPVersion version_get() const;
   void        version_set(HTTPVersion version);
 
-  const char *method_get(int *length);
-  int         method_get_wksidx() const;
-  void        method_set(const char *value, int length);
+  std::string_view method_get();
+  int              method_get_wksidx() const;
+  void             method_set(const char *value, int length);
 
   URL *url_create(URL *url);
 
@@ -565,31 +565,28 @@ public:
 
   /** Get the URL path.
       This is a reference, not allocated.
-      @return A pointer to the path or @c NULL if there is no valid URL.
+      @return A string_view to the path or an empty string_view if there is no valid URL.
   */
-  const char *path_get(int *length ///< Storage for path length.
-  );
+  std::string_view path_get();
 
   /** Get the URL query.
       This is a reference, not allocated.
-      @return A pointer to the query or @c NULL if there is no valid URL.
+      @return A string_view to the query or an empty string_view if there is no valid URL.
   */
-  const char *query_get(int *length ///< Storage for query length.
-  );
+  std::string_view query_get();
 
   /** Get the URL fragment.
       This is a reference, not allocated.
-      @return A pointer to the fragment or @c NULL if there is no valid URL.
+      @return A string_view to the fragment or an empty string_view if there is no valid URL.
   */
-  const char *fragment_get(int *length ///< Storage for fragment length.
-  );
+  std::string_view fragment_get();
 
   /** Get the target host name.
       The length is returned in @a length if non-NULL.
       @note The results are cached so this is fast after the first call.
-      @return A pointer to the host name.
+      @return A string_view to the host name.
   */
-  const char *host_get(int *length = nullptr) const;
+  std::string_view host_get() const;
 
   /** Get the target port.
       If the target port is not found then it is adjusted to the
@@ -601,12 +598,11 @@ public:
 
   /** Get the URL scheme.
       This is a reference, not allocated.
-      @return A pointer to the scheme or @c NULL if there is no valid URL.
+      @return A string_view to the scheme or an empty string_view if there is no valid URL.
   */
-  const char *scheme_get(int *length ///< Storage for path length.
-  );
-  void        url_set(URL *url);
-  void        url_set(const char *str, int length);
+  std::string_view scheme_get();
+  void             url_set(URL *url);
+  void             url_set(const char *str, int length);
 
   /// Check location of target host.
   /// @return @c true if the host was in the URL, @c false otherwise.
@@ -631,8 +627,8 @@ public:
   HTTPStatus status_get() const;
   void       status_set(HTTPStatus status);
 
-  const char *reason_get(int *length);
-  void        reason_set(const char *value, int length);
+  std::string_view reason_get();
+  void             reason_set(const char *value, int length);
 
   void mark_early_data(bool flag = true) const;
   bool is_early_data() const;
@@ -778,21 +774,19 @@ HTTPHdr::_test_and_fill_target_cache() const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-HTTPHdr::host_get(int *length) const
+inline std::string_view
+HTTPHdr::host_get() const
 {
   this->_test_and_fill_target_cache();
   if (m_target_in_url) {
-    return url_get()->host_get(length);
+    int  length;
+    auto host{url_get()->host_get(&length)};
+    return std::string_view{host, static_cast<std::string_view::size_type>(length)};
   } else if (m_host_mime) {
-    if (length)
-      *length = m_host_length;
-    return m_host_mime->m_ptr_value;
+    return std::string_view{m_host_mime->m_ptr_value, static_cast<std::string_view::size_type>(m_host_length)};
   }
 
-  if (length)
-    *length = 0;
-  return nullptr;
+  return std::string_view{};
 }
 
 /*-------------------------------------------------------------------------
@@ -952,13 +946,13 @@ HTTPHdr::version_set(HTTPVersion version)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-HTTPHdr::method_get(int *length)
+inline std::string_view
+HTTPHdr::method_get()
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
-  return http_hdr_method_get(m_http, length);
+  return http_hdr_method_get(m_http);
 }
 
 inline int
@@ -1103,13 +1097,13 @@ HTTPHdr::status_set(HTTPStatus status)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-HTTPHdr::reason_get(int *length)
+inline std::string_view
+HTTPHdr::reason_get()
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  return http_hdr_reason_get(m_http, length);
+  return http_hdr_reason_get(m_http);
 }
 
 /*-------------------------------------------------------------------------
@@ -1205,32 +1199,52 @@ HTTPHdr::url_string_get_ref(int *length)
   return this->url_string_get(USE_HDR_HEAP_MAGIC, length);
 }
 
-inline const char *
-HTTPHdr::path_get(int *length)
+inline std::string_view
+HTTPHdr::path_get()
 {
   URL *url = this->url_get();
-  return url ? url->path_get(length) : nullptr;
+  if (url) {
+    int  length;
+    auto path{url->path_get(&length)};
+    return std::string_view{path, static_cast<std::string_view::size_type>(length)};
+  }
+  return std::string_view{};
 }
 
-inline const char *
-HTTPHdr::query_get(int *length)
+inline std::string_view
+HTTPHdr::query_get()
 {
   URL *url = this->url_get();
-  return url ? url->query_get(length) : nullptr;
+  if (url) {
+    int  length;
+    auto query{url->query_get(&length)};
+    return std::string_view{query, static_cast<std::string_view::size_type>(length)};
+  }
+  return std::string_view{};
 }
 
-inline const char *
-HTTPHdr::fragment_get(int *length)
+inline std::string_view
+HTTPHdr::fragment_get()
 {
   URL *url = this->url_get();
-  return url ? url->fragment_get(length) : nullptr;
+  if (url) {
+    int  length;
+    auto fragment{url->fragment_get(&length)};
+    return std::string_view{fragment, static_cast<std::string_view::size_type>(length)};
+  }
+  return std::string_view{};
 }
 
-inline const char *
-HTTPHdr::scheme_get(int *length)
+inline std::string_view
+HTTPHdr::scheme_get()
 {
   URL *url = this->url_get();
-  return url ? url->scheme_get(length) : nullptr;
+  if (url) {
+    int  length;
+    auto scheme{url->scheme_get(&length)};
+    return std::string_view{scheme, static_cast<std::string_view::size_type>(length)};
+  }
+  return std::string_view{};
 }
 
 /*-------------------------------------------------------------------------

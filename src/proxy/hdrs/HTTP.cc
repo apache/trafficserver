@@ -698,22 +698,23 @@ http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-http_hdr_method_get(HTTPHdrImpl *hh, int *length)
+std::string_view
+http_hdr_method_get(HTTPHdrImpl *hh)
 {
   const char *str;
+  int         length;
 
   ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
   if (hh->u.req.m_method_wks_idx >= 0) {
-    str     = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
-    *length = hdrtoken_index_to_length(hh->u.req.m_method_wks_idx);
+    str    = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
+    length = hdrtoken_index_to_length(hh->u.req.m_method_wks_idx);
   } else {
-    str     = hh->u.req.m_ptr_method;
-    *length = hh->u.req.m_len_method;
+    str    = hh->u.req.m_ptr_method;
+    length = hh->u.req.m_len_method;
   }
 
-  return (str);
+  return std::string_view{str, static_cast<std::string_view::size_type>(length)};
 }
 
 /*-------------------------------------------------------------------------
@@ -769,12 +770,11 @@ http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-http_hdr_reason_get(HTTPHdrImpl *hh, int *length)
+std::string_view
+http_hdr_reason_get(HTTPHdrImpl *hh)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  *length = hh->u.resp.m_len_reason;
-  return (hh->u.resp.m_ptr_reason);
+  return std::string_view{hh->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hh->u.resp.m_len_reason)};
 }
 
 /*-------------------------------------------------------------------------
@@ -1755,10 +1755,9 @@ HTTPHdr::set_url_target_from_host_field(URL *url)
       m_target_in_url = true; // it's there now.
     }
   } else {
-    int         host_len = 0;
-    const char *host     = host_get(&host_len);
+    auto host{host_get()};
 
-    url->host_set(host, host_len);
+    url->host_set(host.data(), static_cast<int>(host.length()));
     if (m_port_in_header) {
       url->port_set(m_port);
     }

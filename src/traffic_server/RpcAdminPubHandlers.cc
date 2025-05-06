@@ -55,10 +55,8 @@ register_admin_jsonrpc_handlers()
                           {{rpc::RESTRICTED_API}});
   rpc::add_method_handler("admin_server_stop_drain", &server_stop_drain, &core_ats_rpc_service_provider_handle,
                           {{rpc::RESTRICTED_API}});
-  rpc::add_notification_handler("admin_server_shutdown", &server_shutdown, &core_ats_rpc_service_provider_handle,
-                                {{rpc::RESTRICTED_API}});
-  rpc::add_notification_handler("admin_server_restart", &server_shutdown, &core_ats_rpc_service_provider_handle,
-                                {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("get_server_status", &get_server_status, &core_ats_rpc_service_provider_handle,
+                          {{rpc::NON_RESTRICTED_API}});
 
   // storage
   using namespace rpc::handlers::storage;

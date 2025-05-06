@@ -371,7 +371,7 @@ read_config(const char *config_filename)
   while (!fin.eof()) {
     field_name[0] = '\0';
     fin >> field_name;
-    if (0) {}
+    if (false) {}
     PARAM(hotset_size)
     PARAM(hotset_frequency)
     PARAM(touch_data)

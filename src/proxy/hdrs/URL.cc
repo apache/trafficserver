@@ -1196,7 +1196,7 @@ url_is_strictly_compliant(const char *start, const char *end)
 {
   for (const char *i = start; i < end; ++i) {
     if (!ParseRules::is_uri(*i)) {
-      Dbg(dbg_ctl_http, "Non-RFC compliant character [0x%.2X] found in URL", (unsigned char)*i);
+      Dbg(dbg_ctl_http, "Non-RFC compliant character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
       return false;
     }
   }
@@ -1213,11 +1213,11 @@ url_is_mostly_compliant(const char *start, const char *end)
 {
   for (const char *i = start; i < end; ++i) {
     if (isspace(*i)) {
-      Dbg(dbg_ctl_http, "Whitespace character [0x%.2X] found in URL", (unsigned char)*i);
+      Dbg(dbg_ctl_http, "Whitespace character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
       return false;
     }
     if (!isprint(*i)) {
-      Dbg(dbg_ctl_http, "Non-printable character [0x%.2X] found in URL", (unsigned char)*i);
+      Dbg(dbg_ctl_http, "Non-printable character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
       return false;
     }
   }

@@ -75,10 +75,9 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 {
   // :method
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD); field != nullptr) {
-    int         value_len;
-    const char *value = header.method_get(&value_len);
+    auto value{header.method_get()};
 
-    field->value_set(header.m_heap, header.m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_len)});
+    field->value_set(header.m_heap, header.m_mime, value);
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :method");
     return PARSE_RESULT_ERROR;
@@ -86,11 +85,10 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
   // :scheme
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_SCHEME); field != nullptr) {
-    int         value_len;
-    const char *value = header.scheme_get(&value_len);
+    auto value{header.scheme_get()};
 
-    if (value != nullptr) {
-      field->value_set(header.m_heap, header.m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_len)});
+    if (!value.empty()) {
+      field->value_set(header.m_heap, header.m_mime, value);
     } else {
       field->value_set(header.m_heap, header.m_mime,
                        std::string_view{URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)});
@@ -102,19 +100,19 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
   // :authority
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY); field != nullptr) {
-    int         value_len;
-    const char *value = header.host_get(&value_len);
+    auto value{header.host_get()};
+    auto value_len{static_cast<int>(value.length())};
 
     if (header.is_port_in_header()) {
       int                   port = header.port_get();
       ts::LocalBuffer<char> buf(value_len + 8);
       char                 *host_and_port = buf.data();
-      value_len                           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
+      value_len                           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value.data(), port);
 
       field->value_set(header.m_heap, header.m_mime,
                        std::string_view{host_and_port, static_cast<std::string_view::size_type>(value_len)});
     } else {
-      field->value_set(header.m_heap, header.m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_len)});
+      field->value_set(header.m_heap, header.m_mime, value);
     }
     // Remove the host header field, redundant to the authority field
     // For istio/envoy, having both was causing 404 responses
@@ -126,20 +124,18 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
   // :path
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH); field != nullptr) {
-    int         value_len = 0;
-    const char *value     = header.path_get(&value_len);
-    int         query_len = 0;
-    const char *query     = header.query_get(&query_len);
-    int         path_len  = value_len + 1;
+    auto value{header.path_get()};
+    auto query{header.query_get()};
+    int  path_len = static_cast<int>(value.length()) + 1;
 
-    ts::LocalBuffer<char> buf(value_len + 1 + 1 + 1 + query_len);
+    ts::LocalBuffer<char> buf(static_cast<int>(value.length()) + 1 + 1 + 1 + static_cast<int>(query.length()));
     char                 *path = buf.data();
     path[0]                    = '/';
-    memcpy(path + 1, value, value_len);
-    if (query_len > 0) {
+    memcpy(path + 1, value.data(), static_cast<int>(value.length()));
+    if (static_cast<int>(query.length()) > 0) {
       path[path_len] = '?';
-      memcpy(path + path_len + 1, query, query_len);
-      path_len += 1 + query_len;
+      memcpy(path + path_len + 1, query.data(), static_cast<int>(query.length()));
+      path_len += 1 + static_cast<int>(query.length());
     }
     field->value_set(header.m_heap, header.m_mime, std::string_view{path, static_cast<std::string_view::size_type>(path_len)});
   } else {

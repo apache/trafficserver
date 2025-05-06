@@ -631,9 +631,9 @@ CacheVC::scanStripe(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&theCache->hosttable);
 
   const CacheHostRecord *rec = &hosttable->gen_host_rec;
-  if (host_len) {
+  if (!hostname.empty()) {
     CacheHostResult res;
-    hosttable->Match(hostname, host_len, &res);
+    hosttable->Match(hostname, &res);
     if (res.record) {
       rec = res.record;
     }
@@ -775,7 +775,9 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         goto Lskip;
       }
       if (!hostinfo_copied) {
-        memccpy(hname, vector.get(i)->request_get()->host_get(&hlen), 0, 500);
+        auto host{vector.get(i)->request_get()->host_get()};
+        hlen = static_cast<int>(host.length());
+        memccpy(hname, host.data(), 0, 500);
         hname[hlen] = 0;
         Dbg(dbg_ctl_cache_scan, "hostname = '%s', hostlen = %d", hname, hlen);
         hostinfo_copied = true;
@@ -824,7 +826,8 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         ink_assert(hostinfo_copied);
         SET_HANDLER(&CacheVC::scanRemoveDone);
         // force remove even if there is a writer
-        cacheProcessor.remove(this, &doc->first_key, CACHE_FRAG_TYPE_HTTP, hname, hlen);
+        cacheProcessor.remove(this, &doc->first_key, CACHE_FRAG_TYPE_HTTP,
+                              std::string_view{hname, static_cast<std::string_view::size_type>(hlen)});
         return EVENT_CONT;
       } else {
         offset            = reinterpret_cast<char *>(doc) - buf->data();

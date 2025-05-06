@@ -26,28 +26,48 @@
 
 #include "matcher.h"
 
-// Special case for strings, to make the distinction between regexes and string matching
-template <>
-void
-Matchers<std::string>::set(const std::string &d, CondModifiers mods)
+static bool
+match_with_modifiers(std::string_view rhs, std::string_view lhs, CondModifiers mods)
 {
-  _data = d;
-  if (mods & COND_NOCASE) {
-    _nocase = true;
-  }
-
-  if (_op == MATCH_REGULAR_EXPRESSION) {
-    if (!_reHelper.setRegexMatch(_data, _nocase)) {
-      std::stringstream ss;
-
-      ss << _data;
-      TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, ss.str().c_str());
-      Dbg(pi_dbg_ctl, "Invalid regex: failed to precompile: %s", ss.str().c_str());
-      throw std::runtime_error("Malformed regex");
-    } else {
-      Dbg(pi_dbg_ctl, "Regex precompiled successfully");
+  // Case-aware equality
+  static auto equals = [](std::string_view a, std::string_view b, CondModifiers mods) -> bool {
+    if (has_modifier(mods, CondModifiers::MOD_NOCASE)) {
+      return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(), [](char c1, char c2) {
+               return std::tolower(static_cast<unsigned char>(c1)) == std::tolower(static_cast<unsigned char>(c2));
+             });
     }
+    return a == b;
+  };
+
+  // Case-aware substring search
+  static auto contains = [](std::string_view haystack, std::string_view needle, CondModifiers mods) -> bool {
+    if (!has_modifier(mods, CondModifiers::MOD_NOCASE)) {
+      return haystack.find(needle) != std::string_view::npos;
+    }
+    auto it = std::search(haystack.begin(), haystack.end(), needle.begin(), needle.end(), [](char c1, char c2) {
+      return std::tolower(static_cast<unsigned char>(c1)) == std::tolower(static_cast<unsigned char>(c2));
+    });
+    return it != haystack.end();
+  };
+
+  if (has_modifier(mods, CondModifiers::MOD_EXT)) {
+    auto dot = rhs.rfind('.');
+    return dot != std::string_view::npos && dot + 1 < rhs.size() && equals(rhs.substr(dot + 1), lhs, mods);
   }
+
+  if (has_modifier(mods, CondModifiers::MOD_SUF)) {
+    return rhs.size() >= lhs.size() && equals(rhs.substr(rhs.size() - lhs.size()), lhs, mods);
+  }
+
+  if (has_modifier(mods, CondModifiers::MOD_PRE)) {
+    return rhs.size() >= lhs.size() && equals(rhs.substr(0, lhs.size()), lhs, mods);
+  }
+
+  if (has_modifier(mods, CondModifiers::MOD_MID)) {
+    return contains(rhs, lhs, mods);
+  }
+
+  return equals(rhs, lhs, mods);
 }
 
 // Special case for strings, to allow for insensitive case comparisons for std::string matchers.
@@ -55,23 +75,51 @@ template <>
 bool
 Matchers<std::string>::test_eq(const std::string &t) const
 {
-  bool r = false;
+  std::string_view lhs    = std::get<std::string>(_data);
+  std::string_view rhs    = t;
+  bool             result = match_with_modifiers(rhs, lhs, _mods);
 
-  if (_data.length() == t.length()) {
-    if (_nocase) {
-      // ToDo: in C++20, this would be nicer with std::range, e.g.
-      // r = std::ranges::equal(_data, t, [](char c1, char c2) { return std::tolower(c1) == std::tolower(c2); });
-      r = std::equal(_data.begin(), _data.end(), t.begin(), [](char c1, char c2) {
-        return std::tolower(static_cast<unsigned char>(c1)) == std::tolower(static_cast<unsigned char>(c2));
-      });
-    } else {
-      r = (t == _data);
+  if (pi_dbg_ctl.on()) {
+    debug_helper(t, " == ", result);
+  }
+
+  return result;
+}
+
+template <>
+bool
+Matchers<std::string>::test_set(const std::string &t) const
+{
+  TSAssert(std::holds_alternative<std::set<std::string>>(_data));
+  std::string_view rhs = t;
+
+  for (const auto &entry : std::get<std::set<std::string>>(_data)) {
+    if (match_with_modifiers(rhs, entry, _mods)) {
+      if (pi_dbg_ctl.on()) {
+        debug_helper(t, " ∈ ", true);
+        return true;
+      }
     }
   }
 
-  if (pi_dbg_ctl.on()) {
-    debug_helper(t, " == ", r);
+  debug_helper(t, " ∈ ", false);
+  return false;
+}
+
+template <>
+bool
+Matchers<const sockaddr *>::test(const sockaddr *const &addr, const Resources & /* Not used */) const
+{
+  TSAssert(std::holds_alternative<swoc::IPRangeSet>(_data));
+  const auto &ranges = std::get<swoc::IPRangeSet>(_data);
+
+  if (ranges.contains(swoc::IPAddr(addr))) {
+    if (pi_dbg_ctl.on()) {
+      char text[INET6_ADDRSTRLEN];
+      Dbg(pi_dbg_ctl, "Successfully found IP-range match on %s", getIP(addr, text));
+    }
+    return true;
   }
 
-  return r;
+  return false;
 }
