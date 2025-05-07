@@ -460,6 +460,7 @@ TEST_CASE("XpackDynamicTableStorage", "[xpack]")
   uint32_t reoffset2 = 0, reoffset3 = 0, reoffset4 = 0;
   {
     ExpandCapacityContext context{storage, 200};
+    REQUIRE(context.ok_to_expand());
     reoffset2 = context.copy_field(offset2, 50);
     // Note that the offsets will now be shifted, starting from 0 now.
     REQUIRE(reoffset2 == 0);
@@ -478,4 +479,10 @@ TEST_CASE("XpackDynamicTableStorage", "[xpack]")
   storage.read(reoffset4, &name, 25, &value, 25);
   REQUIRE(memcmp(name, name4.data(), 25) == 0);
   REQUIRE(memcmp(value, value4.data(), 25) == 0);
+
+  // Test shrinking capacity. This should be rejected via ok_to_expand().
+  {
+    ExpandCapacityContext context{storage, 0};
+    REQUIRE(!context.ok_to_expand());
+  } // context goes out of scope and finishes the expansion phase.
 }
