@@ -47,7 +47,7 @@ ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ATSHash64 *
   if (h) {
     thash = h;
   } else if (hash) {
-    thash = hash;
+    thash = &*hash;
   } else {
     return;
   }
@@ -76,7 +76,7 @@ ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, AT
   if (h) {
     thash = h;
   } else if (hash) {
-    thash = hash;
+    thash = &*hash;
   } else {
     return nullptr;
   }
@@ -132,7 +132,7 @@ ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, b
   if (h) {
     thash = h;
   } else if (hash) {
-    thash = hash;
+    thash = &*hash;
   } else {
     return nullptr;
   }
@@ -205,9 +205,4 @@ ATSConsistentHash::lookup_by_hashval(uint64_t hashval, ATSConsistentHashIter *i,
   return (*iter)->second;
 }
 
-ATSConsistentHash::~ATSConsistentHash()
-{
-  if (hash) {
-    delete hash;
-  }
-}
+ATSConsistentHash::~ATSConsistentHash() {}
