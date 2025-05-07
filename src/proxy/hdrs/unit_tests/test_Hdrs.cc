@@ -531,10 +531,10 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 }
 
 int
-test_arena_aux(Arena *arena, int len)
+test_arena_aux(Arena &arena, int len)
 {
-  char *str        = arena->str_alloc(len);
-  int   verify_len = static_cast<int>(arena->str_length(str));
+  char *str        = arena.str_alloc(len);
+  int   verify_len = static_cast<int>(arena.str_length(str));
 
   if (len != verify_len) {
     std::printf("FAILED: requested %d, got %d bytes\n", len, verify_len);
@@ -1699,26 +1699,22 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
   SECTION("Test arena")
   {
-    Arena *arena;
+    auto arena = std::make_unique<Arena>();
 
-    arena = new Arena;
-
-    CHECK(test_arena_aux(arena, 1) != 1);
-    CHECK(test_arena_aux(arena, 127) != 1);
-    CHECK(test_arena_aux(arena, 128) != 1);
-    CHECK(test_arena_aux(arena, 129) != 1);
-    CHECK(test_arena_aux(arena, 255) != 1);
-    CHECK(test_arena_aux(arena, 256) != 1);
-    CHECK(test_arena_aux(arena, 16384) != 1);
-    CHECK(test_arena_aux(arena, 16385) != 1);
-    CHECK(test_arena_aux(arena, 16511) != 1);
-    CHECK(test_arena_aux(arena, 16512) != 1);
-    CHECK(test_arena_aux(arena, 2097152) != 1);
-    CHECK(test_arena_aux(arena, 2097153) != 1);
-    CHECK(test_arena_aux(arena, 2097279) != 1);
-    CHECK(test_arena_aux(arena, 2097280) != 1);
-
-    delete arena;
+    CHECK(test_arena_aux(*arena, 1) != 1);
+    CHECK(test_arena_aux(*arena, 127) != 1);
+    CHECK(test_arena_aux(*arena, 128) != 1);
+    CHECK(test_arena_aux(*arena, 129) != 1);
+    CHECK(test_arena_aux(*arena, 255) != 1);
+    CHECK(test_arena_aux(*arena, 256) != 1);
+    CHECK(test_arena_aux(*arena, 16384) != 1);
+    CHECK(test_arena_aux(*arena, 16385) != 1);
+    CHECK(test_arena_aux(*arena, 16511) != 1);
+    CHECK(test_arena_aux(*arena, 16512) != 1);
+    CHECK(test_arena_aux(*arena, 2097152) != 1);
+    CHECK(test_arena_aux(*arena, 2097153) != 1);
+    CHECK(test_arena_aux(*arena, 2097279) != 1);
+    CHECK(test_arena_aux(*arena, 2097280) != 1);
   }
 
   SECTION("Test regex")
