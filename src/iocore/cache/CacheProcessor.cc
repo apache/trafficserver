@@ -53,9 +53,11 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <numeric>
 #include <string>
 #include <system_error>
 #include <unordered_set>
+#include <vector>
 
 static void    CachePeriodicMetricsUpdate();
 static int64_t cache_bytes_used(int index);
@@ -976,10 +978,8 @@ cplist_reconfigure()
       // else the size is greater...
       /* search the cp_list */
 
-      int *sorted_vols = new int[gndisks];
-      for (int i = 0; i < gndisks; i++) {
-        sorted_vols[i] = i;
-      }
+      std::vector<int> sorted_vols(gndisks);
+      std::iota(sorted_vols.begin(), sorted_vols.end(), 0);
       for (int i = 0; i < gndisks - 1; i++) {
         int smallest     = sorted_vols[i];
         int smallest_ndx = i;
@@ -1038,8 +1038,6 @@ cplist_reconfigure()
 
         size_to_alloc = size_in_blocks - cp->size;
       }
-
-      delete[] sorted_vols;
 
       if (size_to_alloc) {
         if (create_volume(volume_number, size_to_alloc, cp->scheme, cp)) {

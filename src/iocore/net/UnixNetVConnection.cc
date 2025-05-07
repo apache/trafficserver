@@ -663,7 +663,7 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
       nh->write_ready_list.remove(this);
     }
 
-    int err, ret;
+    int err{0}, ret;
 
     if (this->get_context() == NET_VCONNECTION_OUT) {
       ret = this->sslStartHandShake(SSL_EVENT_CLIENT, err);
