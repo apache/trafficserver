@@ -204,7 +204,7 @@ struct Cache {
   //  ts::CacheStripeBlocks calcTotalSpanPhysicalSize();
   ts::CacheStripeBlocks calcTotalSpanConfiguredSize();
 
-  std::list<Span *>                  _spans;
+  std::list<std::unique_ptr<Span>>   _spans;
   std::map<int, Volume>              _volumes;
   std::vector<StripeSM *>            globalVec_stripe;
   std::unordered_set<ts::CacheURL *> URLset;
@@ -234,7 +234,7 @@ Cache::clearSpan(Span* span)
 void
 Cache::clearAllocation()
 {
-  for (auto span : _spans) {
+  for (auto &span : _spans) {
     span->clear();
   }
   for (auto &item : _volumes) {
@@ -332,7 +332,7 @@ VolumeAllocator::fillEmptySpans()
 {
   Errata zret;
   // Walk the spans, skipping ones that are not empty.
-  for (auto span : _cache._spans) {
+  for (auto &span : _cache._spans) {
     if (span->isEmpty()) {
       this->allocateFor(*span);
     }
@@ -344,7 +344,7 @@ Errata
 VolumeAllocator::allocateSpan(swoc::file::path const &input_file_path)
 {
   Errata zret;
-  for (auto span : _cache._spans) {
+  for (auto &span : _cache._spans) {
     if (span->_path.view() == input_file_path.view()) {
       std::cout << "===============================" << std::endl;
       if (span->_header) {
@@ -374,7 +374,7 @@ VolumeAllocator::fillAllSpans()
   }
   // Allocate for each span, clearing as it goes.
   _cache.clearAllocation();
-  for (auto span : _cache._spans) {
+  for (auto &span : _cache._spans) {
     this->allocateFor(*span);
   }
   return zret;
@@ -501,7 +501,7 @@ Cache::loadSpanDirect(swoc::file::path const &path, int vol_idx, [[maybe_unused]
     } else {
       span->clear();
     }
-    _spans.push_back(span.release());
+    _spans.emplace_back(std::move(span.release()));
   }
   return zret;
 }
@@ -590,7 +590,7 @@ void
 Cache::dumpSpans(SpanDumpDepth depth)
 {
   if (depth >= SpanDumpDepth::SPAN) {
-    for (auto span : _spans) {
+    for (auto &span : _spans) {
       if (nullptr == span->_header) {
         std::cout << "Span: " << span->_path.string() << " is uninitialized" << std::endl;
       } else {
@@ -665,7 +665,7 @@ Cache::calcTotalSpanConfiguredSize()
 {
   ts::CacheStripeBlocks zret(0);
 
-  for (auto span : _spans) {
+  for (auto &span : _spans) {
     zret += round_down(span->_len);
   }
   return zret;
@@ -685,12 +685,7 @@ Cache::calcTotalSpanPhysicalSize()
 }
 #endif
 
-Cache::~Cache()
-{
-  for (auto *span : _spans) {
-    delete span;
-  }
-}
+Cache::~Cache() {}
 
 Errata
 Span::load()
@@ -1166,7 +1161,7 @@ Clear_Spans()
   }
 
   if ((err = cache.loadSpan(SpanFile))) {
-    for (auto *span : cache._spans) {
+    for (auto &span : cache._spans) {
       span->clearPermanently();
     }
   }
@@ -1228,7 +1223,7 @@ walk_bucket_chain(const std::string &devicePath)
   Cache cache;
   if ((err = cache.loadSpan(SpanFile))) {
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
-    for (auto sp : cache._spans) {
+    for (auto &sp : cache._spans) {
       if (devicePath.size() > 0 && sp->_path.view() == devicePath) {
         for (auto strp : sp->_stripes) {
           strp->loadMeta();
@@ -1246,7 +1241,7 @@ Clear_Span(const std::string &devicePath)
   Cache cache;
   if ((err = cache.loadSpan(SpanFile))) {
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
-    for (auto sp : cache._spans) {
+    for (auto &sp : cache._spans) {
       if (devicePath.size() > 0 && sp->_path.view() == devicePath) {
         printf("clearing %s\n", devicePath.data());
         sp->clearPermanently();
@@ -1262,7 +1257,7 @@ Check_Freelist(const std::string &devicePath)
   Cache cache;
   if ((err = cache.loadSpan(SpanFile))) {
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
-    for (auto sp : cache._spans) {
+    for (auto &sp : cache._spans) {
       if (devicePath.size() > 0 && sp->_path.view() == devicePath) {
         printf("Scanning %s\n", devicePath.data());
         for (auto strp : sp->_stripes) {
@@ -1329,9 +1324,9 @@ Get_Response(swoc::file::path const &input_file_path)
   }
 }
 
-void static scan_span(Span *span, swoc::file::path const &regex_path)
+void static scan_span(Span &span, swoc::file::path const &regex_path)
 {
-  for (auto strp : span->_stripes) {
+  for (auto strp : span._stripes) {
     strp->loadMeta();
     strp->loadDir();
 
@@ -1355,8 +1350,8 @@ Scan_Cache(swoc::file::path const &regex_path)
       return;
     }
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
-    for (auto sp : cache._spans) {
-      threadPool.emplace_back(scan_span, sp, regex_path);
+    for (auto &sp : cache._spans) {
+      threadPool.emplace_back(scan_span, std::ref(*sp), regex_path);
     }
     for (auto &th : threadPool) {
       th.join();
