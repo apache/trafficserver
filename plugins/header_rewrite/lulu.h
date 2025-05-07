@@ -32,11 +32,11 @@
 #define TS_REMAP_PSEUDO_HOOK TS_HTTP_LAST_HOOK // Ugly, but use the "last hook" for remap instances.
 const int OVECCOUNT = 30;                      // We support $1 - $9 only, and this needs to be 3x that
 
+template <typename T> constexpr bool ALWAYS_FALSE_V = false;
+
 std::string getIP(sockaddr const *s_sockaddr);
 char       *getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN]);
 uint16_t    getPort(sockaddr const *s_sockaddr);
-
-template <typename T> constexpr bool ALWAYS_FALSE_V = false;
 
 namespace header_rewrite_ns
 {

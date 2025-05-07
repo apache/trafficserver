@@ -150,7 +150,6 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
 {
   std::unique_ptr<RuleSet>     rule(nullptr);
   std::string                  filename;
-  std::ifstream                f;
   int                          lineno = 0;
   std::stack<ConditionGroup *> group_stack;
   ConditionGroup              *group = nullptr;
@@ -167,17 +166,18 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     filename = fname;
   }
 
-  f.open(filename.c_str(), std::ios::in);
-  if (!f.is_open()) {
+  auto reader = openConfig(filename);
+  if (!reader || !reader->stream) {
     TSError("[%s] unable to open %s", PLUGIN_NAME, filename.c_str());
     return false;
   }
 
   Dbg(dbg_ctl, "Parsing started on file: %s", filename.c_str());
-  while (!f.eof()) {
+
+  while (!reader->stream->eof()) {
     std::string line;
 
-    getline(f, line);
+    getline(*reader->stream, line);
     ++lineno;
     Dbg(dbg_ctl, "Reading line: %d: %s", lineno, line.c_str());
 
@@ -285,6 +285,15 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     } catch (std::runtime_error &e) {
       TSError("[%s] header_rewrite configuration exception: %s in file: %s, lineno: %d", PLUGIN_NAME, e.what(), fname.c_str(),
               lineno);
+      return false;
+    }
+  }
+
+  if (reader->pipebuf) {
+    reader->pipebuf->close();
+    if (reader->pipebuf->exit_status() != 0) {
+      TSError("[%s] hrw4u preprocessor exited with non-zero status (%d): %s", PLUGIN_NAME, reader->pipebuf->exit_status(),
+              fname.c_str());
       return false;
     }
   }
