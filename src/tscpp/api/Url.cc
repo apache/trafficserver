@@ -38,12 +38,12 @@ struct atscppapi::UrlState : noncopyable {
 
 Url::Url()
 {
-  state_ = new UrlState(static_cast<TSMBuffer>(nullptr), static_cast<TSMLoc>(nullptr));
+  state_ = std::make_unique<UrlState>(static_cast<TSMBuffer>(nullptr), static_cast<TSMLoc>(nullptr));
 }
 
 Url::Url(void *hdr_buf, void *url_loc)
 {
-  state_ = new UrlState(static_cast<TSMBuffer>(hdr_buf), static_cast<TSMLoc>(url_loc));
+  state_ = std::make_unique<UrlState>(static_cast<TSMBuffer>(hdr_buf), static_cast<TSMLoc>(url_loc));
 }
 
 void
@@ -53,10 +53,7 @@ Url::init(void *hdr_buf, void *url_loc)
   state_->url_loc_ = static_cast<TSMLoc>(url_loc);
 }
 
-Url::~Url()
-{
-  delete state_;
-}
+Url::~Url() {}
 
 bool inline Url::isInitialized() const
 {

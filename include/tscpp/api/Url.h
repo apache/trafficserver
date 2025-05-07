@@ -25,6 +25,7 @@
 
 #include <string>
 #include <cstdint>
+#include <memory>
 #include "tscpp/api/noncopyable.h"
 
 namespace atscppapi
@@ -127,9 +128,9 @@ public:
   void setPort(const uint16_t);
 
 private:
-  bool      isInitialized() const;
-  void      init(void *hdr_buf, void *url_loc);
-  UrlState *state_;
+  bool                      isInitialized() const;
+  void                      init(void *hdr_buf, void *url_loc);
+  std::unique_ptr<UrlState> state_;
   friend class Request;
   friend class ClientRequest;
   friend class RemapPlugin;
