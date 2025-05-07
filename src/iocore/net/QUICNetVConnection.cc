@@ -250,6 +250,7 @@ QUICNetVConnection::_switch_to_established_state()
 {
   QUICConDebug("Enter state_connection_established");
   this->_record_tls_handshake_end_time();
+  this->_update_end_of_handshake_stats();
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_established);
   this->_start_application();
   this->_handshake_completed = true;

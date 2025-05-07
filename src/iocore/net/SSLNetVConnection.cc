@@ -1321,7 +1321,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
     if (this->get_tls_handshake_begin_time()) {
       this->_record_tls_handshake_end_time();
-      Metrics::Counter::increment(ssl_rsb.total_success_handshake_count_in);
+      this->_update_end_of_handshake_stats();
     }
 
     if (this->get_tunnel_type() != SNIRoutingType::NONE) {
