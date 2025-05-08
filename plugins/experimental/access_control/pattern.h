@@ -80,14 +80,14 @@ public:
   virtual ~MultiPattern();
 
   bool          empty() const;
-  void          add(Pattern *pattern);
+  void          add(std::unique_ptr<Pattern> pattern);
   virtual bool  match(const String &subject) const;
   virtual bool  match(const String &subject, String &pattern) const;
   const String &name() const;
 
 protected:
-  std::vector<Pattern *> _list; /**< @brief vector which dictates the order of the pattern evaluation. */
-  String                 _name; /**< @brief multi-pattern name */
+  std::vector<std::unique_ptr<Pattern>> _list; /**< @brief vector which dictates the order of the pattern evaluation. */
+  String                                _name; /**< @brief multi-pattern name */
 
   // noncopyable
   MultiPattern(const MultiPattern &)            = delete; // disallow
@@ -136,7 +136,7 @@ public:
   bool classify(const String &subject, String &name, String &pattern) const;
   bool matchAll(const String &subject, String &name, String &pattern) const;
 
-  void add(MultiPattern *pattern);
+  void add(std::unique_ptr<MultiPattern> pattern);
   bool empty();
 
   // noncopyable
@@ -144,5 +144,5 @@ public:
   Classifier &operator=(const Classifier &) = delete; // disallow
 
 private:
-  std::vector<MultiPattern *> _list; /**< @brief vector which dictates the multi-pattern evaluation order */
+  std::vector<std::unique_ptr<MultiPattern>> _list; /**< @brief vector which dictates the multi-pattern evaluation order */
 };
