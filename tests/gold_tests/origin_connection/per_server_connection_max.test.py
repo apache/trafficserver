@@ -18,6 +18,7 @@ Verify the behavior of proxy.config.http.per_server.connection.max.
 #  limitations under the License.
 
 Test.Summary = __doc__
+import os
 
 
 class PerServerConnectionMaxTest:
@@ -95,7 +96,7 @@ class ConnectMethodTest:
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb',
-                'proxy.config.http.server_ports': f"{self._ts.Variables.port}",
+                'proxy.config.http.server_ports': f"{self._ts.Variables.port} {self._ts.Variables.uds_path}",
                 'proxy.config.http.connect_ports': f"{self._server.Variables.Port}",
                 'proxy.config.http.per_server.connection.max': self._origin_max_connections,
             })
@@ -108,7 +109,10 @@ class ConnectMethodTest:
         """Configure a client to perform a CONNECT request with a slow response from the server."""
         p = tr.Processes.Process(f'slow_client_{self._client_counter}')
         self._client_counter += 1
-        tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'", p=p)
+        tr.MakeCurlCommand(
+            f"-v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'",
+            p=p,
+            uds_path=self._ts.Variables.uds_path)
         return p
 
     def run(self) -> None:
@@ -131,7 +135,8 @@ class ConnectMethodTest:
         # response.
         tr.MakeCurlCommandMulti(
             f"sleep 1; {{curl}} -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'"
-            f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'")
+            f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'",
+            uds_path=self._ts.Variables.uds_path)
         # Curl will have a 22 exit code if it receives a 5XX response (and we
         # expect a 503).
         tr.Processes.Default.ReturnCode = 22

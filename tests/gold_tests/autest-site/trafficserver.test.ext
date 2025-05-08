@@ -368,7 +368,7 @@ def MakeATSProcess(
             p.Variables.ssl_portv6 = 4444
 
     # unix domain socket path
-    uds_path = os.path.join(obj.RunDirectory, 'uds.socket')
+    uds_path = os.path.join(runtime_dir, 'uds.socket')
     p.Variables.uds_path = uds_path
 
     get_port(p, "manager_port")

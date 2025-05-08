@@ -68,7 +68,8 @@ tr.MakeCurlCommand(
 "http://www.example.com/magic" \
 -H "Proxy-Connection: keep-alive" \
 --verbose \
-'''.format(ts.Variables.port))
+'''.format(ts.Variables.port),
+    uds_path=ts.Variables.uds_path)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
