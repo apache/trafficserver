@@ -118,6 +118,46 @@ sessions:
     server-response:
       status: 200
 
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /malformed/chunk/header3
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, 6 ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Chunk header must end with a sequence of CRLF.
+        data: 7%0Dabcwxyz%0D%0A0%0D%0A%0D%0A
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /malformed/chunk/header3
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, 7 ]
+      content:
+        transfer: plain
+        encoding: uri
+        # Chunk header must end with a sequence of CRLF.
+        data: 3%0Aabcwxyz%0D%0A0%0D%0A%0D%0A
+
+    # The connection will be dropped and this response will not go out.
+    server-response:
+      status: 200
+
   #
   # Now repeat the above two malformed chunk header tests, but on the server
   # side.

@@ -2750,6 +2750,9 @@ HttpSM::tunnel_handler_post(int event, void *data)
       case HttpTransact::INACTIVE_TIMEOUT:
         call_transact_and_set_next_state(HttpTransact::PostInactiveTimeoutResponse);
         return 0;
+      case HttpTransact::PARSE_ERROR:
+        call_transact_and_set_next_state(HttpTransact::BadRequest);
+        return 0;
       default:
         break;
       }
@@ -3102,6 +3105,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     /* fallthru */
 
   case VC_EVENT_EOS:
+  case HTTP_TUNNEL_EVENT_PARSE_ERROR:
 
     switch (event) {
     case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -3115,6 +3119,9 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       break;
     case VC_EVENT_EOS:
       t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
+      break;
+    case HTTP_TUNNEL_EVENT_PARSE_ERROR:
+      t_state.current.server->state = HttpTransact::PARSE_ERROR;
       break;
     }
     Metrics::Counter::increment(http_rsb.origin_shutdown_tunnel_server);
@@ -3791,11 +3798,12 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
   switch (event) {
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
+  case HTTP_TUNNEL_EVENT_PARSE_ERROR:
     if (client_response_hdr_bytes == 0) {
       p->handler_state = HTTP_SM_POST_UA_FAIL;
       set_ua_abort(HttpTransact::ABORTED, event);
 
-      SMDbg(dbg_ctl_http_tunnel, "send 408 response to client to vc %p, tunnel vc %p", _ua.get_txn()->get_netvc(), p->vc);
+      SMDbg(dbg_ctl_http_tunnel, "send error response to client to vc %p, tunnel vc %p", _ua.get_txn()->get_netvc(), p->vc);
 
       tunnel.chain_abort_all(p);
       // Reset the inactivity timeout, otherwise the InactivityCop will callback again in the next second.
@@ -5892,6 +5900,9 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
     break;
   case VC_EVENT_ERROR:
     t_state.client_info.state = HttpTransact::CONNECTION_ERROR;
+    break;
+  case HTTP_TUNNEL_EVENT_PARSE_ERROR:
+    t_state.client_info.state = HttpTransact::PARSE_ERROR;
     break;
   }
 }
