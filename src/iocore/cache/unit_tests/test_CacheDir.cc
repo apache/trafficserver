@@ -57,7 +57,7 @@ regress_rand_CacheKey(CacheKey *key)
 void
 dir_corrupt_bucket(Dir *b, int s, StripeSM *stripe)
 {
-  int  l   = (static_cast<int>(dir_bucket_length(b, s, stripe) * ts::Random::drandom()));
+  int  l   = (static_cast<int>(stripe->directory.bucket_length(b, s) * ts::Random::drandom()));
   Dir *e   = b;
   Dir *seg = stripe->directory.get_segment(s);
   for (int i = 0; i < l; i++) {
@@ -108,10 +108,10 @@ public:
 
     // test insert
     int inserted = 0;
-    int free     = dir_freelist_length(stripe, s);
+    int free     = stripe->directory.freelist_length(s);
     int n        = free;
     while (n--) {
-      if (!dir_insert(&key, stripe, &dir)) {
+      if (!stripe->directory.insert(&key, stripe, &dir)) {
         break;
       }
       inserted++;
@@ -124,8 +124,8 @@ public:
         dir_set_offset(dir_bucket_row(dir_bucket(i, seg), j), 0); // delete
       }
     }
-    dir_clean_segment(s, stripe);
-    int newfree = dir_freelist_length(stripe, s);
+    stripe->directory.clean_segment(s, stripe);
+    int newfree = stripe->directory.freelist_length(s);
     CHECK(static_cast<unsigned int>(newfree - free) <= 1);
 
     // test insert-delete
@@ -133,7 +133,7 @@ public:
     ttime = ink_get_hrtime();
     for (i = 0; i < newfree; i++) {
       regress_rand_CacheKey(&key);
-      dir_insert(&key, stripe, &dir);
+      stripe->directory.insert(&key, stripe, &dir);
     }
     uint64_t us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
     // On windows us is sometimes 0. I don't know why.
@@ -146,7 +146,7 @@ public:
     for (i = 0; i < newfree; i++) {
       Dir *last_collision = nullptr;
       regress_rand_CacheKey(&key);
-      CHECK(dir_probe(&key, stripe, &dir, &last_collision));
+      CHECK(stripe->directory.probe(&key, stripe, &dir, &last_collision));
     }
     us = (ink_get_hrtime() - ttime) / HRTIME_USECOND;
     // On windows us is sometimes 0. I don't know why.
@@ -157,7 +157,7 @@ public:
 
     for (int c = 0; c < stripe->directory.entries() * 0.75; c++) {
       regress_rand_CacheKey(&key);
-      dir_insert(&key, stripe, &dir);
+      stripe->directory.insert(&key, stripe, &dir);
     }
 
     Dir dir1;
@@ -167,14 +167,14 @@ public:
     Dbg(dbg_ctl_cache_dir_test, "corrupt_bucket test");
     for (int ntimes = 0; ntimes < 10; ntimes++) {
 #ifdef LOOP_CHECK_MODE
-      // dir_probe in bucket with loop
+      // probe in bucket with loop
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      dir_insert(&key, vol, &dir);
+      stripe->directory.insert(&key, vol, &dir);
       Dir *last_collision = 0;
-      dir_probe(&key, vol, &dir, &last_collision);
+      vol->directory.probe(&key, vol, &dir, &last_collision);
 
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
@@ -182,9 +182,9 @@ public:
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
 
       last_collision = 0;
-      dir_probe(&key, vol, &dir, &last_collision);
+      vol->directory.probe(&key, vol, &dir, &last_collision);
 
-      // dir_overwrite in bucket with loop
+      // overwrite in bucket with loop
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
@@ -192,48 +192,48 @@ public:
       key1.b[1] = 127;
       dir1      = dir;
       dir_set_offset(&dir1, 23);
-      dir_insert(&key1, vol, &dir1);
-      dir_insert(&key, vol, &dir);
+      stripe->directory.insert(&key1, vol, &dir1);
+      stripe->directory.insert(&key, vol, &dir);
       key1.b[1] = 80;
-      dir_insert(&key1, vol, &dir1);
+      stripe->directory.insert(&key1, vol, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      dir_overwrite(&key, vol, &dir, &dir, 1);
+      vol->directory.overwrite(&key, vol, &dir, &dir, 1);
 
       rand_CacheKey(&key);
       s1       = key.slice32(0) % vol->segments;
       b1       = key.slice32(1) % vol->buckets;
       key.b[1] = 23;
-      dir_insert(&key, vol, &dir1);
+      stripe->directory.insert(&key, vol, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      dir_overwrite(&key, vol, &dir, &dir, 0);
+      vol->directory.overwrite(&key, vol, &dir, &dir, 0);
 
       rand_CacheKey(&key);
       s1        = key.slice32(0) % vol->segments;
       Dir *seg1 = vol->directory.get_segment(s1);
-      // dir_freelist_length in freelist with loop
+      // freelist_length in freelist with loop
       dir_corrupt_bucket(dir_from_offset(vol->header->freelist[s], seg1), s1, vol);
-      dir_freelist_length(vol, s1);
+      vol->directory.freelist_length(s1);
 
       rand_CacheKey(&key);
       s1 = key.slice32(0) % vol->segments;
       b1 = key.slice32(1) % vol->buckets;
-      // dir_bucket_length in bucket with loop
+      // bucket_length in bucket with loop
       dir_corrupt_bucket(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      dir_bucket_length(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
-      CHECK(check_dir(vol));
+      vol->directory.bucket_length(dir_bucket(b1, vol->directory.get_segment(s1)), s1, vol);
+      CHECK(vol->directory.check());
 #else
       // test corruption detection
       rand_CacheKey(&key);
       s1 = key.slice32(0) % stripe->directory.segments;
       b1 = key.slice32(1) % stripe->directory.buckets;
 
-      dir_insert(&key, stripe, &dir1);
-      dir_insert(&key, stripe, &dir1);
-      dir_insert(&key, stripe, &dir1);
-      dir_insert(&key, stripe, &dir1);
-      dir_insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
+      stripe->directory.insert(&key, stripe, &dir1);
       dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
-      CHECK(!check_dir(stripe));
+      CHECK(!stripe->directory.check());
 #endif
     }
     stripe->clear_dir();

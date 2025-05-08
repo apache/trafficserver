@@ -260,7 +260,7 @@ Stripe::dir_check()
       ++hist[std::min(h, SEGMENT_HISTOGRAM_WIDTH)];
       seg_chain_max = std::max(seg_chain_max, h);
     }
-    int fl_size       = dir_freelist_length(this, s);
+    int fl_size       = directory.freelist_length(s);
     in_use           += seg_in_use;
     empty            += seg_empty;
     stale            += seg_stale;
@@ -350,7 +350,7 @@ Stripe::_init_dir()
     for (l = 1; l < DIR_DEPTH; l++) {
       for (b = 0; b < this->directory.buckets; b++) {
         Dir *bucket = dir_bucket(b, seg);
-        dir_free_entry(dir_bucket_row(bucket, l), s, this);
+        this->directory.free_entry(dir_bucket_row(bucket, l), s);
       }
     }
   }
