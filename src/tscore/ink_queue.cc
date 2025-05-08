@@ -171,6 +171,7 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   }
   Dbg(dbg_ctl_freelist_init, "<%s> Alignment request/actual (%" PRIu32 "/%" PRIu32 ")", name, alignment, f->alignment);
   Dbg(dbg_ctl_freelist_init, "<%s> Type Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, type_size, f->type_size);
+  ink_assert(f->type_size != 0);
   if (f->use_hugepages) {
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_hugepage_size()) / f->type_size;
   } else {
