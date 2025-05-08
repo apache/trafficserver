@@ -23,6 +23,7 @@
 
 #include <deque>
 #include <utility>
+#include <iostream>
 
 #include "swoc/swoc_file.h"
 
@@ -263,9 +264,11 @@ RecCoreInit(Diags *_diags)
 RecErrT
 RecLinkConfigInt(const char *name, RecInt *rec_int)
 {
-  if (RecGetRecordInt(name, rec_int) == REC_ERR_FAIL) {
+  auto tmp{RecGetRecordInt(name)};
+  if (!tmp) {
     return REC_ERR_FAIL;
   }
+  *rec_int = tmp.value();
   return RecRegisterConfigUpdateCb(name, link_int, (void *)rec_int);
 }
 
@@ -284,26 +287,34 @@ RecLinkConfigUInt32(const char *name, uint32_t *p_uint32)
 RecErrT
 RecLinkConfigFloat(const char *name, RecFloat *rec_float)
 {
-  if (RecGetRecordFloat(name, rec_float) == REC_ERR_FAIL) {
+  auto tmp{RecGetRecordFloat(name)};
+  if (!tmp) {
     return REC_ERR_FAIL;
   }
+  *rec_float = tmp.value();
   return RecRegisterConfigUpdateCb(name, link_float, (void *)rec_float);
 }
 
 RecErrT
 RecLinkConfigCounter(const char *name, RecCounter *rec_counter)
 {
-  if (RecGetRecordCounter(name, rec_counter) == REC_ERR_FAIL) {
+  auto tmp{RecGetRecordCounter(name)};
+  if (!tmp) {
     return REC_ERR_FAIL;
   }
+  *rec_counter = tmp.value();
   return RecRegisterConfigUpdateCb(name, link_counter, (void *)rec_counter);
 }
 
 RecErrT
 RecLinkConfigString(const char *name, RecString *rec_string)
 {
-  if (RecGetRecordString_Xmalloc(name, rec_string) == REC_ERR_FAIL) {
-    return REC_ERR_FAIL;
+  {
+    auto tmp{RecGetRecordStringAlloc(name)};
+    if (!tmp) {
+      return REC_ERR_FAIL;
+    }
+    *rec_string = ats_stringdup(tmp);
   }
   return RecRegisterConfigUpdateCb(name, link_string_alloc, (void *)rec_string);
 }
@@ -311,9 +322,11 @@ RecLinkConfigString(const char *name, RecString *rec_string)
 RecErrT
 RecLinkConfigByte(const char *name, RecByte *rec_byte)
 {
-  if (RecGetRecordByte(name, rec_byte) == REC_ERR_FAIL) {
+  auto tmp{RecGetRecordInt(name)};
+  if (!tmp) {
     return REC_ERR_FAIL;
   }
+  *rec_byte = tmp.value();
   return RecRegisterConfigUpdateCb(name, link_byte, (void *)rec_byte);
 }
 
@@ -399,34 +412,34 @@ Enable_Config_Var(std::string_view const &name, RecContextCb record_cb, RecConfi
 //-------------------------------------------------------------------------
 // RecGetRecordXXX
 //-------------------------------------------------------------------------
-RecErrT
-RecGetRecordInt(const char *name, RecInt *rec_int, bool lock)
+std::optional<RecInt>
+RecGetRecordInt(const char *name, bool lock)
 {
-  RecErrT err;
-  RecData data;
+  RecData               data;
+  std::optional<RecInt> rec_int;
 
-  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
-    *rec_int = data.rec_int;
+  if (RecGetRecord_Xmalloc(name, RECD_INT, &data, lock) == REC_ERR_OKAY) {
+    rec_int = data.rec_int;
   }
-  return err;
+  return rec_int;
 }
 
-RecErrT
-RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock)
+std::optional<RecFloat>
+RecGetRecordFloat(const char *name, bool lock)
 {
-  RecErrT err;
-  RecData data;
+  RecData                 data;
+  std::optional<RecFloat> rec_float;
 
-  if ((err = RecGetRecord_Xmalloc(name, RECD_FLOAT, &data, lock)) == REC_ERR_OKAY) {
-    *rec_float = data.rec_float;
+  if (RecGetRecord_Xmalloc(name, RECD_FLOAT, &data, lock) == REC_ERR_OKAY) {
+    rec_float = data.rec_float;
   }
-  return err;
+  return rec_float;
 }
 
-RecErrT
+std::optional<std::string_view>
 RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
 {
-  RecErrT err = REC_ERR_OKAY;
+  std::optional<std::string_view> ret;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -435,71 +448,63 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
     RecRecord *r = it->second;
 
     rec_mutex_acquire(&(r->lock));
-    if (!r->registered || (r->data_type != RECD_STRING)) {
-      err = REC_ERR_FAIL;
-    } else {
+    if (r->registered && r->data_type == RECD_STRING) {
       if (r->data.rec_string == nullptr) {
         buf[0] = '\0';
       } else {
         ink_strlcpy(buf, r->data.rec_string, buf_len);
       }
+      ret = std::string_view{buf};
     }
     rec_mutex_release(&(r->lock));
-  } else {
-    err = REC_ERR_FAIL;
   }
   if (lock) {
     ink_rwlock_unlock(&g_records_rwlock);
   }
-  return err;
+  return ret;
 }
 
-RecErrT
-RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock)
+std::optional<std::string>
+RecGetRecordStringAlloc(const char *name, bool lock)
 {
-  RecErrT err;
-  RecData data;
+  // Must use this indirection because the API requires a pure function, therefore no values can
+  // be bound in the lambda.
+  using Context = std::optional<std::string>;
+  Context ret{};
 
-  if ((err = RecGetRecord_Xmalloc(name, RECD_STRING, &data, lock)) == REC_ERR_OKAY) {
-    *rec_string = data.rec_string;
-  }
-  return err;
+  RecLookupRecord(
+    name,
+    [](RecRecord const *r, void *ctx) -> void {
+      auto &&str = *static_cast<Context *>(ctx);
+      if (r->registered && r->data_type == RECD_STRING) {
+        if (auto rec_str{r->data.rec_string}; rec_str) {
+          auto len{strlen(rec_str)};
+          if (len) {
+            // Chop trailing spaces
+            auto end{rec_str + len - 1};
+            while (end >= rec_str && isspace(*end)) {
+              end--;
+            }
+            len = static_cast<std::string::size_type>(end + 1 - rec_str);
+          }
+          str = len ? std::string{rec_str, len} : std::string{};
+        }
+      }
+    },
+    &ret, lock);
+  return ret;
 }
 
-RecErrT
-RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock)
+std::optional<RecCounter>
+RecGetRecordCounter(const char *name, bool lock)
 {
-  RecErrT err;
-  RecData data;
+  RecData                   data;
+  std::optional<RecCounter> rec_counter;
 
-  if ((err = RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock)) == REC_ERR_OKAY) {
-    *rec_counter = data.rec_counter;
+  if (RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock) == REC_ERR_OKAY) {
+    rec_counter = data.rec_counter;
   }
-  return err;
-}
-
-RecErrT
-RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
-{
-  RecErrT err;
-  RecData data;
-
-  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
-    *rec_byte = data.rec_int;
-  }
-  return err;
-}
-
-RecErrT
-RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
-{
-  RecErrT err;
-  RecData data;
-
-  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
-    *rec_bool = 0 != data.rec_int;
-  }
-  return err;
+  return rec_counter;
 }
 
 //-------------------------------------------------------------------------
@@ -910,88 +915,6 @@ RecDumpRecordsHt(RecT rec_type)
 {
   RecDebug(DL_Note, "Dumping Records:");
   RecDumpRecords(rec_type, debug_record_callback, nullptr);
-}
-
-//-------------------------------------------------------------------------
-// Backwards compatibility ... TODO: Should eliminate these
-//-------------------------------------------------------------------------
-RecInt
-REC_ConfigReadInteger(const char *name)
-{
-  RecInt t = 0;
-  RecGetRecordInt(name, &t);
-  return t;
-}
-
-char *
-REC_ConfigReadString(const char *name)
-{
-  char *t = nullptr;
-  RecGetRecordString_Xmalloc(name, static_cast<RecString *>(&t));
-  return t;
-}
-
-RecFloat
-REC_ConfigReadFloat(const char *name)
-{
-  RecFloat t = 0;
-  RecGetRecordFloat(name, &t);
-  return t;
-}
-
-//-------------------------------------------------------------------------
-// Backwards compatibility. TODO: Should remove these.
-//-------------------------------------------------------------------------
-RecInt
-REC_readInteger(const char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecInt _tmp   = 0;
-  bool   _found = (RecGetRecordInt(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
-}
-
-RecFloat
-REC_readFloat(char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecFloat _tmp   = 0.0;
-  bool     _found = (RecGetRecordFloat(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
-}
-
-RecCounter
-REC_readCounter(char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecCounter _tmp   = 0;
-  bool       _found = (RecGetRecordCounter(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
-}
-
-RecString
-REC_readString(const char *name, bool *found, bool lock)
-{
-  ink_assert(name);
-  RecString _tmp   = nullptr;
-  bool      _found = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
-
-  if (found) {
-    *found = _found;
-  }
-  return _tmp;
 }
 
 //-------------------------------------------------------------------------
