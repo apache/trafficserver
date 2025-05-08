@@ -15,8 +15,10 @@
 #pragma once
 
 #include <functional>
-#include <mutex>
 #include <memory>
+#include <mutex>
+#include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace proxy_wasm {
