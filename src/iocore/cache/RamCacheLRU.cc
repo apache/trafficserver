@@ -54,7 +54,7 @@ struct RamCacheLRU : public RamCache {
   void init(int64_t max_bytes, StripeSM *stripe) override;
 
   // private
-  std::vector<bool> *seen = nullptr;
+  std::vector<bool> seen{};
   Que(RamCacheLRUEntry, lru_link) lru;
   DList(RamCacheLRUEntry, hash_link) *bucket = nullptr;
   int       nbuckets                         = 0;
@@ -115,12 +115,11 @@ RamCacheLRU::resize_hashtable()
   }
   bucket   = new_bucket;
   nbuckets = anbuckets;
-  delete seen;
   if (cache_config_ram_cache_use_seen_filter) {
     int size = bucket_sizes[ibuckets];
 
-    seen = new std::vector<bool>(size * 2); // Twice the size, to reduce collision risks.
-    seen->assign(size * 2, false);
+    seen.resize(size * 2); // Twice the size, to reduce collision risks.
+    seen.assign(size * 2, false);
   }
 }
 
@@ -196,12 +195,12 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t 
       ((cache_config_ram_cache_use_seen_filter > 1) && (bytes >= max_bytes * (1 - (1 / cache_config_ram_cache_use_seen_filter))))) {
     uint32_t j = key->slice32(3) % (nbuckets * 2); // The seen filter bucket size is 2x
 
-    if (!(*seen)[j]) {
+    if (!seen[j]) {
       DDbg(dbg_ctl_ram_cache, "put %X %" PRIu64 " len %d UNSEEN", key->slice32(3), auxkey, len);
-      (*seen)[j] = true;
+      seen[j] = true;
       return 0;
     } else {
-      (*seen)[j] = false; // Clear the seen filter slot for future entries.
+      seen[j] = false; // Clear the seen filter slot for future entries.
     }
   }
 
