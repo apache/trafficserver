@@ -39,7 +39,7 @@ void
 ConditionStatus::initialize(Parser &p)
 {
   Condition::initialize(p);
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods(), [](const std::string &s) -> DataType {
     auto status = Parser::parseNumeric<DataType>(s);
@@ -48,7 +48,7 @@ ConditionStatus::initialize(Parser &p)
     }
     return status;
   });
-  _matcher = match;
+  _matcher = std::move(match);
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
@@ -67,7 +67,7 @@ ConditionStatus::eval(const Resources &res)
 {
   Dbg(pi_dbg_ctl, "Evaluating STATUS()");
 
-  return static_cast<MatcherType *>(_matcher)->test(res.resp_status, res);
+  return static_cast<MatcherType *>(_matcher.get())->test(res.resp_status, res);
 }
 
 void
@@ -82,10 +82,10 @@ void
 ConditionMethod::initialize(Parser &p)
 {
   Condition::initialize(p);
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods());
-  _matcher = match;
+  _matcher = std::move(match);
 
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
 }
@@ -98,7 +98,7 @@ ConditionMethod::eval(const Resources &res)
   append_value(s, res);
   Dbg(pi_dbg_ctl, "Evaluating METHOD()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(s, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(s, res);
 }
 
 void
@@ -124,21 +124,21 @@ ConditionRandom::initialize(Parser &p)
 {
   struct timeval tv;
   Condition::initialize(p);
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   gettimeofday(&tv, nullptr);
   _seed = getpid() * tv.tv_usec;
   _max  = strtol(_qualifier.c_str(), nullptr, 10);
 
   match->set(p.get_arg(), mods(), [](const std::string &s) -> DataType { return Parser::parseNumeric<DataType>(s); });
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 bool
 ConditionRandom::eval(const Resources &res)
 {
   Dbg(pi_dbg_ctl, "Evaluating RANDOM()");
-  return static_cast<const MatcherType *>(_matcher)->test(rand_r(&_seed) % _max, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(rand_r(&_seed) % _max, res);
 }
 
 void
@@ -197,10 +197,10 @@ void
 ConditionHeader::initialize(Parser &p)
 {
   Condition::initialize(p);
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods());
-  _matcher = match;
+  _matcher = std::move(match);
 
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
@@ -253,7 +253,7 @@ ConditionHeader::eval(const Resources &res)
   append_value(s, res);
   Dbg(pi_dbg_ctl, "Evaluating HEADER()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(s, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(s, res);
 }
 
 // ConditionUrl: request or response header. TODO: This is not finished, at all!!!
@@ -262,9 +262,9 @@ ConditionUrl::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
   match->set(p.get_arg(), mods());
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 void
@@ -367,7 +367,7 @@ ConditionUrl::eval(const Resources &res)
 
   append_value(s, res);
 
-  return static_cast<const Matchers<std::string> *>(_matcher)->test(s, res);
+  return static_cast<const Matchers<std::string> *>(_matcher.get())->test(s, res);
 }
 
 // ConditionDBM: do a lookup against a DBM
@@ -376,9 +376,9 @@ ConditionDBM::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
   match->set(p.get_arg(), mods());
-  _matcher = match;
+  _matcher = std::move(match);
 
   std::string::size_type pos = _qualifier.find_first_of(',');
 
@@ -431,7 +431,7 @@ ConditionDBM::eval(const Resources &res)
   append_value(s, res);
   Dbg(pi_dbg_ctl, "Evaluating DBM()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(s, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(s, res);
 }
 
 // ConditionCookie: request or response header
@@ -440,10 +440,10 @@ ConditionCookie::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods());
-  _matcher = match;
+  _matcher = std::move(match);
 
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
 }
@@ -501,7 +501,7 @@ ConditionCookie::eval(const Resources &res)
   append_value(s, res);
   Dbg(pi_dbg_ctl, "Evaluating COOKIE()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(s, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(s, res);
 }
 
 // ConditionInternalTxn: Is the txn internal?
@@ -520,15 +520,15 @@ ConditionIp::initialize(Parser &p)
   Condition::initialize(p);
 
   if (_cond_op == MATCH_IP_RANGES) { // Special hack for IP ranges
-    MatcherTypeIp *match = new MatcherTypeIp(_cond_op);
+    auto match = std::make_unique<MatcherTypeIp>(_cond_op);
 
     match->set(p.get_arg(), mods(), [](const std::string & /*s*/) { return static_cast<const sockaddr *>(nullptr); });
-    _matcher = match;
+    _matcher = std::move(match);
   } else {
-    auto *match = new MatcherType(_cond_op);
+    auto match = std::make_unique<MatcherType>(_cond_op);
 
     match->set(p.get_arg(), mods());
-    _matcher = match;
+    _matcher = std::move(match);
   }
 }
 
@@ -574,7 +574,7 @@ ConditionIp::eval(const Resources &res)
     }
 
     if (addr) {
-      return static_cast<const Matchers<const sockaddr *> *>(_matcher)->test(addr, res);
+      return static_cast<const Matchers<const sockaddr *> *>(_matcher.get())->test(addr, res);
     } else {
       return false;
     }
@@ -582,7 +582,7 @@ ConditionIp::eval(const Resources &res)
     std::string s;
 
     append_value(s, res);
-    bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s, res);
+    bool rval = static_cast<const Matchers<std::string> *>(_matcher.get())->test(s, res);
 
     Dbg(pi_dbg_ctl, "Evaluating IP(): %s - rval: %d", s.c_str(), rval);
 
@@ -622,10 +622,10 @@ void
 ConditionTransactCount::initialize(Parser &p)
 {
   Condition::initialize(p);
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods(), [](const std::string &s) -> DataType { return Parser::parseNumeric<DataType>(s); });
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 bool
@@ -637,7 +637,7 @@ ConditionTransactCount::eval(const Resources &res)
     int n = TSHttpSsnTransactionCount(ssn);
 
     Dbg(pi_dbg_ctl, "Evaluating TXN-COUNT()");
-    return static_cast<MatcherType *>(_matcher)->test(n, res);
+    return static_cast<MatcherType *>(_matcher.get())->test(n, res);
   }
 
   Dbg(pi_dbg_ctl, "\tNo session found, returning false");
@@ -712,10 +712,10 @@ ConditionNow::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods(), [](const std::string &s) -> DataType { return Parser::parseNumeric<DataType>(s); });
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 void
@@ -759,7 +759,7 @@ ConditionNow::eval(const Resources &res)
   int64_t now = get_now_qualified(_now_qual);
 
   Dbg(pi_dbg_ctl, "Evaluating NOW()");
-  return static_cast<const MatcherType *>(_matcher)->test(now, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(now, res);
 }
 
 std::string
@@ -782,16 +782,16 @@ ConditionGeo::initialize(Parser &p)
   Condition::initialize(p);
 
   if (is_int_type()) {
-    auto *match = new Matchers<int64_t>(_cond_op);
+    auto match = std::make_unique<Matchers<int64_t>>(_cond_op);
 
     match->set(p.get_arg(), mods(), [](const std::string &s) -> int64_t { return Parser::parseNumeric<int64_t>(s); });
-    _matcher = match;
+    _matcher = std::move(match);
   } else {
     // The default is to have a string matcher
-    Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+    auto match = std::make_unique<Matchers<std::string>>(_cond_op);
 
     match->set(p.get_arg(), mods());
-    _matcher = match;
+    _matcher = std::move(match);
   }
 }
 
@@ -839,12 +839,12 @@ ConditionGeo::eval(const Resources &res)
   if (is_int_type()) {
     int64_t geo = get_geo_int(TSHttpTxnClientAddrGet(res.txnp));
 
-    ret = static_cast<const Matchers<int64_t> *>(_matcher)->test(geo, res);
+    ret = static_cast<const Matchers<int64_t> *>(_matcher.get())->test(geo, res);
   } else {
     std::string s;
 
     append_value(s, res);
-    ret = static_cast<const Matchers<std::string> *>(_matcher)->test(s, res);
+    ret = static_cast<const Matchers<std::string> *>(_matcher.get())->test(s, res);
   }
 
   return ret;
@@ -860,16 +860,16 @@ ConditionId::initialize(Parser &p)
   Condition::initialize(p);
 
   if (_id_qual == ID_QUAL_REQUEST) {
-    auto *match = new Matchers<uint64_t>(_cond_op);
+    auto match = std::make_unique<Matchers<uint64_t>>(_cond_op);
 
     match->set(p.get_arg(), mods(), [](const std::string &s) -> uint64_t { return Parser::parseNumeric<uint64_t>(s); });
-    _matcher = match;
+    _matcher = std::move(match);
   } else {
     // The default is to have a string matcher
-    Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+    auto match = std::make_unique<Matchers<std::string>>(_cond_op);
 
     match->set(p.get_arg(), mods());
-    _matcher = match;
+    _matcher = std::move(match);
   }
 }
 
@@ -923,12 +923,12 @@ ConditionId::eval(const Resources &res)
     uint64_t id = TSHttpTxnIdGet(res.txnp);
 
     Dbg(pi_dbg_ctl, "Evaluating GEO() -> %" PRIu64, id);
-    return static_cast<const Matchers<uint64_t> *>(_matcher)->test(id, res);
+    return static_cast<const Matchers<uint64_t> *>(_matcher.get())->test(id, res);
   } else {
     std::string s;
 
     append_value(s, res);
-    bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s, res);
+    bool rval = static_cast<const Matchers<std::string> *>(_matcher.get())->test(s, res);
 
     Dbg(pi_dbg_ctl, "Evaluating ID(): %s - rval: %d", s.c_str(), rval);
     return rval;
@@ -940,10 +940,10 @@ ConditionCidr::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods());
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 void
@@ -988,7 +988,7 @@ ConditionCidr::eval(const Resources &res)
   append_value(s, res);
   Dbg(pi_dbg_ctl, "Evaluating CIDR()");
 
-  return static_cast<MatcherType *>(_matcher)->test(s, res);
+  return static_cast<MatcherType *>(_matcher.get())->test(s, res);
 }
 
 void
@@ -1044,15 +1044,15 @@ ConditionInbound::initialize(Parser &p)
   Condition::initialize(p);
 
   if (_cond_op == MATCH_IP_RANGES) { // Special hack for IP ranges for now ...
-    MatcherTypeIp *match = new MatcherTypeIp(_cond_op);
+    auto match = std::make_unique<MatcherTypeIp>(_cond_op);
 
     match->set(p.get_arg(), mods(), [](const std::string & /* s */) { return static_cast<const sockaddr *>(nullptr); });
-    _matcher = match;
+    _matcher = std::move(match);
   } else {
-    auto *match = new MatcherType(_cond_op);
+    auto match = std::make_unique<MatcherType>(_cond_op);
 
     match->set(p.get_arg(), mods());
-    _matcher = match;
+    _matcher = std::move(match);
   }
 }
 
@@ -1109,7 +1109,7 @@ ConditionInbound::eval(const Resources &res)
     }
 
     if (addr) {
-      return static_cast<const Matchers<const sockaddr *> *>(_matcher)->test(addr, res);
+      return static_cast<const Matchers<const sockaddr *> *>(_matcher.get())->test(addr, res);
     } else {
       return false;
     }
@@ -1117,7 +1117,7 @@ ConditionInbound::eval(const Resources &res)
     std::string s;
 
     append_value(s, res);
-    bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s, res);
+    bool rval = static_cast<const Matchers<std::string> *>(_matcher.get())->test(s, res);
 
     Dbg(pi_dbg_ctl, "Evaluating %s(): %s - rval: %d", TAG, s.c_str(), rval);
 
@@ -1210,7 +1210,7 @@ ConditionStringLiteral::eval(const Resources &res)
 {
   Dbg(pi_dbg_ctl, "Evaluating StringLiteral");
 
-  return static_cast<const MatcherType *>(_matcher)->test(_literal, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(_literal, res);
 }
 
 // ConditionSessionTransactCount
@@ -1218,10 +1218,10 @@ void
 ConditionSessionTransactCount::initialize(Parser &p)
 {
   Condition::initialize(p);
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods(), [](const std::string &s) -> DataType { return Parser::parseNumeric<DataType>(s); });
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 bool
@@ -1230,7 +1230,7 @@ ConditionSessionTransactCount::eval(const Resources &res)
   int const val = TSHttpTxnServerSsnTransactionCount(res.txnp);
 
   Dbg(pi_dbg_ctl, "Evaluating SSN-TXN-COUNT()");
-  return static_cast<MatcherType *>(_matcher)->test(val, res);
+  return static_cast<MatcherType *>(_matcher.get())->test(val, res);
 }
 
 void
@@ -1251,10 +1251,10 @@ ConditionTcpInfo::initialize(Parser &p)
 {
   Condition::initialize(p);
   Dbg(pi_dbg_ctl, "Initializing TCP Info");
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods(), [](const std::string &s) -> DataType { return Parser::parseNumeric<DataType>(s); });
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 void
@@ -1271,7 +1271,7 @@ ConditionTcpInfo::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s, res);
+  bool rval = static_cast<const Matchers<std::string> *>(_matcher.get())->test(s, res);
 
   Dbg(pi_dbg_ctl, "Evaluating TCP-Info: %s - rval: %d", s.c_str(), rval);
 
@@ -1322,10 +1322,10 @@ void
 ConditionCache::initialize(Parser &p)
 {
   Condition::initialize(p);
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods());
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 bool
@@ -1336,7 +1336,7 @@ ConditionCache::eval(const Resources &res)
   append_value(s, res);
   Dbg(pi_dbg_ctl, "Evaluating CACHE()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(s, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(s, res);
 }
 
 void
@@ -1371,9 +1371,9 @@ ConditionNextHop::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
   match->set(p.get_arg(), mods());
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 void
@@ -1415,7 +1415,7 @@ ConditionNextHop::eval(const Resources &res)
 
   append_value(s, res);
 
-  return static_cast<const Matchers<std::string> *>(_matcher)->test(s, res);
+  return static_cast<const Matchers<std::string> *>(_matcher.get())->test(s, res);
 }
 
 // ConditionHttpCntl: request header.
@@ -1479,10 +1479,10 @@ void
 ConditionStateInt8::initialize(Parser &p)
 {
   Condition::initialize(p);
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods(), [](const std::string &s) -> DataType { return Parser::parseNumeric<DataType>(s); });
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 void
@@ -1515,7 +1515,7 @@ ConditionStateInt8::eval(const Resources &res)
 
   Dbg(pi_dbg_ctl, "Evaluating STATE-INT8()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(data, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(data, res);
 }
 
 // ConditionStateInt16
@@ -1523,10 +1523,10 @@ void
 ConditionStateInt16::initialize(Parser &p)
 {
   Condition::initialize(p);
-  auto *match = new MatcherType(_cond_op);
+  auto match = std::make_unique<MatcherType>(_cond_op);
 
   match->set(p.get_arg(), mods(), [](const std::string &s) -> DataType { return Parser::parseNumeric<DataType>(s); });
-  _matcher = match;
+  _matcher = std::move(match);
 }
 
 void
@@ -1561,7 +1561,7 @@ ConditionStateInt16::eval(const Resources &res)
 
   Dbg(pi_dbg_ctl, "Evaluating STATE-INT8()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(data, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(data, res);
 }
 
 // ConditionLastCapture
@@ -1603,5 +1603,5 @@ ConditionLastCapture::eval(const Resources &res)
   append_value(s, res);
   Dbg(pi_dbg_ctl, "Evaluating LAST-CAPTURE()");
 
-  return static_cast<const MatcherType *>(_matcher)->test(s, res);
+  return static_cast<const MatcherType *>(_matcher.get())->test(s, res);
 }
