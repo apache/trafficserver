@@ -90,7 +90,8 @@ register_net_stats()
   net_rsb.connections_throttled_in   = Metrics::Counter::createPtr("proxy.process.net.connections_throttled_in");
   net_rsb.per_client_connections_throttled_in =
     Metrics::Counter::createPtr("proxy.process.net.per_client.connections_throttled_in");
-  net_rsb.connections_throttled_out = Metrics::Counter::createPtr("proxy.process.net.connections_throttled_out");
+  net_rsb.per_client_connections_exempt_in = Metrics::Counter::createPtr("proxy.process.net.per_client.connections_exempt_in");
+  net_rsb.connections_throttled_out        = Metrics::Counter::createPtr("proxy.process.net.connections_throttled_out");
   net_rsb.tunnel_total_client_connections_blind_tcp =
     Metrics::Counter::createPtr("proxy.process.tunnel.total_client_connections_blind_tcp");
   net_rsb.tunnel_current_client_connections_blind_tcp =
