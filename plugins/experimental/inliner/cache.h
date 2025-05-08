@@ -101,16 +101,11 @@ namespace cache
   }
 
   struct Write {
-    const std::string content_;
-    io::IO           *out_;
-    TSVConn           vconnection_;
+    const std::string       content_;
+    std::unique_ptr<io::IO> out_;
+    TSVConn                 vconnection_;
 
-    ~Write()
-    {
-      if (out_ != nullptr) {
-        delete out_;
-      }
-    }
+    ~Write() {}
 
     Write(std::string &&s) : content_(std::move(s)), out_(nullptr), vconnection_(nullptr) {}
     static int handle(TSCont, TSEvent, void *);
