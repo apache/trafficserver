@@ -57,14 +57,13 @@ SniSelector::yamlParser(const std::string &yaml_file)
           return false;
         }
 
-        auto ipl = new List::IP(name);
+        auto ipl = std::make_unique<List::IP>(name);
 
         if (ipl->parseYaml(list)) {
           Dbg(dbg_ctl, "Loaded List rule: %s", name.c_str());
-          addList(ipl);
+          addList(std::move(ipl));
         } else {
           TSError("[%s] Failed to parse the List YAML node", PLUGIN_NAME);
-          delete ipl;
           return false;
         }
       } else {
@@ -89,14 +88,13 @@ SniSelector::yamlParser(const std::string &yaml_file)
           return false;
         }
 
-        auto iprep = new IpReputation::SieveLru(name);
+        auto iprep = std::make_unique<IpReputation::SieveLru>(name);
 
         if (iprep->parseYaml(ipr)) {
           Dbg(dbg_ctl, "Loaded IP Reputation rule: %s", name.c_str());
-          addIPReputation(iprep);
+          addIPReputation(std::move(iprep));
         } else {
           TSError("[%s] Failed to parse the ip-rep YAML node", PLUGIN_NAME);
-          delete iprep;
           return false;
         }
       } else {

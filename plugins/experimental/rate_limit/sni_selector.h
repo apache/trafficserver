@@ -38,8 +38,8 @@ class SniSelector
 
 public:
   using Limiters      = std::unordered_map<std::string, std::tuple<bool, SniRateLimiter *>>;
-  using IPReputations = std::vector<IpReputation::SieveLru *>;
-  using Lists         = std::vector<List::IP *>;
+  using IPReputations = std::vector<std::unique_ptr<IpReputation::SieveLru>>;
+  using Lists         = std::vector<std::unique_ptr<List::IP>>;
 
   SniSelector() { Dbg(dbg_ctl, "Creating SNI selector"); }
 
@@ -56,14 +56,6 @@ public:
 
     if (_queue_cont) {
       TSContDestroy(_queue_cont);
-    }
-
-    for (auto &iprep : _reputations) {
-      delete iprep;
-    }
-
-    for (auto &list : _lists) {
-      delete list;
     }
 
     delete _default;
@@ -139,37 +131,36 @@ public:
   }
 
   void
-  addIPReputation(IpReputation::SieveLru *iprep)
+  addIPReputation(std::unique_ptr<IpReputation::SieveLru> iprep)
   {
-    _reputations.emplace_back(iprep);
+    _reputations.emplace_back(std::move(iprep));
   }
 
   IpReputation::SieveLru *
   findIpRep(const std::string &name)
   {
-    auto it = std::find_if(_reputations.begin(), _reputations.end(),
-                           [&name](const IpReputation::SieveLru *iprep) { return iprep->name() == name; });
+    auto it = std::find_if(_reputations.begin(), _reputations.end(), [&name](auto &iprep) { return iprep->name() == name; });
 
     if (it != _reputations.end()) {
-      return *it;
+      return it->get();
     }
 
     return nullptr;
   }
 
   void
-  addList(List::IP *list)
+  addList(std::unique_ptr<List::IP> list)
   {
-    _lists.emplace_back(list);
+    _lists.emplace_back(std::move(list));
   }
 
   List::IP *
   findList(const std::string &name)
   {
-    auto it = std::find_if(_lists.begin(), _lists.end(), [&name](const List::IP *list) { return list->name() == name; });
+    auto it = std::find_if(_lists.begin(), _lists.end(), [&name](auto &list) { return list->name() == name; });
 
     if (it != _lists.end()) {
-      return *it;
+      return it->get();
     }
 
     return nullptr;
