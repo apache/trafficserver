@@ -426,8 +426,14 @@ public:
 protected:
   bool eval(const Resources &res) override;
 
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
 private:
-  int64_t       get_now_qualified(NowQualifiers qual) const;
+  int64_t       get_now_qualified(NowQualifiers qual, const Resources &res) const;
   NowQualifiers _now_qual = NOW_QUAL_EPOCH;
 };
 

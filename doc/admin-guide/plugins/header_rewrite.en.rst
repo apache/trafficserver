@@ -1106,6 +1106,22 @@ TXN_DEBUG        Enable transaction debugging (default: ``off``)
 SKIP_REMAP       Don't require a remap match for the transaction (default: ``off``)
 ================ ====================================================================
 
+set-plugin-cntl
+~~~~~~~~~~~~~~~
+::
+
+  set-plugin-cntl <controller> <value>
+
+This operator lets you control the fundamental behavior of this plugin for a particular transaction.
+The available controllers are:
+
+================== ===================== =============================================================================================
+Controller         Operators/Conditions  Description
+================== ===================== =============================================================================================
+TIMEZONE           ``NOW``               If ``GMT`` is passed, the operators and conditions use GMT regardles of the timezone setting
+                                         on your system. The default value is ``LOCAL``.
+================== ===================== =============================================================================================
+
 Operator Flags
 --------------
 
