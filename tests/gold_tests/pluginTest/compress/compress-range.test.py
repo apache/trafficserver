@@ -42,13 +42,23 @@ class CompressPluginTest:
                 "proxy.config.http.insert_response_via_str": 2,
             })
 
-        self.ts.Setup.Copy("etc/cache-true-ignore-range.config")
+        self.ts.Setup.Copy("etc/cache-true-remove-range.config")
+        self.ts.Setup.Copy("etc/cache-true-remove-accept-encoding.config")
         self.ts.Setup.Copy("etc/cache-true-no-compression.config")
 
         self.ts.Disk.remap_config.AddLines(
             {
-                f"map /cache-true-ignore-range/ http://127.0.0.1:{self.server.Variables.http_port}/ @plugin=compress.so @pparam={Test.RunDirectory}/cache-true-ignore-range.config",
-                f"map /cache-true-no-compression/ http://127.0.0.1:{self.server.Variables.http_port}/ @plugin=compress.so @pparam={Test.RunDirectory}/cache-true-no-compression.config",
+                f"""
+map /cache-true-remove-range/ http://127.0.0.1:{self.server.Variables.http_port}/ \
+    @plugin=compress.so \
+    @pparam={Test.RunDirectory}/cache-true-remove-range.config
+map /cache-true-remove-accept-encoding/ http://127.0.0.1:{self.server.Variables.http_port}/ \
+    @plugin=compress.so \
+    @pparam={Test.RunDirectory}/cache-true-remove-accept-encoding.config
+map /cache-true-no-compression/ http://127.0.0.1:{self.server.Variables.http_port}/ \
+    @plugin=compress.so \
+    @pparam={Test.RunDirectory}/cache-true-no-compression.config
+"""
             })
 
     def run(self):
