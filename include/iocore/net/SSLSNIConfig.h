@@ -37,15 +37,8 @@
 #include <strings.h>
 #include <memory>
 
-#if __has_include("pcre/pcre.h")
-#include <pcre/pcre.h>
-#elif __has_include("pcre.h")
-#include <pcre.h>
-#else
-#error "Unable to locate PCRE heeader"
-#endif
-
 #include "tsutil/ts_ip.h"
+#include "tsutil/Regex.h"
 
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/SNIActionItem.h"
@@ -63,14 +56,6 @@ struct NextHopProperty {
 
 using ActionVector = std::vector<std::unique_ptr<ActionItem>>;
 
-struct PcreFreer {
-  void
-  operator()(void *p)
-  {
-    pcre_free(p);
-  }
-};
-
 struct NamedElement {
   NamedElement() {}
 
@@ -85,7 +70,7 @@ struct NamedElement {
 
   std::vector<ts::port_range_t> inbound_port_ranges;
 
-  std::unique_ptr<pcre, PcreFreer> match;
+  Regex match;
 
   uint32_t rank = 0; ///< order of the config. smaller is higher.
 };
