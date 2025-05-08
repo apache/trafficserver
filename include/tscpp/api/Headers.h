@@ -25,6 +25,7 @@
 #pragma once
 
 #include "tscpp/api/noncopyable.h"
+#include <memory>
 #include <string>
 
 namespace atscppapi
