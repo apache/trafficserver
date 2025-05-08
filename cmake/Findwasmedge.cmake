@@ -15,33 +15,33 @@
 #
 #######################
 
-# Findwamr.cmake
+# Findwasmedge.cmake
 #
 # This will define the following variables
 #
-#     wamr_FOUND
-#     wamr_LIBRARY
-#     wamr_INCLUDE_DIR
+#     wasmedge_FOUND
+#     wasmedge_LIBRARY
+#     wasmedge_INCLUDE_DIR
 #
 # and the following imported targets
 #
-#     wamr::wamr
+#     wasmedge::wasmedge
 #
 
-find_library(iwasm_LIBRARY NAMES iwasm)
-find_path(wamr_INCLUDE_DIR NAMES wasm_c_api.h)
+find_library(lwasmedge_LIBRARY NAMES wasmedge)
+find_path(wasmedge_INCLUDE_DIR NAMES wasmedge/wasmedge.h)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(wamr REQUIRED_VARS iwasm_LIBRARY wamr_INCLUDE_DIR)
+find_package_handle_standard_args(wasmedge REQUIRED_VARS lwasmedge_LIBRARY wasmedge_INCLUDE_DIR)
 
-if(wamr_FOUND)
-  mark_as_advanced(wamr_FOUND wamr_LIBRARY)
-  set(wamr_INCLUDE_DIRS ${wamr_INCLUDE_DIR})
-  set(wamr_LIBRARY ${iwasm_LIBRARY})
+if(wasmedge_FOUND)
+  mark_as_advanced(wasmedge_FOUND wasmedge_LIBRARY)
+  set(wasmedge_INCLUDE_DIRS ${wasmedge_INCLUDE_DIR})
+  set(wasmedge_LIBRARY ${lwasmedge_LIBRARY})
 endif()
 
-if(wamr_FOUND AND NOT TARGET wamr::wamr)
-  add_library(wamr::wamr INTERFACE IMPORTED)
-  target_include_directories(wamr::wamr INTERFACE ${wamr_INCLUDE_DIRS})
-  target_link_libraries(wamr::wamr INTERFACE ${wamr_LIBRARY})
+if(wasmedge_FOUND AND NOT TARGET wasmedge::wasmedge)
+  add_library(wasmedge::wasmedge INTERFACE IMPORTED)
+  target_include_directories(wasmedge::wasmedge INTERFACE ${wasmedge_INCLUDE_DIRS})
+  target_link_libraries(wasmedge::wasmedge INTERFACE ${wasmedge_LIBRARY})
 endif()

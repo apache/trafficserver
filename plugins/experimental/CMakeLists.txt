@@ -116,6 +116,9 @@ endif()
 if(BUILD_URL_SIG)
   add_subdirectory(url_sig)
 endif()
-if(BUILD_WASM)
+if(BUILD_WASM_WAMR
+   OR BUILD_WASM_WASMTIME
+   OR BUILD_WASM_WASMEDGE
+)
   add_subdirectory(wasm)
 endif()

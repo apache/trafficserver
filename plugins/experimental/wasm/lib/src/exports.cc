@@ -646,6 +646,9 @@ Word grpc_send(Word token, Word message_ptr, Word message_size, Word end_stream)
   return context->grpcSend(token, message.value(), end_stream != 0U);
 }
 
+// WASIp1 typings in comments sourced from
+// https://github.com/WebAssembly/wasi-libc/blob/446cb3f1aa21f9b1a1eab372f82d65d19003e924/libc-bottom-half/headers/public/wasi/api.h
+
 // __wasi_errno_t path_open(__wasi_fd_t fd, __wasi_lookupflags_t dirflags, const char *path,
 // size_t path_len, __wasi_oflags_t oflags, __wasi_rights_t fs_rights_base, __wasi_rights_t
 // fs_rights_inheriting, __wasi_fdflags_t fdflags, __wasi_fd_t *retptr0)
@@ -776,6 +779,13 @@ Word wasi_unstable_fd_fdstat_get(Word fd, Word statOut) {
   return 0; // __WASI_ESUCCESS
 }
 
+// __wasi_errno_t __wasi_fd_fdstat_set_flags(__wasi_fd_t fd, __wasi_fdflags_t flags)
+Word wasi_unstable_fd_fdstat_set_flags(Word /*fd*/, Word /*flags*/) {
+  // Flags that can be specified: append, dsync, nonblock, rsync, and sync. Proxy-wasm only supports
+  // STDOUT and STDERR, but none of these flags have any effect in Proxy-Wasm.
+  return 52; // __WASI_ERRNO_ENOSYS
+}
+
 // __wasi_errno_t __wasi_environ_get(char **environ, char *environ_buf);
 Word wasi_unstable_environ_get(Word environ_array_ptr, Word environ_buf) {
   auto *context = contextOrEffectiveContext();
@@ -877,6 +887,21 @@ Word wasi_unstable_random_get(Word result_buf_ptr, Word buf_len) {
     return 21; // __WASI_EFAULT
   }
   return 0; // __WASI_ESUCCESS
+}
+
+// __wasi_errno_t __wasi_sched_yield()
+Word wasi_unstable_sched_yield() {
+  // Per POSIX man pages, it is valid to return success if the calling thread is the only thread in
+  // the highest priority list. This is vacuously true for wasm without threads. There are no valid
+  // error cases defined.
+  return 0; // __WASI_ESUCCESS
+}
+
+// __wasi_errno_t __wasi_poll_oneoff(const __wasi_subscription_t *in, __wasi_event_t *out,
+// __wasi_size_t nsubscriptions, __wasi_size_t *nevents)
+Word wasi_unstable_poll_oneoff(Word /*in*/, Word /*out*/, Word /*nsubscriptions*/,
+                               Word /*nevents_ptr*/) {
+  return 52; // __WASI_ERRNO_ENOSYS
 }
 
 // void __wasi_proc_exit(__wasi_exitcode_t rval);

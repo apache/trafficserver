@@ -47,6 +47,7 @@
         "CMAKE_COMPILE_WARNING_AS_ERROR": "OFF",
         "CMAKE_INSTALL_PREFIX": "/opt/ats",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_WASM_WAMR": "OFF",
         "ENABLE_VERIFY_PLUGINS": "OFF"
       }
     },
@@ -58,6 +59,7 @@
         "ENABLE_AUTEST": "ON",
         "CMAKE_INSTALL_PREFIX": "/tmp/ts-autest",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_WASM_WAMR": "OFF",
         "ENABLE_EXAMPLE": "ON"
       }
     },
@@ -106,6 +108,7 @@
         "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
         "ENABLE_CCACHE": "ON",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_WASM_WAMR": "OFF",
         "ENABLE_EXAMPLE": "ON",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats"
       }
@@ -210,7 +213,8 @@
       "binaryDir": "${sourceDir}/build-${presetName}",
       "cacheVariables": {
         "CMAKE_INSTALL_PREFIX": "/tmp/ats",
-        "BUILD_EXPERIMENTAL_PLUGINS": "ON"
+        "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_WASM_WAMR": "OFF"
       }
     },
     {
@@ -391,6 +395,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_WASM_WAMR": "OFF",
         "ENABLE_EXAMPLE": "ON",
         "ENABLE_CCACHE": "OFF"
       }
