@@ -464,7 +464,7 @@ private:
   unsigned int out_of   = 0;
 };
 
-using SubOpQueue = std::vector<const subop *>;
+using SubOpQueue = std::vector<std::unique_ptr<subop>>;
 
 //----------------------------------------------------------------------------
 class op
@@ -472,18 +472,12 @@ class op
 public:
   op() { Dbg(dbg_ctl, "op constructor called"); }
 
-  ~op()
-  {
-    Dbg(dbg_ctl, "op destructor called");
-    for (auto &subop : subops) {
-      delete subop;
-    }
-  }
+  ~op() { Dbg(dbg_ctl, "op destructor called"); }
 
   void
-  addSubOp(const subop *s)
+  addSubOp(std::unique_ptr<subop> s)
   {
-    subops.push_back(s);
+    subops.push_back(std::move(s));
   }
 
   void
@@ -527,7 +521,7 @@ public:
     Dbg(dbg_ctl, "sending to: %s", sendto.c_str());
     Dbg(dbg_ctl, "if these operations match: ");
 
-    for (auto subop : subops) {
+    for (auto &subop : subops) {
       subop->printSubOp();
     }
     if (else_sendto.size() > 0) {
@@ -553,7 +547,7 @@ public:
 
     Dbg(dbg_ctl, "starting to process a new operation");
 
-    for (auto subop : subops) {
+    for (auto &subop : subops) {
       // subop* s = *it;
       int         subop_type = subop->getOpType();
       target_type target     = subop->getTargetType();
@@ -819,7 +813,7 @@ using OpMap      = std::vector<StringPair>;
 static bool
 build_op(op &o, OpMap const &q)
 {
-  subop *sub = new subop();
+  auto sub = std::make_unique<subop>();
 
   // loop through the array of key->value pairs
   for (auto const &pr : q) {
@@ -873,17 +867,16 @@ build_op(op &o, OpMap const &q)
     }
 
     if (key == "connector") {
-      o.addSubOp(sub);
-      sub = new subop();
+      o.addSubOp(std::move(sub));
+      sub = std::make_unique<subop>();
     }
   }
 
-  o.addSubOp(sub);
+  o.addSubOp(std::move(sub));
   return true;
 
 error:
   Dbg(dbg_ctl, "error building operation");
-  delete sub;
   return false;
 }
 
