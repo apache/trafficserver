@@ -249,7 +249,7 @@ MC::add_binary_header(uint16_t err, uint8_t hdr_len, uint16_t key_len, uint32_t 
 int
 MC::write_binary_error(protocol_binary_response_status err, int swallow)
 {
-  const char *errstr;
+  const char *errstr{nullptr};
   switch (err) {
   case PROTOCOL_BINARY_RESPONSE_ENOMEM:
     errstr = "Out of memory";
