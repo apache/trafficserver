@@ -45,7 +45,7 @@ using Node = Http2DependencyTree::Node;
  */
 TEST_CASE("Http2DependencyTree_1", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D");
 
   tree->add(0, 1, 0, false, &b);
@@ -66,8 +66,6 @@ TEST_CASE("Http2DependencyTree_1", "[http2][Http2DependencyTree]")
   REQUIRE(node_d->parent == node_a);
   REQUIRE(node_b->parent == node_d);
   REQUIRE(node_c->parent == node_d);
-
-  delete tree;
 }
 
 /**
@@ -85,7 +83,7 @@ TEST_CASE("Http2DependencyTree_1", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_2", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -105,8 +103,6 @@ TEST_CASE("Http2DependencyTree_2", "[http2][Http2DependencyTree]")
   REQUIRE(node_a->parent == node_d);
   REQUIRE(node_d->parent == node_x);
   REQUIRE(node_f->parent == node_d);
-
-  delete tree;
 }
 
 /**
@@ -124,7 +120,7 @@ TEST_CASE("Http2DependencyTree_2", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_3", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -144,8 +140,6 @@ TEST_CASE("Http2DependencyTree_3", "[http2][Http2DependencyTree]")
   REQUIRE(node_a->parent == node_d);
   REQUIRE(node_d->parent == node_x);
   REQUIRE(node_f->parent == node_a);
-
-  delete tree;
 }
 
 /**
@@ -156,7 +150,7 @@ TEST_CASE("Http2DependencyTree_3", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_4", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A");
   tree->add(0, 1, 0, false, &a);
 
@@ -169,8 +163,6 @@ TEST_CASE("Http2DependencyTree_4", "[http2][Http2DependencyTree]")
 
   tree->deactivate(node_a, 0);
   REQUIRE(tree->top() == nullptr);
-
-  delete tree;
 }
 
 /**
@@ -184,7 +176,7 @@ TEST_CASE("Http2DependencyTree_4", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_5", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C");
 
   tree->add(0, 3, 15, false, &a);
@@ -201,8 +193,6 @@ TEST_CASE("Http2DependencyTree_5", "[http2][Http2DependencyTree]")
 
   tree->deactivate(node_a, 0);
   REQUIRE(tree->top() == node_b);
-
-  delete tree;
 }
 
 /**
@@ -216,7 +206,7 @@ TEST_CASE("Http2DependencyTree_5", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_6", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  auto tree = std::make_unique<Tree>(100);
 
   string a("A"), b("B"), c("C"), d("D");
 
@@ -241,8 +231,6 @@ TEST_CASE("Http2DependencyTree_6", "[http2][Http2DependencyTree]")
 
   const string expect = "BDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBD";
   REQUIRE(oss.str() == expect);
-
-  delete tree;
 }
 
 /**
@@ -255,7 +243,7 @@ TEST_CASE("Http2DependencyTree_6", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_Chrome_50", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  auto tree = std::make_unique<Tree>(100);
 
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F"), g("G"), h("H"), i("I");
 
@@ -293,8 +281,6 @@ TEST_CASE("Http2DependencyTree_Chrome_50", "[http2][Http2DependencyTree]")
     "ABCDEFGHIABCDEFGHIABCDEFABCGHIABCDEFABCGHIDEFABCGHIDEFABCABCDEFGHIABCDEFABCGHIABCDEFABCGHIDEFABCGHIDEFABCABC";
 
   REQUIRE(oss.str() == expect);
-
-  delete tree;
 }
 
 /**
@@ -313,7 +299,7 @@ TEST_CASE("Http2DependencyTree_Chrome_50", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_Chrome_51", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  auto tree = std::make_unique<Tree>(100);
 
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F"), g("G"), h("H"), i("I");
 
@@ -365,8 +351,6 @@ TEST_CASE("Http2DependencyTree_Chrome_51", "[http2][Http2DependencyTree]")
   const string expect = "ACEGIBDFH";
 
   REQUIRE(oss.str() == expect);
-
-  delete tree;
 }
 
 /**
@@ -381,7 +365,7 @@ TEST_CASE("Http2DependencyTree_Chrome_51", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_remove_1", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  auto tree = std::make_unique<Tree>(100);
 
   string a("A"), b("B"), c("C");
 
@@ -417,8 +401,6 @@ TEST_CASE("Http2DependencyTree_remove_1", "[http2][Http2DependencyTree]")
   tree->deactivate(node_c, 16);
   tree->remove(node_c);
   REQUIRE(tree->find(7) == nullptr);
-
-  delete tree;
 }
 
 /**
@@ -434,7 +416,7 @@ TEST_CASE("Http2DependencyTree_remove_1", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_remove_2", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  auto tree = std::make_unique<Tree>(100);
 
   string a("A"), b("B"), c("C");
 
@@ -465,8 +447,6 @@ TEST_CASE("Http2DependencyTree_remove_2", "[http2][Http2DependencyTree]")
   REQUIRE(tree->find(3) == nullptr);
   REQUIRE(tree->find(5) == nullptr);
   REQUIRE(tree->find(7) == nullptr);
-
-  delete tree;
 }
 
 /**
@@ -480,7 +460,7 @@ TEST_CASE("Http2DependencyTree_remove_2", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_exclusive_node", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D");
 
   Node *B = tree->add(0, 1, 0, false, &b);
@@ -494,8 +474,6 @@ TEST_CASE("Http2DependencyTree_exclusive_node", "[http2][Http2DependencyTree]")
   tree->remove(B);
 
   REQUIRE(tree->top() == nullptr);
-
-  delete tree;
 }
 
 /** test for reprioritize with active node
@@ -509,7 +487,7 @@ TEST_CASE("Http2DependencyTree_exclusive_node", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C");
 
   Node *A = tree->add(0, 7, 70, false, &a);
@@ -526,8 +504,6 @@ TEST_CASE("Http2DependencyTree_reprioritize", "[http2][Http2DependencyTree]")
   tree->remove(A);
 
   REQUIRE(tree->top()->t != nullptr);
-
-  delete tree;
 }
 
 /**
@@ -545,7 +521,7 @@ TEST_CASE("Http2DependencyTree_reprioritize", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize_2", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -568,8 +544,6 @@ TEST_CASE("Http2DependencyTree_reprioritize_2", "[http2][Http2DependencyTree]")
   REQUIRE(!node_x->queue->in(node_a->entry));
   REQUIRE(node_x->queue->in(node_d->entry));
   REQUIRE(node_d->queue->in(node_a->entry));
-
-  delete tree;
 }
 
 /**
@@ -587,7 +561,7 @@ TEST_CASE("Http2DependencyTree_reprioritize_2", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize_3", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -611,8 +585,6 @@ TEST_CASE("Http2DependencyTree_reprioritize_3", "[http2][Http2DependencyTree]")
   REQUIRE(node_x->queue->in(node_d->entry));
   REQUIRE(!node_a->queue->in(node_c->entry));
   REQUIRE(node_c->queue->empty());
-
-  delete tree;
 }
 
 /**
@@ -631,7 +603,7 @@ TEST_CASE("Http2DependencyTree_reprioritize_3", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize_4", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -655,8 +627,6 @@ TEST_CASE("Http2DependencyTree_reprioritize_4", "[http2][Http2DependencyTree]")
   REQUIRE(node_x->queue->in(node_d->entry));
   REQUIRE(!node_a->queue->in(node_c->entry));
   REQUIRE(node_c->queue->empty());
-
-  delete tree;
 }
 
 /**
@@ -675,7 +645,7 @@ TEST_CASE("Http2DependencyTree_reprioritize_4", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_reprioritize_5", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
   tree->add(0, 1, 0, false, &a);
@@ -701,8 +671,6 @@ TEST_CASE("Http2DependencyTree_reprioritize_5", "[http2][Http2DependencyTree]")
   REQUIRE(node_x->queue->in(node_a->entry));
   REQUIRE(!node_a->queue->in(node_c->entry));
   REQUIRE(node_c->queue->empty());
-
-  delete tree;
 }
 
 /** test for https://github.com/apache/trafficserver/issues/2268
@@ -723,7 +691,7 @@ TEST_CASE("Http2DependencyTree_reprioritize_5", "[http2][Http2DependencyTree]")
  */
 TEST_CASE("Http2DependencyTree_insert_with_empty_parent", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  auto tree = std::make_unique<Tree>(100);
 
   string a("A"), b("B"), c("C");
   tree->add(0, 3, 20, false, &a);
@@ -743,8 +711,6 @@ TEST_CASE("Http2DependencyTree_insert_with_empty_parent", "[http2][Http2Dependen
 
   tree->remove(c_n);
   REQUIRE(tree->find_shadow(9) == nullptr);
-
-  delete tree;
 }
 
 /** test for https://github.com/apache/trafficserver/issues/2268
@@ -757,7 +723,7 @@ TEST_CASE("Http2DependencyTree_insert_with_empty_parent", "[http2][Http2Dependen
  */
 TEST_CASE("Http2DependencyTree_shadow_reprioritize", "[http2][Http2DependencyTree]")
 {
-  Tree *tree = new Tree(100);
+  auto tree = std::make_unique<Tree>(100);
 
   string a("A"), b("B");
   tree->add(0, 3, 20, false, &a);
@@ -769,8 +735,6 @@ TEST_CASE("Http2DependencyTree_shadow_reprioritize", "[http2][Http2DependencyTre
 
   tree->reprioritize(s_n, 7, false);
   REQUIRE(tree->find_shadow(9) == nullptr);
-
-  delete tree;
 }
 
 /** Test for https://github.com/apache/trafficserver/pull/4212
@@ -787,7 +751,7 @@ TEST_CASE("Http2DependencyTree_shadow_reprioritize", "[http2][Http2DependencyTre
  */
 TEST_CASE("Http2DependencyTree_delete_parent_before_child_arrives", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D"), e("E");
 
   tree->add(0, 3, 20, false, &a);
@@ -807,8 +771,6 @@ TEST_CASE("Http2DependencyTree_delete_parent_before_child_arrives", "[http2][Htt
 
   Node *node_e = tree->add(9, 11, 30, false, &e);
   REQUIRE(node_e->parent->id == 3);
-
-  delete tree;
 }
 
 /** Test for https://github.com/apache/trafficserver/pull/4212
@@ -825,7 +787,7 @@ TEST_CASE("Http2DependencyTree_delete_parent_before_child_arrives", "[http2][Htt
  */
 TEST_CASE("Http2DependencyTree_handle_priority_nodes", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C"), d("D"), e("E");
 
   // P1 node
@@ -849,8 +811,6 @@ TEST_CASE("Http2DependencyTree_handle_priority_nodes", "[http2][Http2DependencyT
   tree->remove(node_a);
   Node *node_p1 = tree->find(3);
   REQUIRE(node_p1 != nullptr);
-
-  delete tree;
 }
 
 /**
@@ -866,7 +826,7 @@ TEST_CASE("Http2DependencyTree_handle_priority_nodes", "[http2][Http2DependencyT
  */
 TEST_CASE("Http2DependencyTree_reprioritize_shadow_node", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C");
 
   tree->add(0, 3, 20, false, &a);
@@ -894,13 +854,11 @@ TEST_CASE("Http2DependencyTree_reprioritize_shadow_node", "[http2][Http2Dependen
   tree->remove(b_n);
   c_n = tree->find(7);
   REQUIRE(c_n != nullptr);
-
-  delete tree;
 }
 
 TEST_CASE("Http2DependencyTree_missing_parent", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A"), b("B"), c("C");
 
   tree->add(0, 3, 20, false, &a);
@@ -919,13 +877,11 @@ TEST_CASE("Http2DependencyTree_missing_parent", "[http2][Http2DependencyTree]")
   REQUIRE(c_n->is_shadow() == false);
   REQUIRE(c_n->point == 5);
   REQUIRE(c_n->weight == 15);
-
-  delete tree;
 }
 
 TEST_CASE("Http2DependencyTree_max_depth", "[http2][Http2DependencyTree]")
 {
-  Tree  *tree = new Tree(100);
+  auto   tree = std::make_unique<Tree>(100);
   string a("A");
   for (int i = 0; i < 100; ++i) {
     tree->add(i, i + 1, 16, false, &a);
@@ -935,6 +891,4 @@ TEST_CASE("Http2DependencyTree_max_depth", "[http2][Http2DependencyTree]")
   REQUIRE(node->parent->id == 0);
   REQUIRE(leaf != nullptr);
   REQUIRE(leaf->parent->id != 0);
-
-  delete tree;
 }
