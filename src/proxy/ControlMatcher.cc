@@ -88,13 +88,10 @@ HttpRequestData::get_client_ip()
 template <class Data, class MatchResult>
 HostMatcher<Data, MatchResult>::HostMatcher(const char *name, const char *filename) : BaseMatcher<Data>(name, filename)
 {
-  host_lookup = new HostLookup(name);
+  host_lookup = std::make_unique<HostLookup>(name);
 }
 
-template <class Data, class MatchResult> HostMatcher<Data, MatchResult>::~HostMatcher()
-{
-  delete host_lookup;
-}
+template <class Data, class MatchResult> HostMatcher<Data, MatchResult>::~HostMatcher() {}
 
 //
 // template <class Data,class MatchResult>
@@ -698,14 +695,7 @@ ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const ch
   }
 }
 
-template <class Data, class MatchResult> ControlMatcher<Data, MatchResult>::~ControlMatcher()
-{
-  delete reMatch;
-  delete urlMatch;
-  delete hostMatch;
-  delete ipMatch;
-  delete hrMatch;
-}
+template <class Data, class MatchResult> ControlMatcher<Data, MatchResult>::~ControlMatcher() {}
 
 // void ControlMatcher<Data, MatchResult>::Print()
 //
@@ -861,27 +851,27 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
   }
   // Now allocate space for the record pointers
   if ((flags & ALLOW_REGEX_TABLE) && regex > 0) {
-    reMatch = new RegexMatcher<Data, MatchResult>(matcher_name, config_file_path);
+    reMatch = std::make_unique<RegexMatcher<Data, MatchResult>>(matcher_name, config_file_path);
     reMatch->AllocateSpace(regex);
   }
 
   if ((flags & ALLOW_URL_TABLE) && url > 0) {
-    urlMatch = new UrlMatcher<Data, MatchResult>(matcher_name, config_file_path);
+    urlMatch = std::make_unique<UrlMatcher<Data, MatchResult>>(matcher_name, config_file_path);
     urlMatch->AllocateSpace(url);
   }
 
   if ((flags & ALLOW_HOST_TABLE) && hostDomain > 0) {
-    hostMatch = new HostMatcher<Data, MatchResult>(matcher_name, config_file_path);
+    hostMatch = std::make_unique<HostMatcher<Data, MatchResult>>(matcher_name, config_file_path);
     hostMatch->AllocateSpace(hostDomain);
   }
 
   if ((flags & ALLOW_IP_TABLE) && ip > 0) {
-    ipMatch = new IpMatcher<Data, MatchResult>(matcher_name, config_file_path);
+    ipMatch = std::make_unique<IpMatcher<Data, MatchResult>>(matcher_name, config_file_path);
     ipMatch->AllocateSpace(ip);
   }
 
   if ((flags & ALLOW_HOST_REGEX_TABLE) && hostregex > 0) {
-    hrMatch = new HostRegexMatcher<Data, MatchResult>(matcher_name, config_file_path);
+    hrMatch = std::make_unique<HostRegexMatcher<Data, MatchResult>>(matcher_name, config_file_path);
     hrMatch->AllocateSpace(hostregex);
   }
   // Traverse the list and build the records table
