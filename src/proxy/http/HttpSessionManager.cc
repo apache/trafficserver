@@ -441,7 +441,6 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
 {
   PoolableSession *to_return = nullptr;
   HSMresult_t      retval    = HSM_NOT_FOUND;
-  bool             acquired  = false;
 
   // Extend the mutex window until the acquired Server session is attached
   // to the SM. Releasing the mutex before that results in race conditions
@@ -458,12 +457,10 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
 
     if (locked) {
       if (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) {
-        retval   = ethread->server_session_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
-        acquired = (HSM_DONE == retval);
+        retval = ethread->server_session_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
         Dbg(dbg_ctl_http_ss, "[acquire session] thread pool search %s", to_return ? "successful" : "failed");
       } else {
-        retval   = m_g_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
-        acquired = (HSM_DONE == retval);
+        retval = m_g_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
         Dbg(dbg_ctl_http_ss, "[acquire session] global pool search %s", to_return ? "successful" : "failed");
         // At this point to_return has been removed from the pool. Do we need to move it
         // to the same thread?
@@ -517,10 +514,6 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
     }
   }
 
-  if (acquired) {
-    Metrics::Gauge::decrement(http_rsb.pooled_server_connections);
-  }
-
   return retval;
 }
 
@@ -552,10 +545,6 @@ HttpSessionManager::release_session(PoolableSession *to_release)
     }
   }
 
-  if (released_p) {
-    Metrics::Gauge::increment(http_rsb.pooled_server_connections);
-  }
-
   return released_p ? HSM_DONE : HSM_RETRY;
 }
 
@@ -576,6 +565,8 @@ ServerSessionPool::removeSession(PoolableSession *to_remove)
     Dbg(dbg_ctl_http_ss, "After Remove session %p m_fqdn_pool size=%zu m_ip_pool_size=%zu", to_remove, m_fqdn_pool.count(),
         m_ip_pool.count());
   }
+
+  Metrics::Gauge::decrement(http_rsb.pooled_server_connections);
 }
 
 void
@@ -592,4 +583,6 @@ ServerSessionPool::addSession(PoolableSession *ss)
     ats_ip_nptop(ss->get_remote_addr(), peer_ip, sizeof(peer_ip));
     Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [add session] session placed into shared pool under ip %s", ss->connection_id(), peer_ip);
   }
+
+  Metrics::Gauge::increment(http_rsb.pooled_server_connections);
 }
