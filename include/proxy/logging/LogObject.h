@@ -244,9 +244,9 @@ public:
   bool operator==(LogObject &rhs);
 
 public:
-  LogFormat    *m_format;
-  Ptr<LogFile>  m_logFile;
-  LogFilterList m_filter_list;
+  std::unique_ptr<LogFormat> m_format;
+  Ptr<LogFile>               m_logFile;
+  LogFilterList              m_filter_list;
 
 private:
   char *m_basename; // the name of the file associated

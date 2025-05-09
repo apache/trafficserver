@@ -119,7 +119,7 @@ LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_di
     m_fast(fast)
 {
   ink_release_assert(format);
-  m_format         = new LogFormat(*format);
+  m_format         = std::make_unique<LogFormat>(*format);
   m_buffer_manager = new LogBufferManager[m_flush_threads];
 
   if (file_format == LOG_FILE_BINARY) {
@@ -131,7 +131,7 @@ LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_di
   generate_filenames(log_dir, basename, file_format);
 
   // compute_signature is a static function
-  m_signature = compute_signature(m_format, m_basename, m_flags);
+  m_signature = compute_signature(m_format.get(), m_basename, m_flags);
 
   m_logFile = new LogFile(m_filename, header, file_format, m_signature, cfg->ascii_buffer_size, cfg->max_line_size,
                           m_pipe_buffer_size, format->escape_type());
@@ -158,7 +158,6 @@ LogObject::~LogObject()
   ats_free(m_basename);
   ats_free(m_filename);
   ats_free(m_alt_filename);
-  delete m_format;
   delete[] m_buffer_manager;
   if (!m_fast) {
     delete static_cast<LogBuffer *>(FREELIST_POINTER(m_log_buffer));
@@ -309,7 +308,7 @@ LogObject::display(FILE *fd)
           "LogObject [%p]: format = %s (%p)\nbasename = %s\n"
           "flags = %u\n"
           "signature = %" PRIu64 "\n",
-          this, m_format->name(), m_format, m_basename, m_flags, m_signature);
+          this, m_format->name(), m_format.get(), m_basename, m_flags, m_signature);
 
   fprintf(fd, "full path = %s\n", get_full_filename());
   m_filter_list.display(fd);
