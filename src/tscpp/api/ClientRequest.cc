@@ -41,7 +41,7 @@ struct atscppapi::ClientRequestState : noncopyable {
 
 atscppapi::ClientRequest::ClientRequest(void *ats_txn_handle, void *hdr_buf, void *hdr_loc) : Request(hdr_buf, hdr_loc)
 {
-  state_ = new ClientRequestState(static_cast<TSHttpTxn>(ats_txn_handle));
+  state_ = std::make_unique<ClientRequestState>(static_cast<TSHttpTxn>(ats_txn_handle));
 }
 
 atscppapi::ClientRequest::~ClientRequest()
@@ -52,8 +52,6 @@ atscppapi::ClientRequest::~ClientRequest()
               state_->pristine_url_loc_);
     TSHandleMLocRelease(state_->pristine_hdr_buf_, null_parent_loc, state_->pristine_url_loc_);
   }
-
-  delete state_;
 }
 
 const Url &
