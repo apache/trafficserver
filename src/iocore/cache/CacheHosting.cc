@@ -46,12 +46,11 @@ DbgCtl dbg_ctl_matcher{"matcher"};
 
 CacheHostMatcher::CacheHostMatcher(const char *name, CacheType typ) : data_array(nullptr), array_len(-1), num_el(-1), type(typ)
 {
-  host_lookup = new HostLookup(name);
+  host_lookup = std::make_unique<HostLookup>(name);
 }
 
 CacheHostMatcher::~CacheHostMatcher()
 {
-  delete host_lookup;
   delete[] data_array;
 }
 

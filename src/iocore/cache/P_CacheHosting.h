@@ -95,16 +95,16 @@ public:
   HostLookup *
   getHLookup() const
   {
-    return host_lookup;
+    return host_lookup.get();
   }
 
 private:
-  static void      PrintFunc(void *opaque_data);
-  HostLookup      *host_lookup; // Data structure to do the lookups
-  CacheHostRecord *data_array;  // array of all data items
-  int              array_len;   // the length of the arrays
-  int              num_el;      // the number of items in the tree
-  CacheType        type;
+  static void                 PrintFunc(void *opaque_data);
+  std::unique_ptr<HostLookup> host_lookup; // Data structure to do the lookups
+  CacheHostRecord            *data_array;  // array of all data items
+  int                         array_len;   // the length of the arrays
+  int                         num_el;      // the number of items in the tree
+  CacheType                   type;
 };
 
 // ReplaceablePtr provides threadsafe access to an object which may be replaced.
