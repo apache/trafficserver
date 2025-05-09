@@ -80,7 +80,7 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
     m_pipe_buffer_size(pipe_buffer_size)
 {
   if (m_file_format != LOG_FILE_PIPE) {
-    m_log = new BaseLogFile(name, m_signature);
+    m_log = std::make_unique<BaseLogFile>(name, m_signature);
     // Use Log::config->hostname rather than Machine::instance()->hostname
     // because the former is reloadable.
     m_log->set_hostname(Log::config->hostname);
@@ -113,7 +113,6 @@ LogFile::~LogFile()
   // close_file() here ensures that we do not leak file descriptors.
   close_file();
 
-  delete m_log;
   ats_free(m_header);
   ats_free(m_name);
   Dbg(dbg_ctl_log_file, "exiting LogFile destructor, this=%p", this);
