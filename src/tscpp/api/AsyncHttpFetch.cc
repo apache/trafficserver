@@ -178,7 +178,7 @@ void
 AsyncHttpFetch::init(const string &url_str, HttpMethod http_method, const string &request_body, StreamingFlag streaming_flag)
 {
   LOG_DEBUG("Created new AsyncHttpFetch object %p", this);
-  state_ = new AsyncHttpFetchState(url_str, http_method, request_body, streaming_flag);
+  state_ = std::make_unique<AsyncHttpFetchState>(url_str, http_method, request_body, streaming_flag);
 }
 
 void
@@ -282,7 +282,4 @@ AsyncHttpFetch::getResponseBody(const void *&body, size_t &body_size) const
   body_size = state_->body_size_;
 }
 
-AsyncHttpFetch::~AsyncHttpFetch()
-{
-  delete state_;
-}
+AsyncHttpFetch::~AsyncHttpFetch() {}
