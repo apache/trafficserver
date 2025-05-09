@@ -165,7 +165,7 @@ private:
 
   std::forward_list<CallbackType> _configCallbacks;
 
-  std::unordered_map<std::string, ConfigManager *> bindings;
+  std::unordered_map<std::string, std::unique_ptr<ConfigManager>> bindings;
   void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
                      ConfigManager *parentConfig);
   /// JSONRPC endpoint

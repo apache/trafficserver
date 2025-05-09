@@ -104,13 +104,7 @@ FileManager::FileManager()
 FileManager::~FileManager()
 {
   // Let other operations finish and do not start any new ones
-  ink_mutex_acquire(&accessLock);
 
-  for (auto &&it : bindings) {
-    delete it.second;
-  }
-
-  ink_mutex_release(&accessLock);
   ink_mutex_destroy(&accessLock);
 }
 
@@ -139,8 +133,8 @@ FileManager::addFileHelper(const char *fileName, const char *configName, bool ro
                            ConfigManager *parentConfig)
 {
   ink_assert(fileName != nullptr);
-  ConfigManager *configManager = new ConfigManager(fileName, configName, root_access_needed, isRequired, parentConfig);
-  bindings.emplace(configManager->getFileName(), configManager);
+  auto configManager = std::make_unique<ConfigManager>(fileName, configName, root_access_needed, isRequired, parentConfig);
+  bindings.emplace(configManager->getFileName(), std::move(configManager));
 }
 
 // bool FileManager::getConfigManagerObj(char* fileName, ConfigManager** rbPtr)
@@ -158,7 +152,7 @@ FileManager::getConfigObj(const char *fileName, ConfigManager **rbPtr)
   bool found = it != bindings.end();
   ink_mutex_release(&accessLock);
 
-  *rbPtr = found ? it->second : nullptr;
+  *rbPtr = found ? it->second.get() : nullptr;
   return found;
 }
 
@@ -219,7 +213,7 @@ FileManager::rereadConfig()
   size_t                       n;
   ink_mutex_acquire(&accessLock);
   for (auto &&it : bindings) {
-    rb = it.second;
+    rb = it.second.get();
     // ToDo: rb->isVersions() was always true before, because numberBackups was always >= 1. So ROLLBACK_CHECK_ONLY could not
     // happen at all...
     if (rb->checkForUserUpdate(FileManager::ROLLBACK_CHECK_AND_UPDATE)) {
@@ -249,7 +243,7 @@ FileManager::rereadConfig()
     }
     // for each parent file, if it is changed, then delete all its children
     for (auto &&it : bindings) {
-      rb = it.second;
+      rb = it.second.get();
       if (rb->getParentConfig() == changedFiles[i]) {
         if (std::find(childFileNeedDelete.begin(), childFileNeedDelete.end(), rb) == childFileNeedDelete.end()) {
           childFileNeedDelete.push_back(rb);
@@ -260,7 +254,6 @@ FileManager::rereadConfig()
   n = childFileNeedDelete.size();
   for (size_t i = 0; i < n; i++) {
     bindings.erase(childFileNeedDelete[i]->getFileName());
-    delete childFileNeedDelete[i];
   }
   ink_mutex_release(&accessLock);
 
@@ -309,7 +302,7 @@ FileManager::isConfigStale()
 
   ink_mutex_acquire(&accessLock);
   for (auto &&it : bindings) {
-    rb = it.second;
+    rb = it.second.get();
     if (rb->checkForUserUpdate(FileManager::ROLLBACK_CHECK_ONLY)) {
       stale = true;
       break;
@@ -330,7 +323,7 @@ FileManager::configFileChild(const char *parent, const char *child)
   ink_mutex_acquire(&accessLock);
   if (auto it = bindings.find(parent); it != bindings.end()) {
     Dbg(dbg_ctl, "Adding child file %s to %s parent", child, parent);
-    parentConfig = it->second;
+    parentConfig = it->second.get();
     addFileHelper(child, "", parentConfig->rootAccessNeeded(), parentConfig->getIsRequired(), parentConfig);
   }
   ink_mutex_release(&accessLock);
@@ -345,7 +338,7 @@ FileManager::get_files_registry_rpc_endpoint(std::string_view const & /* id ATS_
   {
     ink_scoped_mutex_lock lock(accessLock);
     for (auto &&it : bindings) {
-      if (ConfigManager *cm = it.second; cm) {
+      if (ConfigManager *cm = it.second.get(); cm) {
         YAML::Node  element{YAML::NodeType::Map};
         std::string sysconfdir(RecConfigReadConfigDir());
         element[FILE_PATH_KEY_STR]          = Layout::get()->relative_to(sysconfdir, cm->getFileName());
