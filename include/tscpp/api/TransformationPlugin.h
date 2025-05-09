@@ -140,9 +140,9 @@ protected:
   TransformationPlugin(Transaction &transaction, Type type);
 
 private:
-  TransformationPluginState *state_; /** Internal state for a TransformationPlugin */
-  size_t                     doProduce(std::string_view);
-  static int                 resumeCallback(TSCont cont, TSEvent event, void *edata); /** Resume callback*/
+  std::unique_ptr<TransformationPluginState> state_; /** Internal state for a TransformationPlugin */
+  size_t                                     doProduce(std::string_view);
+  static int                                 resumeCallback(TSCont cont, TSEvent event, void *edata); /** Resume callback*/
 };
 
 } // namespace atscppapi
