@@ -115,7 +115,7 @@ class HeaderField;
 class header_field_value_iterator
 {
 private:
-  HeaderFieldValueIteratorState *state_;
+  std::unique_ptr<HeaderFieldValueIteratorState> state_;
 
 public:
   using iterator_category = std::forward_iterator_tag;
@@ -178,7 +178,7 @@ public:
 class header_field_iterator
 {
 private:
-  HeaderFieldIteratorState *state_;
+  std::unique_ptr<HeaderFieldIteratorState> state_;
   header_field_iterator(void *hdr_buf, void *hdr_loc, void *field_loc);
 
 public:
@@ -604,7 +604,7 @@ public:
   ~Headers();
 
 private:
-  HeadersState *state_;
+  std::unique_ptr<HeadersState> state_;
   friend class Request;
   friend class ClientRequest;
   friend class Response;
