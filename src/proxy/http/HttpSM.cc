@@ -2870,18 +2870,22 @@ HttpSM::tunnel_handler_trailer(int event, void *data)
     nbytes = start_bytes;
   }
   // Signal the _ua.get_txn() to get ready for a trailer
-  _ua.get_txn()->set_expect_send_trailer();
-  tunnel.deallocate_buffers();
-  tunnel.reset();
-  HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_trailer_server,
-                                              HT_HTTP_SERVER, "http server trailer");
-  tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_trailer_ua, HT_HTTP_CLIENT,
-                      "user agent trailer");
+  if (_ua.get_entry() && _ua.get_entry()->vc) {
+    _ua.get_txn()->set_expect_send_trailer();
+    tunnel.deallocate_buffers();
+    tunnel.reset();
+    HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_trailer_server,
+                                                HT_HTTP_SERVER, "http server trailer");
+    tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_trailer_ua, HT_HTTP_CLIENT,
+                        "user agent trailer");
 
-  _ua.get_entry()->in_tunnel = true;
-  server_entry->in_tunnel    = true;
+    _ua.get_entry()->in_tunnel = true;
+    server_entry->in_tunnel    = true;
 
-  tunnel.tunnel_run(p);
+    tunnel.tunnel_run(p);
+  } else {
+    (this->*default_handler)(HTTP_TUNNEL_EVENT_DONE, &tunnel);
+  }
 
   return 0;
 }
