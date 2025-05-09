@@ -537,13 +537,13 @@ TEST_CASE("Http2DependencyTree_reprioritize_2", "[http2][Http2DependencyTree]")
   Node *node_d = tree->find(7);
 
   tree->activate(node_b);
-  REQUIRE(node_x->queue->in(node_a->entry));
+  REQUIRE(node_x->queue->in(node_a->entry.get()));
 
   tree->reprioritize(1, 7, true);
 
-  REQUIRE(!node_x->queue->in(node_a->entry));
-  REQUIRE(node_x->queue->in(node_d->entry));
-  REQUIRE(node_d->queue->in(node_a->entry));
+  REQUIRE(!node_x->queue->in(node_a->entry.get()));
+  REQUIRE(node_x->queue->in(node_d->entry.get()));
+  REQUIRE(node_d->queue->in(node_a->entry.get()));
 }
 
 /**
@@ -580,10 +580,10 @@ TEST_CASE("Http2DependencyTree_reprioritize_3", "[http2][Http2DependencyTree]")
   tree->activate(node_f);
   tree->reprioritize(1, 7, true);
 
-  REQUIRE(node_a->queue->in(node_f->entry));
-  REQUIRE(node_d->queue->in(node_a->entry));
-  REQUIRE(node_x->queue->in(node_d->entry));
-  REQUIRE(!node_a->queue->in(node_c->entry));
+  REQUIRE(node_a->queue->in(node_f->entry.get()));
+  REQUIRE(node_d->queue->in(node_a->entry.get()));
+  REQUIRE(node_x->queue->in(node_d->entry.get()));
+  REQUIRE(!node_a->queue->in(node_c->entry.get()));
   REQUIRE(node_c->queue->empty());
 }
 
@@ -622,10 +622,10 @@ TEST_CASE("Http2DependencyTree_reprioritize_4", "[http2][Http2DependencyTree]")
   tree->activate(node_f);
   tree->reprioritize(7, 0, false);
 
-  REQUIRE(!node_a->queue->in(node_f->entry));
-  REQUIRE(node_d->queue->in(node_f->entry));
-  REQUIRE(node_x->queue->in(node_d->entry));
-  REQUIRE(!node_a->queue->in(node_c->entry));
+  REQUIRE(!node_a->queue->in(node_f->entry.get()));
+  REQUIRE(node_d->queue->in(node_f->entry.get()));
+  REQUIRE(node_x->queue->in(node_d->entry.get()));
+  REQUIRE(!node_a->queue->in(node_c->entry.get()));
   REQUIRE(node_c->queue->empty());
 }
 
@@ -665,11 +665,11 @@ TEST_CASE("Http2DependencyTree_reprioritize_5", "[http2][Http2DependencyTree]")
   tree->activate(node_f);
   tree->reprioritize(7, 3, false);
 
-  REQUIRE(node_a->queue->in(node_b->entry));
-  REQUIRE(node_b->queue->in(node_d->entry));
-  REQUIRE(!node_c->queue->in(node_d->entry));
-  REQUIRE(node_x->queue->in(node_a->entry));
-  REQUIRE(!node_a->queue->in(node_c->entry));
+  REQUIRE(node_a->queue->in(node_b->entry.get()));
+  REQUIRE(node_b->queue->in(node_d->entry.get()));
+  REQUIRE(!node_c->queue->in(node_d->entry.get()));
+  REQUIRE(node_x->queue->in(node_a->entry.get()));
+  REQUIRE(!node_a->queue->in(node_c->entry.get()));
   REQUIRE(node_c->queue->empty());
 }
 
