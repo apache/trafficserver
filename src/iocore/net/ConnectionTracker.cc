@@ -162,7 +162,7 @@ Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> cons
   static const std::string_view trailer{" \n]}"};
 
   static const auto printer = [](swoc::BufferWriter &w, ConnectionTracker::Group const *g) -> swoc::BufferWriter & {
-    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count.load(), g->_count_max.load(), g->_blocked.load(),
+    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count_metric != nullptr ? g->_count_metric->load() : g->_count.load(), g->_count_max.load(), g->_blocked.load(),
             g->get_last_alert_epoch_time());
     return w;
   };
@@ -185,6 +185,28 @@ Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> cons
   w.restore(trailer.size());
   w.write(trailer);
   return text;
+bool
+Config_Update_Conntrack_Metric_Enabled(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
+
+  if (RECD_INT == dtype) {
+    config->metric_enabled = data.rec_int;
+    return true;
+  }
+  return false;
+}
+
+bool
+Config_Update_Conntrack_Metric_Prefix(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
+
+  if (RECD_STRING == dtype) {
+    config->metric_prefix = data.rec_string;
+    return true;
+  }
+  return false;
 }
 
 } // namespace
@@ -200,6 +222,8 @@ ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUp
   Enable_Config_Var(CONFIG_SERVER_VAR_MAX, &Config_Update_Conntrack_Max, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_MATCH, &Config_Update_Conntrack_Match, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_ALERT_DELAY, &Config_Update_Conntrack_Server_Alert_Delay, config_cb, global);
+  Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_ENABLED, &Config_Update_Conntrack_Metric_Enabled, config_cb, global);
+  Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_PREFIX, &Config_Update_Conntrack_Metric_Prefix, config_cb, global);
 }
 
 ConnectionTracker::TxnState
@@ -252,6 +276,19 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
     _alert_delay{direction == DirectionType::INBOUND ? _global_config->client_alert_delay : _global_config->server_alert_delay}
 {
   Metrics::Gauge::increment(net_rsb.connection_tracker_table_size);
+  // only add metrics for server connections
+  if (_global_config->metric_enabled && direction == DirectionType::OUTBOUND) {
+    std::string _metric_name = metric_name(key, fqdn, _global_config->metric_prefix);
+    _count_metric            = Metrics::Gauge::createPtr("proxy.process.http.per_server.current_connection.", _metric_name);
+    _count_total_metric      = Metrics::Counter::createPtr("proxy.process.http.per_server.total_connection.", _metric_name);
+    _blocked_metric          = Metrics::Counter::createPtr("proxy.process.http.per_server.blocked_connection.", _metric_name);
+
+    if (dbg_ctl.on()) {
+      swoc::LocalBufferWriter<256> w;
+      w.print("Registered per_server_connection.{}\0", _metric_name);
+      DbgPrint(dbg_ctl, "%s", w.data());
+    }
+  }
   // store the host name if relevant.
   if (MATCH_HOST == _match_type || MATCH_BOTH == _match_type) {
     _fqdn.assign(fqdn);
@@ -322,7 +359,25 @@ ConnectionTracker::Group::should_alert(std::time_t *lat)
 void
 ConnectionTracker::Group::release()
 {
-  if (_count > 0) {
+  // If metric enabled, use metric as count
+  if (_count_metric != nullptr) {
+    if (_count_metric->load() > 0) {
+      ts::Metrics::Gauge::decrement(_count_metric);
+      if (_count_metric->load() == 0) {
+        TableSingleton             &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
+        std::lock_guard<std::mutex> lock(table._mutex); // Table lock
+        if (_count_metric->load() > 0) {
+          // Someone else grabbed the Group between our last check and taking the
+          // lock.
+          return;
+        }
+        table._table.erase(_key);
+      }
+    } else {
+      // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
+      Error("Number of tracked connections should be greater than or equal to zero: %lld", _count_metric->load());
+    }
+  } else if (_count > 0) {
     if (--_count == 0) {
       TableSingleton             &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
       std::lock_guard<std::mutex> lock(table._mutex); // Table lock
@@ -397,7 +452,7 @@ ConnectionTracker::dump_outbound(FILE *f)
 
     for (std::shared_ptr<Group const> g : groups) {
       swoc::LocalBufferWriter<128> w;
-      w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
+      w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", (g->_count_metric != nullptr ? g->_count_metric->load() : g->_count.load()), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);
     }
 
@@ -426,7 +481,8 @@ ConnectionTracker::dump_inbound(FILE *f)
 
     for (std::shared_ptr<Group const> g : groups) {
       swoc::LocalBufferWriter<128> w;
-      w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
+      w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(),
+              g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);
     }
 
