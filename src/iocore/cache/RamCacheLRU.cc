@@ -54,7 +54,7 @@ struct RamCacheLRU : public RamCache {
   void init(int64_t max_bytes, StripeSM *stripe) override;
 
   // private
-  std::vector<bool> seen{};
+  std::vector<bool> seen;
   Que(RamCacheLRUEntry, lru_link) lru;
   DList(RamCacheLRUEntry, hash_link) *bucket = nullptr;
   int       nbuckets                         = 0;
