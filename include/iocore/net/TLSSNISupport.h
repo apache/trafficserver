@@ -58,8 +58,30 @@ public:
 
   int perform_sni_action(SSL &ssl);
   // Callback functions for OpenSSL libraries
+
+  /** Process a CLIENT_HELLO from a client.
+   *
+   * This is for client-side connections.
+   */
   void on_client_hello(ClientHello &client_hello);
+
+  /** Process the servername extension when a client uses one in the TLS handshake.
+   *
+   * This is for client-side connections.
+   */
   void on_servername(SSL *ssl, int *al, void *arg);
+
+  /** Set the servername extension for server-side connections.
+   *
+   * This is for server-side connections.
+   * This calls SSL_set_tlsext_host_name() to set the servername extension.
+   *
+   * @param ssl The SSL object upon which the servername extension is set.
+   * @param name The servername to set. This is assumed to be a non-empty,
+   *   null-terminated string.
+   * @return True if the servername was set successfully, false otherwise.
+   */
+  bool set_sni_server_name(SSL *ssl, char const *name);
 
   /**
    * Get the server name in SNI
@@ -92,5 +114,5 @@ private:
   // Null-terminated string, or nullptr if there is no SNI server name.
   std::unique_ptr<char[]> _sni_server_name;
 
-  void _set_sni_server_name(std::string_view name);
+  void _set_sni_server_name_buffer(std::string_view name);
 };

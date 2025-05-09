@@ -1146,7 +1146,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       // SNI
       ats_scoped_str &tlsext_host_name = this->options.sni_hostname ? this->options.sni_hostname : this->options.sni_servername;
       if (tlsext_host_name) {
-        if (SSL_set_tlsext_host_name(this->ssl, tlsext_host_name)) {
+        if (this->set_sni_server_name(this->ssl, tlsext_host_name)) {
           Dbg(dbg_ctl_ssl, "using SNI name '%s' for client handshake", tlsext_host_name.get());
         } else {
           Dbg(dbg_ctl_ssl_error, "failed to set SNI name '%s' for client handshake", tlsext_host_name.get());

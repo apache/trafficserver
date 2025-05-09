@@ -54,6 +54,12 @@ void
 TLSSNISupport::bind(SSL *ssl, TLSSNISupport *snis)
 {
   SSL_set_ex_data(ssl, _ex_data_index, snis);
+  char const *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  if (servername) {
+    snis->_set_sni_server_name_buffer(servername);
+  } else {
+    snis->_clear();
+  }
 }
 
 void
@@ -118,7 +124,7 @@ TLSSNISupport::on_client_hello(ClientHello &client_hello)
     }
   }
   if (servername) {
-    this->_set_sni_server_name(std::string_view(servername, len));
+    this->_set_sni_server_name_buffer(std::string_view(servername, len));
   }
 }
 
@@ -127,8 +133,23 @@ TLSSNISupport::on_servername(SSL *ssl, int * /* al ATS_UNUSED */, void * /* arg 
 {
   const char *name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (name) {
-    this->_set_sni_server_name(name);
+    this->_set_sni_server_name_buffer(name);
   }
+}
+
+bool
+TLSSNISupport::set_sni_server_name(SSL *ssl, char const *name)
+{
+  if (name == nullptr || strnlen(name, 256) == 0) {
+    Dbg(dbg_ctl_ssl_sni, "Empty servername provided, not setting SNI");
+    return false;
+  }
+  if (SSL_set_tlsext_host_name(ssl, name) != 1) {
+    Dbg(dbg_ctl_ssl_sni, "SSL_set_tlsext_host_name failed to set %s", name);
+    return false;
+  }
+  this->_set_sni_server_name_buffer(name);
+  return true;
 }
 
 void
@@ -144,7 +165,7 @@ TLSSNISupport::get_sni_server_name() const
 }
 
 void
-TLSSNISupport::_set_sni_server_name(std::string_view name)
+TLSSNISupport::_set_sni_server_name_buffer(std::string_view name)
 {
   if (name.size()) {
     char *n = new char[name.size() + 1];
