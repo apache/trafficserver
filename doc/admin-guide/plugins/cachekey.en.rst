@@ -140,7 +140,7 @@ Cache key structure and related plugin parameters
   optional components      | └───────────────────┴───────────────────┘
   configured               |
 
-* ``--include-headers`` (default: empty list) - comma separated list of headers to be added to the `cache key`. The list of headers defined by ``--include-headers`` are always sorted before adding them to the `cache key`.
+* ``--include-headers`` (default: empty list) - comma separated list of headers to be added to the `cache key`. The list of headers defined by ``--include-headers`` are always sorted before adding them to the `cache key`. These header field names are matched case sensitively, but keep in mind that HTTP/2 header field names are lowercase per `RFC 9113, Section 8.2 <https://www.rfc-editor.org/rfc/rfc9113#section-8.2>`_.
 
 * ``--capture-header=<headername>:<capture_definition>`` (default: empty) - captures elements from header <headername> using <capture_definition> and adds them to the `cache key`.
 
