@@ -133,7 +133,7 @@ testRefcounting()
 {
   int ret = 0;
 
-  RefCountCache<ExampleStruct> *cache = new RefCountCache<ExampleStruct>(4);
+  auto cache = std::make_unique<RefCountCache<ExampleStruct>>(4);
 
   // Create and then immediately delete an item
   ExampleStruct *to_delete  = ExampleStruct::alloc();
@@ -172,8 +172,6 @@ testRefcounting()
   ret |= tmpAfter.get()->idx != 1;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
 
-  delete cache;
-
   return ret;
 }
 
@@ -182,7 +180,7 @@ testclear()
 {
   int ret = 0;
 
-  RefCountCache<ExampleStruct> *cache = new RefCountCache<ExampleStruct>(4);
+  auto cache = std::make_unique<RefCountCache<ExampleStruct>>(4);
 
   // Create and then immediately delete an item
   ExampleStruct *item  = ExampleStruct::alloc();
@@ -192,8 +190,6 @@ testclear()
   cache->clear();
   ret |= item->refcount() != 0;
   ret |= item->idx != -1;
-
-  delete cache;
 
   return ret;
 }
@@ -216,8 +212,8 @@ test()
   printf("refcount ret %d\n", ret);
 
   // Initialize our cache
-  int                           cachePartitions = 4;
-  RefCountCache<ExampleStruct> *cache           = new RefCountCache<ExampleStruct>(cachePartitions);
+  int  cachePartitions = 4;
+  auto cache           = std::make_unique<RefCountCache<ExampleStruct>>(cachePartitions);
   printf("Created...\n");
 
   LoadRefCountCacheFromPath<ExampleStruct>(*cache, "/tmp/hostdb_cache", ExampleStruct::unmarshall);
@@ -225,7 +221,7 @@ test()
   int numTestEntries = 10000;
 
   // See if anything persisted across the restart
-  ret |= verifyCache(cache, 0, numTestEntries);
+  ret |= verifyCache(cache.get(), 0, numTestEntries);
   printf("done verifying startup\n");
 
   // Clear the cache
@@ -235,12 +231,12 @@ test()
 
   // fill it
   printf("filling...\n");
-  fillCache(cache, 0, numTestEntries);
+  fillCache(cache.get(), 0, numTestEntries);
   printf("filled...\n");
 
   // Verify that it has items
   printf("verifying...\n");
-  ret |= verifyCache(cache, 0, numTestEntries);
+  ret |= verifyCache(cache.get(), 0, numTestEntries);
   printf("verified %d\n", ret);
 
   // Verify that we can alloc() with no extra space
@@ -252,7 +248,7 @@ test()
   Ptr<ExampleStruct> tmpAfter = cache->get(static_cast<uint64_t>(1));
   printf("Item after (ret=%d) %d %d\n", ret, 1, tmpAfter->idx);
   // Verify every item in the cache
-  ret |= verifyCache(cache, 0, numTestEntries);
+  ret |= verifyCache(cache.get(), 0, numTestEntries);
   printf("verified entire cache ret=%d\n", ret);
 
   // Grab a pointer to item 1
@@ -266,15 +262,13 @@ test()
   printf("ret=%d\n", ret);
 
   // Verify every item in the cache
-  ret |= verifyCache(cache, 0, numTestEntries);
+  ret |= verifyCache(cache.get(), 0, numTestEntries);
 
   // TODO: figure out how to test syncing/loading
   // write out the whole thing
   // printf("Sync return: %d\n", cache->sync_all());
 
   printf("TestRun: %d\n", ret);
-
-  delete cache;
 
   return ret;
 }
