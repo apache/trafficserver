@@ -83,7 +83,7 @@ namespace transformations
     ~GzipDeflateTransformation() override;
 
   private:
-    GzipDeflateTransformationState *state_; /** Internal state for Gzip Deflate Transformations */
+    std::unique_ptr<GzipDeflateTransformationState> state_; /** Internal state for Gzip Deflate Transformations */
   };
 } // namespace transformations
 } // namespace atscppapi
