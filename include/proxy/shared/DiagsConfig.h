@@ -41,7 +41,7 @@ struct DiagsConfig {
   ~DiagsConfig();
 
 private:
-  bool         callbacks_established;
-  BaseLogFile *diags_log;
-  Diags       *_diags;
+  bool                   callbacks_established;
+  BaseLogFile           *diags_log;
+  std::unique_ptr<Diags> _diags;
 };
