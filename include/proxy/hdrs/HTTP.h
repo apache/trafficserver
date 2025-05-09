@@ -24,6 +24,10 @@
 #pragma once
 
 #include <cassert>
+#include <string_view>
+
+using namespace std::literals;
+
 #include "tscore/Arena.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/HTTPVersion.h"
@@ -869,9 +873,9 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
   //    *unknown_tokens = false;
 
   if (con_hdr) {
-    if (con_hdr->value_get_index("keep-alive", 10) >= 0)
+    if (con_hdr->value_get_index("keep-alive"sv) >= 0)
       con_token = CON_TOKEN_KEEP_ALIVE;
-    else if (con_hdr->value_get_index("close", 5) >= 0)
+    else if (con_hdr->value_get_index("close"sv) >= 0)
       con_token = CON_TOKEN_CLOSE;
   }
 
@@ -895,11 +899,11 @@ inline HTTPKeepAlive
 HTTPHdr::keep_alive_get() const
 {
   HTTPKeepAlive    retval = HTTP_NO_KEEPALIVE;
-  const MIMEField *pc     = this->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+  const MIMEField *pc     = this->field_find(static_cast<std::string_view>(MIME_FIELD_PROXY_CONNECTION));
   if (pc != nullptr) {
     retval = is_header_keep_alive(this->version_get(), pc);
   } else {
-    const MIMEField *c = this->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+    const MIMEField *c = this->field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
     retval             = is_header_keep_alive(this->version_get(), c);
   }
   return retval;

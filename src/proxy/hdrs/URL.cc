@@ -430,7 +430,8 @@ URLImpl::set_scheme(HdrHeap *heap, const char *scheme_str, int scheme_wks_idx, i
     scheme_str = nullptr;
   }
 
-  mime_str_u16_set(heap, scheme_str, length, &(this->m_ptr_scheme), &(this->m_len_scheme), copy_string);
+  mime_str_u16_set(heap, std::string_view{scheme_str, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_scheme),
+                   &(this->m_len_scheme), copy_string);
 
   this->m_scheme_wks_idx = scheme_wks_idx;
   if (scheme_wks_idx >= 0) {
@@ -460,7 +461,8 @@ URLImpl::set_user(HdrHeap *heap, const char *value, int length, bool copy_string
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_user), &(this->m_len_user), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_user),
+                   &(this->m_len_user), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -473,7 +475,8 @@ URLImpl::set_password(HdrHeap *heap, const char *value, int length, bool copy_st
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_password), &(this->m_len_password), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_password),
+                   &(this->m_len_password), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -486,7 +489,8 @@ URLImpl::set_host(HdrHeap *heap, const char *value, int length, bool copy_string
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_host), &(this->m_len_host), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_host),
+                   &(this->m_len_host), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -499,7 +503,8 @@ URLImpl::set_port(HdrHeap *heap, const char *value, int length, bool copy_string
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_port), &(this->m_len_port), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_port),
+                   &(this->m_len_port), copy_string);
 
   this->m_port = 0;
   for (int i = 0; i < length; i++) {
@@ -522,9 +527,10 @@ URLImpl::set_port(HdrHeap *heap, unsigned int port)
     int  length;
 
     length = ink_fast_itoa(port, value, sizeof(value));
-    mime_str_u16_set(heap, value, length, &(this->m_ptr_port), &(this->m_len_port), true);
+    mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_port),
+                     &(this->m_len_port), true);
   } else {
-    mime_str_u16_set(heap, nullptr, 0, &(this->m_ptr_port), &(this->m_len_port), true);
+    mime_str_u16_set(heap, std::string_view{nullptr, 0}, &(this->m_ptr_port), &(this->m_len_port), true);
   }
   this->m_port = port;
 }
@@ -539,7 +545,8 @@ URLImpl::set_path(HdrHeap *heap, const char *value, int length, bool copy_string
   if (length == 0) {
     value = nullptr;
   }
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_path), &(this->m_len_path), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_path),
+                   &(this->m_len_path), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -552,7 +559,8 @@ void
 URLImpl::set_query(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
   url_called_set(this);
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_query), &(this->m_len_query), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_query),
+                   &(this->m_len_query), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -562,7 +570,8 @@ void
 URLImpl::set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string)
 {
   url_called_set(this);
-  mime_str_u16_set(heap, value, length, &(this->m_ptr_fragment), &(this->m_len_fragment), copy_string);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_fragment),
+                   &(this->m_len_fragment), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -1605,31 +1614,35 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
   bool scheme_added = false;
   if (url->m_ptr_scheme) {
     TRY(((normalization_flags & URLNormalize::LC_SCHEME_HOST) ? mime_mem_print_lc : mime_mem_print)(
-      url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      std::string_view{url->m_ptr_scheme, static_cast<std::string_view::size_type>(url->m_len_scheme)}, buf_start, buf_length,
+      buf_index_inout, buf_chars_to_skip_inout));
     scheme_added = true;
 
   } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
     if (URL_TYPE_HTTP == url->m_url_type) {
-      TRY(mime_mem_print(URL_SCHEME_HTTP, URL_LEN_HTTP, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTP, static_cast<std::string_view::size_type>(URL_LEN_HTTP)}, buf_start,
+                         buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
 
     } else if (URL_TYPE_HTTPS == url->m_url_type) {
-      TRY(mime_mem_print(URL_SCHEME_HTTPS, URL_LEN_HTTPS, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)}, buf_start,
+                         buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
     }
   }
   if (scheme_added) {
-    TRY(mime_mem_print("://", 3, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("://"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   if (url->m_ptr_user) {
-    TRY(mime_mem_print(url->m_ptr_user, url->m_len_user, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(std::string_view{url->m_ptr_user, static_cast<std::string_view::size_type>(url->m_len_user)}, buf_start,
+                       buf_length, buf_index_inout, buf_chars_to_skip_inout));
     if (url->m_ptr_password) {
-      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(
-        mime_mem_print(url->m_ptr_password, url->m_len_password, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(":"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{url->m_ptr_password, static_cast<std::string_view::size_type>(url->m_len_password)},
+                         buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
-    TRY(mime_mem_print("@", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("@"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   if (url->m_ptr_host) {
@@ -1638,34 +1651,39 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     int  n         = url->m_len_host;
     bool bracket_p = '[' != *url->m_ptr_host && (nullptr != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
     if (bracket_p) {
-      TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print("["sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
     TRY(((normalization_flags & URLNormalize::LC_SCHEME_HOST) ? mime_mem_print_lc : mime_mem_print)(
-      url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      std::string_view{url->m_ptr_host, static_cast<std::string_view::size_type>(url->m_len_host)}, buf_start, buf_length,
+      buf_index_inout, buf_chars_to_skip_inout));
     if (bracket_p) {
-      TRY(mime_mem_print("]", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print("]"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
     if (url->m_ptr_port && url->m_port) {
-      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print(url->m_ptr_port, url->m_len_port, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(":"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{url->m_ptr_port, static_cast<std::string_view::size_type>(url->m_len_port)}, buf_start,
+                         buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
   }
 
   if (!url->m_path_is_empty) {
-    TRY(mime_mem_print("/", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("/"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
   if (url->m_ptr_path) {
-    TRY(mime_mem_print(url->m_ptr_path, url->m_len_path, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(std::string_view{url->m_ptr_path, static_cast<std::string_view::size_type>(url->m_len_path)}, buf_start,
+                       buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   if (url->m_ptr_query && url->m_len_query > 0) {
-    TRY(mime_mem_print("?", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    TRY(mime_mem_print(url->m_ptr_query, url->m_len_query, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("?"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(std::string_view{url->m_ptr_query, static_cast<std::string_view::size_type>(url->m_len_query)}, buf_start,
+                       buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   if (url->m_ptr_fragment && url->m_len_fragment > 0) {
-    TRY(mime_mem_print("#", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    TRY(mime_mem_print(url->m_ptr_fragment, url->m_len_fragment, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print("#"sv, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(std::string_view{url->m_ptr_fragment, static_cast<std::string_view::size_type>(url->m_len_fragment)},
+                       buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   return 1;

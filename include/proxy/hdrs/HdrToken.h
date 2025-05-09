@@ -28,6 +28,7 @@
 #include "tscore/ink_assert.h"
 #include "tscore/ink_atomic.h"
 #include "tscore/ink_defs.h"
+#include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
 #include "tscore/Allocator.h"
 #include "tsutil/Regex.h"
@@ -107,6 +108,8 @@ extern int         hdrtoken_tokenize(const char *string, int string_len, const c
 extern int         hdrtoken_method_tokenize(const char *string, int string_len);
 extern const char *hdrtoken_string_to_wks(const char *string);
 extern const char *hdrtoken_string_to_wks(const char *string, int length);
+extern c_str_view  hdrtoken_string_to_wks_sv(const char *string);
+extern c_str_view  hdrtoken_string_to_wks_sv(const char *string, int length);
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
