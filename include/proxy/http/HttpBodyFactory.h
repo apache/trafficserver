@@ -113,7 +113,7 @@ public:
 class HttpBodySetRawData
 {
 public:
-  using TemplateTable = std::unordered_map<std::string, HttpBodyTemplate *>;
+  using TemplateTable = std::unordered_map<std::string, std::unique_ptr<HttpBodyTemplate>>;
 
   virtual ~HttpBodySetRawData() {}
 
@@ -150,7 +150,7 @@ public:
   }
 
   HttpBodyTemplate *get_template_by_name(const char *name);
-  void              set_template_by_name(const char *name, HttpBodyTemplate *t);
+  void              set_template_by_name(const char *name, std::unique_ptr<HttpBodyTemplate> t);
 };
 
 ////////////////////////////////////////////////////////////////////////
