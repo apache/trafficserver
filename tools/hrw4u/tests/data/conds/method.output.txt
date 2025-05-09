@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{METHOD} (GET,HEAD)
+    set-header @X-Method "%{METHOD}"

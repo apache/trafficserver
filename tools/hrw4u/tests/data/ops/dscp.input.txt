@@ -1,0 +1,4 @@
+REMAP:
+if true {
+   inbound.conn.dscp = 17;
+}

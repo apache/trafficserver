@@ -1,0 +1,4 @@
+REMAP:
+if inbound.url.path == "php" with EXT,NOCASE {
+    inbound.status = 403;
+}

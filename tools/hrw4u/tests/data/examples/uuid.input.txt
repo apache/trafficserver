@@ -1,0 +1,4 @@
+SEND_RESPONSE:
+if inbound.resp.ATS-SRVR-UUID == "" || cache() == "hit-fresh" {
+    inbound.resp.ATS-SRVR-UUID = "{id.UNIQUE}";
+}

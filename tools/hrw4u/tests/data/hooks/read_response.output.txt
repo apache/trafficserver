@@ -1,0 +1,3 @@
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+cond %{HEADER:X-Read-Response} ="yes"
+    rm-header X-Read-Response

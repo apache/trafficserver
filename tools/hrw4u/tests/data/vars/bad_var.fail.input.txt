@@ -1,0 +1,6 @@
+VAR:
+   Flag: bool;
+   Num: int32;
+
+REMAP:
+   inbound.req.X-foo = "bar";

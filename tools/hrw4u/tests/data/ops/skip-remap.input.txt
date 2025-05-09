@@ -1,0 +1,4 @@
+SEND_REQUEST:
+if inbound.req.path ~ /foo/ {
+   skip-remap(True);
+}

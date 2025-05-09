@@ -1,0 +1,1 @@
+(program (section VAR : (variables (variableDecl Num : int16 ;))) (section REMAP : (conditionalBlock (ifStatement if (condition (logicalExpression (logicalTerm (logicalFactor (comparison (comparable Num) > (value 12345)))))) (block { (statement inbound.req.X-foo = (value "bar") ;) })))) <EOF>)

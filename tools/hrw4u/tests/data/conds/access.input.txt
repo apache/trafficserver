@@ -1,0 +1,4 @@
+REMAP:
+if access("/tmp/bar") {
+  inbound.req.X-Remap = "exists";
+}

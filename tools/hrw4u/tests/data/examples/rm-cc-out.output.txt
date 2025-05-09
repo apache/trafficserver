@@ -1,0 +1,3 @@
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    rm-header Cache-Control
+    rm-header Pragma

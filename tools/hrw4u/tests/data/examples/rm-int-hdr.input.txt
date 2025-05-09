@@ -1,0 +1,5 @@
+REMAP:
+if inbound.req.X-Debug != "keep" {
+    inbound.req.X-Debug-Foo = "";
+    inbound.req.X-Debug-Bar = "";
+}
