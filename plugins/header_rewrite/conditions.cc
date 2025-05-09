@@ -802,41 +802,96 @@ ConditionGeo::initialize(Parser &p)
     match->set(p.get_arg(), mods());
     _matcher = std::move(match);
   }
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
 }
 
 void
 ConditionGeo::set_qualifier(const std::string &q)
 {
-  Condition::set_qualifier(q);
+  std::string qualifier = q;
+  std::size_t colon_pos = q.find(':');
 
-  Dbg(pi_dbg_ctl, "\tParsing %%{GEO:%s} qualifier", q.c_str());
+  if (colon_pos != std::string::npos) {
+    std::string header;
 
-  if (q == "COUNTRY") {
+    qualifier = q.substr(0, colon_pos);
+    header    = q.substr(colon_pos + 1);
+
+    if (header.empty() || header.find_first_of(" \t") != std::string::npos) {
+      TSError("[%s] Invalid header name in GEO qualifier: '%s'", PLUGIN_NAME, header.c_str());
+      return;
+    }
+
+    _ip_header = header;
+  }
+
+  Condition::set_qualifier(qualifier);
+
+  if (_ip_header.empty()) {
+    Dbg(pi_dbg_ctl, "\tParsing %%{GEO:%s} qualifier", qualifier.c_str());
+  } else {
+    Dbg(pi_dbg_ctl, "\tParsing %%{GEO:%s:%s} qualifier", qualifier.c_str(), _ip_header.c_str());
+  }
+
+  if (qualifier == "COUNTRY") {
     _geo_qual = GEO_QUAL_COUNTRY;
     is_int_type(false);
-  } else if (q == "COUNTRY-ISO") {
+  } else if (qualifier == "COUNTRY-ISO") {
     _geo_qual = GEO_QUAL_COUNTRY_ISO;
     is_int_type(true);
-  } else if (q == "ASN") {
+  } else if (qualifier == "ASN") {
     _geo_qual = GEO_QUAL_ASN;
     is_int_type(true);
-  } else if (q == "ASN-NAME") {
+  } else if (qualifier == "ASN-NAME") {
     _geo_qual = GEO_QUAL_ASN_NAME;
     is_int_type(false);
   } else {
-    TSError("[%s] Unknown Geo() qualifier: %s", PLUGIN_NAME, q.c_str());
+    TSError("[%s] Unknown Geo() qualifier: %s", PLUGIN_NAME, qualifier.c_str());
   }
+}
+
+static const sockaddr *
+_geo_ip_helper(const std::string &header, const Resources &res, struct sockaddr &addr_buf)
+{
+  if (header.empty()) {
+    return TSHttpTxnClientAddrGet(res.txnp);
+  } else {
+    int len = 0;
+
+    if (res.client_bufp && res.client_hdr_loc) {
+      TSMLoc field_loc = TSMimeHdrFieldFind(res.client_bufp, res.client_hdr_loc, header.c_str(), header.size());
+
+      if (field_loc) {
+        const char *value = TSMimeHdrFieldValueStringGet(res.client_bufp, res.client_hdr_loc, field_loc, -1, &len);
+
+        if (len > 0 && value) {
+          if (TSIpStringToAddr(value, len, &addr_buf) == TS_SUCCESS) {
+            TSHandleMLocRelease(res.client_bufp, res.client_hdr_loc, field_loc);
+            return &addr_buf;
+          }
+        }
+        TSHandleMLocRelease(res.client_bufp, res.client_hdr_loc, field_loc);
+      }
+    }
+  }
+
+  return nullptr;
 }
 
 void
 ConditionGeo::append_value(std::string &s, const Resources &res)
 {
-  if (is_int_type()) {
-    s += std::to_string(get_geo_int(getClientAddr(res.txnp, _txn_private_slot)));
-  } else {
-    s += get_geo_string(getClientAddr(res.txnp, _txn_private_slot));
+  struct sockaddr addr_buf;
+  const sockaddr *client_ip = _geo_ip_helper(_ip_header, res, addr_buf);
+
+  if (client_ip != nullptr) {
+    if (is_int_type()) {
+      s += std::to_string(get_geo_int(client_ip));
+    } else {
+      s += get_geo_string(client_ip);
+    }
+    Dbg(pi_dbg_ctl, "Appending GEO() to evaluation value -> %s", s.c_str());
   }
-  Dbg(pi_dbg_ctl, "Appending GEO() to evaluation value -> %s", s.c_str());
 }
 
 bool
@@ -846,9 +901,14 @@ ConditionGeo::eval(const Resources &res)
 
   Dbg(pi_dbg_ctl, "Evaluating GEO()");
   if (is_int_type()) {
-    int64_t geo = get_geo_int(getClientAddr(res.txnp, _txn_private_slot));
+    struct sockaddr addr_buf;
+    const sockaddr *client_ip = _geo_ip_helper(_ip_header, res, addr_buf);
 
-    ret = static_cast<const Matchers<int64_t> *>(_matcher.get())->test(geo, res);
+    if (client_ip != nullptr) {
+      int64_t geo = get_geo_int(client_ip);
+
+      ret = static_cast<const Matchers<int64_t> *>(_matcher.get())->test(geo, res);
+    }
   } else {
     std::string s;
 
