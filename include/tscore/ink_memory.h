@@ -619,6 +619,16 @@ struct ats_unique_buf_deleter {
 using ats_unique_buf = std::unique_ptr<uint8_t[], ats_unique_buf_deleter>;
 ats_unique_buf ats_unique_malloc(size_t size);
 
+/** Similar to `string_view`, but guarantees that the data ends with
+    a null character '\0'.
+
+    This class is intended for temporary use during the transition
+    from legacy code that uses `char*` to modern code that uses `std::string_view`.
+    It will be removed once it is no longer needed.
+
+    The `wks` code should be modernized to use more idiomatic C++,
+    after which this class can be eliminated.
+ */
 class c_str_view
 {
 public:
