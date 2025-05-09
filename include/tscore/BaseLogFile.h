@@ -229,11 +229,11 @@ private:
   int timestamp_to_str(long timestamp, char *buf, int size);
 
   // member variables
-  ats_scoped_str m_name;
-  ats_scoped_str m_hostname;
-  bool           m_is_regfile    = false;
-  bool           m_is_init       = false;
-  BaseMetaInfo  *m_meta_info     = nullptr;
-  uint64_t       m_signature     = 0;
-  bool           m_has_signature = false;
+  ats_scoped_str                m_name;
+  ats_scoped_str                m_hostname;
+  bool                          m_is_regfile    = false;
+  bool                          m_is_init       = false;
+  std::unique_ptr<BaseMetaInfo> m_meta_info     = nullptr;
+  uint64_t                      m_signature     = 0;
+  bool                          m_has_signature = false;
 };
