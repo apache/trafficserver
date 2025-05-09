@@ -84,7 +84,7 @@ namespace transformations
     ~GzipInflateTransformation() override;
 
   private:
-    GzipInflateTransformationState *state_; /** Internal state for Gzip Deflate Transformations */
+    std::unique_ptr<GzipInflateTransformationState> state_; /** Internal state for Gzip Deflate Transformations */
   };
 
 } // namespace transformations

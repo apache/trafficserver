@@ -74,13 +74,10 @@ struct atscppapi::transformations::GzipInflateTransformationState : noncopyable 
 GzipInflateTransformation::GzipInflateTransformation(Transaction &transaction, TransformationPlugin::Type type)
   : TransformationPlugin(transaction, type)
 {
-  state_ = new GzipInflateTransformationState(type);
+  state_ = std::make_unique<GzipInflateTransformationState>(type);
 }
 
-GzipInflateTransformation::~GzipInflateTransformation()
-{
-  delete state_;
-}
+GzipInflateTransformation::~GzipInflateTransformation() {}
 
 void
 GzipInflateTransformation::consume(std::string_view data)
