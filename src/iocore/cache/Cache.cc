@@ -85,21 +85,21 @@ int     cache_config_persist_bad_disks             = false;
 
 // Globals
 
-CacheStatsBlock                    cache_rsb;
-Cache                             *theCache                     = nullptr;
-CacheDisk                        **gdisks                       = nullptr;
-int                                gndisks                      = 0;
-Cache                             *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
-CacheSync                         *cacheDirSync                 = nullptr;
-Store                              theCacheStore;
-StripeSM                         **gstripes  = nullptr;
-std::atomic<int>                   gnstripes = 0;
-ClassAllocator<CacheVC>            cacheVConnectionAllocator("cacheVConnection");
-ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
-ClassAllocator<EvacuationBlock>    evacuationBlockAllocator("evacuationBlock");
-ClassAllocator<CacheRemoveCont>    cacheRemoveContAllocator("cacheRemoveCont");
-ClassAllocator<EvacuationKey>      evacuationKeyAllocator("evacuationKey");
-std::unordered_set<std::string>    known_bad_disks;
+CacheStatsBlock                         cache_rsb;
+Cache                                  *theCache = nullptr;
+std::vector<std::unique_ptr<CacheDisk>> gdisks;
+int                                     gndisks                      = 0;
+Cache                                  *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
+CacheSync                              *cacheDirSync                 = nullptr;
+Store                                   theCacheStore;
+StripeSM                              **gstripes  = nullptr;
+std::atomic<int>                        gnstripes = 0;
+ClassAllocator<CacheVC>                 cacheVConnectionAllocator("cacheVConnection");
+ClassAllocator<CacheEvacuateDocVC>      cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
+ClassAllocator<EvacuationBlock>         evacuationBlockAllocator("evacuationBlock");
+ClassAllocator<CacheRemoveCont>         cacheRemoveContAllocator("cacheRemoveCont");
+ClassAllocator<EvacuationKey>           evacuationKeyAllocator("evacuationKey");
+std::unordered_set<std::string>         known_bad_disks;
 
 namespace
 {
@@ -191,7 +191,7 @@ AIO_failure_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data)
   AIOCallback *cb      = static_cast<AIOCallback *>(data);
 
   for (; disk_no < gndisks; disk_no++) {
-    CacheDisk *d = gdisks[disk_no];
+    CacheDisk *d = gdisks[disk_no].get();
 
     if (d->fd == cb->aiocb.aio_fildes) {
       char message[256];

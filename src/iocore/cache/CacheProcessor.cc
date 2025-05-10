@@ -48,6 +48,7 @@
 #include "tsutil/DbgCtl.h"
 #include "tsutil/Metrics.h"
 
+#include <algorithm>
 #include <cinttypes>
 #include <cstdlib>
 #include <cstring>
@@ -79,20 +80,20 @@ extern int     cache_config_persist_bad_disks;
 
 // Globals
 
-extern CacheDisk                     **gdisks;
-extern int                             gndisks;
-static std::atomic<int>                initialize_disk;
-extern Store                           theCacheStore;
-int                                    CacheProcessor::initialized          = CACHE_INITIALIZING;
-uint32_t                               CacheProcessor::cache_ready          = 0;
-int                                    CacheProcessor::start_done           = 0;
-bool                                   CacheProcessor::clear                = false;
-bool                                   CacheProcessor::fix                  = false;
-bool                                   CacheProcessor::check                = false;
-int                                    CacheProcessor::start_internal_flags = 0;
-int                                    CacheProcessor::auto_clear_flag      = 0;
-CacheProcessor                         cacheProcessor;
-extern std::unordered_set<std::string> known_bad_disks;
+extern std::vector<std::unique_ptr<CacheDisk>> gdisks;
+extern int                                     gndisks;
+static std::atomic<int>                        initialize_disk;
+extern Store                                   theCacheStore;
+int                                            CacheProcessor::initialized          = CACHE_INITIALIZING;
+uint32_t                                       CacheProcessor::cache_ready          = 0;
+int                                            CacheProcessor::start_done           = 0;
+bool                                           CacheProcessor::clear                = false;
+bool                                           CacheProcessor::fix                  = false;
+bool                                           CacheProcessor::check                = false;
+int                                            CacheProcessor::start_internal_flags = 0;
+int                                            CacheProcessor::auto_clear_flag      = 0;
+CacheProcessor                                 cacheProcessor;
+extern std::unordered_set<std::string>         known_bad_disks;
 
 namespace
 {
@@ -180,7 +181,7 @@ CacheProcessor::start_internal(int flags)
 
   /* Read the config file and create the data structures corresponding to the file. */
   gndisks = theCacheStore.n_spans;
-  gdisks  = static_cast<CacheDisk **>(ats_malloc(gndisks * sizeof(CacheDisk *)));
+  gdisks.resize(gndisks);
 
   // Temporaries to carry values between loops
   char **paths = static_cast<char **>(alloca(sizeof(char *) * gndisks));
@@ -271,7 +272,7 @@ CacheProcessor::start_internal(int flags)
       if (diskok) {
         int sector_size = span->hw_sector_size;
 
-        CacheDisk *cache_disk = new CacheDisk();
+        auto cache_disk = std::make_unique<CacheDisk>();
         if (check) {
           cache_disk->read_only_p = true;
         }
@@ -292,7 +293,7 @@ CacheProcessor::start_internal(int flags)
           sector_size = STORE_BLOCK_SIZE;
         }
 
-        gdisks[gndisks]       = cache_disk;
+        gdisks[gndisks]       = std::move(cache_disk);
         sector_sizes[gndisks] = sector_size;
         fds[gndisks]          = fd;
         spans[gndisks]        = span;
@@ -674,7 +675,7 @@ CacheProcessor::find_by_path(std::string_view path)
   if (CACHE_INITIALIZED == initialized) {
     for (int i = 0; i < gndisks; ++i) {
       if (0 == strncmp(path.data(), gdisks[i]->path, path.length())) {
-        return gdisks[i];
+        return gdisks[i].get();
       }
     }
   }
@@ -685,13 +686,7 @@ CacheProcessor::find_by_path(std::string_view path)
 bool
 CacheProcessor::has_online_storage() const
 {
-  CacheDisk **dptr = gdisks;
-  for (int disk_no = 0; disk_no < gndisks; ++disk_no, ++dptr) {
-    if (!DISK_BAD(*dptr) && (*dptr)->online) {
-      return true;
-    }
-  }
-  return false;
+  return std::any_of(gdisks.begin(), gdisks.end(), [](auto &disk) { return !DISK_BAD(disk) && disk->online; });
 }
 
 int
@@ -725,12 +720,10 @@ CacheProcessor::diskInitialized()
   // Check and remove bad disks from gdisks[]
   for (i = 0; i < gndisks; i++) {
     if (DISK_BAD(gdisks[i])) {
-      delete gdisks[i];
-      gdisks[i] = nullptr;
+      gdisks[i].reset();
       bad_disks++;
     } else if (bad_disks > 0) {
-      gdisks[i - bad_disks] = gdisks[i];
-      gdisks[i]             = nullptr;
+      gdisks[i - bad_disks] = std::move(gdisks[i]);
     }
   }
   if (bad_disks > 0) {
@@ -787,7 +780,7 @@ CacheProcessor::diskInitialized()
   memset(gstripes, 0, gnstripes * sizeof(StripeSM *));
   gnstripes = 0;
   for (i = 0; i < gndisks; i++) {
-    CacheDisk *d = gdisks[i];
+    CacheDisk *d = gdisks[i].get();
     if (dbg_ctl_cache_hosting.on()) {
       int j;
       DbgPrint(dbg_ctl_cache_hosting, "Disk: %d:%s: Stripe Blocks: %u: Free space: %" PRIu64, i, d->path,
@@ -1060,7 +1053,7 @@ cplist_init()
 {
   cp_list_len = 0;
   for (int i = 0; i < gndisks; i++) {
-    CacheDisk *d = gdisks[i];
+    CacheDisk *d = gdisks[i].get();
     ink_assert(d != nullptr);
     DiskStripe **dp = d->disk_stripes;
     for (unsigned int j = 0; j < d->header->num_volumes; j++) {
