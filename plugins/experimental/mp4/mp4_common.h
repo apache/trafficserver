@@ -21,6 +21,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <memory>
 #include <unistd.h>
 #include <cinttypes>
 
@@ -103,19 +104,13 @@ class Mp4Context
 public:
   Mp4Context(float s) : start(s), cl(0), mtc(nullptr), transform_added(false){};
 
-  ~Mp4Context()
-  {
-    if (mtc) {
-      delete mtc;
-      mtc = nullptr;
-    }
-  }
+  ~Mp4Context() {}
 
 public:
   float   start;
   int64_t cl;
 
-  Mp4TransformContext *mtc;
+  std::unique_ptr<Mp4TransformContext> mtc;
 
   bool transform_added;
 };
