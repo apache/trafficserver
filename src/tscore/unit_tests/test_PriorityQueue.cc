@@ -22,6 +22,7 @@
 */
 
 #include <cstdint>
+#include <memory>
 
 #include "tscore/PriorityQueue.h"
 #include "catch.hpp"
@@ -48,415 +49,315 @@ using PQ    = PriorityQueue<N *>;
 // Push, top, and pop a entry
 TEST_CASE("PriorityQueue1", "[libts][PriorityQueue]")
 {
-  PQ    *pq      = new PQ();
-  N     *a       = new N(6, "A");
-  Entry *entry_a = new Entry(a);
+  auto pq      = std::make_unique<PQ>();
+  auto a       = std::make_unique<N>(6, "A");
+  auto entry_a = std::make_unique<Entry>(a.get());
 
-  pq->push(entry_a);
-  REQUIRE(pq->top() == entry_a);
+  pq->push(entry_a.get());
+  REQUIRE(pq->top() == entry_a.get());
 
   pq->pop();
   REQUIRE(pq->top() == nullptr);
-
-  delete pq;
-  delete a;
-  delete entry_a;
 }
 
 // Increase weight
 TEST_CASE("PriorityQueue2", "[libts][PriorityQueue]")
 {
-  PQ *pq = new PQ();
+  auto pq = std::make_unique<PQ>();
 
-  N *a = new N(10, "A");
-  N *b = new N(20, "B");
-  N *c = new N(30, "C");
+  auto a = std::make_unique<N>(10, "A");
+  auto b = std::make_unique<N>(20, "B");
+  auto c = std::make_unique<N>(30, "C");
 
-  Entry *entry_a = new Entry(a);
-  Entry *entry_b = new Entry(b);
-  Entry *entry_c = new Entry(c);
+  auto entry_a = std::make_unique<Entry>(a.get());
+  auto entry_b = std::make_unique<Entry>(b.get());
+  auto entry_c = std::make_unique<Entry>(c.get());
 
-  pq->push(entry_a);
-  pq->push(entry_b);
-  pq->push(entry_c);
+  pq->push(entry_a.get());
+  pq->push(entry_b.get());
+  pq->push(entry_c.get());
 
-  REQUIRE(pq->top() == entry_a);
+  REQUIRE(pq->top() == entry_a.get());
 
   a->weight = 40;
-  pq->update(entry_a);
+  pq->update(entry_a.get());
 
-  REQUIRE(pq->top() == entry_b);
+  REQUIRE(pq->top() == entry_b.get());
 
   b->weight = 50;
-  pq->update(entry_b, true);
+  pq->update(entry_b.get(), true);
 
-  REQUIRE(pq->top() == entry_c);
-
-  delete pq;
-
-  delete a;
-  delete b;
-  delete c;
-
-  delete entry_a;
-  delete entry_b;
-  delete entry_c;
+  REQUIRE(pq->top() == entry_c.get());
 }
 
 // Decrease weight
 TEST_CASE("PriorityQueue3", "[libts][PriorityQueue]")
 {
-  PQ *pq = new PQ();
+  auto pq = std::make_unique<PQ>();
 
-  N *a = new N(10, "A");
-  N *b = new N(20, "B");
-  N *c = new N(30, "C");
+  auto a = std::make_unique<N>(10, "A");
+  auto b = std::make_unique<N>(20, "B");
+  auto c = std::make_unique<N>(30, "C");
 
-  Entry *entry_a = new Entry(a);
-  Entry *entry_b = new Entry(b);
-  Entry *entry_c = new Entry(c);
+  auto entry_a = std::make_unique<Entry>(a.get());
+  auto entry_b = std::make_unique<Entry>(b.get());
+  auto entry_c = std::make_unique<Entry>(c.get());
 
-  pq->push(entry_a);
-  pq->push(entry_b);
-  pq->push(entry_c);
+  pq->push(entry_a.get());
+  pq->push(entry_b.get());
+  pq->push(entry_c.get());
 
-  REQUIRE(pq->top() == entry_a);
+  REQUIRE(pq->top() == entry_a.get());
 
   b->weight = 5;
-  pq->update(entry_b);
+  pq->update(entry_b.get());
 
-  REQUIRE(pq->top() == entry_b);
+  REQUIRE(pq->top() == entry_b.get());
 
   c->weight = 3;
-  pq->update(entry_c, false);
+  pq->update(entry_c.get(), false);
 
-  REQUIRE(pq->top() == entry_c);
-
-  delete pq;
-
-  delete a;
-  delete b;
-  delete c;
-
-  delete entry_a;
-  delete entry_b;
-  delete entry_c;
+  REQUIRE(pq->top() == entry_c.get());
 }
 
 // Push, top, and pop 9 entries
 TEST_CASE("PriorityQueue4", "[libts][PriorityQueue]")
 {
-  PQ *pq = new PQ();
+  auto pq = std::make_unique<PQ>();
 
-  N *a = new N(6, "A");
-  N *b = new N(1, "B");
-  N *c = new N(9, "C");
-  N *d = new N(8, "D");
-  N *e = new N(4, "E");
-  N *f = new N(3, "F");
-  N *g = new N(2, "G");
-  N *h = new N(7, "H");
-  N *i = new N(5, "I");
+  auto a = std::make_unique<N>(6, "A");
+  auto b = std::make_unique<N>(1, "B");
+  auto c = std::make_unique<N>(9, "C");
+  auto d = std::make_unique<N>(8, "D");
+  auto e = std::make_unique<N>(4, "E");
+  auto f = std::make_unique<N>(3, "F");
+  auto g = std::make_unique<N>(2, "G");
+  auto h = std::make_unique<N>(7, "H");
+  auto i = std::make_unique<N>(5, "I");
 
-  Entry *entry_a = new Entry(a);
-  Entry *entry_b = new Entry(b);
-  Entry *entry_c = new Entry(c);
-  Entry *entry_d = new Entry(d);
-  Entry *entry_e = new Entry(e);
-  Entry *entry_f = new Entry(f);
-  Entry *entry_g = new Entry(g);
-  Entry *entry_h = new Entry(h);
-  Entry *entry_i = new Entry(i);
+  auto entry_a = std::make_unique<Entry>(a.get());
+  auto entry_b = std::make_unique<Entry>(b.get());
+  auto entry_c = std::make_unique<Entry>(c.get());
+  auto entry_d = std::make_unique<Entry>(d.get());
+  auto entry_e = std::make_unique<Entry>(e.get());
+  auto entry_f = std::make_unique<Entry>(f.get());
+  auto entry_g = std::make_unique<Entry>(g.get());
+  auto entry_h = std::make_unique<Entry>(h.get());
+  auto entry_i = std::make_unique<Entry>(i.get());
 
-  pq->push(entry_a);
-  pq->push(entry_b);
-  pq->push(entry_c);
-  pq->push(entry_d);
-  pq->push(entry_e);
-  pq->push(entry_f);
-  pq->push(entry_g);
-  pq->push(entry_h);
-  pq->push(entry_i);
+  pq->push(entry_a.get());
+  pq->push(entry_b.get());
+  pq->push(entry_c.get());
+  pq->push(entry_d.get());
+  pq->push(entry_e.get());
+  pq->push(entry_f.get());
+  pq->push(entry_g.get());
+  pq->push(entry_h.get());
+  pq->push(entry_i.get());
 
-  REQUIRE(pq->top() == entry_b); // 1
+  REQUIRE(pq->top() == entry_b.get()); // 1
   pq->pop();
-  REQUIRE(pq->top() == entry_g); // 2
+  REQUIRE(pq->top() == entry_g.get()); // 2
   pq->pop();
-  REQUIRE(pq->top() == entry_f); // 3
+  REQUIRE(pq->top() == entry_f.get()); // 3
   pq->pop();
-  REQUIRE(pq->top() == entry_e); // 4
+  REQUIRE(pq->top() == entry_e.get()); // 4
   pq->pop();
-  REQUIRE(pq->top() == entry_i); // 5
+  REQUIRE(pq->top() == entry_i.get()); // 5
   pq->pop();
-  REQUIRE(pq->top() == entry_a); // 6
+  REQUIRE(pq->top() == entry_a.get()); // 6
   pq->pop();
-  REQUIRE(pq->top() == entry_h); // 7
+  REQUIRE(pq->top() == entry_h.get()); // 7
   pq->pop();
-  REQUIRE(pq->top() == entry_d); // 8
+  REQUIRE(pq->top() == entry_d.get()); // 8
   pq->pop();
-  REQUIRE(pq->top() == entry_c); // 9
+  REQUIRE(pq->top() == entry_c.get()); // 9
   pq->pop();
 
   REQUIRE(pq->top() == nullptr);
-
-  delete pq;
-
-  delete a;
-  delete b;
-  delete c;
-  delete d;
-  delete e;
-  delete f;
-  delete g;
-  delete h;
-  delete i;
-
-  delete entry_a;
-  delete entry_b;
-  delete entry_c;
-  delete entry_d;
-  delete entry_e;
-  delete entry_f;
-  delete entry_g;
-  delete entry_h;
-  delete entry_i;
 }
 
 // Push, top, pop, and update 9 entries
 TEST_CASE("PriorityQueue5", "[libts][PriorityQueue]")
 {
-  PQ *pq = new PQ();
+  auto pq = std::make_unique<PQ>();
 
-  N *a = new N(6, "A");
-  N *b = new N(1, "B");
-  N *c = new N(9, "C");
-  N *d = new N(8, "D");
-  N *e = new N(4, "E");
-  N *f = new N(3, "F");
-  N *g = new N(2, "G");
-  N *h = new N(7, "H");
-  N *i = new N(5, "I");
+  auto a = std::make_unique<N>(6, "A");
+  auto b = std::make_unique<N>(1, "B");
+  auto c = std::make_unique<N>(9, "C");
+  auto d = std::make_unique<N>(8, "D");
+  auto e = std::make_unique<N>(4, "E");
+  auto f = std::make_unique<N>(3, "F");
+  auto g = std::make_unique<N>(2, "G");
+  auto h = std::make_unique<N>(7, "H");
+  auto i = std::make_unique<N>(5, "I");
 
-  Entry *entry_a = new Entry(a);
-  Entry *entry_b = new Entry(b);
-  Entry *entry_c = new Entry(c);
-  Entry *entry_d = new Entry(d);
-  Entry *entry_e = new Entry(e);
-  Entry *entry_f = new Entry(f);
-  Entry *entry_g = new Entry(g);
-  Entry *entry_h = new Entry(h);
-  Entry *entry_i = new Entry(i);
+  auto entry_a = std::make_unique<Entry>(a.get());
+  auto entry_b = std::make_unique<Entry>(b.get());
+  auto entry_c = std::make_unique<Entry>(c.get());
+  auto entry_d = std::make_unique<Entry>(d.get());
+  auto entry_e = std::make_unique<Entry>(e.get());
+  auto entry_f = std::make_unique<Entry>(f.get());
+  auto entry_g = std::make_unique<Entry>(g.get());
+  auto entry_h = std::make_unique<Entry>(h.get());
+  auto entry_i = std::make_unique<Entry>(i.get());
 
-  pq->push(entry_a);
-  pq->push(entry_b);
-  pq->push(entry_c);
-  pq->push(entry_d);
-  pq->push(entry_e);
-  pq->push(entry_f);
-  pq->push(entry_g);
-  pq->push(entry_h);
-  pq->push(entry_i);
+  pq->push(entry_a.get());
+  pq->push(entry_b.get());
+  pq->push(entry_c.get());
+  pq->push(entry_d.get());
+  pq->push(entry_e.get());
+  pq->push(entry_f.get());
+  pq->push(entry_g.get());
+  pq->push(entry_h.get());
+  pq->push(entry_i.get());
 
   // Pop head and push it back again
-  REQUIRE(pq->top() == entry_b); // 1
+  REQUIRE(pq->top() == entry_b.get()); // 1
   pq->pop();
   b->weight += 100;
-  pq->push(entry_b);
+  pq->push(entry_b.get());
   // Update weight
   a->weight += 100;
-  pq->update(entry_a);
+  pq->update(entry_a.get());
   c->weight += 100;
-  pq->update(entry_d);
+  pq->update(entry_d.get());
   e->weight += 100;
-  pq->update(entry_e);
+  pq->update(entry_e.get());
   g->weight += 100;
-  pq->update(entry_g);
+  pq->update(entry_g.get());
 
   // Check
-  REQUIRE(pq->top() == entry_f); // 3
+  REQUIRE(pq->top() == entry_f.get()); // 3
   pq->pop();
-  REQUIRE(pq->top() == entry_i); // 5
+  REQUIRE(pq->top() == entry_i.get()); // 5
   pq->pop();
-  REQUIRE(pq->top() == entry_h); // 7
+  REQUIRE(pq->top() == entry_h.get()); // 7
   pq->pop();
-  REQUIRE(pq->top() == entry_d); // 8
+  REQUIRE(pq->top() == entry_d.get()); // 8
   pq->pop();
-  REQUIRE(pq->top() == entry_b); // 101
+  REQUIRE(pq->top() == entry_b.get()); // 101
   pq->pop();
-  REQUIRE(pq->top() == entry_g); // 102
+  REQUIRE(pq->top() == entry_g.get()); // 102
   pq->pop();
-  REQUIRE(pq->top() == entry_e); // 104
+  REQUIRE(pq->top() == entry_e.get()); // 104
   pq->pop();
-  REQUIRE(pq->top() == entry_a); // 106
+  REQUIRE(pq->top() == entry_a.get()); // 106
   pq->pop();
-  REQUIRE(pq->top() == entry_c); // 109
+  REQUIRE(pq->top() == entry_c.get()); // 109
   pq->pop();
 
   REQUIRE(pq->top() == nullptr);
-
-  delete pq;
-
-  delete a;
-  delete b;
-  delete c;
-  delete d;
-  delete e;
-  delete f;
-  delete g;
-  delete h;
-  delete i;
-
-  delete entry_a;
-  delete entry_b;
-  delete entry_c;
-  delete entry_d;
-  delete entry_e;
-  delete entry_f;
-  delete entry_g;
-  delete entry_h;
-  delete entry_i;
 }
 
 // Test erase method
 TEST_CASE("PriorityQueue6", "[libts][PriorityQueue]")
 {
-  PQ *pq = new PQ();
+  auto pq = std::make_unique<PQ>();
 
-  N *a = new N(10, "A");
-  N *b = new N(20, "B");
-  N *c = new N(30, "C");
+  auto a = std::make_unique<N>(10, "A");
+  auto b = std::make_unique<N>(20, "B");
+  auto c = std::make_unique<N>(30, "C");
 
-  Entry *entry_a = new Entry(a);
-  Entry *entry_b = new Entry(b);
-  Entry *entry_c = new Entry(c);
+  auto entry_a = std::make_unique<Entry>(a.get());
+  auto entry_b = std::make_unique<Entry>(b.get());
+  auto entry_c = std::make_unique<Entry>(c.get());
 
-  pq->push(entry_a);
-  pq->push(entry_b);
-  pq->push(entry_c);
+  pq->push(entry_a.get());
+  pq->push(entry_b.get());
+  pq->push(entry_c.get());
 
   uint32_t index;
 
-  REQUIRE(pq->top() == entry_a);
+  REQUIRE(pq->top() == entry_a.get());
 
   index = entry_a->index;
-  pq->erase(entry_a);
+  pq->erase(entry_a.get());
   REQUIRE(entry_a->index == index);
 
-  REQUIRE(pq->top() == entry_b);
+  REQUIRE(pq->top() == entry_b.get());
 
   index = entry_c->index;
-  pq->erase(entry_c);
+  pq->erase(entry_c.get());
   REQUIRE(entry_c->index == index);
 
-  REQUIRE(pq->top() == entry_b);
+  REQUIRE(pq->top() == entry_b.get());
 
   index = entry_b->index;
-  pq->erase(entry_b);
+  pq->erase(entry_b.get());
   REQUIRE(entry_b->index == index);
 
   REQUIRE(pq->top() == nullptr);
   REQUIRE(pq->empty());
 
-  delete pq;
+  auto pq2 = std::make_unique<PQ>();
 
-  delete a;
-  delete b;
-  delete c;
+  auto w = std::make_unique<N>(10, "W");
+  auto x = std::make_unique<N>(20, "X");
+  auto y = std::make_unique<N>(30, "Y");
+  auto z = std::make_unique<N>(40, "Z");
 
-  delete entry_a;
-  delete entry_b;
-  delete entry_c;
+  auto entry_w = std::make_unique<Entry>(w.get());
+  auto entry_x = std::make_unique<Entry>(x.get());
+  auto entry_y = std::make_unique<Entry>(y.get());
+  auto entry_z = std::make_unique<Entry>(z.get());
 
-  PQ *pq2 = new PQ();
+  pq2->push(entry_z.get());
+  pq2->push(entry_y.get());
+  pq2->push(entry_x.get());
+  pq2->push(entry_w.get());
 
-  N *w = new N(10, "W");
-  N *x = new N(20, "X");
-  N *y = new N(30, "Y");
-  N *z = new N(40, "Z");
-
-  Entry *entry_w = new Entry(w);
-  Entry *entry_x = new Entry(x);
-  Entry *entry_y = new Entry(y);
-  Entry *entry_z = new Entry(z);
-
-  pq2->push(entry_z);
-  pq2->push(entry_y);
-  pq2->push(entry_x);
-  pq2->push(entry_w);
-
-  REQUIRE(pq2->top() == entry_w);
-  pq2->erase(entry_x);
-  REQUIRE(pq2->top() == entry_w);
+  REQUIRE(pq2->top() == entry_w.get());
+  pq2->erase(entry_x.get());
+  REQUIRE(pq2->top() == entry_w.get());
   // The following two cases should test that erase preserves the index
-  pq2->erase(entry_y);
-  REQUIRE(pq2->top() == entry_w);
-  pq2->erase(entry_z);
-  REQUIRE(pq2->top() == entry_w);
-
-  delete pq2;
-
-  delete w;
-  delete x;
-  delete y;
-  delete z;
-
-  delete entry_w;
-  delete entry_x;
-  delete entry_y;
-  delete entry_z;
+  pq2->erase(entry_y.get());
+  REQUIRE(pq2->top() == entry_w.get());
+  pq2->erase(entry_z.get());
+  REQUIRE(pq2->top() == entry_w.get());
 }
 
 // Test erase and pop method to ensure the index entries are updated (TS-4915)
 TEST_CASE("PriorityQueue7", "[libts][PriorityQueue]")
 {
-  PQ *pq2 = new PQ();
+  auto pq2 = std::make_unique<PQ>();
 
-  N *x = new N(20, "X");
-  N *y = new N(30, "Y");
-  N *z = new N(40, "Z");
+  auto x = std::make_unique<N>(20, "X");
+  auto y = std::make_unique<N>(30, "Y");
+  auto z = std::make_unique<N>(40, "Z");
 
-  Entry *entry_x = new Entry(x);
-  Entry *entry_y = new Entry(y);
-  Entry *entry_z = new Entry(z);
+  auto entry_x = std::make_unique<Entry>(x.get());
+  auto entry_y = std::make_unique<Entry>(y.get());
+  auto entry_z = std::make_unique<Entry>(z.get());
 
-  pq2->push(entry_z);
-  pq2->push(entry_y);
-  pq2->push(entry_x);
+  pq2->push(entry_z.get());
+  pq2->push(entry_y.get());
+  pq2->push(entry_x.get());
 
-  REQUIRE(pq2->top() == entry_x);
+  REQUIRE(pq2->top() == entry_x.get());
   pq2->pop();
-  REQUIRE(pq2->top() == entry_y);
-  pq2->erase(entry_y);
-  REQUIRE(pq2->top() == entry_z);
-
-  delete pq2;
-
-  delete x;
-  delete y;
-  delete z;
-
-  delete entry_x;
-  delete entry_y;
-  delete entry_z;
+  REQUIRE(pq2->top() == entry_y.get());
+  pq2->erase(entry_y.get());
+  REQUIRE(pq2->top() == entry_z.get());
 }
 
 // Test erase and pop method to ensure the index entries are correctly
 TEST_CASE("PriorityQueue8", "[libts][PriorityQueue]")
 {
-  PQ *pq1 = new PQ();
-  PQ *pq2 = new PQ();
+  auto pq1 = std::make_unique<PQ>();
+  auto pq2 = std::make_unique<PQ>();
 
-  N *x = new N(20, "X");
-  N *y = new N(30, "Y");
-  N *z = new N(40, "Z");
+  auto x = std::make_unique<N>(20, "X");
+  auto y = std::make_unique<N>(30, "Y");
+  auto z = std::make_unique<N>(40, "Z");
 
-  Entry *entry_x = new Entry(x);
-  Entry *entry_y = new Entry(y);
-  Entry *entry_z = new Entry(z);
+  auto entry_x = std::make_unique<Entry>(x.get());
+  auto entry_y = std::make_unique<Entry>(y.get());
+  auto entry_z = std::make_unique<Entry>(z.get());
 
-  pq2->push(entry_z);
-  pq2->push(entry_y);
-  pq2->push(entry_x);
+  pq2->push(entry_z.get());
+  pq2->push(entry_y.get());
+  pq2->push(entry_x.get());
 
   x->weight = 40;
   y->weight = 30;
@@ -473,43 +374,24 @@ TEST_CASE("PriorityQueue8", "[libts][PriorityQueue]")
   pq1->push(pq2->top());
   pq2->pop();
   REQUIRE(pq1->top()->index == 0);
-
-  delete pq1;
-  delete pq2;
-
-  delete x;
-  delete y;
-  delete z;
-
-  delete entry_x;
-  delete entry_y;
-  delete entry_z;
 }
 
 TEST_CASE("PriorityQueue9", "[libts][PriorityQueue]")
 {
-  PQ *pq1 = new PQ();
+  auto pq1 = std::make_unique<PQ>();
 
-  N *x = new N(20, "X");
-  N *y = new N(30, "Y");
+  auto x = std::make_unique<N>(20, "X");
+  auto y = std::make_unique<N>(30, "Y");
 
-  Entry *X = new Entry(x);
-  Entry *Y = new Entry(y);
+  auto X = std::make_unique<Entry>(x.get());
+  auto Y = std::make_unique<Entry>(y.get());
 
   REQUIRE(X->index == 0);
   REQUIRE(Y->index == 0);
 
-  pq1->push(X);
+  pq1->push(X.get());
 
-  pq1->erase(Y);
+  pq1->erase(Y.get());
 
-  REQUIRE(pq1->top() == X);
-
-  delete x;
-  delete y;
-
-  delete X;
-  delete Y;
-
-  delete pq1;
+  REQUIRE(pq1->top() == X.get());
 }

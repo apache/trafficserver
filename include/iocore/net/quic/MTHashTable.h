@@ -343,7 +343,7 @@ public:
   {
     for (int i = 0; i < MT_HASHTABLE_PARTITIONS; i++) {
       locks[i]      = new_ProxyMutex();
-      hashTables[i] = new IMTHashTable<key_t, data_t>(size, gc_func, pre_gc_func);
+      hashTables[i] = std::make_unique<IMTHashTable<key_t, data_t>>(size, gc_func, pre_gc_func);
       // INIT_CHAIN_HEAD(&chain_heads[i]);
       // last_GC_time[i] = 0;
     }
@@ -353,7 +353,6 @@ public:
   {
     for (int i = 0; i < MT_HASHTABLE_PARTITIONS; i++) {
       locks[i] = NULL;
-      delete hashTables[i];
     }
   }
 
@@ -436,8 +435,8 @@ public:
   }
 
 private:
-  IMTHashTable<key_t, data_t> *hashTables[MT_HASHTABLE_PARTITIONS];
-  Ptr<ProxyMutex>              locks[MT_HASHTABLE_PARTITIONS];
+  std::array<std::unique_ptr<IMTHashTable<key_t, data_t>>, MT_HASHTABLE_PARTITIONS> hashTables;
+  Ptr<ProxyMutex>                                                                   locks[MT_HASHTABLE_PARTITIONS];
   // MT_ListEntry chain_heads[MT_HASHTABLE_PARTITIONS];
   // int last_GC_time[MT_HASHTABLE_PARTITIONS];
   // int32_t cur_items;

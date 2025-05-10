@@ -655,7 +655,7 @@ HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **
     }
 
     if (auto it_page = body_set->table_of_pages->find(type); it_page != body_set->table_of_pages->end()) {
-      HttpBodyTemplate *t = it_page->second;
+      auto &t = it_page->second;
       if ((t == nullptr) || (!t->is_sane())) {
         return nullptr;
       }
@@ -664,7 +664,7 @@ HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **
       Dbg(dbg_ctl_body_factory, "find_template(%s,%s) -> (file %s, length %" PRId64 ", lang '%s', charset '%s')", set, type,
           t->template_pathname, t->byte_count, body_set->content_language, body_set->content_charset);
 
-      return t;
+      return t.get();
     }
   }
   Dbg(dbg_ctl_body_factory, "find_template(%s,%s) -> NULL", set, type);
@@ -717,8 +717,8 @@ HttpBodyFactory::nuke_template_tables()
         ///////////////////////////////////////////
         // loop over body-types->body hash table //
         ///////////////////////////////////////////
-        for (const auto &it_page : *body_set->table_of_pages.get()) {
-          delete it_page.second;
+        for (auto &it_page : *body_set->table_of_pages.get()) {
+          it_page.second.reset(nullptr);
         }
         body_set->table_of_pages.reset(nullptr);
       }
@@ -843,8 +843,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
       body_set->content_language, body_set->content_charset);
 
   while ((dirEntry = readdir(dir))) {
-    HttpBodyTemplate *tmpl;
-    size_t            d_len = strlen(dirEntry->d_name);
+    size_t d_len = strlen(dirEntry->d_name);
 
     ///////////////////////////////////////////////////////////////
     // all template files must have a file name of the form      //
@@ -873,12 +872,10 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
     // read in this template file //
     ////////////////////////////////
 
-    tmpl = new HttpBodyTemplate();
-    if (!tmpl->load_from_file(tmpl_dir, dirEntry->d_name)) {
-      delete tmpl;
-    } else {
-      Dbg(dbg_ctl_body_factory, "      %s -> %p", dirEntry->d_name, tmpl);
-      body_set->set_template_by_name(dirEntry->d_name, tmpl);
+    auto tmpl = std::make_unique<HttpBodyTemplate>();
+    if (tmpl->load_from_file(tmpl_dir, dirEntry->d_name)) {
+      Dbg(dbg_ctl_body_factory, "      %s -> %p", dirEntry->d_name, tmpl.get());
+      body_set->set_template_by_name(dirEntry->d_name, std::move(tmpl));
     }
   }
 
@@ -1038,23 +1035,23 @@ HttpBodySet::get_template_by_name(const char *name)
   }
 
   if (auto it = table_of_pages->find(name); it != table_of_pages->end()) {
-    HttpBodyTemplate *t = it->second;
+    auto &t = it->second;
     if ((t == nullptr) || (!t->is_sane())) {
       return nullptr;
     }
     Dbg(dbg_ctl_body_factory, "    get_template_by_name(%s) -> (file %s, length %" PRId64 ")", name, t->template_pathname,
         t->byte_count);
-    return t;
+    return t.get();
   }
   Dbg(dbg_ctl_body_factory, "    get_template_by_name(%s) -> NULL", name);
   return nullptr;
 }
 
 void
-HttpBodySet::set_template_by_name(const char *name, HttpBodyTemplate *t)
+HttpBodySet::set_template_by_name(const char *name, std::unique_ptr<HttpBodyTemplate> t)
 {
   if (name) {
-    table_of_pages->emplace(name, t);
+    table_of_pages->emplace(name, std::move(t));
   }
 }
 

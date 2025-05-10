@@ -273,9 +273,10 @@ handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata)
 TransformationPlugin::TransformationPlugin(Transaction &transaction, TransformationPlugin::Type type)
   : TransactionPlugin(transaction), state_(nullptr)
 {
-  state_         = new TransformationPluginState(transaction, *this, type, static_cast<TSHttpTxn>(transaction.getAtsHandle()));
+  state_ =
+    std::make_unique<TransformationPluginState>(transaction, *this, type, static_cast<TSHttpTxn>(transaction.getAtsHandle()));
   state_->vconn_ = TSTransformCreate(handleTransformationPluginEvents, state_->txn_);
-  TSContDataSet(state_->vconn_, static_cast<void *>(state_)); // edata in a TransformationHandler is NOT a TSHttpTxn.
+  TSContDataSet(state_->vconn_, static_cast<void *>(state_.get())); // edata in a TransformationHandler is NOT a TSHttpTxn.
   LOG_DEBUG("Creating TransformationPlugin=%p (vconn)contp=%p tshttptxn=%p transformation_type=%d", this, state_->vconn_,
             state_->txn_, type);
   TSHttpTxnHookAdd(state_->txn_, utils::internal::convertInternalTransformationTypeToTsHook(type), state_->vconn_);
@@ -285,7 +286,6 @@ TransformationPlugin::~TransformationPlugin()
 {
   LOG_DEBUG("Destroying TransformationPlugin=%p", this);
   cleanupTransformation(state_->vconn_);
-  delete state_;
 }
 
 void
@@ -299,8 +299,9 @@ TransformationPlugin::pause()
               state_->vconn_, state_->txn_);
   } else {
     state_->paused_ = true;
-    if (!static_cast<bool>(static_cast<ResumeAfterPauseCont *>(state_))) {
-      *static_cast<ResumeAfterPauseCont *>(state_) = ResumeAfterPauseCont(TSContMutexGet(reinterpret_cast<TSCont>(state_->txn_)));
+    if (!static_cast<bool>(static_cast<ResumeAfterPauseCont *>(state_.get()))) {
+      *static_cast<ResumeAfterPauseCont *>(state_.get()) =
+        ResumeAfterPauseCont(TSContMutexGet(reinterpret_cast<TSCont>(state_->txn_)));
     }
   }
 }
@@ -321,7 +322,7 @@ TransformationPlugin::resumeCont()
   // naturally result in TransactionPluginState having Continuation as an indirect base class multiple times, making
   // disambiguation necessary when converting.
   //
-  return *static_cast<ResumeAfterPauseCont *>(state_);
+  return *static_cast<ResumeAfterPauseCont *>(state_.get());
 }
 
 int

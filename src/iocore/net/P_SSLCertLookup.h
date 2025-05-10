@@ -131,8 +131,8 @@ public:
 };
 
 struct SSLCertLookup : public ConfigInfo {
-  SSLContextStorage *ssl_storage;
-  SSLContextStorage *ec_storage;
+  std::unique_ptr<SSLContextStorage> ssl_storage;
+  std::unique_ptr<SSLContextStorage> ec_storage;
 
   shared_SSL_CTX ssl_default;
   bool           is_valid = true;

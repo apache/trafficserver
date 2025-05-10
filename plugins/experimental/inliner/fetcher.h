@@ -102,23 +102,19 @@ struct HttpParser {
 template <class T> struct HttpTransaction {
   using Self = HttpTransaction<T>;
 
-  bool                    parsingHeaders_;
-  bool                    abort_;
-  bool                    timeout_;
-  io::IO                 *in_;
-  std::unique_ptr<io::IO> out_;
-  TSVConn                 vconnection_;
-  TSCont                  continuation_;
-  T                       t_;
-  HttpParser              parser_;
-  ChunkDecoder           *chunkDecoder_;
+  bool                          parsingHeaders_;
+  bool                          abort_;
+  bool                          timeout_;
+  std::unique_ptr<io::IO>       in_;
+  std::unique_ptr<io::IO>       out_;
+  TSVConn                       vconnection_;
+  TSCont                        continuation_;
+  T                             t_;
+  HttpParser                    parser_;
+  std::unique_ptr<ChunkDecoder> chunkDecoder_;
 
   ~HttpTransaction()
   {
-    if (in_ != nullptr) {
-      delete in_;
-      in_ = nullptr;
-    }
     timeout(0);
     assert(vconnection_ != nullptr);
     if (abort_) {
@@ -128,9 +124,6 @@ template <class T> struct HttpTransaction {
     }
     assert(continuation_ != nullptr);
     TSContDestroy(continuation_);
-    if (chunkDecoder_ != nullptr) {
-      delete chunkDecoder_;
-    }
   }
 
   HttpTransaction(TSVConn v, TSCont c, std::unique_ptr<io::IO> i, const uint64_t l, const T &t)
@@ -230,7 +223,7 @@ template <class T> struct HttpTransaction {
           if (self->parser_.parse(*self->in_)) {
             if (isChunkEncoding(self->parser_.buffer_, self->parser_.location_)) {
               assert(self->chunkDecoder_ == nullptr);
-              self->chunkDecoder_ = new ChunkDecoder();
+              self->chunkDecoder_ = std::make_unique<ChunkDecoder>();
             }
             self->t_.header(self->parser_.buffer_, self->parser_.location_);
             self->parsingHeaders_ = false;

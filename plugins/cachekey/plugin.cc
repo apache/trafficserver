@@ -27,7 +27,7 @@
 #include "common.h"
 
 /* Configuration only used by the global plugin instance. */
-Configs *globalConfig = nullptr;
+std::unique_ptr<Configs> globalConfig = nullptr;
 
 /**
  * @brief Set the cache key called by both global and remap instances.
@@ -82,7 +82,7 @@ contSetCachekey(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, v
 {
   TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
 
-  setCacheKey(txn, globalConfig);
+  setCacheKey(txn, &*globalConfig);
 
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   return 0;
@@ -108,15 +108,14 @@ TSPluginInit(int argc, const char *argv[])
     CacheKeyError("global plugin registration failed");
   }
 
-  globalConfig = new Configs();
+  globalConfig = std::make_unique<Configs>();
   if (nullptr != globalConfig && globalConfig->init(argc, argv, /* perRemapConfig */ false)) {
     TSCont cont = TSContCreate(contSetCachekey, nullptr);
     TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, cont);
 
     CacheKeyDebug("global plugin initialized");
   } else {
-    globalConfig = nullptr;
-    delete globalConfig;
+    globalConfig.reset();
 
     CacheKeyError("failed to initialize global plugin");
   }

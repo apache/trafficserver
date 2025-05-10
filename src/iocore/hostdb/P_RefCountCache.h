@@ -412,10 +412,10 @@ public:
   RefCountCacheBlock        *get_rsb();
 
 private:
-  int                                      max_size;  // Total size
-  int                                      max_items; // Total number of items allowed
-  unsigned int                             num_partitions;
-  std::vector<RefCountCachePartition<C> *> partitions;
+  int                                                     max_size;  // Total size
+  int                                                     max_items; // Total number of items allowed
+  unsigned int                                            num_partitions;
+  std::vector<std::unique_ptr<RefCountCachePartition<C>>> partitions;
   // Header
   RefCountCacheHeader header; // Our header
   RefCountCacheBlock  rsb;
@@ -443,16 +443,14 @@ RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items
   // Now lets create all the partitions
   this->partitions.reserve(num_partitions);
   for (unsigned int i = 0; i < num_partitions; i++) {
-    this->partitions.push_back(new RefCountCachePartition<C>(i, size / num_partitions, items / num_partitions, &this->rsb));
+    this->partitions.push_back(
+      std::make_unique<RefCountCachePartition<C>>(i, size / num_partitions, items / num_partitions, &this->rsb));
   }
 }
 
 // Deconstruct the class
 template <class C> RefCountCache<C>::~RefCountCache()
 {
-  for (unsigned int i = 0; i < num_partitions; i++) {
-    delete this->partitions[i];
-  }
   num_partitions = 0;
 }
 

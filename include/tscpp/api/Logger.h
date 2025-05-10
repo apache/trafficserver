@@ -242,7 +242,7 @@ public:
   void logError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2, 3);
 
 private:
-  LoggerState *state_; /**< Internal state for the Logger */
+  std::unique_ptr<LoggerState> state_; /**< Internal state for the Logger */
 };
 
 } // namespace atscppapi

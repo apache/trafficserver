@@ -270,15 +270,14 @@ SSLCertContext::setCtx(shared_SSL_CTX sc)
 }
 
 SSLCertLookup::SSLCertLookup()
-  : ssl_storage(new SSLContextStorage()), ec_storage(new SSLContextStorage()), ssl_default(nullptr), is_valid(true)
+  : ssl_storage(std::make_unique<SSLContextStorage>()),
+    ec_storage(std::make_unique<SSLContextStorage>()),
+    ssl_default(nullptr),
+    is_valid(true)
 {
 }
 
-SSLCertLookup::~SSLCertLookup()
-{
-  delete this->ssl_storage;
-  delete this->ec_storage;
-}
+SSLCertLookup::~SSLCertLookup() {}
 
 SSLCertContext *
 SSLCertLookup::find(const std::string &address, [[maybe_unused]] SSLCertContextType ctxType) const

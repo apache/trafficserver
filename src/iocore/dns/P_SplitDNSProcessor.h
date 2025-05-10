@@ -45,6 +45,7 @@
 #include <swoc/TextView.h>
 
 #include <cstdint>
+#include <memory>
 
 /* ---------------------------
    forward declarations ...
@@ -94,7 +95,7 @@ struct SplitDNS : public ConfigInfo {
   void *getDNSRecord(swoc::TextView hostname);
   void  findServer(RequestData *rdata, SplitDNSResult *result);
 
-  DNS_table *m_DNSSrvrTable = nullptr;
+  std::unique_ptr<DNS_table> m_DNSSrvrTable = nullptr;
 
   int32_t m_SplitDNSlEnable = 0;
 

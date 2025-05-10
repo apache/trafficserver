@@ -127,7 +127,6 @@ CacheDisk::~CacheDisk()
     while ((q = (free_blocks->dpb_queue.pop()))) {
       delete q;
     }
-    delete free_blocks;
   }
 }
 
@@ -389,9 +388,8 @@ CacheDisk::update_header()
     while ((q = (free_blocks->dpb_queue.pop()))) {
       delete q;
     }
-    delete free_blocks;
   }
-  free_blocks                = new DiskStripe();
+  free_blocks                = std::make_unique<DiskStripe>();
   free_blocks->vol_number    = -1;
   free_blocks->disk          = this;
   free_blocks->num_volblocks = 0;

@@ -264,8 +264,8 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   ////////////////////////////////////////////////////////////////////
 
   if (!use_records) {
-    _diags = new Diags(prefix_string, tags, actions, nullptr);
-    DiagsPtr::set(_diags);
+    _diags = std::make_unique<Diags>(prefix_string, tags, actions, nullptr);
+    DiagsPtr::set(_diags.get());
     config_diags_norecords();
     return;
   }
@@ -311,8 +311,8 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
 
   // Set up diags, FILE streams are opened in Diags constructor
   diags_log = new BaseLogFile(diags_logpath.c_str());
-  _diags    = new Diags(prefix_string, tags, actions, diags_log, diags_perm_parsed, output_perm_parsed);
-  DiagsPtr::set(_diags);
+  _diags    = std::make_unique<Diags>(prefix_string, tags, actions, diags_log, diags_perm_parsed, output_perm_parsed);
+  DiagsPtr::set(_diags.get());
   _diags->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int, diags_log_roll_size);
   _diags->config_roll_outputlog(static_cast<RollingEnabledValues>(output_log_roll_enable), output_log_roll_int,
                                 output_log_roll_size);
@@ -368,7 +368,4 @@ DiagsConfig::register_diags_callbacks()
   }
 }
 
-DiagsConfig::~DiagsConfig()
-{
-  delete _diags;
-}
+DiagsConfig::~DiagsConfig() {}
