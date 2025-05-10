@@ -70,7 +70,7 @@ ClassAllocator<BItem> ioAllocator("io");
 
 TEST_CASE("ProxyAllocator", "[iocore]")
 {
-  Thread *bench_thread = new BThread();
+  auto bench_thread = std::make_unique<BThread>();
   bench_thread->set_specific();
   int count = 10000;
 
@@ -106,6 +106,4 @@ TEST_CASE("ProxyAllocator", "[iocore]")
     }
     return bench_thread->ioAllocator.allocated;
   };
-
-  delete bench_thread;
 }
