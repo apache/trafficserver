@@ -201,12 +201,7 @@ CacheHostTable::CacheHostTable(Cache *c, CacheType typ)
   m_numEntries = this->BuildTable(config_path);
 }
 
-CacheHostTable::~CacheHostTable()
-{
-  if (hostMatch != nullptr) {
-    delete hostMatch;
-  }
-}
+CacheHostTable::~CacheHostTable() {}
 
 // void ControlMatcher<Data, Result>::Print()
 //
@@ -337,7 +332,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   }
 
   if (hostDomain > 0) {
-    hostMatch = new CacheHostMatcher(matcher_name, type);
+    hostMatch = std::make_unique<CacheHostMatcher>(matcher_name, type);
     hostMatch->AllocateSpace(hostDomain);
   }
   // Traverse the list and build the records table

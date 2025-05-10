@@ -237,7 +237,7 @@ public:
   CacheHostMatcher *
   getHostMatcher() const
   {
-    return hostMatch;
+    return hostMatch.get();
   }
 
   static int config_callback(const char *, RecDataT, RecData, void *);
@@ -254,9 +254,9 @@ public:
   CacheHostRecord gen_host_rec;
 
 private:
-  CacheHostMatcher  *hostMatch    = nullptr;
-  const matcher_tags config_tags  = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
-  const char        *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
+  std::unique_ptr<CacheHostMatcher> hostMatch    = nullptr;
+  const matcher_tags                config_tags  = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
+  const char                       *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
 };
 
 struct CacheHostTableConfig;
