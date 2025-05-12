@@ -136,7 +136,7 @@ QUICPacketHandlerIn::clone() const
 }
 
 int
-QUICPacketHandlerIn::acceptEvent(int event, void *data)
+QUICPacketHandlerIn::acceptEventQUIC(int event, void *data)
 {
   // NetVConnection *netvc;
   ink_release_assert(event == EVENT_IMMEDIATE || event == NET_EVENT_DATAGRAM_OPEN || event == NET_EVENT_DATAGRAM_READ_READY ||
@@ -175,11 +175,11 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
 }
 
 void
-QUICPacketHandlerIn::init_accept(EThread * /* t  ATS_UNUSED */ = nullptr)
+QUICPacketHandlerIn::init_accept_quic()
 {
   int i, n;
 
-  SET_HANDLER(&QUICPacketHandlerIn::acceptEvent);
+  SET_HANDLER(&QUICPacketHandlerIn::acceptEventQUIC);
 
   n = eventProcessor.thread_group[ET_UDP]._count;
   for (i = 0; i < n; i++) {

@@ -102,8 +102,8 @@ struct NetAccept : public Continuation {
 
   virtual NetProcessor *getNetProcessor() const;
 
-  virtual void       init_accept(EThread *t = nullptr);
-  void               init_accept_loop();
+  virtual void       init_accept_periodic(EThread *t = nullptr);
+  void               init_accept_dedicated_threads();
   void               init_accept_per_thread();
   virtual void       stop_accept();
   virtual NetAccept *clone() const;
@@ -114,21 +114,23 @@ struct NetAccept : public Continuation {
    *
    * @see do_blocking_listen
    */
-  int do_listen();
+  int do_nonblocking_listen();
   int do_blocking_listen();
   int do_blocking_accept(EThread *t);
+  int do_accept_periodic(void *ep, bool blockable);
 
-  virtual int acceptEvent(int event, void *e);
-  virtual int acceptFastEvent(int event, void *e);
-  virtual int accept_per_thread(int event, void *e);
-  int         acceptLoopEvent(int event, Event *e);
-  void        cancel();
+  int  acceptEventPeriodic(int event, void *e);
+  int  acceptEventPerThread(int event, void *e);
+  int  listenEventPerThread(int event, void *e);
+  int  acceptEventDedicatedThread(int event, Event *e);
+  void cancel();
 
   explicit NetAccept(const NetProcessor::AcceptOptions &);
   ~NetAccept() override { action_ = nullptr; }
 
 private:
-  int do_listen_impl(bool non_blocking);
+  int                 do_listen_impl(bool non_blocking);
+  UnixNetVConnection *initialize_vc_from_con(Connection &con, NetAcceptAction *action, EThread *ethread);
 };
 
 extern Ptr<ProxyMutex>          naVecMutex;

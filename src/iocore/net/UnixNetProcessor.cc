@@ -139,7 +139,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
 
   if (opt.frequent_accept) { // true
     if (accept_threads > 0 && listen_per_thread == 0) {
-      na->init_accept_loop();
+      na->init_accept_dedicated_threads();
     } else {
       na->init_accept_per_thread();
     }
@@ -154,7 +154,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     }
 #endif // TS_USE_POSIX_CAP
   } else {
-    na->init_accept(nullptr);
+    na->init_accept_periodic(nullptr);
   }
 
   {
