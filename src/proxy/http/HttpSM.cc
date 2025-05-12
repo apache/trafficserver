@@ -735,9 +735,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
     if (t_state.hdr_info.client_request.version_get() == HTTP_1_1 &&
         (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
          t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT)) {
-      int         len    = 0;
-      const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
-      if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
+      auto expect{t_state.hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
+      if (strcasecmp(expect, std::string_view{HTTP_VALUE_100_CONTINUE,
+                                              static_cast<std::string_view::size_type>(HTTP_LEN_100_CONTINUE)}) == 0) {
         // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
         // immediately, before receive the real response from original server.
         if (t_state.http_config_param->send_100_continue_response) {
@@ -1146,7 +1146,7 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
       // We got a content length so update our internal
       //   data as well as fix up the request header
       t_state.hdr_info.transform_request_cl = size;
-      t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
+      t_state.hdr_info.server_request.value_set_int64(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH), size);
       setup_server_send_request_api();
       break;
     } else {
@@ -1184,7 +1184,7 @@ HttpSM::state_response_wait_for_transform_read(int event, void *data)
     if (size != INT64_MAX && size >= 0) {
       // We got a content length so update our internal state
       t_state.hdr_info.transform_response_cl = size;
-      t_state.hdr_info.transform_response.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
+      t_state.hdr_info.transform_response.value_set_int64(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH), size);
     } else {
       t_state.hdr_info.transform_response_cl = HTTP_UNDEFINED_CL;
     }
@@ -1996,7 +1996,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     bool allow_error = false;
     if (t_state.hdr_info.server_response.type_get() == HTTP_TYPE_RESPONSE &&
         t_state.hdr_info.server_response.status_get() == HTTP_STATUS_MOVED_TEMPORARILY) {
-      if (t_state.hdr_info.server_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
+      if (t_state.hdr_info.server_response.field_find(static_cast<std::string_view>(MIME_FIELD_LOCATION))) {
         allow_error = true;
       }
     }
@@ -4408,7 +4408,7 @@ HttpSM::do_remap_request(bool run_inline)
   // is not already there, promote it only in the unmapped_url. This avoids breaking any logic that
   // depends on the lack of promotion in the client request URL.
   if (!t_state.unmapped_url.m_url_impl->m_ptr_host) {
-    MIMEField *host_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+    MIMEField *host_field = t_state.hdr_info.client_request.field_find(static_cast<std::string_view>(MIME_FIELD_HOST));
     if (host_field) {
       auto host_name{host_field->value_get()};
       if (!host_name.empty()) {
@@ -4858,20 +4858,21 @@ HttpSM::calculate_output_cl(int64_t num_chars_for_ct, int64_t num_chars_for_cl)
 void
 HttpSM::do_range_parse(MIMEField *range_field)
 {
-  int     num_chars_for_ct = 0;
-  int64_t content_length   = 0;
+  std::string_view content_type{};
+  int64_t          content_length = 0;
 
   if (t_state.cache_info.object_read != nullptr) {
-    t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &num_chars_for_ct);
+    content_type =
+      t_state.cache_info.object_read->response_get()->value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
     content_length = t_state.cache_info.object_read->object_size_get();
   } else {
     content_length = t_state.hdr_info.server_response.get_content_length();
-    t_state.hdr_info.server_response.value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &num_chars_for_ct);
+    content_type   = t_state.hdr_info.server_response.value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
   }
   int64_t num_chars_for_cl = num_chars_for_int(content_length);
 
   parse_range_and_compare(range_field, content_length);
-  calculate_output_cl(num_chars_for_ct, num_chars_for_cl);
+  calculate_output_cl(content_type.length(), num_chars_for_cl);
 }
 
 // this function looks for any Range: headers, parses them and either
@@ -4882,7 +4883,7 @@ HttpSM::do_range_setup_if_necessary()
 {
   MIMEField *field;
 
-  field = t_state.hdr_info.client_request.field_find(MIME_FIELD_RANGE, MIME_LEN_RANGE);
+  field = t_state.hdr_info.client_request.field_find(static_cast<std::string_view>(MIME_FIELD_RANGE));
   ink_assert(field != nullptr);
 
   t_state.range_setup = HttpTransact::RANGE_NONE;
@@ -4901,8 +4902,9 @@ HttpSM::do_range_setup_if_necessary()
 
       if (t_state.num_range_fields > 1) {
         if (0 == t_state.txn_conf->allow_multi_range) {
-          t_state.range_setup = HttpTransact::RANGE_NONE;                                 // No Range required (not allowed)
-          t_state.hdr_info.client_request.field_delete(MIME_FIELD_RANGE, MIME_LEN_RANGE); // ... and nuke the Range header too
+          t_state.range_setup = HttpTransact::RANGE_NONE; // No Range required (not allowed)
+          t_state.hdr_info.client_request.field_delete(
+            static_cast<std::string_view>(MIME_FIELD_RANGE)); // ... and nuke the Range header too
           t_state.num_range_fields = 0;
         } else if (1 == t_state.txn_conf->allow_multi_range) {
           do_transform = true;
@@ -4930,13 +4932,12 @@ HttpSM::do_range_setup_if_necessary()
       // We have to do the transform on (allowed) multi-range request, *or* if the VC is not pread capable
       if (do_transform) {
         if (api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK) == nullptr) {
-          int         field_content_type_len = -1;
-          const char *content_type           = nullptr;
-          int64_t     content_length         = 0;
+          std::string_view content_type{};
+          int64_t          content_length = 0;
 
           if (t_state.cache_info.object_read && t_state.cache_info.action != HttpTransact::CACHE_DO_REPLACE) {
-            content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
-                                                                                     &field_content_type_len);
+            content_type =
+              t_state.cache_info.object_read->response_get()->value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
             content_length = t_state.cache_info.object_read->object_size_get();
           } else {
             // We don't want to transform a range request if the server response has a content encoding.
@@ -4948,17 +4949,16 @@ HttpSM::do_range_setup_if_necessary()
 
             // Since we are transforming the range from the server, we want to cache the original response
             t_state.api_info.cache_untransformed = true;
-            content_type =
-              t_state.hdr_info.server_response.value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &field_content_type_len);
+            content_type   = t_state.hdr_info.server_response.value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
             content_length = t_state.hdr_info.server_response.get_content_length();
           }
 
           SMDbg(dbg_ctl_http_trans, "Unable to accelerate range request, fallback to transform");
 
           // create a Range: transform processor for requests of type Range: bytes=1-2,4-5,10-100 (eg. multiple ranges)
-          INKVConnInternal *range_trans = transformProcessor.range_transform(mutex.get(), t_state.ranges, t_state.num_range_fields,
-                                                                             &t_state.hdr_info.transform_response, content_type,
-                                                                             field_content_type_len, content_length);
+          INKVConnInternal *range_trans = transformProcessor.range_transform(
+            mutex.get(), t_state.ranges, t_state.num_range_fields, &t_state.hdr_info.transform_response, content_type.data(),
+            static_cast<int>(content_type.length()), content_length);
           api_hooks.append(TS_HTTP_RESPONSE_TRANSFORM_HOOK, range_trans);
         } else {
           // ToDo: Do we do something here? The theory is that multiple transforms do not behave well with
@@ -6631,8 +6631,9 @@ HttpSM::attach_server_session()
           !t_state.hdr_info.server_request.presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
         // Stuff in a TE setting so we treat this as chunked, sort of.
         t_state.server_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
-        t_state.hdr_info.server_request.value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED,
-                                                     HTTP_LEN_CHUNKED, true);
+        t_state.hdr_info.server_request.value_append(
+          static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
+          std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
       }
     }
   }
@@ -6667,7 +6668,7 @@ HttpSM::setup_server_send_request()
 
   if (t_state.api_server_request_body_set) {
     msg_len = t_state.internal_msg_buffer_size;
-    t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
+    t_state.hdr_info.server_request.value_set_int64(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH), msg_len);
   }
 
   dump_header(dbg_ctl_http_hdrs, &(t_state.hdr_info.server_request), sm_id, "Proxy's Request after hooks");
@@ -6919,20 +6920,21 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     // Set the content length here since a plugin
     //   may have changed the error body
     t_state.hdr_info.client_response.set_content_length(t_state.internal_msg_buffer_size);
-    t_state.hdr_info.client_response.field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    t_state.hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING));
 
     // set internal_msg_buffer_type if available
     if (t_state.internal_msg_buffer_type) {
       int len = strlen(t_state.internal_msg_buffer_type);
 
       if (len > 0) {
-        t_state.hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, t_state.internal_msg_buffer_type,
-                                                   len);
+        t_state.hdr_info.client_response.value_set(
+          static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE),
+          std::string_view{t_state.internal_msg_buffer_type, static_cast<std::string_view::size_type>(len)});
       }
       ats_free(t_state.internal_msg_buffer_type);
       t_state.internal_msg_buffer_type = nullptr;
     } else {
-      t_state.hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);
+      t_state.hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE), "text/html"sv);
     }
   } else {
     is_msg_buf_present = false;
@@ -6942,7 +6944,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     //   Needed for keep-alive on PURGE requests
     if (!is_response_body_precluded(t_state.hdr_info.client_response.status_get(), t_state.method)) {
       t_state.hdr_info.client_response.set_content_length(0);
-      t_state.hdr_info.client_response.field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+      t_state.hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING));
     }
   }
 
@@ -7188,7 +7190,7 @@ HttpSM::setup_server_transfer()
     }
   }
   if (action == TCA_CHUNK_CONTENT || action == TCA_PASSTHRU_CHUNKED_CONTENT) { // remove Content-Length
-    t_state.hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+    t_state.hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
   }
   // Now dump the header into the buffer
   ink_assert(t_state.hdr_info.client_response.status_get() != HTTP_STATUS_NOT_MODIFIED);
@@ -7660,12 +7662,10 @@ HttpSM::update_stats()
     url_string[offset] = 0; // NULL terminate the string
 
     // unique id
-    char        unique_id_string[128] = "";
-    int         length                = 0;
-    const char *field                 = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
-    if (field != nullptr && length > 0) {
-      length = std::min(length, static_cast<int>(sizeof(unique_id_string)) - 1);
-      memcpy(unique_id_string, field, length);
+    char unique_id_string[128] = "";
+    if (auto field{t_state.hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_X_ID))}; !field.empty()) {
+      auto length{std::min(field.length(), sizeof(unique_id_string) - 1)};
+      memcpy(unique_id_string, field.data(), length);
       unique_id_string[length] = 0; // NULL terminate the string
     }
 
@@ -8269,7 +8269,8 @@ HttpSM::do_redirect()
 
   // if redirect_url is set by an user's plugin, yts will redirect to this url anyway.
   if (is_redirect_required()) {
-    if (redirect_url != nullptr || t_state.hdr_info.client_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
+    if (redirect_url != nullptr ||
+        t_state.hdr_info.client_response.field_find(static_cast<std::string_view>(MIME_FIELD_LOCATION))) {
       if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
         LogAccess accessor(this);
         if (redirect_url == nullptr) {
@@ -8305,10 +8306,8 @@ HttpSM::do_redirect()
         Metrics::Counter::increment(http_rsb.total_x_redirect);
       } else {
         // get the location header and setup the redirect
-        int   redir_len = 0;
-        char *redir_url =
-          const_cast<char *>(t_state.hdr_info.client_response.value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redir_len));
-        redirect_request(redir_url, redir_len);
+        auto redir_url{t_state.hdr_info.client_response.value_get(static_cast<std::string_view>(MIME_FIELD_LOCATION))};
+        redirect_request(redir_url.data(), static_cast<int>(redir_url.length()));
       }
 
     } else {
@@ -8331,20 +8330,18 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   }
 
   bool valid_origHost = true;
-  int  origHost_len, origMethod_len{0};
+  int  origMethod_len{0};
   char origHost[MAXDNAME];
   char origMethod[255];
   int  origPort = 80;
 
   if (t_state.hdr_info.server_request.valid()) {
-    char *tmpOrigHost;
+    origPort = t_state.hdr_info.server_request.port_get();
 
-    origPort    = t_state.hdr_info.server_request.port_get();
-    tmpOrigHost = const_cast<char *>(t_state.hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &origHost_len));
-
-    if (tmpOrigHost) {
-      memcpy(origHost, tmpOrigHost, origHost_len);
-      origHost[std::min(origHost_len, MAXDNAME - 1)] = '\0';
+    if (auto tmpOrigHost{t_state.hdr_info.server_request.value_get(static_cast<std::string_view>(MIME_FIELD_HOST))};
+        !tmpOrigHost.empty()) {
+      memcpy(origHost, tmpOrigHost.data(), tmpOrigHost.length());
+      origHost[std::min(tmpOrigHost.length(), sizeof(origHost) - 1)] = '\0';
     } else {
       valid_origHost = false;
     }
@@ -8474,9 +8471,11 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
         char buf[host_len + 7]; // 5 + 1 + 1 ("12345" + ':' + '\0')
 
         host_len = snprintf(buf, host_len + 7, "%.*s:%d", host_len, host, port);
-        t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
+        t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
+                                                  std::string_view{buf, static_cast<std::string_view::size_type>(host_len)});
       } else {
-        t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host, host_len);
+        t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
+                                                  std::string_view{host, static_cast<std::string_view::size_type>(host_len)});
       }
       t_state.hdr_info.client_request.m_target_cached = false;
       t_state.hdr_info.server_request.m_target_cached = false;
@@ -8508,9 +8507,12 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
           char buf[host_len + 7]; // 5 + 1 + 1 ("12345" + ':' + '\0')
 
           host_len = snprintf(buf, host_len + 7, "%s:%d", origHostNoPort, origPort);
-          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
+          t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
+                                                    std::string_view{buf, static_cast<std::string_view::size_type>(host_len)});
         } else {
-          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, origHostNoPort, host_len);
+          t_state.hdr_info.client_request.value_set(
+            static_cast<std::string_view>(MIME_FIELD_HOST),
+            std::string_view{origHostNoPort, static_cast<std::string_view::size_type>(host_len)});
         }
 
         // Cleanup of state etc.
@@ -8530,7 +8532,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       } else {
       LhostError:
         // the server request didn't have a host, so remove it from the headers
-        t_state.hdr_info.client_request.field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
+        t_state.hdr_info.client_request.field_delete(static_cast<std::string_view>(MIME_FIELD_HOST));
       }
     }
   }

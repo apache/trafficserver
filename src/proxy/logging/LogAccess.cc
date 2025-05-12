@@ -96,7 +96,7 @@ LogAccess::init()
 
   if (hdr->client_response.valid()) {
     m_proxy_response = &(hdr->client_response);
-    MIMEField *field = m_proxy_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    MIMEField *field = m_proxy_response->field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
     if (field) {
       auto proxy_resp_content_type{field->value_get()};
       m_proxy_resp_content_type_str = const_cast<char *>(proxy_resp_content_type.data());
@@ -104,7 +104,8 @@ LogAccess::init()
       LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
     } else {
       // If Content-Type field is missing, check for @Content-Type
-      field = m_proxy_response->field_find(HIDDEN_CONTENT_TYPE, HIDDEN_CONTENT_TYPE_LEN);
+      field = m_proxy_response->field_find(
+        std::string_view{HIDDEN_CONTENT_TYPE, static_cast<std::string_view::size_type>(HIDDEN_CONTENT_TYPE_LEN)});
       if (field) {
         auto proxy_resp_content_type{field->value_get()};
         m_proxy_resp_content_type_str = const_cast<char *>(proxy_resp_content_type.data());
@@ -2934,7 +2935,7 @@ LogAccess::marshal_file_size(char *buf)
     MIMEField *fld;
     HTTPHdr   *hdr = m_server_response ? m_server_response : m_cache_response;
 
-    if (hdr && (fld = hdr->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE))) {
+    if (hdr && (fld = hdr->field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_RANGE)))) {
       auto  value{fld->value_get()};
       int   len = value.length();
       char *str = const_cast<char *>(value.data());
@@ -3117,7 +3118,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
   }
 
   if (header) {
-    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
+    MIMEField *fld = header->field_find(std::string_view{field});
     if (fld) {
       valid_field = true;
 
@@ -3220,7 +3221,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
   }
 
   if (header) {
-    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
+    MIMEField *fld = header->field_find(std::string_view{field});
     if (fld) {
       valid_field = true;
 
@@ -3366,7 +3367,7 @@ LogAccess::set_http_header_field(LogField::Container container, char *field, cha
   }
 
   if (header && buf) {
-    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
+    MIMEField *fld = header->field_find(std::string_view{field});
     if (fld) {
       // Loop over dups, update each of them
       //
@@ -3374,7 +3375,7 @@ LogAccess::set_http_header_field(LogField::Container container, char *field, cha
         // make sure to reuse header heaps as otherwise
         // coalesce logic in header heap may free up
         // memory pointed to by cquuc or other log fields
-        header->field_value_set(fld, buf, len, true);
+        header->field_value_set(fld, std::string_view{buf, static_cast<std::string_view::size_type>(len)}, true);
         fld = fld->m_next_dup;
       }
     }

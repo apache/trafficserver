@@ -1630,9 +1630,11 @@ TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value
   }
 
   if (idx >= 0) {
-    mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+    mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx,
+                                   std::string_view{value, static_cast<std::string_view::size_type>(length)});
   } else {
-    mime_field_value_set(heap, handle->mh, handle->field_ptr, value, length, true);
+    mime_field_value_set(heap, handle->mh, handle->field_ptr,
+                         std::string_view{value, static_cast<std::string_view::size_type>(length)}, true);
   }
 }
 
@@ -1646,7 +1648,8 @@ TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int 
     length = strlen(value);
   }
 
-  mime_field_value_insert_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+  mime_field_value_insert_comma_val(heap, handle->mh, handle->field_ptr, idx,
+                                    std::string_view{value, static_cast<std::string_view::size_type>(length)});
 }
 
 /****************/
@@ -1690,7 +1693,7 @@ TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
   }
 
   MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(hdr_obj);
-  MIMEField   *f  = mime_hdr_field_find(mh, name, length);
+  MIMEField   *f  = mime_hdr_field_find(mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
 
   if (f == nullptr) {
     return TS_NULL_MLOC;
@@ -1861,8 +1864,8 @@ TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int 
   MIMEHdrImpl        *mh   = _hdr_mloc_to_mime_hdr_impl(mh_mloc);
   HdrHeap            *heap = ((reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap);
   MIMEFieldSDKHandle *h    = sdk_alloc_field_handle(bufp, mh);
-  h->field_ptr             = mime_field_create_named(heap, mh, name, name_len);
-  *locp                    = reinterpret_cast<TSMLoc>(h);
+  h->field_ptr = mime_field_create_named(heap, mh, std::string_view{name, static_cast<std::string_view::size_type>(name_len)});
+  *locp        = reinterpret_cast<TSMLoc>(h);
   return TS_SUCCESS;
 }
 
@@ -1903,9 +1906,11 @@ TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMB
     mime_hdr_field_detach(d_handle->mh, d_handle->field_ptr, false);
   }
 
-  mime_field_name_value_set(d_heap, d_handle->mh, d_handle->field_ptr, s_handle->field_ptr->m_wks_idx,
-                            s_handle->field_ptr->m_ptr_name, s_handle->field_ptr->m_len_name, s_handle->field_ptr->m_ptr_value,
-                            s_handle->field_ptr->m_len_value, 0, 0, true);
+  mime_field_name_value_set(
+    d_heap, d_handle->mh, d_handle->field_ptr, s_handle->field_ptr->m_wks_idx,
+    std::string_view{s_handle->field_ptr->m_ptr_name, static_cast<std::string_view::size_type>(s_handle->field_ptr->m_len_name)},
+    std::string_view{s_handle->field_ptr->m_ptr_value, static_cast<std::string_view::size_type>(s_handle->field_ptr->m_len_value)},
+    0, 0, true);
 
   if (dest_attached) {
     mime_hdr_field_attach(d_handle->mh, d_handle->field_ptr, 1, nullptr);
@@ -1969,7 +1974,9 @@ TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field
 
   s_field = s_handle->field_ptr;
   d_field = d_handle->field_ptr;
-  mime_field_value_set(d_heap, d_handle->mh, d_field, s_field->m_ptr_value, s_field->m_len_value, true);
+  mime_field_value_set(d_heap, d_handle->mh, d_field,
+                       std::string_view{s_field->m_ptr_value, static_cast<std::string_view::size_type>(s_field->m_len_value)},
+                       true);
   return TS_SUCCESS;
 }
 
@@ -2066,7 +2073,7 @@ TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name
     mime_hdr_field_detach(handle->mh, handle->field_ptr, false);
   }
 
-  handle->field_ptr->name_set(heap, handle->mh, name, length);
+  handle->field_ptr->name_set(heap, handle->mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
 
   if (attached) {
     mime_hdr_field_attach(handle->mh, handle->field_ptr, 1, nullptr);
@@ -2097,7 +2104,7 @@ TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
    * An empty string is also considered to be a token. The correct value of
    * the field after this function should be null.
    */
-  mime_field_value_set(heap, handle->mh, handle->field_ptr, nullptr, 0, true);
+  mime_field_value_set(heap, handle->mh, handle->field_ptr, std::string_view{nullptr, 0}, true);
   return TS_SUCCESS;
 }
 
@@ -2353,7 +2360,8 @@ TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, con
   if (length == -1) {
     length = strlen(value);
   }
-  mime_field_value_extend_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+  mime_field_value_extend_comma_val(heap, handle->mh, handle->field_ptr, idx,
+                                    std::string_view{value, static_cast<std::string_view::size_type>(length)});
   return TS_SUCCESS;
 }
 
@@ -6847,7 +6855,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   TSMLoc   obj  = reinterpret_cast<TSMLoc>(hptr->m_http);
 
   MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
-  MIMEField   *f  = mime_hdr_field_find(mh, MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+  MIMEField   *f  = mime_hdr_field_find(mh, static_cast<std::string_view>(MIME_FIELD_ACCEPT_ENCODING));
   if (!stream->push_promise(url_obj, f)) {
     url_obj.destroy();
     return TS_ERROR;

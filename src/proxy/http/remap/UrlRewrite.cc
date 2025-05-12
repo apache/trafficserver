@@ -396,23 +396,18 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
 bool
 UrlRewrite::ReverseMap(HTTPHdr *response_header)
 {
-  const char *location_hdr;
-  URL         location_url;
-  int         loc_length;
-  bool        remap_found = false;
-  const char *host;
-  int         host_len;
-  char       *new_loc_hdr;
-  int         new_loc_length;
-  int         i;
-  const struct {
-    const char *const field;
-    const int         len;
-  } url_headers[N_URL_HEADERS] = {
-    {MIME_FIELD_LOCATION,         MIME_LEN_LOCATION        },
-    {MIME_FIELD_CONTENT_LOCATION, MIME_LEN_CONTENT_LOCATION},
-    {"URI",                       3                        },
-    {"Destination",               11                       }
+  URL                    location_url;
+  bool                   remap_found = false;
+  const char            *host;
+  int                    host_len;
+  char                  *new_loc_hdr;
+  int                    new_loc_length;
+  int                    i;
+  const std::string_view url_headers[N_URL_HEADERS] = {
+    static_cast<std::string_view>(MIME_FIELD_LOCATION),
+    static_cast<std::string_view>(MIME_FIELD_CONTENT_LOCATION),
+    "URI"sv,
+    "Destination"sv,
   };
 
   if (unlikely(num_rules_reverse == 0)) {
@@ -421,14 +416,14 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
   }
 
   for (i = 0; i < N_URL_HEADERS; ++i) {
-    location_hdr = response_header->value_get(url_headers[i].field, url_headers[i].len, &loc_length);
+    auto location_hdr{response_header->value_get(url_headers[i])};
 
-    if (location_hdr == nullptr) {
+    if (location_hdr.empty()) {
       continue;
     }
 
     location_url.create(nullptr);
-    location_url.parse(location_hdr, loc_length);
+    location_url.parse(location_hdr.data(), static_cast<int>(location_hdr.length()));
 
     host = location_url.host_get(&host_len);
 
@@ -440,7 +435,8 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
       }
       url_rewrite_remap_request(reverse_mapping, &location_url);
       new_loc_hdr = location_url.string_get_ref(&new_loc_length);
-      response_header->value_set(url_headers[i].field, url_headers[i].len, new_loc_hdr, new_loc_length);
+      response_header->value_set(url_headers[i],
+                                 std::string_view{new_loc_hdr, static_cast<std::string_view::size_type>(new_loc_length)});
     }
 
     location_url.destroy();
@@ -652,21 +648,15 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 
   if (host_len == 0 && reverse_proxy != 0) { // Server request.  Use the host header to figure out where
                                              // it goes.  Host header parsing is same as in ::Remap
-    int         host_hdr_len;
-    const char *host_hdr = request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_hdr_len);
+    auto host_hdr{request_header->value_get(static_cast<std::string_view>(MIME_FIELD_HOST))};
 
-    if (!host_hdr) {
-      host_hdr     = "";
-      host_hdr_len = 0;
-    }
-
-    const char *tmp = static_cast<const char *>(memchr(host_hdr, ':', host_hdr_len));
+    const char *tmp = static_cast<const char *>(memchr(host_hdr.data(), ':', host_hdr.length()));
 
     if (tmp == nullptr) {
-      host_len = host_hdr_len;
+      host_len = static_cast<int>(host_hdr.length());
     } else {
-      host_len     = tmp - host_hdr;
-      request_port = ink_atoi(tmp + 1, host_hdr_len - host_len);
+      host_len     = tmp - host_hdr.data();
+      request_port = ink_atoi(tmp + 1, static_cast<int>(host_hdr.length()) - host_len);
 
       // If atoi fails, try the default for the
       //   protocol
@@ -675,7 +665,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
       }
     }
 
-    host = host_hdr;
+    host = host_hdr.data();
   }
   // Temporary Redirects have precedence over Permanent Redirects
   // the rationale behind this is that network administrators might

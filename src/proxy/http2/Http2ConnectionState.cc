@@ -2455,8 +2455,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
       bool    has_content_header   = send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH);
       bool    explicit_zero_length = has_content_header && send_hdr->get_content_length() == 0;
       int64_t content_length       = has_content_header ? send_hdr->get_content_length() : 0L;
-      bool    is_chunked =
-        is_transfer_encoded && send_hdr->value_get(MIME_FIELD_TRANSFER_ENCODING) == std::string_view(HTTP_VALUE_CHUNKED);
+      bool is_chunked = is_transfer_encoded && send_hdr->value_get(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) ==
+                                                 std::string_view(HTTP_VALUE_CHUNKED);
 
       bool expect_content_stream =
         is_transfer_encoded ||                                                        // transfer encoded content length is unknown
@@ -2540,10 +2540,10 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   if (accept_encoding != nullptr) {
     auto       name{accept_encoding->name_get()};
-    MIMEField *f = hdr.field_create(name.data(), name.length());
+    MIMEField *f = hdr.field_create(name);
 
     auto value{accept_encoding->value_get()};
-    f->value_set(hdr.m_heap, hdr.m_mime, value.data(), value.length());
+    f->value_set(hdr.m_heap, hdr.m_mime, value);
 
     hdr.field_attach(f);
   }
