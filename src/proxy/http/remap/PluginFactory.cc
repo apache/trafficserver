@@ -107,7 +107,7 @@ PluginFactory::~PluginFactory()
   if (!TSSystemState::is_event_system_shut_down()) {
     uint32_t elevate_access = 0;
 
-    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    elevate_access = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     fs::remove_all(_runtimeDir, _ec);

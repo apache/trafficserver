@@ -118,7 +118,7 @@ RecHttpLoadIp(char const *name)
   ts::IPAddrPair zret;
   char           value[1024];
 
-  if (REC_ERR_OKAY == RecGetRecordString(name, value, sizeof(value))) {
+  if (RecGetRecordString(name, value, sizeof(value)).has_value()) {
     Tokenizer tokens(", ");
     int       n_addrs = tokens.Initialize(value);
     for (int i = 0; i < n_addrs; ++i) {
@@ -154,9 +154,9 @@ RecHttpLoadIpAddrsFromConfVar(const char *value_name, swoc::IPRangeSet &addrs)
 {
   char value[1024];
 
-  if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value))) {
+  if (auto sv{RecGetRecordString(value_name, value, sizeof(value))}; sv) {
     Dbg(dbg_ctl_config, "RecHttpLoadIpAddrsFromConfVar: parsing the name [%s] and value [%s]", value_name, value);
-    swoc::TextView text(value, std::strlen(value));
+    swoc::TextView text(sv.value());
     while (text) {
       auto token = text.take_prefix_at(',');
       if (swoc::IPRange r; r.load(token)) {
@@ -283,14 +283,10 @@ HttpProxyPort::checkPrefix(const char *src, char const *prefix, size_t prefix_le
 bool
 HttpProxyPort::loadConfig(std::vector<self> &entries)
 {
-  char *text;
-  bool  found_p;
-
-  text = REC_readString(PORTS_CONFIG_NAME, &found_p);
-  if (found_p) {
-    self::loadValue(entries, text);
+  auto text{RecGetRecordStringAlloc(PORTS_CONFIG_NAME)};
+  if (text) {
+    self::loadValue(entries, ats_as_c_str(text));
   }
-  ats_free(text);
 
   return 0 < entries.size();
 }
@@ -743,11 +739,11 @@ ts_host_res_global_init()
 {
   // Global configuration values.
   host_res_default_preference_order = HOST_RES_DEFAULT_PREFERENCE_ORDER;
-  char *ip_resolve                  = REC_ConfigReadString("proxy.config.hostdb.ip_resolve");
+  auto str{RecGetRecordStringAlloc("proxy.config.hostdb.ip_resolve")};
+  auto ip_resolve{ats_as_c_str(str)};
   if (ip_resolve) {
     parse_host_res_preference(ip_resolve, host_res_default_preference_order);
   }
-  ats_free(ip_resolve);
 }
 
 // Whatever executable uses librecords must call this.

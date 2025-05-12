@@ -27,6 +27,7 @@
 #include <strings.h>
 #include <cinttypes>
 #include <limits>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -148,6 +149,18 @@ inline char *
 ats_stringdup(std::string_view const &p)
 {
   return p.empty() ? nullptr : _xstrdup(p.data(), p.size(), nullptr);
+}
+
+inline char *
+ats_stringdup(std::optional<std::string> const &p)
+{
+  return p ? _xstrdup(p.value().data(), p.value().size(), nullptr) : nullptr;
+}
+
+inline const char *
+ats_as_c_str(std::optional<std::string> const &p)
+{
+  return p ? p.value().c_str() : nullptr;
 }
 
 template <typename PtrType, typename SizeType>

@@ -1945,7 +1945,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   // Optionally elevate/allow file access to read root-only
   // certificates. The destructor will drop privilege for us.
   uint32_t elevate_setting = 0;
-  REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+  elevate_setting          = RecGetRecordInt("proxy.config.ssl.cert.load_elevated").value_or(0);
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
   line = tokLine(content.data(), &tok_state);

@@ -58,8 +58,8 @@ parsePluginDynamicReloadConfig()
 {
   int int_plugin_dynamic_reload_mode;
 
-  REC_ReadConfigInteger(int_plugin_dynamic_reload_mode, "proxy.config.plugin.dynamic_reload_mode");
-  plugin_dynamic_reload_mode = static_cast<PluginDynamicReloadMode>(int_plugin_dynamic_reload_mode);
+  int_plugin_dynamic_reload_mode = RecGetRecordInt("proxy.config.plugin.dynamic_reload_mode").value_or(0);
+  plugin_dynamic_reload_mode     = static_cast<PluginDynamicReloadMode>(int_plugin_dynamic_reload_mode);
 
   if (plugin_dynamic_reload_mode < 0 || plugin_dynamic_reload_mode >= PluginDynamicReloadMode::RELOAD_COUNT) {
     Warning("proxy.config.plugin.dynamic_reload_mode out of range. using default value.");
@@ -158,7 +158,7 @@ single_plugin_init(int argc, char *argv[], bool validateOnly)
   // change the effective user to root
   {
     uint32_t elevate_access = 0;
-    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    elevate_access          = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     void       *handle, *initptr = nullptr;
@@ -224,40 +224,40 @@ plugin_expand(char *arg)
 
   switch (data_type) {
   case RECD_STRING: {
-    RecString str_val;
-    if (RecGetRecordString_Xmalloc(arg, &str_val) != REC_ERR_OKAY) {
+    auto rec_str{RecGetRecordStringAlloc(arg)};
+    if (!rec_str) {
       goto not_found;
     }
-    return static_cast<char *>(str_val);
+    return ats_stringdup(rec_str);
     break;
   }
   case RECD_FLOAT: {
-    RecFloat float_val;
-    if (RecGetRecordFloat(arg, &float_val) != REC_ERR_OKAY) {
+    auto float_val{RecGetRecordFloat(arg)};
+    if (!float_val) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));
-    snprintf(str, 128, "%f", static_cast<float>(float_val));
+    snprintf(str, 128, "%f", static_cast<float>(float_val.value()));
     return str;
     break;
   }
   case RECD_INT: {
-    RecInt int_val;
-    if (RecGetRecordInt(arg, &int_val) != REC_ERR_OKAY) {
+    auto int_val{RecGetRecordInt(arg)};
+    if (!int_val) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));
-    snprintf(str, 128, "%ld", static_cast<long int>(int_val));
+    snprintf(str, 128, "%ld", static_cast<long int>(int_val.value()));
     return str;
     break;
   }
   case RECD_COUNTER: {
-    RecCounter count_val;
-    if (RecGetRecordCounter(arg, &count_val) != REC_ERR_OKAY) {
+    auto count_val{RecGetRecordCounter(arg)};
+    if (count_val) {
       goto not_found;
     }
     str = static_cast<char *>(ats_malloc(128));
-    snprintf(str, 128, "%ld", static_cast<long int>(count_val));
+    snprintf(str, 128, "%ld", static_cast<long int>(count_val.value()));
     return str;
     break;
   }

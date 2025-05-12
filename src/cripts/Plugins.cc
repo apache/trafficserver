@@ -57,7 +57,7 @@ Plugin::Remap::Create(const std::string &tag, const std::string &plugin, const c
   {
     uint32_t elevate_access = 0;
 
-    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    elevate_access = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     inst._plugin = gPluginFactory.getRemapPlugin(path, argc, const_cast<char **>(argv), error, isPluginDynamicReloadEnabled());

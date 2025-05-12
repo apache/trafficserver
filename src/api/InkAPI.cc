@@ -3252,10 +3252,10 @@ TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *plugin_f
 TSReturnCode
 TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 {
-  auto res = RecGetRecordInt(const_cast<char *>(var_name), static_cast<RecInt *>(result));
+  auto tmp{RecGetRecordInt(var_name)};
 
   // Try the old librecords first
-  if (res == REC_ERR_FAIL) {
+  if (!tmp) {
     int id = global_api_metrics.lookup(var_name);
 
     if (id == ts::Metrics::NOT_FOUND) {
@@ -3263,6 +3263,8 @@ TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
     } else {
       *result = global_api_metrics[id].load();
     }
+  } else {
+    *result = tmp.value();
   }
 
   return TS_SUCCESS;
@@ -3271,10 +3273,10 @@ TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 TSReturnCode
 TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 {
-  auto res = RecGetRecordCounter(const_cast<char *>(var_name), static_cast<RecCounter *>(result));
+  auto tmp{RecGetRecordCounter(var_name)};
 
   // Try the old librecords first
-  if (res == REC_ERR_FAIL) {
+  if (!tmp) {
     int id = global_api_metrics.lookup(var_name);
 
     if (id == ts::Metrics::NOT_FOUND) {
@@ -3282,6 +3284,8 @@ TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
     } else {
       *result = global_api_metrics[id].load();
     }
+  } else {
+    *result = tmp.value();
   }
 
   return TS_SUCCESS;
@@ -3291,17 +3295,22 @@ TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 TSReturnCode
 TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
 {
-  return RecGetRecordFloat(const_cast<char *>(var_name), static_cast<RecFloat *>(result)) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
+  auto tmp{RecGetRecordFloat(const_cast<char *>(var_name))};
+  if (tmp) {
+    *result = tmp.value();
+    return TS_SUCCESS;
+  }
+  return TS_ERROR;
 }
 
 TSReturnCode
 TSMgmtStringGet(const char *var_name, TSMgmtString *result)
 {
-  RecString tmp = nullptr;
-  (void)RecGetRecordString_Xmalloc(const_cast<char *>(var_name), &tmp);
+  auto tmp_str{RecGetRecordStringAlloc(const_cast<char *>(var_name))};
+  auto tmp{ats_as_c_str(tmp_str)};
 
   if (tmp) {
-    *result = tmp;
+    *result = ats_strdup(tmp);
     return TS_SUCCESS;
   }
 

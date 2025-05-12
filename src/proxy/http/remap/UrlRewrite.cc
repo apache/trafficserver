@@ -60,7 +60,7 @@ bool
 UrlRewrite::get_acl_behavior_policy(ACLBehaviorPolicy &policy)
 {
   int behavior_policy = 0;
-  REC_ReadConfigInteger(behavior_policy, "proxy.config.url_remap.acl_behavior_policy");
+  behavior_policy     = RecGetRecordInt("proxy.config.url_remap.acl_behavior_policy").value_or(0);
   switch (behavior_policy) {
   case 0:
     policy = ACLBehaviorPolicy::ACL_BEHAVIOR_LEGACY;
@@ -87,20 +87,24 @@ UrlRewrite::load()
   }
 
   this->ts_name = nullptr;
-  REC_ReadConfigStringAlloc(this->ts_name, "proxy.config.proxy_name");
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.proxy_name")}; rec_str) {
+    this->ts_name = ats_stringdup(rec_str);
+  }
   if (this->ts_name == nullptr) {
     Warning("%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
     this->ts_name = ats_strdup("");
   }
 
   this->http_default_redirect_url = nullptr;
-  REC_ReadConfigStringAlloc(this->http_default_redirect_url, "proxy.config.http.referer_default_redirect");
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.http.referer_default_redirect")}; rec_str) {
+    this->http_default_redirect_url = ats_stringdup(rec_str);
+  }
   if (this->http_default_redirect_url == nullptr) {
     Warning("%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);
     this->http_default_redirect_url = ats_strdup("http://www.apache.org");
   }
 
-  REC_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
+  reverse_proxy = RecGetRecordInt("proxy.config.reverse_proxy.enabled").value_or(0);
 
   /* Initialize the plugin factory */
   pluginFactory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
@@ -132,7 +136,7 @@ UrlRewrite::load()
   if (TS_SUCCESS == this->BuildTable(config_file_path)) {
     int n_rules = this->rule_count(); // Minimum # of rules to be considered a valid configuration.
     int required_rules;
-    REC_ReadConfigInteger(required_rules, "proxy.config.url_remap.min_rules_required");
+    required_rules = RecGetRecordInt("proxy.config.url_remap.min_rules_required").value_or(0);
     if (n_rules >= required_rules) {
       _valid = true;
       if (dbg_ctl_url_rewrite.on()) {
