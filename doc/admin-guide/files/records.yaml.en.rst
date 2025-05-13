@@ -1900,7 +1900,7 @@ Negative Response Caching
    already cached content. A revalidation failure means a connection failure or a 50x response code.
    When considering replying with a stale response in these negative revalidating circumstances,
    |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` configuration and will not
-   use a cached response older than ``max_stale_age`` seconds.
+   use a cached response older than ``max_stale_age`` seconds plus ``max-age`` of cached content.
 
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
@@ -2740,11 +2740,11 @@ Dynamic Content & Content Negotiation
    ===== ======================================================================
    ``0`` Default. Disable cache and go to origin server.
    ``1`` Return a ``502`` error on a cache miss.
-   ``2`` Serve stale if object's age is under
+   ``2`` Serve stale if object's age is under ``max-age`` +
          :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
          origin server.
    ``3`` Return a ``502`` error on a cache miss or serve stale on a cache
-         revalidate if object's age is under
+         revalidate if object's age is under ``max-age`` +
          :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
          origin server.
    ``4`` Return a ``502`` error on either a cache miss or on a revalidation.

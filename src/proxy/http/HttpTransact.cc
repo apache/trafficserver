@@ -5966,7 +5966,7 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
                                                                  s->cache_info.object_read->response_received_time_get(),
                                                                  cached_response, cached_response->get_date(), s->current.now);
   // Negative age is overflow
-  if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age)) {
+  if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age + get_max_age(cached_response))) {
     TxnDbg(dbg_ctl_http_trans, "document age is too large %" PRId64, (int64_t)current_age);
     return false;
   }

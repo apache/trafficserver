@@ -119,12 +119,33 @@ sessions:
     proxy-response:
       status: 200
 
+  # Request the stale resource after max-age is passed. ATS will still serve stale contents until
+  # 12 seconds {= max-age (2 seconds) + max_stale_age (10 seconds)}.
+  # Note that we already delayed 4 seconds in a previous transaction.
+  - client-request:
+      delay: 7s
+
+      method: "GET"
+      version: "1.1"
+      url: /a/path
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 4th_stale ]
+        - [ X-Request, 4th_stale ]
+
+    <<: *origin_response
+
+    # At this point, ATS should respond with a 502 since max_stale_age is exceeded.
+    proxy-response:
+      status: 200
+
   # Request the stale resource after enough delay to guarantee that the cached
-  # object's age exceeds max_stale_age (10 seconds). Note that we already
-  # delayed 4 seconds in a previous transaction. ATS should not serve the stale
+  # object's age exceeds max-age (2 seconds) + max_stale_age (10 seconds). Note that we already
+  # delayed 11 seconds in a previous transaction. ATS should not serve the stale
   # entry anymore because it is too old.
   - client-request:
-      delay: 8s
+      delay: 2s
 
       method: "GET"
       version: "1.1"
