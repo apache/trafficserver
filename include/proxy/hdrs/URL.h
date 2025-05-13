@@ -302,7 +302,7 @@ public:
   void type_code_set(int type);
 
   std::string_view query_get() const noexcept;
-  void             query_set(const char *value, int length);
+  void             query_set(std::string_view value);
   std::string_view fragment_get() const noexcept;
   void             fragment_set(const char *value, int length);
 
@@ -677,10 +677,10 @@ URL::query_get() const noexcept
   -------------------------------------------------------------------------*/
 
 inline void
-URL::query_set(const char *value, int length)
+URL::query_set(std::string_view value)
 {
   ink_assert(valid());
-  m_url_impl->set_query(m_heap, {value, static_cast<std::string_view::size_type>(length)}, true);
+  m_url_impl->set_query(m_heap, value, true);
 }
 
 /*-------------------------------------------------------------------------
