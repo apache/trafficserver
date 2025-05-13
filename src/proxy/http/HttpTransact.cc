@@ -2144,10 +2144,10 @@ HttpTransact::DecideCacheLookup(State *s)
         if (auto [field, host, port_sv]{incoming_request->get_host_port_values()}; field != nullptr) {
           int port = 0;
           if (!port_sv.empty()) {
-            s->cache_info.lookup_url->host_set(host.data(), static_cast<int>(host.length()));
+            s->cache_info.lookup_url->host_set(host);
             port = ink_atoi(port_sv.data(), static_cast<int>(port_sv.length()));
           } else {
-            s->cache_info.lookup_url->host_set(host.data(), static_cast<int>(host.length()));
+            s->cache_info.lookup_url->host_set(host);
           }
           s->cache_info.lookup_url->port_set(port);
         }
@@ -7746,7 +7746,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   // If we are going to a peer cache and want to use the pristine URL, get it from the base request
   if (s->parent_result.use_pristine) {
     auto host{s->unmapped_url.host_get()};
-    outgoing_request->url_get()->host_set(host.data(), static_cast<int>(host.length()));
+    outgoing_request->url_get()->host_set(host);
   }
 
   // If the response is most likely not cacheable, eg, request with Authorization,
@@ -8171,7 +8171,7 @@ HttpTransact::build_redirect_response(State *s)
   //////////////////////////////////////////////////////////
   u = s->hdr_info.client_request.url_get();
   auto old_host{u->host_get()};
-  u->host_set(s->dns_info.lookup_name, strlen(s->dns_info.lookup_name));
+  u->host_set({s->dns_info.lookup_name});
   new_url = to_free = u->string_get(&s->arena, &new_url_len);
   assert(to_free != nullptr); // needed to avoid false positive nullptr deref from clang-analyzer.
   // The following code may not be needed if string_get above always returns non nullptr,
@@ -8179,7 +8179,7 @@ HttpTransact::build_redirect_response(State *s)
   if (new_url == nullptr) {
     new_url = "";
   }
-  u->host_set(old_host.data(), static_cast<int>(old_host.length()));
+  u->host_set(old_host);
 
   //////////////////////////
   // set redirect headers //

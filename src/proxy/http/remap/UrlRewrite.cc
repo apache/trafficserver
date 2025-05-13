@@ -318,11 +318,9 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
   URL *map_to   = mapping_container.getToURL();
   URL *map_from = mapping_container.getFromURL();
 
-  auto toHost{map_to->host_get()};
-
   Dbg(dbg_ctl_url_rewrite, "%s: Remapping rule id: %d matched", __func__, mapping_container.getMapping()->map_id);
 
-  request_url->host_set(toHost.data(), static_cast<int>(toHost.length()));
+  request_url->host_set(map_to->host_get());
   request_url->port_set(map_to->port_get_raw());
 
   // With the CONNECT method, we have to avoid messing with the scheme and path, because it's not part of
@@ -1039,7 +1037,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       buf_len              = _expandSubstitutions(matches_info, list_iter, request_host, buf, sizeof(buf));
       URL *expanded_url    = mapping_container.createNewToURL();
       expanded_url->copy(&((list_iter->url_map)->toURL));
-      expanded_url->host_set(buf, buf_len);
+      expanded_url->host_set({buf, static_cast<std::string_view::size_type>(buf_len)});
 
       Dbg(dbg_ctl_url_rewrite_regex, "Expanded toURL to [%.*s]", expanded_url->length_get(), expanded_url->string_get_ref());
       retval = true;

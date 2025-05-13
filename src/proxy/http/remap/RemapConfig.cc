@@ -1349,7 +1349,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     LowerCaseStr(fromHost_lower);
 
     // set the normalized string so nobody else has to normalize this
-    new_mapping->fromURL.host_set(fromHost_lower, fromHost.length());
+    new_mapping->fromURL.host_set({fromHost_lower, fromHost.length()});
 
     reg_map = nullptr;
     if (is_cur_mapping_regex) {
@@ -1382,7 +1382,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             u_mapping = new url_mapping;
             u_mapping->fromURL.create(nullptr);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
-            u_mapping->fromURL.host_set(ipb, strlen(ipb));
+            u_mapping->fromURL.host_set({ipb});
             u_mapping->toURL.create(nullptr);
             u_mapping->toURL.copy(&new_mapping->toURL);
 

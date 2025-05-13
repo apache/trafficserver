@@ -1749,16 +1749,14 @@ HTTPHdr::set_url_target_from_host_field(URL *url)
     // Use local cached URL and don't copy if the target
     // is already there.
     if (!m_target_in_url && m_host_mime && m_host_length) {
-      m_url_cached.host_set(m_host_mime->m_ptr_value, m_host_length);
+      m_url_cached.host_set({m_host_mime->m_ptr_value, static_cast<std::string_view::size_type>(m_host_length)});
       if (m_port_in_header) {
         m_url_cached.port_set(m_port);
       }
       m_target_in_url = true; // it's there now.
     }
   } else {
-    auto host{host_get()};
-
-    url->host_set(host.data(), static_cast<int>(host.length()));
+    url->host_set(host_get());
     if (m_port_in_header) {
       url->port_set(m_port);
     }

@@ -499,7 +499,7 @@ HttpSM::setup_blind_tunnel_port()
     if (t_state.hdr_info.client_request.url_get()->host_get().empty()) {
       if (tts->has_tunnel_destination()) {
         auto tunnel_host = tts->get_tunnel_host();
-        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host.data(), tunnel_host.size());
+        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host);
         if (tts->get_tunnel_port() > 0) {
           t_state.tunnel_port_is_dynamic = tts->tunnel_port_is_dynamic();
           t_state.hdr_info.client_request.url_get()->port_set(tts->get_tunnel_port());
@@ -511,7 +511,7 @@ HttpSM::setup_blind_tunnel_port()
         if (auto *snis = netvc->get_service<TLSSNISupport>(); snis) {
           server_name = snis->get_sni_server_name();
         }
-        t_state.hdr_info.client_request.url_get()->host_set(server_name, strlen(server_name));
+        t_state.hdr_info.client_request.url_get()->host_set({server_name});
         t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
@@ -519,7 +519,7 @@ HttpSM::setup_blind_tunnel_port()
     char new_host[INET6_ADDRSTRLEN];
     ats_ip_ntop(netvc->get_local_addr(), new_host, sizeof(new_host));
 
-    t_state.hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
+    t_state.hdr_info.client_request.url_get()->host_set({new_host});
     t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
   }
   t_state.api_next_action = HttpTransact::SM_ACTION_API_TUNNEL_START;
@@ -1382,7 +1382,7 @@ plugins required to work with sni_routing.
       if (auto tts = netvc->get_service<TLSTunnelSupport>(); tts) {
         if (tts->has_tunnel_destination()) {
           auto tunnel_host = tts->get_tunnel_host();
-          t_state.hdr_info.client_request.url_get()->host_set(tunnel_host.data(), tunnel_host.size());
+          t_state.hdr_info.client_request.url_get()->host_set(tunnel_host);
           ushort tunnel_port = tts->get_tunnel_port();
           if (tunnel_port > 0) {
             t_state.hdr_info.client_request.url_get()->port_set(tunnel_port);
@@ -1394,7 +1394,7 @@ plugins required to work with sni_routing.
           if (auto *snis = netvc->get_service<TLSSNISupport>(); snis) {
             server_name = snis->get_sni_server_name();
           }
-          t_state.hdr_info.client_request.url_get()->host_set(server_name, strlen(server_name));
+          t_state.hdr_info.client_request.url_get()->host_set({server_name});
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       }
@@ -4440,7 +4440,7 @@ HttpSM::do_remap_request(bool run_inline)
         }
 
         // Set values
-        t_state.unmapped_url.host_set(host_name.data(), host_name.length());
+        t_state.unmapped_url.host_set(host_name);
         if (port >= 0) {
           t_state.unmapped_url.port_set(port);
         }
@@ -8521,7 +8521,8 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
             {origUrl.m_url_impl->m_ptr_user, static_cast<std::string_view::size_type>(origUrl.m_url_impl->m_len_user)});
           clientUrl.password_set(
             {origUrl.m_url_impl->m_ptr_password, static_cast<std::string_view::size_type>(origUrl.m_url_impl->m_len_password)});
-          clientUrl.host_set(origUrl.m_url_impl->m_ptr_host, origUrl.m_url_impl->m_len_host);
+          clientUrl.host_set(
+            {origUrl.m_url_impl->m_ptr_host, static_cast<std::string_view::size_type>(origUrl.m_url_impl->m_len_host)});
           clientUrl.port_set(origUrl.port_get());
         }
       } else {
