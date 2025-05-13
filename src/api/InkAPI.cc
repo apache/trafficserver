@@ -1297,7 +1297,11 @@ TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc obj, int type)
 const char *
 TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::query_get);
+  auto query{URLPartGet(bufp, obj, &URL::query_get)};
+  if (length) {
+    *length = static_cast<int>(query.length());
+  }
+  return query.data();
 }
 
 TSReturnCode

@@ -213,10 +213,9 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     if (auto path{url->path_get()}; !path.empty()) {
       h->update(path.data(), path.length());
     }
-    url_string_ref = url->query_get(&len);
-    if (url_string_ref && len > 0) {
+    if (auto query{url->query_get()}; !query.empty()) {
       h->update("?", 1);
-      h->update(url_string_ref, len);
+      h->update(query.data(), query.length());
     }
     break;
   // path + fragment hash

@@ -99,10 +99,9 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   }
 
   if (!ignore_query) {
-    url_string_ref = ps_url->query_get(&len);
-    if (url_string_ref) {
+    if (auto query{ps_url->query_get()}; !query.empty()) {
       h->update("?", 1);
-      h->update(url_string_ref, len);
+      h->update(query.data(), query.length());
     }
   }
 

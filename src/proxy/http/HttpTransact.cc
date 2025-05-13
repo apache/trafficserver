@@ -5983,8 +5983,6 @@ HttpTransact::url_looks_dynamic(URL *url)
 {
   const char        *p_start, *p, *t;
   static const char *asp = ".asp";
-  const char        *part;
-  int                part_length;
 
   if (url->scheme_get_wksidx() != URL_WKSIDX_HTTP && url->scheme_get_wksidx() != URL_WKSIDX_HTTPS) {
     return false;
@@ -5993,8 +5991,7 @@ HttpTransact::url_looks_dynamic(URL *url)
   // (1) If URL contains query stuff in it, call it dynamic //
   ////////////////////////////////////////////////////////////
 
-  part = url->query_get(&part_length);
-  if (part != nullptr) {
+  if (!url->query_get().empty()) {
     return true;
   }
   ///////////////////////////////////////////////

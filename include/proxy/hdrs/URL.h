@@ -301,10 +301,10 @@ public:
   int  type_code_get();
   void type_code_set(int type);
 
-  const char *query_get(int *length);
-  void        query_set(const char *value, int length);
-  const char *fragment_get(int *length);
-  void        fragment_set(const char *value, int length);
+  std::string_view query_get() const noexcept;
+  void             query_set(const char *value, int length);
+  const char      *fragment_get(int *length);
+  void             fragment_set(const char *value, int length);
 
   /**
    * Parse the given URL string and populate URL state with the parts.
@@ -666,15 +666,11 @@ URL::type_code_set(int typecode)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::query_get(int *length)
+inline std::string_view
+URL::query_get() const noexcept
 {
   ink_assert(valid());
-  auto query{m_url_impl->get_query()};
-  if (length) {
-    *length = static_cast<int>(query.length());
-  }
-  return query.data();
+  return m_url_impl->get_query();
 }
 
 /*-------------------------------------------------------------------------

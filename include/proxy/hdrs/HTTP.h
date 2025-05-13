@@ -1212,9 +1212,7 @@ HTTPHdr::query_get()
 {
   URL *url = this->url_get();
   if (url) {
-    int  length;
-    auto query{url->query_get(&length)};
-    return std::string_view{query, static_cast<std::string_view::size_type>(length)};
+    return url->query_get();
   }
   return std::string_view{};
 }
