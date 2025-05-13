@@ -784,11 +784,10 @@ URLImpl::get_query() const noexcept
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-URLImpl::get_fragment(int *length)
+std::string_view
+URLImpl::get_fragment() const noexcept
 {
-  *length = this->m_len_fragment;
-  return this->m_ptr_fragment;
+  return {this->m_ptr_fragment, static_cast<std::string_view::size_type>(this->m_len_fragment)};
 }
 
 /*-------------------------------------------------------------------------
