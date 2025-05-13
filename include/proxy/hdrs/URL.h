@@ -102,7 +102,7 @@ public:
   std::string_view get_params() const noexcept;
   void             set_params(HdrHeap *heap, std::string_view value, bool copy_string);
   std::string_view get_query() const noexcept;
-  void             set_query(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void             set_query(HdrHeap *heap, std::string_view value, bool copy_string);
   std::string_view get_fragment() const noexcept;
   void             set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string);
 
@@ -680,7 +680,7 @@ inline void
 URL::query_set(const char *value, int length)
 {
   ink_assert(valid());
-  m_url_impl->set_query(m_heap, value, length, true);
+  m_url_impl->set_query(m_heap, {value, static_cast<std::string_view::size_type>(length)}, true);
 }
 
 /*-------------------------------------------------------------------------

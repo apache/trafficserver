@@ -550,11 +550,10 @@ URLImpl::set_path(HdrHeap *heap, std::string_view value, bool copy_string)
 // url_{query|fragment}_set()
 
 void
-URLImpl::set_query(HdrHeap *heap, const char *value, int length, bool copy_string)
+URLImpl::set_query(HdrHeap *heap, std::string_view value, bool copy_string)
 {
   url_called_set(this);
-  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_query),
-                   &(this->m_len_query), copy_string);
+  mime_str_u16_set(heap, value, &(this->m_ptr_query), &(this->m_len_query), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -1503,7 +1502,7 @@ done:
     if (!query_end) {
       query_end = cur;
     }
-    url->set_query(heap, query_start, query_end - query_start, copy_strings);
+    url->set_query(heap, {query_start, static_cast<std::string_view::size_type>(query_end - query_start)}, copy_strings);
   }
   if (fragment_start) {
     // There was a fragment string marked by '#'.
