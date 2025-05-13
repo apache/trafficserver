@@ -453,6 +453,36 @@ private:
   TSHttpCntlType _cntl_qual;
 };
 
+class OperatorSetPluginCntl : public Operator
+{
+public:
+  OperatorSetPluginCntl() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetPluginCntl"); }
+
+  // noncopyable
+  OperatorSetPluginCntl(const OperatorSetPluginCntl &) = delete;
+  void operator=(const OperatorSetPluginCntl &)        = delete;
+
+  void initialize(Parser &p) override;
+
+  enum class PluginCtrl {
+    TIMEZONE,
+  };
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
+private:
+  PluginCtrl _name;
+  int        _value;
+};
+
 class RemapPluginInst; // Opaque to the HRW operator, but needed in the implementation.
 
 class OperatorRunPlugin : public Operator

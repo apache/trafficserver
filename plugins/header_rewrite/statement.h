@@ -155,6 +155,7 @@ public:
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
     acquire_txn_slot();
+    acquire_txn_private_slot();
 
     _initialized = true;
   }
@@ -184,14 +185,31 @@ protected:
     return false;
   }
 
-  Statement *_next     = nullptr; // Linked list
-  int        _txn_slot = -1;
+  virtual bool
+  need_txn_private_slot() const
+  {
+    return false;
+  }
+
+  Statement *_next             = nullptr; // Linked list
+  int        _txn_slot         = -1;
+  int        _txn_private_slot = -1;
 
 private:
   void acquire_txn_slot();
+  void acquire_txn_private_slot();
 
   ResourceIDs               _rsrc = RSRC_NONE;
   TSHttpHookID              _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;
   bool                      _initialized = false;
 };
+
+union PrivateSlotData {
+  uint64_t raw;
+  struct {
+    uint64_t timezone : 1; // TIMEZONE_LOCAL, or TIMEZONE_GMT
+  };
+};
+
+enum { TIMEZONE_LOCAL, TIMEZONE_GMT };
