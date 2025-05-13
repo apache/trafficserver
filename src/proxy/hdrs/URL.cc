@@ -748,11 +748,10 @@ URLImpl::get_password() const noexcept
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-URLImpl::get_host(int *length)
+std::string_view
+URLImpl::get_host() const noexcept
 {
-  *length = this->m_len_host;
-  return this->m_ptr_host;
+  return {this->m_ptr_host, static_cast<std::string_view::size_type>(this->m_len_host)};
 }
 
 /*-------------------------------------------------------------------------

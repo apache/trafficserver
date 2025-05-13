@@ -1189,13 +1189,12 @@ ParseResult
 validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 {
   ParseResult ret = PARSE_RESULT_DONE;
-  int         host_len;
-  url->get_host(&host_len);
+  auto        host{url->get_host()};
   int         path_len;
   const char *path = url->get_path(&path_len);
   auto        scheme{url->get_scheme()};
 
-  if (host_len == 0) {
+  if (host.empty()) {
     if (path_len == 1 && path[0] == '*') { // asterisk-form
       // Skip this check for now because URLImpl can't distinguish '*' and '/*'
       // if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
@@ -1204,7 +1203,7 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
     } else { // origin-form
       // Nothing to check here
     }
-  } else if (scheme.empty() && host_len != 0) { // authority-form
+  } else if (scheme.empty() && !host.empty()) { // authority-form
     if (method_wk_idx != HTTP_WKSIDX_CONNECT) {
       ret = PARSE_RESULT_ERROR;
     }
