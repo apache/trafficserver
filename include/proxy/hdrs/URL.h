@@ -100,7 +100,7 @@ public:
   int              get_type_code();
   void             set_type_code(unsigned int typecode);
   std::string_view get_params() const noexcept;
-  void             set_params(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void             set_params(HdrHeap *heap, std::string_view value, bool copy_string);
   std::string_view get_query() const noexcept;
   void             set_query(HdrHeap *heap, const char *value, int length, bool copy_string);
   std::string_view get_fragment() const noexcept;
