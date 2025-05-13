@@ -1151,7 +1151,11 @@ TSUrlSchemeSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 const char *
 TSUrlUserGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::user_get);
+  auto user{URLPartGet(bufp, obj, &URL::user_get)};
+  if (length) {
+    *length = static_cast<int>(user.length());
+  }
+  return user.data();
 }
 
 TSReturnCode

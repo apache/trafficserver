@@ -284,12 +284,12 @@ public:
   int              scheme_get_wksidx() const;
   void             scheme_set(const char *value, int length);
 
-  const char *user_get(int *length);
-  void        user_set(const char *value, int length);
-  const char *password_get(int *length);
-  void        password_set(const char *value, int length);
-  const char *host_get(int *length);
-  void        host_set(const char *value, int length);
+  std::string_view user_get() const noexcept;
+  void             user_set(const char *value, int length);
+  const char      *password_get(int *length);
+  void             password_set(const char *value, int length);
+  const char      *host_get(int *length);
+  void             host_set(const char *value, int length);
 
   int  port_get() const;
   int  port_get_raw() const;
@@ -536,15 +536,11 @@ URL::scheme_set(const char *value, int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::user_get(int *length)
+inline std::string_view
+URL::user_get() const noexcept
 {
   ink_assert(valid());
-  auto user{m_url_impl->get_user()};
-  if (length) {
-    *length = static_cast<int>(user.length());
-  }
-  return user.data();
+  return m_url_impl->get_user();
 }
 
 /*-------------------------------------------------------------------------
