@@ -6001,12 +6001,12 @@ HttpTransact::url_looks_dynamic(URL *url)
   // (2) If path ends in "asp" call it dynamic //
   ///////////////////////////////////////////////
 
-  part = url->path_get(&part_length);
-  if (part) {
-    p = &part[part_length - 1];
+  auto path{url->path_get()};
+  if (path.data()) {
+    p = &path[path.length() - 1];
     t = &asp[3];
 
-    while (p != part) {
+    while (p != path.data()) {
       if (ParseRules::ink_tolower(*p) == ParseRules::ink_tolower(*t)) {
         p -= 1;
         t -= 1;
@@ -6022,8 +6022,8 @@ HttpTransact::url_looks_dynamic(URL *url)
   // (3) If the path of the url contains "cgi", call it dynamic. //
   /////////////////////////////////////////////////////////////////
 
-  if (part && part_length >= 3) {
-    for (p_start = part; p_start <= &part[part_length - 3]; p_start++) {
+  if (path.data() && path.length() >= 3) {
+    for (p_start = path.data(); p_start <= &path[path.length() - 3]; p_start++) {
       if (((p_start[0] == 'c') || (p_start[0] == 'C')) && ((p_start[1] == 'g') || (p_start[1] == 'G')) &&
           ((p_start[2] == 'i') || (p_start[2] == 'I'))) {
         return (true);

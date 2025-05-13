@@ -94,9 +94,8 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   // Always hash on '/' because paths returned by ATS are always stripped of it
   h->update("/", 1);
 
-  url_string_ref = ps_url->path_get(&len);
-  if (url_string_ref) {
-    h->update(url_string_ref, len);
+  if (auto path{ps_url->path_get()}; !path.empty()) {
+    h->update(path.data(), path.length());
   }
 
   if (!ignore_query) {

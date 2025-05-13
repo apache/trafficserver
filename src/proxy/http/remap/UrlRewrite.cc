@@ -48,11 +48,10 @@ DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 void
 SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 {
-  int         fromLen, toLen;
-  const char *from_path = new_mapping->fromURL.path_get(&fromLen);
-  const char *to_path   = new_to_url.path_get(&toLen);
+  auto from_path{new_mapping->fromURL.path_get()};
+  auto to_path{new_to_url.path_get()};
 
-  new_mapping->homePageRedirect = (from_path && !to_path) ? true : false;
+  new_mapping->homePageRedirect = (!from_path.empty() && to_path.empty()) ? true : false;
 }
 } // end anonymous namespace
 
@@ -329,51 +328,47 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
   // With the CONNECT method, we have to avoid messing with the scheme and path, because it's not part of
   // the CONNECT request (only host and port is).
   if (HTTP_WKSIDX_CONNECT != method) {
-    const char *requestPath;
-    int         requestPathLen = 0;
-    int         fromPathLen    = 0;
-    const char *toPath;
-    int         toPathLen;
-
     auto toScheme{map_to->scheme_get()};
     request_url->scheme_set(toScheme.data(), static_cast<int>(toScheme.length()));
 
-    map_from->path_get(&fromPathLen);
-    toPath      = map_to->path_get(&toPathLen);
-    requestPath = request_url->path_get(&requestPathLen);
+    auto fromPathLen{static_cast<int>(map_from->path_get().length())};
+    auto toPath{map_to->path_get()};
+    auto toPathLen{static_cast<int>(toPath.length())};
+    auto requestPath{request_url->path_get()};
+    auto requestPathLen{static_cast<int>(requestPath.length())};
 
     // Should be +3, little extra padding won't hurt.
     char newPath[(requestPathLen - fromPathLen) + toPathLen + 8];
     int  newPathLen = 0;
 
     *newPath = 0;
-    if (toPath) {
-      memcpy(newPath, toPath, toPathLen);
+    if (!toPath.empty()) {
+      memcpy(newPath, toPath.data(), toPathLen);
       newPathLen += toPathLen;
     }
 
     // We might need to insert a trailing slash in the new portion of the path
     // if more will be added and none is present and one will be needed.
-    if (!fromPathLen && requestPathLen && newPathLen && toPathLen && *(newPath + newPathLen - 1) != '/') {
-      *(newPath + newPathLen) = '/';
+    if (!fromPathLen && requestPathLen && newPathLen && toPathLen && newPath[newPathLen - 1] != '/') {
+      newPath[newPathLen] = '/';
       newPathLen++;
     }
 
-    if (requestPath) {
+    if (!requestPath.empty()) {
       // avoid adding another trailing slash if the requestPath already had one and so does the toPath
       if (requestPathLen < fromPathLen) {
-        if (toPath && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
+        if (!toPath.empty() && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
           fromPathLen++;
         }
       } else if (requestPathLen > fromPathLen) {
-        if (toPath && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
+        if (!toPath.empty() && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
           fromPathLen++;
         }
       }
 
       // copy the end of the path past what has been mapped
       if ((requestPathLen - fromPathLen) > 0) {
-        memcpy(newPath + newPathLen, requestPath + fromPathLen, requestPathLen - fromPathLen);
+        memcpy(newPath + newPathLen, requestPath.data() + fromPathLen, requestPathLen - fromPathLen);
         newPathLen += (requestPathLen - fromPathLen);
       }
     }
@@ -989,9 +984,6 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
 
   auto request_scheme{request_url->scheme_get()};
 
-  int         request_path_len, reg_map_path_len;
-  const char *request_path = request_url->path_get(&request_path_len), *reg_map_path;
-
   // If the scheme is empty (e.g. because of a CONNECT method), guess it based on port
   // This is equivalent to the logic in UrlMappingPathIndex::_GetTrie().
   if (request_scheme.empty()) {
@@ -1022,9 +1014,10 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       continue;
     }
 
-    reg_map_path = list_iter->url_map->fromURL.path_get(&reg_map_path_len);
-    if ((request_path_len < reg_map_path_len) ||
-        strncmp(reg_map_path, request_path, reg_map_path_len)) { // use the shorter path length here
+    auto request_path{request_url->path_get()};
+    auto reg_map_path{list_iter->url_map->fromURL.path_get()};
+    if ((request_path.length() < reg_map_path.length()) ||
+        strncmp(reg_map_path.data(), request_path.data(), reg_map_path.length())) { // use the shorter path length here
       Dbg(dbg_ctl_url_rewrite_regex, "Skipping regex with rank %d as path does not cover request path", reg_map_rank);
       continue;
     }

@@ -742,10 +742,8 @@ TEST_CASE("UrlPathGet", "[url][path_get]")
       HdrHeap *heap = new_HdrHeap();
       url.create(heap);
       url.parse(test_case.uri);
-      const char *path;
-      int path_len;
-      path = url.path_get(&path_len);
-      CHECK(std::string_view(path, path_len) == test_case.path);
+      auto path{url.path_get()};
+      CHECK(path == test_case.path);
       heap->destroy();
     }
   }

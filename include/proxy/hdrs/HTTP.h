@@ -1202,11 +1202,9 @@ HTTPHdr::path_get()
 {
   URL *url = this->url_get();
   if (url) {
-    int  length;
-    auto path{url->path_get(&length)};
-    return std::string_view{path, static_cast<std::string_view::size_type>(length)};
+    return url->path_get();
   }
-  return std::string_view{};
+  return {};
 }
 
 inline std::string_view

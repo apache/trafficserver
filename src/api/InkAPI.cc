@@ -1245,7 +1245,11 @@ TSUrlPortSet(TSMBuffer bufp, TSMLoc obj, int port)
 const char *
 TSUrlPathGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::path_get);
+  auto path{URLPartGet(bufp, obj, &URL::path_get)};
+  if (length) {
+    *length = static_cast<int>(path.length());
+  }
+  return path.data();
 }
 
 TSReturnCode

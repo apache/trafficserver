@@ -295,8 +295,8 @@ public:
   int  port_get_raw() const;
   void port_set(int port);
 
-  const char *path_get(int *length);
-  void        path_set(const char *value, int length);
+  std::string_view path_get() const noexcept;
+  void             path_set(const char *value, int length);
 
   int  type_code_get();
   void type_code_set(int type);
@@ -626,15 +626,11 @@ URL::port_set(int port)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::path_get(int *length)
+inline std::string_view
+URL::path_get() const noexcept
 {
   ink_assert(valid());
-  auto path{m_url_impl->get_path()};
-  if (length) {
-    *length = static_cast<int>(path.length());
-  }
-  return path.data();
+  return m_url_impl->get_path();
 }
 
 /*-------------------------------------------------------------------------
