@@ -6460,6 +6460,7 @@ HttpSM::perform_cache_write_action()
     // Write close deletes the old alternate
     cache_sm.close_write();
     cache_sm.close_read();
+    t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
     break;
   }
 
@@ -6518,6 +6519,7 @@ HttpSM::issue_cache_update()
   }
   // Now close the write which commits the update
   cache_sm.close_write();
+  t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
 }
 
 int
