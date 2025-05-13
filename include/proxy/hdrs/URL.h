@@ -85,7 +85,7 @@ public:
   std::string_view get_scheme() const noexcept;
   const char      *set_scheme(HdrHeap *heap, std::string_view value, int value_wks_idx, bool copy_string);
   std::string_view get_user() const noexcept;
-  void             set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void             set_user(HdrHeap *heap, std::string_view value, bool copy_string);
   std::string_view get_password() const noexcept;
   void             set_password(HdrHeap *heap, const char *value, int length, bool copy_string);
   std::string_view get_host() const noexcept;
@@ -550,7 +550,7 @@ inline void
 URL::user_set(const char *value, int length)
 {
   ink_assert(valid());
-  m_url_impl->set_user(m_heap, value, length, true);
+  m_url_impl->set_user(m_heap, {value, static_cast<std::string_view::size_type>(length)}, true);
 }
 
 /*-------------------------------------------------------------------------

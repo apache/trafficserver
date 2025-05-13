@@ -454,14 +454,13 @@ URLImpl::set_scheme(HdrHeap *heap, std::string_view value, int scheme_wks_idx, b
   -------------------------------------------------------------------------*/
 
 void
-URLImpl::set_user(HdrHeap *heap, const char *value, int length, bool copy_string)
+URLImpl::set_user(HdrHeap *heap, std::string_view value, bool copy_string)
 {
   url_called_set(this);
-  if (length == 0) {
-    value = nullptr;
+  if (value.empty()) {
+    value = {nullptr, 0};
   }
-  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_user),
-                   &(this->m_len_user), copy_string);
+  mime_str_u16_set(heap, value, &(this->m_ptr_user), &(this->m_len_user), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -1358,7 +1357,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
   // character past the parse area.
 
   if (user) {
-    url->set_user(heap, user.data(), user.size(), copy_strings_p);
+    url->set_user(heap, user, copy_strings_p);
     if (passw) {
       url->set_password(heap, passw.data(), passw.size(), copy_strings_p);
     }
