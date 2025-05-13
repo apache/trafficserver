@@ -775,11 +775,10 @@ URLImpl::get_path() const noexcept
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-URLImpl::get_query(int *length)
+std::string_view
+URLImpl::get_query() const noexcept
 {
-  *length = this->m_len_query;
-  return this->m_ptr_query;
+  return {this->m_ptr_query, static_cast<std::string_view::size_type>(this->m_len_query)};
 }
 
 /*-------------------------------------------------------------------------
