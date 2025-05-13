@@ -92,7 +92,7 @@ public:
   void             set_host(HdrHeap *heap, std::string_view value, bool copy_string);
   int              get_port();
   void             set_port(HdrHeap *heap, unsigned int port);
-  void             set_port(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void             set_port(HdrHeap *heap, std::string_view value, bool copy_string);
   std::string_view get_path() const noexcept;
   void             set_path(HdrHeap *heap, const char *value, int length, bool copy_string);
   int              get_type();

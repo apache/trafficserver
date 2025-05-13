@@ -493,21 +493,20 @@ URLImpl::set_host(HdrHeap *heap, std::string_view value, bool copy_string)
   -------------------------------------------------------------------------*/
 
 void
-URLImpl::set_port(HdrHeap *heap, const char *value, int length, bool copy_string)
+URLImpl::set_port(HdrHeap *heap, std::string_view value, bool copy_string)
 {
   url_called_set(this);
-  if (length == 0) {
-    value = nullptr;
+  if (value.empty()) {
+    value = {nullptr, 0};
   }
-  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_port),
-                   &(this->m_len_port), copy_string);
+  mime_str_u16_set(heap, value, &(this->m_ptr_port), &(this->m_len_port), copy_string);
 
   this->m_port = 0;
-  for (int i = 0; i < length; i++) {
-    if (!ParseRules::is_digit(value[i])) {
+  for (auto digit : value) {
+    if (!ParseRules::is_digit(digit)) {
       break;
     }
-    this->m_port = this->m_port * 10 + (value[i] - '0');
+    this->m_port = this->m_port * 10 + (digit - '0');
   }
 }
 
@@ -1384,7 +1383,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     if (port.empty()) {
       return PARSE_RESULT_ERROR; // colon w/o port value.
     }
-    url->set_port(heap, port.data(), port.size(), copy_strings_p);
+    url->set_port(heap, port, copy_strings_p);
   }
   *start = cur;
   return PARSE_RESULT_DONE;
@@ -1568,7 +1567,7 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
       port_len = host_end - port - 1; // must compute this first.
       host_end = port;                // then point at colon.
       ++port;                         // drop colon from port.
-      url->set_port(heap, port, port_len, copy_strings);
+      url->set_port(heap, {port, static_cast<std::string_view::size_type>(port_len)}, copy_strings);
     }
 
     // Now we can set the host.
