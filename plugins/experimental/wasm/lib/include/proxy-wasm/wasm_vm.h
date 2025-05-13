@@ -19,15 +19,15 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
+#include "include/proxy-wasm/sdk.h"
 #include "include/proxy-wasm/word.h"
 
 namespace proxy_wasm {
-
-#include "proxy_wasm_enums.h"
 
 class ContextBase;
 

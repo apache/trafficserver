@@ -305,20 +305,20 @@ http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HTTPVersion ver
     MIMEField *field;
     switch (polarity) {
     case HTTP_TYPE_REQUEST:
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_METHOD);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
 
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_SCHEME);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
 
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_AUTHORITY);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
 
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_PATH);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
       break;
     case HTTP_TYPE_RESPONSE:
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_STATUS);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
       break;
     default:
@@ -419,7 +419,7 @@ http_version_print(const HTTPVersion &version, char *buf, int bufsize, int *bufi
 
   char tmpbuf[16];
   http_hdr_version_to_string(version, tmpbuf);
-  TRY(mime_mem_print(tmpbuf, 8, buf, bufsize, bufindex, dumpoffset));
+  TRY(mime_mem_print(std::string_view{tmpbuf, 8}, buf, bufsize, bufindex, dumpoffset));
   return 1;
 
 #undef TRY
@@ -481,24 +481,26 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
         *p++       = '\n';
         *bufindex += 2;
       } else {
-        TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
       }
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
 
     } else {
-      TRY(mime_mem_print(hdr->u.req.m_ptr_method, hdr->u.req.m_len_method, buf, bufsize, bufindex, dumpoffset));
+      TRY(
+        mime_mem_print(std::string_view{hdr->u.req.m_ptr_method, static_cast<std::string_view::size_type>(hdr->u.req.m_len_method)},
+                       buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
       if (hdr->u.req.m_url_impl) {
         TRY(url_print(hdr->u.req.m_url_impl, buf, bufsize, bufindex, dumpoffset));
-        TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
       }
 
       TRY(http_version_print(hdr->m_version, buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
     }
@@ -528,7 +530,9 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
       *bufindex += tmplen + 1;
 
       if (hdr->u.resp.m_ptr_reason) {
-        TRY(mime_mem_print(hdr->u.resp.m_ptr_reason, hdr->u.resp.m_len_reason, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print(
+          std::string_view{hdr->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hdr->u.resp.m_len_reason)}, buf,
+          bufsize, bufindex, dumpoffset));
       }
 
       if (bufsize - *bufindex >= 2) {
@@ -537,7 +541,7 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
         *p++       = '\n';
         *bufindex += 2;
       } else {
-        TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
       }
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
@@ -545,19 +549,22 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
     } else {
       TRY(http_version_print(hdr->m_version, buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
       tmplen = mime_format_int(tmpbuf, http_hdr_status_get(hdr), sizeof(tmpbuf));
 
-      TRY(mime_mem_print(tmpbuf, tmplen, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(std::string_view{tmpbuf, static_cast<std::string_view::size_type>(tmplen)}, buf, bufsize, bufindex,
+                         dumpoffset));
 
-      TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
       if (hdr->u.resp.m_ptr_reason) {
-        TRY(mime_mem_print(hdr->u.resp.m_ptr_reason, hdr->u.resp.m_len_reason, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print(
+          std::string_view{hdr->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hdr->u.resp.m_len_reason)}, buf,
+          bufsize, bufindex, dumpoffset));
       }
 
-      TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
     }
@@ -691,22 +698,23 @@ http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-http_hdr_method_get(HTTPHdrImpl *hh, int *length)
+std::string_view
+http_hdr_method_get(HTTPHdrImpl *hh)
 {
   const char *str;
+  int         length;
 
   ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
   if (hh->u.req.m_method_wks_idx >= 0) {
-    str     = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
-    *length = hdrtoken_index_to_length(hh->u.req.m_method_wks_idx);
+    str    = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
+    length = hdrtoken_index_to_length(hh->u.req.m_method_wks_idx);
   } else {
-    str     = hh->u.req.m_ptr_method;
-    *length = hh->u.req.m_len_method;
+    str    = hh->u.req.m_ptr_method;
+    length = hh->u.req.m_len_method;
   }
 
-  return (str);
+  return std::string_view{str, static_cast<std::string_view::size_type>(length)};
 }
 
 /*-------------------------------------------------------------------------
@@ -718,7 +726,8 @@ http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t 
   ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
   hh->u.req.m_method_wks_idx = method_wks_idx;
-  mime_str_u16_set(heap, method, method_length, &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
+  mime_str_u16_set(heap, std::string_view{method, static_cast<std::string_view::size_type>(method_length)},
+                   &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
 }
 
 /*-------------------------------------------------------------------------
@@ -761,12 +770,11 @@ http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-http_hdr_reason_get(HTTPHdrImpl *hh, int *length)
+std::string_view
+http_hdr_reason_get(HTTPHdrImpl *hh)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  *length = hh->u.resp.m_len_reason;
-  return (hh->u.resp.m_ptr_reason);
+  return std::string_view{hh->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hh->u.resp.m_len_reason)};
 }
 
 /*-------------------------------------------------------------------------
@@ -776,7 +784,8 @@ void
 http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  mime_str_u16_set(heap, value, length, &(hh->u.resp.m_ptr_reason), &(hh->u.resp.m_len_reason), must_copy);
+  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(hh->u.resp.m_ptr_reason),
+                   &(hh->u.resp.m_len_reason), must_copy);
 }
 
 /*-------------------------------------------------------------------------
@@ -1211,7 +1220,7 @@ ParseResult
 validate_hdr_host(HTTPHdrImpl *hh)
 {
   ParseResult ret        = PARSE_RESULT_DONE;
-  MIMEField  *host_field = mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_HOST, MIME_LEN_HOST);
+  MIMEField  *host_field = mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_HOST));
   if (host_field) {
     if (host_field->has_dups()) {
       ret = PARSE_RESULT_ERROR; // can't have more than 1 host field.
@@ -1245,14 +1254,15 @@ validate_hdr_host(HTTPHdrImpl *hh)
 ParseResult
 validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
 {
-  MIMEField *content_length_field = mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  MIMEField *content_length_field =
+    mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
 
   if (content_length_field) {
     // RFC 7230 section 3.3.3:
     // If a message is received with both a Transfer-Encoding and a
     // Content-Length header field, the Transfer-Encoding overrides
     // the Content-Length
-    if (mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING) != nullptr) {
+    if (mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) != nullptr) {
       // Delete all Content-Length headers
       Dbg(dbg_ctl_http, "Transfer-Encoding header and Content-Length headers the request, removing all Content-Length headers");
       mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field, true);
@@ -1696,9 +1706,7 @@ http_parse_te(const char *buf, int len, Arena *arena)
 void
 HTTPHdr::_fill_target_cache() const
 {
-  URL        *url = this->url_get();
-  const char *port_ptr;
-  int         port_len;
+  URL *url = this->url_get();
 
   m_target_in_url  = false;
   m_port_in_header = false;
@@ -1709,16 +1717,23 @@ HTTPHdr::_fill_target_cache() const
     m_port           = url->port_get();
     m_port_in_header = 0 != url->port_get_raw();
     m_host_mime      = nullptr;
-  } else if (nullptr !=
-             (m_host_mime = const_cast<HTTPHdr *>(this)->get_host_port_values(nullptr, &m_host_length, &port_ptr, &port_len))) {
-    m_port = 0;
-    if (port_ptr) {
-      for (; port_len > 0 && isdigit(*port_ptr); ++port_ptr, --port_len) {
-        m_port = m_port * 10 + *port_ptr - '0';
+  } else {
+    std::string_view host, port;
+    std::tie(m_host_mime, host, port) = const_cast<HTTPHdr *>(this)->get_host_port_values();
+    m_host_length                     = static_cast<int>(host.length());
+
+    if (m_host_mime != nullptr) {
+      m_port = 0;
+      if (!port.empty()) {
+        for (auto c : port) {
+          if (isdigit(c)) {
+            m_port = m_port * 10 + c - '0';
+          }
+        }
       }
+      m_port_in_header = (0 != m_port);
+      m_port           = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
     }
-    m_port_in_header = (0 != m_port);
-    m_port           = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
   }
 
   m_target_cached = true;
@@ -1740,10 +1755,9 @@ HTTPHdr::set_url_target_from_host_field(URL *url)
       m_target_in_url = true; // it's there now.
     }
   } else {
-    int         host_len = 0;
-    const char *host     = host_get(&host_len);
+    auto host{host_get()};
 
-    url->host_set(host, host_len);
+    url->host_set(host.data(), static_cast<int>(host.length()));
     if (m_port_in_header) {
       url->port_set(m_port);
     }
@@ -1890,7 +1904,7 @@ HTTPHdr::check_hdr_implements()
 {
   bool       retval = true;
   MIMEField *transfer_encode =
-    mime_hdr_field_find(this->m_http->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    mime_hdr_field_find(this->m_http->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING));
   if (transfer_encode) {
     do {
       auto val{transfer_encode->value_get()};

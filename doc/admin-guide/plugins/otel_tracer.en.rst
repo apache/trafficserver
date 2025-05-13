@@ -50,6 +50,17 @@ Compiling the Plugin
 
 To compile this plugin, we need nlohmann-json, protobuf and opentelemetry-cpp
 
+nlohmann-json:
+
+::
+
+  wget https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz
+  tar zxvf v3.11.3.tar.gz
+  cd json-3.11.3
+  cmake -B build -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON
+  cmake --build build --config Release --parallel --verbose
+  sudo cmake --install build --prefix /usr/local/
+
 protobuf:
 
 ::
@@ -58,24 +69,21 @@ protobuf:
   wget https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.21.12.tar.gz
   tar zxvf v3.21.12.tar.gz
   cd protobuf-3.21.12
-  ./autogen.sh
-  ./configure --enable-shared=no --enable-static=yes CXXFLAGS="-std=c++17 -fPIC" CFLAGS="-fPIC"
-  make
-  make install
+  cmake -B build -Dprotobuf_BUILD_SHARED_LIBS=OFF -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+  cmake --build build --config Release --parallel --verbose
+  sudo cmake --install build --prefix /usr/local/
 
 opentelemetry-cpp
 
 ::
 
   cd
-  wget https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.11.0.tar.gz
-  tar zxvf v1.11.0.tar.gz
-  cd opentelemetry-cpp-1.11.0
-  mkdir build
-  cd build
-  cmake .. -DBUILD_TESTING=OFF -DWITH_EXAMPLES=OFF -DWITH_JAEGER=OFF -DWITH_OTLP_GRPC=OFF -DWITH_OTLP_HTTP=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DWITH_ABSEIL=OFF
-  cmake --build . --target all
-  cmake --install . --config Debug --prefix /usr/local/
+  wget https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.19.0.tar.gz
+  tar zxvf v1.19.0.tar.gz
+  cd opentelemetry-cpp-1.19.0
+  cmake -B build -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DWITH_EXAMPLES=OFF -DWITH_OTLP_GRPC=OFF -DWITH_OTLP_HTTP=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DWITH_ABSEIL=OFF
+  cmake --build build --config Release --parallel --verbose
+  sudo cmake --install build --prefix /usr/local/
 
 Installation
 ============

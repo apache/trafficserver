@@ -328,7 +328,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
   nbti.rules_list = bti->rules_list;
   nbti.rewrite    = bti->rewrite;
 
-  Dbg(dbg_ctl_url_rewrite, "[%s] including remap configuration from %s", __func__, (const char *)path);
+  Dbg(dbg_ctl_url_rewrite, "[%s] including remap configuration from %s", __func__, path);
   success = remap_parse_config_bti(path, &nbti);
 
   // The sub-parse might have updated the rules list, so push it up to the parent parse.
@@ -869,7 +869,7 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
   memset(pargv, 0, sizeof(pargv));
   memset(new_argv, 0, sizeof(new_argv));
 
-  ink_assert((unsigned)argc < countof(new_argv));
+  ink_assert(static_cast<unsigned>(argc) < countof(new_argv));
 
   if (jump_to_argc != 0) {
     argc  -= jump_to_argc;
@@ -942,7 +942,7 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
   std::string      error;
   {
     uint32_t elevate_access = 0;
-    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    elevate_access          = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     pi = rewrite->pluginFactory.getRemapPlugin(swoc::file::path(const_cast<const char *>(c)), parc, pargv, error,
@@ -1341,7 +1341,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // the rest of the system assumes that trailing slashes have
     // been removed.
 
-    if (unlikely(fromHostLen >= (int)sizeof(fromHost_lower_buf))) {
+    if (unlikely(fromHostLen >= static_cast<int>(sizeof(fromHost_lower_buf)))) {
       fromHost_lower = (fromHost_lower_ptr = static_cast<char *>(ats_malloc(fromHostLen + 1)));
     } else {
       fromHost_lower = &fromHost_lower_buf[0];

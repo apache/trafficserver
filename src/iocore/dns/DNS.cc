@@ -226,22 +226,30 @@ DNSProcessor::start(int, size_t stacksize)
   //
   // Read configuration
   //
-  REC_EstablishStaticConfigInt32(dns_retries, "proxy.config.dns.retries");
-  REC_EstablishStaticConfigInt32(dns_timeout, "proxy.config.dns.lookup_timeout");
-  REC_EstablishStaticConfigInt32(dns_search, "proxy.config.dns.search_default_domains");
-  REC_EstablishStaticConfigInt32(dns_failover_number, "proxy.config.dns.failover_number");
-  REC_EstablishStaticConfigInt32(dns_failover_period, "proxy.config.dns.failover_period");
-  REC_EstablishStaticConfigInt32(dns_max_dns_in_flight, "proxy.config.dns.max_dns_in_flight");
-  REC_EstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
-  REC_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
-  REC_EstablishStaticConfigInt32(dns_max_tcp_continuous_failures, "proxy.config.dns.max_tcp_continuous_failures");
-  REC_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
-  REC_ReadConfigStringAlloc(dns_local_ipv4, "proxy.config.dns.local_ipv4");
-  REC_ReadConfigStringAlloc(dns_local_ipv6, "proxy.config.dns.local_ipv6");
-  REC_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
-  REC_EstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
+  RecEstablishStaticConfigInt32(dns_retries, "proxy.config.dns.retries");
+  RecEstablishStaticConfigInt32(dns_timeout, "proxy.config.dns.lookup_timeout");
+  RecEstablishStaticConfigInt32(dns_search, "proxy.config.dns.search_default_domains");
+  RecEstablishStaticConfigInt32(dns_failover_number, "proxy.config.dns.failover_number");
+  RecEstablishStaticConfigInt32(dns_failover_period, "proxy.config.dns.failover_period");
+  RecEstablishStaticConfigInt32(dns_max_dns_in_flight, "proxy.config.dns.max_dns_in_flight");
+  RecEstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
+  RecEstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
+  RecEstablishStaticConfigInt32(dns_max_tcp_continuous_failures, "proxy.config.dns.max_tcp_continuous_failures");
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.dns.nameservers")}; rec_str) {
+    dns_ns_list = ats_stringdup(rec_str);
+  }
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.dns.local_ipv4")}; rec_str) {
+    dns_local_ipv4 = ats_stringdup(rec_str);
+  }
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.dns.local_ipv6")}; rec_str) {
+    dns_local_ipv6 = ats_stringdup(rec_str);
+  }
+  if (auto rec_str{RecGetRecordStringAlloc("proxy.config.dns.resolv_conf")}; rec_str) {
+    dns_resolv_conf = ats_stringdup(rec_str);
+  }
+  RecEstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
   int dns_conn_mode_i = 0;
-  REC_EstablishStaticConfigInt32(dns_conn_mode_i, "proxy.config.dns.connection_mode");
+  RecEstablishStaticConfigInt32(dns_conn_mode_i, "proxy.config.dns.connection_mode");
   dns_conn_mode = static_cast<DNS_CONN_MODE>(dns_conn_mode_i);
 
   if (dns_thread > 0) {
@@ -1562,7 +1570,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   // Do we have an entry for this id?
   //
   if (!e || !e->written_flag) {
-    Dbg(dbg_ctl_dns, "unknown DNS id = %u", (uint16_t)ntohs(h->id));
+    Dbg(dbg_ctl_dns, "unknown DNS id = %u", static_cast<uint16_t>(ntohs(h->id)));
     return false; // cannot count this as a success
   }
   //

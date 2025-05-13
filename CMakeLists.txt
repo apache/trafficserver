@@ -29,7 +29,10 @@ project(ats VERSION 11.0.0)
 set(TS_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(TS_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(TS_VERSION_MICRO ${PROJECT_VERSION_PATCH})
-set(TS_VERSION_STRING ${TS_VERSION_MAJOR}.${TS_VERSION_MINOR}.${TS_VERSION_MICRO})
+set(TS_VERSION_STRING
+    ${TS_VERSION_MAJOR}.${TS_VERSION_MINOR}.${TS_VERSION_MICRO}
+    CACHE STRING "The version string"
+)
 math(EXPR TS_VERSION_NUMBER "${TS_VERSION_MAJOR} * 1000000 + ${TS_VERSION_MINOR} * 1000 + ${TS_VERSION_MICRO}")
 
 # We make this a cache entry so that it can be configured to different values
@@ -139,6 +142,7 @@ if(ENABLE_DISK_FAILURE_TESTS)
   add_compile_definitions("AIO_FAULT_INJECTION")
 endif()
 option(ENABLE_AUTEST "Setup autest (default OFF)")
+option(ENABLE_AUTEST_UDS "Setup autest with curl using UDS (default OFF)")
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
@@ -532,9 +536,9 @@ check_cxx_source_compiles(
   HAVE_CRYPTO_EX_DUP_TYPE1
 )
 
-set(CMAKE_REQUIRED_INCLUDES netinet/in.h netinet/tcp.h)
+set(CMAKE_EXTRA_INCLUDE_FILES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)
-unset(CMAKE_REQUIRED_INCLUDES)
+unset(CMAKE_EXTRA_INCLUDE_FILES)
 
 # Since Linux 2.6.12
 check_struct_has_member("struct tcp_info" tcpi_total_retrans "linux/tcp.h" HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS)

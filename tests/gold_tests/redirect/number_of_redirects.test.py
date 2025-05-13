@@ -83,8 +83,8 @@ class NumberOfRedirectionsTest:
         self._tr.Processes.Default.StartBefore(self._srv3)
         self._tr.Processes.Default.StartBefore(self._dns)
         self._tr.Processes.Default.StartBefore(self._ts)
-        self._tr.Command = "curl -L -vvv a.test/ping --proxy 127.0.0.1:{0} -H 'uuid: redirect_test_1'".format(
-            self._ts.Variables.port)
+        self._tr.MakeCurlCommand(
+            "-L -v a.test/ping --proxy 127.0.0.1:{0} -H 'uuid: redirect_test_1'".format(self._ts.Variables.port))
         self._tr.Processes.Default.Streams.All = f"gold/number_of_redirections_{self._numberOfRedirections}.gold"
         self._tr.ReturnCode = 0
         self._tr.StillRunningAfter = self._ts

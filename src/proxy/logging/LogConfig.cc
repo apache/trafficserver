@@ -27,6 +27,8 @@
 
 #include <memory>
 
+using namespace std::literals;
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 
@@ -93,60 +95,53 @@ LogConfig::register_rolled_log_auto_delete(std::string_view logname, int rolling
 void
 LogConfig::read_configuration_variables()
 {
-  int   val;
-  char *ptr;
+  int val;
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.log_buffer_size"));
+  val = RecGetRecordInt("proxy.config.log.log_buffer_size").value_or(0);
   if (val > 0) {
     log_buffer_size = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.log_fast_buffer"));
+  val = RecGetRecordInt("proxy.config.log.log_fast_buffer").value_or(0);
   if (val > 0) {
     log_fast_buffer = true;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_secs_per_buffer"));
+  val = RecGetRecordInt("proxy.config.log.max_secs_per_buffer").value_or(0);
   if (val > 0) {
     max_secs_per_buffer = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_space_mb_for_logs"));
+  val = RecGetRecordInt("proxy.config.log.max_space_mb_for_logs").value_or(0);
   if (val > 0) {
     max_space_mb_for_logs = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_space_mb_headroom"));
+  val = RecGetRecordInt("proxy.config.log.max_space_mb_headroom").value_or(0);
   if (val > 0) {
     max_space_mb_headroom = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.io.max_buffer_index"));
+  val = RecGetRecordInt("proxy.config.log.io.max_buffer_index").value_or(0);
   if (val > 0) {
     logbuffer_max_iobuf_index = val;
   }
 
-  ptr                     = REC_ConfigReadString("proxy.config.log.logfile_perm");
-  int logfile_perm_parsed = ink_fileperm_parse(ptr);
-  if (logfile_perm_parsed != -1) {
-    logfile_perm = logfile_perm_parsed;
-  }
-  ats_free(ptr);
-
-  ptr = REC_ConfigReadString("proxy.config.log.hostname");
-  if (ptr != nullptr) {
-    if (std::string_view(ptr) != "localhost") {
-      ats_free(hostname);
-      hostname = ptr;
-    } else {
-      ats_free(ptr);
+  {
+    auto str{RecGetRecordStringAlloc("proxy.config.log.logfile_perm")};
+    if (auto logfile_perm_parsed{ink_fileperm_parse(ats_as_c_str(str))}; logfile_perm_parsed != -1) {
+      logfile_perm = logfile_perm_parsed;
     }
   }
 
-  ptr = REC_ConfigReadString("proxy.config.error.logfile.filename");
-  if (ptr != nullptr) {
+  if (auto str{RecGetRecordStringAlloc("proxy.config.log.hostname")}; str && !str.value().empty() && str.value() != "localhost"sv) {
+    ats_free(hostname);
+    hostname = ats_stringdup(str);
+  }
+
+  if (auto str{RecGetRecordStringAlloc("proxy.config.error.logfile.filename")}; str && !str.value().empty()) {
     ats_free(error_log_filename);
-    error_log_filename = ptr;
+    error_log_filename = ats_stringdup(str);
   }
 
   ats_free(logfile_dir);
@@ -159,7 +154,7 @@ LogConfig::read_configuration_variables()
     ::exit(1);
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.preproc_threads"));
+  val = RecGetRecordInt("proxy.config.log.preproc_threads").value_or(0);
   if (val > 0 && val <= 128) {
     preproc_threads = val;
   }
@@ -169,11 +164,11 @@ LogConfig::read_configuration_variables()
   // we don't check for valid values of rolling_enabled, rolling_interval_sec,
   // rolling_offset_hr, or rolling_size_mb because the LogObject takes care of this
   //
-  rolling_interval_sec = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_interval_sec"));
-  rolling_offset_hr    = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr"));
-  rolling_size_mb      = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_size_mb"));
-  rolling_min_count    = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_min_count"));
-  val                  = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_enabled"));
+  rolling_interval_sec = RecGetRecordInt("proxy.config.log.rolling_interval_sec").value_or(0);
+  rolling_offset_hr    = RecGetRecordInt("proxy.config.log.rolling_offset_hr").value_or(0);
+  rolling_size_mb      = RecGetRecordInt("proxy.config.log.rolling_size_mb").value_or(0);
+  rolling_min_count    = RecGetRecordInt("proxy.config.log.rolling_min_count").value_or(0);
+  val                  = RecGetRecordInt("proxy.config.log.rolling_enabled").value_or(0);
   if (LogRollingEnabledIsValid(val)) {
     rolling_enabled = static_cast<Log::RollingEnabledValues>(val);
   } else {
@@ -181,20 +176,20 @@ LogConfig::read_configuration_variables()
     rolling_enabled = Log::NO_ROLLING;
   }
 
-  val                      = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files"));
+  val                      = RecGetRecordInt("proxy.config.log.auto_delete_rolled_files").value_or(0);
   auto_delete_rolled_files = (val > 0);
 
-  val                 = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_allow_empty"));
+  val                 = RecGetRecordInt("proxy.config.log.rolling_allow_empty").value_or(0);
   rolling_allow_empty = (val > 0);
 
   // THROTTLING
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.throttling_interval_msec"));
+  val = RecGetRecordInt("proxy.config.log.throttling_interval_msec").value_or(0);
   if (LogThrottlingIsValid(val)) {
     LogMessage::set_default_log_throttling_interval(std::chrono::milliseconds{val});
   } else {
     Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.throttling_interval_msec");
   }
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.debug.throttling_interval_msec"));
+  val = RecGetRecordInt("proxy.config.diags.debug.throttling_interval_msec").value_or(0);
   if (LogThrottlingIsValid(val)) {
     LogMessage::set_default_debug_throttling_interval(std::chrono::milliseconds{val});
   } else {
@@ -208,43 +203,41 @@ LogConfig::read_configuration_variables()
     // The following register these other core logs for log rotation deletion.
 
     // For diagnostic logs
-    val = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_min_count"));
+    val = RecGetRecordInt("proxy.config.diags.logfile.rolling_min_count").value_or(0);
     register_rolled_log_auto_delete(DIAGS_LOG_FILENAME, val);
     register_rolled_log_auto_delete(MANAGER_LOG_FILENAME, val);
 
     // For traffic.out
-    char       *configured_name(REC_ConfigReadString("proxy.config.output.logfile.name"));
-    const char *traffic_logname = configured_name ? configured_name : "traffic.out";
-    val                         = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_min_count"));
+    auto configured_name{RecGetRecordStringAlloc("proxy.config.output.logfile.name")};
+    auto traffic_logname{configured_name && !configured_name.value().empty() ? configured_name.value() : "traffic.out"sv};
+    val = static_cast<int>(RecGetRecordInt("proxy.config.output.logfile.rolling_min_count").value_or(0));
     register_rolled_log_auto_delete(traffic_logname, val);
 
-    rolling_max_count = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_max_count"));
-
-    ats_free(configured_name);
+    rolling_max_count = RecGetRecordInt("proxy.config.log.rolling_max_count").value_or(0);
   }
   // PERFORMANCE
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.sampling_frequency"));
+  val = RecGetRecordInt("proxy.config.log.sampling_frequency").value_or(0);
   if (val > 0) {
     sampling_frequency = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.file_stat_frequency"));
+  val = RecGetRecordInt("proxy.config.log.file_stat_frequency").value_or(0);
   if (val > 0) {
     file_stat_frequency = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.space_used_frequency"));
+  val = RecGetRecordInt("proxy.config.log.space_used_frequency").value_or(0);
   if (val > 0) {
     space_used_frequency = val;
   }
 
   // ASCII BUFFER
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.ascii_buffer_size"));
+  val = RecGetRecordInt("proxy.config.log.ascii_buffer_size").value_or(0);
   if (val > 0) {
     ascii_buffer_size = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_line_size"));
+  val = RecGetRecordInt("proxy.config.log.max_line_size").value_or(0);
   if (val > 0) {
     max_line_size = val;
   }
@@ -463,7 +456,7 @@ LogConfig::register_config_callbacks()
   };
 
   for (unsigned i = 0; i < countof(names); ++i) {
-    REC_RegisterConfigUpdateFunc(names[i], &LogConfig::reconfigure, nullptr);
+    RecRegisterConfigUpdateCb(names[i], &LogConfig::reconfigure, nullptr);
   }
 }
 

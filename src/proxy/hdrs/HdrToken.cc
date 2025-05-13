@@ -467,7 +467,7 @@ hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_strin
 {
   int wks_idx;
 
-  wks_idx = hdrtoken_strs_dfa->match({string, size_t(string_len)});
+  wks_idx = hdrtoken_strs_dfa->match({string, static_cast<size_t>(string_len)});
 
   if (wks_idx < 0) {
     wks_idx = -1;
@@ -563,4 +563,27 @@ hdrtoken_string_to_wks(const char *string, int length)
   const char *wks = nullptr;
   hdrtoken_tokenize(string, length, &wks);
   return wks;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+c_str_view
+hdrtoken_string_to_wks_sv(const char *string)
+{
+  const char *wks = nullptr;
+  auto        length{strlen(string)};
+  hdrtoken_tokenize(string, static_cast<int>(length), &wks);
+  return c_str_view{wks, length};
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+c_str_view
+hdrtoken_string_to_wks_sv(const char *string, int length)
+{
+  const char *wks = nullptr;
+  hdrtoken_tokenize(string, length, &wks);
+  return c_str_view{wks, static_cast<c_str_view::size_type>(length)};
 }

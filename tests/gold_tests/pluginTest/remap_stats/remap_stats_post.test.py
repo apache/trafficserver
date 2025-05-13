@@ -46,14 +46,14 @@ ts.Disk.records_config.update(
 tr = Test.AddTestRun("curl host one")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = 'curl -o /dev/null -H "Host: one"' + ' http://127.0.0.1:{}/argh'.format(ts.Variables.port)
+tr.MakeCurlCommand('-o /dev/null -H "Host: one"' + ' http://127.0.0.1:{}/argh'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
 # 1 Test - Curl host Two
 tr = Test.AddTestRun("curl host two")
-tr.Processes.Default.Command = 'curl -o /dev/null -H "Host: two"' + ' http://127.0.0.1:{}/badpath'.format(ts.Variables.port)
+tr.MakeCurlCommand('-o /dev/null -H "Host: two"' + ' http://127.0.0.1:{}/badpath'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

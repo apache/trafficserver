@@ -507,60 +507,60 @@ uint32_t Http2::buffer_water_mark                  = 0;
 void
 Http2::init()
 {
-  REC_EstablishStaticConfigInt32U(max_concurrent_streams_in, "proxy.config.http2.max_concurrent_streams_in");
-  REC_EstablishStaticConfigInt32U(min_concurrent_streams_in, "proxy.config.http2.min_concurrent_streams_in");
-  REC_EstablishStaticConfigInt32U(max_concurrent_streams_out, "proxy.config.http2.max_concurrent_streams_out");
-  REC_EstablishStaticConfigInt32U(min_concurrent_streams_out, "proxy.config.http2.min_concurrent_streams_out");
+  RecEstablishStaticConfigUInt32(max_concurrent_streams_in, "proxy.config.http2.max_concurrent_streams_in");
+  RecEstablishStaticConfigUInt32(min_concurrent_streams_in, "proxy.config.http2.min_concurrent_streams_in");
+  RecEstablishStaticConfigUInt32(max_concurrent_streams_out, "proxy.config.http2.max_concurrent_streams_out");
+  RecEstablishStaticConfigUInt32(min_concurrent_streams_out, "proxy.config.http2.min_concurrent_streams_out");
 
-  REC_EstablishStaticConfigInt32U(max_active_streams_in, "proxy.config.http2.max_active_streams_in");
-  REC_EstablishStaticConfigInt32U(stream_priority_enabled, "proxy.config.http2.stream_priority_enabled");
+  RecEstablishStaticConfigUInt32(max_active_streams_in, "proxy.config.http2.max_active_streams_in");
+  RecEstablishStaticConfigUInt32(stream_priority_enabled, "proxy.config.http2.stream_priority_enabled");
 
-  REC_EstablishStaticConfigInt32U(initial_window_size_in, "proxy.config.http2.initial_window_size_in");
+  RecEstablishStaticConfigUInt32(initial_window_size_in, "proxy.config.http2.initial_window_size_in");
   uint32_t flow_control_policy_in_int = 0;
-  REC_EstablishStaticConfigInt32U(flow_control_policy_in_int, "proxy.config.http2.flow_control.policy_in");
+  RecEstablishStaticConfigUInt32(flow_control_policy_in_int, "proxy.config.http2.flow_control.policy_in");
   if (flow_control_policy_in_int > 2) {
     Error("Invalid value for proxy.config.http2.flow_control.policy_in: %d", flow_control_policy_in_int);
     flow_control_policy_in_int = 0;
   }
   flow_control_policy_in = static_cast<Http2FlowControlPolicy>(flow_control_policy_in_int);
 
-  REC_EstablishStaticConfigInt32U(initial_window_size_out, "proxy.config.http2.initial_window_size_out");
+  RecEstablishStaticConfigUInt32(initial_window_size_out, "proxy.config.http2.initial_window_size_out");
   uint32_t flow_control_policy_out_int = 0;
-  REC_EstablishStaticConfigInt32U(flow_control_policy_out_int, "proxy.config.http2.flow_control.policy_out");
+  RecEstablishStaticConfigUInt32(flow_control_policy_out_int, "proxy.config.http2.flow_control.policy_out");
   if (flow_control_policy_out_int > 2) {
     Error("Invalid value for proxy.config.http2.flow_control.policy_out: %d", flow_control_policy_out_int);
     flow_control_policy_out_int = 0;
   }
   flow_control_policy_out = static_cast<Http2FlowControlPolicy>(flow_control_policy_out_int);
 
-  REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
-  REC_EstablishStaticConfigInt32U(header_table_size, "proxy.config.http2.header_table_size");
-  REC_EstablishStaticConfigInt32U(max_header_list_size, "proxy.config.http2.max_header_list_size");
-  REC_EstablishStaticConfigInt32U(accept_no_activity_timeout, "proxy.config.http2.accept_no_activity_timeout");
-  REC_EstablishStaticConfigInt32U(no_activity_timeout_in, "proxy.config.http2.no_activity_timeout_in");
-  REC_EstablishStaticConfigInt32U(no_activity_timeout_out, "proxy.config.http2.no_activity_timeout_out");
-  REC_EstablishStaticConfigInt32U(active_timeout_in, "proxy.config.http2.active_timeout_in");
-  REC_EstablishStaticConfigInt32U(incomplete_header_timeout_in, "proxy.config.http2.incomplete_header_timeout_in");
-  REC_EstablishStaticConfigInt32U(push_diary_size, "proxy.config.http2.push_diary_size");
-  REC_EstablishStaticConfigInt32U(zombie_timeout_in, "proxy.config.http2.zombie_debug_timeout_in");
-  REC_EstablishStaticConfigFloat(stream_error_rate_threshold, "proxy.config.http2.stream_error_rate_threshold");
-  REC_EstablishStaticConfigInt32U(stream_error_sampling_threshold, "proxy.config.http2.stream_error_sampling_threshold");
-  REC_EstablishStaticConfigInt32(max_settings_per_frame, "proxy.config.http2.max_settings_per_frame");
-  REC_EstablishStaticConfigInt32(max_settings_per_minute, "proxy.config.http2.max_settings_per_minute");
-  REC_EstablishStaticConfigInt32(max_settings_frames_per_minute, "proxy.config.http2.max_settings_frames_per_minute");
-  REC_EstablishStaticConfigInt32(max_ping_frames_per_minute, "proxy.config.http2.max_ping_frames_per_minute");
-  REC_EstablishStaticConfigInt32(max_priority_frames_per_minute, "proxy.config.http2.max_priority_frames_per_minute");
-  REC_EstablishStaticConfigInt32(max_rst_stream_frames_per_minute, "proxy.config.http2.max_rst_stream_frames_per_minute");
-  REC_EstablishStaticConfigInt32(max_continuation_frames_per_minute, "proxy.config.http2.max_continuation_frames_per_minute");
-  REC_EstablishStaticConfigInt32(max_empty_frames_per_minute, "proxy.config.http2.max_empty_frames_per_minute");
-  REC_EstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
-  REC_EstablishStaticConfigInt32U(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
-  REC_EstablishStaticConfigInt32U(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
-  REC_EstablishStaticConfigInt32U(header_table_size_limit, "proxy.config.http2.header_table_size_limit");
-  REC_EstablishStaticConfigInt32U(write_buffer_block_size, "proxy.config.http2.write_buffer_block_size");
-  REC_EstablishStaticConfigFloat(write_size_threshold, "proxy.config.http2.write_size_threshold");
-  REC_EstablishStaticConfigInt32U(write_time_threshold, "proxy.config.http2.write_time_threshold");
-  REC_EstablishStaticConfigInt32U(buffer_water_mark, "proxy.config.http2.default_buffer_water_mark");
+  RecEstablishStaticConfigUInt32(max_frame_size, "proxy.config.http2.max_frame_size");
+  RecEstablishStaticConfigUInt32(header_table_size, "proxy.config.http2.header_table_size");
+  RecEstablishStaticConfigUInt32(max_header_list_size, "proxy.config.http2.max_header_list_size");
+  RecEstablishStaticConfigUInt32(accept_no_activity_timeout, "proxy.config.http2.accept_no_activity_timeout");
+  RecEstablishStaticConfigUInt32(no_activity_timeout_in, "proxy.config.http2.no_activity_timeout_in");
+  RecEstablishStaticConfigUInt32(no_activity_timeout_out, "proxy.config.http2.no_activity_timeout_out");
+  RecEstablishStaticConfigUInt32(active_timeout_in, "proxy.config.http2.active_timeout_in");
+  RecEstablishStaticConfigUInt32(incomplete_header_timeout_in, "proxy.config.http2.incomplete_header_timeout_in");
+  RecEstablishStaticConfigUInt32(push_diary_size, "proxy.config.http2.push_diary_size");
+  RecEstablishStaticConfigUInt32(zombie_timeout_in, "proxy.config.http2.zombie_debug_timeout_in");
+  RecEstablishStaticConfigFloat(stream_error_rate_threshold, "proxy.config.http2.stream_error_rate_threshold");
+  RecEstablishStaticConfigUInt32(stream_error_sampling_threshold, "proxy.config.http2.stream_error_sampling_threshold");
+  RecEstablishStaticConfigInt32(max_settings_per_frame, "proxy.config.http2.max_settings_per_frame");
+  RecEstablishStaticConfigInt32(max_settings_per_minute, "proxy.config.http2.max_settings_per_minute");
+  RecEstablishStaticConfigInt32(max_settings_frames_per_minute, "proxy.config.http2.max_settings_frames_per_minute");
+  RecEstablishStaticConfigInt32(max_ping_frames_per_minute, "proxy.config.http2.max_ping_frames_per_minute");
+  RecEstablishStaticConfigInt32(max_priority_frames_per_minute, "proxy.config.http2.max_priority_frames_per_minute");
+  RecEstablishStaticConfigInt32(max_rst_stream_frames_per_minute, "proxy.config.http2.max_rst_stream_frames_per_minute");
+  RecEstablishStaticConfigInt32(max_continuation_frames_per_minute, "proxy.config.http2.max_continuation_frames_per_minute");
+  RecEstablishStaticConfigInt32(max_empty_frames_per_minute, "proxy.config.http2.max_empty_frames_per_minute");
+  RecEstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
+  RecEstablishStaticConfigUInt32(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
+  RecEstablishStaticConfigUInt32(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
+  RecEstablishStaticConfigUInt32(header_table_size_limit, "proxy.config.http2.header_table_size_limit");
+  RecEstablishStaticConfigUInt32(write_buffer_block_size, "proxy.config.http2.write_buffer_block_size");
+  RecEstablishStaticConfigFloat(write_size_threshold, "proxy.config.http2.write_size_threshold");
+  RecEstablishStaticConfigUInt32(write_time_threshold, "proxy.config.http2.write_time_threshold");
+  RecEstablishStaticConfigUInt32(buffer_water_mark, "proxy.config.http2.default_buffer_water_mark");
 
   write_buffer_block_size_index = iobuffer_size_to_index(Http2::write_buffer_block_size, MAX_BUFFER_SIZE_INDEX);
 

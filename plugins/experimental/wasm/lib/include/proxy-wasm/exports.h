@@ -139,10 +139,13 @@ Word wasi_unstable_fd_read(Word, Word, Word, Word);
 Word wasi_unstable_fd_seek(Word, int64_t, Word, Word);
 Word wasi_unstable_fd_close(Word);
 Word wasi_unstable_fd_fdstat_get(Word fd, Word statOut);
+Word wasi_unstable_fd_fdstat_set_flags(Word fd, Word flags);
 Word wasi_unstable_environ_get(Word, Word);
 Word wasi_unstable_environ_sizes_get(Word count_ptr, Word buf_size_ptr);
 Word wasi_unstable_args_get(Word argc_ptr, Word argv_buf_size_ptr);
 Word wasi_unstable_args_sizes_get(Word argc_ptr, Word argv_buf_size_ptr);
+Word wasi_unstable_sched_yield();
+Word wasi_unstable_poll_oneoff(Word in, Word out, Word nsubscriptions, Word nevents);
 void wasi_unstable_proc_exit(Word);
 Word wasi_unstable_clock_time_get(Word, uint64_t, Word);
 Word wasi_unstable_random_get(Word, Word);
@@ -170,9 +173,10 @@ void emscripten_notify_memory_growth(Word);
       _f(continue_stream) _f(close_stream) _f(get_log_level)
 
 #define FOR_ALL_WASI_FUNCTIONS(_f)                                                                 \
-  _f(fd_write) _f(fd_read) _f(fd_seek) _f(fd_close) _f(fd_fdstat_get) _f(environ_get)              \
-      _f(environ_sizes_get) _f(args_get) _f(args_sizes_get) _f(clock_time_get) _f(random_get)      \
-          _f(proc_exit) _f(path_open) _f(fd_prestat_get) _f(fd_prestat_dir_name)
+  _f(fd_write) _f(fd_read) _f(fd_seek) _f(fd_close) _f(fd_fdstat_get) _f(fd_fdstat_set_flags)      \
+      _f(environ_get) _f(environ_sizes_get) _f(args_get) _f(args_sizes_get) _f(clock_time_get)     \
+          _f(random_get) _f(sched_yield) _f(poll_oneoff) _f(proc_exit) _f(path_open)               \
+              _f(fd_prestat_get) _f(fd_prestat_dir_name)
 
 // Helpers to generate a stub to pass to VM, in place of a restricted proxy-wasm capability.
 #define _CREATE_PROXY_WASM_STUB(_fn)                                                               \

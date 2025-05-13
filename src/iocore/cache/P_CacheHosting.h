@@ -79,7 +79,7 @@ public:
   void AllocateSpace(int num_entries);
   void NewEntry(matcher_line *line_info);
 
-  void Match(const char *rdata, int rlen, CacheHostResult *result) const;
+  void Match(std::string_view rdata, CacheHostResult *result) const;
   void Print() const;
 
   int
@@ -226,7 +226,7 @@ public:
   int BuildTable(const char *config_file_path);
   int BuildTableFromString(const char *config_file_path, char *str);
 
-  void Match(const char *rdata, int rlen, CacheHostResult *result) const;
+  void Match(std::string_view rdata, CacheHostResult *result) const;
   void Print() const;
 
   int
@@ -245,7 +245,7 @@ public:
   void
   register_config_callback(ReplaceablePtr<CacheHostTable> *p)
   {
-    REC_RegisterConfigUpdateFunc("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
+    RecRegisterConfigUpdateCb("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
   }
 
   CacheType       type         = CACHE_HTTP_TYPE;

@@ -507,9 +507,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
 
     Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
+    std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
   }
-
-  std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
 
   RulesConfig *conf = new RulesConfig;
 

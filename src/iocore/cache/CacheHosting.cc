@@ -99,13 +99,13 @@ CacheHostMatcher::AllocateSpace(int num_entries)
   num_el    = 0;
 }
 
-// void CacheHostMatcher::Match(RequestData* rdata, Result* result)
+// void CacheHostMatcher::Match(std::string_view rdata, Result* result)
 //
 //  Searches our tree and updates argresult for each element matching
 //    arg hostname
 //
 void
-CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) const
+CacheHostMatcher::Match(std::string_view rdata, CacheHostResult *result) const
 {
   void            *opaque_ptr;
   CacheHostRecord *data_ptr;
@@ -117,14 +117,13 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) co
     return;
   }
 
-  if (rlen == 0) {
+  if (rdata.empty()) {
     return;
   }
 
-  std::string_view data{rdata, static_cast<size_t>(rlen)};
-  HostLookupState  s;
+  HostLookupState s;
 
-  r = host_lookup->MatchFirst(data, &s, &opaque_ptr);
+  r = host_lookup->MatchFirst(rdata, &s, &opaque_ptr);
 
   while (r == true) {
     ink_assert(opaque_ptr != nullptr);
@@ -223,15 +222,15 @@ CacheHostTable::Print() const
   }
 }
 
-// void ControlMatcher<Data, Result>::Match(RequestData* rdata
-//                                          Result* result)
+// void ControlMatcher<Result>::Match(std::string_view rdata
+//                                    Result* result)
 //
 //   Queries each table for the Result*
 //
 void
-CacheHostTable::Match(const char *rdata, int rlen, CacheHostResult *result) const
+CacheHostTable::Match(std::string_view rdata, CacheHostResult *result) const
 {
-  hostMatch->Match(rdata, rlen, result);
+  hostMatch->Match(rdata, result);
 }
 
 int
@@ -466,7 +465,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
   int                    is_vol_present = 0;
   char                   config_file[PATH_NAME_MAX];
 
-  REC_ReadConfigString(config_file, "proxy.config.cache.hosting_filename", PATH_NAME_MAX);
+  RecGetRecordString("proxy.config.cache.hosting_filename", config_file, PATH_NAME_MAX);
   type = typ;
   for (i = 0; i < MATCHER_MAX_TOKENS; i++) {
     char *label = line_info->line[0][i];
@@ -607,10 +606,10 @@ ConfigVolumes::read_config_file()
   if (ec) {
     switch (ec.value()) {
     case ENOENT:
-      Warning("Cannot open the config file: %s - %s", (const char *)config_path, strerror(ec.value()));
+      Warning("Cannot open the config file: %s - %s", config_path.get(), strerror(ec.value()));
       break;
     default:
-      Error("%s failed to load: %s", (const char *)config_path, strerror(ec.value()));
+      Error("%s failed to load: %s", config_path.get(), strerror(ec.value()));
       return;
     }
   }

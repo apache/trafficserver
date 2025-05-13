@@ -41,21 +41,31 @@
 class HttpSM;
 class HttpCacheSM;
 
-struct HttpCacheAction : public Action {
-  HttpCacheAction();
+class HttpCacheAction : public Action
+{
+public:
   void cancel(Continuation *c = nullptr) override;
+
   void
-  init(HttpCacheSM *sm_arg)
+  init(HttpCacheSM *cache_sm)
   {
-    sm = sm_arg;
+    _cache_sm = cache_sm;
   };
-  HttpCacheSM *sm = nullptr;
+
+  void
+  reset()
+  {
+    cancelled = false;
+  }
+
+private:
+  HttpCacheSM *_cache_sm = nullptr;
 };
 
 class HttpCacheSM : public Continuation
 {
 public:
-  HttpCacheSM();
+  HttpCacheSM() : Continuation(nullptr), captive_action() {}
 
   void
   init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex)
@@ -64,6 +74,7 @@ public:
     mutex     = amutex;
     captive_action.init(this);
   }
+  void reset();
 
   Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, const OverridableHttpConfigParams *params,
                     time_t pin_in_cache);
@@ -81,14 +92,14 @@ public:
   Action *pending_action = nullptr;
 
   // Function to set readwhilewrite_inprogress flag
-  inline void
+  void
   set_readwhilewrite_inprogress(bool value)
   {
     readwhilewrite_inprogress = value;
   }
 
   // Function to get the readwhilewrite_inprogress flag
-  inline bool
+  bool
   is_readwhilewrite_inprogress()
   {
     return readwhilewrite_inprogress;
@@ -106,7 +117,7 @@ public:
     return cache_read_vc ? (cache_read_vc->is_compressed_in_ram()) : false;
   }
 
-  inline void
+  void
   set_open_read_tries(int value)
   {
     open_read_tries = value;
@@ -118,7 +129,7 @@ public:
     return open_read_tries;
   }
 
-  inline void
+  void
   set_open_write_tries(int value)
   {
     open_write_tries = value;
@@ -154,7 +165,7 @@ public:
     return nullptr;
   }
 
-  inline void
+  void
   abort_read()
   {
     if (cache_read_vc) {
@@ -163,7 +174,8 @@ public:
       cache_read_vc = nullptr;
     }
   }
-  inline void
+
+  void
   abort_write()
   {
     if (cache_write_vc) {
@@ -172,7 +184,8 @@ public:
       cache_write_vc = nullptr;
     }
   }
-  inline void
+
+  void
   close_write()
   {
     if (cache_write_vc) {
@@ -181,7 +194,8 @@ public:
       cache_write_vc = nullptr;
     }
   }
-  inline void
+
+  void
   close_read()
   {
     if (cache_read_vc) {
@@ -190,7 +204,8 @@ public:
       cache_read_vc = nullptr;
     }
   }
-  inline void
+
+  void
   end_both()
   {
     // We close the read so that cache
@@ -199,7 +214,7 @@ public:
     abort_write();
   }
 
-  inline int
+  int
   get_last_error() const
   {
     return err_code;

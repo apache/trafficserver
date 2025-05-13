@@ -38,6 +38,12 @@ class FetchSM : public Continuation
 {
 public:
   FetchSM() {}
+
+  /** Indicate whether FetchSM dependencies have been initialized by ATS.
+   * @return True if FetchSM dependencies have been initialized, false otherwise.
+   */
+  static bool is_initialized();
+
   void
   init_comm()
   {

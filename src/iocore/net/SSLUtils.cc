@@ -930,7 +930,7 @@ asn1_strdup(ASN1_STRING *s)
   ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
              ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING || ASN1_STRING_type(s) == V_ASN1_T61STRING);
 
-  return ats_strndup((const char *)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
+  return ats_strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(s)), ASN1_STRING_length(s));
 }
 
 // This callback function is executed while OpenSSL processes the SSL
@@ -992,28 +992,6 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
       }
       Metrics::Counter::increment(it->second);
     }
-
-#if defined(OPENSSL_IS_BORINGSSL)
-    uint16_t group_id = SSL_get_group_id(ssl);
-    if (group_id != 0) {
-      const char *group_name = SSL_get_group_name(group_id);
-      if (auto it = tls_group_map.find(group_name); it != tls_group_map.end()) {
-        Metrics::Counter::increment(it->second);
-      } else {
-        Warning("Unknown TLS Group");
-      }
-    }
-#elif defined(SSL_get_negotiated_group)
-    int nid = SSL_get_negotiated_group(const_cast<SSL *>(ssl));
-    if (nid != NID_undef) {
-      if (auto it = tls_group_map.find(nid); it != tls_group_map.end()) {
-        Metrics::Counter::increment(it->second);
-      } else {
-        auto other = tls_group_map.find(SSL_GROUP_STAT_OTHER_KEY);
-        Metrics::Counter::increment(other->second);
-      }
-    }
-#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
   }
 }
 
@@ -1842,7 +1820,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   // Optionally elevate/allow file access to read root-only
   // certificates. The destructor will drop privilege for us.
   uint32_t elevate_setting = 0;
-  REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+  elevate_setting          = RecGetRecordInt("proxy.config.ssl.cert.load_elevated").value_or(0);
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
   line = tokLine(content.data(), &tok_state);

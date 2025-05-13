@@ -1043,6 +1043,15 @@ allow-plain
    for details about chunked trailers. By default, this option is enabled
    and therefore |TS| will drop chunked trailers.
 
+.. ts:cv:: CONFIG proxy.config.http.strict_chunk_parsing INT 1
+   :reloadable:
+   :overridable:
+
+   Specifies whether |TS| strictly checks errors in chunked message body.
+   If enabled (``1``), |TS| returns 400 Bad Request if chunked message body is
+   not compliant with RFC 9112. If disabled (``0``),  |TS| allows using LF as
+   a line terminator.
+
 .. ts:cv:: CONFIG proxy.config.http.send_http11_requests INT 1
    :reloadable:
    :overridable:
@@ -1918,6 +1927,12 @@ Negative Response Caching
    :ts:cv:`proxy.config.http.cache.max_stale_age` is used for that determination.
 
    This configuration defaults to 1,800 seconds (30 minutes).
+
+.. ts:cv:: CONFIG proxy.config.http.negative_revalidating_list STRING 500 502 503 504
+   :reloadable:
+
+   The HTTP status codes for which the negative revalidating feature applies. Note that this is a
+   `STRING` configuration containing a space separated list of the desired HTTP status codes.
 
 Proxy User Variables
 ====================
@@ -4233,10 +4248,9 @@ Client-Related Configuration
    ``"h2,http/1.1,http/1.0"``       HTTP/2 is preferred by |TS| over HTTP/1.1 and HTTP/1.0. Thus, if the
                                     origin supports HTTP/2, it will be used for the connection. If
                                     not, it will fall back to HTTP/1.1 or, if that is not supported,
-                                    HTTP/1.0. (HTTP/2 to origin is currently not supported by |TS|.)
+                                    HTTP/1.0.
    ``"h2"``                         |TS| only advertises HTTP/2 support. Thus, the origin will
-                                    either negotiate HTTP/2 or fail the handshake. (HTTP/2 to origin
-                                    is currently not supported by |TS|.)
+                                    either negotiate HTTP/2 or fail the handshake.
    ================================ ======================================================================
 
    Note that this is an overridable configuration, so the ALPN can be configured on a per-origin

@@ -2567,7 +2567,7 @@ REGRESSION_TEST(SDK_API_TSContDataGet)(RegressionTest *test, int /* atype ATS_UN
   my_data->data1  = 1;
   my_data->data2  = 2;
 
-  TSContDataSet(contp, (void *)my_data);
+  TSContDataSet(contp, static_cast<void *>(my_data));
 
   TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
 }
@@ -3789,10 +3789,10 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
   const char       *fragment = "yyy";
   const char       *fragment_get;
   char             *url_expected_string;
-  char             *url_string_from_1     = (char *)nullptr;
-  char             *url_string_from_2     = (char *)nullptr;
-  char             *url_string_from_3     = (char *)nullptr;
-  char             *url_string_from_print = (char *)nullptr;
+  char             *url_string_from_1{nullptr};
+  char             *url_string_from_2{nullptr};
+  char             *url_string_from_3{nullptr};
+  char             *url_string_from_print{nullptr};
   int               url_expected_length;
   int               url_length_from_1;
   int               url_length_from_2;
@@ -6478,7 +6478,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
      same log file name. */
   ats_scoped_str tmp(RecConfigReadLogDir());
   snprintf(logname, sizeof(logname), "RegressionTestLog%d.log", static_cast<int>(getpid()));
-  snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", (const char *)tmp, logname);
+  snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", tmp.get(), logname);
 
   unlink(fullpath_logname);
   retVal = TSTextLogObjectCreate(logname, TS_LOG_MODE_ADD_TIMESTAMP, &ts_log);
@@ -8716,7 +8716,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.parent_proxy.disable_parent_markdowns", "proxy.config.net.default_inactivity_timeout",
    "proxy.config.http.no_dns_just_forward_to_parent", "proxy.config.http.cache.ignore_query",
    "proxy.config.http.drop_chunked_trailers", "proxy.config.http.cache.post_method",
-   }
+   "proxy.config.http.strict_chunk_parsing", }
 };
 
 extern ClassAllocator<HttpSM> httpSMAllocator;

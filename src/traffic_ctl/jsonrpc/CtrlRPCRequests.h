@@ -161,6 +161,15 @@ struct ServerStopDrainRequest : shared::rpc::ClientRequest {
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+struct GetServerStatusRequest : shared::rpc::ClientRequest {
+  using super = ClientRequest;
+  std::string
+  get_method() const override
+  {
+    return "get_server_status";
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
 struct SetStorageDeviceOfflineRequest : shared::rpc::ClientRequest {
   using super = shared::rpc::ClientRequest;
   struct Params {

@@ -54,12 +54,12 @@ public:
   {
     bool rt = eval(res);
 
-    if (_mods & COND_NOT) {
+    if (has_modifier(_mods, CondModifiers::NOT)) {
       rt = !rt;
     }
 
     if (_next) {
-      if (_mods & COND_OR) {
+      if (has_modifier(_mods, CondModifiers::OR)) {
         return rt || (static_cast<Condition *>(_next)->do_eval(res));
       } else { // AND is the default
         // Short circuit if we're an AND and the first condition is FALSE.
@@ -79,7 +79,7 @@ public:
   bool
   last() const
   {
-    return _mods & COND_LAST;
+    return has_modifier(_mods, CondModifiers::MOD_L);
   }
 
   CondModifiers
@@ -129,5 +129,5 @@ protected:
   Matcher    *_matcher       = nullptr;
 
 private:
-  CondModifiers _mods = COND_NONE;
+  CondModifiers _mods = CondModifiers::NONE;
 };

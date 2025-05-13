@@ -1628,9 +1628,11 @@ TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value
   }
 
   if (idx >= 0) {
-    mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+    mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx,
+                                   std::string_view{value, static_cast<std::string_view::size_type>(length)});
   } else {
-    mime_field_value_set(heap, handle->mh, handle->field_ptr, value, length, true);
+    mime_field_value_set(heap, handle->mh, handle->field_ptr,
+                         std::string_view{value, static_cast<std::string_view::size_type>(length)}, true);
   }
 }
 
@@ -1644,7 +1646,8 @@ TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int 
     length = strlen(value);
   }
 
-  mime_field_value_insert_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+  mime_field_value_insert_comma_val(heap, handle->mh, handle->field_ptr, idx,
+                                    std::string_view{value, static_cast<std::string_view::size_type>(length)});
 }
 
 /****************/
@@ -1688,7 +1691,7 @@ TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
   }
 
   MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(hdr_obj);
-  MIMEField   *f  = mime_hdr_field_find(mh, name, length);
+  MIMEField   *f  = mime_hdr_field_find(mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
 
   if (f == nullptr) {
     return TS_NULL_MLOC;
@@ -1859,8 +1862,8 @@ TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int 
   MIMEHdrImpl        *mh   = _hdr_mloc_to_mime_hdr_impl(mh_mloc);
   HdrHeap            *heap = ((reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap);
   MIMEFieldSDKHandle *h    = sdk_alloc_field_handle(bufp, mh);
-  h->field_ptr             = mime_field_create_named(heap, mh, name, name_len);
-  *locp                    = reinterpret_cast<TSMLoc>(h);
+  h->field_ptr = mime_field_create_named(heap, mh, std::string_view{name, static_cast<std::string_view::size_type>(name_len)});
+  *locp        = reinterpret_cast<TSMLoc>(h);
   return TS_SUCCESS;
 }
 
@@ -1901,9 +1904,11 @@ TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMB
     mime_hdr_field_detach(d_handle->mh, d_handle->field_ptr, false);
   }
 
-  mime_field_name_value_set(d_heap, d_handle->mh, d_handle->field_ptr, s_handle->field_ptr->m_wks_idx,
-                            s_handle->field_ptr->m_ptr_name, s_handle->field_ptr->m_len_name, s_handle->field_ptr->m_ptr_value,
-                            s_handle->field_ptr->m_len_value, 0, 0, true);
+  mime_field_name_value_set(
+    d_heap, d_handle->mh, d_handle->field_ptr, s_handle->field_ptr->m_wks_idx,
+    std::string_view{s_handle->field_ptr->m_ptr_name, static_cast<std::string_view::size_type>(s_handle->field_ptr->m_len_name)},
+    std::string_view{s_handle->field_ptr->m_ptr_value, static_cast<std::string_view::size_type>(s_handle->field_ptr->m_len_value)},
+    0, 0, true);
 
   if (dest_attached) {
     mime_hdr_field_attach(d_handle->mh, d_handle->field_ptr, 1, nullptr);
@@ -1967,7 +1972,9 @@ TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field
 
   s_field = s_handle->field_ptr;
   d_field = d_handle->field_ptr;
-  mime_field_value_set(d_heap, d_handle->mh, d_field, s_field->m_ptr_value, s_field->m_len_value, true);
+  mime_field_value_set(d_heap, d_handle->mh, d_field,
+                       std::string_view{s_field->m_ptr_value, static_cast<std::string_view::size_type>(s_field->m_len_value)},
+                       true);
   return TS_SUCCESS;
 }
 
@@ -2064,7 +2071,7 @@ TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name
     mime_hdr_field_detach(handle->mh, handle->field_ptr, false);
   }
 
-  handle->field_ptr->name_set(heap, handle->mh, name, length);
+  handle->field_ptr->name_set(heap, handle->mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
 
   if (attached) {
     mime_hdr_field_attach(handle->mh, handle->field_ptr, 1, nullptr);
@@ -2095,7 +2102,7 @@ TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
    * An empty string is also considered to be a token. The correct value of
    * the field after this function should be null.
    */
-  mime_field_value_set(heap, handle->mh, handle->field_ptr, nullptr, 0, true);
+  mime_field_value_set(heap, handle->mh, handle->field_ptr, std::string_view{nullptr, 0}, true);
   return TS_SUCCESS;
 }
 
@@ -2351,7 +2358,8 @@ TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, con
   if (length == -1) {
     length = strlen(value);
   }
-  mime_field_value_extend_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+  mime_field_value_extend_comma_val(heap, handle->mh, handle->field_ptr, idx,
+                                    std::string_view{value, static_cast<std::string_view::size_type>(length)});
   return TS_SUCCESS;
 }
 
@@ -2790,7 +2798,9 @@ TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  return h.method_get(length);
+  auto method{h.method_get()};
+  *length = static_cast<int>(method.length());
+  return method.data();
 }
 
 TSReturnCode
@@ -2829,7 +2839,9 @@ TSHttpHdrHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  return h.host_get(length);
+  auto host{h.host_get()};
+  *length = static_cast<int>(host.length());
+  return host.data();
 }
 
 TSReturnCode
@@ -2919,7 +2931,9 @@ TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  return h.reason_get(length);
+  auto reason{h.reason_get()};
+  *length = static_cast<int>(reason.length());
+  return reason.data();
 }
 
 TSReturnCode
@@ -3244,10 +3258,10 @@ TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *plugin_f
 TSReturnCode
 TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 {
-  auto res = RecGetRecordInt(const_cast<char *>(var_name), static_cast<RecInt *>(result));
+  auto tmp{RecGetRecordInt(var_name)};
 
   // Try the old librecords first
-  if (res == REC_ERR_FAIL) {
+  if (!tmp) {
     int id = global_api_metrics.lookup(var_name);
 
     if (id == ts::Metrics::NOT_FOUND) {
@@ -3255,6 +3269,8 @@ TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
     } else {
       *result = global_api_metrics[id].load();
     }
+  } else {
+    *result = tmp.value();
   }
 
   return TS_SUCCESS;
@@ -3263,10 +3279,10 @@ TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 TSReturnCode
 TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 {
-  auto res = RecGetRecordCounter(const_cast<char *>(var_name), static_cast<RecCounter *>(result));
+  auto tmp{RecGetRecordCounter(var_name)};
 
   // Try the old librecords first
-  if (res == REC_ERR_FAIL) {
+  if (!tmp) {
     int id = global_api_metrics.lookup(var_name);
 
     if (id == ts::Metrics::NOT_FOUND) {
@@ -3274,6 +3290,8 @@ TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
     } else {
       *result = global_api_metrics[id].load();
     }
+  } else {
+    *result = tmp.value();
   }
 
   return TS_SUCCESS;
@@ -3283,17 +3301,22 @@ TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 TSReturnCode
 TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
 {
-  return RecGetRecordFloat(const_cast<char *>(var_name), static_cast<RecFloat *>(result)) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
+  auto tmp{RecGetRecordFloat(const_cast<char *>(var_name))};
+  if (tmp) {
+    *result = tmp.value();
+    return TS_SUCCESS;
+  }
+  return TS_ERROR;
 }
 
 TSReturnCode
 TSMgmtStringGet(const char *var_name, TSMgmtString *result)
 {
-  RecString tmp = nullptr;
-  (void)RecGetRecordString_Xmalloc(const_cast<char *>(var_name), &tmp);
+  auto tmp_str{RecGetRecordStringAlloc(const_cast<char *>(var_name))};
+  auto tmp{ats_as_c_str(tmp_str)};
 
   if (tmp) {
-    *result = tmp;
+    *result = ats_strdup(tmp);
     return TS_SUCCESS;
   }
 
@@ -5594,8 +5617,8 @@ TSHttpConnectPlugin(TSHttpConnectOptions *options)
   sdk_assert(options->connect_type == TS_CONNECT_PLUGIN);
   sdk_assert(options->addr);
 
-  sdk_assert(ats_is_ip(options->addr));
-  sdk_assert(ats_ip_port_cast(options->addr));
+  sdk_assert(ats_is_unix(options->addr) || ats_is_ip(options->addr));
+  sdk_assert(ats_is_unix(options->addr) || ats_ip_port_cast(options->addr));
   return reinterpret_cast<TSVConn>(PluginHttpConnectInternal(options));
 }
 
@@ -6180,7 +6203,8 @@ TSCacheRead(TSCont contp, TSCacheKey key)
   CacheInfo    *info = reinterpret_cast<CacheInfo *>(key);
   Continuation *i    = reinterpret_cast<INKContInternal *>(contp);
 
-  return reinterpret_cast<TSAction>(cacheProcessor.open_read(i, &info->cache_key, info->frag_type, info->hostname, info->len));
+  return reinterpret_cast<TSAction>(cacheProcessor.open_read(
+    i, &info->cache_key, info->frag_type, std::string_view{info->hostname, static_cast<std::string_view::size_type>(info->len)}));
 }
 
 TSAction
@@ -6195,7 +6219,8 @@ TSCacheWrite(TSCont contp, TSCacheKey key)
   Continuation *i    = reinterpret_cast<INKContInternal *>(contp);
 
   return reinterpret_cast<TSAction>(
-    cacheProcessor.open_write(i, &info->cache_key, info->frag_type, 0, false, info->pin_in_cache, info->hostname, info->len));
+    cacheProcessor.open_write(i, &info->cache_key, info->frag_type, 0, false, info->pin_in_cache,
+                              std::string_view{info->hostname, static_cast<std::string_view::size_type>(info->len)}));
 }
 
 TSAction
@@ -6209,7 +6234,8 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
   CacheInfo       *info = reinterpret_cast<CacheInfo *>(key);
   INKContInternal *i    = reinterpret_cast<INKContInternal *>(contp);
 
-  return reinterpret_cast<TSAction>(cacheProcessor.remove(i, &info->cache_key, info->frag_type, info->hostname, info->len));
+  return reinterpret_cast<TSAction>(cacheProcessor.remove(
+    i, &info->cache_key, info->frag_type, std::string_view{info->hostname, static_cast<std::string_view::size_type>(info->len)}));
 }
 
 TSAction
@@ -6224,9 +6250,10 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 
   if (key) {
     CacheInfo *info = reinterpret_cast<CacheInfo *>(key);
-    return reinterpret_cast<TSAction>(cacheProcessor.scan(i, info->hostname, info->len, KB_per_second));
+    return reinterpret_cast<TSAction>(
+      cacheProcessor.scan(i, std::string_view{info->hostname, static_cast<std::string_view::size_type>(info->len)}, KB_per_second));
   }
-  return reinterpret_cast<TSAction>(cacheProcessor.scan(i, nullptr, 0, KB_per_second));
+  return reinterpret_cast<TSAction>(cacheProcessor.scan(i, std::string_view{}, KB_per_second));
 }
 
 /************************   REC Stats API    **************************/
@@ -6826,7 +6853,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   TSMLoc   obj  = reinterpret_cast<TSMLoc>(hptr->m_http);
 
   MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
-  MIMEField   *f  = mime_hdr_field_find(mh, MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+  MIMEField   *f  = mime_hdr_field_find(mh, static_cast<std::string_view>(MIME_FIELD_ACCEPT_ENCODING));
   if (!stream->push_promise(url_obj, f)) {
     url_obj.destroy();
     return TS_ERROR;
@@ -7231,6 +7258,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_DROP_CHUNKED_TRAILERS:
     ret = _memberp_to_generic(&overridableHttpConfig->http_drop_chunked_trailers, conv);
+    break;
+  case TS_CONFIG_HTTP_STRICT_CHUNK_PARSING:
+    ret = _memberp_to_generic(&overridableHttpConfig->http_strict_chunk_parsing, conv);
     break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->flow_control_enabled, conv);
@@ -8175,7 +8205,7 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_f
     if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
       if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
         if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname, rsp_file)) {
-          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", certname);
         }
       }
     }

@@ -219,7 +219,7 @@ def add_object(config, var, value, type, track_info):
         add_object(config[key], var[index + 1:], value, type, track_info)
 
 
-def fix_record_names(file):
+def make_tmp_file_with_renamed_fields(file):
     temp = tempfile.NamedTemporaryFile(prefix='records.config_', delete=False)
 
     for l in fileinput.input(files=file):
@@ -232,6 +232,7 @@ def fix_record_names(file):
                 rec_line = ' '.join(elements)
                 temp.write(rec_line.encode('utf-8'))
                 temp.write(b'\n')
+                # Store the record to keep track of the renamed fields.
                 Remapped_Vars[rec_name] = Renamed_Records[rec_name]
 
                 continue
@@ -246,7 +247,7 @@ def handle_file_input(args):
     config = {}
 
     # Fix the names first.
-    filename = fix_record_names(args.file)
+    filename = make_tmp_file_with_renamed_fields(args.file)
     with open(filename, "r+") as f:
         lines = f.readlines()
         num_lines = len(lines)
@@ -284,6 +285,13 @@ def handle_file_input(args):
     save_to_file(args.output, args.json, args.typerepr, args.no_backup, ts)
 
     f.close()
+
+    # Clean up the temp file we've created with the renamed fields.
+    try:
+        os.remove(filename)
+    except OSError as e:
+        raise Exception(f"Error removing temporary file  {e.filename} - {e.strerror}. YAML file was created")
+
     return
 
 

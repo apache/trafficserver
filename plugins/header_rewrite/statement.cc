@@ -95,6 +95,28 @@ Statement::acquire_txn_slot()
   _txn_slot = txn_slot_index;
 }
 
+void
+Statement::acquire_txn_private_slot()
+{
+  // Don't do anything if we don't need it
+  if (!need_txn_private_slot() || _txn_private_slot >= 0) {
+    return;
+  }
+
+  // Only call the index reservation once per plugin load
+  static int txn_private_slot_index = []() -> int {
+    int index = -1;
+
+    if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "HRW txn private variables", &index)) {
+      TSError("[%s] failed to reserve user arg index", PLUGIN_NAME);
+      return -1; // Fallback value
+    }
+    return index;
+  }();
+
+  _txn_private_slot = txn_private_slot_index;
+}
+
 // Parse NextHop qualifiers
 NextHopQualifiers
 Statement::parse_next_hop_qualifier(const std::string &q) const

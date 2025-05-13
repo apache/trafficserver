@@ -28,8 +28,18 @@ server = Test.MakeOriginServer("server")
 # Configure the server to return 200 responses. The rewrite rules below set a
 # non-200 status, so if curl gets a 200 response something went wrong.
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {
+    "headers": "GET /to_path/hello?=foo=bar HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+server.addResponse("sessionfile.log", request_header, response_header)
+request_header = {
+    "headers": "GET /to_path/hrw-sets.png HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 server.addResponse("sessionfile.log", request_header, response_header)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: no_path.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_header)
@@ -46,10 +56,10 @@ ts.Setup.CopyAs('rules/set_redirect.conf', Test.RunDirectory)
 
 # This configuration makes use of CLIENT-URL in conditions.
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/from_path/ https://127.0.0.1:{0}/to_path/ '
+    'map http://www.example.com/from_path/ http://127.0.0.1:{0}/to_path/ '
     '@plugin=header_rewrite.so @pparam={1}/rule_client.conf'.format(server.Variables.Port, Test.RunDirectory))
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com:8080/from_path/ https://127.0.0.1:{0}/to_path/ '
+    'map http://www.example.com:8080/from_path/ http://127.0.0.1:{0}/to_path/ '
     '@plugin=header_rewrite.so @pparam={1}/rule_client.conf'.format(server.Variables.Port, Test.RunDirectory))
 # This configuration makes use of TO-URL in a set-redirect operator.
 ts.Disk.remap_config.AddLine(
@@ -58,8 +68,8 @@ ts.Disk.remap_config.AddLine(
 
 # Test CLIENT-URL.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl --proxy 127.0.0.1:{0} "http://www.example.com/from_path/hello?=foo=bar" '
+tr.MakeCurlCommand(
+    '--proxy 127.0.0.1:{0} "http://www.example.com/from_path/hello?=foo=bar" '
     '-H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
@@ -70,8 +80,18 @@ ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
 
 # Test TO-URL in a set-redirect operator.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --head 127.0.0.1:{0} -H "Host: no_path.com" --verbose'.format(ts.Variables.port)
+tr.MakeCurlCommand('--head 127.0.0.1:{0} -H "Host: no_path.com" --verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/set-redirect.gold"
+tr.StillRunningAfter = server
+ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
+
+# Test HRW sets matching
+tr = Test.AddTestRun()
+tr.MakeCurlCommand(
+    '--proxy 127.0.0.1:{0} "http://www.example.com/from_path/hrw-sets.png" '
+    '-H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/ext-sets.gold"
 tr.StillRunningAfter = server
 ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"

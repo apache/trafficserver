@@ -234,7 +234,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   NetAccept *na = createNetAccept(opt);
 
   if (accept_threads < 0) {
-    REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
+    accept_threads = RecGetRecordInt("proxy.config.accept_threads").value_or(0);
   }
   Metrics::Gauge::increment(net_rsb.accepts_currently_open);
 
@@ -248,7 +248,6 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   ink_assert(0 < opt.local_port && opt.local_port < 65536);
   accept_ip.network_order_port() = htons(opt.local_port);
 
-  na->accept_fn   = net_accept;
   na->server.sock = UnixSocket{fd};
   ats_ip_copy(&na->server.accept_addr, &accept_ip);
 

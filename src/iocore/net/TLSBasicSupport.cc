@@ -24,6 +24,9 @@
 
 #include "SSLStats.h"
 #include "iocore/net/TLSBasicSupport.h"
+#if defined(OPENSSL_IS_BORINGSSL)
+#include "tscore/Diags.h" // For Warning
+#endif                    // OPENSSL_IS_BORINGSSL
 #include "tsutil/DbgCtl.h"
 
 #include <cinttypes>
@@ -169,6 +172,22 @@ TLSBasicSupport::set_valid_tls_version_max(int max)
   SSL_set_max_proto_version(ssl, ver);
 }
 
+void
+TLSBasicSupport::set_legacy_cipher_suite(std::string const &cipher_suite)
+{
+  auto ssl = this->_get_ssl_object();
+  SSL_set_cipher_list(ssl, cipher_suite.c_str());
+}
+
+void
+TLSBasicSupport::set_cipher_suite([[maybe_unused]] std::string const &cipher_suite)
+{
+#if TS_USE_TLS_SET_CIPHERSUITES
+  auto ssl = this->_get_ssl_object();
+  SSL_set_ciphersuites(ssl, cipher_suite.c_str());
+#endif
+}
+
 int
 TLSBasicSupport::verify_certificate(X509_STORE_CTX *ctx)
 {
@@ -200,4 +219,34 @@ TLSBasicSupport::_record_tls_handshake_end_time()
 
   Dbg(dbg_ctl_ssl, "ssl handshake time:%" PRId64, ssl_handshake_time);
   Metrics::Counter::increment(ssl_rsb.total_handshake_time, ssl_handshake_time);
+}
+
+void
+TLSBasicSupport::_update_end_of_handshake_stats()
+{
+  Metrics::Counter::increment(ssl_rsb.total_success_handshake_count_in);
+
+#if defined(OPENSSL_IS_BORINGSSL)
+  SSL     *ssl      = this->_get_ssl_object();
+  uint16_t group_id = SSL_get_group_id(ssl);
+  if (group_id != 0) {
+    const char *group_name = SSL_get_group_name(group_id);
+    if (auto it = tls_group_map.find(group_name); it != tls_group_map.end()) {
+      Metrics::Counter::increment(it->second);
+    } else {
+      Warning("Unknown TLS Group");
+    }
+  }
+#elif defined(SSL_get_negotiated_group)
+  SSL *ssl = this->_get_ssl_object();
+  int  nid = SSL_get_negotiated_group(const_cast<SSL *>(ssl));
+  if (nid != NID_undef) {
+    if (auto it = tls_group_map.find(nid); it != tls_group_map.end()) {
+      Metrics::Counter::increment(it->second);
+    } else {
+      auto other = tls_group_map.find(SSL_GROUP_STAT_OTHER_KEY);
+      Metrics::Counter::increment(other->second);
+    }
+  }
+#endif // OPENSSL_IS_BORINGSSL or SSL_get_negotiated_group
 }

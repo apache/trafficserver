@@ -60,6 +60,15 @@ parse_matcher_op(std::string &arg)
     } else {
       return MATCH_ERROR;
     }
+  case '(':
+    arg.erase(0, 1);
+    // There should be a right paren at the end
+    if (arg.length() >= 1 && arg[arg.length() - 1] == ')') {
+      arg.erase(arg.length() - 1, arg.length());
+      return MATCH_SET;
+    } else {
+      return MATCH_ERROR;
+    }
   default:
     return MATCH_EQUAL;
     break;
@@ -75,26 +84,50 @@ Condition::initialize(Parser &p)
     if (p.mod_exist("AND")) {
       TSError("[%s] Can't have both AND and OR in mods", PLUGIN_NAME);
     } else {
-      _mods = static_cast<CondModifiers>(_mods | COND_OR);
+      _mods |= CondModifiers::OR;
     }
   } else if (p.mod_exist("AND")) {
-    _mods = static_cast<CondModifiers>(_mods | COND_AND);
+    _mods |= CondModifiers::AND;
   }
 
   if (p.mod_exist("NOT")) {
-    _mods = static_cast<CondModifiers>(_mods | COND_NOT);
+    _mods |= CondModifiers::NOT;
   }
 
   // The NOCASE / CASE modifier is a bit special, since it ripples down into the Matchers for
   // strings and regexes.
+  int _substr_seen = 0;
+
   if (p.mod_exist("NOCASE")) {
-    _mods = static_cast<CondModifiers>(_mods | COND_NOCASE);
+    _mods |= CondModifiers::MOD_NOCASE;
   } else if (p.mod_exist("CASE")) {
-    // Nothing to do, this is the default
+    // Nothing to do — default is case-sensitive, but still allow this string for clearness.
   }
 
+  if (p.mod_exist("EXT")) {
+    _mods |= CondModifiers::MOD_EXT;
+    _substr_seen++;
+  }
+  if (p.mod_exist("SUF")) {
+    _mods |= CondModifiers::MOD_SUF;
+    _substr_seen++;
+  }
+  if (p.mod_exist("PRE")) {
+    _mods |= CondModifiers::MOD_PRE;
+    _substr_seen++;
+  }
+  if (p.mod_exist("MID")) {
+    _mods |= CondModifiers::MOD_MID;
+    _substr_seen++;
+  }
+
+  if (_substr_seen > 1) {
+    throw std::runtime_error("Only one substring modifier (EXT, SUF, PRE, MID) may be used.");
+  }
+
+  // Deal with the "last" modifier as well.
   if (p.mod_exist("L")) {
-    _mods = static_cast<CondModifiers>(_mods | COND_LAST);
+    _mods |= CondModifiers::MOD_L;
   }
 
   _cond_op = parse_matcher_op(p.get_arg());

@@ -316,9 +316,8 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
 
     if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
       // Check whether the request uses CONNECT method
-      int         method_len;
-      const char *method = _receive_header.method_get(&method_len);
-      if (method_len == HTTP_LEN_CONNECT && strncmp(method, HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT) == 0) {
+      auto method{_receive_header.method_get()};
+      if (method == std::string_view{HTTP_METHOD_CONNECT, static_cast<std::string_view::size_type>(HTTP_LEN_CONNECT)}) {
         this->_is_tunneling = true;
       }
     }
@@ -840,7 +839,7 @@ Http2Stream::update_write_request(bool call_update)
       Http2StreamDebug("update_write_request parsing done, read %d bytes", bytes_used);
 
       // Schedule session shutdown if response header has "Connection: close"
-      MIMEField *field = this->_send_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+      MIMEField *field = this->_send_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
       if (field) {
         auto value{field->value_get()};
         if (value == std::string_view{HTTP_VALUE_CLOSE, static_cast<std::string_view::size_type>(HTTP_LEN_CLOSE)}) {

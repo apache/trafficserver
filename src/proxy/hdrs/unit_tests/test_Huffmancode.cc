@@ -69,12 +69,12 @@ void
 random_test()
 {
   const int size      = 1024;
-  char     *dst_start = (char *)malloc(size * 2);
+  char     *dst_start = static_cast<char *>(malloc(size * 2));
   char      string[size];
   for (char &i : string) {
     // coverity[dont_call]
     long num = lrand48();
-    i        = (char)num;
+    i        = static_cast<char>(num);
   }
   const uint8_t *src     = (const uint8_t *)string;
   uint32_t       src_len = sizeof(string);

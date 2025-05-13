@@ -29,7 +29,7 @@
 #
 
 find_library(iwasm_LIBRARY NAMES iwasm)
-find_path(wamr_INCLUDE_DIR NAMES wasm_export.h)
+find_path(wamr_INCLUDE_DIR NAMES wasm_c_api.h)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(wamr REQUIRED_VARS iwasm_LIBRARY wamr_INCLUDE_DIR)

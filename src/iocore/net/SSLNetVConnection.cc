@@ -170,7 +170,7 @@ debug_certificate_name(const char *msg, X509_NAME *name)
     long  len;
     char *ptr;
     len = BIO_get_mem_data(bio, &ptr);
-    Dbg(dbg_ctl_ssl, "%s %.*s", msg, (int)len, ptr);
+    Dbg(dbg_ctl_ssl, "%s %.*s", msg, static_cast<int>(len), ptr);
   }
 
   BIO_free(bio);
@@ -1146,7 +1146,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       // SNI
       ats_scoped_str &tlsext_host_name = this->options.sni_hostname ? this->options.sni_hostname : this->options.sni_servername;
       if (tlsext_host_name) {
-        if (SSL_set_tlsext_host_name(this->ssl, tlsext_host_name)) {
+        if (this->set_sni_server_name(this->ssl, tlsext_host_name)) {
           Dbg(dbg_ctl_ssl, "using SNI name '%s' for client handshake", tlsext_host_name.get());
         } else {
           Dbg(dbg_ctl_ssl_error, "failed to set SNI name '%s' for client handshake", tlsext_host_name.get());
@@ -1321,7 +1321,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
     if (this->get_tls_handshake_begin_time()) {
       this->_record_tls_handshake_end_time();
-      Metrics::Counter::increment(ssl_rsb.total_success_handshake_count_in);
+      this->_update_end_of_handshake_stats();
     }
 
     if (this->get_tunnel_type() != SNIRoutingType::NONE) {

@@ -44,7 +44,7 @@ public:
 
   // This will, and should, only be called via the ProxyAllocator as used in the factory.
   Context(TSHttpTxn txn_ptr, TSHttpSsn ssn_ptr, TSRemapRequestInfo *rri_ptr, cripts::Instance &inst)
-    : rri(rri_ptr), p_instance(inst)
+    : rri(rri_ptr), p_instance(inst), _client(this), _server(this), _urls(this, _client.url)
   {
     state.txnp    = txn_ptr;
     state.ssnp    = ssn_ptr;
@@ -67,7 +67,6 @@ public:
 
   // These are private, but needs to be visible to our friend classes that
   // depends on the Context.
-private:
   friend class Client::Request;
   friend class Client::Response;
   friend class Client::Connection;
@@ -84,25 +83,63 @@ private:
 
   // These are "pre-allocated", but not initialized. They will be initialized
   // when used via a factory.
-  cripts::Client::Response   _client_resp_header;
-  cripts::Client::Request    _client_req_header;
-  cripts::Client::Connection _client_conn;
-  cripts::Client::URL        _client_url;
-  cripts::Remap::From::URL   _remap_from_url;
-  cripts::Remap::To::URL     _remap_to_url;
-  cripts::Pristine::URL      _pristine_url;
-  cripts::Server::Response   _server_resp_header;
-  cripts::Server::Request    _server_req_header;
-  cripts::Server::Connection _server_conn;
-  cripts::Cache::URL         _cache_url;
-  cripts::Parent::URL        _parent_url;
+  struct _ClientBlock {
+    cripts::Client::Response   response;
+    cripts::Client::Request    request;
+    cripts::Client::Connection connection;
+    cripts::Client::URL        url;
+
+    _ClientBlock(Context *ctx)
+    {
+      response.set_state(&ctx->state);
+      request.set_state(&ctx->state);
+      connection.set_state(&ctx->state);
+    }
+  } _client;
+
+  struct _ServerBlock {
+    cripts::Server::Response   response;
+    cripts::Server::Request    request;
+    cripts::Server::Connection connection;
+
+    _ServerBlock(Context *ctx)
+    {
+      response.set_state(&ctx->state);
+      request.set_state(&ctx->state);
+      connection.set_state(&ctx->state);
+    }
+
+  } _server;
+
+  struct _UrlBlock {
+    cripts::Client::URL  &request;
+    cripts::Pristine::URL pristine;
+    cripts::Cache::URL    cache;
+    cripts::Parent::URL   parent;
+
+    struct {
+      cripts::Remap::From::URL from;
+      cripts::Remap::To::URL   to;
+    } remap;
+
+    _UrlBlock(Context *ctx, cripts::Client::URL &alias) : request(alias)
+    {
+      request.set_context(ctx);
+      pristine.set_context(ctx);
+      cache.set_context(ctx);
+      parent.set_context(ctx);
+      remap.from.set_context(ctx);
+      remap.to.set_context(ctx);
+    }
+
+  } _urls;
 }; // End class Context
 
 } // namespace cripts
 
 // This may be weird, but oh well for now.
 #define Get()               _get(context)
-#define Set(_value)         _set(context, _value)
+#define Set(_value, ...)    _set(context, _value __VA_OPT__(, ) __VA_ARGS__)
 #define Update()            _update(context)
 #define RunRemap()          _runRemap(context)
 #define Activate()          _activate(context->p_instance)

@@ -39,20 +39,20 @@
 #include "proxy/http/HttpSessionManager.h"
 
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \
-  REC_EstablishStaticConfigStringAlloc(_ix, _n);      \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecEstablishStaticConfigString(_ix, _n);            \
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigLongLong(_ix, _n) \
-  REC_EstablishStaticConfigInteger(_ix, _n);       \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecEstablishStaticConfigInt(_ix, _n);            \
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigFloat(_ix, _n) \
-  REC_EstablishStaticConfigFloat(_ix, _n);      \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecEstablishStaticConfigFloat(_ix, _n);       \
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 #define HttpEstablishStaticConfigByte(_ix, _n) \
-  REC_EstablishStaticConfigByte(_ix, _n);      \
-  REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
+  RecEstablishStaticConfigByte(_ix, _n);       \
+  RecRegisterConfigUpdateCb(_n, http_config_cb, NULL)
 
 namespace
 {
@@ -100,9 +100,9 @@ template <typename T, unsigned N>
 static bool
 http_config_enum_read(const char *name, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
-  char key[512]; // it's just one key - painful UI if keys are longer than this
-  if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
-    return http_config_enum_search(key, list, value);
+  char key_buf[512]; // it's just one key - painful UI if keys are longer than this
+  if (auto key{RecGetRecordString(name, key_buf, sizeof(key_buf))}; key) {
+    return http_config_enum_search(key.value(), list, value);
   }
   return false;
 }
@@ -125,24 +125,23 @@ static const ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatch
 };
 
 bool
-HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
+HttpConfig::load_server_session_sharing_match(std::string_view key, MgmtByte &mask)
 {
   MgmtByte value;
   mask = 0;
   // Parse through and build up mask
-  std::string_view key_list(key);
-  size_t           start  = 0;
-  size_t           offset = 0;
-  Dbg(dbg_ctl_http_config, "enum mask value %s", key);
+  size_t start  = 0;
+  size_t offset = 0;
+  Dbg(dbg_ctl_http_config, "enum mask value %.*s", static_cast<int>(key.length()), key.data());
   do {
-    offset = key_list.find(',', start);
+    offset = key.find(',', start);
     if (offset == std::string_view::npos) {
-      std::string_view one_key = key_list.substr(start);
+      std::string_view one_key = key.substr(start);
       if (!http_config_enum_search(one_key, SessionSharingMatchStrings, value)) {
         return false;
       }
     } else {
-      std::string_view one_key = key_list.substr(start, offset - start);
+      std::string_view one_key = key.substr(start, offset - start);
       if (!http_config_enum_search(one_key, SessionSharingMatchStrings, value)) {
         return false;
       }
@@ -163,9 +162,9 @@ HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
 static bool
 http_config_enum_mask_read(const char *name, MgmtByte &value)
 {
-  char key[512]; // it's just one key - painful UI if keys are longer than this
-  if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
-    return HttpConfig::load_server_session_sharing_match(key, value);
+  char key_buf[512]; // it's just one key - painful UI if keys are longer than this
+  if (auto key{RecGetRecordString(name, key_buf, sizeof(key_buf))}; key) {
+    return HttpConfig::load_server_session_sharing_match(key.value(), value);
   }
   return false;
 }
@@ -486,6 +485,7 @@ register_stat_callbacks()
   http_rsb.total_client_connections          = Metrics::Counter::createPtr("proxy.process.http.total_client_connections");
   http_rsb.total_client_connections_ipv4     = Metrics::Counter::createPtr("proxy.process.http.total_client_connections_ipv4");
   http_rsb.total_client_connections_ipv6     = Metrics::Counter::createPtr("proxy.process.http.total_client_connections_ipv6");
+  http_rsb.total_client_connections_uds      = Metrics::Counter::createPtr("proxy.process.http.total_client_connections_uds");
   http_rsb.total_incoming_connections        = Metrics::Counter::createPtr("proxy.process.http.total_incoming_connections");
   http_rsb.total_parent_marked_down_count    = Metrics::Counter::createPtr("proxy.process.http.total_parent_marked_down_count");
   http_rsb.total_parent_proxy_connections    = Metrics::Counter::createPtr("proxy.process.http.total_parent_proxy_connections");
@@ -634,33 +634,51 @@ register_stat_callbacks()
   });
 }
 
+/**
+  Parse list of HTTP status code and return HttpStatusBitset
+  - e.g. "204 305 403 404 414 500 501 502 503 504"
+ */
+static HttpStatusBitset
+parse_http_status_code_list(swoc::TextView status_list)
+{
+  HttpStatusBitset set;
+
+  auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
+
+  while (!status_list.ltrim_if(is_sep).empty()) {
+    swoc::TextView span;
+    swoc::TextView token{status_list.take_prefix_if(is_sep)};
+    auto           n = swoc::svtoi(token, &span);
+    if (span.size() != token.size()) {
+      Error("Invalid status code '%.*s': not a number", static_cast<int>(token.size()), token.data());
+    } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {
+      Error("Invalid status code '%.*s': out of range", static_cast<int>(token.size()), token.data());
+    } else {
+      set[n] = true;
+    }
+  }
+
+  return set;
+}
+
 static bool
 set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
 {
   bool             ret = false;
   HttpStatusBitset set;
+
   // values from proxy.config.http.negative_caching_list
   if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
     // parse the list of status codes
-    swoc::TextView status_list(data.rec_string, strlen(data.rec_string));
-    auto           is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
-    while (!status_list.ltrim_if(is_sep).empty()) {
-      swoc::TextView span, token{status_list.take_prefix_if(is_sep)};
-      auto           n = swoc::svtoi(token, &span);
-      if (span.size() != token.size()) {
-        Error("Invalid status code '%.*s' for negative caching: not a number", static_cast<int>(token.size()), token.data());
-      } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {
-        Error("Invalid status code '%.*s' for negative caching: out of range", static_cast<int>(token.size()), token.data());
-      } else {
-        set[n] = true;
-      }
-    }
+    set = parse_http_status_code_list({data.rec_string, strlen(data.rec_string)});
   }
+
   // set the return value
   if (set != c->negative_caching_list) {
     c->negative_caching_list = set;
     ret                      = ret || update;
   }
+
   return ret;
 }
 
@@ -682,6 +700,47 @@ load_negative_caching_var(RecRecord const *r, void *cookie)
 {
   HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
   set_negative_caching_list(r->name, r->data_type, r->data, c, false);
+}
+
+static bool
+set_negative_revalidating_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
+{
+  bool             ret = false;
+  HttpStatusBitset set;
+
+  // values from proxy.config.http.negative_revalidating_list
+  if (0 == strcasecmp("proxy.config.http.negative_revalidating_list", name) && RECD_STRING == dtype && data.rec_string) {
+    // parse the list of status codes
+    set = parse_http_status_code_list({data.rec_string, strlen(data.rec_string)});
+  }
+
+  // set the return value
+  if (set != c->negative_revalidating_list) {
+    c->negative_revalidating_list = set;
+    ret                           = ret || update;
+  }
+
+  return ret;
+}
+
+// Method of getting the status code bitset
+static int
+negative_revalidating_list_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+  // Signal an update if valid value arrived.
+  if (set_negative_revalidating_list(name, dtype, data, c, true)) {
+    http_config_cb(name, dtype, data, cookie);
+  }
+  return REC_ERR_OKAY;
+}
+
+// Method of loading the negative caching config bitset
+void
+load_negative_revalidating_var(RecRecord const *r, void *cookie)
+{
+  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+  set_negative_revalidating_list(r->name, r->data_type, r->data, c, false);
 }
 
 /** Template for creating conversions and initialization for @c std::chrono based configuration variables.
@@ -828,6 +887,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.chunking_enabled, "proxy.config.http.chunking_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.http_chunking_size, "proxy.config.http.chunking.size");
   HttpEstablishStaticConfigByte(c.oride.http_drop_chunked_trailers, "proxy.config.http.drop_chunked_trailers");
+  HttpEstablishStaticConfigByte(c.oride.http_strict_chunk_parsing, "proxy.config.http.strict_chunk_parsing");
   HttpEstablishStaticConfigByte(c.oride.flow_control_enabled, "proxy.config.http.flow_control.enabled");
   HttpEstablishStaticConfigLongLong(c.oride.flow_high_water_mark, "proxy.config.http.flow_control.high_water");
   HttpEstablishStaticConfigLongLong(c.oride.flow_low_water_mark, "proxy.config.http.flow_control.low_water");
@@ -847,9 +907,9 @@ HttpConfig::startup()
   {
     char str[512];
 
-    if (REC_ERR_OKAY == RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))) {
+    if (auto sv{RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))}; sv) {
       swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(std::string_view(str), error);
+      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(sv.value(), error);
       if (!error.size()) {
         c.oride.insert_forwarded = bs;
       } else {
@@ -1018,6 +1078,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.negative_revalidating_lifetime, "proxy.config.http.negative_revalidating_lifetime");
   RecRegisterConfigUpdateCb("proxy.config.http.negative_caching_list", &negative_caching_list_cb, &c);
   RecLookupRecord("proxy.config.http.negative_caching_list", &load_negative_caching_var, &c, true);
+  RecRegisterConfigUpdateCb("proxy.config.http.negative_revalidating_list", &negative_revalidating_list_cb, &c);
+  RecLookupRecord("proxy.config.http.negative_revalidating_list", &load_negative_revalidating_var, &c, true);
 
   // Buffer size and watermark
   HttpEstablishStaticConfigLongLong(c.oride.default_buffer_size_index, "proxy.config.http.default_buffer_size");
@@ -1124,6 +1186,7 @@ HttpConfig::reconfigure()
   params->oride.keep_alive_enabled_out      = INT_TO_BOOL(m_master.oride.keep_alive_enabled_out);
   params->oride.chunking_enabled            = INT_TO_BOOL(m_master.oride.chunking_enabled);
   params->oride.http_drop_chunked_trailers  = m_master.oride.http_drop_chunked_trailers;
+  params->oride.http_strict_chunk_parsing   = m_master.oride.http_strict_chunk_parsing;
   params->oride.auth_server_session_private = m_master.oride.auth_server_session_private;
 
   params->oride.http_chunking_size = m_master.oride.http_chunking_size;
@@ -1336,7 +1399,8 @@ HttpConfig::reconfigure()
   params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
   params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
 
-  params->negative_caching_list = m_master.negative_caching_list;
+  params->negative_caching_list      = m_master.negative_caching_list;
+  params->negative_revalidating_list = m_master.negative_revalidating_list;
 
   params->oride.host_res_data            = m_master.oride.host_res_data;
   params->oride.host_res_data.conf_value = ats_strdup(m_master.oride.host_res_data.conf_value);

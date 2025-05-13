@@ -23,6 +23,8 @@
 
 #include "proxy/http/remap/RemapProcessor.h"
 
+using namespace std::literals;
+
 RemapProcessor remapProcessor;
 
 namespace
@@ -41,14 +43,12 @@ bool
 RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
 {
   Dbg(dbg_ctl_url_rewrite, "setting up for remap: %p", s);
-  URL        *request_url    = nullptr;
-  bool        mapping_found  = false;
-  HTTPHdr    *request_header = &s->hdr_info.client_request;
-  char      **redirect_url   = &s->remap_redirect;
-  const char *request_host;
-  int         request_host_len;
-  int         request_port;
-  bool        proxy_request = false;
+  URL     *request_url    = nullptr;
+  bool     mapping_found  = false;
+  HTTPHdr *request_header = &s->hdr_info.client_request;
+  char   **redirect_url   = &s->remap_redirect;
+  int      request_port;
+  bool     proxy_request = false;
 
   s->reverse_proxy = table->reverse_proxy;
   s->url_map.set(s->hdr_info.client_request.m_heap);
@@ -69,13 +69,12 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
     return false;
   }
 
-  request_host  = request_header->host_get(&request_host_len);
+  auto request_host{request_header->host_get()};
   request_port  = request_header->port_get();
   proxy_request = request_header->is_target_in_url() || !s->reverse_proxy;
   // Default to empty host.
-  if (!request_host) {
-    request_host     = "";
-    request_host_len = 0;
+  if (request_host.empty()) {
+    request_host = ""sv;
   }
 
   Dbg(dbg_ctl_url_rewrite, "[lookup] attempting %s lookup", proxy_request ? "proxy" : "normal");
@@ -83,8 +82,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
   if (table->num_rules_forward_with_recv_port) {
     Dbg(dbg_ctl_url_rewrite, "[lookup] forward mappings with recv port found; Using recv port %d",
         s->client_info.dst_addr.host_order_port());
-    if (table->forwardMappingWithRecvPortLookup(request_url, s->client_info.dst_addr.host_order_port(), request_host,
-                                                request_host_len, s->url_map)) {
+    if (table->forwardMappingWithRecvPortLookup(request_url, s->client_info.dst_addr.host_order_port(), request_host.data(),
+                                                static_cast<int>(request_host.length()), s->url_map)) {
       Dbg(dbg_ctl_url_rewrite, "Found forward mapping with recv port");
       mapping_found = true;
     } else if (table->num_rules_forward == 0) {
@@ -95,13 +94,14 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
   }
 
   if (!mapping_found) {
-    mapping_found = table->forwardMappingLookup(request_url, request_port, request_host, request_host_len, s->url_map);
+    mapping_found = table->forwardMappingLookup(request_url, request_port, request_host.data(),
+                                                static_cast<int>(request_host.length()), s->url_map);
   }
 
   // If no rules match and we have a host, check empty host rules since
   // they function as default rules for server requests.
   // If there's no host, we've already done this.
-  if (!mapping_found && table->nohost_rules && request_host_len) {
+  if (!mapping_found && table->nohost_rules && !request_host.empty()) {
     Dbg(dbg_ctl_url_rewrite, "[lookup] nothing matched");
     mapping_found = table->forwardMappingLookup(request_url, 0, "", 0, s->url_map);
   }
@@ -110,8 +110,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
 
     // Save this information for later
     // @amc: why is this done only for requests without a host in the URL?
-    s->hh_info.host_len     = request_host_len;
-    s->hh_info.request_host = request_host;
+    s->hh_info.host_len     = static_cast<int>(request_host.length());
+    s->hh_info.request_host = request_host.data();
     s->hh_info.request_port = request_port;
 
     if (mapping_found) {
@@ -159,24 +159,21 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 
   // Check referer filtering rules
   if ((s->filter_mask & URL_REMAP_FILTER_REFERER) != 0 && (ri = map->referer_list) != nullptr) {
-    const char *referer_hdr  = nullptr;
-    int         referer_len  = 0;
-    bool        enabled_flag = map->optional_referer ? true : false;
+    std::string_view referer_hdr{};
+    bool             enabled_flag = map->optional_referer ? true : false;
 
     if (request_header->presence(MIME_PRESENCE_REFERER) &&
-        (referer_hdr = request_header->value_get(MIME_FIELD_REFERER, MIME_LEN_REFERER, &referer_len)) != nullptr) {
-      if (referer_len >= static_cast<int>(sizeof(tmp_referer_buf))) {
-        referer_len = static_cast<int>(sizeof(tmp_referer_buf) - 1);
-      }
-      memcpy(tmp_referer_buf, referer_hdr, referer_len);
-      tmp_referer_buf[referer_len] = 0;
+        !(referer_hdr = request_header->value_get(static_cast<std::string_view>(MIME_FIELD_REFERER))).empty()) {
+      referer_hdr = referer_hdr.substr(0, std::min(referer_hdr.length(), sizeof(tmp_referer_buf) - 1));
+      memcpy(tmp_referer_buf, referer_hdr.data(), referer_hdr.length());
+      tmp_referer_buf[referer_hdr.length()] = 0;
       for (enabled_flag = false; ri; ri = ri->next) {
         if (ri->any) {
           enabled_flag = true;
           if (!map->negative_referer) {
             break;
           }
-        } else if (ri->regex_valid && ri->regex.exec(std::string_view(tmp_referer_buf, referer_len))) {
+        } else if (ri->regex_valid && ri->regex.exec(std::string_view(tmp_referer_buf, referer_hdr.length()))) {
           enabled_flag = ri->negative ? false : true;
           break;
         }
@@ -196,7 +193,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
               c = rc->chunk_str;
               break;
             case 'r':
-              c = (referer_len && referer_hdr) ? &tmp_referer_buf[0] : nullptr;
+              c = (referer_hdr.empty() ? nullptr : &tmp_referer_buf[0]);
               break;
             case 'f':
             case 't':
@@ -235,15 +232,13 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 
   // We also need to rewrite the "Host:" header if it exists and
   //   pristine host hdr is not enabled
-  int         host_len;
-  const char *host_hdr = request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
 
-  if (request_url && host_hdr != nullptr && s->txn_conf->maintain_pristine_host_hdr == 0) {
+  if (auto host_hdr{request_header->value_get(static_cast<std::string_view>(MIME_FIELD_HOST))};
+      request_url && !host_hdr.empty() && s->txn_conf->maintain_pristine_host_hdr == 0) {
     if (dbg_ctl_url_rewrite.on()) {
-      int   old_host_hdr_len;
-      char *old_host_hdr = const_cast<char *>(request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &old_host_hdr_len));
-      if (old_host_hdr) {
-        Dbg(dbg_ctl_url_rewrite, "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
+      auto old_host_hdr{request_header->value_get(static_cast<std::string_view>(MIME_FIELD_HOST))};
+      if (!old_host_hdr.empty()) {
+        Dbg(dbg_ctl_url_rewrite, "Host: Header before rewrite %.*s", static_cast<int>(old_host_hdr.length()), old_host_hdr.data());
       }
     }
     //
@@ -270,11 +265,12 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     //   won't be able to resolve it and the request will not go
     //   through
     if (tmp >= TS_MAX_HOST_NAME_LEN) {
-      request_header->field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
+      request_header->field_delete(static_cast<std::string_view>(MIME_FIELD_HOST));
       Dbg(dbg_ctl_url_rewrite, "Host: Header too long after rewrite");
     } else {
       Dbg(dbg_ctl_url_rewrite, "Host: Header after rewrite %.*s", tmp, host_hdr_buf);
-      request_header->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host_hdr_buf, tmp);
+      request_header->value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
+                                std::string_view{host_hdr_buf, static_cast<std::string_view::size_type>(tmp)});
     }
   }
 

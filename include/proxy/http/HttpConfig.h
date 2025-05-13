@@ -258,6 +258,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_client_connections;
   Metrics::Counter::AtomicType *total_client_connections_ipv4;
   Metrics::Counter::AtomicType *total_client_connections_ipv6;
+  Metrics::Counter::AtomicType *total_client_connections_uds;
   Metrics::Counter::AtomicType *total_incoming_connections;
   Metrics::Counter::AtomicType *total_parent_marked_down_count;
   Metrics::Counter::AtomicType *total_parent_proxy_connections;
@@ -659,6 +660,7 @@ struct OverridableHttpConfigParams {
 
   MgmtInt  http_chunking_size         = 4096; ///< Maximum chunk size for chunked output.
   MgmtByte http_drop_chunked_trailers = 1;    ///< Whether to drop chunked trailers.
+  MgmtByte http_strict_chunk_parsing  = 1;    ///< Whether to parse chunked body strictly.
   MgmtInt  flow_high_water_mark       = 0;    ///< Flow control high water mark.
   MgmtInt  flow_low_water_mark        = 0;    ///< Flow control low water mark.
 
@@ -800,6 +802,9 @@ public:
   // bitset to hold the status codes that will BE cached with negative caching enabled
   HttpStatusBitset negative_caching_list;
 
+  // bitset to hold the status codes that will used by nagative revalidating enabled
+  HttpStatusBitset negative_revalidating_list;
+
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
@@ -837,7 +842,7 @@ public:
   static HttpConfigParams *acquire();
   static void              release(HttpConfigParams *params);
 
-  static bool load_server_session_sharing_match(const char *key, MgmtByte &mask);
+  static bool load_server_session_sharing_match(std::string_view key, MgmtByte &mask);
 
   // parse ssl ports configuration string
   static HttpConfigPortRange *parse_ports_list(char *ports_str);

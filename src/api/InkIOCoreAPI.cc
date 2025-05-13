@@ -568,7 +568,7 @@ TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64
     }
   }
 
-  return (const char *)p;
+  return static_cast<const char *>(p);
 }
 
 int64_t

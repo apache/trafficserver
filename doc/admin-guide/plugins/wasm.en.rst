@@ -39,11 +39,11 @@ How it Works
 
 The plugin uses the library and header files from the Proxy-Wasm project.
 
-* https://github.com/proxy-wasm/proxy-wasm-cpp-host/tree/b7e690703c7f26707438a2f1ebd7c197bc8f0296
+* https://github.com/proxy-wasm/proxy-wasm-cpp-host/tree/c4d7bb0fda912e24c64daf2aa749ec54cec99412
 * https://github.com/proxy-wasm/proxy-wasm-cpp-sdk/tree/fd0be8405db25de0264bdb78fae3a82668c03782
 
-Proxy-Wasm in turn uses an underlying WebAssembly runtime to execute the WebAssembly module. (Currently only WAMR and
-WasmEdge are supported)
+Proxy-Wasm in turn uses an underlying WebAssembly runtime to execute the WebAssembly module. (Currently only WAMR,
+Wasmtime and WasmEdge are supported)
 
 The plugin creates a root context when ATS starts and a new context will be created out of the root context for each
 transaction. ATS plugin events will trigger the corresponding functions in the WebAssembly module to be executed through
@@ -61,9 +61,9 @@ Compiling the Plugin
 
 ::
 
-  wget https://github.com/bytecodealliance/wasm-micro-runtime/archive/refs/tags/WAMR-1.2.1.tar.gz
-  tar zxvf WAMR-1.2.1.tar.gz
-  cd wasm-micro-runtime-WAMR-1.2.1
+  wget https://github.com/bytecodealliance/wasm-micro-runtime/archive/refs/tags/WAMR-2.1.1.tar.gz
+  tar zxvf WAMR-2.1.1.tar.gz
+  cd wasm-micro-runtime-WAMR-2.1.1
   cp core/iwasm/include/* /usr/local/include/
   cd product-mini/platforms/linux
   mkdir build
@@ -78,16 +78,13 @@ Compiling the Plugin
 
   git clone https://github.com/bytecodealliance/wasmtime.git
   cd wasmtime/
-  git checkout release-9.0.0
+  git checkout release-24.0.0
   git submodule update --init
   cargo build
   cargo build --release --manifest-path crates/c-api/Cargo.toml
   sudo cp target/release/libwasmtime.so /usr/local/lib
-  wget https://github.com/WebAssembly/wasm-c-api/archive/c9d31284651b975f05ac27cee0bab1377560b87e.tar.gz
-  tar zxvf c9d31284651b975f05ac27cee0bab1377560b87e.tar.gz
-  cd wasm-c-api-c9d31284651b975f05ac27cee0bab1377560b87e/
-  sudo mkdir /usr/local/include/include/
-  sudo cp include/wasm.h /usr/local/include/include/
+  sudo mkdir -p /usr/local/include/crates/c-api/include/
+  sudo cp crates/c-api/include/wasm.h /usr/local/include/crates/c-api/include/
 
 **Install WasmEdge**
 
