@@ -94,7 +94,7 @@ public:
   void             set_port(HdrHeap *heap, unsigned int port);
   void             set_port(HdrHeap *heap, std::string_view value, bool copy_string);
   std::string_view get_path() const noexcept;
-  void             set_path(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void             set_path(HdrHeap *heap, std::string_view value, bool copy_string);
   int              get_type();
   void             set_type(int type);
   int              get_type_code();
@@ -640,7 +640,7 @@ inline void
 URL::path_set(const char *value, int length)
 {
   ink_assert(valid());
-  m_url_impl->set_path(m_heap, value, length, true);
+  m_url_impl->set_path(m_heap, {value, static_cast<std::string_view::size_type>(length)}, true);
 }
 
 /*-------------------------------------------------------------------------

@@ -237,7 +237,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
         path.remove_prefix(1);
       }
 
-      header.m_http->u.req.m_url_impl->set_path(header.m_heap, path.data(), path.length(), true);
+      header.m_http->u.req.m_url_impl->set_path(header.m_heap, path, true);
 
       header.field_delete(field);
     } else {

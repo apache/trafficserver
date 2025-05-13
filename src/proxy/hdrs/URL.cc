@@ -534,14 +534,13 @@ URLImpl::set_port(HdrHeap *heap, unsigned int port)
   -------------------------------------------------------------------------*/
 
 void
-URLImpl::set_path(HdrHeap *heap, const char *value, int length, bool copy_string)
+URLImpl::set_path(HdrHeap *heap, std::string_view value, bool copy_string)
 {
   url_called_set(this);
-  if (length == 0) {
-    value = nullptr;
+  if (value.empty()) {
+    value = {nullptr, 0};
   }
-  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_path),
-                   &(this->m_len_path), copy_string);
+  mime_str_u16_set(heap, value, &(this->m_ptr_path), &(this->m_len_path), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -1491,7 +1490,7 @@ done:
       }
     }
 
-    url->set_path(heap, path_start, path_end - path_start, copy_strings);
+    url->set_path(heap, {path_start, static_cast<std::string_view::size_type>(path_end - path_start)}, copy_strings);
   } else if (!nothing_after_host) {
     // There was no path set via '/': it is absolutely empty. However, if there
     // is no path, query, or fragment after the host, we by convention add a
@@ -1576,7 +1575,7 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
 
   // path is anything that's left.
   if (cur < end) {
-    url->set_path(heap, cur, end - cur, copy_strings);
+    url->set_path(heap, {cur, static_cast<std::string_view::size_type>(end - cur)}, copy_strings);
     cur = end;
   }
   *start = cur;
