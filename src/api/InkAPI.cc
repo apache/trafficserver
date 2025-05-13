@@ -1050,9 +1050,8 @@ TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
   return url_string_get(url_impl, nullptr, length, nullptr);
 }
 
-using URLPartGetF    = std::string_view (URL::*)() const noexcept;
-using URLPartSetF    = void (URL::*)(std::string_view);
-using URLPartSetFLen = void (URL::*)(const char *, int);
+using URLPartGetF = std::string_view (URL::*)() const noexcept;
+using URLPartSetF = void (URL::*)(std::string_view);
 
 static const std::string_view
 URLPartGet(TSMBuffer bufp, TSMLoc obj, URLPartGetF url_f)
@@ -1088,30 +1087,6 @@ URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSet
     length = strlen(value);
   }
   (u.*url_f)(std::string_view{value, static_cast<std::string_view::size_type>(length)});
-
-  return TS_SUCCESS;
-}
-
-static TSReturnCode
-URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSetFLen url_f)
-{
-  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
-
-  if (!isWriteable(bufp)) {
-    return TS_ERROR;
-  }
-
-  URL u;
-  u.m_heap     = (reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap;
-  u.m_url_impl = reinterpret_cast<URLImpl *>(obj);
-
-  if (!value) {
-    length = 0;
-  } else if (length < 0) {
-    length = strlen(value);
-  }
-  (u.*url_f)(value, length);
 
   return TS_SUCCESS;
 }

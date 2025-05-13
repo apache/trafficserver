@@ -7704,7 +7704,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   URL *url = outgoing_request->url_get();
 
   // Remove fragment from upstream URL
-  url->fragment_set(nullptr, 0);
+  url->fragment_set({nullptr, 0});
 
   // Check whether a Host header field is missing from a 1.0 or 1.1 request.
   if (outgoing_version != HTTP_0_9 && !outgoing_request->presence(MIME_PRESENCE_HOST)) {

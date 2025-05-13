@@ -304,7 +304,7 @@ public:
   std::string_view query_get() const noexcept;
   void             query_set(std::string_view value);
   std::string_view fragment_get() const noexcept;
-  void             fragment_set(const char *value, int length);
+  void             fragment_set(std::string_view value);
 
   /**
    * Parse the given URL string and populate URL state with the parts.
@@ -697,10 +697,10 @@ URL::fragment_get() const noexcept
   -------------------------------------------------------------------------*/
 
 inline void
-URL::fragment_set(const char *value, int length)
+URL::fragment_set(std::string_view value)
 {
   ink_assert(valid());
-  m_url_impl->set_fragment(m_heap, {value, static_cast<std::string_view::size_type>(length)}, true);
+  m_url_impl->set_fragment(m_heap, value, true);
 }
 
 /**
