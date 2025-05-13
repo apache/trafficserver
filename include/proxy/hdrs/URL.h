@@ -99,7 +99,7 @@ public:
   void             set_type(int type);
   int              get_type_code();
   void             set_type_code(unsigned int typecode);
-  const char      *get_params(int *length);
+  std::string_view get_params() const noexcept;
   void             set_params(HdrHeap *heap, const char *value, int length, bool copy_string);
   const char      *get_query(int *length);
   void             set_query(HdrHeap *heap, const char *value, int length, bool copy_string);
