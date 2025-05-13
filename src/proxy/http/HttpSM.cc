@@ -490,7 +490,7 @@ HttpSM::setup_blind_tunnel_port()
     t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
     t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
     t_state.hdr_info.client_request.url_create(&u);
-    u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
+    u.scheme_set({URL_SCHEME_TUNNEL, static_cast<std::string_view::size_type>(URL_LEN_TUNNEL)});
     t_state.hdr_info.client_request.url_set(&u);
   }
 
@@ -1375,7 +1375,7 @@ plugins required to work with sni_routing.
       t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
       t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
       t_state.hdr_info.client_request.url_create(&u);
-      u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
+      u.scheme_set({URL_SCHEME_TUNNEL, static_cast<std::string_view::size_type>(URL_LEN_TUNNEL)});
       t_state.hdr_info.client_request.url_set(&u);
 
       NetVConnection *netvc = _ua.get_txn()->get_netvc();
@@ -8447,7 +8447,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       int port = clientUrl.port_get();
 
       if (auto redirectScheme{clientUrl.scheme_get()}; redirectScheme.empty()) {
-        clientUrl.scheme_set(scheme_str, scheme_len);
+        clientUrl.scheme_set({scheme_str, static_cast<std::string_view::size_type>(scheme_len)});
         SMDbg(dbg_ctl_http_redirect, "URL without scheme");
       }
 
@@ -8514,7 +8514,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
         t_state.hdr_info.client_request.method_set(origMethod, std::min(origMethod_len, static_cast<int>(sizeof(origMethod))));
         t_state.hdr_info.client_request.m_target_cached = false;
         t_state.hdr_info.server_request.m_target_cached = false;
-        clientUrl.scheme_set(scheme_str, scheme_len);
+        clientUrl.scheme_set({scheme_str, static_cast<std::string_view::size_type>(scheme_len)});
         if (isRedirectUrlOriginForm) {
           // build the rest of the effictive URL: the authority part
           clientUrl.user_set(origUrl.m_url_impl->m_ptr_user, origUrl.m_url_impl->m_len_user);

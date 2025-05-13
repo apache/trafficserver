@@ -328,8 +328,7 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
   // With the CONNECT method, we have to avoid messing with the scheme and path, because it's not part of
   // the CONNECT request (only host and port is).
   if (HTTP_WKSIDX_CONNECT != method) {
-    auto toScheme{map_to->scheme_get()};
-    request_url->scheme_set(toScheme.data(), static_cast<int>(toScheme.length()));
+    request_url->scheme_set(map_to->scheme_get());
 
     auto fromPathLen{static_cast<int>(map_from->path_get().length())};
     auto toPath{map_to->path_get()};

@@ -1348,10 +1348,10 @@ HttpTransact::handle_websocket_upgrade_pre_remap(State *s)
   URL *url = s->hdr_info.client_request.url_get();
   if (url->scheme_get_wksidx() == URL_WKSIDX_HTTP) {
     TxnDbg(dbg_ctl_http_trans_websocket_upgrade_pre_remap, "Changing scheme to WS for remapping.");
-    url->scheme_set(URL_SCHEME_WS, URL_LEN_WS);
+    url->scheme_set({URL_SCHEME_WS, static_cast<std::string_view::size_type>(URL_LEN_WS)});
   } else if (url->scheme_get_wksidx() == URL_WKSIDX_HTTPS) {
     TxnDbg(dbg_ctl_http_trans_websocket_upgrade_pre_remap, "Changing scheme to WSS for remapping.");
-    url->scheme_set(URL_SCHEME_WSS, URL_LEN_WSS);
+    url->scheme_set({URL_SCHEME_WSS, static_cast<std::string_view::size_type>(URL_LEN_WSS)});
   } else {
     TxnDbg(dbg_ctl_http_trans_websocket_upgrade_pre_remap, "Invalid scheme for websocket upgrade");
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error");
@@ -1411,10 +1411,10 @@ HttpTransact::ModifyRequest(State *s)
   s->method = request.method_get_wksidx();
   if (scheme < 0 && s->method != HTTP_WKSIDX_CONNECT) {
     if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
-      url->scheme_set(URL_SCHEME_HTTPS, URL_LEN_HTTPS);
+      url->scheme_set({URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)});
       s->orig_scheme = URL_WKSIDX_HTTPS;
     } else {
-      url->scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
+      url->scheme_set({URL_SCHEME_HTTP, static_cast<std::string_view::size_type>(URL_LEN_HTTP)});
       s->orig_scheme = URL_WKSIDX_HTTP;
     }
   }
@@ -5674,12 +5674,12 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
       TxnDbg(dbg_ctl_http_trans, "Switching WS next hop scheme to http.");
       s->next_hop_scheme = URL_WKSIDX_HTTP;
       s->scheme          = URL_WKSIDX_HTTP;
-      // s->request_data.hdr->url_get()->scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
+      // s->request_data.hdr->url_get()->scheme_set({URL_SCHEME_HTTP, static_cast<std::string_view::size_type>(URL_LEN_HTTP)});
     } else if (s->next_hop_scheme == URL_WKSIDX_WSS) {
       TxnDbg(dbg_ctl_http_trans, "Switching WSS next hop scheme to https.");
       s->next_hop_scheme = URL_WKSIDX_HTTPS;
       s->scheme          = URL_WKSIDX_HTTPS;
-      // s->request_data.hdr->url_get()->scheme_set(URL_SCHEME_HTTPS, URL_LEN_HTTPS);
+      // s->request_data.hdr->url_get()->scheme_set({URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)});
     } else {
       Error("Scheme doesn't match websocket...!");
     }

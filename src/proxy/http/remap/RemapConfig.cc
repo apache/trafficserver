@@ -1242,7 +1242,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // If the rule is "/" or just some other relative path
     //   we need to default the scheme to http
     if (fromScheme.empty()) {
-      new_mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
+      new_mapping->fromURL.scheme_set({URL_SCHEME_HTTP, static_cast<std::string_view::size_type>(URL_LEN_HTTP)});
       fromScheme                        = new_mapping->fromURL.scheme_get();
       new_mapping->wildcard_from_scheme = true;
     }

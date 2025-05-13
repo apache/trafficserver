@@ -282,7 +282,7 @@ public:
 
   std::string_view scheme_get() const noexcept;
   int              scheme_get_wksidx() const;
-  void             scheme_set(const char *value, int length);
+  void             scheme_set(std::string_view value);
 
   std::string_view user_get() const noexcept;
   void             user_set(const char *value, int length);
@@ -526,11 +526,11 @@ URL::scheme_get_wksidx() const
   -------------------------------------------------------------------------*/
 
 inline void
-URL::scheme_set(const char *value, int length)
+URL::scheme_set(std::string_view value)
 {
   ink_assert(valid());
-  int scheme_wks_idx = (value ? hdrtoken_tokenize(value, length) : -1);
-  m_url_impl->set_scheme(m_heap, {value, static_cast<std::string_view::size_type>(length)}, scheme_wks_idx, true);
+  int scheme_wks_idx = (!value.empty() ? hdrtoken_tokenize(value.data(), value.length()) : -1);
+  m_url_impl->set_scheme(m_heap, value, scheme_wks_idx, true);
 }
 
 /*-------------------------------------------------------------------------
