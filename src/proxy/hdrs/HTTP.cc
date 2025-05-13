@@ -32,6 +32,8 @@
 #include "proxy/hdrs/HdrToken.h"
 #include "tscore/Diags.h"
 
+using namespace std::literals;
+
 /***********************************************************************
  *                                                                     *
  *                    C O M P I L E    O P T I O N S                   *
@@ -1190,12 +1192,11 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 {
   ParseResult ret = PARSE_RESULT_DONE;
   auto        host{url->get_host()};
-  int         path_len;
-  const char *path = url->get_path(&path_len);
+  auto        path{url->get_path()};
   auto        scheme{url->get_scheme()};
 
   if (host.empty()) {
-    if (path_len == 1 && path[0] == '*') { // asterisk-form
+    if (path == "*"sv) { // asterisk-form
       // Skip this check for now because URLImpl can't distinguish '*' and '/*'
       // if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
       //   ret = PARSE_RESULT_ERROR;

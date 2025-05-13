@@ -766,11 +766,10 @@ URLImpl::get_port()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-URLImpl::get_path(int *length)
+std::string_view
+URLImpl::get_path() const noexcept
 {
-  *length = this->m_len_path;
-  return this->m_ptr_path;
+  return {this->m_ptr_path, static_cast<std::string_view::size_type>(this->m_len_path)};
 }
 
 /*-------------------------------------------------------------------------

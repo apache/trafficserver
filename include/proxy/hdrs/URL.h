@@ -93,7 +93,7 @@ public:
   int              get_port();
   void             set_port(HdrHeap *heap, unsigned int port);
   void             set_port(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char      *get_path(int *length);
+  std::string_view get_path() const noexcept;
   void             set_path(HdrHeap *heap, const char *value, int length, bool copy_string);
   int              get_type();
   void             set_type(int type);
@@ -642,7 +642,11 @@ inline const char *
 URL::path_get(int *length)
 {
   ink_assert(valid());
-  return m_url_impl->get_path(length);
+  auto path{m_url_impl->get_path()};
+  if (length) {
+    *length = static_cast<int>(path.length());
+  }
+  return path.data();
 }
 
 /*-------------------------------------------------------------------------
