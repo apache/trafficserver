@@ -286,7 +286,7 @@ public:
 
   std::string_view user_get() const noexcept;
   void             user_set(const char *value, int length);
-  const char      *password_get(int *length);
+  std::string_view password_get() const noexcept;
   void             password_set(const char *value, int length);
   const char      *host_get(int *length);
   void             host_set(const char *value, int length);
@@ -556,15 +556,11 @@ URL::user_set(const char *value, int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::password_get(int *length)
+inline std::string_view
+URL::password_get() const noexcept
 {
   ink_assert(valid());
-  auto password{m_url_impl->get_password()};
-  if (length) {
-    *length = static_cast<int>(password.length());
-  }
-  return password.data();
+  return m_url_impl->get_password();
 }
 
 /*-------------------------------------------------------------------------

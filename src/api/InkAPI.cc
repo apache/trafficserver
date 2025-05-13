@@ -1167,7 +1167,11 @@ TSUrlUserSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 const char *
 TSUrlPasswordGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::password_get);
+  auto password{URLPartGet(bufp, obj, &URL::password_get)};
+  if (length) {
+    *length = static_cast<int>(password.length());
+  }
+  return password.data();
 }
 
 TSReturnCode
