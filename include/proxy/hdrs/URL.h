@@ -280,7 +280,6 @@ public:
   void  hash_get(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
   void  host_hash_get(CryptoHash *hash) const;
 
-  const char            *scheme_get(int *length);
   const std::string_view scheme_get();
   int                    scheme_get_wksidx() const;
   void                   scheme_set(const char *value, int length);
@@ -516,14 +515,6 @@ URL::scheme_get()
   int         length;
   const char *scheme = m_url_impl->get_scheme(&length);
   return std::string_view{scheme, static_cast<size_t>(length)};
-}
-
-inline const char *
-URL::scheme_get(int *length)
-{
-  std::string_view ret = this->scheme_get();
-  *length              = ret.size();
-  return ret.data();
 }
 
 inline int

@@ -1046,22 +1046,21 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   int   rparse, cur_line_size, cln = 0; // Our current line number
 
   // Vars to build the mapping
-  const char   *fromScheme, *toScheme;
-  int           fromSchemeLen, toSchemeLen;
-  const char   *fromHost, *toHost;
-  int           fromHostLen, toHostLen;
-  char         *map_from, *map_from_start;
-  char         *map_to, *map_to_start;
-  const char   *tmp; // Appease the DEC compiler
-  char         *fromHost_lower     = nullptr;
-  char         *fromHost_lower_ptr = nullptr;
-  char          fromHost_lower_buf[1024];
-  url_mapping  *new_mapping = nullptr;
-  mapping_type  maptype;
-  referer_info *ri;
-  int           origLength;
-  int           length;
-  int           tok_count;
+  std::string_view fromScheme{}, toScheme{};
+  const char      *fromHost, *toHost;
+  int              fromHostLen, toHostLen;
+  char            *map_from, *map_from_start;
+  char            *map_to, *map_to_start;
+  const char      *tmp; // Appease the DEC compiler
+  char            *fromHost_lower     = nullptr;
+  char            *fromHost_lower_ptr = nullptr;
+  char             fromHost_lower_buf[1024];
+  url_mapping     *new_mapping = nullptr;
+  mapping_type     maptype;
+  referer_info    *ri;
+  int              origLength;
+  int              length;
+  int              tok_count;
 
   UrlRewrite::RegexMapping *reg_map;
   bool                      is_cur_mapping_regex;
@@ -1240,29 +1239,29 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       goto MAP_ERROR;
     }
 
-    fromScheme = new_mapping->fromURL.scheme_get(&fromSchemeLen);
+    fromScheme = new_mapping->fromURL.scheme_get();
     // If the rule is "/" or just some other relative path
     //   we need to default the scheme to http
-    if (fromScheme == nullptr || fromSchemeLen == 0) {
+    if (fromScheme.empty()) {
       new_mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
-      fromScheme                        = new_mapping->fromURL.scheme_get(&fromSchemeLen);
+      fromScheme                        = new_mapping->fromURL.scheme_get();
       new_mapping->wildcard_from_scheme = true;
     }
-    toScheme = new_mapping->toURL.scheme_get(&toSchemeLen);
+    toScheme = new_mapping->toURL.scheme_get();
 
     // Include support for HTTPS scheme
     // includes support for FILE scheme
-    if ((fromScheme != URL_SCHEME_HTTP && fromScheme != URL_SCHEME_HTTPS && fromScheme != URL_SCHEME_FILE &&
-         fromScheme != URL_SCHEME_TUNNEL && fromScheme != URL_SCHEME_WS && fromScheme != URL_SCHEME_WSS) ||
-        (toScheme != URL_SCHEME_HTTP && toScheme != URL_SCHEME_HTTPS && toScheme != URL_SCHEME_TUNNEL &&
-         toScheme != URL_SCHEME_WS && toScheme != URL_SCHEME_WSS)) {
+    if ((fromScheme.data() != URL_SCHEME_HTTP && fromScheme.data() != URL_SCHEME_HTTPS && fromScheme.data() != URL_SCHEME_FILE &&
+         fromScheme.data() != URL_SCHEME_TUNNEL && fromScheme.data() != URL_SCHEME_WS && fromScheme.data() != URL_SCHEME_WSS) ||
+        (toScheme.data() != URL_SCHEME_HTTP && toScheme.data() != URL_SCHEME_HTTPS && toScheme.data() != URL_SCHEME_TUNNEL &&
+         toScheme.data() != URL_SCHEME_WS && toScheme.data() != URL_SCHEME_WSS)) {
       errStr = "only http, https, ws, wss, and tunnel remappings are supported";
       goto MAP_ERROR;
     }
 
     // If mapping from WS or WSS we must map out to WS or WSS
-    if ((fromScheme == URL_SCHEME_WSS || fromScheme == URL_SCHEME_WS) &&
-        (toScheme != URL_SCHEME_WSS && toScheme != URL_SCHEME_WS)) {
+    if ((fromScheme.data() == URL_SCHEME_WSS || fromScheme.data() == URL_SCHEME_WS) &&
+        (toScheme.data() != URL_SCHEME_WSS && toScheme.data() != URL_SCHEME_WS)) {
       errStr = "WS or WSS can only be mapped out to WS or WSS.";
       goto MAP_ERROR;
     }

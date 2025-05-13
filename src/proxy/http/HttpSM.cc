@@ -8368,10 +8368,8 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
 
   redirectUrl.parse(arg_redirect_url, arg_redirect_len);
   {
-    int _scheme_len = -1;
-    int _host_len   = -1;
-    if (redirectUrl.scheme_get(&_scheme_len) == nullptr && redirectUrl.host_get(&_host_len) != nullptr &&
-        arg_redirect_url[0] != '/') {
+    int _host_len = -1;
+    if (redirectUrl.scheme_get().empty() && redirectUrl.host_get(&_host_len) != nullptr && arg_redirect_url[0] != '/') {
       // RFC7230 § 5.5
       // The redirect URL lacked a scheme and so it is a relative URL.
       // The redirect URL did not begin with a slash, so we parsed some or all
@@ -8450,11 +8448,9 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
     const char *host = clientUrl.host_get(&host_len);
 
     if (host != nullptr) {
-      int         port = clientUrl.port_get();
-      int         redirectSchemeLen;
-      const char *redirectScheme = clientUrl.scheme_get(&redirectSchemeLen);
+      int port = clientUrl.port_get();
 
-      if (redirectScheme == nullptr) {
+      if (auto redirectScheme{clientUrl.scheme_get()}; redirectScheme.empty()) {
         clientUrl.scheme_set(scheme_str, scheme_len);
         SMDbg(dbg_ctl_http_redirect, "URL without scheme");
       }

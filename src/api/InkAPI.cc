@@ -1050,11 +1050,26 @@ TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
   return url_string_get(url_impl, nullptr, length, nullptr);
 }
 
-using URLPartGetF = const char *(URL::*)(int *);
-using URLPartSetF = void (URL::*)(const char *, int);
+using URLPartGetF    = const std::string_view (URL::*)();
+using URLPartGetFLen = const char *(URL::*)(int *);
+using URLPartSetF    = void (URL::*)(const char *, int);
+
+static const std::string_view
+URLPartGet(TSMBuffer bufp, TSMLoc obj, URLPartGetF url_f)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
+
+  URL u;
+
+  u.m_heap     = (reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap;
+  u.m_url_impl = reinterpret_cast<URLImpl *>(obj);
+
+  return (u.*url_f)();
+}
 
 static const char *
-URLPartGet(TSMBuffer bufp, TSMLoc obj, int *length, URLPartGetF url_f)
+URLPartGet(TSMBuffer bufp, TSMLoc obj, int *length, URLPartGetFLen url_f)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
@@ -1095,7 +1110,11 @@ URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSet
 const char *
 TSUrlRawSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::scheme_get);
+  auto scheme{URLPartGet(bufp, obj, &URL::scheme_get)};
+  if (length) {
+    *length = static_cast<int>(scheme.length());
+  }
+  return scheme.data();
 }
 
 const char *

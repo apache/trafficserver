@@ -331,16 +331,14 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
   // With the CONNECT method, we have to avoid messing with the scheme and path, because it's not part of
   // the CONNECT request (only host and port is).
   if (HTTP_WKSIDX_CONNECT != method) {
-    const char *toScheme;
-    int         toSchemeLen;
     const char *requestPath;
     int         requestPathLen = 0;
     int         fromPathLen    = 0;
     const char *toPath;
     int         toPathLen;
 
-    toScheme = map_to->scheme_get(&toSchemeLen);
-    request_url->scheme_set(toScheme, toSchemeLen);
+    auto toScheme{map_to->scheme_get()};
+    request_url->scheme_set(toScheme.data(), static_cast<int>(toScheme.length()));
 
     map_from->path_get(&fromPathLen);
     toPath      = map_to->path_get(&toPathLen);
@@ -993,17 +991,17 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
     Dbg(dbg_ctl_url_rewrite_regex, "Going to match regexes with rank <= %d", rank_ceiling);
   }
 
-  int         request_scheme_len, reg_map_scheme_len;
-  const char *request_scheme = request_url->scheme_get(&request_scheme_len), *reg_map_scheme;
+  auto request_scheme{request_url->scheme_get()};
 
   int         request_path_len, reg_map_path_len;
   const char *request_path = request_url->path_get(&request_path_len), *reg_map_path;
 
   // If the scheme is empty (e.g. because of a CONNECT method), guess it based on port
   // This is equivalent to the logic in UrlMappingPathIndex::_GetTrie().
-  if (request_scheme_len == 0) {
-    request_scheme     = request_port == 80 ? URL_SCHEME_HTTP : URL_SCHEME_HTTPS;
-    request_scheme_len = hdrtoken_wks_to_length(request_scheme);
+  if (request_scheme.empty()) {
+    auto request_scheme_cstr{request_port == 80 ? URL_SCHEME_HTTP : URL_SCHEME_HTTPS};
+    request_scheme =
+      std::string_view{request_scheme_cstr, static_cast<std::string_view::size_type>(hdrtoken_wks_to_length(request_scheme_cstr))};
   }
 
   // Loop over the entire linked list, or until we're satisfied
@@ -1015,8 +1013,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       break;
     }
 
-    reg_map_scheme = list_iter->url_map->fromURL.scheme_get(&reg_map_scheme_len);
-    if ((request_scheme_len != reg_map_scheme_len) || strncmp(request_scheme, reg_map_scheme, request_scheme_len)) {
+    if (auto reg_map_scheme{list_iter->url_map->fromURL.scheme_get()}; request_scheme != reg_map_scheme) {
       Dbg(dbg_ctl_url_rewrite_regex, "Skipping regex with rank %d as scheme does not match request scheme", reg_map_rank);
       continue;
     }

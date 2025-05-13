@@ -1240,9 +1240,7 @@ HTTPHdr::scheme_get()
 {
   URL *url = this->url_get();
   if (url) {
-    int  length;
-    auto scheme{url->scheme_get(&length)};
-    return std::string_view{scheme, static_cast<std::string_view::size_type>(length)};
+    return url->scheme_get();
   }
   return std::string_view{};
 }
