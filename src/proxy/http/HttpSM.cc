@@ -8517,7 +8517,8 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
         clientUrl.scheme_set({scheme_str, static_cast<std::string_view::size_type>(scheme_len)});
         if (isRedirectUrlOriginForm) {
           // build the rest of the effictive URL: the authority part
-          clientUrl.user_set(origUrl.m_url_impl->m_ptr_user, origUrl.m_url_impl->m_len_user);
+          clientUrl.user_set(
+            {origUrl.m_url_impl->m_ptr_user, static_cast<std::string_view::size_type>(origUrl.m_url_impl->m_len_user)});
           clientUrl.password_set(origUrl.m_url_impl->m_ptr_password, origUrl.m_url_impl->m_len_password);
           clientUrl.host_set(origUrl.m_url_impl->m_ptr_host, origUrl.m_url_impl->m_len_host);
           clientUrl.port_set(origUrl.port_get());

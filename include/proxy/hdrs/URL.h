@@ -285,7 +285,7 @@ public:
   void             scheme_set(std::string_view value);
 
   std::string_view user_get() const noexcept;
-  void             user_set(const char *value, int length);
+  void             user_set(std::string_view value);
   std::string_view password_get() const noexcept;
   void             password_set(const char *value, int length);
   std::string_view host_get() const noexcept;
@@ -547,10 +547,10 @@ URL::user_get() const noexcept
   -------------------------------------------------------------------------*/
 
 inline void
-URL::user_set(const char *value, int length)
+URL::user_set(std::string_view value)
 {
   ink_assert(valid());
-  m_url_impl->set_user(m_heap, {value, static_cast<std::string_view::size_type>(length)}, true);
+  m_url_impl->set_user(m_heap, value, true);
 }
 
 /*-------------------------------------------------------------------------
