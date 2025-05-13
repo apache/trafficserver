@@ -779,9 +779,7 @@ HTTPHdr::host_get() const
 {
   this->_test_and_fill_target_cache();
   if (m_target_in_url) {
-    int  length;
-    auto host{url_get()->host_get(&length)};
-    return std::string_view{host, static_cast<std::string_view::size_type>(length)};
+    return url_get()->host_get();
   } else if (m_host_mime) {
     return std::string_view{m_host_mime->m_ptr_value, static_cast<std::string_view::size_type>(m_host_length)};
   }

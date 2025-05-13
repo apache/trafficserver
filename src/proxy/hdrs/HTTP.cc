@@ -1711,13 +1711,15 @@ HTTPHdr::_fill_target_cache() const
   m_port_in_header = false;
   m_host_mime      = nullptr;
   // Check in the URL first, then the HOST field.
-  if (nullptr != url->host_get(&m_host_length)) {
+  std::string_view host;
+  if (host = url->host_get(); nullptr != host.data()) {
     m_target_in_url  = true;
     m_port           = url->port_get();
     m_port_in_header = 0 != url->port_get_raw();
     m_host_mime      = nullptr;
+    m_host_length    = static_cast<int>(host.length());
   } else {
-    std::string_view host, port;
+    std::string_view port;
     std::tie(m_host_mime, host, port) = const_cast<HTTPHdr *>(this)->get_host_port_values();
     m_host_length                     = static_cast<int>(host.length());
 

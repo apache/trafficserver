@@ -316,16 +316,14 @@ UrlRewrite::_tableLookup(std::unique_ptr<URLTable> &h_table, URL *request_url, i
 void
 url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *request_url, int method)
 {
-  URL        *map_to   = mapping_container.getToURL();
-  URL        *map_from = mapping_container.getFromURL();
-  const char *toHost;
-  int         toHostLen;
+  URL *map_to   = mapping_container.getToURL();
+  URL *map_from = mapping_container.getFromURL();
 
-  toHost = map_to->host_get(&toHostLen);
+  auto toHost{map_to->host_get()};
 
   Dbg(dbg_ctl_url_rewrite, "%s: Remapping rule id: %d matched", __func__, mapping_container.getMapping()->map_id);
 
-  request_url->host_set(toHost, toHostLen);
+  request_url->host_set(toHost.data(), static_cast<int>(toHost.length()));
   request_url->port_set(map_to->port_get_raw());
 
   // With the CONNECT method, we have to avoid messing with the scheme and path, because it's not part of
@@ -396,8 +394,6 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
 {
   URL                    location_url;
   bool                   remap_found = false;
-  const char            *host;
-  int                    host_len;
   char                  *new_loc_hdr;
   int                    new_loc_length;
   int                    i;
@@ -423,11 +419,12 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
     location_url.create(nullptr);
     location_url.parse(location_hdr.data(), static_cast<int>(location_hdr.length()));
 
-    host = location_url.host_get(&host_len);
+    auto host{location_url.host_get()};
 
     UrlMappingContainer reverse_mapping(response_header->m_heap);
 
-    if (reverseMappingLookup(&location_url, location_url.port_get(), host, host_len, reverse_mapping)) {
+    if (reverseMappingLookup(&location_url, location_url.port_get(), host.data(), static_cast<int>(host.length()),
+                             reverse_mapping)) {
       if (i == 0) {
         remap_found = true;
       }
@@ -616,8 +613,6 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 {
   URL         *request_url;
   mapping_type mappingType;
-  const char  *host     = nullptr;
-  int          host_len = 0, request_port = 0;
   bool         prt, trt; // existence of permanent and temporary redirect tables, respectively
 
   prt = (num_rules_redirect_permanent != 0);
@@ -641,15 +636,16 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
     return NONE;
   }
 
-  host         = request_url->host_get(&host_len);
-  request_port = request_url->port_get();
+  auto host{request_url->host_get()};
+  auto request_port{request_url->port_get()};
 
-  if (host_len == 0 && reverse_proxy != 0) { // Server request.  Use the host header to figure out where
-                                             // it goes.  Host header parsing is same as in ::Remap
+  if (host.empty() && reverse_proxy != 0) { // Server request.  Use the host header to figure out where
+                                            // it goes.  Host header parsing is same as in ::Remap
     auto host_hdr{request_header->value_get(static_cast<std::string_view>(MIME_FIELD_HOST))};
 
     const char *tmp = static_cast<const char *>(memchr(host_hdr.data(), ':', host_hdr.length()));
 
+    int host_len;
     if (tmp == nullptr) {
       host_len = static_cast<int>(host_hdr.length());
     } else {
@@ -663,7 +659,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
       }
     }
 
-    host = host_hdr.data();
+    host = {host_hdr.data(), static_cast<std::string_view::size_type>(host_len)};
   }
   // Temporary Redirects have precedence over Permanent Redirects
   // the rationale behind this is that network administrators might
@@ -674,12 +670,12 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
   UrlMappingContainer redirect_mapping(request_header->m_heap);
 
   if (trt) {
-    if (temporaryRedirectLookup(request_url, request_port, host, host_len, redirect_mapping)) {
+    if (temporaryRedirectLookup(request_url, request_port, host.data(), static_cast<int>(host.length()), redirect_mapping)) {
       mappingType = TEMPORARY_REDIRECT;
     }
   }
   if ((mappingType == NONE) && prt) {
-    if (permanentRedirectLookup(request_url, request_port, host, host_len, redirect_mapping)) {
+    if (permanentRedirectLookup(request_url, request_port, host.data(), static_cast<int>(host.length()), redirect_mapping)) {
       mappingType = PERMANENT_REDIRECT;
     }
   }

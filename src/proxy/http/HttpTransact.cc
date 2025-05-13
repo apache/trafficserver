@@ -931,9 +931,7 @@ HttpTransact::OriginDown(State *s)
   build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
   Metrics::Counter::increment(http_rsb.down_server_no_requests);
   char            *url_str = s->hdr_info.client_request.url_string_get_ref(nullptr);
-  int              host_len;
-  const char      *host_name_ptr = s->unmapped_url.host_get(&host_len);
-  std::string_view host_name{host_name_ptr, size_t(host_len)};
+  std::string_view host_name{s->unmapped_url.host_get()};
   swoc::bwprint(error_bw_buffer, "CONNECT: down server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
                 host_name, swoc::bwf::FirstOf(url_str, "<none>"));
   Log::error("%s", error_bw_buffer.c_str());
@@ -960,9 +958,9 @@ HttpTransact::HandleBlindTunnel(State *s)
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
 
   if (dbg_ctl_http_trans.on()) {
-    int         host_len;
-    const char *host = s->hdr_info.client_request.url_get()->host_get(&host_len);
-    TxnDbg(dbg_ctl_http_trans, "destination set to %.*s:%d", host_len, host, s->hdr_info.client_request.url_get()->port_get());
+    auto host{s->hdr_info.client_request.url_get()->host_get()};
+    TxnDbg(dbg_ctl_http_trans, "destination set to %.*s:%d", static_cast<int>(host.length()), host.data(),
+           s->hdr_info.client_request.url_get()->port_get());
   }
 
   // Set the mode to tunnel so that we don't lookup the cache
@@ -3800,13 +3798,11 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
          ats_ip_nptop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
   if (s->current.server->had_connect_fail()) {
-    char       *url_str       = s->hdr_info.client_request.url_string_get(&s->arena);
-    int         host_len      = 0;
-    const char *host_name_ptr = "";
+    char            *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
+    std::string_view host_name{};
     if (s->unmapped_url.valid()) {
-      host_name_ptr = s->unmapped_url.host_get(&host_len);
+      host_name = s->unmapped_url.host_get();
     }
-    std::string_view host_name{host_name_ptr, size_t(host_len)};
     swoc::bwprint(error_bw_buffer,
                   "CONNECT: attempt fail [{}] to {} for host='{}' "
                   "connection_result={::s} error={::s} retry_attempts={} url='{}'",
@@ -7715,21 +7711,20 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   // Check whether a Host header field is missing from a 1.0 or 1.1 request.
   if (outgoing_version != HTTP_0_9 && !outgoing_request->presence(MIME_PRESENCE_HOST)) {
-    int         host_len;
-    const char *host = url->host_get(&host_len);
+    auto host{url->host_get()};
 
     // Add a ':port' to the HOST header if the request is not going
     // to the default port.
     int port = url->port_get();
     if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
+      auto  host_len{static_cast<int>(host.length())};
       char *buf = static_cast<char *>(alloca(host_len + 15));
-      memcpy(buf, host, host_len);
+      memcpy(buf, host.data(), host_len);
       host_len += snprintf(buf + host_len, 15, ":%d", port);
       outgoing_request->value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
                                   std::string_view{buf, static_cast<std::string_view::size_type>(host_len)});
     } else {
-      outgoing_request->value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
-                                  std::string_view{host, static_cast<std::string_view::size_type>(host_len)});
+      outgoing_request->value_set(static_cast<std::string_view>(MIME_FIELD_HOST), host);
     }
   }
 
@@ -7753,9 +7748,8 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   // If we are going to a peer cache and want to use the pristine URL, get it from the base request
   if (s->parent_result.use_pristine) {
-    int  tmp_len  = 0;
-    auto tmp_char = s->unmapped_url.host_get(&tmp_len);
-    outgoing_request->url_get()->host_set(tmp_char, tmp_len);
+    auto host{s->unmapped_url.host_get()};
+    outgoing_request->url_get()->host_set(host.data(), static_cast<int>(host.length()));
   }
 
   // If the response is most likely not cacheable, eg, request with Authorization,
@@ -8164,8 +8158,6 @@ HttpTransact::build_redirect_response(State *s)
 {
   TxnDbg(dbg_ctl_http_redirect, "Entering HttpTransact::build_redirect_response");
   URL        *u;
-  const char *old_host;
-  int         old_host_len;
   const char *new_url = nullptr;
   int         new_url_len;
   char       *to_free = nullptr;
@@ -8180,8 +8172,8 @@ HttpTransact::build_redirect_response(State *s)
   // inserts expanded hostname into old url in order to   //
   // get scheme information, then puts the old url back.  //
   //////////////////////////////////////////////////////////
-  u        = s->hdr_info.client_request.url_get();
-  old_host = u->host_get(&old_host_len);
+  u = s->hdr_info.client_request.url_get();
+  auto old_host{u->host_get()};
   u->host_set(s->dns_info.lookup_name, strlen(s->dns_info.lookup_name));
   new_url = to_free = u->string_get(&s->arena, &new_url_len);
   assert(to_free != nullptr); // needed to avoid false positive nullptr deref from clang-analyzer.
@@ -8190,7 +8182,7 @@ HttpTransact::build_redirect_response(State *s)
   if (new_url == nullptr) {
     new_url = "";
   }
-  u->host_set(old_host, old_host_len);
+  u->host_set(old_host.data(), static_cast<int>(old_host.length()));
 
   //////////////////////////
   // set redirect headers //

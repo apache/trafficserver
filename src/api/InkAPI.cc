@@ -1183,7 +1183,11 @@ TSUrlPasswordSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 const char *
 TSUrlHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::host_get);
+  auto host{URLPartGet(bufp, obj, &URL::host_get)};
+  if (length) {
+    *length = static_cast<int>(host.length());
+  }
+  return host.data();
 }
 
 TSReturnCode

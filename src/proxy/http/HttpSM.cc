@@ -481,10 +481,9 @@ HttpSM::setup_blind_tunnel_port()
 {
   NetVConnection *netvc = _ua.get_txn()->get_netvc();
   ink_release_assert(netvc);
-  int host_len;
 
   // This applies to both the TLS and non TLS cases
-  if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
+  if (t_state.hdr_info.client_request.url_get()->host_get().empty()) {
     // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
     URL u;
 
@@ -497,7 +496,7 @@ HttpSM::setup_blind_tunnel_port()
 
   TLSTunnelSupport *tts = nullptr;
   if (!_ua.get_txn()->is_outbound_transparent() && (tts = netvc->get_service<TLSTunnelSupport>())) {
-    if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
+    if (t_state.hdr_info.client_request.url_get()->host_get().empty()) {
       if (tts->has_tunnel_destination()) {
         auto tunnel_host = tts->get_tunnel_host();
         t_state.hdr_info.client_request.url_get()->host_set(tunnel_host.data(), tunnel_host.size());
@@ -5832,9 +5831,7 @@ HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
       if (auto [down, fail_count] = info->active->increment_fail_count(time_down, t_state.txn_conf->connect_attempts_rr_retries);
           down) {
         char            *url_str = t_state.hdr_info.client_request.url_string_get_ref(nullptr);
-        int              host_len;
-        const char      *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
-        std::string_view host_name{host_name_ptr, static_cast<size_t>(host_len)};
+        std::string_view host_name{t_state.unmapped_url.host_get()};
         swoc::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' fail_count='{}' marking down",
                       swoc::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
                       swoc::bwf::FirstOf(url_str, "<none>"), fail_count);
@@ -8368,8 +8365,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
 
   redirectUrl.parse(arg_redirect_url, arg_redirect_len);
   {
-    int _host_len = -1;
-    if (redirectUrl.scheme_get().empty() && redirectUrl.host_get(&_host_len) != nullptr && arg_redirect_url[0] != '/') {
+    if (redirectUrl.scheme_get().empty() && !redirectUrl.host_get().empty() && arg_redirect_url[0] != '/') {
       // RFC7230 § 5.5
       // The redirect URL lacked a scheme and so it is a relative URL.
       // The redirect URL did not begin with a slash, so we parsed some or all
@@ -8444,10 +8440,10 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   // check to see if the client request passed a host header, if so copy the host and port from the redirect url and
   // make a new host header
   if (t_state.hdr_info.client_request.presence(MIME_PRESENCE_HOST)) {
-    int         host_len;
-    const char *host = clientUrl.host_get(&host_len);
+    auto host{clientUrl.host_get()};
+    auto host_len{static_cast<int>(host.length())};
 
-    if (host != nullptr) {
+    if (!host.empty()) {
       int port = clientUrl.port_get();
 
       if (auto redirectScheme{clientUrl.scheme_get()}; redirectScheme.empty()) {
@@ -8468,12 +8464,11 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       if (!noPortInHost) {
         char buf[host_len + 7]; // 5 + 1 + 1 ("12345" + ':' + '\0')
 
-        host_len = snprintf(buf, host_len + 7, "%.*s:%d", host_len, host, port);
+        host_len = snprintf(buf, host_len + 7, "%.*s:%d", host_len, host.data(), port);
         t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
                                                   std::string_view{buf, static_cast<std::string_view::size_type>(host_len)});
       } else {
-        t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
-                                                  std::string_view{host, static_cast<std::string_view::size_type>(host_len)});
+        t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST), host);
       }
       t_state.hdr_info.client_request.m_target_cached = false;
       t_state.hdr_info.server_request.m_target_cached = false;

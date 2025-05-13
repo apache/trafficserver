@@ -37,6 +37,8 @@
 #include "proxy/IPAllow.h"
 #include "proxy/http/remap/PluginFactory.h"
 
+using namespace std::literals;
+
 #define modulePrefix "[ReverseProxy]"
 
 load_remap_file_func load_remap_file_cb = nullptr;
@@ -969,12 +971,10 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
 static bool
 process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mapping, UrlRewrite::RegexMapping *reg_map)
 {
-  const char *str;
-  int         str_index;
-  const char *to_host;
-  int         to_host_len;
-  int         substitution_id;
-  int         captures;
+  std::string_view to_host{};
+  int              to_host_len;
+  int              substitution_id;
+  int              captures;
 
   reg_map->to_url_host_template     = nullptr;
   reg_map->to_url_host_template_len = 0;
@@ -1000,8 +1000,9 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
     goto lFail;
   }
 
-  to_host = new_mapping->toURL.host_get(&to_host_len);
-  for (int i = 0; i < (to_host_len - 1); ++i) {
+  to_host     = new_mapping->toURL.host_get();
+  to_host_len = static_cast<int>(to_host.length());
+  for (int i = 0; i < to_host_len - 1; ++i) {
     if (to_host[i] == '$') {
       substitution_id = to_host[i + 1] - '0';
       if ((substitution_id < 0) || (substitution_id > captures)) {
@@ -1017,10 +1018,9 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   // so the regex itself is stored in fromURL.host; string to match
   // will be in the request; string to use for substitutions will be
   // in this buffer
-  str                               = new_mapping->toURL.host_get(&str_index); // reusing str and str_index
-  reg_map->to_url_host_template_len = str_index;
-  reg_map->to_url_host_template     = static_cast<char *>(ats_malloc(str_index));
-  memcpy(reg_map->to_url_host_template, str, str_index);
+  reg_map->to_url_host_template_len = to_host_len;
+  reg_map->to_url_host_template     = static_cast<char *>(ats_malloc(to_host_len));
+  memcpy(reg_map->to_url_host_template, to_host.data(), to_host_len);
 
   return true;
 
@@ -1047,8 +1047,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
   // Vars to build the mapping
   std::string_view fromScheme{}, toScheme{};
-  const char      *fromHost, *toHost;
-  int              fromHostLen, toHostLen;
+  std::string_view fromHost{}, toHost{};
   char            *map_from, *map_from_start;
   char            *map_to, *map_to_start;
   const char      *tmp; // Appease the DEC compiler
@@ -1310,15 +1309,14 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     }
 
     // Check to see the fromHost remapping is a relative one
-    fromHost = new_mapping->fromURL.host_get(&fromHostLen);
-    if (fromHost == nullptr || fromHostLen <= 0) {
+    fromHost = new_mapping->fromURL.host_get();
+    if (fromHost.empty()) {
       if (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) {
         if (*map_from_start != '/') {
           errStr = "relative remappings must begin with a /";
           goto MAP_ERROR;
         } else {
-          fromHost    = "";
-          fromHostLen = 0;
+          fromHost = ""sv;
         }
       } else {
         errStr = "remap source in reverse mappings requires a hostname";
@@ -1326,8 +1324,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       }
     }
 
-    toHost = new_mapping->toURL.host_get(&toHostLen);
-    if (toHost == nullptr || toHostLen <= 0) {
+    toHost = new_mapping->toURL.host_get();
+    if (toHost.empty()) {
       errStr = "The remap destinations require a hostname";
       goto MAP_ERROR;
     }
@@ -1340,18 +1338,18 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // the rest of the system assumes that trailing slashes have
     // been removed.
 
-    if (unlikely(fromHostLen >= static_cast<int>(sizeof(fromHost_lower_buf)))) {
-      fromHost_lower = (fromHost_lower_ptr = static_cast<char *>(ats_malloc(fromHostLen + 1)));
+    if (unlikely(fromHost.length() >= sizeof(fromHost_lower_buf))) {
+      fromHost_lower = (fromHost_lower_ptr = static_cast<char *>(ats_malloc(fromHost.length() + 1)));
     } else {
       fromHost_lower = &fromHost_lower_buf[0];
     }
     // Canonicalize the hostname by making it lower case
-    memcpy(fromHost_lower, fromHost, fromHostLen);
-    fromHost_lower[fromHostLen] = 0;
+    memcpy(fromHost_lower, fromHost.data(), fromHost.length());
+    fromHost_lower[fromHost.length()] = 0;
     LowerCaseStr(fromHost_lower);
 
     // set the normalized string so nobody else has to normalize this
-    new_mapping->fromURL.host_set(fromHost_lower, fromHostLen);
+    new_mapping->fromURL.host_set(fromHost_lower, fromHost.length());
 
     reg_map = nullptr;
     if (is_cur_mapping_regex) {

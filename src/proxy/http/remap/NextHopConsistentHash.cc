@@ -203,9 +203,8 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     break;
   // hostname hash
   case NH_HOSTNAME_HASH_KEY:
-    url_string_ref = url->host_get(&len);
-    if (url_string_ref && len > 0) {
-      h->update(url_string_ref, len);
+    if (auto host{url->host_get()}; !host.empty()) {
+      h->update(host.data(), host.length());
     }
     break;
   // path + query string
