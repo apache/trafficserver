@@ -86,7 +86,7 @@ public:
   const char      *set_scheme(HdrHeap *heap, const char *value, int value_wks_idx, int length, bool copy_string);
   std::string_view get_user() const noexcept;
   void             set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char      *get_password(int *length);
+  std::string_view get_password() const noexcept;
   void             set_password(HdrHeap *heap, const char *value, int length, bool copy_string);
   const char      *get_host(int *length);
   void             set_host(HdrHeap *heap, const char *value, int length, bool copy_string);
@@ -564,7 +564,11 @@ inline const char *
 URL::password_get(int *length)
 {
   ink_assert(valid());
-  return m_url_impl->get_password(length);
+  auto password{m_url_impl->get_password()};
+  if (length) {
+    *length = static_cast<int>(password.length());
+  }
+  return password.data();
 }
 
 /*-------------------------------------------------------------------------

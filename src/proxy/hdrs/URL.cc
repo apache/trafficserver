@@ -739,11 +739,10 @@ URLImpl::get_user() const noexcept
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-URLImpl::get_password(int *length)
+std::string_view
+URLImpl::get_password() const noexcept
 {
-  *length = this->m_len_password;
-  return this->m_ptr_password;
+  return {this->m_ptr_password, static_cast<std::string_view::size_type>(this->m_len_password)};
 }
 
 /*-------------------------------------------------------------------------
