@@ -1222,9 +1222,7 @@ HTTPHdr::fragment_get()
 {
   URL *url = this->url_get();
   if (url) {
-    int  length;
-    auto fragment{url->fragment_get(&length)};
-    return std::string_view{fragment, static_cast<std::string_view::size_type>(length)};
+    return url->fragment_get();
   }
   return std::string_view{};
 }

@@ -224,10 +224,9 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     if (auto path{url->path_get()}; !path.empty()) {
       h->update(path.data(), path.length());
     }
-    url_string_ref = url->fragment_get(&len);
-    if (url_string_ref && len > 0) {
+    if (auto fragment{url->fragment_get()}; !fragment.empty()) {
       h->update("?", 1);
-      h->update(url_string_ref, len);
+      h->update(fragment.data(), fragment.length());
     }
     break;
   // use the cache key created by the TSCacheUrlSet() API (e.g. the cachekey plugin)

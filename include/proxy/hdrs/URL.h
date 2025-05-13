@@ -303,7 +303,7 @@ public:
 
   std::string_view query_get() const noexcept;
   void             query_set(const char *value, int length);
-  const char      *fragment_get(int *length);
+  std::string_view fragment_get() const noexcept;
   void             fragment_set(const char *value, int length);
 
   /**
@@ -686,15 +686,11 @@ URL::query_set(const char *value, int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::fragment_get(int *length)
+inline std::string_view
+URL::fragment_get() const noexcept
 {
   ink_assert(valid());
-  auto fragment{m_url_impl->get_fragment()};
-  if (length) {
-    *length = static_cast<int>(fragment.length());
-  }
-  return fragment.data();
+  return m_url_impl->get_fragment();
 }
 
 /*-------------------------------------------------------------------------
