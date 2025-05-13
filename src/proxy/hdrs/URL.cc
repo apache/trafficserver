@@ -422,16 +422,15 @@ URLImpl::check_strings(HeapCheck *heaps, int num_heaps)
  ***********************************************************************/
 
 const char *
-URLImpl::set_scheme(HdrHeap *heap, const char *scheme_str, int scheme_wks_idx, int length, bool copy_string)
+URLImpl::set_scheme(HdrHeap *heap, std::string_view value, int scheme_wks_idx, bool copy_string)
 {
   const char *scheme_wks;
   url_called_set(this);
-  if (length == 0) {
-    scheme_str = nullptr;
+  if (value.empty()) {
+    value = {nullptr, 0};
   }
 
-  mime_str_u16_set(heap, std::string_view{scheme_str, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_scheme),
-                   &(this->m_len_scheme), copy_string);
+  mime_str_u16_set(heap, value, &(this->m_ptr_scheme), &(this->m_len_scheme), copy_string);
 
   this->m_scheme_wks_idx = scheme_wks_idx;
   if (scheme_wks_idx >= 0) {
@@ -1166,7 +1165,8 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
             return PARSE_RESULT_ERROR;
           }
         }
-        url->set_scheme(heap, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings_p);
+        url->set_scheme(heap, std::string_view{scheme_start, static_cast<std::string_view::size_type>(scheme_end - scheme_start)},
+                        scheme_wks_idx, copy_strings_p);
       }
     }
     *start = scheme_end;

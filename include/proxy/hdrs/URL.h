@@ -83,7 +83,7 @@ public:
 
   // Accessors
   std::string_view get_scheme() const noexcept;
-  const char      *set_scheme(HdrHeap *heap, const char *value, int value_wks_idx, int length, bool copy_string);
+  const char      *set_scheme(HdrHeap *heap, std::string_view value, int value_wks_idx, bool copy_string);
   std::string_view get_user() const noexcept;
   void             set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
   std::string_view get_password() const noexcept;
@@ -530,7 +530,7 @@ URL::scheme_set(const char *value, int length)
 {
   ink_assert(valid());
   int scheme_wks_idx = (value ? hdrtoken_tokenize(value, length) : -1);
-  m_url_impl->set_scheme(m_heap, value, scheme_wks_idx, length, true);
+  m_url_impl->set_scheme(m_heap, {value, static_cast<std::string_view::size_type>(length)}, scheme_wks_idx, true);
 }
 
 /*-------------------------------------------------------------------------

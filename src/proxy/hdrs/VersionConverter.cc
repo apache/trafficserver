@@ -190,7 +190,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
         }
       }
 
-      header.m_http->u.req.m_url_impl->set_scheme(header.m_heap, scheme.data(), scheme_wks_idx, scheme.length(), true);
+      header.m_http->u.req.m_url_impl->set_scheme(header.m_heap, scheme, scheme_wks_idx, true);
 
       header.field_delete(field);
     } else {
