@@ -296,7 +296,7 @@ public:
   void port_set(int port);
 
   std::string_view path_get() const noexcept;
-  void             path_set(const char *value, int length);
+  void             path_set(std::string_view value);
 
   int  type_code_get();
   void type_code_set(int type);
@@ -637,10 +637,10 @@ URL::path_get() const noexcept
   -------------------------------------------------------------------------*/
 
 inline void
-URL::path_set(const char *value, int length)
+URL::path_set(std::string_view value)
 {
   ink_assert(valid());
-  m_url_impl->set_path(m_heap, {value, static_cast<std::string_view::size_type>(length)}, true);
+  m_url_impl->set_path(m_heap, value, true);
 }
 
 /*-------------------------------------------------------------------------

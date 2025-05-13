@@ -372,9 +372,9 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
 
     // Skip any leading / in the path when setting the new URL path
     if (*newPath == '/') {
-      request_url->path_set(newPath + 1, newPathLen - 1);
+      request_url->path_set({newPath + 1, static_cast<std::string_view::size_type>(newPathLen - 1)});
     } else {
-      request_url->path_set(newPath, newPathLen);
+      request_url->path_set({newPath, static_cast<std::string_view::size_type>(newPathLen)});
     }
   }
 }
