@@ -1050,7 +1050,7 @@ TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
   return url_string_get(url_impl, nullptr, length, nullptr);
 }
 
-using URLPartGetF    = const std::string_view (URL::*)();
+using URLPartGetF    = std::string_view (URL::*)() const noexcept;
 using URLPartGetFLen = const char *(URL::*)(int *);
 using URLPartSetF    = void (URL::*)(const char *, int);
 

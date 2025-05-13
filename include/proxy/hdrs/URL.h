@@ -280,9 +280,9 @@ public:
   void  hash_get(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
   void  host_hash_get(CryptoHash *hash) const;
 
-  const std::string_view scheme_get();
-  int                    scheme_get_wksidx() const;
-  void                   scheme_set(const char *value, int length);
+  std::string_view scheme_get() const noexcept;
+  int              scheme_get_wksidx() const;
+  void             scheme_set(const char *value, int length);
 
   const char *user_get(int *length);
   void        user_set(const char *value, int length);
@@ -508,8 +508,8 @@ URL::host_hash_get(CryptoHash *hash) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const std::string_view
-URL::scheme_get()
+inline std::string_view
+URL::scheme_get() const noexcept
 {
   ink_assert(valid());
   return m_url_impl->get_scheme();
