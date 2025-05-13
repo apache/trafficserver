@@ -467,14 +467,13 @@ URLImpl::set_user(HdrHeap *heap, std::string_view value, bool copy_string)
   -------------------------------------------------------------------------*/
 
 void
-URLImpl::set_password(HdrHeap *heap, const char *value, int length, bool copy_string)
+URLImpl::set_password(HdrHeap *heap, std::string_view value, bool copy_string)
 {
   url_called_set(this);
-  if (length == 0) {
-    value = nullptr;
+  if (value.empty()) {
+    value = {nullptr, 0};
   }
-  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_password),
-                   &(this->m_len_password), copy_string);
+  mime_str_u16_set(heap, value, &(this->m_ptr_password), &(this->m_len_password), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -1359,7 +1358,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
   if (user) {
     url->set_user(heap, user, copy_strings_p);
     if (passw) {
-      url->set_password(heap, passw.data(), passw.size(), copy_strings_p);
+      url->set_password(heap, passw, copy_strings_p);
     }
   }
 
