@@ -480,14 +480,13 @@ URLImpl::set_password(HdrHeap *heap, std::string_view value, bool copy_string)
   -------------------------------------------------------------------------*/
 
 void
-URLImpl::set_host(HdrHeap *heap, const char *value, int length, bool copy_string)
+URLImpl::set_host(HdrHeap *heap, std::string_view value, bool copy_string)
 {
   url_called_set(this);
-  if (length == 0) {
-    value = nullptr;
+  if (value.empty()) {
+    value = {nullptr, 0};
   }
-  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_host),
-                   &(this->m_len_host), copy_string);
+  mime_str_u16_set(heap, value, &(this->m_ptr_host), &(this->m_len_host), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -1373,7 +1372,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
   }
   if (!host.empty()) {
     if (!verify_host_characters || validate_host_name(host)) {
-      url->set_host(heap, host.data(), host.size(), copy_strings_p);
+      url->set_host(heap, host, copy_strings_p);
     } else {
       return PARSE_RESULT_ERROR;
     }
@@ -1573,7 +1572,7 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
     }
 
     // Now we can set the host.
-    url->set_host(heap, base, host_end - base, copy_strings);
+    url->set_host(heap, {base, static_cast<std::string_view::size_type>(host_end - base)}, copy_strings);
   }
 
   // path is anything that's left.

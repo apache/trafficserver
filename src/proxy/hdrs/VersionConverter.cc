@@ -202,7 +202,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY);
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
     auto authority{field->value_get()};
-    header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority.data(), authority.length(), true);
+    header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority, true);
 
     if (!is_connect_method) {
       MIMEField *host = header.field_find(static_cast<std::string_view>(MIME_FIELD_HOST));

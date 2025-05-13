@@ -89,7 +89,7 @@ public:
   std::string_view get_password() const noexcept;
   void             set_password(HdrHeap *heap, std::string_view value, bool copy_string);
   std::string_view get_host() const noexcept;
-  void             set_host(HdrHeap *heap, const char *value, int length, bool copy_string);
+  void             set_host(HdrHeap *heap, std::string_view value, bool copy_string);
   int              get_port();
   void             set_port(HdrHeap *heap, unsigned int port);
   void             set_port(HdrHeap *heap, const char *value, int length, bool copy_string);
@@ -590,7 +590,7 @@ inline void
 URL::host_set(const char *value, int length)
 {
   ink_assert(valid());
-  m_url_impl->set_host(m_heap, value, length, true);
+  m_url_impl->set_host(m_heap, {value, static_cast<std::string_view::size_type>(length)}, true);
 }
 
 /*-------------------------------------------------------------------------
