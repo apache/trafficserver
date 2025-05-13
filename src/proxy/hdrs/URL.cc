@@ -560,11 +560,10 @@ URLImpl::set_query(HdrHeap *heap, std::string_view value, bool copy_string)
   -------------------------------------------------------------------------*/
 
 void
-URLImpl::set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string)
+URLImpl::set_fragment(HdrHeap *heap, std::string_view value, bool copy_string)
 {
   url_called_set(this);
-  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(this->m_ptr_fragment),
-                   &(this->m_len_fragment), copy_string);
+  mime_str_u16_set(heap, value, &(this->m_ptr_fragment), &(this->m_len_fragment), copy_string);
 }
 
 /*-------------------------------------------------------------------------
@@ -1509,7 +1508,8 @@ done:
     if (!fragment_end) {
       fragment_end = cur;
     }
-    url->set_fragment(heap, fragment_start, fragment_end - fragment_start, copy_strings);
+    url->set_fragment(heap, {fragment_start, static_cast<std::string_view::size_type>(fragment_end - fragment_start)},
+                      copy_strings);
   }
 
   *start = cur;
