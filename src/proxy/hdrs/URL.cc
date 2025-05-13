@@ -716,15 +716,14 @@ url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-URLImpl::get_scheme(int *length)
+std::string_view
+URLImpl::get_scheme() const noexcept
 {
   if (this->m_scheme_wks_idx >= 0) {
-    *length = hdrtoken_index_to_length(this->m_scheme_wks_idx);
-    return hdrtoken_index_to_wks(this->m_scheme_wks_idx);
+    return {hdrtoken_index_to_wks(this->m_scheme_wks_idx),
+            static_cast<std::string_view::size_type>(hdrtoken_index_to_length(this->m_scheme_wks_idx))};
   } else {
-    *length = this->m_len_scheme;
-    return this->m_ptr_scheme;
+    return {this->m_ptr_scheme, static_cast<std::string_view::size_type>(this->m_len_scheme)};
   }
 }
 

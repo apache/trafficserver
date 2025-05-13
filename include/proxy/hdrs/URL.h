@@ -82,29 +82,29 @@ public:
   // 8 bytes + 4 bits, will result in padding
 
   // Accessors
-  const char *get_scheme(int *length);
-  const char *set_scheme(HdrHeap *heap, const char *value, int value_wks_idx, int length, bool copy_string);
-  const char *get_user(int *length);
-  void        set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_password(int *length);
-  void        set_password(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_host(int *length);
-  void        set_host(HdrHeap *heap, const char *value, int length, bool copy_string);
-  int         get_port();
-  void        set_port(HdrHeap *heap, unsigned int port);
-  void        set_port(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_path(int *length);
-  void        set_path(HdrHeap *heap, const char *value, int length, bool copy_string);
-  int         get_type();
-  void        set_type(int type);
-  int         get_type_code();
-  void        set_type_code(unsigned int typecode);
-  const char *get_params(int *length);
-  void        set_params(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_query(int *length);
-  void        set_query(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_fragment(int *length);
-  void        set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string);
+  std::string_view get_scheme() const noexcept;
+  const char      *set_scheme(HdrHeap *heap, const char *value, int value_wks_idx, int length, bool copy_string);
+  const char      *get_user(int *length);
+  void             set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char      *get_password(int *length);
+  void             set_password(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char      *get_host(int *length);
+  void             set_host(HdrHeap *heap, const char *value, int length, bool copy_string);
+  int              get_port();
+  void             set_port(HdrHeap *heap, unsigned int port);
+  void             set_port(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char      *get_path(int *length);
+  void             set_path(HdrHeap *heap, const char *value, int length, bool copy_string);
+  int              get_type();
+  void             set_type(int type);
+  int              get_type_code();
+  void             set_type_code(unsigned int typecode);
+  const char      *get_params(int *length);
+  void             set_params(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char      *get_query(int *length);
+  void             set_query(HdrHeap *heap, const char *value, int length, bool copy_string);
+  const char      *get_fragment(int *length);
+  void             set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string);
 
   // Marshaling Functions
   int    marshal(MarshalXlate *str_xlate, int num_xlate);
@@ -512,9 +512,7 @@ inline const std::string_view
 URL::scheme_get()
 {
   ink_assert(valid());
-  int         length;
-  const char *scheme = m_url_impl->get_scheme(&length);
-  return std::string_view{scheme, static_cast<size_t>(length)};
+  return m_url_impl->get_scheme();
 }
 
 inline int
