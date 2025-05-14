@@ -121,7 +121,7 @@ sessions:
 
   # Request the stale resource after max-age is passed. ATS will still serve stale contents until
   # 12 seconds {= max-age (2 seconds) + max_stale_age (10 seconds)}.
-  # Note that we already delayed 4 seconds in a previous transaction.
+  # Note that we already delayed 4 seconds in a previous transaction. Current cache object age is 11 seconds.
   - client-request:
       delay: 7s
 
@@ -142,8 +142,8 @@ sessions:
 
   # Request the stale resource after enough delay to guarantee that the cached
   # object's age exceeds max-age (2 seconds) + max_stale_age (10 seconds). Note that we already
-  # delayed 11 seconds in a previous transaction. ATS should not serve the stale
-  # entry anymore because it is too old.
+  # delayed 11 seconds in a previous transaction. Current cache object age is 13 seconds. ATS
+  # should not serve the stale entry anymore because it is too old.
   - client-request:
       delay: 2s
 
