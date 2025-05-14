@@ -8444,6 +8444,76 @@ TSVConnReenableEx(TSVConn vconn, TSEvent event)
   }
 }
 
+TSReturnCode
+TSVConnPPInfoGet(TSVConn vconn, uint16_t key, const char **value, int *length)
+{
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconn);
+
+  if (key < 0x100) {
+    auto &tlv = vc->get_proxy_protocol_info().tlv;
+    if (auto ite = tlv.find(key); ite != tlv.end()) {
+      *value  = ite->second.data();
+      *length = ite->second.length();
+    } else {
+      return TS_ERROR;
+    }
+  } else {
+    switch (key) {
+    case TS_PP_INFO_SRC_ADDR:
+      *value = reinterpret_cast<const char *>(vc->get_proxy_protocol_src_addr());
+      if (*value == nullptr) {
+        return TS_ERROR;
+      }
+      *length = ats_ip_size(reinterpret_cast<const sockaddr *>(*value));
+      break;
+    case TS_PP_INFO_DST_ADDR:
+      *value = reinterpret_cast<const char *>(vc->get_proxy_protocol_dst_addr());
+      if (*value == nullptr) {
+        return TS_ERROR;
+      }
+      *length = ats_ip_size(reinterpret_cast<const sockaddr *>(*value));
+      break;
+    default:
+      return TS_ERROR;
+    }
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value)
+{
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconn);
+
+  if (key < 0x100) {
+    // Unknown type value cannot be returned as an integer
+    return TS_ERROR;
+  } else {
+    switch (key) {
+    case TS_PP_INFO_VERSION:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_version());
+      break;
+    case TS_PP_INFO_SRC_PORT:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_src_port());
+      break;
+    case TS_PP_INFO_DST_PORT:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_dst_port());
+      break;
+    case TS_PP_INFO_PROTOCOL:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_info().ip_family);
+      break;
+    case TS_PP_INFO_SOCK_TYPE:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_info().type);
+      break;
+    default:
+      return TS_ERROR;
+    }
+  }
+
+  return TS_SUCCESS;
+}
+
 TSSslSession
 TSSslSessionGet(const TSSslSessionID *session_id)
 {
