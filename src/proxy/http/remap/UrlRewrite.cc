@@ -365,7 +365,7 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
         if (toPath && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
           fromPathLen++;
         }
-      } else {
+      } else if (requestPathLen > fromPathLen) {
         if (toPath && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
           fromPathLen++;
         }
