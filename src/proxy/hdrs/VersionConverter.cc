@@ -90,8 +90,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     if (!value.empty()) {
       field->value_set(header.m_heap, header.m_mime, value);
     } else {
-      field->value_set(header.m_heap, header.m_mime,
-                       std::string_view{URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)});
+      field->value_set(header.m_heap, header.m_mime, std::string_view{URL_SCHEME_HTTPS});
     }
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :scheme");

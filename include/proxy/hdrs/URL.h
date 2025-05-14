@@ -121,26 +121,26 @@ private:
 
 using URLHashContext = CryptoContext;
 
-extern const char *URL_SCHEME_FILE;
-extern const char *URL_SCHEME_FTP;
-extern const char *URL_SCHEME_GOPHER;
-extern const char *URL_SCHEME_HTTP;
-extern const char *URL_SCHEME_HTTPS;
-extern const char *URL_SCHEME_WS;
-extern const char *URL_SCHEME_WSS;
-extern const char *URL_SCHEME_MAILTO;
-extern const char *URL_SCHEME_NEWS;
-extern const char *URL_SCHEME_NNTP;
-extern const char *URL_SCHEME_PROSPERO;
-extern const char *URL_SCHEME_TELNET;
-extern const char *URL_SCHEME_TUNNEL;
-extern const char *URL_SCHEME_WAIS;
-extern const char *URL_SCHEME_PNM;
-extern const char *URL_SCHEME_RTSP;
-extern const char *URL_SCHEME_RTSPU;
-extern const char *URL_SCHEME_MMS;
-extern const char *URL_SCHEME_MMSU;
-extern const char *URL_SCHEME_MMST;
+extern c_str_view URL_SCHEME_FILE;
+extern c_str_view URL_SCHEME_FTP;
+extern c_str_view URL_SCHEME_GOPHER;
+extern c_str_view URL_SCHEME_HTTP;
+extern c_str_view URL_SCHEME_HTTPS;
+extern c_str_view URL_SCHEME_WS;
+extern c_str_view URL_SCHEME_WSS;
+extern c_str_view URL_SCHEME_MAILTO;
+extern c_str_view URL_SCHEME_NEWS;
+extern c_str_view URL_SCHEME_NNTP;
+extern c_str_view URL_SCHEME_PROSPERO;
+extern c_str_view URL_SCHEME_TELNET;
+extern c_str_view URL_SCHEME_TUNNEL;
+extern c_str_view URL_SCHEME_WAIS;
+extern c_str_view URL_SCHEME_PNM;
+extern c_str_view URL_SCHEME_RTSP;
+extern c_str_view URL_SCHEME_RTSPU;
+extern c_str_view URL_SCHEME_MMS;
+extern c_str_view URL_SCHEME_MMSU;
+extern c_str_view URL_SCHEME_MMST;
 
 extern int URL_WKSIDX_FILE;
 extern int URL_WKSIDX_FTP;
@@ -162,27 +162,6 @@ extern int URL_WKSIDX_RTSPU;
 extern int URL_WKSIDX_MMS;
 extern int URL_WKSIDX_MMSU;
 extern int URL_WKSIDX_MMST;
-
-extern int URL_LEN_FILE;
-extern int URL_LEN_FTP;
-extern int URL_LEN_GOPHER;
-extern int URL_LEN_HTTP;
-extern int URL_LEN_HTTPS;
-extern int URL_LEN_WS;
-extern int URL_LEN_WSS;
-extern int URL_LEN_MAILTO;
-extern int URL_LEN_NEWS;
-extern int URL_LEN_NNTP;
-extern int URL_LEN_PROSPERO;
-extern int URL_LEN_TELNET;
-extern int URL_LEN_TUNNEL;
-extern int URL_LEN_WAIS;
-extern int URL_LEN_PNM;
-extern int URL_LEN_RTSP;
-extern int URL_LEN_RTSPU;
-extern int URL_LEN_MMS;
-extern int URL_LEN_MMSU;
-extern int URL_LEN_MMST;
 
 /* Public */
 bool validate_host_name(std::string_view addr);

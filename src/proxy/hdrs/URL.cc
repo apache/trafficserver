@@ -30,26 +30,26 @@
 #include "proxy/hdrs/HTTP.h"
 #include "tscore/Diags.h"
 
-const char *URL_SCHEME_FILE;
-const char *URL_SCHEME_FTP;
-const char *URL_SCHEME_GOPHER;
-const char *URL_SCHEME_HTTP;
-const char *URL_SCHEME_HTTPS;
-const char *URL_SCHEME_WSS;
-const char *URL_SCHEME_WS;
-const char *URL_SCHEME_MAILTO;
-const char *URL_SCHEME_NEWS;
-const char *URL_SCHEME_NNTP;
-const char *URL_SCHEME_PROSPERO;
-const char *URL_SCHEME_TELNET;
-const char *URL_SCHEME_TUNNEL;
-const char *URL_SCHEME_WAIS;
-const char *URL_SCHEME_PNM;
-const char *URL_SCHEME_RTSP;
-const char *URL_SCHEME_RTSPU;
-const char *URL_SCHEME_MMS;
-const char *URL_SCHEME_MMSU;
-const char *URL_SCHEME_MMST;
+c_str_view URL_SCHEME_FILE;
+c_str_view URL_SCHEME_FTP;
+c_str_view URL_SCHEME_GOPHER;
+c_str_view URL_SCHEME_HTTP;
+c_str_view URL_SCHEME_HTTPS;
+c_str_view URL_SCHEME_WSS;
+c_str_view URL_SCHEME_WS;
+c_str_view URL_SCHEME_MAILTO;
+c_str_view URL_SCHEME_NEWS;
+c_str_view URL_SCHEME_NNTP;
+c_str_view URL_SCHEME_PROSPERO;
+c_str_view URL_SCHEME_TELNET;
+c_str_view URL_SCHEME_TUNNEL;
+c_str_view URL_SCHEME_WAIS;
+c_str_view URL_SCHEME_PNM;
+c_str_view URL_SCHEME_RTSP;
+c_str_view URL_SCHEME_RTSPU;
+c_str_view URL_SCHEME_MMS;
+c_str_view URL_SCHEME_MMSU;
+c_str_view URL_SCHEME_MMST;
 
 int URL_WKSIDX_FILE;
 int URL_WKSIDX_FTP;
@@ -71,27 +71,6 @@ int URL_WKSIDX_RTSPU;
 int URL_WKSIDX_MMS;
 int URL_WKSIDX_MMSU;
 int URL_WKSIDX_MMST;
-
-int URL_LEN_FILE;
-int URL_LEN_FTP;
-int URL_LEN_GOPHER;
-int URL_LEN_HTTP;
-int URL_LEN_HTTPS;
-int URL_LEN_WS;
-int URL_LEN_WSS;
-int URL_LEN_MAILTO;
-int URL_LEN_NEWS;
-int URL_LEN_NNTP;
-int URL_LEN_PROSPERO;
-int URL_LEN_TELNET;
-int URL_LEN_TUNNEL;
-int URL_LEN_WAIS;
-int URL_LEN_PNM;
-int URL_LEN_RTSP;
-int URL_LEN_RTSPU;
-int URL_LEN_MMS;
-int URL_LEN_MMSU;
-int URL_LEN_MMST;
 
 namespace
 {
@@ -163,73 +142,53 @@ url_init()
 
     hdrtoken_init();
 
-    URL_SCHEME_FILE     = hdrtoken_string_to_wks("file");
-    URL_SCHEME_FTP      = hdrtoken_string_to_wks("ftp");
-    URL_SCHEME_GOPHER   = hdrtoken_string_to_wks("gopher");
-    URL_SCHEME_HTTP     = hdrtoken_string_to_wks("http");
-    URL_SCHEME_HTTPS    = hdrtoken_string_to_wks("https");
-    URL_SCHEME_WSS      = hdrtoken_string_to_wks("wss");
-    URL_SCHEME_WS       = hdrtoken_string_to_wks("ws");
-    URL_SCHEME_MAILTO   = hdrtoken_string_to_wks("mailto");
-    URL_SCHEME_NEWS     = hdrtoken_string_to_wks("news");
-    URL_SCHEME_NNTP     = hdrtoken_string_to_wks("nntp");
-    URL_SCHEME_PROSPERO = hdrtoken_string_to_wks("prospero");
-    URL_SCHEME_TELNET   = hdrtoken_string_to_wks("telnet");
-    URL_SCHEME_TUNNEL   = hdrtoken_string_to_wks("tunnel");
-    URL_SCHEME_WAIS     = hdrtoken_string_to_wks("wais");
-    URL_SCHEME_PNM      = hdrtoken_string_to_wks("pnm");
-    URL_SCHEME_RTSP     = hdrtoken_string_to_wks("rtsp");
-    URL_SCHEME_RTSPU    = hdrtoken_string_to_wks("rtspu");
-    URL_SCHEME_MMS      = hdrtoken_string_to_wks("mms");
-    URL_SCHEME_MMSU     = hdrtoken_string_to_wks("mmsu");
-    URL_SCHEME_MMST     = hdrtoken_string_to_wks("mmst");
+    URL_SCHEME_FILE     = hdrtoken_string_to_wks_sv("file");
+    URL_SCHEME_FTP      = hdrtoken_string_to_wks_sv("ftp");
+    URL_SCHEME_GOPHER   = hdrtoken_string_to_wks_sv("gopher");
+    URL_SCHEME_HTTP     = hdrtoken_string_to_wks_sv("http");
+    URL_SCHEME_HTTPS    = hdrtoken_string_to_wks_sv("https");
+    URL_SCHEME_WSS      = hdrtoken_string_to_wks_sv("wss");
+    URL_SCHEME_WS       = hdrtoken_string_to_wks_sv("ws");
+    URL_SCHEME_MAILTO   = hdrtoken_string_to_wks_sv("mailto");
+    URL_SCHEME_NEWS     = hdrtoken_string_to_wks_sv("news");
+    URL_SCHEME_NNTP     = hdrtoken_string_to_wks_sv("nntp");
+    URL_SCHEME_PROSPERO = hdrtoken_string_to_wks_sv("prospero");
+    URL_SCHEME_TELNET   = hdrtoken_string_to_wks_sv("telnet");
+    URL_SCHEME_TUNNEL   = hdrtoken_string_to_wks_sv("tunnel");
+    URL_SCHEME_WAIS     = hdrtoken_string_to_wks_sv("wais");
+    URL_SCHEME_PNM      = hdrtoken_string_to_wks_sv("pnm");
+    URL_SCHEME_RTSP     = hdrtoken_string_to_wks_sv("rtsp");
+    URL_SCHEME_RTSPU    = hdrtoken_string_to_wks_sv("rtspu");
+    URL_SCHEME_MMS      = hdrtoken_string_to_wks_sv("mms");
+    URL_SCHEME_MMSU     = hdrtoken_string_to_wks_sv("mmsu");
+    URL_SCHEME_MMST     = hdrtoken_string_to_wks_sv("mmst");
 
-    ink_assert(URL_SCHEME_FILE && URL_SCHEME_FTP && URL_SCHEME_GOPHER && URL_SCHEME_HTTP && URL_SCHEME_HTTPS && URL_SCHEME_WS &&
-               URL_SCHEME_WSS && URL_SCHEME_MAILTO && URL_SCHEME_NEWS && URL_SCHEME_NNTP && URL_SCHEME_PROSPERO &&
-               URL_SCHEME_TELNET && URL_SCHEME_TUNNEL && URL_SCHEME_WAIS && URL_SCHEME_PNM && URL_SCHEME_RTSP && URL_SCHEME_RTSPU &&
-               URL_SCHEME_MMS && URL_SCHEME_MMSU && URL_SCHEME_MMST);
+    ink_assert(URL_SCHEME_FILE.c_str() && URL_SCHEME_FTP.c_str() && URL_SCHEME_GOPHER.c_str() && URL_SCHEME_HTTP.c_str() &&
+               URL_SCHEME_HTTPS.c_str() && URL_SCHEME_WS.c_str() && URL_SCHEME_WSS.c_str() && URL_SCHEME_MAILTO.c_str() &&
+               URL_SCHEME_NEWS.c_str() && URL_SCHEME_NNTP.c_str() && URL_SCHEME_PROSPERO.c_str() && URL_SCHEME_TELNET.c_str() &&
+               URL_SCHEME_TUNNEL.c_str() && URL_SCHEME_WAIS.c_str() && URL_SCHEME_PNM.c_str() && URL_SCHEME_RTSP.c_str() &&
+               URL_SCHEME_RTSPU.c_str() && URL_SCHEME_MMS.c_str() && URL_SCHEME_MMSU.c_str() && URL_SCHEME_MMST.c_str());
 
-    URL_WKSIDX_FILE     = hdrtoken_wks_to_index(URL_SCHEME_FILE);
-    URL_WKSIDX_FTP      = hdrtoken_wks_to_index(URL_SCHEME_FTP);
-    URL_WKSIDX_GOPHER   = hdrtoken_wks_to_index(URL_SCHEME_GOPHER);
-    URL_WKSIDX_HTTP     = hdrtoken_wks_to_index(URL_SCHEME_HTTP);
-    URL_WKSIDX_HTTPS    = hdrtoken_wks_to_index(URL_SCHEME_HTTPS);
-    URL_WKSIDX_WS       = hdrtoken_wks_to_index(URL_SCHEME_WS);
-    URL_WKSIDX_WSS      = hdrtoken_wks_to_index(URL_SCHEME_WSS);
-    URL_WKSIDX_MAILTO   = hdrtoken_wks_to_index(URL_SCHEME_MAILTO);
-    URL_WKSIDX_NEWS     = hdrtoken_wks_to_index(URL_SCHEME_NEWS);
-    URL_WKSIDX_NNTP     = hdrtoken_wks_to_index(URL_SCHEME_NNTP);
-    URL_WKSIDX_PROSPERO = hdrtoken_wks_to_index(URL_SCHEME_PROSPERO);
-    URL_WKSIDX_TELNET   = hdrtoken_wks_to_index(URL_SCHEME_TELNET);
-    URL_WKSIDX_TUNNEL   = hdrtoken_wks_to_index(URL_SCHEME_TUNNEL);
-    URL_WKSIDX_WAIS     = hdrtoken_wks_to_index(URL_SCHEME_WAIS);
-    URL_WKSIDX_PNM      = hdrtoken_wks_to_index(URL_SCHEME_PNM);
-    URL_WKSIDX_RTSP     = hdrtoken_wks_to_index(URL_SCHEME_RTSP);
-    URL_WKSIDX_RTSPU    = hdrtoken_wks_to_index(URL_SCHEME_RTSPU);
-    URL_WKSIDX_MMS      = hdrtoken_wks_to_index(URL_SCHEME_MMS);
-    URL_WKSIDX_MMSU     = hdrtoken_wks_to_index(URL_SCHEME_MMSU);
-    URL_WKSIDX_MMST     = hdrtoken_wks_to_index(URL_SCHEME_MMST);
-
-    URL_LEN_FILE     = hdrtoken_wks_to_length(URL_SCHEME_FILE);
-    URL_LEN_FTP      = hdrtoken_wks_to_length(URL_SCHEME_FTP);
-    URL_LEN_GOPHER   = hdrtoken_wks_to_length(URL_SCHEME_GOPHER);
-    URL_LEN_HTTP     = hdrtoken_wks_to_length(URL_SCHEME_HTTP);
-    URL_LEN_HTTPS    = hdrtoken_wks_to_length(URL_SCHEME_HTTPS);
-    URL_LEN_WS       = hdrtoken_wks_to_length(URL_SCHEME_WS);
-    URL_LEN_WSS      = hdrtoken_wks_to_length(URL_SCHEME_WSS);
-    URL_LEN_MAILTO   = hdrtoken_wks_to_length(URL_SCHEME_MAILTO);
-    URL_LEN_NEWS     = hdrtoken_wks_to_length(URL_SCHEME_NEWS);
-    URL_LEN_NNTP     = hdrtoken_wks_to_length(URL_SCHEME_NNTP);
-    URL_LEN_PROSPERO = hdrtoken_wks_to_length(URL_SCHEME_PROSPERO);
-    URL_LEN_TELNET   = hdrtoken_wks_to_length(URL_SCHEME_TELNET);
-    URL_LEN_TUNNEL   = hdrtoken_wks_to_length(URL_SCHEME_TUNNEL);
-    URL_LEN_WAIS     = hdrtoken_wks_to_length(URL_SCHEME_WAIS);
-    URL_LEN_PNM      = hdrtoken_wks_to_length(URL_SCHEME_PNM);
-    URL_LEN_RTSP     = hdrtoken_wks_to_length(URL_SCHEME_RTSP);
-    URL_LEN_RTSPU    = hdrtoken_wks_to_length(URL_SCHEME_RTSPU);
-    URL_LEN_MMS      = hdrtoken_wks_to_length(URL_SCHEME_MMS);
-    URL_LEN_MMSU     = hdrtoken_wks_to_length(URL_SCHEME_MMSU);
-    URL_LEN_MMST     = hdrtoken_wks_to_length(URL_SCHEME_MMST);
+    URL_WKSIDX_FILE     = hdrtoken_wks_to_index(URL_SCHEME_FILE.c_str());
+    URL_WKSIDX_FTP      = hdrtoken_wks_to_index(URL_SCHEME_FTP.c_str());
+    URL_WKSIDX_GOPHER   = hdrtoken_wks_to_index(URL_SCHEME_GOPHER.c_str());
+    URL_WKSIDX_HTTP     = hdrtoken_wks_to_index(URL_SCHEME_HTTP.c_str());
+    URL_WKSIDX_HTTPS    = hdrtoken_wks_to_index(URL_SCHEME_HTTPS.c_str());
+    URL_WKSIDX_WS       = hdrtoken_wks_to_index(URL_SCHEME_WS.c_str());
+    URL_WKSIDX_WSS      = hdrtoken_wks_to_index(URL_SCHEME_WSS.c_str());
+    URL_WKSIDX_MAILTO   = hdrtoken_wks_to_index(URL_SCHEME_MAILTO.c_str());
+    URL_WKSIDX_NEWS     = hdrtoken_wks_to_index(URL_SCHEME_NEWS.c_str());
+    URL_WKSIDX_NNTP     = hdrtoken_wks_to_index(URL_SCHEME_NNTP.c_str());
+    URL_WKSIDX_PROSPERO = hdrtoken_wks_to_index(URL_SCHEME_PROSPERO.c_str());
+    URL_WKSIDX_TELNET   = hdrtoken_wks_to_index(URL_SCHEME_TELNET.c_str());
+    URL_WKSIDX_TUNNEL   = hdrtoken_wks_to_index(URL_SCHEME_TUNNEL.c_str());
+    URL_WKSIDX_WAIS     = hdrtoken_wks_to_index(URL_SCHEME_WAIS.c_str());
+    URL_WKSIDX_PNM      = hdrtoken_wks_to_index(URL_SCHEME_PNM.c_str());
+    URL_WKSIDX_RTSP     = hdrtoken_wks_to_index(URL_SCHEME_RTSP.c_str());
+    URL_WKSIDX_RTSPU    = hdrtoken_wks_to_index(URL_SCHEME_RTSPU.c_str());
+    URL_WKSIDX_MMS      = hdrtoken_wks_to_index(URL_SCHEME_MMS.c_str());
+    URL_WKSIDX_MMSU     = hdrtoken_wks_to_index(URL_SCHEME_MMSU.c_str());
+    URL_WKSIDX_MMST     = hdrtoken_wks_to_index(URL_SCHEME_MMST.c_str());
   }
 }
 
@@ -439,9 +398,9 @@ URLImpl::set_scheme(HdrHeap *heap, std::string_view value, int scheme_wks_idx, b
     scheme_wks = nullptr;
   }
 
-  if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS) {
+  if (scheme_wks == URL_SCHEME_HTTP.c_str() || scheme_wks == URL_SCHEME_WS.c_str()) {
     this->m_url_type = URL_TYPE_HTTP;
-  } else if (scheme_wks == URL_SCHEME_HTTPS || scheme_wks == URL_SCHEME_WSS) {
+  } else if (scheme_wks == URL_SCHEME_HTTPS.c_str() || scheme_wks == URL_SCHEME_WSS.c_str()) {
     this->m_url_type = URL_TYPE_HTTPS;
   } else {
     this->m_url_type = URL_TYPE_HTTP;
@@ -822,10 +781,10 @@ url_length_get(URLImpl *url, unsigned normalization_flags)
 
   } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
     if (URL_TYPE_HTTP == url->m_url_type) {
-      length += URL_LEN_HTTP + 3;
+      length += static_cast<int>(URL_SCHEME_HTTP.length()) + 3;
 
     } else if (URL_TYPE_HTTPS == url->m_url_type) {
-      length += URL_LEN_HTTPS + 3;
+      length += static_cast<int>(URL_SCHEME_HTTPS.length()) + 3;
     }
   }
 
@@ -899,7 +858,7 @@ url_to_string(URLImpl *url, Arena *arena, int *length)
   if (url->m_ptr_scheme) {
     memcpy(&str[idx], url->m_ptr_scheme, url->m_len_scheme);
     idx += url->m_len_scheme;
-    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
+    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE.c_str())) {
       str[idx++] = ':';
     } else {
       str[idx++] = ':';
@@ -1607,13 +1566,11 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
 
   } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
     if (URL_TYPE_HTTP == url->m_url_type) {
-      TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTP, static_cast<std::string_view::size_type>(URL_LEN_HTTP)}, buf_start,
-                         buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTP}, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
 
     } else if (URL_TYPE_HTTPS == url->m_url_type) {
-      TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)}, buf_start,
-                         buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTPS}, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
     }
   }

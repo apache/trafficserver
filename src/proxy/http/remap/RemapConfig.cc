@@ -1242,7 +1242,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // If the rule is "/" or just some other relative path
     //   we need to default the scheme to http
     if (fromScheme.empty()) {
-      new_mapping->fromURL.scheme_set({URL_SCHEME_HTTP, static_cast<std::string_view::size_type>(URL_LEN_HTTP)});
+      new_mapping->fromURL.scheme_set(std::string_view{URL_SCHEME_HTTP});
       fromScheme                        = new_mapping->fromURL.scheme_get();
       new_mapping->wildcard_from_scheme = true;
     }
@@ -1250,17 +1250,19 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     // Include support for HTTPS scheme
     // includes support for FILE scheme
-    if ((fromScheme.data() != URL_SCHEME_HTTP && fromScheme.data() != URL_SCHEME_HTTPS && fromScheme.data() != URL_SCHEME_FILE &&
-         fromScheme.data() != URL_SCHEME_TUNNEL && fromScheme.data() != URL_SCHEME_WS && fromScheme.data() != URL_SCHEME_WSS) ||
-        (toScheme.data() != URL_SCHEME_HTTP && toScheme.data() != URL_SCHEME_HTTPS && toScheme.data() != URL_SCHEME_TUNNEL &&
-         toScheme.data() != URL_SCHEME_WS && toScheme.data() != URL_SCHEME_WSS)) {
+    if ((fromScheme != std::string_view{URL_SCHEME_HTTP} && fromScheme != std::string_view{URL_SCHEME_HTTPS} &&
+         fromScheme != std::string_view{URL_SCHEME_FILE} && fromScheme != std::string_view{URL_SCHEME_TUNNEL} &&
+         fromScheme != std::string_view{URL_SCHEME_WS} && fromScheme != std::string_view{URL_SCHEME_WSS}) ||
+        (toScheme != std::string_view{URL_SCHEME_HTTP} && toScheme != std::string_view{URL_SCHEME_HTTPS} &&
+         toScheme != std::string_view{URL_SCHEME_TUNNEL} && toScheme != std::string_view{URL_SCHEME_WS} &&
+         toScheme != std::string_view{URL_SCHEME_WSS})) {
       errStr = "only http, https, ws, wss, and tunnel remappings are supported";
       goto MAP_ERROR;
     }
 
     // If mapping from WS or WSS we must map out to WS or WSS
-    if ((fromScheme.data() == URL_SCHEME_WSS || fromScheme.data() == URL_SCHEME_WS) &&
-        (toScheme.data() != URL_SCHEME_WSS && toScheme.data() != URL_SCHEME_WS)) {
+    if ((fromScheme == std::string_view{URL_SCHEME_WSS} || fromScheme == std::string_view{URL_SCHEME_WS}) &&
+        (toScheme != std::string_view{URL_SCHEME_WSS} && toScheme != std::string_view{URL_SCHEME_WS})) {
       errStr = "WS or WSS can only be mapped out to WS or WSS.";
       goto MAP_ERROR;
     }
@@ -1370,7 +1372,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // in remap.config, we also needs to convert hostname to its IPv4 addr
     // and gives a new remap rule with the IPv4 addr.
     if ((maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) &&
-        fromScheme == URL_SCHEME_TUNNEL && (fromHost_lower[0] < '0' || fromHost_lower[0] > '9')) {
+        fromScheme == std::string_view{URL_SCHEME_TUNNEL} && (fromHost_lower[0] < '0' || fromHost_lower[0] > '9')) {
       addrinfo      *ai_records; // returned records.
       ip_text_buffer ipb;        // buffer for address string conversion.
       if (0 == getaddrinfo(fromHost_lower, nullptr, nullptr, &ai_records)) {

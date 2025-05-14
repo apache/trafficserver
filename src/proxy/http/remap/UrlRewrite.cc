@@ -984,9 +984,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
   // If the scheme is empty (e.g. because of a CONNECT method), guess it based on port
   // This is equivalent to the logic in UrlMappingPathIndex::_GetTrie().
   if (request_scheme.empty()) {
-    auto request_scheme_cstr{request_port == 80 ? URL_SCHEME_HTTP : URL_SCHEME_HTTPS};
-    request_scheme =
-      std::string_view{request_scheme_cstr, static_cast<std::string_view::size_type>(hdrtoken_wks_to_length(request_scheme_cstr))};
+    request_scheme = std::string_view{80 ? URL_SCHEME_HTTP : URL_SCHEME_HTTPS};
   }
 
   // Loop over the entire linked list, or until we're satisfied

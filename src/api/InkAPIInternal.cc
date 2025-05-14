@@ -540,33 +540,33 @@ api_init()
     init = 0;
 
     /* URL schemes */
-    TS_URL_SCHEME_FILE     = URL_SCHEME_FILE;
-    TS_URL_SCHEME_FTP      = URL_SCHEME_FTP;
-    TS_URL_SCHEME_GOPHER   = URL_SCHEME_GOPHER;
-    TS_URL_SCHEME_HTTP     = URL_SCHEME_HTTP;
-    TS_URL_SCHEME_HTTPS    = URL_SCHEME_HTTPS;
-    TS_URL_SCHEME_MAILTO   = URL_SCHEME_MAILTO;
-    TS_URL_SCHEME_NEWS     = URL_SCHEME_NEWS;
-    TS_URL_SCHEME_NNTP     = URL_SCHEME_NNTP;
-    TS_URL_SCHEME_PROSPERO = URL_SCHEME_PROSPERO;
-    TS_URL_SCHEME_TELNET   = URL_SCHEME_TELNET;
-    TS_URL_SCHEME_WAIS     = URL_SCHEME_WAIS;
-    TS_URL_SCHEME_WS       = URL_SCHEME_WS;
-    TS_URL_SCHEME_WSS      = URL_SCHEME_WSS;
+    TS_URL_SCHEME_FILE     = URL_SCHEME_FILE.c_str();
+    TS_URL_SCHEME_FTP      = URL_SCHEME_FTP.c_str();
+    TS_URL_SCHEME_GOPHER   = URL_SCHEME_GOPHER.c_str();
+    TS_URL_SCHEME_HTTP     = URL_SCHEME_HTTP.c_str();
+    TS_URL_SCHEME_HTTPS    = URL_SCHEME_HTTPS.c_str();
+    TS_URL_SCHEME_MAILTO   = URL_SCHEME_MAILTO.c_str();
+    TS_URL_SCHEME_NEWS     = URL_SCHEME_NEWS.c_str();
+    TS_URL_SCHEME_NNTP     = URL_SCHEME_NNTP.c_str();
+    TS_URL_SCHEME_PROSPERO = URL_SCHEME_PROSPERO.c_str();
+    TS_URL_SCHEME_TELNET   = URL_SCHEME_TELNET.c_str();
+    TS_URL_SCHEME_WAIS     = URL_SCHEME_WAIS.c_str();
+    TS_URL_SCHEME_WS       = URL_SCHEME_WS.c_str();
+    TS_URL_SCHEME_WSS      = URL_SCHEME_WSS.c_str();
 
-    TS_URL_LEN_FILE     = URL_LEN_FILE;
-    TS_URL_LEN_FTP      = URL_LEN_FTP;
-    TS_URL_LEN_GOPHER   = URL_LEN_GOPHER;
-    TS_URL_LEN_HTTP     = URL_LEN_HTTP;
-    TS_URL_LEN_HTTPS    = URL_LEN_HTTPS;
-    TS_URL_LEN_MAILTO   = URL_LEN_MAILTO;
-    TS_URL_LEN_NEWS     = URL_LEN_NEWS;
-    TS_URL_LEN_NNTP     = URL_LEN_NNTP;
-    TS_URL_LEN_PROSPERO = URL_LEN_PROSPERO;
-    TS_URL_LEN_TELNET   = URL_LEN_TELNET;
-    TS_URL_LEN_WAIS     = URL_LEN_WAIS;
-    TS_URL_LEN_WS       = URL_LEN_WS;
-    TS_URL_LEN_WSS      = URL_LEN_WSS;
+    TS_URL_LEN_FILE     = static_cast<int>(URL_SCHEME_FILE.length());
+    TS_URL_LEN_FTP      = static_cast<int>(URL_SCHEME_FTP.length());
+    TS_URL_LEN_GOPHER   = static_cast<int>(URL_SCHEME_GOPHER.length());
+    TS_URL_LEN_HTTP     = static_cast<int>(URL_SCHEME_HTTP.length());
+    TS_URL_LEN_HTTPS    = static_cast<int>(URL_SCHEME_HTTPS.length());
+    TS_URL_LEN_MAILTO   = static_cast<int>(URL_SCHEME_MAILTO.length());
+    TS_URL_LEN_NEWS     = static_cast<int>(URL_SCHEME_NEWS.length());
+    TS_URL_LEN_NNTP     = static_cast<int>(URL_SCHEME_NNTP.length());
+    TS_URL_LEN_PROSPERO = static_cast<int>(URL_SCHEME_PROSPERO.length());
+    TS_URL_LEN_TELNET   = static_cast<int>(URL_SCHEME_TELNET.length());
+    TS_URL_LEN_WAIS     = static_cast<int>(URL_SCHEME_WAIS.length());
+    TS_URL_LEN_WS       = static_cast<int>(URL_SCHEME_WS.length());
+    TS_URL_LEN_WSS      = static_cast<int>(URL_SCHEME_WSS.length());
 
     /* MIME fields */
     TS_MIME_FIELD_ACCEPT                    = MIME_FIELD_ACCEPT.c_str();

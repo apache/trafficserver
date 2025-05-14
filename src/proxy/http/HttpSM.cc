@@ -490,7 +490,7 @@ HttpSM::setup_blind_tunnel_port()
     t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
     t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
     t_state.hdr_info.client_request.url_create(&u);
-    u.scheme_set({URL_SCHEME_TUNNEL, static_cast<std::string_view::size_type>(URL_LEN_TUNNEL)});
+    u.scheme_set(std::string_view{URL_SCHEME_TUNNEL});
     t_state.hdr_info.client_request.url_set(&u);
   }
 
@@ -1375,7 +1375,7 @@ plugins required to work with sni_routing.
       t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
       t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
       t_state.hdr_info.client_request.url_create(&u);
-      u.scheme_set({URL_SCHEME_TUNNEL, static_cast<std::string_view::size_type>(URL_LEN_TUNNEL)});
+      u.scheme_set(std::string_view{URL_SCHEME_TUNNEL});
       t_state.hdr_info.client_request.url_set(&u);
 
       NetVConnection *netvc = _ua.get_txn()->get_netvc();
