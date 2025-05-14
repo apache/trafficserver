@@ -118,8 +118,9 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
 {
   int         method_output_lengths[32];
   const char *methods[] = {
-    HTTP_METHOD_CONNECT, HTTP_METHOD_DELETE, HTTP_METHOD_GET, HTTP_METHOD_HEAD, HTTP_METHOD_OPTIONS,
-    HTTP_METHOD_POST,    HTTP_METHOD_PURGE,  HTTP_METHOD_PUT, HTTP_METHOD_PUSH, HTTP_METHOD_TRACE,
+    HTTP_METHOD_CONNECT.c_str(), HTTP_METHOD_DELETE.c_str(), HTTP_METHOD_GET.c_str(),   HTTP_METHOD_HEAD.c_str(),
+    HTTP_METHOD_OPTIONS.c_str(), HTTP_METHOD_POST.c_str(),   HTTP_METHOD_PURGE.c_str(), HTTP_METHOD_PUT.c_str(),
+    HTTP_METHOD_PUSH.c_str(),    HTTP_METHOD_TRACE.c_str(),
   };
   char  inline_buffer[64];
   char *alloced_buffer, *value_buffer;
@@ -890,8 +891,7 @@ HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr
 {
   auto expect{s->hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
 
-  if (strcasecmp(expect,
-                 std::string_view{HTTP_VALUE_100_CONTINUE, static_cast<std::string_view::size_type>(HTTP_LEN_100_CONTINUE)}) == 0) {
+  if (strcasecmp(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
     outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPECT));
   }
 }
@@ -1259,5 +1259,5 @@ HttpTransactHeaders::add_connection_close(HTTPHdr *header)
     field = header->field_create(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
     header->field_attach(field);
   }
-  header->field_value_set(field, std::string_view{HTTP_VALUE_CLOSE, static_cast<std::string_view::size_type>(HTTP_LEN_CLOSE)});
+  header->field_value_set(field, static_cast<std::string_view>(HTTP_VALUE_CLOSE));
 }

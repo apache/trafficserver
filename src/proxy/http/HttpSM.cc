@@ -488,7 +488,7 @@ HttpSM::setup_blind_tunnel_port()
     URL u;
 
     t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
-    t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
+    t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT.c_str(), static_cast<int>(HTTP_METHOD_CONNECT.length()));
     t_state.hdr_info.client_request.url_create(&u);
     u.scheme_set(std::string_view{URL_SCHEME_TUNNEL});
     t_state.hdr_info.client_request.url_set(&u);
@@ -735,8 +735,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
         (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
          t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT)) {
       auto expect{t_state.hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
-      if (strcasecmp(expect, std::string_view{HTTP_VALUE_100_CONTINUE,
-                                              static_cast<std::string_view::size_type>(HTTP_LEN_100_CONTINUE)}) == 0) {
+      if (strcasecmp(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
         // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
         // immediately, before receive the real response from original server.
         if (t_state.http_config_param->send_100_continue_response) {
@@ -1373,7 +1372,7 @@ plugins required to work with sni_routing.
       URL u;
 
       t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
-      t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
+      t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT.c_str(), static_cast<int>(HTTP_METHOD_CONNECT.length()));
       t_state.hdr_info.client_request.url_create(&u);
       u.scheme_set(std::string_view{URL_SCHEME_TUNNEL});
       t_state.hdr_info.client_request.url_set(&u);
@@ -6630,9 +6629,8 @@ HttpSM::attach_server_session()
           !t_state.hdr_info.server_request.presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
         // Stuff in a TE setting so we treat this as chunked, sort of.
         t_state.server_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
-        t_state.hdr_info.server_request.value_append(
-          static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
-          std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
+        t_state.hdr_info.server_request.value_append(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
+                                                     static_cast<std::string_view>(HTTP_VALUE_CHUNKED), true);
       }
     }
   }

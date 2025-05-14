@@ -35,8 +35,7 @@ HeaderValidator::is_h2_h3_header_valid(const HTTPHdr &hdr, bool is_response, boo
   bool             has_connect_method = false;
   if (method_field) {
     auto method{method_field->value_get()};
-    has_connect_method =
-      method == std::string_view{HTTP_METHOD_CONNECT, static_cast<std::string_view::size_type>(HTTP_LEN_CONNECT)};
+    has_connect_method = method == static_cast<std::string_view>(HTTP_METHOD_CONNECT);
   }
   unsigned int expected_pseudo_header_count = is_response ? 1 : has_connect_method ? 2 : 4;
   unsigned int pseudo_header_count          = 0;

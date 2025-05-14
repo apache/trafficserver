@@ -2456,7 +2456,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
       bool    explicit_zero_length = has_content_header && send_hdr->get_content_length() == 0;
       int64_t content_length       = has_content_header ? send_hdr->get_content_length() : 0L;
       bool is_chunked = is_transfer_encoded && send_hdr->value_get(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) ==
-                                                 std::string_view(HTTP_VALUE_CHUNKED);
+                                                 static_cast<std::string_view>(HTTP_VALUE_CHUNKED);
 
       bool expect_content_stream =
         is_transfer_encoded ||                                                        // transfer encoded content length is unknown
@@ -2536,7 +2536,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
   hdr.create(HTTP_TYPE_REQUEST, HTTP_2_0);
   hdr.url_set(&url);
-  hdr.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+  hdr.method_set(HTTP_METHOD_GET.c_str(), static_cast<int>(HTTP_METHOD_GET.length()));
 
   if (accept_encoding != nullptr) {
     auto       name{accept_encoding->name_get()};

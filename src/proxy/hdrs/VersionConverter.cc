@@ -163,7 +163,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD);
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
     auto method{field->value_get()};
-    if (method == std::string_view{HTTP_METHOD_CONNECT, static_cast<std::string_view::size_type>(HTTP_LEN_CONNECT)}) {
+    if (method == static_cast<std::string_view>(HTTP_METHOD_CONNECT)) {
       is_connect_method = true;
     }
 

@@ -317,7 +317,7 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
     if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
       // Check whether the request uses CONNECT method
       auto method{_receive_header.method_get()};
-      if (method == std::string_view{HTTP_METHOD_CONNECT, static_cast<std::string_view::size_type>(HTTP_LEN_CONNECT)}) {
+      if (method == static_cast<std::string_view>(HTTP_METHOD_CONNECT)) {
         this->_is_tunneling = true;
       }
     }
@@ -842,7 +842,7 @@ Http2Stream::update_write_request(bool call_update)
       MIMEField *field = this->_send_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
       if (field) {
         auto value{field->value_get()};
-        if (value == std::string_view{HTTP_VALUE_CLOSE, static_cast<std::string_view::size_type>(HTTP_LEN_CLOSE)}) {
+        if (value == static_cast<std::string_view>(HTTP_VALUE_CLOSE)) {
           SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
           if (connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
             connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);

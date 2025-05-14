@@ -765,7 +765,7 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
     // Furthermore, if there is a Set-Cookie header, then
     // Cache-Control must be set.
     if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_ALL_BUT_TEXT_EXT &&
-        ((!response->presence(MIME_PRESENCE_SET_COOKIE)) || response->is_cache_control_set(HTTP_VALUE_PUBLIC))) {
+        ((!response->presence(MIME_PRESENCE_SET_COOKIE)) || response->is_cache_control_set(HTTP_VALUE_PUBLIC.c_str()))) {
       return false;
     }
     return true;
@@ -1568,7 +1568,7 @@ HttpTransact::HandleRequest(State *s)
 
       if (expect != nullptr) {
         auto expect_hdr_val{expect->value_get()};
-        if (ptr_len_casecmp(expect_hdr_val.data(), expect_hdr_val.length(), HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0) {
+        if (strcasecmp(expect_hdr_val, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
           // Let's error out this request.
           TxnDbg(dbg_ctl_http_trans, "Client sent a post expect: 100-continue, sending 405.");
           Metrics::Counter::increment(http_rsb.disallowed_post_100_continue);
@@ -2256,7 +2256,7 @@ HttpTransact::HandlePushResponseHdr(State *s)
   // We need to create the request header storing in the cache
   s->hdr_info.server_request.create(HTTP_TYPE_REQUEST);
   s->hdr_info.server_request.copy(&s->hdr_info.client_request);
-  s->hdr_info.server_request.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+  s->hdr_info.server_request.method_set(HTTP_METHOD_GET.c_str(), static_cast<int>(HTTP_METHOD_GET.length()));
   s->hdr_info.server_request.value_set("X-Inktomi-Source"sv, "http PUSH"sv);
 
   dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_response, s->state_machine_id(), "Pushed Response Header");
@@ -2437,7 +2437,7 @@ HttpTransact::issue_revalidate(State *s)
   ink_assert(GET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP) != ' ');
 
   if (s->www_auth_content == CACHE_AUTH_FRESH) {
-    s->hdr_info.server_request.method_set(HTTP_METHOD_HEAD, HTTP_LEN_HEAD);
+    s->hdr_info.server_request.method_set(HTTP_METHOD_HEAD.c_str(), static_cast<int>(HTTP_METHOD_HEAD.length()));
     // The document is fresh in cache and we just want to see if the
     // the client has the right credentials
     // this cache action is just to get us into the hcoofsr function
@@ -2480,7 +2480,8 @@ HttpTransact::issue_revalidate(State *s)
   // that case here.
   bool no_cache_in_request = false;
 
-  if (s->hdr_info.client_request.is_pragma_no_cache_set() || s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
+  if (s->hdr_info.client_request.is_pragma_no_cache_set() ||
+      s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE.c_str())) {
     TxnDbg(dbg_ctl_http_trans, "no-cache header directive in request, folks");
     no_cache_in_request = true;
   }
@@ -3293,7 +3294,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
 
   HTTPHdr *h = &s->hdr_info.client_request;
 
-  if (!h->is_cache_control_set(HTTP_VALUE_ONLY_IF_CACHED)) {
+  if (!h->is_cache_control_set(HTTP_VALUE_ONLY_IF_CACHED.c_str())) {
     // Initialize the server_info structure if we haven't been through DNS
     // Otherwise, the http_version will not be initialized
     if (!s->current.server || !s->current.server->dst_addr.isValid()) {
@@ -4759,7 +4760,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
   s->cache_info.object_store.request_get()->url_set(s_url->valid() ? s_url : s->hdr_info.client_request.url_get());
 
   if (s->cache_info.object_store.request_get()->method_get_wksidx() == HTTP_WKSIDX_HEAD) {
-    s->cache_info.object_store.request_get()->method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+    s->cache_info.object_store.request_get()->method_set(HTTP_METHOD_GET.c_str(), static_cast<int>(HTTP_METHOD_GET.length()));
   }
 
   if (s->api_modifiable_cached_resp) {
@@ -4937,7 +4938,7 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
   }
 
   if (s->api_server_request_body_set) {
-    cache_info->request_get()->method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+    cache_info->request_get()->method_set(HTTP_METHOD_GET.c_str(), static_cast<int>(HTTP_METHOD_GET.length()));
   }
 
   // Set-Cookie should not be put in the cache to prevent
@@ -5379,9 +5380,8 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
           } else {
             // Stuff in a TE setting so we treat this as chunked, sort of.
             s->client_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
-            incoming_hdr->value_append(
-              static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
-              std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
+            incoming_hdr->value_append(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
+                                       static_cast<std::string_view>(HTTP_VALUE_CHUNKED), true);
           }
         }
         if (HTTP_UNDEFINED_CL == s->hdr_info.request_content_length) {
@@ -5411,7 +5411,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 
       while (te_raw) {
         te_val = http_parse_te(te_raw, te_raw_len, &s->arena);
-        if (te_val->encoding == HTTP_VALUE_IDENTITY) {
+        if (te_val->encoding == HTTP_VALUE_IDENTITY.c_str()) {
           if (te_val->qvalue <= 0.0) {
             s->arena.free(te_val, sizeof(HTTPValTE));
             return UNACCEPTABLE_TE_REQUIRED;
@@ -5443,7 +5443,7 @@ HttpTransact::set_client_request_state(State *s, HTTPHdr *incoming_hdr)
 
       while (enc_value) {
         const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
-        if (wks_value == HTTP_VALUE_CHUNKED) {
+        if (wks_value == HTTP_VALUE_CHUNKED.c_str()) {
           s->client_info.transfer_encoding = CHUNKED_ENCODING;
           break;
         }
@@ -5822,7 +5822,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     while (enc_value) {
       const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
 
-      if (wks_value == HTTP_VALUE_CHUNKED && !is_response_body_precluded(status_code, s->method)) {
+      if (wks_value == HTTP_VALUE_CHUNKED.c_str() && !is_response_body_precluded(status_code, s->method)) {
         TxnDbg(dbg_ctl_http_hdrs, "transfer encoding: chunked!");
         s->current.server->transfer_encoding = CHUNKED_ENCODING;
 
@@ -6944,7 +6944,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
          (s->source == SOURCE_TRANSFORM && s->hdr_info.trust_response_cl == false))) {
       s->client_info.receive_chunked_response = true;
       heads->value_append(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
-                          std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
+                          static_cast<std::string_view>(HTTP_VALUE_CHUNKED), true);
     } else {
       s->client_info.receive_chunked_response = false;
     }
@@ -7065,7 +7065,7 @@ HttpTransact::does_client_request_permit_cached_response(const OverridableHttpCo
   ////////////////////////////////////////////////////////////////////////
 
   if (!c->ignore_client_no_cache) {
-    if (h->is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
+    if (h->is_cache_control_set(HTTP_VALUE_NO_CACHE.c_str())) {
       return (false);
     }
     if (h->is_pragma_no_cache_set()) {
@@ -7084,7 +7084,7 @@ HttpTransact::does_client_request_permit_cached_response(const OverridableHttpCo
 bool
 HttpTransact::does_client_request_permit_dns_caching(CacheControlResult *c, HTTPHdr *h)
 {
-  if (h->is_pragma_no_cache_set() && h->is_cache_control_set(HTTP_VALUE_NO_CACHE) && (!c->ignore_client_no_cache)) {
+  if (h->is_pragma_no_cache_set() && h->is_cache_control_set(HTTP_VALUE_NO_CACHE.c_str()) && (!c->ignore_client_no_cache)) {
     return (false);
   }
   return (true);
@@ -7097,7 +7097,7 @@ HttpTransact::does_client_request_permit_storing(CacheControlResult *c, HTTPHdr 
   // If aren't ignoring client's cache directives, meet client's wishes //
   ////////////////////////////////////////////////////////////////////////
   if (!c->ignore_client_no_cache) {
-    if (h->is_cache_control_set(HTTP_VALUE_NO_STORE)) {
+    if (h->is_cache_control_set(HTTP_VALUE_NO_STORE.c_str())) {
       return (false);
     }
   }
@@ -7472,12 +7472,12 @@ HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr
   ///////////////////////////////////////////////////////////////////////
 
   if ((p->cache_ignore_auth == 0) && client_request->presence(MIME_PRESENCE_AUTHORIZATION)) {
-    if (obj_response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE) ||
-        obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) {
+    if (obj_response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE.c_str()) ||
+        obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE.c_str())) {
       return AUTHENTICATION_MUST_REVALIDATE;
-    } else if (obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) {
+    } else if (obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE.c_str())) {
       return AUTHENTICATION_MUST_REVALIDATE;
-    } else if (obj_response->is_cache_control_set(HTTP_VALUE_PUBLIC)) {
+    } else if (obj_response->is_cache_control_set(HTTP_VALUE_PUBLIC.c_str())) {
       return AUTHENTICATION_SUCCESS;
     } else {
       if (obj_response->field_find("@WWW-Auth"sv) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
