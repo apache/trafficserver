@@ -82,7 +82,7 @@ contSetCachekey(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, v
 {
   TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
 
-  setCacheKey(txn, &*globalConfig);
+  setCacheKey(txn, globalConfig.get());
 
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   return 0;
