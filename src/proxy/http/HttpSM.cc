@@ -488,7 +488,7 @@ HttpSM::setup_blind_tunnel_port()
     URL u;
 
     t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
-    t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT.c_str(), static_cast<int>(HTTP_METHOD_CONNECT.length()));
+    t_state.hdr_info.client_request.method_set(static_cast<std::string_view>(HTTP_METHOD_CONNECT));
     t_state.hdr_info.client_request.url_create(&u);
     u.scheme_set(std::string_view{URL_SCHEME_TUNNEL});
     t_state.hdr_info.client_request.url_set(&u);
@@ -1372,7 +1372,7 @@ plugins required to work with sni_routing.
       URL u;
 
       t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
-      t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT.c_str(), static_cast<int>(HTTP_METHOD_CONNECT.length()));
+      t_state.hdr_info.client_request.method_set(static_cast<std::string_view>(HTTP_METHOD_CONNECT));
       t_state.hdr_info.client_request.url_create(&u);
       u.scheme_set(std::string_view{URL_SCHEME_TUNNEL});
       t_state.hdr_info.client_request.url_set(&u);
@@ -8509,7 +8509,8 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
         // Cleanup of state etc.
         url_nuke_proxy_stuff(clientUrl.m_url_impl);
         url_nuke_proxy_stuff(t_state.hdr_info.client_request.m_url_cached.m_url_impl);
-        t_state.hdr_info.client_request.method_set(origMethod, std::min(origMethod_len, static_cast<int>(sizeof(origMethod))));
+        t_state.hdr_info.client_request.method_set(
+          std::string_view{origMethod, std::min(static_cast<std::string_view::size_type>(origMethod_len), sizeof(origMethod))});
         t_state.hdr_info.client_request.m_target_cached = false;
         t_state.hdr_info.server_request.m_target_cached = false;
         clientUrl.scheme_set({scheme_str, static_cast<std::string_view::size_type>(scheme_len)});

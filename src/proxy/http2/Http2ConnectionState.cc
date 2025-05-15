@@ -2536,7 +2536,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
   hdr.create(HTTP_TYPE_REQUEST, HTTP_2_0);
   hdr.url_set(&url);
-  hdr.method_set(HTTP_METHOD_GET.c_str(), static_cast<int>(HTTP_METHOD_GET.length()));
+  hdr.method_set(static_cast<std::string_view>(HTTP_METHOD_GET));
 
   if (accept_encoding != nullptr) {
     auto       name{accept_encoding->name_get()};

@@ -167,7 +167,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
       is_connect_method = true;
     }
 
-    header.method_set(method.data(), method.length());
+    header.method_set(method);
     header.field_delete(field);
   } else {
     return PARSE_RESULT_ERROR;

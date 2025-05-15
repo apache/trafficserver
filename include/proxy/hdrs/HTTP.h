@@ -485,7 +485,7 @@ public:
 
   std::string_view method_get();
   int              method_get_wksidx() const;
-  void             method_set(const char *value, int length);
+  void             method_set(std::string_view value);
 
   URL *url_create(URL *url);
 
@@ -929,13 +929,13 @@ HTTPHdr::method_get_wksidx() const
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::method_set(const char *value, int length)
+HTTPHdr::method_set(std::string_view value)
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
-  int method_wks_idx = hdrtoken_tokenize(value, length);
-  http_hdr_method_set(m_heap, m_http, {value, static_cast<std::string_view::size_type>(length)}, method_wks_idx, true);
+  int method_wks_idx = hdrtoken_tokenize(value.data(), static_cast<int>(value.length()));
+  http_hdr_method_set(m_heap, m_http, value, method_wks_idx, true);
 }
 
 /*-------------------------------------------------------------------------

@@ -310,7 +310,7 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
       if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
         // There's no way to cause Bad Request directly at this time.
         // Set an invalid method so it causes an error later.
-        _receive_header.method_set("\xffVOID", 1);
+        _receive_header.method_set(std::string_view{"\xffVOID", 1});
       }
     }
 

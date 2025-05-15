@@ -2854,7 +2854,7 @@ TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
     length = strlen(value);
   }
 
-  h.method_set(value, length);
+  h.method_set(std::string_view{value, static_cast<std::string_view::size_type>(length)});
   return TS_SUCCESS;
 }
 

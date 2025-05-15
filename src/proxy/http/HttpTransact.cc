@@ -2256,7 +2256,7 @@ HttpTransact::HandlePushResponseHdr(State *s)
   // We need to create the request header storing in the cache
   s->hdr_info.server_request.create(HTTP_TYPE_REQUEST);
   s->hdr_info.server_request.copy(&s->hdr_info.client_request);
-  s->hdr_info.server_request.method_set(HTTP_METHOD_GET.c_str(), static_cast<int>(HTTP_METHOD_GET.length()));
+  s->hdr_info.server_request.method_set(static_cast<std::string_view>(HTTP_METHOD_GET));
   s->hdr_info.server_request.value_set("X-Inktomi-Source"sv, "http PUSH"sv);
 
   dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_response, s->state_machine_id(), "Pushed Response Header");
@@ -2437,7 +2437,7 @@ HttpTransact::issue_revalidate(State *s)
   ink_assert(GET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP) != ' ');
 
   if (s->www_auth_content == CACHE_AUTH_FRESH) {
-    s->hdr_info.server_request.method_set(HTTP_METHOD_HEAD.c_str(), static_cast<int>(HTTP_METHOD_HEAD.length()));
+    s->hdr_info.server_request.method_set(static_cast<std::string_view>(HTTP_METHOD_HEAD));
     // The document is fresh in cache and we just want to see if the
     // the client has the right credentials
     // this cache action is just to get us into the hcoofsr function
@@ -4760,7 +4760,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
   s->cache_info.object_store.request_get()->url_set(s_url->valid() ? s_url : s->hdr_info.client_request.url_get());
 
   if (s->cache_info.object_store.request_get()->method_get_wksidx() == HTTP_WKSIDX_HEAD) {
-    s->cache_info.object_store.request_get()->method_set(HTTP_METHOD_GET.c_str(), static_cast<int>(HTTP_METHOD_GET.length()));
+    s->cache_info.object_store.request_get()->method_set(static_cast<std::string_view>(HTTP_METHOD_GET));
   }
 
   if (s->api_modifiable_cached_resp) {
@@ -4938,7 +4938,7 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
   }
 
   if (s->api_server_request_body_set) {
-    cache_info->request_get()->method_set(HTTP_METHOD_GET.c_str(), static_cast<int>(HTTP_METHOD_GET.length()));
+    cache_info->request_get()->method_set(static_cast<std::string_view>(HTTP_METHOD_GET));
   }
 
   // Set-Cookie should not be put in the cache to prevent
