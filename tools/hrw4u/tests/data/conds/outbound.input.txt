@@ -1,0 +1,5 @@
+SEND_REQUEST {
+    if outbound.url.host ~ /foo|bar/ {
+        outbound.req.X-Valid = "{outbound.url.port}";
+    }
+}

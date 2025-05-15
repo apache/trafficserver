@@ -1,0 +1,5 @@
+REMAP {
+    if inbound.method in ["GET", "HEAD"] {
+      inbound.req.@X-Method = "{inbound.method}";
+    }
+}

@@ -1,0 +1,9 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Foo} ="bar"
+    set-body "This is a response body"
+else
+    set-state-flag 0 true
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+cond %{STATE-FLAG:0}
+    set-body-from "https://example.com/body.txt"

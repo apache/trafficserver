@@ -1,0 +1,4 @@
+READ_RESPONSE {
+    outbound.resp.Set-Cookie = "";
+    outbound.resp.WWW-Authenticate = "";
+}

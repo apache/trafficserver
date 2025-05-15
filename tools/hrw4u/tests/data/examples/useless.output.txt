@@ -1,0 +1,7 @@
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+cond %{CLIENT-URL:PORT} =8090 [AND]
+cond %{METHOD} ="HEAD" [AND]
+cond %{CLIENT-HEADER:Accept-Language} /es-py/ [AND,NOT]
+cond %{STATUS} =304 [OR]
+cond %{RANDOM:500} >200
+    set-status 403

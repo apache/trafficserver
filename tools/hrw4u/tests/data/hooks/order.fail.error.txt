@@ -1,0 +1,3 @@
+tests/data/hooks/order.fail.input.txt:7:0: error: Variable section must be first in a section
+   7 | VARS {
+     | ^
