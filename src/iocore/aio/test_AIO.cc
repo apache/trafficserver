@@ -23,6 +23,7 @@
 
 #include "iocore/aio/AIO.h"
 #include "iocore/eventsystem/EventSystem.h"
+#include "iocore/net/Net.h"
 #include "tscore/ink_atomic.h"
 #include "tscore/ink_hw.h"
 #include "tscore/Layout.h"
@@ -221,11 +222,11 @@ dump_summary()
   printf("IO_URING results\n");
   printf("-----------------\n");
 
-  auto completed = Metrics::Counter::lookup("proxy.process.io_uring.completed", nullptr);
-  auto submitted = Metrics::Counter::lookup("proxy.process.io_uring.submitted", nullptr);
+  auto completed = ts::Metrics::Counter::lookup("proxy.process.io_uring.completed", nullptr);
+  auto submitted = ts::Metrics::Counter::lookup("proxy.process.io_uring.submitted", nullptr);
 
-  printf("submissions: %lu\n", Metrics::Counter::load(submitted));
-  printf("completions: %lu\n", Metrics::Counter::load(completed));
+  printf("submissions: %lu\n", ts::Metrics::Counter::load(submitted));
+  printf("completions: %lu\n", ts::Metrics::Counter::load(completed));
 #endif
 
   if (delete_disks) {

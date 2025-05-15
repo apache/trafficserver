@@ -1750,11 +1750,11 @@ configure_io_uring()
   RecInt aio_io_uring_wq_bounded    = cfg.wq_bounded;
   RecInt aio_io_uring_wq_unbounded  = cfg.wq_unbounded;
 
-  RecGetRecordInteger("proxy.config.io_uring.entries", &aio_io_uring_queue_entries);
-  RecGetRecordInteger("proxy.config.io_uring.sq_poll_ms", &aio_io_uring_sq_poll_ms);
-  RecGetRecordInteger("proxy.config.io_uring.attach_wq", &aio_io_uring_attach_wq);
-  RecGetRecordInteger("proxy.config.io_uring.wq_workers_bounded", &aio_io_uring_wq_bounded);
-  RecGetRecordInteger("proxy.config.io_uring.wq_workers_unbounded", &aio_io_uring_wq_unbounded);
+  aio_io_uring_queue_entries = RecGetRecordInt("proxy.config.io_uring.entries").value_or(0);
+  aio_io_uring_sq_poll_ms    = RecGetRecordInt("proxy.config.io_uring.sq_poll_ms").value_or(0);
+  aio_io_uring_attach_wq     = RecGetRecordInt("proxy.config.io_uring.attach_wq").value_or(0);
+  aio_io_uring_wq_bounded    = RecGetRecordInt("proxy.config.io_uring.wq_workers_bounded").value_or(0);
+  aio_io_uring_wq_unbounded  = RecGetRecordInt("proxy.config.io_uring.wq_workers_unbounded").value_or(0);
 
   cfg.queue_entries = aio_io_uring_queue_entries;
   cfg.sq_poll_ms    = aio_io_uring_sq_poll_ms;

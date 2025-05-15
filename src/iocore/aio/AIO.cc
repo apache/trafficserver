@@ -200,17 +200,17 @@ ink_aio_init(ts::ModuleVersion v, [[maybe_unused]] AIOBackend backend)
   // If the caller specified auto backend, check for config to force a backend
   if (backend == AIOBackend::AIO_BACKEND_AUTO) {
     auto aio_mode{RecGetRecordStringAlloc("proxy.config.aio.mode")};
-    if (aio_mode && !aio_mode.empty()) {
-      if (strcasecmp(aio_mode, "auto") == 0) {
+    if (aio_mode && !aio_mode->empty()) {
+      if (strcasecmp(*aio_mode, "auto") == 0) {
         backend = AIOBackend::AIO_BACKEND_AUTO;
-      } else if (strcasecmp(aio_mode, "thread") == 0) {
+      } else if (strcasecmp(*aio_mode, "thread") == 0) {
         // force thread mode
         backend = AIOBackend::AIO_BACKEND_THREAD;
-      } else if (strcasecmp(aio_mode, "io_uring") == 0) {
+      } else if (strcasecmp(*aio_mode, "io_uring") == 0) {
         // force io_uring mode
         backend = AIOBackend::AIO_BACKEND_IO_URING;
       } else {
-        Warning("Invalid value '%s' for proxy.config.aio.mode.  autodetecting", aio_mode.c_str());
+        Warning("Invalid value '%s' for proxy.config.aio.mode.  autodetecting", aio_mode->c_str());
       }
     }
   }
