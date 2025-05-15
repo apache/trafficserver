@@ -403,8 +403,7 @@ void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 bool http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver);
 
 std::string_view http_hdr_method_get(HTTPHdrImpl *hh);
-void             http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
-                                     bool must_copy);
+void http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view method, int16_t method_wks_idx, bool must_copy);
 
 void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 
@@ -936,7 +935,7 @@ HTTPHdr::method_set(const char *value, int length)
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   int method_wks_idx = hdrtoken_tokenize(value, length);
-  http_hdr_method_set(m_heap, m_http, value, method_wks_idx, length, true);
+  http_hdr_method_set(m_heap, m_http, {value, static_cast<std::string_view::size_type>(length)}, method_wks_idx, true);
 }
 
 /*-------------------------------------------------------------------------

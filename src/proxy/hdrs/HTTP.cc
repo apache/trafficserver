@@ -651,13 +651,12 @@ http_hdr_method_get(HTTPHdrImpl *hh)
   -------------------------------------------------------------------------*/
 
 void
-http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length, bool must_copy)
+http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view method, int16_t method_wks_idx, bool must_copy)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
   hh->u.req.m_method_wks_idx = method_wks_idx;
-  mime_str_u16_set(heap, std::string_view{method, static_cast<std::string_view::size_type>(method_length)},
-                   &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
+  mime_str_u16_set(heap, method, &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
 }
 
 /*-------------------------------------------------------------------------
@@ -927,7 +926,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 
       HTTPVersion version{static_cast<uint8_t>(end[-5] - '0'), static_cast<uint8_t>(end[-3] - '0')};
 
-      http_hdr_method_set(heap, hh, &(cur[0]), HTTP_WKSIDX_GET, 3, must_copy_strings);
+      http_hdr_method_set(heap, hh, {&(cur[0]), 3}, HTTP_WKSIDX_GET, must_copy_strings);
       ink_assert(hh->u.req.m_url_impl != nullptr);
       url       = hh->u.req.m_url_impl;
       url_start = &(cur[4]);
@@ -1074,7 +1073,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     ink_assert(url_end);
 
     int method_wks_idx = hdrtoken_method_tokenize(method_start, static_cast<int>(method_end - method_start));
-    http_hdr_method_set(heap, hh, method_start, method_wks_idx, static_cast<int>(method_end - method_start), must_copy_strings);
+    http_hdr_method_set(heap, hh, {method_start, static_cast<std::string_view::size_type>(method_end - method_start)},
+                        method_wks_idx, must_copy_strings);
 
     ink_assert(hh->u.req.m_url_impl != nullptr);
 
