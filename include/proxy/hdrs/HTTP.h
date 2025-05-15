@@ -410,7 +410,7 @@ void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 // HTTPStatus             http_hdr_status_get (HTTPHdrImpl *hh);
 void             http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
 std::string_view http_hdr_reason_get(HTTPHdrImpl *hh);
-void             http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
+void             http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view value, bool must_copy);
 const char      *http_hdr_reason_lookup(unsigned status);
 
 void        http_parser_init(HTTPParser *parser);
@@ -1076,7 +1076,7 @@ HTTPHdr::reason_set(const char *value, int length)
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  http_hdr_reason_set(m_heap, m_http, value, length, true);
+  http_hdr_reason_set(m_heap, m_http, {value, static_cast<std::string_view::size_type>(length)}, true);
 }
 
 /*-------------------------------------------------------------------------

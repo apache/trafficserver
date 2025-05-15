@@ -710,11 +710,10 @@ http_hdr_reason_get(HTTPHdrImpl *hh)
   -------------------------------------------------------------------------*/
 
 void
-http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy)
+http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view value, bool must_copy)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(hh->u.resp.m_ptr_reason),
-                   &(hh->u.resp.m_len_reason), must_copy);
+  mime_str_u16_set(heap, value, &(hh->u.resp.m_ptr_reason), &(hh->u.resp.m_len_reason), must_copy);
 }
 
 /*-------------------------------------------------------------------------
@@ -1314,7 +1313,8 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
       http_hdr_version_set(hh, version);
       http_hdr_status_set(hh, status);
-      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, {reason_start, static_cast<std::string_view::size_type>(reason_end - reason_start)},
+                          must_copy_strings);
 
       end                    = real_end;
       parser->m_parsing_http = false;
@@ -1431,7 +1431,8 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     }
 
     if (reason_start && reason_end) {
-      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, {reason_start, static_cast<std::string_view::size_type>(reason_end - reason_start)},
+                          must_copy_strings);
     }
 
     end                    = real_end;
