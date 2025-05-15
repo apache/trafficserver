@@ -318,13 +318,61 @@ ConnectionTracker::get_outbound_groups(std::vector<std::shared_ptr<Group const>>
   }
 }
 
+void
+ConnectionTracker::get_inbound_groups(std::vector<std::shared_ptr<Group const>> &groups)
+{
+  std::lock_guard<std::mutex> lock(_inbound_table._mutex); // TABLE LOCK
+  groups.resize(0);
+  groups.reserve(_inbound_table._table.size());
+  for (auto &&[key, group] : _inbound_table._table) {
+    groups.push_back(group);
+  }
+}
+std::string
+ConnectionTracker::inbound_to_json_string()
+{
+  std::string                    text;
+  size_t                         extent = 0;
+  static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [  )"};
+  static const swoc::bwf::Format item_fmt{
+    R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "alert": {}}},
+)"};
+  static const std::string_view trailer{" \n]}"};
+
+  static const auto printer = [](swoc::BufferWriter &w, Group const *g) -> swoc::BufferWriter & {
+    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count.load(), g->_count_max.load(), g->_blocked.load(),
+            g->get_last_alert_epoch_time());
+    return w;
+  };
+
+  swoc::FixedBufferWriter                   null_bw{nullptr}; // Empty buffer for sizing work.
+  std::vector<std::shared_ptr<Group const>> groups;
+
+  self_type::get_inbound_groups(groups);
+
+  null_bw.print(header_fmt, groups.size()).extent();
+  for (auto g : groups) {
+    printer(null_bw, g.get());
+  }
+  extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
+
+  text.resize(extent);
+  swoc::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
+  w.restrict(trailer.size());
+  w.print(header_fmt, groups.size());
+  for (auto g : groups) {
+    printer(w, g.get());
+  }
+  w.restore(trailer.size());
+  w.write(trailer);
+  return text;
+}
 std::string
 ConnectionTracker::outbound_to_json_string()
 {
   std::string                    text;
   size_t                         extent = 0;
-  static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [
-)"};
+  static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [  )"};
   static const swoc::bwf::Format item_fmt{
     R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "alert": {}}},
 )"};
@@ -360,14 +408,43 @@ ConnectionTracker::outbound_to_json_string()
 }
 
 void
-ConnectionTracker::dump(FILE *f)
+ConnectionTracker::dump_outbound(FILE *f)
 {
   std::vector<std::shared_ptr<Group const>> groups;
 
   self_type::get_outbound_groups(groups);
 
   if (groups.size()) {
-    fprintf(f, "\nPeer Connection Tracking\n%7s | %5s | %24s | %33s | %8s |\n", "Current", "Block", "Address", "Hostname Hash",
+    fprintf(f, "\n[O] Peer Connection Tracking\n%7s | %5s | %24s | %33s | %8s |\n", "Current", "Block", "Address", "Hostname Hash",
+            "Match");
+    fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
+
+    for (std::shared_ptr<Group const> g : groups) {
+      swoc::LocalBufferWriter<128> w;
+      w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
+      fwrite(w.data(), w.size(), 1, f);
+    }
+
+    fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
+  }
+}
+
+void
+ConnectionTracker::dump(FILE *f)
+{
+  dump_outbound(f);
+  dump_inbound(f);
+}
+
+void
+ConnectionTracker::dump_inbound(FILE *f)
+{
+  std::vector<std::shared_ptr<Group const>> groups;
+
+  self_type::get_inbound_groups(groups);
+
+  if (groups.size()) {
+    fprintf(f, "\n[I] Peer Connection Tracking\n%7s | %5s | %24s | %33s | %8s |\n", "Current", "Block", "Address", "Hostname Hash",
             "Match");
     fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
 

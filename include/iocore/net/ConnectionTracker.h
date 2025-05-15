@@ -212,6 +212,14 @@ public:
    */
   static TxnState obtain_outbound(TxnConfig const &txn_cnf, std::string_view fqdn, IpEndpoint const &addr);
 
+  /** Get the currently existing inbound groups.
+   * @param [out] groups parameter - pointers to the groups are pushed in to this container.
+   *
+   * The groups are loaded in to @a groups, which is cleared before loading. Note the groups returned will remain valid
+   * although data inside the groups is volatile.
+   */
+  static void get_inbound_groups(std::vector<std::shared_ptr<Group const>> &groups);
+
   /** Get the currently existing outbound groups.
    * @param [out] groups parameter - pointers to the groups are pushed in to this container.
    *
@@ -219,6 +227,12 @@ public:
    * although data inside the groups is volatile.
    */
   static void get_outbound_groups(std::vector<std::shared_ptr<Group const>> &groups);
+
+  /** Write the inbound connection tracking data to JSON.
+   * @return string containing a JSON encoding of the table.
+   */
+  static std::string inbound_to_json_string();
+
   /** Write the outbound connection tracking data to JSON.
    * @return string containing a JSON encoding of the table.
    */
@@ -227,6 +241,15 @@ public:
    * @param f Output file.
    */
   static void dump(FILE *f);
+  /** Write the groups to @a f.
+   * @param f Output file.
+   */
+  static void dump_inbound(FILE *f);
+  /** Write the groups to @a f.
+   * @param f Output file.
+   */
+  static void dump_outbound(FILE *f);
+
   /** Do global initialization.
    *
    * This sets up the global configuration and any configuration update callbacks needed. It is presumed
