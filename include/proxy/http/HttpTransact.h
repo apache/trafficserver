@@ -523,8 +523,6 @@ public:
     HTTPInfo         transform_store;
     CacheDirectives  directives;
     HTTPInfo        *object_read          = nullptr;
-    int              open_read_retries    = 0;
-    int              open_write_retries   = 0;
     CacheWriteLock_t write_lock_state     = CACHE_WL_INIT;
     int              lookup_count         = 0;
     SquidHitMissCode hit_miss_code        = SQUID_MISS_NONE;

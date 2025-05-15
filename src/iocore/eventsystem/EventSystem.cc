@@ -40,23 +40,27 @@ ink_event_system_init(ts::ModuleVersion v)
 
   // For backwards compatibility make sure to allow thread_freelist_size
   // This needs to change in 6.0
-  REC_EstablishStaticConfigInt32(thread_freelist_high_watermark, "proxy.config.allocator.thread_freelist_size");
+  RecEstablishStaticConfigInt32(thread_freelist_high_watermark, "proxy.config.allocator.thread_freelist_size");
 
-  REC_EstablishStaticConfigInt32(thread_freelist_low_watermark, "proxy.config.allocator.thread_freelist_low_watermark");
+  RecEstablishStaticConfigInt32(thread_freelist_low_watermark, "proxy.config.allocator.thread_freelist_low_watermark");
 
-  int   chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
-  char *chunk_sizes_string                = REC_ConfigReadString("proxy.config.allocator.iobuf_chunk_sizes");
-  if (chunk_sizes_string && !parse_buffer_chunk_sizes(chunk_sizes_string, chunk_sizes)) {
-    // If we can't parse the string then we can't be sure of the chunk sizes so just exit
-    Fatal("Failed to parse proxy.config.allocator.iobuf_chunk_sizes");
+  int chunk_sizes[DEFAULT_BUFFER_SIZES] = {0};
+  {
+    auto chunk_sizes_string{RecGetRecordStringAlloc("proxy.config.allocator.iobuf_chunk_sizes")};
+    if (auto chunk_sizes_c_str{ats_as_c_str(chunk_sizes_string)};
+        chunk_sizes_c_str && !parse_buffer_chunk_sizes(chunk_sizes_c_str, chunk_sizes)) {
+      // If we can't parse the string then we can't be sure of the chunk sizes so just exit
+      Fatal("Failed to parse proxy.config.allocator.iobuf_chunk_sizes");
+    }
   }
-  ats_free(chunk_sizes_string);
 
   bool use_hugepages = ats_hugepage_enabled();
 
 #ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
   RecBool dont_dump_enabled = true;
-  RecGetRecordBool("proxy.config.allocator.dontdump_iobuffers", &dont_dump_enabled, false);
+  if (auto tmp{RecGetRecordInt("proxy.config.allocator.dontdump_iobuffers", false)}; tmp) {
+    dont_dump_enabled = tmp.value();
+  }
 
   if (dont_dump_enabled) {
     iobuffer_advice |= MADV_DONTDUMP;

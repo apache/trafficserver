@@ -1278,8 +1278,8 @@ QPACK::_attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *
                       bool /* never_index ATS_UNUSED */)
 {
   // TODO If never_index is true, we need to mark this header as sensitive to not index the header when passing it to the other side
-  MIMEField *new_field = hdr.field_create(name, name_len);
-  new_field->value_set(hdr.m_heap, hdr.m_mime, value, value_len);
+  MIMEField *new_field = hdr.field_create(std::string_view{name, static_cast<std::string_view::size_type>(name_len)});
+  new_field->value_set(hdr.m_heap, hdr.m_mime, std::string_view{value, static_cast<std::string_view::size_type>(value_len)});
   hdr.field_attach(new_field);
 }
 

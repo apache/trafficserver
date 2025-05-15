@@ -41,8 +41,7 @@
 void
 DiagsConfig::reconfigure_diags()
 {
-  int              i, e;
-  char            *p, *dt, *at;
+  int              i;
   DiagsConfigState c;
   bool             found, all_found;
 
@@ -77,21 +76,25 @@ DiagsConfig::reconfigure_diags()
 
   // enabled if records.yaml set
 
-  e = static_cast<int>(REC_readInteger("proxy.config.diags.debug.enabled", &found));
-  if (e && found) {
-    c.enabled(DiagsTagType_Debug, e); // implement OR logic
+  auto e{RecGetRecordInt("proxy.config.diags.debug.enabled")};
+  found = e.has_value();
+  if (found && e.value()) {
+    c.enabled(DiagsTagType_Debug, e.value()); // implement OR logic
   }
   all_found = all_found && found;
 
-  e = static_cast<int>(REC_readInteger("proxy.config.diags.action.enabled", &found));
-  if (e && found) {
+  e     = RecGetRecordInt("proxy.config.diags.action.enabled");
+  found = e.has_value();
+  if (found && e.value()) {
     c.enabled(DiagsTagType_Action, 1); // implement OR logic
   }
   all_found = all_found && found;
 
-  e                     = static_cast<int>(REC_readInteger("proxy.config.diags.show_location", &found));
-  _diags->show_location = ((e == 1 && found) ? SHOW_LOCATION_DEBUG : ((e == 2 && found) ? SHOW_LOCATION_ALL : SHOW_LOCATION_NONE));
-  all_found             = all_found && found;
+  e     = RecGetRecordInt("proxy.config.diags.show_location");
+  found = e.has_value();
+  _diags->show_location =
+    ((found && e.value() == 1) ? SHOW_LOCATION_DEBUG : ((found && e.value() == 2) ? SHOW_LOCATION_ALL : SHOW_LOCATION_NONE));
+  all_found = all_found && found;
 
   // read output routing values
   for (i = 0;; i++) {
@@ -102,23 +105,23 @@ DiagsConfig::reconfigure_diags()
       break;
     }
 
-    p         = REC_readString(record_name, &found);
+    auto rec_str{RecGetRecordStringAlloc(record_name)};
+    found     = rec_str.has_value();
     all_found = all_found && found;
 
     if (found) {
-      parse_output_string(p, &(c.outputs[l]));
-      ats_free(p);
+      parse_output_string(ats_as_c_str(rec_str), &(c.outputs[l]));
     } else {
       Error("can't find config variable '%s'", record_name);
     }
   }
 
-  p         = REC_readString("proxy.config.diags.debug.tags", &found);
-  dt        = (found ? p : nullptr); // NOTE: needs to be freed
+  auto dt{RecGetRecordStringAlloc("proxy.config.diags.debug.tags")};
+  found     = dt.has_value();
   all_found = all_found && found;
 
-  p         = REC_readString("proxy.config.diags.action.tags", &found);
-  at        = (found ? p : nullptr); // NOTE: needs to be freed
+  auto at{RecGetRecordStringAlloc("proxy.config.diags.action.tags")};
+  found     = at.has_value();
   all_found = all_found && found;
 
   ///////////////////////////////////////////////////////////////////
@@ -140,8 +143,8 @@ DiagsConfig::reconfigure_diags()
     // add new tag tables from records.yaml or command line overrides //
     //////////////////////////////////////////////////////////////////////
 
-    _diags->activate_taglist((_diags->base_debug_tags ? _diags->base_debug_tags : dt), DiagsTagType_Debug);
-    _diags->activate_taglist((_diags->base_action_tags ? _diags->base_action_tags : at), DiagsTagType_Action);
+    _diags->activate_taglist((_diags->base_debug_tags ? _diags->base_debug_tags : ats_as_c_str(dt)), DiagsTagType_Debug);
+    _diags->activate_taglist((_diags->base_action_tags ? _diags->base_action_tags : ats_as_c_str(at)), DiagsTagType_Action);
 
     ////////////////////////////////////
     // change the diags config values //
@@ -149,12 +152,6 @@ DiagsConfig::reconfigure_diags()
     _diags->config = c;
     Note("updated diags config");
   }
-
-  ////////////////////////////////////
-  // free the record.config strings //
-  ////////////////////////////////////
-  ats_free(dt);
-  ats_free(at);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -193,7 +190,7 @@ diags_config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type 
 //////////////////////////////////////////////////////////////////////////////
 
 void
-DiagsConfig::parse_output_string(char *s, DiagsModeOutput *o)
+DiagsConfig::parse_output_string(const char *s, DiagsModeOutput *o)
 {
   o->to_stdout   = (s && strchr(s, 'O'));
   o->to_stderr   = (s && strchr(s, 'E'));
@@ -293,25 +290,32 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
 
   // Grab rolling intervals from configuration
   // TODO error check these values
-  int output_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec"));
-  int output_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb"));
-  int output_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled"));
-  int diags_log_roll_int     = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec"));
-  int diags_log_roll_size    = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb"));
-  int diags_log_roll_enable  = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled"));
+  int output_log_roll_int;
+  output_log_roll_int = RecGetRecordInt("proxy.config.output.logfile.rolling_interval_sec").value_or(0);
+  int output_log_roll_size;
+  output_log_roll_size = RecGetRecordInt("proxy.config.output.logfile.rolling_size_mb").value_or(0);
+  int output_log_roll_enable;
+  output_log_roll_enable = RecGetRecordInt("proxy.config.output.logfile.rolling_enabled").value_or(0);
+  int diags_log_roll_int;
+  diags_log_roll_int = RecGetRecordInt("proxy.config.diags.logfile.rolling_interval_sec").value_or(0);
+  int diags_log_roll_size;
+  diags_log_roll_size = RecGetRecordInt("proxy.config.diags.logfile.rolling_size_mb").value_or(0);
+  int diags_log_roll_enable;
+  diags_log_roll_enable = RecGetRecordInt("proxy.config.diags.logfile.rolling_enabled").value_or(0);
 
   // Grab some perms for the actual files on disk
-  char *diags_perm         = REC_ConfigReadString("proxy.config.diags.logfile_perm");
-  char *output_perm        = REC_ConfigReadString("proxy.config.output.logfile_perm");
-  int   diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
-  int   output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
+  {
+    auto diags_perm{RecGetRecordStringAlloc("proxy.config.diags.logfile_perm")};
+    auto output_perm{RecGetRecordStringAlloc("proxy.config.output.logfile_perm")};
+    auto diags_perm_c_str{ats_as_c_str(diags_perm)};
+    auto output_perm_c_str{ats_as_c_str(output_perm)};
+    int  diags_perm_parsed  = diags_perm_c_str ? ink_fileperm_parse(diags_perm_c_str) : -1;
+    int  output_perm_parsed = output_perm_c_str ? ink_fileperm_parse(output_perm_c_str) : -1;
 
-  ats_free(diags_perm);
-  ats_free(output_perm);
-
-  // Set up diags, FILE streams are opened in Diags constructor
-  diags_log = new BaseLogFile(diags_logpath.c_str());
-  _diags    = std::make_unique<Diags>(prefix_string, tags, actions, diags_log, diags_perm_parsed, output_perm_parsed);
+    // Set up diags, FILE streams are opened in Diags constructor
+    diags_log = new BaseLogFile(diags_logpath.c_str());
+    _diags    = std::make_unique<Diags>(prefix_string, tags, actions, diags_log, diags_perm_parsed, output_perm_parsed);
+  }
   DiagsPtr::set(_diags.get());
   _diags->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int, diags_log_roll_size);
   _diags->config_roll_outputlog(static_cast<RollingEnabledValues>(output_log_roll_enable), output_log_roll_int,
@@ -353,7 +357,7 @@ DiagsConfig::register_diags_callbacks()
 
   // set triggers to call same callback for any diag config change
   for (i = 0; config_record_names[i] != nullptr; i++) {
-    status = (REC_RegisterConfigUpdateFunc(config_record_names[i], diags_config_callback, o) == REC_ERR_OKAY);
+    status = (RecRegisterConfigUpdateCb(config_record_names[i], diags_config_callback, o) == REC_ERR_OKAY);
     if (!status) {
       Warning("couldn't register variable '%s', is %s up to date?", config_record_names[i], ts::filename::RECORDS);
     }

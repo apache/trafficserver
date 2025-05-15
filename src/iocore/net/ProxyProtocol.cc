@@ -145,6 +145,7 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
     }
 
     pp_info->ip_family = AF_INET;
+    pp_info->type      = SOCK_STREAM;
   } else if (hdr.starts_with(PPv1_PROTO_TCP6)) {
     token = hdr.split_prefix_at(' ');
     if (0 == token.size()) {
@@ -152,6 +153,7 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
     }
 
     pp_info->ip_family = AF_INET6;
+    pp_info->type      = SOCK_STREAM;
   } else {
     return 0;
   }

@@ -128,9 +128,7 @@ static int
 validate_rww(int new_value)
 {
   if (new_value) {
-    float http_bg_fill;
-
-    REC_ReadConfigFloat(http_bg_fill, "proxy.config.http.background_fill_completed_threshold");
+    auto http_bg_fill{RecGetRecordFloat("proxy.config.http.background_fill_completed_threshold").value_or(0)};
     if (http_bg_fill > 0.0) {
       Note("to enable reading while writing a document, %s should be 0.0: read while writing disabled",
            "proxy.config.http.background_fill_completed_threshold");
@@ -259,7 +257,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */)
   total_nvol            = 0;
   total_good_nvol       = 0;
 
-  REC_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
+  RecEstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
   Dbg(dbg_ctl_cache_init, "Cache::open - proxy.config.cache.min_average_object_size = %d", cache_config_min_average_object_size);
 
   CacheVol *cp = cp_list.head;
@@ -800,64 +798,63 @@ ink_cache_init(ts::ModuleVersion v)
 {
   ink_release_assert(v.check(CACHE_MODULE_VERSION));
 
-  REC_EstablishStaticConfigInteger(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
+  RecEstablishStaticConfigInt(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.ram_cache.size = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_size,
       cache_config_ram_cache_size / (1024 * 1024));
 
-  REC_EstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
-  REC_EstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
-  REC_EstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
-  REC_ReadConfigInt32(cache_config_ram_cache_use_seen_filter, "proxy.config.cache.ram_cache.use_seen_filter");
+  RecEstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
+  RecEstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
+  RecEstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
+  cache_config_ram_cache_use_seen_filter = RecGetRecordInt("proxy.config.cache.ram_cache.use_seen_filter").value_or(0);
 
-  REC_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
+  RecEstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
 
-  REC_EstablishStaticConfigInt32(cache_config_log_alternate_eviction, "proxy.config.cache.log.alternate.eviction");
+  RecEstablishStaticConfigInt32(cache_config_log_alternate_eviction, "proxy.config.cache.log.alternate.eviction");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.log.alternate.eviction = %d", cache_config_log_alternate_eviction);
 
-  REC_EstablishStaticConfigInteger(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
+  RecEstablishStaticConfigInt(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
   Dbg(dbg_ctl_cache_init, "cache_config_ram_cache_cutoff = %" PRId64 " = %" PRId64 "Mb", cache_config_ram_cache_cutoff,
       cache_config_ram_cache_cutoff / (1024 * 1024));
 
-  REC_EstablishStaticConfigInt32(cache_config_permit_pinning, "proxy.config.cache.permit.pinning");
+  RecEstablishStaticConfigInt32(cache_config_permit_pinning, "proxy.config.cache.permit.pinning");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.permit.pinning = %d", cache_config_permit_pinning);
 
-  REC_EstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
+  RecEstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
 
-  REC_EstablishStaticConfigInt32(cache_config_dir_sync_delay, "proxy.config.cache.dir.sync_delay");
+  RecEstablishStaticConfigInt32(cache_config_dir_sync_delay, "proxy.config.cache.dir.sync_delay");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_delay = %d", cache_config_dir_sync_delay);
 
-  REC_EstablishStaticConfigInt32(cache_config_dir_sync_max_write, "proxy.config.cache.dir.sync_max_write");
+  RecEstablishStaticConfigInt32(cache_config_dir_sync_max_write, "proxy.config.cache.dir.sync_max_write");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.dir.sync_max_write = %d", cache_config_dir_sync_max_write);
 
-  REC_EstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
+  RecEstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);
 
-  REC_EstablishStaticConfigInt32(cache_config_max_doc_size, "proxy.config.cache.max_doc_size");
+  RecEstablishStaticConfigInt32(cache_config_max_doc_size, "proxy.config.cache.max_doc_size");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.max_doc_size = %d = %dMb", cache_config_max_doc_size,
       cache_config_max_doc_size / (1024 * 1024));
 
-  REC_EstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
+  RecEstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
 
-  REC_EstablishStaticConfigInt32(cache_config_read_while_writer_max_retries, "proxy.config.cache.read_while_writer.max_retries");
+  RecEstablishStaticConfigInt32(cache_config_read_while_writer_max_retries, "proxy.config.cache.read_while_writer.max_retries");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.read_while_writer.max_retries = %d", cache_config_read_while_writer_max_retries);
 
-  REC_EstablishStaticConfigInt32(cache_read_while_writer_retry_delay, "proxy.config.cache.read_while_writer_retry.delay");
+  RecEstablishStaticConfigInt32(cache_read_while_writer_retry_delay, "proxy.config.cache.read_while_writer_retry.delay");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.read_while_writer_retry.delay = %dms", cache_read_while_writer_retry_delay);
 
-  REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
+  RecEstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
 
-  REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_size_limit, "proxy.config.cache.hit_evacuate_size_limit");
+  RecEstablishStaticConfigInt32(cache_config_hit_evacuate_size_limit, "proxy.config.cache.hit_evacuate_size_limit");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
 
-  REC_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
+  RecEstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
 
-  ink_assert(REC_RegisterConfigUpdateFunc("proxy.config.cache.target_fragment_size", FragmentSizeUpdateCb, nullptr) !=
-             REC_ERR_FAIL);
-  REC_ReadConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
+  ink_assert(RecRegisterConfigUpdateCb("proxy.config.cache.target_fragment_size", FragmentSizeUpdateCb, nullptr) != REC_ERR_FAIL);
+  cache_config_target_fragment_size = RecGetRecordInt("proxy.config.cache.target_fragment_size").value_or(0);
 
   if (cache_config_target_fragment_size == 0) {
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
@@ -866,28 +863,28 @@ ink_cache_init(ts::ModuleVersion v)
     cache_config_target_fragment_size = MAX_FRAG_SIZE + sizeof(Doc);
   }
 
-  REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
+  RecEstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
 
-  REC_EstablishStaticConfigInt32(cache_config_agg_write_backlog, "proxy.config.cache.agg_write_backlog");
+  RecEstablishStaticConfigInt32(cache_config_agg_write_backlog, "proxy.config.cache.agg_write_backlog");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.agg_write_backlog = %d", cache_config_agg_write_backlog);
 
-  REC_EstablishStaticConfigInt32(cache_config_enable_checksum, "proxy.config.cache.enable_checksum");
+  RecEstablishStaticConfigInt32(cache_config_enable_checksum, "proxy.config.cache.enable_checksum");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.enable_checksum = %d", cache_config_enable_checksum);
 
-  REC_EstablishStaticConfigInt32(cache_config_alt_rewrite_max_size, "proxy.config.cache.alt_rewrite_max_size");
+  RecEstablishStaticConfigInt32(cache_config_alt_rewrite_max_size, "proxy.config.cache.alt_rewrite_max_size");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.alt_rewrite_max_size = %d", cache_config_alt_rewrite_max_size);
 
-  REC_EstablishStaticConfigInt32(cache_config_read_while_writer, "proxy.config.cache.enable_read_while_writer");
+  RecEstablishStaticConfigInt32(cache_config_read_while_writer, "proxy.config.cache.enable_read_while_writer");
   cache_config_read_while_writer = validate_rww(cache_config_read_while_writer);
-  REC_RegisterConfigUpdateFunc("proxy.config.cache.enable_read_while_writer", update_cache_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.cache.enable_read_while_writer", update_cache_config, nullptr);
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
 
   register_cache_stats(&cache_rsb, "proxy.process.cache");
 
-  REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
+  cacheProcessor.wait_for_cache = RecGetRecordInt("proxy.config.http.wait_for_cache").value_or(0);
 
-  REC_EstablishStaticConfigInt32(cache_config_persist_bad_disks, "proxy.config.cache.persist_bad_disks");
+  RecEstablishStaticConfigInt32(cache_config_persist_bad_disks, "proxy.config.cache.persist_bad_disks");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.persist_bad_disks = %d", cache_config_persist_bad_disks);
   if (cache_config_persist_bad_disks) {
     std::filesystem::path localstatedir{Layout::get()->localstatedir};

@@ -20,6 +20,7 @@
  */
 
 #include <string>
+#include <string_view>
 #include <cstring>
 #include <cctype>
 #include <bitset>
@@ -28,6 +29,8 @@
 #include <new>
 #include <cstdio>
 #include <memory>
+
+using namespace std::literals;
 
 #include "tsutil/Regex.h"
 #include "tscore/ink_time.h"
@@ -956,41 +959,40 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     // Test the (new) continuation line folding to be correct. This should replace the
     // \r\n with two spaces (so a total of three between "part1" and "part2").
-    int         length       = 0;
-    const char *continuation = hdr.value_get("continuation", 12, &length);
+    auto continuation{hdr.value_get("continuation"sv)};
 
-    if ((13 != length)) {
+    if ((13 != continuation.length())) {
       std::printf("FAILED: continue header folded line was too short\n");
       REQUIRE(false);
     }
 
-    if (strncmp(continuation + 5, "   ", 3)) {
+    if (!continuation.substr(5).starts_with("   "sv)) {
       std::printf("FAILED: continue header unfolding did not produce correct WS's\n");
       REQUIRE(false);
     }
 
-    if (strncmp(continuation, "part1   part2", 13)) {
+    if (continuation != "part1   part2"sv) {
       std::printf("FAILED: continue header unfolding was not correct\n");
       REQUIRE(false);
     }
 
-    hdr.field_delete("not_there", 9);
-    hdr.field_delete("accept", 6);
-    hdr.field_delete("scooby", 6);
-    hdr.field_delete("scooby", 6);
-    hdr.field_delete("bar", 3);
-    hdr.field_delete("continuation", 12);
+    hdr.field_delete("not_there"sv);
+    hdr.field_delete("accept"sv);
+    hdr.field_delete("scooby"sv);
+    hdr.field_delete("scooby"sv);
+    hdr.field_delete("bar"sv);
+    hdr.field_delete("continuation"sv);
 
     int count = hdr.fields_count();
     std::printf("hdr.fields_count() = %d\n", count);
 
-    int i_max_forwards = hdr.value_get_int("Max-Forwards", 12);
-    int u_max_forwards = hdr.value_get_uint("Max-Forwards", 12);
+    int i_max_forwards = hdr.value_get_int("Max-Forwards"sv);
+    int u_max_forwards = hdr.value_get_uint("Max-Forwards"sv);
     std::printf("i_max_forwards = %d   u_max_forwards = %d\n", i_max_forwards, u_max_forwards);
 
     hdr.set_age(9999);
 
-    length = hdr.length_get();
+    auto length{hdr.length_get()};
     std::printf("hdr.length_get() = %d\n", length);
 
     time_t t0, t1, t2;
@@ -1010,12 +1012,12 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       REQUIRE(false);
     }
 
-    hdr.value_append("Cache-Control", 13, "no-cache", 8, true);
+    hdr.value_append("Cache-Control"sv, "no-cache"sv, true);
 
     MIMEField *cc_field;
     StrList    slist;
 
-    cc_field = hdr.field_find("Cache-Control", 13);
+    cc_field = hdr.field_find("Cache-Control"sv);
 
     if (cc_field == nullptr) {
       std::printf("FAILED: missing Cache-Control header\n\n");
@@ -1025,23 +1027,23 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     // TODO: Do we need to check the "count" returned?
     cc_field->value_get_comma_list(&slist); // FIX: correct usage?
 
-    if (cc_field->value_get_index("Private", 7) < 0) {
+    if (cc_field->value_get_index("Private"sv) < 0) {
       std::printf("Failed: value_get_index of Cache-Control did not find private");
       REQUIRE(false);
     }
-    if (cc_field->value_get_index("Bogus", 5) >= 0) {
+    if (cc_field->value_get_index("Bogus"sv) >= 0) {
       std::printf("Failed: value_get_index of Cache-Control incorrectly found bogus");
       REQUIRE(false);
     }
-    if (hdr.value_get_index("foo", 3, "three", 5) < 0) {
+    if (hdr.value_get_index("foo"sv, "three"sv) < 0) {
       std::printf("Failed: value_get_index of foo did not find three");
       REQUIRE(false);
     }
-    if (hdr.value_get_index("foo", 3, "bar", 3) < 0) {
+    if (hdr.value_get_index("foo"sv, "bar"sv) < 0) {
       std::printf("Failed: value_get_index of foo did not find bar");
       REQUIRE(false);
     }
-    if (hdr.value_get_index("foo", 3, "Bogus", 5) >= 0) {
+    if (hdr.value_get_index("foo"sv, "Bogus"sv) >= 0) {
       std::printf("Failed: value_get_index of foo incorrectly found bogus");
       REQUIRE(false);
     }
@@ -1055,7 +1057,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     const char *field_name = "Test_heap_reuse";
 
-    MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+    MIMEField *f = hdr.field_create(field_name);
     REQUIRE(f->m_ptr_value == nullptr);
 
     hdr.field_attach(f);
@@ -1064,9 +1066,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     const char *test_value = "mytest";
 
     std::printf("Testing Heap Reuse..\n");
-    hdr.field_value_set(f, "orig_value", strlen("orig_value"));
+    hdr.field_value_set(f, "orig_value");
     const char *m_ptr_value_orig = f->m_ptr_value;
-    hdr.field_value_set(f, test_value, strlen(test_value), true);
+    hdr.field_value_set(f, test_value, true);
     REQUIRE(f->m_ptr_value != test_value);       // should be copied
     REQUIRE(f->m_ptr_value == m_ptr_value_orig); // heap doesn't change
     REQUIRE(f->m_len_value == strlen(test_value));
@@ -1074,7 +1076,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     m_ptr_value_orig           = f->m_ptr_value;
     const char *new_test_value = "myTest";
-    hdr.field_value_set(f, new_test_value, strlen(new_test_value), false);
+    hdr.field_value_set(f, new_test_value, false);
     REQUIRE(f->m_ptr_value != new_test_value);   // should be copied
     REQUIRE(f->m_ptr_value != m_ptr_value_orig); // new heap
     REQUIRE(f->m_len_value == strlen(new_test_value));
@@ -1656,22 +1658,22 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     for (i = 1; i <= 100; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
       snprintf(field_value, sizeof(field_value), "%d %d %d %d %d", i, i, i, i, i);
-      resp_hdr.value_set(field_name, static_cast<int>(strlen(field_name)), field_value, static_cast<int>(strlen(field_value)));
+      resp_hdr.value_set(std::string_view{field_name}, std::string_view{field_value});
     }
 
     /**** (3) delete all the even numbered fields *****/
     for (i = 2; i <= 100; i += 2) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
-      resp_hdr.field_delete(field_name, static_cast<int>(strlen(field_name)));
+      resp_hdr.field_delete(std::string_view{field_name});
     }
 
     /***** (4) add in secondary fields for all multiples of 3 ***/
     for (i = 3; i <= 100; i += 3) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
-      MIMEField *f = resp_hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+      MIMEField *f = resp_hdr.field_create(field_name);
       resp_hdr.field_attach(f);
       snprintf(field_value, sizeof(field_value), "d %d %d %d %d %d", i, i, i, i, i);
-      f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, field_value, static_cast<int>(strlen(field_value)));
+      f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, std::string_view{field_value});
     }
 
     /***** (5) append all fields with multiples of 5 ***/
@@ -1679,14 +1681,13 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       snprintf(field_name, sizeof(field_name), "Test%d", i);
       snprintf(field_value, sizeof(field_value), "a %d", i);
 
-      resp_hdr.value_append(field_name, static_cast<int>(strlen(field_name)), field_value, static_cast<int>(strlen(field_value)),
-                            true);
+      resp_hdr.value_append(field_name, field_value, true);
     }
 
     /**** (6) delete all multiples of nine *****/
     for (i = 9; i <= 100; i += 9) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
-      resp_hdr.field_delete(field_name, static_cast<int>(strlen(field_name)));
+      resp_hdr.field_delete(std::string_view{field_name});
     }
 
     std::printf("\n======== mutated response ==========\n\n");
@@ -1884,13 +1885,13 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     for (i = 0; i < ntests; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-      MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+      MIMEField *f = hdr.field_create(field_name);
       REQUIRE(f->m_ptr_value == nullptr);
 
       hdr.field_attach(f);
       REQUIRE(f->m_ptr_value == nullptr);
 
-      hdr.field_value_set(f, tests[i].value, strlen(tests[i].value));
+      hdr.field_value_set(f, tests[i].value);
       REQUIRE(f->m_ptr_value != tests[i].value); // should be copied
       REQUIRE(f->m_len_value == strlen(tests[i].value));
       REQUIRE(memcmp(f->m_ptr_value, tests[i].value, f->m_len_value) == 0);
@@ -1976,9 +1977,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     for (i = 0; i < ntests; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-      MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
-      hdr.field_value_set(f, tests[i].old_raw, strlen(tests[i].old_raw));
-      mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, tests[i].slice, strlen(tests[i].slice));
+      MIMEField *f = hdr.field_create(field_name);
+      hdr.field_value_set(f, tests[i].old_raw);
+      mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, std::string_view{tests[i].slice});
       REQUIRE(f->m_ptr_value != nullptr);
 
       if ((f->m_len_value != strlen(tests[i].new_raw)) || (memcmp(f->m_ptr_value, tests[i].new_raw, f->m_len_value) != 0)) {

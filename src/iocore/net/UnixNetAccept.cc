@@ -208,13 +208,13 @@ NetAccept::init_accept_loop()
   if (do_blocking_listen()) {
     return;
   }
-  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+  stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
 
   n = opt.accept_threads;
   // Fill in accept thread from configuration if necessary.
   if (n < 0) {
-    REC_ReadConfigInteger(n, "proxy.config.accept_threads");
+    n = RecGetRecordInt("proxy.config.accept_threads").value_or(0);
   }
 
   for (i = 0; i < n; i++) {
@@ -258,7 +258,7 @@ int
 NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED */)
 {
   int listen_per_thread = 0;
-  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+  listen_per_thread     = RecGetRecordInt("proxy.config.exec_thread.listen").value_or(0);
 
   if (listen_per_thread == 1) {
     if (ats_is_unix(server.accept_addr)) {
@@ -287,7 +287,7 @@ NetAccept::init_accept_per_thread()
   int i, n;
   int listen_per_thread = 0;
 
-  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+  listen_per_thread = RecGetRecordInt("proxy.config.exec_thread.listen").value_or(0);
 
   if (listen_per_thread == 0) {
     if (do_listen()) {
