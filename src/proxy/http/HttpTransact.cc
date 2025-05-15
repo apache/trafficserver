@@ -8887,7 +8887,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
 
   header->status_set(HTTP_STATUS_PARTIAL_CONTENT);
   reason_phrase = const_cast<char *>(http_hdr_reason_lookup(HTTP_STATUS_PARTIAL_CONTENT));
-  header->reason_set(reason_phrase, strlen(reason_phrase));
+  header->reason_set(std::string_view{reason_phrase});
 
   // set the right Content-Type for multiple entry Range
   if (s->num_range_fields > 1) {

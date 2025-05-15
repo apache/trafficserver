@@ -2990,7 +2990,7 @@ TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
   if (length < 0) {
     length = strlen(value);
   }
-  h.reason_set(value, length);
+  h.reason_set(std::string_view{value, static_cast<std::string_view::size_type>(length)});
   return TS_SUCCESS;
 }
 

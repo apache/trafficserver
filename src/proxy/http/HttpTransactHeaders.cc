@@ -203,7 +203,7 @@ HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response, HTTPStatus 
 
   outgoing_response->version_set(HTTPVersion(1, 1));
   outgoing_response->status_set(status);
-  outgoing_response->reason_set(reason_phrase, reason_phrase_len);
+  outgoing_response->reason_set(std::string_view{reason_phrase, static_cast<std::string_view::size_type>(reason_phrase_len)});
   outgoing_response->set_date(date);
 }
 
@@ -357,7 +357,7 @@ HttpTransactHeaders::convert_to_1_0_response_header(HTTPHdr *outgoing_response, 
   // Set reason phrase if passed in.
   if (reason_phrase != nullptr) {
     Dbg(dbg_ctl_http_transact_headers, "Setting HTTP/1.0 reason phrase to '%s'", reason_phrase);
-    outgoing_response->reason_set(reason_phrase, strlen(reason_phrase));
+    outgoing_response->reason_set(std::string_view{reason_phrase});
   }
 
   // Keep-Alive?
@@ -379,7 +379,7 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response, 
   // Set reason phrase if passed in.
   if (reason_phrase != nullptr) {
     Dbg(dbg_ctl_http_transact_headers, "Setting HTTP/1.1 reason phrase to '%s'", reason_phrase);
-    outgoing_response->reason_set(reason_phrase, strlen(reason_phrase));
+    outgoing_response->reason_set(std::string_view{reason_phrase});
   }
 }
 

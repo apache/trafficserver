@@ -591,7 +591,7 @@ public:
   void       status_set(HTTPStatus status);
 
   std::string_view reason_get();
-  void             reason_set(const char *value, int length);
+  void             reason_set(std::string_view value);
 
   void mark_early_data(bool flag = true) const;
   bool is_early_data() const;
@@ -1071,12 +1071,12 @@ HTTPHdr::reason_get()
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::reason_set(const char *value, int length)
+HTTPHdr::reason_set(std::string_view value)
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  http_hdr_reason_set(m_heap, m_http, {value, static_cast<std::string_view::size_type>(length)}, true);
+  http_hdr_reason_set(m_heap, m_http, value, true);
 }
 
 /*-------------------------------------------------------------------------
