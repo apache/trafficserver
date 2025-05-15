@@ -565,7 +565,7 @@ public:
   */
   std::string_view scheme_get();
   void             url_set(URL *url);
-  void             url_set(const char *str, int length);
+  void             url_set(std::string_view value);
 
   /// Check location of target host.
   /// @return @c true if the host was in the URL, @c false otherwise.
@@ -1005,7 +1005,7 @@ HTTPHdr::url_set(URL *url)
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::url_set(const char *str, int length)
+HTTPHdr::url_set(std::string_view value)
 {
   URLImpl *url_impl;
 
@@ -1014,7 +1014,8 @@ HTTPHdr::url_set(const char *str, int length)
 
   url_impl = m_http->u.req.m_url_impl;
   ::url_clear(url_impl);
-  ::url_parse(m_heap, url_impl, &str, str + length, true);
+  const char *str{value.data()};
+  ::url_parse(m_heap, url_impl, &str, str + value.length(), true);
 }
 
 /*-------------------------------------------------------------------------
