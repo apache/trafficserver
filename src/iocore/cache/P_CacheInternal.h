@@ -492,7 +492,9 @@ Cache::generate_key(CryptoHash *hash, CacheURL *url)
 inline void
 Cache::generate_key(HttpCacheKey *key, CacheURL *url, bool ignore_query, cache_generation_t generation)
 {
-  key->hostname = url->host_get(&key->hostlen);
+  auto host{url->host_get()};
+  key->hostname = host.data();
+  key->hostlen  = static_cast<int>(host.length());
   url->hash_get(&key->hash, ignore_query, generation);
 }
 

@@ -72,23 +72,23 @@ HttpDebugNames::get_server_state_name(HttpTransact::ServerState_t state)
 const char *
 HttpDebugNames::get_method_name(const char *method)
 {
-  if (method == HTTP_METHOD_CONNECT) {
+  if (method == HTTP_METHOD_CONNECT.c_str()) {
     return ("HTTP_METHOD_CONNECT");
-  } else if (method == HTTP_METHOD_DELETE) {
+  } else if (method == HTTP_METHOD_DELETE.c_str()) {
     return ("HTTP_METHOD_DELETE");
-  } else if (method == HTTP_METHOD_GET) {
+  } else if (method == HTTP_METHOD_GET.c_str()) {
     return ("HTTP_METHOD_GET");
-  } else if (method == HTTP_METHOD_HEAD) {
+  } else if (method == HTTP_METHOD_HEAD.c_str()) {
     return ("HTTP_METHOD_HEAD");
-  } else if (method == HTTP_METHOD_OPTIONS) {
+  } else if (method == HTTP_METHOD_OPTIONS.c_str()) {
     return ("HTTP_METHOD_OPTIONS");
-  } else if (method == HTTP_METHOD_POST) {
+  } else if (method == HTTP_METHOD_POST.c_str()) {
     return ("HTTP_METHOD_POST");
-  } else if (method == HTTP_METHOD_PURGE) {
+  } else if (method == HTTP_METHOD_PURGE.c_str()) {
     return ("HTTP_METHOD_PURGE");
-  } else if (method == HTTP_METHOD_PUT) {
+  } else if (method == HTTP_METHOD_PUT.c_str()) {
     return ("HTTP_METHOD_PUT");
-  } else if (method == HTTP_METHOD_TRACE) {
+  } else if (method == HTTP_METHOD_TRACE.c_str()) {
     return ("HTTP_METHOD_TRACE");
   } else {
     return ("HTTP_METHOD_UNKNOWN");
