@@ -20,6 +20,7 @@ Test.Summary = '''
 Test a basic remap of a http connection
 '''
 
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
