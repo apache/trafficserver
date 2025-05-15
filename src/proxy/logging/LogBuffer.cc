@@ -391,7 +391,7 @@ LogBuffer::_add_buffer_header(const LogConfig *cfg)
   //
   // initialize the header
   //
-  LogFormat *fmt                 = m_owner->m_format;
+  LogFormat *fmt                 = m_owner->m_format.get();
   m_header                       = reinterpret_cast<LogBufferHeader *>(m_buffer);
   m_header->cookie               = LOG_SEGMENT_COOKIE;
   m_header->version              = LOG_SEGMENT_VERSION;

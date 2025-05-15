@@ -58,7 +58,7 @@ handleTransactionPluginEvents(TSCont cont, TSEvent event, void *edata)
 
 TransactionPlugin::TransactionPlugin(Transaction &transaction)
 {
-  state_        = new TransactionPluginState(static_cast<TSHttpTxn>(transaction.getAtsHandle()));
+  state_        = std::make_unique<TransactionPluginState>(static_cast<TSHttpTxn>(transaction.getAtsHandle()));
   TSMutex mutex = nullptr;
   state_->cont_ = TSContCreate(handleTransactionPluginEvents, mutex);
   TSContDataSet(state_->cont_, static_cast<void *>(this));
@@ -87,7 +87,6 @@ TransactionPlugin::~TransactionPlugin()
 {
   LOG_DEBUG("Destroying TransactionPlugin=%p", this);
   TSContDestroy(state_->cont_);
-  delete state_;
 }
 
 void

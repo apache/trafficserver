@@ -72,16 +72,15 @@ handleGlobalPluginEvents(TSCont cont, TSEvent event, void *edata)
 GlobalPlugin::GlobalPlugin(bool ignore_internal_transactions)
 {
   utils::internal::initTransactionManagement();
-  state_        = new GlobalPluginState(this, ignore_internal_transactions);
+  state_        = std::make_unique<GlobalPluginState>(this, ignore_internal_transactions);
   TSMutex mutex = nullptr;
   state_->cont_ = TSContCreate(handleGlobalPluginEvents, mutex);
-  TSContDataSet(state_->cont_, static_cast<void *>(state_));
+  TSContDataSet(state_->cont_, static_cast<void *>(state_.get()));
 }
 
 GlobalPlugin::~GlobalPlugin()
 {
   TSContDestroy(state_->cont_);
-  delete state_;
 }
 
 void

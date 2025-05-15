@@ -394,12 +394,7 @@ Pattern::compile()
 /**
  * @brief Destructor, deletes all patterns.
  */
-MultiPattern::~MultiPattern()
-{
-  for (auto &p : this->_list) {
-    delete p;
-  }
-}
+MultiPattern::~MultiPattern() {}
 
 /**
  * @brief Check if empty.
@@ -418,9 +413,9 @@ MultiPattern::empty() const
  * @param pattern pattern pointer
  */
 void
-MultiPattern::add(Pattern *pattern)
+MultiPattern::add(std::unique_ptr<Pattern> pattern)
 {
-  this->_list.push_back(pattern);
+  this->_list.push_back(std::move(pattern));
 }
 
 /**
@@ -431,7 +426,7 @@ MultiPattern::add(Pattern *pattern)
 bool
 MultiPattern::match(const String &subject) const
 {
-  for (auto p : this->_list) {
+  for (auto &p : this->_list) {
     if (nullptr != p && p->match(subject)) {
       return true;
     }
@@ -448,7 +443,7 @@ MultiPattern::match(const String &subject) const
 bool
 MultiPattern::replace(const String &subject, String &result) const
 {
-  for (auto p : this->_list) {
+  for (auto &p : this->_list) {
     if (nullptr != p && p->replace(subject, result)) {
       return true;
     }

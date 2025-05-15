@@ -102,12 +102,7 @@ public:
   self_type &operator=(const self_type &) = delete;
   self_type &operator=(self_type &&)      = delete;
 
-  ~SieveLru()
-  {
-    for (auto &bucket : _buckets) {
-      delete bucket;
-    }
-  }
+  ~SieveLru() {}
 
   bool parseYaml(const YAML::Node &node);
 
@@ -243,11 +238,11 @@ protected:
   int32_t move_bucket(KeyClass key, uint32_t to_bucket);
 
 private:
-  HashMap                    _map;
-  std::vector<SieveBucket *> _buckets;
-  std::string                _name;
-  bool                       _initialized = false; // If this has been properly initialized yet
-  TSMutex                    _lock;                // The lock around all data access
+  HashMap                                   _map;
+  std::vector<std::unique_ptr<SieveBucket>> _buckets;
+  std::string                               _name;
+  bool                                      _initialized = false; // If this has been properly initialized yet
+  TSMutex                                   _lock;                // The lock around all data access
   // Standard options
   uint32_t             _num_buckets = 10;                           // Leave this at 10 ...
   uint32_t             _size        = 0;                            // Set this up to initialize

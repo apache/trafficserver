@@ -270,6 +270,6 @@ dispatch(Requests &r, const int t)
       Dbg(dbg_ctl, "%s", b.c_str());
     }
     // forwarding iterator->io pointer ownership
-    ats::get(iterator->io.release(), iterator->length, Handler(iterator->host), t);
+    ats::get(std::move(iterator->io), iterator->length, Handler(iterator->host), t);
   }
 }

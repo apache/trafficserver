@@ -116,7 +116,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
 
   // Read meta info if needed (if file was not opened)
   if (!m_meta_info) {
-    m_meta_info = new BaseMetaInfo(m_name.get());
+    m_meta_info = std::make_unique<BaseMetaInfo>(m_name.get());
   }
 
   // Create the new file name, which consists of a timestamp and rolled
@@ -297,15 +297,15 @@ BaseLogFile::open_file(int perm)
       // This object must be fresh since it has not built its MetaInfo
       // so we create a new MetaInfo object that will read right away
       // (in the constructor) the corresponding metafile
-      m_meta_info = new BaseMetaInfo(m_name.get());
+      m_meta_info = std::make_unique<BaseMetaInfo>(m_name.get());
     }
   } else {
     // The log file does not exist, so we create a new MetaInfo object
     //  which will save itself to disk right away (in the constructor)
     if (m_has_signature) {
-      m_meta_info = new BaseMetaInfo(m_name.get(), static_cast<long>(time(nullptr)), m_signature);
+      m_meta_info = std::make_unique<BaseMetaInfo>(m_name.get(), static_cast<long>(time(nullptr)), m_signature);
     } else {
-      m_meta_info = new BaseMetaInfo(m_name.get(), static_cast<long>(time(nullptr)));
+      m_meta_info = std::make_unique<BaseMetaInfo>(m_name.get(), static_cast<long>(time(nullptr)));
     }
   }
 
@@ -363,8 +363,7 @@ BaseLogFile::close_file()
     ret       = fclose(m_fp);
     m_fp      = nullptr;
     m_is_init = false;
-    delete m_meta_info;
-    m_meta_info = nullptr;
+    m_meta_info.reset();
   }
   return ret;
 }

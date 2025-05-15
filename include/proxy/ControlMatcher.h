@@ -266,12 +266,12 @@ public:
   HostLookup *
   getHLookup()
   {
-    return host_lookup;
+    return host_lookup.get();
   }
 
 private:
-  static void PrintFunc(void *opaque_data);
-  HostLookup *host_lookup = nullptr; // Data structure to do the lookups
+  static void                 PrintFunc(void *opaque_data);
+  std::unique_ptr<HostLookup> host_lookup = nullptr; // Data structure to do the lookups
 };
 
 template <class Data, class MatchResult> class IpMatcher : protected BaseMatcher<Data>
@@ -329,27 +329,27 @@ public:
   HostMatcher<Data, MatchResult> *
   getHostMatcher()
   {
-    return hostMatch;
+    return hostMatch.get();
   }
 
   RegexMatcher<Data, MatchResult> *
   getReMatcher()
   {
-    return reMatch;
+    return reMatch.get();
   }
 
   IpMatcher<Data, MatchResult> *
   getIPMatcher()
   {
-    return ipMatch;
+    return ipMatch.get();
   }
 
   // private
-  RegexMatcher<Data, MatchResult>     *reMatch;
-  UrlMatcher<Data, MatchResult>       *urlMatch;
-  HostMatcher<Data, MatchResult>      *hostMatch;
-  IpMatcher<Data, MatchResult>        *ipMatch;
-  HostRegexMatcher<Data, MatchResult> *hrMatch;
+  std::unique_ptr<RegexMatcher<Data, MatchResult>>     reMatch;
+  std::unique_ptr<UrlMatcher<Data, MatchResult>>       urlMatch;
+  std::unique_ptr<HostMatcher<Data, MatchResult>>      hostMatch;
+  std::unique_ptr<IpMatcher<Data, MatchResult>>        ipMatch;
+  std::unique_ptr<HostRegexMatcher<Data, MatchResult>> hrMatch;
 
   const matcher_tags *config_tags = nullptr;
   char                config_file_path[PATH_NAME_MAX];

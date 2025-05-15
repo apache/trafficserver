@@ -39,18 +39,18 @@ namespace ct
 {
 class CacheScan
 {
-  StripeSM    *stripe    = nullptr;
-  url_matcher *u_matcher = nullptr;
+  StripeSM                    *stripe    = nullptr;
+  std::unique_ptr<url_matcher> u_matcher = nullptr;
 
 public:
   CacheScan(StripeSM *str, swoc::file::path const &path) : stripe(str)
   {
     if (!path.empty()) {
-      u_matcher = new url_matcher(path);
+      u_matcher = std::make_unique<url_matcher>(path);
     }
   };
   CacheScan(StripeSM *str) : stripe(str) {}
-  ~CacheScan() { delete u_matcher; }
+  ~CacheScan() {}
   Errata Scan(bool search = false);
   Errata get_alternates(const char *buf, int length, bool search);
   int    unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref);

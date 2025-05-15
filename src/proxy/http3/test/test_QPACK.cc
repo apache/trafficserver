@@ -212,10 +212,10 @@ output_encoded_data(FILE *fd, uint64_t stream_id, IOBufferReader *header_block_r
 }
 
 void
-output_decoded_headers(FILE *fd, HTTPHdr **headers, uint64_t n)
+output_decoded_headers(FILE *fd, std::vector<std::unique_ptr<HTTPHdr>> &headers, uint64_t n)
 {
   for (uint64_t i = 0; i < n; ++i) {
-    HTTPHdr *header_set = headers[i];
+    HTTPHdr *header_set = headers[i].get();
     if (!header_set) {
       continue;
     }
@@ -361,16 +361,16 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs)
   uint32_t block_len;
   int      read_len = 0;
 
-  uint64_t stream_id                 = 1;
-  HTTPHdr *header_sets[MAX_SEQUENCE] = {nullptr};
-  int      n_headers                 = 0;
+  uint64_t                              stream_id = 1;
+  std::vector<std::unique_ptr<HTTPHdr>> header_sets(MAX_SEQUENCE);
+  int                                   n_headers = 0;
   while ((read_len = read_block(fd_in, stream_id, &block, block_len)) >= 0) {
     if (stream_id == encoder_stream->id()) {
       encoder_stream->write(block, block_len, offset, false);
       offset += block_len;
     } else {
       if (!header_sets[stream_id - 1]) {
-        header_sets[stream_id - 1] = new HTTPHdr();
+        header_sets[stream_id - 1] = std::make_unique<HTTPHdr>();
         header_sets[stream_id - 1]->create(HTTP_TYPE_REQUEST);
         ++n_headers;
       }
@@ -390,10 +390,9 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs)
 
   output_decoded_headers(fd_out, header_sets, n_headers);
 
-  for (unsigned int i = 0; i < countof(header_sets); ++i) {
+  for (unsigned int i = 0; i < header_sets.size(); ++i) {
     if (header_sets[i]) {
       header_sets[i]->destroy();
-      delete header_sets[i];
     }
   }
   fflush(fd_in);
