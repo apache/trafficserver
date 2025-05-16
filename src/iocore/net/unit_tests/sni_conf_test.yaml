@@ -46,3 +46,8 @@ sni:
 # test with mixed-case glob
 - fqdn: "*.MiXeDcAsE.com"
   http2: false
+
+# test glob in the middle
+# TODO - according to the docs this should be supported
+# but it is not working in the current implementation
+- fqdn: "cat.*.com"

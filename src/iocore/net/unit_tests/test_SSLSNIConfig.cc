@@ -140,6 +140,33 @@ TEST_CASE("Test SSLSNIConfig")
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 3);
   }
+
+  SECTION("Test empty SNI does not match")
+  {
+    auto const &actions{params.get("", 443)};
+    CHECK(!actions.first);
+  }
+
+  SECTION("Test SNI with special characters does not match")
+  {
+    auto const &actions{params.get("some$port.com", 443)};
+    CHECK(!actions.first);
+  }
+
+  // TODO - this is a bug in the regex, and it should match
+  SECTION("Test with invalid glob in the middle in yaml config (e.g. cat.*.com)")
+  {
+    auto const &actions{params.get("cat.dog.com", 443)};
+    REQUIRE(!actions.first);
+  }
+
+  // TODO - this is a bug in the regex, it should not match
+  SECTION("Test with invalid glob in the middle in yaml config (e.g. cat.*.com) matches")
+  {
+    auto const &actions{params.get("cat.*.com", 443)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 2);
+  }
 }
 
 TEST_CASE("SNIConfig reconfigure callback is invoked")
