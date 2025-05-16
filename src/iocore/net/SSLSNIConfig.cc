@@ -77,6 +77,7 @@ NamedElement::operator=(NamedElement &&other)
   if (this != &other) {
     match               = std::move(other.match);
     inbound_port_ranges = std::move(other.inbound_port_ranges);
+    rank                = other.rank;
   }
   return *this;
 }

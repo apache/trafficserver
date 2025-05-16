@@ -36,3 +36,13 @@ sni:
   http2_buffer_water_mark: 256
 - fqdn: foo.bar.com
   http2: false
+
+# test with mixed-case
+- fqdn: "MiXeDcAsE.foo.com"
+  http2: true
+  http2_buffer_water_mark: 256
+  inbound_port_ranges: 31337
+
+# # test with mixed-case glob
+- fqdn: "*.MiXeDcAsE.com"
+  http2: false
