@@ -47,7 +47,5 @@ sni:
 - fqdn: "*.MiXeDcAsE.com"
   http2: false
 
-# test glob in the middle
-# TODO - according to the docs this should be supported
-# but it is not working in the current implementation
+# test glob in the middle, this will be an exact match
 - fqdn: "cat.*.com"

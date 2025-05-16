@@ -153,15 +153,13 @@ TEST_CASE("Test SSLSNIConfig")
     CHECK(!actions.first);
   }
 
-  // TODO - this is a bug in the regex, and it should match
-  SECTION("Test with invalid glob in the middle in yaml config (e.g. cat.*.com)")
+  SECTION("Test with invalid glob in the middle in yaml config (e.g. cat.*.com) does not match")
   {
     auto const &actions{params.get("cat.dog.com", 443)};
     REQUIRE(!actions.first);
   }
 
-  // TODO - this is a bug in the regex, it should not match
-  SECTION("Test with invalid glob in the middle in yaml config (e.g. cat.*.com) matches")
+  SECTION("Test with invalid glob in the middle in yaml config (e.g. cat.*.com) does an exact match")
   {
     auto const &actions{params.get("cat.*.com", 443)};
     REQUIRE(actions.first);
