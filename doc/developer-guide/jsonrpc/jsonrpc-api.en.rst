@@ -469,6 +469,8 @@ JSONRPC API
 
 * `filemanager.get_files_registry`_
 
+* `get_connection_tracker_info`_
+
 .. _jsonapi-management-records:
 
 
@@ -1666,6 +1668,88 @@ Response:
          ]
       }
    }
+
+.. _get_connection_tracker_info:
+
+get_connection_tracker_info
+----------------------------
+
+|method|
+
+Description
+~~~~~~~~~~~
+
+Get inbound and outbound connection tracking data from |TS|.
+
+Parameters
+~~~~~~~~~~
+
+======================= ============= ==================================================================================
+Field                   Type          Description
+======================= ============= ==================================================================================
+``table``               |str|         Specifies which group table to query, ``inbound`` or ``outbound``.  If value is
+                                      ``both`` then both tables will be added to the response. The default is ``outbound``.
+======================= ============= ==================================================================================
+
+You can query this api using `invoke` functionality from :ref:`traffic_ctl_rpc`.
+
+   .. code-block:: bash
+      :linenos:
+
+      $ traffic_ctl rpc invoke get_connection_tracker_info -p 'table: both'  -f json
+
+
+.. note::
+
+   JSON output can be formatted by any tool like `jq`.
+
+Result
+~~~~~~
+
+The response will contain inbound/outbound info or an error. :ref:`jsonrpc-node-errors`.
+
+Response examples
+~~~~~~~~~~~~~~~~~
+
+   .. code-block:: json
+      :linenos:
+
+      {
+         "id":"f4477ac4-0d44-11eb-958d-001fc69cc946",
+         "jsonrpc":"2.0",
+         "result":{
+            "outbound":{
+               "count":"1",
+               "list":[
+                  {
+                     "type":"both",
+                     "ip":"127.0.0.1:80",
+                     "fqdn":"127.0.0.1",
+                     "current":"8",
+                     "max":"8",
+                     "blocked":"0",
+                     "alert":"0"
+                  }
+               ]
+            },
+            "inbound":{
+               "count":"1",
+               "list":[
+                  {
+                     "type":"ip",
+                     "ip":"127.0.0.1:34226",
+                     "fqdn":"",
+                     "current":"2",
+                     "max":"0",
+                     "blocked":"0",
+                     "alert":"0"
+                  }
+               ]
+            }
+         }
+      }
+
+
 
 See also
 ========

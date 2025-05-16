@@ -43,3 +43,19 @@ traffic_ctl.server().drain().exec()
 traffic_ctl.server().status().validate_with_text(
     '{"initialized_done": "true", "is_ssl_handshaking_stopped": "false", "is_draining": "true", "is_event_system_shut_down": "false"}'
 )
+
+# Get basic and empty connection tracker info.
+traffic_ctl.rpc().invoke(
+    handler="get_connection_tracker_info", params='"table: both"').validate_result_with_text(
+        '{"outbound": {"count": "0", "list": []}, "inbound": {"count": "0", "list": []}}')
+# default = outbound only
+traffic_ctl.rpc().invoke(
+    handler="get_connection_tracker_info").validate_result_with_text('{"outbound": {"count": "0", "list": []}}')
+# requets inbound oonly
+traffic_ctl.rpc().invoke(
+    handler="get_connection_tracker_info",
+    params='"table: inbound"').validate_result_with_text('{"inbound": {"count": "0", "list": []}}')
+# requets outbound only
+traffic_ctl.rpc().invoke(
+    handler="get_connection_tracker_info",
+    params='"table: outbound"').validate_result_with_text('{"outbound": {"count": "0", "list": []}}')
