@@ -43,6 +43,6 @@ sni:
   http2_buffer_water_mark: 256
   inbound_port_ranges: 31337
 
-# # test with mixed-case glob
+# test with mixed-case glob
 - fqdn: "*.MiXeDcAsE.com"
   http2: false
