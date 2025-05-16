@@ -55,7 +55,7 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
     FAIL(errorstream.str());
   }
   REQUIRE(zret.is_ok());
-  REQUIRE(conf.items.size() == 7);
+  REQUIRE(conf.items.size() == 10);
 
   SECTION("If no ports were specified, port range should contain all ports.")
   {
