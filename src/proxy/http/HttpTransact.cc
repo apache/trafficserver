@@ -2046,7 +2046,7 @@ HttpTransact::OSDNSLookup(State *s)
     } else {
       if ((s->cache_info.action == CacheAction_t::NO_ACTION) &&
           (((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
-            s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED))) {
+            s->range_setup == RangeSetup_t::NOT_SATISFIABLE || s->range_setup == RangeSetup_t::NOT_HANDLED))) {
         TRANSACT_RETURN(StateMachineAction_t::API_OS_DNS, HandleCacheOpenReadMiss);
       } else if (!s->txn_conf->cache_http || s->cache_lookup_result == HttpTransact::CacheLookupResult_t::SKIPPED) {
         TRANSACT_RETURN(StateMachineAction_t::API_OS_DNS, LookupSkipOpenServer);
@@ -2510,7 +2510,7 @@ HttpTransact::issue_revalidate(State *s)
     if (c_resp->get_last_modified() > 0 &&
         (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
          s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD) &&
-        s->range_setup == RANGE_NONE) {
+        s->range_setup == RangeSetup_t::NONE) {
       // make this a conditional request
       if (auto str{c_resp->value_get(static_cast<std::string_view>(MIME_FIELD_LAST_MODIFIED))}; !str.empty()) {
         s->hdr_info.server_request.value_set(static_cast<std::string_view>(MIME_FIELD_IF_MODIFIED_SINCE), str);
@@ -3054,12 +3054,12 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE) &&
           HttpTransactCache::validate_ifrange_header_if_any(client_request, cached_response)) {
         s->state_machine->do_range_setup_if_necessary();
-        if (s->range_setup == RANGE_NOT_SATISFIABLE) {
+        if (s->range_setup == RangeSetup_t::NOT_SATISFIABLE) {
           build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable", "default");
           s->cache_info.action = CacheAction_t::NO_ACTION;
           s->next_action       = StateMachineAction_t::INTERNAL_CACHE_NOOP;
           break;
-        } else if ((s->range_setup == RANGE_NOT_HANDLED) || !s->range_in_cache) {
+        } else if ((s->range_setup == RangeSetup_t::NOT_HANDLED) || !s->range_in_cache) {
           // we switch to tunneling for Range requests if it is out of order.
           // or if the range can't be satisfied from the cache
           // In that case we fetch the entire source so it's OK to switch
@@ -3277,8 +3277,8 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   if (does_method_require_cache_copy_deletion(s->txn_conf, s->method) && s->api_req_cacheable == false) {
     s->cache_info.action = CacheAction_t::NO_ACTION;
   } else if ((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
-             does_method_effect_cache(s->method) == false || s->range_setup == RANGE_NOT_SATISFIABLE ||
-             s->range_setup == RANGE_NOT_HANDLED) {
+             does_method_effect_cache(s->method) == false || s->range_setup == RangeSetup_t::NOT_SATISFIABLE ||
+             s->range_setup == RangeSetup_t::NOT_HANDLED) {
     s->cache_info.action = CacheAction_t::NO_ACTION;
   } else if (s->api_server_response_no_store) { // plugin may have decided not to cache the response
     s->cache_info.action = CacheAction_t::NO_ACTION;
@@ -4853,7 +4853,7 @@ HttpTransact::handle_transform_ready(State *s)
   build_response(s, &s->hdr_info.transform_response, &s->hdr_info.client_response, s->client_info.http_version);
 
   if (s->cache_info.action != CacheAction_t::NO_ACTION && s->cache_info.action != CacheAction_t::DELETE &&
-      s->api_info.cache_transformed && !s->range_setup) {
+      s->api_info.cache_transformed && s->range_setup == HttpTransact::RangeSetup_t::NONE) {
     HTTPHdr *transform_store_request = nullptr;
     switch (s->pre_transform_source) {
     case Source_t::CACHE:
@@ -6190,7 +6190,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     return false;
   }
   // already has a fresh copy in the cache
-  if (s->range_setup == RANGE_NOT_HANDLED) {
+  if (s->range_setup == RangeSetup_t::NOT_HANDLED) {
     return false;
   }
 
@@ -6653,7 +6653,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
       case Source_t::HTTP_ORIGIN_SERVER:
         // We made our decision about whether to trust the
         //   response content length in init_state_vars_from_response()
-        if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
+        if (s->range_setup != HttpTransact::RangeSetup_t::NOT_TRANSFORM_REQUESTED) {
           break;
         }
         // fallthrough
@@ -6661,7 +6661,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
       case Source_t::CACHE:
         // if we are doing a single Range: request, calculate the new
         // C-L: header
-        if (s->range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
+        if (s->range_setup == HttpTransact::RangeSetup_t::NOT_TRANSFORM_REQUESTED) {
           change_response_header_because_of_range_request(s, header);
           s->hdr_info.trust_response_cl = true;
         }
@@ -6681,7 +6681,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         break;
 
       case Source_t::TRANSFORM:
-        if (s->range_setup == HttpTransact::RANGE_REQUESTED) {
+        if (s->range_setup == HttpTransact::RangeSetup_t::REQUESTED) {
           header->set_content_length(s->range_output_cl);
           s->hdr_info.trust_response_cl = true;
         } else if (s->hdr_info.transform_response_cl == HTTP_UNDEFINED_CL) {
@@ -6719,8 +6719,8 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         header->field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
         s->hdr_info.trust_response_cl      = false;
         s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
-        ink_assert(s->range_setup == RANGE_NONE);
-      } else if (s->range_setup == RANGE_NOT_TRANSFORM_REQUESTED) {
+        ink_assert(s->range_setup == RangeSetup_t::NONE);
+      } else if (s->range_setup == RangeSetup_t::NOT_TRANSFORM_REQUESTED) {
         // if we are doing a single Range: request, calculate the new
         // C-L: header
         // either the object is in cache or origin returned a 304 Not Modified response. We can still turn this into a proper Range
@@ -6746,7 +6746,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         s->hdr_info.trust_response_cl = false;
       }
       header->field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
-      ink_assert(s->range_setup != RANGE_NOT_TRANSFORM_REQUESTED);
+      ink_assert(s->range_setup != RangeSetup_t::NOT_TRANSFORM_REQUESTED);
     }
   }
   return;

@@ -443,12 +443,12 @@ public:
 
   enum class UpdateCachedObject_t { NONE, PREPARE, CONTINUE, ERROR, SUCCEED, FAIL };
 
-  enum RangeSetup_t {
-    RANGE_NONE = 0,
-    RANGE_REQUESTED,
-    RANGE_NOT_SATISFIABLE,
-    RANGE_NOT_HANDLED,
-    RANGE_NOT_TRANSFORM_REQUESTED,
+  enum class RangeSetup_t {
+    NONE = 0,
+    REQUESTED,
+    NOT_SATISFIABLE,
+    NOT_HANDLED,
+    NOT_TRANSFORM_REQUESTED,
   };
 
   enum CacheAuth_t {
@@ -788,7 +788,7 @@ public:
     URL   unmapped_url; // unmapped url is the effective url before remap
 
     // Http Range: related variables
-    RangeSetup_t range_setup      = RANGE_NONE;
+    RangeSetup_t range_setup      = RangeSetup_t::NONE;
     int64_t      num_range_fields = 0;
     int64_t      range_output_cl  = 0;
     RangeRecord *ranges           = nullptr;
@@ -883,7 +883,7 @@ public:
 
       delete[] ranges;
       ranges      = nullptr;
-      range_setup = RANGE_NONE;
+      range_setup = RangeSetup_t::NONE;
       return;
     }
 

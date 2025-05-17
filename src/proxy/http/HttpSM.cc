@@ -3536,7 +3536,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   // to a source in HttpSM::tunnel_handler_transform_write
   //
   HttpTransact::Source_t original_source = t_state.source;
-  if (HttpTransact::Source_t::TRANSFORM == original_source && t_state.range_setup != HttpTransact::RANGE_NONE) {
+  if (HttpTransact::Source_t::TRANSFORM == original_source && t_state.range_setup != HttpTransact::RangeSetup_t::NONE) {
     original_source = t_state.pre_transform_source;
   }
 
@@ -4225,7 +4225,7 @@ HttpSM::tunnel_handler_transform_write(int event, HttpTunnelConsumer *c)
   // all other transforms are plugin driven and the difference between
   // source data and final data should represent the transformation delta
   //
-  if (t_state.range_setup == HttpTransact::RANGE_NONE) {
+  if (t_state.range_setup == HttpTransact::RangeSetup_t::NONE) {
     switch (t_state.pre_transform_source) {
     case HttpTransact::Source_t::HTTP_ORIGIN_SERVER:
       server_response_body_bytes = client_response_body_bytes;
@@ -4630,13 +4630,13 @@ HttpSM::do_hostdb_update_if_necessary()
 
 /*
  * range entry valid [a,b] (a >= 0 and b >= 0 and a <= b)
- * HttpTransact::RANGE_NONE if the content length of cached copy is zero or
+ * HttpTransact::RangeSetup_t::NONE if the content length of cached copy is zero or
  * no range entry
- * HttpTransact::RANGE_NOT_SATISFIABLE iff all range entries are valid but
+ * HttpTransact::RangeSetup_t::NOT_SATISFIABLE iff all range entries are valid but
  * none overlap the current extent of the cached copy
- * HttpTransact::RANGE_NOT_HANDLED if out-of-order Range entries or
+ * HttpTransact::RangeSetup_t::NOT_HANDLED if out-of-order Range entries or
  * the cached copy`s content_length is INT64_MAX (e.g. read_from_writer and trunked)
- * HttpTransact::RANGE_REQUESTED if all sub range entries are valid and
+ * HttpTransact::RangeSetup_t::REQUESTED if all sub range entries are valid and
  * in order (remove the entries that not overlap the extent of cache copy)
  */
 void
@@ -4653,7 +4653,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
   RangeRecord *ranges = nullptr;
   int64_t      start, end;
 
-  ink_assert(field != nullptr && t_state.range_setup == HttpTransact::RANGE_NONE && t_state.ranges == nullptr);
+  ink_assert(field != nullptr && t_state.range_setup == HttpTransact::RangeSetup_t::NONE && t_state.ranges == nullptr);
 
   if (content_length <= 0) {
     return;
@@ -4661,12 +4661,12 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
 
   // ToDo: Can this really happen?
   if (content_length == INT64_MAX) {
-    t_state.range_setup = HttpTransact::RANGE_NOT_HANDLED;
+    t_state.range_setup = HttpTransact::RangeSetup_t::NOT_HANDLED;
     return;
   }
 
   if (parse_range_done) {
-    SMDbg(dbg_ctl_http_range, "parse_range already done, t_state.range_setup %d", t_state.range_setup);
+    SMDbg(dbg_ctl_http_range, "parse_range already done, t_state.range_setup %d", static_cast<int>(t_state.range_setup));
     return;
   }
   parse_range_done = true;
@@ -4692,7 +4692,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
 
   for (; value; value = csv.get_next(&value_len)) {
     if (!(tmp = static_cast<const char *>(memchr(value, '-', value_len)))) {
-      t_state.range_setup = HttpTransact::RANGE_NONE;
+      t_state.range_setup = HttpTransact::RangeSetup_t::NONE;
       goto Lfaild;
     }
 
@@ -4713,7 +4713,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
         int64_t new_start = start * 10 + (*s - '0');
 
         if (new_start < start) { // Overflow
-          t_state.range_setup = HttpTransact::RANGE_NONE;
+          t_state.range_setup = HttpTransact::RangeSetup_t::NONE;
           goto Lfaild;
         }
         start = new_start;
@@ -4724,7 +4724,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       }
 
       if (s < e) {
-        t_state.range_setup = HttpTransact::RANGE_NONE;
+        t_state.range_setup = HttpTransact::RangeSetup_t::NONE;
         goto Lfaild;
       }
     }
@@ -4739,7 +4739,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
 
     if (s >= e) {
       if (start < 0) {
-        t_state.range_setup = HttpTransact::RANGE_NONE;
+        t_state.range_setup = HttpTransact::RangeSetup_t::NONE;
         goto Lfaild;
       } else if (start >= content_length) {
         not_satisfy++;
@@ -4753,7 +4753,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
         int64_t new_end = end * 10 + (*s - '0');
 
         if (new_end < end) { // Overflow
-          t_state.range_setup = HttpTransact::RANGE_NONE;
+          t_state.range_setup = HttpTransact::RangeSetup_t::NONE;
           goto Lfaild;
         }
         end = new_end;
@@ -4764,7 +4764,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       }
 
       if (s < e) {
-        t_state.range_setup = HttpTransact::RANGE_NONE;
+        t_state.range_setup = HttpTransact::RangeSetup_t::NONE;
         goto Lfaild;
       }
 
@@ -4785,12 +4785,12 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
     }
 
     if (start > end) {
-      t_state.range_setup = HttpTransact::RANGE_NONE;
+      t_state.range_setup = HttpTransact::RangeSetup_t::NONE;
       goto Lfaild;
     }
 
     if (prev_good_range >= 0 && start <= ranges[prev_good_range]._end) {
-      t_state.range_setup = HttpTransact::RANGE_NOT_HANDLED;
+      t_state.range_setup = HttpTransact::RangeSetup_t::NOT_HANDLED;
       goto Lfaild;
     }
 
@@ -4818,14 +4818,14 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
   }
 
   if (nr > 0) {
-    t_state.range_setup      = HttpTransact::RANGE_REQUESTED;
+    t_state.range_setup      = HttpTransact::RangeSetup_t::REQUESTED;
     t_state.ranges           = ranges;
     t_state.num_range_fields = nr;
     return;
   }
 
   if (not_satisfy) {
-    t_state.range_setup = HttpTransact::RANGE_NOT_SATISFIABLE;
+    t_state.range_setup = HttpTransact::RangeSetup_t::NOT_SATISFIABLE;
   }
 
 Lfaild:
@@ -4838,7 +4838,8 @@ Lfaild:
 void
 HttpSM::calculate_output_cl(int64_t num_chars_for_ct, int64_t num_chars_for_cl)
 {
-  if (t_state.range_setup != HttpTransact::RANGE_REQUESTED && t_state.range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
+  if (t_state.range_setup != HttpTransact::RangeSetup_t::REQUESTED &&
+      t_state.range_setup != HttpTransact::RangeSetup_t::NOT_TRANSFORM_REQUESTED) {
     return;
   }
 
@@ -4895,12 +4896,12 @@ HttpSM::do_range_setup_if_necessary()
   field = t_state.hdr_info.client_request.field_find(static_cast<std::string_view>(MIME_FIELD_RANGE));
   ink_assert(field != nullptr);
 
-  t_state.range_setup = HttpTransact::RANGE_NONE;
+  t_state.range_setup = HttpTransact::RangeSetup_t::NONE;
 
   if (t_state.method == HTTP_WKSIDX_GET && t_state.hdr_info.client_request.version_get() == HTTP_1_1) {
     do_range_parse(field);
 
-    if (t_state.range_setup == HttpTransact::RANGE_REQUESTED) {
+    if (t_state.range_setup == HttpTransact::RangeSetup_t::REQUESTED) {
       bool do_transform = false;
 
       if (!t_state.range_in_cache && t_state.cache_info.object_read) {
@@ -4911,7 +4912,7 @@ HttpSM::do_range_setup_if_necessary()
 
       if (t_state.num_range_fields > 1) {
         if (0 == t_state.txn_conf->allow_multi_range) {
-          t_state.range_setup = HttpTransact::RANGE_NONE; // No Range required (not allowed)
+          t_state.range_setup = HttpTransact::RangeSetup_t::NONE; // No Range required (not allowed)
           t_state.hdr_info.client_request.field_delete(
             static_cast<std::string_view>(MIME_FIELD_RANGE)); // ... and nuke the Range header too
           t_state.num_range_fields = 0;
@@ -4919,7 +4920,7 @@ HttpSM::do_range_setup_if_necessary()
           do_transform = true;
         } else {
           t_state.num_range_fields = 0;
-          t_state.range_setup      = HttpTransact::RANGE_NOT_SATISFIABLE;
+          t_state.range_setup      = HttpTransact::RangeSetup_t::NOT_SATISFIABLE;
         }
       } else {
         // if revalidating and cache is stale we want to transform
@@ -4932,7 +4933,7 @@ HttpSM::do_range_setup_if_necessary()
           }
         } else if (cache_sm.cache_read_vc && cache_sm.cache_read_vc->is_pread_capable()) {
           // If only one range entry and pread is capable, no need transform range
-          t_state.range_setup = HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED;
+          t_state.range_setup = HttpTransact::RangeSetup_t::NOT_TRANSFORM_REQUESTED;
         } else {
           do_transform = true;
         }
@@ -4952,7 +4953,7 @@ HttpSM::do_range_setup_if_necessary()
             // We don't want to transform a range request if the server response has a content encoding.
             if (t_state.hdr_info.server_response.presence(MIME_PRESENCE_CONTENT_ENCODING)) {
               Dbg(dbg_ctl_http_trans, "Cannot setup range transform for server response with content encoding");
-              t_state.range_setup = HttpTransact::RANGE_NONE;
+              t_state.range_setup = HttpTransact::RangeSetup_t::NONE;
               return;
             }
 
@@ -6410,7 +6411,7 @@ HttpSM::perform_transform_cache_write_action()
 {
   SMDbg(dbg_ctl_http, "%s", HttpDebugNames::get_cache_action_name(t_state.cache_info.action));
 
-  if (t_state.range_setup) {
+  if (t_state.range_setup != HttpTransact::RangeSetup_t::NONE) {
     SMDbg(dbg_ctl_http, "perform_transform_cache_write_action %s (with range setup)",
           HttpDebugNames::get_cache_action_name(t_state.cache_info.action));
   }
