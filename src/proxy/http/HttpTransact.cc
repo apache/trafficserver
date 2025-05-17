@@ -2585,15 +2585,15 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     // the client without revalidation?
     Freshness_t freshness = what_is_document_freshness(s, &s->hdr_info.client_request, obj->response_get());
     switch (freshness) {
-    case FRESHNESS_FRESH:
+    case Freshness_t::FRESH:
       TxnDbg(dbg_ctl_http_seq, "Fresh copy");
       s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_FRESH;
       break;
-    case FRESHNESS_WARNING:
+    case Freshness_t::WARNING:
       TxnDbg(dbg_ctl_http_seq, "Heuristic-based Fresh copy");
       s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_WARNING;
       break;
-    case FRESHNESS_STALE:
+    case Freshness_t::STALE:
       TxnDbg(dbg_ctl_http_seq, "Stale in cache");
       s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_STALE;
       break;
@@ -7254,9 +7254,9 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
 //      is still "fresh enough" to serve.  One of the following values
 //      is returned:
 //
-//          FRESHNESS_FRESH             Fresh enough, serve it
-//          FRESHNESS_WARNING           Stale but client says it's okay
-//          FRESHNESS_STALE             Too stale, don't use
+//          Freshness_t::FRESH             Fresh enough, serve it
+//          Freshness_t::WARNING           Stale but client says it's okay
+//          Freshness_t::STALE             Too stale, don't use
 //
 //////////////////////////////////////////////////////////////////////////////
 HttpTransact::Freshness_t
@@ -7272,7 +7272,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   if (s->cache_open_write_fail_action & CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE) {
     if (is_stale_cache_response_returnable(s)) {
       TxnDbg(dbg_ctl_http_match, "cache_serve_stale_on_write_lock_fail, return FRESH");
-      return (FRESHNESS_FRESH);
+      return (Freshness_t::FRESH);
     }
   }
 
@@ -7288,9 +7288,9 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 
     TxnDbg(dbg_ctl_http_match, "ttl-in-cache = %d, resident time = %d", s->cache_control.ttl_in_cache, resident_time);
     if (resident_time > s->cache_control.ttl_in_cache) {
-      return (FRESHNESS_STALE);
+      return (Freshness_t::STALE);
     } else {
-      return (FRESHNESS_FRESH);
+      return (Freshness_t::FRESH);
     }
   }
 
@@ -7302,7 +7302,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 
   if ((cooked_cc_mask & cc_mask) && s->cache_control.revalidate_after <= 0) {
     TxnDbg(dbg_ctl_http_match, "document stale due to server must-revalidate");
-    return FRESHNESS_STALE;
+    return Freshness_t::STALE;
   }
 
   response_date = cached_obj_response->get_date();
@@ -7335,20 +7335,20 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
       break;
     case 1: // Stale if heuristic
       if (heuristic) {
-        TxnDbg(dbg_ctl_http_match, "config requires FRESHNESS_STALE because heuristic calculation");
-        return (FRESHNESS_STALE);
+        TxnDbg(dbg_ctl_http_match, "config requires Freshness_t::STALE because heuristic calculation");
+        return (Freshness_t::STALE);
       }
       break;
     case 2: // Always stale
-      TxnDbg(dbg_ctl_http_match, "config specifies always FRESHNESS_STALE");
-      return (FRESHNESS_STALE);
+      TxnDbg(dbg_ctl_http_match, "config specifies always Freshness_t::STALE");
+      return (Freshness_t::STALE);
     case 3: // Never stale
-      TxnDbg(dbg_ctl_http_match, "config specifies always FRESHNESS_FRESH");
-      return (FRESHNESS_FRESH);
+      TxnDbg(dbg_ctl_http_match, "config specifies always Freshness_t::FRESH");
+      return (Freshness_t::FRESH);
     case 4: // Stale if IMS
       if (client_request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE)) {
-        TxnDbg(dbg_ctl_http_match, "config specifies FRESHNESS_STALE if IMS present");
-        return (FRESHNESS_STALE);
+        TxnDbg(dbg_ctl_http_match, "config specifies Freshness_t::STALE if IMS present");
+        return (Freshness_t::STALE);
       }
     default: // Bad config, ignore
       break;
@@ -7431,20 +7431,20 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 
   if (do_revalidate || !age_limit || current_age > age_limit) { // client-modified limit
     TxnDbg(dbg_ctl_http_match, "document needs revalidate/too old; "
-                               "returning FRESHNESS_STALE");
-    return (FRESHNESS_STALE);
+                               "returning Freshness_t::STALE");
+    return (Freshness_t::STALE);
   } else if (current_age > fresh_limit) { // original limit
     if (os_specifies_revalidate) {
       TxnDbg(dbg_ctl_http_match, "document is stale and OS specifies revalidation; "
-                                 "returning FRESHNESS_STALE");
-      return (FRESHNESS_STALE);
+                                 "returning Freshness_t::STALE");
+      return (Freshness_t::STALE);
     }
     TxnDbg(dbg_ctl_http_match, "document is stale but no revalidation explicitly required; "
-                               "returning FRESHNESS_WARNING");
-    return (FRESHNESS_WARNING);
+                               "returning Freshness_t::WARNING");
+    return (Freshness_t::WARNING);
   } else {
-    TxnDbg(dbg_ctl_http_match, "document is fresh; returning FRESHNESS_FRESH");
-    return (FRESHNESS_FRESH);
+    TxnDbg(dbg_ctl_http_match, "document is fresh; returning Freshness_t::FRESH");
+    return (Freshness_t::FRESH);
   }
 }
 

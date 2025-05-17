@@ -294,10 +294,10 @@ public:
     ERROR_OTHER
   };
 
-  enum Freshness_t {
-    FRESHNESS_FRESH = 0, // Fresh enough, serve it
-    FRESHNESS_WARNING,   // Stale, but client says OK
-    FRESHNESS_STALE      // Stale, don't use
+  enum class Freshness_t {
+    FRESH = 0, // Fresh enough, serve it
+    WARNING,   // Stale, but client says OK
+    STALE      // Stale, don't use
   };
 
   enum HttpTransactMagic_t {
