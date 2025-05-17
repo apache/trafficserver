@@ -488,7 +488,7 @@ Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transa
 {
   if (ssession) {
     ink_assert(bound_ss == nullptr);
-    ssession->state = PoolableSession::KA_RESERVED;
+    ssession->state = PoolableSession::PooledState::KA_RESERVED;
     bound_ss        = ssession;
     HttpSsnDbg("[%" PRId64 "] attaching server session [%" PRId64 "] as slave", con_id, ssession->connection_id());
     ink_assert(ssession->get_netvc() != this->get_netvc());
