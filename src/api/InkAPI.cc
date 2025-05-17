@@ -8794,7 +8794,7 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
 
   HttpSM              *sm = reinterpret_cast<HttpSM *>(txnp);
   HttpTransact::State *s  = &(sm->t_state);
-  sdk_assert(s->next_action == HttpTransact::SM_ACTION_CACHE_LOOKUP);
+  sdk_assert(s->next_action == HttpTransact::StateMachineAction_t::CACHE_LOOKUP);
 
   // Because of where this is in the state machine, the storage for the cache_info URL must
   // have already been initialized and @a lookup_url must be valid.

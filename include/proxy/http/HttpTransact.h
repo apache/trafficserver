@@ -373,58 +373,58 @@ public:
   // HttpTransact fills a StateMachineAction_t  //
   // to tell the state machine what to do next. //
   ////////////////////////////////////////////////
-  enum StateMachineAction_t {
-    SM_ACTION_UNDEFINED = 0,
+  enum class StateMachineAction_t {
+    UNDEFINED = 0,
 
-    // SM_ACTION_AUTH_LOOKUP,
-    SM_ACTION_DNS_LOOKUP,
-    SM_ACTION_DNS_REVERSE_LOOKUP,
+    // AUTH_LOOKUP,
+    DNS_LOOKUP,
+    DNS_REVERSE_LOOKUP,
 
-    SM_ACTION_CACHE_LOOKUP,
-    SM_ACTION_CACHE_ISSUE_WRITE,
-    SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM,
-    SM_ACTION_CACHE_PREPARE_UPDATE,
-    SM_ACTION_CACHE_ISSUE_UPDATE,
+    CACHE_LOOKUP,
+    CACHE_ISSUE_WRITE,
+    CACHE_ISSUE_WRITE_TRANSFORM,
+    CACHE_PREPARE_UPDATE,
+    CACHE_ISSUE_UPDATE,
 
-    SM_ACTION_ORIGIN_SERVER_OPEN,
-    SM_ACTION_ORIGIN_SERVER_RAW_OPEN,
-    SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN,
+    ORIGIN_SERVER_OPEN,
+    ORIGIN_SERVER_RAW_OPEN,
+    ORIGIN_SERVER_RR_MARK_DOWN,
 
-    SM_ACTION_READ_PUSH_HDR,
-    SM_ACTION_STORE_PUSH_BODY,
+    READ_PUSH_HDR,
+    STORE_PUSH_BODY,
 
-    SM_ACTION_INTERNAL_CACHE_DELETE,
-    SM_ACTION_INTERNAL_CACHE_NOOP,
-    SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS,
-    SM_ACTION_INTERNAL_CACHE_WRITE,
-    SM_ACTION_INTERNAL_100_RESPONSE,
-    SM_ACTION_SEND_ERROR_CACHE_NOOP,
+    INTERNAL_CACHE_DELETE,
+    INTERNAL_CACHE_NOOP,
+    INTERNAL_CACHE_UPDATE_HEADERS,
+    INTERNAL_CACHE_WRITE,
+    INTERNAL_100_RESPONSE,
+    SEND_ERROR_CACHE_NOOP,
 
-    SM_ACTION_WAIT_FOR_FULL_BODY,
-    SM_ACTION_REQUEST_BUFFER_READ_COMPLETE,
-    SM_ACTION_SERVE_FROM_CACHE,
-    SM_ACTION_SERVER_READ,
-    SM_ACTION_SERVER_PARSE_NEXT_HDR,
-    SM_ACTION_TRANSFORM_READ,
-    SM_ACTION_SSL_TUNNEL,
-    SM_ACTION_CONTINUE,
+    WAIT_FOR_FULL_BODY,
+    REQUEST_BUFFER_READ_COMPLETE,
+    SERVE_FROM_CACHE,
+    SERVER_READ,
+    SERVER_PARSE_NEXT_HDR,
+    TRANSFORM_READ,
+    SSL_TUNNEL,
+    CONTINUE,
 
-    SM_ACTION_API_SM_START,
-    SM_ACTION_API_READ_REQUEST_HDR,
-    SM_ACTION_API_TUNNEL_START,
-    SM_ACTION_API_PRE_REMAP,
-    SM_ACTION_API_POST_REMAP,
-    SM_ACTION_API_OS_DNS,
-    SM_ACTION_API_SEND_REQUEST_HDR,
-    SM_ACTION_API_READ_CACHE_HDR,
-    SM_ACTION_API_CACHE_LOOKUP_COMPLETE,
-    SM_ACTION_API_READ_RESPONSE_HDR,
-    SM_ACTION_API_SEND_RESPONSE_HDR,
-    SM_ACTION_API_SM_SHUTDOWN,
+    API_SM_START,
+    API_READ_REQUEST_HDR,
+    API_TUNNEL_START,
+    API_PRE_REMAP,
+    API_POST_REMAP,
+    API_OS_DNS,
+    API_SEND_REQUEST_HDR,
+    API_READ_CACHE_HDR,
+    API_CACHE_LOOKUP_COMPLETE,
+    API_READ_RESPONSE_HDR,
+    API_SEND_RESPONSE_HDR,
+    API_SM_SHUTDOWN,
 
-    SM_ACTION_REMAP_REQUEST,
-    SM_ACTION_POST_REMAP_SKIP,
-    SM_ACTION_REDIRECT_READ
+    REMAP_REQUEST,
+    POST_REMAP_SKIP,
+    REDIRECT_READ
   };
 
   enum TransferEncoding_t {
@@ -745,9 +745,9 @@ public:
     ParentResult                              parent_result;
     CacheControlResult                        cache_control;
 
-    StateMachineAction_t next_action                      = SM_ACTION_UNDEFINED; // out
-    StateMachineAction_t api_next_action                  = SM_ACTION_UNDEFINED; // out
-    void (*transact_return_point)(HttpTransact::State *s) = nullptr;             // out
+    StateMachineAction_t next_action                      = StateMachineAction_t::UNDEFINED; // out
+    StateMachineAction_t api_next_action                  = StateMachineAction_t::UNDEFINED; // out
+    void (*transact_return_point)(HttpTransact::State *s) = nullptr;                         // out
 
     // We keep this so we can jump back to the upgrade handler after remap is complete
     void (*post_remap_upgrade_return_point)(HttpTransact::State *s) = nullptr; // out
@@ -792,7 +792,7 @@ public:
     HdrHeapSDKHandle    *cache_req_hdr_heap_handle  = nullptr;
     HdrHeapSDKHandle    *cache_resp_hdr_heap_handle = nullptr;
     UpdateCachedObject_t api_update_cached_object   = UPDATE_CACHED_OBJECT_NONE;
-    StateMachineAction_t saved_update_next_action   = SM_ACTION_UNDEFINED;
+    StateMachineAction_t saved_update_next_action   = StateMachineAction_t::UNDEFINED;
     CacheAction_t        saved_update_cache_action  = CacheAction_t::UNDEFINED;
 
     // Remap plugin processor support

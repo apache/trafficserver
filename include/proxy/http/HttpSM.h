@@ -479,7 +479,7 @@ private:
    */
   void setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header_bytes = 0);
 
-  HttpTransact::StateMachineAction_t last_action     = HttpTransact::SM_ACTION_UNDEFINED;
+  HttpTransact::StateMachineAction_t last_action     = HttpTransact::StateMachineAction_t::UNDEFINED;
   int (HttpSM::*m_last_state)(int event, void *data) = nullptr;
   virtual void set_next_state();
   void         call_transact_and_set_next_state(TransactEntryFunc_t f);

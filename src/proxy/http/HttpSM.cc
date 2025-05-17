@@ -344,7 +344,7 @@ HttpSM::do_api_callout()
 int
 HttpSM::state_add_to_list(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_START;
+  t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SM_START;
   if (do_api_callout() < 0) {
     // Didn't get the hook continuation lock. Clear the read and wait for next event
     if (_ua.get_entry()->read_vio) {
@@ -523,7 +523,7 @@ HttpSM::setup_blind_tunnel_port()
     t_state.hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
     t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
   }
-  t_state.api_next_action = HttpTransact::SM_ACTION_API_TUNNEL_START;
+  t_state.api_next_action = HttpTransact::StateMachineAction_t::API_TUNNEL_START;
   do_api_callout();
 }
 
@@ -1511,11 +1511,11 @@ plugins required to work with sni_routing.
     handle_api_return();
     break;
   case API_RETURN_DEFERED_CLOSE:
-    ink_assert(t_state.api_next_action == HttpTransact::SM_ACTION_API_SM_SHUTDOWN);
+    ink_assert(t_state.api_next_action == HttpTransact::StateMachineAction_t::API_SM_SHUTDOWN);
     do_api_callout();
     break;
   case API_RETURN_DEFERED_SERVER_ERROR:
-    ink_assert(t_state.api_next_action == HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR);
+    ink_assert(t_state.api_next_action == HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR);
     ink_assert(t_state.current.state != HttpTransact::CONNECTION_ALIVE);
     call_transact_and_set_next_state(HttpTransact::HandleResponse);
     break;
@@ -1547,7 +1547,7 @@ void
 HttpSM::handle_api_return()
 {
   switch (t_state.api_next_action) {
-  case HttpTransact::SM_ACTION_API_SM_START: {
+  case HttpTransact::StateMachineAction_t::API_SM_START: {
     NetVConnection *netvc        = _ua.get_txn()->get_netvc();
     auto           *tts          = netvc->get_service<TLSTunnelSupport>();
     bool            forward_dest = tts != nullptr && tts->is_decryption_needed();
@@ -1558,8 +1558,8 @@ HttpSM::handle_api_return()
     }
     return;
   }
-  case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
-  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
+  case HttpTransact::StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE:
+  case HttpTransact::StateMachineAction_t::API_READ_CACHE_HDR:
     if (t_state.api_cleanup_cache_read && t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
       t_state.api_cleanup_cache_read = false;
       t_state.cache_info.object_read = nullptr;
@@ -1570,29 +1570,29 @@ HttpSM::handle_api_return()
     }
     // fallthrough
 
-  case HttpTransact::SM_ACTION_API_PRE_REMAP:
-  case HttpTransact::SM_ACTION_API_POST_REMAP:
-  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
-  case HttpTransact::SM_ACTION_REQUEST_BUFFER_READ_COMPLETE:
-  case HttpTransact::SM_ACTION_API_OS_DNS:
-  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
+  case HttpTransact::StateMachineAction_t::API_PRE_REMAP:
+  case HttpTransact::StateMachineAction_t::API_POST_REMAP:
+  case HttpTransact::StateMachineAction_t::API_READ_REQUEST_HDR:
+  case HttpTransact::StateMachineAction_t::REQUEST_BUFFER_READ_COMPLETE:
+  case HttpTransact::StateMachineAction_t::API_OS_DNS:
+  case HttpTransact::StateMachineAction_t::API_READ_RESPONSE_HDR:
     call_transact_and_set_next_state(nullptr);
     return;
-  case HttpTransact::SM_ACTION_API_TUNNEL_START:
+  case HttpTransact::StateMachineAction_t::API_TUNNEL_START:
     // Finished the Tunnel start callback.  Go ahead and do the HandleBlindTunnel
     call_transact_and_set_next_state(HttpTransact::HandleBlindTunnel);
     return;
-  case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
+  case HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR:
     setup_server_send_request();
     return;
-  case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
+  case HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR:
     // Set back the inactivity timeout
     if (_ua.get_txn()) {
       _ua.get_txn()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
     }
 
     // We only follow 3xx when redirect_in_process == false. Otherwise the redirection has already been launched (in
-    // SM_ACTION_SERVER_READ).redirect_in_process is set before this logic if we need more direction.
+    // StateMachineAction_t::SERVER_READ).redirect_in_process is set before this logic if we need more direction.
     // This redirection is only used with the build_error_response. Then, the redirection_tries will be increased by
     // state_read_server_response_header and never get into this logic again.
     if (enable_redirection && !t_state.redirect_info.redirect_in_process && is_redirect_required()) {
@@ -1601,7 +1601,7 @@ HttpSM::handle_api_return()
     // we have further processing to do
     //  based on what t_state.next_action is
     break;
-  case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
+  case HttpTransact::StateMachineAction_t::API_SM_SHUTDOWN:
     state_remove_from_list(EVENT_NONE, nullptr);
     return;
   default:
@@ -1610,13 +1610,13 @@ HttpSM::handle_api_return()
   }
 
   switch (t_state.next_action) {
-  case HttpTransact::SM_ACTION_TRANSFORM_READ: {
+  case HttpTransact::StateMachineAction_t::TRANSFORM_READ: {
     HttpTunnelProducer *p = setup_transfer_from_transform();
     perform_transform_cache_write_action();
     tunnel.tunnel_run(p);
     break;
   }
-  case HttpTransact::SM_ACTION_SERVER_READ: {
+  case HttpTransact::StateMachineAction_t::SERVER_READ: {
     if (unlikely(t_state.did_upgrade_succeed)) {
       // We've successfully handled the upgrade, let's now setup
       // a blind tunnel.
@@ -1652,13 +1652,13 @@ HttpSM::handle_api_return()
     }
     break;
   }
-  case HttpTransact::SM_ACTION_SERVE_FROM_CACHE: {
+  case HttpTransact::StateMachineAction_t::SERVE_FROM_CACHE: {
     HttpTunnelProducer *p = setup_cache_read_transfer();
     tunnel.tunnel_run(p);
     break;
   }
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_WRITE: {
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_WRITE: {
     if (cache_sm.cache_write_vc) {
       setup_internal_transfer(&HttpSM::tunnel_handler_cache_fill);
     } else {
@@ -1667,22 +1667,22 @@ HttpSM::handle_api_return()
     break;
   }
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP:
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE:
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS:
-  case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP: {
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_NOOP:
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_DELETE:
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_UPDATE_HEADERS:
+  case HttpTransact::StateMachineAction_t::SEND_ERROR_CACHE_NOOP: {
     setup_internal_transfer(&HttpSM::tunnel_handler);
     break;
   }
 
-  case HttpTransact::SM_ACTION_REDIRECT_READ: {
+  case HttpTransact::StateMachineAction_t::REDIRECT_READ: {
     // Clean up from any communication with previous servers
     release_server_session();
 
     call_transact_and_set_next_state(HttpTransact::HandleRequest);
     break;
   }
-  case HttpTransact::SM_ACTION_SSL_TUNNEL: {
+  case HttpTransact::StateMachineAction_t::SSL_TUNNEL: {
     setup_blind_tunnel(true);
     break;
   }
@@ -2044,7 +2044,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     t_state.current.state         = HttpTransact::CONNECTION_ALIVE;
     t_state.transact_return_point = HttpTransact::HandleResponse;
-    t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
+    t_state.api_next_action       = HttpTransact::StateMachineAction_t::API_READ_RESPONSE_HDR;
 
     // if exceeded limit deallocate postdata buffers and disable redirection
     if (!(enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections))) {
@@ -2523,7 +2523,7 @@ HttpSM::state_cache_open_write(int event, void *data)
     //  the cache write.  If this is the case, forward the event
     //  to the transform read state as it will know how to
     //  handle it
-    if (t_state.next_action == HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM) {
+    if (t_state.next_action == HttpTransact::StateMachineAction_t::CACHE_ISSUE_WRITE_TRANSFORM) {
       state_common_wait_for_transform_read(&transform_info, &HttpSM::tunnel_handler, event, data);
 
       return 0;
@@ -2542,7 +2542,7 @@ HttpSM::state_cache_open_write(int event, void *data)
 inline void
 HttpSM::setup_cache_lookup_complete_api()
 {
-  t_state.api_next_action = HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE;
+  t_state.api_next_action = HttpTransact::StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE;
   do_api_callout();
 }
 
@@ -2815,7 +2815,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
     if (milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] != 0) {
       t_state.current.state         = HttpTransact::CONNECTION_ALIVE;
       t_state.transact_return_point = HttpTransact::HandleResponse;
-      t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
+      t_state.api_next_action       = HttpTransact::StateMachineAction_t::API_READ_RESPONSE_HDR;
       do_api_callout();
     }
     break;
@@ -5726,45 +5726,45 @@ int
 HttpSM::do_api_callout_internal()
 {
   switch (t_state.api_next_action) {
-  case HttpTransact::SM_ACTION_API_SM_START:
+  case HttpTransact::StateMachineAction_t::API_SM_START:
     cur_hook_id = TS_HTTP_TXN_START_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_PRE_REMAP:
+  case HttpTransact::StateMachineAction_t::API_PRE_REMAP:
     cur_hook_id = TS_HTTP_PRE_REMAP_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_POST_REMAP:
+  case HttpTransact::StateMachineAction_t::API_POST_REMAP:
     cur_hook_id = TS_HTTP_POST_REMAP_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_TUNNEL_START:
+  case HttpTransact::StateMachineAction_t::API_TUNNEL_START:
     cur_hook_id = TS_HTTP_TUNNEL_START_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
+  case HttpTransact::StateMachineAction_t::API_READ_REQUEST_HDR:
     cur_hook_id = TS_HTTP_READ_REQUEST_HDR_HOOK;
     break;
-  case HttpTransact::SM_ACTION_REQUEST_BUFFER_READ_COMPLETE:
+  case HttpTransact::StateMachineAction_t::REQUEST_BUFFER_READ_COMPLETE:
     cur_hook_id = TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_OS_DNS:
+  case HttpTransact::StateMachineAction_t::API_OS_DNS:
     cur_hook_id = TS_HTTP_OS_DNS_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
+  case HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR:
     cur_hook_id = TS_HTTP_SEND_REQUEST_HDR_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
+  case HttpTransact::StateMachineAction_t::API_READ_CACHE_HDR:
     cur_hook_id = TS_HTTP_READ_CACHE_HDR_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
+  case HttpTransact::StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE:
     cur_hook_id = TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
+  case HttpTransact::StateMachineAction_t::API_READ_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_READ_RESPONSE_HDR_HOOK;
     break;
-  case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
+  case HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
     ATS_PROBE1(milestone_ua_begin_write, sm_id);
     milestones[TS_MILESTONE_UA_BEGIN_WRITE] = ink_get_hrtime();
     break;
-  case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
+  case HttpTransact::StateMachineAction_t::API_SM_SHUTDOWN:
     if (callout_state == HTTP_API_IN_CALLOUT || callout_state == HTTP_API_DEFERED_SERVER_ERROR) {
       callout_state = HTTP_API_DEFERED_CLOSE;
       return 0;
@@ -6661,7 +6661,7 @@ HttpSM::setup_server_send_request_api()
 {
   // Make sure the VC is on the correct timeout
   server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
-  t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR;
+  t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR;
   do_api_callout();
 }
 
@@ -6909,7 +6909,7 @@ HttpSM::setup_error_transfer()
     // Since we need to send the error message, call the API
     //   function
     ink_assert(t_state.internal_msg_buffer_size > 0 || is_response_body_precluded(t_state.http_return_code));
-    t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
     do_api_callout();
   } else {
     SMDbg(dbg_ctl_http, "Now closing connection ...");
@@ -7518,7 +7518,7 @@ HttpSM::kill_this()
     //  if the plugin receives event we must reset
     //  the terminate_flag
     terminate_sm            = false;
-    t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_SHUTDOWN;
+    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SM_SHUTDOWN;
     if (do_api_callout() < 0) { // Failed to get a continuation lock
       // Need to hang out until we can complete the TXN_CLOSE hook
       terminate_sm = false;
@@ -7875,31 +7875,32 @@ HttpSM::set_next_state()
   // Use the returned "next action" code to set the next state handler //
   ///////////////////////////////////////////////////////////////////////
   switch (t_state.next_action) {
-  case HttpTransact::SM_ACTION_API_PRE_REMAP:
-  case HttpTransact::SM_ACTION_API_POST_REMAP:
-  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
-  case HttpTransact::SM_ACTION_REQUEST_BUFFER_READ_COMPLETE:
-  case HttpTransact::SM_ACTION_API_OS_DNS:
-  case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
-  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
-  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
-  case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
-  case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE: {
+  case HttpTransact::StateMachineAction_t::API_PRE_REMAP:
+  case HttpTransact::StateMachineAction_t::API_POST_REMAP:
+  case HttpTransact::StateMachineAction_t::API_READ_REQUEST_HDR:
+  case HttpTransact::StateMachineAction_t::REQUEST_BUFFER_READ_COMPLETE:
+  case HttpTransact::StateMachineAction_t::API_OS_DNS:
+  case HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR:
+  case HttpTransact::StateMachineAction_t::API_READ_CACHE_HDR:
+  case HttpTransact::StateMachineAction_t::API_READ_RESPONSE_HDR:
+  case HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR:
+  case HttpTransact::StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE: {
     t_state.api_next_action = t_state.next_action;
     do_api_callout();
     break;
   }
 
-  case HttpTransact::SM_ACTION_POST_REMAP_SKIP: {
+  case HttpTransact::StateMachineAction_t::POST_REMAP_SKIP: {
     call_transact_and_set_next_state(nullptr);
     break;
   }
 
-  case HttpTransact::SM_ACTION_REMAP_REQUEST: {
+  case HttpTransact::StateMachineAction_t::REMAP_REQUEST: {
     do_remap_request(true); /* run inline */
     SMDbg(dbg_ctl_url_rewrite, "completed inline remapping request");
     t_state.url_remap_success = remapProcessor.finish_remap(&t_state, m_remap);
-    if (t_state.next_action == HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP && t_state.transact_return_point == nullptr) {
+    if (t_state.next_action == HttpTransact::StateMachineAction_t::SEND_ERROR_CACHE_NOOP &&
+        t_state.transact_return_point == nullptr) {
       // It appears that we can now set the next_action to error and transact_return_point to nullptr when
       // going through do_remap_request presumably due to a plugin setting an error.  In that case, it seems
       // that the error message has already been setup, so we can just return and avoid the further
@@ -7910,7 +7911,7 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::SM_ACTION_DNS_LOOKUP: {
+  case HttpTransact::StateMachineAction_t::DNS_LOOKUP: {
     if (sockaddr const *addr; t_state.http_config_param->use_client_target_addr == 2 &&              // no CTA verification
                               !t_state.url_remap_success &&                                          // wasn't remapped
                               t_state.parent_result.result != PARENT_SPECIFIED &&                    // no parent.
@@ -7988,19 +7989,19 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::SM_ACTION_DNS_REVERSE_LOOKUP: {
+  case HttpTransact::StateMachineAction_t::DNS_REVERSE_LOOKUP: {
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_hostdb_reverse_lookup);
     do_hostdb_reverse_lookup();
     break;
   }
 
-  case HttpTransact::SM_ACTION_CACHE_LOOKUP: {
+  case HttpTransact::StateMachineAction_t::CACHE_LOOKUP: {
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_read);
     do_cache_lookup_and_read();
     break;
   }
 
-  case HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN: {
+  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_OPEN: {
     // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
     // bytes are received back
     t_state.set_connect_fail(EIO);
@@ -8037,17 +8038,17 @@ HttpSM::set_next_state()
 
   // This is called in some case if the 100 continue header is from a HTTP/1.0 server
   // Likely an obsolete case now and should probably return an error
-  case HttpTransact::SM_ACTION_SERVER_PARSE_NEXT_HDR: {
+  case HttpTransact::StateMachineAction_t::SERVER_PARSE_NEXT_HDR: {
     setup_server_read_response_header();
     break;
   }
 
-  case HttpTransact::SM_ACTION_INTERNAL_100_RESPONSE: {
+  case HttpTransact::StateMachineAction_t::INTERNAL_100_RESPONSE: {
     setup_100_continue_transfer();
     break;
   }
 
-  case HttpTransact::SM_ACTION_SERVER_READ: {
+  case HttpTransact::StateMachineAction_t::SERVER_READ: {
     t_state.source = HttpTransact::Source_t::HTTP_ORIGIN_SERVER;
 
     if (transform_info.vc) {
@@ -8058,7 +8059,7 @@ HttpSM::set_next_state()
       tunnel.tunnel_run(p);
     } else {
       ink_assert((t_state.hdr_info.client_response.valid() ? true : false) == true);
-      t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+      t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
 
       // check to see if we are going to handle the redirection from server response and if there is a plugin hook set
       if (hooks_set && is_redirect_required() == false) {
@@ -8071,7 +8072,7 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::SM_ACTION_SERVE_FROM_CACHE: {
+  case HttpTransact::StateMachineAction_t::SERVE_FROM_CACHE: {
     ink_assert(t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE ||
                t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE_AND_DELETE ||
                t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE_AND_UPDATE);
@@ -8095,7 +8096,7 @@ HttpSM::set_next_state()
       t_state.hdr_info.cache_response.copy(&t_state.hdr_info.client_response);
 
       perform_cache_write_action();
-      t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+      t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
 
       // check to see if there is a plugin hook set
       if (hooks_set) {
@@ -8107,20 +8108,20 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE: {
+  case HttpTransact::StateMachineAction_t::CACHE_ISSUE_WRITE: {
     ink_assert(cache_sm.cache_write_vc == nullptr);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_write);
     do_cache_prepare_write();
     break;
   }
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_WRITE: {
-    t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_WRITE: {
+    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
     do_api_callout();
     break;
   }
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP: {
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_NOOP: {
     if (server_entry != nullptr && server_entry->in_tunnel == false) {
       release_server_session();
     }
@@ -8130,43 +8131,43 @@ HttpSM::set_next_state()
     // If we're in state SEND_API_RESPONSE_HDR, it means functions
     // registered to hook SEND_RESPONSE_HDR have already been called. So we do not
     // need to call do_api_callout. Otherwise TS loops infinitely in this state !
-    if (t_state.api_next_action == HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR) {
+    if (t_state.api_next_action == HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR) {
       handle_api_return();
     } else {
-      t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+      t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
       do_api_callout();
     }
     break;
   }
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE: {
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_DELETE: {
     // Nuke all the alternates since this is mostly likely
     //   the result of a delete method
     cache_sm.end_both();
     do_cache_delete_all_alts(nullptr);
 
     release_server_session();
-    t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
     do_api_callout();
     break;
   }
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS: {
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_UPDATE_HEADERS: {
     issue_cache_update();
     cache_sm.close_read();
 
     release_server_session();
-    t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
     do_api_callout();
     break;
   }
 
-  case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP: {
+  case HttpTransact::StateMachineAction_t::SEND_ERROR_CACHE_NOOP: {
     setup_error_transfer();
     break;
   }
 
-  case HttpTransact::SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN: {
+  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RR_MARK_DOWN: {
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_mark_os_down);
     ATS_PROBE(next_state_SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN);
 
@@ -8181,13 +8182,13 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::SM_ACTION_SSL_TUNNEL: {
-    t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+  case HttpTransact::StateMachineAction_t::SSL_TUNNEL: {
+    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
     do_api_callout();
     break;
   }
 
-  case HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN: {
+  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN: {
     // Pre-emptively set a server connect failure that will be cleared once a WRITE_READY is received from origin or
     // bytes are received back
     t_state.set_connect_fail(EIO);
@@ -8198,7 +8199,7 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM: {
+  case HttpTransact::StateMachineAction_t::CACHE_ISSUE_WRITE_TRANSFORM: {
     ink_assert(t_state.cache_info.transform_action == HttpTransact::CacheAction_t::PREPARE_TO_WRITE);
 
     if (transform_cache_sm.cache_write_vc) {
@@ -8216,18 +8217,18 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::SM_ACTION_TRANSFORM_READ: {
-    t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+  case HttpTransact::StateMachineAction_t::TRANSFORM_READ: {
+    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
     do_api_callout();
     break;
   }
 
-  case HttpTransact::SM_ACTION_READ_PUSH_HDR: {
+  case HttpTransact::StateMachineAction_t::READ_PUSH_HDR: {
     setup_push_read_response_header();
     break;
   }
 
-  case HttpTransact::SM_ACTION_STORE_PUSH_BODY: {
+  case HttpTransact::StateMachineAction_t::STORE_PUSH_BODY: {
     // This can return NULL - do we really want to run the tunnel in that case?
     // But that's how it was before this change.
     HttpTunnelProducer *p = setup_push_transfer_to_cache();
@@ -8235,12 +8236,12 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::SM_ACTION_CACHE_PREPARE_UPDATE: {
+  case HttpTransact::StateMachineAction_t::CACHE_PREPARE_UPDATE: {
     ink_assert(t_state.api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE);
     do_cache_prepare_update();
     break;
   }
-  case HttpTransact::SM_ACTION_CACHE_ISSUE_UPDATE: {
+  case HttpTransact::StateMachineAction_t::CACHE_ISSUE_UPDATE: {
     if (t_state.api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_ERROR) {
       t_state.cache_info.object_read = nullptr;
       cache_sm.close_read();
@@ -8250,12 +8251,12 @@ HttpSM::set_next_state()
     break;
   }
 
-  case HttpTransact::SM_ACTION_WAIT_FOR_FULL_BODY: {
+  case HttpTransact::StateMachineAction_t::WAIT_FOR_FULL_BODY: {
     wait_for_full_body();
     break;
   }
 
-  case HttpTransact::SM_ACTION_CONTINUE: {
+  case HttpTransact::StateMachineAction_t::CONTINUE: {
     ink_release_assert(!"Not implemented");
     break;
   }
@@ -8430,11 +8431,11 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
 
   // we want to close the server session
   // will do that in handle_api_return under the
-  // HttpTransact::SM_ACTION_REDIRECT_READ state
+  // HttpTransact::StateMachineAction_t::REDIRECT_READ state
   t_state.parent_result.reset();
   t_state.request_sent_time      = 0;
   t_state.response_received_time = 0;
-  t_state.next_action            = HttpTransact::SM_ACTION_REDIRECT_READ;
+  t_state.next_action            = HttpTransact::StateMachineAction_t::REDIRECT_READ;
   // we have a new OS and need to have DNS lookup the new OS
   t_state.dns_info.resolved_p = false;
   t_state.force_dns           = false;
