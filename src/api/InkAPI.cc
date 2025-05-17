@@ -489,7 +489,7 @@ sdk_sanity_check_http_ssn(TSHttpSsn ssnp)
 TSReturnCode
 sdk_sanity_check_txn(TSHttpTxn txnp)
 {
-  if ((txnp != nullptr) && ((reinterpret_cast<HttpSM *>(txnp))->magic == HTTP_SM_MAGIC_ALIVE)) {
+  if ((txnp != nullptr) && ((reinterpret_cast<HttpSM *>(txnp))->magic == HttpSmMagic_t::ALIVE)) {
     return TS_SUCCESS;
   }
   return TS_ERROR;

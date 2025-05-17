@@ -1823,7 +1823,7 @@ HttpTunnel::main_handler(int event, void *data)
 
   ++reentrancy_count;
 
-  ink_assert(sm->magic == HTTP_SM_MAGIC_ALIVE);
+  ink_assert(sm->magic == HttpSmMagic_t::ALIVE);
 
   // Find the appropriate entry
   if ((p = get_producer(static_cast<VIO *>(data))) != nullptr) {

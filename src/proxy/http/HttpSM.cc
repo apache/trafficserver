@@ -195,7 +195,7 @@ initialize_thread_for_connecting_pools(EThread *thread)
 #endif
 #define STATE_ENTER(state_name, event)                                                   \
   {                                                                                      \
-    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE); */ REMEMBER(event, reentrancy_count);   \
+    /*ink_assert (magic == HttpSmMagic_t::ALIVE); */ REMEMBER(event, reentrancy_count);  \
     SMDbg(dbg_ctl_http, "[%s, %s]", #state_name, HttpDebugNames::get_event_name(event)); \
     ATS_PROBE1(state_name, sm_id);                                                       \
   }
@@ -262,7 +262,7 @@ HttpSM::cleanup()
   tunnel.mutex.clear();
   cache_sm.mutex.clear();
   transform_cache_sm.mutex.clear();
-  magic    = HTTP_SM_MAGIC_DEAD;
+  magic    = HttpSmMagic_t::DEAD;
   debug_on = false;
 
   if (_prewarm_sm) {
@@ -286,7 +286,7 @@ HttpSM::init(bool from_early_data)
 
   _from_early_data = from_early_data;
 
-  magic = HTTP_SM_MAGIC_ALIVE;
+  magic = HttpSmMagic_t::ALIVE;
 
   server_txn = nullptr;
 
@@ -1299,7 +1299,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
 int
 HttpSM::state_api_callback(int event, void *data)
 {
-  ink_release_assert(magic == HTTP_SM_MAGIC_ALIVE);
+  ink_release_assert(magic == HttpSmMagic_t::ALIVE);
 
   ink_assert(reentrancy_count >= 0);
   reentrancy_count++;
@@ -2624,7 +2624,7 @@ HttpSM::state_cache_open_read(int event, void *data)
 int
 HttpSM::main_handler(int event, void *data)
 {
-  ink_release_assert(magic == HTTP_SM_MAGIC_ALIVE);
+  ink_release_assert(magic == HttpSmMagic_t::ALIVE);
 
   HttpSMHandler jump_point = nullptr;
   ink_assert(reentrancy_count >= 0);

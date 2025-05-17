@@ -104,9 +104,9 @@ struct HttpTransformInfo {
   HttpTransformInfo() {}
 };
 
-enum {
-  HTTP_SM_MAGIC_ALIVE = 0x0000FEED,
-  HTTP_SM_MAGIC_DEAD  = 0xDEADFEED,
+enum class HttpSmMagic_t : uint32_t {
+  ALIVE = 0x0000FEED,
+  DEAD  = 0xDEADFEED,
 };
 
 enum {
@@ -277,8 +277,8 @@ public:
 
   std::string_view find_proto_string(HTTPVersion version) const;
 
-  int64_t      sm_id = -1;
-  unsigned int magic = HTTP_SM_MAGIC_DEAD;
+  int64_t       sm_id = -1;
+  HttpSmMagic_t magic = HttpSmMagic_t::DEAD;
 
   // YTS Team, yamsat Plugin
   bool    enable_redirection = false; // To check if redirection is enabled

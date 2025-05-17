@@ -46,7 +46,7 @@
 
 #define STATE_ENTER(state_name, event, vio)                                                           \
   do {                                                                                                \
-    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */        \
+    /*ink_assert (magic == HttpSmMagic_t::ALIVE);  REMEMBER (event, NULL, reentrancy_count); */       \
     HttpSsnDbg("[%" PRId64 "] [%s, %s]", con_id, #state_name, HttpDebugNames::get_event_name(event)); \
   } while (0)
 
