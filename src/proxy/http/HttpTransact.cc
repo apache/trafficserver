@@ -197,13 +197,13 @@ parent_is_proxy(HttpTransact::State *s)
 
 // wrapper to get the parent.config retry type.
 // Does NOT check the strategy; if strategy exists, strategy->responseIsRetryable should be called instead.
-inline static unsigned
+inline static ParentRetry_t
 retry_type(HttpTransact::State *s)
 {
   if (s->parent_params) {
     return s->parent_result.retry_type();
   }
-  return PARENT_RETRY_NONE;
+  return ParentRetry_t::NONE;
 }
 
 // wrapper to choose between a remap next hop strategy or use parent.config
@@ -395,41 +395,42 @@ inline static ParentRetry_t
 response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
 {
   if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response) || s->current.request_to != ResolveInfo::PARENT_PROXY) {
-    return PARENT_RETRY_NONE;
+    return ParentRetry_t::NONE;
   }
   if (s->response_action.handled) {
-    return s->response_action.action.responseIsRetryable ? PARENT_RETRY_SIMPLE : PARENT_RETRY_NONE;
+    return s->response_action.action.responseIsRetryable ? ParentRetry_t::SIMPLE : ParentRetry_t::NONE;
   }
   const url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
     return mp->strategy->responseIsRetryable(s->state_machine->sm_id, s->current, response_code);
   }
 
-  if (s->parent_params && !s->parent_result.response_is_retryable((ParentRetry_t)(s->parent_result.retry_type()), response_code)) {
-    return PARENT_RETRY_NONE;
+  if (s->parent_params && !s->parent_result.response_is_retryable(s->parent_result.retry_type(), response_code)) {
+    return ParentRetry_t::NONE;
   }
-  const unsigned int s_retry_type = retry_type(s);
+  const ParentRetry_t s_retry_type = retry_type(s);
   // If simple or both, check if code is simple-retryable and for retry attempts
-  if ((s_retry_type & PARENT_RETRY_SIMPLE) && s->parent_result.response_is_retryable(PARENT_RETRY_SIMPLE, response_code) &&
-      s->current.simple_retry_attempts < max_retries(s, PARENT_RETRY_SIMPLE)) {
+  if ((s_retry_type == ParentRetry_t::SIMPLE || s_retry_type == ParentRetry_t::BOTH) &&
+      s->parent_result.response_is_retryable(ParentRetry_t::SIMPLE, response_code) &&
+      s->current.simple_retry_attempts < max_retries(s, ParentRetry_t::SIMPLE)) {
     TxnDbg(dbg_ctl_http_trans, "saw parent retry simple first in trans");
     if (s->current.simple_retry_attempts < numParents(s)) {
-      return PARENT_RETRY_SIMPLE;
+      return ParentRetry_t::SIMPLE;
     }
-    return PARENT_RETRY_NONE;
+    return ParentRetry_t::NONE;
   }
   // If unavailable or both, check if code is unavailable-retryable AND also not simple-retryable, then unavailable retry attempts
-  if ((s_retry_type & PARENT_RETRY_UNAVAILABLE_SERVER) &&
-      s->parent_result.response_is_retryable(PARENT_RETRY_UNAVAILABLE_SERVER, response_code) &&
-      !s->parent_result.response_is_retryable(PARENT_RETRY_SIMPLE, response_code) &&
-      s->current.unavailable_server_retry_attempts < max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER)) {
+  if ((s_retry_type == ParentRetry_t::UNAVAILABLE_SERVER || s_retry_type == ParentRetry_t::BOTH) &&
+      s->parent_result.response_is_retryable(ParentRetry_t::UNAVAILABLE_SERVER, response_code) &&
+      !s->parent_result.response_is_retryable(ParentRetry_t::SIMPLE, response_code) &&
+      s->current.unavailable_server_retry_attempts < max_retries(s, ParentRetry_t::UNAVAILABLE_SERVER)) {
     TxnDbg(dbg_ctl_http_trans, "saw parent retry unavailable first in trans");
     if (s->current.unavailable_server_retry_attempts < numParents(s)) {
-      return PARENT_RETRY_UNAVAILABLE_SERVER;
+      return ParentRetry_t::UNAVAILABLE_SERVER;
     }
-    return PARENT_RETRY_NONE;
+    return ParentRetry_t::NONE;
   }
-  return PARENT_RETRY_NONE;
+  return ParentRetry_t::NONE;
 }
 
 inline static void
@@ -441,18 +442,18 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
 
   HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
   switch (response_is_retryable(s, server_response)) {
-  case PARENT_RETRY_SIMPLE:
+  case ParentRetry_t::SIMPLE:
     s->current.state      = HttpTransact::PARENT_RETRY;
-    s->current.retry_type = PARENT_RETRY_SIMPLE;
+    s->current.retry_type = ParentRetry_t::SIMPLE;
     break;
-  case PARENT_RETRY_UNAVAILABLE_SERVER:
+  case ParentRetry_t::UNAVAILABLE_SERVER:
     s->current.state      = HttpTransact::PARENT_RETRY;
-    s->current.retry_type = PARENT_RETRY_UNAVAILABLE_SERVER;
+    s->current.retry_type = ParentRetry_t::UNAVAILABLE_SERVER;
     break;
-  case PARENT_RETRY_BOTH:
+  case ParentRetry_t::BOTH:
     ink_assert(!"response_is_retryable should return an exact retry type, never both");
     break;
-  case PARENT_RETRY_NONE:
+  case ParentRetry_t::NONE:
     break; // no retry
   }
 }
@@ -3586,14 +3587,14 @@ HttpTransact::handle_response_from_parent(State *s)
     handle_forward_server_connection_open(s);
     break;
   case PARENT_RETRY:
-    if (s->current.retry_type == PARENT_RETRY_SIMPLE) {
+    if (s->current.retry_type == ParentRetry_t::SIMPLE) {
       s->current.simple_retry_attempts++;
     } else {
       markParentDown(s);
       s->current.unavailable_server_retry_attempts++;
     }
     next_lookup           = find_server_and_update_current_info(s);
-    s->current.retry_type = PARENT_RETRY_NONE;
+    s->current.retry_type = ParentRetry_t::NONE;
     break;
   default:
     TxnDbg(dbg_ctl_http_trans, "[hrfp] connection not alive");

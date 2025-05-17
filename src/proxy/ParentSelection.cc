@@ -704,11 +704,11 @@ ParentRecord::Init(matcher_line *line_info)
       used = true;
     } else if (strcasecmp(label, "parent_retry") == 0) {
       if (strcasecmp(val, "simple_retry") == 0) {
-        parent_retry = PARENT_RETRY_SIMPLE;
+        parent_retry = ParentRetry_t::SIMPLE;
       } else if (strcasecmp(val, "unavailable_server_retry") == 0) {
-        parent_retry = PARENT_RETRY_UNAVAILABLE_SERVER;
+        parent_retry = ParentRetry_t::UNAVAILABLE_SERVER;
       } else if (strcasecmp(val, "both") == 0) {
-        parent_retry = PARENT_RETRY_BOTH;
+        parent_retry = ParentRetry_t::BOTH;
       } else {
         errPtr = "invalid argument to parent_retry directive.";
       }
@@ -764,24 +764,25 @@ ParentRecord::Init(matcher_line *line_info)
   }
 
   // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
-  if (unavailable_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+  if (unavailable_server_retry_responses != nullptr &&
+      (parent_retry != ParentRetry_t::UNAVAILABLE_SERVER && parent_retry != ParentRetry_t::BOTH)) {
     Warning("%s ignoring unavailable_server_retry_responses directive on line %d, as unavailable_server_retry is not enabled.",
             modulePrefix, line_num);
     delete unavailable_server_retry_responses;
     unavailable_server_retry_responses = nullptr;
-  } else if (unavailable_server_retry_responses == nullptr && parent_retry) {
+  } else if (unavailable_server_retry_responses == nullptr && parent_retry != ParentRetry_t::NONE) {
     // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
     Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
     unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
   }
 
   // delete simple_server_retry_responses if simple_retry is not enabled.
-  if (simple_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_SIMPLE)) {
+  if (simple_server_retry_responses != nullptr && (parent_retry != ParentRetry_t::SIMPLE && parent_retry != ParentRetry_t::BOTH)) {
     Warning("%s ignore simple_server_Retry_responses directive on line %d, as simple_server_retry is not enabled.", modulePrefix,
             line_num);
     delete simple_server_retry_responses;
     simple_server_retry_responses = nullptr;
-  } else if (simple_server_retry_responses == nullptr && parent_retry) {
+  } else if (simple_server_retry_responses == nullptr && parent_retry != ParentRetry_t::NONE) {
     // initialize simple server respones codes to the default value if simple_retry is enabled.
     Warning("%s initializing SimpleRetryResponseCodes on line %d to 404 default.", modulePrefix, line_num);
     simple_server_retry_responses = new SimpleRetryResponseCodes(nullptr);

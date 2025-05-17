@@ -612,7 +612,7 @@ public:
     Attempts      retry_attempts;
     unsigned      simple_retry_attempts             = 0;
     unsigned      unavailable_server_retry_attempts = 0;
-    ParentRetry_t retry_type                        = PARENT_RETRY_NONE;
+    ParentRetry_t retry_type                        = ParentRetry_t::NONE;
 
     _CurrentInfo()                     = default;
     _CurrentInfo(_CurrentInfo const &) = delete;

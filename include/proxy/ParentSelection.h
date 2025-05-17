@@ -65,12 +65,12 @@ static const char *ParentResultStr[] = {"ParentResultType::UNDEFINED", "ParentRe
 
 enum class ParentRR_t { NO_ROUND_ROBIN = 0, STRICT_ROUND_ROBIN, HASH_ROUND_ROBIN, CONSISTENT_HASH, LATCHED_ROUND_ROBIN, UNDEFINED };
 
-enum ParentRetry_t {
-  PARENT_RETRY_NONE               = 0,
-  PARENT_RETRY_SIMPLE             = 1,
-  PARENT_RETRY_UNAVAILABLE_SERVER = 2,
+enum class ParentRetry_t {
+  NONE               = 0,
+  SIMPLE             = 1,
+  UNAVAILABLE_SERVER = 2,
   // both simple and unavailable server retry
-  PARENT_RETRY_BOTH = 3
+  BOTH = 3
 };
 
 struct UnavailableServerResponseCodes {
@@ -158,7 +158,7 @@ public:
   ParentSelectionStrategy        *selection_strategy                 = nullptr;
   UnavailableServerResponseCodes *unavailable_server_retry_responses = nullptr;
   SimpleRetryResponseCodes       *simple_server_retry_responses      = nullptr;
-  ParentRetry_t                   parent_retry                       = PARENT_RETRY_NONE;
+  ParentRetry_t                   parent_retry                       = ParentRetry_t::NONE;
   int                             max_simple_retries                 = 1;
   int                             max_unavailable_server_retries     = 1;
   int                             secondary_mode                     = 1;
@@ -228,10 +228,10 @@ struct ParentResult {
     return is_api_result() ? true : rec->parent_is_proxy;
   }
 
-  unsigned
+  ParentRetry_t
   retry_type() const
   {
-    return is_api_result() ? PARENT_RETRY_NONE : rec->parent_retry;
+    return is_api_result() ? ParentRetry_t::NONE : rec->parent_retry;
   }
 
   unsigned
@@ -243,13 +243,13 @@ struct ParentResult {
     }
 
     switch (method) {
-    case PARENT_RETRY_NONE:
+    case ParentRetry_t::NONE:
       return 0;
-    case PARENT_RETRY_SIMPLE:
+    case ParentRetry_t::SIMPLE:
       return rec->max_simple_retries;
-    case PARENT_RETRY_UNAVAILABLE_SERVER:
+    case ParentRetry_t::UNAVAILABLE_SERVER:
       return rec->max_unavailable_server_retries;
-    case PARENT_RETRY_BOTH:
+    case ParentRetry_t::BOTH:
       return std::max(rec->max_unavailable_server_retries, rec->max_simple_retries);
     }
 
@@ -259,15 +259,15 @@ struct ParentResult {
   bool
   response_is_retryable(ParentRetry_t retry_type, HTTPStatus response_code) const
   {
-    Dbg(dbg_ctl_parent_select, "In response_is_retryable, code: %d, type: %d", response_code, retry_type);
-    if (retry_type == PARENT_RETRY_BOTH) {
+    Dbg(dbg_ctl_parent_select, "In response_is_retryable, code: %d, type: %d", response_code, static_cast<int>(retry_type));
+    if (retry_type == ParentRetry_t::BOTH) {
       Dbg(dbg_ctl_parent_select, "Saw retry both");
       return (rec->unavailable_server_retry_responses->contains(response_code) ||
               rec->simple_server_retry_responses->contains(response_code));
-    } else if (retry_type == PARENT_RETRY_UNAVAILABLE_SERVER) {
+    } else if (retry_type == ParentRetry_t::UNAVAILABLE_SERVER) {
       Dbg(dbg_ctl_parent_select, "Saw retry unavailable server");
       return rec->unavailable_server_retry_responses->contains(response_code);
-    } else if (retry_type == PARENT_RETRY_SIMPLE) {
+    } else if (retry_type == ParentRetry_t::SIMPLE) {
       Dbg(dbg_ctl_parent_select, "Saw retry simple retry");
       return rec->simple_server_retry_responses->contains(response_code);
     } else {

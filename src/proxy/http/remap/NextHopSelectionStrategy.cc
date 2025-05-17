@@ -307,16 +307,16 @@ NextHopSelectionStrategy::responseIsRetryable(int64_t sm_id, HttpTransact::Curre
          "%d, max_unavailable_retries: %d",
          sm_id, response_code, sa, this->max_simple_retries, ua, max_unavailable_retries);
   if (this->resp_codes.contains(response_code) && sa < this->max_simple_retries && sa < this->num_parents) {
-    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_SIMPLE", sm_id, response_code);
-    return PARENT_RETRY_SIMPLE;
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning ParentRetry_t::SIMPLE", sm_id, response_code);
+    return ParentRetry_t::SIMPLE;
   }
   if (this->markdown_codes.contains(response_code) && ua < this->max_unavailable_retries && ua < this->num_parents) {
-    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_UNAVAILABLE_SERVER", sm_id,
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning ParentRetry_t::UNAVAILABLE_SERVER", sm_id,
            response_code);
-    return PARENT_RETRY_UNAVAILABLE_SERVER;
+    return ParentRetry_t::UNAVAILABLE_SERVER;
   }
-  NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is not retryable, returning PARENT_RETRY_NONE", sm_id, response_code);
-  return PARENT_RETRY_NONE;
+  NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is not retryable, returning ParentRetry_t::NONE", sm_id, response_code);
+  return ParentRetry_t::NONE;
 }
 
 namespace YAML
