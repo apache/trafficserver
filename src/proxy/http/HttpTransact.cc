@@ -2438,7 +2438,7 @@ HttpTransact::issue_revalidate(State *s)
   SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
   ink_assert(GET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP) != ' ');
 
-  if (s->www_auth_content == CACHE_AUTH_FRESH) {
+  if (s->www_auth_content == CacheAuth_t::FRESH) {
     s->hdr_info.server_request.method_set(HTTP_METHOD_HEAD, HTTP_LEN_HEAD);
     // The document is fresh in cache and we just want to see if the
     // the client has the right credentials
@@ -2489,7 +2489,7 @@ HttpTransact::issue_revalidate(State *s)
 
   if ((!(s->hdr_info.client_request.presence(MIME_PRESENCE_IF_MODIFIED_SINCE))) &&
       (!(s->hdr_info.client_request.presence(MIME_PRESENCE_IF_NONE_MATCH))) && (no_cache_in_request == true) &&
-      (!s->txn_conf->cache_ims_on_client_no_cache) && (s->www_auth_content == CACHE_AUTH_NONE)) {
+      (!s->txn_conf->cache_ims_on_client_no_cache) && (s->www_auth_content == CacheAuth_t::NONE)) {
     TxnDbg(dbg_ctl_http_trans, "Can not make this a conditional request. This is the force update of the cached copy case");
     // set cache action to update. response will be a 200 or error,
     // causing cached copy to be replaced (if 200).
@@ -2702,7 +2702,7 @@ HttpTransact::need_to_revalidate(State *s)
 
   bool send_revalidate = ((needs_authenticate == true) || (needs_revalidate == true) || (is_cache_response_returnable(s) == false));
   if (needs_cache_auth == true) {
-    s->www_auth_content = send_revalidate ? CACHE_AUTH_STALE : CACHE_AUTH_FRESH;
+    s->www_auth_content = send_revalidate ? CacheAuth_t::STALE : CacheAuth_t::FRESH;
     send_revalidate     = true;
   }
   return send_revalidate;
@@ -2829,7 +2829,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
   if (needs_cache_auth == true) {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
-    s->www_auth_content = send_revalidate ? CACHE_AUTH_STALE : CACHE_AUTH_FRESH;
+    s->www_auth_content = send_revalidate ? CacheAuth_t::STALE : CacheAuth_t::FRESH;
     send_revalidate     = true;
   }
 
@@ -3975,7 +3975,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
     return;
   }
 
-  if (s->www_auth_content == CACHE_AUTH_FRESH) {
+  if (s->www_auth_content == CacheAuth_t::FRESH) {
     // no update is needed - either to serve from cache if authorized,
     // or tunnnel the server response
     if (s->hdr_info.server_response.status_get() == HTTP_STATUS_OK) {
@@ -4404,9 +4404,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       s->next_action       = StateMachineAction_t::SERVE_FROM_CACHE;
       client_response_code = base_response->status_get();
     } else if (s->cache_info.action == CacheAction_t::UPDATE) {
-      if (s->www_auth_content == CACHE_AUTH_FRESH || s->api_server_response_ignore) {
+      if (s->www_auth_content == CacheAuth_t::FRESH || s->api_server_response_ignore) {
         s->cache_info.action = CacheAction_t::NO_ACTION;
-      } else if (s->www_auth_content == CACHE_AUTH_STALE && server_response_code == HTTP_STATUS_UNAUTHORIZED) {
+      } else if (s->www_auth_content == CacheAuth_t::STALE && server_response_code == HTTP_STATUS_UNAUTHORIZED) {
         s->cache_info.action = CacheAction_t::NO_ACTION;
       } else if (!cacheable) {
         if (HttpTransactHeaders::is_status_an_error_response(server_response_code) &&
@@ -6284,7 +6284,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   if (indicator > 0) { // cacheable indicated by cache control header
     TxnDbg(dbg_ctl_http_trans, "YES by response cache control");
     // even if it is authenticated, this is cacheable based on regular rules
-    s->www_auth_content = CACHE_AUTH_NONE;
+    s->www_auth_content = CacheAuth_t::NONE;
     return true;
   } else if (indicator < 0) { // not cacheable indicated by cache control header
 

@@ -3508,7 +3508,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     c->write_success          = true;
     t_state.client_info.abort = HttpTransact::DIDNOT_ABORT;
     if (t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
-      if (t_state.www_auth_content != HttpTransact::CACHE_AUTH_SERVE || _ua.get_txn()->get_server_session()) {
+      if (t_state.www_auth_content != HttpTransact::CacheAuth_t::SERVE || _ua.get_txn()->get_server_session()) {
         // successful keep-alive
         close_connection = false;
       }
@@ -5927,16 +5927,16 @@ HttpSM::release_server_session(bool serve_from_cache)
       t_state.hdr_info.server_request.valid() &&
       (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
        (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD &&
-        t_state.www_auth_content != HttpTransact::CACHE_AUTH_NONE)) &&
+        t_state.www_auth_content != HttpTransact::CacheAuth_t::NONE)) &&
       plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL && (!server_entry || !server_entry->eos)) {
-    if (t_state.www_auth_content == HttpTransact::CACHE_AUTH_NONE || serve_from_cache == false) {
+    if (t_state.www_auth_content == HttpTransact::CacheAuth_t::NONE || serve_from_cache == false) {
       // Must explicitly set the keep_alive_no_activity time before doing the release
       server_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->keep_alive_no_activity_timeout_out));
       server_txn->release();
     } else {
       // an authenticated server connection - attach to the local client
       // we are serving from cache for the current transaction
-      t_state.www_auth_content = HttpTransact::CACHE_AUTH_SERVE;
+      t_state.www_auth_content = HttpTransact::CacheAuth_t::SERVE;
       _ua.get_txn()->attach_server_session(static_cast<PoolableSession *>(server_txn->get_proxy_ssn()), false);
     }
   } else {
@@ -5953,7 +5953,7 @@ HttpSM::release_server_session(bool serve_from_cache)
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_invalid_request);
     } else if (t_state.hdr_info.server_response.status_get() != HTTP_STATUS_NOT_MODIFIED &&
                (t_state.hdr_info.server_request.method_get_wksidx() != HTTP_WKSIDX_HEAD ||
-                t_state.www_auth_content == HttpTransact::CACHE_AUTH_NONE)) {
+                t_state.www_auth_content == HttpTransact::CacheAuth_t::NONE)) {
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_modified);
     } else {
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_misc);

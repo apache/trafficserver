@@ -451,12 +451,12 @@ public:
     NOT_TRANSFORM_REQUESTED,
   };
 
-  enum CacheAuth_t {
-    CACHE_AUTH_NONE = 0,
-    // CACHE_AUTH_TRUE,
-    CACHE_AUTH_FRESH,
-    CACHE_AUTH_STALE,
-    CACHE_AUTH_SERVE
+  enum class CacheAuth_t {
+    NONE = 0,
+    // TRUE,
+    FRESH,
+    STALE,
+    SERVE
   };
 
   struct State;
@@ -664,7 +664,7 @@ public:
     HTTPVersion         updated_server_version = HTTP_INVALID;
     CacheLookupResult_t cache_lookup_result    = CacheLookupResult_t::NONE;
     HTTPStatus          http_return_code       = HTTP_STATUS_NONE;
-    CacheAuth_t         www_auth_content       = CACHE_AUTH_NONE;
+    CacheAuth_t         www_auth_content       = CacheAuth_t::NONE;
 
     Arena arena;
 
