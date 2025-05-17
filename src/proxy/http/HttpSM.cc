@@ -826,8 +826,8 @@ HttpSM::wait_for_full_body()
   int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
   post_buffer->write(_ua.get_txn()->get_remote_reader(), chunked ? _ua.get_txn()->get_remote_reader()->read_avail() : post_bytes);
 
-  p = tunnel.add_producer(_ua.get_entry()->vc, post_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_BUFFER_READ,
-                          "ua post buffer");
+  p = tunnel.add_producer(_ua.get_entry()->vc, post_bytes, buf_start, &HttpSM::tunnel_handler_post_ua,
+                          HttpTunnelType_t::BUFFER_READ, "ua post buffer");
   if (chunked) {
     bool const drop_chunked_trailers = t_state.http_config_param->oride.http_drop_chunked_trailers == 1;
     bool const parse_chunk_strictly  = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
@@ -1227,7 +1227,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
       ink_assert(c->write_success == false);
     } else if (c->producer->read_success == false) {
       // Case 2 - error from data source
-      if (c->producer->vc_type == HT_HTTP_CLIENT) {
+      if (c->producer->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
         // Our source is the client.  POST can't
         //   be truncated so forward to the tunnel
         //   handler to clean this mess up
@@ -1262,7 +1262,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
     if (c->handler_state != HTTP_SM_TRANSFORM_FAIL) {
       t_info->vc = nullptr;
     }
-    if (c->producer->vc_type == HT_HTTP_CLIENT) {
+    if (c->producer->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
       /* Producer was the user agent and there was a failure transforming the POST.
          Handling this is challenging and this isn't the best way but it at least
          avoids a crash due to trying to send a response to a NULL'd out user agent.
@@ -2682,7 +2682,8 @@ HttpSM::main_handler(int event, void *data)
 void
 HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
 {
-  ink_assert(p->vc_type == HT_HTTP_CLIENT || (p->handler_state == HTTP_SM_POST_UA_FAIL && p->vc_type == HT_BUFFER_READ));
+  ink_assert(p->vc_type == HttpTunnelType_t::HTTP_CLIENT ||
+             (p->handler_state == HTTP_SM_POST_UA_FAIL && p->vc_type == HttpTunnelType_t::BUFFER_READ));
   HttpTunnelConsumer *c;
 
   // If there is a post transform, remove it's entry from the State
@@ -2735,7 +2736,8 @@ HttpSM::tunnel_handler_post(int event, void *data)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post, event);
 
-  HttpTunnelProducer *p = _ua.get_txn() != nullptr ? tunnel.get_producer(_ua.get_txn()) : tunnel.get_producer(HT_HTTP_CLIENT);
+  HttpTunnelProducer *p =
+    _ua.get_txn() != nullptr ? tunnel.get_producer(_ua.get_txn()) : tunnel.get_producer(HttpTunnelType_t::HTTP_CLIENT);
   if (!p) {
     return 0; // Cannot do anything if there is no producer
   }
@@ -2789,7 +2791,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
   if (is_waiting_for_full_body && !this->is_postbuf_valid()) {
     p_handler_state = HTTP_SM_POST_SERVER_FAIL;
   }
-  if (p->vc_type != HT_BUFFER_READ) {
+  if (p->vc_type != HttpTunnelType_t::BUFFER_READ) {
     tunnel_handler_post_or_put(p);
   }
 
@@ -2878,8 +2880,8 @@ HttpSM::tunnel_handler_trailer(int event, void *data)
   tunnel.deallocate_buffers();
   tunnel.reset();
   HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_trailer_server,
-                                              HT_HTTP_SERVER, "http server trailer");
-  tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_trailer_ua, HT_HTTP_CLIENT,
+                                              HttpTunnelType_t::HTTP_SERVER, "http server trailer");
+  tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_trailer_ua, HttpTunnelType_t::HTTP_CLIENT,
                       "user agent trailer");
 
   _ua.get_entry()->in_tunnel = true;
@@ -2913,9 +2915,9 @@ HttpSM::tunnel_handler_cache_fill(int event, void *data)
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
-  server_entry->vc = server_txn;
-  HttpTunnelProducer *p =
-    tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_server, HT_HTTP_SERVER, "http server");
+  server_entry->vc      = server_txn;
+  HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_server,
+                                              HttpTunnelType_t::HTTP_SERVER, "http server");
 
   bool const drop_chunked_trailers = t_state.http_config_param->oride.http_drop_chunked_trailers == 1;
   bool const parse_chunk_strictly  = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
@@ -2982,7 +2984,8 @@ HttpSM::tunnel_handler_push(int event, void *data)
   ink_assert(data == &tunnel);
 
   // Check to see if the client is still around
-  HttpTunnelProducer *ua = (_ua.get_txn()) ? tunnel.get_producer(_ua.get_txn()) : tunnel.get_producer(HT_HTTP_CLIENT);
+  HttpTunnelProducer *ua =
+    (_ua.get_txn()) ? tunnel.get_producer(_ua.get_txn()) : tunnel.get_producer(HttpTunnelType_t::HTTP_CLIENT);
 
   if (ua == nullptr || !ua->read_success) {
     // Client failed to send the body, it's gone.  Kill the
@@ -2992,7 +2995,7 @@ HttpSM::tunnel_handler_push(int event, void *data)
   }
 
   HttpTunnelConsumer *cache = ua->consumer_list.head;
-  ink_release_assert(cache->vc_type == HT_CACHE_WRITE);
+  ink_release_assert(cache->vc_type == HttpTunnelType_t::CACHE_WRITE);
   bool cache_write_success = cache->write_success;
 
   // Reset tunneling state since we need to send a response
@@ -3128,7 +3131,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     Metrics::Counter::increment(http_rsb.origin_shutdown_tunnel_server);
     close_connection = true;
 
-    ink_assert(p->vc_type == HT_HTTP_SERVER);
+    ink_assert(p->vc_type == HttpTunnelType_t::HTTP_SERVER);
 
     if (is_http_server_eos_truncation(p)) {
       SMDbg(dbg_ctl_http, "aborting HTTP tunnel due to server truncation");
@@ -3229,7 +3232,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   }
   // We handled the event.  Now either shutdown the connection or
   //   setup it up for keep-alive
-  ink_assert(p->vc_type == HT_HTTP_SERVER);
+  ink_assert(p->vc_type == HttpTunnelType_t::HTTP_SERVER);
   ink_assert(p->vc == server_txn);
 
   // The server session has been released. Clean all pointer
@@ -3302,7 +3305,7 @@ HttpSM::tunnel_handler_trailer_server(int event, HttpTunnelProducer *p)
       break;
     }
 
-    ink_assert(p->vc_type == HT_HTTP_SERVER);
+    ink_assert(p->vc_type == HttpTunnelType_t::HTTP_SERVER);
 
     SMDbg(dbg_ctl_http, "aborting HTTP tunnel due to server truncation");
     tunnel.chain_abort_all(p);
@@ -3334,7 +3337,7 @@ HttpSM::tunnel_handler_trailer_server(int event, HttpTunnelProducer *p)
 
   // We handled the event.  Now either shutdown server transaction
   ink_assert(server_entry->vc == p->vc);
-  ink_assert(p->vc_type == HT_HTTP_SERVER);
+  ink_assert(p->vc_type == HttpTunnelType_t::HTTP_SERVER);
   ink_assert(p->vc == server_txn);
 
   // The server session has been released. Clean all pointer
@@ -3393,7 +3396,7 @@ HttpSM::tunnel_handler_100_continue_ua(int event, HttpTunnelConsumer *c)
 bool
 HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
 {
-  ink_assert(c->vc_type == HT_HTTP_CLIENT);
+  ink_assert(c->vc_type == HttpTunnelType_t::HTTP_CLIENT);
 
   if (c->producer->alive &&          // something there to read
                                      //      server_entry && server_entry->vc &&              // from an origin server
@@ -3405,7 +3408,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
     if (!server_txn || !server_txn->get_netvc()) {
       // return true if we have finished the reading from OS when client aborted
       p = c->producer->self_consumer ? c->producer->self_consumer->producer : c->producer;
-      if (p->vc_type == HT_HTTP_SERVER && p->read_success) {
+      if (p->vc_type == HttpTunnelType_t::HTTP_SERVER && p->read_success) {
         return true;
       } else {
         return false;
@@ -3497,7 +3500,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
         // if producer is the cache or OS, close the producer.
         // Otherwise in case of large docs, producer iobuffer gets filled up,
         // waiting for a consumer to consume data and the connection is never closed.
-        if (p->alive && ((p->vc_type == HT_CACHE_READ) || (p->vc_type == HT_HTTP_SERVER))) {
+        if (p->alive && ((p->vc_type == HttpTunnelType_t::CACHE_READ) || (p->vc_type == HttpTunnelType_t::HTTP_SERVER))) {
           tunnel.chain_abort_all(p);
         }
       }
@@ -3560,7 +3563,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     // only external POSTs should be subject to this logic; ruling out internal POSTs here
     bool is_eligible_post_request = ((t_state.method == HTTP_WKSIDX_POST) && !is_internal);
 
-    if (is_eligible_post_request && c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
+    if (is_eligible_post_request && c->producer->vc_type != HttpTunnelType_t::STATIC && event == VC_EVENT_WRITE_COMPLETE) {
       _ua.get_txn()->set_half_close_flag(true);
     }
 
@@ -3611,7 +3614,7 @@ HttpSM::tunnel_handler_trailer_ua(int event, HttpTunnelConsumer *c)
       // if producer is the cache or OS, close the producer.
       // Otherwise in case of large docs, producer iobuffer gets filled up,
       // waiting for a consumer to consume data and the connection is never closed.
-      if (p->alive && ((p->vc_type == HT_CACHE_READ) || (p->vc_type == HT_HTTP_SERVER))) {
+      if (p->alive && ((p->vc_type == HttpTunnelType_t::CACHE_READ) || (p->vc_type == HttpTunnelType_t::HTTP_SERVER))) {
         tunnel.chain_abort_all(p);
       }
     }
@@ -3723,8 +3726,9 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
   STATE_ENTER(&HttpSM::tunnel_handler_cache_write, event);
   SMDbg(dbg_ctl_http, "handling cache event: %s", HttpDebugNames::get_event_name(event));
 
-  HttpTransact::CacheWriteStatus_t *status_ptr =
-    (c->producer->vc_type == HT_TRANSFORM) ? &t_state.cache_info.transform_write_status : &t_state.cache_info.write_status;
+  HttpTransact::CacheWriteStatus_t *status_ptr = (c->producer->vc_type == HttpTunnelType_t::TRANSFORM) ?
+                                                   &t_state.cache_info.transform_write_status :
+                                                   &t_state.cache_info.write_status;
 
   switch (event) {
   case VC_EVENT_ERROR:
@@ -3829,7 +3833,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     //   we were setting it again to true but incorrectly in
     //   the case of a transform
     hsm_release_assert(_ua.get_entry()->in_tunnel == true);
-    if (p->consumer_list.head && p->consumer_list.head->vc_type == HT_TRANSFORM) {
+    if (p->consumer_list.head && p->consumer_list.head->vc_type == HttpTunnelType_t::TRANSFORM) {
       hsm_release_assert(post_transform_info.entry->in_tunnel == true);
     } // server side may have completed before the user agent side, so it may no longer be in tunnel
 
@@ -3958,7 +3962,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     // We may be reading from a transform.  In that case, we
     //   want to close the transform
     HttpTunnelProducer *ua_producer;
-    if (c->producer->vc_type == HT_TRANSFORM) {
+    if (c->producer->vc_type == HttpTunnelType_t::TRANSFORM) {
       if (c->producer->handler_state == HTTP_SM_TRANSFORM_OPEN) {
         ink_assert(c->producer->vc == post_transform_info.vc);
         c->producer->vc->do_io_close();
@@ -3969,7 +3973,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     } else {
       ua_producer = c->producer;
     }
-    ink_assert(ua_producer->vc_type == HT_HTTP_CLIENT);
+    ink_assert(ua_producer->vc_type == HttpTunnelType_t::HTTP_CLIENT);
     ink_assert(ua_producer->vc == _ua.get_txn());
     ink_assert(ua_producer->vc == _ua.get_entry()->vc);
 
@@ -3983,11 +3987,11 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     // When event is VC_EVENT_ERROR,and when redirection is enabled
     // do not shut down the client read
     if (enable_redirection) {
-      if (ua_producer->vc_type == HT_STATIC && event != VC_EVENT_ERROR && event != VC_EVENT_EOS) {
+      if (ua_producer->vc_type == HttpTunnelType_t::STATIC && event != VC_EVENT_ERROR && event != VC_EVENT_EOS) {
         _ua.get_entry()->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, _ua.get_txn()->get_remote_reader()->mbuf);
         // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
       } else {
-        if (ua_producer->vc_type == HT_STATIC && t_state.redirect_info.redirect_in_process) {
+        if (ua_producer->vc_type == HttpTunnelType_t::STATIC && t_state.redirect_info.redirect_in_process) {
           post_failed = true;
         }
       }
@@ -4073,16 +4077,16 @@ HttpSM::tunnel_handler_ssl_producer(int event, HttpTunnelProducer *p)
 
   // Update stats
   switch (p->vc_type) {
-  case HT_HTTP_SERVER:
+  case HttpTunnelType_t::HTTP_SERVER:
     server_response_body_bytes += p->bytes_read;
     break;
-  case HT_HTTP_CLIENT:
+  case HttpTunnelType_t::HTTP_CLIENT:
     client_request_body_bytes += p->bytes_read;
     break;
   default:
     // Covered here:
-    // HT_CACHE_READ, HT_CACHE_WRITE,
-    // HT_TRANSFORM, HT_STATIC.
+    // HttpTunnelType_t::CACHE_READ, HttpTunnelType_t::CACHE_WRITE,
+    // HttpTunnelType_t::TRANSFORM, HttpTunnelType_t::STATIC.
     break;
   }
 
@@ -4140,16 +4144,16 @@ HttpSM::tunnel_handler_ssl_consumer(int event, HttpTunnelConsumer *c)
 
   // Update stats
   switch (c->vc_type) {
-  case HT_HTTP_SERVER:
+  case HttpTunnelType_t::HTTP_SERVER:
     server_request_body_bytes += c->bytes_written;
     break;
-  case HT_HTTP_CLIENT:
+  case HttpTunnelType_t::HTTP_CLIENT:
     client_response_body_bytes += c->bytes_written;
     break;
   default:
     // Handled here:
-    // HT_CACHE_READ, HT_CACHE_WRITE, HT_TRANSFORM,
-    // HT_STATIC
+    // HttpTunnelType_t::CACHE_READ, HttpTunnelType_t::CACHE_WRITE, HttpTunnelType_t::TRANSFORM,
+    // HttpTunnelType_t::STATIC
     break;
   }
 
@@ -6218,11 +6222,11 @@ HttpSM::setup_transform_to_server_transfer()
   HttpTunnelConsumer *c = tunnel.get_consumer(post_transform_info.vc);
 
   HttpTunnelProducer *p = tunnel.add_producer(post_transform_info.vc, nbytes, buf_start, &HttpSM::tunnel_handler_transform_read,
-                                              HT_TRANSFORM, "post transform");
+                                              HttpTunnelType_t::TRANSFORM, "post transform");
   tunnel.chain(c, p);
   post_transform_info.entry->in_tunnel = true;
 
-  tunnel.add_consumer(server_entry->vc, post_transform_info.vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER,
+  tunnel.add_consumer(server_entry->vc, post_transform_info.vc, &HttpSM::tunnel_handler_post_server, HttpTunnelType_t::HTTP_SERVER,
                       "http server post");
   server_entry->in_tunnel = true;
 
@@ -6285,7 +6289,7 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
     int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
     transferred_bytes  = post_bytes;
     p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, postdata_producer_reader, (HttpProducerHandler) nullptr,
-                            HT_STATIC, "redirect static agent post");
+                            HttpTunnelType_t::STATIC, "redirect static agent post");
   } else {
     int64_t alloc_index;
     // content length is undefined, use default buffer size
@@ -6332,7 +6336,7 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
       post_bytes = num_body_bytes;
     }
     p = tunnel.add_producer(_ua.get_entry()->vc, post_bytes - transferred_bytes, buf_start, &HttpSM::tunnel_handler_post_ua,
-                            HT_HTTP_CLIENT, "user agent post");
+                            HttpTunnelType_t::HTTP_CLIENT, "user agent post");
   }
   _ua.get_entry()->in_tunnel = true;
 
@@ -6341,8 +6345,8 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_request_wait_for_transform_read);
     ink_assert(post_transform_info.entry != nullptr);
     ink_assert(post_transform_info.entry->vc == post_transform_info.vc);
-    tunnel.add_consumer(post_transform_info.entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_transform_write, HT_TRANSFORM,
-                        "post transform");
+    tunnel.add_consumer(post_transform_info.entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_transform_write,
+                        HttpTunnelType_t::TRANSFORM, "post transform");
     post_transform_info.entry->in_tunnel = true;
     break;
   case HTTP_SERVER_VC:
@@ -6352,11 +6356,11 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
     if (post_redirect) {
       chunked = false;
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_for_partial_post);
-      tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER,
-                          "redirect http server post");
+      tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server,
+                          HttpTunnelType_t::HTTP_SERVER, "redirect http server post");
     } else {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
-      tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER,
+      tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_post_server, HttpTunnelType_t::HTTP_SERVER,
                           "http server post");
     }
     server_entry->in_tunnel = true;
@@ -6787,8 +6791,9 @@ HttpSM::setup_cache_read_transfer()
   }
 
   HttpTunnelProducer *p = tunnel.add_producer(cache_sm.cache_read_vc, doc_size, buf_start, &HttpSM::tunnel_handler_cache_read,
-                                              HT_CACHE_READ, "cache read");
-  tunnel.add_consumer(_ua.get_entry()->vc, cache_sm.cache_read_vc, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
+                                              HttpTunnelType_t::CACHE_READ, "cache read");
+  tunnel.add_consumer(_ua.get_entry()->vc, cache_sm.cache_read_vc, &HttpSM::tunnel_handler_ua, HttpTunnelType_t::HTTP_CLIENT,
+                      "user agent");
   // if size of a cached item is not known, we'll do chunking for keep-alive HTTP/1.1 clients
   // this only applies to read-while-write cases where origin server sends a dynamically generated chunked content
   // w/o providing a Content-Length header
@@ -6825,10 +6830,10 @@ HttpSM::setup_cache_transfer_to_transform()
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_response_wait_for_transform_read);
 
   HttpTunnelProducer *p = tunnel.add_producer(cache_sm.cache_read_vc, doc_size, buf_start, &HttpSM::tunnel_handler_cache_read,
-                                              HT_CACHE_READ, "cache read");
+                                              HttpTunnelType_t::CACHE_READ, "cache read");
 
-  tunnel.add_consumer(transform_info.vc, cache_sm.cache_read_vc, &HttpSM::tunnel_handler_transform_write, HT_TRANSFORM,
-                      "transform write");
+  tunnel.add_consumer(transform_info.vc, cache_sm.cache_read_vc, &HttpSM::tunnel_handler_transform_write,
+                      HttpTunnelType_t::TRANSFORM, "transform write");
   transform_info.entry->in_tunnel = true;
   cache_sm.cache_read_vc          = nullptr;
 
@@ -6849,7 +6854,8 @@ HttpSM::setup_cache_write_transfer(HttpCacheSM *c_sm, VConnection *source_vc, HT
   c_sm->cache_write_vc->set_http_info(store_info);
   store_info->clear();
 
-  tunnel.add_consumer(c_sm->cache_write_vc, source_vc, &HttpSM::tunnel_handler_cache_write, HT_CACHE_WRITE, name, skip_bytes);
+  tunnel.add_consumer(c_sm->cache_write_vc, source_vc, &HttpSM::tunnel_handler_cache_write, HttpTunnelType_t::CACHE_WRITE, name,
+                      skip_bytes);
 
   c_sm->cache_write_vc = nullptr;
 }
@@ -6872,10 +6878,11 @@ HttpSM::setup_100_continue_transfer()
   tunnel.reset();
 
   // Setup the tunnel to the client
-  HttpTunnelProducer *p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, client_response_hdr_bytes, buf_start,
-                                              (HttpProducerHandler) nullptr, HT_STATIC, "internal msg - 100 continue");
-  tunnel.add_consumer(_ua.get_entry()->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_100_continue_ua, HT_HTTP_CLIENT,
-                      "user agent");
+  HttpTunnelProducer *p =
+    tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, client_response_hdr_bytes, buf_start, (HttpProducerHandler) nullptr,
+                        HttpTunnelType_t::STATIC, "internal msg - 100 continue");
+  tunnel.add_consumer(_ua.get_entry()->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_100_continue_ua,
+                      HttpTunnelType_t::HTTP_CLIENT, "user agent");
 
   // Make sure the half_close is not set.
   _ua.get_txn()->set_half_close_flag(false);
@@ -7010,9 +7017,10 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     tunnel.reset();
 
     // Setup the tunnel to the client
-    HttpTunnelProducer *p =
-      tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, nbytes, buf_start, (HttpProducerHandler) nullptr, HT_STATIC, "internal msg");
-    tunnel.add_consumer(_ua.get_entry()->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
+    HttpTunnelProducer *p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, nbytes, buf_start, (HttpProducerHandler) nullptr,
+                                                HttpTunnelType_t::STATIC, "internal msg");
+    tunnel.add_consumer(_ua.get_entry()->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_ua, HttpTunnelType_t::HTTP_CLIENT,
+                        "user agent");
 
     _ua.get_entry()->in_tunnel = true;
     tunnel.tunnel_run(p);
@@ -7105,10 +7113,10 @@ HttpSM::setup_server_transfer_to_transform()
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_response_wait_for_transform_read);
 
-  HttpTunnelProducer *p =
-    tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_server, HT_HTTP_SERVER, "http server");
+  HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_server,
+                                              HttpTunnelType_t::HTTP_SERVER, "http server");
 
-  tunnel.add_consumer(transform_info.vc, server_entry->vc, &HttpSM::tunnel_handler_transform_write, HT_TRANSFORM,
+  tunnel.add_consumer(transform_info.vc, server_entry->vc, &HttpSM::tunnel_handler_transform_write, HttpTunnelType_t::TRANSFORM,
                       "transform write");
 
   server_entry->in_tunnel         = true;
@@ -7137,7 +7145,7 @@ HttpSM::setup_transfer_from_transform()
   HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
   ink_assert(c != nullptr);
   ink_assert(c->vc == transform_info.vc);
-  ink_assert(c->vc_type == HT_TRANSFORM);
+  ink_assert(c->vc_type == HttpTunnelType_t::TRANSFORM);
 
   // Now dump the header into the buffer
   ink_assert(t_state.hdr_info.client_response.status_get() != HTTP_STATUS_NOT_MODIFIED);
@@ -7146,10 +7154,11 @@ HttpSM::setup_transfer_from_transform()
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
   HttpTunnelProducer *p = tunnel.add_producer(transform_info.vc, INT64_MAX, buf_start, &HttpSM::tunnel_handler_transform_read,
-                                              HT_TRANSFORM, "transform read");
+                                              HttpTunnelType_t::TRANSFORM, "transform read");
   tunnel.chain(c, p);
 
-  tunnel.add_consumer(_ua.get_entry()->vc, transform_info.vc, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
+  tunnel.add_consumer(_ua.get_entry()->vc, transform_info.vc, &HttpSM::tunnel_handler_ua, HttpTunnelType_t::HTTP_CLIENT,
+                      "user agent");
 
   transform_info.entry->in_tunnel = true;
   _ua.get_entry()->in_tunnel      = true;
@@ -7215,10 +7224,11 @@ HttpSM::setup_server_transfer()
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
-  HttpTunnelProducer *p =
-    tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_server, HT_HTTP_SERVER, "http server");
+  HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_server,
+                                              HttpTunnelType_t::HTTP_SERVER, "http server");
 
-  tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
+  tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_ua, HttpTunnelType_t::HTTP_CLIENT,
+                      "user agent");
 
   _ua.get_entry()->in_tunnel = true;
   server_entry->in_tunnel    = true;
@@ -7266,8 +7276,8 @@ HttpSM::setup_push_transfer_to_cache()
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_push);
 
-  HttpTunnelProducer *p =
-    tunnel.add_producer(_ua.get_entry()->vc, nbytes, buf_start, &HttpSM::tunnel_handler_ua_push, HT_HTTP_CLIENT, "user_agent");
+  HttpTunnelProducer *p = tunnel.add_producer(_ua.get_entry()->vc, nbytes, buf_start, &HttpSM::tunnel_handler_ua_push,
+                                              HttpTunnelType_t::HTTP_CLIENT, "user_agent");
   setup_cache_write_transfer(&cache_sm, _ua.get_entry()->vc, &t_state.cache_info.object_store, 0, "cache write");
 
   _ua.get_entry()->in_tunnel = true;
@@ -7329,42 +7339,43 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
   this->do_transform_open();
   this->do_post_transform_open();
 
-  p_os =
-    tunnel.add_producer(server_entry->vc, -1, r_to, &HttpSM::tunnel_handler_ssl_producer, HT_HTTP_SERVER, "http server - tunnel");
+  p_os = tunnel.add_producer(server_entry->vc, -1, r_to, &HttpSM::tunnel_handler_ssl_producer, HttpTunnelType_t::HTTP_SERVER,
+                             "http server - tunnel");
 
   if (this->transform_info.vc != nullptr) {
     HttpTunnelConsumer *c_trans = tunnel.add_consumer(transform_info.vc, server_entry->vc, &HttpSM::tunnel_handler_transform_write,
-                                                      HT_TRANSFORM, "server tunnel - transform");
+                                                      HttpTunnelType_t::TRANSFORM, "server tunnel - transform");
     MIOBuffer          *trans_buf = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     IOBufferReader     *trans_to  = trans_buf->alloc_reader();
     HttpTunnelProducer *p_trans   = tunnel.add_producer(transform_info.vc, -1, trans_to, &HttpSM::tunnel_handler_transform_read,
-                                                        HT_TRANSFORM, "server tunnel - transform");
-    c_ua = tunnel.add_consumer(_ua.get_entry()->vc, transform_info.vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_CLIENT,
-                               "user agent - tunnel");
+                                                        HttpTunnelType_t::TRANSFORM, "server tunnel - transform");
+    c_ua = tunnel.add_consumer(_ua.get_entry()->vc, transform_info.vc, &HttpSM::tunnel_handler_ssl_consumer,
+                               HttpTunnelType_t::HTTP_CLIENT, "user agent - tunnel");
     tunnel.chain(c_trans, p_trans);
     transform_info.entry->in_tunnel = true;
   } else {
-    c_ua = tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_CLIENT,
-                               "user agent - tunnel");
+    c_ua = tunnel.add_consumer(_ua.get_entry()->vc, server_entry->vc, &HttpSM::tunnel_handler_ssl_consumer,
+                               HttpTunnelType_t::HTTP_CLIENT, "user agent - tunnel");
   }
 
-  p_ua = tunnel.add_producer(_ua.get_entry()->vc, -1, r_from, &HttpSM::tunnel_handler_ssl_producer, HT_HTTP_CLIENT,
+  p_ua = tunnel.add_producer(_ua.get_entry()->vc, -1, r_from, &HttpSM::tunnel_handler_ssl_producer, HttpTunnelType_t::HTTP_CLIENT,
                              "user agent - tunnel");
 
   if (this->post_transform_info.vc != nullptr) {
-    HttpTunnelConsumer *c_trans = tunnel.add_consumer(
-      post_transform_info.vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_transform_write, HT_TRANSFORM, "ua tunnel - transform");
+    HttpTunnelConsumer *c_trans =
+      tunnel.add_consumer(post_transform_info.vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_transform_write,
+                          HttpTunnelType_t::TRANSFORM, "ua tunnel - transform");
     MIOBuffer          *trans_buf = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     IOBufferReader     *trans_to  = trans_buf->alloc_reader();
     HttpTunnelProducer *p_trans = tunnel.add_producer(post_transform_info.vc, -1, trans_to, &HttpSM::tunnel_handler_transform_read,
-                                                      HT_TRANSFORM, "ua tunnel - transform");
-    c_os = tunnel.add_consumer(server_entry->vc, post_transform_info.vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_SERVER,
-                               "http server - tunnel");
+                                                      HttpTunnelType_t::TRANSFORM, "ua tunnel - transform");
+    c_os = tunnel.add_consumer(server_entry->vc, post_transform_info.vc, &HttpSM::tunnel_handler_ssl_consumer,
+                               HttpTunnelType_t::HTTP_SERVER, "http server - tunnel");
     tunnel.chain(c_trans, p_trans);
     post_transform_info.entry->in_tunnel = true;
   } else {
-    c_os = tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_SERVER,
-                               "http server - tunnel");
+    c_os = tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_ssl_consumer,
+                               HttpTunnelType_t::HTTP_SERVER, "http server - tunnel");
   }
 
   _ua.get_entry()->vc->mark_as_tunnel_endpoint();
@@ -7393,7 +7404,7 @@ HttpSM::setup_client_response_plugin_agents(HttpTunnelProducer *p, int num_heade
   has_active_response_plugin_agents = agent != nullptr;
   while (agent) {
     INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
-    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "response plugin agent",
+    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HttpTunnelType_t::HTTP_CLIENT, "response plugin agent",
                         num_header_bytes);
     // We don't put these in the SM VC table because the tunnel
     // will clean them up in do_io_close().
@@ -7408,7 +7419,7 @@ HttpSM::setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header
   has_active_request_plugin_agents = agent != nullptr;
   while (agent) {
     INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
-    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "request plugin agent",
+    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HttpTunnelType_t::HTTP_CLIENT, "request plugin agent",
                         num_header_bytes);
     // We don't put these in the SM VC table because the tunnel
     // will clean them up in do_io_close().

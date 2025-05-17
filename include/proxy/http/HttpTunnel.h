@@ -65,7 +65,7 @@ struct HttpTunnelProducer;
 using HttpProducerHandler = int (HttpSM::*)(int, HttpTunnelProducer *);
 using HttpConsumerHandler = int (HttpSM::*)(int, HttpTunnelConsumer *);
 
-enum HttpTunnelType_t { HT_HTTP_SERVER, HT_HTTP_CLIENT, HT_CACHE_READ, HT_CACHE_WRITE, HT_TRANSFORM, HT_STATIC, HT_BUFFER_READ };
+enum class HttpTunnelType_t { HTTP_SERVER, HTTP_CLIENT, CACHE_READ, CACHE_WRITE, TRANSFORM, STATIC, BUFFER_READ };
 
 enum TunnelChunkingAction_t {
   TCA_CHUNK_CONTENT,
@@ -214,7 +214,7 @@ struct HttpTunnelConsumer {
   HttpTunnelProducer *producer      = nullptr;
   HttpTunnelProducer *self_producer = nullptr;
 
-  HttpTunnelType_t    vc_type       = HT_HTTP_CLIENT;
+  HttpTunnelType_t    vc_type       = HttpTunnelType_t::HTTP_CLIENT;
   VConnection        *vc            = nullptr;
   IOBufferReader     *buffer_reader = nullptr;
   HttpConsumerHandler vc_handler    = nullptr;
@@ -249,7 +249,7 @@ struct HttpTunnelProducer {
   VIO                    *read_vio      = nullptr;
   MIOBuffer              *read_buffer   = nullptr;
   IOBufferReader         *buffer_start  = nullptr;
-  HttpTunnelType_t        vc_type       = HT_HTTP_SERVER;
+  HttpTunnelType_t        vc_type       = HttpTunnelType_t::HTTP_SERVER;
 
   ChunkedHandler         chunked_handler;
   TunnelChunkingAction_t chunking_action = TCA_PASSTHRU_DECHUNKED_CONTENT;
@@ -664,7 +664,7 @@ inline bool
 HttpTunnel::has_cache_writer() const
 {
   for (const auto &consumer : consumers) {
-    if (consumer.vc_type == HT_CACHE_WRITE && consumer.vc != nullptr) {
+    if (consumer.vc_type == HttpTunnelType_t::CACHE_WRITE && consumer.vc != nullptr) {
       return true;
     }
   }
@@ -685,9 +685,9 @@ HttpTunnel::has_consumer_besides_client() const
     }
 
     switch (consumer.vc_type) {
-    case HT_HTTP_CLIENT:
+    case HttpTunnelType_t::HTTP_CLIENT:
       continue;
-    case HT_HTTP_SERVER:
+    case HttpTunnelType_t::HTTP_SERVER:
       // ignore uploading data to servers
       continue;
     default:
@@ -720,7 +720,7 @@ HttpTunnelConsumer::is_downstream_from(VConnection *vc)
 inline bool
 HttpTunnelConsumer::is_sink() const
 {
-  return HT_HTTP_CLIENT == vc_type || HT_CACHE_WRITE == vc_type;
+  return HttpTunnelType_t::HTTP_CLIENT == vc_type || HttpTunnelType_t::CACHE_WRITE == vc_type;
 }
 
 inline bool
@@ -734,7 +734,8 @@ HttpTunnelProducer::is_source() const
 {
   // If a producer is marked as a client, then it's part of a bidirectional tunnel
   // and so is an actual source of data.
-  return HT_HTTP_SERVER == vc_type || HT_CACHE_READ == vc_type || HT_HTTP_CLIENT == vc_type;
+  return HttpTunnelType_t::HTTP_SERVER == vc_type || HttpTunnelType_t::CACHE_READ == vc_type ||
+         HttpTunnelType_t::HTTP_CLIENT == vc_type;
 }
 
 inline void

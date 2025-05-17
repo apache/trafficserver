@@ -492,7 +492,7 @@ HttpTunnelProducer::backlog(uint64_t limit)
   for (HttpTunnelConsumer *c = consumer_list.head; c; c = c->link.next) {
     if (c->alive && c->write_vio) {
       uint64_t n = 0;
-      if (HT_TRANSFORM == c->vc_type) {
+      if (HttpTunnelType_t::TRANSFORM == c->vc_type) {
         n += static_cast<TransformVCChain *>(c->vc)->backlog(limit);
       } else {
         IOBufferReader *r = c->write_vio->get_reader();
@@ -837,7 +837,7 @@ HttpTunnel::tunnel_run(HttpTunnelProducer *p_arg)
 
     for (int i = 0; i < MAX_PRODUCERS; ++i) {
       p = producers + i;
-      if (p->vc != nullptr && (p->alive || (p->vc_type == HT_STATIC && p->buffer_start != nullptr))) {
+      if (p->vc != nullptr && (p->alive || (p->vc_type == HttpTunnelType_t::STATIC && p->buffer_start != nullptr))) {
         producer_run(p);
       }
     }
@@ -864,7 +864,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   bool                transform_consumer = false;
 
   for (c = p->consumer_list.head; c; c = c->link.next) {
-    if (c->vc_type == HT_CACHE_WRITE) {
+    if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
       cache_write_consumer = c;
       break;
     }
@@ -872,7 +872,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
   // bz57413
   for (c = p->consumer_list.head; c; c = c->link.next) {
-    if (c->vc_type == HT_TRANSFORM) {
+    if (c->vc_type == HttpTunnelType_t::TRANSFORM) {
       transform_consumer = true;
       break;
     }
@@ -949,7 +949,8 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   }
 
   int64_t read_start_pos = 0;
-  if (p->vc_type == HT_CACHE_READ && sm->t_state.range_setup == HttpTransact::RangeSetup_t::NOT_TRANSFORM_REQUESTED) {
+  if (p->vc_type == HttpTunnelType_t::CACHE_READ &&
+      sm->t_state.range_setup == HttpTransact::RangeSetup_t::NOT_TRANSFORM_REQUESTED) {
     ink_assert(sm->t_state.num_range_fields == 1); // we currently just support only one range entry
     read_start_pos = sm->t_state.ranges[0]._start;
     producer_n     = (sm->t_state.ranges[0]._end - sm->t_state.ranges[0]._start) + 1;
@@ -972,7 +973,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   for (c = p->consumer_list.head; c; c = c->link.next) {
     // Create a reader for each consumer.  The reader allows
     // us to implement skip bytes
-    if (c->vc_type == HT_CACHE_WRITE) {
+    if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
       switch (action) {
       case TCA_CHUNK_CONTENT:
       case TCA_PASSTHRU_DECHUNKED_CONTENT:
@@ -1011,8 +1012,9 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   // YTS Team, yamsat Plugin
   // Allocate and copy partial POST data to buffers. Check for the various parameters
   // including the maximum configured post data size
-  if ((p->vc_type == HT_BUFFER_READ && sm->is_postbuf_valid()) ||
-      (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection && p->vc_type == HT_HTTP_CLIENT)) {
+  if ((p->vc_type == HttpTunnelType_t::BUFFER_READ && sm->is_postbuf_valid()) ||
+      (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection &&
+       p->vc_type == HttpTunnelType_t::HTTP_CLIENT)) {
     Dbg(dbg_ctl_http_redirect, "[HttpTunnel::producer_run] client post: %" PRId64 " max size: %" PRId64 "",
         p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
 
@@ -1021,7 +1023,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       Warning("http_redirect, [HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
               p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
-      if (p->vc_type == HT_BUFFER_READ) {
+      if (p->vc_type == HttpTunnelType_t::BUFFER_READ) {
         producer_handler(VC_EVENT_ERROR, p);
         return;
       }
@@ -1060,7 +1062,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     }
 
     producer_handler(VC_EVENT_READ_READY, p);
-    if (sm->get_postbuf_done() && p->vc_type == HT_HTTP_CLIENT) { // read_avail() == 0
+    if (sm->get_postbuf_done() && p->vc_type == HttpTunnelType_t::HTTP_CLIENT) { // read_avail() == 0
       // [bug 2579251]
       // Ugh, this is horrible but in the redirect case they are running a the tunnel again with the
       // now closed/empty producer to trigger PRECOMPLETE.  If the POST was chunked, producer_n is set
@@ -1107,7 +1109,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       // from the client is already in the buffer.  Go ahead and set
       // the amount to read since we know it.  We will forward the FIN
       // to the server on VC_EVENT_WRITE_COMPLETE.
-      if (p->vc_type == HT_HTTP_CLIENT) {
+      if (p->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
         ProxyTransaction *ua_vc = static_cast<ProxyTransaction *>(p->vc);
         if (ua_vc->get_half_close_flag()) {
           int tmp = c->buffer_reader->read_avail();
@@ -1296,9 +1298,9 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   // YTS Team, yamsat Plugin
   // Copy partial POST data to buffers. Check for the various parameters including
   // the maximum configured post data size
-  if ((p->vc_type == HT_BUFFER_READ && sm->is_postbuf_valid()) ||
+  if ((p->vc_type == HttpTunnelType_t::BUFFER_READ && sm->is_postbuf_valid()) ||
       (sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection &&
-       (event == VC_EVENT_READ_READY || event == VC_EVENT_READ_COMPLETE) && p->vc_type == HT_HTTP_CLIENT)) {
+       (event == VC_EVENT_READ_READY || event == VC_EVENT_READ_COMPLETE) && p->vc_type == HttpTunnelType_t::HTTP_CLIENT)) {
     Dbg(dbg_ctl_http_redirect, "[HttpTunnel::producer_handler] [%s %s]", p->name, HttpDebugNames::get_event_name(event));
 
     if ((sm->postbuf_buffer_avail() + sm->postbuf_reader_avail()) > HttpConfig::m_master.post_copy_size) {
@@ -1306,7 +1308,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
               " reader_avail=%" PRId64 " limit=%" PRId64 "",
               sm->postbuf_buffer_avail(), sm->postbuf_reader_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
-      if (p->vc_type == HT_BUFFER_READ) {
+      if (p->vc_type == HttpTunnelType_t::BUFFER_READ) {
         event = VC_EVENT_ERROR;
       }
     } else {
@@ -1467,7 +1469,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
           // We can stall for small thresholds on network sinks because this event happens
           // before the actual socket write. So we trap for the buffer becoming empty to
           // make sure we get an event to unthrottle after the write.
-          if (HT_HTTP_CLIENT == c->vc_type) {
+          if (HttpTunnelType_t::HTTP_CLIENT == c->vc_type) {
             NetVConnection *netvc = dynamic_cast<NetVConnection *>(c->write_vio->vc_server);
             if (netvc) { // really, this should always be true.
               netvc->trapWriteBufferEmpty();
@@ -1508,7 +1510,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
   case VC_EVENT_WRITE_READY:
     this->consumer_reenable(c);
     // Once we get a write ready from the origin, we can assume the connect to some degree succeeded
-    if (c->vc_type == HT_HTTP_SERVER) {
+    if (c->vc_type == HttpTunnelType_t::HTTP_SERVER) {
       sm->t_state.current.server->clear_connect_fail();
     }
     break;
@@ -1541,9 +1543,9 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
         if (p->alive) {
           producer_handler(VC_EVENT_READ_COMPLETE, p);
         }
-      } else if (c->vc_type == HT_HTTP_SERVER) {
+      } else if (c->vc_type == HttpTunnelType_t::HTTP_SERVER) {
         c->producer->handler_state = HTTP_SM_POST_UA_FAIL;
-      } else if (c->vc_type == HT_HTTP_CLIENT) {
+      } else if (c->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
         c->producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
       }
     }
@@ -1649,7 +1651,7 @@ HttpTunnel::final_consumer_bytes_to_write(HttpTunnelProducer *p, HttpTunnelConsu
   } else {
     TunnelChunkingAction_t action = p->chunking_action;
     if (c->alive) {
-      if (c->vc_type == HT_CACHE_WRITE) {
+      if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
         switch (action) {
         case TCA_CHUNK_CONTENT:
         case TCA_PASSTHRU_DECHUNKED_CONTENT:
@@ -1741,7 +1743,7 @@ HttpTunnel::chain_abort_cache_write(HttpTunnelProducer *p)
 
   while (c) {
     if (c->alive) {
-      if (c->vc_type == HT_CACHE_WRITE) {
+      if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
         ink_assert(c->self_producer == nullptr);
         c->write_vio = nullptr;
         c->vc->do_io_close(EHTTP_ERROR);
@@ -1861,14 +1863,14 @@ void
 HttpTunnel::update_stats_after_abort(HttpTunnelType_t t)
 {
   switch (t) {
-  case HT_CACHE_READ:
-  case HT_CACHE_WRITE:
+  case HttpTunnelType_t::CACHE_READ:
+  case HttpTunnelType_t::CACHE_WRITE:
     Metrics::Gauge::decrement(http_rsb.current_cache_connections);
     break;
   default:
     // Handled here:
-    // HT_HTTP_SERVER, HT_HTTP_CLIENT,
-    // HT_TRANSFORM, HT_STATIC
+    // HttpTunnelType_t::HTTP_SERVER, HttpTunnelType_t::HTTP_CLIENT,
+    // HttpTunnelType_t::TRANSFORM, HttpTunnelType_t::STATIC
     break;
   };
 }
