@@ -227,7 +227,7 @@ Http1ServerSession ::release_transaction()
 
     HSMresult_t r = httpSessionManager.release_session(this);
 
-    if (r == HSM_RETRY) {
+    if (r == HSMresult_t::RETRY) {
       // Session could not be put in the session manager
       //  due to lock contention
       // FIX:  should retry instead of closing
@@ -236,8 +236,8 @@ Http1ServerSession ::release_transaction()
     } else {
       // The session was successfully put into the session
       //    manager and it will manage it
-      // (Note: should never get HSM_NOT_FOUND here)
-      ink_assert(r == HSM_DONE);
+      // (Note: should never get HSMresult_t::NOT_FOUND here)
+      ink_assert(r == HSMresult_t::DONE);
       // If the session got picked up immediately by another thread the transact_count could be greater
       ink_release_assert(transact_count >= released_transactions);
     }

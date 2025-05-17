@@ -5455,16 +5455,16 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     try_reuse     = true;
 
     switch (shared_result) {
-    case HSM_DONE:
+    case HSMresult_t::DONE:
       Metrics::Counter::increment(http_rsb.origin_reuse);
       hsm_release_assert(server_txn != nullptr);
       handle_http_server_open();
       return;
-    case HSM_NOT_FOUND:
+    case HSMresult_t::NOT_FOUND:
       Metrics::Counter::increment(http_rsb.origin_not_found);
       hsm_release_assert(server_txn == nullptr);
       break;
-    case HSM_RETRY:
+    case HSMresult_t::RETRY:
       Metrics::Counter::increment(http_rsb.origin_reuse_fail);
       //  Could not get shared pool lock
       //   FIX: should retry lock
