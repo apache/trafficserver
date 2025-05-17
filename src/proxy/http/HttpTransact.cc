@@ -966,7 +966,7 @@ HttpTransact::HandleBlindTunnel(State *s)
   }
 
   // Set the mode to tunnel so that we don't lookup the cache
-  s->current.mode = TUNNELLING_PROXY;
+  s->current.mode = ProxyMode_t::TUNNELLING;
 
   // Let the request work it's way through the code and
   //  we grab it again after the raw connection has been opened
@@ -1590,7 +1590,7 @@ HttpTransact::HandleRequest(State *s)
   // Before it's decided to do a cache lookup,
   // assume no cache lookup and using proxy (not tunneling)
   s->cache_info.action = CacheAction_t::NO_ACTION;
-  s->current.mode      = GENERIC_PROXY;
+  s->current.mode      = ProxyMode_t::GENERIC;
 
   // initialize the cache_control structure read from cache.config
   update_cache_control_information_from_config(s);
@@ -1691,7 +1691,7 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   // We just want to write the request straight to the plugin
   if (s->cache_info.action != HttpTransact::CacheAction_t::NO_ACTION) {
     s->cache_info.action = HttpTransact::CacheAction_t::NO_ACTION;
-    s->current.mode      = TUNNELLING_PROXY;
+    s->current.mode      = ProxyMode_t::TUNNELLING;
     Metrics::Counter::increment(http_rsb.tunnels);
   }
   // Regardless of the protocol we're gatewaying to
@@ -2099,14 +2099,14 @@ HttpTransact::DecideCacheLookup(State *s)
     // for redirect, we want to skip cache lookup and write into
     // the cache directly with the URL before the redirect
     s->cache_info.action = CacheAction_t::NO_ACTION;
-    s->current.mode      = GENERIC_PROXY;
+    s->current.mode      = ProxyMode_t::GENERIC;
   } else {
     if (is_request_cache_lookupable(s) && !s->is_upgrade_request) {
       s->cache_info.action = CacheAction_t::LOOKUP;
-      s->current.mode      = GENERIC_PROXY;
+      s->current.mode      = ProxyMode_t::GENERIC;
     } else {
       s->cache_info.action = CacheAction_t::NO_ACTION;
-      s->current.mode      = TUNNELLING_PROXY;
+      s->current.mode      = ProxyMode_t::TUNNELLING;
       Metrics::Counter::increment(http_rsb.tunnels);
     }
   }
@@ -2118,7 +2118,7 @@ HttpTransact::DecideCacheLookup(State *s)
   if (s->cache_info.action == CacheAction_t::LOOKUP) {
     TxnDbg(dbg_ctl_http_trans, "Will do cache lookup.");
     TxnDbg(dbg_ctl_http_seq, "Will do cache lookup");
-    ink_assert(s->current.mode != TUNNELLING_PROXY);
+    ink_assert(s->current.mode != ProxyMode_t::TUNNELLING);
 
     if (s->cache_info.lookup_url == nullptr) {
       HTTPHdr *incoming_request = &s->hdr_info.client_request;
@@ -5529,7 +5529,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
   if (!incoming_hdr->presence(MIME_PRESENCE_MAX_FORWARDS)) {
     // Trace and Options requests should not be looked up in cache.
     // s->cache_info.action = CacheAction_t::NO_ACTION;
-    s->current.mode = TUNNELLING_PROXY;
+    s->current.mode = ProxyMode_t::TUNNELLING;
     Metrics::Counter::increment(http_rsb.tunnels);
     return false;
   }
@@ -5595,7 +5595,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
 
     // Trace and Options requests should not be looked up in cache.
     // s->cache_info.action = CacheAction_t::NO_ACTION;
-    s->current.mode = TUNNELLING_PROXY;
+    s->current.mode = ProxyMode_t::TUNNELLING;
     Metrics::Counter::increment(http_rsb.tunnels);
   }
 
@@ -5688,7 +5688,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
       Error("Scheme doesn't match websocket...!");
     }
 
-    s->current.mode      = GENERIC_PROXY;
+    s->current.mode      = ProxyMode_t::GENERIC;
     s->cache_info.action = CacheAction_t::NO_ACTION;
   }
 
@@ -6053,7 +6053,7 @@ bool
 HttpTransact::is_request_cache_lookupable(State *s)
 {
   // ummm, someone has already decided that proxy should tunnel
-  if (s->current.mode == TUNNELLING_PROXY) {
+  if (s->current.mode == ProxyMode_t::TUNNELLING) {
     return false;
   }
   // don't bother with remaining checks if we already did a cache lookup
@@ -6425,7 +6425,7 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
   /* fall through */
   case METHOD_NOT_SUPPORTED:
     TxnDbg(dbg_ctl_http_trans, "unsupported method");
-    s->current.mode = TUNNELLING_PROXY;
+    s->current.mode = ProxyMode_t::TUNNELLING;
     return true;
   case BAD_CONNECT_PORT:
     int port;
@@ -7763,7 +7763,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   // Answer: NO.  Since if the response is most likely not cacheable,
   // we don't remove conditional headers so that for a non-200 response
   // from the O.S., we will save bandwidth between proxy and O.S.
-  if (s->current.mode == GENERIC_PROXY) {
+  if (s->current.mode == ProxyMode_t::GENERIC) {
     if (is_request_likely_cacheable(s, base_request)) {
       if (s->txn_conf->cache_when_to_revalidate != 4) {
         TxnDbg(dbg_ctl_http_trans, "request like cacheable and conditional headers removed");

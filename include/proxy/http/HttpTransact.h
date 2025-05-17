@@ -302,10 +302,10 @@ public:
 
   enum class HttpTransactMagic_t : uint32_t { ALIVE = 0x00001234, DEAD = 0xDEAD1234, SEPARATOR = 0x12345678 };
 
-  enum ProxyMode_t {
-    UNDEFINED_MODE,
-    GENERIC_PROXY,
-    TUNNELLING_PROXY,
+  enum class ProxyMode_t {
+    UNDEFINED,
+    GENERIC,
+    TUNNELLING,
   };
 
   enum RequestError_t {
@@ -585,7 +585,7 @@ public:
   };
 
   using CurrentInfo = struct _CurrentInfo {
-    ProxyMode_t                       mode       = UNDEFINED_MODE;
+    ProxyMode_t                       mode       = ProxyMode_t::UNDEFINED;
     ResolveInfo::UpstreamResolveStyle request_to = ResolveInfo::UNDEFINED_LOOKUP;
     ConnectionAttributes             *server     = nullptr;
     ink_time_t                        now        = 0;
