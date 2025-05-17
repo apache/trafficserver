@@ -86,12 +86,12 @@ private:
   int state_slave_keep_alive(int event, void *data);
   int state_wait_for_close(int event, void *data);
 
-  enum C_Read_State {
-    HCS_INIT,
-    HCS_ACTIVE_READER,
-    HCS_KEEP_ALIVE,
-    HCS_HALF_CLOSED,
-    HCS_CLOSED,
+  enum class C_Read_State {
+    INIT,
+    ACTIVE_READER,
+    KEEP_ALIVE,
+    HALF_CLOSED,
+    CLOSED,
   };
 
   enum class Magic : uint32_t {
@@ -109,7 +109,7 @@ private:
   MIOBuffer      *read_buffer = nullptr;
   IOBufferReader *_reader     = nullptr;
 
-  C_Read_State read_state = HCS_INIT;
+  C_Read_State read_state = C_Read_State::INIT;
 
   VIO *ka_vio       = nullptr;
   VIO *slave_ka_vio = nullptr;
