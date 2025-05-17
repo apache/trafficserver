@@ -73,7 +73,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         // properly.
         NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
         REQUIRE(ptr != nullptr);
-        CHECK(ptr->hash_key == NH_CACHE_HASH_KEY);
+        CHECK(ptr->hash_key == NHHashKeyType::CACHE_HASH_KEY);
 
         CHECK(strategy->go_direct == false);
         CHECK(strategy->scheme == NH_SCHEME_HTTP);
@@ -704,7 +704,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         // the hash_key was set properly.
         NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
         REQUIRE(ptr != nullptr);
-        CHECK(ptr->hash_key == NH_URL_HASH_KEY);
+        CHECK(ptr->hash_key == NHHashKeyType::URL_HASH_KEY);
 
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NH_SCHEME_HTTPS);

@@ -117,20 +117,20 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
     if (n["hash_key"]) {
       auto hash_key_val = n["hash_key"].Scalar();
       if (hash_key_val == hash_key_url) {
-        hash_key = NH_URL_HASH_KEY;
+        hash_key = NHHashKeyType::URL_HASH_KEY;
       } else if (hash_key_val == hash_key_hostname) {
-        hash_key = NH_HOSTNAME_HASH_KEY;
+        hash_key = NHHashKeyType::HOSTNAME_HASH_KEY;
       } else if (hash_key_val == hash_key_path) {
-        hash_key = NH_PATH_HASH_KEY;
+        hash_key = NHHashKeyType::PATH_HASH_KEY;
       } else if (hash_key_val == hash_key_path_query) {
-        hash_key = NH_PATH_QUERY_HASH_KEY;
+        hash_key = NHHashKeyType::PATH_QUERY_HASH_KEY;
       } else if (hash_key_val == hash_key_path_fragment) {
-        hash_key = NH_PATH_FRAGMENT_HASH_KEY;
+        hash_key = NHHashKeyType::PATH_FRAGMENT_HASH_KEY;
       } else if (hash_key_val == hash_key_cache) {
         // ToDo: Deprecated in 10.0.x, remove in 11.0.0
-        hash_key = NH_CACHE_HASH_KEY;
+        hash_key = NHHashKeyType::CACHE_HASH_KEY;
       } else {
-        hash_key = NH_PATH_HASH_KEY;
+        hash_key = NHHashKeyType::PATH_HASH_KEY;
         NH_Note("Invalid 'hash_key' value, '%s', for the strategy named '%s', using default '%s'.", hash_key_val.c_str(),
                 strategy_name.c_str(), hash_key_path.data());
       }
@@ -194,7 +194,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
 
   // calculate a hash using the selected config.
   switch (hash_key) {
-  case NH_URL_HASH_KEY:
+  case NHHashKeyType::URL_HASH_KEY:
     url_string_ref = url->string_get_ref(&len, URLNormalize::LC_SCHEME_HOST);
     if (url_string_ref && len > 0) {
       h->update(url_string_ref, len);
@@ -202,14 +202,14 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     }
     break;
   // hostname hash
-  case NH_HOSTNAME_HASH_KEY:
+  case NHHashKeyType::HOSTNAME_HASH_KEY:
     url_string_ref = url->host_get(&len);
     if (url_string_ref && len > 0) {
       h->update(url_string_ref, len);
     }
     break;
   // path + query string
-  case NH_PATH_QUERY_HASH_KEY:
+  case NHHashKeyType::PATH_QUERY_HASH_KEY:
     url_string_ref = url->path_get(&len);
     h->update("/", 1);
     if (url_string_ref && len > 0) {
@@ -222,7 +222,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     }
     break;
   // path + fragment hash
-  case NH_PATH_FRAGMENT_HASH_KEY:
+  case NHHashKeyType::PATH_FRAGMENT_HASH_KEY:
     url_string_ref = url->path_get(&len);
     h->update("/", 1);
     if (url_string_ref && len > 0) {
@@ -236,7 +236,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     break;
   // use the cache key created by the TSCacheUrlSet() API (e.g. the cachekey plugin)
   // ToDo: Deprecated in 10.0.x, remove in 11.0.0
-  case NH_CACHE_HASH_KEY:
+  case NHHashKeyType::CACHE_HASH_KEY:
     if (hrdata.cache_info_parent_selection_url && *(hrdata.cache_info_parent_selection_url)) {
       url            = *(hrdata.cache_info_parent_selection_url);
       url_string_ref = url->string_get_ref(&len);
@@ -256,7 +256,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     }
     break;
   // use the path as the hash, default.
-  case NH_PATH_HASH_KEY:
+  case NHHashKeyType::PATH_HASH_KEY:
   default:
     url_string_ref = url->path_get(&len);
     h->update("/", 1);
