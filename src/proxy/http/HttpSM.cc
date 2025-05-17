@@ -416,7 +416,7 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   //   vc table
   _ua.set_entry(vc_table.new_entry());
   _ua.get_entry()->vc      = txn;
-  _ua.get_entry()->vc_type = HTTP_UA_VC;
+  _ua.get_entry()->vc_type = HttpVC_t::UA_VC;
 
   ats_ip_copy(&t_state.client_info.src_addr, netvc->get_remote_addr());
   ats_ip_copy(&t_state.client_info.dst_addr, netvc->get_local_addr());
@@ -1090,7 +1090,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     // Record the VC in our table
     server_entry     = vc_table.new_entry();
     server_entry->vc = netvc = static_cast<NetVConnection *>(data);
-    server_entry->vc_type    = HTTP_RAW_SERVER_VC;
+    server_entry->vc_type    = HttpVC_t::RAW_SERVER_VC;
     t_state.current.state    = HttpTransact::CONNECTION_ALIVE;
     ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
@@ -1973,7 +1973,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = ink_get_hrtime();
 
     // Any other events to the end
-    if (server_entry->vc_type == HTTP_SERVER_VC) {
+    if (server_entry->vc_type == HttpVC_t::SERVER_VC) {
       server_entry->vc_read_handler  = &HttpSM::tunnel_handler;
       server_entry->vc_write_handler = &HttpSM::tunnel_handler;
     }
@@ -2104,12 +2104,12 @@ HttpSM::state_send_server_request_header(int event, void *data)
         } else {
           // Go ahead and set up the post tunnel if we are not waiting for a 100 response
           if (!t_state.hdr_info.client_request.m_100_continue_required) {
-            do_setup_client_request_body_tunnel(HTTP_SERVER_VC);
+            do_setup_client_request_body_tunnel(HttpVC_t::SERVER_VC);
           }
         }
       }
       // Any other events to these read response
-      if (server_entry->vc_type == HTTP_SERVER_VC) {
+      if (server_entry->vc_type == HttpVC_t::SERVER_VC) {
         server_entry->vc_read_handler = &HttpSM::state_read_server_response_header;
       }
     }
@@ -2967,7 +2967,7 @@ HttpSM::tunnel_handler_100_continue(int event, void *data)
       t_state.hdr_info.server_response.create(HTTP_TYPE_RESPONSE);
       handle_server_setup_error(VC_EVENT_EOS, server_entry->read_vio);
     } else {
-      do_setup_client_request_body_tunnel(HTTP_SERVER_VC);
+      do_setup_client_request_body_tunnel(HttpVC_t::SERVER_VC);
     }
   } else {
     terminate_sm = true;
@@ -3895,7 +3895,7 @@ HttpSM::tunnel_handler_for_partial_post(int event, void * /* data ATS_UNUSED */)
     post_failed = false;
     handle_post_failure();
   } else {
-    do_setup_client_request_body_tunnel(HTTP_SERVER_VC);
+    do_setup_client_request_body_tunnel(HttpVC_t::SERVER_VC);
   }
 
   return 0;
@@ -5804,7 +5804,7 @@ HttpSM::do_post_transform_open()
     // Record the transform VC in our table
     post_transform_info.entry          = vc_table.new_entry();
     post_transform_info.entry->vc      = post_transform_info.vc;
-    post_transform_info.entry->vc_type = HTTP_TRANSFORM_VC;
+    post_transform_info.entry->vc_type = HttpVC_t::TRANSFORM_VC;
   }
 
   return post_transform_info.vc;
@@ -5827,7 +5827,7 @@ HttpSM::do_transform_open()
     // Record the transform VC in our table
     transform_info.entry          = vc_table.new_entry();
     transform_info.entry->vc      = transform_info.vc;
-    transform_info.entry->vc_type = HTTP_TRANSFORM_VC;
+    transform_info.entry->vc_type = HttpVC_t::TRANSFORM_VC;
   } else {
     transform_info.vc = nullptr;
   }
@@ -6059,7 +6059,7 @@ HttpSM::handle_http_server_open()
                                      t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) &&
         do_post_transform_open()) {
       do_setup_client_request_body_tunnel(
-        HTTP_TRANSFORM_VC); /* This doesn't seem quite right.  Should be sending the request header */
+        HttpVC_t::TRANSFORM_VC); /* This doesn't seem quite right.  Should be sending the request header */
     } else {
       setup_server_send_request_api();
     }
@@ -6171,7 +6171,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
     // Clean up the vc_table entry so any events in play to the timed out server vio
     // don't get handled.  The connection isn't there.
     if (server_entry) {
-      ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
+      ink_assert(server_entry->vc_type == HttpVC_t::SERVER_VC);
       vc_table.cleanup_entry(server_entry);
       server_entry = nullptr;
     }
@@ -6342,7 +6342,7 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
   _ua.get_entry()->in_tunnel = true;
 
   switch (to_vc_type) {
-  case HTTP_TRANSFORM_VC:
+  case HttpVC_t::TRANSFORM_VC:
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_request_wait_for_transform_read);
     ink_assert(post_transform_info.entry != nullptr);
     ink_assert(post_transform_info.entry->vc == post_transform_info.vc);
@@ -6350,7 +6350,7 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
                         HttpTunnelType_t::TRANSFORM, "post transform");
     post_transform_info.entry->in_tunnel = true;
     break;
-  case HTTP_SERVER_VC:
+  case HttpVC_t::SERVER_VC:
     // YTS Team, yamsat Plugin
     // When redirect in process is true and redirection is enabled
     // add http server as the consumer
@@ -6601,7 +6601,7 @@ HttpSM::attach_server_session()
   // Record the VC in our table
   server_entry                   = vc_table.new_entry();
   server_entry->vc               = server_txn;
-  server_entry->vc_type          = HTTP_SERVER_VC;
+  server_entry->vc_type          = HttpVC_t::SERVER_VC;
   server_entry->vc_write_handler = &HttpSM::state_send_server_request_header;
 
   UnixNetVConnection *server_vc = static_cast<UnixNetVConnection *>(server_txn->get_netvc());
@@ -7980,7 +7980,7 @@ HttpSM::set_next_state()
     // We need to close the previous attempt
     // Because it could be a server side retry by DNS rr
     if (server_entry) {
-      ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
+      ink_assert(server_entry->vc_type == HttpVC_t::SERVER_VC);
       vc_table.cleanup_entry(server_entry);
       server_entry = nullptr;
     } else {
@@ -8028,7 +8028,7 @@ HttpSM::set_next_state()
 
     // We need to close the previous attempt
     if (server_entry) {
-      ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
+      ink_assert(server_entry->vc_type == HttpVC_t::SERVER_VC);
       vc_table.cleanup_entry(server_entry);
       server_entry = nullptr;
     } else {
