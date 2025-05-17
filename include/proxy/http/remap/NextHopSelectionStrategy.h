@@ -67,7 +67,7 @@ enum class NHPolicyType {
   CONSISTENT_HASH // consistent hashing strategy.
 };
 
-enum NHSchemeType { NH_SCHEME_NONE = 0, NH_SCHEME_HTTP, NH_SCHEME_HTTPS };
+enum class NHSchemeType { NONE = 0, HTTP, HTTPS };
 
 enum NHRingMode { NH_ALTERNATE_RING = 0, NH_EXHAUST_RING, NH_PEERING_RING };
 
@@ -100,7 +100,7 @@ struct HealthChecks {
 };
 
 struct NHProtocol {
-  NHSchemeType scheme = NH_SCHEME_NONE;
+  NHSchemeType scheme = NHSchemeType::NONE;
   uint32_t     port   = 0;
   std::string  health_check_url;
 };
@@ -215,7 +215,7 @@ public:
   bool                                                  host_override      = false;
   bool                                                  use_pristine       = false;
   NHPolicyType                                          policy_type        = NHPolicyType::UNDEFINED;
-  NHSchemeType                                          scheme             = NH_SCHEME_NONE;
+  NHSchemeType                                          scheme             = NHSchemeType::NONE;
   NHRingMode                                            ring_mode          = NH_ALTERNATE_RING;
   ResponseCodes                                         resp_codes;     // simple retry codes
   ResponseCodes                                         markdown_codes; // unavailable server retry and markdown codes

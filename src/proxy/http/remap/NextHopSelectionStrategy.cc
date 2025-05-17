@@ -57,9 +57,9 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
     if (n["scheme"]) {
       auto scheme_val = n["scheme"].Scalar();
       if (scheme_val == "http") {
-        scheme = NH_SCHEME_HTTP;
+        scheme = NHSchemeType::HTTP;
       } else if (scheme_val == "https") {
-        scheme = NH_SCHEME_HTTPS;
+        scheme = NHSchemeType::HTTPS;
       } else {
         NH_Note("Invalid scheme '%s' for strategy '%s', setting to NONE", scheme_val.c_str(), strategy_name.c_str());
       }
@@ -398,9 +398,9 @@ template <> struct convert<NHProtocol> {
     if (map["scheme"]) {
       const auto scheme_val = map["scheme"].Scalar();
       if (scheme_val == "http") {
-        nh.scheme = NH_SCHEME_HTTP;
+        nh.scheme = NHSchemeType::HTTP;
       } else if (scheme_val == "https") {
-        nh.scheme = NH_SCHEME_HTTPS;
+        nh.scheme = NHSchemeType::HTTPS;
       } else {
         NH_Note("Invalid scheme '%s' for protocol, setting to NONE", scheme_val.c_str());
       }

@@ -459,11 +459,11 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
     result.last_parent = pRec->host_index;
     result.last_lookup = result.last_group = cur_ring;
     switch (scheme) {
-    case NH_SCHEME_NONE:
-    case NH_SCHEME_HTTP:
+    case NHSchemeType::NONE:
+    case NHSchemeType::HTTP:
       result.port = pRec->getPort(scheme);
       break;
-    case NH_SCHEME_HTTPS:
+    case NHSchemeType::HTTPS:
       result.port = pRec->getPort(scheme);
       break;
     }

@@ -76,7 +76,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(ptr->hash_key == NHHashKeyType::CACHE_HASH_KEY);
 
         CHECK(strategy->go_direct == false);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
+        CHECK(strategy->scheme == NHSchemeType::HTTP);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
         CHECK(strategy->groups == 2);
         std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
@@ -90,10 +90,10 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 1.5);
@@ -101,7 +101,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
                 CHECK(h->weight == 1.5);
@@ -113,10 +113,10 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p3.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.3:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.3:8443");
                 CHECK(h->weight == 0.5);
@@ -124,10 +124,10 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
                 break;
               case 1:
                 CHECK(h->hostname == "p4.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.4:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.4:8443");
                 CHECK(h->weight == 1.5);
@@ -152,7 +152,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_STRICT);
         CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
+        CHECK(strategy->scheme == NHSchemeType::HTTP);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
         CHECK(strategy->groups == 2);
         std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
@@ -166,17 +166,17 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 1.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
                 CHECK(h->weight == 1.5);
@@ -187,20 +187,20 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p3.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.3:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.3:8443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p4.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.4:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.4:8443");
                 CHECK(h->weight == 1.5);
@@ -239,7 +239,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTPS);
+        CHECK(strategy->scheme == NHSchemeType::HTTPS);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
         CHECK(strategy->groups == 2);
         std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
@@ -253,20 +253,20 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 1.0);
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.2:443");
                 CHECK(h->weight == 1.0);
@@ -277,20 +277,20 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "s1.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.1:443");
                 CHECK(h->weight == 1.0);
                 break;
               case 1:
                 CHECK(h->hostname == "s2.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.2:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.2:443");
                 CHECK(h->weight == 1.0);
@@ -314,7 +314,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_LATCHED);
         CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
+        CHECK(strategy->scheme == NHSchemeType::HTTP);
         CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
         CHECK(strategy->groups == 1);
         std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
@@ -328,20 +328,20 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p3.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.3:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.3:443");
                 CHECK(h->weight == 1.0);
                 break;
               case 1:
                 CHECK(h->hostname == "p4.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.4:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.4:443");
                 CHECK(h->weight == 1.0);
@@ -382,7 +382,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->max_simple_retries == 2);
         CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
+        CHECK(strategy->scheme == NHSchemeType::HTTP);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
@@ -401,17 +401,17 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
                 CHECK(h->weight == 0.5);
@@ -422,20 +422,20 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "s1.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.1:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.1:8443");
                 CHECK(h->weight == 2.0);
                 break;
               case 1:
                 CHECK(h->hostname == "s2.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.2:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.2:8443");
                 CHECK(h->weight == 1.0);
@@ -462,7 +462,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->ignore_self_detect == false);
         CHECK(strategy->max_simple_retries == 2);
         CHECK(strategy->go_direct == false);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
+        CHECK(strategy->scheme == NHSchemeType::HTTP);
         CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
@@ -481,17 +481,17 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
                 CHECK(h->weight == 0.5);
@@ -502,20 +502,20 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "s1.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.1:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.1:8443");
                 CHECK(h->weight == 2.0);
                 break;
               case 1:
                 CHECK(h->hostname == "s2.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.2:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.2:8443");
                 CHECK(h->weight == 1.0);
@@ -542,7 +542,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->ignore_self_detect == true);
         CHECK(strategy->max_simple_retries == 2);
         CHECK(strategy->go_direct == false);
-        CHECK(strategy->scheme == NH_SCHEME_HTTPS);
+        CHECK(strategy->scheme == NHSchemeType::HTTPS);
         CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
@@ -561,17 +561,17 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
                 CHECK(h->weight == 0.5);
@@ -582,20 +582,20 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "s1.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.1:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.1:8443");
                 CHECK(h->weight == 2.0);
                 break;
               case 1:
                 CHECK(h->hostname == "s2.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.2:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.2:8443");
                 CHECK(h->weight == 1.0);
@@ -619,7 +619,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         REQUIRE(strategy != nullptr);
         CHECK(strategy->policy_type == NHPolicyType::RR_STRICT);
         CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTPS);
+        CHECK(strategy->scheme == NHSchemeType::HTTPS);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->max_simple_retries == 2);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
@@ -640,17 +640,17 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
                 CHECK(h->weight == 0.5);
@@ -661,20 +661,20 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "s1.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.1:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.1:8443");
                 CHECK(h->weight == 2.0);
                 break;
               case 1:
                 CHECK(h->hostname == "s2.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.2:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.2:8443");
                 CHECK(h->weight == 1.0);
@@ -707,7 +707,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(ptr->hash_key == NHHashKeyType::URL_HASH_KEY);
 
         CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTPS);
+        CHECK(strategy->scheme == NHSchemeType::HTTPS);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
@@ -726,17 +726,17 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
                 CHECK(h->weight == 0.5);
@@ -747,20 +747,20 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "s1.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.1:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.1:8443");
                 CHECK(h->weight == 2.0);
                 break;
               case 1:
                 CHECK(h->hostname == "s2.bar.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.2.2:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.2.2:8443");
                 CHECK(h->weight == 1.0);
@@ -804,7 +804,7 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
         CHECK(strategy->max_simple_retries == 2);
         CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
+        CHECK(strategy->scheme == NHSchemeType::HTTP);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
@@ -823,17 +823,17 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
                 CHECK(h->weight == 0.5);
@@ -844,20 +844,20 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p3.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.3:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.3:8443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p4.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.4:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.4:8443");
                 CHECK(h->weight == 0.5);
@@ -887,7 +887,7 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
         CHECK(strategy->ignore_self_detect == false);
         CHECK(strategy->max_simple_retries == 2);
         CHECK(strategy->go_direct == false);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
+        CHECK(strategy->scheme == NHSchemeType::HTTP);
         CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
@@ -906,17 +906,17 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p1.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.1:80");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.1:443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p2.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 80);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.2:80");
                 CHECK(h->weight == 0.5);
@@ -927,20 +927,20 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
               switch (j) {
               case 0:
                 CHECK(h->hostname == "p3.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.3:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.3:8443");
                 CHECK(h->weight == 0.5);
                 break;
               case 1:
                 CHECK(h->hostname == "p4.foo.com");
-                CHECK(h->protocols[0]->scheme == NH_SCHEME_HTTP);
+                CHECK(h->protocols[0]->scheme == NHSchemeType::HTTP);
                 CHECK(h->protocols[0]->port == 8080);
                 CHECK(h->protocols[0]->health_check_url == "http://192.168.1.4:8080");
-                CHECK(h->protocols[1]->scheme == NH_SCHEME_HTTPS);
+                CHECK(h->protocols[1]->scheme == NHSchemeType::HTTPS);
                 CHECK(h->protocols[1]->port == 8443);
                 CHECK(h->protocols[1]->health_check_url == "https://192.168.1.4:8443");
                 CHECK(h->weight == 0.5);
