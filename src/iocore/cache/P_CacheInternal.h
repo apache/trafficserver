@@ -448,7 +448,7 @@ struct Cache {
   int       ready                 = CACHE_INITIALIZING;
   int64_t   cache_size            = 0; // in store block size
   int       total_initialized_vol = 0;
-  CacheType scheme                = CACHE_NONE_TYPE;
+  CacheType scheme                = CacheType::NONE;
 
   mutable ReplaceablePtr<CacheHostTable> hosttable;
 

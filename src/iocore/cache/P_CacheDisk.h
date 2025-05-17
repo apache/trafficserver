@@ -108,7 +108,7 @@ struct CacheDisk : public Continuation {
   int              openDone(int event, void *data);
   int              sync();
   int              syncDone(int event, void *data);
-  DiskStripeBlock *create_volume(int number, off_t size, int scheme);
+  DiskStripeBlock *create_volume(int number, off_t size, CacheType scheme);
   int              delete_volume(int number);
   int              delete_all_volumes();
   void             update_header();

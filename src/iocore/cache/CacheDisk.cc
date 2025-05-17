@@ -251,7 +251,7 @@ CacheDisk::syncDone(int event, void * /* data ATS_UNUSED */)
 
 /* size is in store blocks */
 DiskStripeBlock *
-CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
+CacheDisk::create_volume(int number, off_t size_in_blocks, CacheType scheme)
 {
   if (size_in_blocks == 0) {
     return nullptr;
@@ -319,7 +319,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   p->len    = size_in_blocks;
   p->free   = 0;
   p->number = number;
-  p->type   = scheme;
+  p->type   = static_cast<unsigned int>(scheme);
   header->num_used++;
 
   unsigned int i;
@@ -353,7 +353,7 @@ CacheDisk::delete_volume(int number)
       DiskStripeBlockQueue *q;
       for (q = disk_stripes[i]->dpb_queue.head; q;) {
         DiskStripeBlock *p  = q->b;
-        p->type             = CACHE_NONE_TYPE;
+        p->type             = static_cast<unsigned int>(CacheType::NONE);
         p->free             = 1;
         free_space         += p->len;
         header->num_free++;
@@ -457,7 +457,7 @@ CacheDisk::delete_all_volumes()
 {
   header->vol_info[0].offset = start;
   header->vol_info[0].len    = num_usable_blocks;
-  header->vol_info[0].type   = CACHE_NONE_TYPE;
+  header->vol_info[0].type   = static_cast<unsigned int>(CacheType::NONE);
   header->vol_info[0].free   = 1;
 
   header->magic            = DISK_HEADER_MAGIC;

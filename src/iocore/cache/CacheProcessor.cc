@@ -68,7 +68,7 @@ int            cplist_reconfigure();
 void           cplist_init();
 void           register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix);
 static void    cplist_update();
-static int     create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp);
+static int     create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVol *cp);
 static int     fillExclusiveDisks(CacheVol *cp);
 
 static size_t DEFAULT_RAM_CACHE_MULTIPLIER = 10; // I.e. 10x 1MB per 1GB of disk.
@@ -808,13 +808,13 @@ CacheProcessor::diskInitialized()
   }
   if (config_volumes.num_volumes == 0) {
     theCache         = new Cache();
-    theCache->scheme = CACHE_HTTP_TYPE;
+    theCache->scheme = CacheType::HTTP;
     theCache->open(clear, fix);
     return;
   }
   if (config_volumes.num_http_volumes != 0) {
     theCache         = new Cache();
-    theCache->scheme = CACHE_HTTP_TYPE;
+    theCache->scheme = CacheType::HTTP;
     theCache->open(clear, fix);
   }
 }
@@ -832,7 +832,7 @@ cplist_reconfigure()
     /* only the http cache */
     CacheVol *cp     = new CacheVol();
     cp->vol_number   = 0;
-    cp->scheme       = CACHE_HTTP_TYPE;
+    cp->scheme       = CacheType::HTTP;
     cp->disk_stripes = static_cast<DiskStripe **>(ats_malloc(gndisks * sizeof(DiskStripe *)));
     memset(cp->disk_stripes, 0, gndisks * sizeof(DiskStripe *));
     cp_list.enqueue(cp);
@@ -850,7 +850,7 @@ cplist_reconfigure()
         for (int p = 0; p < vols; p++) {
           off_t b = gdisks[i]->free_space / (vols - p);
           Dbg(dbg_ctl_cache_hosting, "blocks = %" PRId64, (int64_t)b);
-          DiskStripeBlock *dpb = gdisks[i]->create_volume(0, b, CACHE_HTTP_TYPE);
+          DiskStripeBlock *dpb = gdisks[i]->create_volume(0, b, CacheType::HTTP);
           ink_assert(dpb && dpb->len == (uint64_t)b);
         }
         ink_assert(gdisks[i]->free_space == 0);
@@ -1066,7 +1066,7 @@ cplist_init()
       CacheVol *p = cp_list.head;
       while (p) {
         if (p->vol_number == dp[j]->vol_number) {
-          ink_assert(p->scheme == static_cast<int>(dp[j]->dpb_queue.head->b->type));
+          ink_assert(p->scheme == static_cast<CacheType>(dp[j]->dpb_queue.head->b->type));
           p->size            += dp[j]->size;
           p->num_vols        += dp[j]->num_volblocks;
           p->disk_stripes[i]  = dp[j];
@@ -1081,7 +1081,7 @@ cplist_init()
         new_p->vol_number   = dp[j]->vol_number;
         new_p->num_vols     = dp[j]->num_volblocks;
         new_p->size         = dp[j]->size;
-        new_p->scheme       = dp[j]->dpb_queue.head->b->type;
+        new_p->scheme       = static_cast<CacheType>(dp[j]->dpb_queue.head->b->type);
         new_p->disk_stripes = static_cast<DiskStripe **>(ats_malloc(gndisks * sizeof(DiskStripe *)));
         memset(new_p->disk_stripes, 0, gndisks * sizeof(DiskStripe *));
         new_p->disk_stripes[i] = dp[j];
@@ -1258,7 +1258,7 @@ cplist_update()
 
 // This is some really bad code, and needs to be rewritten!
 int
-create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
+create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVol *cp)
 {
   static int curr_vol       = 0; // FIXME: this will not reinitialize correctly
   off_t      to_create      = size_in_blocks;
