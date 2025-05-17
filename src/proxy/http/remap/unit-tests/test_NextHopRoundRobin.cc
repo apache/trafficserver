@@ -131,11 +131,11 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
         // mark down s2.
         strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
-        // eighth request, p1, p2, s1, s2 are down, should get PARENT_DIRECT as go_direct is true
+        // eighth request, p1, p2, s1, s2 are down, should get ParentResultType::DIRECT as go_direct is true
         build_request(10009, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
-        CHECK(result->result == ParentResultType::PARENT_DIRECT);
+        CHECK(result->result == ParentResultType::DIRECT);
 
         // check that nextHopExists() returns false when all parents are down.
         CHECK(strategy->nextHopExists(txnp) == false);
@@ -147,14 +147,14 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
         build_request(10010, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp, nullptr, now);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p2.foo.com") == 0);
 
         // tenth request, p1 should now be retried.
         build_request(10011, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp, nullptr, now);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
       }
       br_destroy(sm);

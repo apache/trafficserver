@@ -4488,7 +4488,7 @@ HttpSM::do_hostdb_lookup()
   milestones[TS_MILESTONE_DNS_LOOKUP_BEGIN] = ink_get_hrtime();
 
   // If directed to not look up fqdns then mark as resolved
-  if (t_state.txn_conf->no_dns_forward_to_parent && t_state.parent_result.result == PARENT_UNDEFINED) {
+  if (t_state.txn_conf->no_dns_forward_to_parent && t_state.parent_result.result == ParentResultType::UNDEFINED) {
     t_state.dns_info.resolved_p = true;
     call_transact_and_set_next_state(nullptr);
     return;
@@ -7933,7 +7933,7 @@ HttpSM::set_next_state()
   case HttpTransact::StateMachineAction_t::DNS_LOOKUP: {
     if (sockaddr const *addr; t_state.http_config_param->use_client_target_addr == 2 &&              // no CTA verification
                               !t_state.url_remap_success &&                                          // wasn't remapped
-                              t_state.parent_result.result != PARENT_SPECIFIED &&                    // no parent.
+                              t_state.parent_result.result != ParentResultType::SPECIFIED &&         // no parent.
                               t_state.client_info.is_transparent &&                                  // inbound transparent
                               t_state.dns_info.os_addr_style == ResolveInfo::OS_Addr::TRY_DEFAULT && // haven't tried anything yet.
                               ats_is_ip(addr = _ua.get_txn()->get_netvc()->get_local_addr()))        // valid inbound remote address
@@ -7965,7 +7965,7 @@ HttpSM::set_next_state()
       call_transact_and_set_next_state(nullptr);
       break;
     } else if (t_state.dns_info.looking_up == ResolveInfo::ORIGIN_SERVER && t_state.txn_conf->no_dns_forward_to_parent &&
-               t_state.parent_result.result != PARENT_UNDEFINED) {
+               t_state.parent_result.result != ParentResultType::UNDEFINED) {
       t_state.dns_info.resolved_p = true; // seems dangerous - where's the IP address?
       call_transact_and_set_next_state(nullptr);
       break;

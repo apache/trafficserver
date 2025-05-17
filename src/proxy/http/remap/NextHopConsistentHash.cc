@@ -295,7 +295,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
   std::string_view            first_call_host;
   int                         first_call_port = 0;
 
-  if (result.line_number == -1 && result.result == PARENT_UNDEFINED) {
+  if (result.line_number == -1 && result.result == ParentResultType::UNDEFINED) {
     firstcall = true;
   }
 
@@ -306,7 +306,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
   // will instead just increment the hash table iterator to find the next parent on the ring
   if (firstcall) {
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] firstcall, line_number: %d, result: %s", sm_id, result.line_number,
-           ParentResultStr[result.result]);
+           ParentResultStr[static_cast<int>(result.result)]);
     result.line_number = distance;
     cur_ring           = 0;
     for (uint32_t i = 0; i < groups; i++) {
@@ -320,7 +320,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
       first_call_port = result.port;
     }
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] not firstcall, line_number: %d, result: %s", sm_id, result.line_number,
-           ParentResultStr[result.result]);
+           ParentResultStr[static_cast<int>(result.result)]);
     switch (ring_mode) {
     case NHRingMode::ALTERNATE_RING:
       if (groups > 1) {
@@ -407,7 +407,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
             result.last_parent = pRec->host_index;
             result.last_lookup = pRec->group_index;
             result.retry       = nextHopRetry;
-            result.result      = PARENT_SPECIFIED;
+            result.result      = ParentResultType::SPECIFIED;
             NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] next hop %s is now retryable", sm_id, pRec->hostname.c_str());
             break;
           }
@@ -454,7 +454,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
   // ----------------------------------------------------------------------------------------------------
 
   if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available.load() || result.retry)) {
-    result.result      = PARENT_SPECIFIED;
+    result.result      = ParentResultType::SPECIFIED;
     result.hostname    = pRec->hostname.c_str();
     result.last_parent = pRec->host_index;
     result.last_lookup = result.last_group = cur_ring;
@@ -486,20 +486,20 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
 
     ink_assert(result.hostname != nullptr);
     ink_assert(result.port != 0);
-    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result->result: %s Chosen parent: %s.%d", sm_id, ParentResultStr[result.result],
-           result.hostname, result.port);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result->result: %s Chosen parent: %s.%d", sm_id,
+           ParentResultStr[static_cast<int>(result.result)], result.hostname, result.port);
   } else {
     if (go_direct == true) {
-      result.result = PARENT_DIRECT;
+      result.result = ParentResultType::DIRECT;
     } else {
-      result.result = PARENT_FAIL;
+      result.result = ParentResultType::FAIL;
     }
     result.hostname = nullptr;
     result.port     = 0;
     result.retry    = false;
 
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result.result: %s set hostname null port 0 retry false", sm_id,
-           ParentResultStr[result.result]);
+           ParentResultStr[static_cast<int>(result.result)]);
   }
 
   setHostHeader(txnp, result.hostname);

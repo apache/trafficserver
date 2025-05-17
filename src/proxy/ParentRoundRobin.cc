@@ -81,9 +81,9 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       ink_assert(result->rec->go_direct == true);
       // Could not find a parent
       if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-        result->result = PARENT_DIRECT;
+        result->result = ParentResultType::DIRECT;
       } else {
-        result->result = PARENT_FAIL;
+        result->result = ParentResultType::FAIL;
       }
 
       result->hostname = nullptr;
@@ -127,9 +127,9 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       if (result->rec->go_direct == true) {
         // Could not find a parent
         if (result->rec->parent_is_proxy == true) {
-          result->result = PARENT_DIRECT;
+          result->result = ParentResultType::DIRECT;
         } else {
-          result->result = PARENT_FAIL;
+          result->result = ParentResultType::FAIL;
         }
         result->hostname = nullptr;
         result->port     = 0;
@@ -176,7 +176,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
 
     if (parentUp == true && host_stat != TS_HOST_STATUS_DOWN) {
       Dbg(dbg_ctl_parent_select, "status for %s: %d", parents[cur_index].hostname, host_stat);
-      result->result      = PARENT_SPECIFIED;
+      result->result      = ParentResultType::SPECIFIED;
       result->hostname    = parents[cur_index].hostname;
       result->port        = parents[cur_index].port;
       result->last_parent = cur_index;
@@ -190,9 +190,9 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
   } while (static_cast<unsigned int>(cur_index) != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-    result->result = PARENT_DIRECT;
+    result->result = ParentResultType::DIRECT;
   } else {
-    result->result = PARENT_FAIL;
+    result->result = ParentResultType::FAIL;
   }
 
   result->hostname = nullptr;

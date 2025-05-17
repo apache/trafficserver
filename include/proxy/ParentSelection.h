@@ -52,15 +52,16 @@ struct OverridableHttpConfigParams;
 class ParentRecord;
 class ParentSelectionStrategy;
 
-enum ParentResultType {
-  PARENT_UNDEFINED,
-  PARENT_DIRECT,
-  PARENT_SPECIFIED,
-  PARENT_AGENT,
-  PARENT_FAIL,
+enum class ParentResultType {
+  UNDEFINED,
+  DIRECT,
+  SPECIFIED,
+  AGENT,
+  FAIL,
 };
 
-static const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
+static const char *ParentResultStr[] = {"ParentResultType::UNDEFINED", "ParentResultType::DIRECT", "ParentResultType::SPECIFIED",
+                                        "ParentResultType::AGENT", "ParentResultType::FAIL"};
 
 enum ParentRR_t {
   P_NO_ROUND_ROBIN = 0,
@@ -200,7 +201,7 @@ struct ParentResult {
   {
     ink_zero(*this);
     line_number           = -1;
-    result                = PARENT_UNDEFINED;
+    result                = ParentResultType::UNDEFINED;
     mapWrapped[0]         = false;
     mapWrapped[1]         = false;
     do_not_cache_response = false;
@@ -218,9 +219,9 @@ struct ParentResult {
   {
     if (rec == nullptr) {
       // If we don't have a result, we either haven't done a parent
-      // lookup yet (PARENT_UNDEFINED), or the lookup didn't match
-      // anything (PARENT_DIRECT).
-      ink_assert(result == PARENT_UNDEFINED || result == PARENT_DIRECT);
+      // lookup yet (ParentResultType::UNDEFINED), or the lookup didn't match
+      // anything (ParentResultType::DIRECT).
+      ink_assert(result == ParentResultType::UNDEFINED || result == ParentResultType::DIRECT);
       return false;
     }
 
@@ -288,7 +289,7 @@ struct ParentResult {
       return false;
     } else {
       // Caller should check for a valid result beforehand.
-      ink_assert(result != PARENT_UNDEFINED);
+      ink_assert(result != ParentResultType::UNDEFINED);
       ink_assert(is_some());
       return rec->bypass_ok();
     }
@@ -300,7 +301,7 @@ struct ParentResult {
     printf("ParentResult - hostname: %s, port: %d, retry: %s, line_number: %d, last_parent: %d, start_parent: %d, wrap_around: %s, "
            "last_lookup: %d, result: %s\n",
            hostname, port, (retry) ? "true" : "false", line_number, last_parent, start_parent, (wrap_around) ? "true" : "false",
-           last_lookup, ParentResultStr[result]);
+           last_lookup, ParentResultStr[static_cast<int>(result)]);
   }
 
   static DbgCtl dbg_ctl_parent_select;
