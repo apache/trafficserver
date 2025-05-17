@@ -1335,16 +1335,16 @@ HttpSM::state_api_callout(int event, void * /* data ATS_UNUSED */)
 {
   // enum and variable for figuring out what the next action is after
   //   after we've finished the api state
-  enum AfterApiReturn_t {
-    API_RETURN_UNKNOWN = 0,
-    API_RETURN_CONTINUE,
-    API_RETURN_DEFERED_CLOSE,
-    API_RETURN_DEFERED_SERVER_ERROR,
-    API_RETURN_ERROR_JUMP,
-    API_RETURN_SHUTDOWN,
-    API_RETURN_INVALIDATE_ERROR
+  enum class AfterApiReturn_t {
+    UNKNOWN = 0,
+    CONTINUE,
+    DEFERED_CLOSE,
+    DEFERED_SERVER_ERROR,
+    ERROR_JUMP,
+    SHUTDOWN,
+    INVALIDATE_ERROR
   };
-  AfterApiReturn_t api_next = API_RETURN_UNKNOWN;
+  AfterApiReturn_t api_next = AfterApiReturn_t::UNKNOWN;
 
   if (event != EVENT_NONE) {
     STATE_ENTER(&HttpSM::state_api_callout, event);
@@ -1450,13 +1450,13 @@ plugins required to work with sni_routing.
       if (t_state.api_modifiable_cached_resp && t_state.api_update_cached_object == HttpTransact::UpdateCachedObject_t::PREPARE) {
         t_state.api_update_cached_object = HttpTransact::UpdateCachedObject_t::CONTINUE;
       }
-      api_next = API_RETURN_CONTINUE;
+      api_next = AfterApiReturn_t::CONTINUE;
       break;
     case HttpApiState_t::DEFERED_CLOSE:
-      api_next = API_RETURN_DEFERED_CLOSE;
+      api_next = AfterApiReturn_t::DEFERED_CLOSE;
       break;
     case HttpApiState_t::DEFERED_SERVER_ERROR:
-      api_next = API_RETURN_DEFERED_SERVER_ERROR;
+      api_next = AfterApiReturn_t::DEFERED_SERVER_ERROR;
       break;
     case HttpApiState_t::REWIND_STATE_MACHINE:
       SMDbg(dbg_ctl_http, "REWIND");
@@ -1470,11 +1470,11 @@ plugins required to work with sni_routing.
 
   case HTTP_API_ERROR:
     if (callout_state == HttpApiState_t::DEFERED_CLOSE) {
-      api_next = API_RETURN_DEFERED_CLOSE;
+      api_next = AfterApiReturn_t::DEFERED_CLOSE;
     } else if (cur_hook_id == TS_HTTP_TXN_CLOSE_HOOK) {
       // If we are closing the state machine, we can't
       //   jump to an error state so just continue
-      api_next = API_RETURN_CONTINUE;
+      api_next = AfterApiReturn_t::CONTINUE;
     } else if (t_state.api_http_sm_shutdown) {
       t_state.api_http_sm_shutdown   = false;
       t_state.cache_info.object_read = nullptr;
@@ -1482,14 +1482,14 @@ plugins required to work with sni_routing.
       transform_cache_sm.close_read();
       release_server_session();
       terminate_sm                 = true;
-      api_next                     = API_RETURN_SHUTDOWN;
+      api_next                     = AfterApiReturn_t::SHUTDOWN;
       t_state.squid_codes.log_code = SQUID_LOG_TCP_DENIED;
     } else if (t_state.api_modifiable_cached_resp &&
                t_state.api_update_cached_object == HttpTransact::UpdateCachedObject_t::PREPARE) {
       t_state.api_update_cached_object = HttpTransact::UpdateCachedObject_t::ERROR;
-      api_next                         = API_RETURN_INVALIDATE_ERROR;
+      api_next                         = AfterApiReturn_t::INVALIDATE_ERROR;
     } else {
-      api_next = API_RETURN_ERROR_JUMP;
+      api_next = AfterApiReturn_t::ERROR_JUMP;
     }
     break;
 
@@ -1508,28 +1508,28 @@ plugins required to work with sni_routing.
   callout_state = HttpApiState_t::NO_CALLOUT;
   api_timer     = 0;
   switch (api_next) {
-  case API_RETURN_CONTINUE:
+  case AfterApiReturn_t::CONTINUE:
     handle_api_return();
     break;
-  case API_RETURN_DEFERED_CLOSE:
+  case AfterApiReturn_t::DEFERED_CLOSE:
     ink_assert(t_state.api_next_action == HttpTransact::StateMachineAction_t::API_SM_SHUTDOWN);
     do_api_callout();
     break;
-  case API_RETURN_DEFERED_SERVER_ERROR:
+  case AfterApiReturn_t::DEFERED_SERVER_ERROR:
     ink_assert(t_state.api_next_action == HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR);
     ink_assert(t_state.current.state != HttpTransact::CONNECTION_ALIVE);
     call_transact_and_set_next_state(HttpTransact::HandleResponse);
     break;
-  case API_RETURN_ERROR_JUMP:
+  case AfterApiReturn_t::ERROR_JUMP:
     call_transact_and_set_next_state(HttpTransact::HandleApiErrorJump);
     break;
-  case API_RETURN_SHUTDOWN:
+  case AfterApiReturn_t::SHUTDOWN:
     break;
-  case API_RETURN_INVALIDATE_ERROR:
+  case AfterApiReturn_t::INVALIDATE_ERROR:
     do_cache_prepare_update();
     break;
   default:
-  case API_RETURN_UNKNOWN:
+  case AfterApiReturn_t::UNKNOWN:
     ink_release_assert(0);
   }
 
