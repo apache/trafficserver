@@ -49,11 +49,31 @@ struct HdrTokenTypeBinding {
   HdrTokenType type;
 };
 
+enum class HdrTokenInfoFlags : uint32_t {
+  NONE      = 0,
+  COMMAS    = 1 << 0,
+  MULTVALS  = 1 << 1,
+  HOPBYHOP  = 1 << 2,
+  PROXYAUTH = 1 << 3,
+};
+
+inline HdrTokenInfoFlags
+operator|(HdrTokenInfoFlags a, HdrTokenInfoFlags b)
+{
+  return static_cast<HdrTokenInfoFlags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
+inline HdrTokenInfoFlags
+operator&(HdrTokenInfoFlags a, HdrTokenInfoFlags b)
+{
+  return static_cast<HdrTokenInfoFlags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+
 struct HdrTokenFieldInfo {
-  const char *name;
-  int32_t     slotid;
-  uint64_t    mask;
-  uint32_t    flags;
+  const char       *name;
+  int32_t           slotid;
+  uint64_t          mask;
+  HdrTokenInfoFlags flags;
 };
 
 struct HdrTokenTypeSpecific {
@@ -72,23 +92,15 @@ struct HdrTokenHeapPrefix {
   HdrTokenTypeSpecific wks_type_specific;
 };
 
-enum HdrTokenInfoFlags {
-  HTIF_NONE      = 0,
-  HTIF_COMMAS    = 1 << 0,
-  HTIF_MULTVALS  = 1 << 1,
-  HTIF_HOPBYHOP  = 1 << 2,
-  HTIF_PROXYAUTH = 1 << 3
-};
-
 extern DFA *hdrtoken_strs_dfa;
 extern int  hdrtoken_num_wks;
 
-extern const char  *hdrtoken_strs[];
-extern int          hdrtoken_str_lengths[];
-extern HdrTokenType hdrtoken_str_token_types[];
-extern int32_t      hdrtoken_str_slotids[];
-extern uint64_t     hdrtoken_str_masks[];
-extern uint32_t     hdrtoken_str_flags[];
+extern const char       *hdrtoken_strs[];
+extern int               hdrtoken_str_lengths[];
+extern HdrTokenType      hdrtoken_str_token_types[];
+extern int32_t           hdrtoken_str_slotids[];
+extern uint64_t          hdrtoken_str_masks[];
+extern HdrTokenInfoFlags hdrtoken_str_flags[];
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -175,7 +187,7 @@ hdrtoken_index_to_mask(int wks_idx)
   return hdrtoken_str_masks[wks_idx];
 }
 
-inline int
+inline HdrTokenInfoFlags
 hdrtoken_index_to_flags(int wks_idx)
 {
   ink_assert(hdrtoken_is_valid_wks_idx(wks_idx));
@@ -228,7 +240,7 @@ hdrtoken_wks_to_mask(const char *wks)
   return prefix->wks_info.mask;
 }
 
-inline int
+inline HdrTokenInfoFlags
 hdrtoken_wks_to_flags(const char *wks)
 {
   ink_assert(hdrtoken_is_wks(wks));

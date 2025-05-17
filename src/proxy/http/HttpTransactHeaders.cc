@@ -71,7 +71,8 @@ HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
   if (!hdrtoken_is_wks(field_name)) {
     return (false);
   }
-  if ((hdrtoken_wks_to_flags(field_name) & HTIF_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE.c_str())) {
+  if ((hdrtoken_wks_to_flags(field_name) & HdrTokenInfoFlags::HOPBYHOP) != HdrTokenInfoFlags::NONE &&
+      (field_name != MIME_FIELD_KEEP_ALIVE.c_str())) {
     return (true);
   } else {
     return (false);
@@ -243,9 +244,9 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
       continue;
     }
 
-    int field_flags = hdrtoken_index_to_flags(field.m_wks_idx);
+    HdrTokenInfoFlags field_flags = hdrtoken_index_to_flags(field.m_wks_idx);
 
-    if (field_flags & HTIF_HOPBYHOP) {
+    if ((field_flags & HdrTokenInfoFlags::HOPBYHOP) != HdrTokenInfoFlags::NONE) {
       std::string_view name(field.name_get());
       std::string_view value(field.value_get());
       bool const       is_te_trailers = name == MIME_FIELD_TE.c_str() && value == "trailers";
@@ -255,7 +256,7 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
       }
 
       // Delete header if not in special proxy_auth retention mode
-      if (retain_proxy_auth_hdrs && (field_flags & HTIF_PROXYAUTH)) {
+      if (retain_proxy_auth_hdrs && (field_flags & HdrTokenInfoFlags::PROXYAUTH) != HdrTokenInfoFlags::NONE) {
         continue;
       }
       new_hdr->field_delete(&field);

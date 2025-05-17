@@ -138,7 +138,7 @@ struct MIMEField {
   supports_commas() const
   {
     if (m_wks_idx >= 0) {
-      return (hdrtoken_index_to_flags(m_wks_idx) & HTIF_COMMAS);
+      return (hdrtoken_index_to_flags(m_wks_idx) & HdrTokenInfoFlags::COMMAS) != HdrTokenInfoFlags::NONE;
     }
     return true; // by default, assume supports commas
   }
