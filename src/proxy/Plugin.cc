@@ -33,24 +33,24 @@
 
 #define MAX_PLUGIN_ARGS 64
 
-static PluginDynamicReloadMode plugin_dynamic_reload_mode = PluginDynamicReloadMode::RELOAD_ON;
+static PluginDynamicReloadMode plugin_dynamic_reload_mode = PluginDynamicReloadMode::ON;
 
 bool
 isPluginDynamicReloadEnabled()
 {
-  return PluginDynamicReloadMode::RELOAD_ON == plugin_dynamic_reload_mode;
+  return PluginDynamicReloadMode::ON == plugin_dynamic_reload_mode;
 }
 
 void
 enablePluginDynamicReload()
 {
-  plugin_dynamic_reload_mode = PluginDynamicReloadMode::RELOAD_ON;
+  plugin_dynamic_reload_mode = PluginDynamicReloadMode::ON;
 }
 
 void
 disablePluginDynamicReload()
 {
-  plugin_dynamic_reload_mode = PluginDynamicReloadMode::RELOAD_OFF;
+  plugin_dynamic_reload_mode = PluginDynamicReloadMode::OFF;
 }
 
 void
@@ -61,11 +61,12 @@ parsePluginDynamicReloadConfig()
   int_plugin_dynamic_reload_mode = RecGetRecordInt("proxy.config.plugin.dynamic_reload_mode").value_or(0);
   plugin_dynamic_reload_mode     = static_cast<PluginDynamicReloadMode>(int_plugin_dynamic_reload_mode);
 
-  if (plugin_dynamic_reload_mode < 0 || plugin_dynamic_reload_mode >= PluginDynamicReloadMode::RELOAD_COUNT) {
+  if (static_cast<int>(plugin_dynamic_reload_mode) < 0 ||
+      static_cast<int>(plugin_dynamic_reload_mode) >= static_cast<int>(PluginDynamicReloadMode::COUNT)) {
     Warning("proxy.config.plugin.dynamic_reload_mode out of range. using default value.");
-    plugin_dynamic_reload_mode = PluginDynamicReloadMode::RELOAD_ON;
+    plugin_dynamic_reload_mode = PluginDynamicReloadMode::ON;
   }
-  Note("Initialized plugin_dynamic_reload_mode: %d", plugin_dynamic_reload_mode);
+  Note("Initialized plugin_dynamic_reload_mode: %d", static_cast<int>(plugin_dynamic_reload_mode));
 }
 
 void
