@@ -2509,7 +2509,7 @@ HttpSM::state_cache_open_write(int event, void *data)
     }
 
     ink_assert(t_state.cache_info.object_read != nullptr);
-    t_state.source = HttpTransact::SOURCE_CACHE;
+    t_state.source = HttpTransact::Source_t::CACHE;
     // clear up CACHE_LOOKUP_MISS, let Freshness function decide
     // hit status
     t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
@@ -2575,7 +2575,7 @@ HttpSM::state_cache_open_read(int event, void *data)
     // lookup/open is successful. //
     /////////////////////////////////
     ink_assert(cache_sm.cache_read_vc != nullptr);
-    t_state.source = HttpTransact::SOURCE_CACHE;
+    t_state.source = HttpTransact::Source_t::CACHE;
 
     cache_sm.cache_read_vc->get_http_info(&t_state.cache_info.object_read);
     // ToDo: Should support other levels of cache hits here, but the cache does not support it (yet)
@@ -3535,15 +3535,15 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   // to a source in HttpSM::tunnel_handler_transform_write
   //
   HttpTransact::Source_t original_source = t_state.source;
-  if (HttpTransact::SOURCE_TRANSFORM == original_source && t_state.range_setup != HttpTransact::RANGE_NONE) {
+  if (HttpTransact::Source_t::TRANSFORM == original_source && t_state.range_setup != HttpTransact::RANGE_NONE) {
     original_source = t_state.pre_transform_source;
   }
 
   switch (original_source) {
-  case HttpTransact::SOURCE_HTTP_ORIGIN_SERVER:
+  case HttpTransact::Source_t::HTTP_ORIGIN_SERVER:
     server_response_body_bytes = client_response_body_bytes;
     break;
-  case HttpTransact::SOURCE_CACHE:
+  case HttpTransact::Source_t::CACHE:
     cache_response_body_bytes = client_response_body_bytes;
     break;
   default:
@@ -4226,10 +4226,10 @@ HttpSM::tunnel_handler_transform_write(int event, HttpTunnelConsumer *c)
   //
   if (t_state.range_setup == HttpTransact::RANGE_NONE) {
     switch (t_state.pre_transform_source) {
-    case HttpTransact::SOURCE_HTTP_ORIGIN_SERVER:
+    case HttpTransact::Source_t::HTTP_ORIGIN_SERVER:
       server_response_body_bytes = client_response_body_bytes;
       break;
-    case HttpTransact::SOURCE_CACHE:
+    case HttpTransact::Source_t::CACHE:
       cache_response_body_bytes = client_response_body_bytes;
       break;
     default:
@@ -6917,7 +6917,7 @@ HttpSM::setup_error_transfer()
     _ua.set_entry(nullptr);
     // _ua.get_txn()     = NULL;
     terminate_sm   = true;
-    t_state.source = HttpTransact::SOURCE_INTERNAL;
+    t_state.source = HttpTransact::Source_t::INTERNAL;
   }
 }
 
@@ -6961,7 +6961,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     }
   }
 
-  t_state.source = HttpTransact::SOURCE_INTERNAL;
+  t_state.source = HttpTransact::Source_t::INTERNAL;
 
   int64_t buf_size =
     index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + (is_msg_buf_present ? t_state.internal_msg_buffer_size : 0);
@@ -8048,7 +8048,7 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_SERVER_READ: {
-    t_state.source = HttpTransact::SOURCE_HTTP_ORIGIN_SERVER;
+    t_state.source = HttpTransact::Source_t::HTTP_ORIGIN_SERVER;
 
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);
@@ -8076,7 +8076,7 @@ HttpSM::set_next_state()
                t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE_AND_DELETE ||
                t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE_AND_UPDATE);
     release_server_session(true);
-    t_state.source = HttpTransact::SOURCE_CACHE;
+    t_state.source = HttpTransact::Source_t::CACHE;
 
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);

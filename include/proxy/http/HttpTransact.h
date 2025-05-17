@@ -360,13 +360,13 @@ public:
   ////////////
   // source //
   ////////////
-  enum Source_t {
-    SOURCE_NONE = 0,
-    SOURCE_HTTP_ORIGIN_SERVER,
-    SOURCE_RAW_ORIGIN_SERVER,
-    SOURCE_CACHE,
-    SOURCE_TRANSFORM,
-    SOURCE_INTERNAL // generated from text buffer
+  enum class Source_t {
+    NONE = 0,
+    HTTP_ORIGIN_SERVER,
+    RAW_ORIGIN_SERVER,
+    CACHE,
+    TRANSFORM,
+    INTERNAL // generated from text buffer
   };
 
   ////////////////////////////////////////////////
@@ -727,8 +727,8 @@ public:
     ConnectionAttributes        parent_info;
     ConnectionAttributes        server_info;
 
-    Source_t            source               = SOURCE_NONE;
-    Source_t            pre_transform_source = SOURCE_NONE;
+    Source_t            source               = Source_t::NONE;
+    Source_t            pre_transform_source = Source_t::NONE;
     HttpRequestFlavor_t req_flavor           = HttpRequestFlavor_t::FWDPROXY;
 
     CurrentInfo  current;

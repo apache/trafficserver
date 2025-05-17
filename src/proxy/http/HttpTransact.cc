@@ -1747,7 +1747,7 @@ HttpTransact::HandleApiErrorJump(State *s)
   }
 
   // Set the source to internal so chunking is handled correctly
-  s->source = SOURCE_INTERNAL;
+  s->source = Source_t::INTERNAL;
 
   /**
     The API indicated an error. Lets use a >=400 error from the state (if one's set) or fallback to a
@@ -1814,7 +1814,7 @@ HttpTransact::PPDNSLookup(State *s)
     // DNS lookup of parent failed, find next parent or o.s.
     if (find_server_and_update_current_info(s) == ResolveInfo::HOST_NONE) {
       if (is_cache_hit(s->cache_lookup_result) && is_stale_cache_response_returnable(s)) {
-        s->source = SOURCE_CACHE;
+        s->source = Source_t::CACHE;
         TxnDbg(dbg_ctl_http_trans, "All parents are down, serving stale doc to client");
         build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
         return;
@@ -1913,7 +1913,7 @@ HttpTransact::OSDNSLookup(State *s)
 
       // Even with unsuccessful DNS lookup, return stale object from cache if applicable
       if (is_cache_hit(s->cache_lookup_result) && is_stale_cache_response_returnable(s)) {
-        s->source = SOURCE_CACHE;
+        s->source = Source_t::CACHE;
         TxnDbg(dbg_ctl_http_trans, "[hscno] serving stale doc to client");
         build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
         return;
@@ -3438,7 +3438,7 @@ HttpTransact::HandleResponse(State *s)
   TxnDbg(dbg_ctl_http_trans, "Entering HttpTransact::HandleResponse");
   TxnDbg(dbg_ctl_http_seq, "Response received");
 
-  s->source                 = SOURCE_HTTP_ORIGIN_SERVER;
+  s->source                 = Source_t::HTTP_ORIGIN_SERVER;
   s->response_received_time = ink_local_time();
   ink_assert(s->response_received_time >= s->request_sent_time);
   s->current.now = s->response_received_time;
@@ -3917,7 +3917,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
     ink_assert(s->cache_info.object_read != nullptr);
     ink_assert(s->cache_info.action == CacheAction_t::UPDATE || s->cache_info.action == CacheAction_t::SERVE);
     ink_assert(s->internal_msg_buffer == nullptr);
-    s->source = SOURCE_CACHE;
+    s->source = Source_t::CACHE;
     TxnDbg(dbg_ctl_http_trans, "[hscno] serving stale doc to client");
     build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   } else {
@@ -4846,7 +4846,7 @@ HttpTransact::handle_transform_ready(State *s)
   ink_assert(s->hdr_info.transform_response.valid() == true);
 
   s->pre_transform_source = s->source;
-  s->source               = SOURCE_TRANSFORM;
+  s->source               = Source_t::TRANSFORM;
 
   dump_header(dbg_ctl_http_hdrs, &s->hdr_info.transform_response, s->state_machine_id(), "Header From Transform");
 
@@ -4856,13 +4856,13 @@ HttpTransact::handle_transform_ready(State *s)
       s->api_info.cache_transformed && !s->range_setup) {
     HTTPHdr *transform_store_request = nullptr;
     switch (s->pre_transform_source) {
-    case SOURCE_CACHE:
+    case Source_t::CACHE:
       // If we are transforming from the cache, treat
       //  the transform as if it were virtual server
       //  use in the incoming request
       transform_store_request = &s->hdr_info.client_request;
       break;
-    case SOURCE_HTTP_ORIGIN_SERVER:
+    case Source_t::HTTP_ORIGIN_SERVER:
       transform_store_request = &s->hdr_info.server_request;
       break;
     default:
@@ -6650,7 +6650,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
       ink_assert(header->get_content_length() == cl);
 
       switch (s->source) {
-      case SOURCE_HTTP_ORIGIN_SERVER:
+      case Source_t::HTTP_ORIGIN_SERVER:
         // We made our decision about whether to trust the
         //   response content length in init_state_vars_from_response()
         if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
@@ -6658,7 +6658,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         }
         // fallthrough
 
-      case SOURCE_CACHE:
+      case Source_t::CACHE:
         // if we are doing a single Range: request, calculate the new
         // C-L: header
         if (s->range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
@@ -6680,7 +6680,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         }
         break;
 
-      case SOURCE_TRANSFORM:
+      case Source_t::TRANSFORM:
         if (s->range_setup == HttpTransact::RANGE_REQUESTED) {
           header->set_content_length(s->range_output_cl);
           s->hdr_info.trust_response_cl = true;
@@ -6706,8 +6706,8 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
     // we can try to get the content length based on object size.
     // Also, we should check the scenario of server sending't  a unexpected 304 response for a non conditional request( no cached
     // object )
-    if (s->source == SOURCE_CACHE ||
-        (s->source == SOURCE_HTTP_ORIGIN_SERVER && s->hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED &&
+    if (s->source == Source_t::CACHE ||
+        (s->source == Source_t::HTTP_ORIGIN_SERVER && s->hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED &&
          s->cache_info.object_read != nullptr)) {
       // If there is no content-length header, we can
       //   insert one since the cache knows definitely
@@ -6887,7 +6887,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   heads->field_delete(static_cast<std::string_view>(MIME_FIELD_PROXY_CONNECTION));
 
   // Handle the upgrade cases
-  if (s->is_upgrade_request && heads->status_get() == HTTP_STATUS_SWITCHING_PROTOCOL && s->source == SOURCE_HTTP_ORIGIN_SERVER) {
+  if (s->is_upgrade_request && heads->status_get() == HTTP_STATUS_SWITCHING_PROTOCOL && s->source == Source_t::HTTP_ORIGIN_SERVER) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
     if (s->is_websocket) {
       TxnDbg(dbg_ctl_http_trans, "transaction successfully upgraded to websockets.");
@@ -6916,7 +6916,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   if (ver.get_major() == 0) { /* No K-A for 0.9 apps */
     ka_action = KA_DISABLED;
   } else if (heads->status_get() == HTTP_STATUS_NO_CONTENT &&
-             ((s->source == SOURCE_HTTP_ORIGIN_SERVER && s->current.server->transfer_encoding != NO_TRANSFER_ENCODING) ||
+             ((s->source == Source_t::HTTP_ORIGIN_SERVER && s->current.server->transfer_encoding != NO_TRANSFER_ENCODING) ||
               heads->get_content_length() != 0)) {
     // some systems hang until the connection closes when receiving a 204 regardless of the K-A headers
     // close if there is any body response from the origin
@@ -6937,7 +6937,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
         // we do not need chunked encoding for internal error messages
         // that are sent to the client if the server response is not valid.
-        (((s->source == SOURCE_HTTP_ORIGIN_SERVER || s->source == SOURCE_TRANSFORM) && s->hdr_info.server_response.valid() &&
+        (((s->source == Source_t::HTTP_ORIGIN_SERVER || s->source == Source_t::TRANSFORM) && s->hdr_info.server_response.valid() &&
           // if we receive a 304, we will serve the client from the
           // cache and thus do not need chunked encoding.
           s->hdr_info.server_response.status_get() != HTTP_STATUS_NOT_MODIFIED &&
@@ -6946,9 +6946,9 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
            // length (e.g. no Content-Length and Connection:close in HTTP/1.1 responses)
            s->hdr_info.trust_response_cl == false)) ||
          // handle serve from cache (read-while-write) case
-         (s->source == SOURCE_CACHE && s->hdr_info.trust_response_cl == false) ||
+         (s->source == Source_t::CACHE && s->hdr_info.trust_response_cl == false) ||
          // any transform will potentially alter the content length. try chunking if possible
-         (s->source == SOURCE_TRANSFORM && s->hdr_info.trust_response_cl == false))) {
+         (s->source == Source_t::TRANSFORM && s->hdr_info.trust_response_cl == false))) {
       s->client_info.receive_chunked_response = true;
       heads->value_append(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
                           std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
@@ -8092,7 +8092,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   }
 
   // set the source to internal so that chunking is handled correctly
-  s->source = SOURCE_INTERNAL;
+  s->source = Source_t::INTERNAL;
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
 
   if (status_code == HTTP_STATUS_SERVICE_UNAVAILABLE) {
@@ -8354,7 +8354,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     client_response_status = s->hdr_info.client_response.status_get();
   }
 
-  if ((s->source == SOURCE_INTERNAL) && client_response_status >= 400) {
+  if ((s->source == Source_t::INTERNAL) && client_response_status >= 400) {
     client_transaction_result = ClientTransactionResult_t::ERROR_OTHER;
   }
 
@@ -8451,7 +8451,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     client_transaction_result = ClientTransactionResult_t::ERROR_ABORT;
   }
   // Count the status codes, assuming the client didn't abort (i.e. there is an m_http)
-  if ((s->source != SOURCE_NONE) && (s->client_info.abort == DIDNOT_ABORT)) {
+  if ((s->source != Source_t::NONE) && (s->client_info.abort == DIDNOT_ABORT)) {
     switch (client_response_status) {
     case 100:
       Metrics::Counter::increment(http_rsb.response_status_100_count);
