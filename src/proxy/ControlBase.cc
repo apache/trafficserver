@@ -746,11 +746,11 @@ ControlBase::CheckModifiers(HttpRequestData *request_data)
   return true;
 }
 
-enum mod_errors {
-  ME_UNKNOWN,
-  ME_PARSE_FAILED,
-  ME_BAD_MOD,
-  ME_CALLEE_GENERATED,
+enum class mod_errors {
+  UNKNOWN,
+  PARSE_FAILED,
+  BAD_MOD,
+  CALLEE_GENERATED,
 };
 
 static const char *errorFormats[] = {
@@ -777,7 +777,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
 {
   // Variables for error processing
   const char *errBuf = nullptr;
-  mod_errors  err    = ME_UNKNOWN;
+  mod_errors  err    = mod_errors::UNKNOWN;
 
   int n_elts = line_info->num_el; // Element count for line.
 
@@ -793,7 +793,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
   // count decremented. So we have to scan the entire array to be sure of
   // finding all the elements. We'll track the element count so we can
   // escape if we've found all of the elements.
-  for (int i = 0; n_elts && ME_UNKNOWN == err && i < MATCHER_MAX_TOKENS; ++i) {
+  for (int i = 0; n_elts && mod_errors::UNKNOWN == err && i < MATCHER_MAX_TOKENS; ++i) {
     Modifier *mod = nullptr;
 
     char *label = line_info->line[0][i];
@@ -803,7 +803,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
       continue; // Already use.
     }
     if (!value) {
-      err = ME_PARSE_FAILED;
+      err = mod_errors::PARSE_FAILED;
       break;
     }
 
@@ -828,15 +828,15 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
     } else if (strcasecmp(label, "internal") == 0) {
       mod = InternalMod::make(value, &errBuf);
     } else {
-      err = ME_BAD_MOD;
+      err = mod_errors::BAD_MOD;
     }
 
     if (errBuf) {
-      err = ME_CALLEE_GENERATED; // Mod make failed.
+      err = mod_errors::CALLEE_GENERATED; // Mod make failed.
     }
 
     // If nothing went wrong, add the mod and bump the element count.
-    if (ME_UNKNOWN == err) {
+    if (mod_errors::UNKNOWN == err) {
       _mods.push_back(mod);
       --n_elts;
     } else {
@@ -844,10 +844,10 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
     }
   }
 
-  if (err != ME_UNKNOWN) {
+  if (err != mod_errors::UNKNOWN) {
     this->clear();
-    if (err != ME_CALLEE_GENERATED) {
-      errBuf = errorFormats[err];
+    if (err != mod_errors::CALLEE_GENERATED) {
+      errBuf = errorFormats[static_cast<int>(err)];
     }
   }
 
