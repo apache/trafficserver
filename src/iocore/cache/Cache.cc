@@ -219,7 +219,7 @@ Cache::open_done()
   Action *register_ShowCacheInternal(Continuation * c, HTTPHdr * h);
 
   if (total_good_nvol == 0) {
-    ready = CACHE_INIT_FAILED;
+    ready = CacheInitState::FAILED;
     cacheProcessor.cacheInitialized();
     return 0;
   }
@@ -232,13 +232,13 @@ Cache::open_done()
 
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&this->hosttable);
   if (hosttable->gen_host_rec.num_cachevols == 0) {
-    ready = CACHE_INIT_FAILED;
+    ready = CacheInitState::FAILED;
   } else {
-    ready = CACHE_INITIALIZED;
+    ready = CacheInitState::INITIALIZED;
   }
 
   // TS-3848
-  if (ready == CACHE_INIT_FAILED && cacheProcessor.waitForCache() >= 2) {
+  if (ready == CacheInitState::FAILED && cacheProcessor.waitForCache() >= 2) {
     Emergency("Failed to initialize cache host table");
   }
 

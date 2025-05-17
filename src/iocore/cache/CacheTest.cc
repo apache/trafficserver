@@ -297,7 +297,7 @@ CacheTestSM::complete(int event)
 
 EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  if (cacheProcessor.IsCacheEnabled() != CACHE_INITIALIZED) {
+  if (cacheProcessor.IsCacheEnabled() != CacheInitState::INITIALIZED) {
     rprintf(t, "cache not initialized");
     *pstatus = REGRESSION_TEST_FAILED;
     return;
@@ -666,7 +666,7 @@ REGRESSION_TEST(ram_cache)(RegressionTest *t, int level, int *pstatus)
     return;
   }
 
-  if (cacheProcessor.IsCacheEnabled() != CACHE_INITIALIZED) {
+  if (cacheProcessor.IsCacheEnabled() != CacheInitState::INITIALIZED) {
     rprintf(t, "cache not initialized");
     *pstatus = REGRESSION_TEST_FAILED;
     return;

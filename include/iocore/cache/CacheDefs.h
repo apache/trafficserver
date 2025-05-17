@@ -28,9 +28,11 @@
 #include "tscore/Version.h"
 #include "tscore/CryptoHash.h"
 
-#define CACHE_INIT_FAILED  -1
-#define CACHE_INITIALIZING 0
-#define CACHE_INITIALIZED  1
+enum class CacheInitState : int {
+  FAILED       = -1,
+  INITIALIZING = 0,
+  INITIALIZED  = 1,
+};
 
 #define CACHE_ALT_INDEX_DEFAULT -1
 #define CACHE_ALT_REMOVED       -2

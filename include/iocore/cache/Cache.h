@@ -108,7 +108,7 @@ struct CacheProcessor : public Processor {
   */
   bool has_online_storage() const;
 
-  static int IsCacheEnabled();
+  static CacheInitState IsCacheEnabled();
 
   static bool IsCacheReady(CacheFragType type);
 
@@ -137,14 +137,14 @@ struct CacheProcessor : public Processor {
     return wait_for_cache;
   }
 
-  static uint32_t cache_ready;
-  static int      initialized;
-  static int      start_done;
-  static bool     clear;
-  static bool     fix;
-  static bool     check;
-  static int      start_internal_flags;
-  static int      auto_clear_flag;
+  static uint32_t       cache_ready;
+  static CacheInitState initialized;
+  static int            start_done;
+  static bool           clear;
+  static bool           fix;
+  static bool           check;
+  static int            start_internal_flags;
+  static int            auto_clear_flag;
 
   ts::VersionNumber min_stripe_version;
   ts::VersionNumber max_stripe_version;
