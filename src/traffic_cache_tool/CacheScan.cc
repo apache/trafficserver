@@ -216,20 +216,20 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
       *found_obj = obj;
     }
     // TODO : fix this switch
-    switch (obj->m_type) {
-    case HDR_HEAP_OBJ_HTTP_HEADER:
+    switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+    case HdrHeapObjType::HTTP_HEADER:
       this->unmarshal((HTTPHdrImpl *)obj, offset);
       break;
-    case HDR_HEAP_OBJ_URL:
+    case HdrHeapObjType::URL:
       this->unmarshal((URLImpl *)obj, offset);
       break;
-    case HDR_HEAP_OBJ_FIELD_BLOCK:
+    case HdrHeapObjType::FIELD_BLOCK:
       this->unmarshal((MIMEFieldBlockImpl *)obj, offset);
       break;
-    case HDR_HEAP_OBJ_MIME_HEADER:
+    case HdrHeapObjType::MIME_HEADER:
       this->unmarshal((MIMEHdrImpl *)obj, offset);
       break;
-    case HDR_HEAP_OBJ_EMPTY:
+    case HdrHeapObjType::EMPTY:
       // Nothing to do
       break;
     default:
@@ -309,7 +309,8 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   HTTPHdrImpl *hh  = nullptr;
   int          tmp = 0;
   if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
-    tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = this->unmarshal(heap, len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh),
+                          block_ref);
     if (hh == nullptr || tmp < 0) {
       zret.note("HTTPInfo::request unmarshal failed");
       return zret;
@@ -325,7 +326,8 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
-    tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = this->unmarshal(heap, len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh),
+                          block_ref);
     if (hh == nullptr || tmp < 0) {
       zret.note("HTTPInfo::response unmarshal failed");
       return zret;
@@ -354,7 +356,7 @@ CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
   }
 
   return in_bound && mem.contains(reinterpret_cast<char *>(url)) &&
-         !(url == nullptr || url->m_length <= 0 || url->m_type != HDR_HEAP_OBJ_URL);
+         !(url == nullptr || url->m_length <= 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL);
 }
 
 Errata

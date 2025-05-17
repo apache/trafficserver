@@ -281,7 +281,7 @@ http_hdr_create(HdrHeap *heap, HTTPType polarity, HTTPVersion version)
 {
   HTTPHdrImpl *hh;
 
-  hh = (HTTPHdrImpl *)heap->allocate_obj(sizeof(HTTPHdrImpl), HDR_HEAP_OBJ_HTTP_HEADER);
+  hh = (HTTPHdrImpl *)heap->allocate_obj(sizeof(HTTPHdrImpl), HdrHeapObjType::HTTP_HEADER);
   http_hdr_init(heap, hh, polarity, version);
   return (hh);
 }
@@ -743,7 +743,7 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
     }
     // Clone into new heap if the URL was allocated against a different heap
     if (reinterpret_cast<char *>(url) < heap->m_data_start || reinterpret_cast<char *>(url) >= heap->m_free_start) {
-      hh->u.req.m_url_impl = static_cast<URLImpl *>(heap->allocate_obj(url->m_length, url->m_type));
+      hh->u.req.m_url_impl = static_cast<URLImpl *>(heap->allocate_obj(url->m_length, static_cast<HdrHeapObjType>(url->m_type)));
       memcpy(hh->u.req.m_url_impl, url, url->m_length);
       // Make sure there is a read_write heap
       if (heap->m_read_write_heap.get() == nullptr) {
@@ -1928,7 +1928,8 @@ HTTPHdr::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
   m_heap = reinterpret_cast<HdrHeap *>(buf);
 
-  int res = m_heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&m_http), block_ref);
+  int res =
+    m_heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&m_http), block_ref);
 
   if (res > 0) {
     m_mime = m_http->m_fields_impl;
@@ -2235,7 +2236,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
   HTTPHdrImpl *hh = nullptr;
   int          tmp;
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::request unmarshal failed");
       return -1;
@@ -2249,7 +2250,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::response unmarshal failed");
       return -1;
@@ -2316,7 +2317,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
   HTTPHdrImpl *hh = nullptr;
   int          tmp;
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::request unmarshal failed");
       return -1;
@@ -2330,7 +2331,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
 
   heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::response unmarshal failed");
       return -1;

@@ -163,22 +163,22 @@ loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
     HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
 
     switch (obj->m_type) {
-    case HDR_HEAP_OBJ_HTTP_HEADER:
-      printf("  HDR_HEAP_OBJ_HTTP_HEADER %d bytes\n", obj->m_length);
+    case HdrHeapObjType::HTTP_HEADER:
+      printf("  HdrHeapObjType::HTTP_HEADER %d bytes\n", obj->m_length);
       process_http_hdr_impl(obj, offset);
       break;
-    case HDR_HEAP_OBJ_URL:
-      printf("  HDR_HEAP_OBJ_URL         %d bytes\n", obj->m_length);
+    case HdrHeapObjType::URL:
+      printf("  HdrHeapObjType::URL         %d bytes\n", obj->m_length);
       break;
-    case HDR_HEAP_OBJ_FIELD_BLOCK:
-      printf("  HDR_HEAP_OBJ_FIELD_BLOCK %d bytes\n", obj->m_length);
+    case HdrHeapObjType::FIELD_BLOCK:
+      printf("  HdrHeapObjType::FIELD_BLOCK %d bytes\n", obj->m_length);
       break;
-    case HDR_HEAP_OBJ_MIME_HEADER:
-      printf("  HDR_HEAP_OBJ_MIME_HEADER %d bytes\n", obj->m_length);
+    case HdrHeapObjType::MIME_HEADER:
+      printf("  HdrHeapObjType::MIME_HEADER %d bytes\n", obj->m_length);
       process_mime_hdr_impl(obj, offset);
       break;
-    case HDR_HEAP_OBJ_EMPTY:
-      printf("  HDR_HEAP_OBJ_EMPTY       %d bytes\n", obj->m_length);
+    case HdrHeapObjType::EMPTY:
+      printf("  HdrHeapObjType::EMPTY       %d bytes\n", obj->m_length);
       break;
     default:
       printf("  OBJ UNKNOWN (%d)  %d bytes\n", obj->m_type, obj->m_length);
@@ -280,7 +280,7 @@ load_buffer(int fd, hdr_type h_type)
   // Patch up some values
   if (my_heap->m_magic == HDR_BUF_MAGIC_MARSHALED) {
     //      HdrHeapObjImpl* obj;
-    //      my_heap->unmarshal(hdr_size, HDR_HEAP_OBJ_HTTP_HEADER, &obj, NULL);
+    //      my_heap->unmarshal(hdr_size, HdrHeapObjType::HTTP_HEADER, &obj, NULL);
     marshalled = 1;
     offset     = (int)hdr_heap;
   } else {

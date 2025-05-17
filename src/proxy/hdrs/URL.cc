@@ -247,7 +247,7 @@ url_create(HdrHeap *heap)
 {
   URLImpl *url;
 
-  url = (URLImpl *)heap->allocate_obj(sizeof(URLImpl), HDR_HEAP_OBJ_URL);
+  url = (URLImpl *)heap->allocate_obj(sizeof(URLImpl), HdrHeapObjType::URL);
   obj_clear_data((HdrHeapObjImpl *)url);
   url->m_url_type       = URL_TYPE_NONE;
   url->m_scheme_wks_idx = -1;

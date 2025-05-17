@@ -857,7 +857,7 @@ mime_hdr_create(HdrHeap *heap)
 {
   MIMEHdrImpl *mh;
 
-  mh = (MIMEHdrImpl *)heap->allocate_obj(sizeof(MIMEHdrImpl), HDR_HEAP_OBJ_MIME_HEADER);
+  mh = (MIMEHdrImpl *)heap->allocate_obj(sizeof(MIMEHdrImpl), HdrHeapObjType::MIME_HEADER);
   mime_hdr_init(mh);
   return mh;
 }
@@ -907,7 +907,7 @@ mime_hdr_init(MIMEHdrImpl *mh)
   mime_hdr_cooked_stuff_init(mh, nullptr);
 
   // first header is inline: fake an object header for uniformity
-  obj_init_header((HdrHeapObjImpl *)&(mh->m_first_fblock), HDR_HEAP_OBJ_FIELD_BLOCK, sizeof(MIMEFieldBlockImpl), 0);
+  obj_init_header((HdrHeapObjImpl *)&(mh->m_first_fblock), HdrHeapObjType::FIELD_BLOCK, sizeof(MIMEFieldBlockImpl), 0);
 
   _mime_hdr_field_block_init(&(mh->m_first_fblock));
   mh->m_fblock_list_tail = &(mh->m_first_fblock);
@@ -920,7 +920,7 @@ _mime_field_block_copy(MIMEFieldBlockImpl *s_fblock, HdrHeap * /* s_heap ATS_UNU
 {
   MIMEFieldBlockImpl *d_fblock;
 
-  d_fblock = (MIMEFieldBlockImpl *)d_heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HDR_HEAP_OBJ_FIELD_BLOCK);
+  d_fblock = (MIMEFieldBlockImpl *)d_heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HdrHeapObjType::FIELD_BLOCK);
   memcpy(d_fblock, s_fblock, sizeof(MIMEFieldBlockImpl));
   return d_fblock;
 }
@@ -1299,7 +1299,7 @@ mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh)
 
   tail_fblock = mh->m_fblock_list_tail;
   if (tail_fblock->m_freetop >= MIME_FIELD_BLOCK_SLOTS) {
-    new_fblock = (MIMEFieldBlockImpl *)heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HDR_HEAP_OBJ_FIELD_BLOCK);
+    new_fblock = (MIMEFieldBlockImpl *)heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HdrHeapObjType::FIELD_BLOCK);
     _mime_hdr_field_block_init(new_fblock);
     tail_fblock->m_next    = new_fblock;
     tail_fblock            = new_fblock;

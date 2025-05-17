@@ -62,21 +62,21 @@ obj_describe(HdrHeapObjImpl *obj, bool recurse)
   Dbg(dbg_ctl_http, "%s %p: [T: %d, L: %4d, OBJFLAGS: %X]  ", obj_names[obj->m_type], obj, obj->m_type, obj->m_length,
       obj->m_obj_flags);
 
-  switch (obj->m_type) {
-  case HDR_HEAP_OBJ_EMPTY:
+  switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+  case HdrHeapObjType::EMPTY:
     break;
-  case HDR_HEAP_OBJ_RAW:
+  case HdrHeapObjType::RAW:
     break;
-  case HDR_HEAP_OBJ_MIME_HEADER:
+  case HdrHeapObjType::MIME_HEADER:
     mime_hdr_describe(obj, recurse);
     break;
-  case HDR_HEAP_OBJ_FIELD_BLOCK:
+  case HdrHeapObjType::FIELD_BLOCK:
     mime_field_block_describe(obj, recurse);
     break;
-  case HDR_HEAP_OBJ_HTTP_HEADER:
+  case HdrHeapObjType::HTTP_HEADER:
     http_hdr_describe(obj, recurse);
     break;
-  case HDR_HEAP_OBJ_URL:
+  case HdrHeapObjType::URL:
     url_describe(obj, recurse);
     break;
   default:
@@ -183,7 +183,7 @@ HdrHeap::destroy()
 }
 
 HdrHeapObjImpl *
-HdrHeap::allocate_obj(int nbytes, int type)
+HdrHeap::allocate_obj(int nbytes, HdrHeapObjType type)
 {
   char           *new_space;
   HdrHeapObjImpl *obj;
@@ -228,7 +228,7 @@ void
 HdrHeap::deallocate_obj(HdrHeapObjImpl *obj)
 {
   ink_assert(m_writeable);
-  obj->m_type = HDR_HEAP_OBJ_EMPTY;
+  obj->m_type = static_cast<uint32_t>(HdrHeapObjType::EMPTY);
 }
 
 char *
@@ -415,21 +415,21 @@ HdrHeap::evacuate_from_str_heaps(HdrStrHeap *new_heap)
       // Object length cannot be 0 by design, otherwise something is wrong + infinite loop here!
       ink_release_assert(0 != obj->m_length);
 
-      switch (obj->m_type) {
-      case HDR_HEAP_OBJ_URL:
+      switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+      case HdrHeapObjType::URL:
         ((URLImpl *)obj)->move_strings(new_heap);
         break;
-      case HDR_HEAP_OBJ_HTTP_HEADER:
+      case HdrHeapObjType::HTTP_HEADER:
         ((HTTPHdrImpl *)obj)->move_strings(new_heap);
         break;
-      case HDR_HEAP_OBJ_MIME_HEADER:
+      case HdrHeapObjType::MIME_HEADER:
         ((MIMEHdrImpl *)obj)->move_strings(new_heap);
         break;
-      case HDR_HEAP_OBJ_FIELD_BLOCK:
+      case HdrHeapObjType::FIELD_BLOCK:
         ((MIMEFieldBlockImpl *)obj)->move_strings(new_heap);
         break;
-      case HDR_HEAP_OBJ_EMPTY:
-      case HDR_HEAP_OBJ_RAW:
+      case HdrHeapObjType::EMPTY:
+      case HdrHeapObjType::RAW:
         // Nothing to do
         break;
       default:
@@ -458,21 +458,21 @@ HdrHeap::required_space_for_evacuation()
       // Object length cannot be 0 by design, otherwise something is wrong + infinite loop here!
       ink_release_assert(0 != obj->m_length);
 
-      switch (obj->m_type) {
-      case HDR_HEAP_OBJ_URL:
+      switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+      case HdrHeapObjType::URL:
         ret += ((URLImpl *)obj)->strings_length();
         break;
-      case HDR_HEAP_OBJ_HTTP_HEADER:
+      case HdrHeapObjType::HTTP_HEADER:
         ret += ((HTTPHdrImpl *)obj)->strings_length();
         break;
-      case HDR_HEAP_OBJ_MIME_HEADER:
+      case HdrHeapObjType::MIME_HEADER:
         ret += ((MIMEHdrImpl *)obj)->strings_length();
         break;
-      case HDR_HEAP_OBJ_FIELD_BLOCK:
+      case HdrHeapObjType::FIELD_BLOCK:
         ret += ((MIMEFieldBlockImpl *)obj)->strings_length();
         break;
-      case HDR_HEAP_OBJ_EMPTY:
-      case HDR_HEAP_OBJ_RAW:
+      case HdrHeapObjType::EMPTY:
+      case HdrHeapObjType::RAW:
         // Nothing to do
         break;
       default:
@@ -480,7 +480,7 @@ HdrHeap::required_space_for_evacuation()
       }
 
       // coalesce empty objects next to each other
-      if (obj->m_type == HDR_HEAP_OBJ_EMPTY) {
+      if (static_cast<HdrHeapObjType>(obj->m_type) == HdrHeapObjType::EMPTY) {
         if (prev_obj != nullptr && prev_obj->m_length < (MAX_HDR_HEAP_OBJ_LENGTH - obj->m_length)) {
           prev_obj->m_length += obj->m_length;
           ink_release_assert(prev_obj->m_length > 0);
@@ -535,21 +535,21 @@ HdrHeap::sanity_check_strs()
       // Object length cannot be 0 by design, otherwise something is wrong + infinite loop here!
       ink_release_assert(0 != obj->m_length);
 
-      switch (obj->m_type) {
-      case HDR_HEAP_OBJ_URL:
+      switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+      case HdrHeapObjType::URL:
         ((URLImpl *)obj)->check_strings(heaps, num_heaps);
         break;
-      case HDR_HEAP_OBJ_HTTP_HEADER:
+      case HdrHeapObjType::HTTP_HEADER:
         ((HTTPHdrImpl *)obj)->check_strings(heaps, num_heaps);
         break;
-      case HDR_HEAP_OBJ_MIME_HEADER:
+      case HdrHeapObjType::MIME_HEADER:
         ((MIMEHdrImpl *)obj)->check_strings(heaps, num_heaps);
         break;
-      case HDR_HEAP_OBJ_FIELD_BLOCK:
+      case HdrHeapObjType::FIELD_BLOCK:
         ((MIMEFieldBlockImpl *)obj)->check_strings(heaps, num_heaps);
         break;
-      case HDR_HEAP_OBJ_EMPTY:
-      case HDR_HEAP_OBJ_RAW:
+      case HdrHeapObjType::EMPTY:
+      case HdrHeapObjType::RAW:
         // Nothing to do
         break;
       default:
@@ -778,29 +778,29 @@ HdrHeap::marshal(char *buf, int len)
       HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(obj_data);
       ink_assert(obj_is_aligned(obj));
 
-      switch (obj->m_type) {
-      case HDR_HEAP_OBJ_URL:
+      switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+      case HdrHeapObjType::URL:
         if (((URLImpl *)obj)->marshal(str_xlation, str_heaps) < 0) {
           goto Failed;
         }
         break;
-      case HDR_HEAP_OBJ_HTTP_HEADER:
+      case HdrHeapObjType::HTTP_HEADER:
         if (((HTTPHdrImpl *)obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
           goto Failed;
         }
         break;
-      case HDR_HEAP_OBJ_FIELD_BLOCK:
+      case HdrHeapObjType::FIELD_BLOCK:
         if (((MIMEFieldBlockImpl *)obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
           goto Failed;
         }
         break;
-      case HDR_HEAP_OBJ_MIME_HEADER:
+      case HdrHeapObjType::MIME_HEADER:
         if (((MIMEHdrImpl *)obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps)) {
           goto Failed;
         }
         break;
-      case HDR_HEAP_OBJ_EMPTY:
-      case HDR_HEAP_OBJ_RAW:
+      case HdrHeapObjType::EMPTY:
+      case HdrHeapObjType::RAW:
         // Check to make sure we aren't stuck
         //   in an infinite loop
         if (obj->m_length <= 0) {
@@ -965,20 +965,20 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
       *found_obj = obj;
     }
 
-    switch (obj->m_type) {
-    case HDR_HEAP_OBJ_HTTP_HEADER:
+    switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+    case HdrHeapObjType::HTTP_HEADER:
       ((HTTPHdrImpl *)obj)->unmarshal(offset);
       break;
-    case HDR_HEAP_OBJ_URL:
+    case HdrHeapObjType::URL:
       ((URLImpl *)obj)->unmarshal(offset);
       break;
-    case HDR_HEAP_OBJ_FIELD_BLOCK:
+    case HdrHeapObjType::FIELD_BLOCK:
       ((MIMEFieldBlockImpl *)obj)->unmarshal(offset);
       break;
-    case HDR_HEAP_OBJ_MIME_HEADER:
+    case HdrHeapObjType::MIME_HEADER:
       ((MIMEHdrImpl *)obj)->unmarshal(offset);
       break;
-    case HDR_HEAP_OBJ_EMPTY:
+    case HdrHeapObjType::EMPTY:
       // Nothing to do
       break;
     default:

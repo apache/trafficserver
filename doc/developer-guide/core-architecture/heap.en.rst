@@ -32,27 +32,27 @@ Classes
 
    The type of an instance stored in a heap must be one of the following values.
 
-   .. enumerator:: HDR_HEAP_OBJ_EMPTY = 0
+   .. enumerator:: HdrHeapObjType::EMPTY = 0
 
       Used to mark invalid objects, ones not yet constructed or ones that have been destroyed.
 
-   .. enumerator:: HDR_HEAP_OBJ_RAW = 1
+   .. enumerator:: HdrHeapObjType::RAW = 1
 
       Some sort of raw object, I have no idea.
 
-   .. enumerator:: HDR_HEAP_OBJ_URL = 2
+   .. enumerator:: HdrHeapObjType::URL = 2
 
       A URL object.
 
-   .. enumerator:: HDR_HEAP_OBJ_HTTP_HEADER = 3
+   .. enumerator:: HdrHeapObjType::HTTP_HEADER = 3
 
       The header for an HTTP request or response.
 
-   .. enumerator:: HDR_HEAP_OBJ_MIME_HEADER = 4
+   .. enumerator:: HdrHeapObjType::MIME_HEADER = 4
 
       A MIME header, containing MIME style fields with names and values.
 
-   .. enumerator:: HDR_HEAP_OBJ_FIELD_BLOCK = 5
+   .. enumerator:: HdrHeapObjType::FIELD_BLOCK = 5
 
       Who the heck knows?
 
