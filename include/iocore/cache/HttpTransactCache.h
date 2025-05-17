@@ -39,10 +39,10 @@
 static const time_t CacheHighAgeWatermark = UINT_MAX;
 struct CacheHTTPInfoVector;
 
-enum Variability_t {
-  VARIABILITY_NONE = 0,
-  VARIABILITY_SOME,
-  VARIABILITY_ALL,
+enum class Variability_t {
+  NONE = 0,
+  SOME,
+  ALL,
 };
 
 class HttpTransactCache

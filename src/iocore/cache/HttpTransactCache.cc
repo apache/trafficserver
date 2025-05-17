@@ -466,12 +466,12 @@ HttpTransactCache::calculate_quality_of_match(const HttpConfigAccessor *http_con
     // set quality to -1, if cached copy would vary for this request //
     Variability_t variability = CalcVariability(http_config_param, client_request, obj_client_request, obj_origin_server_response);
 
-    if (variability != VARIABILITY_NONE) {
+    if (variability != Variability_t::NONE) {
       Q = -1.0;
     }
 
-    Dbg(dbg_ctl_http_match, "    CalcQualityOfMatch: CalcVariability says variability = %d", (variability != VARIABILITY_NONE));
-    Dbg(dbg_ctl_http_seq, "    CalcQualityOfMatch: CalcVariability says variability = %d", (variability != VARIABILITY_NONE));
+    Dbg(dbg_ctl_http_match, "    CalcQualityOfMatch: CalcVariability says variability = %d", (variability != Variability_t::NONE));
+    Dbg(dbg_ctl_http_seq, "    CalcQualityOfMatch: CalcVariability says variability = %d", (variability != Variability_t::NONE));
     Dbg(dbg_ctl_http_match, "    CalcQualityOfMatch: Returning final Q = %g", Q);
     Dbg(dbg_ctl_http_seq, "    CalcQualityOfMatch: Returning final Q = %g", Q);
   }
@@ -1206,7 +1206,7 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
   ink_assert(obj_client_request != nullptr);
   ink_assert(obj_origin_server_response != nullptr);
 
-  Variability_t variability = VARIABILITY_NONE;
+  Variability_t variability = Variability_t::NONE;
   if (obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
     StrList vary_list;
 
@@ -1231,7 +1231,7 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
         Dbg(dbg_ctl_http_match, "Vary: %s", field->str);
         if (((field->str[0] == '*') && (field->str[1] == NUL))) {
           Dbg(dbg_ctl_http_match, "Wildcard variability --- object not served from cache");
-          variability = VARIABILITY_ALL;
+          variability = Variability_t::ALL;
           break;
         }
         ////////////////////////////////////////////////////////////////////////////////////////
@@ -1278,7 +1278,7 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
 
         // Header values match? //
         if (!HttpCompat::do_vary_header_values_match(cached_hdr_field, current_hdr_field)) {
-          variability = VARIABILITY_SOME;
+          variability = Variability_t::SOME;
           break;
         }
       }
