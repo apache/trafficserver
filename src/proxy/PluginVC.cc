@@ -93,7 +93,7 @@ DbgCtl dbg_ctl_pvc_test{"pvc_test"};
 
 PluginVC::PluginVC(PluginVCCore *core_obj)
   : NetVConnection(),
-    magic(PLUGIN_VC_MAGIC_ALIVE),
+    magic(PluginVCMagic_t::ALIVE),
     vc_type(PluginVC_t::UNKNOWN),
     core_obj(core_obj),
     other_side(nullptr),
@@ -129,7 +129,7 @@ PluginVC::main_handler(int event, void *data)
   Dbg(dbg_ctl_pvc_event, "[%u] %s: Received event %d", core_obj->id, PVC_TYPE, event);
 
   ink_release_assert(event == EVENT_INTERVAL || event == EVENT_IMMEDIATE);
-  ink_release_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_release_assert(magic == PluginVCMagic_t::ALIVE);
   ink_assert(!deletable);
   ink_assert(data != nullptr);
 
@@ -255,7 +255,7 @@ VIO *
 PluginVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   ink_assert(!closed);
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
 
   if (buf) {
     read_state.vio.set_writer(buf);
@@ -286,7 +286,7 @@ VIO *
 PluginVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner)
 {
   ink_assert(!closed);
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
 
   if (abuffer) {
     ink_assert(!owner);
@@ -318,7 +318,7 @@ void
 PluginVC::reenable(VIO *vio)
 {
   ink_assert(!closed);
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
   ink_assert(vio->mutex->thread_holding == this_ethread());
 
   Ptr<ProxyMutex> sm_mutex = vio->mutex;
@@ -341,7 +341,7 @@ void
 PluginVC::reenable_re(VIO *vio)
 {
   ink_assert(!closed);
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
   ink_assert(vio->mutex->thread_holding == this_ethread());
 
   Dbg(dbg_ctl_pvc, "[%u] %s: reenable_re %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
@@ -376,7 +376,7 @@ void
 PluginVC::do_io_close(int /* flag ATS_UNUSED */)
 {
   ink_assert(!closed);
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
 
   Dbg(dbg_ctl_pvc, "[%u] %s: do_io_close", core_obj->id, PVC_TYPE);
 
@@ -396,7 +396,7 @@ void
 PluginVC::do_io_shutdown(ShutdownHowTo_t howto)
 {
   ink_assert(!closed);
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
 
   switch (howto) {
   case IO_SHUTDOWN_READ:
@@ -480,7 +480,7 @@ void
 PluginVC::process_write_side()
 {
   ink_assert(!deletable);
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
 
   Dbg(dbg_ctl_pvc, "[%u] %s: process_write_side", core_obj->id, PVC_TYPE);
   need_write_process = false;
@@ -602,7 +602,7 @@ void
 PluginVC::process_read_side()
 {
   ink_assert(!deletable);
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
 
   Dbg(dbg_ctl_pvc, "[%u] %s: process_read_side", core_obj->id, PVC_TYPE);
   need_read_process = false;
@@ -648,7 +648,7 @@ PluginVC::process_read_side()
 void
 PluginVC::process_close()
 {
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
 
   Dbg(dbg_ctl_pvc, "[%u] %s: process_close", core_obj->id, PVC_TYPE);
 
@@ -771,7 +771,7 @@ PluginVC::update_inactive_time()
 void
 PluginVC::setup_event_cb(ink_hrtime in, Event **e_ptr)
 {
-  ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(magic == PluginVCMagic_t::ALIVE);
 
   if (*e_ptr == nullptr) {
     // We locked the pointer so we can now allocate an event
@@ -1038,13 +1038,13 @@ PluginVCCore::destroy()
   active_vc.mutex = nullptr;
   active_vc.read_state.vio.buffer.clear();
   active_vc.write_state.vio.buffer.clear();
-  active_vc.magic = PLUGIN_VC_MAGIC_DEAD;
+  active_vc.magic = PluginVCMagic_t::DEAD;
 
   ink_assert(passive_vc.closed == true || !connected);
   passive_vc.mutex = nullptr;
   passive_vc.read_state.vio.buffer.clear();
   passive_vc.write_state.vio.buffer.clear();
-  passive_vc.magic = PLUGIN_VC_MAGIC_DEAD;
+  passive_vc.magic = PluginVCMagic_t::DEAD;
 
   this->mutex = nullptr;
   delete this;
