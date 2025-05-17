@@ -441,14 +441,7 @@ public:
 
   enum class CacheLookupResult_t { NONE, MISS, DOC_BUSY, HIT_STALE, HIT_WARNING, HIT_FRESH, SKIPPED };
 
-  enum UpdateCachedObject_t {
-    UPDATE_CACHED_OBJECT_NONE,
-    UPDATE_CACHED_OBJECT_PREPARE,
-    UPDATE_CACHED_OBJECT_CONTINUE,
-    UPDATE_CACHED_OBJECT_ERROR,
-    UPDATE_CACHED_OBJECT_SUCCEED,
-    UPDATE_CACHED_OBJECT_FAIL
-  };
+  enum class UpdateCachedObject_t { NONE, PREPARE, CONTINUE, ERROR, SUCCEED, FAIL };
 
   enum RangeSetup_t {
     RANGE_NONE = 0,
@@ -783,7 +776,7 @@ public:
     // These ptrs are deallocate when transaction is over.
     HdrHeapSDKHandle    *cache_req_hdr_heap_handle  = nullptr;
     HdrHeapSDKHandle    *cache_resp_hdr_heap_handle = nullptr;
-    UpdateCachedObject_t api_update_cached_object   = UPDATE_CACHED_OBJECT_NONE;
+    UpdateCachedObject_t api_update_cached_object   = UpdateCachedObject_t::NONE;
     StateMachineAction_t saved_update_next_action   = StateMachineAction_t::UNDEFINED;
     CacheAction_t        saved_update_cache_action  = CacheAction_t::UNDEFINED;
 

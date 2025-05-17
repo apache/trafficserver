@@ -4591,7 +4591,7 @@ TSHttpTxnUpdateCachedObject(TSHttpTxn txnp)
     return TS_ERROR;
   }
 
-  s->api_update_cached_object = HttpTransact::UPDATE_CACHED_OBJECT_PREPARE;
+  s->api_update_cached_object = HttpTransact::UpdateCachedObject_t::PREPARE;
   return TS_SUCCESS;
 }
 

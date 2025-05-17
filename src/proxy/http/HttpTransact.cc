@@ -2653,7 +2653,7 @@ HttpTransact::need_to_revalidate(State *s)
   bool           needs_cache_auth = false;
   CacheHTTPInfo *obj;
 
-  if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
+  if (s->api_update_cached_object == HttpTransact::UpdateCachedObject_t::CONTINUE) {
     obj = &s->cache_info.object_store;
     ink_assert(obj->valid());
     if (!obj->valid()) {
@@ -2694,7 +2694,7 @@ HttpTransact::need_to_revalidate(State *s)
 
   ink_assert(is_cache_hit(s->cache_lookup_result));
   if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE &&
-      s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
+      s->api_update_cached_object != HttpTransact::UpdateCachedObject_t::CONTINUE) {
     needs_revalidate = true;
   } else {
     needs_revalidate = false;
@@ -2749,7 +2749,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   bool           server_up          = true;
   CacheHTTPInfo *obj;
 
-  if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
+  if (s->api_update_cached_object == HttpTransact::UpdateCachedObject_t::CONTINUE) {
     obj = &s->cache_info.object_store;
     ink_assert(obj->valid());
   } else {
@@ -2801,7 +2801,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   // But, we only do this if we're not in an API updating the cached object (see TSHttpTxnUpdateCachedObject)
   if ((((s->cache_lookup_result == CacheLookupResult_t::HIT_STALE) ||
         ((obj->response_get()->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE) && !s->cache_control.ignore_server_no_cache)) &&
-       (s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE))) {
+       (s->api_update_cached_object != HttpTransact::UpdateCachedObject_t::CONTINUE))) {
     needs_revalidate = true;
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
   }
@@ -2966,7 +2966,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     build_response_from_cache(s, HTTP_WARNING_CODE_NONE);
   }
 
-  if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
+  if (s->api_update_cached_object == HttpTransact::UpdateCachedObject_t::CONTINUE) {
     s->saved_update_next_action  = s->next_action;
     s->saved_update_cache_action = s->cache_info.action;
     s->next_action               = StateMachineAction_t::CACHE_PREPARE_UPDATE;
@@ -2994,7 +2994,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
   HTTPHdr       *to_warn         = &s->hdr_info.client_response;
   CacheHTTPInfo *obj;
 
-  if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
+  if (s->api_update_cached_object == HttpTransact::UpdateCachedObject_t::CONTINUE) {
     obj = &s->cache_info.object_store;
     ink_assert(obj->valid());
   } else {
@@ -3506,16 +3506,16 @@ HttpTransact::HandleUpdateCachedObject(State *s)
     }
     s->request_sent_time      = s->cache_info.object_read->request_sent_time_get();
     s->response_received_time = s->cache_info.object_read->response_received_time_get();
-    if (s->api_update_cached_object == UPDATE_CACHED_OBJECT_CONTINUE) {
+    if (s->api_update_cached_object == UpdateCachedObject_t::CONTINUE) {
       TRANSACT_RETURN(StateMachineAction_t::CACHE_ISSUE_UPDATE, HttpTransact::HandleUpdateCachedObjectContinue);
     } else {
       TRANSACT_RETURN(StateMachineAction_t::CACHE_ISSUE_UPDATE, HttpTransact::HandleApiErrorJump);
     }
-  } else if (s->api_update_cached_object == UPDATE_CACHED_OBJECT_CONTINUE) {
+  } else if (s->api_update_cached_object == UpdateCachedObject_t::CONTINUE) {
     // even failed to update, continue to serve from cache
     HandleUpdateCachedObjectContinue(s);
   } else {
-    s->api_update_cached_object = UPDATE_CACHED_OBJECT_FAIL;
+    s->api_update_cached_object = UpdateCachedObject_t::FAIL;
     HandleApiErrorJump(s);
   }
 }
@@ -3523,7 +3523,7 @@ HttpTransact::HandleUpdateCachedObject(State *s)
 void
 HttpTransact::HandleUpdateCachedObjectContinue(State *s)
 {
-  ink_assert(s->api_update_cached_object == UPDATE_CACHED_OBJECT_CONTINUE);
+  ink_assert(s->api_update_cached_object == UpdateCachedObject_t::CONTINUE);
   s->cache_info.action = s->saved_update_cache_action;
   s->next_action       = s->saved_update_next_action;
 }

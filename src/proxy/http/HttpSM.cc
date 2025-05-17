@@ -1446,8 +1446,8 @@ plugins required to work with sni_routing.
     switch (callout_state) {
     case HTTP_API_NO_CALLOUT:
     case HTTP_API_IN_CALLOUT:
-      if (t_state.api_modifiable_cached_resp && t_state.api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
-        t_state.api_update_cached_object = HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE;
+      if (t_state.api_modifiable_cached_resp && t_state.api_update_cached_object == HttpTransact::UpdateCachedObject_t::PREPARE) {
+        t_state.api_update_cached_object = HttpTransact::UpdateCachedObject_t::CONTINUE;
       }
       api_next = API_RETURN_CONTINUE;
       break;
@@ -1484,8 +1484,8 @@ plugins required to work with sni_routing.
       api_next                     = API_RETURN_SHUTDOWN;
       t_state.squid_codes.log_code = SQUID_LOG_TCP_DENIED;
     } else if (t_state.api_modifiable_cached_resp &&
-               t_state.api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
-      t_state.api_update_cached_object = HttpTransact::UPDATE_CACHED_OBJECT_ERROR;
+               t_state.api_update_cached_object == HttpTransact::UpdateCachedObject_t::PREPARE) {
+      t_state.api_update_cached_object = HttpTransact::UpdateCachedObject_t::ERROR;
       api_next                         = API_RETURN_INVALIDATE_ERROR;
     } else {
       api_next = API_RETURN_ERROR_JUMP;
@@ -1560,7 +1560,7 @@ HttpSM::handle_api_return()
   }
   case HttpTransact::StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE:
   case HttpTransact::StateMachineAction_t::API_READ_CACHE_HDR:
-    if (t_state.api_cleanup_cache_read && t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
+    if (t_state.api_cleanup_cache_read && t_state.api_update_cached_object != HttpTransact::UpdateCachedObject_t::PREPARE) {
       t_state.api_cleanup_cache_read = false;
       t_state.cache_info.object_read = nullptr;
       t_state.request_sent_time      = UNDEFINED_TIME;
@@ -8238,12 +8238,12 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::StateMachineAction_t::CACHE_PREPARE_UPDATE: {
-    ink_assert(t_state.api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE);
+    ink_assert(t_state.api_update_cached_object == HttpTransact::UpdateCachedObject_t::CONTINUE);
     do_cache_prepare_update();
     break;
   }
   case HttpTransact::StateMachineAction_t::CACHE_ISSUE_UPDATE: {
-    if (t_state.api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_ERROR) {
+    if (t_state.api_update_cached_object == HttpTransact::UpdateCachedObject_t::ERROR) {
       t_state.cache_info.object_read = nullptr;
       cache_sm.close_read();
     }
