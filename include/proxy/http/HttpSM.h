@@ -130,10 +130,10 @@ enum class HttpApiState_t {
   REWIND_STATE_MACHINE,
 };
 
-enum HttpPluginTunnel_t {
-  HTTP_NO_PLUGIN_TUNNEL = 0,
-  HTTP_PLUGIN_AS_SERVER,
-  HTTP_PLUGIN_AS_INTERCEPT,
+enum class HttpPluginTunnel_t {
+  NONE = 0,
+  AS_SERVER,
+  AS_INTERCEPT,
 };
 
 class PluginVCCore;
@@ -292,7 +292,7 @@ public:
   BackgroundFill_t background_fill = BackgroundFill_t::NONE;
 
   // Tunneling request to plugin
-  HttpPluginTunnel_t plugin_tunnel_type = HTTP_NO_PLUGIN_TUNNEL;
+  HttpPluginTunnel_t plugin_tunnel_type = HttpPluginTunnel_t::NONE;
   PluginVCCore      *plugin_tunnel      = nullptr;
 
   HttpTransact::State t_state;

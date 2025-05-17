@@ -1787,7 +1787,7 @@ HttpSM::state_http_server_open(int event, void *data)
     ink_release_assert(pending_action.empty() || pending_action.get_continuation() == vc->get_action()->continuation);
     pending_action = nullptr;
 
-    if (this->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
+    if (this->plugin_tunnel_type == HttpPluginTunnel_t::NONE) {
       SMDbg(dbg_ctl_http_connect, "setting handler for connection handshake timeout %" PRId64, this->get_server_connect_timeout());
       // Just want to get a write-ready event so we know that the connection handshake is complete.
       // The buffer we create will be handed over to the eventually created server session
@@ -2208,7 +2208,7 @@ HttpSM::add_to_existing_request()
   bool                 retval  = false;
   EThread             *ethread = this_ethread();
 
-  if (this->plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
+  if (this->plugin_tunnel_type != HttpPluginTunnel_t::NONE) {
     return false;
   }
 
@@ -3084,7 +3084,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   bool close_connection = false;
 
   if (t_state.current.server->keep_alive == HTTP_KEEPALIVE && server_entry->eos == false &&
-      plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL && t_state.txn_conf->keep_alive_enabled_out == 1) {
+      plugin_tunnel_type == HttpPluginTunnel_t::NONE && t_state.txn_conf->keep_alive_enabled_out == 1) {
     close_connection = false;
   } else {
     if (t_state.current.server->keep_alive != HTTP_KEEPALIVE) {
@@ -4589,7 +4589,7 @@ HttpSM::track_connect_fail() const
 void
 HttpSM::do_hostdb_update_if_necessary()
 {
-  if (t_state.current.server == nullptr || plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL || t_state.dns_info.active == nullptr) {
+  if (t_state.current.server == nullptr || plugin_tunnel_type != HttpPluginTunnel_t::NONE || t_state.dns_info.active == nullptr) {
     // No server, so update is not necessary
     return;
   }
@@ -5681,7 +5681,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       new_entry->hostname            = t_state.current.server->name;
       new_entry->sni                 = this->get_outbound_sni();
       new_entry->cert_name           = this->get_outbound_cert();
-      new_entry->is_no_plugin_tunnel = plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL;
+      new_entry->is_no_plugin_tunnel = plugin_tunnel_type == HttpPluginTunnel_t::NONE;
       this->t_state.set_connect_fail(EIO);
       new_entry->connect_sms.insert(this);
       ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->ipaddr, new_entry));
@@ -5928,7 +5928,7 @@ HttpSM::release_server_session(bool serve_from_cache)
       (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
        (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD &&
         t_state.www_auth_content != HttpTransact::CacheAuth_t::NONE)) &&
-      plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL && (!server_entry || !server_entry->eos)) {
+      plugin_tunnel_type == HttpPluginTunnel_t::NONE && (!server_entry || !server_entry->eos)) {
     if (t_state.www_auth_content == HttpTransact::CacheAuth_t::NONE || serve_from_cache == false) {
       // Must explicitly set the keep_alive_no_activity time before doing the release
       server_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->keep_alive_no_activity_timeout_out));
@@ -6653,7 +6653,7 @@ HttpSM::attach_server_session()
     }
   }
 
-  if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL || is_private()) {
+  if (plugin_tunnel_type != HttpPluginTunnel_t::NONE || is_private()) {
     this->set_server_session_private(true);
   }
 }

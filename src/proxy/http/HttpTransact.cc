@@ -1221,7 +1221,7 @@ done:
 
     otherwise, 502/404 the request right now. /eric
   */
-  if (!s->reverse_proxy && s->state_machine->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
+  if (!s->reverse_proxy && s->state_machine->plugin_tunnel_type == HttpPluginTunnel_t::NONE) {
     TxnDbg(dbg_ctl_http_trans, "END HttpTransact::EndRemapRequest");
     Metrics::Counter::increment(http_rsb.invalid_client_requests);
     TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
@@ -1601,7 +1601,7 @@ HttpTransact::HandleRequest(State *s)
     s->cache_info.action = CacheAction_t::LOOKUP;
   }
 
-  if (s->state_machine->plugin_tunnel_type == HTTP_PLUGIN_AS_INTERCEPT) {
+  if (s->state_machine->plugin_tunnel_type == HttpPluginTunnel_t::AS_INTERCEPT) {
     setup_plugin_request_intercept(s);
     return;
   }
@@ -6491,12 +6491,12 @@ HttpTransact::is_request_retryable(State *s)
     return false;
   }
 
-  if (s->state_machine->plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
+  if (s->state_machine->plugin_tunnel_type != HttpPluginTunnel_t::NONE) {
     // API can override
-    if (s->state_machine->plugin_tunnel_type == HTTP_PLUGIN_AS_SERVER && s->api_info.retry_intercept_failures == true) {
+    if (s->state_machine->plugin_tunnel_type == HttpPluginTunnel_t::AS_SERVER && s->api_info.retry_intercept_failures == true) {
       // This used to be an == comparison, which made no sense. Changed
       // to be an assignment, hoping the state is correct.
-      s->state_machine->plugin_tunnel_type = HTTP_NO_PLUGIN_TUNNEL;
+      s->state_machine->plugin_tunnel_type = HttpPluginTunnel_t::NONE;
     } else {
       return false;
     }
