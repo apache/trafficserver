@@ -5231,7 +5231,7 @@ bool
 HttpSM::apply_ip_allow_filter()
 {
   // Method allowed on dest IP address check
-  IpAllow::ACL acl = IpAllow::match(this->get_server_remote_addr(), IpAllow::DST_ADDR);
+  IpAllow::ACL acl = IpAllow::match(this->get_server_remote_addr(), IpAllow::match_key_t::DST_ADDR);
 
   if (ip_allow_is_request_forbidden(acl)) {
     ip_allow_deny_request(acl);

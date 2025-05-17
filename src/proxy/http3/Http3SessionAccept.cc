@@ -49,7 +49,7 @@ bool
 Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSED */, IOBufferReader * /* reader ATS_UNUSED */)
 {
   sockaddr const *client_ip   = netvc->get_remote_addr();
-  IpAllow::ACL    session_acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
+  IpAllow::ACL    session_acl = IpAllow::match(client_ip, IpAllow::match_key_t::SRC_ADDR);
   if (!session_acl.isValid()) {
     ip_port_text_buffer ipb;
     Warning("QUIC client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));

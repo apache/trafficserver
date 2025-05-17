@@ -43,7 +43,7 @@ bool
 Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   sockaddr const *client_ip   = netvc->get_remote_addr();
-  IpAllow::ACL    session_acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
+  IpAllow::ACL    session_acl = IpAllow::match(client_ip, IpAllow::match_key_t::SRC_ADDR);
   if (!session_acl.isValid()) {
     ip_port_text_buffer ipb;
     Warning("HTTP/2 client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));

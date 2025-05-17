@@ -172,7 +172,7 @@ IpAllow::match(swoc::IPAddr const &addr, match_key_t key)
 {
   self_type    *self   = acquire();
   Record const *record = nullptr;
-  if (SRC_ADDR == key) {
+  if (match_key_t::SRC_ADDR == key) {
     if (auto spot = self->_src_map.find(addr); spot != self->_src_map.end()) {
       auto r = std::get<1>(*spot);
       // Special case - if checking in accept is enabled and the record is a deny all,

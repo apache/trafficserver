@@ -91,7 +91,7 @@ public:
   using IpCategories  = std::unordered_map<std::string, swoc::IPSpace<bool>>;
 
   // indicator for whether we should be checking the acl record for src ip or dest ip
-  enum match_key_t { SRC_ADDR, DST_ADDR };
+  enum class match_key_t { SRC_ADDR, DST_ADDR };
 
   /// Token strings for configuration
   static constexpr swoc::TextView OPT_MATCH_SRC{"src_ip"};
