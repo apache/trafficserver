@@ -300,11 +300,7 @@ public:
     STALE      // Stale, don't use
   };
 
-  enum HttpTransactMagic_t {
-    HTTP_TRANSACT_MAGIC_ALIVE     = 0x00001234,
-    HTTP_TRANSACT_MAGIC_DEAD      = 0xDEAD1234,
-    HTTP_TRANSACT_MAGIC_SEPARATOR = 0x12345678
-  };
+  enum class HttpTransactMagic_t : uint32_t { ALIVE = 0x00001234, DEAD = 0xDEAD1234, SEPARATOR = 0x12345678 };
 
   enum ProxyMode_t {
     UNDEFINED_MODE,
@@ -690,7 +686,7 @@ public:
   struct State {
     HttpSM *state_machine = nullptr;
 
-    HttpTransactMagic_t m_magic                = HTTP_TRANSACT_MAGIC_ALIVE;
+    HttpTransactMagic_t m_magic                = HttpTransactMagic_t::ALIVE;
     HTTPVersion         updated_server_version = HTTP_INVALID;
     CacheLookupResult_t cache_lookup_result    = CACHE_LOOKUP_NONE;
     HTTPStatus          http_return_code       = HTTP_STATUS_NONE;
@@ -883,7 +879,7 @@ public:
     void
     destroy()
     {
-      m_magic = HTTP_TRANSACT_MAGIC_DEAD;
+      m_magic = HttpTransactMagic_t::DEAD;
 
       free_internal_msg_buffer();
       ats_free(internal_msg_buffer_type);
