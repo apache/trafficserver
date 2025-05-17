@@ -61,7 +61,7 @@ int   marshalled     = 0;
 
 // Diags *diags;
 
-enum hdr_type {
+enum class hdr_type {
   UNKNOWN_HDR,
   REQUEST_HDR,
   RESPONSE_HDR,
@@ -294,7 +294,7 @@ load_buffer(int fd, hdr_type h_type)
 int
 main(int argc, const char *argv[])
 {
-  hdr_type h_type = UNKNOWN_HDR;
+  hdr_type h_type = hdr_type::UNKNOWN_HDR;
 
   http_init();
   DiagsPtr::set(new Diags(nullptr, nullptr));
@@ -304,13 +304,13 @@ main(int argc, const char *argv[])
   }
 
   if (strcasecmp(argv[1], "req") == 0) {
-    h_type = REQUEST_HDR;
+    h_type = hdr_type::REQUEST_HDR;
   } else if (strcasecmp(argv[1], "resp") == 0) {
-    h_type = RESPONSE_HDR;
+    h_type = hdr_type::RESPONSE_HDR;
   } else if (strcasecmp(argv[1], "hinfo") == 0) {
-    h_type = HTTP_INFO_HDR;
+    h_type = hdr_type::HTTP_INFO_HDR;
   } else if (strcasecmp(argv[1], "mbuf") == 0) {
-    h_type = RAW_MBUFFER;
+    h_type = hdr_type::RAW_MBUFFER;
   } else {
     fprintf(stderr, "Usage: %s req|resp|hinfo|mbuf <file>\n", argv[0]);
     exit(1);
