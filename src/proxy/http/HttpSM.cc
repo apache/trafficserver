@@ -1108,7 +1108,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::OPEN_RAW_ERROR;
     // use this value just to get around other values
-    t_state.hdr_info.response_error = HttpTransact::STATUS_CODE_SERVER_ERROR;
+    t_state.hdr_info.response_error = HttpTransact::ResponseError_t::STATUS_CODE_SERVER_ERROR;
     break;
   case EVENT_INTERVAL:
     // If we get EVENT_INTERNAL it means that we moved the transaction

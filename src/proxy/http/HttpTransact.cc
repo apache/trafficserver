@@ -339,7 +339,7 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
                (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT) ||
                s->current.state == OUTBOUND_CONGESTION || s->current.state == BAD_INCOMING_RESPONSE);
 
-    s->hdr_info.response_error = CONNECTION_OPEN_FAILED;
+    s->hdr_info.response_error = ResponseError_t::CONNECTION_OPEN_FAILED;
     return false;
   }
 
@@ -347,39 +347,39 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
 
   switch (s->hdr_info.response_error) {
 #ifdef REALLY_NEED_TO_CHECK_DATE_VALIDITY
-  case BOGUS_OR_NO_DATE_IN_RESPONSE:
+  case ResponseError_t::BOGUS_OR_NO_DATE_IN_RESPONSE:
     // We could modify the response to add the date, if need be.
     //          incoming_response->set_date(s->request_sent_time);
     return true;
 #endif
-  case NO_RESPONSE_HEADER_ERROR:
+  case ResponseError_t::NO_RESPONSE_HEADER_ERROR:
     TxnDbg(dbg_ctl_http_trans, "No errors in response");
     return true;
 
-  case MISSING_REASON_PHRASE:
+  case ResponseError_t::MISSING_REASON_PHRASE:
     TxnDbg(dbg_ctl_http_trans, "Response Error: Missing reason phrase - allowing");
     return true;
 
-  case STATUS_CODE_SERVER_ERROR:
+  case ResponseError_t::STATUS_CODE_SERVER_ERROR:
     TxnDbg(dbg_ctl_http_trans, "Response Error: Origin Server returned 500 - allowing");
     return true;
 
-  case CONNECTION_OPEN_FAILED:
+  case ResponseError_t::CONNECTION_OPEN_FAILED:
     TxnDbg(dbg_ctl_http_trans, "Response Error: connection open failed");
     s->current.state = CONNECTION_ERROR;
     return false;
 
-  case NON_EXISTANT_RESPONSE_HEADER:
+  case ResponseError_t::NON_EXISTANT_RESPONSE_HEADER:
     TxnDbg(dbg_ctl_http_trans, "Response Error: No response header");
     s->current.state = BAD_INCOMING_RESPONSE;
     return false;
 
-  case NOT_A_RESPONSE_HEADER:
+  case ResponseError_t::NOT_A_RESPONSE_HEADER:
     TxnDbg(dbg_ctl_http_trans, "Response Error: Not a response header");
     s->current.state = BAD_INCOMING_RESPONSE;
     return false;
 
-  case MISSING_STATUS_CODE:
+  case ResponseError_t::MISSING_STATUS_CODE:
     TxnDbg(dbg_ctl_http_trans, "Response Error: Missing status code");
     s->current.state = BAD_INCOMING_RESPONSE;
     return false;
@@ -5478,20 +5478,20 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
              s->next_hop_scheme == URL_WKSIDX_TUNNEL);
 
   if (incoming_hdr == nullptr) {
-    return NON_EXISTANT_RESPONSE_HEADER;
+    return ResponseError_t::NON_EXISTANT_RESPONSE_HEADER;
   }
 
   if (incoming_hdr->type_get() != HTTP_TYPE_RESPONSE) {
-    return NOT_A_RESPONSE_HEADER;
+    return ResponseError_t::NOT_A_RESPONSE_HEADER;
   }
 
   HTTPStatus incoming_status = incoming_hdr->status_get();
   if (!incoming_status) {
-    return MISSING_STATUS_CODE;
+    return ResponseError_t::MISSING_STATUS_CODE;
   }
 
   if (incoming_status == HTTP_STATUS_INTERNAL_SERVER_ERROR) {
-    return STATUS_CODE_SERVER_ERROR;
+    return ResponseError_t::STATUS_CODE_SERVER_ERROR;
   }
 
   if (!incoming_hdr->presence(MIME_PRESENCE_DATE)) {
@@ -5504,15 +5504,15 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
     time_t date_value = incoming_hdr->get_date();
     if (date_value <= 0) {
       TxnDbg(dbg_ctl_http_trans, "Bogus date in response");
-      return BOGUS_OR_NO_DATE_IN_RESPONSE;
+      return ResponseError_t::BOGUS_OR_NO_DATE_IN_RESPONSE;
     }
   } else {
     TxnDbg(dbg_ctl_http_trans, "No date in response");
-    return BOGUS_OR_NO_DATE_IN_RESPONSE;
+    return ResponseError_t::BOGUS_OR_NO_DATE_IN_RESPONSE;
   }
 #endif
 
-  return NO_RESPONSE_HEADER_ERROR;
+  return ResponseError_t::NO_RESPONSE_HEADER_ERROR;
 }
 
 bool
@@ -7535,7 +7535,7 @@ HttpTransact::handle_server_down(State *s)
 
   switch (s->current.state) {
   case CONNECTION_ALIVE: /* down while alive for unknown reason */
-    ink_release_assert(s->hdr_info.response_error != NO_RESPONSE_HEADER_ERROR);
+    ink_release_assert(s->hdr_info.response_error != ResponseError_t::NO_RESPONSE_HEADER_ERROR);
     status    = HTTP_STATUS_BAD_GATEWAY;
     reason    = "Unknown Error";
     body_type = "response#bad_response";
@@ -7581,7 +7581,7 @@ HttpTransact::handle_server_down(State *s)
     status                     = HTTP_STATUS_SERVICE_UNAVAILABLE;
     reason                     = "Origin server congested";
     body_type                  = "congestion#retryAfter";
-    s->hdr_info.response_error = TOTAL_RESPONSE_ERROR_TYPES;
+    s->hdr_info.response_error = ResponseError_t::TOTAL_TYPES;
     break;
   case STATE_UNDEFINED:
   case TRANSACTION_COMPLETE:
@@ -7598,22 +7598,22 @@ HttpTransact::handle_server_down(State *s)
   ////////////////////////////////////////////////////////
 
   switch (s->hdr_info.response_error) {
-  case NON_EXISTANT_RESPONSE_HEADER:
+  case ResponseError_t::NON_EXISTANT_RESPONSE_HEADER:
     status    = HTTP_STATUS_BAD_GATEWAY;
     reason    = "No Response Header From Server";
     body_type = "response#bad_response";
     break;
-  case MISSING_REASON_PHRASE:
-  case NO_RESPONSE_HEADER_ERROR:
-  case NOT_A_RESPONSE_HEADER:
+  case ResponseError_t::MISSING_REASON_PHRASE:
+  case ResponseError_t::NO_RESPONSE_HEADER_ERROR:
+  case ResponseError_t::NOT_A_RESPONSE_HEADER:
 #ifdef REALLY_NEED_TO_CHECK_DATE_VALIDITY
-  case BOGUS_OR_NO_DATE_IN_RESPONSE:
+  case ResponseError_t::BOGUS_OR_NO_DATE_IN_RESPONSE:
 #endif
     status    = HTTP_STATUS_BAD_GATEWAY;
     reason    = "Malformed Server Response";
     body_type = "response#bad_response";
     break;
-  case MISSING_STATUS_CODE:
+  case ResponseError_t::MISSING_STATUS_CODE:
     status    = HTTP_STATUS_BAD_GATEWAY;
     reason    = "Malformed Server Response Status";
     body_type = "response#bad_response";

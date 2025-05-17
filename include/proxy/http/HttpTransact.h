@@ -324,7 +324,7 @@ public:
     TOTAL_TYPES
   };
 
-  enum ResponseError_t {
+  enum class ResponseError_t {
     NO_RESPONSE_HEADER_ERROR,
     BOGUS_OR_NO_DATE_IN_RESPONSE,
     CONNECTION_OPEN_FAILED,
@@ -333,7 +333,7 @@ public:
     NON_EXISTANT_RESPONSE_HEADER,
     NOT_A_RESPONSE_HEADER,
     STATUS_CODE_SERVER_ERROR,
-    TOTAL_RESPONSE_ERROR_TYPES
+    TOTAL_TYPES
   };
 
   // Please do not forget to fix TSServerState (ts/apidefs.h.in)
@@ -661,7 +661,7 @@ public:
     int64_t         transform_response_cl      = HTTP_UNDEFINED_CL;
     bool            client_req_is_server_style = false;
     bool            trust_response_cl          = false;
-    ResponseError_t response_error             = NO_RESPONSE_HEADER_ERROR;
+    ResponseError_t response_error             = ResponseError_t::NO_RESPONSE_HEADER_ERROR;
     bool            extension_method           = false;
 
     _HeaderInfo() {}
