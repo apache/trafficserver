@@ -2048,14 +2048,14 @@ HttpTransact::OSDNSLookup(State *s)
           (((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
             s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED))) {
         TRANSACT_RETURN(StateMachineAction_t::API_OS_DNS, HandleCacheOpenReadMiss);
-      } else if (!s->txn_conf->cache_http || s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_SKIPPED) {
+      } else if (!s->txn_conf->cache_http || s->cache_lookup_result == HttpTransact::CacheLookupResult_t::SKIPPED) {
         TRANSACT_RETURN(StateMachineAction_t::API_OS_DNS, LookupSkipOpenServer);
         // DNS Lookup is done after LOOKUP Skipped  and after we get response
         // from the DNS we need to call LookupSkipOpenServer
       } else if (is_cache_hit(s->cache_lookup_result)) {
         // DNS lookup is done if the content is state need to call handle cache open read hit
         TRANSACT_RETURN(StateMachineAction_t::API_OS_DNS, HandleCacheOpenReadHit);
-      } else if (s->cache_lookup_result == CACHE_LOOKUP_MISS || s->cache_info.action == CacheAction_t::NO_ACTION) {
+      } else if (s->cache_lookup_result == CacheLookupResult_t::MISS || s->cache_info.action == CacheAction_t::NO_ACTION) {
         TRANSACT_RETURN(StateMachineAction_t::API_OS_DNS, HandleCacheOpenReadMiss);
         // DNS lookup is done if the lookup failed and need to call Handle Cache Open Read Miss
       } else if (s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE && s->txn_conf->cache_post_method == 1 &&
@@ -2068,7 +2068,7 @@ HttpTransact::OSDNSLookup(State *s)
         TRANSACT_RETURN(StateMachineAction_t::API_OS_DNS, HandleCacheOpenReadMiss);
       } else {
         build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Invalid Cache Lookup result", "default");
-        Log::error("HTTP: Invalid CACHE LOOKUP RESULT : %d", s->cache_lookup_result);
+        Log::error("HTTP: Invalid CACHE LOOKUP RESULT : %d", static_cast<int>(s->cache_lookup_result));
         TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
       }
     }
@@ -2179,7 +2179,7 @@ HttpTransact::DecideCacheLookup(State *s)
     } else {
       // calling out CACHE_LOOKUP_COMPLETE_HOOK even when the cache
       // lookup is skipped
-      s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_SKIPPED;
+      s->cache_lookup_result = HttpTransact::CacheLookupResult_t::SKIPPED;
       if (s->force_dns) {
         TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, LookupSkipOpenServer);
       } else {
@@ -2380,8 +2380,8 @@ HttpTransact::HandleCacheOpenRead(State *s)
     // If somebody else was writing the document, proceed just like it was
     // a normal cache miss, except don't try to write to the cache
     //
-    if (s->cache_lookup_result == CACHE_LOOKUP_DOC_BUSY) {
-      s->cache_lookup_result = CACHE_LOOKUP_MISS;
+    if (s->cache_lookup_result == CacheLookupResult_t::DOC_BUSY) {
+      s->cache_lookup_result = CacheLookupResult_t::MISS;
       s->cache_info.action   = CacheAction_t::NO_ACTION;
     }
   } else {
@@ -2580,22 +2580,22 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
   TxnDbg(dbg_ctl_http_trans, "response_received_time : %" PRId64, (int64_t)s->response_received_time);
   // if the plugin has already decided the freshness, we don't need to
   // do it again
-  if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_NONE) {
+  if (s->cache_lookup_result == HttpTransact::CacheLookupResult_t::NONE) {
     // is the document still fresh enough to be served back to
     // the client without revalidation?
     Freshness_t freshness = what_is_document_freshness(s, &s->hdr_info.client_request, obj->response_get());
     switch (freshness) {
     case Freshness_t::FRESH:
       TxnDbg(dbg_ctl_http_seq, "Fresh copy");
-      s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_FRESH;
+      s->cache_lookup_result = HttpTransact::CacheLookupResult_t::HIT_FRESH;
       break;
     case Freshness_t::WARNING:
       TxnDbg(dbg_ctl_http_seq, "Heuristic-based Fresh copy");
-      s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_WARNING;
+      s->cache_lookup_result = HttpTransact::CacheLookupResult_t::HIT_WARNING;
       break;
     case Freshness_t::STALE:
       TxnDbg(dbg_ctl_http_seq, "Stale in cache");
-      s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_STALE;
+      s->cache_lookup_result = HttpTransact::CacheLookupResult_t::HIT_STALE;
       break;
     default:
       ink_assert(!("what_is_document_freshness has returned unsupported code."));
@@ -2603,8 +2603,8 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     }
   }
 
-  ink_assert(s->cache_lookup_result != HttpTransact::CACHE_LOOKUP_MISS);
-  if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_HIT_STALE) {
+  ink_assert(s->cache_lookup_result != HttpTransact::CacheLookupResult_t::MISS);
+  if (s->cache_lookup_result == HttpTransact::CacheLookupResult_t::HIT_STALE) {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
   }
@@ -2625,10 +2625,10 @@ HttpTransact::CallOSDNSLookup(State *s)
   HostStatus  &pstatus = HostStatus::instance();
   HostStatRec *hst     = pstatus.getHostStatus(s->server_info.name);
   if (hst && hst->status == TSHostStatus::TS_HOST_STATUS_DOWN) {
-    TxnDbg(dbg_ctl_http, "%d ", s->cache_lookup_result);
+    TxnDbg(dbg_ctl_http, "%d ", static_cast<int>(s->cache_lookup_result));
     s->current.state = OUTBOUND_CONGESTION;
-    if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
-        s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH) {
+    if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE || s->cache_lookup_result == CacheLookupResult_t::HIT_WARNING ||
+        s->cache_lookup_result == CacheLookupResult_t::HIT_FRESH) {
       s->cache_info.action = CacheAction_t::SERVE;
     } else {
       s->cache_info.action = CacheAction_t::NO_ACTION;
@@ -2693,7 +2693,7 @@ HttpTransact::need_to_revalidate(State *s)
   }
 
   ink_assert(is_cache_hit(s->cache_lookup_result));
-  if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE &&
+  if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE &&
       s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     needs_revalidate = true;
   } else {
@@ -2799,7 +2799,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   //    proxy.config.http.cache.ignore_server_no_cache is set to 0 (i.e don't ignore no cache -- the default setting)
   //
   // But, we only do this if we're not in an API updating the cached object (see TSHttpTxnUpdateCachedObject)
-  if ((((s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE) ||
+  if ((((s->cache_lookup_result == CacheLookupResult_t::HIT_STALE) ||
         ((obj->response_get()->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE) && !s->cache_control.ignore_server_no_cache)) &&
        (s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE))) {
     needs_revalidate = true;
@@ -2957,9 +2957,9 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   if (cache_sm.is_readwhilewrite_inprogress())
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_RWW_HIT);
 
-  if (s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING) {
+  if (s->cache_lookup_result == CacheLookupResult_t::HIT_WARNING) {
     build_response_from_cache(s, HTTP_WARNING_CODE_HERUISTIC_EXPIRATION);
-  } else if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE) {
+  } else if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE) {
     ink_assert(server_up == false);
     build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   } else {
@@ -7650,13 +7650,13 @@ HttpTransact::is_request_likely_cacheable(State *s, HTTPHdr *request)
 bool
 HttpTransact::is_fresh_cache_hit(CacheLookupResult_t r)
 {
-  return (r == CACHE_LOOKUP_HIT_FRESH || r == CACHE_LOOKUP_HIT_WARNING);
+  return (r == CacheLookupResult_t::HIT_FRESH || r == CacheLookupResult_t::HIT_WARNING);
 }
 
 bool
 HttpTransact::is_cache_hit(CacheLookupResult_t r)
 {
-  return (is_fresh_cache_hit(r) || r == CACHE_LOOKUP_HIT_STALE);
+  return (is_fresh_cache_hit(r) || r == CacheLookupResult_t::HIT_STALE);
 }
 
 void

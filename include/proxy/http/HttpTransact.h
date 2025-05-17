@@ -439,15 +439,7 @@ public:
     ALL,
   };
 
-  enum CacheLookupResult_t {
-    CACHE_LOOKUP_NONE,
-    CACHE_LOOKUP_MISS,
-    CACHE_LOOKUP_DOC_BUSY,
-    CACHE_LOOKUP_HIT_STALE,
-    CACHE_LOOKUP_HIT_WARNING,
-    CACHE_LOOKUP_HIT_FRESH,
-    CACHE_LOOKUP_SKIPPED
-  };
+  enum class CacheLookupResult_t { NONE, MISS, DOC_BUSY, HIT_STALE, HIT_WARNING, HIT_FRESH, SKIPPED };
 
   enum UpdateCachedObject_t {
     UPDATE_CACHED_OBJECT_NONE,
@@ -677,7 +669,7 @@ public:
 
     HttpTransactMagic_t m_magic                = HttpTransactMagic_t::ALIVE;
     HTTPVersion         updated_server_version = HTTP_INVALID;
-    CacheLookupResult_t cache_lookup_result    = CACHE_LOOKUP_NONE;
+    CacheLookupResult_t cache_lookup_result    = CacheLookupResult_t::NONE;
     HTTPStatus          http_return_code       = HTTP_STATUS_NONE;
     CacheAuth_t         www_auth_content       = CACHE_AUTH_NONE;
 

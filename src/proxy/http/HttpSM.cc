@@ -2495,7 +2495,7 @@ HttpSM::state_cache_open_write(int event, void *data)
       // Note that CACHE_LOOKUP_COMPLETE may be invoked more than once
       // if CACHE_WL_FAIL_ACTION_READ_RETRY is configured
       ink_assert(t_state.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY);
-      t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
+      t_state.cache_lookup_result         = HttpTransact::CacheLookupResult_t::NONE;
       t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::READ_RETRY;
       break;
     }
@@ -2511,9 +2511,9 @@ HttpSM::state_cache_open_write(int event, void *data)
 
     ink_assert(t_state.cache_info.object_read != nullptr);
     t_state.source = HttpTransact::Source_t::CACHE;
-    // clear up CACHE_LOOKUP_MISS, let Freshness function decide
+    // clear up CacheLookupResult_t::MISS, let Freshness function decide
     // hit status
-    t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
+    t_state.cache_lookup_result         = HttpTransact::CacheLookupResult_t::NONE;
     t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::READ_RETRY;
     break;
 
@@ -2600,9 +2600,9 @@ HttpSM::state_cache_open_read(int event, void *data)
     // Inform HttpTransact somebody else is updating the document
     // HttpCacheSM already waited so transact should go ahead.
     if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
-      t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_DOC_BUSY;
+      t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::DOC_BUSY;
     } else {
-      t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;
+      t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::MISS;
     }
 
     ink_assert(t_state.transact_return_point == nullptr);
@@ -4905,7 +4905,7 @@ HttpSM::do_range_setup_if_necessary()
 
       if (!t_state.range_in_cache && t_state.cache_info.object_read) {
         SMDbg(dbg_ctl_http_range, "range can't be satisfied from cache, force origin request");
-        t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;
+        t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::MISS;
         return;
       }
 
@@ -4992,7 +4992,7 @@ HttpSM::do_cache_lookup_and_read()
 
   ATS_PROBE1(milestone_cache_open_read_begin, sm_id);
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
-  t_state.cache_lookup_result                    = HttpTransact::CACHE_LOOKUP_NONE;
+  t_state.cache_lookup_result                    = HttpTransact::CacheLookupResult_t::NONE;
   t_state.cache_info.lookup_count++;
   // YTS Team, yamsat Plugin
   // Changed the lookup_url to c_url which enables even

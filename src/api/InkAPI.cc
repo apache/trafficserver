@@ -4187,21 +4187,21 @@ TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status)
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
   switch (sm->t_state.cache_lookup_result) {
-  case HttpTransact::CACHE_LOOKUP_MISS:
-  case HttpTransact::CACHE_LOOKUP_DOC_BUSY:
+  case HttpTransact::CacheLookupResult_t::MISS:
+  case HttpTransact::CacheLookupResult_t::DOC_BUSY:
     *lookup_status = TS_CACHE_LOOKUP_MISS;
     break;
-  case HttpTransact::CACHE_LOOKUP_HIT_STALE:
+  case HttpTransact::CacheLookupResult_t::HIT_STALE:
     *lookup_status = TS_CACHE_LOOKUP_HIT_STALE;
     break;
-  case HttpTransact::CACHE_LOOKUP_HIT_WARNING:
-  case HttpTransact::CACHE_LOOKUP_HIT_FRESH:
+  case HttpTransact::CacheLookupResult_t::HIT_WARNING:
+  case HttpTransact::CacheLookupResult_t::HIT_FRESH:
     *lookup_status = TS_CACHE_LOOKUP_HIT_FRESH;
     break;
-  case HttpTransact::CACHE_LOOKUP_SKIPPED:
+  case HttpTransact::CacheLookupResult_t::SKIPPED:
     *lookup_status = TS_CACHE_LOOKUP_SKIPPED;
     break;
-  case HttpTransact::CACHE_LOOKUP_NONE:
+  case HttpTransact::CacheLookupResult_t::NONE:
   default:
     return TS_ERROR;
   };
@@ -4232,12 +4232,12 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
   HttpTransact::CacheLookupResult_t *sm_status = &(sm->t_state.cache_lookup_result);
 
   // converting from a miss to a hit is not allowed
-  if (*sm_status == HttpTransact::CACHE_LOOKUP_MISS && cachelookup != TS_CACHE_LOOKUP_MISS) {
+  if (*sm_status == HttpTransact::CacheLookupResult_t::MISS && cachelookup != TS_CACHE_LOOKUP_MISS) {
     return TS_ERROR;
   }
 
   // here is to handle converting a hit to a miss
-  if (cachelookup == TS_CACHE_LOOKUP_MISS && *sm_status != HttpTransact::CACHE_LOOKUP_MISS) {
+  if (cachelookup == TS_CACHE_LOOKUP_MISS && *sm_status != HttpTransact::CacheLookupResult_t::MISS) {
     sm->t_state.api_cleanup_cache_read = true;
     ink_assert(sm->t_state.transact_return_point != nullptr);
     sm->t_state.transact_return_point = HttpTransact::HandleCacheOpenRead;
@@ -4245,13 +4245,13 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 
   switch (cachelookup) {
   case TS_CACHE_LOOKUP_MISS:
-    *sm_status = HttpTransact::CACHE_LOOKUP_MISS;
+    *sm_status = HttpTransact::CacheLookupResult_t::MISS;
     break;
   case TS_CACHE_LOOKUP_HIT_STALE:
-    *sm_status = HttpTransact::CACHE_LOOKUP_HIT_STALE;
+    *sm_status = HttpTransact::CacheLookupResult_t::HIT_STALE;
     break;
   case TS_CACHE_LOOKUP_HIT_FRESH:
-    *sm_status = HttpTransact::CACHE_LOOKUP_HIT_FRESH;
+    *sm_status = HttpTransact::CacheLookupResult_t::HIT_FRESH;
     break;
   default:
     return TS_ERROR;
