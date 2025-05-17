@@ -701,13 +701,13 @@ find_server_and_update_current_info(HttpTransact::State *s)
 inline static bool
 do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response, HTTPHdr *cached_request = nullptr)
 {
-  enum CookiesConfig {
-    COOKIES_CACHE_NONE             = 0, // do not cache any responses to cookies
-    COOKIES_CACHE_ALL              = 1, // cache for any content-type (ignore cookies)
-    COOKIES_CACHE_IMAGES           = 2, // cache only for image types
-    COOKIES_CACHE_ALL_BUT_TEXT     = 3, // cache for all but text content-types
-    COOKIES_CACHE_ALL_BUT_TEXT_EXT = 4  // cache for all but text content-types except with OS response
-                                        // without "Set-Cookie" or with "Cache-Control: public"
+  enum class CookiesConfig {
+    CACHE_NONE             = 0, // do not cache any responses to cookies
+    CACHE_ALL              = 1, // cache for any content-type (ignore cookies)
+    CACHE_IMAGES           = 2, // cache only for image types
+    CACHE_ALL_BUT_TEXT     = 3, // cache for all but text content-types
+    CACHE_ALL_BUT_TEXT_EXT = 4  // cache for all but text content-types except with OS response
+                                // without "Set-Cookie" or with "Cache-Control: public"
   };
 
 #ifdef DEBUG
@@ -719,7 +719,7 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
 #endif
 
   // Can cache all regardless of cookie header - just ignore all cookie headers
-  if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_ALL) {
+  if (static_cast<CookiesConfig>(cookies_conf) == CookiesConfig::CACHE_ALL) {
     return false;
   }
 
@@ -740,31 +740,31 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
     return false;
   }
 
-  // Do not cache if cookies option is COOKIES_CACHE_NONE
+  // Do not cache if cookies option is CookiesConfig::CACHE_NONE
   // and a Cookie is detected
-  if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_NONE) {
+  if (static_cast<CookiesConfig>(cookies_conf) == CookiesConfig::CACHE_NONE) {
     return true;
   }
   // All other options depend on the Content-Type
   auto content_type{response->value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE))};
 
-  if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_IMAGES) {
+  if (static_cast<CookiesConfig>(cookies_conf) == CookiesConfig::CACHE_IMAGES) {
     if (content_type.starts_with("image"sv)) {
       // Images can be cached
       return false;
     }
-    return true; // do not cache if  COOKIES_CACHE_IMAGES && content_type != "image"
+    return true; // do not cache if  CookiesConfig::CACHE_IMAGES && content_type != "image"
   }
-  // COOKIES_CACHE_ALL_BUT_TEXT || COOKIES_CACHE_ALL_BUT_TEXT_EXT
+  // CookiesConfig::CACHE_ALL_BUT_TEXT || CookiesConfig::CACHE_ALL_BUT_TEXT_EXT
   // Note: if the configuration is bad, we consider
-  // COOKIES_CACHE_ALL_BUT_TEXT to be the default
+  // CookiesConfig::CACHE_ALL_BUT_TEXT to be the default
 
   if (content_type.starts_with("text"sv)) { // content type  - "text"
     // Text objects cannot be cached unless the option is
-    // COOKIES_CACHE_ALL_BUT_TEXT_EXT.
+    // CookiesConfig::CACHE_ALL_BUT_TEXT_EXT.
     // Furthermore, if there is a Set-Cookie header, then
     // Cache-Control must be set.
-    if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_ALL_BUT_TEXT_EXT &&
+    if (static_cast<CookiesConfig>(cookies_conf) == CookiesConfig::CACHE_ALL_BUT_TEXT_EXT &&
         ((!response->presence(MIME_PRESENCE_SET_COOKIE)) || response->is_cache_control_set(HTTP_VALUE_PUBLIC))) {
       return false;
     }
