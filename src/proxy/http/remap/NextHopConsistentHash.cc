@@ -97,13 +97,13 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
     if (n["hash_url"]) {
       auto hash_url_val = n["hash_url"].Scalar();
       if (hash_url_val == hash_url_request) {
-        hash_url = NH_HASH_URL_REQUEST;
+        hash_url = NHHashUrlType::REQUEST;
       } else if (hash_url_val == hash_url_cache) {
-        hash_url = NH_HASH_URL_CACHE;
+        hash_url = NHHashUrlType::CACHE;
       } else if (hash_url_val == hash_url_parent) {
-        hash_url = NH_HASH_URL_PARENT;
+        hash_url = NHHashUrlType::PARENT;
       } else {
-        hash_url = NH_HASH_URL_REQUEST;
+        hash_url = NHHashUrlType::REQUEST;
         NH_Note("Invalid 'hash_url' value, '%s', for the strategy named '%s', using default '%s'.", hash_url_val.c_str(),
                 strategy_name.c_str(), hash_url_request.data());
       }
@@ -173,14 +173,14 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
   const char *url_string_ref = nullptr;
 
   switch (hash_url) {
-  case NH_HASH_URL_REQUEST:
+  case NHHashUrlType::REQUEST:
     break;
-  case NH_HASH_URL_CACHE:
+  case NHHashUrlType::CACHE:
     if (hrdata.cache_info_lookup_url) {
       url = *(hrdata.cache_info_lookup_url);
     }
     break;
-  case NH_HASH_URL_PARENT:
+  case NHHashUrlType::PARENT:
     if (hrdata.cache_info_parent_selection_url) {
       url = *(hrdata.cache_info_parent_selection_url);
     }

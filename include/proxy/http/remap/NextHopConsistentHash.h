@@ -37,7 +37,7 @@ enum class NHHashKeyType {
   CACHE_HASH_KEY // ToDo: Deprecated in 10.0.0, remove in 11.0.0
 };
 
-enum NHHashUrlType { NH_HASH_URL_REQUEST = 0, NH_HASH_URL_CACHE, NH_HASH_URL_PARENT };
+enum class NHHashUrlType { REQUEST = 0, CACHE, PARENT };
 
 class NextHopConsistentHash : public NextHopSelectionStrategy
 {
@@ -47,7 +47,7 @@ class NextHopConsistentHash : public NextHopSelectionStrategy
 
 public:
   NHHashKeyType hash_key = NHHashKeyType::PATH_HASH_KEY;
-  NHHashUrlType hash_url = NH_HASH_URL_REQUEST;
+  NHHashUrlType hash_url = NHHashUrlType::REQUEST;
 
   NextHopConsistentHash() = delete;
   NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy, ts::Yaml::Map &n);
