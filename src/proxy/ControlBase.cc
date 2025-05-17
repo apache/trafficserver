@@ -61,7 +61,7 @@ ControlBase::Modifier::~Modifier() = default;
 ControlBase::Modifier::Type
 ControlBase::Modifier::type() const
 {
-  return MOD_INVALID;
+  return Type::INVALID;
 }
 // --------------------------
 namespace
@@ -85,7 +85,7 @@ const char *const TimeMod::NAME = "Time";
 ControlBase::Modifier::Type
 TimeMod::type() const
 {
-  return MOD_TIME;
+  return Type::TIME;
 }
 const char *
 TimeMod::name() const
@@ -300,7 +300,7 @@ const char *const SrcIPMod::NAME = "SrcIP";
 ControlBase::Modifier::Type
 SrcIPMod::type() const
 {
-  return MOD_SRC_IP;
+  return Type::SRC_IP;
 }
 const char *
 SrcIPMod::name() const
@@ -357,7 +357,7 @@ SchemeMod::SchemeMod(int scheme) : _scheme(scheme) {}
 ControlBase::Modifier::Type
 SchemeMod::type() const
 {
-  return MOD_SCHEME;
+  return Type::SCHEME;
 }
 const char *
 SchemeMod::name() const
@@ -476,7 +476,7 @@ const char *const MethodMod::NAME = "Method";
 ControlBase::Modifier::Type
 MethodMod::type() const
 {
-  return MOD_METHOD;
+  return Type::METHOD;
 }
 const char *
 MethodMod::name() const
@@ -511,7 +511,7 @@ const char *const PrefixMod::NAME = "Prefix";
 ControlBase::Modifier::Type
 PrefixMod::type() const
 {
-  return MOD_PREFIX;
+  return Type::PREFIX;
 }
 const char *
 PrefixMod::name() const
@@ -558,7 +558,7 @@ const char *const SuffixMod::NAME = "Suffix";
 ControlBase::Modifier::Type
 SuffixMod::type() const
 {
-  return MOD_SUFFIX;
+  return Type::SUFFIX;
 }
 const char *
 SuffixMod::name() const
@@ -605,7 +605,7 @@ const char *const TagMod::NAME = "Tag";
 ControlBase::Modifier::Type
 TagMod::type() const
 {
-  return MOD_TAG;
+  return Type::TAG;
 }
 const char *
 TagMod::name() const
@@ -633,7 +633,7 @@ struct InternalMod : public ControlBase::Modifier {
   Type
   type() const override
   {
-    return MOD_INTERNAL;
+    return Type::INTERNAL;
   }
   const char *
   name() const override
@@ -713,7 +713,7 @@ ControlBase::Print() const
 const char *
 ControlBase::getSchemeModText() const
 {
-  Modifier *mod = this->findModOfType(Modifier::MOD_SCHEME);
+  Modifier *mod = this->findModOfType(Modifier::Type::SCHEME);
 
   if (mod) {
     return static_cast<SchemeMod *>(mod)->getWksText();
@@ -733,7 +733,7 @@ ControlBase::CheckModifiers(HttpRequestData *request_data)
 
   // If the incoming request has no tag but the entry does, or both
   // have tags that do not match, then we do NOT have a match.
-  if (!request_data->tag && findModOfType(Modifier::MOD_TAG)) {
+  if (!request_data->tag && findModOfType(Modifier::Type::TAG)) {
     return false;
   }
 
