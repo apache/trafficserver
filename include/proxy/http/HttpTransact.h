@@ -273,11 +273,11 @@ public:
     TOTAL_TYPES
   };
 
-  enum CacheWriteLock_t {
-    CACHE_WL_INIT,
-    CACHE_WL_SUCCESS,
-    CACHE_WL_FAIL,
-    CACHE_WL_READ_RETRY,
+  enum class CacheWriteLock_t {
+    INIT,
+    SUCCESS,
+    FAIL,
+    READ_RETRY,
   };
 
   enum ClientTransactionResult_t {
@@ -518,7 +518,7 @@ public:
     HTTPInfo         transform_store;
     CacheDirectives  directives;
     HTTPInfo        *object_read          = nullptr;
-    CacheWriteLock_t write_lock_state     = CACHE_WL_INIT;
+    CacheWriteLock_t write_lock_state     = CacheWriteLock_t::INIT;
     int              lookup_count         = 0;
     SquidHitMissCode hit_miss_code        = SQUID_MISS_NONE;
     URL             *parent_selection_url = nullptr;

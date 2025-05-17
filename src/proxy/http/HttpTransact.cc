@@ -2288,7 +2288,7 @@ void
 HttpTransact::HandlePushCacheWrite(State *s)
 {
   switch (s->cache_info.write_lock_state) {
-  case CACHE_WL_SUCCESS:
+  case CacheWriteLock_t::SUCCESS:
     // We were able to get the lock for the URL vector in the cache
     if (s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE) {
       s->cache_info.action = CacheAction_t::WRITE;
@@ -2302,12 +2302,12 @@ HttpTransact::HandlePushCacheWrite(State *s)
     TRANSACT_RETURN(SM_ACTION_STORE_PUSH_BODY, nullptr);
     break;
 
-  case CACHE_WL_FAIL:
-  case CACHE_WL_READ_RETRY:
+  case CacheWriteLock_t::FAIL:
+  case CacheWriteLock_t::READ_RETRY:
     // No write lock, can not complete request so bail
     HandlePushError(s, "Cache Write Failed");
     break;
-  case CACHE_WL_INIT:
+  case CacheWriteLock_t::INIT:
   default:
     ink_release_assert(0);
   }
@@ -2448,7 +2448,7 @@ HttpTransact::issue_revalidate(State *s)
     return;
   }
 
-  if (s->cache_info.write_lock_state == CACHE_WL_INIT) {
+  if (s->cache_info.write_lock_state == CacheWriteLock_t::INIT) {
     // We do a cache lookup for DELETE, PUT and POST requests as well.
     // We must, however, delete the cached copy after forwarding the
     // request to the server. is_cache_response_returnable will ensure
@@ -2464,7 +2464,7 @@ HttpTransact::issue_revalidate(State *s)
   } else {
     // We've looped back around due to missing the write lock
     //  for the cache.  At this point we want to forget about the cache
-    ink_assert(s->cache_info.write_lock_state == CACHE_WL_READ_RETRY);
+    ink_assert(s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY);
     s->cache_info.action = CacheAction_t::NO_ACTION;
     return;
   }
@@ -3131,11 +3131,11 @@ HttpTransact::handle_cache_write_lock(State *s)
              s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE);
 
   switch (s->cache_info.write_lock_state) {
-  case CACHE_WL_SUCCESS:
+  case CacheWriteLock_t::SUCCESS:
     // We were able to get the lock for the URL vector in the cache
     SET_UNPREPARE_CACHE_ACTION(s->cache_info);
     break;
-  case CACHE_WL_FAIL:
+  case CacheWriteLock_t::FAIL:
     // No write lock, ignore the cache and proxy only;
     // FIX: Should just serve from cache if this is a revalidate
     Metrics::Counter::increment(http_rsb.cache_open_write_fail_count);
@@ -3170,7 +3170,7 @@ HttpTransact::handle_cache_write_lock(State *s)
       break;
     }
     break;
-  case CACHE_WL_READ_RETRY:
+  case CacheWriteLock_t::READ_RETRY:
     s->request_sent_time      = UNDEFINED_TIME;
     s->response_received_time = UNDEFINED_TIME;
     s->cache_info.action      = CacheAction_t::LOOKUP;
@@ -3192,7 +3192,7 @@ HttpTransact::handle_cache_write_lock(State *s)
     remove_ims = true;
     SET_VIA_STRING(VIA_DETAIL_CACHE_TYPE, VIA_DETAIL_CACHE);
     break;
-  case CACHE_WL_INIT:
+  case CacheWriteLock_t::INIT:
   default:
     ink_release_assert(0);
     break;
@@ -3218,7 +3218,7 @@ HttpTransact::handle_cache_write_lock(State *s)
     }
   }
 
-  if (s->cache_info.write_lock_state == CACHE_WL_READ_RETRY) {
+  if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY) {
     TxnDbg(dbg_ctl_http_error, "calling hdr_info.server_request.destroy");
     s->hdr_info.server_request.destroy();
     HandleCacheOpenReadHitFreshness(s);
@@ -3343,7 +3343,7 @@ HttpTransact::set_cache_prepare_write_action_for_new_request(State *s)
 {
   // This method must be called no more than one time per request. It should
   // not be called for non-cacheable requests.
-  if (s->cache_info.write_lock_state == CACHE_WL_SUCCESS) {
+  if (s->cache_info.write_lock_state == CacheWriteLock_t::SUCCESS) {
     // If and only if this is a redirected request, we may have already
     // prepared a cache write (during the handling of the previous request
     // which got the 3xx response) and can safely re-use it. Otherwise, we
@@ -3356,7 +3356,7 @@ HttpTransact::set_cache_prepare_write_action_for_new_request(State *s)
     s->cache_info.action = CacheAction_t::WRITE;
   } else {
     s->cache_info.action           = CacheAction_t::PREPARE_TO_WRITE;
-    s->cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
+    s->cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
   }
 }
 
@@ -3495,7 +3495,7 @@ HttpTransact::HandleResponse(State *s)
 void
 HttpTransact::HandleUpdateCachedObject(State *s)
 {
-  if (s->cache_info.write_lock_state == HttpTransact::CACHE_WL_SUCCESS) {
+  if (s->cache_info.write_lock_state == HttpTransact::CacheWriteLock_t::SUCCESS) {
     ink_assert(s->cache_info.object_store.valid());
     ink_assert(s->cache_info.object_store.response_get() != nullptr);
     ink_assert(s->cache_info.object_read != nullptr);
@@ -4824,11 +4824,11 @@ HttpTransact::handle_transform_cache_write(State *s)
   ink_assert(s->cache_info.transform_action == CacheAction_t::PREPARE_TO_WRITE);
 
   switch (s->cache_info.write_lock_state) {
-  case CACHE_WL_SUCCESS:
+  case CacheWriteLock_t::SUCCESS:
     // We were able to get the lock for the URL vector in the cache
     s->cache_info.transform_action = CacheAction_t::WRITE;
     break;
-  case CACHE_WL_FAIL:
+  case CacheWriteLock_t::FAIL:
     // No write lock, ignore the cache
     s->cache_info.transform_action       = CacheAction_t::NO_ACTION;
     s->cache_info.transform_write_status = CACHE_WRITE_LOCK_MISS;

@@ -4587,7 +4587,7 @@ TSHttpTxnUpdateCachedObject(TSHttpTxn txnp)
     return TS_ERROR;
   }
 
-  if (s->cache_info.write_lock_state == HttpTransact::CACHE_WL_READ_RETRY) {
+  if (s->cache_info.write_lock_state == HttpTransact::CacheWriteLock_t::READ_RETRY) {
     return TS_ERROR;
   }
 

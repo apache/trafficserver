@@ -2460,7 +2460,7 @@ HttpSM::state_cache_open_write(int event, void *data)
     //////////////////////////////
     // OPEN WRITE is successful //
     //////////////////////////////
-    t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_SUCCESS;
+    t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::SUCCESS;
     break;
 
   case CACHE_EVENT_OPEN_WRITE_FAILED:
@@ -2469,11 +2469,11 @@ HttpSM::state_cache_open_write(int event, void *data)
     if (t_state.redirect_info.redirect_in_process) {
       SMDbg(dbg_ctl_http_redirect, "CACHE_EVENT_OPEN_WRITE_FAILED during redirect follow");
       t_state.cache_open_write_fail_action = CACHE_WL_FAIL_ACTION_DEFAULT;
-      t_state.cache_info.write_lock_state  = HttpTransact::CACHE_WL_FAIL;
+      t_state.cache_info.write_lock_state  = HttpTransact::CacheWriteLock_t::FAIL;
       break;
     }
     if (t_state.txn_conf->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_DEFAULT) {
-      t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
+      t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::FAIL;
       break;
     } else {
       t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
@@ -2482,7 +2482,7 @@ HttpSM::state_cache_open_write(int event, void *data)
         // cache miss, set wl_state to fail
         SMDbg(dbg_ctl_http, "cache object read %p, cache_wl_fail_action %d", t_state.cache_info.object_read,
               t_state.cache_open_write_fail_action);
-        t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
+        t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::FAIL;
         break;
       }
     }
@@ -2495,7 +2495,7 @@ HttpSM::state_cache_open_write(int event, void *data)
       // if CACHE_WL_FAIL_ACTION_READ_RETRY is configured
       ink_assert(t_state.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY);
       t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
-      t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_READ_RETRY;
+      t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::READ_RETRY;
       break;
     }
     // The write vector was locked and the cache_sm retried
@@ -2513,7 +2513,7 @@ HttpSM::state_cache_open_write(int event, void *data)
     // clear up CACHE_LOOKUP_MISS, let Freshness function decide
     // hit status
     t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
-    t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_READ_RETRY;
+    t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::READ_RETRY;
     break;
 
   case HTTP_TUNNEL_EVENT_DONE:
@@ -6466,7 +6466,7 @@ HttpSM::perform_cache_write_action()
     // Write close deletes the old alternate
     cache_sm.close_write();
     cache_sm.close_read();
-    t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
+    t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
     break;
   }
 
@@ -6525,7 +6525,7 @@ HttpSM::issue_cache_update()
   }
   // Now close the write which commits the update
   cache_sm.close_write();
-  t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
+  t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
 }
 
 int
@@ -8206,7 +8206,7 @@ HttpSM::set_next_state()
       //  didn't use for the untransformed copy
       ink_assert(cache_sm.cache_write_vc == nullptr);
       ink_assert(t_state.api_info.cache_untransformed == false);
-      t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_SUCCESS;
+      t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::SUCCESS;
       call_transact_and_set_next_state(nullptr);
     } else {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_write);
