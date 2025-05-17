@@ -42,13 +42,7 @@
 
 #define SIZEOF(x) (sizeof(x) / sizeof(x[0]))
 
-enum HdrTokenType {
-  HDRTOKEN_TYPE_OTHER         = 0,
-  HDRTOKEN_TYPE_FIELD         = 1,
-  HDRTOKEN_TYPE_METHOD        = 2,
-  HDRTOKEN_TYPE_SCHEME        = 3,
-  HDRTOKEN_TYPE_CACHE_CONTROL = 4
-};
+enum class HdrTokenType { OTHER = 0, FIELD = 1, METHOD = 2, SCHEME = 3, CACHE_CONTROL = 4 };
 
 struct HdrTokenTypeBinding {
   const char  *name;
@@ -212,7 +206,7 @@ hdrtoken_wks_to_length(const char *wks)
   return hdrtoken_wks_to_prefix(wks)->wks_length;
 }
 
-inline int
+inline HdrTokenType
 hdrtoken_wks_to_token_type(const char *wks)
 {
   ink_assert(hdrtoken_is_wks(wks));

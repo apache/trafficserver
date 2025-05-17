@@ -1174,7 +1174,7 @@ HTTPHdr::is_cache_control_set(const char *cc_directive_wks)
   ink_assert(hdrtoken_is_wks(cc_directive_wks));
 
   const HdrTokenHeapPrefix *prefix = hdrtoken_wks_to_prefix(cc_directive_wks);
-  ink_assert(prefix->wks_token_type == HDRTOKEN_TYPE_CACHE_CONTROL);
+  ink_assert(prefix->wks_token_type == HdrTokenType::CACHE_CONTROL);
 
   uint32_t cc_mask = prefix->wks_type_specific.u.cache_control.cc_mask;
   if (get_cooked_cc_mask() & cc_mask)

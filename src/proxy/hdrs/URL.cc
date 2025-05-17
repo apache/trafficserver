@@ -1167,7 +1167,7 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
         scheme_end     = cur;
         scheme_wks_idx = hdrtoken_tokenize(scheme_start, scheme_end - scheme_start, &scheme_wks);
 
-        if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
+        if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HdrTokenType::SCHEME)) {
           // Unknown scheme, validate the scheme
           if (!validate_scheme({scheme_start, static_cast<size_t>(scheme_end - scheme_start)})) {
             return PARSE_RESULT_ERROR;
