@@ -5317,11 +5317,11 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
   // the transfer-encoding and content-length headers changed
   set_client_request_state(s, incoming_hdr);
   if (incoming_hdr == nullptr) {
-    return NON_EXISTANT_REQUEST_HEADER;
+    return RequestError_t::NON_EXISTANT_REQUEST_HEADER;
   }
 
   if (!(HttpTransactHeaders::is_request_proxy_authorized(incoming_hdr))) {
-    return FAILED_PROXY_AUTHORIZATION;
+    return RequestError_t::FAILED_PROXY_AUTHORIZATION;
   }
 
   URL *incoming_url = incoming_hdr->url_get();
@@ -5329,11 +5329,11 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
   auto hostname_len{static_cast<int>(hostname.length())};
 
   if (hostname.empty()) {
-    return MISSING_HOST_FIELD;
+    return RequestError_t::MISSING_HOST_FIELD;
   }
 
   if (hostname_len >= MAXDNAME || hostname_len <= 0 || memchr(hostname.data(), '\0', hostname_len)) {
-    return BAD_HTTP_HEADER_SYNTAX;
+    return RequestError_t::BAD_HTTP_HEADER_SYNTAX;
   }
 
   int scheme = incoming_url->scheme_get_wksidx();
@@ -5343,19 +5343,19 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS && method != HTTP_WKSIDX_CONNECT &&
         !((scheme == URL_WKSIDX_WS || scheme == URL_WKSIDX_WSS) && s->is_websocket)) {
       if (scheme < 0) {
-        return NO_REQUEST_SCHEME;
+        return RequestError_t::NO_REQUEST_SCHEME;
       } else {
-        return SCHEME_NOT_SUPPORTED;
+        return RequestError_t::SCHEME_NOT_SUPPORTED;
       }
     }
 
     if (!HttpTransactHeaders::is_this_method_supported(scheme, method)) {
-      return METHOD_NOT_SUPPORTED;
+      return RequestError_t::METHOD_NOT_SUPPORTED;
     }
     if ((method == HTTP_WKSIDX_CONNECT) && !s->transparent_passthrough &&
         (!is_port_in_range(incoming_hdr->url_get()->port_get(), s->http_config_param->connect_ports))) {
       TxnDbg(dbg_ctl_http_trans, "Rejected a CONNECT to port %d not in connect_ports", incoming_hdr->url_get()->port_get());
-      return BAD_CONNECT_PORT;
+      return RequestError_t::BAD_CONNECT_PORT;
     }
 
     if (s->client_info.transfer_encoding == CHUNKED_ENCODING && incoming_hdr->version_get() < HTTP_1_1) {
@@ -5366,7 +5366,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
       // differences in interpretation may open up the door to compatibility
       // issues. To protect against this, we reply with a 4xx if the client
       // uses Transfer-Encoding with HTTP versions that do not support it.
-      return UNACCEPTABLE_TE_REQUIRED;
+      return RequestError_t::UNACCEPTABLE_TE_REQUIRED;
     }
 
     // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
@@ -5379,7 +5379,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
         // See if we need to insert a chunked header
         if (!incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
           if (s->txn_conf->post_check_content_length_enabled) {
-            return NO_POST_CONTENT_LENGTH;
+            return RequestError_t::NO_POST_CONTENT_LENGTH;
           } else {
             // Stuff in a TE setting so we treat this as chunked, sort of.
             s->client_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
@@ -5389,7 +5389,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
           }
         }
         if (HTTP_UNDEFINED_CL == s->hdr_info.request_content_length) {
-          return INVALID_POST_CONTENT_LENGTH;
+          return RequestError_t::INVALID_POST_CONTENT_LENGTH;
         }
       }
     }
@@ -5418,7 +5418,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
         if (te_val->encoding == HTTP_VALUE_IDENTITY) {
           if (te_val->qvalue <= 0.0) {
             s->arena.free(te_val, sizeof(HTTPValTE));
-            return UNACCEPTABLE_TE_REQUIRED;
+            return RequestError_t::UNACCEPTABLE_TE_REQUIRED;
           }
         }
         s->arena.free(te_val, sizeof(HTTPValTE));
@@ -5427,7 +5427,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     }
   }
 
-  return NO_REQUEST_HEADER_ERROR;
+  return RequestError_t::NO_REQUEST_HEADER_ERROR;
 }
 
 void
@@ -6370,25 +6370,25 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 
   incoming_error = check_request_validity(s, incoming_request);
   switch (incoming_error) {
-  case NO_REQUEST_HEADER_ERROR:
+  case RequestError_t::NO_REQUEST_HEADER_ERROR:
     TxnDbg(dbg_ctl_http_trans, "no request header errors");
     break;
-  case FAILED_PROXY_AUTHORIZATION:
+  case RequestError_t::FAILED_PROXY_AUTHORIZATION:
     TxnDbg(dbg_ctl_http_trans, "failed proxy authorization");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED, "Proxy Authentication Required",
                          "access#proxy_auth_required");
     return false;
-  case NON_EXISTANT_REQUEST_HEADER:
+  case RequestError_t::NON_EXISTANT_REQUEST_HEADER:
   /* fall through */
-  case BAD_HTTP_HEADER_SYNTAX: {
+  case RequestError_t::BAD_HTTP_HEADER_SYNTAX: {
     TxnDbg(dbg_ctl_http_trans, "non-existent/bad header");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error");
     return false;
   }
 
-  case MISSING_HOST_FIELD:
+  case RequestError_t::MISSING_HOST_FIELD:
 
     ////////////////////////////////////////////////////////////////////
     // FIX: are we sure the following logic is right?  it seems that  //
@@ -6415,38 +6415,38 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
     }
 
     return false;
-  case SCHEME_NOT_SUPPORTED:
-  case NO_REQUEST_SCHEME: {
+  case RequestError_t::SCHEME_NOT_SUPPORTED:
+  case RequestError_t::NO_REQUEST_SCHEME: {
     TxnDbg(dbg_ctl_http_trans, "unsupported or missing request scheme");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Unsupported URL Scheme", "request#scheme_unsupported");
     return false;
   }
   /* fall through */
-  case METHOD_NOT_SUPPORTED:
+  case RequestError_t::METHOD_NOT_SUPPORTED:
     TxnDbg(dbg_ctl_http_trans, "unsupported method");
     s->current.mode = ProxyMode_t::TUNNELLING;
     return true;
-  case BAD_CONNECT_PORT:
+  case RequestError_t::BAD_CONNECT_PORT:
     int port;
     port = url ? url->port_get() : 0;
     TxnDbg(dbg_ctl_http_trans, "%d is an invalid connect port", port);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_FORBIDDEN, "Tunnel Forbidden", "access#connect_forbidden");
     return false;
-  case NO_POST_CONTENT_LENGTH: {
+  case RequestError_t::NO_POST_CONTENT_LENGTH: {
     TxnDbg(dbg_ctl_http_trans, "post request without content length");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_LENGTH_REQUIRED, "Content Length Required", "request#no_content_length");
     return false;
   }
-  case UNACCEPTABLE_TE_REQUIRED: {
+  case RequestError_t::UNACCEPTABLE_TE_REQUIRED: {
     TxnDbg(dbg_ctl_http_trans, "TE required is unacceptable.");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_NOT_ACCEPTABLE, "Transcoding Not Available", "transcoding#unsupported");
     return false;
   }
-  case INVALID_POST_CONTENT_LENGTH: {
+  case RequestError_t::INVALID_POST_CONTENT_LENGTH: {
     TxnDbg(dbg_ctl_http_trans, "post request with negative content length value");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length");

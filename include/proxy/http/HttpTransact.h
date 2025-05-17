@@ -308,7 +308,7 @@ public:
     TUNNELLING,
   };
 
-  enum RequestError_t {
+  enum class RequestError_t {
     NO_REQUEST_HEADER_ERROR,
     BAD_HTTP_HEADER_SYNTAX,
     BAD_CONNECT_PORT,
@@ -321,7 +321,7 @@ public:
     SCHEME_NOT_SUPPORTED,
     UNACCEPTABLE_TE_REQUIRED,
     INVALID_POST_CONTENT_LENGTH,
-    TOTAL_REQUEST_ERROR_TYPES
+    TOTAL_TYPES
   };
 
   enum ResponseError_t {
