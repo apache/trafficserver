@@ -90,7 +90,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
         CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
 
         // did not reset result, kept it as last parent selected was p1.fo.com, mark it down and we should only select p2.foo.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // fourth request, p1 is down should select p2.
         build_request(10004, &sm, nullptr, "rabbit.net", nullptr);
@@ -105,7 +105,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
         CHECK(strcmp(result->hostname, "p2.foo.com") == 0);
 
         // mark down p2.
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // fifth request, p1 and p2 are both down, should get s1.bar.com from failover ring.
         build_request(10006, &sm, nullptr, "rabbit.net", nullptr);
@@ -120,7 +120,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
         CHECK(strcmp(result->hostname, "s1.bar.com") == 0);
 
         // mark down s1.
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // seventh request, p1, p2, s1 are down, should get s2.bar.com from failover ring.
         build_request(10008, &sm, nullptr, "rabbit.net", nullptr);
@@ -129,7 +129,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
         CHECK(strcmp(result->hostname, "s2.bar.com") == 0);
 
         // mark down s2.
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // eighth request, p1, p2, s1, s2 are down, should get PARENT_DIRECT as go_direct is true
         build_request(10009, &sm, nullptr, "rabbit.net", nullptr);
@@ -209,7 +209,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'first-live'", "[NextHop
         CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
 
         // mark down p1.
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // third request.
         build_request(10014, &sm, nullptr, "rabbit.net", nullptr);

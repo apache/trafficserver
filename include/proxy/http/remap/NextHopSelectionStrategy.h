@@ -49,7 +49,7 @@ namespace Yaml
 }
 } // namespace ts
 
-enum NHCmd { NH_MARK_UP, NH_MARK_DOWN };
+enum class NHCmd { MARK_UP, MARK_DOWN };
 
 struct NHHealthStatus {
   virtual bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) = 0;

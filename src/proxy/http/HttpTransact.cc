@@ -256,7 +256,7 @@ markParentDown(HttpTransact::State *s)
     // Do nothing. If a plugin handled the response, let it handle markdown.
   } else if (mp && mp->strategy) {
     mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
-                              NH_MARK_DOWN);
+                              NHCmd::MARK_DOWN);
   } else if (s->parent_params) {
     s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
   }
@@ -272,7 +272,7 @@ markParentUp(HttpTransact::State *s)
     // Do nothing. If a plugin handled the response, let it handle markdown
   } else if (mp && mp->strategy) {
     mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
-                              NH_MARK_UP);
+                              NHCmd::MARK_UP);
   } else if (s->parent_params) {
     s->parent_params->markParentUp(&s->parent_result);
   }
