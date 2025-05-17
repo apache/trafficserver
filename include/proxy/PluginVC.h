@@ -49,10 +49,10 @@ struct PluginVCState {
 
 inline PluginVCState::PluginVCState() : vio() {}
 
-enum PluginVC_t {
-  PLUGIN_VC_UNKNOWN,
-  PLUGIN_VC_ACTIVE,
-  PLUGIN_VC_PASSIVE,
+enum class PluginVC_t {
+  UNKNOWN,
+  ACTIVE,
+  PASSIVE,
 };
 
 // For the id in set_data/get_data

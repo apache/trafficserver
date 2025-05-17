@@ -82,7 +82,7 @@
 #define PVC_LOCK_RETRY_TIME      HRTIME_MSECONDS(10)
 #define MIN_BLOCK_TRANSFER_BYTES 128
 
-#define PVC_TYPE ((vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive")
+#define PVC_TYPE ((vc_type == PluginVC_t::ACTIVE) ? "Active" : "Passive")
 
 namespace
 {
@@ -94,7 +94,7 @@ DbgCtl dbg_ctl_pvc_test{"pvc_test"};
 PluginVC::PluginVC(PluginVCCore *core_obj)
   : NetVConnection(),
     magic(PLUGIN_VC_MAGIC_ALIVE),
-    vc_type(PLUGIN_VC_UNKNOWN),
+    vc_type(PluginVC_t::UNKNOWN),
     core_obj(core_obj),
     other_side(nullptr),
     read_state(),
@@ -535,7 +535,7 @@ PluginVC::process_write_side()
   MUTEX_TRY_LOCK(lock, other_side->read_state.vio.mutex, my_ethread);
   if (!lock.is_locked()) {
     Dbg(dbg_ctl_pvc_event, "[%u] %s: process_read_side from other side lock miss, retrying", other_side->core_obj->id,
-        ((other_side->vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive"));
+        ((other_side->vc_type == PluginVC_t::ACTIVE) ? "Active" : "Passive"));
 
     // set need_read_process to enforce the read processing
     other_side->need_read_process = true;
@@ -624,7 +624,7 @@ PluginVC::process_read_side()
     MUTEX_TRY_LOCK(lock, other_side->write_state.vio.mutex, my_ethread);
     if (!lock.is_locked()) {
       Dbg(dbg_ctl_pvc_event, "[%u] %s: process_write_side from other side lock miss, retrying", other_side->core_obj->id,
-          ((other_side->vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive"));
+          ((other_side->vc_type == PluginVC_t::ACTIVE) ? "Active" : "Passive"));
 
       // set need_write_process to enforce the write processing
       other_side->need_write_process = true;
@@ -893,7 +893,7 @@ PluginVC::get_socket()
 void
 PluginVC::set_local_addr()
 {
-  if (vc_type == PLUGIN_VC_ACTIVE) {
+  if (vc_type == PluginVC_t::ACTIVE) {
     ats_ip_copy(&local_addr, &core_obj->active_addr_struct);
     //    local_addr = core_obj->active_addr_struct;
   } else {
@@ -905,7 +905,7 @@ PluginVC::set_local_addr()
 void
 PluginVC::set_remote_addr()
 {
-  if (vc_type == PLUGIN_VC_ACTIVE) {
+  if (vc_type == PluginVC_t::ACTIVE) {
     ats_ip_copy(&remote_addr, &core_obj->passive_addr_struct);
   } else {
     ats_ip_copy(&remote_addr, &core_obj->active_addr_struct);
@@ -944,14 +944,14 @@ PluginVC::get_data(int id, void *data)
   }
   switch (id) {
   case PLUGIN_VC_DATA_LOCAL:
-    if (vc_type == PLUGIN_VC_ACTIVE) {
+    if (vc_type == PluginVC_t::ACTIVE) {
       *static_cast<void **>(data) = core_obj->active_data;
     } else {
       *static_cast<void **>(data) = core_obj->passive_data;
     }
     return true;
   case PLUGIN_VC_DATA_REMOTE:
-    if (vc_type == PLUGIN_VC_ACTIVE) {
+    if (vc_type == PluginVC_t::ACTIVE) {
       *static_cast<void **>(data) = core_obj->passive_data;
     } else {
       *static_cast<void **>(data) = core_obj->active_data;
@@ -971,14 +971,14 @@ PluginVC::set_data(int id, void *data)
 {
   switch (id) {
   case PLUGIN_VC_DATA_LOCAL:
-    if (vc_type == PLUGIN_VC_ACTIVE) {
+    if (vc_type == PluginVC_t::ACTIVE) {
       core_obj->active_data = data;
     } else {
       core_obj->passive_data = data;
     }
     return true;
   case PLUGIN_VC_DATA_REMOTE:
-    if (vc_type == PLUGIN_VC_ACTIVE) {
+    if (vc_type == PluginVC_t::ACTIVE) {
       core_obj->passive_data = data;
     } else {
       core_obj->active_data = data;
@@ -1009,13 +1009,13 @@ PluginVCCore::init(int64_t buffer_index, int64_t buffer_water_mark)
 {
   mutex = new_ProxyMutex();
 
-  active_vc.vc_type    = PLUGIN_VC_ACTIVE;
+  active_vc.vc_type    = PluginVC_t::ACTIVE;
   active_vc.other_side = &passive_vc;
   active_vc.core_obj   = this;
   active_vc.mutex      = mutex;
   active_vc.thread     = this_ethread();
 
-  passive_vc.vc_type    = PLUGIN_VC_PASSIVE;
+  passive_vc.vc_type    = PluginVC_t::PASSIVE;
   passive_vc.other_side = &active_vc;
   passive_vc.core_obj   = this;
   passive_vc.mutex      = mutex;
