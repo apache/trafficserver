@@ -34,7 +34,7 @@
 
 //
 //  Implementation of round robin based upon consistent hash of the URL,
-//  ParentRR_t = P_CONSISTENT_HASH.
+//  ParentRR_t = ParentRR_t::CONSISTENT_HASH.
 //
 class ParentConsistentHash : public ParentSelectionStrategy
 {

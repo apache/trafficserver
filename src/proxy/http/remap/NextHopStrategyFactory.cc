@@ -153,7 +153,7 @@ NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyTy
       strat_chash = std::make_shared<NextHopConsistentHash>(name, policy_type, node);
       _strategies.emplace(std::make_pair(std::string(name), strat_chash));
       break;
-    default: // handles P_UNDEFINED, no strategy is added
+    default: // handles ParentRR_t::UNDEFINED, no strategy is added
       break;
     };
   } catch (std::exception &ex) {

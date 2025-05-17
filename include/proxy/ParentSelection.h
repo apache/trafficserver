@@ -63,14 +63,7 @@ enum class ParentResultType {
 static const char *ParentResultStr[] = {"ParentResultType::UNDEFINED", "ParentResultType::DIRECT", "ParentResultType::SPECIFIED",
                                         "ParentResultType::AGENT", "ParentResultType::FAIL"};
 
-enum ParentRR_t {
-  P_NO_ROUND_ROBIN = 0,
-  P_STRICT_ROUND_ROBIN,
-  P_HASH_ROUND_ROBIN,
-  P_CONSISTENT_HASH,
-  P_LATCHED_ROUND_ROBIN,
-  P_UNDEFINED
-};
+enum class ParentRR_t { NO_ROUND_ROBIN = 0, STRICT_ROUND_ROBIN, HASH_ROUND_ROBIN, CONSISTENT_HASH, LATCHED_ROUND_ROBIN, UNDEFINED };
 
 enum ParentRetry_t {
   PARENT_RETRY_NONE               = 0,

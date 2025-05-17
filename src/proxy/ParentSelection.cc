@@ -608,7 +608,7 @@ ParentRecord::DefaultInit(char *val)
     ats_free(errBuf);
     return false;
   } else {
-    ParentRR_t round_robin = P_NO_ROUND_ROBIN;
+    ParentRR_t round_robin = ParentRR_t::NO_ROUND_ROBIN;
     Dbg(dbg_ctl_parent_select, "allocating ParentRoundRobin() lookup strategy.");
     selection_strategy = new ParentRoundRobin(this, round_robin);
     return true;
@@ -633,7 +633,7 @@ ParentRecord::Init(matcher_line *line_info)
   char       *val;
   char        parent_buf[16384] = {0};
   bool        used              = false;
-  ParentRR_t  round_robin       = P_NO_ROUND_ROBIN;
+  ParentRR_t  round_robin       = ParentRR_t::NO_ROUND_ROBIN;
   char        buf[128];
 
   this->line_num = line_info->line_num;
@@ -654,17 +654,17 @@ ParentRecord::Init(matcher_line *line_info)
 
     if (strcasecmp(label, "round_robin") == 0) {
       if (strcasecmp(val, "true") == 0) {
-        round_robin = P_HASH_ROUND_ROBIN;
+        round_robin = ParentRR_t::HASH_ROUND_ROBIN;
       } else if (strcasecmp(val, "strict") == 0) {
-        round_robin = P_STRICT_ROUND_ROBIN;
+        round_robin = ParentRR_t::STRICT_ROUND_ROBIN;
       } else if (strcasecmp(val, "false") == 0) {
-        round_robin = P_NO_ROUND_ROBIN;
+        round_robin = ParentRR_t::NO_ROUND_ROBIN;
       } else if (strcasecmp(val, "consistent_hash") == 0) {
-        round_robin = P_CONSISTENT_HASH;
+        round_robin = ParentRR_t::CONSISTENT_HASH;
       } else if (strcasecmp(val, "latched") == 0) {
-        round_robin = P_LATCHED_ROUND_ROBIN;
+        round_robin = ParentRR_t::LATCHED_ROUND_ROBIN;
       } else {
-        round_robin = P_NO_ROUND_ROBIN;
+        round_robin = ParentRR_t::NO_ROUND_ROBIN;
         errPtr      = "invalid argument to round_robin directive";
       }
       used = true;
@@ -809,19 +809,19 @@ ParentRecord::Init(matcher_line *line_info)
   }
 
   switch (round_robin) {
-  // ParentRecord.round_robin defaults to P_NO_ROUND_ROBIN when round_robin
+  // ParentRecord.round_robin defaults to ParentRR_t::NO_ROUND_ROBIN when round_robin
   // is not set in parent.config.  Therefore ParentRoundRobin is the default
   // strategy.  If setting go_direct to true, there should be no parent list
   // in parent.config and ParentRoundRobin::lookup will set parent_result->r
   // to ParentResultType::DIRECT.
-  case P_NO_ROUND_ROBIN:
-  case P_STRICT_ROUND_ROBIN:
-  case P_HASH_ROUND_ROBIN:
-  case P_LATCHED_ROUND_ROBIN:
+  case ParentRR_t::NO_ROUND_ROBIN:
+  case ParentRR_t::STRICT_ROUND_ROBIN:
+  case ParentRR_t::HASH_ROUND_ROBIN:
+  case ParentRR_t::LATCHED_ROUND_ROBIN:
     Dbg(dbg_ctl_parent_select, "allocating ParentRoundRobin() lookup strategy.");
     selection_strategy = new ParentRoundRobin(this, round_robin);
     break;
-  case P_CONSISTENT_HASH:
+  case ParentRR_t::CONSISTENT_HASH:
     Dbg(dbg_ctl_parent_select, "allocating ParentConsistentHash() lookup strategy.");
     selection_strategy = new ParentConsistentHash(this);
     break;
