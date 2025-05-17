@@ -66,11 +66,11 @@ void
 ChunkedHandler::init(IOBufferReader *buffer_in, HttpTunnelProducer *p, bool drop_chunked_trailers, bool parse_chunk_strictly)
 {
   if (p->do_chunking) {
-    init_by_action(buffer_in, ACTION_DOCHUNK, drop_chunked_trailers, parse_chunk_strictly);
+    init_by_action(buffer_in, Action::DOCHUNK, drop_chunked_trailers, parse_chunk_strictly);
   } else if (p->do_dechunking) {
-    init_by_action(buffer_in, ACTION_DECHUNK, drop_chunked_trailers, parse_chunk_strictly);
+    init_by_action(buffer_in, Action::DECHUNK, drop_chunked_trailers, parse_chunk_strictly);
   } else {
-    init_by_action(buffer_in, ACTION_PASSTHRU, drop_chunked_trailers, parse_chunk_strictly);
+    init_by_action(buffer_in, Action::PASSTHRU, drop_chunked_trailers, parse_chunk_strictly);
   }
   return;
 }
@@ -87,18 +87,18 @@ ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action, bool dr
   this->strict_chunk_parsing = parse_chunk_strictly;
 
   switch (action) {
-  case ACTION_DOCHUNK:
+  case Action::DOCHUNK:
     dechunked_reader                   = buffer_in->mbuf->clone_reader(buffer_in);
     dechunked_reader->mbuf->water_mark = min_block_transfer_bytes;
     chunked_buffer                     = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
     chunked_size                       = 0;
     break;
-  case ACTION_DECHUNK:
+  case Action::DECHUNK:
     chunked_reader   = buffer_in->mbuf->clone_reader(buffer_in);
     dechunked_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_256);
     dechunked_size   = 0;
     break;
-  case ACTION_PASSTHRU:
+  case Action::PASSTHRU:
     chunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
     if (drop_chunked_trailers) {
       // Note that dropping chunked trailers only applies in the passthrough
@@ -124,13 +124,13 @@ void
 ChunkedHandler::clear()
 {
   switch (action) {
-  case ACTION_DOCHUNK:
-  case ACTION_PASSTHRU:
+  case Action::DOCHUNK:
+  case Action::PASSTHRU:
     if (chunked_buffer) {
       free_MIOBuffer(chunked_buffer);
     }
     break;
-  case ACTION_DECHUNK:
+  case Action::DECHUNK:
     free_MIOBuffer(dechunked_buffer);
     break;
   default:

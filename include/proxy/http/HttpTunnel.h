@@ -87,9 +87,9 @@ struct ChunkedHandler {
 
   static int const DEFAULT_MAX_CHUNK_SIZE = 4096;
 
-  enum Action { ACTION_DOCHUNK = 0, ACTION_DECHUNK, ACTION_PASSTHRU, ACTION_UNSET };
+  enum class Action { DOCHUNK = 0, DECHUNK, PASSTHRU, UNSET };
 
-  Action action = ACTION_UNSET;
+  Action action = Action::UNSET;
 
   IOBufferReader *chunked_reader   = nullptr;
   MIOBuffer      *dechunked_buffer = nullptr;
