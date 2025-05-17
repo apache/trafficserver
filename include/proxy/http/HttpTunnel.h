@@ -70,19 +70,19 @@ enum class HttpTunnelType_t { HTTP_SERVER, HTTP_CLIENT, CACHE_READ, CACHE_WRITE,
 enum class TunnelChunkingAction_t { CHUNK_CONTENT, DECHUNK_CONTENT, PASSTHRU_CHUNKED_CONTENT, PASSTHRU_DECHUNKED_CONTENT };
 
 struct ChunkedHandler {
-  enum ChunkedState {
-    CHUNK_READ_CHUNK = 0,
-    CHUNK_READ_SIZE_START,
-    CHUNK_READ_SIZE,
-    CHUNK_READ_SIZE_CRLF,
-    CHUNK_READ_TRAILER_BLANK,
-    CHUNK_READ_TRAILER_CR,
-    CHUNK_READ_TRAILER_LINE,
-    CHUNK_READ_ERROR,
-    CHUNK_READ_DONE,
-    CHUNK_WRITE_CHUNK,
-    CHUNK_WRITE_DONE,
-    CHUNK_FLOW_CONTROL
+  enum class ChunkedState {
+    READ_CHUNK = 0,
+    READ_SIZE_START,
+    READ_SIZE,
+    READ_SIZE_CRLF,
+    READ_TRAILER_BLANK,
+    READ_TRAILER_CR,
+    READ_TRAILER_LINE,
+    READ_ERROR,
+    READ_DONE,
+    WRITE_CHUNK,
+    WRITE_DONE,
+    FLOW_CONTROL
   };
 
   static int const DEFAULT_MAX_CHUNK_SIZE = 4096;
@@ -117,7 +117,7 @@ struct ChunkedHandler {
    */
   int64_t skip_bytes = 0;
 
-  ChunkedState state                = CHUNK_READ_CHUNK;
+  ChunkedState state                = ChunkedState::READ_CHUNK;
   int64_t      cur_chunk_size       = 0;
   int64_t      cur_chunk_bytes_left = 0;
   int          last_server_event    = VC_EVENT_NONE;

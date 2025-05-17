@@ -237,7 +237,7 @@ FetchSM::check_chunked()
       ch->init_by_action(resp_reader, ChunkedHandler::ACTION_DECHUNK, HttpTunnel::DROP_CHUNKED_TRAILERS,
                          HttpTunnel::PARSE_CHUNK_STRICTLY);
       ch->dechunked_reader = ch->dechunked_buffer->alloc_reader();
-      ch->state            = ChunkedHandler::CHUNK_READ_SIZE;
+      ch->state            = ChunkedHandler::ChunkedState::READ_SIZE;
       resp_reader->dealloc();
     }
   }
@@ -356,8 +356,8 @@ FetchSM::InvokePluginExt(int fetch_event)
     }
   } else if (fetch_flags & TS_FETCH_FLAGS_DECHUNK) {
     do {
-      if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
-        chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;
+      if (chunked_handler.state == ChunkedHandler::ChunkedState::FLOW_CONTROL) {
+        chunked_handler.state = ChunkedHandler::ChunkedState::READ_SIZE_START;
       }
 
       event = dechunk_body();
@@ -373,7 +373,7 @@ FetchSM::InvokePluginExt(int fetch_event)
         goto out;
       }
 
-    } while (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL);
+    } while (chunked_handler.state == ChunkedHandler::ChunkedState::FLOW_CONTROL);
   } else if (check_body_done()) {
     contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_DONE, this);
   } else {
@@ -470,8 +470,8 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
 
   reader = chunked_handler.dechunked_reader;
   do {
-    if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
-      chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;
+    if (chunked_handler.state == ChunkedHandler::ChunkedState::FLOW_CONTROL) {
+      chunked_handler.state = ChunkedHandler::ChunkedState::READ_SIZE_START;
     }
 
     if (!dechunk_body()) {
@@ -499,7 +499,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
         client_bytes += read_done;
       }
     }
-  } while (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL);
+  } while (chunked_handler.state == ChunkedHandler::ChunkedState::FLOW_CONTROL);
 
   client_response[client_bytes] = '\0';
   return;

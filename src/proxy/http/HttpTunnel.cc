@@ -162,13 +162,13 @@ ChunkedHandler::read_size()
 
     while (data_size > 0) {
       bytes_used++;
-      if (state == CHUNK_READ_SIZE) {
+      if (state == ChunkedState::READ_SIZE) {
         // The http spec says the chunked size is always in hex
         if (ParseRules::is_hex(*tmp)) {
           // Make sure we will not overflow running_sum with our shift.
           if (!can_safely_shift_left(running_sum, 4)) {
             // We have no more space in our variable for the shift.
-            state = CHUNK_READ_ERROR;
+            state = ChunkedState::READ_ERROR;
             done  = true;
             break;
           }
@@ -187,47 +187,47 @@ ChunkedHandler::read_size()
           const auto is_rfc_compliant_char = (ParseRules::is_ws(*tmp) || ParseRules::is_cr(*tmp) || *tmp == ';');
           const auto is_acceptable_lf      = (ParseRules::is_lf(*tmp) && !strict_chunk_parsing);
           if (is_bogus_chunk_size || (!is_rfc_compliant_char && !is_acceptable_lf)) {
-            state = CHUNK_READ_ERROR;
+            state = ChunkedState::READ_ERROR;
             done  = true;
             break;
           } else {
             if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
               ++num_cr;
             }
-            state = CHUNK_READ_SIZE_CRLF; // now look for CRLF
+            state = ChunkedState::READ_SIZE_CRLF; // now look for CRLF
           }
         }
-      } else if (state == CHUNK_READ_SIZE_CRLF) { // Scan for a linefeed
+      } else if (state == ChunkedState::READ_SIZE_CRLF) { // Scan for a linefeed
         if (ParseRules::is_lf(*tmp)) {
           if (!prev_is_cr) {
             Dbg(dbg_ctl_http_chunk, "Found an LF without a preceding CR (protocol violation)");
             if (strict_chunk_parsing) {
-              state = CHUNK_READ_ERROR;
+              state = ChunkedState::READ_ERROR;
               done  = true;
               break;
             }
           }
           Dbg(dbg_ctl_http_chunk, "read chunk size of %d bytes", running_sum);
           cur_chunk_bytes_left = (cur_chunk_size = running_sum);
-          state                = (running_sum == 0) ? CHUNK_READ_TRAILER_BLANK : CHUNK_READ_CHUNK;
+          state                = (running_sum == 0) ? ChunkedState::READ_TRAILER_BLANK : ChunkedState::READ_CHUNK;
           done                 = true;
           num_cr               = 0;
           break;
         } else if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
           if (num_cr != 0) {
-            state = CHUNK_READ_ERROR;
+            state = ChunkedState::READ_ERROR;
             done  = true;
             break;
           }
           ++num_cr;
         }
-      } else if (state == CHUNK_READ_SIZE_START) {
-        Dbg(dbg_ctl_http_chunk, "CHUNK_READ_SIZE_START 0x%02x", *tmp);
+      } else if (state == ChunkedState::READ_SIZE_START) {
+        Dbg(dbg_ctl_http_chunk, "ChunkedState::READ_SIZE_START 0x%02x", *tmp);
         if (ParseRules::is_lf(*tmp)) {
           if (!prev_is_cr) {
             Dbg(dbg_ctl_http_chunk, "Found an LF without a preceding CR (protocol violation) before chunk size");
             if (strict_chunk_parsing) {
-              state = CHUNK_READ_ERROR;
+              state = ChunkedState::READ_ERROR;
               done  = true;
               break;
             }
@@ -235,17 +235,17 @@ ChunkedHandler::read_size()
           running_sum = 0;
           num_digits  = 0;
           num_cr      = 0;
-          state       = CHUNK_READ_SIZE;
+          state       = ChunkedState::READ_SIZE;
         } else if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
           if (num_cr != 0) {
             Dbg(dbg_ctl_http_chunk, "Found multiple CRs before chunk size");
-            state = CHUNK_READ_ERROR;
+            state = ChunkedState::READ_ERROR;
             done  = true;
             break;
           }
           ++num_cr;
         } else { // Unexpected character
-          state = CHUNK_READ_ERROR;
+          state = ChunkedState::READ_ERROR;
           done  = true;
         }
       }
@@ -324,7 +324,7 @@ ChunkedHandler::read_chunk()
   if (cur_chunk_bytes_left == 0) {
     Dbg(dbg_ctl_http_chunk, "completed read of chunk of %" PRId64 " bytes", cur_chunk_size);
 
-    state = CHUNK_READ_SIZE_START;
+    state = ChunkedState::READ_SIZE_START;
   } else if (cur_chunk_bytes_left > 0) {
     Dbg(dbg_ctl_http_chunk, "read %" PRId64 " bytes of an %" PRId64 " chunk", transferred_bytes, cur_chunk_size);
   }
@@ -350,13 +350,13 @@ ChunkedHandler::read_trailer()
         // For a CR to signal we are almost done, the preceding
         //  part of the line must be blank and next character
         //  must a LF
-        state = (state == CHUNK_READ_TRAILER_BLANK) ? CHUNK_READ_TRAILER_CR : CHUNK_READ_TRAILER_LINE;
+        state = (state == ChunkedState::READ_TRAILER_BLANK) ? ChunkedState::READ_TRAILER_CR : ChunkedState::READ_TRAILER_LINE;
       } else if (ParseRules::is_lf(*tmp)) {
         // For a LF to signal we are done reading the
         //   trailer, the line must have either been blank
         //   or must have only had a CR on it
-        if (state == CHUNK_READ_TRAILER_CR || state == CHUNK_READ_TRAILER_BLANK) {
-          state = CHUNK_READ_DONE;
+        if (state == ChunkedState::READ_TRAILER_CR || state == ChunkedState::READ_TRAILER_BLANK) {
+          state = ChunkedState::READ_DONE;
           Dbg(dbg_ctl_http_chunk, "completed read of trailers");
 
           if (this->drop_chunked_trailers) {
@@ -370,12 +370,12 @@ ChunkedHandler::read_trailer()
         } else {
           // A LF that does not terminate the trailer
           //  indicates a new line
-          state = CHUNK_READ_TRAILER_BLANK;
+          state = ChunkedState::READ_TRAILER_BLANK;
         }
       } else {
         // A character that is not a CR or LF indicates
         //  the we are parsing a line of the trailer
-        state = CHUNK_READ_TRAILER_LINE;
+        state = ChunkedState::READ_TRAILER_LINE;
       }
       tmp++;
     }
@@ -389,29 +389,29 @@ std::pair<int64_t, bool>
 ChunkedHandler::process_chunked_content()
 {
   int64_t bytes_read = 0;
-  while (chunked_reader->is_read_avail_more_than(0) && state != CHUNK_READ_DONE && state != CHUNK_READ_ERROR) {
+  while (chunked_reader->is_read_avail_more_than(0) && state != ChunkedState::READ_DONE && state != ChunkedState::READ_ERROR) {
     switch (state) {
-    case CHUNK_READ_SIZE:
-    case CHUNK_READ_SIZE_CRLF:
-    case CHUNK_READ_SIZE_START:
+    case ChunkedState::READ_SIZE:
+    case ChunkedState::READ_SIZE_CRLF:
+    case ChunkedState::READ_SIZE_START:
       bytes_read += read_size();
       break;
-    case CHUNK_READ_CHUNK:
+    case ChunkedState::READ_CHUNK:
       bytes_read += read_chunk();
       break;
-    case CHUNK_READ_TRAILER_BLANK:
-    case CHUNK_READ_TRAILER_CR:
-    case CHUNK_READ_TRAILER_LINE:
+    case ChunkedState::READ_TRAILER_BLANK:
+    case ChunkedState::READ_TRAILER_CR:
+    case ChunkedState::READ_TRAILER_LINE:
       bytes_read += read_trailer();
       break;
-    case CHUNK_FLOW_CONTROL:
+    case ChunkedState::FLOW_CONTROL:
       return std::make_pair(bytes_read, false);
     default:
       ink_release_assert(0);
       break;
     }
   }
-  auto const done = (state == CHUNK_READ_DONE || state == CHUNK_READ_ERROR);
+  auto const done = (state == ChunkedState::READ_DONE || state == ChunkedState::READ_ERROR);
   return std::make_pair(bytes_read, done);
 }
 
@@ -433,10 +433,10 @@ ChunkedHandler::generate_chunked_content()
     break;
   }
 
-  while ((r_avail = dechunked_reader->read_avail()) > 0 && state != CHUNK_WRITE_DONE) {
+  while ((r_avail = dechunked_reader->read_avail()) > 0 && state != ChunkedState::WRITE_DONE) {
     int64_t write_val = std::min(max_chunk_size, r_avail);
 
-    state = CHUNK_WRITE_CHUNK;
+    state = ChunkedState::WRITE_CHUNK;
     Dbg(dbg_ctl_http_chunk, "creating a chunk of size %" PRId64 " bytes", write_val);
 
     // Output the chunk size.
@@ -470,7 +470,7 @@ ChunkedHandler::generate_chunked_content()
   }
 
   if (server_done) {
-    state = CHUNK_WRITE_DONE;
+    state = ChunkedState::WRITE_DONE;
 
     // Add the chunked transfer coding trailer.
     chunked_buffer->write("0\r\n\r\n", 5);
@@ -696,11 +696,11 @@ HttpTunnel::set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_byt
 
   switch (action) {
   case TunnelChunkingAction_t::CHUNK_CONTENT:
-    p->chunked_handler.state = p->chunked_handler.CHUNK_WRITE_CHUNK;
+    p->chunked_handler.state = p->chunked_handler.ChunkedState::WRITE_CHUNK;
     break;
   case TunnelChunkingAction_t::DECHUNK_CONTENT:
   case TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT:
-    p->chunked_handler.state = p->chunked_handler.CHUNK_READ_SIZE;
+    p->chunked_handler.state = p->chunked_handler.ChunkedState::READ_SIZE;
     break;
   default:
     break;
@@ -1239,7 +1239,7 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
 
   // If we couldn't understand the encoding, return
   //   an error
-  if (p->chunked_handler.state == ChunkedHandler::CHUNK_READ_ERROR) {
+  if (p->chunked_handler.state == ChunkedHandler::ChunkedState::READ_ERROR) {
     Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] producer_handler_chunked [%s chunk decoding error]", sm->sm_id, p->name);
     p->chunked_handler.truncation = true;
     return HTTP_TUNNEL_EVENT_PARSE_ERROR;
@@ -1325,7 +1325,8 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   } // end of added logic for partial copy of POST
 
   Dbg(dbg_ctl_http_redirect, "[%" PRId64 "] enable_redirection: [%d %d %d] event: %d, state: %d", sm->sm_id, p->alive == true,
-      sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event, p->chunked_handler.state);
+      sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event,
+      static_cast<int>(p->chunked_handler.state));
 
   switch (event) {
   case VC_EVENT_READ_READY:

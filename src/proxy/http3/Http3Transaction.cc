@@ -880,7 +880,7 @@ Http09Transaction::_process_write_vio()
     }
 
     // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler
-    // is CHUNK_READ_DONE and set FIN flag
+    // is ChunkedState::READ_DONE and set FIN flag
     if (this->_write_vio.ntodo() == 0) {
       // The size of respons to client
       this->_info.write_vio->done();
