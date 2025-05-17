@@ -59,9 +59,9 @@ bwformat(BufferWriter &w, Spec const & /* spec ATS_UNUSED */, IpAllow const *obj
 
 } // namespace swoc
 
-enum AclOp {
-  ACL_OP_ALLOW, ///< Allow access.
-  ACL_OP_DENY,  ///< Deny access.
+enum class AclOp {
+  ALLOW, ///< Allow access.
+  DENY,  ///< Deny access.
 };
 
 const IpAllow::Record IpAllow::ALLOW_ALL_RECORD(ALL_METHOD_MASK);
@@ -385,7 +385,7 @@ IpAllow::YAMLLoadIPCategory(const YAML::Node &node, IpMap *map, IpAllow::Record 
 swoc::Errata
 IpAllow::YAMLLoadEntry(const YAML::Node &entry)
 {
-  AclOp      op = ACL_OP_DENY; // "shut up", I explained to the compiler.
+  AclOp      op = AclOp::DENY; // "shut up", I explained to the compiler.
   YAML::Node node;
   auto       record = _arena.make<Record>();
   IpMap     *map    = nullptr; // src or dst map.
@@ -423,9 +423,9 @@ IpAllow::YAMLLoadEntry(const YAML::Node &entry)
           value, entry.Mark());
       }
       if (value == YAML_VALUE_ACTION_ALLOW || value == YAML_VALUE_ACTION_ALLOW_OLD_NAME) {
-        op = ACL_OP_ALLOW;
+        op = AclOp::ALLOW;
       } else if (value == YAML_VALUE_ACTION_DENY || value == YAML_VALUE_ACTION_DENY_OLD_NAME) {
-        op = ACL_OP_DENY;
+        op = AclOp::DENY;
       } else {
         return swoc::Errata(ERRATA_ERROR, "{} {} - item ignored, value for tag '{}' must be '{}' or '{}'", this, node.Mark(),
                             YAML_TAG_ACTION, YAML_VALUE_ACTION_ALLOW, YAML_VALUE_ACTION_DENY);
@@ -500,7 +500,7 @@ IpAllow::YAMLLoadEntry(const YAML::Node &entry)
     record->_method_mask = ALL_METHOD_MASK;
   }
 
-  if (op == ACL_OP_DENY) {
+  if (op == AclOp::DENY) {
     record->_method_mask              = ALL_METHOD_MASK & ~record->_method_mask;
     record->_deny_nonstandard_methods = true;
   }
