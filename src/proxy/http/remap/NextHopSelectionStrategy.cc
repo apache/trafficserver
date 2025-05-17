@@ -40,14 +40,14 @@ constexpr std::string_view peering_rings   = "peering_ring";
 constexpr std::string_view active_health_check  = "active";
 constexpr std::string_view passive_health_check = "passive";
 
-constexpr const char *policy_strings[] = {"NH_UNDEFINED", "NH_FIRST_LIVE", "NH_RR_STRICT",
-                                          "NH_RR_IP",     "NH_RR_LATCHED", "NH_CONSISTENT_HASH"};
+constexpr const char *policy_strings[] = {"NHPolicyType::UNDEFINED", "NHPolicyType::FIRST_LIVE", "NHPolicyType::RR_STRICT",
+                                          "NHPolicyType::RR_IP",     "NHPolicyType::RR_LATCHED", "NHPolicyType::CONSISTENT_HASH"};
 
 NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &policy, ts::Yaml::Map &n)
   : strategy_name(name), policy_type(policy)
 {
   NH_Dbg(NH_DBG_CTL, "NextHopSelectionStrategy calling constructor");
-  NH_Dbg(NH_DBG_CTL, "Using a selection strategy of type %s", policy_strings[policy]);
+  NH_Dbg(NH_DBG_CTL, "Using a selection strategy of type %s", policy_strings[static_cast<int>(policy)]);
 
   std::string self_host;
   bool        self_host_used = false;
@@ -251,7 +251,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
         "ring mode '" + std::string(peering_rings) +
         "' requires two host groups (peering group and an upstream group), or a single peering group with go_direct");
     }
-    if (policy_type != NH_CONSISTENT_HASH) {
+    if (policy_type != NHPolicyType::CONSISTENT_HASH) {
       throw std::invalid_argument("ring mode '" + std::string(peering_rings) +
                                   "' is only implemented for a 'consistent_hash' policy");
     }

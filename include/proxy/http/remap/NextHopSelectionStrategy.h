@@ -58,13 +58,13 @@ struct NHHealthStatus {
   virtual ~NHHealthStatus() {}
 };
 
-enum NHPolicyType {
-  NH_UNDEFINED = 0,
-  NH_FIRST_LIVE,     // first available nexthop
-  NH_RR_STRICT,      // strict round robin
-  NH_RR_IP,          // round robin by client ip.
-  NH_RR_LATCHED,     // latched to available next hop.
-  NH_CONSISTENT_HASH // consistent hashing strategy.
+enum class NHPolicyType {
+  UNDEFINED = 0,
+  FIRST_LIVE,     // first available nexthop
+  RR_STRICT,      // strict round robin
+  RR_IP,          // round robin by client ip.
+  RR_LATCHED,     // latched to available next hop.
+  CONSISTENT_HASH // consistent hashing strategy.
 };
 
 enum NHSchemeType { NH_SCHEME_NONE = 0, NH_SCHEME_HTTP, NH_SCHEME_HTTPS };
@@ -214,7 +214,7 @@ public:
   bool                                                  cache_peer_result  = true;
   bool                                                  host_override      = false;
   bool                                                  use_pristine       = false;
-  NHPolicyType                                          policy_type        = NH_UNDEFINED;
+  NHPolicyType                                          policy_type        = NHPolicyType::UNDEFINED;
   NHSchemeType                                          scheme             = NH_SCHEME_NONE;
   NHRingMode                                            ring_mode          = NH_ALTERNATE_RING;
   ResponseCodes                                         resp_codes;     // simple retry codes

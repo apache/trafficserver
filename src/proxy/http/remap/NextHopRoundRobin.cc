@@ -66,17 +66,17 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] first call , cur_grp_index: %d, cur_hst_index: %d, distance: %d", sm_id, cur_grp_index,
            cur_hst_index, distance);
     switch (policy_type) {
-    case NH_FIRST_LIVE:
+    case NHPolicyType::FIRST_LIVE:
       result->start_parent = cur_hst_index = 0;
       cur_grp_index                        = 0;
       break;
-    case NH_RR_STRICT: {
+    case NHPolicyType::RR_STRICT: {
       std::lock_guard<std::mutex> lock(_mutex);
       cur_hst_index = result->start_parent = this->hst_index;
       cur_grp_index                        = 0;
       this->hst_index                      = (this->hst_index + 1) % hst_size;
     } break;
-    case NH_RR_IP:
+    case NHPolicyType::RR_IP:
       cur_grp_index = 0;
       if (request_info.get_client_ip() != nullptr) {
         cur_hst_index = result->start_parent = ntohl(ats_ip_hash(request_info.get_client_ip())) % hst_size;
@@ -84,7 +84,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
         cur_hst_index = this->hst_index;
       }
       break;
-    case NH_RR_LATCHED:
+    case NHPolicyType::RR_LATCHED:
       cur_grp_index = 0;
       cur_hst_index = result->start_parent = latched_index;
       break;

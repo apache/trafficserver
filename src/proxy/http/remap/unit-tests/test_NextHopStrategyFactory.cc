@@ -67,7 +67,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         REQUIRE(strategy != nullptr);
         CHECK(strategy->parent_is_proxy == true);
         CHECK(strategy->max_simple_retries == 1);
-        CHECK(strategy->policy_type == NH_CONSISTENT_HASH);
+        CHECK(strategy->policy_type == NHPolicyType::CONSISTENT_HASH);
 
         // down cast here using the stored pointer so that I can verify the hash_key was set
         // properly.
@@ -150,7 +150,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
       {
         std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-2");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_STRICT);
+        CHECK(strategy->policy_type == NHPolicyType::RR_STRICT);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NH_SCHEME_HTTP);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
@@ -237,7 +237,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
       {
         std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-3");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_IP);
+        CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NH_SCHEME_HTTPS);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
@@ -312,7 +312,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
       {
         std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-4");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_LATCHED);
+        CHECK(strategy->policy_type == NHPolicyType::RR_LATCHED);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NH_SCHEME_HTTP);
         CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
@@ -380,7 +380,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         REQUIRE(strategy != nullptr);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->max_simple_retries == 2);
-        CHECK(strategy->policy_type == NH_RR_IP);
+        CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NH_SCHEME_HTTP);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
@@ -457,7 +457,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
       {
         std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-south");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_LATCHED);
+        CHECK(strategy->policy_type == NHPolicyType::RR_LATCHED);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->ignore_self_detect == false);
         CHECK(strategy->max_simple_retries == 2);
@@ -537,7 +537,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
       {
         std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-east");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_FIRST_LIVE);
+        CHECK(strategy->policy_type == NHPolicyType::FIRST_LIVE);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->ignore_self_detect == true);
         CHECK(strategy->max_simple_retries == 2);
@@ -617,7 +617,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
       {
         std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-west");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_STRICT);
+        CHECK(strategy->policy_type == NHPolicyType::RR_STRICT);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NH_SCHEME_HTTPS);
         CHECK(strategy->parent_is_proxy == false);
@@ -696,7 +696,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
       {
         std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-midwest");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_CONSISTENT_HASH);
+        CHECK(strategy->policy_type == NHPolicyType::CONSISTENT_HASH);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->max_simple_retries == 2);
 
@@ -802,7 +802,7 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
         REQUIRE(strategy != nullptr);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->max_simple_retries == 2);
-        CHECK(strategy->policy_type == NH_RR_IP);
+        CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NH_SCHEME_HTTP);
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
@@ -882,7 +882,7 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
       {
         std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-south");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_LATCHED);
+        CHECK(strategy->policy_type == NHPolicyType::RR_LATCHED);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->ignore_self_detect == false);
         CHECK(strategy->max_simple_retries == 2);

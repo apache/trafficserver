@@ -57,7 +57,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
       {
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
-        REQUIRE(strategy->policy_type == NH_RR_STRICT);
+        REQUIRE(strategy->policy_type == NHPolicyType::RR_STRICT);
       }
     }
 
@@ -182,7 +182,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'first-live'", "[NextHop
       {
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
-        REQUIRE(strategy->policy_type == NH_FIRST_LIVE);
+        REQUIRE(strategy->policy_type == NHPolicyType::FIRST_LIVE);
       }
     }
 
@@ -262,7 +262,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
       {
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
-        REQUIRE(strategy->policy_type == NH_RR_IP);
+        REQUIRE(strategy->policy_type == NHPolicyType::RR_IP);
       }
     }
 
@@ -339,7 +339,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'latched'", "[NextHopRou
       {
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
-        REQUIRE(strategy->policy_type == NH_RR_LATCHED);
+        REQUIRE(strategy->policy_type == NHPolicyType::RR_LATCHED);
       }
     }
 
