@@ -52,18 +52,6 @@ DbgCtl         ParentResult::dbg_ctl_parent_select{"parent_select"};
 static DbgCtl &dbg_ctl_parent_select{ParentResult::dbg_ctl_parent_select};
 static DbgCtl  dbg_ctl_parent_config{"parent_config"};
 
-//
-//  Config Callback Prototypes
-//
-enum ParentCB_t {
-  PARENT_FILE_CB,
-  PARENT_DEFAULT_CB,
-  PARENT_RETRY_CB,
-  PARENT_ENABLE_CB,
-  PARENT_THRESHOLD_CB,
-  PARENT_DNS_ONLY_CB,
-};
-
 ParentSelectionPolicy::ParentSelectionPolicy()
 {
   int32_t retry_time     = 0;
