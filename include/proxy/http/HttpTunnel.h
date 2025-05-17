@@ -67,12 +67,7 @@ using HttpConsumerHandler = int (HttpSM::*)(int, HttpTunnelConsumer *);
 
 enum class HttpTunnelType_t { HTTP_SERVER, HTTP_CLIENT, CACHE_READ, CACHE_WRITE, TRANSFORM, STATIC, BUFFER_READ };
 
-enum TunnelChunkingAction_t {
-  TCA_CHUNK_CONTENT,
-  TCA_DECHUNK_CONTENT,
-  TCA_PASSTHRU_CHUNKED_CONTENT,
-  TCA_PASSTHRU_DECHUNKED_CONTENT
-};
+enum class TunnelChunkingAction_t { CHUNK_CONTENT, DECHUNK_CONTENT, PASSTHRU_CHUNKED_CONTENT, PASSTHRU_DECHUNKED_CONTENT };
 
 struct ChunkedHandler {
   enum ChunkedState {
@@ -252,7 +247,7 @@ struct HttpTunnelProducer {
   HttpTunnelType_t        vc_type       = HttpTunnelType_t::HTTP_SERVER;
 
   ChunkedHandler         chunked_handler;
-  TunnelChunkingAction_t chunking_action = TCA_PASSTHRU_DECHUNKED_CONTENT;
+  TunnelChunkingAction_t chunking_action = TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT;
 
   bool do_chunking         = false;
   bool do_dechunking       = false;
@@ -402,7 +397,7 @@ public:
    * @param[in] action The chunking behavior to enact on incoming bytes.
    * @param[in] drop_chunked_trailers If @c true, chunked trailers are filtered
    *   out. Logically speaking, this is only applicable when proxying chunked
-   *   content, thus only when @a action is @c TCA_PASSTHRU_CHUNKED_CONTENT.
+   *   content, thus only when @a action is @c TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT.
    * @param[in] parse_chunk_strictly If @c true, no parse error will be allowed
    */
   void set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_bytes, TunnelChunkingAction_t action,

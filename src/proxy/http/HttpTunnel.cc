@@ -695,11 +695,11 @@ HttpTunnel::set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_byt
   p->chunking_action               = action;
 
   switch (action) {
-  case TCA_CHUNK_CONTENT:
+  case TunnelChunkingAction_t::CHUNK_CONTENT:
     p->chunked_handler.state = p->chunked_handler.CHUNK_WRITE_CHUNK;
     break;
-  case TCA_DECHUNK_CONTENT:
-  case TCA_PASSTHRU_CHUNKED_CONTENT:
+  case TunnelChunkingAction_t::DECHUNK_CONTENT:
+  case TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT:
     p->chunked_handler.state = p->chunked_handler.CHUNK_READ_SIZE;
     break;
   default:
@@ -734,7 +734,7 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
     p->vc_handler      = sm_handler;
     p->vc_type         = vc_type;
     p->name            = name_arg;
-    p->chunking_action = TCA_PASSTHRU_DECHUNKED_CONTENT;
+    p->chunking_action = TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT;
 
     p->do_chunking         = false;
     p->do_dechunking       = false;
@@ -884,11 +884,11 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
   // [bug 2579251] static producers won't have handler set
   if (p->vc != HTTP_TUNNEL_STATIC_PRODUCER) {
-    if (action == TCA_CHUNK_CONTENT) {
+    if (action == TunnelChunkingAction_t::CHUNK_CONTENT) {
       p->do_chunking = true;
-    } else if (action == TCA_DECHUNK_CONTENT) {
+    } else if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
       p->do_dechunking = true;
-    } else if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
+    } else if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
       p->do_chunked_passthru = true;
 
       // Dechunk the chunked content into the cache.
@@ -975,12 +975,12 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     // us to implement skip bytes
     if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
       switch (action) {
-      case TCA_CHUNK_CONTENT:
-      case TCA_PASSTHRU_DECHUNKED_CONTENT:
+      case TunnelChunkingAction_t::CHUNK_CONTENT:
+      case TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT:
         c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
         break;
-      case TCA_DECHUNK_CONTENT:
-      case TCA_PASSTHRU_CHUNKED_CONTENT:
+      case TunnelChunkingAction_t::DECHUNK_CONTENT:
+      case TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT:
         c->buffer_reader = p->chunked_handler.dechunked_buffer->clone_reader(dechunked_buffer_start);
         break;
       default:
@@ -988,17 +988,17 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       }
     }
     // Non-cache consumers.
-    else if (action == TCA_CHUNK_CONTENT) {
+    else if (action == TunnelChunkingAction_t::CHUNK_CONTENT) {
       c->buffer_reader = p->chunked_handler.chunked_buffer->clone_reader(chunked_buffer_start);
-    } else if (action == TCA_DECHUNK_CONTENT) {
+    } else if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
       c->buffer_reader = p->chunked_handler.dechunked_buffer->clone_reader(dechunked_buffer_start);
-    } else if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
+    } else if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
       if (p->chunked_handler.drop_chunked_trailers) {
         c->buffer_reader = p->chunked_handler.chunked_buffer->clone_reader(passthrough_buffer_start);
       } else {
         c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
       }
-    } else { // TCA_PASSTHRU_DECHUNKED_CONTENT
+    } else { // TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT
       c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
     }
 
@@ -1653,22 +1653,22 @@ HttpTunnel::final_consumer_bytes_to_write(HttpTunnelProducer *p, HttpTunnelConsu
     if (c->alive) {
       if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
         switch (action) {
-        case TCA_CHUNK_CONTENT:
-        case TCA_PASSTHRU_DECHUNKED_CONTENT:
+        case TunnelChunkingAction_t::CHUNK_CONTENT:
+        case TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT:
           bytes_to_write = p->bytes_consumed;
           break;
-        case TCA_DECHUNK_CONTENT:
-        case TCA_PASSTHRU_CHUNKED_CONTENT:
+        case TunnelChunkingAction_t::DECHUNK_CONTENT:
+        case TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT:
           bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
           break;
         default:
           break;
         }
-      } else if (action == TCA_CHUNK_CONTENT) {
+      } else if (action == TunnelChunkingAction_t::CHUNK_CONTENT) {
         bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.chunked_size;
-      } else if (action == TCA_DECHUNK_CONTENT) {
+      } else if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
         bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
-      } else if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
+      } else if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
         bytes_to_write = p->bytes_consumed;
       } else {
         bytes_to_write = p->bytes_consumed;
@@ -1694,7 +1694,7 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
   int64_t                total_bytes = 0;
   TunnelChunkingAction_t action      = p->chunking_action;
 
-  if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
+  if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
     // Verify that we consumed the number of bytes we accounted for via p->bytes_consumed.
     if (p->bytes_read == 0 && p->buffer_start != nullptr) {
       int num_read = p->buffer_start->read_avail() - p->chunked_handler.chunked_reader->read_avail();
