@@ -2853,23 +2853,23 @@ convert_cache_write_code(HttpTransact::CacheWriteStatus_t t)
 {
   LogCacheWriteCodeType code;
   switch (t) {
-  case HttpTransact::NO_CACHE_WRITE:
+  case HttpTransact::CacheWriteStatus_t::NO_WRITE:
     code = LOG_CACHE_WRITE_NONE;
     break;
-  case HttpTransact::CACHE_WRITE_LOCK_MISS:
+  case HttpTransact::CacheWriteStatus_t::LOCK_MISS:
     code = LOG_CACHE_WRITE_LOCK_MISSED;
     break;
-  case HttpTransact::CACHE_WRITE_IN_PROGRESS:
+  case HttpTransact::CacheWriteStatus_t::IN_PROGRESS:
     // Hack - the HttpSM doesn't record
     //   cache write aborts currently so
     //   if it's not complete declare it
     //   aborted
     code = LOG_CACHE_WRITE_LOCK_ABORTED;
     break;
-  case HttpTransact::CACHE_WRITE_ERROR:
+  case HttpTransact::CacheWriteStatus_t::ERROR:
     code = LOG_CACHE_WRITE_ERROR;
     break;
-  case HttpTransact::CACHE_WRITE_COMPLETE:
+  case HttpTransact::CacheWriteStatus_t::COMPLETE:
     code = LOG_CACHE_WRITE_COMPLETE;
     break;
   default:

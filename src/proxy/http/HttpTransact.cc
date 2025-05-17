@@ -3145,7 +3145,7 @@ HttpTransact::handle_cache_write_lock(State *s)
     case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE:
     case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE:
       TxnDbg(dbg_ctl_http_error, "cache_open_write_fail_action %d, cache miss, return error", s->cache_open_write_fail_action);
-      s->cache_info.write_status = CACHE_WRITE_ERROR;
+      s->cache_info.write_status = CacheWriteStatus_t::ERROR;
       build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect");
       MIMEField *ats_field;
       HTTPHdr   *header;
@@ -3165,7 +3165,7 @@ HttpTransact::handle_cache_write_lock(State *s)
 
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     default:
-      s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
+      s->cache_info.write_status = CacheWriteStatus_t::LOCK_MISS;
       remove_ims                 = true;
       break;
     }
@@ -3179,7 +3179,7 @@ HttpTransact::handle_cache_write_lock(State *s)
       //  Clean up server_request and re-initiate
       //  Cache Lookup
       ink_assert(s->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY);
-      s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
+      s->cache_info.write_status = CacheWriteStatus_t::LOCK_MISS;
       StateMachineAction_t next;
       next           = SM_ACTION_CACHE_LOOKUP;
       s->next_action = next;
@@ -4831,7 +4831,7 @@ HttpTransact::handle_transform_cache_write(State *s)
   case CacheWriteLock_t::FAIL:
     // No write lock, ignore the cache
     s->cache_info.transform_action       = CacheAction_t::NO_ACTION;
-    s->cache_info.transform_write_status = CACHE_WRITE_LOCK_MISS;
+    s->cache_info.transform_write_status = CacheWriteStatus_t::LOCK_MISS;
     break;
   default:
     ink_release_assert(0);

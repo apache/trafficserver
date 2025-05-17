@@ -3729,7 +3729,7 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     // Abnormal termination
-    *status_ptr  = HttpTransact::CACHE_WRITE_ERROR;
+    *status_ptr  = HttpTransact::CacheWriteStatus_t::ERROR;
     c->write_vio = nullptr;
     c->vc->do_io_close(EHTTP_ERROR);
 
@@ -3747,11 +3747,11 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     //   we got a truncated header from the origin server
     //   but decided to accept it anyways
     if (c->write_vio == nullptr) {
-      *status_ptr      = HttpTransact::CACHE_WRITE_ERROR;
+      *status_ptr      = HttpTransact::CacheWriteStatus_t::ERROR;
       c->write_success = false;
       c->vc->do_io_close(EHTTP_ERROR);
     } else {
-      *status_ptr      = HttpTransact::CACHE_WRITE_COMPLETE;
+      *status_ptr      = HttpTransact::CacheWriteStatus_t::COMPLETE;
       c->write_success = true;
       c->vc->do_io_close();
       c->write_vio = nullptr;
@@ -6424,7 +6424,7 @@ HttpSM::perform_transform_cache_write_action()
   case HttpTransact::CacheAction_t::WRITE: {
     if (t_state.api_info.cache_untransformed == false) {
       transform_cache_sm.close_read();
-      t_state.cache_info.transform_write_status = HttpTransact::CACHE_WRITE_IN_PROGRESS;
+      t_state.cache_info.transform_write_status = HttpTransact::CacheWriteStatus_t::IN_PROGRESS;
       setup_cache_write_transfer(&transform_cache_sm, transform_info.entry->vc, &t_state.cache_info.transform_store,
                                  client_response_hdr_bytes, "cache write t");
     }
@@ -6493,7 +6493,7 @@ HttpSM::perform_cache_write_action()
     //   completed
     if (transform_info.entry == nullptr || t_state.api_info.cache_untransformed == true) {
       cache_sm.close_read();
-      t_state.cache_info.write_status = HttpTransact::CACHE_WRITE_IN_PROGRESS;
+      t_state.cache_info.write_status = HttpTransact::CacheWriteStatus_t::IN_PROGRESS;
       setup_cache_write_transfer(&cache_sm, server_entry->vc, &t_state.cache_info.object_store, client_response_hdr_bytes,
                                  "cache write");
     } else {

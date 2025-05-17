@@ -353,13 +353,7 @@ public:
     OUTBOUND_CONGESTION
   };
 
-  enum CacheWriteStatus_t {
-    NO_CACHE_WRITE = 0,
-    CACHE_WRITE_LOCK_MISS,
-    CACHE_WRITE_IN_PROGRESS,
-    CACHE_WRITE_ERROR,
-    CACHE_WRITE_COMPLETE
-  };
+  enum class CacheWriteStatus_t { NO_WRITE = 0, LOCK_MISS, IN_PROGRESS, ERROR, COMPLETE };
 
   enum HttpRequestFlavor_t {
     REQ_FLAVOR_INTERCEPTED      = 0,
@@ -504,8 +498,8 @@ public:
     HttpTransact::CacheAction_t action           = CacheAction_t::UNDEFINED;
     HttpTransact::CacheAction_t transform_action = CacheAction_t::UNDEFINED;
 
-    HttpTransact::CacheWriteStatus_t write_status           = NO_CACHE_WRITE;
-    HttpTransact::CacheWriteStatus_t transform_write_status = NO_CACHE_WRITE;
+    HttpTransact::CacheWriteStatus_t write_status           = CacheWriteStatus_t::NO_WRITE;
+    HttpTransact::CacheWriteStatus_t transform_write_status = CacheWriteStatus_t::NO_WRITE;
 
     URL             *lookup_url = nullptr;
     URL              lookup_url_storage;
