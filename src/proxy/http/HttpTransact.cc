@@ -8344,7 +8344,7 @@ HttpTransact::user_agent_connection_speed(ink_hrtime transfer_time, int64_t nbyt
 void
 HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime request_process_time)
 {
-  ClientTransactionResult_t client_transaction_result = CLIENT_TRANSACTION_RESULT_UNDEFINED;
+  ClientTransactionResult_t client_transaction_result = ClientTransactionResult_t::UNDEFINED;
 
   ///////////////////////////////////////////////////////
   // don't count errors we generated as hits or misses //
@@ -8355,18 +8355,18 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   }
 
   if ((s->source == SOURCE_INTERNAL) && client_response_status >= 400) {
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_OTHER;
+    client_transaction_result = ClientTransactionResult_t::ERROR_OTHER;
   }
 
   switch (s->squid_codes.log_code) {
   case SQUID_LOG_ERR_CONNECT_FAIL:
     Metrics::Counter::increment(http_rsb.cache_miss_cold);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL;
+    client_transaction_result = ClientTransactionResult_t::ERROR_CONNECT_FAIL;
     break;
 
   case SQUID_LOG_TCP_CF_HIT:
     Metrics::Counter::increment(http_rsb.cache_hit_rww);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
+    client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_MEM_HIT:
@@ -8376,59 +8376,59 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   case SQUID_LOG_TCP_HIT:
     // It's possible to have two stat's instead of one, if needed.
     Metrics::Counter::increment(http_rsb.cache_hit_fresh);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
+    client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_REFRESH_HIT:
     Metrics::Counter::increment(http_rsb.cache_hit_reval);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_REVALIDATED;
+    client_transaction_result = ClientTransactionResult_t::HIT_REVALIDATED;
     break;
 
   case SQUID_LOG_TCP_IMS_HIT:
     Metrics::Counter::increment(http_rsb.cache_hit_ims);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
+    client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_REF_FAIL_HIT:
     Metrics::Counter::increment(http_rsb.cache_hit_stale_served);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
+    client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_MISS:
     if ((GET_VIA_STRING(VIA_CACHE_RESULT) == VIA_IN_CACHE_NOT_ACCEPTABLE) || (GET_VIA_STRING(VIA_CACHE_RESULT) == VIA_CACHE_MISS)) {
       Metrics::Counter::increment(http_rsb.cache_miss_cold);
-      client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_COLD;
+      client_transaction_result = ClientTransactionResult_t::MISS_COLD;
     } else {
       // FIX: what case is this for?  can it ever happen?
       Metrics::Counter::increment(http_rsb.cache_miss_uncacheable);
-      client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_UNCACHABLE;
+      client_transaction_result = ClientTransactionResult_t::MISS_UNCACHABLE;
     }
     break;
 
   case SQUID_LOG_TCP_REFRESH_MISS:
     Metrics::Counter::increment(http_rsb.cache_miss_changed);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_CHANGED;
+    client_transaction_result = ClientTransactionResult_t::MISS_CHANGED;
     break;
 
   case SQUID_LOG_TCP_CLIENT_REFRESH:
     Metrics::Counter::increment(http_rsb.cache_miss_client_no_cache);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_CLIENT_NO_CACHE;
+    client_transaction_result = ClientTransactionResult_t::MISS_CLIENT_NO_CACHE;
     break;
 
   case SQUID_LOG_TCP_IMS_MISS:
     Metrics::Counter::increment(http_rsb.cache_miss_ims);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_COLD;
+    client_transaction_result = ClientTransactionResult_t::MISS_COLD;
     break;
 
   case SQUID_LOG_TCP_SWAPFAIL:
     Metrics::Counter::increment(http_rsb.cache_read_error);
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
+    client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
   case SQUID_LOG_ERR_READ_TIMEOUT:
   case SQUID_LOG_TCP_DENIED:
     // No cache result due to error
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_OTHER;
+    client_transaction_result = ClientTransactionResult_t::ERROR_OTHER;
     break;
 
   default:
@@ -8439,7 +8439,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     // FIX: I suspect the following line should not be set here,
     //      because it overrides the error classification above.
     //      Commenting out.
-    // client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_COLD;
+    // client_transaction_result = ClientTransactionResult_t::MISS_COLD;
 
     break;
   }
@@ -8448,7 +8448,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   // don't count aborts as hits or misses //
   //////////////////////////////////////////
   if (s->client_info.abort == ABORTED) {
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_ABORT;
+    client_transaction_result = ClientTransactionResult_t::ERROR_ABORT;
   }
   // Count the status codes, assuming the client didn't abort (i.e. there is an m_http)
   if ((s->source != SOURCE_NONE) && (s->client_info.abort == DIDNOT_ABORT)) {
@@ -8604,45 +8604,45 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   ink_hrtime total_msec   = ink_hrtime_to_msec(total_time);
   ink_hrtime process_msec = ink_hrtime_to_msec(request_process_time);
   switch (client_transaction_result) {
-  case CLIENT_TRANSACTION_RESULT_HIT_FRESH:
+  case ClientTransactionResult_t::HIT_FRESH:
     Metrics::Counter::increment(http_rsb.ua_counts_hit_fresh);
     Metrics::Counter::increment(http_rsb.ua_msecs_hit_fresh, total_msec);
     Metrics::Counter::increment(http_rsb.ua_counts_hit_fresh_process);
     Metrics::Counter::increment(http_rsb.ua_msecs_hit_fresh_process, process_msec);
     break;
-  case CLIENT_TRANSACTION_RESULT_HIT_REVALIDATED:
+  case ClientTransactionResult_t::HIT_REVALIDATED:
     Metrics::Counter::increment(http_rsb.ua_counts_hit_reval);
     Metrics::Counter::increment(http_rsb.ua_msecs_hit_reval, total_msec);
     break;
-  case CLIENT_TRANSACTION_RESULT_MISS_COLD:
+  case ClientTransactionResult_t::MISS_COLD:
     Metrics::Counter::increment(http_rsb.ua_counts_miss_cold);
     Metrics::Counter::increment(http_rsb.ua_msecs_miss_cold, total_msec);
     break;
-  case CLIENT_TRANSACTION_RESULT_MISS_CHANGED:
+  case ClientTransactionResult_t::MISS_CHANGED:
     Metrics::Counter::increment(http_rsb.ua_counts_miss_changed);
     Metrics::Counter::increment(http_rsb.ua_msecs_miss_changed, total_msec);
     break;
-  case CLIENT_TRANSACTION_RESULT_MISS_CLIENT_NO_CACHE:
+  case ClientTransactionResult_t::MISS_CLIENT_NO_CACHE:
     Metrics::Counter::increment(http_rsb.ua_counts_miss_client_no_cache);
     Metrics::Counter::increment(http_rsb.ua_msecs_miss_client_no_cache, total_msec);
     break;
-  case CLIENT_TRANSACTION_RESULT_MISS_UNCACHABLE:
+  case ClientTransactionResult_t::MISS_UNCACHABLE:
     Metrics::Counter::increment(http_rsb.ua_counts_miss_uncacheable);
     Metrics::Counter::increment(http_rsb.ua_msecs_miss_uncacheable, total_msec);
     break;
-  case CLIENT_TRANSACTION_RESULT_ERROR_ABORT:
+  case ClientTransactionResult_t::ERROR_ABORT:
     Metrics::Counter::increment(http_rsb.ua_counts_errors_aborts);
     Metrics::Counter::increment(http_rsb.ua_msecs_errors_aborts, total_msec);
     break;
-  case CLIENT_TRANSACTION_RESULT_ERROR_POSSIBLE_ABORT:
+  case ClientTransactionResult_t::ERROR_POSSIBLE_ABORT:
     Metrics::Counter::increment(http_rsb.ua_counts_errors_possible_aborts);
     Metrics::Counter::increment(http_rsb.ua_msecs_errors_possible_aborts, total_msec);
     break;
-  case CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL:
+  case ClientTransactionResult_t::ERROR_CONNECT_FAIL:
     Metrics::Counter::increment(http_rsb.ua_counts_errors_connect_failed);
     Metrics::Counter::increment(http_rsb.ua_msecs_errors_connect_failed, total_msec);
     break;
-  case CLIENT_TRANSACTION_RESULT_ERROR_OTHER:
+  case ClientTransactionResult_t::ERROR_OTHER:
     Metrics::Counter::increment(http_rsb.ua_counts_errors_other);
     Metrics::Counter::increment(http_rsb.ua_msecs_errors_other, total_msec);
     break;
