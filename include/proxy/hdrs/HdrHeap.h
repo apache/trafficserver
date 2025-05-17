@@ -61,8 +61,6 @@ enum {
   HDR_HEAP_OBJ_FIELD_BLOCK      = 5,
   HDR_HEAP_OBJ_FIELD_STANDALONE = 6, // not a type that lives in HdrHeaps
   HDR_HEAP_OBJ_FIELD_SDK_HANDLE = 7, // not a type that lives in HdrHeaps
-
-  HDR_HEAP_OBJ_MAGIC = 0x0FEEB1E0
 };
 
 struct HdrHeapObjImpl {
