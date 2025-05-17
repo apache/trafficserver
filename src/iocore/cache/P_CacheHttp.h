@@ -32,11 +32,6 @@ using CacheHTTPHdr  = HTTPHdr;
 using CacheHTTPInfo = HTTPInfo;
 
 #define OFFSET_BITS 24
-enum {
-  OWNER_NONE  = 0,
-  OWNER_CACHE = 1,
-  OWNER_HTTP  = 2,
-};
 
 struct vec_info {
   CacheHTTPInfo alternate;
