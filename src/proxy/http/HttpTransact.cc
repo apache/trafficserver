@@ -6766,42 +6766,42 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
 void
 HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads)
 {
-  enum KA_Action_t {
-    KA_UNKNOWN,
-    KA_DISABLED,
-    KA_CLOSE,
-    KA_CONNECTION,
+  enum class KA_Action_t {
+    UNKNOWN,
+    DISABLED,
+    CLOSE,
+    CONNECTION,
   };
 
-  KA_Action_t ka_action   = KA_UNKNOWN;
+  KA_Action_t ka_action   = KA_Action_t::UNKNOWN;
   bool        upstream_ka = (s->current.server->keep_alive == HTTP_KEEPALIVE);
 
   ink_assert(heads->type_get() == HTTP_TYPE_REQUEST);
 
   // Check preconditions for Keep-Alive
   if (!upstream_ka) {
-    ka_action = KA_DISABLED;
+    ka_action = KA_Action_t::DISABLED;
   } else if (ver.get_major() == 0) { /* No K-A for 0.9 apps */
-    ka_action = KA_DISABLED;
+    ka_action = KA_Action_t::DISABLED;
   }
   // If preconditions are met, figure out what action to take
-  if (ka_action == KA_UNKNOWN) {
+  if (ka_action == KA_Action_t::UNKNOWN) {
     int method = heads->method_get_wksidx();
     if (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_OPTIONS || method == HTTP_WKSIDX_PURGE ||
         method == HTTP_WKSIDX_DELETE || method == HTTP_WKSIDX_TRACE) {
       // These methods do not need a content-length header
-      ka_action = KA_CONNECTION;
+      ka_action = KA_Action_t::CONNECTION;
     } else {
       // All remaining methods require a content length header
       if (heads->get_content_length() == -1) {
-        ka_action = KA_CLOSE;
+        ka_action = KA_Action_t::CLOSE;
       } else {
-        ka_action = KA_CONNECTION;
+        ka_action = KA_Action_t::CONNECTION;
       }
     }
   }
 
-  ink_assert(ka_action != KA_UNKNOWN);
+  ink_assert(ka_action != KA_Action_t::UNKNOWN);
 
   // Since connection headers are hop-to-hop, strip the
   //  the ones we received from the user-agent
@@ -6811,7 +6811,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
   if (!s->is_upgrade_request) {
     // Insert K-A headers as necessary
     switch (ka_action) {
-    case KA_CONNECTION:
+    case KA_Action_t::CONNECTION:
       ink_assert(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
       if (ver == HTTP_1_0) {
         if (s->current.request_to == ResolveInfo::PARENT_PROXY && parent_is_proxy(s)) {
@@ -6823,8 +6823,8 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       // NOTE: if the version is 1.1 we don't need to do
       //  anything since keep-alive is assumed
       break;
-    case KA_DISABLED:
-    case KA_CLOSE:
+    case KA_Action_t::DISABLED:
+    case KA_Action_t::CLOSE:
       if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
         /* Had keep-alive */
         s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
@@ -6871,13 +6871,13 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
 void
 HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads)
 {
-  enum KA_Action_t {
-    KA_UNKNOWN,
-    KA_DISABLED,
-    KA_CLOSE,
-    KA_CONNECTION,
+  enum class KA_Action_t {
+    UNKNOWN,
+    DISABLED,
+    CLOSE,
+    CONNECTION,
   };
-  KA_Action_t ka_action = KA_UNKNOWN;
+  KA_Action_t ka_action = KA_Action_t::UNKNOWN;
 
   ink_assert(heads->type_get() == HTTP_TYPE_RESPONSE);
 
@@ -6914,13 +6914,13 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
 
   // Check pre-conditions for keep-alive
   if (ver.get_major() == 0) { /* No K-A for 0.9 apps */
-    ka_action = KA_DISABLED;
+    ka_action = KA_Action_t::DISABLED;
   } else if (heads->status_get() == HTTP_STATUS_NO_CONTENT &&
              ((s->source == Source_t::HTTP_ORIGIN_SERVER && s->current.server->transfer_encoding != TransferEncoding_t::NONE) ||
               heads->get_content_length() != 0)) {
     // some systems hang until the connection closes when receiving a 204 regardless of the K-A headers
     // close if there is any body response from the origin
-    ka_action = KA_CLOSE;
+    ka_action = KA_Action_t::CLOSE;
   } else {
     // Determine if we are going to send either a server-generated or
     // proxy-generated chunked response to the client. If we cannot
@@ -6968,22 +6968,22 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // Otherwise, if we cannot trust the content length, we will close the connection
     // unless we are going to use chunked encoding on HTTP/1.1 or the client issued a PUSH request
     if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
-      ka_action = KA_DISABLED;
+      ka_action = KA_Action_t::DISABLED;
     } else if (s->hdr_info.trust_response_cl == false && s->state_machine->get_ua_txn() &&
                s->state_machine->get_ua_txn()->is_chunked_encoding_supported() &&
                !(s->client_info.receive_chunked_response == true ||
                  (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
-      ka_action = KA_CLOSE;
+      ka_action = KA_Action_t::CLOSE;
     } else {
-      ka_action = KA_CONNECTION;
+      ka_action = KA_Action_t::CONNECTION;
     }
   }
 
-  ink_assert(ka_action != KA_UNKNOWN);
+  ink_assert(ka_action != KA_Action_t::UNKNOWN);
 
   // Insert K-A headers as necessary
   switch (ka_action) {
-  case KA_CONNECTION:
+  case KA_Action_t::CONNECTION:
     ink_assert(s->client_info.keep_alive != HTTP_NO_KEEPALIVE);
     // This is a hack, we send the keep-alive header for both 1.0
     // and 1.1, to be "compatible" with Akamai.
@@ -6991,8 +6991,8 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // NOTE: if the version is 1.1 we don't need to do
     //  anything since keep-alive is assumed
     break;
-  case KA_CLOSE:
-  case KA_DISABLED:
+  case KA_Action_t::CLOSE:
+  case KA_Action_t::DISABLED:
     if (s->client_info.keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
       if (s->client_info.proxy_connect_hdr) {
         heads->value_set(std::string_view{c_hdr_field_str, static_cast<std::string_view::size_type>(c_hdr_field_len)}, "close"sv);
