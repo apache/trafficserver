@@ -71,8 +71,6 @@ enum class NHSchemeType { NONE = 0, HTTP, HTTPS };
 
 enum class NHRingMode { ALTERNATE_RING = 0, EXHAUST_RING, PEERING_RING };
 
-enum NH_HHealthCheck { NH_ACTIVE, NH_PASSIVE };
-
 // response codes container
 struct ResponseCodes {
   ResponseCodes(){};
