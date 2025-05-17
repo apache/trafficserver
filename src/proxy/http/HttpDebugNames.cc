@@ -490,34 +490,34 @@ const char *
 HttpDebugNames::get_cache_action_name(HttpTransact::CacheAction_t t)
 {
   switch (t) {
-  case HttpTransact::CACHE_DO_UNDEFINED:
-    return ("CACHE_DO_UNDEFINED");
-  case HttpTransact::CACHE_DO_NO_ACTION:
-    return ("CACHE_DO_NO_ACTION");
-  case HttpTransact::CACHE_DO_DELETE:
-    return ("CACHE_DO_DELETE");
-  case HttpTransact::CACHE_DO_LOOKUP:
-    return ("CACHE_DO_LOOKUP");
-  case HttpTransact::CACHE_DO_REPLACE:
-    return ("CACHE_DO_REPLACE");
-  case HttpTransact::CACHE_DO_SERVE:
-    return ("CACHE_DO_SERVE");
-  case HttpTransact::CACHE_DO_SERVE_AND_DELETE:
-    return ("CACHE_DO_SERVE_AND_DELETE");
-  case HttpTransact::CACHE_DO_SERVE_AND_UPDATE:
-    return ("CACHE_DO_SERVE_AND_UPDATE");
-  case HttpTransact::CACHE_DO_UPDATE:
-    return ("CACHE_DO_UPDATE");
-  case HttpTransact::CACHE_DO_WRITE:
-    return ("CACHE_DO_WRITE");
-  case HttpTransact::CACHE_PREPARE_TO_DELETE:
-    return ("CACHE_PREPARE_TO_DELETE");
-  case HttpTransact::CACHE_PREPARE_TO_UPDATE:
-    return ("CACHE_PREPARE_TO_UPDATE");
-  case HttpTransact::CACHE_PREPARE_TO_WRITE:
-    return ("CACHE_PREPARE_TO_WRITE");
-  case HttpTransact::TOTAL_CACHE_ACTION_TYPES:
-    return ("TOTAL_CACHE_ACTION_TYPES");
+  case HttpTransact::CacheAction_t::UNDEFINED:
+    return ("CacheAction_t::UNDEFINED");
+  case HttpTransact::CacheAction_t::NO_ACTION:
+    return ("CacheAction_t::NO_ACTION");
+  case HttpTransact::CacheAction_t::DELETE:
+    return ("CacheAction_t::DELETE");
+  case HttpTransact::CacheAction_t::LOOKUP:
+    return ("CacheAction_t::LOOKUP");
+  case HttpTransact::CacheAction_t::REPLACE:
+    return ("CacheAction_t::REPLACE");
+  case HttpTransact::CacheAction_t::SERVE:
+    return ("CacheAction_t::SERVE");
+  case HttpTransact::CacheAction_t::SERVE_AND_DELETE:
+    return ("CacheAction_t::SERVE_AND_DELETE");
+  case HttpTransact::CacheAction_t::SERVE_AND_UPDATE:
+    return ("CacheAction_t::SERVE_AND_UPDATE");
+  case HttpTransact::CacheAction_t::UPDATE:
+    return ("CacheAction_t::UPDATE");
+  case HttpTransact::CacheAction_t::WRITE:
+    return ("CacheAction_t::WRITE");
+  case HttpTransact::CacheAction_t::PREPARE_TO_DELETE:
+    return ("CacheAction_t::PREPARE_TO_DELETE");
+  case HttpTransact::CacheAction_t::PREPARE_TO_UPDATE:
+    return ("CacheAction_t::PREPARE_TO_UPDATE");
+  case HttpTransact::CacheAction_t::PREPARE_TO_WRITE:
+    return ("CacheAction_t::PREPARE_TO_WRITE");
+  case HttpTransact::CacheAction_t::TOTAL_TYPES:
+    return ("CacheAction_t::TOTAL_TYPES");
   }
 
   return ("unknown cache action");

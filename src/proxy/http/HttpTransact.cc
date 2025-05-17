@@ -107,15 +107,15 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
   TRANSACT_SETUP_RETURN(n, r)        \
   return v;
 
-#define SET_UNPREPARE_CACHE_ACTION(C)                               \
-  {                                                                 \
-    if (C.action == HttpTransact::CACHE_PREPARE_TO_DELETE) {        \
-      C.action = HttpTransact::CACHE_DO_DELETE;                     \
-    } else if (C.action == HttpTransact::CACHE_PREPARE_TO_UPDATE) { \
-      C.action = HttpTransact::CACHE_DO_UPDATE;                     \
-    } else {                                                        \
-      C.action = HttpTransact::CACHE_DO_WRITE;                      \
-    }                                                               \
+#define SET_UNPREPARE_CACHE_ACTION(C)                                        \
+  {                                                                          \
+    if (C.action == HttpTransact::CacheAction_t::PREPARE_TO_DELETE) {        \
+      C.action = HttpTransact::CacheAction_t::DELETE;                        \
+    } else if (C.action == HttpTransact::CacheAction_t::PREPARE_TO_UPDATE) { \
+      C.action = HttpTransact::CacheAction_t::UPDATE;                        \
+    } else {                                                                 \
+      C.action = HttpTransact::CacheAction_t::WRITE;                         \
+    }                                                                        \
   }
 
 #define TxnDbg(ctl, fmt, ...) \
@@ -803,17 +803,17 @@ how_to_open_connection(HttpTransact::State *s)
   // If there is no cache-action to be issued, just
   // connect to the server.
   switch (s->cache_info.action) {
-  case HttpTransact::CACHE_PREPARE_TO_DELETE:
-  case HttpTransact::CACHE_PREPARE_TO_UPDATE:
-  case HttpTransact::CACHE_PREPARE_TO_WRITE:
+  case HttpTransact::CacheAction_t::PREPARE_TO_DELETE:
+  case HttpTransact::CacheAction_t::PREPARE_TO_UPDATE:
+  case HttpTransact::CacheAction_t::PREPARE_TO_WRITE:
     s->transact_return_point = HttpTransact::handle_cache_write_lock;
     return HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE;
   default:
     // This covers:
-    // CACHE_DO_UNDEFINED, CACHE_DO_NO_ACTION, CACHE_DO_DELETE,
-    // CACHE_DO_LOOKUP, CACHE_DO_REPLACE, CACHE_DO_SERVE,
-    // CACHE_DO_SERVE_AND_DELETE, CACHE_DO_SERVE_AND_UPDATE,
-    // CACHE_DO_UPDATE, CACHE_DO_WRITE, TOTAL_CACHE_ACTION_TYPES
+    // CacheAction_t::UNDEFINED, CacheAction_t::NO_ACTION, CacheAction_t::DELETE,
+    // CacheAction_t::LOOKUP, CacheAction_t::REPLACE, CacheAction_t::SERVE,
+    // CacheAction_t::SERVE_AND_DELETE, CacheAction_t::SERVE_AND_UPDATE,
+    // CacheAction_t::UPDATE, CacheAction_t::WRITE, CacheAction_t::TOTAL_TYPES
     break;
   }
 
@@ -1589,7 +1589,7 @@ HttpTransact::HandleRequest(State *s)
   // Cache lookup or not will be decided later at DecideCacheLookup().
   // Before it's decided to do a cache lookup,
   // assume no cache lookup and using proxy (not tunneling)
-  s->cache_info.action = CACHE_DO_NO_ACTION;
+  s->cache_info.action = CacheAction_t::NO_ACTION;
   s->current.mode      = GENERIC_PROXY;
 
   // initialize the cache_control structure read from cache.config
@@ -1598,7 +1598,7 @@ HttpTransact::HandleRequest(State *s)
   // We still need to decide whether or not to do a cache lookup since
   // the scheduled update code depends on this info.
   if (is_request_cache_lookupable(s)) {
-    s->cache_info.action = CACHE_DO_LOOKUP;
+    s->cache_info.action = CacheAction_t::LOOKUP;
   }
 
   if (s->state_machine->plugin_tunnel_type == HTTP_PLUGIN_AS_INTERCEPT) {
@@ -1689,8 +1689,8 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   //  that we don't do dns, cache read or cache write
   //
   // We just want to write the request straight to the plugin
-  if (s->cache_info.action != HttpTransact::CACHE_DO_NO_ACTION) {
-    s->cache_info.action = HttpTransact::CACHE_DO_NO_ACTION;
+  if (s->cache_info.action != HttpTransact::CacheAction_t::NO_ACTION) {
+    s->cache_info.action = HttpTransact::CacheAction_t::NO_ACTION;
     s->current.mode      = TUNNELLING_PROXY;
     Metrics::Counter::increment(http_rsb.tunnels);
   }
@@ -1931,7 +1931,7 @@ HttpTransact::OSDNSLookup(State *s)
       char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
       swoc::bwprint(error_bw_buffer, "DNS Error: {} {}", log_msg, swoc::bwf::FirstOf(url_str, "<none>"));
       Log::error("%s", error_bw_buffer.c_str());
-      // s->cache_info.action = CACHE_DO_NO_ACTION;
+      // s->cache_info.action = CacheAction_t::NO_ACTION;
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     }
     return;
@@ -2044,7 +2044,7 @@ HttpTransact::OSDNSLookup(State *s)
       StartAccessControl(s); // If skip_dns is enabled and no ip based rules in cache.config and parent.config
       // Access Control is called after DNS response
     } else {
-      if ((s->cache_info.action == CACHE_DO_NO_ACTION) &&
+      if ((s->cache_info.action == CacheAction_t::NO_ACTION) &&
           (((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
             s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED))) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
@@ -2055,13 +2055,13 @@ HttpTransact::OSDNSLookup(State *s)
       } else if (is_cache_hit(s->cache_lookup_result)) {
         // DNS lookup is done if the content is state need to call handle cache open read hit
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadHit);
-      } else if (s->cache_lookup_result == CACHE_LOOKUP_MISS || s->cache_info.action == CACHE_DO_NO_ACTION) {
+      } else if (s->cache_lookup_result == CACHE_LOOKUP_MISS || s->cache_info.action == CacheAction_t::NO_ACTION) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
         // DNS lookup is done if the lookup failed and need to call Handle Cache Open Read Miss
-      } else if (s->cache_info.action == CACHE_PREPARE_TO_WRITE && s->txn_conf->cache_post_method == 1 &&
+      } else if (s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE && s->txn_conf->cache_post_method == 1 &&
                  s->method == HTTP_WKSIDX_POST) {
         // By virtue of being here, we are intending to forward the request on
-        // to the server. If we marked this as CACHE_PREPARE_TO_WRITE and this
+        // to the server. If we marked this as CacheAction_t::PREPARE_TO_WRITE and this
         // is a POST request whose response we intend to write, then we have to
         // proceed from here by calling the function that handles this as a
         // miss.
@@ -2098,14 +2098,14 @@ HttpTransact::DecideCacheLookup(State *s)
   if (s->redirect_info.redirect_in_process) {
     // for redirect, we want to skip cache lookup and write into
     // the cache directly with the URL before the redirect
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
     s->current.mode      = GENERIC_PROXY;
   } else {
     if (is_request_cache_lookupable(s) && !s->is_upgrade_request) {
-      s->cache_info.action = CACHE_DO_LOOKUP;
+      s->cache_info.action = CacheAction_t::LOOKUP;
       s->current.mode      = GENERIC_PROXY;
     } else {
-      s->cache_info.action = CACHE_DO_NO_ACTION;
+      s->cache_info.action = CacheAction_t::NO_ACTION;
       s->current.mode      = TUNNELLING_PROXY;
       Metrics::Counter::increment(http_rsb.tunnels);
     }
@@ -2115,7 +2115,7 @@ HttpTransact::DecideCacheLookup(State *s)
   // traffic server path.
 
   // now decide whether the cache can even be looked up.
-  if (s->cache_info.action == CACHE_DO_LOOKUP) {
+  if (s->cache_info.action == CacheAction_t::LOOKUP) {
     TxnDbg(dbg_ctl_http_trans, "Will do cache lookup.");
     TxnDbg(dbg_ctl_http_seq, "Will do cache lookup");
     ink_assert(s->current.mode != TUNNELLING_PROXY);
@@ -2159,7 +2159,7 @@ HttpTransact::DecideCacheLookup(State *s)
 
     TRANSACT_RETURN(SM_ACTION_CACHE_LOOKUP, nullptr);
   } else {
-    ink_assert(s->cache_info.action != CACHE_DO_LOOKUP && s->cache_info.action != CACHE_DO_SERVE);
+    ink_assert(s->cache_info.action != CacheAction_t::LOOKUP && s->cache_info.action != CacheAction_t::SERVE);
 
     TxnDbg(dbg_ctl_http_trans, "Will NOT do cache lookup.");
     TxnDbg(dbg_ctl_http_seq, "Will NOT do cache lookup");
@@ -2230,9 +2230,9 @@ void
 HttpTransact::HandleCacheOpenReadPush(State *s, bool read_successful)
 {
   if (read_successful) {
-    s->cache_info.action = CACHE_PREPARE_TO_UPDATE;
+    s->cache_info.action = CacheAction_t::PREPARE_TO_UPDATE;
   } else {
-    s->cache_info.action = CACHE_PREPARE_TO_WRITE;
+    s->cache_info.action = CacheAction_t::PREPARE_TO_WRITE;
   }
 
   TRANSACT_RETURN(SM_ACTION_READ_PUSH_HDR, HandlePushResponseHdr);
@@ -2268,7 +2268,7 @@ HttpTransact::HandlePushResponseHdr(State *s)
   s->response_received_time = s->request_sent_time = ink_local_time();
 
   if (is_response_cacheable(s, &s->hdr_info.server_request, &s->hdr_info.server_response)) {
-    ink_assert(s->cache_info.action == CACHE_PREPARE_TO_WRITE || s->cache_info.action == CACHE_PREPARE_TO_UPDATE);
+    ink_assert(s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE || s->cache_info.action == CacheAction_t::PREPARE_TO_UPDATE);
 
     TRANSACT_RETURN(SM_ACTION_CACHE_ISSUE_WRITE, HandlePushCacheWrite);
   } else {
@@ -2290,10 +2290,10 @@ HttpTransact::HandlePushCacheWrite(State *s)
   switch (s->cache_info.write_lock_state) {
   case CACHE_WL_SUCCESS:
     // We were able to get the lock for the URL vector in the cache
-    if (s->cache_info.action == CACHE_PREPARE_TO_WRITE) {
-      s->cache_info.action = CACHE_DO_WRITE;
-    } else if (s->cache_info.action == CACHE_PREPARE_TO_UPDATE) {
-      s->cache_info.action = CACHE_DO_REPLACE;
+    if (s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE) {
+      s->cache_info.action = CacheAction_t::WRITE;
+    } else if (s->cache_info.action == CacheAction_t::PREPARE_TO_UPDATE) {
+      s->cache_info.action = CacheAction_t::REPLACE;
     } else {
       ink_release_assert(0);
     }
@@ -2316,10 +2316,10 @@ HttpTransact::HandlePushCacheWrite(State *s)
 void
 HttpTransact::HandlePushTunnelSuccess(State *s)
 {
-  ink_assert(s->cache_info.action == CACHE_DO_WRITE || s->cache_info.action == CACHE_DO_REPLACE);
+  ink_assert(s->cache_info.action == CacheAction_t::WRITE || s->cache_info.action == CacheAction_t::REPLACE);
 
   // FIX ME: check PUSH spec for status codes
-  HTTPStatus resp_status = (s->cache_info.action == CACHE_DO_WRITE) ? HTTP_STATUS_CREATED : HTTP_STATUS_OK;
+  HTTPStatus resp_status = (s->cache_info.action == CacheAction_t::WRITE) ? HTTP_STATUS_CREATED : HTTP_STATUS_OK;
 
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, resp_status);
 
@@ -2382,7 +2382,7 @@ HttpTransact::HandleCacheOpenRead(State *s)
     //
     if (s->cache_lookup_result == CACHE_LOOKUP_DOC_BUSY) {
       s->cache_lookup_result = CACHE_LOOKUP_MISS;
-      s->cache_info.action   = CACHE_DO_NO_ACTION;
+      s->cache_info.action   = CacheAction_t::NO_ACTION;
     }
   } else {
     CacheHTTPInfo *obj = s->cache_info.object_read;
@@ -2443,7 +2443,7 @@ HttpTransact::issue_revalidate(State *s)
     // The document is fresh in cache and we just want to see if the
     // the client has the right credentials
     // this cache action is just to get us into the hcoofsr function
-    s->cache_info.action = CACHE_DO_UPDATE;
+    s->cache_info.action = CacheAction_t::UPDATE;
     dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_request, s->state_machine_id(), "Proxy's Request (Conditionalized)");
     return;
   }
@@ -2455,17 +2455,17 @@ HttpTransact::issue_revalidate(State *s)
     // that we forward the request. We now specify what the cache
     // action should be when the response is received.
     if (does_method_require_cache_copy_deletion(s->txn_conf, s->method)) {
-      s->cache_info.action = CACHE_PREPARE_TO_DELETE;
+      s->cache_info.action = CacheAction_t::PREPARE_TO_DELETE;
       TxnDbg(dbg_ctl_http_seq, "cache action: DELETE");
     } else {
-      s->cache_info.action = CACHE_PREPARE_TO_UPDATE;
+      s->cache_info.action = CacheAction_t::PREPARE_TO_UPDATE;
       TxnDbg(dbg_ctl_http_seq, "cache action: UPDATE");
     }
   } else {
     // We've looped back around due to missing the write lock
     //  for the cache.  At this point we want to forget about the cache
     ink_assert(s->cache_info.write_lock_state == CACHE_WL_READ_RETRY);
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
     return;
   }
 
@@ -2493,7 +2493,7 @@ HttpTransact::issue_revalidate(State *s)
     TxnDbg(dbg_ctl_http_trans, "Can not make this a conditional request. This is the force update of the cached copy case");
     // set cache action to update. response will be a 200 or error,
     // causing cached copy to be replaced (if 200).
-    s->cache_info.action = CACHE_PREPARE_TO_UPDATE;
+    s->cache_info.action = CacheAction_t::PREPARE_TO_UPDATE;
     return;
   }
   // do not conditionalize if the cached response is not a 200
@@ -2540,7 +2540,7 @@ HttpTransact::issue_revalidate(State *s)
   /* fall through */
   default:
     TxnDbg(dbg_ctl_http_trans, "cached response is not a 200 response so no conditionalization.");
-    s->cache_info.action = CACHE_PREPARE_TO_UPDATE;
+    s->cache_info.action = CacheAction_t::PREPARE_TO_UPDATE;
     break;
   case HTTP_STATUS_PARTIAL_CONTENT:
     ink_assert(!"unexpected status code");
@@ -2558,7 +2558,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
 
   if (delete_all_document_alternates_and_return(s, true)) {
     TxnDbg(dbg_ctl_http_trans, "Delete and return");
-    s->cache_info.action = CACHE_DO_DELETE;
+    s->cache_info.action = CacheAction_t::DELETE;
     s->next_action       = HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE;
     return;
   }
@@ -2629,9 +2629,9 @@ HttpTransact::CallOSDNSLookup(State *s)
     s->current.state = OUTBOUND_CONGESTION;
     if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
         s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH) {
-      s->cache_info.action = CACHE_DO_SERVE;
+      s->cache_info.action = CacheAction_t::SERVE;
     } else {
-      s->cache_info.action = CACHE_DO_NO_ACTION;
+      s->cache_info.action = CacheAction_t::NO_ACTION;
     }
     handle_server_connection_not_open(s);
   } else {
@@ -3020,7 +3020,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_HIT_CONDITIONAL);
 
     build_response(s, cached_response, &s->hdr_info.client_response, s->client_info.http_version, client_response_code);
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
     s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
     break;
 
@@ -3031,7 +3031,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_CONDITIONAL);
 
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, client_response_code);
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
     s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
     break;
 
@@ -3046,7 +3046,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
         s->api_resp_cacheable == true) {
       // send back the full document to the client.
       TxnDbg(dbg_ctl_http_trans, "Match! Serving full document.");
-      s->cache_info.action = CACHE_DO_SERVE;
+      s->cache_info.action = CacheAction_t::SERVE;
 
       // Check if cached response supports Range. If it does, append
       // Range transformation plugin
@@ -3056,7 +3056,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
         s->state_machine->do_range_setup_if_necessary();
         if (s->range_setup == RANGE_NOT_SATISFIABLE) {
           build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable", "default");
-          s->cache_info.action = CACHE_DO_NO_ACTION;
+          s->cache_info.action = CacheAction_t::NO_ACTION;
           s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
           break;
         } else if ((s->range_setup == RANGE_NOT_HANDLED) || !s->range_in_cache) {
@@ -3065,7 +3065,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
           // In that case we fetch the entire source so it's OK to switch
           // this late.
           TxnDbg(dbg_ctl_http_seq, "Out-of-order Range request - tunneling");
-          s->cache_info.action = CACHE_DO_NO_ACTION;
+          s->cache_info.action = CacheAction_t::NO_ACTION;
           if (s->force_dns || s->dns_info.resolved_p) {
             HandleCacheOpenReadMiss(s); // DNS is already completed no need of doing DNS
           } else {
@@ -3088,7 +3088,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       TxnDbg(dbg_ctl_http_trans, "Match! Serving header only.");
 
       build_response(s, cached_response, &s->hdr_info.client_response, s->client_info.http_version);
-      s->cache_info.action = CACHE_DO_NO_ACTION;
+      s->cache_info.action = CacheAction_t::NO_ACTION;
       s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
     } else {
       // We handled the request but it's not GET or HEAD (eg. DELETE),
@@ -3096,7 +3096,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       //
       TxnDbg(dbg_ctl_http_trans, "No match! Connection failed.");
       build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect");
-      s->cache_info.action = CACHE_DO_NO_ACTION;
+      s->cache_info.action = CacheAction_t::NO_ACTION;
       s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
       warning_code         = HTTP_WARNING_CODE_NONE;
     }
@@ -3127,8 +3127,8 @@ HttpTransact::handle_cache_write_lock(State *s)
 {
   bool remove_ims = false;
 
-  ink_assert(s->cache_info.action == CACHE_PREPARE_TO_DELETE || s->cache_info.action == CACHE_PREPARE_TO_UPDATE ||
-             s->cache_info.action == CACHE_PREPARE_TO_WRITE);
+  ink_assert(s->cache_info.action == CacheAction_t::PREPARE_TO_DELETE || s->cache_info.action == CacheAction_t::PREPARE_TO_UPDATE ||
+             s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE);
 
   switch (s->cache_info.write_lock_state) {
   case CACHE_WL_SUCCESS:
@@ -3139,7 +3139,7 @@ HttpTransact::handle_cache_write_lock(State *s)
     // No write lock, ignore the cache and proxy only;
     // FIX: Should just serve from cache if this is a revalidate
     Metrics::Counter::increment(http_rsb.cache_open_write_fail_count);
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
     switch (s->cache_open_write_fail_action) {
     case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS:
     case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE:
@@ -3173,7 +3173,7 @@ HttpTransact::handle_cache_write_lock(State *s)
   case CACHE_WL_READ_RETRY:
     s->request_sent_time      = UNDEFINED_TIME;
     s->response_received_time = UNDEFINED_TIME;
-    s->cache_info.action      = CACHE_DO_LOOKUP;
+    s->cache_info.action      = CacheAction_t::LOOKUP;
     if (!s->cache_info.object_read) {
       //  Write failed and read retry triggered
       //  Clean up server_request and re-initiate
@@ -3260,7 +3260,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
 
   if (delete_all_document_alternates_and_return(s, false)) {
     TxnDbg(dbg_ctl_http_trans, "Delete and return");
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
     s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
     return;
   }
@@ -3275,13 +3275,13 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   // We do a cache lookup for some non-GET requests as well.
   // We must, however, not cache the responses to these requests.
   if (does_method_require_cache_copy_deletion(s->txn_conf, s->method) && s->api_req_cacheable == false) {
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
   } else if ((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
              does_method_effect_cache(s->method) == false || s->range_setup == RANGE_NOT_SATISFIABLE ||
              s->range_setup == RANGE_NOT_HANDLED) {
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
   } else if (s->api_server_response_no_store) { // plugin may have decided not to cache the response
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
   } else {
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);
   }
@@ -3353,9 +3353,9 @@ HttpTransact::set_cache_prepare_write_action_for_new_request(State *s)
     // we would have to tell the state machine to abort its write, and we
     // don't have a state for that.
     ink_release_assert(s->redirect_info.redirect_in_process);
-    s->cache_info.action = CACHE_DO_WRITE;
+    s->cache_info.action = CacheAction_t::WRITE;
   } else {
-    s->cache_info.action           = CACHE_PREPARE_TO_WRITE;
+    s->cache_info.action           = CacheAction_t::PREPARE_TO_WRITE;
     s->cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
   }
 }
@@ -3394,7 +3394,7 @@ HttpTransact::OriginServerRawOpen(State *s)
     /* fall through */
     handle_server_down(s);
 
-    ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
+    ink_assert(s->cache_info.action == CacheAction_t::NO_ACTION);
     s->next_action = SM_ACTION_INTERNAL_CACHE_NOOP;
     break;
   case CONNECTION_ALIVE:
@@ -3449,12 +3449,12 @@ HttpTransact::HandleResponse(State *s)
   Metrics::Counter::increment(http_rsb.incoming_responses);
 
   ink_release_assert(s->current.request_to != ResolveInfo::UNDEFINED_LOOKUP);
-  if (s->cache_info.action != CACHE_DO_WRITE) {
-    ink_release_assert(s->cache_info.action != CACHE_DO_LOOKUP);
-    ink_release_assert(s->cache_info.action != CACHE_DO_SERVE);
-    ink_release_assert(s->cache_info.action != CACHE_PREPARE_TO_DELETE);
-    ink_release_assert(s->cache_info.action != CACHE_PREPARE_TO_UPDATE);
-    ink_release_assert(s->cache_info.action != CACHE_PREPARE_TO_WRITE);
+  if (s->cache_info.action != CacheAction_t::WRITE) {
+    ink_release_assert(s->cache_info.action != CacheAction_t::LOOKUP);
+    ink_release_assert(s->cache_info.action != CacheAction_t::SERVE);
+    ink_release_assert(s->cache_info.action != CacheAction_t::PREPARE_TO_DELETE);
+    ink_release_assert(s->cache_info.action != CacheAction_t::PREPARE_TO_UPDATE);
+    ink_release_assert(s->cache_info.action != CacheAction_t::PREPARE_TO_WRITE);
   }
 
   if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
@@ -3575,12 +3575,12 @@ HttpTransact::handle_response_from_parent(State *s)
     if (s->response_action.handled) {
       if (s->response_action.action.no_cache) {
         TxnDbg(dbg_ctl_http_trans, "plugin set response_action.no_cache, do not cache.");
-        s->cache_info.action = CACHE_DO_NO_ACTION;
+        s->cache_info.action = CacheAction_t::NO_ACTION;
       }
     } else {
       if (s->parent_result.do_not_cache_response) {
         TxnDbg(dbg_ctl_http_trans, "response is from a next hop peer, do not cache.");
-        s->cache_info.action = CACHE_DO_NO_ACTION;
+        s->cache_info.action = CacheAction_t::NO_ACTION;
       }
     }
     handle_forward_server_connection_open(s);
@@ -3878,35 +3878,35 @@ HttpTransact::handle_server_connection_not_open(State *s)
   s->state_machine->do_hostdb_update_if_necessary();
 
   switch (s->cache_info.action) {
-  case CACHE_DO_UPDATE:
-  case CACHE_DO_SERVE:
+  case CacheAction_t::UPDATE:
+  case CacheAction_t::SERVE:
     serve_from_cache = is_stale_cache_response_returnable(s);
     break;
 
-  case CACHE_PREPARE_TO_DELETE:
+  case CacheAction_t::PREPARE_TO_DELETE:
   /* fall through */
-  case CACHE_PREPARE_TO_UPDATE:
+  case CacheAction_t::PREPARE_TO_UPDATE:
   /* fall through */
-  case CACHE_PREPARE_TO_WRITE:
+  case CacheAction_t::PREPARE_TO_WRITE:
     ink_release_assert(!"Why still preparing for cache action - "
                         "we skipped a step somehow.");
     break;
 
-  case CACHE_DO_LOOKUP:
+  case CacheAction_t::LOOKUP:
     ink_assert(!("Why server response? Should have been a cache operation"));
     break;
 
-  case CACHE_DO_DELETE:
+  case CacheAction_t::DELETE:
   // decisions, decisions. what should we do here?
   // we could theoretically still delete the cached
   // copy or serve it back with a warning, or easier
   // just punt and biff the user. i say: biff the user.
   /* fall through */
-  case CACHE_DO_UNDEFINED:
+  case CacheAction_t::UNDEFINED:
   /* fall through */
-  case CACHE_DO_NO_ACTION:
+  case CacheAction_t::NO_ACTION:
   /* fall through */
-  case CACHE_DO_WRITE:
+  case CacheAction_t::WRITE:
   /* fall through */
   default:
     serve_from_cache = false;
@@ -3915,7 +3915,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
 
   if (serve_from_cache) {
     ink_assert(s->cache_info.object_read != nullptr);
-    ink_assert(s->cache_info.action == CACHE_DO_UPDATE || s->cache_info.action == CACHE_DO_SERVE);
+    ink_assert(s->cache_info.action == CacheAction_t::UPDATE || s->cache_info.action == CacheAction_t::SERVE);
     ink_assert(s->internal_msg_buffer == nullptr);
     s->source = SOURCE_CACHE;
     TxnDbg(dbg_ctl_http_trans, "[hscno] serving stale doc to client");
@@ -3991,7 +3991,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
   CacheVConnection *cw_vc = s->state_machine->get_cache_sm().cache_write_vc;
 
   if (s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
-    if (s->cache_info.action == CACHE_DO_NO_ACTION) {
+    if (s->cache_info.action == CacheAction_t::NO_ACTION) {
       switch (s->hdr_info.server_response.status_get()) {
       case HTTP_STATUS_MULTIPLE_CHOICES:   // 300
       case HTTP_STATUS_MOVED_PERMANENTLY:  // 301
@@ -4004,7 +4004,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
       default:
         TxnDbg(dbg_ctl_http_trans, "[hfsco] redirect in progress, non-3xx response, setting cache_do_write");
         if (cw_vc && s->txn_conf->cache_http) {
-          s->cache_info.action = CACHE_DO_WRITE;
+          s->cache_info.action = CacheAction_t::WRITE;
         }
         break;
       }
@@ -4012,29 +4012,29 @@ HttpTransact::handle_forward_server_connection_open(State *s)
   }
 
   switch (s->cache_info.action) {
-  case CACHE_DO_WRITE:
+  case CacheAction_t::WRITE:
   /* fall through */
-  case CACHE_DO_UPDATE:
+  case CacheAction_t::UPDATE:
   /* fall through */
-  case CACHE_DO_DELETE:
+  case CacheAction_t::DELETE:
     TxnDbg(dbg_ctl_http_trans, "[hfsco] cache action: %s", HttpDebugNames::get_cache_action_name(s->cache_info.action));
     handle_cache_operation_on_forward_server_response(s);
     break;
-  case CACHE_PREPARE_TO_DELETE:
+  case CacheAction_t::PREPARE_TO_DELETE:
   /* fall through */
-  case CACHE_PREPARE_TO_UPDATE:
+  case CacheAction_t::PREPARE_TO_UPDATE:
   /* fall through */
-  case CACHE_PREPARE_TO_WRITE:
+  case CacheAction_t::PREPARE_TO_WRITE:
     ink_release_assert(!"Why still preparing for cache action - we skipped a step somehow.");
     break;
-  case CACHE_DO_LOOKUP:
+  case CacheAction_t::LOOKUP:
   /* fall through */
-  case CACHE_DO_SERVE:
+  case CacheAction_t::SERVE:
     ink_assert(!("Why server response? Should have been a cache operation"));
     break;
-  case CACHE_DO_UNDEFINED:
+  case CacheAction_t::UNDEFINED:
   /* fall through */
-  case CACHE_DO_NO_ACTION:
+  case CacheAction_t::NO_ACTION:
   /* fall through */
   default:
     // Just tunnel?
@@ -4167,17 +4167,17 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
 
     // determine the correct cache action, next state, and response
     // precondition: s->cache_info.action should be one of the following
-    // CACHE_DO_DELETE, or CACHE_DO_UPDATE; otherwise, it's an error.
-    if (s->api_server_response_ignore && s->cache_info.action == CACHE_DO_UPDATE) {
+    // CacheAction_t::DELETE, or CacheAction_t::UPDATE; otherwise, it's an error.
+    if (s->api_server_response_ignore && s->cache_info.action == CacheAction_t::UPDATE) {
       s->api_server_response_ignore = false;
       ink_assert(s->cache_info.object_read);
       base_response        = s->cache_info.object_read->response_get();
-      s->cache_info.action = CACHE_DO_SERVE;
+      s->cache_info.action = CacheAction_t::SERVE;
       TxnDbg(dbg_ctl_http_trans, "[hcoofsr] not merging, cache action changed to: %s",
              HttpDebugNames::get_cache_action_name(s->cache_info.action));
       s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
       client_response_code = base_response->status_get();
-    } else if ((s->cache_info.action == CACHE_DO_DELETE) || ((s->cache_info.action == CACHE_DO_UPDATE) && !cacheable)) {
+    } else if ((s->cache_info.action == CacheAction_t::DELETE) || ((s->cache_info.action == CacheAction_t::UPDATE) && !cacheable)) {
       if (is_request_conditional(&s->hdr_info.client_request)) {
         client_response_code = HttpTransactCache::match_response_to_request_conditionals(
           &s->hdr_info.client_request, s->cache_info.object_read->response_get(), s->response_received_time);
@@ -4190,7 +4190,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         // from the server and delete the cached copy
         base_response        = &s->hdr_info.server_response;
         client_response_code = base_response->status_get();
-        s->cache_info.action = CACHE_DO_DELETE;
+        s->cache_info.action = CacheAction_t::DELETE;
         s->next_action       = SM_ACTION_INTERNAL_CACHE_DELETE;
       } else {
         // We got screwed. The client did not send a conditional request,
@@ -4198,7 +4198,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         // now told us to delete the cached copy and sent back a 304.
         // We need to send the cached copy to the client, then delete it.
         if (s->method == HTTP_WKSIDX_HEAD) {
-          s->cache_info.action = CACHE_DO_DELETE;
+          s->cache_info.action = CacheAction_t::DELETE;
           s->next_action       = SM_ACTION_SERVER_READ;
         } else {
           // No need to worry about If-Range headers because the request isn't conditional
@@ -4206,15 +4206,15 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
             s->state_machine->do_range_setup_if_necessary();
             // Check client request range header if we cached a stealed content with cacheable=false
           }
-          s->cache_info.action = CACHE_DO_SERVE_AND_DELETE;
+          s->cache_info.action = CacheAction_t::SERVE_AND_DELETE;
           s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
         }
         base_response        = s->cache_info.object_read->response_get();
         client_response_code = base_response->status_get();
       }
 
-    } else if (s->cache_info.action == CACHE_DO_UPDATE && is_request_conditional(&s->hdr_info.server_request)) {
-      // CACHE_DO_UPDATE and server response is cacheable
+    } else if (s->cache_info.action == CacheAction_t::UPDATE && is_request_conditional(&s->hdr_info.server_request)) {
+      // CacheAction_t::UPDATE and server response is cacheable
       if (is_request_conditional(&s->hdr_info.client_request)) {
         if (s->txn_conf->cache_when_to_revalidate != 4) {
           client_response_code = HttpTransactCache::match_response_to_request_conditionals(
@@ -4229,17 +4229,17 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       if (client_response_code != HTTP_STATUS_OK) {
         // delete the cached copy unless configured to always verify IMS
         if (s->txn_conf->cache_when_to_revalidate != 4) {
-          s->cache_info.action = CACHE_DO_UPDATE;
+          s->cache_info.action = CacheAction_t::UPDATE;
           s->next_action       = SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS;
           /* base_response will be set after updating headers below */
         } else {
-          s->cache_info.action = CACHE_DO_NO_ACTION;
+          s->cache_info.action = CacheAction_t::NO_ACTION;
           s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
           base_response        = &s->hdr_info.server_response;
         }
       } else {
         if (s->method == HTTP_WKSIDX_HEAD) {
-          s->cache_info.action = CACHE_DO_UPDATE;
+          s->cache_info.action = CacheAction_t::UPDATE;
           s->next_action       = SM_ACTION_SERVER_READ;
         } else {
           auto *client_request  = &s->hdr_info.client_request;
@@ -4251,19 +4251,19 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
             // update and serve this cache. This will give a 200 response to
             // a bad client, but allows us to avoid pegging the origin (e.g. abuse).
           }
-          s->cache_info.action = CACHE_DO_SERVE_AND_UPDATE;
+          s->cache_info.action = CacheAction_t::SERVE_AND_UPDATE;
           s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
         }
         /* base_response will be set after updating headers below */
       }
 
-    } else { // cache action != CACHE_DO_DELETE and != CACHE_DO_UPDATE
+    } else { // cache action != CacheAction_t::DELETE and != CacheAction_t::UPDATE
 
       // bogus response from server. deal by tunnelling to client.
       // server should not have sent back a 304 because our request
       // should not have been an conditional.
       TxnDbg(dbg_ctl_http_trans, "[hcoofsr] 304 for non-conditional request");
-      s->cache_info.action = CACHE_DO_NO_ACTION;
+      s->cache_info.action = CacheAction_t::NO_ACTION;
       s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
       client_response_code = s->hdr_info.server_response.status_get();
       base_response        = &s->hdr_info.server_response;
@@ -4316,7 +4316,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
        negative_revalidating_lifetime. (negative revalidating)
      */
     if (s->txn_conf->negative_revalidating_enabled && s->http_config_param->negative_revalidating_list[server_response_code] &&
-        s->cache_info.action == CACHE_DO_UPDATE && is_stale_cache_response_returnable(s)) {
+        s->cache_info.action == CacheAction_t::UPDATE && is_stale_cache_response_returnable(s)) {
       HTTPStatus cached_response_code = s->cache_info.object_read->response_get()->status_get();
       if (!(cached_response_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || cached_response_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
             cached_response_code == HTTP_STATUS_BAD_GATEWAY || cached_response_code == HTTP_STATUS_SERVICE_UNAVAILABLE)) {
@@ -4346,10 +4346,10 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           client_response_code = HTTP_STATUS_NOT_MODIFIED;
         } else {
           if (s->method == HTTP_WKSIDX_HEAD) {
-            s->cache_info.action = CACHE_DO_UPDATE;
+            s->cache_info.action = CacheAction_t::UPDATE;
             s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
           } else {
-            s->cache_info.action = CACHE_DO_SERVE_AND_UPDATE;
+            s->cache_info.action = CacheAction_t::SERVE_AND_UPDATE;
             s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
           }
 
@@ -4387,27 +4387,27 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     // determine the correct cache action given the original cache action,
     // cacheability of server response, and request method
     // precondition: s->cache_info.action is one of the following
-    // CACHE_DO_UPDATE, CACHE_DO_WRITE, or CACHE_DO_DELETE
+    // CacheAction_t::UPDATE, CacheAction_t::WRITE, or CacheAction_t::DELETE
     int const server_request_method = s->hdr_info.server_request.method_get_wksidx();
     if (s->api_server_response_no_store) {
-      s->cache_info.action = CACHE_DO_NO_ACTION;
+      s->cache_info.action = CacheAction_t::NO_ACTION;
     } else if (s->api_server_response_ignore && server_response_code == HTTP_STATUS_OK &&
                server_request_method == HTTP_WKSIDX_HEAD) {
       s->api_server_response_ignore = false;
       ink_assert(s->cache_info.object_read);
       base_response        = s->cache_info.object_read->response_get();
-      s->cache_info.action = CACHE_DO_SERVE;
+      s->cache_info.action = CacheAction_t::SERVE;
       TxnDbg(dbg_ctl_http_trans,
              "[hcoofsr] ignoring server response, "
              "cache action changed to: %s",
              HttpDebugNames::get_cache_action_name(s->cache_info.action));
       s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
       client_response_code = base_response->status_get();
-    } else if (s->cache_info.action == CACHE_DO_UPDATE) {
+    } else if (s->cache_info.action == CacheAction_t::UPDATE) {
       if (s->www_auth_content == CACHE_AUTH_FRESH || s->api_server_response_ignore) {
-        s->cache_info.action = CACHE_DO_NO_ACTION;
+        s->cache_info.action = CacheAction_t::NO_ACTION;
       } else if (s->www_auth_content == CACHE_AUTH_STALE && server_response_code == HTTP_STATUS_UNAUTHORIZED) {
-        s->cache_info.action = CACHE_DO_NO_ACTION;
+        s->cache_info.action = CacheAction_t::NO_ACTION;
       } else if (!cacheable) {
         if (HttpTransactHeaders::is_status_an_error_response(server_response_code) &&
             !HttpTransactHeaders::is_method_safe(server_request_method)) {
@@ -4420,15 +4420,15 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           //    A cache MUST invalidate the effective request URI (Section 5.5 of
           //    [RFC7230]) when it receives a non-error response to a request
           //    with a method whose safety is unknown.
-          s->cache_info.action = CACHE_DO_NO_ACTION;
+          s->cache_info.action = CacheAction_t::NO_ACTION;
         } else {
-          s->cache_info.action = CACHE_DO_DELETE;
+          s->cache_info.action = CacheAction_t::DELETE;
         }
       } else if (s->method == HTTP_WKSIDX_HEAD) {
-        s->cache_info.action = CACHE_DO_DELETE;
+        s->cache_info.action = CacheAction_t::DELETE;
       } else {
         ink_assert(s->cache_info.object_read != nullptr);
-        s->cache_info.action = CACHE_DO_REPLACE;
+        s->cache_info.action = CacheAction_t::REPLACE;
 
         auto *client_request = &s->hdr_info.client_request;
         if (client_request->presence(MIME_PRESENCE_RANGE) &&
@@ -4437,13 +4437,13 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         }
       }
 
-    } else if (s->cache_info.action == CACHE_DO_WRITE) {
+    } else if (s->cache_info.action == CacheAction_t::WRITE) {
       if (!cacheable) {
-        s->cache_info.action = CACHE_DO_NO_ACTION;
+        s->cache_info.action = CacheAction_t::NO_ACTION;
       } else if (s->method == HTTP_WKSIDX_HEAD) {
-        s->cache_info.action = CACHE_DO_NO_ACTION;
+        s->cache_info.action = CacheAction_t::NO_ACTION;
       } else {
-        s->cache_info.action = CACHE_DO_WRITE;
+        s->cache_info.action = CacheAction_t::WRITE;
         auto *client_request = &s->hdr_info.client_request;
         if (client_request->presence(MIME_PRESENCE_RANGE) &&
             HttpTransactCache::validate_ifrange_header_if_any(client_request, base_response)) {
@@ -4451,7 +4451,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         }
       }
 
-    } else if (s->cache_info.action == CACHE_DO_DELETE) {
+    } else if (s->cache_info.action == CacheAction_t::DELETE) {
       if (!cacheable && HttpTransactHeaders::is_status_an_error_response(server_response_code) &&
           !HttpTransactHeaders::is_method_safe(server_request_method)) {
         // Only delete the cache entry if the response is successful. For
@@ -4463,15 +4463,15 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         //    A cache MUST invalidate the effective request URI (Section 5.5 of
         //    [RFC7230]) when it receives a non-error response to a request
         //    with a method whose safety is unknown.
-        s->cache_info.action = CACHE_DO_NO_ACTION;
+        s->cache_info.action = CacheAction_t::NO_ACTION;
       }
 
     } else {
       ink_assert(!("cache action inconsistent with current state"));
     }
     // postcondition: s->cache_info.action is one of the following
-    // CACHE_DO_REPLACE, CACHE_DO_WRITE, CACHE_DO_DELETE, or
-    // CACHE_DO_NO_ACTION
+    // CacheAction_t::REPLACE, CacheAction_t::WRITE, CacheAction_t::DELETE, or
+    // CacheAction_t::NO_ACTION
 
     // Check see if we ought to serve the client a 304 based on
     //   it's IMS date.  We may gotten a 200 back from the origin
@@ -4480,8 +4480,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     //   not cacheable we ought not issue a 304 to the client so
     //   make sure we are writing the document to the cache if
     //   before issuing a 304
-    if (s->cache_info.action == CACHE_DO_WRITE || s->cache_info.action == CACHE_DO_NO_ACTION ||
-        s->cache_info.action == CACHE_DO_REPLACE) {
+    if (s->cache_info.action == CacheAction_t::WRITE || s->cache_info.action == CacheAction_t::NO_ACTION ||
+        s->cache_info.action == CacheAction_t::REPLACE) {
       if (s->is_cacheable_due_to_negative_caching_configuration) {
         HTTPHdr *resp;
         s->cache_info.object_store.create();
@@ -4503,11 +4503,11 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
                client_response_code);
         if ((client_response_code == HTTP_STATUS_NOT_MODIFIED) || (client_response_code == HTTP_STATUS_PRECONDITION_FAILED)) {
           switch (s->cache_info.action) {
-          case CACHE_DO_WRITE:
-          case CACHE_DO_REPLACE:
+          case CacheAction_t::WRITE:
+          case CacheAction_t::REPLACE:
             s->next_action = SM_ACTION_INTERNAL_CACHE_WRITE;
             break;
-          case CACHE_DO_DELETE:
+          case CacheAction_t::DELETE:
             s->next_action = SM_ACTION_INTERNAL_CACHE_DELETE;
             break;
           default:
@@ -4528,23 +4528,23 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   // update stat, set via string, etc
 
   switch (s->cache_info.action) {
-  case CACHE_DO_SERVE_AND_DELETE:
+  case CacheAction_t::SERVE_AND_DELETE:
   // fall through
-  case CACHE_DO_DELETE:
+  case CacheAction_t::DELETE:
     TxnDbg(dbg_ctl_http_trans, "[hcoofsr] delete cached copy");
     SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_DELETED);
     Metrics::Counter::increment(http_rsb.cache_deletes);
     break;
-  case CACHE_DO_WRITE:
+  case CacheAction_t::WRITE:
     TxnDbg(dbg_ctl_http_trans, "[hcoofsr] cache write");
     SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_WRITTEN);
     Metrics::Counter::increment(http_rsb.cache_writes);
     break;
-  case CACHE_DO_SERVE_AND_UPDATE:
+  case CacheAction_t::SERVE_AND_UPDATE:
   // fall through
-  case CACHE_DO_UPDATE:
+  case CacheAction_t::UPDATE:
   // fall through
-  case CACHE_DO_REPLACE:
+  case CacheAction_t::REPLACE:
     TxnDbg(dbg_ctl_http_trans, "[hcoofsr] cache update/replace");
     SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
     Metrics::Counter::increment(http_rsb.cache_updates);
@@ -4553,7 +4553,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     break;
   }
 
-  if ((client_response_code == HTTP_STATUS_NOT_MODIFIED) && (s->cache_info.action != CACHE_DO_NO_ACTION)) {
+  if ((client_response_code == HTTP_STATUS_NOT_MODIFIED) && (s->cache_info.action != CacheAction_t::NO_ACTION)) {
     /* ink_assert(GET_VIA_STRING(VIA_CLIENT_REQUEST)
        != VIA_CLIENT_SIMPLE); */
     TxnDbg(dbg_ctl_http_trans, "[hcoofsr] Client request was conditional");
@@ -4569,7 +4569,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   // Do the real work below.
 
   // first update the cached object
-  if ((s->cache_info.action == CACHE_DO_UPDATE) || (s->cache_info.action == CACHE_DO_SERVE_AND_UPDATE)) {
+  if ((s->cache_info.action == CacheAction_t::UPDATE) || (s->cache_info.action == CacheAction_t::SERVE_AND_UPDATE)) {
     TxnDbg(dbg_ctl_http_trans, "[hcoofsr] merge and update cached copy");
     merge_and_update_headers_for_cache_update(s);
     base_response = s->cache_info.object_store.response_get();
@@ -4583,7 +4583,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   }
   ink_assert(base_response->valid());
 
-  if ((s->cache_info.action == CACHE_DO_WRITE) || (s->cache_info.action == CACHE_DO_REPLACE)) {
+  if ((s->cache_info.action == CacheAction_t::WRITE) || (s->cache_info.action == CacheAction_t::REPLACE)) {
     set_headers_for_cache_write(s, &s->cache_info.object_store, &s->hdr_info.server_request, &s->hdr_info.server_response);
   }
   // 304, 412, and 416 responses are handled here
@@ -4672,7 +4672,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
     } else {
       TxnDbg(dbg_ctl_http_trans, "[hncoofsr] next action will be OS_READ_CACHE_NOOP");
 
-      ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
+      ink_assert(s->cache_info.action == CacheAction_t::NO_ACTION);
       s->next_action = SM_ACTION_SERVER_READ;
     }
     if (s->state_machine->redirect_url == nullptr) {
@@ -4693,7 +4693,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
       warn_text = "Proxy received unexpected 304 response; content may be stale";
     }
 
-    ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
+    ink_assert(s->cache_info.action == CacheAction_t::NO_ACTION);
     s->next_action = SM_ACTION_INTERNAL_CACHE_NOOP;
     break;
   case HTTP_STATUS_HTTPVER_NOT_SUPPORTED:
@@ -4711,14 +4711,14 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
     return;
   case HTTP_STATUS_PARTIAL_CONTENT:
     // If we get this back we should be just passing it through.
-    ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
+    ink_assert(s->cache_info.action == CacheAction_t::NO_ACTION);
     s->next_action = SM_ACTION_SERVER_READ;
     break;
   default:
     TxnDbg(dbg_ctl_http_trans, "[hncoofsr] server sent back something other than 100,304,200");
     /* Default behavior is to pass-through response to the client */
 
-    ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
+    ink_assert(s->cache_info.action == CacheAction_t::NO_ACTION);
     s->next_action = SM_ACTION_SERVER_READ;
     break;
   }
@@ -4821,16 +4821,16 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
 void
 HttpTransact::handle_transform_cache_write(State *s)
 {
-  ink_assert(s->cache_info.transform_action == CACHE_PREPARE_TO_WRITE);
+  ink_assert(s->cache_info.transform_action == CacheAction_t::PREPARE_TO_WRITE);
 
   switch (s->cache_info.write_lock_state) {
   case CACHE_WL_SUCCESS:
     // We were able to get the lock for the URL vector in the cache
-    s->cache_info.transform_action = CACHE_DO_WRITE;
+    s->cache_info.transform_action = CacheAction_t::WRITE;
     break;
   case CACHE_WL_FAIL:
     // No write lock, ignore the cache
-    s->cache_info.transform_action       = CACHE_DO_NO_ACTION;
+    s->cache_info.transform_action       = CacheAction_t::NO_ACTION;
     s->cache_info.transform_write_status = CACHE_WRITE_LOCK_MISS;
     break;
   default:
@@ -4852,8 +4852,8 @@ HttpTransact::handle_transform_ready(State *s)
 
   build_response(s, &s->hdr_info.transform_response, &s->hdr_info.client_response, s->client_info.http_version);
 
-  if (s->cache_info.action != CACHE_DO_NO_ACTION && s->cache_info.action != CACHE_DO_DELETE && s->api_info.cache_transformed &&
-      !s->range_setup) {
+  if (s->cache_info.action != CacheAction_t::NO_ACTION && s->cache_info.action != CacheAction_t::DELETE &&
+      s->api_info.cache_transformed && !s->range_setup) {
     HTTPHdr *transform_store_request = nullptr;
     switch (s->pre_transform_source) {
     case SOURCE_CACHE:
@@ -4877,10 +4877,10 @@ HttpTransact::handle_transform_ready(State *s)
       s->cache_info.transform_store.response_get()->value_set("InkXform"sv, "nullt"sv);
     }
 
-    s->cache_info.transform_action = CACHE_PREPARE_TO_WRITE;
+    s->cache_info.transform_action = CacheAction_t::PREPARE_TO_WRITE;
     TRANSACT_RETURN(SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM, handle_transform_cache_write);
   } else {
-    s->cache_info.transform_action = CACHE_DO_NO_ACTION;
+    s->cache_info.transform_action = CacheAction_t::NO_ACTION;
     TRANSACT_RETURN(SM_ACTION_TRANSFORM_READ, nullptr);
   }
 }
@@ -5528,7 +5528,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
   // If there is no Max-Forwards request header, just return false.
   if (!incoming_hdr->presence(MIME_PRESENCE_MAX_FORWARDS)) {
     // Trace and Options requests should not be looked up in cache.
-    // s->cache_info.action = CACHE_DO_NO_ACTION;
+    // s->cache_info.action = CacheAction_t::NO_ACTION;
     s->current.mode = TUNNELLING_PROXY;
     Metrics::Counter::increment(http_rsb.tunnels);
     return false;
@@ -5594,7 +5594,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
     incoming_hdr->set_max_forwards(max_forwards);
 
     // Trace and Options requests should not be looked up in cache.
-    // s->cache_info.action = CACHE_DO_NO_ACTION;
+    // s->cache_info.action = CacheAction_t::NO_ACTION;
     s->current.mode = TUNNELLING_PROXY;
     Metrics::Counter::increment(http_rsb.tunnels);
   }
@@ -5689,7 +5689,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     }
 
     s->current.mode      = GENERIC_PROXY;
-    s->cache_info.action = CACHE_DO_NO_ACTION;
+    s->cache_info.action = CacheAction_t::NO_ACTION;
   }
 
   s->method = incoming_request->method_get_wksidx();

@@ -4922,7 +4922,7 @@ HttpSM::do_range_setup_if_necessary()
         }
       } else {
         // if revalidating and cache is stale we want to transform
-        if (t_state.cache_info.action == HttpTransact::CACHE_DO_REPLACE) {
+        if (t_state.cache_info.action == HttpTransact::CacheAction_t::REPLACE) {
           if (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_OK) {
             Dbg(dbg_ctl_http_range, "Serving transform after stale cache re-serve");
             do_transform = true;
@@ -4943,7 +4943,7 @@ HttpSM::do_range_setup_if_necessary()
           std::string_view content_type{};
           int64_t          content_length = 0;
 
-          if (t_state.cache_info.object_read && t_state.cache_info.action != HttpTransact::CACHE_DO_REPLACE) {
+          if (t_state.cache_info.object_read && t_state.cache_info.action != HttpTransact::CacheAction_t::REPLACE) {
             content_type =
               t_state.cache_info.object_read->response_get()->value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
             content_length = t_state.cache_info.object_read->object_size_get();
@@ -6415,13 +6415,13 @@ HttpSM::perform_transform_cache_write_action()
   }
 
   switch (t_state.cache_info.transform_action) {
-  case HttpTransact::CACHE_DO_NO_ACTION: {
+  case HttpTransact::CacheAction_t::NO_ACTION: {
     // Nothing to do
     transform_cache_sm.end_both();
     break;
   }
 
-  case HttpTransact::CACHE_DO_WRITE: {
+  case HttpTransact::CacheAction_t::WRITE: {
     if (t_state.api_info.cache_untransformed == false) {
       transform_cache_sm.close_read();
       t_state.cache_info.transform_write_status = HttpTransact::CACHE_WRITE_IN_PROGRESS;
@@ -6449,7 +6449,7 @@ HttpSM::perform_cache_write_action()
   SMDbg(dbg_ctl_http, "%s", HttpDebugNames::get_cache_action_name(t_state.cache_info.action));
 
   switch (t_state.cache_info.action) {
-  case HttpTransact::CACHE_DO_NO_ACTION:
+  case HttpTransact::CacheAction_t::NO_ACTION:
 
   {
     // Nothing to do
@@ -6457,12 +6457,12 @@ HttpSM::perform_cache_write_action()
     break;
   }
 
-  case HttpTransact::CACHE_DO_SERVE: {
+  case HttpTransact::CacheAction_t::SERVE: {
     cache_sm.abort_write();
     break;
   }
 
-  case HttpTransact::CACHE_DO_DELETE: {
+  case HttpTransact::CacheAction_t::DELETE: {
     // Write close deletes the old alternate
     cache_sm.close_write();
     cache_sm.close_read();
@@ -6470,25 +6470,25 @@ HttpSM::perform_cache_write_action()
     break;
   }
 
-  case HttpTransact::CACHE_DO_SERVE_AND_DELETE: {
+  case HttpTransact::CacheAction_t::SERVE_AND_DELETE: {
     // FIX ME: need to set up delete for after cache write has
     //   completed
     break;
   }
 
-  case HttpTransact::CACHE_DO_SERVE_AND_UPDATE: {
+  case HttpTransact::CacheAction_t::SERVE_AND_UPDATE: {
     issue_cache_update();
     break;
   }
 
-  case HttpTransact::CACHE_DO_UPDATE: {
+  case HttpTransact::CacheAction_t::UPDATE: {
     cache_sm.close_read();
     issue_cache_update();
     break;
   }
 
-  case HttpTransact::CACHE_DO_WRITE:
-  case HttpTransact::CACHE_DO_REPLACE:
+  case HttpTransact::CacheAction_t::WRITE:
+  case HttpTransact::CacheAction_t::REPLACE:
     // Fix need to set up delete for after cache write has
     //   completed
     if (transform_info.entry == nullptr || t_state.api_info.cache_untransformed == true) {
@@ -8072,9 +8072,9 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_SERVE_FROM_CACHE: {
-    ink_assert(t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE ||
-               t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE_AND_DELETE ||
-               t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE_AND_UPDATE);
+    ink_assert(t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE ||
+               t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE_AND_DELETE ||
+               t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE_AND_UPDATE);
     release_server_session(true);
     t_state.source = HttpTransact::SOURCE_CACHE;
 
@@ -8199,7 +8199,7 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM: {
-    ink_assert(t_state.cache_info.transform_action == HttpTransact::CACHE_PREPARE_TO_WRITE);
+    ink_assert(t_state.cache_info.transform_action == HttpTransact::CacheAction_t::PREPARE_TO_WRITE);
 
     if (transform_cache_sm.cache_write_vc) {
       // We've already got the write_vc that

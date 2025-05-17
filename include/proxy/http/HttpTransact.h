@@ -257,20 +257,20 @@ public:
   enum class Authentication_t { SUCCESS = 0, MUST_REVALIDATE, MUST_PROXY, CACHE_AUTH };
 
   enum CacheAction_t {
-    CACHE_DO_UNDEFINED = 0,
-    CACHE_DO_NO_ACTION,
-    CACHE_DO_DELETE,
-    CACHE_DO_LOOKUP,
-    CACHE_DO_REPLACE,
-    CACHE_DO_SERVE,
-    CACHE_DO_SERVE_AND_DELETE,
-    CACHE_DO_SERVE_AND_UPDATE,
-    CACHE_DO_UPDATE,
-    CACHE_DO_WRITE,
-    CACHE_PREPARE_TO_DELETE,
-    CACHE_PREPARE_TO_UPDATE,
-    CACHE_PREPARE_TO_WRITE,
-    TOTAL_CACHE_ACTION_TYPES
+    UNDEFINED = 0,
+    NO_ACTION,
+    DELETE,
+    LOOKUP,
+    REPLACE,
+    SERVE,
+    SERVE_AND_DELETE,
+    SERVE_AND_UPDATE,
+    UPDATE,
+    WRITE,
+    PREPARE_TO_DELETE,
+    PREPARE_TO_UPDATE,
+    PREPARE_TO_WRITE,
+    TOTAL_TYPES
   };
 
   enum CacheWriteLock_t {
@@ -505,8 +505,8 @@ public:
   };
 
   using CacheLookupInfo = struct _CacheLookupInfo {
-    HttpTransact::CacheAction_t action           = CACHE_DO_UNDEFINED;
-    HttpTransact::CacheAction_t transform_action = CACHE_DO_UNDEFINED;
+    HttpTransact::CacheAction_t action           = CacheAction_t::UNDEFINED;
+    HttpTransact::CacheAction_t transform_action = CacheAction_t::UNDEFINED;
 
     HttpTransact::CacheWriteStatus_t write_status           = NO_CACHE_WRITE;
     HttpTransact::CacheWriteStatus_t transform_write_status = NO_CACHE_WRITE;
@@ -808,7 +808,7 @@ public:
     HdrHeapSDKHandle    *cache_resp_hdr_heap_handle = nullptr;
     UpdateCachedObject_t api_update_cached_object   = UPDATE_CACHED_OBJECT_NONE;
     StateMachineAction_t saved_update_next_action   = SM_ACTION_UNDEFINED;
-    CacheAction_t        saved_update_cache_action  = CACHE_DO_UNDEFINED;
+    CacheAction_t        saved_update_cache_action  = CacheAction_t::UNDEFINED;
 
     // Remap plugin processor support
     UrlMappingContainer url_map;
