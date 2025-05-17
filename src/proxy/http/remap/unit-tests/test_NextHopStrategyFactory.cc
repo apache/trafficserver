@@ -77,7 +77,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 
         CHECK(strategy->go_direct == false);
         CHECK(strategy->scheme == NHSchemeType::HTTP);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
+        CHECK(strategy->ring_mode == NHRingMode::EXHAUST_RING);
         CHECK(strategy->groups == 2);
         std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
         CHECK(h != nullptr);
@@ -153,7 +153,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->policy_type == NHPolicyType::RR_STRICT);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NHSchemeType::HTTP);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
+        CHECK(strategy->ring_mode == NHRingMode::EXHAUST_RING);
         CHECK(strategy->groups == 2);
         std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
         CHECK(h != nullptr);
@@ -240,7 +240,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NHSchemeType::HTTPS);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
+        CHECK(strategy->ring_mode == NHRingMode::EXHAUST_RING);
         CHECK(strategy->groups == 2);
         std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
         CHECK(h != nullptr);
@@ -315,7 +315,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->policy_type == NHPolicyType::RR_LATCHED);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NHSchemeType::HTTP);
-        CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
+        CHECK(strategy->ring_mode == NHRingMode::ALTERNATE_RING);
         CHECK(strategy->groups == 1);
         std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
         CHECK(h != nullptr);
@@ -383,7 +383,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NHSchemeType::HTTP);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
+        CHECK(strategy->ring_mode == NHRingMode::EXHAUST_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
         CHECK(strategy->resp_codes.contains(402));
@@ -463,7 +463,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->max_simple_retries == 2);
         CHECK(strategy->go_direct == false);
         CHECK(strategy->scheme == NHSchemeType::HTTP);
-        CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
+        CHECK(strategy->ring_mode == NHRingMode::ALTERNATE_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
         CHECK(strategy->resp_codes.contains(502));
@@ -543,7 +543,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->max_simple_retries == 2);
         CHECK(strategy->go_direct == false);
         CHECK(strategy->scheme == NHSchemeType::HTTPS);
-        CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
+        CHECK(strategy->ring_mode == NHRingMode::ALTERNATE_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
         CHECK(strategy->resp_codes.contains(502));
@@ -622,7 +622,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->scheme == NHSchemeType::HTTPS);
         CHECK(strategy->parent_is_proxy == false);
         CHECK(strategy->max_simple_retries == 2);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
+        CHECK(strategy->ring_mode == NHRingMode::EXHAUST_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
         CHECK(strategy->resp_codes.contains(502));
@@ -708,7 +708,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NHSchemeType::HTTPS);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
+        CHECK(strategy->ring_mode == NHRingMode::EXHAUST_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
         CHECK(strategy->resp_codes.contains(502));
@@ -805,7 +805,7 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
         CHECK(strategy->policy_type == NHPolicyType::RR_IP);
         CHECK(strategy->go_direct == true);
         CHECK(strategy->scheme == NHSchemeType::HTTP);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
+        CHECK(strategy->ring_mode == NHRingMode::EXHAUST_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
         CHECK(strategy->resp_codes.contains(502));
@@ -888,7 +888,7 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
         CHECK(strategy->max_simple_retries == 2);
         CHECK(strategy->go_direct == false);
         CHECK(strategy->scheme == NHSchemeType::HTTP);
-        CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
+        CHECK(strategy->ring_mode == NHRingMode::ALTERNATE_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
         CHECK(strategy->resp_codes.contains(502));

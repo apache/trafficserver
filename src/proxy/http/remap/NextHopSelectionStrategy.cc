@@ -99,18 +99,18 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
       if (failover_node["ring_mode"]) {
         auto ring_mode_val = failover_node["ring_mode"].Scalar();
         if (ring_mode_val == alternate_rings) {
-          ring_mode = NH_ALTERNATE_RING;
+          ring_mode = NHRingMode::ALTERNATE_RING;
         } else if (ring_mode_val == exhaust_rings) {
-          ring_mode = NH_EXHAUST_RING;
+          ring_mode = NHRingMode::EXHAUST_RING;
         } else if (ring_mode_val == peering_rings) {
-          ring_mode            = NH_PEERING_RING;
+          ring_mode            = NHRingMode::PEERING_RING;
           YAML::Node self_node = failover_node["self"];
           if (self_node) {
             self_host = self_node.Scalar();
             NH_Dbg(NH_DBG_CTL, "%s is self", self_host.c_str());
           }
         } else {
-          ring_mode = NH_ALTERNATE_RING;
+          ring_mode = NHRingMode::ALTERNATE_RING;
           NH_Note("Invalid 'ring_mode' value, '%s', for the strategy named '%s', using default '%s'.", ring_mode_val.c_str(),
                   strategy_name.c_str(), alternate_rings.data());
         }
@@ -215,7 +215,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
               if ((self_host == host_rec->hostname) || mach->is_self(host_rec->hostname.c_str())) {
-                if (ring_mode == NH_PEERING_RING && grp != 0) {
+                if (ring_mode == NHRingMode::PEERING_RING && grp != 0) {
                   throw std::invalid_argument("self host (" + self_host +
                                               ") can only appear in first host group for peering ring mode");
                 }
@@ -240,7 +240,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
                                 "', this strategy will be ignored.");
   }
 
-  if (ring_mode == NH_PEERING_RING) {
+  if (ring_mode == NHRingMode::PEERING_RING) {
     if (groups == 1) {
       if (!go_direct) {
         throw std::invalid_argument("ring mode '" + std::string(peering_rings) +

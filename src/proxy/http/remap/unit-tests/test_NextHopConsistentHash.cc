@@ -658,7 +658,7 @@ SCENARIO("Testing NextHopConsistentHash using a peering ring_mode.")
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
         REQUIRE(strategy->groups == 2);
-        REQUIRE(strategy->ring_mode == NH_PEERING_RING);
+        REQUIRE(strategy->ring_mode == NHRingMode::PEERING_RING);
         REQUIRE(strategy->policy_type == NHPolicyType::CONSISTENT_HASH);
         for (std::size_t i = 0; i < strategy->host_groups.size(); ++i) {
           for (auto const &elem : strategy->host_groups[i]) {

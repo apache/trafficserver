@@ -322,14 +322,14 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] not firstcall, line_number: %d, result: %s", sm_id, result.line_number,
            ParentResultStr[result.result]);
     switch (ring_mode) {
-    case NH_ALTERNATE_RING:
+    case NHRingMode::ALTERNATE_RING:
       if (groups > 1) {
         cur_ring = (result.last_group + 1) % groups;
       } else {
         cur_ring = result.last_group;
       }
       break;
-    case NH_PEERING_RING:
+    case NHRingMode::PEERING_RING:
       if (groups == 1) {
         result.last_group = cur_ring = NO_RING_USE_POST_REMAP;
       } else {
@@ -339,7 +339,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
         result.last_group = cur_ring = 1;
       }
       break;
-    case NH_EXHAUST_RING:
+    case NHRingMode::EXHAUST_RING:
     default:
       cur_ring = result.last_group;
       break;
@@ -378,7 +378,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
         if (firstcall) {
           result.first_choice_status = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
           // if peering and the selected host is myself, change rings and search for an upstream parent.
-          if (ring_mode == NH_PEERING_RING && (pRec->self || is_self)) {
+          if (ring_mode == NHRingMode::PEERING_RING && (pRec->self || is_self)) {
             if (groups == 1) {
               // use host from post-remap URL
               cur_ring = NO_RING_USE_POST_REMAP;
@@ -420,14 +420,14 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
       }
       // try other rings per the ring mode
       switch (ring_mode) {
-      case NH_ALTERNATE_RING:
+      case NHRingMode::ALTERNATE_RING:
         if (pRec && groups > 0) {
           cur_ring = (pRec->group_index + 1) % groups;
         } else {
           cur_ring = 0;
         }
         break;
-      case NH_EXHAUST_RING:
+      case NHRingMode::EXHAUST_RING:
       default:
         if (wrap_around[cur_ring] && groups > 1) {
           cur_ring = (cur_ring + 1) % groups;
@@ -470,7 +470,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
     result.retry = nextHopRetry;
     // if using a peering ring mode and the parent selected came from the 'peering' group,
     // cur_ring == 0, then if the config allows it, set the flag to not cache the result.
-    if (ring_mode == NH_PEERING_RING && !cache_peer_result && cur_ring == 0) {
+    if (ring_mode == NHRingMode::PEERING_RING && !cache_peer_result && cur_ring == 0) {
       result.do_not_cache_response = true;
 
       NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] setting do not cache response from a peer per config: %s", sm_id,
@@ -479,7 +479,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
 
     // We want to use the pristine/pre-remap URL when going to a peer so it can handle
     // the request without needing extra remaps to handle the post-remap URL
-    if (ring_mode == NH_PEERING_RING && cur_ring == 0 && use_pristine) {
+    if (ring_mode == NHRingMode::PEERING_RING && cur_ring == 0 && use_pristine) {
       result.use_pristine = true;
       NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] setting use pristine to true", sm_id);
     }

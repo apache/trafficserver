@@ -183,8 +183,8 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
       if (start_host == cur_hst_index) {
         wrap_around[cur_grp_index] = wrapped = result->wrap_around = true;
       }
-    } else {                                // search the fail over groups.
-      if (ring_mode == NH_ALTERNATE_RING) { // use alternating ring mode.
+    } else {                                         // search the fail over groups.
+      if (ring_mode == NHRingMode::ALTERNATE_RING) { // use alternating ring mode.
         cur_grp_index = (cur_grp_index + 1) % groups;
         hst_size      = host_groups[cur_grp_index].size();
         if (cur_grp_index == start_group) {

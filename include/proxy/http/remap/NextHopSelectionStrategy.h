@@ -69,7 +69,7 @@ enum class NHPolicyType {
 
 enum class NHSchemeType { NONE = 0, HTTP, HTTPS };
 
-enum NHRingMode { NH_ALTERNATE_RING = 0, NH_EXHAUST_RING, NH_PEERING_RING };
+enum class NHRingMode { ALTERNATE_RING = 0, EXHAUST_RING, PEERING_RING };
 
 enum NH_HHealthCheck { NH_ACTIVE, NH_PASSIVE };
 
@@ -216,7 +216,7 @@ public:
   bool                                                  use_pristine       = false;
   NHPolicyType                                          policy_type        = NHPolicyType::UNDEFINED;
   NHSchemeType                                          scheme             = NHSchemeType::NONE;
-  NHRingMode                                            ring_mode          = NH_ALTERNATE_RING;
+  NHRingMode                                            ring_mode          = NHRingMode::ALTERNATE_RING;
   ResponseCodes                                         resp_codes;     // simple retry codes
   ResponseCodes                                         markdown_codes; // unavailable server retry and markdown codes
   HealthChecks                                          health_checks;
