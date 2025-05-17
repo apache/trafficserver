@@ -42,11 +42,6 @@
 extern ink_mutex debug_cs_list_mutex;
 #endif
 
-enum {
-  HTTP_CS_MAGIC_ALIVE = 0x0123FEED,
-  HTTP_CS_MAGIC_DEAD  = 0xDEADFEED,
-};
-
 class HttpSM;
 class Http1ClientSession : public ProxySession
 {
@@ -99,7 +94,12 @@ private:
     HCS_CLOSED,
   };
 
-  int magic = HTTP_CS_MAGIC_DEAD;
+  enum class Magic : uint32_t {
+    ALIVE = 0x0123FEED,
+    DEAD  = 0xDEADFEED,
+  };
+
+  Magic magic = Magic::DEAD;
 
   /// A monotonically increasing count of all transactions ever handled by the session.
   int  transact_count = 0;

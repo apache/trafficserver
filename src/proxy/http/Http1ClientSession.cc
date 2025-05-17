@@ -113,7 +113,7 @@ Http1ClientSession::release_transaction()
 void
 Http1ClientSession::free()
 {
-  magic = HTTP_CS_MAGIC_DEAD;
+  magic = Magic::DEAD;
   if (read_buffer) {
     free_MIOBuffer(read_buffer);
     read_buffer = nullptr;
@@ -144,7 +144,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_assert(new_vc != nullptr);
   ink_assert(_vc == nullptr);
   _vc         = new_vc;
-  magic       = HTTP_CS_MAGIC_ALIVE;
+  magic       = Magic::ALIVE;
   mutex       = new_vc->mutex;
   trans.mutex = mutex; // Share this mutex with the transaction
   in_destroy  = false;
