@@ -355,12 +355,7 @@ public:
 
   enum class CacheWriteStatus_t { NO_WRITE = 0, LOCK_MISS, IN_PROGRESS, ERROR, COMPLETE };
 
-  enum HttpRequestFlavor_t {
-    REQ_FLAVOR_INTERCEPTED      = 0,
-    REQ_FLAVOR_REVPROXY         = 1,
-    REQ_FLAVOR_FWDPROXY         = 2,
-    REQ_FLAVOR_SCHEDULED_UPDATE = 3
-  };
+  enum class HttpRequestFlavor_t { INTERCEPTED = 0, REVPROXY = 1, FWDPROXY = 2, SCHEDULED_UPDATE = 3 };
 
   ////////////
   // source //
@@ -734,7 +729,7 @@ public:
 
     Source_t            source               = SOURCE_NONE;
     Source_t            pre_transform_source = SOURCE_NONE;
-    HttpRequestFlavor_t req_flavor           = REQ_FLAVOR_FWDPROXY;
+    HttpRequestFlavor_t req_flavor           = HttpRequestFlavor_t::FWDPROXY;
 
     CurrentInfo  current;
     HeaderInfo   hdr_info;

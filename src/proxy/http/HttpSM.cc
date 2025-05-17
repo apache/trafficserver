@@ -2379,10 +2379,10 @@ HttpSM::state_hostdb_reverse_lookup(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_hostdb_reverse_lookup, event);
 
-  // REQ_FLAVOR_SCHEDULED_UPDATE can be transformed into
-  // REQ_FLAVOR_REVPROXY
-  ink_assert(t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
-             t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY || _ua.get_entry()->vc != nullptr);
+  // HttpRequestFlavor_t::SCHEDULED_UPDATE can be transformed into
+  // HttpRequestFlavor_t::REVPROXY
+  ink_assert(t_state.req_flavor == HttpTransact::HttpRequestFlavor_t::SCHEDULED_UPDATE ||
+             t_state.req_flavor == HttpTransact::HttpRequestFlavor_t::REVPROXY || _ua.get_entry()->vc != nullptr);
 
   switch (event) {
   case EVENT_HOST_DB_LOOKUP:
@@ -5349,8 +5349,8 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   // _ua.get_entry() can be null if a scheduled update is also a reverse proxy
   // request. Added REVPROXY to the assert below, and then changed checks
   // to be based on _ua.get_txn() != NULL instead of req_flavor value.
-  ink_assert(_ua.get_entry() != nullptr || t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
-             t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
+  ink_assert(_ua.get_entry() != nullptr || t_state.req_flavor == HttpTransact::HttpRequestFlavor_t::SCHEDULED_UPDATE ||
+             t_state.req_flavor == HttpTransact::HttpRequestFlavor_t::REVPROXY);
 
   ink_assert(pending_action.empty());
   ink_assert(t_state.current.server->dst_addr.network_order_port() != 0);
@@ -5495,7 +5495,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   }
   // Otherwise, we release the existing connection and call connect_re
   // to get a new one.
-  // _ua.get_txn() is null when t_state.req_flavor == REQ_FLAVOR_SCHEDULED_UPDATE
+  // _ua.get_txn() is null when t_state.req_flavor == HttpRequestFlavor_t::SCHEDULED_UPDATE
   else if (_ua.get_txn() != nullptr) {
     PoolableSession *existing_ss = _ua.get_txn()->get_server_session();
     if (existing_ss) {
@@ -6714,9 +6714,9 @@ HttpSM::setup_server_read_response_header()
 {
   ink_assert(server_txn != nullptr);
   ink_assert(server_entry != nullptr);
-  // REQ_FLAVOR_SCHEDULED_UPDATE can be transformed in REQ_FLAVOR_REVPROXY
-  ink_assert(_ua.get_txn() != nullptr || t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
-             t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
+  // HttpRequestFlavor_t::SCHEDULED_UPDATE can be transformed in HttpRequestFlavor_t::REVPROXY
+  ink_assert(_ua.get_txn() != nullptr || t_state.req_flavor == HttpTransact::HttpRequestFlavor_t::SCHEDULED_UPDATE ||
+             t_state.req_flavor == HttpTransact::HttpRequestFlavor_t::REVPROXY);
 
   ink_assert(server_txn != nullptr && server_txn->get_remote_reader() != nullptr);
 

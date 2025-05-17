@@ -1186,7 +1186,7 @@ HttpTransact::EndRemapRequest(State *s)
     }
   } else {
     if (s->http_config_param->reverse_proxy_enabled) {
-      s->req_flavor = REQ_FLAVOR_REVPROXY;
+      s->req_flavor = HttpRequestFlavor_t::REVPROXY;
     }
   }
   s->reverse_proxy = true;
