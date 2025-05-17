@@ -118,12 +118,7 @@ obj_init_header(HdrHeapObjImpl *obj, HdrHeapObjType type, uint32_t nbytes, uint3
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-enum {
-  HDR_BUF_MAGIC_ALIVE     = 0xabcdfeed,
-  HDR_BUF_MAGIC_MARSHALED = 0xdcbafeed,
-  HDR_BUF_MAGIC_DEAD      = 0xabcddead,
-  HDR_BUF_MAGIC_CORRUPT   = 0xbadbadcc
-};
+enum class HdrBufMagic : uint32_t { ALIVE = 0xabcdfeed, MARSHALED = 0xdcbafeed, DEAD = 0xabcddead, CORRUPT = 0xbadbadcc };
 
 class HdrStrHeap : public RefCountObj
 {
@@ -202,7 +197,7 @@ public:
   /// Computes the valid data size of an unmarshalled instance.
   /// Callers should round up to HDR_PTR_SIZE to get the actual footprint.
   int unmarshal_size() const; // TBD - change this name, it's confusing.
-  // One option - overload marshal_length to return this value if @a magic is HDR_BUF_MAGIC_MARSHALED.
+  // One option - overload marshal_length to return this value if @a magic is HdrBufMagic::MARSHALED.
 
   void inherit_string_heaps(const HdrHeap *inherit_from);
   int  attach_block(IOBufferBlock *b, const char *use_start);
@@ -268,10 +263,10 @@ public:
   // Debugging functions
   void dump_heap(int len = -1);
 
-  uint32_t m_magic;
-  char    *m_free_start;
-  char    *m_data_start;
-  uint32_t m_size;
+  HdrBufMagic m_magic;
+  char       *m_free_start;
+  char       *m_data_start;
+  uint32_t    m_size;
 
   bool m_writeable;
 

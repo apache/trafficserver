@@ -404,7 +404,7 @@ TSReturnCode
 sdk_sanity_check_mbuffer(TSMBuffer bufp)
 {
   HdrHeapSDKHandle *handle = reinterpret_cast<HdrHeapSDKHandle *>(bufp);
-  if ((handle == nullptr) || (handle->m_heap == nullptr) || (handle->m_heap->m_magic != HDR_BUF_MAGIC_ALIVE)) {
+  if ((handle == nullptr) || (handle->m_heap == nullptr) || (handle->m_heap->m_magic != HdrBufMagic::ALIVE)) {
     return TS_ERROR;
   }
 

@@ -148,7 +148,7 @@ loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
 
   printf("Looping over HdrHeap objects @ 0x%X\n", hdr_heap);
 
-  if (hdr_heap->m_magic == HDR_BUF_MAGIC_MARSHALED) {
+  if (hdr_heap->m_magic == HdrBufMagic::MARSHALED) {
     printf(" marshalled heap - size %d\n", hdr_heap->m_size);
     hdr_heap->m_data_start = ((char *)hdr_heap) + ROUND(sizeof(HdrHeap), HDR_PTR_SIZE);
     hdr_heap->m_free_start = ((char *)hdr_heap) + hdr_heap->m_size;
@@ -278,7 +278,7 @@ load_buffer(int fd, hdr_type h_type)
   int      offset  = hdr_heap - (char *)old_addr;
 
   // Patch up some values
-  if (my_heap->m_magic == HDR_BUF_MAGIC_MARSHALED) {
+  if (my_heap->m_magic == HdrBufMagic::MARSHALED) {
     //      HdrHeapObjImpl* obj;
     //      my_heap->unmarshal(hdr_size, HdrHeapObjType::HTTP_HEADER, &obj, NULL);
     marshalled = 1;

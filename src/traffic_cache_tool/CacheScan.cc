@@ -155,7 +155,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
   *found_obj = nullptr;
 
   // Check out this heap and make sure it is OK
-  if (hh->m_magic != HDR_BUF_MAGIC_MARSHALED) {
+  if (hh->m_magic != HdrBufMagic::MARSHALED) {
     ink_assert(!"HdrHeap::unmarshal bad magic");
     return zret;
   }
@@ -246,7 +246,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
     obj_data = obj_data + obj->m_length;
   }
 
-  hh->m_magic = HDR_BUF_MAGIC_ALIVE;
+  hh->m_magic = HdrBufMagic::ALIVE;
 
   return HdrHeapMarshalBlocks(swoc::round_up(hh->unmarshal_size()));
 }

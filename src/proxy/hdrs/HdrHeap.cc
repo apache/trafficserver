@@ -91,7 +91,7 @@ inline void
 HdrHeap::init()
 {
   m_data_start = m_free_start = (reinterpret_cast<char *>(this)) + HDR_HEAP_HDR_SIZE;
-  m_magic                     = HDR_BUF_MAGIC_ALIVE;
+  m_magic                     = HdrBufMagic::ALIVE;
   m_writeable                 = true;
 
   m_next      = nullptr;
@@ -695,7 +695,7 @@ HdrHeap::marshal(char *buf, int len)
   //  we can fill in the header on marshalled block
   marshal_hdr->m_free_start = nullptr;
   marshal_hdr->m_data_start = reinterpret_cast<char *>(HDR_HEAP_HDR_SIZE.value()); // offset
-  marshal_hdr->m_magic      = HDR_BUF_MAGIC_MARSHALED;
+  marshal_hdr->m_magic      = HdrBufMagic::MARSHALED;
   marshal_hdr->m_writeable  = false;
   marshal_hdr->m_size       = ptr_heap_size + HDR_HEAP_HDR_SIZE;
   marshal_hdr->m_next       = nullptr;
@@ -831,7 +831,7 @@ HdrHeap::marshal(char *buf, int len)
   return used;
 
 Failed:
-  marshal_hdr->m_magic = HDR_BUF_MAGIC_CORRUPT;
+  marshal_hdr->m_magic = HdrBufMagic::CORRUPT;
   return -1;
 }
 
@@ -843,7 +843,7 @@ Failed:
 bool
 HdrHeap::check_marshalled(uint32_t buf_length)
 {
-  if (this->m_magic != HDR_BUF_MAGIC_MARSHALED) {
+  if (this->m_magic != HdrBufMagic::MARSHALED) {
     return false;
   }
 
@@ -893,7 +893,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
   *found_obj = nullptr;
 
   // Check out this heap and make sure it is OK
-  if (m_magic != HDR_BUF_MAGIC_MARSHALED) {
+  if (m_magic != HdrBufMagic::MARSHALED) {
     ink_assert(!"HdrHeap::unmarshal bad magic");
     return -1;
   }
@@ -991,7 +991,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
     obj_data = obj_data + obj->m_length;
   }
 
-  m_magic = HDR_BUF_MAGIC_ALIVE;
+  m_magic = HdrBufMagic::ALIVE;
 
   unmarshal_size = HdrHeapMarshalBlocks(swoc::round_up(unmarshal_size));
   return unmarshal_size;
