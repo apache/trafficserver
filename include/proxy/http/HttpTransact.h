@@ -254,12 +254,7 @@ public:
     ABORTED,
   };
 
-  enum Authentication_t {
-    AUTHENTICATION_SUCCESS = 0,
-    AUTHENTICATION_MUST_REVALIDATE,
-    AUTHENTICATION_MUST_PROXY,
-    AUTHENTICATION_CACHE_AUTH
-  };
+  enum class Authentication_t { SUCCESS = 0, MUST_REVALIDATE, MUST_PROXY, CACHE_AUTH };
 
   enum CacheAction_t {
     CACHE_DO_UNDEFINED = 0,

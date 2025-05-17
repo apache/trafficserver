@@ -2668,20 +2668,20 @@ HttpTransact::need_to_revalidate(State *s)
   Authentication_t authentication_needed = AuthenticationNeeded(s->txn_conf, &s->hdr_info.client_request, obj->response_get());
 
   switch (authentication_needed) {
-  case AUTHENTICATION_SUCCESS:
+  case Authentication_t::SUCCESS:
     TxnDbg(dbg_ctl_http_seq, "Authentication not needed");
     needs_authenticate = false;
     break;
-  case AUTHENTICATION_MUST_REVALIDATE:
+  case Authentication_t::MUST_REVALIDATE:
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
     TxnDbg(dbg_ctl_http_seq, "Authentication needed");
     needs_authenticate = true;
     break;
-  case AUTHENTICATION_MUST_PROXY:
+  case Authentication_t::MUST_PROXY:
     TxnDbg(dbg_ctl_http_seq, "Authentication needed");
     needs_authenticate = true;
     break;
-  case AUTHENTICATION_CACHE_AUTH:
+  case Authentication_t::CACHE_AUTH:
     TxnDbg(dbg_ctl_http_seq, "Authentication needed for cache_auth_content");
     needs_authenticate = false;
     needs_cache_auth   = true;
@@ -2766,20 +2766,20 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   Authentication_t authentication_needed = AuthenticationNeeded(s->txn_conf, &s->hdr_info.client_request, obj->response_get());
 
   switch (authentication_needed) {
-  case AUTHENTICATION_SUCCESS:
+  case Authentication_t::SUCCESS:
     TxnDbg(dbg_ctl_http_seq, "Authentication not needed");
     needs_authenticate = false;
     break;
-  case AUTHENTICATION_MUST_REVALIDATE:
+  case Authentication_t::MUST_REVALIDATE:
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
     TxnDbg(dbg_ctl_http_seq, "Authentication needed");
     needs_authenticate = true;
     break;
-  case AUTHENTICATION_MUST_PROXY:
+  case Authentication_t::MUST_PROXY:
     TxnDbg(dbg_ctl_http_seq, "Authentication needed");
     HandleCacheOpenReadMiss(s);
     return;
-  case AUTHENTICATION_CACHE_AUTH:
+  case Authentication_t::CACHE_AUTH:
     TxnDbg(dbg_ctl_http_seq, "Authentication needed for cache_auth_content");
     needs_authenticate = false;
     needs_cache_auth   = true;
@@ -5973,7 +5973,7 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
   // If the stale document requires authorization, we can't return it either.
   Authentication_t auth_needed = AuthenticationNeeded(s->txn_conf, &s->hdr_info.client_request, cached_response);
 
-  if (auth_needed != AUTHENTICATION_SUCCESS) {
+  if (auth_needed != Authentication_t::SUCCESS) {
     TxnDbg(dbg_ctl_http_trans, "authorization prevent serving stale");
     return false;
   }
@@ -7481,24 +7481,24 @@ HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr
   if ((p->cache_ignore_auth == 0) && client_request->presence(MIME_PRESENCE_AUTHORIZATION)) {
     if (obj_response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE) ||
         obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) {
-      return AUTHENTICATION_MUST_REVALIDATE;
+      return Authentication_t::MUST_REVALIDATE;
     } else if (obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) {
-      return AUTHENTICATION_MUST_REVALIDATE;
+      return Authentication_t::MUST_REVALIDATE;
     } else if (obj_response->is_cache_control_set(HTTP_VALUE_PUBLIC)) {
-      return AUTHENTICATION_SUCCESS;
+      return Authentication_t::SUCCESS;
     } else {
       if (obj_response->field_find("@WWW-Auth"sv) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
-        return AUTHENTICATION_CACHE_AUTH;
+        return Authentication_t::CACHE_AUTH;
       }
-      return AUTHENTICATION_MUST_PROXY;
+      return Authentication_t::MUST_PROXY;
     }
   }
 
   if (obj_response->field_find("@WWW-Auth"sv) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
-    return AUTHENTICATION_CACHE_AUTH;
+    return Authentication_t::CACHE_AUTH;
   }
 
-  return (AUTHENTICATION_SUCCESS);
+  return (Authentication_t::SUCCESS);
 }
 
 void
