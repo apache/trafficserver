@@ -427,10 +427,10 @@ public:
     REDIRECT_READ
   };
 
-  enum TransferEncoding_t {
-    NO_TRANSFER_ENCODING = 0,
-    CHUNKED_ENCODING,
-    DEFLATE_ENCODING,
+  enum class TransferEncoding_t {
+    NONE = 0,
+    CHUNKED,
+    DEFLATE,
   };
 
   enum class Variability_t {
@@ -532,7 +532,7 @@ public:
     int                connect_result = 0;
     char              *name           = nullptr;
     swoc::IPAddr       name_addr;
-    TransferEncoding_t transfer_encoding = NO_TRANSFER_ENCODING;
+    TransferEncoding_t transfer_encoding = TransferEncoding_t::NONE;
 
     /** This is the source address of the connection from the point of view of the transaction.
         It is the address of the source of the request.

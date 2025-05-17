@@ -769,7 +769,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     HttpTransact::set_client_request_state(&t_state, &t_state.hdr_info.client_request);
 
     if (t_state.hdr_info.client_request.get_content_length() == 0 &&
-        t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING) {
+        t_state.client_info.transfer_encoding != HttpTransact::TransferEncoding_t::CHUNKED) {
       // Enable further IO to watch for client aborts
       _ua.get_entry()->read_vio->reenable();
     } else if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_TRACE) {
@@ -799,7 +799,7 @@ HttpSM::wait_for_full_body()
 {
   is_waiting_for_full_body = true;
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
-  bool                chunked = (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING);
+  bool                chunked = (t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED);
   int64_t             alloc_index;
   HttpTunnelProducer *p = nullptr;
 
@@ -1938,8 +1938,9 @@ HttpSM::state_read_server_response_header(int event, void *data)
     server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
 
     // For requests that contain a body, we can cancel the ua inactivity timeout.
-    if (_ua.get_txn() && _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
-                                                         t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+    if (_ua.get_txn() &&
+        _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                        t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
       _ua.get_txn()->cancel_inactivity_timeout();
     }
   }
@@ -2096,7 +2097,7 @@ HttpSM::state_send_server_request_header(int event, void *data)
       method                     = t_state.hdr_info.server_request.method_get_wksidx();
       if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
           _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
-                                          t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+                                          t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
         if (post_transform_info.vc) {
           setup_transform_to_server_transfer();
         } else {
@@ -2904,7 +2905,7 @@ HttpSM::tunnel_handler_cache_fill(int event, void *data)
   IOBufferReader *buf_start   = buf->alloc_reader();
 
   TunnelChunkingAction_t action =
-    (t_state.current.server && t_state.current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING) ?
+    (t_state.current.server && t_state.current.server->transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) ?
       TCA_DECHUNK_CONTENT :
       TCA_PASSTHRU_DECHUNKED_CONTENT;
 
@@ -6049,7 +6050,7 @@ HttpSM::handle_http_server_open()
     int method = t_state.hdr_info.server_request.method_get_wksidx();
     if (method != HTTP_WKSIDX_TRACE &&
         server_txn->has_request_body(t_state.hdr_info.request_content_length,
-                                     t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) &&
+                                     t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) &&
         do_post_transform_open()) {
       do_setup_client_request_body_tunnel(
         HTTP_TRANSFORM_VC); /* This doesn't seem quite right.  Should be sending the request header */
@@ -6233,7 +6234,7 @@ HttpSM::do_drain_request_body(HTTPHdr &response)
   int64_t content_length = t_state.hdr_info.client_request.get_content_length();
   int64_t avail          = _ua.get_txn()->get_remote_reader()->read_avail();
 
-  if (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+  if (t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) {
     SMDbg(dbg_ctl_http, "Chunked body, setting the response to non-keepalive");
     goto close_connection;
   }
@@ -6264,7 +6265,7 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
     // a tunnel nor any of the other related logic around request bodies.
     return;
   }
-  bool chunked = t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
+  bool chunked = t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED ||
                  t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL;
   bool post_redirect = false;
 
@@ -6637,13 +6638,13 @@ HttpSM::attach_server_session()
 
   // Do we need Transfer_Encoding?
   if (_ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
-                                      t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+                                      t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
     if (server_txn->is_chunked_encoding_supported()) {
       // See if we need to insert a chunked header
       if (!t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH) &&
           !t_state.hdr_info.server_request.presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
         // Stuff in a TE setting so we treat this as chunked, sort of.
-        t_state.server_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
+        t_state.server_info.transfer_encoding = HttpTransact::TransferEncoding_t::CHUNKED;
         t_state.hdr_info.server_request.value_append(
           static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
           std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
@@ -7112,7 +7113,7 @@ HttpSM::setup_server_transfer_to_transform()
   server_entry->in_tunnel         = true;
   transform_info.entry->in_tunnel = true;
 
-  if (t_state.current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+  if (t_state.current.server->transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) {
     client_response_hdr_bytes       = 0; // fixed by YTS Team, yamsat
     bool const parse_chunk_strictly = t_state.http_config_param->oride.http_strict_chunk_parsing == 1;
     tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_DECHUNK_CONTENT, HttpTunnel::DROP_CHUNKED_TRAILERS,
@@ -7186,13 +7187,13 @@ HttpSM::setup_server_transfer()
   // before we write the response header into buffer
   TunnelChunkingAction_t action;
   if (t_state.client_info.receive_chunked_response == false) {
-    if (t_state.current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+    if (t_state.current.server->transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) {
       action = TCA_DECHUNK_CONTENT;
     } else {
       action = TCA_PASSTHRU_DECHUNKED_CONTENT;
     }
   } else {
-    if (t_state.current.server->transfer_encoding != HttpTransact::CHUNKED_ENCODING) {
+    if (t_state.current.server->transfer_encoding != HttpTransact::TransferEncoding_t::CHUNKED) {
       if (t_state.client_info.http_version == HTTP_0_9) {
         action = TCA_PASSTHRU_DECHUNKED_CONTENT; // send as-is
       } else {
@@ -7976,7 +7977,7 @@ HttpSM::set_next_state()
       // cannot be cancelled.
       if (_ua.get_txn() &&
           !_ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
-                                           t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+                                           t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
         _ua.get_txn()->cancel_inactivity_timeout();
       } else if (!_ua.get_txn() || _ua.get_txn()->get_netvc() == nullptr) {
         terminate_sm = true;
@@ -8024,7 +8025,7 @@ HttpSM::set_next_state()
       // cannot be cancelled.
       if (_ua.get_txn() &&
           !_ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
-                                           t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+                                           t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
         _ua.get_txn()->cancel_inactivity_timeout();
       } else if (!_ua.get_txn()) {
         terminate_sm = true;

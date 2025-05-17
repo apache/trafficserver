@@ -1581,7 +1581,7 @@ HttpTransact::HandleRequest(State *s)
     }
     if (s->txn_conf->request_buffer_enabled &&
         s->state_machine->get_ua_txn()->has_request_body(s->hdr_info.request_content_length,
-                                                         s->client_info.transfer_encoding == CHUNKED_ENCODING)) {
+                                                         s->client_info.transfer_encoding == TransferEncoding_t::CHUNKED)) {
       TRANSACT_RETURN(StateMachineAction_t::WAIT_FOR_FULL_BODY, nullptr);
     }
   }
@@ -5358,7 +5358,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
       return RequestError_t::BAD_CONNECT_PORT;
     }
 
-    if (s->client_info.transfer_encoding == CHUNKED_ENCODING && incoming_hdr->version_get() < HTTP_1_1) {
+    if (s->client_info.transfer_encoding == TransferEncoding_t::CHUNKED && incoming_hdr->version_get() < HTTP_1_1) {
       // Per spec, Transfer-Encoding is only supported in HTTP/1.1. For earlier
       // versions, we must reject Transfer-Encoding rather than interpret it
       // since downstream proxies may ignore the chunk header and rely upon the
@@ -5372,7 +5372,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
-        s->client_info.transfer_encoding != CHUNKED_ENCODING) {
+        s->client_info.transfer_encoding != TransferEncoding_t::CHUNKED) {
       // In normal operation there will always be a get_ua_txn() at this point, but in one of the -R1  regression tests a request is
       // createdindependent of a transaction and this method is called, so we must null check
       if (!s->state_machine->get_ua_txn() || s->state_machine->get_ua_txn()->is_chunked_encoding_supported()) {
@@ -5382,7 +5382,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
             return RequestError_t::NO_POST_CONTENT_LENGTH;
           } else {
             // Stuff in a TE setting so we treat this as chunked, sort of.
-            s->client_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
+            s->client_info.transfer_encoding = HttpTransact::TransferEncoding_t::CHUNKED;
             incoming_hdr->value_append(
               static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
               std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
@@ -5448,7 +5448,7 @@ HttpTransact::set_client_request_state(State *s, HTTPHdr *incoming_hdr)
       while (enc_value) {
         const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
         if (wks_value == HTTP_VALUE_CHUNKED) {
-          s->client_info.transfer_encoding = CHUNKED_ENCODING;
+          s->client_info.transfer_encoding = TransferEncoding_t::CHUNKED;
           break;
         }
         enc_value = enc_val_iter.get_next(&enc_val_len);
@@ -5708,7 +5708,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
 
   // if transfer encoding is chunked content length is undefined
-  if (s->client_info.transfer_encoding == CHUNKED_ENCODING) {
+  if (s->client_info.transfer_encoding == TransferEncoding_t::CHUNKED) {
     s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
   }
   s->request_data.hdr = &s->hdr_info.client_request;
@@ -5828,7 +5828,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
 
       if (wks_value == HTTP_VALUE_CHUNKED && !is_response_body_precluded(status_code, s->method)) {
         TxnDbg(dbg_ctl_http_hdrs, "transfer encoding: chunked!");
-        s->current.server->transfer_encoding = CHUNKED_ENCODING;
+        s->current.server->transfer_encoding = TransferEncoding_t::CHUNKED;
 
         s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
         s->hdr_info.trust_response_cl       = false;
@@ -5877,7 +5877,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     }
   }
 
-  s->current.server->transfer_encoding = NO_TRANSFER_ENCODING;
+  s->current.server->transfer_encoding = TransferEncoding_t::NONE;
 }
 
 bool
@@ -6916,7 +6916,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   if (ver.get_major() == 0) { /* No K-A for 0.9 apps */
     ka_action = KA_DISABLED;
   } else if (heads->status_get() == HTTP_STATUS_NO_CONTENT &&
-             ((s->source == Source_t::HTTP_ORIGIN_SERVER && s->current.server->transfer_encoding != NO_TRANSFER_ENCODING) ||
+             ((s->source == Source_t::HTTP_ORIGIN_SERVER && s->current.server->transfer_encoding != TransferEncoding_t::NONE) ||
               heads->get_content_length() != 0)) {
     // some systems hang until the connection closes when receiving a 204 regardless of the K-A headers
     // close if there is any body response from the origin
@@ -6941,7 +6941,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
           // if we receive a 304, we will serve the client from the
           // cache and thus do not need chunked encoding.
           s->hdr_info.server_response.status_get() != HTTP_STATUS_NOT_MODIFIED &&
-          (s->current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
+          (s->current.server->transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED ||
            // we can use chunked encoding if we cannot trust the content
            // length (e.g. no Content-Length and Connection:close in HTTP/1.1 responses)
            s->hdr_info.trust_response_cl == false)) ||
@@ -8017,7 +8017,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   //  which we do for NTLM auth)                      //
   //////////////////////////////////////////////////////
   if (status_code == HTTP_STATUS_REQUEST_TIMEOUT || s->hdr_info.client_request.get_content_length() != 0 ||
-      s->client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+      s->client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
     // We don't have a request body.  Since we are
