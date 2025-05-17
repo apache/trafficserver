@@ -7853,7 +7853,7 @@ TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
 
-  return (s->background_fill == BACKGROUND_FILL_STARTED);
+  return (s->background_fill == BackgroundFill_t::STARTED);
 }
 
 int

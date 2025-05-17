@@ -8674,13 +8674,13 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
 
   // Background fill stats
   switch (s->state_machine->background_fill) {
-  case BACKGROUND_FILL_COMPLETED: {
+  case BackgroundFill_t::COMPLETED: {
     int64_t bg_size = origin_server_response_body_size - user_agent_response_body_size;
     bg_size         = std::max(static_cast<int64_t>(0), bg_size);
     Metrics::Counter::increment(http_rsb.background_fill_bytes_completed, bg_size);
     break;
   }
-  case BACKGROUND_FILL_ABORTED: {
+  case BackgroundFill_t::ABORTED: {
     int64_t bg_size = origin_server_response_body_size - user_agent_response_body_size;
 
     if (bg_size < 0) {
@@ -8689,9 +8689,9 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
     Metrics::Counter::increment(http_rsb.background_fill_bytes_aborted, bg_size);
     break;
   }
-  case BACKGROUND_FILL_NONE:
+  case BackgroundFill_t::NONE:
     break;
-  case BACKGROUND_FILL_STARTED:
+  case BackgroundFill_t::STARTED:
   default:
     ink_assert(0);
   }

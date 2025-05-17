@@ -3223,8 +3223,8 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   }
 
   // If we had a ground fill, check update our status
-  if (background_fill == BACKGROUND_FILL_STARTED) {
-    background_fill = p->read_success ? BACKGROUND_FILL_COMPLETED : BACKGROUND_FILL_ABORTED;
+  if (background_fill == BackgroundFill_t::STARTED) {
+    background_fill = p->read_success ? BackgroundFill_t::COMPLETED : BackgroundFill_t::ABORTED;
     Metrics::Gauge::decrement(http_rsb.background_fill_current_count);
   }
   // We handled the event.  Now either shutdown the connection or
@@ -3468,11 +3468,11 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
       p = c->producer->self_consumer ? c->producer->self_consumer->producer : c->producer;
       SMDbg(dbg_ctl_http, "Initiating background fill");
       // check whether to finish the reading.
-      background_fill = p->read_success ? BACKGROUND_FILL_COMPLETED : BACKGROUND_FILL_STARTED;
+      background_fill = p->read_success ? BackgroundFill_t::COMPLETED : BackgroundFill_t::STARTED;
 
       // There is another consumer (cache write) so
       //  detach the user agent
-      if (background_fill == BACKGROUND_FILL_STARTED) {
+      if (background_fill == BackgroundFill_t::STARTED) {
         Metrics::Gauge::increment(http_rsb.background_fill_current_count);
         Metrics::Counter::increment(http_rsb.background_fill_total_count);
 
@@ -3764,7 +3764,7 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     break;
   }
 
-  if (background_fill != BACKGROUND_FILL_NONE) {
+  if (background_fill != BackgroundFill_t::NONE) {
     server_response_body_bytes = c->bytes_written;
   }
 

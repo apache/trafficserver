@@ -88,11 +88,11 @@ using HttpSMHandler = int (HttpSM::*)(int, void *);
  */
 int64_t do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnection *vc_in, int conf);
 
-enum BackgroundFill_t {
-  BACKGROUND_FILL_NONE = 0,
-  BACKGROUND_FILL_STARTED,
-  BACKGROUND_FILL_ABORTED,
-  BACKGROUND_FILL_COMPLETED,
+enum class BackgroundFill_t {
+  NONE = 0,
+  STARTED,
+  ABORTED,
+  COMPLETED,
 };
 
 extern ink_mutex debug_sm_list_mutex;
@@ -289,7 +289,7 @@ public:
   int     redirection_tries = 0; // To monitor number of redirections
   int64_t transferred_bytes = 0; // For handling buffering of request body data.
 
-  BackgroundFill_t background_fill = BACKGROUND_FILL_NONE;
+  BackgroundFill_t background_fill = BackgroundFill_t::NONE;
 
   // Tunneling request to plugin
   HttpPluginTunnel_t plugin_tunnel_type = HTTP_NO_PLUGIN_TUNNEL;
