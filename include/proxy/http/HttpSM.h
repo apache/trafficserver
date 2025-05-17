@@ -122,12 +122,12 @@ enum {
   HTTP_SM_TRANSFORM_FAIL   = 2,
 };
 
-enum HttpApiState_t {
-  HTTP_API_NO_CALLOUT,
-  HTTP_API_IN_CALLOUT,
-  HTTP_API_DEFERED_CLOSE,
-  HTTP_API_DEFERED_SERVER_ERROR,
-  HTTP_API_REWIND_STATE_MACHINE,
+enum class HttpApiState_t {
+  NO_CALLOUT,
+  IN_CALLOUT,
+  DEFERED_CLOSE,
+  DEFERED_SERVER_ERROR,
+  REWIND_STATE_MACHINE,
 };
 
 enum HttpPluginTunnel_t {
@@ -563,7 +563,7 @@ private:
 
   int            reentrancy_count = 0;
   int            cur_hooks        = 0;
-  HttpApiState_t callout_state    = HTTP_API_NO_CALLOUT;
+  HttpApiState_t callout_state    = HttpApiState_t::NO_CALLOUT;
 
   // api_hooks must not be changed directly
   //  Use txn_hook_{ap,pre}pend so hooks_set is

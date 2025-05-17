@@ -1406,8 +1406,8 @@ plugins required to work with sni_routing.
       cur_hook = hook_state.getNext();
     }
     if (cur_hook) {
-      if (callout_state == HTTP_API_NO_CALLOUT) {
-        callout_state = HTTP_API_IN_CALLOUT;
+      if (callout_state == HttpApiState_t::NO_CALLOUT) {
+        callout_state = HttpApiState_t::IN_CALLOUT;
       }
 
       WEAK_MUTEX_TRY_LOCK(lock, cur_hook->m_cont->mutex, mutex->thread_holding);
@@ -1444,22 +1444,22 @@ plugins required to work with sni_routing.
     }
     // Map the callout state into api_next
     switch (callout_state) {
-    case HTTP_API_NO_CALLOUT:
-    case HTTP_API_IN_CALLOUT:
+    case HttpApiState_t::NO_CALLOUT:
+    case HttpApiState_t::IN_CALLOUT:
       if (t_state.api_modifiable_cached_resp && t_state.api_update_cached_object == HttpTransact::UpdateCachedObject_t::PREPARE) {
         t_state.api_update_cached_object = HttpTransact::UpdateCachedObject_t::CONTINUE;
       }
       api_next = API_RETURN_CONTINUE;
       break;
-    case HTTP_API_DEFERED_CLOSE:
+    case HttpApiState_t::DEFERED_CLOSE:
       api_next = API_RETURN_DEFERED_CLOSE;
       break;
-    case HTTP_API_DEFERED_SERVER_ERROR:
+    case HttpApiState_t::DEFERED_SERVER_ERROR:
       api_next = API_RETURN_DEFERED_SERVER_ERROR;
       break;
-    case HTTP_API_REWIND_STATE_MACHINE:
+    case HttpApiState_t::REWIND_STATE_MACHINE:
       SMDbg(dbg_ctl_http, "REWIND");
-      callout_state = HTTP_API_NO_CALLOUT;
+      callout_state = HttpApiState_t::NO_CALLOUT;
       set_next_state();
       return 0;
     default:
@@ -1468,7 +1468,7 @@ plugins required to work with sni_routing.
     break;
 
   case HTTP_API_ERROR:
-    if (callout_state == HTTP_API_DEFERED_CLOSE) {
+    if (callout_state == HttpApiState_t::DEFERED_CLOSE) {
       api_next = API_RETURN_DEFERED_CLOSE;
     } else if (cur_hook_id == TS_HTTP_TXN_CLOSE_HOOK) {
       // If we are closing the state machine, we can't
@@ -1504,7 +1504,7 @@ plugins required to work with sni_routing.
 
   // Now that we're completed with the api state and figured out what
   //   to do next, do it
-  callout_state = HTTP_API_NO_CALLOUT;
+  callout_state = HttpApiState_t::NO_CALLOUT;
   api_timer     = 0;
   switch (api_next) {
   case API_RETURN_CONTINUE:
@@ -2134,7 +2134,7 @@ HttpSM::state_send_server_request_header(int event, void *data)
     // from both read and write sides of a connection so it should be handled correctly (close tunnels,
     // deallocate, etc) here with handle_server_setup_error().  Otherwise we might hang due to not shutting
     // down and never receiving another event again.
-    /*if (server_txn->get_remote_reader()->read_avail() > 0 && callout_state == HTTP_API_NO_CALLOUT) {
+    /*if (server_txn->get_remote_reader()->read_avail() > 0 && callout_state == HttpApiState_t::NO_CALLOUT) {
        break;
        } */
 
@@ -5767,8 +5767,8 @@ HttpSM::do_api_callout_internal()
     milestones[TS_MILESTONE_UA_BEGIN_WRITE] = ink_get_hrtime();
     break;
   case HttpTransact::StateMachineAction_t::API_SM_SHUTDOWN:
-    if (callout_state == HTTP_API_IN_CALLOUT || callout_state == HTTP_API_DEFERED_SERVER_ERROR) {
-      callout_state = HTTP_API_DEFERED_CLOSE;
+    if (callout_state == HttpApiState_t::IN_CALLOUT || callout_state == HttpApiState_t::DEFERED_SERVER_ERROR) {
+      callout_state = HttpApiState_t::DEFERED_CLOSE;
       return 0;
     } else {
       cur_hook_id = TS_HTTP_TXN_CLOSE_HOOK;
@@ -6179,16 +6179,16 @@ HttpSM::handle_server_setup_error(int event, void *data)
   //   HTTP_API_SEND_REQUEST_HDR defer calling transact until
   //   after we've finished processing the plugin callout
   switch (callout_state) {
-  case HTTP_API_NO_CALLOUT:
+  case HttpApiState_t::NO_CALLOUT:
     // Normal fast path case, no api callouts in progress
     break;
-  case HTTP_API_IN_CALLOUT:
-  case HTTP_API_DEFERED_SERVER_ERROR:
+  case HttpApiState_t::IN_CALLOUT:
+  case HttpApiState_t::DEFERED_SERVER_ERROR:
     // Callout in progress note that we are in deferring
     //   the server error
-    callout_state = HTTP_API_DEFERED_SERVER_ERROR;
+    callout_state = HttpApiState_t::DEFERED_SERVER_ERROR;
     return;
-  case HTTP_API_DEFERED_CLOSE:
+  case HttpApiState_t::DEFERED_CLOSE:
     // The user agent has shutdown killing the sm
     //   but we are stuck waiting for the server callout
     //   to finish so do nothing here.  We don't care
@@ -7475,11 +7475,11 @@ HttpSM::kill_this()
     // cancel uncompleted actions //
     ////////////////////////////////
     // The action should be cancelled only if
-    // the state machine is in HTTP_API_NO_CALLOUT
+    // the state machine is in HttpApiState_t::NO_CALLOUT
     // state. This is because we are depending on the
     // callout to complete for the state machine to
     // get killed.
-    if (callout_state == HTTP_API_NO_CALLOUT && !pending_action.empty()) {
+    if (callout_state == HttpApiState_t::NO_CALLOUT && !pending_action.empty()) {
       pending_action = nullptr;
     } else if (!pending_action.empty()) {
       ink_assert(pending_action.empty());
@@ -8751,7 +8751,7 @@ HttpSM::find_proto_string(HTTPVersion version) const
 void
 HttpSM::rewind_state_machine()
 {
-  callout_state = HTTP_API_REWIND_STATE_MACHINE;
+  callout_state = HttpApiState_t::REWIND_STATE_MACHINE;
 }
 
 // YTS Team, yamsat Plugin
