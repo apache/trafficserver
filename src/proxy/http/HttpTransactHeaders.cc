@@ -423,7 +423,7 @@ void
 HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes)
 {
   SquidLogCode       log_code      = SquidLogCode::EMPTY;
-  SquidHierarchyCode hier_code     = SQUID_HIER_EMPTY;
+  SquidHierarchyCode hier_code     = SquidHierarchyCode::EMPTY;
   SquidHitMissCode   hit_miss_code = SQUID_HIT_RESERVED;
 
   /////////////////////////////
@@ -513,15 +513,15 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   // The Hierarchy Code //
   ////////////////////////
   if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
   } else if (via_string[VIA_DETAIL_PP_CONNECT] == VIA_DETAIL_PP_SUCCESS) {
-    hier_code = SQUID_HIER_PARENT_HIT;
+    hier_code = SquidHierarchyCode::PARENT_HIT;
   } else if (via_string[VIA_DETAIL_CACHE_TYPE] == VIA_DETAIL_PARENT) {
-    hier_code = SQUID_HIER_DEFAULT_PARENT;
+    hier_code = SquidHierarchyCode::DEFAULT_PARENT;
   } else if (via_string[VIA_DETAIL_TUNNEL] == VIA_DETAIL_TUNNEL_NO_FORWARD) {
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
   } else {
-    hier_code = SQUID_HIER_DIRECT;
+    hier_code = SquidHierarchyCode::DIRECT;
   }
 
   // Errors may override the other codes, so check the via string error codes last
@@ -536,14 +536,14 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     break;
   case VIA_ERROR_DNS_FAILURE:
     log_code  = SquidLogCode::ERR_DNS_FAIL;
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_FORBIDDEN:
     log_code = SquidLogCode::ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_HEADER_SYNTAX:
     log_code  = SquidLogCode::ERR_INVALID_REQ;
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_SERVER:
     if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_IMS_MISS) {
@@ -554,23 +554,23 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_IMS_MISS) {
       log_code = SquidLogCode::ERR_READ_TIMEOUT;
     }
-    if (hier_code == SQUID_HIER_PARENT_HIT) {
-      hier_code = SQUID_HIER_TIMEOUT_PARENT_HIT;
+    if (hier_code == SquidHierarchyCode::PARENT_HIT) {
+      hier_code = SquidHierarchyCode::TIMEOUT_PARENT_HIT;
     } else {
-      hier_code = SQUID_HIER_TIMEOUT_DIRECT;
+      hier_code = SquidHierarchyCode::TIMEOUT_DIRECT;
     }
     break;
   case VIA_ERROR_CACHE_READ:
     log_code  = SquidLogCode::TCP_SWAPFAIL;
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_LOOP_DETECTED:
     log_code  = SquidLogCode::ERR_LOOP_DETECTED;
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_UNKNOWN:
     log_code  = SquidLogCode::ERR_UNKNOWN;
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   default:
     break;

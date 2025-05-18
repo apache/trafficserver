@@ -1484,39 +1484,40 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
       case P_STATE_HIERARCHY:
         state = P_STATE_PEER;
         hier  = *((int64_t *)(read_from));
-        switch (hier) {
-        case SQUID_HIER_NONE:
+        switch (static_cast<SquidHierarchyCode>(hier)) {
+        case SquidHierarchyCode::NONE:
           update_counter(totals.hierarchies.none, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.none, size);
           }
           break;
-        case SQUID_HIER_DIRECT:
+        case SquidHierarchyCode::DIRECT:
           update_counter(totals.hierarchies.direct, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.direct, size);
           }
           break;
-        case SQUID_HIER_SIBLING_HIT:
+        case SquidHierarchyCode::SIBLING_HIT:
           update_counter(totals.hierarchies.sibling, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.sibling, size);
           }
           break;
-        case SQUID_HIER_PARENT_HIT:
+        case SquidHierarchyCode::PARENT_HIT:
           update_counter(totals.hierarchies.parent, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.direct, size);
           }
           break;
-        case SQUID_HIER_EMPTY:
+        case SquidHierarchyCode::EMPTY:
           update_counter(totals.hierarchies.empty, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.empty, size);
           }
           break;
         default:
-          if ((hier >= SQUID_HIER_EMPTY) && (hier < SQUID_HIER_INVALID_ASSIGNED_CODE)) {
+          if ((hier >= static_cast<int64_t>(SquidHierarchyCode::EMPTY)) &&
+              (hier < static_cast<int64_t>(SquidHierarchyCode::INVALID_ASSIGNED_CODE))) {
             update_counter(totals.hierarchies.other, size);
             if (o_stats != nullptr) {
               update_counter(o_stats->hierarchies.other, size);

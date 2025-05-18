@@ -3106,7 +3106,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
     t_state.squid_codes.log_code  = SquidLogCode::ERR_READ_TIMEOUT;
-    t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
+    t_state.squid_codes.hier_code = SquidHierarchyCode::TIMEOUT_DIRECT;
     /* fallthru */
 
   case VC_EVENT_EOS:
@@ -3286,7 +3286,7 @@ HttpSM::tunnel_handler_trailer_server(int event, HttpTunnelProducer *p)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
     t_state.squid_codes.log_code  = SquidLogCode::ERR_READ_TIMEOUT;
-    t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
+    t_state.squid_codes.hier_code = SquidHierarchyCode::TIMEOUT_DIRECT;
     /* fallthru */
 
   case VC_EVENT_EOS:
