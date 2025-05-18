@@ -38,8 +38,8 @@ int64_t xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, cons
                             uint8_t n = 7);
 
 struct XpackLookupResult {
-  uint32_t index                                  = 0;
-  enum MatchType { NONE, NAME, EXACT } match_type = MatchType::NONE;
+  uint32_t index                                        = 0;
+  enum class MatchType { NONE, NAME, EXACT } match_type = MatchType::NONE;
 };
 
 struct XpackDynamicTableEntry {
