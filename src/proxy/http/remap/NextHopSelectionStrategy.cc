@@ -305,17 +305,20 @@ NextHopSelectionStrategy::responseIsRetryable(int64_t sm_id, HttpTransact::Curre
   NH_Dbg(NH_DBG_CTL,
          "[%" PRIu64 "] response_code %d, simple_retry_attempts: %d max_simple_retries: %d, unavailable_server_retry_attempts: "
          "%d, max_unavailable_retries: %d",
-         sm_id, response_code, sa, this->max_simple_retries, ua, max_unavailable_retries);
-  if (this->resp_codes.contains(response_code) && sa < this->max_simple_retries && sa < this->num_parents) {
-    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning ParentRetry_t::SIMPLE", sm_id, response_code);
+         sm_id, static_cast<int>(response_code), sa, this->max_simple_retries, ua, max_unavailable_retries);
+  if (this->resp_codes.contains(static_cast<short>(response_code)) && sa < this->max_simple_retries && sa < this->num_parents) {
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning ParentRetry_t::SIMPLE", sm_id,
+           static_cast<int>(response_code));
     return ParentRetry_t::SIMPLE;
   }
-  if (this->markdown_codes.contains(response_code) && ua < this->max_unavailable_retries && ua < this->num_parents) {
+  if (this->markdown_codes.contains(static_cast<short>(response_code)) && ua < this->max_unavailable_retries &&
+      ua < this->num_parents) {
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning ParentRetry_t::UNAVAILABLE_SERVER", sm_id,
-           response_code);
+           static_cast<int>(response_code));
     return ParentRetry_t::UNAVAILABLE_SERVER;
   }
-  NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is not retryable, returning ParentRetry_t::NONE", sm_id, response_code);
+  NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is not retryable, returning ParentRetry_t::NONE", sm_id,
+         static_cast<int>(response_code));
   return ParentRetry_t::NONE;
 }
 

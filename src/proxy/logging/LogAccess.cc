@@ -2343,10 +2343,10 @@ LogAccess::marshal_proxy_resp_status_code(char *buf)
       else if (m_proxy_response->valid()) {
         status = m_proxy_response->status_get();
       } else {
-        status = HTTP_STATUS_OK;
+        status = HTTPStatus::OK;
       }
     } else {
-      status = HTTP_STATUS_NONE;
+      status = HTTPStatus::NONE;
     }
     marshal_int(buf, static_cast<int64_t>(status));
   }
@@ -2617,7 +2617,7 @@ LogAccess::marshal_server_resp_status_code(char *buf)
     if (m_server_response) {
       status = m_server_response->status_get();
     } else {
-      status = HTTP_STATUS_NONE;
+      status = HTTPStatus::NONE;
     }
     marshal_int(buf, static_cast<int64_t>(status));
   }
@@ -2770,7 +2770,7 @@ LogAccess::marshal_cache_resp_status_code(char *buf)
     if (m_cache_response) {
       status = m_cache_response->status_get();
     } else {
-      status = HTTP_STATUS_NONE;
+      status = HTTPStatus::NONE;
     }
     marshal_int(buf, static_cast<int64_t>(status));
   }

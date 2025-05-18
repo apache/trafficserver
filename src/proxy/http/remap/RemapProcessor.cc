@@ -223,8 +223,8 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
       if (*redirect_url == nullptr) {
         *redirect_url = ats_strdup(map->filter_redirect_url ? map->filter_redirect_url : table->http_default_redirect_url);
       }
-      if (HTTP_STATUS_NONE == s->http_return_code) {
-        s->http_return_code = HTTP_STATUS_MOVED_TEMPORARILY;
+      if (HTTPStatus::NONE == s->http_return_code) {
+        s->http_return_code = HTTPStatus::MOVED_TEMPORARILY;
       }
       return false;
     }

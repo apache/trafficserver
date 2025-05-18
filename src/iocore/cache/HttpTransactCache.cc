@@ -1290,12 +1290,12 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
 
 /**
   If the request has If-modified-since or If-none-match,
-  HTTP_STATUS_NOT_MODIFIED is returned if both or the existing one
+  HTTPStatus::NOT_MODIFIED is returned if both or the existing one
   (if only one exists) fails; otherwise, the response's status code
   is returned.
 
   If the request has If-unmodified-since or If-match,
-  HTTP_STATUS_PRECONDITION_FAILED is returned if one fails; otherwise,
+  HTTPStatus::PRECONDITION_FAILED is returned if one fails; otherwise,
   the response's status code is returned.
 
   If the request is a RANGE request with If-range, the response's
@@ -1307,17 +1307,17 @@ HttpTransactCache::CalcVariability(const HttpConfigAccessor *http_config_params,
   headers when processing RANGE headers. On other occasions, it's
   easier to treat If-range requests as plain non-conditional ones.
 
-  @return status code: HTTP_STATUS_NOT_MODIFIED or HTTP_STATUS_PRECONDITION_FAILED
+  @return status code: HTTPStatus::NOT_MODIFIED or HTTPStatus::PRECONDITION_FAILED
 
 */
 HTTPStatus
 HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTPHdr *response, ink_time_t response_received_time)
 {
-  HTTPStatus response_code = HTTP_STATUS_NONE;
+  HTTPStatus response_code = HTTPStatus::NONE;
 
-  ink_assert(response->status_get() != HTTP_STATUS_NOT_MODIFIED);
-  ink_assert(response->status_get() != HTTP_STATUS_PRECONDITION_FAILED);
-  ink_assert(response->status_get() != HTTP_STATUS_RANGE_NOT_SATISFIABLE);
+  ink_assert(response->status_get() != HTTPStatus::NOT_MODIFIED);
+  ink_assert(response->status_get() != HTTPStatus::PRECONDITION_FAILED);
+  ink_assert(response->status_get() != HTTPStatus::RANGE_NOT_SATISFIABLE);
 
   if (!(request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_NONE_MATCH | MIME_PRESENCE_IF_UNMODIFIED_SINCE |
                           MIME_PRESENCE_IF_MATCH))) {
@@ -1336,7 +1336,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
       ////////////////////////////////////////////////////////////////////////
       if (do_strings_match_weakly(raw_etags.data(), static_cast<int>(raw_etags.length()), comma_sep_tag_list.data(),
                                   static_cast<int>(comma_sep_tag_list.length()))) {
-        return HTTP_STATUS_NOT_MODIFIED;
+        return HTTPStatus::NOT_MODIFIED;
       } else {
         return response->status_get();
       }
@@ -1353,7 +1353,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
         return response->status_get();
       }
 
-      response_code = HTTP_STATUS_NOT_MODIFIED;
+      response_code = HTTPStatus::NOT_MODIFIED;
     } else if (response->presence(MIME_PRESENCE_DATE)) {
       ink_time_t date_value = response->get_date();
 
@@ -1362,20 +1362,20 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
         return response->status_get();
       }
 
-      response_code = HTTP_STATUS_NOT_MODIFIED;
+      response_code = HTTPStatus::NOT_MODIFIED;
     } else {
       // we won't return NOT_MODIFIED if received time is too recent
       if (request->get_if_modified_since() < response_received_time) {
         return response->status_get();
       }
 
-      response_code = HTTP_STATUS_NOT_MODIFIED;
+      response_code = HTTPStatus::NOT_MODIFIED;
     }
   }
 
   // There is no If-none-match, and If-modified-since failed,
   // so return NOT_MODIFIED
-  if (response_code != HTTP_STATUS_NONE) {
+  if (response_code != HTTPStatus::NONE) {
     return response_code;
   }
 
@@ -1392,7 +1392,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
                                   static_cast<int>(comma_sep_tag_list.length()))) {
       return response->status_get();
     } else {
-      return HTTP_STATUS_PRECONDITION_FAILED;
+      return HTTPStatus::PRECONDITION_FAILED;
     }
   }
 
@@ -1403,7 +1403,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
     // Condition fails if Last-modified not exists
     if ((request->get_if_unmodified_since() < lm_value) || (lm_value == 0)) {
-      return HTTP_STATUS_PRECONDITION_FAILED;
+      return HTTPStatus::PRECONDITION_FAILED;
     } else {
       response_code = response->status_get();
     }
@@ -1411,7 +1411,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // There is no If-match, and If-unmodified-since passed,
   // so return the original response code
-  if (response_code != HTTP_STATUS_NONE) {
+  if (response_code != HTTPStatus::NONE) {
     return response_code;
   }
 

@@ -1037,7 +1037,7 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
   }
 
   MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
-  if ((field && !field->value_get_int64()) || ainfo->m_alt->m_response_hdr.status_get() == HTTP_STATUS_NO_CONTENT) {
+  if ((field && !field->value_get_int64()) || ainfo->m_alt->m_response_hdr.status_get() == HTTPStatus::NO_CONTENT) {
     f.allow_empty_doc = 1;
     // Set the object size here to zero in case this is a cache replace where the new object
     // length is zero but the old object was not.

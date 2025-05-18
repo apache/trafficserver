@@ -144,7 +144,6 @@ FetchSM::InvokePlugin(int event, void *data)
 bool
 FetchSM::has_body()
 {
-  int      status_code;
   HTTPHdr *hdr;
 
   if (!header_done) {
@@ -161,8 +160,7 @@ FetchSM::has_body()
 
   hdr = &client_response_hdr;
 
-  status_code = hdr->status_get();
-  if (status_code < 200 || status_code == 204 || status_code == 304) {
+  if (auto status_code{static_cast<int>(hdr->status_get())}; status_code < 200 || status_code == 204 || status_code == 304) {
     return false;
   }
 

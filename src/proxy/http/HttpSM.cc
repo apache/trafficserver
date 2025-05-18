@@ -656,11 +656,11 @@ HttpSM::state_read_client_request_header(int event, void *data)
     _ua.get_entry()->read_vio->nbytes = _ua.get_entry()->read_vio->ndone;
 
     (bytes_used > t_state.http_config_param->http_request_line_max_size) ?
-      t_state.http_return_code = HTTP_STATUS_REQUEST_URI_TOO_LONG :
-      t_state.http_return_code = HTTP_STATUS_NONE;
+      t_state.http_return_code = HTTPStatus::REQUEST_URI_TOO_LONG :
+      t_state.http_return_code = HTTPStatus::NONE;
 
     if (!is_http1_hdr_version_supported(t_state.hdr_info.client_request.version_get())) {
-      t_state.http_return_code = HTTP_STATUS_HTTPVER_NOT_SUPPORTED;
+      t_state.http_return_code = HTTPStatus::HTTPVER_NOT_SUPPORTED;
     }
 
     call_transact_and_set_next_state(HttpTransact::BadRequest);
@@ -694,7 +694,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     SMDbg(dbg_ctl_http, "done parsing client request header");
 
     if (!t_state.hdr_info.client_request.check_hdr_implements()) {
-      t_state.http_return_code = HTTP_STATUS_NOT_IMPLEMENTED;
+      t_state.http_return_code = HTTPStatus::NOT_IMPLEMENTED;
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
     }
@@ -706,7 +706,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
         Warning("scheme [%s] vs. protocol [%s] mismatch", hdrtoken_index_to_wks(scheme),
                 _ua.get_client_connection_is_ssl() ? "tls" : "plaintext");
         if (t_state.http_config_param->scheme_proto_mismatch_policy == 2) {
-          t_state.http_return_code = HTTP_STATUS_BAD_REQUEST;
+          t_state.http_return_code = HTTPStatus::BAD_REQUEST;
           call_transact_and_set_next_state(HttpTransact::BadRequest);
           break;
         }
@@ -1997,7 +1997,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     //  something  and didn't just throw up it's hands (INKqa05339)
     bool allow_error = false;
     if (t_state.hdr_info.server_response.type_get() == HTTP_TYPE_RESPONSE &&
-        t_state.hdr_info.server_response.status_get() == HTTP_STATUS_MOVED_TEMPORARILY) {
+        t_state.hdr_info.server_response.status_get() == HTTPStatus::MOVED_TEMPORARILY) {
       if (t_state.hdr_info.server_response.field_find(static_cast<std::string_view>(MIME_FIELD_LOCATION))) {
         allow_error = true;
       }
@@ -2027,7 +2027,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   case PARSE_RESULT_DONE:
 
     if (!t_state.hdr_info.server_response.check_hdr_implements()) {
-      t_state.http_return_code = HTTP_STATUS_BAD_GATEWAY;
+      t_state.http_return_code = HTTPStatus::BAD_GATEWAY;
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
     }
@@ -4930,7 +4930,7 @@ HttpSM::do_range_setup_if_necessary()
       } else {
         // if revalidating and cache is stale we want to transform
         if (t_state.cache_info.action == HttpTransact::CacheAction_t::REPLACE) {
-          if (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_OK) {
+          if (t_state.hdr_info.server_response.status_get() == HTTPStatus::OK) {
             Dbg(dbg_ctl_http_range, "Serving transform after stale cache re-serve");
             do_transform = true;
           } else {
@@ -5930,7 +5930,7 @@ HttpSM::release_server_session(bool serve_from_cache)
   if (TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match && t_state.current.server != nullptr &&
       t_state.current.server->keep_alive == HTTP_KEEPALIVE && t_state.hdr_info.server_response.valid() &&
       t_state.hdr_info.server_request.valid() &&
-      (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
+      (t_state.hdr_info.server_response.status_get() == HTTPStatus::NOT_MODIFIED ||
        (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD &&
         t_state.www_auth_content != HttpTransact::CacheAuth_t::NONE)) &&
       plugin_tunnel_type == HttpPluginTunnel_t::NONE && (!server_entry || !server_entry->eos)) {
@@ -5956,7 +5956,7 @@ HttpSM::release_server_session(bool serve_from_cache)
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_invalid_response);
     } else if (!t_state.hdr_info.server_request.valid()) {
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_invalid_request);
-    } else if (t_state.hdr_info.server_response.status_get() != HTTP_STATUS_NOT_MODIFIED &&
+    } else if (t_state.hdr_info.server_response.status_get() != HTTPStatus::NOT_MODIFIED &&
                (t_state.hdr_info.server_request.method_get_wksidx() != HTTP_WKSIDX_HEAD ||
                 t_state.www_auth_content == HttpTransact::CacheAuth_t::NONE)) {
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_modified);
@@ -6785,7 +6785,7 @@ HttpSM::setup_cache_read_transfer()
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // Now dump the header into the buffer
-  ink_assert(t_state.hdr_info.client_response.status_get() != HTTP_STATUS_NOT_MODIFIED);
+  ink_assert(t_state.hdr_info.client_response.status_get() != HTTPStatus::NOT_MODIFIED);
   client_response_hdr_bytes = hdr_size = write_response_header_into_buffer(&t_state.hdr_info.client_response, buf);
   cache_response_hdr_bytes             = client_response_hdr_bytes;
 
@@ -7153,7 +7153,7 @@ HttpSM::setup_transfer_from_transform()
   ink_assert(c->vc_type == HttpTunnelType_t::TRANSFORM);
 
   // Now dump the header into the buffer
-  ink_assert(t_state.hdr_info.client_response.status_get() != HTTP_STATUS_NOT_MODIFIED);
+  ink_assert(t_state.hdr_info.client_response.status_get() != HTTPStatus::NOT_MODIFIED);
   client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, buf);
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
@@ -7223,7 +7223,7 @@ HttpSM::setup_server_transfer()
     t_state.hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
   }
   // Now dump the header into the buffer
-  ink_assert(t_state.hdr_info.client_response.status_get() != HTTP_STATUS_NOT_MODIFIED);
+  ink_assert(t_state.hdr_info.client_response.status_get() != HTTPStatus::NOT_MODIFIED);
   client_response_hdr_bytes = hdr_size = write_response_header_into_buffer(&t_state.hdr_info.client_response, buf);
 
   nbytes = server_transfer_init(buf, hdr_size);
@@ -7633,7 +7633,7 @@ HttpSM::update_stats()
   milestones[TS_MILESTONE_SM_FINISH] = ink_get_hrtime();
 
   if (is_action_tag_set("bad_length_state_dump")) {
-    if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTP_STATUS_OK) {
+    if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTPStatus::OK) {
       int64_t p_resp_cl = t_state.hdr_info.client_response.get_content_length();
       int64_t resp_size = client_response_body_bytes;
       if (!((p_resp_cl == -1 || p_resp_cl == resp_size || resp_size == 0))) {
@@ -7715,7 +7715,7 @@ HttpSM::update_stats()
     // get the status code, lame that we have to check to see if it is valid or we will assert in the method call
     int status = 0;
     if (t_state.hdr_info.client_response.valid()) {
-      status = t_state.hdr_info.client_response.status_get();
+      status = static_cast<int>(t_state.hdr_info.client_response.status_get());
     }
     char client_ip[INET6_ADDRSTRLEN];
     ats_ip_ntop(&t_state.client_info.src_addr, client_ip, sizeof(client_ip));
@@ -8649,13 +8649,13 @@ HttpSM::is_redirect_required()
     HTTPStatus status = t_state.hdr_info.client_response.status_get();
     // check to see if the response from the origin was a 301, 302, or 303
     switch (status) {
-    case HTTP_STATUS_MULTIPLE_CHOICES:   // 300
-    case HTTP_STATUS_MOVED_PERMANENTLY:  // 301
-    case HTTP_STATUS_MOVED_TEMPORARILY:  // 302
-    case HTTP_STATUS_SEE_OTHER:          // 303
-    case HTTP_STATUS_USE_PROXY:          // 305
-    case HTTP_STATUS_TEMPORARY_REDIRECT: // 307
-    case HTTP_STATUS_PERMANENT_REDIRECT: // 308
+    case HTTPStatus::MULTIPLE_CHOICES:   // 300
+    case HTTPStatus::MOVED_PERMANENTLY:  // 301
+    case HTTPStatus::MOVED_TEMPORARILY:  // 302
+    case HTTPStatus::SEE_OTHER:          // 303
+    case HTTPStatus::USE_PROXY:          // 305
+    case HTTPStatus::TEMPORARY_REDIRECT: // 307
+    case HTTPStatus::PERMANENT_REDIRECT: // 308
       redirect_required = true;
       break;
     default:

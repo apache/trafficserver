@@ -262,7 +262,7 @@ VersionConverter::_convert_res_from_1_to_2(HTTPHdr &header) const
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_STATUS); field != nullptr) {
     // ink_small_itoa() requires 5+ buffer length
     char status_str[STATUS_VALUE_LEN + 3];
-    mime_format_int(status_str, header.status_get(), sizeof(status_str));
+    mime_format_int(status_str, static_cast<int32_t>(header.status_get()), sizeof(status_str));
 
     field->value_set(header.m_heap, header.m_mime,
                      std::string_view{status_str, static_cast<std::string_view::size_type>(STATUS_VALUE_LEN)});

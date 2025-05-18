@@ -36,6 +36,7 @@
 #include "proxy/hdrs/MIME.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/PoolableSession.h"
+#include "proxy/hdrs/HTTP.h"
 
 #include "iocore/utils/Machine.h"
 
@@ -371,7 +372,7 @@ void
 HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response, char const *reason_phrase)
 {
   // These are required
-  ink_assert(outgoing_response->status_get());
+  ink_assert(outgoing_response->status_get() != HTTPStatus::NONE);
 
   // Set HTTP version to 1.1
   outgoing_response->version_set(HTTPVersion(1, 1));

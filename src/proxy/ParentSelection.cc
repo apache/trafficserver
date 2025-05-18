@@ -321,14 +321,14 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
 
   if (val == nullptr) {
     Warning("UnavailableServerResponseCodes - unavailable_server_retry_responses is null loading default 503 code.");
-    codes.push_back(HTTP_STATUS_SERVICE_UNAVAILABLE);
+    codes.push_back(static_cast<int>(HTTPStatus::SERVICE_UNAVAILABLE));
     return;
   }
   numTok = pTok.Initialize(val, SHARE_TOKS);
   if (numTok == 0) {
     c = atoi(val);
     if (c > 499 && c < 600) {
-      codes.push_back(HTTP_STATUS_SERVICE_UNAVAILABLE);
+      codes.push_back(static_cast<int>(HTTPStatus::SERVICE_UNAVAILABLE));
     }
   }
   for (int i = 0; i < numTok; i++) {
@@ -350,14 +350,14 @@ SimpleRetryResponseCodes::SimpleRetryResponseCodes(char *val)
 
   if (val == nullptr) {
     Warning("SimpleRetryResponseCodes - simple_server_retry_responses is null loading default 404 code.");
-    codes.push_back(HTTP_STATUS_NOT_FOUND);
+    codes.push_back(static_cast<int>(HTTPStatus::NOT_FOUND));
     return;
   }
   numTok = pTok.Initialize(val, SHARE_TOKS);
   if (numTok == 0) {
     c = atoi(val);
     if (c > 399 && c < 600) {
-      codes.push_back(HTTP_STATUS_NOT_FOUND);
+      codes.push_back(static_cast<int>(HTTPStatus::NOT_FOUND));
     }
   }
   for (int i = 0; i < numTok; i++) {

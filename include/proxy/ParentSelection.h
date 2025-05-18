@@ -259,17 +259,18 @@ struct ParentResult {
   bool
   response_is_retryable(ParentRetry_t retry_type, HTTPStatus response_code) const
   {
-    Dbg(dbg_ctl_parent_select, "In response_is_retryable, code: %d, type: %d", response_code, static_cast<int>(retry_type));
+    Dbg(dbg_ctl_parent_select, "In response_is_retryable, code: %d, type: %d", static_cast<int>(response_code),
+        static_cast<int>(retry_type));
     if (retry_type == ParentRetry_t::BOTH) {
       Dbg(dbg_ctl_parent_select, "Saw retry both");
-      return (rec->unavailable_server_retry_responses->contains(response_code) ||
-              rec->simple_server_retry_responses->contains(response_code));
+      return (rec->unavailable_server_retry_responses->contains(static_cast<int>(response_code)) ||
+              rec->simple_server_retry_responses->contains(static_cast<int>(response_code)));
     } else if (retry_type == ParentRetry_t::UNAVAILABLE_SERVER) {
       Dbg(dbg_ctl_parent_select, "Saw retry unavailable server");
-      return rec->unavailable_server_retry_responses->contains(response_code);
+      return rec->unavailable_server_retry_responses->contains(static_cast<int>(response_code));
     } else if (retry_type == ParentRetry_t::SIMPLE) {
       Dbg(dbg_ctl_parent_select, "Saw retry simple retry");
-      return rec->simple_server_retry_responses->contains(response_code);
+      return rec->simple_server_retry_responses->contains(static_cast<int>(response_code));
     } else {
       return false;
     }

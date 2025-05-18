@@ -1076,7 +1076,7 @@ RangeTransform::change_response_header()
 
   ink_release_assert(m_transform_resp);
 
-  status_code = HTTP_STATUS_PARTIAL_CONTENT;
+  status_code = HTTPStatus::PARTIAL_CONTENT;
   m_transform_resp->status_set(status_code);
   reason_phrase = const_cast<char *>(http_hdr_reason_lookup(status_code));
   m_transform_resp->reason_set(reason_phrase, strlen(reason_phrase));

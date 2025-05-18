@@ -663,7 +663,7 @@ public:
     HttpTransactMagic_t m_magic                = HttpTransactMagic_t::ALIVE;
     HTTPVersion         updated_server_version = HTTP_INVALID;
     CacheLookupResult_t cache_lookup_result    = CacheLookupResult_t::NONE;
-    HTTPStatus          http_return_code       = HTTP_STATUS_NONE;
+    HTTPStatus          http_return_code       = HTTPStatus::NONE;
     CacheAuth_t         www_auth_content       = CacheAuth_t::NONE;
 
     Arena arena;
@@ -1127,9 +1127,9 @@ using TransactEntryFunc_t = void (*)(HttpTransact::State *);
 inline bool
 is_response_body_precluded(HTTPStatus status_code)
 {
-  if (((status_code != HTTP_STATUS_OK) &&
-       ((status_code == HTTP_STATUS_NOT_MODIFIED) || ((status_code < HTTP_STATUS_OK) && (status_code >= HTTP_STATUS_CONTINUE)) ||
-        (status_code == HTTP_STATUS_NO_CONTENT)))) {
+  if (((status_code != HTTPStatus::OK) &&
+       ((status_code == HTTPStatus::NOT_MODIFIED) || ((status_code < HTTPStatus::OK) && (status_code >= HTTPStatus::CONTINUE)) ||
+        (status_code == HTTPStatus::NO_CONTENT)))) {
     return true;
   } else {
     return false;

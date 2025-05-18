@@ -435,7 +435,7 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
   if (!x)      \
   return 0
 
-  int   tmplen, hdrstat;
+  int   tmplen;
   char  tmpbuf[32];
   char *p;
 
@@ -515,8 +515,7 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
       *p++       = ' ';
       *bufindex += 9;
 
-      hdrstat = http_hdr_status_get(hdr);
-      if (hdrstat == 200) {
+      if (auto hdrstat{static_cast<int32_t>(http_hdr_status_get(hdr))}; hdrstat == 200) {
         *p++   = '2';
         *p++   = '0';
         *p++   = '0';
@@ -551,7 +550,7 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
 
       TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
-      tmplen = mime_format_int(tmpbuf, http_hdr_status_get(hdr), sizeof(tmpbuf));
+      tmplen = mime_format_int(tmpbuf, static_cast<int32_t>(http_hdr_status_get(hdr)), sizeof(tmpbuf));
 
       TRY(mime_mem_print(std::string_view{tmpbuf, static_cast<std::string_view::size_type>(tmplen)}, buf, bufsize, bufindex,
                          dumpoffset));
@@ -764,7 +763,7 @@ void
 http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  hh->u.resp.m_status = status;
+  hh->u.resp.m_status = static_cast<int16_t>(status);
 }
 
 /*-------------------------------------------------------------------------
@@ -792,13 +791,13 @@ http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int lengt
   -------------------------------------------------------------------------*/
 
 const char *
-http_hdr_reason_lookup(unsigned status)
+http_hdr_reason_lookup(HTTPStatus status)
 {
 #define HTTP_STATUS_ENTRY(value, reason) \
   case value:                            \
     return #reason
 
-  switch (status) {
+  switch (static_cast<int>(status)) {
     HTTP_STATUS_ENTRY(0, None);                  // TS_HTTP_STATUS_NONE
     HTTP_STATUS_ENTRY(100, Continue);            // [RFC2616]
     HTTP_STATUS_ENTRY(101, Switching Protocols); // [RFC2616]
@@ -823,7 +822,7 @@ http_hdr_reason_lookup(unsigned status)
     HTTP_STATUS_ENTRY(303, See Other);         // [RFC2616]
     HTTP_STATUS_ENTRY(304, Not Modified);      // [RFC2616]
     HTTP_STATUS_ENTRY(305, Use Proxy);         // [RFC2616]
-    // 306 Reserved                                                   // [RFC2616]
+    // 306 Reserved                             // [RFC2616]
     HTTP_STATUS_ENTRY(307, Temporary Redirect); // [RFC2616]
     HTTP_STATUS_ENTRY(308, Permanent Redirect); // [RFC-reschke-http-status-308-07]
     // 309-399 Unassigned
@@ -848,7 +847,7 @@ http_hdr_reason_lookup(unsigned status)
     HTTP_STATUS_ENTRY(422, Unprocessable Entity);            // [RFC4918]
     HTTP_STATUS_ENTRY(423, Locked);                          // [RFC4918]
     HTTP_STATUS_ENTRY(424, Failed Dependency);               // [RFC4918]
-    // 425 Reserved                                                   // [RFC2817]
+    // 425 Reserved                           // [RFC2817]
     HTTP_STATUS_ENTRY(426, Upgrade Required); // [RFC2817]
     // 427 Unassigned
     HTTP_STATUS_ENTRY(428, Precondition Required); // [RFC6585]
