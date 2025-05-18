@@ -54,7 +54,7 @@ Http1ServerSession::destroy()
   }
   ink_release_assert(_vc == nullptr);
   ink_assert(read_buffer);
-  magic = HTTP_SS_MAGIC_DEAD;
+  magic = Http1ServerSessionMagic::DEAD;
   if (read_buffer) {
     free_MIOBuffer(read_buffer);
     read_buffer = nullptr;
@@ -86,7 +86,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   // Unique session identifier.
   con_id = ProxySession::next_connection_id();
 
-  magic = HTTP_SS_MAGIC_ALIVE;
+  magic = Http1ServerSessionMagic::ALIVE;
   Metrics::Gauge::increment(http_rsb.current_server_connections);
   Metrics::Counter::increment(http_rsb.total_server_connections);
 
