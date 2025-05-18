@@ -1818,7 +1818,7 @@ HttpTransact::PPDNSLookup(State *s)
       if (is_cache_hit(s->cache_lookup_result) && is_stale_cache_response_returnable(s)) {
         s->source = Source_t::CACHE;
         TxnDbg(dbg_ctl_http_trans, "All parents are down, serving stale doc to client");
-        build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
+        build_response_from_cache(s, HTTPWarningCode::REVALIDATION_FAILED);
         return;
       }
       ink_assert(s->current.request_to == ResolveInfo::HOST_NONE);
@@ -1917,7 +1917,7 @@ HttpTransact::OSDNSLookup(State *s)
       if (is_cache_hit(s->cache_lookup_result) && is_stale_cache_response_returnable(s)) {
         s->source = Source_t::CACHE;
         TxnDbg(dbg_ctl_http_trans, "[hscno] serving stale doc to client");
-        build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
+        build_response_from_cache(s, HTTPWarningCode::REVALIDATION_FAILED);
         return;
       }
       // output the DNS failure error message
@@ -2960,12 +2960,12 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_RWW_HIT);
 
   if (s->cache_lookup_result == CacheLookupResult_t::HIT_WARNING) {
-    build_response_from_cache(s, HTTP_WARNING_CODE_HERUISTIC_EXPIRATION);
+    build_response_from_cache(s, HTTPWarningCode::HERUISTIC_EXPIRATION);
   } else if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE) {
     ink_assert(server_up == false);
-    build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
+    build_response_from_cache(s, HTTPWarningCode::REVALIDATION_FAILED);
   } else {
-    build_response_from_cache(s, HTTP_WARNING_CODE_NONE);
+    build_response_from_cache(s, HTTPWarningCode::NONE);
   }
 
   if (s->api_update_cached_object == HttpTransact::UpdateCachedObject_t::CONTINUE) {
@@ -3100,13 +3100,13 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       build_error_response(s, HTTPStatus::BAD_GATEWAY, "Connection Failed", "connect#failed_connect");
       s->cache_info.action = CacheAction_t::NO_ACTION;
       s->next_action       = StateMachineAction_t::INTERNAL_CACHE_NOOP;
-      warning_code         = HTTP_WARNING_CODE_NONE;
+      warning_code         = HTTPWarningCode::NONE;
     }
     break;
   }
 
   // After building the client response, add the given warning if provided.
-  if (warning_code != HTTP_WARNING_CODE_NONE) {
+  if (warning_code != HTTPWarningCode::NONE) {
     delete_warning_value(to_warn, warning_code);
     HttpTransactHeaders::insert_warning_header(s->http_config_param, to_warn, warning_code);
   }
@@ -3921,7 +3921,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
     ink_assert(s->internal_msg_buffer == nullptr);
     s->source = Source_t::CACHE;
     TxnDbg(dbg_ctl_http_trans, "[hscno] serving stale doc to client");
-    build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
+    build_response_from_cache(s, HTTPWarningCode::REVALIDATION_FAILED);
   } else {
     switch (s->current.request_to) {
     case ResolveInfo::PARENT_PROXY:
@@ -4582,7 +4582,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     base_response->unset_cooked_cc_need_revalidate_once();
     // unset warning revalidation failed header if it set
     // (potentially added by negative revalidating)
-    delete_warning_value(base_response, HTTP_WARNING_CODE_REVALIDATION_FAILED);
+    delete_warning_value(base_response, HTTPWarningCode::REVALIDATION_FAILED);
   }
   ink_assert(base_response->valid());
 
@@ -4624,7 +4624,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     }
     // a warning text is added only in the case of a NOT MODIFIED response
     if (warn_text) {
-      HttpTransactHeaders::insert_warning_header(s->http_config_param, &s->hdr_info.client_response, HTTP_WARNING_CODE_MISC_WARNING,
+      HttpTransactHeaders::insert_warning_header(s->http_config_param, &s->hdr_info.client_response, HTTPWarningCode::MISC_WARNING,
                                                  warn_text, strlen(warn_text));
     }
 
@@ -4736,7 +4736,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
   }
 
   if (warn_text) {
-    HttpTransactHeaders::insert_warning_header(s->http_config_param, to_warn, HTTP_WARNING_CODE_MISC_WARNING, warn_text,
+    HttpTransactHeaders::insert_warning_header(s->http_config_param, to_warn, HTTPWarningCode::MISC_WARNING, warn_text,
                                                strlen(warn_text));
   }
 
@@ -4815,7 +4815,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
       }
     }
 
-    delete_warning_value(cached_hdr, HTTP_WARNING_CODE_REVALIDATION_FAILED);
+    delete_warning_value(cached_hdr, HTTPWarningCode::REVALIDATION_FAILED);
   }
 
   s->cache_info.object_store.request_get()->field_delete(static_cast<std::string_view>(MIME_FIELD_VIA));
@@ -8867,7 +8867,7 @@ HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_cod
         valid_p = iter.get_first_int(field, val_code);
 
         while (valid_p) {
-          if (val_code != warning_code) {
+          if (val_code != static_cast<int>(warning_code)) {
             auto value = iter.get_current();
             if (new_field) {
               new_field->value_append(to_warn->m_heap, to_warn->m_mime, value.data(), value.size(), true);

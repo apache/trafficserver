@@ -600,8 +600,8 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
 
   char *warning_text = static_cast<char *>(alloca(bufsize));
 
-  len =
-    snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
+  len = snprintf(warning_text, bufsize, "%3d %s %.*s", static_cast<int>(code), http_config_param->proxy_response_via_string,
+                 warn_text_len, warn_text);
   header->value_set(static_cast<std::string_view>(MIME_FIELD_WARNING),
                     std::string_view{warning_text, static_cast<std::string_view::size_type>(len)});
 }
