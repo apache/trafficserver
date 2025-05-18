@@ -7790,14 +7790,14 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   if (should_close) {
-    sm->t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    sm->t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
     if (sm->get_ua_txn()) {
       sm->set_ua_half_close_flag();
     }
   }
   // Don't change if PIPELINE is set...
-  else if (sm->t_state.client_info.keep_alive == HTTP_NO_KEEPALIVE) {
-    sm->t_state.client_info.keep_alive = HTTP_KEEPALIVE;
+  else if (sm->t_state.client_info.keep_alive == HTTPKeepAlive::NO_KEEPALIVE) {
+    sm->t_state.client_info.keep_alive = HTTPKeepAlive::KEEPALIVE;
   }
 
   return TS_SUCCESS;

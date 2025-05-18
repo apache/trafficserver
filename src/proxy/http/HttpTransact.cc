@@ -876,7 +876,7 @@ HttpTransact::BadRequest(State *s)
   }
 
   build_error_response(s, status, reason, body_factory_template);
-  s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+  s->client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -1706,7 +1706,7 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   // Also "fake" the info we'd normally get from
   //   hostDB
   s->server_info.http_version = HTTP_1_0;
-  s->server_info.keep_alive   = HTTP_NO_KEEPALIVE;
+  s->server_info.keep_alive   = HTTPKeepAlive::NO_KEEPALIVE;
   s->server_info.http_version = HTTP_1_0;
   s->server_info.dst_addr.setToAnyAddr(AF_INET); // must set an address or we can't set the port.
   s->server_info.dst_addr.network_order_port() = htons(s->hdr_info.client_request.port_get()); // this is the info that matters.
@@ -2343,7 +2343,7 @@ HttpTransact::HandleBadPushRespHdr(State *s)
 void
 HttpTransact::HandlePushError(State *s, const char *reason)
 {
-  s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+  s->client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
 
   // Set half close flag to prevent TCP
   //   reset from the body still being transferred
@@ -3846,7 +3846,7 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   //////////////////////////////////////////////
   // disable keep-alive for request and retry //
   //////////////////////////////////////////////
-  s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
+  s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   s->current.retry_attempts.increment();
 
   TxnDbg(dbg_ctl_http_trans, "retry attempts now: %d, max: %d", s->current.retry_attempts.get(), max_retries);
@@ -4287,7 +4287,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
 
   case HTTPStatus::HTTPVER_NOT_SUPPORTED: // 505
   {
-    bool keep_alive = (s->current.server->keep_alive == HTTP_KEEPALIVE);
+    bool keep_alive = (s->current.server->keep_alive == HTTPKeepAlive::KEEPALIVE);
 
     s->next_action = how_to_open_connection(s);
 
@@ -4661,7 +4661,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
   TxnDbg(dbg_ctl_http_trans, "(hncoofsr)");
   TxnDbg(dbg_ctl_http_seq, "Entering handle_no_cache_operation_on_forward_server_response");
 
-  bool        keep_alive = s->current.server->keep_alive == HTTP_KEEPALIVE;
+  bool        keep_alive = s->current.server->keep_alive == HTTPKeepAlive::KEEPALIVE;
   const char *warn_text  = nullptr;
 
   switch (s->hdr_info.server_response.status_get()) {
@@ -5178,7 +5178,7 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
          server_info->http_version.get_minor(), check_hostdb);
 
   // Set keep_alive info based on the records.yaml setting
-  server_info->keep_alive = s->txn_conf->keep_alive_enabled_out ? HTTP_KEEPALIVE : HTTP_NO_KEEPALIVE;
+  server_info->keep_alive = s->txn_conf->keep_alive_enabled_out ? HTTPKeepAlive::KEEPALIVE : HTTPKeepAlive::NO_KEEPALIVE;
 
   return check_hostdb;
 }
@@ -5220,19 +5220,19 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes           
 
   if (force_http11 == true || (http11_if_hostdb == true && host_db_info->http_version == HTTP_1_1)) {
     server_info->http_version = HTTP_1_1;
-    server_info->keep_alive   = HTTP_KEEPALIVE;
+    server_info->keep_alive   = HTTPKeepAlive::KEEPALIVE;
   } else if (host_db_info->http_version == HTTP_1_0) {
     server_info->http_version = HTTP_1_0;
-    server_info->keep_alive   = HTTP_KEEPALIVE;
+    server_info->keep_alive   = HTTPKeepAlive::KEEPALIVE;
   } else if (host_db_info->http_version == HTTP_0_9) {
     server_info->http_version = HTTP_0_9;
-    server_info->keep_alive   = HTTP_NO_KEEPALIVE;
+    server_info->keep_alive   = HTTPKeepAlive::NO_KEEPALIVE;
   } else {
     //////////////////////////////////////////////
     // not set yet for this host. set defaults. //
     //////////////////////////////////////////////
     server_info->http_version  = HTTP_1_0;
-    server_info->keep_alive    = HTTP_KEEPALIVE;
+    server_info->keep_alive    = HTTPKeepAlive::KEEPALIVE;
     host_db_info->http_version = HTTP_1_0;
   }
 
@@ -5240,7 +5240,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes           
   // origin server keep_alive //
   /////////////////////////////
   if (!s->txn_conf->keep_alive_enabled_out) {
-    server_info->keep_alive = HTTP_NO_KEEPALIVE;
+    server_info->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
   return;
@@ -5659,7 +5659,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
 
   // If this is an internal request, never keep alive
   if (!s->txn_conf->keep_alive_enabled_in || (vc && vc->get_is_internal_request())) {
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    s->client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   } else {
     s->client_info.keep_alive = incoming_request->keep_alive_get();
   }
@@ -5787,10 +5787,10 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
 
   // Don't allow an upgrade request to Keep Alive
   if (s->is_upgrade_request) {
-    s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
+    s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
-  if (s->current.server->keep_alive == HTTP_KEEPALIVE) {
+  if (s->current.server->keep_alive == HTTPKeepAlive::KEEPALIVE) {
     TxnDbg(dbg_ctl_http_hdrs, "Server is keep-alive.");
   } else if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->is_outbound_transparent() &&
              s->state_machine->t_state.http_config_param->use_client_source_port) {
@@ -5798,7 +5798,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
        re-open it because the 4-tuple may still be in the processing of shutting down. So if the server isn't
        keep alive we must turn that off for the client as well.
     */
-    s->state_machine->t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    s->state_machine->t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
   HTTPStatus status_code = incoming_response->status_get();
@@ -6777,7 +6777,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
   };
 
   KA_Action_t ka_action   = KA_Action_t::UNKNOWN;
-  bool        upstream_ka = (s->current.server->keep_alive == HTTP_KEEPALIVE);
+  bool        upstream_ka = (s->current.server->keep_alive == HTTPKeepAlive::KEEPALIVE);
 
   ink_assert(heads->type_get() == HTTP_TYPE_REQUEST);
 
@@ -6815,7 +6815,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
     // Insert K-A headers as necessary
     switch (ka_action) {
     case KA_Action_t::CONNECTION:
-      ink_assert(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
+      ink_assert(s->current.server->keep_alive != HTTPKeepAlive::NO_KEEPALIVE);
       if (ver == HTTP_1_0) {
         if (s->current.request_to == ResolveInfo::PARENT_PROXY && parent_is_proxy(s)) {
           heads->value_set(static_cast<std::string_view>(MIME_FIELD_PROXY_CONNECTION), "keep-alive"sv);
@@ -6828,9 +6828,9 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       break;
     case KA_Action_t::DISABLED:
     case KA_Action_t::CLOSE:
-      if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
+      if (s->current.server->keep_alive != HTTPKeepAlive::NO_KEEPALIVE || (ver == HTTP_1_1)) {
         /* Had keep-alive */
-        s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
+        s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
         if (s->current.request_to == ResolveInfo::PARENT_PROXY && parent_is_proxy(s)) {
           heads->value_set(static_cast<std::string_view>(MIME_FIELD_PROXY_CONNECTION), "close"sv);
         } else {
@@ -6848,8 +6848,8 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       break;
     }
   } else { /* websocket connection */
-    s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-    s->client_info.keep_alive     = HTTP_NO_KEEPALIVE;
+    s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
+    s->client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
     heads->value_set(static_cast<std::string_view>(MIME_FIELD_CONNECTION), static_cast<std::string_view>(MIME_FIELD_UPGRADE));
 
     if (s->is_websocket) {
@@ -6891,7 +6891,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
 
   // Handle the upgrade cases
   if (s->is_upgrade_request && heads->status_get() == HTTPStatus::SWITCHING_PROTOCOL && s->source == Source_t::HTTP_ORIGIN_SERVER) {
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    s->client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
     if (s->is_websocket) {
       TxnDbg(dbg_ctl_http_trans, "transaction successfully upgraded to websockets.");
       // s->transparent_passthrough = true;
@@ -6970,12 +6970,12 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // Close the connection if client_info is not keep-alive.
     // Otherwise, if we cannot trust the content length, we will close the connection
     // unless we are going to use chunked encoding on HTTP/1.1 or the client issued a PUSH request
-    if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
+    if (s->client_info.keep_alive != HTTPKeepAlive::KEEPALIVE) {
       ka_action = KA_Action_t::DISABLED;
     } else if (s->hdr_info.trust_response_cl == false && s->state_machine->get_ua_txn() &&
                s->state_machine->get_ua_txn()->is_chunked_encoding_supported() &&
                !(s->client_info.receive_chunked_response == true ||
-                 (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
+                 (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTPKeepAlive::KEEPALIVE))) {
       ka_action = KA_Action_t::CLOSE;
     } else {
       ka_action = KA_Action_t::CONNECTION;
@@ -6987,7 +6987,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   // Insert K-A headers as necessary
   switch (ka_action) {
   case KA_Action_t::CONNECTION:
-    ink_assert(s->client_info.keep_alive != HTTP_NO_KEEPALIVE);
+    ink_assert(s->client_info.keep_alive != HTTPKeepAlive::NO_KEEPALIVE);
     // This is a hack, we send the keep-alive header for both 1.0
     // and 1.1, to be "compatible" with Akamai.
     heads->value_set(std::string_view{c_hdr_field_str, static_cast<std::string_view::size_type>(c_hdr_field_len)}, "keep-alive"sv);
@@ -6996,13 +6996,13 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     break;
   case KA_Action_t::CLOSE:
   case KA_Action_t::DISABLED:
-    if (s->client_info.keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
+    if (s->client_info.keep_alive != HTTPKeepAlive::NO_KEEPALIVE || (ver == HTTP_1_1)) {
       if (s->client_info.proxy_connect_hdr) {
         heads->value_set(std::string_view{c_hdr_field_str, static_cast<std::string_view::size_type>(c_hdr_field_len)}, "close"sv);
       } else if (s->state_machine->get_ua_txn() != nullptr) {
         s->state_machine->get_ua_txn()->set_close_connection(*heads);
       }
-      s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+      s->client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
     }
     // Note: if we are 1.1, we always need to send the close
     //  header since persistent connections are the default
@@ -8022,7 +8022,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   //////////////////////////////////////////////////////
   if (status_code == HTTPStatus::REQUEST_TIMEOUT || s->hdr_info.client_request.get_content_length() != 0 ||
       s->client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) {
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    s->client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   } else {
     // We don't have a request body.  Since we are
     //  generating the error, we know we can trust
@@ -8034,12 +8034,12 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   if ((s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->is_outbound_transparent()) &&
       (status_code == HTTPStatus::INTERNAL_SERVER_ERROR || status_code == HTTPStatus::GATEWAY_TIMEOUT ||
        status_code == HTTPStatus::BAD_GATEWAY || status_code == HTTPStatus::SERVICE_UNAVAILABLE)) {
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    s->client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
   // If there is a parse error on reading the request it can leave reading the request stream in an undetermined state
   if (status_code == HTTPStatus::BAD_REQUEST) {
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    s->client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
   switch (status_code) {
@@ -8109,7 +8109,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     s->congestion_control_crat = retry_after;
   } else if (status_code == HTTPStatus::BAD_REQUEST) {
     // Close the client connection after a malformed request
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    s->client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
   // Add a bunch of headers to make sure that caches between

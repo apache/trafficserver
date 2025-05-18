@@ -628,7 +628,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       // Setting half close means we will send the FIN when we've written all of the data.
       if (event == VC_EVENT_EOS) {
         this->set_ua_half_close_flag();
-        t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+        t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
       }
       return 0;
     }
@@ -1864,7 +1864,7 @@ HttpSM::state_http_server_open(int event, void *data)
               ats_ip_nptop(&t_state.client_info.src_addr.sa, ip_c, sizeof ip_c),
               ats_ip_nptop(&t_state.server_info.dst_addr.sa, ip_s, sizeof ip_s));
       }
-      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE; // part of the problem, clear it.
+      t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE; // part of the problem, clear it.
       terminate_sm                   = true;
     } else if (ENET_THROTTLING == t_state.current.server->connect_result) {
       Metrics::Counter::increment(http_rsb.origin_connections_throttled);
@@ -1982,9 +1982,9 @@ HttpSM::state_read_server_response_header(int event, void *data)
     if (tunnel.is_tunnel_alive()) {
       tunnel.abort_tunnel();
       // Make sure client connection is closed when we are done in case there is cruft left over
-      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+      t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
       // Similarly the server connection should also be closed
-      t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+      t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
     }
   }
 
@@ -3087,11 +3087,11 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 
   bool close_connection = false;
 
-  if (t_state.current.server->keep_alive == HTTP_KEEPALIVE && server_entry->eos == false &&
+  if (t_state.current.server->keep_alive == HTTPKeepAlive::KEEPALIVE && server_entry->eos == false &&
       plugin_tunnel_type == HttpPluginTunnel_t::NONE && t_state.txn_conf->keep_alive_enabled_out == 1) {
     close_connection = false;
   } else {
-    if (t_state.current.server->keep_alive != HTTP_KEEPALIVE) {
+    if (t_state.current.server->keep_alive != HTTPKeepAlive::KEEPALIVE) {
       Metrics::Counter::increment(http_rsb.origin_shutdown_tunnel_server_no_keep_alive);
     } else if (server_entry->eos == true) {
       Metrics::Counter::increment(http_rsb.origin_shutdown_tunnel_server_eos);
@@ -3145,8 +3145,8 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
         _ua.set_txn(nullptr); */
 
       t_state.current.server->abort      = HttpTransact::ABORTED;
-      t_state.client_info.keep_alive     = HTTP_NO_KEEPALIVE;
-      t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+      t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
+      t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
       if (event == VC_EVENT_EOS) {
         t_state.squid_codes.log_code = SQUID_LOG_ERR_READ_ERROR;
       }
@@ -3190,8 +3190,8 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
         tunnel.abort_cache_write_finish_others(p);
         // We couldn't read all chunks successfully:
         // Disable keep-alive.
-        t_state.client_info.keep_alive     = HTTP_NO_KEEPALIVE;
-        t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+        t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
+        t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
       } else {
         tunnel.local_finish_all(p);
       }
@@ -3250,7 +3250,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
        disabling KeepAlive if the server closes.
     */
     if (_ua.get_txn() && _ua.get_txn()->is_outbound_transparent() && t_state.http_config_param->use_client_source_port) {
-      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+      t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
     }
   } else {
     // If the option to attach the server session to the client session is set
@@ -3260,7 +3260,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     // origin server
     bool release_origin_connection = true;
     if (t_state.txn_conf->attach_server_session_to_client == 1 && _ua.get_txn() &&
-        t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
+        t_state.client_info.keep_alive == HTTPKeepAlive::KEEPALIVE) {
       SMDbg(dbg_ctl_http, "attaching server session to the client");
       if (_ua.get_txn()->attach_server_session(static_cast<PoolableSession *>(server_txn->get_proxy_ssn()))) {
         release_origin_connection = false;
@@ -3312,8 +3312,8 @@ HttpSM::tunnel_handler_trailer_server(int event, HttpTunnelProducer *p)
     tunnel.chain_abort_all(p);
 
     t_state.current.server->abort      = HttpTransact::ABORTED;
-    t_state.client_info.keep_alive     = HTTP_NO_KEEPALIVE;
-    t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+    t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
+    t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
     t_state.squid_codes.log_code       = SQUID_LOG_ERR_READ_ERROR;
     break;
 
@@ -3511,7 +3511,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   case VC_EVENT_WRITE_COMPLETE:
     c->write_success          = true;
     t_state.client_info.abort = HttpTransact::DIDNOT_ABORT;
-    if (t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
+    if (t_state.client_info.keep_alive == HTTPKeepAlive::KEEPALIVE) {
       if (t_state.www_auth_content != HttpTransact::CacheAuth_t::SERVE || _ua.get_txn()->get_server_session()) {
         // successful keep-alive
         close_connection = false;
@@ -5928,7 +5928,7 @@ HttpSM::release_server_session(bool serve_from_cache)
   }
 
   if (TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match && t_state.current.server != nullptr &&
-      t_state.current.server->keep_alive == HTTP_KEEPALIVE && t_state.hdr_info.server_response.valid() &&
+      t_state.current.server->keep_alive == HTTPKeepAlive::KEEPALIVE && t_state.hdr_info.server_response.valid() &&
       t_state.hdr_info.server_request.valid() &&
       (t_state.hdr_info.server_response.status_get() == HTTPStatus::NOT_MODIFIED ||
        (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD &&
@@ -5950,7 +5950,7 @@ HttpSM::release_server_session(bool serve_from_cache)
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_no_sharing);
     } else if (t_state.current.server == nullptr) {
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_no_server);
-    } else if (t_state.current.server->keep_alive != HTTP_KEEPALIVE) {
+    } else if (t_state.current.server->keep_alive != HTTPKeepAlive::KEEPALIVE) {
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_no_keep_alive);
     } else if (!t_state.hdr_info.server_response.valid()) {
       Metrics::Counter::increment(http_rsb.origin_shutdown_release_invalid_response);
@@ -6010,8 +6010,8 @@ HttpSM::handle_post_failure()
   this->disable_redirect();
 
   // Don't even think about doing keep-alive after this debacle
-  t_state.client_info.keep_alive     = HTTP_NO_KEEPALIVE;
-  t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+  t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
+  t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
 
   tunnel.deallocate_buffers();
   tunnel.reset();
@@ -6259,7 +6259,7 @@ HttpSM::do_drain_request_body(HTTPHdr &response)
   return;
 
 close_connection:
-  t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+  t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   _ua.get_txn()->set_close_connection(response);
 }
 
@@ -7099,7 +7099,7 @@ HttpSM::server_transfer_init(MIOBuffer *buf, int hdr_size)
   //   sure the server isn't screwing us by having sent too
   //   much.  If it did, we want to close the server connection
   if (server_response_pre_read_bytes == to_copy && server_txn->get_remote_reader()->read_avail() > 0) {
-    t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+    t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
   return nbytes;

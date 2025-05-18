@@ -506,7 +506,7 @@ public:
 
   struct ConnectionAttributes {
     HTTPVersion   http_version;
-    HTTPKeepAlive keep_alive = HTTP_KEEPALIVE_UNDEFINED;
+    HTTPKeepAlive keep_alive = HTTPKeepAlive::UNDEFINED;
 
     // The following variable is true if the client expects to
     // received a chunked response.

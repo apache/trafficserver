@@ -90,10 +90,10 @@ enum class HTTPStatus {
   HTTPVER_NOT_SUPPORTED = 505
 };
 
-enum HTTPKeepAlive {
-  HTTP_KEEPALIVE_UNDEFINED = 0,
-  HTTP_NO_KEEPALIVE,
-  HTTP_KEEPALIVE,
+enum class HTTPKeepAlive {
+  UNDEFINED = 0,
+  NO_KEEPALIVE,
+  KEEPALIVE,
 };
 
 enum HTTPWarningCode {
@@ -870,7 +870,7 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
   };
 
   int           con_token  = CON_TOKEN_NONE;
-  HTTPKeepAlive keep_alive = HTTP_NO_KEEPALIVE;
+  HTTPKeepAlive keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   //    *unknown_tokens = false;
 
   if (con_hdr) {
@@ -881,17 +881,17 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
   }
 
   if (HTTP_1_0 == http_version) {
-    keep_alive = (con_token == CON_TOKEN_KEEP_ALIVE) ? (HTTP_KEEPALIVE) : (HTTP_NO_KEEPALIVE);
+    keep_alive = (con_token == CON_TOKEN_KEEP_ALIVE) ? (HTTPKeepAlive::KEEPALIVE) : (HTTPKeepAlive::NO_KEEPALIVE);
   } else if (HTTP_1_1 == http_version) {
     // We deviate from the spec here.  If the we got a response where
     //   where there is no Connection header and the request 1.0 was
     //   1.0 don't treat this as keep-alive since Netscape-Enterprise/3.6 SP1
     //   server doesn't
     keep_alive = ((con_token == CON_TOKEN_KEEP_ALIVE) || (con_token == CON_TOKEN_NONE && HTTP_1_1 == http_version)) ?
-                   (HTTP_KEEPALIVE) :
-                   (HTTP_NO_KEEPALIVE);
+                   (HTTPKeepAlive::KEEPALIVE) :
+                   (HTTPKeepAlive::NO_KEEPALIVE);
   } else {
-    keep_alive = HTTP_NO_KEEPALIVE;
+    keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
   return (keep_alive);
 }
@@ -899,7 +899,7 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
 inline HTTPKeepAlive
 HTTPHdr::keep_alive_get() const
 {
-  HTTPKeepAlive    retval = HTTP_NO_KEEPALIVE;
+  HTTPKeepAlive    retval = HTTPKeepAlive::NO_KEEPALIVE;
   const MIMEField *pc     = this->field_find(static_cast<std::string_view>(MIME_FIELD_PROXY_CONNECTION));
   if (pc != nullptr) {
     retval = is_header_keep_alive(this->version_get(), pc);
@@ -913,7 +913,7 @@ HTTPHdr::keep_alive_get() const
 inline bool
 HTTPHdr::is_keep_alive_set() const
 {
-  return this->keep_alive_get() == HTTP_KEEPALIVE;
+  return this->keep_alive_get() == HTTPKeepAlive::KEEPALIVE;
 }
 
 /**
