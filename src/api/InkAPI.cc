@@ -2526,7 +2526,7 @@ TSHttpHdrCreate(TSMBuffer bufp)
 
   HTTPHdr h;
   h.m_heap = (reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap;
-  h.create(HTTP_TYPE_UNKNOWN);
+  h.create(HTTPType::UNKNOWN);
   return reinterpret_cast<TSMLoc>(h.m_http);
 }
 
@@ -2743,11 +2743,11 @@ TSHttpHdrTypeSet(TSMBuffer bufp, TSMLoc obj, TSHttpType type)
   //   fake the difference.  We not going to let
   //   people change the types of a header.  If they
   //   try, too bad.
-  if (h.m_http->m_polarity == HTTP_TYPE_UNKNOWN) {
-    if (type == static_cast<TSHttpType>(HTTP_TYPE_REQUEST)) {
+  if (h.m_http->m_polarity == HTTPType::UNKNOWN) {
+    if (type == static_cast<TSHttpType>(HTTPType::REQUEST)) {
       h.m_http->u.req.m_url_impl = url_create(h.m_heap);
       h.m_http->m_polarity       = static_cast<HTTPType>(type);
-    } else if (type == static_cast<TSHttpType>(HTTP_TYPE_RESPONSE)) {
+    } else if (type == static_cast<TSHttpType>(HTTPType::RESPONSE)) {
       h.m_http->m_polarity = static_cast<HTTPType>(type);
     }
   }
@@ -2855,7 +2855,7 @@ TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc obj, TSMLoc *locp)
 
   HTTPHdrImpl *hh = reinterpret_cast<HTTPHdrImpl *>(obj);
 
-  if (hh->m_polarity != HTTP_TYPE_REQUEST) {
+  if (hh->m_polarity != HTTPType::REQUEST) {
     return TS_ERROR;
   }
 
@@ -3982,7 +3982,7 @@ TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_
   auto buf_handle = reinterpret_cast<HTTPHdr *>(hdr_buf);
   auto hdr_handle = reinterpret_cast<HTTPHdrImpl *>(hdr_loc);
 
-  if (hdr_handle->m_polarity != HTTP_TYPE_REQUEST) {
+  if (hdr_handle->m_polarity != HTTPType::REQUEST) {
     Dbg(dbg_ctl_plugin, "Trying to get a URL from response header %p", hdr_loc);
     return TS_ERROR;
   }

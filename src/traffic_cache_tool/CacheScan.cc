@@ -80,10 +80,10 @@ Errata
 CacheScan::unmarshal(HTTPHdrImpl *obj, intptr_t offset)
 {
   Errata zret;
-  if (obj->m_polarity == HTTP_TYPE_REQUEST) {
+  if (obj->m_polarity == HTTPType::REQUEST) {
     HDR_UNMARSHAL_STR(obj->u.req.m_ptr_method, offset);
     HDR_UNMARSHAL_PTR(obj->u.req.m_url_impl, URLImpl, offset);
-  } else if (obj->m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (obj->m_polarity == HTTPType::RESPONSE) {
     HDR_UNMARSHAL_STR(obj->u.resp.m_ptr_reason, offset);
   } else {
     zret.note("Unknown Polarity of HTTPHdrImpl* obj");

@@ -94,10 +94,10 @@ Http3HeaderFramer::_generate_header_block()
   ParseResult parse_result = PARSE_RESULT_ERROR;
 
   if (this->_transaction->direction() == NET_VCONNECTION_OUT) {
-    this->_header.create(HTTP_TYPE_REQUEST, HTTP_3_0);
+    this->_header.create(HTTPType::REQUEST, HTTP_3_0);
     parse_result = this->_header.parse_req(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
   } else {
-    this->_header.create(HTTP_TYPE_RESPONSE, HTTP_3_0);
+    this->_header.create(HTTPType::RESPONSE, HTTP_3_0);
     parse_result = this->_header.parse_resp(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
   }
   this->_source_vio->ndone += bytes_used;

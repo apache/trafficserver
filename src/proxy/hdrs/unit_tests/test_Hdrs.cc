@@ -89,7 +89,7 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
     HTTPHdr  req_hdr;
     HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64); // extra to prevent proxy allocation.
 
-    req_hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
 
     http_parser_clear(&parser);
 
@@ -190,7 +190,7 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   /*** (1) parse the request string into hdr ***/
 
-  req_hdr.create(HTTP_TYPE_REQUEST);
+  req_hdr.create(HTTPType::REQUEST);
 
   start = request;
   end   = start + strlen(start); // 1 character past end of string
@@ -212,7 +212,7 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   /*** (2) parse the response string into hdr ***/
 
-  resp_hdr.create(HTTP_TYPE_RESPONSE);
+  resp_hdr.create(HTTPType::RESPONSE);
 
   start = response;
   end   = start + strlen(start); // 1 character past end of string
@@ -232,14 +232,14 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
   }
 
   /*** (3) Basic copy testing ***/
-  copy1.create(HTTP_TYPE_REQUEST);
+  copy1.create(HTTPType::REQUEST);
   copy1.copy(&req_hdr);
   comp_str = comp_http_hdr(&req_hdr, &copy1);
   if (comp_str) {
     goto done;
   }
 
-  copy2.create(HTTP_TYPE_RESPONSE);
+  copy2.create(HTTPType::RESPONSE);
   copy2.copy(&resp_hdr);
   comp_str = comp_http_hdr(&resp_hdr, &copy2);
   if (comp_str) {
@@ -292,7 +292,7 @@ test_http_hdr_null_char(int testnum, const char *request, const char * /*request
 
   /*** (1) parse the request string into hdr ***/
 
-  hdr.create(HTTP_TYPE_REQUEST);
+  hdr.create(HTTPType::REQUEST);
 
   start = request;
 
@@ -334,7 +334,7 @@ test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_
 
   /*** (1) parse the request string into hdr ***/
 
-  hdr.create(HTTP_TYPE_REQUEST);
+  hdr.create(HTTPType::REQUEST);
 
   start = request;
 
@@ -395,7 +395,7 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   /*** (1) parse the request string into hdr ***/
 
-  hdr.create(HTTP_TYPE_REQUEST);
+  hdr.create(HTTPType::REQUEST);
 
   start = request;
   end   = start + strlen(start); // 1 character past end of string
@@ -422,9 +422,9 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
   ref.refcount_inc();
 
   int marshal_len = hdr.m_heap->marshal(marshal_buf.get(), marshal_bufsize);
-  marshal_hdr.create(HTTP_TYPE_REQUEST);
+  marshal_hdr.create(HTTPType::REQUEST);
   marshal_hdr.unmarshal(marshal_buf.get(), marshal_len, &ref);
-  new_hdr.create(HTTP_TYPE_REQUEST);
+  new_hdr.create(HTTPType::REQUEST);
   new_hdr.copy(&marshal_hdr);
 
   /*** (3) print the request header and copy to buffers ***/
@@ -466,7 +466,7 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   /*** (4) parse the response string into hdr ***/
 
-  hdr.create(HTTP_TYPE_RESPONSE);
+  hdr.create(HTTPType::RESPONSE);
 
   start = response;
   end   = start + strlen(start); // 1 character past end of string
@@ -487,7 +487,7 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   /*** (2) copy the response header ***/
 
-  new_hdr.create(HTTP_TYPE_RESPONSE);
+  new_hdr.create(HTTPType::RESPONSE);
   new_hdr.copy(&hdr);
 
   /*** (3) print the response header and copy to buffers ***/
@@ -1479,8 +1479,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       http_parser_init(&parser);
 
-      req_hdr.create(HTTP_TYPE_REQUEST);
-      rsp_hdr.create(HTTP_TYPE_RESPONSE);
+      req_hdr.create(HTTPType::REQUEST);
+      rsp_hdr.create(HTTPType::RESPONSE);
 
       std::printf("======== parsing\n\n");
       while (true) {
@@ -1498,7 +1498,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       /*** useless copy to exercise copy function ***/
 
       HTTPHdr new_hdr;
-      new_hdr.create(HTTP_TYPE_REQUEST);
+      new_hdr.create(HTTPType::REQUEST);
       new_hdr.copy(&req_hdr);
       new_hdr.destroy();
 
@@ -1596,8 +1596,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       http_parser_init(&parser);
 
-      req_hdr.create(HTTP_TYPE_REQUEST);
-      rsp_hdr.create(HTTP_TYPE_RESPONSE);
+      req_hdr.create(HTTPType::REQUEST);
+      rsp_hdr.create(HTTPType::RESPONSE);
 
       std::printf("======== test_http_req_parse_error parsing\n\n");
       err = req_hdr.parse_req(&parser, &start, end, true, true, 1);
@@ -1638,7 +1638,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     http_parser_init(&parser);
 
-    resp_hdr.create(HTTP_TYPE_RESPONSE);
+    resp_hdr.create(HTTPType::RESPONSE);
 
     while (true) {
       err = resp_hdr.parse_resp(&parser, &start, end, true);
@@ -1884,7 +1884,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     ntests = sizeof(tests) / sizeof(tests[0]);
 
-    hdr.create(HTTP_TYPE_REQUEST);
+    hdr.create(HTTPType::REQUEST);
 
     for (i = 0; i < ntests; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
@@ -1976,7 +1976,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     ntests = sizeof(tests) / sizeof(tests[0]);
 
-    hdr.create(HTTP_TYPE_REQUEST);
+    hdr.create(HTTPType::REQUEST);
 
     for (i = 0; i < ntests; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);

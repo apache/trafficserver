@@ -49,12 +49,12 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   HTTPParser parser;
   HTTPHdr    req_hdr, rsp_hdr, req_hdr_2, rsp_hdr_2, req_hdr_3, rsp_hdr_3;
 
-  req_hdr.create(HTTP_TYPE_REQUEST);
-  rsp_hdr.create(HTTP_TYPE_RESPONSE);
-  req_hdr_2.create(HTTP_TYPE_REQUEST, HTTP_2_0);
-  rsp_hdr_2.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
-  req_hdr_3.create(HTTP_TYPE_REQUEST, HTTP_3_0);
-  rsp_hdr_3.create(HTTP_TYPE_RESPONSE, HTTP_3_0);
+  req_hdr.create(HTTPType::REQUEST);
+  rsp_hdr.create(HTTPType::RESPONSE);
+  req_hdr_2.create(HTTPType::REQUEST, HTTP_2_0);
+  rsp_hdr_2.create(HTTPType::RESPONSE, HTTP_2_0);
+  req_hdr_3.create(HTTPType::REQUEST, HTTP_3_0);
+  rsp_hdr_3.create(HTTPType::RESPONSE, HTTP_3_0);
 
   {
     http_parser_init(&parser);

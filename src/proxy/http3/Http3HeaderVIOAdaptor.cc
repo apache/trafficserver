@@ -105,7 +105,7 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
 {
   // Currently trailer support for h3 is not implemented.
   constexpr static bool NON_TRAILER = false;
-  if (!HeaderValidator::is_h2_h3_header_valid(this->_header, http_hdr_type_get(this->_header.m_http) == HTTP_TYPE_RESPONSE,
+  if (!HeaderValidator::is_h2_h3_header_valid(this->_header, http_hdr_type_get(this->_header.m_http) == HTTPType::RESPONSE,
                                               NON_TRAILER)) {
     Dbg(dbg_ctl_http3, "Header is invalid");
     return -1;
@@ -118,7 +118,7 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
 
   // FIXME: response header might be delayed from first response body because of callback from QPACK
   // Workaround fix for mixed response header and body
-  if (http_hdr_type_get(this->_header.m_http) == HTTP_TYPE_RESPONSE) {
+  if (http_hdr_type_get(this->_header.m_http) == HTTPType::RESPONSE) {
     return 0;
   }
 

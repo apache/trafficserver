@@ -47,7 +47,7 @@ check_header(const Fields_type &fields, HTTPHdr &hdr, bool expectation, bool is_
   for (auto &field : fields) {
     add_field_value_to_hdr(hdr, field.first, field.second);
   }
-  auto ret = HeaderValidator::is_h2_h3_header_valid(hdr, hdr.type_get() == HTTP_TYPE_RESPONSE, is_trailer);
+  auto ret = HeaderValidator::is_h2_h3_header_valid(hdr, hdr.type_get() == HTTPType::RESPONSE, is_trailer);
   REQUIRE(ret == expectation);
 }
 } // end anonymous namespace
@@ -60,7 +60,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
 
   SECTION("Test (valid) request with 4 required pseudo headers")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "GET"         },
       {":scheme",    "https"       },
@@ -71,7 +71,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test request with missing method field")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":scheme",    "https"       },
       {":authority", "www.this.com"},
@@ -81,7 +81,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test request with missing authority field")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method", "GET"       },
       {":scheme", "https"     },
@@ -91,7 +91,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test request with missing scheme field")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "GET"         },
       {":authority", "www.this.com"},
@@ -101,7 +101,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test request with missing path field")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "GET"         },
       {":scheme",    "https"       },
@@ -111,7 +111,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test request with extra pseudo headers")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "GET"         },
       {":scheme",    "https"       },
@@ -123,7 +123,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test CONNECT request with all required fields")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "CONNECT"     },
       {":authority", "www.this.com"},
@@ -133,7 +133,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test CONNECT request with disallowed :scheme field")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "CONNECT"     },
       {":authority", "www.this.com"},
@@ -145,7 +145,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test CONNECT request with disallowed :path field")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "CONNECT"     },
       {":authority", "www.this.com"},
@@ -157,7 +157,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test (valid) response with only the status field")
   {
-    hdr.create(HTTP_TYPE_RESPONSE, HTTP_1_1, heap);
+    hdr.create(HTTPType::RESPONSE, HTTP_1_1, heap);
     Fields_type fields = {
       {":status", "200"},
     };
@@ -166,7 +166,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
 
   SECTION("Test response with more than the status field")
   {
-    hdr.create(HTTP_TYPE_RESPONSE, HTTP_1_1, heap);
+    hdr.create(HTTPType::RESPONSE, HTTP_1_1, heap);
     Fields_type fields = {
       {":status", "200"},
       {":method", "GET"},
@@ -176,7 +176,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test response with no status field")
   {
-    hdr.create(HTTP_TYPE_RESPONSE, HTTP_1_1, heap);
+    hdr.create(HTTPType::RESPONSE, HTTP_1_1, heap);
     Fields_type fields = {
       {":method", "GET"},
     };
@@ -185,7 +185,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test (invalid) trailer header with pseudo-header field")
   {
-    hdr.create(HTTP_TYPE_RESPONSE, HTTP_1_1, heap);
+    hdr.create(HTTPType::RESPONSE, HTTP_1_1, heap);
     Fields_type fields = {
       {":status", "500"},
     };
@@ -195,7 +195,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test request with Connection headers")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "GET"         },
       {":scheme",    "https"       },
@@ -208,7 +208,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test request with Keep-Alive headers")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "GET"                },
       {":scheme",    "https"              },
@@ -221,7 +221,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test request with Proxy-Connection headers")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",          "GET"         },
       {":scheme",          "https"       },
@@ -234,7 +234,7 @@ TEST_CASE("testIsHeaderValid", "[proxy][hdrtest]")
   }
   SECTION("Test request with Upgrade headers")
   {
-    hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
     Fields_type fields = {
       {":method",    "GET"         },
       {":scheme",    "https"       },

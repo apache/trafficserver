@@ -369,14 +369,14 @@ inline void
 Http2Stream::reset_receive_headers()
 {
   this->_receive_header.destroy();
-  this->_receive_header.create(HTTP_TYPE_RESPONSE);
+  this->_receive_header.create(HTTPType::RESPONSE);
 }
 
 inline void
 Http2Stream::reset_send_headers()
 {
   this->_send_header.destroy();
-  this->_send_header.create(HTTP_TYPE_RESPONSE);
+  this->_send_header.create(HTTPType::RESPONSE);
 }
 
 // Check entire DATA payload length if content-length: header exists

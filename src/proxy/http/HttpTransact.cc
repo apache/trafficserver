@@ -712,10 +712,10 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
   };
 
 #ifdef DEBUG
-  ink_assert(request->type_get() == HTTP_TYPE_REQUEST);
-  ink_assert(response->type_get() == HTTP_TYPE_RESPONSE);
+  ink_assert(request->type_get() == HTTPType::REQUEST);
+  ink_assert(response->type_get() == HTTPType::RESPONSE);
   if (cached_request) {
-    ink_assert(cached_request->type_get() == HTTP_TYPE_REQUEST);
+    ink_assert(cached_request->type_get() == HTTPType::REQUEST);
   }
 #endif
 
@@ -2258,7 +2258,7 @@ HttpTransact::HandlePushResponseHdr(State *s)
     return;
   }
   // We need to create the request header storing in the cache
-  s->hdr_info.server_request.create(HTTP_TYPE_REQUEST);
+  s->hdr_info.server_request.create(HTTPType::REQUEST);
   s->hdr_info.server_request.copy(&s->hdr_info.client_request);
   s->hdr_info.server_request.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
   s->hdr_info.server_request.value_set("X-Inktomi-Source"sv, "http PUSH"sv);
@@ -2388,10 +2388,10 @@ HttpTransact::HandleCacheOpenRead(State *s)
     }
   } else {
     CacheHTTPInfo *obj = s->cache_info.object_read;
-    if (obj->response_get()->type_get() == HTTP_TYPE_UNKNOWN) {
+    if (obj->response_get()->type_get() == HTTPType::UNKNOWN) {
       read_successful = false;
     }
-    if (obj->request_get()->type_get() == HTTP_TYPE_UNKNOWN) {
+    if (obj->request_get()->type_get() == HTTPType::UNKNOWN) {
       read_successful = false;
     }
   }
@@ -4891,7 +4891,7 @@ HttpTransact::handle_transform_ready(State *s)
 void
 HttpTransact::set_header_for_transform(State *s, HTTPHdr *base_header)
 {
-  s->hdr_info.transform_response.create(HTTP_TYPE_RESPONSE);
+  s->hdr_info.transform_response.create(HTTPType::RESPONSE);
   s->hdr_info.transform_response.copy(base_header);
 
   // Nuke the content length since 1) the transform will probably
@@ -4906,8 +4906,8 @@ void
 HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHdr *request, HTTPHdr *response)
 {
   URL *temp_url;
-  ink_assert(request->type_get() == HTTP_TYPE_REQUEST);
-  ink_assert(response->type_get() == HTTP_TYPE_RESPONSE);
+  ink_assert(request->type_get() == HTTPType::REQUEST);
+  ink_assert(response->type_get() == HTTPType::RESPONSE);
 
   if (!cache_info->valid()) {
     cache_info->create();
@@ -5484,7 +5484,7 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
     return ResponseError_t::NON_EXISTANT_RESPONSE_HEADER;
   }
 
-  if (incoming_hdr->type_get() != HTTP_TYPE_RESPONSE) {
+  if (incoming_hdr->type_get() != HTTPType::RESPONSE) {
     return ResponseError_t::NOT_A_RESPONSE_HEADER;
   }
 
@@ -5521,7 +5521,7 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
 bool
 HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
 {
-  ink_assert(incoming_hdr->type_get() == HTTP_TYPE_REQUEST);
+  ink_assert(incoming_hdr->type_get() == HTTPType::REQUEST);
 
   // This only applies to TRACE and OPTIONS
   if ((s->method != HTTP_WKSIDX_TRACE) && (s->method != HTTP_WKSIDX_OPTIONS)) {
@@ -6645,7 +6645,7 @@ void
 HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *base)
 {
   int64_t cl = HTTP_UNDEFINED_CL;
-  ink_assert(header->type_get() == HTTP_TYPE_RESPONSE);
+  ink_assert(header->type_get() == HTTPType::RESPONSE);
   if (base->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
     cl = base->get_content_length();
     if (cl >= 0) {
@@ -6779,7 +6779,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
   KA_Action_t ka_action   = KA_Action_t::UNKNOWN;
   bool        upstream_ka = (s->current.server->keep_alive == HTTPKeepAlive::KEEPALIVE);
 
-  ink_assert(heads->type_get() == HTTP_TYPE_REQUEST);
+  ink_assert(heads->type_get() == HTTPType::REQUEST);
 
   // Check preconditions for Keep-Alive
   if (!upstream_ka) {
@@ -6882,7 +6882,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   };
   KA_Action_t ka_action = KA_Action_t::UNKNOWN;
 
-  ink_assert(heads->type_get() == HTTP_TYPE_RESPONSE);
+  ink_assert(heads->type_get() == HTTPType::RESPONSE);
 
   // Since connection headers are hop-to-hop, strip the
   //  the ones we received from upstream

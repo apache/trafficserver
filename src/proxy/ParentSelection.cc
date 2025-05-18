@@ -1878,7 +1878,7 @@ void
 br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
 {
   h->hdr = new HTTPHdr();
-  h->hdr->create(HTTP_TYPE_REQUEST);
+  h->hdr->create(HTTPType::REQUEST);
   h->hostname_str = ats_strdup(os_hostname);
   h->xact_start   = time(nullptr);
   ink_zero(h->src_ip);

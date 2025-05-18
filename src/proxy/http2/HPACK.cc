@@ -770,7 +770,7 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
   uint8_t             *cursor      = out_buf;
   const uint8_t *const out_buf_end = out_buf + out_buf_len;
 
-  ink_assert(http_hdr_type_get(hdr->m_http) != HTTP_TYPE_UNKNOWN);
+  ink_assert(http_hdr_type_get(hdr->m_http) != HTTPType::UNKNOWN);
 
   // Update dynamic table size
   if (maximum_table_size >= 0) {

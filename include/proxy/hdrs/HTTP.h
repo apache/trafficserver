@@ -249,10 +249,10 @@ constexpr std::string_view PSEUDO_HEADER_PATH      = ":path";
 constexpr std::string_view PSEUDO_HEADER_METHOD    = ":method";
 constexpr std::string_view PSEUDO_HEADER_STATUS    = ":status";
 
-enum HTTPType {
-  HTTP_TYPE_UNKNOWN,
-  HTTP_TYPE_REQUEST,
-  HTTP_TYPE_RESPONSE,
+enum class HTTPType {
+  UNKNOWN,
+  REQUEST,
+  RESPONSE,
 };
 
 struct HTTPHdrImpl : public HdrHeapObjImpl {
@@ -702,7 +702,7 @@ HTTPHdr::create(HTTPType polarity, HTTPVersion version, HdrHeap *heap)
 inline void
 HTTPHdr::clear()
 {
-  if (m_http && m_http->m_polarity == HTTP_TYPE_REQUEST) {
+  if (m_http && m_http->m_polarity == HTTPType::REQUEST) {
     m_url_cached.clear();
   }
   this->HdrHeapSDKHandle::clear();
@@ -748,7 +748,7 @@ HTTPHdr::copy_shallow(const HTTPHdr *hdr)
   m_http = hdr->m_http;
   m_mime = hdr->m_mime;
 
-  if (hdr->type_get() == HTTP_TYPE_REQUEST && m_url_cached.valid())
+  if (hdr->type_get() == HTTPType::REQUEST && m_url_cached.valid())
     m_url_cached.copy_shallow(&hdr->m_url_cached);
 }
 
@@ -951,7 +951,7 @@ inline std::string_view
 HTTPHdr::method_get()
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   return http_hdr_method_get(m_http);
 }
@@ -960,7 +960,7 @@ inline int
 HTTPHdr::method_get_wksidx() const
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   return (m_http->u.req.m_method_wks_idx);
 }
@@ -972,7 +972,7 @@ inline void
 HTTPHdr::method_set(const char *value, int length)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   int method_wks_idx = hdrtoken_tokenize(value, length);
   http_hdr_method_set(m_heap, m_http, value, method_wks_idx, length, true);
@@ -985,7 +985,7 @@ inline URL *
 HTTPHdr::url_create(URL *u)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   u->set(this);
   u->create(m_heap);
@@ -999,7 +999,7 @@ inline URL *
 HTTPHdr::url_get() const
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   // It's entirely possible that someone changed URL in our impl
   // without updating the cached copy in the C++ layer.  Check
@@ -1021,7 +1021,7 @@ inline URL *
 HTTPHdr::url_get(URL *url)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   url->set(this); // attach refcount
   url->m_url_impl = m_http->u.req.m_url_impl;
@@ -1035,7 +1035,7 @@ inline void
 HTTPHdr::url_set(URL *url)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   URLImpl *url_impl = m_http->u.req.m_url_impl;
   ::url_copy_onto(url->m_url_impl, url->m_heap, url_impl, m_heap, true);
@@ -1050,7 +1050,7 @@ HTTPHdr::url_set(const char *str, int length)
   URLImpl *url_impl;
 
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   url_impl = m_http->u.req.m_url_impl;
   ::url_clear(url_impl);
@@ -1063,7 +1063,7 @@ HTTPHdr::url_set(const char *str, int length)
 inline HTTPStatus
 http_hdr_status_get(HTTPHdrImpl const *hh)
 {
-  ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(hh->m_polarity == HTTPType::RESPONSE);
   return (HTTPStatus)hh->u.resp.m_status;
 }
 
@@ -1076,7 +1076,7 @@ HTTPHdr::status_get() const
   ink_assert(valid());
 
   if (m_http) {
-    ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+    ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
     return http_hdr_status_get(m_http);
   }
 
@@ -1090,7 +1090,7 @@ inline void
 HTTPHdr::status_set(HTTPStatus status)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   http_hdr_status_set(m_http, status);
 }
@@ -1102,7 +1102,7 @@ inline std::string_view
 HTTPHdr::reason_get()
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   return http_hdr_reason_get(m_http);
 }
@@ -1114,7 +1114,7 @@ inline void
 HTTPHdr::reason_set(const char *value, int length)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   http_hdr_reason_set(m_heap, m_http, value, length, true);
 }
@@ -1147,7 +1147,7 @@ HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool
                    size_t max_request_line_size, size_t max_hdr_field_size)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   return http_parser_parse_req(parser, m_heap, m_http, start, end, true, eof, strict_uri_parsing, max_request_line_size,
                                max_hdr_field_size);
@@ -1160,7 +1160,7 @@ inline ParseResult
 HTTPHdr::parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   return http_parser_parse_resp(parser, m_heap, m_http, start, end, true, eof);
 }

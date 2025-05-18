@@ -93,12 +93,12 @@ process_http_hdr_impl(HdrHeapObjImpl *obj, int offset)
   char        *s;
   HTTPHdrImpl *hhdr = (HTTPHdrImpl *)obj;
 
-  if (hhdr->m_polarity == HTTP_TYPE_REQUEST) {
+  if (hhdr->m_polarity == HTTPType::REQUEST) {
     printf("    is a request hdr\n");
     s = load_string(hhdr->u.req.m_ptr_method, hhdr->u.req.m_len_method, offset);
     printf("    method: %s\n", s);
     ats_free(s);
-  } else if (hhdr->m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (hhdr->m_polarity == HTTPType::RESPONSE) {
     printf("    is a response hdr\n");
     printf("    status code: %d\n", (int)hhdr->u.resp.m_status);
     s = load_string(hhdr->u.resp.m_ptr_reason, hhdr->u.resp.m_len_reason, offset);

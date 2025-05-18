@@ -197,10 +197,10 @@ HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response, HTTPStatus 
                                          int reason_phrase_len, ink_time_t date)
 {
   if (!outgoing_response->valid()) {
-    outgoing_response->create(HTTP_TYPE_RESPONSE);
+    outgoing_response->create(HTTPType::RESPONSE);
   }
 
-  ink_assert(outgoing_response->type_get() == HTTP_TYPE_RESPONSE);
+  ink_assert(outgoing_response->type_get() == HTTPType::RESPONSE);
 
   outgoing_response->version_set(HTTPVersion(1, 1));
   outgoing_response->status_set(status);

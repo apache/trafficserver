@@ -66,14 +66,14 @@ TEST_CASE("HttpTransact", "[http]")
         {"FFF", "666"}
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
         field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
         field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
@@ -146,14 +146,14 @@ TEST_CASE("HttpTransact", "[http]")
         {"FFF", "666"}
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
         field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
         field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
@@ -220,14 +220,14 @@ TEST_CASE("HttpTransact", "[http]")
         {"EEE", "666"}
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
         field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
         field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
@@ -294,14 +294,14 @@ TEST_CASE("HttpTransact", "[http]")
         {"FFF", "666"}
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
         field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
         field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
@@ -371,14 +371,14 @@ TEST_CASE("HttpTransact", "[http]")
         {"EEE", "999"},
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
         field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
         field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
@@ -463,14 +463,14 @@ TEST_CASE("HttpTransact", "[http]")
         {"Bop",   "666"},
       };
 
-      cached_headers.create(HTTP_TYPE_RESPONSE);
+      cached_headers.create(HTTPType::RESPONSE);
       for (auto &&entry : cached) {
         field = cached_headers.field_create(entry.name);
         cached_headers.field_attach(field);
         cached_headers.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      response_headers.create(HTTP_TYPE_RESPONSE);
+      response_headers.create(HTTPType::RESPONSE);
       for (auto &&entry : response) {
         field = response_headers.field_create(entry.name);
         response_headers.field_attach(field);

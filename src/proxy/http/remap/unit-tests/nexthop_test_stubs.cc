@@ -94,7 +94,7 @@ build_request(int64_t sm_id, HttpSM *sm, sockaddr_in *ip, const char *os_hostnam
     delete sm->t_state.request_data.hdr;
   }
   sm->t_state.request_data.hdr = new HTTPHdr();
-  sm->t_state.request_data.hdr->create(HTTP_TYPE_REQUEST, HTTP_1_1, myHeap);
+  sm->t_state.request_data.hdr->create(HTTPType::REQUEST, HTTP_1_1, myHeap);
   sm->t_state.request_data.hostname_str = sm->t_state.arena.str_store(os_hostname, strlen(os_hostname));
   sm->t_state.request_data.xact_start   = time(nullptr);
   ink_zero(sm->t_state.request_data.src_ip);

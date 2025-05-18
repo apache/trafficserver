@@ -132,7 +132,7 @@ load_qif_file(const char *filename, HTTPHdr **headers)
     } else {
       if (!hdr) {
         hdr = new HTTPHdr();
-        hdr->create(HTTP_TYPE_REQUEST);
+        hdr->create(HTTPType::REQUEST);
       }
       auto tab   = line.find_first_of('\t');
       auto name  = line.substr(0, tab);
@@ -371,7 +371,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs)
     } else {
       if (!header_sets[stream_id - 1]) {
         header_sets[stream_id - 1] = new HTTPHdr();
-        header_sets[stream_id - 1]->create(HTTP_TYPE_REQUEST);
+        header_sets[stream_id - 1]->create(HTTPType::REQUEST);
         ++n_headers;
       }
       qpack->decode(stream_id, block, block_len, *header_sets[stream_id - 1], event_handler, eventProcessor.all_ethreads[0]);

@@ -35,14 +35,14 @@ VersionConverter::convert(HTTPHdr &header, int from, int to) const
   int type = 0;
 
   switch (http_hdr_type_get(header.m_http)) {
-  case HTTP_TYPE_REQUEST:
+  case HTTPType::REQUEST:
     type = 0;
     break;
-  case HTTP_TYPE_RESPONSE:
+  case HTTPType::RESPONSE:
     type = 1;
     break;
-  case HTTP_TYPE_UNKNOWN:
-    ink_abort("HTTP_TYPE_UNKNOWN");
+  case HTTPType::UNKNOWN:
+    ink_abort("HTTPType::UNKNOWN");
     break;
   }
 

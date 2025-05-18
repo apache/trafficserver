@@ -189,7 +189,7 @@ build_hdrs(HTTPInfo &info, const char *url, const char *content_type)
   p += snprintf(p, sizeof(buf) - (p - buf), "Vary: Content-type\n");
   p += snprintf(p, sizeof(buf) - (p - buf), "Proxy-Connection: Keep-Alive\n\n");
 
-  req.create(HTTP_TYPE_REQUEST);
+  req.create(HTTPType::REQUEST);
   http_parser_init(&parser);
 
   while (true) {
@@ -214,7 +214,7 @@ build_hdrs(HTTPInfo &info, const char *url, const char *content_type)
   p += snprintf(p, sizeof(buf) - (p - buf), "Expires: Fri, 15 Mar 2219 08:55:45 GMT\n");
   p += snprintf(p, sizeof(buf) - (p - buf), "Last-Modified: Thu, 14 Mar 2019 08:47:40 GMT\n\n");
 
-  resp.create(HTTP_TYPE_RESPONSE);
+  resp.create(HTTPType::RESPONSE);
   http_parser_init(&parser);
   start = buf;
 

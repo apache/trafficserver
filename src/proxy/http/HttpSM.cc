@@ -429,7 +429,7 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   // Setup for parsing the header
   _ua.get_entry()->vc_read_handler = &HttpSM::state_read_client_request_header;
   t_state.hdr_info.client_request.destroy();
-  t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
+  t_state.hdr_info.client_request.create(HTTPType::REQUEST);
 
   // Prepare raw reader which will live until we are sure this is HTTP indeed
   auto tts = netvc->get_service<TLSTunnelSupport>();
@@ -488,7 +488,7 @@ HttpSM::setup_blind_tunnel_port()
     // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
     URL u;
 
-    t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
+    t_state.hdr_info.client_request.create(HTTPType::REQUEST);
     t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
     t_state.hdr_info.client_request.url_create(&u);
     u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
@@ -951,7 +951,7 @@ HttpSM::setup_push_read_response_header()
   // Note: we must use destroy() here since clear()
   //  does not free the memory from the header
   t_state.hdr_info.server_response.destroy();
-  t_state.hdr_info.server_response.create(HTTP_TYPE_RESPONSE);
+  t_state.hdr_info.server_response.create(HTTPType::RESPONSE);
   http_parser_clear(&http_parser);
 
   // We already done the READ when we read the client
@@ -1374,7 +1374,7 @@ plugins required to work with sni_routing.
       // We've received a request on a port which we blind forward
       URL u;
 
-      t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
+      t_state.hdr_info.client_request.create(HTTPType::REQUEST);
       t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
       t_state.hdr_info.client_request.url_create(&u);
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
@@ -1996,7 +1996,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     //  response to make sure that the parser was able to parse
     //  something  and didn't just throw up it's hands (INKqa05339)
     bool allow_error = false;
-    if (t_state.hdr_info.server_response.type_get() == HTTP_TYPE_RESPONSE &&
+    if (t_state.hdr_info.server_response.type_get() == HTTPType::RESPONSE &&
         t_state.hdr_info.server_response.status_get() == HTTPStatus::MOVED_TEMPORARILY) {
       if (t_state.hdr_info.server_response.field_find(static_cast<std::string_view>(MIME_FIELD_LOCATION))) {
         allow_error = true;
@@ -2964,7 +2964,7 @@ HttpSM::tunnel_handler_100_continue(int event, void *data)
       // Since 100 isn't a final (loggable) response header
       //   kill the 100 continue header and create an empty one
       t_state.hdr_info.server_response.destroy();
-      t_state.hdr_info.server_response.create(HTTP_TYPE_RESPONSE);
+      t_state.hdr_info.server_response.create(HTTPType::RESPONSE);
       handle_server_setup_error(VC_EVENT_EOS, server_entry->read_vio);
     } else {
       do_setup_client_request_body_tunnel(HttpVC_t::SERVER_VC);
@@ -6744,7 +6744,7 @@ HttpSM::setup_server_read_response_header()
   // Note: we must use destroy() here since clear()
   //  does not free the memory from the header
   t_state.hdr_info.server_response.destroy();
-  t_state.hdr_info.server_response.create(HTTP_TYPE_RESPONSE);
+  t_state.hdr_info.server_response.create(HTTPType::RESPONSE);
   http_parser_clear(&http_parser);
   server_response_hdr_bytes                        = 0;
   milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = 0;
@@ -8102,7 +8102,7 @@ HttpSM::set_next_state()
       ink_assert(t_state.hdr_info.client_response.valid() == 0);
       ink_assert((t_state.hdr_info.transform_response.valid() ? true : false) == true);
       do_drain_request_body(t_state.hdr_info.transform_response);
-      t_state.hdr_info.cache_response.create(HTTP_TYPE_RESPONSE);
+      t_state.hdr_info.cache_response.create(HTTPType::RESPONSE);
       t_state.hdr_info.cache_response.copy(&t_state.hdr_info.transform_response);
 
       HttpTunnelProducer *p = setup_cache_transfer_to_transform();
@@ -8111,7 +8111,7 @@ HttpSM::set_next_state()
     } else {
       ink_assert((t_state.hdr_info.client_response.valid() ? true : false) == true);
       do_drain_request_body(t_state.hdr_info.client_response);
-      t_state.hdr_info.cache_response.create(HTTP_TYPE_RESPONSE);
+      t_state.hdr_info.cache_response.create(HTTPType::RESPONSE);
       t_state.hdr_info.cache_response.copy(&t_state.hdr_info.client_response);
 
       perform_cache_write_action();
