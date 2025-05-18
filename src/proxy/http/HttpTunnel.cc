@@ -1117,7 +1117,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
             c_write = tmp;
           }
           p->alive         = false;
-          p->handler_state = HTTP_SM_POST_SUCCESS;
+          p->handler_state = static_cast<int>(HttpSmPost_t::SUCCESS);
         }
       }
       Dbg(dbg_ctl_http_tunnel, "Start write vio %" PRId64 " bytes", c_write);
@@ -1140,7 +1140,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       // done but we didn't do anything
       p->alive         = false;
       p->read_success  = true;
-      p->handler_state = HTTP_SM_POST_SUCCESS;
+      p->handler_state = static_cast<int>(HttpSmPost_t::SUCCESS);
       Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] [tunnel_run] producer already done", sm->sm_id);
       producer_handler(HTTP_TUNNEL_EVENT_PRECOMPLETE, p);
     } else {
@@ -1376,7 +1376,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     jump_point = p->vc_handler;
     (sm->*jump_point)(event, p);
     sm_callback = true;
-    p->update_state_if_not_set(HTTP_SM_POST_SUCCESS);
+    p->update_state_if_not_set(static_cast<int>(HttpSmPost_t::SUCCESS));
 
     // Kick off the consumers if appropriate
     for (c = p->consumer_list.head; c; c = c->link.next) {
@@ -1412,7 +1412,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
       (sm->*jump_point)(event, p);
       sm_callback = true;
       // Failure case anyway
-      p->update_state_if_not_set(HTTP_SM_POST_UA_FAIL);
+      p->update_state_if_not_set(static_cast<int>(HttpSmPost_t::UA_FAIL));
     }
     break;
 
@@ -1537,7 +1537,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     // Necessary for post tunnel end processing
     if (c->producer && c->producer->handler_state == 0) {
       if (event == VC_EVENT_WRITE_COMPLETE) {
-        c->producer->handler_state = HTTP_SM_POST_SUCCESS;
+        c->producer->handler_state = static_cast<int>(HttpSmPost_t::SUCCESS);
         // If the consumer completed, presumably the producer successfully read
         c->producer->read_success = true;
         // Go ahead and clean up the producer side
@@ -1545,9 +1545,9 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
           producer_handler(VC_EVENT_READ_COMPLETE, p);
         }
       } else if (c->vc_type == HttpTunnelType_t::HTTP_SERVER) {
-        c->producer->handler_state = HTTP_SM_POST_UA_FAIL;
+        c->producer->handler_state = static_cast<int>(HttpSmPost_t::UA_FAIL);
       } else if (c->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
-        c->producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
+        c->producer->handler_state = static_cast<int>(HttpSmPost_t::SERVER_FAIL);
       }
     }
     sm_callback = true;

@@ -109,11 +109,11 @@ enum class HttpSmMagic_t : uint32_t {
   DEAD  = 0xDEADFEED,
 };
 
-enum {
-  HTTP_SM_POST_UNKNOWN     = 0,
-  HTTP_SM_POST_UA_FAIL     = 1,
-  HTTP_SM_POST_SERVER_FAIL = 2,
-  HTTP_SM_POST_SUCCESS     = 3,
+enum class HttpSmPost_t {
+  UNKNOWN     = 0,
+  UA_FAIL     = 1,
+  SERVER_FAIL = 2,
+  SUCCESS     = 3,
 };
 
 enum {

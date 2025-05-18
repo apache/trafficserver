@@ -2684,7 +2684,7 @@ void
 HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
 {
   ink_assert(p->vc_type == HttpTunnelType_t::HTTP_CLIENT ||
-             (p->handler_state == HTTP_SM_POST_UA_FAIL && p->vc_type == HttpTunnelType_t::BUFFER_READ));
+             (static_cast<HttpSmPost_t>(p->handler_state) == HttpSmPost_t::UA_FAIL && p->vc_type == HttpTunnelType_t::BUFFER_READ));
   HttpTunnelConsumer *c;
 
   // If there is a post transform, remove it's entry from the State
@@ -2700,17 +2700,17 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
     post_transform_info.entry = nullptr;
   }
 
-  switch (p->handler_state) {
-  case HTTP_SM_POST_SERVER_FAIL:
+  switch (static_cast<HttpSmPost_t>(p->handler_state)) {
+  case HttpSmPost_t::SERVER_FAIL:
     c = tunnel.get_consumer(server_entry->vc);
     ink_assert(c->write_success == false);
     break;
-  case HTTP_SM_POST_UA_FAIL:
+  case HttpSmPost_t::UA_FAIL:
     // UA quit - shutdown the SM
     ink_assert(p->read_success == false);
     terminate_sm = true;
     break;
-  case HTTP_SM_POST_SUCCESS:
+  case HttpSmPost_t::SUCCESS:
     // The post succeeded
     ink_assert(p->read_success == true);
     ink_assert(p->consumer_list.head->write_success == true);
@@ -2745,7 +2745,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
 
   switch (event) {
   case HTTP_TUNNEL_EVENT_DONE: // Tunnel done.
-    if (p->handler_state == HTTP_SM_POST_UA_FAIL) {
+    if (static_cast<HttpSmPost_t>(p->handler_state) == HttpSmPost_t::UA_FAIL) {
       // post failed
       switch (t_state.client_info.state) {
       case HttpTransact::ACTIVE_TIMEOUT:
@@ -2773,8 +2773,8 @@ HttpSM::tunnel_handler_post(int event, void *data)
       free_MIOBuffer(_ua.get_entry()->write_buffer);
       _ua.get_entry()->write_buffer = nullptr;
     }
-    if (!p->handler_state) {
-      p->handler_state = HTTP_SM_POST_UA_FAIL;
+    if (p->handler_state == static_cast<int>(HttpSmPost_t::UNKNOWN)) {
+      p->handler_state = static_cast<int>(HttpSmPost_t::UA_FAIL);
     }
     break;
   case VC_EVENT_READ_READY:
@@ -2790,21 +2790,21 @@ HttpSM::tunnel_handler_post(int event, void *data)
 
   int p_handler_state = p->handler_state;
   if (is_waiting_for_full_body && !this->is_postbuf_valid()) {
-    p_handler_state = HTTP_SM_POST_SERVER_FAIL;
+    p_handler_state = static_cast<int>(HttpSmPost_t::SERVER_FAIL);
   }
   if (p->vc_type != HttpTunnelType_t::BUFFER_READ) {
     tunnel_handler_post_or_put(p);
   }
 
-  switch (p_handler_state) {
-  case HTTP_SM_POST_SERVER_FAIL:
+  switch (static_cast<HttpSmPost_t>(p_handler_state)) {
+  case HttpSmPost_t::SERVER_FAIL:
     handle_post_failure();
     break;
-  case HTTP_SM_POST_UA_FAIL:
+  case HttpSmPost_t::UA_FAIL:
     // Client side failed.  Shutdown and go home.  No need to communicate back to UA
     terminate_sm = true;
     break;
-  case HTTP_SM_POST_SUCCESS:
+  case HttpSmPost_t::SUCCESS:
     // It's time to start reading the response
     if (is_waiting_for_full_body) {
       is_waiting_for_full_body  = false;
@@ -3806,7 +3806,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case HTTP_TUNNEL_EVENT_PARSE_ERROR:
     if (client_response_hdr_bytes == 0) {
-      p->handler_state = HTTP_SM_POST_UA_FAIL;
+      p->handler_state = static_cast<int>(HttpSmPost_t::UA_FAIL);
       set_ua_abort(HttpTransact::ABORTED, event);
 
       SMDbg(dbg_ctl_http_tunnel, "send error response to client to vc %p, tunnel vc %p", _ua.get_txn()->get_netvc(), p->vc);
@@ -3826,7 +3826,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
   case VC_EVENT_ERROR:
     //  Did not complete post tunneling.  Abort the
     //   server and close the ua
-    p->handler_state = HTTP_SM_POST_UA_FAIL;
+    p->handler_state = static_cast<int>(HttpSmPost_t::UA_FAIL);
     set_ua_abort(HttpTransact::ABORTED, event);
     tunnel.chain_abort_all(p);
     // the in_tunnel status on both the ua & and
@@ -3846,7 +3846,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
 
   case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
-    p->handler_state           = HTTP_SM_POST_SUCCESS;
+    p->handler_state           = static_cast<int>(HttpSmPost_t::SUCCESS);
     p->read_success            = true;
     _ua.get_entry()->in_tunnel = false;
 
@@ -4006,7 +4006,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     //   is a response on from the server.  Mark the user
     //   agent as down so that tunnel concludes.
     ua_producer->alive         = false;
-    ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
+    ua_producer->handler_state = static_cast<int>(HttpSmPost_t::SERVER_FAIL);
     ink_assert(tunnel.is_tunnel_alive() == false);
     break;
 
@@ -6111,7 +6111,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
         ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
 
         ua_producer->alive         = false;
-        ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
+        ua_producer->handler_state = static_cast<int>(HttpSmPost_t::SERVER_FAIL);
         tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
         return;
       }
@@ -6406,7 +6406,7 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
   // If we're half closed, we got a FIN from the client. Forward it on to the origin server
   // now that we have the tunnel operational.
   // HttpTunnel could broken due to bad chunked data and close all vc by chain_abort_all().
-  if (p->handler_state != HTTP_SM_POST_UA_FAIL && _ua.get_txn()->get_half_close_flag()) {
+  if (static_cast<HttpSmPost_t>(p->handler_state) != HttpSmPost_t::UA_FAIL && _ua.get_txn()->get_half_close_flag()) {
     p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
   }
 }
