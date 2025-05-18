@@ -128,7 +128,7 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
     swoc::TextView       input            = frag.msg;
     bool                 got_shares_input = !frag.shares_input;
     constexpr bool const is_eof           = false;
-    ParseResult const    got_res          = scanner.get(input, output, got_shares_input, is_eof, MIMEScanner::LINE);
+    ParseResult const    got_res          = scanner.get(input, output, got_shares_input, is_eof, MIMEScanner::ScanType::LINE);
 
     REQUIRE(frag.expected_result == got_res);
     REQUIRE(frag.shares_input == got_shares_input);

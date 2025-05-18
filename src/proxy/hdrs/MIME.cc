@@ -2222,7 +2222,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
       auto lf_off = text.find(ParseRules::CHAR_LF);
       if (lf_off != TextView::npos) {
         text.remove_prefix(lf_off + 1); // drop up to and including LF
-        if (LINE == scan_type) {
+        if (ScanType::LINE == scan_type) {
           zret    = ParseResult::OK;
           m_state = MimeParseState::BEFORE;
         } else {
@@ -2357,7 +2357,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     TextView text{*real_s, real_e};
     TextView parsed;
-    err     = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::FIELD);
+    err     = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::ScanType::FIELD);
     *real_s = text.data();
     if (err != ParseResult::OK) {
       return err;

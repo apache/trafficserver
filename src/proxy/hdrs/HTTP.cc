@@ -949,7 +949,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     }
 
     text.assign(*start, real_end);
-    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::LINE);
+    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::ScanType::LINE);
     *start = text.data();
     if (static_cast<int>(err) < 0) {
       return err;
@@ -1346,7 +1346,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
     swoc::TextView text{*start, real_end};
     swoc::TextView parsed;
-    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::LINE);
+    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::ScanType::LINE);
     *start = text.data();
     if (static_cast<int>(err) < 0) {
       return err;

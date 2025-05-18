@@ -428,7 +428,7 @@ struct MIMEScanner {
   using self_type = MIMEScanner; ///< Self reference type.
 public:
   /// Type of input scanning.
-  enum ScanType {
+  enum class ScanType {
     LINE  = 0, ///< Scan a single line.
     FIELD = 1, ///< Scan with line folding enabled.
   };
