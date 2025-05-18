@@ -714,11 +714,11 @@ public:
 
   enum class CacheRequiredHeaders { NONE = 0, AT_LEAST_LAST_MODIFIED = 1, CACHE_CONTROL = 2 };
 
-  enum {
-    SEND_HTTP11_NEVER                    = 0,
-    SEND_HTTP11_ALWAYS                   = 1,
-    SEND_HTTP11_UPGRADE_HOSTDB           = 2,
-    SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB = 3,
+  enum class SendHttp11 {
+    NEVER                    = 0,
+    ALWAYS                   = 1,
+    UPGRADE_HOSTDB           = 2,
+    IF_REQUEST_11_AND_HOSTDB = 3,
   };
 
 public:

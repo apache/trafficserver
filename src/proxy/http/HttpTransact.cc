@@ -5151,15 +5151,15 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
            server_info->http_version.get_minor());
     return false;
   }
-  switch (s->txn_conf->send_http11_requests) {
-  case HttpConfigParams::SEND_HTTP11_NEVER:
+  switch (static_cast<HttpConfigParams::SendHttp11>(s->txn_conf->send_http11_requests)) {
+  case HttpConfigParams::SendHttp11::NEVER:
     server_info->http_version = HTTP_1_0;
     break;
-  case HttpConfigParams::SEND_HTTP11_UPGRADE_HOSTDB:
+  case HttpConfigParams::SendHttp11::UPGRADE_HOSTDB:
     server_info->http_version = HTTP_1_0;
     check_hostdb              = true;
     break;
-  case HttpConfigParams::SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB:
+  case HttpConfigParams::SendHttp11::IF_REQUEST_11_AND_HOSTDB:
     server_info->http_version = HTTP_1_0;
     if (s->hdr_info.client_request.version_get() == HTTP_1_1) {
       // check hostdb only if client req is http/1.1
@@ -5167,10 +5167,10 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
     }
     break;
   default:
-    // The default is the "1" config, SEND_HTTP11_ALWAYS, but assert in debug builds since we shouldn't be here
+    // The default is the "1" config, SendHttp11::ALWAYS, but assert in debug builds since we shouldn't be here
     ink_assert(0);
   // fallthrough
-  case HttpConfigParams::SEND_HTTP11_ALWAYS:
+  case HttpConfigParams::SendHttp11::ALWAYS:
     server_info->http_version = HTTP_1_1;
     break;
   }
@@ -5196,24 +5196,24 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes           
   bool force_http11     = false;
   bool http11_if_hostdb = false;
 
-  switch (s->txn_conf->send_http11_requests) {
-  case HttpConfigParams::SEND_HTTP11_NEVER:
+  switch (static_cast<HttpConfigParams::SendHttp11>(s->txn_conf->send_http11_requests)) {
+  case HttpConfigParams::SendHttp11::NEVER:
     // No need to do anything since above vars
     //   are defaulted false
     break;
-  case HttpConfigParams::SEND_HTTP11_UPGRADE_HOSTDB:
+  case HttpConfigParams::SendHttp11::UPGRADE_HOSTDB:
     http11_if_hostdb = true;
     break;
-  case HttpConfigParams::SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB:
+  case HttpConfigParams::SendHttp11::IF_REQUEST_11_AND_HOSTDB:
     if (s->hdr_info.client_request.version_get() == HTTP_1_1) {
       http11_if_hostdb = true;
     }
     break;
   default:
-    // The default is the "1" config, SEND_HTTP11_ALWAYS, but assert in debug builds since we shouldn't be here
+    // The default is the "1" config, SendHttp11::ALWAYS, but assert in debug builds since we shouldn't be here
     ink_assert(0);
   // fallthrough
-  case HttpConfigParams::SEND_HTTP11_ALWAYS:
+  case HttpConfigParams::SendHttp11::ALWAYS:
     force_http11 = true;
     break;
   }
