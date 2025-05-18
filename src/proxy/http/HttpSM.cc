@@ -8294,7 +8294,7 @@ HttpSM::do_redirect()
     this->postbuf_clear();
 
     if (enable_redirection && redirection_tries >= t_state.txn_conf->number_of_redirections) {
-      t_state.squid_codes.subcode = SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED;
+      t_state.squid_codes.subcode = SquidSubcode::NUM_REDIRECTIONS_EXCEEDED;
     }
 
     return;

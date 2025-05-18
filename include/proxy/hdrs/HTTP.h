@@ -166,9 +166,9 @@ enum class SquidLogCode {
 };
 
 // squid log subcodes
-enum SquidSubcode {
-  SQUID_SUBCODE_EMPTY                     = '0',
-  SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED = '1',
+enum class SquidSubcode {
+  EMPTY                     = '0',
+  NUM_REDIRECTIONS_EXCEEDED = '1',
 };
 
 /* squid hierarchy codes */
