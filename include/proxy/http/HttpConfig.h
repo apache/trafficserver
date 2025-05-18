@@ -331,14 +331,14 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_1G;
 };
 
-enum CacheOpenWriteFailAction_t {
-  CACHE_WL_FAIL_ACTION_DEFAULT                           = 0x00,
-  CACHE_WL_FAIL_ACTION_ERROR_ON_MISS                     = 0x01,
-  CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE               = 0x02,
-  CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE = 0x03,
-  CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE       = 0x04,
-  CACHE_WL_FAIL_ACTION_READ_RETRY                        = 0x05,
-  TOTAL_CACHE_WL_FAIL_ACTION_TYPES
+enum class CacheOpenWriteFailAction_t {
+  DEFAULT                           = 0x00,
+  ERROR_ON_MISS                     = 0x01,
+  STALE_ON_REVALIDATE               = 0x02,
+  ERROR_ON_MISS_STALE_ON_REVALIDATE = 0x03,
+  ERROR_ON_MISS_OR_REVALIDATE       = 0x04,
+  READ_RETRY                        = 0x05,
+  TOTAL_TYPES
 };
 
 extern HttpStatsBlock http_rsb;

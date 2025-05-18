@@ -202,11 +202,12 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     break;
 
   case CACHE_EVENT_OPEN_WRITE_FAILED: {
-    if (master_sm->t_state.txn_conf->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
+    if (master_sm->t_state.txn_conf->cache_open_write_fail_action ==
+        static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY)) {
       // fall back to open_read_tries
-      // Note that when CACHE_WL_FAIL_ACTION_READ_RETRY is configured, max_cache_open_write_retries
+      // Note that when CacheOpenWriteFailAction_t::READ_RETRY is configured, max_cache_open_write_retries
       // is automatically ignored. Make sure to not disable max_cache_open_read_retries
-      // with CACHE_WL_FAIL_ACTION_READ_RETRY as this results in proxy'ing to origin
+      // with CacheOpenWriteFailAction_t::READ_RETRY as this results in proxy'ing to origin
       // without write retries in both a cache miss or a cache refresh scenario.
 
       if (write_retry_done()) {
@@ -248,7 +249,8 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
   } break;
 
   case EVENT_INTERVAL:
-    if (master_sm->t_state.txn_conf->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
+    if (master_sm->t_state.txn_conf->cache_open_write_fail_action ==
+        static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY)) {
       Dbg(dbg_ctl_http_cache,
           "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
           "falling back to read retry...",

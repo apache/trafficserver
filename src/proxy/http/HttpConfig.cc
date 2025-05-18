@@ -1332,7 +1332,7 @@ HttpConfig::reconfigure()
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
 
   params->oride.cache_open_write_fail_action = m_master.oride.cache_open_write_fail_action;
-  if (params->oride.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
+  if (params->oride.cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY)) {
     if (params->oride.max_cache_open_read_retries <= 0 || params->oride.max_cache_open_write_retries <= 0) {
       Warning("Invalid config, cache_open_write_fail_action (%d), max_cache_open_read_retries (%" PRIu64 "), "
               "max_cache_open_write_retries (%" PRIu64 ")",

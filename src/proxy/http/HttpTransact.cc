@@ -3142,10 +3142,10 @@ HttpTransact::handle_cache_write_lock(State *s)
     // FIX: Should just serve from cache if this is a revalidate
     Metrics::Counter::increment(http_rsb.cache_open_write_fail_count);
     s->cache_info.action = CacheAction_t::NO_ACTION;
-    switch (s->cache_open_write_fail_action) {
-    case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS:
-    case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE:
-    case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE:
+    switch (static_cast<CacheOpenWriteFailAction_t>(s->cache_open_write_fail_action)) {
+    case CacheOpenWriteFailAction_t::ERROR_ON_MISS:
+    case CacheOpenWriteFailAction_t::ERROR_ON_MISS_STALE_ON_REVALIDATE:
+    case CacheOpenWriteFailAction_t::ERROR_ON_MISS_OR_REVALIDATE:
       TxnDbg(dbg_ctl_http_error, "cache_open_write_fail_action %d, cache miss, return error", s->cache_open_write_fail_action);
       s->cache_info.write_status = CacheWriteStatus_t::ERROR;
       build_error_response(s, HTTPStatus::BAD_GATEWAY, "Connection Failed", "connect#failed_connect");
@@ -3180,7 +3180,7 @@ HttpTransact::handle_cache_write_lock(State *s)
       //  Write failed and read retry triggered
       //  Clean up server_request and re-initiate
       //  Cache Lookup
-      ink_assert(s->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY);
+      ink_assert(s->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY));
       s->cache_info.write_status = CacheWriteStatus_t::LOCK_MISS;
       StateMachineAction_t next;
       next           = StateMachineAction_t::CACHE_LOOKUP;
@@ -7272,7 +7272,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   uint32_t   cc_mask, cooked_cc_mask;
   uint32_t   os_specifies_revalidate;
 
-  if (s->cache_open_write_fail_action & CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE) {
+  if (s->cache_open_write_fail_action & static_cast<MgmtByte>(CacheOpenWriteFailAction_t::STALE_ON_REVALIDATE)) {
     if (is_stale_cache_response_returnable(s)) {
       TxnDbg(dbg_ctl_http_match, "cache_serve_stale_on_write_lock_fail, return FRESH");
       return (Freshness_t::FRESH);
