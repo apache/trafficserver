@@ -4525,9 +4525,9 @@ TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
   *client_abort = false;
   HttpSM *sm    = reinterpret_cast<HttpSM *>(txnp);
   switch (sm->t_state.squid_codes.log_code) {
-  case SQUID_LOG_ERR_CLIENT_ABORT:
-  case SQUID_LOG_ERR_CLIENT_READ_ERROR:
-  case SQUID_LOG_TCP_SWAPFAIL:
+  case SquidLogCode::ERR_CLIENT_ABORT:
+  case SquidLogCode::ERR_CLIENT_READ_ERROR:
+  case SquidLogCode::TCP_SWAPFAIL:
     // check for client abort and cache read error
     *client_abort = true;
     return TS_SUCCESS;

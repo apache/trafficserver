@@ -3065,8 +3065,8 @@ LogAccess::marshal_cache_collapsed_connection_success(char *buf)
 
       // We attempted an open write, but ended up with some sort of HIT which means we must have gone back to the read state
       if ((m_http_sm->get_cache_sm().get_open_write_tries() > (0)) &&
-          ((code == SQUID_LOG_TCP_HIT) || (code == SQUID_LOG_TCP_MEM_HIT) || (code == SQUID_LOG_TCP_DISK_HIT) ||
-           (code == SQUID_LOG_TCP_CF_HIT))) {
+          ((code == SquidLogCode::TCP_HIT) || (code == SquidLogCode::TCP_MEM_HIT) || (code == SquidLogCode::TCP_DISK_HIT) ||
+           (code == SquidLogCode::TCP_CF_HIT))) {
         // Attempted collapsed connection and got a hit, success
         id = 1;
       } else if (m_http_sm->get_cache_sm().get_open_write_tries() > (m_http_sm->t_state.txn_conf->max_cache_open_write_retries)) {

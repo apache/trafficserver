@@ -1167,10 +1167,10 @@ HttpTransact::EndRemapRequest(State *s)
         // socket when there is no host. Need to handle DNS failure elsewhere.
       } else if (host.empty()) { /* no host */
         build_error_response(s, HTTPStatus::BAD_REQUEST, "Host Header Required", "request#no_host");
-        s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
+        s->squid_codes.log_code = SquidLogCode::ERR_INVALID_URL;
       } else {
         build_error_response(s, HTTPStatus::NOT_FOUND, "Not Found on Accelerator", "urlrouting#no_mapping");
-        s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
+        s->squid_codes.log_code = SquidLogCode::ERR_INVALID_URL;
       }
       s->reverse_proxy = false;
       goto done;
@@ -1181,7 +1181,7 @@ HttpTransact::EndRemapRequest(State *s)
       ///////////////////////////////////////////////////////
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       build_error_response(s, HTTPStatus::NOT_FOUND, "Not Found", "urlrouting#no_mapping");
-      s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
+      s->squid_codes.log_code = SquidLogCode::ERR_INVALID_URL;
 
       s->reverse_proxy = false;
       goto done;
@@ -1562,7 +1562,7 @@ HttpTransact::HandleRequest(State *s)
       Metrics::Counter::increment(http_rsb.post_body_too_large);
       bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
       build_error_response(s, HTTPStatus::REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large", "request#entity_too_large");
-      s->squid_codes.log_code = SQUID_LOG_ERR_POST_ENTITY_TOO_LARGE;
+      s->squid_codes.log_code = SquidLogCode::ERR_POST_ENTITY_TOO_LARGE;
       TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
     }
 
@@ -1923,7 +1923,7 @@ HttpTransact::OSDNSLookup(State *s)
       // output the DNS failure error message
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       if (!s->dns_info.record || s->dns_info.record->is_failed()) {
-        // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
+        // Set to internal server error so later logging will pick up SquidLogCode::ERR_DNS_FAIL
         build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
         log_msg = "looking up";
       } else {
@@ -5706,7 +5706,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
 
   if (s->method == 0 || s->method == HTTP_WKSIDX_METHODS_CNT) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_METHOD);
-    s->squid_codes.log_code      = SQUID_LOG_TCP_MISS;
+    s->squid_codes.log_code      = SquidLogCode::TCP_MISS;
     s->hdr_info.extension_method = true;
   }
 
@@ -8363,42 +8363,42 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   }
 
   switch (s->squid_codes.log_code) {
-  case SQUID_LOG_ERR_CONNECT_FAIL:
+  case SquidLogCode::ERR_CONNECT_FAIL:
     Metrics::Counter::increment(http_rsb.cache_miss_cold);
     client_transaction_result = ClientTransactionResult_t::ERROR_CONNECT_FAIL;
     break;
 
-  case SQUID_LOG_TCP_CF_HIT:
+  case SquidLogCode::TCP_CF_HIT:
     Metrics::Counter::increment(http_rsb.cache_hit_rww);
     client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
-  case SQUID_LOG_TCP_MEM_HIT:
+  case SquidLogCode::TCP_MEM_HIT:
     Metrics::Counter::increment(http_rsb.cache_hit_mem_fresh);
     // fallthrough
 
-  case SQUID_LOG_TCP_HIT:
+  case SquidLogCode::TCP_HIT:
     // It's possible to have two stat's instead of one, if needed.
     Metrics::Counter::increment(http_rsb.cache_hit_fresh);
     client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
-  case SQUID_LOG_TCP_REFRESH_HIT:
+  case SquidLogCode::TCP_REFRESH_HIT:
     Metrics::Counter::increment(http_rsb.cache_hit_reval);
     client_transaction_result = ClientTransactionResult_t::HIT_REVALIDATED;
     break;
 
-  case SQUID_LOG_TCP_IMS_HIT:
+  case SquidLogCode::TCP_IMS_HIT:
     Metrics::Counter::increment(http_rsb.cache_hit_ims);
     client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
-  case SQUID_LOG_TCP_REF_FAIL_HIT:
+  case SquidLogCode::TCP_REF_FAIL_HIT:
     Metrics::Counter::increment(http_rsb.cache_hit_stale_served);
     client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
-  case SQUID_LOG_TCP_MISS:
+  case SquidLogCode::TCP_MISS:
     if ((GET_VIA_STRING(VIA_CACHE_RESULT) == VIA_IN_CACHE_NOT_ACCEPTABLE) || (GET_VIA_STRING(VIA_CACHE_RESULT) == VIA_CACHE_MISS)) {
       Metrics::Counter::increment(http_rsb.cache_miss_cold);
       client_transaction_result = ClientTransactionResult_t::MISS_COLD;
@@ -8409,28 +8409,28 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     }
     break;
 
-  case SQUID_LOG_TCP_REFRESH_MISS:
+  case SquidLogCode::TCP_REFRESH_MISS:
     Metrics::Counter::increment(http_rsb.cache_miss_changed);
     client_transaction_result = ClientTransactionResult_t::MISS_CHANGED;
     break;
 
-  case SQUID_LOG_TCP_CLIENT_REFRESH:
+  case SquidLogCode::TCP_CLIENT_REFRESH:
     Metrics::Counter::increment(http_rsb.cache_miss_client_no_cache);
     client_transaction_result = ClientTransactionResult_t::MISS_CLIENT_NO_CACHE;
     break;
 
-  case SQUID_LOG_TCP_IMS_MISS:
+  case SquidLogCode::TCP_IMS_MISS:
     Metrics::Counter::increment(http_rsb.cache_miss_ims);
     client_transaction_result = ClientTransactionResult_t::MISS_COLD;
     break;
 
-  case SQUID_LOG_TCP_SWAPFAIL:
+  case SquidLogCode::TCP_SWAPFAIL:
     Metrics::Counter::increment(http_rsb.cache_read_error);
     client_transaction_result = ClientTransactionResult_t::HIT_FRESH;
     break;
 
-  case SQUID_LOG_ERR_READ_TIMEOUT:
-  case SQUID_LOG_TCP_DENIED:
+  case SquidLogCode::ERR_READ_TIMEOUT:
+  case SquidLogCode::TCP_DENIED:
     // No cache result due to error
     client_transaction_result = ClientTransactionResult_t::ERROR_OTHER;
     break;
@@ -8702,60 +8702,60 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
 
   // Bandwidth Savings
   switch (s->squid_codes.log_code) {
-  case SQUID_LOG_TCP_HIT:
-  case SQUID_LOG_TCP_MEM_HIT:
-  case SQUID_LOG_TCP_CF_HIT:
+  case SquidLogCode::TCP_HIT:
+  case SquidLogCode::TCP_MEM_HIT:
+  case SquidLogCode::TCP_CF_HIT:
     // It's possible to have two stat's instead of one, if needed.
     Metrics::Counter::increment(http_rsb.tcp_hit_count);
     Metrics::Counter::increment(http_rsb.tcp_hit_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.tcp_hit_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_TCP_MISS:
+  case SquidLogCode::TCP_MISS:
     Metrics::Counter::increment(http_rsb.tcp_miss_count);
     Metrics::Counter::increment(http_rsb.tcp_miss_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.tcp_miss_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_TCP_EXPIRED_MISS:
+  case SquidLogCode::TCP_EXPIRED_MISS:
     Metrics::Counter::increment(http_rsb.tcp_expired_miss_count);
     Metrics::Counter::increment(http_rsb.tcp_expired_miss_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.tcp_expired_miss_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_TCP_REFRESH_HIT:
+  case SquidLogCode::TCP_REFRESH_HIT:
     Metrics::Counter::increment(http_rsb.tcp_refresh_hit_count);
     Metrics::Counter::increment(http_rsb.tcp_refresh_hit_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.tcp_refresh_hit_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_TCP_REFRESH_MISS:
+  case SquidLogCode::TCP_REFRESH_MISS:
     Metrics::Counter::increment(http_rsb.tcp_refresh_miss_count);
     Metrics::Counter::increment(http_rsb.tcp_refresh_miss_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.tcp_refresh_miss_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_TCP_CLIENT_REFRESH:
+  case SquidLogCode::TCP_CLIENT_REFRESH:
     Metrics::Counter::increment(http_rsb.tcp_client_refresh_count);
     Metrics::Counter::increment(http_rsb.tcp_client_refresh_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.tcp_client_refresh_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_TCP_IMS_HIT:
+  case SquidLogCode::TCP_IMS_HIT:
     Metrics::Counter::increment(http_rsb.tcp_ims_hit_count);
     Metrics::Counter::increment(http_rsb.tcp_ims_hit_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.tcp_ims_hit_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_TCP_IMS_MISS:
+  case SquidLogCode::TCP_IMS_MISS:
     Metrics::Counter::increment(http_rsb.tcp_ims_miss_count);
     Metrics::Counter::increment(http_rsb.tcp_ims_miss_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.tcp_ims_miss_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_ERR_CLIENT_ABORT:
+  case SquidLogCode::ERR_CLIENT_ABORT:
     Metrics::Counter::increment(http_rsb.err_client_abort_count);
     Metrics::Counter::increment(http_rsb.err_client_abort_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.err_client_abort_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_ERR_CLIENT_READ_ERROR:
+  case SquidLogCode::ERR_CLIENT_READ_ERROR:
     Metrics::Counter::increment(http_rsb.err_client_read_error_count);
     Metrics::Counter::increment(http_rsb.err_client_read_error_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.err_client_read_error_origin_server_bytes, origin_server_bytes);
     break;
-  case SQUID_LOG_ERR_CONNECT_FAIL:
+  case SquidLogCode::ERR_CONNECT_FAIL:
     Metrics::Counter::increment(http_rsb.err_connect_fail_count);
     Metrics::Counter::increment(http_rsb.err_connect_fail_user_agent_bytes, user_agent_bytes);
     Metrics::Counter::increment(http_rsb.err_connect_fail_origin_server_bytes, origin_server_bytes);

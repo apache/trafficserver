@@ -1483,7 +1483,7 @@ plugins required to work with sni_routing.
       release_server_session();
       terminate_sm                 = true;
       api_next                     = AfterApiReturn_t::SHUTDOWN;
-      t_state.squid_codes.log_code = SQUID_LOG_TCP_DENIED;
+      t_state.squid_codes.log_code = SquidLogCode::TCP_DENIED;
     } else if (t_state.api_modifiable_cached_resp &&
                t_state.api_update_cached_object == HttpTransact::UpdateCachedObject_t::PREPARE) {
       t_state.api_update_cached_object = HttpTransact::UpdateCachedObject_t::ERROR;
@@ -3105,7 +3105,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
-    t_state.squid_codes.log_code  = SQUID_LOG_ERR_READ_TIMEOUT;
+    t_state.squid_codes.log_code  = SquidLogCode::ERR_READ_TIMEOUT;
     t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
     /* fallthru */
 
@@ -3148,7 +3148,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
       t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
       if (event == VC_EVENT_EOS) {
-        t_state.squid_codes.log_code = SQUID_LOG_ERR_READ_ERROR;
+        t_state.squid_codes.log_code = SquidLogCode::ERR_READ_ERROR;
       }
     } else {
       SMDbg(dbg_ctl_http, "finishing HTTP tunnel");
@@ -3285,7 +3285,7 @@ HttpSM::tunnel_handler_trailer_server(int event, HttpTunnelProducer *p)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
-    t_state.squid_codes.log_code  = SQUID_LOG_ERR_READ_TIMEOUT;
+    t_state.squid_codes.log_code  = SquidLogCode::ERR_READ_TIMEOUT;
     t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
     /* fallthru */
 
@@ -3314,7 +3314,7 @@ HttpSM::tunnel_handler_trailer_server(int event, HttpTunnelProducer *p)
     t_state.current.server->abort      = HttpTransact::ABORTED;
     t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
     t_state.current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
-    t_state.squid_codes.log_code       = SQUID_LOG_ERR_READ_ERROR;
+    t_state.squid_codes.log_code       = SquidLogCode::ERR_READ_ERROR;
     break;
 
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
@@ -3692,7 +3692,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
     ink_assert(t_state.cache_info.object_read->valid());
     if (t_state.cache_info.object_read->object_size_get() != INT64_MAX || event == VC_EVENT_ERROR) {
       // Abnormal termination
-      t_state.squid_codes.log_code = SQUID_LOG_TCP_SWAPFAIL;
+      t_state.squid_codes.log_code = SquidLogCode::TCP_SWAPFAIL;
       p->vc->do_io_close(EHTTP_ERROR);
       p->read_vio = nullptr;
       tunnel.chain_abort_all(p);
@@ -5879,14 +5879,14 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
     // More detailed client side abort logging based on event
     switch (event) {
     case VC_EVENT_ERROR:
-      t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_READ_ERROR;
+      t_state.squid_codes.log_code = SquidLogCode::ERR_CLIENT_READ_ERROR;
       break;
     case VC_EVENT_EOS:
     case VC_EVENT_ACTIVE_TIMEOUT:     // Won't matter. Server will hangup
     case VC_EVENT_INACTIVITY_TIMEOUT: // Won't matter. Send back 408
     // Fall-through
     default:
-      t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_ABORT;
+      t_state.squid_codes.log_code = SquidLogCode::ERR_CLIENT_ABORT;
       break;
     }
     break;
@@ -8307,16 +8307,16 @@ HttpSM::do_redirect()
       if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
         LogAccess accessor(this);
         if (redirect_url == nullptr) {
-          if (t_state.squid_codes.log_code == SQUID_LOG_TCP_HIT) {
-            t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT_REDIRECT;
+          if (t_state.squid_codes.log_code == SquidLogCode::TCP_HIT) {
+            t_state.squid_codes.log_code = SquidLogCode::TCP_HIT_REDIRECT;
           } else {
-            t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS_REDIRECT;
+            t_state.squid_codes.log_code = SquidLogCode::TCP_MISS_REDIRECT;
           }
         } else {
-          if (t_state.squid_codes.log_code == SQUID_LOG_TCP_HIT) {
-            t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT_X_REDIRECT;
+          if (t_state.squid_codes.log_code == SquidLogCode::TCP_HIT) {
+            t_state.squid_codes.log_code = SquidLogCode::TCP_HIT_X_REDIRECT;
           } else {
-            t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS_X_REDIRECT;
+            t_state.squid_codes.log_code = SquidLogCode::TCP_MISS_X_REDIRECT;
           }
         }
 

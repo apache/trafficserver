@@ -422,7 +422,7 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
 void
 HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes)
 {
-  SquidLogCode       log_code      = SQUID_LOG_EMPTY;
+  SquidLogCode       log_code      = SquidLogCode::EMPTY;
   SquidHierarchyCode hier_code     = SQUID_HIER_EMPTY;
   SquidHitMissCode   hit_miss_code = SQUID_HIT_RESERVED;
 
@@ -467,19 +467,19 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   // Now the Log Code //
   //////////////////////
   if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_NO_CACHE) {
-    log_code = SQUID_LOG_TCP_CLIENT_REFRESH;
+    log_code = SquidLogCode::TCP_CLIENT_REFRESH;
   }
 
   else {
     if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_IMS) {
       if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) ||
           (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT)) {
-        log_code = SQUID_LOG_TCP_IMS_HIT;
+        log_code = SquidLogCode::TCP_IMS_HIT;
       } else {
         if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE && via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
-          log_code = SQUID_LOG_TCP_REFRESH_HIT;
+          log_code = SquidLogCode::TCP_REFRESH_HIT;
         } else {
-          log_code = SQUID_LOG_TCP_IMS_MISS;
+          log_code = SquidLogCode::TCP_IMS_MISS;
         }
       }
     }
@@ -487,23 +487,23 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     else {
       if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE) {
         if (via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
-          log_code = SQUID_LOG_TCP_REFRESH_HIT;
+          log_code = SquidLogCode::TCP_REFRESH_HIT;
         } else {
           if (via_string[VIA_SERVER_RESULT] == VIA_SERVER_ERROR) {
-            log_code = SQUID_LOG_TCP_REF_FAIL_HIT;
+            log_code = SquidLogCode::TCP_REF_FAIL_HIT;
           } else {
-            log_code = SQUID_LOG_TCP_REFRESH_MISS;
+            log_code = SquidLogCode::TCP_REFRESH_MISS;
           }
         }
       } else {
         if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) {
-          log_code = SQUID_LOG_TCP_HIT;
+          log_code = SquidLogCode::TCP_HIT;
         } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) {
-          log_code = SQUID_LOG_TCP_MEM_HIT;
+          log_code = SquidLogCode::TCP_MEM_HIT;
         } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT) {
-          log_code = SQUID_LOG_TCP_CF_HIT; // Read while write HIT
+          log_code = SquidLogCode::TCP_CF_HIT; // Read while write HIT
         } else {
-          log_code = SQUID_LOG_TCP_MISS;
+          log_code = SquidLogCode::TCP_MISS;
         }
       }
     }
@@ -527,32 +527,32 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   // Errors may override the other codes, so check the via string error codes last
   switch (via_string[VIA_ERROR_TYPE]) {
   case VIA_ERROR_AUTHORIZATION:
-    log_code = SQUID_LOG_ERR_PROXY_DENIED;
+    log_code = SquidLogCode::ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_CONNECTION:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_REFRESH_MISS) {
-      log_code = SQUID_LOG_ERR_CONNECT_FAIL;
+    if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_REFRESH_MISS) {
+      log_code = SquidLogCode::ERR_CONNECT_FAIL;
     }
     break;
   case VIA_ERROR_DNS_FAILURE:
-    log_code  = SQUID_LOG_ERR_DNS_FAIL;
+    log_code  = SquidLogCode::ERR_DNS_FAIL;
     hier_code = SQUID_HIER_NONE;
     break;
   case VIA_ERROR_FORBIDDEN:
-    log_code = SQUID_LOG_ERR_PROXY_DENIED;
+    log_code = SquidLogCode::ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_HEADER_SYNTAX:
-    log_code  = SQUID_LOG_ERR_INVALID_REQ;
+    log_code  = SquidLogCode::ERR_INVALID_REQ;
     hier_code = SQUID_HIER_NONE;
     break;
   case VIA_ERROR_SERVER:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_IMS_MISS) {
-      log_code = SQUID_LOG_ERR_CONNECT_FAIL;
+    if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_IMS_MISS) {
+      log_code = SquidLogCode::ERR_CONNECT_FAIL;
     }
     break;
   case VIA_ERROR_TIMEOUT:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_IMS_MISS) {
-      log_code = SQUID_LOG_ERR_READ_TIMEOUT;
+    if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_IMS_MISS) {
+      log_code = SquidLogCode::ERR_READ_TIMEOUT;
     }
     if (hier_code == SQUID_HIER_PARENT_HIT) {
       hier_code = SQUID_HIER_TIMEOUT_PARENT_HIT;
@@ -561,15 +561,15 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     }
     break;
   case VIA_ERROR_CACHE_READ:
-    log_code  = SQUID_LOG_TCP_SWAPFAIL;
+    log_code  = SquidLogCode::TCP_SWAPFAIL;
     hier_code = SQUID_HIER_NONE;
     break;
   case VIA_ERROR_LOOP_DETECTED:
-    log_code  = SQUID_LOG_ERR_LOOP_DETECTED;
+    log_code  = SquidLogCode::ERR_LOOP_DETECTED;
     hier_code = SQUID_HIER_NONE;
     break;
   case VIA_ERROR_UNKNOWN:
-    log_code  = SQUID_LOG_ERR_UNKNOWN;
+    log_code  = SquidLogCode::ERR_UNKNOWN;
     hier_code = SQUID_HIER_NONE;
     break;
   default:

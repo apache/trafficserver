@@ -642,7 +642,7 @@ public:
   };
 
   using SquidLogInfo = struct _SquidLogInfo {
-    SquidLogCode       log_code      = SQUID_LOG_ERR_UNKNOWN;
+    SquidLogCode       log_code      = SquidLogCode::ERR_UNKNOWN;
     SquidSubcode       subcode       = SQUID_SUBCODE_EMPTY;
     SquidHierarchyCode hier_code     = SQUID_HIER_EMPTY;
     SquidHitMissCode   hit_miss_code = SQUID_MISS_NONE;
