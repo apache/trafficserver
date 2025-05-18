@@ -56,11 +56,11 @@ enum {
 };
 
 /// Parsing state.
-enum MimeParseState {
-  MIME_PARSE_BEFORE,   ///< Before a field.
-  MIME_PARSE_FOUND_CR, ///< Before a field, found a CR.
-  MIME_PARSE_INSIDE,   ///< Inside a field.
-  MIME_PARSE_AFTER,    ///< After a field.
+enum class MimeParseState {
+  BEFORE,   ///< Before a field.
+  FOUND_CR, ///< Before a field, found a CR.
+  INSIDE,   ///< Inside a field.
+  AFTER,    ///< After a field.
 };
 
 /***********************************************************************
@@ -469,7 +469,7 @@ protected:
    */
   self_type &append(swoc::TextView text);
 
-  static constexpr MimeParseState INITIAL_PARSE_STATE = MIME_PARSE_BEFORE;
+  static constexpr MimeParseState INITIAL_PARSE_STATE = MimeParseState::BEFORE;
   std::string                     m_line;                       ///< Internally buffered line data for field coalescence.
   MimeParseState                  m_state{INITIAL_PARSE_STATE}; ///< Parsing machine state.
 };

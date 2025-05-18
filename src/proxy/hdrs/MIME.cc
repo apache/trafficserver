@@ -2187,8 +2187,8 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   auto text = input;
   while (ParseResult::CONT == zret && !text.empty()) {
     switch (m_state) {
-    case MIME_PARSE_BEFORE: // waiting to find a field.
-      m_line.resize(0);     // any caller should already be done with the buffer
+    case MimeParseState::BEFORE: // waiting to find a field.
+      m_line.resize(0);          // any caller should already be done with the buffer
       if (ParseRules::is_cr(*text)) {
         ++text;
         if (!text.empty() && ParseRules::is_lf(*text)) {
@@ -2196,17 +2196,17 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
           ++text;
           zret = ParseResult::DONE;
         } else {
-          m_state = MIME_PARSE_FOUND_CR;
+          m_state = MimeParseState::FOUND_CR;
         }
       } else if (ParseRules::is_lf(*text)) {
         ++text;
         zret = ParseResult::DONE; // Required by regression test.
       } else {
         // consume this character in the next state.
-        m_state = MIME_PARSE_INSIDE;
+        m_state = MimeParseState::INSIDE;
       }
       break;
-    case MIME_PARSE_FOUND_CR:
+    case MimeParseState::FOUND_CR:
       // Looking for a field and found a CR, which should mean terminating the header.
       if (ParseRules::is_lf(*text)) {
         ++text;
@@ -2215,24 +2215,24 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
         // This really should be an error (spec doesn't permit lone CR) but the regression tests
         // require it.
         this->append(TextView(&RAW_CR, 1)); // This is to fix a core dump of the icc 19.1 compiler when {&RAW_CR, 1} is used
-        m_state = MIME_PARSE_INSIDE;
+        m_state = MimeParseState::INSIDE;
       }
       break;
-    case MIME_PARSE_INSIDE: {
+    case MimeParseState::INSIDE: {
       auto lf_off = text.find(ParseRules::CHAR_LF);
       if (lf_off != TextView::npos) {
         text.remove_prefix(lf_off + 1); // drop up to and including LF
         if (LINE == scan_type) {
           zret    = ParseResult::OK;
-          m_state = MIME_PARSE_BEFORE;
+          m_state = MimeParseState::BEFORE;
         } else {
-          m_state = MIME_PARSE_AFTER; // looking for line folding.
+          m_state = MimeParseState::AFTER; // looking for line folding.
         }
       } else { // no EOL, consume all text without changing state.
         text.remove_prefix(text.size());
       }
     } break;
-    case MIME_PARSE_AFTER:
+    case MimeParseState::AFTER:
       // After a LF, the next line might be a continuation / folded line. That's indicated by a
       // starting whitespace. If that's the case, back up over the preceding CR/LF with space and
       // pretend it's the same line.
@@ -2242,9 +2242,9 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
         if (ParseRules::is_cr(*unfold)) {
           *unfold = ' ';
         }
-        m_state = MIME_PARSE_INSIDE; // back inside the field.
+        m_state = MimeParseState::INSIDE; // back inside the field.
       } else {
-        m_state = MIME_PARSE_BEFORE; // field terminated.
+        m_state = MimeParseState::BEFORE; // field terminated.
         zret    = ParseResult::OK;
       }
       break;
@@ -2262,30 +2262,30 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
       // Should never return PARSE_CONT if we've hit EOF.
       if (parsed_text.empty()) {
         // all input previously consumed. If we're between fields, that's cool.
-        if (MIME_PARSE_INSIDE != m_state) {
-          m_state = MIME_PARSE_BEFORE; // probably not needed...
+        if (MimeParseState::INSIDE != m_state) {
+          m_state = MimeParseState::BEFORE; // probably not needed...
           zret    = ParseResult::DONE;
         } else {
           zret = ParseResult::ERROR; // unterminated field.
         }
-      } else if (MIME_PARSE_AFTER == m_state) {
+      } else if (MimeParseState::AFTER == m_state) {
         // Special case it seems - need to accept the final field even if there's no header
         // terminating CR LF. This is only reasonable after absolute end of input (EOF) because
         // otherwise this might be a multiline field where we haven't seen the next leading space.
-        m_state = MIME_PARSE_BEFORE;
+        m_state = MimeParseState::BEFORE;
         zret    = ParseResult::OK;
       } else {
         // Partial input, no field / line CR LF
         zret = ParseResult::ERROR; // Unterminated field.
       }
     } else if (!parsed_text.empty()) {
-      if (MIME_PARSE_INSIDE == m_state) {
+      if (MimeParseState::INSIDE == m_state) {
         // Inside a field but more data is expected. Save what we've got.
         this->append(parsed_text);  // Do this here to force appending.
         save_parsed_text_p = false; // don't double append.
-      } else if (MIME_PARSE_AFTER == m_state) {
+      } else if (MimeParseState::AFTER == m_state) {
         // After a field but we still have data. Need to parse it too.
-        m_state = MIME_PARSE_BEFORE;
+        m_state = MimeParseState::BEFORE;
         zret    = ParseResult::OK;
       }
     }
@@ -2300,7 +2300,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   output_shares_input = true;
   if (ParseResult::CONT != zret) {
     if (!m_line.empty()) {
-      output              = m_line; // cleared when called with state MIME_PARSE_BEFORE
+      output              = m_line; // cleared when called with state MimeParseState::BEFORE
       output_shares_input = false;
     } else {
       output = parsed_text;
