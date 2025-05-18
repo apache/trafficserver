@@ -57,7 +57,7 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
   mime_parser_init(&parser);
 
   auto result = mime_parser_parse(&parser, heap, mime.m_mime, &real_s, real_e, false, true, false);
-  REQUIRE(PARSE_RESULT_DONE == result);
+  REQUIRE(ParseResult::DONE == result);
 
   HdrCsvIter iter;
 
@@ -145,7 +145,7 @@ TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
   mime.create(heap);
   mime_parser_init(&parser);
   auto result = mime_parser_parse(&parser, heap, mime.m_mime, &real_s, real_e, false, true, false);
-  REQUIRE(PARSE_RESULT_DONE == result);
+  REQUIRE(ParseResult::DONE == result);
 
   MIMEField *field{mime.field_find(connection_tag)};
   REQUIRE(mime_hdr_fields_count(mime.m_mime) == 4);
@@ -188,7 +188,7 @@ TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
   mime.create(heap);
   mime_parser_init(&parser);
   auto result = mime_parser_parse(&parser, heap, mime.m_mime, &real_s, real_e, false, true, false);
-  REQUIRE(PARSE_RESULT_DONE == result);
+  REQUIRE(ParseResult::DONE == result);
 
   MIMEField *field{mime.field_find(connection_tag)};
   REQUIRE(mime_hdr_fields_count(mime.m_mime) == 4);

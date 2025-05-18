@@ -387,9 +387,9 @@ ParseResult
 http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 {
   if (hvc.convert(*headers, 2, 1) == 0) {
-    return PARSE_RESULT_DONE;
+    return ParseResult::DONE;
   } else {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 }
 
@@ -402,12 +402,12 @@ ParseResult
 http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
 {
   if (hvc.convert(*headers, 1, 2) == 0) {
-    return PARSE_RESULT_DONE;
+    return ParseResult::DONE;
   } else {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
-  return PARSE_RESULT_DONE;
+  return ParseResult::DONE;
 }
 
 Http2ErrorCode

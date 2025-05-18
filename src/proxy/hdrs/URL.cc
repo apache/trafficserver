@@ -1170,16 +1170,16 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
         if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HdrTokenType::SCHEME)) {
           // Unknown scheme, validate the scheme
           if (!validate_scheme({scheme_start, static_cast<size_t>(scheme_end - scheme_start)})) {
-            return PARSE_RESULT_ERROR;
+            return ParseResult::ERROR;
           }
         }
         url->set_scheme(heap, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings_p);
       }
     }
     *start = scheme_end;
-    return PARSE_RESULT_CONT;
+    return ParseResult::CONT;
   }
-  return PARSE_RESULT_ERROR; // no non-whitespace found
+  return ParseResult::ERROR; // no non-whitespace found
 }
 
 // This implementation namespace is necessary because this function is tested by a Catch unit test
@@ -1232,21 +1232,21 @@ url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool
           bool verify_host_characters)
 {
   if (strict_uri_parsing == 1 && !url_is_strictly_compliant(*start, end)) {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
   if (strict_uri_parsing == 2 && !url_is_mostly_compliant(*start, end)) {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   ParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
-  return PARSE_RESULT_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p, verify_host_characters) : zret;
+  return ParseResult::CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p, verify_host_characters) : zret;
 }
 
 ParseResult
 url_parse_regex(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p)
 {
   ParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
-  return PARSE_RESULT_CONT == zret ? url_parse_http_regex(heap, url, start, end, copy_strings_p) : zret;
+  return ParseResult::CONT == zret ? url_parse_http_regex(heap, url, start, end, copy_strings_p) : zret;
 }
 
 /**
@@ -1284,7 +1284,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
     cur += 3;
   } else if (':' == *cur && (++cur >= end || ('/' == *cur && (++cur >= end || ('/' == *cur && ++cur >= end))))) {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   base = cur;
@@ -1295,7 +1295,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     switch (*cur) {
     case ']': // address close
       if (nullptr == bracket || n_colon >= MAX_COLON) {
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
       ++cur;
       /* We keep the brackets because there are too many other places
@@ -1311,7 +1311,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
         last_colon = nullptr;
         break;
       } else if (':' != *cur) { // otherwise it must be a colon
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
       /* We want to prevent more than 1 colon following so we set @a
          n_colon appropriately.
@@ -1320,14 +1320,14 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     // FALL THROUGH
     case ':': // track colons, fail if too many.
       if (++n_colon > MAX_COLON) {
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
       last_colon = cur;
       ++cur;
       break;
     case '@': // user/password marker.
       if (user || n_colon > 1) {
-        return PARSE_RESULT_ERROR; // we already got one, or too many colons.
+        return ParseResult::ERROR; // we already got one, or too many colons.
       }
       if (n_colon) {
         user.assign(base, last_colon);
@@ -1342,7 +1342,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
       break;
     case '[':                       // address open
       if (bracket || base != cur) { // must be first char in field
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
       bracket = cur; // location and flag.
       ++cur;
@@ -1384,7 +1384,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     if (!verify_host_characters || validate_host_name(host)) {
       url->set_host(heap, host.data(), host.size(), copy_strings_p);
     } else {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
   }
 
@@ -1392,12 +1392,12 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     ink_assert(n_colon);
     port.assign(last_colon + 1, cur);
     if (port.empty()) {
-      return PARSE_RESULT_ERROR; // colon w/o port value.
+      return ParseResult::ERROR; // colon w/o port value.
     }
     url->set_port(heap, port.data(), port.size(), copy_strings_p);
   }
   *start = cur;
-  return PARSE_RESULT_DONE;
+  return ParseResult::DONE;
 }
 
 /*-------------------------------------------------------------------------
@@ -1419,7 +1419,7 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
   char        mask;
 
   err = url_parse_internet(heap, url, start, end, copy_strings, verify_host_characters);
-  if (err < 0) {
+  if (static_cast<int>(err) < 0) {
     return err;
   }
 
@@ -1526,7 +1526,7 @@ done:
   }
 
   *start = cur;
-  return PARSE_RESULT_DONE;
+  return ParseResult::DONE;
 }
 
 ParseResult
@@ -1539,7 +1539,7 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
     cur += 3;
   } else if (':' == *cur && (++cur >= end || ('/' == *cur && (++cur >= end || ('/' == *cur && ++cur >= end))))) {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   // Grab everything until EOS or slash.
@@ -1591,7 +1591,7 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
     cur = end;
   }
   *start = cur;
-  return PARSE_RESULT_DONE;
+  return ParseResult::DONE;
 }
 
 /*-------------------------------------------------------------------------

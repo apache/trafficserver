@@ -112,7 +112,7 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
   }
   int res = this->_hvc.convert(this->_header, 3, 1);
   if (res != 0) {
-    Dbg(dbg_ctl_http3, "PARSE_RESULT_ERROR");
+    Dbg(dbg_ctl_http3, "ParseResult::ERROR");
     return -1;
   }
 

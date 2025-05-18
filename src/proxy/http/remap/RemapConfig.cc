@@ -1042,8 +1042,9 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   Tokenizer whiteTok(" \t");
 
   // Vars to parse line in file
-  char *tok_state, *cur_line, *cur_line_tmp;
-  int   rparse, cur_line_size, cln = 0; // Our current line number
+  char       *tok_state, *cur_line, *cur_line_tmp;
+  int         cur_line_size, cln = 0; // Our current line number
+  ParseResult rparse;
 
   // Vars to build the mapping
   const char   *fromScheme, *toScheme;
@@ -1221,7 +1222,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     map_from_start[origLength] = '\0'; // Unwhack
 
-    if (rparse != PARSE_RESULT_DONE) {
+    if (rparse != ParseResult::DONE) {
       snprintf(errStrBuf, sizeof(errStrBuf), "malformed From URL: %.*s", length, tmp);
       errStr = errStrBuf;
       goto MAP_ERROR;
@@ -1236,7 +1237,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     rparse                   = new_mapping->toURL.parse_no_host_check(std::string_view(tmp, length));
     map_to_start[origLength] = '\0'; // Unwhack
 
-    if (rparse != PARSE_RESULT_DONE) {
+    if (rparse != ParseResult::DONE) {
       snprintf(errStrBuf, sizeof(errStrBuf), "malformed To URL: %.*s", length, tmp);
       errStr = errStrBuf;
       goto MAP_ERROR;

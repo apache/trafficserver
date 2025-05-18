@@ -945,21 +945,21 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 
     // Make sure the line is not longer than max_request_line_size
     if (scanner->get_buffered_line_size() > max_request_line_size) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     text.assign(*start, real_end);
     err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::LINE);
     *start = text.data();
-    if (err < 0) {
+    if (static_cast<int>(err) < 0) {
       return err;
     }
     // We have to get a request line.  If we get parse done here,
     //   that meas we got an empty request
-    if (err == PARSE_RESULT_DONE) {
-      return PARSE_RESULT_ERROR;
+    if (err == ParseResult::DONE) {
+      return ParseResult::ERROR;
     }
-    if (err == PARSE_RESULT_CONT) {
+    if (err == ParseResult::CONT) {
       return err;
     }
 
@@ -968,7 +968,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     end              = parsed.data_end();
 
     if (static_cast<unsigned>(end - line_start) > max_request_line_size) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     must_copy_strings = (must_copy_strings || (!line_is_real));
@@ -1001,11 +1001,11 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       url       = hh->u.req.m_url_impl;
       url_start = &(cur[4]);
       err       = ::url_parse(heap, url, &url_start, &(end[-11]), must_copy_strings, strict_uri_parsing);
-      if (err < 0) {
+      if (static_cast<int>(err) < 0) {
         return err;
       }
       if (!http_hdr_version_set(hh, version)) {
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
 
       end                    = real_end;
@@ -1014,13 +1014,13 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof,
                                           false, max_hdr_field_size);
       // If we're done with the main parse do some validation
-      if (ret == PARSE_RESULT_DONE) {
+      if (ret == ParseResult::DONE) {
         ret = validate_hdr_request_target(HTTP_WKSIDX_GET, url);
       }
-      if (ret == PARSE_RESULT_DONE) {
+      if (ret == ParseResult::DONE) {
         ret = validate_hdr_host(hh); // check HOST header
       }
-      if (ret == PARSE_RESULT_DONE) {
+      if (ret == ParseResult::DONE) {
         ret = validate_hdr_content_length(heap, hh);
       }
       return ret;
@@ -1134,7 +1134,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 
   done:
     if (!method_start || !method_end) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     // checking these with an if statement makes coverity flag as dead code because
@@ -1150,7 +1150,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     url = hh->u.req.m_url_impl;
     err = ::url_parse(heap, url, &url_start, url_end, must_copy_strings, strict_uri_parsing);
 
-    if (err < 0) {
+    if (static_cast<int>(err) < 0) {
       return err;
     }
 
@@ -1158,11 +1158,11 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     if (version_start && version_end) {
       version = http_parse_version(version_start, version_end);
     } else {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     if (!http_hdr_version_set(hh, version)) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     end                    = real_end;
@@ -1172,13 +1172,13 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
   ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, false,
                                       max_hdr_field_size);
   // If we're done with the main parse do some validation
-  if (ret == PARSE_RESULT_DONE) {
+  if (ret == ParseResult::DONE) {
     ret = validate_hdr_request_target(hh->u.req.m_method_wks_idx, hh->u.req.m_url_impl);
   }
-  if (ret == PARSE_RESULT_DONE) {
+  if (ret == ParseResult::DONE) {
     ret = validate_hdr_host(hh); // check HOST header
   }
-  if (ret == PARSE_RESULT_DONE) {
+  if (ret == ParseResult::DONE) {
     ret = validate_hdr_content_length(heap, hh);
   }
   return ret;
@@ -1187,7 +1187,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 ParseResult
 validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 {
-  ParseResult ret = PARSE_RESULT_DONE;
+  ParseResult ret = ParseResult::DONE;
   int         host_len;
   url->get_host(&host_len);
   int         path_len;
@@ -1199,14 +1199,14 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
     if (path_len == 1 && path[0] == '*') { // asterisk-form
       // Skip this check for now because URLImpl can't distinguish '*' and '/*'
       // if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
-      //   ret = PARSE_RESULT_ERROR;
+      //   ret = ParseResult::ERROR;
       // }
     } else { // origin-form
       // Nothing to check here
     }
   } else if (scheme_len == 0 && host_len != 0) { // authority-form
     if (method_wk_idx != HTTP_WKSIDX_CONNECT) {
-      ret = PARSE_RESULT_ERROR;
+      ret = ParseResult::ERROR;
     }
   } else { // absolute-form
     // Nothing to check here
@@ -1218,32 +1218,32 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 ParseResult
 validate_hdr_host(HTTPHdrImpl *hh)
 {
-  ParseResult ret        = PARSE_RESULT_DONE;
+  ParseResult ret        = ParseResult::DONE;
   MIMEField  *host_field = mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_HOST));
   if (host_field) {
     if (host_field->has_dups()) {
-      ret = PARSE_RESULT_ERROR; // can't have more than 1 host field.
+      ret = ParseResult::ERROR; // can't have more than 1 host field.
     } else {
       auto             host{host_field->value_get()};
       std::string_view addr, port, rest;
       if (0 == ats_ip_parse(host, &addr, &port, &rest)) {
         if (!port.empty()) {
           if (port.size() > 5) {
-            return PARSE_RESULT_ERROR;
+            return ParseResult::ERROR;
           }
           int port_i = ink_atoi(port.data(), port.size());
           if (port_i >= 65536 || port_i <= 0) {
-            return PARSE_RESULT_ERROR;
+            return ParseResult::ERROR;
           }
         }
         if (!validate_host_name(addr)) {
-          return PARSE_RESULT_ERROR;
+          return ParseResult::ERROR;
         }
-        if (PARSE_RESULT_DONE == ret && !std::all_of(rest.begin(), rest.end(), &ParseRules::is_ws)) {
-          return PARSE_RESULT_ERROR;
+        if (ParseResult::DONE == ret && !std::all_of(rest.begin(), rest.end(), &ParseRules::is_ws)) {
+          return ParseResult::ERROR;
         }
       } else {
-        ret = PARSE_RESULT_ERROR;
+        ret = ParseResult::ERROR;
       }
     }
   }
@@ -1265,7 +1265,7 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
       // Delete all Content-Length headers
       Dbg(dbg_ctl_http, "Transfer-Encoding header and Content-Length headers the request, removing all Content-Length headers");
       mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field, true);
-      return PARSE_RESULT_DONE;
+      return ParseResult::DONE;
     }
 
     // RFC 7230 section 3.3.3:
@@ -1283,14 +1283,14 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     //
     if (value.empty()) {
       Dbg(dbg_ctl_http, "Content-Length headers don't match the ABNF, returning parse error");
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     // If the content-length value contains a non-numeric value, the header is invalid
     if (std::find_if(value.cbegin(), value.cend(), [](std::string_view::value_type c) { return !std::isdigit(c); }) !=
         value.cend()) {
       Dbg(dbg_ctl_http, "Content-Length value contains non-digit, returning parse error");
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     while (content_length_field->has_dups()) {
@@ -1299,7 +1299,7 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
       if ((value.length() != value_dup.length()) || value.compare(value_dup) != 0) {
         // Values are different, parse error
         Dbg(dbg_ctl_http, "Content-Length headers don't match, returning parse error");
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       } else {
         // Delete the duplicate since it has the same value
         Dbg(dbg_ctl_http, "Deleting duplicate Content-Length header");
@@ -1308,7 +1308,7 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     }
   }
 
-  return PARSE_RESULT_DONE;
+  return ParseResult::DONE;
 }
 
 /*-------------------------------------------------------------------------
@@ -1341,21 +1341,21 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
     // Make sure the line is not longer than 64K
     if (scanner->get_buffered_line_size() >= UINT16_MAX) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     swoc::TextView text{*start, real_end};
     swoc::TextView parsed;
     err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::LINE);
     *start = text.data();
-    if (err < 0) {
+    if (static_cast<int>(err) < 0) {
       return err;
     }
     // Make sure the length headers are consistent
-    if (err == PARSE_RESULT_DONE) {
+    if (err == ParseResult::DONE) {
       err = validate_hdr_content_length(heap, hh);
     }
-    if ((err == PARSE_RESULT_DONE) || (err == PARSE_RESULT_CONT)) {
+    if ((err == ParseResult::DONE) || (err == ParseResult::CONT)) {
       return err;
     }
 
@@ -1392,7 +1392,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
       parser->m_parsing_http = false;
       auto ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
       // Make sure the length headers are consistent
-      if (ret == PARSE_RESULT_DONE) {
+      if (ret == ParseResult::DONE) {
         ret = validate_hdr_content_length(heap, hh);
       }
       return ret;
@@ -1483,17 +1483,17 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
   eoh:
     *start = old_start;
-    return PARSE_RESULT_ERROR; // This used to return PARSE_RESULT_DONE by default before
+    return ParseResult::ERROR; // This used to return ParseResult::DONE by default before
 
   done:
     if (!version_start || !version_end) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     HTTPVersion version = http_parse_version(version_start, version_end);
 
     if (version == HTTP_0_9) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     http_hdr_version_set(hh, version);
@@ -1511,7 +1511,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
   }
   auto ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
   // Make sure the length headers are consistent
-  if (ret == PARSE_RESULT_DONE) {
+  if (ret == ParseResult::DONE) {
     ret = validate_hdr_content_length(heap, hh);
   }
   return ret;

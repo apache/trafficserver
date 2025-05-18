@@ -44,11 +44,11 @@ using namespace std::literals;
  *                                                                     *
  ***********************************************************************/
 
-enum ParseResult {
-  PARSE_RESULT_ERROR = -1,
-  PARSE_RESULT_DONE  = 0,
-  PARSE_RESULT_CONT  = 1,
-  PARSE_RESULT_OK    = 3, // This is only used internally in mime_parser_parse and not returned to the user
+enum class ParseResult {
+  ERROR = -1,
+  DONE  = 0,
+  CONT  = 1,
+  OK    = 3, // This is only used internally in mime_parser_parse and not returned to the user
 };
 
 enum {
@@ -452,7 +452,7 @@ public:
    * scanned @a input. This is separate because @a output may be a view of @a input or a view of the
    * internal line buffer. Which of these cases obtains is returned in @a output_shares_input. This
    * is @c true if @a output is a view of @a input, and @c false if @a output is a view of the
-   * internal buffer, but is only set if the result is not @c PARSE_RESULT_CONT (that is, it is not
+   * internal buffer, but is only set if the result is not @c ParseResult::CONT (that is, it is not
    * set until scanning has completed). If @a scan_type is @c FIELD then folded lines are
    * accumulated in to a single line stored in the internal buffer. Otherwise the scanning
    * terminates at the first CR/LF.
@@ -1030,8 +1030,8 @@ public:
 
   int print(char *buf, int bufsize, int *bufindex, int *chars_to_skip);
 
-  int parse(MIMEParser *parser, const char **start, const char *end, bool must_copy_strs, bool eof, bool remove_ws_from_field_name,
-            size_t max_hdr_field_size = UINT16_MAX);
+  ParseResult parse(MIMEParser *parser, const char **start, const char *end, bool must_copy_strs, bool eof,
+                    bool remove_ws_from_field_name, size_t max_hdr_field_size = UINT16_MAX);
 
   int              value_get_index(std::string_view name, std::string_view value) const;
   std::string_view value_get(std::string_view name) const;
@@ -1278,7 +1278,7 @@ MIMEHdr::print(char *buf, int bufsize, int *bufindex, int *chars_to_skip)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int
+inline ParseResult
 MIMEHdr::parse(MIMEParser *parser, const char **start, const char *end, bool must_copy_strs, bool eof,
                bool remove_ws_from_field_name, size_t max_hdr_field_size)
 {

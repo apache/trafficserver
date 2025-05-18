@@ -6833,7 +6833,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 
   URL url_obj;
   url_obj.create(nullptr);
-  if (url_obj.parse(url, url_len) == PARSE_RESULT_ERROR) {
+  if (url_obj.parse(url, url_len) == ParseResult::ERROR) {
     url_obj.destroy();
     return TS_ERROR;
   }
@@ -8800,7 +8800,7 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
   // Because of where this is in the state machine, the storage for the cache_info URL must
   // have already been initialized and @a lookup_url must be valid.
   auto result = s->cache_info.lookup_url->parse(url, length < 0 ? strlen(url) : length);
-  if (PARSE_RESULT_DONE == result) {
+  if (ParseResult::DONE == result) {
     s->transact_return_point = nullptr;
     sm->rewind_state_machine();
     return TS_SUCCESS;

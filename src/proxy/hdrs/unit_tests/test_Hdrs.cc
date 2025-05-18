@@ -47,37 +47,37 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
 {
   struct Test {
     swoc::TextView msg;
-    int            expected_result;
+    ParseResult    expected_result;
     int            expected_bytes_consumed;
   };
   static const std::array<Test, 26> tests = {
     {
-     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
-     {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_RESULT_DONE, 28},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_RESULT_DONE, 48},
-     {"GET", PARSE_RESULT_ERROR, 3},
-     {"GET /index.html", PARSE_RESULT_ERROR, 15},
-     {"GET /index.html\r\n", PARSE_RESULT_ERROR, 17},
-     {"GET /index.html HTTP/1.0", PARSE_RESULT_ERROR, 24},
-     {"GET /index.html HTTP/1.0\r", PARSE_RESULT_ERROR, 25},
-     {"GET /index.html HTTP/1.0\n", PARSE_RESULT_DONE, 25},
-     {"GET /index.html HTTP/1.0\n\n", PARSE_RESULT_DONE, 26},
-     {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_RESULT_DONE, 28},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_RESULT_ERROR, 44},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 45},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_RESULT_DONE, 48},
-     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 44},
-     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_RESULT_DONE, 53},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
-     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
-     {"GET /index.html hTTP/1.0\r\n", PARSE_RESULT_ERROR, 26},
-     {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n", PARSE_RESULT_DONE, 48},
-     {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n", PARSE_RESULT_ERROR, 47},
-     {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n", PARSE_RESULT_ERROR, 46},
-     {"CONNECT foo.example HTTP/1.1\r\n", PARSE_RESULT_DONE, 30},
-     {"GET foo.example HTTP/1.1\r\n", PARSE_RESULT_ERROR, 26},
-     {"", PARSE_RESULT_ERROR, 0},
+     {"GET /index.html HTTP/1.0\r\n", ParseResult::DONE, 26},
+     {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", ParseResult::DONE, 28},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", ParseResult::DONE, 48},
+     {"GET", ParseResult::ERROR, 3},
+     {"GET /index.html", ParseResult::ERROR, 15},
+     {"GET /index.html\r\n", ParseResult::ERROR, 17},
+     {"GET /index.html HTTP/1.0", ParseResult::ERROR, 24},
+     {"GET /index.html HTTP/1.0\r", ParseResult::ERROR, 25},
+     {"GET /index.html HTTP/1.0\n", ParseResult::DONE, 25},
+     {"GET /index.html HTTP/1.0\n\n", ParseResult::DONE, 26},
+     {"GET /index.html HTTP/1.0\r\n\r\n", ParseResult::DONE, 28},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", ParseResult::ERROR, 44},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", ParseResult::DONE, 45},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", ParseResult::DONE, 46},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", ParseResult::DONE, 48},
+     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", ParseResult::DONE, 44},
+     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", ParseResult::DONE, 53},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", ParseResult::DONE, 46},
+     {"GET /index.html HTTP/1.0\r\n", ParseResult::DONE, 26},
+     {"GET /index.html hTTP/1.0\r\n", ParseResult::ERROR, 26},
+     {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n", ParseResult::DONE, 48},
+     {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n", ParseResult::ERROR, 47},
+     {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n", ParseResult::ERROR, 46},
+     {"CONNECT foo.example HTTP/1.1\r\n", ParseResult::DONE, 30},
+     {"GET foo.example HTTP/1.1\r\n", ParseResult::ERROR, 26},
+     {"", ParseResult::ERROR, 0},
      }
   };
 
@@ -111,13 +111,13 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
   struct Fragment {
     swoc::TextView msg;
     bool           shares_input;
-    int            expected_result;
+    ParseResult    expected_result;
   };
   constexpr std::array<Fragment, 3> const fragments = {
     {
-     {message.substr(0, 11), true, PARSE_RESULT_CONT},
-     {message.substr(11, 11), true, PARSE_RESULT_CONT},
-     {message.substr(22), false, PARSE_RESULT_OK},
+     {message.substr(0, 11), true, ParseResult::CONT},
+     {message.substr(11, 11), true, ParseResult::CONT},
+     {message.substr(22), false, ParseResult::OK},
      }
   };
 
@@ -177,7 +177,6 @@ comp_http_hdr(HTTPHdr *h1, HTTPHdr *h2)
 int
 test_http_hdr_copy_over_aux(int testnum, const char *request, const char *response)
 {
-  int     err;
   HTTPHdr req_hdr;
   HTTPHdr resp_hdr;
   HTTPHdr copy1;
@@ -197,14 +196,15 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   http_parser_init(&parser);
 
+  ParseResult err;
   while (true) {
     err = req_hdr.parse_req(&parser, &start, end, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err == PARSE_RESULT_ERROR) {
+  if (err == ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) parse error parsing request hdr\n", testnum);
     return (0);
   }
@@ -221,12 +221,12 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   while (true) {
     err = resp_hdr.parse_resp(&parser, &start, end, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err == PARSE_RESULT_ERROR) {
+  if (err == ParseResult::ERROR) {
     printf("FAILED: (test #%d) parse error parsing response hdr\n", testnum);
     return (0);
   }
@@ -282,7 +282,7 @@ done:
 int
 test_http_hdr_null_char(int testnum, const char *request, const char * /*request_tgt*/)
 {
-  int            err;
+  ParseResult    err;
   HTTPHdr        hdr;
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
   HTTPParser     parser;
@@ -309,12 +309,12 @@ test_http_hdr_null_char(int testnum, const char *request, const char * /*request
 
   while (true) {
     err = hdr.parse_req(&parser, &cpy_buf_ptr, cpy_buf_ptr + length, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err != PARSE_RESULT_ERROR) {
+  if (err != ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) no parse error parsing request with null char\n", testnum);
     return (0);
   }
@@ -324,7 +324,7 @@ test_http_hdr_null_char(int testnum, const char *request, const char * /*request
 int
 test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_tgt */)
 {
-  int            err;
+  ParseResult    err;
   HTTPHdr        hdr;
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
   HTTPParser     parser;
@@ -351,12 +351,12 @@ test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_
 
   while (true) {
     err = hdr.parse_req(&parser, &cpy_buf_ptr, cpy_buf_ptr + strlen(start), true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err != PARSE_RESULT_ERROR) {
+  if (err != ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) no parse error parsing method with ctl char\n", testnum);
     return (0);
   }
@@ -376,7 +376,7 @@ int
 test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *request_tgt, const char *response,
                                  const char *response_tgt)
 {
-  int         err;
+  ParseResult err;
   HTTPHdr     hdr;
   HTTPParser  parser;
   const char *start;
@@ -404,12 +404,12 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   while (true) {
     err = hdr.parse_req(&parser, &start, end, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err == PARSE_RESULT_ERROR) {
+  if (err == ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) parse error parsing request hdr\n", testnum);
     return (0);
   }
@@ -475,12 +475,12 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   while (true) {
     err = hdr.parse_resp(&parser, &start, end, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err == PARSE_RESULT_ERROR) {
+  if (err == ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) parse error parsing response hdr\n", testnum);
     return (0);
   }
@@ -564,45 +564,45 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     } test_cases[] = {
       ////
       // Field Name
-      {"Content-Length: 10\r\n",     PARSE_RESULT_CONT },
-      {"Content-Length\x0b: 10\r\n", PARSE_RESULT_ERROR},
-      {"Content-Length\xff: 10\r\n", PARSE_RESULT_ERROR},
+      {"Content-Length: 10\r\n",     ParseResult::CONT },
+      {"Content-Length\x0b: 10\r\n", ParseResult::ERROR},
+      {"Content-Length\xff: 10\r\n", ParseResult::ERROR},
       // Delimiters in field name
-      {"delimiter_\": 10\r\n",       PARSE_RESULT_ERROR},
-      {"delimiter_(: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_): 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_,: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_/: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_:: 0\r\n",         PARSE_RESULT_CONT }, // Parsed as field name "delimiter_" and field value ": 0", which is valid
-      {"delimiter_;: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_<: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_=: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_>: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_?: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_@: 0\r\n",         PARSE_RESULT_CONT }, // Not allowed by the spec, but we use it as internal header indicator
-      {"delimiter_[: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_\\: 0\r\n",        PARSE_RESULT_ERROR},
-      {"delimiter_]: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_{: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_}: 0\r\n",         PARSE_RESULT_ERROR},
+      {"delimiter_\": 10\r\n",       ParseResult::ERROR},
+      {"delimiter_(: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_): 0\r\n",         ParseResult::ERROR},
+      {"delimiter_,: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_/: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_:: 0\r\n",         ParseResult::CONT }, // Parsed as field name "delimiter_" and field value ": 0", which is valid
+      {"delimiter_;: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_<: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_=: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_>: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_?: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_@: 0\r\n",         ParseResult::CONT }, // Not allowed by the spec, but we use it as internal header indicator
+      {"delimiter_[: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_\\: 0\r\n",        ParseResult::ERROR},
+      {"delimiter_]: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_{: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_}: 0\r\n",         ParseResult::ERROR},
       ////
       // Field Value
       // SP
-      {"Content-Length: 10\r\n",     PARSE_RESULT_CONT },
+      {"Content-Length: 10\r\n",     ParseResult::CONT },
       // HTAB
-      {"Foo: ab\td/cd\r\n",          PARSE_RESULT_CONT },
+      {"Foo: ab\td/cd\r\n",          ParseResult::CONT },
       // VCHAR
-      {"Foo: ab\x21/cd\r\n",         PARSE_RESULT_CONT },
-      {"Foo: ab\x7e/cd\r\n",         PARSE_RESULT_CONT },
+      {"Foo: ab\x21/cd\r\n",         ParseResult::CONT },
+      {"Foo: ab\x7e/cd\r\n",         ParseResult::CONT },
       // DEL
-      {"Foo: ab\x7f/cd\r\n",         PARSE_RESULT_ERROR},
+      {"Foo: ab\x7f/cd\r\n",         ParseResult::ERROR},
       // obs-text
-      {"Foo: ab\x80/cd\r\n",         PARSE_RESULT_CONT },
-      {"Foo: ab\xff/cd\r\n",         PARSE_RESULT_CONT },
+      {"Foo: ab\x80/cd\r\n",         ParseResult::CONT },
+      {"Foo: ab\xff/cd\r\n",         ParseResult::CONT },
       // control char
-      {"Content-Length: 10\x0b\r\n", PARSE_RESULT_ERROR},
-      {"Content-Length:\x0b 10\r\n", PARSE_RESULT_ERROR},
-      {"Foo: ab\x1d/cd\r\n",         PARSE_RESULT_ERROR},
+      {"Content-Length: 10\x0b\r\n", ParseResult::ERROR},
+      {"Content-Length:\x0b 10\r\n", ParseResult::ERROR},
+      {"Foo: ab\x1d/cd\r\n",         ParseResult::ERROR},
     };
 
     MIMEHdr        hdr;
@@ -616,9 +616,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       const char *start = t.line.data();
       const char *end   = start + t.line.size();
 
-      int r = hdr.parse(&parser, &start, end, false, false, false);
+      auto r = hdr.parse(&parser, &start, end, false, false, false);
       if (r != t.expected) {
-        std::printf("Expected %s is %s, but not", t.line.data(), t.expected == PARSE_RESULT_ERROR ? "invalid" : "valid");
+        std::printf("Expected %s is %s, but not", t.line.data(), t.expected == ParseResult::ERROR ? "invalid" : "valid");
         CHECK(false);
       }
     }
@@ -840,7 +840,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       "a.b.com/xx.jpg?newpath=http://bob.dave.com",
     };
 
-    int         err, failed = 0;
+    ParseResult err;
+    int         failed = 0;
     URL         url;
     const char *start;
     const char *end;
@@ -853,7 +854,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       url.create(nullptr);
       err = url.parse(&start, end);
-      if (err < 0) {
+      if (static_cast<int>(err) < 0) {
         std::printf("Failed to parse url '%s'\n", start);
         failed = 1;
         break;
@@ -899,7 +900,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       url.create(nullptr);
       err = url.parse(x, strlen(x));
       url.destroy();
-      if (err == PARSE_RESULT_DONE) {
+      if (err == ParseResult::DONE) {
         failed = 1;
         std::printf("Successfully parsed invalid url '%s'", x);
         break;
@@ -937,7 +938,6 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       "\r\n",
     };
 
-    int         err;
     MIMEHdr     hdr;
     MIMEParser  parser;
     const char *start;
@@ -953,9 +953,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     bool must_copy_strs = false;
 
     hdr.create(nullptr);
-    err = hdr.parse(&parser, &start, end, must_copy_strs, false, false);
+    auto err = hdr.parse(&parser, &start, end, must_copy_strs, false, false);
 
-    REQUIRE(err >= 0);
+    REQUIRE(static_cast<int>(err) >= 0);
 
     // Test the (new) continuation line folding to be correct. This should replace the
     // \r\n with two spaces (so a total of three between "part1" and "part2").
@@ -1458,7 +1458,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       {request_blank3,        response_blank3      }
     };
 
-    int         err;
+    ParseResult err;
     HTTPHdr     req_hdr, rsp_hdr;
     HTTPParser  parser;
     const char *start;
@@ -1485,11 +1485,11 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       std::printf("======== parsing\n\n");
       while (true) {
         err = req_hdr.parse_req(&parser, &start, end, true);
-        if (err != PARSE_RESULT_CONT) {
+        if (err != ParseResult::CONT) {
           break;
         }
       }
-      if (err == PARSE_RESULT_ERROR) {
+      if (err == ParseResult::ERROR) {
         req_hdr.destroy();
         rsp_hdr.destroy();
         break;
@@ -1526,11 +1526,11 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       while (true) {
         err = rsp_hdr.parse_resp(&parser, &start, end, true);
-        if (err != PARSE_RESULT_CONT) {
+        if (err != ParseResult::CONT) {
           break;
         }
       }
-      if (err == PARSE_RESULT_ERROR) {
+      if (err == ParseResult::ERROR) {
         req_hdr.destroy();
         rsp_hdr.destroy();
         break;
@@ -1555,6 +1555,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
         int  bufindex, last_bufindex;
         int  tmp;
         int  i;
+        int  print_err;
 
         bufindex = 0;
 
@@ -1562,9 +1563,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
           last_bufindex = bufindex;
           tmp           = bufindex;
           buf[0]        = '#'; // make it obvious if hdr.print doesn't print anything
-          err           = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
+          print_err     = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
 
-          // std::printf("test_header: tmp = %d  err = %d  bufindex = %d\n", tmp, err, bufindex);
+          // std::printf("test_header: tmp = %d  err = %d  bufindex = %d\n", tmp, print_err, bufindex);
           putchar('{');
           for (i = 0; i < bufindex - last_bufindex; i++) {
             if (!iscntrl(buf[i])) {
@@ -1574,7 +1575,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
             }
           }
           putchar('}');
-        } while (!err);
+        } while (!print_err);
       }
 
       // rsp_hdr.print (NULL, 0, NULL, NULL);
@@ -1601,7 +1602,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       std::printf("======== test_http_req_parse_error parsing\n\n");
       err = req_hdr.parse_req(&parser, &start, end, true, true, 1);
-      if (err != PARSE_RESULT_ERROR) {
+      if (err != ParseResult::ERROR) {
         status = 0;
       }
 
@@ -1626,7 +1627,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     std::printf("   <<< MUST BE HAND-VERIFIED FOR FULL BENEFIT>>>\n\n");
 
     HTTPHdr     resp_hdr;
-    int         err, i;
+    int         i;
     HTTPParser  parser;
     const char  base_resp[] = "HTTP/1.0 200 OK\r\n\r\n";
     const char *start, *end;
@@ -1640,9 +1641,10 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     resp_hdr.create(HTTPType::RESPONSE);
 
+    ParseResult err;
     while (true) {
       err = resp_hdr.parse_resp(&parser, &start, end, true);
-      if (err != PARSE_RESULT_CONT) {
+      if (err != ParseResult::CONT) {
         break;
       }
     }

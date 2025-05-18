@@ -49,8 +49,8 @@ VersionConverter::convert(HTTPHdr &header, int from, int to) const
   ink_assert(MIN_VERSION <= from && from <= MAX_VERSION);
   ink_assert(MIN_VERSION <= to && to <= MAX_VERSION);
 
-  int ret = (this->*_convert_functions[type][from - 1][to - 1])(header);
-  if (ret < 0) {
+  ParseResult ret = (this->*_convert_functions[type][from - 1][to - 1])(header);
+  if (static_cast<int>(ret) < 0) {
     return -1;
   }
 
@@ -64,13 +64,13 @@ VersionConverter::convert(HTTPHdr &header, int from, int to) const
   return 0;
 }
 
-int
+ParseResult
 VersionConverter::_convert_nop(HTTPHdr & /* header ATS_UNUSED */) const
 {
-  return 0;
+  return ParseResult::DONE;
 }
 
-int
+ParseResult
 VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 {
   // :method
@@ -80,7 +80,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     field->value_set(header.m_heap, header.m_mime, value);
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :method");
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   // :scheme
@@ -95,7 +95,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     }
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :scheme");
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   // :authority
@@ -119,7 +119,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     header.field_delete(static_cast<std::string_view>(MIME_FIELD_HOST));
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :authority");
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   // :path
@@ -140,7 +140,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     field->value_set(header.m_heap, header.m_mime, std::string_view{path, static_cast<std::string_view::size_type>(path_len)});
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :path");
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   // TODO: remove host/Host header
@@ -149,10 +149,10 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
 
   this->_remove_connection_specific_header_fields(header);
 
-  return 0;
+  return ParseResult::DONE;
 }
 
-int
+ParseResult
 VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
 {
   bool is_connect_method = false;
@@ -171,7 +171,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     header.method_set(method.data(), method.length());
     header.field_delete(field);
   } else {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   if (!is_connect_method) {
@@ -186,7 +186,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
       if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HdrTokenType::SCHEME)) {
         // unknown scheme, validate the scheme
         if (!validate_scheme(scheme)) {
-          return PARSE_RESULT_ERROR;
+          return ParseResult::ERROR;
         }
       }
 
@@ -194,7 +194,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
 
       header.field_delete(field);
     } else {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
   }
 
@@ -223,7 +223,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
       }
     }
   } else {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   if (!is_connect_method) {
@@ -241,7 +241,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
 
       header.field_delete(field);
     } else {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     // Combine Cookie header.([RFC 7540] 8.1.2.5.)
@@ -250,10 +250,10 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     }
   }
 
-  return 0;
+  return ParseResult::DONE;
 }
 
-int
+ParseResult
 VersionConverter::_convert_res_from_1_to_2(HTTPHdr &header) const
 {
   constexpr int STATUS_VALUE_LEN = 3;
@@ -268,15 +268,15 @@ VersionConverter::_convert_res_from_1_to_2(HTTPHdr &header) const
                      std::string_view{status_str, static_cast<std::string_view::size_type>(STATUS_VALUE_LEN)});
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :status");
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   this->_remove_connection_specific_header_fields(header);
 
-  return 0;
+  return ParseResult::DONE;
 }
 
-int
+ParseResult
 VersionConverter::_convert_res_from_2_to_1(HTTPHdr &header) const
 {
   // HTTP Version
@@ -289,10 +289,10 @@ VersionConverter::_convert_res_from_2_to_1(HTTPHdr &header) const
     header.status_set(http_parse_status(status.data(), status.data() + status.length()));
     header.field_delete(field);
   } else {
-    return -1;
+    return ParseResult::ERROR;
   }
 
-  return 0;
+  return ParseResult::DONE;
 }
 
 void

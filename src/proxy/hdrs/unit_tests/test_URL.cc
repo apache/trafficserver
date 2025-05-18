@@ -526,7 +526,7 @@ test_parse(url_parse_test_case const &test_case, bool parse_function)
   URL      url;
   HdrHeap *heap = new_HdrHeap();
   url.create(heap);
-  ParseResult result = PARSE_RESULT_OK;
+  ParseResult result = ParseResult::OK;
   if (parse_function == URL_PARSE) {
     if (test_case.verify_host_characters) {
       result = url.parse(test_case.input_uri);
@@ -540,14 +540,16 @@ test_parse(url_parse_test_case const &test_case, bool parse_function)
   if (parse_function == URL_PARSE_REGEX) {
     expected_is_valid = test_case.is_valid_regex;
   }
-  if (expected_is_valid && result != PARSE_RESULT_DONE) {
-    std::printf("Parse URI: \"%s\", expected it to be valid but it was parsed invalid (%d)\n", test_case.input_uri.c_str(), result);
+  if (expected_is_valid && result != ParseResult::DONE) {
+    std::printf("Parse URI: \"%s\", expected it to be valid but it was parsed invalid (%d)\n", test_case.input_uri.c_str(),
+                static_cast<int>(result));
     CHECK(false);
-  } else if (!expected_is_valid && result != PARSE_RESULT_ERROR) {
-    std::printf("Parse URI: \"%s\", expected it to be invalid but it was parsed valid (%d)\n", test_case.input_uri.c_str(), result);
+  } else if (!expected_is_valid && result != ParseResult::ERROR) {
+    std::printf("Parse URI: \"%s\", expected it to be invalid but it was parsed valid (%d)\n", test_case.input_uri.c_str(),
+                static_cast<int>(result));
     CHECK(false);
   }
-  if (result == PARSE_RESULT_DONE) {
+  if (result == ParseResult::DONE) {
     char buf[1024];
     int  index  = 0;
     int  offset = 0;

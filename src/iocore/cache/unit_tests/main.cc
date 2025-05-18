@@ -176,7 +176,7 @@ build_hdrs(HTTPInfo &info, const char *url, const char *content_type)
   HTTPHdr     req;
   HTTPHdr     resp;
   HTTPParser  parser;
-  int         err       = -1;
+  ParseResult err       = ParseResult::ERROR;
   char        buf[1024] = {0};
   const char *start     = buf;
   char       *p         = buf;
@@ -194,12 +194,12 @@ build_hdrs(HTTPInfo &info, const char *url, const char *content_type)
 
   while (true) {
     err = req.parse_req(&parser, &start, p, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  ink_assert(err == PARSE_RESULT_DONE);
+  ink_assert(err == ParseResult::DONE);
 
   memset(buf, 0, sizeof(buf));
   p = buf;
@@ -220,11 +220,11 @@ build_hdrs(HTTPInfo &info, const char *url, const char *content_type)
 
   while (true) {
     err = resp.parse_resp(&parser, &start, p, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
-  ink_assert(err == PARSE_RESULT_DONE);
+  ink_assert(err == ParseResult::DONE);
 
   info.request_set(&req);
   info.response_set(&resp);

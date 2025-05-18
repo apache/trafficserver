@@ -305,7 +305,7 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
   if (this->trailing_header_is_possible()) {
     Http2StreamDebug("trailing header: Skipping send_headers initialization.");
   } else {
-    if (http2_convert_header_from_2_to_1_1(&_receive_header) == PARSE_RESULT_ERROR) {
+    if (http2_convert_header_from_2_to_1_1(&_receive_header) == ParseResult::ERROR) {
       Http2StreamDebug("Error converting HTTP/2 headers to HTTP/1.1.");
       if (_receive_header.type_get() == HTTPType::REQUEST) {
         // There's no way to cause Bad Request directly at this time.
@@ -823,8 +823,8 @@ Http2Stream::update_write_request(bool call_update)
   // Process the new data
   if (!this->parsing_header_done) {
     // Still parsing the request or response header
-    int bytes_used = 0;
-    int state;
+    int         bytes_used = 0;
+    ParseResult state;
     if (this->is_outbound_connection()) {
       state = this->_send_header.parse_req(&http_parser, this->_send_reader, &bytes_used, false);
     } else {
@@ -834,7 +834,7 @@ Http2Stream::update_write_request(bool call_update)
     write_vio.ndone += bytes_used;
 
     switch (state) {
-    case PARSE_RESULT_DONE: {
+    case ParseResult::DONE: {
       this->parsing_header_done = true;
       Http2StreamDebug("update_write_request parsing done, read %d bytes", bytes_used);
 
@@ -878,12 +878,12 @@ Http2Stream::update_write_request(bool call_update)
       }
       break;
     }
-    case PARSE_RESULT_CONT:
+    case ParseResult::CONT:
       // Let it ride for next time
       Http2StreamDebug("update_write_request still parsing, read %d bytes", bytes_used);
       break;
     default:
-      Http2StreamDebug("update_write_request  state %d, read %d bytes", state, bytes_used);
+      Http2StreamDebug("update_write_request  state %d, read %d bytes", static_cast<int>(state), bytes_used);
       break;
     }
   } else {

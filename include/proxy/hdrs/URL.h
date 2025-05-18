@@ -312,7 +312,7 @@ public:
    *
    * @param[in] url The URL to parse.
    *
-   * @return PARSE_RESULT_DONE if parsing was successful, PARSE_RESULT_ERROR
+   * @return ParseResult::DONE if parsing was successful, ParseResult::ERROR
    * otherwise.
    */
   ParseResult parse(std::string_view url);
