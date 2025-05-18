@@ -712,11 +712,7 @@ public:
   HttpConfigParams();
   ~HttpConfigParams() override;
 
-  enum {
-    CACHE_REQUIRED_HEADERS_NONE                   = 0,
-    CACHE_REQUIRED_HEADERS_AT_LEAST_LAST_MODIFIED = 1,
-    CACHE_REQUIRED_HEADERS_CACHE_CONTROL          = 2
-  };
+  enum class CacheRequiredHeaders { NONE = 0, AT_LEAST_LAST_MODIFIED = 1, CACHE_CONTROL = 2 };
 
   enum {
     SEND_HTTP11_NEVER                    = 0,

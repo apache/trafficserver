@@ -6248,12 +6248,12 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       uint32_t cc_mask = (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE);
       // server did not send expires header or last modified
       // and we are configured to not cache without them.
-      switch (s->txn_conf->cache_required_headers) {
-      case HttpConfigParams::CACHE_REQUIRED_HEADERS_NONE:
+      switch (static_cast<HttpConfigParams::CacheRequiredHeaders>(s->txn_conf->cache_required_headers)) {
+      case HttpConfigParams::CacheRequiredHeaders::NONE:
         TxnDbg(dbg_ctl_http_trans, "no response headers required");
         break;
 
-      case HttpConfigParams::CACHE_REQUIRED_HEADERS_AT_LEAST_LAST_MODIFIED:
+      case HttpConfigParams::CacheRequiredHeaders::AT_LEAST_LAST_MODIFIED:
         if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask) &&
             !response->get_last_modified()) {
           TxnDbg(dbg_ctl_http_trans, "last_modified, expires, or max-age is required");
@@ -6263,7 +6263,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
         }
         break;
 
-      case HttpConfigParams::CACHE_REQUIRED_HEADERS_CACHE_CONTROL:
+      case HttpConfigParams::CacheRequiredHeaders::CACHE_CONTROL:
         if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask)) {
           TxnDbg(dbg_ctl_http_trans, "expires header or max-age is required");
           return false;
