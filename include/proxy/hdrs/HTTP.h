@@ -863,31 +863,31 @@ HTTPHdr::version_get() const
 inline static HTTPKeepAlive
 is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
 {
-  enum {
-    CON_TOKEN_NONE = 0,
-    CON_TOKEN_KEEP_ALIVE,
-    CON_TOKEN_CLOSE,
+  enum class ConToken {
+    NONE = 0,
+    KEEP_ALIVE,
+    CLOSE,
   };
 
-  int           con_token  = CON_TOKEN_NONE;
+  auto          con_token  = ConToken::NONE;
   HTTPKeepAlive keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   //    *unknown_tokens = false;
 
   if (con_hdr) {
     if (con_hdr->value_get_index("keep-alive"sv) >= 0)
-      con_token = CON_TOKEN_KEEP_ALIVE;
+      con_token = ConToken::KEEP_ALIVE;
     else if (con_hdr->value_get_index("close"sv) >= 0)
-      con_token = CON_TOKEN_CLOSE;
+      con_token = ConToken::CLOSE;
   }
 
   if (HTTP_1_0 == http_version) {
-    keep_alive = (con_token == CON_TOKEN_KEEP_ALIVE) ? (HTTPKeepAlive::KEEPALIVE) : (HTTPKeepAlive::NO_KEEPALIVE);
+    keep_alive = (con_token == ConToken::KEEP_ALIVE) ? (HTTPKeepAlive::KEEPALIVE) : (HTTPKeepAlive::NO_KEEPALIVE);
   } else if (HTTP_1_1 == http_version) {
     // We deviate from the spec here.  If the we got a response where
     //   where there is no Connection header and the request 1.0 was
     //   1.0 don't treat this as keep-alive since Netscape-Enterprise/3.6 SP1
     //   server doesn't
-    keep_alive = ((con_token == CON_TOKEN_KEEP_ALIVE) || (con_token == CON_TOKEN_NONE && HTTP_1_1 == http_version)) ?
+    keep_alive = ((con_token == ConToken::KEEP_ALIVE) || (con_token == ConToken::CLOSE && HTTP_1_1 == http_version)) ?
                    (HTTPKeepAlive::KEEPALIVE) :
                    (HTTPKeepAlive::NO_KEEPALIVE);
   } else {
