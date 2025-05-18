@@ -2025,9 +2025,9 @@ HTTPCacheAlt::HTTPCacheAlt() : m_request_hdr(), m_response_hdr()
 void
 HTTPCacheAlt::destroy()
 {
-  ink_assert(m_magic == CACHE_ALT_MAGIC_ALIVE);
+  ink_assert(m_magic == CacheAltMagic::ALIVE);
   ink_assert(m_writeable);
-  m_magic     = CACHE_ALT_MAGIC_DEAD;
+  m_magic     = CacheAltMagic::DEAD;
   m_writeable = 0;
   m_request_hdr.destroy();
   m_response_hdr.destroy();
@@ -2142,7 +2142,7 @@ HTTPInfo::marshal(char *buf, int len)
   HTTPCacheAlt *marshal_alt = reinterpret_cast<HTTPCacheAlt *>(buf);
   // non-zero only if the offsets are external. Otherwise they get
   // marshalled along with the alt struct.
-  ink_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
+  ink_assert(m_alt->m_magic == CacheAltMagic::ALIVE);
 
   // Make sure the buffer is aligned
   //    ink_assert(((intptr_t)buf) & 0x3 == 0);
@@ -2152,7 +2152,7 @@ HTTPInfo::marshal(char *buf, int len)
   //   extra bytes now but will save copying any
   //   bytes on the way out of the cache
   memcpy(buf, m_alt, sizeof(HTTPCacheAlt));
-  marshal_alt->m_magic          = CACHE_ALT_MAGIC_MARSHALED;
+  marshal_alt->m_magic          = CacheAltMagic::MARSHALED;
   marshal_alt->m_writeable      = 0;
   marshal_alt->m_unmarshal_len  = -1;
   marshal_alt->m_ext_buffer     = nullptr;
@@ -2205,19 +2205,19 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
   HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
   int           orig_len = len;
 
-  if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
+  if (alt->m_magic == CacheAltMagic::ALIVE) {
     // Already unmarshaled, must be a ram cache
     //  it
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);
     return alt->m_unmarshal_len;
-  } else if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
+  } else if (alt->m_magic != CacheAltMagic::MARSHALED) {
     ink_assert(!"HTTPInfo::unmarshal bad magic");
     return -1;
   }
 
   ink_assert(alt->m_unmarshal_len < 0);
-  alt->m_magic = CACHE_ALT_MAGIC_ALIVE;
+  alt->m_magic = CacheAltMagic::ALIVE;
   ink_assert(alt->m_writeable == 0);
   len -= HTTP_ALT_MARSHAL_SIZE;
 
@@ -2272,19 +2272,19 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
   HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
   int           orig_len = len;
 
-  if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
+  if (alt->m_magic == CacheAltMagic::ALIVE) {
     // Already unmarshaled, must be a ram cache
     //  it
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);
     return alt->m_unmarshal_len;
-  } else if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
+  } else if (alt->m_magic != CacheAltMagic::MARSHALED) {
     ink_assert(!"HTTPInfo::unmarshal bad magic");
     return -1;
   }
 
   ink_assert(alt->m_unmarshal_len < 0);
-  alt->m_magic = CACHE_ALT_MAGIC_ALIVE;
+  alt->m_magic = CacheAltMagic::ALIVE;
   ink_assert(alt->m_writeable == 0);
   len -= HTTP_ALT_MARSHAL_SIZE;
 
@@ -2356,7 +2356,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
 {
   HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
 
-  if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
+  if (alt->m_magic != CacheAltMagic::MARSHALED) {
     return false;
   }
 
@@ -2413,7 +2413,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
 void
 HTTPInfo::set_buffer_reference(RefCountObj *block_ref)
 {
-  ink_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
+  ink_assert(m_alt->m_magic == CacheAltMagic::ALIVE);
 
   // Free existing reference
   if (m_alt->m_ext_buffer != nullptr) {
@@ -2437,7 +2437,7 @@ HTTPInfo::get_handle(char *buf, int len)
   //  need to do is set m_alt and make sure things are sane
   HTTPCacheAlt *a = reinterpret_cast<HTTPCacheAlt *>(buf);
 
-  if (a->m_magic == CACHE_ALT_MAGIC_ALIVE) {
+  if (a->m_magic == CacheAltMagic::ALIVE) {
     m_alt = a;
     ink_assert(m_alt->m_unmarshal_len > 0);
     ink_assert(m_alt->m_unmarshal_len <= len);

@@ -258,19 +258,19 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
   int           orig_len = len;
 
-  if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
+  if (alt->m_magic == CacheAltMagic::ALIVE) {
     // Already unmarshalled, must be a ram cache
     //  it
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);
     return zret;
-  } else if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
+  } else if (alt->m_magic != CacheAltMagic::MARSHALED) {
     ink_assert(!"HTTPInfo::unmarshal bad magic");
     return zret;
   }
 
   ink_assert(alt->m_unmarshal_len < 0);
-  alt->m_magic = CACHE_ALT_MAGIC_ALIVE;
+  alt->m_magic = CacheAltMagic::ALIVE;
   ink_assert(alt->m_writeable == 0);
   len -= HTTP_ALT_MARSHAL_SIZE;
 
@@ -372,7 +372,7 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
   while (length - (buf - start) > static_cast<int>(sizeof(HTTPCacheAlt))) {
     HTTPCacheAlt *a = (HTTPCacheAlt *)buf;
 
-    if (a->m_magic == CACHE_ALT_MAGIC_MARSHALED) {
+    if (a->m_magic == CacheAltMagic::MARSHALED) {
       zret = this->unmarshal(const_cast<char *>(buf), length, block_ref);
       if (zret.length()) {
         std::cerr << zret << std::endl;

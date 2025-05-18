@@ -1251,10 +1251,10 @@ HTTPHdr::scheme_get()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-enum {
-  CACHE_ALT_MAGIC_ALIVE     = 0xabcddeed,
-  CACHE_ALT_MAGIC_MARSHALED = 0xdcbadeed,
-  CACHE_ALT_MAGIC_DEAD      = 0xdeadeed,
+enum class CacheAltMagic : uint32_t {
+  ALIVE     = 0xabcddeed,
+  MARSHALED = 0xdcbadeed,
+  DEAD      = 0xdeadeed,
 };
 
 // struct HTTPCacheAlt
@@ -1264,7 +1264,7 @@ struct HTTPCacheAlt {
   void copy_frag_offsets_from(HTTPCacheAlt *src);
   void destroy();
 
-  uint32_t m_magic = CACHE_ALT_MAGIC_ALIVE;
+  CacheAltMagic m_magic = CacheAltMagic::ALIVE;
 
   // Writeable is set to true is we reside
   //  in a buffer owned by this structure.
