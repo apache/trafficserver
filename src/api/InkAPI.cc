@@ -1106,11 +1106,11 @@ TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
     return data;
   }
   switch (reinterpret_cast<URLImpl *>(obj)->m_url_type) {
-  case URL_TYPE_HTTP:
+  case URLType::HTTP:
     data    = URL_SCHEME_HTTP;
     *length = URL_LEN_HTTP;
     break;
-  case URL_TYPE_HTTPS:
+  case URLType::HTTPS:
     data    = URL_SCHEME_HTTPS;
     *length = URL_LEN_HTTPS;
     break;

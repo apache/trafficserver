@@ -7724,7 +7724,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     // Add a ':port' to the HOST header if the request is not going
     // to the default port.
     int port = url->port_get();
-    if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
+    if (port != url_canonicalize_port(URLType::HTTP, 0)) {
       char *buf = static_cast<char *>(alloca(host_len + 15));
       memcpy(buf, host, host_len);
       host_len += snprintf(buf + host_len, 15, ":%d", port);

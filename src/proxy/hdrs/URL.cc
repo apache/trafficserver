@@ -249,7 +249,7 @@ url_create(HdrHeap *heap)
 
   url = (URLImpl *)heap->allocate_obj(sizeof(URLImpl), HdrHeapObjType::URL);
   obj_clear_data((HdrHeapObjImpl *)url);
-  url->m_url_type       = URL_TYPE_NONE;
+  url->m_url_type       = URLType::NONE;
   url->m_scheme_wks_idx = -1;
   url_clear_string_ref(url);
   return url;
@@ -262,7 +262,7 @@ void
 url_clear(URLImpl *url_impl)
 {
   obj_clear_data((HdrHeapObjImpl *)url_impl);
-  url_impl->m_url_type       = URL_TYPE_NONE;
+  url_impl->m_url_type       = URLType::NONE;
   url_impl->m_scheme_wks_idx = -1;
 }
 
@@ -441,11 +441,11 @@ URLImpl::set_scheme(HdrHeap *heap, const char *scheme_str, int scheme_wks_idx, i
   }
 
   if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS) {
-    this->m_url_type = URL_TYPE_HTTP;
+    this->m_url_type = URLType::HTTP;
   } else if (scheme_wks == URL_SCHEME_HTTPS || scheme_wks == URL_SCHEME_WSS) {
-    this->m_url_type = URL_TYPE_HTTPS;
+    this->m_url_type = URLType::HTTPS;
   } else {
-    this->m_url_type = URL_TYPE_HTTP;
+    this->m_url_type = URLType::HTTP;
   }
 
   return scheme_wks; // tokenized string or NULL if not well known
@@ -578,7 +578,7 @@ URLImpl::set_fragment(HdrHeap *heap, const char *value, int length, bool copy_st
   -------------------------------------------------------------------------*/
 
 void
-URLImpl::set_type(int type)
+URLImpl::set_type(URLType type)
 {
   url_called_set(this);
   this->m_url_type = type;
@@ -800,7 +800,7 @@ URLImpl::get_fragment(int *length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
+URLType
 URLImpl::get_type()
 {
   return this->m_url_type;
@@ -836,10 +836,10 @@ url_length_get(URLImpl *url, unsigned normalization_flags)
     length += url->m_len_scheme + 3; // +3 for "://"
 
   } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
-    if (URL_TYPE_HTTP == url->m_url_type) {
+    if (URLType::HTTP == url->m_url_type) {
       length += URL_LEN_HTTP + 3;
 
-    } else if (URL_TYPE_HTTPS == url->m_url_type) {
+    } else if (URLType::HTTPS == url->m_url_type) {
       length += URL_LEN_HTTPS + 3;
     }
   }
@@ -1619,12 +1619,12 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     scheme_added = true;
 
   } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
-    if (URL_TYPE_HTTP == url->m_url_type) {
+    if (URLType::HTTP == url->m_url_type) {
       TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTP, static_cast<std::string_view::size_type>(URL_LEN_HTTP)}, buf_start,
                          buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
 
-    } else if (URL_TYPE_HTTPS == url->m_url_type) {
+    } else if (URLType::HTTPS == url->m_url_type) {
       TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)}, buf_start,
                          buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
@@ -1696,7 +1696,7 @@ url_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 {
   URLImpl *obj = (URLImpl *)raw;
 
-  Dbg(dbg_ctl_http, "[URLTYPE: %d, SWKSIDX: %d,", obj->m_url_type, obj->m_scheme_wks_idx);
+  Dbg(dbg_ctl_http, "[URLTYPE: %d, SWKSIDX: %d,", static_cast<int>(obj->m_url_type), obj->m_scheme_wks_idx);
   Dbg(dbg_ctl_http, "\tSCHEME: \"%.*s\", SCHEME_LEN: %d,", obj->m_len_scheme, (obj->m_ptr_scheme ? obj->m_ptr_scheme : "NULL"),
       obj->m_len_scheme);
   Dbg(dbg_ctl_http, "\tUSER: \"%.*s\", USER_LEN: %d,", obj->m_len_user, (obj->m_ptr_user ? obj->m_ptr_user : "NULL"),
@@ -1880,7 +1880,7 @@ void
 url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query, cache_generation_t generation)
 {
   URLHashContext ctx;
-  if ((url_hash_method != 0) && (url->m_url_type == URL_TYPE_HTTP) &&
+  if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) &&
       ((url->m_len_user + url->m_len_password + (ignore_query ? 0 : url->m_len_query)) == 0) &&
       (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
