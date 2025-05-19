@@ -125,6 +125,8 @@ TEST_CASE("Test SSLSNIConfig")
     auto const &actions{params.get("AnYtHiNg.BaR.CoM", 443)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 4);
+    // verify the capture group
+    REQUIRE(actions.second._fqdn_wildcard_captured_groups->at(0) == "AnYtHiNg");
   }
 
   SECTION("Test mixed-case in yaml config")
@@ -139,6 +141,8 @@ TEST_CASE("Test SSLSNIConfig")
     auto const &actions{params.get("FoO.mixedcase.com", 443)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 3);
+    // verify the capture group
+    REQUIRE(actions.second._fqdn_wildcard_captured_groups->at(0) == "FoO");
   }
 
   SECTION("Test empty SNI does not match")
