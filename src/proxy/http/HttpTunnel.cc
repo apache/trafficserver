@@ -696,11 +696,11 @@ HttpTunnel::set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_byt
 
   switch (action) {
   case TunnelChunkingAction_t::CHUNK_CONTENT:
-    p->chunked_handler.state = p->chunked_handler.ChunkedState::WRITE_CHUNK;
+    p->chunked_handler.state = ChunkedHandler::ChunkedState::WRITE_CHUNK;
     break;
   case TunnelChunkingAction_t::DECHUNK_CONTENT:
   case TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT:
-    p->chunked_handler.state = p->chunked_handler.ChunkedState::READ_SIZE;
+    p->chunked_handler.state = ChunkedHandler::ChunkedState::READ_SIZE;
     break;
   default:
     break;
