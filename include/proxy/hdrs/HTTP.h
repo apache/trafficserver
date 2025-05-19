@@ -887,7 +887,7 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
     //   where there is no Connection header and the request 1.0 was
     //   1.0 don't treat this as keep-alive since Netscape-Enterprise/3.6 SP1
     //   server doesn't
-    keep_alive = ((con_token == ConToken::KEEP_ALIVE) || (con_token == ConToken::CLOSE && HTTP_1_1 == http_version)) ?
+    keep_alive = ((con_token == ConToken::KEEP_ALIVE) || (con_token == ConToken::NONE && HTTP_1_1 == http_version)) ?
                    (HTTPKeepAlive::KEEPALIVE) :
                    (HTTPKeepAlive::NO_KEEPALIVE);
   } else {
