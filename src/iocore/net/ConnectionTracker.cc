@@ -375,7 +375,7 @@ ConnectionTracker::Group::release()
       }
     } else {
       // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
-      Error("Number of tracked connections should be greater than or equal to zero: %lld", _count_metric->load());
+      Error("Number of tracked connections should be greater than or equal to zero: %ld", _count_metric->load());
     }
   } else if (_count > 0) {
     if (--_count == 0) {

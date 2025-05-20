@@ -376,7 +376,7 @@ ConnectionTracker::Group::metric_name(const Key &key, std::string_view fqdn, std
     metric_name += std::string(fqdn) + "." + ats_ip_nptop(&key._addr.sa, buf, sizeof(buf));
     break;
   default:
-    metric_name += "";
+    Warning("Invalid matching type to add to per_server.connections metrics");
   }
   return metric_prefix.empty() ? metric_name : metric_prefix + "." + metric_name;
 }
