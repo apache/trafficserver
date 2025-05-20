@@ -149,6 +149,44 @@ Config_Update_Conntrack_Client_Alert_Delay(const char *name, RecDataT dtype, Rec
   return Config_Update_Conntrack_Server_Alert_Delay_Helper(name, dtype, data, cookie, config->client_alert_delay);
 }
 
+// // helper function to build up a json string from the passed conn groups.
+std::string
+Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> const &groups)
+{
+  std::string                    text;
+  size_t                         extent = 0;
+  static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [  )"};
+  static const swoc::bwf::Format item_fmt{
+    R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "alert": {}}},
+)"};
+  static const std::string_view trailer{" \n]}"};
+
+  static const auto printer = [](swoc::BufferWriter &w, ConnectionTracker::Group const *g) -> swoc::BufferWriter & {
+    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count.load(), g->_count_max.load(), g->_blocked.load(),
+            g->get_last_alert_epoch_time());
+    return w;
+  };
+
+  swoc::FixedBufferWriter null_bw{nullptr}; // Empty buffer for sizing work.
+
+  null_bw.print(header_fmt, groups.size()).extent();
+  for (auto g : groups) {
+    printer(null_bw, g.get());
+  }
+  extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
+
+  text.resize(extent);
+  swoc::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
+  w.restrict(trailer.size());
+  w.print(header_fmt, groups.size());
+  for (auto g : groups) {
+    printer(w, g.get());
+  }
+  w.restore(trailer.size());
+  w.write(trailer);
+  return text;
+}
+
 } // namespace
 
 void
@@ -328,83 +366,21 @@ ConnectionTracker::get_inbound_groups(std::vector<std::shared_ptr<Group const>> 
     groups.push_back(group);
   }
 }
+
 std::string
 ConnectionTracker::inbound_to_json_string()
 {
-  std::string                    text;
-  size_t                         extent = 0;
-  static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [  )"};
-  static const swoc::bwf::Format item_fmt{
-    R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "alert": {}}},
-)"};
-  static const std::string_view trailer{" \n]}"};
-
-  static const auto printer = [](swoc::BufferWriter &w, Group const *g) -> swoc::BufferWriter & {
-    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count.load(), g->_count_max.load(), g->_blocked.load(),
-            g->get_last_alert_epoch_time());
-    return w;
-  };
-
-  swoc::FixedBufferWriter                   null_bw{nullptr}; // Empty buffer for sizing work.
   std::vector<std::shared_ptr<Group const>> groups;
-
   self_type::get_inbound_groups(groups);
-
-  null_bw.print(header_fmt, groups.size()).extent();
-  for (auto g : groups) {
-    printer(null_bw, g.get());
-  }
-  extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
-
-  text.resize(extent);
-  swoc::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
-  w.restrict(trailer.size());
-  w.print(header_fmt, groups.size());
-  for (auto g : groups) {
-    printer(w, g.get());
-  }
-  w.restore(trailer.size());
-  w.write(trailer);
-  return text;
+  return Groups_To_JSON(groups);
 }
+
 std::string
 ConnectionTracker::outbound_to_json_string()
 {
-  std::string                    text;
-  size_t                         extent = 0;
-  static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [  )"};
-  static const swoc::bwf::Format item_fmt{
-    R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "alert": {}}},
-)"};
-  static const std::string_view trailer{" \n]}"};
-
-  static const auto printer = [](swoc::BufferWriter &w, Group const *g) -> swoc::BufferWriter & {
-    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count.load(), g->_count_max.load(), g->_blocked.load(),
-            g->get_last_alert_epoch_time());
-    return w;
-  };
-
-  swoc::FixedBufferWriter                   null_bw{nullptr}; // Empty buffer for sizing work.
   std::vector<std::shared_ptr<Group const>> groups;
-
   self_type::get_outbound_groups(groups);
-
-  null_bw.print(header_fmt, groups.size()).extent();
-  for (auto g : groups) {
-    printer(null_bw, g.get());
-  }
-  extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
-
-  text.resize(extent);
-  swoc::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
-  w.restrict(trailer.size());
-  w.print(header_fmt, groups.size());
-  for (auto g : groups) {
-    printer(w, g.get());
-  }
-  w.restore(trailer.size());
-  w.write(trailer);
-  return text;
+  return Groups_To_JSON(groups);
 }
 
 void
