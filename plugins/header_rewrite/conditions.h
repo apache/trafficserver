@@ -474,6 +474,7 @@ private:
 protected:
   bool          eval(const Resources &res) override;
   GeoQualifiers _geo_qual = GEO_QUAL_COUNTRY;
+  std::string   _ip_header;
   bool          _int_type = false;
 };
 
