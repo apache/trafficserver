@@ -140,8 +140,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   URL          *request_url    = request_header->url_get();
   char        **redirect_url   = &s->remap_redirect;
   char          tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048];
-  const char   *remapped_host;
-  int           remapped_host_len, tmp;
+  int           tmp;
   int           from_len;
   referer_info *ri;
 
@@ -197,10 +196,11 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
               break;
             case 'f':
             case 't':
-              remapped_host = (rc->type == 'f') ?
-                                map->fromURL.string_get_buf(tmp_buf, static_cast<int>(sizeof(tmp_buf)), &from_len) :
-                                ((s->url_map).getToURL())->string_get_buf(tmp_buf, static_cast<int>(sizeof(tmp_buf)), &from_len);
-              if (remapped_host && from_len > 0) {
+              if (auto remapped_host_cstr =
+                    (rc->type == 'f') ?
+                      map->fromURL.string_get_buf(tmp_buf, static_cast<int>(sizeof(tmp_buf)), &from_len) :
+                      ((s->url_map).getToURL())->string_get_buf(tmp_buf, static_cast<int>(sizeof(tmp_buf)), &from_len);
+                  remapped_host_cstr && from_len > 0) {
                 c = &tmp_buf[0];
               }
               break;
@@ -245,14 +245,15 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     // Create the new host header field being careful that our
     //   temporary buffer has adequate length
     //
-    remapped_host = request_url->host_get(&remapped_host_len);
+    auto remapped_host{request_url->host_get()};
+    auto remapped_host_len{static_cast<int>(remapped_host.length())};
 
     int remapped_port = request_url->port_get_raw();
 
     char host_hdr_buf[TS_MAX_HOST_NAME_LEN];
     if (TS_MAX_HOST_NAME_LEN > remapped_host_len) {
       tmp = remapped_host_len;
-      memcpy(host_hdr_buf, remapped_host, remapped_host_len);
+      memcpy(host_hdr_buf, remapped_host.data(), remapped_host_len);
       if (remapped_port) {
         tmp += snprintf(host_hdr_buf + remapped_host_len, TS_MAX_HOST_NAME_LEN - remapped_host_len - 1, ":%d", remapped_port);
       }

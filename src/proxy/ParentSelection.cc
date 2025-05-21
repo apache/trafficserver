@@ -32,6 +32,10 @@
 #include "tscore/Regression.h"
 #include "tscore/Tokenizer.h"
 
+#include <string_view>
+
+using namespace std::literals;
+
 #define MAX_SIMPLE_RETRIES             5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
 
@@ -1209,8 +1213,8 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   ST(6);
   REINIT;
   br(request, "www.snoopy.net");
-  const char *snoopy_dog = "http://www.snoopy.com/";
-  request->hdr->url_set(snoopy_dog, strlen(snoopy_dog));
+  auto snoopy_dog = "http://www.snoopy.com/"sv;
+  request->hdr->url_set(snoopy_dog);
   FP;
   RE(verify(result, PARENT_SPECIFIED, "odie", 80) + verify(result, PARENT_SPECIFIED, "garfield", 80), 5);
   // Test 7
