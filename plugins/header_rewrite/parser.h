@@ -28,9 +28,85 @@
 #include <charconv>
 #include <optional>
 #include <limits>
+#include <memory>
 
 #include "ts/ts.h"
 #include "lulu.h"
+
+///////////////////////////////////////////////////////////////////////////////
+// Simple wrapper, for dealing with raw configurations, and the compiled
+// configurations.
+class HRW4UPipe : public std::streambuf
+{
+public:
+  explicit HRW4UPipe(FILE *pipe) : _pipe(pipe) { setg(_buffer, _buffer, _buffer); }
+
+  ~HRW4UPipe() override { close(); }
+
+  void
+  set_pid(pid_t pid)
+  {
+    _pid = pid;
+  }
+
+  int
+  exit_status() const
+  {
+    return _exit_code;
+  }
+
+  void
+  close()
+  {
+    if (_pipe) {
+      fclose(_pipe);
+      _pipe = nullptr;
+    }
+
+    if (_pid > 0) {
+      int status = -1;
+      waitpid(_pid, &status, 0);
+      if (WIFEXITED(status)) {
+        _exit_code = WEXITSTATUS(status);
+      } else if (WIFSIGNALED(status)) {
+        _exit_code = 128 + WTERMSIG(status);
+      } else {
+        _exit_code = -1;
+      }
+      _pid = -1;
+    }
+  }
+
+protected:
+  int
+  underflow() override
+  {
+    if (!_pipe) {
+      return traits_type::eof();
+    }
+
+    size_t n = fread(_buffer, 1, sizeof(_buffer), _pipe);
+    if (n == 0) {
+      return traits_type::eof();
+    }
+
+    setg(_buffer, _buffer, _buffer + n);
+    return traits_type::to_int_type(*gptr());
+  }
+
+private:
+  char  _buffer[65536];
+  FILE *_pipe      = nullptr;
+  pid_t _pid       = -1;
+  int   _exit_code = -1;
+};
+
+struct ConfReader {
+  std::unique_ptr<std::istream> stream;
+  std::shared_ptr<HRW4UPipe>    pipebuf;
+};
+
+std::optional<ConfReader> openConfig(const std::string &filename);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
