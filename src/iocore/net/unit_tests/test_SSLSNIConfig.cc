@@ -41,77 +41,133 @@ TEST_CASE("Test SSLSNIConfig")
 
   SECTION("The config does not match any SNIs for someport.com:577")
   {
-    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 577)};
+    auto const &actions{params.get("someport.com", 577)};
     CHECK(!actions.first);
   }
 
   SECTION("The config does not match any SNIs for someport.com:808")
   {
-    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 808)};
+    auto const &actions{params.get("someport.com", 808)};
     CHECK(!actions.first);
   }
 
   SECTION("The config does not match any SNIs for oneport.com:1")
   {
-    auto const &actions{params.get({"oneport.com", std::strlen("oneport.com")}, 1)};
+    auto const &actions{params.get("oneport.com", 1)};
     CHECK(!actions.first);
   }
 
   SECTION("The config does match an SNI for oneport.com:433")
   {
-    auto const &actions{params.get({"oneport.com", std::strlen("oneport.com")}, 433)};
+    auto const &actions{params.get("oneport.com", 433)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 2);
   }
 
   SECTION("The config matches an SNI for allports.com")
   {
-    auto const &actions{params.get({"allports.com", std::strlen("allports.com")}, 1)};
+    auto const &actions{params.get("allports.com", 1)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 2);
   }
 
   SECTION("The config matches an SNI for someport.com:1")
   {
-    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 1)};
+    auto const &actions{params.get("someport.com", 1)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 3);
   }
 
   SECTION("The config matches an SNI for someport.com:433")
   {
-    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 433)};
+    auto const &actions{params.get("someport.com", 433)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 3);
   }
 
   SECTION("The config matches an SNI for someport:8080")
   {
-    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 8080)};
+    auto const &actions{params.get("someport.com", 8080)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 2);
   }
 
   SECTION("The config matches an SNI for someport:65535")
   {
-    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 65535)};
+    auto const &actions{params.get("someport.com", 65535)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 2);
   }
 
   SECTION("The config matches an SNI for someport:482")
   {
-    auto const &actions{params.get({"someport.com", std::strlen("someport.com")}, 482)};
+    auto const &actions{params.get("someport.com", 482)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 3);
   }
 
   SECTION("Matching order")
   {
-    std::string_view target = "foo.bar.com";
-    auto const      &actions{params.get(target, 443)};
+    auto const &actions{params.get("foo.bar.com", 443)};
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 5); ///< three H2 config + early data + fqdn
+  }
+
+  SECTION("Test mixed-case")
+  {
+    auto const &actions{params.get("SoMePoRt.CoM", 65535)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 2);
+  }
+
+  SECTION("Test mixed-case with wildcard in yaml config")
+  {
+    auto const &actions{params.get("AnYtHiNg.BaR.CoM", 443)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 4);
+    // verify the capture group
+    REQUIRE(actions.second._fqdn_wildcard_captured_groups->at(0) == "AnYtHiNg");
+  }
+
+  SECTION("Test mixed-case in yaml config")
+  {
+    auto const &actions{params.get("mixedcase.foo.com", 31337)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 4);
+  }
+
+  SECTION("Test mixed-case glob in yaml config")
+  {
+    auto const &actions{params.get("FoO.mixedcase.com", 443)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 3);
+    // verify the capture group
+    REQUIRE(actions.second._fqdn_wildcard_captured_groups->at(0) == "FoO");
+  }
+
+  SECTION("Test empty SNI does not match")
+  {
+    auto const &actions{params.get("", 443)};
+    CHECK(!actions.first);
+  }
+
+  SECTION("Test SNI with special characters does not match")
+  {
+    auto const &actions{params.get("some$port.com", 443)};
+    CHECK(!actions.first);
+  }
+
+  SECTION("Test with invalid glob in the middle in yaml config (e.g. cat.*.com) does not match")
+  {
+    auto const &actions{params.get("cat.dog.com", 443)};
+    REQUIRE(!actions.first);
+  }
+
+  SECTION("Test with invalid glob in the middle in yaml config (e.g. cat.*.com) does an exact match")
+  {
+    auto const &actions{params.get("cat.*.com", 443)};
+    REQUIRE(actions.first);
+    REQUIRE(actions.first->size() == 2);
   }
 }
 
