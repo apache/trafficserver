@@ -52,7 +52,7 @@
 
 struct CacheVol {
   int          vol_number       = -1;
-  int          scheme           = 0;
+  CacheType    scheme           = CacheType::NONE;
   off_t        size             = 0;
   int          num_vols         = 0;
   int          avg_obj_size     = -1; // Defer to the records.config if not overriden

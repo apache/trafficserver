@@ -40,14 +40,14 @@ constexpr std::string_view peering_rings   = "peering_ring";
 constexpr std::string_view active_health_check  = "active";
 constexpr std::string_view passive_health_check = "passive";
 
-constexpr const char *policy_strings[] = {"NH_UNDEFINED", "NH_FIRST_LIVE", "NH_RR_STRICT",
-                                          "NH_RR_IP",     "NH_RR_LATCHED", "NH_CONSISTENT_HASH"};
+constexpr const char *policy_strings[] = {"NHPolicyType::UNDEFINED", "NHPolicyType::FIRST_LIVE", "NHPolicyType::RR_STRICT",
+                                          "NHPolicyType::RR_IP",     "NHPolicyType::RR_LATCHED", "NHPolicyType::CONSISTENT_HASH"};
 
 NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &policy, ts::Yaml::Map &n)
   : strategy_name(name), policy_type(policy)
 {
   NH_Dbg(NH_DBG_CTL, "NextHopSelectionStrategy calling constructor");
-  NH_Dbg(NH_DBG_CTL, "Using a selection strategy of type %s", policy_strings[policy]);
+  NH_Dbg(NH_DBG_CTL, "Using a selection strategy of type %s", policy_strings[static_cast<int>(policy)]);
 
   std::string self_host;
   bool        self_host_used = false;
@@ -57,9 +57,9 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
     if (n["scheme"]) {
       auto scheme_val = n["scheme"].Scalar();
       if (scheme_val == "http") {
-        scheme = NH_SCHEME_HTTP;
+        scheme = NHSchemeType::HTTP;
       } else if (scheme_val == "https") {
-        scheme = NH_SCHEME_HTTPS;
+        scheme = NHSchemeType::HTTPS;
       } else {
         NH_Note("Invalid scheme '%s' for strategy '%s', setting to NONE", scheme_val.c_str(), strategy_name.c_str());
       }
@@ -99,18 +99,18 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
       if (failover_node["ring_mode"]) {
         auto ring_mode_val = failover_node["ring_mode"].Scalar();
         if (ring_mode_val == alternate_rings) {
-          ring_mode = NH_ALTERNATE_RING;
+          ring_mode = NHRingMode::ALTERNATE_RING;
         } else if (ring_mode_val == exhaust_rings) {
-          ring_mode = NH_EXHAUST_RING;
+          ring_mode = NHRingMode::EXHAUST_RING;
         } else if (ring_mode_val == peering_rings) {
-          ring_mode            = NH_PEERING_RING;
+          ring_mode            = NHRingMode::PEERING_RING;
           YAML::Node self_node = failover_node["self"];
           if (self_node) {
             self_host = self_node.Scalar();
             NH_Dbg(NH_DBG_CTL, "%s is self", self_host.c_str());
           }
         } else {
-          ring_mode = NH_ALTERNATE_RING;
+          ring_mode = NHRingMode::ALTERNATE_RING;
           NH_Note("Invalid 'ring_mode' value, '%s', for the strategy named '%s', using default '%s'.", ring_mode_val.c_str(),
                   strategy_name.c_str(), alternate_rings.data());
         }
@@ -215,7 +215,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
               if ((self_host == host_rec->hostname) || mach->is_self(host_rec->hostname.c_str())) {
-                if (ring_mode == NH_PEERING_RING && grp != 0) {
+                if (ring_mode == NHRingMode::PEERING_RING && grp != 0) {
                   throw std::invalid_argument("self host (" + self_host +
                                               ") can only appear in first host group for peering ring mode");
                 }
@@ -240,7 +240,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
                                 "', this strategy will be ignored.");
   }
 
-  if (ring_mode == NH_PEERING_RING) {
+  if (ring_mode == NHRingMode::PEERING_RING) {
     if (groups == 1) {
       if (!go_direct) {
         throw std::invalid_argument("ring mode '" + std::string(peering_rings) +
@@ -251,7 +251,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
         "ring mode '" + std::string(peering_rings) +
         "' requires two host groups (peering group and an upstream group), or a single peering group with go_direct");
     }
-    if (policy_type != NH_CONSISTENT_HASH) {
+    if (policy_type != NHPolicyType::CONSISTENT_HASH) {
       throw std::invalid_argument("ring mode '" + std::string(peering_rings) +
                                   "' is only implemented for a 'consistent_hash' policy");
     }
@@ -305,18 +305,21 @@ NextHopSelectionStrategy::responseIsRetryable(int64_t sm_id, HttpTransact::Curre
   NH_Dbg(NH_DBG_CTL,
          "[%" PRIu64 "] response_code %d, simple_retry_attempts: %d max_simple_retries: %d, unavailable_server_retry_attempts: "
          "%d, max_unavailable_retries: %d",
-         sm_id, response_code, sa, this->max_simple_retries, ua, max_unavailable_retries);
-  if (this->resp_codes.contains(response_code) && sa < this->max_simple_retries && sa < this->num_parents) {
-    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_SIMPLE", sm_id, response_code);
-    return PARENT_RETRY_SIMPLE;
+         sm_id, static_cast<int>(response_code), sa, this->max_simple_retries, ua, max_unavailable_retries);
+  if (this->resp_codes.contains(static_cast<short>(response_code)) && sa < this->max_simple_retries && sa < this->num_parents) {
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning ParentRetry_t::SIMPLE", sm_id,
+           static_cast<int>(response_code));
+    return ParentRetry_t::SIMPLE;
   }
-  if (this->markdown_codes.contains(response_code) && ua < this->max_unavailable_retries && ua < this->num_parents) {
-    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_UNAVAILABLE_SERVER", sm_id,
-           response_code);
-    return PARENT_RETRY_UNAVAILABLE_SERVER;
+  if (this->markdown_codes.contains(static_cast<short>(response_code)) && ua < this->max_unavailable_retries &&
+      ua < this->num_parents) {
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is retryable, returning ParentRetry_t::UNAVAILABLE_SERVER", sm_id,
+           static_cast<int>(response_code));
+    return ParentRetry_t::UNAVAILABLE_SERVER;
   }
-  NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is not retryable, returning PARENT_RETRY_NONE", sm_id, response_code);
-  return PARENT_RETRY_NONE;
+  NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] response code %d is not retryable, returning ParentRetry_t::NONE", sm_id,
+         static_cast<int>(response_code));
+  return ParentRetry_t::NONE;
 }
 
 namespace YAML
@@ -398,9 +401,9 @@ template <> struct convert<NHProtocol> {
     if (map["scheme"]) {
       const auto scheme_val = map["scheme"].Scalar();
       if (scheme_val == "http") {
-        nh.scheme = NH_SCHEME_HTTP;
+        nh.scheme = NHSchemeType::HTTP;
       } else if (scheme_val == "https") {
-        nh.scheme = NH_SCHEME_HTTPS;
+        nh.scheme = NHSchemeType::HTTPS;
       } else {
         NH_Note("Invalid scheme '%s' for protocol, setting to NONE", scheme_val.c_str());
       }

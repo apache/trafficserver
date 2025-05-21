@@ -2343,10 +2343,10 @@ LogAccess::marshal_proxy_resp_status_code(char *buf)
       else if (m_proxy_response->valid()) {
         status = m_proxy_response->status_get();
       } else {
-        status = HTTP_STATUS_OK;
+        status = HTTPStatus::OK;
       }
     } else {
-      status = HTTP_STATUS_NONE;
+      status = HTTPStatus::NONE;
     }
     marshal_int(buf, static_cast<int64_t>(status));
   }
@@ -2617,7 +2617,7 @@ LogAccess::marshal_server_resp_status_code(char *buf)
     if (m_server_response) {
       status = m_server_response->status_get();
     } else {
-      status = HTTP_STATUS_NONE;
+      status = HTTPStatus::NONE;
     }
     marshal_int(buf, static_cast<int64_t>(status));
   }
@@ -2770,7 +2770,7 @@ LogAccess::marshal_cache_resp_status_code(char *buf)
     if (m_cache_response) {
       status = m_cache_response->status_get();
     } else {
-      status = HTTP_STATUS_NONE;
+      status = HTTPStatus::NONE;
     }
     marshal_int(buf, static_cast<int64_t>(status));
   }
@@ -2853,23 +2853,23 @@ convert_cache_write_code(HttpTransact::CacheWriteStatus_t t)
 {
   LogCacheWriteCodeType code;
   switch (t) {
-  case HttpTransact::NO_CACHE_WRITE:
+  case HttpTransact::CacheWriteStatus_t::NO_WRITE:
     code = LOG_CACHE_WRITE_NONE;
     break;
-  case HttpTransact::CACHE_WRITE_LOCK_MISS:
+  case HttpTransact::CacheWriteStatus_t::LOCK_MISS:
     code = LOG_CACHE_WRITE_LOCK_MISSED;
     break;
-  case HttpTransact::CACHE_WRITE_IN_PROGRESS:
+  case HttpTransact::CacheWriteStatus_t::IN_PROGRESS:
     // Hack - the HttpSM doesn't record
     //   cache write aborts currently so
     //   if it's not complete declare it
     //   aborted
     code = LOG_CACHE_WRITE_LOCK_ABORTED;
     break;
-  case HttpTransact::CACHE_WRITE_ERROR:
+  case HttpTransact::CacheWriteStatus_t::ERROR:
     code = LOG_CACHE_WRITE_ERROR;
     break;
-  case HttpTransact::CACHE_WRITE_COMPLETE:
+  case HttpTransact::CacheWriteStatus_t::COMPLETE:
     code = LOG_CACHE_WRITE_COMPLETE;
     break;
   default:
@@ -3065,8 +3065,8 @@ LogAccess::marshal_cache_collapsed_connection_success(char *buf)
 
       // We attempted an open write, but ended up with some sort of HIT which means we must have gone back to the read state
       if ((m_http_sm->get_cache_sm().get_open_write_tries() > (0)) &&
-          ((code == SQUID_LOG_TCP_HIT) || (code == SQUID_LOG_TCP_MEM_HIT) || (code == SQUID_LOG_TCP_DISK_HIT) ||
-           (code == SQUID_LOG_TCP_CF_HIT))) {
+          ((code == SquidLogCode::TCP_HIT) || (code == SquidLogCode::TCP_MEM_HIT) || (code == SquidLogCode::TCP_DISK_HIT) ||
+           (code == SquidLogCode::TCP_CF_HIT))) {
         // Attempted collapsed connection and got a hit, success
         id = 1;
       } else if (m_http_sm->get_cache_sm().get_open_write_tries() > (m_http_sm->t_state.txn_conf->max_cache_open_write_retries)) {

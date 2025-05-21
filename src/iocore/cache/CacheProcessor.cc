@@ -69,7 +69,7 @@ int            cplist_reconfigure();
 void           cplist_init();
 void           register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix);
 static void    cplist_update();
-static int     create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp);
+static int     create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVol *cp);
 static int     fillExclusiveDisks(CacheVol *cp);
 
 static size_t DEFAULT_RAM_CACHE_MULTIPLIER = 10; // I.e. 10x 1MB per 1GB of disk.
@@ -86,7 +86,7 @@ extern std::vector<std::unique_ptr<CacheDisk>> gdisks;
 extern int                                     gndisks;
 static std::atomic<int>                        initialize_disk;
 extern Store                                   theCacheStore;
-int                                            CacheProcessor::initialized          = CACHE_INITIALIZING;
+CacheInitState                                 CacheProcessor::initialized          = CacheInitState::INITIALIZING;
 uint32_t                                       CacheProcessor::cache_ready          = 0;
 int                                            CacheProcessor::start_done           = 0;
 bool                                           CacheProcessor::clear                = false;
@@ -140,7 +140,7 @@ CachePeriodicMetricsUpdate()
     ts::Metrics::Gauge::store(gstripes[i]->cache_vol->vol_rsb.bytes_used, 0);
   }
 
-  if (cacheProcessor.initialized == CACHE_INITIALIZED) {
+  if (cacheProcessor.initialized == CacheInitState::INITIALIZED) {
     for (int i = 0; i < gnstripes; ++i) {
       StripeSM *v    = gstripes[i];
       int64_t   used = cache_bytes_used(i);
@@ -319,7 +319,7 @@ CacheProcessor::start_internal(int flags)
   start_done = 1;
 
   if (gndisks == 0) {
-    CacheProcessor::initialized = CACHE_INIT_FAILED;
+    CacheProcessor::initialized = CacheInitState::FAILED;
     // Have to do this here because no IO events were scheduled and so @c diskInitialized() won't be called.
     if (cb_after_init) {
       cb_after_init();
@@ -332,7 +332,7 @@ CacheProcessor::start_internal(int flags)
       return -1; // pointless, AFAICT this is ignored.
     }
   } else if (this->waitForCache() == 3 && static_cast<unsigned int>(gndisks) < theCacheStore.n_spans_in_config) {
-    CacheProcessor::initialized = CACHE_INIT_FAILED;
+    CacheProcessor::initialized = CacheInitState::FAILED;
     if (cb_after_init) {
       cb_after_init();
     }
@@ -674,7 +674,7 @@ persist_bad_disks()
 CacheDisk *
 CacheProcessor::find_by_path(std::string_view path)
 {
-  if (CACHE_INITIALIZED == initialized) {
+  if (CacheInitState::INITIALIZED == initialized) {
     for (int i = 0; i < gndisks; ++i) {
       if (0 == strncmp(path.data(), gdisks[i]->path, path.length())) {
         return gdisks[i].get();
@@ -691,7 +691,7 @@ CacheProcessor::has_online_storage() const
   return std::any_of(gdisks.begin(), gdisks.end(), [](auto &disk) { return !DISK_BAD(disk) && disk->online; });
 }
 
-int
+CacheInitState
 CacheProcessor::IsCacheEnabled()
 {
   return CacheProcessor::initialized;
@@ -700,7 +700,7 @@ CacheProcessor::IsCacheEnabled()
 bool
 CacheProcessor::IsCacheReady(CacheFragType type)
 {
-  if (IsCacheEnabled() != CACHE_INITIALIZED) {
+  if (IsCacheEnabled() != CacheInitState::INITIALIZED) {
     return false;
   }
   return static_cast<bool>(cache_ready & (1 << type));
@@ -735,7 +735,7 @@ CacheProcessor::diskInitialized()
     if (this->waitForCache() == 3 || (0 == gndisks && this->waitForCache() == 2)) {
       // This could be passed off to @c cacheInitialized (as with volume config problems) but I
       // think the more specific error message here is worth the extra code.
-      CacheProcessor::initialized = CACHE_INIT_FAILED;
+      CacheProcessor::initialized = CacheInitState::FAILED;
       if (cb_after_init) {
         cb_after_init();
       }
@@ -801,13 +801,13 @@ CacheProcessor::diskInitialized()
   }
   if (config_volumes.num_volumes == 0) {
     theCache         = new Cache();
-    theCache->scheme = CACHE_HTTP_TYPE;
+    theCache->scheme = CacheType::HTTP;
     theCache->open(clear, fix);
     return;
   }
   if (config_volumes.num_http_volumes != 0) {
     theCache         = new Cache();
-    theCache->scheme = CACHE_HTTP_TYPE;
+    theCache->scheme = CacheType::HTTP;
     theCache->open(clear, fix);
   }
 }
@@ -825,7 +825,7 @@ cplist_reconfigure()
     /* only the http cache */
     CacheVol *cp     = new CacheVol();
     cp->vol_number   = 0;
-    cp->scheme       = CACHE_HTTP_TYPE;
+    cp->scheme       = CacheType::HTTP;
     cp->disk_stripes = static_cast<DiskStripe **>(ats_malloc(gndisks * sizeof(DiskStripe *)));
     memset(cp->disk_stripes, 0, gndisks * sizeof(DiskStripe *));
     cp_list.enqueue(cp);
@@ -843,7 +843,7 @@ cplist_reconfigure()
         for (int p = 0; p < vols; p++) {
           off_t b = gdisks[i]->free_space / (vols - p);
           Dbg(dbg_ctl_cache_hosting, "blocks = %" PRId64, (int64_t)b);
-          DiskStripeBlock *dpb = gdisks[i]->create_volume(0, b, CACHE_HTTP_TYPE);
+          DiskStripeBlock *dpb = gdisks[i]->create_volume(0, b, CacheType::HTTP);
           ink_assert(dpb && dpb->len == (uint64_t)b);
         }
         ink_assert(gdisks[i]->free_space == 0);
@@ -1059,7 +1059,7 @@ cplist_init()
       CacheVol *p = cp_list.head;
       while (p) {
         if (p->vol_number == dp[j]->vol_number) {
-          ink_assert(p->scheme == static_cast<int>(dp[j]->dpb_queue.head->b->type));
+          ink_assert(p->scheme == static_cast<CacheType>(dp[j]->dpb_queue.head->b->type));
           p->size            += dp[j]->size;
           p->num_vols        += dp[j]->num_volblocks;
           p->disk_stripes[i]  = dp[j];
@@ -1074,7 +1074,7 @@ cplist_init()
         new_p->vol_number   = dp[j]->vol_number;
         new_p->num_vols     = dp[j]->num_volblocks;
         new_p->size         = dp[j]->size;
-        new_p->scheme       = dp[j]->dpb_queue.head->b->type;
+        new_p->scheme       = static_cast<CacheType>(dp[j]->dpb_queue.head->b->type);
         new_p->disk_stripes = static_cast<DiskStripe **>(ats_malloc(gndisks * sizeof(DiskStripe *)));
         memset(new_p->disk_stripes, 0, gndisks * sizeof(DiskStripe *));
         new_p->disk_stripes[i] = dp[j];
@@ -1251,7 +1251,7 @@ cplist_update()
 
 // This is some really bad code, and needs to be rewritten!
 int
-create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
+create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVol *cp)
 {
   static int curr_vol       = 0; // FIXME: this will not reinitialize correctly
   off_t      to_create      = size_in_blocks;
@@ -1381,7 +1381,7 @@ CacheProcessor::cacheInitialized()
     return;
   }
 
-  if (theCache->ready == CACHE_INITIALIZING) {
+  if (theCache->ready == CacheInitState::INITIALIZING) {
     Dbg(dbg_ctl_cache_init, "theCache is initializing");
     return;
   }
@@ -1395,7 +1395,7 @@ CacheProcessor::cacheInitialized()
   total_size += theCache->cache_size;
   Dbg(dbg_ctl_cache_init, "theCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
       total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
-  if (theCache->ready == CACHE_INIT_FAILED) {
+  if (theCache->ready == CacheInitState::FAILED) {
     Dbg(dbg_ctl_cache_init, "failed to initialize the cache for http: cache disabled");
     Warning("failed to initialize the cache for http: cache disabled\n");
   } else {
@@ -1540,11 +1540,11 @@ CacheProcessor::cacheInitialized()
   }
   if (cache_init_ok) {
     // Initialize virtual cache
-    CacheProcessor::initialized = CACHE_INITIALIZED;
+    CacheProcessor::initialized = CacheInitState::INITIALIZED;
     CacheProcessor::cache_ready = caches_ready;
     Note("cache enabled");
   } else {
-    CacheProcessor::initialized = CACHE_INIT_FAILED;
+    CacheProcessor::initialized = CacheInitState::FAILED;
     Note("cache disabled");
   }
 
@@ -1554,7 +1554,7 @@ CacheProcessor::cacheInitialized()
   }
 
   // TS-3848
-  if (CACHE_INIT_FAILED == CacheProcessor::initialized && cacheProcessor.waitForCache() > 1) {
+  if (CacheInitState::FAILED == CacheProcessor::initialized && cacheProcessor.waitForCache() > 1) {
     Emergency("Cache initialization failed with cache required, exiting.");
   }
 }

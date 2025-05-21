@@ -358,124 +358,124 @@ const char *
 HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
 {
   switch (e) {
-  case HttpTransact::SM_ACTION_UNDEFINED:
-    return ("SM_ACTION_UNDEFINED");
+  case HttpTransact::StateMachineAction_t::UNDEFINED:
+    return ("StateMachineAction_t::UNDEFINED");
 
-  case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE:
-    return ("SM_ACTION_CACHE_ISSUE_WRITE");
+  case HttpTransact::StateMachineAction_t::CACHE_ISSUE_WRITE:
+    return ("StateMachineAction_t::CACHE_ISSUE_WRITE");
 
-  case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM:
-    return ("SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM");
+  case HttpTransact::StateMachineAction_t::CACHE_ISSUE_WRITE_TRANSFORM:
+    return ("StateMachineAction_t::CACHE_ISSUE_WRITE_TRANSFORM");
 
-  case HttpTransact::SM_ACTION_CACHE_LOOKUP:
-    return ("SM_ACTION_CACHE_LOOKUP");
+  case HttpTransact::StateMachineAction_t::CACHE_LOOKUP:
+    return ("StateMachineAction_t::CACHE_LOOKUP");
 
-  case HttpTransact::SM_ACTION_DNS_LOOKUP:
-    return ("SM_ACTION_DNS_LOOKUP");
+  case HttpTransact::StateMachineAction_t::DNS_LOOKUP:
+    return ("StateMachineAction_t::DNS_LOOKUP");
 
-  case HttpTransact::SM_ACTION_DNS_REVERSE_LOOKUP:
-    return ("SM_ACTION_DNS_REVERSE_LOOKUP");
+  case HttpTransact::StateMachineAction_t::DNS_REVERSE_LOOKUP:
+    return ("StateMachineAction_t::DNS_REVERSE_LOOKUP");
 
-  case HttpTransact::SM_ACTION_CACHE_PREPARE_UPDATE:
-    return ("SM_ACTION_CACHE_PREPARE_UPDATE");
+  case HttpTransact::StateMachineAction_t::CACHE_PREPARE_UPDATE:
+    return ("StateMachineAction_t::CACHE_PREPARE_UPDATE");
 
-  case HttpTransact::SM_ACTION_CACHE_ISSUE_UPDATE:
-    return ("SM_ACTION_CACHE_ISSUE_UPDATE");
+  case HttpTransact::StateMachineAction_t::CACHE_ISSUE_UPDATE:
+    return ("StateMachineAction_t::CACHE_ISSUE_UPDATE");
 
-  case HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN:
-    return ("SM_ACTION_ORIGIN_SERVER_OPEN");
+  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_OPEN:
+    return ("StateMachineAction_t::ORIGIN_SERVER_OPEN");
 
-  case HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN:
-    return ("SM_ACTION_ORIGIN_SERVER_RAW_OPEN");
+  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN:
+    return ("StateMachineAction_t::ORIGIN_SERVER_RAW_OPEN");
 
-  case HttpTransact::SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN:
-    return ("SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN");
+  case HttpTransact::StateMachineAction_t::ORIGIN_SERVER_RR_MARK_DOWN:
+    return ("StateMachineAction_t::ORIGIN_SERVER_RR_MARK_DOWN");
 
-  case HttpTransact::SM_ACTION_READ_PUSH_HDR:
-    return ("SM_ACTION_READ_PUSH_HDR");
+  case HttpTransact::StateMachineAction_t::READ_PUSH_HDR:
+    return ("StateMachineAction_t::READ_PUSH_HDR");
 
-  case HttpTransact::SM_ACTION_STORE_PUSH_BODY:
-    return ("SM_ACTION_STORE_PUSH_BODY");
+  case HttpTransact::StateMachineAction_t::STORE_PUSH_BODY:
+    return ("StateMachineAction_t::STORE_PUSH_BODY");
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_WRITE:
-    return ("SM_ACTION_INTERNAL_CACHE_WRITE");
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_WRITE:
+    return ("StateMachineAction_t::INTERNAL_CACHE_WRITE");
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE:
-    return ("SM_ACTION_INTERNAL_CACHE_DELETE");
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_DELETE:
+    return ("StateMachineAction_t::INTERNAL_CACHE_DELETE");
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP:
-    return ("SM_ACTION_INTERNAL_CACHE_NOOP");
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_NOOP:
+    return ("StateMachineAction_t::INTERNAL_CACHE_NOOP");
 
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS:
-    return ("SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS");
+  case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_UPDATE_HEADERS:
+    return ("StateMachineAction_t::INTERNAL_CACHE_UPDATE_HEADERS");
 
-  case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP:
-    return ("SM_ACTION_SEND_ERROR_CACHE_NOOP");
+  case HttpTransact::StateMachineAction_t::SEND_ERROR_CACHE_NOOP:
+    return ("StateMachineAction_t::SEND_ERROR_CACHE_NOOP");
 
-  case HttpTransact::SM_ACTION_SERVE_FROM_CACHE:
-    return ("SM_ACTION_SERVE_FROM_CACHE");
+  case HttpTransact::StateMachineAction_t::SERVE_FROM_CACHE:
+    return ("StateMachineAction_t::SERVE_FROM_CACHE");
 
-  case HttpTransact::SM_ACTION_SERVER_READ:
-    return ("SM_ACTION_SERVER_READ");
+  case HttpTransact::StateMachineAction_t::SERVER_READ:
+    return ("StateMachineAction_t::SERVER_READ");
 
-  case HttpTransact::SM_ACTION_SSL_TUNNEL:
-    return ("SM_ACTION_SSL_TUNNEL");
+  case HttpTransact::StateMachineAction_t::SSL_TUNNEL:
+    return ("StateMachineAction_t::SSL_TUNNEL");
 
-  case HttpTransact::SM_ACTION_CONTINUE:
-    return ("SM_ACTION_CONTINUE");
+  case HttpTransact::StateMachineAction_t::CONTINUE:
+    return ("StateMachineAction_t::CONTINUE");
 
-  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
-    return ("SM_ACTION_API_READ_REQUEST_HDR");
+  case HttpTransact::StateMachineAction_t::API_READ_REQUEST_HDR:
+    return ("StateMachineAction_t::API_READ_REQUEST_HDR");
 
-  case HttpTransact::SM_ACTION_API_TUNNEL_START:
-    return ("SM_ACTION_API_TUNNEL_START");
+  case HttpTransact::StateMachineAction_t::API_TUNNEL_START:
+    return ("StateMachineAction_t::API_TUNNEL_START");
 
-  case HttpTransact::SM_ACTION_API_OS_DNS:
-    return ("SM_ACTION_API_OS_DNS");
+  case HttpTransact::StateMachineAction_t::API_OS_DNS:
+    return ("StateMachineAction_t::API_OS_DNS");
 
-  case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
-    return ("SM_ACTION_API_SEND_REQUEST_HDR");
+  case HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR:
+    return ("StateMachineAction_t::API_SEND_REQUEST_HDR");
 
-  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
-    return ("SM_ACTION_API_READ_CACHE_HDR");
+  case HttpTransact::StateMachineAction_t::API_READ_CACHE_HDR:
+    return ("StateMachineAction_t::API_READ_CACHE_HDR");
 
-  case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
-    return ("SM_ACTION_API_CACHE_LOOKUP_COMPLETE");
+  case HttpTransact::StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE:
+    return ("StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE");
 
-  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
-    return ("SM_ACTION_API_READ_RESPONSE_HDR");
+  case HttpTransact::StateMachineAction_t::API_READ_RESPONSE_HDR:
+    return ("StateMachineAction_t::API_READ_RESPONSE_HDR");
 
-  case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
-    return ("SM_ACTION_API_SEND_RESPONSE_HDR");
+  case HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR:
+    return ("StateMachineAction_t::API_SEND_RESPONSE_HDR");
 
-  case HttpTransact::SM_ACTION_INTERNAL_100_RESPONSE:
-    return ("SM_ACTION_INTERNAL_100_RESPONSE");
+  case HttpTransact::StateMachineAction_t::INTERNAL_100_RESPONSE:
+    return ("StateMachineAction_t::INTERNAL_100_RESPONSE");
 
-  case HttpTransact::SM_ACTION_SERVER_PARSE_NEXT_HDR:
-    return ("SM_ACTION_SERVER_PARSE_NEXT_HDR");
+  case HttpTransact::StateMachineAction_t::SERVER_PARSE_NEXT_HDR:
+    return ("StateMachineAction_t::SERVER_PARSE_NEXT_HDR");
 
-  case HttpTransact::SM_ACTION_TRANSFORM_READ:
-    return ("SM_ACTION_TRANSFORM_READ");
+  case HttpTransact::StateMachineAction_t::TRANSFORM_READ:
+    return ("StateMachineAction_t::TRANSFORM_READ");
 
-  case HttpTransact::SM_ACTION_WAIT_FOR_FULL_BODY:
-    return ("SM_ACTION_WAIT_FOR_FULL_BODY");
+  case HttpTransact::StateMachineAction_t::WAIT_FOR_FULL_BODY:
+    return ("StateMachineAction_t::WAIT_FOR_FULL_BODY");
 
-  case HttpTransact::SM_ACTION_REQUEST_BUFFER_READ_COMPLETE:
-    return ("SM_ACTION_REQUEST_BUFFER_READ_COMPLETE");
-  case HttpTransact::SM_ACTION_API_SM_START:
-    return ("SM_ACTION_API_SM_START");
-  case HttpTransact::SM_ACTION_REDIRECT_READ:
-    return ("SM_ACTION_REDIRECT_READ");
-  case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
-    return ("SM_ACTION_API_SM_SHUTDOWN");
-  case HttpTransact::SM_ACTION_REMAP_REQUEST:
-    return ("SM_ACTION_REMAP_REQUEST");
-  case HttpTransact::SM_ACTION_API_PRE_REMAP:
-    return ("SM_ACTION_API_PRE_REMAP");
-  case HttpTransact::SM_ACTION_API_POST_REMAP:
-    return ("SM_ACTION_API_POST_REMAP");
-  case HttpTransact::SM_ACTION_POST_REMAP_SKIP:
-    return ("SM_ACTION_POST_REMAP_SKIP");
+  case HttpTransact::StateMachineAction_t::REQUEST_BUFFER_READ_COMPLETE:
+    return ("StateMachineAction_t::REQUEST_BUFFER_READ_COMPLETE");
+  case HttpTransact::StateMachineAction_t::API_SM_START:
+    return ("StateMachineAction_t::API_SM_START");
+  case HttpTransact::StateMachineAction_t::REDIRECT_READ:
+    return ("StateMachineAction_t::REDIRECT_READ");
+  case HttpTransact::StateMachineAction_t::API_SM_SHUTDOWN:
+    return ("StateMachineAction_t::API_SM_SHUTDOWN");
+  case HttpTransact::StateMachineAction_t::REMAP_REQUEST:
+    return ("StateMachineAction_t::REMAP_REQUEST");
+  case HttpTransact::StateMachineAction_t::API_PRE_REMAP:
+    return ("StateMachineAction_t::API_PRE_REMAP");
+  case HttpTransact::StateMachineAction_t::API_POST_REMAP:
+    return ("StateMachineAction_t::API_POST_REMAP");
+  case HttpTransact::StateMachineAction_t::POST_REMAP_SKIP:
+    return ("StateMachineAction_t::POST_REMAP_SKIP");
   }
 
   return ("unknown state name");
@@ -490,34 +490,34 @@ const char *
 HttpDebugNames::get_cache_action_name(HttpTransact::CacheAction_t t)
 {
   switch (t) {
-  case HttpTransact::CACHE_DO_UNDEFINED:
-    return ("CACHE_DO_UNDEFINED");
-  case HttpTransact::CACHE_DO_NO_ACTION:
-    return ("CACHE_DO_NO_ACTION");
-  case HttpTransact::CACHE_DO_DELETE:
-    return ("CACHE_DO_DELETE");
-  case HttpTransact::CACHE_DO_LOOKUP:
-    return ("CACHE_DO_LOOKUP");
-  case HttpTransact::CACHE_DO_REPLACE:
-    return ("CACHE_DO_REPLACE");
-  case HttpTransact::CACHE_DO_SERVE:
-    return ("CACHE_DO_SERVE");
-  case HttpTransact::CACHE_DO_SERVE_AND_DELETE:
-    return ("CACHE_DO_SERVE_AND_DELETE");
-  case HttpTransact::CACHE_DO_SERVE_AND_UPDATE:
-    return ("CACHE_DO_SERVE_AND_UPDATE");
-  case HttpTransact::CACHE_DO_UPDATE:
-    return ("CACHE_DO_UPDATE");
-  case HttpTransact::CACHE_DO_WRITE:
-    return ("CACHE_DO_WRITE");
-  case HttpTransact::CACHE_PREPARE_TO_DELETE:
-    return ("CACHE_PREPARE_TO_DELETE");
-  case HttpTransact::CACHE_PREPARE_TO_UPDATE:
-    return ("CACHE_PREPARE_TO_UPDATE");
-  case HttpTransact::CACHE_PREPARE_TO_WRITE:
-    return ("CACHE_PREPARE_TO_WRITE");
-  case HttpTransact::TOTAL_CACHE_ACTION_TYPES:
-    return ("TOTAL_CACHE_ACTION_TYPES");
+  case HttpTransact::CacheAction_t::UNDEFINED:
+    return ("CacheAction_t::UNDEFINED");
+  case HttpTransact::CacheAction_t::NO_ACTION:
+    return ("CacheAction_t::NO_ACTION");
+  case HttpTransact::CacheAction_t::DELETE:
+    return ("CacheAction_t::DELETE");
+  case HttpTransact::CacheAction_t::LOOKUP:
+    return ("CacheAction_t::LOOKUP");
+  case HttpTransact::CacheAction_t::REPLACE:
+    return ("CacheAction_t::REPLACE");
+  case HttpTransact::CacheAction_t::SERVE:
+    return ("CacheAction_t::SERVE");
+  case HttpTransact::CacheAction_t::SERVE_AND_DELETE:
+    return ("CacheAction_t::SERVE_AND_DELETE");
+  case HttpTransact::CacheAction_t::SERVE_AND_UPDATE:
+    return ("CacheAction_t::SERVE_AND_UPDATE");
+  case HttpTransact::CacheAction_t::UPDATE:
+    return ("CacheAction_t::UPDATE");
+  case HttpTransact::CacheAction_t::WRITE:
+    return ("CacheAction_t::WRITE");
+  case HttpTransact::CacheAction_t::PREPARE_TO_DELETE:
+    return ("CacheAction_t::PREPARE_TO_DELETE");
+  case HttpTransact::CacheAction_t::PREPARE_TO_UPDATE:
+    return ("CacheAction_t::PREPARE_TO_UPDATE");
+  case HttpTransact::CacheAction_t::PREPARE_TO_WRITE:
+    return ("CacheAction_t::PREPARE_TO_WRITE");
+  case HttpTransact::CacheAction_t::TOTAL_TYPES:
+    return ("CacheAction_t::TOTAL_TYPES");
   }
 
   return ("unknown cache action");

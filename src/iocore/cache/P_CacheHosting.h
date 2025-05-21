@@ -52,7 +52,7 @@ struct CacheHostRecord {
     ats_free(cp);
   }
 
-  CacheType       type           = CACHE_NONE_TYPE;
+  CacheType       type           = CacheType::NONE;
   StripeSM      **stripes        = nullptr;
   int             num_vols       = 0;
   unsigned short *vol_hash_table = nullptr;
@@ -248,7 +248,7 @@ public:
     RecRegisterConfigUpdateCb("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
   }
 
-  CacheType       type         = CACHE_HTTP_TYPE;
+  CacheType       type         = CacheType::HTTP;
   Cache          *cache        = nullptr;
   int             m_numEntries = 0;
   CacheHostRecord gen_host_rec;
@@ -272,7 +272,7 @@ struct CacheHostTableConfig : public Continuation {
   int
   mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    CacheType type  = CACHE_HTTP_TYPE;
+    CacheType type  = CacheType::HTTP;
     Cache    *cache = nullptr;
     {
       ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(ppt);

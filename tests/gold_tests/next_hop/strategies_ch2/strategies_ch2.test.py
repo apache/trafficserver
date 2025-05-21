@@ -149,6 +149,7 @@ for i in range(num_objects):
     tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = ("grep -F PARENT_SPECIFIED trace.log | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'")
+tr.Processes.Default.Command = (
+    "grep -F ParentResultType::SPECIFIED trace.log | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'")
 tr.Processes.Default.Streams.stdout = "trace.gold"
 tr.Processes.Default.ReturnCode = 0

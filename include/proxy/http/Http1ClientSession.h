@@ -42,11 +42,6 @@
 extern ink_mutex debug_cs_list_mutex;
 #endif
 
-enum {
-  HTTP_CS_MAGIC_ALIVE = 0x0123FEED,
-  HTTP_CS_MAGIC_DEAD  = 0xDEADFEED,
-};
-
 class HttpSM;
 class Http1ClientSession : public ProxySession
 {
@@ -91,15 +86,20 @@ private:
   int state_slave_keep_alive(int event, void *data);
   int state_wait_for_close(int event, void *data);
 
-  enum C_Read_State {
-    HCS_INIT,
-    HCS_ACTIVE_READER,
-    HCS_KEEP_ALIVE,
-    HCS_HALF_CLOSED,
-    HCS_CLOSED,
+  enum class C_Read_State {
+    INIT,
+    ACTIVE_READER,
+    KEEP_ALIVE,
+    HALF_CLOSED,
+    CLOSED,
   };
 
-  int magic = HTTP_CS_MAGIC_DEAD;
+  enum class Magic : uint32_t {
+    ALIVE = 0x0123FEED,
+    DEAD  = 0xDEADFEED,
+  };
+
+  Magic magic = Magic::DEAD;
 
   /// A monotonically increasing count of all transactions ever handled by the session.
   int  transact_count = 0;
@@ -109,7 +109,7 @@ private:
   MIOBuffer      *read_buffer = nullptr;
   IOBufferReader *_reader     = nullptr;
 
-  C_Read_State read_state = HCS_INIT;
+  C_Read_State read_state = C_Read_State::INIT;
 
   VIO *ka_vio       = nullptr;
   VIO *slave_ka_vio = nullptr;
