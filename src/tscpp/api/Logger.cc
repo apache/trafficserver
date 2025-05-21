@@ -72,7 +72,7 @@ const int ROLL_ON_TIME = 1; // See RollingEnabledValues in LogConfig.h
  */
 Logger::Logger()
 {
-  state_ = new LoggerState();
+  state_ = std::make_unique<LoggerState>();
 }
 
 Logger::~Logger()
@@ -80,8 +80,6 @@ Logger::~Logger()
   if (state_->initialized_ && state_->text_log_obj_) {
     TSTextLogObjectDestroy(state_->text_log_obj_);
   }
-
-  delete state_;
 }
 
 /*

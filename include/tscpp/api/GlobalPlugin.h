@@ -84,7 +84,7 @@ protected:
   GlobalPlugin(bool ignore_internal_transactions = false);
 
 private:
-  GlobalPluginState *state_; /**< Internal state tied to a GlobalPlugin */
+  std::unique_ptr<GlobalPluginState> state_; /**< Internal state tied to a GlobalPlugin */
 };
 
 } // namespace atscppapi

@@ -46,19 +46,19 @@ struct atscppapi::RequestState : noncopyable {
 
 Request::Request()
 {
-  state_ = new RequestState();
+  state_ = std::make_unique<RequestState>();
 }
 
 Request::Request(void *hdr_buf, void *hdr_loc)
 {
-  state_ = new RequestState();
+  state_ = std::make_unique<RequestState>();
   init(hdr_buf, hdr_loc);
   LOG_DEBUG("Initialized request object %p with hdr_buf=%p and hdr_loc=%p", this, hdr_buf, hdr_loc);
 }
 
 Request::Request(const string &url_str, HttpMethod method, HttpVersion version)
 {
-  state_               = new RequestState();
+  state_               = std::make_unique<RequestState>();
   state_->method_      = method;
   state_->version_     = version;
   state_->destroy_buf_ = true;
@@ -198,5 +198,4 @@ Request::~Request()
       TSMBufferDestroy(state_->hdr_buf_);
     }
   }
-  delete state_;
 }

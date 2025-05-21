@@ -288,7 +288,7 @@ AccessControlConfig::init(int argc, char *argv[])
   }
 
   /* Support only KeyValuePair syntax for now */
-  _tokenFactory = new AccessTokenFactory(_kvpAccessTokenConfig, _symmetricKeysMap, _debugLevel);
+  _tokenFactory = std::make_unique<AccessTokenFactory>(_kvpAccessTokenConfig, _symmetricKeysMap, _debugLevel);
   if (nullptr == _tokenFactory) {
     AccessControlDebug("failed to initialize the access token factory");
     return false;
@@ -323,12 +323,12 @@ AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool deny
   }
 
   /* Have the multiplattern be named as same as the filename, would be used only for debugging. */
-  MultiPattern *multiPattern;
+  std::unique_ptr<MultiPattern> multiPattern;
   if (denylist) {
-    multiPattern = new NonMatchingMultiPattern(filename);
+    multiPattern = std::make_unique<NonMatchingMultiPattern>(filename);
     AccessControlDebug("NonMatchingMultiPattern('%s')", filename.c_str());
   } else {
-    multiPattern = new MultiPattern(filename);
+    multiPattern = std::make_unique<MultiPattern>(filename);
     AccessControlDebug("MultiPattern('%s')", filename.c_str());
   }
   if (nullptr == multiPattern) {
@@ -339,7 +339,6 @@ AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool deny
   AccessControlDebug("loading multi-pattern '%s' from '%s'", filename.c_str(), path.c_str());
 
   while (std::getline(ifstr, regex)) {
-    Pattern          *p;
     String::size_type pos;
 
     ++lineno;
@@ -354,28 +353,25 @@ AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool deny
       continue;
     }
 
-    p = new Pattern();
+    auto p = std::make_unique<Pattern>();
 
     if (nullptr != p && p->init(regex)) {
       if (denylist) {
         AccessControlDebug("Added pattern '%s' to deny list uri-path multi-pattern '%s'", regex.c_str(), filename.c_str());
-        multiPattern->add(p);
+        multiPattern->add(std::move(p));
       } else {
         AccessControlDebug("Added pattern '%s' to allow list uri-path multi-pattern '%s'", regex.c_str(), filename.c_str());
-        multiPattern->add(p);
+        multiPattern->add(std::move(p));
       }
     } else {
       AccessControlError("%s:%u: failed to parse regex '%s'", path.c_str(), lineno, regex.c_str());
-      delete p;
     }
   }
 
   ifstr.close();
 
   if (!multiPattern->empty()) {
-    _uriPathScope.add(multiPattern);
-  } else {
-    delete multiPattern;
+    _uriPathScope.add(std::move(multiPattern));
   }
 
   return true;

@@ -33,11 +33,11 @@
 int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
-extern int             gndisks;
-extern CacheDisk     **gdisks;
-extern Queue<CacheVol> cp_list;
-extern int             cp_list_len;
-extern ConfigVolumes   config_volumes;
+extern int                                     gndisks;
+extern std::vector<std::unique_ptr<CacheDisk>> gdisks;
+extern Queue<CacheVol>                         cp_list;
+extern int                                     cp_list_len;
+extern ConfigVolumes                           config_volumes;
 
 extern void cplist_init();
 extern int  cplist_reconfigure();
@@ -77,7 +77,7 @@ create_config(int num)
   switch (num) {
   case 0:
     for (i = 0; i < gndisks; i++) {
-      CacheDisk *d      = gdisks[i];
+      CacheDisk *d      = gdisks[i].get();
       int        blocks = d->num_usable_blocks;
       if (blocks < STORE_BLOCKS_PER_STRIPE) {
         Warning("Cannot run Cache_vol regression: not enough disk space");
@@ -284,7 +284,7 @@ execute_and_verify()
   REQUIRE(matched == config_volumes.num_volumes);
 
   for (int i = 0; i < gndisks; i++) {
-    CacheDisk *d = gdisks[i];
+    CacheDisk *d = gdisks[i].get();
     if (dbg_ctl_cache_hosting.on()) {
       Dbg(dbg_ctl_cache_hosting, "Disk: %d: Stripe Blocks: %u: Free space: %" PRIu64, i, d->header->num_diskvol_blks,
           d->free_space);

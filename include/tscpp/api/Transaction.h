@@ -375,9 +375,9 @@ public:
   bool configFind(std::string const &name, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
 private:
-  TransactionState *state_;          //!< The internal TransactionState object tied to the current Transaction
-  friend class TransactionPlugin;    //!< TransactionPlugin is a friend so it can call addPlugin()
-  friend class TransformationPlugin; //!< TransformationPlugin is a friend so it can call addPlugin()
+  std::unique_ptr<TransactionState> state_; //!< The internal TransactionState object tied to the current Transaction
+  friend class TransactionPlugin;           //!< TransactionPlugin is a friend so it can call addPlugin()
+  friend class TransformationPlugin;        //!< TransformationPlugin is a friend so it can call addPlugin()
 
   /**
    * @private

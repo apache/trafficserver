@@ -53,6 +53,6 @@ public:
   ~ClientRequest();
 
 private:
-  ClientRequestState *state_;
+  std::unique_ptr<ClientRequestState> state_;
 };
 } // namespace atscppapi

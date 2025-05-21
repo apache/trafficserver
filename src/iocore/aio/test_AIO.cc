@@ -30,6 +30,7 @@
 #include "tscore/TSSystemState.h"
 #include "tscore/Random.h"
 #include <iostream>
+#include <memory>
 #include <fstream>
 
 using std::cout;
@@ -501,7 +502,7 @@ main(int argc, char *argv[])
   ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   eventProcessor.start(num_processors);
 
-  Thread *main_thread = new EThread;
+  auto main_thread = std::make_unique<EThread>();
   main_thread->set_specific();
 
 #if TS_USE_LINUX_IO_URING
@@ -554,6 +555,4 @@ main(int argc, char *argv[])
     sleep(1);
 #endif
   }
-
-  delete main_thread;
 }

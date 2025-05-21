@@ -30,14 +30,14 @@ QUICApplicationMap::get(QUICStreamId id)
   if (it == this->_map.end()) {
     return this->_default_app;
   } else {
-    return it->second;
+    return it->second.get();
   }
 }
 
 void
-QUICApplicationMap::set(QUICStreamId id, QUICApplication *app)
+QUICApplicationMap::set(QUICStreamId id, std::unique_ptr<QUICApplication> app)
 {
-  this->_map[id] = app;
+  this->_map[id] = std::move(app);
 }
 
 void

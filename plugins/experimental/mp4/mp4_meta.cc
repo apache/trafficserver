@@ -154,7 +154,7 @@ Mp4Meta::post_process_meta()
   start_offset = cl;
 
   for (i = 0; i < trak_num; i++) {
-    trak = trak_vec[i];
+    trak = trak_vec[i].get();
 
     if (mp4_update_stts_atom(trak) != 0) {
       return -1;
@@ -217,7 +217,7 @@ Mp4Meta::post_process_meta()
   TSIOBufferCopy(out_handle.buffer, mdat_atom.reader, TSIOBufferReaderAvail(mdat_atom.reader), 0);
 
   for (i = 0; i < trak_num; i++) {
-    trak = trak_vec[i];
+    trak = trak_vec[i].get();
 
     if (trak->atoms[MP4_CO64_DATA].buffer) {
       mp4_adjust_co64_atom(trak, adjustment);
@@ -525,8 +525,8 @@ Mp4Meta::mp4_read_trak_atom(int64_t atom_header_size, int64_t atom_data_size)
     return -1;
   }
 
-  trak                 = new Mp4Trak();
-  trak_vec[trak_num++] = trak;
+  trak_vec[trak_num] = std::make_unique<Mp4Trak>();
+  trak               = trak_vec[trak_num++].get();
 
   trak->atoms[MP4_TRAK_ATOM].buffer = TSIOBufferCreate();
   trak->atoms[MP4_TRAK_ATOM].reader = TSIOBufferReaderAlloc(trak->atoms[MP4_TRAK_ATOM].buffer);
@@ -553,7 +553,7 @@ Mp4Meta::mp4_read_tkhd_atom(int64_t atom_header_size, int64_t atom_data_size)
 
   atom_size = atom_header_size + atom_data_size;
 
-  trak            = trak_vec[trak_num - 1];
+  trak            = trak_vec[trak_num - 1].get();
   trak->tkhd_size = atom_size;
 
   trak->atoms[MP4_TKHD_ATOM].buffer = TSIOBufferCreate();
@@ -572,7 +572,7 @@ Mp4Meta::mp4_read_mdia_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   Mp4Trak *trak;
 
-  trak = trak_vec[trak_num - 1];
+  trak = trak_vec[trak_num - 1].get();
 
   trak->atoms[MP4_MDIA_ATOM].buffer = TSIOBufferCreate();
   trak->atoms[MP4_MDIA_ATOM].reader = TSIOBufferReaderAlloc(trak->atoms[MP4_MDIA_ATOM].buffer);
@@ -607,7 +607,7 @@ Mp4Meta::mp4_read_mdhd_atom(int64_t atom_header_size, int64_t atom_data_size)
 
   atom_size = atom_header_size + atom_data_size;
 
-  trak            = trak_vec[trak_num - 1];
+  trak            = trak_vec[trak_num - 1].get();
   trak->mdhd_size = atom_size;
   trak->timescale = ts;
   trak->duration  = duration;
@@ -631,7 +631,7 @@ Mp4Meta::mp4_read_hdlr_atom(int64_t atom_header_size, int64_t atom_data_size)
 
   atom_size = atom_header_size + atom_data_size;
 
-  trak            = trak_vec[trak_num - 1];
+  trak            = trak_vec[trak_num - 1].get();
   trak->hdlr_size = atom_size;
 
   trak->atoms[MP4_HDLR_ATOM].buffer = TSIOBufferCreate();
@@ -648,7 +648,7 @@ Mp4Meta::mp4_read_minf_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   Mp4Trak *trak;
 
-  trak = trak_vec[trak_num - 1];
+  trak = trak_vec[trak_num - 1].get();
 
   trak->atoms[MP4_MINF_ATOM].buffer = TSIOBufferCreate();
   trak->atoms[MP4_MINF_ATOM].reader = TSIOBufferReaderAlloc(trak->atoms[MP4_MINF_ATOM].buffer);
@@ -667,7 +667,7 @@ Mp4Meta::mp4_read_vmhd_atom(int64_t atom_header_size, int64_t atom_data_size)
 
   atom_size = atom_data_size + atom_header_size;
 
-  trak             = trak_vec[trak_num - 1];
+  trak             = trak_vec[trak_num - 1].get();
   trak->vmhd_size += atom_size;
 
   trak->atoms[MP4_VMHD_ATOM].buffer = TSIOBufferCreate();
@@ -687,7 +687,7 @@ Mp4Meta::mp4_read_smhd_atom(int64_t atom_header_size, int64_t atom_data_size)
 
   atom_size = atom_data_size + atom_header_size;
 
-  trak             = trak_vec[trak_num - 1];
+  trak             = trak_vec[trak_num - 1].get();
   trak->smhd_size += atom_size;
 
   trak->atoms[MP4_SMHD_ATOM].buffer = TSIOBufferCreate();
@@ -707,7 +707,7 @@ Mp4Meta::mp4_read_dinf_atom(int64_t atom_header_size, int64_t atom_data_size)
 
   atom_size = atom_data_size + atom_header_size;
 
-  trak             = trak_vec[trak_num - 1];
+  trak             = trak_vec[trak_num - 1].get();
   trak->dinf_size += atom_size;
 
   trak->atoms[MP4_DINF_ATOM].buffer = TSIOBufferCreate();
@@ -724,7 +724,7 @@ Mp4Meta::mp4_read_stbl_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   Mp4Trak *trak;
 
-  trak = trak_vec[trak_num - 1];
+  trak = trak_vec[trak_num - 1].get();
 
   trak->atoms[MP4_STBL_ATOM].buffer = TSIOBufferCreate();
   trak->atoms[MP4_STBL_ATOM].reader = TSIOBufferReaderAlloc(trak->atoms[MP4_STBL_ATOM].buffer);
@@ -743,7 +743,7 @@ Mp4Meta::mp4_read_stsd_atom(int64_t atom_header_size, int64_t atom_data_size)
 
   atom_size = atom_data_size + atom_header_size;
 
-  trak        = trak_vec[trak_num - 1];
+  trak        = trak_vec[trak_num - 1].get();
   trak->size += atom_size;
 
   trak->atoms[MP4_STSD_ATOM].buffer = TSIOBufferCreate();
@@ -776,7 +776,7 @@ Mp4Meta::mp4_read_stts_atom(int64_t atom_header_size, int64_t atom_data_size)
     return -1;
   }
 
-  trak                         = trak_vec[trak_num - 1];
+  trak                         = trak_vec[trak_num - 1].get();
   trak->time_to_sample_entries = entries;
 
   trak->atoms[MP4_STTS_ATOM].buffer = TSIOBufferCreate();
@@ -812,7 +812,7 @@ Mp4Meta::mp4_read_stss_atom(int64_t atom_header_size, int64_t atom_data_size)
     return -1;
   }
 
-  trak                       = trak_vec[trak_num - 1];
+  trak                       = trak_vec[trak_num - 1].get();
   trak->sync_samples_entries = entries;
 
   trak->atoms[MP4_STSS_ATOM].buffer = TSIOBufferCreate();
@@ -848,7 +848,7 @@ Mp4Meta::mp4_read_ctts_atom(int64_t atom_header_size, int64_t atom_data_size)
     return -1;
   }
 
-  trak                             = trak_vec[trak_num - 1];
+  trak                             = trak_vec[trak_num - 1].get();
   trak->composition_offset_entries = entries;
 
   trak->atoms[MP4_CTTS_ATOM].buffer = TSIOBufferCreate();
@@ -884,7 +884,7 @@ Mp4Meta::mp4_read_stsc_atom(int64_t atom_header_size, int64_t atom_data_size)
     return -1;
   }
 
-  trak                          = trak_vec[trak_num - 1];
+  trak                          = trak_vec[trak_num - 1].get();
   trak->sample_to_chunk_entries = entries;
 
   trak->atoms[MP4_STSC_ATOM].buffer = TSIOBufferCreate();
@@ -916,7 +916,7 @@ Mp4Meta::mp4_read_stsz_atom(int64_t atom_header_size, int64_t atom_data_size)
   entries     = copied_size > 0 ? mp4_get_32value(stsz.entries) : 0;
   esize       = entries * sizeof(int32_t);
 
-  trak = trak_vec[trak_num - 1];
+  trak = trak_vec[trak_num - 1].get();
   size = copied_size > 0 ? mp4_get_32value(stsz.uniform_size) : 0;
 
   trak->sample_sizes_entries = entries;
@@ -965,7 +965,7 @@ Mp4Meta::mp4_read_stco_atom(int64_t atom_header_size, int64_t atom_data_size)
     return -1;
   }
 
-  trak         = trak_vec[trak_num - 1];
+  trak         = trak_vec[trak_num - 1].get();
   trak->chunks = entries;
 
   trak->atoms[MP4_STCO_ATOM].buffer = TSIOBufferCreate();
@@ -1001,7 +1001,7 @@ Mp4Meta::mp4_read_co64_atom(int64_t atom_header_size, int64_t atom_data_size)
     return -1;
   }
 
-  trak         = trak_vec[trak_num - 1];
+  trak         = trak_vec[trak_num - 1].get();
   trak->chunks = entries;
 
   trak->atoms[MP4_CO64_ATOM].buffer = TSIOBufferCreate();

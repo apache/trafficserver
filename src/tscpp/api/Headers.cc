@@ -118,20 +118,17 @@ struct HeaderFieldValueIteratorState : noncopyable {
 
 header_field_value_iterator::header_field_value_iterator(void *bufp, void *hdr_loc, void *field_loc, int index)
 {
-  state_ = new HeaderFieldValueIteratorState();
+  state_ = std::make_unique<HeaderFieldValueIteratorState>();
   state_->reset(static_cast<TSMBuffer>(bufp), static_cast<TSMLoc>(hdr_loc), static_cast<TSMLoc>(field_loc), index);
 }
 
 header_field_value_iterator::header_field_value_iterator(const header_field_value_iterator &it)
 {
-  state_ = new HeaderFieldValueIteratorState();
+  state_ = std::make_unique<HeaderFieldValueIteratorState>();
   state_->reset(it.state_->hdr_buf_, it.state_->hdr_loc_, it.state_->field_loc_, it.state_->index_);
 }
 
-header_field_value_iterator::~header_field_value_iterator()
-{
-  delete state_;
-}
+header_field_value_iterator::~header_field_value_iterator() {}
 
 std::string
 header_field_value_iterator::operator*()
@@ -394,38 +391,36 @@ operator<<(std::ostream &os, HeaderField &obj)
 }
 
 header_field_iterator::header_field_iterator(void *hdr_buf, void *hdr_loc, void *field_loc)
-  : state_(
-      new HeaderFieldIteratorState(static_cast<TSMBuffer>(hdr_buf), static_cast<TSMLoc>(hdr_loc), static_cast<TSMLoc>(field_loc)))
+  : state_(std::make_unique<HeaderFieldIteratorState>(static_cast<TSMBuffer>(hdr_buf), static_cast<TSMLoc>(hdr_loc),
+                                                      static_cast<TSMLoc>(field_loc)))
 {
 }
 
-header_field_iterator::header_field_iterator(const header_field_iterator &it) : state_(new HeaderFieldIteratorState(*it.state_)) {}
+header_field_iterator::header_field_iterator(const header_field_iterator &it)
+  : state_(std::make_unique<HeaderFieldIteratorState>(*it.state_))
+{
+}
 
 header_field_iterator &
 header_field_iterator::operator=(const header_field_iterator &rhs)
 {
   if (this != &rhs) {
-    delete state_;
-    state_ = new HeaderFieldIteratorState(*rhs.state_);
+    state_ = std::make_unique<HeaderFieldIteratorState>(*rhs.state_);
   }
   return *this;
 }
 
-header_field_iterator::~header_field_iterator()
-{
-  delete state_;
-}
+header_field_iterator::~header_field_iterator() {}
 
 // utility function to use to advance iterators using different functions
-HeaderFieldIteratorState *
-advanceIterator(HeaderFieldIteratorState *state, TSMLoc (*getNextField)(TSMBuffer, TSMLoc, TSMLoc))
+std::unique_ptr<HeaderFieldIteratorState>
+advanceIterator(std::unique_ptr<HeaderFieldIteratorState> state, TSMLoc (*getNextField)(TSMBuffer, TSMLoc, TSMLoc))
 {
   if (state->mloc_container_->field_loc_ != TS_NULL_MLOC) {
     TSMBuffer hdr_buf        = state->mloc_container_->hdr_buf_;
     TSMLoc    hdr_loc        = state->mloc_container_->hdr_loc_;
     TSMLoc    next_field_loc = getNextField(hdr_buf, hdr_loc, state->mloc_container_->field_loc_);
-    delete state;
-    state = new HeaderFieldIteratorState(hdr_buf, hdr_loc, next_field_loc);
+    state                    = std::make_unique<HeaderFieldIteratorState>(hdr_buf, hdr_loc, next_field_loc);
   }
   return state;
 }
@@ -433,7 +428,7 @@ advanceIterator(HeaderFieldIteratorState *state, TSMLoc (*getNextField)(TSMBuffe
 header_field_iterator &
 header_field_iterator::operator++()
 {
-  state_ = advanceIterator(state_, TSMimeHdrFieldNext);
+  state_ = advanceIterator(std::move(state_), TSMimeHdrFieldNext);
   return *this;
 }
 
@@ -448,7 +443,7 @@ header_field_iterator::operator++(int)
 header_field_iterator &
 header_field_iterator::nextDup()
 {
-  state_ = advanceIterator(state_, TSMimeHdrFieldNextDup);
+  state_ = advanceIterator(std::move(state_), TSMimeHdrFieldNextDup);
   return *this;
 }
 
@@ -501,12 +496,12 @@ struct HeadersState : noncopyable {
 
 Headers::Headers()
 {
-  state_ = new HeadersState();
+  state_ = std::make_unique<HeadersState>();
 }
 
 Headers::Headers(void *bufp, void *mloc)
 {
-  state_ = new HeadersState();
+  state_ = std::make_unique<HeadersState>();
   reset(bufp, mloc);
 }
 
@@ -516,10 +511,7 @@ Headers::reset(void *bufp, void *mloc)
   state_->reset(static_cast<TSMBuffer>(bufp), static_cast<TSMLoc>(mloc));
 }
 
-Headers::~Headers()
-{
-  delete state_;
-}
+Headers::~Headers() {}
 
 bool
 Headers::isInitialized() const

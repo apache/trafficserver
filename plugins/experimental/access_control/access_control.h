@@ -25,6 +25,7 @@
 
 #include <ctime>
 #include <map>
+#include <memory>
 #include <iostream>
 
 #include "common.h"
@@ -263,12 +264,12 @@ public:
     _desiredType = KeyValuePair;
   }
 
-  AccessToken *
+  std::unique_ptr<AccessToken>
   getAccessToken()
   {
     switch (_desiredType) {
     case KeyValuePair: {
-      return new KvpAccessToken(_kvpAccessTokenConfig, _secretMap, _enableDebug);
+      return std::make_unique<KvpAccessToken>(_kvpAccessTokenConfig, _secretMap, _enableDebug);
       break;
     }
     default: {

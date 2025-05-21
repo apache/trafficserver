@@ -276,7 +276,7 @@ mp4_add_transform(Mp4Context *mc, TSHttpTxn txnp)
     return;
   }
 
-  mc->mtc = new Mp4TransformContext(mc->start, mc->cl);
+  mc->mtc = std::make_unique<Mp4TransformContext>(mc->start, mc->cl);
 
   TSHttpTxnUntransformedRespCache(txnp, 1);
   TSHttpTxnTransformedRespCache(txnp, 0);
@@ -329,7 +329,7 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
   bool                 write_down;
   Mp4TransformContext *mtc;
 
-  mtc = mc->mtc;
+  mtc = mc->mtc.get();
 
   output_conn  = TSTransformOutputVConnGet(contp);
   input_vio    = TSVConnWriteVIOGet(contp);

@@ -40,12 +40,12 @@ class ParentConsistentHash : public ParentSelectionStrategy
 {
   // there are two hashes PRIMARY parents
   // and SECONDARY parents.
-  ATSHash64Sip24     hash[2];
-  ATSConsistentHash *chash[2];
-  pRecord           *parents[2];
-  bool               foundParents[2][MAX_PARENTS];
-  bool               ignore_query;
-  int                secondary_mode;
+  ATSHash64Sip24                     hash[2];
+  std::unique_ptr<ATSConsistentHash> chash[2];
+  pRecord                           *parents[2];
+  bool                               foundParents[2][MAX_PARENTS];
+  bool                               ignore_query;
+  int                                secondary_mode;
 
 public:
   static const int PRIMARY   = 0;

@@ -62,11 +62,9 @@ ConfigElements::setInclude(const char *arg)
 static void
 setPattern(MultiPattern &multiPattern, const char *arg)
 {
-  Pattern *p = new Pattern();
+  auto p = std::make_unique<Pattern>();
   if (nullptr != p && p->init(arg)) {
-    multiPattern.add(p);
-  } else {
-    delete p;
+    multiPattern.add(std::move(p));
   }
 }
 
@@ -309,11 +307,11 @@ Configs::loadClassifiers(const String &args, bool denylist)
     return false;
   }
 
-  MultiPattern *multiPattern;
+  std::unique_ptr<MultiPattern> multiPattern;
   if (denylist) {
-    multiPattern = new NonMatchingMultiPattern(classname);
+    multiPattern = std::make_unique<NonMatchingMultiPattern>(classname);
   } else {
-    multiPattern = new MultiPattern(classname);
+    multiPattern = std::make_unique<MultiPattern>(classname);
   }
   if (nullptr == multiPattern) {
     CacheKeyError("failed to allocate classifier '%s'", classname.c_str());
@@ -323,7 +321,6 @@ Configs::loadClassifiers(const String &args, bool denylist)
   CacheKeyDebug("loading classifier '%s' from '%s'", classname.c_str(), path.c_str());
 
   while (std::getline(ifstr, regex)) {
-    Pattern          *p;
     String::size_type pos;
 
     ++lineno;
@@ -338,28 +335,25 @@ Configs::loadClassifiers(const String &args, bool denylist)
       continue;
     }
 
-    p = new Pattern();
+    auto p = std::make_unique<Pattern>();
 
-    if (nullptr != p && p->init(regex)) {
+    if (p->init(regex)) {
       if (denylist) {
         CacheKeyDebug("Added pattern '%s' to deny list '%s'", regex.c_str(), classname.c_str());
-        multiPattern->add(p);
+        multiPattern->add(std::move(p));
       } else {
         CacheKeyDebug("Added pattern '%s' to allow list '%s'", regex.c_str(), classname.c_str());
-        multiPattern->add(p);
+        multiPattern->add(std::move(p));
       }
     } else {
       CacheKeyError("%s:%u: failed to parse regex '%s'", path.c_str(), lineno, regex.c_str());
-      delete p;
     }
   }
 
   ifstr.close();
 
   if (!multiPattern->empty()) {
-    _classifier.add(multiPattern);
-  } else {
-    delete multiPattern;
+    _classifier.add(std::move(multiPattern));
   }
 
   return true;

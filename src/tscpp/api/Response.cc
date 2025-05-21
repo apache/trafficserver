@@ -41,7 +41,7 @@ struct ResponseState : noncopyable {
 
 Response::Response()
 {
-  state_ = new ResponseState();
+  state_ = std::make_unique<ResponseState>();
   //  state_->headers_.setType(Headers::TYPE_RESPONSE);
 }
 
@@ -135,7 +135,4 @@ Response::getHeaders() const
   return state_->headers_; // if not initialized, we will just return an empty object
 }
 
-Response::~Response()
-{
-  delete state_;
-}
+Response::~Response() {}

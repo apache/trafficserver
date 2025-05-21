@@ -356,8 +356,8 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
           if (0 < tokenHdrValueLen) {
             AccessControlDebug("origin response access token '%.*s'", tokenHdrValueLen, tokenHdrValue);
 
-            AccessToken *token = config->_tokenFactory->getAccessToken();
-            if (nullptr != token &&
+            if (auto token = config->_tokenFactory->getAccessToken();
+                nullptr != token &&
                 VALID == (data->_originState = token->validate(StringView(tokenHdrValue, tokenHdrValueLen), time(nullptr)))) {
               /*
                * From RFC 6265 "HTTP State Management Mechanism":
@@ -392,8 +392,6 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
               AccessControlDebug("%.*s: %s", TS_MIME_LEN_SET_COOKIE, TS_MIME_FIELD_SET_COOKIE, cookieValue.c_str());
               setHeader(clientRespBufp, clientRespHdrLoc, TS_MIME_FIELD_SET_COOKIE, TS_MIME_LEN_SET_COOKIE, cookieValue.c_str(),
                         cookieValue.size(), /* duplicateOk = */ true);
-
-              delete token;
             } else {
               AccessControlDebug("failed to construct a valid origin access token, did not set-cookie with it");
               /* Don't set any cookie, fail the request here returning appropriate status code and body.*/
@@ -519,8 +517,7 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
     char   decodedCookie[decodedCookieBufferSize];
     size_t decryptedCookieSize = cryptoModifiedBase64Decode(cookie.c_str(), cookie.size(), decodedCookie, decodedCookieBufferSize);
     if (0 < decryptedCookieSize) {
-      AccessToken *token = config->_tokenFactory->getAccessToken();
-      if (nullptr != token) {
+      if (auto token = config->_tokenFactory->getAccessToken(); nullptr != token) {
         data->_vaState = token->validate(StringView(decodedCookie, decryptedCookieSize), time(nullptr));
         if (VALID != data->_vaState) {
           remapStatus =
@@ -541,7 +538,6 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
           setHeader(rri->requestBufp, rri->requestHdrp, config->_extrTokenIdHdrName.c_str(), config->_extrTokenIdHdrName.size(),
                     tokeId.c_str(), tokeId.size());
         }
-        delete token;
       } else {
         AccessControlDebug("failed to construct access token");
         remapStatus = handleInvalidToken(txnp, data, reject, config->_internalError, UNUSED);

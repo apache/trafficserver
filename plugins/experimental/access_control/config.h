@@ -35,7 +35,7 @@ class AccessControlConfig
 {
 public:
   AccessControlConfig() {}
-  virtual ~AccessControlConfig() { delete _tokenFactory; }
+  virtual ~AccessControlConfig() {}
   bool init(int argc, char *argv[]);
 
   bool loadMultiPatternsFromFile(const String &filename, bool denylist = true);
@@ -58,7 +58,7 @@ public:
 
   String _cookieName = "cdn_auth"; /** @brief name of the cookie containing the token to be verified */
 
-  AccessTokenFactory *_tokenFactory = nullptr;
+  std::unique_ptr<AccessTokenFactory> _tokenFactory = nullptr;
 
   bool       _rejectRequestsWithInvalidTokens = false; /** reject versa forward to the origin if access token is invalid */
   String     _respTokenHeaderName;   /** @brief name of header used by origin to provide the access token in its response */

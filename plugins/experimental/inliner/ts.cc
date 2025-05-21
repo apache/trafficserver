@@ -36,20 +36,20 @@ namespace ats
 {
 namespace io
 {
-  IO *
+  std::unique_ptr<IO>
   IO::read(TSVConn v, TSCont c, const int64_t s)
   {
     assert(s > 0);
-    IO *io  = new IO();
+    auto io = std::make_unique<IO>();
     io->vio = TSVConnRead(v, c, io->buffer, s);
     return io;
   }
 
-  IO *
+  std::unique_ptr<IO>
   IO::write(TSVConn v, TSCont c, const int64_t s)
   {
     assert(s > 0);
-    IO *io  = new IO();
+    auto io = std::make_unique<IO>();
     io->vio = TSVConnWrite(v, c, io->reader, s);
     return io;
   }

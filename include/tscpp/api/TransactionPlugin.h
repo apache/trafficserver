@@ -123,7 +123,7 @@ protected:
   std::shared_ptr<Mutex> getMutex(TSHttpTxn);
 
 private:
-  TransactionPluginState *state_; /**< The internal state for a TransactionPlugin */
+  std::unique_ptr<TransactionPluginState> state_; /**< The internal state for a TransactionPlugin */
   friend class utils::internal;
 };
 
