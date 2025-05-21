@@ -1147,16 +1147,16 @@ set-plugin-cntl
 This operator lets you control the fundamental behavior of this plugin for a particular transaction.
 The available controllers are:
 
-+==================+=====================+============================================================================================+
-|Controller        |Operators/Conditions |Description                                                                                 |
-+==================+=====================+============================================================================================+
-|TIMEZONE          |``NOW``              |If ``GMT`` is passed, the operators and conditions use GMT regardles of the timezone setting|
-|                  |                     |on your system. The default value is ``LOCAL``.                                             |
-+==================+=====================+============================================================================================+
-|INBOUND_IP_SOURCE |``IP``, ``INBOUND``, |Selects which IP address to use for the operators and conditions. Available sources are     |
-|                  |``CIDR``, and ``GEO``|``PEER`` (Uses the IP address of the peer), and ``PROXY`` (Uses the IP address from PROXY   |
-|                  |                     |protocol)                                                                                   |
-+==================+=====================+============================================================================================+
++===================+========================+==============================================================================================+
+| Controller        | Operators/Conditions   | Description                                                                                  |
++===================+========================+==============================================================================================+
+| TIMEZONE          | ``NOW``                | If ``GMT`` is passed, the operators and conditions use GMT regardles of the timezone setting |
+|                   |                        | on your system. The default value is ``LOCAL``.                                              |
++===================+========================+==============================================================================================+
+| INBOUND_IP_SOURCE | ``IP``, ``INBOUND``,   | Selects which IP address to use for the operators and conditions. Available sources are      |
+|                   | ``CIDR``, and ``GEO``  | ``PEER`` (Uses the IP address of the peer), and ``PROXY`` (Uses the IP address from PROXY    |
+|                   |                        | protocol)                                                                                    |
++===================+========================+==============================================================================================+
 
 Operator Flags
 --------------
