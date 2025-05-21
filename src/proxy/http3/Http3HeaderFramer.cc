@@ -91,19 +91,19 @@ Http3HeaderFramer::_generate_header_block()
 {
   // Prase response header and generate header block
   int         bytes_used   = 0;
-  ParseResult parse_result = PARSE_RESULT_ERROR;
+  ParseResult parse_result = ParseResult::ERROR;
 
   if (this->_transaction->direction() == NET_VCONNECTION_OUT) {
-    this->_header.create(HTTP_TYPE_REQUEST, HTTP_3_0);
+    this->_header.create(HTTPType::REQUEST, HTTP_3_0);
     parse_result = this->_header.parse_req(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
   } else {
-    this->_header.create(HTTP_TYPE_RESPONSE, HTTP_3_0);
+    this->_header.create(HTTPType::RESPONSE, HTTP_3_0);
     parse_result = this->_header.parse_resp(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
   }
   this->_source_vio->ndone += bytes_used;
 
   switch (parse_result) {
-  case PARSE_RESULT_DONE: {
+  case ParseResult::DONE: {
     this->_hvc.convert(this->_header, 1, 3);
 
     this->_header_block        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
@@ -112,7 +112,7 @@ Http3HeaderFramer::_generate_header_block()
     this->_qpack->encode(this->_stream_id, this->_header, this->_header_block, this->_header_block_len);
     break;
   }
-  case PARSE_RESULT_CONT:
+  case ParseResult::CONT:
     break;
   default:
     Dbg(dbg_ctl_http3_trans, "Ignore invalid headers");

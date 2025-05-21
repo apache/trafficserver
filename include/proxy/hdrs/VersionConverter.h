@@ -25,6 +25,8 @@
 
 #include <string_view>
 
+#include "proxy/hdrs/MIME.h"
+
 class HTTPHdr;
 
 /**
@@ -51,15 +53,15 @@ public:
   int convert(HTTPHdr &header, int from, int to) const;
 
 private:
-  int _convert_nop(HTTPHdr &header) const;
-  int _convert_req_from_1_to_2(HTTPHdr &header) const;
-  int _convert_req_from_2_to_1(HTTPHdr &header) const;
-  int _convert_res_from_1_to_2(HTTPHdr &header) const;
-  int _convert_res_from_2_to_1(HTTPHdr &header) const;
+  ParseResult _convert_nop(HTTPHdr &header) const;
+  ParseResult _convert_req_from_1_to_2(HTTPHdr &header) const;
+  ParseResult _convert_req_from_2_to_1(HTTPHdr &header) const;
+  ParseResult _convert_res_from_1_to_2(HTTPHdr &header) const;
+  ParseResult _convert_res_from_2_to_1(HTTPHdr &header) const;
 
   void _remove_connection_specific_header_fields(HTTPHdr &header) const;
 
-  using convert_function = int (VersionConverter::*)(HTTPHdr &) const;
+  using convert_function = ParseResult (VersionConverter::*)(HTTPHdr &) const;
 
   static constexpr int MIN_VERSION = 1;
   static constexpr int MAX_VERSION = 3;

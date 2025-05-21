@@ -49,10 +49,10 @@ struct PluginVCState {
 
 inline PluginVCState::PluginVCState() : vio() {}
 
-enum PluginVC_t {
-  PLUGIN_VC_UNKNOWN,
-  PLUGIN_VC_ACTIVE,
-  PLUGIN_VC_PASSIVE,
+enum class PluginVC_t {
+  UNKNOWN,
+  ACTIVE,
+  PASSIVE,
 };
 
 // For the id in set_data/get_data
@@ -61,9 +61,9 @@ enum {
   PLUGIN_VC_DATA_REMOTE,
 };
 
-enum {
-  PLUGIN_VC_MAGIC_ALIVE = 0xaabbccdd,
-  PLUGIN_VC_MAGIC_DEAD  = 0xaabbdead,
+enum class PluginVCMagic_t : uint32_t {
+  ALIVE = 0xaabbccdd,
+  DEAD  = 0xaabbdead,
 };
 
 class PluginVC : public NetVConnection, public PluginIdentity
@@ -163,9 +163,9 @@ private:
   void    update_inactive_time();
   int64_t transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, int64_t act_on);
 
-  uint32_t      magic;
-  PluginVC_t    vc_type;
-  PluginVCCore *core_obj;
+  PluginVCMagic_t magic;
+  PluginVC_t      vc_type;
+  PluginVCCore   *core_obj;
 
   PluginVC *other_side;
 

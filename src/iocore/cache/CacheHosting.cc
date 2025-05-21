@@ -385,7 +385,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   Note("%s finished loading", ts::filename::HOSTING);
 
   if (!generic_rec_initd) {
-    const char *cache_type = (type == CACHE_HTTP_TYPE) ? "http" : "mixt";
+    const char *cache_type = (type == CacheType::HTTP) ? "http" : "mixt";
     Warning("No Volumes specified for Generic Hostnames for %s documents: %s cache will be disabled", cache_type, cache_type);
   }
 
@@ -440,7 +440,7 @@ CacheHostRecord::Init(CacheType typ)
     }
   }
   if (!num_cachevols) {
-    Warning("error: No volumes found for Cache Type %d", type);
+    Warning("error: No volumes found for Cache Type %d", static_cast<int>(type));
     return -1;
   }
   stripes     = static_cast<StripeSM **>(ats_malloc(num_vols * sizeof(StripeSM *)));
@@ -652,7 +652,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     char       *line_end         = nullptr;
     const char *err              = nullptr;
     int         volume_number    = 0;
-    CacheType   scheme           = CACHE_NONE_TYPE;
+    CacheType   scheme           = CacheType::NONE;
     int         size             = 0;
     int         in_percent       = 0;
     bool        ramcache_enabled = true;
@@ -716,10 +716,10 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 
         if (!strcasecmp(tmp, "http")) {
           tmp    += 4;
-          scheme  = CACHE_HTTP_TYPE;
+          scheme  = CacheType::HTTP;
         } else if (!strcasecmp(tmp, "mixt")) {
           tmp    += 4;
-          scheme  = CACHE_RTSP_TYPE;
+          scheme  = CacheType::RTSP;
         } else {
           err = "Unexpected end of line";
           break;
@@ -781,7 +781,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 
     if (err) {
       Warning("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, err);
-    } else if (volume_number && size && scheme) {
+    } else if (volume_number && size && scheme != CacheType::NONE) {
       /* add the config */
 
       ConfigVol *configp = new ConfigVol();
@@ -801,13 +801,13 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       configp->ramcache_enabled = ramcache_enabled;
       cp_queue.enqueue(configp);
       num_volumes++;
-      if (scheme == CACHE_HTTP_TYPE) {
+      if (scheme == CacheType::HTTP) {
         num_http_volumes++;
       } else {
         ink_release_assert(!"Unexpected non-HTTP cache volume");
       }
-      Dbg(dbg_ctl_cache_hosting, "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number, scheme, size,
-          in_percent, ramcache_enabled);
+      Dbg(dbg_ctl_cache_hosting, "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number,
+          static_cast<int>(scheme), size, in_percent, ramcache_enabled);
     }
 
     tmp = bufTok.iterNext(&i_state);

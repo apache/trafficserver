@@ -247,9 +247,9 @@ url_create(HdrHeap *heap)
 {
   URLImpl *url;
 
-  url = (URLImpl *)heap->allocate_obj(sizeof(URLImpl), HDR_HEAP_OBJ_URL);
+  url = (URLImpl *)heap->allocate_obj(sizeof(URLImpl), HdrHeapObjType::URL);
   obj_clear_data((HdrHeapObjImpl *)url);
-  url->m_url_type       = URL_TYPE_NONE;
+  url->m_url_type       = URLType::NONE;
   url->m_scheme_wks_idx = -1;
   url_clear_string_ref(url);
   return url;
@@ -262,7 +262,7 @@ void
 url_clear(URLImpl *url_impl)
 {
   obj_clear_data((HdrHeapObjImpl *)url_impl);
-  url_impl->m_url_type       = URL_TYPE_NONE;
+  url_impl->m_url_type       = URLType::NONE;
   url_impl->m_scheme_wks_idx = -1;
 }
 
@@ -441,11 +441,11 @@ URLImpl::set_scheme(HdrHeap *heap, const char *scheme_str, int scheme_wks_idx, i
   }
 
   if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS) {
-    this->m_url_type = URL_TYPE_HTTP;
+    this->m_url_type = URLType::HTTP;
   } else if (scheme_wks == URL_SCHEME_HTTPS || scheme_wks == URL_SCHEME_WSS) {
-    this->m_url_type = URL_TYPE_HTTPS;
+    this->m_url_type = URLType::HTTPS;
   } else {
-    this->m_url_type = URL_TYPE_HTTP;
+    this->m_url_type = URLType::HTTP;
   }
 
   return scheme_wks; // tokenized string or NULL if not well known
@@ -578,7 +578,7 @@ URLImpl::set_fragment(HdrHeap *heap, const char *value, int length, bool copy_st
   -------------------------------------------------------------------------*/
 
 void
-URLImpl::set_type(int type)
+URLImpl::set_type(URLType type)
 {
   url_called_set(this);
   this->m_url_type = type;
@@ -800,7 +800,7 @@ URLImpl::get_fragment(int *length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
+URLType
 URLImpl::get_type()
 {
   return this->m_url_type;
@@ -836,10 +836,10 @@ url_length_get(URLImpl *url, unsigned normalization_flags)
     length += url->m_len_scheme + 3; // +3 for "://"
 
   } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
-    if (URL_TYPE_HTTP == url->m_url_type) {
+    if (URLType::HTTP == url->m_url_type) {
       length += URL_LEN_HTTP + 3;
 
-    } else if (URL_TYPE_HTTPS == url->m_url_type) {
+    } else if (URLType::HTTPS == url->m_url_type) {
       length += URL_LEN_HTTPS + 3;
     }
   }
@@ -1167,19 +1167,19 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
         scheme_end     = cur;
         scheme_wks_idx = hdrtoken_tokenize(scheme_start, scheme_end - scheme_start, &scheme_wks);
 
-        if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
+        if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HdrTokenType::SCHEME)) {
           // Unknown scheme, validate the scheme
           if (!validate_scheme({scheme_start, static_cast<size_t>(scheme_end - scheme_start)})) {
-            return PARSE_RESULT_ERROR;
+            return ParseResult::ERROR;
           }
         }
         url->set_scheme(heap, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings_p);
       }
     }
     *start = scheme_end;
-    return PARSE_RESULT_CONT;
+    return ParseResult::CONT;
   }
-  return PARSE_RESULT_ERROR; // no non-whitespace found
+  return ParseResult::ERROR; // no non-whitespace found
 }
 
 // This implementation namespace is necessary because this function is tested by a Catch unit test
@@ -1232,21 +1232,21 @@ url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool
           bool verify_host_characters)
 {
   if (strict_uri_parsing == 1 && !url_is_strictly_compliant(*start, end)) {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
   if (strict_uri_parsing == 2 && !url_is_mostly_compliant(*start, end)) {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   ParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
-  return PARSE_RESULT_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p, verify_host_characters) : zret;
+  return ParseResult::CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p, verify_host_characters) : zret;
 }
 
 ParseResult
 url_parse_regex(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p)
 {
   ParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
-  return PARSE_RESULT_CONT == zret ? url_parse_http_regex(heap, url, start, end, copy_strings_p) : zret;
+  return ParseResult::CONT == zret ? url_parse_http_regex(heap, url, start, end, copy_strings_p) : zret;
 }
 
 /**
@@ -1284,7 +1284,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
     cur += 3;
   } else if (':' == *cur && (++cur >= end || ('/' == *cur && (++cur >= end || ('/' == *cur && ++cur >= end))))) {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   base = cur;
@@ -1295,7 +1295,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     switch (*cur) {
     case ']': // address close
       if (nullptr == bracket || n_colon >= MAX_COLON) {
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
       ++cur;
       /* We keep the brackets because there are too many other places
@@ -1311,7 +1311,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
         last_colon = nullptr;
         break;
       } else if (':' != *cur) { // otherwise it must be a colon
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
       /* We want to prevent more than 1 colon following so we set @a
          n_colon appropriately.
@@ -1320,14 +1320,14 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     // FALL THROUGH
     case ':': // track colons, fail if too many.
       if (++n_colon > MAX_COLON) {
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
       last_colon = cur;
       ++cur;
       break;
     case '@': // user/password marker.
       if (user || n_colon > 1) {
-        return PARSE_RESULT_ERROR; // we already got one, or too many colons.
+        return ParseResult::ERROR; // we already got one, or too many colons.
       }
       if (n_colon) {
         user.assign(base, last_colon);
@@ -1342,7 +1342,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
       break;
     case '[':                       // address open
       if (bracket || base != cur) { // must be first char in field
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
       bracket = cur; // location and flag.
       ++cur;
@@ -1384,7 +1384,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     if (!verify_host_characters || validate_host_name(host)) {
       url->set_host(heap, host.data(), host.size(), copy_strings_p);
     } else {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
   }
 
@@ -1392,12 +1392,12 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     ink_assert(n_colon);
     port.assign(last_colon + 1, cur);
     if (port.empty()) {
-      return PARSE_RESULT_ERROR; // colon w/o port value.
+      return ParseResult::ERROR; // colon w/o port value.
     }
     url->set_port(heap, port.data(), port.size(), copy_strings_p);
   }
   *start = cur;
-  return PARSE_RESULT_DONE;
+  return ParseResult::DONE;
 }
 
 /*-------------------------------------------------------------------------
@@ -1419,7 +1419,7 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
   char        mask;
 
   err = url_parse_internet(heap, url, start, end, copy_strings, verify_host_characters);
-  if (err < 0) {
+  if (static_cast<int>(err) < 0) {
     return err;
   }
 
@@ -1526,7 +1526,7 @@ done:
   }
 
   *start = cur;
-  return PARSE_RESULT_DONE;
+  return ParseResult::DONE;
 }
 
 ParseResult
@@ -1539,7 +1539,7 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
     cur += 3;
   } else if (':' == *cur && (++cur >= end || ('/' == *cur && (++cur >= end || ('/' == *cur && ++cur >= end))))) {
-    return PARSE_RESULT_ERROR;
+    return ParseResult::ERROR;
   }
 
   // Grab everything until EOS or slash.
@@ -1591,7 +1591,7 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
     cur = end;
   }
   *start = cur;
-  return PARSE_RESULT_DONE;
+  return ParseResult::DONE;
 }
 
 /*-------------------------------------------------------------------------
@@ -1619,12 +1619,12 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     scheme_added = true;
 
   } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
-    if (URL_TYPE_HTTP == url->m_url_type) {
+    if (URLType::HTTP == url->m_url_type) {
       TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTP, static_cast<std::string_view::size_type>(URL_LEN_HTTP)}, buf_start,
                          buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
 
-    } else if (URL_TYPE_HTTPS == url->m_url_type) {
+    } else if (URLType::HTTPS == url->m_url_type) {
       TRY(mime_mem_print(std::string_view{URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)}, buf_start,
                          buf_length, buf_index_inout, buf_chars_to_skip_inout));
       scheme_added = true;
@@ -1696,7 +1696,7 @@ url_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 {
   URLImpl *obj = (URLImpl *)raw;
 
-  Dbg(dbg_ctl_http, "[URLTYPE: %d, SWKSIDX: %d,", obj->m_url_type, obj->m_scheme_wks_idx);
+  Dbg(dbg_ctl_http, "[URLTYPE: %d, SWKSIDX: %d,", static_cast<int>(obj->m_url_type), obj->m_scheme_wks_idx);
   Dbg(dbg_ctl_http, "\tSCHEME: \"%.*s\", SCHEME_LEN: %d,", obj->m_len_scheme, (obj->m_ptr_scheme ? obj->m_ptr_scheme : "NULL"),
       obj->m_len_scheme);
   Dbg(dbg_ctl_http, "\tUSER: \"%.*s\", USER_LEN: %d,", obj->m_len_user, (obj->m_ptr_user ? obj->m_ptr_user : "NULL"),
@@ -1880,7 +1880,7 @@ void
 url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query, cache_generation_t generation)
 {
   URLHashContext ctx;
-  if ((url_hash_method != 0) && (url->m_url_type == URL_TYPE_HTTP) &&
+  if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) &&
       ((url->m_len_user + url->m_len_password + (ignore_query ? 0 : url->m_len_query)) == 0) &&
       (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {

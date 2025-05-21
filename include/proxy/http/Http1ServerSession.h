@@ -41,9 +41,9 @@ class HttpSM;
 class MIOBuffer;
 class IOBufferReader;
 
-enum {
-  HTTP_SS_MAGIC_ALIVE = 0x0123FEED,
-  HTTP_SS_MAGIC_DEAD  = 0xDEADFEED,
+enum class Http1ServerSessionMagic : uint32_t {
+  ALIVE = 0x0123FEED,
+  DEAD  = 0xDEADFEED,
 };
 
 class Http1ServerSession : public PoolableSession
@@ -96,7 +96,7 @@ public:
   MIOBuffer *read_buffer = nullptr;
 
 private:
-  int magic = HTTP_SS_MAGIC_DEAD;
+  Http1ServerSessionMagic magic = Http1ServerSessionMagic::DEAD;
 
   IOBufferReader *_reader = nullptr;
 

@@ -44,17 +44,17 @@ const int CC_UNSET_TIME = -1;
 //     load to verify memory allocation
 // #define CACHE_CONTROL_TIMEOUT            (HRTIME_SECOND*10)
 
-enum CacheControlType {
-  CC_INVALID = 0,
-  CC_REVALIDATE_AFTER,
-  CC_NEVER_CACHE,
-  CC_STANDARD_CACHE,
-  CC_IGNORE_NO_CACHE,
-  CC_IGNORE_CLIENT_NO_CACHE,
-  CC_IGNORE_SERVER_NO_CACHE,
-  CC_PIN_IN_CACHE,
-  CC_TTL_IN_CACHE,
-  CC_NUM_TYPES
+enum class CacheControlType {
+  INVALID = 0,
+  REVALIDATE_AFTER,
+  NEVER_CACHE,
+  STANDARD_CACHE,
+  IGNORE_NO_CACHE,
+  IGNORE_CLIENT_NO_CACHE,
+  IGNORE_SERVER_NO_CACHE,
+  PIN_IN_CACHE,
+  TTL_IN_CACHE,
+  NUM_TYPES
 };
 
 struct matcher_line;
@@ -104,7 +104,7 @@ class CacheControlRecord : public ControlBase
 {
 public:
   CacheControlRecord();
-  CacheControlType directive                  = CC_INVALID;
+  CacheControlType directive                  = CacheControlType::INVALID;
   int              time_arg                   = 0;
   int              cache_responses_to_cookies = -1;
   Result           Init(matcher_line *line_info);

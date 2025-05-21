@@ -56,7 +56,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
   HostStatus                 &pStatus   = HostStatus::instance();
   TSHostStatus                host_stat = TSHostStatus::TS_HOST_STATUS_UP;
 
-  if (result->line_number != -1 && result->result != PARENT_UNDEFINED) {
+  if (result->line_number != -1 && result->result != ParentResultType::UNDEFINED) {
     firstcall = false;
   }
 
@@ -66,17 +66,17 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] first call , cur_grp_index: %d, cur_hst_index: %d, distance: %d", sm_id, cur_grp_index,
            cur_hst_index, distance);
     switch (policy_type) {
-    case NH_FIRST_LIVE:
+    case NHPolicyType::FIRST_LIVE:
       result->start_parent = cur_hst_index = 0;
       cur_grp_index                        = 0;
       break;
-    case NH_RR_STRICT: {
+    case NHPolicyType::RR_STRICT: {
       std::lock_guard<std::mutex> lock(_mutex);
       cur_hst_index = result->start_parent = this->hst_index;
       cur_grp_index                        = 0;
       this->hst_index                      = (this->hst_index + 1) % hst_size;
     } break;
-    case NH_RR_IP:
+    case NHPolicyType::RR_IP:
       cur_grp_index = 0;
       if (request_info.get_client_ip() != nullptr) {
         cur_hst_index = result->start_parent = ntohl(ats_ip_hash(request_info.get_client_ip())) % hst_size;
@@ -84,7 +84,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
         cur_hst_index = this->hst_index;
       }
       break;
-    case NH_RR_LATCHED:
+    case NHPolicyType::RR_LATCHED:
       cur_grp_index = 0;
       cur_hst_index = result->start_parent = latched_index;
       break;
@@ -105,9 +105,9 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
     if (static_cast<unsigned int>(cur_hst_index) == result->start_parent) {
       // We've wrapped around so bypass if we can
       if (go_direct == true) {
-        result->result = PARENT_DIRECT;
+        result->result = ParentResultType::DIRECT;
       } else {
-        result->result = PARENT_FAIL;
+        result->result = ParentResultType::FAIL;
       }
       result->hostname    = nullptr;
       result->port        = 0;
@@ -164,7 +164,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
     // The selected host is available or retryable, return the search result.
     if (parentUp == true && host_stat != TS_HOST_STATUS_DOWN) {
       NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] status for %s: %s", sm_id, cur_host->hostname.c_str(), HostStatusNames[host_stat]);
-      result->result      = PARENT_SPECIFIED;
+      result->result      = ParentResultType::SPECIFIED;
       result->hostname    = cur_host->hostname.c_str();
       result->port        = cur_host->getPort(scheme);
       result->last_parent = cur_hst_index;
@@ -183,8 +183,8 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
       if (start_host == cur_hst_index) {
         wrap_around[cur_grp_index] = wrapped = result->wrap_around = true;
       }
-    } else {                                // search the fail over groups.
-      if (ring_mode == NH_ALTERNATE_RING) { // use alternating ring mode.
+    } else {                                         // search the fail over groups.
+      if (ring_mode == NHRingMode::ALTERNATE_RING) { // use alternating ring mode.
         cur_grp_index = (cur_grp_index + 1) % groups;
         hst_size      = host_groups[cur_grp_index].size();
         if (cur_grp_index == start_group) {
@@ -214,9 +214,9 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
   } while (!wrapped);
 
   if (go_direct == true) {
-    result->result = PARENT_DIRECT;
+    result->result = ParentResultType::DIRECT;
   } else {
-    result->result = PARENT_FAIL;
+    result->result = ParentResultType::FAIL;
   }
 
   result->hostname = nullptr;

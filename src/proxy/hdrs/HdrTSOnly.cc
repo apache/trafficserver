@@ -53,9 +53,9 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
   int         used;
 
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
-  ParseResult state = PARSE_RESULT_CONT;
+  ParseResult state = ParseResult::CONT;
   *bytes_used       = 0;
 
   do {
@@ -80,7 +80,7 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     r->consume(used);
     *bytes_used += used;
 
-  } while (state == PARSE_RESULT_CONT);
+  } while (state == ParseResult::CONT);
 
   return state;
 }
@@ -94,9 +94,9 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
   int         used;
 
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
-  ParseResult state = PARSE_RESULT_CONT;
+  ParseResult state = ParseResult::CONT;
   *bytes_used       = 0;
 
   do {
@@ -110,7 +110,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
       } else if (nullptr == start) {
         // EOF on empty MIOBuffer - that's a fail, don't bother with parsing.
         // (otherwise will attempt to attach_block a non-existent block)
-        state = PARSE_RESULT_ERROR;
+        state = ParseResult::ERROR;
         break;
       }
     }
@@ -128,7 +128,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
     r->consume(used);
     *bytes_used += used;
 
-  } while (state == PARSE_RESULT_CONT);
+  } while (state == ParseResult::CONT);
 
   return state;
 }

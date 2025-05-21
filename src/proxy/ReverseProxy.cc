@@ -96,7 +96,7 @@ init_reverse_proxy()
 mapping_type
 request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url, UrlRewrite *table)
 {
-  return table ? table->Remap_redirect(request_header, redirect_url) : NONE;
+  return table ? table->Remap_redirect(request_header, redirect_url) : mapping_type::NONE;
 }
 
 bool

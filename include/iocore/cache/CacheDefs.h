@@ -28,9 +28,11 @@
 #include "tscore/Version.h"
 #include "tscore/CryptoHash.h"
 
-#define CACHE_INIT_FAILED  -1
-#define CACHE_INITIALIZING 0
-#define CACHE_INITIALIZED  1
+enum class CacheInitState : int {
+  FAILED       = -1,
+  INITIALIZING = 0,
+  INITIALIZED  = 1,
+};
 
 #define CACHE_ALT_INDEX_DEFAULT -1
 #define CACHE_ALT_REMOVED       -2
@@ -62,10 +64,10 @@ static const uint8_t CACHE_DIR_MINOR_VERSION = 0;
 #define CACHE_DEREF                  12
 #define CACHE_LOOKUP_OP              13
 
-enum CacheType {
-  CACHE_NONE_TYPE = 0, // for empty disk fragments
-  CACHE_HTTP_TYPE = 1,
-  CACHE_RTSP_TYPE = 2
+enum class CacheType {
+  NONE = 0, // for empty disk fragments
+  HTTP = 1,
+  RTSP = 2
 };
 
 // NOTE: All the failures are ODD, and one greater than the success

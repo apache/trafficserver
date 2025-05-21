@@ -300,7 +300,7 @@ XpackDynamicTable::lookup(const char *name, size_t name_len, const char *value, 
     }
   }
 
-  XPACKDbg("Lookup entry: candidate_index=%u, match_type=%u", candidate_index, match_type);
+  XPACKDbg("Lookup entry: candidate_index=%u, match_type=%u", candidate_index, static_cast<unsigned int>(match_type));
   return {candidate_index, match_type};
 }
 

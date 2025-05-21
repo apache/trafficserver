@@ -41,7 +41,7 @@ const char modulePrefix[] = "[CacheControl]";
 
 #define TWEAK_CACHE_RESPONSES_TO_COOKIES "cache-responses-to-cookies"
 
-const char *CC_directive_str[CC_NUM_TYPES] = {
+const char *CC_directive_str[static_cast<int>(CacheControlType::NUM_TYPES)] = {
   "INVALID",
   "REVALIDATE_AFTER",
   "NEVER_CACHE",
@@ -196,24 +196,24 @@ void
 CacheControlRecord::Print() const
 {
   switch (this->directive) {
-  case CC_REVALIDATE_AFTER:
-    printf("\t\tDirective: %s : %d\n", CC_directive_str[CC_REVALIDATE_AFTER], this->time_arg);
+  case CacheControlType::REVALIDATE_AFTER:
+    printf("\t\tDirective: %s : %d\n", CC_directive_str[static_cast<int>(CacheControlType::REVALIDATE_AFTER)], this->time_arg);
     break;
-  case CC_PIN_IN_CACHE:
-    printf("\t\tDirective: %s : %d\n", CC_directive_str[CC_PIN_IN_CACHE], this->time_arg);
+  case CacheControlType::PIN_IN_CACHE:
+    printf("\t\tDirective: %s : %d\n", CC_directive_str[static_cast<int>(CacheControlType::PIN_IN_CACHE)], this->time_arg);
     break;
-  case CC_TTL_IN_CACHE:
-    printf("\t\tDirective: %s : %d\n", CC_directive_str[CC_TTL_IN_CACHE], this->time_arg);
+  case CacheControlType::TTL_IN_CACHE:
+    printf("\t\tDirective: %s : %d\n", CC_directive_str[static_cast<int>(CacheControlType::TTL_IN_CACHE)], this->time_arg);
     break;
-  case CC_IGNORE_CLIENT_NO_CACHE:
-  case CC_IGNORE_SERVER_NO_CACHE:
-  case CC_NEVER_CACHE:
-  case CC_STANDARD_CACHE:
-  case CC_IGNORE_NO_CACHE:
-    printf("\t\tDirective: %s\n", CC_directive_str[this->directive]);
+  case CacheControlType::IGNORE_CLIENT_NO_CACHE:
+  case CacheControlType::IGNORE_SERVER_NO_CACHE:
+  case CacheControlType::NEVER_CACHE:
+  case CacheControlType::STANDARD_CACHE:
+  case CacheControlType::IGNORE_NO_CACHE:
+    printf("\t\tDirective: %s\n", CC_directive_str[static_cast<int>(this->directive)]);
     break;
-  case CC_INVALID:
-  case CC_NUM_TYPES:
+  case CacheControlType::INVALID:
+  case CacheControlType::NUM_TYPES:
     printf("\t\tDirective: INVALID\n");
     break;
   }
@@ -281,32 +281,32 @@ CacheControlRecord::Init(matcher_line *line_info)
 
     if (strcasecmp(label, "action") == 0) {
       if (strcasecmp(val, "never-cache") == 0) {
-        directive = CC_NEVER_CACHE;
+        directive = CacheControlType::NEVER_CACHE;
         d_found   = true;
       } else if (strcasecmp(val, "standard-cache") == 0) {
-        directive = CC_STANDARD_CACHE;
+        directive = CacheControlType::STANDARD_CACHE;
         d_found   = true;
       } else if (strcasecmp(val, "ignore-no-cache") == 0) {
-        directive = CC_IGNORE_NO_CACHE;
+        directive = CacheControlType::IGNORE_NO_CACHE;
         d_found   = true;
       } else if (strcasecmp(val, "ignore-client-no-cache") == 0) {
-        directive = CC_IGNORE_CLIENT_NO_CACHE;
+        directive = CacheControlType::IGNORE_CLIENT_NO_CACHE;
         d_found   = true;
       } else if (strcasecmp(val, "ignore-server-no-cache") == 0) {
-        directive = CC_IGNORE_SERVER_NO_CACHE;
+        directive = CacheControlType::IGNORE_SERVER_NO_CACHE;
         d_found   = true;
       } else {
         return Result::failure("%s Invalid action at line %d in %s", modulePrefix, line_num, ts::filename::CACHE);
       }
     } else {
       if (strcasecmp(label, "revalidate") == 0) {
-        directive = CC_REVALIDATE_AFTER;
+        directive = CacheControlType::REVALIDATE_AFTER;
         d_found   = true;
       } else if (strcasecmp(label, "pin-in-cache") == 0) {
-        directive = CC_PIN_IN_CACHE;
+        directive = CacheControlType::PIN_IN_CACHE;
         d_found   = true;
       } else if (strcasecmp(label, "ttl-in-cache") == 0) {
-        directive = CC_TTL_IN_CACHE;
+        directive = CacheControlType::TTL_IN_CACHE;
         d_found   = true;
       }
       // Process the time argument for the remaining directives
@@ -356,14 +356,14 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
   HttpRequestData *h_rdata = static_cast<HttpRequestData *>(rdata);
 
   switch (this->directive) {
-  case CC_REVALIDATE_AFTER:
+  case CacheControlType::REVALIDATE_AFTER:
     if (this->CheckForMatch(h_rdata, result->reval_line) == true) {
       result->revalidate_after = time_arg;
       result->reval_line       = this->line_num;
       match                    = true;
     }
     break;
-  case CC_NEVER_CACHE:
+  case CacheControlType::NEVER_CACHE:
     if (this->CheckForMatch(h_rdata, result->never_line) == true) {
       // ttl-in-cache overrides never-cache
       if (result->ttl_line == -1) {
@@ -373,7 +373,7 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
       }
     }
     break;
-  case CC_STANDARD_CACHE:
+  case CacheControlType::STANDARD_CACHE:
     // Standard cache just overrides never-cache
     if (this->CheckForMatch(h_rdata, result->never_line) == true) {
       result->never_cache = false;
@@ -381,34 +381,34 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
       match               = true;
     }
     break;
-  case CC_IGNORE_NO_CACHE:
+  case CacheControlType::IGNORE_NO_CACHE:
   // We cover both client & server cases for this directive
   //  FALLTHROUGH
-  case CC_IGNORE_CLIENT_NO_CACHE:
+  case CacheControlType::IGNORE_CLIENT_NO_CACHE:
     if (this->CheckForMatch(h_rdata, result->ignore_client_line) == true) {
       result->ignore_client_no_cache = true;
       result->ignore_client_line     = this->line_num;
       match                          = true;
     }
-    if (this->directive != CC_IGNORE_NO_CACHE) {
+    if (this->directive != CacheControlType::IGNORE_NO_CACHE) {
       break;
     }
   // FALLTHROUGH
-  case CC_IGNORE_SERVER_NO_CACHE:
+  case CacheControlType::IGNORE_SERVER_NO_CACHE:
     if (this->CheckForMatch(h_rdata, result->ignore_server_line) == true) {
       result->ignore_server_no_cache = true;
       result->ignore_server_line     = this->line_num;
       match                          = true;
     }
     break;
-  case CC_PIN_IN_CACHE:
+  case CacheControlType::PIN_IN_CACHE:
     if (this->CheckForMatch(h_rdata, result->pin_line) == true) {
       result->pin_in_cache_for = time_arg;
       result->pin_line         = this->line_num;
       match                    = true;
     }
     break;
-  case CC_TTL_IN_CACHE:
+  case CacheControlType::TTL_IN_CACHE:
     if (this->CheckForMatch(h_rdata, result->ttl_line) == true) {
       result->ttl_in_cache = time_arg;
       result->ttl_line     = this->line_num;
@@ -418,8 +418,8 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
       match               = true;
     }
     break;
-  case CC_INVALID:
-  case CC_NUM_TYPES:
+  case CacheControlType::INVALID:
+  case CacheControlType::NUM_TYPES:
   default:
     // Should not get here
     Warning("Impossible directive in CacheControlRecord::UpdateMatch");
@@ -439,6 +439,7 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
       crtc_debug[0] = 0;
     }
 
-    Dbg(dbg_ctl_cache_control, "Matched with for %s at line %d%s", CC_directive_str[this->directive], this->line_num, crtc_debug);
+    Dbg(dbg_ctl_cache_control, "Matched with for %s at line %d%s", CC_directive_str[static_cast<int>(this->directive)],
+        this->line_num, crtc_debug);
   }
 }

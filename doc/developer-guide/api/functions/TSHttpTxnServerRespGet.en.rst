@@ -52,5 +52,5 @@ calls to retrieve information from the header.
       if (TS_SUCCESS == TSHttpTxnServerRespGet(tnx, &resp_heap, &resp_hdr)) {
          return TSHttpHdrStatusGet(resp_headp, resp_hdr);
       }
-      return HTTP_STATUS_NONE;
+      return HTTPStatus::NONE;
    }

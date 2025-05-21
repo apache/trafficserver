@@ -78,7 +78,7 @@ public:
   {
     ink_hrtime ttime;
 
-    REQUIRE(CacheProcessor::IsCacheEnabled() == CACHE_INITIALIZED);
+    REQUIRE(CacheProcessor::IsCacheEnabled() == CacheInitState::INITIALIZED);
     REQUIRE(gnstripes >= 1);
 
     StripeSM *stripe = gstripes[0];

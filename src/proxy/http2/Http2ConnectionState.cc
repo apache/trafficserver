@@ -2534,7 +2534,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   HTTPHdr        hdr;
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
-  hdr.create(HTTP_TYPE_REQUEST, HTTP_2_0);
+  hdr.create(HTTPType::REQUEST, HTTP_2_0);
   hdr.url_set(&url);
   hdr.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
 

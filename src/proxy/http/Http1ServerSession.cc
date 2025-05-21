@@ -49,12 +49,12 @@ Http1ServerSession::Http1ServerSession() : super_type(), trans(this) {}
 void
 Http1ServerSession::destroy()
 {
-  if (state != SSN_CLOSED) {
+  if (state != PooledState::SSN_CLOSED) {
     return;
   }
   ink_release_assert(_vc == nullptr);
   ink_assert(read_buffer);
-  magic = HTTP_SS_MAGIC_DEAD;
+  magic = Http1ServerSessionMagic::DEAD;
   if (read_buffer) {
     free_MIOBuffer(read_buffer);
     read_buffer = nullptr;
@@ -86,7 +86,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   // Unique session identifier.
   con_id = ProxySession::next_connection_id();
 
-  magic = HTTP_SS_MAGIC_ALIVE;
+  magic = Http1ServerSessionMagic::ALIVE;
   Metrics::Gauge::increment(http_rsb.current_server_connections);
   Metrics::Counter::increment(http_rsb.total_server_connections);
 
@@ -98,7 +98,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
     _reader     = reader;
   }
   Dbg(dbg_ctl_http_ss, "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
-  state = INIT;
+  state = PooledState::INIT;
 
   new_vc->set_tcp_congestion_control(NetVConnection::tcp_congestion_control_side::SERVER_SIDE);
 }
@@ -107,11 +107,11 @@ void
 Http1ServerSession::do_io_close(int alerrno)
 {
   // Only do the close bookkeeping 1 time
-  if (state != SSN_CLOSED) {
+  if (state != PooledState::SSN_CLOSED) {
     swoc::LocalBufferWriter<256> w;
     bool                         debug_p = dbg_ctl_http_ss.on();
 
-    state = SSN_CLOSED;
+    state = PooledState::SSN_CLOSED;
 
     if (debug_p) {
       w.print("[{}] session close: nevtc {:x}", con_id, _vc);
@@ -150,16 +150,16 @@ Http1ServerSession::release(ProxyTransaction * /* trans ATS_UNUSED */)
 {
   Dbg(dbg_ctl_http_ss, "[%" PRId64 "] Releasing session, private_session=%d, sharing_match=%d", con_id, this->is_private(),
       sharing_match);
-  if (state == SSN_IN_USE) {
+  if (state == PooledState::SSN_IN_USE) {
     // The caller should have already set the inactive timeout to the keep alive timeout
     // Unfortunately, we do not have access to that value from here.
     // However we can clear the active timeout here.  The active timeout makes no sense
     // in the keep alive state
     cancel_active_timeout();
-    state = SSN_TO_RELEASE;
+    state = PooledState::SSN_TO_RELEASE;
     return;
   }
-  ink_release_assert(state == SSN_TO_RELEASE);
+  ink_release_assert(state == PooledState::SSN_TO_RELEASE);
 }
 
 // Keys for matching hostnames
@@ -217,7 +217,7 @@ Http1ServerSession ::release_transaction()
       Metrics::Counter::increment(http_rsb.origin_close_private);
     }
     this->do_io_close();
-  } else if (state == SSN_TO_RELEASE) {
+  } else if (state == PooledState::SSN_TO_RELEASE) {
     _vc->control_flags.set_flags(0);
 
     // do not change the read/write cont and mutex yet
@@ -227,7 +227,7 @@ Http1ServerSession ::release_transaction()
 
     HSMresult_t r = httpSessionManager.release_session(this);
 
-    if (r == HSM_RETRY) {
+    if (r == HSMresult_t::RETRY) {
       // Session could not be put in the session manager
       //  due to lock contention
       // FIX:  should retry instead of closing
@@ -236,15 +236,15 @@ Http1ServerSession ::release_transaction()
     } else {
       // The session was successfully put into the session
       //    manager and it will manage it
-      // (Note: should never get HSM_NOT_FOUND here)
-      ink_assert(r == HSM_DONE);
+      // (Note: should never get HSMresult_t::NOT_FOUND here)
+      ink_assert(r == HSMresult_t::DONE);
       // If the session got picked up immediately by another thread the transact_count could be greater
       ink_release_assert(transact_count >= released_transactions);
     }
   } else { // Not to be released
     if (transact_count == released_transactions) {
       // Make sure we previously called release() or do_io_close() on the session
-      ink_release_assert(state != INIT);
+      ink_release_assert(state != PooledState::INIT);
       do_io_close(HTTP_ERRNO);
     } else {
       ink_release_assert(transact_count == released_transactions);
@@ -255,7 +255,7 @@ Http1ServerSession ::release_transaction()
 ProxyTransaction *
 Http1ServerSession::new_transaction()
 {
-  state = SSN_IN_USE;
+  state = PooledState::SSN_IN_USE;
   transact_count++;
   ink_release_assert(transact_count == (released_transactions + 1));
   trans.set_reader(this->get_remote_reader());

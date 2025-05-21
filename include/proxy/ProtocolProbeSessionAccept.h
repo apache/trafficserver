@@ -31,10 +31,10 @@ struct ProtocolProbeSessionAcceptEnums {
   /// Enumeration for related groups of protocols.
   /// There is a child acceptor for each group which
   /// handles finer grained stuff.
-  enum ProtoGroupKey {
-    PROTO_HTTP,    ///< HTTP group (0.9-1.1)
-    PROTO_HTTP2,   ///< HTTP 2 group
-    N_PROTO_GROUPS ///< Size value.
+  enum class ProtoGroupKey {
+    HTTP,    ///< HTTP group (0.9-1.1)
+    HTTP2,   ///< HTTP 2 group
+    N_GROUPS ///< Size value.
   };
 };
 
@@ -66,7 +66,7 @@ private:
       We make it one larger and leave the last entry NULL so we don't have to
       do range checks on the enum value.
    */
-  SessionAccept *endpoint[N_PROTO_GROUPS + 1];
+  SessionAccept *endpoint[static_cast<int>(ProtoGroupKey::N_GROUPS) + 1];
 
   friend struct ProtocolProbeTrampoline;
 };
