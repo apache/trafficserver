@@ -342,3 +342,18 @@ public:
 private:
   std::string const server_TLSV1_3_cipher_suites{};
 };
+
+/**
+   Override proxy.config.ssl.server.groups_list by server_groups_list in sni.yaml
+ */
+class ServerGroupsList : public ActionItem
+{
+public:
+  ServerGroupsList(std::string const &p) : server_groups_list(p) {}
+  ~ServerGroupsList() override {}
+
+  int SNIAction(SSL &ssl, const Context &ctx) const override;
+
+private:
+  std::string const server_groups_list{};
+};

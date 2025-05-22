@@ -58,6 +58,7 @@ TSDECL(client_key);
 TSDECL(client_sni_policy);
 TSDECL(server_cipher_suite);
 TSDECL(server_TLSv1_3_cipher_suites);
+TSDECL(server_groups_list);
 TSDECL(ip_allow);
 TSDECL(valid_tls_versions_in);
 TSDECL(valid_tls_version_min_in);
@@ -105,6 +106,7 @@ struct YamlSNIConfig {
     std::string         client_sni_policy;
     std::string         server_cipher_suite;
     std::string         server_TLSv1_3_cipher_suites;
+    std::string         server_groups_list;
     std::string         ip_allow;
     bool                protocol_unset = true;
     unsigned long       protocol_mask;

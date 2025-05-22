@@ -63,6 +63,7 @@ public:
   void set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask);
   void set_legacy_cipher_suite(std::string const &cipher_suite);
   void set_cipher_suite(std::string const &cipher_suite);
+  void set_groups_list(std::string const &groups_list);
 
   /**
    * Give the plugin access to the data structure passed in during the underlying
