@@ -27,15 +27,313 @@
 #
 # Type `atspr` by itself for a list of printables.
 #
+# The History printing works best with `set print array on`.
+#
 
 import gdb
+import re
 import socket
 import struct
 from curses.ascii import isgraph
 
+
+class HistoryEntryPrinter:
+    """Pretty-printer for a HistoryEntry"""
+
+    def __init__(self, val):
+        self.val = val
+
+    @staticmethod
+    def event_value_to_description(event_num: int) -> str:
+        """Convert event value to a human-readable description.
+        :param event_num: The event number.
+        :return: A string description of the event.
+        """
+        if event_num == 60000:
+            return 'TS_EVENT_HTTP_CONTINUE'
+        elif event_num == 0:
+            return 'TS_EVENT_NONE'
+        elif event_num == 1:
+            return 'TS_EVENT_IMMEDIATE'
+        elif event_num == 2:
+            return 'TS_EVENT_TIMEOUT'
+        elif event_num == 3:
+            return 'TS_EVENT_ERROR'
+        elif event_num == 4:
+            return 'TS_EVENT_CONTINUE'
+        elif event_num == 34463:
+            return 'NO_EVENT'
+
+        elif event_num == 100:
+            return 'TS_EVENT_VCONN_READ_READY'
+        elif event_num == 101:
+            return 'TS_EVENT_VCONN_WRITE_READY'
+        elif event_num == 102:
+            return 'TS_EVENT_VCONN_READ_COMPLETE'
+        elif event_num == 103:
+            return 'TS_EVENT_VCONN_WRITE_COMPLETE'
+        elif event_num == 104:
+            return 'TS_EVENT_VCONN_EOS'
+        elif event_num == 105:
+            return 'TS_EVENT_VCONN_INACTIVITY_TIMEOUT'
+        elif event_num == 106:
+            return 'TS_EVENT_VCONN_ACTIVE_TIMEOUT'
+        elif event_num == 107:
+            return 'TS_EVENT_VCONN_START'
+        elif event_num == 108:
+            return 'TS_EVENT_VCONN_CLOSE'
+        elif event_num == 109:
+            return 'TS_EVENT_VCONN_OUTBOUND_START'
+        elif event_num == 110:
+            return 'TS_EVENT_VCONN_OUTBOUND_CLOSE'
+        elif event_num == 107:
+            return 'TS_EVENT_VCONN_PRE_ACCEPT'
+
+        elif event_num == 200:
+            return 'TS_EVENT_NET_CONNECT'
+        elif event_num == 201:
+            return 'TS_EVENT_NET_CONNECT_FAILED'
+        elif event_num == 202:
+            return 'TS_EVENT_NET_ACCEPT'
+        elif event_num == 204:
+            return 'TS_EVENT_NET_ACCEPT_FAILED'
+
+        elif event_num == 206:
+            return 'TS_EVENT_INTERNAL_206'
+        elif event_num == 207:
+            return 'TS_EVENT_INTERNAL_207'
+        elif event_num == 208:
+            return 'TS_EVENT_INTERNAL_208'
+        elif event_num == 209:
+            return 'TS_EVENT_INTERNAL_209'
+        elif event_num == 210:
+            return 'TS_EVENT_INTERNAL_210'
+        elif event_num == 211:
+            return 'TS_EVENT_INTERNAL_211'
+        elif event_num == 212:
+            return 'TS_EVENT_INTERNAL_212'
+
+        elif event_num == 500:
+            return 'TS_EVENT_HOST_LOOKUP'
+        elif event_num == 1102:
+            return 'TS_EVENT_CACHE_OPEN_READ'
+        elif event_num == 1103:
+            return 'TS_EVENT_CACHE_OPEN_READ_FAILED'
+        elif event_num == 1108:
+            return 'TS_EVENT_CACHE_OPEN_WRITE'
+        elif event_num == 1109:
+            return 'TS_EVENT_CACHE_OPEN_WRITE_FAILED'
+        elif event_num == 1112:
+            return 'TS_EVENT_CACHE_REMOVE'
+        elif event_num == 1113:
+            return 'TS_EVENT_CACHE_REMOVE_FAILED'
+        elif event_num == 1120:
+            return 'TS_EVENT_CACHE_SCAN'
+        elif event_num == 1121:
+            return 'TS_EVENT_CACHE_SCAN_FAILED'
+        elif event_num == 1122:
+            return 'TS_EVENT_CACHE_SCAN_OBJECT'
+        elif event_num == 1123:
+            return 'TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED'
+        elif event_num == 1124:
+            return 'TS_EVENT_CACHE_SCAN_OPERATION_FAILED'
+        elif event_num == 1125:
+            return 'TS_EVENT_CACHE_SCAN_DONE'
+        elif event_num == 1126:
+            return 'TS_EVENT_CACHE_LOOKUP'
+        elif event_num == 1127:
+            return 'TS_EVENT_CACHE_READ'
+        elif event_num == 1128:
+            return 'TS_EVENT_CACHE_DELETE'
+        elif event_num == 1129:
+            return 'TS_EVENT_CACHE_WRITE'
+        elif event_num == 1130:
+            return 'TS_EVENT_CACHE_WRITE_HEADER'
+        elif event_num == 1131:
+            return 'TS_EVENT_CACHE_CLOSE'
+        elif event_num == 1132:
+            return 'TS_EVENT_CACHE_LOOKUP_READY'
+        elif event_num == 1133:
+            return 'TS_EVENT_CACHE_LOOKUP_COMPLETE'
+        elif event_num == 1134:
+            return 'TS_EVENT_CACHE_READ_READY'
+        elif event_num == 1135:
+            return 'TS_EVENT_CACHE_READ_COMPLETE'
+
+        elif event_num == 1200:
+            return 'TS_EVENT_INTERNAL_1200'
+
+        elif event_num == 2000:
+            return 'TS_EVENT_SSL_SESSION_GET'
+        elif event_num == 2001:
+            return 'TS_EVENT_SSL_SESSION_NEW'
+        elif event_num == 2002:
+            return 'TS_EVENT_SSL_SESSION_REMOVE'
+
+        elif event_num == 3900:
+            return 'TS_EVENT_AIO_DONE'
+
+        elif event_num == 60000:
+            return 'TS_EVENT_HTTP_CONTINUE'
+        elif event_num == 60001:
+            return 'TS_EVENT_HTTP_ERROR'
+        elif event_num == 60002:
+            return 'TS_EVENT_HTTP_READ_REQUEST_HDR'
+        elif event_num == 60003:
+            return 'TS_EVENT_HTTP_OS_DNS'
+        elif event_num == 60004:
+            return 'TS_EVENT_HTTP_SEND_REQUEST_HDR'
+        elif event_num == 60005:
+            return 'TS_EVENT_HTTP_READ_CACHE_HDR'
+        elif event_num == 60006:
+            return 'TS_EVENT_HTTP_READ_RESPONSE_HDR'
+        elif event_num == 60007:
+            return 'TS_EVENT_HTTP_SEND_RESPONSE_HDR'
+        elif event_num == 60008:
+            return 'TS_EVENT_HTTP_REQUEST_TRANSFORM'
+        elif event_num == 60009:
+            return 'TS_EVENT_HTTP_RESPONSE_TRANSFORM'
+        elif event_num == 60010:
+            return 'TS_EVENT_HTTP_SELECT_ALT'
+        elif event_num == 60011:
+            return 'TS_EVENT_HTTP_TXN_START'
+        elif event_num == 60012:
+            return 'TS_EVENT_HTTP_TXN_CLOSE'
+        elif event_num == 60013:
+            return 'TS_EVENT_HTTP_SSN_START'
+        elif event_num == 60014:
+            return 'TS_EVENT_HTTP_SSN_CLOSE'
+        elif event_num == 60015:
+            return 'TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE'
+        elif event_num == 60016:
+            return 'TS_EVENT_HTTP_PRE_REMAP'
+        elif event_num == 60017:
+            return 'TS_EVENT_HTTP_POST_REMAP'
+        elif event_num == 60018:
+            return 'TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE'
+
+        elif event_num == 60100:
+            return 'TS_EVENT_LIFECYCLE_PORTS_INITIALIZED'
+        elif event_num == 60101:
+            return 'TS_EVENT_LIFECYCLE_PORTS_READY'
+        elif event_num == 60102:
+            return 'TS_EVENT_LIFECYCLE_CACHE_READY'
+        elif event_num == 60103:
+            return 'TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED'
+        elif event_num == 60104:
+            return 'TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED'
+        elif event_num == 60105:
+            return 'TS_EVENT_LIFECYCLE_MSG'
+        elif event_num == 60106:
+            return 'TS_EVENT_LIFECYCLE_TASK_THREADS_READY'
+        elif event_num == 60107:
+            return 'TS_EVENT_LIFECYCLE_SHUTDOWN'
+
+        elif event_num == 60200:
+            return 'TS_EVENT_INTERNAL_60200'
+        elif event_num == 60201:
+            return 'TS_EVENT_INTERNAL_60201'
+        elif event_num == 60202:
+            return 'TS_EVENT_INTERNAL_60202'
+        elif event_num == 60203:
+            return 'TS_EVENT_SSL_CERT'
+        elif event_num == 60204:
+            return 'TS_EVENT_SSL_SERVERNAME'
+        elif event_num == 60205:
+            return 'TS_EVENT_SSL_VERIFY_SERVER'
+        elif event_num == 60206:
+            return 'TS_EVENT_SSL_VERIFY_CLIENT'
+        elif event_num == 60207:
+            return 'TS_EVENT_SSL_CLIENT_HELLO'
+        elif event_num == 60208:
+            return 'TS_EVENT_SSL_SECRET'
+
+        elif event_num == 60300:
+            return 'TS_EVENT_MGMT_UPDATE'
+
+        else:
+            return f'Unknown event {event_num}'
+
+    def to_string(self):
+        loc = self.val['location']
+
+        file = loc['file'].string()
+        line = int(loc['line'])
+        base_name = file.split('/')[-1]
+        location_description = f'{base_name}:{line}'
+
+        function = loc['func'].string() if loc['func'] else ''
+
+        event = int(self.val['event'])
+        event_name = self.event_value_to_description(event)
+        event_description = f'{event_name} ({event})'
+
+        reent = int(self.val['reentrancy'])
+        return f"{location_description:<25} {function:<50} {event_description:<55} reent={reent:>7}"
+
+
+class HistoryPrinter:
+    '''Pretty-printer for History<Count>.
+
+    This is in the HttpSM class as 'history', for example.
+    '''
+
+    def __init__(self, val):
+        self.val = val
+        t = val.type.strip_typedefs().unqualified()
+        name = t.name or ''
+        m = re.match(r'.*History<([0-9]+)>', name)
+        self.capacity = int(m.group(1)) if m else None
+        self.history_position = int(val['history_pos'])
+
+    def to_string(self):
+        num_entries = self.capacity if self.history_position >= self.capacity else self.history_position
+        return f"History(capacity={self.capacity}, history_pos={self.history_position}, num_entries={num_entries})"
+
+    def children(self):
+        '''Print the history entries from earliest to latest.
+
+        This handles the circular buffer nature of the history.
+        '''
+        has_wrapped = self.history_position >= self.capacity
+        first_entry = self.history_position % self.capacity if has_wrapped else 0
+        num_entries = self.capacity if has_wrapped else self.history_position
+
+        history_entries = self.val['history']
+        for i in range(num_entries):
+            index = (first_entry + i) % self.capacity
+            history_entry = history_entries[index]
+            location = history_entry['location']
+            func = location['func'].string()
+            if 'state_api_call' in func or 'set_next_state' in func:
+                # These are generally not useful.
+                continue
+            yield f"[{i}]", history_entry
+
+    # Set display_hint.
+    def display_hint(self):
+        '''Indicate that History is an array-like object.'''
+        return 'array'
+
+
+def lookup_history_printer(val):
+    t = val.type.strip_typedefs().unqualified()
+    name = t.name or ''
+    # Handle plain HistoryEntry
+    if name == 'HistoryEntry':
+        return HistoryEntryPrinter(val)
+    # Handle History<Count> template
+    if re.match(r'.*History<\d+>', name):
+        return HistoryPrinter(val)
+    return None
+
+
+# Register our pretty-printers.
+if hasattr(gdb, 'pretty_printers'):
+    gdb.pretty_printers.append(lookup_history_printer)
+
+
 # return memory for an ats string address and length
-
-
 def ats_str(addr, addr_len):
     if addr_len == 0:
         return ''
