@@ -1,0 +1,2 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    no-op

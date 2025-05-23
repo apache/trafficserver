@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Auth-Me} /foo/ [NOT]
+    set-redirect 302 "https://example.com/foo"

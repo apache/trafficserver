@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{STATE-INT8:0} >123
+    set-header X-foo "bar"

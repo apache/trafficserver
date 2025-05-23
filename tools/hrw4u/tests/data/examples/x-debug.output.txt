@@ -1,0 +1,13 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{HEADER:All-Cache} ="" [NOT]
+    set-header All-Cache "%{HEADER:All-Cache} %{CACHE}"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{HEADER:All-Cache} =""
+    set-header All-Cache "%{CACHE}"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{HEADER:All-Cache} =""
+    set-header All-Cache "%{CACHE}"
+else
+    set-header All-Cache "%{HEADER:All-Cache} %{CACHE}"

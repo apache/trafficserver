@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{COOKIE:foobar} /foo/
+    set-header X-Cookie "there"

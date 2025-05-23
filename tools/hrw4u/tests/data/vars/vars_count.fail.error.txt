@@ -1,0 +1,3 @@
+tests/data/vars/vars_count.fail.input.txt:7:3: error: Too many 'int8' variables (max 4)
+   7 |    Five: int8;
+     |    ^
