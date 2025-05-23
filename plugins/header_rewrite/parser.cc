@@ -28,7 +28,7 @@
 
 #include "parser.h"
 
-enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX, PARSER_IN_EXPANSION, PARSER_IN_BRACE };
+enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX, PARSER_IN_EXPANSION, PARSER_IN_BRACE, PARSER_IN_PAREN };
 
 bool
 Parser::parse_line(const std::string &original_line)
@@ -71,7 +71,7 @@ Parser::parse_line(const std::string &original_line)
         cur_token_start  = i;
       }
       line.erase(i, 1);
-    } else if ((state != PARSER_IN_REGEX) && (line[i] == '"')) {
+    } else if ((state != PARSER_IN_REGEX) && (state != PARSER_IN_PAREN) && (line[i] == '"')) {
       if ((state != PARSER_IN_QUOTE) && !extracting_token) {
         state            = PARSER_IN_QUOTE;
         extracting_token = true;
@@ -93,6 +93,15 @@ Parser::parse_line(const std::string &original_line)
       extracting_token = true;
       cur_token_start  = i;
     } else if ((state == PARSER_IN_BRACE) && (line[i] == '}')) {
+      cur_token_length = i - cur_token_start + 1;
+      _tokens.push_back(line.substr(cur_token_start, cur_token_length));
+      state            = PARSER_DEFAULT;
+      extracting_token = false;
+    } else if ((state == PARSER_DEFAULT) && (line[i] == '(')) {
+      state            = PARSER_IN_PAREN;
+      extracting_token = true;
+      cur_token_start  = i;
+    } else if ((state == PARSER_IN_PAREN) && (line[i] == ')')) {
       cur_token_length = i - cur_token_start + 1;
       _tokens.push_back(line.substr(cur_token_start, cur_token_length));
       state            = PARSER_DEFAULT;

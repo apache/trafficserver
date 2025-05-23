@@ -739,6 +739,11 @@ The absence of an operand for conditions which accept them simply requires that
 a value exists (e.g. the content of the header is not an empty string) for the
 condition to be considered true.
 
+.. note::
+    Strings within a set can be quoted, but the quotes are not necessary. This
+    can be important if a matching string can include spaces or commas,
+    e.g. ``(foo,"bar,fie",baz)``.
+
 Condition Flags
 ---------------
 
@@ -764,9 +769,10 @@ EXT    The substring match only applies to the file extension following a dot.
        This is generally mostly useful for the ``URL:PATH`` part.
 ====== ========================================================================
 
-**Note**: At most, one of ``[PRE]``, ``[SUF]``, ``[MID]``, or ``[EXT]`` may be
-used at any time. They can however be used together with ``[NOCASE]`` and the
-other flags.
+.. note::
+    At most, one of ``[PRE]``, ``[SUF]``, ``[MID]``, or ``[EXT]`` may be
+    used at any time. They can however be used together with ``[NOCASE]`` and the
+    other flags.
 
 Operators
 ---------
@@ -898,7 +904,9 @@ Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a custom error respons
 and set the body with the result. Triggering this rule on an OK transaction will
 send a 500 status code to the client with the desired response. If this is triggered
 on any error status code, that original status code will be sent to the client.
-**Note**: This config should only be set using READ_RESPONSE_HDR_HOOK
+
+.. note::
+    This config should only be set using READ_RESPONSE_HDR_HOOK
 
 An example config would look like::
 
@@ -958,8 +966,9 @@ the appropriate logs even when the debug tag has not been enabled. For
 additional information on |TS| debugging statements, refer to
 :ref:`developer-debug-tags` in the developer's documentation.
 
-**Note**: This operator is deprecated, use the `set-http-cntl`_ operator instead,
-with the ``TXN_DEBUG`` control.
+.. note::
+    This operator is deprecated, use the `set-http-cntl`_ operator instead,
+    with the ``TXN_DEBUG`` control.
 
 set-destination
 ~~~~~~~~~~~~~~~
@@ -1074,8 +1083,9 @@ When invoked, and when ``<value>`` is any of ``1``, ``true``, or ``TRUE``, this
 operator causes |TS| to abort further request remapping. Any other value and
 the operator will effectively be a no-op.
 
-**Note**: This operator is deprecated, use the `set-http-cntl`_ operator instead,
-with the ``SKIP_REMAP`` control.
+.. note::
+    This operator is deprecated, use the `set-http-cntl`_ operator instead,
+    with the ``SKIP_REMAP`` control.
 
 set-cookie
 ~~~~~~~~~~

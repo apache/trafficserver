@@ -194,13 +194,39 @@ public:
     // MATCH_SET (allowed for any T)
     if (_op == MATCH_SET) {
       _data.template emplace<std::set<T>>();
+      auto          &values = std::get<std::set<T>>(_data);
+      swoc::TextView src{s};
+      bool           in_quotes = false;
+      size_t         start = 0, cur = 0, skip_quotes = 0;
 
-      auto              &values = std::get<std::set<T>>(_data);
-      std::istringstream stream(s);
-      std::string        part;
+      while (cur < src.size()) {
+        if (src[cur] == '"') {
+          skip_quotes = 1;
+          in_quotes   = !in_quotes;
+          ++cur;
+        } else if (src[cur] == ',' && !in_quotes) {
+          swoc::TextView field = src.substr(start + skip_quotes, cur - start - skip_quotes * 2);
 
-      while (std::getline(stream, part, ',')) {
-        values.insert(convert(part));
+          field.ltrim_if(&isspace).rtrim_if(&isspace);
+          values.insert(convert(std::string(field)));
+          start       = ++cur + skip_quotes;
+          skip_quotes = 0;
+        } else {
+          ++cur;
+        }
+      }
+
+      if (in_quotes) {
+        Dbg(pi_dbg_ctl, "Invalid set: unmatched quotes in: %s", s.c_str());
+        throw std::runtime_error("Malformed set, unmatched quotes");
+      }
+
+      // Last field (if any)
+      if (start < src.size()) {
+        swoc::TextView field = src.substr(start + skip_quotes, src.size() - start - skip_quotes * 2);
+
+        field.ltrim_if(&isspace).rtrim_if(&isspace);
+        values.insert(convert(std::string(field)));
       }
 
       if (!values.empty()) {
