@@ -22,10 +22,12 @@
  */
 
 #include "proxy/http/HttpCacheSM.h"
+#include "iocore/eventsystem/Thread.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
 
 #include "iocore/cache/Cache.h"
+#include "tscore/ink_assert.h"
 
 #define SM_REMEMBER(sm, e, r)                          \
   {                                                    \
@@ -74,6 +76,8 @@ HttpCacheSM::reset()
 void
 HttpCacheSM::destroy()
 {
+  ink_release_assert(this->mutex->thread_holding == this_ethread());
+
   if (_read_retry_event != nullptr) {
     _read_retry_event->cancel();
   }
@@ -296,6 +300,8 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
 void
 HttpCacheSM::_schedule_read_retry()
 {
+  ink_release_assert(this->mutex->thread_holding == this_ethread());
+
   if (_read_retry_event != nullptr && _read_retry_event->cancelled == false) {
     _read_retry_event->cancel();
   }
