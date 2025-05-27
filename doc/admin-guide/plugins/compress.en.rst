@@ -108,19 +108,25 @@ range-request
 
 This config controls behavior of this plugin when a client send ``Range`` header and ``Accept-Encoding`` header in the same time.
 
-============== =================================================================
-Value          Description
-============== =================================================================
-ignore-range   Remove ``Range`` header if the request has both headers (Default)
-false          Same as ``ignore-range`` for compatiblity
-no-compression Remove ``Accept-Encoding`` header if the request has both headers
-none           Do nothing
-true           Same as ``none`` for compatibility
-============== =================================================================
+====================== =================================================================
+Value                  Description
+====================== =================================================================
+none                   Do nothing
+true                   Same as ``none`` for compatibility
+remove-range           Remove ``Range`` header if the request has both headers
+remove-accept-encoding Remove ``Accept-Encoding`` header if the request has both headers
+no-compression         Do NOT compress Partial Content (default)
+false                  Same as ``no-compression`` for compatiblity
+====================== =================================================================
 
 .. important::
 
    Do NOT set this to ``none`` (or ``true``) if the cache config is set to ``false``. This combination will deliver corrupted content.
+
+
+.. important::
+
+   Some plugins (like cache_range_request) remove ``Range`` header. If you set ``remove-range`` or ``remove-accept-encoding``, be careful with the order of plugins.
 
 compressible-content-type
 -------------------------
