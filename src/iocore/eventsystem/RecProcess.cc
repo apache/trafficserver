@@ -117,21 +117,15 @@ struct config_update_cont : public Continuation {
 // sync_cont
 //-------------------------------------------------------------------------
 struct sync_cont : public Continuation {
-  TextBuffer *m_tb;
+  std::unique_ptr<TextBuffer> m_tb;
 
   sync_cont(ProxyMutex *m) : Continuation(m)
   {
     SET_HANDLER(&sync_cont::sync);
-    m_tb = new TextBuffer(65536);
+    m_tb = std::make_unique<TextBuffer>(65536);
   }
 
-  ~sync_cont() override
-  {
-    if (m_tb != nullptr) {
-      delete m_tb;
-      m_tb = nullptr;
-    }
-  }
+  ~sync_cont() override {}
 
   int
   sync(int /* event */, Event * /* e */)

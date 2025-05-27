@@ -226,8 +226,8 @@ private:
   bool _application_started = false;
   void _start_application();
 
-  QUICStreamManager  *_stream_manager  = nullptr;
-  QUICApplicationMap *_application_map = nullptr;
+  std::unique_ptr<QUICStreamManager>  _stream_manager  = nullptr;
+  std::unique_ptr<QUICApplicationMap> _application_map = nullptr;
 
   bool _is_verifying_cert = false;
   bool _is_cert_verified  = false;

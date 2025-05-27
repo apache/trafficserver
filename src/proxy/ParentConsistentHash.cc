@@ -40,7 +40,7 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   secondary_mode     = parent_record->secondary_mode;
   ink_zero(foundParents);
 
-  chash[PRIMARY] = new ATSConsistentHash();
+  chash[PRIMARY] = std::make_unique<ATSConsistentHash>();
 
   for (i = 0; i < parent_record->num_parents; i++) {
     chash[PRIMARY]->insert(&(parent_record->parents[i]), parent_record->parents[i].weight, (ATSHash64 *)&hash[PRIMARY]);
@@ -48,7 +48,7 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 
   if (parent_record->num_secondary_parents > 0) {
     Dbg(dbg_ctl_parent_select, "ParentConsistentHash(): initializing the secondary parents hash.");
-    chash[SECONDARY] = new ATSConsistentHash();
+    chash[SECONDARY] = std::make_unique<ATSConsistentHash>();
 
     for (i = 0; i < parent_record->num_secondary_parents; i++) {
       chash[SECONDARY]->insert(&(parent_record->secondary_parents[i]), parent_record->secondary_parents[i].weight,
@@ -63,8 +63,6 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 ParentConsistentHash::~ParentConsistentHash()
 {
   Dbg(dbg_ctl_parent_select, "~ParentConsistentHash(): releasing hashes");
-  delete chash[PRIMARY];
-  delete chash[SECONDARY];
 }
 
 uint64_t
@@ -198,7 +196,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
 
   // Do the initial parent look-up.
   path_hash = getPathHash(request_info, (ATSHash64 *)&hash);
-  fhash     = chash[last_lookup];
+  fhash     = chash[last_lookup].get();
   do { // search until we've selected a different parent if !firstCall
     prtmp = chash_lookup(fhash, path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup], &hash,
                          &result->chash_init[last_lookup], &result->mapWrapped[last_lookup]);
@@ -286,7 +284,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
             last_lookup = PRIMARY;
           }
         }
-        fhash = chash[last_lookup];
+        fhash = chash[last_lookup].get();
         prtmp = chash_lookup(fhash, path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup], &hash,
                              &result->chash_init[last_lookup], &result->mapWrapped[last_lookup]);
         lookups++;

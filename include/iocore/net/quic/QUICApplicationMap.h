@@ -26,22 +26,17 @@
 #include "iocore/net/quic/QUICTypes.h"
 #include "iocore/net/quic/QUICApplication.h"
 #include <map>
+#include <memory>
 
 class QUICApplicationMap
 {
 public:
-  void             set(QUICStreamId id, QUICApplication *app);
+  void             set(QUICStreamId id, std::unique_ptr<QUICApplication> app);
   void             set_default(QUICApplication *app);
   QUICApplication *get(QUICStreamId id);
-  ~QUICApplicationMap()
-  {
-    for (auto it = _map.begin(); it != _map.end(); ++it) {
-      delete it->second;
-    }
-    delete _default_app;
-  }
+  ~QUICApplicationMap() { delete _default_app; }
 
 private:
-  std::map<QUICStreamId, QUICApplication *> _map;
-  QUICApplication                          *_default_app = nullptr;
+  std::map<QUICStreamId, std::unique_ptr<QUICApplication>> _map;
+  QUICApplication                                         *_default_app = nullptr;
 };

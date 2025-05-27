@@ -24,13 +24,13 @@
 #pragma once
 
 #include "P_NetAccept.h"
+#include "P_QUICClosedConCollector.h"
 #include "iocore/net/UDPConnection.h"
 
 #include <quiche.h>
 
 class QUICNetVConnection;
 class QUICConnectionTable;
-class QUICClosedConCollector;
 
 class QUICPacketHandler
 {
@@ -43,8 +43,8 @@ public:
   void close_connection(QUICNetVConnection *conn);
 
 protected:
-  Event                  *_collector_event      = nullptr;
-  QUICClosedConCollector *_closed_con_collector = nullptr;
+  Event                                  *_collector_event      = nullptr;
+  std::unique_ptr<QUICClosedConCollector> _closed_con_collector = nullptr;
 
   virtual Continuation *_get_continuation() = 0;
 

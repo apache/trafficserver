@@ -21,6 +21,7 @@
 //
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -53,7 +54,7 @@ public:
   append_value(std::string &s, const Resources &res) const
   {
     if (!_cond_vals.empty()) {
-      for (auto _cond_val : _cond_vals) {
+      for (auto &_cond_val : _cond_vals) {
         _cond_val->append_value(s, res);
       }
     } else {
@@ -98,8 +99,8 @@ public:
   }
 
 private:
-  int                      _int_value   = 0;
-  double                   _float_value = 0.0;
-  std::string              _value;
-  std::vector<Condition *> _cond_vals;
+  int                                     _int_value   = 0;
+  double                                  _float_value = 0.0;
+  std::string                             _value;
+  std::vector<std::unique_ptr<Condition>> _cond_vals;
 };
