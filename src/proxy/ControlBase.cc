@@ -61,7 +61,7 @@ ControlBase::Modifier::~Modifier() = default;
 ControlBase::Modifier::Type
 ControlBase::Modifier::type() const
 {
-  return MOD_INVALID;
+  return Type::INVALID;
 }
 // --------------------------
 namespace
@@ -85,7 +85,7 @@ const char *const TimeMod::NAME = "Time";
 ControlBase::Modifier::Type
 TimeMod::type() const
 {
-  return MOD_TIME;
+  return Type::TIME;
 }
 const char *
 TimeMod::name() const
@@ -300,7 +300,7 @@ const char *const SrcIPMod::NAME = "SrcIP";
 ControlBase::Modifier::Type
 SrcIPMod::type() const
 {
-  return MOD_SRC_IP;
+  return Type::SRC_IP;
 }
 const char *
 SrcIPMod::name() const
@@ -357,7 +357,7 @@ SchemeMod::SchemeMod(int scheme) : _scheme(scheme) {}
 ControlBase::Modifier::Type
 SchemeMod::type() const
 {
-  return MOD_SCHEME;
+  return Type::SCHEME;
 }
 const char *
 SchemeMod::name() const
@@ -476,7 +476,7 @@ const char *const MethodMod::NAME = "Method";
 ControlBase::Modifier::Type
 MethodMod::type() const
 {
-  return MOD_METHOD;
+  return Type::METHOD;
 }
 const char *
 MethodMod::name() const
@@ -511,7 +511,7 @@ const char *const PrefixMod::NAME = "Prefix";
 ControlBase::Modifier::Type
 PrefixMod::type() const
 {
-  return MOD_PREFIX;
+  return Type::PREFIX;
 }
 const char *
 PrefixMod::name() const
@@ -557,7 +557,7 @@ const char *const SuffixMod::NAME = "Suffix";
 ControlBase::Modifier::Type
 SuffixMod::type() const
 {
-  return MOD_SUFFIX;
+  return Type::SUFFIX;
 }
 const char *
 SuffixMod::name() const
@@ -603,7 +603,7 @@ const char *const TagMod::NAME = "Tag";
 ControlBase::Modifier::Type
 TagMod::type() const
 {
-  return MOD_TAG;
+  return Type::TAG;
 }
 const char *
 TagMod::name() const
@@ -631,7 +631,7 @@ struct InternalMod : public ControlBase::Modifier {
   Type
   type() const override
   {
-    return MOD_INTERNAL;
+    return Type::INTERNAL;
   }
   const char *
   name() const override
@@ -711,7 +711,7 @@ ControlBase::Print() const
 const char *
 ControlBase::getSchemeModText() const
 {
-  Modifier *mod = this->findModOfType(Modifier::MOD_SCHEME);
+  Modifier *mod = this->findModOfType(Modifier::Type::SCHEME);
 
   if (mod) {
     return static_cast<SchemeMod *>(mod)->getWksText();
@@ -731,7 +731,7 @@ ControlBase::CheckModifiers(HttpRequestData *request_data)
 
   // If the incoming request has no tag but the entry does, or both
   // have tags that do not match, then we do NOT have a match.
-  if (!request_data->tag && findModOfType(Modifier::MOD_TAG)) {
+  if (!request_data->tag && findModOfType(Modifier::Type::TAG)) {
     return false;
   }
 
@@ -744,11 +744,11 @@ ControlBase::CheckModifiers(HttpRequestData *request_data)
   return true;
 }
 
-enum mod_errors {
-  ME_UNKNOWN,
-  ME_PARSE_FAILED,
-  ME_BAD_MOD,
-  ME_CALLEE_GENERATED,
+enum class mod_errors {
+  UNKNOWN,
+  PARSE_FAILED,
+  BAD_MOD,
+  CALLEE_GENERATED,
 };
 
 static const char *errorFormats[] = {
@@ -775,7 +775,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
 {
   // Variables for error processing
   const char *errBuf = nullptr;
-  mod_errors  err    = ME_UNKNOWN;
+  mod_errors  err    = mod_errors::UNKNOWN;
 
   int n_elts = line_info->num_el; // Element count for line.
 
@@ -791,7 +791,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
   // count decremented. So we have to scan the entire array to be sure of
   // finding all the elements. We'll track the element count so we can
   // escape if we've found all of the elements.
-  for (int i = 0; n_elts && ME_UNKNOWN == err && i < MATCHER_MAX_TOKENS; ++i) {
+  for (int i = 0; n_elts && mod_errors::UNKNOWN == err && i < MATCHER_MAX_TOKENS; ++i) {
     Modifier *mod = nullptr;
 
     char *label = line_info->line[0][i];
@@ -801,7 +801,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
       continue; // Already use.
     }
     if (!value) {
-      err = ME_PARSE_FAILED;
+      err = mod_errors::PARSE_FAILED;
       break;
     }
 
@@ -826,15 +826,15 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
     } else if (strcasecmp(label, "internal") == 0) {
       mod = InternalMod::make(value, &errBuf);
     } else {
-      err = ME_BAD_MOD;
+      err = mod_errors::BAD_MOD;
     }
 
     if (errBuf) {
-      err = ME_CALLEE_GENERATED; // Mod make failed.
+      err = mod_errors::CALLEE_GENERATED; // Mod make failed.
     }
 
     // If nothing went wrong, add the mod and bump the element count.
-    if (ME_UNKNOWN == err) {
+    if (mod_errors::UNKNOWN == err) {
       _mods.push_back(mod);
       --n_elts;
     } else {
@@ -842,10 +842,10 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
     }
   }
 
-  if (err != ME_UNKNOWN) {
+  if (err != mod_errors::UNKNOWN) {
     this->clear();
-    if (err != ME_CALLEE_GENERATED) {
-      errBuf = errorFormats[err];
+    if (err != mod_errors::CALLEE_GENERATED) {
+      errBuf = errorFormats[static_cast<int>(err)];
     }
   }
 

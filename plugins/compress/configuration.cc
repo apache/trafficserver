@@ -272,16 +272,22 @@ HostConfiguration::compression_algorithms()
   return compression_algorithms_;
 }
 
+/**
+  "true" and "false" are compatibility with old version, will be removed
+ */
 void
 HostConfiguration::set_range_request(const std::string &token)
 {
-  // "true" and "false" are compatibility with old version, will be removed
-  if (token == "false" || token == "ignore-range") {
-    range_request_ctl_ = RangeRequestCtrl::IGNORE_RANGE;
-  } else if (token == "true" || token == "none") {
+  if (token == "true" || token == "none") {
     range_request_ctl_ = RangeRequestCtrl::NONE;
-  } else if (token == "no-compression") {
+  } else if (token == "false" || token == "no-compression") {
     range_request_ctl_ = RangeRequestCtrl::NO_COMPRESSION;
+  } else if (token == "remove-range") {
+    range_request_ctl_ = RangeRequestCtrl::REMOVE_RANGE;
+  } else if (token == "remove-accept-encoding") {
+    range_request_ctl_ = RangeRequestCtrl::REMOVE_ACCEPT_ENCODING;
+  } else {
+    error("invalid token for range_request: %s", token.c_str());
   }
 }
 

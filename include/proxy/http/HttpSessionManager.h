@@ -41,10 +41,10 @@ class HttpSM;
 
 void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
 
-enum HSMresult_t {
-  HSM_DONE,
-  HSM_RETRY,
-  HSM_NOT_FOUND,
+enum class HSMresult_t {
+  DONE,
+  RETRY,
+  NOT_FOUND,
 };
 
 /** A pool of server sessions.

@@ -61,7 +61,7 @@ int   marshalled     = 0;
 
 // Diags *diags;
 
-enum hdr_type {
+enum class hdr_type {
   UNKNOWN_HDR,
   REQUEST_HDR,
   RESPONSE_HDR,
@@ -93,12 +93,12 @@ process_http_hdr_impl(HdrHeapObjImpl *obj, int offset)
   char        *s;
   HTTPHdrImpl *hhdr = (HTTPHdrImpl *)obj;
 
-  if (hhdr->m_polarity == HTTP_TYPE_REQUEST) {
+  if (hhdr->m_polarity == HTTPType::REQUEST) {
     printf("    is a request hdr\n");
     s = load_string(hhdr->u.req.m_ptr_method, hhdr->u.req.m_len_method, offset);
     printf("    method: %s\n", s);
     ats_free(s);
-  } else if (hhdr->m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (hhdr->m_polarity == HTTPType::RESPONSE) {
     printf("    is a response hdr\n");
     printf("    status code: %d\n", (int)hhdr->u.resp.m_status);
     s = load_string(hhdr->u.resp.m_ptr_reason, hhdr->u.resp.m_len_reason, offset);
@@ -148,7 +148,7 @@ loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
 
   printf("Looping over HdrHeap objects @ 0x%X\n", hdr_heap);
 
-  if (hdr_heap->m_magic == HDR_BUF_MAGIC_MARSHALED) {
+  if (hdr_heap->m_magic == HdrBufMagic::MARSHALED) {
     printf(" marshalled heap - size %d\n", hdr_heap->m_size);
     hdr_heap->m_data_start = ((char *)hdr_heap) + ROUND(sizeof(HdrHeap), HDR_PTR_SIZE);
     hdr_heap->m_free_start = ((char *)hdr_heap) + hdr_heap->m_size;
@@ -163,22 +163,22 @@ loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
     HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
 
     switch (obj->m_type) {
-    case HDR_HEAP_OBJ_HTTP_HEADER:
-      printf("  HDR_HEAP_OBJ_HTTP_HEADER %d bytes\n", obj->m_length);
+    case HdrHeapObjType::HTTP_HEADER:
+      printf("  HdrHeapObjType::HTTP_HEADER %d bytes\n", obj->m_length);
       process_http_hdr_impl(obj, offset);
       break;
-    case HDR_HEAP_OBJ_URL:
-      printf("  HDR_HEAP_OBJ_URL         %d bytes\n", obj->m_length);
+    case HdrHeapObjType::URL:
+      printf("  HdrHeapObjType::URL         %d bytes\n", obj->m_length);
       break;
-    case HDR_HEAP_OBJ_FIELD_BLOCK:
-      printf("  HDR_HEAP_OBJ_FIELD_BLOCK %d bytes\n", obj->m_length);
+    case HdrHeapObjType::FIELD_BLOCK:
+      printf("  HdrHeapObjType::FIELD_BLOCK %d bytes\n", obj->m_length);
       break;
-    case HDR_HEAP_OBJ_MIME_HEADER:
-      printf("  HDR_HEAP_OBJ_MIME_HEADER %d bytes\n", obj->m_length);
+    case HdrHeapObjType::MIME_HEADER:
+      printf("  HdrHeapObjType::MIME_HEADER %d bytes\n", obj->m_length);
       process_mime_hdr_impl(obj, offset);
       break;
-    case HDR_HEAP_OBJ_EMPTY:
-      printf("  HDR_HEAP_OBJ_EMPTY       %d bytes\n", obj->m_length);
+    case HdrHeapObjType::EMPTY:
+      printf("  HdrHeapObjType::EMPTY       %d bytes\n", obj->m_length);
       break;
     default:
       printf("  OBJ UNKNOWN (%d)  %d bytes\n", obj->m_type, obj->m_length);
@@ -278,9 +278,9 @@ load_buffer(int fd, hdr_type h_type)
   int      offset  = hdr_heap - (char *)old_addr;
 
   // Patch up some values
-  if (my_heap->m_magic == HDR_BUF_MAGIC_MARSHALED) {
+  if (my_heap->m_magic == HdrBufMagic::MARSHALED) {
     //      HdrHeapObjImpl* obj;
-    //      my_heap->unmarshal(hdr_size, HDR_HEAP_OBJ_HTTP_HEADER, &obj, NULL);
+    //      my_heap->unmarshal(hdr_size, HdrHeapObjType::HTTP_HEADER, &obj, NULL);
     marshalled = 1;
     offset     = (int)hdr_heap;
   } else {
@@ -294,7 +294,7 @@ load_buffer(int fd, hdr_type h_type)
 int
 main(int argc, const char *argv[])
 {
-  hdr_type h_type = UNKNOWN_HDR;
+  hdr_type h_type = hdr_type::UNKNOWN_HDR;
 
   http_init();
   DiagsPtr::set(new Diags(nullptr, nullptr));
@@ -304,13 +304,13 @@ main(int argc, const char *argv[])
   }
 
   if (strcasecmp(argv[1], "req") == 0) {
-    h_type = REQUEST_HDR;
+    h_type = hdr_type::REQUEST_HDR;
   } else if (strcasecmp(argv[1], "resp") == 0) {
-    h_type = RESPONSE_HDR;
+    h_type = hdr_type::RESPONSE_HDR;
   } else if (strcasecmp(argv[1], "hinfo") == 0) {
-    h_type = HTTP_INFO_HDR;
+    h_type = hdr_type::HTTP_INFO_HDR;
   } else if (strcasecmp(argv[1], "mbuf") == 0) {
-    h_type = RAW_MBUFFER;
+    h_type = hdr_type::RAW_MBUFFER;
   } else {
     fprintf(stderr, "Usage: %s req|resp|hinfo|mbuf <file>\n", argv[0]);
     exit(1);

@@ -43,18 +43,18 @@ class ControlBase
 {
 public:
   struct Modifier {
-    enum Type {
-      MOD_INVALID,
-      MOD_PORT,
-      MOD_SCHEME,
-      MOD_PREFIX,
-      MOD_SUFFIX,
-      MOD_METHOD,
-      MOD_TIME,
-      MOD_SRC_IP,
-      MOD_IPORT,
-      MOD_TAG,
-      MOD_INTERNAL,
+    enum class Type {
+      INVALID,
+      PORT,
+      SCHEME,
+      PREFIX,
+      SUFFIX,
+      METHOD,
+      TIME,
+      SRC_IP,
+      IPORT,
+      TAG,
+      INTERNAL,
     };
     /// Destructor - force virtual.
     virtual ~Modifier();

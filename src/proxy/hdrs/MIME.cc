@@ -857,7 +857,7 @@ mime_hdr_create(HdrHeap *heap)
 {
   MIMEHdrImpl *mh;
 
-  mh = (MIMEHdrImpl *)heap->allocate_obj(sizeof(MIMEHdrImpl), HDR_HEAP_OBJ_MIME_HEADER);
+  mh = (MIMEHdrImpl *)heap->allocate_obj(sizeof(MIMEHdrImpl), HdrHeapObjType::MIME_HEADER);
   mime_hdr_init(mh);
   return mh;
 }
@@ -907,7 +907,7 @@ mime_hdr_init(MIMEHdrImpl *mh)
   mime_hdr_cooked_stuff_init(mh, nullptr);
 
   // first header is inline: fake an object header for uniformity
-  obj_init_header((HdrHeapObjImpl *)&(mh->m_first_fblock), HDR_HEAP_OBJ_FIELD_BLOCK, sizeof(MIMEFieldBlockImpl), 0);
+  obj_init_header((HdrHeapObjImpl *)&(mh->m_first_fblock), HdrHeapObjType::FIELD_BLOCK, sizeof(MIMEFieldBlockImpl), 0);
 
   _mime_hdr_field_block_init(&(mh->m_first_fblock));
   mh->m_fblock_list_tail = &(mh->m_first_fblock);
@@ -920,7 +920,7 @@ _mime_field_block_copy(MIMEFieldBlockImpl *s_fblock, HdrHeap * /* s_heap ATS_UNU
 {
   MIMEFieldBlockImpl *d_fblock;
 
-  d_fblock = (MIMEFieldBlockImpl *)d_heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HDR_HEAP_OBJ_FIELD_BLOCK);
+  d_fblock = (MIMEFieldBlockImpl *)d_heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HdrHeapObjType::FIELD_BLOCK);
   memcpy(d_fblock, s_fblock, sizeof(MIMEFieldBlockImpl));
   return d_fblock;
 }
@@ -1299,7 +1299,7 @@ mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh)
 
   tail_fblock = mh->m_fblock_list_tail;
   if (tail_fblock->m_freetop >= MIME_FIELD_BLOCK_SLOTS) {
-    new_fblock = (MIMEFieldBlockImpl *)heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HDR_HEAP_OBJ_FIELD_BLOCK);
+    new_fblock = (MIMEFieldBlockImpl *)heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HdrHeapObjType::FIELD_BLOCK);
     _mime_hdr_field_block_init(new_fblock);
     tail_fblock->m_next    = new_fblock;
     tail_fblock            = new_fblock;
@@ -2180,59 +2180,59 @@ MIMEScanner::append(TextView text)
 ParseResult
 MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, bool eof_p, ScanType scan_type)
 {
-  ParseResult zret = PARSE_RESULT_CONT;
+  ParseResult zret = ParseResult::CONT;
   // Need this for handling dangling CR.
   static const char RAW_CR{ParseRules::CHAR_CR};
 
   auto text = input;
-  while (PARSE_RESULT_CONT == zret && !text.empty()) {
+  while (ParseResult::CONT == zret && !text.empty()) {
     switch (m_state) {
-    case MIME_PARSE_BEFORE: // waiting to find a field.
-      m_line.resize(0);     // any caller should already be done with the buffer
+    case MimeParseState::BEFORE: // waiting to find a field.
+      m_line.resize(0);          // any caller should already be done with the buffer
       if (ParseRules::is_cr(*text)) {
         ++text;
         if (!text.empty() && ParseRules::is_lf(*text)) {
           // optimize a bit - this happens >99% of the time after a CR.
           ++text;
-          zret = PARSE_RESULT_DONE;
+          zret = ParseResult::DONE;
         } else {
-          m_state = MIME_PARSE_FOUND_CR;
+          m_state = MimeParseState::FOUND_CR;
         }
       } else if (ParseRules::is_lf(*text)) {
         ++text;
-        zret = PARSE_RESULT_DONE; // Required by regression test.
+        zret = ParseResult::DONE; // Required by regression test.
       } else {
         // consume this character in the next state.
-        m_state = MIME_PARSE_INSIDE;
+        m_state = MimeParseState::INSIDE;
       }
       break;
-    case MIME_PARSE_FOUND_CR:
+    case MimeParseState::FOUND_CR:
       // Looking for a field and found a CR, which should mean terminating the header.
       if (ParseRules::is_lf(*text)) {
         ++text;
-        zret = PARSE_RESULT_DONE;
+        zret = ParseResult::DONE;
       } else {
         // This really should be an error (spec doesn't permit lone CR) but the regression tests
         // require it.
         this->append(TextView(&RAW_CR, 1)); // This is to fix a core dump of the icc 19.1 compiler when {&RAW_CR, 1} is used
-        m_state = MIME_PARSE_INSIDE;
+        m_state = MimeParseState::INSIDE;
       }
       break;
-    case MIME_PARSE_INSIDE: {
+    case MimeParseState::INSIDE: {
       auto lf_off = text.find(ParseRules::CHAR_LF);
       if (lf_off != TextView::npos) {
         text.remove_prefix(lf_off + 1); // drop up to and including LF
-        if (LINE == scan_type) {
-          zret    = PARSE_RESULT_OK;
-          m_state = MIME_PARSE_BEFORE;
+        if (ScanType::LINE == scan_type) {
+          zret    = ParseResult::OK;
+          m_state = MimeParseState::BEFORE;
         } else {
-          m_state = MIME_PARSE_AFTER; // looking for line folding.
+          m_state = MimeParseState::AFTER; // looking for line folding.
         }
       } else { // no EOL, consume all text without changing state.
         text.remove_prefix(text.size());
       }
     } break;
-    case MIME_PARSE_AFTER:
+    case MimeParseState::AFTER:
       // After a LF, the next line might be a continuation / folded line. That's indicated by a
       // starting whitespace. If that's the case, back up over the preceding CR/LF with space and
       // pretend it's the same line.
@@ -2242,10 +2242,10 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
         if (ParseRules::is_cr(*unfold)) {
           *unfold = ' ';
         }
-        m_state = MIME_PARSE_INSIDE; // back inside the field.
+        m_state = MimeParseState::INSIDE; // back inside the field.
       } else {
-        m_state = MIME_PARSE_BEFORE; // field terminated.
-        zret    = PARSE_RESULT_OK;
+        m_state = MimeParseState::BEFORE; // field terminated.
+        zret    = ParseResult::OK;
       }
       break;
     }
@@ -2254,7 +2254,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   TextView parsed_text{input.data(), text.data()};
   bool     save_parsed_text_p = !parsed_text.empty();
 
-  if (PARSE_RESULT_CONT == zret) {
+  if (ParseResult::CONT == zret) {
     // data ran out before we got a clear final result. There a number of things we need to check
     // and possibly adjust that result. It's less complex to do this cleanup than handle all of
     // these checks in the parser state machine.
@@ -2262,31 +2262,31 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
       // Should never return PARSE_CONT if we've hit EOF.
       if (parsed_text.empty()) {
         // all input previously consumed. If we're between fields, that's cool.
-        if (MIME_PARSE_INSIDE != m_state) {
-          m_state = MIME_PARSE_BEFORE; // probably not needed...
-          zret    = PARSE_RESULT_DONE;
+        if (MimeParseState::INSIDE != m_state) {
+          m_state = MimeParseState::BEFORE; // probably not needed...
+          zret    = ParseResult::DONE;
         } else {
-          zret = PARSE_RESULT_ERROR; // unterminated field.
+          zret = ParseResult::ERROR; // unterminated field.
         }
-      } else if (MIME_PARSE_AFTER == m_state) {
+      } else if (MimeParseState::AFTER == m_state) {
         // Special case it seems - need to accept the final field even if there's no header
         // terminating CR LF. This is only reasonable after absolute end of input (EOF) because
         // otherwise this might be a multiline field where we haven't seen the next leading space.
-        m_state = MIME_PARSE_BEFORE;
-        zret    = PARSE_RESULT_OK;
+        m_state = MimeParseState::BEFORE;
+        zret    = ParseResult::OK;
       } else {
         // Partial input, no field / line CR LF
-        zret = PARSE_RESULT_ERROR; // Unterminated field.
+        zret = ParseResult::ERROR; // Unterminated field.
       }
     } else if (!parsed_text.empty()) {
-      if (MIME_PARSE_INSIDE == m_state) {
+      if (MimeParseState::INSIDE == m_state) {
         // Inside a field but more data is expected. Save what we've got.
         this->append(parsed_text);  // Do this here to force appending.
         save_parsed_text_p = false; // don't double append.
-      } else if (MIME_PARSE_AFTER == m_state) {
+      } else if (MimeParseState::AFTER == m_state) {
         // After a field but we still have data. Need to parse it too.
-        m_state = MIME_PARSE_BEFORE;
-        zret    = PARSE_RESULT_OK;
+        m_state = MimeParseState::BEFORE;
+        zret    = ParseResult::OK;
       }
     }
   }
@@ -2298,9 +2298,9 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
 
   // adjust out arguments.
   output_shares_input = true;
-  if (PARSE_RESULT_CONT != zret) {
+  if (ParseResult::CONT != zret) {
     if (!m_line.empty()) {
-      output              = m_line; // cleared when called with state MIME_PARSE_BEFORE
+      output              = m_line; // cleared when called with state MimeParseState::BEFORE
       output_shares_input = false;
     } else {
       output = parsed_text;
@@ -2308,8 +2308,8 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   }
 
   // Make sure there are no null characters in the input scanned so far
-  if (zret != PARSE_RESULT_ERROR && TextView::npos != parsed_text.find('\0')) {
-    zret = PARSE_RESULT_ERROR;
+  if (zret != ParseResult::ERROR && TextView::npos != parsed_text.find('\0')) {
+    zret = ParseResult::ERROR;
   }
 
   input.remove_prefix(parsed_text.size());
@@ -2357,9 +2357,9 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     TextView text{*real_s, real_e};
     TextView parsed;
-    err     = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::FIELD);
+    err     = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::ScanType::FIELD);
     *real_s = text.data();
-    if (err != PARSE_RESULT_OK) {
+    if (err != ParseResult::OK) {
       return err;
     }
 
@@ -2368,11 +2368,11 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     //////////////////////////////////////////////////
 
     if ((parsed.size() >= 2) && (parsed[0] == ParseRules::CHAR_CR) && (parsed[1] == ParseRules::CHAR_LF)) {
-      return PARSE_RESULT_DONE;
+      return ParseResult::DONE;
     }
 
     if ((parsed.size() >= 1) && (parsed[0] == ParseRules::CHAR_LF)) {
-      return PARSE_RESULT_DONE;
+      return ParseResult::DONE;
     }
 
     /////////////////////////////////////////////
@@ -2408,7 +2408,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     bool raw_print_field = true;
     if (is_ws(field_name.back())) {
       if (!remove_ws_from_field_name) {
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
       field_name.rtrim_if(&ParseRules::is_ws);
       raw_print_field = false;
@@ -2422,7 +2422,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     // Make sure the name + value is not longer than configured max_hdr_field_size
     if (field_name.size() + field_value.size() > max_hdr_field_size) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     //    int total_line_length = (int)(field_line_last - field_line_first + 1);
@@ -2446,7 +2446,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     if (field_name_wks_idx < 0) {
       for (auto i : field_name) {
         if (!ParseRules::is_http_field_name(i)) {
-          return PARSE_RESULT_ERROR;
+          return ParseResult::ERROR;
         }
       }
     }
@@ -2455,7 +2455,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     for (char i : field_value) {
       // FIXME: ParseRules::is_http_field_value() should be used but the implementation looks wrong
       if (ParseRules::is_control(i)) {
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
     }
 

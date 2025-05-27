@@ -47,7 +47,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     HTTPHdr        hdr_1;
     ts::PostScript hdr_1_defer([&]() -> void { hdr_1.destroy(); });
-    hdr_1.create(HTTP_TYPE_REQUEST, HTTP_2_0);
+    hdr_1.create(HTTPType::REQUEST, HTTP_2_0);
 
     // parse
     const char *start = request;
@@ -93,7 +93,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // convert back to HTTP/1.1
     HTTPHdr        hdr_2;
     ts::PostScript hdr_2_defer([&]() -> void { hdr_2.destroy(); });
-    hdr_2.create(HTTP_TYPE_REQUEST);
+    hdr_2.create(HTTPType::REQUEST);
     hdr_2.copy(&hdr_1);
 
     http2_convert_header_from_2_to_1_1(&hdr_2);
@@ -115,7 +115,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // HTTP/2 request contains a Host header.
     HTTPHdr        hdr_2_with_host;
     ts::PostScript hdr_2_with_host_defer([&]() -> void { hdr_2_with_host.destroy(); });
-    hdr_2_with_host.create(HTTP_TYPE_REQUEST);
+    hdr_2_with_host.create(HTTPType::REQUEST);
     hdr_2_with_host.copy(&hdr_1);
 
     MIMEField *host = hdr_2_with_host.field_create(static_cast<std::string_view>(MIME_FIELD_HOST));
@@ -149,7 +149,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     HTTPHdr        hdr_1;
     ts::PostScript hdr_1_defer([&]() -> void { hdr_1.destroy(); });
-    hdr_1.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
+    hdr_1.create(HTTPType::RESPONSE, HTTP_2_0);
 
     // parse
     const char *start = response;
@@ -177,7 +177,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // convert to HTTP/1.1
     HTTPHdr        hdr_2;
     ts::PostScript hdr_2_defer([&]() -> void { hdr_2.destroy(); });
-    hdr_2.create(HTTP_TYPE_REQUEST);
+    hdr_2.create(HTTPType::REQUEST);
     hdr_2.copy(&hdr_1);
 
     http2_convert_header_from_2_to_1_1(&hdr_2);

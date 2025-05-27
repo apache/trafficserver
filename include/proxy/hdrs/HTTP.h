@@ -38,176 +38,177 @@ using namespace std::literals;
 
 class Http2HeaderTable;
 
-enum HTTPStatus {
-  HTTP_STATUS_NONE = 0,
+enum class HTTPStatus {
+  NONE = 0,
 
-  HTTP_STATUS_CONTINUE           = 100,
-  HTTP_STATUS_SWITCHING_PROTOCOL = 101,
-  HTTP_STATUS_EARLY_HINTS        = 103,
+  CONTINUE           = 100,
+  SWITCHING_PROTOCOL = 101,
+  PROCESSING         = 102,
+  EARLY_HINTS        = 103,
 
-  HTTP_STATUS_OK                            = 200,
-  HTTP_STATUS_CREATED                       = 201,
-  HTTP_STATUS_ACCEPTED                      = 202,
-  HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION = 203,
-  HTTP_STATUS_NO_CONTENT                    = 204,
-  HTTP_STATUS_RESET_CONTENT                 = 205,
-  HTTP_STATUS_PARTIAL_CONTENT               = 206,
+  OK                            = 200,
+  CREATED                       = 201,
+  ACCEPTED                      = 202,
+  NON_AUTHORITATIVE_INFORMATION = 203,
+  NO_CONTENT                    = 204,
+  RESET_CONTENT                 = 205,
+  PARTIAL_CONTENT               = 206,
 
-  HTTP_STATUS_MULTIPLE_CHOICES   = 300,
-  HTTP_STATUS_MOVED_PERMANENTLY  = 301,
-  HTTP_STATUS_MOVED_TEMPORARILY  = 302,
-  HTTP_STATUS_SEE_OTHER          = 303,
-  HTTP_STATUS_NOT_MODIFIED       = 304,
-  HTTP_STATUS_USE_PROXY          = 305,
-  HTTP_STATUS_TEMPORARY_REDIRECT = 307,
-  HTTP_STATUS_PERMANENT_REDIRECT = 308,
+  MULTIPLE_CHOICES   = 300,
+  MOVED_PERMANENTLY  = 301,
+  MOVED_TEMPORARILY  = 302,
+  SEE_OTHER          = 303,
+  NOT_MODIFIED       = 304,
+  USE_PROXY          = 305,
+  TEMPORARY_REDIRECT = 307,
+  PERMANENT_REDIRECT = 308,
 
-  HTTP_STATUS_BAD_REQUEST                   = 400,
-  HTTP_STATUS_UNAUTHORIZED                  = 401,
-  HTTP_STATUS_PAYMENT_REQUIRED              = 402,
-  HTTP_STATUS_FORBIDDEN                     = 403,
-  HTTP_STATUS_NOT_FOUND                     = 404,
-  HTTP_STATUS_METHOD_NOT_ALLOWED            = 405,
-  HTTP_STATUS_NOT_ACCEPTABLE                = 406,
-  HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED = 407,
-  HTTP_STATUS_REQUEST_TIMEOUT               = 408,
-  HTTP_STATUS_CONFLICT                      = 409,
-  HTTP_STATUS_GONE                          = 410,
-  HTTP_STATUS_LENGTH_REQUIRED               = 411,
-  HTTP_STATUS_PRECONDITION_FAILED           = 412,
-  HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE      = 413,
-  HTTP_STATUS_REQUEST_URI_TOO_LONG          = 414,
-  HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE        = 415,
-  HTTP_STATUS_RANGE_NOT_SATISFIABLE         = 416,
-  HTTP_STATUS_TOO_EARLY                     = 425,
+  BAD_REQUEST                   = 400,
+  UNAUTHORIZED                  = 401,
+  PAYMENT_REQUIRED              = 402,
+  FORBIDDEN                     = 403,
+  NOT_FOUND                     = 404,
+  METHOD_NOT_ALLOWED            = 405,
+  NOT_ACCEPTABLE                = 406,
+  PROXY_AUTHENTICATION_REQUIRED = 407,
+  REQUEST_TIMEOUT               = 408,
+  CONFLICT                      = 409,
+  GONE                          = 410,
+  LENGTH_REQUIRED               = 411,
+  PRECONDITION_FAILED           = 412,
+  REQUEST_ENTITY_TOO_LARGE      = 413,
+  REQUEST_URI_TOO_LONG          = 414,
+  UNSUPPORTED_MEDIA_TYPE        = 415,
+  RANGE_NOT_SATISFIABLE         = 416,
+  TOO_EARLY                     = 425,
 
-  HTTP_STATUS_INTERNAL_SERVER_ERROR = 500,
-  HTTP_STATUS_NOT_IMPLEMENTED       = 501,
-  HTTP_STATUS_BAD_GATEWAY           = 502,
-  HTTP_STATUS_SERVICE_UNAVAILABLE   = 503,
-  HTTP_STATUS_GATEWAY_TIMEOUT       = 504,
-  HTTP_STATUS_HTTPVER_NOT_SUPPORTED = 505
+  INTERNAL_SERVER_ERROR = 500,
+  NOT_IMPLEMENTED       = 501,
+  BAD_GATEWAY           = 502,
+  SERVICE_UNAVAILABLE   = 503,
+  GATEWAY_TIMEOUT       = 504,
+  HTTPVER_NOT_SUPPORTED = 505
 };
 
-enum HTTPKeepAlive {
-  HTTP_KEEPALIVE_UNDEFINED = 0,
-  HTTP_NO_KEEPALIVE,
-  HTTP_KEEPALIVE,
+enum class HTTPKeepAlive {
+  UNDEFINED = 0,
+  NO_KEEPALIVE,
+  KEEPALIVE,
 };
 
-enum HTTPWarningCode {
-  HTTP_WARNING_CODE_NONE = 0,
+enum class HTTPWarningCode {
+  NONE = 0,
 
-  HTTP_WARNING_CODE_RESPONSE_STALE         = 110,
-  HTTP_WARNING_CODE_REVALIDATION_FAILED    = 111,
-  HTTP_WARNING_CODE_DISCONNECTED_OPERATION = 112,
-  HTTP_WARNING_CODE_HERUISTIC_EXPIRATION   = 113,
-  HTTP_WARNING_CODE_TRANSFORMATION_APPLIED = 114,
-  HTTP_WARNING_CODE_MISC_WARNING           = 199
+  RESPONSE_STALE         = 110,
+  REVALIDATION_FAILED    = 111,
+  DISCONNECTED_OPERATION = 112,
+  HERUISTIC_EXPIRATION   = 113,
+  TRANSFORMATION_APPLIED = 114,
+  MISC_WARNING           = 199
 };
 
 /* squid log codes
    There is code (e.g. logstats) that depends on these errors coming at the end of this enum */
-enum SquidLogCode {
-  SQUID_LOG_EMPTY                     = '0',
-  SQUID_LOG_TCP_HIT                   = '1',
-  SQUID_LOG_TCP_DISK_HIT              = '2',
-  SQUID_LOG_TCP_MEM_HIT               = '.', // Don't want to change others codes
-  SQUID_LOG_TCP_MISS                  = '3',
-  SQUID_LOG_TCP_EXPIRED_MISS          = '4',
-  SQUID_LOG_TCP_REFRESH_HIT           = '5',
-  SQUID_LOG_TCP_REF_FAIL_HIT          = '6',
-  SQUID_LOG_TCP_REFRESH_MISS          = '7',
-  SQUID_LOG_TCP_CLIENT_REFRESH        = '8',
-  SQUID_LOG_TCP_IMS_HIT               = '9',
-  SQUID_LOG_TCP_IMS_MISS              = 'a',
-  SQUID_LOG_TCP_SWAPFAIL              = 'b',
-  SQUID_LOG_TCP_DENIED                = 'c',
-  SQUID_LOG_TCP_WEBFETCH_MISS         = 'd',
-  SQUID_LOG_TCP_FUTURE_2              = 'f',
-  SQUID_LOG_TCP_HIT_REDIRECT          = '[', // standard redirect
-  SQUID_LOG_TCP_MISS_REDIRECT         = ']', // standard redirect
-  SQUID_LOG_TCP_HIT_X_REDIRECT        = '<', // extended redirect
-  SQUID_LOG_TCP_MISS_X_REDIRECT       = '>', // extended redirect
-  SQUID_LOG_UDP_HIT                   = 'g',
-  SQUID_LOG_UDP_WEAK_HIT              = 'h',
-  SQUID_LOG_UDP_HIT_OBJ               = 'i',
-  SQUID_LOG_UDP_MISS                  = 'j',
-  SQUID_LOG_UDP_DENIED                = 'k',
-  SQUID_LOG_UDP_INVALID               = 'l',
-  SQUID_LOG_UDP_RELOADING             = 'm',
-  SQUID_LOG_UDP_FUTURE_1              = 'n',
-  SQUID_LOG_UDP_FUTURE_2              = 'o',
-  SQUID_LOG_ERR_READ_TIMEOUT          = 'p',
-  SQUID_LOG_ERR_LIFETIME_EXP          = 'q',
-  SQUID_LOG_ERR_POST_ENTITY_TOO_LARGE = 'L',
-  SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ    = 'r',
-  SQUID_LOG_ERR_READ_ERROR            = 's',
-  SQUID_LOG_ERR_CLIENT_ABORT          = 't', // Client side abort logging
-  SQUID_LOG_ERR_CONNECT_FAIL          = 'u',
-  SQUID_LOG_ERR_INVALID_REQ           = 'v',
-  SQUID_LOG_ERR_UNSUP_REQ             = 'w',
-  SQUID_LOG_ERR_INVALID_URL           = 'x',
-  SQUID_LOG_ERR_NO_FDS                = 'y',
-  SQUID_LOG_ERR_DNS_FAIL              = 'z',
-  SQUID_LOG_ERR_NOT_IMPLEMENTED       = 'A',
-  SQUID_LOG_ERR_CANNOT_FETCH          = 'B',
-  SQUID_LOG_ERR_NO_RELAY              = 'C',
-  SQUID_LOG_ERR_DISK_IO               = 'D',
-  SQUID_LOG_ERR_ZERO_SIZE_OBJECT      = 'E',
-  SQUID_LOG_TCP_CF_HIT                = 'F', // Collapsed forwarding HIT also known as Read while write hit
-  SQUID_LOG_ERR_PROXY_DENIED          = 'G',
-  SQUID_LOG_ERR_WEBFETCH_DETECTED     = 'H',
-  SQUID_LOG_ERR_FUTURE_1              = 'I',
-  SQUID_LOG_ERR_CLIENT_READ_ERROR     = 'J', // Client side abort logging
-  SQUID_LOG_ERR_LOOP_DETECTED         = 'K', // Loop or cycle detected, request came back to this server
-  SQUID_LOG_ERR_UNKNOWN               = 'Z'
+enum class SquidLogCode {
+  EMPTY                     = '0',
+  TCP_HIT                   = '1',
+  TCP_DISK_HIT              = '2',
+  TCP_MEM_HIT               = '.', // Don't want to change others codes
+  TCP_MISS                  = '3',
+  TCP_EXPIRED_MISS          = '4',
+  TCP_REFRESH_HIT           = '5',
+  TCP_REF_FAIL_HIT          = '6',
+  TCP_REFRESH_MISS          = '7',
+  TCP_CLIENT_REFRESH        = '8',
+  TCP_IMS_HIT               = '9',
+  TCP_IMS_MISS              = 'a',
+  TCP_SWAPFAIL              = 'b',
+  TCP_DENIED                = 'c',
+  TCP_WEBFETCH_MISS         = 'd',
+  TCP_FUTURE_2              = 'f',
+  TCP_HIT_REDIRECT          = '[', // standard redirect
+  TCP_MISS_REDIRECT         = ']', // standard redirect
+  TCP_HIT_X_REDIRECT        = '<', // extended redirect
+  TCP_MISS_X_REDIRECT       = '>', // extended redirect
+  UDP_HIT                   = 'g',
+  UDP_WEAK_HIT              = 'h',
+  UDP_HIT_OBJ               = 'i',
+  UDP_MISS                  = 'j',
+  UDP_DENIED                = 'k',
+  UDP_INVALID               = 'l',
+  UDP_RELOADING             = 'm',
+  UDP_FUTURE_1              = 'n',
+  UDP_FUTURE_2              = 'o',
+  ERR_READ_TIMEOUT          = 'p',
+  ERR_LIFETIME_EXP          = 'q',
+  ERR_POST_ENTITY_TOO_LARGE = 'L',
+  ERR_NO_CLIENTS_BIG_OBJ    = 'r',
+  ERR_READ_ERROR            = 's',
+  ERR_CLIENT_ABORT          = 't', // Client side abort logging
+  ERR_CONNECT_FAIL          = 'u',
+  ERR_INVALID_REQ           = 'v',
+  ERR_UNSUP_REQ             = 'w',
+  ERR_INVALID_URL           = 'x',
+  ERR_NO_FDS                = 'y',
+  ERR_DNS_FAIL              = 'z',
+  ERR_NOT_IMPLEMENTED       = 'A',
+  ERR_CANNOT_FETCH          = 'B',
+  ERR_NO_RELAY              = 'C',
+  ERR_DISK_IO               = 'D',
+  ERR_ZERO_SIZE_OBJECT      = 'E',
+  TCP_CF_HIT                = 'F', // Collapsed forwarding HIT also known as Read while write hit
+  ERR_PROXY_DENIED          = 'G',
+  ERR_WEBFETCH_DETECTED     = 'H',
+  ERR_FUTURE_1              = 'I',
+  ERR_CLIENT_READ_ERROR     = 'J', // Client side abort logging
+  ERR_LOOP_DETECTED         = 'K', // Loop or cycle detected, request came back to this server
+  ERR_UNKNOWN               = 'Z'
 };
 
 // squid log subcodes
-enum SquidSubcode {
-  SQUID_SUBCODE_EMPTY                     = '0',
-  SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED = '1',
+enum class SquidSubcode {
+  EMPTY                     = '0',
+  NUM_REDIRECTIONS_EXCEEDED = '1',
 };
 
 /* squid hierarchy codes */
-enum SquidHierarchyCode {
-  SQUID_HIER_EMPTY                           = '0',
-  SQUID_HIER_NONE                            = '1',
-  SQUID_HIER_DIRECT                          = '2',
-  SQUID_HIER_SIBLING_HIT                     = '3',
-  SQUID_HIER_PARENT_HIT                      = '4',
-  SQUID_HIER_DEFAULT_PARENT                  = '5',
-  SQUID_HIER_SINGLE_PARENT                   = '6',
-  SQUID_HIER_FIRST_UP_PARENT                 = '7',
-  SQUID_HIER_NO_PARENT_DIRECT                = '8',
-  SQUID_HIER_FIRST_PARENT_MISS               = '9',
-  SQUID_HIER_LOCAL_IP_DIRECT                 = 'a',
-  SQUID_HIER_FIREWALL_IP_DIRECT              = 'b',
-  SQUID_HIER_NO_DIRECT_FAIL                  = 'c',
-  SQUID_HIER_SOURCE_FASTEST                  = 'd',
-  SQUID_HIER_SIBLING_UDP_HIT_OBJ             = 'e',
-  SQUID_HIER_PARENT_UDP_HIT_OBJ              = 'f',
-  SQUID_HIER_PASSTHROUGH_PARENT              = 'g',
-  SQUID_HIER_SSL_PARENT_MISS                 = 'h',
-  SQUID_HIER_INVALID_CODE                    = 'i',
-  SQUID_HIER_TIMEOUT_DIRECT                  = 'j',
-  SQUID_HIER_TIMEOUT_SIBLING_HIT             = 'k',
-  SQUID_HIER_TIMEOUT_PARENT_HIT              = 'l',
-  SQUID_HIER_TIMEOUT_DEFAULT_PARENT          = 'm',
-  SQUID_HIER_TIMEOUT_SINGLE_PARENT           = 'n',
-  SQUID_HIER_TIMEOUT_FIRST_UP_PARENT         = 'o',
-  SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT        = 'p',
-  SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS       = 'q',
-  SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT         = 'r',
-  SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT      = 's',
-  SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL          = 't',
-  SQUID_HIER_TIMEOUT_SOURCE_FASTEST          = 'u',
-  SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ     = 'v',
-  SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ      = 'w',
-  SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT      = 'x',
-  SQUID_HIER_TIMEOUT_TIMEOUT_SSL_PARENT_MISS = 'y',
-  SQUID_HIER_INVALID_ASSIGNED_CODE           = 'z'
+enum class SquidHierarchyCode {
+  EMPTY                           = '0',
+  NONE                            = '1',
+  DIRECT                          = '2',
+  SIBLING_HIT                     = '3',
+  PARENT_HIT                      = '4',
+  DEFAULT_PARENT                  = '5',
+  SINGLE_PARENT                   = '6',
+  FIRST_UP_PARENT                 = '7',
+  NO_PARENT_DIRECT                = '8',
+  FIRST_PARENT_MISS               = '9',
+  LOCAL_IP_DIRECT                 = 'a',
+  FIREWALL_IP_DIRECT              = 'b',
+  NO_DIRECT_FAIL                  = 'c',
+  SOURCE_FASTEST                  = 'd',
+  SIBLING_UDP_HIT_OBJ             = 'e',
+  PARENT_UDP_HIT_OBJ              = 'f',
+  PASSTHROUGH_PARENT              = 'g',
+  SSL_PARENT_MISS                 = 'h',
+  INVALID_CODE                    = 'i',
+  TIMEOUT_DIRECT                  = 'j',
+  TIMEOUT_SIBLING_HIT             = 'k',
+  TIMEOUT_PARENT_HIT              = 'l',
+  TIMEOUT_DEFAULT_PARENT          = 'm',
+  TIMEOUT_SINGLE_PARENT           = 'n',
+  TIMEOUT_FIRST_UP_PARENT         = 'o',
+  TIMEOUT_NO_PARENT_DIRECT        = 'p',
+  TIMEOUT_FIRST_PARENT_MISS       = 'q',
+  TIMEOUT_LOCAL_IP_DIRECT         = 'r',
+  TIMEOUT_FIREWALL_IP_DIRECT      = 's',
+  TIMEOUT_NO_DIRECT_FAIL          = 't',
+  TIMEOUT_SOURCE_FASTEST          = 'u',
+  TIMEOUT_SIBLING_UDP_HIT_OBJ     = 'v',
+  TIMEOUT_PARENT_UDP_HIT_OBJ      = 'w',
+  TIMEOUT_PASSTHROUGH_PARENT      = 'x',
+  TIMEOUT_TIMEOUT_SSL_PARENT_MISS = 'y',
+  INVALID_ASSIGNED_CODE           = 'z'
 };
 
 /* squid hit/miss codes */
@@ -248,10 +249,10 @@ constexpr std::string_view PSEUDO_HEADER_PATH      = ":path";
 constexpr std::string_view PSEUDO_HEADER_METHOD    = ":method";
 constexpr std::string_view PSEUDO_HEADER_STATUS    = ":status";
 
-enum HTTPType {
-  HTTP_TYPE_UNKNOWN,
-  HTTP_TYPE_REQUEST,
-  HTTP_TYPE_RESPONSE,
+enum class HTTPType {
+  UNKNOWN,
+  REQUEST,
+  RESPONSE,
 };
 
 struct HTTPHdrImpl : public HdrHeapObjImpl {
@@ -411,7 +412,7 @@ void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 void             http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
 std::string_view http_hdr_reason_get(HTTPHdrImpl *hh);
 void             http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view value, bool must_copy);
-const char      *http_hdr_reason_lookup(unsigned status);
+const char      *http_hdr_reason_lookup(HTTPStatus status);
 
 void        http_parser_init(HTTPParser *parser);
 void        http_parser_clear(HTTPParser *parser);
@@ -664,7 +665,7 @@ HTTPHdr::create(HTTPType polarity, HTTPVersion version, HdrHeap *heap)
 inline void
 HTTPHdr::clear()
 {
-  if (m_http && m_http->m_polarity == HTTP_TYPE_REQUEST) {
+  if (m_http && m_http->m_polarity == HTTPType::REQUEST) {
     m_url_cached.clear();
   }
   this->HdrHeapSDKHandle::clear();
@@ -710,7 +711,7 @@ HTTPHdr::copy_shallow(const HTTPHdr *hdr)
   m_http = hdr->m_http;
   m_mime = hdr->m_mime;
 
-  if (hdr->type_get() == HTTP_TYPE_REQUEST && m_url_cached.valid())
+  if (hdr->type_get() == HTTPType::REQUEST && m_url_cached.valid())
     m_url_cached.copy_shallow(&hdr->m_url_cached);
 }
 
@@ -823,35 +824,35 @@ HTTPHdr::version_get() const
 inline static HTTPKeepAlive
 is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
 {
-  enum {
-    CON_TOKEN_NONE = 0,
-    CON_TOKEN_KEEP_ALIVE,
-    CON_TOKEN_CLOSE,
+  enum class ConToken {
+    NONE = 0,
+    KEEP_ALIVE,
+    CLOSE,
   };
 
-  int           con_token  = CON_TOKEN_NONE;
-  HTTPKeepAlive keep_alive = HTTP_NO_KEEPALIVE;
+  auto          con_token  = ConToken::NONE;
+  HTTPKeepAlive keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   //    *unknown_tokens = false;
 
   if (con_hdr) {
     if (con_hdr->value_get_index("keep-alive"sv) >= 0)
-      con_token = CON_TOKEN_KEEP_ALIVE;
+      con_token = ConToken::KEEP_ALIVE;
     else if (con_hdr->value_get_index("close"sv) >= 0)
-      con_token = CON_TOKEN_CLOSE;
+      con_token = ConToken::CLOSE;
   }
 
   if (HTTP_1_0 == http_version) {
-    keep_alive = (con_token == CON_TOKEN_KEEP_ALIVE) ? (HTTP_KEEPALIVE) : (HTTP_NO_KEEPALIVE);
+    keep_alive = (con_token == ConToken::KEEP_ALIVE) ? (HTTPKeepAlive::KEEPALIVE) : (HTTPKeepAlive::NO_KEEPALIVE);
   } else if (HTTP_1_1 == http_version) {
     // We deviate from the spec here.  If the we got a response where
     //   where there is no Connection header and the request 1.0 was
     //   1.0 don't treat this as keep-alive since Netscape-Enterprise/3.6 SP1
     //   server doesn't
-    keep_alive = ((con_token == CON_TOKEN_KEEP_ALIVE) || (con_token == CON_TOKEN_NONE && HTTP_1_1 == http_version)) ?
-                   (HTTP_KEEPALIVE) :
-                   (HTTP_NO_KEEPALIVE);
+    keep_alive = ((con_token == ConToken::KEEP_ALIVE) || (con_token == ConToken::NONE && HTTP_1_1 == http_version)) ?
+                   (HTTPKeepAlive::KEEPALIVE) :
+                   (HTTPKeepAlive::NO_KEEPALIVE);
   } else {
-    keep_alive = HTTP_NO_KEEPALIVE;
+    keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
   return (keep_alive);
 }
@@ -859,7 +860,7 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
 inline HTTPKeepAlive
 HTTPHdr::keep_alive_get() const
 {
-  HTTPKeepAlive    retval = HTTP_NO_KEEPALIVE;
+  HTTPKeepAlive    retval = HTTPKeepAlive::NO_KEEPALIVE;
   const MIMEField *pc     = this->field_find(static_cast<std::string_view>(MIME_FIELD_PROXY_CONNECTION));
   if (pc != nullptr) {
     retval = is_header_keep_alive(this->version_get(), pc);
@@ -873,7 +874,7 @@ HTTPHdr::keep_alive_get() const
 inline bool
 HTTPHdr::is_keep_alive_set() const
 {
-  return this->keep_alive_get() == HTTP_KEEPALIVE;
+  return this->keep_alive_get() == HTTPKeepAlive::KEEPALIVE;
 }
 
 /**
@@ -886,8 +887,8 @@ inline bool
 HTTPHdr::expect_final_response() const
 {
   switch (this->status_get()) {
-  case HTTP_STATUS_CONTINUE:
-  case HTTP_STATUS_EARLY_HINTS:
+  case HTTPStatus::CONTINUE:
+  case HTTPStatus::EARLY_HINTS:
     return true;
   default:
     return false;
@@ -911,7 +912,7 @@ inline std::string_view
 HTTPHdr::method_get()
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   return http_hdr_method_get(m_http);
 }
@@ -920,7 +921,7 @@ inline int
 HTTPHdr::method_get_wksidx() const
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   return (m_http->u.req.m_method_wks_idx);
 }
@@ -932,7 +933,7 @@ inline void
 HTTPHdr::method_set(std::string_view value)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   int method_wks_idx = hdrtoken_tokenize(value.data(), static_cast<int>(value.length()));
   http_hdr_method_set(m_heap, m_http, value, method_wks_idx, true);
@@ -945,7 +946,7 @@ inline URL *
 HTTPHdr::url_create(URL *u)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   u->set(this);
   u->create(m_heap);
@@ -959,7 +960,7 @@ inline URL *
 HTTPHdr::url_get() const
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   // It's entirely possible that someone changed URL in our impl
   // without updating the cached copy in the C++ layer.  Check
@@ -981,7 +982,7 @@ inline URL *
 HTTPHdr::url_get(URL *url)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   url->set(this); // attach refcount
   url->m_url_impl = m_http->u.req.m_url_impl;
@@ -995,7 +996,7 @@ inline void
 HTTPHdr::url_set(URL *url)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   URLImpl *url_impl = m_http->u.req.m_url_impl;
   ::url_copy_onto(url->m_url_impl, url->m_heap, url_impl, m_heap, true);
@@ -1010,7 +1011,7 @@ HTTPHdr::url_set(std::string_view value)
   URLImpl *url_impl;
 
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   url_impl = m_http->u.req.m_url_impl;
   ::url_clear(url_impl);
@@ -1024,7 +1025,7 @@ HTTPHdr::url_set(std::string_view value)
 inline HTTPStatus
 http_hdr_status_get(HTTPHdrImpl const *hh)
 {
-  ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(hh->m_polarity == HTTPType::RESPONSE);
   return (HTTPStatus)hh->u.resp.m_status;
 }
 
@@ -1037,11 +1038,11 @@ HTTPHdr::status_get() const
   ink_assert(valid());
 
   if (m_http) {
-    ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+    ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
     return http_hdr_status_get(m_http);
   }
 
-  return HTTP_STATUS_NONE;
+  return HTTPStatus::NONE;
 }
 
 /*-------------------------------------------------------------------------
@@ -1051,7 +1052,7 @@ inline void
 HTTPHdr::status_set(HTTPStatus status)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   http_hdr_status_set(m_http, status);
 }
@@ -1063,7 +1064,7 @@ inline std::string_view
 HTTPHdr::reason_get()
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   return http_hdr_reason_get(m_http);
 }
@@ -1075,7 +1076,7 @@ inline void
 HTTPHdr::reason_set(std::string_view value)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   http_hdr_reason_set(m_heap, m_http, value, true);
 }
@@ -1108,7 +1109,7 @@ HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool
                    size_t max_request_line_size, size_t max_hdr_field_size)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
   return http_parser_parse_req(parser, m_heap, m_http, start, end, true, eof, strict_uri_parsing, max_request_line_size,
                                max_hdr_field_size);
@@ -1121,7 +1122,7 @@ inline ParseResult
 HTTPHdr::parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   return http_parser_parse_resp(parser, m_heap, m_http, start, end, true, eof);
 }
@@ -1136,7 +1137,7 @@ HTTPHdr::is_cache_control_set(const char *cc_directive_wks)
   ink_assert(hdrtoken_is_wks(cc_directive_wks));
 
   const HdrTokenHeapPrefix *prefix = hdrtoken_wks_to_prefix(cc_directive_wks);
-  ink_assert(prefix->wks_token_type == HDRTOKEN_TYPE_CACHE_CONTROL);
+  ink_assert(prefix->wks_token_type == HdrTokenType::CACHE_CONTROL);
 
   uint32_t cc_mask = prefix->wks_type_specific.u.cache_control.cc_mask;
   if (get_cooked_cc_mask() & cc_mask)
@@ -1204,10 +1205,10 @@ HTTPHdr::scheme_get()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-enum {
-  CACHE_ALT_MAGIC_ALIVE     = 0xabcddeed,
-  CACHE_ALT_MAGIC_MARSHALED = 0xdcbadeed,
-  CACHE_ALT_MAGIC_DEAD      = 0xdeadeed,
+enum class CacheAltMagic : uint32_t {
+  ALIVE     = 0xabcddeed,
+  MARSHALED = 0xdcbadeed,
+  DEAD      = 0xdeadeed,
 };
 
 // struct HTTPCacheAlt
@@ -1217,7 +1218,7 @@ struct HTTPCacheAlt {
   void copy_frag_offsets_from(HTTPCacheAlt *src);
   void destroy();
 
-  uint32_t m_magic = CACHE_ALT_MAGIC_ALIVE;
+  CacheAltMagic m_magic = CacheAltMagic::ALIVE;
 
   // Writeable is set to true is we reside
   //  in a buffer owned by this structure.

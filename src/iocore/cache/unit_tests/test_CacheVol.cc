@@ -90,7 +90,7 @@ create_config(int num)
         }
         ConfigVol *cp  = new ConfigVol();
         cp->number     = vol_num++;
-        cp->scheme     = CACHE_HTTP_TYPE;
+        cp->scheme     = CacheType::HTTP;
         cp->size       = 128;
         cp->in_percent = false;
         cp->cachep     = nullptr;
@@ -129,7 +129,7 @@ create_config(int num)
     for (i = 0; i < 10; i++) {
       ConfigVol *cp  = new ConfigVol();
       cp->number     = vol_num++;
-      cp->scheme     = CACHE_HTTP_TYPE;
+      cp->scheme     = CacheType::HTTP;
       cp->size       = 10;
       cp->percent    = 10;
       cp->in_percent = true;
@@ -185,7 +185,7 @@ create_config(int num)
 
       off_t random_size = (gen->random() % modu) + 1;
       /* convert to 128 megs multiple */
-      CacheType scheme = (random_size % 2) ? CACHE_HTTP_TYPE : CACHE_RTSP_TYPE;
+      CacheType scheme = (random_size % 2) ? CacheType::HTTP : CacheType::RTSP;
       random_size      = ROUND_TO_VOL_SIZE(random_size);
       off_t blocks     = random_size / STORE_BLOCK_SIZE;
       ink_assert(blocks <= total_space);
@@ -201,7 +201,7 @@ create_config(int num)
       cp->cachep     = nullptr;
       config_volumes.cp_queue.enqueue(cp);
       config_volumes.num_volumes++;
-      if (cp->scheme == CACHE_HTTP_TYPE) {
+      if (cp->scheme == CacheType::HTTP) {
         config_volumes.num_http_volumes++;
         Dbg(dbg_ctl_cache_vol_test, "volume=%d scheme=http size=%zd", cp->number, static_cast<size_t>(cp->size));
       } else {

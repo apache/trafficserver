@@ -49,7 +49,7 @@ namespace Yaml
 }
 } // namespace ts
 
-enum NHCmd { NH_MARK_UP, NH_MARK_DOWN };
+enum class NHCmd { MARK_UP, MARK_DOWN };
 
 struct NHHealthStatus {
   virtual bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) = 0;
@@ -58,20 +58,18 @@ struct NHHealthStatus {
   virtual ~NHHealthStatus() {}
 };
 
-enum NHPolicyType {
-  NH_UNDEFINED = 0,
-  NH_FIRST_LIVE,     // first available nexthop
-  NH_RR_STRICT,      // strict round robin
-  NH_RR_IP,          // round robin by client ip.
-  NH_RR_LATCHED,     // latched to available next hop.
-  NH_CONSISTENT_HASH // consistent hashing strategy.
+enum class NHPolicyType {
+  UNDEFINED = 0,
+  FIRST_LIVE,     // first available nexthop
+  RR_STRICT,      // strict round robin
+  RR_IP,          // round robin by client ip.
+  RR_LATCHED,     // latched to available next hop.
+  CONSISTENT_HASH // consistent hashing strategy.
 };
 
-enum NHSchemeType { NH_SCHEME_NONE = 0, NH_SCHEME_HTTP, NH_SCHEME_HTTPS };
+enum class NHSchemeType { NONE = 0, HTTP, HTTPS };
 
-enum NHRingMode { NH_ALTERNATE_RING = 0, NH_EXHAUST_RING, NH_PEERING_RING };
-
-enum NH_HHealthCheck { NH_ACTIVE, NH_PASSIVE };
+enum class NHRingMode { ALTERNATE_RING = 0, EXHAUST_RING, PEERING_RING };
 
 // response codes container
 struct ResponseCodes {
@@ -100,7 +98,7 @@ struct HealthChecks {
 };
 
 struct NHProtocol {
-  NHSchemeType scheme = NH_SCHEME_NONE;
+  NHSchemeType scheme = NHSchemeType::NONE;
   uint32_t     port   = 0;
   std::string  health_check_url;
 };
@@ -214,9 +212,9 @@ public:
   bool                                                  cache_peer_result  = true;
   bool                                                  host_override      = false;
   bool                                                  use_pristine       = false;
-  NHPolicyType                                          policy_type        = NH_UNDEFINED;
-  NHSchemeType                                          scheme             = NH_SCHEME_NONE;
-  NHRingMode                                            ring_mode          = NH_ALTERNATE_RING;
+  NHPolicyType                                          policy_type        = NHPolicyType::UNDEFINED;
+  NHSchemeType                                          scheme             = NHSchemeType::NONE;
+  NHRingMode                                            ring_mode          = NHRingMode::ALTERNATE_RING;
   ResponseCodes                                         resp_codes;     // simple retry codes
   ResponseCodes                                         markdown_codes; // unavailable server retry and markdown codes
   HealthChecks                                          health_checks;

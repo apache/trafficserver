@@ -85,20 +85,20 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
         continue;
       }
       const auto  &policy_value = policy.Scalar();
-      NHPolicyType policy_type  = NH_UNDEFINED;
+      NHPolicyType policy_type  = NHPolicyType::UNDEFINED;
 
       if (policy_value == consistent_hash) {
-        policy_type = NH_CONSISTENT_HASH;
+        policy_type = NHPolicyType::CONSISTENT_HASH;
       } else if (policy_value == first_live) {
-        policy_type = NH_FIRST_LIVE;
+        policy_type = NHPolicyType::FIRST_LIVE;
       } else if (policy_value == rr_strict) {
-        policy_type = NH_RR_STRICT;
+        policy_type = NHPolicyType::RR_STRICT;
       } else if (policy_value == rr_ip) {
-        policy_type = NH_RR_IP;
+        policy_type = NHPolicyType::RR_IP;
       } else if (policy_value == latched) {
-        policy_type = NH_RR_LATCHED;
+        policy_type = NHPolicyType::RR_LATCHED;
       }
-      if (policy_type == NH_UNDEFINED) {
+      if (policy_type == NHPolicyType::UNDEFINED) {
         NH_Error("Invalid policy '%s' for the strategy named '%s', this strategy will be ignored.", policy_value.c_str(),
                  name.c_str());
       } else {
@@ -142,18 +142,18 @@ NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyTy
 
   try {
     switch (policy_type) {
-    case NH_FIRST_LIVE:
-    case NH_RR_STRICT:
-    case NH_RR_IP:
-    case NH_RR_LATCHED:
+    case NHPolicyType::FIRST_LIVE:
+    case NHPolicyType::RR_STRICT:
+    case NHPolicyType::RR_IP:
+    case NHPolicyType::RR_LATCHED:
       strat_rr = std::make_shared<NextHopRoundRobin>(name, policy_type, node);
       _strategies.emplace(std::make_pair(std::string(name), strat_rr));
       break;
-    case NH_CONSISTENT_HASH:
+    case NHPolicyType::CONSISTENT_HASH:
       strat_chash = std::make_shared<NextHopConsistentHash>(name, policy_type, node);
       _strategies.emplace(std::make_pair(std::string(name), strat_chash));
       break;
-    default: // handles P_UNDEFINED, no strategy is added
+    default: // handles ParentRR_t::UNDEFINED, no strategy is added
       break;
     };
   } catch (std::exception &ex) {

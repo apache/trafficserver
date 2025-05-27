@@ -611,7 +611,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
   trt = (num_rules_redirect_temporary != 0);
 
   if (prt + trt == 0) {
-    return NONE;
+    return mapping_type::NONE;
   }
 
   // Since are called before request validity checking
@@ -620,12 +620,12 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
   //
   if (request_header == nullptr) {
     Dbg(dbg_ctl_url_rewrite, "request_header was invalid.  UrlRewrite::Remap_redirect bailing out.");
-    return NONE;
+    return mapping_type::NONE;
   }
   request_url = request_header->url_get();
   if (!request_url->valid()) {
     Dbg(dbg_ctl_url_rewrite, "request_url was invalid.  UrlRewrite::Remap_redirect bailing out.");
-    return NONE;
+    return mapping_type::NONE;
   }
 
   auto host{request_url->host_get()};
@@ -657,23 +657,23 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
   // the rationale behind this is that network administrators might
   // want quick redirects and not want to worry about all the existing
   // permanent rules
-  mappingType = NONE;
+  mappingType = mapping_type::NONE;
 
   UrlMappingContainer redirect_mapping(request_header->m_heap);
 
   if (trt) {
     if (temporaryRedirectLookup(request_url, request_port, host.data(), static_cast<int>(host.length()), redirect_mapping)) {
-      mappingType = TEMPORARY_REDIRECT;
+      mappingType = mapping_type::TEMPORARY_REDIRECT;
     }
   }
-  if ((mappingType == NONE) && prt) {
+  if ((mappingType == mapping_type::NONE) && prt) {
     if (permanentRedirectLookup(request_url, request_port, host.data(), static_cast<int>(host.length()), redirect_mapping)) {
-      mappingType = PERMANENT_REDIRECT;
+      mappingType = mapping_type::PERMANENT_REDIRECT;
     }
   }
 
-  if (mappingType != NONE) {
-    ink_assert((mappingType == PERMANENT_REDIRECT) || (mappingType == TEMPORARY_REDIRECT));
+  if (mappingType != mapping_type::NONE) {
+    ink_assert((mappingType == mapping_type::PERMANENT_REDIRECT) || (mappingType == mapping_type::TEMPORARY_REDIRECT));
 
     // Make a copy of the request url so that we can munge it
     //   for the redirect
@@ -685,9 +685,9 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 
     return mappingType;
   }
-  ink_assert(mappingType == NONE);
+  ink_assert(mappingType == mapping_type::NONE);
 
-  return NONE;
+  return mapping_type::NONE;
 }
 
 bool
@@ -718,25 +718,25 @@ UrlRewrite::InsertMapping(mapping_type maptype, url_mapping *new_mapping, RegexM
 
   // Now add the mapping to appropriate container
   switch (maptype) {
-  case FORWARD_MAP:
-  case FORWARD_MAP_REFERER:
+  case mapping_type::FORWARD_MAP:
+  case mapping_type::FORWARD_MAP_REFERER:
     success = _addToStore(forward_mappings, new_mapping, reg_map, src_host, is_cur_mapping_regex, num_rules_forward);
     if (success) {
       // @todo: is this applicable to regex mapping too?
       SetHomePageRedirectFlag(new_mapping, new_mapping->toURL);
     }
     break;
-  case REVERSE_MAP:
+  case mapping_type::REVERSE_MAP:
     success = _addToStore(reverse_mappings, new_mapping, reg_map, src_host, is_cur_mapping_regex, num_rules_reverse);
     new_mapping->homePageRedirect = false;
     break;
-  case PERMANENT_REDIRECT:
+  case mapping_type::PERMANENT_REDIRECT:
     success = _addToStore(permanent_redirects, new_mapping, reg_map, src_host, is_cur_mapping_regex, num_rules_redirect_permanent);
     break;
-  case TEMPORARY_REDIRECT:
+  case mapping_type::TEMPORARY_REDIRECT:
     success = _addToStore(temporary_redirects, new_mapping, reg_map, src_host, is_cur_mapping_regex, num_rules_redirect_temporary);
     break;
-  case FORWARD_MAP_WITH_RECV_PORT:
+  case mapping_type::FORWARD_MAP_WITH_RECV_PORT:
     success = _addToStore(forward_mappings_with_recv_port, new_mapping, reg_map, src_host, is_cur_mapping_regex,
                           num_rules_forward_with_recv_port);
     break;
@@ -754,7 +754,7 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
 {
   bool success;
 
-  if (maptype == FORWARD_MAP_WITH_RECV_PORT) {
+  if (maptype == mapping_type::FORWARD_MAP_WITH_RECV_PORT) {
     success = TableInsert(forward_mappings_with_recv_port.hash_lookup, mapping, src_host);
   } else {
     success = TableInsert(forward_mappings.hash_lookup, mapping, src_host);
@@ -762,16 +762,16 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
 
   if (success) {
     switch (maptype) {
-    case FORWARD_MAP:
-    case FORWARD_MAP_REFERER:
-    case FORWARD_MAP_WITH_RECV_PORT:
+    case mapping_type::FORWARD_MAP:
+    case mapping_type::FORWARD_MAP_REFERER:
+    case mapping_type::FORWARD_MAP_WITH_RECV_PORT:
       SetHomePageRedirectFlag(mapping, mapping->toURL);
       break;
     default:
       break;
     }
 
-    (maptype != FORWARD_MAP_WITH_RECV_PORT) ? ++num_rules_forward : ++num_rules_forward_with_recv_port;
+    (maptype != mapping_type::FORWARD_MAP_WITH_RECV_PORT) ? ++num_rules_forward : ++num_rules_forward_with_recv_port;
   }
 
   return success;

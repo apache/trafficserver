@@ -195,11 +195,11 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
 
   if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
     http = new HttpSessionAccept(accept_opt);
-    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP, http);
+    probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP, http);
   }
 
   if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
-    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP2, new Http2SessionAccept(accept_opt));
+    probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP2, new Http2SessionAccept(accept_opt));
   }
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_0, create_h1_server_session});
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_1, create_h1_server_session});

@@ -37,17 +37,17 @@ ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _roun
 
   if (dbg_ctl_parent_select.on()) {
     switch (round_robin_type) {
-    case P_NO_ROUND_ROBIN:
-      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type P_NO_ROUND_ROBIN.");
+    case ParentRR_t::NO_ROUND_ROBIN:
+      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type ParentRR_t::NO_ROUND_ROBIN.");
       break;
-    case P_STRICT_ROUND_ROBIN:
-      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type P_STRICT_ROUND_ROBIN.");
+    case ParentRR_t::STRICT_ROUND_ROBIN:
+      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type ParentRR_t::STRICT_ROUND_ROBIN.");
       break;
-    case P_HASH_ROUND_ROBIN:
-      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type P_HASH_ROUND_ROBIN.");
+    case ParentRR_t::HASH_ROUND_ROBIN:
+      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type ParentRR_t::HASH_ROUND_ROBIN.");
       break;
-    case P_LATCHED_ROUND_ROBIN:
-      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type P_LATCHED_ROUND_ROBIN.");
+    case ParentRR_t::LATCHED_ROUND_ROBIN:
+      DbgPrint(dbg_ctl_parent_select, "Using a round robin parent selection strategy of type ParentRR_t::LATCHED_ROUND_ROBIN.");
       break;
     default:
       // should never see this, there is a problem if you do.
@@ -81,9 +81,9 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       ink_assert(result->rec->go_direct == true);
       // Could not find a parent
       if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-        result->result = PARENT_DIRECT;
+        result->result = ParentResultType::DIRECT;
       } else {
-        result->result = PARENT_FAIL;
+        result->result = ParentResultType::FAIL;
       }
 
       result->hostname = nullptr;
@@ -91,7 +91,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       return;
     } else {
       switch (round_robin_type) {
-      case P_HASH_ROUND_ROBIN:
+      case ParentRR_t::HASH_ROUND_ROBIN:
         // INKqa12817 - make sure to convert to host byte order
         // Why was it important to do host order here?  And does this have any
         // impact with the transition to IPv6?  The IPv4 functionality is
@@ -103,14 +103,14 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
           cur_index = 0;
         }
         break;
-      case P_STRICT_ROUND_ROBIN:
+      case ParentRR_t::STRICT_ROUND_ROBIN:
         cur_index = result->start_parent =
           ink_atomic_increment(reinterpret_cast<uint32_t *>(&result->rec->rr_next), 1) % num_parents;
         break;
-      case P_NO_ROUND_ROBIN:
+      case ParentRR_t::NO_ROUND_ROBIN:
         cur_index = result->start_parent = 0;
         break;
-      case P_LATCHED_ROUND_ROBIN:
+      case ParentRR_t::LATCHED_ROUND_ROBIN:
         cur_index = result->start_parent = latched_parent;
         break;
       default:
@@ -127,9 +127,9 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       if (result->rec->go_direct == true) {
         // Could not find a parent
         if (result->rec->parent_is_proxy == true) {
-          result->result = PARENT_DIRECT;
+          result->result = ParentResultType::DIRECT;
         } else {
-          result->result = PARENT_FAIL;
+          result->result = ParentResultType::FAIL;
         }
         result->hostname = nullptr;
         result->port     = 0;
@@ -176,7 +176,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
 
     if (parentUp == true && host_stat != TS_HOST_STATUS_DOWN) {
       Dbg(dbg_ctl_parent_select, "status for %s: %d", parents[cur_index].hostname, host_stat);
-      result->result      = PARENT_SPECIFIED;
+      result->result      = ParentResultType::SPECIFIED;
       result->hostname    = parents[cur_index].hostname;
       result->port        = parents[cur_index].port;
       result->last_parent = cur_index;
@@ -190,9 +190,9 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
   } while (static_cast<unsigned int>(cur_index) != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-    result->result = PARENT_DIRECT;
+    result->result = ParentResultType::DIRECT;
   } else {
-    result->result = PARENT_FAIL;
+    result->result = ParentResultType::FAIL;
   }
 
   result->hostname = nullptr;

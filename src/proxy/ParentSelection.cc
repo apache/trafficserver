@@ -56,18 +56,6 @@ DbgCtl         ParentResult::dbg_ctl_parent_select{"parent_select"};
 static DbgCtl &dbg_ctl_parent_select{ParentResult::dbg_ctl_parent_select};
 static DbgCtl  dbg_ctl_parent_config{"parent_config"};
 
-//
-//  Config Callback Prototypes
-//
-enum ParentCB_t {
-  PARENT_FILE_CB,
-  PARENT_DEFAULT_CB,
-  PARENT_RETRY_CB,
-  PARENT_ENABLE_CB,
-  PARENT_THRESHOLD_CB,
-  PARENT_DNS_ONLY_CB,
-};
-
 ParentSelectionPolicy::ParentSelectionPolicy()
 {
   int32_t retry_time     = 0;
@@ -115,7 +103,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
   // Check to see if the parent was set through the
   //   api
   if (apiParentExists(rdata)) {
-    result->result       = PARENT_SPECIFIED;
+    result->result       = ParentResultType::SPECIFIED;
     result->hostname     = rdata->api_info->parent_proxy_name;
     result->port         = rdata->api_info->parent_proxy_port;
     result->rec          = extApiRecord;
@@ -141,8 +129,8 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     if (defaultPtr != nullptr) {
       rec = result->rec = defaultPtr;
     } else {
-      result->result = PARENT_DIRECT;
-      Dbg(dbg_ctl_parent_select, "Returning PARENT_DIRECT (no parents were found)");
+      result->result = ParentResultType::DIRECT;
+      Dbg(dbg_ctl_parent_select, "Returning ParentResultType::DIRECT (no parents were found)");
       return;
     }
   }
@@ -153,24 +141,24 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
 
   if (dbg_ctl_parent_select.on()) {
     switch (result->result) {
-    case PARENT_UNDEFINED:
-      DbgPrint(dbg_ctl_parent_select, "PARENT_UNDEFINED");
-      DbgPrint(dbg_ctl_parent_select, "Result for %s was %s", result->url, ParentResultStr[result->result]);
+    case ParentResultType::UNDEFINED:
+      DbgPrint(dbg_ctl_parent_select, "ParentResultType::UNDEFINED");
+      DbgPrint(dbg_ctl_parent_select, "Result for %s was %s", result->url, ParentResultStr[static_cast<int>(result->result)]);
       break;
-    case PARENT_FAIL:
-      DbgPrint(dbg_ctl_parent_select, "PARENT_FAIL");
+    case ParentResultType::FAIL:
+      DbgPrint(dbg_ctl_parent_select, "ParentResultType::FAIL");
       break;
-    case PARENT_DIRECT:
-      DbgPrint(dbg_ctl_parent_select, "PARENT_DIRECT");
-      DbgPrint(dbg_ctl_parent_select, "Result for %s was %s", result->url, ParentResultStr[result->result]);
+    case ParentResultType::DIRECT:
+      DbgPrint(dbg_ctl_parent_select, "ParentResultType::DIRECT");
+      DbgPrint(dbg_ctl_parent_select, "Result for %s was %s", result->url, ParentResultStr[static_cast<int>(result->result)]);
       break;
-    case PARENT_SPECIFIED:
-      DbgPrint(dbg_ctl_parent_select, "PARENT_SPECIFIED");
+    case ParentResultType::SPECIFIED:
+      DbgPrint(dbg_ctl_parent_select, "ParentResultType::SPECIFIED");
       DbgPrint(dbg_ctl_parent_select, "Result for %s was parent %s:%d", result->url, result->hostname, result->port);
       break;
     default:
       // Handled here:
-      // PARENT_AGENT
+      // ParentResultType::AGENT
       break;
     }
   }
@@ -185,19 +173,20 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 
   //  Make sure that we are being called back with a
   //   result structure with a parent
-  ink_assert(result->result == PARENT_SPECIFIED);
-  if (result->result != PARENT_SPECIFIED) {
-    result->result = PARENT_FAIL;
+  ink_assert(result->result == ParentResultType::SPECIFIED);
+  if (result->result != ParentResultType::SPECIFIED) {
+    result->result = ParentResultType::FAIL;
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
   if (result->is_api_result()) {
-    Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->result]);
-    result->result = PARENT_FAIL;
+    Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", rdata->get_host(), ParentResultStr[static_cast<int>(result->result)]);
+    result->result = ParentResultType::FAIL;
     return;
   }
-  Dbg(dbg_ctl_parent_select, "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->result, tablePtr);
+  Dbg(dbg_ctl_parent_select, "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", static_cast<int>(result->result),
+      tablePtr);
 
   // Find the next parent in the array
   Dbg(dbg_ctl_parent_select, "Calling selectParent() from nextParent");
@@ -207,24 +196,24 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 
   if (dbg_ctl_parent_select.on()) {
     switch (result->result) {
-    case PARENT_UNDEFINED:
-      Dbg(dbg_ctl_parent_select, "PARENT_UNDEFINED");
-      Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", host, ParentResultStr[result->result]);
+    case ParentResultType::UNDEFINED:
+      Dbg(dbg_ctl_parent_select, "ParentResultType::UNDEFINED");
+      Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", host, ParentResultStr[static_cast<int>(result->result)]);
       break;
-    case PARENT_FAIL:
-      Dbg(dbg_ctl_parent_select, "PARENT_FAIL");
-      Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", host, ParentResultStr[result->result]);
+    case ParentResultType::FAIL:
+      Dbg(dbg_ctl_parent_select, "ParentResultType::FAIL");
+      Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", host, ParentResultStr[static_cast<int>(result->result)]);
       break;
-    case PARENT_DIRECT:
-      Dbg(dbg_ctl_parent_select, "PARENT_DIRECT");
-      Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", host, ParentResultStr[result->result]);
+    case ParentResultType::DIRECT:
+      Dbg(dbg_ctl_parent_select, "ParentResultType::DIRECT");
+      Dbg(dbg_ctl_parent_select, "Retry result for %s was %s", host, ParentResultStr[static_cast<int>(result->result)]);
       break;
-    case PARENT_SPECIFIED:
+    case ParentResultType::SPECIFIED:
       Dbg(dbg_ctl_parent_select, "Retry result for %s was parent %s:%d", host, result->hostname, result->port);
       break;
     default:
       // Handled here:
-      // PARENT_AGENT
+      // ParentResultType::AGENT
       break;
     }
   }
@@ -336,14 +325,14 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
 
   if (val == nullptr) {
     Warning("UnavailableServerResponseCodes - unavailable_server_retry_responses is null loading default 503 code.");
-    codes.push_back(HTTP_STATUS_SERVICE_UNAVAILABLE);
+    codes.push_back(static_cast<int>(HTTPStatus::SERVICE_UNAVAILABLE));
     return;
   }
   numTok = pTok.Initialize(val, SHARE_TOKS);
   if (numTok == 0) {
     c = atoi(val);
     if (c > 499 && c < 600) {
-      codes.push_back(HTTP_STATUS_SERVICE_UNAVAILABLE);
+      codes.push_back(static_cast<int>(HTTPStatus::SERVICE_UNAVAILABLE));
     }
   }
   for (int i = 0; i < numTok; i++) {
@@ -365,14 +354,14 @@ SimpleRetryResponseCodes::SimpleRetryResponseCodes(char *val)
 
   if (val == nullptr) {
     Warning("SimpleRetryResponseCodes - simple_server_retry_responses is null loading default 404 code.");
-    codes.push_back(HTTP_STATUS_NOT_FOUND);
+    codes.push_back(static_cast<int>(HTTPStatus::NOT_FOUND));
     return;
   }
   numTok = pTok.Initialize(val, SHARE_TOKS);
   if (numTok == 0) {
     c = atoi(val);
     if (c > 399 && c < 600) {
-      codes.push_back(HTTP_STATUS_NOT_FOUND);
+      codes.push_back(static_cast<int>(HTTPStatus::NOT_FOUND));
     }
   }
   for (int i = 0; i < numTok; i++) {
@@ -623,7 +612,7 @@ ParentRecord::DefaultInit(char *val)
     ats_free(errBuf);
     return false;
   } else {
-    ParentRR_t round_robin = P_NO_ROUND_ROBIN;
+    ParentRR_t round_robin = ParentRR_t::NO_ROUND_ROBIN;
     Dbg(dbg_ctl_parent_select, "allocating ParentRoundRobin() lookup strategy.");
     selection_strategy = new ParentRoundRobin(this, round_robin);
     return true;
@@ -648,7 +637,7 @@ ParentRecord::Init(matcher_line *line_info)
   char       *val;
   char        parent_buf[16384] = {0};
   bool        used              = false;
-  ParentRR_t  round_robin       = P_NO_ROUND_ROBIN;
+  ParentRR_t  round_robin       = ParentRR_t::NO_ROUND_ROBIN;
   char        buf[128];
 
   this->line_num = line_info->line_num;
@@ -669,17 +658,17 @@ ParentRecord::Init(matcher_line *line_info)
 
     if (strcasecmp(label, "round_robin") == 0) {
       if (strcasecmp(val, "true") == 0) {
-        round_robin = P_HASH_ROUND_ROBIN;
+        round_robin = ParentRR_t::HASH_ROUND_ROBIN;
       } else if (strcasecmp(val, "strict") == 0) {
-        round_robin = P_STRICT_ROUND_ROBIN;
+        round_robin = ParentRR_t::STRICT_ROUND_ROBIN;
       } else if (strcasecmp(val, "false") == 0) {
-        round_robin = P_NO_ROUND_ROBIN;
+        round_robin = ParentRR_t::NO_ROUND_ROBIN;
       } else if (strcasecmp(val, "consistent_hash") == 0) {
-        round_robin = P_CONSISTENT_HASH;
+        round_robin = ParentRR_t::CONSISTENT_HASH;
       } else if (strcasecmp(val, "latched") == 0) {
-        round_robin = P_LATCHED_ROUND_ROBIN;
+        round_robin = ParentRR_t::LATCHED_ROUND_ROBIN;
       } else {
-        round_robin = P_NO_ROUND_ROBIN;
+        round_robin = ParentRR_t::NO_ROUND_ROBIN;
         errPtr      = "invalid argument to round_robin directive";
       }
       used = true;
@@ -719,11 +708,11 @@ ParentRecord::Init(matcher_line *line_info)
       used = true;
     } else if (strcasecmp(label, "parent_retry") == 0) {
       if (strcasecmp(val, "simple_retry") == 0) {
-        parent_retry = PARENT_RETRY_SIMPLE;
+        parent_retry = ParentRetry_t::SIMPLE;
       } else if (strcasecmp(val, "unavailable_server_retry") == 0) {
-        parent_retry = PARENT_RETRY_UNAVAILABLE_SERVER;
+        parent_retry = ParentRetry_t::UNAVAILABLE_SERVER;
       } else if (strcasecmp(val, "both") == 0) {
-        parent_retry = PARENT_RETRY_BOTH;
+        parent_retry = ParentRetry_t::BOTH;
       } else {
         errPtr = "invalid argument to parent_retry directive.";
       }
@@ -779,24 +768,25 @@ ParentRecord::Init(matcher_line *line_info)
   }
 
   // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
-  if (unavailable_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+  if (unavailable_server_retry_responses != nullptr &&
+      (parent_retry != ParentRetry_t::UNAVAILABLE_SERVER && parent_retry != ParentRetry_t::BOTH)) {
     Warning("%s ignoring unavailable_server_retry_responses directive on line %d, as unavailable_server_retry is not enabled.",
             modulePrefix, line_num);
     delete unavailable_server_retry_responses;
     unavailable_server_retry_responses = nullptr;
-  } else if (unavailable_server_retry_responses == nullptr && parent_retry) {
+  } else if (unavailable_server_retry_responses == nullptr && parent_retry != ParentRetry_t::NONE) {
     // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
     Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
     unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
   }
 
   // delete simple_server_retry_responses if simple_retry is not enabled.
-  if (simple_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_SIMPLE)) {
+  if (simple_server_retry_responses != nullptr && (parent_retry != ParentRetry_t::SIMPLE && parent_retry != ParentRetry_t::BOTH)) {
     Warning("%s ignore simple_server_Retry_responses directive on line %d, as simple_server_retry is not enabled.", modulePrefix,
             line_num);
     delete simple_server_retry_responses;
     simple_server_retry_responses = nullptr;
-  } else if (simple_server_retry_responses == nullptr && parent_retry) {
+  } else if (simple_server_retry_responses == nullptr && parent_retry != ParentRetry_t::NONE) {
     // initialize simple server respones codes to the default value if simple_retry is enabled.
     Warning("%s initializing SimpleRetryResponseCodes on line %d to 404 default.", modulePrefix, line_num);
     simple_server_retry_responses = new SimpleRetryResponseCodes(nullptr);
@@ -824,19 +814,19 @@ ParentRecord::Init(matcher_line *line_info)
   }
 
   switch (round_robin) {
-  // ParentRecord.round_robin defaults to P_NO_ROUND_ROBIN when round_robin
+  // ParentRecord.round_robin defaults to ParentRR_t::NO_ROUND_ROBIN when round_robin
   // is not set in parent.config.  Therefore ParentRoundRobin is the default
   // strategy.  If setting go_direct to true, there should be no parent list
   // in parent.config and ParentRoundRobin::lookup will set parent_result->r
-  // to PARENT_DIRECT.
-  case P_NO_ROUND_ROBIN:
-  case P_STRICT_ROUND_ROBIN:
-  case P_HASH_ROUND_ROBIN:
-  case P_LATCHED_ROUND_ROBIN:
+  // to ParentResultType::DIRECT.
+  case ParentRR_t::NO_ROUND_ROBIN:
+  case ParentRR_t::STRICT_ROUND_ROBIN:
+  case ParentRR_t::HASH_ROUND_ROBIN:
+  case ParentRR_t::LATCHED_ROUND_ROBIN:
     Dbg(dbg_ctl_parent_select, "allocating ParentRoundRobin() lookup strategy.");
     selection_strategy = new ParentRoundRobin(this, round_robin);
     break;
-  case P_CONSISTENT_HASH:
+  case ParentRR_t::CONSISTENT_HASH:
     Dbg(dbg_ctl_parent_select, "allocating ParentConsistentHash() lookup strategy.");
     selection_strategy = new ParentConsistentHash(this);
     break;
@@ -1144,9 +1134,9 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     REINIT;
     br(request, "fruit_basket.net");
     FP;
-    red    += verify(result, PARENT_SPECIFIED, "red", 37412);
-    orange += verify(result, PARENT_SPECIFIED, "orange", 37412);
-    yellow += verify(result, PARENT_SPECIFIED, "yellow", 37412);
+    red    += verify(result, ParentResultType::SPECIFIED, "red", 37412);
+    orange += verify(result, ParentResultType::SPECIFIED, "orange", 37412);
+    yellow += verify(result, ParentResultType::SPECIFIED, "yellow", 37412);
   }
   RE(((red == 7) && (orange == 7) && (yellow == 7)), 1);
   // Test 2
@@ -1159,10 +1149,10 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     REINIT;
     br(request, "fruit_basket.net");
     FP;
-    g += verify(result, PARENT_SPECIFIED, "green", 4325);
-    b += verify(result, PARENT_SPECIFIED, "blue", 4325);
-    i += verify(result, PARENT_SPECIFIED, "indigo", 4325);
-    v += verify(result, PARENT_SPECIFIED, "violet", 4325);
+    g += verify(result, ParentResultType::SPECIFIED, "green", 4325);
+    b += verify(result, ParentResultType::SPECIFIED, "blue", 4325);
+    i += verify(result, ParentResultType::SPECIFIED, "indigo", 4325);
+    v += verify(result, ParentResultType::SPECIFIED, "violet", 4325);
   }
   RE((((g == 17) && !b && !i && !v) || (!g && (b == 17) && !i && !v) || (!g && !b && (i == 17) && !v) ||
       (!g && !b && !i && (v == 17))),
@@ -1196,19 +1186,19 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "numeric_host", &ip.sa);
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "cat", 37) + verify(result, PARENT_SPECIFIED, "dog", 24), 3);
+  RE(verify(result, ParentResultType::SPECIFIED, "cat", 37) + verify(result, ParentResultType::SPECIFIED, "dog", 24), 3);
   ats_ip_pton(TEST_IP6_ADDR, &ip.sa);
   ST(4);
   REINIT;
   br(request, "numeric_host", &ip.sa);
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "zwoop", 37) + verify(result, PARENT_SPECIFIED, "jMCg", 24), 4);
+  RE(verify(result, ParentResultType::SPECIFIED, "zwoop", 37) + verify(result, ParentResultType::SPECIFIED, "jMCg", 24), 4);
   // Test 5
   ST(5);
   REINIT;
   br(request, "www.pilot.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "pilot_net", 80), 5);
+  RE(verify(result, ParentResultType::SPECIFIED, "pilot_net", 80), 5);
   // Test 6
   ST(6);
   REINIT;
@@ -1216,25 +1206,25 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   auto snoopy_dog = "http://www.snoopy.com/"sv;
   request->hdr->url_set(snoopy_dog);
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "odie", 80) + verify(result, PARENT_SPECIFIED, "garfield", 80), 5);
+  RE(verify(result, ParentResultType::SPECIFIED, "odie", 80) + verify(result, ParentResultType::SPECIFIED, "garfield", 80), 5);
   // Test 7
   ST(7);
   REINIT;
   br(request, "a.rabbit.i.am");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "amy", 80) + verify(result, PARENT_SPECIFIED, "katie", 80) +
-       verify(result, PARENT_SPECIFIED, "carissa", 771),
+  RE(verify(result, ParentResultType::SPECIFIED, "amy", 80) + verify(result, ParentResultType::SPECIFIED, "katie", 80) +
+       verify(result, ParentResultType::SPECIFIED, "carissa", 771),
      6);
   // Test 6+ BUGBUG needs to be fixed
   //   ST(7); REINIT;
   //   br(request, "www.microsoft.net");
-  //   FP; RE( verify(result,PARENT_SPECIFIED,"zoo.net",341) +
-  //       verify(result,PARENT_SPECIFIED,"zoo.net",347) +
-  //       verify(result,PARENT_SPECIFIED,"zoo.edu",111) ,7);
+  //   FP; RE( verify(result,ParentResultType::SPECIFIED,"zoo.net",341) +
+  //       verify(result,ParentResultType::SPECIFIED,"zoo.net",347) +
+  //       verify(result,ParentResultType::SPECIFIED,"zoo.edu",111) ,7);
   // Test 6++ BUGBUG needs to be fixed
   //   ST(7); REINIT;
   //   br(request, "snow.imac.net:2020");
-  //   FP; RE(verify(result,PARENT_DIRECT,0,0),7);
+  //   FP; RE(verify(result,ParentResultType::DIRECT,0,0),7);
   // Test 6+++ BUGBUG needs to be fixed
   //   ST(8); REINIT;
   //   br(request, "snow.imac.net:819");
@@ -1246,7 +1236,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   //   request->hdr->url_set(u);
   //   ink_assert(request->hdr->url_get()->port_get() == 819);
   //   printf("url: %s\n",request->hdr->url_get()->string_get(0));
-  //   FP; RE(verify(result,PARENT_SPECIFIED,"genie",80),8);
+  //   FP; RE(verify(result,ParentResultType::SPECIFIED,"genie",80),8);
   // Test 7 - N Parent Table
   tbl[0] = '\0';
   T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=strict go_direct=true\n");
@@ -1256,7 +1246,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 7);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 7);
   params->markParentDown(result, fail_threshold, retry_time);
 
   // Test 9
@@ -1264,44 +1254,44 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 8);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 8);
   // Test 10
   ST(10);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 9);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 9);
   // Test 11
   ST(11);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 10);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 10);
   // restart the loop
   // Test 12
   ST(12);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 11);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 11);
   // Test 13
   ST(13);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 12);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 12);
   // Test 14
   ST(14);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 13);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 13);
   // Test 15
   ST(15);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 14);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 14);
   params->markParentDown(result, fail_threshold, retry_time);
 
   // restart the loop
@@ -1311,44 +1301,44 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 15);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 15);
   // Test 17
   ST(17);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 16);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 16);
   // Test 18
   ST(18);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 17);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 17);
   // Test 19
   ST(19);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 18);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 18);
   // restart the loop
   // Test 20
   ST(20);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 19);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 19);
   // Test 21
   ST(21);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 20);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 20);
   // Test 22
   ST(22);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 21);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 21);
   params->markParentDown(result, fail_threshold, retry_time);
 
   // Test 23 - 32
@@ -1357,7 +1347,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     REINIT;
     br(request, "i.am.rabbit.net");
     FP;
-    RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i);
+    RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), i);
   }
 
   params->markParentDown(result, 1, 5); // now they're all down
@@ -1368,7 +1358,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     REINIT;
     br(request, "i.am.rabbit.net");
     FP;
-    RE(verify(result, PARENT_DIRECT, nullptr, 0), i);
+    RE(verify(result, ParentResultType::DIRECT, nullptr, 0), i);
   }
 
   // sleep(5); // parents should come back up; they don't
@@ -1386,16 +1376,16 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     sleep(1);
     switch (i % 4) {
     case 0:
-      RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), i);
+      RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), i);
       break;
     case 1:
-      RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i);
+      RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), i);
       break;
     case 2:
-      RE(verify(result, PARENT_SPECIFIED, "furry", 80), i);
+      RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), i);
       break;
     case 3:
-      RE(verify(result, PARENT_SPECIFIED, "frisky", 80), i);
+      RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), i);
       break;
     default:
       ink_assert(0);
@@ -1412,7 +1402,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 173);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 173);
   params->markParentDown(result, fail_threshold, retry_time); // fuzzy is down.
 
   // Test 174
@@ -1421,7 +1411,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 174);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 174);
 
   params->markParentDown(result, fail_threshold, retry_time); // frisky is down.
 
@@ -1431,7 +1421,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 175);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 175);
 
   params->markParentDown(result, fail_threshold, retry_time); // frisky is down.
 
@@ -1441,7 +1431,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 176);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 176);
 
   params->markParentDown(result, fail_threshold, retry_time); // all are down now.
 
@@ -1451,7 +1441,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_FAIL, nullptr, 80), 177);
+  RE(verify(result, ParentResultType::FAIL, nullptr, 80), 177);
 
   // Test 178
   tbl[0] = '\0';
@@ -1463,7 +1453,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 178);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 178);
 
   params->markParentDown(result, fail_threshold, retry_time); // fuzzy is down
 
@@ -1473,7 +1463,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 179);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 179);
 
   params->markParentDown(result, fail_threshold, retry_time); // fluffy is down
 
@@ -1483,7 +1473,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 180);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 180);
 
   params->markParentDown(result, fail_threshold, retry_time); // furry is down
 
@@ -1493,7 +1483,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 181);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 181);
 
   params->markParentDown(result, fail_threshold, retry_time); // frisky is down and we should be back on fuzzy.
 
@@ -1503,7 +1493,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_FAIL, nullptr, 80), 182);
+  RE(verify(result, ParentResultType::FAIL, nullptr, 80), 182);
 
   // wait long enough so that fuzzy is retryable.
   sleep(params->policy.ParentRetryTime - 2);
@@ -1514,7 +1504,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 183);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 183);
 
   // Test 184
   // mark fuzzy down with HostStatus API.
@@ -1525,7 +1515,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 184);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 184);
 
   // Test 185
   // mark fluffy down and expect furry to be chosen
@@ -1536,7 +1526,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 185);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 185);
 
   // Test 186
   // mark furry and frisky down, fuzzy up and expect fuzzy to be chosen
@@ -1549,7 +1539,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 186);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 186);
 
   // Test 187
   // test the HostStatus API with ParentConsistent Hash.
@@ -1569,7 +1559,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 187);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 187);
 
   // Test 188
   // mark fuzzy down and expect fluffy.
@@ -1580,7 +1570,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 188);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 188);
 
   // Test 189
   // mark fuzzy back up and expect fuzzy.
@@ -1591,7 +1581,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 189);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 189);
 
   // Test 190
   // mark fuzzy back down and set the host status down
@@ -1607,7 +1597,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 190);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 190);
 
   // now set the host status on fuzzy to up and it should now
   // be retried.
@@ -1616,7 +1606,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 191);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 191);
 
   // Test 192
   tbl[0] = '\0';
@@ -1633,7 +1623,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 192);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 192);
 
   // Test 193
   // mark fuzzy down and wait for it to become retryable
@@ -1646,7 +1636,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 193);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 193);
 
   // Test 194
   // set the host status for fuzzy  back up and since its
@@ -1656,7 +1646,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 194);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 194);
 
   // Test 195
   // secondary_mode=1 (default) is covered by tests cases 173-177 above
@@ -1671,7 +1661,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 195);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 195);
   params->markParentDown(result, fail_threshold, retry_time); // fuzzy is down.
 
   // Test 196
@@ -1680,7 +1670,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 196);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 196);
 
   params->markParentDown(result, fail_threshold, retry_time); // fluffy is down.
 
@@ -1690,7 +1680,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 197);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 197);
 
   params->markParentDown(result, fail_threshold, retry_time); // frisky is down.
 
@@ -1700,7 +1690,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 198);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 198);
 
   params->markParentDown(result, fail_threshold, retry_time); // all are down now.
 
@@ -1710,7 +1700,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_FAIL, nullptr, 80), 199);
+  RE(verify(result, ParentResultType::FAIL, nullptr, 80), 199);
 
   // Test 200
   // secondary_mode=3 is tested here first-choice NOT marked down
@@ -1724,7 +1714,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 200);
+  RE(verify(result, ParentResultType::SPECIFIED, "fuzzy", 80), 200);
   params->markParentDown(result, fail_threshold, retry_time); // fuzzy is down.
 
   // Test 201
@@ -1733,7 +1723,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 201);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 201);
 
   params->markParentDown(result, fail_threshold, retry_time); // fluffy is down.
 
@@ -1743,7 +1733,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 202);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 202);
 
   params->markParentDown(result, fail_threshold, retry_time); // frisky is down.
 
@@ -1753,7 +1743,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 203);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 203);
 
   params->markParentDown(result, fail_threshold, retry_time); // all are down now.
 
@@ -1763,7 +1753,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_FAIL, nullptr, 80), 204);
+  RE(verify(result, ParentResultType::FAIL, nullptr, 80), 204);
 
   // Test 205
   // secondary_mode=3 is tested here first-choice marked down
@@ -1778,7 +1768,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 205);
+  RE(verify(result, ParentResultType::SPECIFIED, "frisky", 80), 205);
   params->markParentDown(result, fail_threshold, retry_time); // frisky is down.
 
   // Test 206
@@ -1787,7 +1777,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 206);
+  RE(verify(result, ParentResultType::SPECIFIED, "furry", 80), 206);
 
   params->markParentDown(result, fail_threshold, retry_time); // furry is down.
 
@@ -1797,7 +1787,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 207);
+  RE(verify(result, ParentResultType::SPECIFIED, "fluffy", 80), 207);
 
   params->markParentDown(result, fail_threshold, retry_time); // all are down now.
 
@@ -1807,7 +1797,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_FAIL, nullptr, 80), 208);
+  RE(verify(result, ParentResultType::FAIL, nullptr, 80), 208);
 
   // Tests 209 through 211 test that host selection is based upon the hash_string
 
@@ -1821,7 +1811,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.stooges.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "larry", 80), 209);
+  RE(verify(result, ParentResultType::SPECIFIED, "larry", 80), 209);
 
   // Test 210
   // fuzzy { curly larry, moe } fluffy
@@ -1833,7 +1823,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.stooges.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "curly", 80), 210);
+  RE(verify(result, ParentResultType::SPECIFIED, "curly", 80), 210);
 
   // Test 211
   // fuzzy { curly larry, moe } fluffy
@@ -1847,7 +1837,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   _st.setHostStatus("curly", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
   br(request, "i.am.stooges.net");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "carol", 80), 211);
+  RE(verify(result, ParentResultType::SPECIFIED, "carol", 80), 211);
 
   // Test 212
   tbl[0] = '\0';
@@ -1858,7 +1848,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.mouse.com");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "goofy", 80), 212);
+  RE(verify(result, ParentResultType::SPECIFIED, "goofy", 80), 212);
 
   // Test 213
   // markdown goofy and minnie gets chosen.
@@ -1867,7 +1857,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REINIT;
   br(request, "i.am.mouse.com");
   FP;
-  RE(verify(result, PARENT_SPECIFIED, "minnie", 80), 213);
+  RE(verify(result, ParentResultType::SPECIFIED, "minnie", 80), 213);
 
   delete request;
   delete result;
@@ -1884,7 +1874,7 @@ verify(ParentResult *r, ParentResultType e, const char *h, int p)
   if (dbg_ctl_parent_select.on()) {
     show_result(r);
   }
-  return (r->result != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));
+  return (r->result != e) ? 0 : ((e != ParentResultType::SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));
 }
 
 // br creates an HttpRequestData object
@@ -1892,7 +1882,7 @@ void
 br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
 {
   h->hdr = new HTTPHdr();
-  h->hdr->create(HTTP_TYPE_REQUEST);
+  h->hdr->create(HTTPType::REQUEST);
   h->hostname_str = ats_strdup(os_hostname);
   h->xact_start   = time(nullptr);
   ink_zero(h->src_ip);
@@ -1907,23 +1897,23 @@ void
 show_result(ParentResult *p)
 {
   switch (p->result) {
-  case PARENT_UNDEFINED:
-    printf("result is PARENT_UNDEFINED\n");
+  case ParentResultType::UNDEFINED:
+    printf("result is ParentResultType::UNDEFINED\n");
     break;
-  case PARENT_DIRECT:
-    printf("result is PARENT_DIRECT\n");
+  case ParentResultType::DIRECT:
+    printf("result is ParentResultType::DIRECT\n");
     break;
-  case PARENT_SPECIFIED:
-    printf("result is PARENT_SPECIFIED\n");
+  case ParentResultType::SPECIFIED:
+    printf("result is ParentResultType::SPECIFIED\n");
     printf("hostname is %s\n", p->hostname);
     printf("port is %d\n", p->port);
     break;
-  case PARENT_FAIL:
-    printf("result is PARENT_FAIL\n");
+  case ParentResultType::FAIL:
+    printf("result is ParentResultType::FAIL\n");
     break;
   default:
     // Handled here:
-    // PARENT_AGENT
+    // ParentResultType::AGENT
     break;
   }
 }

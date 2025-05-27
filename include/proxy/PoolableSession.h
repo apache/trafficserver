@@ -34,7 +34,7 @@ class PoolableSession : public ProxySession
   using super_type = ProxySession;
 
 public:
-  enum PooledState {
+  enum class PooledState {
     INIT,
     SSN_IN_USE,    // actively in use
     KA_RESERVED,   // stuck to client
@@ -71,7 +71,7 @@ public:
   } _fqdn_link;
 
   CryptoHash  hostname_hash;
-  PooledState state = INIT;
+  PooledState state = PooledState::INIT;
 
   // Copy of the owning SM's server session sharing settings
   TSServerSessionSharingMatchMask sharing_match = TS_SERVER_SESSION_SHARING_MATCH_MASK_NONE;
@@ -112,12 +112,12 @@ private:
 inline void
 PoolableSession::set_active()
 {
-  state = SSN_IN_USE;
+  state = PooledState::SSN_IN_USE;
 }
 inline bool
 PoolableSession::is_active()
 {
-  return state == SSN_IN_USE;
+  return state == PooledState::SSN_IN_USE;
 }
 inline void
 PoolableSession::set_private(bool new_private)

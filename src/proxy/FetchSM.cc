@@ -144,7 +144,6 @@ FetchSM::InvokePlugin(int event, void *data)
 bool
 FetchSM::has_body()
 {
-  int      status_code;
   HTTPHdr *hdr;
 
   if (!header_done) {
@@ -161,8 +160,7 @@ FetchSM::has_body()
 
   hdr = &client_response_hdr;
 
-  status_code = hdr->status_get();
-  if (status_code < 200 || status_code == 204 || status_code == 304) {
+  if (auto status_code{static_cast<int>(hdr->status_get())}; status_code < 200 || status_code == 204 || status_code == 304) {
     return false;
   }
 
@@ -234,10 +232,10 @@ FetchSM::check_chunked()
 
     if (resp_is_chunked && (fetch_flags & TS_FETCH_FLAGS_DECHUNK)) {
       ChunkedHandler *ch = &chunked_handler;
-      ch->init_by_action(resp_reader, ChunkedHandler::ACTION_DECHUNK, HttpTunnel::DROP_CHUNKED_TRAILERS,
+      ch->init_by_action(resp_reader, ChunkedHandler::Action::DECHUNK, HttpTunnel::DROP_CHUNKED_TRAILERS,
                          HttpTunnel::PARSE_CHUNK_STRICTLY);
       ch->dechunked_reader = ch->dechunked_buffer->alloc_reader();
-      ch->state            = ChunkedHandler::CHUNK_READ_SIZE;
+      ch->state            = ChunkedHandler::ChunkedState::READ_SIZE;
       resp_reader->dealloc();
     }
   }
@@ -356,8 +354,8 @@ FetchSM::InvokePluginExt(int fetch_event)
     }
   } else if (fetch_flags & TS_FETCH_FLAGS_DECHUNK) {
     do {
-      if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
-        chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;
+      if (chunked_handler.state == ChunkedHandler::ChunkedState::FLOW_CONTROL) {
+        chunked_handler.state = ChunkedHandler::ChunkedState::READ_SIZE_START;
       }
 
       event = dechunk_body();
@@ -373,7 +371,7 @@ FetchSM::InvokePluginExt(int fetch_event)
         goto out;
       }
 
-    } while (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL);
+    } while (chunked_handler.state == ChunkedHandler::ChunkedState::FLOW_CONTROL);
   } else if (check_body_done()) {
     contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_DONE, this);
   } else {
@@ -428,7 +426,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
   if (header_done == 0 && read_done > 0) {
     int bytes_used = 0;
     header_done    = true;
-    if (client_response_hdr.parse_resp(&http_parser, reader, &bytes_used, 0) == PARSE_RESULT_DONE) {
+    if (client_response_hdr.parse_resp(&http_parser, reader, &bytes_used, 0) == ParseResult::DONE) {
       if ((bytes_used > 0) && (bytes_used <= read_avail)) {
         memcpy(info, buf, bytes_used);
         info         += bytes_used;
@@ -470,8 +468,8 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
 
   reader = chunked_handler.dechunked_reader;
   do {
-    if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
-      chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;
+    if (chunked_handler.state == ChunkedHandler::ChunkedState::FLOW_CONTROL) {
+      chunked_handler.state = ChunkedHandler::ChunkedState::READ_SIZE_START;
     }
 
     if (!dechunk_body()) {
@@ -499,7 +497,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
         client_bytes += read_done;
       }
     }
-  } while (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL);
+  } while (chunked_handler.state == ChunkedHandler::ChunkedState::FLOW_CONTROL);
 
   client_response[client_bytes] = '\0';
   return;
@@ -534,7 +532,7 @@ FetchSM::process_fetch_read(int event)
     }
 
     if (header_done == 0 && ((fetch_flags & TS_FETCH_FLAGS_STREAM) || callback_options == AFTER_HEADER)) {
-      if (client_response_hdr.parse_resp(&http_parser, resp_reader, &bytes_used, false) == PARSE_RESULT_DONE) {
+      if (client_response_hdr.parse_resp(&http_parser, resp_reader, &bytes_used, false) == ParseResult::DONE) {
         header_done = true;
         if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
           return InvokePluginExt();

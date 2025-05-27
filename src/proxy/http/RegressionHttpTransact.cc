@@ -38,7 +38,7 @@ static void
 init_sm(HttpSM *sm)
 {
   sm->init();
-  sm->t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST, HTTP_1_1, nullptr);
+  sm->t_state.hdr_info.client_request.create(HTTPType::REQUEST, HTTP_1_1, nullptr);
 }
 
 static void

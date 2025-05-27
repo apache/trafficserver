@@ -97,13 +97,13 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
     if (n["hash_url"]) {
       auto hash_url_val = n["hash_url"].Scalar();
       if (hash_url_val == hash_url_request) {
-        hash_url = NH_HASH_URL_REQUEST;
+        hash_url = NHHashUrlType::REQUEST;
       } else if (hash_url_val == hash_url_cache) {
-        hash_url = NH_HASH_URL_CACHE;
+        hash_url = NHHashUrlType::CACHE;
       } else if (hash_url_val == hash_url_parent) {
-        hash_url = NH_HASH_URL_PARENT;
+        hash_url = NHHashUrlType::PARENT;
       } else {
-        hash_url = NH_HASH_URL_REQUEST;
+        hash_url = NHHashUrlType::REQUEST;
         NH_Note("Invalid 'hash_url' value, '%s', for the strategy named '%s', using default '%s'.", hash_url_val.c_str(),
                 strategy_name.c_str(), hash_url_request.data());
       }
@@ -117,20 +117,20 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
     if (n["hash_key"]) {
       auto hash_key_val = n["hash_key"].Scalar();
       if (hash_key_val == hash_key_url) {
-        hash_key = NH_URL_HASH_KEY;
+        hash_key = NHHashKeyType::URL_HASH_KEY;
       } else if (hash_key_val == hash_key_hostname) {
-        hash_key = NH_HOSTNAME_HASH_KEY;
+        hash_key = NHHashKeyType::HOSTNAME_HASH_KEY;
       } else if (hash_key_val == hash_key_path) {
-        hash_key = NH_PATH_HASH_KEY;
+        hash_key = NHHashKeyType::PATH_HASH_KEY;
       } else if (hash_key_val == hash_key_path_query) {
-        hash_key = NH_PATH_QUERY_HASH_KEY;
+        hash_key = NHHashKeyType::PATH_QUERY_HASH_KEY;
       } else if (hash_key_val == hash_key_path_fragment) {
-        hash_key = NH_PATH_FRAGMENT_HASH_KEY;
+        hash_key = NHHashKeyType::PATH_FRAGMENT_HASH_KEY;
       } else if (hash_key_val == hash_key_cache) {
         // ToDo: Deprecated in 10.0.x, remove in 11.0.0
-        hash_key = NH_CACHE_HASH_KEY;
+        hash_key = NHHashKeyType::CACHE_HASH_KEY;
       } else {
-        hash_key = NH_PATH_HASH_KEY;
+        hash_key = NHHashKeyType::PATH_HASH_KEY;
         NH_Note("Invalid 'hash_key' value, '%s', for the strategy named '%s', using default '%s'.", hash_key_val.c_str(),
                 strategy_name.c_str(), hash_key_path.data());
       }
@@ -173,14 +173,14 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
   const char *url_string_ref = nullptr;
 
   switch (hash_url) {
-  case NH_HASH_URL_REQUEST:
+  case NHHashUrlType::REQUEST:
     break;
-  case NH_HASH_URL_CACHE:
+  case NHHashUrlType::CACHE:
     if (hrdata.cache_info_lookup_url) {
       url = *(hrdata.cache_info_lookup_url);
     }
     break;
-  case NH_HASH_URL_PARENT:
+  case NHHashUrlType::PARENT:
     if (hrdata.cache_info_parent_selection_url) {
       url = *(hrdata.cache_info_parent_selection_url);
     }
@@ -194,7 +194,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
 
   // calculate a hash using the selected config.
   switch (hash_key) {
-  case NH_URL_HASH_KEY:
+  case NHHashKeyType::URL_HASH_KEY:
     url_string_ref = url->string_get_ref(&len, URLNormalize::LC_SCHEME_HOST);
     if (url_string_ref && len > 0) {
       h->update(url_string_ref, len);
@@ -202,13 +202,13 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     }
     break;
   // hostname hash
-  case NH_HOSTNAME_HASH_KEY:
+  case NHHashKeyType::HOSTNAME_HASH_KEY:
     if (auto host{url->host_get()}; !host.empty()) {
       h->update(host.data(), host.length());
     }
     break;
   // path + query string
-  case NH_PATH_QUERY_HASH_KEY:
+  case NHHashKeyType::PATH_QUERY_HASH_KEY:
     h->update("/", 1);
     if (auto path{url->path_get()}; !path.empty()) {
       h->update(path.data(), path.length());
@@ -219,7 +219,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     }
     break;
   // path + fragment hash
-  case NH_PATH_FRAGMENT_HASH_KEY:
+  case NHHashKeyType::PATH_FRAGMENT_HASH_KEY:
     h->update("/", 1);
     if (auto path{url->path_get()}; !path.empty()) {
       h->update(path.data(), path.length());
@@ -231,7 +231,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     break;
   // use the cache key created by the TSCacheUrlSet() API (e.g. the cachekey plugin)
   // ToDo: Deprecated in 10.0.x, remove in 11.0.0
-  case NH_CACHE_HASH_KEY:
+  case NHHashKeyType::CACHE_HASH_KEY:
     if (hrdata.cache_info_parent_selection_url && *(hrdata.cache_info_parent_selection_url)) {
       url            = *(hrdata.cache_info_parent_selection_url);
       url_string_ref = url->string_get_ref(&len);
@@ -250,7 +250,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     }
     break;
   // use the path as the hash, default.
-  case NH_PATH_HASH_KEY:
+  case NHHashKeyType::PATH_HASH_KEY:
   default:
     h->update("/", 1);
     if (auto path{url->path_get()}; !path.empty()) {
@@ -288,7 +288,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
   std::string_view            first_call_host;
   int                         first_call_port = 0;
 
-  if (result.line_number == -1 && result.result == PARENT_UNDEFINED) {
+  if (result.line_number == -1 && result.result == ParentResultType::UNDEFINED) {
     firstcall = true;
   }
 
@@ -299,7 +299,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
   // will instead just increment the hash table iterator to find the next parent on the ring
   if (firstcall) {
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] firstcall, line_number: %d, result: %s", sm_id, result.line_number,
-           ParentResultStr[result.result]);
+           ParentResultStr[static_cast<int>(result.result)]);
     result.line_number = distance;
     cur_ring           = 0;
     for (uint32_t i = 0; i < groups; i++) {
@@ -313,16 +313,16 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
       first_call_port = result.port;
     }
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] not firstcall, line_number: %d, result: %s", sm_id, result.line_number,
-           ParentResultStr[result.result]);
+           ParentResultStr[static_cast<int>(result.result)]);
     switch (ring_mode) {
-    case NH_ALTERNATE_RING:
+    case NHRingMode::ALTERNATE_RING:
       if (groups > 1) {
         cur_ring = (result.last_group + 1) % groups;
       } else {
         cur_ring = result.last_group;
       }
       break;
-    case NH_PEERING_RING:
+    case NHRingMode::PEERING_RING:
       if (groups == 1) {
         result.last_group = cur_ring = NO_RING_USE_POST_REMAP;
       } else {
@@ -332,7 +332,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
         result.last_group = cur_ring = 1;
       }
       break;
-    case NH_EXHAUST_RING:
+    case NHRingMode::EXHAUST_RING:
     default:
       cur_ring = result.last_group;
       break;
@@ -371,7 +371,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
         if (firstcall) {
           result.first_choice_status = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
           // if peering and the selected host is myself, change rings and search for an upstream parent.
-          if (ring_mode == NH_PEERING_RING && (pRec->self || is_self)) {
+          if (ring_mode == NHRingMode::PEERING_RING && (pRec->self || is_self)) {
             if (groups == 1) {
               // use host from post-remap URL
               cur_ring = NO_RING_USE_POST_REMAP;
@@ -400,7 +400,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
             result.last_parent = pRec->host_index;
             result.last_lookup = pRec->group_index;
             result.retry       = nextHopRetry;
-            result.result      = PARENT_SPECIFIED;
+            result.result      = ParentResultType::SPECIFIED;
             NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] next hop %s is now retryable", sm_id, pRec->hostname.c_str());
             break;
           }
@@ -413,14 +413,14 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
       }
       // try other rings per the ring mode
       switch (ring_mode) {
-      case NH_ALTERNATE_RING:
+      case NHRingMode::ALTERNATE_RING:
         if (pRec && groups > 0) {
           cur_ring = (pRec->group_index + 1) % groups;
         } else {
           cur_ring = 0;
         }
         break;
-      case NH_EXHAUST_RING:
+      case NHRingMode::EXHAUST_RING:
       default:
         if (wrap_around[cur_ring] && groups > 1) {
           cur_ring = (cur_ring + 1) % groups;
@@ -447,23 +447,23 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
   // ----------------------------------------------------------------------------------------------------
 
   if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available.load() || result.retry)) {
-    result.result      = PARENT_SPECIFIED;
+    result.result      = ParentResultType::SPECIFIED;
     result.hostname    = pRec->hostname.c_str();
     result.last_parent = pRec->host_index;
     result.last_lookup = result.last_group = cur_ring;
     switch (scheme) {
-    case NH_SCHEME_NONE:
-    case NH_SCHEME_HTTP:
+    case NHSchemeType::NONE:
+    case NHSchemeType::HTTP:
       result.port = pRec->getPort(scheme);
       break;
-    case NH_SCHEME_HTTPS:
+    case NHSchemeType::HTTPS:
       result.port = pRec->getPort(scheme);
       break;
     }
     result.retry = nextHopRetry;
     // if using a peering ring mode and the parent selected came from the 'peering' group,
     // cur_ring == 0, then if the config allows it, set the flag to not cache the result.
-    if (ring_mode == NH_PEERING_RING && !cache_peer_result && cur_ring == 0) {
+    if (ring_mode == NHRingMode::PEERING_RING && !cache_peer_result && cur_ring == 0) {
       result.do_not_cache_response = true;
 
       NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] setting do not cache response from a peer per config: %s", sm_id,
@@ -472,27 +472,27 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
 
     // We want to use the pristine/pre-remap URL when going to a peer so it can handle
     // the request without needing extra remaps to handle the post-remap URL
-    if (ring_mode == NH_PEERING_RING && cur_ring == 0 && use_pristine) {
+    if (ring_mode == NHRingMode::PEERING_RING && cur_ring == 0 && use_pristine) {
       result.use_pristine = true;
       NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] setting use pristine to true", sm_id);
     }
 
     ink_assert(result.hostname != nullptr);
     ink_assert(result.port != 0);
-    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result->result: %s Chosen parent: %s.%d", sm_id, ParentResultStr[result.result],
-           result.hostname, result.port);
+    NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result->result: %s Chosen parent: %s.%d", sm_id,
+           ParentResultStr[static_cast<int>(result.result)], result.hostname, result.port);
   } else {
     if (go_direct == true) {
-      result.result = PARENT_DIRECT;
+      result.result = ParentResultType::DIRECT;
     } else {
-      result.result = PARENT_FAIL;
+      result.result = ParentResultType::FAIL;
     }
     result.hostname = nullptr;
     result.port     = 0;
     result.retry    = false;
 
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result.result: %s set hostname null port 0 retry false", sm_id,
-           ParentResultStr[result.result]);
+           ParentResultStr[static_cast<int>(result.result)]);
   }
 
   setHostHeader(txnp, result.hostname);

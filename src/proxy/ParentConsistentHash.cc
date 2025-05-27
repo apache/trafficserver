@@ -155,9 +155,9 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   // Should only get into this state if we are supposed to go direct.
   if (parents[PRIMARY] == nullptr && parents[SECONDARY] == nullptr) {
     if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-      result->result = PARENT_DIRECT;
+      result->result = ParentResultType::DIRECT;
     } else {
-      result->result = PARENT_FAIL;
+      result->result = ParentResultType::FAIL;
     }
     result->hostname = nullptr;
     result->port     = 0;
@@ -244,7 +244,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
           result->last_parent = pRec->idx;
           result->last_lookup = last_lookup;
           result->retry       = parentRetry;
-          result->result      = PARENT_SPECIFIED;
+          result->result      = ParentResultType::SPECIFIED;
           break;
         }
       }
@@ -329,7 +329,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
     }
   }
   if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available.load() || result->retry)) {
-    result->result      = PARENT_SPECIFIED;
+    result->result      = ParentResultType::SPECIFIED;
     result->hostname    = pRec->hostname;
     result->port        = pRec->port;
     result->last_parent = pRec->idx;
@@ -340,9 +340,9 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
     Dbg(dbg_ctl_parent_select, "Chosen parent: %s.%d", result->hostname, result->port);
   } else {
     if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-      result->result = PARENT_DIRECT;
+      result->result = ParentResultType::DIRECT;
     } else {
-      result->result = PARENT_FAIL;
+      result->result = ParentResultType::FAIL;
     }
     result->hostname = nullptr;
     result->port     = 0;
@@ -377,8 +377,8 @@ ParentConsistentHash::markParentUp(ParentResult *result)
   //  Make sure that we are being called back with a
   //   result structure with a parent that is being retried
   ink_release_assert(result->retry == true);
-  ink_assert(result->result == PARENT_SPECIFIED);
-  if (result->result != PARENT_SPECIFIED) {
+  ink_assert(result->result == ParentResultType::SPECIFIED);
+  if (result->result != ParentResultType::SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover

@@ -168,7 +168,7 @@ for i in range(num_object):
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    "grep -e '^+++' -e '^[A-Z].*TTP/' -e '^.alts. --' -e 'PARENT_SPECIFIED' trace_peer*.log"
+    "grep -e '^+++' -e '^[A-Z].*TTP/' -e '^.alts. --' -e 'ParentResultType::SPECIFIED' trace_peer*.log"
     " | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'")
 tr.Processes.Default.Streams.stdout = "trace.gold"
 tr.Processes.Default.ReturnCode = 0

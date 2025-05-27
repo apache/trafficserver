@@ -34,10 +34,10 @@
 
 using cache_generation_t = int64_t;
 
-enum URLType {
-  URL_TYPE_NONE,
-  URL_TYPE_HTTP,
-  URL_TYPE_HTTPS,
+enum class URLType : uint8_t {
+  NONE,
+  HTTP,
+  HTTPS,
 };
 
 class URLImpl : public HdrHeapObjImpl
@@ -71,7 +71,7 @@ public:
   // Tokenized values
   int16_t  m_scheme_wks_idx;
   uint16_t m_port;
-  uint8_t  m_url_type;  // e.g. HTTP
+  URLType  m_url_type;  // e.g. HTTP
   uint8_t  m_type_code; // RFC 1738 limits type code to 1 char
   // 6 bytes
 
@@ -95,8 +95,8 @@ public:
   void             set_port(HdrHeap *heap, std::string_view value, bool copy_string);
   std::string_view get_path() const noexcept;
   void             set_path(HdrHeap *heap, std::string_view value, bool copy_string);
-  int              get_type();
-  void             set_type(int type);
+  URLType          get_type();
+  void             set_type(URLType type);
   int              get_type_code();
   void             set_type_code(unsigned int typecode);
   std::string_view get_params() const noexcept;
@@ -218,12 +218,12 @@ void unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, 
 void unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e, int &state);
 
 inline int
-url_canonicalize_port(int type, int port)
+url_canonicalize_port(URLType type, int port)
 {
   if (port == 0) {
-    if (type == URL_TYPE_HTTP)
+    if (type == URLType::HTTP)
       port = 80;
-    else if (type == URL_TYPE_HTTPS)
+    else if (type == URLType::HTTPS)
       port = 443;
   }
   return (port);
@@ -290,7 +290,7 @@ public:
    *
    * @param[in] url The URL to parse.
    *
-   * @return PARSE_RESULT_DONE if parsing was successful, PARSE_RESULT_ERROR
+   * @return ParseResult::DONE if parsing was successful, ParseResult::ERROR
    * otherwise.
    */
   ParseResult parse(std::string_view url);

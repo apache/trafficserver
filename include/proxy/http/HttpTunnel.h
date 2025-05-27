@@ -48,6 +48,7 @@
 #define HTTP_TUNNEL_EVENT_PRECOMPLETE     (HTTP_TUNNEL_EVENTS_START + 2)
 #define HTTP_TUNNEL_EVENT_CONSUMER_DETACH (HTTP_TUNNEL_EVENTS_START + 3)
 #define HTTP_TUNNEL_EVENT_ACTIVITY_CHECK  (HTTP_TUNNEL_EVENTS_START + 4)
+#define HTTP_TUNNEL_EVENT_PARSE_ERROR     (HTTP_TUNNEL_EVENTS_START + 5)
 
 #define HTTP_TUNNEL_STATIC_PRODUCER (VConnection *)!0
 
@@ -64,36 +65,31 @@ struct HttpTunnelProducer;
 using HttpProducerHandler = int (HttpSM::*)(int, HttpTunnelProducer *);
 using HttpConsumerHandler = int (HttpSM::*)(int, HttpTunnelConsumer *);
 
-enum HttpTunnelType_t { HT_HTTP_SERVER, HT_HTTP_CLIENT, HT_CACHE_READ, HT_CACHE_WRITE, HT_TRANSFORM, HT_STATIC, HT_BUFFER_READ };
+enum class HttpTunnelType_t { HTTP_SERVER, HTTP_CLIENT, CACHE_READ, CACHE_WRITE, TRANSFORM, STATIC, BUFFER_READ };
 
-enum TunnelChunkingAction_t {
-  TCA_CHUNK_CONTENT,
-  TCA_DECHUNK_CONTENT,
-  TCA_PASSTHRU_CHUNKED_CONTENT,
-  TCA_PASSTHRU_DECHUNKED_CONTENT
-};
+enum class TunnelChunkingAction_t { CHUNK_CONTENT, DECHUNK_CONTENT, PASSTHRU_CHUNKED_CONTENT, PASSTHRU_DECHUNKED_CONTENT };
 
 struct ChunkedHandler {
-  enum ChunkedState {
-    CHUNK_READ_CHUNK = 0,
-    CHUNK_READ_SIZE_START,
-    CHUNK_READ_SIZE,
-    CHUNK_READ_SIZE_CRLF,
-    CHUNK_READ_TRAILER_BLANK,
-    CHUNK_READ_TRAILER_CR,
-    CHUNK_READ_TRAILER_LINE,
-    CHUNK_READ_ERROR,
-    CHUNK_READ_DONE,
-    CHUNK_WRITE_CHUNK,
-    CHUNK_WRITE_DONE,
-    CHUNK_FLOW_CONTROL
+  enum class ChunkedState {
+    READ_CHUNK = 0,
+    READ_SIZE_START,
+    READ_SIZE,
+    READ_SIZE_CRLF,
+    READ_TRAILER_BLANK,
+    READ_TRAILER_CR,
+    READ_TRAILER_LINE,
+    READ_ERROR,
+    READ_DONE,
+    WRITE_CHUNK,
+    WRITE_DONE,
+    FLOW_CONTROL
   };
 
   static int const DEFAULT_MAX_CHUNK_SIZE = 4096;
 
-  enum Action { ACTION_DOCHUNK = 0, ACTION_DECHUNK, ACTION_PASSTHRU, ACTION_UNSET };
+  enum class Action { DOCHUNK = 0, DECHUNK, PASSTHRU, UNSET };
 
-  Action action = ACTION_UNSET;
+  Action action = Action::UNSET;
 
   IOBufferReader *chunked_reader   = nullptr;
   MIOBuffer      *dechunked_buffer = nullptr;
@@ -121,7 +117,7 @@ struct ChunkedHandler {
    */
   int64_t skip_bytes = 0;
 
-  ChunkedState state                = CHUNK_READ_CHUNK;
+  ChunkedState state                = ChunkedState::READ_CHUNK;
   int64_t      cur_chunk_size       = 0;
   int64_t      cur_chunk_bytes_left = 0;
   int          last_server_event    = VC_EVENT_NONE;
@@ -213,7 +209,7 @@ struct HttpTunnelConsumer {
   HttpTunnelProducer *producer      = nullptr;
   HttpTunnelProducer *self_producer = nullptr;
 
-  HttpTunnelType_t    vc_type       = HT_HTTP_CLIENT;
+  HttpTunnelType_t    vc_type       = HttpTunnelType_t::HTTP_CLIENT;
   VConnection        *vc            = nullptr;
   IOBufferReader     *buffer_reader = nullptr;
   HttpConsumerHandler vc_handler    = nullptr;
@@ -248,10 +244,10 @@ struct HttpTunnelProducer {
   VIO                    *read_vio      = nullptr;
   MIOBuffer              *read_buffer   = nullptr;
   IOBufferReader         *buffer_start  = nullptr;
-  HttpTunnelType_t        vc_type       = HT_HTTP_SERVER;
+  HttpTunnelType_t        vc_type       = HttpTunnelType_t::HTTP_SERVER;
 
   ChunkedHandler         chunked_handler;
-  TunnelChunkingAction_t chunking_action = TCA_PASSTHRU_DECHUNKED_CONTENT;
+  TunnelChunkingAction_t chunking_action = TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT;
 
   bool do_chunking         = false;
   bool do_dechunking       = false;
@@ -401,7 +397,7 @@ public:
    * @param[in] action The chunking behavior to enact on incoming bytes.
    * @param[in] drop_chunked_trailers If @c true, chunked trailers are filtered
    *   out. Logically speaking, this is only applicable when proxying chunked
-   *   content, thus only when @a action is @c TCA_PASSTHRU_CHUNKED_CONTENT.
+   *   content, thus only when @a action is @c TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT.
    * @param[in] parse_chunk_strictly If @c true, no parse error will be allowed
    */
   void set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_bytes, TunnelChunkingAction_t action,
@@ -663,7 +659,7 @@ inline bool
 HttpTunnel::has_cache_writer() const
 {
   for (const auto &consumer : consumers) {
-    if (consumer.vc_type == HT_CACHE_WRITE && consumer.vc != nullptr) {
+    if (consumer.vc_type == HttpTunnelType_t::CACHE_WRITE && consumer.vc != nullptr) {
       return true;
     }
   }
@@ -684,9 +680,9 @@ HttpTunnel::has_consumer_besides_client() const
     }
 
     switch (consumer.vc_type) {
-    case HT_HTTP_CLIENT:
+    case HttpTunnelType_t::HTTP_CLIENT:
       continue;
-    case HT_HTTP_SERVER:
+    case HttpTunnelType_t::HTTP_SERVER:
       // ignore uploading data to servers
       continue;
     default:
@@ -719,7 +715,7 @@ HttpTunnelConsumer::is_downstream_from(VConnection *vc)
 inline bool
 HttpTunnelConsumer::is_sink() const
 {
-  return HT_HTTP_CLIENT == vc_type || HT_CACHE_WRITE == vc_type;
+  return HttpTunnelType_t::HTTP_CLIENT == vc_type || HttpTunnelType_t::CACHE_WRITE == vc_type;
 }
 
 inline bool
@@ -733,7 +729,8 @@ HttpTunnelProducer::is_source() const
 {
   // If a producer is marked as a client, then it's part of a bidirectional tunnel
   // and so is an actual source of data.
-  return HT_HTTP_SERVER == vc_type || HT_CACHE_READ == vc_type || HT_HTTP_CLIENT == vc_type;
+  return HttpTunnelType_t::HTTP_SERVER == vc_type || HttpTunnelType_t::CACHE_READ == vc_type ||
+         HttpTunnelType_t::HTTP_CLIENT == vc_type;
 }
 
 inline void

@@ -88,11 +88,11 @@ using HttpSMHandler = int (HttpSM::*)(int, void *);
  */
 int64_t do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnection *vc_in, int conf);
 
-enum BackgroundFill_t {
-  BACKGROUND_FILL_NONE = 0,
-  BACKGROUND_FILL_STARTED,
-  BACKGROUND_FILL_ABORTED,
-  BACKGROUND_FILL_COMPLETED,
+enum class BackgroundFill_t {
+  NONE = 0,
+  STARTED,
+  ABORTED,
+  COMPLETED,
 };
 
 extern ink_mutex debug_sm_list_mutex;
@@ -104,16 +104,16 @@ struct HttpTransformInfo {
   HttpTransformInfo() {}
 };
 
-enum {
-  HTTP_SM_MAGIC_ALIVE = 0x0000FEED,
-  HTTP_SM_MAGIC_DEAD  = 0xDEADFEED,
+enum class HttpSmMagic_t : uint32_t {
+  ALIVE = 0x0000FEED,
+  DEAD  = 0xDEADFEED,
 };
 
-enum {
-  HTTP_SM_POST_UNKNOWN     = 0,
-  HTTP_SM_POST_UA_FAIL     = 1,
-  HTTP_SM_POST_SERVER_FAIL = 2,
-  HTTP_SM_POST_SUCCESS     = 3,
+enum class HttpSmPost_t {
+  UNKNOWN     = 0,
+  UA_FAIL     = 1,
+  SERVER_FAIL = 2,
+  SUCCESS     = 3,
 };
 
 enum {
@@ -122,18 +122,18 @@ enum {
   HTTP_SM_TRANSFORM_FAIL   = 2,
 };
 
-enum HttpApiState_t {
-  HTTP_API_NO_CALLOUT,
-  HTTP_API_IN_CALLOUT,
-  HTTP_API_DEFERED_CLOSE,
-  HTTP_API_DEFERED_SERVER_ERROR,
-  HTTP_API_REWIND_STATE_MACHINE,
+enum class HttpApiState_t {
+  NO_CALLOUT,
+  IN_CALLOUT,
+  DEFERED_CLOSE,
+  DEFERED_SERVER_ERROR,
+  REWIND_STATE_MACHINE,
 };
 
-enum HttpPluginTunnel_t {
-  HTTP_NO_PLUGIN_TUNNEL = 0,
-  HTTP_PLUGIN_AS_SERVER,
-  HTTP_PLUGIN_AS_INTERCEPT,
+enum class HttpPluginTunnel_t {
+  NONE = 0,
+  AS_SERVER,
+  AS_INTERCEPT,
 };
 
 class PluginVCCore;
@@ -277,8 +277,8 @@ public:
 
   std::string_view find_proto_string(HTTPVersion version) const;
 
-  int64_t      sm_id = -1;
-  unsigned int magic = HTTP_SM_MAGIC_DEAD;
+  int64_t       sm_id = -1;
+  HttpSmMagic_t magic = HttpSmMagic_t::DEAD;
 
   // YTS Team, yamsat Plugin
   bool    enable_redirection = false; // To check if redirection is enabled
@@ -289,10 +289,10 @@ public:
   int     redirection_tries = 0; // To monitor number of redirections
   int64_t transferred_bytes = 0; // For handling buffering of request body data.
 
-  BackgroundFill_t background_fill = BACKGROUND_FILL_NONE;
+  BackgroundFill_t background_fill = BackgroundFill_t::NONE;
 
   // Tunneling request to plugin
-  HttpPluginTunnel_t plugin_tunnel_type = HTTP_NO_PLUGIN_TUNNEL;
+  HttpPluginTunnel_t plugin_tunnel_type = HttpPluginTunnel_t::NONE;
   PluginVCCore      *plugin_tunnel      = nullptr;
 
   HttpTransact::State t_state;
@@ -479,7 +479,7 @@ private:
    */
   void setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header_bytes = 0);
 
-  HttpTransact::StateMachineAction_t last_action     = HttpTransact::SM_ACTION_UNDEFINED;
+  HttpTransact::StateMachineAction_t last_action     = HttpTransact::StateMachineAction_t::UNDEFINED;
   int (HttpSM::*m_last_state)(int event, void *data) = nullptr;
   virtual void set_next_state();
   void         call_transact_and_set_next_state(TransactEntryFunc_t f);
@@ -563,7 +563,7 @@ private:
 
   int            reentrancy_count = 0;
   int            cur_hooks        = 0;
-  HttpApiState_t callout_state    = HTTP_API_NO_CALLOUT;
+  HttpApiState_t callout_state    = HttpApiState_t::NO_CALLOUT;
 
   // api_hooks must not be changed directly
   //  Use txn_hook_{ap,pre}pend so hooks_set is

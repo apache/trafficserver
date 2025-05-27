@@ -665,7 +665,7 @@ ConditionTransactCount::append_value(std::string &s, Resources const &res)
 // Time related functionality for statements. We return an int64_t here, to assure that
 // gettimeofday() / Epoch does not lose bits.
 int64_t
-ConditionNow::get_now_qualified(NowQualifiers qual) const
+ConditionNow::get_now_qualified(NowQualifiers qual, const Resources &resources) const
 {
   time_t now;
 
@@ -676,7 +676,14 @@ ConditionNow::get_now_qualified(NowQualifiers qual) const
   } else {
     struct tm res;
 
-    localtime_r(&now, &res);
+    PrivateSlotData private_data;
+    private_data.raw = reinterpret_cast<uint64_t>(TSUserArgGet(resources.txnp, _txn_private_slot));
+    if (private_data.timezone == 1) {
+      gmtime_r(&now, &res);
+    } else {
+      localtime_r(&now, &res);
+    }
+
     switch (qual) {
     case NOW_QUAL_YEAR:
       return static_cast<int64_t>(res.tm_year + 1900); // This makes more sense
@@ -747,16 +754,16 @@ ConditionNow::set_qualifier(const std::string &q)
 }
 
 void
-ConditionNow::append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
+ConditionNow::append_value(std::string &s, const Resources &res)
 {
-  s += std::to_string(get_now_qualified(_now_qual));
+  s += std::to_string(get_now_qualified(_now_qual, res));
   Dbg(pi_dbg_ctl, "Appending NOW() to evaluation value -> %s", s.c_str());
 }
 
 bool
 ConditionNow::eval(const Resources &res)
 {
-  int64_t now = get_now_qualified(_now_qual);
+  int64_t now = get_now_qualified(_now_qual, res);
 
   Dbg(pi_dbg_ctl, "Evaluating NOW()");
   return static_cast<const MatcherType *>(_matcher)->test(now, res);

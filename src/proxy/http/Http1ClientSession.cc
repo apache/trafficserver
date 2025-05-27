@@ -46,7 +46,7 @@
 
 #define STATE_ENTER(state_name, event, vio)                                                           \
   do {                                                                                                \
-    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */        \
+    /*ink_assert (magic == HttpSmMagic_t::ALIVE);  REMEMBER (event, NULL, reentrancy_count); */       \
     HttpSsnDbg("[%" PRId64 "] [%s, %s]", con_id, #state_name, HttpDebugNames::get_event_name(event)); \
   } while (0)
 
@@ -71,11 +71,11 @@ DbgCtl dbg_ctl_ssl_early_data{"ssl_early_data"};
 Http1ClientSession::Http1ClientSession() : super(), trans(this) {}
 
 //
-// Will only close the connection if do_io_close has been called previously (to set read_state to HCS_CLOSED
+// Will only close the connection if do_io_close has been called previously (to set read_state to C_Read_State::CLOSED
 void
 Http1ClientSession::destroy()
 {
-  if (read_state != HCS_CLOSED) {
+  if (read_state != C_Read_State::CLOSED) {
     return;
   }
   if (!in_destroy) {
@@ -96,11 +96,11 @@ Http1ClientSession::release_transaction()
   released_transactions++;
   if (transact_count == released_transactions) {
     // Make sure we previously called release() or do_io_close() on the session
-    ink_release_assert(read_state != HCS_INIT);
+    ink_release_assert(read_state != C_Read_State::INIT);
     if (is_active()) {
       // (in)active timeout
       do_io_close(HTTP_ERRNO);
-    } else if (read_state == HCS_ACTIVE_READER) {
+    } else if (read_state == C_Read_State::ACTIVE_READER) {
       release(&trans); // Put back to keep-alive state
     } else {
       destroy();
@@ -113,7 +113,7 @@ Http1ClientSession::release_transaction()
 void
 Http1ClientSession::free()
 {
-  magic = HTTP_CS_MAGIC_DEAD;
+  magic = Magic::DEAD;
   if (read_buffer) {
     free_MIOBuffer(read_buffer);
     read_buffer = nullptr;
@@ -144,7 +144,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_assert(new_vc != nullptr);
   ink_assert(_vc == nullptr);
   _vc         = new_vc;
-  magic       = HTTP_CS_MAGIC_ALIVE;
+  magic       = Magic::ALIVE;
   mutex       = new_vc->mutex;
   trans.mutex = mutex; // Share this mutex with the transaction
   in_destroy  = false;
@@ -225,18 +225,18 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 void
 Http1ClientSession::do_io_close(int alerrno)
 {
-  if (read_state == HCS_CLOSED) {
+  if (read_state == C_Read_State::CLOSED) {
     if (transact_count == released_transactions) {
       this->destroy();
     }
     return; // Don't double call session close
   }
-  if (read_state == HCS_ACTIVE_READER) {
+  if (read_state == C_Read_State::ACTIVE_READER) {
     clear_session_active();
   }
 
   // Prevent double closing
-  ink_release_assert(read_state != HCS_CLOSED);
+  ink_release_assert(read_state != C_Read_State::CLOSED);
 
   // If we have an attached server session, release
   //   it back to our shared pool
@@ -252,7 +252,7 @@ Http1ClientSession::do_io_close(int alerrno)
   }
 
   if (half_close && this->trans.get_sm()) {
-    read_state = HCS_HALF_CLOSED;
+    read_state = C_Read_State::HALF_CLOSED;
     SET_HANDLER(&Http1ClientSession::state_wait_for_close);
     HttpSsnDbg("[%" PRId64 "] session half close", con_id);
 
@@ -274,7 +274,7 @@ Http1ClientSession::do_io_close(int alerrno)
     _reader->consume(_reader->read_avail());
   } else {
     HttpSsnDbg("[%" PRId64 "] session closed", con_id);
-    read_state = HCS_CLOSED;
+    read_state = C_Read_State::CLOSED;
 
     if (_vc) {
       _vc->do_io_close();
@@ -292,7 +292,7 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
   STATE_ENTER(&Http1ClientSession::state_wait_for_close, event, data);
 
   ink_assert(data == ka_vio);
-  ink_assert(read_state == HCS_HALF_CLOSED);
+  ink_assert(read_state == C_Read_State::HALF_CLOSED);
 
   Event *e = static_cast<Event *>(data);
   if (e == schedule_event) {
@@ -371,7 +371,7 @@ Http1ClientSession::state_keep_alive(int event, void *data)
       schedule_event = nullptr;
     } else {
       ink_assert(data && data == ka_vio);
-      ink_assert(read_state == HCS_KEEP_ALIVE);
+      ink_assert(read_state == C_Read_State::KEEP_ALIVE);
     }
   }
 
@@ -442,7 +442,7 @@ Http1ClientSession::release(ProxyTransaction *trans)
     new_transaction();
   } else {
     HttpSsnDbg("[%" PRId64 "] initiating io for next header", con_id);
-    read_state = HCS_KEEP_ALIVE;
+    read_state = C_Read_State::KEEP_ALIVE;
     SET_HANDLER(&Http1ClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
@@ -475,7 +475,7 @@ Http1ClientSession::new_transaction()
   // connection re-use
   half_close = false;
 
-  read_state = HCS_ACTIVE_READER;
+  read_state = C_Read_State::ACTIVE_READER;
 
   transact_count++;
 
@@ -488,7 +488,7 @@ Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transa
 {
   if (ssession) {
     ink_assert(bound_ss == nullptr);
-    ssession->state = PoolableSession::KA_RESERVED;
+    ssession->state = PoolableSession::PooledState::KA_RESERVED;
     bound_ss        = ssession;
     HttpSsnDbg("[%" PRId64 "] attaching server session [%" PRId64 "] as slave", con_id, ssession->connection_id());
     ink_assert(ssession->get_netvc() != this->get_netvc());

@@ -176,7 +176,7 @@ sdk_alloc_field_handle(TSMBuffer /* bufp ATS_UNUSED */, MIMEHdrImpl *mh)
   // TODO: Should remove this when memory allocation can't fail.
   sdk_assert(sdk_sanity_check_null_ptr((void *)handle) == TS_SUCCESS);
 
-  obj_init_header(handle, HDR_HEAP_OBJ_FIELD_SDK_HANDLE, sizeof(MIMEFieldSDKHandle), 0);
+  obj_init_header(handle, HdrHeapObjType::FIELD_SDK_HANDLE, sizeof(MIMEFieldSDKHandle), 0);
   handle->mh = mh;
 
   return handle;
@@ -362,9 +362,9 @@ inline MIMEHdrImpl *
 _hdr_obj_to_mime_hdr_impl(HdrHeapObjImpl *obj)
 {
   MIMEHdrImpl *impl;
-  if (obj->m_type == HDR_HEAP_OBJ_HTTP_HEADER) {
+  if (static_cast<HdrHeapObjType>(obj->m_type) == HdrHeapObjType::HTTP_HEADER) {
     impl = static_cast<HTTPHdrImpl *>(obj)->m_fields_impl;
-  } else if (obj->m_type == HDR_HEAP_OBJ_MIME_HEADER) {
+  } else if (static_cast<HdrHeapObjType>(obj->m_type) == HdrHeapObjType::MIME_HEADER) {
     impl = static_cast<MIMEHdrImpl *>(obj);
   } else {
     ink_release_assert(!"mloc not a header type");
@@ -387,7 +387,7 @@ sdk_sanity_check_field_handle(TSMLoc field, TSMLoc parent_hdr = nullptr)
   }
 
   MIMEFieldSDKHandle *field_handle = reinterpret_cast<MIMEFieldSDKHandle *>(field);
-  if (field_handle->m_type != HDR_HEAP_OBJ_FIELD_SDK_HANDLE) {
+  if (static_cast<HdrHeapObjType>(field_handle->m_type) != HdrHeapObjType::FIELD_SDK_HANDLE) {
     return TS_ERROR;
   }
 
@@ -404,7 +404,7 @@ TSReturnCode
 sdk_sanity_check_mbuffer(TSMBuffer bufp)
 {
   HdrHeapSDKHandle *handle = reinterpret_cast<HdrHeapSDKHandle *>(bufp);
-  if ((handle == nullptr) || (handle->m_heap == nullptr) || (handle->m_heap->m_magic != HDR_BUF_MAGIC_ALIVE)) {
+  if ((handle == nullptr) || (handle->m_heap == nullptr) || (handle->m_heap->m_magic != HdrBufMagic::ALIVE)) {
     return TS_ERROR;
   }
 
@@ -419,7 +419,7 @@ sdk_sanity_check_mime_hdr_handle(TSMLoc field)
   }
 
   MIMEFieldSDKHandle *field_handle = reinterpret_cast<MIMEFieldSDKHandle *>(field);
-  if (field_handle->m_type != HDR_HEAP_OBJ_MIME_HEADER) {
+  if (static_cast<HdrHeapObjType>(field_handle->m_type) != HdrHeapObjType::MIME_HEADER) {
     return TS_ERROR;
   }
 
@@ -434,7 +434,7 @@ sdk_sanity_check_url_handle(TSMLoc field)
   }
 
   MIMEFieldSDKHandle *field_handle = reinterpret_cast<MIMEFieldSDKHandle *>(field);
-  if (field_handle->m_type != HDR_HEAP_OBJ_URL) {
+  if (static_cast<HdrHeapObjType>(field_handle->m_type) != HdrHeapObjType::URL) {
     return TS_ERROR;
   }
 
@@ -449,7 +449,7 @@ sdk_sanity_check_http_hdr_handle(TSMLoc field)
   }
 
   HTTPHdrImpl *field_handle = reinterpret_cast<HTTPHdrImpl *>(field);
-  if (field_handle->m_type != HDR_HEAP_OBJ_HTTP_HEADER) {
+  if (static_cast<HdrHeapObjType>(field_handle->m_type) != HdrHeapObjType::HTTP_HEADER) {
     return TS_ERROR;
   }
 
@@ -489,7 +489,7 @@ sdk_sanity_check_http_ssn(TSHttpSsn ssnp)
 TSReturnCode
 sdk_sanity_check_txn(TSHttpTxn txnp)
 {
-  if ((txnp != nullptr) && ((reinterpret_cast<HttpSM *>(txnp))->magic == HTTP_SM_MAGIC_ALIVE)) {
+  if ((txnp != nullptr) && ((reinterpret_cast<HttpSM *>(txnp))->magic == HttpSmMagic_t::ALIVE)) {
     return TS_SUCCESS;
   }
   return TS_ERROR;
@@ -841,13 +841,13 @@ TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
 
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
 
-  switch (obj->m_type) {
-  case HDR_HEAP_OBJ_URL:
-  case HDR_HEAP_OBJ_HTTP_HEADER:
-  case HDR_HEAP_OBJ_MIME_HEADER:
+  switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+  case HdrHeapObjType::URL:
+  case HdrHeapObjType::HTTP_HEADER:
+  case HdrHeapObjType::MIME_HEADER:
     return TS_SUCCESS;
 
-  case HDR_HEAP_OBJ_FIELD_SDK_HANDLE:
+  case HdrHeapObjType::FIELD_SDK_HANDLE:
     field_handle = static_cast<MIMEFieldSDKHandle *>(obj);
     if (sdk_sanity_check_field_handle(mloc, parent) != TS_SUCCESS) {
       return TS_ERROR;
@@ -1109,11 +1109,11 @@ TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
     return data;
   }
   switch (reinterpret_cast<URLImpl *>(obj)->m_url_type) {
-  case URL_TYPE_HTTP:
+  case URLType::HTTP:
     data    = URL_SCHEME_HTTP.c_str();
     *length = static_cast<int>(URL_SCHEME_HTTP.length());
     break;
-  case URL_TYPE_HTTPS:
+  case URLType::HTTPS:
     data    = URL_SCHEME_HTTPS.c_str();
     *length = static_cast<int>(URL_SCHEME_HTTPS.length());
     break;
@@ -2553,7 +2553,7 @@ TSHttpHdrCreate(TSMBuffer bufp)
 
   HTTPHdr h;
   h.m_heap = (reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap;
-  h.create(HTTP_TYPE_UNKNOWN);
+  h.create(HTTPType::UNKNOWN);
   return reinterpret_cast<TSMLoc>(h.m_http);
 }
 
@@ -2590,7 +2590,7 @@ TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *
   d_heap = (reinterpret_cast<HdrHeapSDKHandle *>(dest_bufp))->m_heap;
   s_hh   = reinterpret_cast<HTTPHdrImpl *>(src_hdr);
 
-  if (s_hh->m_type != HDR_HEAP_OBJ_HTTP_HEADER) {
+  if (static_cast<HdrHeapObjType>(s_hh->m_type) != HdrHeapObjType::HTTP_HEADER) {
     return TS_ERROR;
   }
 
@@ -2627,7 +2627,8 @@ TSHttpHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_obj, TSMBuffer src_bufp, TSMLoc s
   s_hh   = reinterpret_cast<HTTPHdrImpl *>(src_obj);
   d_hh   = reinterpret_cast<HTTPHdrImpl *>(dest_obj);
 
-  if ((s_hh->m_type != HDR_HEAP_OBJ_HTTP_HEADER) || (d_hh->m_type != HDR_HEAP_OBJ_HTTP_HEADER)) {
+  if ((static_cast<HdrHeapObjType>(s_hh->m_type) != HdrHeapObjType::HTTP_HEADER) ||
+      (static_cast<HdrHeapObjType>(d_hh->m_type) != HdrHeapObjType::HTTP_HEADER)) {
     return TS_ERROR;
   }
 
@@ -2652,7 +2653,7 @@ TSHttpHdrPrint(TSMBuffer bufp, TSMLoc obj, TSIOBuffer iobufp)
   int            done;
 
   SET_HTTP_HDR(h, bufp, obj);
-  ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
+  ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
 
   dumpoffset = 0;
   do {
@@ -2688,7 +2689,7 @@ TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc obj, const char **
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
+  ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
   TSHttpHdrTypeSet(bufp, obj, TS_HTTP_TYPE_REQUEST);
   return static_cast<TSParseResult>(h.parse_req(reinterpret_cast<HTTPParser *>(parser), start, end, false));
 }
@@ -2709,7 +2710,7 @@ TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc obj, const char *
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
+  ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
   TSHttpHdrTypeSet(bufp, obj, TS_HTTP_TYPE_RESPONSE);
   return static_cast<TSParseResult>(h.parse_resp(reinterpret_cast<HTTPParser *>(parser), start, end, false));
 }
@@ -2723,7 +2724,7 @@ TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc obj)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
+  ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
   return h.length_get();
 }
 
@@ -2736,7 +2737,7 @@ TSHttpHdrTypeGet(TSMBuffer bufp, TSMLoc obj)
   HTTPHdr h;
   SET_HTTP_HDR(h, bufp, obj);
   /* Don't need the assert as the check is done in sdk_sanity_check_http_hdr_handle
-     ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
+     ink_assert(h.m_http->m_type == HdrHeapObjType::HTTP_HEADER);
    */
   return static_cast<TSHttpType>(h.type_get());
 }
@@ -2759,7 +2760,7 @@ TSHttpHdrTypeSet(TSMBuffer bufp, TSMLoc obj, TSHttpType type)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
+  ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
 
   // FIX: why are we using an HTTPHdr here?  why can't we
   //      just manipulate the impls directly?
@@ -2769,11 +2770,11 @@ TSHttpHdrTypeSet(TSMBuffer bufp, TSMLoc obj, TSHttpType type)
   //   fake the difference.  We not going to let
   //   people change the types of a header.  If they
   //   try, too bad.
-  if (h.m_http->m_polarity == HTTP_TYPE_UNKNOWN) {
-    if (type == static_cast<TSHttpType>(HTTP_TYPE_REQUEST)) {
+  if (h.m_http->m_polarity == HTTPType::UNKNOWN) {
+    if (type == static_cast<TSHttpType>(HTTPType::REQUEST)) {
       h.m_http->u.req.m_url_impl = url_create(h.m_heap);
       h.m_http->m_polarity       = static_cast<HTTPType>(type);
-    } else if (type == static_cast<TSHttpType>(HTTP_TYPE_RESPONSE)) {
+    } else if (type == static_cast<TSHttpType>(HTTPType::RESPONSE)) {
       h.m_http->m_polarity = static_cast<HTTPType>(type);
     }
   }
@@ -2811,7 +2812,7 @@ TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc obj, int ver)
   HTTPVersion version{ver};
 
   SET_HTTP_HDR(h, bufp, obj);
-  ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
+  ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
 
   h.version_set(version);
   return TS_SUCCESS;
@@ -2881,7 +2882,7 @@ TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc obj, TSMLoc *locp)
 
   HTTPHdrImpl *hh = reinterpret_cast<HTTPHdrImpl *>(obj);
 
-  if (hh->m_polarity != HTTP_TYPE_REQUEST) {
+  if (hh->m_polarity != HTTPType::REQUEST) {
     return TS_ERROR;
   }
 
@@ -2907,7 +2908,7 @@ TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc obj, TSMLoc url)
   HdrHeap     *heap = (reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap;
   HTTPHdrImpl *hh   = reinterpret_cast<HTTPHdrImpl *>(obj);
 
-  if (hh->m_type != HDR_HEAP_OBJ_HTTP_HEADER) {
+  if (static_cast<HdrHeapObjType>(hh->m_type) != HdrHeapObjType::HTTP_HEADER) {
     return TS_ERROR;
   }
 
@@ -2945,7 +2946,7 @@ TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc obj, TSHttpStatus status)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
+  ink_assert(static_cast<HdrHeapObjType>(h.m_http->m_type) == HdrHeapObjType::HTTP_HEADER);
   h.status_set(static_cast<HTTPStatus>(status));
   return TS_SUCCESS;
 }
@@ -2984,7 +2985,7 @@ TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 
   SET_HTTP_HDR(h, bufp, obj);
   /* Don't need the assert as the check is done in sdk_sanity_check_http_hdr_handle
-     ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
+     ink_assert(h.m_http->m_type == HdrHeapObjType::HTTP_HEADER);
   */
 
   if (length < 0) {
@@ -4008,7 +4009,7 @@ TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_
   auto buf_handle = reinterpret_cast<HTTPHdr *>(hdr_buf);
   auto hdr_handle = reinterpret_cast<HTTPHdrImpl *>(hdr_loc);
 
-  if (hdr_handle->m_polarity != HTTP_TYPE_REQUEST) {
+  if (hdr_handle->m_polarity != HTTPType::REQUEST) {
     Dbg(dbg_ctl_plugin, "Trying to get a URL from response header %p", hdr_loc);
     return TS_ERROR;
   }
@@ -4214,21 +4215,21 @@ TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status)
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
   switch (sm->t_state.cache_lookup_result) {
-  case HttpTransact::CACHE_LOOKUP_MISS:
-  case HttpTransact::CACHE_LOOKUP_DOC_BUSY:
+  case HttpTransact::CacheLookupResult_t::MISS:
+  case HttpTransact::CacheLookupResult_t::DOC_BUSY:
     *lookup_status = TS_CACHE_LOOKUP_MISS;
     break;
-  case HttpTransact::CACHE_LOOKUP_HIT_STALE:
+  case HttpTransact::CacheLookupResult_t::HIT_STALE:
     *lookup_status = TS_CACHE_LOOKUP_HIT_STALE;
     break;
-  case HttpTransact::CACHE_LOOKUP_HIT_WARNING:
-  case HttpTransact::CACHE_LOOKUP_HIT_FRESH:
+  case HttpTransact::CacheLookupResult_t::HIT_WARNING:
+  case HttpTransact::CacheLookupResult_t::HIT_FRESH:
     *lookup_status = TS_CACHE_LOOKUP_HIT_FRESH;
     break;
-  case HttpTransact::CACHE_LOOKUP_SKIPPED:
+  case HttpTransact::CacheLookupResult_t::SKIPPED:
     *lookup_status = TS_CACHE_LOOKUP_SKIPPED;
     break;
-  case HttpTransact::CACHE_LOOKUP_NONE:
+  case HttpTransact::CacheLookupResult_t::NONE:
   default:
     return TS_ERROR;
   };
@@ -4259,12 +4260,12 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
   HttpTransact::CacheLookupResult_t *sm_status = &(sm->t_state.cache_lookup_result);
 
   // converting from a miss to a hit is not allowed
-  if (*sm_status == HttpTransact::CACHE_LOOKUP_MISS && cachelookup != TS_CACHE_LOOKUP_MISS) {
+  if (*sm_status == HttpTransact::CacheLookupResult_t::MISS && cachelookup != TS_CACHE_LOOKUP_MISS) {
     return TS_ERROR;
   }
 
   // here is to handle converting a hit to a miss
-  if (cachelookup == TS_CACHE_LOOKUP_MISS && *sm_status != HttpTransact::CACHE_LOOKUP_MISS) {
+  if (cachelookup == TS_CACHE_LOOKUP_MISS && *sm_status != HttpTransact::CacheLookupResult_t::MISS) {
     sm->t_state.api_cleanup_cache_read = true;
     ink_assert(sm->t_state.transact_return_point != nullptr);
     sm->t_state.transact_return_point = HttpTransact::HandleCacheOpenRead;
@@ -4272,13 +4273,13 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 
   switch (cachelookup) {
   case TS_CACHE_LOOKUP_MISS:
-    *sm_status = HttpTransact::CACHE_LOOKUP_MISS;
+    *sm_status = HttpTransact::CacheLookupResult_t::MISS;
     break;
   case TS_CACHE_LOOKUP_HIT_STALE:
-    *sm_status = HttpTransact::CACHE_LOOKUP_HIT_STALE;
+    *sm_status = HttpTransact::CacheLookupResult_t::HIT_STALE;
     break;
   case TS_CACHE_LOOKUP_HIT_FRESH:
-    *sm_status = HttpTransact::CACHE_LOOKUP_HIT_FRESH;
+    *sm_status = HttpTransact::CacheLookupResult_t::HIT_FRESH;
     break;
   default:
     return TS_ERROR;
@@ -4551,9 +4552,9 @@ TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
   *client_abort = false;
   HttpSM *sm    = reinterpret_cast<HttpSM *>(txnp);
   switch (sm->t_state.squid_codes.log_code) {
-  case SQUID_LOG_ERR_CLIENT_ABORT:
-  case SQUID_LOG_ERR_CLIENT_READ_ERROR:
-  case SQUID_LOG_TCP_SWAPFAIL:
+  case SquidLogCode::ERR_CLIENT_ABORT:
+  case SquidLogCode::ERR_CLIENT_READ_ERROR:
+  case SquidLogCode::TCP_SWAPFAIL:
     // check for client abort and cache read error
     *client_abort = true;
     return TS_SUCCESS;
@@ -4614,11 +4615,11 @@ TSHttpTxnUpdateCachedObject(TSHttpTxn txnp)
     return TS_ERROR;
   }
 
-  if (s->cache_info.write_lock_state == HttpTransact::CACHE_WL_READ_RETRY) {
+  if (s->cache_info.write_lock_state == HttpTransact::CacheWriteLock_t::READ_RETRY) {
     return TS_ERROR;
   }
 
-  s->api_update_cached_object = HttpTransact::UPDATE_CACHED_OBJECT_PREPARE;
+  s->api_update_cached_object = HttpTransact::UpdateCachedObject_t::PREPARE;
   return TS_SUCCESS;
 }
 
@@ -5962,7 +5963,7 @@ TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
   TSIOBufferSizeIndex buffer_index      = TSPluginVCIOBufferIndexGet(txnp);
   TSIOBufferWaterMark buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(txnp);
 
-  http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_SERVER;
+  http_sm->plugin_tunnel_type = HttpPluginTunnel_t::AS_SERVER;
   http_sm->plugin_tunnel      = PluginVCCore::alloc(reinterpret_cast<INKContInternal *>(contp), buffer_index, buffer_water_mark);
 }
 
@@ -5977,7 +5978,7 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
   TSIOBufferSizeIndex buffer_index      = TSPluginVCIOBufferIndexGet(txnp);
   TSIOBufferWaterMark buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(txnp);
 
-  http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_INTERCEPT;
+  http_sm->plugin_tunnel_type = HttpPluginTunnel_t::AS_INTERCEPT;
   http_sm->plugin_tunnel      = PluginVCCore::alloc(reinterpret_cast<INKContInternal *>(contp), buffer_index, buffer_water_mark);
 }
 
@@ -6859,7 +6860,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 
   URL url_obj;
   url_obj.create(nullptr);
-  if (url_obj.parse(url, url_len) == PARSE_RESULT_ERROR) {
+  if (url_obj.parse(url, url_len) == ParseResult::ERROR) {
     url_obj.destroy();
     return TS_ERROR;
   }
@@ -7816,14 +7817,14 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   if (should_close) {
-    sm->t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    sm->t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
     if (sm->get_ua_txn()) {
       sm->set_ua_half_close_flag();
     }
   }
   // Don't change if PIPELINE is set...
-  else if (sm->t_state.client_info.keep_alive == HTTP_NO_KEEPALIVE) {
-    sm->t_state.client_info.keep_alive = HTTP_KEEPALIVE;
+  else if (sm->t_state.client_info.keep_alive == HTTPKeepAlive::NO_KEEPALIVE) {
+    sm->t_state.client_info.keep_alive = HTTPKeepAlive::KEEPALIVE;
   }
 
   return TS_SUCCESS;
@@ -7880,7 +7881,7 @@ TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
 
-  return (s->background_fill == BACKGROUND_FILL_STARTED);
+  return (s->background_fill == BackgroundFill_t::STARTED);
 }
 
 int
@@ -8471,6 +8472,76 @@ TSVConnReenableEx(TSVConn vconn, TSEvent event)
   }
 }
 
+TSReturnCode
+TSVConnPPInfoGet(TSVConn vconn, uint16_t key, const char **value, int *length)
+{
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconn);
+
+  if (key < 0x100) {
+    auto &tlv = vc->get_proxy_protocol_info().tlv;
+    if (auto ite = tlv.find(key); ite != tlv.end()) {
+      *value  = ite->second.data();
+      *length = ite->second.length();
+    } else {
+      return TS_ERROR;
+    }
+  } else {
+    switch (key) {
+    case TS_PP_INFO_SRC_ADDR:
+      *value = reinterpret_cast<const char *>(vc->get_proxy_protocol_src_addr());
+      if (*value == nullptr) {
+        return TS_ERROR;
+      }
+      *length = ats_ip_size(reinterpret_cast<const sockaddr *>(*value));
+      break;
+    case TS_PP_INFO_DST_ADDR:
+      *value = reinterpret_cast<const char *>(vc->get_proxy_protocol_dst_addr());
+      if (*value == nullptr) {
+        return TS_ERROR;
+      }
+      *length = ats_ip_size(reinterpret_cast<const sockaddr *>(*value));
+      break;
+    default:
+      return TS_ERROR;
+    }
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value)
+{
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconn);
+
+  if (key < 0x100) {
+    // Unknown type value cannot be returned as an integer
+    return TS_ERROR;
+  } else {
+    switch (key) {
+    case TS_PP_INFO_VERSION:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_version());
+      break;
+    case TS_PP_INFO_SRC_PORT:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_src_port());
+      break;
+    case TS_PP_INFO_DST_PORT:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_dst_port());
+      break;
+    case TS_PP_INFO_PROTOCOL:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_info().ip_family);
+      break;
+    case TS_PP_INFO_SOCK_TYPE:
+      *value = static_cast<TSMgmtInt>(vc->get_proxy_protocol_info().type);
+      break;
+    default:
+      return TS_ERROR;
+    }
+  }
+
+  return TS_SUCCESS;
+}
+
 TSSslSession
 TSSslSessionGet(const TSSslSessionID *session_id)
 {
@@ -8751,12 +8822,12 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
 
   HttpSM              *sm = reinterpret_cast<HttpSM *>(txnp);
   HttpTransact::State *s  = &(sm->t_state);
-  sdk_assert(s->next_action == HttpTransact::SM_ACTION_CACHE_LOOKUP);
+  sdk_assert(s->next_action == HttpTransact::StateMachineAction_t::CACHE_LOOKUP);
 
   // Because of where this is in the state machine, the storage for the cache_info URL must
   // have already been initialized and @a lookup_url must be valid.
   auto result = s->cache_info.lookup_url->parse(url, length < 0 ? strlen(url) : length);
-  if (PARSE_RESULT_DONE == result) {
+  if (ParseResult::DONE == result) {
     s->transact_return_point = nullptr;
     sm->rewind_state_machine();
     return TS_SUCCESS;

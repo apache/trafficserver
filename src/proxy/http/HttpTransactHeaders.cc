@@ -36,6 +36,7 @@
 #include "proxy/hdrs/MIME.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/PoolableSession.h"
+#include "proxy/hdrs/HTTP.h"
 
 #include "iocore/utils/Machine.h"
 
@@ -71,7 +72,8 @@ HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
   if (!hdrtoken_is_wks(field_name)) {
     return (false);
   }
-  if ((hdrtoken_wks_to_flags(field_name) & HTIF_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE.c_str())) {
+  if ((hdrtoken_wks_to_flags(field_name) & HdrTokenInfoFlags::HOPBYHOP) != HdrTokenInfoFlags::NONE &&
+      (field_name != MIME_FIELD_KEEP_ALIVE.c_str())) {
     return (true);
   } else {
     return (false);
@@ -196,10 +198,10 @@ HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response, HTTPStatus 
                                          int reason_phrase_len, ink_time_t date)
 {
   if (!outgoing_response->valid()) {
-    outgoing_response->create(HTTP_TYPE_RESPONSE);
+    outgoing_response->create(HTTPType::RESPONSE);
   }
 
-  ink_assert(outgoing_response->type_get() == HTTP_TYPE_RESPONSE);
+  ink_assert(outgoing_response->type_get() == HTTPType::RESPONSE);
 
   outgoing_response->version_set(HTTPVersion(1, 1));
   outgoing_response->status_set(status);
@@ -244,9 +246,9 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
       continue;
     }
 
-    int field_flags = hdrtoken_index_to_flags(field.m_wks_idx);
+    HdrTokenInfoFlags field_flags = hdrtoken_index_to_flags(field.m_wks_idx);
 
-    if (field_flags & HTIF_HOPBYHOP) {
+    if ((field_flags & HdrTokenInfoFlags::HOPBYHOP) != HdrTokenInfoFlags::NONE) {
       std::string_view name(field.name_get());
       std::string_view value(field.value_get());
       bool const       is_te_trailers = name == MIME_FIELD_TE.c_str() && value == "trailers";
@@ -256,7 +258,7 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
       }
 
       // Delete header if not in special proxy_auth retention mode
-      if (retain_proxy_auth_hdrs && (field_flags & HTIF_PROXYAUTH)) {
+      if (retain_proxy_auth_hdrs && (field_flags & HdrTokenInfoFlags::PROXYAUTH) != HdrTokenInfoFlags::NONE) {
         continue;
       }
       new_hdr->field_delete(&field);
@@ -371,7 +373,7 @@ void
 HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response, char const *reason_phrase)
 {
   // These are required
-  ink_assert(outgoing_response->status_get());
+  ink_assert(outgoing_response->status_get() != HTTPStatus::NONE);
 
   // Set HTTP version to 1.1
   outgoing_response->version_set(HTTPVersion(1, 1));
@@ -421,8 +423,8 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
 void
 HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes)
 {
-  SquidLogCode       log_code      = SQUID_LOG_EMPTY;
-  SquidHierarchyCode hier_code     = SQUID_HIER_EMPTY;
+  SquidLogCode       log_code      = SquidLogCode::EMPTY;
+  SquidHierarchyCode hier_code     = SquidHierarchyCode::EMPTY;
   SquidHitMissCode   hit_miss_code = SQUID_HIT_RESERVED;
 
   /////////////////////////////
@@ -466,19 +468,19 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   // Now the Log Code //
   //////////////////////
   if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_NO_CACHE) {
-    log_code = SQUID_LOG_TCP_CLIENT_REFRESH;
+    log_code = SquidLogCode::TCP_CLIENT_REFRESH;
   }
 
   else {
     if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_IMS) {
       if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) ||
           (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT)) {
-        log_code = SQUID_LOG_TCP_IMS_HIT;
+        log_code = SquidLogCode::TCP_IMS_HIT;
       } else {
         if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE && via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
-          log_code = SQUID_LOG_TCP_REFRESH_HIT;
+          log_code = SquidLogCode::TCP_REFRESH_HIT;
         } else {
-          log_code = SQUID_LOG_TCP_IMS_MISS;
+          log_code = SquidLogCode::TCP_IMS_MISS;
         }
       }
     }
@@ -486,23 +488,23 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     else {
       if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE) {
         if (via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
-          log_code = SQUID_LOG_TCP_REFRESH_HIT;
+          log_code = SquidLogCode::TCP_REFRESH_HIT;
         } else {
           if (via_string[VIA_SERVER_RESULT] == VIA_SERVER_ERROR) {
-            log_code = SQUID_LOG_TCP_REF_FAIL_HIT;
+            log_code = SquidLogCode::TCP_REF_FAIL_HIT;
           } else {
-            log_code = SQUID_LOG_TCP_REFRESH_MISS;
+            log_code = SquidLogCode::TCP_REFRESH_MISS;
           }
         }
       } else {
         if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) {
-          log_code = SQUID_LOG_TCP_HIT;
+          log_code = SquidLogCode::TCP_HIT;
         } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) {
-          log_code = SQUID_LOG_TCP_MEM_HIT;
+          log_code = SquidLogCode::TCP_MEM_HIT;
         } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT) {
-          log_code = SQUID_LOG_TCP_CF_HIT; // Read while write HIT
+          log_code = SquidLogCode::TCP_CF_HIT; // Read while write HIT
         } else {
-          log_code = SQUID_LOG_TCP_MISS;
+          log_code = SquidLogCode::TCP_MISS;
         }
       }
     }
@@ -512,64 +514,64 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   // The Hierarchy Code //
   ////////////////////////
   if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
   } else if (via_string[VIA_DETAIL_PP_CONNECT] == VIA_DETAIL_PP_SUCCESS) {
-    hier_code = SQUID_HIER_PARENT_HIT;
+    hier_code = SquidHierarchyCode::PARENT_HIT;
   } else if (via_string[VIA_DETAIL_CACHE_TYPE] == VIA_DETAIL_PARENT) {
-    hier_code = SQUID_HIER_DEFAULT_PARENT;
+    hier_code = SquidHierarchyCode::DEFAULT_PARENT;
   } else if (via_string[VIA_DETAIL_TUNNEL] == VIA_DETAIL_TUNNEL_NO_FORWARD) {
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
   } else {
-    hier_code = SQUID_HIER_DIRECT;
+    hier_code = SquidHierarchyCode::DIRECT;
   }
 
   // Errors may override the other codes, so check the via string error codes last
   switch (via_string[VIA_ERROR_TYPE]) {
   case VIA_ERROR_AUTHORIZATION:
-    log_code = SQUID_LOG_ERR_PROXY_DENIED;
+    log_code = SquidLogCode::ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_CONNECTION:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_REFRESH_MISS) {
-      log_code = SQUID_LOG_ERR_CONNECT_FAIL;
+    if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_REFRESH_MISS) {
+      log_code = SquidLogCode::ERR_CONNECT_FAIL;
     }
     break;
   case VIA_ERROR_DNS_FAILURE:
-    log_code  = SQUID_LOG_ERR_DNS_FAIL;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::ERR_DNS_FAIL;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_FORBIDDEN:
-    log_code = SQUID_LOG_ERR_PROXY_DENIED;
+    log_code = SquidLogCode::ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_HEADER_SYNTAX:
-    log_code  = SQUID_LOG_ERR_INVALID_REQ;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::ERR_INVALID_REQ;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_SERVER:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_IMS_MISS) {
-      log_code = SQUID_LOG_ERR_CONNECT_FAIL;
+    if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_IMS_MISS) {
+      log_code = SquidLogCode::ERR_CONNECT_FAIL;
     }
     break;
   case VIA_ERROR_TIMEOUT:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_IMS_MISS) {
-      log_code = SQUID_LOG_ERR_READ_TIMEOUT;
+    if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_IMS_MISS) {
+      log_code = SquidLogCode::ERR_READ_TIMEOUT;
     }
-    if (hier_code == SQUID_HIER_PARENT_HIT) {
-      hier_code = SQUID_HIER_TIMEOUT_PARENT_HIT;
+    if (hier_code == SquidHierarchyCode::PARENT_HIT) {
+      hier_code = SquidHierarchyCode::TIMEOUT_PARENT_HIT;
     } else {
-      hier_code = SQUID_HIER_TIMEOUT_DIRECT;
+      hier_code = SquidHierarchyCode::TIMEOUT_DIRECT;
     }
     break;
   case VIA_ERROR_CACHE_READ:
-    log_code  = SQUID_LOG_TCP_SWAPFAIL;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::TCP_SWAPFAIL;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_LOOP_DETECTED:
-    log_code  = SQUID_LOG_ERR_LOOP_DETECTED;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::ERR_LOOP_DETECTED;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_UNKNOWN:
-    log_code  = SQUID_LOG_ERR_UNKNOWN;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::ERR_UNKNOWN;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   default:
     break;
@@ -599,8 +601,8 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
 
   char *warning_text = static_cast<char *>(alloca(bufsize));
 
-  len =
-    snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
+  len = snprintf(warning_text, bufsize, "%3d %s %.*s", static_cast<int>(code), http_config_param->proxy_response_via_string,
+                 warn_text_len, warn_text);
   header->value_set(static_cast<std::string_view>(MIME_FIELD_WARNING),
                     std::string_view{warning_text, static_cast<std::string_view::size_type>(len)});
 }
