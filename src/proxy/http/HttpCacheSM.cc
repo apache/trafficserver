@@ -74,9 +74,9 @@ HttpCacheSM::reset()
 }
 
 void
-HttpCacheSM::destroy()
+HttpCacheSM::cleanup()
 {
-  ink_release_assert(this->mutex->thread_holding == this_ethread());
+  ink_release_assert(this->mutex && this->mutex->thread_holding == this_ethread());
 
   if (_read_retry_event != nullptr) {
     _read_retry_event->cancel();

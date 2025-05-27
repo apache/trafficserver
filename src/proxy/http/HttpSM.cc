@@ -258,7 +258,7 @@ HttpSM::cleanup()
   HttpConfig::release(t_state.http_config_param);
   m_remap->release();
 
-  cache_sm.destroy();
+  cache_sm.cleanup();
 
   mutex.clear();
   tunnel.mutex.clear();
