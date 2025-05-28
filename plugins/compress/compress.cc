@@ -267,8 +267,8 @@ content_encoding_header(TSMBuffer bufp, TSMLoc hdr_loc, const int compression_ty
     value     = TS_HTTP_VALUE_DEFLATE;
     value_len = TS_HTTP_LEN_DEFLATE;
   } else if (compression_type & COMPRESSION_TYPE_ZSTD && (algorithm & ALGORITHM_ZSTD)) {
-    value     = "zstd";
-    value_len = strlen("zstd");
+    value     = TS_HTTP_VALUE_ZSTD;
+    value_len = TS_HTTP_LEN_ZSTD;
   }
 
   if (value_len == 0) {
@@ -889,7 +889,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
           compression_acceptable = 1;
         }
         *compress_type |= COMPRESSION_TYPE_GZIP;
-      } else if (strncasecmp(value, "zstd", sizeof("zstd") - 1) == 0) {
+      } else if (strncasecmp(value, TS_HTTP_VALUE_ZSTD, TS_HTTP_LEN_ZSTD) == 0) {
         if (*algorithms & ALGORITHM_ZSTD) {
           compression_acceptable = 1;
         }
