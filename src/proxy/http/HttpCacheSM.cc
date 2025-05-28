@@ -22,10 +22,12 @@
  */
 
 #include "proxy/http/HttpCacheSM.h"
+#include "iocore/eventsystem/Thread.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
 
 #include "iocore/cache/Cache.h"
+#include "tscore/ink_assert.h"
 
 #define SM_REMEMBER(sm, e, r)                          \
   {                                                    \
@@ -69,6 +71,16 @@ void
 HttpCacheSM::reset()
 {
   captive_action.reset();
+}
+
+void
+HttpCacheSM::cleanup()
+{
+  ink_release_assert(this->mutex && this->mutex->thread_holding == this_ethread());
+
+  if (_read_retry_event != nullptr) {
+    _read_retry_event->cancel();
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -117,7 +129,6 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
       // redirect follow in progress, close the previous cache_read_vc
       close_read();
     }
-    open_read_cb  = true;
     cache_read_vc = static_cast<CacheVConnection *>(data);
     master_sm->handleEvent(event, &captive_action);
     break;
@@ -132,22 +143,23 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
       // Somebody else is writing the object
       if (open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries) {
         // Retry to read; maybe the update finishes in time
-        open_read_cb = false;
-        do_schedule_in();
+        _schedule_read_retry();
       } else {
         // Give up; the update didn't finish in time
         // HttpSM will inform HttpTransact to 'proxy-only'
-        open_read_cb = true;
         master_sm->handleEvent(event, &captive_action);
       }
     } else {
       // Simple miss in the cache.
-      open_read_cb = true;
       master_sm->handleEvent(event, &captive_action);
     }
     break;
 
   case EVENT_INTERVAL:
+    if (_read_retry_event == static_cast<Event *>(data)) {
+      _read_retry_event = nullptr;
+    }
+
     // Retry the cache open read if the number retries is less
     // than or equal to the max number of open read retries,
     // else treat as a cache miss.
@@ -197,7 +209,6 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     Metrics::Gauge::increment(http_rsb.current_cache_connections);
     ink_assert(cache_write_vc == nullptr);
     cache_write_vc = static_cast<CacheVConnection *>(data);
-    open_write_cb  = true;
     master_sm->handleEvent(event, &captive_action);
     break;
 
@@ -231,9 +242,8 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     }
 
     if (read_retry_on_write_fail || !write_retry_done()) {
-      // Retry open write;
-      open_write_cb = false;
-      do_schedule_in();
+      // Retry open read;
+      _schedule_read_retry();
     } else {
       // The cache is hosed or full or something.
       // Forward the failure to the main sm
@@ -241,19 +251,21 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
           "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
           "done retrying...",
           master_sm->sm_id, open_write_tries);
-      open_write_cb = true;
-      err_code      = reinterpret_cast<intptr_t>(data);
+      err_code = reinterpret_cast<intptr_t>(data);
       master_sm->handleEvent(event, &captive_action);
     }
   } break;
 
   case EVENT_INTERVAL:
+    if (_read_retry_event == static_cast<Event *>(data)) {
+      _read_retry_event = nullptr;
+    }
+
     if (master_sm->t_state.txn_conf->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
       Dbg(dbg_ctl_http_cache,
           "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
           "falling back to read retry...",
           master_sm->sm_id, open_write_tries);
-      open_read_cb = false;
       master_sm->handleEvent(CACHE_EVENT_OPEN_READ, &captive_action);
     } else {
       Dbg(dbg_ctl_http_cache,
@@ -279,16 +291,21 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
   return VC_EVENT_CONT;
 }
 
+/**
+  Schedule a read retry event to this HttpCacheSM continuation with cache_open_read_retry_time delay.
+  The scheduled event is tracked by `_read_retry_event`.
+ */
 void
-HttpCacheSM::do_schedule_in()
+HttpCacheSM::_schedule_read_retry()
 {
-  ink_assert(pending_action == nullptr);
-  Action *action_handle =
-    mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(master_sm->t_state.txn_conf->cache_open_read_retry_time));
+  ink_release_assert(this->mutex->thread_holding == this_ethread());
 
-  if (action_handle != ACTION_RESULT_DONE) {
-    pending_action = action_handle;
+  if (_read_retry_event != nullptr && _read_retry_event->cancelled == false) {
+    _read_retry_event->cancel();
   }
+
+  _read_retry_event =
+    mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(master_sm->t_state.txn_conf->cache_open_read_retry_time));
 
   return;
 }
@@ -298,24 +315,25 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
 {
   open_read_tries++;
   ink_assert(pending_action == nullptr);
-  ink_assert(open_read_cb == false);
+
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
   Action *action_handle           = cacheProcessor.open_read(this, &key, this->read_request_hdr, &http_params);
 
   if (action_handle != ACTION_RESULT_DONE) {
-    pending_action = action_handle;
-  }
-  // Check to see if we've already called the user back
-  //  If we have then it's ACTION_RESULT_DONE, other wise
-  //  return our captive action and ensure that we are actually
-  //  doing something useful
-  if (open_read_cb == true) {
-    return ACTION_RESULT_DONE;
-  } else {
-    ink_assert(pending_action != nullptr);
-    captive_action.cancelled = 0; // Make sure not cancelled before we hand it out
+    pending_action           = action_handle;
+    captive_action.cancelled = false; // Make sure not cancelled before we hand it out
     return &captive_action;
+  } else {
+    // In some cases, CacheProcessor::open_read calls back to `state_cache_open_read` with a cache event. If the event is
+    // CACHE_EVENT_OPEN_READ_FAILED, a read retry event might be scheduled. In this case, CacheProcessor::open_read returns
+    // ACTION_RESULT_DONE, even though the read retry event is still pending. To indicate this situation to HttpSM, the scheduled
+    // read retry event is returned. HttpSM can cancel the event if necessary.
+    if (_read_retry_event && _read_retry_event->cancelled != true) {
+      return _read_retry_event;
+    } else {
+      return ACTION_RESULT_DONE;
+    }
   }
 }
 
@@ -335,8 +353,7 @@ HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, const Ov
 
   lookup_max_recursive++;
   current_lookup_level++;
-  open_read_cb = false;
-  act_return   = do_cache_open_read(cache_key);
+  act_return = do_cache_open_read(cache_key);
   // the following logic is based on the assumption that the second
   // lookup won't happen if the HttpSM hasn't been called back for the
   // first lookup
@@ -366,8 +383,7 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   SET_HANDLER(&HttpCacheSM::state_cache_open_write);
   ink_assert(pending_action == nullptr);
   ink_assert((cache_write_vc == nullptr) || master_sm->t_state.redirect_info.redirect_in_process);
-  // INKqa12119
-  open_write_cb = false;
+
   open_write_tries++;
   if (0 == open_write_start) {
     open_write_start = ink_get_hrtime();
@@ -400,17 +416,18 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   Action        *action_handle = cacheProcessor.open_write(this, key, info, pin_in_cache);
 
   if (action_handle != ACTION_RESULT_DONE) {
-    pending_action = action_handle;
-  }
-  // Check to see if we've already called the user back
-  //  If we have then it's ACTION_RESULT_DONE, other wise
-  //  return our captive action and ensure that we are actually
-  //  doing something useful
-  if (open_write_cb == true) {
-    return ACTION_RESULT_DONE;
-  } else {
-    ink_assert(pending_action != nullptr);
-    captive_action.cancelled = 0; // Make sure not cancelled before we hand it out
+    pending_action           = action_handle;
+    captive_action.cancelled = false; // Make sure not cancelled before we hand it out
     return &captive_action;
+  } else {
+    // In some cases, CacheProcessor::open_write calls back to `state_cache_open_write` with a cache event. If the event is
+    // CACHE_EVENT_OPEN_WRITE_FAILED, a read retry event might be scheduled. In this case, CacheProcessor::open_read returns
+    // ACTION_RESULT_DONE, even though the read retry event is still pending. To indicate this situation to HttpSM, the scheduled
+    // read retry event is returned. HttpSM can cancel the event if necessary.
+    if (_read_retry_event && _read_retry_event->cancelled != true) {
+      return _read_retry_event;
+    } else {
+      return ACTION_RESULT_DONE;
+    }
   }
 }
