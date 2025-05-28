@@ -132,10 +132,9 @@ sessions:
         - [ Host, example.com ]
         - [ uuid, 35 ]
 
-          # After this delay, the item is 8 seconds old. This makes it:
-          #  6 seconds beyond the server's max-age of 2 seconds and
-          #  2 seconds beyond ATS's max_stale_age of 6 seconds.
-      delay: 4s
+          # After this delay, the item is 10 seconds old. This is 2 seconds beyond
+          #  the server's max-age of 2 seconds + ATS's max_stale_age of 6 seconds.
+      delay: 6s
 
     server-response:
       status: 503
