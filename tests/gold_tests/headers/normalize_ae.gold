@@ -63,6 +63,166 @@ br, gzip
 -
 br, gzip
 -
+zstd
+-
+zstd, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd, br, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd
+-
+zstd
+-
+X-Au-Test: www.ae-4.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br
+-
+br
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+X-Au-Test: www.ae-5.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br, gzip
+-
+br, gzip
+-
+zstd
+-
+zstd, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd, br, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd, br, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd
+-
+zstd
+-
+X-Au-Test: www.ae-4.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br
+-
+br
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+X-Au-Test: www.ae-5.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br, gzip
+-
+br, gzip
+-
+zstd
+-
+zstd, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd, br, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd
+-
+zstd
+-
 X-Au-Test: www.no-oride.com
 ACCEPT-ENCODING MISSING
 -
