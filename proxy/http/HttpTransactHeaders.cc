@@ -1284,7 +1284,7 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
           Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
-          Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-br non-gzip Accept-Encoding");
+          Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-zstd non-br non-gzip Accept-Encoding");
         }
       } else {
         static bool logged = false;
