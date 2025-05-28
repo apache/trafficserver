@@ -143,6 +143,13 @@ handle_range_request(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
 }
 } // namespace
 
+// Forward declarations for ZSTD compression functions
+#if HAVE_ZSTD_H
+static void zstd_compress_init(Data *data);
+static void zstd_compress_finish(Data *data);
+static void zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length);
+#endif
+
 static Data *
 data_alloc(int compression_type, int compression_algorithms)
 {
