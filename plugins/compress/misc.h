@@ -75,6 +75,18 @@ using b_stream = struct {
 };
 #endif
 
+#if HAVE_ZSTD_H
+using zstd_stream = struct {
+  ZSTD_CCtx  *cctx;
+  const void *next_in;
+  size_t      avail_in;
+  void       *next_out;
+  size_t      avail_out;
+  size_t      total_in;
+  size_t      total_out;
+};
+#endif
+
 using Data = struct {
   TSHttpTxn                txn;
   Gzip::HostConfiguration *hc;
@@ -90,7 +102,7 @@ using Data = struct {
   b_stream bstrm;
 #endif
 #if HAVE_ZSTD_H
-  ZSTD_CCtx *zstd_cctx;
+  zstd_stream zstrm_zstd;
 #endif
 };
 

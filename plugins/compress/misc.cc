@@ -86,7 +86,7 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
   bool   br      = false;
   bool   zstd    = false;
   // remove the accept encoding field(s),
-  // while finding out if gzip or deflate is supported.
+  // while finding out if gzip, brotli, deflate, or zstandard are supported.
   while (field) {
     int         val_len;
     const char *values_ = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, -1, &val_len);
@@ -101,7 +101,7 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
           br = true;
         } else if (strcasecmp("deflate", next) == 0) {
           deflate = true;
-        } else if (strcasecmp(TS_HTTP_VALUE_ZSTD, next) == 0) {
+        } else if (strcasecmp("zstd", next) == 0) {
           zstd = true;
         }
       }
@@ -118,7 +118,7 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
     TSMimeHdrFieldCreate(reqp, hdr_loc, &field);
     TSMimeHdrFieldNameSet(reqp, hdr_loc, field, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
     if (zstd) {
-      TSMimeHdrFieldValueStringInsert(reqp, hdr_loc, field, -1, TS_HTTP_VALUE_ZSTD, TS_HTTP_LEN_ZSTD);
+      TSMimeHdrFieldValueStringInsert(reqp, hdr_loc, field, -1, "zstd", strlen("zstd"));
       info("normalized accept encoding to zstd");
     }
     if (br) {
