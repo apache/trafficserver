@@ -1,7 +1,7 @@
 What this plugin does:
 =====================
 
-This plugin compresses responses, via gzip or brotli, whichever is applicable
+This plugin compresses responses, via gzip, deflate, brotli, or zstd (Zstandard), whichever is applicable
 it can compress origin responses as well as cached responses
 
 installation:
