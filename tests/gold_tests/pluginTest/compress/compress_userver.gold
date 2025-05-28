@@ -1,15 +1,18 @@
-0/gzip, deflate, sdch, br
+0/zstd, gzip, deflate, sdch, br
 0/gzip
 0/br
 0/deflate
-1/gzip, deflate, sdch, br
+0/zstd
+1/zstd, gzip, deflate, sdch, br
 1/gzip
 1/br
 1/deflate
-2/gzip, deflate, sdch, br
+1/zstd
+2/zstd, gzip, deflate, sdch, br
 2/gzip
 2/br
 2/deflate
+2/zstd
 0/gzip;q=0.666
 0/gzip;q=0.666x
 0/gzip;q=#0.666
