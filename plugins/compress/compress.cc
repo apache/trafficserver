@@ -235,7 +235,7 @@ data_destroy(Data *data)
 #endif
 #if HAVE_ZSTD_H
   if (data->zstd_cctx) {
-      ZSTD_freeCCtx(data->zstd_cctx);
+    ZSTD_freeCCtx(data->zstd_cctx);
   }
 #endif
 
