@@ -204,11 +204,11 @@ data_alloc(int compression_type, int compression_algorithms)
   }
 #endif
 #if HAVE_ZSTD_H
-  data->zstd_ctx = nullptr;
+  data->zstd_cctx = nullptr;
   if (compression_type & COMPRESSION_TYPE_ZSTD) {
     debug("zstd compression. Create Zstd Compression Context.");
-    data->zstd_ctx = ZSTD_createCCtx();
-    if (!data->zstd_ctx) {
+    data->zstd_cctx = ZSTD_createCCtx();
+    if (!data->zstd_cctx) {
       fatal("Zstd Compression Context Creation Failed");
     }
   }
@@ -234,8 +234,8 @@ data_destroy(Data *data)
   BrotliEncoderDestroyInstance(data->bstrm.br);
 #endif
 #if HAVE_ZSTD_H
-  if (data->zstd_ctx) {
-    ZSTD_freeCCtx(data->zstd_ctx);
+  if (data->zstd_cctx) {
+      ZSTD_freeCCtx(data->zstd_cctx);
   }
 #endif
 
