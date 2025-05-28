@@ -2381,10 +2381,13 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
     if (result == Http2SendDataFrameResult::DONE) {
       if (!stream->is_outbound_connection()) {
         // Delete a stream immediately
-        // TODO its should not be deleted for a several time to handling
-        // RST_STREAM and WINDOW_UPDATE.
-        // See 'closed' state written at [RFC 7540] 5.1.
         Http2StreamDebug(this->session, stream->get_id(), "Shutdown stream");
+
+        if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+          // actively close stream on half-closed(local) by sending RST_STREAM frame
+          send_rst_stream_frame(stream->get_id(), Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+        }
+
         stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
         stream->do_io_close();
       } else if (stream->is_outbound_connection() && stream->is_write_vio_done()) {
