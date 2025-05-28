@@ -111,7 +111,7 @@ next_in_map(Stripe *stripe, char *vol_map, off_t offset)
 }
 
 // Function in CacheDir.cc that we need for make_vol_map().
-int dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe);
+int dir_bucket_loop_fix(Dir *start_dir, int s, Directory *directory);
 
 // TODO: If we used a bit vector, we could make a smaller map structure.
 // TODO: If we saved a high water mark we could have a smaller buf, and avoid searching it
@@ -136,7 +136,7 @@ make_vol_map(Stripe *stripe)
     Dir *seg = stripe->directory.get_segment(s);
     for (int b = 0; b < stripe->directory.buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (dir_bucket_loop_fix(e, s, stripe)) {
+      if (dir_bucket_loop_fix(e, s, &stripe->directory)) {
         break;
       }
       while (e) {
@@ -585,7 +585,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       /* should be first_key not key..right?? */
       if (doc->first_key == key) {
         ink_assert(doc->magic == DOC_MAGIC);
-        if (dir_delete(&key, stripe, &dir) > 0) {
+        if (stripe->directory.remove(&key, stripe, &dir) > 0) {
           if (od) {
             stripe->close_write(this);
           }
@@ -597,7 +597,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
   Lcollision:
     // check for collision
-    if (dir_probe(&key, stripe, &dir, &last_collision) > 0) {
+    if (stripe->directory.probe(&key, stripe, &dir, &last_collision) > 0) {
       int ret = do_read_call(&key);
       if (ret == EVENT_RETURN) {
         goto Lread;
@@ -739,7 +739,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
     last_collision = nullptr;
     while (true) {
-      if (!dir_probe(&doc->first_key, stripe, &dir, &last_collision)) {
+      if (!stripe->directory.probe(&doc->first_key, stripe, &dir, &last_collision)) {
         goto Lskip;
       }
       if (!stripe->dir_agg_valid(&dir) || !dir_head(&dir) ||
@@ -787,7 +787,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       // verify that the earliest block exists, reducing 'false hit' callbacks
       if (!(key == doc->key)) {
         last_collision = nullptr;
-        if (!dir_probe(&key, stripe, &earliest_dir, &last_collision)) {
+        if (!stripe->directory.probe(&key, stripe, &earliest_dir, &last_collision)) {
           continue;
         }
       }
@@ -968,7 +968,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
 
     while (true) {
-      if (!dir_probe(&first_key, stripe, &d, &l)) {
+      if (!stripe->directory.probe(&first_key, stripe, &d, &l)) {
         stripe->close_write(this);
         _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_FAILED, nullptr);
         SET_HANDLER(&CacheVC::scanObject);
@@ -1005,9 +1005,9 @@ CacheVC::scanUpdateDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
   if (lock.is_locked()) {
     // insert a directory entry for the previous fragment
-    dir_overwrite(&first_key, stripe, &dir, &od->first_dir, false);
+    stripe->directory.overwrite(&first_key, stripe, &dir, &od->first_dir, false);
     if (od->move_resident_alt) {
-      dir_insert(&od->single_doc_key, stripe, &od->single_doc_dir);
+      stripe->directory.insert(&od->single_doc_key, stripe, &od->single_doc_dir);
     }
     ink_assert(stripe->open_read(&first_key));
     ink_assert(this->od);
