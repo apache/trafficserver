@@ -207,7 +207,9 @@ zstd           Zstandard compression (fast, high compression ratio)
 ============== =================================================================
 
 Note that if :ts:cv:`proxy.config.http.normalize_ae` is ``1``, only gzip will
-be considered, and if it is ``2``, only br or gzip will be considered.
+be considered, if it is ``2``, only br or gzip will be considered, if it is ``4``,
+only zstd, br, or gzip will be considered, and if it is ``5``, all combinations
+of zstd, br, and gzip will be considered.
 
 Examples
 ========

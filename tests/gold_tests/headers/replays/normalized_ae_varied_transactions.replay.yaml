@@ -811,3 +811,297 @@ sessions:
         # - [ X-Response-Identifier, { value: Br-Gzip-Accept-Encoding, as: equal } ]
         - [ X-Response-Identifier, { value: Gzip-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: hit-fresh, as: equal } ]
+
+  # Case 5 proxy.config.http.normalize_ae:4 (ZSTD priority mode)
+  # load an alternate of no Accept-Encoding header
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case5
+      headers:
+        fields:
+        - [ Host, www.ae-4.com ]
+        - [ X-Debug, x-cache]
+        - [ uuid, 41 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, Accept-Encoding ]
+        - [ Connection, close ]
+        - [ X-Response-Identifier, No-Accept-Encoding ]
+      content:
+        encoding: plain
+        data: "no Accept-Encoding"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: No-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # load an alternate of zstd Accept-Encoding header
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case5
+      headers:
+        fields:
+        - [ Host, www.ae-4.com ]
+        - [ X-Debug, x-cache]
+        - [ Accept-Encoding, zstd ]
+        - [ uuid, 42 ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, Accept-Encoding ]
+        - [ Connection, close ]
+        - [ X-Response-Identifier, Zstd-Accept-Encoding ]
+      content:
+        encoding: plain
+        data: "Zstd Accept-Encoding"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: Zstd-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # Accept-Encoding header zstd, br would match the alternate of zstd Accept-Encoding header
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case5
+      headers:
+        fields:
+        - [ Host, www.ae-4.com ]
+        - [ X-Debug, x-cache]
+        - [ uuid, 43 ]
+        - [ Accept-Encoding, "zstd, br" ]
+      delay: 100ms
+
+    server-response:
+      <<: *404_response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: Zstd-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: hit-fresh, as: equal } ]
+
+  # Accept-Encoding header br, gzip would match the alternate of no Accept-Encoding header (mode 4 fallback)
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case5
+      headers:
+        fields:
+        - [ Host, www.ae-4.com ]
+        - [ X-Debug, x-cache]
+        - [ uuid, 44 ]
+        - [ Accept-Encoding, "br, gzip" ]
+      delay: 100ms
+
+    server-response:
+      <<: *404_response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: No-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: hit-fresh, as: equal } ]
+
+  # Case 6 proxy.config.http.normalize_ae:5 (ZSTD combination mode)
+  # load an alternate of no Accept-Encoding header
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case6
+      headers:
+        fields:
+        - [ Host, www.ae-5.com ]
+        - [ X-Debug, x-cache]
+        - [ uuid, 51 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, Accept-Encoding ]
+        - [ Connection, close ]
+        - [ X-Response-Identifier, No-Accept-Encoding ]
+      content:
+        encoding: plain
+        data: "no Accept-Encoding"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: No-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # load an alternate of zstd Accept-Encoding header
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case6
+      headers:
+        fields:
+        - [ Host, www.ae-5.com ]
+        - [ X-Debug, x-cache]
+        - [ Accept-Encoding, zstd ]
+        - [ uuid, 52 ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, Accept-Encoding ]
+        - [ Connection, close ]
+        - [ X-Response-Identifier, Zstd-Accept-Encoding ]
+      content:
+        encoding: plain
+        data: "Zstd Accept-Encoding"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: Zstd-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # load an alternate of zstd, br, gzip Accept-Encoding header
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case6
+      headers:
+        fields:
+        - [ Host, www.ae-5.com ]
+        - [ X-Debug, x-cache]
+        - [ Accept-Encoding, "zstd, br, gzip" ]
+        - [ uuid, 53 ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, Accept-Encoding ]
+        - [ Connection, close ]
+        - [ X-Response-Identifier, Zstd-Br-Gzip-Accept-Encoding ]
+      content:
+        encoding: plain
+        data: "Zstd-Br-Gzip Accept-Encoding"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: Zstd-Br-Gzip-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # Accept-Encoding header gzip, zstd, br would match the alternate of zstd, br, gzip Accept-Encoding header
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case6
+      headers:
+        fields:
+        - [ Host, www.ae-5.com ]
+        - [ X-Debug, x-cache]
+        - [ uuid, 54 ]
+        - [ Accept-Encoding, "gzip, zstd, br" ]
+      delay: 100ms
+
+    server-response:
+      <<: *404_response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: Zstd-Br-Gzip-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: hit-fresh, as: equal } ]
+
+  # Accept-Encoding header zstd, gzip would match the alternate of zstd Accept-Encoding header (mode 5 creates zstd, gzip)
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case6
+      headers:
+        fields:
+        - [ Host, www.ae-5.com ]
+        - [ X-Debug, x-cache]
+        - [ uuid, 55 ]
+        - [ Accept-Encoding, "zstd, gzip" ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, Accept-Encoding ]
+        - [ Connection, close ]
+        - [ X-Response-Identifier, Zstd-Gzip-Accept-Encoding ]
+      content:
+        encoding: plain
+        data: "Zstd-Gzip Accept-Encoding"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: Zstd-Gzip-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # Accept-Encoding header deflate, zstd would match the alternate of zstd Accept-Encoding header
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /case6
+      headers:
+        fields:
+        - [ Host, www.ae-5.com ]
+        - [ X-Debug, x-cache]
+        - [ uuid, 56 ]
+        - [ Accept-Encoding, "deflate, zstd" ]
+      delay: 100ms
+
+    server-response:
+      <<: *404_response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: Zstd-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: hit-fresh, as: equal } ]
