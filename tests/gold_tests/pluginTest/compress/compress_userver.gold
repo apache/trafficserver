@@ -13,6 +13,11 @@
 2/br
 2/deflate
 2/zstd
+3/zstd, gzip, deflate, sdch, br
+3/gzip
+3/br
+3/deflate
+3/zstd
 0/gzip;q=0.666
 0/gzip;q=0.666x
 0/gzip;q=#0.666
