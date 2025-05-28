@@ -211,11 +211,17 @@ data_alloc(int compression_type, int compression_algorithms)
   }
 #endif
 #if HAVE_ZSTD_H
-  data->zstd_cctx = nullptr;
+  data->zstrm_zstd.cctx      = nullptr;
+  data->zstrm_zstd.next_in   = nullptr;
+  data->zstrm_zstd.avail_in  = 0;
+  data->zstrm_zstd.total_in  = 0;
+  data->zstrm_zstd.next_out  = nullptr;
+  data->zstrm_zstd.avail_out = 0;
+  data->zstrm_zstd.total_out = 0;
   if (compression_type & COMPRESSION_TYPE_ZSTD) {
     debug("zstd compression. Create Zstd Compression Context.");
-    data->zstd_cctx = ZSTD_createCCtx();
-    if (!data->zstd_cctx) {
+    data->zstrm_zstd.cctx = ZSTD_createCCtx();
+    if (!data->zstrm_zstd.cctx) {
       fatal("Zstd Compression Context Creation Failed");
     }
   }
@@ -241,8 +247,8 @@ data_destroy(Data *data)
   BrotliEncoderDestroyInstance(data->bstrm.br);
 #endif
 #if HAVE_ZSTD_H
-  if (data->zstd_cctx) {
-    ZSTD_freeCCtx(data->zstd_cctx);
+  if (data->zstrm_zstd.cctx) {
+    ZSTD_freeCCtx(data->zstrm_zstd.cctx);
   }
 #endif
 
@@ -396,7 +402,7 @@ compress_transform_init(TSCont contp, Data *data)
 #if HAVE_ZSTD_H
   if (data->compression_type & COMPRESSION_TYPE_ZSTD) {
     zstd_compress_init(data);
-    if (!data->zstd_cctx) {
+    if (!data->zstrm_zstd.cctx) {
       TSError("Failed to create Zstandard compression context");
       return;
     }
@@ -512,33 +518,105 @@ brotli_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_l
 static void
 zstd_compress_init(Data *data)
 {
-  data->zstd_cctx = ZSTD_createCCtx();
-  if (!data->zstd_cctx) {
+  if (!data->zstrm_zstd.cctx) {
     error("Failed to initialize Zstd compression context");
+    return;
   }
+
+  // Set compression level
+  size_t result = ZSTD_CCtx_setParameter(data->zstrm_zstd.cctx, ZSTD_c_compressionLevel, ZSTD_COMPRESSION_LEVEL);
+  if (ZSTD_isError(result)) {
+    error("Failed to set Zstd compression level: %s", ZSTD_getErrorName(result));
+    return;
+  }
+
+  // Enable checksum for data integrity
+  result = ZSTD_CCtx_setParameter(data->zstrm_zstd.cctx, ZSTD_c_checksumFlag, 1);
+  if (ZSTD_isError(result)) {
+    error("Failed to enable Zstd checksum: %s", ZSTD_getErrorName(result));
+    return;
+  }
+
+  debug("zstd compression context initialized with level %d", ZSTD_COMPRESSION_LEVEL);
 }
 
 static void
 zstd_compress_finish(Data *data)
 {
-  if (data->zstd_cctx) {
-    ZSTD_freeCCtx(data->zstd_cctx);
-    data->zstd_cctx = nullptr;
+  if (data->state == transform_state_output) {
+    TSIOBufferBlock downstream_blkp;
+    int64_t         downstream_length;
+
+    data->state = transform_state_finished;
+
+    // Finalize the zstd stream
+    for (;;) {
+      downstream_blkp = TSIOBufferStart(data->downstream_buffer);
+
+      char *downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
+
+      ZSTD_outBuffer output = {downstream_buffer, static_cast<size_t>(downstream_length), 0};
+
+      size_t remaining = ZSTD_endStream(data->zstrm_zstd.cctx, &output);
+
+      if (ZSTD_isError(remaining)) {
+        error("zstd compression finish failed: %s", ZSTD_getErrorName(remaining));
+        break;
+      }
+
+      if (output.pos > 0) {
+        TSIOBufferProduce(data->downstream_buffer, output.pos);
+        data->downstream_length    += output.pos;
+        data->zstrm_zstd.total_out += output.pos;
+      }
+
+      if (remaining == 0) { /* compression finished */
+        break;
+      }
+    }
+
+    debug("zstd-transform: Finished zstd compression");
+    log_compression_ratio(data->zstrm_zstd.total_in, data->downstream_length);
   }
 }
 
 static void
 zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
 {
-  char   output_buffer[ZSTD_CStreamOutSize()];
-  size_t compressed_size = ZSTD_compressCCtx(data->zstd_cctx, output_buffer, sizeof(output_buffer), upstream_buffer,
-                                             upstream_length, ZSTD_COMPRESSION_LEVEL);
-  if (ZSTD_isError(compressed_size)) {
-    error("Zstd compression failed: %s", ZSTD_getErrorName(compressed_size));
-    return;
+  TSIOBufferBlock downstream_blkp;
+  int64_t         downstream_length;
+
+  // Set up input buffer for zstd streaming
+  ZSTD_inBuffer input        = {upstream_buffer, static_cast<size_t>(upstream_length), 0};
+  data->zstrm_zstd.total_in += upstream_length;
+
+  while (input.pos < input.size) {
+    downstream_blkp         = TSIOBufferStart(data->downstream_buffer);
+    char *downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
+
+    // Set up output buffer for zstd streaming
+    ZSTD_outBuffer output = {downstream_buffer, static_cast<size_t>(downstream_length), 0};
+
+    // Compress the data using streaming API
+    size_t result = ZSTD_compressStream2(data->zstrm_zstd.cctx, &output, &input, ZSTD_e_continue);
+
+    if (ZSTD_isError(result)) {
+      error("Zstd compression failed: %s", ZSTD_getErrorName(result));
+      return;
+    }
+
+    if (output.pos > 0) {
+      TSIOBufferProduce(data->downstream_buffer, output.pos);
+      data->downstream_length    += output.pos;
+      data->zstrm_zstd.total_out += output.pos;
+    }
+
+    // If we have output space but no more input was consumed, break to avoid infinite loop
+    if (output.pos == 0 && input.pos < input.size) {
+      error("zstd-transform: no progress made in compression");
+      break;
+    }
   }
-  TSIOBufferWrite(data->downstream_buffer, output_buffer, compressed_size);
-  data->downstream_length += compressed_size;
 }
 #endif
 

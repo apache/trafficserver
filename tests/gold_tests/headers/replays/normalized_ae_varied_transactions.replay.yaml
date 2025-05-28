@@ -902,7 +902,7 @@ sessions:
         - [ X-Response-Identifier, { value: Zstd-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
-  # Accept-Encoding header br, gzip would match the alternate of no Accept-Encoding header (mode 4 fallback)
+  # Accept-Encoding header br, gzip would match the alternate of br Accept-Encoding header (mode 4 fallback)
   - client-request:
       method: "GET"
       version: "1.1"
@@ -922,7 +922,7 @@ sessions:
       status: 200
       headers:
         fields:
-        - [ X-Response-Identifier, { value: No-Accept-Encoding, as: equal } ]
+        - [ X-Response-Identifier, { value: Br-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
   # Case 6 proxy.config.http.normalize_ae:5 (ZSTD combination mode)
