@@ -126,6 +126,9 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
         this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
       } else {
+        if (_actively_closed_streams.contains(id)) {
+          return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+        }
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED, nullptr);
       }
     } else {
@@ -2384,8 +2387,9 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
         Http2StreamDebug(this->session, stream->get_id(), "Shutdown stream");
 
         if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
-          // actively close stream on half-closed(local) by sending RST_STREAM frame
+          // actively close stream in the half-closed(local) state by sending a RST_STREAM frame
           send_rst_stream_frame(stream->get_id(), Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+          _actively_closed_streams.insert(stream->get_id());
         }
 
         stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);

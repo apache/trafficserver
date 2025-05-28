@@ -281,6 +281,9 @@ private:
   Http2StreamId      latest_streamid_out = 0;
   std::atomic<int>   stream_requests     = 0;
 
+  // TODO: change to fixed size buffer
+  std::set<Http2StreamId> _actively_closed_streams;
+
   // Counter for current active streams which are started by the client.
   std::atomic<uint32_t> peer_streams_count_in = 0;
 
