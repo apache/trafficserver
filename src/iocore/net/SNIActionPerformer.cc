@@ -506,6 +506,9 @@ ServerGroupsList::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) cons
   }
   Dbg(dbg_ctl_ssl_sni, "Setting groups list from server_groups_list to %s", server_groups_list.c_str());
 
-  tbs->set_groups_list(server_groups_list);
+  if (!tbs->set_groups_list(server_groups_list)) {
+    Error("Invalid server_groups_list: %s", server_groups_list.c_str());
+    return SSL_TLSEXT_ERR_ALERT_WARNING;
+  }
   return SSL_TLSEXT_ERR_OK;
 }

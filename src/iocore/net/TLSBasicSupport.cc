@@ -185,11 +185,11 @@ TLSBasicSupport::set_cipher_suite([[maybe_unused]] std::string const &cipher_sui
 #endif
 }
 
-void
+bool
 TLSBasicSupport::set_groups_list(std::string const &groups_list)
 {
   auto ssl = this->_get_ssl_object();
-  SSL_set1_groups_list(ssl, groups_list.c_str());
+  return SSL_set1_groups_list(ssl, groups_list.c_str());
 }
 
 int

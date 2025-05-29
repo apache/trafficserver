@@ -59,6 +59,10 @@ ts.Disk.sni_yaml.AddLines(
         '  server_groups_list: x25519',
         '  valid_tls_versions_in: [ TLSv1_2 ]',
         '  server_cipher_suite: ECDHE-RSA-AES256-GCM-SHA384',
+        '- fqdn: ccc.com',
+        '  server_groups_list: ABC123',
+        '  valid_tls_versions_in: [ TLSv1_2 ]',
+        '  server_cipher_suite: ECDHE-RSA-AES256-GCM-SHA384',
     ])
 
 tr = Test.AddTestRun("Test 0: x25519")
@@ -74,9 +78,20 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
 tr.Processes.Default.Streams.all = Testers.IncludesExpression(
     f"SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / x25519", "Curl should log using x25519 in the SSL connection")
 
+tr = Test.AddTestRun("Test 1: fail")
+tr.MakeCurlCommand(
+    "-v --ciphers ECDHE-RSA-AES256-GCM-SHA384 --resolve 'ccc.com:{0}:127.0.0.1' -k  https://ccc.com:{0}".format(
+        ts.Variables.ssl_port))
+# The error code is 35, which indicates there was a ssl connection error
+tr.ReturnCode = 35
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    "ERROR: Invalid server_groups_list: ABC123", "Curl attempt should have failed")
+
 # Hybrid ECDH PQ key exchange TLS groups were added in OpenSSL 3.5
 if Condition.HasOpenSSLVersion("3.5.0"):
-    tr = Test.AddTestRun("Test 1: X25519MLKEM768")
+    tr = Test.AddTestRun("Test 2: X25519MLKEM768")
     tr.MakeCurlCommand(
         "-v --tls13-ciphers TLS_AES_256_GCM_SHA384 --resolve 'aaa.com:{0}:127.0.0.1' -k  https://aaa.com:{0}".format(
             ts.Variables.ssl_port))
