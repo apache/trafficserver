@@ -2975,6 +2975,27 @@ LogAccess::marshal_client_http_connection_id(char *buf)
   return INK_MIN_ALIGN;
 }
 
+int
+LogAccess::marshal_client_http_connection_uid(char *buf)
+{
+  // Each of the two 64 bit values require 20 decimal digits. Add 1 for null
+  // terminator.
+  char str[41];
+  int  len = 0;
+  if (m_http_sm) {
+    std::string_view uid_prefix = m_http_sm->client_connection_uid_prefix();
+    int64_t const    id         = m_http_sm->client_connection_id();
+    len = snprintf(str, sizeof(str), "%.*s:%" PRIx64, static_cast<int>(uid_prefix.length()), uid_prefix.data(), id);
+  } else {
+    len = snprintf(str, sizeof(str), "0:0");
+  }
+  len = round_strlen(len + 1); // +1 for trailing null.
+  if (buf) {
+    marshal_str(buf, str, len);
+  }
+  return len;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

@@ -59,7 +59,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: custom
-      format: "%<ccid> %<ctid> %<cssn>"
+      format: "%<ccui> %<ccid> %<ctid> %<cssn>"
   logs:
     - filename: test_new_log_flds
       format: custom

@@ -198,6 +198,7 @@ Connections and Transactions
 .. _ssrc:
 .. _sstc:
 .. _ccid:
+.. _ccui:
 .. _ctid:
 .. _ctpw:
 .. _ctpd:
@@ -218,6 +219,13 @@ sstc  Proxy          Number of transactions between the |TS| proxy and the origi
 ccid  Client Request Client Connection ID, a non-negative number for a connection,
                      which is different for all currently-active connections to
                      clients.
+ccui  Client Request A globally unique client connection id. This is made up of a
+                     base64-encoded string of the nanoseconds since the epoch
+                     that |TS| started, a colon, and the Client Connection ID
+                     (ccid_).  Since it is unlikely that two |TS| instances in
+                     an organization will start at the exact same nanosecond,
+                     this value is generally unique across the entire
+                     organization for all time.
 ctid  Client Request Client Transaction ID, a non-negative number for a transaction,
                      which is different for all currently-active transactions on the
                      same client connection.  For client HTTP/2 transactions, this

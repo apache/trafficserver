@@ -26,6 +26,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_resolver.h"
 #include "tscore/TSSystemState.h"
+#include <string>
 #include <string_view>
 #include <memory>
 #include "api/InkAPIInternal.h"
@@ -141,9 +142,19 @@ public:
   bool is_draining() const;
   bool is_peer_closed() const;
 
-  int64_t      connection_id() const;
-  TSHttpHookID get_hookid() const;
-  bool         has_hooks() const;
+  int64_t connection_id() const;
+
+  /** Return a prefix that should likely be unique across traffic server instances.
+   *
+   * This is the timestamp in nanoseconds since epoch at the time
+   * ATS was started. It's not likely that two ATS instances will
+   * start at the same nanosecond.
+   *
+   * @return A prefix that can be used to create a unique connection ID.
+   */
+  std::string_view connection_uid_prefix() const;
+  TSHttpHookID     get_hookid() const;
+  bool             has_hooks() const;
 
   virtual bool support_sni() const;
 
@@ -193,8 +204,9 @@ protected:
   bool debug_on   = false;
   bool in_destroy = false;
 
-  int64_t con_id         = 0;
-  Event  *schedule_event = nullptr;
+  int64_t            con_id = 0;
+  static std::string con_uid_prefix;
+  Event             *schedule_event = nullptr;
 
   // This function should be called in all overrides of new_connection() where
   // the new_vc may be an SSLNetVConnection object.
@@ -203,6 +215,7 @@ protected:
   NetVConnection *_vc = nullptr; // The netvc associated with the concrete session class
 
 private:
+  void initialize_con_uid_prefix();
   void handle_api_return(int event);
   int  state_api_callout(int event, void *edata);
 
@@ -216,7 +229,8 @@ private:
   bool m_active = false;
 
   std::unique_ptr<SSLProxySession> _ssl;
-  static inline int64_t            next_cs_id = 0;
+  static inline uint64_t           next_cs_id = 0;
+  static std::mutex                con_uid_prefix_mutex;
 };
 
 ///////////////////

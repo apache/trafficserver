@@ -945,6 +945,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ccid", field);
 
+  field = new LogField("client_connection_uid", "ccui", LogField::STRING, &LogAccess::marshal_client_http_connection_uid,
+                       &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("ccui", field);
+
   field = new LogField("client_transaction_id", "ctid", LogField::sINT, &LogAccess::marshal_client_http_transaction_id,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);

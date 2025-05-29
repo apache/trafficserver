@@ -64,7 +64,9 @@ public:
   ProxyTransaction *get_txn() const;
   void              set_txn(ProxyTransaction *txn, TransactionMilestones &milestones);
 
-  int get_client_connection_id() const;
+  int64_t get_client_connection_id() const;
+
+  std::string_view get_client_connection_uid_prefix() const;
 
   int get_client_transaction_id() const;
 
@@ -95,7 +97,8 @@ private:
 
   ClientConnectionInfo m_conn_info{};
 
-  int                   m_client_connection_id{-1};
+  int64_t               m_client_connection_id{-1};
+  std::string_view      m_client_connection_uid_prefix{"-1"};
   ClientTransactionInfo m_txn_info{};
 
   void save_transaction_info();
@@ -141,7 +144,8 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
   // information that may be needed for logging.
   this->save_transaction_info();
   if (auto p{txn->get_proxy_ssn()}; p) {
-    m_client_connection_id = p->connection_id();
+    m_client_connection_id         = p->connection_id();
+    m_client_connection_uid_prefix = p->connection_uid_prefix();
   }
 
   m_conn_info.tcp_reused = !txn->is_first_transaction();
@@ -188,10 +192,16 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
   }
 }
 
-inline int
+inline int64_t
 HttpUserAgent::get_client_connection_id() const
 {
   return m_client_connection_id;
+}
+
+inline std::string_view
+HttpUserAgent::get_client_connection_uid_prefix() const
+{
+  return m_client_connection_uid_prefix;
 }
 
 inline int

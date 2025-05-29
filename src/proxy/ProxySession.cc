@@ -26,12 +26,54 @@
 #include "proxy/ProxySession.h"
 #include "iocore/net/TLSBasicSupport.h"
 #include "private/SSLProxySession.h"
+#include "tscore/ink_base64.h"
+
+#include <chrono>
+#include <mutex>
 
 std::map<int, std::function<PoolableSession *()>> ProtocolSessionCreateMap;
 
-ProxySession::ProxySession() : VConnection(nullptr) {}
+std::mutex  ProxySession::con_uid_prefix_mutex;
+std::string ProxySession::con_uid_prefix;
 
-ProxySession::ProxySession(NetVConnection *vc) : VConnection(nullptr), _vc(vc) {}
+void
+ProxySession::initialize_con_uid_prefix()
+{
+  std::lock_guard<std::mutex> lock(con_uid_prefix_mutex);
+  if (!con_uid_prefix.empty()) {
+    // Already initialized by another thread.
+    return;
+  }
+  // Get nanoseconds since epoch.
+  auto const     now         = std::chrono::high_resolution_clock::now();
+  auto const     duration    = now.time_since_epoch();
+  uint64_t const nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+
+  // Base64 encode the nanoseconds to con_uid_prefix.
+  size_t const max_encoded_size   = ats_base64_encode_dstlen(sizeof(nanoseconds));
+  auto         encoded_buffer     = std::make_unique<char[]>(max_encoded_size);
+  size_t       encoded_length     = 0;
+  auto        *nanoseconds_char_p = reinterpret_cast<char const *>(&nanoseconds);
+  if (ats_base64_encode(nanoseconds_char_p, sizeof(nanoseconds), encoded_buffer.get(), max_encoded_size, &encoded_length)) {
+    con_uid_prefix = std::string(encoded_buffer.get(), encoded_length);
+  } else {
+    Fatal("Failed to encode connection UID prefix from nanoseconds: %" PRId64, nanoseconds);
+  }
+}
+
+ProxySession::ProxySession() : VConnection(nullptr)
+{
+  if (unlikely(con_uid_prefix.empty())) {
+    initialize_con_uid_prefix();
+  }
+}
+
+ProxySession::ProxySession(NetVConnection *vc) : VConnection(nullptr), _vc(vc)
+{
+  if (unlikely(con_uid_prefix.empty())) {
+    initialize_con_uid_prefix();
+  }
+}
 
 ProxySession::~ProxySession()
 {
@@ -202,6 +244,12 @@ int64_t
 ProxySession::connection_id() const
 {
   return con_id;
+}
+
+std::string_view
+ProxySession::connection_uid_prefix() const
+{
+  return con_uid_prefix;
 }
 
 bool
