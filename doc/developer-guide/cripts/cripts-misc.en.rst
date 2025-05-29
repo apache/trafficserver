@@ -414,3 +414,63 @@ Debug logging uses the same format string syntax as ``fmt::format()`` in ``libfm
     debug tags in your ATS configuration to enable debug output for your Cripts.
     The default debug tag for Cripts is the name of the Cript itself, either
     the Cript source file, or the compiled plugin name.
+
+Cache Groups
+============
+
+As a way to manage assosication between cache entries, Cripts provides an infrastructure
+for cache groups. A cache group is a set of cache entries that are logically
+associated with each other via custom identifiers.
+
+Example implementation of the Cache Groups RFC
+
+.. code-block:: cpp
+
+   do_create_instance()
+   {
+     // Create a cache-group for this site / remap rule(s). They can be shared.
+     instance.data[0] = cripts::Cache::Group::Manager::Factory("example_site");
+   }
+
+   do_delete_instance()
+   {
+     void *ptr = AsPointer(instance.data[0]);
+
+     if (ptr) {
+       delete static_cast<std::shared_ptr<cripts::Cache::Group> *>(ptr);
+       instance.data[0] = nullptr;
+     }
+   }
+
+   do_cache_lookup()
+   {
+     if (cached.response.lookupstatus != cripts::LookupStatus::MISS) {
+       void *ptr = AsPointer(instance.data[0]);
+
+       if (ptr) {
+         auto date = cached.response.AsDate("Date");
+         if (date > 0) {
+           auto cache_groups = cached.response["Cache-Groups"];
+           if (!cache_groups.empty()) {
+             borrow cg = *static_cast<std::shared_ptr<cripts::Cache::Group> *>(ptr);
+             if (cg->Lookup(cache_groups.split(','), date)) {
+               cached.response.lookupstatus = cripts::LookupStatus::HIT_STALE;
+             }
+           }
+         }
+       }
+     }
+   }
+
+   do_read_response()
+   {
+     void *ptr = AsPointer(instance.data[0]);
+
+     if (ptr) {
+       auto invalidation = client.request["Cache-Group-Invalidation"];
+       if (!invalidation.empty()) {
+         borrow cg = *static_cast<std::shared_ptr<cripts::Cache::Group> *>(ptr);
+         cg->Insert(invalidation.split(','));
+       }
+     }
+   }
