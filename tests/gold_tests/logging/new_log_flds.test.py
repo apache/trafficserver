@@ -39,7 +39,8 @@ ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update(
     {
-        # 'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'snowflake|http',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     })
@@ -59,7 +60,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: custom
-      format: "%<ccid> %<ctid> %<cssn>"
+      format: "%<psfid> %<ccid> %<ctid> %<cssn>"
   logs:
     - filename: test_new_log_flds
       format: custom

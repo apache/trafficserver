@@ -747,7 +747,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
 
   *via_string++ = '[';
-  memcpy(via_string, Machine::instance()->uuid.getString(), TS_UUID_STRING_LEN);
+  memcpy(via_string, Machine::instance()->process_uuid.getString(), TS_UUID_STRING_LEN);
   via_string    += TS_UUID_STRING_LEN;
   *via_string++  = ']';
   *via_string++  = ' ';
@@ -990,12 +990,12 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 
     const Machine &m = *Machine::instance();
 
-    if (optSet[HttpForwarded::BY_UUID] and m.uuid.valid()) {
+    if (optSet[HttpForwarded::BY_UUID] and m.process_uuid.valid()) {
       if (hdr.size()) {
         hdr << ';';
       }
 
-      hdr << "by=_" << m.uuid.getString();
+      hdr << "by=_" << m.process_uuid.getString();
     }
 
     if (optSet[HttpForwarded::BY_IP] and m.ip.isValid()) {
