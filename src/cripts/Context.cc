@@ -52,11 +52,11 @@ Context::reset()
   if (_urls.pristine.Initialized()) {
     _urls.pristine.Reset();
   }
-  if (_urls.cache.Initialized()) {
-    _urls.cache.Reset();
-  }
   if (_urls.parent.Initialized()) {
     _urls.parent.Reset();
+  }
+  if (_cache.url.Initialized()) {
+    _cache.url.Reset();
   }
 }
 
