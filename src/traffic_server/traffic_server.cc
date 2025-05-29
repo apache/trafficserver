@@ -2034,7 +2034,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     Machine::init(hostname, &machine_addr.sa);
   }
 
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->uuid.getString(),
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->process_uuid.getString(),
                         RECP_NON_PERSISTENT);
 
   res_track_memory = RecGetRecordInt("proxy.config.res_track_memory").value_or(0);
