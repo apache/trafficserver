@@ -24,6 +24,7 @@
 #include <string_view>
 #include <charconv>
 #include <type_traits>
+#include <chrono>
 
 #include <fmt/core.h>
 
@@ -101,6 +102,12 @@ public:
   ToBool() const
   {
     return bool(*this);
+  }
+
+  [[nodiscard]] time_t
+  ToDate() const
+  {
+    return TSMimeParseDate(_value.data(), _value.size());
   }
 
   std::vector<mixin_type>

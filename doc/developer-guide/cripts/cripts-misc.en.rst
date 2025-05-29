@@ -85,7 +85,6 @@ Function                    Description
 =========================   =======================================================================
 ``DisableCallback()``       Disables a future callback in this Cript, for this transaction.
 ``Aborted()``               Has the transaction been aborted.
-``LookupStatus()``          Returns the cache lookup status for the transaction.
 =========================   =======================================================================
 
 When disabling a callback, use the following names:
@@ -133,9 +132,9 @@ Example usage to turn off a particular hook conditionally:
 Time
 ====
 
-Cripts has encapsulated some common time-related functions in the core.  At the
-moment only the localtime is available, via the ``cripts::Time::Local`` object and its
-``Now()`` method. The ``Now()`` method returns the current time as an object
+Cripts has encapsulated some common time-related functions in the core.  Two different time objects
+are available, ``cripts::Time::Local`` and ``cripts::Time::UTC`` objects and their respective
+``Now()`` methods. The ``Now()`` method returns the current time as an object
 with the following functions:
 
 =====================   ===========================================================================
@@ -150,10 +149,11 @@ Function                Description
 ``Second()``            Returns the second (0-59).
 ``Weekday()``           Returns the day of the week (0-6, Sunday is 0).
 ``Yearday()``           Returns the day of the year (0-365).
+``ToDate()``            Returns a string for the Date in HTTP header format
 =====================   ===========================================================================
 
 The time as returned by ``Now()`` can also be used directly in comparisons with previous or future
-times.
+times. In addition, the ``Now()`` constructor takes an optional ``cripts::Time::Point`` argument.
 
 .. _cripts-misc-plugins:
 
@@ -281,3 +281,63 @@ Example:
    }
 
 A ``cripts::Metric::Gauge`` can also be set via the ``Setter()`` method.
+
+Cache Groups
+============
+
+As a way to manage assosication between cache entries, Cripts provides an infrastructure
+for cache groups. A cache group is a set of cache entries that are logically
+associated with each other via custom identifiers.
+
+Example implementation of the Cache Groups RFC
+
+.. code-block:: cpp
+
+   do_create_instance()
+   {
+     // Create a cache-group for this site / remap rule(s). They can be shared.
+     instance.data[0] = cripts::Cache::Group::Manager::Factory("example_site");
+   }
+
+   do_delete_instance()
+   {
+     void *ptr = AsPointer(instance.data[0]);
+
+     if (ptr) {
+       delete static_cast<std::shared_ptr<cripts::Cache::Group> *>(ptr);
+       instance.data[0] = nullptr;
+     }
+   }
+
+   do_cache_lookup()
+   {
+     if (cached.response.lookupstatus != cripts::LookupStatus::MISS) {
+       void *ptr = AsPointer(instance.data[0]);
+
+       if (ptr) {
+         auto date = cached.response.AsDate("Date");
+         if (date > 0) {
+           auto cache_groups = cached.response["Cache-Groups"];
+           if (!cache_groups.empty()) {
+             borrow cg = *static_cast<std::shared_ptr<cripts::Cache::Group> *>(ptr);
+             if (cg->Lookup(cache_groups.split(','), date)) {
+               cached.response.lookupstatus = cripts::LookupStatus::HIT_STALE;
+             }
+           }
+         }
+       }
+     }
+   }
+
+   do_read_response()
+   {
+     void *ptr = AsPointer(instance.data[0]);
+
+     if (ptr) {
+       auto invalidation = client.request["Cache-Group-Invalidation"];
+       if (!invalidation.empty()) {
+         borrow cg = *static_cast<std::shared_ptr<cripts::Cache::Group> *>(ptr);
+         cg->Insert(invalidation.split(','));
+       }
+     }
+   }

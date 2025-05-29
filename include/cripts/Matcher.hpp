@@ -23,8 +23,10 @@
 // Setup for PCRE2
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
+#include <algorithm>
 #include <vector>
 #include <tuple>
+#include <algorithm>
 
 #include "ts/ts.h"
 #include "cripts/Lulu.hpp"
@@ -153,7 +155,8 @@ namespace List
     {
       auto data = method.Data();
 
-      return end() != std::find_if(begin(), end(), [&](const cripts::Header::Method &header) { return header.Data() == data; });
+      return end() !=
+             std::ranges::find_if(begin(), end(), [&](const cripts::Header::Method &header) { return header.Data() == data; });
     }
 
     [[nodiscard]] bool

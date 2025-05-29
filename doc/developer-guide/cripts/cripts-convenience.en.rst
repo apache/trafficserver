@@ -68,9 +68,10 @@ Object                        Traditional API equivalent
 ``server.request``            ``borrow cripts::Server::Request::Get()``
 ``server.response``           ``borrow cripts::Server::Response::Get()``
 ``server.connection``         ``borrow cripts::Server::Connection::Get()``
+``cached.url``                ``borrow cripts::Cache::URL::Get()``
+``cached.response``           ``borrow cripts::Cache::Response::Get()``
 ``urls.request``              ``borrow cripts::Client::URL::Get()``
 ``urls.pristine``             ``borrow cripts::Pristine::URL::Get()``
-``urls.cache``                ``borrow cripts::Cache::URL::Get()``
 ``urls.parent``               ``borrow cripts::Parent::URL::Get()``
 ``urls.remap.to``             ``borrow cripts::Remap::To::URL::Get``
 ``urls.remap.from``           ``borrow cripts::Remap::From::URL::Get``
