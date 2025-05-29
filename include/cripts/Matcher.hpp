@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <vector>
 #include <tuple>
+#include <algorithm>
 
 #include "cripts/Headers.hpp"
 #include "cripts/Lulu.hpp"
