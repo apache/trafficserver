@@ -1,0 +1,1 @@
+(program (section (varSection VARS { (variables (variableDecl Flag : bool ;)) })) (section REMAP { (conditional (ifStatement if (condition (expression (term (factor Flag)))) (block { (statement inbound.req.X-foo = (value "bar") ;) }))) }) <EOF>)

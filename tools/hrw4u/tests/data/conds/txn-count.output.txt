@@ -1,0 +1,9 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{FROM-URL:PATH} /foo/ [AND]
+cond %{TXN-COUNT} >10
+    set-header @Client-Txn-Count "%{TXN-COUNT}"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{FROM-URL:PATH} /foo/ [AND]
+cond %{SSN-TXN-COUNT} >5
+    set-header @Server-Txn-Count "%{SSN-TXN-COUNT}"

@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{TO-URL:PATH} /foo/
+    set-header To-URL "allowed"

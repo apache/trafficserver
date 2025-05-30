@@ -1,0 +1,5 @@
+REMAP {
+    if true {
+       set-config("proxy.config.http.cache.http", 0);
+    }
+}

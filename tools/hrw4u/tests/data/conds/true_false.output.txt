@@ -1,0 +1,4 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{TRUE} [OR]
+cond %{FALSE}
+    set-header X-foo "bar"

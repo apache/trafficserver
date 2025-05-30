@@ -1,0 +1,13 @@
+VARS {
+    foo: int8;
+}
+
+REMAP {
+    foo = 17;
+}
+
+SEND_RESPONSE {
+    inbound.resp.X-Foo = "Foo is {foo}";
+    inbound.resp.X-Random = "Random is {random(100)}";
+    inbound.resp.X-Hdr = "Header is {inbound.req.X-Hdr}";
+}

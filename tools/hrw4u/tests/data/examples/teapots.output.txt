@@ -1,0 +1,3 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{STATUS} =418
+    counter "plugin.header_rewrite.teapots"

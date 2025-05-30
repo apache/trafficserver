@@ -1,0 +1,8 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Allow} ="yes"
+    set-status 403
+    set-state-flag 0 true
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{STATE-FLAG:0}
+    set-status-reason "Go Away"
