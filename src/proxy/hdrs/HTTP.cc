@@ -32,6 +32,8 @@
 #include "proxy/hdrs/HdrToken.h"
 #include "tscore/Diags.h"
 
+using namespace std::literals;
+
 /***********************************************************************
  *                                                                     *
  *                    C O M P I L E    O P T I O N S                   *
@@ -46,16 +48,16 @@
  *                                                                     *
  ***********************************************************************/
 
-const char *HTTP_METHOD_CONNECT;
-const char *HTTP_METHOD_DELETE;
-const char *HTTP_METHOD_GET;
-const char *HTTP_METHOD_HEAD;
-const char *HTTP_METHOD_OPTIONS;
-const char *HTTP_METHOD_POST;
-const char *HTTP_METHOD_PURGE;
-const char *HTTP_METHOD_PUT;
-const char *HTTP_METHOD_TRACE;
-const char *HTTP_METHOD_PUSH;
+c_str_view HTTP_METHOD_CONNECT;
+c_str_view HTTP_METHOD_DELETE;
+c_str_view HTTP_METHOD_GET;
+c_str_view HTTP_METHOD_HEAD;
+c_str_view HTTP_METHOD_OPTIONS;
+c_str_view HTTP_METHOD_POST;
+c_str_view HTTP_METHOD_PURGE;
+c_str_view HTTP_METHOD_PUT;
+c_str_view HTTP_METHOD_TRACE;
+c_str_view HTTP_METHOD_PUSH;
 
 int HTTP_WKSIDX_CONNECT;
 int HTTP_WKSIDX_DELETE;
@@ -69,41 +71,30 @@ int HTTP_WKSIDX_TRACE;
 int HTTP_WKSIDX_PUSH;
 int HTTP_WKSIDX_METHODS_CNT = 0;
 
-int HTTP_LEN_CONNECT;
-int HTTP_LEN_DELETE;
-int HTTP_LEN_GET;
-int HTTP_LEN_HEAD;
-int HTTP_LEN_OPTIONS;
-int HTTP_LEN_POST;
-int HTTP_LEN_PURGE;
-int HTTP_LEN_PUT;
-int HTTP_LEN_TRACE;
-int HTTP_LEN_PUSH;
-
-const char *HTTP_VALUE_BYTES;
-const char *HTTP_VALUE_CHUNKED;
-const char *HTTP_VALUE_CLOSE;
-const char *HTTP_VALUE_COMPRESS;
-const char *HTTP_VALUE_DEFLATE;
-const char *HTTP_VALUE_GZIP;
-const char *HTTP_VALUE_BROTLI;
-const char *HTTP_VALUE_IDENTITY;
-const char *HTTP_VALUE_KEEP_ALIVE;
-const char *HTTP_VALUE_MAX_AGE;
-const char *HTTP_VALUE_MAX_STALE;
-const char *HTTP_VALUE_MIN_FRESH;
-const char *HTTP_VALUE_MUST_REVALIDATE;
-const char *HTTP_VALUE_NONE;
-const char *HTTP_VALUE_NO_CACHE;
-const char *HTTP_VALUE_NO_STORE;
-const char *HTTP_VALUE_NO_TRANSFORM;
-const char *HTTP_VALUE_ONLY_IF_CACHED;
-const char *HTTP_VALUE_PRIVATE;
-const char *HTTP_VALUE_PROXY_REVALIDATE;
-const char *HTTP_VALUE_PUBLIC;
-const char *HTTP_VALUE_S_MAXAGE;
-const char *HTTP_VALUE_NEED_REVALIDATE_ONCE;
-const char *HTTP_VALUE_100_CONTINUE;
+c_str_view HTTP_VALUE_BYTES;
+c_str_view HTTP_VALUE_CHUNKED;
+c_str_view HTTP_VALUE_CLOSE;
+c_str_view HTTP_VALUE_COMPRESS;
+c_str_view HTTP_VALUE_DEFLATE;
+c_str_view HTTP_VALUE_GZIP;
+c_str_view HTTP_VALUE_BROTLI;
+c_str_view HTTP_VALUE_IDENTITY;
+c_str_view HTTP_VALUE_KEEP_ALIVE;
+c_str_view HTTP_VALUE_MAX_AGE;
+c_str_view HTTP_VALUE_MAX_STALE;
+c_str_view HTTP_VALUE_MIN_FRESH;
+c_str_view HTTP_VALUE_MUST_REVALIDATE;
+c_str_view HTTP_VALUE_NONE;
+c_str_view HTTP_VALUE_NO_CACHE;
+c_str_view HTTP_VALUE_NO_STORE;
+c_str_view HTTP_VALUE_NO_TRANSFORM;
+c_str_view HTTP_VALUE_ONLY_IF_CACHED;
+c_str_view HTTP_VALUE_PRIVATE;
+c_str_view HTTP_VALUE_PROXY_REVALIDATE;
+c_str_view HTTP_VALUE_PUBLIC;
+c_str_view HTTP_VALUE_S_MAXAGE;
+c_str_view HTTP_VALUE_NEED_REVALIDATE_ONCE;
+c_str_view HTTP_VALUE_100_CONTINUE;
 // Cache-control: extension "need-revalidate-once" is used internally by T.S.
 // to invalidate a document, and it is not returned/forwarded.
 // If a cached document has this extension set (ie, is invalidated),
@@ -115,31 +106,6 @@ const char *HTTP_VALUE_100_CONTINUE;
 //      unset_cooked_cc_need_revalidate_once()
 // To test, use regular Cache-control testing functions, eg,
 //      is_cache_control_set(HTTP_VALUE_NEED_REVALIDATE_ONCE)
-
-int HTTP_LEN_BYTES;
-int HTTP_LEN_CHUNKED;
-int HTTP_LEN_CLOSE;
-int HTTP_LEN_COMPRESS;
-int HTTP_LEN_DEFLATE;
-int HTTP_LEN_GZIP;
-int HTTP_LEN_BROTLI;
-int HTTP_LEN_IDENTITY;
-int HTTP_LEN_KEEP_ALIVE;
-int HTTP_LEN_MAX_AGE;
-int HTTP_LEN_MAX_STALE;
-int HTTP_LEN_MIN_FRESH;
-int HTTP_LEN_MUST_REVALIDATE;
-int HTTP_LEN_NONE;
-int HTTP_LEN_NO_CACHE;
-int HTTP_LEN_NO_STORE;
-int HTTP_LEN_NO_TRANSFORM;
-int HTTP_LEN_ONLY_IF_CACHED;
-int HTTP_LEN_PRIVATE;
-int HTTP_LEN_PROXY_REVALIDATE;
-int HTTP_LEN_PUBLIC;
-int HTTP_LEN_S_MAXAGE;
-int HTTP_LEN_NEED_REVALIDATE_ONCE;
-int HTTP_LEN_100_CONTINUE;
 
 Arena *const HTTPHdr::USE_HDR_HEAP_MAGIC = reinterpret_cast<Arena *>(1);
 
@@ -176,100 +142,64 @@ http_init()
     mime_init();
     url_init();
 
-    HTTP_METHOD_CONNECT = hdrtoken_string_to_wks("CONNECT");
-    HTTP_METHOD_DELETE  = hdrtoken_string_to_wks("DELETE");
-    HTTP_METHOD_GET     = hdrtoken_string_to_wks("GET");
-    HTTP_METHOD_HEAD    = hdrtoken_string_to_wks("HEAD");
-    HTTP_METHOD_OPTIONS = hdrtoken_string_to_wks("OPTIONS");
-    HTTP_METHOD_POST    = hdrtoken_string_to_wks("POST");
-    HTTP_METHOD_PURGE   = hdrtoken_string_to_wks("PURGE");
-    HTTP_METHOD_PUT     = hdrtoken_string_to_wks("PUT");
-    HTTP_METHOD_TRACE   = hdrtoken_string_to_wks("TRACE");
-    HTTP_METHOD_PUSH    = hdrtoken_string_to_wks("PUSH");
+    HTTP_METHOD_CONNECT = hdrtoken_string_to_wks_sv("CONNECT");
+    HTTP_METHOD_DELETE  = hdrtoken_string_to_wks_sv("DELETE");
+    HTTP_METHOD_GET     = hdrtoken_string_to_wks_sv("GET");
+    HTTP_METHOD_HEAD    = hdrtoken_string_to_wks_sv("HEAD");
+    HTTP_METHOD_OPTIONS = hdrtoken_string_to_wks_sv("OPTIONS");
+    HTTP_METHOD_POST    = hdrtoken_string_to_wks_sv("POST");
+    HTTP_METHOD_PURGE   = hdrtoken_string_to_wks_sv("PURGE");
+    HTTP_METHOD_PUT     = hdrtoken_string_to_wks_sv("PUT");
+    HTTP_METHOD_TRACE   = hdrtoken_string_to_wks_sv("TRACE");
+    HTTP_METHOD_PUSH    = hdrtoken_string_to_wks_sv("PUSH");
 
     // HTTP methods index calculation. Don't forget to count them!
     // Don't change the order of calculation! Each index has related bitmask (see http quick filter)
-    HTTP_WKSIDX_CONNECT = hdrtoken_wks_to_index(HTTP_METHOD_CONNECT);
+    HTTP_WKSIDX_CONNECT = hdrtoken_wks_to_index(HTTP_METHOD_CONNECT.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_DELETE = hdrtoken_wks_to_index(HTTP_METHOD_DELETE);
+    HTTP_WKSIDX_DELETE = hdrtoken_wks_to_index(HTTP_METHOD_DELETE.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_GET = hdrtoken_wks_to_index(HTTP_METHOD_GET);
+    HTTP_WKSIDX_GET = hdrtoken_wks_to_index(HTTP_METHOD_GET.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_HEAD = hdrtoken_wks_to_index(HTTP_METHOD_HEAD);
+    HTTP_WKSIDX_HEAD = hdrtoken_wks_to_index(HTTP_METHOD_HEAD.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_OPTIONS = hdrtoken_wks_to_index(HTTP_METHOD_OPTIONS);
+    HTTP_WKSIDX_OPTIONS = hdrtoken_wks_to_index(HTTP_METHOD_OPTIONS.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_POST = hdrtoken_wks_to_index(HTTP_METHOD_POST);
+    HTTP_WKSIDX_POST = hdrtoken_wks_to_index(HTTP_METHOD_POST.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_PURGE = hdrtoken_wks_to_index(HTTP_METHOD_PURGE);
+    HTTP_WKSIDX_PURGE = hdrtoken_wks_to_index(HTTP_METHOD_PURGE.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_PUT = hdrtoken_wks_to_index(HTTP_METHOD_PUT);
+    HTTP_WKSIDX_PUT = hdrtoken_wks_to_index(HTTP_METHOD_PUT.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_TRACE = hdrtoken_wks_to_index(HTTP_METHOD_TRACE);
+    HTTP_WKSIDX_TRACE = hdrtoken_wks_to_index(HTTP_METHOD_TRACE.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_PUSH = hdrtoken_wks_to_index(HTTP_METHOD_PUSH);
+    HTTP_WKSIDX_PUSH = hdrtoken_wks_to_index(HTTP_METHOD_PUSH.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
 
-    HTTP_LEN_CONNECT = hdrtoken_wks_to_length(HTTP_METHOD_CONNECT);
-    HTTP_LEN_DELETE  = hdrtoken_wks_to_length(HTTP_METHOD_DELETE);
-    HTTP_LEN_GET     = hdrtoken_wks_to_length(HTTP_METHOD_GET);
-    HTTP_LEN_HEAD    = hdrtoken_wks_to_length(HTTP_METHOD_HEAD);
-    HTTP_LEN_OPTIONS = hdrtoken_wks_to_length(HTTP_METHOD_OPTIONS);
-    HTTP_LEN_POST    = hdrtoken_wks_to_length(HTTP_METHOD_POST);
-    HTTP_LEN_PURGE   = hdrtoken_wks_to_length(HTTP_METHOD_PURGE);
-    HTTP_LEN_PUT     = hdrtoken_wks_to_length(HTTP_METHOD_PUT);
-    HTTP_LEN_TRACE   = hdrtoken_wks_to_length(HTTP_METHOD_TRACE);
-    HTTP_LEN_PUSH    = hdrtoken_wks_to_length(HTTP_METHOD_PUSH);
-
-    HTTP_VALUE_BYTES                = hdrtoken_string_to_wks("bytes");
-    HTTP_VALUE_CHUNKED              = hdrtoken_string_to_wks("chunked");
-    HTTP_VALUE_CLOSE                = hdrtoken_string_to_wks("close");
-    HTTP_VALUE_COMPRESS             = hdrtoken_string_to_wks("compress");
-    HTTP_VALUE_DEFLATE              = hdrtoken_string_to_wks("deflate");
-    HTTP_VALUE_GZIP                 = hdrtoken_string_to_wks("gzip");
-    HTTP_VALUE_BROTLI               = hdrtoken_string_to_wks("br");
-    HTTP_VALUE_IDENTITY             = hdrtoken_string_to_wks("identity");
-    HTTP_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks("keep-alive");
-    HTTP_VALUE_MAX_AGE              = hdrtoken_string_to_wks("max-age");
-    HTTP_VALUE_MAX_STALE            = hdrtoken_string_to_wks("max-stale");
-    HTTP_VALUE_MIN_FRESH            = hdrtoken_string_to_wks("min-fresh");
-    HTTP_VALUE_MUST_REVALIDATE      = hdrtoken_string_to_wks("must-revalidate");
-    HTTP_VALUE_NONE                 = hdrtoken_string_to_wks("none");
-    HTTP_VALUE_NO_CACHE             = hdrtoken_string_to_wks("no-cache");
-    HTTP_VALUE_NO_STORE             = hdrtoken_string_to_wks("no-store");
-    HTTP_VALUE_NO_TRANSFORM         = hdrtoken_string_to_wks("no-transform");
-    HTTP_VALUE_ONLY_IF_CACHED       = hdrtoken_string_to_wks("only-if-cached");
-    HTTP_VALUE_PRIVATE              = hdrtoken_string_to_wks("private");
-    HTTP_VALUE_PROXY_REVALIDATE     = hdrtoken_string_to_wks("proxy-revalidate");
-    HTTP_VALUE_PUBLIC               = hdrtoken_string_to_wks("public");
-    HTTP_VALUE_S_MAXAGE             = hdrtoken_string_to_wks("s-maxage");
-    HTTP_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks("need-revalidate-once");
-    HTTP_VALUE_100_CONTINUE         = hdrtoken_string_to_wks("100-continue");
-
-    HTTP_LEN_BYTES                = hdrtoken_wks_to_length(HTTP_VALUE_BYTES);
-    HTTP_LEN_CHUNKED              = hdrtoken_wks_to_length(HTTP_VALUE_CHUNKED);
-    HTTP_LEN_CLOSE                = hdrtoken_wks_to_length(HTTP_VALUE_CLOSE);
-    HTTP_LEN_COMPRESS             = hdrtoken_wks_to_length(HTTP_VALUE_COMPRESS);
-    HTTP_LEN_DEFLATE              = hdrtoken_wks_to_length(HTTP_VALUE_DEFLATE);
-    HTTP_LEN_GZIP                 = hdrtoken_wks_to_length(HTTP_VALUE_GZIP);
-    HTTP_LEN_BROTLI               = hdrtoken_wks_to_length(HTTP_VALUE_BROTLI);
-    HTTP_LEN_IDENTITY             = hdrtoken_wks_to_length(HTTP_VALUE_IDENTITY);
-    HTTP_LEN_KEEP_ALIVE           = hdrtoken_wks_to_length(HTTP_VALUE_KEEP_ALIVE);
-    HTTP_LEN_MAX_AGE              = hdrtoken_wks_to_length(HTTP_VALUE_MAX_AGE);
-    HTTP_LEN_MAX_STALE            = hdrtoken_wks_to_length(HTTP_VALUE_MAX_STALE);
-    HTTP_LEN_MIN_FRESH            = hdrtoken_wks_to_length(HTTP_VALUE_MIN_FRESH);
-    HTTP_LEN_MUST_REVALIDATE      = hdrtoken_wks_to_length(HTTP_VALUE_MUST_REVALIDATE);
-    HTTP_LEN_NONE                 = hdrtoken_wks_to_length(HTTP_VALUE_NONE);
-    HTTP_LEN_NO_CACHE             = hdrtoken_wks_to_length(HTTP_VALUE_NO_CACHE);
-    HTTP_LEN_NO_STORE             = hdrtoken_wks_to_length(HTTP_VALUE_NO_STORE);
-    HTTP_LEN_NO_TRANSFORM         = hdrtoken_wks_to_length(HTTP_VALUE_NO_TRANSFORM);
-    HTTP_LEN_ONLY_IF_CACHED       = hdrtoken_wks_to_length(HTTP_VALUE_ONLY_IF_CACHED);
-    HTTP_LEN_PRIVATE              = hdrtoken_wks_to_length(HTTP_VALUE_PRIVATE);
-    HTTP_LEN_PROXY_REVALIDATE     = hdrtoken_wks_to_length(HTTP_VALUE_PROXY_REVALIDATE);
-    HTTP_LEN_PUBLIC               = hdrtoken_wks_to_length(HTTP_VALUE_PUBLIC);
-    HTTP_LEN_S_MAXAGE             = hdrtoken_wks_to_length(HTTP_VALUE_S_MAXAGE);
-    HTTP_LEN_NEED_REVALIDATE_ONCE = hdrtoken_wks_to_length(HTTP_VALUE_NEED_REVALIDATE_ONCE);
-    HTTP_LEN_100_CONTINUE         = hdrtoken_wks_to_length(HTTP_VALUE_100_CONTINUE);
+    HTTP_VALUE_BYTES                = hdrtoken_string_to_wks_sv("bytes");
+    HTTP_VALUE_CHUNKED              = hdrtoken_string_to_wks_sv("chunked");
+    HTTP_VALUE_CLOSE                = hdrtoken_string_to_wks_sv("close");
+    HTTP_VALUE_COMPRESS             = hdrtoken_string_to_wks_sv("compress");
+    HTTP_VALUE_DEFLATE              = hdrtoken_string_to_wks_sv("deflate");
+    HTTP_VALUE_GZIP                 = hdrtoken_string_to_wks_sv("gzip");
+    HTTP_VALUE_BROTLI               = hdrtoken_string_to_wks_sv("br");
+    HTTP_VALUE_IDENTITY             = hdrtoken_string_to_wks_sv("identity");
+    HTTP_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks_sv("keep-alive");
+    HTTP_VALUE_MAX_AGE              = hdrtoken_string_to_wks_sv("max-age");
+    HTTP_VALUE_MAX_STALE            = hdrtoken_string_to_wks_sv("max-stale");
+    HTTP_VALUE_MIN_FRESH            = hdrtoken_string_to_wks_sv("min-fresh");
+    HTTP_VALUE_MUST_REVALIDATE      = hdrtoken_string_to_wks_sv("must-revalidate");
+    HTTP_VALUE_NONE                 = hdrtoken_string_to_wks_sv("none");
+    HTTP_VALUE_NO_CACHE             = hdrtoken_string_to_wks_sv("no-cache");
+    HTTP_VALUE_NO_STORE             = hdrtoken_string_to_wks_sv("no-store");
+    HTTP_VALUE_NO_TRANSFORM         = hdrtoken_string_to_wks_sv("no-transform");
+    HTTP_VALUE_ONLY_IF_CACHED       = hdrtoken_string_to_wks_sv("only-if-cached");
+    HTTP_VALUE_PRIVATE              = hdrtoken_string_to_wks_sv("private");
+    HTTP_VALUE_PROXY_REVALIDATE     = hdrtoken_string_to_wks_sv("proxy-revalidate");
+    HTTP_VALUE_PUBLIC               = hdrtoken_string_to_wks_sv("public");
+    HTTP_VALUE_S_MAXAGE             = hdrtoken_string_to_wks_sv("s-maxage");
+    HTTP_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks_sv("need-revalidate-once");
+    HTTP_VALUE_100_CONTINUE         = hdrtoken_string_to_wks_sv("100-continue");
   }
 }
 
@@ -720,13 +650,12 @@ http_hdr_method_get(HTTPHdrImpl *hh)
   -------------------------------------------------------------------------*/
 
 void
-http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length, bool must_copy)
+http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view method, int16_t method_wks_idx, bool must_copy)
 {
   ink_assert(hh->m_polarity == HTTPType::REQUEST);
 
   hh->u.req.m_method_wks_idx = method_wks_idx;
-  mime_str_u16_set(heap, std::string_view{method, static_cast<std::string_view::size_type>(method_length)},
-                   &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
+  mime_str_u16_set(heap, method, &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
 }
 
 /*-------------------------------------------------------------------------
@@ -780,11 +709,10 @@ http_hdr_reason_get(HTTPHdrImpl *hh)
   -------------------------------------------------------------------------*/
 
 void
-http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy)
+http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view value, bool must_copy)
 {
   ink_assert(hh->m_polarity == HTTPType::RESPONSE);
-  mime_str_u16_set(heap, std::string_view{value, static_cast<std::string_view::size_type>(length)}, &(hh->u.resp.m_ptr_reason),
-                   &(hh->u.resp.m_len_reason), must_copy);
+  mime_str_u16_set(heap, value, &(hh->u.resp.m_ptr_reason), &(hh->u.resp.m_len_reason), must_copy);
 }
 
 /*-------------------------------------------------------------------------
@@ -996,7 +924,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 
       HTTPVersion version{static_cast<uint8_t>(end[-5] - '0'), static_cast<uint8_t>(end[-3] - '0')};
 
-      http_hdr_method_set(heap, hh, &(cur[0]), hdrtoken_wks_to_index(HTTP_METHOD_GET), 3, must_copy_strings);
+      http_hdr_method_set(heap, hh, {&(cur[0]), 3}, HTTP_WKSIDX_GET, must_copy_strings);
       ink_assert(hh->u.req.m_url_impl != nullptr);
       url       = hh->u.req.m_url_impl;
       url_start = &(cur[4]);
@@ -1143,7 +1071,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     ink_assert(url_end);
 
     int method_wks_idx = hdrtoken_method_tokenize(method_start, static_cast<int>(method_end - method_start));
-    http_hdr_method_set(heap, hh, method_start, method_wks_idx, static_cast<int>(method_end - method_start), must_copy_strings);
+    http_hdr_method_set(heap, hh, {method_start, static_cast<std::string_view::size_type>(method_end - method_start)},
+                        method_wks_idx, must_copy_strings);
 
     ink_assert(hh->u.req.m_url_impl != nullptr);
 
@@ -1188,15 +1117,12 @@ ParseResult
 validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 {
   ParseResult ret = ParseResult::DONE;
-  int         host_len;
-  url->get_host(&host_len);
-  int         path_len;
-  const char *path = url->get_path(&path_len);
-  int         scheme_len;
-  url->get_scheme(&scheme_len);
+  auto        host{url->get_host()};
+  auto        path{url->get_path()};
+  auto        scheme{url->get_scheme()};
 
-  if (host_len == 0) {
-    if (path_len == 1 && path[0] == '*') { // asterisk-form
+  if (host.empty()) {
+    if (path == "*"sv) { // asterisk-form
       // Skip this check for now because URLImpl can't distinguish '*' and '/*'
       // if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
       //   ret = ParseResult::ERROR;
@@ -1204,7 +1130,7 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
     } else { // origin-form
       // Nothing to check here
     }
-  } else if (scheme_len == 0 && host_len != 0) { // authority-form
+  } else if (scheme.empty() && !host.empty()) { // authority-form
     if (method_wk_idx != HTTP_WKSIDX_CONNECT) {
       ret = ParseResult::ERROR;
     }
@@ -1386,7 +1312,8 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
       http_hdr_version_set(hh, version);
       http_hdr_status_set(hh, status);
-      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, {reason_start, static_cast<std::string_view::size_type>(reason_end - reason_start)},
+                          must_copy_strings);
 
       end                    = real_end;
       parser->m_parsing_http = false;
@@ -1503,7 +1430,8 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     }
 
     if (reason_start && reason_end) {
-      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, {reason_start, static_cast<std::string_view::size_type>(reason_end - reason_start)},
+                          must_copy_strings);
     }
 
     end                    = real_end;
@@ -1711,13 +1639,15 @@ HTTPHdr::_fill_target_cache() const
   m_port_in_header = false;
   m_host_mime      = nullptr;
   // Check in the URL first, then the HOST field.
-  if (nullptr != url->host_get(&m_host_length)) {
+  std::string_view host;
+  if (host = url->host_get(); nullptr != host.data()) {
     m_target_in_url  = true;
     m_port           = url->port_get();
     m_port_in_header = 0 != url->port_get_raw();
     m_host_mime      = nullptr;
+    m_host_length    = static_cast<int>(host.length());
   } else {
-    std::string_view host, port;
+    std::string_view port;
     std::tie(m_host_mime, host, port) = const_cast<HTTPHdr *>(this)->get_host_port_values();
     m_host_length                     = static_cast<int>(host.length());
 
@@ -1747,16 +1677,14 @@ HTTPHdr::set_url_target_from_host_field(URL *url)
     // Use local cached URL and don't copy if the target
     // is already there.
     if (!m_target_in_url && m_host_mime && m_host_length) {
-      m_url_cached.host_set(m_host_mime->m_ptr_value, m_host_length);
+      m_url_cached.host_set({m_host_mime->m_ptr_value, static_cast<std::string_view::size_type>(m_host_length)});
       if (m_port_in_header) {
         m_url_cached.port_set(m_port);
       }
       m_target_in_url = true; // it's there now.
     }
   } else {
-    auto host{host_get()};
-
-    url->host_set(host.data(), static_cast<int>(host.length()));
+    url->host_set(host_get());
     if (m_port_in_header) {
       url->port_set(m_port);
     }

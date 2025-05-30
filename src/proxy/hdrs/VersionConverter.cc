@@ -90,8 +90,7 @@ VersionConverter::_convert_req_from_1_to_2(HTTPHdr &header) const
     if (!value.empty()) {
       field->value_set(header.m_heap, header.m_mime, value);
     } else {
-      field->value_set(header.m_heap, header.m_mime,
-                       std::string_view{URL_SCHEME_HTTPS, static_cast<std::string_view::size_type>(URL_LEN_HTTPS)});
+      field->value_set(header.m_heap, header.m_mime, std::string_view{URL_SCHEME_HTTPS});
     }
   } else {
     ink_abort("initialize HTTP/2 pseudo-headers, no :scheme");
@@ -164,11 +163,11 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_METHOD);
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
     auto method{field->value_get()};
-    if (method == std::string_view{HTTP_METHOD_CONNECT, static_cast<std::string_view::size_type>(HTTP_LEN_CONNECT)}) {
+    if (method == static_cast<std::string_view>(HTTP_METHOD_CONNECT)) {
       is_connect_method = true;
     }
 
-    header.method_set(method.data(), method.length());
+    header.method_set(method);
     header.field_delete(field);
   } else {
     return ParseResult::ERROR;
@@ -190,7 +189,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
         }
       }
 
-      header.m_http->u.req.m_url_impl->set_scheme(header.m_heap, scheme.data(), scheme_wks_idx, scheme.length(), true);
+      header.m_http->u.req.m_url_impl->set_scheme(header.m_heap, scheme, scheme_wks_idx, true);
 
       header.field_delete(field);
     } else {
@@ -202,7 +201,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY);
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
     auto authority{field->value_get()};
-    header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority.data(), authority.length(), true);
+    header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority, true);
 
     if (!is_connect_method) {
       MIMEField *host = header.field_find(static_cast<std::string_view>(MIME_FIELD_HOST));
@@ -237,7 +236,7 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
         path.remove_prefix(1);
       }
 
-      header.m_http->u.req.m_url_impl->set_path(header.m_heap, path.data(), path.length(), true);
+      header.m_http->u.req.m_url_impl->set_path(header.m_heap, path, true);
 
       header.field_delete(field);
     } else {
