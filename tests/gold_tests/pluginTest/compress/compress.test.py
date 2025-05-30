@@ -25,7 +25,8 @@ Test compress plugin
 # Skip if plugins not present.
 #
 Test.SkipUnless(
-    Condition.PluginExists('compress.so'), Condition.PluginExists('conf_remap.so'), Condition.HasATSFeature('TS_HAS_BROTLI'))
+    Condition.PluginExists('compress.so'), Condition.PluginExists('conf_remap.so'), Condition.HasATSFeature('TS_HAS_BROTLI'),
+    Condition.HasATSFeature('TS_HAS_ZSTD'))
 
 server = Test.MakeOriginServer("server", options={'--load': f'{Test.TestDirectory}/compress_observer.py'})
 
@@ -169,6 +170,14 @@ for i in range(3):
     tr = Test.AddTestRun(f'verify deflate: {i}')
     tr.ReturnCode = 0
     tr.Processes.Default.Command = f"diff {out_path} {orig_path}"
+
+    tr = Test.AddTestRun(f'zstd: {i}')
+    tr.Processes.Default.ReturnCode = 0
+    out_path = get_out_path()
+    tr.MakeCurlCommand(curl(ts, i, "zstd", out_path))
+    tr = Test.AddTestRun(f'verify zstd: {i}')
+    tr.ReturnCode = 0
+    tr.Processes.Default.Command = get_verify_command(out_path, "zstd -d")
 
 # Test Accept-Encoding normalization.
 

@@ -11,6 +11,24 @@ gzip
 -
 gzip
 -
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+ACCEPT-ENCODING MISSING
+-
 X-Au-Test: www.ae-0.com
 ACCEPT-ENCODING MISSING
 -
@@ -23,6 +41,24 @@ br
 gzip, br
 -
 gzip;q=0.3, whatever;q=0.666, br;q=0.7
+-
+zstd
+-
+zstd, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+gzip, zstd, br
+-
+br, zstd
+-
+zstd;q=0.8, br;q=0.7, gzip;q=0.6
+-
+deflate, zstd
+-
+identity, zstd, compress
 -
 X-Au-Test: www.ae-1.com
 ACCEPT-ENCODING MISSING
@@ -37,6 +73,24 @@ gzip
 -
 gzip
 -
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+ACCEPT-ENCODING MISSING
+-
 X-Au-Test: www.ae-2.com
 ACCEPT-ENCODING MISSING
 -
@@ -50,6 +104,24 @@ br
 -
 br
 -
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+br
+-
+br
+-
+br
+-
+br
+-
+br
+-
+ACCEPT-ENCODING MISSING
+-
+ACCEPT-ENCODING MISSING
+-
 X-Au-Test: www.ae-3.com
 ACCEPT-ENCODING MISSING
 -
@@ -62,6 +134,86 @@ br
 br, gzip
 -
 br, gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+br
+-
+br, gzip
+-
+br, gzip
+-
+br
+-
+br, gzip
+-
+ACCEPT-ENCODING MISSING
+-
+ACCEPT-ENCODING MISSING
+-
+X-Au-Test: www.ae-4.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br
+-
+br
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+X-Au-Test: www.ae-5.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br, gzip
+-
+br, gzip
+-
+zstd
+-
+zstd, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd, br, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd
+-
+zstd
 -
 X-Au-Test: www.no-oride.com
 ACCEPT-ENCODING MISSING
@@ -76,6 +228,24 @@ gzip, br
 -
 gzip;q=0.3, whatever;q=0.666, br;q=0.7
 -
+zstd
+-
+zstd, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+gzip, zstd, br
+-
+br, zstd
+-
+zstd;q=0.8, br;q=0.7, gzip;q=0.6
+-
+deflate, zstd
+-
+identity, zstd, compress
+-
 X-Au-Test: www.ae-0.com
 ACCEPT-ENCODING MISSING
 -
@@ -88,6 +258,24 @@ br
 gzip, br
 -
 gzip;q=0.3, whatever;q=0.666, br;q=0.7
+-
+zstd
+-
+zstd, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+gzip, zstd, br
+-
+br, zstd
+-
+zstd;q=0.8, br;q=0.7, gzip;q=0.6
+-
+deflate, zstd
+-
+identity, zstd, compress
 -
 X-Au-Test: www.ae-1.com
 ACCEPT-ENCODING MISSING
@@ -102,6 +290,24 @@ gzip
 -
 gzip
 -
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+ACCEPT-ENCODING MISSING
+-
 X-Au-Test: www.ae-2.com
 ACCEPT-ENCODING MISSING
 -
@@ -115,6 +321,24 @@ br
 -
 br
 -
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+br
+-
+br
+-
+br
+-
+br
+-
+br
+-
+ACCEPT-ENCODING MISSING
+-
+ACCEPT-ENCODING MISSING
+-
 X-Au-Test: www.ae-3.com
 ACCEPT-ENCODING MISSING
 -
@@ -127,4 +351,84 @@ br
 br, gzip
 -
 br, gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+br
+-
+br, gzip
+-
+br, gzip
+-
+br
+-
+br, gzip
+-
+ACCEPT-ENCODING MISSING
+-
+ACCEPT-ENCODING MISSING
+-
+X-Au-Test: www.ae-4.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br
+-
+br
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+zstd
+-
+X-Au-Test: www.ae-5.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br, gzip
+-
+br, gzip
+-
+zstd
+-
+zstd, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd, br, gzip
+-
+zstd, br
+-
+zstd, br, gzip
+-
+zstd
+-
+zstd
 -
