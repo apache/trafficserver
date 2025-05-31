@@ -614,10 +614,10 @@ public:
   bool set_server_session_private(bool private_session);
   bool is_dying() const;
 
-  int client_connection_id() const;
-  int client_transaction_id() const;
-  int client_transaction_priority_weight() const;
-  int client_transaction_priority_dependence() const;
+  int64_t client_connection_id() const;
+  int     client_transaction_id() const;
+  int     client_transaction_priority_weight() const;
+  int     client_transaction_priority_dependence() const;
 
   ink_hrtime get_server_inactivity_timeout();
   ink_hrtime get_server_active_timeout();
@@ -672,7 +672,7 @@ HttpSM::is_dying() const
   return terminate_sm;
 }
 
-inline int
+inline int64_t
 HttpSM::client_connection_id() const
 {
   return _ua.get_client_connection_id();
