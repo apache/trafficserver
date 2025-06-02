@@ -563,7 +563,10 @@ Http2Stream::do_io_close(int /* flags */)
     // We only need to do this for the client side since we only need to pass through RST_STREAM
     // from the server. If a client sends a RST_STREAM, we need to keep the server side alive so
     // the background fill can function as intended.
-    if (!this->is_outbound_connection() && this->is_state_writeable()) {
+    //
+    // In the half-closed(local) state, server can close stream actively by sending RST_STREAM frame
+    if (!this->is_outbound_connection() &&
+        (this->is_state_writeable() || _state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL)) {
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
     }
 

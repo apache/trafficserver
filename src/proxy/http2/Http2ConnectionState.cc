@@ -2392,8 +2392,8 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
           stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
           stream->do_io_close();
         } else {
-          // This stream waits for the END_STREAM in half-closed (local) state until `http.transaction_no_activity_timeout_in`
-          // expires
+          // This stream waits for the END_STREAM in half-closed (local) state until `http.transaction_no_activity_timeout_in`.
+          // If no frame with END_STREAM is found, ATS actively closes the stream.
           Http2StreamDebug(this->session, stream->get_id(), "waiting END_STREAM");
         }
       } else if (stream->is_outbound_connection() && stream->is_write_vio_done()) {
