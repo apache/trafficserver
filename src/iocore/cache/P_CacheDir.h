@@ -218,8 +218,6 @@ struct OpenDirEntry {
 
   LINK(OpenDirEntry, link);
 
-  int wait(CacheVC *c, int msec);
-
   bool
   has_multiple_writers()
   {
