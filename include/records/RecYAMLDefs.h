@@ -83,6 +83,16 @@ struct CfgNode {
     }
   }
 
+  std::string
+  mark_as_view(swoc::TextView fmt = "Line: {}, Column: {}") const
+  {
+    swoc::LocalBufferWriter<128> lbw;
+    lbw.print(fmt, node.Mark().line + 1, node.Mark().column + 1);
+    std::string mark;
+    mark.reserve(lbw.view().size());
+    mark = std::string{lbw.view().data(), lbw.view().size()};
+    return mark;
+  }
   // public
   YAML::Node node;
   YAML::Node value_node;
