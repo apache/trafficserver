@@ -57,6 +57,9 @@ thread_alloc(CAlloc &a, ProxyAllocator &l, Args &&...args)
     void *v    = l.freelist;
     l.freelist = *reinterpret_cast<void **>(l.freelist);
     --(l.allocated);
+#if TS_USE_ALLOCATOR_METRICS
+    a.increment_for_alloc();
+#endif
     ::new (v) typename CAlloc::Value_type(std::forward<Args>(args)...);
     return static_cast<typename CAlloc::Value_type *>(v);
   }
@@ -84,6 +87,12 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 
 #endif
 
+#if TS_USE_ALLOCATOR_METRICS
+#define UPDATE_FREE_METRICS(_a) _a.increment_for_free()
+#else
+#define UPDATE_FREE_METRICS(_a)
+#endif
+
 #define THREAD_FREE(_p, _a, _tin)                                                                  \
   do {                                                                                             \
     ::_a.destroy_if_enabled(_p);                                                                   \
@@ -92,6 +101,7 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
       *(char **)_p    = (char *)_t->_a.freelist;                                                   \
       _t->_a.freelist = _p;                                                                        \
       _t->_a.allocated++;                                                                          \
+      UPDATE_FREE_METRICS(::_a);                                                                   \
       if (thread_freelist_high_watermark > 0 && _t->_a.allocated > thread_freelist_high_watermark) \
         thread_freeup(::_a.raw(), _t->_a);                                                         \
     } else {                                                                                       \
