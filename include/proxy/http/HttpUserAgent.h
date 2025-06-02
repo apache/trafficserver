@@ -64,7 +64,7 @@ public:
   ProxyTransaction *get_txn() const;
   void              set_txn(ProxyTransaction *txn, TransactionMilestones &milestones);
 
-  int get_client_connection_id() const;
+  int64_t get_client_connection_id() const;
 
   int get_client_transaction_id() const;
 
@@ -95,7 +95,7 @@ private:
 
   ClientConnectionInfo m_conn_info{};
 
-  int                   m_client_connection_id{-1};
+  int64_t               m_client_connection_id{-1};
   ClientTransactionInfo m_txn_info{};
 
   void save_transaction_info();
@@ -188,7 +188,7 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
   }
 }
 
-inline int
+inline int64_t
 HttpUserAgent::get_client_connection_id() const
 {
   return m_client_connection_id;
