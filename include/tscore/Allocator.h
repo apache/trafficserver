@@ -227,25 +227,41 @@ public:
   void *
   alloc_void()
   {
-    inuse_metric->increment(1);
-    alloc_metric->increment(1);
+    increment_for_alloc();
     return WrappedAllocator::alloc_void();
   }
 
   void
   free_void(void *ptr)
   {
-    inuse_metric->decrement(1);
-    free_metric->increment(1);
+    increment_for_free();
     WrappedAllocator::free_void(ptr);
   }
 
   void
   free_void_bulk(void *head, void *tail, size_t num_item)
   {
-    inuse_metric->decrement(num_item);
-    free_metric->increment(num_item);
+    // this is only currently called from ProxyAllocator to free
+    // back to the watermark, so if this is called, it means
+    // the ProxyAllocator free has been decrementing the free count
+    // for items on its freelist so this function should not update metrics
     WrappedAllocator::free_void_bulk(head, tail, num_item);
+  }
+
+  // NOTE(cmcfarlen): These metric functions are also called
+  // by ProxyAllocator when items are added/removed from its freelist
+  void
+  increment_for_alloc()
+  {
+    inuse_metric->increment(1);
+    alloc_metric->increment(1);
+  }
+
+  void
+  increment_for_free(int val = 1)
+  {
+    inuse_metric->decrement(val);
+    free_metric->increment(val);
   }
 
   MeteredAllocator() {}
