@@ -94,8 +94,8 @@ SetRecordFromYAMLNode(CfgNode const &field, swoc::Errata &errata)
     // we ignore it.
     auto [dtype, e] = detail::try_deduce_type(field.value_node);
     if (!e.empty()) {
-      errata.note(ERRATA_WARN, "Ignoring field '{}' [{}] at Line {}. Not registered and {}", field.node.as<std::string>(),
-                  field.get_record_name(), field.node.Mark().line + 1, e);
+      errata.note(ERRATA_WARN, "Ignoring field '{}' [{}] at {}. Not registered and {}", field.node.as<std::string>(),
+                  field.get_record_name(), field.mark_as_view("line={}, col={}"), e);
       // We can't continue without knowing the type.
       return;
     }
@@ -127,8 +127,8 @@ SetRecordFromYAMLNode(CfgNode const &field, swoc::Errata &errata)
   }
 
   if (!check_expr.empty() && RecordValidityCheck(value_str.c_str(), check_type, check_expr.c_str()) == false) {
-    errata.note(ERRATA_WARN, "{} - Validity Check failed. '{}' against '{}'. Default value will be used", record_name, check_expr,
-                value_str);
+    errata.note(ERRATA_WARN, "{} - Validity Check error {}. Pattern '{}' failed against '{}'. Default value will be used",
+                record_name, field.mark_as_view("at line={}, col={}"), check_expr, value_str);
     return;
   }
 
