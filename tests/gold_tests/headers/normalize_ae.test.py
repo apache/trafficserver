@@ -167,6 +167,10 @@ def allAEHdrs(shouldWaitForUServer, shouldWaitForTs, ts, host):
     tr.MakeCurlCommand(baseCurl + curlTail('identity, zstd, compress'))
     tr.Processes.Default.ReturnCode = 0
 
+    tr = test.AddTestRun()
+    tr.MakeCurlCommand(baseCurl + curlTail('br, compress'))
+    tr.Processes.Default.ReturnCode = 0
+
 
 def perTsTest(shouldWaitForUServer, ts):
     allAEHdrs(shouldWaitForUServer, True, ts, 'www.no-oride.com')

@@ -184,6 +184,8 @@ zstd
 -
 zstd
 -
+br
+-
 X-Au-Test: www.ae-5.com
 ACCEPT-ENCODING MISSING
 -
@@ -214,6 +216,8 @@ zstd, br, gzip
 zstd
 -
 zstd
+-
+br
 -
 X-Au-Test: www.no-oride.com
 ACCEPT-ENCODING MISSING
@@ -401,6 +405,8 @@ zstd
 -
 zstd
 -
+br
+-
 X-Au-Test: www.ae-5.com
 ACCEPT-ENCODING MISSING
 -
@@ -431,4 +437,6 @@ zstd, br, gzip
 zstd
 -
 zstd
+-
+br
 -
