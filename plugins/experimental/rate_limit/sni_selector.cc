@@ -57,14 +57,13 @@ SniSelector::yamlParser(const std::string &yaml_file)
           return false;
         }
 
-        auto ipl = new List::IP(name);
+        auto ipl = std::make_unique<List::IP>(name);
 
         if (ipl->parseYaml(list)) {
           Dbg(dbg_ctl, "Loaded List rule: %s", name.c_str());
-          addList(ipl);
+          addList(std::move(ipl));
         } else {
           TSError("[%s] Failed to parse the List YAML node", PLUGIN_NAME);
-          delete ipl;
           return false;
         }
       } else {
@@ -89,14 +88,13 @@ SniSelector::yamlParser(const std::string &yaml_file)
           return false;
         }
 
-        auto iprep = new IpReputation::SieveLru(name);
+        auto iprep = std::make_unique<IpReputation::SieveLru>(name);
 
         if (iprep->parseYaml(ipr)) {
           Dbg(dbg_ctl, "Loaded IP Reputation rule: %s", name.c_str());
-          addIPReputation(iprep);
+          addIPReputation(std::move(iprep));
         } else {
           TSError("[%s] Failed to parse the ip-rep YAML node", PLUGIN_NAME);
-          delete iprep;
           return false;
         }
       } else {
@@ -121,18 +119,19 @@ SniSelector::yamlParser(const std::string &yaml_file)
           return false;
         }
 
-        auto limiter = new SniRateLimiter(name, this);
+        auto limiter     = std::make_unique<SniRateLimiter>(name, this);
+        auto limiter_ptr = limiter.get();
 
         if (limiter->parseYaml(sni)) {
           if (name == "*" || name == "default") {
-            _default = limiter;
+            _default = std::move(limiter);
           } else {
-            addLimiter(limiter);
+            addLimiter(std::move(limiter));
           }
 
           // Setup rate based limit, if configured (this is rate as in "requests per second")
-          if (limiter->rate() > 0) {
-            limiter->addBucket();
+          if (limiter_ptr->rate() > 0) {
+            limiter_ptr->addBucket();
           }
 
           // Add aliases, if any
@@ -148,7 +147,7 @@ SniSelector::yamlParser(const std::string &yaml_file)
                   return false;
                 }
                 Dbg(dbg_ctl, "Adding alias: %s -> %s", alias.c_str(), name.c_str());
-                addAlias(alias, limiter);
+                addAlias(alias, limiter_ptr);
               }
             } else {
               TSError("[%s] aliases node is not a sequence", PLUGIN_NAME);
@@ -157,7 +156,6 @@ SniSelector::yamlParser(const std::string &yaml_file)
           }
         } else {
           TSError("[%s] Failed to parse the selector YAML node", PLUGIN_NAME);
-          delete limiter;
           return false;
         }
       } else {
@@ -214,8 +212,9 @@ sni_queue_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
   auto *selector = static_cast<SniSelector *>(TSContDataGet(cont));
 
   for (const auto &[key, entry] : selector->limiters()) {
-    auto [owner, limiter] = entry;
-    QueueTime now         = std::chrono::system_clock::now(); // Only do this once per limiter
+    auto      owner   = isOwnedlimiter(entry);
+    auto      limiter = limiterPtr(entry);
+    QueueTime now     = std::chrono::system_clock::now(); // Only do this once per limiter
 
     if (owner) { // Don't operate on the aliases
       // Try to enable some queued VCs (if any) if there are slots available

@@ -52,7 +52,7 @@ struct CacheHostRecord {
     ats_free(cp);
   }
 
-  CacheType       type           = CACHE_NONE_TYPE;
+  CacheType       type           = CacheType::NONE;
   StripeSM      **stripes        = nullptr;
   int             num_vols       = 0;
   unsigned short *vol_hash_table = nullptr;
@@ -95,16 +95,16 @@ public:
   HostLookup *
   getHLookup() const
   {
-    return host_lookup;
+    return host_lookup.get();
   }
 
 private:
-  static void      PrintFunc(void *opaque_data);
-  HostLookup      *host_lookup; // Data structure to do the lookups
-  CacheHostRecord *data_array;  // array of all data items
-  int              array_len;   // the length of the arrays
-  int              num_el;      // the number of items in the tree
-  CacheType        type;
+  static void                 PrintFunc(void *opaque_data);
+  std::unique_ptr<HostLookup> host_lookup; // Data structure to do the lookups
+  CacheHostRecord            *data_array;  // array of all data items
+  int                         array_len;   // the length of the arrays
+  int                         num_el;      // the number of items in the tree
+  CacheType                   type;
 };
 
 // ReplaceablePtr provides threadsafe access to an object which may be replaced.
@@ -237,7 +237,7 @@ public:
   CacheHostMatcher *
   getHostMatcher() const
   {
-    return hostMatch;
+    return hostMatch.get();
   }
 
   static int config_callback(const char *, RecDataT, RecData, void *);
@@ -248,15 +248,15 @@ public:
     RecRegisterConfigUpdateCb("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
   }
 
-  CacheType       type         = CACHE_HTTP_TYPE;
+  CacheType       type         = CacheType::HTTP;
   Cache          *cache        = nullptr;
   int             m_numEntries = 0;
   CacheHostRecord gen_host_rec;
 
 private:
-  CacheHostMatcher  *hostMatch    = nullptr;
-  const matcher_tags config_tags  = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
-  const char        *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
+  std::unique_ptr<CacheHostMatcher> hostMatch    = nullptr;
+  const matcher_tags                config_tags  = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
+  const char                       *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
 };
 
 struct CacheHostTableConfig;
@@ -272,7 +272,7 @@ struct CacheHostTableConfig : public Continuation {
   int
   mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    CacheType type  = CACHE_HTTP_TYPE;
+    CacheType type  = CacheType::HTTP;
     Cache    *cache = nullptr;
     {
       ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(ppt);

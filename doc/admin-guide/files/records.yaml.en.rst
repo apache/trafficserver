@@ -1730,7 +1730,7 @@ Origin Server Connect Attempts
    Set a limit for the number of concurrent connections to an upstream server group. A value of
    ``0`` disables checking. If a transaction attempts to connect to a group which already has the
    maximum number of concurrent connections a 503
-   (``HTTP_STATUS_SERVICE_UNAVAILABLE``) error response is sent to the user agent. To configure
+   (``HTTPStatus::SERVICE_UNAVAILABLE``) error response is sent to the user agent. To configure
 
    Upstream server group definition
       See :ts:cv:`proxy.config.http.per_server.connection.match`.

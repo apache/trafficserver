@@ -422,34 +422,36 @@ public:
         ++(l->c_2xx);
       }
 
-      switch (result) {
-      case SQUID_LOG_TCP_HIT:
-      case SQUID_LOG_TCP_IMS_HIT:
-      case SQUID_LOG_TCP_REFRESH_HIT:
-      case SQUID_LOG_TCP_DISK_HIT:
-      case SQUID_LOG_TCP_MEM_HIT:
-      case SQUID_LOG_TCP_CF_HIT:
-      case SQUID_LOG_TCP_REF_FAIL_HIT:
-      case SQUID_LOG_UDP_HIT:
-      case SQUID_LOG_UDP_WEAK_HIT:
-      case SQUID_LOG_UDP_HIT_OBJ:
+      switch (static_cast<SquidLogCode>(result)) {
+      case SquidLogCode::TCP_HIT:
+      case SquidLogCode::TCP_IMS_HIT:
+      case SquidLogCode::TCP_REFRESH_HIT:
+      case SquidLogCode::TCP_DISK_HIT:
+      case SquidLogCode::TCP_MEM_HIT:
+      case SquidLogCode::TCP_CF_HIT:
+      case SquidLogCode::TCP_REF_FAIL_HIT:
+      case SquidLogCode::UDP_HIT:
+      case SquidLogCode::UDP_WEAK_HIT:
+      case SquidLogCode::UDP_HIT_OBJ:
         ++(l->hits);
         break;
-      case SQUID_LOG_TCP_MISS:
-      case SQUID_LOG_TCP_IMS_MISS:
-      case SQUID_LOG_TCP_REFRESH_MISS:
-      case SQUID_LOG_TCP_EXPIRED_MISS:
-      case SQUID_LOG_TCP_WEBFETCH_MISS:
-      case SQUID_LOG_UDP_MISS:
+      case SquidLogCode::TCP_MISS:
+      case SquidLogCode::TCP_IMS_MISS:
+      case SquidLogCode::TCP_REFRESH_MISS:
+      case SquidLogCode::TCP_EXPIRED_MISS:
+      case SquidLogCode::TCP_WEBFETCH_MISS:
+      case SquidLogCode::UDP_MISS:
         ++(l->misses);
         break;
-      case SQUID_LOG_ERR_CLIENT_ABORT:
-      case SQUID_LOG_ERR_CLIENT_READ_ERROR:
-      case SQUID_LOG_ERR_CONNECT_FAIL:
-      case SQUID_LOG_ERR_INVALID_REQ:
-      case SQUID_LOG_ERR_UNKNOWN:
-      case SQUID_LOG_ERR_READ_TIMEOUT:
+      case SquidLogCode::ERR_CLIENT_ABORT:
+      case SquidLogCode::ERR_CLIENT_READ_ERROR:
+      case SquidLogCode::ERR_CONNECT_FAIL:
+      case SquidLogCode::ERR_INVALID_REQ:
+      case SquidLogCode::ERR_UNKNOWN:
+      case SquidLogCode::ERR_READ_TIMEOUT:
         ++(l->errors);
+        break;
+      default:
         break;
       }
 
@@ -497,34 +499,36 @@ public:
         l->c_2xx = 1;
       }
 
-      switch (result) {
-      case SQUID_LOG_TCP_HIT:
-      case SQUID_LOG_TCP_IMS_HIT:
-      case SQUID_LOG_TCP_REFRESH_HIT:
-      case SQUID_LOG_TCP_DISK_HIT:
-      case SQUID_LOG_TCP_MEM_HIT:
-      case SQUID_LOG_TCP_CF_HIT:
-      case SQUID_LOG_TCP_REF_FAIL_HIT:
-      case SQUID_LOG_UDP_HIT:
-      case SQUID_LOG_UDP_WEAK_HIT:
-      case SQUID_LOG_UDP_HIT_OBJ:
+      switch (static_cast<SquidLogCode>(result)) {
+      case SquidLogCode::TCP_HIT:
+      case SquidLogCode::TCP_IMS_HIT:
+      case SquidLogCode::TCP_REFRESH_HIT:
+      case SquidLogCode::TCP_DISK_HIT:
+      case SquidLogCode::TCP_MEM_HIT:
+      case SquidLogCode::TCP_CF_HIT:
+      case SquidLogCode::TCP_REF_FAIL_HIT:
+      case SquidLogCode::UDP_HIT:
+      case SquidLogCode::UDP_WEAK_HIT:
+      case SquidLogCode::UDP_HIT_OBJ:
         l->hits = 1;
         break;
-      case SQUID_LOG_TCP_MISS:
-      case SQUID_LOG_TCP_IMS_MISS:
-      case SQUID_LOG_TCP_REFRESH_MISS:
-      case SQUID_LOG_TCP_EXPIRED_MISS:
-      case SQUID_LOG_TCP_WEBFETCH_MISS:
-      case SQUID_LOG_UDP_MISS:
+      case SquidLogCode::TCP_MISS:
+      case SquidLogCode::TCP_IMS_MISS:
+      case SquidLogCode::TCP_REFRESH_MISS:
+      case SquidLogCode::TCP_EXPIRED_MISS:
+      case SquidLogCode::TCP_WEBFETCH_MISS:
+      case SquidLogCode::UDP_MISS:
         l->misses = 1;
         break;
-      case SQUID_LOG_ERR_CLIENT_ABORT:
-      case SQUID_LOG_ERR_CLIENT_READ_ERROR:
-      case SQUID_LOG_ERR_CONNECT_FAIL:
-      case SQUID_LOG_ERR_INVALID_REQ:
-      case SQUID_LOG_ERR_UNKNOWN:
-      case SQUID_LOG_ERR_READ_TIMEOUT:
+      case SquidLogCode::ERR_CLIENT_ABORT:
+      case SquidLogCode::ERR_CLIENT_READ_ERROR:
+      case SquidLogCode::ERR_CONNECT_FAIL:
+      case SquidLogCode::ERR_INVALID_REQ:
+      case SquidLogCode::ERR_UNKNOWN:
+      case SquidLogCode::ERR_READ_TIMEOUT:
         l->errors = 1;
+        break;
+      default:
         break;
       }
 
@@ -869,96 +873,96 @@ update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counte
 inline void
 update_results_elapsed(OriginStats *stat, int result, int elapsed, int size)
 {
-  switch (result) {
-  case SQUID_LOG_TCP_HIT:
+  switch (static_cast<SquidLogCode>(result)) {
+  case SquidLogCode::TCP_HIT:
     update_counter(stat->results.hits.hit, size);
     update_counter(stat->results.hits.total, size);
     update_elapsed(stat->elapsed.hits.hit, elapsed, stat->results.hits.hit);
     update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
     break;
-  case SQUID_LOG_TCP_MEM_HIT:
+  case SquidLogCode::TCP_MEM_HIT:
     update_counter(stat->results.hits.hit_ram, size);
     update_counter(stat->results.hits.total, size);
     update_elapsed(stat->elapsed.hits.hit_ram, elapsed, stat->results.hits.hit_ram);
     update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
     break;
-  case SQUID_LOG_TCP_CF_HIT:
+  case SquidLogCode::TCP_CF_HIT:
     update_counter(stat->results.hits.hit_rww, size);
     update_counter(stat->results.hits.total, size);
     update_elapsed(stat->elapsed.hits.hit_rww, elapsed, stat->results.hits.hit_rww);
     update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
     break;
-  case SQUID_LOG_TCP_MISS:
+  case SquidLogCode::TCP_MISS:
     update_counter(stat->results.misses.miss, size);
     update_counter(stat->results.misses.total, size);
     update_elapsed(stat->elapsed.misses.miss, elapsed, stat->results.misses.miss);
     update_elapsed(stat->elapsed.misses.total, elapsed, stat->results.misses.total);
     break;
-  case SQUID_LOG_TCP_IMS_HIT:
+  case SquidLogCode::TCP_IMS_HIT:
     update_counter(stat->results.hits.ims, size);
     update_counter(stat->results.hits.total, size);
     update_elapsed(stat->elapsed.hits.ims, elapsed, stat->results.hits.ims);
     update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
     break;
-  case SQUID_LOG_TCP_IMS_MISS:
+  case SquidLogCode::TCP_IMS_MISS:
     update_counter(stat->results.misses.ims, size);
     update_counter(stat->results.misses.total, size);
     update_elapsed(stat->elapsed.misses.ims, elapsed, stat->results.misses.ims);
     update_elapsed(stat->elapsed.misses.total, elapsed, stat->results.misses.total);
     break;
-  case SQUID_LOG_TCP_REFRESH_HIT:
+  case SquidLogCode::TCP_REFRESH_HIT:
     update_counter(stat->results.hits.refresh, size);
     update_counter(stat->results.hits.total, size);
     update_elapsed(stat->elapsed.hits.refresh, elapsed, stat->results.hits.refresh);
     update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
     break;
-  case SQUID_LOG_TCP_REFRESH_MISS:
+  case SquidLogCode::TCP_REFRESH_MISS:
     update_counter(stat->results.misses.refresh, size);
     update_counter(stat->results.misses.total, size);
     update_elapsed(stat->elapsed.misses.refresh, elapsed, stat->results.misses.refresh);
     update_elapsed(stat->elapsed.misses.total, elapsed, stat->results.misses.total);
     break;
-  case SQUID_LOG_TCP_DISK_HIT:
-  case SQUID_LOG_TCP_REF_FAIL_HIT:
-  case SQUID_LOG_UDP_HIT:
-  case SQUID_LOG_UDP_WEAK_HIT:
-  case SQUID_LOG_UDP_HIT_OBJ:
+  case SquidLogCode::TCP_DISK_HIT:
+  case SquidLogCode::TCP_REF_FAIL_HIT:
+  case SquidLogCode::UDP_HIT:
+  case SquidLogCode::UDP_WEAK_HIT:
+  case SquidLogCode::UDP_HIT_OBJ:
     update_counter(stat->results.hits.other, size);
     update_counter(stat->results.hits.total, size);
     update_elapsed(stat->elapsed.hits.other, elapsed, stat->results.hits.other);
     update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
     break;
-  case SQUID_LOG_TCP_EXPIRED_MISS:
-  case SQUID_LOG_TCP_WEBFETCH_MISS:
-  case SQUID_LOG_UDP_MISS:
+  case SquidLogCode::TCP_EXPIRED_MISS:
+  case SquidLogCode::TCP_WEBFETCH_MISS:
+  case SquidLogCode::UDP_MISS:
     update_counter(stat->results.misses.other, size);
     update_counter(stat->results.misses.total, size);
     update_elapsed(stat->elapsed.misses.other, elapsed, stat->results.misses.other);
     update_elapsed(stat->elapsed.misses.total, elapsed, stat->results.misses.total);
     break;
-  case SQUID_LOG_ERR_CLIENT_ABORT:
+  case SquidLogCode::ERR_CLIENT_ABORT:
     update_counter(stat->results.errors.client_abort, size);
     update_counter(stat->results.errors.total, size);
     break;
-  case SQUID_LOG_ERR_CLIENT_READ_ERROR:
+  case SquidLogCode::ERR_CLIENT_READ_ERROR:
     update_counter(stat->results.errors.client_read_error, size);
     update_counter(stat->results.errors.total, size);
     break;
-  case SQUID_LOG_ERR_CONNECT_FAIL:
+  case SquidLogCode::ERR_CONNECT_FAIL:
     update_counter(stat->results.errors.connect_fail, size);
     update_counter(stat->results.errors.total, size);
     break;
-  case SQUID_LOG_ERR_INVALID_REQ:
+  case SquidLogCode::ERR_INVALID_REQ:
     update_counter(stat->results.errors.invalid_req, size);
     update_counter(stat->results.errors.total, size);
     break;
-  case SQUID_LOG_ERR_UNKNOWN:
+  case SquidLogCode::ERR_UNKNOWN:
     update_counter(stat->results.errors.unknown, size);
     update_counter(stat->results.errors.total, size);
     break;
   default:
     // This depends on all errors being at the end of the enum ... Which is the case right now.
-    if (result < SQUID_LOG_ERR_READ_TIMEOUT) {
+    if (result < static_cast<int>(SquidLogCode::ERR_READ_TIMEOUT)) {
       update_counter(stat->results.other, size);
     } else {
       update_counter(stat->results.errors.other, size);
@@ -1480,39 +1484,40 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
       case P_STATE_HIERARCHY:
         state = P_STATE_PEER;
         hier  = *((int64_t *)(read_from));
-        switch (hier) {
-        case SQUID_HIER_NONE:
+        switch (static_cast<SquidHierarchyCode>(hier)) {
+        case SquidHierarchyCode::NONE:
           update_counter(totals.hierarchies.none, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.none, size);
           }
           break;
-        case SQUID_HIER_DIRECT:
+        case SquidHierarchyCode::DIRECT:
           update_counter(totals.hierarchies.direct, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.direct, size);
           }
           break;
-        case SQUID_HIER_SIBLING_HIT:
+        case SquidHierarchyCode::SIBLING_HIT:
           update_counter(totals.hierarchies.sibling, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.sibling, size);
           }
           break;
-        case SQUID_HIER_PARENT_HIT:
+        case SquidHierarchyCode::PARENT_HIT:
           update_counter(totals.hierarchies.parent, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.direct, size);
           }
           break;
-        case SQUID_HIER_EMPTY:
+        case SquidHierarchyCode::EMPTY:
           update_counter(totals.hierarchies.empty, size);
           if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.empty, size);
           }
           break;
         default:
-          if ((hier >= SQUID_HIER_EMPTY) && (hier < SQUID_HIER_INVALID_ASSIGNED_CODE)) {
+          if ((hier >= static_cast<int64_t>(SquidHierarchyCode::EMPTY)) &&
+              (hier < static_cast<int64_t>(SquidHierarchyCode::INVALID_ASSIGNED_CODE))) {
             update_counter(totals.hierarchies.other, size);
             if (o_stats != nullptr) {
               update_counter(o_stats->hierarchies.other, size);

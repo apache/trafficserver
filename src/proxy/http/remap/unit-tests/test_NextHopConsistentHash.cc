@@ -94,73 +94,73 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
         result->reset();
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
 
         // mark down p1.foo.com.  markNextHop looks at the 'result'
         // and uses the host index there mark down the host selected
         // from a
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // second request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10002, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p2.foo.com") == 0);
 
         // mark down p2.foo.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // third request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10003, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "s2.bar.com") == 0);
 
         // mark down s2.bar.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // fourth request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10004, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "s1.bar.com") == 0);
 
         // mark down s1.bar.com.
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // fifth request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10005, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "q1.bar.com") == 0);
 
         // mark down q1.bar.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
         // sixth request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10006, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "q2.bar.com") == 0);
 
         // mark down q2.bar.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
         // seventh request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10007, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
 
-        CHECK(result->result == ParentResultType::PARENT_DIRECT);
+        CHECK(result->result == ParentResultType::DIRECT);
         CHECK(result->hostname == nullptr);
 
         // sleep and test that q2 is becomes retryable;
@@ -170,7 +170,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10008, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp, nullptr, now);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "q2.bar.com") == 0);
 
         // free up request resources.
@@ -225,30 +225,30 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
         build_request(20001, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
 
         // mark down p1.foo.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
         // second request
         build_request(20002, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p2.foo.com") == 0);
 
         // mark down p2.foo.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // third request
         result->reset();
         build_request(20003, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "s2.bar.com") == 0);
 
         // mark down s2.bar.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // fourth request
         {
@@ -256,12 +256,12 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
           result->reset();
           build_request(20004, &sm, nullptr, "rabbit.net", nullptr);
           strategy->findNextHop(txnp, nullptr, now);
-          REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+          REQUIRE(result->result == ParentResultType::SPECIFIED);
           CHECK(strcmp(result->hostname, "s1.bar.com") == 0);
         }
 
         // mark down s1.bar.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // fifth request
         {
@@ -269,7 +269,7 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
           result->reset();
           build_request(20005, &sm, nullptr, "rabbit.net/asset1", nullptr);
           strategy->findNextHop(txnp, nullptr, now);
-          REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+          REQUIRE(result->result == ParentResultType::SPECIFIED);
           CHECK(strcmp(result->hostname, "q1.bar.com") == 0);
         }
 
@@ -279,7 +279,7 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
           result->reset();
           build_request(20006, &sm, nullptr, "rabbit.net", nullptr);
           strategy->findNextHop(txnp, nullptr, now);
-          REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+          REQUIRE(result->result == ParentResultType::SPECIFIED);
           CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
         }
       }
@@ -331,7 +331,7 @@ SCENARIO("Testing NextHop ignore_self_detect false", "[NextHopConsistentHash]")
         build_request(10001, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
-        CHECK(result->result == ParentResultType::PARENT_DIRECT);
+        CHECK(result->result == ParentResultType::DIRECT);
         CHECK(result->hostname == nullptr);
         br_destroy(sm);
       }
@@ -380,7 +380,7 @@ SCENARIO("Testing NextHop ignore_self_detect true", "[NextHopConsistentHash]")
         build_request(10001, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "localhost") == 0);
         CHECK(result->port == 8000);
         br_destroy(sm);
@@ -430,25 +430,25 @@ SCENARIO("Testing NextHopConsistentHash same host different port markdown", "[Ne
         result->reset();
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "localhost") == 0);
         CHECK(result->port == 8000);
 
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         build_request(10002, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "localhost") == 0);
         CHECK(result->port == 8002);
 
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         build_request(10003, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "localhost") == 0);
         CHECK(result->port == 8004);
         br_destroy(sm);
@@ -500,16 +500,16 @@ SCENARIO("Testing NextHopConsistentHash hash_string override", "[NextHopConsiste
         // We happen to know that 'foo.test' will be first if the hostname is the hash
         // and foo.test will be first for the hash 'first' and the bar.test hash 'second'.
         // So, if the hash_string override isn't getting applied, this will fail.
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "bar.test") == 0);
         CHECK(result->port == 80);
 
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         build_request(10002, &sm, nullptr, "rabbit.net", nullptr);
         strategy->findNextHop(txnp);
 
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "foo.test") == 0);
         CHECK(result->port == 80);
         br_destroy(sm);
@@ -559,63 +559,63 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
         build_request(30001, &sm, nullptr, "bunny.net/asset1", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c2.foo.com") == 0);
 
         // simulated failure, mark c2 down and retry request
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // second request
         build_request(30002, &sm, nullptr, "bunny.net.net/asset1", nullptr);
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c3.bar.com") == 0);
 
         // mark down c3.bar.com
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
 
         // third request
         build_request(30003, &sm, nullptr, "bunny.net/asset2", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c6.bar.com") == 0);
 
         // just mark it down and retry request
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
         // fourth request
         build_request(30004, &sm, nullptr, "bunny.net/asset2", nullptr);
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c1.foo.com") == 0);
 
         // mark it down
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
         // fifth request - new request
         build_request(30005, &sm, nullptr, "bunny.net/asset3", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c4.bar.com") == 0);
 
         // mark it down and retry
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
         // sixth request
         result->reset();
         build_request(30006, &sm, nullptr, "bunny.net/asset3", nullptr);
         strategy->findNextHop(txnp);
-        REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c5.bar.com") == 0);
 
         // mark it down
-        strategy->markNextHop(txnp, result->hostname, result->port, NH_MARK_DOWN);
+        strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
         // seventh request - new request with all hosts down and go_direct is false.
         {
           time_t now = time(nullptr) - 1; ///< make sure down hosts are not retryable
           result->reset();
           build_request(30007, &sm, nullptr, "bunny.net/asset4", nullptr);
           strategy->findNextHop(txnp, nullptr, now);
-          REQUIRE(result->result == ParentResultType::PARENT_FAIL);
+          REQUIRE(result->result == ParentResultType::FAIL);
           CHECK(result->hostname == nullptr);
         }
 
@@ -625,7 +625,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
           result->reset();
           build_request(30008, &sm, nullptr, "bunny.net/asset4", nullptr);
           strategy->findNextHop(txnp, nullptr, now);
-          REQUIRE(result->result == ParentResultType::PARENT_SPECIFIED);
+          REQUIRE(result->result == ParentResultType::SPECIFIED);
           CHECK(strcmp(result->hostname, "c2.foo.com") == 0);
         }
       }
@@ -658,8 +658,8 @@ SCENARIO("Testing NextHopConsistentHash using a peering ring_mode.")
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
         REQUIRE(strategy->groups == 2);
-        REQUIRE(strategy->ring_mode == NH_PEERING_RING);
-        REQUIRE(strategy->policy_type == NH_CONSISTENT_HASH);
+        REQUIRE(strategy->ring_mode == NHRingMode::PEERING_RING);
+        REQUIRE(strategy->policy_type == NHPolicyType::CONSISTENT_HASH);
         for (std::size_t i = 0; i < strategy->host_groups.size(); ++i) {
           for (auto const &elem : strategy->host_groups[i]) {
             bool should_be_self = elem.get()->hostname == "p3.bar.com" && i == 0;

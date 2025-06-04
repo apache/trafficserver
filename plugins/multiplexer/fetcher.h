@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <netinet/in.h>
 
 #include <cinttypes>
@@ -73,27 +74,19 @@ struct HttpParser {
 template <class T> struct HttpTransaction {
   using Self = HttpTransaction<T>;
 
-  bool          parsingHeaders_;
-  bool          abort_;
-  bool          timeout_;
-  io::IO       *in_;
-  io::IO       *out_;
-  TSVConn       vconnection_;
-  TSCont        continuation_;
-  T             t_;
-  HttpParser    parser_;
-  ChunkDecoder *chunkDecoder_;
+  bool                          parsingHeaders_;
+  bool                          abort_;
+  bool                          timeout_;
+  std::unique_ptr<io::IO>       in_;
+  std::unique_ptr<io::IO>       out_;
+  TSVConn                       vconnection_;
+  TSCont                        continuation_;
+  T                             t_;
+  HttpParser                    parser_;
+  std::unique_ptr<ChunkDecoder> chunkDecoder_;
 
   ~HttpTransaction()
   {
-    if (in_ != NULL) {
-      delete in_;
-      in_ = NULL;
-    }
-    if (out_ != NULL) {
-      delete out_;
-      out_ = NULL;
-    }
     timeout(0);
     assert(vconnection_ != NULL);
     if (abort_) {
@@ -103,17 +96,14 @@ template <class T> struct HttpTransaction {
     }
     assert(continuation_ != NULL);
     TSContDestroy(continuation_);
-    if (chunkDecoder_ != NULL) {
-      delete chunkDecoder_;
-    }
   }
 
-  HttpTransaction(TSVConn v, TSCont c, io::IO *const i, const uint64_t l, const T &t)
+  HttpTransaction(TSVConn v, TSCont c, std::unique_ptr<io::IO> i, const uint64_t l, const T &t)
     : parsingHeaders_(false),
       abort_(false),
       timeout_(false),
       in_(nullptr),
-      out_(i),
+      out_(std::move(i)),
       vconnection_(v),
       continuation_(c),
       t_(t),
@@ -208,7 +198,7 @@ template <class T> struct HttpTransaction {
           if (self->parser_.parse(*self->in_)) {
             if (isChunkEncoding(self->parser_.buffer_, self->parser_.location_)) {
               assert(self->chunkDecoder_ == NULL);
-              self->chunkDecoder_ = new ChunkDecoder();
+              self->chunkDecoder_ = std::make_unique<ChunkDecoder>();
             }
             self->t_.header(self->parser_.buffer_, self->parser_.location_);
             self->parsingHeaders_ = false;
@@ -256,8 +246,7 @@ template <class T> struct HttpTransaction {
       assert(self->vconnection_);
       TSVConnShutdown(self->vconnection_, 0, 1);
       assert(self->out_ != NULL);
-      delete self->out_;
-      self->out_ = NULL;
+      self->out_.reset();
       break;
     case TS_EVENT_VCONN_WRITE_READY:
       Dbg(dbg_ctl, "HttpTransaction: Write Ready (Done: %" PRId64 " Todo: %" PRId64 ")", TSVIONDoneGet(self->out_->vio),
@@ -284,7 +273,7 @@ template <class T> struct HttpTransaction {
 
 template <class T>
 bool
-get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
+get(const std::string &a, std::unique_ptr<io::IO> i, const int64_t l, const T &t, const int64_t ti = 0)
 {
   using multiplexer_ns::dbg_ctl;
   using Transaction = HttpTransaction<T>;
@@ -299,7 +288,7 @@ get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const in
   assert(vconn != nullptr);
   TSCont contp = TSContCreate(Transaction::handle, TSMutexCreate());
   assert(contp != nullptr);
-  Transaction *transaction = new Transaction(vconn, contp, i, l, t);
+  Transaction *transaction = new Transaction(vconn, contp, std::move(i), l, t);
   TSContDataSet(contp, transaction);
   if (ti > 0) {
     Dbg(dbg_ctl, "ats::get Setting active timeout to: %" PRId64, ti);
@@ -310,8 +299,8 @@ get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const in
 
 template <class T>
 bool
-get(io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
+get(std::unique_ptr<io::IO> i, const int64_t l, const T &t, const int64_t ti = 0)
 {
-  return get("127.0.0.1", i, l, t, ti);
+  return get("127.0.0.1", std::move(i), l, t, ti);
 }
 } // namespace ats

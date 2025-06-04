@@ -21,6 +21,7 @@
 //
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "ts/ts.h"
@@ -38,11 +39,7 @@ class Condition : public Statement
 public:
   Condition() { Dbg(dbg_ctl, "Calling CTOR for Condition"); }
 
-  ~Condition() override
-  {
-    Dbg(dbg_ctl, "Calling DTOR for Condition");
-    delete _matcher;
-  }
+  ~Condition() override { Dbg(dbg_ctl, "Calling DTOR for Condition"); }
 
   // noncopyable
   Condition(const Condition &)      = delete;
@@ -100,7 +97,7 @@ public:
   const Matcher *
   get_matcher() const
   {
-    return _matcher;
+    return _matcher.get();
   }
 
   MatcherOps
@@ -123,10 +120,10 @@ protected:
   // Evaluate the condition
   virtual bool eval(const Resources &res) = 0;
 
-  std::string _qualifier;
-  const char *_qualifier_wks = nullptr;
-  MatcherOps  _cond_op       = MATCH_EQUAL;
-  Matcher    *_matcher       = nullptr;
+  std::string              _qualifier;
+  const char              *_qualifier_wks = nullptr;
+  MatcherOps               _cond_op       = MATCH_EQUAL;
+  std::unique_ptr<Matcher> _matcher       = nullptr;
 
 private:
   CondModifiers _mods = CondModifiers::NONE;

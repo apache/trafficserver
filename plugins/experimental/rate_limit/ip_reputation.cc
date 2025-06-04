@@ -125,10 +125,10 @@ SieveLru::parseYaml(const YAML::Node &node)
 
   // Create the other buckets, in smaller and smaller sizes (power of 2)
   for (uint32_t i = lastBucket(); i <= entryBucket(); ++i) {
-    _buckets[i]  = new SieveBucket(cur_size);
+    _buckets[i]  = std::make_unique<SieveBucket>(cur_size);
     cur_size    *= 2;
   }
-  _buckets[blockBucket()] = new SieveBucket(cur_size / 2); // Block LRU, same size as entry bucket
+  _buckets[blockBucket()] = std::make_unique<SieveBucket>(cur_size / 2); // Block LRU, same size as entry bucket
 
   Dbg(dbg_ctl, "Loaded IP-Reputation rule: %s(%u, %u, %u, %ld)", _name.c_str(), _num_buckets, _size, _percentage,
       static_cast<long>(_max_age.count()));
@@ -151,13 +151,13 @@ SieveLru::increment(KeyClass key)
 
   if (_map.end() == map_it) {
     // This is a new entry, this can only be added to the last LRU bucket
-    SieveBucket *lru = _buckets[entryBucket()];
+    auto &lru = _buckets[entryBucket()];
 
     if (lru->full()) { // The LRU is full, replace the last item with a new one
       auto last                                 = std::prev(lru->end());
       auto &[l_key, l_count, l_bucket, l_added] = *last;
 
-      lru->moveTop(lru, last);
+      lru->moveTop(lru.get(), last);
       _map.erase(l_key);
       *last = {key, 1, entryBucket(), SystemClock::now()};
     } else {
@@ -172,8 +172,8 @@ SieveLru::increment(KeyClass key)
   } else {
     auto &[map_key, map_item]              = *map_it;
     auto &[list_key, count, bucket, added] = *map_item;
-    auto lru                               = _buckets[bucket];
-    auto max_age                           = (bucket == blockBucket() ? _permablock_max_age : _max_age);
+    auto &lru                              = _buckets[bucket];
+    auto  max_age                          = (bucket == blockBucket() ? _permablock_max_age : _max_age);
 
     // Check if the entry is older than max_age (if set), if so just move it to the entry bucket and restart
     // Yes, this will move likely abusive IPs but they will earn back a bad reputation; The goal here is to
@@ -182,19 +182,19 @@ SieveLru::increment(KeyClass key)
     // age it out properly.
     if ((_max_age > std::chrono::seconds::zero()) && ((count % 10) == 0) &&
         (std::chrono::duration_cast<std::chrono::seconds>(SystemClock::now() - added) > max_age)) {
-      auto last_lru = _buckets[entryBucket()];
+      auto &last_lru = _buckets[entryBucket()];
 
       count  >>= 3; // Age the count by a factor of 1/8th
       bucket   = entryBucket();
-      last_lru->moveTop(lru, map_item);
+      last_lru->moveTop(lru.get(), map_item);
     } else {
       ++count;
 
-      if (bucket > lastBucket()) {         // Not in the smallest bucket, so we may promote
-        auto p_lru = _buckets[bucket - 1]; // Move to previous bucket
+      if (bucket > lastBucket()) {          // Not in the smallest bucket, so we may promote
+        auto &p_lru = _buckets[bucket - 1]; // Move to previous bucket
 
         if (!p_lru->full()) {
-          p_lru->moveTop(lru, map_item);
+          p_lru->moveTop(lru.get(), map_item);
           --bucket;
         } else {
           auto p_item                               = std::prev(p_lru->end());
@@ -202,15 +202,15 @@ SieveLru::increment(KeyClass key)
 
           if (p_count <= count) {
             // Swap places on the two elements, moving both to the top of their respective LRU buckets
-            p_lru->moveTop(lru, map_item);
-            lru->moveTop(p_lru, p_item);
+            p_lru->moveTop(lru.get(), map_item);
+            lru->moveTop(p_lru.get(), p_item);
             --bucket;
             ++p_bucket;
           }
         }
       } else {
         // Just move it to the top of the current LRU
-        lru->moveTop(lru, map_item);
+        lru->moveTop(lru.get(), map_item);
       }
     }
     TSMutexUnlock(_lock);
@@ -254,13 +254,13 @@ SieveLru::move_bucket(KeyClass key, uint32_t to_bucket)
 
   if (_map.end() == map_it) {
     // This is a new entry, add it directly to the special bucket
-    SieveBucket *lru = _buckets[to_bucket];
+    auto &lru = _buckets[to_bucket];
 
     if (lru->full()) { // The LRU is full, replace the last item with a new one
       auto last                                 = std::prev(lru->end());
       auto &[l_key, l_count, l_bucket, l_added] = *last;
 
-      lru->moveTop(lru, last);
+      lru->moveTop(lru.get(), last);
       _map.erase(l_key);
       *last = {key, 1, to_bucket, SystemClock::now()};
     } else {
@@ -271,10 +271,10 @@ SieveLru::move_bucket(KeyClass key, uint32_t to_bucket)
   } else {
     auto &[map_key, map_item]              = *map_it;
     auto &[list_key, count, bucket, added] = *map_item;
-    auto lru                               = _buckets[bucket];
+    auto &lru                              = _buckets[bucket];
 
     if (bucket != to_bucket) { // Make sure it's not already blocked
-      auto move_lru = _buckets[to_bucket];
+      auto &move_lru = _buckets[to_bucket];
 
       // Free a space for a new entry, if needed
       if (move_lru->size() >= move_lru->max_size()) {
@@ -284,7 +284,7 @@ SieveLru::move_bucket(KeyClass key, uint32_t to_bucket)
         move_lru->erase(d_entry);
         _map.erase(d_key);
       }
-      move_lru->moveTop(lru, map_item); // Move the LRU item to the perma-blocks
+      move_lru->moveTop(lru.get(), map_item); // Move the LRU item to the perma-blocks
       bucket = to_bucket;
       added  = SystemClock::now();
     }
@@ -302,7 +302,7 @@ SieveLru::dump()
 
   for (uint32_t i = 0; i < _num_buckets + 1; ++i) {
     int64_t cnt = 0, sum = 0;
-    auto    lru = _buckets[i];
+    auto   &lru = _buckets[i];
 
     std::cout << '\n' << "Dumping bucket " << i << " (size=" << lru->size() << ", max_size=" << lru->max_size() << ")" << '\n';
     for (auto &it : *lru) {

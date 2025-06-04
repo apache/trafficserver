@@ -170,8 +170,8 @@ test_decoding(const string &filename)
   HTTPHdr            original, decoded;
   MIMEField         *field;
 
-  decoded.create(HTTP_TYPE_REQUEST);
-  original.create(HTTP_TYPE_REQUEST);
+  decoded.create(HTTPType::REQUEST);
+  original.create(HTTPType::REQUEST);
 
   int      seqnum = -1;
   ifstream ifs(filename);
@@ -225,8 +225,8 @@ test_encoding(const string &filename_in, const string &filename_out)
   HTTPHdr            original, decoded;
   MIMEField         *field;
 
-  decoded.create(HTTP_TYPE_REQUEST);
-  original.create(HTTP_TYPE_REQUEST);
+  decoded.create(HTTPType::REQUEST);
+  original.create(HTTPType::REQUEST);
 
   ofstream ofs(filename_out);
   ofs << "{" << endl;

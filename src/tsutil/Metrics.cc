@@ -44,12 +44,12 @@ Metrics::instance()
 void
 Metrics::Storage::addBlob() // The mutex must be held before calling this!
 {
-  auto blob = new Metrics::NamesAndAtomics();
+  auto blob = std::make_unique<Metrics::NamesAndAtomics>();
 
   debug_assert(blob);
   debug_assert(_cur_blob < MAX_BLOBS);
 
-  _blobs[++_cur_blob] = blob;
+  _blobs[++_cur_blob] = std::move(blob);
   _cur_off            = 0;
 }
 
@@ -64,7 +64,7 @@ Metrics::Storage::create(std::string_view name)
   }
 
   Metrics::IdType           id    = _makeId(_cur_blob, _cur_off);
-  Metrics::NamesAndAtomics *blob  = _blobs[_cur_blob];
+  Metrics::NamesAndAtomics *blob  = _blobs[_cur_blob].get();
   Metrics::NameStorage     &names = std::get<0>(*blob);
 
   names[_cur_off] = std::make_tuple(std::string(name), id);
@@ -94,11 +94,11 @@ Metrics::AtomicType *
 Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name) const
 {
   auto [blob_ix, offset]         = _splitID(id);
-  Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
   // Do a sanity check on the ID, to make sure we don't index outside of the realm of possibility.
   if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
-    blob   = _blobs[0];
+    blob   = _blobs[0].get();
     offset = 0;
   }
 
@@ -130,11 +130,11 @@ std::string_view
 Metrics::Storage::name(Metrics::IdType id) const
 {
   auto [blob_ix, offset]         = _splitID(id);
-  Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
   // Do a sanity check on the ID, to make sure we don't index outside of the realm of possibility.
   if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
-    blob   = _blobs[0];
+    blob   = _blobs[0].get();
     offset = 0;
   }
 
@@ -154,7 +154,7 @@ Metrics::Storage::createSpan(size_t size, Metrics::IdType *id)
   }
 
   Metrics::IdType           span_start = _makeId(_cur_blob, _cur_off);
-  Metrics::NamesAndAtomics *blob       = _blobs[_cur_blob];
+  Metrics::NamesAndAtomics *blob       = _blobs[_cur_blob].get();
   Metrics::AtomicStorage   &atomics    = std::get<1>(*blob);
   Metrics::SpanType         span       = Metrics::SpanType(&atomics[_cur_off], size);
 
@@ -171,7 +171,7 @@ bool
 Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
 {
   auto [blob_ix, offset]         = _splitID(id);
-  Metrics::NamesAndAtomics *blob = _blobs[blob_ix];
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
   // We can only rename Metrics that are already allocated
   if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {

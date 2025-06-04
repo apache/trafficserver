@@ -28,16 +28,16 @@
 #include "tscore/HashSip.h"
 #include "proxy/http/remap/NextHopSelectionStrategy.h"
 
-enum NHHashKeyType {
-  NH_URL_HASH_KEY = 0,
-  NH_HOSTNAME_HASH_KEY,
-  NH_PATH_HASH_KEY, // default, consistent hash uses the request url path
-  NH_PATH_QUERY_HASH_KEY,
-  NH_PATH_FRAGMENT_HASH_KEY,
-  NH_CACHE_HASH_KEY // ToDo: Deprecated in 10.0.0, remove in 11.0.0
+enum class NHHashKeyType {
+  URL_HASH_KEY = 0,
+  HOSTNAME_HASH_KEY,
+  PATH_HASH_KEY, // default, consistent hash uses the request url path
+  PATH_QUERY_HASH_KEY,
+  PATH_FRAGMENT_HASH_KEY,
+  CACHE_HASH_KEY // ToDo: Deprecated in 10.0.0, remove in 11.0.0
 };
 
-enum NHHashUrlType { NH_HASH_URL_REQUEST = 0, NH_HASH_URL_CACHE, NH_HASH_URL_PARENT };
+enum class NHHashUrlType { REQUEST = 0, CACHE, PARENT };
 
 class NextHopConsistentHash : public NextHopSelectionStrategy
 {
@@ -46,8 +46,8 @@ class NextHopConsistentHash : public NextHopSelectionStrategy
   uint64_t getHashKey(uint64_t sm_id, const HttpRequestData &hrdata, ATSHash64 *h);
 
 public:
-  NHHashKeyType hash_key = NH_PATH_HASH_KEY;
-  NHHashUrlType hash_url = NH_HASH_URL_REQUEST;
+  NHHashKeyType hash_key = NHHashKeyType::PATH_HASH_KEY;
+  NHHashUrlType hash_url = NHHashUrlType::REQUEST;
 
   NextHopConsistentHash() = delete;
   NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy, ts::Yaml::Map &n);

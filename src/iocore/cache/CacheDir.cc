@@ -168,17 +168,6 @@ OpenDir::open_read(const CryptoHash *key) const
   return nullptr;
 }
 
-int
-OpenDirEntry::wait(CacheVC *cont, int msec)
-{
-  ink_assert(cont->stripe->mutex->thread_holding == this_ethread());
-  cont->f.open_read_timeout = 1;
-  ink_assert(!cont->trigger);
-  cont->trigger = cont->stripe->mutex->thread_holding->schedule_in_local(cont, HRTIME_MSECONDS(msec));
-  readers.push(cont);
-  return EVENT_CONT;
-}
-
 //
 // Cache Directory
 //

@@ -850,10 +850,10 @@ CB_After_Cache_Init()
 void
 CB_cmd_cache_clear()
 {
-  if (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED) {
+  if (cacheProcessor.IsCacheEnabled() == CacheInitState::INITIALIZED) {
     Note("CLEAR, succeeded");
     ::exit(0);
-  } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
+  } else if (cacheProcessor.IsCacheEnabled() == CacheInitState::FAILED) {
     Note("unable to open Cache, CLEAR failed");
     ::exit(1);
   }
@@ -863,7 +863,7 @@ void
 CB_cmd_cache_check()
 {
   int res = 0;
-  if (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED) {
+  if (cacheProcessor.IsCacheEnabled() == CacheInitState::INITIALIZED) {
     res = cacheProcessor.dir_check(false) < 0 || res;
     cacheProcessor.stop();
     const char *n = "CHECK";
@@ -875,7 +875,7 @@ CB_cmd_cache_check()
       printf("\n%s succeeded\n", n);
       ::exit(0);
     }
-  } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
+  } else if (cacheProcessor.IsCacheEnabled() == CacheInitState::FAILED) {
     Note("unable to open Cache, Check failed");
     ::exit(1);
   }
@@ -1556,7 +1556,7 @@ struct RegressionCont : public Continuation {
     (void)event;
     (void)e;
     int res = 0;
-    if (!initialized && (cacheProcessor.IsCacheEnabled() != CACHE_INITIALIZED)) {
+    if (!initialized && (cacheProcessor.IsCacheEnabled() != CacheInitState::INITIALIZED)) {
       printf("Regression waiting for the cache to be ready... %d\n", ++waits);
       return EVENT_CONT;
     }
@@ -1750,11 +1750,11 @@ configure_io_uring()
   RecInt aio_io_uring_wq_bounded    = cfg.wq_bounded;
   RecInt aio_io_uring_wq_unbounded  = cfg.wq_unbounded;
 
-  RecGetRecordInteger("proxy.config.io_uring.entries", &aio_io_uring_queue_entries);
-  RecGetRecordInteger("proxy.config.io_uring.sq_poll_ms", &aio_io_uring_sq_poll_ms);
-  RecGetRecordInteger("proxy.config.io_uring.attach_wq", &aio_io_uring_attach_wq);
-  RecGetRecordInteger("proxy.config.io_uring.wq_workers_bounded", &aio_io_uring_wq_bounded);
-  RecGetRecordInteger("proxy.config.io_uring.wq_workers_unbounded", &aio_io_uring_wq_unbounded);
+  aio_io_uring_queue_entries = RecGetRecordInt("proxy.config.io_uring.entries").value_or(0);
+  aio_io_uring_sq_poll_ms    = RecGetRecordInt("proxy.config.io_uring.sq_poll_ms").value_or(0);
+  aio_io_uring_attach_wq     = RecGetRecordInt("proxy.config.io_uring.attach_wq").value_or(0);
+  aio_io_uring_wq_bounded    = RecGetRecordInt("proxy.config.io_uring.wq_workers_bounded").value_or(0);
+  aio_io_uring_wq_unbounded  = RecGetRecordInt("proxy.config.io_uring.wq_workers_unbounded").value_or(0);
 
   cfg.queue_entries = aio_io_uring_queue_entries;
   cfg.sq_poll_ms    = aio_io_uring_sq_poll_ms;

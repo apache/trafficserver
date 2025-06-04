@@ -254,70 +254,61 @@ public:
     ABORTED,
   };
 
-  enum Authentication_t {
-    AUTHENTICATION_SUCCESS = 0,
-    AUTHENTICATION_MUST_REVALIDATE,
-    AUTHENTICATION_MUST_PROXY,
-    AUTHENTICATION_CACHE_AUTH
-  };
+  enum class Authentication_t { SUCCESS = 0, MUST_REVALIDATE, MUST_PROXY, CACHE_AUTH };
 
   enum CacheAction_t {
-    CACHE_DO_UNDEFINED = 0,
-    CACHE_DO_NO_ACTION,
-    CACHE_DO_DELETE,
-    CACHE_DO_LOOKUP,
-    CACHE_DO_REPLACE,
-    CACHE_DO_SERVE,
-    CACHE_DO_SERVE_AND_DELETE,
-    CACHE_DO_SERVE_AND_UPDATE,
-    CACHE_DO_UPDATE,
-    CACHE_DO_WRITE,
-    CACHE_PREPARE_TO_DELETE,
-    CACHE_PREPARE_TO_UPDATE,
-    CACHE_PREPARE_TO_WRITE,
-    TOTAL_CACHE_ACTION_TYPES
+    UNDEFINED = 0,
+    NO_ACTION,
+    DELETE,
+    LOOKUP,
+    REPLACE,
+    SERVE,
+    SERVE_AND_DELETE,
+    SERVE_AND_UPDATE,
+    UPDATE,
+    WRITE,
+    PREPARE_TO_DELETE,
+    PREPARE_TO_UPDATE,
+    PREPARE_TO_WRITE,
+    TOTAL_TYPES
   };
 
-  enum CacheWriteLock_t {
-    CACHE_WL_INIT,
-    CACHE_WL_SUCCESS,
-    CACHE_WL_FAIL,
-    CACHE_WL_READ_RETRY,
+  enum class CacheWriteLock_t {
+    INIT,
+    SUCCESS,
+    FAIL,
+    READ_RETRY,
   };
 
-  enum ClientTransactionResult_t {
-    CLIENT_TRANSACTION_RESULT_UNDEFINED,
-    CLIENT_TRANSACTION_RESULT_HIT_FRESH,
-    CLIENT_TRANSACTION_RESULT_HIT_REVALIDATED,
-    CLIENT_TRANSACTION_RESULT_MISS_COLD,
-    CLIENT_TRANSACTION_RESULT_MISS_CHANGED,
-    CLIENT_TRANSACTION_RESULT_MISS_CLIENT_NO_CACHE,
-    CLIENT_TRANSACTION_RESULT_MISS_UNCACHABLE,
-    CLIENT_TRANSACTION_RESULT_ERROR_ABORT,
-    CLIENT_TRANSACTION_RESULT_ERROR_POSSIBLE_ABORT,
-    CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL,
-    CLIENT_TRANSACTION_RESULT_ERROR_OTHER
+  enum class ClientTransactionResult_t {
+    UNDEFINED,
+    HIT_FRESH,
+    HIT_REVALIDATED,
+    MISS_COLD,
+    MISS_CHANGED,
+    MISS_CLIENT_NO_CACHE,
+    MISS_UNCACHABLE,
+    ERROR_ABORT,
+    ERROR_POSSIBLE_ABORT,
+    ERROR_CONNECT_FAIL,
+    ERROR_OTHER
   };
 
-  enum Freshness_t {
-    FRESHNESS_FRESH = 0, // Fresh enough, serve it
-    FRESHNESS_WARNING,   // Stale, but client says OK
-    FRESHNESS_STALE      // Stale, don't use
+  enum class Freshness_t {
+    FRESH = 0, // Fresh enough, serve it
+    WARNING,   // Stale, but client says OK
+    STALE      // Stale, don't use
   };
 
-  enum HttpTransactMagic_t {
-    HTTP_TRANSACT_MAGIC_ALIVE     = 0x00001234,
-    HTTP_TRANSACT_MAGIC_DEAD      = 0xDEAD1234,
-    HTTP_TRANSACT_MAGIC_SEPARATOR = 0x12345678
+  enum class HttpTransactMagic_t : uint32_t { ALIVE = 0x00001234, DEAD = 0xDEAD1234, SEPARATOR = 0x12345678 };
+
+  enum class ProxyMode_t {
+    UNDEFINED,
+    GENERIC,
+    TUNNELLING,
   };
 
-  enum ProxyMode_t {
-    UNDEFINED_MODE,
-    GENERIC_PROXY,
-    TUNNELLING_PROXY,
-  };
-
-  enum RequestError_t {
+  enum class RequestError_t {
     NO_REQUEST_HEADER_ERROR,
     BAD_HTTP_HEADER_SYNTAX,
     BAD_CONNECT_PORT,
@@ -330,10 +321,10 @@ public:
     SCHEME_NOT_SUPPORTED,
     UNACCEPTABLE_TE_REQUIRED,
     INVALID_POST_CONTENT_LENGTH,
-    TOTAL_REQUEST_ERROR_TYPES
+    TOTAL_TYPES
   };
 
-  enum ResponseError_t {
+  enum class ResponseError_t {
     NO_RESPONSE_HEADER_ERROR,
     BOGUS_OR_NO_DATE_IN_RESPONSE,
     CONNECTION_OPEN_FAILED,
@@ -342,7 +333,7 @@ public:
     NON_EXISTANT_RESPONSE_HEADER,
     NOT_A_RESPONSE_HEADER,
     STATUS_CODE_SERVER_ERROR,
-    TOTAL_RESPONSE_ERROR_TYPES
+    TOTAL_TYPES
   };
 
   // Please do not forget to fix TSServerState (ts/apidefs.h.in)
@@ -362,136 +353,110 @@ public:
     OUTBOUND_CONGESTION
   };
 
-  enum CacheWriteStatus_t {
-    NO_CACHE_WRITE = 0,
-    CACHE_WRITE_LOCK_MISS,
-    CACHE_WRITE_IN_PROGRESS,
-    CACHE_WRITE_ERROR,
-    CACHE_WRITE_COMPLETE
-  };
+  enum class CacheWriteStatus_t { NO_WRITE = 0, LOCK_MISS, IN_PROGRESS, ERROR, COMPLETE };
 
-  enum HttpRequestFlavor_t {
-    REQ_FLAVOR_INTERCEPTED      = 0,
-    REQ_FLAVOR_REVPROXY         = 1,
-    REQ_FLAVOR_FWDPROXY         = 2,
-    REQ_FLAVOR_SCHEDULED_UPDATE = 3
-  };
+  enum class HttpRequestFlavor_t { INTERCEPTED = 0, REVPROXY = 1, FWDPROXY = 2, SCHEDULED_UPDATE = 3 };
 
   ////////////
   // source //
   ////////////
-  enum Source_t {
-    SOURCE_NONE = 0,
-    SOURCE_HTTP_ORIGIN_SERVER,
-    SOURCE_RAW_ORIGIN_SERVER,
-    SOURCE_CACHE,
-    SOURCE_TRANSFORM,
-    SOURCE_INTERNAL // generated from text buffer
+  enum class Source_t {
+    NONE = 0,
+    HTTP_ORIGIN_SERVER,
+    RAW_ORIGIN_SERVER,
+    CACHE,
+    TRANSFORM,
+    INTERNAL // generated from text buffer
   };
 
   ////////////////////////////////////////////////
   // HttpTransact fills a StateMachineAction_t  //
   // to tell the state machine what to do next. //
   ////////////////////////////////////////////////
-  enum StateMachineAction_t {
-    SM_ACTION_UNDEFINED = 0,
+  enum class StateMachineAction_t {
+    UNDEFINED = 0,
 
-    // SM_ACTION_AUTH_LOOKUP,
-    SM_ACTION_DNS_LOOKUP,
-    SM_ACTION_DNS_REVERSE_LOOKUP,
+    // AUTH_LOOKUP,
+    DNS_LOOKUP,
+    DNS_REVERSE_LOOKUP,
 
-    SM_ACTION_CACHE_LOOKUP,
-    SM_ACTION_CACHE_ISSUE_WRITE,
-    SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM,
-    SM_ACTION_CACHE_PREPARE_UPDATE,
-    SM_ACTION_CACHE_ISSUE_UPDATE,
+    CACHE_LOOKUP,
+    CACHE_ISSUE_WRITE,
+    CACHE_ISSUE_WRITE_TRANSFORM,
+    CACHE_PREPARE_UPDATE,
+    CACHE_ISSUE_UPDATE,
 
-    SM_ACTION_ORIGIN_SERVER_OPEN,
-    SM_ACTION_ORIGIN_SERVER_RAW_OPEN,
-    SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN,
+    ORIGIN_SERVER_OPEN,
+    ORIGIN_SERVER_RAW_OPEN,
+    ORIGIN_SERVER_RR_MARK_DOWN,
 
-    SM_ACTION_READ_PUSH_HDR,
-    SM_ACTION_STORE_PUSH_BODY,
+    READ_PUSH_HDR,
+    STORE_PUSH_BODY,
 
-    SM_ACTION_INTERNAL_CACHE_DELETE,
-    SM_ACTION_INTERNAL_CACHE_NOOP,
-    SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS,
-    SM_ACTION_INTERNAL_CACHE_WRITE,
-    SM_ACTION_INTERNAL_100_RESPONSE,
-    SM_ACTION_SEND_ERROR_CACHE_NOOP,
+    INTERNAL_CACHE_DELETE,
+    INTERNAL_CACHE_NOOP,
+    INTERNAL_CACHE_UPDATE_HEADERS,
+    INTERNAL_CACHE_WRITE,
+    INTERNAL_100_RESPONSE,
+    SEND_ERROR_CACHE_NOOP,
 
-    SM_ACTION_WAIT_FOR_FULL_BODY,
-    SM_ACTION_REQUEST_BUFFER_READ_COMPLETE,
-    SM_ACTION_SERVE_FROM_CACHE,
-    SM_ACTION_SERVER_READ,
-    SM_ACTION_SERVER_PARSE_NEXT_HDR,
-    SM_ACTION_TRANSFORM_READ,
-    SM_ACTION_SSL_TUNNEL,
-    SM_ACTION_CONTINUE,
+    WAIT_FOR_FULL_BODY,
+    REQUEST_BUFFER_READ_COMPLETE,
+    SERVE_FROM_CACHE,
+    SERVER_READ,
+    SERVER_PARSE_NEXT_HDR,
+    TRANSFORM_READ,
+    SSL_TUNNEL,
+    CONTINUE,
 
-    SM_ACTION_API_SM_START,
-    SM_ACTION_API_READ_REQUEST_HDR,
-    SM_ACTION_API_TUNNEL_START,
-    SM_ACTION_API_PRE_REMAP,
-    SM_ACTION_API_POST_REMAP,
-    SM_ACTION_API_OS_DNS,
-    SM_ACTION_API_SEND_REQUEST_HDR,
-    SM_ACTION_API_READ_CACHE_HDR,
-    SM_ACTION_API_CACHE_LOOKUP_COMPLETE,
-    SM_ACTION_API_READ_RESPONSE_HDR,
-    SM_ACTION_API_SEND_RESPONSE_HDR,
-    SM_ACTION_API_SM_SHUTDOWN,
+    API_SM_START,
+    API_READ_REQUEST_HDR,
+    API_TUNNEL_START,
+    API_PRE_REMAP,
+    API_POST_REMAP,
+    API_OS_DNS,
+    API_SEND_REQUEST_HDR,
+    API_READ_CACHE_HDR,
+    API_CACHE_LOOKUP_COMPLETE,
+    API_READ_RESPONSE_HDR,
+    API_SEND_RESPONSE_HDR,
+    API_SM_SHUTDOWN,
 
-    SM_ACTION_REMAP_REQUEST,
-    SM_ACTION_POST_REMAP_SKIP,
-    SM_ACTION_REDIRECT_READ
+    REMAP_REQUEST,
+    POST_REMAP_SKIP,
+    REDIRECT_READ
   };
 
-  enum TransferEncoding_t {
-    NO_TRANSFER_ENCODING = 0,
-    CHUNKED_ENCODING,
-    DEFLATE_ENCODING,
+  enum class TransferEncoding_t {
+    NONE = 0,
+    CHUNKED,
+    DEFLATE,
   };
 
-  enum Variability_t {
-    VARIABILITY_NONE = 0,
-    VARIABILITY_SOME,
-    VARIABILITY_ALL,
+  enum class Variability_t {
+    NONE = 0,
+    SOME,
+    ALL,
   };
 
-  enum CacheLookupResult_t {
-    CACHE_LOOKUP_NONE,
-    CACHE_LOOKUP_MISS,
-    CACHE_LOOKUP_DOC_BUSY,
-    CACHE_LOOKUP_HIT_STALE,
-    CACHE_LOOKUP_HIT_WARNING,
-    CACHE_LOOKUP_HIT_FRESH,
-    CACHE_LOOKUP_SKIPPED
+  enum class CacheLookupResult_t { NONE, MISS, DOC_BUSY, HIT_STALE, HIT_WARNING, HIT_FRESH, SKIPPED };
+
+  enum class UpdateCachedObject_t { NONE, PREPARE, CONTINUE, ERROR, SUCCEED, FAIL };
+
+  enum class RangeSetup_t {
+    NONE = 0,
+    REQUESTED,
+    NOT_SATISFIABLE,
+    NOT_HANDLED,
+    NOT_TRANSFORM_REQUESTED,
   };
 
-  enum UpdateCachedObject_t {
-    UPDATE_CACHED_OBJECT_NONE,
-    UPDATE_CACHED_OBJECT_PREPARE,
-    UPDATE_CACHED_OBJECT_CONTINUE,
-    UPDATE_CACHED_OBJECT_ERROR,
-    UPDATE_CACHED_OBJECT_SUCCEED,
-    UPDATE_CACHED_OBJECT_FAIL
-  };
-
-  enum RangeSetup_t {
-    RANGE_NONE = 0,
-    RANGE_REQUESTED,
-    RANGE_NOT_SATISFIABLE,
-    RANGE_NOT_HANDLED,
-    RANGE_NOT_TRANSFORM_REQUESTED,
-  };
-
-  enum CacheAuth_t {
-    CACHE_AUTH_NONE = 0,
-    // CACHE_AUTH_TRUE,
-    CACHE_AUTH_FRESH,
-    CACHE_AUTH_STALE,
-    CACHE_AUTH_SERVE
+  enum class CacheAuth_t {
+    NONE = 0,
+    // TRUE,
+    FRESH,
+    STALE,
+    SERVE
   };
 
   struct State;
@@ -510,11 +475,11 @@ public:
   };
 
   using CacheLookupInfo = struct _CacheLookupInfo {
-    HttpTransact::CacheAction_t action           = CACHE_DO_UNDEFINED;
-    HttpTransact::CacheAction_t transform_action = CACHE_DO_UNDEFINED;
+    HttpTransact::CacheAction_t action           = CacheAction_t::UNDEFINED;
+    HttpTransact::CacheAction_t transform_action = CacheAction_t::UNDEFINED;
 
-    HttpTransact::CacheWriteStatus_t write_status           = NO_CACHE_WRITE;
-    HttpTransact::CacheWriteStatus_t transform_write_status = NO_CACHE_WRITE;
+    HttpTransact::CacheWriteStatus_t write_status           = CacheWriteStatus_t::NO_WRITE;
+    HttpTransact::CacheWriteStatus_t transform_write_status = CacheWriteStatus_t::NO_WRITE;
 
     URL             *lookup_url = nullptr;
     URL              lookup_url_storage;
@@ -523,7 +488,7 @@ public:
     HTTPInfo         transform_store;
     CacheDirectives  directives;
     HTTPInfo        *object_read          = nullptr;
-    CacheWriteLock_t write_lock_state     = CACHE_WL_INIT;
+    CacheWriteLock_t write_lock_state     = CacheWriteLock_t::INIT;
     int              lookup_count         = 0;
     SquidHitMissCode hit_miss_code        = SQUID_MISS_NONE;
     URL             *parent_selection_url = nullptr;
@@ -541,7 +506,7 @@ public:
 
   struct ConnectionAttributes {
     HTTPVersion   http_version;
-    HTTPKeepAlive keep_alive = HTTP_KEEPALIVE_UNDEFINED;
+    HTTPKeepAlive keep_alive = HTTPKeepAlive::UNDEFINED;
 
     // The following variable is true if the client expects to
     // received a chunked response.
@@ -552,7 +517,7 @@ public:
     int                connect_result = 0;
     char              *name           = nullptr;
     swoc::IPAddr       name_addr;
-    TransferEncoding_t transfer_encoding = NO_TRANSFER_ENCODING;
+    TransferEncoding_t transfer_encoding = TransferEncoding_t::NONE;
 
     /** This is the source address of the connection from the point of view of the transaction.
         It is the address of the source of the request.
@@ -594,7 +559,7 @@ public:
   };
 
   using CurrentInfo = struct _CurrentInfo {
-    ProxyMode_t                       mode       = UNDEFINED_MODE;
+    ProxyMode_t                       mode       = ProxyMode_t::UNDEFINED;
     ResolveInfo::UpstreamResolveStyle request_to = ResolveInfo::UNDEFINED_LOOKUP;
     ConnectionAttributes             *server     = nullptr;
     ink_time_t                        now        = 0;
@@ -647,7 +612,7 @@ public:
     Attempts      retry_attempts;
     unsigned      simple_retry_attempts             = 0;
     unsigned      unavailable_server_retry_attempts = 0;
-    ParentRetry_t retry_type                        = PARENT_RETRY_NONE;
+    ParentRetry_t retry_type                        = ParentRetry_t::NONE;
 
     _CurrentInfo()                     = default;
     _CurrentInfo(_CurrentInfo const &) = delete;
@@ -670,16 +635,16 @@ public:
     int64_t         transform_response_cl      = HTTP_UNDEFINED_CL;
     bool            client_req_is_server_style = false;
     bool            trust_response_cl          = false;
-    ResponseError_t response_error             = NO_RESPONSE_HEADER_ERROR;
+    ResponseError_t response_error             = ResponseError_t::NO_RESPONSE_HEADER_ERROR;
     bool            extension_method           = false;
 
     _HeaderInfo() {}
   };
 
   using SquidLogInfo = struct _SquidLogInfo {
-    SquidLogCode       log_code      = SQUID_LOG_ERR_UNKNOWN;
-    SquidSubcode       subcode       = SQUID_SUBCODE_EMPTY;
-    SquidHierarchyCode hier_code     = SQUID_HIER_EMPTY;
+    SquidLogCode       log_code      = SquidLogCode::ERR_UNKNOWN;
+    SquidSubcode       subcode       = SquidSubcode::EMPTY;
+    SquidHierarchyCode hier_code     = SquidHierarchyCode::EMPTY;
     SquidHitMissCode   hit_miss_code = SQUID_MISS_NONE;
 
     _SquidLogInfo() {}
@@ -695,11 +660,11 @@ public:
   struct State {
     HttpSM *state_machine = nullptr;
 
-    HttpTransactMagic_t m_magic                = HTTP_TRANSACT_MAGIC_ALIVE;
+    HttpTransactMagic_t m_magic                = HttpTransactMagic_t::ALIVE;
     HTTPVersion         updated_server_version = HTTP_INVALID;
-    CacheLookupResult_t cache_lookup_result    = CACHE_LOOKUP_NONE;
-    HTTPStatus          http_return_code       = HTTP_STATUS_NONE;
-    CacheAuth_t         www_auth_content       = CACHE_AUTH_NONE;
+    CacheLookupResult_t cache_lookup_result    = CacheLookupResult_t::NONE;
+    HTTPStatus          http_return_code       = HTTPStatus::NONE;
+    CacheAuth_t         www_auth_content       = CacheAuth_t::NONE;
 
     Arena arena;
 
@@ -747,9 +712,9 @@ public:
     ConnectionAttributes        parent_info;
     ConnectionAttributes        server_info;
 
-    Source_t            source               = SOURCE_NONE;
-    Source_t            pre_transform_source = SOURCE_NONE;
-    HttpRequestFlavor_t req_flavor           = REQ_FLAVOR_FWDPROXY;
+    Source_t            source               = Source_t::NONE;
+    Source_t            pre_transform_source = Source_t::NONE;
+    HttpRequestFlavor_t req_flavor           = HttpRequestFlavor_t::FWDPROXY;
 
     CurrentInfo  current;
     HeaderInfo   hdr_info;
@@ -765,9 +730,9 @@ public:
     ParentResult                              parent_result;
     CacheControlResult                        cache_control;
 
-    StateMachineAction_t next_action                      = SM_ACTION_UNDEFINED; // out
-    StateMachineAction_t api_next_action                  = SM_ACTION_UNDEFINED; // out
-    void (*transact_return_point)(HttpTransact::State *s) = nullptr;             // out
+    StateMachineAction_t next_action                      = StateMachineAction_t::UNDEFINED; // out
+    StateMachineAction_t api_next_action                  = StateMachineAction_t::UNDEFINED; // out
+    void (*transact_return_point)(HttpTransact::State *s) = nullptr;                         // out
 
     // We keep this so we can jump back to the upgrade handler after remap is complete
     void (*post_remap_upgrade_return_point)(HttpTransact::State *s) = nullptr; // out
@@ -811,9 +776,9 @@ public:
     // These ptrs are deallocate when transaction is over.
     HdrHeapSDKHandle    *cache_req_hdr_heap_handle  = nullptr;
     HdrHeapSDKHandle    *cache_resp_hdr_heap_handle = nullptr;
-    UpdateCachedObject_t api_update_cached_object   = UPDATE_CACHED_OBJECT_NONE;
-    StateMachineAction_t saved_update_next_action   = SM_ACTION_UNDEFINED;
-    CacheAction_t        saved_update_cache_action  = CACHE_DO_UNDEFINED;
+    UpdateCachedObject_t api_update_cached_object   = UpdateCachedObject_t::NONE;
+    StateMachineAction_t saved_update_next_action   = StateMachineAction_t::UNDEFINED;
+    CacheAction_t        saved_update_cache_action  = CacheAction_t::UNDEFINED;
 
     // Remap plugin processor support
     UrlMappingContainer url_map;
@@ -823,7 +788,7 @@ public:
     URL   unmapped_url; // unmapped url is the effective url before remap
 
     // Http Range: related variables
-    RangeSetup_t range_setup      = RANGE_NONE;
+    RangeSetup_t range_setup      = RangeSetup_t::NONE;
     int64_t      num_range_fields = 0;
     int64_t      range_output_cl  = 0;
     RangeRecord *ranges           = nullptr;
@@ -888,7 +853,7 @@ public:
     void
     destroy()
     {
-      m_magic = HTTP_TRANSACT_MAGIC_DEAD;
+      m_magic = HttpTransactMagic_t::DEAD;
 
       free_internal_msg_buffer();
       ats_free(internal_msg_buffer_type);
@@ -918,7 +883,7 @@ public:
 
       delete[] ranges;
       ranges      = nullptr;
-      range_setup = RANGE_NONE;
+      range_setup = RangeSetup_t::NONE;
       return;
     }
 
@@ -1162,9 +1127,9 @@ using TransactEntryFunc_t = void (*)(HttpTransact::State *);
 inline bool
 is_response_body_precluded(HTTPStatus status_code)
 {
-  if (((status_code != HTTP_STATUS_OK) &&
-       ((status_code == HTTP_STATUS_NOT_MODIFIED) || ((status_code < HTTP_STATUS_OK) && (status_code >= HTTP_STATUS_CONTINUE)) ||
-        (status_code == HTTP_STATUS_NO_CONTENT)))) {
+  if (((status_code != HTTPStatus::OK) &&
+       ((status_code == HTTPStatus::NOT_MODIFIED) || ((status_code < HTTPStatus::OK) && (status_code >= HTTPStatus::CONTINUE)) ||
+        (status_code == HTTPStatus::NO_CONTENT)))) {
     return true;
   } else {
     return false;

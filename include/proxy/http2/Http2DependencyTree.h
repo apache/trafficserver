@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "tscore/List.h"
 #include "tscore/Diags.h"
 #include "tscore/PriorityQueue.h"
@@ -43,21 +45,18 @@ class Node
 public:
   explicit Node(void *t = nullptr) : t(t)
   {
-    entry = new PriorityQueueEntry<Node *>(this);
-    queue = new PriorityQueue<Node *>();
+    entry = std::make_unique<PriorityQueueEntry<Node *>>(this);
+    queue = std::make_unique<PriorityQueue<Node *>>();
   }
 
   Node(uint32_t i, uint32_t w, uint32_t p, Node *n, void *t = nullptr) : id(i), weight(w), point(p), t(t), parent(n)
   {
-    entry = new PriorityQueueEntry<Node *>(this);
-    queue = new PriorityQueue<Node *>();
+    entry = std::make_unique<PriorityQueueEntry<Node *>>(this);
+    queue = std::make_unique<PriorityQueue<Node *>>();
   }
 
   ~Node()
   {
-    delete entry;
-    delete queue;
-
     // delete all child nodes
     if (!children.empty()) {
       Node *node = children.head;
@@ -99,17 +98,17 @@ public:
     return shadow == true;
   }
 
-  bool                        active = false;
-  bool                        queued = false;
-  bool                        shadow = false;
-  uint32_t                    id     = HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY;
-  uint32_t                    weight = HTTP2_PRIORITY_DEFAULT_WEIGHT;
-  uint32_t                    point  = 0;
-  void                       *t      = nullptr;
-  Node                       *parent = nullptr;
-  DLL<Node>                   children;
-  PriorityQueueEntry<Node *> *entry;
-  PriorityQueue<Node *>      *queue;
+  bool                                        active = false;
+  bool                                        queued = false;
+  bool                                        shadow = false;
+  uint32_t                                    id     = HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY;
+  uint32_t                                    weight = HTTP2_PRIORITY_DEFAULT_WEIGHT;
+  uint32_t                                    point  = 0;
+  void                                       *t      = nullptr;
+  Node                                       *parent = nullptr;
+  DLL<Node>                                   children;
+  std::unique_ptr<PriorityQueueEntry<Node *>> entry;
+  std::unique_ptr<PriorityQueue<Node *>>      queue;
 };
 
 template <typename T> class Tree
@@ -311,8 +310,8 @@ Tree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T
   if (exclusive) {
     while (Node *child = parent->children.pop()) {
       if (child->queued) {
-        parent->queue->erase(child->entry);
-        node->queue->push(child->entry);
+        parent->queue->erase(child->entry.get());
+        node->queue->push(child->entry.get());
       }
       node->children.push(child);
       child->parent = node;
@@ -322,7 +321,7 @@ Tree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T
   parent->children.push(node);
   if (!node->queue->empty()) {
     ink_release_assert(!node->queued);
-    parent->queue->push(node->entry);
+    parent->queue->push(node->entry.get());
     node->queued = true;
   }
   node->shadow = shadow;
@@ -337,7 +336,7 @@ Tree<T>::in(Node *current, Node *node)
   bool retval = false;
   if (current == nullptr)
     current = _root;
-  if (current->queue->in(node->entry)) {
+  if (current->queue->in(node->entry.get())) {
     return true;
   } else {
     Node *child = current->children.head;
@@ -365,7 +364,7 @@ Tree<T>::remove(Node *node)
   Node *parent = node->parent;
   parent->children.remove(node);
   if (node->queued) {
-    parent->queue->erase(node->entry);
+    parent->queue->erase(node->entry.get());
   }
 
   // Push queue entries
@@ -460,12 +459,12 @@ Tree<T>::_change_parent(Node *node, Node *new_parent, bool exclusive)
   ink_release_assert(node->parent != nullptr);
   node->parent->children.remove(node);
   if (node->queued) {
-    node->parent->queue->erase(node->entry);
+    node->parent->queue->erase(node->entry.get());
     node->queued = false;
 
     Node *current = node->parent;
     while (current->queue->empty() && !current->active && current->parent != nullptr) {
-      current->parent->queue->erase(current->entry);
+      current->parent->queue->erase(current->entry.get());
       current->queued = false;
       current         = current->parent;
     }
@@ -475,8 +474,8 @@ Tree<T>::_change_parent(Node *node, Node *new_parent, bool exclusive)
   if (exclusive) {
     while (Node *child = new_parent->children.pop()) {
       if (child->queued) {
-        child->parent->queue->erase(child->entry);
-        node->queue->push(child->entry);
+        child->parent->queue->erase(child->entry.get());
+        node->queue->push(child->entry.get());
       }
 
       node->children.push(child);
@@ -492,7 +491,7 @@ Tree<T>::_change_parent(Node *node, Node *new_parent, bool exclusive)
   if (node->active || !node->queue->empty()) {
     Node *current = node;
     while (current->parent != nullptr && !current->queued) {
-      current->parent->queue->push(current->entry);
+      current->parent->queue->push(current->entry.get());
       current->queued = true;
       current         = current->parent;
     }
@@ -532,7 +531,7 @@ Tree<T>::activate(Node *node)
   node->active = true;
 
   while (node->parent != nullptr && !node->queued) {
-    node->parent->queue->push(node->entry);
+    node->parent->queue->push(node->entry.get());
     node->queued = true;
     node         = node->parent;
   }
@@ -546,7 +545,7 @@ Tree<T>::deactivate(Node *node, uint32_t sent)
 
   while (!node->active && node->queue->empty() && node->parent != nullptr) {
     if (node->queued) {
-      node->parent->queue->erase(node->entry);
+      node->parent->queue->erase(node->entry.get());
       node->queued = false;
     }
 
@@ -564,9 +563,9 @@ Tree<T>::update(Node *node, uint32_t sent)
     node->point += sent * K / (node->weight + 1);
 
     if (node->queued) {
-      node->parent->queue->update(node->entry, true);
+      node->parent->queue->update(node->entry.get(), true);
     } else {
-      node->parent->queue->push(node->entry);
+      node->parent->queue->push(node->entry.get());
       node->queued = true;
     }
 

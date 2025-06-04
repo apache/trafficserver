@@ -424,11 +424,11 @@ Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::I
   this->_frame_collector.add_generator(this->_data_framer);
   // this->_frame_collector.add_generator(this->_push_controller);
 
-  HTTPType http_type = HTTP_TYPE_UNKNOWN;
+  HTTPType http_type = HTTPType::UNKNOWN;
   if (this->direction() == NET_VCONNECTION_OUT) {
-    http_type = HTTP_TYPE_RESPONSE;
+    http_type = HTTPType::RESPONSE;
   } else {
-    http_type = HTTP_TYPE_REQUEST;
+    http_type = HTTPType::REQUEST;
   }
   this->_header_handler = new Http3HeaderVIOAdaptor(&this->_read_vio, http_type, session->remote_qpack(), stream_id);
   this->_data_handler   = new Http3StreamDataVIOAdaptor(&this->_read_vio);
@@ -880,7 +880,7 @@ Http09Transaction::_process_write_vio()
     }
 
     // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler
-    // is CHUNK_READ_DONE and set FIN flag
+    // is ChunkedState::READ_DONE and set FIN flag
     if (this->_write_vio.ntodo() == 0) {
       // The size of respons to client
       this->_info.write_vio->done();

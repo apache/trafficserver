@@ -149,6 +149,68 @@ Config_Update_Conntrack_Client_Alert_Delay(const char *name, RecDataT dtype, Rec
   return Config_Update_Conntrack_Server_Alert_Delay_Helper(name, dtype, data, cookie, config->client_alert_delay);
 }
 
+bool
+Config_Update_Conntrack_Metric_Enabled(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
+
+  if (RECD_INT == dtype) {
+    config->metric_enabled = data.rec_int;
+    return true;
+  }
+  return false;
+}
+
+bool
+Config_Update_Conntrack_Metric_Prefix(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
+
+  if (RECD_STRING == dtype) {
+    config->metric_prefix = data.rec_string;
+    return true;
+  }
+  return false;
+}
+
+// // helper function to build up a json string from the passed conn groups.
+std::string
+Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> const &groups)
+{
+  std::string                    text;
+  size_t                         extent = 0;
+  static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [  )"};
+  static const swoc::bwf::Format item_fmt{
+    R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "alert": {}}},
+)"};
+  static const std::string_view trailer{" \n]}"};
+
+  static const auto printer = [](swoc::BufferWriter &w, ConnectionTracker::Group const *g) -> swoc::BufferWriter & {
+    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count_metric != nullptr ? g->_count_metric->load() : g->_count.load(),
+            g->_count_max.load(), g->_blocked.load(), g->get_last_alert_epoch_time());
+    return w;
+  };
+
+  swoc::FixedBufferWriter null_bw{nullptr}; // Empty buffer for sizing work.
+
+  null_bw.print(header_fmt, groups.size()).extent();
+  for (auto g : groups) {
+    printer(null_bw, g.get());
+  }
+  extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
+
+  text.resize(extent);
+  swoc::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
+  w.restrict(trailer.size());
+  w.print(header_fmt, groups.size());
+  for (auto g : groups) {
+    printer(w, g.get());
+  }
+  w.restore(trailer.size());
+  w.write(trailer);
+  return text;
+}
+
 } // namespace
 
 void
@@ -162,6 +224,8 @@ ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUp
   Enable_Config_Var(CONFIG_SERVER_VAR_MAX, &Config_Update_Conntrack_Max, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_MATCH, &Config_Update_Conntrack_Match, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_ALERT_DELAY, &Config_Update_Conntrack_Server_Alert_Delay, config_cb, global);
+  Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_ENABLED, &Config_Update_Conntrack_Metric_Enabled, config_cb, global);
+  Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_PREFIX, &Config_Update_Conntrack_Metric_Prefix, config_cb, global);
 }
 
 ConnectionTracker::TxnState
@@ -214,6 +278,19 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
     _alert_delay{direction == DirectionType::INBOUND ? _global_config->client_alert_delay : _global_config->server_alert_delay}
 {
   Metrics::Gauge::increment(net_rsb.connection_tracker_table_size);
+  // only add metrics for server connections
+  if (_global_config->metric_enabled && direction == DirectionType::OUTBOUND) {
+    std::string _metric_name = metric_name(key, fqdn, _global_config->metric_prefix);
+    _count_metric            = Metrics::Gauge::createPtr("proxy.process.http.per_server.current_connection.", _metric_name);
+    _count_total_metric      = Metrics::Counter::createPtr("proxy.process.http.per_server.total_connection.", _metric_name);
+    _blocked_metric          = Metrics::Counter::createPtr("proxy.process.http.per_server.blocked_connection.", _metric_name);
+
+    if (dbg_ctl.on()) {
+      swoc::LocalBufferWriter<256> w;
+      w.print("Registered per_server_connection.{}\0", _metric_name);
+      DbgPrint(dbg_ctl, "%s", w.data());
+    }
+  }
   // store the host name if relevant.
   if (MATCH_HOST == _match_type || MATCH_BOTH == _match_type) {
     _fqdn.assign(fqdn);
@@ -284,7 +361,25 @@ ConnectionTracker::Group::should_alert(std::time_t *lat)
 void
 ConnectionTracker::Group::release()
 {
-  if (_count > 0) {
+  // If metric enabled, use metric as count
+  if (_count_metric != nullptr) {
+    if (_count_metric->load() > 0) {
+      ts::Metrics::Gauge::decrement(_count_metric);
+      if (_count_metric->load() == 0) {
+        TableSingleton             &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
+        std::lock_guard<std::mutex> lock(table._mutex); // Table lock
+        if (_count_metric->load() > 0) {
+          // Someone else grabbed the Group between our last check and taking the
+          // lock.
+          return;
+        }
+        table._table.erase(_key);
+      }
+    } else {
+      // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
+      Error("Number of tracked connections should be greater than or equal to zero: %" PRId64, _count_metric->load());
+    }
+  } else if (_count > 0) {
     if (--_count == 0) {
       TableSingleton             &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
       std::lock_guard<std::mutex> lock(table._mutex); // Table lock
@@ -318,56 +413,72 @@ ConnectionTracker::get_outbound_groups(std::vector<std::shared_ptr<Group const>>
   }
 }
 
+void
+ConnectionTracker::get_inbound_groups(std::vector<std::shared_ptr<Group const>> &groups)
+{
+  std::lock_guard<std::mutex> lock(_inbound_table._mutex); // TABLE LOCK
+  groups.resize(0);
+  groups.reserve(_inbound_table._table.size());
+  for (auto &&[key, group] : _inbound_table._table) {
+    groups.push_back(group);
+  }
+}
+
+std::string
+ConnectionTracker::inbound_to_json_string()
+{
+  std::vector<std::shared_ptr<Group const>> groups;
+  self_type::get_inbound_groups(groups);
+  return Groups_To_JSON(groups);
+}
+
 std::string
 ConnectionTracker::outbound_to_json_string()
 {
-  std::string                    text;
-  size_t                         extent = 0;
-  static const swoc::bwf::Format header_fmt{R"({{"count": {}, "list": [
-)"};
-  static const swoc::bwf::Format item_fmt{
-    R"(  {{"type": "{}", "ip": "{}", "fqdn": "{}", "current": {}, "max": {}, "blocked": {}, "alert": {}}},
-)"};
-  static const std::string_view trailer{" \n]}"};
-
-  static const auto printer = [](swoc::BufferWriter &w, Group const *g) -> swoc::BufferWriter & {
-    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count.load(), g->_count_max.load(), g->_blocked.load(),
-            g->get_last_alert_epoch_time());
-    return w;
-  };
-
-  swoc::FixedBufferWriter                   null_bw{nullptr}; // Empty buffer for sizing work.
   std::vector<std::shared_ptr<Group const>> groups;
-
   self_type::get_outbound_groups(groups);
-
-  null_bw.print(header_fmt, groups.size()).extent();
-  for (auto g : groups) {
-    printer(null_bw, g.get());
-  }
-  extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
-
-  text.resize(extent);
-  swoc::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
-  w.restrict(trailer.size());
-  w.print(header_fmt, groups.size());
-  for (auto g : groups) {
-    printer(w, g.get());
-  }
-  w.restore(trailer.size());
-  w.write(trailer);
-  return text;
+  return Groups_To_JSON(groups);
 }
 
 void
-ConnectionTracker::dump(FILE *f)
+ConnectionTracker::dump_outbound(FILE *f)
 {
   std::vector<std::shared_ptr<Group const>> groups;
 
   self_type::get_outbound_groups(groups);
 
   if (groups.size()) {
-    fprintf(f, "\nPeer Connection Tracking\n%7s | %5s | %24s | %33s | %8s |\n", "Current", "Block", "Address", "Hostname Hash",
+    fprintf(f, "\n[O] Peer Connection Tracking\n%7s | %5s | %24s | %33s | %8s |\n", "Current", "Block", "Address", "Hostname Hash",
+            "Match");
+    fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
+
+    for (std::shared_ptr<Group const> g : groups) {
+      swoc::LocalBufferWriter<128> w;
+      w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", (g->_count_metric != nullptr ? g->_count_metric->load() : g->_count.load()),
+              g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
+      fwrite(w.data(), w.size(), 1, f);
+    }
+
+    fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
+  }
+}
+
+void
+ConnectionTracker::dump(FILE *f)
+{
+  dump_outbound(f);
+  dump_inbound(f);
+}
+
+void
+ConnectionTracker::dump_inbound(FILE *f)
+{
+  std::vector<std::shared_ptr<Group const>> groups;
+
+  self_type::get_inbound_groups(groups);
+
+  if (groups.size()) {
+    fprintf(f, "\n[I] Peer Connection Tracking\n%7s | %5s | %24s | %33s | %8s |\n", "Current", "Block", "Address", "Hostname Hash",
             "Match");
     fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
 
