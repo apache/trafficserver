@@ -203,35 +203,30 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
     break;
   // hostname hash
   case NHHashKeyType::HOSTNAME_HASH_KEY:
-    url_string_ref = url->host_get(&len);
-    if (url_string_ref && len > 0) {
-      h->update(url_string_ref, len);
+    if (auto host{url->host_get()}; !host.empty()) {
+      h->update(host.data(), host.length());
     }
     break;
   // path + query string
   case NHHashKeyType::PATH_QUERY_HASH_KEY:
-    url_string_ref = url->path_get(&len);
     h->update("/", 1);
-    if (url_string_ref && len > 0) {
-      h->update(url_string_ref, len);
+    if (auto path{url->path_get()}; !path.empty()) {
+      h->update(path.data(), path.length());
     }
-    url_string_ref = url->query_get(&len);
-    if (url_string_ref && len > 0) {
+    if (auto query{url->query_get()}; !query.empty()) {
       h->update("?", 1);
-      h->update(url_string_ref, len);
+      h->update(query.data(), query.length());
     }
     break;
   // path + fragment hash
   case NHHashKeyType::PATH_FRAGMENT_HASH_KEY:
-    url_string_ref = url->path_get(&len);
     h->update("/", 1);
-    if (url_string_ref && len > 0) {
-      h->update(url_string_ref, len);
+    if (auto path{url->path_get()}; !path.empty()) {
+      h->update(path.data(), path.length());
     }
-    url_string_ref = url->fragment_get(&len);
-    if (url_string_ref && len > 0) {
+    if (auto fragment{url->fragment_get()}; !fragment.empty()) {
       h->update("?", 1);
-      h->update(url_string_ref, len);
+      h->update(fragment.data(), fragment.length());
     }
     break;
   // use the cache key created by the TSCacheUrlSet() API (e.g. the cachekey plugin)
@@ -246,22 +241,20 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, const HttpRequestData &hrdata,
       }
     } else {
       // URL defaults to hrdata.hdr->url_get() above
-      url_string_ref = url->path_get(&len);
       h->update("/", 1);
-      if (url_string_ref && len > 0) {
-        NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] the parent selection over-ride url is not set, using default path: %s.", sm_id,
-               url_string_ref);
-        h->update(url_string_ref, len);
+      if (auto path{url->path_get()}; !path.empty()) {
+        NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] the parent selection over-ride url is not set, using default path: %.*s.", sm_id,
+               static_cast<int>(path.length()), path.data());
+        h->update(path.data(), path.length());
       }
     }
     break;
   // use the path as the hash, default.
   case NHHashKeyType::PATH_HASH_KEY:
   default:
-    url_string_ref = url->path_get(&len);
     h->update("/", 1);
-    if (url_string_ref && len > 0) {
-      h->update(url_string_ref, len);
+    if (auto path{url->path_get()}; !path.empty()) {
+      h->update(path.data(), path.length());
     }
     break;
   }

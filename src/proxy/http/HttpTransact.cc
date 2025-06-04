@@ -766,7 +766,7 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
     // Furthermore, if there is a Set-Cookie header, then
     // Cache-Control must be set.
     if (static_cast<CookiesConfig>(cookies_conf) == CookiesConfig::CACHE_ALL_BUT_TEXT_EXT &&
-        ((!response->presence(MIME_PRESENCE_SET_COOKIE)) || response->is_cache_control_set(HTTP_VALUE_PUBLIC))) {
+        ((!response->presence(MIME_PRESENCE_SET_COOKIE)) || response->is_cache_control_set(HTTP_VALUE_PUBLIC.c_str()))) {
       return false;
     }
     return true;
@@ -932,9 +932,7 @@ HttpTransact::OriginDown(State *s)
   build_error_response(s, HTTPStatus::BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
   Metrics::Counter::increment(http_rsb.down_server_no_requests);
   char            *url_str = s->hdr_info.client_request.url_string_get_ref(nullptr);
-  int              host_len;
-  const char      *host_name_ptr = s->unmapped_url.host_get(&host_len);
-  std::string_view host_name{host_name_ptr, size_t(host_len)};
+  std::string_view host_name{s->unmapped_url.host_get()};
   swoc::bwprint(error_bw_buffer, "CONNECT: down server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
                 host_name, swoc::bwf::FirstOf(url_str, "<none>"));
   Log::error("%s", error_bw_buffer.c_str());
@@ -961,9 +959,9 @@ HttpTransact::HandleBlindTunnel(State *s)
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
 
   if (dbg_ctl_http_trans.on()) {
-    int         host_len;
-    const char *host = s->hdr_info.client_request.url_get()->host_get(&host_len);
-    TxnDbg(dbg_ctl_http_trans, "destination set to %.*s:%d", host_len, host, s->hdr_info.client_request.url_get()->port_get());
+    auto host{s->hdr_info.client_request.url_get()->host_get()};
+    TxnDbg(dbg_ctl_http_trans, "destination set to %.*s:%d", static_cast<int>(host.length()), host.data(),
+           s->hdr_info.client_request.url_get()->port_get());
   }
 
   // Set the mode to tunnel so that we don't lookup the cache
@@ -1352,10 +1350,10 @@ HttpTransact::handle_websocket_upgrade_pre_remap(State *s)
   URL *url = s->hdr_info.client_request.url_get();
   if (url->scheme_get_wksidx() == URL_WKSIDX_HTTP) {
     TxnDbg(dbg_ctl_http_trans_websocket_upgrade_pre_remap, "Changing scheme to WS for remapping.");
-    url->scheme_set(URL_SCHEME_WS, URL_LEN_WS);
+    url->scheme_set(std::string_view{URL_SCHEME_WS});
   } else if (url->scheme_get_wksidx() == URL_WKSIDX_HTTPS) {
     TxnDbg(dbg_ctl_http_trans_websocket_upgrade_pre_remap, "Changing scheme to WSS for remapping.");
-    url->scheme_set(URL_SCHEME_WSS, URL_LEN_WSS);
+    url->scheme_set(std::string_view{URL_SCHEME_WSS});
   } else {
     TxnDbg(dbg_ctl_http_trans_websocket_upgrade_pre_remap, "Invalid scheme for websocket upgrade");
     build_error_response(s, HTTPStatus::BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error");
@@ -1415,10 +1413,10 @@ HttpTransact::ModifyRequest(State *s)
   s->method = request.method_get_wksidx();
   if (scheme < 0 && s->method != HTTP_WKSIDX_CONNECT) {
     if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
-      url->scheme_set(URL_SCHEME_HTTPS, URL_LEN_HTTPS);
+      url->scheme_set(std::string_view{URL_SCHEME_HTTPS});
       s->orig_scheme = URL_WKSIDX_HTTPS;
     } else {
-      url->scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
+      url->scheme_set(std::string_view{URL_SCHEME_HTTP});
       s->orig_scheme = URL_WKSIDX_HTTP;
     }
   }
@@ -1572,7 +1570,7 @@ HttpTransact::HandleRequest(State *s)
 
       if (expect != nullptr) {
         auto expect_hdr_val{expect->value_get()};
-        if (ptr_len_casecmp(expect_hdr_val.data(), expect_hdr_val.length(), HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0) {
+        if (strcasecmp(expect_hdr_val, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
           // Let's error out this request.
           TxnDbg(dbg_ctl_http_trans, "Client sent a post expect: 100-continue, sending 405.");
           Metrics::Counter::increment(http_rsb.disallowed_post_100_continue);
@@ -2148,10 +2146,10 @@ HttpTransact::DecideCacheLookup(State *s)
         if (auto [field, host, port_sv]{incoming_request->get_host_port_values()}; field != nullptr) {
           int port = 0;
           if (!port_sv.empty()) {
-            s->cache_info.lookup_url->host_set(host.data(), static_cast<int>(host.length()));
+            s->cache_info.lookup_url->host_set(host);
             port = ink_atoi(port_sv.data(), static_cast<int>(port_sv.length()));
           } else {
-            s->cache_info.lookup_url->host_set(host.data(), static_cast<int>(host.length()));
+            s->cache_info.lookup_url->host_set(host);
           }
           s->cache_info.lookup_url->port_set(port);
         }
@@ -2260,7 +2258,7 @@ HttpTransact::HandlePushResponseHdr(State *s)
   // We need to create the request header storing in the cache
   s->hdr_info.server_request.create(HTTPType::REQUEST);
   s->hdr_info.server_request.copy(&s->hdr_info.client_request);
-  s->hdr_info.server_request.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+  s->hdr_info.server_request.method_set(static_cast<std::string_view>(HTTP_METHOD_GET));
   s->hdr_info.server_request.value_set("X-Inktomi-Source"sv, "http PUSH"sv);
 
   dump_header(dbg_ctl_http_hdrs, &s->hdr_info.server_response, s->state_machine_id(), "Pushed Response Header");
@@ -2441,7 +2439,7 @@ HttpTransact::issue_revalidate(State *s)
   ink_assert(GET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP) != ' ');
 
   if (s->www_auth_content == CacheAuth_t::FRESH) {
-    s->hdr_info.server_request.method_set(HTTP_METHOD_HEAD, HTTP_LEN_HEAD);
+    s->hdr_info.server_request.method_set(static_cast<std::string_view>(HTTP_METHOD_HEAD));
     // The document is fresh in cache and we just want to see if the
     // the client has the right credentials
     // this cache action is just to get us into the hcoofsr function
@@ -2484,7 +2482,8 @@ HttpTransact::issue_revalidate(State *s)
   // that case here.
   bool no_cache_in_request = false;
 
-  if (s->hdr_info.client_request.is_pragma_no_cache_set() || s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
+  if (s->hdr_info.client_request.is_pragma_no_cache_set() ||
+      s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE.c_str())) {
     TxnDbg(dbg_ctl_http_trans, "no-cache header directive in request, folks");
     no_cache_in_request = true;
   }
@@ -3297,7 +3296,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
 
   HTTPHdr *h = &s->hdr_info.client_request;
 
-  if (!h->is_cache_control_set(HTTP_VALUE_ONLY_IF_CACHED)) {
+  if (!h->is_cache_control_set(HTTP_VALUE_ONLY_IF_CACHED.c_str())) {
     // Initialize the server_info structure if we haven't been through DNS
     // Otherwise, the http_version will not be initialized
     if (!s->current.server || !s->current.server->dst_addr.isValid()) {
@@ -3802,13 +3801,11 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
          ats_ip_nptop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
   if (s->current.server->had_connect_fail()) {
-    char       *url_str       = s->hdr_info.client_request.url_string_get(&s->arena);
-    int         host_len      = 0;
-    const char *host_name_ptr = "";
+    char            *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
+    std::string_view host_name{};
     if (s->unmapped_url.valid()) {
-      host_name_ptr = s->unmapped_url.host_get(&host_len);
+      host_name = s->unmapped_url.host_get();
     }
-    std::string_view host_name{host_name_ptr, size_t(host_len)};
     swoc::bwprint(error_bw_buffer,
                   "CONNECT: attempt fail [{}] to {} for host='{}' "
                   "connection_result={::s} error={::s} retry_attempts={} url='{}'",
@@ -4766,7 +4763,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
   s->cache_info.object_store.request_get()->url_set(s_url->valid() ? s_url : s->hdr_info.client_request.url_get());
 
   if (s->cache_info.object_store.request_get()->method_get_wksidx() == HTTP_WKSIDX_HEAD) {
-    s->cache_info.object_store.request_get()->method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+    s->cache_info.object_store.request_get()->method_set(static_cast<std::string_view>(HTTP_METHOD_GET));
   }
 
   if (s->api_modifiable_cached_resp) {
@@ -4944,7 +4941,7 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
   }
 
   if (s->api_server_request_body_set) {
-    cache_info->request_get()->method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+    cache_info->request_get()->method_set(static_cast<std::string_view>(HTTP_METHOD_GET));
   }
 
   // Set-Cookie should not be put in the cache to prevent
@@ -5386,9 +5383,8 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
           } else {
             // Stuff in a TE setting so we treat this as chunked, sort of.
             s->client_info.transfer_encoding = HttpTransact::TransferEncoding_t::CHUNKED;
-            incoming_hdr->value_append(
-              static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
-              std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
+            incoming_hdr->value_append(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
+                                       static_cast<std::string_view>(HTTP_VALUE_CHUNKED), true);
           }
         }
         if (HTTP_UNDEFINED_CL == s->hdr_info.request_content_length) {
@@ -5418,7 +5414,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 
       while (te_raw) {
         te_val = http_parse_te(te_raw, te_raw_len, &s->arena);
-        if (te_val->encoding == HTTP_VALUE_IDENTITY) {
+        if (te_val->encoding == HTTP_VALUE_IDENTITY.c_str()) {
           if (te_val->qvalue <= 0.0) {
             s->arena.free(te_val, sizeof(HTTPValTE));
             return RequestError_t::UNACCEPTABLE_TE_REQUIRED;
@@ -5450,7 +5446,7 @@ HttpTransact::set_client_request_state(State *s, HTTPHdr *incoming_hdr)
 
       while (enc_value) {
         const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
-        if (wks_value == HTTP_VALUE_CHUNKED) {
+        if (wks_value == HTTP_VALUE_CHUNKED.c_str()) {
           s->client_info.transfer_encoding = TransferEncoding_t::CHUNKED;
           break;
         }
@@ -5681,12 +5677,12 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
       TxnDbg(dbg_ctl_http_trans, "Switching WS next hop scheme to http.");
       s->next_hop_scheme = URL_WKSIDX_HTTP;
       s->scheme          = URL_WKSIDX_HTTP;
-      // s->request_data.hdr->url_get()->scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
+      // s->request_data.hdr->url_get()->scheme_set(std::string_view{URL_SCHEME_HTTP});
     } else if (s->next_hop_scheme == URL_WKSIDX_WSS) {
       TxnDbg(dbg_ctl_http_trans, "Switching WSS next hop scheme to https.");
       s->next_hop_scheme = URL_WKSIDX_HTTPS;
       s->scheme          = URL_WKSIDX_HTTPS;
-      // s->request_data.hdr->url_get()->scheme_set(URL_SCHEME_HTTPS, URL_LEN_HTTPS);
+      // s->request_data.hdr->url_get()->scheme_set(std::string_view{URL_SCHEME_HTTPS});
     } else {
       Error("Scheme doesn't match websocket...!");
     }
@@ -5829,7 +5825,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     while (enc_value) {
       const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
 
-      if (wks_value == HTTP_VALUE_CHUNKED && !is_response_body_precluded(status_code, s->method)) {
+      if (wks_value == HTTP_VALUE_CHUNKED.c_str() && !is_response_body_precluded(status_code, s->method)) {
         TxnDbg(dbg_ctl_http_hdrs, "transfer encoding: chunked!");
         s->current.server->transfer_encoding = TransferEncoding_t::CHUNKED;
 
@@ -5990,8 +5986,6 @@ HttpTransact::url_looks_dynamic(URL *url)
 {
   const char        *p_start, *p, *t;
   static const char *asp = ".asp";
-  const char        *part;
-  int                part_length;
 
   if (url->scheme_get_wksidx() != URL_WKSIDX_HTTP && url->scheme_get_wksidx() != URL_WKSIDX_HTTPS) {
     return false;
@@ -6000,20 +5994,19 @@ HttpTransact::url_looks_dynamic(URL *url)
   // (1) If URL contains query stuff in it, call it dynamic //
   ////////////////////////////////////////////////////////////
 
-  part = url->query_get(&part_length);
-  if (part != nullptr) {
+  if (!url->query_get().empty()) {
     return true;
   }
   ///////////////////////////////////////////////
   // (2) If path ends in "asp" call it dynamic //
   ///////////////////////////////////////////////
 
-  part = url->path_get(&part_length);
-  if (part) {
-    p = &part[part_length - 1];
+  auto path{url->path_get()};
+  if (path.data()) {
+    p = &path[path.length() - 1];
     t = &asp[3];
 
-    while (p != part) {
+    while (p != path.data()) {
       if (ParseRules::ink_tolower(*p) == ParseRules::ink_tolower(*t)) {
         p -= 1;
         t -= 1;
@@ -6029,8 +6022,8 @@ HttpTransact::url_looks_dynamic(URL *url)
   // (3) If the path of the url contains "cgi", call it dynamic. //
   /////////////////////////////////////////////////////////////////
 
-  if (part && part_length >= 3) {
-    for (p_start = part; p_start <= &part[part_length - 3]; p_start++) {
+  if (path.data() && path.length() >= 3) {
+    for (p_start = path.data(); p_start <= &path[path.length() - 3]; p_start++) {
       if (((p_start[0] == 'c') || (p_start[0] == 'C')) && ((p_start[1] == 'g') || (p_start[1] == 'G')) &&
           ((p_start[2] == 'i') || (p_start[2] == 'I'))) {
         return (true);
@@ -6954,7 +6947,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
          (s->source == Source_t::TRANSFORM && s->hdr_info.trust_response_cl == false))) {
       s->client_info.receive_chunked_response = true;
       heads->value_append(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
-                          std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
+                          static_cast<std::string_view>(HTTP_VALUE_CHUNKED), true);
     } else {
       s->client_info.receive_chunked_response = false;
     }
@@ -7075,7 +7068,7 @@ HttpTransact::does_client_request_permit_cached_response(const OverridableHttpCo
   ////////////////////////////////////////////////////////////////////////
 
   if (!c->ignore_client_no_cache) {
-    if (h->is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
+    if (h->is_cache_control_set(HTTP_VALUE_NO_CACHE.c_str())) {
       return (false);
     }
     if (h->is_pragma_no_cache_set()) {
@@ -7094,7 +7087,7 @@ HttpTransact::does_client_request_permit_cached_response(const OverridableHttpCo
 bool
 HttpTransact::does_client_request_permit_dns_caching(CacheControlResult *c, HTTPHdr *h)
 {
-  if (h->is_pragma_no_cache_set() && h->is_cache_control_set(HTTP_VALUE_NO_CACHE) && (!c->ignore_client_no_cache)) {
+  if (h->is_pragma_no_cache_set() && h->is_cache_control_set(HTTP_VALUE_NO_CACHE.c_str()) && (!c->ignore_client_no_cache)) {
     return (false);
   }
   return (true);
@@ -7107,7 +7100,7 @@ HttpTransact::does_client_request_permit_storing(CacheControlResult *c, HTTPHdr 
   // If aren't ignoring client's cache directives, meet client's wishes //
   ////////////////////////////////////////////////////////////////////////
   if (!c->ignore_client_no_cache) {
-    if (h->is_cache_control_set(HTTP_VALUE_NO_STORE)) {
+    if (h->is_cache_control_set(HTTP_VALUE_NO_STORE.c_str())) {
       return (false);
     }
   }
@@ -7482,12 +7475,12 @@ HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr
   ///////////////////////////////////////////////////////////////////////
 
   if ((p->cache_ignore_auth == 0) && client_request->presence(MIME_PRESENCE_AUTHORIZATION)) {
-    if (obj_response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE) ||
-        obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) {
+    if (obj_response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE.c_str()) ||
+        obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE.c_str())) {
       return Authentication_t::MUST_REVALIDATE;
-    } else if (obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) {
+    } else if (obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE.c_str())) {
       return Authentication_t::MUST_REVALIDATE;
-    } else if (obj_response->is_cache_control_set(HTTP_VALUE_PUBLIC)) {
+    } else if (obj_response->is_cache_control_set(HTTP_VALUE_PUBLIC.c_str())) {
       return Authentication_t::SUCCESS;
     } else {
       if (obj_response->field_find("@WWW-Auth"sv) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
@@ -7714,25 +7707,24 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   URL *url = outgoing_request->url_get();
 
   // Remove fragment from upstream URL
-  url->fragment_set(nullptr, 0);
+  url->fragment_set({nullptr, 0});
 
   // Check whether a Host header field is missing from a 1.0 or 1.1 request.
   if (outgoing_version != HTTP_0_9 && !outgoing_request->presence(MIME_PRESENCE_HOST)) {
-    int         host_len;
-    const char *host = url->host_get(&host_len);
+    auto host{url->host_get()};
 
     // Add a ':port' to the HOST header if the request is not going
     // to the default port.
     int port = url->port_get();
     if (port != url_canonicalize_port(URLType::HTTP, 0)) {
+      auto  host_len{static_cast<int>(host.length())};
       char *buf = static_cast<char *>(alloca(host_len + 15));
-      memcpy(buf, host, host_len);
+      memcpy(buf, host.data(), host_len);
       host_len += snprintf(buf + host_len, 15, ":%d", port);
       outgoing_request->value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
                                   std::string_view{buf, static_cast<std::string_view::size_type>(host_len)});
     } else {
-      outgoing_request->value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
-                                  std::string_view{host, static_cast<std::string_view::size_type>(host_len)});
+      outgoing_request->value_set(static_cast<std::string_view>(MIME_FIELD_HOST), host);
     }
   }
 
@@ -7756,9 +7748,8 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   // If we are going to a peer cache and want to use the pristine URL, get it from the base request
   if (s->parent_result.use_pristine) {
-    int  tmp_len  = 0;
-    auto tmp_char = s->unmapped_url.host_get(&tmp_len);
-    outgoing_request->url_get()->host_set(tmp_char, tmp_len);
+    auto host{s->unmapped_url.host_get()};
+    outgoing_request->url_get()->host_set(host);
   }
 
   // If the response is most likely not cacheable, eg, request with Authorization,
@@ -8168,8 +8159,6 @@ HttpTransact::build_redirect_response(State *s)
 {
   TxnDbg(dbg_ctl_http_redirect, "Entering HttpTransact::build_redirect_response");
   URL        *u;
-  const char *old_host;
-  int         old_host_len;
   const char *new_url = nullptr;
   int         new_url_len;
   char       *to_free = nullptr;
@@ -8184,9 +8173,9 @@ HttpTransact::build_redirect_response(State *s)
   // inserts expanded hostname into old url in order to   //
   // get scheme information, then puts the old url back.  //
   //////////////////////////////////////////////////////////
-  u        = s->hdr_info.client_request.url_get();
-  old_host = u->host_get(&old_host_len);
-  u->host_set(s->dns_info.lookup_name, strlen(s->dns_info.lookup_name));
+  u = s->hdr_info.client_request.url_get();
+  auto old_host{u->host_get()};
+  u->host_set({s->dns_info.lookup_name});
   new_url = to_free = u->string_get(&s->arena, &new_url_len);
   assert(to_free != nullptr); // needed to avoid false positive nullptr deref from clang-analyzer.
   // The following code may not be needed if string_get above always returns non nullptr,
@@ -8194,7 +8183,7 @@ HttpTransact::build_redirect_response(State *s)
   if (new_url == nullptr) {
     new_url = "";
   }
-  u->host_set(old_host, old_host_len);
+  u->host_set(old_host);
 
   //////////////////////////
   // set redirect headers //
@@ -8902,7 +8891,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
 
   header->status_set(HTTPStatus::PARTIAL_CONTENT);
   reason_phrase = const_cast<char *>(http_hdr_reason_lookup(HTTPStatus::PARTIAL_CONTENT));
-  header->reason_set(reason_phrase, strlen(reason_phrase));
+  header->reason_set(std::string_view{reason_phrase});
 
   // set the right Content-Type for multiple entry Range
   if (s->num_range_fields > 1) {
