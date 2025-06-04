@@ -470,6 +470,7 @@ check_symbol_exists(BIO_meth_get_destroy "openssl/bio.h" HAVE_BIO_METH_GET_DESTR
 check_symbol_exists(CRYPTO_set_ex_data "openssl/bio.h" HAVE_CRYPTO_SET_EX_DATA)
 check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
+check_symbol_exists(SSL_CTX_new_ex "openssl/ssl.h" HAVE_SSL_CTX_NEW_EX)
 check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_CLIENT_HELLO_CB)
 check_symbol_exists(SSL_CTX_set_select_certificate_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB)
 check_symbol_exists(SSL_set1_verify_cert_store "openssl/ssl.h" TS_HAS_VERIFY_CERT_STORE)

@@ -41,10 +41,10 @@ void
 QUICCertConfig::reconfigure()
 {
   SSLConfig::scoped_config params;
-  SSLCertLookup           *lookup = new SSLCertLookup();
+  SSLCertLookup           *lookup = new SSLCertLookup(SSLConfigParams::number_of_ssl_threads);
 
   QUICMultiCertConfigLoader loader(params);
-  loader.load(lookup);
+  loader.load(lookup, SSLConfigParams::number_of_ssl_threads);
 
   _config_id = configProcessor.set(_config_id, lookup);
 }

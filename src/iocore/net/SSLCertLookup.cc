@@ -269,48 +269,58 @@ SSLCertContext::setCtx(shared_SSL_CTX sc)
   ctx = std::move(sc);
 }
 
-SSLCertLookup::SSLCertLookup()
-  : ssl_storage(std::make_unique<SSLContextStorage>()),
-    ec_storage(std::make_unique<SSLContextStorage>()),
-    ssl_default(nullptr),
-    is_valid(true)
+SSLCertLookup::SSLCertLookup(int nthreads) : is_valid(true)
 {
+#ifdef OPENSSL_IS_BORINGSSL
+  // BoringSSL doesn't support the libctx API, so we only need the one instance
+  // across all threads.
+  nthreads = 1;
+#endif // OPENSSL_IS_BORINGSSL
+  for (int i = 0; i < nthreads; ++i) {
+    this->ssl_storage.emplace_back(std::make_unique<SSLContextStorage>());
+#ifdef OPENSSL_IS_BORINGSSL
+    this->ec_storage.emplace_back(std::make_unique<SSLContextStorage>());
+#endif // OPENSSL_IS_BORINGSSL
+  }
+  this->ssl_default.resize(nthreads);
 }
 
 SSLCertLookup::~SSLCertLookup() {}
 
 SSLCertContext *
-SSLCertLookup::find(const std::string &address, [[maybe_unused]] SSLCertContextType ctxType) const
+SSLCertLookup::find(const std::string &address, [[maybe_unused]] SSLCertContextType ctxType, int threadID) const
 {
+  int const contextIndex = this->getContextIndex(threadID);
 #ifdef OPENSSL_IS_BORINGSSL
   // If the context is EC supportable, try finding that first.
   if (ctxType == SSLCertContextType::EC) {
-    auto ctx = this->ec_storage->lookup(address);
+    auto ctx = this->ec_storage[contextIndex]->lookup(address);
     if (ctx != nullptr) {
       return ctx;
     }
   }
 #endif
   // non-EC last resort
-  return this->ssl_storage->lookup(address);
+  return this->ssl_storage[contextIndex]->lookup(address);
 }
 
 SSLCertContext *
-SSLCertLookup::find(const IpEndpoint &address) const
+SSLCertLookup::find(const IpEndpoint &address, int threadID) const
 {
+  int const           contextIndex = this->getContextIndex(threadID);
   SSLCertContext     *cc;
   SSLAddressLookupKey key(address);
 
 #ifdef OPENSSL_IS_BORINGSSL
   // If the context is EC supportable, try finding that first.
-  if ((cc = this->ec_storage->lookup(key.get()))) {
+  if ((cc = this->ec_storage[contextIndex]->lookup(key.get()))) {
     return cc;
   }
 
   // If that failed, try the address without the port.
   if (address.network_order_port()) {
     key.split();
-    if ((cc = this->ec_storage->lookup(key.get()))) {
+    if ((cc = this->ec_storage[contextIndex]->lookup(key.get()))) {
       return cc;
     }
   }
@@ -320,84 +330,88 @@ SSLCertLookup::find(const IpEndpoint &address) const
 #endif
 
   // First try the full address.
-  if ((cc = this->ssl_storage->lookup(key.get()))) {
+  if ((cc = this->ssl_storage[contextIndex]->lookup(key.get()))) {
     return cc;
   }
 
   // If that failed, try the address without the port.
   if (address.network_order_port()) {
     key.split();
-    return this->ssl_storage->lookup(key.get());
+    return this->ssl_storage[contextIndex]->lookup(key.get());
   }
 
   return nullptr;
 }
 
 int
-SSLCertLookup::insert(const char *name, SSLCertContext const &cc)
+SSLCertLookup::insert(const char *name, SSLCertContext const &cc, int threadID)
 {
+  int const contextIndex = this->getContextIndex(threadID);
 #ifdef OPENSSL_IS_BORINGSSL
   switch (cc.ctx_type) {
   case SSLCertContextType::GENERIC:
   case SSLCertContextType::RSA:
-    return this->ssl_storage->insert(name, cc);
+    return this->ssl_storage[contextIndex]->insert(name, cc);
   case SSLCertContextType::EC:
-    return this->ec_storage->insert(name, cc);
+    return this->ec_storage[contextIndex]->insert(name, cc);
   default:
     ink_assert(false);
     return -1;
   }
 #else
-  return this->ssl_storage->insert(name, cc);
+  return this->ssl_storage[contextIndex]->insert(name, cc);
 #endif
 }
 
 int
-SSLCertLookup::insert(const IpEndpoint &address, SSLCertContext const &cc)
+SSLCertLookup::insert(const IpEndpoint &address, SSLCertContext const &cc, int threadID)
 {
+  int const           contextIndex = this->getContextIndex(threadID);
   SSLAddressLookupKey key(address);
 
 #ifdef OPENSSL_IS_BORINGSSL
   switch (cc.ctx_type) {
   case SSLCertContextType::GENERIC:
   case SSLCertContextType::RSA:
-    return this->ssl_storage->insert(key.get(), cc);
+    return this->ssl_storage[contextIndex]->insert(key.get(), cc);
   case SSLCertContextType::EC:
-    return this->ec_storage->insert(key.get(), cc);
+    return this->ec_storage[contextIndex]->insert(key.get(), cc);
   default:
     ink_assert(false);
     return -1;
   }
 #else
-  return this->ssl_storage->insert(key.get(), cc);
+  return this->ssl_storage[contextIndex]->insert(key.get(), cc);
 #endif
 }
 
 unsigned
-SSLCertLookup::count(SSLCertContextType ctxType) const
+SSLCertLookup::count(SSLCertContextType ctxType, int threadID) const
 {
+  int const contextIndex = this->getContextIndex(threadID);
   switch (ctxType) {
   case SSLCertContextType::EC:
 #ifdef OPENSSL_IS_BORINGSSL
-    return ec_storage->count();
+    return ec_storage[contextIndex]->count();
 #endif
   case SSLCertContextType::RSA:
   default:
-    return ssl_storage->count();
+    return ssl_storage[contextIndex]->count();
   }
 }
 
 SSLCertContext *
-SSLCertLookup::get(unsigned i, SSLCertContextType ctxType) const
+SSLCertLookup::get(unsigned i, SSLCertContextType ctxType, int threadID) const
 {
+  int const contextIndex = this->getContextIndex(threadID);
   switch (ctxType) {
   case SSLCertContextType::EC:
 #ifdef OPENSSL_IS_BORINGSSL
-    return ec_storage->get(i);
+    return ec_storage[contextIndex]->get(i);
 #endif
   case SSLCertContextType::RSA:
   default:
-    return ssl_storage->get(i);
+    return ssl_storage[contextIndex]->get(i);
   }
 }
 
@@ -416,12 +430,12 @@ SSLCertLookup::register_cert_secrets(std::vector<std::string> const &cert_secret
 }
 
 void
-SSLCertLookup::getPolicies(const std::string &secret_name, std::set<shared_SSLMultiCertConfigParams> &policies) const
+SSLCertLookup::getPolicies(const std::string &secret_name, std::set<shared_SSLMultiCertConfigParams> &policies, int threadID) const
 {
   auto iter = cert_secret_registry.find(secret_name);
   if (iter != cert_secret_registry.end()) {
     for (auto name : iter->second) {
-      SSLCertContext *cc = this->find(name);
+      SSLCertContext *cc = this->find(name, SSLCertContextType::GENERIC, threadID);
       if (cc) {
         policies.insert(cc->userconfig);
       }

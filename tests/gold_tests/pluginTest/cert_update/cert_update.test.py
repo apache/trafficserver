@@ -48,7 +48,7 @@ ports.get_port(ts, 's_server_port')
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'cert_update',
+        'proxy.config.diags.debug.tags': 'ssl.cert_update|cert_update',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),

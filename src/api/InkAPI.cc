@@ -8323,19 +8323,24 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
       // Embedded null char
       return TS_ERROR;
     }
-    Dbg(dbg_ctl_ssl_cert_update, "Updating from %s with common name %s", cert_path, common_name_str);
+    Dbg(dbg_ctl_ssl_cert_update, "Updating from %s with common name %s for %zd threads", cert_path, common_name_str,
+        SSLConfigParams::number_of_ssl_threads);
 
     // Update context to use cert
-    cc = lookup->find(common_name_str);
-    if (cc && cc->getCtx()) {
-      test_ctx = shared_SSL_CTX(SSLCreateServerContext(config, cc->userconfig.get(), cert_path, key_path), SSLReleaseContext);
-      if (!test_ctx) {
-        return TS_ERROR;
+    for (auto threadIndex = 0u; threadIndex < SSLConfigParams::number_of_ssl_threads; ++threadIndex) {
+      cc = lookup->find(common_name_str, SSLCertContextType::GENERIC, threadIndex);
+      if (cc && cc->getCtx()) {
+        test_ctx = shared_SSL_CTX(SSLCreateServerContext(config, cc->userconfig.get(), cert_path, key_path), SSLReleaseContext);
+        if (!test_ctx) {
+          return TS_ERROR;
+        }
+        // Atomic Swap
+        Dbg(dbg_ctl_ssl_cert_update, "Updating context from thread %d from %s with common name %s", threadIndex, cert_path,
+            common_name_str);
+        cc->setCtx(test_ctx);
       }
-      // Atomic Swap
-      cc->setCtx(test_ctx);
-      return TS_SUCCESS;
     }
+    return TS_SUCCESS;
   }
 
   return TS_ERROR;

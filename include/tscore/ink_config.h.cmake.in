@@ -171,6 +171,7 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 // TODO(cmcfarlen): Verify use of below in iocore/net/SSLNetVConnection (redunant)
 #cmakedefine01 HAVE_SSL_READ_EARLY_DATA
 #cmakedefine HAVE_SSL_SET_MAX_EARLY_DATA
+#cmakedefine01 HAVE_SSL_CTX_NEW_EX
 #cmakedefine01 HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 #cmakedefine01 HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
 #cmakedefine01 HAVE_SSL_GET_SHARED_CURVE
