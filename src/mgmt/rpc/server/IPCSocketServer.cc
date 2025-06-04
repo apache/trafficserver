@@ -413,7 +413,7 @@ IPCSocketServer::Client::read_all(Buffer &bw) const
       return {false, swoc::bwprint(buff, "Peer disconnected. EOF")};
     }
     bw.save(ret);
-    if (_max_req_size - bw.stored() > 0) { // we can still read more.
+    if (bw.stored() < _max_req_size) { // we can still read more.
       using namespace std::chrono_literals;
       if (!this->poll_for_data(1ms)) {
         return {true, buff};
