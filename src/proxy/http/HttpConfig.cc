@@ -639,10 +639,14 @@ register_stat_callbacks()
   Parse list of HTTP status code and return HttpStatusBitset
   - e.g. "204 305 403 404 414 500 501 502 503 504"
  */
-static HttpStatusBitset
-parse_http_status_code_list(swoc::TextView status_list)
+static void
+parse_http_status_code_list(HttpStatusBitset &set, swoc::TextView status_list)
 {
-  HttpStatusBitset set;
+  // Clear target set first
+  set.reset();
+
+  // Trim quotes or double quotes if there
+  status_list = status_list.trim('"').trim('\'');
 
   auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
 
@@ -658,91 +662,20 @@ parse_http_status_code_list(swoc::TextView status_list)
       set[n] = true;
     }
   }
-
-  return set;
 }
 
-static bool
-set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
-{
-  bool             ret = false;
-  HttpStatusBitset set;
-
-  // values from proxy.config.http.negative_caching_list
-  if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
-    // parse the list of status codes
-    set = parse_http_status_code_list({data.rec_string, strlen(data.rec_string)});
-  }
-
-  // set the return value
-  if (set != c->negative_caching_list) {
-    c->negative_caching_list = set;
-    ret                      = ret || update;
-  }
-
-  return ret;
-}
-
-// Method of getting the status code bitset
-static int
-negative_caching_list_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
-{
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  // Signal an update if valid value arrived.
-  if (set_negative_caching_list(name, dtype, data, c, true)) {
-    http_config_cb(name, dtype, data, cookie);
-  }
-  return REC_ERR_OKAY;
-}
-
-// Method of loading the negative caching config bitset
-void
-load_negative_caching_var(RecRecord const *r, void *cookie)
-{
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  set_negative_caching_list(r->name, r->data_type, r->data, c, false);
-}
-
-static bool
-set_negative_revalidating_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
-{
-  bool             ret = false;
-  HttpStatusBitset set;
-
-  // values from proxy.config.http.negative_revalidating_list
-  if (0 == strcasecmp("proxy.config.http.negative_revalidating_list", name) && RECD_STRING == dtype && data.rec_string) {
-    // parse the list of status codes
-    set = parse_http_status_code_list({data.rec_string, strlen(data.rec_string)});
-  }
-
-  // set the return value
-  if (set != c->negative_revalidating_list) {
-    c->negative_revalidating_list = set;
-    ret                           = ret || update;
-  }
-
-  return ret;
-}
-
-// Method of getting the status code bitset
-static int
-negative_revalidating_list_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
-{
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  // Signal an update if valid value arrived.
-  if (set_negative_revalidating_list(name, dtype, data, c, true)) {
-    http_config_cb(name, dtype, data, cookie);
-  }
-  return REC_ERR_OKAY;
-}
-
-// Method of loading the negative caching config bitset
-void
-load_negative_revalidating_var(RecRecord const *r, void *cookie)
-{
-  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  set_negative_revalidating_list(r->name, r->data_type, r->data, c, false);
-}
+// clang-format off
+// TODO: find good clang-format setting
+const MgmtConverter HttpStatusCodeList::Conv{
+  [](const void *data) -> std::string_view {
+    const HttpStatusCodeList *list = static_cast<const HttpStatusCodeList *>(data);
+    return list->conf_value;
+  },
+  [](void *data, std::string_view src) -> void {
+    HttpStatusCodeList *list = static_cast<HttpStatusCodeList *>(data);
+    parse_http_status_code_list(list->_data, src);
+  }};
+// clang-format on
 
 /** Template for creating conversions and initialization for @c std::chrono based configuration variables.
  *
@@ -1075,12 +1008,11 @@ HttpConfig::startup()
   // Negative caching and revalidation
   HttpEstablishStaticConfigByte(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
+  HttpEstablishStaticConfigStringAlloc(c.oride.negative_caching_list.conf_value, "proxy.config.http.negative_caching_list");
   HttpEstablishStaticConfigByte(c.oride.negative_revalidating_enabled, "proxy.config.http.negative_revalidating_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_revalidating_lifetime, "proxy.config.http.negative_revalidating_lifetime");
-  RecRegisterConfigUpdateCb("proxy.config.http.negative_caching_list", &negative_caching_list_cb, &c);
-  RecLookupRecord("proxy.config.http.negative_caching_list", &load_negative_caching_var, &c, true);
-  RecRegisterConfigUpdateCb("proxy.config.http.negative_revalidating_list", &negative_revalidating_list_cb, &c);
-  RecLookupRecord("proxy.config.http.negative_revalidating_list", &load_negative_revalidating_var, &c, true);
+  HttpEstablishStaticConfigStringAlloc(c.oride.negative_revalidating_list.conf_value,
+                                       "proxy.config.http.negative_revalidating_list");
 
   // Buffer size and watermark
   HttpEstablishStaticConfigLongLong(c.oride.default_buffer_size_index, "proxy.config.http.default_buffer_size");
@@ -1400,8 +1332,8 @@ HttpConfig::reconfigure()
   params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
   params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
 
-  params->negative_caching_list      = m_master.negative_caching_list;
-  params->negative_revalidating_list = m_master.negative_revalidating_list;
+  params->oride.negative_caching_list.set(m_master.oride.negative_caching_list.conf_value);
+  params->oride.negative_revalidating_list.set(m_master.oride.negative_revalidating_list.conf_value);
 
   params->oride.host_res_data            = m_master.oride.host_res_data;
   params->oride.host_res_data.conf_value = ats_strdup(m_master.oride.host_res_data.conf_value);

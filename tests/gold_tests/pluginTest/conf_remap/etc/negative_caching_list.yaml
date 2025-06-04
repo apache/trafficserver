@@ -1,0 +1,4 @@
+records:
+  http:
+    negative_caching_enabled: 1
+    negative_caching_list: "400 404"
