@@ -342,7 +342,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, st
   CacheVC      *c     = nullptr;
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
-    if (!lock.is_locked() || (od = stripe->open_read(key)) || dir_probe(key, stripe, &result, &last_collision)) {
+    if (!lock.is_locked() || (od = stripe->open_read(key)) || stripe->directory.probe(key, stripe, &result, &last_collision)) {
       c = new_CacheVC(cont);
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       c->vio.op  = VIO::READ;
@@ -545,7 +545,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
 
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
-    if (!lock.is_locked() || (od = stripe->open_read(key)) || dir_probe(key, stripe, &result, &last_collision)) {
+    if (!lock.is_locked() || (od = stripe->open_read(key)) || stripe->directory.probe(key, stripe, &result, &last_collision)) {
       c            = new_CacheVC(cont);
       c->first_key = c->key = c->earliest_key = *key;
       c->stripe                               = stripe;
@@ -688,7 +688,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
       if (c->od->has_multiple_writers()) {
         goto Lmiss;
       }
-      if (!dir_probe(key, c->stripe, &c->dir, &c->last_collision)) {
+      if (!c->stripe->directory.probe(key, c->stripe, &c->dir, &c->last_collision)) {
         if (c->f.update) {
           // fail update because vector has been GC'd
           // This situation can also arise in openWriteStartDone
