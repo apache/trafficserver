@@ -29,6 +29,8 @@ ACCEPT-ENCODING MISSING
 -
 ACCEPT-ENCODING MISSING
 -
+ACCEPT-ENCODING MISSING
+-
 X-Au-Test: www.ae-0.com
 ACCEPT-ENCODING MISSING
 -
@@ -60,6 +62,8 @@ deflate, zstd
 -
 identity, zstd, compress
 -
+br, compress
+-
 X-Au-Test: www.ae-1.com
 ACCEPT-ENCODING MISSING
 -
@@ -86,6 +90,8 @@ gzip
 ACCEPT-ENCODING MISSING
 -
 gzip
+-
+ACCEPT-ENCODING MISSING
 -
 ACCEPT-ENCODING MISSING
 -
@@ -122,6 +128,8 @@ ACCEPT-ENCODING MISSING
 -
 ACCEPT-ENCODING MISSING
 -
+br
+-
 X-Au-Test: www.ae-3.com
 ACCEPT-ENCODING MISSING
 -
@@ -152,6 +160,8 @@ br, gzip
 ACCEPT-ENCODING MISSING
 -
 ACCEPT-ENCODING MISSING
+-
+br
 -
 X-Au-Test: www.ae-4.com
 ACCEPT-ENCODING MISSING
@@ -250,6 +260,8 @@ deflate, zstd
 -
 identity, zstd, compress
 -
+br, compress
+-
 X-Au-Test: www.ae-0.com
 ACCEPT-ENCODING MISSING
 -
@@ -281,6 +293,8 @@ deflate, zstd
 -
 identity, zstd, compress
 -
+br, compress
+-
 X-Au-Test: www.ae-1.com
 ACCEPT-ENCODING MISSING
 -
@@ -307,6 +321,8 @@ gzip
 ACCEPT-ENCODING MISSING
 -
 gzip
+-
+ACCEPT-ENCODING MISSING
 -
 ACCEPT-ENCODING MISSING
 -
@@ -343,6 +359,8 @@ ACCEPT-ENCODING MISSING
 -
 ACCEPT-ENCODING MISSING
 -
+br
+-
 X-Au-Test: www.ae-3.com
 ACCEPT-ENCODING MISSING
 -
@@ -373,6 +391,8 @@ br, gzip
 ACCEPT-ENCODING MISSING
 -
 ACCEPT-ENCODING MISSING
+-
+br
 -
 X-Au-Test: www.ae-4.com
 ACCEPT-ENCODING MISSING

@@ -263,7 +263,10 @@ content_encoding_header(TSMBuffer bufp, TSMLoc hdr_loc, const int compression_ty
   const char  *value     = nullptr;
   int          value_len = 0;
   // Delete Content-Encoding if present???
-  if (compression_type & COMPRESSION_TYPE_BROTLI && (algorithm & ALGORITHM_BROTLI)) {
+  if (compression_type & COMPRESSION_TYPE_ZSTD && (algorithm & ALGORITHM_ZSTD)) {
+    value     = TS_HTTP_VALUE_ZSTD;
+    value_len = TS_HTTP_LEN_ZSTD;
+  } else if (compression_type & COMPRESSION_TYPE_BROTLI && (algorithm & ALGORITHM_BROTLI)) {
     value     = TS_HTTP_VALUE_BROTLI;
     value_len = TS_HTTP_LEN_BROTLI;
   } else if (compression_type & COMPRESSION_TYPE_GZIP && (algorithm & ALGORITHM_GZIP)) {
@@ -272,9 +275,6 @@ content_encoding_header(TSMBuffer bufp, TSMLoc hdr_loc, const int compression_ty
   } else if (compression_type & COMPRESSION_TYPE_DEFLATE && (algorithm & ALGORITHM_DEFLATE)) {
     value     = TS_HTTP_VALUE_DEFLATE;
     value_len = TS_HTTP_LEN_DEFLATE;
-  } else if (compression_type & COMPRESSION_TYPE_ZSTD && (algorithm & ALGORITHM_ZSTD)) {
-    value     = TS_HTTP_VALUE_ZSTD;
-    value_len = TS_HTTP_LEN_ZSTD;
   }
 
   if (value_len == 0) {
@@ -642,14 +642,14 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
       upstream_length = amount;
     }
 
-#if HAVE_BROTLI_ENCODE_H
-    if (data->compression_type & COMPRESSION_TYPE_BROTLI && (data->compression_algorithms & ALGORITHM_BROTLI)) {
-      brotli_transform_one(data, upstream_buffer, upstream_length);
+#if HAVE_ZSTD_H
+    if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
+      zstd_compress_one(data, upstream_buffer, upstream_length);
     } else
 #endif
-#if HAVE_ZSTD_H
-      if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
-      zstd_compress_one(data, upstream_buffer, upstream_length);
+#if HAVE_BROTLI_ENCODE_H
+      if (data->compression_type & COMPRESSION_TYPE_BROTLI && (data->compression_algorithms & ALGORITHM_BROTLI)) {
+      brotli_transform_one(data, upstream_buffer, upstream_length);
     } else
 #endif
       if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
@@ -734,16 +734,16 @@ brotli_transform_finish(Data *data)
 static void
 compress_transform_finish(Data *data)
 {
-#if HAVE_BROTLI_ENCODE_H
-  if (data->compression_type & COMPRESSION_TYPE_BROTLI && data->compression_algorithms & ALGORITHM_BROTLI) {
-    brotli_transform_finish(data);
-    debug("compress_transform_finish: brotli compression finish");
-  } else
-#endif
 #if HAVE_ZSTD_H
-    if (data->compression_type & COMPRESSION_TYPE_ZSTD && data->compression_algorithms & ALGORITHM_ZSTD) {
+  if (data->compression_type & COMPRESSION_TYPE_ZSTD && data->compression_algorithms & ALGORITHM_ZSTD) {
     zstd_compress_finish(data);
     debug("compress_transform_finish: zstd compression finish");
+  } else
+#endif
+#if HAVE_BROTLI_ENCODE_H
+    if (data->compression_type & COMPRESSION_TYPE_BROTLI && data->compression_algorithms & ALGORITHM_BROTLI) {
+    brotli_transform_finish(data);
+    debug("compress_transform_finish: brotli compression finish");
   } else
 #endif
     if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
@@ -952,7 +952,12 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
         continue;
       }
 
-      if (strncasecmp(value, "br", sizeof("br") - 1) == 0) {
+      if (strncasecmp(value, "zstd", sizeof("zstd") - 1) == 0) {
+        if (*algorithms & ALGORITHM_ZSTD) {
+          compression_acceptable = 1;
+        }
+        *compress_type |= COMPRESSION_TYPE_ZSTD;
+      } else if (strncasecmp(value, "br", sizeof("br") - 1) == 0) {
         if (*algorithms & ALGORITHM_BROTLI) {
           compression_acceptable = 1;
         }
@@ -967,11 +972,6 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
           compression_acceptable = 1;
         }
         *compress_type |= COMPRESSION_TYPE_GZIP;
-      } else if (strncasecmp(value, TS_HTTP_VALUE_ZSTD, TS_HTTP_LEN_ZSTD) == 0) {
-        if (*algorithms & ALGORITHM_ZSTD) {
-          compression_acceptable = 1;
-        }
-        *compress_type |= COMPRESSION_TYPE_ZSTD;
       }
     }
 

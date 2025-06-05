@@ -1316,10 +1316,6 @@ sessions:
         - [ X-Response-Identifier, { value: Gzip-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: miss, as: equal } ]
 
-  # NOTICE: This case should load an alternate of zstd, br Accept-Encoding header.
-  #         However, due to the implementation of calculate_quality_of_match(),
-  #         ATS matches the alternate of zstd Accept-Encoding header.
-  #         The result is DIFFERENT from the description of proxy.config.http.normalize_ae: 5
   - client-request:
       method: "GET"
       version: "1.1"
@@ -1335,7 +1331,7 @@ sessions:
     proxy-request:
       headers:
         fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
+        - [Accept-Encoding, { value: "zstd, br", as: equal }]
 
     server-response:
       status: 200
@@ -1355,10 +1351,8 @@ sessions:
       status: 200
       headers:
         fields:
-        # - [ X-Response-Identifier, { value: Zstd-Br-Accept-Encoding, as: equal } ]
-        # - [ X-Cache, { value: miss, as: equal } ]
-        - [ X-Response-Identifier, { value: Zstd-Accept-Encoding, as: equal } ]
-        - [ X-Cache, { value: hit-fresh, as: equal } ]
+        - [ X-Response-Identifier, { value: Zstd-Br-Accept-Encoding, as: equal } ]
+        - [ X-Cache, { value: miss, as: equal } ]
 
   # NOTICE: This case should load an alternate of zstd, gzip Accept-Encoding header.
   #         However, due to the implementation of calculate_quality_of_match(),
@@ -1379,7 +1373,7 @@ sessions:
     proxy-request:
       headers:
         fields:
-        - [Accept-Encoding, { value: gzip, as: equal }]
+        - [Accept-Encoding, { value: "zstd, gzip", as: equal }]
 
     server-response:
       status: 200
@@ -1423,7 +1417,7 @@ sessions:
     proxy-request:
       headers:
         fields:
-        - [Accept-Encoding, { value: gzip, as: equal }]
+        - [Accept-Encoding, { value: "br, gzip", as: equal }]
 
     server-response:
       status: 200
@@ -1588,11 +1582,6 @@ sessions:
         - [ X-Response-Identifier, { value: Br-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
-  # NOTICE: This case should make Accept-Encoding header zstd, br;q=0.8 match
-  #         the alternate of zstd, br Accept-Encoding header.
-  #         However, due to the implementation of calculate_quality_of_match(),
-  #         ATS matches the alternate of zstd Accept-Encoding header.
-  #         The result is DIFFERENT from the description of proxy.config.http.normalize_ae: 5
   - client-request:
       method: "GET"
       version: "1.1"
@@ -1608,7 +1597,7 @@ sessions:
     proxy-request:
       headers:
         fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
+        - [Accept-Encoding, { value: "zstd, br", as: equal }]
 
     server-response:
       <<: *404_response
@@ -1617,8 +1606,7 @@ sessions:
       status: 200
       headers:
         fields:
-        # - [ X-Response-Identifier, { value: Zstd-Br-Accept-Encoding, as: equal } ]
-        - [ X-Response-Identifier, { value: Zstd-Accept-Encoding, as: equal } ]
+        - [ X-Response-Identifier, { value: Zstd-Br-Accept-Encoding, as: equal } ]
         - [ X-Cache, { value: hit-fresh, as: equal } ]
 
   # NOTICE: This case should make Accept-Encoding header zstd, gzip;q=0.8 match
@@ -1641,7 +1629,7 @@ sessions:
     proxy-request:
       headers:
         fields:
-        - [Accept-Encoding, { value: gzip, as: equal }]
+        - [Accept-Encoding, { value: "zstd, gzip", as: equal }]
 
     server-response:
       <<: *404_response

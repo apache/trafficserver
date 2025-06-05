@@ -1069,7 +1069,8 @@ encoding_wildcard:
         // always try to fetch GZIP content if we have not tried sending AE before
         return -1.0f;
       }
-    } else if (cached_accept_field && !match_content_encoding(cached_accept_field, "gzip")) {
+    } else if (cached_accept_field && !match_content_encoding(cached_accept_field, "gzip") &&
+               !match_content_encoding(cached_accept_field, "br") && !match_content_encoding(cached_accept_field, "zstd")) {
       return 0.001f;
     } else {
       return -1.0f;

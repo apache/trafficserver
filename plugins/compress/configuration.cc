@@ -246,7 +246,7 @@ HostConfiguration::add_compression_algorithms(string &line)
     } else if (token == "deflate") {
       compression_algorithms_ |= ALGORITHM_DEFLATE;
     } else {
-      error("Unknown compression type. Supported compression-algorithms <br,gzip,deflate>.");
+      error("Unknown compression type. Supported compression-algorithms <zstd,br,gzip,deflate>.");
     }
   }
 }
@@ -344,10 +344,6 @@ Configuration::Parse(const char *path)
     trim_if(line, isspace);
     if (line.empty()) {
       continue;
-    }
-
-    if (strstr(line.c_str(), "zstd")) {
-      current_host_configuration->add_compression_algorithms(line);
     }
 
     for (;;) {
