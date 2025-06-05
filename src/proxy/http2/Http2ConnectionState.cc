@@ -126,6 +126,9 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
         this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
       } else {
+        if (_actively_closed_streams.contains(id)) {
+          return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+        }
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED, nullptr);
       }
     } else {
@@ -2381,10 +2384,14 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
     if (result == Http2SendDataFrameResult::DONE) {
       if (!stream->is_outbound_connection()) {
         // Delete a stream immediately
-        // TODO its should not be deleted for a several time to handling
-        // RST_STREAM and WINDOW_UPDATE.
-        // See 'closed' state written at [RFC 7540] 5.1.
         Http2StreamDebug(this->session, stream->get_id(), "Shutdown stream");
+
+        if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+          // actively close stream in the half-closed(local) state by sending a RST_STREAM frame
+          send_rst_stream_frame(stream->get_id(), Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+          _actively_closed_streams.insert(stream->get_id());
+        }
+
         stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
         stream->do_io_close();
       } else if (stream->is_outbound_connection() && stream->is_write_vio_done()) {
