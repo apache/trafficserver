@@ -63,11 +63,11 @@ child_curl_request = (
     f'{{curl}} -X PUSH -d "{stale_5}" "http://localhost:{ts_child.Variables.port}";'
     f'{{curl}} -X PUSH -d "{stale_10}" "http://localhost:{ts_parent.Variables.port}";'
     f'sleep 7; {{curl}} -s -v http://localhost:{ts_child.Variables.port};'
-    f'sleep 15; {{curl}} -s -v http://localhost:{ts_child.Variables.port};'
+    f'sleep 17; {{curl}} -s -v http://localhost:{ts_child.Variables.port};'
     # Test parent serving stale with failed DNS OS lookup
     f'{{curl}} -X PUSH -d "{stale_5}" "http://localhost:{ts_parent.Variables.port}";'
     f'sleep 7; {{curl}} -s -v http://localhost:{ts_parent.Variables.port};'
-    f'sleep 15; {{curl}} -s -v http://localhost:{ts_parent.Variables.port};')
+    f'sleep 17; {{curl}} -s -v http://localhost:{ts_parent.Variables.port};')
 
 # Test case for when parent server is down but child proxy can serve cache object
 tr = Test.AddTestRun()
