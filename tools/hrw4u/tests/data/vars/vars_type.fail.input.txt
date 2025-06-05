@@ -1,0 +1,9 @@
+VARS {
+   first: int8;
+   second: int16;
+}
+
+REMAP {
+   second = 12345;
+   first = second;
+}

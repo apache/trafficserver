@@ -195,14 +195,11 @@ class HRW4UVisitor(hrw4uVisitor):
                     rhs = self._substitute_strings(rhs, ctx)
                 self._debug(f"assignment: {lhs} = {rhs}")
                 lhs_obj = self.symbol_resolver.symbol_for(lhs)
-                if lhs_obj:
-                    rhs_obj = self.symbol_resolver.symbol_for(rhs)
-                    if rhs_obj:
-                        if rhs_obj.var_type != lhs_obj.var_type:
-                            raise SymbolResolutionError(rhs, f"Type mismatch: {lhs_obj.var_type} vs {rhs_obj.var_type}")
-                        out = lhs_obj.as_operator(rhs_obj.as_cond())
-                    else:
-                        out = lhs_obj.as_operator(rhs)
+                rhs_obj = self.symbol_resolver.symbol_for(rhs)
+                if lhs_obj and rhs_obj:
+                    if rhs_obj.var_type != lhs_obj.var_type:
+                        raise SymbolResolutionError(rhs, f"Type mismatch: {lhs_obj.var_type} vs {rhs_obj.var_type}")
+                    out = lhs_obj.as_operator(rhs_obj.as_cond())
                 else:
                     out = self.symbol_resolver.resolve_assignment(lhs, rhs, self.current_section)
                 self.emit_statement(out)
