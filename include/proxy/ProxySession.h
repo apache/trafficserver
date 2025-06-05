@@ -31,6 +31,7 @@
 #include "api/InkAPIInternal.h"
 #include "proxy/http/HttpSessionAccept.h"
 #include "proxy/IPAllow.h"
+#include "tscore/SnowflakeID.h"
 
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
@@ -225,7 +226,7 @@ private:
 inline int64_t
 ProxySession::next_connection_id()
 {
-  return ink_atomic_increment(&next_cs_id, 1);
+  return SnowflakeID::get_next_value();
 }
 
 inline void
