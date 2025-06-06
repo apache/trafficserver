@@ -20,11 +20,13 @@
 //
 //
 #include <utility>
-#include <iostream>
 #include <string>
+#include <fstream>
 #include <sstream>
+#include <filesystem>
 
 #include "ts/ts.h"
+#include "tscore/Layout.h"
 
 #include "parser.h"
 
@@ -50,7 +52,7 @@ Parser::parse_line(const std::string &original_line)
         state            = PARSER_DEFAULT;
       } else if (!std::isspace(line[i])) {
         // we got a standalone =, > or <
-        _tokens.push_back(std::string(1, line[i]));
+        _tokens.emplace_back(1, line[i]);
       }
     } else if ((state != PARSER_IN_QUOTE) && (line[i] == '/')) {
       // Deal with regexes, nothing gets escaped / quoted in here
@@ -115,7 +117,7 @@ Parser::parse_line(const std::string &original_line)
 
       if ((line[i] == '=') || (line[i] == '+')) {
         // These are always a separate token
-        _tokens.push_back(std::string(1, line[i]));
+        _tokens.emplace_back(1, line[i]);
         continue;
       }
 
@@ -278,9 +280,8 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
   return false;
 }
 
-HRWSimpleTokenizer::HRWSimpleTokenizer(const std::string &original_line)
+HRWSimpleTokenizer::HRWSimpleTokenizer(const std::string &line)
 {
-  std::string line             = original_line;
   ParserState state            = PARSER_DEFAULT;
   bool        extracting_token = false;
   off_t       cur_token_start  = 0;
@@ -323,5 +324,97 @@ HRWSimpleTokenizer::HRWSimpleTokenizer(const std::string &original_line)
   // take what was left behind
   if (extracting_token) {
     _tokens.push_back(line.substr(cur_token_start));
+  }
+}
+
+// This is the universal configuration reader, which can read both
+// a raw file, as well as executing an external compiler (hrw4u) to parse
+// the configuration file.
+namespace
+{
+void
+_log_stderr(int fd)
+{
+  char        buffer[512];
+  std::string partial;
+
+  while (ssize_t n = read(fd, buffer, sizeof(buffer))) {
+    if (n <= 0) {
+      break;
+    }
+    partial.append(buffer, n);
+    size_t pos = 0;
+    while ((pos = partial.find('\n')) != std::string::npos) {
+      std::string line = partial.substr(0, pos);
+      TSError("[header_rewrite: hrw4u] %s", line.c_str());
+      partial.erase(0, pos + 1);
+    }
+  }
+
+  if (!partial.empty()) {
+    TSError("[hrw4u] stderr: %s", partial.c_str());
+  }
+
+  close(fd);
+}
+} // namespace
+
+std::optional<ConfReader>
+openConfig(const std::string &filename)
+{
+  namespace fs             = std::filesystem;
+  const std::string suffix = ".hrw4u";
+  std::string       hrw4u  = Layout::get()->bindir + "/traffic_hrw4u";
+
+  static const bool has_compiler = [hrw4u]() {
+    fs::path        path(hrw4u);
+    std::error_code ec;
+    auto            status = fs::status(path, ec);
+    auto            perms  = status.permissions();
+    return fs::exists(path, ec) && fs::is_regular_file(path, ec) && (perms & fs::perms::owner_exec) != fs::perms::none;
+  }();
+
+  if (filename.ends_with(suffix) && has_compiler) {
+    int pipe_fds[2];
+    int stderr_pipe[2];
+
+    if (pipe(pipe_fds) != 0 || pipe(stderr_pipe) != 0) {
+      TSError("[header_rewrite] failed to create pipe for hrw4u compiler: %s", strerror(errno));
+      return std::nullopt;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+      TSError("[header_rewrite] failed to fork for hrw4u compiler: %s", strerror(errno));
+      return std::nullopt;
+    } else if (pid == 0) {
+      dup2(pipe_fds[1], STDOUT_FILENO);
+      dup2(stderr_pipe[1], STDERR_FILENO);
+      close(pipe_fds[0]);
+      close(stderr_pipe[0]);
+
+      const char *argv[] = {hrw4u.c_str(), filename.c_str(), nullptr};
+      execvp(argv[0], const_cast<char **>(argv));
+      _exit(127); // child exec failed
+    }
+
+    // Parent
+    close(pipe_fds[1]);
+    close(stderr_pipe[1]);
+
+    _log_stderr(stderr_pipe[0]);
+
+    auto pipebuf = std::make_shared<HRW4UPipe>(fdopen(pipe_fds[0], "r"));
+    pipebuf->set_pid(pid);
+    auto stream = std::make_unique<std::istream>(pipebuf.get());
+
+    return ConfReader{.stream = std::move(stream), .pipebuf = std::move(pipebuf)};
+  } else {
+    auto file = std::make_unique<std::ifstream>(filename);
+    if (!file->is_open()) {
+      return std::nullopt;
+    }
+
+    return ConfReader{.stream = std::move(file), .pipebuf = nullptr};
   }
 }
