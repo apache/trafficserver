@@ -52,7 +52,7 @@ Parser::parse_line(const std::string &original_line)
         state            = PARSER_DEFAULT;
       } else if (!std::isspace(line[i])) {
         // we got a standalone =, > or <
-        _tokens.push_back(std::string(1, line[i]));
+        _tokens.emplace_back(1, line[i]);
       }
     } else if ((state != PARSER_IN_QUOTE) && (line[i] == '/')) {
       // Deal with regexes, nothing gets escaped / quoted in here
@@ -108,7 +108,7 @@ Parser::parse_line(const std::string &original_line)
 
       if ((line[i] == '=') || (line[i] == '+')) {
         // These are always a separate token
-        _tokens.push_back(std::string(1, line[i]));
+        _tokens.emplace_back(1, line[i]);
         continue;
       }
 
@@ -271,9 +271,8 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
   return false;
 }
 
-HRWSimpleTokenizer::HRWSimpleTokenizer(const std::string &original_line)
+HRWSimpleTokenizer::HRWSimpleTokenizer(const std::string &line)
 {
-  std::string line             = original_line;
   ParserState state            = PARSER_DEFAULT;
   bool        extracting_token = false;
   off_t       cur_token_start  = 0;
@@ -331,8 +330,9 @@ _log_stderr(int fd)
   std::string partial;
 
   while (ssize_t n = read(fd, buffer, sizeof(buffer))) {
-    if (n <= 0)
+    if (n <= 0) {
       break;
+    }
     partial.append(buffer, n);
     size_t pos = 0;
     while ((pos = partial.find('\n')) != std::string::npos) {
@@ -370,11 +370,13 @@ openConfig(const std::string &filename)
     int stderr_pipe[2];
 
     if (pipe(pipe_fds) != 0 || pipe(stderr_pipe) != 0) {
+      TSError("[header_rewrite] failed to create pipe for hrw4u compiler: %s", strerror(errno));
       return std::nullopt;
     }
 
     pid_t pid = fork();
     if (pid < 0) {
+      TSError("[header_rewrite] failed to fork for hrw4u compiler: %s", strerror(errno));
       return std::nullopt;
     } else if (pid == 0) {
       dup2(pipe_fds[1], STDOUT_FILENO);
@@ -397,13 +399,13 @@ openConfig(const std::string &filename)
     pipebuf->set_pid(pid);
     auto stream = std::make_unique<std::istream>(pipebuf.get());
 
-    return ConfReader{std::move(stream), std::move(pipebuf)};
+    return ConfReader{.stream = std::move(stream), .pipebuf = std::move(pipebuf)};
   } else {
     auto file = std::make_unique<std::ifstream>(filename);
     if (!file->is_open()) {
       return std::nullopt;
     }
 
-    return ConfReader{std::move(file), nullptr};
+    return ConfReader{.stream = std::move(file), .pipebuf = nullptr};
   }
 }
