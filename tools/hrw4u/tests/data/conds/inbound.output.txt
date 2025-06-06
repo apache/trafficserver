@@ -1,0 +1,12 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{INBOUND:TLS} ="" [NOT]
+    set-header X-LOCAL-ADDR "%{INBOUND:LOCAL-ADDR}"
+    set-header X-LOCAL-PORT "%{INBOUND:LOCAL-PORT}"
+    set-header X-REMOTE-ADDR "%{INBOUND:REMOTE-ADDR}"
+    set-header X-REMOTE-PORT "%{INBOUND:REMOTE-PORT}"
+    set-header X-TLS "%{INBOUND:TLS}"
+    set-header X-H2 "%{INBOUND:H2}"
+    set-header X-IPV4 "%{INBOUND:IPV4}"
+    set-header X-IPV6 "%{INBOUND:IPV6}"
+    set-header X-IP-FAMILY "%{INBOUND:IP-FAMILY}"
+    set-header X-STACK "%{INBOUND:STACK}"

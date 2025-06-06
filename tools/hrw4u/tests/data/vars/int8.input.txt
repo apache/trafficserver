@@ -1,0 +1,9 @@
+VARS {
+   Num: int8;
+}
+
+REMAP {
+    if Num > 123 {
+        inbound.req.X-foo = "bar";
+    }
+}
