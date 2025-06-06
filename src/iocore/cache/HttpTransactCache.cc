@@ -988,23 +988,67 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
 
   } else {
     // "Accept-encoding must correctly handle multiple content encoding"
-    // The combined quality factor is the product of all quality factors.
-    // (Note that there may be other possible choice, eg, min(),
-    // but I think multiplication is the best.)
-    // For example, if "content-encoding: a, b", and quality factors
-    // of a and b (in accept-encoding header) are q_a and q_b, resp,
-    // then the combined quality factor is (q_a * q_b).
-    // If any one of the content-encoding is not matched,
-    // then the q value will not be changed.
-    float combined_q = 1.0;
+    //
+    // The combined quality factor uses weighted scoring that prefers alternates supporting
+    // more of the client's requested encodings:
+    // 1. Calculate weighted score based on highest quality encodings
+    // 2. Add bonus for comprehensive encoding support
+    // 3. Prefer alternates that match client's most preferred encodings
+    //
+    // Example: For Accept-Encoding "br, gzip;q=0.8":
+    // - Single "br": score = 1.0 * 0.9 = 0.9 (high quality, but limited)
+    // - Single "gzip": score = 0.8 * 0.9 = 0.72 (medium quality, limited)
+    // - "br, gzip": score = max(1.0, 0.8) * 1.0 + coverage_bonus = 1.0 + 0.02 = 1.02
+    float max_q                  = 0.0;
+    float total_client_encodings = 0.0;
+    int   encoding_count         = 0;
+
+    // First pass: find maximum quality and count client encodings
+    StrList client_encodings;
+    if (accept_field) {
+      accept_field->value_get_comma_list(&client_encodings);
+      for (Str *client_enc = client_encodings.head; client_enc; client_enc = client_enc->next) {
+        total_client_encodings += 1.0;
+      }
+    }
+
+    // Second pass: evaluate each content encoding
     for (c_value = c_values_list.head; c_value; c_value = c_value->next) {
       float this_q = -1.0;
       if (!match_accept_content_encoding(c_value->str, accept_field, &wildcard_present, &wildcard_q, &this_q)) {
         goto encoding_wildcard;
       }
-      combined_q *= this_q;
+
+      // Track the highest quality encoding
+      if (this_q > max_q) {
+        max_q = this_q;
+      }
+
+      encoding_count++;
     }
-    q = combined_q;
+
+    // Calculate final quality score
+    if (encoding_count == 1) {
+      // Single encoding: use quality * 0.9 to slightly disadvantage vs comprehensive
+      q = max_q * 0.9;
+    } else {
+      // Multiple encodings: use max quality as base + coverage bonus
+      q = max_q;
+
+      // Add coverage bonus based on how much of client's preferences we support
+      if (total_client_encodings > 0) {
+        float coverage_ratio = static_cast<float>(encoding_count) / total_client_encodings;
+        if (coverage_ratio > 1.0) {
+          coverage_ratio = 1.0;
+        }
+        q += coverage_ratio * 0.02; // Up to 2% bonus for full coverage
+      }
+
+      // Cap at reasonable maximum
+      if (q > 1.02) {
+        q = 1.02;
+      }
+    }
   }
 
 encoding_wildcard:
@@ -1025,7 +1069,8 @@ encoding_wildcard:
         // always try to fetch GZIP content if we have not tried sending AE before
         return -1.0f;
       }
-    } else if (cached_accept_field && !match_content_encoding(cached_accept_field, "gzip")) {
+    } else if (cached_accept_field && !match_content_encoding(cached_accept_field, "gzip") &&
+               !match_content_encoding(cached_accept_field, "br") && !match_content_encoding(cached_accept_field, "zstd")) {
       return 0.001f;
     } else {
       return -1.0f;
