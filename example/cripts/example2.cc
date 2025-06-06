@@ -57,8 +57,8 @@ do_txn_close()
 
 do_cache_lookup()
 {
-  CDebug("Cache URL: {}", urls.cache);
-  CDebug("Cache Host: {}", urls.cache.host);
+  CDebug("Cache URL: {}", cached.url);
+  CDebug("Cache Host: {}", cached.url.host);
 }
 
 do_send_request()
@@ -80,7 +80,7 @@ do_send_response()
   client.response["Cache-Control"]  = "Private"; // Deletes old CC values, and sets a new one
   client.response["X-UUID"]         = UniqueUUID();
   client.response["X-tcpinfo"]      = client.connection.tcpinfo.Log();
-  client.response["X-Cache-Status"] = client.response.cache;
+  client.response["X-Cache-Status"] = cached.response.lookupstatus.GetSV();
   client.response["X-Integer"]      = 666;
   client.response["X-Data"]         = AsString(txn_data[2]);
 
@@ -118,7 +118,7 @@ do_send_response()
 do_remap()
 {
   auto ip  = client.connection.IP();
-  auto now = TimeNow();
+  auto now = LocalTimeNow();
 
   if (CRIPT_ALLOW.Match(ip)) {
     CDebug("Client IP allowed: {}", ip.string(24, 64));
