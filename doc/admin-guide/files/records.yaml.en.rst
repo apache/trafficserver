@@ -2390,6 +2390,19 @@ Cache Control
    Establishes a guaranteed maximum lifetime boundary for object freshness.
    Setting this to ``0`` disables the feature.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.try_compat_key_read INT 0
+   :reloadable:
+
+   When enabled (``1``), |TS| will try to lookup the cached object using the
+   previous cache key generation algorithm, but will always write new objects
+   using the newest key generation. This might be temporarily necessary
+   if a large cache was created by the previous version of ATS but the new
+   version changed the way cache keys are generated.  If this is turned on,
+   a metric called `proxy.process.http.cache.compat_key_reads` will be
+   incremented any time the compat cache lookup successfully finds the object.
+   You can monitor this metric and know when its safe to turn this feature off
+   as the cache wraps around.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.range.lookup INT 1
    :overridable:
 

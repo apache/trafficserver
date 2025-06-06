@@ -639,6 +639,13 @@ static const RecordElement RecordsConfig[] =
   ,
 
   //        ###################
+  //        # Cache Compat    #
+  //        ###################
+  {RECT_CONFIG, "proxy.config.http.cache.try_compat_key_read", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+
+
+  //        ###################
   //        # Error Reporting #
   //        ###################
   {RECT_CONFIG, "proxy.config.http.errors.log_error_pages", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}

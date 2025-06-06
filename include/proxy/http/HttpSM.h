@@ -174,6 +174,12 @@ public:
   ~PostDataBuffers();
 };
 
+enum class CompatibilityCacheLookup {
+  COMPAT_CACHE_LOOKUP_NORMAL = 0,
+  COMPAT_CACHE_LOOKUP_92,
+  COMPAT_CACHE_LAST,
+};
+
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpTransact;
@@ -532,6 +538,8 @@ public:
   // with the source plugin.
   const char *plugin_tag = nullptr;
   int64_t     plugin_id  = 0;
+
+  CompatibilityCacheLookup compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
 
 private:
   HttpTunnel tunnel;
