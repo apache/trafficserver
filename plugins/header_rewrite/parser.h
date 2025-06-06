@@ -109,6 +109,7 @@ public:
 
   bool parse_line(const std::string &original_line);
 
+  // We chose to have this take a std::string, since some of these conversions can not take a TextView easily
   template <typename NumericT>
   static NumericT
   parseNumeric(const std::string &s)
