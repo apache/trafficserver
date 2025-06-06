@@ -24,6 +24,9 @@
   limitations under the License.
  */
 
+#include <ranges>
+#include <string_view>
+
 #include "proxy/IPAllow.h"
 #include "records/RecCore.h"
 #include "swoc/Errata.h"
@@ -67,8 +70,9 @@ enum AclOp {
 const IpAllow::Record IpAllow::ALLOW_ALL_RECORD(ALL_METHOD_MASK);
 const IpAllow::ACL    IpAllow::DENY_ALL_ACL;
 
-size_t IpAllow::configid       = 0;
-bool   IpAllow::accept_check_p = true; // initializing global flag for fast deny
+size_t  IpAllow::configid       = 0;
+bool    IpAllow::accept_check_p = true; // initializing global flag for fast deny
+uint8_t IpAllow::subjects[Subject::MAX_SUBJECTS];
 
 static ConfigUpdateHandler<IpAllow> *ipAllowUpdate;
 
@@ -212,6 +216,30 @@ IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_conf
   if (!path.empty()) {
     ip_categories_config_file = ats_scoped_str(path).get();
   }
+
+  RecString subjects_char;
+  REC_ReadConfigStringAlloc(subjects_char, "proxy.config.acl.subjects");
+  std::string_view subjects_sv{subjects_char};
+  int              i = 0;
+  for (const auto subject : std::views::split(subjects_sv, ',')) {
+    std::string_view subject_sv{subject.begin(), subject.end()};
+    if (i >= MAX_SUBJECTS) {
+      Error("Too many ACL subjects were provided");
+    }
+    if (subject_sv == "PEER") {
+      subjects[i] = Subject::PEER;
+      ++i;
+    } else if (subject_sv == "PROXY") {
+      subjects[i] = Subject::PROXY;
+      ++i;
+    } else {
+      Dbg(dbg_ctl_ip_allow, "Unknown subject %.*s was ignored", static_cast<int>(subject_sv.length()), subject_sv.data());
+    }
+  }
+  if (i < Subject::MAX_SUBJECTS) {
+    subjects[i] = Subject::MAX_SUBJECTS;
+  }
+  ats_free(subjects_char);
 }
 
 BufferWriter &
