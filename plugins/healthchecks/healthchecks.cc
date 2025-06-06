@@ -166,25 +166,54 @@ setup_watchers(int fd)
 /* Separate thread to monitor status files for reload */
 #define INOTIFY_BUFLEN (1024 * sizeof(struct inotify_event))
 
+/** Determine whether @a event applies to the @a finfo configured file. */
+static bool
+event_matches_config(struct inotify_event *event, HCFileInfo *finfo)
+{
+  if (!finfo || !event) {
+    return false;
+  }
+  if (event->wd == finfo->wd) {
+    // Easy: the event is for this configured file we are watching.
+    return true;
+  }
+  if (event->wd != finfo->dir->wd) {
+    // The event is not for this file, nor for the parent directory. No match.
+    return false;
+  }
+
+  // The event applies to a change in a directory that contains files we are
+  // configured to watch. Does the directory event apply to this file?
+
+  if (!finfo->basename || finfo->basename_len <= 0) {
+    // This configured finfo is not for a specific file.
+    return false;
+  }
+  if (strnlen(event->name, NAME_MAX) != finfo->basename_len) {
+    return false;
+  }
+  return strncmp(event->name, finfo->basename, finfo->basename_len) == 0;
+}
+
 static void *
 hc_thread(void *data ATS_UNUSED)
 {
-  int            fd      = inotify_init();
-  HCFileData    *fl_head = nullptr;
+  int            inotify_fd = inotify_init();
+  HCFileData    *fl_head    = nullptr;
   char           buffer[INOTIFY_BUFLEN];
   struct timeval last_free, now;
 
   gettimeofday(&last_free, nullptr);
 
   /* Setup watchers for the directories, these are a one time setup */
-  setup_watchers(fd); // This is a leak, but since we enter an infinite loop this is ok?
+  setup_watchers(inotify_fd); // This is a leak, but since we enter an infinite loop this is ok?
 
-  while (1) {
+  while (true) {
     HCFileData *fdata = fl_head, *fdata_prev = nullptr;
 
     gettimeofday(&now, nullptr);
     /* Read the inotify events, blocking until we get something */
-    int len = read(fd, buffer, INOTIFY_BUFLEN);
+    int len = read(inotify_fd, buffer, INOTIFY_BUFLEN);
 
     /* The fl_head is a linked list of previously released data entries. They
        are ordered "by time", so once we find one that is scheduled for deletion,
@@ -220,8 +249,7 @@ hc_thread(void *data ATS_UNUSED)
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
         HCFileInfo           *finfo = g_config;
 
-        while (finfo && !((event->wd == finfo->wd) ||
-                          ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, finfo->basename_len)))) {
+        while (finfo && !event_matches_config(event, finfo)) {
           finfo = finfo->_next;
         }
         if (finfo) {
@@ -232,10 +260,12 @@ hc_thread(void *data ATS_UNUSED)
             Dbg(dbg_ctl, "Modify file event (%d) on %s", event->mask, finfo->fname);
           } else if (event->mask & (IN_CREATE | IN_MOVED_TO)) {
             Dbg(dbg_ctl, "Create file event (%d) on %s", event->mask, finfo->fname);
-            finfo->wd = inotify_add_watch(fd, finfo->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
+            finfo->wd = inotify_add_watch(inotify_fd, finfo->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
           } else if (event->mask & (IN_DELETE_SELF | IN_MOVED_FROM)) {
             Dbg(dbg_ctl, "Delete file event (%d) on %s", event->mask, finfo->fname);
-            finfo->wd = inotify_rm_watch(fd, finfo->wd);
+            finfo->wd = inotify_rm_watch(inotify_fd, finfo->wd);
+          } else {
+            Dbg(dbg_ctl, "Unhandled event (%d) on %s", event->mask, finfo->fname);
           }
           /* Load the new data and then swap this atomically */
           memset(new_data, 0, sizeof(HCFileData));
