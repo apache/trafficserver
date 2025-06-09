@@ -88,7 +88,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
           }
         }
       }
-      dir_overwrite(&doc->key, this->stripe, &this->dir, &this->overwrite_dir);
+      this->stripe->directory.overwrite(&doc->key, this->stripe, &this->dir, &this->overwrite_dir);
     }
     // if the tag in the overwrite_dir matches the first_key in the
     // document, then it has to be the vector. We guarantee that
@@ -108,7 +108,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
                dir_offset(&cod->first_dir), dir_offset(&this->dir));
           cod->first_dir = this->dir;
         }
-        if (dir_overwrite(&doc->first_key, this->stripe, &this->dir, &this->overwrite_dir)) {
+        if (this->stripe->directory.overwrite(&doc->first_key, this->stripe, &this->dir, &this->overwrite_dir)) {
           int64_t o = dir_offset(&this->overwrite_dir), n = dir_offset(&this->dir);
           this->stripe->ram_cache->fixup(&doc->first_key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
         }
@@ -119,7 +119,7 @@ CacheEvacuateDocVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS
         this->total_len    += doc->data_len();
         this->first_key     = doc->first_key;
         this->earliest_dir  = this->dir;
-        if (dir_probe(&this->first_key, this->stripe, &this->dir, &last_collision) > 0) {
+        if (this->stripe->directory.probe(&this->first_key, this->stripe, &this->dir, &last_collision) > 0) {
           dir_lookaside_insert(b, this->stripe, &this->earliest_dir);
           // read the vector
           SET_HANDLER(&CacheEvacuateDocVC::evacuateReadHead);
@@ -188,7 +188,7 @@ CacheEvacuateDocVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e AT
   }
   return EVENT_CONT;
 Lcollision:
-  if (dir_probe(&this->first_key, this->stripe, &this->dir, &last_collision)) {
+  if (this->stripe->directory.probe(&this->first_key, this->stripe, &this->dir, &last_collision)) {
     int ret = do_read_call(&this->first_key);
     if (ret == EVENT_RETURN) {
       return handleEvent(AIO_EVENT_DONE, nullptr);
