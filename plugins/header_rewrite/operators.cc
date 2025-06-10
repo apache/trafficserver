@@ -344,7 +344,7 @@ OperatorSetDestination::exec(const Resources &res) const
         if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS && TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
           // This case creates a new_url_loc which should be used for any other set-destination case
-          res._rri->requestUrl = reinterpret_cast<TSMLoc>(new_url_loc);
+          res._rri->requestUrl = new_url_loc;
           Dbg(pi_dbg_ctl, "Set destination URL to %s", value.c_str());
         } else {
           Dbg(pi_dbg_ctl, "Failed to set URL %s", value.c_str());
