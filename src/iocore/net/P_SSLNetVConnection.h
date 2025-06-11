@@ -189,6 +189,26 @@ public:
 
   int64_t read_raw_data();
 
+  /** Initialize handshake buffers in which we store TLS handshake data.
+   *
+   * Typically, we would configure the SSL object to use the socket directly,
+   * and call SSL_read on the socket. In this way, the OpenSSL machine would
+   * read and parse the stream for us, handshake and all. We cannot, however,
+   * blindly let OpenSSL read off the socket since we may need to replay the
+   * CLIENT_HELLO raw bytes to the origin if we wind up blind tunneling the
+   * connection.  Therefore, for the initial CLIENT_HELLO, we:
+   *
+   * 1. Manually read bytes off the socket via read_raw_data().
+   * 2. Store the bytes in @a handShakeBuffer.
+   * 3. Configure our SSL object to read from a memory buffer populated from @a
+   *    handshakeReader.
+   *
+   * Once the CLIENT_HELLO is parsed, we either configure the SSL object to read
+   * from the socket as normal, or we replay the bytes to the origin via @a
+   * handshakeHolder if we decide to blind tunnel the connection. In the latter
+   * tunnel case, any subsequent bytes are blindly tunneled between the origin
+   * and the client.
+   */
   void
   initialize_handshake_buffers()
   {
@@ -340,10 +360,21 @@ private:
   enum SSLHandshakeStatus sslHandshakeStatus          = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   bool                    sslClientRenegotiationAbort = false;
   bool                    first_ssl_connect           = true;
-  MIOBuffer              *handShakeBuffer             = nullptr;
-  IOBufferReader         *handShakeHolder             = nullptr;
-  IOBufferReader         *handShakeReader             = nullptr;
-  int                     handShakeBioStored          = 0;
+
+  /** The buffer storing the initial CLIENT_HELLO bytes. */
+  MIOBuffer *handShakeBuffer = nullptr;
+
+  /** Used to incrementally shuffle bytes read off the socket to the SSL object. */
+  IOBufferReader *handShakeHolder = nullptr;
+
+  /** If blind tunneling, this supplies the initial raw bytes of the CLIENT_HELLO. */
+  IOBufferReader *handShakeReader = nullptr;
+
+  /** The number of bytes last send to the SSL's BIO. */
+  int handShakeBioStored = 0;
+
+  /** Whether we have already checked for Proxy Protocol in the initial packet. */
+  bool haveCheckedProxyProtocol = false;
 
   bool transparentPassThrough = false;
   bool allowPlain             = false;
