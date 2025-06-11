@@ -16,6 +16,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from ports import get_port
+import sys
+
 Test.Summary = '''
 Test tunneling based on SNI
 '''
@@ -33,6 +36,12 @@ response_foo_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"
 response_bar_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "bar ok"}
 server_foo.addResponse("sessionlog.json", request_foo_header, response_foo_header)
 server_bar.addResponse("sessionlog.json", request_bar_header, response_bar_header)
+
+# Server to interact with a split CLIENT_HELLO in a blind tunnel.
+split_client_hello_server = Test.Processes.Process('receive_split_client_hello_server')
+server_port = get_port(split_client_hello_server, 'tcp_port')
+server_command = f'{sys.executable} receive_split_client_hello.py 127.0.0.1 {server_port}'
+split_client_hello_server.Command = server_command
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/signed-foo.pem")
@@ -59,12 +68,14 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.http.connect_ports':
-            '{0} {1} {2}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.SSL_Port),
+            '{0} {1} {2} {3}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.SSL_Port, split_client_hello_server.Variables.tcp_port),
         'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
-        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|ssl|proxyprotocol',
+        'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
         'proxy.config.dns.resolv_conf': 'NULL'
     })
 
@@ -75,18 +86,21 @@ ts.Disk.sni_yaml.AddLines(
     [
         'sni:',
         '- fqdn: foo.com',
-        "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
+        f"  tunnel_route: localhost:{server_foo.Variables.SSL_Port}",
+        '- fqdn: slashdot.org',
+        f"  tunnel_route: localhost:{split_client_hello_server.Variables.tcp_port}",
         "- fqdn: bob.*.com",
-        "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
+        f"  tunnel_route: localhost:{server_foo.Variables.SSL_Port}",
         "- fqdn: '*.match.com'",
-        "  tunnel_route: $1.testmatch:{0}".format(server_foo.Variables.SSL_Port),
+        f"  tunnel_route: $1.testmatch:{server_foo.Variables.SSL_Port}",
         "- fqdn: '*.ok.*.com'",
-        "  tunnel_route: $2.example.$1:{0}".format(server_foo.Variables.SSL_Port),
+        f"  tunnel_route: $2.example.$1:{server_foo.Variables.SSL_Port}",
         "- fqdn: ''",  # No SNI sent
-        "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port)
+        f"  tunnel_route: localhost:{server_bar.Variables.SSL_Port}"
     ])
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
+tr.TimeOut = 5
 tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
@@ -103,6 +117,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not te
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("bob.bar.com Tunnel-test")
+tr.TimeOut = 5
 tr.Processes.Default.Command = "curl -v --resolve 'bob.bar.com:{0}:127.0.0.1' -k  https://bob.bar.com:{0}".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
@@ -116,6 +131,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not te
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("bar.com no Tunnel-test")
+tr.TimeOut = 5
 tr.Processes.Default.Command = "curl -v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
@@ -124,6 +140,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Acc
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
 
 tr = Test.AddTestRun("no SNI Tunnel-test")
+tr.TimeOut = 5
 tr.Processes.Default.Command = "curl -v -k  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
@@ -135,6 +152,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not te
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("one.match.com Tunnel-test")
+tr.TimeOut = 5
 tr.Processes.Default.Command = "curl -vvv --resolve 'one.match.com:{0}:127.0.0.1' -k  https://one.match.com:{0}".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
@@ -148,6 +166,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not te
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
 
 tr = Test.AddTestRun("one.ok.two.com Tunnel-test")
+tr.TimeOut = 5
 tr.Processes.Default.Command = "curl -vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https:/one.ok.two.com:{0}".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
@@ -178,6 +197,35 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = 'echo Updated configs'
 tr.Processes.Default.ReturnCode = 0
 
+# Test a large CLIENT_HELLO.
+tr = Test.AddTestRun("Single large CLIENT_HELLO blind tunnel test")
+tr.TimeOut = 5
+tr.Setup.Copy('split_client_hello.py')
+tr.Setup.Copy('receive_split_client_hello.py')
+p = tr.Processes.Default
+p.StartBefore(split_client_hello_server, ready=When.PortOpen(server_port))
+p.Command = f'{sys.executable} split_client_hello.py 127.0.0.1 {ts.Variables.ssl_port} -s 0'
+p.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = dns
+p.Streams.All += Testers.ContainsExpression('dummy SERVER_HELLO', 'Verify a dummy SERVER_HELLO response is received')
+p.Streams.All += Testers.ContainsExpression('data: 0', 'Verify that the first data packet was received.')
+p.Streams.All += Testers.ContainsExpression('data: 1', 'Verify that the second data packet was received.')
+
+# Test a CLIENT_HELLO split over two TCP packets.
+tr = Test.AddTestRun("Split large CLIENT_HELLO blind tunnel test")
+tr.TimeOut = 5
+tr.Setup.Copy('split_client_hello.py')
+tr.Setup.Copy('receive_split_client_hello.py')
+p = tr.Processes.Default
+p.Command = f'{sys.executable} split_client_hello.py 127.0.0.1 {ts.Variables.ssl_port}'
+p.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = dns
+p.Streams.All += Testers.ContainsExpression('dummy SERVER_HELLO', 'Verify a dummy SERVER_HELLO response is received')
+p.Streams.All += Testers.ContainsExpression('data: 0', 'Verify that the first data packet was received.')
+p.Streams.All += Testers.ContainsExpression('data: 1', 'Verify that the second data packet was received.')
+
 trreload = Test.AddTestRun("Reload config")
 trreload.StillRunningAfter = ts
 trreload.StillRunningAfter = server_foo
@@ -189,6 +237,7 @@ trreload.Processes.Default.ReturnCode = 0
 
 # Should terminate on traffic_server (not tunnel)
 tr = Test.AddTestRun("foo.com no Tunnel-test")
+tr.TimeOut = 30
 tr.StillRunningAfter = ts
 # Wait for the reload to complete by running the sni_reload_done test
 tr.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags_log.Name, 'sni.yaml finished loading', 2))
@@ -196,7 +245,6 @@ tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  ht
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.TimeOut = 30
 
 # Should tunnel to server_bar
 tr = Test.AddTestRun("bar.com  Tunnel-test")

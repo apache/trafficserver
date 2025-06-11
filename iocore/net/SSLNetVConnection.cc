@@ -414,47 +414,53 @@ SSLNetVConnection::read_raw_data()
   }
   NET_SUM_DYN_STAT(net_read_bytes_stat, r);
 
-  IpMap *pp_ipmap;
-  pp_ipmap = SSLConfigParams::proxy_protocol_ipmap;
+  if (!this->haveCheckedProxyProtocol) {
+    // The PROXY Protocol, by spec, is designed to require only the first TCP packet of bytes
+    // because it is under typical MTU. So we only need to perform the following inspection on the
+    // first packet.
+    this->haveCheckedProxyProtocol = true;
+    IpMap *pp_ipmap;
+    pp_ipmap = SSLConfigParams::proxy_protocol_ipmap;
 
-  if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
-    Debug("proxyprotocol", "proxy protocol is enabled on this port");
-    if (pp_ipmap->count() > 0) {
-      Debug("proxyprotocol", "proxy protocol has a configured allowlist of trusted IPs - checking");
+    if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
+      Debug("proxyprotocol", "proxy protocol is enabled on this port");
+      if (pp_ipmap->count() > 0) {
+        Debug("proxyprotocol", "proxy protocol has a configured allowlist of trusted IPs - checking");
 
-      // At this point, using get_remote_addr() will return the ip of the
-      // proxy source IP, not the Proxy Protocol client ip. Since we are
-      // checking the ip of the actual source of this connection, this is
-      // what we want now.
-      void *payload = nullptr;
-      if (!pp_ipmap->contains(get_remote_addr(), &payload)) {
-        Debug("proxyprotocol", "proxy protocol src IP is NOT in the configured allowlist of trusted IPs - "
-                               "closing connection");
-        r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
-        goto proxy_protocol_bypass;
+        // At this point, using get_remote_addr() will return the ip of the
+        // proxy source IP, not the Proxy Protocol client ip. Since we are
+        // checking the ip of the actual source of this connection, this is
+        // what we want now.
+        void *payload = nullptr;
+        if (!pp_ipmap->contains(get_remote_addr(), &payload)) {
+          Debug("proxyprotocol", "proxy protocol src IP is NOT in the configured allowlist of trusted IPs - "
+                                 "closing connection");
+          r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
+          goto proxy_protocol_bypass;
+        } else {
+          char new_host[INET6_ADDRSTRLEN];
+          Debug("proxyprotocol", "Source IP [%s] is in the trusted allowlist for proxy protocol",
+                ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
+        }
       } else {
-        char new_host[INET6_ADDRSTRLEN];
-        Debug("proxyprotocol", "Source IP [%s] is in the trusted allowlist for proxy protocol",
-              ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
+        Debug("proxyprotocol", "proxy protocol DOES NOT have a configured allowlist of trusted IPs but "
+                               "proxy protocol is enabled on this port - processing all connections");
       }
-    } else {
-      Debug("proxyprotocol", "proxy protocol DOES NOT have a configured allowlist of trusted IPs but "
-                             "proxy protocol is enabled on this port - processing all connections");
-    }
 
-    if (this->has_proxy_protocol(buffer, &r)) {
-      Debug("proxyprotocol", "ssl has proxy protocol header");
-      set_remote_addr(get_proxy_protocol_src_addr());
-      if (is_debug_tag_set("proxyprotocol")) {
-        IpEndpoint dst;
-        dst.sa = *(this->get_proxy_protocol_dst_addr());
-        ip_port_text_buffer ipb1;
-        ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
-        Debug("proxyprotocol", "ssl_has_proxy_v1, dest IP received [%s]", ipb1);
+      if (this->has_proxy_protocol(buffer, &r)) {
+        Debug("proxyprotocol", "ssl has proxy protocol header");
+        set_remote_addr(get_proxy_protocol_src_addr());
+        if (is_debug_tag_set("proxyprotocol")) {
+          IpEndpoint dst;
+          dst.sa = *(this->get_proxy_protocol_dst_addr());
+          ip_port_text_buffer ipb1;
+          ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
+          Debug("proxyprotocol", "ssl_has_proxy_v1, dest IP received [%s]", ipb1);
+        }
+      } else {
+        Debug("proxyprotocol", "proxy protocol was enabled, but required header was not present in the "
+                               "transaction - closing connection");
       }
-    } else {
-      Debug("proxyprotocol", "proxy protocol was enabled, but required header was not present in the "
-                             "transaction - closing connection");
     }
   } // end of Proxy Protocol processing
 
@@ -463,13 +469,13 @@ proxy_protocol_bypass:
   if (r > 0) {
     this->handShakeBuffer->fill(r);
 
-    char *start              = this->handShakeReader->start();
-    char *end                = this->handShakeReader->end();
-    this->handShakeBioStored = end - start;
+    auto const total_chain_size = this->handShakeReader->read_avail();
+    this->handShakeBioStored    = total_chain_size;
+    char *buffer_for_bio        = this->_getCoalescedHandShakeBuffer(total_chain_size);
 
     // Sets up the buffer as a read only bio target
     // Must be reset on each read
-    BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
+    BIO *rbio = BIO_new_mem_buf(buffer_for_bio, this->handShakeBioStored);
     BIO_set_mem_eof_return(rbio, -1);
     SSL_set0_rbio(this->ssl, rbio);
   } else {
@@ -497,23 +503,25 @@ SSLNetVConnection::update_rbio(bool move_to_socket)
 {
   bool retval = false;
   if (BIO_eof(SSL_get_rbio(this->ssl)) && this->handShakeReader != nullptr) {
+    Debug("ssl", "Consuming handShakeBioStored=%d bytes from the handshake reader", this->handShakeBioStored);
     this->handShakeReader->consume(this->handShakeBioStored);
     this->handShakeBioStored = 0;
     // Load up the next block if present
     if (this->handShakeReader->is_read_avail_more_than(0)) {
-      // Setup the next iobuffer block to drain
-      char *start              = this->handShakeReader->start();
-      char *end                = this->handShakeReader->end();
-      this->handShakeBioStored = end - start;
+      auto const total_chain_size = this->handShakeReader->read_avail();
+      this->handShakeBioStored    = total_chain_size;
+      char *buffer_for_bio        = this->_getCoalescedHandShakeBuffer(total_chain_size);
+      Debug("ssl", "Adding %d bytes to the ssl rbio", this->handShakeBioStored);
 
       // Sets up the buffer as a read only bio target
       // Must be reset on each read
-      BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
+      BIO *rbio = BIO_new_mem_buf(buffer_for_bio, this->handShakeBioStored);
       BIO_set_mem_eof_return(rbio, -1);
       SSL_set0_rbio(this->ssl, rbio);
       retval = true;
       // Handshake buffer is empty but we have read something, move to the socket rbio
     } else if (move_to_socket && this->handShakeHolder->is_read_avail_more_than(0)) {
+      Debug("ssl", "No other bytes in the handshake reader, moving to socket rbio");
       BIO *rbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
       BIO_set_mem_eof_return(rbio, -1);
       SSL_set0_rbio(this->ssl, rbio);
@@ -602,6 +610,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           int64_t r              = buf.writer()->write(this->handShakeHolder);
           s->vio.nbytes += r;
           s->vio.ndone += r;
+          Debug("ssl", "Copied %" PRId64 " TLS handshake bytes to read.vio", r);
 
           // Clean up the handshake buffers
           this->free_handshake_buffers();
@@ -633,7 +642,12 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       }
       // move over to the socket if we haven't already
       if (this->handShakeBuffer != nullptr) {
-        read.triggered = update_rbio(true);
+        bool const in_client_hello = sslHandshakeHookState == HANDSHAKE_HOOKS_CLIENT_HELLO;
+        // Only transfer buffers to the socket once the CLIENT_HELLO is
+        // finished. We need to keep our buffers updated until then in case we
+        // enter tunnel mode.
+        Debug("ssl", "Updating our buffers, in CLIENT_HELLO: %s", in_client_hello ? "true" : "false");
+        read.triggered = update_rbio(!in_client_hello);
       } else {
         read.triggered = 0;
       }
@@ -1238,39 +1252,38 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   Debug("ssl", "Go on with the handshake state=%d", sslHandshakeHookState);
 
   // All the pre-accept hooks have completed, proceed with the actual accept.
-  if (this->handShakeReader) {
+  bool const in_client_hello = sslHandshakeHookState == HANDSHAKE_HOOKS_CLIENT_HELLO;
+  // We only feed CLIENT_HELLO bytes into our temporary buffers. If we are past
+  // the CLIENT_HELLO, then no need to buffer.
+  if (in_client_hello && this->handShakeReader) {
     if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
-      // Is this the first read?
-      if (!this->handShakeReader->is_read_avail_more_than(0) && !this->handShakeHolder->is_read_avail_more_than(0)) {
+                                            // Is this the first read?
 #if TS_USE_TLS_ASYNC
-        if (SSLConfigParams::async_handshake_enabled) {
-          SSL_set_mode(ssl, SSL_MODE_ASYNC);
-        }
+      if (SSLConfigParams::async_handshake_enabled) {
+        SSL_set_mode(ssl, SSL_MODE_ASYNC);
+      }
 #endif
 
-        Debug("ssl", "%p first read\n", this);
-        // Read from socket to fill in the BIO buffer with the
-        // raw handshake data before calling the ssl accept calls.
-        int retval = this->read_raw_data();
-        if (retval < 0) {
-          if (retval == -EAGAIN) {
-            // No data at the moment, hang tight
-            SSLVCDebug(this, "SSL handshake: EAGAIN");
-            return SSL_HANDSHAKE_WANT_READ;
-          } else {
-            // An error, make us go away
-            SSLVCDebug(this, "SSL handshake error: read_retval=%d", retval);
-            return EVENT_ERROR;
-          }
-        } else if (retval == 0) {
-          // EOF, go away, we stopped in the handshake
-          SSLVCDebug(this, "SSL handshake error: EOF");
+      Debug("ssl", "%p reading off the socket into our buffers", this);
+      // Read from socket to fill in the BIO buffer with the
+      // raw handshake data before calling the ssl accept calls.
+      int retval = this->read_raw_data();
+      if (retval < 0) {
+        if (retval == -EAGAIN) {
+          // No data at the moment, hang tight
+          SSLVCDebug(this, "SSL handshake: EAGAIN");
+          return SSL_HANDSHAKE_WANT_READ;
+        } else {
+          // An error, make us go away
+          SSLVCDebug(this, "SSL handshake error: read_retval=%d", retval);
           return EVENT_ERROR;
         }
-      } else {
-        update_rbio(false);
+      } else if (retval == 0) {
+        // EOF, go away, we stopped in the handshake
+        SSLVCDebug(this, "SSL handshake error: EOF");
+        return EVENT_ERROR;
       }
-    } // Still data in the BIO
+    } // Still data in the BIO. Let OpenSSL consume that first before doing anything else.
   }
 
   ssl_error_t ssl_error = this->_ssl_accept();
@@ -1989,6 +2002,24 @@ NetProcessor *
 SSLNetVConnection::_getNetProcessor()
 {
   return &sslNetProcessor;
+}
+
+char *
+SSLNetVConnection::_getCoalescedHandShakeBuffer(int64_t total_chain_size)
+{
+  if (this->coalescedHandShakeBioBuffer != nullptr) {
+    ats_free(this->coalescedHandShakeBioBuffer);
+    this->coalescedHandShakeBioBuffer = nullptr;
+  }
+  char *start           = this->handShakeReader->start();
+  char *end             = this->handShakeReader->end();
+  char *coalescedBuffer = start;
+  if ((end - start) < total_chain_size) {
+    this->coalescedHandShakeBioBuffer = static_cast<char *>(ats_malloc(total_chain_size));
+    this->handShakeReader->memcpy(this->coalescedHandShakeBioBuffer, total_chain_size);
+    coalescedBuffer = this->coalescedHandShakeBioBuffer;
+  }
+  return coalescedBuffer;
 }
 
 ssl_curve_id
