@@ -738,7 +738,7 @@ enum TSRecordDataType {
 };
 
 class HttpStatusCodeList;
-using TSConfigValue = std::variant<int64_t, float, char *, HttpStatusCodeList *>;
+using TSConfigValue = std::variant<HttpStatusCodeList *>;
 
 union TSRecordData {
   int64_t rec_int;

@@ -882,14 +882,6 @@ public:
 /////////////////////////////////////////////////////////////
 inline HttpConfigParams::HttpConfigParams() {}
 
-/**
-  oride members will be deleted
-  ```
-  oride.negative_caching_list
-  oride.negative_revalidating_list
-  ```
-*/
-
 inline HttpConfigParams::~HttpConfigParams()
 {
   ats_free(proxy_hostname);
@@ -912,4 +904,7 @@ inline HttpConfigParams::~HttpConfigParams()
 
   delete connect_ports;
   delete redirect_actions_map;
+
+  delete oride.negative_caching_list;
+  delete oride.negative_revalidating_list;
 }
