@@ -356,6 +356,7 @@ OperatorSetDestination::exec(const Resources &res) const
         Dbg(pi_dbg_ctl, "Would set destination SCHEME to an empty value, skipping");
       } else {
         TSUrlSchemeSet(bufp, url_m_loc, value.c_str(), value.length());
+        const_cast<Resources &>(res).changed_url = true;
         Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() invoked with SCHEME: %s", value.c_str());
       }
       break;
