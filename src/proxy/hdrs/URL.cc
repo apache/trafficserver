@@ -1877,6 +1877,123 @@ url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query, cach
   }
 }
 
+static inline void
+url_CryptoHash_get_general_92(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, bool ignore_query,
+                              cache_generation_t generation)
+{
+  char        buffer[BUFSIZE];
+  char       *p, *e;
+  const char *strs[13], *ends[13];
+  const char *t;
+  in_port_t   port;
+  int         i, s;
+
+  strs[0] = url->m_ptr_scheme;
+  strs[1] = "://";
+  strs[2] = url->m_ptr_user;
+  strs[3] = ":";
+  strs[4] = url->m_ptr_password;
+  strs[5] = "@";
+  strs[6] = url->m_ptr_host;
+  strs[7] = "/";
+  strs[8] = url->m_ptr_path;
+
+  ends[0] = strs[0] + url->m_len_scheme;
+  ends[1] = strs[1] + 3;
+  ends[2] = strs[2] + url->m_len_user;
+  ends[3] = strs[3] + 1;
+  ends[4] = strs[4] + url->m_len_password;
+  ends[5] = strs[5] + 1;
+  ends[6] = strs[6] + url->m_len_host;
+  ends[7] = strs[7] + 1;
+  ends[8] = strs[8] + url->m_len_path;
+
+  strs[9]  = ";";
+  strs[10] = url->m_ptr_params;
+  strs[11] = "?";
+
+  // Special case for the query paramters, allowing us to ignore them if requested
+  if (!ignore_query) {
+    strs[12] = url->m_ptr_query;
+    ends[12] = strs[12] + url->m_len_query;
+  } else {
+    strs[12] = nullptr;
+    ends[12] = nullptr;
+  }
+
+  ends[9]  = strs[9] + 1;
+  ends[10] = strs[10] + url->m_len_params;
+  ends[11] = strs[11] + 1;
+
+  p = buffer;
+  e = buffer + BUFSIZE;
+
+  for (i = 0; i < 13; i++) {
+    if (strs[i]) {
+      t = strs[i];
+      s = 0;
+
+      while (t < ends[i]) {
+        if ((i == 0) || (i == 6)) { // scheme and host
+          unescape_str_tolower(p, e, t, ends[i], s);
+        } else if (i == 8 || i == 10 || i == 12) { // path, params, query
+          // Don't unescape the parts of the URI that are processed by the
+          // origin since it may behave differently based upon whether these are
+          // escaped or not. Therefore differently encoded strings should be
+          // cached separately via differentiated hashes.
+          int path_len = ends[i] - t;
+          int min_len  = std::min(path_len, static_cast<int>(e - p));
+          memcpy(p, t, min_len);
+          p += min_len;
+          t += min_len;
+        } else {
+          unescape_str(p, e, t, ends[i], s);
+        }
+
+        if (p == e) {
+          ctx.update(buffer, BUFSIZE);
+          p = buffer;
+        }
+      }
+    }
+  }
+
+  if (p != buffer) {
+    ctx.update(buffer, p - buffer);
+  }
+  int buffer_len = static_cast<int>(p - buffer);
+  port           = url_canonicalize_port(url->m_url_type, url->m_port);
+
+  ctx.update(&port, sizeof(port));
+  if (generation != -1) {
+    ctx.update(&generation, sizeof(generation));
+    Dbg(dbg_ctl_url_cachekey, "Final url string for cache hash key %.*s%d%d", buffer_len, buffer, port,
+        static_cast<int>(generation));
+  } else {
+    Dbg(dbg_ctl_url_cachekey, "Final url string for cache hash key %.*s%d", buffer_len, buffer, port);
+  }
+  ctx.finalize(hash);
+}
+
+void
+url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query, cache_generation_t generation)
+{
+  URLHashContext ctx;
+  if ((url_hash_method != 0) && (url->m_url_type == URL_TYPE_HTTP) &&
+      ((url->m_len_user + url->m_len_password + url->m_len_params + (ignore_query ? 0 : url->m_len_query)) == 0) &&
+      (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
+      (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
+    url_CryptoHash_get_fast(url, ctx, hash, generation);
+#ifdef DEBUG
+    CryptoHash hash_general;
+    url_CryptoHash_get_general_92(url, ctx, hash_general, ignore_query, generation);
+    ink_assert(*hash == hash_general);
+#endif
+  } else {
+    url_CryptoHash_get_general_92(url, ctx, *hash, ignore_query, generation);
+  }
+}
+
 #undef BUFSIZE
 
 /*-------------------------------------------------------------------------

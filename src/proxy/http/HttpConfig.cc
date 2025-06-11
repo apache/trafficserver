@@ -591,6 +591,7 @@ register_stat_callbacks()
     Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_800M");
   http_rsb.origin_server_speed_bytes_per_sec_1G =
     Metrics::Counter::createPtr("proxy.process.http.origin_server_speed_bytes_per_sec_1G");
+  http_rsb.cache_compat_key_reads = Metrics::Counter::createPtr("proxy.process.http.cache.compat_key_reads");
 
   Metrics::Derived::derive({
     // Total bytes of client request body + headers
@@ -1108,7 +1109,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
   HttpEstablishStaticConfigStringAlloc(c.redirect_actions_string, "proxy.config.http.redirect.actions");
   HttpEstablishStaticConfigByte(c.http_host_sni_policy, "proxy.config.http.host_sni_policy");
-
+  HttpEstablishStaticConfigByte(c.cache_try_compat_key_read, "proxy.config.http.cache.try_compat_key_read");
   HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_sni_policy, "proxy.config.ssl.client.sni_policy");
   HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_alpn_protocols, "proxy.config.ssl.client.alpn_protocols");
   HttpEstablishStaticConfigByte(c.scheme_proto_mismatch_policy, "proxy.config.ssl.client.scheme_proto_mismatch_policy");
@@ -1408,6 +1409,8 @@ HttpConfig::reconfigure()
 
   params->oride.plugin_vc_default_buffer_index      = m_master.oride.plugin_vc_default_buffer_index;
   params->oride.plugin_vc_default_buffer_water_mark = m_master.oride.plugin_vc_default_buffer_water_mark;
+
+  params->cache_try_compat_key_read = m_master.cache_try_compat_key_read;
 
   m_id = configProcessor.set(m_id, params);
 }

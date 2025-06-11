@@ -470,6 +470,11 @@ struct Cache {
   static void generate_key(CryptoHash *hash, CacheURL *url);
   static void generate_key(HttpCacheKey *hash, CacheURL *url, bool ignore_query = false, cache_generation_t generation = -1);
 
+  // These generate functions are used for backward compatibility with caches created with ATS9.2
+  // see `proxy.config.http.cache.try_compat_key_read`
+  static void generate_key92(CryptoHash *hash, CacheURL *url);
+  static void generate_key92(HttpCacheKey *hash, CacheURL *url, bool ignore_query = false, cache_generation_t generation = -1);
+
   void vol_initialized(bool result);
 
   int open_done();
@@ -493,6 +498,19 @@ Cache::generate_key(HttpCacheKey *key, CacheURL *url, bool ignore_query, cache_g
 {
   key->hostname = url->host_get(&key->hostlen);
   url->hash_get(&key->hash, ignore_query, generation);
+}
+
+inline void
+Cache::generate_key92(CryptoHash *hash, CacheURL *url)
+{
+  url->hash_get92(hash);
+}
+
+inline void
+Cache::generate_key92(HttpCacheKey *key, CacheURL *url, bool ignore_query, cache_generation_t generation)
+{
+  key->hostname = url->host_get(&key->hostlen);
+  url->hash_get92(&key->hash, ignore_query, generation);
 }
 
 inline unsigned int
