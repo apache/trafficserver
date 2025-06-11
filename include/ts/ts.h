@@ -2583,6 +2583,9 @@ TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey con
 
 TSReturnCode TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
+TSReturnCode TSHttpTxnConfigParse(TSConfigValue &dst, TSOverridableConfigKey key, const char *value, size_t length);
+TSReturnCode TSHttpTxnConfigSet(TSHttpTxn txnp, TSOverridableConfigKey key, const TSConfigValue &src);
+
 /**
    This is a generalization of the old TSHttpTxnFollowRedirect(), but gives finer
    control over the behavior. Instead of using the Location: header for the new

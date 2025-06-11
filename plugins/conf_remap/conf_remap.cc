@@ -16,6 +16,7 @@
   limitations under the License.
 */
 
+#include "ts/apidefs.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "tscore/ink_defs.h"
@@ -46,6 +47,7 @@ struct RemapConfigs {
     TSRecordDataType       _type;
     TSRecordData           _data;
     int                    _data_len; // Used when data is a string
+    TSConfigValue          _value;
   };
 
   RemapConfigs() { memset(_items, 0, sizeof(_items)); };
@@ -118,6 +120,15 @@ RemapConfigs::parse_inline(const char *arg)
   case TS_RECORDDATATYPE_FLOAT:
     _items[_current]._data.rec_float = strtof(value.c_str(), nullptr);
     break;
+  case TS_RECORDDATATYPE_VARIANT: {
+    TSReturnCode res = TSHttpTxnConfigParse(_items[_current]._value, name, value.c_str(), value.length());
+    if (res == TS_ERROR) {
+      TSError("[%s] key %s: failed to parse value", PLUGIN_NAME, key.c_str());
+      return false;
+    }
+
+    break;
+  }
   default:
     TSError("[%s] Configuration variable '%s' is of an unsupported type", PLUGIN_NAME, key.c_str());
     return false;
@@ -198,6 +209,15 @@ scalar_node_handler(const TSYAMLRecCfgFieldData *cfg, void *data)
     case TS_RECORDDATATYPE_FLOAT:
       item->_data.rec_float = value.as<float>();
       break;
+    case TS_RECORDDATATYPE_VARIANT: {
+      std::string  str = value.as<std::string>();
+      TSReturnCode res = TSHttpTxnConfigParse(item->_value, name, TSstrdup(str.c_str()), str.size());
+      if (res == TS_ERROR) {
+        TSError("[%s] field %s: failed to parse value", PLUGIN_NAME, cfg->field_name);
+        return TS_ERROR;
+      }
+      break;
+    }
     default:
       TSError("[%s] field %s: type(%d) not support (unheard of)", PLUGIN_NAME, cfg->field_name, expected_type);
       return TS_ERROR;
@@ -349,6 +369,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
       case TS_RECORDDATATYPE_FLOAT:
         TSHttpTxnConfigFloatSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
         Dbg(dbg_ctl, "Setting config id %d to %f", conf->_items[ix]._name, conf->_items[ix]._data.rec_float);
+        break;
+      case TS_RECORDDATATYPE_VARIANT:
+        TSHttpTxnConfigSet(txnp, conf->_items[ix]._name, conf->_items[ix]._value);
+        // Dbg(dbg_ctl, "Setting config id %d to %p", conf->_items[ix]._name, conf->_items[ix]._data.rec_any);
         break;
       default:
         break; // Error ?

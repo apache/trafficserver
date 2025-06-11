@@ -67,22 +67,18 @@ class HttpStatusCodeList
 public:
   static const MgmtConverter Conv;
 
-  char *conf_value{nullptr};
+  HttpStatusCodeList(const char *value, size_t length);
+  ~HttpStatusCodeList();
 
   bool
   contains(int code) const
   {
-    return _data[code];
-  }
-
-  void
-  set(const char *src, int length = -1)
-  {
-    conf_value = ats_strndup(src, length);
-    Conv.store_string(&_data, conf_value);
+    return _data.test(code);
   }
 
 private:
+  char *_conf_value = nullptr;
+
   // TODO: change container to std::unordered_set or something
   HttpStatusBitset _data;
 };
@@ -726,10 +722,10 @@ struct OverridableHttpConfigParams {
   HostResData host_res_data;
 
   // bitset to hold the status codes that will BE cached with negative caching enabled
-  HttpStatusCodeList negative_caching_list;
+  HttpStatusCodeList *negative_caching_list;
 
   // bitset to hold the status codes that will used by nagative revalidating enabled
-  HttpStatusCodeList negative_revalidating_list;
+  HttpStatusCodeList *negative_revalidating_list;
 };
 
 /////////////////////////////////////////////////////////////
@@ -886,6 +882,14 @@ public:
 /////////////////////////////////////////////////////////////
 inline HttpConfigParams::HttpConfigParams() {}
 
+/**
+  oride members will be deleted
+  ```
+  oride.negative_caching_list
+  oride.negative_revalidating_list
+  ```
+*/
+
 inline HttpConfigParams::~HttpConfigParams()
 {
   ats_free(proxy_hostname);
@@ -905,8 +909,6 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.ssl_client_sni_policy);
   ats_free(oride.ssl_client_alpn_protocols);
   ats_free(oride.host_res_data.conf_value);
-  ats_free(oride.negative_caching_list.conf_value);
-  ats_free(oride.negative_revalidating_list.conf_value);
 
   delete connect_ports;
   delete redirect_actions_map;

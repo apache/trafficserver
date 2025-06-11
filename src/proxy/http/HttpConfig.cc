@@ -24,6 +24,7 @@
 
 #include <deque>
 
+#include "records/RecDefs.h"
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
 #include "tscore/Tokenizer.h"
@@ -635,13 +636,13 @@ register_stat_callbacks()
 }
 
 /**
-  Parse list of HTTP status code and return HttpStatusBitset
+  Parse list of HTTP status code and return new pointer to HttpStatusBitset.
   - e.g. "204 305 403 404 414 500 501 502 503 504"
  */
-static HttpStatusBitset
-parse_http_status_code_list(swoc::TextView status_list)
+static void
+parse_http_status_code_list(HttpStatusBitset &set, swoc::TextView status_list)
 {
-  HttpStatusBitset set;
+  status_list = status_list.trim('"').trim('\'');
 
   auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
 
@@ -657,21 +658,44 @@ parse_http_status_code_list(swoc::TextView status_list)
       set[n] = true;
     }
   }
+}
 
-  return set;
+/**
+  Method of loading the HttpStatusCodeList from RECD_STRING
+ */
+void
+load_http_status_code_list_var(RecRecord const *r, void *cookie)
+{
+  HttpStatusCodeList **list = static_cast<HttpStatusCodeList **>(cookie);
+
+  if (r->data_type == RECD_STRING && r->data.rec_string) {
+    *list = new HttpStatusCodeList(r->data.rec_string, strlen(r->data.rec_string));
+  }
+}
+
+HttpStatusCodeList::HttpStatusCodeList(const char *value, size_t length)
+{
+  this->_conf_value = ats_strndup(value, length);
+  parse_http_status_code_list(this->_data, this->_conf_value);
+}
+
+HttpStatusCodeList::~HttpStatusCodeList()
+{
+  ats_free(this->_conf_value);
 }
 
 // clang-format off
 // TODO: find good clang-format setting
-const MgmtConverter HttpStatusCodeList::Conv{
+const MgmtConverter HttpStatusCodeList::Conv {
   [](const void *data) -> std::string_view {
     const HttpStatusCodeList *list = static_cast<const HttpStatusCodeList *>(data);
-    return list->conf_value;
+    return list->_conf_value;
   },
   [](void *data, std::string_view src) -> void {
     HttpStatusCodeList *list = static_cast<HttpStatusCodeList *>(data);
-    list->_data               = parse_http_status_code_list(src);
-  }};
+    new (list) HttpStatusCodeList(src.data(), src.length());
+  }
+};
 // clang-format on
 
 /** Template for creating conversions and initialization for @c std::chrono based configuration variables.
@@ -1005,11 +1029,14 @@ HttpConfig::startup()
   // Negative caching and revalidation
   HttpEstablishStaticConfigByte(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
-  HttpEstablishStaticConfigStringAlloc(c.oride.negative_caching_list.conf_value, "proxy.config.http.negative_caching_list");
+  RecRegisterConfigUpdateCb("proxy.config.http.negative_caching_list", http_config_cb, nullptr);
+  RecLookupRecord("proxy.config.http.negative_caching_list", &load_http_status_code_list_var, &c.oride.negative_caching_list, true);
+
   HttpEstablishStaticConfigByte(c.oride.negative_revalidating_enabled, "proxy.config.http.negative_revalidating_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_revalidating_lifetime, "proxy.config.http.negative_revalidating_lifetime");
-  HttpEstablishStaticConfigStringAlloc(c.oride.negative_revalidating_list.conf_value,
-                                       "proxy.config.http.negative_revalidating_list");
+  RecRegisterConfigUpdateCb("proxy.config.http.negative_revalidating_list", http_config_cb, nullptr);
+  RecLookupRecord("proxy.config.http.negative_revalidating_list", &load_http_status_code_list_var,
+                  &c.oride.negative_revalidating_list, true);
 
   // Buffer size and watermark
   HttpEstablishStaticConfigLongLong(c.oride.default_buffer_size_index, "proxy.config.http.default_buffer_size");
@@ -1329,8 +1356,8 @@ HttpConfig::reconfigure()
   params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
   params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
 
-  params->oride.negative_caching_list.set(m_master.oride.negative_caching_list.conf_value);
-  params->oride.negative_revalidating_list.set(m_master.oride.negative_revalidating_list.conf_value);
+  params->oride.negative_caching_list      = m_master.oride.negative_caching_list;
+  params->oride.negative_revalidating_list = m_master.oride.negative_revalidating_list;
 
   params->oride.host_res_data            = m_master.oride.host_res_data;
   params->oride.host_res_data.conf_value = ats_strdup(m_master.oride.host_res_data.conf_value);

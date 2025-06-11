@@ -22,6 +22,7 @@
  */
 
 #include <atomic>
+#include <cstring>
 #include <tuple>
 #include <unordered_map>
 #include <string_view>
@@ -30,6 +31,7 @@
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/UDPNet.h"
+#include "ts/apidefs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/Encoding.h"
@@ -7677,19 +7679,10 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     /* noop */
     break;
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
-    if (value && length > 0) {
-      OverridableHttpConfigParams *target      = &s->t_state.my_txn_conf();
-      target->negative_caching_list.conf_value = const_cast<char *>(value);
-      return _eval_conv(target, conf, value, length);
-    }
-    break;
+    [[fallthrough]];
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
-    if (value && length > 0) {
-      OverridableHttpConfigParams *target           = &s->t_state.my_txn_conf();
-      target->negative_revalidating_list.conf_value = const_cast<char *>(value);
-      return _eval_conv(target, conf, value, length);
-    }
-    break;
+    // Use TSHttpTxnConfigParse and TSHttpTxnConfigSet
+    return TS_ERROR;
   case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
     if (value && length > 0) {
       s->t_state.my_txn_conf().host_res_data.conf_value = const_cast<char *>(value);
@@ -7762,6 +7755,43 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   }
 
   return TS_ERROR;
+}
+
+TSReturnCode
+TSHttpTxnConfigParse(TSConfigValue &dst, TSOverridableConfigKey key, const char *value, size_t length)
+{
+  switch (key) {
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
+    [[fallthrough]];
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST: {
+    dst = new HttpStatusCodeList(value, length);
+    break;
+  }
+  default:
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnConfigSet(TSHttpTxn txnp, TSOverridableConfigKey key, const TSConfigValue &src)
+{
+  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
+  s->t_state.setup_per_txn_configs();
+
+  switch (key) {
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
+    s->t_state.my_txn_conf().negative_caching_list = std::get<HttpStatusCodeList *>(src);
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
+    s->t_state.my_txn_conf().negative_revalidating_list = std::get<HttpStatusCodeList *>(src);
+    break;
+  default:
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
 }
 
 TSReturnCode
