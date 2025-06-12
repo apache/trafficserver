@@ -404,11 +404,19 @@ elevating_fopen(const char *path, const char *mode)
 int
 elevating_chmod(const char *path, int perm)
 {
-  int ret = chmod(path, perm);
-  if (ret != 0 && (EPERM == errno || EACCES == errno)) {
-    ElevateAccess access(ElevateAccess::OWNER_PRIVILEGE);
-    return chmod(path, perm);
+  int fd = open(path, O_WRONLY);
+  if (fd < 0) {
+    if (EPERM == errno || EACCES == errno) {
+      ElevateAccess access(ElevateAccess::OWNER_PRIVILEGE);
+      fd = open(path, O_WRONLY);
+    }
+    if (fd < 0) {
+      return -1; // Failed to open file
+    }
   }
+
+  int ret = fchmod(fd, perm);
+  close(fd);
   return ret;
 }
 
