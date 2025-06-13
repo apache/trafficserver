@@ -199,6 +199,8 @@ extern void ats_force_order_by_family(sa_family_t family, HostResPreferenceOrder
 
 // Domain resolution priority for origin.
 struct HostResData {
+  ~HostResData() { ats_free(conf_value); }
+
   HostResPreferenceOrder order;
   // keep the configuration value to satisfy the API(TSHttpTxnConfigStringSet)
   char *conf_value{nullptr};

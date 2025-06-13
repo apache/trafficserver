@@ -45,6 +45,7 @@
 #include "swoc/swoc_ip.h"
 #include "swoc/BufferWriter.h"
 
+#include "tscore/MgmtDefs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_resolver.h"
@@ -60,6 +61,27 @@ using ts::Metrics;
 
 static const unsigned HTTP_STATUS_NUMBER = 600;
 using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
+
+class HttpStatusCodeList
+{
+public:
+  static const MgmtConverter Conv;
+
+  HttpStatusCodeList(const char *value, size_t length);
+  ~HttpStatusCodeList() { ats_free(this->_conf_value); };
+
+  bool
+  contains(int code) const
+  {
+    return _data.test(code);
+  }
+
+private:
+  char *_conf_value = nullptr;
+
+  // TODO: change container to std::unordered_set or something
+  HttpStatusBitset _data;
+};
 
 struct HttpStatsBlock {
   // Need two stats for these for counts and times
@@ -394,6 +416,20 @@ OptionBitSet optStrToBitset(std::string_view optConfigStr, swoc::FixedBufferWrit
 
 } // namespace HttpForwarded
 
+// TODO: make a template
+class HttpForwardedConf
+{
+public:
+  HttpForwardedConf(std::string_view value, swoc::FixedBufferWriter &error);
+  ~HttpForwardedConf();
+
+  const HttpForwarded::OptionBitSet &data();
+
+private:
+  char                       *_conf_value = nullptr;
+  HttpForwarded::OptionBitSet _data;
+};
+
 namespace RedirectEnabled
 {
 enum class AddressClass {
@@ -438,8 +474,6 @@ static std::map<std::string, Action> action_map = {
 // and State (txn) structure. It allows for certain configs
 // to be overridable per transaction more easily.
 struct OverridableHttpConfigParams {
-  OverridableHttpConfigParams() : insert_forwarded(HttpForwarded::OptionBitSet()) {}
-
   // A simple rules here:
   //   * Place all MgmtByte configs before all other configs
   MgmtByte maintain_pristine_host_hdr = 1;
@@ -493,8 +527,8 @@ struct OverridableHttpConfigParams {
   ///////////////
   // Forwarded //
   ///////////////
-  HttpForwarded::OptionBitSet insert_forwarded;
-  MgmtInt                     proxy_protocol_out = -1;
+  HttpForwardedConf *insert_forwarded   = nullptr;
+  MgmtInt            proxy_protocol_out = -1;
 
   //////////////////////
   //  Version Hell    //
@@ -646,7 +680,7 @@ struct OverridableHttpConfigParams {
   MgmtByte enable_parent_timeout_markdowns = 0;
   MgmtByte disable_parent_markdowns        = 0;
 
-  ts_seconds down_server_timeout{300};
+  TSMgmtSeconds down_server_timeout{300};
 
   // open read failure retries.
   MgmtInt max_cache_open_read_retries = -1;
@@ -698,7 +732,13 @@ struct OverridableHttpConfigParams {
   char *ssl_client_alpn_protocols       = nullptr;
 
   // Host Resolution order
-  HostResData host_res_data;
+  HostResData *host_res_data;
+
+  // bitset to hold the status codes that will BE cached with negative caching enabled
+  HttpStatusCodeList *negative_caching_list;
+
+  // bitset to hold the status codes that will used by nagative revalidating enabled
+  HttpStatusCodeList *negative_revalidating_list;
 };
 
 /////////////////////////////////////////////////////////////
@@ -796,12 +836,6 @@ public:
 
   ConnectionTracker::GlobalConfig global_connection_tracker_config;
 
-  // bitset to hold the status codes that will BE cached with negative caching enabled
-  HttpStatusBitset negative_caching_list;
-
-  // bitset to hold the status codes that will used by nagative revalidating enabled
-  HttpStatusBitset negative_revalidating_list;
-
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
@@ -881,8 +915,12 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(redirect_actions_string);
   ats_free(oride.ssl_client_sni_policy);
   ats_free(oride.ssl_client_alpn_protocols);
-  ats_free(oride.host_res_data.conf_value);
 
   delete connect_ports;
   delete redirect_actions_map;
+
+  delete oride.host_res_data;
+  delete oride.insert_forwarded;
+  delete oride.negative_caching_list;
+  delete oride.negative_revalidating_list;
 }

@@ -187,3 +187,26 @@ optStrToBitset(std::string_view optConfigStr, swoc::FixedBufferWriter &error)
 } // end optStrToBitset()
 
 } // end namespace HttpForwarded
+
+////
+// HttpForwardedConf
+//
+HttpForwardedConf::HttpForwardedConf(std::string_view value, swoc::FixedBufferWriter &error)
+{
+  this->_conf_value = ats_strndup(value.data(), value.length());
+  this->_data       = HttpForwarded::optStrToBitset(value, error);
+  if (error.size()) {
+    Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
+  }
+}
+
+HttpForwardedConf::~HttpForwardedConf()
+{
+  ats_free(this->_conf_value);
+}
+
+const HttpForwarded::OptionBitSet &
+HttpForwardedConf::data()
+{
+  return this->_data;
+}

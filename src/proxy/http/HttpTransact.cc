@@ -580,8 +580,7 @@ is_negative_caching_appropriate(HttpTransact::State *s)
   }
 
   auto status = static_cast<int>(s->hdr_info.server_response.status_get());
-  auto params = s->http_config_param;
-  if (params->negative_caching_list[status]) {
+  if (s->txn_conf->negative_caching_list->contains(status)) {
     TxnDbg(dbg_ctl_http_trans, "%d is eligible for negative caching", status);
     return true;
   } else {
@@ -3762,7 +3761,7 @@ HttpTransact::handle_response_from_server(State *s)
         // Force host resolution to have the same family as the client.
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
-        ats_force_order_by_family(s->current.server->dst_addr.family(), s->my_txn_conf().host_res_data.order);
+        ats_force_order_by_family(s->current.server->dst_addr.family(), s->my_txn_conf().host_res_data->order);
         return CallOSDNSLookup(s);
       } else {
         if ((s->txn_conf->connect_attempts_rr_retries > 0) &&
@@ -4318,7 +4317,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
        negative_revalidating_lifetime. (negative revalidating)
      */
     if (s->txn_conf->negative_revalidating_enabled &&
-        s->http_config_param->negative_revalidating_list[static_cast<int>(server_response_code)] &&
+        s->txn_conf->negative_revalidating_list->contains(static_cast<int>(server_response_code)) &&
         s->cache_info.action == CacheAction_t::UPDATE && is_stale_cache_response_returnable(s)) {
       HTTPStatus cached_response_code = s->cache_info.object_read->response_get()->status_get();
       if (!(cached_response_code == HTTPStatus::INTERNAL_SERVER_ERROR || cached_response_code == HTTPStatus::GATEWAY_TIMEOUT ||
