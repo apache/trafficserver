@@ -667,7 +667,7 @@ struct OverridableHttpConfigParams {
   MgmtByte enable_parent_timeout_markdowns = 0;
   MgmtByte disable_parent_markdowns        = 0;
 
-  ts_seconds down_server_timeout{300};
+  TSMgmtSeconds down_server_timeout{300};
 
   // open read failure retries.
   MgmtInt max_cache_open_read_retries = -1;

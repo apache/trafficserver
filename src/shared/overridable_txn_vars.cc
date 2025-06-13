@@ -61,7 +61,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.http.doc_in_cache_skip_dns",                        {TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS, TS_RECORDDATATYPE_INT}            },
     {"proxy.config.http.forward_connect_method",                       {TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD, TS_RECORDDATATYPE_INT}           },
     {"proxy.config.http.request_buffer_enabled",                       {TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED, TS_RECORDDATATYPE_INT}           },
-    {"proxy.config.http.down_server.cache_time",                       {TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME, TS_RECORDDATATYPE_INT}           },
+    {"proxy.config.http.down_server.cache_time",                       {TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME, TS_RECORDDATATYPE_VARIANT}       },
     {"proxy.config.http.proxy_protocol_out",                           {TS_CONFIG_HTTP_PROXY_PROTOCOL_OUT, TS_RECORDDATATYPE_INT}               },
     {"proxy.config.http.insert_age_in_response",                       {TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, TS_RECORDDATATYPE_INT}           },
     {"proxy.config.url_remap.pristine_host_hdr",                       {TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR, TS_RECORDDATATYPE_INT}           },

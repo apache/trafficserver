@@ -990,9 +990,16 @@ using TSMgmtInt     = int64_t;
 using TSMgmtCounter = int64_t;
 using TSMgmtFloat   = float;
 using TSMgmtString  = char *;
+using TSMgmtSeconds = std::chrono::seconds;
 
 class HttpStatusCodeList;
-using TSConfigValue = std::variant<TSMgmtInt, TSMgmtFloat, std::string_view, HttpStatusCodeList *>;
+/**
+  TODO:
+  HttpForwarded::OptionBitSet
+  ConnectionTracker::TxnConfig
+  HostResData
+ */
+using TSConfigValue = std::variant<TSMgmtInt, TSMgmtFloat, std::string_view, HttpStatusCodeList *, TSMgmtSeconds>;
 
 /// The source of a management value.
 enum TSMgmtSource {

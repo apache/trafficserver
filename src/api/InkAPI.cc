@@ -32,6 +32,7 @@
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/UDPNet.h"
 #include "ts/apidefs.h"
+#include "tscore/MgmtDefs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/Encoding.h"
@@ -7767,6 +7768,12 @@ TSHttpTxnConfigParse(TSConfigValue &dst, TSOverridableConfigKey key, const char 
     dst = new HttpStatusCodeList(value, length);
     break;
   }
+  case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME: {
+    // TODO: HttpDownServerCacheTimeConv should have store_string
+    MgmtConverter conv = HttpDownServerCacheTimeConv;
+    conv.store_int(&dst, strtoll(value, nullptr, 10));
+    break;
+  }
   default:
     return TS_ERROR;
   }
@@ -7774,8 +7781,10 @@ TSHttpTxnConfigParse(TSConfigValue &dst, TSOverridableConfigKey key, const char 
   return TS_SUCCESS;
 }
 
+namespace
+{
 TSReturnCode
-_TxnConfigHttpStatusCodeList(TSHttpTxn txnp, TSOverridableConfigKey key, HttpStatusCodeList *list)
+txn_config_http_status_code_list_set(TSHttpTxn txnp, TSOverridableConfigKey key, HttpStatusCodeList *list)
 {
   HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
   s->t_state.setup_per_txn_configs();
@@ -7795,13 +7804,32 @@ _TxnConfigHttpStatusCodeList(TSHttpTxn txnp, TSOverridableConfigKey key, HttpSta
 }
 
 TSReturnCode
+txn_config_seconds_set(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtSeconds time)
+{
+  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
+  s->t_state.setup_per_txn_configs();
+
+  switch (key) {
+  case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
+    s->t_state.my_txn_conf().down_server_timeout = time;
+    break;
+  default:
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+} // namespace
+
+TSReturnCode
 TSHttpTxnConfigSet(TSHttpTxn txnp, TSOverridableConfigKey key, const TSConfigValue &src)
 {
   const auto visitor = swoc::meta::vary{
     [&](TSMgmtInt v) { return TSHttpTxnConfigIntSet(txnp, key, v); },
     [&](TSMgmtFloat v) { return TSHttpTxnConfigFloatSet(txnp, key, v); },
     [&](std::string_view v) { return TSHttpTxnConfigStringSet(txnp, key, v.data(), v.length()); },
-    [&](HttpStatusCodeList *v) { return _TxnConfigHttpStatusCodeList(txnp, key, v); },
+    [&](TSMgmtSeconds v) { return txn_config_seconds_set(txnp, key, v); },
+    [&](HttpStatusCodeList *v) { return txn_config_http_status_code_list_set(txnp, key, v); },
   };
 
   return std::visit(visitor, src);
