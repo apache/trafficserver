@@ -992,11 +992,6 @@ using TSMgmtFloat   = float;
 using TSMgmtString  = char *;
 using TSMgmtSeconds = std::chrono::seconds;
 
-/**
-  TODO:
-  HttpForwarded::OptionBitSet
-  ConnectionTracker::TxnConfig
- */
 class HttpStatusCodeList;
 struct HostResData;
 class HttpForwardedConf;
@@ -1009,7 +1004,8 @@ using TSConfigValue = std::variant<
                         std::string_view,
                         HttpStatusCodeList *,
                         HostResData *,
-                        HttpForwardedConf *>;
+                        HttpForwardedConf *,
+                        TSOutboundConnectionMatchType>;
 // clang-format on
 
 /// The source of a management value.

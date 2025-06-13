@@ -7749,6 +7749,7 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   return TS_ERROR;
 }
 
+// TODO: change arg to std::string_view
 TSReturnCode
 TSHttpTxnConfigParse(TSConfigValue &dst, TSOverridableConfigKey key, const char *value, size_t length)
 {
@@ -7781,7 +7782,11 @@ TSHttpTxnConfigParse(TSConfigValue &dst, TSOverridableConfigKey key, const char 
     }
     break;
   }
-
+  case TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH: {
+    MgmtConverter conv = ConnectionTracker::SERVER_MATCH_CONV;
+    conv.store_string(&dst, {value, length});
+    break;
+  }
   default:
     return TS_ERROR;
   }
@@ -7862,6 +7867,23 @@ txn_config_http_forwarded_set(TSHttpTxn txnp, TSOverridableConfigKey key, HttpFo
   return TS_SUCCESS;
 }
 
+TSReturnCode
+txn_outbout_connection_match_type_set(TSHttpTxn txnp, TSOverridableConfigKey key, TSOutboundConnectionMatchType data)
+{
+  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
+  s->t_state.setup_per_txn_configs();
+
+  switch (key) {
+  case TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH:
+    s->t_state.my_txn_conf().connection_tracker_config.server_match = static_cast<ConnectionTracker::MatchType>(data);
+    break;
+  default:
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
 } // namespace
 
 TSReturnCode
@@ -7875,6 +7897,7 @@ TSHttpTxnConfigSet(TSHttpTxn txnp, TSOverridableConfigKey key, const TSConfigVal
     [&](HttpStatusCodeList *v) { return txn_config_http_status_code_list_set(txnp, key, v); },
     [&](HostResData *v) { return txn_config_host_res_data_set(txnp, key, v); },
     [&](HttpForwardedConf *v) { return txn_config_http_forwarded_set(txnp, key, v); },
+    [&](TSOutboundConnectionMatchType v) { return txn_outbout_connection_match_type_set(txnp, key, v); },
   };
 
   return std::visit(visitor, src);
