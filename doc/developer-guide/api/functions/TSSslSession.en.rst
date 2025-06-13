@@ -38,7 +38,7 @@ Description
 ===========
 
 These functions work with the internal ATS session cache.  These functions are only useful if the ATS internal
-session cache is enabled by setting :ts:cv:`proxy.config.ssl.session_cache.enabled` has been set to 2.
+session cache is enabled by setting :ts:cv:`proxy.config.ssl.session_cache.value` has been set to 2.
 
 These functions tend to be used with the :enumerator:`TS_SSL_SESSION_HOOK`.
 

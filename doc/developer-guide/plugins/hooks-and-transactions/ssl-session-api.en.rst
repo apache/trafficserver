@@ -31,7 +31,7 @@ to enable the plugin to update the session cache based on outside information, e
 
 This hook is invoked when a change has been made to the ATS session cache or a session has been accessed
 from ATS via OpenSSL.  These hooks are only activated if the ATS implementation of the session cache is in
-use.  This means :ts:cv:`proxy.config.ssl.session_cache.enabled` has been set to 2.
+use.  This means :ts:cv:`proxy.config.ssl.session_cache.value` has been set to 2.
 
 The hook callback has the following signature
 
