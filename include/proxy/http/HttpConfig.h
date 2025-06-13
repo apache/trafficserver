@@ -526,8 +526,8 @@ struct OverridableHttpConfigParams {
   ///////////////
   // Forwarded //
   ///////////////
-  HttpForwardedConf          *insert_forwarded   = nullptr;
-  MgmtInt                     proxy_protocol_out = -1;
+  HttpForwardedConf *insert_forwarded   = nullptr;
+  MgmtInt            proxy_protocol_out = -1;
 
   //////////////////////
   //  Version Hell    //
