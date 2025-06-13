@@ -402,6 +402,20 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
     bool client_enabled_flag = true;
 
     ink_release_assert(ats_is_ip(&s->client_info.src_addr));
+    const IpEndpoint *src_addr   = nullptr;
+    const IpEndpoint *local_addr = nullptr;
+    const ProxyProtocol &pp_info = s->state_machine->get_ua_txn()->get_netvc()->get_proxy_protocol_info();
+    for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
+      if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
+        src_addr   = &s->client_info.src_addr;
+        local_addr = &s->client_info.dst_addr;
+        break;
+      } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] && pp_info.version != ProxyProtocolVersion::UNDEFINED) {
+        src_addr   = &pp_info.src_addr;
+        local_addr = &pp_info.dst_addr;
+        break;
+      }
+    }
 
     for (acl_filter_rule *rp = map->filter; rp && client_enabled_flag; rp = rp->next) {
       bool match = true;
@@ -421,7 +435,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
       if (match && rp->src_ip_valid) {
         match = false;
         for (int j = 0; j < rp->src_ip_cnt && !match; j++) {
-          bool in_range = rp->src_ip_array[j].contains(s->client_info.src_addr);
+          bool in_range = rp->src_ip_array[j].contains(*src_addr);
           if (rp->src_ip_array[j].invert) {
             if (!in_range) {
               match = true;
@@ -438,16 +452,14 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         Debug("url_rewrite", "match was true and we have specified a in_ip field");
         match = false;
         for (int j = 0; j < rp->in_ip_cnt && !match; j++) {
-          IpEndpoint incoming_addr;
-          incoming_addr.assign(s->state_machine->ua_txn->get_netvc()->get_local_addr());
           if (is_debug_tag_set("url_rewrite")) {
             char buf1[128], buf2[128], buf3[128];
-            ats_ip_ntop(incoming_addr, buf1, sizeof(buf1));
+            ats_ip_ntop(local_addr, buf1, sizeof(buf1));
             rp->in_ip_array[j].start.toString(buf2, sizeof(buf2));
             rp->in_ip_array[j].end.toString(buf3, sizeof(buf3));
             Debug("url_rewrite", "Trying to match incoming address %s in range %s - %s.", buf1, buf2, buf3);
           }
-          bool in_range = rp->in_ip_array[j].contains(incoming_addr);
+          bool in_range = rp->in_ip_array[j].contains(*local_addr);
           if (rp->in_ip_array[j].invert) {
             if (!in_range) {
               match = true;
