@@ -7775,23 +7775,36 @@ TSHttpTxnConfigParse(TSConfigValue &dst, TSOverridableConfigKey key, const char 
 }
 
 TSReturnCode
-TSHttpTxnConfigSet(TSHttpTxn txnp, TSOverridableConfigKey key, const TSConfigValue &src)
+_TxnConfigHttpStatusCodeList(TSHttpTxn txnp, TSOverridableConfigKey key, HttpStatusCodeList *list)
 {
   HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
   s->t_state.setup_per_txn_configs();
 
   switch (key) {
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
-    s->t_state.my_txn_conf().negative_caching_list = std::get<HttpStatusCodeList *>(src);
+    s->t_state.my_txn_conf().negative_caching_list = list;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
-    s->t_state.my_txn_conf().negative_revalidating_list = std::get<HttpStatusCodeList *>(src);
+    s->t_state.my_txn_conf().negative_revalidating_list = list;
     break;
   default:
     return TS_ERROR;
   }
 
   return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnConfigSet(TSHttpTxn txnp, TSOverridableConfigKey key, const TSConfigValue &src)
+{
+  const auto visitor = swoc::meta::vary{
+    [&](TSMgmtInt v) { return TSHttpTxnConfigIntSet(txnp, key, v); },
+    [&](TSMgmtFloat v) { return TSHttpTxnConfigFloatSet(txnp, key, v); },
+    [&](std::string_view v) { return TSHttpTxnConfigStringSet(txnp, key, v.data(), v.length()); },
+    [&](HttpStatusCodeList *v) { return _TxnConfigHttpStatusCodeList(txnp, key, v); },
+  };
+
+  return std::visit(visitor, src);
 }
 
 TSReturnCode
