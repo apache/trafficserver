@@ -130,8 +130,6 @@ public:
   void addFile(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
                ConfigManager *parentConfig = nullptr);
 
-  bool getConfigObj(const char *fileName, ConfigManager **rbPtr);
-
   void
   registerCallback(CallbackType f)
   {

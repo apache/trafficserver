@@ -253,4 +253,4 @@ void RecConfigWarnIfUnregistered();
 //------------------------------------------------------------------------
 // Set RecRecord attributes
 //------------------------------------------------------------------------
-RecErrT RecSetSyncRequired(char *name, bool lock = true);
+RecErrT RecSetSyncRequired(const char *name, bool lock = true);

@@ -456,7 +456,7 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
 }
 
 RecErrT
-RecSetSyncRequired(char *name, bool lock)
+RecSetSyncRequired(const char *name, bool lock)
 {
   RecErrT    err = REC_ERR_FAIL;
   RecRecord *r1;
