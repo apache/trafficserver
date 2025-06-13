@@ -148,20 +148,37 @@ class HRW4UVisitor(hrw4uVisitor):
         if ctx.varSection():
             return self.visitVarSection(ctx.varSection())
 
-        label = ctx.getChild(0).getText()
-        self.current_section = label
+        section = ctx.name.text
+        self.current_section = section
         try:
-            hook = self.symbol_resolver.map_hook(label)
-            self._debug(f"`{label}' -> `{hook}'")
-            self.emit_condition(f"cond %{{{hook}}} [AND]", final=True)
+            hook = self.symbol_resolver.map_hook(section)
+            self._debug(f"`{section}' -> `{hook}'")
+            emitted = False
+            after_conditional = False
 
-            if ctx.conditional():
-                self.visit(ctx.conditional())
-            elif ctx.statementList():
-                self._stmt_indent += 1
-                for stmt in ctx.statementList().statement():
-                    self.visit(stmt)
-                self._stmt_indent -= 1
+            for body in ctx.sectionBody():
+                if body.conditional():
+                    if emitted:
+                        self._flush_condition()
+                        self.output.append("")
+                    self.emit_condition(f"cond %{{{hook}}} [AND]", final=True)
+                    self.visit(body)
+                    emitted = True
+                    after_conditional = True
+
+                elif body.statement():
+                    if emitted and after_conditional:
+                        self._flush_condition()
+                        self.output.append("")
+                        emitted = False
+                    if not emitted:
+                        self.emit_condition(f"cond %{{{hook}}} [AND]", final=True)
+                        emitted = True
+                    self._stmt_indent += 1
+                    self.visit(body)
+                    self._stmt_indent -= 1
+                    after_conditional = False
+
         except Exception as e:
             raise hrw4u_error(self.filename, ctx, e)
         self._debug_exit("visitSection")
@@ -184,7 +201,10 @@ class HRW4UVisitor(hrw4uVisitor):
 
             if ctx.functionCall():
                 func, args = self._parse_function_call(ctx.functionCall())
-                symbol = self.symbol_resolver.resolve_statement_func(func, args)
+                subst_args = [
+                    self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
+                ]
+                symbol = self.symbol_resolver.resolve_statement_func(func, subst_args)
                 self.emit_statement(symbol)
                 return
 

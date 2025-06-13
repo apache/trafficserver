@@ -1,1 +1,1 @@
-(program (section SEND_RESPONSE { (conditional (ifStatement if (condition (expression (term (factor ! (factor (functionCall access ( (argumentList (value "/path/to/the/healthcheck/file.txt}")) ))))))) (block { (statement inbound.resp.Connection = (value "close") ;) }))) }) <EOF>)
+(program (section SEND_RESPONSE { (sectionBody (conditional (ifStatement if (condition (expression (term (factor ! (factor (functionCall access ( (argumentList (value "/path/to/the/healthcheck/file.txt}")) ))))))) (block { (statement inbound.resp.Connection = (value "close") ;) })))) }) <EOF>)

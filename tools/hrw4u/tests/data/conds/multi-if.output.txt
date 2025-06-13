@@ -1,0 +1,13 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:PATH} ="favicon.ico"
+    set-header X-Foo "bar"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{GEO:COUNTRY} ="KR"
+    set-header X-Something-Else "miles"
+else
+    set-header X-Something-Else "leif"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:PATH} ("foo","bar") [PRE]
+    set-header X-Path "yes"

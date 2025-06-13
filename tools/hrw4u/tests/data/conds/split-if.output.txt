@@ -1,0 +1,10 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Miles "miles"
+    set-header X-Miles-Rank "IV"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:PATH} ="favicon.ico"
+    set-header X-Foo "bar"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Leif "leif"

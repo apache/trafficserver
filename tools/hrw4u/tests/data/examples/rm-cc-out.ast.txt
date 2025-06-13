@@ -1,1 +1,1 @@
-(program (section SEND_REQUEST { (statementList (statement outbound.req.Cache-Control = (value "") ;) (statement outbound.req.Pragma = (value "") ;)) }) <EOF>)
+(program (section SEND_REQUEST { (sectionBody (statement outbound.req.Cache-Control = (value "") ;)) (sectionBody (statement outbound.req.Pragma = (value "") ;)) }) <EOF>)

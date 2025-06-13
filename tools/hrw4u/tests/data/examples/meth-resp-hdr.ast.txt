@@ -1,1 +1,1 @@
-(program (section SEND_RESPONSE { (statementList (statement inbound.resp.X-Original-Method = (value "{inbound.method}") ;)) }) <EOF>)
+(program (section SEND_RESPONSE { (sectionBody (statement inbound.resp.X-Original-Method = (value "{inbound.method}") ;)) }) <EOF>)

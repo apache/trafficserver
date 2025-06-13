@@ -1,1 +1,1 @@
-(program (section REMAP { (conditional (ifStatement if (condition (expression (term (factor (functionCall internal ( )))))) (block { (statement inbound.req.X-Foo = (value "Is Internal") ;) }))) }) <EOF>)
+(program (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (functionCall internal ( )))))) (block { (statement inbound.req.X-Foo = (value "Is Internal") ;) })))) }) <EOF>)

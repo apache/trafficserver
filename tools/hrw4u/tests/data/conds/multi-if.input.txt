@@ -1,0 +1,15 @@
+REMAP {
+    if inbound.url.path == "favicon.ico" {
+        inbound.req.X-Foo = "bar";
+    }
+
+    if geo.COUNTRY == "KR" {
+         inbound.req.X-Something-Else = "miles";
+    } else {
+         inbound.req.X-Something-Else = "leif";
+    }
+
+    if inbound.url.path in ["foo", "bar"] with PRE {
+        inbound.req.X-Path = "yes";
+    }
+}
