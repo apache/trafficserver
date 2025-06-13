@@ -1,1 +1,1 @@
-(program (section REMAP { (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable to.url.path) ~ (regex /foo/)))))) (block { (statement inbound.req.To-URL = (value "allowed") ;) }))) }) <EOF>)
+(program (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable to.url.path) ~ (regex /foo/)))))) (block { (statement inbound.req.To-URL = (value "allowed") ;) })))) }) <EOF>)

@@ -1,0 +1,10 @@
+REMAP {
+    inbound.req.X-Miles = "miles";
+    inbound.req.X-Miles-Rank = "IV";
+
+    if inbound.url.path == "favicon.ico" {
+        inbound.req.X-Foo = "bar";
+    }
+
+    inbound.req.X-Leif = "leif";
+}

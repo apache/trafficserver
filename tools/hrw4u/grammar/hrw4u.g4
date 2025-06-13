@@ -91,11 +91,16 @@ program
 
 section
     : varSection
-    | name=IDENT LBRACE (conditional | statementList) RBRACE
+    | name=IDENT LBRACE sectionBody+ RBRACE
     ;
 
 varSection
     : VARS LBRACE variables RBRACE
+    ;
+
+sectionBody
+    : statement
+    | conditional
     ;
 
 variables
@@ -104,10 +109,6 @@ variables
 
 variableDecl
     : name=IDENT COLON typeName=IDENT SEMICOLON
-    ;
-
-statementList
-    : statement+
     ;
 
 statement
