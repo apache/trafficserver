@@ -1360,7 +1360,7 @@ HttpConfig::reconfigure()
   params->oride.negative_revalidating_list = m_master.oride.negative_revalidating_list;
 
   params->oride.host_res_data            = m_master.oride.host_res_data;
-  params->oride.host_res_data.conf_value = ats_strdup(m_master.oride.host_res_data.conf_value);
+  params->oride.host_res_data->conf_value = ats_strdup(m_master.oride.host_res_data->conf_value);
 
   params->oride.plugin_vc_default_buffer_index      = m_master.oride.plugin_vc_default_buffer_index;
   params->oride.plugin_vc_default_buffer_water_mark = m_master.oride.plugin_vc_default_buffer_water_mark;

@@ -719,7 +719,7 @@ struct OverridableHttpConfigParams {
   char *ssl_client_alpn_protocols       = nullptr;
 
   // Host Resolution order
-  HostResData host_res_data;
+  HostResData *host_res_data;
 
   // bitset to hold the status codes that will BE cached with negative caching enabled
   HttpStatusCodeList *negative_caching_list;
@@ -900,11 +900,11 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(redirect_actions_string);
   ats_free(oride.ssl_client_sni_policy);
   ats_free(oride.ssl_client_alpn_protocols);
-  ats_free(oride.host_res_data.conf_value);
 
   delete connect_ports;
   delete redirect_actions_map;
 
+  delete oride.host_res_data;
   delete oride.negative_caching_list;
   delete oride.negative_revalidating_list;
 }

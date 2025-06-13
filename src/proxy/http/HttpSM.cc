@@ -410,7 +410,7 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   ink_assert(_ua.get_txn()->get_proxy_ssn()->accept_options);
 
   // default the upstream IP style host resolution order from inbound
-  t_state.my_txn_conf().host_res_data.order = _ua.get_txn()->get_proxy_ssn()->accept_options->host_res_preference;
+  t_state.my_txn_conf().host_res_data->order = _ua.get_txn()->get_proxy_ssn()->accept_options->host_res_preference;
 
   start_sub_sm();
 
@@ -2362,7 +2362,7 @@ HttpSM::state_hostdb_lookup(int event, void *data)
                                                                                    HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
     opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
     opt.host_res_style =
-      ats_host_res_from(_ua.get_txn()->get_netvc()->get_local_addr()->sa_family, t_state.txn_conf->host_res_data.order);
+      ats_host_res_from(_ua.get_txn()->get_netvc()->get_local_addr()->sa_family, t_state.txn_conf->host_res_data->order);
 
     pending_action = hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
     if (pending_action.empty()) {
@@ -4517,7 +4517,7 @@ HttpSM::do_hostdb_lookup()
                                                                                      HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
       opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
       opt.host_res_style =
-        ats_host_res_from(_ua.get_txn()->get_netvc()->get_local_addr()->sa_family, t_state.txn_conf->host_res_data.order);
+        ats_host_res_from(_ua.get_txn()->get_netvc()->get_local_addr()->sa_family, t_state.txn_conf->host_res_data->order);
 
       pending_action = hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
       if (pending_action.empty()) {
@@ -4550,7 +4550,7 @@ HttpSM::do_hostdb_lookup()
     opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
 
     opt.host_res_style =
-      ats_host_res_from(_ua.get_txn()->get_netvc()->get_local_addr()->sa_family, t_state.txn_conf->host_res_data.order);
+      ats_host_res_from(_ua.get_txn()->get_netvc()->get_local_addr()->sa_family, t_state.txn_conf->host_res_data->order);
 
     pending_action = hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info,
                                                    t_state.dns_info.lookup_name, 0, opt);

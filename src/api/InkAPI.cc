@@ -7686,7 +7686,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     return TS_ERROR;
   case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
     if (value && length > 0) {
-      s->t_state.my_txn_conf().host_res_data.conf_value = const_cast<char *>(value);
+      s->t_state.my_txn_conf().host_res_data->conf_value = const_cast<char *>(value);
     }
     [[fallthrough]];
   default: {
@@ -7774,6 +7774,14 @@ TSHttpTxnConfigParse(TSConfigValue &dst, TSOverridableConfigKey key, const char 
     conv.store_int(&dst, strtoll(value, nullptr, 10));
     break;
   }
+  case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE: {
+    dst = new HostResData();
+
+    MgmtConverter conv = HttpTransact::HOST_RES_CONV;
+    conv.store_string(std::get<HostResData *>(dst), {value, length});
+
+    break;
+  }
   default:
     return TS_ERROR;
   }
@@ -7819,6 +7827,24 @@ txn_config_seconds_set(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtSeconds
 
   return TS_SUCCESS;
 }
+
+TSReturnCode
+txn_config_host_res_data_set(TSHttpTxn txnp, TSOverridableConfigKey key, HostResData *data)
+{
+  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
+  s->t_state.setup_per_txn_configs();
+
+  switch (key) {
+  case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
+    s->t_state.my_txn_conf().host_res_data = data;
+    break;
+  default:
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
 } // namespace
 
 TSReturnCode
@@ -7827,9 +7853,10 @@ TSHttpTxnConfigSet(TSHttpTxn txnp, TSOverridableConfigKey key, const TSConfigVal
   const auto visitor = swoc::meta::vary{
     [&](TSMgmtInt v) { return TSHttpTxnConfigIntSet(txnp, key, v); },
     [&](TSMgmtFloat v) { return TSHttpTxnConfigFloatSet(txnp, key, v); },
-    [&](std::string_view v) { return TSHttpTxnConfigStringSet(txnp, key, v.data(), v.length()); },
     [&](TSMgmtSeconds v) { return txn_config_seconds_set(txnp, key, v); },
+    [&](std::string_view v) { return TSHttpTxnConfigStringSet(txnp, key, v.data(), v.length()); },
     [&](HttpStatusCodeList *v) { return txn_config_http_status_code_list_set(txnp, key, v); },
+    [&](HostResData *v) { return txn_config_host_res_data_set(txnp, key, v); },
   };
 
   return std::visit(visitor, src);
