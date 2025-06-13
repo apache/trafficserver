@@ -151,6 +151,7 @@ public:
   int marshal_client_security_protocol(char *);      // STR
   int marshal_client_security_cipher_suite(char *);  // STR
   int marshal_client_security_curve(char *);         // STR
+  int marshal_client_security_group(char *);         // STR
   int marshal_client_security_alpn(char *);          // STR
   int marshal_client_finish_status_code(char *);     // INT
   int marshal_client_req_id(char *);                 // INT

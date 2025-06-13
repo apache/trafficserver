@@ -48,6 +48,7 @@ struct ClientConnectionInfo {
   char const *sec_protocol{"-"};
   char const *cipher_suite{"-"};
   char const *curve{"-"};
+  char const *security_group{"-"};
 
   int alpn_id{SessionProtocolNameRegistry::INVALID};
 };
@@ -85,6 +86,8 @@ public:
   char const *get_client_cipher_suite() const;
 
   char const *get_client_curve() const;
+
+  char const *get_client_security_group() const;
 
   int get_client_alpn_id() const;
 
@@ -164,6 +167,12 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
       m_conn_info.curve = curve;
     } else {
       m_conn_info.curve = "-";
+    }
+
+    if (auto group{tbs->get_tls_group()}; group) {
+      m_conn_info.security_group = group;
+    } else {
+      m_conn_info.security_group = "-";
     }
 
     if (!m_conn_info.tcp_reused) {
@@ -252,6 +261,12 @@ inline char const *
 HttpUserAgent::get_client_curve() const
 {
   return m_conn_info.curve;
+}
+
+inline char const *
+HttpUserAgent::get_client_security_group() const
+{
+  return m_conn_info.security_group;
 }
 
 inline int
