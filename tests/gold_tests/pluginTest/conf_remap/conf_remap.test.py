@@ -24,6 +24,7 @@ Test.SkipUnless(Condition.PluginExists('conf_remap.so'))
 
 
 class ConfRemapPluginTest:
+
     def __init__(self):
         self._tr = Test.AddTestRun("conf_remap")
         self._replay_file = "replay/conf_remap.replay.yaml"
@@ -33,8 +34,7 @@ class ConfRemapPluginTest:
         self.__setupClient()
 
     def __setupClient(self):
-        self._tr.AddVerifierClientProcess(
-            "verifier-client", self._replay_file, http_ports=[self._ts.Variables.port])
+        self._tr.AddVerifierClientProcess("verifier-client", self._replay_file, http_ports=[self._ts.Variables.port])
 
     def __setupOriginServer(self):
         self._server = self._tr.AddVerifierServerProcess("verifier-server", self._replay_file)
@@ -64,9 +64,9 @@ map /custom_negative_caching_list/ \
     """
             })
 
-
     def run(self):
         self._tr.Processes.Default.StartBefore(self._ts)
         self._tr.StillRunningAfter = self._ts
+
 
 ConfRemapPluginTest().run()
