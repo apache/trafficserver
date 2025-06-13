@@ -679,11 +679,6 @@ HttpStatusCodeList::HttpStatusCodeList(const char *value, size_t length)
   parse_http_status_code_list(this->_data, this->_conf_value);
 }
 
-HttpStatusCodeList::~HttpStatusCodeList()
-{
-  ats_free(this->_conf_value);
-}
-
 // clang-format off
 // TODO: find good clang-format setting
 const MgmtConverter HttpStatusCodeList::Conv {

@@ -68,7 +68,7 @@ public:
   static const MgmtConverter Conv;
 
   HttpStatusCodeList(const char *value, size_t length);
-  ~HttpStatusCodeList();
+  ~HttpStatusCodeList() { ats_free(this->_conf_value); };
 
   bool
   contains(int code) const
