@@ -999,8 +999,18 @@ using TSMgmtSeconds = std::chrono::seconds;
  */
 class HttpStatusCodeList;
 struct HostResData;
+class HttpForwardedConf;
 
-using TSConfigValue = std::variant<TSMgmtInt, TSMgmtFloat, TSMgmtSeconds, std::string_view, HttpStatusCodeList *, HostResData *>;
+// clang-format off
+using TSConfigValue = std::variant<
+                        TSMgmtInt,
+                        TSMgmtFloat,
+                        TSMgmtSeconds,
+                        std::string_view,
+                        HttpStatusCodeList *,
+                        HostResData *,
+                        HttpForwardedConf *>;
+// clang-format on
 
 /// The source of a management value.
 enum TSMgmtSource {

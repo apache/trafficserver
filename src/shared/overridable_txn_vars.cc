@@ -39,7 +39,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.http.chunking_enabled",                             {TS_CONFIG_HTTP_CHUNKING_ENABLED, TS_RECORDDATATYPE_INT}                 },
     {"proxy.config.http.cache.generation",                             {TS_CONFIG_HTTP_CACHE_GENERATION, TS_RECORDDATATYPE_INT}                 },
     {"proxy.config.http.insert_client_ip",                             {TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP, TS_RECORDDATATYPE_INT}       },
-    {"proxy.config.http.insert_forwarded",                             {TS_CONFIG_HTTP_INSERT_FORWARDED, TS_RECORDDATATYPE_STRING}              },
+    {"proxy.config.http.insert_forwarded",                             {TS_CONFIG_HTTP_INSERT_FORWARDED, TS_RECORDDATATYPE_VARIANT}             },
     {"proxy.config.http.cache.range.write",                            {TS_CONFIG_HTTP_CACHE_RANGE_WRITE, TS_RECORDDATATYPE_INT}                },
     {"proxy.config.http.allow_multi_range",                            {TS_CONFIG_HTTP_ALLOW_MULTI_RANGE, TS_RECORDDATATYPE_INT}                },
     {"proxy.config.http.cache.range.lookup",                           {TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP, TS_RECORDDATATYPE_INT}               },

@@ -7624,17 +7624,6 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.my_txn_conf().body_factory_template_base_len = 0;
     }
     break;
-  case TS_CONFIG_HTTP_INSERT_FORWARDED:
-    if (value && length > 0) {
-      swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(std::string_view(value, length), error);
-      if (!error.size()) {
-        s->t_state.my_txn_conf().insert_forwarded = bs;
-      } else {
-        Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
-      }
-    }
-    break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
     if (value && length > 0) {
       HttpConfig::load_server_session_sharing_match(value, s->t_state.my_txn_conf().server_session_sharing_match);
@@ -7679,6 +7668,8 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_SSL_CERT_FILEPATH:
     /* noop */
     break;
+  case TS_CONFIG_HTTP_INSERT_FORWARDED:
+    [[fallthrough]];
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST:
     [[fallthrough]];
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST:
@@ -7782,6 +7773,15 @@ TSHttpTxnConfigParse(TSConfigValue &dst, TSOverridableConfigKey key, const char 
 
     break;
   }
+  case TS_CONFIG_HTTP_INSERT_FORWARDED: {
+    swoc::LocalBufferWriter<1024> error;
+    dst = new HttpForwardedConf({value, length}, error);
+    if (!error.size()) {
+      return TS_ERROR;
+    }
+    break;
+  }
+
   default:
     return TS_ERROR;
   }
@@ -7845,6 +7845,23 @@ txn_config_host_res_data_set(TSHttpTxn txnp, TSOverridableConfigKey key, HostRes
   return TS_SUCCESS;
 }
 
+TSReturnCode
+txn_config_http_forwarded_set(TSHttpTxn txnp, TSOverridableConfigKey key, HttpForwardedConf *data)
+{
+  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
+  s->t_state.setup_per_txn_configs();
+
+  switch (key) {
+  case TS_CONFIG_HTTP_INSERT_FORWARDED:
+    s->t_state.my_txn_conf().insert_forwarded = data;
+    break;
+  default:
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
 } // namespace
 
 TSReturnCode
@@ -7857,6 +7874,7 @@ TSHttpTxnConfigSet(TSHttpTxn txnp, TSOverridableConfigKey key, const TSConfigVal
     [&](std::string_view v) { return TSHttpTxnConfigStringSet(txnp, key, v.data(), v.length()); },
     [&](HttpStatusCodeList *v) { return txn_config_http_status_code_list_set(txnp, key, v); },
     [&](HostResData *v) { return txn_config_host_res_data_set(txnp, key, v); },
+    [&](HttpForwardedConf *v) { return txn_config_http_forwarded_set(txnp, key, v); },
   };
 
   return std::visit(visitor, src);

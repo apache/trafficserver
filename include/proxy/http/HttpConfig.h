@@ -415,6 +415,20 @@ OptionBitSet optStrToBitset(std::string_view optConfigStr, swoc::FixedBufferWrit
 
 } // namespace HttpForwarded
 
+// TODO: make a template
+class HttpForwardedConf
+{
+public:
+  HttpForwardedConf(std::string_view value, swoc::FixedBufferWriter &error);
+  ~HttpForwardedConf();
+
+  const HttpForwarded::OptionBitSet &data();
+
+private:
+  char                       *_conf_value = nullptr;
+  HttpForwarded::OptionBitSet _data;
+};
+
 namespace RedirectEnabled
 {
 enum class AddressClass {
@@ -459,8 +473,6 @@ static std::map<std::string, Action> action_map = {
 // and State (txn) structure. It allows for certain configs
 // to be overridable per transaction more easily.
 struct OverridableHttpConfigParams {
-  OverridableHttpConfigParams() : insert_forwarded(HttpForwarded::OptionBitSet()) {}
-
   // A simple rules here:
   //   * Place all MgmtByte configs before all other configs
   MgmtByte maintain_pristine_host_hdr = 1;
@@ -514,7 +526,7 @@ struct OverridableHttpConfigParams {
   ///////////////
   // Forwarded //
   ///////////////
-  HttpForwarded::OptionBitSet insert_forwarded;
+  HttpForwardedConf          *insert_forwarded   = nullptr;
   MgmtInt                     proxy_protocol_out = -1;
 
   //////////////////////
@@ -905,6 +917,7 @@ inline HttpConfigParams::~HttpConfigParams()
   delete redirect_actions_map;
 
   delete oride.host_res_data;
+  delete oride.insert_forwarded;
   delete oride.negative_caching_list;
   delete oride.negative_revalidating_list;
 }

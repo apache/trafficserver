@@ -248,9 +248,9 @@ http_insert_forwarded_cb(const char *name, RecDataT dtype, RecData data, void *c
   if (0 == strcasecmp("proxy.config.http.insert_forwarded", name)) {
     if (RECD_STRING == dtype) {
       swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(std::string_view(data.rec_string), error);
+      HttpForwardedConf            *conf = new HttpForwardedConf(data.rec_string, error);
       if (!error.size()) {
-        c->oride.insert_forwarded = bs;
+        c->oride.insert_forwarded = conf;
         valid_p                   = true;
       } else {
         Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
@@ -864,9 +864,9 @@ HttpConfig::startup()
 
     if (auto sv{RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))}; sv) {
       swoc::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet   bs = HttpForwarded::optStrToBitset(sv.value(), error);
+      HttpForwardedConf            *insert_forwarded = new HttpForwardedConf(sv.value(), error);
       if (!error.size()) {
-        c.oride.insert_forwarded = bs;
+        c.oride.insert_forwarded = insert_forwarded;
       } else {
         Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
       }
