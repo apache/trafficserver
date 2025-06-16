@@ -1,0 +1,4 @@
+Changes with Apache Traffic Server 9.2.11
+  #12169 - 9.2.x: fix libyaml for gcc 15, and cherry-pick fedora:42 updates
+  #12294 - Add a setting to choose the data source of IP address for ACL
+  #12296 - Add max inclusion support to esi plugin for 9.2.x
