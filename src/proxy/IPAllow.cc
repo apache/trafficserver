@@ -24,7 +24,6 @@
   limitations under the License.
  */
 
-#include <ranges>
 #include <string_view>
 
 #include "proxy/IPAllow.h"
@@ -219,10 +218,12 @@ IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_conf
 
   RecString subjects_char;
   REC_ReadConfigStringAlloc(subjects_char, "proxy.config.acl.subjects");
-  std::string_view subjects_sv{subjects_char};
-  int              i = 0;
-  for (const auto subject : std::views::split(subjects_sv, ',')) {
-    std::string_view subject_sv{subject.begin(), subject.end()};
+  std::string_view            subjects_sv{subjects_char};
+  int                         i = 0;
+  std::string_view::size_type s, e;
+  for (s = 0, e = 0; s < subjects_sv.size() && e != subjects_sv.npos; s = e + 1) {
+    e                           = subjects_sv.find(",", s);
+    std::string_view subject_sv = subjects_sv.substr(s, e);
     if (i >= MAX_SUBJECTS) {
       Error("Too many ACL subjects were provided");
     }
