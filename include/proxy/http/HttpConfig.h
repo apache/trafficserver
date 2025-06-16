@@ -415,14 +415,24 @@ OptionBitSet optStrToBitset(std::string_view optConfigStr, swoc::FixedBufferWrit
 
 } // namespace HttpForwarded
 
-// TODO: make a template
 class HttpForwardedConf
 {
 public:
-  HttpForwardedConf(std::string_view value, swoc::FixedBufferWriter &error);
-  ~HttpForwardedConf();
+  HttpForwardedConf(std::string_view value, swoc::FixedBufferWriter &error)
+  {
+    this->_conf_value = ats_strndup(value.data(), value.length());
+    this->_data       = HttpForwarded::optStrToBitset(value, error);
+    if (error.size()) {
+      Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
+    }
+  }
+  ~HttpForwardedConf() { ats_free(this->_conf_value); }
 
-  const HttpForwarded::OptionBitSet &data();
+  const HttpForwarded::OptionBitSet &
+  data() const
+  {
+    return this->_data;
+  }
 
 private:
   char                       *_conf_value = nullptr;
