@@ -96,3 +96,14 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/ext-sets.gold"
 tr.StillRunningAfter = server
 ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
+
+# Test HRW elif
+tr = Test.AddTestRun()
+tr.MakeCurlCommand(
+    '--proxy 127.0.0.1:{0} "http://www.example.com/from_path/hrw-sets.png" '
+    '-H "Proxy-Connection: keep-alive" -H "X-Testing: elif" '
+    '--verbose'.format(ts.Variables.port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/cond-elif.gold"
+tr.StillRunningAfter = server
+ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"

@@ -113,6 +113,8 @@ std::optional<ConfReader> openConfig(const std::string &filename);
 class Parser
 {
 public:
+  enum class CondClause { OPER, COND, ELIF, ELSE };
+
   Parser() = default; // No from/to URLs for this parser
   Parser(char *from_url, char *to_url) : _from_url(from_url), _to_url(to_url) {}
 
@@ -139,16 +141,28 @@ public:
     return _empty;
   }
 
+  CondClause
+  get_clause() const
+  {
+    return _clause;
+  }
+
   bool
   is_cond() const
   {
-    return _cond;
+    return _clause == CondClause::COND;
   }
 
   bool
   is_else() const
   {
-    return _else;
+    return _clause == CondClause::ELSE;
+  }
+
+  bool
+  is_elif() const
+  {
+    return _clause == CondClause::ELIF;
   }
 
   const std::string &
@@ -236,8 +250,7 @@ public:
 private:
   bool preprocess(std::vector<std::string> tokens);
 
-  bool                     _cond     = false;
-  bool                     _else     = false;
+  CondClause               _clause   = CondClause::OPER;
   bool                     _empty    = false;
   char                    *_from_url = nullptr;
   char                    *_to_url   = nullptr;

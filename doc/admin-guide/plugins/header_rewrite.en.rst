@@ -142,6 +142,26 @@ with the word ``else``. The following example illustrates this::
 The ``else`` clause is not a condition, and does not take any flags, it is
 of course optional, but when specified must be followed by at least one operator.
 
+You can also do an ``elif`` (else if) clause, which is specified by starting a new line
+with the word ``elif``. The following example illustrates this::
+
+    cond %{STATUS} >399 [AND]
+    cond %{STATUS} <500
+      set-status 404
+    elif
+      cond %{STATUS} =503
+        set-status 502
+    else
+      set-status 503
+
+Keep in mind that nesting the ``else`` and ``elif`` clauses is not allowed, but any
+number of ``elif`` clauses can be specified. We can consider these clauses are more
+powerful and flexible ``switch`` statement. In an ``if-elif-else`` rule, only one
+will evaluate its operators.
+
+Similarly, each ``else`` and ``elif`` have the same implied
+:ref:`Hook Condition <hook_conditions>` as the initial condition.
+
 State variables
 ---------------
 
@@ -1238,6 +1258,8 @@ tell which is which, and how do you indicate to |TS| that the condition is
 specifically and exclusively for a request header or just for a response
 header? And how do you ensure that a header rewrite occurs against a request
 before it is proxied?
+
+.. _hook_conditions:
 
 Hook Conditions
 ---------------

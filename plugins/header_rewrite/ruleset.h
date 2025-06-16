@@ -39,14 +39,37 @@ class RuleSet
 {
 public:
   // Holding the IF and ELSE operators and mods, in two separate linked lists.
-  struct OperatorPair {
-    OperatorPair() = default;
+  struct OperatorAndMods {
+    OperatorAndMods() = default;
 
-    OperatorPair(const OperatorPair &)            = delete;
-    OperatorPair &operator=(const OperatorPair &) = delete;
+    OperatorAndMods(const OperatorAndMods &)            = delete;
+    OperatorAndMods &operator=(const OperatorAndMods &) = delete;
 
     Operator     *oper      = nullptr;
     OperModifiers oper_mods = OPER_NONE;
+  };
+
+  struct CondOpSection {
+    CondOpSection() = default;
+
+    ~CondOpSection()
+    {
+      delete ops.oper;
+      delete next;
+    }
+
+    CondOpSection(const CondOpSection &)            = delete;
+    CondOpSection &operator=(const CondOpSection &) = delete;
+
+    bool
+    has_operator() const
+    {
+      return ops.oper != nullptr;
+    }
+
+    ConditionGroup  group;
+    OperatorAndMods ops;
+    CondOpSection  *next = nullptr; // For elif / else sections.
   };
 
   RuleSet() { Dbg(dbg_ctl, "RuleSet CTOR"); }
@@ -54,8 +77,6 @@ public:
   ~RuleSet()
   {
     Dbg(dbg_ctl, "RulesSet DTOR");
-    delete _operators[0].oper; // These are pointers
-    delete _operators[1].oper;
     delete next;
   }
 
@@ -72,7 +93,15 @@ public:
   bool
   has_operator() const
   {
-    return (nullptr != _operators[0].oper) || (nullptr != _operators[1].oper);
+    const CondOpSection *section = &_sections;
+
+    while (section != nullptr) {
+      if (section->has_operator()) {
+        return true;
+      }
+      section = section->next;
+    }
+    return false;
   }
 
   void
@@ -84,13 +113,36 @@ public:
   ConditionGroup *
   get_group()
   {
-    return &_group;
+    return &_cur_section->group;
   }
 
   TSHttpHookID
   get_hook() const
   {
     return _hook;
+  }
+
+  Parser::CondClause
+  get_clause() const
+  {
+    return _clause;
+  }
+
+  CondOpSection *
+  cur_section()
+  {
+    return _cur_section;
+  }
+
+  ConditionGroup *
+  new_section(Parser::CondClause clause)
+  {
+    TSAssert(_cur_section && !_cur_section->next);
+    _clause            = clause;
+    _cur_section->next = new CondOpSection();
+    _cur_section       = _cur_section->next;
+
+    return &_cur_section->group;
   }
 
   ResourceIDs
@@ -105,20 +157,14 @@ public:
     return _last;
   }
 
-  void
-  switch_branch()
-  {
-    _is_else = !_is_else;
-  }
-
   OperModifiers
-  exec(const OperatorPair &ops, const Resources &res) const
+  exec(const OperatorAndMods &ops, const Resources &res) const
   {
     if (nullptr == ops.oper) {
       return ops.oper_mods;
     }
 
-    auto no_reenable_count{ops.oper->do_exec(res)};
+    auto no_reenable_count = ops.oper->do_exec(res);
 
     ink_assert(no_reenable_count < 2);
     if (no_reenable_count) {
@@ -128,25 +174,32 @@ public:
     return ops.oper_mods;
   }
 
-  const OperatorPair &
+  const RuleSet::OperatorAndMods &
   eval(const Resources &res)
   {
-    if (_group.eval(res)) {
-      return _operators[0]; // IF conditions
-    } else {
-      return _operators[1]; // ELSE conditions
+    for (CondOpSection *sec = &_sections; sec != nullptr; sec = sec->next) {
+      if (sec->group.eval(res)) {
+        return sec->ops;
+      }
     }
+
+    // No matching condition found, return empty operator set.
+    static OperatorAndMods empty_ops;
+    return empty_ops;
   }
 
-  RuleSet *next = nullptr; // Linked list
+  // Linked list of RuleSets
+  RuleSet *next = nullptr;
 
 private:
-  ConditionGroup _group;        // All conditions are now wrapped in a group
-  OperatorPair   _operators[2]; // Holds both the IF and the ELSE set of operators
+  // This holds one condition group, and the ops and optional else_ops, there's
+  // aways at least one of these in the vector (no "elif" sections).
+  CondOpSection  _sections;
+  CondOpSection *_cur_section = &_sections;
 
   // State values (updated when conds / operators are added)
-  TSHttpHookID _hook    = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
-  ResourceIDs  _ids     = RSRC_NONE;
-  bool         _last    = false;
-  bool         _is_else = false; // Are we in the else clause of the new rule? For parsing.
+  TSHttpHookID       _hook   = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
+  ResourceIDs        _ids    = RSRC_NONE;
+  bool               _last   = false;
+  Parser::CondClause _clause = Parser::CondClause::OPER;
 };
