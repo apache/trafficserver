@@ -1633,7 +1633,7 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
     gHandlerManager = new HandlerManager(HANDLER_MGR_DEBUG_TAG, &TSDebug, &TSError);
   }
 
-  memset(pOptionInfo, 0, sizeof(struct OptionInfo));
+  memset((void*)pOptionInfo, 0, sizeof(struct OptionInfo));
 
   if (argc > 1) {
     int c;
