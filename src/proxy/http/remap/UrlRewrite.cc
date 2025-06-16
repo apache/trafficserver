@@ -458,9 +458,9 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
     int method        = s->hdr_info.client_request.method_get_wksidx();
     int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
 
-    const IpEndpoint    *src_addr;
-    const IpEndpoint    *local_addr;
-    const ProxyProtocol &pp_info = s->state_machine->get_ua_txn()->get_netvc()->get_proxy_protocol_info();
+    const IpEndpoint    *src_addr   = nullptr;
+    const IpEndpoint    *local_addr = nullptr;
+    const ProxyProtocol &pp_info    = s->state_machine->get_ua_txn()->get_netvc()->get_proxy_protocol_info();
     for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
       if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
         src_addr   = &s->client_info.src_addr;
@@ -471,6 +471,12 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, const url_mapping *const
         local_addr = &pp_info.dst_addr;
         break;
       }
+    }
+
+    if (src_addr == nullptr) {
+      // Use addresses from peer if none of the configured sources are avaialable
+      src_addr   = &s->client_info.src_addr;
+      local_addr = &s->client_info.dst_addr;
     }
 
     s->client_connection_allowed = true; // Default is that we allow things unless some filter matches
