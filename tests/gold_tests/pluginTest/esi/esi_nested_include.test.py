@@ -118,9 +118,10 @@ class EsiTest():
     def run_test(self):
         # Test 1: Verify basic ESI functionality without processing internal txn.
         tr = Test.AddTestRun("First request")
-        tr.MakeCurlCommand(
-            f'http://127.0.0.1:{self._ts.Variables.port}/main.php -H"Host: www.example.com" '
-            '-H"Accept: */*" --verbose')
+        tr.Processes.Default.Command = \
+            ('curl http://127.0.0.1:{0}/main.php -H"Host: www.example.com" '
+             '-H"Accept: */*" --verbose'.format(
+                 self._ts.Variables.port))
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/nested_include_body.gold"
         tr.StillRunningAfter = self._server
