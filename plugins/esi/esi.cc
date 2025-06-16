@@ -75,7 +75,7 @@ static Utils::HeaderValueList gAllowlistCookies;
 #define MIME_FIELD_XESI "X-Esi"
 #define MIME_FIELD_XESI_LEN 5
 
-#define MIME_FIELD_XESIDEPTH     "X-Esi-Depth"
+#define MIME_FIELD_XESIDEPTH "X-Esi-Depth"
 #define MIME_FIELD_XESIDEPTH_LEN 11
 
 #define HTTP_VALUE_PRIVATE_EXPIRES "-1"
@@ -320,8 +320,8 @@ ContData::getClientState()
       TSHandleMLocRelease(bufp, req_hdr_loc, url_loc);
     }
 
-    TSMLoc field_loc   = TSMimeHdrFieldGet(req_bufp, req_hdr_loc, 0);
-    bool   depth_field = false;
+    TSMLoc field_loc = TSMimeHdrFieldGet(req_bufp, req_hdr_loc, 0);
+    bool depth_field = false;
     while (field_loc) {
       TSMLoc next_field_loc;
       const char *name;
@@ -332,7 +332,7 @@ ContData::getClientState()
         if (Utils::areEqual(name, name_len, MIME_FIELD_XESIDEPTH, MIME_FIELD_XESIDEPTH_LEN)) {
           unsigned d = TSMimeHdrFieldValueUintGet(req_bufp, req_hdr_loc, field_loc, -1);
           d          = (d + 1) % 10;
-          char      dstr[2];
+          char dstr[2];
           int const len = snprintf(dstr, sizeof(dstr), "%u", d);
 
           HttpHeader header;
@@ -349,8 +349,8 @@ ContData::getClientState()
           int n_values;
           n_values = TSMimeHdrFieldValuesCount(req_bufp, req_hdr_loc, field_loc);
           if (n_values && (n_values != TS_ERROR)) {
-            const char *value     = nullptr;
-            int         value_len = 0;
+            const char *value = nullptr;
+            int value_len     = 0;
             if (n_values == 1) {
               value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, 0, &value_len);
 
@@ -1296,7 +1296,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
     return false;
   }
 
-  TSMLoc   loc;
+  TSMLoc loc;
   unsigned d;
 
   d   = 0;
@@ -1305,8 +1305,9 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
     d = TSMimeHdrFieldValueUintGet(bufp, hdr_loc, loc, -1);
   }
   TSHandleMLocRelease(bufp, hdr_loc, loc);
-  if( d >= pOptionInfo->max_inclusion_depth ) {
-    TSError("[esi][%s] The current esi inclusion depth (%u) is larger than or equal to the max (%u)", __FUNCTION__, d, pOptionInfo->max_inclusion_depth);
+  if (d >= pOptionInfo->max_inclusion_depth) {
+    TSError("[esi][%s] The current esi inclusion depth (%u) is larger than or equal to the max (%u)", __FUNCTION__, d,
+            pOptionInfo->max_inclusion_depth);
     return false;
   }
 
@@ -1669,7 +1670,7 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
       }
       case 'i': {
         unsigned max;
-        auto     num = std::sscanf(optarg, "%u", &max);
+        auto num = std::sscanf(optarg, "%u", &max);
         if (num != 1) {
           TSEmergency("[esi][%s] value for maximum inclusion depth (%s) is not unsigned integer", __FUNCTION__, optarg);
         }
