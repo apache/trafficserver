@@ -417,6 +417,12 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
       }
     }
 
+    if (src_addr == nullptr) {
+      // Use addresses from peer if none of the configured sources are avaialable
+      src_addr   = &s->client_info.src_addr;
+      local_addr = &s->client_info.dst_addr;
+    }
+
     for (acl_filter_rule *rp = map->filter; rp && client_enabled_flag; rp = rp->next) {
       bool match = true;
 
