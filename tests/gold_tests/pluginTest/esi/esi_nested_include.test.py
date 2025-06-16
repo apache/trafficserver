@@ -61,8 +61,7 @@ class EsiTest():
 
         # Generate the set of ESI responses.
         request_header = {
-            "headers":
-                "GET /esi-nested-include.php HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Content-Length: 0\r\n\r\n",
+            "headers": "GET /esi-nested-include.php HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
             "body": ""
         }
@@ -72,8 +71,8 @@ class EsiTest():
 '''
         response_header = {
             "headers":
-                "HTTP/1.1 200 OK\r\n" + "X-Esi: 1\r\n" + "Cache-Control: private\r\n" +
-                "Content-Type: text/html\r\n" + "Connection: close\r\n" + "Content-Length: {}\r\n".format(len(esi_body)) + "\r\n",
+                "HTTP/1.1 200 OK\r\n" + "X-Esi: 1\r\n" + "Cache-Control: private\r\n" + "Content-Type: text/html\r\n" +
+                "Connection: close\r\n" + "Content-Length: {}\r\n".format(len(esi_body)) + "\r\n",
             "timestamp": "1469733493.993",
             "body": esi_body
         }

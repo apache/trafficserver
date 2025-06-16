@@ -303,7 +303,7 @@ ContData::getClientState()
       TSHandleMLocRelease(bufp, req_hdr_loc, url_loc);
     }
 
-    TSMLoc field_loc = TSMimeHdrFieldGet(req_bufp, req_hdr_loc, 0);
+    TSMLoc field_loc   = TSMimeHdrFieldGet(req_bufp, req_hdr_loc, 0);
     bool   depth_field = false;
     while (field_loc) {
       TSMLoc      next_field_loc;
@@ -314,8 +314,8 @@ ContData::getClientState()
       if (name) {
         if (Utils::areEqual(name, name_len, MIME_FIELD_XESIDEPTH, MIME_FIELD_XESIDEPTH_LEN)) {
           unsigned d = TSMimeHdrFieldValueUintGet(req_bufp, req_hdr_loc, field_loc, -1);
-          d = (d + 1) % 10;
-          char dstr[2];
+          d          = (d + 1) % 10;
+          char      dstr[2];
           int const len = snprintf(dstr, sizeof(dstr), "%u", d);
 
           HttpHeader header;
@@ -1277,14 +1277,15 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionI
   TSMLoc   loc;
   unsigned d;
 
-  d = 0;
+  d   = 0;
   loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XESIDEPTH, MIME_FIELD_XESIDEPTH_LEN);
   if (loc != TS_NULL_MLOC) {
     d = TSMimeHdrFieldValueUintGet(bufp, hdr_loc, loc, -1);
   }
   TSHandleMLocRelease(bufp, hdr_loc, loc);
-  if( d >= pOptionInfo->max_inclusion_depth ) {
-    TSError("[esi][%s] The current esi inclusion depth (%u) is larger than or equal to the max (%u)", __FUNCTION__, d, pOptionInfo->max_inclusion_depth);
+  if (d >= pOptionInfo->max_inclusion_depth) {
+    TSError("[esi][%s] The current esi inclusion depth (%u) is larger than or equal to the max (%u)", __FUNCTION__, d,
+            pOptionInfo->max_inclusion_depth);
     return false;
   }
 
@@ -1687,7 +1688,8 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
 
   Dbg(dbg_ctl_local,
       "[%s] Plugin started, "
-      "packed-node-support: %d, private-response: %d, disable-gzip-output: %d, first-byte-flush: %d, max-doc-size %u, max-inclusion-depth %u ",
+      "packed-node-support: %d, private-response: %d, disable-gzip-output: %d, first-byte-flush: %d, max-doc-size %u, "
+      "max-inclusion-depth %u ",
       __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
       pOptionInfo->first_byte_flush, pOptionInfo->max_doc_size, pOptionInfo->max_inclusion_depth);
 
