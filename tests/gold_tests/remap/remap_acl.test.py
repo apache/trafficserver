@@ -43,7 +43,7 @@ class Test_remap_acl:
 
     def __init__(
             self, name: str, replay_file: str, ip_allow_content: str, deactivate_ip_allow: bool,
-            acl_configuration: str, named_acls: List[Tuple[str, str]], expected_responses: List[int]):
+            acl_configuration: str, named_acls: List[Tuple[str, str]], expected_responses: List[int], proxy_protocol: bool):
         """Initialize the test.
 
         :param name: The name of the test.
@@ -64,7 +64,7 @@ class Test_remap_acl:
         tr = Test.AddTestRun(name)
         self._configure_server(tr)
         self._configure_traffic_server(tr)
-        self._configure_client(tr)
+        self._configure_client(tr, proxy_protocol)
 
     def _configure_server(self, tr: 'TestRun') -> None:
         """Configure the server.
@@ -83,16 +83,17 @@ class Test_remap_acl:
         """
 
         name = f"ts-{Test_remap_acl._ts_counter}"
-        ts = tr.MakeATSProcess(name, enable_cache=False, enable_tls=True)
+        ts = tr.MakeATSProcess(name, enable_cache=False, enable_tls=True, enable_proxy_protocol=True)
         Test_remap_acl._ts_counter += 1
         self._ts = ts
 
         ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'http|url|remap|ip_allow',
+                'proxy.config.diags.debug.tags': 'http|url|remap|ip-allow|proxyprotocol',
                 'proxy.config.http.push_method_enabled': 1,
                 'proxy.config.http.connect_ports': self._server.Variables.http_port,
+                'proxy.config.acl.subjects': 'PROXY,PEER',
             })
 
         remap_config_lines = []
@@ -111,14 +112,15 @@ class Test_remap_acl:
         ts.Disk.remap_config.AddLines(remap_config_lines)
         ts.Disk.ip_allow_yaml.AddLines(self._ip_allow_content.split("\n"))
 
-    def _configure_client(self, tr: 'TestRun') -> None:
+    def _configure_client(self, tr: 'TestRun', proxy_protocol: bool) -> None:
         """Run the test.
 
         :param tr: The TestRun object to associate the client process with.
         """
 
         name = f"client-{Test_remap_acl._client_counter}"
-        p = tr.AddVerifierClientProcess(name, self._replay_file, http_ports=[self._ts.Variables.port])
+        port = self._ts.Variables.port if proxy_protocol == False else self._ts.Variables.proxy_protocol_port
+        p = tr.AddVerifierClientProcess(name, self._replay_file, http_ports=[port])
         Test_remap_acl._client_counter += 1
         p.StartBefore(self._server)
         p.StartBefore(self._ts)
@@ -159,6 +161,25 @@ def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_
     with open(replay_file, "w") as f:
         f.write(dump(data))
 
+IP_ALLOW_CONTENT = f'''
+ip_allow:
+  - apply: in
+    ip_addrs: 0/0
+    action: allow
+    methods:
+      - GET
+'''
+
+test_ip_allow_optional_methods_pp = Test_remap_acl(
+    "Verify non-allowed methods are blocked (PP).",
+    replay_file='remap_acl_get_post_allowed_pp.replay.yaml',
+    ip_allow_content=IP_ALLOW_CONTENT,
+    deactivate_ip_allow=True,
+    acl_configuration='@action=allow @src_ip=1.2.3.4 @method=GET @method=POST',
+    named_acls=[],
+    expected_responses=[200, 200, 403, 403, 403],
+    proxy_protocol=True)
+
 """
 Test all acl combinations
 # """
@@ -178,6 +199,7 @@ for idx, test in enumerate(all_acl_combination_tests):
         acl_configuration=test["inline"],
         named_acls=[("acl", test["named_acl"])] if test["named_acl"] != "" else [],
         expected_responses=[test["GET response"], test["POST response"]],
+        proxy_protocol=False,
     )
 
 """
@@ -202,7 +224,9 @@ for idx, test in enumerate(all_deactivate_ip_allow_tests):
         deactivate_ip_allow=test["deactivate_ip_allow"],
         acl_configuration=test["inline"],
         named_acls=[("acl", test["named_acl"])] if test["named_acl"] != "" else [],
-        expected_responses=[test["GET response"], test["POST response"]])
+        expected_responses=[test["GET response"], test["POST response"]],
+        proxy_protocol=False,
+    )
 
 """
 Test combination of named filters
@@ -223,4 +247,5 @@ for idx, test in enumerate(named_filter_combination_tests):
         acl_configuration="",
         named_acls=[("acl_1", test["named_acl_1"]), ("acl_2", test["named_acl_2"])],
         expected_responses=[test["GET response"], test["POST response"]],
+        proxy_protocol=False,
     )

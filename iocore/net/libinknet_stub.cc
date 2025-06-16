@@ -192,3 +192,5 @@ PreWarmManager::reconfigure()
 }
 
 PreWarmManager prewarmManager;
+
+uint8_t IpAllow::subjects[Subject::MAX_SUBJECTS];

@@ -35,6 +35,7 @@
 #include "SSLTypes.h"
 
 #include "tscore/ink_inet.h"
+#include "../../proxy/IPAllow.h"
 
 #include <vector>
 
@@ -442,15 +443,25 @@ public:
       return SSL_TLSEXT_ERR_OK;
     }
 
-    auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
-    auto ip     = ssl_vc->get_remote_endpoint();
+    auto ssl_vc        = dynamic_cast<SSLNetVConnection *>(snis);
+    const sockaddr *ip = nullptr;
+    for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
+      if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
+        ip = ssl_vc->get_remote_addr();
+        break;
+      } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
+                 ssl_vc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+        ip = ssl_vc->get_proxy_protocol_src_addr();
+        break;
+      }
+    }
 
     // check the allowed ips
     if (ip_map.contains(ip)) {
       return SSL_TLSEXT_ERR_OK;
     } else {
       char buff[256];
-      ats_ip_ntop(&ip.sa, buff, sizeof(buff));
+      ats_ip_ntop(ip, buff, sizeof(buff));
       Debug("ssl_sni", "%s is not allowed. Denying connection", buff);
       return SSL_TLSEXT_ERR_ALERT_FATAL;
     }

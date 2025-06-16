@@ -25,6 +25,8 @@
  */
 
 #include <sstream>
+#include <string_view>
+
 #include "IPAllow.h"
 #include "tscore/BufferWriter.h"
 #include "tscore/ts_file.h"
@@ -114,6 +116,7 @@ const IpAllow::ACL IpAllow::DENY_ALL_ACL;
 
 size_t IpAllow::configid     = 0;
 bool IpAllow::accept_check_p = true; // initializing global flag for fast deny
+uint8_t IpAllow::subjects[Subject::MAX_SUBJECTS];
 
 static ConfigUpdateHandler<IpAllow> *ipAllowUpdate;
 
@@ -202,7 +205,35 @@ IpAllow::match(sockaddr const *ip, match_key_t key)
 //   End API functions
 //
 
-IpAllow::IpAllow(const char *config_var) : config_file(ats_scoped_str(RecConfigReadConfigPath(config_var)).get()) {}
+IpAllow::IpAllow(const char *config_var) : config_file(ats_scoped_str(RecConfigReadConfigPath(config_var)).get())
+{
+  RecString subjects_char;
+  REC_ReadConfigStringAlloc(subjects_char, "proxy.config.acl.subjects");
+  std::string_view subjects_sv{subjects_char};
+  int i = 0;
+  std::string_view::size_type s, e;
+
+  for (s = 0, e = 0; s < subjects_sv.size() && e != subjects_sv.npos; s = e + 1) {
+    e                           = subjects_sv.find(",", s);
+    std::string_view subject_sv = subjects_sv.substr(s, e);
+    if (i >= MAX_SUBJECTS) {
+      Error("Too many ACL subjects were provided");
+    }
+    if (subject_sv == "PEER") {
+      subjects[i] = Subject::PEER;
+      ++i;
+    } else if (subject_sv == "PROXY") {
+      subjects[i] = Subject::PROXY;
+      ++i;
+    } else {
+      Debug("ip-allow", "Unknown subject %.*s was ignored", static_cast<int>(subject_sv.length()), subject_sv.data());
+    }
+  }
+  if (i < Subject::MAX_SUBJECTS) {
+    subjects[i] = Subject::MAX_SUBJECTS;
+  }
+  ats_free(subjects_char);
+}
 
 void
 IpAllow::PrintMap(const IpMap *map) const

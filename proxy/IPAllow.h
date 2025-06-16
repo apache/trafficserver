@@ -102,6 +102,8 @@ public:
 
   static constexpr const char *MODULE_NAME = "IPAllow";
 
+  enum Subject { PEER, PROXY, MAX_SUBJECTS };
+
   /** An access control record and support data.
    * The primary point of this is to hold the backing configuration in memory while the ACL
    * is in use.
@@ -181,6 +183,8 @@ public:
   static bool isAcceptCheckEnabled();
 
   const ts::file::path &get_config_file() const;
+
+  static uint8_t subjects[Subject::MAX_SUBJECTS];
 
 private:
   static size_t configid;               ///< Configuration ID for update management.
