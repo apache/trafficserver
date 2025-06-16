@@ -43,19 +43,18 @@ DbgCtl dbg_ctl{PLUGIN_NAME};
 // Class to hold a set of configurations (one for each remap rule instance)
 struct RemapConfigs {
   struct Item {
-    TSOverridableConfigKey _name;
-    TSRecordDataType       _type;
-    TSRecordData           _data;
-    int                    _data_len; // Used when data is a string
-    TSConfigValue          _value;
+    TSOverridableConfigKey _name = TS_CONFIG_NULL;
+    TSRecordDataType       _type = TS_RECORDDATATYPE_NULL;
+    TSRecordData           _data{0};
+    int                    _data_len = 0; // Used when data is a string
+    TSConfigValue          _value{};
   };
 
-  RemapConfigs() { memset(_items, 0, sizeof(_items)); };
   bool parse_file(const char *filename);
   bool parse_inline(const char *arg);
 
-  Item _items[MAX_OVERRIDABLE_CONFIGS];
-  int  _current = 0;
+  Item _items[MAX_OVERRIDABLE_CONFIGS] = {};
+  int  _current                        = 0;
 };
 
 // Helper function for the parser
