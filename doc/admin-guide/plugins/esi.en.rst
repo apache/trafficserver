@@ -76,7 +76,7 @@ Enabling ESI
 
     esi.so
 
-2. There are four optional arguments that can be passed to the above ``esi.so`` entry:
+2. There are optional arguments that can be passed to the above ``esi.so`` entry:
 
 - ``--private-response`` will add private cache control and expires headers to the processed ESI document.
 - ``--packed-node-support`` will enable the support for using the packed node feature, which will improve the
@@ -86,6 +86,8 @@ Enabling ESI
 - ``--first-byte-flush`` will enable the first byte flush feature, which will flush content to users as soon as the entire
   ESI document is received and parsed without all ESI includes fetched. The flushing will stop at the ESI include markup
   till that include is fetched.
+- ``--max-inclusion-depth <max-depth>`` controls the maximum depth of recursive ESI inclusion allowed (between 0 and 9).
+  Default is 3.
 
 3. ``HTTP_COOKIE`` variable support is turned off by default. It can be turned on with ``-f <handler_config>`` or
    ``-handler <handler_config>``. For example:
