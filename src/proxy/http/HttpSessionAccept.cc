@@ -39,7 +39,16 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   IpAllow::ACL        acl;
   ip_port_text_buffer ipb;
 
-  client_ip = netvc->get_remote_addr();
+  for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
+    if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
+      client_ip = netvc->get_remote_addr();
+      break;
+    } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
+               netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+      client_ip = netvc->get_proxy_protocol_src_addr();
+      break;
+    }
+  }
 
   if (ats_is_ip(client_ip)) {
     acl = IpAllow::match(client_ip, IpAllow::match_key_t::SRC_ADDR);
