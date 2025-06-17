@@ -42,8 +42,20 @@ Http2SessionAccept::~Http2SessionAccept() = default;
 bool
 Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const *client_ip   = netvc->get_remote_addr();
-  IpAllow::ACL    session_acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
+  sockaddr const *client_ip = nullptr;
+
+  for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
+    if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
+      client_ip = netvc->get_remote_addr();
+      break;
+    } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
+               netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+      client_ip = netvc->get_proxy_protocol_src_addr();
+      break;
+    }
+  }
+
+  IpAllow::ACL session_acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
   if (!session_acl.isValid()) {
     ip_port_text_buffer ipb;
     Warning("HTTP/2 client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));

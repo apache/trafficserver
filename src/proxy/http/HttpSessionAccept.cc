@@ -39,6 +39,16 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   IpAllow::ACL        acl;
   ip_port_text_buffer ipb;
 
+  for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
+    if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
+      client_ip = netvc->get_remote_addr();
+      break;
+    } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
+               netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+      client_ip = netvc->get_proxy_protocol_src_addr();
+      break;
+    }
+  }
   acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
   if (!acl.isValid()) { // if there's no ACL, it's a hard deny.
     Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
