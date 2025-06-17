@@ -2162,6 +2162,20 @@ IP Allow
    the use of this file, see :file:`ip_allow.yaml`. If this is a relative path,
    |TS| loads it relative to the ``SYSCONFDIR`` directory.
 
+.. ts:cv:: CONFIG proxy.config.acl.subjects STRING PEER
+
+   Specifies the list of data sources for getting client's IP address for ACL.
+   The value is a comma separated string, and the first available data source
+   will be used. If you configure a port to enable PROXY protocol, you probably
+   need to adjust this setting to have ``PROXY`` in the list.
+
+   ============= ======================================================================
+   Value         Description
+   ============= ======================================================================
+   ``PEER``      Use the IP address of the peer
+   ``PROXY``     Use the IP address from PROXY protocol
+   ============= ======================================================================
+
 
 Cache Control
 =============
