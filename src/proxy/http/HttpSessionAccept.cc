@@ -35,11 +35,25 @@ DbgCtl dbg_ctl_http_seq{"http_seq"};
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const     *client_ip;
+  sockaddr const     *client_ip = nullptr;
   IpAllow::ACL        acl;
   ip_port_text_buffer ipb;
 
-  client_ip = netvc->get_remote_addr();
+  for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
+    if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
+      client_ip = netvc->get_remote_addr();
+      break;
+    } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
+               netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+      client_ip = netvc->get_proxy_protocol_src_addr();
+      break;
+    }
+  }
+
+  if (client_ip == nullptr) {
+    // Use addresses from peer if none of the configured sources are avaialable
+    client_ip = netvc->get_remote_addr();
+  }
 
   if (ats_is_ip(client_ip)) {
     acl = IpAllow::match(client_ip, IpAllow::match_key_t::SRC_ADDR);
