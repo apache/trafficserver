@@ -114,9 +114,14 @@ ts.Disk.remap_config.AddLine(
     ' @plugin=compress.so @pparam={}/compress2.config'.format(Test.RunDirectory))
 ts.Disk.remap_config.AddLine(
     'map http://ae-3/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
+    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3' +
+    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory))
+ts.Disk.remap_config.AddLine(
+    'map http://ae-4/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
+    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=4' +
     ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory))
 
-for i in range(3):
+for i in range(4):
 
     tr = Test.AddTestRun()
     if (waitForTs):
@@ -126,7 +131,7 @@ for i in range(3):
         tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
     waitForServer = False
     tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Command = curl(ts, i, 'gzip, deflate, sdch, br')
+    tr.Processes.Default.Command = curl(ts, i, 'zstd, gzip, deflate, sdch, br')
 
     tr = Test.AddTestRun()
     tr.Processes.Default.ReturnCode = 0
@@ -139,6 +144,10 @@ for i in range(3):
     tr = Test.AddTestRun()
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Command = curl(ts, i, "deflate")
+
+    tr = Test.AddTestRun()
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Command = curl(ts, i, "zstd")
 
 # Test Accept-Encoding normalization.
 

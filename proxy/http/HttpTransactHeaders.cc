@@ -1255,6 +1255,37 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
           header->field_delete(ae_field);
           Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-br non-gzip Accept-Encoding");
         }
+      } else if (normalize_ae == 4) {
+        // Canonicalize Accept-Encoding to zstd, br, gzip, or subsets, or remove.
+        bool has_zstd = HttpTransactCache::match_content_encoding(ae_field, "zstd");
+        bool has_br   = HttpTransactCache::match_content_encoding(ae_field, "br");
+        bool has_gzip = HttpTransactCache::match_content_encoding(ae_field, "gzip");
+
+        if (has_zstd && has_br && has_gzip) {
+          header->field_value_set(ae_field, "zstd, br, gzip", 14);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to zstd, br, gzip");
+        } else if (has_zstd && has_br) {
+          header->field_value_set(ae_field, "zstd, br", 8);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to zstd, br");
+        } else if (has_zstd && has_gzip) {
+          header->field_value_set(ae_field, "zstd, gzip", 10);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to zstd, gzip");
+        } else if (has_zstd) {
+          header->field_value_set(ae_field, "zstd", 4);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to zstd");
+        } else if (has_br && has_gzip) {
+          header->field_value_set(ae_field, "br, gzip", 8);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br, gzip");
+        } else if (has_br) {
+          header->field_value_set(ae_field, "br", 2);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
+        } else if (has_gzip) {
+          header->field_value_set(ae_field, "gzip", 4);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
+        } else {
+          header->field_delete(ae_field);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-zstd non-br non-gzip Accept-Encoding");
+        }
       } else {
         static bool logged = false;
 

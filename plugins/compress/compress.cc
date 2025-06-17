@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip, deflate or brotli
+  Transforms content using gzip, deflate, brotli or zstd
 
   @section license License
 
@@ -23,6 +23,9 @@
 
 #include <cstring>
 #include <zlib.h>
+#if HAVE_ZSTD_H
+#include <zstd.h>
+#endif
 
 #include "ink_autoconf.h"
 
@@ -60,6 +63,10 @@ const char *dictionary           = nullptr;
 #if HAVE_BROTLI_ENCODE_H
 const int BROTLI_COMPRESSION_LEVEL = 6;
 const int BROTLI_LGW               = 16;
+#endif
+
+#if HAVE_ZSTD_H
+const int ZSTD_COMPRESSION_LEVEL = 6;
 #endif
 
 static const char *global_hidden_header_name = nullptr;
@@ -130,6 +137,16 @@ data_alloc(int compression_type, int compression_algorithms)
     data->bstrm.total_out = 0;
   }
 #endif
+#if HAVE_ZSTD_H
+  data->zstd_cctx = nullptr;
+  if (compression_type & COMPRESSION_TYPE_ZSTD) {
+    debug("zstd compression. Create Zstd Compression Context.");
+    data->zstd_cctx = ZSTD_createCCtx();
+    if (!data->zstd_cctx) {
+      fatal("Zstd Compression Context Creation Failed");
+    }
+  }
+#endif
   return data;
 }
 
@@ -149,6 +166,11 @@ data_destroy(Data *data)
 // brotlidestory
 #if HAVE_BROTLI_ENCODE_H
   BrotliEncoderDestroyInstance(data->bstrm.br);
+#endif
+#if HAVE_ZSTD_H
+  if (data->zstd_cctx) {
+    ZSTD_freeCCtx(data->zstd_cctx);
+  }
 #endif
 
   TSfree(data);
@@ -171,6 +193,9 @@ content_encoding_header(TSMBuffer bufp, TSMLoc hdr_loc, const int compression_ty
   } else if (compression_type & COMPRESSION_TYPE_DEFLATE && (algorithm & ALGORITHM_DEFLATE)) {
     value     = TS_HTTP_VALUE_DEFLATE;
     value_len = TS_HTTP_LEN_DEFLATE;
+  } else if (compression_type & COMPRESSION_TYPE_ZSTD && (algorithm & ALGORITHM_ZSTD)) {
+    value     = "zstd";
+    value_len = strlen("zstd");
   }
 
   if (value_len == 0) {
@@ -295,6 +320,16 @@ compress_transform_init(TSCont contp, Data *data)
     data->downstream_vio    = TSVConnWrite(downstream_conn, contp, data->downstream_reader, INT64_MAX);
   }
 
+#if HAVE_ZSTD_H
+  if (data->compression_type & COMPRESSION_TYPE_ZSTD) {
+    zstd_compress_init(data);
+    if (!data->zstd_cctx) {
+      TSError("Failed to create Zstandard compression context");
+      return;
+    }
+  }
+#endif
+
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
@@ -400,6 +435,40 @@ brotli_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_l
 }
 #endif
 
+#if HAVE_ZSTD_H
+static void
+zstd_compress_init(Data *data)
+{
+  data->zstd_cctx = ZSTD_createCCtx();
+  if (!data->zstd_cctx) {
+    error("Failed to initialize Zstd compression context");
+  }
+}
+
+static void
+zstd_compress_finish(Data *data)
+{
+  if (data->zstd_cctx) {
+    ZSTD_freeCCtx(data->zstd_cctx);
+    data->zstd_cctx = nullptr;
+  }
+}
+
+static void
+zstd_compress_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
+{
+  char output_buffer[ZSTD_CStreamOutSize()];
+  size_t compressed_size = ZSTD_compressCCtx(data->zstd_cctx, output_buffer, sizeof(output_buffer), upstream_buffer,
+                                             upstream_length, ZSTD_COMPRESSION_LEVEL);
+  if (ZSTD_isError(compressed_size)) {
+    error("Zstd compression failed: %s", ZSTD_getErrorName(compressed_size));
+    return;
+  }
+  TSIOBufferWrite(data->downstream_buffer, output_buffer, compressed_size);
+  data->downstream_length += compressed_size;
+}
+#endif
+
 static void
 compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
 {
@@ -425,6 +494,11 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
 #if HAVE_BROTLI_ENCODE_H
     if (data->compression_type & COMPRESSION_TYPE_BROTLI && (data->compression_algorithms & ALGORITHM_BROTLI)) {
       brotli_transform_one(data, upstream_buffer, upstream_length);
+    } else
+#endif
+#if HAVE_ZSTD_H
+      if (data->compression_type & COMPRESSION_TYPE_ZSTD && (data->compression_algorithms & ALGORITHM_ZSTD)) {
+      zstd_compress_one(data, upstream_buffer, upstream_length);
     } else
 #endif
       if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
@@ -513,6 +587,12 @@ compress_transform_finish(Data *data)
   if (data->compression_type & COMPRESSION_TYPE_BROTLI && data->compression_algorithms & ALGORITHM_BROTLI) {
     brotli_transform_finish(data);
     debug("compress_transform_finish: brotli compression finish");
+  } else
+#endif
+#if HAVE_ZSTD_H
+    if (data->compression_type & COMPRESSION_TYPE_ZSTD && data->compression_algorithms & ALGORITHM_ZSTD) {
+    zstd_compress_finish(data);
+    debug("compress_transform_finish: zstd compression finish");
   } else
 #endif
     if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
@@ -720,6 +800,11 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
           compression_acceptable = 1;
         }
         *compress_type |= COMPRESSION_TYPE_GZIP;
+      } else if (strncasecmp(value, "zstd", sizeof("zstd") - 1) == 0) {
+        if (*algorithms & ALGORITHM_ZSTD) {
+          compression_acceptable = 1;
+        }
+        *compress_type |= COMPRESSION_TYPE_ZSTD;
       }
     }
 
