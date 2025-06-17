@@ -76,7 +76,7 @@ Enabling ESI
 
     esi.so
 
-2. There are four optional arguments that can be passed to the above ``esi.so`` entry:
+2. There are optional arguments that can be passed to the above ``esi.so`` entry:
 
 - ``--private-response`` will add private cache control and expires headers to the processed ESI document.
 - ``--packed-node-support`` will enable the support for using the packed node feature, which will improve the
@@ -90,6 +90,8 @@ Enabling ESI
   in bytes.  The number of bytes must be an unsigned decimal integer, and can be followed (with no white space) by
   a K, to indicate the given number is multiplied by 1024, or by M, to indicate the given number is multiplied by
   1024 * 1024.  Example values: 500, 5K, 2M.  If this option is omitted, the maximum document size defaults to 1M.
+- ``--max-inclusion-depth <max-depth>`` controls the maximum depth of recursive ESI inclusion allowed (between 0 and 9).
+  Default is 3.
 
 3. ``HTTP_COOKIE`` variable support is turned off by default. It can be turned on with ``-f <handler_config>`` or
    ``-handler <handler_config>``. For example:

@@ -58,6 +58,7 @@ struct OptionInfo {
   bool     disable_gzip_output{false};
   bool     first_byte_flush{false};
   unsigned max_doc_size{1024 * 1024};
+  unsigned max_inclusion_depth{3};
 };
 
 static HandlerManager        *gHandlerManager = nullptr;
@@ -68,6 +69,9 @@ static Utils::HeaderValueList gAllowlistCookies;
 
 #define MIME_FIELD_XESI     "X-Esi"
 #define MIME_FIELD_XESI_LEN 5
+
+#define MIME_FIELD_XESIDEPTH     "X-Esi-Depth"
+#define MIME_FIELD_XESIDEPTH_LEN 11
 
 #define HTTP_VALUE_PRIVATE_EXPIRES "-1"
 #define HTTP_VALUE_PRIVATE_CC      "max-age=0, private"
@@ -298,7 +302,9 @@ ContData::getClientState()
       }
       TSHandleMLocRelease(bufp, req_hdr_loc, url_loc);
     }
-    TSMLoc field_loc = TSMimeHdrFieldGet(req_bufp, req_hdr_loc, 0);
+
+    TSMLoc field_loc   = TSMimeHdrFieldGet(req_bufp, req_hdr_loc, 0);
+    bool   depth_field = false;
     while (field_loc) {
       TSMLoc      next_field_loc;
       const char *name;
@@ -306,38 +312,56 @@ ContData::getClientState()
 
       name = TSMimeHdrFieldNameGet(req_bufp, req_hdr_loc, field_loc, &name_len);
       if (name) {
-        int n_values;
-        n_values = TSMimeHdrFieldValuesCount(req_bufp, req_hdr_loc, field_loc);
-        if (n_values && (n_values != TS_ERROR)) {
-          const char *value     = nullptr;
-          int         value_len = 0;
-          if (n_values == 1) {
-            value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, 0, &value_len);
+        if (Utils::areEqual(name, name_len, MIME_FIELD_XESIDEPTH, MIME_FIELD_XESIDEPTH_LEN)) {
+          unsigned d = TSMimeHdrFieldValueUintGet(req_bufp, req_hdr_loc, field_loc, -1);
+          d          = (d + 1) % 10;
+          char      dstr[2];
+          int const len = snprintf(dstr, sizeof(dstr), "%u", d);
 
-            if (nullptr != value && value_len) {
-              if (Utils::areEqual(name, name_len, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING) &&
-                  Utils::areEqual(value, value_len, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
-                gzip_output = true;
-              }
-            }
+          HttpHeader header;
+          if (len != 1) {
+            header = HttpHeader(MIME_FIELD_XESIDEPTH, MIME_FIELD_XESIDEPTH_LEN, "1", 1);
           } else {
-            for (int i = 0; i < n_values; ++i) {
-              value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, i, &value_len);
+            header = HttpHeader(MIME_FIELD_XESIDEPTH, MIME_FIELD_XESIDEPTH_LEN, dstr, 1);
+          }
+          data_fetcher->useHeader(header);
+          esi_vars->populate(header);
+          depth_field = true;
+
+        } else {
+          int n_values;
+          n_values = TSMimeHdrFieldValuesCount(req_bufp, req_hdr_loc, field_loc);
+          if (n_values && (n_values != TS_ERROR)) {
+            const char *value     = nullptr;
+            int         value_len = 0;
+            if (n_values == 1) {
+              value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, 0, &value_len);
+
               if (nullptr != value && value_len) {
                 if (Utils::areEqual(name, name_len, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING) &&
                     Utils::areEqual(value, value_len, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
                   gzip_output = true;
                 }
               }
+            } else {
+              for (int i = 0; i < n_values; ++i) {
+                value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, i, &value_len);
+                if (nullptr != value && value_len) {
+                  if (Utils::areEqual(name, name_len, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING) &&
+                      Utils::areEqual(value, value_len, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
+                    gzip_output = true;
+                  }
+                }
+              }
+
+              value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, -1, &value_len);
             }
 
-            value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, -1, &value_len);
-          }
-
-          if (value != nullptr) {
-            HttpHeader header(name, name_len, value, value_len);
-            data_fetcher->useHeader(header);
-            esi_vars->populate(header);
+            if (value != nullptr) {
+              HttpHeader header(name, name_len, value, value_len);
+              data_fetcher->useHeader(header);
+              esi_vars->populate(header);
+            }
           }
         }
       }
@@ -345,6 +369,12 @@ ContData::getClientState()
       next_field_loc = TSMimeHdrFieldNext(req_bufp, req_hdr_loc, field_loc);
       TSHandleMLocRelease(req_bufp, req_hdr_loc, field_loc);
       field_loc = next_field_loc;
+    }
+
+    if (depth_field == false) {
+      HttpHeader header(MIME_FIELD_XESIDEPTH, MIME_FIELD_XESIDEPTH_LEN, "1", 1);
+      data_fetcher->useHeader(header);
+      esi_vars->populate(header);
     }
   }
 
@@ -1229,7 +1259,7 @@ maskOsCacheHeaders(TSHttpTxn txnp)
 }
 
 static bool
-isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool *intercept_header, bool *head_only)
+isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, const OptionInfo *pOptionInfo, bool *intercept_header, bool *head_only)
 {
   //  We are only interested in transforming "200 OK" responses with a
   //  Content-Type: text/ header and with X-Esi header
@@ -1241,6 +1271,21 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool *intercept_header, bo
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[esi][%s] Couldn't get txn header", __FUNCTION__);
+    return false;
+  }
+
+  TSMLoc   loc;
+  unsigned d;
+
+  d   = 0;
+  loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XESIDEPTH, MIME_FIELD_XESIDEPTH_LEN);
+  if (loc != TS_NULL_MLOC) {
+    d = TSMimeHdrFieldValueUintGet(bufp, hdr_loc, loc, -1);
+  }
+  TSHandleMLocRelease(bufp, hdr_loc, loc);
+  if (d >= pOptionInfo->max_inclusion_depth) {
+    TSError("[esi][%s] The current esi inclusion depth (%u) is larger than or equal to the max (%u)", __FUNCTION__, d,
+            pOptionInfo->max_inclusion_depth);
     return false;
   }
 
@@ -1318,7 +1363,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool *intercept_header, bo
 }
 
 static bool
-isCacheObjTransformable(TSHttpTxn txnp, bool *intercept_header, bool *head_only)
+isCacheObjTransformable(TSHttpTxn txnp, const OptionInfo *pOptionInfo, bool *intercept_header, bool *head_only)
 {
   int obj_status;
   if (TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) == TS_ERROR) {
@@ -1327,7 +1372,7 @@ isCacheObjTransformable(TSHttpTxn txnp, bool *intercept_header, bool *head_only)
   }
   if (obj_status == TS_CACHE_LOOKUP_HIT_FRESH) {
     Dbg(dbg_ctl_local, "[%s] doc found in cache, will add transformation", __FUNCTION__);
-    return isTxnTransformable(txnp, true, intercept_header, head_only);
+    return isTxnTransformable(txnp, true, pOptionInfo, intercept_header, head_only);
   }
   Dbg(dbg_ctl_local, "[%s] cache object's status is %d; not transformable", __FUNCTION__, obj_status);
   return false;
@@ -1499,7 +1544,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
       if (event == TS_EVENT_HTTP_READ_RESPONSE_HDR) {
         bool mask_cache_headers = false;
         Dbg(dbg_ctl_local, "[%s] handling read response header event", __FUNCTION__);
-        if (isTxnTransformable(txnp, false, &intercept_header, &head_only)) {
+        if (isTxnTransformable(txnp, false, pOptionInfo, &intercept_header, &head_only)) {
           addTransform(txnp, true, intercept_header, head_only, pOptionInfo);
           Stats::increment(Stats::N_OS_DOCS);
           mask_cache_headers = true;
@@ -1512,7 +1557,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
         }
       } else {
         Dbg(dbg_ctl_local, "[%s] handling cache lookup complete event", __FUNCTION__);
-        if (isCacheObjTransformable(txnp, &intercept_header, &head_only)) {
+        if (isCacheObjTransformable(txnp, pOptionInfo, &intercept_header, &head_only)) {
           // we make the assumption above that a transformable cache
           // object would already have a transformation. We should revisit
           // that assumption in case we change the statement below
@@ -1575,11 +1620,12 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
       {const_cast<char *>("first-byte-flush"),    no_argument,       nullptr, 'b'},
       {const_cast<char *>("handler-filename"),    required_argument, nullptr, 'f'},
       {const_cast<char *>("max-doc-size"),        required_argument, nullptr, 'd'},
+      {const_cast<char *>("max-inclusion-depth"), required_argument, nullptr, 'i'},
       {nullptr,                                   0,                 nullptr, 0  },
     };
 
     int longindex = 0;
-    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:d:", longopts, &longindex)) != -1) {
+    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:d:i:", longopts, &longindex)) != -1) {
       switch (c) {
       case 'n':
         pOptionInfo->packed_node_support = true;
@@ -1621,6 +1667,18 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
         pOptionInfo->max_doc_size = max * coeff;
         break;
       }
+      case 'i': {
+        unsigned max;
+        auto     num = std::sscanf(optarg, "%u", &max);
+        if (num != 1) {
+          TSEmergency("[esi][%s] value for maximum inclusion depth (%s) is not unsigned integer", __FUNCTION__, optarg);
+        }
+        if (max > 9) {
+          TSEmergency("[esi][%s] maximum inclusion depth (%s) large than 9", __FUNCTION__, optarg);
+        }
+        pOptionInfo->max_inclusion_depth = max;
+        break;
+      }
       default:
         TSEmergency("[esi][%s] bad option", __FUNCTION__);
         return -1;
@@ -1630,9 +1688,10 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
 
   Dbg(dbg_ctl_local,
       "[%s] Plugin started, "
-      "packed-node-support: %d, private-response: %d, disable-gzip-output: %d, first-byte-flush: %d, max-doc-size %u ",
+      "packed-node-support: %d, private-response: %d, disable-gzip-output: %d, first-byte-flush: %d, max-doc-size %u, "
+      "max-inclusion-depth %u ",
       __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
-      pOptionInfo->first_byte_flush, pOptionInfo->max_doc_size);
+      pOptionInfo->first_byte_flush, pOptionInfo->max_doc_size, pOptionInfo->max_inclusion_depth);
 
   return 0;
 }
