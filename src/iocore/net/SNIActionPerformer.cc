@@ -24,6 +24,7 @@
 #include "swoc/swoc_file.h"
 #include "swoc/BufferWriter.h"
 #include "tscore/Layout.h"
+#include "proxy/IPAllow.h"
 
 #include "SNIActionPerformer.h"
 
@@ -412,8 +413,19 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
     return SSL_TLSEXT_ERR_OK;
   }
 
-  auto ssl_vc = SSLNetVCAccess(&ssl);
-  auto ip     = swoc::IPAddr(ssl_vc->get_remote_endpoint());
+  auto            ssl_vc    = SSLNetVCAccess(&ssl);
+  const sockaddr *client_ip = nullptr;
+  for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
+    if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
+      client_ip = ssl_vc->get_remote_addr();
+      break;
+    } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
+               ssl_vc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+      client_ip = ssl_vc->get_proxy_protocol_src_addr();
+      break;
+    }
+  }
+  swoc::IPAddr ip = swoc::IPAddr(client_ip);
 
   // check the allowed ips
   if (ip_addrs.contains(ip)) {

@@ -147,6 +147,8 @@ public:
 
   static constexpr const char *MODULE_NAME = "IPAllow";
 
+  enum Subject { PEER, PROXY, MAX_SUBJECTS };
+
   /** An access control record and support data.
    * The primary point of this is to hold the backing configuration in memory while the ACL
    * is in use.
@@ -251,6 +253,8 @@ public:
    * @return True if there are no rules in ip_allow.yaml, false otherwise.
    */
   static bool has_no_rules();
+
+  static uint8_t subjects[Subject::MAX_SUBJECTS];
 
 private:
   static size_t       configid;         ///< Configuration ID for update management.

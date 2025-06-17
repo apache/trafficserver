@@ -142,6 +142,14 @@ static const RecordElement RecordsConfig[] =
 
   //##############################################################################
   //#
+  //# ACL
+  //#
+  //##############################################################################
+  {RECT_CONFIG, "proxy.config.acl.subjects", RECD_STRING, "PEER", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+
+  //##############################################################################
+  //#
   //# Support for disabling check for Accept-* / Content-* header mismatch
   //#
   //##############################################################################

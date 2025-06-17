@@ -25,6 +25,7 @@ Test.Summary = '''Test sni.yaml ip_allow.'''
 class ConnectionType:
     GET = 0
     TUNNEL = 1
+    PROXY = 2
 
 
 class TestSniIpAllow:
@@ -38,19 +39,21 @@ class TestSniIpAllow:
         """Configure a test run.
         :param connect_type: The type of connection to use.
         """
-        tr = Test.AddTestRun("Verify ip_allow of sni.yaml")
+        tr = Test.AddTestRun(f'Verify ip_allow of sni.yaml ({connect_type})')
 
         if connect_type == ConnectionType.GET:
             self._replay_file: str = "replay/ip_allow.replay.yaml"
         elif connect_type == ConnectionType.TUNNEL:
             self._replay_file: str = "replay/ip_allow_tunnel.replay.yaml"
+        elif connect_type == ConnectionType.PROXY:
+            self._replay_file: str = "replay/ip_allow_proxy.replay.yaml"
         else:
             raise ValueError(f'Invalid connect_type: {connect_type}')
 
         self._dns = self._configure_dns(tr)
         self._server = self._configure_server(tr)
         self._ts = self._configure_trafficserver(tr, connect_type, self._dns, self._server)
-        self._configure_client(tr, self._dns, self._server, self._ts)
+        self._configure_client(tr, self._dns, self._server, self._ts, connect_type)
 
     def _configure_dns(self, tr: 'TestRun') -> 'Process':
         """Configure a DNS for the TestRun.
@@ -86,7 +89,7 @@ class TestSniIpAllow:
         :return: The Traffic Server Process.
         """
         name = f'ts{TestSniIpAllow._ts_counter}'
-        ts = tr.MakeATSProcess(name, enable_tls=True, enable_cache=False)
+        ts = tr.MakeATSProcess(name, enable_tls=True, enable_cache=False, enable_proxy_protocol=True)
         TestSniIpAllow._ts_counter += 1
         ts.Disk.sni_yaml.AddLines(
             [
@@ -98,6 +101,12 @@ class TestSniIpAllow:
             ts.Disk.sni_yaml.AddLines([
                 f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
             ])
+        if connect_type == ConnectionType.PROXY:
+            ts.Disk.sni_yaml.AddLines(
+                [
+                    '- fqdn: pp.block.me.com',
+                    '  ip_allow: 192.168.10.1',  # Therefore 1.2.3.4 should be blocked.
+                ])
         ts.Disk.sni_yaml.AddLines([
             '- fqdn: allow.me.com',
             '  ip_allow: 127.0.0.1',
@@ -105,6 +114,11 @@ class TestSniIpAllow:
         if connect_type == ConnectionType.TUNNEL:
             ts.Disk.sni_yaml.AddLines([
                 f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
+            ])
+        if connect_type == ConnectionType.PROXY:
+            ts.Disk.sni_yaml.AddLines([
+                '- fqdn: pp.allow.me.com',
+                '  ip_allow: 1.2.3.4',
             ])
         ts.addDefaultSSLFiles()
         ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
@@ -117,7 +131,8 @@ class TestSniIpAllow:
                 'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'http|ssl',
+                'proxy.config.diags.debug.tags': 'http|ssl|proxyprotocol',
+                'proxy.config.acl.subjects': 'PROXY,PEER',
             })
         if connect_type == ConnectionType.TUNNEL:
             ts.Disk.records_config.update({
@@ -125,7 +140,8 @@ class TestSniIpAllow:
             })
         return ts
 
-    def _configure_client(self, tr: 'TestRun', dns: 'Process', server: 'Process', ts: 'Process') -> None:
+    def _configure_client(
+            self, tr: 'TestRun', dns: 'Process', server: 'Process', ts: 'Process', connect_type: ConnectionType.GET) -> None:
         """Configure the client for the TestRun.
         :param tr: The TestRun to configure with the client.
         :param dns: The DNS Process.
@@ -133,8 +149,15 @@ class TestSniIpAllow:
         :param ts: The Traffic Server Process.
         """
         name = f'client{TestSniIpAllow._client_counter}'
-        p = tr.AddVerifierClientProcess(
-            name, self._replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
+        if connect_type == ConnectionType.PROXY:
+            p = tr.AddVerifierClientProcess(
+                name,
+                self._replay_file,
+                http_ports=[ts.Variables.proxy_protocol_port],
+                https_ports=[ts.Variables.proxy_protocol_ssl_port])
+        else:
+            p = tr.AddVerifierClientProcess(
+                name, self._replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
         TestSniIpAllow._client_counter += 1
         ts.StartBefore(server)
         ts.StartBefore(dns)
@@ -151,3 +174,4 @@ class TestSniIpAllow:
 
 TestSniIpAllow(ConnectionType.GET)
 TestSniIpAllow(ConnectionType.TUNNEL)
+TestSniIpAllow(ConnectionType.PROXY)
