@@ -258,13 +258,13 @@ main(int argc, char **argv)
   auto threads = eventProcessor.active_group_threads(ET_CALL);
   int  count   = threads.end() - threads.begin();
 
-  latch                   l{count};
-  std::vector<StartDNS *> tests;
+  latch                                  l{count};
+  std::vector<std::unique_ptr<StartDNS>> tests;
 
   for (auto &t : eventProcessor.active_group_threads(ET_CALL)) {
-    StartDNS *startDns = new StartDNS{hosts, t->id, l};
-    t->schedule_imm(startDns);
-    tests.push_back(startDns);
+    auto startDns = std::make_unique<StartDNS>(hosts, t->id, l);
+    t->schedule_imm(startDns.get());
+    tests.push_back(std::move(startDns));
   }
 
   l.wait();
@@ -277,7 +277,7 @@ main(int argc, char **argv)
   std::chrono::duration<float> min_i = std::chrono::duration<float>::max();
   std::chrono::duration<float> max_i{};
 
-  for (auto *test : tests) {
+  for (auto &test : tests) {
     test->print_results();
     results_count += test->results.size();
     for (const auto &r : test->results) {
@@ -291,7 +291,6 @@ main(int argc, char **argv)
         max_i = std::max(max_i, r.d);
       }
     }
-    delete test;
   }
 
   printf("Hosts: %zu lookup count: %d thread count: %d\n", hosts.size(), dns_count, count);

@@ -1,0 +1,9 @@
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+cond %{CLIENT-URL:PATH} /examplepath1/
+    set-header Cache-Control "max-age=3600"
+    no-op [L]
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+cond %{CLIENT-URL:PATH} /examplepath2\/examplepath3\/.*/
+    set-header Cache-Control "no-cache"
+    no-op [L]

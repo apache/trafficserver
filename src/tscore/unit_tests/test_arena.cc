@@ -37,6 +37,7 @@
 
 #include "tscore/Arena.h"
 #include <cstdio>
+#include <memory>
 
 void
 fill_test_data(char *ptr, int size, int seed)
@@ -51,21 +52,16 @@ fill_test_data(char *ptr, int size, int seed)
 
 TEST_CASE("test arena", "[libts][arena]")
 {
-  const int sizes_to_test   = 12;
-  const int regions_to_test = 1024 * 2;
-  char    **test_regions    = new char *[regions_to_test];
-  Arena    *a               = new Arena();
+  const int           sizes_to_test   = 12;
+  const int           regions_to_test = 1024 * 2;
+  std::vector<char *> test_regions{regions_to_test};
+  auto                a = std::make_unique<Arena>();
 
   for (int i = 0; i < sizes_to_test; i++) {
     int test_size = 1 << i;
 
-    // Clear out the regions array
-    int j = 0;
-    for (j = 0; j < regions_to_test; j++) {
-      test_regions[j] = nullptr;
-    }
-
     // Allocate and fill the array
+    int j = 0;
     for (j = 0; j < regions_to_test; j++) {
       test_regions[j] = static_cast<char *>(a->alloc(test_size));
       fill_test_data(test_regions[j], test_size, j);
@@ -90,7 +86,4 @@ TEST_CASE("test arena", "[libts][arena]")
 
     a->reset();
   }
-
-  delete[] test_regions;
-  delete a;
 }

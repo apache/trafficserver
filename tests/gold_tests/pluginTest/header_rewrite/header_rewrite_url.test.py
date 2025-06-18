@@ -90,7 +90,8 @@ ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '--proxy 127.0.0.1:{0} "http://www.example.com/from_path/hrw-sets.png" '
-    '-H "Proxy-Connection: keep-alive" --verbose'.format(ts.Variables.port))
+    '-H "Proxy-Connection: keep-alive" -H "X-Testing: foo,bar" '
+    '--verbose'.format(ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/ext-sets.gold"
 tr.StillRunningAfter = server

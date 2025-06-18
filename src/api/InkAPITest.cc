@@ -22,6 +22,7 @@
  */
 
 // Turn off -Wdeprecated so that we can still test our own deprecated APIs.
+
 #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 3)
 #pragma GCC diagnostic ignored "-Wdeprecated"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -46,6 +47,10 @@
 #include "records/RecCore.h"
 
 #include "../iocore/net/P_UnixNetVConnection.h"
+
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/Lock.h"
+
 #include "records/RecHttp.h"
 
 #include "proxy/http/HttpSM.h"
@@ -8736,6 +8741,11 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
   int                    len;
 
   s->init();
+  s->mutex = new_ProxyMutex();
+  SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
+
+  HttpCacheSM *c_sm = &(s->get_cache_sm());
+  c_sm->init(s, s->mutex);
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
   for (int i = 0; i < static_cast<int>(SDK_Overridable_Configs.size()); ++i) {
@@ -8835,9 +8845,12 @@ REGRESSION_TEST(SDK_API_TXN_HTTP_INFO_GET)(RegressionTest *test, int /* atype AT
   TSMgmtInt ival_read;
 
   s->init();
+  s->mutex = new_ProxyMutex();
+  SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
 
   *pstatus          = REGRESSION_TEST_INPROGRESS;
   HttpCacheSM *c_sm = &(s->get_cache_sm());
+  c_sm->init(s, s->mutex);
   c_sm->set_readwhilewrite_inprogress(true);
   c_sm->set_open_read_tries(5);
   c_sm->set_open_write_tries(8);

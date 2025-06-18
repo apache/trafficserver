@@ -22,12 +22,34 @@
 #include <string_view>
 #include <unordered_map>
 #include <atomic>
+#include <variant>
 
 #include "ts/ts.h"
 #include "sni_limiter.h"
 #include "utilities.h"
 #include "ip_reputation.h"
 #include "lists.h"
+
+using OwnedLimiterOrAlias = std::variant<std::unique_ptr<SniRateLimiter>, SniRateLimiter *>;
+
+static inline bool
+isOwnedlimiter(const OwnedLimiterOrAlias &limiter_or_alias)
+{
+  return limiter_or_alias.index() == 0;
+}
+
+static inline SniRateLimiter *
+limiterPtr(const OwnedLimiterOrAlias &limiter_or_alias)
+{
+  switch (limiter_or_alias.index()) {
+  case 0:
+    return std::get<0>(limiter_or_alias).get();
+  case 1:
+    return std::get<1>(limiter_or_alias);
+  default:
+    return nullptr;
+  }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // SNI based limiter selector, this will have one singleton instance.
@@ -37,9 +59,9 @@ class SniSelector
   using self_type = SniSelector;
 
 public:
-  using Limiters      = std::unordered_map<std::string, std::tuple<bool, SniRateLimiter *>>;
-  using IPReputations = std::vector<IpReputation::SieveLru *>;
-  using Lists         = std::vector<List::IP *>;
+  using Limiters      = std::unordered_map<std::string, OwnedLimiterOrAlias>;
+  using IPReputations = std::vector<std::unique_ptr<IpReputation::SieveLru>>;
+  using Lists         = std::vector<std::unique_ptr<List::IP>>;
 
   SniSelector() { Dbg(dbg_ctl, "Creating SNI selector"); }
 
@@ -56,23 +78,6 @@ public:
 
     if (_queue_cont) {
       TSContDestroy(_queue_cont);
-    }
-
-    for (auto &iprep : _reputations) {
-      delete iprep;
-    }
-
-    for (auto &list : _lists) {
-      delete list;
-    }
-
-    delete _default;
-    for (auto &limiter : _limiters) {
-      auto &[owner, ptr] = limiter.second;
-
-      if (owner) {
-        delete ptr;
-      }
     }
   }
 
@@ -116,20 +121,20 @@ public:
   {
     auto iter = _limiters.find(sni);
 
-    return ((iter != _limiters.end()) ? std::get<1>(iter->second) : _default);
+    return iter != _limiters.end() ? limiterPtr(iter->second) : _default.get();
   }
 
   void
-  addLimiter(SniRateLimiter *limiter)
+  addLimiter(std::unique_ptr<SniRateLimiter> limiter)
   {
     _needs_queue_cont |= (limiter->max_queue() > 0);
-    _limiters.emplace(limiter->name(), std::forward_as_tuple(true, limiter));
+    _limiters.emplace(limiter->name(), std::move(limiter));
   }
 
   void
   addAlias(std::string alias, SniRateLimiter *limiter)
   {
-    _limiters.emplace(alias, std::forward_as_tuple(false, limiter));
+    _limiters.emplace(alias, limiter);
   }
 
   const std::string &
@@ -139,37 +144,36 @@ public:
   }
 
   void
-  addIPReputation(IpReputation::SieveLru *iprep)
+  addIPReputation(std::unique_ptr<IpReputation::SieveLru> iprep)
   {
-    _reputations.emplace_back(iprep);
+    _reputations.emplace_back(std::move(iprep));
   }
 
   IpReputation::SieveLru *
   findIpRep(const std::string &name)
   {
-    auto it = std::find_if(_reputations.begin(), _reputations.end(),
-                           [&name](const IpReputation::SieveLru *iprep) { return iprep->name() == name; });
+    auto it = std::find_if(_reputations.begin(), _reputations.end(), [&name](auto &iprep) { return iprep->name() == name; });
 
     if (it != _reputations.end()) {
-      return *it;
+      return it->get();
     }
 
     return nullptr;
   }
 
   void
-  addList(List::IP *list)
+  addList(std::unique_ptr<List::IP> list)
   {
-    _lists.emplace_back(list);
+    _lists.emplace_back(std::move(list));
   }
 
   List::IP *
   findList(const std::string &name)
   {
-    auto it = std::find_if(_lists.begin(), _lists.end(), [&name](const List::IP *list) { return list->name() == name; });
+    auto it = std::find_if(_lists.begin(), _lists.end(), [&name](auto &list) { return list->name() == name; });
 
     if (it != _lists.end()) {
-      return *it;
+      return it->get();
     }
 
     return nullptr;
@@ -181,15 +185,15 @@ public:
   static void startup(const std::string &yaml_file);
 
 private:
-  std::string           _yaml_file;
-  bool                  _needs_queue_cont = false;
-  TSCont                _queue_cont       = nullptr; // Continuation processing the queue periodically
-  TSAction              _queue_action     = nullptr; // The action associated with the queue continuation, needed to shut it down
-  Limiters              _limiters;                   // The SNI limiters
-  SniRateLimiter       *_default = nullptr;          // Default limiter, if any
-  IPReputations         _reputations;                // IP-Reputation rules
-  Lists                 _lists;                      // IP lists (for now, could be generalized later)
-  std::atomic<uint32_t> _leases = 0;                 // Number of leases we have on the current selector, start with one
+  std::string _yaml_file;
+  bool        _needs_queue_cont = false;
+  TSCont      _queue_cont       = nullptr;            // Continuation processing the queue periodically
+  TSAction    _queue_action     = nullptr;            // The action associated with the queue continuation, needed to shut it down
+  Limiters    _limiters;                              // The SNI limiters
+  std::unique_ptr<SniRateLimiter> _default = nullptr; // Default limiter, if any
+  IPReputations                   _reputations;       // IP-Reputation rules
+  Lists                           _lists;             // IP lists (for now, could be generalized later)
+  std::atomic<uint32_t>           _leases = 0;        // Number of leases we have on the current selector, start with one
 
   static std::atomic<self_type *> _instance; // Holds the singleton instance, initialized in the .cc file
 };

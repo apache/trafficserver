@@ -151,13 +151,12 @@ PrefetchConfig::init(int argc, char *argv[])
       break;
 
     case 'e': /* --fetch-path-pattern */ {
-      Pattern *pattern = new Pattern();
+      auto pattern = std::make_unique<Pattern>();
       if (nullptr != pattern) {
         if (pattern->init(optarg)) {
-          _nextPaths.add(pattern);
+          _nextPaths.add(std::move(pattern));
         } else {
           PrefetchError("failed to initialize next object pattern");
-          delete pattern;
         }
       }
     } break;

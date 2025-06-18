@@ -43,6 +43,7 @@
 #include "swoc/TextView.h"
 #include <tscore/MgmtDefs.h>
 #include "iocore/net/SessionSharingAPIEnums.h"
+#include "tsutil/Metrics.h"
 
 /**
  * Singleton class to keep track of the number of inbound and outbound connections.
@@ -83,6 +84,8 @@ public:
   struct GlobalConfig {
     std::chrono::seconds client_alert_delay{60}; ///< Alert delay in seconds.
     std::chrono::seconds server_alert_delay{60}; ///< Alert delay in seconds.
+    bool                 metric_enabled{false};  ///< Enabling per server metrics.
+    std::string          metric_prefix;          ///< Per server metric prefix.
   };
 
   // The names of the configuration values.
@@ -93,6 +96,8 @@ public:
   static constexpr std::string_view CONFIG_SERVER_VAR_MIN{"proxy.config.http.per_server.connection.min"};
   static constexpr std::string_view CONFIG_SERVER_VAR_MATCH{"proxy.config.http.per_server.connection.match"};
   static constexpr std::string_view CONFIG_SERVER_VAR_ALERT_DELAY{"proxy.config.http.per_server.connection.alert_delay"};
+  static constexpr std::string_view CONFIG_SERVER_VAR_METRIC_ENABLED{"proxy.config.http.per_server.connection.metric_enabled"};
+  static constexpr std::string_view CONFIG_SERVER_VAR_METRIC_PREFIX{"proxy.config.http.per_server.connection.metric_prefix"};
 
   /// A record for the outbound connection count.
   /// These are stored per outbound session equivalence class, as determined by the session matching.
@@ -131,6 +136,11 @@ public:
     std::atomic<int>    _in_queue{0};   ///< # of connections queued, waiting for a connection.
     std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
 
+    // Recording data as metrics
+    ts::Metrics::Gauge::AtomicType   *_count_metric       = nullptr;
+    ts::Metrics::Counter::AtomicType *_count_total_metric = nullptr;
+    ts::Metrics::Counter::AtomicType *_blocked_metric     = nullptr;
+
     /** Constructor.
      * Construct from @c Key because the use cases do a table lookup first so the @c Key is already constructed.
      * @param key A populated @c Key structure - values are copied to the @c Group.
@@ -149,7 +159,8 @@ public:
     /// @return @c true if an alert should be generated, @c false otherwise.
     bool should_alert(std::time_t *lat = nullptr);
     /// Time of the last alert in epoch seconds.
-    std::time_t get_last_alert_epoch_time() const;
+    std::time_t        get_last_alert_epoch_time() const;
+    static std::string metric_name(const Key &key, std::string_view fqdn, std::string metric_prefix);
 
     /// Release the reference count to this group and remove it from the
     /// group table if it is no longer referenced.
@@ -212,6 +223,14 @@ public:
    */
   static TxnState obtain_outbound(TxnConfig const &txn_cnf, std::string_view fqdn, IpEndpoint const &addr);
 
+  /** Get the currently existing inbound groups.
+   * @param [out] groups parameter - pointers to the groups are pushed in to this container.
+   *
+   * The groups are loaded in to @a groups, which is cleared before loading. Note the groups returned will remain valid
+   * although data inside the groups is volatile.
+   */
+  static void get_inbound_groups(std::vector<std::shared_ptr<Group const>> &groups);
+
   /** Get the currently existing outbound groups.
    * @param [out] groups parameter - pointers to the groups are pushed in to this container.
    *
@@ -219,6 +238,12 @@ public:
    * although data inside the groups is volatile.
    */
   static void get_outbound_groups(std::vector<std::shared_ptr<Group const>> &groups);
+
+  /** Write the inbound connection tracking data to JSON.
+   * @return string containing a JSON encoding of the table.
+   */
+  static std::string inbound_to_json_string();
+
   /** Write the outbound connection tracking data to JSON.
    * @return string containing a JSON encoding of the table.
    */
@@ -227,6 +252,15 @@ public:
    * @param f Output file.
    */
   static void dump(FILE *f);
+  /** Write the groups to @a f.
+   * @param f Output file.
+   */
+  static void dump_inbound(FILE *f);
+  /** Write the groups to @a f.
+   * @param f Output file.
+   */
+  static void dump_outbound(FILE *f);
+
   /** Do global initialization.
    *
    * This sets up the global configuration and any configuration update callbacks needed. It is presumed
@@ -322,6 +356,31 @@ ConnectionTracker::Group::hash(const Key &key)
   }
 }
 
+inline std::string
+ConnectionTracker::Group::metric_name(const Key &key, std::string_view fqdn, std::string metric_prefix)
+{
+  std::string metric_name = "";
+  char        buf[INET6_ADDRSTRLEN];
+
+  switch (key._match_type) {
+  case MATCH_IP:
+    metric_name += ats_ip_ntop(&key._addr.sa, buf, sizeof(buf));
+    break;
+  case MATCH_PORT:
+    metric_name += ats_ip_nptop(&key._addr.sa, buf, sizeof(buf));
+    break;
+  case MATCH_HOST:
+    metric_name += std::string(fqdn);
+    break;
+  case MATCH_BOTH:
+    metric_name += std::string(fqdn) + "." + ats_ip_nptop(&key._addr.sa, buf, sizeof(buf));
+    break;
+  default:
+    Warning("Invalid matching type to add to per_server.connections metrics");
+  }
+  return metric_prefix.empty() ? metric_name : metric_prefix + "." + metric_name;
+}
+
 inline bool
 ConnectionTracker::TxnState::is_active()
 {
@@ -332,6 +391,12 @@ inline int
 ConnectionTracker::TxnState::reserve()
 {
   _reserved_p = true;
+  // If metric enabled, use metric as count
+  if (_g->_count_metric != nullptr) {
+    ts::Metrics::Gauge::increment(_g->_count_metric);
+    ts::Metrics::Counter::increment(_g->_count_total_metric);
+    return _g->_count_metric->load();
+  }
   return ++_g->_count;
 }
 
@@ -340,7 +405,12 @@ ConnectionTracker::TxnState::release()
 {
   if (_reserved_p) {
     _reserved_p = false;
-    --_g->_count;
+    // If metric enabled, use metric as count
+    if (_g->_count_metric != nullptr) {
+      ts::Metrics::Gauge::decrement(_g->_count_metric);
+    } else {
+      --_g->_count;
+    }
   }
 }
 
@@ -372,6 +442,9 @@ ConnectionTracker::TxnState::update_max_count(int count)
 inline void
 ConnectionTracker::TxnState::blocked()
 {
+  if (_g->_blocked_metric != nullptr) {
+    ts::Metrics::Counter::increment(_g->_blocked_metric);
+  }
   ++_g->_blocked;
 }
 

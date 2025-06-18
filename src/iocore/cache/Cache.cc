@@ -85,21 +85,21 @@ int     cache_config_persist_bad_disks             = false;
 
 // Globals
 
-CacheStatsBlock                    cache_rsb;
-Cache                             *theCache                     = nullptr;
-CacheDisk                        **gdisks                       = nullptr;
-int                                gndisks                      = 0;
-Cache                             *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
-CacheSync                         *cacheDirSync                 = nullptr;
-Store                              theCacheStore;
-StripeSM                         **gstripes  = nullptr;
-std::atomic<int>                   gnstripes = 0;
-ClassAllocator<CacheVC>            cacheVConnectionAllocator("cacheVConnection");
-ClassAllocator<CacheEvacuateDocVC> cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
-ClassAllocator<EvacuationBlock>    evacuationBlockAllocator("evacuationBlock");
-ClassAllocator<CacheRemoveCont>    cacheRemoveContAllocator("cacheRemoveCont");
-ClassAllocator<EvacuationKey>      evacuationKeyAllocator("evacuationKey");
-std::unordered_set<std::string>    known_bad_disks;
+CacheStatsBlock                         cache_rsb;
+Cache                                  *theCache = nullptr;
+std::vector<std::unique_ptr<CacheDisk>> gdisks;
+int                                     gndisks                      = 0;
+Cache                                  *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
+CacheSync                              *cacheDirSync                 = nullptr;
+Store                                   theCacheStore;
+StripeSM                              **gstripes  = nullptr;
+std::atomic<int>                        gnstripes = 0;
+ClassAllocator<CacheVC>                 cacheVConnectionAllocator("cacheVConnection");
+ClassAllocator<CacheEvacuateDocVC>      cacheEvacuateDocVConnectionAllocator("cacheEvacuateDocVC");
+ClassAllocator<EvacuationBlock>         evacuationBlockAllocator("evacuationBlock");
+ClassAllocator<CacheRemoveCont>         cacheRemoveContAllocator("cacheRemoveCont");
+ClassAllocator<EvacuationKey>           evacuationKeyAllocator("evacuationKey");
+std::unordered_set<std::string>         known_bad_disks;
 
 namespace
 {
@@ -189,7 +189,7 @@ AIO_failure_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data)
   AIOCallback *cb      = static_cast<AIOCallback *>(data);
 
   for (; disk_no < gndisks; disk_no++) {
-    CacheDisk *d = gdisks[disk_no];
+    CacheDisk *d = gdisks[disk_no].get();
 
     if (d->fd == cb->aiocb.aio_fildes) {
       char message[256];
@@ -342,7 +342,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, st
   CacheVC      *c     = nullptr;
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
-    if (!lock.is_locked() || (od = stripe->open_read(key)) || dir_probe(key, stripe, &result, &last_collision)) {
+    if (!lock.is_locked() || (od = stripe->open_read(key)) || stripe->directory.probe(key, stripe, &result, &last_collision)) {
       c = new_CacheVC(cont);
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       c->vio.op  = VIO::READ;
@@ -545,7 +545,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
 
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
-    if (!lock.is_locked() || (od = stripe->open_read(key)) || dir_probe(key, stripe, &result, &last_collision)) {
+    if (!lock.is_locked() || (od = stripe->open_read(key)) || stripe->directory.probe(key, stripe, &result, &last_collision)) {
       c            = new_CacheVC(cont);
       c->first_key = c->key = c->earliest_key = *key;
       c->stripe                               = stripe;
@@ -688,7 +688,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
       if (c->od->has_multiple_writers()) {
         goto Lmiss;
       }
-      if (!dir_probe(key, c->stripe, &c->dir, &c->last_collision)) {
+      if (!c->stripe->directory.probe(key, c->stripe, &c->dir, &c->last_collision)) {
         if (c->f.update) {
           // fail update because vector has been GC'd
           // This situation can also arise in openWriteStartDone

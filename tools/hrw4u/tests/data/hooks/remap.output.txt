@@ -1,0 +1,5 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Remap} ="yes"
+    rm-header X-Remap
+else
+    set-header X-Remap "It was not yes"

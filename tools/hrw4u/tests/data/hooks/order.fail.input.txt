@@ -1,0 +1,9 @@
+REMAP {
+    if inbound.req.X-Foo == "Foo" {
+        inbound.status = 403;
+    }
+}
+
+VARS {
+    foo: bool;
+}

@@ -548,10 +548,10 @@ Ldone: {
   off_t clear_start = this->offset_to_vol_offset(directory.header->write_pos);
   off_t clear_end   = this->offset_to_vol_offset(recover_pos);
   if (clear_start <= clear_end) {
-    dir_clear_range(clear_start, clear_end, this);
+    this->directory.clear_range(clear_start, clear_end, this);
   } else {
-    dir_clear_range(clear_start, DIR_OFFSET_MAX, this);
-    dir_clear_range(1, clear_end, this);
+    this->directory.clear_range(clear_start, DIR_OFFSET_MAX, this);
+    this->directory.clear_range(1, clear_end, this);
   }
 
   Note("recovery clearing offsets of Stripe %s : [%" PRIu64 ", %" PRIu64 "] sync_serial %d next %d\n", hash_text.get(),
@@ -741,7 +741,7 @@ StripeSM::aggWriteDone(int event, Event *e)
     for (int done = 0; done < this->_write_buffer.get_buffer_pos();) {
       Doc *doc = reinterpret_cast<Doc *>(this->_write_buffer.get_buffer() + done);
       dir_set_offset(&del_dir, directory.header->write_pos + done);
-      dir_delete(&doc->key, this, &del_dir);
+      this->directory.remove(&doc->key, this, &del_dir);
       done += round_to_approx_size(doc->len);
     }
     this->_write_buffer.reset_buffer_pos();
@@ -1074,7 +1074,7 @@ StripeSM::agg_wrap()
   directory.header->cycle++;
   directory.header->agg_pos = directory.header->write_pos;
   dir_lookaside_cleanup(this);
-  dir_clean_vol(this);
+  this->directory.cleanup(this);
   {
     StripeSM *stripe = this;
     ts::Metrics::Counter::increment(cache_rsb.directory_wrap);
@@ -1230,7 +1230,7 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, StripeSM *s
 {
   Dir dir, *last_collision = nullptr;
   int i = 0;
-  while (dir_probe(key, stripe, &dir, &last_collision)) {
+  while (stripe->directory.probe(key, stripe, &dir, &last_collision)) {
     // next fragment cannot be a head...if it is, it must have been a
     // directory collision.
     if (dir_head(&dir)) {

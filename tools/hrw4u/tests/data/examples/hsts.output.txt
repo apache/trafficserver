@@ -1,0 +1,4 @@
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+cond %{HEADER:Strict-Transport-Security} ="" [AND]
+cond %{INBOUND:TLS} ="" [NOT]
+    set-header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"

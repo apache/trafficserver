@@ -142,6 +142,14 @@ static const RecordElement RecordsConfig[] =
 
   //##############################################################################
   //#
+  //# ACL
+  //#
+  //##############################################################################
+  {RECT_CONFIG, "proxy.config.acl.subjects", RECD_STRING, "PEER", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+
+  //##############################################################################
+  //#
   //# Support for disabling check for Accept-* / Content-* header mismatch
   //#
   //##############################################################################
@@ -367,11 +375,15 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.max", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.per_server.connection.match", RECD_STRING, "both", RECU_DYNAMIC, RR_NULL, RECC_STR, "^(?:ip|host|both|none)$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.match", RECD_STRING, "both", RECU_DYNAMIC, RR_NULL, RECC_STR, "^(?:ip|port|host|both|none)$", RECA_NULL}
         ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.alert_delay", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
         ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.min", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_prefix", RECD_STRING, "", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.attach_server_session_to_client", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
@@ -633,6 +645,13 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.cache.guaranteed_max_lifetime", RECD_INT, "31536000", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+
+  //        ###################
+  //        # Cache Compat    #
+  //        ###################
+  {RECT_CONFIG, "proxy.config.http.cache.try_compat_key_read", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+
 
   //        ###################
   //        # Error Reporting #

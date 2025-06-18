@@ -174,6 +174,12 @@ public:
   ~PostDataBuffers();
 };
 
+enum class CompatibilityCacheLookup {
+  COMPAT_CACHE_LOOKUP_NORMAL = 0,
+  COMPAT_CACHE_LOOKUP_92,
+  COMPAT_CACHE_LAST,
+};
+
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpTransact;
@@ -533,6 +539,8 @@ public:
   const char *plugin_tag = nullptr;
   int64_t     plugin_id  = 0;
 
+  CompatibilityCacheLookup compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
+
 private:
   HttpTunnel tunnel;
 
@@ -614,10 +622,10 @@ public:
   bool set_server_session_private(bool private_session);
   bool is_dying() const;
 
-  int client_connection_id() const;
-  int client_transaction_id() const;
-  int client_transaction_priority_weight() const;
-  int client_transaction_priority_dependence() const;
+  int64_t client_connection_id() const;
+  int     client_transaction_id() const;
+  int     client_transaction_priority_weight() const;
+  int     client_transaction_priority_dependence() const;
 
   ink_hrtime get_server_inactivity_timeout();
   ink_hrtime get_server_active_timeout();
@@ -672,7 +680,7 @@ HttpSM::is_dying() const
   return terminate_sm;
 }
 
-inline int
+inline int64_t
 HttpSM::client_connection_id() const
 {
   return _ua.get_client_connection_id();

@@ -61,7 +61,7 @@ namespace utils
     static AsyncHttpFetchState *
     getAsyncHttpFetchState(AsyncHttpFetch &async_http_fetch)
     {
-      return async_http_fetch.state_;
+      return async_http_fetch.state_.get();
     }
 
     static void

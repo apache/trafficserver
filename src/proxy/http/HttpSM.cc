@@ -22,6 +22,8 @@
 
  */
 
+#include "proxy/http/HttpConfig.h"
+#include "tsutil/Metrics.h"
 #include "tsutil/ts_bw_format.h"
 #include "proxy/ProxyTransaction.h"
 #include "proxy/http/HttpSM.h"
@@ -257,6 +259,8 @@ HttpSM::cleanup()
 
   HttpConfig::release(t_state.http_config_param);
   m_remap->release();
+
+  cache_sm.cleanup();
 
   mutex.clear();
   tunnel.mutex.clear();
@@ -2585,6 +2589,10 @@ HttpSM::state_cache_open_read(int event, void *data)
       t_state.cache_info.hit_miss_code = SQUID_HIT_DISK;
     }
 
+    if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+      Metrics::Counter::increment(http_rsb.cache_compat_key_reads);
+    }
+
     ink_assert(t_state.cache_info.object_read != nullptr);
     call_transact_and_set_next_state(HttpTransact::HandleCacheOpenRead);
     break;
@@ -2601,6 +2609,13 @@ HttpSM::state_cache_open_read(int event, void *data)
     if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::DOC_BUSY;
     } else {
+      if (t_state.http_config_param->cache_try_compat_key_read &&
+          compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL) {
+        // do the retry
+        compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+        do_cache_lookup_and_read();
+        return 0;
+      }
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::MISS;
     }
 
@@ -5011,7 +5026,11 @@ HttpSM::do_cache_lookup_and_read()
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+    Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  } else {
+    Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  }
 
   t_state.hdr_info.cache_request.copy(&t_state.hdr_info.client_request);
   HttpTransactHeaders::normalize_accept_encoding(t_state.txn_conf, &t_state.hdr_info.cache_request);
@@ -5551,7 +5570,8 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   }
 
   // See if the outbound connection tracker data is needed. If so, get it here for consistency.
-  if (t_state.txn_conf->connection_tracker_config.server_max > 0 || t_state.txn_conf->connection_tracker_config.server_min > 0) {
+  if (t_state.txn_conf->connection_tracker_config.server_max > 0 || t_state.txn_conf->connection_tracker_config.server_min > 0 ||
+      t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
     t_state.outbound_conn_track_state =
       ConnectionTracker::obtain_outbound(t_state.txn_conf->connection_tracker_config,
                                          std::string_view{t_state.current.server->name}, t_state.current.server->dst_addr);
@@ -5578,6 +5598,9 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     }
 
     ct_state.update_max_count(ccount);
+  } else if (t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
+    auto &ct_state = t_state.outbound_conn_track_state;
+    ct_state.reserve();
   }
 
   // We did not manage to get an existing session and need to open a new connection

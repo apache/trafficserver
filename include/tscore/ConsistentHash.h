@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <iostream>
 #include <map>
+#include <memory>
 
 /*
   Helper class to be extended to make ring nodes.
@@ -58,6 +59,6 @@ struct ATSConsistentHash {
 
 private:
   int                                         replicas;
-  ATSHash64                                  *hash;
+  std::unique_ptr<ATSHash64>                  hash;
   std::map<uint64_t, ATSConsistentHashNode *> NodeMap;
 };

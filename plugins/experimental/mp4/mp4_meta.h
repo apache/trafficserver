@@ -371,21 +371,13 @@ class Mp4Meta
 {
 public:
   Mp4Meta()
-
   {
-    memset(trak_vec, 0, sizeof(trak_vec));
     meta_buffer = TSIOBufferCreate();
     meta_reader = TSIOBufferReaderAlloc(meta_buffer);
   }
 
   ~Mp4Meta()
   {
-    uint32_t i;
-
-    for (i = 0; i < trak_num; i++) {
-      delete trak_vec[i];
-    }
-
     if (meta_reader) {
       TSIOBufferReaderFree(meta_reader);
       meta_reader = nullptr;
@@ -477,7 +469,7 @@ public:
   BufferHandle mdat_data;
   BufferHandle out_handle;
 
-  Mp4Trak *trak_vec[MP4_MAX_TRAK_NUM];
+  std::array<std::unique_ptr<Mp4Trak>, MP4_MAX_TRAK_NUM> trak_vec;
 
   double rs   = 0;
   double rate = 0;
