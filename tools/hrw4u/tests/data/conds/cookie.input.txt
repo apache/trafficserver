@@ -3,3 +3,8 @@ REMAP {
       inbound.req.X-Cookie = "there";
     }
 }
+REMAP {
+    if inbound.cookie.bar ~ /bar/ {
+      inbound.req.X-Another-Cookie = "here";
+    }
+}
