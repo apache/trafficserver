@@ -26,6 +26,7 @@ import h2.events
 
 import argparse
 
+
 # TODO: cleanup with other HTTP/2 clients (h2active_timeout.py and h2client.py)
 def get_socket(port: int) -> socket.socket:
     """Create a TLS-wrapped socket.
@@ -75,8 +76,8 @@ def makerequest(port: int, path: str, n: int) -> None:
     ]
 
     for stream_id in range(1, n * 2, 2):
-      h2_connection.send_headers(stream_id, headers, end_stream=False)
-      h2_connection.send_data(stream_id, b'', end_stream=True)
+        h2_connection.send_headers(stream_id, headers, end_stream=False)
+        h2_connection.send_data(stream_id, b'', end_stream=True)
 
     tls_socket.sendall(h2_connection.data_to_send())
 
@@ -110,6 +111,7 @@ def makerequest(port: int, path: str, n: int) -> None:
 
     if not error_code == 0:
         exit(1)
+
 
 def main():
     parser = argparse.ArgumentParser()
