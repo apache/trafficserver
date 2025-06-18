@@ -25,17 +25,18 @@ class SymbolResolver:
     # This map is for operators, which may have duplicates as in the _CONDITIONS_MAP. Note that
     # not all of conditions are valid operators.
     _OPERATOR_MAP: Dict[str, Tuple[str | List[str], Optional[Callable[[str], None]], bool, Optional[Set[str]]]] = {
-        "cookie.": (["rm-cookie", "set-cookie"], Validator.quoted_or_simple(), False, None),
         "http.cntl.": ("set-http-cntl", Validator.suffix_group(types.SuffixGroup.HTTP_CNTL_FIELDS), True, None),
         "http.status.reason": ("set-status-reason", Validator.quoted_or_simple(), False, None),
         "http.status": ("set-status", Validator.range(0, 999), False, None),
         "inbound.conn.dscp": ("set-conn-dscp", Validator.nbit_int(6), False, None),
+        "inbound.cookie.": (["rm-cookie", "set-cookie"], Validator.quoted_or_simple(), False, None),
         "inbound.req.": (["rm-header", "set-header"], Validator.quoted_or_simple(), False, None),
         "inbound.resp.body": ("set-body", Validator.quoted_or_simple(), False, None),
         "inbound.resp.": (["rm-header", "set-header"], Validator.quoted_or_simple(), False, None),
         "inbound.status.reason": ("set-status-reason", Validator.range(0, 999), False, None),
         "inbound.status": ("set-status", Validator.range(0, 999), False, None),
         "inbound.url.": (["rm-destination", "set-destination"], Validator.quoted_or_simple(), True, None),
+        "outbound.cookie.": (["rm-cookie", "set-cookie"], Validator.quoted_or_simple(), False, None),
         "outbound.req.": (["rm-header", "set-header"], Validator.quoted_or_simple(), False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
         "outbound.resp.":
             (
@@ -89,17 +90,18 @@ class SymbolResolver:
         # Prefix matches
         "capture.": ("LAST-CAPTURE", Validator.range(0, 9), False, None),
         "client.cert.": ("CLIENT-CERT", None, True, None),
-        "cookie.": ("COOKIE", Validator.quoted_or_simple(), False, None),
         "from.url.": ("FROM-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
         "geo.": ("GEO", Validator.suffix_group(types.SuffixGroup.GEO_FIELDS), True, None),
         "http.cntl.": ("HTTP-CNTL", Validator.suffix_group(types.SuffixGroup.HTTP_CNTL_FIELDS), True, None),
         "id.": ("ID", Validator.suffix_group(types.SuffixGroup.ID_FIELDS), True, None),
         "inbound.conn.": ("INBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True, None),
+        "inbound.cookie.": ("COOKIE", Validator.quoted_or_simple(), False, None),
         "inbound.req.": ("CLIENT-HEADER", None, False, None),
         "inbound.resp.": ("HEADER", None, False, None),
         "inbound.url.": ("CLIENT-URL", Validator.suffix_group(types.SuffixGroup.URL_FIELDS), True, None),
         "now.": ("NOW", Validator.suffix_group(types.SuffixGroup.DATE_FIELDS), True, None),
         "outbound.conn.": ("OUTBOUND", Validator.suffix_group(types.SuffixGroup.CONN_FIELDS), True, None),
+        "outbound.cookie.": ("COOKIE", Validator.quoted_or_simple(), False, None),
         "outbound.req.": ("HEADER", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST"}),
         "outbound.resp.": ("HEADER", None, False, {"PRE_REMAP", "REMAP", "READ_REQUEST", "SEND_REQUEST"}),
         "outbound.url.":

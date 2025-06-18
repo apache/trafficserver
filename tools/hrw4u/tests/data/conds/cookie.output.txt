@@ -1,3 +1,7 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
-cond %{COOKIE:foobar} /foo/
-    set-header X-Cookie "there"
+cond %{COOKIE:bar} /bar/
+    set-cookie mybar "1"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{COOKIE:bar} [NOT]
+    set-cookie mybar "1"
