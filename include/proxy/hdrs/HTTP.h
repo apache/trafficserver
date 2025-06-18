@@ -338,16 +338,16 @@ struct HTTPParser {
   MIMEParser m_mime_parser;
 };
 
-extern const char *HTTP_METHOD_CONNECT;
-extern const char *HTTP_METHOD_DELETE;
-extern const char *HTTP_METHOD_GET;
-extern const char *HTTP_METHOD_HEAD;
-extern const char *HTTP_METHOD_OPTIONS;
-extern const char *HTTP_METHOD_POST;
-extern const char *HTTP_METHOD_PURGE;
-extern const char *HTTP_METHOD_PUT;
-extern const char *HTTP_METHOD_TRACE;
-extern const char *HTTP_METHOD_PUSH;
+extern c_str_view HTTP_METHOD_CONNECT;
+extern c_str_view HTTP_METHOD_DELETE;
+extern c_str_view HTTP_METHOD_GET;
+extern c_str_view HTTP_METHOD_HEAD;
+extern c_str_view HTTP_METHOD_OPTIONS;
+extern c_str_view HTTP_METHOD_POST;
+extern c_str_view HTTP_METHOD_PURGE;
+extern c_str_view HTTP_METHOD_PUT;
+extern c_str_view HTTP_METHOD_TRACE;
+extern c_str_view HTTP_METHOD_PUSH;
 
 extern int HTTP_WKSIDX_CONNECT;
 extern int HTTP_WKSIDX_DELETE;
@@ -361,66 +361,30 @@ extern int HTTP_WKSIDX_TRACE;
 extern int HTTP_WKSIDX_PUSH;
 extern int HTTP_WKSIDX_METHODS_CNT;
 
-extern int HTTP_LEN_CONNECT;
-extern int HTTP_LEN_DELETE;
-extern int HTTP_LEN_GET;
-extern int HTTP_LEN_HEAD;
-extern int HTTP_LEN_OPTIONS;
-extern int HTTP_LEN_POST;
-extern int HTTP_LEN_PURGE;
-extern int HTTP_LEN_PUT;
-extern int HTTP_LEN_TRACE;
-extern int HTTP_LEN_PUSH;
-
-extern const char *HTTP_VALUE_BYTES;
-extern const char *HTTP_VALUE_CHUNKED;
-extern const char *HTTP_VALUE_CLOSE;
-extern const char *HTTP_VALUE_COMPRESS;
-extern const char *HTTP_VALUE_DEFLATE;
-extern const char *HTTP_VALUE_GZIP;
-extern const char *HTTP_VALUE_BROTLI;
-extern const char *HTTP_VALUE_IDENTITY;
-extern const char *HTTP_VALUE_KEEP_ALIVE;
-extern const char *HTTP_VALUE_MAX_AGE;
-extern const char *HTTP_VALUE_MAX_STALE;
-extern const char *HTTP_VALUE_MIN_FRESH;
-extern const char *HTTP_VALUE_MUST_REVALIDATE;
-extern const char *HTTP_VALUE_NONE;
-extern const char *HTTP_VALUE_NO_CACHE;
-extern const char *HTTP_VALUE_NO_STORE;
-extern const char *HTTP_VALUE_NO_TRANSFORM;
-extern const char *HTTP_VALUE_ONLY_IF_CACHED;
-extern const char *HTTP_VALUE_PRIVATE;
-extern const char *HTTP_VALUE_PROXY_REVALIDATE;
-extern const char *HTTP_VALUE_PUBLIC;
-extern const char *HTTP_VALUE_S_MAXAGE;
-extern const char *HTTP_VALUE_NEED_REVALIDATE_ONCE;
-extern const char *HTTP_VALUE_100_CONTINUE;
-
-extern int HTTP_LEN_BYTES;
-extern int HTTP_LEN_CHUNKED;
-extern int HTTP_LEN_CLOSE;
-extern int HTTP_LEN_COMPRESS;
-extern int HTTP_LEN_DEFLATE;
-extern int HTTP_LEN_GZIP;
-extern int HTTP_LEN_BROTLI;
-extern int HTTP_LEN_IDENTITY;
-extern int HTTP_LEN_KEEP_ALIVE;
-extern int HTTP_LEN_MAX_AGE;
-extern int HTTP_LEN_MAX_STALE;
-extern int HTTP_LEN_MIN_FRESH;
-extern int HTTP_LEN_MUST_REVALIDATE;
-extern int HTTP_LEN_NONE;
-extern int HTTP_LEN_NO_CACHE;
-extern int HTTP_LEN_NO_STORE;
-extern int HTTP_LEN_NO_TRANSFORM;
-extern int HTTP_LEN_ONLY_IF_CACHED;
-extern int HTTP_LEN_PRIVATE;
-extern int HTTP_LEN_PROXY_REVALIDATE;
-extern int HTTP_LEN_PUBLIC;
-extern int HTTP_LEN_S_MAXAGE;
-extern int HTTP_LEN_NEED_REVALIDATE_ONCE;
-extern int HTTP_LEN_100_CONTINUE;
+extern c_str_view HTTP_VALUE_BYTES;
+extern c_str_view HTTP_VALUE_CHUNKED;
+extern c_str_view HTTP_VALUE_CLOSE;
+extern c_str_view HTTP_VALUE_COMPRESS;
+extern c_str_view HTTP_VALUE_DEFLATE;
+extern c_str_view HTTP_VALUE_GZIP;
+extern c_str_view HTTP_VALUE_BROTLI;
+extern c_str_view HTTP_VALUE_IDENTITY;
+extern c_str_view HTTP_VALUE_KEEP_ALIVE;
+extern c_str_view HTTP_VALUE_MAX_AGE;
+extern c_str_view HTTP_VALUE_MAX_STALE;
+extern c_str_view HTTP_VALUE_MIN_FRESH;
+extern c_str_view HTTP_VALUE_MUST_REVALIDATE;
+extern c_str_view HTTP_VALUE_NONE;
+extern c_str_view HTTP_VALUE_NO_CACHE;
+extern c_str_view HTTP_VALUE_NO_STORE;
+extern c_str_view HTTP_VALUE_NO_TRANSFORM;
+extern c_str_view HTTP_VALUE_ONLY_IF_CACHED;
+extern c_str_view HTTP_VALUE_PRIVATE;
+extern c_str_view HTTP_VALUE_PROXY_REVALIDATE;
+extern c_str_view HTTP_VALUE_PUBLIC;
+extern c_str_view HTTP_VALUE_S_MAXAGE;
+extern c_str_view HTTP_VALUE_NEED_REVALIDATE_ONCE;
+extern c_str_view HTTP_VALUE_100_CONTINUE;
 
 /* Private */
 void http_hdr_adjust(HTTPHdrImpl *hdrp, int32_t offset, int32_t length, int32_t delta);
@@ -440,15 +404,14 @@ void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 bool http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver);
 
 std::string_view http_hdr_method_get(HTTPHdrImpl *hh);
-void             http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
-                                     bool must_copy);
+void http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view method, int16_t method_wks_idx, bool must_copy);
 
 void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 
 // HTTPStatus             http_hdr_status_get (HTTPHdrImpl *hh);
 void             http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
 std::string_view http_hdr_reason_get(HTTPHdrImpl *hh);
-void             http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
+void             http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view value, bool must_copy);
 const char      *http_hdr_reason_lookup(HTTPStatus status);
 
 void        http_parser_init(HTTPParser *parser);
@@ -523,7 +486,7 @@ public:
 
   std::string_view method_get();
   int              method_get_wksidx() const;
-  void             method_set(const char *value, int length);
+  void             method_set(std::string_view value);
 
   URL *url_create(URL *url);
 
@@ -603,7 +566,7 @@ public:
   */
   std::string_view scheme_get();
   void             url_set(URL *url);
-  void             url_set(const char *str, int length);
+  void             url_set(std::string_view value);
 
   /// Check location of target host.
   /// @return @c true if the host was in the URL, @c false otherwise.
@@ -629,7 +592,7 @@ public:
   void       status_set(HTTPStatus status);
 
   std::string_view reason_get();
-  void             reason_set(const char *value, int length);
+  void             reason_set(std::string_view value);
 
   void mark_early_data(bool flag = true) const;
   bool is_early_data() const;
@@ -780,9 +743,7 @@ HTTPHdr::host_get() const
 {
   this->_test_and_fill_target_cache();
   if (m_target_in_url) {
-    int  length;
-    auto host{url_get()->host_get(&length)};
-    return std::string_view{host, static_cast<std::string_view::size_type>(length)};
+    return url_get()->host_get();
   } else if (m_host_mime) {
     return std::string_view{m_host_mime->m_ptr_value, static_cast<std::string_view::size_type>(m_host_length)};
   }
@@ -969,13 +930,13 @@ HTTPHdr::method_get_wksidx() const
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::method_set(const char *value, int length)
+HTTPHdr::method_set(std::string_view value)
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTPType::REQUEST);
 
-  int method_wks_idx = hdrtoken_tokenize(value, length);
-  http_hdr_method_set(m_heap, m_http, value, method_wks_idx, length, true);
+  int method_wks_idx = hdrtoken_tokenize(value.data(), static_cast<int>(value.length()));
+  http_hdr_method_set(m_heap, m_http, value, method_wks_idx, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -1045,7 +1006,7 @@ HTTPHdr::url_set(URL *url)
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::url_set(const char *str, int length)
+HTTPHdr::url_set(std::string_view value)
 {
   URLImpl *url_impl;
 
@@ -1054,7 +1015,8 @@ HTTPHdr::url_set(const char *str, int length)
 
   url_impl = m_http->u.req.m_url_impl;
   ::url_clear(url_impl);
-  ::url_parse(m_heap, url_impl, &str, str + length, true);
+  const char *str{value.data()};
+  ::url_parse(m_heap, url_impl, &str, str + value.length(), true);
 }
 
 /*-------------------------------------------------------------------------
@@ -1111,12 +1073,12 @@ HTTPHdr::reason_get()
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::reason_set(const char *value, int length)
+HTTPHdr::reason_set(std::string_view value)
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
-  http_hdr_reason_set(m_heap, m_http, value, length, true);
+  http_hdr_reason_set(m_heap, m_http, value, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -1205,11 +1167,9 @@ HTTPHdr::path_get()
 {
   URL *url = this->url_get();
   if (url) {
-    int  length;
-    auto path{url->path_get(&length)};
-    return std::string_view{path, static_cast<std::string_view::size_type>(length)};
+    return url->path_get();
   }
-  return std::string_view{};
+  return {};
 }
 
 inline std::string_view
@@ -1217,9 +1177,7 @@ HTTPHdr::query_get()
 {
   URL *url = this->url_get();
   if (url) {
-    int  length;
-    auto query{url->query_get(&length)};
-    return std::string_view{query, static_cast<std::string_view::size_type>(length)};
+    return url->query_get();
   }
   return std::string_view{};
 }
@@ -1229,9 +1187,7 @@ HTTPHdr::fragment_get()
 {
   URL *url = this->url_get();
   if (url) {
-    int  length;
-    auto fragment{url->fragment_get(&length)};
-    return std::string_view{fragment, static_cast<std::string_view::size_type>(length)};
+    return url->fragment_get();
   }
   return std::string_view{};
 }
@@ -1241,9 +1197,7 @@ HTTPHdr::scheme_get()
 {
   URL *url = this->url_get();
   if (url) {
-    int  length;
-    auto scheme{url->scheme_get(&length)};
-    return std::string_view{scheme, static_cast<std::string_view::size_type>(length)};
+    return url->scheme_get();
   }
   return std::string_view{};
 }

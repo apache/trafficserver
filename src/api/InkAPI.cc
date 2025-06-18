@@ -1050,22 +1050,21 @@ TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
   return url_string_get(url_impl, nullptr, length, nullptr);
 }
 
-using URLPartGetF = const char *(URL::*)(int *);
-using URLPartSetF = void (URL::*)(const char *, int);
+using URLPartGetF = std::string_view (URL::*)() const noexcept;
+using URLPartSetF = void (URL::*)(std::string_view);
 
-static const char *
-URLPartGet(TSMBuffer bufp, TSMLoc obj, int *length, URLPartGetF url_f)
+static const std::string_view
+URLPartGet(TSMBuffer bufp, TSMLoc obj, URLPartGetF url_f)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)length) == TS_SUCCESS);
 
   URL u;
 
   u.m_heap     = (reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap;
   u.m_url_impl = reinterpret_cast<URLImpl *>(obj);
 
-  return (u.*url_f)(length);
+  return (u.*url_f)();
 }
 
 static TSReturnCode
@@ -1087,7 +1086,7 @@ URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSet
   } else if (length < 0) {
     length = strlen(value);
   }
-  (u.*url_f)(value, length);
+  (u.*url_f)(std::string_view{value, static_cast<std::string_view::size_type>(length)});
 
   return TS_SUCCESS;
 }
@@ -1095,7 +1094,11 @@ URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSet
 const char *
 TSUrlRawSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::scheme_get);
+  auto scheme{URLPartGet(bufp, obj, &URL::scheme_get)};
+  if (length) {
+    *length = static_cast<int>(scheme.length());
+  }
+  return scheme.data();
 }
 
 const char *
@@ -1107,12 +1110,12 @@ TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
   }
   switch (reinterpret_cast<URLImpl *>(obj)->m_url_type) {
   case URLType::HTTP:
-    data    = URL_SCHEME_HTTP;
-    *length = URL_LEN_HTTP;
+    data    = URL_SCHEME_HTTP.c_str();
+    *length = static_cast<int>(URL_SCHEME_HTTP.length());
     break;
   case URLType::HTTPS:
-    data    = URL_SCHEME_HTTPS;
-    *length = URL_LEN_HTTPS;
+    data    = URL_SCHEME_HTTPS.c_str();
+    *length = static_cast<int>(URL_SCHEME_HTTPS.length());
     break;
   default:
     *length = 0;
@@ -1132,7 +1135,11 @@ TSUrlSchemeSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 const char *
 TSUrlUserGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::user_get);
+  auto user{URLPartGet(bufp, obj, &URL::user_get)};
+  if (length) {
+    *length = static_cast<int>(user.length());
+  }
+  return user.data();
 }
 
 TSReturnCode
@@ -1144,7 +1151,11 @@ TSUrlUserSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 const char *
 TSUrlPasswordGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::password_get);
+  auto password{URLPartGet(bufp, obj, &URL::password_get)};
+  if (length) {
+    *length = static_cast<int>(password.length());
+  }
+  return password.data();
 }
 
 TSReturnCode
@@ -1156,7 +1167,11 @@ TSUrlPasswordSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 const char *
 TSUrlHostGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::host_get);
+  auto host{URLPartGet(bufp, obj, &URL::host_get)};
+  if (length) {
+    *length = static_cast<int>(host.length());
+  }
+  return host.data();
 }
 
 TSReturnCode
@@ -1214,7 +1229,11 @@ TSUrlPortSet(TSMBuffer bufp, TSMLoc obj, int port)
 const char *
 TSUrlPathGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::path_get);
+  auto path{URLPartGet(bufp, obj, &URL::path_get)};
+  if (length) {
+    *length = static_cast<int>(path.length());
+  }
+  return path.data();
 }
 
 TSReturnCode
@@ -1262,7 +1281,11 @@ TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc obj, int type)
 const char *
 TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::query_get);
+  auto query{URLPartGet(bufp, obj, &URL::query_get)};
+  if (length) {
+    *length = static_cast<int>(query.length());
+  }
+  return query.data();
 }
 
 TSReturnCode
@@ -1274,7 +1297,11 @@ TSUrlHttpQuerySet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 const char *
 TSUrlHttpFragmentGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  return URLPartGet(bufp, obj, length, &URL::fragment_get);
+  auto fragment{URLPartGet(bufp, obj, &URL::fragment_get)};
+  if (length) {
+    *length = static_cast<int>(fragment.length());
+  }
+  return fragment.data();
 }
 
 TSReturnCode
@@ -2828,7 +2855,7 @@ TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
     length = strlen(value);
   }
 
-  h.method_set(value, length);
+  h.method_set(std::string_view{value, static_cast<std::string_view::size_type>(length)});
   return TS_SUCCESS;
 }
 
@@ -2964,7 +2991,7 @@ TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
   if (length < 0) {
     length = strlen(value);
   }
-  h.reason_set(value, length);
+  h.reason_set(std::string_view{value, static_cast<std::string_view::size_type>(length)});
   return TS_SUCCESS;
 }
 

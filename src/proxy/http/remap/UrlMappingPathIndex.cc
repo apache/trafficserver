@@ -44,8 +44,6 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
   int             scheme_idx;
   int             port = (mapping->fromURL).port_get();
   UrlMappingTrie *trie;
-  int             from_path_len;
-  const char     *from_path;
 
   trie = _GetTrie(&(mapping->fromURL), scheme_idx, port);
 
@@ -55,8 +53,8 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
     Dbg(dbg_ctl_UrlMappingPathIndex_Insert, "Created new trie for scheme index, port combo <%d, %d>", scheme_idx, port);
   }
 
-  from_path = mapping->fromURL.path_get(&from_path_len);
-  if (!trie->Insert(from_path, mapping, mapping->getRank(), from_path_len)) {
+  auto from_path{mapping->fromURL.path_get()};
+  if (!trie->Insert(from_path.data(), mapping, mapping->getRank(), static_cast<int>(from_path.length()))) {
     Error("Couldn't insert into trie!");
     return false;
   }
@@ -67,11 +65,11 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
 url_mapping *
 UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_search /* = true */) const
 {
-  url_mapping    *retval = nullptr;
-  int             scheme_idx;
-  UrlMappingTrie *trie;
-  int             path_len;
-  const char     *path;
+  url_mapping     *retval = nullptr;
+  int              scheme_idx;
+  UrlMappingTrie  *trie;
+  int              path_len;
+  std::string_view path{};
 
   trie = _GetTrie(request_url, scheme_idx, request_port, normal_search);
 
@@ -80,9 +78,10 @@ UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_sear
     goto lFail;
   }
 
-  path = request_url->path_get(&path_len);
-  if (!(retval = trie->Search(path, path_len))) {
-    Dbg(dbg_ctl_UrlMappingPathIndex_Search, "Couldn't find entry for url with path [%.*s]", path_len, path);
+  path     = request_url->path_get();
+  path_len = static_cast<int>(path.length());
+  if (!(retval = trie->Search(path.data(), path_len))) {
+    Dbg(dbg_ctl_UrlMappingPathIndex_Search, "Couldn't find entry for url with path [%.*s]", path_len, path.data());
     goto lFail;
   }
   return retval;
