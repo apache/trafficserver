@@ -278,4 +278,4 @@ RecString  REC_readString(const char *name, bool *found, bool lock = true);
 //------------------------------------------------------------------------
 // Set RecRecord attributes
 //------------------------------------------------------------------------
-RecErrT RecSetSyncRequired(char *name, bool lock = true);
+RecErrT RecSetSyncRequired(const char *name, bool lock = true);
