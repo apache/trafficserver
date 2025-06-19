@@ -50,7 +50,7 @@ RuleSet::make_condition(Parser &p, const char *filename, int lineno)
     return nullptr; // Complete failure in the factory
   }
 
-  Dbg(pi_dbg_ctl, "    Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+  Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
   c->initialize(p);
   if (!c->set_hook(_hook)) {
     delete c;
@@ -89,10 +89,9 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
       return false;
     }
 
-    // Work on the appropriate operator list
-    OperatorPair &ops = _is_else ? _operators[1] : _operators[0];
+    OperatorAndMods &ops = _cur_section->ops;
 
-    if (nullptr == ops.oper) {
+    if (!ops.oper) {
       ops.oper = op;
     } else {
       ops.oper->append(op);
