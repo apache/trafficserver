@@ -149,7 +149,8 @@ cond %{CACHE} =hit-fresh        cache() == "hit-fresh"             Cache lookup 
 cond %{CIDR:24,48} =ip          cidr(24,48) == "ip"                Match masked client IP address
 cond %{CLIENT-HEADER:X} =foo    inbound.req.X == "foo"             Original client request header
 cond %{CLIENT-URL:<C> =bar      inbound.url.<C> == "bar"           URL component match, ``C`` is ``host``, ``path`` etc.
-cond %{COOKIE:foo} =bar         cookie.foo == "bar"                Check a cookie value
+cond %{COOKIE:foo} =bar         cookie.foo == "bar" ||             Check a cookie value
+                                inbound.cookie.foo == "bar"
 cond %{FROM-URL:<C>} =bar       from.url.<C> == "bar"              Remap ``From URL`` component match, ``C`` is ``host`` etc.
 cond %{HEADER:X} =foo           {in,out}bound.req.X == "foo"       Context sensitive header conditions
 cond %{ID:UNIQUE} =...          id.UNIQUE == "..."                 Unique transaction identifier

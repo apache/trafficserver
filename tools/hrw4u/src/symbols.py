@@ -30,6 +30,7 @@ class SymbolResolver:
         "http.status.reason": ("set-status-reason", Validator.quoted_or_simple(), False, None),
         "http.status": ("set-status", Validator.range(0, 999), False, None),
         "inbound.conn.dscp": ("set-conn-dscp", Validator.nbit_int(6), False, None),
+        "inbound.cookie.": (["rm-cookie", "set-cookie"], Validator.quoted_or_simple(), False, None),
         "inbound.req.": (["rm-header", "set-header"], Validator.quoted_or_simple(), False, None),
         "inbound.resp.body": ("set-body", Validator.quoted_or_simple(), False, None),
         "inbound.resp.": (["rm-header", "set-header"], Validator.quoted_or_simple(), False, None),
