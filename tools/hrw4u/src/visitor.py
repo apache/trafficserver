@@ -258,6 +258,8 @@ class HRW4UVisitor(hrw4uVisitor):
     def visitConditional(self, ctx):
         self._debug_enter("visitConditional")
         self.visit(ctx.ifStatement())
+        for elif_ctx in ctx.elifClause():
+            self.visit(elif_ctx)
         if ctx.elseClause():
             self.visit(ctx.elseClause())
         self._debug_exit("visitConditional")
@@ -274,6 +276,17 @@ class HRW4UVisitor(hrw4uVisitor):
         self.visit(ctx.block())
         self._debug_exit("visitElseClause")
 
+    def visitElifClause(self, ctx):
+        self._debug_enter("visitElifClause")
+        self.emit_condition("elif", final=True)
+        self._stmt_indent += 1
+        self._cond_indent += 1
+        self.visit(ctx.condition())
+        self.visit(ctx.block())
+        self._stmt_indent -= 1
+        self._cond_indent -= 1
+        self._debug_exit("visitElifClause")
+
     def visitBlock(self, ctx):
         self._debug_enter("visitBlock")
         self._stmt_indent += 1
@@ -284,7 +297,6 @@ class HRW4UVisitor(hrw4uVisitor):
 
     def visitCondition(self, ctx):
         self._debug_enter("visitCondition")
-        self._cond_indent = 0
         self.emit_expression(ctx.expression(), last=True)
         self._flush_condition()
         self._debug_exit("visitCondition")

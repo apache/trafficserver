@@ -1,0 +1,11 @@
+SEND_RESPONSE {
+    if inbound.url.path == "foo"  {
+        inbound.resp.X-Path = "f";
+    } elif inbound.url.path == "bar" {
+        inbound.resp.X-Path = "b";
+    } elif inbound.url.path == "hrw" {
+        inbound.resp.X-Path = "h";
+    } else {
+        inbound.resp.X-path = "other";
+    }
+}

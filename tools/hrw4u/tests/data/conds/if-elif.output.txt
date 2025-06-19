@@ -1,0 +1,11 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{CLIENT-URL:PATH} ="foo"
+    set-header X-Path "f"
+elif
+    cond %{CLIENT-URL:PATH} ="bar"
+        set-header X-Path "b"
+elif
+    cond %{CLIENT-URL:PATH} ="hrw"
+        set-header X-Path "h"
+else
+    set-header X-path "other"
