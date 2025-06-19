@@ -48,6 +48,7 @@
 #include <ts/remap.h>
 #include <ts/remap_version.h>
 #include <tsutil/TsSharedMutex.h>
+#include <utility>
 #include "ts/apidefs.h"
 #include "tscore/ink_config.h"
 #include "swoc/TextView.h"
@@ -222,6 +223,12 @@ public:
     if (_cont) {
       TSContDestroy(_cont);
     }
+  }
+
+  TSCont
+  releaseReloadCont()
+  {
+    return std::exchange(_conf_rld, nullptr);
   }
 
   // Is this configuration usable?
@@ -1269,11 +1276,18 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 void
 TSRemapDeleteInstance(void *ih)
 {
-  S3Config *s3           = static_cast<S3Config *>(ih);
-  TSMutex   s3_mutex_ptr = s3->config_reloader_mutex();
-  TSMutexLock(s3_mutex_ptr);
-  delete s3;
-  TSMutexUnlock(s3_mutex_ptr);
+  S3Config *s3 = static_cast<S3Config *>(ih);
+  if (s3) {
+    TSMutex s3_mutex_ptr = s3->config_reloader_mutex();
+
+    TSMutexLock(s3_mutex_ptr);
+    auto cont = s3->releaseReloadCont();
+    delete s3;
+    TSMutexUnlock(s3_mutex_ptr);
+    if (cont != nullptr) {
+      TSContDestroy(cont);
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
