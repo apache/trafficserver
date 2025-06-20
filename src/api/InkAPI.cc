@@ -8642,7 +8642,7 @@ TSUuid
 TSProcessUuidGet()
 {
   Machine *machine = Machine::instance();
-  return reinterpret_cast<TSUuid>(&machine->uuid);
+  return reinterpret_cast<TSUuid>(&machine->process_uuid);
 }
 
 const char *
@@ -8664,7 +8664,7 @@ TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
   sdk_assert(sdk_sanity_check_null_ptr((void *)uuid_str) == TS_SUCCESS);
 
   HttpSM     *sm      = reinterpret_cast<HttpSM *>(txnp);
-  const char *machine = const_cast<char *>(Machine::instance()->uuid.getString());
+  const char *machine = const_cast<char *>(Machine::instance()->process_uuid.getString());
   int         len;
 
   len = snprintf(uuid_str, TS_CRUUID_STRING_LEN + 1, "%s-%" PRId64 "", machine, sm->sm_id);
