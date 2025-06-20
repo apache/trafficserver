@@ -123,6 +123,27 @@ TLSBasicSupport::get_tls_curve() const
 #endif
 }
 
+const char *
+TLSBasicSupport::get_tls_group() const
+{
+  auto ssl = this->_get_ssl_object();
+
+  if (!ssl) {
+    return nullptr;
+  }
+#if HAVE_SSL_GET0_GROUP_NAME // OpenSSL
+  return SSL_get0_group_name(ssl);
+#elif HAVE_SSL_GET_GROUP_ID && HAVE_SSL_GET_GROUP_NAME // BoringSSL
+  uint16_t const group_id = SSL_get_group_id(ssl);
+  if (group_id == 0) {
+    return nullptr;
+  }
+  return SSL_get_group_name(group_id);
+#else
+  return nullptr;
+#endif // HAVE_SSL_GET0_GROUP_NAME
+}
+
 ink_hrtime
 TLSBasicSupport::get_tls_handshake_begin_time() const
 {
