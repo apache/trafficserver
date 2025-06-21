@@ -90,6 +90,8 @@ public:
   /// be called.
   /// @param response the  server response.
   ///
+  /// @note If there is an error, App_Exit_Status_Code will be set to CTRL_EX_ERROR.
+  ///
   void write_output(shared::rpc::JSONRPCResponse const &response);
 
   ///

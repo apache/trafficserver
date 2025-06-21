@@ -32,13 +32,10 @@
 
 #include "CtrlCommands.h"
 #include "FileConfigCommand.h"
+#include "TrafficCtlStatus.h"
 
-constexpr int CTRL_EX_OK            = 0;
-constexpr int CTRL_EX_ERROR         = 2;
-constexpr int CTRL_EX_UNIMPLEMENTED = 3;
-
-int status_code{CTRL_EX_OK};
-
+// Define the global variable
+int App_Exit_Status_Code = CTRL_EX_OK; // Initialize it to a default value
 namespace
 {
 void
@@ -70,7 +67,7 @@ main([[maybe_unused]] int argc, const char **argv)
 
   auto CtrlUnimplementedCommand = [](std::string_view cmd) {
     std::cout << "Command " << cmd << " unimplemented.\n";
-    status_code = CTRL_EX_UNIMPLEMENTED;
+    App_Exit_Status_Code = CTRL_EX_UNIMPLEMENTED;
   };
 
   parser.add_description("Apache Traffic Server RPC CLI");
@@ -242,9 +239,9 @@ main([[maybe_unused]] int argc, const char **argv)
     // Execute
     args.invoke();
   } catch (std::exception const &ex) {
-    status_code = CTRL_EX_ERROR;
+    App_Exit_Status_Code = CTRL_EX_ERROR;
     std::cerr << "Error found:\n" << ex.what() << '\n';
   }
 
-  return status_code;
+  return App_Exit_Status_Code;
 }

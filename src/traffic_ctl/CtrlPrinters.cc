@@ -29,6 +29,8 @@
 #include "jsonrpc/ctrl_yaml_codecs.h"
 #include "PrintUtils.h"
 
+#include "TrafficCtlStatus.h"
+
 swoc::BufferWriter &
 bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, FloatDate const &wrap)
 {
@@ -43,6 +45,7 @@ void
 print_record_error_list(std::vector<shared::rpc::RecordLookUpResponse::RecordError> const &errors)
 {
   if (auto iter = std::begin(errors); iter != std::end(errors)) {
+    App_Exit_Status_Code = CTRL_EX_ERROR; // Set the exit code to error, so we can return it later.
     std::cout << "------------ Errors ----------\n";
     std::cout << *iter;
     ++iter;
@@ -64,8 +67,10 @@ BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
   }
 
   if (response.is_error()) {
-    // If an error is present, then as per the specs we can ignore the jsonrpc.result field, so we print the error and we are done
-    // here!
+    App_Exit_Status_Code = CTRL_EX_ERROR; // Set the exit code to error, so we can return it later.
+
+    // If an error is present, then as per the specs we can ignore the jsonrpc.result field,
+    // so we print the error and we are done here!
     std::cout << response.error.as<shared::rpc::JSONRPCError>(); // Already formatted.
     return;
   }
