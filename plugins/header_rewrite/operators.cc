@@ -268,7 +268,7 @@ OperatorSetDestination::exec(const Resources &res) const
     // Determine which TSMBuffer and TSMLoc to use
     TSMBuffer bufp;
     TSMLoc    url_m_loc;
-    if (res._rri) {
+    if (res._rri && !res.changed_url) {
       bufp      = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
     } else {
@@ -343,6 +343,7 @@ OperatorSetDestination::exec(const Resources &res) const
         TSMLoc      new_url_loc;
         if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS && TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
+          const_cast<Resources &>(res).changed_url = true;
           Dbg(pi_dbg_ctl, "Set destination URL to %s", value.c_str());
         } else {
           Dbg(pi_dbg_ctl, "Failed to set URL %s", value.c_str());
@@ -355,6 +356,7 @@ OperatorSetDestination::exec(const Resources &res) const
         Dbg(pi_dbg_ctl, "Would set destination SCHEME to an empty value, skipping");
       } else {
         TSUrlSchemeSet(bufp, url_m_loc, value.c_str(), value.length());
+        const_cast<Resources &>(res).changed_url = true;
         Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() invoked with SCHEME: %s", value.c_str());
       }
       break;
