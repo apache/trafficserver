@@ -105,9 +105,36 @@ if you wish to have it in CSV format you can do so by passing an ``Accept`` head
 
 .. option:: Accept: text/csv
 
-In either case the ``Content-Type`` header returned by stats_over_http.so will reflect
-the content that has been returned, either ``text/json`` or ``text/csv``.
+Prometheus formatted output is also supported via the ``Accept`` header:
+
+.. option:: Accept: text/plain; version=0.0.4
+
+Alternatively, the output format can be specified as a suffix to the configured
+path in the HTTP request target.  The supported suffixes are ``/json``,
+``/csv``, and ``/prometheus``.  For example, if the path is set to ``/_stats``
+(the default), you can access the stats in CSV format by using the URL::
+
+    http://host:port/_stats/csv
+
+The Prometheus format can be requested by using the URL::
+
+    http://host:port/_stats/prometheus
+
+The JSON format is the default, but you can also access it explicitly by using the URL::
+
+    http://host:port/_stats/json
+
+Note that using a path suffix overrides any ``Accept`` header. Thus if you
+specify a path suffix, the plugin will return the data in that format regardless of
+the ``Accept`` header.
+
+In either case the ``Content-Type`` header returned by ``stats_over_http.so`` will
+reflect the content that has been returned: ``text/json``, ``text/csv``, or
+``text/plain; version=0.0.4; charset=utf-8`` for JSON, CSV, and Prometheus
+formats respectively.
+
+Stats over http also accepts returning data in gzip or br compressed format per the
+``Accept-encoding`` header. If the header is present, the plugin will return the
+data in the specified encoding, for example:
 
 .. option:: Accept-encoding: gzip, br
-
-Stats over http also accepts returning data in gzip or br compressed format

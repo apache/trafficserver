@@ -24,31 +24,29 @@
 /* stats.c:  expose traffic server stats over http
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <ctype.h>
-#include <limits.h>
-#include <ts/ts.h>
-#include <string.h>
-#include <inttypes.h>
-#include <getopt.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <unistd.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <zlib.h>
-#include <fstream>
+#include <cctype>
 #include <chrono>
+#include <cinttypes>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <fstream>
+#include <getopt.h>
+#include <netinet/in.h>
+#include <string>
+#include <string_view>
+#include <sys/stat.h>
+#include <ts/ts.h>
+#include <unistd.h>
+#include <zlib.h>
 
 #include <ts/remap.h>
-
-#include "swoc/swoc_ip.h"
-
+#include "swoc/TextView.h"
+#include "tscore/ink_config.h"
 #include <tsutil/ts_ip.h>
 
-#include "tscore/ink_config.h"
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>
 #endif
@@ -105,8 +103,8 @@ struct config_holder_t {
   config_t       *config;
 };
 
-enum output_format { JSON_OUTPUT, CSV_OUTPUT };
-enum encoding_format { NONE, DEFLATE, GZIP, BR };
+enum class output_format_t { JSON_OUTPUT, CSV_OUTPUT, PROMETHEUS_OUTPUT };
+enum class encoding_format_t { NONE, DEFLATE, GZIP, BR };
 
 int    configReloadRequests = 0;
 int    configReloads        = 0;
@@ -141,11 +139,11 @@ struct stats_state {
   TSIOBuffer       resp_buffer;
   TSIOBufferReader resp_reader;
 
-  int             output_bytes;
-  int             body_written;
-  output_format   output;
-  encoding_format encoding;
-  z_stream        zstrm;
+  int               output_bytes;
+  int               body_written;
+  output_format_t   output_format;
+  encoding_format_t encoding;
+  z_stream          zstrm;
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
 #endif
@@ -160,7 +158,7 @@ nstr(const char *s)
 }
 
 #if HAVE_BROTLI_ENCODE_H
-encoding_format
+encoding_format_t
 init_br(stats_state *my_state)
 {
   my_state->bstrm.br = nullptr;
@@ -168,7 +166,7 @@ init_br(stats_state *my_state)
   my_state->bstrm.br = BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
   if (!my_state->bstrm.br) {
     Dbg(dbg_ctl, "Brotli Encoder Instance Failed");
-    return NONE;
+    return encoding_format_t::NONE;
   }
   BrotliEncoderSetParameter(my_state->bstrm.br, BROTLI_PARAM_QUALITY, BROTLI_COMPRESSION_LEVEL);
   BrotliEncoderSetParameter(my_state->bstrm.br, BROTLI_PARAM_LGWIN, BROTLI_LGW);
@@ -178,7 +176,7 @@ init_br(stats_state *my_state)
   my_state->bstrm.next_out  = nullptr;
   my_state->bstrm.avail_out = 0;
   my_state->bstrm.total_out = 0;
-  return BR;
+  return encoding_format_t::BR;
 }
 #endif
 
@@ -191,7 +189,7 @@ ms_since_epoch()
 }
 } // namespace
 
-encoding_format
+encoding_format_t
 init_gzip(stats_state *my_state, int mode)
 {
   my_state->zstrm.next_in   = Z_NULL;
@@ -207,16 +205,16 @@ init_gzip(stats_state *my_state, int mode)
   int err = deflateInit2(&my_state->zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, mode, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
   if (err != Z_OK) {
     Dbg(dbg_ctl, "gzip initialization failed");
-    return NONE;
+    return encoding_format_t::NONE;
   } else {
     Dbg(dbg_ctl, "gzip initialized successfully");
     if (mode == GZIP_MODE) {
-      return GZIP;
+      return encoding_format_t::GZIP;
     } else if (mode == DEFLATE_MODE) {
-      return DEFLATE;
+      return encoding_format_t::DEFLATE;
     }
   }
-  return NONE;
+  return encoding_format_t::NONE;
 }
 
 static void
@@ -270,37 +268,55 @@ static const char RESP_HEADER_CSV_DEFLATE[] =
   "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
 static const char RESP_HEADER_CSV_BR[] =
   "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_PROMETHEUS[] =
+  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; charset=utf-8\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_PROMETHEUS_GZIP[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; "
+                                                  "charset=utf-8\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_PROMETHEUS_DEFLATE[] =
+  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; charset=utf-8\r\nContent-Encoding: deflate\r\nCache-Control: "
+  "no-cache\r\n\r\n";
+static const char RESP_HEADER_PROMETHEUS_BR[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; "
+                                                "charset=utf-8\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
 
 static int
 stats_add_resp_header(stats_state *my_state)
 {
-  switch (my_state->output) {
-  case JSON_OUTPUT:
-    if (my_state->encoding == GZIP) {
+  switch (my_state->output_format) {
+  case output_format_t::JSON_OUTPUT:
+    if (my_state->encoding == encoding_format_t::GZIP) {
       return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_GZIP, my_state);
-    } else if (my_state->encoding == DEFLATE) {
+    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
       return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_DEFLATE, my_state);
-    } else if (my_state->encoding == BR) {
+    } else if (my_state->encoding == encoding_format_t::BR) {
       return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_BR, my_state);
     } else {
       return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
     }
     break;
-  case CSV_OUTPUT:
-    if (my_state->encoding == GZIP) {
+  case output_format_t::CSV_OUTPUT:
+    if (my_state->encoding == encoding_format_t::GZIP) {
       return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_GZIP, my_state);
-    } else if (my_state->encoding == DEFLATE) {
+    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
       return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_DEFLATE, my_state);
-    } else if (my_state->encoding == BR) {
+    } else if (my_state->encoding == encoding_format_t::BR) {
       return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_BR, my_state);
     } else {
       return stats_add_data_to_resp_buffer(RESP_HEADER_CSV, my_state);
     }
     break;
-  default:
-    TSError("stats_add_resp_header: Unknown output format");
+  case output_format_t::PROMETHEUS_OUTPUT:
+    if (my_state->encoding == encoding_format_t::GZIP) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_GZIP, my_state);
+    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_DEFLATE, my_state);
+    } else if (my_state->encoding == encoding_format_t::BR) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_BR, my_state);
+    } else {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS, my_state);
+    }
     break;
   }
+  // Not reached.
   return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
 }
 
@@ -326,6 +342,10 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
 }
 
 #define APPEND(a) my_state->output_bytes += stats_add_data_to_resp_buffer(a, my_state)
+
+//-----------------------------------------------------------------------------
+// JSON Formatters
+//-----------------------------------------------------------------------------
 #define APPEND_STAT_JSON(a, fmt, v)                                              \
   do {                                                                           \
     char b[256];                                                                 \
@@ -346,6 +366,9 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
     }                                                                                \
   } while (0)
 
+//-----------------------------------------------------------------------------
+// CSV Formatters
+//-----------------------------------------------------------------------------
 #define APPEND_STAT_CSV(a, fmt, v)                                     \
   do {                                                                 \
     char b[256];                                                       \
@@ -356,6 +379,18 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
   do {                                                                   \
     char b[256];                                                         \
     if (snprintf(b, sizeof(b), "%s," fmt "\n", a, v) < (int)sizeof(b)) { \
+      APPEND(b);                                                         \
+    }                                                                    \
+  } while (0)
+
+//-----------------------------------------------------------------------------
+// Prometheus Formatters
+//-----------------------------------------------------------------------------
+// Note that Prometheus only supports numeric types.
+#define APPEND_STAT_PROMETHEUS_NUMERIC(a, fmt, v)                        \
+  do {                                                                   \
+    char b[256];                                                         \
+    if (snprintf(b, sizeof(b), "%s " fmt "\n", a, v) < (int)sizeof(b)) { \
       APPEND(b);                                                         \
     }                                                                    \
   } while (0)
@@ -417,6 +452,49 @@ csv_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registe
     break;
   default:
     Dbg(dbg_ctl, "unknown type for %s: %d", name, data_type);
+    break;
+  }
+}
+
+/** Replace characters offensive to Prometheus with '_'.
+ * Prometheus is particular about metric names.
+ * @param[in] name The metric name to sanitize.
+ * @return A sanitized metric name.
+ */
+static std::string
+sanitize_metric_name_for_prometheus(std::string_view name)
+{
+  std::string sanitized_name(name);
+  // Convert certain characters that Prometheus doesn't like to '_'.
+  for (auto &c : sanitized_name) {
+    if (c == '.' || c == '+' || c == '-') {
+      c = '_';
+    }
+  }
+  return sanitized_name;
+}
+
+static void
+prometheus_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
+                    TSRecordDataType data_type, TSRecordData *datum)
+{
+  stats_state *my_state       = static_cast<stats_state *>(edata);
+  std::string  sanitized_name = sanitize_metric_name_for_prometheus(name);
+  switch (data_type) {
+  case TS_RECORDDATATYPE_COUNTER:
+    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    break;
+  case TS_RECORDDATATYPE_INT:
+    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    break;
+  case TS_RECORDDATATYPE_FLOAT:
+    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%f", datum->rec_float);
+    break;
+  case TS_RECORDDATATYPE_STRING:
+    Dbg(dbg_ctl, "Prometheus does not support string values, skipping: %s", sanitized_name.c_str());
+    break;
+  default:
+    Dbg(dbg_ctl, "unknown type for %s: %d", sanitized_name.c_str(), data_type);
     break;
   }
 }
@@ -512,28 +590,36 @@ csv_out_stats(stats_state *my_state)
 }
 
 static void
+prometheus_out_stats(stats_state *my_state)
+{
+  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_out_stat, my_state);
+  APPEND_STAT_PROMETHEUS_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
+  // No version printed, since string stats are not supported by Prometheus.
+}
+
+static void
 stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (my_state->body_written == 0) {
       my_state->body_written = 1;
-      switch (my_state->output) {
-      case JSON_OUTPUT:
+      switch (my_state->output_format) {
+      case output_format_t::JSON_OUTPUT:
         json_out_stats(my_state);
         break;
-      case CSV_OUTPUT:
+      case output_format_t::CSV_OUTPUT:
         csv_out_stats(my_state);
         break;
-      default:
-        TSError("stats_process_write: Unknown output type\n");
+      case output_format_t::PROMETHEUS_OUTPUT:
+        prometheus_out_stats(my_state);
         break;
       }
 
-      if ((my_state->encoding == GZIP) || (my_state->encoding == DEFLATE)) {
+      if ((my_state->encoding == encoding_format_t::GZIP) || (my_state->encoding == encoding_format_t::DEFLATE)) {
         gzip_out_stats(my_state);
       }
 #if HAVE_BROTLI_ENCODE_H
-      else if (my_state->encoding == BR) {
+      else if (my_state->encoding == encoding_format_t::BR) {
         br_out_stats(my_state);
       }
 #endif
@@ -569,15 +655,19 @@ stats_dostuff(TSCont contp, TSEvent event, void *edata)
 static int
 stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
-  TSCont       icontp;
-  stats_state *my_state;
-  config_t    *config;
-  TSHttpTxn    txnp = (TSHttpTxn)edata;
-  TSMBuffer    reqp;
-  TSMLoc       hdr_loc = nullptr, url_loc = nullptr, accept_field = nullptr, accept_encoding_field = nullptr;
-  TSEvent      reenable = TS_EVENT_HTTP_CONTINUE;
-  int          path_len = 0;
-  const char  *path     = nullptr;
+  TSCont          icontp;
+  stats_state    *my_state;
+  config_t       *config;
+  TSHttpTxn       txnp = (TSHttpTxn)edata;
+  TSMBuffer       reqp;
+  TSMLoc          hdr_loc = nullptr, url_loc = nullptr, accept_field = nullptr, accept_encoding_field = nullptr;
+  TSEvent         reenable = TS_EVENT_HTTP_CONTINUE;
+  int             path_len = 0;
+  const char     *path     = nullptr;
+  swoc::TextView  request_path;
+  swoc::TextView  request_path_suffix;
+  output_format_t format_per_path          = output_format_t::JSON_OUTPUT;
+  bool            path_had_explicit_format = false;
 
   Dbg(dbg_ctl, "in the read stuff");
   config = get_config(contp);
@@ -593,10 +683,35 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   path = TSUrlPathGet(reqp, url_loc, &path_len);
   Dbg(dbg_ctl, "Path: %.*s", path_len, path);
 
-  if (!(path_len != 0 && path_len == int(config->stats_path.length()) &&
-        !memcmp(path, config->stats_path.c_str(), config->stats_path.length()))) {
-    Dbg(dbg_ctl, "not this plugins path, saw: %.*s, looking for: %s", path_len, path, config->stats_path.c_str());
+  if (path_len == 0) {
+    Dbg(dbg_ctl, "Empty path");
     goto notforme;
+  }
+
+  request_path = swoc::TextView{path, static_cast<size_t>(path_len)};
+  if (!request_path.starts_with(config->stats_path)) {
+    Dbg(dbg_ctl, "Not the configured path for stats: %.*s, expected: %s", path_len, path, config->stats_path.c_str());
+    goto notforme;
+  }
+
+  if (request_path == config->stats_path) {
+    Dbg(dbg_ctl, "Exact match for stats path: %s", config->stats_path.c_str());
+    format_per_path          = output_format_t::JSON_OUTPUT;
+    path_had_explicit_format = false;
+  } else {
+    request_path_suffix = request_path.remove_prefix(config->stats_path.length());
+    if (request_path_suffix == "/json") {
+      format_per_path = output_format_t::JSON_OUTPUT;
+    } else if (request_path_suffix == "/csv") {
+      format_per_path = output_format_t::CSV_OUTPUT;
+    } else if (request_path_suffix == "/prometheus") {
+      format_per_path = output_format_t::PROMETHEUS_OUTPUT;
+    } else {
+      Dbg(dbg_ctl, "Unknown suffix for stats path: %.*s", static_cast<int>(request_path_suffix.length()),
+          request_path_suffix.data());
+      goto notforme;
+    }
+    path_had_explicit_format = true;
   }
 
   if (auto addr = TSHttpTxnClientAddrGet(txnp); !is_ipmap_allowed(config, addr)) {
@@ -615,24 +730,35 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   memset(my_state, 0, sizeof(*my_state));
   icontp = TSContCreate(stats_dostuff, TSMutexCreate());
 
-  accept_field     = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT);
-  my_state->output = JSON_OUTPUT; // default to json output
-  // accept header exists, use it to determine response type
-  if (accept_field != TS_NULL_MLOC) {
-    int         len = -1;
-    const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_field, -1, &len);
+  if (path_had_explicit_format) {
+    Dbg(dbg_ctl, "Path had explicit format, ignoring any Accept header: %s", request_path_suffix.data());
+    my_state->output_format = format_per_path;
+  } else {
+    // Check for an Accept header to determine response type.
+    accept_field            = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT);
+    my_state->output_format = output_format_t::JSON_OUTPUT; // default to json output
+    // accept header exists, use it to determine response type
+    if (accept_field != TS_NULL_MLOC) {
+      int         len = -1;
+      const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_field, -1, &len);
 
-    // Parse the Accept header, default to JSON output unless its another supported format
-    if (!strncasecmp(str, "text/csv", len)) {
-      my_state->output = CSV_OUTPUT;
-    } else {
-      my_state->output = JSON_OUTPUT;
+      // Parse the Accept header, default to JSON output unless its another supported format
+      if (!strncasecmp(str, "text/csv", len)) {
+        Dbg(dbg_ctl, "Saw text/csv in accept header, sending CSV output.");
+        my_state->output_format = output_format_t::CSV_OUTPUT;
+      } else if (!strncasecmp(str, "text/plain; version=0.0.4", len)) {
+        Dbg(dbg_ctl, "Saw text/plain; version=0.0.4 in accept header, sending Prometheus output.");
+        my_state->output_format = output_format_t::PROMETHEUS_OUTPUT;
+      } else {
+        Dbg(dbg_ctl, "Saw %.*s in accept header, defaulting to JSON output.", len, str);
+        my_state->output_format = output_format_t::JSON_OUTPUT;
+      }
     }
   }
 
   // Check for Accept Encoding and init
   accept_encoding_field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-  my_state->encoding    = NONE;
+  my_state->encoding    = encoding_format_t::NONE;
   if (accept_encoding_field != TS_NULL_MLOC) {
     int         len = -1;
     const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_encoding_field, -1, &len);
@@ -650,7 +776,7 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
     }
 #endif
     else {
-      my_state->encoding = NONE;
+      my_state->encoding = encoding_format_t::NONE;
     }
   }
   Dbg(dbg_ctl, "Finished AE check");
