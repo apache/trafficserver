@@ -2249,6 +2249,19 @@ LogAccess::marshal_client_security_curve(char *buf)
 }
 
 int
+LogAccess::marshal_client_security_group(char *buf)
+{
+  const char *group     = m_http_sm->get_user_agent().get_client_security_group();
+  int         round_len = LogAccess::strlen(group);
+
+  if (buf) {
+    marshal_str(buf, group, round_len);
+  }
+
+  return round_len;
+}
+
+int
 LogAccess::marshal_client_security_alpn(char *buf)
 {
   const char *alpn = "-";

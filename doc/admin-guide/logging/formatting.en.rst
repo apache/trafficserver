@@ -637,7 +637,12 @@ cqssr  Client Request SSL session ticket reused status; indicates if the current
 cqssv  Client Request SSL version used to communicate with the client.
 cqssc  Client Request SSL Cipher used by |TS| to communicate with the client.
 cqssu  Client Request SSL Elliptic Curve used by |TS| to communicate with the
-                      client when using an ECDHE cipher.
+                      client when using an ECDHE cipher. The plan is to deprecate
+                      this in the 11.0 release. Use cqssg instead.
+cqssg  Client Request SSL Group used by |TS| to communicate with the client.
+                      This field is only applicable when building |TS| against
+                      OpenSSL 3.2 or later or a version of BoringSSL that
+                      supports querying group names.
 cqssa  Client Request ALPN Protocol ID negotiated with the client.
 pqssl  Proxy Request  Indicates whether the connection from |TS| to the origin
                       was over SSL or not.

@@ -550,6 +550,11 @@ Log::init_fields()
   field_symbol_hash.emplace("cqssu", field);
 
   field =
+    new LogField("client_group", "cqssg", LogField::STRING, &LogAccess::marshal_client_security_group, &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqssg", field);
+
+  field =
     new LogField("client_sec_alpn", "cqssa", LogField::STRING, &LogAccess::marshal_client_security_alpn, &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssa", field);
