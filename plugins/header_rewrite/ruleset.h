@@ -74,18 +74,14 @@ public:
 
   RuleSet() { Dbg(dbg_ctl, "RuleSet CTOR"); }
 
-  ~RuleSet()
-  {
-    Dbg(dbg_ctl, "RulesSet DTOR");
-    delete next;
-  }
+  ~RuleSet() { Dbg(dbg_ctl, "RulesSet DTOR"); }
 
   // noncopyable
   RuleSet(const RuleSet &)        = delete;
   void operator=(const RuleSet &) = delete;
 
   // No reason to inline these
-  void        append(RuleSet *rule);
+  void        append(std::unique_ptr<RuleSet> rule);
   Condition  *make_condition(Parser &p, const char *filename, int lineno);
   bool        add_operator(Parser &p, const char *filename, int lineno);
   ResourceIDs get_all_resource_ids() const;
@@ -189,7 +185,7 @@ public:
   }
 
   // Linked list of RuleSets
-  RuleSet *next = nullptr;
+  std::unique_ptr<RuleSet> next;
 
 private:
   // This holds one condition group, and the ops and optional else_ops, there's

@@ -21,6 +21,7 @@
 #include <string>
 #include <stack>
 #include <stdexcept>
+#include <array>
 #include <getopt.h>
 
 #include "ts/ts.h"
@@ -78,9 +79,6 @@ public:
   RulesConfig()
   {
     Dbg(dbg_ctl, "RulesConfig CTOR");
-    memset(_rules, 0, sizeof(_rules));
-    memset(_resids, 0, sizeof(_resids));
-
     _cont = TSContCreate(cont_rewrite_headers, nullptr);
     TSContDataSet(_cont, static_cast<void *>(this));
   }
@@ -88,9 +86,6 @@ public:
   ~RulesConfig()
   {
     Dbg(dbg_ctl, "RulesConfig DTOR");
-    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) { // lgtm[cpp/constant-comparison]
-      delete _rules[i];
-    }
     TSContDestroy(_cont);
   }
 
@@ -109,7 +104,7 @@ public:
   [[nodiscard]] RuleSet *
   rule(int hook) const
   {
-    return _rules[hook];
+    return _rules[hook].get();
   }
 
   bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr);
@@ -117,21 +112,19 @@ public:
 private:
   void add_rule(std::unique_ptr<RuleSet> rule);
 
-  TSCont      _cont;
-  RuleSet    *_rules[TS_HTTP_LAST_HOOK + 1];
-  ResourceIDs _resids[TS_HTTP_LAST_HOOK + 1];
+  TSCont                                                      _cont;
+  std::array<std::unique_ptr<RuleSet>, TS_HTTP_LAST_HOOK + 1> _rules{};
+  std::array<ResourceIDs, TS_HTTP_LAST_HOOK + 1>              _resids{};
 };
 
 void
 RulesConfig::add_rule(std::unique_ptr<RuleSet> rule)
 {
-  auto raw = rule.release();
-
-  Dbg(pi_dbg_ctl, "   Adding rule to hook=%s", TSHttpHookNameLookup(raw->get_hook()));
-  if (nullptr == _rules[raw->get_hook()]) {
-    _rules[raw->get_hook()] = raw;
+  int hook = rule->get_hook();
+  if (!_rules[hook]) {
+    _rules[hook] = std::move(rule);
   } else {
-    _rules[raw->get_hook()]->append(raw);
+    _rules[hook]->append(std::move(rule));
   }
 }
 
@@ -326,11 +319,11 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
 
   // Add the last rule (possibly the only rule)
   if (rule && rule->has_operator()) {
-    add_rule(std::move(rule)); // Transfer ownership
+    add_rule(std::move(rule));
   }
 
   // Collect all resource IDs that we need
-  for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
+  for (size_t i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
     if (_rules[i]) {
       _resids[i] = _rules[i]->get_all_resource_ids();
     }
@@ -398,7 +391,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
       if (rule->last() || (rt & OPER_LAST)) {
         break; // Conditional break, force a break with [L]
       }
-      rule = rule->next;
+      rule = rule->next.get();
     }
   }
 
@@ -609,7 +602,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       break; // Conditional break, force a break with [L]
     }
 
-    rule = rule->next;
+    rule = rule->next.get();
   }
 
   Dbg(dbg_ctl, "Returning from TSRemapDoRemap with status: %d", rval);

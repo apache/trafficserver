@@ -28,16 +28,16 @@
 // Class implementation (no reason to have these inline)
 //
 void
-RuleSet::append(RuleSet *rule)
+RuleSet::append(std::unique_ptr<RuleSet> rule)
 {
-  RuleSet *tmp = this;
-
   TSReleaseAssert(rule->next == nullptr);
+  std::unique_ptr<RuleSet> *cur = &next;
 
-  while (tmp->next) {
-    tmp = tmp->next;
+  while (*cur) {
+    cur = &(*cur)->next;
   }
-  tmp->next = rule;
+
+  *cur = std::move(rule);
 }
 
 // This stays here, since the condition, albeit owned by a group, is tightly couple to the ruleset.
@@ -110,12 +110,12 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
 ResourceIDs
 RuleSet::get_all_resource_ids() const
 {
-  ResourceIDs ids = _ids;
-  RuleSet    *tmp = this->next;
+  ResourceIDs                     ids = _ids;
+  const std::unique_ptr<RuleSet> *cur = &next;
 
-  while (tmp) {
-    ids = static_cast<ResourceIDs>(ids | tmp->get_resource_ids());
-    tmp = tmp->next;
+  while (*cur) {
+    ids = static_cast<ResourceIDs>(ids | (*cur)->get_resource_ids());
+    cur = &(*cur)->next;
   }
 
   return ids;
