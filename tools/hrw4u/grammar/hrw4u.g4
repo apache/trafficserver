@@ -20,8 +20,9 @@ grammar hrw4u;
 // -----------------------------
 // Lexer Rules
 // -----------------------------
-VARS           : 'VARS';
+VARS          : 'VARS';
 IF            : 'if';
+ELIF          : 'elif';
 ELSE          : 'else';
 IN            : 'in';
 TRUE          : [tT][rR][uU][eE];
@@ -119,7 +120,7 @@ statement
     ;
 
 conditional
-    : ifStatement elseClause?
+    : ifStatement elifClause* elseClause?
     ;
 
 ifStatement
@@ -129,6 +130,11 @@ ifStatement
 
 elseClause
     : ELSE block
+    ;
+
+elifClause
+    : ELIF condition block
+    | ELIF LPAREN condition RPAREN block
     ;
 
 block
