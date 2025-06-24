@@ -34,11 +34,11 @@ class PerServerConnectionMaxTest:
 
     def _configure_dns(self) -> None:
         """Configure a nameserver for the test."""
-        self._dns = Test.MakeDNServer("dns1", default='127.0.0.1')
+        self._dns = Test.MakeDNServer("dns", default='127.0.0.1')
 
     def _configure_server(self) -> None:
         """Configure the server to be used in the test."""
-        self._server = Test.MakeVerifierServerProcess('server1', self._replay_file)
+        self._server = Test.MakeVerifierServerProcess('server', self._replay_file)
 
     def _configure_trafficserver(self) -> None:
         """Configure Traffic Server to be used in the test."""
@@ -87,6 +87,7 @@ class PerServerConnectionMaxTest:
 class ConnectMethodTest:
     """Test our max origin connection behavior with CONNECT traffic."""
 
+    _process_counter: int = 0
     _client_counter: int = 0
 
     def __init__(self, max_conn) -> None:
@@ -94,14 +95,15 @@ class ConnectMethodTest:
         self._configure_dns()
         self._configure_origin_server()
         self._configure_trafficserver(max_conn)
+        ConnectMethodTest._process_counter += 1
 
     def _configure_dns(self) -> None:
         """Configure a nameserver for the test."""
-        self._dns = Test.MakeDNServer("dns2", default='127.0.0.1')
+        self._dns = Test.MakeDNServer(f"dns_{ConnectMethodTest._process_counter}", default='127.0.0.1')
 
     def _configure_origin_server(self) -> None:
         """Configure the httpbin origin server."""
-        self._server = Test.MakeHttpBinServer("server2")
+        self._server = Test.MakeHttpBinServer(f"server_{ConnectMethodTest._process_counter}")
 
     def _configure_trafficserver(self, max_conn) -> None:
         self._ts = Test.MakeATSProcess("ts2_" + str(max_conn))
@@ -124,15 +126,15 @@ class ConnectMethodTest:
 
     def _configure_client_with_slow_response(self, tr) -> 'Test.Process':
         """Configure a client to perform a CONNECT request with a slow response from the server."""
-        p = tr.Processes.Process(f'slow_client_{self._client_counter}')
-        self._client_counter += 1
+        p = tr.Processes.Process(f'slow_client_{ConnectMethodTest._client_counter}')
+        ConnectMethodTest._client_counter += 1
         tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'", p=p)
         return p
 
     def _test_metrics(self, blocked) -> None:
         """Use traffic_ctl to test metrics."""
         tr = Test.AddTestRun("Check connection metrics")
-        tr.Processes.Default.Command = 'traffic_ctl metric match per_server'
+        tr.Processes.Default.Command = 'traffic_ctl metric match per_server; sleep 2'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
