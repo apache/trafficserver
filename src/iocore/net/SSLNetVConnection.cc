@@ -397,13 +397,13 @@ proxy_protocol_bypass:
   if (r > 0) {
     this->handShakeBuffer->fill(r);
 
-    char *start              = this->handShakeReader->start();
-    char *end                = this->handShakeReader->end();
-    this->handShakeBioStored = end - start;
+    auto const total_chain_size = this->handShakeReader->read_avail();
+    this->handShakeBioStored    = total_chain_size;
+    char *buffer_for_bio        = this->_getCoalescedHandShakeBuffer(total_chain_size);
 
     // Sets up the buffer as a read only bio target
     // Must be reset on each read
-    BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
+    BIO *rbio = BIO_new_mem_buf(buffer_for_bio, this->handShakeBioStored);
     BIO_set_mem_eof_return(rbio, -1);
     SSL_set0_rbio(this->ssl, rbio);
   } else {
@@ -436,15 +436,14 @@ SSLNetVConnection::update_rbio(bool move_to_socket)
     this->handShakeBioStored = 0;
     // Load up the next block if present
     if (this->handShakeReader->is_read_avail_more_than(0)) {
-      // Setup the next iobuffer block to drain
-      char *start              = this->handShakeReader->start();
-      char *end                = this->handShakeReader->end();
-      this->handShakeBioStored = end - start;
+      auto const total_chain_size = this->handShakeReader->read_avail();
+      this->handShakeBioStored    = total_chain_size;
+      char *buffer_for_bio        = this->_getCoalescedHandShakeBuffer(total_chain_size);
       Dbg(dbg_ctl_ssl, "Adding %d bytes to the ssl rbio", this->handShakeBioStored);
 
       // Sets up the buffer as a read only bio target
       // Must be reset on each read
-      BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
+      BIO *rbio = BIO_new_mem_buf(buffer_for_bio, this->handShakeBioStored);
       BIO_set_mem_eof_return(rbio, -1);
       SSL_set0_rbio(this->ssl, rbio);
       retval = true;
@@ -1899,6 +1898,24 @@ SSLNetVConnection::_getNetProcessor()
   return &sslNetProcessor;
 }
 
+char *
+SSLNetVConnection::_getCoalescedHandShakeBuffer(int64_t total_chain_size)
+{
+  if (this->coalescedHandShakeBioBuffer != nullptr) {
+    ats_free(this->coalescedHandShakeBioBuffer);
+    this->coalescedHandShakeBioBuffer = nullptr;
+  }
+  char *start           = this->handShakeReader->start();
+  char *end             = this->handShakeReader->end();
+  char *coalescedBuffer = start;
+  if ((end - start) < total_chain_size) {
+    this->coalescedHandShakeBioBuffer = static_cast<char *>(ats_malloc(total_chain_size));
+    this->handShakeReader->memcpy(this->coalescedHandShakeBioBuffer, total_chain_size);
+    coalescedBuffer = this->coalescedHandShakeBioBuffer;
+  }
+  return coalescedBuffer;
+}
+
 void
 SSLNetVConnection::_propagateHandShakeBuffer(UnixNetVConnection *target, EThread *t)
 {
@@ -1916,6 +1933,10 @@ SSLNetVConnection::_propagateHandShakeBuffer(UnixNetVConnection *target, EThread
   // Passing along the buffer, don't keep a reading holding early in the buffer
   this->handShakeReader->dealloc();
   this->handShakeReader = nullptr;
+  if (this->coalescedHandShakeBioBuffer != nullptr) {
+    ats_free(this->coalescedHandShakeBioBuffer);
+    this->coalescedHandShakeBioBuffer = nullptr;
+  }
 
   // Kick things again, so the data that was copied into the
   // vio.read buffer gets processed

@@ -212,10 +212,11 @@ public:
   void
   initialize_handshake_buffers()
   {
-    this->handShakeBuffer    = new_MIOBuffer(SSLConfigParams::ssl_misc_max_iobuffer_size_index);
-    this->handShakeReader    = this->handShakeBuffer->alloc_reader();
-    this->handShakeHolder    = this->handShakeReader->clone();
-    this->handShakeBioStored = 0;
+    this->handShakeBuffer             = new_MIOBuffer(SSLConfigParams::ssl_misc_max_iobuffer_size_index);
+    this->handShakeReader             = this->handShakeBuffer->alloc_reader();
+    this->handShakeHolder             = this->handShakeReader->clone();
+    this->handShakeBioStored          = 0;
+    this->coalescedHandShakeBioBuffer = nullptr;
   }
 
   void
@@ -230,10 +231,14 @@ public:
     if (this->handShakeBuffer) {
       free_MIOBuffer(this->handShakeBuffer);
     }
-    this->handShakeReader    = nullptr;
-    this->handShakeHolder    = nullptr;
-    this->handShakeBuffer    = nullptr;
-    this->handShakeBioStored = 0;
+    if (this->coalescedHandShakeBioBuffer != nullptr) {
+      ats_free(this->coalescedHandShakeBioBuffer);
+    }
+    this->handShakeReader             = nullptr;
+    this->handShakeHolder             = nullptr;
+    this->handShakeBuffer             = nullptr;
+    this->handShakeBioStored          = 0;
+    this->coalescedHandShakeBioBuffer = nullptr;
   }
 
   int         populate_protocol(std::string_view *results, int n) const override;
@@ -357,6 +362,22 @@ private:
   NetProcessor    *_getNetProcessor() override;
   void            *_prepareForMigration() override;
 
+  /** Return the unconsumed bytes in @a handShakeReader in a contiguous memory buffer.
+   *
+   * If @a handShakeReader is a single IOBufferBlock, this returns the pointer
+   * to the data in that block. Otherwise, memory is allocated in @a
+   * handshakeReaderCoalesced and the bytes are copied into it. Regardless, any
+   * previously allocated memory in @a coalescedHandShakeBioBuffer is freed when
+   * this function is called.
+   *
+   * @param[in] total_chain_size The total size of the bytes in @a
+   * handShakeReader across all IOBufferBlocks.
+   *
+   * @return A pointer to all unconsumed bytes in @a handShakeReader in a single
+   * contiguous memory buffer.
+   */
+  char *_getCoalescedHandShakeBuffer(int64_t total_chain_size);
+
   enum SSLHandshakeStatus sslHandshakeStatus          = SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   bool                    sslClientRenegotiationAbort = false;
   bool                    first_ssl_connect           = true;
@@ -369,6 +390,10 @@ private:
 
   /** If blind tunneling, this supplies the initial raw bytes of the CLIENT_HELLO. */
   IOBufferReader *handShakeReader = nullptr;
+
+  /** A buffer for the Coalesced @a handShakeReader bytes if @a handShakeReader
+   * spans multiple IOBufferBlocks. */
+  char *coalescedHandShakeBioBuffer = nullptr;
 
   /** The number of bytes last send to the SSL's BIO. */
   int handShakeBioStored = 0;
