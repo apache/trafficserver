@@ -17,13 +17,15 @@
 */
 #pragma once
 
+#include <openssl/ssl.h>
+
+#include "ts/apidefs.h"
+#include "ts/ts.h"
+
 namespace cripts
 {
 class Context;
 }
-
-#include "ts/apidefs.h"
-#include "ts/ts.h"
 
 #include "cripts/Lulu.hpp"
 #include "cripts/Matcher.hpp"
@@ -301,8 +303,65 @@ class ConnBase
 
   }; // End class ConnBase::TcpInfo
 
+  class TLS
+  {
+    using self_type = TLS;
+
+  public:
+    friend class ConnBase;
+
+    TLS()                             = default;
+    void operator=(const self_type &) = delete;
+
+    operator bool()
+    {
+      auto conn = Connection();
+      return conn != nullptr;
+    }
+
+    [[nodiscard]] TSSslConnection
+    Connection()
+    {
+      if (_not_tls) [[unlikely]] {
+        return nullptr; // Avoid repeated attempts
+      }
+
+      _ensure_initialized(_owner);
+      if (!_tls) {
+        _tls = TSVConnSslConnectionGet(_owner->_vc);
+        if (!_tls) [[unlikely]] {
+          _not_tls = true;
+        }
+      }
+
+      return _tls;
+    }
+
+    [[nodiscard]] X509 *
+    X509(bool mTLS = false)
+    {
+      auto conn = Connection();
+
+      if (mTLS) {
+#ifdef OPENSSL_IS_OPENSSL3
+        return SSL_get1_peer_certificate(reinterpret_cast<::SSL *>(conn));
+#else
+        return SSL_get_peer_certificate(reinterpret_cast<::SSL *>(conn));
+#endif
+      } else {
+        return SSL_get_certificate(reinterpret_cast<::SSL *>(conn));
+      }
+    }
+
+  private:
+    ConnBase       *_owner   = nullptr;
+    TSSslConnection _tls     = nullptr;
+    bool            _not_tls = false;
+
+  }; // End class ConnBase::SSL
+
 public:
-  ConnBase() { dscp._owner = congestion._owner = tcpinfo._owner = geo._owner = pacing._owner = mark._owner = this; }
+  ConnBase() { dscp._owner = congestion._owner = tcpinfo._owner = geo._owner = pacing._owner = mark._owner = tls._owner = this; }
 
   ConnBase(const self_type &)       = delete;
   void operator=(const self_type &) = delete;
@@ -335,6 +394,13 @@ public:
     return TSHttpTxnIsInternal(_state->txnp);
   }
 
+  [[nodiscard]] bool
+  IsTLS()
+  {
+    _ensure_initialized(this);
+    return TSVConnIsSsl(_vc);
+  }
+
   [[nodiscard]] virtual cripts::IP LocalIP() const        = 0;
   [[nodiscard]] virtual int        Count() const          = 0;
   virtual void                     SetDscp(int val) const = 0;
@@ -347,12 +413,13 @@ public:
     _state = state;
   }
 
-  Dscp       dscp;
-  Congestion congestion;
-  TcpInfo    tcpinfo;
-  Geo        geo;
-  Pacing     pacing;
-  Mark       mark;
+  Dscp        dscp;
+  Congestion  congestion;
+  TcpInfo     tcpinfo;
+  Geo         geo;
+  Pacing      pacing;
+  Mark        mark;
+  mutable TLS tls;
 
   cripts::string_view string(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
 
@@ -414,7 +481,6 @@ namespace Client
     {
       return cripts::IP{TSHttpTxnIncomingAddrGet(_state->txnp)};
     }
-
   }; // End class Client::Connection
 
 } // namespace Client

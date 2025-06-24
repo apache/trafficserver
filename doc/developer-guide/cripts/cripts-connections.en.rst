@@ -71,6 +71,7 @@ Method                    Description
 ``LocalIP()``             The server (ATS) IP address of the connection.
 ``IsInternal()``          Returns ``true`` or ``false`` if the connection is internal to ATS.
 ``Socket()``              Returns the raw socket structure for the connection (use with care).
+``IsTLS``                 Returns ``true`` if the connection is a TLS connection.
 =======================   =========================================================================
 
 The ``IP()`` and ``LocalIP()`` methods return the IP address as an object. In addition to the
