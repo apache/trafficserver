@@ -54,7 +54,7 @@ def get_socket(port: int) -> socket.socket:
     return tls_socket
 
 
-def makerequest(port: int, path: str, n: int) -> None:
+def make_request(port: int, path: str, n: int) -> None:
     """Establish an HTTP/2 connection and send a request.
 
     :param port: The port to connect to.
@@ -109,7 +109,7 @@ def makerequest(port: int, path: str, n: int) -> None:
     # close the socket
     tls_socket.close()
 
-    if not error_code == 0:
+    if error_code != 0:
         exit(1)
 
 
@@ -121,7 +121,7 @@ def main():
 
     args = parser.parse_args()
 
-    makerequest(args.port, args.path, args.n)
+    make_request(args.port, args.path, args.n)
 
 
 if __name__ == '__main__':

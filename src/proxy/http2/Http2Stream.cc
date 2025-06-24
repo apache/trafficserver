@@ -1098,7 +1098,7 @@ Http2Stream::release()
     return;
   }
 
-  Http2StreamDebug("release is called, but this stream is not ready");
+  Http2StreamDebug("Delaying do_io_close() until stream is in the closed state");
 }
 
 void

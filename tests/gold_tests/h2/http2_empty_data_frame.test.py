@@ -38,31 +38,31 @@ class Http2EmptyDataFrameTest:
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http2',
-                'proxy.config.ssl.server.cert.path': '{0}'.format(self._ts.Variables.SSLDir),
-                'proxy.config.ssl.server.private_key.path': '{0}'.format(self._ts.Variables.SSLDir),
+                'proxy.config.ssl.server.cert.path': f"{self._ts.Variables.SSLDir}",
+                'proxy.config.ssl.server.private_key.path': f"{self._ts.Variables.SSLDir}",
                 'proxy.config.http.insert_response_via_str': 2,
                 'proxy.config.http2.active_timeout_in': 3,
                 'proxy.config.http2.stream_error_rate_threshold': 0.1  # default
             })
-        self._ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(self._server.Variables.Port))
+        self._ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.Port}")
         self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
     def __setupClient(self):
         self._ts.Setup.CopyAs("clients/h2empty_data_frame.py", Test.RunDirectory)
 
     def run(self):
-        tr = Test.AddTestRun()
+        tr = Test.AddTestRun("warm-up cache")
 
         tr.Processes.Default.StartBefore(self._ts)
-        tr.Processes.Default.StartBefore(self._server, ready=When.PortOpen(self._server.Variables.Port))
+        tr.Processes.Default.StartBefore(self._server)
 
         # warm up the cache
-        tr.Processes.Default.Command = f'{sys.executable} h2empty_data_frame.py {self._ts.Variables.ssl_port} /cache/10 -n 1'
+        tr.Processes.Default.Command = f"{sys.executable} h2empty_data_frame.py {self._ts.Variables.ssl_port} /cache/10 -n 1"
         tr.Processes.Default.ReturnCode = 0
 
         # verify 20 streams doesn't hit `proxy.config.http2.stream_error_rate_threshold`
-        tr = Test.AddTestRun()
-        tr.Processes.Default.Command = f'{sys.executable} h2empty_data_frame.py {self._ts.Variables.ssl_port} /cache/10 -n 20'
+        tr = Test.AddTestRun("open 20 streams")
+        tr.Processes.Default.Command = f"{sys.executable} h2empty_data_frame.py {self._ts.Variables.ssl_port} /cache/10 -n 20"
         tr.Processes.Default.ReturnCode = 0
 
         tr.StillRunningAfter = self._ts
