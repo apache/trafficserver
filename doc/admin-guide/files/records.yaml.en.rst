@@ -1886,6 +1886,7 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 414 500 501 502 503 504
    :reloadable:
+   :overridable:
 
    The HTTP status code for negative caching. Default values are mentioned above. The unwanted status codes can be
    taken out from the list. Other status codes can be added. The variable is a list but parsed as STRING.
@@ -1905,6 +1906,8 @@ Negative Response Caching
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
+   :reloadable:
+   :overridable:
 
    When replying with a stale cached response in negative revalidating circumstances (see
    :ts:cv:`proxy.config.http.negative_revalidating_enabled`), |TS| includes an ``Expires:`` HTTP
@@ -1930,6 +1933,7 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_list STRING 500 502 503 504
    :reloadable:
+   :overridable:
 
    The HTTP status codes for which the negative revalidating feature applies. Note that this is a
    `STRING` configuration containing a space separated list of the desired HTTP status codes.
