@@ -175,9 +175,15 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
     // Pure END_STREAM
     if (payload_length == 0) {
+      if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+        stream->initiating_close();
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+      }
+
       if (stream->is_read_enabled()) {
         stream->signal_read_event(VC_EVENT_READ_COMPLETE);
       }
+
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
   } else {
@@ -2380,13 +2386,16 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
 
     if (result == Http2SendDataFrameResult::DONE) {
       if (!stream->is_outbound_connection()) {
-        // Delete a stream immediately
-        // TODO its should not be deleted for a several time to handling
-        // RST_STREAM and WINDOW_UPDATE.
-        // See 'closed' state written at [RFC 7540] 5.1.
-        Http2StreamDebug(this->session, stream->get_id(), "Shutdown stream");
-        stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
-        stream->do_io_close();
+        if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+          // Delete a stream immediately
+          Http2StreamDebug(this->session, stream->get_id(), "Shutdown stream");
+          stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
+          stream->do_io_close();
+        } else {
+          // This stream waits for the END_STREAM in half-closed (local) state until `http.transaction_no_activity_timeout_in`.
+          // If no frame with END_STREAM is found, ATS actively closes the stream.
+          Http2StreamDebug(this->session, stream->get_id(), "waiting END_STREAM");
+        }
       } else if (stream->is_outbound_connection() && stream->is_write_vio_done()) {
         stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
       } else {

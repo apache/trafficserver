@@ -31,6 +31,7 @@
 #include "tscore/Diags.h"
 #include "tscore/HTTPVersion.h"
 #include "tscore/ink_assert.h"
+#include "tsutil/DbgCtl.h"
 
 #include <numeric>
 
@@ -563,7 +564,10 @@ Http2Stream::do_io_close(int /* flags */)
     // We only need to do this for the client side since we only need to pass through RST_STREAM
     // from the server. If a client sends a RST_STREAM, we need to keep the server side alive so
     // the background fill can function as intended.
-    if (!this->is_outbound_connection() && this->is_state_writeable()) {
+    //
+    // In the half-closed(local) state, server can close stream actively by sending RST_STREAM frame
+    if (!this->is_outbound_connection() &&
+        (this->is_state_writeable() || _state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL)) {
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
     }
 
@@ -591,7 +595,7 @@ Http2Stream::transaction_done()
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   super::transaction_done();
 
-  if (!closed) {
+  if (!closed && _state == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
     do_io_close(); // Make sure we've been closed.  If we didn't close the _proxy_ssn session better still be open
   }
   Http2ConnectionState &state = this->get_connection_state();
@@ -1082,11 +1086,20 @@ Http2Stream::clear_io_events()
   }
 }
 
-//  release and do_io_close are the same for the HTTP/2 protocol
+/**
+  Callback from HttpSM
+
+  release and do_io_close are the same for the HTTP/2 protocol
+ */
 void
 Http2Stream::release()
 {
-  this->do_io_close();
+  if (_state == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+    this->do_io_close();
+    return;
+  }
+
+  Http2StreamDebug("Delaying do_io_close() until stream is in the closed state");
 }
 
 void
