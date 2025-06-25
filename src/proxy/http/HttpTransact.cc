@@ -237,7 +237,6 @@ findParent(HttpTransact::State *s)
 inline static void
 markParentDown(HttpTransact::State *s)
 {
-  Metrics::Counter::increment(http_rsb.total_parent_marked_down_count);
   url_mapping *mp = s->url_map.getMapping();
 
   TxnDbg(dbg_ctl_http_trans, "enable_parent_timeout_markdowns: %d, disable_parent_markdowns: %d",
@@ -251,6 +250,8 @@ markParentDown(HttpTransact::State *s)
   if (s->current.state == HttpTransact::INACTIVE_TIMEOUT && s->txn_conf->enable_parent_timeout_markdowns == 0) {
     return;
   }
+  // Increment metric when config allows ATS to mark parent down
+  Metrics::Counter::increment(http_rsb.total_parent_marked_down_count);
 
   if (s->response_action.handled) {
     // Do nothing. If a plugin handled the response, let it handle markdown.
