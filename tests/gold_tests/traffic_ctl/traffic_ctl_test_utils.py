@@ -54,12 +54,31 @@ def MakeGoldFileWithText(content, dir, test_number, add_new_line=True):
     return gold_filepath
 
 
-class Config():
+class Common():
+    """
+        Handy class to map common traffic_ctl test options.
+    """
+
+    def __init__(self, tr, finish_callback):
+        self._tr = tr
+        self._finish_callback = finish_callback
+
+    def validate_with_exit_code(self, exit_code: int):
+        """
+            Sets the exit code for the test.
+        """
+        self._tr.Processes.Default.ReturnCode = exit_code
+        self._finish_callback(self)
+        return self
+
+
+class Config(Common):
     """
         Handy class to map traffic_ctl config options.
     """
 
     def __init__(self, dir, tr, tn):
+        super().__init__(tr, lambda x: self.__finish())
         self._cmd = "traffic_ctl config "
         self._tr = tr
         self._dir = dir
@@ -105,12 +124,13 @@ class Config():
         self.__finish()
 
 
-class Server():
+class Server(Common):
     """
         Handy class to map traffic_ctl server options.
     """
 
     def __init__(self, dir, tr, tn):
+        super().__init__(tr, lambda x: self.__finish())
         self._cmd = "traffic_ctl server "
         self._tr = tr
         self._dir = dir
