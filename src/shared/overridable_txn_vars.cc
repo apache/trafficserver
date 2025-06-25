@@ -24,6 +24,7 @@
 #include "shared/overridable_txn_vars.h"
 
 #include "iocore/net/ConnectionTracker.h"
+#include "ts/apidefs.h"
 
 const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigKey, const TSRecordDataType>>
   ts::Overridable_Txn_Vars({
@@ -39,7 +40,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.http.chunking_enabled",                             {TS_CONFIG_HTTP_CHUNKING_ENABLED, TS_RECORDDATATYPE_INT}                 },
     {"proxy.config.http.cache.generation",                             {TS_CONFIG_HTTP_CACHE_GENERATION, TS_RECORDDATATYPE_INT}                 },
     {"proxy.config.http.insert_client_ip",                             {TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP, TS_RECORDDATATYPE_INT}       },
-    {"proxy.config.http.insert_forwarded",                             {TS_CONFIG_HTTP_INSERT_FORWARDED, TS_RECORDDATATYPE_STRING}              },
+    {"proxy.config.http.insert_forwarded",                             {TS_CONFIG_HTTP_INSERT_FORWARDED, TS_RECORDDATATYPE_VARIANT}             },
     {"proxy.config.http.cache.range.write",                            {TS_CONFIG_HTTP_CACHE_RANGE_WRITE, TS_RECORDDATATYPE_INT}                },
     {"proxy.config.http.allow_multi_range",                            {TS_CONFIG_HTTP_ALLOW_MULTI_RANGE, TS_RECORDDATATYPE_INT}                },
     {"proxy.config.http.cache.range.lookup",                           {TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP, TS_RECORDDATATYPE_INT}               },
@@ -61,7 +62,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.http.doc_in_cache_skip_dns",                        {TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS, TS_RECORDDATATYPE_INT}            },
     {"proxy.config.http.forward_connect_method",                       {TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD, TS_RECORDDATATYPE_INT}           },
     {"proxy.config.http.request_buffer_enabled",                       {TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED, TS_RECORDDATATYPE_INT}           },
-    {"proxy.config.http.down_server.cache_time",                       {TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME, TS_RECORDDATATYPE_INT}           },
+    {"proxy.config.http.down_server.cache_time",                       {TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME, TS_RECORDDATATYPE_VARIANT}       },
     {"proxy.config.http.proxy_protocol_out",                           {TS_CONFIG_HTTP_PROXY_PROTOCOL_OUT, TS_RECORDDATATYPE_INT}               },
     {"proxy.config.http.insert_age_in_response",                       {TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, TS_RECORDDATATYPE_INT}           },
     {"proxy.config.url_remap.pristine_host_hdr",                       {TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR, TS_RECORDDATATYPE_INT}           },
@@ -78,6 +79,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.http.insert_response_via_str",                      {TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, TS_RECORDDATATYPE_INT}          },
     {"proxy.config.http.flow_control.high_water",                      {TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK, TS_RECORDDATATYPE_INT}     },
     {"proxy.config.http.negative_caching_enabled",                     {TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED, TS_RECORDDATATYPE_INT}         },
+    {"proxy.config.http.negative_caching_list",                        {TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST, TS_RECORDDATATYPE_VARIANT}        },
     {"proxy.config.http.cache.when_to_revalidate",                     {TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.http.response_header_max_size",                     {TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.http.anonymize_remove_referer",                     {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER, TS_RECORDDATATYPE_INT}         },
@@ -93,7 +95,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {ConnectionTracker::CONFIG_SERVER_VAR_MIN,                         {TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS, TS_RECORDDATATYPE_INT}      },
     {"proxy.config.http.anonymize_remove_client_ip",                   {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP, TS_RECORDDATATYPE_INT}       },
     {"proxy.config.http.cache.open_read_retry_time",                   {TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME, TS_RECORDDATATYPE_INT}       },
-    {ConnectionTracker::CONFIG_SERVER_VAR_MATCH,                       {TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH, TS_RECORDDATATYPE_INT}      },
+    {ConnectionTracker::CONFIG_SERVER_VAR_MATCH,                       {TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH, TS_RECORDDATATYPE_VARIANT}  },
     {"proxy.config.http.parent_proxy.fail_threshold",                  {TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD, TS_RECORDDATATYPE_INT}      },
     {"proxy.config.http.cache.ignore_authentication",                  {TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION, TS_RECORDDATATYPE_INT}      },
     {"proxy.config.http.anonymize_remove_user_agent",                  {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT, TS_RECORDDATATYPE_INT}      },
@@ -117,6 +119,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
     {"proxy.config.http.forward.proxy_auth_to_parent",                 {TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT, TS_RECORDDATATYPE_INT}     },
     {"proxy.config.http.parent_proxy.mark_down_hostdb",                {TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB, TS_RECORDDATATYPE_INT}         },
     {"proxy.config.http.negative_revalidating_enabled",                {TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED, TS_RECORDDATATYPE_INT}    },
+    {"proxy.config.http.negative_revalidating_list",                   {TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST, TS_RECORDDATATYPE_VARIANT}   },
     {"proxy.config.http.cache.guaranteed_min_lifetime",                {TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME, TS_RECORDDATATYPE_INT}    },
     {"proxy.config.http.cache.guaranteed_max_lifetime",                {TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME, TS_RECORDDATATYPE_INT}    },
     {"proxy.config.http.transaction_active_timeout_in",                {TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN, TS_RECORDDATATYPE_INT}    },
