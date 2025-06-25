@@ -180,19 +180,20 @@ Parser::preprocess(std::vector<std::string> tokens)
 
   // Special case for "conditional" values
   if (tokens[0].substr(0, 2) == "%{") {
-    _cond = true;
+    _clause = CondClause::COND;
   } else if (tokens[0] == "cond") {
-    _cond = true;
+    _clause = CondClause::COND;
     tokens.erase(tokens.begin());
   } else if (tokens[0] == "else") {
-    _cond = false;
-    _else = true;
-
+    _clause = CondClause::ELSE;
+    return true;
+  } else if (tokens[0] == "elif") {
+    _clause = CondClause::ELIF;
     return true;
   }
 
   // Is it a condition or operator?
-  if (_cond) {
+  if (_clause == CondClause::COND) {
     if ((tokens[0].substr(0, 2) == "%{") && (tokens[0][tokens[0].size() - 1] == '}')) {
       _op = tokens[0].substr(2, tokens[0].size() - 3);
       if (tokens.size() > 2 && (tokens[1][0] == '=' || tokens[1][0] == '>' || tokens[1][0] == '<')) {
@@ -240,7 +241,7 @@ Parser::preprocess(std::vector<std::string> tokens)
 bool
 Parser::cond_is_hook(TSHttpHookID &hook) const
 {
-  if (!_cond) {
+  if (_clause != CondClause::COND) {
     return false;
   }
 

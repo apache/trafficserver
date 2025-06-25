@@ -1,1 +1,1 @@
-(program (section SEND_RESPONSE { (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable outbound.status) == (value 418)))))) (block { (statement (functionCall counter ( (argumentList (value "plugin.header_rewrite.teapots")) )) ;) }))) }) <EOF>)
+(program (section SEND_RESPONSE { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable outbound.status) == (value 418)))))) (block { (statement (functionCall counter ( (argumentList (value "plugin.header_rewrite.teapots")) )) ;) })))) }) <EOF>)

@@ -1,1 +1,1 @@
-(program (section SEND_REQUEST { (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable outbound.url.host) ~ (regex /foo|bar/)))))) (block { (statement outbound.req.X-Valid = (value "{outbound.url.port}") ;) }))) }) <EOF>)
+(program (section SEND_REQUEST { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable outbound.url.host) ~ (regex /foo|bar/)))))) (block { (statement outbound.req.X-Valid = (value "{outbound.url.port}") ;) })))) }) <EOF>)

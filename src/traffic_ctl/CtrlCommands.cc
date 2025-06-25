@@ -34,6 +34,7 @@
 #include "jsonrpc/CtrlRPCRequests.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"
 
+#include "TrafficCtlStatus.h"
 namespace
 {
 /// We use yamlcpp as codec implementation.
@@ -498,6 +499,7 @@ DirectRPCCommand::from_file_request()
       }
 
     } catch (std::exception const &ex) {
+      App_Exit_Status_Code = CTRL_EX_ERROR;
       _printer->write_output(swoc::bwprint(text, "Error found: {}\n", ex.what()));
     }
   }
@@ -529,6 +531,7 @@ DirectRPCCommand::read_from_input()
     _printer->write_output("--> Request sent.\n");
     _printer->write_output(swoc::bwprint(text, "\n<-- {}\n", response));
   } catch (std::exception const &ex) {
+    App_Exit_Status_Code = CTRL_EX_ERROR;
     _printer->write_output(swoc::bwprint(text, "Error found: {}\n", ex.what()));
   }
 }

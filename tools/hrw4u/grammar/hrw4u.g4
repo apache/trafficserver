@@ -20,8 +20,9 @@ grammar hrw4u;
 // -----------------------------
 // Lexer Rules
 // -----------------------------
-VARS           : 'VARS';
+VARS          : 'VARS';
 IF            : 'if';
+ELIF          : 'elif';
 ELSE          : 'else';
 IN            : 'in';
 TRUE          : [tT][rR][uU][eE];
@@ -91,11 +92,16 @@ program
 
 section
     : varSection
-    | name=IDENT LBRACE (conditional | statementList) RBRACE
+    | name=IDENT LBRACE sectionBody+ RBRACE
     ;
 
 varSection
     : VARS LBRACE variables RBRACE
+    ;
+
+sectionBody
+    : statement
+    | conditional
     ;
 
 variables
@@ -106,10 +112,6 @@ variableDecl
     : name=IDENT COLON typeName=IDENT SEMICOLON
     ;
 
-statementList
-    : statement+
-    ;
-
 statement
     : BREAK SEMICOLON
     | functionCall SEMICOLON
@@ -118,7 +120,7 @@ statement
     ;
 
 conditional
-    : ifStatement elseClause?
+    : ifStatement elifClause* elseClause?
     ;
 
 ifStatement
@@ -128,6 +130,11 @@ ifStatement
 
 elseClause
     : ELSE block
+    ;
+
+elifClause
+    : ELIF condition block
+    | ELIF LPAREN condition RPAREN block
     ;
 
 block
