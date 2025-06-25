@@ -52,10 +52,10 @@ using namespace EsiLib;
 using namespace Stats;
 
 struct OptionInfo {
-  bool packed_node_support;
-  bool private_response;
-  bool disable_gzip_output;
-  bool first_byte_flush;
+  bool packed_node_support{false};
+  bool private_response{false};
+  bool disable_gzip_output{false};
+  bool first_byte_flush{false};
   unsigned max_inclusion_depth{3};
 };
 
