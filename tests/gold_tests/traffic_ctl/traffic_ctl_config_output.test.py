@@ -76,3 +76,6 @@ traffic_ctl.config().diff().as_records().validate_with_goldfile("diff_yaml.gold"
 ##### CONFIG DESCRIBE
 # don't really care about values, but just output and that the command actually went through
 traffic_ctl.config().describe("proxy.config.http.server_ports").validate_with_goldfile("describe.gold")
+
+# Make sure that the command returns an exit code of 2
+traffic_ctl.config().get("invalid.should.set.the.exit.code.to.2").validate_with_exit_code(2)
