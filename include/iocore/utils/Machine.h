@@ -31,6 +31,7 @@
 #pragma once
 
 #include "tscore/ink_inet.h"
+#include "tscore/SnowflakeID.h"
 #include "tscore/ink_uuid.h"
 
 #include <unordered_set>
@@ -90,9 +91,11 @@ struct Machine {
   IpEndpoint ip4; ///< IPv4 address if present.
   IpEndpoint ip6; ///< IPv6 address if present.
 
-  std::string host_name;
-  std::string ip_hex_string; ///< IP address as hex string
-  ATSUuid     uuid;
+  std::string                            host_name;
+  uint64_t                               host_fnv1a;    ///<  A 64 bit FNV-1a hash of the host name.
+  std::string                            ip_hex_string; ///< IP address as hex string
+  ATSUuid                                process_uuid;
+  std::unique_ptr<SnowflakeIdNoSequence> process_snowflake_id;
 
   ~Machine();
 

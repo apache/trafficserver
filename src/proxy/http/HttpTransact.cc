@@ -6594,7 +6594,7 @@ HttpTransact::will_this_request_self_loop(State *s)
     // Now check for a loop using the Via string.
     int              count     = 0;
     MIMEField       *via_field = s->hdr_info.client_request.field_find(static_cast<std::string_view>(MIME_FIELD_VIA));
-    std::string_view uuid{Machine::instance()->uuid.getString()};
+    std::string_view uuid{Machine::instance()->process_uuid.getString()};
 
     while (via_field) {
       // No need to waste cycles comma separating the via values since we want to do a match anywhere in the

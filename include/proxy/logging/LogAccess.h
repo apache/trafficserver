@@ -247,6 +247,7 @@ public:
   int marshal_plugin_identity_id(char *);                          // INT
   int marshal_plugin_identity_tag(char *);                         // STR
   int marshal_process_uuid(char *);                                // STR
+  int marshal_process_sfid(char *);                                // STR
   int marshal_client_http_connection_id(char *);                   // INT
   int marshal_client_http_transaction_id(char *);                  // INT
   int marshal_client_http_transaction_priority_weight(char *);     // INT

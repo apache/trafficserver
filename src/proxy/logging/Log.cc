@@ -505,6 +505,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("puuid", field);
 
+  field =
+    new LogField("process_snowflake_id", "psfid", LogField::STRING, &LogAccess::marshal_process_sfid, &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("psfid", field);
+
   field = new LogField("client_req_content_len", "cqcl", LogField::sINT, &LogAccess::marshal_client_req_content_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
