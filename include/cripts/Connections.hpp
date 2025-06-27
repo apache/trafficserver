@@ -22,13 +22,20 @@
 #include "ts/apidefs.h"
 #include "ts/ts.h"
 
-namespace cripts
-{
-class Context;
-}
-
 #include "cripts/Lulu.hpp"
 #include "cripts/Matcher.hpp"
+
+namespace detail
+{
+class ConnBase;
+template <bool IsMutualTLS> class Cert;
+} // namespace detail
+
+namespace cripts::Certs
+{
+using Client = detail::Cert<true>;
+using Server = detail::Cert<false>;
+} // namespace cripts::Certs
 
 // This is figured out in this way because
 // this header has to be available to include
@@ -338,7 +345,7 @@ class ConnBase
     }
 
     [[nodiscard]] X509 *
-    X509(bool mTLS = false)
+    GetX509(bool mTLS = false)
     {
       auto conn = Connection();
 
@@ -362,6 +369,8 @@ class ConnBase
 
 public:
   ConnBase() { dscp._owner = congestion._owner = tcpinfo._owner = geo._owner = pacing._owner = mark._owner = tls._owner = this; }
+
+  virtual ~ConnBase() = default;
 
   ConnBase(const self_type &)       = delete;
   void operator=(const self_type &) = delete;
@@ -422,6 +431,9 @@ public:
   mutable TLS tls;
 
   cripts::string_view string(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
+
+  cripts::Certs::Client ClientCert();
+  cripts::Certs::Server ServerCert();
 
 protected:
   static void

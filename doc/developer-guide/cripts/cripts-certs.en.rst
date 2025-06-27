@@ -26,13 +26,13 @@ Certificates
 ************
 
 Cripts provides a set of convenient classes for introspection into the various
-TLS certificates that are used. This includes both the server certificates used
-to establish a TLS connections, as well as any client certificates use for
+TLS certificates that are used. These include both the server certificates used
+to establish a TLS connections, as well as any client certificates used for
 mutual TLS.
 
-In the current implementation, these objects only works on X509 certificates as
-associated with the ``client`` and ``server`` connections. Lets start off with
-a simple example how to use these objects:
+In the current implementation, these objects only work on X509 certificates as
+associated with the ``client`` and ``server`` connections. Let's start off with
+a simple example of how to use these objects:
 
 .. code-block:: cpp
 
@@ -60,6 +60,20 @@ Object                              Description
 ``cripts::Certs::Server``           The certificate used on the connection for TLS handshakes.
 ``cripts::Certs::Client``           The mutual TLS (mTLS) certificate used on the connection.
 =================================   ===============================================================
+
+This combined with the two kinds of connections, ``cripts::Client::Connection`` and
+``cripts::Server::Connection`` yields a total of four possible certificate objects. For example, to
+access the client mTLS provided certificate on a client connection, you would use:
+
+.. code-block:: cpp
+
+   const auto tls = cripts::Certs::Client(cripts::Client::Connection::Get());
+
+Or if you are using the convenience wrappers:
+
+.. code-block:: cpp
+
+   const auto tls = cripts::Certs::Client(client.connection);
 
 .. _cripts-certs-x509:
 
@@ -122,7 +136,7 @@ easily done in a simple loop:
      if (client.connection.IsTLS()) {
        const auto tls = cripts::Certs::Server(client.connection);
 
-       for (auto : tls.san.uri) {
+       for (auto uri : tls.san.uri) {
          // Check the URI string_view
        }
      }

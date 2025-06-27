@@ -15,11 +15,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
-#include "cripts/Lulu.hpp"
-#include "cripts/Preamble.hpp"
-
 #include <arpa/inet.h>
+
+#include "ts/ts.h"
+
+#include "cripts/Certs.hpp"
 
 namespace
 {
@@ -72,7 +72,7 @@ CertBase::X509Value::_update_value() const
     char *data = nullptr;
     long  len  = BIO_get_mem_data(_bio.get(), &data);
 
-    _value = cripts::string_view(data, static_cast<size_t>(len));
+    _value = cripts::Certs::String(data, static_cast<size_t>(len));
     _ready = true;
   }
 }
@@ -88,7 +88,7 @@ CertBase::X509Value::_load_name(X509_NAME *(*getter)(const X509 *)) const
       X509_NAME_print_ex(_bio.get(), name, 0, XN_FLAG_ONELINE);
       _update_value();
     } else [[unlikely]] {
-      _value = cripts::string_view();
+      _value = cripts::Certs::String();
       _ready = true;
     }
   }
@@ -129,7 +129,7 @@ CertBase::X509Value::_load_time(ASN1_TIME *(*getter)(const X509 *)) const
       ASN1_TIME_print(_bio.get(), time);
       X509Value::_update_value();
     } else [[unlikely]] {
-      _value = cripts::string_view();
+      _value = cripts::Certs::String();
       _ready = true;
     }
   }
@@ -213,4 +213,57 @@ CertBase::SAN::SANBase::_load() const
   sk_GENERAL_NAME_pop_free(san_names, GENERAL_NAME_free);
 }
 
+cripts::string
+CertBase::SAN::SANBase::Join(const char *delim) const
+{
+  cripts::string str;
+
+  ensureLoaded();
+  for (const auto &s : _data) {
+    if (!str.empty()) {
+      str += delim;
+    }
+    str += s;
+  }
+
+  return str; // RVO
+}
+
+void
+CertBase::SAN::Iterator::_advance()
+{
+  if (!_san || _ended) {
+    return;
+  }
+
+  auto it = std::find_if(_san->_sans.begin() + _index, _san->_sans.end(), [](const SANBase *entry) { return entry->Size() > 0; });
+
+  if (it != _san->_sans.end()) {
+    _index = std::distance(_san->_sans.begin(), it) + 1;
+    _iter  = (*it)->Data().begin();
+    _update_current();
+  } else {
+    _ended = true;
+  }
+}
+
+CertBase::SAN::Iterator::value_type
+CertBase::SAN::operator[](size_t index) const
+{
+  if (index < Size()) {
+    size_t cur = 0;
+
+    for (auto *san : _sans) {
+      size_t type_size = san->Size();
+
+      if (index < cur + type_size) {
+        // Found the SAN type that contains this index
+        return std::make_tuple(san->sanType(), cripts::Certs::String((*san)[index - cur]));
+      }
+      cur += type_size;
+    }
+  }
+
+  return std::make_tuple(cripts::Certs::SAN::OTHER, cripts::Certs::String());
+}
 } // namespace detail
