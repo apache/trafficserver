@@ -646,9 +646,16 @@ HttpSM::state_read_client_request_header(int event, void *data)
     _ua.get_txn()->cancel_inactivity_timeout();
     milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = ink_get_hrtime();
 #ifdef ENABLE_SYSTEMTAP_PROBES
-    int   url_len = 0;
-    char *url_str = t_state.hdr_info.client_request.url_string_get_ref(&url_len);
-    ATS_PROBE3(milestone_ua_read_header_done, sm_id, url_str, url_len);
+    {
+      char url_buf[4096] = {0};
+      int  url_len       = 0;
+      int  offset        = 0;
+      URL *url           = t_state.hdr_info.client_request.url_get();
+      if (url) {
+        url->print(url_buf, sizeof(url_buf) - 1, &url_len, &offset);
+        ATS_PROBE3(milestone_ua_read_header_done_url, sm_id, url_buf, url_len);
+      }
+    }
 #endif
   }
 
