@@ -41,7 +41,11 @@ default URL::
 
 where host and port is the hostname/IP and port number of the server.
 
+This plugin can also run as a remap plugin with an optional stats over http config file as a parameter::
 
+    map / http://target @plugin=stats_over_http.so @pparam=config.file
+
+Much like the global version this pparam can also be the path to be used on the remap in order to get the stats
 
 Plugin Options
 ==============
