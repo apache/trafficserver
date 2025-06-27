@@ -37,6 +37,29 @@ enum class SAN : std::uint8_t {
   URI   = GEN_URI,
   IPADD = GEN_IPADD,
 };
+
+class String : public cripts::StringViewMixin<String>
+{
+  using super_type = cripts::StringViewMixin<String>;
+  using self_type  = String;
+
+public:
+  virtual ~String() = default;
+
+  operator cripts::string_view() const { return GetSV(); }
+
+  self_type &
+  operator=(const cripts::string_view str) override
+  {
+    _setSV(str);
+
+    return *this;
+  }
+
+  using super_type::StringViewMixin;
+
+}; // Class cripts::Certs::String
+
 } // namespace cripts::Certs
 
 namespace detail
@@ -91,7 +114,7 @@ public:
 
     CertBase                                         *_owner = nullptr;
     mutable std::unique_ptr<BIO, decltype(&BIO_free)> _bio{nullptr, BIO_free};
-    mutable cripts::string_view                       _value;
+    mutable cripts::Certs::String                     _value;
     mutable bool                                      _ready = false;
   }; //  End class CertBase::X509Value
 
@@ -233,7 +256,7 @@ public:
       using self_type = SANBase;
 
     public:
-      using Container = std::vector<cripts::string>;
+      using Container = std::vector<std::string>;
 
       explicit SANBase(SAN *owner, cripts::Certs::SAN san_id) : _san_id(san_id), _owner(owner) {}
 
@@ -259,8 +282,8 @@ public:
       public:
         using iterator_category = std::forward_iterator_tag;
         using base_iterator     = Container::const_iterator;
-        using value_type        = cripts::string_view;
-        using reference         = cripts::string_view;
+        using value_type        = cripts::Certs::String;
+        using reference         = cripts::Certs::String;
 
         explicit Iterator(base_iterator iter) : _iter(iter) {}
 
@@ -274,7 +297,7 @@ public:
         [[nodiscard]] reference
         operator*() const
         {
-          return *_iter;
+          return cripts::Certs::String(*_iter);
         }
 
         self_type &
@@ -341,14 +364,14 @@ public:
       {
         return size();
       }
-      [[nodiscard]] cripts::string_view
+      [[nodiscard]] cripts::Certs::String
       operator[](size_t index) const
       {
         ensureLoaded();
         if (index >= _data.size()) {
-          return {};
+          return cripts::Certs::String("");
         }
-        return _data[index];
+        return cripts::Certs::String(_data[index]);
       }
 
     protected:
@@ -400,7 +423,7 @@ public:
     {
     public:
       using iterator_category = std::forward_iterator_tag;
-      using value_type        = std::tuple<cripts::Certs::SAN, cripts::string_view>;
+      using value_type        = std::tuple<cripts::Certs::SAN, cripts::Certs::String>;
       using reference         = value_type; // Return by value instead of const reference
       using base_iterator     = SANBase::Container::const_iterator;
 
@@ -462,7 +485,7 @@ public:
       _update_current() const
       {
         if (_san && !_ended) {
-          _current = std::make_tuple(_san->_sans[_index - 1]->sanType(), cripts::string_view(*_iter));
+          _current = std::make_tuple(_san->_sans[_index - 1]->sanType(), cripts::Certs::String(*_iter));
         }
       }
 
@@ -537,13 +560,13 @@ public:
 
           if (index < cur + type_size) {
             // Found the SAN type that contains this index
-            return std::make_tuple(san->sanType(), cripts::string_view((*san)[index - cur]));
+            return std::make_tuple(san->sanType(), cripts::Certs::String((*san)[index - cur]));
           }
           cur += type_size;
         }
       }
 
-      return std::make_tuple(cripts::Certs::SAN::OTHER, cripts::string_view());
+      return std::make_tuple(cripts::Certs::SAN::OTHER, cripts::Certs::String());
     }
 
   private:
@@ -595,7 +618,7 @@ template <bool IsMutualTLS> class Cert : public detail::CertBase
   using super_type = detail::CertBase;
 
 public:
-  explicit Cert(detail::ConnBase &conn) : super_type(conn) { _x509 = conn.tls.X509(IsMutualTLS); }
+  explicit Cert(detail::ConnBase &conn) : super_type(conn) { _x509 = conn.tls.GetX509(IsMutualTLS); }
 }; // End class Cert
 
 } // namespace detail
@@ -625,7 +648,7 @@ template <> struct formatter<cripts::Certs::SAN> {
   }
 };
 
-template <std::derived_from<::detail::CertBase::X509Value> T> struct formatter<T> {
+template <> struct formatter<cripts::Certs::String> {
   constexpr auto
   parse(format_parse_context &ctx) -> decltype(ctx.begin())
   {
@@ -634,9 +657,9 @@ template <std::derived_from<::detail::CertBase::X509Value> T> struct formatter<T
 
   template <typename FormatContext>
   auto
-  format(const T &val, FormatContext &ctx) const -> decltype(ctx.out())
+  format(cripts::Certs::String str, FormatContext &ctx) const -> decltype(ctx.out())
   {
-    return fmt::format_to(ctx.out(), "{}", val.GetSV());
+    return fmt::format_to(ctx.out(), "{}", str.GetSV());
   }
 };
 

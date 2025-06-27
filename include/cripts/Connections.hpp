@@ -338,7 +338,7 @@ class ConnBase
     }
 
     [[nodiscard]] X509 *
-    X509(bool mTLS = false)
+    GetX509(bool mTLS = false)
     {
       auto conn = Connection();
 

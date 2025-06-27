@@ -26,13 +26,13 @@ Certificates
 ************
 
 Cripts provides a set of convenient classes for introspection into the various
-TLS certificates that are used. This includes both the server certificates used
-to establish a TLS connections, as well as any client certificates use for
+TLS certificates that are used. These includes both the server certificates used
+to establish a TLS connections, as well as any client certificates used for
 mutual TLS.
 
-In the current implementation, these objects only works on X509 certificates as
-associated with the ``client`` and ``server`` connections. Lets start off with
-a simple example how to use these objects:
+In the current implementation, these objects only work on X509 certificates as
+associated with the ``client`` and ``server`` connections. Let's start off with
+a simple example of how to use these objects:
 
 .. code-block:: cpp
 
