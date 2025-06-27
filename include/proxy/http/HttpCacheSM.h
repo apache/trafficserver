@@ -86,7 +86,7 @@ public:
     captive_action.init(this);
   }
   void reset();
-  void cleanup();
+  void cancel_pending_action();
 
   Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, const OverridableHttpConfigParams *params,
                     time_t pin_in_cache);
