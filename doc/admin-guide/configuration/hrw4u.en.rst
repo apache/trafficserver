@@ -67,7 +67,7 @@ virtualenv or system-wide using:
 
 .. code-block:: none
 
-   pip install dist/hrw4u-1.0.0-py3-none-any.whl
+   pipx install dist/hrw4u-1.0.0-py3-none-any.whl
 
 Using
 -----
@@ -91,7 +91,8 @@ Syntax Differences
 The basic structure is a `section` name defining the part of the transaction to run in
 followed by conditionals and operators. It uses `if () {} else {}` conditional syntax
 with `&& , || and ==`, with conditions and operators generally following function() or
-object.style grammar. For instance:
+object.style grammar. Operator lines are terminated with `;` (whitespace is still not
+significant). For instance:
 
 .. code-block:: none
 
@@ -167,6 +168,7 @@ cond %{SSN-TXN-COUNT} >10       ssn-txn-count() > 10               Number of tra
 cond %{TO-URL:<C>} =bar         to.url.<C> == "bar"                Remap ``To URL`` component match, ``C`` is ``host`` etc.
 cond %{TXN-COUNT} >10           txn-count() > 10                   Number of transactions on client connection
 cond %{URL:<C> =bar             {in,out}bound.url.<C> == "bar"     Context aware URL component match
+cond ${GEO:<C>} =bar            geo.<C> == "bar"                   IP to Geo mapping. ``C`` is ``country``, ``asn`` etc.
 =============================== ================================== ================================================
 
 The conditions operating on headers and URLs are also available as operators. E.g.:
@@ -180,10 +182,14 @@ The conditions operating on headers and URLs are also available as operators. E.
 In general, where it makes sense for the condition to be used as an operator, it is available as an operator.
 The rule of thumb is the conditional is an operator if the value is mutable.
 
+.. note::
+    Each parenthesis group in a conditional will produce a GROUP. Thus, the original header_rewrite
+    config will be more readable with ``if ...`` than `if (...)`.
+
 Operators
 ---------
 
-Operators in ``header_rewrite`` mapt to HRW4U as a mix of assignments and function calls.
+Operators in ``header_rewrite`` map to HRW4U as a mix of assignments and function calls.
 The preference is the assignment style when appropriate.
 
 ============================= ================================= ================================================
@@ -220,6 +226,15 @@ set-debug         set-debug()                  Enables ATS txn debug
 skip-remap        skip-remap()                 Skip remap processing (open proxy)
 ================= ============================ ================================
 
+String concatenations
+---------------------
+
+You can concatenate values using strings, condition values and variable expansions on the same line in
+operators using. For instance, `outbound.req.CustomHeader “Hello from {inbound.ip}:{inbound.port}”`. As
+a result, the set-redirect's `[QSA]` flag would be implemented as `set-redirect(302, "https://...?{inbound.url.query}")``.
+Note the presence of the `?` -- the url.query doesn't include it.
+
+
 Semantics
 =========
 
@@ -246,7 +261,8 @@ A special section `VARS` is used to declare variables. There is no equivalent in
 `header_rewrite`, where you managed the variables manually.
 
 .. note::
-    The section name is always required in HRW4U, there are no implicit or default hooks.
+    The section name is always required in HRW4U, there are no implicit or default hooks. There
+    can be several if/else block per section block.
 
 Groups
 ------

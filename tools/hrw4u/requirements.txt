@@ -17,3 +17,4 @@
 antlr4-python3-runtime
 pytest
 pyinstaller
+build
