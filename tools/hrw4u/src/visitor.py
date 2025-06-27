@@ -382,25 +382,22 @@ class HRW4UVisitor(hrw4uVisitor):
         self._flush_condition()
         self.output.append(" " * (self._stmt_indent * self.INDENT_SPACES) + line)
 
-    def emit_expression(self, ctx, *, nested: bool = False, last: bool = False):
+    def emit_expression(self, ctx, *, nested: bool = False, last: bool = False, grouped: bool = False):
         self._debug_enter("emit_expression")
         if ctx.OR():
             self._debug("`OR' detected")
-            if nested:
+            if grouped:
                 self._debug("GROUP-START")
                 self.emit_condition("cond %{GROUP}", final=True)
                 self._cond_indent += 1
 
-            self.emit_expression(ctx.expression(), nested=True, last=False)
-
+            self.emit_expression(ctx.expression(), nested=False, last=False)
             if self._queued:
-                self._queued.indent = self._cond_indent
                 self._queued.state.and_or = True
             self._flush_condition()
-
             self.emit_term(ctx.term(), last=last)
 
-            if nested:
+            if grouped:
                 self._flush_condition()
                 self._cond_indent -= 1
                 self.emit_condition("cond %{GROUP:END}")
@@ -434,7 +431,7 @@ class HRW4UVisitor(hrw4uVisitor):
                 self._debug("GROUP-START")
                 self.emit_condition("cond %{GROUP}", final=True)
                 self._cond_indent += 1
-                self.emit_expression(ctx.expression(), nested=False, last=True)
+                self.emit_expression(ctx.expression(), nested=False, last=True, grouped=True)
                 self._cond_indent -= 1
                 self._cond_state.last = last
                 self.emit_condition("cond %{GROUP:END}")
