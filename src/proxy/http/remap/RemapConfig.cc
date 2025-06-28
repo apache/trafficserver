@@ -1255,7 +1255,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // includes support for FILE scheme
     if ((fromScheme != std::string_view{URL_SCHEME_HTTP} && fromScheme != std::string_view{URL_SCHEME_HTTPS} &&
          fromScheme != std::string_view{URL_SCHEME_FILE} && fromScheme != std::string_view{URL_SCHEME_TUNNEL} &&
-         fromScheme != std::string_view{URL_SCHEME_WS} && fromScheme != std::string_view{URL_SCHEME_WSS}) ||
+         fromScheme != std::string_view{URL_SCHEME_WS} && fromScheme != std::string_view{URL_SCHEME_WSS} &&
+         fromScheme != std::string_view{URL_SCHEME_HTTP_UDS} && fromScheme != std::string_view{URL_SCHEME_HTTPS_UDS}) ||
         (toScheme != std::string_view{URL_SCHEME_HTTP} && toScheme != std::string_view{URL_SCHEME_HTTPS} &&
          toScheme != std::string_view{URL_SCHEME_TUNNEL} && toScheme != std::string_view{URL_SCHEME_WS} &&
          toScheme != std::string_view{URL_SCHEME_WSS})) {
