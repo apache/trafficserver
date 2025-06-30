@@ -343,6 +343,16 @@ setting headers. For example::
         set-header ATS-Geo-ASN %{GEO:ASN}
         set-header ATS-Geo-ASN-NAME %{GEO:ASN-NAME}
 
+Additionally, you can specify a client request header to use to extract an IP address
+value from. This is specified as a second argument, separated with a second colon.
+For example::
+
+    cond %{GEO:COUNTRY:X-Client-IP} =US
+        set-status 403
+
+If there is no request header matching the condition, the condition will always return
+an empty string, as if the client IP was not found in the GEO-IP database.
+
 GROUP
 ~~~~~
 ::
