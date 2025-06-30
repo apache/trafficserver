@@ -160,7 +160,7 @@ public:
    * cached for future calls.
    * @return An encoded string representation of the snowflake ID.
    */
-  std::string_view get_string();
+  std::string_view get_string() const;
 
 private:
   /** Generate the next snowflake value. */
@@ -177,7 +177,7 @@ private:
   static std::mutex m_mutex;
 
   union snowflake_t {
-    uint64_t value;
+    uint64_t value = 0;
     struct {
 // Layout the bytes according to endianness such that subsequent snowflake IDs
 // are always increasing in value.
@@ -224,7 +224,7 @@ public:
    * cached for future calls.
    * @return An encoded string representation of the snowflake ID.
    */
-  std::string_view get_string();
+  std::string_view get_string() const;
 
 private:
   /** Generate a new SnoflakeIdNoSequence value. */
@@ -232,7 +232,7 @@ private:
 
 private:
   union snowflake_t {
-    uint64_t value;
+    uint64_t value = 0;
     struct {
 // Layout the bytes according to endianness such that subsequent snowflake IDs
 // are always increasing in value.
