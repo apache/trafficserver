@@ -648,8 +648,19 @@ HttpSM::state_read_client_request_header(int event, void *data)
     _ua.get_entry()->vc_read_handler  = &HttpSM::state_watch_for_client_abort;
     _ua.get_entry()->vc_write_handler = &HttpSM::state_watch_for_client_abort;
     _ua.get_txn()->cancel_inactivity_timeout();
-    ATS_PROBE1(milestone_ua_read_header_done, sm_id);
     milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = ink_get_hrtime();
+#ifdef ENABLE_SYSTEMTAP_PROBES
+    {
+      char url_buf[4096] = {0};
+      int  url_len       = 0;
+      int  offset        = 0;
+      URL *url           = t_state.hdr_info.client_request.url_get();
+      if (url) {
+        url->print(url_buf, sizeof(url_buf) - 1, &url_len, &offset);
+        ATS_PROBE3(milestone_ua_read_header_done_url, sm_id, url_buf, url_len);
+      }
+    }
+#endif
   }
 
   switch (state) {
