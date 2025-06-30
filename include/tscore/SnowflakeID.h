@@ -163,19 +163,35 @@ public:
   std::string_view get_string() const;
 
 private:
+  /** A generator singleton encapsulating the state across the generation of snowflake ids. */
+  class SnowflakeIDGenerator
+  {
+  public:
+    /** Get the singleton instance of the SnowflakeIDGenerator.
+     * @return A reference to the singleton instance.
+     */
+    static SnowflakeIDGenerator &instance();
+
+    /** Generate a new snowflake ID.
+     * @return The next Snowflake ID.
+     */
+    uint64_t get_next_id();
+
+  private:
+    /** The timestamp of the last created snowflake ID. */
+    uint64_t m_last_timestamp = 0;
+
+    /** The sequence value of the last created snowflake ID. */
+    uint64_t m_last_sequence = 0;
+
+    /** A mutex used to make snowflake ID created thread safe. */
+    std::mutex m_mutex;
+  };
+
   /** Generate the next snowflake value. */
   static uint64_t generate_next_snowflake_value();
 
 private:
-  /** The timestamp of the last created snowflake ID. */
-  static uint64_t m_last_timestamp;
-
-  /** The sequence value of the last created snowflake ID. */
-  static uint64_t m_last_sequence;
-
-  /** A mutex used to make snowflake ID created thread safe. */
-  static std::mutex m_mutex;
-
   union snowflake_t {
     uint64_t value = 0;
     struct {
