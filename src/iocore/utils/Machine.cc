@@ -21,10 +21,11 @@
   limitations under the License.
  */
 
-#include "tscore/ink_inet.h"
-#include "tscore/ink_assert.h"
-#include "tscore/Diags.h"
 #include "iocore/utils/Machine.h"
+#include "tscore/Diags.h"
+#include "tscore/SnowflakeID.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_inet.h"
 
 #if HAVE_IFADDRS_H
 #include <ifaddrs.h>
@@ -32,6 +33,32 @@
 
 // Singleton
 Machine *Machine::_instance = nullptr;
+
+/** Compute the FNV-1a hash for the given string.
+ * @param[in] str The string to hash.
+ * @return The 64-bit FNV-1a hash of the string.
+ */
+static constexpr uint64_t
+compute_fnv1a(std::string_view str)
+{
+  // Parameters set under guidance from:
+  // http://isthe.com/chongo/tech/comp/fnv/#google_vignette.
+  constexpr uint64_t FNV_PRIME  = 1099511628211u;
+  constexpr uint64_t FNV_OFFSET = 14695981039346656037u;
+  uint64_t           hash       = FNV_OFFSET;
+
+  // Process each character in lowercase
+  for (char c : str) {
+    hash ^= static_cast<unsigned int>(c);
+    hash *= FNV_PRIME;
+  }
+  return hash;
+}
+
+// Verify our FNV-1a hash implementation.
+static_assert(compute_fnv1a("") == 14695981039346656037u, "64 bit FNV-1 hash for '' should be 14695981039346656037");
+static_assert(compute_fnv1a("e1.myedge.colo.acme.com") == 9637442596227468504u,
+              "64 bit FNV-1 hash for 'e1.myedge.colo.acme.com' should be 9637442596227468504");
 
 Machine *
 Machine::instance()
@@ -59,8 +86,8 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   ip_text_buffer ip_strbuf;
   char           localhost[1024];
 
-  uuid.initialize(TS_UUID_V4);
-  ink_release_assert(nullptr != uuid.getString()); // The Process UUID must be available on startup
+  process_uuid.initialize(TS_UUID_V4);
+  ink_release_assert(nullptr != process_uuid.getString()); // The Process UUID must be available on startup
 
   if (!ats_is_ip(addr)) {
     if (!the_hostname) {
@@ -204,6 +231,10 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
       insert_id(localhost);
     }
   }
+
+  host_fnv1a = compute_fnv1a(host_name);
+  SnowflakeIDUtils::set_machine_id(host_fnv1a);
+  process_snowflake_id = std::make_unique<SnowflakeIdNoSequence>();
 
   char hex_buff[TS_IP6_SIZE * 2 + 1];
   ats_ip_to_hex(&ip.sa, hex_buff, sizeof(hex_buff));
