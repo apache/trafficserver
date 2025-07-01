@@ -79,8 +79,8 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--help", "-h", "Print usage information")
     .add_option("--run-root", "", "using TS_RUNROOT as sandbox", "TS_RUNROOT", 1)
     .add_option("--format", "-f", "Use a specific output format {json|rpc}", "", 1, "", "format")
-    .add_option("--read-timeout-ms", "", "Read timeout for RPC (in milliseconds)", "", 1, "1000", "read-timeout")
-    .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "10", "read-attempts");
+    .add_option("--read-timeout-ms", "", "Read timeout for RPC (in milliseconds)", "", 1, "10000", "read-timeout")
+    .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
   auto &metric_command     = parser.add_command("metric", "Manipulate performance metrics").require_commands();
