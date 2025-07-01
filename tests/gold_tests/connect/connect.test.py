@@ -85,13 +85,10 @@ logging:
         tr = Test.AddTestRun()
         self.__checkProcessBefore(tr)
         if Condition.CurlUsingUnixDomainSocket():
-            tr.MakeCurlCommand(
-                f"-v --fail -s -X CONNECT -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'",
-                uds_path=self.ts.Variables.uds_path)
+            tr.MakeCurlCommand(f"-v --fail -s -X CONNECT -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'", ts=self.ts)
             tr.Processes.Default.Streams.stderr = "gold/connect_0_stderr_uds.gold"
         else:
-            tr.MakeCurlCommand(
-                f"-v --fail -s -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'", uds_path=self.ts.Variables.uds_path)
+            tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'", ts=self.ts)
             tr.Processes.Default.Streams.stderr = "gold/connect_0_stderr.gold"
             tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
                 f'Connected to 127.0.0.1.*{self.ts.Variables.port}', 'Curl should connect through the ATS proxy port.')

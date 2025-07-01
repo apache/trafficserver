@@ -136,7 +136,7 @@ class TestEarlyHints:
             f'--resolve "server.com:{ts_port}:127.0.0.1" '
             f'-H "Host: server.com" '
             f'{scheme}://server.com:{ts_port}/{self._protocol_str}',
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
 
         client.ReturnCode = 0
         self._ts.StartBefore(self._dns)

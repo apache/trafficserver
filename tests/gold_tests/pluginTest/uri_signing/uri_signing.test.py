@@ -102,7 +102,7 @@ tr = Test.AddTestRun("unsigned request")
 ps = tr.Processes.Default
 ps.StartBefore(ts)
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-tr.MakeCurlCommand(curl_and_args + 'http://somehost/someasset.ts', uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand(curl_and_args + 'http://somehost/someasset.ts', ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -111,7 +111,7 @@ tr.StillRunningAfter = ts
 # 1 - accept a passthru request
 tr = Test.AddTestRun("passthru request")
 ps = tr.Processes.Default
-tr.MakeCurlCommand(curl_and_args + 'http://somehost/crossdomain.xml', uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand(curl_and_args + 'http://somehost/crossdomain.xml', ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -123,7 +123,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/someasset.ts?URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -135,7 +135,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/someasset.ts?URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -147,7 +147,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/someasset.ts?URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.ozH4sNwgcOlTZT0l4RQlVCH_osxz9yI1HCBesEv-jYg"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -159,7 +159,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY/someasset.ts"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -171,7 +171,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8/someasset.ts"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -183,7 +183,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/someasset.ts;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -195,7 +195,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/someasset.ts;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -207,7 +207,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -219,7 +219,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 tr.StillRunningAfter = server
@@ -231,7 +231,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/someasset.ts" -H "Cookie: URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8;URISigningPackage=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -243,7 +243,7 @@ ps = tr.Processes.Default
 tr.MakeCurlCommand(
     curl_and_args +
     '"http://somehost/someasset.ts?URISigningPackage=ewogICJ0eXAiOiAiSldUIiwKICAiYWxnIjogIkhTMjU2Igp9.ewogICJleHAiOiAxOTIzMDU2MDg0Cn0.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/403.gold"
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(

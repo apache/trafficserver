@@ -82,7 +82,7 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
     '-s -D - -v {ipv4} --http1.1 -H "x-debug: x-cache,via" -H "Host: www.example.com" http://localhost:{port}/max_age_10sec'.format(
         port=ts.Variables.port, ipv4=ipv4flag),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/cache_and_req_body-miss.gold"
 tr.StillRunningAfter = ts

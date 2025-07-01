@@ -116,8 +116,7 @@ class conf_remap_yaml_load_test:
             )
         if Condition.CurlUsingUnixDomainSocket():
             tr.MakeCurlCommand(
-                '-H "Host: www.testexample.com" "http://127.0.0.1:{0}/test" --verbose'.format(self._ts.Variables.port),
-                uds_path=self._ts.Variables.uds_path)
+                '-H "Host: www.testexample.com" "http://127.0.0.1:{0}/test" --verbose'.format(self._ts.Variables.port), ts=self._ts)
         else:
             tr.MakeCurlCommand(
                 '--proxy 127.0.0.1:{0} "http://www.testexample.com/test" -H "Host: www.testexample.com" --verbose'.format(

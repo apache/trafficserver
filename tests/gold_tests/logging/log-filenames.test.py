@@ -121,7 +121,7 @@ class LogFilenamesTest:
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self.ts.Variables.port}/some/path --verbose --next '
             f'http://127.0.0.1:{self.ts.Variables.port}/server/down --verbose',
-            uds_path=self.ts.Variables.uds_path)
+            ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.ts)
 

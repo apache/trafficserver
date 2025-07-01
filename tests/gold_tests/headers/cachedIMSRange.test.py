@@ -143,7 +143,7 @@ tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H"UID: Fill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-miss.gold"
 tr.StillRunningAfter = ts
@@ -157,7 +157,7 @@ tr.DelayStart = 2
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H"UID: IMS" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale.gold"
 tr.StillRunningAfter = ts
@@ -171,7 +171,7 @@ tr.DelayStart = 2
 tr.MakeCurlCommand(
     '--range 0-1 -s -D - -v {0} --http1.1 -H"UID: IMS" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale-206.gold"
 tr.StillRunningAfter = ts
@@ -179,7 +179,7 @@ tr.StillRunningAfter = server
 
 # Test 3 - Test 304 response served from a regex-remap rule with HTTP.
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f'-vs http://127.0.0.1:{ts.Variables.port}/ -H "Host: {default_304_host}"', uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand(f'-vs http://127.0.0.1:{ts.Variables.port}/ -H "Host: {default_304_host}"', ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.GoldFile("gold/http1_304.gold", case_insensitive=True)
 tr.StillRunningAfter = server
@@ -204,7 +204,7 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H"UID: EtagFill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -217,7 +217,7 @@ tr.DelayStart = 2
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H"UID: INM" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale-INM.gold"
 tr.StillRunningAfter = ts
@@ -231,7 +231,7 @@ tr.DelayStart = 2
 tr.MakeCurlCommand(
     '--range 0-1 -s -D - -v {0} --http1.1 -H"UID: INM" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale-206-etag.gold"
 tr.StillRunningAfter = ts
@@ -243,7 +243,7 @@ tr.DelayStart = 3
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H"UID: noBody" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_nobody-hit-stale.gold"
 tr.StillRunningAfter = ts
@@ -255,7 +255,7 @@ tr.DelayStart = 3
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H"UID: noBody" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_nobody-hit-stale.gold"
 tr.StillRunningAfter = ts
@@ -267,7 +267,7 @@ tr.DelayStart = 2
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H"UID: EtagError" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_error_nobody.gold"
 tr.StillRunningAfter = ts
@@ -279,7 +279,7 @@ tr.DelayStart = 2
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H"UID: EtagError" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_error_nobody.gold"
 tr.StillRunningAfter = ts

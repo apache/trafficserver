@@ -153,7 +153,7 @@ No Date
         tr.MakeCurlCommand(
             'http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
             '-H"Accept: */*" -H"uuid: first" --verbose -o /dev/stderr'.format(self._ts.Variables.port),
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/esi_private_headers.gold"
         tr.StillRunningAfter = self._server
@@ -164,7 +164,7 @@ No Date
         tr.MakeCurlCommand(
             'http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
             '-H"Accept: */*" -H"uuid: second" --verbose -o /dev/stderr'.format(self._ts.Variables.port),
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/esi_private_headers.gold"
         tr.StillRunningAfter = self._server

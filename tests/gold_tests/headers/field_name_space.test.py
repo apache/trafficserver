@@ -47,8 +47,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
-    '-s -D - -v {0} --http1.1 -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    '-s -D - -v {0} --http1.1 -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/field_name_space.gold"
 tr.StillRunningAfter = ts

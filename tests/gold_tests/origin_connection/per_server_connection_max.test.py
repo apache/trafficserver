@@ -129,10 +129,7 @@ class ConnectMethodTest:
         """Configure a client to perform a CONNECT request with a slow response from the server."""
         p = tr.Processes.Process(f'slow_client_{ConnectMethodTest._client_counter}')
         ConnectMethodTest._client_counter += 1
-        tr.MakeCurlCommand(
-            f"-v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'",
-            p=p,
-            uds_path=self._ts.Variables.uds_path)
+        tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'", p=p, ts=self._ts)
         return p
 
     def _test_metrics(self, blocked) -> None:
@@ -169,7 +166,7 @@ class ConnectMethodTest:
         tr.MakeCurlCommandMulti(
             f"sleep 1; {{curl}} -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'"
             f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'",
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         # Curl will have a 22 exit code if it receives a 5XX response (and we
         # expect a 503).
         tr.Processes.Default.ReturnCode = 22 if blocked else 0

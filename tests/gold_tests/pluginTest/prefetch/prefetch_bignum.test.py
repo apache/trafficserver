@@ -68,8 +68,7 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://domain.in/texts/demo-3842948374928374982374982374.txt',
-    uds_path=ts.Variables.uds_path)
+    f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://domain.in/texts/demo-3842948374928374982374982374.txt', ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 Test.AddAwaitFileContainsTestRun('Await transactions to finish logging.', ts.Disk.traffic_out.Name, '3842948374928374982374982377')

@@ -45,7 +45,7 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H " foo: bar" -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.200.gold"
 tr.StillRunningAfter = ts
@@ -54,7 +54,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H "foo : bar" -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.400.gold"
 tr.StillRunningAfter = ts
@@ -63,7 +63,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -H "foo  : bar" -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.400.gold"
 tr.StillRunningAfter = ts
@@ -73,7 +73,7 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -d "hello world" -H "Content-Length: 11" -H "Content-Length: 10" -H "Content-Length: 9" -H "Host: www.example.com" http://localhost:{1}/'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.400.gold"
 tr.StillRunningAfter = ts
@@ -83,7 +83,7 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -d "hello world" -H "Content-Length: 11" -H "Content-Length: 11" -H "Content-Length: 11" -H "Host: www.example.com" http://localhost:{1}/'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.200.gold"
 tr.StillRunningAfter = ts
@@ -93,7 +93,7 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - -v {0} --http1.1 -d "hello world" -H "Transfer-Encoding: chunked" -H "Content-Length: 11" -H "Content-Length: 10" -H "Content-Length: 9" -H "Host: www.example.com" http://localhost:{1}/'
     .format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.200.gold"
 tr.StillRunningAfter = ts

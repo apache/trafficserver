@@ -93,8 +93,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 creq = replay_txns[0]['client-request']
-tr.MakeCurlCommand(
-    curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + creq["url"], uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand(curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + creq["url"], ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
 tr.StillRunningAfter = ts
@@ -104,7 +103,7 @@ tr = Test.AddTestRun("pristine test")
 tr.MakeCurlCommand(
     curl_and_args + "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
     f" | grep -e '^HTTP/' -e '^Location' | sed 's/{server.Variables.Port}/SERVER_PORT/'",
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
 tr.StillRunningAfter = ts
@@ -115,7 +114,7 @@ tr.MakeCurlCommand(
     curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) +
     " 'http://example.three/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
     " | grep -e '^HTTP/' -e '^Content-Length'",
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
 tr.StillRunningAfter = ts
@@ -124,7 +123,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("crash test")
 creq = replay_txns[1]['client-request']
 tr.MakeCurlCommand(curl_and_args + \
-    '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), uds_path=ts.Variables.uds_path)
+    '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
 ts.Disk.diags_log.Content = Testers.ContainsExpression(

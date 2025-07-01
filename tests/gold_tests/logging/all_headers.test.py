@@ -94,11 +94,9 @@ if Condition.CurlUsingUnixDomainSocket():
     tr.MakeCurlCommand(
         '"http://127.0.0.1:{0}" --user-agent "007" --haproxy-protocol 1 --haproxy-clientip 127.0.0.1 --verbose '.format(
             ts.Variables.port) + reallyLong(),
-        uds_path=ts.Variables.uds_path)
+        ts=ts)
 else:
-    tr.MakeCurlCommand(
-        '"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(),
-        uds_path=ts.Variables.uds_path)
+    tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 # Repeat same curl, will be answered from the ATS cache.
@@ -108,11 +106,9 @@ if Condition.CurlUsingUnixDomainSocket():
     tr.MakeCurlCommand(
         '"http://127.0.0.1:{0}" --user-agent "007" --haproxy-protocol 1 --haproxy-clientip 127.0.0.1 --verbose '.format(
             ts.Variables.port) + reallyLong(),
-        uds_path=ts.Variables.uds_path)
+        ts=ts)
 else:
-    tr.MakeCurlCommand(
-        '"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(),
-        uds_path=ts.Variables.uds_path)
+    tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 # Delay to allow TS to flush report to disk, then "sanitize" generated log.

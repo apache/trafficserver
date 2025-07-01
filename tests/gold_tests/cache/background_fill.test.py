@@ -114,7 +114,7 @@ timeout 2 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variab
 sleep 4;
 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4
 """,
-            uds_path=self.ts['for_httpbin'].Variables.uds_path)
+            ts=self.ts['for_httpbin'])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.Any(
             "gold/background_fill_0_stderr_H.gold", "gold/background_fill_0_stderr_W.gold")
@@ -133,7 +133,7 @@ timeout 3 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Vari
 sleep 5;
 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4
 """,
-            uds_path=self.ts['for_httpbin'].Variables.uds_path)
+            ts=self.ts['for_httpbin'])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.Any(
             "gold/background_fill_1_stderr_H.gold", "gold/background_fill_1_stderr_W.gold")
@@ -152,7 +152,7 @@ timeout 3 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variab
 sleep 5;
 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4
 """,
-            uds_path=self.ts['for_httpbin'].Variables.uds_path)
+            ts=self.ts['for_httpbin'])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.Any(
             "gold/background_fill_2_stderr_H.gold", "gold/background_fill_2_stderr_W.gold")

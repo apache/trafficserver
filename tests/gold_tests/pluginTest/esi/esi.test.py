@@ -203,7 +203,7 @@ echo date('l jS \of F Y h:i:s A');
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
             '-H"Accept: */*" --verbose',
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -214,7 +214,7 @@ echo date('l jS \of F Y h:i:s A');
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
             '-H"Accept: */*" --verbose',
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -228,7 +228,7 @@ echo date('l jS \of F Y h:i:s A');
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
             f'-H "Accept-Encoding: gzip" -H"Accept: */*" --verbose --output {gzipped_body_file}',
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Ready = When.FileExists(gzipped_body_file)
         tr.Processes.Default.Streams.stderr = "gold/esi_gzipped.gold"
@@ -254,7 +254,7 @@ echo date('l jS \of F Y h:i:s A');
             f'http://127.0.0.1:{self._ts.Variables.port}/expect_empty_body '
             '-H"Host: www.example.com" -H"Accept-Encoding: gzip" -H"Accept: */*" '
             f'--verbose --output {gzipped_empty_body}',
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Ready = When.FileExists(gzipped_empty_body)
         tr.Processes.Default.Streams.stderr = "gold/empty_response_body.gold"
@@ -278,7 +278,7 @@ echo date('l jS \of F Y h:i:s A');
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
             '-H"Host: www.example.com" -H"Accept: */*" --verbose',
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100",
@@ -292,7 +292,7 @@ echo date('l jS \of F Y h:i:s A');
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
             '-H"Host: www.example.com" -H"Accept: */*" --verbose',
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -304,7 +304,7 @@ echo date('l jS \of F Y h:i:s A');
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
             '-H"Host: www.example.com" -H "Accept-Encoding: gzip" -H"Accept: */*" --verbose',
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server

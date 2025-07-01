@@ -123,7 +123,7 @@ class BodyBufferTest:
         tr.MakeCurlCommand(
             f'-v http://127.0.0.1:{self._ts.Variables.port}/contentlength -d "{self.content_length_request_body}" --next '
             f'-v http://127.0.0.1:{self._ts.Variables.port}/chunked -H "Transfer-Encoding: chunked" -d "{self.chunked_request_body}"',
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(Test.Processes.ts)

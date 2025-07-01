@@ -80,15 +80,11 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 #
-tr.MakeCurlCommand(
-    '--verbose {0} --header "Host: mYhOsT.teSt" hTtP://loCalhOst:{1}/'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand('--verbose {0} --header "Host: mYhOsT.teSt" hTtP://loCalhOst:{1}/'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '--verbose {0} --proxy localhost:{1} http://mYhOsT.teSt/xYz'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand('--verbose {0} --proxy localhost:{1} http://mYhOsT.teSt/xYz'.format(ipv4flag, ts.Variables.port), ts=ts)
 
 if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun()

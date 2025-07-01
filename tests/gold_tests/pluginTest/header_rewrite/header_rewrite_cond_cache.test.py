@@ -59,7 +59,7 @@ curlRequest = (
 
 # Test Case
 tr = Test.AddTestRun()
-tr.MakeCurlCommandMulti(curlRequest.format(ts.Variables.port), uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommandMulti(curlRequest.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

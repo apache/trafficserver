@@ -15,7 +15,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import os
 
 Test.Summary = "Test start up of Traffic server with configuration modification of starting port of different servers at the same time"
 
@@ -38,7 +37,7 @@ ts2.Ready = When.PortOpen(ts2.Variables.port)
 t = Test.AddTestRun("Talk to ts1")
 t.Processes.Default.StartBefore(ts1)
 t.Processes.Default.StartBefore(ts2)
-t.MakeCurlCommand("127.0.0.1:{port}".format(port=ts1.Variables.port), uds_path=ts1.Variables.uds_path)
+t.MakeCurlCommand("127.0.0.1:{port}".format(port=ts1.Variables.port), ts=ts1)
 t.ReturnCode = 0
 t.StillRunningAfter = ts1
 t.StillRunningAfter += ts2

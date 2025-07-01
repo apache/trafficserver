@@ -71,16 +71,15 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 #
-tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    '"http://127.0.0.1:{0}" "http://127.0.0.1:{0}" --http1.1 --verbose'.format(ts.Variables.port), uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" "http://127.0.0.1:{0}" --http1.1 --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 if not Condition.CurlUsingUnixDomainSocket():

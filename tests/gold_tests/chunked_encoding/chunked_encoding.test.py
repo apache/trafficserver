@@ -102,9 +102,7 @@ tr.TimeOut = 5
 if Condition.CurlUsingUnixDomainSocket():
     tr.MakeCurlCommand('--http1.1 -H "Host: www.example.com" "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
 else:
-    tr.MakeCurlCommand(
-        '--http1.1 --proxy 127.0.0.1:{0} http://www.example.com --verbose'.format(ts.Variables.port),
-        uds_path=ts.Variables.uds_path)
+    tr.MakeCurlCommand('--http1.1 --proxy 127.0.0.1:{0} http://www.example.com --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
@@ -132,8 +130,7 @@ if not Condition.CurlUsingUnixDomainSocket():
 tr = Test.AddTestRun()
 tr.TimeOut = 5
 tr.MakeCurlCommand(
-    'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -d "knock knock"'.format(ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -d "knock knock"'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/chunked_POST_200.gold"
 tr.StillRunningAfter = server
@@ -144,7 +141,7 @@ tr.TimeOut = 5
 tr.MakeCurlCommand(
     'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -H "Transfer-Encoding: chunked" -d "Knock knock"'.format(
         ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/chunked_POST_200.gold"
 tr.StillRunningAfter = server

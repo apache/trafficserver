@@ -48,7 +48,7 @@ ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key
 tr = Test.AddTestRun("tr")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.MakeCurlCommand('-i  http://127.0.0.1:{0}/file'.format(ts.Variables.port), uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand('-i  http://127.0.0.1:{0}/file'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Activity Timeout", "Request should fail with active timeout")
 
 if not Condition.CurlUsingUnixDomainSocket():

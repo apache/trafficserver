@@ -47,8 +47,7 @@ ts.Disk.plugin_config.AddLine(f'header_rewrite.so {Test.RunDirectory}/glob_set_r
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server)
-tr.MakeCurlCommand(
-    f'--head 127.0.0.1:{ts.Variables.port} -H "Host: 127.0.0.1:{server.Variables.Port}" --verbose', uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand(f'--head 127.0.0.1:{ts.Variables.port} -H "Host: 127.0.0.1:{server.Variables.Port}" --verbose', ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/set-redirect-glob.gold"
 tr.StillRunningAfter = server
@@ -57,8 +56,7 @@ ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
 
 # Run operator on Send Response Hdr hook (ID:REQUEST == 1).
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(
-    f'--head 127.0.0.1:{ts.Variables.port} -H "Host: 127.0.0.1:{server.Variables.Port}" --verbose', uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand(f'--head 127.0.0.1:{ts.Variables.port} -H "Host: 127.0.0.1:{server.Variables.Port}" --verbose', ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/set-redirect-glob.gold"
 tr.StillRunningAfter = server

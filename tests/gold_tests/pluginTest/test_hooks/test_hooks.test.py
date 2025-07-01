@@ -65,9 +65,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
-tr.MakeCurlCommand(
-    '--verbose {0} --header "Host: one" http://localhost:{1}/argh'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+tr.MakeCurlCommand('--verbose {0} --header "Host: one" http://localhost:{1}/argh'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 if not Condition.CurlUsingUnixDomainSocket():

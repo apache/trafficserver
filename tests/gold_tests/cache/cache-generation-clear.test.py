@@ -51,7 +51,7 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
         ts.Variables.port, objectid),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.All = "gold/miss_default-1.gold"
@@ -61,7 +61,7 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
         ts.Variables.port, objectid),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_default-1.gold"
 
@@ -79,7 +79,7 @@ tr.DelayStart = 15  # delay start of test run to allow previous command to take 
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
         ts.Variables.port, objectid),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/miss_default77.gold"
 
@@ -88,7 +88,7 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
         ts.Variables.port, objectid),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_default77.gold"
 
@@ -97,6 +97,6 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
         ts.Variables.port, objectid),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_default77.gold"

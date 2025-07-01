@@ -62,7 +62,7 @@ tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommandMulti(
     f'touch {InProgressFilePathspec} ; ' +
     f'{{curl}} --verbose {ipv4flag} --header "Host:myhost.test" http://localhost:{ts.Variables.port}/',
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 # Give tests up to 10 seconds to complete.

@@ -52,7 +52,7 @@ tr.TimeOut = 5
 tr.MakeCurlCommand(
     '-H "host: example.com" -H "transfer-encoding: gzip" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'.format(
         ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
@@ -67,7 +67,7 @@ tr.TimeOut = 5
 tr.MakeCurlCommand(
     '-H "host: example.com" -H "transfer-encoding: gzip" -H "transfer-encoding: chunked" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'
     .format(ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("501 Field not implemented", "Should fail")
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("200 OK", "Should not succeed")

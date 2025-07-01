@@ -55,14 +55,12 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommand(
-    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()

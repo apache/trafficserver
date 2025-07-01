@@ -82,8 +82,7 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
 tr.MakeCurlCommand(
-    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr.StillRunningAfter = server
@@ -92,8 +91,7 @@ tr.StillRunningAfter = ts
 # HTTP 1.0
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose {0} --http1.0 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port),
-    uds_path=ts.Variables.uds_path)
+    '--verbose {0} --http1.0 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr.StillRunningAfter = server
@@ -131,8 +129,7 @@ if not Condition.CurlUsingUnixDomainSocket():
 # IPv6
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv6flag, ts.Variables.portv6),
-    uds_path=ts.Variables.uds_path)
+    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv6flag, ts.Variables.portv6), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

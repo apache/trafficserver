@@ -15,7 +15,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import os
 
 Test.Summary = "Test start up of Traffic server with configuration modification of starting port"
 
@@ -27,6 +26,6 @@ ts.Disk.records_config.update({
 ts.Ready = When.PortOpen(ts.Variables.port)
 t = Test.AddTestRun("Test traffic server started properly")
 t.Processes.Default.StartBefore(ts)
-t.MakeCurlCommand("127.0.0.1:{port}".format(port=ts.Variables.port), uds_path=ts.Variables.uds_path)
+t.MakeCurlCommand("127.0.0.1:{port}".format(port=ts.Variables.port), ts=ts)
 t.ReturnCode = 0
 t.StillRunningAfter = ts

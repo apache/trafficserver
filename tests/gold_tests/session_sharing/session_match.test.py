@@ -91,7 +91,7 @@ class SessionMatchTest:
             '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/two &&'
             '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/three'.format(
                 port=self._ts.Variables.port),
-            uds_path=self._ts.Variables.uds_path)
+            ts=self._ts)
         self._tr.Processes.Default.ReturnCode = 0
         self._tr.Processes.Default.StartBefore(self._server)
         self._tr.Processes.Default.StartBefore(self._ts)
