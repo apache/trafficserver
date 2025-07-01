@@ -210,6 +210,7 @@ union PrivateSlotData {
   struct {
     uint64_t timezone  : 1; // TIMEZONE_LOCAL, or TIMEZONE_GMT
     uint64_t ip_source : 2; // IP_SRC_PEER, IP_SRC_PROXY, IP_SRC_FORWARDED, or IP_SRC_PLUGIN
+    uint64_t unused    : 61;
   };
 };
 
