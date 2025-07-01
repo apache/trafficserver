@@ -164,7 +164,26 @@ LogAccess::marshal_process_uuid(char *buf)
   int len = round_strlen(TS_UUID_STRING_LEN + 1);
 
   if (buf) {
-    const char *str = const_cast<char *>(Machine::instance()->uuid.getString());
+    const char *str = const_cast<char *>(Machine::instance()->process_uuid.getString());
+    marshal_str(buf, str, len);
+  }
+  return len;
+}
+
+int
+LogAccess::marshal_process_sfid(char *buf)
+{
+  char const *str = nullptr;
+  int         len = 0;
+
+  if (Machine *machine = Machine::instance(); machine) {
+    std::string_view snowflake_id = machine->process_snowflake_id->get_string();
+    str                           = snowflake_id.data();
+    len                           = snowflake_id.length();
+  }
+
+  len = INK_ALIGN_DEFAULT(len + 1);
+  if (buf) {
     marshal_str(buf, str, len);
   }
   return len;
@@ -2166,7 +2185,7 @@ int
 LogAccess::marshal_client_req_uuid(char *buf)
 {
   char        str[TS_CRUUID_STRING_LEN + 1];
-  const char *uuid = Machine::instance()->uuid.getString();
+  const char *uuid = Machine::instance()->process_uuid.getString();
   int         len  = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
 
   ink_assert(len <= TS_CRUUID_STRING_LEN);
@@ -2249,6 +2268,19 @@ LogAccess::marshal_client_security_curve(char *buf)
 
   if (buf) {
     marshal_str(buf, curve, round_len);
+  }
+
+  return round_len;
+}
+
+int
+LogAccess::marshal_client_security_group(char *buf)
+{
+  const char *group     = m_http_sm->get_user_agent().get_client_security_group();
+  int         round_len = LogAccess::strlen(group);
+
+  if (buf) {
+    marshal_str(buf, group, round_len);
   }
 
   return round_len;

@@ -261,6 +261,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_client_connections_uds;
   Metrics::Counter::AtomicType *total_incoming_connections;
   Metrics::Counter::AtomicType *total_parent_marked_down_count;
+  Metrics::Counter::AtomicType *total_parent_marked_down_timeout;
   Metrics::Counter::AtomicType *total_parent_proxy_connections;
   Metrics::Counter::AtomicType *total_parent_retries;
   Metrics::Counter::AtomicType *total_parent_retries_exhausted;
@@ -329,6 +330,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_400M;
   Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_800M;
   Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_1G;
+  Metrics::Counter::AtomicType *cache_compat_key_reads;
 };
 
 enum class CacheOpenWriteFailAction_t {
@@ -812,6 +814,8 @@ public:
 
   MgmtByte http_host_sni_policy         = 0;
   MgmtByte scheme_proto_mismatch_policy = 2;
+
+  MgmtByte cache_try_compat_key_read = 0;
 
   // noncopyable
   /////////////////////////////////////

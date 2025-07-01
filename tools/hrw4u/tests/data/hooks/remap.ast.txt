@@ -1,0 +1,1 @@
+(program (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable inbound.req.X-Remap) == (value "yes")))))) (block { (statement inbound.req.X-Remap = (value "") ;) })) (elseClause else (block { (statement inbound.req.X-Remap = (value "It was not yes") ;) })))) }) <EOF>)

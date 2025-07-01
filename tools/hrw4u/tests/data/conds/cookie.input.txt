@@ -1,0 +1,10 @@
+REMAP {
+    if inbound.cookie.bar ~ /bar/ {
+      inbound.cookie.mybar = "1";
+    }
+}
+SEND_RESPONSE {
+    if ! inbound.cookie.bar {
+      inbound.cookie.mybar = "1";
+    }
+}

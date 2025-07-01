@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{INTERNAL-TRANSACTION}
+    set-header X-Foo "Is Internal"

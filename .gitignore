@@ -51,6 +51,8 @@ configs/storage.config.default
 
 doc/_build
 doc/docbuild/
+doc/docs-build/
+docs-build/
 doc/locale/pot
 doc/xml/
 

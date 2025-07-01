@@ -22,6 +22,8 @@
 
  */
 
+#include "proxy/http/HttpConfig.h"
+#include "tsutil/Metrics.h"
 #include "tsutil/ts_bw_format.h"
 #include "proxy/ProxyTransaction.h"
 #include "proxy/http/HttpSM.h"
@@ -483,26 +485,25 @@ HttpSM::setup_blind_tunnel_port()
 {
   NetVConnection *netvc = _ua.get_txn()->get_netvc();
   ink_release_assert(netvc);
-  int host_len;
 
   // This applies to both the TLS and non TLS cases
-  if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
+  if (t_state.hdr_info.client_request.url_get()->host_get().empty()) {
     // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
     URL u;
 
     t_state.hdr_info.client_request.create(HTTPType::REQUEST);
-    t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
+    t_state.hdr_info.client_request.method_set(static_cast<std::string_view>(HTTP_METHOD_CONNECT));
     t_state.hdr_info.client_request.url_create(&u);
-    u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
+    u.scheme_set(std::string_view{URL_SCHEME_TUNNEL});
     t_state.hdr_info.client_request.url_set(&u);
   }
 
   TLSTunnelSupport *tts = nullptr;
   if (!_ua.get_txn()->is_outbound_transparent() && (tts = netvc->get_service<TLSTunnelSupport>())) {
-    if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
+    if (t_state.hdr_info.client_request.url_get()->host_get().empty()) {
       if (tts->has_tunnel_destination()) {
         auto tunnel_host = tts->get_tunnel_host();
-        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host.data(), tunnel_host.size());
+        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host);
         if (tts->get_tunnel_port() > 0) {
           t_state.tunnel_port_is_dynamic = tts->tunnel_port_is_dynamic();
           t_state.hdr_info.client_request.url_get()->port_set(tts->get_tunnel_port());
@@ -514,7 +515,7 @@ HttpSM::setup_blind_tunnel_port()
         if (auto *snis = netvc->get_service<TLSSNISupport>(); snis) {
           server_name = snis->get_sni_server_name();
         }
-        t_state.hdr_info.client_request.url_get()->host_set(server_name, strlen(server_name));
+        t_state.hdr_info.client_request.url_get()->host_set({server_name});
         t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
@@ -522,7 +523,7 @@ HttpSM::setup_blind_tunnel_port()
     char new_host[INET6_ADDRSTRLEN];
     ats_ip_ntop(netvc->get_local_addr(), new_host, sizeof(new_host));
 
-    t_state.hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
+    t_state.hdr_info.client_request.url_get()->host_set({new_host});
     t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
   }
   t_state.api_next_action = HttpTransact::StateMachineAction_t::API_TUNNEL_START;
@@ -646,8 +647,19 @@ HttpSM::state_read_client_request_header(int event, void *data)
     _ua.get_entry()->vc_read_handler  = &HttpSM::state_watch_for_client_abort;
     _ua.get_entry()->vc_write_handler = &HttpSM::state_watch_for_client_abort;
     _ua.get_txn()->cancel_inactivity_timeout();
-    ATS_PROBE1(milestone_ua_read_header_done, sm_id);
     milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = ink_get_hrtime();
+#ifdef ENABLE_SYSTEMTAP_PROBES
+    {
+      char url_buf[4096] = {0};
+      int  url_len       = 0;
+      int  offset        = 0;
+      URL *url           = t_state.hdr_info.client_request.url_get();
+      if (url) {
+        url->print(url_buf, sizeof(url_buf) - 1, &url_len, &offset);
+        ATS_PROBE3(milestone_ua_read_header_done_url, sm_id, url_buf, url_len);
+      }
+    }
+#endif
   }
 
   switch (state) {
@@ -738,8 +750,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
         (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
          t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT)) {
       auto expect{t_state.hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
-      if (strcasecmp(expect, std::string_view{HTTP_VALUE_100_CONTINUE,
-                                              static_cast<std::string_view::size_type>(HTTP_LEN_100_CONTINUE)}) == 0) {
+      if (strcasecmp(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
         // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
         // immediately, before receive the real response from original server.
         if (t_state.http_config_param->send_100_continue_response) {
@@ -1377,16 +1388,16 @@ plugins required to work with sni_routing.
       URL u;
 
       t_state.hdr_info.client_request.create(HTTPType::REQUEST);
-      t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
+      t_state.hdr_info.client_request.method_set(static_cast<std::string_view>(HTTP_METHOD_CONNECT));
       t_state.hdr_info.client_request.url_create(&u);
-      u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
+      u.scheme_set(std::string_view{URL_SCHEME_TUNNEL});
       t_state.hdr_info.client_request.url_set(&u);
 
       NetVConnection *netvc = _ua.get_txn()->get_netvc();
       if (auto tts = netvc->get_service<TLSTunnelSupport>(); tts) {
         if (tts->has_tunnel_destination()) {
           auto tunnel_host = tts->get_tunnel_host();
-          t_state.hdr_info.client_request.url_get()->host_set(tunnel_host.data(), tunnel_host.size());
+          t_state.hdr_info.client_request.url_get()->host_set(tunnel_host);
           ushort tunnel_port = tts->get_tunnel_port();
           if (tunnel_port > 0) {
             t_state.hdr_info.client_request.url_get()->port_set(tunnel_port);
@@ -1398,7 +1409,7 @@ plugins required to work with sni_routing.
           if (auto *snis = netvc->get_service<TLSSNISupport>(); snis) {
             server_name = snis->get_sni_server_name();
           }
-          t_state.hdr_info.client_request.url_get()->host_set(server_name, strlen(server_name));
+          t_state.hdr_info.client_request.url_get()->host_set({server_name});
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       }
@@ -2589,6 +2600,10 @@ HttpSM::state_cache_open_read(int event, void *data)
       t_state.cache_info.hit_miss_code = SQUID_HIT_DISK;
     }
 
+    if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+      Metrics::Counter::increment(http_rsb.cache_compat_key_reads);
+    }
+
     ink_assert(t_state.cache_info.object_read != nullptr);
     call_transact_and_set_next_state(HttpTransact::HandleCacheOpenRead);
     break;
@@ -2605,6 +2620,13 @@ HttpSM::state_cache_open_read(int event, void *data)
     if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::DOC_BUSY;
     } else {
+      if (t_state.http_config_param->cache_try_compat_key_read &&
+          compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL) {
+        // do the retry
+        compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+        do_cache_lookup_and_read();
+        return 0;
+      }
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::MISS;
     }
 
@@ -4457,7 +4479,7 @@ HttpSM::do_remap_request(bool run_inline)
         }
 
         // Set values
-        t_state.unmapped_url.host_set(host_name.data(), host_name.length());
+        t_state.unmapped_url.host_set(host_name);
         if (port >= 0) {
           t_state.unmapped_url.port_set(port);
         }
@@ -5015,7 +5037,11 @@ HttpSM::do_cache_lookup_and_read()
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+    Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  } else {
+    Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  }
 
   t_state.hdr_info.cache_request.copy(&t_state.hdr_info.client_request);
   HttpTransactHeaders::normalize_accept_encoding(t_state.txn_conf, &t_state.hdr_info.cache_request);
@@ -5853,9 +5879,7 @@ HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
       if (auto [down, fail_count] = info->active->increment_fail_count(time_down, t_state.txn_conf->connect_attempts_rr_retries);
           down) {
         char            *url_str = t_state.hdr_info.client_request.url_string_get_ref(nullptr);
-        int              host_len;
-        const char      *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
-        std::string_view host_name{host_name_ptr, static_cast<size_t>(host_len)};
+        std::string_view host_name{t_state.unmapped_url.host_get()};
         swoc::bwprint(error_bw_buffer, "CONNECT : {::s} connecting to {} for host='{}' url='{}' fail_count='{}' marking down",
                       swoc::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr, host_name,
                       swoc::bwf::FirstOf(url_str, "<none>"), fail_count);
@@ -6661,9 +6685,8 @@ HttpSM::attach_server_session()
           !t_state.hdr_info.server_request.presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
         // Stuff in a TE setting so we treat this as chunked, sort of.
         t_state.server_info.transfer_encoding = HttpTransact::TransferEncoding_t::CHUNKED;
-        t_state.hdr_info.server_request.value_append(
-          static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
-          std::string_view{HTTP_VALUE_CHUNKED, static_cast<std::string_view::size_type>(HTTP_LEN_CHUNKED)}, true);
+        t_state.hdr_info.server_request.value_append(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING),
+                                                     static_cast<std::string_view>(HTTP_VALUE_CHUNKED), true);
       }
     }
   }
@@ -8405,10 +8428,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
 
   redirectUrl.parse(arg_redirect_url, arg_redirect_len);
   {
-    int _scheme_len = -1;
-    int _host_len   = -1;
-    if (redirectUrl.scheme_get(&_scheme_len) == nullptr && redirectUrl.host_get(&_host_len) != nullptr &&
-        arg_redirect_url[0] != '/') {
+    if (redirectUrl.scheme_get().empty() && !redirectUrl.host_get().empty() && arg_redirect_url[0] != '/') {
       // RFC7230 § 5.5
       // The redirect URL lacked a scheme and so it is a relative URL.
       // The redirect URL did not begin with a slash, so we parsed some or all
@@ -8483,16 +8503,14 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   // check to see if the client request passed a host header, if so copy the host and port from the redirect url and
   // make a new host header
   if (t_state.hdr_info.client_request.presence(MIME_PRESENCE_HOST)) {
-    int         host_len;
-    const char *host = clientUrl.host_get(&host_len);
+    auto host{clientUrl.host_get()};
+    auto host_len{static_cast<int>(host.length())};
 
-    if (host != nullptr) {
-      int         port = clientUrl.port_get();
-      int         redirectSchemeLen;
-      const char *redirectScheme = clientUrl.scheme_get(&redirectSchemeLen);
+    if (!host.empty()) {
+      int port = clientUrl.port_get();
 
-      if (redirectScheme == nullptr) {
-        clientUrl.scheme_set(scheme_str, scheme_len);
+      if (auto redirectScheme{clientUrl.scheme_get()}; redirectScheme.empty()) {
+        clientUrl.scheme_set({scheme_str, static_cast<std::string_view::size_type>(scheme_len)});
         SMDbg(dbg_ctl_http_redirect, "URL without scheme");
       }
 
@@ -8509,12 +8527,11 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       if (!noPortInHost) {
         char buf[host_len + 7]; // 5 + 1 + 1 ("12345" + ':' + '\0')
 
-        host_len = snprintf(buf, host_len + 7, "%.*s:%d", host_len, host, port);
+        host_len = snprintf(buf, host_len + 7, "%.*s:%d", host_len, host.data(), port);
         t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
                                                   std::string_view{buf, static_cast<std::string_view::size_type>(host_len)});
       } else {
-        t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST),
-                                                  std::string_view{host, static_cast<std::string_view::size_type>(host_len)});
+        t_state.hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST), host);
       }
       t_state.hdr_info.client_request.m_target_cached = false;
       t_state.hdr_info.server_request.m_target_cached = false;
@@ -8557,15 +8574,19 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
         // Cleanup of state etc.
         url_nuke_proxy_stuff(clientUrl.m_url_impl);
         url_nuke_proxy_stuff(t_state.hdr_info.client_request.m_url_cached.m_url_impl);
-        t_state.hdr_info.client_request.method_set(origMethod, std::min(origMethod_len, static_cast<int>(sizeof(origMethod))));
+        t_state.hdr_info.client_request.method_set(
+          std::string_view{origMethod, std::min(static_cast<std::string_view::size_type>(origMethod_len), sizeof(origMethod))});
         t_state.hdr_info.client_request.m_target_cached = false;
         t_state.hdr_info.server_request.m_target_cached = false;
-        clientUrl.scheme_set(scheme_str, scheme_len);
+        clientUrl.scheme_set({scheme_str, static_cast<std::string_view::size_type>(scheme_len)});
         if (isRedirectUrlOriginForm) {
           // build the rest of the effictive URL: the authority part
-          clientUrl.user_set(origUrl.m_url_impl->m_ptr_user, origUrl.m_url_impl->m_len_user);
-          clientUrl.password_set(origUrl.m_url_impl->m_ptr_password, origUrl.m_url_impl->m_len_password);
-          clientUrl.host_set(origUrl.m_url_impl->m_ptr_host, origUrl.m_url_impl->m_len_host);
+          clientUrl.user_set(
+            {origUrl.m_url_impl->m_ptr_user, static_cast<std::string_view::size_type>(origUrl.m_url_impl->m_len_user)});
+          clientUrl.password_set(
+            {origUrl.m_url_impl->m_ptr_password, static_cast<std::string_view::size_type>(origUrl.m_url_impl->m_len_password)});
+          clientUrl.host_set(
+            {origUrl.m_url_impl->m_ptr_host, static_cast<std::string_view::size_type>(origUrl.m_url_impl->m_len_host)});
           clientUrl.port_set(origUrl.port_get());
         }
       } else {

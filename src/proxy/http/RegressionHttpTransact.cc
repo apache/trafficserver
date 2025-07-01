@@ -25,6 +25,10 @@
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/HttpSM.h"
 
+#include <string_view>
+
+using namespace std::literals;
+
 void
 forceLinkRegressionHttpTransact()
 {
@@ -38,7 +42,7 @@ init_sm(HttpSM *sm)
 }
 
 static void
-setup_client_request(HttpSM *sm, const char *scheme, const char *request)
+setup_client_request(HttpSM *sm, std::string_view scheme, const char *request)
 {
   init_sm(sm);
 
@@ -50,7 +54,7 @@ setup_client_request(HttpSM *sm, const char *scheme, const char *request)
   http_parser_init(&httpParser);
   int bytes_used = 0;
   sm->t_state.hdr_info.client_request.parse_req(&httpParser, buffer_reader, &bytes_used, true /* eos */);
-  sm->t_state.hdr_info.client_request.url_get()->scheme_set(scheme, strlen(scheme));
+  sm->t_state.hdr_info.client_request.url_get()->scheme_set(scheme);
   sm->t_state.method = sm->t_state.hdr_info.client_request.method_get_wksidx();
   free_MIOBuffer(read_buffer);
 }
@@ -69,29 +73,29 @@ REGRESSION_TEST(HttpTransact_is_request_valid)(RegressionTest *t, int /* level *
   *pstatus = REGRESSION_TEST_PASSED;
 
   struct {
-    const char *scheme;
-    const char *req;
-    bool        result;
+    std::string_view scheme;
+    const char      *req;
+    bool             result;
   } requests[] = {
     // missing host header
-    {"http",  "GET / HTTP/1.1\r\n\r\n",                                         false},
+    {"http"sv, "GET / HTTP/1.1\r\n\r\n",                                         false},
     // good get request
-    {"http",  "GET / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                        true },
+    {"http"sv, "GET / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                        true },
     // good trace request
-    {"http",  "TRACE / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                      true },
+    {"http"sv, "TRACE / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                      true },
     // content len < 0
-    {"http",  "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
-    {"http",  "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
-    {"http",  "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n",  false},
+    {"http"sv, "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
+    {"http"sv, "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
+    {"http"sv, "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n",  false},
     // valid content len
-    {"http",  "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true },
-    {"http",  "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true },
-    {"http",  "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n",  true },
+    {"http"sv, "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true },
+    {"http"sv, "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true },
+    {"http"sv, "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n",  true },
     // Content Length missing
-    {"http",  "POST / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                       false},
-    {"http",  "PUSH / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                       false},
-    {"http",  "PUT / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                        false},
-    {nullptr, nullptr,                                                          false}
+    {"http"sv, "POST / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                       false},
+    {"http"sv, "PUSH / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                       false},
+    {"http"sv, "PUT / HTTP/1.1\r\nHost: abc.com\r\n\r\n",                        false},
+    {""sv,     nullptr,                                                          false}
   };
   for (int i = 0; requests[i].req; i++) {
     setup_client_request(&sm, requests[i].scheme, requests[i].req);

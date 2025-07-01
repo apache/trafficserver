@@ -120,8 +120,9 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
 {
   int         method_output_lengths[32];
   const char *methods[] = {
-    HTTP_METHOD_CONNECT, HTTP_METHOD_DELETE, HTTP_METHOD_GET, HTTP_METHOD_HEAD, HTTP_METHOD_OPTIONS,
-    HTTP_METHOD_POST,    HTTP_METHOD_PURGE,  HTTP_METHOD_PUT, HTTP_METHOD_PUSH, HTTP_METHOD_TRACE,
+    HTTP_METHOD_CONNECT.c_str(), HTTP_METHOD_DELETE.c_str(), HTTP_METHOD_GET.c_str(),   HTTP_METHOD_HEAD.c_str(),
+    HTTP_METHOD_OPTIONS.c_str(), HTTP_METHOD_POST.c_str(),   HTTP_METHOD_PURGE.c_str(), HTTP_METHOD_PUT.c_str(),
+    HTTP_METHOD_PUSH.c_str(),    HTTP_METHOD_TRACE.c_str(),
   };
   char  inline_buffer[64];
   char *alloced_buffer, *value_buffer;
@@ -204,7 +205,7 @@ HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response, HTTPStatus 
 
   outgoing_response->version_set(HTTPVersion(1, 1));
   outgoing_response->status_set(status);
-  outgoing_response->reason_set(reason_phrase, reason_phrase_len);
+  outgoing_response->reason_set(std::string_view{reason_phrase, static_cast<std::string_view::size_type>(reason_phrase_len)});
   outgoing_response->set_date(date);
 }
 
@@ -358,7 +359,7 @@ HttpTransactHeaders::convert_to_1_0_response_header(HTTPHdr *outgoing_response, 
   // Set reason phrase if passed in.
   if (reason_phrase != nullptr) {
     Dbg(dbg_ctl_http_transact_headers, "Setting HTTP/1.0 reason phrase to '%s'", reason_phrase);
-    outgoing_response->reason_set(reason_phrase, strlen(reason_phrase));
+    outgoing_response->reason_set(std::string_view{reason_phrase});
   }
 
   // Keep-Alive?
@@ -380,7 +381,7 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response, 
   // Set reason phrase if passed in.
   if (reason_phrase != nullptr) {
     Dbg(dbg_ctl_http_transact_headers, "Setting HTTP/1.1 reason phrase to '%s'", reason_phrase);
-    outgoing_response->reason_set(reason_phrase, strlen(reason_phrase));
+    outgoing_response->reason_set(std::string_view{reason_phrase});
   }
 }
 
@@ -746,7 +747,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
 
   *via_string++ = '[';
-  memcpy(via_string, Machine::instance()->uuid.getString(), TS_UUID_STRING_LEN);
+  memcpy(via_string, Machine::instance()->process_uuid.getString(), TS_UUID_STRING_LEN);
   via_string    += TS_UUID_STRING_LEN;
   *via_string++  = ']';
   *via_string++  = ' ';
@@ -892,8 +893,7 @@ HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr
 {
   auto expect{s->hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
 
-  if (strcasecmp(expect,
-                 std::string_view{HTTP_VALUE_100_CONTINUE, static_cast<std::string_view::size_type>(HTTP_LEN_100_CONTINUE)}) == 0) {
+  if (strcasecmp(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
     outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPECT));
   }
 }
@@ -990,12 +990,12 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 
     const Machine &m = *Machine::instance();
 
-    if (optSet[HttpForwarded::BY_UUID] and m.uuid.valid()) {
+    if (optSet[HttpForwarded::BY_UUID] and m.process_uuid.valid()) {
       if (hdr.size()) {
         hdr << ';';
       }
 
-      hdr << "by=_" << m.uuid.getString();
+      hdr << "by=_" << m.process_uuid.getString();
     }
 
     if (optSet[HttpForwarded::BY_IP] and m.ip.isValid()) {
@@ -1261,5 +1261,5 @@ HttpTransactHeaders::add_connection_close(HTTPHdr *header)
     field = header->field_create(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
     header->field_attach(field);
   }
-  header->field_value_set(field, std::string_view{HTTP_VALUE_CLOSE, static_cast<std::string_view::size_type>(HTTP_LEN_CLOSE)});
+  header->field_value_set(field, static_cast<std::string_view>(HTTP_VALUE_CLOSE));
 }

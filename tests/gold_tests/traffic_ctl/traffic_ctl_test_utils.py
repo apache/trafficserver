@@ -54,12 +54,31 @@ def MakeGoldFileWithText(content, dir, test_number, add_new_line=True):
     return gold_filepath
 
 
-class Config():
+class Common():
+    """
+        Handy class to map common traffic_ctl test options.
+    """
+
+    def __init__(self, tr, finish_callback):
+        self._tr = tr
+        self._finish_callback = finish_callback
+
+    def validate_with_exit_code(self, exit_code: int):
+        """
+            Sets the exit code for the test.
+        """
+        self._tr.Processes.Default.ReturnCode = exit_code
+        self._finish_callback(self)
+        return self
+
+
+class Config(Common):
     """
         Handy class to map traffic_ctl config options.
     """
 
     def __init__(self, dir, tr, tn):
+        super().__init__(tr, lambda x: self.__finish())
         self._cmd = "traffic_ctl config "
         self._tr = tr
         self._dir = dir
@@ -105,12 +124,13 @@ class Config():
         self.__finish()
 
 
-class Server():
+class Server(Common):
     """
         Handy class to map traffic_ctl server options.
     """
 
     def __init__(self, dir, tr, tn):
+        super().__init__(tr, lambda x: self.__finish())
         self._cmd = "traffic_ctl server "
         self._tr = tr
         self._dir = dir
@@ -147,6 +167,43 @@ class Server():
 
     def validate_with_text(self, text: str):
         self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn)
+        self.__finish()
+
+
+class RPC(Common):
+    """
+        Handy class to map traffic_ctl server options.
+    """
+
+    def __init__(self, dir, tr, tn):
+        super().__init__(tr, lambda x: self.__finish())
+        self._cmd = "traffic_ctl rpc "
+        self._tr = tr
+        self._dir = dir
+        self._tn = tn
+
+    def invoke(self, handler: str, params={}):
+        if not params:
+            self._cmd = f'{self._cmd}  invoke {handler} -f json'
+        else:
+            self._cmd = f'{self._cmd}  invoke {handler} -p {str(params)} -f json'
+
+        return self
+
+    def __finish(self):
+        """
+            Sets the command to the test. Make sure this gets called after
+            validation is set. Without this call the test will fail.
+        """
+        self._tr.Processes.Default.Command = self._cmd
+
+    def validate_with_text(self, text: str):
+        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(text, self._dir, self._tn)
+        self.__finish()
+
+    def validate_result_with_text(self, text: str):
+        full_text = f'{{\"jsonrpc\": \"2.0\", \"result\": {text}, \"id\": {"``"}}}'
+        self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(full_text, self._dir, self._tn)
         self.__finish()
 
 
@@ -212,6 +269,10 @@ class TrafficCtl(Config, Server):
     def server(self):
         self.add_test()
         return Server(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
+
+    def rpc(self):
+        self.add_test()
+        return RPC(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
 
 
 def Make_traffic_ctl(test, records_yaml=None):

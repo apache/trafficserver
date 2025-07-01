@@ -1900,7 +1900,7 @@ Negative Response Caching
    already cached content. A revalidation failure means a connection failure or a 50x response code.
    When considering replying with a stale response in these negative revalidating circumstances,
    |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` configuration and will not
-   use a cached response older than ``max_stale_age`` seconds.
+   use a cached response older than ``max_stale_age`` seconds plus ``max-age`` of cached content.
 
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
@@ -2162,6 +2162,20 @@ IP Allow
    the use of this file, see :file:`ip_allow.yaml`. If this is a relative path,
    |TS| loads it relative to the ``SYSCONFDIR`` directory.
 
+.. ts:cv:: CONFIG proxy.config.acl.subjects STRING PEER
+
+   Specifies the list of data sources for getting client's IP address for ACL.
+   The value is a comma separated string, and the first available data source
+   will be used. If you configure a port to enable PROXY protocol, you probably
+   need to adjust this setting to have ``PROXY`` in the list.
+
+   ============= ======================================================================
+   Value         Description
+   ============= ======================================================================
+   ``PEER``      Use the IP address of the peer
+   ``PROXY``     Use the IP address from PROXY protocol
+   ============= ======================================================================
+
 
 Cache Control
 =============
@@ -2389,6 +2403,19 @@ Cache Control
 
    Establishes a guaranteed maximum lifetime boundary for object freshness.
    Setting this to ``0`` disables the feature.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.try_compat_key_read INT 0
+   :reloadable:
+
+   When enabled (``1``), |TS| will try to lookup the cached object using the
+   previous cache key generation algorithm, but will always write new objects
+   using the newest key generation. This might be temporarily necessary
+   if a large cache was created by the previous version of ATS but the new
+   version changed the way cache keys are generated.  If this is turned on,
+   a metric called `proxy.process.http.cache.compat_key_reads` will be
+   incremented any time the compat cache lookup successfully finds the object.
+   You can monitor this metric and know when its safe to turn this feature off
+   as the cache wraps around.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.range.lookup INT 1
    :overridable:
@@ -2740,11 +2767,11 @@ Dynamic Content & Content Negotiation
    ===== ======================================================================
    ``0`` Default. Disable cache and go to origin server.
    ``1`` Return a ``502`` error on a cache miss.
-   ``2`` Serve stale if object's age is under
+   ``2`` Serve stale if object's age is under ``max-age`` +
          :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
          origin server.
    ``3`` Return a ``502`` error on a cache miss or serve stale on a cache
-         revalidate if object's age is under
+         revalidate if object's age is under ``max-age`` +
          :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
          origin server.
    ``4`` Return a ``502`` error on either a cache miss or on a revalidation.

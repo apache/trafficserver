@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 from enum import Enum
+import sys
 
 Test.Summary = 'Exercise stats-over-http plugin'
 Test.SkipUnless(Condition.PluginExists('stats_over_http.so'))
@@ -62,18 +63,108 @@ class StatsOverHttpPluginTest:
         assert (self.state == self.State.RUNNING)
         tr.StillRunningAfter = self.ts
 
-    def __testCase0(self):
-        tr = Test.AddTestRun()
+    def __testCaseNoAccept(self):
+        tr = Test.AddTestRun('Fetch stats over HTTP in JSON format: no Accept and default path')
         self.__checkProcessBefore(tr)
         tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout = "gold/stats_over_http_0_stdout.gold"
-        tr.Processes.Default.Streams.stderr = "gold/stats_over_http_0_stderr.gold"
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('{ "global": {', 'Output should have the JSON header.')
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            '"proxy.process.http.delete_requests": "0",', 'Output should be JSON formatted.')
+        tr.Processes.Default.Streams.stderr = "gold/stats_over_http_json_stderr.gold"
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)
 
+    def __testCaseAcceptCSV(self):
+        tr = Test.AddTestRun('Fetch stats over HTTP in CSV format')
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'proxy.process.http.delete_requests,0', 'Output should be CSV formatted.')
+        tr.Processes.Default.Streams.stderr = "gold/stats_over_http_csv_stderr.gold"
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
+    def __testCaseAcceptPrometheus(self):
+        tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format')
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(f"-vs -H'Accept: text/plain; version=0.0.4' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_http_delete_requests 0', 'Output should be Prometheus formatted.')
+        tr.Processes.Default.Streams.stderr = "gold/stats_over_http_prometheus_stderr.gold"
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
+    def __testCasePathJSON(self):
+        tr = Test.AddTestRun('Fetch stats over HTTP in JSON format via /_stats/json')
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/json")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('{ "global": {', 'JSON header expected.')
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            '"proxy.process.http.delete_requests": "0",', 'JSON field expected.')
+        tr.Processes.Default.Streams.stderr = "gold/stats_over_http_json_stderr.gold"
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
+    def __testCasePathCSV(self):
+        tr = Test.AddTestRun('Fetch stats over HTTP in CSV format via /_stats/csv')
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/csv")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'proxy.process.http.delete_requests,0', 'CSV output expected.')
+        tr.Processes.Default.Streams.stderr = "gold/stats_over_http_csv_stderr.gold"
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
+    def __testCasePathPrometheus(self):
+        tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format via /_stats/prometheus')
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_http_delete_requests 0', 'Prometheus output expected.')
+        tr.Processes.Default.Streams.stderr = "gold/stats_over_http_prometheus_stderr.gold"
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
+    def __testCaseAcceptIgnoredIfPathExplicit(self):
+        tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format with Accept csv header')
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(f"-vs -H'Accept: text/csv' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_http_delete_requests 0', 'Prometheus output expected.')
+        tr.Processes.Default.Streams.stderr = "gold/stats_over_http_prometheus_stderr.gold"
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
+    def __queryAndParsePrometheusMetrics(self):
+        """
+        Query the ATS stats over HTTP in Prometheus format and parse the output.
+        """
+        tr = Test.AddTestRun('Query and parse Prometheus metrics')
+        ingester = 'prometheus_stats_ingester.py'
+        tr.Setup.CopyAs(ingester)
+        self.__checkProcessBefore(tr)
+        p = tr.Processes.Default
+        p.Command = f'{sys.executable} {ingester} http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus'
+        p.ReturnCode = 0
+        p.Streams.stdout += Testers.ContainsExpression(
+            'proxy_process_http_delete_requests 0', 'Verify the successful parsing of Prometheus metrics.')
+
     def run(self):
-        self.__testCase0()
+        self.__testCaseNoAccept()
+        self.__testCaseAcceptCSV()
+        self.__testCaseAcceptPrometheus()
+        self.__testCasePathJSON()
+        self.__testCasePathCSV()
+        self.__testCasePathPrometheus()
+        self.__testCaseAcceptIgnoredIfPathExplicit()
+        self.__queryAndParsePrometheusMetrics()
 
 
 StatsOverHttpPluginTest().run()

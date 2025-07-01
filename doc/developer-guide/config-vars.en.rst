@@ -310,7 +310,7 @@ required for generic access:
 
 #. Add a value to the ``TSOverridableConfigKey`` enumeration in |apidefs.h.in|_.
 
-#. Augment ``Overridable_Map`` in |overridable_txn_vars.cc|_ to include configuration variable.
+#. Augment ``ts::Overridable_Txn_Vars`` in |overridable_txn_vars.cc|_ to include configuration variable.
 
 #. Update the function ``_conf_to_memberp`` in |InkAPI.cc|_ to have a case for the enumeration value
    in ``TSOverridableConfigKey``.

@@ -52,6 +52,10 @@ configured with :ts:cv:`proxy.config.http.proxy_protocol_allowlist`.
        :ts:cv:`proxy.config.http.server_ports` configuration, regardless of whether
        the connections have the Proxy Protocol header.
 
+By default, |TS| uses client's IP address that is from the peer when it applies ACL. If you configure a port to
+enable PROXY protocol and want to apply ACL against the IP address delivered by PROXY protocol, you need to have ``PROXY`` in
+:ts:cv:`proxy.config.acl.subjects`.
+
 1. HTTP Forwarded Header
 
 The client IP address in the PROXY protocol header is passed to the origin server via an HTTP `Forwarded:
