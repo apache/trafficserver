@@ -149,7 +149,7 @@ cond %{CACHE} =hit-fresh        cache() == "hit-fresh"             Cache lookup 
 cond %{CIDR:24,48} =ip          cidr(24,48) == "ip"                Match masked client IP address
 cond %{CLIENT-HEADER:X} =foo    inbound.req.X == "foo"             Original client request header
 cond %{CLIENT-URL:<C> =bar      inbound.url.<C> == "bar"           URL component match, ``C`` is ``host``, ``path`` etc.
-cond %{COOKIE:foo} =bar         cookie.foo == "bar"                Check a cookie value
+cond %{COOKIE:foo} =bar         {in,out}bound.cookie.foo == "bar"  Check a cookie value
 cond %{FROM-URL:<C>} =bar       from.url.<C> == "bar"              Remap ``From URL`` component match, ``C`` is ``host`` etc.
 cond %{HEADER:X} =foo           {in,out}bound.req.X == "foo"       Context sensitive header conditions
 cond %{ID:UNIQUE} =...          id.UNIQUE == "..."                 Unique transaction identifier
@@ -191,7 +191,7 @@ Header Rewrite                HRW4U                             Description
 ============================= ================================= ================================================
 counter my_stat               counter("my_stat")                Increment internal counter
 rm-client-header X-Foo        inbound.req.X-Foo = ""            Remove a client request header
-rm-cookie foo                 cookie.foo = ""                   Remove a cookie
+rm-cookie foo                 {in,out}bound.cookie.foo = ""     Remove the cookie named foo
 rm-destination <C>            inbound.url.<C> = ""              Remove an URL component, ``C`` is path, query etc.
 rm-header X-Foo               {in,out}bound.req.X-Foo = ""      Context sensitive header removal
 rm-destination QUERY ...      remove_query("foo,bar")           Remove specified query keys
@@ -202,7 +202,7 @@ set-body-from "https://..."   set-body-from("https://...")      Set the response
 set-config <name> 12          set-config("name", 17)            Set a configuration variable to a value
 set-conn-dscp 8               inbound.conn.dscp = 8             Set the DSCP value for the connection
 set-conn-mark 17              inbound.conn.mark = 17            Set the MARK value for the connection
-set-cookie foo bar            cookie.foo = "bar"                Set a response cookie
+set-cookie foo bar            {in,out}bound.cookie.foo = "bar"  Set a request/response cookie named foo
 set-destination <C> bar       inbound.url.<C> = "bar"           Set a URL component, ``C`` is path, query etc.
 set-header X-Bar foo          inbound.req.X-Bar = "foo"         Assign a client request header
 set-redirect <Code> <URL>     set-redirect(302, "https://...")  Set a redirect response
