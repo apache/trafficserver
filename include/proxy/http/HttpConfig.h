@@ -261,6 +261,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_client_connections_uds;
   Metrics::Counter::AtomicType *total_incoming_connections;
   Metrics::Counter::AtomicType *total_parent_marked_down_count;
+  Metrics::Counter::AtomicType *total_parent_marked_down_timeout;
   Metrics::Counter::AtomicType *total_parent_proxy_connections;
   Metrics::Counter::AtomicType *total_parent_retries;
   Metrics::Counter::AtomicType *total_parent_retries_exhausted;

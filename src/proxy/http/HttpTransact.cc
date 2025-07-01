@@ -245,8 +245,11 @@ markParentDown(HttpTransact::State *s)
     return;
   }
 
-  if (s->current.state == HttpTransact::INACTIVE_TIMEOUT && s->txn_conf->enable_parent_timeout_markdowns == 0) {
-    return;
+  if (s->current.state == HttpTransact::INACTIVE_TIMEOUT) {
+    if (s->txn_conf->enable_parent_timeout_markdowns == 0) {
+      return;
+    }
+    Metrics::Counter::increment(http_rsb.total_parent_marked_down_timeout);
   }
   // Increment metric when config allows ATS to mark parent down
   Metrics::Counter::increment(http_rsb.total_parent_marked_down_count);
