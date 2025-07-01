@@ -38,7 +38,8 @@ enum CompressionAlgorithm {
   ALGORITHM_DEFAULT = 0,
   ALGORITHM_DEFLATE = 1,
   ALGORITHM_GZIP    = 2,
-  ALGORITHM_BROTLI  = 4 // For bit manipulations
+  ALGORITHM_BROTLI  = 4, // For bit manipulations
+  ALGORITHM_ZSTD    = 8
 };
 
 class HostConfiguration : private atscppapi::noncopyable
