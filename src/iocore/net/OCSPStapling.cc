@@ -1295,7 +1295,7 @@ ocsp_update()
   TS_OCSP_RESPONSE *resp = nullptr;
   time_t            current_time;
 
-  Note("OCSP refresh started");
+  Dbg(dbg_ctl_ssl_ocsp, "OCSP refresh started");
 
   SSLCertificateConfig::scoped_config certLookup;
 
@@ -1338,7 +1338,7 @@ ocsp_update()
       }
     }
   }
-  Note("OCSP refresh finished");
+  Dbg(dbg_ctl_ssl_ocsp, "OCSP refresh finished");
   return OCSPStatus::OCSP_OK;
 }
 
