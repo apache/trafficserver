@@ -378,6 +378,12 @@ public:
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
   bool eval(const Resources &res) override;
 
 private:
@@ -472,6 +478,12 @@ private:
   virtual std::string get_geo_string(const sockaddr *addr) const;
 
 protected:
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
   bool          eval(const Resources &res) override;
   GeoQualifiers _geo_qual = GEO_QUAL_COUNTRY;
   bool          _int_type = false;
@@ -523,6 +535,12 @@ public:
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
   bool eval(const Resources &res) override;
 
 private:
@@ -554,6 +572,12 @@ public:
   static constexpr const char *TAG = "INBOUND";
 
 protected:
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
   bool eval(const Resources &res) override;
 
 private:
