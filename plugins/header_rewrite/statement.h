@@ -166,6 +166,13 @@ public:
     return _initialized;
   }
 
+  int
+  get_txn_private_slot()
+  {
+    acquire_txn_private_slot();
+    return _txn_private_slot;
+  }
+
 protected:
   virtual void initialize_hooks();
 

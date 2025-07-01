@@ -83,15 +83,27 @@ This plugin may be enabled globally, so that the conditions and header
 rewriting rules are evaluated for every request made to your |TS| instance.
 This is done by adding the following line to your :file:`plugin.config`::
 
-  header_rewrite.so [--geo-db-path=path/to/geoip.db] config_file_1.conf config_file_2.conf ...
+  header_rewrite.so config_file_1.conf config_file_2.conf ...
 
 You may specify multiple configuration files. Their rules will be evaluated in
 the order the files are listed.
 
-The plugin takes an optional switch ``--geo-db-path``. If MaxMindDB support has
-been compiled in, use this switch to point at your .mmdb file. This also applies to
-the remap context.
+The plugin takes an optional switches.
 
+  +======================================+==================================================================================================+
+  | Option                               | Description                                                                                      |
+  +======================================+==================================================================================================+
+  | ``--geo-db-path <path_to_geoip_db>`` | If MaxMindDB support has been compiled in, use this switch to point at your .mmdb file.          |
+  |                                      | This also applies to the remap context.                                                          |
+  +======================================+==================================================================================================+
+  | ``--timezone <value>``               | This applies ``set-plugin-cntl TIMEZONE <value>`` to every transaction unconditionally.          |
+  |                                      | See :ref:`set-plugin-cntl` for the setting values and the effect.                                |
+  +======================================+==================================================================================================+
+  | ``--inbound-ip-source <value>``      | This applies ``set-plugin-cntl INBOUND_IP_SOURCE <value>`` to every transaction unconditionally. |
+  |                                      | See :ref:`set-plugin-cntl` for the setting values and the effect.                                |
+  +======================================+==================================================================================================+
+
+Please note that these optional switches needs to appear before config files like you would do on UNIX command lines.
 
 Enabling Per-Mapping
 --------------------
