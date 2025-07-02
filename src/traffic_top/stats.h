@@ -22,6 +22,7 @@
 */
 #pragma once
 
+#include <chrono>
 #include <map>
 #include <string>
 #include <sys/types.h>
@@ -495,7 +496,7 @@ private:
       rpc::RPCClient rpcClient;
 
       // invoke the rpc.
-      auto const &rpcResponse = rpcClient.invoke<>(request);
+      auto const &rpcResponse = rpcClient.invoke<>(request, std::chrono::milliseconds(1000), 10);
 
       if (!rpcResponse.is_error()) {
         auto const &records = rpcResponse.result.as<rpc::RecordLookUpResponse>();
