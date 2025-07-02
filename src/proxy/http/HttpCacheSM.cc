@@ -55,9 +55,7 @@ HttpCacheAction::cancel(Continuation *c)
   ink_assert(this->cancelled == false);
 
   this->cancelled = true;
-  if (_cache_sm->pending_action) {
-    _cache_sm->pending_action->cancel();
-  }
+  _cache_sm->cancel_pending_action();
 }
 
 ////
@@ -74,12 +72,16 @@ HttpCacheSM::reset()
 }
 
 void
-HttpCacheSM::cleanup()
+HttpCacheSM::cancel_pending_action()
 {
-  ink_release_assert(this->mutex && this->mutex->thread_holding == this_ethread());
+  if (pending_action != nullptr) {
+    pending_action->cancel();
+    pending_action = nullptr;
+  }
 
   if (_read_retry_event != nullptr) {
     _read_retry_event->cancel();
+    _read_retry_event = nullptr;
   }
 }
 
@@ -327,10 +329,11 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   } else {
     // In some cases, CacheProcessor::open_read calls back to `state_cache_open_read` with a cache event. If the event is
     // CACHE_EVENT_OPEN_READ_FAILED, a read retry event might be scheduled. In this case, CacheProcessor::open_read returns
-    // ACTION_RESULT_DONE, even though the read retry event is still pending. To indicate this situation to HttpSM, the scheduled
-    // read retry event is returned. HttpSM can cancel the event if necessary.
+    // ACTION_RESULT_DONE, even though the read retry event is still pending. To indicate this situation to HttpSM, `captive_action`
+    // is returned. HttpSM can cancel the event though this `captive_action` if necessary.
     if (_read_retry_event && _read_retry_event->cancelled != true) {
-      return _read_retry_event;
+      captive_action.cancelled = false;
+      return &captive_action;
     } else {
       return ACTION_RESULT_DONE;
     }
@@ -421,11 +424,12 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
     return &captive_action;
   } else {
     // In some cases, CacheProcessor::open_write calls back to `state_cache_open_write` with a cache event. If the event is
-    // CACHE_EVENT_OPEN_WRITE_FAILED, a read retry event might be scheduled. In this case, CacheProcessor::open_read returns
-    // ACTION_RESULT_DONE, even though the read retry event is still pending. To indicate this situation to HttpSM, the scheduled
-    // read retry event is returned. HttpSM can cancel the event if necessary.
+    // CACHE_EVENT_OPEN_WRITE_FAILED, a read retry event might be scheduled. In this case, CacheProcessor::open_write returns
+    // ACTION_RESULT_DONE, even though the read retry event is still pending. To indicate this situation to HttpSM, `captive_action`
+    // is returned. HttpSM can cancel the event though this `captive_action` if necessary.
     if (_read_retry_event && _read_retry_event->cancelled != true) {
-      return _read_retry_event;
+      captive_action.cancelled = false;
+      return &captive_action;
     } else {
       return ACTION_RESULT_DONE;
     }
