@@ -18,5 +18,5 @@ Security-sensitive information may be logged with modified logging configuration
 
 Experimental features and plugins are known unstable and not supposed to be used on production. We do not consider
 vulnerabilities in those as security issues. You may report vulnerabilities in those publicly on our public lists or GitHub. However, please
-contact us privately, if you believe vulnerabilites you find are serious, or if you are not sure whether you should report the
+contact us privately, if you believe the vulnerabilities you find are serious, or if you are not sure whether you should report the
 vulnerabilities publicly.
