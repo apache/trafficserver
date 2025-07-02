@@ -43,6 +43,7 @@
 #include <zlib.h>
 
 #include <ts/remap.h>
+#include <ts/remap_version.h>
 #include "swoc/TextView.h"
 #include "tscore/ink_config.h"
 #include <tsutil/ts_ip.h>
@@ -653,7 +654,7 @@ stats_dostuff(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
+stats_origin(config_t *this_config, TSEvent /* event ATS_UNUSED */, void *edata, bool is_remap)
 {
   TSCont          icontp;
   stats_state    *my_state;
@@ -670,7 +671,7 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   bool            path_had_explicit_format = false;
 
   Dbg(dbg_ctl, "in the read stuff");
-  config = get_config(contp);
+  config = this_config;
 
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS) {
     goto cleanup;
@@ -783,6 +784,7 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 
   TSContDataSet(icontp, my_state);
   TSHttpTxnIntercept(icontp, txnp);
+
   goto cleanup;
 
 notforme:
@@ -800,8 +802,52 @@ cleanup:
   if (accept_encoding_field) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, accept_encoding_field);
   }
-  TSHttpTxnReenable(txnp, reenable);
+  if (!is_remap) {
+    TSHttpTxnReenable(txnp, reenable);
+  }
+
   return 0;
+}
+
+static int
+stats_origin_global_wrapper(TSCont contp, TSEvent, void *edata)
+{
+  config_t *config = get_config(contp);
+  return stats_origin(config, TS_EVENT_NONE, edata, false);
+}
+
+TSReturnCode
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+{
+  CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* errBuf ATS_UNUSED */, int /* errBufSize ATS_UNUSED */)
+{
+  config_holder_t *config_holder;
+  config_holder = new_config_holder(argc > 1 ? argv[2] : nullptr);
+  *instance     = static_cast<void *>(config_holder);
+  /* Path was not set during load, so the param was not a config file, we also
+    have an argument so it must be the path, set it here.  Otherwise if no argument
+    then use the default _stats path */
+  if ((config_holder->config != nullptr) && (config_holder->config->stats_path.empty()) && (argc > 1) &&
+      (config_holder->config_path == nullptr)) {
+    config_holder->config->stats_path = argv[2] + ('/' == argv[2][0] ? 1 : 0);
+  } else if ((config_holder->config != nullptr) && (config_holder->config->stats_path.empty())) {
+    config_holder->config->stats_path = DEFAULT_URL_PATH;
+  }
+  return TS_SUCCESS;
+}
+
+TSRemapStatus
+TSRemapDoRemap(void *id, TSHttpTxn rh, TSRemapRequestInfo * /* ATS_UNUSED */)
+{
+  config_holder_t *configh = static_cast<config_holder_t *>(id);
+  stats_origin(configh->config, TS_EVENT_NONE, rh, true);
+
+  return TSREMAP_NO_REMAP;
 }
 
 void
@@ -860,7 +906,7 @@ init:
 
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */
-  main_cont = TSContCreate(stats_origin, nullptr);
+  main_cont = TSContCreate(stats_origin_global_wrapper, nullptr);
   TSContDataSet(main_cont, (void *)config_holder);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, main_cont);
 
@@ -969,6 +1015,13 @@ delete_config(config_t *config)
 {
   Dbg(dbg_ctl, "Freeing config");
   TSfree(config);
+}
+
+void
+TSRemapDeleteInstance(void *ih)
+{
+  config_holder_t *configh = static_cast<config_holder_t *>(ih);
+  delete_config(configh->config);
 }
 
 // standard api below...
