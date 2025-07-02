@@ -47,9 +47,10 @@ namespace
 DbgCtl dbg_ctl{"filemanager"};
 
 swoc::Errata
-handle_file_reload(std::string const &fileName, std::string const &configName)
+process_config_update(std::string const &fileName, std::string const &configName)
 {
-  Dbg(dbg_ctl, "handling reload %s - %s", fileName.c_str(), configName.c_str());
+  Dbg(dbg_ctl, "Config update requested for '%s'. [%s]", fileName.empty() ? "Unknown" : fileName.c_str(),
+      configName.empty() ? "No config record associated" : configName.c_str());
   swoc::Errata ret;
   // TODO: make sure records holds the name after change, if not we should change it.
   if (fileName == ts::filename::RECORDS) {
@@ -58,13 +59,12 @@ handle_file_reload(std::string const &fileName, std::string const &configName)
     } else {
       ret.note("Error reading {}", fileName).note(zret);
     }
-  } else {
-    RecT  rec_type;
-    char *data = const_cast<char *>(configName.c_str());
-    if (RecGetRecordType(data, &rec_type) == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
-      RecSetSyncRequired(data);
+  } else if (!configName.empty()) { // Could be the case we have a child file to reload with no related config record.
+    RecT rec_type;
+    if (auto r = RecGetRecordType(configName.c_str(), &rec_type); r == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
+      RecSetSyncRequired(configName.c_str());
     } else {
-      ret.note("Unknown file change {}.", configName);
+      Dbg(dbg_ctl, "Couldn't set RecSetSyncRequired for %s - RecGetRecordType ret = %d", configName.c_str(), r);
     }
   }
 
@@ -85,7 +85,7 @@ const std::string NA_STR{"N/A"};
 FileManager::FileManager()
 {
   ink_mutex_init(&accessLock);
-  this->registerCallback(&handle_file_reload);
+  this->registerCallback(&process_config_update);
 
   // Register the files registry jsonrpc endpoint
   rpc::add_method_handler("filemanager.get_files_registry",
@@ -143,38 +143,15 @@ FileManager::addFileHelper(const char *fileName, const char *configName, bool ro
   bindings.emplace(configManager->getFileName(), configManager);
 }
 
-// bool FileManager::getConfigManagerObj(char* fileName, ConfigManager** rbPtr)
-//
-//  Sets rbPtr to the ConfigManager object associated
-//    with the passed in fileName.
-//
-//  If there is no binding, false is returned
-//
-bool
-FileManager::getConfigObj(const char *fileName, ConfigManager **rbPtr)
-{
-  ink_mutex_acquire(&accessLock);
-  auto it    = bindings.find(fileName);
-  bool found = it != bindings.end();
-  ink_mutex_release(&accessLock);
-
-  *rbPtr = found ? it->second : nullptr;
-  return found;
-}
-
 swoc::Errata
 FileManager::fileChanged(std::string const &fileName, std::string const &configName)
 {
-  Dbg(dbg_ctl, "file changed %s", fileName.c_str());
   swoc::Errata ret;
 
   std::lock_guard<std::mutex> guard(_callbacksMutex);
   for (auto const &call : _configCallbacks) {
     if (auto const &r = call(fileName, configName); !r) {
-      Dbg(dbg_ctl, "something back from callback %s", fileName.c_str());
-      if (ret.empty()) {
-        ret.note("Errors while reloading configurations.");
-      }
+      Dbg(dbg_ctl, "Something came back from the callback associated with %s", fileName.c_str());
       ret.note(r);
     }
   }
@@ -224,10 +201,7 @@ FileManager::rereadConfig()
     // happen at all...
     if (rb->checkForUserUpdate(FileManager::ROLLBACK_CHECK_AND_UPDATE)) {
       Dbg(dbg_ctl, "File %s changed.", it.first.c_str());
-      auto const &r = fileChanged(rb->getFileName(), rb->getConfigName());
-
-      if (!r) {
-        ret.note("Errors while reloading configurations.");
+      if (auto const &r = fileChanged(rb->getFileName(), rb->getConfigName()); !r) {
         ret.note(r);
       }
 
@@ -268,9 +242,6 @@ FileManager::rereadConfig()
   for (size_t i = 0; i < n; i++) {
     if (std::find(changedFiles.begin(), changedFiles.end(), parentFileNeedChange[i]) == changedFiles.end()) {
       if (auto const &r = fileChanged(parentFileNeedChange[i]->getFileName(), parentFileNeedChange[i]->getConfigName()); !r) {
-        if (ret.empty()) {
-          ret.note("Error while handling parent file name changed.");
-        }
         ret.note(r);
       }
     }
@@ -283,18 +254,12 @@ FileManager::rereadConfig()
   if (found && enabled) {
     if (auto const &r = fileChanged("proxy.config.body_factory.template_sets_dir", "proxy.config.body_factory.template_sets_dir");
         !r) {
-      if (ret.empty()) {
-        ret.note("Error while loading body factory templates");
-      }
       ret.note(r);
     }
   }
 
   if (auto const &r = fileChanged("proxy.config.ssl.server.ticket_key.filename", "proxy.config.ssl.server.ticket_key.filename");
       !r) {
-    if (ret.empty()) {
-      ret.note("Error while loading ticket keys");
-    }
     ret.note(r);
   }
 
@@ -436,7 +401,6 @@ FileManager::ConfigManager::checkForUserUpdate(FileManager::RollBackCheckType ho
       fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
       // TODO: syslog????
     }
-    Dbg(dbg_ctl, "User has changed config file %s\n", fileName.c_str());
     result = true;
   } else {
     result = false;
