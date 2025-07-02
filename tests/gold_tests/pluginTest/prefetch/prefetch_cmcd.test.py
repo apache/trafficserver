@@ -165,7 +165,7 @@ origin.addResponse("sessionlog.json", request_header, response_header)
 dns = Test.MakeDNServer("dns")
 
 # next hop trafficserver instance
-ts1 = Test.MakeATSProcess("ts1")
+ts1 = Test.MakeATSProcess("ts1", enable_uds=False)
 ts1.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
@@ -227,50 +227,50 @@ tr.Processes.Default.ReturnCode = 0
 
 # attempt to get normal asset
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name}")
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name}", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # issue curl form same asset, with prefetch
 tr = Test.AddTestRun()
 tr.DelayStart = 1
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{pf_header}\'")
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{pf_header}\'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # fetch the prefetched asset (only cached on ts1)
 tr = Test.AddTestRun()
 tr.DelayStart = 1
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{pf_name}")
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{pf_name}", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # attempt to prefetch again
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{pf_header}\'")
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{pf_header}\'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # request the prefetched asset
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{pf_name}")
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{pf_name}", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # prefetch using query params with query prefetch perc encoded
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/tests/{query_name}\' -H \'{query_pf_perc_header}\'")
+    f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/tests/{query_name}\' -H \'{query_pf_perc_header}\'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # request the prefetched asset without perc encoding
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/tests/{query_pf_name}\'")
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/tests/{query_pf_name}\'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # ensure root path prefetch works
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/{root_name}\' -H \'{root_header}\'")
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/{root_name}\' -H \'{root_header}\'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # ensure request with nrr= field is skipped
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/{crr_name}\' -H \'{crr_header}\'")
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/{crr_name}\' -H \'{crr_header}\'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 condwaitpath = os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')

@@ -51,6 +51,9 @@ ts.Disk.plugin_config.AddLine(f"{plugin_name}.so {InProgressFilePathspec} {ts.Va
 
 ts.Disk.remap_config.AddLine("map http://myhost.test http://127.0.0.1:{0}".format(server.Variables.Port))
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
 # Dummy transaction to trigger plugin.
 #
 tr = Test.AddTestRun()
@@ -58,7 +61,8 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommandMulti(
     f'touch {InProgressFilePathspec} ; ' +
-    f'{{curl}} --verbose --ipv4 --header "Host:myhost.test" http://localhost:{ts.Variables.port}/')
+    f'{{curl}} --verbose {ipv4flag} --header "Host:myhost.test" http://localhost:{ts.Variables.port}/',
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 # Give tests up to 10 seconds to complete.
