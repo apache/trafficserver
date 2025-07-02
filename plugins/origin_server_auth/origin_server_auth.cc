@@ -225,6 +225,10 @@ public:
     }
   }
 
+  // This handles the hoops needed to safely delete the special
+  // plugin level instance of this class.
+  static void deletePluginInstance(S3Config *p);
+
   TSCont
   releaseReloadCont()
   {
@@ -652,6 +656,29 @@ S3Config::parse_config(const std::string &config_fname)
   }
 
   return true;
+}
+
+void
+S3Config::deletePluginInstance(S3Config *s3)
+{
+  // Due to a race conditions with the background continuation
+  // the plugin shutdown has to take care not to run
+  // when the reload continuation does.
+  //
+  // The order of oprations here is important, be careful making changes
+  if (s3) {
+    TSMutex s3_mutex_ptr = s3->config_reloader_mutex();
+
+    TSMutexLock(s3_mutex_ptr);
+    auto cont = s3->releaseReloadCont();
+    delete s3;
+    TSMutexUnlock(s3_mutex_ptr);
+    // Its important to only destory this continuation outside of holding
+    // its lock, but after it has been cancelled (in the S3Config destructor)
+    if (cont != nullptr) {
+      TSContDestroy(cont);
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1276,18 +1303,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 void
 TSRemapDeleteInstance(void *ih)
 {
-  S3Config *s3 = static_cast<S3Config *>(ih);
-  if (s3) {
-    TSMutex s3_mutex_ptr = s3->config_reloader_mutex();
-
-    TSMutexLock(s3_mutex_ptr);
-    auto cont = s3->releaseReloadCont();
-    delete s3;
-    TSMutexUnlock(s3_mutex_ptr);
-    if (cont != nullptr) {
-      TSContDestroy(cont);
-    }
-  }
+  S3Config::deletePluginInstance(static_cast<S3Config *>(ih));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
