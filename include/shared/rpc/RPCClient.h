@@ -21,7 +21,7 @@
 
 /// JSONRPC 2.0 RPC network client.
 
-#include <iostream>
+#include <chrono>
 #include <string_view>
 
 #include <yaml-cpp/yaml.h>
@@ -48,7 +48,7 @@ public:
   /// endode/decode you can just call @c invoke(JSONRPCRequest const &req).
   /// @throw runtime_error
   std::string
-  invoke(std::string_view req)
+  invoke(std::string_view req, std::chrono::milliseconds timeout_ms, int attempts)
   {
     std::string err_text; // for error messages.
     try {
@@ -56,7 +56,7 @@ public:
       if (!_client.is_closed()) {
         std::string resp;
         _client.send(req);
-        switch (_client.read_all(resp)) {
+        switch (_client.read_all(resp, timeout_ms, attempts)) {
         case IPCSocketClient::ReadStatus::NO_ERROR: {
           _client.disconnect();
           return resp;
@@ -98,13 +98,13 @@ public:
   /// @throw YAML::Exception
   template <typename Codec = yamlcpp_json_emitter>
   JSONRPCResponse
-  invoke(JSONRPCRequest const &req)
+  invoke(JSONRPCRequest const &req, std::chrono::milliseconds timeout_ms, int attempts)
   {
     static_assert(internal::has_decode<Codec>::value || internal::has_encode<Codec>::value,
                   "You need to implement encode/decode in your own codec impl.");
     // We should add a static_assert and make sure encode/decode are part of Codec type.
     auto const &reqStr = Codec::encode(req);
-    return Codec::decode(invoke(reqStr));
+    return Codec::decode(invoke(reqStr, timeout_ms, attempts));
   }
 
 private:

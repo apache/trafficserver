@@ -34,16 +34,17 @@ protected:
   /// @param request A string representation of the json/yaml request.
   /// @return a string with the json/yaml response.
   /// @note This function does print the raw string if requested by the "--format". No printer involved, standard output.
-  std::string invoke_rpc(std::string const &request);
+  std::string invoke_rpc(std::string const &request, std::chrono::milliseconds timeout_ms, int attempts);
 
   /// @brief Function that calls the rpc server. This function takes a json objects and uses the defined coded to convert them to a
   ///        string. This function will call invoke_rpc(string) overload.
   /// @param A Client request.
   /// @return A server response.
-  shared::rpc::JSONRPCResponse invoke_rpc(shared::rpc::ClientRequest const &request);
+  shared::rpc::JSONRPCResponse invoke_rpc(shared::rpc::ClientRequest const &request, std::chrono::milliseconds timeout_ms,
+                                          int attempts);
 
   /// @brief Function that calls the rpc server. The response will not be decoded, it will be a raw string.
-  void invoke_rpc(shared::rpc::ClientRequest const &request, std::string &bw);
+  void invoke_rpc(shared::rpc::ClientRequest const &request, std::string &bw, std::chrono::milliseconds timeout_ms, int attempts);
 
   std::unique_ptr<BasePrinter> _printer; //!< Specific output formatter. This should be created by the derived class.
 private:
@@ -56,7 +57,7 @@ private:
 /// This class should be used as a base class for every new command or group of commands that are related.
 /// The base class will provide the client communication through the @c invoke_call member function. Arguments that were
 /// parsed by the traffic_ctl are available as a member to all the derived classes.
-class CtrlCommand
+class CtrlCommand : public RPCAccessor
 {
 public:
   virtual ~CtrlCommand() = default;
@@ -75,6 +76,10 @@ public:
   /// @brief This variable is used to mark if a Signal was flagged by the application. Default value is 0 and the signal number
   ///        should be set when the signal is handled.
   static std::atomic_int Signal_Flagged;
+
+  std::string invoke_rpc(std::string const &request);
+
+  shared::rpc::JSONRPCResponse invoke_rpc(shared::rpc::ClientRequest const &request);
 
 protected:
   /// @brief The whole design is that the command will execute the @c _invoked_func once invoked. This function ptr should be
@@ -98,7 +103,7 @@ private:
 /// @brief Record Command Implementation
 ///        Used as base class for any command that needs to access to a TS record.
 ///        If deriving from this class, make sure you implement @c execute_subcommand() and call the _invoked_func yourself.
-class RecordCommand : public CtrlCommand, public RPCAccessor
+class RecordCommand : public CtrlCommand
 {
 public:
   using CtrlCommand::CtrlCommand;
@@ -157,7 +162,7 @@ public:
   MetricCommand(ts::Arguments *args);
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
-class HostCommand : public CtrlCommand, public RPCAccessor
+class HostCommand : public CtrlCommand
 {
 public:
   HostCommand(ts::Arguments *args);
@@ -173,7 +178,7 @@ private:
   void status_up();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
-class PluginCommand : public CtrlCommand, public RPCAccessor
+class PluginCommand : public CtrlCommand
 {
 public:
   PluginCommand(ts::Arguments *args);
@@ -183,7 +188,7 @@ private:
   void                            plugin_msg();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
-class DirectRPCCommand : public CtrlCommand, public RPCAccessor
+class DirectRPCCommand : public CtrlCommand
 {
 public:
   DirectRPCCommand(ts::Arguments *args);
@@ -204,7 +209,7 @@ private:
   bool validate_input(std::string const &in) const;
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
-class ServerCommand : public CtrlCommand, public RPCAccessor
+class ServerCommand : public CtrlCommand
 {
 public:
   ServerCommand(ts::Arguments *args);
@@ -228,7 +233,7 @@ private:
 };
 //
 // -----------------------------------------------------------------------------------------------------------------------------------
-struct StorageCommand : public CtrlCommand, public RPCAccessor {
+struct StorageCommand : public CtrlCommand {
   StorageCommand(ts::Arguments *args);
 
 private:
