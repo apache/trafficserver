@@ -48,7 +48,7 @@ class Hrw4uSyntaxError(Exception):
         super().__init__(self._format_error(filename, line, column, message, source_line))
 
     def _format_error(self, filename, line, col, message, source_line):
-        error = f"{filename}:{line}:{col}: error: {message}"
+        error = f"{filename.name}:{line}:{col}: error: {message}"
 
         lineno = f"{line:4d}"
         code_line = f"{lineno} | {source_line}"
@@ -63,7 +63,7 @@ class SymbolResolutionError(Exception):
         super().__init__(message or f"Unrecognized symbol: '{name}'")
 
 
-# Main errror handling function, use this in the visitor and symbols
+# Main error handling function, use this in the visitor and symbols
 def hrw4u_error(filename, ctx, exc):
     if isinstance(exc, Hrw4uSyntaxError):
         return exc
