@@ -778,6 +778,8 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
     }
   }
 
+  // Release the request header MLoc.
+  TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr);
   return TS_EVENT_NONE;
 }
 
