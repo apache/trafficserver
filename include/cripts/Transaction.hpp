@@ -81,18 +81,6 @@ public:
     return false;
   }
 
-  [[nodiscard]] int
-  LookupStatus() const
-  {
-    int status = 0;
-
-    if (TSHttpTxnCacheLookupStatusGet(txnp, &status) != TS_SUCCESS) {
-      return -1;
-    }
-
-    return status;
-  }
-
 }; // class Transaction
 
 } // namespace cripts
