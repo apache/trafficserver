@@ -247,7 +247,7 @@ stats_cleanup(TSCont contp, stats_state *my_state)
   }
 
   TSVConnClose(my_state->net_vc);
-  TSfree(my_state);
+  delete my_state;
   TSContDestroy(contp);
 }
 
@@ -932,7 +932,7 @@ static config_t *
 new_config(std::fstream &fh)
 {
   config_t *config    = nullptr;
-  config              = new config_t();
+  config              = new config_t;
   config->recordTypes = DEFAULT_RECORD_TYPES;
   config->stats_path  = "";
   std::string cur_line;
@@ -984,7 +984,7 @@ static void
 delete_config(config_t *config)
 {
   Dbg(dbg_ctl, "Freeing config");
-  TSfree(config);
+  delete config;
 }
 
 // standard api below...
