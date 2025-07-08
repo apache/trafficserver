@@ -1585,6 +1585,14 @@ HttpSM::handle_api_return()
     // Finished the Tunnel start callback.  Go ahead and do the HandleBlindTunnel
     call_transact_and_set_next_state(HttpTransact::HandleBlindTunnel);
     return;
+
+  case HttpTransact::StateMachineAction_t::API_SEND_PROXY_PROTOCOL:
+    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR;
+    if (is_private() && t_state.txn_conf->proxy_protocol_out >= 0) {
+      setup_server_send_proxy_protocol();
+      return;
+    }
+    // if proxy procotol not needed, move to API_SEND_REQUEST_HDR
   case HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR:
     setup_server_send_request();
     return;
@@ -2071,6 +2079,49 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
   default:
     ink_assert(!"not reached");
+  }
+
+  return 0;
+}
+
+int
+HttpSM::state_send_server_proxy_protocol(int event, void *data)
+{
+  ink_assert(server_entry != nullptr);
+  ink_assert(server_entry->eos == false);
+  ink_assert(server_entry->write_vio == (VIO *)data);
+  STATE_ENTER(&HttpSM::state_send_server_proxy_protocol, event);
+
+  switch (event) {
+  case VC_EVENT_WRITE_READY:
+    server_entry->write_vio->reenable();
+    break;
+
+  case VC_EVENT_WRITE_COMPLETE:
+    // We are done sending the proxy protocol, deallocate
+    // our buffer and then send the server request
+    if (server_entry->write_buffer) {
+      free_MIOBuffer(server_entry->write_buffer);
+      server_entry->write_buffer = nullptr;
+    }
+    setup_server_send_request();
+    break;
+  case VC_EVENT_EOS:
+    server_entry->eos = true;
+
+  case VC_EVENT_ERROR:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+    handle_server_setup_error(event, data);
+    break;
+
+  case VC_EVENT_READ_COMPLETE:
+    SMDbg(dbg_ctl_http_ss, "read complete due to 0 byte do_io_read");
+    break;
+
+  default:
+    ink_release_assert(0);
+    break;
   }
 
   return 0;
@@ -5775,6 +5826,9 @@ HttpSM::do_api_callout_internal()
   case HttpTransact::StateMachineAction_t::API_OS_DNS:
     cur_hook_id = TS_HTTP_OS_DNS_HOOK;
     break;
+  case HttpTransact::StateMachineAction_t::API_SEND_PROXY_PROTOCOL:
+   cur_hook_id = TS_HTTP_SEND_REQUEST_HDR_HOOK;
+   break;
   case HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR:
     cur_hook_id = TS_HTTP_SEND_REQUEST_HDR_HOOK;
     break;
@@ -6690,8 +6744,30 @@ HttpSM::setup_server_send_request_api()
 {
   // Make sure the VC is on the correct timeout
   server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
-  t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR;
+  t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_PROXY_PROTOCOL;
   do_api_callout();
+}
+
+void
+HttpSM::setup_server_send_proxy_protocol()
+{
+  int64_t nbytes = 0;
+  int     hdr_length;
+
+  server_entry->vc_write_handler = &HttpSM::state_send_server_proxy_protocol;
+  server_entry->write_buffer     = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  nbytes = do_outbound_proxy_protocol(server_entry->write_buffer, static_cast<NetVConnection *>(server_entry->vc), _ua.get_txn()->get_netvc(), t_state.txn_conf->proxy_protocol_out);
+  hdr_length = nbytes;
+
+  IOBufferReader *buf_start = server_entry->write_buffer->alloc_reader();
+
+  server_entry->write_vio = server_entry->vc->do_io_write(this, hdr_length, buf_start);
+
+  milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = ink_get_hrtime();
+
+  server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
+
+  t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_REQUEST_HDR;
 }
 
 void
@@ -6728,7 +6804,11 @@ HttpSM::setup_server_send_request()
   }
 
   ATS_PROBE1(milestone_server_begin_write, sm_id);
-  milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = ink_get_hrtime();
+
+  if (milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] == 0) {
+      milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = ink_get_hrtime();
+  }
+
   server_entry->write_vio                     = server_entry->vc->do_io_write(this, hdr_length, buf_start);
 
   // Make sure the VC is using correct timeouts.  We may be reusing a previously used server session
@@ -7927,6 +8007,7 @@ HttpSM::set_next_state()
     break;
   }
 
+  case HttpTransact::StateMachineAction_t::API_SEND_PROXY_PROTOCOL:
   case HttpTransact::StateMachineAction_t::POST_REMAP_SKIP: {
     call_transact_and_set_next_state(nullptr);
     break;

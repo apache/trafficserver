@@ -376,6 +376,7 @@ private:
   int state_http_server_open(int event, void *data);
   int state_raw_http_server_open(int event, void *data);
   int state_send_server_request_header(int event, void *data);
+  int state_send_server_proxy_protocol(int event, void *data);
   int state_read_server_response_header(int event, void *data);
 
   // API
@@ -440,6 +441,7 @@ private:
   void                setup_push_read_response_header();
   void                setup_server_read_response_header();
   void                setup_cache_lookup_complete_api();
+  void                setup_server_send_proxy_protocol();
   void                setup_server_send_request();
   void                setup_server_send_request_api();
   HttpTunnelProducer *setup_server_transfer();
