@@ -1908,7 +1908,7 @@ Here is an example:
         print(name)             -- test
     end
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.server_request.server_addr.get_nexthop_port
 ----------------------------------------------
@@ -1929,7 +1929,7 @@ Here is an example:
         print(name)             -- test
     end
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.get_next_hop_strategy
 -----------------------------
@@ -1948,7 +1948,7 @@ Here is an example:
 			ts.debug("Using strategy: " .. strategy)
 		end
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.set_next_hop_strategy
 -----------------------------
@@ -1973,7 +1973,7 @@ Here is an example:
 			end
 		end
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.sha256
 ---------
@@ -1994,7 +1994,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.sha256_bin
 -------------
@@ -2014,7 +2014,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.hmac_md5
 -----------
@@ -2040,7 +2040,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.hmac_sha1
 ------------
@@ -2066,7 +2066,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.hmac_sha256
 --------------
@@ -2092,7 +2092,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.server_request.server_addr.get_ip
 ------------------------------------
@@ -3401,7 +3401,7 @@ ts.http.get_ssn_remote_addr
 
 **description:** This function can be used to get the remote address (IP, port, family) of the session.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.get_client_received_error
 ---------------------------------
@@ -3421,7 +3421,7 @@ Here is an example
         ts.debug('txn_close: '..code)
     end
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.get_client_sent_error
 -----------------------------
@@ -3431,7 +3431,7 @@ ts.http.get_client_sent_error
 
 **description:** This function can be used to get the client sent error from transaction.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.get_server_received_error
 ---------------------------------
@@ -3441,7 +3441,7 @@ ts.http.get_server_received_error
 
 **description:** This function can be used to get the server received error from transaction.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.get_server_sent_error
 -----------------------------
@@ -3451,7 +3451,7 @@ ts.http.get_server_sent_error
 
 **description:** This function can be used to get the server sent error from transaction.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.add_package_path
 -------------------
@@ -4624,7 +4624,7 @@ ts.vconn.get_fd
 
 **description:** This function can be used to get the file descriptor of the virtual connection.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.vconn.disable_h2
 -------------------
@@ -4634,7 +4634,7 @@ ts.vconn.disable_h2
 
 **description:** This function can be used to disable http/2 for the virtual connection.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.vconn.get_remote_addr
 ------------------------
@@ -4644,7 +4644,7 @@ ts.vconn.get_remote_addr
 
 **description:** This function can be used to get the remote address (IP, port, family) of the virtual connection.
 
-`TOP <#ts-lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 Todo
 ====
