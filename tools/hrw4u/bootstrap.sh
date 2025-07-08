@@ -20,12 +20,22 @@ set -e
 
 VENV_NAME="hrw4u"
 
+if ! which antlr; then
+    echo "Make sure antlr is installed, e.g. brew install antlr"
+    echo "Once its in your path, re-run this script."
+    exit
+fi
+
 eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 # eval "$(pyenv virtualenv-init -)"
 
-echo "==> Creating virtualenv $VENV_NAME..."
-pyenv virtualenv "$VENV_NAME"
+if pyenv virtualenvs | grep hrw4u; then
+    pyenv uninstall -f "$VENV_NAME"
+else
+    echo "==> Creating virtualenv $VENV_NAME..."
+    pyenv virtualenv "$VENV_NAME"
+fi
 
 echo "==> Activating virtualenv..."
 pyenv activate "$VENV_NAME"
