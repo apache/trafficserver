@@ -170,6 +170,17 @@ class HistoryEntryPrinter:
         elif event_num == 2002:
             return 'TS_EVENT_SSL_SESSION_REMOVE'
 
+        elif event_num == 2301:
+            return 'HTTP_TUNNEL_EVENT_DONE'
+        elif event_num == 2302:
+            return 'HTTP_TUNNEL_EVENT_PRECOMPLETE'
+        elif event_num == 2303:
+            return 'HTTP_TUNNEL_EVENT_CONSUMER_DETACH'
+        elif event_num == 2304:
+            return 'HTTP_TUNNEL_EVENT_ACTIVITY_CHECK'
+        elif event_num == 2305:
+            return 'HTTP_TUNNEL_EVENT_PARSE_ERROR'
+
         elif event_num == 3900:
             return 'TS_EVENT_AIO_DONE'
 
