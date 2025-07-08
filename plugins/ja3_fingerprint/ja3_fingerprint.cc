@@ -181,10 +181,12 @@ append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, const char *field, int field_len
     TSMimeHdrFieldAppend(bufp, hdr_loc, target);
     TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, target, -1, value, value_len);
   } else if (!preserve) {
-    TSMLoc next = target;
-    while (next) {
-      target = next;
-      next   = TSMimeHdrFieldNextDup(bufp, hdr_loc, target);
+    // Find the last duplicate, being careful to release the previous TSMLoc along the way.
+    TSMLoc dup = TSMimeHdrFieldNextDup(bufp, hdr_loc, target);
+    while (dup != TS_NULL_MLOC) {
+      TSHandleMLocRelease(bufp, hdr_loc, target);
+      target = dup;
+      dup    = TSMimeHdrFieldNextDup(bufp, hdr_loc, target);
     }
     TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, target, -1, value, value_len);
   }
