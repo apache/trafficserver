@@ -92,6 +92,7 @@
 #include "cripts/Matcher.hpp"
 #include "cripts/Time.hpp"
 #include "cripts/Crypto.hpp"
+#include "cripts/Certs.hpp"
 #include "cripts/Files.hpp"
 #include "cripts/Metrics.hpp"
 #include "cripts/Plugins.hpp"
