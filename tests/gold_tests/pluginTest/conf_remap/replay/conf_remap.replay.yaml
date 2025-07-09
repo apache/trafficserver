@@ -87,7 +87,7 @@ sessions:
     # By negative caching, the 503 will be cached and this will not go through.
     <<: *200_response
 
-    # Expect the server's 200 response.
+    # Expect the cached 503 response
     proxy-response:
       status: 503
 
@@ -147,7 +147,7 @@ sessions:
     # By customization, the 404 will be cached and this will not go through.
     <<: *200_response
 
-    # Expect the server's 404 response.
+    # Expect the cached 404 response.
     proxy-response:
       status: 404
 
