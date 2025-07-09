@@ -97,10 +97,10 @@ The plugin takes an optional switches.
   |                                      | This also applies to the remap context.                                                          |
   +======================================+==================================================================================================+
   | ``--timezone <value>``               | This applies ``set-plugin-cntl TIMEZONE <value>`` to every transaction unconditionally.          |
-  |                                      | See :ref:`set-plugin-cntl` for the setting values and the effect.                                |
+  |                                      | See set-plugin-cntl for the setting values and the effect.                                |
   +======================================+==================================================================================================+
   | ``--inbound-ip-source <value>``      | This applies ``set-plugin-cntl INBOUND_IP_SOURCE <value>`` to every transaction unconditionally. |
-  |                                      | See :ref:`set-plugin-cntl` for the setting values and the effect.                                |
+  |                                      | See set-plugin-cntl for the setting values and the effect.                                |
   +======================================+==================================================================================================+
 
 Please note that these optional switches needs to appear before config files like you would do on UNIX command lines.
