@@ -1,9 +1,9 @@
 ``
-> GET http://a.test/ping HTTP/1.1
+> GET ``ping HTTP/1.1
 > Host: a.test
 > User-Agent: curl/``
 > Accept: */*
-> Proxy-Connection: Keep-Alive
+``
 > uuid: redirect_test_1
 ``
 < HTTP/1.1 302 Redirect
@@ -11,7 +11,7 @@
 < Date: ``
 < Age: ``
 < Transfer-Encoding: chunked
-< Proxy-Connection: keep-alive
+< ``Connection: keep-alive
 < Server: ATS/``
 ``
 < HTTP/1.1 302 Redirect
@@ -19,20 +19,20 @@
 < Date: ``
 < Age: ``
 < Transfer-Encoding: chunked
-< Proxy-Connection: keep-alive
+< ``Connection: keep-alive
 < Server: ATS/``
 ``
-> GET http://c.test:``
+> GET ``
 > Host: c.test:``
 > User-Agent: curl/``
 > Accept: */*
-> Proxy-Connection: Keep-Alive
+``
 > uuid: redirect_test_1
 ``
 < HTTP/1.1 200 OK
 < date: ``
 < Age: ``
 < Transfer-Encoding: chunked
-< Proxy-Connection: keep-alive
+< ``Connection: keep-alive
 < Server: ATS/``
 ``

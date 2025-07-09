@@ -66,7 +66,7 @@ class StatsOverHttpPluginTest:
     def __testCaseNoAccept(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in JSON format: no Accept and default path')
         self.__checkProcessBefore(tr)
-        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats")
+        tr.MakeCurlCommand(f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats", ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('{ "global": {', 'Output should have the JSON header.')
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(

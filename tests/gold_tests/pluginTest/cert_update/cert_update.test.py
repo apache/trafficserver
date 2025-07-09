@@ -23,6 +23,7 @@ Test.Summary = '''
 Test cert_update plugin.
 '''
 
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.SkipUnless(
     Condition.HasProgram("openssl", "Openssl need to be installed on system for this test to work"),
     Condition.PluginExists('cert_update.so'))

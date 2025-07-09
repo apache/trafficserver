@@ -116,7 +116,7 @@ Variables.VerifierBinPath = ENV['VERIFIER_BIN']
 Variables.BuildRoot = ENV['BUILD_ROOT']
 Variables.RepoDir = repo_root
 Variables.AtsTestPluginsDir = os.path.join(Variables.BuildRoot, 'tests', 'tools', 'plugins', '.libs')
-Variables.AtsBuildGoldTestsDir = os.path.join(Variables.BuildRoot, 'tests', 'gold_tests')
+Variables.AtsBuildGoldTestsDir = os.path.join(Variables.BuildRoot, 'tests', 'gold_tests_filtered')
 Variables.CurlUds = Arguments.curl_uds
 
 # modify delay times as we always have to kill Trafficserver
