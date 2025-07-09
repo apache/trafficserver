@@ -34,6 +34,8 @@
 #include "conditions.h"
 #include "lulu.h"
 
+static const sockaddr *getClientAddr(TSHttpTxn txnp, int txn_private_slot);
+
 // ConditionStatus
 void
 ConditionStatus::initialize(Parser &p)
@@ -553,7 +555,7 @@ ConditionIp::eval(const Resources &res)
 
     switch (_ip_qual) {
     case IP_QUAL_CLIENT:
-      addr = TSHttpTxnClientAddrGet(res.txnp);
+      addr = getClientAddr(res.txnp, _txn_private_slot);
       break;
     case IP_QUAL_INBOUND:
       addr = TSHttpTxnIncomingAddrGet(res.txnp);
@@ -591,7 +593,7 @@ ConditionIp::append_value(std::string &s, const Resources &res)
 
   switch (_ip_qual) {
   case IP_QUAL_CLIENT:
-    ip_set = (nullptr != getIP(TSHttpTxnClientAddrGet(res.txnp), ip));
+    ip_set = (nullptr != getIP(getClientAddr(res.txnp, _txn_private_slot), ip));
     break;
   case IP_QUAL_INBOUND:
     ip_set = (nullptr != getIP(TSHttpTxnIncomingAddrGet(res.txnp), ip));
@@ -824,9 +826,9 @@ void
 ConditionGeo::append_value(std::string &s, const Resources &res)
 {
   if (is_int_type()) {
-    s += std::to_string(get_geo_int(TSHttpTxnClientAddrGet(res.txnp)));
+    s += std::to_string(get_geo_int(getClientAddr(res.txnp, _txn_private_slot)));
   } else {
-    s += get_geo_string(TSHttpTxnClientAddrGet(res.txnp));
+    s += get_geo_string(getClientAddr(res.txnp, _txn_private_slot));
   }
   Dbg(pi_dbg_ctl, "Appending GEO() to evaluation value -> %s", s.c_str());
 }
@@ -838,7 +840,7 @@ ConditionGeo::eval(const Resources &res)
 
   Dbg(pi_dbg_ctl, "Evaluating GEO()");
   if (is_int_type()) {
-    int64_t geo = get_geo_int(TSHttpTxnClientAddrGet(res.txnp));
+    int64_t geo = get_geo_int(getClientAddr(res.txnp, _txn_private_slot));
 
     ret = static_cast<const Matchers<int64_t> *>(_matcher)->test(geo, res);
   } else {
@@ -995,7 +997,7 @@ ConditionCidr::eval(const Resources &res)
 void
 ConditionCidr::append_value(std::string &s, const Resources &res)
 {
-  struct sockaddr const *addr = TSHttpTxnClientAddrGet(res.txnp);
+  struct sockaddr const *addr = getClientAddr(res.txnp, _txn_private_slot);
 
   if (addr) {
     switch (addr->sa_family) {
@@ -1101,7 +1103,7 @@ ConditionInbound::eval(const Resources &res)
       addr = TSHttpTxnIncomingAddrGet(res.txnp);
       break;
     case NET_QUAL_REMOTE_ADDR:
-      addr = TSHttpTxnClientAddrGet(res.txnp);
+      addr = getClientAddr(res.txnp, _txn_private_slot);
       break;
     default:
       // Only support actual IP addresses of course...
@@ -1148,10 +1150,10 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
     zret = text;
   } break;
   case NET_QUAL_REMOTE_ADDR: {
-    zret = getIP(TSHttpTxnClientAddrGet(res.txnp), text);
+    zret = getIP(getClientAddr(res.txnp, _txn_private_slot), text);
   } break;
   case NET_QUAL_REMOTE_PORT: {
-    uint16_t port = getPort(TSHttpTxnClientAddrGet(res.txnp));
+    uint16_t port = getPort(getClientAddr(res.txnp, _txn_private_slot));
     snprintf(text, sizeof(text), "%d", port);
     zret = text;
   } break;
@@ -1607,4 +1609,28 @@ ConditionLastCapture::eval(const Resources &res)
   Dbg(pi_dbg_ctl, "Evaluating LAST-CAPTURE()");
 
   return static_cast<const MatcherType *>(_matcher)->test(s, res);
+}
+
+static const struct sockaddr *
+getClientAddr(TSHttpTxn txnp, int txn_private_slot)
+{
+  const struct sockaddr *addr = nullptr;
+  int                    addr_len;
+
+  PrivateSlotData private_data;
+  private_data.raw = reinterpret_cast<uint64_t>(TSUserArgGet(txnp, txn_private_slot));
+  switch (private_data.ip_source) {
+  case IP_SRC_PEER:
+    addr = TSHttpTxnClientAddrGet(txnp);
+    break;
+  case IP_SRC_PROXY:
+    TSVConnPPInfoGet(TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txnp)), TS_PP_INFO_SRC_ADDR, reinterpret_cast<const char **>(&addr),
+                     &addr_len);
+    break;
+  default:
+    Dbg(pi_dbg_ctl, "Unknown IP source (%d) was specified", private_data.ip_source);
+    addr = TSHttpTxnClientAddrGet(txnp);
+    break;
+  }
+  return addr;
 }
