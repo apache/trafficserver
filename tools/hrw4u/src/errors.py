@@ -48,7 +48,7 @@ class Hrw4uSyntaxError(Exception):
         super().__init__(self._format_error(filename, line, column, message, source_line))
 
     def _format_error(self, filename, line, col, message, source_line):
-        error = f"{filename.name}:{line}:{col}: error: {message}"
+        error = f"{filename}:{line}:{col}: error: {message}"
 
         lineno = f"{line:4d}"
         code_line = f"{lineno} | {source_line}"
