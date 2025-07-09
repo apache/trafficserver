@@ -466,6 +466,7 @@ public:
 
   enum class PluginCtrl {
     TIMEZONE,
+    INBOUND_IP_SOURCE,
   };
 
 protected:
