@@ -1689,3 +1689,26 @@ This rule will deny all requests for URIs with the ``.php`` file extension::
    cond %{REMAP_PSEUDO_HOOK} [AND]
    cond %{CLIENT-URL:PATH} ="php" [EXT,NOCASE]
       set-status 403
+
+Use GMT regardless of system timezone setting
+---------------------------------------------
+
+This rule will change the behavior of %{NOW}. It will always return time in GMT.
+
+   cond %{READ_REQUEST_HDR_HOOK}
+      set-plugin-cntl TIMEZONE GMT
+
+   cond %{SEND_RESPONSE_HDR_HOOK}
+     set-header hour %{NOW:HOUR}
+
+Use IP address provided by PROXY protocol
+-----------------------------------------
+
+This rule will change the behavior of all header_rewrite conditions which use the client's IP address on a connection.
+Those will pick the address provided by PROXY protocol, instead of the peer's address.
+
+   cond %{READ_REQUEST_HDR_HOOK}
+      set-plugin-cntl INBOUND_IP_SOURCE PROXY
+
+   cond %{SEND_RESPONSE_HDR_HOOK}
+      set-header real-ip %{INBOUND:REMOTE-ADDR}
