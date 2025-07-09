@@ -28,6 +28,7 @@ list(REMOVE_ITEM CPP_FILES ${TEST_CPP_FILES})
 
 set(CRIPTS_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/cripts/Bundle.hpp
+    ${PROJECT_SOURCE_DIR}/include/cripts/Certs.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/ConfigsBase.hpp
     ${PROJECT_SOURCE_DIR}/include/cripts/Connections.hpp
