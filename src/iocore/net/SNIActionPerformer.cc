@@ -339,7 +339,7 @@ HostSniPolicy::TestClientSNIAction(const char * /* servername ATS_UNUSED */, con
 
 TLSValidProtocols::TLSValidProtocols(unsigned long protocols) : unset(false), protocol_mask(protocols)
 {
-  Warning("valid_tls_versions_in is deprecated. Use valid_tls_version_min_in and ivalid_tls_version_max_in instead.");
+  Warning("valid_tls_versions_in is deprecated. Use valid_tls_version_min_in and valid_tls_version_max_in instead.");
 }
 
 int
