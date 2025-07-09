@@ -50,7 +50,10 @@ def main():
     input_content = args.input_file.read()
 
     if args.input_file is not sys.stdin:
+        filename = args.input_file.name
         args.input_file.close()
+    else:
+        filename = "<stdin>"
 
     if not (args.ast or args.hrw):
         args.hrw = True
@@ -59,12 +62,12 @@ def main():
 
     lexer = hrw4uLexer(input_stream)
     lexer.removeErrorListeners()
-    lexer.addErrorListener(ThrowingErrorListener(filename=args.input_file))
+    lexer.addErrorListener(ThrowingErrorListener(filename=filename))
     token_stream = CommonTokenStream(lexer)
 
     parser_obj = hrw4uParser(token_stream)
     parser_obj.removeErrorListeners()
-    parser_obj.addErrorListener(ThrowingErrorListener(filename=args.input_file))
+    parser_obj.addErrorListener(ThrowingErrorListener(filename=filename))
     parser_obj.errorHandler = BailErrorStrategy()
 
     try:
@@ -77,7 +80,7 @@ def main():
     if args.ast:
         print(tree.toStringTree(recog=parser_obj))
     else:
-        visitor = HRW4UVisitor(filename=args.input_file, debug=args.debug)
+        visitor = HRW4UVisitor(filename=filename, debug=args.debug)
         try:
             result = visitor.visit(tree)
             print("\n".join(result))
