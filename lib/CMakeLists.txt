@@ -44,3 +44,5 @@ target_include_directories(catch2::catch2 INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}
 
 add_library(systemtap::systemtap INTERFACE IMPORTED GLOBAL)
 target_include_directories(systemtap::systemtap INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/systemtap")
+
+add_subdirectory(ls-hpack)

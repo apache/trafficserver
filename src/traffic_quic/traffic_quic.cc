@@ -116,7 +116,6 @@ main(int argc, const char **argv)
   url_init();
   mime_init();
   http_init();
-  hpack_huffman_init();
 
   ts::Http3Config::startup();
 

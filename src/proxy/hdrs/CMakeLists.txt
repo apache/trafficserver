@@ -35,8 +35,11 @@ add_library(ts::hdrs ALIAS hdrs)
 target_link_libraries(
   hdrs
   PUBLIC libswoc::libswoc ts::tscore
-  PRIVATE ts::inkevent ts::tsutil
+  PRIVATE ts::inkevent ts::tsutil lshpack
 )
+
+# For ls-hpack includes.
+target_include_directories(hdrs PRIVATE ${CMAKE_SOURCE_DIR}/lib)
 
 if(BUILD_TESTING)
   add_executable(
@@ -51,11 +54,15 @@ if(BUILD_TESTING)
     unit_tests/test_URL.cc
     unit_tests/unit_test_main.cc
   )
-  target_link_libraries(test_proxy_hdrs PRIVATE ts::hdrs ts::tscore ts::inkevent libswoc::libswoc catch2::catch2)
+  target_link_libraries(
+    test_proxy_hdrs PRIVATE ts::hdrs ts::tscore ts::inkevent libswoc::libswoc catch2::catch2 lshpack
+  )
   add_test(NAME test_proxy_hdrs COMMAND test_proxy_hdrs)
 
   add_executable(test_proxy_hdrs_xpack unit_tests/test_XPACK.cc)
-  target_link_libraries(test_proxy_hdrs_xpack PRIVATE ts::hdrs ts::tscore ts::tsutil libswoc::libswoc catch2::catch2)
+  target_link_libraries(
+    test_proxy_hdrs_xpack PRIVATE ts::hdrs ts::tscore ts::tsutil libswoc::libswoc catch2::catch2 lshpack
+  )
   add_test(NAME test_proxy_hdrs_xpack COMMAND test_proxy_hdrs_xpack)
 endif()
 
