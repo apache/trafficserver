@@ -39,6 +39,7 @@
 #include "ts/remap.h"
 #include "ts/remap_version.h"
 #include "background_fetch.h"
+#include "configs.h"
 
 static const char *
 getCacheLookupResultName(TSCacheLookupResult result)
@@ -108,23 +109,29 @@ cont_check_cacheable(TSHttpTxn txnp)
 // if a background fetch is allowed for this request
 //
 static int
-cont_handle_cache(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
+cont_handle_cache(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  if (TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE == event) {
-    bool const requested = cont_check_cacheable(txnp);
-    if (requested) // Made a background fetch request, do not cache the response
-    {
-      Dbg(dbg_ctl, "setting no store");
-      TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true);
-      TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_MISS);
+  TSHttpTxn      txnp   = static_cast<TSHttpTxn>(edata);
+  BgFetchConfig *config = static_cast<BgFetchConfig *>(TSContDataGet(contp));
+
+  if (nullptr == config) {
+    // something seriously wrong..
+    TSError("[%s] Can't get configurations", PLUGIN_NAME);
+  } else if (config->bgFetchAllowed(txnp)) {
+    if (TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE == event) {
+      bool const requested = cont_check_cacheable(txnp);
+      if (requested) // Made a background fetch request, do not cache the response
+      {
+        Dbg(dbg_ctl, "setting no store");
+        TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SERVER_NO_STORE, true);
+        TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_MISS);
+      }
+
+    } else {
+      TSError("[%s] Unknown event for this plugin %d", PLUGIN_NAME, event);
+      Dbg(dbg_ctl, "unknown event for this plugin %d", event);
     }
-
-  } else {
-    TSError("[%s] Unknown event for this plugin %d", PLUGIN_NAME, event);
-    Dbg(dbg_ctl, "unknown event for this plugin %d", event);
   }
-
   // Reenable and continue with the state machine.
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
@@ -147,19 +154,46 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 // We don't have any specific "instances" here, at least not yet.
 //
 TSReturnCode
-TSRemapNewInstance(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */, void **ih, char * /* errbuf ATS_UNUSED */,
-                   int /* errbuf_size ATS_UNUSED */)
+TSRemapNewInstance(int argc, char **argv, void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  TSCont cont = TSContCreate(cont_handle_cache, nullptr);
-  *ih         = cont;
-  return TS_SUCCESS;
+  TSCont         cont    = TSContCreate(cont_handle_cache, nullptr);
+  BgFetchConfig *config  = new BgFetchConfig(cont);
+  bool           success = true;
+
+  // The first two arguments are the "from" and "to" URL string. We need to
+  // skip them, but we also require that there be an option to masquerade as
+  // argv[0], so we increment the argument indexes by 1 rather than by 2.
+  argc--;
+  argv++;
+
+  // This is for backwards compatibility, ugly! ToDo: Remove for ATS v9.0.0 IMO.
+  if (argc > 1 && *argv[1] != '-') {
+    Dbg(dbg_ctl, "config file %s", argv[1]);
+    if (!config->readConfig(argv[1])) {
+      success = false;
+    }
+  } else {
+    if (!config->parseOptions(argc, const_cast<const char **>(argv))) {
+      success = false;
+    }
+  }
+
+  if (success) {
+    *ih = config;
+
+    return TS_SUCCESS;
+  }
+
+  // Something went wrong with the configuration setup.
+  delete config;
+  return TS_ERROR;
 }
 
 void
 TSRemapDeleteInstance(void *ih)
 {
-  TSCont cont = static_cast<TSCont>(ih);
-  TSContDestroy(cont);
+  BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
+  delete config;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -171,8 +205,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   if (nullptr == ih) {
     return TSREMAP_NO_REMAP;
   }
-  TSCont const cont = static_cast<TSCont>(ih);
-  TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
+  BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, config->getCont());
   Dbg(dbg_ctl, "TSRemapDoRemap() added hook");
 
   return TSREMAP_NO_REMAP;
