@@ -105,7 +105,7 @@ struct config_holder_t {
   config_t       *config;
 };
 
-enum output_format { JSON_OUTPUT, CSV_OUTPUT };
+enum output_format_t { JSON_OUTPUT, CSV_OUTPUT };
 enum encoding_format { NONE, DEFLATE, GZIP, BR };
 
 int    configReloadRequests = 0;
@@ -122,33 +122,49 @@ static bool             is_ipmap_allowed(const config_t *config, const struct so
 
 #if HAVE_BROTLI_ENCODE_H
 struct b_stream {
-  BrotliEncoderState *br;
-  uint8_t            *next_in;
-  size_t              avail_in;
-  uint8_t            *next_out;
-  size_t              avail_out;
-  size_t              total_in;
-  size_t              total_out;
+  BrotliEncoderState *br        = nullptr;
+  uint8_t            *next_in   = nullptr;
+  size_t              avail_in  = 0;
+  uint8_t            *next_out  = nullptr;
+  size_t              avail_out = 0;
+  size_t              total_in  = 0;
+  size_t              total_out = 0;
+
+  ~b_stream()
+  {
+    if (br) {
+      BrotliEncoderDestroyInstance(br);
+      br = nullptr;
+    }
+  }
 };
 #endif
 
 struct stats_state {
-  TSVConn net_vc;
-  TSVIO   read_vio;
-  TSVIO   write_vio;
+  TSVConn net_vc    = nullptr;
+  TSVIO   read_vio  = nullptr;
+  TSVIO   write_vio = nullptr;
 
-  TSIOBuffer       req_buffer;
-  TSIOBuffer       resp_buffer;
-  TSIOBufferReader resp_reader;
+  TSIOBuffer       req_buffer  = nullptr;
+  TSIOBuffer       resp_buffer = nullptr;
+  TSIOBufferReader resp_reader = nullptr;
 
-  int             output_bytes;
-  int             body_written;
-  output_format   output;
-  encoding_format encoding;
+  int             output_bytes  = 0;
+  int             body_written  = 0;
+  output_format_t output_format = JSON_OUTPUT;
+  encoding_format encoding      = NONE;
   z_stream        zstrm;
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
 #endif
+  stats_state()
+  {
+    memset(&zstrm, 0, sizeof(z_stream));
+    zstrm.zalloc    = Z_NULL;
+    zstrm.zfree     = Z_NULL;
+    zstrm.opaque    = Z_NULL;
+    zstrm.data_type = Z_ASCII;
+  }
 };
 
 static char *
@@ -233,7 +249,7 @@ stats_cleanup(TSCont contp, stats_state *my_state)
   }
 
   TSVConnClose(my_state->net_vc);
-  TSfree(my_state);
+  delete my_state;
   TSContDestroy(contp);
 }
 
@@ -274,7 +290,7 @@ static const char RESP_HEADER_CSV_BR[] =
 static int
 stats_add_resp_header(stats_state *my_state)
 {
-  switch (my_state->output) {
+  switch (my_state->output_format) {
   case JSON_OUTPUT:
     if (my_state->encoding == GZIP) {
       return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_GZIP, my_state);
@@ -464,6 +480,7 @@ br_out_stats(stats_state *my_state)
   }
   my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, outputsize);
   BrotliEncoderDestroyInstance(my_state->bstrm.br);
+  my_state->bstrm.br = nullptr;
 }
 #endif
 
@@ -517,7 +534,7 @@ stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (my_state->body_written == 0) {
       my_state->body_written = 1;
-      switch (my_state->output) {
+      switch (my_state->output_format) {
       case JSON_OUTPUT:
         json_out_stats(my_state);
         break;
@@ -611,12 +628,11 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   /* This is us -- register our intercept */
   Dbg(dbg_ctl, "Intercepting request");
 
-  my_state = (stats_state *)TSmalloc(sizeof(*my_state));
-  memset(my_state, 0, sizeof(*my_state));
-  icontp = TSContCreate(stats_dostuff, TSMutexCreate());
+  my_state = new stats_state;
+  icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
 
-  accept_field     = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT);
-  my_state->output = JSON_OUTPUT; // default to json output
+  accept_field            = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT);
+  my_state->output_format = JSON_OUTPUT; // default to json output
   // accept header exists, use it to determine response type
   if (accept_field != TS_NULL_MLOC) {
     int         len = -1;
@@ -624,9 +640,9 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 
     // Parse the Accept header, default to JSON output unless its another supported format
     if (!strncasecmp(str, "text/csv", len)) {
-      my_state->output = CSV_OUTPUT;
+      my_state->output_format = CSV_OUTPUT;
     } else {
-      my_state->output = JSON_OUTPUT;
+      my_state->output_format = JSON_OUTPUT;
     }
   }
 
@@ -790,7 +806,7 @@ static config_t *
 new_config(std::fstream &fh)
 {
   config_t *config    = nullptr;
-  config              = new config_t();
+  config              = new config_t;
   config->recordTypes = DEFAULT_RECORD_TYPES;
   config->stats_path  = "";
   std::string cur_line;
@@ -842,7 +858,7 @@ static void
 delete_config(config_t *config)
 {
   Dbg(dbg_ctl, "Freeing config");
-  TSfree(config);
+  delete config;
 }
 
 // standard api below...
