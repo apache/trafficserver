@@ -114,7 +114,7 @@ class HRW4UVisitor(hrw4uVisitor):
                     self._debug(f"substitute: {{{func_name}({arg_str})}} -> {replacement}")
                 elif m.group("var"):
                     var_name = m.group("var").strip()
-                    replacement = self.symbol_resolver.resolve_condition(var_name, self.current_section)
+                    replacement, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
                     self._debug(f"substitute: {{{var_name}}} -> {replacement}")
                 else:
                     raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")
@@ -306,7 +306,7 @@ class HRW4UVisitor(hrw4uVisitor):
         comp = ctx.comparable()
         try:
             if comp.ident:
-                lhs = self.symbol_resolver.resolve_condition(comp.ident.text, self.current_section)
+                lhs, _ = self.symbol_resolver.resolve_condition(comp.ident.text, self.current_section)
             else:
                 lhs = self.visitFunctionCall(comp.functionCall())
             operator = ctx.getChild(1)
@@ -382,25 +382,22 @@ class HRW4UVisitor(hrw4uVisitor):
         self._flush_condition()
         self.output.append(" " * (self._stmt_indent * self.INDENT_SPACES) + line)
 
-    def emit_expression(self, ctx, *, nested: bool = False, last: bool = False):
+    def emit_expression(self, ctx, *, nested: bool = False, last: bool = False, grouped: bool = False):
         self._debug_enter("emit_expression")
         if ctx.OR():
             self._debug("`OR' detected")
-            if nested:
+            if grouped:
                 self._debug("GROUP-START")
                 self.emit_condition("cond %{GROUP}", final=True)
                 self._cond_indent += 1
 
-            self.emit_expression(ctx.expression(), nested=True, last=False)
-
+            self.emit_expression(ctx.expression(), nested=False, last=False)
             if self._queued:
-                self._queued.indent = self._cond_indent
                 self._queued.state.and_or = True
             self._flush_condition()
-
             self.emit_term(ctx.term(), last=last)
 
-            if nested:
+            if grouped:
                 self._flush_condition()
                 self._cond_indent -= 1
                 self.emit_condition("cond %{GROUP:END}")
@@ -434,7 +431,7 @@ class HRW4UVisitor(hrw4uVisitor):
                 self._debug("GROUP-START")
                 self.emit_condition("cond %{GROUP}", final=True)
                 self._cond_indent += 1
-                self.emit_expression(ctx.expression(), nested=False, last=True)
+                self.emit_expression(ctx.expression(), nested=False, last=True, grouped=True)
                 self._cond_indent -= 1
                 self._cond_state.last = last
                 self.emit_condition("cond %{GROUP:END}")
@@ -461,9 +458,20 @@ class HRW4UVisitor(hrw4uVisitor):
                 entry = self.symbol_resolver.symbol_for(name)
                 if entry:
                     symbol = entry.as_cond()
+                    default_expr = False
                 else:
-                    symbol = self.symbol_resolver.resolve_condition(name, self.current_section)
-                cond = self._make_condition(symbol, last=last)
+                    symbol, default_expr = self.symbol_resolver.resolve_condition(name, self.current_section)
+
+                if default_expr:
+                    cond_txt = f"{symbol} =\"\""
+                    negate = not self._cond_state.not_
+                else:
+                    cond_txt = symbol
+                    negate = self._cond_state.not_
+
+                self._cond_state.not_ = False
+                self._debug(f"{'implicit' if default_expr else 'explicit'} comparison: {cond_txt} negate={negate}")
+                cond = self._make_condition(cond_txt, last=last, negate=negate)
                 self.emit_condition(cond)
 
         except Exception as e:

@@ -1,0 +1,4 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Foo} ="" [OR,NOT]
+cond %{CLIENT-HEADER:X-Bar} ="" [NOT]
+    set-header X-fie "123"
