@@ -38,7 +38,7 @@ IPCSocketClient::self_reference
 IPCSocketClient::connect(std::chrono::milliseconds wait_ms, int attempts)
 {
   std::string text;
-  int         err, tries{attempts};
+  int         err, attempts_remaining{attempts};
   bool        done{false};
   _sock = socket(AF_UNIX, SOCK_STREAM, 0);
 
@@ -58,13 +58,13 @@ IPCSocketClient::connect(std::chrono::milliseconds wait_ms, int attempts)
   // Socket and if it tell us to retry we just wait for a few ms and try again for
   // X times.
   do {
-    --tries;
+    --attempts_remaining;
     if (::connect(_sock, (struct sockaddr *)&_server, sizeof(struct sockaddr_un)) >= 0) {
       done = true;
       break;
     }
 
-    if (errno == EAGAIN || errno == EINPROGRESS) {
+    if (errno == EAGAIN || errno == EINPROGRESS || errno == ECONNREFUSED) {
       // Connection cannot be completed immediately
       // EAGAIN for UDS should suffice, but just in case.
       std::this_thread::sleep_for(wait_ms);
@@ -75,13 +75,13 @@ IPCSocketClient::connect(std::chrono::milliseconds wait_ms, int attempts)
       err = errno;
       break;
     }
-  } while (tries != 0);
+  } while (attempts_remaining != 0);
 
-  if ((tries == 0 && !done) || !done) {
+  if ((attempts_remaining == 0 && !done) || !done) {
     this->close();
     errno = err;
     throw std::runtime_error(swoc::bwprint(text, "connect(attempts={}/{}): Couldn't open connection with {}. Last error: {}({})\n",
-                                           (attempts - tries), attempts, _path, std::strerror(errno), errno));
+                                           (attempts - attempts_remaining), attempts, _path, std::strerror(errno), errno));
   }
   return *this;
 }
