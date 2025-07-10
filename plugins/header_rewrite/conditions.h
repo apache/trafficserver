@@ -360,6 +360,12 @@ public:
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
   bool eval(const Resources &res) override;
 
 private:
@@ -447,6 +453,12 @@ private:
   virtual std::string get_geo_string(const sockaddr *addr) const;
 
 protected:
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
   bool          eval(const Resources &res) override;
   GeoQualifiers _geo_qual = GEO_QUAL_COUNTRY;
   bool          _int_type = false;
@@ -494,6 +506,12 @@ public:
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
   bool eval(const Resources &res) override;
 
 private:
@@ -517,18 +535,24 @@ public:
   ConditionInbound(self &) = delete;
   self &operator=(self &)  = delete;
 
-  void        initialize(Parser &p) override;
-  void        set_qualifier(const std::string &q) override;
-  void        append_value(std::string &s, const Resources &res) override;
-  static void append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
+  void initialize(Parser &p) override;
+  void set_qualifier(const std::string &q) override;
+  void append_value(std::string &s, const Resources &res) override;
 
   static constexpr const char *TAG = "INBOUND";
 
 protected:
+  bool
+  need_txn_private_slot() const override
+  {
+    return true;
+  }
+
   bool eval(const Resources &res) override;
 
 private:
   NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
+  void                     append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
 };
 
 class ConditionStringLiteral : public Condition
