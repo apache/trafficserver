@@ -36,7 +36,7 @@ Value::~Value()
 }
 
 void
-Value::set_value(const std::string &val)
+Value::set_value(const std::string &val, Statement *owner)
 {
   _value = val;
 
@@ -55,6 +55,7 @@ Value::set_value(const std::string &val)
 
           if (parser.parse_line(_value)) {
             tcond_val->initialize(parser);
+            require_resources(tcond_val->get_resource_ids());
           } else {
             // TODO: should we produce error here?
             Dbg(dbg_ctl, "Error parsing value '%s'", _value.c_str());
@@ -66,6 +67,9 @@ Value::set_value(const std::string &val)
 
       if (tcond_val) {
         _cond_vals.push_back(std::unique_ptr<Condition>{tcond_val});
+        if (owner) {
+          owner->require_resources(tcond_val->get_resource_ids());
+        }
       }
     }
   } else {
