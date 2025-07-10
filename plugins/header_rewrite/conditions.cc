@@ -851,10 +851,10 @@ ConditionGeo::set_qualifier(const std::string &q)
 }
 
 static const sockaddr *
-_geo_ip_helper(const std::string &header, const Resources &res, struct sockaddr &addr_buf)
+_geo_ip_helper(const std::string &header, const Resources &res, struct sockaddr &addr_buf, int txn_private_slot)
 {
   if (header.empty()) {
-    return TSHttpTxnClientAddrGet(res.txnp);
+    return getClientAddr(res.txnp, txn_private_slot);
   } else {
     int len = 0;
 
@@ -882,7 +882,7 @@ void
 ConditionGeo::append_value(std::string &s, const Resources &res)
 {
   struct sockaddr addr_buf;
-  const sockaddr *client_ip = _geo_ip_helper(_ip_header, res, addr_buf);
+  const sockaddr *client_ip = _geo_ip_helper(_ip_header, res, addr_buf, _txn_private_slot);
 
   if (client_ip != nullptr) {
     if (is_int_type()) {
@@ -902,7 +902,7 @@ ConditionGeo::eval(const Resources &res)
   Dbg(pi_dbg_ctl, "Evaluating GEO()");
   if (is_int_type()) {
     struct sockaddr addr_buf;
-    const sockaddr *client_ip = _geo_ip_helper(_ip_header, res, addr_buf);
+    const sockaddr *client_ip = _geo_ip_helper(_ip_header, res, addr_buf, _txn_private_slot);
 
     if (client_ip != nullptr) {
       int64_t geo = get_geo_int(client_ip);
