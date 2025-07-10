@@ -241,6 +241,64 @@ where the requested data was generated from. The cache values are:
   skipped     The cache lookup was skipped.
   ==========  ===========
 
+CERT
+~~~~
+::
+
+    cond %{CERT:<x509-field>} <operand>
+
+..note::
+   This condition is only available if |ATS| is built with
+   :ref:`Cripts <developer-guide-cripts>` support.
+
+
+If the session is over TLS (HTTPS), this condition provides access to the X509
+details of the server certificate. The following fields are supported:
+
+  ==============  =================================================================
+   Field          Description
+  ==============  =================================================================
+  PEM             The PEM-encoded certificate, as a string.
+  SIG             The signature of the certificate.
+  SUBJECT         The subject of the certificate.
+  ISSUER          The issuer of the certificate.
+  SERIAL          The serial number of the certificate.
+  NOT_BEFORE      The date and time when the certificate becomes valid.
+  NOT_AFTER       The date and time when the certificate expires.
+  VERSION         The version of the certificate.
+  SAN:DNS         The Subject Alternative Name (SAN) DNS entries.
+  SAN:IP          The Subject Alternative Name (SAN) IP addresses.
+  SAN:EMAIL       The Subject Alternative Name (SAN) email addresses.
+  SAN:URI         The Subject Alternative Name (SAN) URIs.
+  ==============  =================================================================
+
+The ``SAN:`` fields will return a semicolon-separated list of the respective
+values, there can be zero, one or many of each SAN type. The conditions can of
+course also be used with other operators, as values. Example:
+
+    cond %{SEND_RESPONSE_HDR_HOOK}
+        set-header X-Resp-Serial "%{CERT:SERIAL}"
+
+CLIENT-CERT
+~~~~~~~~~~~~~
+::
+
+    cond %{CLIENT-CERT:<x509-field>} <operand>
+
+..note::
+   This condition is only available if |ATS| is built with
+   :ref:`Cripts <developer-guide-cripts>` support.
+
+
+If the client has presented a certificate (Mutual TLS), this condition allows you
+to inspect the X509 certificate details. This condition supports the same X509
+fields as the CERT_ condition, and the same format is used.
+
+The ``SAN:`` fields will return a semicolon-separated list of the respective
+values, there can be zero, one or many of each SAN type. Example:
+
+    cond %{CLIENT-CERT:SAN:DNS} /example.com/
+
 CLIENT-HEADER
 ~~~~~~~~~~~~~
 ::

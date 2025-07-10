@@ -859,7 +859,7 @@ private:
   _get_data(const Resources &res) const
   {
     TSAssert(_byte_ix >= 0 && _byte_ix < NUM_STATE_INT8S);
-    auto    ptr  = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+    auto    ptr  = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
     uint8_t data = (ptr & STATE_INT8_MASKS[_byte_ix]) >> (NUM_STATE_FLAGS + _byte_ix * 8);
 
     return data;
@@ -904,7 +904,7 @@ private:
   uint16_t
   _get_data(const Resources &res) const
   {
-    auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_slot));
+    auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
 
     return ((ptr & STATE_INT16_MASK) >> 48);
   }
@@ -933,3 +933,37 @@ protected:
 private:
   int _ix = -1;
 };
+
+///////////////////////////////////////////////////////////////////////////////////
+// The following Conditions are only available if the CRIPTS feature is enabled.
+///
+#if TS_HAS_CRIPTS
+
+// Cert: Certificat information (X509)
+class ConditionCert : public Condition
+{
+  using SelfType = ConditionCert;
+
+public:
+  explicit ConditionCert(bool mTLS = false)
+  {
+    _mTLS = mTLS;
+    Dbg(dbg_ctl, "Calling CTOR for ConditionCert");
+  };
+
+  // noncopyable
+  ConditionCert(const SelfType &)  = delete;
+  void operator=(const SelfType &) = delete;
+
+  void initialize(Parser &p) override;
+  void set_qualifier(const std::string &q) override;
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+
+private:
+  X509Qualifiers _x509_qual = X509_QUAL_SUBJECT;
+  bool           _mTLS      = false;
+};
+#endif
