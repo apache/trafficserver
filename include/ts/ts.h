@@ -2994,6 +2994,10 @@ TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sockaddr *
  */
 TSTxnType TSHttpTxnTypeGet(TSHttpTxn txnp);
 
+TSReturnCode TSHttpTxnVerifiedAddrSet(TSHttpTxn txnp, const struct sockaddr *addr);
+
+TSReturnCode TSHttpTxnVerifiedAddrGet(TSHttpTxn txnp, const struct sockaddr **addr);
+
 /* Get Arbitrary Txn info such as cache lookup details etc as defined in TSHttpTxnInfoKey */
 /**
    Return the particular txn info requested.

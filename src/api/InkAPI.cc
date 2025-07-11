@@ -4289,6 +4289,34 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 }
 
 TSReturnCode
+TSHttpTxnVerifiedAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)addr) == TS_SUCCESS);
+
+  HttpSM           *sm     = reinterpret_cast<HttpSM *>(txnp);
+  ProxyTransaction *prxtxn = sm->get_ua_txn();
+
+  prxtxn->set_verified_client_addr(addr);
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnVerifiedAddrGet(TSHttpTxn txnp, const struct sockaddr **addr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)addr) == TS_SUCCESS);
+
+  HttpSM           *sm     = reinterpret_cast<HttpSM *>(txnp);
+  ProxyTransaction *prxtxn = sm->get_ua_txn();
+
+  *addr = prxtxn->get_verified_client_addr();
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);

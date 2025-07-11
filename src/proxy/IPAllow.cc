@@ -232,6 +232,9 @@ IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_conf
       } else if (subject_sv == "PROXY") {
         subjects[i] = Subject::PROXY;
         ++i;
+      } else if (subject_sv == "PLUGIN") {
+        subjects[i] = Subject::PLUGIN;
+        ++i;
       } else {
         Dbg(dbg_ctl_ip_allow, "Unknown subject %.*s was ignored", static_cast<int>(subject_sv.length()), subject_sv.data());
       }

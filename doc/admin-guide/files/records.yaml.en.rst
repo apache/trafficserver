@@ -2186,6 +2186,7 @@ IP Allow
    ============= ======================================================================
    ``PEER``      Use the IP address of the peer
    ``PROXY``     Use the IP address from PROXY protocol
+   ``PLUGIN``    Use the IP address verified by a plugin
    ============= ======================================================================
 
 
