@@ -24,6 +24,7 @@ Test normalizations of the Accept-Encoding header field.
 '''
 
 Test.SkipUnless(Condition.HasATSFeature('TS_HAS_BROTLI'))
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_ZSTD'))
 
 Test.ContinueOnFail = True
 
