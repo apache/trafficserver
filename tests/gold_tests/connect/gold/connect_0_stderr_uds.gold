@@ -1,0 +1,19 @@
+``
+* Connected to `` port ``
+``
+> CONNECT /get HTTP/1.1
+> Host: foo.com
+``
+>``
+< HTTP/1.1 200 OK
+``
+<``
+`` CONNECT ``
+``
+> GET /get HTTP/1.1
+> Host: foo.com
+>``
+< HTTP/1.1 200 OK
+``
+<``
+``

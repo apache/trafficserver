@@ -31,4 +31,5 @@ Debugging and Analysis
    core-dump-analysis.en
    profiling.en
    memory-leaks.en
+   tracing.en
 

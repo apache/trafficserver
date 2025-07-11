@@ -80,10 +80,10 @@ Errata
 CacheScan::unmarshal(HTTPHdrImpl *obj, intptr_t offset)
 {
   Errata zret;
-  if (obj->m_polarity == HTTP_TYPE_REQUEST) {
+  if (obj->m_polarity == HTTPType::REQUEST) {
     HDR_UNMARSHAL_STR(obj->u.req.m_ptr_method, offset);
     HDR_UNMARSHAL_PTR(obj->u.req.m_url_impl, URLImpl, offset);
-  } else if (obj->m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (obj->m_polarity == HTTPType::RESPONSE) {
     HDR_UNMARSHAL_STR(obj->u.resp.m_ptr_reason, offset);
   } else {
     zret.note("Unknown Polarity of HTTPHdrImpl* obj");
@@ -155,7 +155,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
   *found_obj = nullptr;
 
   // Check out this heap and make sure it is OK
-  if (hh->m_magic != HDR_BUF_MAGIC_MARSHALED) {
+  if (hh->m_magic != HdrBufMagic::MARSHALED) {
     ink_assert(!"HdrHeap::unmarshal bad magic");
     return zret;
   }
@@ -216,20 +216,20 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
       *found_obj = obj;
     }
     // TODO : fix this switch
-    switch (obj->m_type) {
-    case HDR_HEAP_OBJ_HTTP_HEADER:
+    switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+    case HdrHeapObjType::HTTP_HEADER:
       this->unmarshal((HTTPHdrImpl *)obj, offset);
       break;
-    case HDR_HEAP_OBJ_URL:
+    case HdrHeapObjType::URL:
       this->unmarshal((URLImpl *)obj, offset);
       break;
-    case HDR_HEAP_OBJ_FIELD_BLOCK:
+    case HdrHeapObjType::FIELD_BLOCK:
       this->unmarshal((MIMEFieldBlockImpl *)obj, offset);
       break;
-    case HDR_HEAP_OBJ_MIME_HEADER:
+    case HdrHeapObjType::MIME_HEADER:
       this->unmarshal((MIMEHdrImpl *)obj, offset);
       break;
-    case HDR_HEAP_OBJ_EMPTY:
+    case HdrHeapObjType::EMPTY:
       // Nothing to do
       break;
     default:
@@ -246,7 +246,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
     obj_data = obj_data + obj->m_length;
   }
 
-  hh->m_magic = HDR_BUF_MAGIC_ALIVE;
+  hh->m_magic = HdrBufMagic::ALIVE;
 
   return HdrHeapMarshalBlocks(swoc::round_up(hh->unmarshal_size()));
 }
@@ -258,19 +258,19 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
   int           orig_len = len;
 
-  if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
+  if (alt->m_magic == CacheAltMagic::ALIVE) {
     // Already unmarshalled, must be a ram cache
     //  it
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);
     return zret;
-  } else if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
+  } else if (alt->m_magic != CacheAltMagic::MARSHALED) {
     ink_assert(!"HTTPInfo::unmarshal bad magic");
     return zret;
   }
 
   ink_assert(alt->m_unmarshal_len < 0);
-  alt->m_magic = CACHE_ALT_MAGIC_ALIVE;
+  alt->m_magic = CacheAltMagic::ALIVE;
   ink_assert(alt->m_writeable == 0);
   len -= HTTP_ALT_MARSHAL_SIZE;
 
@@ -309,7 +309,8 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   HTTPHdrImpl *hh  = nullptr;
   int          tmp = 0;
   if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
-    tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = this->unmarshal(heap, len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh),
+                          block_ref);
     if (hh == nullptr || tmp < 0) {
       zret.note("HTTPInfo::request unmarshal failed");
       return zret;
@@ -325,7 +326,8 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
-    tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = this->unmarshal(heap, len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh),
+                          block_ref);
     if (hh == nullptr || tmp < 0) {
       zret.note("HTTPInfo::response unmarshal failed");
       return zret;
@@ -354,7 +356,7 @@ CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
   }
 
   return in_bound && mem.contains(reinterpret_cast<char *>(url)) &&
-         !(url == nullptr || url->m_length <= 0 || url->m_type != HDR_HEAP_OBJ_URL);
+         !(url == nullptr || url->m_length <= 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL);
 }
 
 Errata
@@ -370,7 +372,7 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
   while (length - (buf - start) > static_cast<int>(sizeof(HTTPCacheAlt))) {
     HTTPCacheAlt *a = (HTTPCacheAlt *)buf;
 
-    if (a->m_magic == CACHE_ALT_MAGIC_MARSHALED) {
+    if (a->m_magic == CacheAltMagic::MARSHALED) {
       zret = this->unmarshal(const_cast<char *>(buf), length, block_ref);
       if (zret.length()) {
         std::cerr << zret << std::endl;

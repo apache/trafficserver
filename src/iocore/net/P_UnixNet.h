@@ -198,8 +198,9 @@ check_transient_accept_error(int res)
     last_transient_accept_error = t;
     Warning("accept thread received transient error: errno = %d", -res);
 #if defined(__linux__)
-    if (res == -ENOBUFS || res == -ENFILE)
+    if (res == -ENOBUFS || res == -ENFILE) {
       Warning("errno : %d consider a memory upgrade", -res);
+    }
 #endif
   }
 }

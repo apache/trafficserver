@@ -151,6 +151,7 @@ public:
   int marshal_client_security_protocol(char *);      // STR
   int marshal_client_security_cipher_suite(char *);  // STR
   int marshal_client_security_curve(char *);         // STR
+  int marshal_client_security_group(char *);         // STR
   int marshal_client_security_alpn(char *);          // STR
   int marshal_client_finish_status_code(char *);     // INT
   int marshal_client_req_id(char *);                 // INT
@@ -246,6 +247,7 @@ public:
   int marshal_plugin_identity_id(char *);                          // INT
   int marshal_plugin_identity_tag(char *);                         // STR
   int marshal_process_uuid(char *);                                // STR
+  int marshal_process_sfid(char *);                                // STR
   int marshal_client_http_connection_id(char *);                   // INT
   int marshal_client_http_transaction_id(char *);                  // INT
   int marshal_client_http_transaction_priority_weight(char *);     // INT

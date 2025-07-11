@@ -43,7 +43,7 @@
 
  * used for redirection, mapping, and reverse mapping
  **/
-enum mapping_type {
+enum class mapping_type {
   FORWARD_MAP,
   REVERSE_MAP,
   PERMANENT_REDIRECT,

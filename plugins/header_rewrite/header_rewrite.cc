@@ -21,6 +21,7 @@
 #include <string>
 #include <stack>
 #include <stdexcept>
+#include <array>
 #include <getopt.h>
 
 #include "ts/ts.h"
@@ -78,9 +79,6 @@ public:
   RulesConfig()
   {
     Dbg(dbg_ctl, "RulesConfig CTOR");
-    memset(_rules, 0, sizeof(_rules));
-    memset(_resids, 0, sizeof(_resids));
-
     _cont = TSContCreate(cont_rewrite_headers, nullptr);
     TSContDataSet(_cont, static_cast<void *>(this));
   }
@@ -88,55 +86,46 @@ public:
   ~RulesConfig()
   {
     Dbg(dbg_ctl, "RulesConfig DTOR");
-    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) { // lgtm[cpp/constant-comparison]
-      delete _rules[i];
-    }
     TSContDestroy(_cont);
   }
 
-  TSCont
+  [[nodiscard]] TSCont
   continuation() const
   {
     return _cont;
   }
 
-  ResourceIDs
+  [[nodiscard]] ResourceIDs
   resid(int hook) const
   {
     return _resids[hook];
   }
 
-  RuleSet *
+  [[nodiscard]] RuleSet *
   rule(int hook) const
   {
-    return _rules[hook];
+    return _rules[hook].get();
   }
 
   bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr);
 
 private:
-  bool add_rule(RuleSet *rule);
+  void add_rule(std::unique_ptr<RuleSet> rule);
 
-  TSCont      _cont;
-  RuleSet    *_rules[TS_HTTP_LAST_HOOK + 1];
-  ResourceIDs _resids[TS_HTTP_LAST_HOOK + 1];
+  TSCont                                                      _cont;
+  std::array<std::unique_ptr<RuleSet>, TS_HTTP_LAST_HOOK + 1> _rules{};
+  std::array<ResourceIDs, TS_HTTP_LAST_HOOK + 1>              _resids{};
 };
 
-// Helper function to add a rule to the rulesets
-bool
-RulesConfig::add_rule(RuleSet *rule)
+void
+RulesConfig::add_rule(std::unique_ptr<RuleSet> rule)
 {
-  if (rule && rule->has_operator()) {
-    Dbg(dbg_ctl, "   Adding rule to hook=%s", TSHttpHookNameLookup(rule->get_hook()));
-    if (nullptr == _rules[rule->get_hook()]) {
-      _rules[rule->get_hook()] = rule;
-    } else {
-      _rules[rule->get_hook()]->append(rule);
-    }
-    return true;
+  int hook = rule->get_hook();
+  if (!_rules[hook]) {
+    _rules[hook] = std::move(rule);
+  } else {
+    _rules[hook]->append(std::move(rule));
   }
-
-  return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -150,7 +139,6 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
 {
   std::unique_ptr<RuleSet>     rule(nullptr);
   std::string                  filename;
-  std::ifstream                f;
   int                          lineno = 0;
   std::stack<ConditionGroup *> group_stack;
   ConditionGroup              *group = nullptr;
@@ -167,17 +155,18 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     filename = fname;
   }
 
-  f.open(filename.c_str(), std::ios::in);
-  if (!f.is_open()) {
+  auto reader = openConfig(filename);
+  if (!reader || !reader->stream) {
     TSError("[%s] unable to open %s", PLUGIN_NAME, filename.c_str());
     return false;
   }
 
   Dbg(dbg_ctl, "Parsing started on file: %s", filename.c_str());
-  while (!f.eof()) {
+
+  while (!reader->stream->eof()) {
     std::string line;
 
-    getline(f, line);
+    getline(*reader->stream, line);
     ++lineno;
     Dbg(dbg_ctl, "Reading line: %d: %s", lineno, line.c_str());
 
@@ -206,15 +195,43 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
       continue;
     }
 
-    // If we are at the beginning of a new condition, save away the previous rule (but only if it has operators).
-    if (p.is_cond() && add_rule(rule.get())) {
-      rule.release();
+    TSHttpHookID hook    = default_hook;
+    bool         is_hook = p.cond_is_hook(hook);
+
+    // Deal with the elif / else special keywords, these are neither conditions nor operators.
+    if (p.is_else() || p.is_elif()) {
+      Dbg(pi_dbg_ctl, "Entering elif/else, CondClause=%d", static_cast<int>(p.get_clause()));
+      if (rule) {
+        group = rule->new_section(p.get_clause());
+        continue;
+      } else {
+        TSError("[%s] ELSE/ELIF clause without preceding conditions in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+        return false;
+      }
     }
 
-    TSHttpHookID hook    = default_hook;
-    bool         is_hook = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
+    // If we are at the beginning of a new condition, save away the previous rule (but only if it has operators).
+    if (p.is_cond() && rule) {
+      bool transfer    = rule->cur_section()->has_operator();
+      auto rule_clause = rule->get_clause();
 
-    if (nullptr == rule) {
+      if (rule_clause == Parser::CondClause::ELIF) {
+        if (is_hook) {
+          TSError("[%s] ELIF without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+          return false;
+        }
+      } else if (rule_clause == Parser::CondClause::ELSE) {
+        if (!transfer) {
+          TSError("[%s] conditions not allowed in ELSE clause in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
+          return false;
+        }
+      }
+      if (transfer) {
+        add_rule(std::move(rule));
+      }
+    }
+
+    if (!rule) {
       if (!group_stack.empty()) {
         TSError("[%s] mismatched %%{GROUP} conditions in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
         return false;
@@ -251,7 +268,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
         if (!cond) {
           throw std::runtime_error("add_condition() failed");
         } else {
-          ConditionGroup *ngrp = dynamic_cast<ConditionGroup *>(cond);
+          auto *ngrp = dynamic_cast<ConditionGroup *>(cond);
 
           if (ngrp) {
             if (ngrp->closes()) {
@@ -274,9 +291,6 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
             group->add_condition(cond);
           }
         }
-      } else if (p.is_else()) {
-        // Switch to the else portion of operators
-        rule->switch_branch();
       } else { // Operator
         if (!rule->add_operator(p, filename.c_str(), lineno)) {
           throw std::runtime_error("add_operator() failed");
@@ -289,18 +303,27 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
     }
   }
 
+  if (reader->pipebuf) {
+    reader->pipebuf->close();
+    if (reader->pipebuf->exit_status() != 0) {
+      TSError("[%s] hrw4u preprocessor exited with non-zero status (%d): %s", PLUGIN_NAME, reader->pipebuf->exit_status(),
+              fname.c_str());
+      return false;
+    }
+  }
+
   if (!group_stack.empty()) {
     TSError("[%s] missing final %%{GROUP:END} condition in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
     return false;
   }
 
   // Add the last rule (possibly the only rule)
-  if (add_rule(rule.get())) {
-    rule.release();
+  if (rule && rule->has_operator()) {
+    add_rule(std::move(rule));
   }
 
   // Collect all resource IDs that we need
-  for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
+  for (size_t i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
     if (_rules[i]) {
       _resids[i] = _rules[i]->get_all_resource_ids();
     }
@@ -315,9 +338,9 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
 static int
 cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn    txnp = static_cast<TSHttpTxn>(edata);
+  auto         txnp = static_cast<TSHttpTxn>(edata);
   TSHttpHookID hook = TS_HTTP_LAST_HOOK;
-  RulesConfig *conf = static_cast<RulesConfig *>(TSContDataGet(contp));
+  auto        *conf = static_cast<RulesConfig *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
@@ -358,8 +381,8 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 
     // Evaluation of all rules. This code is sort of duplicate in DoRemap as well.
     while (rule) {
-      const RuleSet::OperatorPair &ops = rule->eval(res);
-      const OperModifiers          rt  = rule->exec(ops, res);
+      const RuleSet::OperatorAndMods &ops = rule->eval(res);
+      const OperModifiers             rt  = rule->exec(ops, res);
 
       if (rt & OPER_NO_REENABLE) {
         reenable = false;
@@ -368,7 +391,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
       if (rule->last() || (rt & OPER_LAST)) {
         break; // Conditional break, force a break with [L]
       }
-      rule = rule->next;
+      rule = rule->next.get();
     }
   }
 
@@ -380,8 +403,8 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 }
 
 static const struct option longopt[] = {
-  {"geo-db-path", required_argument, nullptr, 'm' },
-  {nullptr,       no_argument,       nullptr, '\0'}
+  {.name = "geo-db-path", .has_arg = required_argument, .flag = nullptr, .val = 'm' },
+  {.name = nullptr,       .has_arg = no_argument,       .flag = nullptr, .val = '\0'}
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -415,7 +438,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  if (!geoDBpath.empty() && geoDBpath.find('/') != 0) {
+  if (!geoDBpath.empty() && !geoDBpath.starts_with('/')) {
     geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
   }
 
@@ -425,8 +448,8 @@ TSPluginInit(int argc, const char *argv[])
 
   // Parse the global config file(s). All rules are just appended
   // to the "global" Rules configuration.
-  RulesConfig *conf       = new RulesConfig;
-  bool         got_config = false;
+  auto *conf       = new RulesConfig;
+  bool  got_config = false;
 
   for (int i = optind; i < argc; ++i) {
     // Parse the config file(s). Note that multiple config files are
@@ -502,16 +525,15 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   if (!geoDBpath.empty()) {
-    if (geoDBpath.find('/') != 0) {
+    if (!geoDBpath.starts_with('/')) {
       geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
     }
 
     Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
+    std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
   }
 
-  std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
-
-  RulesConfig *conf = new RulesConfig;
+  auto *conf = new RulesConfig;
 
   for (int i = optind; i < argc; ++i) {
     Dbg(pi_dbg_ctl, "Loading remap configuration file %s", argv[i]);
@@ -521,15 +543,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       return TS_ERROR;
     } else {
       Dbg(pi_dbg_ctl, "Successfully loaded remap config file %s", argv[i]);
-    }
-  }
-
-  // For debugging only
-  if (pi_dbg_ctl.on()) {
-    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
-      if (conf->rule(i)) {
-        Dbg(pi_dbg_ctl, "Adding remap ruleset to hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
-      }
     }
   }
 
@@ -558,7 +571,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   }
 
   TSRemapStatus rval = TSREMAP_NO_REMAP;
-  RulesConfig  *conf = static_cast<RulesConfig *>(ih);
+  auto         *conf = static_cast<RulesConfig *>(ih);
 
   // Go through all hooks we support, and setup the txn hook(s) as necessary
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
@@ -576,8 +589,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   res.gather(RSRC_CLIENT_REQUEST_HEADERS, TS_REMAP_PSEUDO_HOOK);
   while (rule) {
-    const RuleSet::OperatorPair &ops = rule->eval(res);
-    const OperModifiers          rt  = rule->exec(ops, res);
+    const RuleSet::OperatorAndMods &ops = rule->eval(res);
+    const OperModifiers             rt  = rule->exec(ops, res);
 
     ink_assert((rt & OPER_NO_REENABLE) == 0);
 
@@ -589,7 +602,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       break; // Conditional break, force a break with [L]
     }
 
-    rule = rule->next;
+    rule = rule->next.get();
   }
 
   Dbg(dbg_ctl, "Returning from TSRemapDoRemap with status: %d", rval);

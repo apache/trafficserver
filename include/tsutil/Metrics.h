@@ -26,6 +26,7 @@
 #include <array>
 #include <unordered_map>
 #include <tuple>
+#include <memory>
 #include <mutex>
 #include <atomic>
 #include <cstdint>
@@ -95,7 +96,7 @@ private:
   using NameStorage     = std::array<NameAndId, MAX_SIZE>;
   using AtomicStorage   = std::array<AtomicType, MAX_SIZE>;
   using NamesAndAtomics = std::tuple<NameStorage, AtomicStorage>;
-  using BlobStorage     = std::array<NamesAndAtomics *, MAX_BLOBS>;
+  using BlobStorage     = std::array<std::unique_ptr<NamesAndAtomics>, MAX_BLOBS>;
 
 public:
   Metrics(const self_type &)              = delete;
@@ -302,17 +303,12 @@ private:
 
     Storage()
     {
-      _blobs[0] = new NamesAndAtomics();
+      _blobs[0] = std::make_unique<NamesAndAtomics>();
       release_assert(_blobs[0]);
       release_assert(0 == create("proxy.process.api.metrics.bad_id")); // Reserve slot 0 for errors, this should always be 0
     }
 
-    ~Storage()
-    {
-      for (size_t i = 0; i <= _cur_blob; ++i) {
-        delete _blobs[i];
-      }
-    }
+    ~Storage() {}
 
     IdType           create(const std::string_view name);
     void             addBlob();

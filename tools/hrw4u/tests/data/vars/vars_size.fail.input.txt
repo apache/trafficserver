@@ -1,0 +1,7 @@
+VARS {
+   tooBig: int8;
+}
+
+REMAP {
+   tooBig = 1234;
+}

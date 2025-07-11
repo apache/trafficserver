@@ -56,5 +56,8 @@ grpcio-tools = "*"
 pyOpenSSL = "*"
 eventlet = "*"
 
+# To test stats_over_http prometheus exporter.
+prometheus_client = "*"
+
 [requires]
 python_version = "3"

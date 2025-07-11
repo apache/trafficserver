@@ -258,8 +258,10 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_client_connections;
   Metrics::Counter::AtomicType *total_client_connections_ipv4;
   Metrics::Counter::AtomicType *total_client_connections_ipv6;
+  Metrics::Counter::AtomicType *total_client_connections_uds;
   Metrics::Counter::AtomicType *total_incoming_connections;
   Metrics::Counter::AtomicType *total_parent_marked_down_count;
+  Metrics::Counter::AtomicType *total_parent_marked_down_timeout;
   Metrics::Counter::AtomicType *total_parent_proxy_connections;
   Metrics::Counter::AtomicType *total_parent_retries;
   Metrics::Counter::AtomicType *total_parent_retries_exhausted;
@@ -328,16 +330,17 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_400M;
   Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_800M;
   Metrics::Counter::AtomicType *origin_server_speed_bytes_per_sec_1G;
+  Metrics::Counter::AtomicType *cache_compat_key_reads;
 };
 
-enum CacheOpenWriteFailAction_t {
-  CACHE_WL_FAIL_ACTION_DEFAULT                           = 0x00,
-  CACHE_WL_FAIL_ACTION_ERROR_ON_MISS                     = 0x01,
-  CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE               = 0x02,
-  CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE = 0x03,
-  CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE       = 0x04,
-  CACHE_WL_FAIL_ACTION_READ_RETRY                        = 0x05,
-  TOTAL_CACHE_WL_FAIL_ACTION_TYPES
+enum class CacheOpenWriteFailAction_t {
+  DEFAULT                           = 0x00,
+  ERROR_ON_MISS                     = 0x01,
+  STALE_ON_REVALIDATE               = 0x02,
+  ERROR_ON_MISS_STALE_ON_REVALIDATE = 0x03,
+  ERROR_ON_MISS_OR_REVALIDATE       = 0x04,
+  READ_RETRY                        = 0x05,
+  TOTAL_TYPES
 };
 
 extern HttpStatsBlock http_rsb;
@@ -659,6 +662,7 @@ struct OverridableHttpConfigParams {
 
   MgmtInt  http_chunking_size         = 4096; ///< Maximum chunk size for chunked output.
   MgmtByte http_drop_chunked_trailers = 1;    ///< Whether to drop chunked trailers.
+  MgmtByte http_strict_chunk_parsing  = 1;    ///< Whether to parse chunked body strictly.
   MgmtInt  flow_high_water_mark       = 0;    ///< Flow control high water mark.
   MgmtInt  flow_low_water_mark        = 0;    ///< Flow control low water mark.
 
@@ -710,17 +714,13 @@ public:
   HttpConfigParams();
   ~HttpConfigParams() override;
 
-  enum {
-    CACHE_REQUIRED_HEADERS_NONE                   = 0,
-    CACHE_REQUIRED_HEADERS_AT_LEAST_LAST_MODIFIED = 1,
-    CACHE_REQUIRED_HEADERS_CACHE_CONTROL          = 2
-  };
+  enum class CacheRequiredHeaders { NONE = 0, AT_LEAST_LAST_MODIFIED = 1, CACHE_CONTROL = 2 };
 
-  enum {
-    SEND_HTTP11_NEVER                    = 0,
-    SEND_HTTP11_ALWAYS                   = 1,
-    SEND_HTTP11_UPGRADE_HOSTDB           = 2,
-    SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB = 3,
+  enum class SendHttp11 {
+    NEVER                    = 0,
+    ALWAYS                   = 1,
+    UPGRADE_HOSTDB           = 2,
+    IF_REQUEST_11_AND_HOSTDB = 3,
   };
 
 public:
@@ -800,6 +800,9 @@ public:
   // bitset to hold the status codes that will BE cached with negative caching enabled
   HttpStatusBitset negative_caching_list;
 
+  // bitset to hold the status codes that will used by nagative revalidating enabled
+  HttpStatusBitset negative_revalidating_list;
+
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
@@ -811,6 +814,8 @@ public:
 
   MgmtByte http_host_sni_policy         = 0;
   MgmtByte scheme_proto_mismatch_policy = 2;
+
+  MgmtByte cache_try_compat_key_read = 0;
 
   // noncopyable
   /////////////////////////////////////
@@ -837,7 +842,7 @@ public:
   static HttpConfigParams *acquire();
   static void              release(HttpConfigParams *params);
 
-  static bool load_server_session_sharing_match(const char *key, MgmtByte &mask);
+  static bool load_server_session_sharing_match(std::string_view key, MgmtByte &mask);
 
   // parse ssl ports configuration string
   static HttpConfigPortRange *parse_ports_list(char *ports_str);

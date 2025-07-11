@@ -35,28 +35,28 @@ Context::reset()
   // Clear the initialized headers before calling next hook
   // Note: we don't clear the pristine URL, nor the Remap From/To URLs, they are static.
   //      We also don't clear the client URL, since it's from the RRI.
-  if (_client_resp_header.Initialized()) {
-    _client_resp_header.Reset();
+  if (_client.response.Initialized()) {
+    _client.response.Reset();
   }
-  if (_server_resp_header.Initialized()) {
-    _server_resp_header.Reset();
+  if (_server.response.Initialized()) {
+    _server.response.Reset();
   }
-  if (_client_req_header.Initialized()) {
-    _client_req_header.Reset();
+  if (_client.request.Initialized()) {
+    _client.request.Reset();
   }
-  if (_server_req_header.Initialized()) {
-    _server_req_header.Reset();
+  if (_server.request.Initialized()) {
+    _server.request.Reset();
   }
 
   // Clear the initialized URLs before calling next hook
-  if (_pristine_url.Initialized()) {
-    _pristine_url.Reset();
+  if (_urls.pristine.Initialized()) {
+    _urls.pristine.Reset();
   }
-  if (_cache_url.Initialized()) {
-    _cache_url.Reset();
+  if (_urls.cache.Initialized()) {
+    _urls.cache.Reset();
   }
-  if (_parent_url.Initialized()) {
-    _parent_url.Reset();
+  if (_urls.parent.Initialized()) {
+    _urls.parent.Reset();
   }
 }
 

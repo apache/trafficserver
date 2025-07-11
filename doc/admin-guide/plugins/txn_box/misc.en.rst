@@ -386,11 +386,3 @@ Mutual TLS
 
 Control remapping based on whether the user agent provided a TLS certificate, whether the
 certificate was verified, and whether the SNI name is in a whitelist.
-
-.. rubric:: Footnotes
-
-.. [*]
-
-   Literals are treated internally as extractors that "extract" the literal string. In practice every
-   feature string is an array of extractors.
-

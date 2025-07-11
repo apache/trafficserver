@@ -38,8 +38,8 @@ int64_t xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, cons
                             uint8_t n = 7);
 
 struct XpackLookupResult {
-  uint32_t index                                  = 0;
-  enum MatchType { NONE, NAME, EXACT } match_type = MatchType::NONE;
+  uint32_t index                                        = 0;
+  enum class MatchType { NONE, NAME, EXACT } match_type = MatchType::NONE;
 };
 
 struct XpackDynamicTableEntry {
@@ -165,7 +165,7 @@ public:
   /** Begin the storage expansion phase to the @a new_max_size. */
   ExpandCapacityContext(XpackDynamicTableStorage &storage, uint32_t new_max_size) : _storage{storage}
   {
-    this->_storage._start_expanding_capacity(new_max_size);
+    this->_ok_to_expand = this->_storage._start_expanding_capacity(new_max_size);
   }
   /** End the storage expansion phase, cleaning up the old storage memory. */
   ~ExpandCapacityContext() { this->_storage._finish_expanding_capacity(); }
@@ -183,8 +183,21 @@ public:
    */
   uint32_t copy_field(uint32_t old_offset, uint32_t len);
 
+  /** Indicate whether the expansion should proceed.
+   * Return whether @a _storage indicates that the new max size is valid for
+   * expanding the storage. If not, the expansion should not proceed.
+   *
+   * @return true if the new size is valid, false otherwise.
+   */
+  bool
+  ok_to_expand() const
+  {
+    return this->_ok_to_expand;
+  }
+
 private:
   XpackDynamicTableStorage &_storage;
+  bool                      _ok_to_expand = false;
 };
 
 class XpackDynamicTable

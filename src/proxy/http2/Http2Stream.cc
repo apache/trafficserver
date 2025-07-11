@@ -31,6 +31,7 @@
 #include "tscore/Diags.h"
 #include "tscore/HTTPVersion.h"
 #include "tscore/ink_assert.h"
+#include "tsutil/DbgCtl.h"
 
 #include <numeric>
 
@@ -71,12 +72,12 @@ Http2Stream::Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initi
   this->_reader = this->_receive_buffer.alloc_reader();
 
   if (this->is_outbound_connection()) { // Flip the sense of the expected headers.  Fix naming later
-    _receive_header.create(HTTP_TYPE_RESPONSE);
-    _send_header.create(HTTP_TYPE_REQUEST, HTTP_2_0);
+    _receive_header.create(HTTPType::RESPONSE);
+    _send_header.create(HTTPType::REQUEST, HTTP_2_0);
   } else {
     this->upstream_outbound_options = *(session->accept_options);
-    _receive_header.create(HTTP_TYPE_REQUEST);
-    _send_header.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
+    _receive_header.create(HTTPType::REQUEST);
+    _send_header.create(HTTPType::RESPONSE, HTTP_2_0);
   }
 
   http_parser_init(&http_parser);
@@ -305,20 +306,19 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
   if (this->trailing_header_is_possible()) {
     Http2StreamDebug("trailing header: Skipping send_headers initialization.");
   } else {
-    if (http2_convert_header_from_2_to_1_1(&_receive_header) == PARSE_RESULT_ERROR) {
+    if (http2_convert_header_from_2_to_1_1(&_receive_header) == ParseResult::ERROR) {
       Http2StreamDebug("Error converting HTTP/2 headers to HTTP/1.1.");
-      if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
+      if (_receive_header.type_get() == HTTPType::REQUEST) {
         // There's no way to cause Bad Request directly at this time.
         // Set an invalid method so it causes an error later.
-        _receive_header.method_set("\xffVOID", 1);
+        _receive_header.method_set(std::string_view{"\xffVOID", 1});
       }
     }
 
-    if (_receive_header.type_get() == HTTP_TYPE_REQUEST) {
+    if (_receive_header.type_get() == HTTPType::REQUEST) {
       // Check whether the request uses CONNECT method
-      int         method_len;
-      const char *method = _receive_header.method_get(&method_len);
-      if (method_len == HTTP_LEN_CONNECT && strncmp(method, HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT) == 0) {
+      auto method{_receive_header.method_get()};
+      if (method == static_cast<std::string_view>(HTTP_METHOD_CONNECT)) {
         this->_is_tunneling = true;
       }
     }
@@ -563,7 +563,10 @@ Http2Stream::do_io_close(int /* flags */)
     // We only need to do this for the client side since we only need to pass through RST_STREAM
     // from the server. If a client sends a RST_STREAM, we need to keep the server side alive so
     // the background fill can function as intended.
-    if (!this->is_outbound_connection() && this->is_state_writeable()) {
+    //
+    // In the half-closed(local) state, server can close stream actively by sending RST_STREAM frame
+    if (!this->is_outbound_connection() &&
+        (this->is_state_writeable() || _state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL)) {
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
     }
 
@@ -591,7 +594,7 @@ Http2Stream::transaction_done()
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   super::transaction_done();
 
-  if (!closed) {
+  if (!closed && _state == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
     do_io_close(); // Make sure we've been closed.  If we didn't close the _proxy_ssn session better still be open
   }
   Http2ConnectionState &state = this->get_connection_state();
@@ -824,8 +827,8 @@ Http2Stream::update_write_request(bool call_update)
   // Process the new data
   if (!this->parsing_header_done) {
     // Still parsing the request or response header
-    int bytes_used = 0;
-    int state;
+    int         bytes_used = 0;
+    ParseResult state;
     if (this->is_outbound_connection()) {
       state = this->_send_header.parse_req(&http_parser, this->_send_reader, &bytes_used, false);
     } else {
@@ -835,15 +838,15 @@ Http2Stream::update_write_request(bool call_update)
     write_vio.ndone += bytes_used;
 
     switch (state) {
-    case PARSE_RESULT_DONE: {
+    case ParseResult::DONE: {
       this->parsing_header_done = true;
       Http2StreamDebug("update_write_request parsing done, read %d bytes", bytes_used);
 
       // Schedule session shutdown if response header has "Connection: close"
-      MIMEField *field = this->_send_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+      MIMEField *field = this->_send_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
       if (field) {
         auto value{field->value_get()};
-        if (value == std::string_view{HTTP_VALUE_CLOSE, static_cast<std::string_view::size_type>(HTTP_LEN_CLOSE)}) {
+        if (value == static_cast<std::string_view>(HTTP_VALUE_CLOSE)) {
           SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
           if (connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
             connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
@@ -863,7 +866,7 @@ Http2Stream::update_write_request(bool call_update)
       }
       if (this->is_outbound_connection() || this->_send_header.expect_final_response()) {
         _send_header.destroy();
-        _send_header.create(this->is_outbound_connection() ? HTTP_TYPE_REQUEST : HTTP_TYPE_RESPONSE, HTTP_2_0);
+        _send_header.create(this->is_outbound_connection() ? HTTPType::REQUEST : HTTPType::RESPONSE, HTTP_2_0);
         http_parser_clear(&http_parser);
         http_parser_init(&http_parser);
       }
@@ -879,12 +882,12 @@ Http2Stream::update_write_request(bool call_update)
       }
       break;
     }
-    case PARSE_RESULT_CONT:
+    case ParseResult::CONT:
       // Let it ride for next time
       Http2StreamDebug("update_write_request still parsing, read %d bytes", bytes_used);
       break;
     default:
-      Http2StreamDebug("update_write_request  state %d, read %d bytes", state, bytes_used);
+      Http2StreamDebug("update_write_request  state %d, read %d bytes", static_cast<int>(state), bytes_used);
       break;
     }
   } else {
@@ -1082,11 +1085,20 @@ Http2Stream::clear_io_events()
   }
 }
 
-//  release and do_io_close are the same for the HTTP/2 protocol
+/**
+  Callback from HttpSM
+
+  release and do_io_close are the same for the HTTP/2 protocol
+ */
 void
 Http2Stream::release()
 {
-  this->do_io_close();
+  if (_state == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+    this->do_io_close();
+    return;
+  }
+
+  Http2StreamDebug("Delaying do_io_close() until stream is in the closed state");
 }
 
 void

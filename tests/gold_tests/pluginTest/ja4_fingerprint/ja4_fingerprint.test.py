@@ -117,6 +117,7 @@ class TestJA4Fingerprint:
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.http.server_ports': f'{self._port_one}:ssl',
+                'proxy.config.proxy_name': 'test.proxy.com',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ja4_fingerprint|http',
             })
@@ -144,7 +145,7 @@ class TestJA4Fingerprint:
                  'then a JA4 header should be attached.')
 def test1(params: TestParams) -> None:
     client = params['tr'].Processes.Default
-    client.Command = 'curl -k -v "https://localhost:{0}/resource"'.format(params['port_one'])
+    params['tr'].MakeCurlCommand('-k -v "https://localhost:{0}/resource"'.format(params['port_one']))
 
     client.ReturnCode = 0
     client.Streams.stdout += Testers.ContainsExpression(r'Yay!', 'We should receive the expected body.')

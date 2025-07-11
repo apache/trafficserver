@@ -208,13 +208,13 @@ NetAccept::init_accept_loop()
   if (do_blocking_listen()) {
     return;
   }
-  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+  stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
 
   n = opt.accept_threads;
   // Fill in accept thread from configuration if necessary.
   if (n < 0) {
-    REC_ReadConfigInteger(n, "proxy.config.accept_threads");
+    n = RecGetRecordInt("proxy.config.accept_threads").value_or(0);
   }
 
   for (i = 0; i < n; i++) {
@@ -258,7 +258,7 @@ int
 NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED */)
 {
   int listen_per_thread = 0;
-  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+  listen_per_thread     = RecGetRecordInt("proxy.config.exec_thread.listen").value_or(0);
 
   if (listen_per_thread == 1) {
     if (ats_is_unix(server.accept_addr)) {
@@ -272,11 +272,7 @@ NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED
     }
   }
 
-  if (accept_fn == net_accept) {
-    SET_HANDLER(&NetAccept::acceptFastEvent);
-  } else {
-    SET_HANDLER(&NetAccept::acceptEvent);
-  }
+  SET_HANDLER(&NetAccept::acceptFastEvent);
   PollDescriptor *pd = get_PollDescriptor(this_ethread());
   if (this->ep.start(pd, this, EVENTIO_READ) < 0) {
     Fatal("[NetAccept::accept_per_thread]:error starting EventIO");
@@ -291,7 +287,7 @@ NetAccept::init_accept_per_thread()
   int i, n;
   int listen_per_thread = 0;
 
-  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+  listen_per_thread = RecGetRecordInt("proxy.config.exec_thread.listen").value_or(0);
 
   if (listen_per_thread == 0) {
     if (do_listen()) {
@@ -483,7 +479,7 @@ NetAccept::acceptEvent(int event, void *ep)
     }
 
     int res;
-    if ((res = accept_fn(this, e, false)) < 0) {
+    if ((res = net_accept(this, e, false)) < 0) {
       Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
       /* INKqa11179 */
       Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);

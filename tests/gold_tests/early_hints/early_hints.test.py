@@ -131,11 +131,12 @@ class TestEarlyHints:
             protocol_arg = '-k --http2'
             scheme = 'https'
             ts_port = self._ts.Variables.ssl_port
-        client.Command = (
-            f'curl -v {protocol_arg} '
+        tr.MakeCurlCommand(
+            f'-v {protocol_arg} '
             f'--resolve "server.com:{ts_port}:127.0.0.1" '
             f'-H "Host: server.com" '
-            f'{scheme}://server.com:{ts_port}/{self._protocol_str}')
+            f'{scheme}://server.com:{ts_port}/{self._protocol_str}',
+            ts=self._ts)
 
         client.ReturnCode = 0
         self._ts.StartBefore(self._dns)
@@ -154,5 +155,6 @@ class TestEarlyHints:
 
 
 TestEarlyHints(Protocol.HTTP)
-TestEarlyHints(Protocol.HTTPS)
-TestEarlyHints(Protocol.HTTP2)
+if not Condition.CurlUsingUnixDomainSocket():
+    TestEarlyHints(Protocol.HTTPS)
+    TestEarlyHints(Protocol.HTTP2)

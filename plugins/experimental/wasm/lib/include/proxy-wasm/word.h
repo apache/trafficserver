@@ -17,9 +17,9 @@
 
 #include <iostream>
 
-namespace proxy_wasm {
+#include "include/proxy-wasm/sdk.h"
 
-#include "proxy_wasm_common.h"
+namespace proxy_wasm {
 
 // Use byteswap functions only when compiling for big-endian platforms.
 #if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) &&                                    \

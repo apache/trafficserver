@@ -129,13 +129,13 @@ private:
   LogEscapeType m_escape_type;
 
 public:
-  BaseLogFile *m_log; // BaseLogFile backs the actual file on disk
-  char        *m_header;
-  uint64_t     m_signature;         // signature of log object stored
-  size_t       m_ascii_buffer_size; // size of ascii buffer
-  size_t       m_max_line_size;     // size of longest log line (record)
-  int          m_pipe_buffer_size;  // this is the size of the pipe buffer set by fcntl
-  int          m_fd;                // this could back m_log or a pipe, depending on the situation
+  std::unique_ptr<BaseLogFile> m_log; // BaseLogFile backs the actual file on disk
+  char                        *m_header;
+  uint64_t                     m_signature;         // signature of log object stored
+  size_t                       m_ascii_buffer_size; // size of ascii buffer
+  size_t                       m_max_line_size;     // size of longest log line (record)
+  int                          m_pipe_buffer_size;  // this is the size of the pipe buffer set by fcntl
+  int                          m_fd;                // this could back m_log or a pipe, depending on the situation
 
 public:
   Link<LogFile> link;

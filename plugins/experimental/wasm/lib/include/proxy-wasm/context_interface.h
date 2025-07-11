@@ -25,10 +25,9 @@
 #include <memory>
 #include <vector>
 
-namespace proxy_wasm {
+#include "include/proxy-wasm/sdk.h"
 
-#include "proxy_wasm_common.h"
-#include "proxy_wasm_enums.h"
+namespace proxy_wasm {
 
 using Pairs = std::vector<std::pair<std::string_view, std::string_view>>;
 using PairsWithStringValues = std::vector<std::pair<std::string_view, std::string>>;

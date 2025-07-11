@@ -102,7 +102,7 @@ HttpVCTable::remove_entry(HttpVCTableEntry *e)
   e->write_vio        = nullptr;
   e->vc_read_handler  = nullptr;
   e->vc_write_handler = nullptr;
-  e->vc_type          = HTTP_UNKNOWN;
+  e->vc_type          = HttpVC_t::UNKNOWN;
   e->in_tunnel        = false;
 }
 
@@ -116,7 +116,7 @@ HttpVCTable::cleanup_entry(HttpVCTableEntry *e)
 {
   ink_assert(e->vc);
   if (e->in_tunnel == false) {
-    if (e->vc_type == HTTP_SERVER_VC) {
+    if (e->vc_type == HttpVC_t::SERVER_VC) {
       Metrics::Counter::increment(http_rsb.origin_shutdown_cleanup_entry);
     }
     e->vc->do_io_close();

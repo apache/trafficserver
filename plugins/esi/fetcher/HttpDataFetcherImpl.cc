@@ -65,6 +65,8 @@ HttpDataFetcherImpl::HttpDataFetcherImpl(TSCont contp, sockaddr const *client_ad
       memcpy(&_client_addr, client_addr, sizeof(sockaddr_in));
     } else if (client_addr->sa_family == AF_INET6) {
       memcpy(&_client_addr, client_addr, sizeof(sockaddr_in6));
+    } else if (client_addr->sa_family == AF_UNIX) {
+      memcpy(&_client_addr, client_addr, sizeof(sockaddr_un));
     } else {
       memcpy(&_client_addr, &sin, sizeof(sin));
       TSError("[HttpDataFetcherImpl] Unknown address family %d", client_addr->sa_family);

@@ -58,9 +58,9 @@ elif [ -e /etc/debian_version ]; then
     echo "+-------------------------------------------------------------------------+"
     echo "| You probably need to run this, or something like this, for your system: |"
     echo "|                                                                         |"
-    echo "|   sudo apt -y install libev-dev libjemalloc-dev python2-dev libxml2-dev |"
-    echo "|   sudo apt -y install libpython2-dev libc-ares-dev libsystemd-dev       |"
-    echo "|   sudo apt -y install libevent-dev libjansson-dev zlib1g-dev cargo      |"
+    echo "|   sudo apt -y install libev-dev libjemalloc-dev python3-dev libxml2-dev |"
+    echo "|   sudo apt -y install libpython3-dev libc-ares-dev libsystemd-dev       |"
+    echo "|   sudo apt -y install libevent-dev libjansson-dev zlib1g-dev libpsl-dev |"
     echo "|                                                                         |"
     echo "| Rust may be needed too, see https://rustup.rs for the details           |"
     echo "+-------------------------------------------------------------------------+"
@@ -112,10 +112,10 @@ else
     OS="linux"
 fi
 
-wget https://go.dev/dl/go1.21.6.${OS}-${ARCH}.tar.gz
-sudo rm -rf ${BASE}/go && sudo tar -C ${BASE} -xf go1.21.6.${OS}-${ARCH}.tar.gz
-rm go1.21.6.${OS}-${ARCH}.tar.gz
-sudo chmod -R a+rX ${BASE}
+go_version=1.24.1
+wget https://go.dev/dl/go${go_version}.${OS}-${ARCH}.tar.gz
+rm -rf ${BASE}/go && tar -C ${BASE} -xf go${go_version}.${OS}-${ARCH}.tar.gz
+rm go${go_version}.${OS}-${ARCH}.tar.gz
 
 GO_BINARY_PATH=${BASE}/go/bin/go
 if [ ! -d boringssl ]; then
@@ -148,6 +148,7 @@ cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
   -DCMAKE_C_FLAGS=${BSSL_C_FLAGS} \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DBUILD_SHARED_LIBS=1
 cmake \
   -B build-static \
@@ -156,6 +157,7 @@ cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS='-Wno-error=ignored-attributes -UBORINGSSL_HAVE_LIBUNWIND' \
   -DCMAKE_C_FLAGS="${BSSL_C_FLAGS}" \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DBUILD_SHARED_LIBS=0
 cmake --build build-shared -j ${num_threads}
 cmake --build build-static -j ${num_threads}
@@ -188,7 +190,7 @@ LDFLAGS=${LDFLAGS:-"-Wl,-rpath,${BORINGSSL_LIB_PATH}"}
 
 # Then nghttp3
 echo "Building nghttp3..."
-[ ! -d nghttp3 ] && git clone --depth 1 -b v1.2.0 https://github.com/ngtcp2/nghttp3.git
+[ ! -d nghttp3 ] && git clone --depth 1 -b v1.8.0 https://github.com/ngtcp2/nghttp3.git
 cd nghttp3
 git submodule update --init
 autoreconf -if
@@ -206,7 +208,7 @@ cd ..
 
 # Now ngtcp2
 echo "Building ngtcp2..."
-[ ! -d ngtcp2 ] && git clone --depth 1 -b v1.4.0 https://github.com/ngtcp2/ngtcp2.git
+[ ! -d ngtcp2 ] && git clone --depth 1 -b v1.11.0 https://github.com/ngtcp2/ngtcp2.git
 cd ngtcp2
 autoreconf -if
 ./configure \
@@ -226,7 +228,7 @@ cd ..
 
 # Then nghttp2, with support for H3
 echo "Building nghttp2 ..."
-[ ! -d nghttp2 ] && git clone --depth 1 -b v1.60.0 https://github.com/tatsuhiro-t/nghttp2.git
+[ ! -d nghttp2 ] && git clone --depth 1 -b v1.65.0 https://github.com/tatsuhiro-t/nghttp2.git
 cd nghttp2
 git submodule update --init
 autoreconf -if
@@ -256,7 +258,7 @@ cd ..
 
 # Then curl
 echo "Building curl ..."
-[ ! -d curl ] && git clone --depth 1 -b curl-8_7_1 https://github.com/curl/curl.git
+[ ! -d curl ] && git clone --depth 1 -b curl-8_12_1 https://github.com/curl/curl.git
 cd curl
 # On mac autoreconf fails on the first attempt with an issue finding ltmain.sh.
 # The second runs fine.

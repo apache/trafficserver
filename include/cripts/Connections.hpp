@@ -17,16 +17,37 @@
 */
 #pragma once
 
-namespace cripts
-{
-class Context;
-}
+#include <openssl/ssl.h>
 
 #include "ts/apidefs.h"
 #include "ts/ts.h"
 
 #include "cripts/Lulu.hpp"
 #include "cripts/Matcher.hpp"
+
+namespace detail
+{
+class ConnBase;
+template <bool IsMutualTLS> class Cert;
+} // namespace detail
+
+namespace cripts::Certs
+{
+using Client = detail::Cert<true>;
+using Server = detail::Cert<false>;
+} // namespace cripts::Certs
+
+// This is figured out in this way because
+// this header has to be available to include
+// from cripts scripts that won't have access
+// to ink_platform.h.
+#if __has_include("linux/tcp.h")
+#include "linux/tcp.h"
+#define HAS_TCP_INFO 1
+#elif __has_include("netinet/tcp.h") && !defined(__APPLE__)
+#include "netinet/tcp.h"
+#define HAS_TCP_INFO 1
+#endif
 
 namespace cripts
 {
@@ -70,6 +91,7 @@ namespace detail
 class ConnBase
 {
   using self_type = ConnBase;
+
   class Dscp
   {
     using self_type = Dscp;
@@ -87,7 +109,7 @@ class ConnBase
     void
     operator=(int val)
     {
-      TSAssert(_owner);
+      _ensure_initialized(_owner);
       _owner->SetDscp(val);
       _val = val;
     }
@@ -135,7 +157,7 @@ class ConnBase
     self_type &
     operator=([[maybe_unused]] cripts::string_view const &str)
     {
-      TSAssert(_owner);
+      _ensure_initialized(_owner);
 #if defined(TCP_CONGESTION)
       int connfd = _owner->FD();
       int res    = setsockopt(connfd, IPPROTO_TCP, TCP_CONGESTION, str.data(), str.size());
@@ -170,7 +192,7 @@ class ConnBase
     void
     operator=(int val)
     {
-      TSAssert(_owner);
+      _ensure_initialized(_owner);
       _owner->SetMark(val);
       _val = val;
     }
@@ -220,7 +242,7 @@ class ConnBase
     }
 
 // ToDo: Add more member accesses? Tthe underlying info makes it hard to make it cross platform
-#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
+#if HAS_TCP_INFO
     integer
     rtt()
     {
@@ -288,8 +310,67 @@ class ConnBase
 
   }; // End class ConnBase::TcpInfo
 
+  class TLS
+  {
+    using self_type = TLS;
+
+  public:
+    friend class ConnBase;
+
+    TLS()                             = default;
+    void operator=(const self_type &) = delete;
+
+    operator bool()
+    {
+      auto conn = Connection();
+      return conn != nullptr;
+    }
+
+    [[nodiscard]] TSSslConnection
+    Connection()
+    {
+      if (_not_tls) [[unlikely]] {
+        return nullptr; // Avoid repeated attempts
+      }
+
+      _ensure_initialized(_owner);
+      if (!_tls) {
+        _tls = TSVConnSslConnectionGet(_owner->_vc);
+        if (!_tls) [[unlikely]] {
+          _not_tls = true;
+        }
+      }
+
+      return _tls;
+    }
+
+    [[nodiscard]] X509 *
+    GetX509(bool mTLS = false)
+    {
+      auto conn = Connection();
+
+      if (mTLS) {
+#ifdef OPENSSL_IS_OPENSSL3
+        return SSL_get1_peer_certificate(reinterpret_cast<::SSL *>(conn));
+#else
+        return SSL_get_peer_certificate(reinterpret_cast<::SSL *>(conn));
+#endif
+      } else {
+        return SSL_get_certificate(reinterpret_cast<::SSL *>(conn));
+      }
+    }
+
+  private:
+    ConnBase       *_owner   = nullptr;
+    TSSslConnection _tls     = nullptr;
+    bool            _not_tls = false;
+
+  }; // End class ConnBase::SSL
+
 public:
-  ConnBase() { dscp._owner = congestion._owner = tcpinfo._owner = geo._owner = pacing._owner = mark._owner = this; }
+  ConnBase() { dscp._owner = congestion._owner = tcpinfo._owner = geo._owner = pacing._owner = mark._owner = tls._owner = this; }
+
+  virtual ~ConnBase() = default;
 
   ConnBase(const self_type &)       = delete;
   void operator=(const self_type &) = delete;
@@ -297,23 +378,23 @@ public:
   [[nodiscard]] virtual int FD() const = 0; // This needs the txnp from the Context
 
   [[nodiscard]] struct sockaddr const *
-  Socket() const
+  Socket()
   {
-    TSAssert(_vc);
+    _ensure_initialized(this);
     return TSNetVConnRemoteAddrGet(_vc);
   }
 
   [[nodiscard]] cripts::IP
-  IP() const
+  IP()
   {
-    TSAssert(Initialized());
+    _ensure_initialized(this);
     return cripts::IP{Socket()};
   }
 
   [[nodiscard]] bool
   Initialized() const
   {
-    return _state != nullptr;
+    return _initialized;
   }
 
   [[nodiscard]] bool
@@ -322,25 +403,54 @@ public:
     return TSHttpTxnIsInternal(_state->txnp);
   }
 
-  [[nodiscard]] virtual cripts::IP LocalIP() const  = 0;
-  [[nodiscard]] virtual int        Count() const    = 0;
-  virtual void                     SetDscp(int val) = 0;
-  virtual void                     SetMark(int val) = 0;
+  [[nodiscard]] bool
+  IsTLS()
+  {
+    _ensure_initialized(this);
+    return TSVConnIsSsl(_vc);
+  }
 
-  Dscp       dscp;
-  Congestion congestion;
-  TcpInfo    tcpinfo;
-  Geo        geo;
-  Pacing     pacing;
-  Mark       mark;
+  [[nodiscard]] virtual cripts::IP LocalIP() const        = 0;
+  [[nodiscard]] virtual int        Count() const          = 0;
+  virtual void                     SetDscp(int val) const = 0;
+  virtual void                     SetMark(int val) const = 0;
+
+  // This should only be called from the Context initializers!
+  void
+  set_state(cripts::Transaction *state)
+  {
+    _state = state;
+  }
+
+  Dscp        dscp;
+  Congestion  congestion;
+  TcpInfo     tcpinfo;
+  Geo         geo;
+  Pacing      pacing;
+  Mark        mark;
+  mutable TLS tls;
 
   cripts::string_view string(unsigned ipv4_cidr = 32, unsigned ipv6_cidr = 128);
 
+  cripts::Certs::Client ClientCert();
+  cripts::Certs::Server ServerCert();
+
 protected:
+  static void
+  _ensure_initialized(self_type *ptr)
+  {
+    if (!ptr->Initialized()) [[unlikely]] {
+      ptr->_initialize();
+    }
+  }
+
+  void virtual _initialize() { _initialized = true; }
+
   cripts::Transaction   *_state  = nullptr;
   struct sockaddr const *_socket = nullptr;
   TSVConn                _vc     = nullptr;
   char                   _str[INET6_ADDRSTRLEN + 1];
+  bool                   _initialized = false;
 
 }; // End class ConnBase
 
@@ -353,8 +463,8 @@ namespace Client
 {
   class Connection : public detail::ConnBase
   {
-    using pe        = detail::ConnBase;
-    using self_type = Connection;
+    using super_type = detail::ConnBase;
+    using self_type  = Connection;
 
   public:
     Connection()                      = default;
@@ -364,15 +474,16 @@ namespace Client
     [[nodiscard]] int  FD() const override;
     [[nodiscard]] int  Count() const override;
     static Connection &_get(cripts::Context *context);
+    void               _initialize() override;
 
     void
-    SetDscp(int val) override
+    SetDscp(int val) const override
     {
       TSHttpTxnClientPacketDscpSet(_state->txnp, val);
     }
 
     void
-    SetMark(int val) override
+    SetMark(int val) const override
     {
       TSHttpTxnClientPacketMarkSet(_state->txnp, val);
     }
@@ -382,7 +493,6 @@ namespace Client
     {
       return cripts::IP{TSHttpTxnIncomingAddrGet(_state->txnp)};
     }
-
   }; // End class Client::Connection
 
 } // namespace Client
@@ -391,8 +501,8 @@ namespace Server
 {
   class Connection : public detail::ConnBase
   {
-    using pe        = detail::ConnBase;
-    using self_type = Connection;
+    using super_type = detail::ConnBase;
+    using self_type  = Connection;
 
   public:
     Connection()                      = default;
@@ -402,15 +512,16 @@ namespace Server
     [[nodiscard]] int  FD() const override;
     [[nodiscard]] int  Count() const override;
     static Connection &_get(cripts::Context *context);
+    void               _initialize() override;
 
     void
-    SetDscp(int val) override
+    SetDscp(int val) const override
     {
       TSHttpTxnServerPacketDscpSet(_state->txnp, val);
     }
 
     void
-    SetMark(int val) override
+    SetMark(int val) const override
     {
       TSHttpTxnServerPacketMarkSet(_state->txnp, val);
     }

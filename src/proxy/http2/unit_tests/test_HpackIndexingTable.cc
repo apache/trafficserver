@@ -25,6 +25,7 @@
  */
 
 #include <memory>
+#include <string_view>
 
 #include "catch.hpp"
 
@@ -86,7 +87,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
 
       for (const auto &i : indexed_test_case) {
         std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
-        headers->create(HTTP_TYPE_REQUEST);
+        headers->create(HTTPType::REQUEST);
         MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
         MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
@@ -219,7 +220,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
 
         for (const auto &i : literal_test_case) {
           std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
-          headers->create(HTTP_TYPE_REQUEST);
+          headers->create(HTTPType::REQUEST);
           MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
           MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
@@ -339,7 +340,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     for (unsigned int i = 0; i < sizeof(encoded_field_response_test_case) / sizeof(encoded_field_response_test_case[0]); i++) {
       std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
-      headers->create(HTTP_TYPE_RESPONSE);
+      headers->create(HTTPType::RESPONSE);
 
       for (unsigned int j = 0; j < sizeof(raw_field_response_test_case[i]) / sizeof(raw_field_response_test_case[i][0]); j++) {
         const char *expected_name  = raw_field_response_test_case[i][j].raw_name;
@@ -349,8 +350,8 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
         }
 
         MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
-        field->name_set(headers->m_heap, headers->m_http->m_fields_impl, expected_name, strlen(expected_name));
-        field->value_set(headers->m_heap, headers->m_http->m_fields_impl, expected_value, strlen(expected_value));
+        field->name_set(headers->m_heap, headers->m_http->m_fields_impl, std::string_view{expected_name});
+        field->value_set(headers->m_heap, headers->m_http->m_fields_impl, std::string_view{expected_value});
         mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, nullptr);
       }
 
@@ -443,7 +444,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
 
     for (unsigned int i = 0; i < sizeof(encoded_field_request_test_case) / sizeof(encoded_field_request_test_case[0]); i++) {
       std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
-      headers->create(HTTP_TYPE_REQUEST);
+      headers->create(HTTPType::REQUEST);
 
       hpack_decode_header_block(indexing_table, headers.get(), encoded_field_request_test_case[i].encoded_field,
                                 encoded_field_request_test_case[i].encoded_field_len, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
@@ -455,7 +456,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
           break;
         }
 
-        MIMEField *field = headers->field_find(expected_name, strlen(expected_name));
+        MIMEField *field = headers->field_find(std::string_view{expected_name});
         CHECK(field != nullptr);
 
         if (field) {
@@ -475,7 +476,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
     // add entries in dynamic table
     {
       std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
-      headers->create(HTTP_TYPE_REQUEST);
+      headers->create(HTTPType::REQUEST);
 
       // C.3.1.  First Request
       uint8_t data[] = {0x82, 0x86, 0x84, 0x41, 0x0f, 0x77, 0x77, 0x77, 0x2e, 0x65,
@@ -491,7 +492,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
     // clear all entries by setting a maximum size of 0
     {
       std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
-      headers->create(HTTP_TYPE_REQUEST);
+      headers->create(HTTPType::REQUEST);
 
       uint8_t data[] = {0x20};
 
@@ -505,7 +506,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
     // make the maximum size back to 4096
     {
       std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
-      headers->create(HTTP_TYPE_REQUEST);
+      headers->create(HTTPType::REQUEST);
 
       uint8_t data[] = {0x3f, 0xe1, 0x1f};
 
@@ -519,7 +520,7 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
     // error with exceeding the limit (MAX_TABLE_SIZE)
     {
       std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
-      headers->create(HTTP_TYPE_REQUEST);
+      headers->create(HTTPType::REQUEST);
 
       uint8_t data[] = {0x3f, 0xe2, 0x1f};
 

@@ -1,0 +1,1 @@
+(program (section SEND_RESPONSE { (sectionBody (conditional (ifStatement if (condition (expression (expression (term (factor true))) || (term (factor false)))) (block { (statement inbound.resp.X-foo = (value "bar") ;) })))) }) <EOF>)

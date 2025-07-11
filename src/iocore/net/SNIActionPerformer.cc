@@ -24,6 +24,7 @@
 #include "swoc/swoc_file.h"
 #include "swoc/BufferWriter.h"
 #include "tscore/Layout.h"
+#include "proxy/IPAllow.h"
 
 #include "SNIActionPerformer.h"
 
@@ -338,7 +339,7 @@ HostSniPolicy::TestClientSNIAction(const char * /* servername ATS_UNUSED */, con
 
 TLSValidProtocols::TLSValidProtocols(unsigned long protocols) : unset(false), protocol_mask(protocols)
 {
-  Warning("valid_tls_versions_in is deprecated. Use valid_tls_version_min_in and ivalid_tls_version_max_in instead.");
+  Warning("valid_tls_versions_in is deprecated. Use valid_tls_version_min_in and valid_tls_version_max_in instead.");
 }
 
 int
@@ -412,8 +413,19 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
     return SSL_TLSEXT_ERR_OK;
   }
 
-  auto ssl_vc = SSLNetVCAccess(&ssl);
-  auto ip     = swoc::IPAddr(ssl_vc->get_remote_endpoint());
+  auto            ssl_vc    = SSLNetVCAccess(&ssl);
+  const sockaddr *client_ip = nullptr;
+  for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
+    if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
+      client_ip = ssl_vc->get_remote_addr();
+      break;
+    } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
+               ssl_vc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+      client_ip = ssl_vc->get_proxy_protocol_src_addr();
+      break;
+    }
+  }
+  swoc::IPAddr ip = swoc::IPAddr(client_ip);
 
   // check the allowed ips
   if (ip_addrs.contains(ip)) {
@@ -460,5 +472,55 @@ ServerMaxEarlyData::SNIAction([[maybe_unused]] SSL &ssl, const Context & /* ctx 
     server_max_early_data > 0 ? std::max(server_max_early_data, TLSEarlyDataSupport::DEFAULT_MAX_EARLY_DATA_SIZE) : 0;
   eds->update_early_data_config(&ssl, server_max_early_data, server_recv_max_early_data);
 #endif
+  return SSL_TLSEXT_ERR_OK;
+}
+
+int
+ServerCipherSuite::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+  if (server_cipher_suite.empty()) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  auto tbs = TLSBasicSupport::getInstance(&ssl);
+  if (tbs == nullptr) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  Dbg(dbg_ctl_ssl_sni, "Setting pre TLSv1.3 cipher suite from server_cipher_suite to %s", server_cipher_suite.c_str());
+  tbs->set_legacy_cipher_suite(server_cipher_suite);
+  return SSL_TLSEXT_ERR_OK;
+}
+
+int
+ServerTLSv1_3CipherSuites::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+  if (server_TLSV1_3_cipher_suites.empty()) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  auto tbs = TLSBasicSupport::getInstance(&ssl);
+  if (tbs == nullptr) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  Dbg(dbg_ctl_ssl_sni, "Setting TLSv1.3 or later cipher suites from server_TLSv1_3_cipher_suites to %s",
+      server_TLSV1_3_cipher_suites.c_str());
+  tbs->set_cipher_suite(server_TLSV1_3_cipher_suites);
+  return SSL_TLSEXT_ERR_OK;
+}
+
+int
+ServerGroupsList::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+  if (server_groups_list.empty()) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  auto tbs = TLSBasicSupport::getInstance(&ssl);
+  if (tbs == nullptr) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+  Dbg(dbg_ctl_ssl_sni, "Setting groups list from server_groups_list to %s", server_groups_list.c_str());
+
+  if (!tbs->set_groups_list(server_groups_list)) {
+    Error("Invalid server_groups_list: %s", server_groups_list.c_str());
+    return SSL_TLSEXT_ERR_ALERT_WARNING;
+  }
   return SSL_TLSEXT_ERR_OK;
 }

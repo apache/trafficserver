@@ -41,7 +41,7 @@ extern DbgCtl dbg_ctl;
 using namespace uri_signing_ns;
 
 #define __FILENAME__          (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#define PluginDebug(fmt, ...) Dbg(dbg_ctl, "[%s:% 4d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__);
+#define PluginDebug(fmt, ...) Dbg(dbg_ctl, fmt, ##__VA_ARGS__);
 #define PluginError(fmt, ...)      \
   PluginDebug(fmt, ##__VA_ARGS__); \
   TSError("[%s:% 4d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__);

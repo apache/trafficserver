@@ -67,8 +67,7 @@ struct FlatYAMLAccessor {
   }
 
 protected:
-  std::vector<YAML::Node>      _docs;
-  std::unique_ptr<BasePrinter> _printer; //!< Specific output formatter. This should be created by the derived class.
+  std::vector<YAML::Node> _docs;
 };
 
 /// @brief Class used to deal with the config file changes. Append or modify an existing records.yaml field

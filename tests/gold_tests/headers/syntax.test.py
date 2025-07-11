@@ -35,52 +35,65 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 # Test 0 - 200 Response
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H " foo: bar" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H " foo: bar" -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.200.gold"
 tr.StillRunningAfter = ts
 
 # Test 1 - 400 Response - Single space after field name
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H "foo : bar" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H "foo : bar" -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.400.gold"
 tr.StillRunningAfter = ts
 
 # Test 2 - 400 Response - Double space after field name
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H "foo  : bar" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H "foo  : bar" -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.400.gold"
 tr.StillRunningAfter = ts
 
 # Test 3 - 400 Response - Three different Content-Length headers
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -d "hello world" -H "Content-Length: 11" -H "Content-Length: 10" -H "Content-Length: 9" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -d "hello world" -H "Content-Length: 11" -H "Content-Length: 10" -H "Content-Length: 9" -H "Host: www.example.com" http://localhost:{1}/'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.400.gold"
 tr.StillRunningAfter = ts
 
 # Test 4 - 200 Response - Three same Content-Length headers
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -d "hello world" -H "Content-Length: 11" -H "Content-Length: 11" -H "Content-Length: 11" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -d "hello world" -H "Content-Length: 11" -H "Content-Length: 11" -H "Content-Length: 11" -H "Host: www.example.com" http://localhost:{1}/'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.200.gold"
 tr.StillRunningAfter = ts
 
 # Test 5 - 200 Response - Three different Content-Length headers with a Transfer encoding header
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -d "hello world" -H "Transfer-Encoding: chunked" -H "Content-Length: 11" -H "Content-Length: 10" -H "Content-Length: 9" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -d "hello world" -H "Transfer-Encoding: chunked" -H "Content-Length: 11" -H "Content-Length: 10" -H "Content-Length: 9" -H "Host: www.example.com" http://localhost:{1}/'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "syntax.200.gold"
 tr.StillRunningAfter = ts

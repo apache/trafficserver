@@ -36,6 +36,10 @@
 #include <sys/mount.h> /* for BLKGETSIZE */
 #endif
 
+#if __has_include(<sys/disk.h>)
+#include <sys/disk.h> /* for DIOCGMEDIASIZE on FreeBSD */
+#endif
+
 using ioctl_arg_t = union {
   uint64_t u64;
   uint32_t u32;

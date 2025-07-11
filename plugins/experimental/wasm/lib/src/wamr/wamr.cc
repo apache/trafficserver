@@ -56,7 +56,8 @@ public:
   Wamr() = default;
 
   std::string_view getEngineName() override { return "wamr"; }
-  std::string_view getPrecompiledSectionName() override { return ""; }
+  // must use the exact name given by test-tools/append-aot-to-wasm/append_aot_to_wasm.py
+  std::string_view getPrecompiledSectionName() override { return "wamr-aot"; }
 
   Cloneable cloneable() override { return Cloneable::CompiledBytecode; }
   std::unique_ptr<WasmVm> clone() override;
@@ -118,18 +119,32 @@ private:
   std::unordered_map<std::string, WasmFuncPtr> module_functions_;
 };
 
-bool Wamr::load(std::string_view bytecode, std::string_view /*precompiled*/,
+bool Wamr::load(std::string_view bytecode, std::string_view precompiled,
                 const std::unordered_map<uint32_t, std::string> & /*function_names*/) {
   store_ = wasm_store_new(engine());
   if (store_ == nullptr) {
     return false;
   }
 
-  wasm_byte_vec_t binary = {.size = bytecode.size(),
-                            .data = (char *)bytecode.data(),
-                            .num_elems = bytecode.size(),
-                            .size_of_elem = sizeof(byte_t),
-                            .lock = nullptr};
+  wasm_byte_vec_t binary = {0};
+  if (precompiled.empty()) {
+    binary.size = bytecode.size();
+    binary.data = const_cast<char *>(bytecode.data());
+    binary.num_elems = bytecode.size();
+    binary.size_of_elem = sizeof(byte_t);
+    binary.lock = nullptr;
+  } else {
+    // skip leading paddings
+    auto padding_count = static_cast<uint8_t>(precompiled[0]);
+    precompiled.remove_prefix(padding_count + 1);
+
+    binary.size = precompiled.size();
+    binary.data = const_cast<char *>(precompiled.data());
+    binary.num_elems = precompiled.size();
+    binary.size_of_elem = sizeof(byte_t);
+    binary.lock = nullptr;
+  }
+
   module_ = wasm_module_new(store_.get(), &binary);
   if (module_ == nullptr) {
     return false;
@@ -224,8 +239,8 @@ static const char *printValKind(wasm_valkind_t kind) {
     return "f32";
   case WASM_F64:
     return "f64";
-  case WASM_ANYREF:
-    return "anyref";
+  case WASM_EXTERNREF:
+    return "externref";
   case WASM_FUNCREF:
     return "funcref";
   default:

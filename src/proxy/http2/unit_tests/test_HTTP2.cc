@@ -47,7 +47,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     HTTPHdr        hdr_1;
     ts::PostScript hdr_1_defer([&]() -> void { hdr_1.destroy(); });
-    hdr_1.create(HTTP_TYPE_REQUEST, HTTP_2_0);
+    hdr_1.create(HTTPType::REQUEST, HTTP_2_0);
 
     // parse
     const char *start = request;
@@ -60,7 +60,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // check pseudo headers
     // :method
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_METHOD);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "GET");
@@ -68,7 +68,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // :scheme
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_SCHEME);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "https");
@@ -76,7 +76,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // :authority
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_AUTHORITY);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "trafficserver.apache.org");
@@ -84,7 +84,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // :path
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_PATH);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "/index.html");
@@ -93,7 +93,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // convert back to HTTP/1.1
     HTTPHdr        hdr_2;
     ts::PostScript hdr_2_defer([&]() -> void { hdr_2.destroy(); });
-    hdr_2.create(HTTP_TYPE_REQUEST);
+    hdr_2.create(HTTPType::REQUEST);
     hdr_2.copy(&hdr_1);
 
     http2_convert_header_from_2_to_1_1(&hdr_2);
@@ -115,13 +115,13 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // HTTP/2 request contains a Host header.
     HTTPHdr        hdr_2_with_host;
     ts::PostScript hdr_2_with_host_defer([&]() -> void { hdr_2_with_host.destroy(); });
-    hdr_2_with_host.create(HTTP_TYPE_REQUEST);
+    hdr_2_with_host.create(HTTPType::REQUEST);
     hdr_2_with_host.copy(&hdr_1);
 
-    MIMEField *host = hdr_2_with_host.field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
+    MIMEField *host = hdr_2_with_host.field_create(static_cast<std::string_view>(MIME_FIELD_HOST));
     hdr_2_with_host.field_attach(host);
     std::string_view host_value = "bogus.host.com";
-    host->value_set(hdr_2_with_host.m_heap, hdr_2_with_host.m_mime, host_value.data(), host_value.size());
+    host->value_set(hdr_2_with_host.m_heap, hdr_2_with_host.m_mime, host_value);
 
     http2_convert_header_from_2_to_1_1(&hdr_2_with_host);
 
@@ -149,7 +149,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     HTTPHdr        hdr_1;
     ts::PostScript hdr_1_defer([&]() -> void { hdr_1.destroy(); });
-    hdr_1.create(HTTP_TYPE_RESPONSE, HTTP_2_0);
+    hdr_1.create(HTTPType::RESPONSE, HTTP_2_0);
 
     // parse
     const char *start = response;
@@ -162,7 +162,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // check pseudo headers
     // :status
     {
-      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size());
+      MIMEField *f = hdr_1.field_find(PSEUDO_HEADER_STATUS);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
       CHECK(v == "200");
@@ -170,14 +170,14 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // no connection header
     {
-      MIMEField *f = hdr_1.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+      MIMEField *f = hdr_1.field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
       CHECK(f == nullptr);
     }
 
     // convert to HTTP/1.1
     HTTPHdr        hdr_2;
     ts::PostScript hdr_2_defer([&]() -> void { hdr_2.destroy(); });
-    hdr_2.create(HTTP_TYPE_REQUEST);
+    hdr_2.create(HTTPType::REQUEST);
     hdr_2.copy(&hdr_1);
 
     http2_convert_header_from_2_to_1_1(&hdr_2);

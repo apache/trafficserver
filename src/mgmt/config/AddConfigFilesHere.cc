@@ -38,9 +38,8 @@ static constexpr bool NOT_REQUIRED{false};
 void
 registerFile(const char *configName, const char *defaultName, bool isRequired)
 {
-  bool           found = false;
-  ats_scoped_str fname(REC_readString(configName, &found));
-  FileManager::instance().addFile(found ? fname : defaultName, configName, false, isRequired);
+  auto fname{RecGetRecordStringAlloc(configName)};
+  FileManager::instance().addFile(fname ? ats_as_c_str(fname) : defaultName, configName, false, isRequired);
 }
 
 //

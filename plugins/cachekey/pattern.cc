@@ -404,12 +404,7 @@ Pattern::compile()
 /**
  * @brief Destructor, deletes all patterns.
  */
-MultiPattern::~MultiPattern()
-{
-  for (auto &p : this->_list) {
-    delete p;
-  }
-}
+MultiPattern::~MultiPattern() {}
 
 /**
  * @brief Check if empty.
@@ -428,9 +423,9 @@ MultiPattern::empty() const
  * @param pattern pattern pointer
  */
 void
-MultiPattern::add(Pattern *pattern)
+MultiPattern::add(std::unique_ptr<Pattern> pattern)
 {
-  this->_list.push_back(pattern);
+  this->_list.push_back(std::move(pattern));
 }
 
 /**
@@ -441,7 +436,7 @@ MultiPattern::add(Pattern *pattern)
 bool
 MultiPattern::match(const String &subject) const
 {
-  for (auto p : this->_list) {
+  for (auto &p : this->_list) {
     if (nullptr != p && p->match(subject)) {
       return true;
     }
@@ -462,7 +457,7 @@ bool
 MultiPattern::process(const String &subject, StringVector &result) const
 {
   bool res = false;
-  for (auto p : this->_list) {
+  for (auto &p : this->_list) {
     if (nullptr != p && p->process(subject, result)) {
       res = true;
     }
@@ -473,12 +468,7 @@ MultiPattern::process(const String &subject, StringVector &result) const
 /**
  * @brief Destructor, deletes all multi-patterns.
  */
-Classifier::~Classifier()
-{
-  for (auto &p : _list) {
-    delete p;
-  }
-}
+Classifier::~Classifier() {}
 
 /**
  * @brief Classifies a subject string by matching against the vector of named multi-patterns
@@ -491,7 +481,7 @@ bool
 Classifier::classify(const String &subject, String &name) const
 {
   bool matched = false;
-  for (auto p : _list) {
+  for (auto &p : _list) {
     if (p->empty()) {
       continue;
     } else if (p->match(subject)) {
@@ -510,7 +500,7 @@ Classifier::classify(const String &subject, String &name) const
  * @param pattern multi-pattern pointer
  */
 void
-Classifier::add(MultiPattern *pattern)
+Classifier::add(std::unique_ptr<MultiPattern> pattern)
 {
-  _list.push_back(pattern);
+  _list.push_back(std::move(pattern));
 }

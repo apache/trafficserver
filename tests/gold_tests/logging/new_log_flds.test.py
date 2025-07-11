@@ -39,7 +39,8 @@ ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update(
     {
-        # 'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'snowflake|http',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     })
@@ -59,7 +60,7 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: custom
-      format: "%<ccid> %<ctid> %<cssn>"
+      format: "%<psfid> %<ccid> %<ctid> %<cssn>"
   logs:
     - filename: test_new_log_flds
       format: custom
@@ -70,27 +71,28 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 #
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port)
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port)
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" "http://127.0.0.1:{0}" --http1.1 --verbose'.format(ts.Variables.port)
+tr.MakeCurlCommand('"http://127.0.0.1:{0}" "http://127.0.0.1:{0}" --http1.1 --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl "https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 0
+if not Condition.CurlUsingUnixDomainSocket():
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand('"https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(ts.Variables.ssl_port))
+    tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl "https://reallyreallyreallyreallylong.com:{0}" --http2 --insecure --verbose' +
-    ' --resolve reallyreallyreallyreallylong.com:{0}:127.0.0.1').format(ts.Variables.ssl_port)
-tr.Processes.Default.ReturnCode = 0
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(
+        (
+            '"https://reallyreallyreallyreallylong.com:{0}" --http2 --insecure --verbose' +
+            ' --resolve reallyreallyreallyreallylong.com:{0}:127.0.0.1').format(ts.Variables.ssl_port))
+    tr.Processes.Default.ReturnCode = 0
 
 # Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
 #

@@ -2085,7 +2085,7 @@ namespace literals {
  * so hopefully someday this can be removed.
  */
 constexpr std::string_view
-operator"" _sv(const char *s, size_t n) {
+operator""_sv(const char *s, size_t n) {
   return {s, n};
 }
 
@@ -2100,7 +2100,7 @@ operator"" _sv(const char *s, size_t n) {
  * so hopefully someday this can be removed.
  */
 constexpr swoc::TextView
-operator"" _tv(const char *s, size_t n) {
+operator""_tv(const char *s, size_t n) {
   return {s, n};
 }
 } // namespace literals

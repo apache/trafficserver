@@ -43,18 +43,18 @@ class ControlBase
 {
 public:
   struct Modifier {
-    enum Type {
-      MOD_INVALID,
-      MOD_PORT,
-      MOD_SCHEME,
-      MOD_PREFIX,
-      MOD_SUFFIX,
-      MOD_METHOD,
-      MOD_TIME,
-      MOD_SRC_IP,
-      MOD_IPORT,
-      MOD_TAG,
-      MOD_INTERNAL,
+    enum class Type {
+      INVALID,
+      PORT,
+      SCHEME,
+      PREFIX,
+      SUFFIX,
+      METHOD,
+      TIME,
+      SRC_IP,
+      IPORT,
+      TAG,
+      INTERNAL,
     };
     /// Destructor - force virtual.
     virtual ~Modifier();
@@ -91,7 +91,7 @@ protected:
   const char *getSchemeModText() const;
 
 private:
-  using Array = std::vector<Modifier *>;
+  using Array = std::vector<std::unique_ptr<Modifier>>;
   Array       _mods;
   const char *ProcessSrcIp(char *val, void **opaque_ptr);
   const char *ProcessTimeOfDay(char *val, void **opaque_ptr);

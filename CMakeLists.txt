@@ -29,7 +29,10 @@ project(ats VERSION 10.2.0)
 set(TS_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(TS_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(TS_VERSION_MICRO ${PROJECT_VERSION_PATCH})
-set(TS_VERSION_STRING ${TS_VERSION_MAJOR}.${TS_VERSION_MINOR}.${TS_VERSION_MICRO})
+set(TS_VERSION_STRING
+    ${TS_VERSION_MAJOR}.${TS_VERSION_MINOR}.${TS_VERSION_MICRO}
+    CACHE STRING "The version string"
+)
 math(EXPR TS_VERSION_NUMBER "${TS_VERSION_MAJOR} * 1000000 + ${TS_VERSION_MINOR} * 1000 + ${TS_VERSION_MICRO}")
 
 # We make this a cache entry so that it can be configured to different values
@@ -139,6 +142,7 @@ if(ENABLE_DISK_FAILURE_TESTS)
   add_compile_definitions("AIO_FAULT_INJECTION")
 endif()
 option(ENABLE_AUTEST "Setup autest (default OFF)")
+option(ENABLE_AUTEST_UDS "Setup autest with curl using UDS (default OFF)")
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
@@ -471,6 +475,9 @@ check_symbol_exists(SSL_CTX_set_select_certificate_cb "openssl/ssl.h" HAVE_SSL_C
 check_symbol_exists(SSL_set1_verify_cert_store "openssl/ssl.h" TS_HAS_VERIFY_CERT_STORE)
 check_symbol_exists(SSL_get_shared_curve "openssl/ssl.h" HAVE_SSL_GET_SHARED_CURVE)
 check_symbol_exists(SSL_get_curve_name "openssl/ssl.h" HAVE_SSL_GET_CURVE_NAME)
+check_symbol_exists(SSL_get0_group_name "openssl/ssl.h" HAVE_SSL_GET0_GROUP_NAME)
+check_symbol_exists(SSL_get_group_id "openssl/ssl.h" HAVE_SSL_GET_GROUP_ID)
+check_symbol_exists(SSL_get_group_name "openssl/ssl.h" HAVE_SSL_GET_GROUP_NAME)
 check_symbol_exists(SSL_set_max_early_data "openssl/ssl.h" HAVE_SSL_SET_MAX_EARLY_DATA)
 check_symbol_exists(SSL_read_early_data "openssl/ssl.h" HAVE_SSL_READ_EARLY_DATA)
 check_symbol_exists(SSL_write_early_data "openssl/ssl.h" HAVE_SSL_WRITE_EARLY_DATA)
@@ -532,9 +539,9 @@ check_cxx_source_compiles(
   HAVE_CRYPTO_EX_DUP_TYPE1
 )
 
-set(CMAKE_REQUIRED_INCLUDES netinet/in.h netinet/tcp.h)
+set(CMAKE_EXTRA_INCLUDE_FILES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)
-unset(CMAKE_REQUIRED_INCLUDES)
+unset(CMAKE_EXTRA_INCLUDE_FILES)
 
 # Since Linux 2.6.12
 check_struct_has_member("struct tcp_info" tcpi_total_retrans "linux/tcp.h" HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS)

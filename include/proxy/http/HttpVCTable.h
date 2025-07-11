@@ -30,14 +30,14 @@
 class HttpSM;
 using HttpSMHandler = int (HttpSM::*)(int, void *);
 
-enum HttpVC_t {
-  HTTP_UNKNOWN = 0,
-  HTTP_UA_VC,
-  HTTP_SERVER_VC,
-  HTTP_TRANSFORM_VC,
-  HTTP_CACHE_READ_VC,
-  HTTP_CACHE_WRITE_VC,
-  HTTP_RAW_SERVER_VC
+enum class HttpVC_t {
+  UNKNOWN = 0,
+  UA_VC,
+  SERVER_VC,
+  TRANSFORM_VC,
+  CACHE_READ_VC,
+  CACHE_WRITE_VC,
+  RAW_SERVER_VC,
 };
 
 struct HttpVCTableEntry {

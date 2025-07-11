@@ -91,7 +91,7 @@ public:
   using IpCategories  = std::unordered_map<std::string, swoc::IPSpace<bool>>;
 
   // indicator for whether we should be checking the acl record for src ip or dest ip
-  enum match_key_t { SRC_ADDR, DST_ADDR };
+  enum class match_key_t { SRC_ADDR, DST_ADDR };
 
   /// Token strings for configuration
   static constexpr swoc::TextView OPT_MATCH_SRC{"src_ip"};
@@ -146,6 +146,8 @@ public:
   static const inline std::string YAML_VALUE_METHODS_ALL{"all"};
 
   static constexpr const char *MODULE_NAME = "IPAllow";
+
+  enum Subject { PEER, PROXY, MAX_SUBJECTS };
 
   /** An access control record and support data.
    * The primary point of this is to hold the backing configuration in memory while the ACL
@@ -251,6 +253,8 @@ public:
    * @return True if there are no rules in ip_allow.yaml, false otherwise.
    */
   static bool has_no_rules();
+
+  static uint8_t subjects[Subject::MAX_SUBJECTS];
 
 private:
   static size_t       configid;         ///< Configuration ID for update management.

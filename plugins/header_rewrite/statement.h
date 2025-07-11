@@ -155,6 +155,7 @@ public:
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
     acquire_txn_slot();
+    acquire_txn_private_slot();
 
     _initialized = true;
   }
@@ -184,14 +185,40 @@ protected:
     return false;
   }
 
-  Statement *_next     = nullptr; // Linked list
-  int        _txn_slot = -1;
+  virtual bool
+  need_txn_private_slot() const
+  {
+    return false;
+  }
+
+  Statement *_next             = nullptr; // Linked list
+  int        _txn_slot         = -1;
+  int        _txn_private_slot = -1;
 
 private:
   void acquire_txn_slot();
+  void acquire_txn_private_slot();
 
   ResourceIDs               _rsrc = RSRC_NONE;
   TSHttpHookID              _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;
   bool                      _initialized = false;
+};
+
+union PrivateSlotData {
+  uint64_t raw;
+  struct {
+    uint64_t timezone  : 1; // TIMEZONE_LOCAL, or TIMEZONE_GMT
+    uint64_t ip_source : 2; // IP_SRC_PEER, IP_SRC_PROXY, IP_SRC_FORWARDED, or IP_SRC_PLUGIN
+    uint64_t unused    : 61;
+  };
+};
+
+enum { TIMEZONE_LOCAL, TIMEZONE_GMT };
+
+enum {
+  IP_SRC_PEER,  // Immediate connection
+  IP_SRC_PROXY, // PROXY protocl
+  // IP_SRC_FORWARDED,  // Forwarded header field (TS core needs to support the header first. It can be done by a plugin as well.)
+  // IP_SRC_PLUGIN  // Plugin (Needs TS API to set and get a verified client IP address)
 };

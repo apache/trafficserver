@@ -214,6 +214,21 @@ Regex::Regex(Regex &&that) noexcept
 }
 
 //----------------------------------------------------------------------------
+Regex &
+Regex::operator=(Regex &&other)
+{
+  if (this != &other) {
+    auto ptr = _Code::get(_code);
+    if (ptr != nullptr) {
+      pcre2_code_free(ptr);
+    }
+    _code = other._code;
+    _Code::set(other._code, nullptr);
+  }
+  return *this;
+}
+
+//----------------------------------------------------------------------------
 Regex::~Regex()
 {
   auto ptr = _Code::get(_code);
@@ -297,12 +312,14 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
 
   matches._size = count;
 
-  if (count < 0) {
-    return count;
-  }
-
-  if (count > 0) {
+  // match was successful
+  if (count >= 0) {
     matches._subject = subject;
+
+    // match but the output vector was too small, adjust the size of the matches
+    if (count == 0) {
+      matches._size = pcre2_get_ovector_count(RegexMatches::_MatchData::get(matches._match_data));
+    }
   }
 
   return count;
@@ -317,6 +334,13 @@ Regex::get_capture_count()
     return -1;
   }
   return captures;
+}
+
+//----------------------------------------------------------------------------
+bool
+Regex::empty() const
+{
+  return _Code::get(_code) == nullptr;
 }
 
 //----------------------------------------------------------------------------

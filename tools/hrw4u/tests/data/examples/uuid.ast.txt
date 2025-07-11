@@ -1,0 +1,1 @@
+(program (section SEND_RESPONSE { (sectionBody (conditional (ifStatement if (condition (expression (expression (term (factor (comparison (comparable inbound.resp.ATS-SRVR-UUID) == (value ""))))) || (term (factor (comparison (comparable (functionCall cache ( ))) == (value "hit-fresh")))))) (block { (statement inbound.resp.ATS-SRVR-UUID = (value "{id.UNIQUE}") ;) })))) }) <EOF>)

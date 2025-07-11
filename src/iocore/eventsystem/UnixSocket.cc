@@ -83,8 +83,9 @@ accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)
 
   do {
     fd = accept(sockfd, addr, addrlen);
-    if (likely(fd >= 0))
+    if (likely(fd >= 0)) {
       break;
+    }
   } while (transient_error());
 
   if ((fd >= 0) && (flags & SOCK_CLOEXEC) && (safe_fcntl(fd, F_SETFD, FD_CLOEXEC) < 0)) {

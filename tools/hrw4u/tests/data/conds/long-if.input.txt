@@ -1,0 +1,11 @@
+REMAP {
+    if inbound.req.xfoo != "" || inbound.req.xBar != "" || inbound.req.X-Foo != "" && inbound.req.X-Fie == "" {
+       inbound.req.X-fie = "123";
+    }
+}
+
+REMAP {
+    if inbound.req.xfoo != "" || inbound.req.xBar != "" || (inbound.req.X-Foo != "" && inbound.req.X-Fie == "") {
+       inbound.req.X-fie = "123";
+    }
+}

@@ -281,8 +281,7 @@ struct CacheVC : public CacheVConnection {
   int                       fragment;
   int                       scan_msec_delay;
   CacheVC                  *write_vc;
-  char                     *hostname;
-  int                       host_len;
+  std::string_view          hostname;
   int                       header_to_write_len;
   void                     *header_to_write;
   short                     writer_lock_retry;

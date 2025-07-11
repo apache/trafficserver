@@ -73,7 +73,7 @@ struct CfgNode {
 
   /// @brief Append field name in order to build up the record name.
   void
-  append_field_name() const
+  append_field_name()
   {
     if (!_legacy.record_name.empty()) {
       _legacy.record_name.append(".");
@@ -83,6 +83,16 @@ struct CfgNode {
     }
   }
 
+  std::string
+  mark_as_view(swoc::TextView fmt = "Line: {}, Column: {}") const
+  {
+    swoc::LocalBufferWriter<128> lbw;
+    lbw.print(fmt, node.Mark().line + 1, node.Mark().column + 1);
+    std::string mark;
+    mark.reserve(lbw.view().size());
+    mark = std::string{lbw.view().data(), lbw.view().size()};
+    return mark;
+  }
   // public
   YAML::Node node;
   YAML::Node value_node;
@@ -92,5 +102,5 @@ private:
   struct Legacy {
     std::string record_name;
   };
-  mutable Legacy _legacy;
+  Legacy _legacy;
 };

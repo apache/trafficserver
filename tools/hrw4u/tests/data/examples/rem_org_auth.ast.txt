@@ -1,0 +1,1 @@
+(program (section READ_RESPONSE { (sectionBody (statement outbound.resp.Set-Cookie = (value "") ;)) (sectionBody (statement outbound.resp.WWW-Authenticate = (value "") ;)) }) <EOF>)

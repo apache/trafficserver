@@ -27,6 +27,11 @@ AppVersionInfo appVersionInfo;
 
 #include "proxy/FetchSM.h"
 ClassAllocator<FetchSM> FetchSMAllocator("unusedFetchSMAllocator");
+bool
+FetchSM::is_initialized()
+{
+  return true;
+}
 void
 FetchSM::ext_launch()
 {

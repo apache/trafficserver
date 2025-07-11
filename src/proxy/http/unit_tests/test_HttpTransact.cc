@@ -22,6 +22,7 @@
  */
 
 #include <string_view>
+
 using namespace std::string_view_literals;
 
 #include "tscore/Diags.h"
@@ -65,16 +66,16 @@ TEST_CASE("HttpTransact", "[http]")
         {"FFF", "666"}
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -83,37 +84,37 @@ TEST_CASE("HttpTransact", "[http]")
 
       CHECK(hdr1.fields_count() == 6);
 
-      field = hdr1.field_find("AAA", 3);
+      field = hdr1.field_find("AAA"sv);
       REQUIRE(field != nullptr);
       auto str{field->value_get()};
       CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("BBB", 3);
+      field = hdr1.field_find("BBB"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "222"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("CCC", 3);
+      field = hdr1.field_find("CCC"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "333"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("DDD", 3);
+      field = hdr1.field_find("DDD"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("EEE", 3);
+      field = hdr1.field_find("EEE"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "555"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("FFF", 3);
+      field = hdr1.field_find("FFF"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "666"sv);
@@ -145,16 +146,16 @@ TEST_CASE("HttpTransact", "[http]")
         {"FFF", "666"}
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -163,31 +164,31 @@ TEST_CASE("HttpTransact", "[http]")
 
       CHECK(hdr1.fields_count() == 5);
 
-      field = hdr1.field_find("AAA", 3);
+      field = hdr1.field_find("AAA"sv);
       REQUIRE(field != nullptr);
       auto str{field->value_get()};
       CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("BBB", 3);
+      field = hdr1.field_find("BBB"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "555"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("CCC", 3);
+      field = hdr1.field_find("CCC"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "333"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("DDD", 3);
+      field = hdr1.field_find("DDD"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("FFF", 3);
+      field = hdr1.field_find("FFF"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "666"sv);
@@ -219,16 +220,16 @@ TEST_CASE("HttpTransact", "[http]")
         {"EEE", "666"}
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -237,31 +238,31 @@ TEST_CASE("HttpTransact", "[http]")
 
       CHECK(hdr1.fields_count() == 6);
 
-      field = hdr1.field_find("AAA", 3);
+      field = hdr1.field_find("AAA"sv);
       REQUIRE(field != nullptr);
       auto str{field->value_get()};
       CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("BBB", 3);
+      field = hdr1.field_find("BBB"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "222"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("CCC", 3);
+      field = hdr1.field_find("CCC"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "333"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("DDD", 3);
+      field = hdr1.field_find("DDD"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("EEE", 3);
+      field = hdr1.field_find("EEE"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "555"sv);
@@ -293,16 +294,16 @@ TEST_CASE("HttpTransact", "[http]")
         {"FFF", "666"}
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -311,31 +312,31 @@ TEST_CASE("HttpTransact", "[http]")
 
       CHECK(hdr1.fields_count() == 6);
 
-      field = hdr1.field_find("AAA", 3);
+      field = hdr1.field_find("AAA"sv);
       REQUIRE(field != nullptr);
       auto str{field->value_get()};
       CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("BBB", 3);
+      field = hdr1.field_find("BBB"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "222"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("CCC", 3);
+      field = hdr1.field_find("CCC"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "333"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("DDD", 3);
+      field = hdr1.field_find("DDD"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "444"sv);
       CHECK(field->has_dups() == true);
 
-      field = hdr1.field_find("FFF", 3);
+      field = hdr1.field_find("FFF"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "666"sv);
@@ -370,16 +371,16 @@ TEST_CASE("HttpTransact", "[http]")
         {"EEE", "999"},
       };
 
-      hdr1.create(HTTP_TYPE_RESPONSE);
+      hdr1.create(HTTPType::RESPONSE);
       for (auto &&entry : input1) {
-        field = hdr1.field_create(entry.name.data(), entry.name.length());
+        field = hdr1.field_create(entry.name);
         hdr1.field_attach(field);
         hdr1.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      hdr2.create(HTTP_TYPE_RESPONSE);
+      hdr2.create(HTTPType::RESPONSE);
       for (auto &&entry : input2) {
-        field = hdr2.field_create(entry.name.data(), entry.name.length());
+        field = hdr2.field_create(entry.name);
         hdr2.field_attach(field);
         hdr2.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -388,13 +389,13 @@ TEST_CASE("HttpTransact", "[http]")
 
       CHECK(hdr1.fields_count() == 6);
 
-      field = hdr1.field_find("AAA", 3);
+      field = hdr1.field_find("AAA"sv);
       REQUIRE(field != nullptr);
       auto str{field->value_get()};
       CHECK(str == "555"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("BBB", 3);
+      field = hdr1.field_find("BBB"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "666"sv);
@@ -407,19 +408,19 @@ TEST_CASE("HttpTransact", "[http]")
       CHECK(field->has_dups() == false);
       ///////////////////////////////////////
 
-      field = hdr1.field_find("CCC", 3);
+      field = hdr1.field_find("CCC"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "888"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("DDD", 3);
+      field = hdr1.field_find("DDD"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
-      field = hdr1.field_find("EEE", 3);
+      field = hdr1.field_find("EEE"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "999"sv);
@@ -462,16 +463,16 @@ TEST_CASE("HttpTransact", "[http]")
         {"Bop",   "666"},
       };
 
-      cached_headers.create(HTTP_TYPE_RESPONSE);
+      cached_headers.create(HTTPType::RESPONSE);
       for (auto &&entry : cached) {
-        field = cached_headers.field_create(entry.name.data(), entry.name.length());
+        field = cached_headers.field_create(entry.name);
         cached_headers.field_attach(field);
         cached_headers.field_value_set(field, entry.value.data(), entry.value.length());
       }
 
-      response_headers.create(HTTP_TYPE_RESPONSE);
+      response_headers.create(HTTPType::RESPONSE);
       for (auto &&entry : response) {
-        field = response_headers.field_create(entry.name.data(), entry.name.length());
+        field = response_headers.field_create(entry.name);
         response_headers.field_attach(field);
         response_headers.field_value_set(field, entry.value.data(), entry.value.length());
       }
@@ -481,37 +482,37 @@ TEST_CASE("HttpTransact", "[http]")
       CHECK(cached_headers.fields_count() == 9);
       CHECK(response_headers.fields_count() == 7);
 
-      field = cached_headers.field_find("Foo", 3);
+      field = cached_headers.field_find("Foo"sv);
       REQUIRE(field != nullptr);
       auto str{field->value_get()};
       CHECK(str == "111"sv);
       CHECK(field->has_dups() == false);
 
-      field = cached_headers.field_find("Fizz", 4);
+      field = cached_headers.field_find("Fizz"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "555"sv);
       CHECK(field->has_dups() == false);
 
-      field = cached_headers.field_find("Bop", 3);
+      field = cached_headers.field_find("Bop"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "666"sv);
       CHECK(field->has_dups() == false);
 
-      field = cached_headers.field_find("X-Foo", 5);
+      field = cached_headers.field_find("X-Foo"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "aaa"sv);
       CHECK(field->has_dups() == false);
 
-      field = cached_headers.field_find("Eat", 3);
+      field = cached_headers.field_find("Eat"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "444"sv);
       CHECK(field->has_dups() == false);
 
-      field = cached_headers.field_find("Bar", 3);
+      field = cached_headers.field_find("Bar"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "333"sv);
@@ -524,7 +525,7 @@ TEST_CASE("HttpTransact", "[http]")
       CHECK(field->has_dups() == false);
       ///////////////////////////////////////
 
-      field = cached_headers.field_find("Zip", 3);
+      field = cached_headers.field_find("Zip"sv);
       REQUIRE(field != nullptr);
       str = field->value_get();
       CHECK(str == "888"sv);

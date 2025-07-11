@@ -129,13 +129,10 @@ public:
     called, the VConnection and underlying processor must NOT send
     any more events related to this VConnection to the state machine.
     Likewise, state machine must not access the VConnection or
-    any returned VIOs after calling close. lerrno indicates whether
-    a close is a normal close or an abort. The difference between
-    a normal close and an abort depends on the underlying type of
-    the VConnection. Passing VIO::CLOSE for lerrno indicates a
-    normal close while passing VIO::ABORT indicates an abort.
+    any returned VIOs after calling close. lerrno indicates the last
+    error on the NetVConnection.
 
-    @param lerrno VIO:CLOSE for regular close or VIO::ABORT for aborts
+    @param lerrno Last error on the NetVConnection
 
   */
   void do_io_close(int lerrno = -1) override = 0;

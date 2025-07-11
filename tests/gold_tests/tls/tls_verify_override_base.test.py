@@ -129,7 +129,7 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
-tr.Processes.Default.Command = 'curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/basic'.format(ts.Variables.port)
+tr.MakeCurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/basic'.format(ts.Variables.port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(server_foo)
@@ -142,7 +142,7 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("default-permissive-fail")
-tr2.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/basic".format(ts.Variables.port)
+tr2.MakeCurlCommand("-k -H \"host: bar.com\"  http://127.0.0.1:{0}/basic".format(ts.Variables.port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -150,7 +150,7 @@ tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("default-permissive-fail2")
-tr2.Processes.Default.Command = "curl -k -H \"host: random.com\"  http://127.0.0.1:{0}/basic".format(ts.Variables.port)
+tr2.MakeCurlCommand("-k -H \"host: random.com\"  http://127.0.0.1:{0}/basic".format(ts.Variables.port))
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -158,7 +158,7 @@ tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr3 = Test.AddTestRun("override-foo")
-tr3.Processes.Default.Command = "curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/override".format(ts.Variables.port)
+tr3.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/override".format(ts.Variables.port))
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
@@ -166,7 +166,7 @@ tr3.StillRunningAfter = ts
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr4 = Test.AddTestRun("override-bar-disabled")
-tr4.Processes.Default.Command = "curl -k -H \"host: bad_bar.com\"  http://127.0.0.1:{0}/overridedisabled".format(ts.Variables.port)
+tr4.MakeCurlCommand("-k -H \"host: bad_bar.com\"  http://127.0.0.1:{0}/overridedisabled".format(ts.Variables.port))
 tr4.ReturnCode = 0
 tr4.StillRunningAfter = server
 tr4.StillRunningAfter = ts
@@ -174,14 +174,14 @@ tr4.StillRunningAfter = ts
 tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr5 = Test.AddTestRun("override-bar-signature-enforced")
-tr5.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/overridesignature".format(ts.Variables.port)
+tr5.MakeCurlCommand("-k -H \"host: bar.com\"  http://127.0.0.1:{0}/overridesignature".format(ts.Variables.port))
 tr5.ReturnCode = 0
 tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr5.StillRunningAfter = server
 tr5.StillRunningAfter = ts
 
 tr6 = Test.AddTestRun("override-bar-enforced")
-tr6.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/overrideenforced".format(ts.Variables.port)
+tr6.MakeCurlCommand("-k -H \"host: bar.com\"  http://127.0.0.1:{0}/overrideenforced".format(ts.Variables.port))
 tr6.ReturnCode = 0
 # Should fail
 tr6.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
@@ -190,7 +190,7 @@ tr6.StillRunningAfter = ts
 
 # Should succeed
 tr = Test.AddTestRun("foo-to-bar-sni-policy-remap")
-tr.Processes.Default.Command = "curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/snipolicybarremap".format(ts.Variables.port)
+tr.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/snipolicybarremap".format(ts.Variables.port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -198,7 +198,7 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not conn
 
 # Should fail
 tr = Test.AddTestRun("foo-to-bar-sni-policy-host")
-tr.Processes.Default.Command = "curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/snipolicybarhost".format(ts.Variables.port)
+tr.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/snipolicybarhost".format(ts.Variables.port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -206,8 +206,7 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could not conn
 
 # Should fail
 tr = Test.AddTestRun("foo-to-bar-sni-policy-servername")
-tr.Processes.Default.Command = "curl -k --resolve foo.com:{0}:127.0.0.1 https://foo.com:{0}/snipolicybarservername".format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand("-k --resolve foo.com:{0}:127.0.0.1 https://foo.com:{0}/snipolicybarservername".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -215,7 +214,7 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could not conn
 
 # Should fail
 tr = Test.AddTestRun("bar-to-foo-sni-policy-remap")
-tr.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/snipolicyfooremap".format(ts.Variables.port)
+tr.MakeCurlCommand("-k -H \"host: bar.com\"  http://127.0.0.1:{0}/snipolicyfooremap".format(ts.Variables.port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -223,7 +222,7 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could not conn
 
 # Should succeed
 tr = Test.AddTestRun("bar-to-foo-sni-policy-host")
-tr.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/snipolicyfoohost".format(ts.Variables.port)
+tr.MakeCurlCommand("-k -H \"host: bar.com\"  http://127.0.0.1:{0}/snipolicyfoohost".format(ts.Variables.port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -231,8 +230,7 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not conn
 
 # Should succeed
 tr = Test.AddTestRun("bar-to-foo-sni-policy-servername")
-tr.Processes.Default.Command = "curl -k --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}/snipolicyfooservername".format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand("-k --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}/snipolicyfooservername".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

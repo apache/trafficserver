@@ -52,17 +52,15 @@ static constexpr unsigned HDR_BUF_RONLY_HEAPS = 3;
 
 class IOBufferBlock;
 
-enum {
-  HDR_HEAP_OBJ_EMPTY            = 0,
-  HDR_HEAP_OBJ_RAW              = 1,
-  HDR_HEAP_OBJ_URL              = 2,
-  HDR_HEAP_OBJ_HTTP_HEADER      = 3,
-  HDR_HEAP_OBJ_MIME_HEADER      = 4,
-  HDR_HEAP_OBJ_FIELD_BLOCK      = 5,
-  HDR_HEAP_OBJ_FIELD_STANDALONE = 6, // not a type that lives in HdrHeaps
-  HDR_HEAP_OBJ_FIELD_SDK_HANDLE = 7, // not a type that lives in HdrHeaps
-
-  HDR_HEAP_OBJ_MAGIC = 0x0FEEB1E0
+enum class HdrHeapObjType : uint8_t {
+  EMPTY            = 0,
+  RAW              = 1,
+  URL              = 2,
+  HTTP_HEADER      = 3,
+  MIME_HEADER      = 4,
+  FIELD_BLOCK      = 5,
+  FIELD_STANDALONE = 6, // not a type that lives in HdrHeaps
+  FIELD_SDK_HANDLE = 7, // not a type that lives in HdrHeaps
 };
 
 struct HdrHeapObjImpl {
@@ -110,9 +108,9 @@ obj_copy(HdrHeapObjImpl *s_obj, char *d_addr)
 }
 
 inline void
-obj_init_header(HdrHeapObjImpl *obj, uint32_t type, uint32_t nbytes, uint32_t obj_flags)
+obj_init_header(HdrHeapObjImpl *obj, HdrHeapObjType type, uint32_t nbytes, uint32_t obj_flags)
 {
-  obj->m_type      = type;
+  obj->m_type      = static_cast<uint32_t>(type);
   obj->m_length    = nbytes;
   obj->m_obj_flags = obj_flags;
 }
@@ -120,12 +118,7 @@ obj_init_header(HdrHeapObjImpl *obj, uint32_t type, uint32_t nbytes, uint32_t ob
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-enum {
-  HDR_BUF_MAGIC_ALIVE     = 0xabcdfeed,
-  HDR_BUF_MAGIC_MARSHALED = 0xdcbafeed,
-  HDR_BUF_MAGIC_DEAD      = 0xabcddead,
-  HDR_BUF_MAGIC_CORRUPT   = 0xbadbadcc
-};
+enum class HdrBufMagic : uint32_t { ALIVE = 0xabcdfeed, MARSHALED = 0xdcbafeed, DEAD = 0xabcddead, CORRUPT = 0xbadbadcc };
 
 class HdrStrHeap : public RefCountObj
 {
@@ -188,7 +181,7 @@ public:
   void destroy();
 
   // PtrHeap allocation
-  HdrHeapObjImpl *allocate_obj(int nbytes, int type);
+  HdrHeapObjImpl *allocate_obj(int nbytes, HdrHeapObjType type);
   void            deallocate_obj(HdrHeapObjImpl *obj);
 
   // StrHeap allocation
@@ -204,7 +197,7 @@ public:
   /// Computes the valid data size of an unmarshalled instance.
   /// Callers should round up to HDR_PTR_SIZE to get the actual footprint.
   int unmarshal_size() const; // TBD - change this name, it's confusing.
-  // One option - overload marshal_length to return this value if @a magic is HDR_BUF_MAGIC_MARSHALED.
+  // One option - overload marshal_length to return this value if @a magic is HdrBufMagic::MARSHALED.
 
   void inherit_string_heaps(const HdrHeap *inherit_from);
   int  attach_block(IOBufferBlock *b, const char *use_start);
@@ -270,10 +263,10 @@ public:
   // Debugging functions
   void dump_heap(int len = -1);
 
-  uint32_t m_magic;
-  char    *m_free_start;
-  char    *m_data_start;
-  uint32_t m_size;
+  HdrBufMagic m_magic;
+  char       *m_free_start;
+  char       *m_data_start;
+  uint32_t    m_size;
 
   bool m_writeable;
 

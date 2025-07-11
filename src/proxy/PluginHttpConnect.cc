@@ -26,6 +26,12 @@
 
 extern HttpSessionAccept *plugin_http_accept;
 
+bool
+PluginHttpConnectIsInitialized()
+{
+  return plugin_http_accept != nullptr;
+}
+
 PluginVC *
 PluginHttpConnectInternal(TSHttpConnectOptions *options)
 {

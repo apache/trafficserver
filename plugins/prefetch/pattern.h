@@ -77,14 +77,14 @@ public:
   virtual ~MultiPattern();
 
   bool          empty() const;
-  void          add(Pattern *pattern);
+  void          add(std::unique_ptr<Pattern> pattern);
   virtual bool  match(const String &subject) const;
   virtual bool  replace(const String &subject, String &result) const;
   const String &name() const;
 
 protected:
-  std::vector<Pattern *> _list; /**< @brief vector which dictates the order of the pattern evaluation. */
-  String                 _name; /**< @brief multi-pattern name */
+  std::vector<std::unique_ptr<Pattern>> _list; /**< @brief vector which dictates the order of the pattern evaluation. */
+  String                                _name; /**< @brief multi-pattern name */
 
 private:
   MultiPattern(const MultiPattern &);            // disallow

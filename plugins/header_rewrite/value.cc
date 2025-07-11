@@ -33,9 +33,6 @@
 Value::~Value()
 {
   Dbg(dbg_ctl, "Calling DTOR for Value");
-  for (auto &_cond_val : _cond_vals) {
-    delete _cond_val;
-  }
 }
 
 void
@@ -68,7 +65,7 @@ Value::set_value(const std::string &val)
       }
 
       if (tcond_val) {
-        _cond_vals.push_back(tcond_val);
+        _cond_vals.push_back(std::unique_ptr<Condition>{tcond_val});
       }
     }
   } else {

@@ -31,8 +31,10 @@ Cripts
    cripts-urls.en
    cripts-headers.en
    cripts-connections.en
-   cripts-matcher.en
+   cripts-certs.en
    cripts-crypto.en
+   cripts-matcher.en
    cripts-misc.en
    cripts-bundles.en
+   cripts-convenience.en
    cripts-examples.en

@@ -98,7 +98,7 @@ template <typename UpdateClass> struct ConfigUpdateHandler {
   int
   attach(const char *name)
   {
-    return REC_RegisterConfigUpdateFunc(name, ConfigUpdateHandler::update, this);
+    return RecRegisterConfigUpdateCb(name, ConfigUpdateHandler::update, this);
   }
 
 private:

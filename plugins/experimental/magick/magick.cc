@@ -23,6 +23,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <utility>
@@ -528,24 +529,18 @@ struct ImageTransform : TransformationPlugin {
 };
 
 struct GlobalHookPlugin : GlobalPlugin {
-  magick::Core    core_;
-  magick::EVPKey *key_ = nullptr;
-  ThreadPool      threadPool_;
+  magick::Core                    core_;
+  std::unique_ptr<magick::EVPKey> key_ = nullptr;
+  ThreadPool                      threadPool_;
 
-  ~GlobalHookPlugin() override
-  {
-    if (nullptr != key_) {
-      delete key_;
-      key_ = nullptr;
-    }
-  }
+  ~GlobalHookPlugin() override {}
 
   GlobalHookPlugin(const char *const f = nullptr) : threadPool_(2)
   {
     if (nullptr != f) {
       assert(0 < strlen(f));
       Dbg(dbg_ctl, "public key file: %s", f);
-      key_             = new magick::EVPKey();
+      key_             = std::make_unique<magick::EVPKey>();
       FILE *const file = fopen(f, "r");
       assert(nullptr != file);
       RSA *rsa = nullptr;

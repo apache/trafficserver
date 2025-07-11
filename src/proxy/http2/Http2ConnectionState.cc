@@ -175,9 +175,15 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
     // Pure END_STREAM
     if (payload_length == 0) {
+      if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+        stream->initiating_close();
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+      }
+
       if (stream->is_read_enabled()) {
         stream->signal_read_event(VC_EVENT_READ_COMPLETE);
       }
+
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
   } else {
@@ -2380,13 +2386,16 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
 
     if (result == Http2SendDataFrameResult::DONE) {
       if (!stream->is_outbound_connection()) {
-        // Delete a stream immediately
-        // TODO its should not be deleted for a several time to handling
-        // RST_STREAM and WINDOW_UPDATE.
-        // See 'closed' state written at [RFC 7540] 5.1.
-        Http2StreamDebug(this->session, stream->get_id(), "Shutdown stream");
-        stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
-        stream->do_io_close();
+        if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+          // Delete a stream immediately
+          Http2StreamDebug(this->session, stream->get_id(), "Shutdown stream");
+          stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
+          stream->do_io_close();
+        } else {
+          // This stream waits for the END_STREAM in half-closed (local) state until `http.transaction_no_activity_timeout_in`.
+          // If no frame with END_STREAM is found, ATS actively closes the stream.
+          Http2StreamDebug(this->session, stream->get_id(), "waiting END_STREAM");
+        }
       } else if (stream->is_outbound_connection() && stream->is_write_vio_done()) {
         stream->signal_write_event(VC_EVENT_WRITE_COMPLETE);
       } else {
@@ -2455,8 +2464,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
       bool    has_content_header   = send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH);
       bool    explicit_zero_length = has_content_header && send_hdr->get_content_length() == 0;
       int64_t content_length       = has_content_header ? send_hdr->get_content_length() : 0L;
-      bool    is_chunked =
-        is_transfer_encoded && send_hdr->value_get(MIME_FIELD_TRANSFER_ENCODING) == std::string_view(HTTP_VALUE_CHUNKED);
+      bool is_chunked = is_transfer_encoded && send_hdr->value_get(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) ==
+                                                 static_cast<std::string_view>(HTTP_VALUE_CHUNKED);
 
       bool expect_content_stream =
         is_transfer_encoded ||                                                        // transfer encoded content length is unknown
@@ -2534,16 +2543,16 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   HTTPHdr        hdr;
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
-  hdr.create(HTTP_TYPE_REQUEST, HTTP_2_0);
+  hdr.create(HTTPType::REQUEST, HTTP_2_0);
   hdr.url_set(&url);
-  hdr.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+  hdr.method_set(static_cast<std::string_view>(HTTP_METHOD_GET));
 
   if (accept_encoding != nullptr) {
     auto       name{accept_encoding->name_get()};
-    MIMEField *f = hdr.field_create(name.data(), name.length());
+    MIMEField *f = hdr.field_create(name);
 
     auto value{accept_encoding->value_get()};
-    f->value_set(hdr.m_heap, hdr.m_mime, value.data(), value.length());
+    f->value_set(hdr.m_heap, hdr.m_mime, value);
 
     hdr.field_attach(f);
   }

@@ -34,10 +34,10 @@
 
 using cache_generation_t = int64_t;
 
-enum URLType {
-  URL_TYPE_NONE,
-  URL_TYPE_HTTP,
-  URL_TYPE_HTTPS,
+enum class URLType : uint8_t {
+  NONE,
+  HTTP,
+  HTTPS,
 };
 
 class URLImpl : public HdrHeapObjImpl
@@ -71,7 +71,7 @@ public:
   // Tokenized values
   int16_t  m_scheme_wks_idx;
   uint16_t m_port;
-  uint8_t  m_url_type;  // e.g. HTTP
+  URLType  m_url_type;  // e.g. HTTP
   uint8_t  m_type_code; // RFC 1738 limits type code to 1 char
   // 6 bytes
 
@@ -82,29 +82,29 @@ public:
   // 8 bytes + 4 bits, will result in padding
 
   // Accessors
-  const char *get_scheme(int *length);
-  const char *set_scheme(HdrHeap *heap, const char *value, int value_wks_idx, int length, bool copy_string);
-  const char *get_user(int *length);
-  void        set_user(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_password(int *length);
-  void        set_password(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_host(int *length);
-  void        set_host(HdrHeap *heap, const char *value, int length, bool copy_string);
-  int         get_port();
-  void        set_port(HdrHeap *heap, unsigned int port);
-  void        set_port(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_path(int *length);
-  void        set_path(HdrHeap *heap, const char *value, int length, bool copy_string);
-  int         get_type();
-  void        set_type(int type);
-  int         get_type_code();
-  void        set_type_code(unsigned int typecode);
-  const char *get_params(int *length);
-  void        set_params(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_query(int *length);
-  void        set_query(HdrHeap *heap, const char *value, int length, bool copy_string);
-  const char *get_fragment(int *length);
-  void        set_fragment(HdrHeap *heap, const char *value, int length, bool copy_string);
+  std::string_view get_scheme() const noexcept;
+  const char      *set_scheme(HdrHeap *heap, std::string_view value, int value_wks_idx, bool copy_string);
+  std::string_view get_user() const noexcept;
+  void             set_user(HdrHeap *heap, std::string_view value, bool copy_string);
+  std::string_view get_password() const noexcept;
+  void             set_password(HdrHeap *heap, std::string_view value, bool copy_string);
+  std::string_view get_host() const noexcept;
+  void             set_host(HdrHeap *heap, std::string_view value, bool copy_string);
+  int              get_port();
+  void             set_port(HdrHeap *heap, unsigned int port);
+  void             set_port(HdrHeap *heap, std::string_view value, bool copy_string);
+  std::string_view get_path() const noexcept;
+  void             set_path(HdrHeap *heap, std::string_view value, bool copy_string);
+  URLType          get_type();
+  void             set_type(URLType type);
+  int              get_type_code();
+  void             set_type_code(unsigned int typecode);
+  std::string_view get_params() const noexcept;
+  void             set_params(HdrHeap *heap, std::string_view value, bool copy_string);
+  std::string_view get_query() const noexcept;
+  void             set_query(HdrHeap *heap, std::string_view value, bool copy_string);
+  std::string_view get_fragment() const noexcept;
+  void             set_fragment(HdrHeap *heap, std::string_view value, bool copy_string);
 
   // Marshaling Functions
   int    marshal(MarshalXlate *str_xlate, int num_xlate);
@@ -121,26 +121,26 @@ private:
 
 using URLHashContext = CryptoContext;
 
-extern const char *URL_SCHEME_FILE;
-extern const char *URL_SCHEME_FTP;
-extern const char *URL_SCHEME_GOPHER;
-extern const char *URL_SCHEME_HTTP;
-extern const char *URL_SCHEME_HTTPS;
-extern const char *URL_SCHEME_WS;
-extern const char *URL_SCHEME_WSS;
-extern const char *URL_SCHEME_MAILTO;
-extern const char *URL_SCHEME_NEWS;
-extern const char *URL_SCHEME_NNTP;
-extern const char *URL_SCHEME_PROSPERO;
-extern const char *URL_SCHEME_TELNET;
-extern const char *URL_SCHEME_TUNNEL;
-extern const char *URL_SCHEME_WAIS;
-extern const char *URL_SCHEME_PNM;
-extern const char *URL_SCHEME_RTSP;
-extern const char *URL_SCHEME_RTSPU;
-extern const char *URL_SCHEME_MMS;
-extern const char *URL_SCHEME_MMSU;
-extern const char *URL_SCHEME_MMST;
+extern c_str_view URL_SCHEME_FILE;
+extern c_str_view URL_SCHEME_FTP;
+extern c_str_view URL_SCHEME_GOPHER;
+extern c_str_view URL_SCHEME_HTTP;
+extern c_str_view URL_SCHEME_HTTPS;
+extern c_str_view URL_SCHEME_WS;
+extern c_str_view URL_SCHEME_WSS;
+extern c_str_view URL_SCHEME_MAILTO;
+extern c_str_view URL_SCHEME_NEWS;
+extern c_str_view URL_SCHEME_NNTP;
+extern c_str_view URL_SCHEME_PROSPERO;
+extern c_str_view URL_SCHEME_TELNET;
+extern c_str_view URL_SCHEME_TUNNEL;
+extern c_str_view URL_SCHEME_WAIS;
+extern c_str_view URL_SCHEME_PNM;
+extern c_str_view URL_SCHEME_RTSP;
+extern c_str_view URL_SCHEME_RTSPU;
+extern c_str_view URL_SCHEME_MMS;
+extern c_str_view URL_SCHEME_MMSU;
+extern c_str_view URL_SCHEME_MMST;
 
 extern int URL_WKSIDX_FILE;
 extern int URL_WKSIDX_FTP;
@@ -162,27 +162,6 @@ extern int URL_WKSIDX_RTSPU;
 extern int URL_WKSIDX_MMS;
 extern int URL_WKSIDX_MMSU;
 extern int URL_WKSIDX_MMST;
-
-extern int URL_LEN_FILE;
-extern int URL_LEN_FTP;
-extern int URL_LEN_GOPHER;
-extern int URL_LEN_HTTP;
-extern int URL_LEN_HTTPS;
-extern int URL_LEN_WS;
-extern int URL_LEN_WSS;
-extern int URL_LEN_MAILTO;
-extern int URL_LEN_NEWS;
-extern int URL_LEN_NNTP;
-extern int URL_LEN_PROSPERO;
-extern int URL_LEN_TELNET;
-extern int URL_LEN_TUNNEL;
-extern int URL_LEN_WAIS;
-extern int URL_LEN_PNM;
-extern int URL_LEN_RTSP;
-extern int URL_LEN_RTSPU;
-extern int URL_LEN_MMS;
-extern int URL_LEN_MMSU;
-extern int URL_LEN_MMST;
 
 /* Public */
 bool validate_host_name(std::string_view addr);
@@ -217,6 +196,7 @@ void  url_called_set(URLImpl *url);
 char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
 void url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1);
+void url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1);
 void url_host_CryptoHash_get(URLImpl *url, CryptoHash *hash);
 
 constexpr bool USE_STRICT_URI_PARSING = true;
@@ -239,12 +219,12 @@ void unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, 
 void unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e, int &state);
 
 inline int
-url_canonicalize_port(int type, int port)
+url_canonicalize_port(URLType type, int port)
 {
   if (port == 0) {
-    if (type == URL_TYPE_HTTP)
+    if (type == URLType::HTTP)
       port = 80;
-    else if (type == URL_TYPE_HTTPS)
+    else if (type == URLType::HTTPS)
       port = 443;
   }
   return (port);
@@ -278,41 +258,41 @@ public:
   char *string_get_ref(int *length = nullptr, unsigned normalization_flags = URLNormalize::NONE) const;
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr) const;
   void  hash_get(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
+  void  hash_get92(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
   void  host_hash_get(CryptoHash *hash) const;
 
-  const char            *scheme_get(int *length);
-  const std::string_view scheme_get();
-  int                    scheme_get_wksidx() const;
-  void                   scheme_set(const char *value, int length);
+  std::string_view scheme_get() const noexcept;
+  int              scheme_get_wksidx() const;
+  void             scheme_set(std::string_view value);
 
-  const char *user_get(int *length);
-  void        user_set(const char *value, int length);
-  const char *password_get(int *length);
-  void        password_set(const char *value, int length);
-  const char *host_get(int *length);
-  void        host_set(const char *value, int length);
+  std::string_view user_get() const noexcept;
+  void             user_set(std::string_view value);
+  std::string_view password_get() const noexcept;
+  void             password_set(std::string_view value);
+  std::string_view host_get() const noexcept;
+  void             host_set(std::string_view value);
 
   int  port_get() const;
   int  port_get_raw() const;
   void port_set(int port);
 
-  const char *path_get(int *length);
-  void        path_set(const char *value, int length);
+  std::string_view path_get() const noexcept;
+  void             path_set(std::string_view value);
 
   int  type_code_get();
   void type_code_set(int type);
 
-  const char *query_get(int *length);
-  void        query_set(const char *value, int length);
-  const char *fragment_get(int *length);
-  void        fragment_set(const char *value, int length);
+  std::string_view query_get() const noexcept;
+  void             query_set(std::string_view value);
+  std::string_view fragment_get() const noexcept;
+  void             fragment_set(std::string_view value);
 
   /**
    * Parse the given URL string and populate URL state with the parts.
    *
    * @param[in] url The URL to parse.
    *
-   * @return PARSE_RESULT_DONE if parsing was successful, PARSE_RESULT_ERROR
+   * @return ParseResult::DONE if parsing was successful, ParseResult::ERROR
    * otherwise.
    */
   ParseResult parse(std::string_view url);
@@ -500,6 +480,16 @@ URL::hash_get(CryptoHash *hash, bool ignore_query, cache_generation_t generation
   -------------------------------------------------------------------------*/
 
 inline void
+URL::hash_get92(CryptoHash *hash, bool ignore_query, cache_generation_t generation) const
+{
+  ink_assert(valid());
+  url_CryptoHash_get_92(m_url_impl, hash, ignore_query, generation);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline void
 URL::host_hash_get(CryptoHash *hash) const
 {
   ink_assert(valid());
@@ -509,21 +499,11 @@ URL::host_hash_get(CryptoHash *hash) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const std::string_view
-URL::scheme_get()
+inline std::string_view
+URL::scheme_get() const noexcept
 {
   ink_assert(valid());
-  int         length;
-  const char *scheme = m_url_impl->get_scheme(&length);
-  return std::string_view{scheme, static_cast<size_t>(length)};
-}
-
-inline const char *
-URL::scheme_get(int *length)
-{
-  std::string_view ret = this->scheme_get();
-  *length              = ret.size();
-  return ret.data();
+  return m_url_impl->get_scheme();
 }
 
 inline int
@@ -537,71 +517,71 @@ URL::scheme_get_wksidx() const
   -------------------------------------------------------------------------*/
 
 inline void
-URL::scheme_set(const char *value, int length)
+URL::scheme_set(std::string_view value)
 {
   ink_assert(valid());
-  int scheme_wks_idx = (value ? hdrtoken_tokenize(value, length) : -1);
-  m_url_impl->set_scheme(m_heap, value, scheme_wks_idx, length, true);
+  int scheme_wks_idx = (!value.empty() ? hdrtoken_tokenize(value.data(), value.length()) : -1);
+  m_url_impl->set_scheme(m_heap, value, scheme_wks_idx, true);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::user_get(int *length)
+inline std::string_view
+URL::user_get() const noexcept
 {
   ink_assert(valid());
-  return m_url_impl->get_user(length);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline void
-URL::user_set(const char *value, int length)
-{
-  ink_assert(valid());
-  m_url_impl->set_user(m_heap, value, length, true);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline const char *
-URL::password_get(int *length)
-{
-  ink_assert(valid());
-  return m_url_impl->get_password(length);
+  return m_url_impl->get_user();
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 inline void
-URL::password_set(const char *value, int length)
+URL::user_set(std::string_view value)
 {
   ink_assert(valid());
-  m_url_impl->set_password(m_heap, value, length, true);
+  m_url_impl->set_user(m_heap, value, true);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::host_get(int *length)
+inline std::string_view
+URL::password_get() const noexcept
 {
   ink_assert(valid());
-  return m_url_impl->get_host(length);
+  return m_url_impl->get_password();
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 inline void
-URL::host_set(const char *value, int length)
+URL::password_set(std::string_view value)
 {
   ink_assert(valid());
-  m_url_impl->set_host(m_heap, value, length, true);
+  m_url_impl->set_password(m_heap, value, true);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline std::string_view
+URL::host_get() const noexcept
+{
+  ink_assert(valid());
+  return m_url_impl->get_host();
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline void
+URL::host_set(std::string_view value)
+{
+  ink_assert(valid());
+  m_url_impl->set_host(m_heap, value, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -637,21 +617,21 @@ URL::port_set(int port)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::path_get(int *length)
+inline std::string_view
+URL::path_get() const noexcept
 {
   ink_assert(valid());
-  return m_url_impl->get_path(length);
+  return m_url_impl->get_path();
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 inline void
-URL::path_set(const char *value, int length)
+URL::path_set(std::string_view value)
 {
   ink_assert(valid());
-  m_url_impl->set_path(m_heap, value, length, true);
+  m_url_impl->set_path(m_heap, value, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -677,41 +657,41 @@ URL::type_code_set(int typecode)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::query_get(int *length)
+inline std::string_view
+URL::query_get() const noexcept
 {
   ink_assert(valid());
-  return m_url_impl->get_query(length);
+  return m_url_impl->get_query();
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 inline void
-URL::query_set(const char *value, int length)
+URL::query_set(std::string_view value)
 {
   ink_assert(valid());
-  m_url_impl->set_query(m_heap, value, length, true);
+  m_url_impl->set_query(m_heap, value, true);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline const char *
-URL::fragment_get(int *length)
+inline std::string_view
+URL::fragment_get() const noexcept
 {
   ink_assert(valid());
-  return m_url_impl->get_fragment(length);
+  return m_url_impl->get_fragment();
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 inline void
-URL::fragment_set(const char *value, int length)
+URL::fragment_set(std::string_view value)
 {
   ink_assert(valid());
-  m_url_impl->set_fragment(m_heap, value, length, true);
+  m_url_impl->set_fragment(m_heap, value, true);
 }
 
 /**

@@ -32,6 +32,8 @@
 #include "proxy/hdrs/HdrToken.h"
 #include "tscore/Diags.h"
 
+using namespace std::literals;
+
 /***********************************************************************
  *                                                                     *
  *                    C O M P I L E    O P T I O N S                   *
@@ -46,16 +48,16 @@
  *                                                                     *
  ***********************************************************************/
 
-const char *HTTP_METHOD_CONNECT;
-const char *HTTP_METHOD_DELETE;
-const char *HTTP_METHOD_GET;
-const char *HTTP_METHOD_HEAD;
-const char *HTTP_METHOD_OPTIONS;
-const char *HTTP_METHOD_POST;
-const char *HTTP_METHOD_PURGE;
-const char *HTTP_METHOD_PUT;
-const char *HTTP_METHOD_TRACE;
-const char *HTTP_METHOD_PUSH;
+c_str_view HTTP_METHOD_CONNECT;
+c_str_view HTTP_METHOD_DELETE;
+c_str_view HTTP_METHOD_GET;
+c_str_view HTTP_METHOD_HEAD;
+c_str_view HTTP_METHOD_OPTIONS;
+c_str_view HTTP_METHOD_POST;
+c_str_view HTTP_METHOD_PURGE;
+c_str_view HTTP_METHOD_PUT;
+c_str_view HTTP_METHOD_TRACE;
+c_str_view HTTP_METHOD_PUSH;
 
 int HTTP_WKSIDX_CONNECT;
 int HTTP_WKSIDX_DELETE;
@@ -69,41 +71,30 @@ int HTTP_WKSIDX_TRACE;
 int HTTP_WKSIDX_PUSH;
 int HTTP_WKSIDX_METHODS_CNT = 0;
 
-int HTTP_LEN_CONNECT;
-int HTTP_LEN_DELETE;
-int HTTP_LEN_GET;
-int HTTP_LEN_HEAD;
-int HTTP_LEN_OPTIONS;
-int HTTP_LEN_POST;
-int HTTP_LEN_PURGE;
-int HTTP_LEN_PUT;
-int HTTP_LEN_TRACE;
-int HTTP_LEN_PUSH;
-
-const char *HTTP_VALUE_BYTES;
-const char *HTTP_VALUE_CHUNKED;
-const char *HTTP_VALUE_CLOSE;
-const char *HTTP_VALUE_COMPRESS;
-const char *HTTP_VALUE_DEFLATE;
-const char *HTTP_VALUE_GZIP;
-const char *HTTP_VALUE_BROTLI;
-const char *HTTP_VALUE_IDENTITY;
-const char *HTTP_VALUE_KEEP_ALIVE;
-const char *HTTP_VALUE_MAX_AGE;
-const char *HTTP_VALUE_MAX_STALE;
-const char *HTTP_VALUE_MIN_FRESH;
-const char *HTTP_VALUE_MUST_REVALIDATE;
-const char *HTTP_VALUE_NONE;
-const char *HTTP_VALUE_NO_CACHE;
-const char *HTTP_VALUE_NO_STORE;
-const char *HTTP_VALUE_NO_TRANSFORM;
-const char *HTTP_VALUE_ONLY_IF_CACHED;
-const char *HTTP_VALUE_PRIVATE;
-const char *HTTP_VALUE_PROXY_REVALIDATE;
-const char *HTTP_VALUE_PUBLIC;
-const char *HTTP_VALUE_S_MAXAGE;
-const char *HTTP_VALUE_NEED_REVALIDATE_ONCE;
-const char *HTTP_VALUE_100_CONTINUE;
+c_str_view HTTP_VALUE_BYTES;
+c_str_view HTTP_VALUE_CHUNKED;
+c_str_view HTTP_VALUE_CLOSE;
+c_str_view HTTP_VALUE_COMPRESS;
+c_str_view HTTP_VALUE_DEFLATE;
+c_str_view HTTP_VALUE_GZIP;
+c_str_view HTTP_VALUE_BROTLI;
+c_str_view HTTP_VALUE_IDENTITY;
+c_str_view HTTP_VALUE_KEEP_ALIVE;
+c_str_view HTTP_VALUE_MAX_AGE;
+c_str_view HTTP_VALUE_MAX_STALE;
+c_str_view HTTP_VALUE_MIN_FRESH;
+c_str_view HTTP_VALUE_MUST_REVALIDATE;
+c_str_view HTTP_VALUE_NONE;
+c_str_view HTTP_VALUE_NO_CACHE;
+c_str_view HTTP_VALUE_NO_STORE;
+c_str_view HTTP_VALUE_NO_TRANSFORM;
+c_str_view HTTP_VALUE_ONLY_IF_CACHED;
+c_str_view HTTP_VALUE_PRIVATE;
+c_str_view HTTP_VALUE_PROXY_REVALIDATE;
+c_str_view HTTP_VALUE_PUBLIC;
+c_str_view HTTP_VALUE_S_MAXAGE;
+c_str_view HTTP_VALUE_NEED_REVALIDATE_ONCE;
+c_str_view HTTP_VALUE_100_CONTINUE;
 // Cache-control: extension "need-revalidate-once" is used internally by T.S.
 // to invalidate a document, and it is not returned/forwarded.
 // If a cached document has this extension set (ie, is invalidated),
@@ -115,31 +106,6 @@ const char *HTTP_VALUE_100_CONTINUE;
 //      unset_cooked_cc_need_revalidate_once()
 // To test, use regular Cache-control testing functions, eg,
 //      is_cache_control_set(HTTP_VALUE_NEED_REVALIDATE_ONCE)
-
-int HTTP_LEN_BYTES;
-int HTTP_LEN_CHUNKED;
-int HTTP_LEN_CLOSE;
-int HTTP_LEN_COMPRESS;
-int HTTP_LEN_DEFLATE;
-int HTTP_LEN_GZIP;
-int HTTP_LEN_BROTLI;
-int HTTP_LEN_IDENTITY;
-int HTTP_LEN_KEEP_ALIVE;
-int HTTP_LEN_MAX_AGE;
-int HTTP_LEN_MAX_STALE;
-int HTTP_LEN_MIN_FRESH;
-int HTTP_LEN_MUST_REVALIDATE;
-int HTTP_LEN_NONE;
-int HTTP_LEN_NO_CACHE;
-int HTTP_LEN_NO_STORE;
-int HTTP_LEN_NO_TRANSFORM;
-int HTTP_LEN_ONLY_IF_CACHED;
-int HTTP_LEN_PRIVATE;
-int HTTP_LEN_PROXY_REVALIDATE;
-int HTTP_LEN_PUBLIC;
-int HTTP_LEN_S_MAXAGE;
-int HTTP_LEN_NEED_REVALIDATE_ONCE;
-int HTTP_LEN_100_CONTINUE;
 
 Arena *const HTTPHdr::USE_HDR_HEAP_MAGIC = reinterpret_cast<Arena *>(1);
 
@@ -176,100 +142,64 @@ http_init()
     mime_init();
     url_init();
 
-    HTTP_METHOD_CONNECT = hdrtoken_string_to_wks("CONNECT");
-    HTTP_METHOD_DELETE  = hdrtoken_string_to_wks("DELETE");
-    HTTP_METHOD_GET     = hdrtoken_string_to_wks("GET");
-    HTTP_METHOD_HEAD    = hdrtoken_string_to_wks("HEAD");
-    HTTP_METHOD_OPTIONS = hdrtoken_string_to_wks("OPTIONS");
-    HTTP_METHOD_POST    = hdrtoken_string_to_wks("POST");
-    HTTP_METHOD_PURGE   = hdrtoken_string_to_wks("PURGE");
-    HTTP_METHOD_PUT     = hdrtoken_string_to_wks("PUT");
-    HTTP_METHOD_TRACE   = hdrtoken_string_to_wks("TRACE");
-    HTTP_METHOD_PUSH    = hdrtoken_string_to_wks("PUSH");
+    HTTP_METHOD_CONNECT = hdrtoken_string_to_wks_sv("CONNECT");
+    HTTP_METHOD_DELETE  = hdrtoken_string_to_wks_sv("DELETE");
+    HTTP_METHOD_GET     = hdrtoken_string_to_wks_sv("GET");
+    HTTP_METHOD_HEAD    = hdrtoken_string_to_wks_sv("HEAD");
+    HTTP_METHOD_OPTIONS = hdrtoken_string_to_wks_sv("OPTIONS");
+    HTTP_METHOD_POST    = hdrtoken_string_to_wks_sv("POST");
+    HTTP_METHOD_PURGE   = hdrtoken_string_to_wks_sv("PURGE");
+    HTTP_METHOD_PUT     = hdrtoken_string_to_wks_sv("PUT");
+    HTTP_METHOD_TRACE   = hdrtoken_string_to_wks_sv("TRACE");
+    HTTP_METHOD_PUSH    = hdrtoken_string_to_wks_sv("PUSH");
 
     // HTTP methods index calculation. Don't forget to count them!
     // Don't change the order of calculation! Each index has related bitmask (see http quick filter)
-    HTTP_WKSIDX_CONNECT = hdrtoken_wks_to_index(HTTP_METHOD_CONNECT);
+    HTTP_WKSIDX_CONNECT = hdrtoken_wks_to_index(HTTP_METHOD_CONNECT.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_DELETE = hdrtoken_wks_to_index(HTTP_METHOD_DELETE);
+    HTTP_WKSIDX_DELETE = hdrtoken_wks_to_index(HTTP_METHOD_DELETE.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_GET = hdrtoken_wks_to_index(HTTP_METHOD_GET);
+    HTTP_WKSIDX_GET = hdrtoken_wks_to_index(HTTP_METHOD_GET.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_HEAD = hdrtoken_wks_to_index(HTTP_METHOD_HEAD);
+    HTTP_WKSIDX_HEAD = hdrtoken_wks_to_index(HTTP_METHOD_HEAD.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_OPTIONS = hdrtoken_wks_to_index(HTTP_METHOD_OPTIONS);
+    HTTP_WKSIDX_OPTIONS = hdrtoken_wks_to_index(HTTP_METHOD_OPTIONS.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_POST = hdrtoken_wks_to_index(HTTP_METHOD_POST);
+    HTTP_WKSIDX_POST = hdrtoken_wks_to_index(HTTP_METHOD_POST.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_PURGE = hdrtoken_wks_to_index(HTTP_METHOD_PURGE);
+    HTTP_WKSIDX_PURGE = hdrtoken_wks_to_index(HTTP_METHOD_PURGE.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_PUT = hdrtoken_wks_to_index(HTTP_METHOD_PUT);
+    HTTP_WKSIDX_PUT = hdrtoken_wks_to_index(HTTP_METHOD_PUT.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_TRACE = hdrtoken_wks_to_index(HTTP_METHOD_TRACE);
+    HTTP_WKSIDX_TRACE = hdrtoken_wks_to_index(HTTP_METHOD_TRACE.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_PUSH = hdrtoken_wks_to_index(HTTP_METHOD_PUSH);
+    HTTP_WKSIDX_PUSH = hdrtoken_wks_to_index(HTTP_METHOD_PUSH.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
 
-    HTTP_LEN_CONNECT = hdrtoken_wks_to_length(HTTP_METHOD_CONNECT);
-    HTTP_LEN_DELETE  = hdrtoken_wks_to_length(HTTP_METHOD_DELETE);
-    HTTP_LEN_GET     = hdrtoken_wks_to_length(HTTP_METHOD_GET);
-    HTTP_LEN_HEAD    = hdrtoken_wks_to_length(HTTP_METHOD_HEAD);
-    HTTP_LEN_OPTIONS = hdrtoken_wks_to_length(HTTP_METHOD_OPTIONS);
-    HTTP_LEN_POST    = hdrtoken_wks_to_length(HTTP_METHOD_POST);
-    HTTP_LEN_PURGE   = hdrtoken_wks_to_length(HTTP_METHOD_PURGE);
-    HTTP_LEN_PUT     = hdrtoken_wks_to_length(HTTP_METHOD_PUT);
-    HTTP_LEN_TRACE   = hdrtoken_wks_to_length(HTTP_METHOD_TRACE);
-    HTTP_LEN_PUSH    = hdrtoken_wks_to_length(HTTP_METHOD_PUSH);
-
-    HTTP_VALUE_BYTES                = hdrtoken_string_to_wks("bytes");
-    HTTP_VALUE_CHUNKED              = hdrtoken_string_to_wks("chunked");
-    HTTP_VALUE_CLOSE                = hdrtoken_string_to_wks("close");
-    HTTP_VALUE_COMPRESS             = hdrtoken_string_to_wks("compress");
-    HTTP_VALUE_DEFLATE              = hdrtoken_string_to_wks("deflate");
-    HTTP_VALUE_GZIP                 = hdrtoken_string_to_wks("gzip");
-    HTTP_VALUE_BROTLI               = hdrtoken_string_to_wks("br");
-    HTTP_VALUE_IDENTITY             = hdrtoken_string_to_wks("identity");
-    HTTP_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks("keep-alive");
-    HTTP_VALUE_MAX_AGE              = hdrtoken_string_to_wks("max-age");
-    HTTP_VALUE_MAX_STALE            = hdrtoken_string_to_wks("max-stale");
-    HTTP_VALUE_MIN_FRESH            = hdrtoken_string_to_wks("min-fresh");
-    HTTP_VALUE_MUST_REVALIDATE      = hdrtoken_string_to_wks("must-revalidate");
-    HTTP_VALUE_NONE                 = hdrtoken_string_to_wks("none");
-    HTTP_VALUE_NO_CACHE             = hdrtoken_string_to_wks("no-cache");
-    HTTP_VALUE_NO_STORE             = hdrtoken_string_to_wks("no-store");
-    HTTP_VALUE_NO_TRANSFORM         = hdrtoken_string_to_wks("no-transform");
-    HTTP_VALUE_ONLY_IF_CACHED       = hdrtoken_string_to_wks("only-if-cached");
-    HTTP_VALUE_PRIVATE              = hdrtoken_string_to_wks("private");
-    HTTP_VALUE_PROXY_REVALIDATE     = hdrtoken_string_to_wks("proxy-revalidate");
-    HTTP_VALUE_PUBLIC               = hdrtoken_string_to_wks("public");
-    HTTP_VALUE_S_MAXAGE             = hdrtoken_string_to_wks("s-maxage");
-    HTTP_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks("need-revalidate-once");
-    HTTP_VALUE_100_CONTINUE         = hdrtoken_string_to_wks("100-continue");
-
-    HTTP_LEN_BYTES                = hdrtoken_wks_to_length(HTTP_VALUE_BYTES);
-    HTTP_LEN_CHUNKED              = hdrtoken_wks_to_length(HTTP_VALUE_CHUNKED);
-    HTTP_LEN_CLOSE                = hdrtoken_wks_to_length(HTTP_VALUE_CLOSE);
-    HTTP_LEN_COMPRESS             = hdrtoken_wks_to_length(HTTP_VALUE_COMPRESS);
-    HTTP_LEN_DEFLATE              = hdrtoken_wks_to_length(HTTP_VALUE_DEFLATE);
-    HTTP_LEN_GZIP                 = hdrtoken_wks_to_length(HTTP_VALUE_GZIP);
-    HTTP_LEN_BROTLI               = hdrtoken_wks_to_length(HTTP_VALUE_BROTLI);
-    HTTP_LEN_IDENTITY             = hdrtoken_wks_to_length(HTTP_VALUE_IDENTITY);
-    HTTP_LEN_KEEP_ALIVE           = hdrtoken_wks_to_length(HTTP_VALUE_KEEP_ALIVE);
-    HTTP_LEN_MAX_AGE              = hdrtoken_wks_to_length(HTTP_VALUE_MAX_AGE);
-    HTTP_LEN_MAX_STALE            = hdrtoken_wks_to_length(HTTP_VALUE_MAX_STALE);
-    HTTP_LEN_MIN_FRESH            = hdrtoken_wks_to_length(HTTP_VALUE_MIN_FRESH);
-    HTTP_LEN_MUST_REVALIDATE      = hdrtoken_wks_to_length(HTTP_VALUE_MUST_REVALIDATE);
-    HTTP_LEN_NONE                 = hdrtoken_wks_to_length(HTTP_VALUE_NONE);
-    HTTP_LEN_NO_CACHE             = hdrtoken_wks_to_length(HTTP_VALUE_NO_CACHE);
-    HTTP_LEN_NO_STORE             = hdrtoken_wks_to_length(HTTP_VALUE_NO_STORE);
-    HTTP_LEN_NO_TRANSFORM         = hdrtoken_wks_to_length(HTTP_VALUE_NO_TRANSFORM);
-    HTTP_LEN_ONLY_IF_CACHED       = hdrtoken_wks_to_length(HTTP_VALUE_ONLY_IF_CACHED);
-    HTTP_LEN_PRIVATE              = hdrtoken_wks_to_length(HTTP_VALUE_PRIVATE);
-    HTTP_LEN_PROXY_REVALIDATE     = hdrtoken_wks_to_length(HTTP_VALUE_PROXY_REVALIDATE);
-    HTTP_LEN_PUBLIC               = hdrtoken_wks_to_length(HTTP_VALUE_PUBLIC);
-    HTTP_LEN_S_MAXAGE             = hdrtoken_wks_to_length(HTTP_VALUE_S_MAXAGE);
-    HTTP_LEN_NEED_REVALIDATE_ONCE = hdrtoken_wks_to_length(HTTP_VALUE_NEED_REVALIDATE_ONCE);
-    HTTP_LEN_100_CONTINUE         = hdrtoken_wks_to_length(HTTP_VALUE_100_CONTINUE);
+    HTTP_VALUE_BYTES                = hdrtoken_string_to_wks_sv("bytes");
+    HTTP_VALUE_CHUNKED              = hdrtoken_string_to_wks_sv("chunked");
+    HTTP_VALUE_CLOSE                = hdrtoken_string_to_wks_sv("close");
+    HTTP_VALUE_COMPRESS             = hdrtoken_string_to_wks_sv("compress");
+    HTTP_VALUE_DEFLATE              = hdrtoken_string_to_wks_sv("deflate");
+    HTTP_VALUE_GZIP                 = hdrtoken_string_to_wks_sv("gzip");
+    HTTP_VALUE_BROTLI               = hdrtoken_string_to_wks_sv("br");
+    HTTP_VALUE_IDENTITY             = hdrtoken_string_to_wks_sv("identity");
+    HTTP_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks_sv("keep-alive");
+    HTTP_VALUE_MAX_AGE              = hdrtoken_string_to_wks_sv("max-age");
+    HTTP_VALUE_MAX_STALE            = hdrtoken_string_to_wks_sv("max-stale");
+    HTTP_VALUE_MIN_FRESH            = hdrtoken_string_to_wks_sv("min-fresh");
+    HTTP_VALUE_MUST_REVALIDATE      = hdrtoken_string_to_wks_sv("must-revalidate");
+    HTTP_VALUE_NONE                 = hdrtoken_string_to_wks_sv("none");
+    HTTP_VALUE_NO_CACHE             = hdrtoken_string_to_wks_sv("no-cache");
+    HTTP_VALUE_NO_STORE             = hdrtoken_string_to_wks_sv("no-store");
+    HTTP_VALUE_NO_TRANSFORM         = hdrtoken_string_to_wks_sv("no-transform");
+    HTTP_VALUE_ONLY_IF_CACHED       = hdrtoken_string_to_wks_sv("only-if-cached");
+    HTTP_VALUE_PRIVATE              = hdrtoken_string_to_wks_sv("private");
+    HTTP_VALUE_PROXY_REVALIDATE     = hdrtoken_string_to_wks_sv("proxy-revalidate");
+    HTTP_VALUE_PUBLIC               = hdrtoken_string_to_wks_sv("public");
+    HTTP_VALUE_S_MAXAGE             = hdrtoken_string_to_wks_sv("s-maxage");
+    HTTP_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks_sv("need-revalidate-once");
+    HTTP_VALUE_100_CONTINUE         = hdrtoken_string_to_wks_sv("100-continue");
   }
 }
 
@@ -281,7 +211,7 @@ http_hdr_create(HdrHeap *heap, HTTPType polarity, HTTPVersion version)
 {
   HTTPHdrImpl *hh;
 
-  hh = (HTTPHdrImpl *)heap->allocate_obj(sizeof(HTTPHdrImpl), HDR_HEAP_OBJ_HTTP_HEADER);
+  hh = (HTTPHdrImpl *)heap->allocate_obj(sizeof(HTTPHdrImpl), HdrHeapObjType::HTTP_HEADER);
   http_hdr_init(heap, hh, polarity, version);
   return (hh);
 }
@@ -296,7 +226,7 @@ http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HTTPVersion ver
   hh->m_polarity    = polarity;
   hh->m_version     = HTTP_1_0;
   hh->m_fields_impl = mime_hdr_create(heap);
-  if (polarity == HTTP_TYPE_REQUEST) {
+  if (polarity == HTTPType::REQUEST) {
     hh->u.req.m_url_impl       = url_create(heap);
     hh->u.req.m_method_wks_idx = -1;
   }
@@ -304,25 +234,25 @@ http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity, HTTPVersion ver
   if (version == HTTP_2_0 || version == HTTP_3_0) {
     MIMEField *field;
     switch (polarity) {
-    case HTTP_TYPE_REQUEST:
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_METHOD.data(), PSEUDO_HEADER_METHOD.size());
+    case HTTPType::REQUEST:
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_METHOD);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
 
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_SCHEME.data(), PSEUDO_HEADER_SCHEME.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_SCHEME);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
 
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_AUTHORITY.data(), PSEUDO_HEADER_AUTHORITY.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_AUTHORITY);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
 
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_PATH.data(), PSEUDO_HEADER_PATH.size());
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_PATH);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
       break;
-    case HTTP_TYPE_RESPONSE:
-      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_STATUS.data(), PSEUDO_HEADER_STATUS.size());
+    case HTTPType::RESPONSE:
+      field = mime_field_create_named(heap, hh->m_fields_impl, PSEUDO_HEADER_STATUS);
       mime_hdr_field_attach(hh->m_fields_impl, field, false, nullptr);
       break;
     default:
-      ink_abort("HTTP_TYPE_UNKNOWN");
+      ink_abort("HTTPType::UNKNOWN");
     }
   }
 }
@@ -343,21 +273,21 @@ http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHea
   d_url      = d_hh->u.req.m_url_impl;
   d_polarity = d_hh->m_polarity;
 
-  ink_assert(s_hh->m_polarity != HTTP_TYPE_UNKNOWN);
+  ink_assert(s_hh->m_polarity != HTTPType::UNKNOWN);
   ink_assert(s_mh != nullptr);
   ink_assert(d_mh != nullptr);
 
   memcpy(d_hh, s_hh, sizeof(HTTPHdrImpl));
   d_hh->m_fields_impl = d_mh; // restore pre-memcpy mime impl
 
-  if (s_hh->m_polarity == HTTP_TYPE_REQUEST) {
-    if (d_polarity == HTTP_TYPE_REQUEST) {
+  if (s_hh->m_polarity == HTTPType::REQUEST) {
+    if (d_polarity == HTTPType::REQUEST) {
       d_hh->u.req.m_url_impl = d_url; // restore pre-memcpy url impl
     } else {
       d_url = d_hh->u.req.m_url_impl = url_create(d_heap); // create url
     }
     url_copy_onto(s_url, s_heap, d_url, d_heap, false);
-  } else if (d_polarity == HTTP_TYPE_REQUEST) {
+  } else if (d_polarity == HTTPType::REQUEST) {
     // gender bender.  Need to kill off old url
     url_clear(d_url);
   }
@@ -419,7 +349,7 @@ http_version_print(const HTTPVersion &version, char *buf, int bufsize, int *bufi
 
   char tmpbuf[16];
   http_hdr_version_to_string(version, tmpbuf);
-  TRY(mime_mem_print(tmpbuf, 8, buf, bufsize, bufindex, dumpoffset));
+  TRY(mime_mem_print(std::string_view{tmpbuf, 8}, buf, bufsize, bufindex, dumpoffset));
   return 1;
 
 #undef TRY
@@ -435,13 +365,13 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
   if (!x)      \
   return 0
 
-  int   tmplen, hdrstat;
+  int   tmplen;
   char  tmpbuf[32];
   char *p;
 
-  ink_assert((hdr->m_polarity == HTTP_TYPE_REQUEST) || (hdr->m_polarity == HTTP_TYPE_RESPONSE));
+  ink_assert((hdr->m_polarity == HTTPType::REQUEST) || (hdr->m_polarity == HTTPType::RESPONSE));
 
-  if (hdr->m_polarity == HTTP_TYPE_REQUEST) {
+  if (hdr->m_polarity == HTTPType::REQUEST) {
     if (hdr->u.req.m_ptr_method == nullptr) {
       return 1;
     }
@@ -481,29 +411,31 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
         *p++       = '\n';
         *bufindex += 2;
       } else {
-        TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
       }
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
 
     } else {
-      TRY(mime_mem_print(hdr->u.req.m_ptr_method, hdr->u.req.m_len_method, buf, bufsize, bufindex, dumpoffset));
+      TRY(
+        mime_mem_print(std::string_view{hdr->u.req.m_ptr_method, static_cast<std::string_view::size_type>(hdr->u.req.m_len_method)},
+                       buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
       if (hdr->u.req.m_url_impl) {
         TRY(url_print(hdr->u.req.m_url_impl, buf, bufsize, bufindex, dumpoffset));
-        TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
       }
 
       TRY(http_version_print(hdr->m_version, buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
     }
 
-  } else { //  hdr->m_polarity == HTTP_TYPE_RESPONSE
+  } else { //  hdr->m_polarity == HTTPType::RESPONSE
 
     if ((buf != nullptr) && (*dumpoffset == 0) && (bufsize - *bufindex >= 9 + 6 + 1)) { // fastpath
 
@@ -513,8 +445,7 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
       *p++       = ' ';
       *bufindex += 9;
 
-      hdrstat = http_hdr_status_get(hdr);
-      if (hdrstat == 200) {
+      if (auto hdrstat{static_cast<int32_t>(http_hdr_status_get(hdr))}; hdrstat == 200) {
         *p++   = '2';
         *p++   = '0';
         *p++   = '0';
@@ -528,7 +459,9 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
       *bufindex += tmplen + 1;
 
       if (hdr->u.resp.m_ptr_reason) {
-        TRY(mime_mem_print(hdr->u.resp.m_ptr_reason, hdr->u.resp.m_len_reason, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print(
+          std::string_view{hdr->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hdr->u.resp.m_len_reason)}, buf,
+          bufsize, bufindex, dumpoffset));
       }
 
       if (bufsize - *bufindex >= 2) {
@@ -537,7 +470,7 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
         *p++       = '\n';
         *bufindex += 2;
       } else {
-        TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
       }
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
@@ -545,19 +478,22 @@ http_hdr_print(HTTPHdrImpl const *hdr, char *buf, int bufsize, int *bufindex, in
     } else {
       TRY(http_version_print(hdr->m_version, buf, bufsize, bufindex, dumpoffset));
 
-      TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
-      tmplen = mime_format_int(tmpbuf, http_hdr_status_get(hdr), sizeof(tmpbuf));
+      tmplen = mime_format_int(tmpbuf, static_cast<int32_t>(http_hdr_status_get(hdr)), sizeof(tmpbuf));
 
-      TRY(mime_mem_print(tmpbuf, tmplen, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(std::string_view{tmpbuf, static_cast<std::string_view::size_type>(tmplen)}, buf, bufsize, bufindex,
+                         dumpoffset));
 
-      TRY(mime_mem_print(" ", 1, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print(" "sv, buf, bufsize, bufindex, dumpoffset));
 
       if (hdr->u.resp.m_ptr_reason) {
-        TRY(mime_mem_print(hdr->u.resp.m_ptr_reason, hdr->u.resp.m_len_reason, buf, bufsize, bufindex, dumpoffset));
+        TRY(mime_mem_print(
+          std::string_view{hdr->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hdr->u.resp.m_len_reason)}, buf,
+          bufsize, bufindex, dumpoffset));
       }
 
-      TRY(mime_mem_print("\r\n", 2, buf, bufsize, bufindex, dumpoffset));
+      TRY(mime_mem_print("\r\n"sv, buf, bufsize, bufindex, dumpoffset));
 
       TRY(mime_hdr_print(hdr->m_fields_impl, buf, bufsize, bufindex, dumpoffset));
     }
@@ -576,7 +512,7 @@ http_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
 {
   HTTPHdrImpl *obj = (HTTPHdrImpl *)raw;
 
-  if (obj->m_polarity == HTTP_TYPE_REQUEST) {
+  if (obj->m_polarity == HTTPType::REQUEST) {
     Dbg(dbg_ctl_http, "[TYPE: REQ, V: %04X, URL: %p, METHOD: \"%.*s\", METHOD_LEN: %d, FIELDS: %p]",
         obj->m_version.get_flat_version(), obj->u.req.m_url_impl, obj->u.req.m_len_method,
         (obj->u.req.m_ptr_method ? obj->u.req.m_ptr_method : "NULL"), obj->u.req.m_len_method, obj->m_fields_impl);
@@ -608,7 +544,7 @@ HTTPHdr::length_get() const
 {
   int length = 0;
 
-  if (m_http->m_polarity == HTTP_TYPE_REQUEST) {
+  if (m_http->m_polarity == HTTPType::REQUEST) {
     if (m_http->u.req.m_ptr_method) {
       length = m_http->u.req.m_len_method;
     } else {
@@ -626,7 +562,7 @@ HTTPHdr::length_get() const
     length += 8; // HTTP/%d.%d
 
     length += 2; // "\r\n"
-  } else if (m_http->m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (m_http->m_polarity == HTTPType::RESPONSE) {
     if (m_http->u.resp.m_ptr_reason) {
       length = m_http->u.resp.m_len_reason;
     } else {
@@ -691,34 +627,35 @@ http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-http_hdr_method_get(HTTPHdrImpl *hh, int *length)
+std::string_view
+http_hdr_method_get(HTTPHdrImpl *hh)
 {
   const char *str;
+  int         length;
 
-  ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(hh->m_polarity == HTTPType::REQUEST);
 
   if (hh->u.req.m_method_wks_idx >= 0) {
-    str     = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
-    *length = hdrtoken_index_to_length(hh->u.req.m_method_wks_idx);
+    str    = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
+    length = hdrtoken_index_to_length(hh->u.req.m_method_wks_idx);
   } else {
-    str     = hh->u.req.m_ptr_method;
-    *length = hh->u.req.m_len_method;
+    str    = hh->u.req.m_ptr_method;
+    length = hh->u.req.m_len_method;
   }
 
-  return (str);
+  return std::string_view{str, static_cast<std::string_view::size_type>(length)};
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
-http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length, bool must_copy)
+http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view method, int16_t method_wks_idx, bool must_copy)
 {
-  ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(hh->m_polarity == HTTPType::REQUEST);
 
   hh->u.req.m_method_wks_idx = method_wks_idx;
-  mime_str_u16_set(heap, method, method_length, &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
+  mime_str_u16_set(heap, method, &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
 }
 
 /*-------------------------------------------------------------------------
@@ -727,14 +664,14 @@ http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t 
 void
 http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
 {
-  ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(hh->m_polarity == HTTPType::REQUEST);
   if (hh->u.req.m_url_impl != url) {
     if (hh->u.req.m_url_impl != nullptr) {
       heap->deallocate_obj(hh->u.req.m_url_impl);
     }
     // Clone into new heap if the URL was allocated against a different heap
     if (reinterpret_cast<char *>(url) < heap->m_data_start || reinterpret_cast<char *>(url) >= heap->m_free_start) {
-      hh->u.req.m_url_impl = static_cast<URLImpl *>(heap->allocate_obj(url->m_length, url->m_type));
+      hh->u.req.m_url_impl = static_cast<URLImpl *>(heap->allocate_obj(url->m_length, static_cast<HdrHeapObjType>(url->m_type)));
       memcpy(hh->u.req.m_url_impl, url, url->m_length);
       // Make sure there is a read_write heap
       if (heap->m_read_write_heap.get() == nullptr) {
@@ -754,42 +691,41 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
 void
 http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status)
 {
-  ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  hh->u.resp.m_status = status;
+  ink_assert(hh->m_polarity == HTTPType::RESPONSE);
+  hh->u.resp.m_status = static_cast<int16_t>(status);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *
-http_hdr_reason_get(HTTPHdrImpl *hh, int *length)
+std::string_view
+http_hdr_reason_get(HTTPHdrImpl *hh)
 {
-  ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  *length = hh->u.resp.m_len_reason;
-  return (hh->u.resp.m_ptr_reason);
+  ink_assert(hh->m_polarity == HTTPType::RESPONSE);
+  return std::string_view{hh->u.resp.m_ptr_reason, static_cast<std::string_view::size_type>(hh->u.resp.m_len_reason)};
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
-http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy)
+http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view value, bool must_copy)
 {
-  ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
-  mime_str_u16_set(heap, value, length, &(hh->u.resp.m_ptr_reason), &(hh->u.resp.m_len_reason), must_copy);
+  ink_assert(hh->m_polarity == HTTPType::RESPONSE);
+  mime_str_u16_set(heap, value, &(hh->u.resp.m_ptr_reason), &(hh->u.resp.m_len_reason), must_copy);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 const char *
-http_hdr_reason_lookup(unsigned status)
+http_hdr_reason_lookup(HTTPStatus status)
 {
 #define HTTP_STATUS_ENTRY(value, reason) \
   case value:                            \
     return #reason
 
-  switch (status) {
+  switch (static_cast<int>(status)) {
     HTTP_STATUS_ENTRY(0, None);                  // TS_HTTP_STATUS_NONE
     HTTP_STATUS_ENTRY(100, Continue);            // [RFC2616]
     HTTP_STATUS_ENTRY(101, Switching Protocols); // [RFC2616]
@@ -814,7 +750,7 @@ http_hdr_reason_lookup(unsigned status)
     HTTP_STATUS_ENTRY(303, See Other);         // [RFC2616]
     HTTP_STATUS_ENTRY(304, Not Modified);      // [RFC2616]
     HTTP_STATUS_ENTRY(305, Use Proxy);         // [RFC2616]
-    // 306 Reserved                                                   // [RFC2616]
+    // 306 Reserved                             // [RFC2616]
     HTTP_STATUS_ENTRY(307, Temporary Redirect); // [RFC2616]
     HTTP_STATUS_ENTRY(308, Permanent Redirect); // [RFC-reschke-http-status-308-07]
     // 309-399 Unassigned
@@ -839,7 +775,7 @@ http_hdr_reason_lookup(unsigned status)
     HTTP_STATUS_ENTRY(422, Unprocessable Entity);            // [RFC4918]
     HTTP_STATUS_ENTRY(423, Locked);                          // [RFC4918]
     HTTP_STATUS_ENTRY(424, Failed Dependency);               // [RFC4918]
-    // 425 Reserved                                                   // [RFC2817]
+    // 425 Reserved                           // [RFC2817]
     HTTP_STATUS_ENTRY(426, Upgrade Required); // [RFC2817]
     // 427 Unassigned
     HTTP_STATUS_ENTRY(428, Precondition Required); // [RFC6585]
@@ -933,25 +869,25 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     real_end = end;
 
   start:
-    hh->m_polarity = HTTP_TYPE_REQUEST;
+    hh->m_polarity = HTTPType::REQUEST;
 
     // Make sure the line is not longer than max_request_line_size
     if (scanner->get_buffered_line_size() > max_request_line_size) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     text.assign(*start, real_end);
-    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::LINE);
+    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::ScanType::LINE);
     *start = text.data();
-    if (err < 0) {
+    if (static_cast<int>(err) < 0) {
       return err;
     }
     // We have to get a request line.  If we get parse done here,
     //   that meas we got an empty request
-    if (err == PARSE_RESULT_DONE) {
-      return PARSE_RESULT_ERROR;
+    if (err == ParseResult::DONE) {
+      return ParseResult::ERROR;
     }
-    if (err == PARSE_RESULT_CONT) {
+    if (err == ParseResult::CONT) {
       return err;
     }
 
@@ -960,7 +896,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     end              = parsed.data_end();
 
     if (static_cast<unsigned>(end - line_start) > max_request_line_size) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     must_copy_strings = (must_copy_strings || (!line_is_real));
@@ -988,16 +924,16 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 
       HTTPVersion version{static_cast<uint8_t>(end[-5] - '0'), static_cast<uint8_t>(end[-3] - '0')};
 
-      http_hdr_method_set(heap, hh, &(cur[0]), hdrtoken_wks_to_index(HTTP_METHOD_GET), 3, must_copy_strings);
+      http_hdr_method_set(heap, hh, {&(cur[0]), 3}, HTTP_WKSIDX_GET, must_copy_strings);
       ink_assert(hh->u.req.m_url_impl != nullptr);
       url       = hh->u.req.m_url_impl;
       url_start = &(cur[4]);
       err       = ::url_parse(heap, url, &url_start, &(end[-11]), must_copy_strings, strict_uri_parsing);
-      if (err < 0) {
+      if (static_cast<int>(err) < 0) {
         return err;
       }
       if (!http_hdr_version_set(hh, version)) {
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       }
 
       end                    = real_end;
@@ -1006,13 +942,13 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof,
                                           false, max_hdr_field_size);
       // If we're done with the main parse do some validation
-      if (ret == PARSE_RESULT_DONE) {
+      if (ret == ParseResult::DONE) {
         ret = validate_hdr_request_target(HTTP_WKSIDX_GET, url);
       }
-      if (ret == PARSE_RESULT_DONE) {
+      if (ret == ParseResult::DONE) {
         ret = validate_hdr_host(hh); // check HOST header
       }
-      if (ret == PARSE_RESULT_DONE) {
+      if (ret == ParseResult::DONE) {
         ret = validate_hdr_content_length(heap, hh);
       }
       return ret;
@@ -1126,7 +1062,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 
   done:
     if (!method_start || !method_end) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     // checking these with an if statement makes coverity flag as dead code because
@@ -1135,14 +1071,15 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     ink_assert(url_end);
 
     int method_wks_idx = hdrtoken_method_tokenize(method_start, static_cast<int>(method_end - method_start));
-    http_hdr_method_set(heap, hh, method_start, method_wks_idx, static_cast<int>(method_end - method_start), must_copy_strings);
+    http_hdr_method_set(heap, hh, {method_start, static_cast<std::string_view::size_type>(method_end - method_start)},
+                        method_wks_idx, must_copy_strings);
 
     ink_assert(hh->u.req.m_url_impl != nullptr);
 
     url = hh->u.req.m_url_impl;
     err = ::url_parse(heap, url, &url_start, url_end, must_copy_strings, strict_uri_parsing);
 
-    if (err < 0) {
+    if (static_cast<int>(err) < 0) {
       return err;
     }
 
@@ -1150,11 +1087,11 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     if (version_start && version_end) {
       version = http_parse_version(version_start, version_end);
     } else {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     if (!http_hdr_version_set(hh, version)) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     end                    = real_end;
@@ -1164,13 +1101,13 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
   ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, false,
                                       max_hdr_field_size);
   // If we're done with the main parse do some validation
-  if (ret == PARSE_RESULT_DONE) {
+  if (ret == ParseResult::DONE) {
     ret = validate_hdr_request_target(hh->u.req.m_method_wks_idx, hh->u.req.m_url_impl);
   }
-  if (ret == PARSE_RESULT_DONE) {
+  if (ret == ParseResult::DONE) {
     ret = validate_hdr_host(hh); // check HOST header
   }
-  if (ret == PARSE_RESULT_DONE) {
+  if (ret == ParseResult::DONE) {
     ret = validate_hdr_content_length(heap, hh);
   }
   return ret;
@@ -1179,26 +1116,23 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 ParseResult
 validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 {
-  ParseResult ret = PARSE_RESULT_DONE;
-  int         host_len;
-  url->get_host(&host_len);
-  int         path_len;
-  const char *path = url->get_path(&path_len);
-  int         scheme_len;
-  url->get_scheme(&scheme_len);
+  ParseResult ret = ParseResult::DONE;
+  auto        host{url->get_host()};
+  auto        path{url->get_path()};
+  auto        scheme{url->get_scheme()};
 
-  if (host_len == 0) {
-    if (path_len == 1 && path[0] == '*') { // asterisk-form
+  if (host.empty()) {
+    if (path == "*"sv) { // asterisk-form
       // Skip this check for now because URLImpl can't distinguish '*' and '/*'
       // if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
-      //   ret = PARSE_RESULT_ERROR;
+      //   ret = ParseResult::ERROR;
       // }
     } else { // origin-form
       // Nothing to check here
     }
-  } else if (scheme_len == 0 && host_len != 0) { // authority-form
+  } else if (scheme.empty() && !host.empty()) { // authority-form
     if (method_wk_idx != HTTP_WKSIDX_CONNECT) {
-      ret = PARSE_RESULT_ERROR;
+      ret = ParseResult::ERROR;
     }
   } else { // absolute-form
     // Nothing to check here
@@ -1210,32 +1144,32 @@ validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 ParseResult
 validate_hdr_host(HTTPHdrImpl *hh)
 {
-  ParseResult ret        = PARSE_RESULT_DONE;
-  MIMEField  *host_field = mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_HOST, MIME_LEN_HOST);
+  ParseResult ret        = ParseResult::DONE;
+  MIMEField  *host_field = mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_HOST));
   if (host_field) {
     if (host_field->has_dups()) {
-      ret = PARSE_RESULT_ERROR; // can't have more than 1 host field.
+      ret = ParseResult::ERROR; // can't have more than 1 host field.
     } else {
       auto             host{host_field->value_get()};
       std::string_view addr, port, rest;
       if (0 == ats_ip_parse(host, &addr, &port, &rest)) {
         if (!port.empty()) {
           if (port.size() > 5) {
-            return PARSE_RESULT_ERROR;
+            return ParseResult::ERROR;
           }
           int port_i = ink_atoi(port.data(), port.size());
           if (port_i >= 65536 || port_i <= 0) {
-            return PARSE_RESULT_ERROR;
+            return ParseResult::ERROR;
           }
         }
         if (!validate_host_name(addr)) {
-          return PARSE_RESULT_ERROR;
+          return ParseResult::ERROR;
         }
-        if (PARSE_RESULT_DONE == ret && !std::all_of(rest.begin(), rest.end(), &ParseRules::is_ws)) {
-          return PARSE_RESULT_ERROR;
+        if (ParseResult::DONE == ret && !std::all_of(rest.begin(), rest.end(), &ParseRules::is_ws)) {
+          return ParseResult::ERROR;
         }
       } else {
-        ret = PARSE_RESULT_ERROR;
+        ret = ParseResult::ERROR;
       }
     }
   }
@@ -1245,18 +1179,19 @@ validate_hdr_host(HTTPHdrImpl *hh)
 ParseResult
 validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
 {
-  MIMEField *content_length_field = mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  MIMEField *content_length_field =
+    mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
 
   if (content_length_field) {
     // RFC 7230 section 3.3.3:
     // If a message is received with both a Transfer-Encoding and a
     // Content-Length header field, the Transfer-Encoding overrides
     // the Content-Length
-    if (mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING) != nullptr) {
+    if (mime_hdr_field_find(hh->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) != nullptr) {
       // Delete all Content-Length headers
       Dbg(dbg_ctl_http, "Transfer-Encoding header and Content-Length headers the request, removing all Content-Length headers");
       mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field, true);
-      return PARSE_RESULT_DONE;
+      return ParseResult::DONE;
     }
 
     // RFC 7230 section 3.3.3:
@@ -1274,14 +1209,14 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     //
     if (value.empty()) {
       Dbg(dbg_ctl_http, "Content-Length headers don't match the ABNF, returning parse error");
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     // If the content-length value contains a non-numeric value, the header is invalid
     if (std::find_if(value.cbegin(), value.cend(), [](std::string_view::value_type c) { return !std::isdigit(c); }) !=
         value.cend()) {
       Dbg(dbg_ctl_http, "Content-Length value contains non-digit, returning parse error");
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     while (content_length_field->has_dups()) {
@@ -1290,7 +1225,7 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
       if ((value.length() != value_dup.length()) || value.compare(value_dup) != 0) {
         // Values are different, parse error
         Dbg(dbg_ctl_http, "Content-Length headers don't match, returning parse error");
-        return PARSE_RESULT_ERROR;
+        return ParseResult::ERROR;
       } else {
         // Delete the duplicate since it has the same value
         Dbg(dbg_ctl_http, "Deleting duplicate Content-Length header");
@@ -1299,7 +1234,7 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     }
   }
 
-  return PARSE_RESULT_DONE;
+  return ParseResult::DONE;
 }
 
 /*-------------------------------------------------------------------------
@@ -1328,25 +1263,25 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     real_end  = end;
     old_start = *start;
 
-    hh->m_polarity = HTTP_TYPE_RESPONSE;
+    hh->m_polarity = HTTPType::RESPONSE;
 
     // Make sure the line is not longer than 64K
     if (scanner->get_buffered_line_size() >= UINT16_MAX) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     swoc::TextView text{*start, real_end};
     swoc::TextView parsed;
-    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::LINE);
+    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::ScanType::LINE);
     *start = text.data();
-    if (err < 0) {
+    if (static_cast<int>(err) < 0) {
       return err;
     }
     // Make sure the length headers are consistent
-    if (err == PARSE_RESULT_DONE) {
+    if (err == ParseResult::DONE) {
       err = validate_hdr_content_length(heap, hh);
     }
-    if ((err == PARSE_RESULT_DONE) || (err == PARSE_RESULT_CONT)) {
+    if ((err == ParseResult::DONE) || (err == ParseResult::CONT)) {
       return err;
     }
 
@@ -1377,13 +1312,14 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
       http_hdr_version_set(hh, version);
       http_hdr_status_set(hh, status);
-      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, {reason_start, static_cast<std::string_view::size_type>(reason_end - reason_start)},
+                          must_copy_strings);
 
       end                    = real_end;
       parser->m_parsing_http = false;
       auto ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
       // Make sure the length headers are consistent
-      if (ret == PARSE_RESULT_DONE) {
+      if (ret == ParseResult::DONE) {
         ret = validate_hdr_content_length(heap, hh);
       }
       return ret;
@@ -1474,17 +1410,17 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
   eoh:
     *start = old_start;
-    return PARSE_RESULT_ERROR; // This used to return PARSE_RESULT_DONE by default before
+    return ParseResult::ERROR; // This used to return ParseResult::DONE by default before
 
   done:
     if (!version_start || !version_end) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     HTTPVersion version = http_parse_version(version_start, version_end);
 
     if (version == HTTP_0_9) {
-      return PARSE_RESULT_ERROR;
+      return ParseResult::ERROR;
     }
 
     http_hdr_version_set(hh, version);
@@ -1494,7 +1430,8 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     }
 
     if (reason_start && reason_end) {
-      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, {reason_start, static_cast<std::string_view::size_type>(reason_end - reason_start)},
+                          must_copy_strings);
     }
 
     end                    = real_end;
@@ -1502,7 +1439,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
   }
   auto ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
   // Make sure the length headers are consistent
-  if (ret == PARSE_RESULT_DONE) {
+  if (ret == ParseResult::DONE) {
     ret = validate_hdr_content_length(heap, hh);
   }
   return ret;
@@ -1696,29 +1633,36 @@ http_parse_te(const char *buf, int len, Arena *arena)
 void
 HTTPHdr::_fill_target_cache() const
 {
-  URL        *url = this->url_get();
-  const char *port_ptr;
-  int         port_len;
+  URL *url = this->url_get();
 
   m_target_in_url  = false;
   m_port_in_header = false;
   m_host_mime      = nullptr;
   // Check in the URL first, then the HOST field.
-  if (nullptr != url->host_get(&m_host_length)) {
+  std::string_view host;
+  if (host = url->host_get(); nullptr != host.data()) {
     m_target_in_url  = true;
     m_port           = url->port_get();
     m_port_in_header = 0 != url->port_get_raw();
     m_host_mime      = nullptr;
-  } else if (nullptr !=
-             (m_host_mime = const_cast<HTTPHdr *>(this)->get_host_port_values(nullptr, &m_host_length, &port_ptr, &port_len))) {
-    m_port = 0;
-    if (port_ptr) {
-      for (; port_len > 0 && isdigit(*port_ptr); ++port_ptr, --port_len) {
-        m_port = m_port * 10 + *port_ptr - '0';
+    m_host_length    = static_cast<int>(host.length());
+  } else {
+    std::string_view port;
+    std::tie(m_host_mime, host, port) = const_cast<HTTPHdr *>(this)->get_host_port_values();
+    m_host_length                     = static_cast<int>(host.length());
+
+    if (m_host_mime != nullptr) {
+      m_port = 0;
+      if (!port.empty()) {
+        for (auto c : port) {
+          if (isdigit(c)) {
+            m_port = m_port * 10 + c - '0';
+          }
+        }
       }
+      m_port_in_header = (0 != m_port);
+      m_port           = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
     }
-    m_port_in_header = (0 != m_port);
-    m_port           = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
   }
 
   m_target_cached = true;
@@ -1733,17 +1677,14 @@ HTTPHdr::set_url_target_from_host_field(URL *url)
     // Use local cached URL and don't copy if the target
     // is already there.
     if (!m_target_in_url && m_host_mime && m_host_length) {
-      m_url_cached.host_set(m_host_mime->m_ptr_value, m_host_length);
+      m_url_cached.host_set({m_host_mime->m_ptr_value, static_cast<std::string_view::size_type>(m_host_length)});
       if (m_port_in_header) {
         m_url_cached.port_set(m_port);
       }
       m_target_in_url = true; // it's there now.
     }
   } else {
-    int         host_len = 0;
-    const char *host     = host_get(&host_len);
-
-    url->host_set(host, host_len);
+    url->host_set(host_get());
     if (m_port_in_header) {
       url->port_set(m_port);
     }
@@ -1890,7 +1831,7 @@ HTTPHdr::check_hdr_implements()
 {
   bool       retval = true;
   MIMEField *transfer_encode =
-    mime_hdr_field_find(this->m_http->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    mime_hdr_field_find(this->m_http->m_fields_impl, static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING));
   if (transfer_encode) {
     do {
       auto val{transfer_encode->value_get()};
@@ -1914,7 +1855,8 @@ HTTPHdr::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
   m_heap = reinterpret_cast<HdrHeap *>(buf);
 
-  int res = m_heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&m_http), block_ref);
+  int res =
+    m_heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&m_http), block_ref);
 
   if (res > 0) {
     m_mime = m_http->m_fields_impl;
@@ -1928,10 +1870,10 @@ HTTPHdr::unmarshal(char *buf, int len, RefCountObj *block_ref)
 int
 HTTPHdrImpl::marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *str_xlate, int num_str)
 {
-  if (m_polarity == HTTP_TYPE_REQUEST) {
+  if (m_polarity == HTTPType::REQUEST) {
     HDR_MARSHAL_STR(u.req.m_ptr_method, str_xlate, num_str);
     HDR_MARSHAL_PTR(u.req.m_url_impl, URLImpl, ptr_xlate, num_ptr);
-  } else if (m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (m_polarity == HTTPType::RESPONSE) {
     HDR_MARSHAL_STR(u.resp.m_ptr_reason, str_xlate, num_str);
   } else {
     ink_release_assert(!"unknown m_polarity");
@@ -1945,10 +1887,10 @@ HTTPHdrImpl::marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *str_xla
 void
 HTTPHdrImpl::unmarshal(intptr_t offset)
 {
-  if (m_polarity == HTTP_TYPE_REQUEST) {
+  if (m_polarity == HTTPType::REQUEST) {
     HDR_UNMARSHAL_STR(u.req.m_ptr_method, offset);
     HDR_UNMARSHAL_PTR(u.req.m_url_impl, URLImpl, offset);
-  } else if (m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (m_polarity == HTTPType::RESPONSE) {
     HDR_UNMARSHAL_STR(u.resp.m_ptr_reason, offset);
   } else {
     ink_release_assert(!"unknown m_polarity");
@@ -1960,9 +1902,9 @@ HTTPHdrImpl::unmarshal(intptr_t offset)
 void
 HTTPHdrImpl::move_strings(HdrStrHeap *new_heap)
 {
-  if (m_polarity == HTTP_TYPE_REQUEST) {
+  if (m_polarity == HTTPType::REQUEST) {
     HDR_MOVE_STR(u.req.m_ptr_method, u.req.m_len_method);
-  } else if (m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (m_polarity == HTTPType::RESPONSE) {
     HDR_MOVE_STR(u.resp.m_ptr_reason, u.resp.m_len_reason);
   } else {
     ink_release_assert(!"unknown m_polarity");
@@ -1974,9 +1916,9 @@ HTTPHdrImpl::strings_length()
 {
   size_t ret = 0;
 
-  if (m_polarity == HTTP_TYPE_REQUEST) {
+  if (m_polarity == HTTPType::REQUEST) {
     ret += u.req.m_len_method;
-  } else if (m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (m_polarity == HTTPType::RESPONSE) {
     ret += u.resp.m_len_reason;
   }
   return ret;
@@ -1985,9 +1927,9 @@ HTTPHdrImpl::strings_length()
 void
 HTTPHdrImpl::check_strings(HeapCheck *heaps, int num_heaps)
 {
-  if (m_polarity == HTTP_TYPE_REQUEST) {
+  if (m_polarity == HTTPType::REQUEST) {
     CHECK_STR(u.req.m_ptr_method, u.req.m_len_method, heaps, num_heaps);
-  } else if (m_polarity == HTTP_TYPE_RESPONSE) {
+  } else if (m_polarity == HTTPType::RESPONSE) {
     CHECK_STR(u.resp.m_ptr_reason, u.resp.m_len_reason, heaps, num_heaps);
   } else {
     ink_release_assert(!"unknown m_polarity");
@@ -2011,9 +1953,9 @@ HTTPCacheAlt::HTTPCacheAlt() : m_request_hdr(), m_response_hdr()
 void
 HTTPCacheAlt::destroy()
 {
-  ink_assert(m_magic == CACHE_ALT_MAGIC_ALIVE);
+  ink_assert(m_magic == CacheAltMagic::ALIVE);
   ink_assert(m_writeable);
-  m_magic     = CACHE_ALT_MAGIC_DEAD;
+  m_magic     = CacheAltMagic::DEAD;
   m_writeable = 0;
   m_request_hdr.destroy();
   m_response_hdr.destroy();
@@ -2128,7 +2070,7 @@ HTTPInfo::marshal(char *buf, int len)
   HTTPCacheAlt *marshal_alt = reinterpret_cast<HTTPCacheAlt *>(buf);
   // non-zero only if the offsets are external. Otherwise they get
   // marshalled along with the alt struct.
-  ink_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
+  ink_assert(m_alt->m_magic == CacheAltMagic::ALIVE);
 
   // Make sure the buffer is aligned
   //    ink_assert(((intptr_t)buf) & 0x3 == 0);
@@ -2138,7 +2080,7 @@ HTTPInfo::marshal(char *buf, int len)
   //   extra bytes now but will save copying any
   //   bytes on the way out of the cache
   memcpy(buf, m_alt, sizeof(HTTPCacheAlt));
-  marshal_alt->m_magic          = CACHE_ALT_MAGIC_MARSHALED;
+  marshal_alt->m_magic          = CacheAltMagic::MARSHALED;
   marshal_alt->m_writeable      = 0;
   marshal_alt->m_unmarshal_len  = -1;
   marshal_alt->m_ext_buffer     = nullptr;
@@ -2191,19 +2133,19 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
   HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
   int           orig_len = len;
 
-  if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
+  if (alt->m_magic == CacheAltMagic::ALIVE) {
     // Already unmarshaled, must be a ram cache
     //  it
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);
     return alt->m_unmarshal_len;
-  } else if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
+  } else if (alt->m_magic != CacheAltMagic::MARSHALED) {
     ink_assert(!"HTTPInfo::unmarshal bad magic");
     return -1;
   }
 
   ink_assert(alt->m_unmarshal_len < 0);
-  alt->m_magic = CACHE_ALT_MAGIC_ALIVE;
+  alt->m_magic = CacheAltMagic::ALIVE;
   ink_assert(alt->m_writeable == 0);
   len -= HTTP_ALT_MARSHAL_SIZE;
 
@@ -2221,7 +2163,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
   HTTPHdrImpl *hh = nullptr;
   int          tmp;
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::request unmarshal failed");
       return -1;
@@ -2235,7 +2177,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::response unmarshal failed");
       return -1;
@@ -2258,19 +2200,19 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
   HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
   int           orig_len = len;
 
-  if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
+  if (alt->m_magic == CacheAltMagic::ALIVE) {
     // Already unmarshaled, must be a ram cache
     //  it
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);
     return alt->m_unmarshal_len;
-  } else if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
+  } else if (alt->m_magic != CacheAltMagic::MARSHALED) {
     ink_assert(!"HTTPInfo::unmarshal bad magic");
     return -1;
   }
 
   ink_assert(alt->m_unmarshal_len < 0);
-  alt->m_magic = CACHE_ALT_MAGIC_ALIVE;
+  alt->m_magic = CacheAltMagic::ALIVE;
   ink_assert(alt->m_writeable == 0);
   len -= HTTP_ALT_MARSHAL_SIZE;
 
@@ -2302,7 +2244,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
   HTTPHdrImpl *hh = nullptr;
   int          tmp;
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::request unmarshal failed");
       return -1;
@@ -2316,7 +2258,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
 
   heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::response unmarshal failed");
       return -1;
@@ -2342,7 +2284,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
 {
   HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
 
-  if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
+  if (alt->m_magic != CacheAltMagic::MARSHALED) {
     return false;
   }
 
@@ -2399,7 +2341,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
 void
 HTTPInfo::set_buffer_reference(RefCountObj *block_ref)
 {
-  ink_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
+  ink_assert(m_alt->m_magic == CacheAltMagic::ALIVE);
 
   // Free existing reference
   if (m_alt->m_ext_buffer != nullptr) {
@@ -2423,7 +2365,7 @@ HTTPInfo::get_handle(char *buf, int len)
   //  need to do is set m_alt and make sure things are sane
   HTTPCacheAlt *a = reinterpret_cast<HTTPCacheAlt *>(buf);
 
-  if (a->m_magic == CACHE_ALT_MAGIC_ALIVE) {
+  if (a->m_magic == CacheAltMagic::ALIVE) {
     m_alt = a;
     ink_assert(m_alt->m_unmarshal_len > 0);
     ink_assert(m_alt->m_unmarshal_len <= len);

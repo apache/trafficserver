@@ -80,7 +80,7 @@ public:
   {
     auto rt = dynamic_cast<CacheReadTest *>(base);
     REQUIRE(rt);
-    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
     REQUIRE(field);
     auto value{field->value_get()};
     REQUIRE(value == "text/html;charset=utf-8"sv);
@@ -133,7 +133,7 @@ public:
   {
     auto rt = dynamic_cast<CacheReadTest *>(base);
     REQUIRE(rt);
-    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
     REQUIRE(field);
     auto value{field->value_get()};
     REQUIRE(value == "text/html;charset=utf-8"sv);
@@ -212,7 +212,7 @@ public:
   {
     auto rt = dynamic_cast<CacheReadTest *>(base);
     REQUIRE(rt);
-    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    MIMEField *field = rt->read_http_info->m_alt->m_response_hdr.field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
     REQUIRE(field);
     auto value{field->value_get()};
     REQUIRE(value == "application/x-javascript"sv);
@@ -225,8 +225,8 @@ public:
     Dir     *last_collision = nullptr;
     SCOPED_MUTEX_LOCK(lock, vc->stripe->mutex, this->mutex->thread_holding);
     vc->vector.data[1].alternate.object_key_get(&key);
-    REQUIRE(dir_probe(&key, vc->stripe, &dir, &last_collision) != 0);
-    REQUIRE(dir_delete(&key, vc->stripe, &dir));
+    REQUIRE(vc->stripe->directory.probe(&key, vc->stripe, &dir, &last_collision) != 0);
+    REQUIRE(vc->stripe->directory.remove(&key, vc->stripe, &dir));
   }
 };
 

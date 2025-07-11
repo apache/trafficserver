@@ -22,6 +22,7 @@
 */
 #pragma once
 
+#include <chrono>
 #include <map>
 #include <string>
 #include <sys/types.h>
@@ -259,12 +260,8 @@ public:
   bool
   getStats()
   {
-    if (_old_stats != nullptr) {
-      delete _old_stats;
-      _old_stats = nullptr;
-    }
-    _old_stats = _stats;
-    _stats     = new map<string, string>;
+    _old_stats = std::move(_stats);
+    _stats     = std::make_unique<map<string, string>>();
 
     gettimeofday(&_time, nullptr);
     double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
@@ -276,12 +273,19 @@ public:
       const LookupItem &item = lookup_it->second;
 
       if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
-        // Add records names to the rpc request.
-        request.emplace_rec(detail::MetricParam{item.name});
+        try {
+          // Add records names to the rpc request.
+          request.emplace_rec(detail::MetricParam{item.name});
+        } catch (std::exception const &e) {
+          // Hard break, something happened when trying to set the last metric name into the request.
+          // This is very unlikely but just in case, we stop it.
+          fprintf(stderr, "Error configuring the stats request, local error: %s", e.what());
+          return false;
+        }
       }
     }
     // query the rpc node.
-    if (auto const &error = fetch_and_fill_stats(request, _stats); !error.empty()) {
+    if (auto const &error = fetch_and_fill_stats(request, _stats.get()); !error.empty()) {
       fprintf(stderr, "Error getting stats from the RPC node:\n%s", error.c_str());
       return false;
     }
@@ -343,13 +347,13 @@ public:
     }
 
     if (type == 1 || type == 2 || type == 5 || type == 8) {
-      value = getValue(item.name, _stats);
+      value = getValue(item.name, _stats.get());
       if (key == "total_time") {
         value = value / 10000000;
       }
 
       if ((type == 2 || type == 5 || type == 8) && _old_stats != nullptr && _absolute == false) {
-        double old = getValue(item.name, _old_stats);
+        double old = getValue(item.name, _old_stats.get());
         if (key == "total_time") {
           old = old / 10000000;
         }
@@ -458,15 +462,7 @@ public:
     return _host;
   }
 
-  ~Stats()
-  {
-    if (_stats != nullptr) {
-      delete _stats;
-    }
-    if (_old_stats != nullptr) {
-      delete _old_stats;
-    }
-  }
+  ~Stats() {}
 
 private:
   std::pair<std::string, LookupItem>
@@ -488,7 +484,7 @@ private:
       rpc::RPCClient rpcClient;
 
       // invoke the rpc.
-      auto const &rpcResponse = rpcClient.invoke<>(request);
+      auto const &rpcResponse = rpcClient.invoke<>(request, std::chrono::milliseconds(1000), 10);
 
       if (!rpcResponse.is_error()) {
         auto const &records = rpcResponse.result.as<rpc::RecordLookUpResponse>();
@@ -520,13 +516,13 @@ private:
     return {}; // no error
   }
 
-  map<string, string>    *_stats;
-  map<string, string>    *_old_stats;
-  map<string, LookupItem> lookup_table;
-  string                  _host;
-  double                  _old_time;
-  double                  _now;
-  double                  _time_diff;
-  struct timeval          _time;
-  bool                    _absolute;
+  std::unique_ptr<map<string, string>> _stats;
+  std::unique_ptr<map<string, string>> _old_stats;
+  map<string, LookupItem>              lookup_table;
+  string                               _host;
+  double                               _old_time;
+  double                               _now;
+  double                               _time_diff;
+  struct timeval                       _time;
+  bool                                 _absolute;
 };

@@ -54,7 +54,7 @@ DbgCtl dbg_ctl_quic_sec{"quic_sec"};
 
 QUICPacketHandler::QUICPacketHandler()
 {
-  this->_closed_con_collector        = new QUICClosedConCollector;
+  this->_closed_con_collector        = std::make_unique<QUICClosedConCollector>();
   this->_closed_con_collector->mutex = new_ProxyMutex();
 }
 
@@ -63,11 +63,6 @@ QUICPacketHandler::~QUICPacketHandler()
   if (this->_collector_event != nullptr) {
     this->_collector_event->cancel();
     this->_collector_event = nullptr;
-  }
-
-  if (this->_closed_con_collector != nullptr) {
-    delete this->_closed_con_collector;
-    this->_closed_con_collector = nullptr;
   }
 }
 
@@ -149,7 +144,7 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
     return EVENT_CONT;
   } else if (event == NET_EVENT_DATAGRAM_READ_READY) {
     if (this->_collector_event == nullptr) {
-      this->_collector_event = this_ethread()->schedule_every(this->_closed_con_collector, HRTIME_MSECONDS(100));
+      this->_collector_event = this_ethread()->schedule_every(this->_closed_con_collector.get(), HRTIME_MSECONDS(100));
     }
 
     Queue<UDPPacket> *queue = static_cast<Queue<UDPPacket> *>(data);

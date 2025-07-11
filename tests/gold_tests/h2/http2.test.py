@@ -202,8 +202,8 @@ tr.StillRunningAfter = server
 # While HTTP/2 does not support Transfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
 tr = Test.AddTestRun("post with chunked body")
-tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format(
-    post_body, ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    '-s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format(post_body, ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
@@ -212,8 +212,8 @@ tr.StillRunningAfter = server
 # While HTTP/2 does not support Transfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
 tr = Test.AddTestRun("post with big chunked body")
-tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format(
-    ts.Variables.ssl_port)
+tr.MakeCurlCommand(
+    '-s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
@@ -223,7 +223,7 @@ tr = Test.AddTestRun("huge response header")
 # Different versions of curl have "bytes data" at various places in the output.
 # Normalize them by simply filtering out those lines since they are not
 # important to this test.
-tr.Processes.Default.Command = f'curl -vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/huge_resp_hdrs |& grep -v "bytes data"'
+tr.MakeCurlCommand(f'-vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/huge_resp_hdrs |& grep -v "bytes data"')
 tr.Processes.Default.ReturnCode = 0
 # Different versions of curl will have different cases for HTTP/2 field names.
 tr.Processes.Default.Streams.stdout = Testers.GoldFile("gold/http2_8_stdout.gold", case_insensitive=True)
@@ -231,7 +231,7 @@ tr.StillRunningAfter = server
 
 # Test Case 9: Header Only Response - e.g. 204
 tr = Test.AddTestRun("header only response")
-tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/status/204'.format(ts.Variables.ssl_port)
+tr.MakeCurlCommand('-vs -k --http2 https://127.0.0.1:{0}/status/204'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http2_9_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.

@@ -239,7 +239,7 @@ IPEndpoint::family_name(sa_family_t family) {
 
 IPEndpoint &
 IPEndpoint::set_to_any(int family) {
-  memset(this, 0, sizeof(*this));
+  memset(static_cast<void *>(this), 0, sizeof(*this));
   if (AF_INET == family) {
     sa4.sin_family      = family;
     sa4.sin_addr.s_addr = INADDR_ANY;
@@ -268,7 +268,7 @@ IPEndpoint::is_any() const {
 
 IPEndpoint &
 IPEndpoint::set_to_loopback(int family) {
-  memset(this, 0, sizeof(*this));
+  memset(static_cast<void *>(this), 0, sizeof(*this));
   if (AF_INET == family) {
     sa.sa_family        = family;
     sa4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);

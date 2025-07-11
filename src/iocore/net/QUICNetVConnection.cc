@@ -142,10 +142,8 @@ QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
   this->_unschedule_quiche_timeout();
   this->_unschedule_packet_write_ready();
 
-  delete this->_application_map;
-  this->_application_map = nullptr;
-  delete this->_stream_manager;
-  this->_stream_manager = nullptr;
+  this->_application_map.reset();
+  this->_stream_manager.reset();
 
   super::clear();
   ALPNSupport::clear();
@@ -250,6 +248,7 @@ QUICNetVConnection::_switch_to_established_state()
 {
   QUICConDebug("Enter state_connection_established");
   this->_record_tls_handshake_end_time();
+  this->_update_end_of_handshake_stats();
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_established);
   this->_start_application();
   this->_handshake_completed = true;
@@ -337,8 +336,8 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   }
 
   this->_context         = std::make_unique<QUICContext>(this);
-  this->_application_map = new QUICApplicationMap();
-  this->_stream_manager  = new QUICStreamManager(this->_context.get(), this->_application_map);
+  this->_application_map = std::make_unique<QUICApplicationMap>();
+  this->_stream_manager  = std::make_unique<QUICStreamManager>(this->_context.get(), this->_application_map.get());
 
   // this->thread is already assigned by QUICPacketHandlerIn::_recv_packet
   ink_assert(this->thread == this_ethread());
@@ -387,7 +386,7 @@ QUICNetVConnection::connectUp(EThread * /* t ATS_UNUSED */, int /* fd ATS_UNUSED
 QUICStreamManager *
 QUICNetVConnection::stream_manager()
 {
-  return this->_stream_manager;
+  return this->_stream_manager.get();
 }
 
 void

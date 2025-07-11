@@ -20,6 +20,7 @@
  */
 
 #include <string>
+#include <string_view>
 #include <cstring>
 #include <cctype>
 #include <bitset>
@@ -28,6 +29,8 @@
 #include <new>
 #include <cstdio>
 #include <memory>
+
+using namespace std::literals;
 
 #include "tsutil/Regex.h"
 #include "tscore/ink_time.h"
@@ -44,37 +47,37 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
 {
   struct Test {
     swoc::TextView msg;
-    int            expected_result;
+    ParseResult    expected_result;
     int            expected_bytes_consumed;
   };
   static const std::array<Test, 26> tests = {
     {
-     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
-     {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_RESULT_DONE, 28},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_RESULT_DONE, 48},
-     {"GET", PARSE_RESULT_ERROR, 3},
-     {"GET /index.html", PARSE_RESULT_ERROR, 15},
-     {"GET /index.html\r\n", PARSE_RESULT_ERROR, 17},
-     {"GET /index.html HTTP/1.0", PARSE_RESULT_ERROR, 24},
-     {"GET /index.html HTTP/1.0\r", PARSE_RESULT_ERROR, 25},
-     {"GET /index.html HTTP/1.0\n", PARSE_RESULT_DONE, 25},
-     {"GET /index.html HTTP/1.0\n\n", PARSE_RESULT_DONE, 26},
-     {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_RESULT_DONE, 28},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_RESULT_ERROR, 44},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 45},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_RESULT_DONE, 48},
-     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 44},
-     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_RESULT_DONE, 53},
-     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
-     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
-     {"GET /index.html hTTP/1.0\r\n", PARSE_RESULT_ERROR, 26},
-     {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n", PARSE_RESULT_DONE, 48},
-     {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n", PARSE_RESULT_ERROR, 47},
-     {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n", PARSE_RESULT_ERROR, 46},
-     {"CONNECT foo.example HTTP/1.1\r\n", PARSE_RESULT_DONE, 30},
-     {"GET foo.example HTTP/1.1\r\n", PARSE_RESULT_ERROR, 26},
-     {"", PARSE_RESULT_ERROR, 0},
+     {"GET /index.html HTTP/1.0\r\n", ParseResult::DONE, 26},
+     {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", ParseResult::DONE, 28},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", ParseResult::DONE, 48},
+     {"GET", ParseResult::ERROR, 3},
+     {"GET /index.html", ParseResult::ERROR, 15},
+     {"GET /index.html\r\n", ParseResult::ERROR, 17},
+     {"GET /index.html HTTP/1.0", ParseResult::ERROR, 24},
+     {"GET /index.html HTTP/1.0\r", ParseResult::ERROR, 25},
+     {"GET /index.html HTTP/1.0\n", ParseResult::DONE, 25},
+     {"GET /index.html HTTP/1.0\n\n", ParseResult::DONE, 26},
+     {"GET /index.html HTTP/1.0\r\n\r\n", ParseResult::DONE, 28},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", ParseResult::ERROR, 44},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", ParseResult::DONE, 45},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", ParseResult::DONE, 46},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", ParseResult::DONE, 48},
+     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", ParseResult::DONE, 44},
+     {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", ParseResult::DONE, 53},
+     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", ParseResult::DONE, 46},
+     {"GET /index.html HTTP/1.0\r\n", ParseResult::DONE, 26},
+     {"GET /index.html hTTP/1.0\r\n", ParseResult::ERROR, 26},
+     {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n", ParseResult::DONE, 48},
+     {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n", ParseResult::ERROR, 47},
+     {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n", ParseResult::ERROR, 46},
+     {"CONNECT foo.example HTTP/1.1\r\n", ParseResult::DONE, 30},
+     {"GET foo.example HTTP/1.1\r\n", ParseResult::ERROR, 26},
+     {"", ParseResult::ERROR, 0},
      }
   };
 
@@ -86,7 +89,7 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
     HTTPHdr  req_hdr;
     HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64); // extra to prevent proxy allocation.
 
-    req_hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+    req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
 
     http_parser_clear(&parser);
 
@@ -108,13 +111,13 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
   struct Fragment {
     swoc::TextView msg;
     bool           shares_input;
-    int            expected_result;
+    ParseResult    expected_result;
   };
   constexpr std::array<Fragment, 3> const fragments = {
     {
-     {message.substr(0, 11), true, PARSE_RESULT_CONT},
-     {message.substr(11, 11), true, PARSE_RESULT_CONT},
-     {message.substr(22), false, PARSE_RESULT_OK},
+     {message.substr(0, 11), true, ParseResult::CONT},
+     {message.substr(11, 11), true, ParseResult::CONT},
+     {message.substr(22), false, ParseResult::OK},
      }
   };
 
@@ -125,7 +128,7 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
     swoc::TextView       input            = frag.msg;
     bool                 got_shares_input = !frag.shares_input;
     constexpr bool const is_eof           = false;
-    ParseResult const    got_res          = scanner.get(input, output, got_shares_input, is_eof, MIMEScanner::LINE);
+    ParseResult const    got_res          = scanner.get(input, output, got_shares_input, is_eof, MIMEScanner::ScanType::LINE);
 
     REQUIRE(frag.expected_result == got_res);
     REQUIRE(frag.shares_input == got_shares_input);
@@ -174,7 +177,6 @@ comp_http_hdr(HTTPHdr *h1, HTTPHdr *h2)
 int
 test_http_hdr_copy_over_aux(int testnum, const char *request, const char *response)
 {
-  int     err;
   HTTPHdr req_hdr;
   HTTPHdr resp_hdr;
   HTTPHdr copy1;
@@ -187,21 +189,22 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   /*** (1) parse the request string into hdr ***/
 
-  req_hdr.create(HTTP_TYPE_REQUEST);
+  req_hdr.create(HTTPType::REQUEST);
 
   start = request;
   end   = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
+  ParseResult err;
   while (true) {
     err = req_hdr.parse_req(&parser, &start, end, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err == PARSE_RESULT_ERROR) {
+  if (err == ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) parse error parsing request hdr\n", testnum);
     return (0);
   }
@@ -209,7 +212,7 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   /*** (2) parse the response string into hdr ***/
 
-  resp_hdr.create(HTTP_TYPE_RESPONSE);
+  resp_hdr.create(HTTPType::RESPONSE);
 
   start = response;
   end   = start + strlen(start); // 1 character past end of string
@@ -218,25 +221,25 @@ test_http_hdr_copy_over_aux(int testnum, const char *request, const char *respon
 
   while (true) {
     err = resp_hdr.parse_resp(&parser, &start, end, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err == PARSE_RESULT_ERROR) {
+  if (err == ParseResult::ERROR) {
     printf("FAILED: (test #%d) parse error parsing response hdr\n", testnum);
     return (0);
   }
 
   /*** (3) Basic copy testing ***/
-  copy1.create(HTTP_TYPE_REQUEST);
+  copy1.create(HTTPType::REQUEST);
   copy1.copy(&req_hdr);
   comp_str = comp_http_hdr(&req_hdr, &copy1);
   if (comp_str) {
     goto done;
   }
 
-  copy2.create(HTTP_TYPE_RESPONSE);
+  copy2.create(HTTPType::RESPONSE);
   copy2.copy(&resp_hdr);
   comp_str = comp_http_hdr(&resp_hdr, &copy2);
   if (comp_str) {
@@ -279,7 +282,7 @@ done:
 int
 test_http_hdr_null_char(int testnum, const char *request, const char * /*request_tgt*/)
 {
-  int            err;
+  ParseResult    err;
   HTTPHdr        hdr;
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
   HTTPParser     parser;
@@ -289,7 +292,7 @@ test_http_hdr_null_char(int testnum, const char *request, const char * /*request
 
   /*** (1) parse the request string into hdr ***/
 
-  hdr.create(HTTP_TYPE_REQUEST);
+  hdr.create(HTTPType::REQUEST);
 
   start = request;
 
@@ -306,12 +309,12 @@ test_http_hdr_null_char(int testnum, const char *request, const char * /*request
 
   while (true) {
     err = hdr.parse_req(&parser, &cpy_buf_ptr, cpy_buf_ptr + length, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err != PARSE_RESULT_ERROR) {
+  if (err != ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) no parse error parsing request with null char\n", testnum);
     return (0);
   }
@@ -321,7 +324,7 @@ test_http_hdr_null_char(int testnum, const char *request, const char * /*request
 int
 test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_tgt */)
 {
-  int            err;
+  ParseResult    err;
   HTTPHdr        hdr;
   ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
   HTTPParser     parser;
@@ -331,7 +334,7 @@ test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_
 
   /*** (1) parse the request string into hdr ***/
 
-  hdr.create(HTTP_TYPE_REQUEST);
+  hdr.create(HTTPType::REQUEST);
 
   start = request;
 
@@ -348,12 +351,12 @@ test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_
 
   while (true) {
     err = hdr.parse_req(&parser, &cpy_buf_ptr, cpy_buf_ptr + strlen(start), true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err != PARSE_RESULT_ERROR) {
+  if (err != ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) no parse error parsing method with ctl char\n", testnum);
     return (0);
   }
@@ -373,7 +376,7 @@ int
 test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *request_tgt, const char *response,
                                  const char *response_tgt)
 {
-  int         err;
+  ParseResult err;
   HTTPHdr     hdr;
   HTTPParser  parser;
   const char *start;
@@ -392,7 +395,7 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   /*** (1) parse the request string into hdr ***/
 
-  hdr.create(HTTP_TYPE_REQUEST);
+  hdr.create(HTTPType::REQUEST);
 
   start = request;
   end   = start + strlen(start); // 1 character past end of string
@@ -401,12 +404,12 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   while (true) {
     err = hdr.parse_req(&parser, &start, end, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err == PARSE_RESULT_ERROR) {
+  if (err == ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) parse error parsing request hdr\n", testnum);
     return (0);
   }
@@ -419,9 +422,9 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
   ref.refcount_inc();
 
   int marshal_len = hdr.m_heap->marshal(marshal_buf.get(), marshal_bufsize);
-  marshal_hdr.create(HTTP_TYPE_REQUEST);
+  marshal_hdr.create(HTTPType::REQUEST);
   marshal_hdr.unmarshal(marshal_buf.get(), marshal_len, &ref);
-  new_hdr.create(HTTP_TYPE_REQUEST);
+  new_hdr.create(HTTPType::REQUEST);
   new_hdr.copy(&marshal_hdr);
 
   /*** (3) print the request header and copy to buffers ***/
@@ -463,7 +466,7 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   /*** (4) parse the response string into hdr ***/
 
-  hdr.create(HTTP_TYPE_RESPONSE);
+  hdr.create(HTTPType::RESPONSE);
 
   start = response;
   end   = start + strlen(start); // 1 character past end of string
@@ -472,19 +475,19 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 
   while (true) {
     err = hdr.parse_resp(&parser, &start, end, true);
-    if (err != PARSE_RESULT_CONT) {
+    if (err != ParseResult::CONT) {
       break;
     }
   }
 
-  if (err == PARSE_RESULT_ERROR) {
+  if (err == ParseResult::ERROR) {
     std::printf("FAILED: (test #%d) parse error parsing response hdr\n", testnum);
     return (0);
   }
 
   /*** (2) copy the response header ***/
 
-  new_hdr.create(HTTP_TYPE_RESPONSE);
+  new_hdr.create(HTTPType::RESPONSE);
   new_hdr.copy(&hdr);
 
   /*** (3) print the response header and copy to buffers ***/
@@ -531,10 +534,10 @@ test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *r
 }
 
 int
-test_arena_aux(Arena *arena, int len)
+test_arena_aux(Arena &arena, int len)
 {
-  char *str        = arena->str_alloc(len);
-  int   verify_len = static_cast<int>(arena->str_length(str));
+  char *str        = arena.str_alloc(len);
+  int   verify_len = static_cast<int>(arena.str_length(str));
 
   if (len != verify_len) {
     std::printf("FAILED: requested %d, got %d bytes\n", len, verify_len);
@@ -561,45 +564,45 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     } test_cases[] = {
       ////
       // Field Name
-      {"Content-Length: 10\r\n",     PARSE_RESULT_CONT },
-      {"Content-Length\x0b: 10\r\n", PARSE_RESULT_ERROR},
-      {"Content-Length\xff: 10\r\n", PARSE_RESULT_ERROR},
+      {"Content-Length: 10\r\n",     ParseResult::CONT },
+      {"Content-Length\x0b: 10\r\n", ParseResult::ERROR},
+      {"Content-Length\xff: 10\r\n", ParseResult::ERROR},
       // Delimiters in field name
-      {"delimiter_\": 10\r\n",       PARSE_RESULT_ERROR},
-      {"delimiter_(: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_): 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_,: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_/: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_:: 0\r\n",         PARSE_RESULT_CONT }, // Parsed as field name "delimiter_" and field value ": 0", which is valid
-      {"delimiter_;: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_<: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_=: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_>: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_?: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_@: 0\r\n",         PARSE_RESULT_CONT }, // Not allowed by the spec, but we use it as internal header indicator
-      {"delimiter_[: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_\\: 0\r\n",        PARSE_RESULT_ERROR},
-      {"delimiter_]: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_{: 0\r\n",         PARSE_RESULT_ERROR},
-      {"delimiter_}: 0\r\n",         PARSE_RESULT_ERROR},
+      {"delimiter_\": 10\r\n",       ParseResult::ERROR},
+      {"delimiter_(: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_): 0\r\n",         ParseResult::ERROR},
+      {"delimiter_,: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_/: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_:: 0\r\n",         ParseResult::CONT }, // Parsed as field name "delimiter_" and field value ": 0", which is valid
+      {"delimiter_;: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_<: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_=: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_>: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_?: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_@: 0\r\n",         ParseResult::CONT }, // Not allowed by the spec, but we use it as internal header indicator
+      {"delimiter_[: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_\\: 0\r\n",        ParseResult::ERROR},
+      {"delimiter_]: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_{: 0\r\n",         ParseResult::ERROR},
+      {"delimiter_}: 0\r\n",         ParseResult::ERROR},
       ////
       // Field Value
       // SP
-      {"Content-Length: 10\r\n",     PARSE_RESULT_CONT },
+      {"Content-Length: 10\r\n",     ParseResult::CONT },
       // HTAB
-      {"Foo: ab\td/cd\r\n",          PARSE_RESULT_CONT },
+      {"Foo: ab\td/cd\r\n",          ParseResult::CONT },
       // VCHAR
-      {"Foo: ab\x21/cd\r\n",         PARSE_RESULT_CONT },
-      {"Foo: ab\x7e/cd\r\n",         PARSE_RESULT_CONT },
+      {"Foo: ab\x21/cd\r\n",         ParseResult::CONT },
+      {"Foo: ab\x7e/cd\r\n",         ParseResult::CONT },
       // DEL
-      {"Foo: ab\x7f/cd\r\n",         PARSE_RESULT_ERROR},
+      {"Foo: ab\x7f/cd\r\n",         ParseResult::ERROR},
       // obs-text
-      {"Foo: ab\x80/cd\r\n",         PARSE_RESULT_CONT },
-      {"Foo: ab\xff/cd\r\n",         PARSE_RESULT_CONT },
+      {"Foo: ab\x80/cd\r\n",         ParseResult::CONT },
+      {"Foo: ab\xff/cd\r\n",         ParseResult::CONT },
       // control char
-      {"Content-Length: 10\x0b\r\n", PARSE_RESULT_ERROR},
-      {"Content-Length:\x0b 10\r\n", PARSE_RESULT_ERROR},
-      {"Foo: ab\x1d/cd\r\n",         PARSE_RESULT_ERROR},
+      {"Content-Length: 10\x0b\r\n", ParseResult::ERROR},
+      {"Content-Length:\x0b 10\r\n", ParseResult::ERROR},
+      {"Foo: ab\x1d/cd\r\n",         ParseResult::ERROR},
     };
 
     MIMEHdr        hdr;
@@ -613,9 +616,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       const char *start = t.line.data();
       const char *end   = start + t.line.size();
 
-      int r = hdr.parse(&parser, &start, end, false, false, false);
+      auto r = hdr.parse(&parser, &start, end, false, false, false);
       if (r != t.expected) {
-        std::printf("Expected %s is %s, but not", t.line.data(), t.expected == PARSE_RESULT_ERROR ? "invalid" : "valid");
+        std::printf("Expected %s is %s, but not", t.line.data(), t.expected == ParseResult::ERROR ? "invalid" : "valid");
         CHECK(false);
       }
     }
@@ -837,7 +840,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       "a.b.com/xx.jpg?newpath=http://bob.dave.com",
     };
 
-    int         err, failed = 0;
+    ParseResult err;
+    int         failed = 0;
     URL         url;
     const char *start;
     const char *end;
@@ -850,7 +854,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       url.create(nullptr);
       err = url.parse(&start, end);
-      if (err < 0) {
+      if (static_cast<int>(err) < 0) {
         std::printf("Failed to parse url '%s'\n", start);
         failed = 1;
         break;
@@ -896,7 +900,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       url.create(nullptr);
       err = url.parse(x, strlen(x));
       url.destroy();
-      if (err == PARSE_RESULT_DONE) {
+      if (err == ParseResult::DONE) {
         failed = 1;
         std::printf("Successfully parsed invalid url '%s'", x);
         break;
@@ -934,7 +938,6 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       "\r\n",
     };
 
-    int         err;
     MIMEHdr     hdr;
     MIMEParser  parser;
     const char *start;
@@ -950,47 +953,46 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     bool must_copy_strs = false;
 
     hdr.create(nullptr);
-    err = hdr.parse(&parser, &start, end, must_copy_strs, false, false);
+    auto err = hdr.parse(&parser, &start, end, must_copy_strs, false, false);
 
-    REQUIRE(err >= 0);
+    REQUIRE(static_cast<int>(err) >= 0);
 
     // Test the (new) continuation line folding to be correct. This should replace the
     // \r\n with two spaces (so a total of three between "part1" and "part2").
-    int         length       = 0;
-    const char *continuation = hdr.value_get("continuation", 12, &length);
+    auto continuation{hdr.value_get("continuation"sv)};
 
-    if ((13 != length)) {
+    if ((13 != continuation.length())) {
       std::printf("FAILED: continue header folded line was too short\n");
       REQUIRE(false);
     }
 
-    if (strncmp(continuation + 5, "   ", 3)) {
+    if (!continuation.substr(5).starts_with("   "sv)) {
       std::printf("FAILED: continue header unfolding did not produce correct WS's\n");
       REQUIRE(false);
     }
 
-    if (strncmp(continuation, "part1   part2", 13)) {
+    if (continuation != "part1   part2"sv) {
       std::printf("FAILED: continue header unfolding was not correct\n");
       REQUIRE(false);
     }
 
-    hdr.field_delete("not_there", 9);
-    hdr.field_delete("accept", 6);
-    hdr.field_delete("scooby", 6);
-    hdr.field_delete("scooby", 6);
-    hdr.field_delete("bar", 3);
-    hdr.field_delete("continuation", 12);
+    hdr.field_delete("not_there"sv);
+    hdr.field_delete("accept"sv);
+    hdr.field_delete("scooby"sv);
+    hdr.field_delete("scooby"sv);
+    hdr.field_delete("bar"sv);
+    hdr.field_delete("continuation"sv);
 
     int count = hdr.fields_count();
     std::printf("hdr.fields_count() = %d\n", count);
 
-    int i_max_forwards = hdr.value_get_int("Max-Forwards", 12);
-    int u_max_forwards = hdr.value_get_uint("Max-Forwards", 12);
+    int i_max_forwards = hdr.value_get_int("Max-Forwards"sv);
+    int u_max_forwards = hdr.value_get_uint("Max-Forwards"sv);
     std::printf("i_max_forwards = %d   u_max_forwards = %d\n", i_max_forwards, u_max_forwards);
 
     hdr.set_age(9999);
 
-    length = hdr.length_get();
+    auto length{hdr.length_get()};
     std::printf("hdr.length_get() = %d\n", length);
 
     time_t t0, t1, t2;
@@ -1010,12 +1012,12 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       REQUIRE(false);
     }
 
-    hdr.value_append("Cache-Control", 13, "no-cache", 8, true);
+    hdr.value_append("Cache-Control"sv, "no-cache"sv, true);
 
     MIMEField *cc_field;
     StrList    slist;
 
-    cc_field = hdr.field_find("Cache-Control", 13);
+    cc_field = hdr.field_find("Cache-Control"sv);
 
     if (cc_field == nullptr) {
       std::printf("FAILED: missing Cache-Control header\n\n");
@@ -1025,23 +1027,23 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     // TODO: Do we need to check the "count" returned?
     cc_field->value_get_comma_list(&slist); // FIX: correct usage?
 
-    if (cc_field->value_get_index("Private", 7) < 0) {
+    if (cc_field->value_get_index("Private"sv) < 0) {
       std::printf("Failed: value_get_index of Cache-Control did not find private");
       REQUIRE(false);
     }
-    if (cc_field->value_get_index("Bogus", 5) >= 0) {
+    if (cc_field->value_get_index("Bogus"sv) >= 0) {
       std::printf("Failed: value_get_index of Cache-Control incorrectly found bogus");
       REQUIRE(false);
     }
-    if (hdr.value_get_index("foo", 3, "three", 5) < 0) {
+    if (hdr.value_get_index("foo"sv, "three"sv) < 0) {
       std::printf("Failed: value_get_index of foo did not find three");
       REQUIRE(false);
     }
-    if (hdr.value_get_index("foo", 3, "bar", 3) < 0) {
+    if (hdr.value_get_index("foo"sv, "bar"sv) < 0) {
       std::printf("Failed: value_get_index of foo did not find bar");
       REQUIRE(false);
     }
-    if (hdr.value_get_index("foo", 3, "Bogus", 5) >= 0) {
+    if (hdr.value_get_index("foo"sv, "Bogus"sv) >= 0) {
       std::printf("Failed: value_get_index of foo incorrectly found bogus");
       REQUIRE(false);
     }
@@ -1055,7 +1057,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     const char *field_name = "Test_heap_reuse";
 
-    MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+    MIMEField *f = hdr.field_create(field_name);
     REQUIRE(f->m_ptr_value == nullptr);
 
     hdr.field_attach(f);
@@ -1064,9 +1066,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     const char *test_value = "mytest";
 
     std::printf("Testing Heap Reuse..\n");
-    hdr.field_value_set(f, "orig_value", strlen("orig_value"));
+    hdr.field_value_set(f, "orig_value");
     const char *m_ptr_value_orig = f->m_ptr_value;
-    hdr.field_value_set(f, test_value, strlen(test_value), true);
+    hdr.field_value_set(f, test_value, true);
     REQUIRE(f->m_ptr_value != test_value);       // should be copied
     REQUIRE(f->m_ptr_value == m_ptr_value_orig); // heap doesn't change
     REQUIRE(f->m_len_value == strlen(test_value));
@@ -1074,7 +1076,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     m_ptr_value_orig           = f->m_ptr_value;
     const char *new_test_value = "myTest";
-    hdr.field_value_set(f, new_test_value, strlen(new_test_value), false);
+    hdr.field_value_set(f, new_test_value, false);
     REQUIRE(f->m_ptr_value != new_test_value);   // should be copied
     REQUIRE(f->m_ptr_value != m_ptr_value_orig); // new heap
     REQUIRE(f->m_len_value == strlen(new_test_value));
@@ -1456,7 +1458,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       {request_blank3,        response_blank3      }
     };
 
-    int         err;
+    ParseResult err;
     HTTPHdr     req_hdr, rsp_hdr;
     HTTPParser  parser;
     const char *start;
@@ -1477,17 +1479,17 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       http_parser_init(&parser);
 
-      req_hdr.create(HTTP_TYPE_REQUEST);
-      rsp_hdr.create(HTTP_TYPE_RESPONSE);
+      req_hdr.create(HTTPType::REQUEST);
+      rsp_hdr.create(HTTPType::RESPONSE);
 
       std::printf("======== parsing\n\n");
       while (true) {
         err = req_hdr.parse_req(&parser, &start, end, true);
-        if (err != PARSE_RESULT_CONT) {
+        if (err != ParseResult::CONT) {
           break;
         }
       }
-      if (err == PARSE_RESULT_ERROR) {
+      if (err == ParseResult::ERROR) {
         req_hdr.destroy();
         rsp_hdr.destroy();
         break;
@@ -1496,7 +1498,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       /*** useless copy to exercise copy function ***/
 
       HTTPHdr new_hdr;
-      new_hdr.create(HTTP_TYPE_REQUEST);
+      new_hdr.create(HTTPType::REQUEST);
       new_hdr.copy(&req_hdr);
       new_hdr.destroy();
 
@@ -1524,11 +1526,11 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       while (true) {
         err = rsp_hdr.parse_resp(&parser, &start, end, true);
-        if (err != PARSE_RESULT_CONT) {
+        if (err != ParseResult::CONT) {
           break;
         }
       }
-      if (err == PARSE_RESULT_ERROR) {
+      if (err == ParseResult::ERROR) {
         req_hdr.destroy();
         rsp_hdr.destroy();
         break;
@@ -1553,6 +1555,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
         int  bufindex, last_bufindex;
         int  tmp;
         int  i;
+        int  print_err;
 
         bufindex = 0;
 
@@ -1560,9 +1563,9 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
           last_bufindex = bufindex;
           tmp           = bufindex;
           buf[0]        = '#'; // make it obvious if hdr.print doesn't print anything
-          err           = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
+          print_err     = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
 
-          // std::printf("test_header: tmp = %d  err = %d  bufindex = %d\n", tmp, err, bufindex);
+          // std::printf("test_header: tmp = %d  err = %d  bufindex = %d\n", tmp, print_err, bufindex);
           putchar('{');
           for (i = 0; i < bufindex - last_bufindex; i++) {
             if (!iscntrl(buf[i])) {
@@ -1572,7 +1575,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
             }
           }
           putchar('}');
-        } while (!err);
+        } while (!print_err);
       }
 
       // rsp_hdr.print (NULL, 0, NULL, NULL);
@@ -1594,12 +1597,12 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
       http_parser_init(&parser);
 
-      req_hdr.create(HTTP_TYPE_REQUEST);
-      rsp_hdr.create(HTTP_TYPE_RESPONSE);
+      req_hdr.create(HTTPType::REQUEST);
+      rsp_hdr.create(HTTPType::RESPONSE);
 
       std::printf("======== test_http_req_parse_error parsing\n\n");
       err = req_hdr.parse_req(&parser, &start, end, true, true, 1);
-      if (err != PARSE_RESULT_ERROR) {
+      if (err != ParseResult::ERROR) {
         status = 0;
       }
 
@@ -1624,7 +1627,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     std::printf("   <<< MUST BE HAND-VERIFIED FOR FULL BENEFIT>>>\n\n");
 
     HTTPHdr     resp_hdr;
-    int         err, i;
+    int         i;
     HTTPParser  parser;
     const char  base_resp[] = "HTTP/1.0 200 OK\r\n\r\n";
     const char *start, *end;
@@ -1636,11 +1639,12 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     http_parser_init(&parser);
 
-    resp_hdr.create(HTTP_TYPE_RESPONSE);
+    resp_hdr.create(HTTPType::RESPONSE);
 
+    ParseResult err;
     while (true) {
       err = resp_hdr.parse_resp(&parser, &start, end, true);
-      if (err != PARSE_RESULT_CONT) {
+      if (err != ParseResult::CONT) {
         break;
       }
     }
@@ -1656,22 +1660,22 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     for (i = 1; i <= 100; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
       snprintf(field_value, sizeof(field_value), "%d %d %d %d %d", i, i, i, i, i);
-      resp_hdr.value_set(field_name, static_cast<int>(strlen(field_name)), field_value, static_cast<int>(strlen(field_value)));
+      resp_hdr.value_set(std::string_view{field_name}, std::string_view{field_value});
     }
 
     /**** (3) delete all the even numbered fields *****/
     for (i = 2; i <= 100; i += 2) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
-      resp_hdr.field_delete(field_name, static_cast<int>(strlen(field_name)));
+      resp_hdr.field_delete(std::string_view{field_name});
     }
 
     /***** (4) add in secondary fields for all multiples of 3 ***/
     for (i = 3; i <= 100; i += 3) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
-      MIMEField *f = resp_hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+      MIMEField *f = resp_hdr.field_create(field_name);
       resp_hdr.field_attach(f);
       snprintf(field_value, sizeof(field_value), "d %d %d %d %d %d", i, i, i, i, i);
-      f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, field_value, static_cast<int>(strlen(field_value)));
+      f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, std::string_view{field_value});
     }
 
     /***** (5) append all fields with multiples of 5 ***/
@@ -1679,14 +1683,13 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
       snprintf(field_name, sizeof(field_name), "Test%d", i);
       snprintf(field_value, sizeof(field_value), "a %d", i);
 
-      resp_hdr.value_append(field_name, static_cast<int>(strlen(field_name)), field_value, static_cast<int>(strlen(field_value)),
-                            true);
+      resp_hdr.value_append(field_name, field_value, true);
     }
 
     /**** (6) delete all multiples of nine *****/
     for (i = 9; i <= 100; i += 9) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
-      resp_hdr.field_delete(field_name, static_cast<int>(strlen(field_name)));
+      resp_hdr.field_delete(std::string_view{field_name});
     }
 
     std::printf("\n======== mutated response ==========\n\n");
@@ -1699,26 +1702,22 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
   SECTION("Test arena")
   {
-    Arena *arena;
+    auto arena = std::make_unique<Arena>();
 
-    arena = new Arena;
-
-    CHECK(test_arena_aux(arena, 1) != 1);
-    CHECK(test_arena_aux(arena, 127) != 1);
-    CHECK(test_arena_aux(arena, 128) != 1);
-    CHECK(test_arena_aux(arena, 129) != 1);
-    CHECK(test_arena_aux(arena, 255) != 1);
-    CHECK(test_arena_aux(arena, 256) != 1);
-    CHECK(test_arena_aux(arena, 16384) != 1);
-    CHECK(test_arena_aux(arena, 16385) != 1);
-    CHECK(test_arena_aux(arena, 16511) != 1);
-    CHECK(test_arena_aux(arena, 16512) != 1);
-    CHECK(test_arena_aux(arena, 2097152) != 1);
-    CHECK(test_arena_aux(arena, 2097153) != 1);
-    CHECK(test_arena_aux(arena, 2097279) != 1);
-    CHECK(test_arena_aux(arena, 2097280) != 1);
-
-    delete arena;
+    CHECK(test_arena_aux(*arena, 1) != 1);
+    CHECK(test_arena_aux(*arena, 127) != 1);
+    CHECK(test_arena_aux(*arena, 128) != 1);
+    CHECK(test_arena_aux(*arena, 129) != 1);
+    CHECK(test_arena_aux(*arena, 255) != 1);
+    CHECK(test_arena_aux(*arena, 256) != 1);
+    CHECK(test_arena_aux(*arena, 16384) != 1);
+    CHECK(test_arena_aux(*arena, 16385) != 1);
+    CHECK(test_arena_aux(*arena, 16511) != 1);
+    CHECK(test_arena_aux(*arena, 16512) != 1);
+    CHECK(test_arena_aux(*arena, 2097152) != 1);
+    CHECK(test_arena_aux(*arena, 2097153) != 1);
+    CHECK(test_arena_aux(*arena, 2097279) != 1);
+    CHECK(test_arena_aux(*arena, 2097280) != 1);
   }
 
   SECTION("Test regex")
@@ -1883,18 +1882,18 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     ntests = sizeof(tests) / sizeof(tests[0]);
 
-    hdr.create(HTTP_TYPE_REQUEST);
+    hdr.create(HTTPType::REQUEST);
 
     for (i = 0; i < ntests; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-      MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+      MIMEField *f = hdr.field_create(field_name);
       REQUIRE(f->m_ptr_value == nullptr);
 
       hdr.field_attach(f);
       REQUIRE(f->m_ptr_value == nullptr);
 
-      hdr.field_value_set(f, tests[i].value, strlen(tests[i].value));
+      hdr.field_value_set(f, tests[i].value);
       REQUIRE(f->m_ptr_value != tests[i].value); // should be copied
       REQUIRE(f->m_len_value == strlen(tests[i].value));
       REQUIRE(memcmp(f->m_ptr_value, tests[i].value, f->m_len_value) == 0);
@@ -1975,14 +1974,14 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
     ntests = sizeof(tests) / sizeof(tests[0]);
 
-    hdr.create(HTTP_TYPE_REQUEST);
+    hdr.create(HTTPType::REQUEST);
 
     for (i = 0; i < ntests; i++) {
       snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-      MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
-      hdr.field_value_set(f, tests[i].old_raw, strlen(tests[i].old_raw));
-      mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, tests[i].slice, strlen(tests[i].slice));
+      MIMEField *f = hdr.field_create(field_name);
+      hdr.field_value_set(f, tests[i].old_raw);
+      mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, std::string_view{tests[i].slice});
       REQUIRE(f->m_ptr_value != nullptr);
 
       if ((f->m_len_value != strlen(tests[i].new_raw)) || (memcmp(f->m_ptr_value, tests[i].new_raw, f->m_len_value) != 0)) {

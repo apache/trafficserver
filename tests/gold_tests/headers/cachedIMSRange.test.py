@@ -132,12 +132,18 @@ ts.Disk.remap_config.AddLines(
 
 ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine(f'//.*/ http://127.0.0.1:{server.Variables.Port} @status=304')
 
+ipv4flag = ""
+if not Condition.CurlUsingUnixDomainSocket():
+    ipv4flag = "--ipv4"
+
 # Test 0 - Fill a 3 byte object with Last-Modified time into cache.
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: Fill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H"UID: Fill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-miss.gold"
 tr.StillRunningAfter = ts
@@ -148,8 +154,10 @@ tr.StillRunningAfter = server
 # a 200 to user
 tr = Test.AddTestRun()
 tr.DelayStart = 2
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: IMS" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H"UID: IMS" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale.gold"
 tr.StillRunningAfter = ts
@@ -160,8 +168,10 @@ tr.StillRunningAfter = server
 # object, and give a 206 to user
 tr = Test.AddTestRun()
 tr.DelayStart = 2
-tr.Processes.Default.Command = 'curl --range 0-1 -s -D - -v --ipv4 --http1.1 -H"UID: IMS" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '--range 0-1 -s -D - -v {0} --http1.1 -H"UID: IMS" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale-206.gold"
 tr.StillRunningAfter = ts
@@ -169,29 +179,32 @@ tr.StillRunningAfter = server
 
 # Test 3 - Test 304 response served from a regex-remap rule with HTTP.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = f'curl -vs http://127.0.0.1:{ts.Variables.port}/ -H "Host: {default_304_host}"'
+tr.MakeCurlCommand(f'-vs http://127.0.0.1:{ts.Variables.port}/ -H "Host: {default_304_host}"', ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.GoldFile("gold/http1_304.gold", case_insensitive=True)
 tr.StillRunningAfter = server
 
-# Test 4 - Test 304 response served from a regex-remap rule with HTTPS.
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = f'curl -vs -k https://127.0.0.1:{ts.Variables.ssl_port}/ -H "Host: {default_304_host}"'
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.All = Testers.GoldFile("gold/http1_304.gold", case_insensitive=True)
-tr.StillRunningAfter = server
+if not Condition.CurlUsingUnixDomainSocket():
+    # Test 4 - Test 304 response served from a regex-remap rule with HTTPS.
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(f'-vs -k https://127.0.0.1:{ts.Variables.ssl_port}/ -H "Host: {default_304_host}"')
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.All = Testers.GoldFile("gold/http1_304.gold", case_insensitive=True)
+    tr.StillRunningAfter = server
 
-# Test 5 - Test 304 response served from a regex-remap rule with HTTP/2.
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = f'curl -vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/ -H "Host: {default_304_host}"'
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.All = Testers.GoldFile("gold/http2_304.gold", case_insensitive=True)
-tr.StillRunningAfter = server
+    # Test 5 - Test 304 response served from a regex-remap rule with HTTP/2.
+    tr = Test.AddTestRun()
+    tr.MakeCurlCommand(f'-vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/ -H "Host: {default_304_host}"')
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.All = Testers.GoldFile("gold/http2_304.gold", case_insensitive=True)
+    tr.StillRunningAfter = server
 
 # Test 6 - Fill a new object with an Etag. Not checking the output here.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: EtagFill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/etag'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H"UID: EtagFill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -201,8 +214,10 @@ tr.StillRunningAfter = server
 # object, and give a 200 to user
 tr = Test.AddTestRun()
 tr.DelayStart = 2
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: INM" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/etag'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H"UID: INM" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale-INM.gold"
 tr.StillRunningAfter = ts
@@ -213,8 +228,10 @@ tr.StillRunningAfter = server
 # refresh the object, and give a 206 to user
 tr = Test.AddTestRun()
 tr.DelayStart = 2
-tr.Processes.Default.Command = 'curl --range 0-1 -s -D - -v --ipv4 --http1.1 -H"UID: INM" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/etag'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '--range 0-1 -s -D - -v {0} --http1.1 -H"UID: INM" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale-206-etag.gold"
 tr.StillRunningAfter = ts
@@ -223,8 +240,10 @@ tr.StillRunningAfter = server
 # Test 9 - The origin changes the initial LMT object to 0 byte. We expect ATS to fetch and serve the new 0 byte object.
 tr = Test.AddTestRun()
 tr.DelayStart = 3
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: noBody" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H"UID: noBody" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_nobody-hit-stale.gold"
 tr.StillRunningAfter = ts
@@ -233,8 +252,10 @@ tr.StillRunningAfter = server
 # Test 10 - Fetch the new 0 byte object again when fresh in cache to ensure its still a 0 byte object.
 tr = Test.AddTestRun()
 tr.DelayStart = 3
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: noBody" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H"UID: noBody" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_nobody-hit-stale.gold"
 tr.StillRunningAfter = ts
@@ -243,8 +264,10 @@ tr.StillRunningAfter = server
 # Test 11 - The origin changes the etag object to 0 byte 404. We expect ATS to fetch and serve the 404 0 byte object.
 tr = Test.AddTestRun()
 tr.DelayStart = 2
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: EtagError" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/etag'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H"UID: EtagError" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_error_nobody.gold"
 tr.StillRunningAfter = ts
@@ -253,8 +276,10 @@ tr.StillRunningAfter = server
 # Test 12 - Fetch the 0 byte etag object again when fresh in cache to ensure its still a 0 byte object
 tr = Test.AddTestRun()
 tr.DelayStart = 2
-tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: EtagError" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/etag'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-s -D - -v {0} --http1.1 -H"UID: EtagError" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{1}/etag'
+    .format(ipv4flag, ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_error_nobody.gold"
 tr.StillRunningAfter = ts

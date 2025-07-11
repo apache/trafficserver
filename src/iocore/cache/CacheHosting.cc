@@ -46,12 +46,11 @@ DbgCtl dbg_ctl_matcher{"matcher"};
 
 CacheHostMatcher::CacheHostMatcher(const char *name, CacheType typ) : data_array(nullptr), array_len(-1), num_el(-1), type(typ)
 {
-  host_lookup = new HostLookup(name);
+  host_lookup = std::make_unique<HostLookup>(name);
 }
 
 CacheHostMatcher::~CacheHostMatcher()
 {
-  delete host_lookup;
   delete[] data_array;
 }
 
@@ -99,13 +98,13 @@ CacheHostMatcher::AllocateSpace(int num_entries)
   num_el    = 0;
 }
 
-// void CacheHostMatcher::Match(RequestData* rdata, Result* result)
+// void CacheHostMatcher::Match(std::string_view rdata, Result* result)
 //
 //  Searches our tree and updates argresult for each element matching
 //    arg hostname
 //
 void
-CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) const
+CacheHostMatcher::Match(std::string_view rdata, CacheHostResult *result) const
 {
   void            *opaque_ptr;
   CacheHostRecord *data_ptr;
@@ -117,14 +116,13 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) co
     return;
   }
 
-  if (rlen == 0) {
+  if (rdata.empty()) {
     return;
   }
 
-  std::string_view data{rdata, static_cast<size_t>(rlen)};
-  HostLookupState  s;
+  HostLookupState s;
 
-  r = host_lookup->MatchFirst(data, &s, &opaque_ptr);
+  r = host_lookup->MatchFirst(rdata, &s, &opaque_ptr);
 
   while (r == true) {
     ink_assert(opaque_ptr != nullptr);
@@ -203,12 +201,7 @@ CacheHostTable::CacheHostTable(Cache *c, CacheType typ)
   m_numEntries = this->BuildTable(config_path);
 }
 
-CacheHostTable::~CacheHostTable()
-{
-  if (hostMatch != nullptr) {
-    delete hostMatch;
-  }
-}
+CacheHostTable::~CacheHostTable() {}
 
 // void ControlMatcher<Data, Result>::Print()
 //
@@ -223,15 +216,15 @@ CacheHostTable::Print() const
   }
 }
 
-// void ControlMatcher<Data, Result>::Match(RequestData* rdata
-//                                          Result* result)
+// void ControlMatcher<Result>::Match(std::string_view rdata
+//                                    Result* result)
 //
 //   Queries each table for the Result*
 //
 void
-CacheHostTable::Match(const char *rdata, int rlen, CacheHostResult *result) const
+CacheHostTable::Match(std::string_view rdata, CacheHostResult *result) const
 {
-  hostMatch->Match(rdata, rlen, result);
+  hostMatch->Match(rdata, result);
 }
 
 int
@@ -339,7 +332,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   }
 
   if (hostDomain > 0) {
-    hostMatch = new CacheHostMatcher(matcher_name, type);
+    hostMatch = std::make_unique<CacheHostMatcher>(matcher_name, type);
     hostMatch->AllocateSpace(hostDomain);
   }
   // Traverse the list and build the records table
@@ -386,7 +379,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   Note("%s finished loading", ts::filename::HOSTING);
 
   if (!generic_rec_initd) {
-    const char *cache_type = (type == CACHE_HTTP_TYPE) ? "http" : "mixt";
+    const char *cache_type = (type == CacheType::HTTP) ? "http" : "mixt";
     Warning("No Volumes specified for Generic Hostnames for %s documents: %s cache will be disabled", cache_type, cache_type);
   }
 
@@ -441,7 +434,7 @@ CacheHostRecord::Init(CacheType typ)
     }
   }
   if (!num_cachevols) {
-    Warning("error: No volumes found for Cache Type %d", type);
+    Warning("error: No volumes found for Cache Type %d", static_cast<int>(type));
     return -1;
   }
   stripes     = static_cast<StripeSM **>(ats_malloc(num_vols * sizeof(StripeSM *)));
@@ -466,7 +459,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
   int                    is_vol_present = 0;
   char                   config_file[PATH_NAME_MAX];
 
-  REC_ReadConfigString(config_file, "proxy.config.cache.hosting_filename", PATH_NAME_MAX);
+  RecGetRecordString("proxy.config.cache.hosting_filename", config_file, PATH_NAME_MAX);
   type = typ;
   for (i = 0; i < MATCHER_MAX_TOKENS; i++) {
     char *label = line_info->line[0][i];
@@ -607,10 +600,10 @@ ConfigVolumes::read_config_file()
   if (ec) {
     switch (ec.value()) {
     case ENOENT:
-      Warning("Cannot open the config file: %s - %s", (const char *)config_path, strerror(ec.value()));
+      Warning("Cannot open the config file: %s - %s", config_path.get(), strerror(ec.value()));
       break;
     default:
-      Error("%s failed to load: %s", (const char *)config_path, strerror(ec.value()));
+      Error("%s failed to load: %s", config_path.get(), strerror(ec.value()));
       return;
     }
   }
@@ -653,7 +646,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     char       *line_end         = nullptr;
     const char *err              = nullptr;
     int         volume_number    = 0;
-    CacheType   scheme           = CACHE_NONE_TYPE;
+    CacheType   scheme           = CacheType::NONE;
     int         size             = 0;
     int         in_percent       = 0;
     bool        ramcache_enabled = true;
@@ -717,10 +710,10 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 
         if (!strcasecmp(tmp, "http")) {
           tmp    += 4;
-          scheme  = CACHE_HTTP_TYPE;
+          scheme  = CacheType::HTTP;
         } else if (!strcasecmp(tmp, "mixt")) {
           tmp    += 4;
-          scheme  = CACHE_RTSP_TYPE;
+          scheme  = CacheType::RTSP;
         } else {
           err = "Unexpected end of line";
           break;
@@ -782,7 +775,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 
     if (err) {
       Warning("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, err);
-    } else if (volume_number && size && scheme) {
+    } else if (volume_number && size && scheme != CacheType::NONE) {
       /* add the config */
 
       ConfigVol *configp = new ConfigVol();
@@ -802,13 +795,13 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       configp->ramcache_enabled = ramcache_enabled;
       cp_queue.enqueue(configp);
       num_volumes++;
-      if (scheme == CACHE_HTTP_TYPE) {
+      if (scheme == CacheType::HTTP) {
         num_http_volumes++;
       } else {
         ink_release_assert(!"Unexpected non-HTTP cache volume");
       }
-      Dbg(dbg_ctl_cache_hosting, "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number, scheme, size,
-          in_percent, ramcache_enabled);
+      Dbg(dbg_ctl_cache_hosting, "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number,
+          static_cast<int>(scheme), size, in_percent, ramcache_enabled);
     }
 
     tmp = bufTok.iterNext(&i_state);

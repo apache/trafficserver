@@ -194,27 +194,24 @@ ink_aio_init(ts::ModuleVersion v, [[maybe_unused]] AIOBackend backend)
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex);
 
-  REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
+  cache_config_threads_per_disk = RecGetRecordInt("proxy.config.cache.threads_per_disk").value_or(0);
 
 #if TS_USE_LINUX_IO_URING
   // If the caller specified auto backend, check for config to force a backend
   if (backend == AIOBackend::AIO_BACKEND_AUTO) {
-    RecString aio_mode = nullptr;
-    REC_ReadConfigStringAlloc(aio_mode, "proxy.config.aio.mode");
-    if (aio_mode) {
-      if (strcasecmp(aio_mode, "auto") == 0) {
+    auto aio_mode{RecGetRecordStringAlloc("proxy.config.aio.mode")};
+    if (aio_mode && !aio_mode->empty()) {
+      if (strcasecmp(*aio_mode, "auto") == 0) {
         backend = AIOBackend::AIO_BACKEND_AUTO;
-      } else if (strcasecmp(aio_mode, "thread") == 0) {
+      } else if (strcasecmp(*aio_mode, "thread") == 0) {
         // force thread mode
         backend = AIOBackend::AIO_BACKEND_THREAD;
-      } else if (strcasecmp(aio_mode, "io_uring") == 0) {
+      } else if (strcasecmp(*aio_mode, "io_uring") == 0) {
         // force io_uring mode
         backend = AIOBackend::AIO_BACKEND_IO_URING;
       } else {
-        Warning("Invalid value '%s' for proxy.config.aio.mode.  autodetecting", aio_mode);
+        Warning("Invalid value '%s' for proxy.config.aio.mode.  autodetecting", aio_mode->c_str());
       }
-
-      ats_free(aio_mode);
     }
   }
 
@@ -317,7 +314,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
   AIOThreadInfo *thr_info;
   size_t         stacksize;
 
-  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+  stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
   for (i = 0; i < thread_num; i++) {
     if (i == (thread_num - 1)) {
       thr_info = new AIOThreadInfo(request, 1);

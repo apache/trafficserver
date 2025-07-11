@@ -37,6 +37,8 @@
 #include "proxy/IPAllow.h"
 #include "proxy/http/remap/PluginFactory.h"
 
+using namespace std::literals;
+
 #define modulePrefix "[ReverseProxy]"
 
 load_remap_file_func load_remap_file_cb = nullptr;
@@ -328,7 +330,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
   nbti.rules_list = bti->rules_list;
   nbti.rewrite    = bti->rewrite;
 
-  Dbg(dbg_ctl_url_rewrite, "[%s] including remap configuration from %s", __func__, (const char *)path);
+  Dbg(dbg_ctl_url_rewrite, "[%s] including remap configuration from %s", __func__, path);
   success = remap_parse_config_bti(path, &nbti);
 
   // The sub-parse might have updated the rules list, so push it up to the parent parse.
@@ -869,7 +871,7 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
   memset(pargv, 0, sizeof(pargv));
   memset(new_argv, 0, sizeof(new_argv));
 
-  ink_assert((unsigned)argc < countof(new_argv));
+  ink_assert(static_cast<unsigned>(argc) < countof(new_argv));
 
   if (jump_to_argc != 0) {
     argc  -= jump_to_argc;
@@ -942,7 +944,7 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
   std::string      error;
   {
     uint32_t elevate_access = 0;
-    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    elevate_access          = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     pi = rewrite->pluginFactory.getRemapPlugin(swoc::file::path(const_cast<const char *>(c)), parc, pargv, error,
@@ -969,12 +971,10 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
 static bool
 process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mapping, UrlRewrite::RegexMapping *reg_map)
 {
-  const char *str;
-  int         str_index;
-  const char *to_host;
-  int         to_host_len;
-  int         substitution_id;
-  int         captures;
+  std::string_view to_host{};
+  int              to_host_len;
+  int              substitution_id;
+  int              captures;
 
   reg_map->to_url_host_template     = nullptr;
   reg_map->to_url_host_template_len = 0;
@@ -1000,8 +1000,9 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
     goto lFail;
   }
 
-  to_host = new_mapping->toURL.host_get(&to_host_len);
-  for (int i = 0; i < (to_host_len - 1); ++i) {
+  to_host     = new_mapping->toURL.host_get();
+  to_host_len = static_cast<int>(to_host.length());
+  for (int i = 0; i < to_host_len - 1; ++i) {
     if (to_host[i] == '$') {
       substitution_id = to_host[i + 1] - '0';
       if ((substitution_id < 0) || (substitution_id > captures)) {
@@ -1017,10 +1018,9 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   // so the regex itself is stored in fromURL.host; string to match
   // will be in the request; string to use for substitutions will be
   // in this buffer
-  str                               = new_mapping->toURL.host_get(&str_index); // reusing str and str_index
-  reg_map->to_url_host_template_len = str_index;
-  reg_map->to_url_host_template     = static_cast<char *>(ats_malloc(str_index));
-  memcpy(reg_map->to_url_host_template, str, str_index);
+  reg_map->to_url_host_template_len = to_host_len;
+  reg_map->to_url_host_template     = static_cast<char *>(ats_malloc(to_host_len));
+  memcpy(reg_map->to_url_host_template, to_host.data(), to_host_len);
 
   return true;
 
@@ -1042,26 +1042,25 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   Tokenizer whiteTok(" \t");
 
   // Vars to parse line in file
-  char *tok_state, *cur_line, *cur_line_tmp;
-  int   rparse, cur_line_size, cln = 0; // Our current line number
+  char       *tok_state, *cur_line, *cur_line_tmp;
+  int         cur_line_size, cln = 0; // Our current line number
+  ParseResult rparse;
 
   // Vars to build the mapping
-  const char   *fromScheme, *toScheme;
-  int           fromSchemeLen, toSchemeLen;
-  const char   *fromHost, *toHost;
-  int           fromHostLen, toHostLen;
-  char         *map_from, *map_from_start;
-  char         *map_to, *map_to_start;
-  const char   *tmp; // Appease the DEC compiler
-  char         *fromHost_lower     = nullptr;
-  char         *fromHost_lower_ptr = nullptr;
-  char          fromHost_lower_buf[1024];
-  url_mapping  *new_mapping = nullptr;
-  mapping_type  maptype;
-  referer_info *ri;
-  int           origLength;
-  int           length;
-  int           tok_count;
+  std::string_view fromScheme{}, toScheme{};
+  std::string_view fromHost{}, toHost{};
+  char            *map_from, *map_from_start;
+  char            *map_to, *map_to_start;
+  const char      *tmp; // Appease the DEC compiler
+  char            *fromHost_lower     = nullptr;
+  char            *fromHost_lower_ptr = nullptr;
+  char             fromHost_lower_buf[1024];
+  url_mapping     *new_mapping = nullptr;
+  mapping_type     maptype;
+  referer_info    *ri;
+  int              origLength;
+  int              length;
+  int              tok_count;
 
   UrlRewrite::RegexMapping *reg_map;
   bool                      is_cur_mapping_regex;
@@ -1157,24 +1156,26 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     // Check to see whether is a reverse or forward mapping
     if (!strcasecmp("reverse_map", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - REVERSE_MAP");
-      maptype = REVERSE_MAP;
+      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::REVERSE_MAP");
+      maptype = mapping_type::REVERSE_MAP;
     } else if (!strcasecmp("map", type_id_str)) {
       Dbg(dbg_ctl_url_rewrite, "[BuildTable] - %s",
-          ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? "FORWARD_MAP" : "FORWARD_MAP_REFERER");
-      maptype = ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? FORWARD_MAP : FORWARD_MAP_REFERER;
+          ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? "mapping_type::FORWARD_MAP" :
+                                                                       "mapping_type::FORWARD_MAP_REFERER");
+      maptype =
+        ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? mapping_type::FORWARD_MAP : mapping_type::FORWARD_MAP_REFERER;
     } else if (!strcasecmp("redirect", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - PERMANENT_REDIRECT");
-      maptype = PERMANENT_REDIRECT;
+      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::PERMANENT_REDIRECT");
+      maptype = mapping_type::PERMANENT_REDIRECT;
     } else if (!strcasecmp("redirect_temporary", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - TEMPORARY_REDIRECT");
-      maptype = TEMPORARY_REDIRECT;
+      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::TEMPORARY_REDIRECT");
+      maptype = mapping_type::TEMPORARY_REDIRECT;
     } else if (!strcasecmp("map_with_referer", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - FORWARD_MAP_REFERER");
-      maptype = FORWARD_MAP_REFERER;
+      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::FORWARD_MAP_REFERER");
+      maptype = mapping_type::FORWARD_MAP_REFERER;
     } else if (!strcasecmp("map_with_recv_port", type_id_str)) {
-      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - FORWARD_MAP_WITH_RECV_PORT");
-      maptype = FORWARD_MAP_WITH_RECV_PORT;
+      Dbg(dbg_ctl_url_rewrite, "[BuildTable] - mapping_type::FORWARD_MAP_WITH_RECV_PORT");
+      maptype = mapping_type::FORWARD_MAP_WITH_RECV_PORT;
     } else {
       snprintf(errStrBuf, sizeof(errStrBuf), "unknown mapping type at line %d", cln + 1);
       errStr = errStrBuf;
@@ -1219,7 +1220,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     map_from_start[origLength] = '\0'; // Unwhack
 
-    if (rparse != PARSE_RESULT_DONE) {
+    if (rparse != ParseResult::DONE) {
       snprintf(errStrBuf, sizeof(errStrBuf), "malformed From URL: %.*s", length, tmp);
       errStr = errStrBuf;
       goto MAP_ERROR;
@@ -1234,42 +1235,44 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     rparse                   = new_mapping->toURL.parse_no_host_check(std::string_view(tmp, length));
     map_to_start[origLength] = '\0'; // Unwhack
 
-    if (rparse != PARSE_RESULT_DONE) {
+    if (rparse != ParseResult::DONE) {
       snprintf(errStrBuf, sizeof(errStrBuf), "malformed To URL: %.*s", length, tmp);
       errStr = errStrBuf;
       goto MAP_ERROR;
     }
 
-    fromScheme = new_mapping->fromURL.scheme_get(&fromSchemeLen);
+    fromScheme = new_mapping->fromURL.scheme_get();
     // If the rule is "/" or just some other relative path
     //   we need to default the scheme to http
-    if (fromScheme == nullptr || fromSchemeLen == 0) {
-      new_mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
-      fromScheme                        = new_mapping->fromURL.scheme_get(&fromSchemeLen);
+    if (fromScheme.empty()) {
+      new_mapping->fromURL.scheme_set(std::string_view{URL_SCHEME_HTTP});
+      fromScheme                        = new_mapping->fromURL.scheme_get();
       new_mapping->wildcard_from_scheme = true;
     }
-    toScheme = new_mapping->toURL.scheme_get(&toSchemeLen);
+    toScheme = new_mapping->toURL.scheme_get();
 
     // Include support for HTTPS scheme
     // includes support for FILE scheme
-    if ((fromScheme != URL_SCHEME_HTTP && fromScheme != URL_SCHEME_HTTPS && fromScheme != URL_SCHEME_FILE &&
-         fromScheme != URL_SCHEME_TUNNEL && fromScheme != URL_SCHEME_WS && fromScheme != URL_SCHEME_WSS) ||
-        (toScheme != URL_SCHEME_HTTP && toScheme != URL_SCHEME_HTTPS && toScheme != URL_SCHEME_TUNNEL &&
-         toScheme != URL_SCHEME_WS && toScheme != URL_SCHEME_WSS)) {
+    if ((fromScheme != std::string_view{URL_SCHEME_HTTP} && fromScheme != std::string_view{URL_SCHEME_HTTPS} &&
+         fromScheme != std::string_view{URL_SCHEME_FILE} && fromScheme != std::string_view{URL_SCHEME_TUNNEL} &&
+         fromScheme != std::string_view{URL_SCHEME_WS} && fromScheme != std::string_view{URL_SCHEME_WSS}) ||
+        (toScheme != std::string_view{URL_SCHEME_HTTP} && toScheme != std::string_view{URL_SCHEME_HTTPS} &&
+         toScheme != std::string_view{URL_SCHEME_TUNNEL} && toScheme != std::string_view{URL_SCHEME_WS} &&
+         toScheme != std::string_view{URL_SCHEME_WSS})) {
       errStr = "only http, https, ws, wss, and tunnel remappings are supported";
       goto MAP_ERROR;
     }
 
     // If mapping from WS or WSS we must map out to WS or WSS
-    if ((fromScheme == URL_SCHEME_WSS || fromScheme == URL_SCHEME_WS) &&
-        (toScheme != URL_SCHEME_WSS && toScheme != URL_SCHEME_WS)) {
+    if ((fromScheme == std::string_view{URL_SCHEME_WSS} || fromScheme == std::string_view{URL_SCHEME_WS}) &&
+        (toScheme != std::string_view{URL_SCHEME_WSS} && toScheme != std::string_view{URL_SCHEME_WS})) {
       errStr = "WS or WSS can only be mapped out to WS or WSS.";
       goto MAP_ERROR;
     }
 
     // Check if a tag is specified.
     if (bti->paramv[3] != nullptr) {
-      if (maptype == FORWARD_MAP_REFERER) {
+      if (maptype == mapping_type::FORWARD_MAP_REFERER) {
         new_mapping->filter_redirect_url = ats_strdup(bti->paramv[3]);
         if (!strcasecmp(bti->paramv[3], "<default>") || !strcasecmp(bti->paramv[3], "default") ||
             !strcasecmp(bti->paramv[3], "<default_redirect_url>") || !strcasecmp(bti->paramv[3], "default_redirect_url")) {
@@ -1311,15 +1314,15 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     }
 
     // Check to see the fromHost remapping is a relative one
-    fromHost = new_mapping->fromURL.host_get(&fromHostLen);
-    if (fromHost == nullptr || fromHostLen <= 0) {
-      if (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) {
+    fromHost = new_mapping->fromURL.host_get();
+    if (fromHost.empty()) {
+      if (maptype == mapping_type::FORWARD_MAP || maptype == mapping_type::FORWARD_MAP_REFERER ||
+          maptype == mapping_type::FORWARD_MAP_WITH_RECV_PORT) {
         if (*map_from_start != '/') {
           errStr = "relative remappings must begin with a /";
           goto MAP_ERROR;
         } else {
-          fromHost    = "";
-          fromHostLen = 0;
+          fromHost = ""sv;
         }
       } else {
         errStr = "remap source in reverse mappings requires a hostname";
@@ -1327,8 +1330,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       }
     }
 
-    toHost = new_mapping->toURL.host_get(&toHostLen);
-    if (toHost == nullptr || toHostLen <= 0) {
+    toHost = new_mapping->toURL.host_get();
+    if (toHost.empty()) {
       errStr = "The remap destinations require a hostname";
       goto MAP_ERROR;
     }
@@ -1341,18 +1344,18 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // the rest of the system assumes that trailing slashes have
     // been removed.
 
-    if (unlikely(fromHostLen >= (int)sizeof(fromHost_lower_buf))) {
-      fromHost_lower = (fromHost_lower_ptr = static_cast<char *>(ats_malloc(fromHostLen + 1)));
+    if (unlikely(fromHost.length() >= sizeof(fromHost_lower_buf))) {
+      fromHost_lower = (fromHost_lower_ptr = static_cast<char *>(ats_malloc(fromHost.length() + 1)));
     } else {
       fromHost_lower = &fromHost_lower_buf[0];
     }
     // Canonicalize the hostname by making it lower case
-    memcpy(fromHost_lower, fromHost, fromHostLen);
-    fromHost_lower[fromHostLen] = 0;
+    memcpy(fromHost_lower, fromHost.data(), fromHost.length());
+    fromHost_lower[fromHost.length()] = 0;
     LowerCaseStr(fromHost_lower);
 
     // set the normalized string so nobody else has to normalize this
-    new_mapping->fromURL.host_set(fromHost_lower, fromHostLen);
+    new_mapping->fromURL.host_set({fromHost_lower, fromHost.length()});
 
     reg_map = nullptr;
     if (is_cur_mapping_regex) {
@@ -1372,8 +1375,9 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // Therefore, for a remap rule like "map tunnel://hostname..."
     // in remap.config, we also needs to convert hostname to its IPv4 addr
     // and gives a new remap rule with the IPv4 addr.
-    if ((maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) &&
-        fromScheme == URL_SCHEME_TUNNEL && (fromHost_lower[0] < '0' || fromHost_lower[0] > '9')) {
+    if ((maptype == mapping_type::FORWARD_MAP || maptype == mapping_type::FORWARD_MAP_REFERER ||
+         maptype == mapping_type::FORWARD_MAP_WITH_RECV_PORT) &&
+        fromScheme == std::string_view{URL_SCHEME_TUNNEL} && (fromHost_lower[0] < '0' || fromHost_lower[0] > '9')) {
       addrinfo      *ai_records; // returned records.
       ip_text_buffer ipb;        // buffer for address string conversion.
       if (0 == getaddrinfo(fromHost_lower, nullptr, nullptr, &ai_records)) {
@@ -1385,7 +1389,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             u_mapping = new url_mapping;
             u_mapping->fromURL.create(nullptr);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
-            u_mapping->fromURL.host_set(ipb, strlen(ipb));
+            u_mapping->fromURL.host_set({ipb});
             u_mapping->toURL.create(nullptr);
             u_mapping->toURL.copy(&new_mapping->toURL);
 
@@ -1407,7 +1411,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     // check for a 'strategy' and if wire it up if one exists.
     if ((bti->remap_optflg & REMAP_OPTFLG_STRATEGY) != 0 &&
-        (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
+        (maptype == mapping_type::FORWARD_MAP || maptype == mapping_type::FORWARD_MAP_REFERER ||
+         maptype == mapping_type::FORWARD_MAP_WITH_RECV_PORT)) {
       const char *strategy = strchr(bti->argv[0], static_cast<int>('='));
       if (strategy == nullptr) {
         errStr = "missing 'strategy' name argument, unable to add mapping rule";
@@ -1426,7 +1431,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     // Check "remap" plugin options and load .so object
     if ((bti->remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 &&
-        (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
+        (maptype == mapping_type::FORWARD_MAP || maptype == mapping_type::FORWARD_MAP_REFERER ||
+         maptype == mapping_type::FORWARD_MAP_WITH_RECV_PORT)) {
       if ((remap_check_option(bti->argv, bti->argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
         int plugin_found_at = 0;
         int jump_to_argc    = 0;

@@ -132,7 +132,7 @@ tr.Processes.Default.ReturnCode = 0
 
 for i in range(num_objects):
     tr = Test.AddTestRun()
-    tr.Processes.Default.Command = (f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj{i}')
+    tr.MakeCurlCommand(f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj{i}', ts=ts)
     tr.Processes.Default.Streams.stdout = "body.gold"
     tr.Processes.Default.ReturnCode = 0
 
@@ -144,11 +144,12 @@ tr.Processes.Default.ReturnCode = 0
 
 for i in range(num_objects):
     tr = Test.AddTestRun()
-    tr.Processes.Default.Command = (f'curl --verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj{i}')
+    tr.MakeCurlCommand(f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj{i}', ts=ts)
     tr.Processes.Default.Streams.stdout = "body.gold"
     tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = ("grep -F PARENT_SPECIFIED trace.log | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'")
+tr.Processes.Default.Command = (
+    "grep -F ParentResultType::SPECIFIED trace.log | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'")
 tr.Processes.Default.Streams.stdout = "trace.gold"
 tr.Processes.Default.ReturnCode = 0

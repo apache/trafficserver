@@ -46,7 +46,7 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
 
   HpackIndexingTable       indexing_table(INITIAL_TABLE_SIZE);
   std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
-  headers->create(HTTP_TYPE_REQUEST);
+  headers->create(HTTPType::REQUEST);
 
   hpack_decode_header_block(indexing_table, headers.get(), input_data, size_data, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
 

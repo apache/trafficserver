@@ -1,0 +1,5 @@
+REMAP {
+    if from.url.path ~ /foo/ {
+      inbound.req.From-URL = "allowed";
+    }
+}

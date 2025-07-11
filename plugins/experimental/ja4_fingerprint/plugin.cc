@@ -38,6 +38,7 @@
 #include <cstdio>
 #include <memory>
 #include <string>
+#include <string_view>
 
 struct JA4_data {
   std::string fingerprint;
@@ -60,7 +61,7 @@ static void               add_ciphers(JA4::TLSClientHelloSummary &summary, SSL *
 static void               add_extensions(JA4::TLSClientHelloSummary &summary, SSL *ssl);
 static std::string        hash_with_SHA256(std::string_view sv);
 static int                handle_read_request_hdr(TSCont cont, TSEvent event, void *edata);
-static void               append_JA4_header(TSCont cont, TSHttpTxn txnp, std::string const *fingerprint);
+static void               append_JA4_headers(TSCont cont, TSHttpTxn txnp, std::string const *fingerprint);
 static void append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, char const *field, int field_len, char const *value, int value_len);
 static int  handle_vconn_close(TSCont cont, TSEvent event, void *edata);
 
@@ -69,6 +70,8 @@ namespace
 constexpr char const *PLUGIN_NAME{"ja4_fingerprint"};
 constexpr char const *PLUGIN_VENDOR{"Apache Software Foundation"};
 constexpr char const *PLUGIN_SUPPORT_EMAIL{"dev@trafficserver.apache.org"};
+
+constexpr std::string_view JA4_VIA_HEADER{"x-ja4-via"};
 
 constexpr unsigned int EXT_ALPN{0x10};
 constexpr unsigned int EXT_SUPPORTED_VERSIONS{0x2b};
@@ -322,7 +325,7 @@ handle_read_request_hdr(TSCont cont, TSEvent event, void *edata)
 
   std::string *fingerprint{static_cast<std::string *>(TSUserArgGet(vconn, *get_user_arg_index()))};
   if (fingerprint) {
-    append_JA4_header(cont, txnp, fingerprint);
+    append_JA4_headers(cont, txnp, fingerprint);
   } else {
     Dbg(dbg_ctl, "No JA4 fingerprint attached to vconn!");
   }
@@ -332,12 +335,23 @@ handle_read_request_hdr(TSCont cont, TSEvent event, void *edata)
 }
 
 void
-append_JA4_header(TSCont /* cont ATS_UNUSED */, TSHttpTxn txnp, std::string const *fingerprint)
+append_JA4_headers(TSCont /* cont ATS_UNUSED */, TSHttpTxn txnp, std::string const *fingerprint)
 {
   TSMBuffer bufp;
   TSMLoc    hdr_loc;
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     append_to_field(bufp, hdr_loc, "ja4", 3, fingerprint->data(), fingerprint->size());
+
+    TSMgmtString proxy_name = nullptr;
+    if (TS_SUCCESS != TSMgmtStringGet("proxy.config.proxy_name", &proxy_name)) {
+      TSError("[%s] Failed to get proxy name for %s, set 'proxy.config.proxy_name' in records.config", PLUGIN_NAME,
+              JA4_VIA_HEADER.data());
+      proxy_name = TSstrdup("unknown");
+    }
+    append_to_field(bufp, hdr_loc, JA4_VIA_HEADER.data(), static_cast<int>(JA4_VIA_HEADER.length()), proxy_name,
+                    static_cast<int>(std::strlen(proxy_name)));
+    TSfree(proxy_name);
+
   } else {
     Dbg(dbg_ctl, "Failed to get headers.");
   }

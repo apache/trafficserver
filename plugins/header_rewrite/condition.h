@@ -21,6 +21,7 @@
 //
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "ts/ts.h"
@@ -38,11 +39,7 @@ class Condition : public Statement
 public:
   Condition() { Dbg(dbg_ctl, "Calling CTOR for Condition"); }
 
-  ~Condition() override
-  {
-    Dbg(dbg_ctl, "Calling DTOR for Condition");
-    delete _matcher;
-  }
+  ~Condition() override { Dbg(dbg_ctl, "Calling DTOR for Condition"); }
 
   // noncopyable
   Condition(const Condition &)      = delete;
@@ -54,12 +51,12 @@ public:
   {
     bool rt = eval(res);
 
-    if (_mods & COND_NOT) {
+    if (has_modifier(_mods, CondModifiers::NOT)) {
       rt = !rt;
     }
 
     if (_next) {
-      if (_mods & COND_OR) {
+      if (has_modifier(_mods, CondModifiers::OR)) {
         return rt || (static_cast<Condition *>(_next)->do_eval(res));
       } else { // AND is the default
         // Short circuit if we're an AND and the first condition is FALSE.
@@ -79,7 +76,7 @@ public:
   bool
   last() const
   {
-    return _mods & COND_LAST;
+    return has_modifier(_mods, CondModifiers::MOD_L);
   }
 
   CondModifiers
@@ -100,7 +97,7 @@ public:
   const Matcher *
   get_matcher() const
   {
-    return _matcher;
+    return _matcher.get();
   }
 
   MatcherOps
@@ -123,11 +120,11 @@ protected:
   // Evaluate the condition
   virtual bool eval(const Resources &res) = 0;
 
-  std::string _qualifier;
-  const char *_qualifier_wks = nullptr;
-  MatcherOps  _cond_op       = MATCH_EQUAL;
-  Matcher    *_matcher       = nullptr;
+  std::string              _qualifier;
+  const char              *_qualifier_wks = nullptr;
+  MatcherOps               _cond_op       = MATCH_EQUAL;
+  std::unique_ptr<Matcher> _matcher       = nullptr;
 
 private:
-  CondModifiers _mods = COND_NONE;
+  CondModifiers _mods = CondModifiers::NONE;
 };

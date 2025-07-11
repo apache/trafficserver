@@ -1,0 +1,1 @@
+(program (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor (comparison (comparable inbound.method) in (set [ (value "GET") , (value "HEAD") ])))))) (block { (statement inbound.req.@X-Method = (value "{inbound.method}") ;) })))) }) <EOF>)

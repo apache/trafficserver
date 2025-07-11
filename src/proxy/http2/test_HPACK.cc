@@ -170,8 +170,8 @@ test_decoding(const string &filename)
   HTTPHdr            original, decoded;
   MIMEField         *field;
 
-  decoded.create(HTTP_TYPE_REQUEST);
-  original.create(HTTP_TYPE_REQUEST);
+  decoded.create(HTTPType::REQUEST);
+  original.create(HTTPType::REQUEST);
 
   int      seqnum = -1;
   ifstream ifs(filename);
@@ -201,8 +201,8 @@ test_decoding(const string &filename)
     case 10:
       // This line should be a header field
       parse_line(line, 10, name, value);
-      field = original.field_create(name.c_str(), name.length());
-      field->value_set(original.m_heap, original.m_mime, value.c_str(), value.length());
+      field = original.field_create(name);
+      field->value_set(original.m_heap, original.m_mime, value);
       original.field_attach(field);
       break;
     }
@@ -225,8 +225,8 @@ test_encoding(const string &filename_in, const string &filename_out)
   HTTPHdr            original, decoded;
   MIMEField         *field;
 
-  decoded.create(HTTP_TYPE_REQUEST);
-  original.create(HTTP_TYPE_REQUEST);
+  decoded.create(HTTPType::REQUEST);
+  original.create(HTTPType::REQUEST);
 
   ofstream ofs(filename_out);
   ofs << "{" << endl;
@@ -279,8 +279,8 @@ test_encoding(const string &filename_in, const string &filename_out)
         ofs << "        }," << endl;
       }
       parse_line(line, 10, name, value);
-      field = original.field_create(name.c_str(), name.length());
-      field->value_set(original.m_heap, original.m_mime, value.c_str(), value.length());
+      field = original.field_create(name);
+      field->value_set(original.m_heap, original.m_mime, value);
       original.field_attach(field);
       ofs << "        {" << endl;
       ofs << "          \"" << name << "\": \"" << escape(value) << "\"" << endl;

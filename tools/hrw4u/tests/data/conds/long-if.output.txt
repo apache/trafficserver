@@ -1,0 +1,15 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:xfoo} ="" [OR,NOT]
+cond %{CLIENT-HEADER:xBar} ="" [OR,NOT]
+cond %{CLIENT-HEADER:X-Foo} ="" [AND,NOT]
+cond %{CLIENT-HEADER:X-Fie} =""
+    set-header X-fie "123"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:xfoo} ="" [OR,NOT]
+cond %{CLIENT-HEADER:xBar} ="" [OR,NOT]
+cond %{GROUP}
+    cond %{CLIENT-HEADER:X-Foo} ="" [AND,NOT]
+    cond %{CLIENT-HEADER:X-Fie} =""
+cond %{GROUP:END}
+    set-header X-fie "123"

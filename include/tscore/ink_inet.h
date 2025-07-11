@@ -1100,6 +1100,18 @@ ats_ip6_set(IpEndpoint     *dst,     ///< Destination storage.
   return ats_ip6_set(&dst->sin6, addr, port);
 }
 
+inline sockaddr *
+ats_unix_set(IpEndpoint *dst, const char *path, int len)
+{
+  dst->sun.sun_family = AF_UNIX;
+  len                 = std::min(len, static_cast<int>(TS_UNIX_SIZE));
+  memcpy(dst->sun.sun_path, path, len);
+#if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
+  dst->sun.sun_len = len;
+#endif
+  return ats_ip_sa_cast(&dst->sun);
+}
+
 /** Write a null terminated string for @a addr to @a dst.
     A buffer of size INET6_ADDRSTRLEN suffices, including a terminating nul.
  */

@@ -27,4 +27,7 @@ namespace rpc::handlers::server
 swoc::Rv<YAML::Node> server_start_drain(std::string_view const &id, YAML::Node const &params);
 swoc::Rv<YAML::Node> server_stop_drain(std::string_view const &id, YAML::Node const &);
 void                 server_shutdown(YAML::Node const &);
+swoc::Rv<YAML::Node> get_server_status(std::string_view const &id, YAML::Node const &);
+swoc::Rv<YAML::Node> get_connection_tracker_info(std::string_view const &id, YAML::Node const &params);
+
 } // namespace rpc::handlers::server

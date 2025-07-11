@@ -31,7 +31,8 @@ TLS connections.
 
 .. note::
 
-    The current implementation doesn't support TLV fields of Version 2.
+    While |TS| supports receiving and processing TLV Version 2 formatted payloads,
+    it does not support sending them.
 
 The Proxy Protocol must be enabled on each port for which connections with the
 Proxy Protocol header are expected.  See
@@ -50,6 +51,10 @@ configured with :ts:cv:`proxy.config.http.proxy_protocol_allowlist`.
        IP addresses for all ports designated for Proxy Protocol in the
        :ts:cv:`proxy.config.http.server_ports` configuration, regardless of whether
        the connections have the Proxy Protocol header.
+
+By default, |TS| uses client's IP address that is from the peer when it applies ACL. If you configure a port to
+enable PROXY protocol and want to apply ACL against the IP address delivered by PROXY protocol, you need to have ``PROXY`` in
+:ts:cv:`proxy.config.acl.subjects`.
 
 1. HTTP Forwarded Header
 

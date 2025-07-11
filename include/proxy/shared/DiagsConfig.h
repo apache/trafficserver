@@ -29,7 +29,7 @@
 struct DiagsConfig {
   void reconfigure_diags();
   void config_diags_norecords();
-  void parse_output_string(char *s, DiagsModeOutput *o);
+  void parse_output_string(const char *s, DiagsModeOutput *o);
   void register_diags_callbacks();
 
   /** DiagsConfig constructor.
@@ -41,7 +41,7 @@ struct DiagsConfig {
   ~DiagsConfig();
 
 private:
-  bool         callbacks_established;
-  BaseLogFile *diags_log;
-  Diags       *_diags;
+  bool                   callbacks_established;
+  BaseLogFile           *diags_log;
+  std::unique_ptr<Diags> _diags;
 };

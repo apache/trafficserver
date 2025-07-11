@@ -38,6 +38,12 @@ class FetchSM : public Continuation
 {
 public:
   FetchSM() {}
+
+  /** Indicate whether FetchSM dependencies have been initialized by ATS.
+   * @return True if FetchSM dependencies have been initialized, false otherwise.
+   */
+  static bool is_initialized();
+
   void
   init_comm()
   {
@@ -47,7 +53,7 @@ public:
     resp_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     resp_reader = resp_buffer->alloc_reader();
     http_parser_init(&http_parser);
-    client_response_hdr.create(HTTP_TYPE_RESPONSE);
+    client_response_hdr.create(HTTPType::RESPONSE);
     SET_HANDLER(&FetchSM::fetch_handler);
   }
 

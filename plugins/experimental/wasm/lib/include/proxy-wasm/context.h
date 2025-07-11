@@ -26,12 +26,10 @@
 #include <string_view>
 #include <vector>
 
+#include "include/proxy-wasm/sdk.h"
 #include "include/proxy-wasm/context_interface.h"
 
 namespace proxy_wasm {
-
-#include "proxy_wasm_common.h"
-#include "proxy_wasm_enums.h"
 
 class PluginHandleBase;
 class WasmBase;

@@ -56,7 +56,7 @@ Example:
 
    do_remap()
    {
-     borrow req  = cripts::Client::Request::get();
+     borrow req  = cripts::Client::Request::Get();
 
      if (req["X-Header"] == "yes") {
        cripts::Error::Status::Set(403);
@@ -119,7 +119,7 @@ Example usage to turn off a particular hook conditionally:
 
    do_remap()
    {
-     static borrow req = cripts::Client::Request::get();
+     static borrow req = cripts::Client::Request::Get();
 
      if (req["X-Header"] == "yes") {
        transaction.DisableCallback(cripts::Callback::DO_READ_RESPONSE);

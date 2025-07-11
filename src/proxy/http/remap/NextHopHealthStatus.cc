@@ -80,10 +80,10 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
 
   // make sure we're called back with a result structure for a parent
   // that is being retried.
-  if (status == NH_MARK_UP) {
+  if (status == NHCmd::MARK_UP) {
     ink_assert(result.retry == true);
   }
-  if (result.result != PARENT_SPECIFIED) {
+  if (result.result != ParentResultType::SPECIFIED) {
     return;
   }
 
@@ -103,14 +103,14 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
 
   switch (status) {
   // Mark the host up.
-  case NH_MARK_UP:
+  case NHCmd::MARK_UP:
     if (!h->available.load()) {
       h->set_available();
       NH_Note("[%" PRId64 "] http parent proxy %s restored", sm_id, hostname);
     }
     break;
   // Mark the host down.
-  case NH_MARK_DOWN:
+  case NHCmd::MARK_DOWN:
     if (h->failedAt.load() == 0 || result.retry == true) {
       { // lock guard
         std::lock_guard<std::mutex> guard(h->_mutex);

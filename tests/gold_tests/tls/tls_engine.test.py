@@ -92,7 +92,7 @@ ts.Disk.MakeConfigFile('load_engine.cnf').AddLines(
 
 # Make a basic request.  Hopefully it goes through
 tr = Test.AddTestRun("Run-Test")
-tr.Processes.Default.Command = "curl -k -v -H uuid:basic -H host:example.com  https://127.0.0.1:{0}/".format(ts.Variables.ssl_port)
+tr.MakeCurlCommand("-k -v -H uuid:basic -H host:example.com  https://127.0.0.1:{0}/".format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))

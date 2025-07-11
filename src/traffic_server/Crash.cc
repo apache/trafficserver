@@ -47,13 +47,14 @@ DbgCtl dbg_ctl_server{"server"};
 char *
 create_logger_path()
 {
-  RecString      name;
   std::string    bindir;
   ats_scoped_str fullpath;
 
-  if (RecGetRecordString_Xmalloc("proxy.config.crash_log_helper", &name) != REC_ERR_OKAY) {
+  auto rec_str{RecGetRecordStringAlloc("proxy.config.crash_log_helper")};
+  if (!rec_str) {
     return nullptr;
   }
+  RecString name{ats_stringdup(rec_str)};
 
   // Take an absolute path as it is ...
   if (name == nullptr || *name == '/') {

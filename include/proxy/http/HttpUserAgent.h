@@ -48,6 +48,7 @@ struct ClientConnectionInfo {
   char const *sec_protocol{"-"};
   char const *cipher_suite{"-"};
   char const *curve{"-"};
+  char const *security_group{"-"};
 
   int alpn_id{SessionProtocolNameRegistry::INVALID};
 };
@@ -64,7 +65,7 @@ public:
   ProxyTransaction *get_txn() const;
   void              set_txn(ProxyTransaction *txn, TransactionMilestones &milestones);
 
-  int get_client_connection_id() const;
+  int64_t get_client_connection_id() const;
 
   int get_client_transaction_id() const;
 
@@ -86,6 +87,8 @@ public:
 
   char const *get_client_curve() const;
 
+  char const *get_client_security_group() const;
+
   int get_client_alpn_id() const;
 
 private:
@@ -95,7 +98,7 @@ private:
 
   ClientConnectionInfo m_conn_info{};
 
-  int                   m_client_connection_id{-1};
+  int64_t               m_client_connection_id{-1};
   ClientTransactionInfo m_txn_info{};
 
   void save_transaction_info();
@@ -166,6 +169,12 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
       m_conn_info.curve = "-";
     }
 
+    if (auto group{tbs->get_tls_group()}; group) {
+      m_conn_info.security_group = group;
+    } else {
+      m_conn_info.security_group = "-";
+    }
+
     if (!m_conn_info.tcp_reused) {
       // Copy along the TLS handshake timings
       milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
@@ -188,7 +197,7 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
   }
 }
 
-inline int
+inline int64_t
 HttpUserAgent::get_client_connection_id() const
 {
   return m_client_connection_id;
@@ -252,6 +261,12 @@ inline char const *
 HttpUserAgent::get_client_curve() const
 {
   return m_conn_info.curve;
+}
+
+inline char const *
+HttpUserAgent::get_client_security_group() const
+{
+  return m_conn_info.security_group;
 }
 
 inline int

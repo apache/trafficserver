@@ -36,6 +36,7 @@
 #include "proxy/hdrs/MIME.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/PoolableSession.h"
+#include "proxy/hdrs/HTTP.h"
 
 #include "iocore/utils/Machine.h"
 
@@ -71,7 +72,8 @@ HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
   if (!hdrtoken_is_wks(field_name)) {
     return (false);
   }
-  if ((hdrtoken_wks_to_flags(field_name) & HTIF_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE)) {
+  if ((hdrtoken_wks_to_flags(field_name) & HdrTokenInfoFlags::HOPBYHOP) != HdrTokenInfoFlags::NONE &&
+      (field_name != MIME_FIELD_KEEP_ALIVE.c_str())) {
     return (true);
   } else {
     return (false);
@@ -118,8 +120,9 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
 {
   int         method_output_lengths[32];
   const char *methods[] = {
-    HTTP_METHOD_CONNECT, HTTP_METHOD_DELETE, HTTP_METHOD_GET, HTTP_METHOD_HEAD, HTTP_METHOD_OPTIONS,
-    HTTP_METHOD_POST,    HTTP_METHOD_PURGE,  HTTP_METHOD_PUT, HTTP_METHOD_PUSH, HTTP_METHOD_TRACE,
+    HTTP_METHOD_CONNECT.c_str(), HTTP_METHOD_DELETE.c_str(), HTTP_METHOD_GET.c_str(),   HTTP_METHOD_HEAD.c_str(),
+    HTTP_METHOD_OPTIONS.c_str(), HTTP_METHOD_POST.c_str(),   HTTP_METHOD_PURGE.c_str(), HTTP_METHOD_PUT.c_str(),
+    HTTP_METHOD_PUSH.c_str(),    HTTP_METHOD_TRACE.c_str(),
   };
   char  inline_buffer[64];
   char *alloced_buffer, *value_buffer;
@@ -153,9 +156,9 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
   }
 
   // step 2: create Allow field if not present
-  field = response->field_find(MIME_FIELD_ALLOW, MIME_LEN_ALLOW);
+  field = response->field_find(static_cast<std::string_view>(MIME_FIELD_ALLOW));
   if (!field) {
-    field = response->field_create(MIME_FIELD_ALLOW, MIME_LEN_ALLOW);
+    field = response->field_create(static_cast<std::string_view>(MIME_FIELD_ALLOW));
     response->field_attach(field);
   }
   // step 3: get a big enough buffer
@@ -195,14 +198,14 @@ HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response, HTTPStatus 
                                          int reason_phrase_len, ink_time_t date)
 {
   if (!outgoing_response->valid()) {
-    outgoing_response->create(HTTP_TYPE_RESPONSE);
+    outgoing_response->create(HTTPType::RESPONSE);
   }
 
-  ink_assert(outgoing_response->type_get() == HTTP_TYPE_RESPONSE);
+  ink_assert(outgoing_response->type_get() == HTTPType::RESPONSE);
 
   outgoing_response->version_set(HTTPVersion(1, 1));
   outgoing_response->status_set(status);
-  outgoing_response->reason_set(reason_phrase, reason_phrase_len);
+  outgoing_response->reason_set(std::string_view{reason_phrase, static_cast<std::string_view::size_type>(reason_phrase_len)});
   outgoing_response->set_date(date);
 }
 
@@ -243,19 +246,19 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
       continue;
     }
 
-    int field_flags = hdrtoken_index_to_flags(field.m_wks_idx);
+    HdrTokenInfoFlags field_flags = hdrtoken_index_to_flags(field.m_wks_idx);
 
-    if (field_flags & HTIF_HOPBYHOP) {
+    if ((field_flags & HdrTokenInfoFlags::HOPBYHOP) != HdrTokenInfoFlags::NONE) {
       std::string_view name(field.name_get());
       std::string_view value(field.value_get());
-      bool const       is_te_trailers = name == MIME_FIELD_TE && value == "trailers";
+      bool const       is_te_trailers = name == MIME_FIELD_TE.c_str() && value == "trailers";
       if (is_te_trailers) {
         // te: trailers is used by gRPC, do not delete it.
         continue;
       }
 
       // Delete header if not in special proxy_auth retention mode
-      if (retain_proxy_auth_hdrs && (field_flags & HTIF_PROXYAUTH)) {
+      if (retain_proxy_auth_hdrs && (field_flags & HdrTokenInfoFlags::PROXYAUTH) != HdrTokenInfoFlags::NONE) {
         continue;
       }
       new_hdr->field_delete(&field);
@@ -315,7 +318,7 @@ HttpTransactHeaders::convert_to_1_0_request_header(HTTPHdr *outgoing_request)
   //             Now, any Cache-Control hdr becomes Pragma: no-cache
 
   if (outgoing_request->presence(MIME_PRESENCE_CACHE_CONTROL) && !outgoing_request->is_pragma_no_cache_set()) {
-    outgoing_request->value_append(MIME_FIELD_PRAGMA, MIME_LEN_PRAGMA, "no-cache", 8, true);
+    outgoing_request->value_append(static_cast<std::string_view>(MIME_FIELD_PRAGMA), "no-cache"sv, true);
   }
   // We do not currently support chunked transfer encoding,
   // so specify that response should use identity transfer coding.
@@ -333,7 +336,7 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr *outgoing_request)
   ink_assert(outgoing_request->version_get() == HTTPVersion(1, 1));
 
   if (outgoing_request->get_cooked_pragma_no_cache() && !(outgoing_request->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE)) {
-    outgoing_request->value_append(MIME_FIELD_CACHE_CONTROL, MIME_LEN_CACHE_CONTROL, "no-cache", 8, true);
+    outgoing_request->value_append(static_cast<std::string_view>(MIME_FIELD_CACHE_CONTROL), "no-cache"sv, true);
   }
   // We do not currently support chunked transfer encoding,
   // so specify that response should use identity transfer coding.
@@ -356,7 +359,7 @@ HttpTransactHeaders::convert_to_1_0_response_header(HTTPHdr *outgoing_response, 
   // Set reason phrase if passed in.
   if (reason_phrase != nullptr) {
     Dbg(dbg_ctl_http_transact_headers, "Setting HTTP/1.0 reason phrase to '%s'", reason_phrase);
-    outgoing_response->reason_set(reason_phrase, strlen(reason_phrase));
+    outgoing_response->reason_set(std::string_view{reason_phrase});
   }
 
   // Keep-Alive?
@@ -370,7 +373,7 @@ void
 HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response, char const *reason_phrase)
 {
   // These are required
-  ink_assert(outgoing_response->status_get());
+  ink_assert(outgoing_response->status_get() != HTTPStatus::NONE);
 
   // Set HTTP version to 1.1
   outgoing_response->version_set(HTTPVersion(1, 1));
@@ -378,7 +381,7 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response, 
   // Set reason phrase if passed in.
   if (reason_phrase != nullptr) {
     Dbg(dbg_ctl_http_transact_headers, "Setting HTTP/1.1 reason phrase to '%s'", reason_phrase);
-    outgoing_response->reason_set(reason_phrase, strlen(reason_phrase));
+    outgoing_response->reason_set(std::string_view{reason_phrase});
   }
 }
 
@@ -420,8 +423,8 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
 void
 HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes)
 {
-  SquidLogCode       log_code      = SQUID_LOG_EMPTY;
-  SquidHierarchyCode hier_code     = SQUID_HIER_EMPTY;
+  SquidLogCode       log_code      = SquidLogCode::EMPTY;
+  SquidHierarchyCode hier_code     = SquidHierarchyCode::EMPTY;
   SquidHitMissCode   hit_miss_code = SQUID_HIT_RESERVED;
 
   /////////////////////////////
@@ -439,10 +442,9 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
       hit_miss_code = SQUID_HIT_RESERVED;
     }
   } else {
-    int         reason_len;
-    const char *reason = header->reason_get(&reason_len);
+    auto reason{header->reason_get()};
 
-    if (reason != nullptr && reason_len >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED) {
+    if (!reason.empty() && reason.length() >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED) {
       hit_miss_code = SQUID_HIT_RESERVED;
       // its a miss in the cache. find out why.
     } else if (via_string[VIA_DETAIL_CACHE_LOOKUP] == VIA_DETAIL_MISS_EXPIRED) {
@@ -466,19 +468,19 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   // Now the Log Code //
   //////////////////////
   if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_NO_CACHE) {
-    log_code = SQUID_LOG_TCP_CLIENT_REFRESH;
+    log_code = SquidLogCode::TCP_CLIENT_REFRESH;
   }
 
   else {
     if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_IMS) {
       if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) ||
           (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT)) {
-        log_code = SQUID_LOG_TCP_IMS_HIT;
+        log_code = SquidLogCode::TCP_IMS_HIT;
       } else {
         if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE && via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
-          log_code = SQUID_LOG_TCP_REFRESH_HIT;
+          log_code = SquidLogCode::TCP_REFRESH_HIT;
         } else {
-          log_code = SQUID_LOG_TCP_IMS_MISS;
+          log_code = SquidLogCode::TCP_IMS_MISS;
         }
       }
     }
@@ -486,23 +488,23 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     else {
       if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE) {
         if (via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
-          log_code = SQUID_LOG_TCP_REFRESH_HIT;
+          log_code = SquidLogCode::TCP_REFRESH_HIT;
         } else {
           if (via_string[VIA_SERVER_RESULT] == VIA_SERVER_ERROR) {
-            log_code = SQUID_LOG_TCP_REF_FAIL_HIT;
+            log_code = SquidLogCode::TCP_REF_FAIL_HIT;
           } else {
-            log_code = SQUID_LOG_TCP_REFRESH_MISS;
+            log_code = SquidLogCode::TCP_REFRESH_MISS;
           }
         }
       } else {
         if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) {
-          log_code = SQUID_LOG_TCP_HIT;
+          log_code = SquidLogCode::TCP_HIT;
         } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) {
-          log_code = SQUID_LOG_TCP_MEM_HIT;
+          log_code = SquidLogCode::TCP_MEM_HIT;
         } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT) {
-          log_code = SQUID_LOG_TCP_CF_HIT; // Read while write HIT
+          log_code = SquidLogCode::TCP_CF_HIT; // Read while write HIT
         } else {
-          log_code = SQUID_LOG_TCP_MISS;
+          log_code = SquidLogCode::TCP_MISS;
         }
       }
     }
@@ -512,64 +514,64 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   // The Hierarchy Code //
   ////////////////////////
   if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
   } else if (via_string[VIA_DETAIL_PP_CONNECT] == VIA_DETAIL_PP_SUCCESS) {
-    hier_code = SQUID_HIER_PARENT_HIT;
+    hier_code = SquidHierarchyCode::PARENT_HIT;
   } else if (via_string[VIA_DETAIL_CACHE_TYPE] == VIA_DETAIL_PARENT) {
-    hier_code = SQUID_HIER_DEFAULT_PARENT;
+    hier_code = SquidHierarchyCode::DEFAULT_PARENT;
   } else if (via_string[VIA_DETAIL_TUNNEL] == VIA_DETAIL_TUNNEL_NO_FORWARD) {
-    hier_code = SQUID_HIER_NONE;
+    hier_code = SquidHierarchyCode::NONE;
   } else {
-    hier_code = SQUID_HIER_DIRECT;
+    hier_code = SquidHierarchyCode::DIRECT;
   }
 
   // Errors may override the other codes, so check the via string error codes last
   switch (via_string[VIA_ERROR_TYPE]) {
   case VIA_ERROR_AUTHORIZATION:
-    log_code = SQUID_LOG_ERR_PROXY_DENIED;
+    log_code = SquidLogCode::ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_CONNECTION:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_REFRESH_MISS) {
-      log_code = SQUID_LOG_ERR_CONNECT_FAIL;
+    if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_REFRESH_MISS) {
+      log_code = SquidLogCode::ERR_CONNECT_FAIL;
     }
     break;
   case VIA_ERROR_DNS_FAILURE:
-    log_code  = SQUID_LOG_ERR_DNS_FAIL;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::ERR_DNS_FAIL;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_FORBIDDEN:
-    log_code = SQUID_LOG_ERR_PROXY_DENIED;
+    log_code = SquidLogCode::ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_HEADER_SYNTAX:
-    log_code  = SQUID_LOG_ERR_INVALID_REQ;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::ERR_INVALID_REQ;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_SERVER:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_IMS_MISS) {
-      log_code = SQUID_LOG_ERR_CONNECT_FAIL;
+    if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_IMS_MISS) {
+      log_code = SquidLogCode::ERR_CONNECT_FAIL;
     }
     break;
   case VIA_ERROR_TIMEOUT:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_IMS_MISS) {
-      log_code = SQUID_LOG_ERR_READ_TIMEOUT;
+    if (log_code == SquidLogCode::TCP_MISS || log_code == SquidLogCode::TCP_IMS_MISS) {
+      log_code = SquidLogCode::ERR_READ_TIMEOUT;
     }
-    if (hier_code == SQUID_HIER_PARENT_HIT) {
-      hier_code = SQUID_HIER_TIMEOUT_PARENT_HIT;
+    if (hier_code == SquidHierarchyCode::PARENT_HIT) {
+      hier_code = SquidHierarchyCode::TIMEOUT_PARENT_HIT;
     } else {
-      hier_code = SQUID_HIER_TIMEOUT_DIRECT;
+      hier_code = SquidHierarchyCode::TIMEOUT_DIRECT;
     }
     break;
   case VIA_ERROR_CACHE_READ:
-    log_code  = SQUID_LOG_TCP_SWAPFAIL;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::TCP_SWAPFAIL;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_LOOP_DETECTED:
-    log_code  = SQUID_LOG_ERR_LOOP_DETECTED;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::ERR_LOOP_DETECTED;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   case VIA_ERROR_UNKNOWN:
-    log_code  = SQUID_LOG_ERR_UNKNOWN;
-    hier_code = SQUID_HIER_NONE;
+    log_code  = SquidLogCode::ERR_UNKNOWN;
+    hier_code = SquidHierarchyCode::NONE;
     break;
   default:
     break;
@@ -599,9 +601,10 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
 
   char *warning_text = static_cast<char *>(alloca(bufsize));
 
-  len =
-    snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
-  header->value_set(MIME_FIELD_WARNING, MIME_LEN_WARNING, warning_text, len);
+  len = snprintf(warning_text, bufsize, "%3d %s %.*s", static_cast<int>(code), http_config_param->proxy_response_via_string,
+                 warn_text_len, warn_text);
+  header->value_set(static_cast<std::string_view>(MIME_FIELD_WARNING),
+                    std::string_view{warning_text, static_cast<std::string_view::size_type>(len)});
 }
 
 void
@@ -729,7 +732,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   char *via_limit  = via_string + sizeof(new_via_string);
 
   if ((s->http_config_param->proxy_hostname_len + s->http_config_param->proxy_request_via_string_len) > 512) {
-    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 13, true);
+    header->value_append(static_cast<std::string_view>(MIME_FIELD_VIA), "TrafficServer"sv, true);
     return;
   }
 
@@ -744,7 +747,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
 
   *via_string++ = '[';
-  memcpy(via_string, Machine::instance()->uuid.getString(), TS_UUID_STRING_LEN);
+  memcpy(via_string, Machine::instance()->process_uuid.getString(), TS_UUID_STRING_LEN);
   via_string    += TS_UUID_STRING_LEN;
   *via_string++  = ']';
   *via_string++  = ' ';
@@ -780,7 +783,9 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   *via_string   = 0;
 
   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
-  header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
+  header->value_append(static_cast<std::string_view>(MIME_FIELD_VIA),
+                       std::string_view{new_via_string, static_cast<std::string_view::size_type>(via_string - new_via_string)},
+                       true);
 }
 
 void
@@ -800,7 +805,8 @@ HttpTransactHeaders::insert_hsts_header_in_response(HttpTransact::State *s, HTTP
     length += sizeof(include_subdomains) - 1;
   }
 
-  header->value_set(MIME_FIELD_STRICT_TRANSPORT_SECURITY, MIME_LEN_STRICT_TRANSPORT_SECURITY, new_hsts_string, length);
+  header->value_set(static_cast<std::string_view>(MIME_FIELD_STRICT_TRANSPORT_SECURITY),
+                    std::string_view{new_hsts_string, static_cast<std::string_view::size_type>(length)});
 }
 
 void
@@ -811,7 +817,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   char *via_limit  = via_string + sizeof(new_via_string);
 
   if ((s->http_config_param->proxy_hostname_len + s->http_config_param->proxy_response_via_string_len) > 512) {
-    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 13, true);
+    header->value_append(static_cast<std::string_view>(MIME_FIELD_VIA), "TrafficServer"sv, true);
     return;
   }
 
@@ -864,7 +870,9 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   *via_string   = 0;
 
   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
-  header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
+  header->value_append(static_cast<std::string_view>(MIME_FIELD_VIA),
+                       std::string_view{new_via_string, static_cast<std::string_view::size_type>(via_string - new_via_string)},
+                       true);
 }
 
 void
@@ -872,10 +880,10 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 {
   if (outgoing->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MATCH |
                          MIME_PRESENCE_IF_NONE_MATCH)) {
-    outgoing->field_delete(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
-    outgoing->field_delete(MIME_FIELD_IF_UNMODIFIED_SINCE, MIME_LEN_IF_UNMODIFIED_SINCE);
-    outgoing->field_delete(MIME_FIELD_IF_MATCH, MIME_LEN_IF_MATCH);
-    outgoing->field_delete(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_IF_MODIFIED_SINCE));
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_IF_UNMODIFIED_SINCE));
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_IF_MATCH));
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_IF_NONE_MATCH));
   }
   // TODO: how about RANGE and IF_RANGE?
 }
@@ -883,11 +891,10 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 void
 HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing)
 {
-  int         len    = 0;
-  const char *expect = s->hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
+  auto expect{s->hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
 
-  if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
-    outgoing->field_delete(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
+  if (strcasecmp(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
+    outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPECT));
   }
 }
 
@@ -908,14 +915,15 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(const OverridableHt
 
     Dbg(dbg_ctl_http_trans, "Adding User-Agent: %.*s", static_cast<int>(http_txn_conf->global_user_agent_header_size),
         http_txn_conf->global_user_agent_header);
-    if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == nullptr) {
-      if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != nullptr)) {
+    if ((ua_field = header->field_find(static_cast<std::string_view>(MIME_FIELD_USER_AGENT))) == nullptr) {
+      if (likely((ua_field = header->field_create(static_cast<std::string_view>(MIME_FIELD_USER_AGENT))) != nullptr)) {
         header->field_attach(ua_field);
       }
     }
     // This will remove any old string (free it), and set our User-Agent.
     if (likely(ua_field)) {
-      header->field_value_set(ua_field, http_txn_conf->global_user_agent_header, http_txn_conf->global_user_agent_header_size);
+      header->field_value_set(
+        ua_field, std::string_view{http_txn_conf->global_user_agent_header, http_txn_conf->global_user_agent_header_size});
     }
   }
 }
@@ -982,12 +990,12 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 
     const Machine &m = *Machine::instance();
 
-    if (optSet[HttpForwarded::BY_UUID] and m.uuid.valid()) {
+    if (optSet[HttpForwarded::BY_UUID] and m.process_uuid.valid()) {
       if (hdr.size()) {
         hdr << ';';
       }
 
-      hdr << "by=_" << m.uuid.getString();
+      hdr << "by=_" << m.process_uuid.getString();
     }
 
     if (optSet[HttpForwarded::BY_IP] and m.ip.isValid()) {
@@ -1046,7 +1054,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
     }
 
     if (optSet[HttpForwarded::HOST]) {
-      const MIMEField *hostField = s->hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+      const MIMEField *hostField = s->hdr_info.client_request.field_find(static_cast<std::string_view>(MIME_FIELD_HOST));
 
       if (hostField and hostField->m_len_value) {
         std::string_view hSV{hostField->m_ptr_value, hostField->m_len_value};
@@ -1098,8 +1106,8 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
     if (hdr.size() and !hdr.error() and (hdr.size() < hdr.capacity())) {
       std::string_view sV = hdr.view();
 
-      request->value_append(MIME_FIELD_FORWARDED, MIME_LEN_FORWARDED, sV.data(), sV.size(), true, ','); // true => separator must
-                                                                                                        // be inserted
+      request->value_append(static_cast<std::string_view>(MIME_FIELD_FORWARDED), sV, true, ','); // true => separator must
+                                                                                                 // be inserted
 
       Dbg(dbg_ctl_http_trans, "[add_forwarded_field_to_outgoing_request] Forwarded header (%.*s) added",
           static_cast<int>(hdr.size()), hdr.data());
@@ -1115,8 +1123,8 @@ HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigPa
     MIMEField *ua_field;
     bool       do_add = true;
 
-    if ((ua_field = header->field_find(MIME_FIELD_SERVER, MIME_LEN_SERVER)) == nullptr) {
-      if (likely((ua_field = header->field_create(MIME_FIELD_SERVER, MIME_LEN_SERVER)) != nullptr)) {
+    if ((ua_field = header->field_find(static_cast<std::string_view>(MIME_FIELD_SERVER))) == nullptr) {
+      if (likely((ua_field = header->field_create(static_cast<std::string_view>(MIME_FIELD_SERVER))) != nullptr)) {
         header->field_attach(ua_field);
       }
     } else {
@@ -1127,8 +1135,8 @@ HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigPa
     // This will remove any old string (free it), and set our Server header.
     if (do_add && likely(ua_field)) {
       Dbg(dbg_ctl_http_trans, "Adding Server: %s", http_txn_conf->proxy_response_server_string);
-      header->field_value_set(ua_field, http_txn_conf->proxy_response_server_string,
-                              http_txn_conf->proxy_response_server_string_len);
+      header->field_value_set(
+        ua_field, std::string_view{http_txn_conf->proxy_response_server_string, http_txn_conf->proxy_response_server_string_len});
     }
   }
 }
@@ -1144,27 +1152,27 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams       
   // From
   if (http_txn_conf->anonymize_remove_from) {
     Dbg(dbg_ctl_anon, "removing 'From' headers");
-    header->field_delete(MIME_FIELD_FROM, MIME_LEN_FROM);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_FROM));
   }
   // Referer
   if (http_txn_conf->anonymize_remove_referer) {
     Dbg(dbg_ctl_anon, "removing 'Referer' headers");
-    header->field_delete(MIME_FIELD_REFERER, MIME_LEN_REFERER);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_REFERER));
   }
   // User-Agent
   if (http_txn_conf->anonymize_remove_user_agent) {
     Dbg(dbg_ctl_anon, "removing 'User-agent' headers");
-    header->field_delete(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_USER_AGENT));
   }
   // Cookie
   if (http_txn_conf->anonymize_remove_cookie) {
     Dbg(dbg_ctl_anon, "removing 'Cookie' headers");
-    header->field_delete(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_COOKIE));
   }
   // Client-ip
   if (http_txn_conf->anonymize_remove_client_ip) {
     Dbg(dbg_ctl_anon, "removing 'Client-ip' headers");
-    header->field_delete(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP);
+    header->field_delete(static_cast<std::string_view>(MIME_FIELD_CLIENT_IP));
   }
   /////////////////////////////////////////////
   // remove any other user specified headers //
@@ -1182,7 +1190,7 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams       
     HttpCompat::parse_comma_list(&anon_list, anon_string);
     for (field = anon_list.head; field != nullptr; field = field->next) {
       Dbg(dbg_ctl_anon, "removing '%s' headers", field->str);
-      header->field_delete(field->str, field->len);
+      header->field_delete(std::string_view{field->str, field->len});
     }
   }
 }
@@ -1193,13 +1201,13 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
   int normalize_ae = ohcp->normalize_ae;
 
   if (normalize_ae) {
-    MIMEField *ae_field = header->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+    MIMEField *ae_field = header->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT_ENCODING));
 
     if (ae_field) {
       if (normalize_ae == 1) {
         // Force Accept-Encoding header to gzip or no header.
         if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
-          header->field_value_set(ae_field, "gzip", 4);
+          header->field_value_set(ae_field, "gzip"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
@@ -1208,10 +1216,10 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
       } else if (normalize_ae == 2) {
         // Force Accept-Encoding header to br (Brotli) or no header.
         if (HttpTransactCache::match_content_encoding(ae_field, "br")) {
-          header->field_value_set(ae_field, "br", 2);
+          header->field_value_set(ae_field, "br"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
         } else if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
-          header->field_value_set(ae_field, "gzip", 4);
+          header->field_value_set(ae_field, "gzip"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
@@ -1221,13 +1229,13 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
         // Force Accept-Encoding header to br,gzip, or br, or gzip, or no header.
         if (HttpTransactCache::match_content_encoding(ae_field, "br") &&
             HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
-          header->field_value_set(ae_field, "br, gzip", 8);
+          header->field_value_set(ae_field, "br, gzip"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br, gzip");
         } else if (HttpTransactCache::match_content_encoding(ae_field, "br")) {
-          header->field_value_set(ae_field, "br", 2);
+          header->field_value_set(ae_field, "br"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
         } else if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
-          header->field_value_set(ae_field, "gzip", 4);
+          header->field_value_set(ae_field, "gzip"sv);
           Dbg(dbg_ctl_http_trans, "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
         } else {
           header->field_delete(ae_field);
@@ -1248,10 +1256,10 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
 void
 HttpTransactHeaders::add_connection_close(HTTPHdr *header)
 {
-  MIMEField *field = header->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+  MIMEField *field = header->field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
   if (!field) {
-    field = header->field_create(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+    field = header->field_create(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
     header->field_attach(field);
   }
-  header->field_value_set(field, HTTP_VALUE_CLOSE, HTTP_LEN_CLOSE);
+  header->field_value_set(field, static_cast<std::string_view>(HTTP_VALUE_CLOSE));
 }

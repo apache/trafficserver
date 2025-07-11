@@ -49,8 +49,10 @@ ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variable
 # HTTP1.1 POST: www.example.com/case1 with gzip transfer-encoding
 tr = Test.AddTestRun()
 tr.TimeOut = 5
-tr.Processes.Default.Command = 'curl -H "host: example.com" -H "transfer-encoding: gzip" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-H "host: example.com" -H "transfer-encoding: gzip" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'.format(
+        ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
@@ -62,8 +64,10 @@ tr.StillRunningAfter = ts
 # HTTP1.1 POST: www.example.com/case1 with gzip and chunked transfer-encoding
 tr = Test.AddTestRun()
 tr.TimeOut = 5
-tr.Processes.Default.Command = 'curl -H "host: example.com" -H "transfer-encoding: gzip" -H "transfer-encoding: chunked" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'.format(
-    ts.Variables.port)
+tr.MakeCurlCommand(
+    '-H "host: example.com" -H "transfer-encoding: gzip" -H "transfer-encoding: chunked" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'
+    .format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("501 Field not implemented", "Should fail")
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("200 OK", "Should not succeed")
@@ -180,6 +184,27 @@ class MalformedChunkHeaderTest:
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             r"(Unexpected chunked content for key 103: too small|Failed HTTP/1 transaction with key: 103)",
             "Verify that ATS closed the sixth transaction.")
+
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"Received an HTTP/1 400 response for key 1 with headers", "Verify that ATS returns a response for uuid:1 transaction.")
+
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"Received an HTTP/1 400 response for key 2 with headers", "Verify that ATS returns a response for uuid:2 transaction.")
+
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"Received an HTTP/1 400 response for key 3 with headers", "Verify that ATS returns a response for uuid:3 transaction.")
+
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"Received an HTTP/1 400 response for key 4 with headers", "Verify that ATS returns a response for uuid:4 transaction.")
+
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"Received an HTTP/1 400 response for key 5 with headers", "Verify that ATS returns a response for uuid:5 transaction.")
+
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"Received an HTTP/1 400 response for key 6 with headers", "Verify that ATS returns a response for uuid:6 transaction.")
+
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"Received an HTTP/1 400 response for key 7 with headers", "Verify that ATS returns a response for uuid:7 transaction.")
 
         # ATS should close the connection before any body gets through. "def"
         # is the body sent by the server for each of these chunked cases.

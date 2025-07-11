@@ -155,6 +155,15 @@ YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
   if (!client_sni_policy.empty()) {
     actions.push_back(std::make_unique<OutboundSNIPolicy>(client_sni_policy));
   }
+  if (!server_cipher_suite.empty()) {
+    actions.push_back(std::make_unique<ServerCipherSuite>(server_cipher_suite));
+  }
+  if (!server_TLSv1_3_cipher_suites.empty()) {
+    actions.push_back(std::make_unique<ServerTLSv1_3CipherSuites>(server_TLSv1_3_cipher_suites));
+  }
+  if (!server_groups_list.empty()) {
+    actions.push_back(std::make_unique<ServerGroupsList>(server_groups_list));
+  }
   if (http2_buffer_water_mark.has_value()) {
     actions.push_back(std::make_unique<HTTP2BufferWaterMark>(http2_buffer_water_mark.value()));
   }
@@ -216,6 +225,11 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_client_cert,
                                                TS_client_key,
                                                TS_client_sni_policy,
+                                               TS_server_cipher_suite,
+#if TS_USE_TLS_SET_CIPHERSUITES
+                                               TS_server_TLSv1_3_cipher_suites,
+#endif
+                                               TS_server_groups_list,
                                                TS_http2,
                                                TS_http2_buffer_water_mark,
                                                TS_http2_initial_window_size_in,
@@ -442,7 +456,15 @@ template <> struct convert<YamlSNIConfig::Item> {
     if (node[TS_client_sni_policy]) {
       item.client_sni_policy = node[TS_client_sni_policy].as<std::string>();
     }
-
+    if (node[TS_server_cipher_suite]) {
+      item.server_cipher_suite = node[TS_server_cipher_suite].as<std::string>();
+    }
+    if (node[TS_server_TLSv1_3_cipher_suites]) {
+      item.server_TLSv1_3_cipher_suites = node[TS_server_TLSv1_3_cipher_suites].as<std::string>();
+    }
+    if (node[TS_server_groups_list]) {
+      item.server_groups_list = node[TS_server_groups_list].as<std::string>();
+    }
     if (node[TS_ip_allow]) {
       item.ip_allow = node[TS_ip_allow].as<std::string>();
     }

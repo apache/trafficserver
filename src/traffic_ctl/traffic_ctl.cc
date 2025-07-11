@@ -32,13 +32,10 @@
 
 #include "CtrlCommands.h"
 #include "FileConfigCommand.h"
+#include "TrafficCtlStatus.h"
 
-constexpr int CTRL_EX_OK            = 0;
-constexpr int CTRL_EX_ERROR         = 2;
-constexpr int CTRL_EX_UNIMPLEMENTED = 3;
-
-int status_code{CTRL_EX_OK};
-
+// Define the global variable
+int App_Exit_Status_Code = CTRL_EX_OK; // Initialize it to a default value
 namespace
 {
 void
@@ -70,7 +67,7 @@ main([[maybe_unused]] int argc, const char **argv)
 
   auto CtrlUnimplementedCommand = [](std::string_view cmd) {
     std::cout << "Command " << cmd << " unimplemented.\n";
-    status_code = CTRL_EX_UNIMPLEMENTED;
+    App_Exit_Status_Code = CTRL_EX_UNIMPLEMENTED;
   };
 
   parser.add_description("Apache Traffic Server RPC CLI");
@@ -81,7 +78,9 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--version", "-V", "Print version string")
     .add_option("--help", "-h", "Print usage information")
     .add_option("--run-root", "", "using TS_RUNROOT as sandbox", "TS_RUNROOT", 1)
-    .add_option("--format", "-f", "Use a specific output format {json|rpc}", "", 1, "", "format");
+    .add_option("--format", "-f", "Use a specific output format {json|rpc}", "", 1, "", "format")
+    .add_option("--read-timeout-ms", "", "Read timeout for RPC (in milliseconds)", "", 1, "10000", "read-timeout")
+    .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
   auto &metric_command     = parser.add_command("metric", "Manipulate performance metrics").require_commands();
@@ -169,18 +168,8 @@ main([[maybe_unused]] int argc, const char **argv)
   // server commands
   server_command.add_command("backtrace", "Show a full stack trace of the traffic_server process",
                              [&]() { CtrlUnimplementedCommand("backtrace"); });
-  server_command.add_command("restart", "Restart Traffic Server", [&]() { CtrlUnimplementedCommand("restart"); })
-    .add_example_usage("traffic_ctl server restart [OPTIONS]")
-    .add_option("--drain", "", "Wait for client connections to drain before restarting");
-  server_command.add_command("start", "Start the proxy", [&]() { CtrlUnimplementedCommand("start"); })
-    .add_example_usage("traffic_ctl server start [OPTIONS]")
-    .add_option("--clear-cache", "", "Clear the disk cache on startup")
-    .add_option("--clear-hostdb", "", "Clear the DNS cache on startup");
-  server_command.add_command("status", "Show the proxy status", [&]() { CtrlUnimplementedCommand("status"); })
+  server_command.add_command("status", "Show the proxy status", [&]() { command->execute(); })
     .add_example_usage("traffic_ctl server status");
-  server_command.add_command("stop", "Stop the proxy", [&]() { CtrlUnimplementedCommand("stop"); })
-    .add_example_usage("traffic_ctl server stop [OPTIONS]")
-    .add_option("--drain", "", "Wait for client connections to drain before stopping");
   server_command.add_command("drain", "Drain the requests", [&]() { command->execute(); })
     .add_example_usage("traffic_ctl server drain [OPTIONS]")
     .add_option("--no-new-connection", "-N", "Wait for new connections down to threshold before starting draining")
@@ -252,9 +241,9 @@ main([[maybe_unused]] int argc, const char **argv)
     // Execute
     args.invoke();
   } catch (std::exception const &ex) {
-    status_code = CTRL_EX_ERROR;
+    App_Exit_Status_Code = CTRL_EX_ERROR;
     std::cerr << "Error found:\n" << ex.what() << '\n';
   }
 
-  return status_code;
+  return App_Exit_Status_Code;
 }

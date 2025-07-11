@@ -179,7 +179,7 @@ initialize_thread_for_net(EThread *thread)
   InactivityCop *inactivityCop = new InactivityCop(get_NetHandler(thread)->mutex);
   int            cop_freq      = 1;
 
-  REC_ReadConfigInteger(cop_freq, "proxy.config.net.inactivity_check_frequency");
+  cop_freq = RecGetRecordInt("proxy.config.net.inactivity_check_frequency").value_or(0);
   memcpy(&nh->config, &NetHandler::global_config, sizeof(NetHandler::global_config));
   nh->configure_per_thread_values();
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));

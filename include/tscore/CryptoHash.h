@@ -46,7 +46,7 @@ union CryptoHash {
   uint8_t  u8[CRYPTO_HASH_SIZE / sizeof(uint8_t)];
 
   /// Default constructor - init to zero.
-  CryptoHash() { memset(this, 0, sizeof(*this)); }
+  CryptoHash() { memset(static_cast<void *>(this), 0, sizeof(*this)); }
   /// Copy constructor.
   CryptoHash(CryptoHash const &that) = default;
 
@@ -55,7 +55,7 @@ union CryptoHash {
   operator=(CryptoHash const &that)
   {
     if (this != &that) {
-      memcpy(this, &that, sizeof(*this));
+      memcpy(static_cast<void *>(this), &that, sizeof(*this));
     }
     return *this;
   }

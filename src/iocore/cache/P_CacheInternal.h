@@ -442,40 +442,45 @@ class StripeSM;
 class CacheHostTable;
 
 struct Cache {
-  int       cache_read_done       = 0;
-  int       total_good_nvol       = 0;
-  int       total_nvol            = 0;
-  int       ready                 = CACHE_INITIALIZING;
-  int64_t   cache_size            = 0; // in store block size
-  int       total_initialized_vol = 0;
-  CacheType scheme                = CACHE_NONE_TYPE;
+  int            cache_read_done       = 0;
+  int            total_good_nvol       = 0;
+  int            total_nvol            = 0;
+  CacheInitState ready                 = CacheInitState::INITIALIZING;
+  int64_t        cache_size            = 0; // in store block size
+  int            total_initialized_vol = 0;
+  CacheType      scheme                = CacheType::NONE;
 
   mutable ReplaceablePtr<CacheHostTable> hosttable;
 
   int open(bool reconfigure, bool fix);
   int close();
 
-  Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len) const;
-  Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int len) const;
+  Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType type, std::string_view hostname) const;
+  Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType type,
+                    std::string_view hostname = std::string_view{}) const;
   Action *open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options = 0, time_t pin_in_cache = 0,
-                     const char *hostname = nullptr, int host_len = 0) const;
-  Action *remove(Continuation *cont, const CacheKey *key, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,
-                 int host_len = 0) const;
-  Action *scan(Continuation *cont, const char *hostname = nullptr, int host_len = 0, int KB_per_second = 2500) const;
+                     std::string_view hostname = std::string_view{}) const;
+  Action *remove(Continuation *cont, const CacheKey *key, CacheFragType type = CACHE_FRAG_TYPE_HTTP,
+                 std::string_view hostname = std::string_view{}) const;
+  Action *scan(Continuation *cont, std::string_view hostname = std::string_view{}, int KB_per_second = 2500) const;
 
   Action     *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                        CacheFragType type, const char *hostname, int host_len) const;
+                        CacheFragType type, std::string_view hostname = std::string_view{}) const;
   Action     *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = 0,
-                         const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,
-                         int host_len = 0) const;
+                         CacheFragType type = CACHE_FRAG_TYPE_HTTP, std::string_view hostname = std::string_view{}) const;
   static void generate_key(CryptoHash *hash, CacheURL *url);
   static void generate_key(HttpCacheKey *hash, CacheURL *url, bool ignore_query = false, cache_generation_t generation = -1);
+
+  // These generate functions are used for backward compatibility with caches created with ATS9.2
+  // see `proxy.config.http.cache.try_compat_key_read`
+  static void generate_key92(CryptoHash *hash, CacheURL *url);
+  static void generate_key92(HttpCacheKey *hash, CacheURL *url, bool ignore_query = false, cache_generation_t generation = -1);
 
   void vol_initialized(bool result);
 
   int open_done();
 
-  StripeSM *key_to_stripe(const CacheKey *key, const char *hostname, int host_len) const;
+  StripeSM *key_to_stripe(const CacheKey *key, std::string_view hostname) const;
 
   Cache() {}
 };
@@ -492,8 +497,25 @@ Cache::generate_key(CryptoHash *hash, CacheURL *url)
 inline void
 Cache::generate_key(HttpCacheKey *key, CacheURL *url, bool ignore_query, cache_generation_t generation)
 {
-  key->hostname = url->host_get(&key->hostlen);
+  auto host{url->host_get()};
+  key->hostname = host.data();
+  key->hostlen  = static_cast<int>(host.length());
   url->hash_get(&key->hash, ignore_query, generation);
+}
+
+inline void
+Cache::generate_key92(CryptoHash *hash, CacheURL *url)
+{
+  url->hash_get92(hash);
+}
+
+inline void
+Cache::generate_key92(HttpCacheKey *key, CacheURL *url, bool ignore_query, cache_generation_t generation)
+{
+  auto host{url->host_get()};
+  key->hostname = host.data();
+  key->hostlen  = static_cast<int>(host.length());
+  url->hash_get92(&key->hash, ignore_query, generation);
 }
 
 inline unsigned int

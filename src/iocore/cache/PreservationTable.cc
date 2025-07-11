@@ -37,6 +37,7 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <limits>
 
 namespace
 {
@@ -45,8 +46,9 @@ DbgCtl dbg_ctl_cache_evac{"cache_evac"};
 
 } // namespace
 
-PreservationTable::PreservationTable(int size) : evacuate_size{(size / EVACUATION_BUCKET_SIZE) + 2}
+PreservationTable::PreservationTable(off_t size) : evacuate_size{static_cast<int>(size / EVACUATION_BUCKET_SIZE) + 2}
 {
+  static_assert(MAX_STRIPE_SIZE / EVACUATION_BUCKET_SIZE + 2 <= std::numeric_limits<decltype(evacuate_size)>::max());
   ink_assert(size > 0);
   int evac_len   = this->evacuate_size * sizeof(DLL<EvacuationBlock>);
   this->evacuate = static_cast<DLL<EvacuationBlock> *>(ats_malloc(evac_len));

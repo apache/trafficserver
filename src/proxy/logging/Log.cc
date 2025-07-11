@@ -215,7 +215,8 @@ Log::periodic_tasks(long time_now)
     Dbg(dbg_ctl_log_config, "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
-      int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
+      int val;
+      val = RecGetRecordInt("proxy.config.log.logging_enabled").value_or(0);
 
       if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
         logging_mode = LOG_MODE_FULL;
@@ -504,6 +505,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("puuid", field);
 
+  field =
+    new LogField("process_snowflake_id", "psfid", LogField::STRING, &LogAccess::marshal_process_sfid, &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("psfid", field);
+
   field = new LogField("client_req_content_len", "cqcl", LogField::sINT, &LogAccess::marshal_client_req_content_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
@@ -548,6 +554,11 @@ Log::init_fields()
     new LogField("client_curve", "cqssu", LogField::STRING, &LogAccess::marshal_client_security_curve, &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssu", field);
+
+  field =
+    new LogField("client_group", "cqssg", LogField::STRING, &LogAccess::marshal_client_security_group, &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqssg", field);
 
   field =
     new LogField("client_sec_alpn", "cqssa", LogField::STRING, &LogAccess::marshal_client_security_alpn, &LogAccess::unmarshal_str);
@@ -630,29 +641,31 @@ Log::init_fields()
 
   Ptr<LogFieldAliasTable> cache_code_map = make_ptr(new LogFieldAliasTable);
   cache_code_map->init(
-    53, SQUID_LOG_EMPTY, "UNDEFINED", SQUID_LOG_TCP_HIT, "TCP_HIT", SQUID_LOG_TCP_DISK_HIT, "TCP_DISK_HIT", SQUID_LOG_TCP_MEM_HIT,
-    "TCP_MEM_HIT", SQUID_LOG_TCP_MISS, "TCP_MISS", SQUID_LOG_TCP_EXPIRED_MISS, "TCP_EXPIRED_MISS", SQUID_LOG_TCP_REFRESH_HIT,
-    "TCP_REFRESH_HIT", SQUID_LOG_TCP_REF_FAIL_HIT, "TCP_REFRESH_FAIL_HIT", SQUID_LOG_TCP_REFRESH_MISS, "TCP_REFRESH_MISS",
-    SQUID_LOG_TCP_CLIENT_REFRESH, "TCP_CLIENT_REFRESH_MISS", SQUID_LOG_TCP_IMS_HIT, "TCP_IMS_HIT", SQUID_LOG_TCP_IMS_MISS,
-    "TCP_IMS_MISS", SQUID_LOG_TCP_SWAPFAIL, "TCP_SWAPFAIL_MISS", SQUID_LOG_TCP_DENIED, "TCP_DENIED", SQUID_LOG_TCP_WEBFETCH_MISS,
-    "TCP_WEBFETCH_MISS", SQUID_LOG_TCP_FUTURE_2, "TCP_FUTURE_2", SQUID_LOG_TCP_HIT_REDIRECT, "TCP_HIT_REDIRECT",
-    SQUID_LOG_TCP_MISS_REDIRECT, "TCP_MISS_REDIRECT", SQUID_LOG_TCP_HIT_X_REDIRECT, "TCP_HIT_X_REDIRECT",
-    SQUID_LOG_TCP_MISS_X_REDIRECT, "TCP_MISS_X_REDIRECT", SQUID_LOG_UDP_HIT, "UDP_HIT", SQUID_LOG_UDP_WEAK_HIT, "UDP_WEAK_HIT",
-    SQUID_LOG_UDP_HIT_OBJ, "UDP_HIT_OBJ", SQUID_LOG_UDP_MISS, "UDP_MISS", SQUID_LOG_UDP_DENIED, "UDP_DENIED", SQUID_LOG_UDP_INVALID,
-    "UDP_INVALID", SQUID_LOG_UDP_RELOADING, "UDP_RELOADING", SQUID_LOG_UDP_FUTURE_1, "UDP_FUTURE_1", SQUID_LOG_UDP_FUTURE_2,
-    "UDP_FUTURE_2", SQUID_LOG_ERR_READ_TIMEOUT, "ERR_READ_TIMEOUT", SQUID_LOG_ERR_LIFETIME_EXP, "ERR_LIFETIME_EXP",
-    SQUID_LOG_ERR_POST_ENTITY_TOO_LARGE, "ERR_POST_ENTITY_TOO_LARGE", SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ, "ERR_NO_CLIENTS_BIG_OBJ",
-    SQUID_LOG_ERR_READ_ERROR, "ERR_READ_ERROR", SQUID_LOG_ERR_CLIENT_ABORT, "ERR_CLIENT_ABORT", SQUID_LOG_ERR_CLIENT_READ_ERROR,
-    "ERR_CLIENT_READ_ERROR", SQUID_LOG_ERR_CONNECT_FAIL, "ERR_CONNECT_FAIL", SQUID_LOG_ERR_INVALID_REQ, "ERR_INVALID_REQ",
-    SQUID_LOG_ERR_UNSUP_REQ, "ERR_UNSUP_REQ", SQUID_LOG_ERR_INVALID_URL, "ERR_INVALID_URL", SQUID_LOG_ERR_NO_FDS, "ERR_NO_FDS",
-    SQUID_LOG_ERR_DNS_FAIL, "ERR_DNS_FAIL", SQUID_LOG_ERR_NOT_IMPLEMENTED, "ERR_NOT_IMPLEMENTED", SQUID_LOG_ERR_CANNOT_FETCH,
-    "ERR_CANNOT_FETCH", SQUID_LOG_ERR_NO_RELAY, "ERR_NO_RELAY", SQUID_LOG_ERR_DISK_IO, "ERR_DISK_IO",
-    SQUID_LOG_ERR_ZERO_SIZE_OBJECT, "ERR_ZERO_SIZE_OBJECT", SQUID_LOG_ERR_PROXY_DENIED, "ERR_PROXY_DENIED",
-    SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED", SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1", SQUID_LOG_ERR_LOOP_DETECTED,
-    "ERR_LOOP_DETECTED", SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN", SQUID_LOG_TCP_CF_HIT, "TCP_CF_HIT");
+    53, SquidLogCode::EMPTY, "UNDEFINED", SquidLogCode::TCP_HIT, "TCP_HIT", SquidLogCode::TCP_DISK_HIT, "TCP_DISK_HIT",
+    SquidLogCode::TCP_MEM_HIT, "TCP_MEM_HIT", SquidLogCode::TCP_MISS, "TCP_MISS", SquidLogCode::TCP_EXPIRED_MISS,
+    "TCP_EXPIRED_MISS", SquidLogCode::TCP_REFRESH_HIT, "TCP_REFRESH_HIT", SquidLogCode::TCP_REF_FAIL_HIT, "TCP_REFRESH_FAIL_HIT",
+    SquidLogCode::TCP_REFRESH_MISS, "TCP_REFRESH_MISS", SquidLogCode::TCP_CLIENT_REFRESH, "TCP_CLIENT_REFRESH_MISS",
+    SquidLogCode::TCP_IMS_HIT, "TCP_IMS_HIT", SquidLogCode::TCP_IMS_MISS, "TCP_IMS_MISS", SquidLogCode::TCP_SWAPFAIL,
+    "TCP_SWAPFAIL_MISS", SquidLogCode::TCP_DENIED, "TCP_DENIED", SquidLogCode::TCP_WEBFETCH_MISS, "TCP_WEBFETCH_MISS",
+    SquidLogCode::TCP_FUTURE_2, "TCP_FUTURE_2", SquidLogCode::TCP_HIT_REDIRECT, "TCP_HIT_REDIRECT", SquidLogCode::TCP_MISS_REDIRECT,
+    "TCP_MISS_REDIRECT", SquidLogCode::TCP_HIT_X_REDIRECT, "TCP_HIT_X_REDIRECT", SquidLogCode::TCP_MISS_X_REDIRECT,
+    "TCP_MISS_X_REDIRECT", SquidLogCode::UDP_HIT, "UDP_HIT", SquidLogCode::UDP_WEAK_HIT, "UDP_WEAK_HIT", SquidLogCode::UDP_HIT_OBJ,
+    "UDP_HIT_OBJ", SquidLogCode::UDP_MISS, "UDP_MISS", SquidLogCode::UDP_DENIED, "UDP_DENIED", SquidLogCode::UDP_INVALID,
+    "UDP_INVALID", SquidLogCode::UDP_RELOADING, "UDP_RELOADING", SquidLogCode::UDP_FUTURE_1, "UDP_FUTURE_1",
+    SquidLogCode::UDP_FUTURE_2, "UDP_FUTURE_2", SquidLogCode::ERR_READ_TIMEOUT, "ERR_READ_TIMEOUT", SquidLogCode::ERR_LIFETIME_EXP,
+    "ERR_LIFETIME_EXP", SquidLogCode::ERR_POST_ENTITY_TOO_LARGE, "ERR_POST_ENTITY_TOO_LARGE", SquidLogCode::ERR_NO_CLIENTS_BIG_OBJ,
+    "ERR_NO_CLIENTS_BIG_OBJ", SquidLogCode::ERR_READ_ERROR, "ERR_READ_ERROR", SquidLogCode::ERR_CLIENT_ABORT, "ERR_CLIENT_ABORT",
+    SquidLogCode::ERR_CLIENT_READ_ERROR, "ERR_CLIENT_READ_ERROR", SquidLogCode::ERR_CONNECT_FAIL, "ERR_CONNECT_FAIL",
+    SquidLogCode::ERR_INVALID_REQ, "ERR_INVALID_REQ", SquidLogCode::ERR_UNSUP_REQ, "ERR_UNSUP_REQ", SquidLogCode::ERR_INVALID_URL,
+    "ERR_INVALID_URL", SquidLogCode::ERR_NO_FDS, "ERR_NO_FDS", SquidLogCode::ERR_DNS_FAIL, "ERR_DNS_FAIL",
+    SquidLogCode::ERR_NOT_IMPLEMENTED, "ERR_NOT_IMPLEMENTED", SquidLogCode::ERR_CANNOT_FETCH, "ERR_CANNOT_FETCH",
+    SquidLogCode::ERR_NO_RELAY, "ERR_NO_RELAY", SquidLogCode::ERR_DISK_IO, "ERR_DISK_IO", SquidLogCode::ERR_ZERO_SIZE_OBJECT,
+    "ERR_ZERO_SIZE_OBJECT", SquidLogCode::ERR_PROXY_DENIED, "ERR_PROXY_DENIED", SquidLogCode::ERR_WEBFETCH_DETECTED,
+    "ERR_WEBFETCH_DETECTED", SquidLogCode::ERR_FUTURE_1, "ERR_FUTURE_1", SquidLogCode::ERR_LOOP_DETECTED, "ERR_LOOP_DETECTED",
+    SquidLogCode::ERR_UNKNOWN, "ERR_UNKNOWN", SquidLogCode::TCP_CF_HIT, "TCP_CF_HIT");
 
   Ptr<LogFieldAliasTable> cache_subcode_map = make_ptr(new LogFieldAliasTable);
-  cache_subcode_map->init(2, SQUID_SUBCODE_EMPTY, "NONE", SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED, "NUM_REDIRECTIONS_EXCEEDED");
+  cache_subcode_map->init(2, SquidSubcode::EMPTY, "NONE", SquidSubcode::NUM_REDIRECTIONS_EXCEEDED, "NUM_REDIRECTIONS_EXCEEDED");
 
   Ptr<LogFieldAliasTable> cache_hit_miss_map = make_ptr(new LogFieldAliasTable);
   cache_hit_miss_map->init(21, SQUID_HIT_RESERVED, "HIT", SQUID_HIT_LEVEL_1, "HIT_RAM", // Also SQUID_HIT_RAM
@@ -725,23 +738,27 @@ Log::init_fields()
 
   Ptr<LogFieldAliasTable> hierarchy_map = make_ptr(new LogFieldAliasTable);
   hierarchy_map->init(
-    36, SQUID_HIER_EMPTY, "EMPTY", SQUID_HIER_NONE, "NONE", SQUID_HIER_DIRECT, "DIRECT", SQUID_HIER_SIBLING_HIT, "SIBLING_HIT",
-    SQUID_HIER_PARENT_HIT, "PARENT_HIT", SQUID_HIER_DEFAULT_PARENT, "DEFAULT_PARENT", SQUID_HIER_SINGLE_PARENT, "SINGLE_PARENT",
-    SQUID_HIER_FIRST_UP_PARENT, "FIRST_UP_PARENT", SQUID_HIER_NO_PARENT_DIRECT, "NO_PARENT_DIRECT", SQUID_HIER_FIRST_PARENT_MISS,
-    "FIRST_PARENT_MISS", SQUID_HIER_LOCAL_IP_DIRECT, "LOCAL_IP_DIRECT", SQUID_HIER_FIREWALL_IP_DIRECT, "FIREWALL_IP_DIRECT",
-    SQUID_HIER_NO_DIRECT_FAIL, "NO_DIRECT_FAIL", SQUID_HIER_SOURCE_FASTEST, "SOURCE_FASTEST", SQUID_HIER_SIBLING_UDP_HIT_OBJ,
-    "SIBLING_UDP_HIT_OBJ", SQUID_HIER_PARENT_UDP_HIT_OBJ, "PARENT_UDP_HIT_OBJ", SQUID_HIER_PASSTHROUGH_PARENT, "PASSTHROUGH_PARENT",
-    SQUID_HIER_SSL_PARENT_MISS, "SSL_PARENT_MISS", SQUID_HIER_INVALID_CODE, "INVALID_CODE", SQUID_HIER_TIMEOUT_DIRECT,
-    "TIMEOUT_DIRECT", SQUID_HIER_TIMEOUT_SIBLING_HIT, "TIMEOUT_SIBLING_HIT", SQUID_HIER_TIMEOUT_PARENT_HIT, "TIMEOUT_PARENT_HIT",
-    SQUID_HIER_TIMEOUT_DEFAULT_PARENT, "TIMEOUT_DEFAULT_PARENT", SQUID_HIER_TIMEOUT_SINGLE_PARENT, "TIMEOUT_SINGLE_PARENT",
-    SQUID_HIER_TIMEOUT_FIRST_UP_PARENT, "TIMEOUT_FIRST_UP_PARENT", SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT, "TIMEOUT_NO_PARENT_DIRECT",
-    SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS, "TIMEOUT_FIRST_PARENT_MISS", SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT,
-    "TIMEOUT_LOCAL_IP_DIRECT", SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT, "TIMEOUT_FIREWALL_IP_DIRECT",
-    SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL, "TIMEOUT_NO_DIRECT_FAIL", SQUID_HIER_TIMEOUT_SOURCE_FASTEST, "TIMEOUT_SOURCE_FASTEST",
-    SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ, "TIMEOUT_SIBLING_UDP_HIT_OBJ", SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ,
-    "TIMEOUT_PARENT_UDP_HIT_OBJ", SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT, "TIMEOUT_PASSTHROUGH_PARENT",
-    SQUID_HIER_TIMEOUT_TIMEOUT_SSL_PARENT_MISS, "TIMEOUT_TIMEOUT_SSL_PARENT_MISS", SQUID_HIER_INVALID_ASSIGNED_CODE,
-    "INVALID_ASSIGNED_CODE");
+    36, SquidHierarchyCode::EMPTY, "EMPTY", SquidHierarchyCode::NONE, "NONE", SquidHierarchyCode::DIRECT, "DIRECT",
+    SquidHierarchyCode::SIBLING_HIT, "SIBLING_HIT", SquidHierarchyCode::PARENT_HIT, "PARENT_HIT",
+    SquidHierarchyCode::DEFAULT_PARENT, "DEFAULT_PARENT", SquidHierarchyCode::SINGLE_PARENT, "SINGLE_PARENT",
+    SquidHierarchyCode::FIRST_UP_PARENT, "FIRST_UP_PARENT", SquidHierarchyCode::NO_PARENT_DIRECT, "NO_PARENT_DIRECT",
+    SquidHierarchyCode::FIRST_PARENT_MISS, "FIRST_PARENT_MISS", SquidHierarchyCode::LOCAL_IP_DIRECT, "LOCAL_IP_DIRECT",
+    SquidHierarchyCode::FIREWALL_IP_DIRECT, "FIREWALL_IP_DIRECT", SquidHierarchyCode::NO_DIRECT_FAIL, "NO_DIRECT_FAIL",
+    SquidHierarchyCode::SOURCE_FASTEST, "SOURCE_FASTEST", SquidHierarchyCode::SIBLING_UDP_HIT_OBJ, "SIBLING_UDP_HIT_OBJ",
+    SquidHierarchyCode::PARENT_UDP_HIT_OBJ, "PARENT_UDP_HIT_OBJ", SquidHierarchyCode::PASSTHROUGH_PARENT, "PASSTHROUGH_PARENT",
+    SquidHierarchyCode::SSL_PARENT_MISS, "SSL_PARENT_MISS", SquidHierarchyCode::INVALID_CODE, "INVALID_CODE",
+    SquidHierarchyCode::TIMEOUT_DIRECT, "TIMEOUT_DIRECT", SquidHierarchyCode::TIMEOUT_SIBLING_HIT, "TIMEOUT_SIBLING_HIT",
+    SquidHierarchyCode::TIMEOUT_PARENT_HIT, "TIMEOUT_PARENT_HIT", SquidHierarchyCode::TIMEOUT_DEFAULT_PARENT,
+    "TIMEOUT_DEFAULT_PARENT", SquidHierarchyCode::TIMEOUT_SINGLE_PARENT, "TIMEOUT_SINGLE_PARENT",
+    SquidHierarchyCode::TIMEOUT_FIRST_UP_PARENT, "TIMEOUT_FIRST_UP_PARENT", SquidHierarchyCode::TIMEOUT_NO_PARENT_DIRECT,
+    "TIMEOUT_NO_PARENT_DIRECT", SquidHierarchyCode::TIMEOUT_FIRST_PARENT_MISS, "TIMEOUT_FIRST_PARENT_MISS",
+    SquidHierarchyCode::TIMEOUT_LOCAL_IP_DIRECT, "TIMEOUT_LOCAL_IP_DIRECT", SquidHierarchyCode::TIMEOUT_FIREWALL_IP_DIRECT,
+    "TIMEOUT_FIREWALL_IP_DIRECT", SquidHierarchyCode::TIMEOUT_NO_DIRECT_FAIL, "TIMEOUT_NO_DIRECT_FAIL",
+    SquidHierarchyCode::TIMEOUT_SOURCE_FASTEST, "TIMEOUT_SOURCE_FASTEST", SquidHierarchyCode::TIMEOUT_SIBLING_UDP_HIT_OBJ,
+    "TIMEOUT_SIBLING_UDP_HIT_OBJ", SquidHierarchyCode::TIMEOUT_PARENT_UDP_HIT_OBJ, "TIMEOUT_PARENT_UDP_HIT_OBJ",
+    SquidHierarchyCode::TIMEOUT_PASSTHROUGH_PARENT, "TIMEOUT_PASSTHROUGH_PARENT",
+    SquidHierarchyCode::TIMEOUT_TIMEOUT_SSL_PARENT_MISS, "TIMEOUT_TIMEOUT_SSL_PARENT_MISS",
+    SquidHierarchyCode::INVALID_ASSIGNED_CODE, "INVALID_ASSIGNED_CODE");
 
   field = new LogField("proxy_hierarchy_route", "phr", LogField::sINT, &LogAccess::marshal_proxy_hierarchy_route,
                        &LogAccess::unmarshal_hierarchy, make_alias_map(hierarchy_map));
@@ -1063,7 +1080,8 @@ Log::init(int flags)
     config->read_configuration_variables();
     preproc_threads = config->preproc_threads;
 
-    int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
+    int val;
+    val = RecGetRecordInt("proxy.config.log.logging_enabled").value_or(0);
     if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
       logging_mode = LOG_MODE_FULL;
       Warning("proxy.config.log.logging_enabled has an invalid "
@@ -1073,7 +1091,8 @@ Log::init(int flags)
       logging_mode = static_cast<LoggingMode>(val);
     }
     // periodic task interval are set on a per instance basis
-    MgmtInt pti = REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
+    MgmtInt pti;
+    pti = RecGetRecordInt("proxy.config.log.periodic_tasks_interval").value_or(0);
     if (pti <= 0) {
       Error("proxy.config.log.periodic_tasks_interval = %" PRId64 " is invalid", pti);
       Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);
@@ -1082,12 +1101,12 @@ Log::init(int flags)
       periodic_tasks_interval = static_cast<uint32_t>(pti);
     }
 
-    REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
+    RecRegisterConfigUpdateCb("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
   }
 
   init_fields();
   if (!(config_flags & LOGCAT)) {
-    REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
+    RecRegisterConfigUpdateCb("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
 
     Dbg(dbg_ctl_log_config, "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
     config->init();
@@ -1124,7 +1143,7 @@ Log::create_threads()
   preproc_notify = new EventNotify[preproc_threads];
 
   size_t stacksize;
-  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+  stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
 
   // start the preproc threads
   //

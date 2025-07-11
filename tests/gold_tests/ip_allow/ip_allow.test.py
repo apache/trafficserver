@@ -22,7 +22,7 @@ import os
 Test.Summary = '''
 Verify ip_allow filtering behavior.
 '''
-
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 
 # Define default ATS
@@ -141,8 +141,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
-tr.Processes.Default.Command = (
-    'curl --verbose -H "Host: www.example.com" http://localhost:{ts_port}/get'.format(ts_port=ts.Variables.port))
+tr.MakeCurlCommand('--verbose -H "Host: www.example.com" http://localhost:{ts_port}/get'.format(ts_port=ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/200.gold'
 tr.StillRunningAfter = ts
@@ -153,8 +152,7 @@ tr.StillRunningAfter = server
 # not in the allowlist.
 #
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl --verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.format(ts_port=ts.Variables.port))
+tr.MakeCurlCommand('--verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.format(ts_port=ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/403.gold'
 tr.StillRunningAfter = ts
@@ -165,9 +163,8 @@ tr.StillRunningAfter = server
 # PUSH is not in the allowlist.
 #
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'curl --http2 --verbose -k -X PUSH -H "Host: localhost" https://localhost:{ts_port}/h2_push'.format(
-        ts_port=ts.Variables.ssl_port))
+tr.MakeCurlCommand(
+    '--http2 --verbose -k -X PUSH -H "Host: localhost" https://localhost:{ts_port}/h2_push'.format(ts_port=ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/403_h2.gold'
 tr.StillRunningAfter = ts
@@ -242,7 +239,8 @@ class Test_ip_allow:
 
         :param tr: The TestRun object to associate the ts process with.
         """
-        ts = tr.MakeATSProcess(f"ts-{Test_ip_allow.ts_counter}", enable_quic=self.is_h3, enable_tls=True)
+        ts = tr.MakeATSProcess(
+            f"ts-{Test_ip_allow.ts_counter}", enable_quic=self.is_h3, enable_tls=True, enable_proxy_protocol=True)
 
         Test_ip_allow.ts_counter += 1
         self._ts = ts
@@ -252,13 +250,14 @@ class Test_ip_allow:
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'v_quic|quic|http|ip_allow',
+                'proxy.config.diags.debug.tags': 'v_quic|quic|http|ip_allow|proxyprotocol',
                 'proxy.config.http.push_method_enabled': 1,
                 'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
                 'proxy.config.quic.no_activity_timeout_in': 0,
                 'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.http.connect_ports': f"{self._server.Variables.http_port}",
+                'proxy.config.acl.subjects': 'PROXY,PEER',
             })
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
@@ -278,6 +277,7 @@ class Test_ip_allow:
         tr.AddVerifierClientProcess(
             f'client-{Test_ip_allow.client_counter}',
             self.replay_file,
+            http_ports=[self._ts.Variables.proxy_protocol_port],
             https_ports=[self._ts.Variables.ssl_port],
             http3_ports=[self._ts.Variables.ssl_port],
             keys=self.replay_keys)
@@ -333,3 +333,20 @@ test_ip_allow_optional_methods = Test_ip_allow(
     is_h3=False,
     expect_request_rejected=False)
 test_ip_allow_optional_methods.run()
+
+# TEST 7: Verify IP address from PROXY protocol is used.
+IP_ALLOW_CONFIG_PROXY_PROTOCOL = '''ip_allow:
+  - apply: in
+    ip_addrs: 1.2.3.4
+    action: allow
+  - apply: in
+    ip_addrs: 0/0
+    action: deny
+'''
+test_ip_allow_proxy_protocol = Test_ip_allow(
+    "ip_allow_proxy_protocol",
+    replay_file='replays/http_proxy_protocol.replay.yaml',
+    ip_allow_config=IP_ALLOW_CONFIG_PROXY_PROTOCOL,
+    is_h3=False,
+    expect_request_rejected=False)
+test_ip_allow_proxy_protocol.run()

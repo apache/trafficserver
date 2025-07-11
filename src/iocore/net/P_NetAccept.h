@@ -91,9 +91,8 @@ struct NetAcceptAction : public Action, public RefCountObjInHeap {
 struct NetAccept : public Continuation {
   ink_hrtime             period = 0;
   Server                 server;
-  AcceptFunctionPtr      accept_fn = nullptr;
-  int                    ifd       = NO_FD;
-  int                    id        = -1;
+  int                    ifd = NO_FD;
+  int                    id  = -1;
   Ptr<NetAcceptAction>   action_;
   SSLNextProtocolAccept *snpa = nullptr;
   NetAcceptEventIO       ep;

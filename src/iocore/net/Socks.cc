@@ -97,7 +97,7 @@ SocksEntry::findServer()
   unsigned int retry_time     = server_params->policy.ParentRetryTime;
 
   if (nattempts == 1) {
-    ink_assert(server_result.result == PARENT_UNDEFINED);
+    ink_assert(server_result.result == ParentResultType::UNDEFINED);
     server_params->findParent(&req_data, &server_result, fail_threshold, retry_time);
   } else {
     socks_conf_struct *conf = netProcessor.socks_conf_stuff;
@@ -108,14 +108,14 @@ SocksEntry::findServer()
     server_params->markParentDown(&server_result, fail_threshold, retry_time);
 
     if (nattempts > conf->connection_attempts) {
-      server_result.result = PARENT_FAIL;
+      server_result.result = ParentResultType::FAIL;
     } else {
       server_params->nextParent(&req_data, &server_result, fail_threshold, retry_time);
     }
   }
 
   switch (server_result.result) {
-  case PARENT_SPECIFIED:
+  case ParentResultType::SPECIFIED:
     // Original was inet_addr, but should hostnames work?
     // ats_ip_pton only supports numeric (because other clients
     // explicitly want to avoid hostname lookups).
@@ -129,8 +129,8 @@ SocksEntry::findServer()
   default:
     ink_assert(!"Unexpected event");
   // fallthrough
-  case PARENT_DIRECT:
-  case PARENT_FAIL:
+  case ParentResultType::DIRECT:
+  case ParentResultType::FAIL:
     memset(&server_addr, 0, sizeof(server_addr));
   }
 
@@ -353,7 +353,7 @@ SocksEntry::mainEvent(int event, void *data)
           break;
         default:
           reply_len = INT_MAX;
-          Dbg(dbg_ctl_Socks, "Illegal address type(%d) in Socks server", (int)p[3]);
+          Dbg(dbg_ctl_Socks, "Illegal address type(%d) in Socks server", static_cast<int>(p[3]));
         }
 
         if (vio->ndone >= reply_len) {
@@ -390,17 +390,17 @@ SocksEntry::mainEvent(int event, void *data)
       bool success;
       if (version == SOCKS5_VERSION) {
         success = (p[0] == SOCKS5_VERSION && p[1] == SOCKS5_REQ_GRANTED);
-        Dbg(dbg_ctl_Socks, "received reply of length %" PRId64 " addr type %d", ((VIO *)data)->ndone, (int)p[3]);
+        Dbg(dbg_ctl_Socks, "received reply of length %" PRId64 " addr type %d", ((VIO *)data)->ndone, static_cast<int>(p[3]));
       } else {
         success = (p[0] == 0 && p[1] == SOCKS4_REQ_GRANTED);
       }
 
       // ink_assert(*(p) == 0);
       if (!success) { // SOCKS request failed
-        Dbg(dbg_ctl_Socks, "Socks request denied %d", (int)*(p + 1));
+        Dbg(dbg_ctl_Socks, "Socks request denied %d", static_cast<int>(*(p + 1)));
         lerrno = ESOCK_DENIED;
       } else {
-        Dbg(dbg_ctl_Socks, "Socks request successful %d", (int)*(p + 1));
+        Dbg(dbg_ctl_Socks, "Socks request successful %d", static_cast<int>(*(p + 1)));
         lerrno = 0;
       }
       free();
@@ -456,13 +456,13 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   std::string     config_text;
 
   socks_conf_stuff->accept_enabled = 0; // initialize it INKqa08593
-  socks_conf_stuff->socks_needed   = REC_ConfigReadInteger("proxy.config.socks.socks_needed");
+  socks_conf_stuff->socks_needed   = RecGetRecordInt("proxy.config.socks.socks_needed").value_or(0);
   if (!socks_conf_stuff->socks_needed) {
     Dbg(dbg_ctl_Socks, "Socks Turned Off");
     return;
   }
 
-  socks_conf_stuff->default_version = REC_ConfigReadInteger("proxy.config.socks.socks_version");
+  socks_conf_stuff->default_version = RecGetRecordInt("proxy.config.socks.socks_version").value_or(0);
   Dbg(dbg_ctl_Socks, "Socks Version %d", socks_conf_stuff->default_version);
 
   if (socks_conf_stuff->default_version != 4 && socks_conf_stuff->default_version != 5) {
@@ -470,17 +470,18 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
     goto error;
   }
 
-  socks_conf_stuff->server_connect_timeout = REC_ConfigReadInteger("proxy.config.socks.server_connect_timeout");
-  socks_conf_stuff->socks_timeout          = REC_ConfigReadInteger("proxy.config.socks.socks_timeout");
+  socks_conf_stuff->server_connect_timeout = RecGetRecordInt("proxy.config.socks.server_connect_timeout").value_or(0);
+  socks_conf_stuff->socks_timeout          = RecGetRecordInt("proxy.config.socks.socks_timeout").value_or(0);
   Dbg(dbg_ctl_Socks, "server connect timeout: %d socks response timeout %d", socks_conf_stuff->server_connect_timeout,
       socks_conf_stuff->socks_timeout);
 
-  socks_conf_stuff->per_server_connection_attempts = REC_ConfigReadInteger("proxy.config.socks.per_server_connection_attempts");
-  socks_conf_stuff->connection_attempts            = REC_ConfigReadInteger("proxy.config.socks.connection_attempts");
+  socks_conf_stuff->per_server_connection_attempts =
+    RecGetRecordInt("proxy.config.socks.per_server_connection_attempts").value_or(0);
+  socks_conf_stuff->connection_attempts = RecGetRecordInt("proxy.config.socks.connection_attempts").value_or(0);
 
-  socks_conf_stuff->accept_enabled = REC_ConfigReadInteger("proxy.config.socks.accept_enabled");
-  socks_conf_stuff->accept_port    = REC_ConfigReadInteger("proxy.config.socks.accept_port");
-  socks_conf_stuff->http_port      = REC_ConfigReadInteger("proxy.config.socks.http_port");
+  socks_conf_stuff->accept_enabled = RecGetRecordInt("proxy.config.socks.accept_enabled").value_or(0);
+  socks_conf_stuff->accept_port    = RecGetRecordInt("proxy.config.socks.accept_port").value_or(0);
+  socks_conf_stuff->http_port      = RecGetRecordInt("proxy.config.socks.http_port").value_or(0);
   Dbg(dbg_ctl_SocksProxy,
       "Read SocksProxy info: accept_enabled = %d "
       "accept_port = %d http_port = %d",
@@ -489,7 +490,7 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   SocksServerConfig::startup();
 
   config_pathname = RecConfigReadConfigPath("proxy.config.socks.socks_config_file");
-  Dbg(dbg_ctl_Socks, "Socks Config File: %s", (const char *)config_pathname);
+  Dbg(dbg_ctl_Socks, "Socks Config File: %s", config_pathname.get());
 
   if (!config_pathname) {
     Error("SOCKS Config: could not read config file name. SOCKS Turned off");
@@ -625,12 +626,12 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
         break;
 
       default:
-        Dbg(dbg_ctl_Socks, "Unexpected Socks auth method (%d) from the server", (int)p[1]);
+        Dbg(dbg_ctl_Socks, "Unexpected Socks auth method (%d) from the server", static_cast<int>(p[1]));
         ret = -1;
         break;
       }
     } else {
-      Dbg(dbg_ctl_Socks, "authEvent got wrong version %d from the Socks server", (int)p[0]);
+      Dbg(dbg_ctl_Socks, "authEvent got wrong version %d from the Socks server", static_cast<int>(p[0]));
       ret = -1;
     }
 
@@ -679,7 +680,7 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
       break;
 
     default:
-      Dbg(dbg_ctl_Socks, "Username/Passwd authentication failed ret_code: %d", (int)p[1]);
+      Dbg(dbg_ctl_Socks, "Username/Passwd authentication failed ret_code: %d", static_cast<int>(p[1]));
       ret = -1;
     }
 

@@ -73,7 +73,7 @@ class CacheEvacuateDocVC;
 // Macros
 
 #ifdef DO_CHECK_DIR
-#define CHECK_DIR(_d) ink_assert(check_dir(_d))
+#define CHECK_DIR(_d) ink_assert(_d->check())
 #else
 #define CHECK_DIR(_d) ((void)0)
 #endif
@@ -218,8 +218,6 @@ struct OpenDirEntry {
 
   LINK(OpenDirEntry, link);
 
-  int wait(CacheVC *c, int msec);
-
   bool
   has_multiple_writers()
   {
@@ -287,6 +285,19 @@ struct Directory {
   /* Returns the first dir in segment @a s.
    */
   Dir *get_segment(int s) const;
+
+  int      probe(const CacheKey *, StripeSM *, Dir *, Dir **);
+  int      insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
+  int      overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+  int      remove(const CacheKey *key, StripeSM *stripe, Dir *del);
+  void     free_entry(Dir *e, int s);
+  int      check();
+  void     cleanup(Stripe *stripe);
+  void     clear_range(off_t start, off_t end, Stripe *stripe);
+  uint64_t entries_used();
+  int      bucket_length(Dir *b, int s);
+  int      freelist_length(int s);
+  void     clean_segment(int s, Stripe *stripe);
 };
 
 inline int
@@ -303,26 +314,13 @@ Directory::get_segment(int s) const
 
 // Global Functions
 
-int      dir_probe(const CacheKey *, StripeSM *, Dir *, Dir **);
-int      dir_insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
-int      dir_overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-int      dir_delete(const CacheKey *key, StripeSM *stripe, Dir *del);
-int      dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, EvacuationBlock **eblock);
-int      dir_lookaside_insert(EvacuationBlock *b, StripeSM *stripe, Dir *to);
-int      dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
-void     dir_lookaside_cleanup(StripeSM *stripe);
-void     dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
-void     dir_free_entry(Dir *e, int s, Stripe *stripe);
-void     dir_sync_init();
-int      check_dir(Stripe *stripe);
-void     dir_clean_vol(Stripe *stripe);
-void     dir_clear_range(off_t start, off_t end, Stripe *stripe);
-uint64_t dir_entries_used(Stripe *stripe);
-void     sync_cache_dir_on_shutdown();
-
-int  dir_bucket_length(Dir *b, int s, Stripe *stripe);
-int  dir_freelist_length(Stripe *stripe, int s);
-void dir_clean_segment(int s, Stripe *stripe);
+int  dir_lookaside_probe(const CacheKey *key, StripeSM *stripe, Dir *result, EvacuationBlock **eblock);
+int  dir_lookaside_insert(EvacuationBlock *b, StripeSM *stripe, Dir *to);
+int  dir_lookaside_fixup(const CacheKey *key, StripeSM *stripe);
+void dir_lookaside_cleanup(StripeSM *stripe);
+void dir_lookaside_remove(const CacheKey *key, StripeSM *stripe);
+void dir_sync_init();
+void sync_cache_dir_on_shutdown();
 
 // Inline Functions
 

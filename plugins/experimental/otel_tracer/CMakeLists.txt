@@ -16,5 +16,17 @@
 #######################
 
 add_atsplugin(otel_tracer otel_tracer.cc)
-target_link_libraries(otel_tracer PRIVATE opentelemetry::opentelemetry protobuf::libprotobuf CURL::libcurl)
+if(CMAKE_LINK_GROUP_USING_RESCAN_SUPPORTED OR CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
+  string(JOIN "," opentelemetry_LIBRARIES_CSV ${opentelemetry_LIBRARIES})
+  target_link_libraries(
+    otel_tracer PRIVATE "$<LINK_GROUP:RESCAN,${opentelemetry_LIBRARIES_CSV},protobuf::libprotobuf,CURL::libcurl>"
+  )
+elseif(APPLE)
+  target_link_libraries(otel_tracer PRIVATE ${opentelemetry_LIBRARIES} protobuf::libprotobuf CURL::libcurl)
+else()
+  target_link_libraries(
+    otel_tracer PRIVATE -Wl,--start-group ${opentelemetry_LIBRARIES} protobuf::libprotobuf CURL::libcurl
+                        -Wl,--end-group
+  )
+endif()
 verify_global_plugin(otel_tracer)

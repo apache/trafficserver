@@ -26,7 +26,7 @@
 
 #include "src/wasmtime/types.h"
 
-#include "include/wasm.h"
+#include "crates/c-api/include/wasm.h"
 
 namespace proxy_wasm {
 namespace wasmtime {
@@ -215,8 +215,8 @@ static const char *printValKind(wasm_valkind_t kind) {
     return "f32";
   case WASM_F64:
     return "f64";
-  case WASM_ANYREF:
-    return "anyref";
+  case WASM_EXTERNREF:
+    return "externref";
   case WASM_FUNCREF:
     return "funcref";
   default:

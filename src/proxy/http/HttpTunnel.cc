@@ -63,41 +63,42 @@ int const CHUNK_IOBUFFER_SIZE_INDEX = MIN_IOBUFFER_SIZE;
 ChunkedHandler::ChunkedHandler() : max_chunk_size(DEFAULT_MAX_CHUNK_SIZE) {}
 
 void
-ChunkedHandler::init(IOBufferReader *buffer_in, HttpTunnelProducer *p, bool drop_chunked_trailers)
+ChunkedHandler::init(IOBufferReader *buffer_in, HttpTunnelProducer *p, bool drop_chunked_trailers, bool parse_chunk_strictly)
 {
   if (p->do_chunking) {
-    init_by_action(buffer_in, ACTION_DOCHUNK, drop_chunked_trailers);
+    init_by_action(buffer_in, Action::DOCHUNK, drop_chunked_trailers, parse_chunk_strictly);
   } else if (p->do_dechunking) {
-    init_by_action(buffer_in, ACTION_DECHUNK, drop_chunked_trailers);
+    init_by_action(buffer_in, Action::DECHUNK, drop_chunked_trailers, parse_chunk_strictly);
   } else {
-    init_by_action(buffer_in, ACTION_PASSTHRU, drop_chunked_trailers);
+    init_by_action(buffer_in, Action::PASSTHRU, drop_chunked_trailers, parse_chunk_strictly);
   }
   return;
 }
 
 void
-ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action, bool drop_chunked_trailers)
+ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action, bool drop_chunked_trailers, bool parse_chunk_strictly)
 {
-  running_sum          = 0;
-  num_digits           = 0;
-  cur_chunk_size       = 0;
-  cur_chunk_bytes_left = 0;
-  truncation           = false;
-  this->action         = action;
+  running_sum                = 0;
+  num_digits                 = 0;
+  cur_chunk_size             = 0;
+  cur_chunk_bytes_left       = 0;
+  truncation                 = false;
+  this->action               = action;
+  this->strict_chunk_parsing = parse_chunk_strictly;
 
   switch (action) {
-  case ACTION_DOCHUNK:
+  case Action::DOCHUNK:
     dechunked_reader                   = buffer_in->mbuf->clone_reader(buffer_in);
     dechunked_reader->mbuf->water_mark = min_block_transfer_bytes;
     chunked_buffer                     = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
     chunked_size                       = 0;
     break;
-  case ACTION_DECHUNK:
+  case Action::DECHUNK:
     chunked_reader   = buffer_in->mbuf->clone_reader(buffer_in);
     dechunked_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_256);
     dechunked_size   = 0;
     break;
-  case ACTION_PASSTHRU:
+  case Action::PASSTHRU:
     chunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
     if (drop_chunked_trailers) {
       // Note that dropping chunked trailers only applies in the passthrough
@@ -123,13 +124,13 @@ void
 ChunkedHandler::clear()
 {
   switch (action) {
-  case ACTION_DOCHUNK:
-  case ACTION_PASSTHRU:
+  case Action::DOCHUNK:
+  case Action::PASSTHRU:
     if (chunked_buffer) {
       free_MIOBuffer(chunked_buffer);
     }
     break;
-  case ACTION_DECHUNK:
+  case Action::DECHUNK:
     free_MIOBuffer(dechunked_buffer);
     break;
   default:
@@ -151,7 +152,6 @@ ChunkedHandler::read_size()
 {
   int64_t bytes_consumed = 0;
   bool    done           = false;
-  int     cr             = 0;
 
   while (chunked_reader->is_read_avail_more_than(0) && !done) {
     const char *tmp       = chunked_reader->start();
@@ -162,13 +162,13 @@ ChunkedHandler::read_size()
 
     while (data_size > 0) {
       bytes_used++;
-      if (state == CHUNK_READ_SIZE) {
+      if (state == ChunkedState::READ_SIZE) {
         // The http spec says the chunked size is always in hex
         if (ParseRules::is_hex(*tmp)) {
           // Make sure we will not overflow running_sum with our shift.
           if (!can_safely_shift_left(running_sum, 4)) {
             // We have no more space in our variable for the shift.
-            state = CHUNK_READ_ERROR;
+            state = ChunkedState::READ_ERROR;
             done  = true;
             break;
           }
@@ -183,45 +183,69 @@ ChunkedHandler::read_size()
           }
         } else {
           // We are done parsing size
-          if ((num_digits == 0 || running_sum < 0) ||       /* Bogus chunk size */
-              (!ParseRules::is_wslfcr(*tmp) && *tmp != ';') /* Unexpected character */
-          ) {
-            state = CHUNK_READ_ERROR;
+          const auto is_bogus_chunk_size   = (num_digits == 0 || running_sum < 0);
+          const auto is_rfc_compliant_char = (ParseRules::is_ws(*tmp) || ParseRules::is_cr(*tmp) || *tmp == ';');
+          const auto is_acceptable_lf      = (ParseRules::is_lf(*tmp) && !strict_chunk_parsing);
+          if (is_bogus_chunk_size || (!is_rfc_compliant_char && !is_acceptable_lf)) {
+            state = ChunkedState::READ_ERROR;
             done  = true;
             break;
           } else {
-            if (ParseRules::is_cr(*tmp)) {
-              ++cr;
+            if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
+              ++num_cr;
             }
-            state = CHUNK_READ_SIZE_CRLF; // now look for CRLF
+            state = ChunkedState::READ_SIZE_CRLF; // now look for CRLF
           }
         }
-      } else if (state == CHUNK_READ_SIZE_CRLF) { // Scan for a linefeed
+      } else if (state == ChunkedState::READ_SIZE_CRLF) { // Scan for a linefeed
         if (ParseRules::is_lf(*tmp)) {
+          if (!prev_is_cr) {
+            Dbg(dbg_ctl_http_chunk, "Found an LF without a preceding CR (protocol violation)");
+            if (strict_chunk_parsing) {
+              state = ChunkedState::READ_ERROR;
+              done  = true;
+              break;
+            }
+          }
           Dbg(dbg_ctl_http_chunk, "read chunk size of %d bytes", running_sum);
           cur_chunk_bytes_left = (cur_chunk_size = running_sum);
-          state                = (running_sum == 0) ? CHUNK_READ_TRAILER_BLANK : CHUNK_READ_CHUNK;
+          state                = (running_sum == 0) ? ChunkedState::READ_TRAILER_BLANK : ChunkedState::READ_CHUNK;
           done                 = true;
-          cr                   = 0;
+          num_cr               = 0;
           break;
-        } else if (ParseRules::is_cr(*tmp)) {
-          if (cr != 0) {
-            state = CHUNK_READ_ERROR;
+        } else if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
+          if (num_cr != 0) {
+            state = ChunkedState::READ_ERROR;
             done  = true;
             break;
           }
-          ++cr;
+          ++num_cr;
         }
-      } else if (state == CHUNK_READ_SIZE_START) {
-        if (ParseRules::is_cr(*tmp)) {
-          // Skip it
-        } else if (ParseRules::is_lf(*tmp) &&
-                   bytes_used <= 2) { // bytes_used should be 2 if it's CRLF, but permit a single LF as well
+      } else if (state == ChunkedState::READ_SIZE_START) {
+        Dbg(dbg_ctl_http_chunk, "ChunkedState::READ_SIZE_START 0x%02x", *tmp);
+        if (ParseRules::is_lf(*tmp)) {
+          if (!prev_is_cr) {
+            Dbg(dbg_ctl_http_chunk, "Found an LF without a preceding CR (protocol violation) before chunk size");
+            if (strict_chunk_parsing) {
+              state = ChunkedState::READ_ERROR;
+              done  = true;
+              break;
+            }
+          }
           running_sum = 0;
           num_digits  = 0;
-          state       = CHUNK_READ_SIZE;
+          num_cr      = 0;
+          state       = ChunkedState::READ_SIZE;
+        } else if ((prev_is_cr = ParseRules::is_cr(*tmp)) == true) {
+          if (num_cr != 0) {
+            Dbg(dbg_ctl_http_chunk, "Found multiple CRs before chunk size");
+            state = ChunkedState::READ_ERROR;
+            done  = true;
+            break;
+          }
+          ++num_cr;
         } else { // Unexpected character
-          state = CHUNK_READ_ERROR;
+          state = ChunkedState::READ_ERROR;
           done  = true;
         }
       }
@@ -300,7 +324,7 @@ ChunkedHandler::read_chunk()
   if (cur_chunk_bytes_left == 0) {
     Dbg(dbg_ctl_http_chunk, "completed read of chunk of %" PRId64 " bytes", cur_chunk_size);
 
-    state = CHUNK_READ_SIZE_START;
+    state = ChunkedState::READ_SIZE_START;
   } else if (cur_chunk_bytes_left > 0) {
     Dbg(dbg_ctl_http_chunk, "read %" PRId64 " bytes of an %" PRId64 " chunk", transferred_bytes, cur_chunk_size);
   }
@@ -326,13 +350,13 @@ ChunkedHandler::read_trailer()
         // For a CR to signal we are almost done, the preceding
         //  part of the line must be blank and next character
         //  must a LF
-        state = (state == CHUNK_READ_TRAILER_BLANK) ? CHUNK_READ_TRAILER_CR : CHUNK_READ_TRAILER_LINE;
+        state = (state == ChunkedState::READ_TRAILER_BLANK) ? ChunkedState::READ_TRAILER_CR : ChunkedState::READ_TRAILER_LINE;
       } else if (ParseRules::is_lf(*tmp)) {
         // For a LF to signal we are done reading the
         //   trailer, the line must have either been blank
         //   or must have only had a CR on it
-        if (state == CHUNK_READ_TRAILER_CR || state == CHUNK_READ_TRAILER_BLANK) {
-          state = CHUNK_READ_DONE;
+        if (state == ChunkedState::READ_TRAILER_CR || state == ChunkedState::READ_TRAILER_BLANK) {
+          state = ChunkedState::READ_DONE;
           Dbg(dbg_ctl_http_chunk, "completed read of trailers");
 
           if (this->drop_chunked_trailers) {
@@ -346,12 +370,12 @@ ChunkedHandler::read_trailer()
         } else {
           // A LF that does not terminate the trailer
           //  indicates a new line
-          state = CHUNK_READ_TRAILER_BLANK;
+          state = ChunkedState::READ_TRAILER_BLANK;
         }
       } else {
         // A character that is not a CR or LF indicates
         //  the we are parsing a line of the trailer
-        state = CHUNK_READ_TRAILER_LINE;
+        state = ChunkedState::READ_TRAILER_LINE;
       }
       tmp++;
     }
@@ -365,29 +389,29 @@ std::pair<int64_t, bool>
 ChunkedHandler::process_chunked_content()
 {
   int64_t bytes_read = 0;
-  while (chunked_reader->is_read_avail_more_than(0) && state != CHUNK_READ_DONE && state != CHUNK_READ_ERROR) {
+  while (chunked_reader->is_read_avail_more_than(0) && state != ChunkedState::READ_DONE && state != ChunkedState::READ_ERROR) {
     switch (state) {
-    case CHUNK_READ_SIZE:
-    case CHUNK_READ_SIZE_CRLF:
-    case CHUNK_READ_SIZE_START:
+    case ChunkedState::READ_SIZE:
+    case ChunkedState::READ_SIZE_CRLF:
+    case ChunkedState::READ_SIZE_START:
       bytes_read += read_size();
       break;
-    case CHUNK_READ_CHUNK:
+    case ChunkedState::READ_CHUNK:
       bytes_read += read_chunk();
       break;
-    case CHUNK_READ_TRAILER_BLANK:
-    case CHUNK_READ_TRAILER_CR:
-    case CHUNK_READ_TRAILER_LINE:
+    case ChunkedState::READ_TRAILER_BLANK:
+    case ChunkedState::READ_TRAILER_CR:
+    case ChunkedState::READ_TRAILER_LINE:
       bytes_read += read_trailer();
       break;
-    case CHUNK_FLOW_CONTROL:
+    case ChunkedState::FLOW_CONTROL:
       return std::make_pair(bytes_read, false);
     default:
       ink_release_assert(0);
       break;
     }
   }
-  auto const done = (state == CHUNK_READ_DONE || state == CHUNK_READ_ERROR);
+  auto const done = (state == ChunkedState::READ_DONE || state == ChunkedState::READ_ERROR);
   return std::make_pair(bytes_read, done);
 }
 
@@ -409,10 +433,10 @@ ChunkedHandler::generate_chunked_content()
     break;
   }
 
-  while ((r_avail = dechunked_reader->read_avail()) > 0 && state != CHUNK_WRITE_DONE) {
+  while ((r_avail = dechunked_reader->read_avail()) > 0 && state != ChunkedState::WRITE_DONE) {
     int64_t write_val = std::min(max_chunk_size, r_avail);
 
-    state = CHUNK_WRITE_CHUNK;
+    state = ChunkedState::WRITE_CHUNK;
     Dbg(dbg_ctl_http_chunk, "creating a chunk of size %" PRId64 " bytes", write_val);
 
     // Output the chunk size.
@@ -446,7 +470,7 @@ ChunkedHandler::generate_chunked_content()
   }
 
   if (server_done) {
-    state = CHUNK_WRITE_DONE;
+    state = ChunkedState::WRITE_DONE;
 
     // Add the chunked transfer coding trailer.
     chunked_buffer->write("0\r\n\r\n", 5);
@@ -468,7 +492,7 @@ HttpTunnelProducer::backlog(uint64_t limit)
   for (HttpTunnelConsumer *c = consumer_list.head; c; c = c->link.next) {
     if (c->alive && c->write_vio) {
       uint64_t n = 0;
-      if (HT_TRANSFORM == c->vc_type) {
+      if (HttpTunnelType_t::TRANSFORM == c->vc_type) {
         n += static_cast<TransformVCChain *>(c->vc)->backlog(limit);
       } else {
         IOBufferReader *r = c->write_vio->get_reader();
@@ -663,19 +687,20 @@ HttpTunnel::deallocate_buffers()
 
 void
 HttpTunnel::set_producer_chunking_action(HttpTunnelProducer *p, int64_t skip_bytes, TunnelChunkingAction_t action,
-                                         bool drop_chunked_trailers)
+                                         bool drop_chunked_trailers, bool parse_chunk_strictly)
 {
   this->http_drop_chunked_trailers = drop_chunked_trailers;
+  this->http_strict_chunk_parsing  = parse_chunk_strictly;
   p->chunked_handler.skip_bytes    = skip_bytes;
   p->chunking_action               = action;
 
   switch (action) {
-  case TCA_CHUNK_CONTENT:
-    p->chunked_handler.state = p->chunked_handler.CHUNK_WRITE_CHUNK;
+  case TunnelChunkingAction_t::CHUNK_CONTENT:
+    p->chunked_handler.state = ChunkedHandler::ChunkedState::WRITE_CHUNK;
     break;
-  case TCA_DECHUNK_CONTENT:
-  case TCA_PASSTHRU_CHUNKED_CONTENT:
-    p->chunked_handler.state = p->chunked_handler.CHUNK_READ_SIZE;
+  case TunnelChunkingAction_t::DECHUNK_CONTENT:
+  case TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT:
+    p->chunked_handler.state = ChunkedHandler::ChunkedState::READ_SIZE;
     break;
   default:
     break;
@@ -709,7 +734,7 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
     p->vc_handler      = sm_handler;
     p->vc_type         = vc_type;
     p->name            = name_arg;
-    p->chunking_action = TCA_PASSTHRU_DECHUNKED_CONTENT;
+    p->chunking_action = TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT;
 
     p->do_chunking         = false;
     p->do_dechunking       = false;
@@ -812,7 +837,7 @@ HttpTunnel::tunnel_run(HttpTunnelProducer *p_arg)
 
     for (int i = 0; i < MAX_PRODUCERS; ++i) {
       p = producers + i;
-      if (p->vc != nullptr && (p->alive || (p->vc_type == HT_STATIC && p->buffer_start != nullptr))) {
+      if (p->vc != nullptr && (p->alive || (p->vc_type == HttpTunnelType_t::STATIC && p->buffer_start != nullptr))) {
         producer_run(p);
       }
     }
@@ -839,7 +864,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   bool                transform_consumer = false;
 
   for (c = p->consumer_list.head; c; c = c->link.next) {
-    if (c->vc_type == HT_CACHE_WRITE) {
+    if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
       cache_write_consumer = c;
       break;
     }
@@ -847,7 +872,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
   // bz57413
   for (c = p->consumer_list.head; c; c = c->link.next) {
-    if (c->vc_type == HT_TRANSFORM) {
+    if (c->vc_type == HttpTunnelType_t::TRANSFORM) {
       transform_consumer = true;
       break;
     }
@@ -859,11 +884,11 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
   // [bug 2579251] static producers won't have handler set
   if (p->vc != HTTP_TUNNEL_STATIC_PRODUCER) {
-    if (action == TCA_CHUNK_CONTENT) {
+    if (action == TunnelChunkingAction_t::CHUNK_CONTENT) {
       p->do_chunking = true;
-    } else if (action == TCA_DECHUNK_CONTENT) {
+    } else if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
       p->do_dechunking = true;
-    } else if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
+    } else if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
       p->do_chunked_passthru = true;
 
       // Dechunk the chunked content into the cache.
@@ -892,7 +917,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     // For all the chunking cases, we must only copy bytes as we process them.
     body_bytes_to_copy = 0;
 
-    p->chunked_handler.init(p->buffer_start, p, this->http_drop_chunked_trailers);
+    p->chunked_handler.init(p->buffer_start, p, this->http_drop_chunked_trailers, this->http_strict_chunk_parsing);
 
     // Copy the header into the chunked/dechunked buffers.
     if (p->do_chunking) {
@@ -924,7 +949,8 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   }
 
   int64_t read_start_pos = 0;
-  if (p->vc_type == HT_CACHE_READ && sm->t_state.range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
+  if (p->vc_type == HttpTunnelType_t::CACHE_READ &&
+      sm->t_state.range_setup == HttpTransact::RangeSetup_t::NOT_TRANSFORM_REQUESTED) {
     ink_assert(sm->t_state.num_range_fields == 1); // we currently just support only one range entry
     read_start_pos = sm->t_state.ranges[0]._start;
     producer_n     = (sm->t_state.ranges[0]._end - sm->t_state.ranges[0]._start) + 1;
@@ -947,14 +973,14 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   for (c = p->consumer_list.head; c; c = c->link.next) {
     // Create a reader for each consumer.  The reader allows
     // us to implement skip bytes
-    if (c->vc_type == HT_CACHE_WRITE) {
+    if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
       switch (action) {
-      case TCA_CHUNK_CONTENT:
-      case TCA_PASSTHRU_DECHUNKED_CONTENT:
+      case TunnelChunkingAction_t::CHUNK_CONTENT:
+      case TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT:
         c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
         break;
-      case TCA_DECHUNK_CONTENT:
-      case TCA_PASSTHRU_CHUNKED_CONTENT:
+      case TunnelChunkingAction_t::DECHUNK_CONTENT:
+      case TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT:
         c->buffer_reader = p->chunked_handler.dechunked_buffer->clone_reader(dechunked_buffer_start);
         break;
       default:
@@ -962,17 +988,17 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       }
     }
     // Non-cache consumers.
-    else if (action == TCA_CHUNK_CONTENT) {
+    else if (action == TunnelChunkingAction_t::CHUNK_CONTENT) {
       c->buffer_reader = p->chunked_handler.chunked_buffer->clone_reader(chunked_buffer_start);
-    } else if (action == TCA_DECHUNK_CONTENT) {
+    } else if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
       c->buffer_reader = p->chunked_handler.dechunked_buffer->clone_reader(dechunked_buffer_start);
-    } else if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
+    } else if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
       if (p->chunked_handler.drop_chunked_trailers) {
         c->buffer_reader = p->chunked_handler.chunked_buffer->clone_reader(passthrough_buffer_start);
       } else {
         c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
       }
-    } else { // TCA_PASSTHRU_DECHUNKED_CONTENT
+    } else { // TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT
       c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
     }
 
@@ -986,8 +1012,9 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   // YTS Team, yamsat Plugin
   // Allocate and copy partial POST data to buffers. Check for the various parameters
   // including the maximum configured post data size
-  if ((p->vc_type == HT_BUFFER_READ && sm->is_postbuf_valid()) ||
-      (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection && p->vc_type == HT_HTTP_CLIENT)) {
+  if ((p->vc_type == HttpTunnelType_t::BUFFER_READ && sm->is_postbuf_valid()) ||
+      (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection &&
+       p->vc_type == HttpTunnelType_t::HTTP_CLIENT)) {
     Dbg(dbg_ctl_http_redirect, "[HttpTunnel::producer_run] client post: %" PRId64 " max size: %" PRId64 "",
         p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
 
@@ -996,7 +1023,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       Warning("http_redirect, [HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
               p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
-      if (p->vc_type == HT_BUFFER_READ) {
+      if (p->vc_type == HttpTunnelType_t::BUFFER_READ) {
         producer_handler(VC_EVENT_ERROR, p);
         return;
       }
@@ -1035,7 +1062,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     }
 
     producer_handler(VC_EVENT_READ_READY, p);
-    if (sm->get_postbuf_done() && p->vc_type == HT_HTTP_CLIENT) { // read_avail() == 0
+    if (sm->get_postbuf_done() && p->vc_type == HttpTunnelType_t::HTTP_CLIENT) { // read_avail() == 0
       // [bug 2579251]
       // Ugh, this is horrible but in the redirect case they are running a the tunnel again with the
       // now closed/empty producer to trigger PRECOMPLETE.  If the POST was chunked, producer_n is set
@@ -1082,7 +1109,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       // from the client is already in the buffer.  Go ahead and set
       // the amount to read since we know it.  We will forward the FIN
       // to the server on VC_EVENT_WRITE_COMPLETE.
-      if (p->vc_type == HT_HTTP_CLIENT) {
+      if (p->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
         ProxyTransaction *ua_vc = static_cast<ProxyTransaction *>(p->vc);
         if (ua_vc->get_half_close_flag()) {
           int tmp = c->buffer_reader->read_avail();
@@ -1090,7 +1117,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
             c_write = tmp;
           }
           p->alive         = false;
-          p->handler_state = HTTP_SM_POST_SUCCESS;
+          p->handler_state = static_cast<int>(HttpSmPost_t::SUCCESS);
         }
       }
       Dbg(dbg_ctl_http_tunnel, "Start write vio %" PRId64 " bytes", c_write);
@@ -1113,7 +1140,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       // done but we didn't do anything
       p->alive         = false;
       p->read_success  = true;
-      p->handler_state = HTTP_SM_POST_SUCCESS;
+      p->handler_state = static_cast<int>(HttpSmPost_t::SUCCESS);
       Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] [tunnel_run] producer already done", sm->sm_id);
       producer_handler(HTTP_TUNNEL_EVENT_PRECOMPLETE, p);
     } else {
@@ -1212,13 +1239,10 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
 
   // If we couldn't understand the encoding, return
   //   an error
-  if (p->chunked_handler.state == ChunkedHandler::CHUNK_READ_ERROR) {
+  if (p->chunked_handler.state == ChunkedHandler::ChunkedState::READ_ERROR) {
     Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] producer_handler_chunked [%s chunk decoding error]", sm->sm_id, p->name);
     p->chunked_handler.truncation = true;
-    // FIX ME: we return EOS here since it will cause the
-    //  the client to be reenabled.  ERROR makes more
-    //  sense but no reenables follow
-    return VC_EVENT_EOS;
+    return HTTP_TUNNEL_EVENT_PARSE_ERROR;
   }
 
   switch (event) {
@@ -1274,9 +1298,9 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   // YTS Team, yamsat Plugin
   // Copy partial POST data to buffers. Check for the various parameters including
   // the maximum configured post data size
-  if ((p->vc_type == HT_BUFFER_READ && sm->is_postbuf_valid()) ||
+  if ((p->vc_type == HttpTunnelType_t::BUFFER_READ && sm->is_postbuf_valid()) ||
       (sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection &&
-       (event == VC_EVENT_READ_READY || event == VC_EVENT_READ_COMPLETE) && p->vc_type == HT_HTTP_CLIENT)) {
+       (event == VC_EVENT_READ_READY || event == VC_EVENT_READ_COMPLETE) && p->vc_type == HttpTunnelType_t::HTTP_CLIENT)) {
     Dbg(dbg_ctl_http_redirect, "[HttpTunnel::producer_handler] [%s %s]", p->name, HttpDebugNames::get_event_name(event));
 
     if ((sm->postbuf_buffer_avail() + sm->postbuf_reader_avail()) > HttpConfig::m_master.post_copy_size) {
@@ -1284,7 +1308,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
               " reader_avail=%" PRId64 " limit=%" PRId64 "",
               sm->postbuf_buffer_avail(), sm->postbuf_reader_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
-      if (p->vc_type == HT_BUFFER_READ) {
+      if (p->vc_type == HttpTunnelType_t::BUFFER_READ) {
         event = VC_EVENT_ERROR;
       }
     } else {
@@ -1301,7 +1325,8 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   } // end of added logic for partial copy of POST
 
   Dbg(dbg_ctl_http_redirect, "[%" PRId64 "] enable_redirection: [%d %d %d] event: %d, state: %d", sm->sm_id, p->alive == true,
-      sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event, p->chunked_handler.state);
+      sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event,
+      static_cast<int>(p->chunked_handler.state));
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -1351,7 +1376,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     jump_point = p->vc_handler;
     (sm->*jump_point)(event, p);
     sm_callback = true;
-    p->update_state_if_not_set(HTTP_SM_POST_SUCCESS);
+    p->update_state_if_not_set(static_cast<int>(HttpSmPost_t::SUCCESS));
 
     // Kick off the consumers if appropriate
     for (c = p->consumer_list.head; c; c = c->link.next) {
@@ -1368,6 +1393,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
+  case HTTP_TUNNEL_EVENT_PARSE_ERROR:
     if (p->alive) {
       p->alive = false;
       if (p->read_vio) {
@@ -1386,7 +1412,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
       (sm->*jump_point)(event, p);
       sm_callback = true;
       // Failure case anyway
-      p->update_state_if_not_set(HTTP_SM_POST_UA_FAIL);
+      p->update_state_if_not_set(static_cast<int>(HttpSmPost_t::UA_FAIL));
     }
     break;
 
@@ -1444,7 +1470,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
           // We can stall for small thresholds on network sinks because this event happens
           // before the actual socket write. So we trap for the buffer becoming empty to
           // make sure we get an event to unthrottle after the write.
-          if (HT_HTTP_CLIENT == c->vc_type) {
+          if (HttpTunnelType_t::HTTP_CLIENT == c->vc_type) {
             NetVConnection *netvc = dynamic_cast<NetVConnection *>(c->write_vio->vc_server);
             if (netvc) { // really, this should always be true.
               netvc->trapWriteBufferEmpty();
@@ -1485,7 +1511,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
   case VC_EVENT_WRITE_READY:
     this->consumer_reenable(c);
     // Once we get a write ready from the origin, we can assume the connect to some degree succeeded
-    if (c->vc_type == HT_HTTP_SERVER) {
+    if (c->vc_type == HttpTunnelType_t::HTTP_SERVER) {
       sm->t_state.current.server->clear_connect_fail();
     }
     break;
@@ -1511,17 +1537,17 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     // Necessary for post tunnel end processing
     if (c->producer && c->producer->handler_state == 0) {
       if (event == VC_EVENT_WRITE_COMPLETE) {
-        c->producer->handler_state = HTTP_SM_POST_SUCCESS;
+        c->producer->handler_state = static_cast<int>(HttpSmPost_t::SUCCESS);
         // If the consumer completed, presumably the producer successfully read
         c->producer->read_success = true;
         // Go ahead and clean up the producer side
         if (p->alive) {
           producer_handler(VC_EVENT_READ_COMPLETE, p);
         }
-      } else if (c->vc_type == HT_HTTP_SERVER) {
-        c->producer->handler_state = HTTP_SM_POST_UA_FAIL;
-      } else if (c->vc_type == HT_HTTP_CLIENT) {
-        c->producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
+      } else if (c->vc_type == HttpTunnelType_t::HTTP_SERVER) {
+        c->producer->handler_state = static_cast<int>(HttpSmPost_t::UA_FAIL);
+      } else if (c->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
+        c->producer->handler_state = static_cast<int>(HttpSmPost_t::SERVER_FAIL);
       }
     }
     sm_callback = true;
@@ -1626,24 +1652,24 @@ HttpTunnel::final_consumer_bytes_to_write(HttpTunnelProducer *p, HttpTunnelConsu
   } else {
     TunnelChunkingAction_t action = p->chunking_action;
     if (c->alive) {
-      if (c->vc_type == HT_CACHE_WRITE) {
+      if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
         switch (action) {
-        case TCA_CHUNK_CONTENT:
-        case TCA_PASSTHRU_DECHUNKED_CONTENT:
+        case TunnelChunkingAction_t::CHUNK_CONTENT:
+        case TunnelChunkingAction_t::PASSTHRU_DECHUNKED_CONTENT:
           bytes_to_write = p->bytes_consumed;
           break;
-        case TCA_DECHUNK_CONTENT:
-        case TCA_PASSTHRU_CHUNKED_CONTENT:
+        case TunnelChunkingAction_t::DECHUNK_CONTENT:
+        case TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT:
           bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
           break;
         default:
           break;
         }
-      } else if (action == TCA_CHUNK_CONTENT) {
+      } else if (action == TunnelChunkingAction_t::CHUNK_CONTENT) {
         bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.chunked_size;
-      } else if (action == TCA_DECHUNK_CONTENT) {
+      } else if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
         bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
-      } else if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
+      } else if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
         bytes_to_write = p->bytes_consumed;
       } else {
         bytes_to_write = p->bytes_consumed;
@@ -1669,7 +1695,7 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
   int64_t                total_bytes = 0;
   TunnelChunkingAction_t action      = p->chunking_action;
 
-  if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
+  if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
     // Verify that we consumed the number of bytes we accounted for via p->bytes_consumed.
     if (p->bytes_read == 0 && p->buffer_start != nullptr) {
       int num_read = p->buffer_start->read_avail() - p->chunked_handler.chunked_reader->read_avail();
@@ -1718,7 +1744,7 @@ HttpTunnel::chain_abort_cache_write(HttpTunnelProducer *p)
 
   while (c) {
     if (c->alive) {
-      if (c->vc_type == HT_CACHE_WRITE) {
+      if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
         ink_assert(c->self_producer == nullptr);
         c->write_vio = nullptr;
         c->vc->do_io_close(EHTTP_ERROR);
@@ -1800,7 +1826,7 @@ HttpTunnel::main_handler(int event, void *data)
 
   ++reentrancy_count;
 
-  ink_assert(sm->magic == HTTP_SM_MAGIC_ALIVE);
+  ink_assert(sm->magic == HttpSmMagic_t::ALIVE);
 
   // Find the appropriate entry
   if ((p = get_producer(static_cast<VIO *>(data))) != nullptr) {
@@ -1838,14 +1864,14 @@ void
 HttpTunnel::update_stats_after_abort(HttpTunnelType_t t)
 {
   switch (t) {
-  case HT_CACHE_READ:
-  case HT_CACHE_WRITE:
+  case HttpTunnelType_t::CACHE_READ:
+  case HttpTunnelType_t::CACHE_WRITE:
     Metrics::Gauge::decrement(http_rsb.current_cache_connections);
     break;
   default:
     // Handled here:
-    // HT_HTTP_SERVER, HT_HTTP_CLIENT,
-    // HT_TRANSFORM, HT_STATIC
+    // HttpTunnelType_t::HTTP_SERVER, HttpTunnelType_t::HTTP_CLIENT,
+    // HttpTunnelType_t::TRANSFORM, HttpTunnelType_t::STATIC
     break;
   };
 }

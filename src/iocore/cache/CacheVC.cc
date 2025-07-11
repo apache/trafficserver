@@ -111,7 +111,7 @@ next_in_map(Stripe *stripe, char *vol_map, off_t offset)
 }
 
 // Function in CacheDir.cc that we need for make_vol_map().
-int dir_bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe);
+int dir_bucket_loop_fix(Dir *start_dir, int s, Directory *directory);
 
 // TODO: If we used a bit vector, we could make a smaller map structure.
 // TODO: If we saved a high water mark we could have a smaller buf, and avoid searching it
@@ -136,7 +136,7 @@ make_vol_map(Stripe *stripe)
     Dir *seg = stripe->directory.get_segment(s);
     for (int b = 0; b < stripe->directory.buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (dir_bucket_loop_fix(e, s, stripe)) {
+      if (dir_bucket_loop_fix(e, s, &stripe->directory)) {
         break;
       }
       while (e) {
@@ -585,7 +585,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       /* should be first_key not key..right?? */
       if (doc->first_key == key) {
         ink_assert(doc->magic == DOC_MAGIC);
-        if (dir_delete(&key, stripe, &dir) > 0) {
+        if (stripe->directory.remove(&key, stripe, &dir) > 0) {
           if (od) {
             stripe->close_write(this);
           }
@@ -597,7 +597,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
   Lcollision:
     // check for collision
-    if (dir_probe(&key, stripe, &dir, &last_collision) > 0) {
+    if (stripe->directory.probe(&key, stripe, &dir, &last_collision) > 0) {
       int ret = do_read_call(&key);
       if (ret == EVENT_RETURN) {
         goto Lread;
@@ -631,9 +631,9 @@ CacheVC::scanStripe(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   ReplaceablePtr<CacheHostTable>::ScopedReader hosttable(&theCache->hosttable);
 
   const CacheHostRecord *rec = &hosttable->gen_host_rec;
-  if (host_len) {
+  if (!hostname.empty()) {
     CacheHostResult res;
-    hosttable->Match(hostname, host_len, &res);
+    hosttable->Match(hostname, &res);
     if (res.record) {
       rec = res.record;
     }
@@ -739,7 +739,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
     last_collision = nullptr;
     while (true) {
-      if (!dir_probe(&doc->first_key, stripe, &dir, &last_collision)) {
+      if (!stripe->directory.probe(&doc->first_key, stripe, &dir, &last_collision)) {
         goto Lskip;
       }
       if (!stripe->dir_agg_valid(&dir) || !dir_head(&dir) ||
@@ -775,7 +775,9 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         goto Lskip;
       }
       if (!hostinfo_copied) {
-        memccpy(hname, vector.get(i)->request_get()->host_get(&hlen), 0, 500);
+        auto host{vector.get(i)->request_get()->host_get()};
+        hlen = static_cast<int>(host.length());
+        memccpy(hname, host.data(), 0, 500);
         hname[hlen] = 0;
         Dbg(dbg_ctl_cache_scan, "hostname = '%s', hostlen = %d", hname, hlen);
         hostinfo_copied = true;
@@ -785,7 +787,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       // verify that the earliest block exists, reducing 'false hit' callbacks
       if (!(key == doc->key)) {
         last_collision = nullptr;
-        if (!dir_probe(&key, stripe, &earliest_dir, &last_collision)) {
+        if (!stripe->directory.probe(&key, stripe, &earliest_dir, &last_collision)) {
           continue;
         }
       }
@@ -824,7 +826,8 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         ink_assert(hostinfo_copied);
         SET_HANDLER(&CacheVC::scanRemoveDone);
         // force remove even if there is a writer
-        cacheProcessor.remove(this, &doc->first_key, CACHE_FRAG_TYPE_HTTP, hname, hlen);
+        cacheProcessor.remove(this, &doc->first_key, CACHE_FRAG_TYPE_HTTP,
+                              std::string_view{hname, static_cast<std::string_view::size_type>(hlen)});
         return EVENT_CONT;
       } else {
         offset            = reinterpret_cast<char *>(doc) - buf->data();
@@ -965,7 +968,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
 
     while (true) {
-      if (!dir_probe(&first_key, stripe, &d, &l)) {
+      if (!stripe->directory.probe(&first_key, stripe, &d, &l)) {
         stripe->close_write(this);
         _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_FAILED, nullptr);
         SET_HANDLER(&CacheVC::scanObject);
@@ -1002,9 +1005,9 @@ CacheVC::scanUpdateDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
   if (lock.is_locked()) {
     // insert a directory entry for the previous fragment
-    dir_overwrite(&first_key, stripe, &dir, &od->first_dir, false);
+    stripe->directory.overwrite(&first_key, stripe, &dir, &od->first_dir, false);
     if (od->move_resident_alt) {
-      dir_insert(&od->single_doc_key, stripe, &od->single_doc_dir);
+      stripe->directory.insert(&od->single_doc_key, stripe, &od->single_doc_dir);
     }
     ink_assert(stripe->open_read(&first_key));
     ink_assert(this->od);
@@ -1033,8 +1036,8 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
     // don't know the total len yet
   }
 
-  MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-  if ((field && !field->value_get_int64()) || ainfo->m_alt->m_response_hdr.status_get() == HTTP_STATUS_NO_CONTENT) {
+  MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
+  if ((field && !field->value_get_int64()) || ainfo->m_alt->m_response_hdr.status_get() == HTTPStatus::NO_CONTENT) {
     f.allow_empty_doc = 1;
     // Set the object size here to zero in case this is a cache replace where the new object
     // length is zero but the old object was not.

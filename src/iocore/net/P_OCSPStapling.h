@@ -25,6 +25,11 @@
 
 void ssl_stapling_ex_init();
 bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const char *rsp_file);
-void ocsp_update();
+
+enum class OCSPStatus {
+  OCSP_OK,
+  OCSP_FETCHSM_NOT_INITIALIZED,
+};
+OCSPStatus ocsp_update();
 
 int ssl_callback_ocsp_stapling(SSL *, void *);

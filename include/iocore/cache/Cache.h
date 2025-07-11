@@ -72,26 +72,21 @@ struct CacheProcessor : public Processor {
   int dir_check(bool fix);
 
   Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                 const char *hostname = nullptr, int host_len = 0);
+                 std::string_view hostname = std::string_view{});
   Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                    const char *hostname = nullptr, int host_len = 0);
+                    std::string_view hostname = std::string_view{});
   Action *open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                     int expected_size = CACHE_EXPECTED_SIZE, int options = 0, time_t pin_in_cache = 0, char *hostname = nullptr,
-                     int host_len = 0);
+                     int expected_size = CACHE_EXPECTED_SIZE, int options = 0, time_t pin_in_cache = 0,
+                     std::string_view hostname = std::string_view{});
   Action *remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                 const char *hostname = nullptr, int host_len = 0);
-  Action *scan(Continuation *cont, char *hostname = nullptr, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
+                 std::string_view hostname = std::string_view{});
+  Action *scan(Continuation *cont, std::string_view hostname = std::string_view{}, int KB_per_second = SCAN_KB_PER_SECOND);
   Action *lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const HttpConfigAccessor *params,
-                    time_t pin_in_cache = 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, CacheHTTPHdr *request, CacheHTTPInfo *old_info,
-                     time_t pin_in_cache = 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+                    CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+  Action *open_write(Continuation *cont, const HttpCacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = 0,
+                     CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *link(Continuation *cont, CacheKey *from, CacheKey *to, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP,
-               char *hostname = nullptr, int host_len = 0);
-
-  Action *deref(Continuation *cont, CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, char *hostname = nullptr,
-                int host_len = 0);
 
   /** Mark physical disk/device/file as offline.
       All stripes for this device are disabled.
@@ -106,14 +101,14 @@ struct CacheProcessor : public Processor {
       If @a len is 0 then @a path is presumed null terminated.
       @return @c nullptr if the path does not match any defined storage.
    */
-  CacheDisk *find_by_path(const char *path, int len = 0);
+  CacheDisk *find_by_path(std::string_view path = std::string_view{});
 
   /** Check if there are any online storage devices.
       If this returns @c false then the cache should be disabled as there is no storage available.
   */
   bool has_online_storage() const;
 
-  static int IsCacheEnabled();
+  static CacheInitState IsCacheEnabled();
 
   static bool IsCacheReady(CacheFragType type);
 
@@ -142,14 +137,14 @@ struct CacheProcessor : public Processor {
     return wait_for_cache;
   }
 
-  static uint32_t cache_ready;
-  static int      initialized;
-  static int      start_done;
-  static bool     clear;
-  static bool     fix;
-  static bool     check;
-  static int      start_internal_flags;
-  static int      auto_clear_flag;
+  static uint32_t       cache_ready;
+  static CacheInitState initialized;
+  static int            start_done;
+  static bool           clear;
+  static bool           fix;
+  static bool           check;
+  static int            start_internal_flags;
+  static int            auto_clear_flag;
 
   ts::VersionNumber min_stripe_version;
   ts::VersionNumber max_stripe_version;

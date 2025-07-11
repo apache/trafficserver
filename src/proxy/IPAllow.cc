@@ -24,6 +24,8 @@
   limitations under the License.
  */
 
+#include <string_view>
+
 #include "proxy/IPAllow.h"
 #include "records/RecCore.h"
 #include "swoc/Errata.h"
@@ -59,16 +61,17 @@ bwformat(BufferWriter &w, Spec const & /* spec ATS_UNUSED */, IpAllow const *obj
 
 } // namespace swoc
 
-enum AclOp {
-  ACL_OP_ALLOW, ///< Allow access.
-  ACL_OP_DENY,  ///< Deny access.
+enum class AclOp {
+  ALLOW, ///< Allow access.
+  DENY,  ///< Deny access.
 };
 
 const IpAllow::Record IpAllow::ALLOW_ALL_RECORD(ALL_METHOD_MASK);
 const IpAllow::ACL    IpAllow::DENY_ALL_ACL;
 
-size_t IpAllow::configid       = 0;
-bool   IpAllow::accept_check_p = true; // initializing global flag for fast deny
+size_t  IpAllow::configid       = 0;
+bool    IpAllow::accept_check_p = true; // initializing global flag for fast deny
+uint8_t IpAllow::subjects[Subject::MAX_SUBJECTS];
 
 static ConfigUpdateHandler<IpAllow> *ipAllowUpdate;
 
@@ -172,7 +175,7 @@ IpAllow::match(swoc::IPAddr const &addr, match_key_t key)
 {
   self_type    *self   = acquire();
   Record const *record = nullptr;
-  if (SRC_ADDR == key) {
+  if (match_key_t::SRC_ADDR == key) {
     if (auto spot = self->_src_map.find(addr); spot != self->_src_map.end()) {
       auto r = std::get<1>(*spot);
       // Special case - if checking in accept is enabled and the record is a deny all,
@@ -202,7 +205,7 @@ IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_conf
   : ip_allow_config_file(ats_scoped_str(RecConfigReadConfigPath(ip_allow_config_var)).get())
 {
   int matching_policy = 0;
-  REC_ReadConfigInteger(matching_policy, "proxy.config.url_remap.acl_behavior_policy");
+  matching_policy     = RecGetRecordInt("proxy.config.url_remap.acl_behavior_policy").value_or(0);
   if (matching_policy == 0) {
     this->_is_legacy_action_policy = true;
   } else {
@@ -211,6 +214,31 @@ IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_conf
   std::string const path = RecConfigReadConfigPath(ip_categories_config_var);
   if (!path.empty()) {
     ip_categories_config_file = ats_scoped_str(path).get();
+  }
+
+  if (auto subjects_char{RecGetRecordStringAlloc("proxy.config.acl.subjects")}; subjects_char) {
+    std::string_view            subjects_sv{subjects_char.value()};
+    int                         i = 0;
+    std::string_view::size_type s, e;
+    for (s = 0, e = 0; s < subjects_sv.size() && e != subjects_sv.npos; s = e + 1) {
+      e                           = subjects_sv.find(",", s);
+      std::string_view subject_sv = subjects_sv.substr(s, e);
+      if (i >= MAX_SUBJECTS) {
+        Error("Too many ACL subjects were provided");
+      }
+      if (subject_sv == "PEER") {
+        subjects[i] = Subject::PEER;
+        ++i;
+      } else if (subject_sv == "PROXY") {
+        subjects[i] = Subject::PROXY;
+        ++i;
+      } else {
+        Dbg(dbg_ctl_ip_allow, "Unknown subject %.*s was ignored", static_cast<int>(subject_sv.length()), subject_sv.data());
+      }
+    }
+    if (i < Subject::MAX_SUBJECTS) {
+      subjects[i] = Subject::MAX_SUBJECTS;
+    }
   }
 }
 
@@ -385,7 +413,7 @@ IpAllow::YAMLLoadIPCategory(const YAML::Node &node, IpMap *map, IpAllow::Record 
 swoc::Errata
 IpAllow::YAMLLoadEntry(const YAML::Node &entry)
 {
-  AclOp      op = ACL_OP_DENY; // "shut up", I explained to the compiler.
+  AclOp      op = AclOp::DENY; // "shut up", I explained to the compiler.
   YAML::Node node;
   auto       record = _arena.make<Record>();
   IpMap     *map    = nullptr; // src or dst map.
@@ -423,9 +451,9 @@ IpAllow::YAMLLoadEntry(const YAML::Node &entry)
           value, entry.Mark());
       }
       if (value == YAML_VALUE_ACTION_ALLOW || value == YAML_VALUE_ACTION_ALLOW_OLD_NAME) {
-        op = ACL_OP_ALLOW;
+        op = AclOp::ALLOW;
       } else if (value == YAML_VALUE_ACTION_DENY || value == YAML_VALUE_ACTION_DENY_OLD_NAME) {
-        op = ACL_OP_DENY;
+        op = AclOp::DENY;
       } else {
         return swoc::Errata(ERRATA_ERROR, "{} {} - item ignored, value for tag '{}' must be '{}' or '{}'", this, node.Mark(),
                             YAML_TAG_ACTION, YAML_VALUE_ACTION_ALLOW, YAML_VALUE_ACTION_DENY);
@@ -500,7 +528,7 @@ IpAllow::YAMLLoadEntry(const YAML::Node &entry)
     record->_method_mask = ALL_METHOD_MASK;
   }
 
-  if (op == ACL_OP_DENY) {
+  if (op == AclOp::DENY) {
     record->_method_mask              = ALL_METHOD_MASK & ~record->_method_mask;
     record->_deny_nonstandard_methods = true;
   }

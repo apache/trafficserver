@@ -155,7 +155,7 @@ ts2.Disk.sni_yaml.AddLines([
 ])
 
 tr = Test.AddTestRun('Basic Curl Test')
-tr.Processes.Default.Command = 'curl -k --resolve example.com:{0}:127.0.0.1 https://example.com:{0}'.format(ts1.Variables.ssl_port)
+tr.MakeCurlCommand('-k --resolve example.com:{0}:127.0.0.1 https://example.com:{0}'.format(ts1.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts1)

@@ -127,9 +127,10 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   StrList acpt_charset_list(false);
 
   if (enable_customizations == 2) {
-    context->hdr_info.client_request.value_get_comma_list(MIME_FIELD_ACCEPT_LANGUAGE, MIME_LEN_ACCEPT_LANGUAGE,
+    context->hdr_info.client_request.value_get_comma_list(static_cast<std::string_view>(MIME_FIELD_ACCEPT_LANGUAGE),
                                                           &acpt_language_list);
-    context->hdr_info.client_request.value_get_comma_list(MIME_FIELD_ACCEPT_CHARSET, MIME_LEN_ACCEPT_CHARSET, &acpt_charset_list);
+    context->hdr_info.client_request.value_get_comma_list(static_cast<std::string_view>(MIME_FIELD_ACCEPT_CHARSET),
+                                                          &acpt_charset_list);
   }
   ///////////////////////////////////////////
   // check if we don't need to format body //
@@ -250,10 +251,7 @@ config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UN
 void
 HttpBodyFactory::reconfigure()
 {
-  RecInt    e;
-  RecString s = nullptr;
-  bool      all_found;
-  int       rec_err;
+  bool all_found;
 
   lock();
   sanity_check();
@@ -272,35 +270,35 @@ HttpBodyFactory::reconfigure()
   all_found = true;
 
   // enable_customizations if records.yaml set
-  rec_err               = RecGetRecordInt("proxy.config.body_factory.enable_customizations", &e);
-  enable_customizations = ((rec_err == REC_ERR_OKAY) ? e : 0);
-  all_found             = all_found && (rec_err == REC_ERR_OKAY);
-  Dbg(dbg_ctl_body_factory, "enable_customizations = %d (found = %" PRId64 ")", enable_customizations, e);
+  auto e{RecGetRecordInt("proxy.config.body_factory.enable_customizations")};
+  enable_customizations = (e.has_value() ? e.value() : 0);
+  all_found             = all_found && e.has_value();
+  Dbg(dbg_ctl_body_factory, "enable_customizations = %d (found = %d)", enable_customizations, e.has_value());
 
-  rec_err        = RecGetRecordInt("proxy.config.body_factory.enable_logging", &e);
-  enable_logging = ((rec_err == REC_ERR_OKAY) ? (e ? true : false) : false);
-  all_found      = all_found && (rec_err == REC_ERR_OKAY);
-  Dbg(dbg_ctl_body_factory, "enable_logging = %d (found = %" PRId64 ")", enable_logging, e);
+  e              = RecGetRecordInt("proxy.config.body_factory.enable_logging");
+  enable_logging = (e.has_value() ? (e.value() ? true : false) : false);
+  all_found      = all_found && e.has_value();
+  Dbg(dbg_ctl_body_factory, "enable_logging = %d (found = %d)", enable_logging, e.has_value());
 
   ats_scoped_str directory_of_template_sets;
 
-  rec_err   = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
-  all_found = all_found && (rec_err == REC_ERR_OKAY);
-  if (rec_err == REC_ERR_OKAY) {
-    directory_of_template_sets = Layout::get()->relative(s);
-    if (access(directory_of_template_sets, R_OK) < 0) {
-      Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));
-      if (TSSystemState::is_initializing()) {
-        Emergency(" Please set 'proxy.config.body_factory.template_sets_dir' ");
-      } else {
-        Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+  {
+    auto rec_str{RecGetRecordStringAlloc("proxy.config.body_factory.template_sets_dir")};
+    all_found = all_found && rec_str;
+    if (rec_str) {
+      directory_of_template_sets = Layout::get()->relative(rec_str ? rec_str.value() : std::string_view{nullptr, 0});
+      if (access(directory_of_template_sets, R_OK) < 0) {
+        Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));
+        if (TSSystemState::is_initializing()) {
+          Emergency(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+        } else {
+          Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+        }
       }
     }
   }
 
   Dbg(dbg_ctl_body_factory, "directory_of_template_sets = '%s' ", (const char *)directory_of_template_sets);
-
-  ats_free(s);
 
   if (!all_found) {
     Warning("config changed, but can't fetch all proxy.config.body_factory values");
@@ -350,7 +348,7 @@ HttpBodyFactory::HttpBodyFactory()
 
   no_registrations_failed = true;
   for (i = 0; config_record_names[i] != nullptr; i++) {
-    status = REC_RegisterConfigUpdateFunc(config_record_names[i], config_callback, (void *)this);
+    status = RecRegisterConfigUpdateCb(config_record_names[i], config_callback, (void *)this);
     if (status != REC_ERR_OKAY) {
       Warning("couldn't register variable '%s', is %s up to date?", config_record_names[i], ts::filename::RECORDS);
     }
@@ -655,7 +653,7 @@ HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **
     }
 
     if (auto it_page = body_set->table_of_pages->find(type); it_page != body_set->table_of_pages->end()) {
-      HttpBodyTemplate *t = it_page->second;
+      auto &t = it_page->second;
       if ((t == nullptr) || (!t->is_sane())) {
         return nullptr;
       }
@@ -664,7 +662,7 @@ HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **
       Dbg(dbg_ctl_body_factory, "find_template(%s,%s) -> (file %s, length %" PRId64 ", lang '%s', charset '%s')", set, type,
           t->template_pathname, t->byte_count, body_set->content_language, body_set->content_charset);
 
-      return t;
+      return t.get();
     }
   }
   Dbg(dbg_ctl_body_factory, "find_template(%s,%s) -> NULL", set, type);
@@ -717,8 +715,8 @@ HttpBodyFactory::nuke_template_tables()
         ///////////////////////////////////////////
         // loop over body-types->body hash table //
         ///////////////////////////////////////////
-        for (const auto &it_page : *body_set->table_of_pages.get()) {
-          delete it_page.second;
+        for (auto &it_page : *body_set->table_of_pages.get()) {
+          it_page.second.reset(nullptr);
         }
         body_set->table_of_pages.reset(nullptr);
       }
@@ -843,8 +841,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
       body_set->content_language, body_set->content_charset);
 
   while ((dirEntry = readdir(dir))) {
-    HttpBodyTemplate *tmpl;
-    size_t            d_len = strlen(dirEntry->d_name);
+    size_t d_len = strlen(dirEntry->d_name);
 
     ///////////////////////////////////////////////////////////////
     // all template files must have a file name of the form      //
@@ -873,12 +870,10 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
     // read in this template file //
     ////////////////////////////////
 
-    tmpl = new HttpBodyTemplate();
-    if (!tmpl->load_from_file(tmpl_dir, dirEntry->d_name)) {
-      delete tmpl;
-    } else {
-      Dbg(dbg_ctl_body_factory, "      %s -> %p", dirEntry->d_name, tmpl);
-      body_set->set_template_by_name(dirEntry->d_name, tmpl);
+    auto tmpl = std::make_unique<HttpBodyTemplate>();
+    if (tmpl->load_from_file(tmpl_dir, dirEntry->d_name)) {
+      Dbg(dbg_ctl_body_factory, "      %s -> %p", dirEntry->d_name, tmpl.get());
+      body_set->set_template_by_name(dirEntry->d_name, std::move(tmpl));
     }
   }
 
@@ -1038,23 +1033,23 @@ HttpBodySet::get_template_by_name(const char *name)
   }
 
   if (auto it = table_of_pages->find(name); it != table_of_pages->end()) {
-    HttpBodyTemplate *t = it->second;
+    auto &t = it->second;
     if ((t == nullptr) || (!t->is_sane())) {
       return nullptr;
     }
     Dbg(dbg_ctl_body_factory, "    get_template_by_name(%s) -> (file %s, length %" PRId64 ")", name, t->template_pathname,
         t->byte_count);
-    return t;
+    return t.get();
   }
   Dbg(dbg_ctl_body_factory, "    get_template_by_name(%s) -> NULL", name);
   return nullptr;
 }
 
 void
-HttpBodySet::set_template_by_name(const char *name, HttpBodyTemplate *t)
+HttpBodySet::set_template_by_name(const char *name, std::unique_ptr<HttpBodyTemplate> t)
 {
   if (name) {
-    table_of_pages->emplace(name, t);
+    table_of_pages->emplace(name, std::move(t));
   }
 }
 

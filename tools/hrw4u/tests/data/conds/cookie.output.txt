@@ -1,0 +1,7 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{COOKIE:bar} /bar/
+    set-cookie mybar "1"
+
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{COOKIE:bar} =""
+    set-cookie mybar "1"

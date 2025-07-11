@@ -20,6 +20,7 @@ from typing import Union
 
 Test.Summary = 'Verify ATS can function as a forward proxy'
 Test.ContinueOnFail = True
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 
 class ForwardProxyTest:
@@ -81,8 +82,8 @@ class ForwardProxyTest:
         tr = Test.AddTestRun()
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
-        tr.Processes.Default.Command = (
-            f'curl --proxy-insecure -v -H "uuid: 1" '
+        tr.MakeCurlCommand(
+            f'--proxy-insecure -v -H "uuid: 1" '
             f'--proxy "https://127.0.0.1:{self.ts.Variables.ssl_port}/" '
             f'http://example.com/')
         tr.Processes.Default.ReturnCode = 0

@@ -268,7 +268,7 @@ OperatorSetDestination::exec(const Resources &res) const
     // Determine which TSMBuffer and TSMLoc to use
     TSMBuffer bufp;
     TSMLoc    url_m_loc;
-    if (res._rri) {
+    if (res._rri && !res.changed_url) {
       bufp      = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
     } else {
@@ -343,6 +343,7 @@ OperatorSetDestination::exec(const Resources &res) const
         TSMLoc      new_url_loc;
         if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS && TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
+          const_cast<Resources &>(res).changed_url = true;
           Dbg(pi_dbg_ctl, "Set destination URL to %s", value.c_str());
         } else {
           Dbg(pi_dbg_ctl, "Failed to set URL %s", value.c_str());
@@ -355,6 +356,7 @@ OperatorSetDestination::exec(const Resources &res) const
         Dbg(pi_dbg_ctl, "Would set destination SCHEME to an empty value, skipping");
       } else {
         TSUrlSchemeSet(bufp, url_m_loc, value.c_str(), value.length());
+        const_cast<Resources &>(res).changed_url = true;
         Dbg(pi_dbg_ctl, "OperatorSetDestination::exec() invoked with SCHEME: %s", value.c_str());
       }
       break;
@@ -1194,6 +1196,69 @@ OperatorSetHttpCntl::exec(const Resources &res) const
 }
 
 void
+OperatorSetPluginCntl::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  const std::string &name  = p.get_arg();
+  const std::string &value = p.get_value();
+
+  if (name == "TIMEZONE") {
+    _name = PluginCtrl::TIMEZONE;
+    if (value == "LOCAL") {
+      _value = TIMEZONE_LOCAL;
+    } else if (value == "GMT") {
+      _value = TIMEZONE_GMT;
+    } else {
+      TSError("[%s] Unknown value for TIMZEONE control: %s", PLUGIN_NAME, value.c_str());
+    }
+  } else if (name == "INBOUND_IP_SOURCE") {
+    _name = PluginCtrl::INBOUND_IP_SOURCE;
+    if (value == "PEER") {
+      _value = IP_SRC_PEER;
+    } else if (value == "PROXY") {
+      _value = IP_SRC_PROXY;
+    } else {
+      TSError("[%s] Unknown value for INBOUND_IP_SOURCE control: %s", PLUGIN_NAME, value.c_str());
+    }
+  }
+}
+
+// This operator should be allowed everywhere
+void
+OperatorSetPluginCntl::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
+}
+
+bool
+OperatorSetPluginCntl::exec(const Resources &res) const
+{
+  PrivateSlotData private_data;
+  private_data.raw = reinterpret_cast<uint64_t>(TSUserArgGet(res.txnp, _txn_private_slot));
+
+  switch (_name) {
+  case PluginCtrl::TIMEZONE:
+    private_data.timezone = _value;
+    break;
+  case PluginCtrl::INBOUND_IP_SOURCE:
+    private_data.ip_source = _value;
+    break;
+  }
+
+  Dbg(pi_dbg_ctl, "   Setting plugin control %d to %d", static_cast<int>(_name), _value);
+  TSUserArgSet(res.txnp, _txn_private_slot, reinterpret_cast<void *>(private_data.raw));
+
+  return true;
+}
+
+void
 OperatorRunPlugin::initialize(Parser &p)
 {
   Operator::initialize(p);
@@ -1231,7 +1296,7 @@ OperatorRunPlugin::initialize(Parser &p)
   {
     uint32_t elevate_access = 0;
 
-    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    elevate_access = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     _plugin = plugin_factory.getRemapPlugin(swoc::file::path(plugin_name), argc, const_cast<char **>(argv), error,
