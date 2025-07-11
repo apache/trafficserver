@@ -60,7 +60,8 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
     tr.MakeCurlCommand(
         '--max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k https://www.example.com:{0}/chat'
-        .format(ts.Variables.ssl_port))
+        .format(ts.Variables.ssl_port),
+        ts=ts)
     tr.Processes.Default.ReturnCode = 28
     tr.Processes.Default.Streams.stderr = "gold/remap-ws-upgrade.gold"
     tr.StillRunningAfter = server

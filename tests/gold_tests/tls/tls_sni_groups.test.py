@@ -70,7 +70,8 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
     "-v --ciphers ECDHE-RSA-AES256-GCM-SHA384 --resolve 'bbb.com:{0}:127.0.0.1' -k  https://bbb.com:{0}".format(
-        ts.Variables.ssl_port))
+        ts.Variables.ssl_port),
+    ts=ts)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
@@ -81,7 +82,8 @@ tr.Processes.Default.Streams.all = Testers.IncludesExpression(
 tr = Test.AddTestRun("Test 1: fail")
 tr.MakeCurlCommand(
     "-v --ciphers ECDHE-RSA-AES256-GCM-SHA384 --resolve 'ccc.com:{0}:127.0.0.1' -k  https://ccc.com:{0}".format(
-        ts.Variables.ssl_port))
+        ts.Variables.ssl_port),
+    ts=ts)
 # The error code is 35, which indicates there was a ssl connection error
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
@@ -94,7 +96,8 @@ if Condition.HasOpenSSLVersion("3.5.0"):
     tr = Test.AddTestRun("Test 2: X25519MLKEM768")
     tr.MakeCurlCommand(
         "-v --tls13-ciphers TLS_AES_256_GCM_SHA384 --resolve 'aaa.com:{0}:127.0.0.1' -k  https://aaa.com:{0}".format(
-            ts.Variables.ssl_port))
+            ts.Variables.ssl_port),
+        ts=ts)
     tr.ReturnCode = 0
     tr.StillRunningAfter = ts
     ts.Disk.traffic_out.Content += Testers.ContainsExpression(

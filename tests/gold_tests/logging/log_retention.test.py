@@ -65,7 +65,7 @@ class TestLogRetention:
         the caller doesn't have to.
         """
         tr = Test.AddTestRun("Initialize processes for ts{}".format(TestLogRetention.__ts_counter - 1))
-        tr.MakeCurlCommand(self.get_curl_command())
+        tr.MakeCurlCommand(self.get_curl_command(), ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         if not TestLogRetention.__server_is_started:
             self.server.StartBefore(self.ts)
@@ -189,7 +189,7 @@ test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"The rolled logfile.*test_deletion.log_{specified_hostname}.*was auto-deleted.*bytes were reclaimed",
     "Verify that space was reclaimed")
 
-test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once())
+test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once(), ts=test.ts)
 test.tr.Processes.Default.ReturnCode = 0
 
 test.tr.StillRunningAfter = test.ts
@@ -231,7 +231,7 @@ test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"The rolled logfile.*test_deletion.log_{specified_hostname}.*was auto-deleted.*bytes were reclaimed",
     "Verify that space was reclaimed")
 
-test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once())
+test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once(), ts=test.ts)
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -258,7 +258,7 @@ test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
 test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "The rolled logfile.*test_log_interface.log_.*was auto-deleted.*bytes were reclaimed", "Verify that space was reclaimed")
 
-test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once())
+test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once(), ts=test.ts)
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -319,7 +319,7 @@ test.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"The rolled logfile.*test_high_priority_deletion.log_{hostname}.*was auto-deleted.*bytes were reclaimed",
     "Verify that space was reclaimed from test_high_priority_deletion")
 
-test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once())
+test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once(), ts=test.ts)
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -351,7 +351,7 @@ test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
 
 # This test doesn't require a log rotation. We just verify that the logs communicate
 # the appropriate min_count values above.
-test.tr.MakeCurlCommand(test.get_curl_command())
+test.tr.MakeCurlCommand(test.get_curl_command(), ts=test.ts)
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -398,7 +398,7 @@ test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
 test.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
     "The rolled logfile.*test_deletion.log_.*was auto-deleted.*bytes were reclaimed", "Verify that space was reclaimed")
 
-test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once())
+test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once(), ts=test.ts)
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -435,7 +435,7 @@ logging:
 test.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "rolled logfile.*test_deletion.log.*old.* was auto-deleted", "Verify test_deletion.log was trimmed")
 
-test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_thrice())
+test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_thrice(), ts=test.ts)
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
@@ -488,7 +488,7 @@ tr.StillRunningAfter = test.ts
 tr.StillRunningAfter = test.server
 
 tr = Test.AddTestRun("Get the log to rotate.")
-test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once())
+test.tr.MakeCurlCommandMulti(test.get_command_to_rotate_once(), ts=test.ts)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = test.ts
 tr.StillRunningAfter = test.server
