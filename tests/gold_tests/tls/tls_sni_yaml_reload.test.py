@@ -113,8 +113,8 @@ tr3.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
 tr3.MakeCurlCommand(
-    f"-q --tls-max 1.2 -s -v -k  --cert ./signed-bar.pem --key ./signed-bar.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}"
-)
+    f"-q --tls-max 1.2 -s -v -k  --cert ./signed-bar.pem --key ./signed-bar.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}",
+    ts=ts)
 tr3.Processes.Default.ReturnCode = 0
 # since the 2nd config with http2 turned on should have failed and used the prior config, verify http2 was not used
 tr3.Processes.Default.Streams.stderr = Testers.ExcludesExpression("GET / HTTP/2", "Confirm that HTTP2 is still not used")
