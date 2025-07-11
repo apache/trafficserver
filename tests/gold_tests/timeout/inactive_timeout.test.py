@@ -51,11 +51,11 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
 
 if not Condition.CurlUsingUnixDomainSocket():
     tr2 = Test.AddTestRun("tr")
-    tr2.MakeCurlCommand('-k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
+    tr2.MakeCurlCommand('-k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
     tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression(
         "Inactivity Timeout", "Request should fail with inactivity timeout")
 
     tr3 = Test.AddTestRun("tr")
-    tr3.MakeCurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
+    tr3.MakeCurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
     tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression(
         "Inactivity Timeout", "Request should fail with inactivity timeout")

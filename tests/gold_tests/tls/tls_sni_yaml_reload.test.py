@@ -67,8 +67,8 @@ tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    f"-q --tls-max 1.2 -s -v -k  --cert ./signed-foo.pem --key ./signed-foo.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}"
-)
+    f"-q --tls-max 1.2 -s -v -k  --cert ./signed-foo.pem --key ./signed-foo.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}",
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Verify curl could successfully connect")
 tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", f"Verify curl used the {sni_domain} SNI")

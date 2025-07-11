@@ -85,7 +85,8 @@ class ForwardProxyTest:
         tr.MakeCurlCommand(
             f'--proxy-insecure -v -H "uuid: 1" '
             f'--proxy "https://127.0.0.1:{self.ts.Variables.ssl_port}/" '
-            f'http://example.com/')
+            f'http://example.com/',
+            ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.server
         tr.StillRunningAfter = self.ts

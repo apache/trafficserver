@@ -53,15 +53,15 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Activity Timeo
 
 if not Condition.CurlUsingUnixDomainSocket():
     tr2 = Test.AddTestRun("tr")
-    tr2.MakeCurlCommand('-k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
+    tr2.MakeCurlCommand('-k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
     tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Activity Timeout", "Request should fail with active timeout")
 
     tr3 = Test.AddTestRun("tr")
-    tr3.MakeCurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port))
+    tr3.MakeCurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
     tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Activity Timeout", "Request should fail with active timeout")
 
     if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
         tr4 = Test.AddTestRun("tr")
-        tr4.MakeCurlCommand('-k -i --http3 https://localhost:{0}/file'.format(ts.Variables.ssl_port))
+        tr4.MakeCurlCommand('-k -i --http3 https://localhost:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
         tr4.Processes.Default.Streams.stdout = Testers.ContainsExpression(
             "Activity Timeout", "Request should fail with active timeout")
