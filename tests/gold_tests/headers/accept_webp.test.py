@@ -61,7 +61,8 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
     '-s -D - -v --ipv4 --http1.1 -H "Accept: image/webp,image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5" -H "Host: www.example.com" http://localhost:{0}/'
-    .format(ts.Variables.port))
+    .format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/accept_webp.gold"
 tr.StillRunningAfter = ts
@@ -70,7 +71,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - -v --ipv4 --http1.1 -H "Accept: image/webp,image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5" -H "Host: www.example.com" http://localhost:{0}/'
-    .format(ts.Variables.port))
+    .format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/accept_webp_cache.gold"
 tr.StillRunningAfter = ts
@@ -79,7 +81,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-s -D - -v --ipv4 --http1.1 -H "Accept: image/png,image/svg+xml,image/*;q=0.8,video/*;q=0.8,*/*;q=0.5" -H "Host: www.example.com" http://localhost:{0}/'
-    .format(ts.Variables.port))
+    .format(ts.Variables.port),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/accept_webp_jpeg.gold"
 tr.StillRunningAfter = ts
