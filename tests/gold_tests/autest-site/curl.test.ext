@@ -30,7 +30,7 @@ Tools to help with TestRun commands
 #
 
 
-def spawn_curl_commands(self, cmdstr, count, retcode=0, use_default=True, ts):
+def spawn_curl_commands(self, cmdstr, count, retcode=0, use_default=True, ts=None):
     ret = []
 
     if self.Variables.get("CurlUds", False):
@@ -48,7 +48,7 @@ def spawn_curl_commands(self, cmdstr, count, retcode=0, use_default=True, ts):
     return ret
 
 
-def curl_command(self, cmd, ts, p=None):
+def curl_command(self, cmd, ts=None, p=None):
     if p == None:
         p = self.Processes.Default
     if self.Variables.get("CurlUds", False):
@@ -58,7 +58,7 @@ def curl_command(self, cmd, ts, p=None):
     return p
 
 
-def curl_multiple_commands(self, cmd, ts):
+def curl_multiple_commands(self, cmd, ts=None):
     p = self.Processes.Default
     if self.Variables.get("CurlUds", False):
         p.Command = cmd.format(curl=f'curl --unix-socket {ts.Variables.uds_path}', curl_base='curl')
