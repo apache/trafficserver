@@ -79,7 +79,7 @@ random_test()
   const uint8_t *src     = (const uint8_t *)string;
   uint32_t       src_len = sizeof(string);
 
-  int bytes = huffman_decode(dst_start, src, src_len);
+  int bytes = huffman_decode(dst_start, size * 2, src, src_len);
 
   // cout << "bytes: " << bytes << endl;
   for (int i = 0; i < bytes; i++) {
@@ -104,8 +104,9 @@ union Value {
 
 TEST_CASE("values_test", "[proxy][huffman]")
 {
-  char dst_start[4];
-  int  size = sizeof(test_values) / 4;
+  constexpr uint32_t dst_len = 4;
+  char               dst_start[dst_len];
+  int                size = sizeof(test_values) / 4;
   for (int i = 0; i < size; i += 2) {
     const uint32_t value = test_values[i];
     const uint32_t bits  = test_values[i + 1];
@@ -142,7 +143,7 @@ TEST_CASE("values_test", "[proxy][huffman]")
     encoded_mapped.y[2] = encoded.y[1];
     encoded_mapped.y[3] = encoded.y[0];
 
-    int  bytes       = huffman_decode(dst_start, encoded_mapped.y, encoded_size);
+    int  bytes       = huffman_decode(dst_start, dst_len, encoded_mapped.y, encoded_size);
     char ascii_value = i / 2;
 
     // EOS is treated as invalid so check for an error
@@ -176,7 +177,7 @@ TEST_CASE("encode_test", "[proxy][huffman]")
 {
   for (const auto &i : huffman_encode_test_data) {
     uint8_t *dst         = static_cast<uint8_t *>(malloc(i.expect_len));
-    int64_t  encoded_len = huffman_encode(dst, i.src, i.src_len);
+    int64_t  encoded_len = huffman_encode(dst, i.expect_len, i.src, i.src_len);
 
     REQUIRE(encoded_len == i.expect_len);
     REQUIRE(memcmp(i.expect, dst, encoded_len) == 0);
@@ -201,7 +202,7 @@ TEST_CASE("decode_errors", "[proxy][huffman]")
   for (unsigned int i = 0; i < sizeof(test_cases) / sizeof(test_cases[0]); i++) {
     int   dst_len = 2 * test_cases[i].input_len;
     char *dst     = (char *)malloc(dst_len);
-    int   len     = huffman_decode(dst, (uint8_t *)test_cases[i].input, test_cases[i].input_len);
+    int   len     = huffman_decode(dst, dst_len, (uint8_t *)test_cases[i].input, test_cases[i].input_len);
     REQUIRE(len == -1);
     free(dst);
   }

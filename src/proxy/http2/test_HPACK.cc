@@ -413,11 +413,7 @@ main(int argc, const char **argv)
   url_init();
   mime_init();
   http_init();
-  hpack_huffman_init();
-
   prepare();
   int status = RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
-
-  hpack_huffman_fin();
   return status;
 }

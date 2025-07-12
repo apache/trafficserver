@@ -111,3 +111,10 @@ https://fossies.org/linux/systemtap/includes/sys/sdt.h
 
 tools/ebpf/trylock-stats is try lock version of lockstat-solution.py of goldshtn/linux-tracing-workshop
 Copyright (c) 2017 Sasha Goldshtein (MIT License)
+
+~~
+
+LS-HPACK provides functionality to encode and decode HTTP headers using
+HPACK compression mechanism specified in RFC 7541.
+Copyright (c) 2018 - 2023 LiteSpeed Technologies Inc, (MIT License)
+https://github.com/litespeedtech/ls-hpack.git
