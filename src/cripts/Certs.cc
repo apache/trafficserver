@@ -190,7 +190,7 @@ CertBase::SAN::SANBase::_load() const
   auto bio = BIO_new(BIO_s_mem());
 
   if (bio) {
-    for (int i = 0; i < sk_GENERAL_NAME_num(san_names); ++i) {
+    for (int i = 0; i < static_cast<int>(sk_GENERAL_NAME_num(san_names)); ++i) {
       const GENERAL_NAME *name = sk_GENERAL_NAME_value(san_names, i);
 
       if (static_cast<cripts::Certs::SAN>(name->type) == _san_id) {
