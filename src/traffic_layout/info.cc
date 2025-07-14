@@ -32,13 +32,8 @@
 #include "info.h"
 #include "iocore/eventsystem/RecProcess.h"
 
-#if __has_include("pcre/pcre.h")
-#include <pcre/pcre.h>
-#elif __has_include("pcre.h")
-#include <pcre.h>
-#else
-#error "Unable to locate PCRE heeader"
-#endif
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #if TS_USE_HWLOC
 #include <hwloc.h>
@@ -189,7 +184,7 @@ produce_versions(bool json)
   print_var("libz", LBW().print("{}", ZLIB_VERSION).view(), json);
   print_var("openssl", LBW().print("{:#x}", OPENSSL_VERSION_NUMBER).view(), json);
   print_var("openssl_str", LBW().print(OPENSSL_VERSION_TEXT).view(), json);
-  print_var("pcre", LBW().print("{}.{}", PCRE_MAJOR, PCRE_MINOR).view(), json);
+  print_var("pcre2", LBW().print("{}.{}", PCRE2_MAJOR, PCRE2_MINOR).view(), json);
   // These are optional, for now at least.
 #if TS_USE_HWLOC
   print_var("hwloc", LBW().print("{:#x}", HWLOC_API_VERSION).view(), json);
