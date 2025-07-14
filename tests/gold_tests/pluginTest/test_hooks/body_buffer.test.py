@@ -17,8 +17,6 @@ Verify HTTP body buffering.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
 Test.SkipUnless(Condition.PluginExists('request_buffer.so'))
 
 
@@ -109,6 +107,7 @@ class BodyBufferTest:
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'request_buffer',
+                'proxy.config.http.server_ports': str(self._ts.Variables.port) + f" {self._ts.Variables.uds_path}",
             })
 
         self._ts.Disk.traffic_out.Content = Testers.ContainsExpression(
@@ -123,8 +122,8 @@ class BodyBufferTest:
         # Send both a Content-Length request and a chunked-encoded request.
         tr.MakeCurlCommand(
             f'-v http://127.0.0.1:{self._ts.Variables.port}/contentlength -d "{self.content_length_request_body}" --next '
-            f'-v http://127.0.0.1:{self._ts.Variables.port}/chunked -H "Transfer-Encoding: chunked" -d "{self.chunked_request_body}"'
-        )
+            f'-v http://127.0.0.1:{self._ts.Variables.port}/chunked -H "Transfer-Encoding: chunked" -d "{self.chunked_request_body}"',
+            ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(Test.Processes.ts)

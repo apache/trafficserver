@@ -22,6 +22,7 @@ Test.Summary = '''
 Test custom log file format
 '''
 
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 # this test depends on Linux specific behavior regarding loopback addresses
 Test.SkipUnless(Condition.IsPlatform("linux"))
 

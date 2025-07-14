@@ -64,6 +64,18 @@
       }
     },
     {
+      "name": "autest-uds",
+      "inherits": ["default"],
+      "binaryDir": "${sourceDir}/build-autest",
+      "cacheVariables": {
+        "ENABLE_AUTEST": "ON",
+        "ENABLE_AUTEST_UDS": "ON",
+        "CMAKE_INSTALL_PREFIX": "/tmp/ts-autest",
+        "BUILD_EXPERIMENTAL_PLUGINS": "ON",
+        "ENABLE_EXAMPLE": "ON"
+      }
+    },
+    {
       "name": "dev",
       "displayName": "development",
       "description": "Development Presets",
