@@ -53,7 +53,8 @@ objectid = uuid.uuid4()
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
-        ts.Variables.port, objectid))
+        ts.Variables.port, objectid),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.All = "gold/miss_default-1.gold"
@@ -62,7 +63,8 @@ tr.Processes.Default.Streams.All = "gold/miss_default-1.gold"
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/generation1/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'
-    .format(ts.Variables.port, objectid))
+    .format(ts.Variables.port, objectid),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/miss_gen1.gold"
 
@@ -70,7 +72,8 @@ tr.Processes.Default.Streams.All = "gold/miss_gen1.gold"
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/generation2/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'
-    .format(ts.Variables.port, objectid))
+    .format(ts.Variables.port, objectid),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/miss_gen2.gold"
 
@@ -78,7 +81,8 @@ tr.Processes.Default.Streams.All = "gold/miss_gen2.gold"
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'
-    .format(ts.Variables.port, objectid))
+    .format(ts.Variables.port, objectid),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_default-1.gold"
 
@@ -86,7 +90,8 @@ tr.Processes.Default.Streams.All = "gold/hit_default-1.gold"
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/generation1/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'
-    .format(ts.Variables.port, objectid))
+    .format(ts.Variables.port, objectid),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_gen1.gold"
 
@@ -94,6 +99,7 @@ tr.Processes.Default.Streams.All = "gold/hit_gen1.gold"
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '"http://127.0.0.1:{0}/generation2/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'
-    .format(ts.Variables.port, objectid))
+    .format(ts.Variables.port, objectid),
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_gen2.gold"

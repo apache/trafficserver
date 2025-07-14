@@ -18,6 +18,7 @@ Verify the behavior of proxy.config.http.per_server.connection.max.
 #  limitations under the License.
 
 Test.Summary = __doc__
+import os
 
 
 class PerServerConnectionMaxTest:
@@ -114,7 +115,7 @@ class ConnectMethodTest:
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb|conn_track',
-                'proxy.config.http.server_ports': f"{self._ts.Variables.port}",
+                'proxy.config.http.server_ports': f"{self._ts.Variables.port} {self._ts.Variables.uds_path}",
                 'proxy.config.http.connect_ports': f"{self._server.Variables.Port}",
                 'proxy.config.http.per_server.connection.metric_enabled': 1,
                 'proxy.config.http.per_server.connection.max': max_conn,
@@ -128,7 +129,7 @@ class ConnectMethodTest:
         """Configure a client to perform a CONNECT request with a slow response from the server."""
         p = tr.Processes.Process(f'slow_client_{ConnectMethodTest._client_counter}')
         ConnectMethodTest._client_counter += 1
-        tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'", p=p)
+        tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'", p=p, ts=self._ts)
         return p
 
     def _test_metrics(self, blocked) -> None:
@@ -164,7 +165,8 @@ class ConnectMethodTest:
         # response.
         tr.MakeCurlCommandMulti(
             f"sleep 1; {{curl}} -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'"
-            f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'")
+            f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'",
+            ts=self._ts)
         # Curl will have a 22 exit code if it receives a 5XX response (and we
         # expect a 503).
         tr.Processes.Default.ReturnCode = 22 if blocked else 0

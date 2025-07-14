@@ -20,7 +20,7 @@ Test the hsts response header.
 Test.Summary = '''
 heck hsts header is set correctly
 '''
-
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 Test.ContinueOnFail = True
 
 # Define default ATS

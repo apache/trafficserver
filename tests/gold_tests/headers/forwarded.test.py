@@ -22,6 +22,7 @@ import os
 Test.Summary = '''
 Test FORWARDED header.
 '''
+Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 Test.SkipUnless(
     Condition.HasCurlFeature('http2'),
