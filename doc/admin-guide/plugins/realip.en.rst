@@ -28,7 +28,7 @@ Description
 The `realip` plugin reads an IP address from a specified data source such as HTTP header field, and make it available for ATS and
 its plugins as the verified client address.
 
-To use the verified client IP address for ACL, :ref:`proxy.config.acl.subjects` needs to be set to `PLUGIN`.
+To use the verified client IP address for ACL, :ts:cv:`proxy.config.acl.subjects` needs to be set to `PLUGIN`.
 Similary, if you want to use the IP address on header_rewrite plugin, its `INBOUND_IP_SOURCE` needs to be set to `PLUGIN`.
 
 
