@@ -20,6 +20,7 @@
 #include "realip.h"
 #include "address_source.h"
 #include "simple.h"
+#include "pp.h"
 
 AddressSource *
 AddressSourceBuilder::build(YAML::Node config)
@@ -38,6 +39,8 @@ AddressSourceBuilder::build(YAML::Node config)
     source_name = it->first.as<std::string>();
     if (source_name == "simple") {
       source = new SimpleAddressSource(it->second);
+    } else if (source_name == "proxyProtocol") {
+      source = new ProxyProtocolAddressSource(it->second);
     } else {
       Dbg(dbg_ctl, "Unsupported source: %s", source_name.c_str());
     }
