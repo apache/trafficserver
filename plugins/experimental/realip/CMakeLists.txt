@@ -17,7 +17,7 @@
 
 project(rate_limit)
 
-add_atsplugin(realip realip.cc address_setter.cc address_source.cc simple.cc)
+add_atsplugin(realip realip.cc address_setter.cc address_source.cc simple.cc pp.cc)
 
 target_link_libraries(realip PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp)
 verify_global_plugin(realip)

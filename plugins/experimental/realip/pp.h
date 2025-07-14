@@ -17,6 +17,9 @@
  */
 #pragma once
 
+#include <yaml-cpp/yaml.h>
+
+#include "ts/ts.h"
 #include "address_source.h"
 
 class ProxyProtocolAddressSource : public AddressSource
