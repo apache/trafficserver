@@ -39,7 +39,7 @@ This function enables plugins to provide a reliable client IP address for |TS| a
 This is useful if there is a proxy in front of |TS| and it forwards client's IP address by HTTP header field, PROXY protocol, etc.
 Plugins that call this function are expected to check the validity of the IP address.
 
-The provided address will be used for remap ACL if :ref:`proxy.config.acl.subjects` is set to `PLUGIN`.
+The provided address will be used for remap ACL if :ts:cv:`proxy.config.acl.subjects` is set to `PLUGIN`.
 Plugins can get the provided address by calling the getter function bewlow if those need client's real IP address.
 
 
