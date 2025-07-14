@@ -19,7 +19,7 @@
 .. default-domain:: cpp
 
 TSHttpTxnVerifiedAddrSet
-*********************
+************************
 
 Sets a client IP address verified by a plugin.
 
@@ -44,7 +44,7 @@ Plugins can get the provided address by calling the getter function bewlow if th
 
 
 TSHttpTxnVerifiedAddrGet
-*********************
+************************
 
 Gets the client IP address verified by a plugin.
 
