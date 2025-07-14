@@ -21,4 +21,5 @@ add_atsplugin(realip realip.cc address_setter.cc address_source.cc simple.cc)
 
 target_link_libraries(realip PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp)
 verify_global_plugin(realip)
-verify_remap_plugin(realip)
+# Only works as a global plugin at this time
+#verify_remap_plugin(realip)
