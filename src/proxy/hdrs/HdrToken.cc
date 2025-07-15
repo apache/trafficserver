@@ -311,6 +311,88 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+<<<<<<< HEAD
+||||||| parent of b1f300cf9 (Remove Brotli and ZSTD constants from MIME.h and update related tests for compression encoding)
+// WARNING:  Indexes into this array are stored on disk for cached objects.  New strings must be added at the end of the array to
+// avoid changing the indexes of pre-existing entries, unless the cache format version number is increased.
+//
+static const char *_hdrtoken_commonly_tokenized_strs[] = {
+  // MIME Field names
+  "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
+  "Approved", // NNTP
+  "Authorization",
+  "Bytes", // NNTP
+  "Cache-Control", "Client-ip", "Connection", "Content-Base", "Content-Encoding", "Content-Language", "Content-Length",
+  "Content-Location", "Content-MD5", "Content-Range", "Content-Type",
+  "Control", // NNTP
+  "Cookie", "Date",
+  "Distribution", // NNTP
+  "Etag", "Expect", "Expires",
+  "Followup-To", // NNTP
+  "From", "Host", "If-Match", "If-Modified-Since", "If-None-Match", "If-Range", "If-Unmodified-Since", "Keep-Alive",
+  "Keywords", // NNTP
+  "Last-Modified",
+  "Lines", // NNTP
+  "Location", "Max-Forwards",
+  "Message-ID", // NNTP
+  "MIME-Version",
+  "Newsgroups",   // NNTP
+  "Organization", // NNTP
+  "Path",         // NNTP
+  "Pragma", "Proxy-Authenticate", "Proxy-Authorization", "Proxy-Connection", "Public", "Range",
+  "References", // NNTP
+  "Referer",
+  "Reply-To", // NNTP
+  "Retry-After",
+  "Sender", // NNTP
+  "Server", "Set-Cookie",
+  "Subject", // NNTP
+  "Summary", // NNTP
+  "Transfer-Encoding", "Upgrade", "User-Agent", "Vary", "Via", "Warning", "Www-Authenticate",
+  "Xref",          // NNTP
+  "@Ats-Internal", // Internal Hack
+
+  // Accept-Encoding
+  "compress", "deflate", "gzip", "identity",
+
+  // Cache-Control flags
+  "max-age", "max-stale", "min-fresh", "must-revalidate", "no-cache", "no-store", "no-transform", "only-if-cached", "private",
+  "proxy-revalidate", "s-maxage", "need-revalidate-once",
+
+  // HTTP miscellaneous
+  "none", "chunked", "close",
+
+  // WS
+  "websocket", "Sec-WebSocket-Key", "Sec-WebSocket-Version",
+
+  // HTTP/2 cleartext
+  MIME_UPGRADE_H2C_TOKEN, "HTTP2-Settings",
+
+  // URL schemes
+  "file", "ftp", "gopher", "https", "http", "mailto", "news", "nntp", "prospero", "telnet", "tunnel", "wais", "pnm", "rtspu",
+  "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
+
+  // HTTP methods
+  "CONNECT", "DELETE", "GET", "POST", "HEAD", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
+
+  // Header extensions
+  "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",
+
+  // RFC-2739
+  "Forwarded",
+
+  // RFC-8470
+  "Early-Data",
+
+  // RFC-7932
+  "br",
+
+  // RFC-8878
+  "zstd"};
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 void
 hdrtoken_hash_init()
 {
