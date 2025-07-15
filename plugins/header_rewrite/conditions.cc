@@ -1063,6 +1063,17 @@ ConditionInbound::initialize(Parser &p)
     match->set(p.get_arg(), mods());
     _matcher = std::move(match);
   }
+
+#if TS_HAS_CRIPTS
+  if (_net_qual >= NET_QUAL_CERT_PEM && _net_qual <= NET_QUAL_CERT_SAN_URI) {
+    if (_mtls_cert) {
+      require_resources(RSRC_MTLS_CERTIFICATE);
+    } else {
+      require_resources(RSRC_SERVER_CERTIFICATE);
+    }
+    require_resources(RSRC_CLIENT_CONNECTION);
+  }
+#endif
 }
 
 void
@@ -1092,6 +1103,68 @@ ConditionInbound::set_qualifier(const std::string &q)
     _net_qual = NET_QUAL_IP_FAMILY;
   } else if (q == "STACK") {
     _net_qual = NET_QUAL_STACK;
+#if TS_HAS_CRIPTS
+  } else if (q == "SERVER-CERT:PEM") {
+    _net_qual = NET_QUAL_CERT_PEM;
+  } else if (q == "SERVER-CERT:SIG") {
+    _net_qual = NET_QUAL_CERT_SIG;
+  } else if (q == "SERVER-CERT:SUBJECT") {
+    _net_qual = NET_QUAL_CERT_SUBJECT;
+  } else if (q == "SERVER-CERT:ISSUER") {
+    _net_qual = NET_QUAL_CERT_ISSUER;
+  } else if (q == "SERVER-CERT:SERIAL") {
+    _net_qual = NET_QUAL_CERT_SERIAL;
+  } else if (q == "SERVER-CERT:NOT_BEFORE") {
+    _net_qual = NET_QUAL_CERT_NOT_BEFORE;
+  } else if (q == "SERVER-CERT:NOT_AFTER") {
+    _net_qual = NET_QUAL_CERT_NOT_AFTER;
+  } else if (q == "SERVER-CERT:VERSION") {
+    _net_qual = NET_QUAL_CERT_VERSION;
+  } else if (q == "SERVER-CERT:SAN:DNS") {
+    _net_qual = NET_QUAL_CERT_SAN_DNS;
+  } else if (q == "SERVER-CERT:SAN:IP") {
+    _net_qual = NET_QUAL_CERT_SAN_IP;
+  } else if (q == "SERVER-CERT:SAN:EMAIL") {
+    _net_qual = NET_QUAL_CERT_SAN_EMAIL;
+  } else if (q == "SERVER-CERT:SAN:URI") {
+    _net_qual = NET_QUAL_CERT_SAN_URI;
+  } else if (q == "CLIENT-CERT:PEM") {
+    _net_qual  = NET_QUAL_CERT_PEM;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SIG") {
+    _net_qual  = NET_QUAL_CERT_SIG;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SUBJECT") {
+    _net_qual  = NET_QUAL_CERT_SUBJECT;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:ISSUER") {
+    _net_qual  = NET_QUAL_CERT_ISSUER;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SERIAL") {
+    _net_qual  = NET_QUAL_CERT_SERIAL;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:NOT_BEFORE") {
+    _net_qual  = NET_QUAL_CERT_NOT_BEFORE;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:NOT_AFTER") {
+    _net_qual  = NET_QUAL_CERT_NOT_AFTER;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:VERSION") {
+    _net_qual  = NET_QUAL_CERT_VERSION;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SAN:DNS") {
+    _net_qual  = NET_QUAL_CERT_SAN_DNS;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SAN:IP") {
+    _net_qual  = NET_QUAL_CERT_SAN_IP;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SAN:EMAIL") {
+    _net_qual  = NET_QUAL_CERT_SAN_EMAIL;
+    _mtls_cert = true;
+  } else if (q == "CLIENT-CERT:SAN:URI") {
+    _net_qual  = NET_QUAL_CERT_SAN_URI;
+    _mtls_cert = true;
+#endif
   } else {
     TSError("[%s] Unknown %s() qualifier: %s", PLUGIN_NAME, TAG, q.c_str());
   }
@@ -1146,6 +1219,22 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
   const char *zret = nullptr;
   char        text[INET6_ADDRSTRLEN];
 
+#if TS_HAS_CRIPTS
+  detail::CertBase *cert = nullptr;
+
+  if (_net_qual >= NET_QUAL_CERT_PEM && _net_qual <= NET_QUAL_CERT_SAN_URI) {
+    if (_mtls_cert) {
+      cert = static_cast<detail::CertBase *>(res.mtls_cert);
+    } else {
+      cert = static_cast<detail::CertBase *>(res.server_cert);
+    }
+
+    if (!cert) {
+      return;
+    }
+  }
+#endif
+
   switch (qual) {
   case NET_QUAL_LOCAL_ADDR: {
     zret = getIP(TSHttpTxnIncomingAddrGet(res.state.txnp), text);
@@ -1194,6 +1283,44 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
       s += tags[i];
     }
   } break;
+#if TS_HAS_CRIPTS
+  case NET_QUAL_CERT_PEM:
+    s += cert->certificate;
+    break;
+  case NET_QUAL_CERT_SIG:
+    s += cert->signature;
+    break;
+  case NET_QUAL_CERT_SUBJECT:
+    s += cert->subject;
+    break;
+  case NET_QUAL_CERT_ISSUER:
+    s += cert->issuer;
+    break;
+  case NET_QUAL_CERT_SERIAL:
+    s += cert->serialNumber;
+    break;
+  case NET_QUAL_CERT_NOT_BEFORE:
+    s += cert->notBefore;
+    break;
+  case NET_QUAL_CERT_NOT_AFTER:
+    s += cert->notAfter;
+    break;
+  case NET_QUAL_CERT_VERSION:
+    s += cert->version;
+    break;
+  case NET_QUAL_CERT_SAN_DNS:
+    s += cert->san.dns.Join(";");
+    break;
+  case NET_QUAL_CERT_SAN_IP:
+    s += cert->san.ipadd.Join(";");
+    break;
+  case NET_QUAL_CERT_SAN_EMAIL:
+    s += cert->san.email.Join(";");
+    break;
+  case NET_QUAL_CERT_SAN_URI:
+    s += cert->san.uri.Join(";");
+    break;
+#endif
   }
 
   if (zret) {
@@ -1638,130 +1765,3 @@ getClientAddr(TSHttpTxn txnp, int txn_private_slot)
   }
   return addr;
 }
-
-///////////////////////////////////////////////////////////////////////////////////
-// The following Conditions are only available if the CRIPTS feature is enabled.
-///
-#if TS_HAS_CRIPTS
-
-// ConditionCert: Various fields for cetificate information (X509).
-//      PROCESS: The process UUID string
-//      REQUEST: The request (HttpSM::sm_id) counter
-//      UNIQUE:  The combination of UUID-sm_id
-void
-ConditionCert::initialize(Parser &p)
-{
-  Condition::initialize(p);
-  auto match = std::make_unique<Matchers<std::string>>(_cond_op);
-
-  match->set(p.get_arg(), mods());
-  _matcher = std::move(match);
-
-  if (_mTLS) {
-    require_resources(RSRC_MTLS_CERTIFICATE);
-  } else {
-    require_resources(RSRC_SERVER_CERTIFICATE);
-  }
-  require_resources(RSRC_CLIENT_CONNECTION);
-}
-
-void
-ConditionCert::set_qualifier(const std::string &q)
-{
-  Condition::set_qualifier(q);
-
-  Dbg(pi_dbg_ctl, "\tParsing %%{CERT:%s} qualifier", q.c_str());
-
-  if (q == "PEM") {
-    _x509_qual = X509_QUAL_PEM;
-  } else if (q == "SIG") {
-    _x509_qual = X509_QUAL_SIG;
-  } else if (q == "SUBJECT") {
-    _x509_qual = X509_QUAL_SUBJECT;
-  } else if (q == "ISSUER") {
-    _x509_qual = X509_QUAL_ISSUER;
-  } else if (q == "SERIAL") {
-    _x509_qual = X509_QUAL_SERIAL;
-  } else if (q == "NOT_BEFORE") {
-    _x509_qual = X509_QUAL_NOT_BEFORE;
-  } else if (q == "NOT_AFTER") {
-    _x509_qual = X509_QUAL_NOT_AFTER;
-  } else if (q == "VERSION") {
-    _x509_qual = X509_QUAL_VERSION;
-  } else if (q == "SAN:DNS") {
-    _x509_qual = X509_QUAL_SAN_DNS;
-  } else if (q == "SAN:IP") {
-    _x509_qual = X509_QUAL_SAN_IP;
-  } else if (q == "SAN:URI") {
-    _x509_qual = X509_QUAL_SAN_URI;
-  } else if (q == "SAN:EMAIL") {
-    _x509_qual = X509_QUAL_SAN_EMAIL;
-  } else {
-    TSError("[%s] Unknown ID() qualifier: %s", PLUGIN_NAME, q.c_str());
-  }
-}
-
-void
-ConditionCert::append_value(std::string &s, const Resources &res ATS_UNUSED)
-{
-  detail::CertBase *cert =
-    _mTLS ? static_cast<detail::CertBase *>(res.mtls_cert) : static_cast<detail::CertBase *>(res.server_cert);
-
-  if (!cert) {
-    return;
-  }
-
-  switch (_x509_qual) {
-  case X509_QUAL_PEM:
-    s += cert->certificate;
-    break;
-  case X509_QUAL_SIG:
-    s += cert->signature;
-    break;
-  case X509_QUAL_SUBJECT:
-    s += cert->subject;
-    break;
-  case X509_QUAL_ISSUER:
-    s += cert->issuer;
-    break;
-  case X509_QUAL_SERIAL:
-    s += cert->serialNumber;
-    break;
-  case X509_QUAL_NOT_BEFORE:
-    s += cert->notBefore;
-    break;
-  case X509_QUAL_NOT_AFTER:
-    s += cert->notAfter;
-    break;
-  case X509_QUAL_VERSION:
-    s += cert->version;
-    break;
-  case X509_QUAL_SAN_DNS:
-    s += cert->san.dns.Join(";");
-    break;
-  case X509_QUAL_SAN_IP:
-    s += cert->san.ipadd.Join(";");
-    break;
-  case X509_QUAL_SAN_URI:
-    s += cert->san.uri.Join(";");
-    break;
-  case X509_QUAL_SAN_EMAIL:
-    s += cert->san.email.Join(";");
-    break;
-  default:
-    break;
-  }
-}
-
-bool
-ConditionCert::eval(const Resources &res)
-{
-  std::string s;
-
-  append_value(s, res);
-  bool rval = static_cast<const Matchers<std::string> *>(_matcher.get())->test(s, res);
-
-  Dbg(pi_dbg_ctl, "Evaluating %sCERT(): %s - rval: %d", _mTLS ? "CLIENT-" : "", s.c_str(), rval);
-  return rval;
-}
-#endif // TS_HAS_CRIPTS

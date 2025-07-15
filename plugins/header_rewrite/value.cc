@@ -67,10 +67,12 @@ Value::set_value(const std::string &val, Statement *owner)
 
       if (tcond_val) {
         _cond_vals.push_back(std::unique_ptr<Condition>{tcond_val});
-        if (owner) {
-          owner->require_resources(tcond_val->get_resource_ids());
-        }
       }
+    }
+
+    // If we have an owner (e.g. an Operator) hoist up the resource requirements
+    if (owner) {
+      owner->require_resources(get_resource_ids());
     }
   } else {
     _int_value   = strtol(_value.c_str(), nullptr, 10);

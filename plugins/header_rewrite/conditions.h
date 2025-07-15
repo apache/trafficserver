@@ -582,7 +582,10 @@ protected:
 
 private:
   NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
-  void                     append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
+#if TS_HAS_CRIPTS
+  bool _mtls_cert = false;
+#endif
+  void append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
 };
 
 class ConditionStringLiteral : public Condition
@@ -933,37 +936,3 @@ protected:
 private:
   int _ix = -1;
 };
-
-///////////////////////////////////////////////////////////////////////////////////
-// The following Conditions are only available if the CRIPTS feature is enabled.
-///
-#if TS_HAS_CRIPTS
-
-// Cert: Certificat information (X509)
-class ConditionCert : public Condition
-{
-  using SelfType = ConditionCert;
-
-public:
-  explicit ConditionCert(bool mTLS = false)
-  {
-    _mTLS = mTLS;
-    Dbg(dbg_ctl, "Calling CTOR for ConditionCert");
-  };
-
-  // noncopyable
-  ConditionCert(const SelfType &)  = delete;
-  void operator=(const SelfType &) = delete;
-
-  void initialize(Parser &p) override;
-  void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
-
-protected:
-  bool eval(const Resources &res) override;
-
-private:
-  X509Qualifiers _x509_qual = X509_QUAL_SUBJECT;
-  bool           _mTLS      = false;
-};
-#endif
