@@ -75,7 +75,7 @@ const int BROTLI_LGW               = 16;
 #endif
 
 #if HAVE_ZSTD_H
-const int ZSTD_COMPRESSION_LEVEL = 6;
+const int ZSTD_COMPRESSION_LEVEL = 12;
 #endif
 
 static const char *global_hidden_header_name = nullptr;
