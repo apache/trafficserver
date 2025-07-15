@@ -931,7 +931,7 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(const OverridableHt
 void
 HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTPHdr *request)
 {
-  HttpForwarded::OptionBitSet optSet = s->txn_conf->insert_forwarded;
+  HttpForwarded::OptionBitSet optSet = s->txn_conf->insert_forwarded->data();
 
   if (optSet.any()) { // One or more Forwarded parameters enabled, so insert/append to Forwarded header.
 
