@@ -318,6 +318,8 @@ Per-Mapping`_ above.
 The ``<part>`` allows the operand to match against just a component of the URL,
 as documented in `URL Parts`_ below.
 
+.. _admin-plugins-header-rewrite-geo:
+
 GEO
 ~~~
 ::
@@ -429,6 +431,8 @@ are of the same name as for `set-http-cntl`_. This condition returns a ``true`` 
 
 would only continue evaluation if logging is turned off.
 
+.. _admin-plugins-header-rewrite-id:
+
 ID
 ~~
 ::
@@ -448,6 +452,8 @@ Now, even though these are conditionals, their primary use are as value
 arguments to another operator. For example::
 
     set-header ATS-Req-UUID %{ID:UNIQUE}
+
+.. _admin-plugins-header-rewrite-inbound:
 
 INBOUND
 ~~~~~~~
@@ -595,6 +601,8 @@ For example::
     cond %{SEND_REQUEST_HDR_HOOK} [AND]
     cond %{NEXT-HOP:HOST} =www.secondparent.com
         set-header Host vhost.secondparent.com
+
+.. _admin-plugins-header-rewrite-now:
 
 NOW
 ~~~
@@ -1116,6 +1124,8 @@ set-cookie
 Replaces the value of cookie ``<name>`` with ``<value>``, creating the cookie
 if necessary.
 
+.. _admin-plugins-header-rewrite-set-http-cntl:
+
 set-http-cntl
 ~~~~~~~~~~~~~
 ::
@@ -1201,6 +1211,8 @@ Old expansion variable   Condition variable to use with concatenations
 %<cque>                  %[CLIENT-URL}
 %<cquup>                 %{CLIENT-URL:PATH}
 ======================== ==========================================================================
+
+.. _admin-plugins-header-rewrite-url-parts:
 
 URL Parts
 ---------
