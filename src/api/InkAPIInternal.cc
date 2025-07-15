@@ -774,6 +774,7 @@ api_init()
     TS_HTTP_LEN_DEFLATE          = static_cast<int>(HTTP_VALUE_DEFLATE.length());
     TS_HTTP_LEN_GZIP             = static_cast<int>(HTTP_VALUE_GZIP.length());
     TS_HTTP_LEN_BROTLI           = static_cast<int>(HTTP_VALUE_BROTLI.length());
+    TS_HTTP_LEN_ZSTD             = static_cast<int>(HTTP_VALUE_ZSTD.length());
     TS_HTTP_LEN_IDENTITY         = static_cast<int>(HTTP_VALUE_IDENTITY.length());
     TS_HTTP_LEN_KEEP_ALIVE       = static_cast<int>(HTTP_VALUE_KEEP_ALIVE.length());
     TS_HTTP_LEN_MAX_AGE          = static_cast<int>(HTTP_VALUE_MAX_AGE.length());
