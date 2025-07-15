@@ -112,22 +112,20 @@ enum NetworkSessionQualifiers {
   NET_QUAL_IPV6,        ///< 'ipv6' or not.
   NET_QUAL_IP_FAMILY,   ///< IP protocol family.
   NET_QUAL_STACK,       ///< Full protocol stack.
-};
-
-enum X509Qualifiers {
-  X509_QUAL_PEM,        // The PEM encoded certificate
-  X509_QUAL_SIG,        // The signature of the certificate
-  X509_QUAL_SUBJECT,    // The subject of the certificate
-  X509_QUAL_ISSUER,     // The issuer of the certificate
-  X509_QUAL_SERIAL,     // The serial number of the certificate
-  X509_QUAL_NOT_BEFORE, // The not before date of the certificate
-  X509_QUAL_NOT_AFTER,  // The not after date of the certificate
-  X509_QUAL_VERSION,    // The version of the certificate
-  // Here comes the Subject Alternative Name (SAN) qualifiers
-  X509_QUAL_SAN_DNS,   // The DNS names in the SAN
-  X509_QUAL_SAN_IP,    // The IP addresses in the SAN
-  X509_QUAL_SAN_EMAIL, // The email addresses in the SAN
-  X509_QUAL_SAN_URI,   // The URIs in the SAN
+#if TS_HAS_CRIPTS
+  NET_QUAL_CERT_PEM,        ///< The PEM encoded certificate
+  NET_QUAL_CERT_SIG,        ///< The signature of the certificate
+  NET_QUAL_CERT_SUBJECT,    ///< The subject of the certificate
+  NET_QUAL_CERT_ISSUER,     ///< The issuer of the certificate
+  NET_QUAL_CERT_SERIAL,     ///< The serial number of the certificate
+  NET_QUAL_CERT_NOT_BEFORE, ///< The not before date of the certificate
+  NET_QUAL_CERT_NOT_AFTER,  ///< The not after date of the certificate
+  NET_QUAL_CERT_VERSION,    ///< The version of the certificate
+  NET_QUAL_CERT_SAN_DNS,    ///< The DNS names in the SAN
+  NET_QUAL_CERT_SAN_IP,     ///< The IP addresses in the SAN
+  NET_QUAL_CERT_SAN_EMAIL,  ///< The email addresses in the SAN
+  NET_QUAL_CERT_SAN_URI,    ///< The URIs in the SAN
+#endif
 };
 
 class Statement
